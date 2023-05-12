@@ -22,7 +22,6 @@ const PDFLayerViewer = null;
 const PDFOutlineViewer = null;
 const PDFPresentationMode = null;
 const PDFSidebar = null;
-const PDFSidebarResizer = null;
 const PDFThumbnailViewer = null;
 const SecondaryToolbar = null;
 const Toolbar = null;
@@ -37,7 +36,6 @@ export {
   PDFOutlineViewer,
   PDFPresentationMode,
   PDFSidebar,
-  PDFSidebarResizer,
   PDFThumbnailViewer,
   SecondaryToolbar,
   Toolbar,

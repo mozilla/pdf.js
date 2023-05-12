@@ -14,6 +14,7 @@
  */
 
 import {
+  docStyle,
   PresentationModeState,
   RenderingStates,
   SidebarView,
@@ -21,6 +22,9 @@ import {
   toggleExpandedBtn,
 } from "./ui_utils.js";
 
+const SIDEBAR_WIDTH_VAR = "--sidebar-width";
+const SIDEBAR_MIN_WIDTH = 200; // pixels
+const SIDEBAR_RESIZING_CLASS = "sidebarResizing";
 const UI_NOTIFICATION_CLASS = "pdfSidebarNotification";
 
 /**
@@ -40,6 +44,8 @@ const UI_NOTIFICATION_CLASS = "pdfSidebarNotification";
  *   (in which the views are placed).
  * @property {HTMLButtonElement} toggleButton - The button used for
  *   opening/closing the sidebar.
+ * @property {HTMLDivElement} resizer - The DOM element that can be dragged in
+ *   order to adjust the width of the sidebar.
  * @property {HTMLButtonElement} thumbnailButton - The button used to show
  *   the thumbnail view.
  * @property {HTMLButtonElement} outlineButton - The button used to show
@@ -63,6 +69,16 @@ const UI_NOTIFICATION_CLASS = "pdfSidebarNotification";
  */
 
 class PDFSidebar {
+  #isRTL = false;
+
+  #mouseMoveBound = this.#mouseMove.bind(this);
+
+  #mouseUpBound = this.#mouseUp.bind(this);
+
+  #outerContainerWidth = null;
+
+  #width = null;
+
   /**
    * @param {PDFSidebarOptions} options
    */
@@ -84,6 +100,7 @@ class PDFSidebar {
     this.outerContainer = elements.outerContainer;
     this.sidebarContainer = elements.sidebarContainer;
     this.toggleButton = elements.toggleButton;
+    this.resizer = elements.resizer;
 
     this.thumbnailButton = elements.thumbnailButton;
     this.outlineButton = elements.outlineButton;
@@ -101,6 +118,9 @@ class PDFSidebar {
     this.eventBus = eventBus;
     this.l10n = l10n;
 
+    l10n.getDirection().then(dir => {
+      this.#isRTL = dir === "rtl";
+    });
     this.#addEventListeners();
   }
 
@@ -275,8 +295,8 @@ class PDFSidebar {
   }
 
   #dispatchEvent() {
-    if (this.isInitialViewSet && !this.isInitialEventDispatched) {
-      this.isInitialEventDispatched = true;
+    if (this.isInitialViewSet) {
+      this.isInitialEventDispatched ||= true;
     }
 
     this.eventBus.dispatch("sidebarviewchanged", {
@@ -411,6 +431,100 @@ class PDFSidebar {
         this.#updateThumbnailViewer();
       }
     });
+
+    // Handle resizing of the sidebar.
+    this.resizer.addEventListener("mousedown", evt => {
+      if (evt.button !== 0) {
+        return;
+      }
+      // Disable the `transition-duration` rules when sidebar resizing begins,
+      // in order to improve responsiveness and to avoid visual glitches.
+      this.outerContainer.classList.add(SIDEBAR_RESIZING_CLASS);
+
+      window.addEventListener("mousemove", this.#mouseMoveBound);
+      window.addEventListener("mouseup", this.#mouseUpBound);
+    });
+
+    this.eventBus._on("resize", evt => {
+      // When the *entire* viewer is resized, such that it becomes narrower,
+      // ensure that the sidebar doesn't end up being too wide.
+      if (evt.source !== window) {
+        return;
+      }
+      // Always reset the cached width when the viewer is resized.
+      this.#outerContainerWidth = null;
+
+      if (!this.#width) {
+        // The sidebar hasn't been resized, hence no need to adjust its width.
+        return;
+      }
+      // NOTE: If the sidebar is closed, we don't need to worry about
+      //       visual glitches nor ensure that rendering is triggered.
+      if (!this.isOpen) {
+        this.#updateWidth(this.#width);
+        return;
+      }
+      this.outerContainer.classList.add(SIDEBAR_RESIZING_CLASS);
+      const updated = this.#updateWidth(this.#width);
+
+      Promise.resolve().then(() => {
+        this.outerContainer.classList.remove(SIDEBAR_RESIZING_CLASS);
+        // Trigger rendering if the sidebar width changed, to avoid
+        // depending on the order in which 'resize' events are handled.
+        if (updated) {
+          this.eventBus.dispatch("resize", { source: this });
+        }
+      });
+    });
+  }
+
+  /**
+   * @type {number}
+   */
+  get outerContainerWidth() {
+    return (this.#outerContainerWidth ||= this.outerContainer.clientWidth);
+  }
+
+  /**
+   * returns {boolean} Indicating if the sidebar width was updated.
+   */
+  #updateWidth(width = 0) {
+    // Prevent the sidebar from becoming too narrow, or from occupying more
+    // than half of the available viewer width.
+    const maxWidth = Math.floor(this.outerContainerWidth / 2);
+    if (width > maxWidth) {
+      width = maxWidth;
+    }
+    if (width < SIDEBAR_MIN_WIDTH) {
+      width = SIDEBAR_MIN_WIDTH;
+    }
+    // Only update the UI when the sidebar width did in fact change.
+    if (width === this.#width) {
+      return false;
+    }
+    this.#width = width;
+
+    docStyle.setProperty(SIDEBAR_WIDTH_VAR, `${width}px`);
+    return true;
+  }
+
+  #mouseMove(evt) {
+    let width = evt.clientX;
+    // For sidebar resizing to work correctly in RTL mode, invert the width.
+    if (this.#isRTL) {
+      width = this.outerContainerWidth - width;
+    }
+    this.#updateWidth(width);
+  }
+
+  #mouseUp(evt) {
+    // Re-enable the `transition-duration` rules when sidebar resizing ends...
+    this.outerContainer.classList.remove(SIDEBAR_RESIZING_CLASS);
+    // ... and ensure that rendering will always be triggered.
+    this.eventBus.dispatch("resize", { source: this });
+
+    window.removeEventListener("mousemove", this.#mouseMoveBound);
+    window.removeEventListener("mouseup", this.#mouseUpBound);
   }
 }
 
