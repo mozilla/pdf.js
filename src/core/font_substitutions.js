@@ -224,7 +224,6 @@ const substitutionMap = new Map([
   [
     "ArialBlack-Italic",
     {
-      prepend: ["Arial Black Italic"],
       local: {
         alias: "ArialBlack",
         append: "Italic",
@@ -337,6 +336,8 @@ const fontAliases = new Map([["Arial-Black", "ArialBlack"]]);
 /**
  * Create the src path to use to load a font (see FontFace).
  * @param {Array<String>} prepend A list of font names to search first.
+ * @param {String} appendToPrepended A String to append to the list of fonts in
+ *  prepend.
  * @param {Array<String>|Object} local A list of font names to search. If an
  *   Object is passed, then local.alias is the name of an other substition font
  *   and local.append is a String to append to the list of fonts in the alias.
@@ -344,7 +345,7 @@ const fontAliases = new Map([["Arial-Black", "ArialBlack"]]);
  *   list of fonts will be "FooSubst1 Bold", "FooSubst2 Bold", etc.
  * @returns an String with the local fonts.
  */
-function makeLocal(prepend, local) {
+function makeLocal(prepend, appendToPrepended, local) {
   let append = "";
   if (!Array.isArray(local)) {
     // We are getting our list of fonts in the alias and we'll append Bold,
@@ -352,9 +353,14 @@ function makeLocal(prepend, local) {
     append = ` ${local.append}`;
     local = substitutionMap.get(local.alias).local;
   }
+  if (appendToPrepended) {
+    appendToPrepended = ` ${appendToPrepended}`;
+  }
+
   let prependedPaths = "";
   if (prepend) {
-    prependedPaths = prepend.map(name => `local(${name})`).join(",") + ",";
+    prependedPaths =
+      prepend.map(name => `local(${name}${appendToPrepended})`).join(",") + ",";
   }
   return (
     prependedPaths + local.map(name => `local(${name}${append})`).join(",")
@@ -378,8 +384,8 @@ function makeLocal(prepend, local) {
  * @param {Object} idFactory The ids factory.
  * @param {String} localFontPath Path to the fonts directory.
  * @param {String} baseFontName The font name to be substituted.
- * @param {String} standardFontName The standard font name to use if the base
- *   font is not available.
+ * @param {String|undefined} standardFontName The standard font name to use
+ *   if the base font is not available.
  * @returns an Object with the CSS, the loaded name, the src and the style.
  */
 function getFontSubstitution(
@@ -437,7 +443,8 @@ function getFontSubstitution(
       (italic && ITALIC) ||
       NORMAL;
     substitutionInfo = {
-      css: `${loadedName},sans-serif`,
+      css: loadedName,
+      guessFallback: true,
       loadedName,
       src: `local(${baseFontName})`,
       style,
@@ -457,16 +464,20 @@ function getFontSubstitution(
 
   // Prepend the fonts to test before the fallback font.
   let prepend = substitution.prepend;
+  let appendToPrepended = "";
 
   if (fallback) {
     // We've a fallback font: this one is a standard font we want to use in case
     // nothing has been found from the prepend list.
-    prepend ||= substitutionMap.get(substitution.local.alias).prepend;
+    if (substitution.local) {
+      prepend ||= substitutionMap.get(substitution.local.alias).prepend;
+      appendToPrepended = substitution.local.append;
+    }
     substitution = substitutionMap.get(fallback);
   }
 
   const { local, path, ultimate } = substitution;
-  let src = makeLocal(prepend, local);
+  let src = makeLocal(prepend, appendToPrepended, local);
   if (path && localFontPath !== null) {
     // PDF.js embeds some fonts we can use.
     src += `,url(${localFontPath}${path})`;
@@ -480,6 +491,7 @@ function getFontSubstitution(
 
   substitutionInfo = {
     css: `${loadedName},${ultimate}`,
+    guessFallback: false,
     loadedName,
     src,
     style,

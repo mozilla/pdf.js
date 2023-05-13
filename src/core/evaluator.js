@@ -3921,6 +3921,9 @@ class PartialEvaluator {
     }
     if (isMonospace) {
       properties.flags |= FontFlags.FixedPitch;
+    } else {
+      // Clear the flag.
+      properties.flags &= ~FontFlags.FixedPitch;
     }
 
     properties.defaultWidth = defaultWidth;
@@ -4197,15 +4200,15 @@ class PartialEvaluator {
         if (standardFontName) {
           file = await this.fetchStandardFontData(standardFontName);
           properties.isInternalFont = !!file;
-          if (!properties.isInternalFont && this.options.useSystemFonts) {
-            properties.systemFontInfo = getFontSubstitution(
-              this.systemFontCache,
-              this.idFactory,
-              this.options.standardFontDataUrl,
-              baseFontName,
-              standardFontName
-            );
-          }
+        }
+        if (!properties.isInternalFont && this.options.useSystemFonts) {
+          properties.systemFontInfo = getFontSubstitution(
+            this.systemFontCache,
+            this.idFactory,
+            this.options.standardFontDataUrl,
+            baseFontName,
+            standardFontName
+          );
         }
         return this.extractDataStructures(dict, dict, properties).then(
           newProperties => {
@@ -4310,15 +4313,15 @@ class PartialEvaluator {
       if (standardFontName) {
         fontFile = await this.fetchStandardFontData(standardFontName);
         isInternalFont = !!fontFile;
-        if (!isInternalFont && this.options.useSystemFonts) {
-          systemFontInfo = getFontSubstitution(
-            this.systemFontCache,
-            this.idFactory,
-            this.options.standardFontDataUrl,
-            fontName.name,
-            standardFontName
-          );
-        }
+      }
+      if (!isInternalFont && this.options.useSystemFonts) {
+        systemFontInfo = getFontSubstitution(
+          this.systemFontCache,
+          this.idFactory,
+          this.options.standardFontDataUrl,
+          fontName.name,
+          standardFontName
+        );
       }
     }
 

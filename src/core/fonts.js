@@ -986,6 +986,7 @@ class Font {
     let { type, subtype } = properties;
     this.type = type;
     this.subtype = subtype;
+    this.systemFontInfo = properties.systemFontInfo;
 
     const matches = name.match(/^InvalidPDFjsFont_(.*)_\d+$/);
     this.isInvalidPDFjsFont = !!matches;
@@ -999,7 +1000,10 @@ class Font {
       this.fallbackName = "sans-serif";
     }
 
-    this.systemFontInfo = properties.systemFontInfo;
+    if (this.systemFontInfo?.guessFallback) {
+      this.systemFontInfo.css += `,${this.fallbackName}`;
+    }
+
     this.differences = properties.differences;
     this.widths = properties.widths;
     this.defaultWidth = properties.defaultWidth;
