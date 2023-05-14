@@ -24,6 +24,7 @@
     "encodings_spec.js",
     "evaluator_spec.js",
     "event_utils_spec.js",
+    "font_substitutions_spec.js",
     "function_spec.js",
     "message_handler_spec.js",
     "metadata_spec.js",
