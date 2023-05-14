@@ -344,7 +344,7 @@ describe("api", function () {
         function () {
           // Shouldn't get here.
           expect(false).toEqual(true);
-          return Promise.reject(new Error("loadingTask should be rejected"));
+          throw new Error("loadingTask should be rejected");
         },
         function (data) {
           expect(data instanceof PasswordException).toEqual(true);
@@ -366,7 +366,7 @@ describe("api", function () {
         function () {
           // Shouldn't get here.
           expect(false).toEqual(true);
-          return Promise.reject(new Error("loadingTask should be rejected"));
+          throw new Error("loadingTask should be rejected");
         },
         function (data) {
           expect(data instanceof PasswordException).toEqual(true);
@@ -427,7 +427,7 @@ describe("api", function () {
           function () {
             // Shouldn't get here.
             expect(false).toEqual(true);
-            return Promise.reject(new Error("loadingTask should be rejected"));
+            throw new Error("loadingTask should be rejected");
           },
           function (reason) {
             expect(reason instanceof PasswordException).toEqual(true);
@@ -447,7 +447,7 @@ describe("api", function () {
           function () {
             // Shouldn't get here.
             expect(false).toEqual(true);
-            return Promise.reject(new Error("loadingTask should be rejected"));
+            throw new Error("loadingTask should be rejected");
           },
           function (reason) {
             expect(reason instanceof PasswordException).toEqual(true);
