@@ -39,6 +39,7 @@ describe("getFontSubstitution", function () {
         },
       })
     );
+    expect(fontSubstitution.css).toMatch(/^g_d(\d+)_sf_f(\d+)$/);
   });
 
   it("should substitute an unknown bold font", () => {
@@ -60,6 +61,7 @@ describe("getFontSubstitution", function () {
         },
       })
     );
+    expect(fontSubstitution.css).toMatch(/^g_d(\d+)_sf_f(\d+)$/);
   });
 
   it("should substitute an unknown italic font", () => {
@@ -81,6 +83,7 @@ describe("getFontSubstitution", function () {
         },
       })
     );
+    expect(fontSubstitution.css).toMatch(/^g_d(\d+)_sf_f(\d+)$/);
   });
 
   it("should substitute an unknown bold italic font", () => {
@@ -102,6 +105,7 @@ describe("getFontSubstitution", function () {
         },
       })
     );
+    expect(fontSubstitution.css).toMatch(/^g_d(\d+)_sf_f(\d+)$/);
   });
 
   it("should substitute an unknown font but with a standard font", () => {
@@ -131,6 +135,7 @@ describe("getFontSubstitution", function () {
         },
       })
     );
+    expect(fontSubstitution.css).toMatch(/^g_d(\d+)_sf_f(\d+),sans-serif$/);
   });
 
   it("should substitute an unknown font but with a standard italic font", () => {
@@ -162,6 +167,7 @@ describe("getFontSubstitution", function () {
         },
       })
     );
+    expect(fontSubstitution.css).toMatch(/^g_d(\d+)_sf_f(\d+),sans-serif$/);
   });
 
   it("should substitute an unknown font but with a standard bold font", () => {
@@ -192,6 +198,7 @@ describe("getFontSubstitution", function () {
         },
       })
     );
+    expect(fontSubstitution.css).toMatch(/^g_d(\d+)_sf_f(\d+),sans-serif$/);
   });
 
   it("should substitute an unknown font but with a standard bold italic font", () => {
@@ -225,6 +232,7 @@ describe("getFontSubstitution", function () {
         },
       })
     );
+    expect(fontSubstitution.css).toMatch(/^g_d(\d+)_sf_f(\d+),sans-serif$/);
   });
 
   it("should substitute Calibri", () => {
@@ -254,6 +262,7 @@ describe("getFontSubstitution", function () {
         },
       })
     );
+    expect(fontSubstitution.css).toMatch(/^g_d(\d+)_sf_f(\d+),sans-serif$/);
   });
 
   it("should substitute Calibri-Bold", () => {
@@ -285,6 +294,7 @@ describe("getFontSubstitution", function () {
         },
       })
     );
+    expect(fontSubstitution.css).toMatch(/^g_d(\d+)_sf_f(\d+),sans-serif$/);
   });
 
   it("should substitute Arial Black", () => {
@@ -316,6 +326,7 @@ describe("getFontSubstitution", function () {
         },
       })
     );
+    expect(fontSubstitution.css).toMatch(/^g_d(\d+)_sf_f(\d+),sans-serif$/);
   });
 
   it("should substitute Arial Black Bold", () => {
@@ -347,5 +358,6 @@ describe("getFontSubstitution", function () {
         },
       })
     );
+    expect(fontSubstitution.css).toMatch(/^g_d(\d+)_sf_f(\d+),sans-serif$/);
   });
 });
