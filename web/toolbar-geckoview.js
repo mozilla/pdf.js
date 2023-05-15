@@ -29,13 +29,42 @@ class Toolbar {
    * @param {ToolbarOptions} options
    * @param {EventBus} eventBus
    * @param {IL10n} _l10n - Localization service.
+   * @param {Object} nimbusData - Nimbus configuration.
    */
-  constructor(options, eventBus, _l10n) {
+  constructor(options, eventBus, _l10n, nimbusData) {
     this.#eventBus = eventBus;
-    this.#buttons = [
-      { element: options.download, eventName: "download" },
-      { element: options.openInApp, eventName: "openinexternalapp" },
+    const buttons = [
+      {
+        element: options.download,
+        eventName: "download",
+        nimbusName: "download-button",
+      },
+      {
+        element: options.openInApp,
+        eventName: "openinexternalapp",
+        nimbusName: "open-in-app-button",
+      },
     ];
+
+    if (nimbusData) {
+      this.#buttons = [];
+      for (const button of buttons) {
+        if (nimbusData[button.nimbusName]) {
+          this.#buttons.push(button);
+        } else {
+          button.element.remove();
+        }
+      }
+      if (this.#buttons.length > 0) {
+        options.container.classList.add("show");
+      } else {
+        options.container.remove();
+        options.mainContainer.classList.add("noToolbar");
+      }
+    } else {
+      options.container.classList.add("show");
+      this.#buttons = buttons;
+    }
 
     // Bind the event listeners for click and various other actions.
     this.#bindListeners(options);
