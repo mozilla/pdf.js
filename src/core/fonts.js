@@ -1001,6 +1001,8 @@ class Font {
     }
 
     if (this.systemFontInfo?.guessFallback) {
+      // Once the fallback name is guessed, we don't want to guess it again.
+      this.systemFontInfo.guessFallback = false;
       this.systemFontInfo.css += `,${this.fallbackName}`;
     }
 
