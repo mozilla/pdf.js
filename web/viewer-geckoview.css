@@ -102,8 +102,13 @@ body {
 #viewerContainer {
   overflow: auto;
   position: absolute;
-  inset: 41px 0 0;
+  inset-block: 41px 0;
+  inset-inline: 0;
   outline: none;
+}
+
+#viewerContainer.noToolbar {
+  inset-block-start: 0;
 }
 
 .dialogButton {

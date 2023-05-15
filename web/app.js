@@ -152,6 +152,10 @@ class DefaultExternalServices {
   static get canvasMaxAreaInBytes() {
     return shadow(this, "canvasMaxAreaInBytes", -1);
   }
+
+  static getNimbusExperimentData() {
+    return shadow(this, "getNimbusExperimentData", Promise.resolve(null));
+  }
 }
 
 const PDFViewerApplication = {
@@ -230,11 +234,20 @@ const PDFViewerApplication = {
   _printAnnotationStoragePromise: null,
   _touchInfo: null,
   _isCtrlKeyDown: false,
+  _nimbusDataPromise: null,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
     this.preferences = this.externalServices.createPreferences();
     this.appConfig = appConfig;
+
+    if (
+      typeof PDFJSDev === "undefined"
+        ? window.isGECKOVIEW
+        : PDFJSDev.test("GECKOVIEW")
+    ) {
+      this._nimbusDataPromise = this.externalServices.getNimbusExperimentData();
+    }
 
     await this._initializeOptions();
     this._forceCssTheme();
@@ -587,7 +600,12 @@ const PDFViewerApplication = {
           : PDFJSDev.test("GECKOVIEW")
       ) {
         if (AppOptions.get("enableFloatingToolbar")) {
-          this.toolbar = new Toolbar(appConfig.toolbar, eventBus, this.l10n);
+          this.toolbar = new Toolbar(
+            appConfig.toolbar,
+            eventBus,
+            this.l10n,
+            await this._nimbusDataPromise
+          );
         }
       } else {
         this.toolbar = new Toolbar(appConfig.toolbar, eventBus, this.l10n);
