@@ -297,7 +297,7 @@ class RefSet {
     ) {
       unreachable('RefSet: Invalid "parent" value.');
     }
-    this._set = new Set(parent && parent._set);
+    this._set = new Set(parent?._set);
   }
 
   has(ref) {

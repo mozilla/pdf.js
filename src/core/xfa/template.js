@@ -5481,8 +5481,7 @@ class Template extends XFAObject {
       breakBeforeTarget = breakBefore.beforeTarget;
     } else if (
       root.subform.children.length >= 1 &&
-      root.subform.children[0].break &&
-      root.subform.children[0].break.beforeTarget
+      root.subform.children[0].break?.beforeTarget
     ) {
       breakBefore = root.subform.children[0].break;
       breakBeforeTarget = breakBefore.beforeTarget;

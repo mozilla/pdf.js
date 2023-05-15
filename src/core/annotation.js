@@ -560,10 +560,9 @@ class Annotation {
    * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
    */
   mustBeViewed(annotationStorage) {
-    const storageEntry =
-      annotationStorage && annotationStorage.get(this.data.id);
-    if (storageEntry && storageEntry.hidden !== undefined) {
-      return !storageEntry.hidden;
+    const hidden = annotationStorage?.get(this.data.id)?.hidden;
+    if (hidden !== undefined) {
+      return !hidden;
     }
     return this.viewable && !this._hasFlag(this.flags, AnnotationFlag.HIDDEN);
   }
@@ -578,10 +577,9 @@ class Annotation {
    * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
    */
   mustBePrinted(annotationStorage) {
-    const storageEntry =
-      annotationStorage && annotationStorage.get(this.data.id);
-    if (storageEntry && storageEntry.print !== undefined) {
-      return storageEntry.print;
+    const print = annotationStorage?.get(this.data.id)?.print;
+    if (print !== undefined) {
+      return print;
     }
     return this.printable;
   }
@@ -1566,8 +1564,7 @@ class WidgetAnnotation extends Annotation {
 
     const localResources = getInheritableProperty({ dict, key: "DR" });
     const acroFormResources = params.acroForm.get("DR");
-    const appearanceResources =
-      this.appearance && this.appearance.dict.get("Resources");
+    const appearanceResources = this.appearance?.dict.get("Resources");
 
     this._fieldResources = {
       localResources,
@@ -1627,10 +1624,7 @@ class WidgetAnnotation extends Annotation {
   }
 
   getRotationMatrix(annotationStorage) {
-    const storageEntry = annotationStorage
-      ? annotationStorage.get(this.data.id)
-      : undefined;
-    let rotation = storageEntry && storageEntry.rotation;
+    let rotation = annotationStorage?.get(this.data.id)?.rotation;
     if (rotation === undefined) {
       rotation = this.rotation;
     }
@@ -1646,10 +1640,7 @@ class WidgetAnnotation extends Annotation {
   }
 
   getBorderAndBackgroundAppearances(annotationStorage) {
-    const storageEntry = annotationStorage
-      ? annotationStorage.get(this.data.id)
-      : undefined;
-    let rotation = storageEntry && storageEntry.rotation;
+    let rotation = annotationStorage?.get(this.data.id)?.rotation;
     if (rotation === undefined) {
       rotation = this.rotation;
     }
@@ -1799,11 +1790,9 @@ class WidgetAnnotation extends Annotation {
   amendSavedDict(annotationStorage, dict) {}
 
   async save(evaluator, task, annotationStorage) {
-    const storageEntry = annotationStorage
-      ? annotationStorage.get(this.data.id)
-      : undefined;
-    let value = storageEntry && storageEntry.value;
-    let rotation = storageEntry && storageEntry.rotation;
+    const storageEntry = annotationStorage?.get(this.data.id);
+    let value = storageEntry?.value,
+      rotation = storageEntry?.rotation;
     if (value === this.data.fieldValue || value === undefined) {
       if (!this._hasValueFromXFA && rotation === undefined) {
         return null;
@@ -1845,7 +1834,7 @@ class WidgetAnnotation extends Annotation {
     }
 
     let needAppearances = false;
-    if (appearance && appearance.needAppearances) {
+    if (appearance?.needAppearances) {
       needAppearances = true;
       appearance = null;
     }
@@ -1949,10 +1938,7 @@ class WidgetAnnotation extends Annotation {
     if (isPassword) {
       return null;
     }
-    const storageEntry = annotationStorage
-      ? annotationStorage.get(this.data.id)
-      : undefined;
-
+    const storageEntry = annotationStorage?.get(this.data.id);
     let value, rotation;
     if (storageEntry) {
       value = storageEntry.formattedValue || storageEntry.value;
@@ -1993,7 +1979,7 @@ class WidgetAnnotation extends Annotation {
       const option = this.data.options.find(
         ({ exportValue }) => value === exportValue
       );
-      value = (option && option.displayValue) || value;
+      value = option?.displayValue || value;
     }
 
     if (value === "") {
@@ -2383,9 +2369,7 @@ class WidgetAnnotation extends Annotation {
     const { localResources, appearanceResources, acroFormResources } =
       this._fieldResources;
 
-    const fontName =
-      this.data.defaultAppearanceData &&
-      this.data.defaultAppearanceData.fontName;
+    const fontName = this.data.defaultAppearanceData?.fontName;
     if (!fontName) {
       return localResources || Dict.empty;
     }
@@ -2763,8 +2747,8 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       return null;
     }
     const storageEntry = annotationStorage.get(this.data.id);
-    let rotation = storageEntry && storageEntry.rotation;
-    let value = storageEntry && storageEntry.value;
+    let rotation = storageEntry?.rotation,
+      value = storageEntry?.value;
 
     if (rotation === undefined) {
       if (value === undefined) {
@@ -2825,8 +2809,8 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       return null;
     }
     const storageEntry = annotationStorage.get(this.data.id);
-    let rotation = storageEntry && storageEntry.rotation;
-    let value = storageEntry && storageEntry.value;
+    let rotation = storageEntry?.rotation,
+      value = storageEntry?.value;
 
     if (rotation === undefined) {
       if (value === undefined) {
@@ -3239,10 +3223,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
     if (!this.hasIndices) {
       return;
     }
-    const storageEntry = annotationStorage
-      ? annotationStorage.get(this.data.id)
-      : undefined;
-    let values = storageEntry && storageEntry.value;
+    let values = annotationStorage?.get(this.data.id)?.value;
     if (!Array.isArray(values)) {
       values = [values];
     }
@@ -3263,10 +3244,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
     }
 
     let exportedValue, rotation;
-    const storageEntry = annotationStorage
-      ? annotationStorage.get(this.data.id)
-      : undefined;
-
+    const storageEntry = annotationStorage?.get(this.data.id);
     if (storageEntry) {
       rotation = storageEntry.rotation;
       exportedValue = storageEntry.value;
@@ -4176,10 +4154,9 @@ class HighlightAnnotation extends MarkupAnnotation {
 
     const quadPoints = (this.data.quadPoints = getQuadPoints(dict, null));
     if (quadPoints) {
-      const resources =
-        this.appearance && this.appearance.dict.get("Resources");
+      const resources = this.appearance?.dict.get("Resources");
 
-      if (!this.appearance || !(resources && resources.has("ExtGState"))) {
+      if (!this.appearance || !resources?.has("ExtGState")) {
         if (this.appearance) {
           // Workaround for cases where there's no /ExtGState-entry directly
           // available, e.g. when the appearance stream contains a /XObject of

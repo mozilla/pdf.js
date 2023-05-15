@@ -1698,7 +1698,7 @@ const CipherTransformFactory = (function CipherTransformFactoryClosure() {
           if (cfDict instanceof Dict && streamCryptoName instanceof Name) {
             cfDict.suppressEncryption = true; // See comment below.
             const handlerDict = cfDict.get(streamCryptoName.name);
-            keyLength = (handlerDict && handlerDict.get("Length")) || 128;
+            keyLength = handlerDict?.get("Length") || 128;
             if (keyLength < 40) {
               // Sometimes it's incorrect value of bits, generators specify
               // bytes.

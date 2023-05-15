@@ -69,7 +69,7 @@ class DatasetReader {
     }
 
     const first = node.firstChild;
-    if (first && first.nodeName === "value") {
+    if (first?.nodeName === "value") {
       return node.children.map(child => decodeString(child.textContent));
     }
 
