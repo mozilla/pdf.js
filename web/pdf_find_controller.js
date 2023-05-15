@@ -739,7 +739,7 @@ class PDFFindController {
     return [isUnicode, query];
   }
 
-  #calculateMatch(pageIndex) {
+  calculateMatch(pageIndex) {
     let query = this.#query;
     if (!query) {
       // Do nothing: the matches should be wiped out already.
@@ -905,7 +905,7 @@ class PDFFindController {
         this._pendingFindMatches.add(i);
         this._extractTextPromises[i].then(() => {
           this._pendingFindMatches.delete(i);
-          this.#calculateMatch(i);
+          this.calculateMatch(i);
         });
       }
     }
@@ -1075,7 +1075,7 @@ class PDFFindController {
       current += matchIdx + 1;
     }
     // When searching starts, this method may be called before the `pageMatches`
-    // have been counted (in `_calculateMatch`). Ensure that the UI won't show
+    // have been counted (in `calculateMatch`). Ensure that the UI won't show
     // temporarily broken state when the active find result doesn't make sense.
     if (current < 1 || current > total) {
       current = total = 0;
