@@ -693,11 +693,7 @@ class OperatorList {
         case OPS.paintInlineImageXObjectGroup:
         case OPS.paintImageMaskXObject:
           const arg = argsArray[i][0]; // First parameter in imgData.
-          if (
-            !arg.cached &&
-            arg.data &&
-            arg.data.buffer instanceof ArrayBuffer
-          ) {
+          if (!arg.cached && arg.data?.buffer instanceof ArrayBuffer) {
             transfers.push(arg.data.buffer);
           }
           break;

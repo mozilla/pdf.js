@@ -41,7 +41,7 @@ class DecryptStream extends DecodeStream {
       return;
     }
     this.nextChunk = this.str.getBytes(chunkSize);
-    const hasMoreData = this.nextChunk && this.nextChunk.length > 0;
+    const hasMoreData = this.nextChunk?.length > 0;
 
     const decrypt = this.decrypt;
     chunk = decrypt(chunk, !hasMoreData);
