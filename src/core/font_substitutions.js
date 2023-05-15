@@ -59,10 +59,7 @@ const substitutionMap = new Map([
   [
     "Times-Bold",
     {
-      local: {
-        alias: "Times-Roman",
-        append: "Bold",
-      },
+      alias: "Times-Roman",
       style: BOLD,
       ultimate: "serif",
     },
@@ -70,10 +67,7 @@ const substitutionMap = new Map([
   [
     "Times-Italic",
     {
-      local: {
-        alias: "Times-Roman",
-        append: "Italic",
-      },
+      alias: "Times-Roman",
       style: ITALIC,
       ultimate: "serif",
     },
@@ -81,10 +75,7 @@ const substitutionMap = new Map([
   [
     "Times-BoldItalic",
     {
-      local: {
-        alias: "Times-Roman",
-        append: "Bold Italic",
-      },
+      alias: "Times-Roman",
       style: BOLDITALIC,
       ultimate: "serif",
     },
@@ -120,10 +111,7 @@ const substitutionMap = new Map([
   [
     "Helvetica-Bold",
     {
-      local: {
-        alias: "Helvetica",
-        append: "Bold",
-      },
+      alias: "Helvetica",
       path: "LiberationSans-Bold.ttf",
       style: BOLD,
       ultimate: "sans-serif",
@@ -132,10 +120,7 @@ const substitutionMap = new Map([
   [
     "Helvetica-Oblique",
     {
-      local: {
-        alias: "Helvetica",
-        append: "Italic",
-      },
+      alias: "Helvetica",
       path: "LiberationSans-Italic.ttf",
       style: ITALIC,
       ultimate: "sans-serif",
@@ -144,10 +129,7 @@ const substitutionMap = new Map([
   [
     "Helvetica-BoldOblique",
     {
-      local: {
-        alias: "Helvetica",
-        append: "Bold Italic",
-      },
+      alias: "Helvetica",
       path: "LiberationSans-BoldItalic.ttf",
       style: BOLDITALIC,
       ultimate: "sans-serif",
@@ -174,10 +156,7 @@ const substitutionMap = new Map([
   [
     "Courier-Bold",
     {
-      local: {
-        alias: "Courier",
-        append: "Bold",
-      },
+      alias: "Courier",
       style: BOLD,
       ultimate: "monospace",
     },
@@ -185,10 +164,7 @@ const substitutionMap = new Map([
   [
     "Courier-Oblique",
     {
-      local: {
-        alias: "Courier",
-        append: "Italic",
-      },
+      alias: "Courier",
       style: ITALIC,
       ultimate: "monospace",
     },
@@ -196,10 +172,7 @@ const substitutionMap = new Map([
   [
     "Courier-BoldOblique",
     {
-      local: {
-        alias: "Courier",
-        append: "Bold Italic",
-      },
+      alias: "Courier",
       style: BOLDITALIC,
       ultimate: "monospace",
     },
@@ -207,7 +180,7 @@ const substitutionMap = new Map([
   [
     "ArialBlack",
     {
-      prepend: ["Arial Black"],
+      local: ["Arial Black"],
       style: {
         style: "normal",
         weight: "900",
@@ -224,10 +197,7 @@ const substitutionMap = new Map([
   [
     "ArialBlack-Italic",
     {
-      local: {
-        alias: "ArialBlack",
-        append: "Italic",
-      },
+      alias: "ArialBlack",
       style: {
         style: "italic",
         weight: "900",
@@ -244,7 +214,7 @@ const substitutionMap = new Map([
   [
     "ArialNarrow",
     {
-      prepend: [
+      local: [
         "Arial Narrow",
         "Liberation Sans Narrow",
         "Helvetica Condensed",
@@ -258,10 +228,7 @@ const substitutionMap = new Map([
   [
     "ArialNarrow-Bold",
     {
-      local: {
-        alias: "ArialNarrow",
-        append: "Bold",
-      },
+      alias: "ArialNarrow",
       style: BOLD,
       fallback: "Helvetica-Bold",
     },
@@ -269,10 +236,7 @@ const substitutionMap = new Map([
   [
     "ArialNarrow-Italic",
     {
-      local: {
-        alias: "ArialNarrow",
-        append: "Italic",
-      },
+      alias: "ArialNarrow",
       style: ITALIC,
       fallback: "Helvetica-Oblique",
     },
@@ -280,10 +244,7 @@ const substitutionMap = new Map([
   [
     "ArialNarrow-BoldItalic",
     {
-      local: {
-        alias: "ArialNarrow",
-        append: "Bold Italic",
-      },
+      alias: "ArialNarrow",
       style: BOLDITALIC,
       fallback: "Helvetica-BoldOblique",
     },
@@ -291,7 +252,7 @@ const substitutionMap = new Map([
   [
     "Calibri",
     {
-      prepend: ["Calibri", "Carlito"],
+      local: ["Calibri", "Carlito"],
       style: NORMAL,
       fallback: "Helvetica",
     },
@@ -299,10 +260,7 @@ const substitutionMap = new Map([
   [
     "Calibri-Bold",
     {
-      local: {
-        alias: "Calibri",
-        append: "Bold",
-      },
+      alias: "Calibri",
       style: BOLD,
       fallback: "Helvetica-Bold",
     },
@@ -310,10 +268,7 @@ const substitutionMap = new Map([
   [
     "Calibri-Italic",
     {
-      local: {
-        alias: "Calibri",
-        append: "Italic",
-      },
+      alias: "Calibri",
       style: ITALIC,
       fallback: "Helvetica-Oblique",
     },
@@ -321,10 +276,7 @@ const substitutionMap = new Map([
   [
     "Calibri-BoldItalic",
     {
-      local: {
-        alias: "Calibri",
-        append: "Bold Italic",
-      },
+      alias: "Calibri",
       style: BOLDITALIC,
       fallback: "Helvetica-BoldOblique",
     },
@@ -333,38 +285,91 @@ const substitutionMap = new Map([
 
 const fontAliases = new Map([["Arial-Black", "ArialBlack"]]);
 
-/**
- * Create the src path to use to load a font (see FontFace).
- * @param {Array<String>} prepend A list of font names to search first.
- * @param {String} appendToPrepended A String to append to the list of fonts in
- *  prepend.
- * @param {Array<String>|Object} local A list of font names to search. If an
- *   Object is passed, then local.alias is the name of an other substition font
- *   and local.append is a String to append to the list of fonts in the alias.
- *   For example if local.alias is "Foo" and local.append is "Bold" then the
- *   list of fonts will be "FooSubst1 Bold", "FooSubst2 Bold", etc.
- * @returns an String with the local fonts.
- */
-function makeLocal(prepend, appendToPrepended, local) {
-  let append = "";
-  if (!Array.isArray(local)) {
-    // We are getting our list of fonts in the alias and we'll append Bold,
-    // Italic or both.
-    append = ` ${local.append}`;
-    local = substitutionMap.get(local.alias).local;
+function getStyleToAppend(style) {
+  switch (style) {
+    case BOLD:
+      return "Bold";
+    case ITALIC:
+      return "Italic";
+    case BOLDITALIC:
+      return "Bold Italic";
+    default:
+      if (style?.weight === "bold") {
+        return "Bold";
+      }
+      if (style?.style === "italic") {
+        return "Italic";
+      }
   }
-  if (appendToPrepended) {
-    appendToPrepended = ` ${appendToPrepended}`;
+  return "";
+}
+
+/**
+ * Generate font description.
+ * @param {Object} param0, font substitution description.
+ * @param {Array<String>} src, contains src values (local(...) or url(...)).
+ * @param {String} localFontPath, path to local fonts.
+ * @param {boolean} useFallback, whether to use fallback font.
+ * @param {boolean} usePath, whether to use path to font.
+ * @param {String} append, style (Bold, Italic, ...) to append to font name.
+ * @return {Object} { style, ultimate }.
+ */
+function generateFont(
+  { alias, local, path, fallback, style, ultimate },
+  src,
+  localFontPath,
+  useFallback = true,
+  usePath = true,
+  append = ""
+) {
+  const result = {
+    style: null,
+    ultimate: null,
+  };
+  if (local) {
+    const extra = append ? ` ${append}` : "";
+    for (const name of local) {
+      src.push(`local(${name}${extra})`);
+    }
+  }
+  if (alias) {
+    const substitution = substitutionMap.get(alias);
+    const aliasAppend = append || getStyleToAppend(style);
+    Object.assign(
+      result,
+      generateFont(
+        substitution,
+        src,
+        localFontPath,
+        /* useFallback = */ useFallback && !fallback,
+        /* usePath = */ usePath && !path,
+        aliasAppend
+      )
+    );
+  }
+  if (style) {
+    result.style = style;
+  }
+  if (ultimate) {
+    result.ultimate = ultimate;
+  }
+  if (useFallback && fallback) {
+    const fallbackInfo = substitutionMap.get(fallback);
+    const { ultimate: fallbackUltimate } = generateFont(
+      fallbackInfo,
+      src,
+      localFontPath,
+      useFallback,
+      /* usePath = */ usePath && !path,
+      append
+    );
+    result.ultimate ||= fallbackUltimate;
+  }
+  if (usePath && path && localFontPath) {
+    src.push(`url(${localFontPath}${path})`);
   }
 
-  let prependedPaths = "";
-  if (prepend) {
-    prependedPaths =
-      prepend.map(name => `local(${name}${appendToPrepended})`).join(",") + ",";
-  }
-  return (
-    prependedPaths + local.map(name => `local(${name}${append})`).join(",")
-  );
+  return result;
 }
 
 /**
@@ -453,50 +458,23 @@ function getFontSubstitution(
     return substitutionInfo;
   }
 
-  while (substitution.alias) {
-    // If we've an alias, use the substitution for the alias.
-    // For example, ArialBlack-Bold is an alias for ArialBlack because the bold
-    // version of Arial Black is not available.
-    substitution = substitutionMap.get(substitution.alias);
-  }
-
-  const { fallback, style } = substitution;
-
-  // Prepend the fonts to test before the fallback font.
-  let prepend = substitution.prepend;
-  let appendToPrepended = "";
-
-  if (fallback) {
-    // We've a fallback font: this one is a standard font we want to use in case
-    // nothing has been found from the prepend list.
-    if (substitution.local) {
-      prepend ||= substitutionMap.get(substitution.local.alias).prepend;
-      appendToPrepended = substitution.local.append;
-    }
-    substitution = substitutionMap.get(fallback);
-  }
-
-  const { local, path, ultimate } = substitution;
-  let src = makeLocal(prepend, appendToPrepended, local);
-  if (path && localFontPath !== null) {
-    // PDF.js embeds some fonts we can use.
-    src += `,url(${localFontPath}${path})`;
-  }
-
+  const src = [];
   // Maybe the OS will have the exact font we want so just prepend it to the
   // list.
   if (mustAddBaseFont && validateFontName(baseFontName)) {
-    src = `local(${baseFontName}),${src}`;
+    src.push(`local(${baseFontName})`);
   }
+  const { style, ultimate } = generateFont(substitution, src, localFontPath);
 
   substitutionInfo = {
     css: `${loadedName},${ultimate}`,
     guessFallback: false,
     loadedName,
-    src,
+    src: src.join(","),
     style,
   };
   systemFontCache.set(key, substitutionInfo);
+
   return substitutionInfo;
 }
 
