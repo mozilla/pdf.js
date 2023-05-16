@@ -1049,7 +1049,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       const storedData = storage.getValue(id, {
         value: this.data.fieldValue,
       });
-      let textContent = storedData.formattedValue || storedData.value || "";
+      let textContent = storedData.value || "";
       const maxLen = storage.getValue(id, {
         charLimit: this.data.maxLen,
       }).charLimit;
@@ -1057,23 +1057,29 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         textContent = textContent.slice(0, maxLen);
       }
 
+      let fieldFormattedValues =
+        storedData.formattedValue || this.data.textContent?.join("\n") || null;
+      if (fieldFormattedValues && this.data.comb) {
+        fieldFormattedValues = fieldFormattedValues.replaceAll(/\s+/g, "");
+      }
+
       const elementData = {
         userValue: textContent,
-        formattedValue: null,
+        formattedValue: fieldFormattedValues,
         lastCommittedValue: null,
         commitKey: 1,
       };
 
       if (this.data.multiLine) {
         element = document.createElement("textarea");
-        element.textContent = textContent;
+        element.textContent = fieldFormattedValues ?? textContent;
         if (this.data.doNotScroll) {
           element.style.overflowY = "hidden";
         }
       } else {
         element = document.createElement("input");
         element.type = "text";
-        element.setAttribute("value", textContent);
+        element.setAttribute("value", fieldFormattedValues ?? textContent);
         if (this.data.doNotScroll) {
           element.style.overflowX = "hidden";
         }

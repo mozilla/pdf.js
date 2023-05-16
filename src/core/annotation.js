@@ -2461,6 +2461,10 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     this.data.doNotScroll = this.hasFieldFlag(AnnotationFieldFlag.DONOTSCROLL);
   }
 
+  get hasTextContent() {
+    return !!this.appearance;
+  }
+
   _getCombAppearance(
     defaultAppearance,
     font,
