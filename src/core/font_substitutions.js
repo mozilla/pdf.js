@@ -451,6 +451,7 @@ function getFontSubstitution(
       css: loadedName,
       guessFallback: true,
       loadedName,
+      baseFontName,
       src: `local(${baseFontName})`,
       style,
     };
@@ -470,6 +471,7 @@ function getFontSubstitution(
     css: `${loadedName},${ultimate}`,
     guessFallback: false,
     loadedName,
+    baseFontName,
     src: src.join(","),
     style,
   };
