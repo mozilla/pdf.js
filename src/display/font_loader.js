@@ -97,17 +97,10 @@ class FontLoader {
         await fontFace.load();
         this.#systemFonts.add(loadedName);
       } catch {
-        if (info.guessFallback) {
-          // We're trying to load only one system font.
-          const match = src.match(/^local\((.*)\)$/);
-          warn(
-            `Cannot load system font: ${match?.[1]}, installing it could help to improve PDF rendering.`
-          );
-        } else {
-          warn(
-            `Cannot load system font: ${loadedName} for style ${style.style} and weight ${style.weight}.`
-          );
-        }
+        warn(
+          `Cannot load system font: ${info.baseFontName}, installing it could help to improve PDF rendering.`
+        );
+
         this.removeNativeFontFace(fontFace);
       }
       return;

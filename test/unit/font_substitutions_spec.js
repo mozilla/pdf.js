@@ -32,6 +32,7 @@ describe("getFontSubstitution", function () {
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
         guessFallback: true,
+        baseFontName: "Foo",
         src: "local(Foo)",
         style: {
           style: "normal",
@@ -54,6 +55,7 @@ describe("getFontSubstitution", function () {
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
         guessFallback: true,
+        baseFontName: "Foo-Bold",
         src: "local(Foo-Bold)",
         style: {
           style: "normal",
@@ -76,6 +78,7 @@ describe("getFontSubstitution", function () {
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
         guessFallback: true,
+        baseFontName: "Foo-Italic",
         src: "local(Foo-Italic)",
         style: {
           style: "italic",
@@ -98,6 +101,7 @@ describe("getFontSubstitution", function () {
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
         guessFallback: true,
+        baseFontName: "Foo-BoldItalic",
         src: "local(Foo-BoldItalic)",
         style: {
           style: "italic",
@@ -120,6 +124,7 @@ describe("getFontSubstitution", function () {
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
         guessFallback: false,
+        baseFontName: "Foo",
         src:
           "local(Foo),local(Helvetica),local(Helvetica Neue)," +
           "local(Arial),local(Arial Nova),local(Liberation Sans)," +
@@ -150,6 +155,7 @@ describe("getFontSubstitution", function () {
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
         guessFallback: false,
+        baseFontName: "Foo-Italic",
         src:
           "local(Foo-Italic),local(Helvetica Italic)," +
           "local(Helvetica Neue Italic),local(Arial Italic)," +
@@ -182,6 +188,7 @@ describe("getFontSubstitution", function () {
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
         guessFallback: false,
+        baseFontName: "Foo-Bold",
         src:
           "local(Foo-Bold),local(Helvetica Bold),local(Helvetica Neue Bold)," +
           "local(Arial Bold),local(Arial Nova Bold)," +
@@ -213,6 +220,7 @@ describe("getFontSubstitution", function () {
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
         guessFallback: false,
+        baseFontName: "Foo-BoldItalic",
         src:
           "local(Foo-BoldItalic),local(Helvetica Bold Italic)," +
           "local(Helvetica Neue Bold Italic),local(Arial Bold Italic)," +
@@ -247,6 +255,7 @@ describe("getFontSubstitution", function () {
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
         guessFallback: false,
+        baseFontName: "Calibri",
         src:
           "local(Calibri),local(Carlito),local(Helvetica)," +
           "local(Helvetica Neue),local(Arial),local(Arial Nova)," +
@@ -277,6 +286,7 @@ describe("getFontSubstitution", function () {
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
         guessFallback: false,
+        baseFontName: "Calibri-Bold",
         src:
           "local(Calibri Bold),local(Carlito Bold),local(Helvetica Bold)," +
           "local(Helvetica Neue Bold),local(Arial Bold)," +
@@ -309,6 +319,7 @@ describe("getFontSubstitution", function () {
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
         guessFallback: false,
+        baseFontName: "ArialBlack",
         src:
           "local(Arial Black),local(Helvetica Bold)," +
           "local(Helvetica Neue Bold),local(Arial Bold)," +
@@ -341,6 +352,7 @@ describe("getFontSubstitution", function () {
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
         guessFallback: false,
+        baseFontName: "ArialBlack-Bold",
         src:
           "local(Arial Black),local(Helvetica Bold)," +
           "local(Helvetica Neue Bold),local(Arial Bold)," +
