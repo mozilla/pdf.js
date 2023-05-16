@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { createActionsMap, FieldType, getFieldType } from "./common.js";
+import { createActionsMap, getFieldType } from "./common.js";
 import { Color } from "./color.js";
 import { PDFObject } from "./pdf_object.js";
 
@@ -247,29 +247,15 @@ class Field extends PDFObject {
       return;
     }
 
-    if (value === "") {
-      this._value = "";
-    } else if (typeof value === "string") {
-      switch (this._fieldType) {
-        case FieldType.none: {
-          this._originalValue = value;
-          const _value = value.trim().replace(",", ".");
-          this._value = !isNaN(_value) ? parseFloat(_value) : value;
-          break;
-        }
-        case FieldType.number:
-        case FieldType.percent: {
-          const _value = value.trim().replace(",", ".");
-          const number = parseFloat(_value);
-          this._value = !isNaN(number) ? number : 0;
-          break;
-        }
-        default:
-          this._value = value;
-      }
-    } else {
+    if (value === "" || typeof value !== "string") {
+      this._originalValue = undefined;
       this._value = value;
+      return;
     }
+
+    this._originalValue = value;
+    const _value = value.trim().replace(",", ".");
+    this._value = !isNaN(_value) ? parseFloat(_value) : value;
   }
 
   _getValue() {
