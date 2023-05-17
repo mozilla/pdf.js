@@ -50,6 +50,14 @@
        "lastPage": 3,
        "type": "eq"
     },
+    {  "id": "issue16432",
+       "file": "pdfs/issue16432.pdf",
+       "md5": "b67b0324c307d8af43d11b0edec88e3e",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "tracemonkey-fbf",
        "file": "pdfs/tracemonkey.pdf",
        "md5": "9a192d8b1a7dc652a19835f6f08098bd",
