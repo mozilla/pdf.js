@@ -315,7 +315,7 @@ class StructTreePage {
         ) {
           obj.children.push({
             type: "content",
-            id: `page${kid.pageObjId}_mcid${kid.mcid}`,
+            id: `p${kid.pageObjId}_mc${kid.mcid}`,
           });
         } else if (kid.type === StructElementType.OBJECT) {
           obj.children.push({

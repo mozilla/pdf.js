@@ -3343,7 +3343,7 @@ class PartialEvaluator {
               textContent.items.push({
                 type: "beginMarkedContentProps",
                 id: Number.isInteger(mcid)
-                  ? `${self.idFactory.getPageObjId()}_mcid${mcid}`
+                  ? `${self.idFactory.getPageObjId()}_mc${mcid}`
                   : null,
                 tag: args[0] instanceof Name ? args[0].name : null,
               });

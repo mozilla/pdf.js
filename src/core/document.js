@@ -102,7 +102,7 @@ class Page {
       }
 
       static getPageObjId() {
-        return `page${ref.toString()}`;
+        return `p${ref.toString()}`;
       }
     };
   }
