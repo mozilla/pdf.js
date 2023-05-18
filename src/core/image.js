@@ -221,7 +221,7 @@ class PDFImage {
       const max = (1 << bitsPerComponent) - 1;
       this.decodeCoefficients = [];
       this.decodeAddends = [];
-      const isIndexed = this.colorSpace && this.colorSpace.name === "Indexed";
+      const isIndexed = this.colorSpace?.name === "Indexed";
       for (let i = 0, j = 0; i < this.decode.length; i += 2, ++j) {
         const dmin = this.decode[i];
         const dmax = this.decode[i + 1];
@@ -428,18 +428,14 @@ class PDFImage {
   }
 
   get drawWidth() {
-    return Math.max(
-      this.width,
-      (this.smask && this.smask.width) || 0,
-      (this.mask && this.mask.width) || 0
-    );
+    return Math.max(this.width, this.smask?.width || 0, this.mask?.width || 0);
   }
 
   get drawHeight() {
     return Math.max(
       this.height,
-      (this.smask && this.smask.height) || 0,
-      (this.mask && this.mask.height) || 0
+      this.smask?.height || 0,
+      this.mask?.height || 0
     );
   }
 
@@ -640,7 +636,7 @@ class PDFImage {
         'PDFImage.undoPreblend: Unsupported "buffer" type.'
       );
     }
-    const matte = this.smask && this.smask.matte;
+    const matte = this.smask?.matte;
     if (!matte) {
       return;
     }
