@@ -932,7 +932,7 @@ class Border extends XFAObject {
     const { edges } = this[$getExtra]();
     const edgeStyles = edges.map(node => {
       const style = node[$toStyle]();
-      style.color = style.color || "#000000";
+      style.color ||= "#000000";
       return style;
     });
 
@@ -3871,7 +3871,7 @@ class NumericEdit extends XFAObject {
       attributes: {
         type: "text",
         fieldId: field[$uid],
-        dataId: (field[$data] && field[$data][$uid]) || field[$uid],
+        dataId: field[$data]?.[$uid] || field[$uid],
         class: ["xfaTextfield"],
         style,
         "aria-label": ariaLabel(field),
