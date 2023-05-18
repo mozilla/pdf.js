@@ -1193,7 +1193,6 @@ class PartialEvaluator {
       });
     };
 
-    const xref = this.xref;
     let fontRef;
     if (font) {
       // Loading by ref.
@@ -1216,7 +1215,7 @@ class PartialEvaluator {
         return this.fontCache.get(fontRef);
       }
 
-      font = xref.fetchIfRef(fontRef);
+      font = this.xref.fetchIfRef(fontRef);
     }
 
     if (!(font instanceof Dict)) {
@@ -1253,9 +1252,6 @@ class PartialEvaluator {
 
     const fontRefIsRef = fontRef instanceof Ref;
     let fontID;
-    if (fontRefIsRef) {
-      fontID = `f${fontRef.toString()}`;
-    }
 
     if (hash && descriptor instanceof Dict) {
       const fontAliases = (descriptor.fontAliases ||= Object.create(null));
@@ -1276,7 +1272,13 @@ class PartialEvaluator {
         fontAliases[hash].aliasRef = fontRef;
       }
       fontID = fontAliases[hash].fontID;
+    } else {
+      fontID = this.idFactory.createFontId();
     }
+    assert(
+      fontID?.startsWith("f"),
+      'The "fontID" must be (correctly) defined.'
+    );
 
     // Workaround for bad PDF generators that reference fonts incorrectly,
     // where `fontRef` is a `Dict` rather than a `Ref` (fixes bug946506.pdf).
@@ -1296,16 +1298,9 @@ class PartialEvaluator {
     if (fontRefIsRef) {
       this.fontCache.put(fontRef, fontCapability.promise);
     } else {
-      if (!fontID) {
-        fontID = this.idFactory.createFontId();
-      }
       font.cacheKey = `cacheKey_${fontID}`;
       this.fontCache.put(font.cacheKey, fontCapability.promise);
     }
-    assert(
-      fontID?.startsWith("f"),
-      'The "fontID" must be (correctly) defined.'
-    );
 
     // Keep track of each font we translated so the caller can
     // load them asynchronously before calling display on a page.
