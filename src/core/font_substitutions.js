@@ -400,8 +400,6 @@ function getFontSubstitution(
   baseFontName,
   standardFontName
 ) {
-  let mustAddBaseFont = false;
-
   // It's possible to have a font name with spaces, commas or dashes, hence we
   // just replace them by a dash.
   baseFontName = normalizeFontName(baseFontName);
@@ -426,13 +424,14 @@ function getFontSubstitution(
     }
   }
 
+  let mustAddBaseFont = false;
   if (!substitution) {
     // If not, check if we've a substitution for the standard font.
     substitution = substitutionMap.get(standardFontName);
     mustAddBaseFont = true;
   }
 
-  const loadedName = `${idFactory.getDocId()}_sf_${idFactory.createFontId()}`;
+  const loadedName = `${idFactory.getDocId()}_s${idFactory.createFontId()}`;
   if (!substitution) {
     if (!validateFontName(baseFontName)) {
       systemFontCache.set(key, null);
