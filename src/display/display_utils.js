@@ -760,22 +760,20 @@ class PDFDateString {
     }
 
     // Lazily initialize the regular expression.
-    if (!pdfDateStringRegex) {
-      pdfDateStringRegex = new RegExp(
-        "^D:" + // Prefix (required)
-          "(\\d{4})" + // Year (required)
-          "(\\d{2})?" + // Month (optional)
-          "(\\d{2})?" + // Day (optional)
-          "(\\d{2})?" + // Hour (optional)
-          "(\\d{2})?" + // Minute (optional)
-          "(\\d{2})?" + // Second (optional)
-          "([Z|+|-])?" + // Universal time relation (optional)
-          "(\\d{2})?" + // Offset hour (optional)
-          "'?" + // Splitting apostrophe (optional)
-          "(\\d{2})?" + // Offset minute (optional)
-          "'?" // Trailing apostrophe (optional)
-      );
-    }
+    pdfDateStringRegex ||= new RegExp(
+      "^D:" + // Prefix (required)
+        "(\\d{4})" + // Year (required)
+        "(\\d{2})?" + // Month (optional)
+        "(\\d{2})?" + // Day (optional)
+        "(\\d{2})?" + // Hour (optional)
+        "(\\d{2})?" + // Minute (optional)
+        "(\\d{2})?" + // Second (optional)
+        "([Z|+|-])?" + // Universal time relation (optional)
+        "(\\d{2})?" + // Offset hour (optional)
+        "'?" + // Splitting apostrophe (optional)
+        "(\\d{2})?" + // Offset minute (optional)
+        "'?" // Trailing apostrophe (optional)
+    );
 
     // Optional fields that don't satisfy the requirements from the regular
     // expression (such as incorrect digit counts or numbers that are out of

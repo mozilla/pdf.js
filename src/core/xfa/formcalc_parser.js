@@ -1282,7 +1282,7 @@ class Parser {
     tok = tok2 || this.lexer.next();
     if (tok.id === TOKEN.step) {
       [tok, step] = this.parseSimpleExpr();
-      tok = tok || this.lexer.next();
+      tok ||= this.lexer.next();
     }
 
     if (tok.id !== TOKEN.do) {
