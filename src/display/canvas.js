@@ -2061,7 +2061,7 @@ class CanvasGraphics {
     }
 
     if (isAddToPathSet) {
-      const paths = this.pendingTextPaths || (this.pendingTextPaths = []);
+      const paths = (this.pendingTextPaths ||= []);
       paths.push({
         transform: getCurrentTransform(ctx),
         x,

@@ -371,7 +371,7 @@ class Field extends PDFObject {
       nIdx = Array.isArray(this._currentValueIndices)
         ? this._currentValueIndices[0]
         : this._currentValueIndices;
-      nIdx = nIdx || 0;
+      nIdx ||= 0;
     }
 
     if (nIdx < 0 || nIdx >= this.numItems) {

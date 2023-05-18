@@ -928,8 +928,8 @@ const CalGrayCS = (function CalGrayCSClosure() {
           "WhitePoint missing - required for color space CalGray"
         );
       }
-      blackPoint = blackPoint || [0, 0, 0];
-      gamma = gamma || 1;
+      blackPoint ||= [0, 0, 0];
+      gamma ||= 1;
 
       // Translate arguments to spec variables.
       this.XW = whitePoint[0];
