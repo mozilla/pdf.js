@@ -1702,7 +1702,7 @@ class PDFDocument {
 
   get calculationOrderIds() {
     const acroForm = this.catalog.acroForm;
-    if (!acroForm || !acroForm.has("CO")) {
+    if (!acroForm?.has("CO")) {
       return shadow(this, "calculationOrderIds", null);
     }
 

@@ -2579,7 +2579,7 @@ class Font {
     if (!isTrueType) {
       const isComposite =
         properties.composite &&
-        ((properties.cidToGidMap || []).length > 0 ||
+        (properties.cidToGidMap?.length > 0 ||
           !(properties.cMap instanceof IdentityCMap));
       // OpenType font (skip composite fonts with non-default glyph mapping).
       if (
