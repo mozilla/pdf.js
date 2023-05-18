@@ -172,11 +172,7 @@ function normalizeBlendMode(value, parsingArray = false) {
 }
 
 function incrementCachedImageMaskCount(data) {
-  if (
-    data.fn === OPS.paintImageMaskXObject &&
-    data.args[0] &&
-    data.args[0].count > 0
-  ) {
+  if (data.fn === OPS.paintImageMaskXObject && data.args[0]?.count > 0) {
     data.args[0].count++;
   }
 }
@@ -517,7 +513,7 @@ class PartialEvaluator {
         }
       }
 
-      if (smask && smask.backdrop) {
+      if (smask?.backdrop) {
         colorSpace ||= ColorSpace.singletons.rgb;
         smask.backdrop = colorSpace.getRgb(smask.backdrop, 0);
       }
@@ -623,7 +619,7 @@ class PartialEvaluator {
           width: w,
           height: h,
           imageIsFromDecodeStream: image instanceof DecodeStream,
-          inverseDecode: !!decode && decode[0] > 0,
+          inverseDecode: decode?.[0] > 0,
           interpolate,
         });
 
@@ -660,7 +656,7 @@ class PartialEvaluator {
         width: w,
         height: h,
         imageIsFromDecodeStream: image instanceof DecodeStream,
-        inverseDecode: !!decode && decode[0] > 0,
+        inverseDecode: decode?.[0] > 0,
         interpolate,
         isOffscreenCanvasSupported: this.options.isOffscreenCanvasSupported,
       });
@@ -991,8 +987,7 @@ class PartialEvaluator {
     fallbackFontDict = null,
     cssFontInfo = null
   ) {
-    const fontName =
-      fontArgs && fontArgs[0] instanceof Name ? fontArgs[0].name : null;
+    const fontName = fontArgs?.[0] instanceof Name ? fontArgs[0].name : null;
 
     return this.loadFont(
       fontName,
@@ -1308,7 +1303,7 @@ class PartialEvaluator {
       this.fontCache.put(font.cacheKey, fontCapability.promise);
     }
     assert(
-      fontID && fontID.startsWith("f"),
+      fontID?.startsWith("f"),
       'The "fontID" must be (correctly) defined.'
     );
 
@@ -2569,7 +2564,7 @@ class PartialEvaluator {
       let posY = currentTransform[5];
 
       // Check if the glyph is in the viewbox.
-      if (textState.font && textState.font.vertical) {
+      if (textState.font?.vertical) {
         if (
           posX < viewBox[0] ||
           posX > viewBox[2] ||
@@ -3655,8 +3650,7 @@ class PartialEvaluator {
    *   {ToUnicodeMap|IdentityToUnicodeMap} object.
    */
   async buildToUnicode(properties) {
-    properties.hasIncludedToUnicodeMap =
-      !!properties.toUnicode && properties.toUnicode.length > 0;
+    properties.hasIncludedToUnicodeMap = properties.toUnicode?.length > 0;
 
     // Section 9.10.2 Mapping Character Codes to Unicode Values
     if (properties.hasIncludedToUnicodeMap) {
@@ -4241,8 +4235,8 @@ class PartialEvaluator {
     }
 
     if (!isType3Font) {
-      const fontNameStr = fontName && fontName.name;
-      const baseFontStr = baseFont && baseFont.name;
+      const fontNameStr = fontName?.name;
+      const baseFontStr = baseFont?.name;
       if (fontNameStr !== baseFontStr) {
         info(
           `The FontDescriptor's FontName is "${fontNameStr}" but ` +
@@ -4250,7 +4244,7 @@ class PartialEvaluator {
         );
         // Workaround for cases where e.g. fontNameStr = 'Arial' and
         // baseFontStr = 'Arial,Bold' (needed when no font file is embedded).
-        if (fontNameStr && baseFontStr && baseFontStr.startsWith(fontNameStr)) {
+        if (fontNameStr && baseFontStr?.startsWith(fontNameStr)) {
           fontName = baseFont;
         }
       }
@@ -4397,7 +4391,7 @@ class PartialEvaluator {
       // If the glyph has an accent we need to build a path for its
       // fontChar too, otherwise CanvasGraphics_paintChar will fail.
       const accent = glyph.accent;
-      if (accent && accent.fontChar) {
+      if (accent?.fontChar) {
         buildPath(accent.fontChar);
       }
     }

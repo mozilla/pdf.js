@@ -1421,7 +1421,7 @@ class PDFDocument {
     const { catalog, linearization, xref } = this;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
-        linearization && linearization.pageFirst === pageIndex,
+        linearization?.pageFirst === pageIndex,
         "_getLinearizationPage - invalid pageIndex argument."
       );
     }
@@ -1466,7 +1466,7 @@ class PDFDocument {
     let promise;
     if (xfaFactory) {
       promise = Promise.resolve([Dict.empty, null]);
-    } else if (linearization && linearization.pageFirst === pageIndex) {
+    } else if (linearization?.pageFirst === pageIndex) {
       promise = this._getLinearizationPage(pageIndex);
     } else {
       promise = catalog.getPageDict(pageIndex);
@@ -1630,7 +1630,7 @@ class PDFDocument {
         this._localIdFactory,
         /* collectFields */ true
       )
-        .then(annotation => annotation && annotation.getFieldObject())
+        .then(annotation => annotation?.getFieldObject())
         .catch(function (reason) {
           warn(`_collectFieldObjects: "${reason}".`);
           return null;

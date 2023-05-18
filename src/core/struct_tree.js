@@ -271,7 +271,7 @@ class StructTreePage {
     let save = false;
     for (let i = 0; i < obj.length; i++) {
       const kidRef = obj[i];
-      if (kidRef && kidRef.toString() === dict.objId) {
+      if (kidRef?.toString() === dict.objId) {
         this.nodes[i] = element;
         save = true;
       }

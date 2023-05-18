@@ -26,7 +26,7 @@ class BaseLocalCache {
     if (this.constructor === BaseLocalCache) {
       unreachable("Cannot initialize BaseLocalCache.");
     }
-    this._onlyRefs = (options && options.onlyRefs) === true;
+    this._onlyRefs = options?.onlyRefs === true;
 
     if (!this._onlyRefs) {
       this._nameRefMap = new Map();

@@ -505,7 +505,7 @@ function recoverJsURL(str) {
   );
 
   const jsUrl = regex.exec(str);
-  if (jsUrl && jsUrl[2]) {
+  if (jsUrl?.[2]) {
     const url = jsUrl[2];
     let newWindow = false;
 

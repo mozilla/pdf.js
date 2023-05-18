@@ -2317,8 +2317,8 @@ function webViewerPageRendered({ pageNumber, error }) {
     const thumbnailView = PDFViewerApplication.pdfThumbnailViewer?.getThumbnail(
       /* index = */ pageNumber - 1
     );
-    if (pageView && thumbnailView) {
-      thumbnailView.setImage(pageView);
+    if (pageView) {
+      thumbnailView?.setImage(pageView);
     }
   }
 

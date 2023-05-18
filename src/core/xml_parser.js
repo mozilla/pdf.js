@@ -302,7 +302,7 @@ class SimpleDOMNode {
   }
 
   get firstChild() {
-    return this.childNodes && this.childNodes[0];
+    return this.childNodes?.[0];
   }
 
   get nextSibling() {
@@ -333,7 +333,7 @@ class SimpleDOMNode {
   }
 
   hasChildNodes() {
-    return this.childNodes && this.childNodes.length > 0;
+    return this.childNodes?.length > 0;
   }
 
   /**
@@ -383,7 +383,7 @@ class SimpleDOMNode {
         }
       }
 
-      if (node.childNodes && node.childNodes.length !== 0) {
+      if (node.childNodes?.length > 0) {
         stack.push([node, 0]);
         node = node.childNodes[0];
       } else if (stack.length === 0) {
