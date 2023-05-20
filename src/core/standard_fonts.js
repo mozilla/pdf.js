@@ -136,6 +136,7 @@ const getNonStdFontMap = getLookupTableFactory(function (t) {
   t["ComicSansMS-Bold"] = "Comic Sans MS-Bold";
   t["ComicSansMS-BoldItalic"] = "Comic Sans MS-BoldItalic";
   t["ComicSansMS-Italic"] = "Comic Sans MS-Italic";
+  t.Impact = "Helvetica";
   t["ItcSymbol-Bold"] = "Helvetica-Bold";
   t["ItcSymbol-BoldItalic"] = "Helvetica-BoldOblique";
   t["ItcSymbol-Book"] = "Helvetica";
