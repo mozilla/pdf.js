@@ -3442,6 +3442,23 @@
        "rounds": 1,
        "type": "text"
     },
+    {  "id": "issue11451",
+       "file": "pdfs/issue11451.pdf",
+       "md5": "a2fd3c4596ad75562df83a2494263802",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
+    {  "id": "bug1652224",
+       "file": "pdfs/bug1652224.pdf",
+       "md5": "0e1bb427f32e83dc8f091842f7a11ac4",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 5,
+       "lastPage": 5,
+       "type": "eq"
+    },
     {  "id": "issue8586",
        "file": "pdfs/issue8586.pdf",
        "md5": "16b5230364017d3b0d2d65978eb35816",
