@@ -281,6 +281,25 @@ const substitutionMap = new Map([
       fallback: "Helvetica-BoldOblique",
     },
   ],
+  [
+    "Wingdings",
+    {
+      local: ["Wingdings", "URW Dingbats"],
+      style: NORMAL,
+    },
+  ],
+  [
+    "Wingdings-Regular",
+    {
+      alias: "Wingdings",
+    },
+  ],
+  [
+    "Wingdings-Bold",
+    {
+      alias: "Wingdings",
+    },
+  ],
 ]);
 
 const fontAliases = new Map([["Arial-Black", "ArialBlack"]]);
