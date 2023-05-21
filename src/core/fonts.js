@@ -1859,16 +1859,41 @@ class Font {
         length: 0,
         sizeOfInstructions: 0,
       };
-      if (sourceEnd - sourceStart <= 12) {
-        // glyph with data less than 12 is invalid one
+      if (
+        sourceStart < 0 ||
+        sourceStart >= source.length ||
+        sourceEnd > source.length ||
+        sourceEnd - sourceStart <= 12
+      ) {
+        // If the offsets are wrong or the glyph is too small, remove it.
         return glyphProfile;
       }
       const glyf = source.subarray(sourceStart, sourceEnd);
-      let contoursCount = signedInt16(glyf[0], glyf[1]);
+
+      // Sanitize the glyph bounding box.
+      const xMin = signedInt16(glyf[2], glyf[3]);
+      const yMin = signedInt16(glyf[4], glyf[5]);
+      const xMax = signedInt16(glyf[6], glyf[7]);
+      const yMax = signedInt16(glyf[8], glyf[9]);
+
+      if (xMin > xMax) {
+        writeSignedInt16(glyf, 2, xMax);
+        writeSignedInt16(glyf, 6, xMin);
+      }
+      if (yMin > yMax) {
+        writeSignedInt16(glyf, 4, yMax);
+        writeSignedInt16(glyf, 8, yMin);
+      }
+
+      const contoursCount = signedInt16(glyf[0], glyf[1]);
       if (contoursCount < 0) {
-        // OTS doesn't like contour count to be less than -1.
-        contoursCount = -1;
-        writeSignedInt16(glyf, 0, contoursCount);
+        if (contoursCount < -1) {
+          // OTS doesn't like contour count to be less than -1.
+          // The glyph data offsets are very likely wrong and
+          // having something lower than -1, very likely, implies
+          // to have some garbage data.
+          return glyphProfile;
+        }
         // complex glyph, writing as is
         dest.set(glyf, destStart);
         glyphProfile.length = glyf.length;
@@ -1913,6 +1938,10 @@ class Font {
         coordinatesLength += xyLength;
         if (flag & 8) {
           const repeat = glyf[j++];
+          if (repeat === 0) {
+            // The repeat count should be non-zero when the repeat flag is set.
+            glyf[j - 1] ^= 8;
+          }
           i += repeat;
           coordinatesLength += repeat * xyLength;
         }
@@ -2763,7 +2792,7 @@ class Font {
     // hhea tables; yMin and descent value are always negative.
     const metricsOverride = {
       unitsPerEm: int16(tables.head.data[18], tables.head.data[19]),
-      yMax: int16(tables.head.data[42], tables.head.data[43]),
+      yMax: signedInt16(tables.head.data[42], tables.head.data[43]),
       yMin: signedInt16(tables.head.data[38], tables.head.data[39]),
       ascent: signedInt16(tables.hhea.data[4], tables.hhea.data[5]),
       descent: signedInt16(tables.hhea.data[6], tables.hhea.data[7]),
