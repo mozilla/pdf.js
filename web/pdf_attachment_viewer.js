@@ -109,13 +109,10 @@ class PDFAttachmentViewer extends BaseTreeViewer {
       this._dispatchEvent(/* attachmentsCount = */ 0);
       return;
     }
-    const names = Object.keys(attachments).sort(function (a, b) {
-      return a.toLowerCase().localeCompare(b.toLowerCase());
-    });
 
     const fragment = document.createDocumentFragment();
     let attachmentsCount = 0;
-    for (const name of names) {
+    for (const name in attachments) {
       const item = attachments[name];
       const content = item.content,
         filename = getFilenameFromUrl(
