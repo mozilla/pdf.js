@@ -601,7 +601,8 @@ const PDFViewerApplication = {
             appConfig.toolbar,
             eventBus,
             this.l10n,
-            await this._nimbusDataPromise
+            await this._nimbusDataPromise,
+            this.externalServices
           );
         }
       } else {
