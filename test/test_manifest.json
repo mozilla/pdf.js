@@ -5963,6 +5963,14 @@
        "link": true,
        "type": "eq"
     },
+    {  "id": "issue16454",
+       "file": "pdfs/issue16454.pdf",
+       "md5": "82fe0c54a96667472ce999be7a789199",
+       "rounds": 1,
+       "lastPage": 1,
+       "link": true,
+       "type": "eq"
+    },
     {  "id": "decodeACSuccessive",
        "file": "pdfs/decodeACSuccessive.pdf",
        "md5": "7749c032624fe27ab8e8d7d5e9a4a93f",
