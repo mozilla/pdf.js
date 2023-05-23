@@ -265,6 +265,15 @@
        "type": "eq",
        "about": "Fonts referenced only by name and not by an object identifier."
     },
+    {  "id": "bug946506-text",
+       "file": "pdfs/bug946506.pdf",
+       "md5": "c28911b5c31bdc337c2ce404c5971cfc",
+       "rounds": 1,
+       "link": false,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "text"
+    },
     {  "id": "bug931481",
        "file": "pdfs/bug931481.pdf",
        "md5": "547de872cbb2ecc653ae83d5be7e5be9",
