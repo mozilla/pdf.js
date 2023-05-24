@@ -24,7 +24,6 @@ const PDFPresentationMode = null;
 const PDFSidebar = null;
 const PDFThumbnailViewer = null;
 const SecondaryToolbar = null;
-const Toolbar = null;
 
 export {
   AnnotationEditorParams,
@@ -38,5 +37,4 @@ export {
   PDFSidebar,
   PDFThumbnailViewer,
   SecondaryToolbar,
-  Toolbar,
 };
