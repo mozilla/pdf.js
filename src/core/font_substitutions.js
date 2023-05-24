@@ -465,10 +465,12 @@ function getFontSubstitution(
     src.push(`local(${baseFontName})`);
   }
   const { style, ultimate } = generateFont(substitution, src, localFontPath);
+  const guessFallback = ultimate === null;
+  const fallback = guessFallback ? "" : `,${ultimate}`;
 
   substitutionInfo = {
-    css: `${loadedName},${ultimate}`,
-    guessFallback: false,
+    css: `${loadedName}${fallback}`,
+    guessFallback,
     loadedName,
     baseFontName,
     src: src.join(","),
