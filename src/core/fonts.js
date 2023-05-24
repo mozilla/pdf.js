@@ -1238,9 +1238,6 @@ class Font {
         this.differences
       );
     } else if (/Dingbats/i.test(fontName)) {
-      if (/Wingdings/i.test(name)) {
-        warn("Non-embedded Wingdings font, falling back to ZapfDingbats.");
-      }
       this.toFontChar = buildToFontChar(
         ZapfDingbatsEncoding,
         getDingbatsGlyphsUnicode(),
