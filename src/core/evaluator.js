@@ -3487,6 +3487,17 @@ class PartialEvaluator {
       }
     }
 
+    const nonEmbeddedFont = !properties.file || properties.isInternalFont;
+    // Ignore an incorrectly specified named encoding for non-embedded
+    // symbol fonts (fixes issue16464.pdf).
+    if (
+      baseEncodingName &&
+      nonEmbeddedFont &&
+      getSymbolsFonts()[properties.name]
+    ) {
+      baseEncodingName = null;
+    }
+
     if (baseEncodingName) {
       properties.defaultEncoding = getEncoding(baseEncodingName);
     } else {
@@ -3503,7 +3514,7 @@ class PartialEvaluator {
       // Heuristic: we have to check if the font is a standard one also
       if (isSymbolicFont) {
         encoding = MacRomanEncoding;
-        if (!properties.file || properties.isInternalFont) {
+        if (nonEmbeddedFont) {
           if (/Symbol/i.test(properties.name)) {
             encoding = SymbolSetEncoding;
           } else if (/Dingbats|Wingdings/i.test(properties.name)) {
