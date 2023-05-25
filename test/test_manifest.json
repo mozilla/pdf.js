@@ -7667,5 +7667,14 @@
       "link": true,
       "print": true,
       "type": "eq"
+   },
+   {
+      "id": "issue16471",
+      "file": "pdfs/issue16471.pdf",
+      "md5": "8ac3720d6d3ddcc58e2eadab477fd81e",
+      "rounds": 1,
+      "link": true,
+      "forms": true,
+      "type": "eq"
    }
 ]
