@@ -614,7 +614,12 @@ class Page {
 
         textContentPromises.push(
           annotation
-            .extractTextContent(partialEvaluator, task, this.view)
+            .extractTextContent(partialEvaluator, task, [
+              -Infinity,
+              -Infinity,
+              Infinity,
+              Infinity,
+            ])
             .catch(function (reason) {
               warn(
                 `getAnnotationsData - ignoring textContent during "${task.name}" task: "${reason}".`
