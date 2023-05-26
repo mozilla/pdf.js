@@ -572,13 +572,6 @@ class PDFLinkService {
   /**
    * @param {number} pageNumber
    */
-  isPageVisible(pageNumber) {
-    return this.pdfViewer.isPageVisible(pageNumber);
-  }
-
-  /**
-   * @param {number} pageNumber
-   */
   isPageCached(pageNumber) {
     return this.pdfViewer.isPageCached(pageNumber);
   }
@@ -744,13 +737,6 @@ class SimpleLinkService {
    * @param {Object} pageRef - reference to the page.
    */
   cachePageRef(pageNum, pageRef) {}
-
-  /**
-   * @param {number} pageNumber
-   */
-  isPageVisible(pageNumber) {
-    return true;
-  }
 
   /**
    * @param {number} pageNumber
