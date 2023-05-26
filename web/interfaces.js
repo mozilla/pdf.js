@@ -116,11 +116,6 @@ class IPDFLinkService {
   /**
    * @param {number} pageNumber
    */
-  isPageVisible(pageNumber) {}
-
-  /**
-   * @param {number} pageNumber
-   */
   isPageCached(pageNumber) {}
 }
 

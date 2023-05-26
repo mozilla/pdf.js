@@ -396,6 +396,12 @@ class PDFFindController {
     this._eventBus = eventBus;
     this.#updateMatchesCountOnProgress = updateMatchesCountOnProgress;
 
+    /**
+     * Callback used to check if a `pageNumber` is currently visible.
+     * @type {function}
+     */
+    this.onIsPageVisible = null;
+
     this.#reset();
     eventBus._on("find", this.#onFind.bind(this));
     eventBus._on("findbarclose", this.#onFindBarClose.bind(this));
@@ -636,15 +642,12 @@ class PDFFindController {
         // there's a risk that consecutive 'findagain' operations could "skip"
         // over matches at the top/bottom of pages thus making them completely
         // inaccessible when there's multiple pages visible in the viewer.
-        if (
+        return (
           pageNumber >= 1 &&
           pageNumber <= linkService.pagesCount &&
           pageNumber !== linkService.page &&
-          !linkService.isPageVisible(pageNumber)
-        ) {
-          return true;
-        }
-        return false;
+          !(this.onIsPageVisible?.(pageNumber) ?? true)
+        );
       case "highlightallchange":
         return false;
     }
