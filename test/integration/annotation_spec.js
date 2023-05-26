@@ -151,6 +151,31 @@ describe("Text widget", () => {
       );
     });
   });
+
+  describe("issue16473.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue16473.pdf", "[data-annotation-id='22R']");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must reset a formatted value after a change", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.type(getSelector("22R"), "a");
+          await page.keyboard.press("Tab");
+          await page.waitForTimeout(10);
+
+          const text = await page.$eval(getSelector("22R"), el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("aHello World");
+        })
+      );
+    });
+  });
 });
 
 describe("Annotation and storage", () => {

@@ -1108,6 +1108,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           event.target.value,
           "value"
         );
+        elementData.formattedValue = null;
       });
 
       element.addEventListener("resetform", event => {
