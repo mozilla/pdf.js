@@ -7676,5 +7676,12 @@
       "link": true,
       "forms": true,
       "type": "eq"
+   },
+   {
+      "id": "bug1529502",
+      "file": "pdfs/bug1529502.pdf",
+      "md5": "4830e765a3d6cb64d39b84de11178f6e",
+      "rounds": 1,
+      "type": "eq"
    }
 ]
