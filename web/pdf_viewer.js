@@ -341,6 +341,10 @@ class PDFViewer {
     return this._pages[index];
   }
 
+  getCachedPageViews() {
+    return new Set(this.#buffer);
+  }
+
   /**
    * @type {boolean} - True if all {PDFPageView} objects are initialized.
    */
