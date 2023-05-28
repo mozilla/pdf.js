@@ -533,6 +533,7 @@ const PDFViewerApplication = {
     if (appConfig.sidebar?.thumbnailView) {
       this.pdfThumbnailViewer = new PDFThumbnailViewer({
         container: appConfig.sidebar.thumbnailView,
+        eventBus,
         renderingQueue: pdfRenderingQueue,
         linkService: pdfLinkService,
         l10n: this.l10n,
