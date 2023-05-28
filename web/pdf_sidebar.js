@@ -16,7 +16,6 @@
 import {
   docStyle,
   PresentationModeState,
-  RenderingStates,
   SidebarView,
   toggleCheckedBtn,
   toggleExpandedBtn,
@@ -30,8 +29,6 @@ const UI_NOTIFICATION_CLASS = "pdfSidebarNotification";
 /**
  * @typedef {Object} PDFSidebarOptions
  * @property {PDFSidebarElements} elements - The DOM elements.
- * @property {PDFViewer} pdfViewer - The document viewer.
- * @property {PDFThumbnailViewer} pdfThumbnailViewer - The thumbnail viewer.
  * @property {EventBus} eventBus - The application event bus.
  * @property {IL10n} l10n - The localization service.
  */
@@ -82,7 +79,7 @@ class PDFSidebar {
   /**
    * @param {PDFSidebarOptions} options
    */
-  constructor({ elements, pdfViewer, pdfThumbnailViewer, eventBus, l10n }) {
+  constructor({ elements, eventBus, l10n }) {
     this.isOpen = false;
     this.active = SidebarView.THUMBS;
     this.isInitialViewSet = false;
@@ -93,9 +90,7 @@ class PDFSidebar {
      * the viewers (PDFViewer/PDFThumbnailViewer) are updated correctly.
      */
     this.onToggled = null;
-
-    this.pdfViewer = pdfViewer;
-    this.pdfThumbnailViewer = pdfThumbnailViewer;
+    this.onUpdateThumbnails = null;
 
     this.outerContainer = elements.outerContainer;
     this.sidebarContainer = elements.sidebarContainer;
@@ -246,7 +241,7 @@ class PDFSidebar {
       return; // Opening will trigger rendering and dispatch the event.
     }
     if (forceRendering) {
-      this.#updateThumbnailViewer();
+      this.onUpdateThumbnails();
       this.onToggled();
     }
     if (isViewChanged) {
@@ -264,7 +259,7 @@ class PDFSidebar {
     this.outerContainer.classList.add("sidebarMoving", "sidebarOpen");
 
     if (this.active === SidebarView.THUMBS) {
-      this.#updateThumbnailViewer();
+      this.onUpdateThumbnails();
     }
     this.onToggled();
     this.#dispatchEvent();
@@ -303,21 +298,6 @@ class PDFSidebar {
       source: this,
       view: this.visibleView,
     });
-  }
-
-  #updateThumbnailViewer() {
-    const { pdfViewer, pdfThumbnailViewer } = this;
-
-    // Use the rendered pages to set the corresponding thumbnail images.
-    const pagesCount = pdfViewer.pagesCount;
-    for (let pageIndex = 0; pageIndex < pagesCount; pageIndex++) {
-      const pageView = pdfViewer.getPageView(pageIndex);
-      if (pageView?.renderingState === RenderingStates.FINISHED) {
-        const thumbnailView = pdfThumbnailViewer.getThumbnail(pageIndex);
-        thumbnailView.setImage(pageView);
-      }
-    }
-    pdfThumbnailViewer.scrollThumbnailIntoView(pdfViewer.currentPageNumber);
   }
 
   #showUINotification() {
@@ -428,7 +408,7 @@ class PDFSidebar {
         evt.state === PresentationModeState.NORMAL &&
         this.visibleView === SidebarView.THUMBS
       ) {
-        this.#updateThumbnailViewer();
+        this.onUpdateThumbnails();
       }
     });
 

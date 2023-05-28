@@ -667,12 +667,23 @@ const PDFViewerApplication = {
     if (appConfig.sidebar) {
       this.pdfSidebar = new PDFSidebar({
         elements: appConfig.sidebar,
-        pdfViewer,
-        pdfThumbnailViewer: this.pdfThumbnailViewer,
         eventBus,
         l10n,
       });
       this.pdfSidebar.onToggled = this.forceRendering.bind(this);
+      this.pdfSidebar.onUpdateThumbnails = () => {
+        // Use the rendered pages to set the corresponding thumbnail images.
+        for (const pageView of pdfViewer.getCachedPageViews()) {
+          if (pageView.renderingState === RenderingStates.FINISHED) {
+            this.pdfThumbnailViewer
+              .getThumbnail(pageView.id - 1)
+              ?.setImage(pageView);
+          }
+        }
+        this.pdfThumbnailViewer.scrollThumbnailIntoView(
+          pdfViewer.currentPageNumber
+        );
+      };
     }
   },
 
