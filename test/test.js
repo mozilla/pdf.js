@@ -315,7 +315,7 @@ function startRefTest(masterMode, showRefImages) {
     }
   }
 
-  function setup() {
+  async function setup() {
     if (fs.existsSync(refsTmpDir)) {
       console.error("tmp/ exists -- unable to proceed with testing");
       process.exit(1);
@@ -334,7 +334,7 @@ function startRefTest(masterMode, showRefImages) {
     onAllSessionsClosed = finalize;
 
     const startUrl = `http://${host}:${server.port}/test/test_slave.html`;
-    startBrowsers(function (session) {
+    await startBrowsers(function (session) {
       session.masterMode = masterMode;
       session.taskResults = {};
       session.tasks = {};
@@ -795,39 +795,35 @@ function makeTestUrl(startUrl) {
   };
 }
 
-function startUnitTest(testUrl, name) {
+async function startUnitTest(testUrl, name) {
   onAllSessionsClosed = onAllSessionsClosedAfterTests(name);
   startServer();
   server.hooks.POST.push(unitTestPostHandler);
 
   const startUrl = `http://${host}:${server.port}${testUrl}`;
-  startBrowsers(function (session) {
+  await startBrowsers(function (session) {
     session.numRuns = 0;
     session.numErrors = 0;
   }, makeTestUrl(startUrl));
 }
 
-function startIntegrationTest() {
+async function startIntegrationTest() {
   onAllSessionsClosed = onAllSessionsClosedAfterTests("integration");
   startServer();
 
   const { runTests } = require("./integration-boot.js");
-  startBrowsers(function (session) {
+  await startBrowsers(function (session) {
     session.numRuns = 0;
     session.numErrors = 0;
   });
   global.integrationBaseUrl = `http://${host}:${server.port}/build/generic/web/viewer.html`;
   global.integrationSessions = sessions;
 
-  Promise.all(sessions.map(session => session.browserPromise)).then(
-    async () => {
-      const results = { runs: 0, failures: 0 };
-      await runTests(results);
-      sessions[0].numRuns = results.runs;
-      sessions[0].numErrors = results.failures;
-      await Promise.all(sessions.map(session => closeSession(session.name)));
-    }
-  );
+  const results = { runs: 0, failures: 0 };
+  await runTests(results);
+  sessions[0].numRuns = results.runs;
+  sessions[0].numErrors = results.failures;
+  await Promise.all(sessions.map(session => closeSession(session.name)));
 }
 
 function unitTestPostHandler(req, res) {
@@ -896,27 +892,6 @@ function unitTestPostHandler(req, res) {
 }
 
 async function startBrowser(browserName, startUrl = "") {
-  const revisions =
-    require("puppeteer-core/lib/cjs/puppeteer/revisions.js").PUPPETEER_REVISIONS;
-  const wantedRevision =
-    browserName === "chrome" ? revisions.chromium : revisions.firefox;
-
-  // Remove other revisions than the one we want to use. Updating Puppeteer can
-  // cause a new revision to be used, and not removing older revisions causes
-  // the disk to fill up.
-  const browserFetcher = puppeteer.createBrowserFetcher({
-    product: browserName,
-  });
-  const localRevisions = await browserFetcher.localRevisions();
-  if (localRevisions.length > 1) {
-    for (const localRevision of localRevisions) {
-      if (localRevision !== wantedRevision) {
-        console.log(`Removing old ${browserName} revision ${localRevision}...`);
-        await browserFetcher.remove(localRevision);
-      }
-    }
-  }
-
   const options = {
     product: browserName,
     headless: false,
@@ -974,7 +949,12 @@ async function startBrowser(browserName, startUrl = "") {
   return browser;
 }
 
-function startBrowsers(initSessionCallback, makeStartUrl = null) {
+async function startBrowsers(initSessionCallback, makeStartUrl = null) {
+  // Remove old browser revisions from Puppeteer's cache. Updating Puppeteer can
+  // cause new browser revisions to be downloaded, so trimming the cache will
+  // prevent the disk from filling up over time.
+  await puppeteer.default.trimCache();
+
   const browserNames = options.noChrome ? ["firefox"] : ["firefox", "chrome"];
 
   sessions = [];
@@ -995,7 +975,7 @@ function startBrowsers(initSessionCallback, makeStartUrl = null) {
     sessions.push(session);
     const startUrl = makeStartUrl ? makeStartUrl(browserName) : "";
 
-    session.browserPromise = startBrowser(browserName, startUrl)
+    await startBrowser(browserName, startUrl)
       .then(function (browser) {
         session.browser = browser;
         initSessionCallback?.(session);
