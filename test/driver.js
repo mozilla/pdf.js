@@ -84,6 +84,9 @@ async function writeSVG(svgElement, ctx) {
     // Workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=1844414
     // we load the image two times.
     await loadImage(svg_xml, null);
+    await new Promise(resolve => {
+      setTimeout(resolve, 10);
+    });
   }
   return loadImage(svg_xml, ctx);
 }
