@@ -301,7 +301,10 @@ class PDFViewer {
     }
 
     this.defaultRenderingQueue = !options.renderingQueue;
-    if (this.defaultRenderingQueue) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      this.defaultRenderingQueue
+    ) {
       // Custom rendering queue is not specified, using default one
       this.renderingQueue = new PDFRenderingQueue();
       this.renderingQueue.setViewer(this);
