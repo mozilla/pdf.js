@@ -1103,17 +1103,12 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     }
 
     shadingFill(args) {
-      const width = this.viewport.width;
-      const height = this.viewport.height;
+      const { width, height } = this.viewport;
       const inv = Util.inverseTransform(this.transformMatrix);
-      const bl = Util.applyTransform([0, 0], inv);
-      const br = Util.applyTransform([0, height], inv);
-      const ul = Util.applyTransform([width, 0], inv);
-      const ur = Util.applyTransform([width, height], inv);
-      const x0 = Math.min(bl[0], br[0], ul[0], ur[0]);
-      const y0 = Math.min(bl[1], br[1], ul[1], ur[1]);
-      const x1 = Math.max(bl[0], br[0], ul[0], ur[0]);
-      const y1 = Math.max(bl[1], br[1], ul[1], ur[1]);
+      const [x0, y0, x1, y1] = Util.getAxialAlignedBoundingBox(
+        [0, 0, width, height],
+        inv
+      );
 
       const rect = this.svgFactory.createElement("svg:rect");
       rect.setAttributeNS(null, "x", x0);
