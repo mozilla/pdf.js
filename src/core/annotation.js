@@ -4056,7 +4056,7 @@ class InkAnnotation extends MarkupAnnotation {
   }
 
   static createNewDict(annotation, xref, { apRef, ap }) {
-    const { paths, rect, rotation } = annotation;
+    const { color, opacity, paths, rect, rotation, thickness } = annotation;
     const ink = new Dict(xref);
     ink.set("Type", Name.get("Annot"));
     ink.set("Subtype", Name.get("Ink"));
@@ -4067,8 +4067,21 @@ class InkAnnotation extends MarkupAnnotation {
       paths.map(p => p.points)
     );
     ink.set("F", 4);
-    ink.set("Border", [0, 0, 0]);
     ink.set("Rotate", rotation);
+
+    // Line thickness.
+    const bs = new Dict(xref);
+    ink.set("BS", bs);
+    bs.set("W", thickness);
+
+    // Color.
+    ink.set(
+      "C",
+      Array.from(color, c => c / 255)
+    );
+
+    // Opacity.
+    ink.set("CA", opacity);
 
     const n = new Dict(xref);
     ink.set("AP", n);
@@ -4123,13 +4136,8 @@ class InkAnnotation extends MarkupAnnotation {
     appearanceStreamDict.set("FormType", 1);
     appearanceStreamDict.set("Subtype", Name.get("Form"));
     appearanceStreamDict.set("Type", Name.get("XObject"));
-    appearanceStreamDict.set("BBox", [0, 0, w, h]);
+    appearanceStreamDict.set("BBox", rect);
     appearanceStreamDict.set("Length", appearance.length);
-
-    if (rotation) {
-      const matrix = getRotationMatrix(rotation, w, h);
-      appearanceStreamDict.set("Matrix", matrix);
-    }
 
     if (opacity !== 1) {
       const resources = new Dict(xref);
