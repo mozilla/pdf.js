@@ -224,15 +224,17 @@ class Rasterize {
       // Rendering annotation layer as HTML.
       const parameters = {
         viewport: annotationViewport,
-        div,
         annotations,
         page,
         linkService: new SimpleLinkService(),
         imageResourcesPath,
         renderForms,
-        annotationCanvasMap: annotationImageMap,
       };
-      AnnotationLayer.render(parameters);
+      const annotationLayer = new AnnotationLayer({
+        div,
+        annotationCanvasMap: annotationImageMap,
+      });
+      annotationLayer.render(parameters);
       await l10n.translate(div);
 
       // Inline SVG images from text annotations.
