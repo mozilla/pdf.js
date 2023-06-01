@@ -616,6 +616,11 @@ class PDFPageView {
           hideTextLayer: postponeDrawing,
         });
 
+        if (postponeDrawing) {
+          // The "pagerendered"-event will be dispatched once the actual
+          // rendering is done, hence don't dispatch it here as well.
+          return;
+        }
         this.eventBus.dispatch("pagerendered", {
           source: this,
           pageNumber: this.id,
