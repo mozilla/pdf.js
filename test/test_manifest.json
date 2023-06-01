@@ -7694,5 +7694,18 @@
       "md5": "4830e765a3d6cb64d39b84de11178f6e",
       "rounds": 1,
       "type": "eq"
-   }
+   },
+   {
+    "id": "issue16500",
+    "file": "pdfs/issue16500.pdf",
+    "md5": "6466546aaa5fcf31235bdf100496705c",
+    "rounds": 1,
+    "type": "eq",
+    "print": true,
+    "annotationStorage": {
+      "7R": {
+        "value": ["Three", "Five"]
+      }
+    }
+ }
 ]
