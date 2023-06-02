@@ -46,8 +46,6 @@ import { PresentationModeState } from "./ui_utils.js";
  */
 
 class AnnotationLayerBuilder {
-  #numAnnotations = 0;
-
   #onPresentationModeChanged = null;
 
   /**
@@ -82,6 +80,7 @@ class AnnotationLayerBuilder {
     this._annotationCanvasMap = annotationCanvasMap;
     this._accessibilityManager = accessibilityManager;
 
+    this.annotationLayer = null;
     this.div = null;
     this._cancelled = false;
     this._eventBus = linkService.eventBus;
@@ -95,15 +94,13 @@ class AnnotationLayerBuilder {
    */
   async render(viewport, intent = "display") {
     if (this.div) {
-      if (this._cancelled || this.#numAnnotations === 0) {
+      if (this._cancelled || !this.annotationLayer) {
         return;
       }
       // If an annotationLayer already exists, refresh its children's
       // transformation matrices.
-      AnnotationLayer.update({
+      this.annotationLayer.update({
         viewport: viewport.clone({ dontFlip: true }),
-        div: this.div,
-        annotationCanvasMap: this._annotationCanvasMap,
       });
       return;
     }
@@ -116,21 +113,26 @@ class AnnotationLayerBuilder {
     if (this._cancelled) {
       return;
     }
-    this.#numAnnotations = annotations.length;
 
     // Create an annotation layer div and render the annotations
     // if there is at least one annotation.
-    this.div = document.createElement("div");
-    this.div.className = "annotationLayer";
-    this.pageDiv.append(this.div);
+    const div = (this.div = document.createElement("div"));
+    div.className = "annotationLayer";
+    this.pageDiv.append(div);
 
-    if (this.#numAnnotations === 0) {
+    if (annotations.length === 0) {
       this.hide();
       return;
     }
-    AnnotationLayer.render({
+
+    this.annotationLayer = new AnnotationLayer({
+      div,
+      accessibilityManager: this._accessibilityManager,
+      annotationCanvasMap: this._annotationCanvasMap,
+    });
+
+    this.annotationLayer.render({
       viewport: viewport.clone({ dontFlip: true }),
-      div: this.div,
       annotations,
       page: this.pdfPage,
       imageResourcesPath: this.imageResourcesPath,
@@ -141,10 +143,8 @@ class AnnotationLayerBuilder {
       enableScripting: this.enableScripting,
       hasJSActions,
       fieldObjects,
-      annotationCanvasMap: this._annotationCanvasMap,
-      accessibilityManager: this._accessibilityManager,
     });
-    this.l10n.translate(this.div);
+    this.l10n.translate(div);
 
     // Ensure that interactive form elements in the annotationLayer are
     // disabled while PresentationMode is active (see issue 12232).
