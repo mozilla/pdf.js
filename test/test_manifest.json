@@ -5042,6 +5042,12 @@
       "link": true,
       "type": "load"
     },
+    {  "id": "issue7454",
+       "file": "pdfs/issue7454.pdf",
+       "md5": "45889bf6a9d3e2eccd01dc48668b21e5",
+       "rounds": 1,
+       "type": "eq"
+    },
     { "id": "bigboundingbox",
       "file": "pdfs/bigboundingbox.pdf",
       "md5": "e5c5e2cb80826d6ebf535413865270cd",
