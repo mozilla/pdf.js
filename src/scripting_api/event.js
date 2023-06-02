@@ -13,9 +13,10 @@
  * limitations under the License.
  */
 
-import { USERACTIVATION_CALLBACKID } from "./app.js";
-
-const USERACTIVATION_MAXTIME_VALIDITY = 5000;
+import {
+  USERACTIVATION_CALLBACKID,
+  USERACTIVATION_MAXTIME_VALIDITY,
+} from "./app_utils.js";
 
 class Event {
   constructor(data) {

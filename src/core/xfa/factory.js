@@ -20,7 +20,7 @@ import {
   $text,
   $toHTML,
   $toPages,
-} from "./xfa_object.js";
+} from "./symbol_utils.js";
 import { Binder } from "./bind.js";
 import { DataHandler } from "./data.js";
 import { FontFinder } from "./fonts.js";

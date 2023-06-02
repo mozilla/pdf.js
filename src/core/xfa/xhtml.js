@@ -27,8 +27,7 @@ import {
   $pushGlyphs,
   $text,
   $toHTML,
-  XmlObject,
-} from "./xfa_object.js";
+} from "./symbol_utils.js";
 import { $buildXFAObject, NamespaceIds } from "./namespaces.js";
 import {
   fixTextIndent,
@@ -37,6 +36,7 @@ import {
   setFontFamily,
 } from "./html_utils.js";
 import { getMeasurement, HTMLResult, stripQuotes } from "./utils.js";
+import { XmlObject } from "./xfa_object.js";
 
 const XHTML_NS_ID = NamespaceIds.xhtml.id;
 const $richText = Symbol();
