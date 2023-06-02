@@ -37,6 +37,7 @@
     "import/extensions": ["error", "always", { "ignorePackages": true, }],
     "import/first": "error",
     "import/named": "error",
+    "import/no-cycle": "error",
     "import/no-empty-named-blocks": "error",
     "import/no-mutable-exports": "error",
     "import/no-self-import": "error",

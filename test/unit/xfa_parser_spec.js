@@ -19,7 +19,7 @@ import {
   $getChildrenByClass,
   $getChildrenByName,
   $text,
-} from "../../src/core/xfa/xfa_object.js";
+} from "../../src/core/xfa/symbol_utils.js";
 import { Binder } from "../../src/core/xfa/bind.js";
 import { searchNode } from "../../src/core/xfa/som.js";
 import { XFAParser } from "../../src/core/xfa/parser.js";

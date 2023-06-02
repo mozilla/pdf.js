@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { $globalData } from "./xfa_object.js";
+import { $globalData } from "./symbol_utils.js";
 import { stripQuotes } from "./utils.js";
 import { warn } from "../../shared/util.js";
 
