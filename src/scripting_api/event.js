@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { USERACTIVATION_CALLBACKID } from "./doc.js";
+import { USERACTIVATION_CALLBACKID } from "./app.js";
 
 const USERACTIVATION_MAXTIME_VALIDITY = 5000;
 
