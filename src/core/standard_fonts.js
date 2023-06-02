@@ -309,6 +309,9 @@ const getSymbolsFonts = getLookupTableFactory(function (t) {
   t.Dingbats = true;
   t.Symbol = true;
   t.ZapfDingbats = true;
+  t.Wingdings = true;
+  t["Wingdings-Bold"] = true;
+  t["Wingdings-Regular"] = true;
 });
 
 // Glyph map for well-known standard fonts. Sometimes Ghostscript uses CID
@@ -888,6 +891,16 @@ function getStandardFontName(name) {
   return stdFontMap[fontName];
 }
 
+function isKnownFontName(name) {
+  const fontName = normalizeFontName(name);
+  return !!(
+    getStdFontMap()[fontName] ||
+    getNonStdFontMap()[fontName] ||
+    getSerifFonts()[fontName] ||
+    getSymbolsFonts()[fontName]
+  );
+}
+
 export {
   getFontNameToFileMap,
   getGlyphMapForStandardFonts,
@@ -898,4 +911,5 @@ export {
   getSupplementalGlyphMapForArialBlack,
   getSupplementalGlyphMapForCalibri,
   getSymbolsFonts,
+  isKnownFontName,
 };
