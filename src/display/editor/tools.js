@@ -396,30 +396,42 @@ class AnnotationEditorUIManager {
 
   #container = null;
 
-  static _keyboardManager = new KeyboardManager([
-    [["ctrl+a", "mac+meta+a"], AnnotationEditorUIManager.prototype.selectAll],
-    [["ctrl+z", "mac+meta+z"], AnnotationEditorUIManager.prototype.undo],
-    [
-      ["ctrl+y", "ctrl+shift+Z", "mac+meta+shift+Z"],
-      AnnotationEditorUIManager.prototype.redo,
-    ],
-    [
-      [
-        "Backspace",
-        "alt+Backspace",
-        "ctrl+Backspace",
-        "shift+Backspace",
-        "mac+Backspace",
-        "mac+alt+Backspace",
-        "mac+ctrl+Backspace",
-        "Delete",
-        "ctrl+Delete",
-        "shift+Delete",
-      ],
-      AnnotationEditorUIManager.prototype.delete,
-    ],
-    [["Escape", "mac+Escape"], AnnotationEditorUIManager.prototype.unselectAll],
-  ]);
+  static get _keyboardManager() {
+    return shadow(
+      this,
+      "_keyboardManager",
+      new KeyboardManager([
+        [
+          ["ctrl+a", "mac+meta+a"],
+          AnnotationEditorUIManager.prototype.selectAll,
+        ],
+        [["ctrl+z", "mac+meta+z"], AnnotationEditorUIManager.prototype.undo],
+        [
+          ["ctrl+y", "ctrl+shift+Z", "mac+meta+shift+Z"],
+          AnnotationEditorUIManager.prototype.redo,
+        ],
+        [
+          [
+            "Backspace",
+            "alt+Backspace",
+            "ctrl+Backspace",
+            "shift+Backspace",
+            "mac+Backspace",
+            "mac+alt+Backspace",
+            "mac+ctrl+Backspace",
+            "Delete",
+            "ctrl+Delete",
+            "shift+Delete",
+          ],
+          AnnotationEditorUIManager.prototype.delete,
+        ],
+        [
+          ["Escape", "mac+Escape"],
+          AnnotationEditorUIManager.prototype.unselectAll,
+        ],
+      ])
+    );
+  }
 
   constructor(container, eventBus, annotationStorage) {
     this.#container = container;
