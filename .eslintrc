@@ -33,6 +33,7 @@
   "rules": {
     // Plugins
     "import/extensions": ["error", "always", { "ignorePackages": true, }],
+    "import/named": "error",
     "import/no-unresolved": ["error", {
       "ignore": ["pdfjs", "pdfjs-lib", "pdfjs-web", "web"]
     }],
