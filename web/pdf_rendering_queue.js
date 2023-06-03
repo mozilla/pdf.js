@@ -36,6 +36,12 @@ class PDFRenderingQueue {
     this.idleTimeout = null;
     this.printing = false;
     this.isThumbnailViewEnabled = false;
+
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+      Object.defineProperty(this, "hasViewer", {
+        value: () => !!this.pdfViewer,
+      });
+    }
   }
 
   /**
@@ -58,13 +64,6 @@ class PDFRenderingQueue {
    */
   isHighestPriority(view) {
     return this.highestPriorityPage === view.renderingId;
-  }
-
-  /**
-   * @returns {boolean}
-   */
-  hasViewer() {
-    return !!this.pdfViewer;
   }
 
   /**
