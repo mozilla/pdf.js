@@ -58,13 +58,7 @@ import {
   $toPages,
   $toStyle,
   $uid,
-  ContentObject,
-  Option01,
-  OptionObject,
-  StringObject,
-  XFAObject,
-  XFAObjectArray,
-} from "./xfa_object.js";
+} from "./symbol_utils.js";
 import { $buildXFAObject, NamespaceIds } from "./namespaces.js";
 import {
   addHTML,
@@ -88,6 +82,14 @@ import {
   setPara,
   toStyle,
 } from "./html_utils.js";
+import {
+  ContentObject,
+  Option01,
+  OptionObject,
+  StringObject,
+  XFAObject,
+  XFAObjectArray,
+} from "./xfa_object.js";
 import {
   getBBox,
   getColor,

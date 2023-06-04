@@ -19,10 +19,9 @@ import {
   $namespaceId,
   $nodeName,
   $onChild,
-  XFAObject,
-  XmlObject,
-} from "./xfa_object.js";
+} from "./symbol_utils.js";
 import { $buildXFAObject, NamespaceIds } from "./namespaces.js";
+import { XFAObject, XmlObject } from "./xfa_object.js";
 
 const DATASETS_NS_ID = NamespaceIds.datasets.id;
 
