@@ -28,6 +28,7 @@ import {
 import { isNodeJS } from "../shared/is_node.js";
 
 /** @type {any} */
+// eslint-disable-next-line import/no-mutable-exports
 let SVGGraphics = class {
   constructor() {
     unreachable("Not implemented: SVGGraphics");
