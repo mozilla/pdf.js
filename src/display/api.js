@@ -69,24 +69,22 @@ const DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 const RENDERING_CANCELLED_TIMEOUT = 100; // ms
 const DELAYED_CLEANUP_TIMEOUT = 5000; // ms
 
-let DefaultCanvasFactory = DOMCanvasFactory;
-let DefaultCMapReaderFactory = DOMCMapReaderFactory;
-let DefaultFilterFactory = DOMFilterFactory;
-let DefaultStandardFontDataFactory = DOMStandardFontDataFactory;
-
-if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS) {
-  const {
-    NodeCanvasFactory,
-    NodeCMapReaderFactory,
-    NodeFilterFactory,
-    NodeStandardFontDataFactory,
-  } = require("./node_utils.js");
-
-  DefaultCanvasFactory = NodeCanvasFactory;
-  DefaultCMapReaderFactory = NodeCMapReaderFactory;
-  DefaultFilterFactory = NodeFilterFactory;
-  DefaultStandardFontDataFactory = NodeStandardFontDataFactory;
-}
+const DefaultCanvasFactory =
+  typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
+    ? require("./node_utils.js").NodeCanvasFactory
+    : DOMCanvasFactory;
+const DefaultCMapReaderFactory =
+  typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
+    ? require("./node_utils.js").NodeCMapReaderFactory
+    : DOMCMapReaderFactory;
+const DefaultFilterFactory =
+  typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
+    ? require("./node_utils.js").NodeFilterFactory
+    : DOMFilterFactory;
+const DefaultStandardFontDataFactory =
+  typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
+    ? require("./node_utils.js").NodeStandardFontDataFactory
+    : DOMStandardFontDataFactory;
 
 let createPDFNetworkStream;
 if (typeof PDFJSDev === "undefined") {

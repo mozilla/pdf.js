@@ -32,8 +32,14 @@
 
   "rules": {
     // Plugins
+    "import/export": "error",
+    "import/exports-last": "error",
     "import/extensions": ["error", "always", { "ignorePackages": true, }],
+    "import/first": "error",
     "import/named": "error",
+    "import/no-empty-named-blocks": "error",
+    "import/no-mutable-exports": "error",
+    "import/no-self-import": "error",
     "import/no-unresolved": ["error", {
       "ignore": ["pdfjs", "pdfjs-lib", "pdfjs-web", "web"]
     }],
