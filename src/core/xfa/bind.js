@@ -36,12 +36,10 @@ import {
   $removeChild,
   $setValue,
   $text,
-  XFAAttribute,
-  XFAObjectArray,
-  XmlObject,
-} from "./xfa_object.js";
+} from "./symbol_utils.js";
 import { BindItems, Field, Items, SetProperty, Text } from "./template.js";
 import { createDataNode, searchNode } from "./som.js";
+import { XFAAttribute, XFAObjectArray, XmlObject } from "./xfa_object.js";
 import { NamespaceIds } from "./namespaces.js";
 import { warn } from "../../shared/util.js";
 

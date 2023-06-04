@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { $uid } from "../../src/core/xfa/xfa_object.js";
+import { $uid } from "../../src/core/xfa/symbol_utils.js";
 import { DataHandler } from "../../src/core/xfa/data.js";
 import { searchNode } from "../../src/core/xfa/som.js";
 import { XFAParser } from "../../src/core/xfa/parser.js";
