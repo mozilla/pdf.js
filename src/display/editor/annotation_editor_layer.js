@@ -20,6 +20,8 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("../../web/text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 /** @typedef {import("../../web/interfaces").IL10n} IL10n */
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/annotation_layer.js").AnnotationLayer} AnnotationLayer */
 
 import { AnnotationEditorType, FeatureTest } from "../../shared/util.js";
 import { bindEvents } from "./tools.js";
@@ -36,6 +38,7 @@ import { setLayerDimensions } from "../display_utils.js";
  * @property {TextAccessibilityManager} [accessibilityManager]
  * @property {number} pageIndex
  * @property {IL10n} l10n
+ * @property {AnnotationLayer} [annotationLayer]
  */
 
 /**
@@ -50,6 +53,8 @@ class AnnotationEditorLayer {
   #accessibilityManager;
 
   #allowClick = false;
+
+  #annotationLayer = null;
 
   #boundPointerup = this.pointerup.bind(this);
 
@@ -80,6 +85,7 @@ class AnnotationEditorLayer {
     this.pageIndex = options.pageIndex;
     this.div = options.div;
     this.#accessibilityManager = options.accessibilityManager;
+    this.#annotationLayer = options.annotationLayer;
 
     this.#uiManager.addLayer(this);
   }
@@ -169,6 +175,17 @@ class AnnotationEditorLayer {
    */
   enable() {
     this.div.style.pointerEvents = "auto";
+    if (this.#annotationLayer) {
+      const editables = this.#annotationLayer.getEditableAnnotations();
+      for (const editable of editables) {
+        const editor = this.deserialize(editable);
+        if (!editor) {
+          continue;
+        }
+        editable.hide();
+        this.addOrRebuild(editor);
+      }
+    }
     for (const editor of this.#editors.values()) {
       editor.enableEditing();
     }
@@ -181,6 +198,10 @@ class AnnotationEditorLayer {
     this.div.style.pointerEvents = "none";
     for (const editor of this.#editors.values()) {
       editor.disableEditing();
+      if (!editor.hasElementChanged()) {
+        editor.annotationElement.show();
+        editor.remove();
+      }
     }
     this.#cleanup();
     if (this.isEmpty) {
@@ -368,7 +389,7 @@ class AnnotationEditorLayer {
    * @returns {AnnotationEditor}
    */
   deserialize(data) {
-    switch (data.annotationType) {
+    switch (data.annotationType ?? data.annotationEditorType) {
       case AnnotationEditorType.FREETEXT:
         return FreeTextEditor.deserialize(data, this, this.#uiManager);
       case AnnotationEditorType.INK:
