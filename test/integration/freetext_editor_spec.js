@@ -343,6 +343,83 @@ describe("Editor", () => {
         })
       );
     });
+
+    it("must check that text change can be undone/redone", async () => {
+      // Run sequentially to avoid clipboard issues.
+      for (const [browserName, page] of pages) {
+        const rect = await page.$eval(".annotationEditorLayer", el => {
+          const { x, y } = el.getBoundingClientRect();
+          return { x, y };
+        });
+
+        await page.keyboard.down("Control");
+        await page.keyboard.press("a");
+        await page.keyboard.up("Control");
+
+        await page.keyboard.down("Control");
+        await page.keyboard.press("Backspace");
+        await page.keyboard.up("Control");
+
+        await page.mouse.click(rect.x + 200, rect.y + 100);
+
+        for (let i = 0; i < 5; i++) {
+          await page.type(`${getEditorSelector(9)} .internal`, "A");
+
+          const editorRect = await page.$eval(getEditorSelector(9), el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+
+          // Commit.
+          await page.mouse.click(
+            editorRect.x,
+            editorRect.y + 2 * editorRect.height
+          );
+
+          if (i < 4) {
+            // And select it again.
+            await page.mouse.click(
+              editorRect.x + editorRect.width / 2,
+              editorRect.y + editorRect.height / 2,
+              { clickCount: 2 }
+            );
+          }
+        }
+
+        await page.keyboard.down("Control");
+        await page.keyboard.press("z");
+        await page.keyboard.up("Control");
+        await page.waitForTimeout(10);
+
+        let text = await page.$eval(`${getEditorSelector(9)} .internal`, el => {
+          return el.innerText;
+        });
+
+        expect(text).withContext(`In ${browserName}`).toEqual("AAAA");
+
+        await page.keyboard.down("Control");
+        await page.keyboard.press("z");
+        await page.keyboard.up("Control");
+        await page.waitForTimeout(10);
+
+        text = await page.$eval(`${getEditorSelector(9)} .internal`, el => {
+          return el.innerText;
+        });
+
+        expect(text).withContext(`In ${browserName}`).toEqual("AAA");
+
+        await page.keyboard.down("Control");
+        await page.keyboard.press("y");
+        await page.keyboard.up("Control");
+        await page.waitForTimeout(10);
+
+        text = await page.$eval(`${getEditorSelector(9)} .internal`, el => {
+          return el.innerText;
+        });
+
+        expect(text).withContext(`In ${browserName}`).toEqual("AAAA");
+      }
+    });
   });
 
   describe("FreeText (multiselection)", () => {
