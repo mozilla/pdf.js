@@ -87,6 +87,92 @@ function parseDefaultAppearance(str) {
   return new DefaultAppearanceEvaluator(str).parse();
 }
 
+class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
+  constructor(stream) {
+    super(stream);
+    this.stream = stream;
+  }
+
+  parse() {
+    const operation = {
+      fn: 0,
+      args: [],
+    };
+    let result = {
+      scaleFactor: 1,
+      fontSize: 0,
+      fontName: "",
+      fontColor: /* black = */ new Uint8ClampedArray(3),
+    };
+    let breakLoop = false;
+    const stack = [];
+
+    try {
+      while (true) {
+        operation.args.length = 0; // Ensure that `args` it's always reset.
+
+        if (breakLoop || !this.read(operation)) {
+          break;
+        }
+        const { fn, args } = operation;
+
+        switch (fn | 0) {
+          case OPS.save:
+            stack.push({
+              scaleFactor: result.scaleFactor,
+              fontSize: result.fontSize,
+              fontName: result.fontName,
+              fontColor: result.fontColor.slice(),
+            });
+            break;
+          case OPS.restore:
+            result = stack.pop() || result;
+            break;
+          case OPS.setTextMatrix:
+            result.scaleFactor *= Math.hypot(args[0], args[1]);
+            break;
+          case OPS.setFont:
+            const [fontName, fontSize] = args;
+            if (fontName instanceof Name) {
+              result.fontName = fontName.name;
+            }
+            if (typeof fontSize === "number" && fontSize > 0) {
+              result.fontSize = fontSize * result.scaleFactor;
+            }
+            break;
+          case OPS.setFillRGBColor:
+            ColorSpace.singletons.rgb.getRgbItem(args, 0, result.fontColor, 0);
+            break;
+          case OPS.setFillGray:
+            ColorSpace.singletons.gray.getRgbItem(args, 0, result.fontColor, 0);
+            break;
+          case OPS.setFillColorSpace:
+            ColorSpace.singletons.cmyk.getRgbItem(args, 0, result.fontColor, 0);
+            break;
+          case OPS.showText:
+          case OPS.showSpacedText:
+          case OPS.nextLineShowText:
+          case OPS.nextLineSetSpacingShowText:
+            breakLoop = true;
+            break;
+        }
+      }
+    } catch (reason) {
+      warn(`parseAppearanceStream - ignoring errors: "${reason}".`);
+    }
+    this.stream.reset();
+    delete result.scaleFactor;
+
+    return result;
+  }
+}
+
+// Parse appearance stream to extract font and color information.
+// It returns the font properties used to render the first text object.
+function parseAppearanceStream(stream) {
+  return new AppearanceStreamEvaluator(stream).parse();
+}
+
 function getPdfColor(color, isFill) {
   if (color[0] === color[1] && color[1] === color[2]) {
     const gray = color[0] / 255;
@@ -368,5 +454,6 @@ export {
   createDefaultAppearance,
   FakeUnicodeFont,
   getPdfColor,
+  parseAppearanceStream,
   parseDefaultAppearance,
 };
