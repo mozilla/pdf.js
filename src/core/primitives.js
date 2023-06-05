@@ -279,6 +279,23 @@ class Ref {
     return `${this.num}R${this.gen}`;
   }
 
+  static fromString(str) {
+    const ref = RefCache[str];
+    if (ref) {
+      return ref;
+    }
+    const m = /^(\d+)R(\d*)$/.exec(str);
+    if (!m || m[1] === "0") {
+      return null;
+    }
+
+    // eslint-disable-next-line no-restricted-syntax
+    return (RefCache[str] = new Ref(
+      parseInt(m[1]),
+      !m[2] ? 0 : parseInt(m[2])
+    ));
+  }
+
   static get(num, gen) {
     const key = gen === 0 ? `${num}R` : `${num}R${gen}`;
     // eslint-disable-next-line no-restricted-syntax
