@@ -26,6 +26,7 @@ import {
 } from "../../shared/util.js";
 import { bindEvents, KeyboardManager } from "./tools.js";
 import { AnnotationEditor } from "./editor.js";
+import { FreeTextAnnotationElement } from "../annotation_layer.js";
 
 /**
  * Basic text editor in order to create a FreeTex annotation.
@@ -489,6 +490,9 @@ class FreeTextEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   static deserialize(data, parent, uiManager) {
+    if (data instanceof FreeTextAnnotationElement) {
+      return null;
+    }
     const editor = super.deserialize(data, parent, uiManager);
 
     editor.#fontSize = data.fontSize;

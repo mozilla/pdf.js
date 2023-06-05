@@ -19,6 +19,7 @@ import {
   Util,
 } from "../../shared/util.js";
 import { AnnotationEditor } from "./editor.js";
+import { InkAnnotationElement } from "../annotation_layer.js";
 import { opacityToHex } from "./tools.js";
 
 // The dimensions of the resizer is 15x15:
@@ -1130,6 +1131,9 @@ class InkEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   static deserialize(data, parent, uiManager) {
+    if (data instanceof InkAnnotationElement) {
+      return null;
+    }
     const editor = super.deserialize(data, parent, uiManager);
 
     editor.thickness = data.thickness;

@@ -20,6 +20,7 @@
 
 import {
   AnnotationBorderStyleType,
+  AnnotationEditorType,
   AnnotationType,
   assert,
   FeatureTest,
@@ -504,7 +505,7 @@ class AnnotationElement {
    *
    * @public
    * @memberof AnnotationElement
-   * @returns {HTMLElement|Array<HTMLElement>} A section element or
+   * @returns {HTMLElement|Array<HTMLElement>|undefined} A section element or
    *   an array of section elements.
    */
   render() {
@@ -557,6 +558,18 @@ class AnnotationElement {
       fields.push({ id, exportValue, domElement });
     }
     return fields;
+  }
+
+  show() {
+    if (this.container) {
+      this.container.hidden = false;
+    }
+  }
+
+  hide() {
+    if (this.container) {
+      this.container.hidden = true;
+    }
   }
 }
 
@@ -2048,6 +2061,7 @@ class FreeTextAnnotationElement extends AnnotationElement {
     );
     super(parameters, { isRenderable, ignoreBorder: true });
     this.textContent = parameters.data.textContent;
+    this.annotationEditorType = AnnotationEditorType.FREETEXT;
   }
 
   render() {
@@ -2328,6 +2342,7 @@ class InkAnnotationElement extends AnnotationElement {
     // Use the polyline SVG element since it allows us to use coordinates
     // directly and to draw both straight lines and curves.
     this.svgElementName = "svg:polyline";
+    this.annotationEditorType = AnnotationEditorType.INK;
   }
 
   render() {
@@ -2596,12 +2611,17 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
  * @property {TextAccessibilityManager} [accessibilityManager]
  */
 
+/**
+ * Manage the layer containing all the annotations.
+ */
 class AnnotationLayer {
   #accessibilityManager = null;
 
   #annotationCanvasMap = null;
 
   #div = null;
+
+  #editableAnnotations = new Set();
 
   constructor({ div, accessibilityManager, annotationCanvasMap }) {
     this.#div = div;
@@ -2666,6 +2686,11 @@ class AnnotationLayer {
       if (!element.isRenderable) {
         continue;
       }
+
+      if (element.annotationEditorType > 0) {
+        this.#editableAnnotations.add(element);
+      }
+
       const rendered = element.render();
       if (data.hidden) {
         rendered.style.visibility = "hidden";
@@ -2732,6 +2757,10 @@ class AnnotationLayer {
     }
     this.#annotationCanvasMap.clear();
   }
+
+  getEditableAnnotations() {
+    return this.#editableAnnotations;
+  }
 }
 
-export { AnnotationLayer };
+export { AnnotationLayer, FreeTextAnnotationElement, InkAnnotationElement };

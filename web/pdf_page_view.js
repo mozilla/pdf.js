@@ -979,6 +979,7 @@ class PDFPageView {
             pdfPage,
             l10n,
             accessibilityManager: this._accessibilityManager,
+            annotationLayer: this.annotationLayer?.annotationLayer,
           });
         }
         this.#renderAnnotationEditorLayer();
