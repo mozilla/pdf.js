@@ -41,7 +41,7 @@ import {
   XRefEntryException,
   XRefParseException,
 } from "./core_utils.js";
-import { Dict, isName, Name, Ref } from "./primitives.js";
+import { Dict, isName, isRefsEqual, Name, Ref, RefSet } from "./primitives.js";
 import { getXfaFontDict, getXfaFontName } from "./xfa_fonts.js";
 import { BaseStream } from "./base_stream.js";
 import { calculateMD5 } from "./crypto.js";
@@ -258,6 +258,24 @@ class Page {
     );
   }
 
+  #replaceIdByRef(annotations, deletedAnnotations) {
+    for (const annotation of annotations) {
+      if (annotation.id) {
+        const ref = Ref.fromString(annotation.id);
+        if (!ref) {
+          warn(`A non-linked annotation cannot be modified: ${annotation.id}`);
+          continue;
+        }
+        if (annotation.deleted) {
+          deletedAnnotations.put(ref);
+          continue;
+        }
+        annotation.ref = ref;
+        delete annotation.id;
+      }
+    }
+  }
+
   async saveNewAnnotations(handler, task, annotations) {
     if (this.xfaFactory) {
       throw new Error("XFA: Cannot save new annotations.");
@@ -276,8 +294,13 @@ class Page {
       options: this.evaluatorOptions,
     });
 
+    const deletedAnnotations = new RefSet();
+    this.#replaceIdByRef(annotations, deletedAnnotations);
+
     const pageDict = this.pageDict;
-    const annotationsArray = this.annotations.slice();
+    const annotationsArray = this.annotations.filter(
+      a => !(a instanceof Ref && deletedAnnotations.has(a))
+    );
     const newData = await AnnotationFactory.saveNewAnnotations(
       partialEvaluator,
       task,
@@ -401,11 +424,14 @@ class Page {
     const newAnnotationsByPage = !this.xfaFactory
       ? getNewAnnotationsMap(annotationStorage)
       : null;
+    let deletedAnnotations = null;
 
     let newAnnotationsPromise = Promise.resolve(null);
     if (newAnnotationsByPage) {
       const newAnnotations = newAnnotationsByPage.get(this.pageIndex);
       if (newAnnotations) {
+        deletedAnnotations = new RefSet();
+        this.#replaceIdByRef(newAnnotations, deletedAnnotations);
         newAnnotationsPromise = AnnotationFactory.printNewAnnotations(
           partialEvaluator,
           task,
@@ -446,6 +472,25 @@ class Page {
       newAnnotationsPromise,
     ]).then(function ([pageOpList, annotations, newAnnotations]) {
       if (newAnnotations) {
+        // Some annotations can already exist (if it has the refToReplace
+        // property). In this case, we replace the old annotation by the new
+        // one.
+        annotations = annotations.filter(
+          a => !(a.ref && deletedAnnotations.has(a.ref))
+        );
+        for (let i = 0, ii = newAnnotations.length; i < ii; i++) {
+          const newAnnotation = newAnnotations[i];
+          if (newAnnotation.refToReplace) {
+            const j = annotations.findIndex(
+              a => a.ref && isRefsEqual(a.ref, newAnnotation.refToReplace)
+            );
+            if (j >= 0) {
+              annotations.splice(j, 1, newAnnotation);
+              newAnnotations.splice(i--, 1);
+              ii--;
+            }
+          }
+        }
         annotations = annotations.concat(newAnnotations);
       }
       if (

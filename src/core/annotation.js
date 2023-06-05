@@ -264,6 +264,9 @@ class AnnotationFactory {
     const promises = [];
 
     for (const annotation of annotations) {
+      if (annotation.deleted) {
+        continue;
+      }
       switch (annotation.annotationType) {
         case AnnotationEditorType.FREETEXT:
           if (!baseFontRef) {
@@ -308,6 +311,9 @@ class AnnotationFactory {
     const { isOffscreenCanvasSupported } = evaluator.options;
     const promises = [];
     for (const annotation of annotations) {
+      if (annotation.deleted) {
+        continue;
+      }
       switch (annotation.annotationType) {
         case AnnotationEditorType.FREETEXT:
           promises.push(
@@ -466,6 +472,7 @@ class Annotation {
     const MK = dict.get("MK");
     this.setBorderAndBackgroundColors(MK);
     this.setRotation(MK);
+    this.ref = params.ref instanceof Ref ? params.ref : null;
 
     this._streams = [];
     if (this.appearance) {
@@ -1467,7 +1474,7 @@ class MarkupAnnotation extends Annotation {
   }
 
   static async createNewAnnotation(xref, annotation, dependencies, params) {
-    const annotationRef = xref.getNewTemporaryRef();
+    const annotationRef = annotation.ref || xref.getNewTemporaryRef();
     const ap = await this.createNewAppearanceStream(annotation, xref, params);
     const buffer = [];
     let annotationDict;
@@ -1497,11 +1504,17 @@ class MarkupAnnotation extends Annotation {
     const ap = await this.createNewAppearanceStream(annotation, xref, params);
     const annotationDict = this.createNewDict(annotation, xref, { ap });
 
-    return new this.prototype.constructor({
+    const newAnnotation = new this.prototype.constructor({
       dict: annotationDict,
       xref,
       isOffscreenCanvasSupported: params.isOffscreenCanvasSupported,
     });
+
+    if (annotation.ref) {
+      newAnnotation.ref = newAnnotation.refToReplace = annotation.ref;
+    }
+
+    return newAnnotation;
   }
 }
 
@@ -1511,7 +1524,6 @@ class WidgetAnnotation extends Annotation {
 
     const { dict, xref } = params;
     const data = this.data;
-    this.ref = params.ref;
     this._needAppearances = params.needAppearances;
 
     data.annotationType = AnnotationType.WIDGET;
