@@ -66,6 +66,14 @@ class FreeTextEditor extends AnnotationEditor {
       "_keyboardManager",
       new KeyboardManager([
         [
+          // Commit the text in case the user use ctrl+s to save the document.
+          // The event must bubble in order to be caught by the viewer.
+          // See bug 1831574.
+          ["ctrl+s", "mac+meta+s", "ctrl+p", "mac+meta+p"],
+          FreeTextEditor.prototype.commitOrRemove,
+          /* bubbles = */ true,
+        ],
+        [
           ["ctrl+Enter", "mac+meta+Enter", "Escape", "mac+Escape"],
           FreeTextEditor.prototype.commitOrRemove,
         ],
