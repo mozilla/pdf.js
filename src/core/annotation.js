@@ -3553,7 +3553,7 @@ class FreeTextAnnotation extends MarkupAnnotation {
   constructor(params) {
     super(params);
 
-    this.data.hasOwnCanvas = this.data.noRotate;
+    this.data.hasOwnCanvas = true;
 
     const { xref } = params;
     this.data.annotationType = AnnotationType.FREETEXT;

@@ -15,8 +15,10 @@
 
 const {
   closePages,
+  getEditors,
   getEditorSelector,
   getSelectedEditors,
+  getSerialized,
   loadAndWait,
   waitForEvent,
   waitForSelectedEditor,
@@ -39,7 +41,7 @@ const copyPaste = async page => {
   await promise;
 };
 
-describe("Editor", () => {
+describe("FreeText Editor", () => {
   describe("FreeText", () => {
     let pages;
 
@@ -833,6 +835,226 @@ describe("Editor", () => {
           expect(diffs)
             .withContext(`In ${browserName}`)
             .toEqual([true, true, true]);
+        })
+      );
+    });
+  });
+
+  describe("FreeText (move existing)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("freetexts.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must move an annotation", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          if (browserName === "firefox") {
+            pending(
+              "Disabled in Firefox, because DnD isn't implemented yet (see bug 1838638)."
+            );
+          }
+
+          await page.setDragInterception(true);
+          await page.click("#editorFreeText");
+
+          const editorIds = await getEditors(page, "freeText");
+          expect(editorIds.length).withContext(`In ${browserName}`).toEqual(6);
+
+          // All the current annotations should be serialized as null objects
+          // because they haven't been edited yet.
+          let serialized = await getSerialized(page);
+          expect(serialized).withContext(`In ${browserName}`).toEqual([]);
+
+          const editorRect = await page.$eval(getEditorSelector(0), el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+
+          await page.mouse.dragAndDrop(
+            {
+              x: editorRect.x + editorRect.width / 2,
+              y: editorRect.y + editorRect.height / 2,
+            },
+            {
+              x: editorRect.x + editorRect.width / 2 + 100,
+              y: editorRect.y + editorRect.height / 2 + 100,
+            },
+            { delay: 100 }
+          );
+
+          serialized = await getSerialized(page);
+          expect(serialized.length).withContext(`In ${browserName}`).toEqual(1);
+        })
+      );
+    });
+  });
+
+  describe("FreeText (update existing)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("freetexts.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must update an existing annotation", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorFreeText");
+
+          let editorIds = await getEditors(page, "freeText");
+          expect(editorIds.length).withContext(`In ${browserName}`).toEqual(6);
+
+          const editorRect = await page.$eval(getEditorSelector(0), el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+          await page.mouse.click(
+            editorRect.x + editorRect.width / 2,
+            editorRect.y + editorRect.height / 2,
+            { clickCount: 2 }
+          );
+
+          await page.keyboard.down("Control");
+          await page.keyboard.press("End");
+          await page.keyboard.up("Control");
+          await page.waitForTimeout(10);
+
+          await page.type(
+            `${getEditorSelector(0)} .internal`,
+            " and edited in Firefox"
+          );
+
+          // Commit.
+          await page.mouse.click(
+            editorRect.x,
+            editorRect.y + 2 * editorRect.height
+          );
+
+          let serialized = await getSerialized(page);
+          expect(serialized.length).withContext(`In ${browserName}`).toEqual(1);
+          expect(serialized[0]).toEqual(
+            jasmine.objectContaining({
+              color: [107, 217, 41],
+              fontSize: 14,
+              value: "Hello World from Acrobat and edited in Firefox",
+              id: "26R",
+            })
+          );
+
+          // Disable editing mode.
+          await page.click("#editorFreeText");
+          // We want to check that the editor is displayed but not the original
+          // annotation.
+          editorIds = await getEditors(page, "freeText");
+          expect(editorIds.length).withContext(`In ${browserName}`).toEqual(1);
+          const hidden = await page.$eval(
+            "[data-annotation-id='26R']",
+            el => el.hidden
+          );
+          expect(hidden).withContext(`In ${browserName}`).toBeTrue();
+
+          // Re-enable editing mode.
+          await page.click("#editorFreeText");
+          await page.focus(".annotationEditorLayer");
+
+          // Undo.
+          await page.keyboard.down("Control");
+          await page.keyboard.press("z");
+          await page.keyboard.up("Control");
+          await page.waitForTimeout(10);
+
+          serialized = await getSerialized(page);
+          expect(serialized).withContext(`In ${browserName}`).toEqual([]);
+
+          editorIds = await getEditors(page, "freeText");
+          expect(editorIds.length).withContext(`In ${browserName}`).toEqual(6);
+
+          // Undo again.
+          await page.keyboard.down("Control");
+          await page.keyboard.press("z");
+          await page.keyboard.up("Control");
+          await page.waitForTimeout(10);
+
+          // We check that the editor hasn't been removed.
+          editorIds = await getEditors(page, "freeText");
+          expect(editorIds.length).withContext(`In ${browserName}`).toEqual(6);
+        })
+      );
+    });
+  });
+
+  describe("FreeText (delete existing)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("freetexts.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must delete an existing annotation", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorFreeText");
+
+          let editorIds = await getEditors(page, "freeText");
+          expect(editorIds.length).withContext(`In ${browserName}`).toEqual(6);
+
+          const editorRect = await page.$eval(getEditorSelector(3), el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+          await page.mouse.click(
+            editorRect.x + editorRect.width / 2,
+            editorRect.y + editorRect.height / 2
+          );
+
+          await page.keyboard.press("Backspace");
+          await page.waitForTimeout(10);
+
+          let serialized = await getSerialized(page);
+          expect(serialized).toEqual([
+            {
+              pageIndex: 0,
+              id: "51R",
+              deleted: true,
+            },
+          ]);
+
+          await page.click("#editorFreeText");
+          // We want to check that nothing is displayed.
+          editorIds = await getEditors(page, "freeText");
+          expect(editorIds.length).withContext(`In ${browserName}`).toEqual(0);
+          const hidden = await page.$eval(
+            "[data-annotation-id='51R']",
+            el => el.hidden
+          );
+          expect(hidden).withContext(`In ${browserName}`).toBeTrue();
+
+          // Re-enable editing mode.
+          await page.click("#editorFreeText");
+          await page.focus(".annotationEditorLayer");
+
+          // Undo.
+          await page.keyboard.down("Control");
+          await page.keyboard.press("z");
+          await page.keyboard.up("Control");
+          await page.waitForTimeout(10);
+
+          serialized = await getSerialized(page);
+          expect(serialized).withContext(`In ${browserName}`).toEqual([]);
         })
       );
     });

@@ -2621,7 +2621,7 @@ class AnnotationLayer {
 
   #div = null;
 
-  #editableAnnotations = new Set();
+  #editableAnnotations = new Map();
 
   constructor({ div, accessibilityManager, annotationCanvasMap }) {
     this.#div = div;
@@ -2688,7 +2688,7 @@ class AnnotationLayer {
       }
 
       if (element.annotationEditorType > 0) {
-        this.#editableAnnotations.add(element);
+        this.#editableAnnotations.set(element.data.id, element);
       }
 
       const rendered = element.render();
@@ -2759,7 +2759,11 @@ class AnnotationLayer {
   }
 
   getEditableAnnotations() {
-    return this.#editableAnnotations;
+    return Array.from(this.#editableAnnotations.values());
+  }
+
+  getEditableAnnotation(id) {
+    return this.#editableAnnotations.get(id);
   }
 }
 
