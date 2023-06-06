@@ -213,14 +213,14 @@ class KeyboardManager {
     this.allKeys = new Set();
 
     const { isMac } = FeatureTest.platform;
-    for (const [keys, callback] of callbacks) {
+    for (const [keys, callback, bubbles = false] of callbacks) {
       for (const key of keys) {
         const isMacKey = key.startsWith("mac+");
         if (isMac && isMacKey) {
-          this.callbacks.set(key.slice(4), callback);
+          this.callbacks.set(key.slice(4), { callback, bubbles });
           this.allKeys.add(key.split("+").at(-1));
         } else if (!isMac && !isMacKey) {
-          this.callbacks.set(key, callback);
+          this.callbacks.set(key, { callback, bubbles });
           this.allKeys.add(key.split("+").at(-1));
         }
       }
@@ -264,13 +264,19 @@ class KeyboardManager {
     if (!this.allKeys.has(event.key)) {
       return;
     }
-    const callback = this.callbacks.get(this.#serialize(event));
-    if (!callback) {
+    const info = this.callbacks.get(this.#serialize(event));
+    if (!info) {
       return;
     }
+    const { callback, bubbles } = info;
     callback.bind(self)();
-    event.stopPropagation();
-    event.preventDefault();
+
+    // For example, ctrl+s in a FreeText must be handled by the viewer, hence
+    // the event must bubble.
+    if (!bubbles) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
   }
 }
 
