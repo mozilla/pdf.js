@@ -331,36 +331,6 @@ class AnnotationEditorLayer {
   }
 
   /**
-   * Add a new editor and make this addition undoable.
-   * @param {AnnotationEditor} editor
-   */
-  addANewEditor(editor) {
-    const cmd = () => {
-      this.addOrRebuild(editor);
-    };
-    const undo = () => {
-      editor.remove();
-    };
-
-    this.addCommands({ cmd, undo, mustExec: true });
-  }
-
-  /**
-   * Add a new editor and make this addition undoable.
-   * @param {AnnotationEditor} editor
-   */
-  addUndoableEditor(editor) {
-    const cmd = () => {
-      this.addOrRebuild(editor);
-    };
-    const undo = () => {
-      editor.remove();
-    };
-
-    this.addCommands({ cmd, undo, mustExec: false });
-  }
-
-  /**
    * Get an id for an editor.
    * @returns {string}
    */
