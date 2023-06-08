@@ -418,6 +418,51 @@ describe("Editor", () => {
         });
 
         expect(text).withContext(`In ${browserName}`).toEqual("AAAA");
+
+        for (let i = 0; i < 4; i++) {
+          await page.keyboard.down("Control");
+          await page.keyboard.press("z");
+          await page.keyboard.up("Control");
+          await page.waitForTimeout(10);
+        }
+
+        expect(await getSelectedEditors(page))
+          .withContext(`In ${browserName}`)
+          .toEqual([]);
+
+        await page.keyboard.down("Control");
+        await page.keyboard.press("y");
+        await page.keyboard.up("Control");
+        await page.waitForTimeout(10);
+
+        text = await page.$eval(`${getEditorSelector(9)} .internal`, el => {
+          return el.innerText;
+        });
+
+        expect(text).withContext(`In ${browserName}`).toEqual("A");
+
+        // Add a new A.
+        const editorRect = await page.$eval(getEditorSelector(9), el => {
+          const { x, y, width, height } = el.getBoundingClientRect();
+          return { x, y, width, height };
+        });
+        await page.mouse.click(
+          editorRect.x + editorRect.width / 2,
+          editorRect.y + editorRect.height / 2,
+          { clickCount: 2 }
+        );
+        await page.type(`${getEditorSelector(9)} .internal`, "A");
+
+        // Commit.
+        await page.mouse.click(
+          editorRect.x,
+          editorRect.y + 2 * editorRect.height
+        );
+
+        text = await page.$eval(`${getEditorSelector(9)} .internal`, el => {
+          return el.innerText;
+        });
+        expect(text).withContext(`In ${browserName}`).toEqual("AA");
       }
     });
   });
