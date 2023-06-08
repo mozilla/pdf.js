@@ -1188,6 +1188,16 @@ class CanvasGraphics {
       1
     );
 
+    if (width / widthScale <= 5 && height / heightScale <= 5) {
+      // The final image is very small, hence having a poor quality
+      // when rescaling isn't really a problem.
+      return {
+        img,
+        paintWidth: width,
+        paintHeight: height,
+      };
+    }
+
     let paintWidth = width,
       paintHeight = height;
     let tmpCanvasId = "prescale1";

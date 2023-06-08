@@ -7713,5 +7713,13 @@
         "value": ["Three", "Five"]
       }
     }
- }
+   },
+   {
+      "id": "bug1445735",
+      "file": "pdfs/bug1445735.pdf",
+      "md5": "a5470d82c1d23eac1fef2fa37f95e980",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+   }
 ]
