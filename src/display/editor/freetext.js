@@ -46,8 +46,6 @@ class FreeTextEditor extends AnnotationEditor {
 
   #editorDivId = `${this.id}-editor`;
 
-  #hasAlreadyBeenCommitted = false;
-
   #fontSize;
 
   static _freeTextDefaultContent = "";
@@ -355,13 +353,6 @@ class FreeTextEditor extends AnnotationEditor {
     }
 
     super.commit();
-    if (!this.#hasAlreadyBeenCommitted) {
-      // This editor has something and it's the first time
-      // it's commited so we can add it in the undo/redo stack.
-      this.#hasAlreadyBeenCommitted = true;
-      this.parent.addUndoableEditor(this);
-    }
-
     this.disableEditMode();
     const savedText = this.#content;
     const newText = (this.#content = this.#extractText().trimEnd());
@@ -371,7 +362,12 @@ class FreeTextEditor extends AnnotationEditor {
 
     const setText = text => {
       this.#content = text;
+      if (!text) {
+        this.remove();
+        return;
+      }
       this.#setContent();
+      this.rebuild();
       this.#setEditorDimensions();
     };
     this.addCommands({
