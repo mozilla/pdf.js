@@ -472,6 +472,7 @@ class AnnotationEditor {
    */
   rebuild() {
     this.div?.addEventListener("focusin", this.#boundFocusin);
+    this.div?.addEventListener("focusout", this.#boundFocusout);
   }
 
   /**
