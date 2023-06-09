@@ -7720,5 +7720,91 @@
    "md5": "35b691c3a343f4531bd287b001b67a77",
    "rounds": 1,
    "type": "eq"
-  }
+  },
+   {
+      "id": "freetexts-editor-print",
+      "file": "pdfs/freetexts.pdf",
+      "md5": "da1310a25ab796c1201810070d5032a3",
+      "rounds": 1,
+      "lastPage": 1,
+      "type": "eq",
+      "print": true,
+      "annotationStorage": {
+         "pdfjs_internal_editor_0": {
+            "annotationType": 3,
+            "color": [0, 0, 255],
+            "fontSize": 21,
+            "value": "The content must have been changed",
+            "pageIndex": 0,
+            "rect": [ 92.58600000000003, 415.2426115258789, 449.1110015258789, 447.59261],
+            "rotation": 0,
+            "id": "36R"
+         }
+      }
+   },
+   {
+      "id": "freetexts-editor-save",
+      "file": "pdfs/freetexts.pdf",
+      "md5": "da1310a25ab796c1201810070d5032a3",
+      "rounds": 1,
+      "lastPage": 1,
+      "type": "eq",
+      "save": true,
+      "print": true,
+      "annotationStorage": {
+         "pdfjs_internal_editor_0": {
+            "annotationType": 3,
+            "color": [255, 0, 0],
+            "fontSize": 21,
+            "value": "The content must have been changed",
+            "pageIndex": 0,
+            "rect": [ 92.58600000000003, 415.2426115258789, 449.1110015258789, 447.59261],
+            "rotation": 0,
+            "id": "36R"
+         }
+      }
+   },
+   {
+      "id": "freetexts-delete-editor-print",
+      "file": "pdfs/freetexts.pdf",
+      "md5": "da1310a25ab796c1201810070d5032a3",
+      "rounds": 1,
+      "lastPage": 1,
+      "type": "eq",
+      "print": true,
+      "annotationStorage": {
+         "pdfjs_internal_editor_0": {
+            "pageIndex": 0,
+            "deleted": true,
+            "id": "36R"
+         },
+         "pdfjs_internal_editor_1": {
+            "pageIndex": 0,
+            "deleted": true,
+            "id": "53R"
+         }
+      }
+   },
+   {
+      "id": "freetexts-delete-editor-save",
+      "file": "pdfs/freetexts.pdf",
+      "md5": "da1310a25ab796c1201810070d5032a3",
+      "rounds": 1,
+      "lastPage": 1,
+      "type": "eq",
+      "save": true,
+      "print": true,
+      "annotationStorage": {
+         "pdfjs_internal_editor_0": {
+            "pageIndex": 0,
+            "deleted": true,
+            "id": "36R"
+         },
+         "pdfjs_internal_editor_1": {
+            "pageIndex": 0,
+            "deleted": true,
+            "id": "53R"
+         }
+      }
+   }
 ]
