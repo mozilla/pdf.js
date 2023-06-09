@@ -7713,5 +7713,12 @@
         "value": ["Three", "Five"]
       }
     }
- }
+  },
+  {
+   "id": "issue16538",
+   "file": "pdfs/issue16538.pdf",
+   "md5": "35b691c3a343f4531bd287b001b67a77",
+   "rounds": 1,
+   "type": "eq"
+  }
 ]
