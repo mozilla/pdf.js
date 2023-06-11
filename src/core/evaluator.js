@@ -724,12 +724,14 @@ class PartialEvaluator {
       return;
     }
 
-    const softMask = dict.get("SM", "SMask") || false;
-    const mask = dict.get("Mask") || false;
-
     const SMALL_IMAGE_DIMENSIONS = 200;
     // Inlining small images into the queue as RGB data
-    if (isInline && !softMask && !mask && w + h < SMALL_IMAGE_DIMENSIONS) {
+    if (
+      isInline &&
+      !dict.has("SMask") &&
+      !dict.has("Mask") &&
+      w + h < SMALL_IMAGE_DIMENSIONS
+    ) {
       const imageObj = new PDFImage({
         xref: this.xref,
         res: resources,
