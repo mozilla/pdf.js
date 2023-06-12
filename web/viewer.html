@@ -65,6 +65,7 @@ See https://github.com/adobe-type-tools/cmap-resources
           "web-pdf_attachment_viewer": "./pdf_attachment_viewer.js",
           "web-pdf_cursor_tools": "./pdf_cursor_tools.js",
           "web-pdf_document_properties": "./pdf_document_properties.js",
+          "web-pdf_save_cfaz_dialog": "./pdf_save_cfaz_dialog.js",
           "web-pdf_find_bar": "./pdf_find_bar.js",
           "web-pdf_layer_viewer": "./pdf_layer_viewer.js",
           "web-pdf_outline_viewer": "./pdf_outline_viewer.js",
@@ -203,7 +204,7 @@ See https://github.com/adobe-type-tools/cmap-resources
         <div id="secondaryToolbar" class="secondaryToolbar hidden doorHangerRight">
           <div id="secondaryToolbarButtonContainer">
 <!--#if GENERIC-->
-            <button id="secondaryOpenFile" class="secondaryToolbarButton visibleLargeView" title="Open File" tabindex="51" data-l10n-id="open_file">
+            <button style="display: none;" id="secondaryOpenFile" class="secondaryToolbarButton visibleLargeView" title="Open File" tabindex="51" data-l10n-id="open_file">
               <span data-l10n-id="open_file_label">Open</span>
             </button>
 <!--#endif-->
@@ -323,7 +324,7 @@ See https://github.com/adobe-type-tools/cmap-resources
               </div>
               <div id="toolbarViewerRight">
 <!--#if GENERIC-->
-                <button id="openFile" class="toolbarButton hiddenLargeView" title="Open File" tabindex="31" data-l10n-id="open_file">
+                <button style="display: none;" id="openFile" class="toolbarButton hiddenLargeView" title="Open File" tabindex="31" data-l10n-id="open_file">
                   <span data-l10n-id="open_file_label">Open</span>
                 </button>
 <!--#endif-->
@@ -363,8 +364,8 @@ See https://github.com/adobe-type-tools/cmap-resources
                     <span data-l10n-id="zoom_in_label">Zoom In</span>
                   </button>
                   <div class="splitToolbarButtonSeparator"></div>
-                  <button id="customButton" class="toolbarButton saveButton" title="Save" tabindex="23" data-l10n-id="save">
-                    Save
+                  <button id="saveCfaz" class="toolbarButton saveButton" title="Save" tabindex="23" data-l10n-id="save">
+                    <p data-l10n-id="save_label">Save</p>
                   </button>
                 </div>
                 <span id="scaleSelectContainer" class="dropdownToolbarButton">
@@ -491,6 +492,14 @@ See https://github.com/adobe-type-tools/cmap-resources
           </div>
         </dialog>
 <!--#endif-->
+        <dialog id="saveCfazDialog" style="min-width: 200px;">
+          <div class="row">
+            <span id="saveCfazDialogMessage">Enviando arquivo…</span>
+          </div>
+          <div class="buttonRow" style="display: none">
+            <button id="saveCfazDialogClose" class="dialogButton"><span >Fechar</span></button>
+          </div>
+        </dialog>
 <!--#if CHROME-->
 <!--#include viewer-snippet-chrome-overlays.html-->
 <!--#endif-->

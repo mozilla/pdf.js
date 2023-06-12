@@ -66,7 +66,7 @@ class Toolbar {
       { element: options.zoomOut, eventName: "zoomout" },
       { element: options.print, eventName: "print" },
       { element: options.download, eventName: "download" },
-      { element: options.customButton, eventName: "customButton" },
+      { element: options.saveCfaz, eventName: "saveCfaz" },
       {
         element: options.editorFreeTextButton,
         eventName: "switchannotationeditormode",

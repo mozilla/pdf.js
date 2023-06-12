@@ -64,7 +64,7 @@ function getViewerConfiguration() {
       editorInkButton: document.getElementById("editorInk"),
       editorInkParamsToolbar: document.getElementById("editorInkParamsToolbar"),
       download: document.getElementById("download"),
-      customButton: document.getElementById("customButton")
+      saveCfaz: document.getElementById("saveCfaz")
     },
     secondaryToolbar: {
       toolbar: document.getElementById("secondaryToolbar"),
@@ -167,6 +167,11 @@ function getViewerConfiguration() {
         ? document.getElementById("fileInput")
         : null,
     debuggerScriptPath: "./debugger.js",
+    saveCfazDialog: {
+      dialog: document.getElementById("saveCfazDialog"),
+      message: document.getElementById("saveCfazDialogMessage"),
+      closeButton: document.getElementById("saveCfazDialogClose")
+    }
   };
 }
 
