@@ -1734,7 +1734,7 @@ const CipherTransformFactory = (function CipherTransformFactoryClosure() {
         if (revision === 6) {
           try {
             password = utf8StringToString(password);
-          } catch (ex) {
+          } catch {
             warn(
               "CipherTransformFactory: Unable to convert UTF8 encoded password."
             );

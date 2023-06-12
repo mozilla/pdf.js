@@ -445,7 +445,7 @@ class PDFLinkService {
           // e.g. "4.3" or "true", because `JSON.parse` converted its type.
           dest = dest.toString();
         }
-      } catch (ex) {}
+      } catch {}
 
       if (
         typeof dest === "string" ||

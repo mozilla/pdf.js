@@ -89,7 +89,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
         const buffer = stringToBytes(value);
         value = decoder.decode(buffer);
         needsEncodingFixup = false;
-      } catch (e) {
+      } catch {
         // TextDecoder constructor threw - unrecognized encoding.
       }
     }
@@ -207,7 +207,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
         } // else encoding is b or B - base64 (RFC 2047 section 4.1)
         try {
           text = atob(text);
-        } catch (e) {}
+        } catch {}
         return textdecode(charset, text);
       }
     );
