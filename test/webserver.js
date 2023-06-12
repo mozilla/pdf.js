@@ -90,7 +90,7 @@ WebServer.prototype = {
       // Windows paths cause issues in statFile and serverDirectoryIndex.
       // Converting to unix path would avoid platform checks in said functions.
       pathPart = pathPart.replaceAll("\\", "/");
-    } catch (ex) {
+    } catch {
       // If the URI cannot be decoded, a `URIError` is thrown. This happens for
       // malformed URIs such as `http://localhost:8888/%s%s` and should be
       // handled as a bad request.

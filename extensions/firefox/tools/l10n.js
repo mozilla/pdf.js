@@ -66,7 +66,7 @@
     if (element.dataset.l10nArgs) {
       try {
         args = JSON.parse(element.dataset.l10nArgs);
-      } catch (e) {
+      } catch {
         console.warn("[l10n] could not parse arguments for #" + key + "");
       }
     }
