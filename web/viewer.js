@@ -64,6 +64,7 @@ function getViewerConfiguration() {
       editorInkButton: document.getElementById("editorInk"),
       editorInkParamsToolbar: document.getElementById("editorInkParamsToolbar"),
       download: document.getElementById("download"),
+      customButton: document.getElementById("customButton")
     },
     secondaryToolbar: {
       toolbar: document.getElementById("secondaryToolbar"),

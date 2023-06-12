@@ -310,7 +310,7 @@ const defaultOptions = {
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   defaultOptions.defaultUrl = {
     /** @type {string} */
-    value: "compressed.tracemonkey-pldi-09.pdf",
+    value: "",
     kind: OptionKind.VIEWER,
   };
   defaultOptions.disablePreferences = {
@@ -320,7 +320,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   };
   defaultOptions.locale = {
     /** @type {string} */
-    value: navigator.language || "en-US",
+    value: navigator.language || "pt-BR",
     kind: OptionKind.VIEWER,
   };
   defaultOptions.sandboxBundleSrc = {

@@ -80,6 +80,15 @@ See https://github.com/adobe-type-tools/cmap-resources
 
     <script src="viewer.js" type="module-shim"></script>
 <!--#endif-->
+    
+    <!-- No cfaz fazer o import dos scripts abaixo e apagar os acima -->
+    
+    <!-- <link rel="resource" type="application/l10n" href="<%= asset_path('pdf_viewer/web/locale/locale.properties') %>">
+    <link rel="stylesheet" href="<%= asset_path('pdf_viewer/web/viewer.css') %>">
+
+    <script src="<%= asset_path('pdf_viewer/build/pdf.js') %>"></script>
+    <script src="<%= asset_path('pdf_viewer/build/pdf.worker.js') %>"></script>
+    <script src="<%= asset_path('pdf_viewer/web/viewer.js') %>"></script> -->
   </head>
 
   <body tabindex="1">
@@ -203,8 +212,8 @@ See https://github.com/adobe-type-tools/cmap-resources
               <span data-l10n-id="print_label">Print</span>
             </button>
 
-            <button id="secondaryDownload" class="secondaryToolbarButton visibleMediumView" title="Save" tabindex="53" data-l10n-id="save">
-              <span data-l10n-id="save_label">Save</span>
+            <button id="secondaryDownload" class="secondaryToolbarButton visibleMediumView" title="Download" tabindex="53" data-l10n-id="download">
+              <span data-l10n-id="download_label">Download</span>
             </button>
 
 <!--#if GENERIC-->
@@ -323,8 +332,8 @@ See https://github.com/adobe-type-tools/cmap-resources
                   <span data-l10n-id="print_label">Print</span>
                 </button>
 
-                <button id="download" class="toolbarButton hiddenMediumView" title="Save" tabindex="33" data-l10n-id="save">
-                  <span data-l10n-id="save_label">Save</span>
+                <button id="download" class="toolbarButton hiddenMediumView" title="Download" tabindex="33" data-l10n-id="download">
+                  <span data-l10n-id="download_label">Download</span>
                 </button>
 
                 <div class="verticalToolbarSeparator hiddenMediumView"></div>
@@ -352,10 +361,14 @@ See https://github.com/adobe-type-tools/cmap-resources
                   <div class="splitToolbarButtonSeparator"></div>
                   <button id="zoomIn" class="toolbarButton" title="Zoom In" tabindex="22" data-l10n-id="zoom_in">
                     <span data-l10n-id="zoom_in_label">Zoom In</span>
-                   </button>
+                  </button>
+                  <div class="splitToolbarButtonSeparator"></div>
+                  <button id="customButton" class="toolbarButton saveButton" title="Save" tabindex="23" data-l10n-id="save">
+                    Save
+                  </button>
                 </div>
                 <span id="scaleSelectContainer" class="dropdownToolbarButton">
-                  <select id="scaleSelect" title="Zoom" tabindex="23" data-l10n-id="zoom">
+                  <select id="scaleSelect" title="Zoom" tabindex="24" data-l10n-id="zoom">
                     <option id="pageAutoOption" title="" value="auto" selected="selected" data-l10n-id="page_scale_auto">Automatic Zoom</option>
                     <option id="pageActualOption" title="" value="page-actual" data-l10n-id="page_scale_actual">Actual Size</option>
                     <option id="pageFitOption" title="" value="page-fit" data-l10n-id="page_scale_fit">Page Fit</option>
@@ -489,5 +502,11 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#if GENERIC-->
     <input type="file" id="fileInput" class="hidden">
 <!--#endif-->
+
+    <!-- Esses inputs hidden abaixo devem ser descomentados quando forem ser utilizados no cfaz -->
+
+    <!-- <input type="hidden" id="archive_url" value="<%= @archive.download_url %>" class="hidden">
+    <input type="hidden" id="archive_put_url" value="<%= @archive.put_object_url(@archive.document.key, @archive.document.content_type) %>" class="hidden">
+    <input type="hidden" id="archive_id" value="<%= @archive.id %>" class="hidden"> -->
   </body>
 </html>

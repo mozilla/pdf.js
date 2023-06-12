@@ -166,7 +166,7 @@
   content: "";
   width: 100%;
   height: 100%;
-  background: url("images/loading-icon.gif") center no-repeat;
+  background: url("pdf_viewer/web/images/loading-icon.gif") center no-repeat;
   display: none;
   /* Using a delay with background-image doesn't work,
      consequently we use the display. */

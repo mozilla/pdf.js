@@ -1034,6 +1034,92 @@ const PDFViewerApplication = {
     throw new Error("PDF document not downloaded.");
   },
 
+  /**
+   * @private
+   */
+  async _sendFileToStorage(url, file) {
+    return new Promise((resolve, reject) => {
+      let xhr = new XMLHttpRequest();
+      xhr.open('PUT', url, true);
+  
+      xhr.onload = function () {
+        if (xhr.status === 200) {
+          resolve();
+        } else {
+          reject(new Error("Não foi possível fazer o upload do arquivo."));
+        }
+      };
+  
+      xhr.onerror = function (e) {
+        reject(e);
+      };
+  
+      xhr.setRequestHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      xhr.setRequestHeader('Content-Type', file.type);
+      xhr.send(file);
+    });
+  },
+
+  /**
+   * @private
+   */
+  async _updateArchiveCfaz(archive_id) {
+    return new Promise((resolve, reject) => {
+      let xhr = new XMLHttpRequest();
+      xhr.open('PUT', `/archives/${archive_id}.json`, true);
+  
+      xhr.onload = function () {
+        if (xhr.status === 200) {
+          resolve();
+        } else {
+          reject(new Error("Não foi possível atualizar o arquivo."));
+        }
+      };
+  
+      xhr.onerror = function (e) {
+        reject(e);
+      };
+
+      xhr.send();
+    });
+  },
+
+  async customButton(){
+    if (this._saveInProgress) {
+      return;
+    }
+    this._saveInProgress = true;
+    await this.pdfScriptingManager.dispatchWillSave();
+
+    const url = this._downloadUrl,
+      filename = this._docFilename;
+    try {
+      this._ensureDownloadComplete();
+
+      const data = await this.pdfDocument.saveDocument();
+      const blob = new Blob([data], { type: "application/pdf" });
+
+      await this._sendFileToStorage(document.getElementById('archive_put_url')?.value, blob)
+      await this._updateArchiveCfaz(document.getElementById('archive_id')?.value)      
+      alert('upaoad')
+    } catch (reason) {
+      // When the PDF document isn't ready, or the PDF file is still
+      // downloading, simply fallback to a "regular" download.
+      console.error(`Error when saving the document: ${reason.message}`);
+      // await this.download();
+    } finally {
+      await this.pdfScriptingManager.dispatchDidSave();
+      this._saveInProgress = false;
+    }
+
+    if (this._hasAnnotationEditors) {
+      this.externalServices.reportTelemetry({
+        type: "editing",
+        data: { type: "save" },
+      });
+    }
+  },
+
   async download(options = {}) {
     const url = this._downloadUrl,
       filename = this._docFilename;
@@ -1916,6 +2002,8 @@ const PDFViewerApplication = {
         webViewerAnnotationEditorStatesChanged
       );
     }
+
+    eventBus._on("customButton", webViewerCustomButton);
   },
 
   bindWindowEvents() {
@@ -2044,6 +2132,8 @@ const PDFViewerApplication = {
       eventBus._off("openfile", webViewerOpenFile);
     }
 
+    eventBus._off("customButton", webViewerCustomButton);
+
     _boundEvents.beforePrint = null;
     _boundEvents.afterPrint = null;
   },
@@ -2165,9 +2255,9 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       // Removing of the following line will not guarantee that the viewer will
       // start accepting URLs from foreign origin -- CORS headers on the remote
       // server must be properly configured.
-      if (fileOrigin !== viewerOrigin) {
-        throw new Error("file origin does not match viewer's");
-      }
+      // if (fileOrigin !== viewerOrigin) {
+      //   throw new Error("file origin does not match viewer's");
+      // }
     } catch (ex) {
       PDFViewerApplication.l10n.get("loading_error").then(msg => {
         PDFViewerApplication._documentError(msg, { message: ex?.message });
@@ -2211,9 +2301,10 @@ function webViewerInitialized() {
   const { appConfig, eventBus, l10n } = PDFViewerApplication;
   let file;
   if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-    const queryString = document.location.search.substring(1);
-    const params = parseQueryString(queryString);
-    file = params.get("file") ?? AppOptions.get("defaultUrl");
+    const achiveUrl = document.getElementById('archive_url')?.value;
+
+    file = achiveUrl ?? AppOptions.get("defaultUrl");
+
     validateFileURL(file);
   } else if (PDFJSDev.test("MOZCENTRAL")) {
     file = window.location.href;
@@ -3290,6 +3381,10 @@ function beforeUnload(evt) {
 
 function webViewerAnnotationEditorStatesChanged(data) {
   PDFViewerApplication.externalServices.updateEditorStates(data);
+}
+
+function webViewerCustomButton() {
+  PDFViewerApplication.customButton();
 }
 
 /* Abstract factory for the print service. */
