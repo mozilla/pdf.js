@@ -24,7 +24,6 @@ class PDFSaveCfazDialog {
     this.l10n = l10n;
 
     this.#reset();
-    this.#updateUI();
 
     // Bind the event listener for the Close button.
     this.closeButton.addEventListener("click", this.close.bind(this));
@@ -63,6 +62,9 @@ class PDFSaveCfazDialog {
    * Open the document properties overlay.
    */
   async open() {
+    this.#reset();
+    this.#updateUI();
+
     await Promise.all([
       this.overlayManager.open(this.dialog),
     ]);
