@@ -24,6 +24,7 @@ class PDFSaveCfazDialog {
     this.l10n = l10n;
 
     this.#reset();
+    this.#updateUI();
 
     // Bind the event listener for the Close button.
     this.closeButton.addEventListener("click", this.close.bind(this));
@@ -55,7 +56,7 @@ class PDFSaveCfazDialog {
 
   #reset() {
     this.closeButtonToggle = false;
-    this.messageContent = "";
+    this.messageContent = "Enviando arquivo…";
   }
 
   /**
@@ -82,6 +83,8 @@ class PDFSaveCfazDialog {
 
     if(this.closeButtonToggle){
         this.closeButton.parentElement.style = 'display: block'
+    }else{
+        this.closeButton.parentElement.style = 'display: none'
     }
   }
 }
