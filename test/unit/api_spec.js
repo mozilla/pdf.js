@@ -3204,6 +3204,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const renderTask = pdfPage.render({
         canvasContext: canvasAndCtx.context,
         viewport,
+        background: "#FF0000", // See comment below.
       });
       expect(renderTask instanceof RenderTask).toEqual(true);
 
@@ -3225,6 +3226,11 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       }
       await renderTask.promise;
       expect(renderTask.separateAnnots).toEqual(false);
+
+      // Use the red background-color to, more easily, tell that the page was
+      // actually rendered successfully.
+      const { data } = canvasAndCtx.context.getImageData(0, 0, 1, 1);
+      expect(data).toEqual(new Uint8ClampedArray([255, 0, 0, 255]));
 
       CanvasFactory.destroy(canvasAndCtx);
       await loadingTask.destroy();
