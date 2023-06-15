@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-/** @typedef {import("./editor.js").AnnotationEditor} AnnotationEditor */
 // eslint-disable-next-line max-len
 /** @typedef {import("./tools.js").AnnotationEditorUIManager} AnnotationEditorUIManager */
 /** @typedef {import("../display_utils.js").PageViewport} PageViewport */
@@ -24,6 +23,7 @@
 /** @typedef {import("../src/display/annotation_layer.js").AnnotationLayer} AnnotationLayer */
 
 import { AnnotationEditorType, FeatureTest } from "../../shared/util.js";
+import { AnnotationEditor } from "./editor.js";
 import { bindEvents } from "./tools.js";
 import { FreeTextEditor } from "./freetext.js";
 import { InkEditor } from "./ink.js";
@@ -66,6 +66,8 @@ class AnnotationEditorLayer {
 
   #isCleaningUp = false;
 
+  #isDisabling = false;
+
   #uiManager;
 
   static _initialized = false;
@@ -86,6 +88,7 @@ class AnnotationEditorLayer {
     this.div = options.div;
     this.#accessibilityManager = options.accessibilityManager;
     this.#annotationLayer = options.annotationLayer;
+    this.viewport = options.viewport;
 
     this.#uiManager.addLayer(this);
   }
@@ -175,18 +178,33 @@ class AnnotationEditorLayer {
    */
   enable() {
     this.div.style.pointerEvents = "auto";
-    if (this.#annotationLayer) {
-      const editables = this.#annotationLayer.getEditableAnnotations();
-      for (const editable of editables) {
-        const editor = this.deserialize(editable);
-        if (!editor) {
-          continue;
-        }
-        editable.hide();
-        this.addOrRebuild(editor);
+    const annotationElementIds = new Set();
+    for (const editor of this.#editors.values()) {
+      editor.enableEditing();
+      if (editor.annotationElementId) {
+        annotationElementIds.add(editor.annotationElementId);
       }
     }
-    for (const editor of this.#editors.values()) {
+
+    if (!this.#annotationLayer) {
+      return;
+    }
+
+    const editables = this.#annotationLayer.getEditableAnnotations();
+    for (const editable of editables) {
+      // The element must be hidden whatever its state is.
+      editable.hide();
+      if (this.#uiManager.isDeletedAnnotationElement(editable.data.id)) {
+        continue;
+      }
+      if (annotationElementIds.has(editable.data.id)) {
+        continue;
+      }
+      const editor = this.deserialize(editable);
+      if (!editor) {
+        continue;
+      }
+      this.addOrRebuild(editor);
       editor.enableEditing();
     }
   }
@@ -195,18 +213,25 @@ class AnnotationEditorLayer {
    * Disable editor creation.
    */
   disable() {
+    this.#isDisabling = true;
     this.div.style.pointerEvents = "none";
     for (const editor of this.#editors.values()) {
       editor.disableEditing();
-      if (!editor.hasElementChanged()) {
-        editor.annotationElement.show();
-        editor.remove();
+      if (!editor.annotationElementId || editor.serialize() !== null) {
+        continue;
       }
+      this.getEditableAnnotation(editor.annotationElementId)?.show();
+      editor.remove();
     }
     this.#cleanup();
     if (this.isEmpty) {
       this.div.hidden = true;
     }
+    this.#isDisabling = false;
+  }
+
+  getEditableAnnotation(id) {
+    return this.#annotationLayer?.getEditableAnnotation(id) || null;
   }
 
   /**
@@ -234,11 +259,22 @@ class AnnotationEditorLayer {
 
   attach(editor) {
     this.#editors.set(editor.id, editor);
+    const { annotationElementId } = editor;
+    if (
+      annotationElementId &&
+      this.#uiManager.isDeletedAnnotationElement(annotationElementId)
+    ) {
+      this.#uiManager.removeDeletedAnnotationElement(editor);
+    }
   }
 
   detach(editor) {
     this.#editors.delete(editor.id);
     this.#accessibilityManager?.removePointerInTextLayer(editor.contentDiv);
+
+    if (!this.#isDisabling && editor.annotationElementId) {
+      this.#uiManager.addDeletedAnnotationElement(editor);
+    }
   }
 
   /**
@@ -249,8 +285,8 @@ class AnnotationEditorLayer {
     // Since we can undo a removal we need to keep the
     // parent property as it is, so don't null it!
 
-    this.#uiManager.removeEditor(editor);
     this.detach(editor);
+    this.#uiManager.removeEditor(editor);
     editor.div.style.display = "none";
     setTimeout(() => {
       // When the div is removed from DOM the focus can move on the
@@ -278,6 +314,12 @@ class AnnotationEditorLayer {
   #changeParent(editor) {
     if (editor.parent === this) {
       return;
+    }
+
+    if (editor.annotationElementId) {
+      this.#uiManager.addDeletedAnnotationElement(editor.annotationElementId);
+      AnnotationEditor.deleteAnnotationElement(editor);
+      editor.annotationElementId = null;
     }
 
     this.attach(editor);
