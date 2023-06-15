@@ -2008,6 +2008,73 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("edit and write an existing annotation, save the pdf and check that the Annot array doesn't contain dup entries", async function () {
+      let loadingTask = getDocument(buildGetDocumentParams("issue14438.pdf"));
+      let pdfDoc = await loadingTask.promise;
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+        annotationType: AnnotationEditorType.FREETEXT,
+        rect: [12, 34, 56, 78],
+        rotation: 0,
+        fontSize: 10,
+        color: [0, 0, 0],
+        value: "Hello PDF.js World!",
+        pageIndex: 0,
+        id: "10R",
+      });
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_1", {
+        annotationType: AnnotationEditorType.FREETEXT,
+        rect: [12, 34, 56, 78],
+        rotation: 0,
+        fontSize: 10,
+        color: [0, 0, 0],
+        value: "Hello PDF.js World!",
+        pageIndex: 0,
+      });
+
+      const data = await pdfDoc.saveDocument();
+      await loadingTask.destroy();
+
+      loadingTask = getDocument(data);
+      pdfDoc = await loadingTask.promise;
+      const annotations = await pdfDoc.getAnnotArray(0);
+
+      expect(annotations).toEqual([
+        "4R",
+        "10R",
+        "17R",
+        "20R",
+        "21R",
+        "22R",
+        "25R",
+        "28R",
+        "29R",
+        "30R",
+        "33R",
+        "36R",
+        "37R",
+        "42R",
+        "43R",
+        "44R",
+        "47R",
+        "50R",
+        "51R",
+        "54R",
+        "55R",
+        "58R",
+        "59R",
+        "62R",
+        "63R",
+        "66R",
+        "69R",
+        "72R",
+        "75R",
+        "78R",
+        "140R",
+      ]);
+
+      await loadingTask.destroy();
+    });
+
     describe("Cross-origin", function () {
       let loadingTask;
       function _checkCanLoad(expectSuccess, filename, options) {
