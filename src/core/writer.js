@@ -14,7 +14,7 @@
  */
 
 import { bytesToString, info, stringToBytes, warn } from "../shared/util.js";
-import { Dict, Name, Ref } from "./primitives.js";
+import { Dict, isName, Name, Ref } from "./primitives.js";
 import {
   escapePDFName,
   escapeString,
@@ -49,28 +49,29 @@ async function writeStream(stream, buffer, transform) {
   if (transform !== null) {
     string = transform.encryptString(string);
   }
+  const { dict } = stream;
 
   // eslint-disable-next-line no-undef
   if (typeof CompressionStream === "undefined") {
-    stream.dict.set("Length", string.length);
-    await writeDict(stream.dict, buffer, transform);
+    dict.set("Length", string.length);
+    await writeDict(dict, buffer, transform);
     buffer.push(" stream\n", string, "\nendstream");
     return;
   }
 
-  const filter = await stream.dict.getAsync("Filter");
-  const flateDecode = Name.get("FlateDecode");
+  const filter = await dict.getAsync("Filter");
+  const params = await dict.getAsync("DecodeParms");
 
-  // If the string is too small there is no real benefit
-  // in compressing it.
+  const filterZero = Array.isArray(filter)
+    ? await dict.xref.fetchIfRefAsync(filter[0])
+    : filter;
+  const isFilterZeroFlateDecode = isName(filterZero, "FlateDecode");
+
+  // If the string is too small there is no real benefit in compressing it.
   // The number 256 is arbitrary, but it should be reasonable.
   const MIN_LENGTH_FOR_COMPRESSING = 256;
 
-  if (
-    string.length >= MIN_LENGTH_FOR_COMPRESSING ||
-    (Array.isArray(filter) && filter.includes(flateDecode)) ||
-    (filter instanceof Name && filter.name === flateDecode.name)
-  ) {
+  if (string.length >= MIN_LENGTH_FOR_COMPRESSING || isFilterZeroFlateDecode) {
     try {
       const byteArray = stringToBytes(string);
       // eslint-disable-next-line no-undef
@@ -83,25 +84,32 @@ async function writeStream(stream, buffer, transform) {
       const buf = await new Response(cs.readable).arrayBuffer();
       string = bytesToString(new Uint8Array(buf));
 
-      if (Array.isArray(filter)) {
-        if (!filter.includes(flateDecode)) {
-          filter.push(flateDecode);
+      let newFilter, newParams;
+      if (!filter) {
+        newFilter = Name.get("FlateDecode");
+      } else if (!isFilterZeroFlateDecode) {
+        newFilter = Array.isArray(filter)
+          ? [Name.get("FlateDecode"), ...filter]
+          : [Name.get("FlateDecode"), filter];
+        if (params) {
+          newParams = Array.isArray(params)
+            ? [null, ...params]
+            : [null, params];
         }
-      } else if (!filter) {
-        stream.dict.set("Filter", flateDecode);
-      } else if (
-        !(filter instanceof Name) ||
-        filter.name !== flateDecode.name
-      ) {
-        stream.dict.set("Filter", [filter, flateDecode]);
+      }
+      if (newFilter) {
+        dict.set("Filter", newFilter);
+      }
+      if (newParams) {
+        dict.set("DecodeParms", newParams);
       }
     } catch (ex) {
       info(`writeStream - cannot compress data: "${ex}".`);
     }
   }
 
-  stream.dict.set("Length", string.length);
-  await writeDict(stream.dict, buffer, transform);
+  dict.set("Length", string.length);
+  await writeDict(dict, buffer, transform);
   buffer.push(" stream\n", string, "\nendstream");
 }
 
