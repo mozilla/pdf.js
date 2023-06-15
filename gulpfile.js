@@ -594,7 +594,7 @@ function checkFile(filePath) {
   try {
     const stat = fs.lstatSync(filePath);
     return stat.isFile();
-  } catch (e) {
+  } catch {
     return false;
   }
 }
@@ -603,7 +603,7 @@ function checkDir(dirPath) {
   try {
     const stat = fs.lstatSync(dirPath);
     return stat.isDirectory();
-  } catch (e) {
+  } catch {
     return false;
   }
 }

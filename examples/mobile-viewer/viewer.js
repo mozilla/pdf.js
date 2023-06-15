@@ -174,7 +174,7 @@ const PDFViewerApplication = {
     let title = pdfjsLib.getFilenameFromUrl(url) || url;
     try {
       title = decodeURIComponent(title);
-    } catch (e) {
+    } catch {
       // decodeURIComponent may throw URIError,
       // fall back to using the unprocessed url in that case
     }

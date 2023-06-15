@@ -644,7 +644,7 @@ class XFAObject {
     for (const $symbol of Object.getOwnPropertySymbols(this)) {
       try {
         clone[$symbol] = this[$symbol];
-      } catch (_) {
+      } catch {
         shadow(clone, $symbol, this[$symbol]);
       }
     }

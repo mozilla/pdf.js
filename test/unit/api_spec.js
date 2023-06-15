@@ -168,7 +168,7 @@ describe("api", function () {
 
         // Shouldn't get here.
         expect(false).toEqual(true);
-      } catch (reason) {
+      } catch {
         expect(true).toEqual(true);
         await destroyed;
       }

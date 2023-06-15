@@ -549,7 +549,7 @@ describe("CipherTransformFactory", function () {
     try {
       const factory = new CipherTransformFactory(dict, fileId, password);
       expect("createCipherTransform" in factory).toEqual(true);
-    } catch (ex) {
+    } catch {
       // Shouldn't get here.
       expect(false).toEqual(true);
     }

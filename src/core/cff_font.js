@@ -28,7 +28,7 @@ class CFFFont {
     this.seacs = this.cff.seacs;
     try {
       this.data = compiler.compile();
-    } catch (e) {
+    } catch {
       warn("Failed to compile font " + properties.loadedName);
       // There may have just been an issue with the compiler, set the data
       // anyway and hope the font loaded.

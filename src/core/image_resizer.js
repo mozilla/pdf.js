@@ -129,7 +129,7 @@ class ImageResizer {
       const opacity = ctx.getImageData(0, 0, 1, 1).data[3];
       canvas.width = canvas.height = 1;
       return opacity !== 0;
-    } catch (e) {
+    } catch {
       return false;
     }
   }

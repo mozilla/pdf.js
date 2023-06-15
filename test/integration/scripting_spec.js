@@ -471,7 +471,7 @@ describe("Interaction", () => {
             await page._client.send("Page.setDownloadBehavior", {
               behavior: "deny",
             });
-          } catch (_) {}
+          } catch {}
           await clearInput(page, getSelector("47R"));
           await page.evaluate(_ => {
             window.document.activeElement.blur();
