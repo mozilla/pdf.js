@@ -993,6 +993,29 @@ describe("FreeText Editor", () => {
     });
   });
 
+  describe("FreeText (update existing but not empty ones)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue14438.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must update an existing annotation but not an empty one", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorFreeText");
+
+          const editorIds = await getEditors(page, "freeText");
+          expect(editorIds.length).withContext(`In ${browserName}`).toEqual(1);
+        })
+      );
+    });
+  });
+
   describe("FreeText (delete existing)", () => {
     let pages;
 
