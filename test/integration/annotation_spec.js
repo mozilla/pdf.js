@@ -403,4 +403,32 @@ describe("ResetForm action", () => {
       );
     });
   });
+
+  describe("FreeText widget", () => {
+    describe("issue14438.pdf", () => {
+      let pages;
+
+      beforeAll(async () => {
+        pages = await loadAndWait(
+          "issue14438.pdf",
+          "[data-annotation-id='10R']"
+        );
+      });
+
+      afterAll(async () => {
+        await closePages(pages);
+      });
+
+      it("must check that the annotation has a popup", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            await page.click("[data-annotation-id='10R']");
+            await page.waitForFunction(
+              `document.querySelector("[data-annotation-id='10R'] .popupWrapper").hidden !== undefined`
+            );
+          })
+        );
+      });
+    });
+  });
 });
