@@ -537,7 +537,9 @@ class FreeTextEditor extends AnnotationEditor {
           id,
         },
         textContent,
-        page: { pageNumber },
+        parent: {
+          page: { pageNumber },
+        },
       } = data;
       if (!textContent || textContent.length === 0) {
         // Empty annotation.
