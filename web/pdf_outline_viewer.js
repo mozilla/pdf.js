@@ -341,7 +341,7 @@ class PDFOutlineViewer extends BaseTreeViewer {
                   return null; // The document was closed while the data resolved.
                 }
                 this.linkService.cachePageRef(pageNumber, destRef);
-              } catch (ex) {
+              } catch {
                 // Invalid page reference, ignore it and continue parsing.
               }
             }

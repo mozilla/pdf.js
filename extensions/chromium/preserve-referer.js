@@ -62,7 +62,7 @@ var extraInfoSpecWithHeaders; // = ['requestHeaders', 'extraHeaders']
   }
   try {
     registerListener(["requestHeaders", "extraHeaders"]);
-  } catch (e) {
+  } catch {
     // "extraHeaders" is not supported in Chrome 71 and earlier.
     registerListener(["requestHeaders"]);
   }

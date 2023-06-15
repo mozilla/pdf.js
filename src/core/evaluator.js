@@ -1498,7 +1498,7 @@ class PartialEvaluator {
           );
           operatorList.addOp(fn, tilingPatternIR);
           return undefined;
-        } catch (ex) {
+        } catch {
           // Handle any errors during normal TilingPattern parsing.
         }
       }

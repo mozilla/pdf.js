@@ -3045,7 +3045,7 @@ class Font {
         cff.duplicateFirstGlyph();
         const compiler = new CFFCompiler(cff);
         tables["CFF "].data = compiler.compile();
-      } catch (e) {
+      } catch {
         warn("Failed to compile font " + properties.loadedName);
       }
     }

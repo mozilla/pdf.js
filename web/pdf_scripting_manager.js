@@ -487,7 +487,7 @@ class PDFScriptingManager {
 
     try {
       await this._scripting.destroySandbox();
-    } catch (ex) {}
+    } catch {}
 
     for (const [name, listener] of this._internalEvents) {
       this._eventBus._off(name, listener);

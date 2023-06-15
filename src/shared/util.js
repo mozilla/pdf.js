@@ -434,7 +434,7 @@ function createValidAbsoluteUrl(url, baseUrl = null, options = null) {
       if (options.tryConvertEncoding) {
         try {
           url = stringToUTF8String(url);
-        } catch (ex) {}
+        } catch {}
       }
     }
 
@@ -442,7 +442,7 @@ function createValidAbsoluteUrl(url, baseUrl = null, options = null) {
     if (_isValidProtocol(absoluteUrl)) {
       return absoluteUrl;
     }
-  } catch (ex) {
+  } catch {
     /* `new URL()` will throw on incorrect data. */
   }
   return null;
@@ -605,7 +605,7 @@ function isEvalSupported() {
   try {
     new Function(""); // eslint-disable-line no-new, no-new-func
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
 }

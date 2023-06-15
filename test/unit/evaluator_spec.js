@@ -368,7 +368,7 @@ describe("evaluator", function () {
 
         // Shouldn't get here.
         expect(false).toEqual(true);
-      } catch (_) {
+      } catch {
         expect(!!result.fnArray && !!result.argsArray).toEqual(true);
         expect(result.fnArray.length).toEqual(0);
       }
@@ -389,7 +389,7 @@ describe("evaluator", function () {
 
         // Shouldn't get here.
         expect(false).toEqual(true);
-      } catch (_) {
+      } catch {
         expect(true).toEqual(true);
       }
     });

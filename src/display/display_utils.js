@@ -648,7 +648,7 @@ function getPdfFilenameFromUrl(url, defaultFilename = "document.pdf") {
         suggestedFilename = reFilename.exec(
           decodeURIComponent(suggestedFilename)
         )[0];
-      } catch (ex) {
+      } catch {
         // Possible (extremely rare) errors:
         // URIError "Malformed URI", e.g. for "%AA.pdf"
         // TypeError "null has no properties", e.g. for "%2F.pdf"
@@ -702,7 +702,7 @@ function isValidFetchUrl(url, baseUrl) {
     const { protocol } = baseUrl ? new URL(url, baseUrl) : new URL(url);
     // The Fetch API only supports the http/https protocols, and not file/ftp.
     return protocol === "http:" || protocol === "https:";
-  } catch (ex) {
+  } catch {
     return false; // `new URL()` will throw on incorrect data.
   }
 }
