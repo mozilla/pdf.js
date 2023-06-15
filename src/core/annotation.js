@@ -1318,6 +1318,7 @@ class MarkupAnnotation extends Annotation {
       this.data.replyType =
         rt instanceof Name ? rt.name : AnnotationReplyType.REPLY;
     }
+    let popupRef = null;
 
     if (this.data.replyType === AnnotationReplyType.GROUP) {
       // Subordinate annotations in a group should inherit
@@ -1344,7 +1345,7 @@ class MarkupAnnotation extends Annotation {
         this.data.modificationDate = this.modificationDate;
       }
 
-      this.data.hasPopup = parent.has("Popup");
+      popupRef = parent.getRaw("Popup");
 
       if (!parent.has("C")) {
         // Fall back to the default background color.
@@ -1359,13 +1360,15 @@ class MarkupAnnotation extends Annotation {
       this.setCreationDate(dict.get("CreationDate"));
       this.data.creationDate = this.creationDate;
 
-      this.data.hasPopup = dict.has("Popup");
+      popupRef = dict.getRaw("Popup");
 
       if (!dict.has("C")) {
         // Fall back to the default background color.
         this.data.color = null;
       }
     }
+
+    this.data.popupRef = popupRef instanceof Ref ? popupRef.toString() : null;
 
     if (dict.has("RC")) {
       this.data.richText = XFAFactory.getRichTextAsHtml(dict.get("RC"));
@@ -3496,6 +3499,12 @@ class PopupAnnotation extends Annotation {
 
     const { dict } = params;
     this.data.annotationType = AnnotationType.POPUP;
+    if (
+      this.data.rect[0] === this.data.rect[2] ||
+      this.data.rect[1] === this.data.rect[3]
+    ) {
+      this.data.rect = null;
+    }
 
     let parentItem = dict.get("Parent");
     if (!parentItem) {
@@ -3503,17 +3512,11 @@ class PopupAnnotation extends Annotation {
       return;
     }
 
-    const parentSubtype = parentItem.get("Subtype");
-    this.data.parentType =
-      parentSubtype instanceof Name ? parentSubtype.name : null;
-    const rawParent = dict.getRaw("Parent");
-    this.data.parentId = rawParent instanceof Ref ? rawParent.toString() : null;
-
     const parentRect = parentItem.getArray("Rect");
     if (Array.isArray(parentRect) && parentRect.length === 4) {
       this.data.parentRect = Util.normalizeRect(parentRect);
     } else {
-      this.data.parentRect = [0, 0, 0, 0];
+      this.data.parentRect = null;
     }
 
     const rt = parentItem.get("RT");
@@ -3557,6 +3560,8 @@ class PopupAnnotation extends Annotation {
     if (parentItem.has("RC")) {
       this.data.richText = XFAFactory.getRichTextAsHtml(parentItem.get("RC"));
     }
+
+    this.data.open = !!dict.get("Open");
   }
 }
 
@@ -4220,7 +4225,7 @@ class HighlightAnnotation extends MarkupAnnotation {
         });
       }
     } else {
-      this.data.hasPopup = false;
+      this.data.popupRef = null;
     }
   }
 }
@@ -4258,7 +4263,7 @@ class UnderlineAnnotation extends MarkupAnnotation {
         });
       }
     } else {
-      this.data.hasPopup = false;
+      this.data.popupRef = null;
     }
   }
 }
@@ -4302,7 +4307,7 @@ class SquigglyAnnotation extends MarkupAnnotation {
         });
       }
     } else {
-      this.data.hasPopup = false;
+      this.data.popupRef = null;
     }
   }
 }
@@ -4341,7 +4346,7 @@ class StrikeOutAnnotation extends MarkupAnnotation {
         });
       }
     } else {
-      this.data.hasPopup = false;
+      this.data.popupRef = null;
     }
   }
 }

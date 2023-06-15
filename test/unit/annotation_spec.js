@@ -623,7 +623,7 @@ describe("annotation", function () {
       expect(data.creationDate).toEqual("D:20180423");
       expect(data.modificationDate).toEqual("D:20190423");
       expect(data.color).toEqual(new Uint8ClampedArray([0, 0, 255]));
-      expect(data.hasPopup).toEqual(true);
+      expect(data.popupRef).toEqual("820R");
     });
 
     it("should parse IRT/RT for a reply type", async function () {
@@ -678,7 +678,7 @@ describe("annotation", function () {
       expect(data.creationDate).toEqual("D:20180523");
       expect(data.modificationDate).toEqual("D:20190523");
       expect(data.color).toEqual(new Uint8ClampedArray([102, 102, 102]));
-      expect(data.hasPopup).toEqual(false);
+      expect(data.popupRef).toEqual(null);
     });
   });
 

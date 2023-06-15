@@ -129,12 +129,13 @@ class AnnotationLayerBuilder {
       div,
       accessibilityManager: this._accessibilityManager,
       annotationCanvasMap: this._annotationCanvasMap,
+      l10n: this.l10n,
+      page: this.pdfPage,
+      viewport: viewport.clone({ dontFlip: true }),
     });
 
     this.annotationLayer.render({
-      viewport: viewport.clone({ dontFlip: true }),
       annotations,
-      page: this.pdfPage,
       imageResourcesPath: this.imageResourcesPath,
       renderForms: this.renderForms,
       linkService: this.linkService,
