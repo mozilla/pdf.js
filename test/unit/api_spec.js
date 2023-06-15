@@ -1979,7 +1979,7 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
-    it("write a a new annotation, save the pdf and check that the prev entry in xref stream is correct", async function () {
+    it("write a new annotation, save the pdf and check that the prev entry in xref stream is correct", async function () {
       if (isNodeJS) {
         pending("Linked test-cases are not supported in Node.js.");
       }
