@@ -780,6 +780,11 @@ class PDFDocumentProxy {
           return this._transport.getXRefPrevValue();
         },
       });
+      Object.defineProperty(this, "getAnnotArray", {
+        value: pageIndex => {
+          return this._transport.getAnnotArray(pageIndex);
+        },
+      });
     }
   }
 
@@ -2403,6 +2408,13 @@ class WorkerTransport {
       Object.defineProperty(this, "getXRefPrevValue", {
         value: () => {
           return this.messageHandler.sendWithPromise("GetXRefPrevValue", null);
+        },
+      });
+      Object.defineProperty(this, "getAnnotArray", {
+        value: pageIndex => {
+          return this.messageHandler.sendWithPromise("GetAnnotArray", {
+            pageIndex,
+          });
         },
       });
     }

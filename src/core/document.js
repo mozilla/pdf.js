@@ -258,7 +258,7 @@ class Page {
     );
   }
 
-  #replaceIdByRef(annotations, deletedAnnotations) {
+  #replaceIdByRef(annotations, deletedAnnotations, existingAnnotations) {
     for (const annotation of annotations) {
       if (annotation.id) {
         const ref = Ref.fromString(annotation.id);
@@ -270,6 +270,7 @@ class Page {
           deletedAnnotations.put(ref);
           continue;
         }
+        existingAnnotations?.put(ref);
         annotation.ref = ref;
         delete annotation.id;
       }
@@ -295,7 +296,8 @@ class Page {
     });
 
     const deletedAnnotations = new RefSet();
-    this.#replaceIdByRef(annotations, deletedAnnotations);
+    const existingAnnotations = new RefSet();
+    this.#replaceIdByRef(annotations, deletedAnnotations, existingAnnotations);
 
     const pageDict = this.pageDict;
     const annotationsArray = this.annotations.filter(
@@ -308,7 +310,10 @@ class Page {
     );
 
     for (const { ref } of newData.annotations) {
-      annotationsArray.push(ref);
+      // Don't add an existing annotation ref to the annotations array.
+      if (ref instanceof Ref && !existingAnnotations.has(ref)) {
+        annotationsArray.push(ref);
+      }
     }
 
     const savedDict = pageDict.get("Annots");
@@ -431,7 +436,7 @@ class Page {
       const newAnnotations = newAnnotationsByPage.get(this.pageIndex);
       if (newAnnotations) {
         deletedAnnotations = new RefSet();
-        this.#replaceIdByRef(newAnnotations, deletedAnnotations);
+        this.#replaceIdByRef(newAnnotations, deletedAnnotations, null);
         newAnnotationsPromise = AnnotationFactory.printNewAnnotations(
           partialEvaluator,
           task,
