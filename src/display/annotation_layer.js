@@ -100,6 +100,8 @@ class AnnotationElementFactory {
             return new PushButtonWidgetAnnotationElement(parameters);
           case "Ch":
             return new ChoiceWidgetAnnotationElement(parameters);
+          case "Sig":
+            return new SignatureWidgetAnnotationElement(parameters);
         }
         return new WidgetAnnotationElement(parameters);
 
@@ -1370,6 +1372,12 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
 
     this.container.append(element);
     return this.container;
+  }
+}
+
+class SignatureWidgetAnnotationElement extends WidgetAnnotationElement {
+  constructor(parameters) {
+    super(parameters, { isRenderable: !!parameters.data.hasOwnCanvas });
   }
 }
 
