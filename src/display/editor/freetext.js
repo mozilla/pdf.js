@@ -539,6 +539,10 @@ class FreeTextEditor extends AnnotationEditor {
         textContent,
         page: { pageNumber },
       } = data;
+      if (!textContent || textContent.length === 0) {
+        // Empty annotation.
+        return null;
+      }
       initialData = data = {
         annotationType: AnnotationEditorType.FREETEXT,
         color: Array.from(fontColor),
