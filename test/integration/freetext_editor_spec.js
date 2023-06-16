@@ -1082,4 +1082,38 @@ describe("FreeText Editor", () => {
       );
     });
   });
+
+  describe("FreeText (copy/paste existing)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("freetexts.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must copy and paste an existing annotation", async () => {
+      // Run sequentially to avoid clipboard issues.
+      for (const [browserName, page] of pages) {
+        await page.click("#editorFreeText");
+
+        const editorIds = await getEditors(page, "freeText");
+        expect(editorIds.length).withContext(`In ${browserName}`).toEqual(6);
+
+        const editorRect = await page.$eval(getEditorSelector(1), el => {
+          const { x, y, width, height } = el.getBoundingClientRect();
+          return { x, y, width, height };
+        });
+        await page.mouse.click(
+          editorRect.x + editorRect.width / 2,
+          editorRect.y + editorRect.height / 2
+        );
+
+        await copyPaste(page);
+        await waitForStorageEntries(page, 7);
+      }
+    });
+  });
 });

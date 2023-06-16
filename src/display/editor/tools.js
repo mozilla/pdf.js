@@ -555,11 +555,8 @@ class AnnotationEditorUIManager {
 
     const editors = [];
     for (const editor of this.#selectedEditors) {
-      if (!editor.isEmpty()) {
-        const serialized = editor.serialize();
-        // Remove the id from the serialized data because it mustn't be linked
-        // to an existing annotation.
-        delete serialized.id;
+      const serialized = editor.serialize(/* isForCopying = */ true);
+      if (serialized) {
         editors.push(serialized);
       }
     }

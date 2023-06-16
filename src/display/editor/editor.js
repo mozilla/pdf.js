@@ -493,8 +493,9 @@ class AnnotationEditor {
    * new annotation to add to the pdf document.
    *
    * To implement in subclasses.
+   * @param {boolean} isForCopying
    */
-  serialize() {
+  serialize(_isForCopying = false) {
     unreachable("An editor must be serializable");
   }
 
