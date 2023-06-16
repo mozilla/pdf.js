@@ -2075,6 +2075,49 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("write a new annotation, save the pdf and check that the text content is correct", async function () {
+      // This test helps to check that the text stream is correctly compressed
+      // when saving.
+      const manifesto = `
+      The Mozilla Manifesto Addendum
+      Pledge for a Healthy Internet
+      
+      The open, global internet is the most powerful communication and collaboration resource we have ever seen.
+      It embodies some of our deepest hopes for human progress.
+      It enables new opportunities for learning, building a sense of shared humanity, and solving the pressing problems
+      facing people everywhere.
+      
+      Over the last decade we have seen this promise fulfilled in many ways.
+      We have also seen the power of the internet used to magnify divisiveness,
+      incite violence, promote hatred, and intentionally manipulate fact and reality.
+      We have learned that we should more explicitly set out our aspirations for the human experience of the internet.
+      We do so now.
+      `.repeat(100);
+      let loadingTask = getDocument(buildGetDocumentParams("empty.pdf"));
+      let pdfDoc = await loadingTask.promise;
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+        annotationType: AnnotationEditorType.FREETEXT,
+        rect: [10, 10, 500, 500],
+        rotation: 0,
+        fontSize: 1,
+        color: [0, 0, 0],
+        value: manifesto,
+        pageIndex: 0,
+      });
+
+      const data = await pdfDoc.saveDocument();
+      await loadingTask.destroy();
+
+      loadingTask = getDocument(data);
+      pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      const annotations = await page.getAnnotations();
+
+      expect(annotations[0].contentsObj.str).toEqual(manifesto);
+
+      await loadingTask.destroy();
+    });
+
     describe("Cross-origin", function () {
       let loadingTask;
       function _checkCanLoad(expectSuccess, filename, options) {
