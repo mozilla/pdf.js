@@ -567,7 +567,7 @@ class FreeTextEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
-  serialize() {
+  serialize(isForCopying = false) {
     if (this.isEmpty()) {
       return null;
     }
@@ -596,12 +596,19 @@ class FreeTextEditor extends AnnotationEditor {
       pageIndex: this.pageIndex,
       rect,
       rotation: this.rotation,
-      id: this.annotationElementId,
     };
+
+    if (isForCopying) {
+      // Don't add the id when copying because the pasted editor mustn't be
+      // linked to an existing annotation.
+      return serialized;
+    }
 
     if (this.annotationElementId && !this.#hasElementChanged(serialized)) {
       return null;
     }
+
+    serialized.id = this.annotationElementId;
 
     return serialized;
   }
