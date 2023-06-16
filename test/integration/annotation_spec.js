@@ -120,6 +120,46 @@ describe("Checkbox annotation", () => {
       );
     });
   });
+
+  describe("f1040_2022.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "f1040_2022.pdf",
+        "[data-annotation-id='1566R']"
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check the checkbox", async () => {
+      await Promise.all(
+        pages.map(async ([_browserName, page]) => {
+          const selectors = [1566, 1568, 1569, 1570, 1571].map(
+            id => `[data-annotation-id='${id}R']`
+          );
+          for (const selector of selectors) {
+            await page.click(selector);
+            for (const otherSelector of selectors) {
+              if (otherSelector === selector) {
+                await page.waitForFunction(
+                  `document.querySelector("${selector} > :first-child").checked`
+                );
+              } else {
+                await page.waitForFunction(
+                  `!document.querySelector("${otherSelector} > :first-child").checked`
+                );
+              }
+            }
+            page.waitForTimeout(10);
+          }
+        })
+      );
+    });
+  });
 });
 
 describe("Text widget", () => {
