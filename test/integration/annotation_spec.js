@@ -431,4 +431,41 @@ describe("ResetForm action", () => {
       });
     });
   });
+
+  describe("Ink widget and its popup after editing", () => {
+    describe("annotation-caret-ink.pdf", () => {
+      let pages;
+
+      beforeAll(async () => {
+        pages = await loadAndWait(
+          "annotation-caret-ink.pdf",
+          "[data-annotation-id='25R']"
+        );
+      });
+
+      afterAll(async () => {
+        await closePages(pages);
+      });
+
+      it("must check that the annotation has a popup", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            await page.waitForFunction(
+              `document.querySelector("[data-annotation-id='25R']").hidden === false`
+            );
+            await page.click("#editorFreeText");
+            await page.waitForTimeout(10);
+            await page.waitForFunction(
+              `document.querySelector("[data-annotation-id='25R']").hidden === true`
+            );
+            await page.click("#editorFreeText");
+            await page.waitForTimeout(10);
+            await page.waitForFunction(
+              `document.querySelector("[data-annotation-id='25R']").hidden === false`
+            );
+          })
+        );
+      });
+    });
+  });
 });
