@@ -215,14 +215,32 @@ class AnnotationEditorLayer {
   disable() {
     this.#isDisabling = true;
     this.div.style.pointerEvents = "none";
+    const hiddenAnnotationIds = new Set();
     for (const editor of this.#editors.values()) {
       editor.disableEditing();
       if (!editor.annotationElementId || editor.serialize() !== null) {
+        hiddenAnnotationIds.add(editor.annotationElementId);
         continue;
       }
       this.getEditableAnnotation(editor.annotationElementId)?.show();
       editor.remove();
     }
+
+    if (this.#annotationLayer) {
+      // Show the annotations that were hidden in enable().
+      const editables = this.#annotationLayer.getEditableAnnotations();
+      for (const editable of editables) {
+        const { id } = editable.data;
+        if (
+          hiddenAnnotationIds.has(id) ||
+          this.#uiManager.isDeletedAnnotationElement(id)
+        ) {
+          continue;
+        }
+        editable.show();
+      }
+    }
+
     this.#cleanup();
     if (this.isEmpty) {
       this.div.hidden = true;
