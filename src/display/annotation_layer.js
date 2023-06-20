@@ -1943,14 +1943,10 @@ class PopupElement {
       // The modification date is shown in the popup instead of the creation
       // date if it is available and can be parsed correctly, which is
       // consistent with other viewers such as Adobe Acrobat.
-      this.#dateTimePromise = parent.l10n.get(
-        "annotation_date_string",
-        {
-          date: dateObject.toLocaleDateString(),
-          time: dateObject.toLocaleTimeString(),
-        },
-        "{{date}}, {{time}}"
-      );
+      this.#dateTimePromise = parent.l10n.get("annotation_date_string", {
+        date: dateObject.toLocaleDateString(),
+        time: dateObject.toLocaleTimeString(),
+      });
     }
 
     this.trigger = elements.flatMap(e => e.getElementsToTriggerPopup());
@@ -1969,7 +1965,7 @@ class PopupElement {
       this.#toggle();
     }
 
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
       // Since the popup is lazily created, we need to ensure that it'll be
       // created and displayed during reference tests.
       this.#parent.popupShow.push(async () => {
@@ -2788,7 +2784,14 @@ class AnnotationLayer {
     this.viewport = viewport;
     this.zIndex = 0;
 
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+    if (
+      typeof PDFJSDev !== "undefined" &&
+      PDFJSDev.test("GENERIC && !TESTING")
+    ) {
+      const { NullL10n } = require("pdfjs-web/l10n_utils.js");
+      this.l10n ||= NullL10n;
+    }
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
       // For testing purposes.
       Object.defineProperty(this, "showPopups", {
         value: async () => {

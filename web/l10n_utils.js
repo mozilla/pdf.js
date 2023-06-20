@@ -14,6 +14,13 @@
  */
 
 /**
+ * PLEASE NOTE: This file is currently imported in both the `web/` and
+ *              `src/display/` folders, hence be EXTREMELY careful about
+ *              introducing any dependencies here since that can lead to an
+ *              unexpected/unnecessary size increase of the *built* files.
+ */
+
+/**
  * A subset of the l10n strings in the `l10n/en-US/viewer.properties` file.
  */
 const DEFAULT_L10N_STRINGS = {
@@ -62,6 +69,8 @@ const DEFAULT_L10N_STRINGS = {
   missing_file_error: "Missing PDF file.",
   unexpected_response_error: "Unexpected server response.",
   rendering_error: "An error occurred while rendering the page.",
+
+  annotation_date_string: "{{date}}, {{time}}",
 
   printing_not_supported:
     "Warning: Printing is not fully supported by this browser.",
