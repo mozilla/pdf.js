@@ -235,9 +235,8 @@ class Rasterize {
         l10n,
         viewport: annotationViewport,
       });
-      annotationLayer.render(parameters);
+      await annotationLayer.render(parameters);
       await annotationLayer.showPopups();
-      await l10n.translate(div);
 
       // Inline SVG images from text annotations.
       await inlineImages(div);
