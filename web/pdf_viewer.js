@@ -1842,6 +1842,15 @@ class PDFViewer {
    *   The constants from {ScrollMode} should be used.
    */
   set scrollMode(mode) {
+    if (
+      typeof PDFJSDev === "undefined"
+        ? window.isGECKOVIEW
+        : PDFJSDev.test("GECKOVIEW")
+    ) {
+      // NOTE: Always ignore the pageLayout in GeckoView since there's
+      // no UI available to change Scroll/Spread modes for the user.
+      return;
+    }
     if (this._scrollMode === mode) {
       return; // The Scroll mode didn't change.
     }
@@ -1903,6 +1912,15 @@ class PDFViewer {
    *   The constants from {SpreadMode} should be used.
    */
   set spreadMode(mode) {
+    if (
+      typeof PDFJSDev === "undefined"
+        ? window.isGECKOVIEW
+        : PDFJSDev.test("GECKOVIEW")
+    ) {
+      // NOTE: Always ignore the pageLayout in GeckoView since there's
+      // no UI available to change Scroll/Spread modes for the user.
+      return;
+    }
     if (this._spreadMode === mode) {
       return; // The Spread mode didn't change.
     }

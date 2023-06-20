@@ -265,21 +265,13 @@ class PDFScriptingManager {
         case "error":
           console.error(value);
           break;
-        case "layout": {
-          // NOTE: Always ignore the pageLayout in GeckoView since there's
-          // no UI available to change Scroll/Spread modes for the user.
-          if (
-            (typeof PDFJSDev === "undefined"
-              ? window.isGECKOVIEW
-              : PDFJSDev.test("GECKOVIEW")) ||
-            isInPresentationMode
-          ) {
+        case "layout":
+          if (isInPresentationMode) {
             return;
           }
           const modes = apiPageLayoutToViewerModes(value);
           this._pdfViewer.spreadMode = modes.spreadMode;
           break;
-        }
         case "page-num":
           this._pdfViewer.currentPageNumber = value + 1;
           break;

@@ -1281,28 +1281,20 @@ const PDFViewerApplication = {
               spreadMode = stored.spreadMode | 0;
             }
           }
-          // NOTE: Ignore the pageMode/pageLayout in GeckoView since there's no
-          // sidebar available, nor any UI for changing the Scroll/Spread modes.
+          // Always let the user preference/view history take precedence.
+          if (pageMode && sidebarView === SidebarView.UNKNOWN) {
+            sidebarView = apiPageModeToSidebarView(pageMode);
+          }
           if (
-            typeof PDFJSDev === "undefined"
-              ? !window.isGECKOVIEW
-              : !PDFJSDev.test("GECKOVIEW")
+            pageLayout &&
+            scrollMode === ScrollMode.UNKNOWN &&
+            spreadMode === SpreadMode.UNKNOWN
           ) {
-            // Always let the user preference/view history take precedence.
-            if (pageMode && sidebarView === SidebarView.UNKNOWN) {
-              sidebarView = apiPageModeToSidebarView(pageMode);
-            }
-            if (
-              pageLayout &&
-              scrollMode === ScrollMode.UNKNOWN &&
-              spreadMode === SpreadMode.UNKNOWN
-            ) {
-              const modes = apiPageLayoutToViewerModes(pageLayout);
-              // TODO: Try to improve page-switching when using the mouse-wheel
-              // and/or arrow-keys before allowing the document to control this.
-              // scrollMode = modes.scrollMode;
-              spreadMode = modes.spreadMode;
-            }
+            const modes = apiPageLayoutToViewerModes(pageLayout);
+            // TODO: Try to improve page-switching when using the mouse-wheel
+            // and/or arrow-keys before allowing the document to control this.
+            // scrollMode = modes.scrollMode;
+            spreadMode = modes.spreadMode;
           }
 
           this.setInitialView(hash, {
