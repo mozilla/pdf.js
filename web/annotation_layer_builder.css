@@ -42,6 +42,10 @@
   .annotationLayer .linkAnnotation:hover {
     backdrop-filter: invert(100%);
   }
+
+  .annotationLayer .popupAnnotation.focused .popup {
+    outline: calc(3px * var(--scale-factor)) solid Highlight !important;
+  }
 }
 
 .annotationLayer {
@@ -240,32 +244,27 @@
   appearance: none;
 }
 
-.annotationLayer .popupTriggerArea {
+.annotationLayer .fileAttachmentAnnotation .popupTriggerArea {
   height: 100%;
   width: 100%;
 }
 
-.annotationLayer .fileAttachmentAnnotation .popupTriggerArea {
-  position: absolute;
-}
-
-.annotationLayer .popupWrapper {
+.annotationLayer .popupAnnotation {
   position: absolute;
   font-size: calc(9px * var(--scale-factor));
-  width: 100%;
-  min-width: calc(180px * var(--scale-factor));
   pointer-events: none;
+  width: max-content;
+  max-width: 45%;
+  height: auto;
 }
 
 .annotationLayer .popup {
-  position: absolute;
-  max-width: calc(180px * var(--scale-factor));
   background-color: rgba(255, 255, 153, 1);
   box-shadow: 0 calc(2px * var(--scale-factor)) calc(5px * var(--scale-factor))
     rgba(136, 136, 136, 1);
   border-radius: calc(2px * var(--scale-factor));
+  outline: 1.5px solid rgb(255, 255, 74);
   padding: calc(6px * var(--scale-factor));
-  margin-left: calc(5px * var(--scale-factor));
   cursor: pointer;
   font: message-box;
   white-space: normal;
@@ -273,17 +272,26 @@
   pointer-events: auto;
 }
 
-.annotationLayer .popup > * {
+.annotationLayer .popupAnnotation.focused .popup {
+  outline-width: 3px;
+}
+
+.annotationLayer .popup * {
   font-size: calc(9px * var(--scale-factor));
 }
 
-.annotationLayer .popup h1 {
+.annotationLayer .popup > .header {
   display: inline-block;
 }
 
-.annotationLayer .popupDate {
+.annotationLayer .popup > .header h1 {
+  display: inline;
+}
+
+.annotationLayer .popup > .header .popupDate {
   display: inline-block;
   margin-left: calc(5px * var(--scale-factor));
+  width: fit-content;
 }
 
 .annotationLayer .popupContent {

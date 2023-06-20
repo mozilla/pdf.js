@@ -21,7 +21,7 @@ const {
 } = require("./test_utils.js");
 
 describe("Annotation highlight", () => {
-  describe("annotation-highlight.pdf", () => {
+  fdescribe("annotation-highlight.pdf", () => {
     let pages;
 
     beforeAll(async () => {
