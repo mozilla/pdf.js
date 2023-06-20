@@ -21,7 +21,7 @@ const {
 } = require("./test_utils.js");
 
 describe("Annotation highlight", () => {
-  fdescribe("annotation-highlight.pdf", () => {
+  describe("annotation-highlight.pdf", () => {
     let pages;
 
     beforeAll(async () => {
@@ -459,12 +459,12 @@ describe("ResetForm action", () => {
         await closePages(pages);
       });
 
-      it("must check that the annotation has a popup", async () => {
+      it("must check that the FreeText annotation has a popup", async () => {
         await Promise.all(
           pages.map(async ([browserName, page]) => {
             await page.click("[data-annotation-id='10R']");
             await page.waitForFunction(
-              `document.querySelector("[data-annotation-id='10R'] .popupWrapper").hidden !== undefined`
+              `document.querySelector("[data-annotation-id='10R']").hidden === false`
             );
           })
         );
@@ -487,7 +487,7 @@ describe("ResetForm action", () => {
         await closePages(pages);
       });
 
-      it("must check that the annotation has a popup", async () => {
+      it("must check that the Ink annotation has a popup", async () => {
         await Promise.all(
           pages.map(async ([browserName, page]) => {
             await page.waitForFunction(
