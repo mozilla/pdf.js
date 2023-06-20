@@ -99,28 +99,6 @@ function getL10nFallback(key, args) {
   return DEFAULT_L10N_STRINGS[key] || "";
 }
 
-const PARTIAL_LANG_CODES = {
-  en: "en-US",
-  es: "es-ES",
-  fy: "fy-NL",
-  ga: "ga-IE",
-  gu: "gu-IN",
-  hi: "hi-IN",
-  hy: "hy-AM",
-  nb: "nb-NO",
-  ne: "ne-NP",
-  nn: "nn-NO",
-  pa: "pa-IN",
-  pt: "pt-PT",
-  sv: "sv-SE",
-  zh: "zh-CN",
-};
-
-// Try to support "incompletely" specified language codes (see issue 13689).
-function fixupLangCode(langCode) {
-  return PARTIAL_LANG_CODES[langCode?.toLowerCase()] || langCode;
-}
-
 // Replaces {{arguments}} with their values.
 function formatL10nValue(text, args) {
   if (!args) {
@@ -151,4 +129,4 @@ const NullL10n = {
   async translate(element) {},
 };
 
-export { fixupLangCode, getL10nFallback, NullL10n };
+export { getL10nFallback, NullL10n };

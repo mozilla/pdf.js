@@ -16,9 +16,31 @@
 /** @typedef {import("./interfaces").IL10n} IL10n */
 
 import "../external/webL10n/l10n.js";
-import { fixupLangCode, getL10nFallback } from "./l10n_utils.js";
+import { getL10nFallback } from "./l10n_utils.js";
 
-const webL10n = document.webL10n;
+const { webL10n } = document;
+
+const PARTIAL_LANG_CODES = {
+  en: "en-US",
+  es: "es-ES",
+  fy: "fy-NL",
+  ga: "ga-IE",
+  gu: "gu-IN",
+  hi: "hi-IN",
+  hy: "hy-AM",
+  nb: "nb-NO",
+  ne: "ne-NP",
+  nn: "nn-NO",
+  pa: "pa-IN",
+  pt: "pt-PT",
+  sv: "sv-SE",
+  zh: "zh-CN",
+};
+
+// Try to support "incompletely" specified language codes (see issue 13689).
+function fixupLangCode(langCode) {
+  return PARTIAL_LANG_CODES[langCode?.toLowerCase()] || langCode;
+}
 
 /**
  * @implements {IL10n}
