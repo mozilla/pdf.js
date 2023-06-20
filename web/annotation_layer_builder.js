@@ -134,7 +134,7 @@ class AnnotationLayerBuilder {
       viewport: viewport.clone({ dontFlip: true }),
     });
 
-    this.annotationLayer.render({
+    await this.annotationLayer.render({
       annotations,
       imageResourcesPath: this.imageResourcesPath,
       renderForms: this.renderForms,
@@ -145,7 +145,6 @@ class AnnotationLayerBuilder {
       hasJSActions,
       fieldObjects,
     });
-    this.l10n.translate(div);
 
     // Ensure that interactive form elements in the annotationLayer are
     // disabled while PresentationMode is active (see issue 12232).

@@ -2823,7 +2823,7 @@ class AnnotationLayer {
    * @param {AnnotationLayerParameters} params
    * @memberof AnnotationLayer
    */
-  render(params) {
+  async render(params) {
     const { annotations } = params;
     const layer = this.div;
     setLayerDimensions(layer, this.viewport);
@@ -2897,6 +2897,8 @@ class AnnotationLayer {
     }
 
     this.#setAnnotationCanvasMap();
+
+    await this.l10n.translate(layer);
   }
 
   /**
