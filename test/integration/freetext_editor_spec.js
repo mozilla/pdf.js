@@ -1116,4 +1116,42 @@ describe("FreeText Editor", () => {
       }
     });
   });
+
+  describe("FreeText with popup", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "annotation-freetext.pdf",
+        ".annotationEditorLayer"
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must not remove an empty annotation", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.hover("[data-annotation-id='23R']");
+          // Wait for the popup to be displayed.
+          await page.waitForFunction(
+            `document.querySelector("[data-annotation-id='popup_23R']").hidden === false`
+          );
+
+          // Enter in editing mode.
+          await page.click("#editorFreeText");
+          await page.waitForTimeout(10);
+          await page.click("#editorFreeText");
+
+          await page.hover("[data-annotation-id='23R']");
+          // Wait for the popup to be displayed.
+          await page.waitForFunction(
+            `document.querySelector("[data-annotation-id='popup_23R']").hidden === false`
+          );
+        })
+      );
+    });
+  });
 });

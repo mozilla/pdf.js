@@ -999,6 +999,9 @@ class Annotation {
 
       enqueue(chunk, size) {
         for (const item of chunk.items) {
+          if (item.str === undefined) {
+            continue;
+          }
           buffer.push(item.str);
           if (item.hasEOL) {
             text.push(buffer.join(""));
@@ -1022,7 +1025,7 @@ class Annotation {
       text.push(buffer.join(""));
     }
 
-    if (text.length > 0) {
+    if (text.length > 1 || text[0]) {
       this.data.textContent = text;
     }
   }
