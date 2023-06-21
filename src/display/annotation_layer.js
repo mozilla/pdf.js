@@ -577,12 +577,14 @@ class AnnotationElement {
     if (this.container) {
       this.container.hidden = false;
     }
+    this.popup?.maybeShow();
   }
 
   hide() {
     if (this.container) {
       this.container.hidden = true;
     }
+    this.popup?.forceHide();
   }
 
   getElementsToTriggerPopup() {
@@ -1861,8 +1863,7 @@ class PopupAnnotationElement extends AnnotationElement {
   render() {
     this.container.classList.add("popupAnnotation");
 
-    // eslint-disable-next-line no-new
-    new PopupElement({
+    const popup = new PopupElement({
       container: this.container,
       color: this.data.color,
       titleObj: this.data.titleObj,
@@ -1875,10 +1876,14 @@ class PopupAnnotationElement extends AnnotationElement {
       elements: this.elements,
       open: this.data.open,
     });
-    this.container.setAttribute(
-      "aria-controls",
-      this.elements.map(e => e.data.id).join(",")
-    );
+
+    const elementIds = [];
+    for (const element of this.elements) {
+      element.popup = popup;
+      elementIds.push(element.data.id);
+    }
+
+    this.container.setAttribute("aria-controls", elementIds.join(","));
 
     return this.container;
   }
@@ -1914,6 +1919,8 @@ class PopupElement {
   #richText = null;
 
   #titleObj = null;
+
+  #wasVisible = false;
 
   constructor({
     container,
@@ -2124,7 +2131,7 @@ class PopupElement {
     if (!this.#popup) {
       this.render();
     }
-    if (this.#container.hidden) {
+    if (!this.isVisible) {
       this.#container.hidden = false;
       this.#container.style.zIndex =
         parseInt(this.#container.style.zIndex) + 1000;
@@ -2144,6 +2151,26 @@ class PopupElement {
     this.#container.hidden = true;
     this.#container.style.zIndex =
       parseInt(this.#container.style.zIndex) - 1000;
+  }
+
+  forceHide() {
+    this.#wasVisible = this.isVisible;
+    if (!this.#wasVisible) {
+      return;
+    }
+    this.#container.hidden = true;
+  }
+
+  maybeShow() {
+    if (!this.#wasVisible) {
+      return;
+    }
+    this.#wasVisible = false;
+    this.#container.hidden = false;
+  }
+
+  get isVisible() {
+    return this.#container.hidden === false;
   }
 }
 
