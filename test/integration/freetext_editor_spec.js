@@ -1153,5 +1153,31 @@ describe("FreeText Editor", () => {
         })
       );
     });
+
+    it("must hide the popup when editing", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("[data-annotation-id='20R']");
+          // Wait for the popup to be displayed.
+          await page.waitForFunction(
+            `document.querySelector("[data-annotation-id='popup_20R']").hidden === false`
+          );
+
+          // Enter in editing mode.
+          await page.click("#editorFreeText");
+          // Wait for the popup to be hidden.
+          await page.waitForFunction(
+            `document.querySelector("[data-annotation-id='popup_20R']").hidden === true`
+          );
+
+          // Exit editing mode.
+          await page.click("#editorFreeText");
+          // Wait for the popup to be visible.
+          await page.waitForFunction(
+            `document.querySelector("[data-annotation-id='popup_20R']").hidden === false`
+          );
+        })
+      );
+    });
   });
 });
