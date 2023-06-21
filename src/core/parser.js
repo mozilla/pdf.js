@@ -893,7 +893,7 @@ class Lexer {
     let ch = this.currentChar;
     let eNotation = false;
     let divideBy = 0; // Different from 0 if it's a floating point value.
-    let sign = 0;
+    let sign = 1;
 
     if (ch === /* '-' = */ 0x2d) {
       sign = -1;
@@ -904,7 +904,6 @@ class Lexer {
         ch = this.nextChar();
       }
     } else if (ch === /* '+' = */ 0x2b) {
-      sign = 1;
       ch = this.nextChar();
     }
     if (ch === /* LF = */ 0x0a || ch === /* CR = */ 0x0d) {
@@ -929,7 +928,6 @@ class Lexer {
       throw new FormatError(msg);
     }
 
-    sign ||= 1;
     let baseValue = ch - 0x30; // '0'
     let powerValue = 0;
     let powerValueSign = 1;
