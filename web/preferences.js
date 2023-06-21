@@ -83,6 +83,9 @@ class BasePreferences {
    *                    have been reset.
    */
   async reset() {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      throw new Error("Please use `about:config` to change preferences.");
+    }
     await this.#initializedPromise;
     const prefs = this.#prefs;
 
@@ -102,6 +105,9 @@ class BasePreferences {
    *                    provided that the preference exists and the types match.
    */
   async set(name, value) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      throw new Error("Please use `about:config` to change preferences.");
+    }
     await this.#initializedPromise;
     const defaultValue = this.#defaults[name],
       prefs = this.#prefs;
