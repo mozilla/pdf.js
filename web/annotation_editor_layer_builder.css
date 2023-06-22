@@ -71,7 +71,8 @@
   cursor: var(--editorInk-editing-cursor);
 }
 
-.annotationEditorLayer :is(.freeTextEditor, .inkEditor)[draggable="true"] {
+.annotationEditorLayer
+  :is(.freeTextEditor, .inkEditor, .stampEditor)[draggable="true"] {
   cursor: move;
 }
 
@@ -80,18 +81,25 @@
   resize: none;
 }
 
-.annotationEditorLayer .freeTextEditor {
+.annotationEditorLayer :is(.freeTextEditor, .inkEditor, .stampEditor) {
   position: absolute;
   background: transparent;
   border-radius: 3px;
+  z-index: 1;
+  transform-origin: 0 0;
+  cursor: auto;
+}
+
+.annotationEditorLayer :is(.inkEditor, .stampEditor) {
+  overflow: auto;
+}
+
+.annotationEditorLayer .freeTextEditor {
   padding: calc(var(--freetext-padding) * var(--scale-factor));
   resize: none;
   width: auto;
   height: auto;
-  z-index: 1;
-  transform-origin: 0 0;
   touch-action: none;
-  cursor: auto;
 }
 
 .annotationEditorLayer .freeTextEditor .internal {
@@ -138,20 +146,13 @@
 }
 
 .annotationEditorLayer
-  :is(.freeTextEditor, .inkEditor):hover:not(.selectedEditor) {
+  :is(.freeTextEditor, .inkEditor, .stampEditor):hover:not(.selectedEditor) {
   outline: var(--hover-outline);
 }
 
 .annotationEditorLayer .inkEditor {
-  position: absolute;
-  background: transparent;
-  border-radius: 3px;
-  overflow: auto;
   width: 100%;
   height: 100%;
-  z-index: 1;
-  transform-origin: 0 0;
-  cursor: auto;
 }
 
 .annotationEditorLayer .inkEditor.editing {
@@ -166,4 +167,31 @@
   width: 100%;
   height: 100%;
   touch-action: none;
+}
+
+.annotationEditorLayer .stampEditor {
+  width: auto;
+  height: auto;
+}
+
+.annotationEditorLayer .stampEditor.loading {
+  aspect-ratio: 1;
+  width: 10%;
+  height: auto;
+  background-color: rgba(128, 128, 128, 0.5);
+  background-image: var(--loading-icon);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  background-size: 16px 16px;
+  transition-property: background-size;
+  transition-delay: var(--loading-icon-delay);
+}
+
+.annotationEditorLayer .stampEditor.selectedEditor {
+  resize: horizontal;
+}
+
+.annotationEditorLayer .stampEditor canvas {
+  width: 100%;
+  height: 100%;
 }
