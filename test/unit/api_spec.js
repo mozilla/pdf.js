@@ -2134,6 +2134,58 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("write a new stamp annotation, save the pdf and check that the same image has the same ref", async function () {
+      if (isNodeJS) {
+        pending("Cannot create a bitmap from Node.js.");
+      }
+
+      const TEST_IMAGES_PATH = "../images/";
+      const filename = "firefox_logo.png";
+      const path = new URL(TEST_IMAGES_PATH + filename, window.location).href;
+
+      const response = await fetch(path);
+      const blob = await response.blob();
+      const bitmap = await createImageBitmap(blob);
+
+      let loadingTask = getDocument(buildGetDocumentParams("empty.pdf"));
+      let pdfDoc = await loadingTask.promise;
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+        annotationType: AnnotationEditorType.STAMP,
+        rect: [12, 34, 56, 78],
+        rotation: 0,
+        bitmap,
+        bitmapId: "im1",
+        pageIndex: 0,
+      });
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_1", {
+        annotationType: AnnotationEditorType.STAMP,
+        rect: [112, 134, 156, 178],
+        rotation: 0,
+        bitmapId: "im1",
+        pageIndex: 0,
+      });
+
+      const data = await pdfDoc.saveDocument();
+      await loadingTask.destroy();
+
+      loadingTask = getDocument(data);
+      pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      const opList = await page.getOperatorList();
+
+      // The pdf contains two stamp annotations with the same image.
+      // The image should be stored only once in the pdf and referenced twice.
+      // So we can verify that the image is referenced twice in the opList.
+
+      for (let i = 0; i < opList.fnArray.length; i++) {
+        if (opList.fnArray[i] === OPS.paintImageXObject) {
+          expect(opList.argsArray[i][0]).toEqual("img_p0_1");
+        }
+      }
+
+      await loadingTask.destroy();
+    });
+
     describe("Cross-origin", function () {
       let loadingTask;
       function _checkCanLoad(expectSuccess, filename, options) {
