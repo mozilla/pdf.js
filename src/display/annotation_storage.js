@@ -182,9 +182,13 @@ class AnnotationStorage {
     const map = new Map(),
       hash = new MurmurHash3_64(),
       transfers = [];
+    const context = Object.create(null);
+
     for (const [key, val] of this.#storage) {
       const serialized =
-        val instanceof AnnotationEditor ? val.serialize() : val;
+        val instanceof AnnotationEditor
+          ? val.serialize(/* isForCopying = */ false, context)
+          : val;
       if (serialized) {
         map.set(key, serialized);
 
