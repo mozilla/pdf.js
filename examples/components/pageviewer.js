@@ -52,20 +52,6 @@ const loadingTask = pdfjsLib.getDocument({
   // Document loaded, retrieving the page.
   const pdfPage = await pdfDocument.getPage(PAGE_TO_VIEW);
 
-  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(pdfjsLib.version);
-  if (match && (match[1] | 0) >= 3 && (match[2] | 0) >= 2) {
-    // Creating the page view with default parameters.
-    const pdfPageView = new pdfjsViewer.PDFPageView({
-      container,
-      id: PAGE_TO_VIEW,
-      scale: SCALE,
-      defaultViewport: pdfPage.getViewport({ scale: SCALE }),
-      eventBus,
-    });
-    // Associate the actual page with the view, and draw it.
-    pdfPageView.setPdfPage(pdfPage);
-    return pdfPageView.draw();
-  }
   // Creating the page view with default parameters.
   const pdfPageView = new pdfjsViewer.PDFPageView({
     container,
@@ -73,15 +59,6 @@ const loadingTask = pdfjsLib.getDocument({
     scale: SCALE,
     defaultViewport: pdfPage.getViewport({ scale: SCALE }),
     eventBus,
-    // We can enable text/annotation/xfa/struct-layers, as needed.
-    textLayerFactory: !pdfDocument.isPureXfa
-      ? new pdfjsViewer.DefaultTextLayerFactory()
-      : null,
-    annotationLayerFactory: new pdfjsViewer.DefaultAnnotationLayerFactory(),
-    xfaLayerFactory: pdfDocument.isPureXfa
-      ? new pdfjsViewer.DefaultXfaLayerFactory()
-      : null,
-    structTreeLayerFactory: new pdfjsViewer.DefaultStructTreeLayerFactory(),
   });
   // Associate the actual page with the view, and draw it.
   pdfPageView.setPdfPage(pdfPage);
