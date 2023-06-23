@@ -14,6 +14,8 @@
  */
 
 // eslint-disable-next-line max-len
+/** @typedef {import("../src/display/base_factory.js").BaseFilterFactory} BaseFilterFactory */
+// eslint-disable-next-line max-len
 /** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/optional_content_config").OptionalContentConfig} OptionalContentConfig */
@@ -84,6 +86,8 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
  * @property {IL10n} [l10n] - Localization service.
  * @property {function} [layerProperties] - The function that is used to lookup
  *   the necessary layer-properties.
+ * @property {BaseFilterFactory} [filterFactory] - Factory to create some SVG
+ *   filters.
  */
 
 const MAX_CANVAS_PIXELS = compatibilityParams.maxCanvasPixels || 16777216;
@@ -203,6 +207,21 @@ class PDFPageView {
         "--scale-factor",
         this.scale * PixelsPerInch.PDF_TO_CSS_UNITS
       );
+      if (
+        options.filterFactory &&
+        (this.pageColors?.foreground === "CanvasText" ||
+          this.pageColors?.background === "Canvas")
+      ) {
+        container?.style.setProperty(
+          "--hcm-highligh-filter",
+          options.filterFactory.addHighlightHCMFilter(
+            "CanvasText",
+            "Canvas",
+            "HighlightText",
+            "Highlight"
+          )
+        );
+      }
 
       const { optionalContentConfigPromise } = options;
       if (optionalContentConfigPromise) {

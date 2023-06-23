@@ -30,6 +30,7 @@
     --input-disabled-border-color: GrayText;
     --input-hover-border-color: Highlight;
     --link-outline: 1.5px solid LinkText;
+    --hcm-highligh-filter: invert(100%);
   }
   .annotationLayer .textWidgetAnnotation :is(input, textarea):required,
   .annotationLayer .choiceWidgetAnnotation select:required,
@@ -40,7 +41,30 @@
   }
 
   .annotationLayer .linkAnnotation:hover {
-    backdrop-filter: invert(100%);
+    backdrop-filter: var(--hcm-highligh-filter);
+  }
+
+  .annotationLayer .linkAnnotation > a:hover {
+    opacity: 0 !important;
+    background: none !important;
+    box-shadow: none;
+  }
+
+  .annotationLayer .popupAnnotation .popup {
+    outline: calc(1.5px * var(--scale-factor)) solid CanvasText !important;
+    background-color: ButtonFace !important;
+    color: ButtonText !important;
+  }
+
+  .annotationLayer .highlightArea:hover::after {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    backdrop-filter: var(--hcm-highligh-filter);
+    content: "";
+    pointer-events: none;
   }
 
   .annotationLayer .popupAnnotation.focused .popup {

@@ -30,6 +30,10 @@ class BaseFilterFactory {
     return "none";
   }
 
+  addHighlightHCMFilter(fgColor, bgColor, newFgColor, newBgColor) {
+    return "none";
+  }
+
   destroy(keepHCM = false) {}
 }
 

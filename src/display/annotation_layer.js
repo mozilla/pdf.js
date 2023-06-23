@@ -210,7 +210,7 @@ class AnnotationElement {
     container.style.zIndex = this.parent.zIndex++;
 
     if (this.data.popupRef) {
-      container.setAttribute("aria-haspopup", true);
+      container.setAttribute("aria-haspopup", "dialog");
     }
 
     if (data.noRotate) {
@@ -474,7 +474,7 @@ class AnnotationElement {
    */
   _createPopup() {
     const { container, data } = this;
-    container.setAttribute("aria-haspopup", true);
+    container.setAttribute("aria-haspopup", "dialog");
 
     const popup = new PopupAnnotationElement({
       data: {
@@ -589,6 +589,17 @@ class AnnotationElement {
 
   getElementsToTriggerPopup() {
     return this.quadrilaterals || this.container;
+  }
+
+  addHighlightArea() {
+    const triggers = this.getElementsToTriggerPopup();
+    if (Array.isArray(triggers)) {
+      for (const element of triggers) {
+        element.classList.add("highlightArea");
+      }
+    } else {
+      triggers.classList.add("highlightArea");
+    }
   }
 }
 
@@ -1881,6 +1892,7 @@ class PopupAnnotationElement extends AnnotationElement {
     for (const element of this.elements) {
       element.popup = popup;
       elementIds.push(element.data.id);
+      element.addHighlightArea();
     }
 
     this.container.setAttribute("aria-controls", elementIds.join(","));
@@ -2264,6 +2276,10 @@ class LineAnnotationElement extends AnnotationElement {
   getElementsToTriggerPopup() {
     return this.#line;
   }
+
+  addHighlightArea() {
+    this.container.classList.add("highlightArea");
+  }
 }
 
 class SquareAnnotationElement extends AnnotationElement {
@@ -2322,6 +2338,10 @@ class SquareAnnotationElement extends AnnotationElement {
 
   getElementsToTriggerPopup() {
     return this.#square;
+  }
+
+  addHighlightArea() {
+    this.container.classList.add("highlightArea");
   }
 }
 
@@ -2382,6 +2402,10 @@ class CircleAnnotationElement extends AnnotationElement {
 
   getElementsToTriggerPopup() {
     return this.#circle;
+  }
+
+  addHighlightArea() {
+    this.container.classList.add("highlightArea");
   }
 }
 
@@ -2451,6 +2475,10 @@ class PolylineAnnotationElement extends AnnotationElement {
 
   getElementsToTriggerPopup() {
     return this.#polyline;
+  }
+
+  addHighlightArea() {
+    this.container.classList.add("highlightArea");
   }
 }
 
@@ -2555,6 +2583,10 @@ class InkAnnotationElement extends AnnotationElement {
 
   getElementsToTriggerPopup() {
     return this.#polylines;
+  }
+
+  addHighlightArea() {
+    this.container.classList.add("highlightArea");
   }
 }
 
@@ -2748,6 +2780,10 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
 
   getElementsToTriggerPopup() {
     return this.#trigger;
+  }
+
+  addHighlightArea() {
+    this.container.classList.add("highlightArea");
   }
 
   /**
