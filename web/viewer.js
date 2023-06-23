@@ -64,7 +64,8 @@ function getViewerConfiguration() {
       editorInkButton: document.getElementById("editorInk"),
       editorInkParamsToolbar: document.getElementById("editorInkParamsToolbar"),
       download: document.getElementById("download"),
-      saveCfaz: document.getElementById("saveCfaz")
+      saveCfaz: document.getElementById("saveCfaz"),
+      backButton: document.getElementById("backButton"),
     },
     secondaryToolbar: {
       toolbar: document.getElementById("secondaryToolbar"),

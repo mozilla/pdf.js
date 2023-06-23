@@ -839,11 +839,11 @@ body {
   left: 6px;
 }
 
-.toolbarButton.saveButton {
+.toolbarButton.customButton {
   width: auto;
 }
 
-.toolbarButton.saveButton::before {
+.toolbarButton.customButton::before {
   content: none;
 }
 

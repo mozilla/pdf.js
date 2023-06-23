@@ -27,10 +27,7 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#if GENERIC || CHROME-->
     <meta name="google" content="notranslate">
 <!--#endif-->
-    <title>PDF.js viewer</title>
-    
-    <!-- Descomentar a tag csrf abaixo para funcionar as requisicoes com o cfaz-max -->
-    <!-- <%= csrf_meta_tags %> -->
+    <title>PDF.js viewer</title>    
 
 <!--#if MOZCENTRAL-->
 <!--#include viewer-snippet-firefox-extension.html-->
@@ -87,7 +84,8 @@ See https://github.com/adobe-type-tools/cmap-resources
     
     <!-- No cfaz fazer o import dos scripts abaixo e apagar os acima -->
     
-    <!-- <link rel="resource" type="application/l10n" href="<%= asset_path('pdf_viewer/web/locale/locale.properties') %>">
+    <!-- <%= csrf_meta_tags %>
+    <link rel="resource" type="application/l10n" href="<%= asset_path('pdf_viewer/web/locale/locale.properties') %>">
     <link rel="stylesheet" href="<%= asset_path('pdf_viewer/web/viewer.css') %>">
 
     <script src="<%= asset_path('pdf_viewer/build/pdf.js') %>"></script>
@@ -310,15 +308,18 @@ See https://github.com/adobe-type-tools/cmap-resources
                   <span data-l10n-id="toggle_sidebar_label">Toggle Sidebar</span>
                 </button>
                 <div class="toolbarButtonSpacer"></div>
-                <button id="viewFind" class="toolbarButton" title="Find in Document" tabindex="12" data-l10n-id="findbar" aria-expanded="false" aria-controls="findbar">
-                  <span data-l10n-id="findbar_label">Find</span>
+                <button id="backButton" class="toolbarButton customButton" title="Back" tabindex="12" data-l10n-id="back">
+                  <p data-l10n-id="back_label">Voltar</p>
                 </button>
+                <button id="viewFind" class="toolbarButton" title="Find in Document" tabindex="13" data-l10n-id="findbar" aria-expanded="false" aria-controls="findbar">
+                  <span data-l10n-id="findbar_label">Find</span>
+                </button>                
                 <div class="splitToolbarButton hiddenSmallView">
-                  <button class="toolbarButton" title="Previous Page" id="previous" tabindex="13" data-l10n-id="previous">
+                  <button class="toolbarButton" title="Previous Page" id="previous" tabindex="14" data-l10n-id="previous">
                     <span data-l10n-id="previous_label">Previous</span>
                   </button>
                   <div class="splitToolbarButtonSeparator"></div>
-                  <button class="toolbarButton" title="Next Page" id="next" tabindex="14" data-l10n-id="next">
+                  <button class="toolbarButton" title="Next Page" id="next" tabindex="15" data-l10n-id="next">
                     <span data-l10n-id="next_label">Next</span>
                   </button>
                 </div>
@@ -369,8 +370,8 @@ See https://github.com/adobe-type-tools/cmap-resources
                     <span data-l10n-id="zoom_in_label">Zoom In</span>
                   </button>
                   <div class="splitToolbarButtonSeparator"></div>
-                  <button id="saveCfaz" class="toolbarButton saveButton" title="Save" tabindex="23" data-l10n-id="save">
-                    <p data-l10n-id="save_label">Save</p>
+                  <button id="saveCfaz" class="toolbarButton customButton" title="Save" tabindex="23" data-l10n-id="save">
+                    <p data-l10n-id="save_label">Salvar</p>
                   </button>
                 </div>
                 <span id="scaleSelectContainer" class="dropdownToolbarButton">
