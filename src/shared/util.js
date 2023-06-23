@@ -142,24 +142,6 @@ const AnnotationType = {
   REDACT: 26,
 };
 
-const AnnotationStateModelType = {
-  MARKED: "Marked",
-  REVIEW: "Review",
-};
-
-const AnnotationMarkedState = {
-  MARKED: "Marked",
-  UNMARKED: "Unmarked",
-};
-
-const AnnotationReviewState = {
-  ACCEPTED: "Accepted",
-  REJECTED: "Rejected",
-  CANCELLED: "Cancelled",
-  COMPLETED: "Completed",
-  NONE: "None",
-};
-
 const AnnotationReplyType = {
   GROUP: "Group",
   REPLY: "R",
@@ -1040,11 +1022,8 @@ export {
   AnnotationEditorType,
   AnnotationFieldFlag,
   AnnotationFlag,
-  AnnotationMarkedState,
   AnnotationMode,
   AnnotationReplyType,
-  AnnotationReviewState,
-  AnnotationStateModelType,
   AnnotationType,
   assert,
   BaseException,
