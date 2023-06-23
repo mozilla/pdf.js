@@ -40,10 +40,12 @@ import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
-// eslint-disable-next-line no-unused-vars
-const pdfjsVersion = PDFJSDev.eval("BUNDLE_VERSION");
-// eslint-disable-next-line no-unused-vars
-const pdfjsBuild = PDFJSDev.eval("BUNDLE_BUILD");
+/* eslint-disable-next-line no-unused-vars */
+const pdfjsVersion =
+  typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_VERSION") : void 0;
+/* eslint-disable-next-line no-unused-vars */
+const pdfjsBuild =
+  typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_BUILD") : void 0;
 
 export {
   AnnotationLayerBuilder,
