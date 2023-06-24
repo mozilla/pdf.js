@@ -175,8 +175,7 @@ class DownloadManager {
 
 class FirefoxPreferences extends BasePreferences {
   async _readFromStorage(prefObj) {
-    const prefs = await FirefoxCom.requestAsync("getPreferences", prefObj);
-    return typeof prefs === "string" ? JSON.parse(prefs) : prefs;
+    return FirefoxCom.requestAsync("getPreferences", prefObj);
   }
 }
 
