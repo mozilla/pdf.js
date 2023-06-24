@@ -2780,10 +2780,15 @@ function webViewerWheel(evt) {
       } else {
         // pixel-based devices
         const PIXELS_PER_LINE_SCALE = 30;
-        ticks = PDFViewerApplication._accumulateTicks(
-          delta / PIXELS_PER_LINE_SCALE,
-          "_wheelUnusedTicks"
-        );
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+          ticks = PDFViewerApplication._accumulateTicks(
+            delta / PIXELS_PER_LINE_SCALE,
+            "_wheelUnusedTicks"
+          );
+        } else {
+          ticks = Math.sign(delta);
+        }
       }
 
       if (ticks < 0) {
