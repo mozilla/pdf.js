@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { FindState, PDFFindController } from "./pdf_find_controller.js";
 import {
   LinkTarget,
   PDFLinkService,
@@ -30,7 +31,6 @@ import { DownloadManager } from "./download_manager.js";
 import { EventBus } from "./event_utils.js";
 import { GenericL10n } from "./genericl10n.js";
 import { NullL10n } from "./l10n_utils.js";
-import { PDFFindController } from "./pdf_find_controller.js";
 import { PDFHistory } from "./pdf_history.js";
 import { PDFPageView } from "./pdf_page_view.js";
 import { PDFScriptingManager } from "./pdf_scripting_manager.js";
@@ -40,58 +40,18 @@ import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
-// eslint-disable-next-line no-unused-vars
-const pdfjsVersion = PDFJSDev.eval("BUNDLE_VERSION");
-// eslint-disable-next-line no-unused-vars
-const pdfjsBuild = PDFJSDev.eval("BUNDLE_BUILD");
-
-class DefaultAnnotationLayerFactory {
-  constructor() {
-    throw new Error(
-      "The `DefaultAnnotationLayerFactory` has been removed, " +
-        "please use the `annotationMode` option when initializing " +
-        "the `PDFPageView`-instance to control AnnotationLayer rendering."
-    );
-  }
-}
-
-class DefaultStructTreeLayerFactory {
-  constructor() {
-    throw new Error(
-      "The `DefaultStructTreeLayerFactory` has been removed, " +
-        "this functionality is automatically enabled when the TextLayer is used."
-    );
-  }
-}
-
-class DefaultTextLayerFactory {
-  constructor() {
-    throw new Error(
-      "The `DefaultTextLayerFactory` has been removed, " +
-        "please use the `textLayerMode` option when initializing " +
-        "the `PDFPageView`-instance to control TextLayer rendering."
-    );
-  }
-}
-
-class DefaultXfaLayerFactory {
-  constructor() {
-    throw new Error(
-      "The `DefaultXfaLayerFactory` has been removed, " +
-        "please use the `enableXfa` option when calling " +
-        "the `getDocument`-function to control XfaLayer rendering."
-    );
-  }
-}
+/* eslint-disable-next-line no-unused-vars */
+const pdfjsVersion =
+  typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_VERSION") : void 0;
+/* eslint-disable-next-line no-unused-vars */
+const pdfjsBuild =
+  typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_BUILD") : void 0;
 
 export {
   AnnotationLayerBuilder,
-  DefaultAnnotationLayerFactory,
-  DefaultStructTreeLayerFactory,
-  DefaultTextLayerFactory,
-  DefaultXfaLayerFactory,
   DownloadManager,
   EventBus,
+  FindState,
   GenericL10n,
   LinkTarget,
   NullL10n,
