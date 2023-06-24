@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { FindState, PDFFindController } from "../../web/pdf_find_controller.js";
 import {
   LinkTarget,
   PDFLinkService,
@@ -30,7 +31,6 @@ import { DownloadManager } from "../../web/download_manager.js";
 import { EventBus } from "../../web/event_utils.js";
 import { GenericL10n } from "../../web/genericl10n.js";
 import { NullL10n } from "../../web/l10n_utils.js";
-import { PDFFindController } from "../../web/pdf_find_controller.js";
 import { PDFHistory } from "../../web/pdf_history.js";
 import { PDFPageView } from "../../web/pdf_page_view.js";
 import { PDFScriptingManager } from "../../web/pdf_scripting_manager.js";
@@ -50,6 +50,7 @@ describe("pdfviewer_api", function () {
       AnnotationLayerBuilder,
       DownloadManager,
       EventBus,
+      FindState,
       GenericL10n,
       LinkTarget,
       NullL10n,
