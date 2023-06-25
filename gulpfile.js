@@ -185,10 +185,7 @@ function createWebpackConfig(
   const bundleDefines = builder.merge(defines, {
     BUNDLE_VERSION: versionInfo.version,
     BUNDLE_BUILD: versionInfo.commit,
-    TESTING:
-      defines.TESTING !== undefined
-        ? defines.TESTING
-        : process.env.TESTING === "true",
+    TESTING: defines.TESTING ?? process.env.TESTING === "true",
     DEFAULT_PREFERENCES: defaultPreferencesDir
       ? getDefaultPreferences(defaultPreferencesDir)
       : {},
@@ -769,10 +766,7 @@ function buildDefaultPreferences(defines, dir) {
     SKIP_BABEL: false,
     BUNDLE_VERSION: 0, // Dummy version
     BUNDLE_BUILD: 0, // Dummy build
-    TESTING:
-      defines.TESTING !== undefined
-        ? defines.TESTING
-        : process.env.TESTING === "true",
+    TESTING: defines.TESTING ?? process.env.TESTING === "true",
   });
 
   const inputStream = merge([
@@ -1547,10 +1541,7 @@ function buildLib(defines, dir) {
   const bundleDefines = builder.merge(defines, {
     BUNDLE_VERSION: versionInfo.version,
     BUNDLE_BUILD: versionInfo.commit,
-    TESTING:
-      defines.TESTING !== undefined
-        ? defines.TESTING
-        : process.env.TESTING === "true",
+    TESTING: defines.TESTING ?? process.env.TESTING === "true",
     DEFAULT_PREFERENCES: getDefaultPreferences(
       defines.SKIP_BABEL ? "lib/" : "lib-legacy/"
     ),
