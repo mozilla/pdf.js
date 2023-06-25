@@ -1,4 +1,5 @@
 {
+  "minimum_chrome_version": "88",
   "manifest_version": 2,
   "name": "PDF Viewer",
   "version": "PDFJSSCRIPT_VERSION",
