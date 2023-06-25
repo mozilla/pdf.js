@@ -2760,6 +2760,9 @@ function webViewerWheel(evt) {
 
       let ticks = 0;
       if (
+        (typeof PDFJSDev !== "undefined" &&
+          PDFJSDev.test("GENERIC || CHROME") &&
+          window.chrome) ||
         deltaMode === WheelEvent.DOM_DELTA_LINE ||
         deltaMode === WheelEvent.DOM_DELTA_PAGE
       ) {
