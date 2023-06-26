@@ -2442,7 +2442,8 @@ class WorkerTransport {
     isOpList = false
   ) {
     let renderingIntent = RenderingIntentFlag.DISPLAY; // Default value.
-    let annotationMap = null;
+    let annotationMap = null,
+      annotationUuid = "";
 
     switch (intent) {
       case "any":
@@ -2476,6 +2477,7 @@ class WorkerTransport {
             : this.annotationStorage;
 
         annotationMap = annotationStorage.serializable;
+        annotationUuid = annotationStorage.uuid;
         break;
       default:
         warn(`getRenderingIntent - invalid annotationMode: ${annotationMode}`);
@@ -2487,9 +2489,7 @@ class WorkerTransport {
 
     return {
       renderingIntent,
-      cacheKey: `${renderingIntent}_${AnnotationStorage.getHash(
-        annotationMap
-      )}`,
+      cacheKey: `${renderingIntent}_${annotationUuid}`,
       annotationStorageMap: annotationMap,
     };
   }

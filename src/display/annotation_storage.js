@@ -13,9 +13,8 @@
  * limitations under the License.
  */
 
-import { objectFromMap, unreachable } from "../shared/util.js";
+import { getUuid, objectFromMap, shadow, unreachable } from "../shared/util.js";
 import { AnnotationEditor } from "./editor/editor.js";
-import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 
 /**
  * Key/value storage for annotation data in forms.
@@ -189,16 +188,8 @@ class AnnotationStorage {
    * PLEASE NOTE: Only intended for usage within the API itself.
    * @ignore
    */
-  static getHash(map) {
-    if (!map) {
-      return "";
-    }
-    const hash = new MurmurHash3_64();
-
-    for (const [key, val] of map) {
-      hash.update(`${key}:${JSON.stringify(val)}`);
-    }
-    return hash.hexdigest();
+  get uuid() {
+    return this.#storage.size > 0 ? getUuid() : "";
   }
 }
 
@@ -230,6 +221,14 @@ class PrintAnnotationStorage extends AnnotationStorage {
    */
   get serializable() {
     return this.#serializable;
+  }
+
+  /**
+   * PLEASE NOTE: Only intended for usage within the API itself.
+   * @ignore
+   */
+  get uuid() {
+    return shadow(this, "uuid", this.#serializable?.size > 0 ? getUuid() : "");
   }
 }
 
