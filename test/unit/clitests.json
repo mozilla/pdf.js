@@ -36,6 +36,7 @@
     "pdf_find_utils_spec.js",
     "pdf_history_spec.js",
     "pdf_spec.js",
+    "pdf_viewer.component_spec.js",
     "pdf_viewer_spec.js",
     "primitives_spec.js",
     "stream_spec.js",
