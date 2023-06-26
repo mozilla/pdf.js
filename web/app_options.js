@@ -88,11 +88,6 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
-  enableFloatingToolbar: {
-    /** @type {boolean} */
-    value: typeof PDFJSDev === "undefined",
-    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
-  },
   enablePermissions: {
     /** @type {boolean} */
     value: false,

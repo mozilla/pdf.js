@@ -597,15 +597,13 @@ const PDFViewerApplication = {
           ? window.isGECKOVIEW
           : PDFJSDev.test("GECKOVIEW")
       ) {
-        if (AppOptions.get("enableFloatingToolbar")) {
-          this.toolbar = new Toolbar(
-            appConfig.toolbar,
-            eventBus,
-            l10n,
-            await this._nimbusDataPromise,
-            externalServices
-          );
-        }
+        this.toolbar = new Toolbar(
+          appConfig.toolbar,
+          eventBus,
+          l10n,
+          await this._nimbusDataPromise,
+          externalServices
+        );
       } else {
         this.toolbar = new Toolbar(appConfig.toolbar, eventBus, l10n);
       }
