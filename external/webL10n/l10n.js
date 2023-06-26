@@ -30,12 +30,14 @@
     - Replaces one `Node.insertBefore()` with `Element.prepend()`.
     - Removes `fireL10nReadyEvent` since the "localized" event it dispatches
       is unused and may clash with an identically named event in the viewer.
+    - Use preprocessor statements for browser globals (removed during building),
+      to enable more unit-testing in Node.js environments.
 */
 
 /*jshint browser: true, devel: true, es5: true, globalstrict: true */
 'use strict';
 
-document.webL10n = (function(window, document, undefined) {
+(typeof PDFJSDev !== "undefined" && PDFJSDev.test("LIB") ? {} : document).webL10n = (function(window, document) {
   var gL10nData = {};
   var gTextData = '';
   var gTextProp = 'textContent';
@@ -1026,4 +1028,7 @@ document.webL10n = (function(window, document, undefined) {
       }
     }
   };
-}) (window, document);
+}) (
+  typeof PDFJSDev !== "undefined" && PDFJSDev.test("LIB") ? {} : window,
+  typeof PDFJSDev !== "undefined" && PDFJSDev.test("LIB") ? {} : document
+);

@@ -18,8 +18,6 @@
 import "../external/webL10n/l10n.js";
 import { getL10nFallback } from "./l10n_utils.js";
 
-const { webL10n } = document;
-
 const PARTIAL_LANG_CODES = {
   en: "en-US",
   es: "es-ES",
@@ -47,6 +45,7 @@ function fixupLangCode(langCode) {
  */
 class GenericL10n {
   constructor(lang) {
+    const { webL10n } = document;
     this._lang = lang;
     this._ready = new Promise((resolve, reject) => {
       webL10n.setLanguage(fixupLangCode(lang), () => {
