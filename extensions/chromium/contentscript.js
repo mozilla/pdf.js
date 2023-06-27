@@ -132,8 +132,12 @@ function updateEmbedElement(elem) {
   }
   elem.type = "text/html";
   elem.src = getEmbeddedViewerURL(elem.src);
+
   if (parentNode) {
-    nextSibling.before(elem);
+    // Suppress linter warning: insertBefore is preferable to
+    // nextSibling.before(elem) because nextSibling may be null.
+    // eslint-disable-next-line unicorn/prefer-modern-dom-apis
+    parentNode.insertBefore(elem, nextSibling);
   }
 }
 
