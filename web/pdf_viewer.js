@@ -916,7 +916,6 @@ class PDFViewer {
             pageColors: this.pageColors,
             l10n: this.l10n,
             layerProperties,
-            filterFactory: pdfDocument.filterFactory,
           });
           this._pages.push(pageView);
         }

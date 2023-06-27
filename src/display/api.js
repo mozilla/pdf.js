@@ -1382,6 +1382,13 @@ class PDFPageProxy {
   }
 
   /**
+   * @type {Object} The filter factory instance.
+   */
+  get filterFactory() {
+    return this._transport.filterFactory;
+  }
+
+  /**
    * @type {boolean} True if only XFA form.
    */
   get isPureXfa() {
