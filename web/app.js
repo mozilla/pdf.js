@@ -1102,11 +1102,13 @@ const PDFViewerApplication = {
   _documentError(message, moreInfo = null) {
     this._unblockDocumentLoadEvent();
 
-    this._otherError(message, moreInfo);
+    // Show the error message to the user
+    const errorMessage = "PDF loading failed. Please try again.";
+    console.error(errorMessage);
 
     this.eventBus.dispatch("documenterror", {
       source: this,
-      message,
+      message: errorMessage,
       reason: moreInfo?.message ?? null,
     });
   },
