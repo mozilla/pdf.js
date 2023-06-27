@@ -3430,8 +3430,8 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       firstImgData = null;
     });
 
-    it("render for printing, with `printAnnotationStorage` set", async function () {
-      async function getPrintData(printAnnotationStorage = null) {
+    it("render for printing, with `frozenAnnotationStorage` set", async function () {
+      async function getPrintData(frozenAnnotationStorage = null) {
         const canvasAndCtx = CanvasFactory.create(
           viewport.width,
           viewport.height
@@ -3441,7 +3441,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
           viewport,
           intent: "print",
           annotationMode: AnnotationMode.ENABLE_STORAGE,
-          printAnnotationStorage,
+          frozenAnnotationStorage,
         });
 
         await renderTask.promise;
@@ -3468,13 +3468,13 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const printOriginalData = await getPrintData();
 
       // Get the *frozen* print-storage for use during printing.
-      const printAnnotationStorage = annotationStorage.print;
+      const frozenAnnotationStorage = annotationStorage.frozen;
       // Update the contents of the form-field again.
       annotationStorage.setValue("22R", { value: "Printing again..." });
 
       // Sanity check to ensure that the print-storage didn't change,
       // after the form-field was updated.
-      expect(printAnnotationStorage.serializable).not.toEqual(
+      expect(frozenAnnotationStorage.serializable).not.toEqual(
         annotationStorage.serializable
       );
 
@@ -3483,13 +3483,13 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const printAgainData = await getPrintData();
 
       // Render for printing again, after updating the form-field,
-      // with `printAnnotationStorage` set.
-      const printStorageData = await getPrintData(printAnnotationStorage);
+      // with `frozenAnnotationStorage` set.
+      const printStorageData = await getPrintData(frozenAnnotationStorage);
 
       // Ensure that printing again, with default parameters,
       // actually uses the "new" form-field data.
       expect(printAgainData).not.toEqual(printOriginalData);
-      // Finally ensure that printing, with `printAnnotationStorage` set,
+      // Finally ensure that printing, with `frozenAnnotationStorage` set,
       // still uses the "previous" form-field data.
       expect(printStorageData).toEqual(printOriginalData);
 

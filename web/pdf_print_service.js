@@ -24,13 +24,12 @@ let overlayManager = null;
 // Renders the page to the canvas of the given print service, and returns
 // the suggested dimensions of the output page.
 function renderPage(
-  activeServiceOnEntry,
   pdfDocument,
   pageNumber,
   size,
   printResolution,
   optionalContentConfigPromise,
-  printAnnotationStoragePromise
+  frozenAnnotationStoragePromise
 ) {
   const scratchCanvas = activeService.scratchCanvas;
 
@@ -47,8 +46,8 @@ function renderPage(
 
   return Promise.all([
     pdfDocument.getPage(pageNumber),
-    printAnnotationStoragePromise,
-  ]).then(function ([pdfPage, printAnnotationStorage]) {
+    frozenAnnotationStoragePromise,
+  ]).then(function ([pdfPage, frozenAnnotationStorage]) {
     const renderContext = {
       canvasContext: ctx,
       transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
@@ -56,7 +55,7 @@ function renderPage(
       intent: "print",
       annotationMode: AnnotationMode.ENABLE_STORAGE,
       optionalContentConfigPromise,
-      printAnnotationStorage,
+      frozenAnnotationStorage,
     };
     return pdfPage.render(renderContext).promise;
   });
@@ -69,7 +68,7 @@ class PDFPrintService {
     printContainer,
     printResolution,
     optionalContentConfigPromise = null,
-    printAnnotationStoragePromise = null,
+    frozenAnnotationStoragePromise = null,
     l10n
   ) {
     this.pdfDocument = pdfDocument;
@@ -78,8 +77,8 @@ class PDFPrintService {
     this._printResolution = printResolution || 150;
     this._optionalContentConfigPromise =
       optionalContentConfigPromise || pdfDocument.getOptionalContentConfig();
-    this._printAnnotationStoragePromise =
-      printAnnotationStoragePromise || Promise.resolve();
+    this._frozenAnnotationStoragePromise =
+      frozenAnnotationStoragePromise || Promise.resolve();
     this.l10n = l10n;
     this.currentPage = -1;
     // The temporary canvas where renderPage paints one page at a time.
@@ -158,13 +157,12 @@ class PDFPrintService {
       const index = this.currentPage;
       renderProgress(index, pageCount, this.l10n);
       renderPage(
-        this,
         this.pdfDocument,
         /* pageNumber = */ index + 1,
         this.pagesOverview[index],
         this._printResolution,
         this._optionalContentConfigPromise,
-        this._printAnnotationStoragePromise
+        this._frozenAnnotationStoragePromise
       )
         .then(this.useRenderedPage.bind(this))
         .then(function () {
@@ -360,7 +358,7 @@ PDFPrintServiceFactory.instance = {
     printContainer,
     printResolution,
     optionalContentConfigPromise,
-    printAnnotationStoragePromise,
+    frozenAnnotationStoragePromise,
     l10n
   ) {
     if (activeService) {
@@ -372,7 +370,7 @@ PDFPrintServiceFactory.instance = {
       printContainer,
       printResolution,
       optionalContentConfigPromise,
-      printAnnotationStoragePromise,
+      frozenAnnotationStoragePromise,
       l10n
     );
     return activeService;

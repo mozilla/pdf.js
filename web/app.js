@@ -228,7 +228,7 @@ const PDFViewerApplication = {
   _PDFBug: null,
   _hasAnnotationEditors: false,
   _title: document.title,
-  _printAnnotationStoragePromise: null,
+  _frozenAnnotationStoragePromise: null,
   _touchInfo: null,
   _isCtrlKeyDown: false,
   _nimbusDataPromise: null,
@@ -1738,13 +1738,13 @@ const PDFViewerApplication = {
   },
 
   beforePrint() {
-    this._printAnnotationStoragePromise = this.pdfScriptingManager
+    this._frozenAnnotationStoragePromise = this.pdfScriptingManager
       .dispatchWillPrint()
       .catch(() => {
         /* Avoid breaking printing; ignoring errors. */
       })
       .then(() => {
-        return this.pdfDocument?.annotationStorage.print;
+        return this.pdfDocument?.annotationStorage.frozen;
       });
 
     if (this.printService) {
@@ -1783,7 +1783,7 @@ const PDFViewerApplication = {
       printContainer,
       printResolution,
       optionalContentConfigPromise,
-      this._printAnnotationStoragePromise,
+      this._frozenAnnotationStoragePromise,
       this.l10n
     );
     this.printService = printService;
@@ -1802,11 +1802,11 @@ const PDFViewerApplication = {
   },
 
   afterPrint() {
-    if (this._printAnnotationStoragePromise) {
-      this._printAnnotationStoragePromise.then(() => {
+    if (this._frozenAnnotationStoragePromise) {
+      this._frozenAnnotationStoragePromise.then(() => {
         this.pdfScriptingManager.dispatchDidPrint();
       });
-      this._printAnnotationStoragePromise = null;
+      this._frozenAnnotationStoragePromise = null;
     }
 
     if (this.printService) {

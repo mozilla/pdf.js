@@ -40,7 +40,7 @@ import {
 } from "../shared/util.js";
 import {
   AnnotationStorage,
-  PrintAnnotationStorage,
+  FrozenAnnotationStorage,
 } from "./annotation_storage.js";
 import {
   deprecated,
@@ -1226,7 +1226,7 @@ class PDFDocumentProxy {
  *   states set.
  * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap] - Map some
  *   annotation ids with canvases used to render them.
- * @property {PrintAnnotationStorage} [printAnnotationStorage]
+ * @property {FrozenAnnotationStorage} [frozenAnnotationStorage]
  */
 
 /**
@@ -1247,7 +1247,7 @@ class PDFDocumentProxy {
  *      (as above) but where interactive form elements are updated with data
  *      from the {@link AnnotationStorage}-instance; useful e.g. for printing.
  *   The default value is `AnnotationMode.ENABLE`.
- * @property {PrintAnnotationStorage} [printAnnotationStorage]
+ * @property {FrozenAnnotationStorage} [frozenAnnotationStorage]
  */
 
 /**
@@ -1415,7 +1415,7 @@ class PDFPageProxy {
     optionalContentConfigPromise = null,
     annotationCanvasMap = null,
     pageColors = null,
-    printAnnotationStorage = null,
+    frozenAnnotationStorage = null,
   }) {
     if (
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
@@ -1432,7 +1432,7 @@ class PDFPageProxy {
     const intentArgs = this._transport.getRenderingIntent(
       intent,
       annotationMode,
-      printAnnotationStorage
+      frozenAnnotationStorage
     );
     // If there was a pending destroy, cancel it so no cleanup happens during
     // this call to render...
@@ -1555,7 +1555,7 @@ class PDFPageProxy {
   getOperatorList({
     intent = "display",
     annotationMode = AnnotationMode.ENABLE,
-    printAnnotationStorage = null,
+    frozenAnnotationStorage = null,
   } = {}) {
     if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
       throw new Error("Not implemented: getOperatorList");
@@ -1571,7 +1571,7 @@ class PDFPageProxy {
     const intentArgs = this._transport.getRenderingIntent(
       intent,
       annotationMode,
-      printAnnotationStorage,
+      frozenAnnotationStorage,
       /* isOpList = */ true
     );
     let intentState = this._intentStates.get(intentArgs.cacheKey);
@@ -2438,7 +2438,7 @@ class WorkerTransport {
   getRenderingIntent(
     intent,
     annotationMode = AnnotationMode.ENABLE,
-    printAnnotationStorage = null,
+    frozenAnnotationStorage = null,
     isOpList = false
   ) {
     let renderingIntent = RenderingIntentFlag.DISPLAY; // Default value.
@@ -2471,9 +2471,8 @@ class WorkerTransport {
         renderingIntent += RenderingIntentFlag.ANNOTATIONS_STORAGE;
 
         const annotationStorage =
-          renderingIntent & RenderingIntentFlag.PRINT &&
-          printAnnotationStorage instanceof PrintAnnotationStorage
-            ? printAnnotationStorage
+          frozenAnnotationStorage instanceof FrozenAnnotationStorage
+            ? frozenAnnotationStorage
             : this.annotationStorage;
 
         annotationMap = annotationStorage.serializable;

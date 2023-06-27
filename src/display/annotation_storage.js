@@ -158,10 +158,10 @@ class AnnotationStorage {
   }
 
   /**
-   * @returns {PrintAnnotationStorage}
+   * @returns {FrozenAnnotationStorage}
    */
-  get print() {
-    return new PrintAnnotationStorage(this);
+  get frozen() {
+    return new FrozenAnnotationStorage(this);
   }
 
   /**
@@ -194,11 +194,12 @@ class AnnotationStorage {
 }
 
 /**
- * A special `AnnotationStorage` for use during printing, where the serializable
- * data is *frozen* upon initialization, to prevent scripting from modifying its
- * contents. (Necessary since printing is triggered synchronously in browsers.)
+ * A special version of the `AnnotationStorage` for use e.g. during printing,
+ * where the serializable data is *frozen* upon initialization, to prevent e.g.
+ * scripting from modifying its contents. (Necessary since printing is triggered
+ * synchronously in browsers.)
  */
-class PrintAnnotationStorage extends AnnotationStorage {
+class FrozenAnnotationStorage extends AnnotationStorage {
   #serializable = null;
 
   constructor(parent) {
@@ -208,11 +209,11 @@ class PrintAnnotationStorage extends AnnotationStorage {
   }
 
   /**
-   * @returns {PrintAnnotationStorage}
+   * @returns {FrozenAnnotationStorage}
    */
   // eslint-disable-next-line getter-return
-  get print() {
-    unreachable("Should not call PrintAnnotationStorage.print");
+  get frozen() {
+    unreachable("Should not call FrozenAnnotationStorage.frozen");
   }
 
   /**
@@ -232,4 +233,4 @@ class PrintAnnotationStorage extends AnnotationStorage {
   }
 }
 
-export { AnnotationStorage, PrintAnnotationStorage };
+export { AnnotationStorage, FrozenAnnotationStorage };
