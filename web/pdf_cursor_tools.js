@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
+import { AnnotationEditorType, shadow } from "pdfjs-lib";
 import { CursorTool, PresentationModeState } from "./ui_utils.js";
-import { AnnotationEditorType } from "pdfjs-lib";
 import { GrabToPan } from "./grab_to_pan.js";
 
 /**
@@ -37,10 +37,6 @@ class PDFCursorTools {
   constructor({ container, eventBus, cursorToolOnLoad = CursorTool.SELECT }) {
     this.container = container;
     this.eventBus = eventBus;
-
-    this.handTool = new GrabToPan({
-      element: this.container,
-    });
 
     this.#addEventListeners();
 
@@ -76,7 +72,7 @@ class PDFCursorTools {
         case CursorTool.SELECT:
           break;
         case CursorTool.HAND:
-          this.handTool.deactivate();
+          this._handTool.deactivate();
           break;
         case CursorTool.ZOOM:
         /* falls through */
@@ -90,7 +86,7 @@ class PDFCursorTools {
         break;
       case CursorTool.HAND:
         disableActiveTool();
-        this.handTool.activate();
+        this._handTool.activate();
         break;
       case CursorTool.ZOOM:
       /* falls through */
@@ -163,6 +159,19 @@ class PDFCursorTools {
         disableActive();
       }
     });
+  }
+
+  /**
+   * @private
+   */
+  get _handTool() {
+    return shadow(
+      this,
+      "_handTool",
+      new GrabToPan({
+        element: this.container,
+      })
+    );
   }
 }
 
