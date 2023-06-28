@@ -490,8 +490,24 @@ class Driver {
         });
         let promise = loadingTask.promise;
 
+        if (task.annotationStorage) {
+          for (const annotation of Object.values(task.annotationStorage)) {
+            if (annotation.bitmapName) {
+              promise = promise.then(async doc => {
+                const response = await fetch(
+                  new URL(`./images/${annotation.bitmapName}`, window.location)
+                );
+                const blob = await response.blob();
+                annotation.bitmap = await createImageBitmap(blob);
+
+                return doc;
+              });
+            }
+          }
+        }
+
         if (task.save) {
-          promise = loadingTask.promise.then(async doc => {
+          promise = promise.then(async doc => {
             if (!task.annotationStorage) {
               throw new Error("Missing `annotationStorage` entry.");
             }
