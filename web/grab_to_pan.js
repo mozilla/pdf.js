@@ -140,18 +140,12 @@ class GrabToPan {
     }
     const xDiff = event.clientX - this.clientXStart;
     const yDiff = event.clientY - this.clientYStart;
-    const scrollTop = this.scrollTopStart - yDiff;
-    const scrollLeft = this.scrollLeftStart - xDiff;
-    if (this.element.scrollTo) {
-      this.element.scrollTo({
-        top: scrollTop,
-        left: scrollLeft,
-        behavior: "instant",
-      });
-    } else {
-      this.element.scrollTop = scrollTop;
-      this.element.scrollLeft = scrollLeft;
-    }
+    this.element.scrollTo({
+      top: this.scrollTopStart - yDiff,
+      left: this.scrollLeftStart - xDiff,
+      behavior: "instant",
+    });
+
     if (!this.overlay.parentNode) {
       document.body.append(this.overlay);
     }
