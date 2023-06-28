@@ -36,6 +36,7 @@ import {
 } from "./core_utils.js";
 import { Dict, Ref } from "./primitives.js";
 import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager.js";
+import { AnnotationFactory } from "./annotation.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
 import { incrementalUpdate } from "./writer.js";
 import { isNodeJS } from "../shared/is_node.js";
@@ -537,12 +538,11 @@ class WorkerMessageHandler {
 
     handler.on(
       "SaveDocument",
-      function ({ isPureXfa, numPages, annotationStorage, filename }) {
+      async function ({ isPureXfa, numPages, annotationStorage, filename }) {
         const promises = [
           pdfManager.requestLoadedStream(),
           pdfManager.ensureCatalog("acroForm"),
           pdfManager.ensureCatalog("acroFormRef"),
-          pdfManager.ensureDoc("xref"),
           pdfManager.ensureDoc("startXRef"),
         ];
 
@@ -550,13 +550,21 @@ class WorkerMessageHandler {
           ? getNewAnnotationsMap(annotationStorage)
           : null;
 
+        const xref = await pdfManager.ensureDoc("xref");
+
         if (newAnnotationsByPage) {
+          const imagePromises = AnnotationFactory.generateImages(
+            annotationStorage.values(),
+            xref,
+            pdfManager.evaluatorOptions.isOffscreenCanvasSupported
+          );
+
           for (const [pageIndex, annotations] of newAnnotationsByPage) {
             promises.push(
               pdfManager.getPage(pageIndex).then(page => {
                 const task = new WorkerTask(`Save (editor): page ${pageIndex}`);
                 return page
-                  .saveNewAnnotations(handler, task, annotations)
+                  .saveNewAnnotations(handler, task, annotations, imagePromises)
                   .finally(function () {
                     finishWorkerTask(task);
                   });
@@ -586,7 +594,6 @@ class WorkerMessageHandler {
           stream,
           acroForm,
           acroFormRef,
-          xref,
           startXRef,
           ...refs
         ]) {

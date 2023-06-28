@@ -1819,6 +1819,15 @@ class PDFPageProxy {
       );
     }
 
+    const transfers = [];
+    if (annotationStorageMap) {
+      for (const annotation of annotationStorageMap.values()) {
+        if (annotation.bitmap) {
+          transfers.push(annotation.bitmap);
+        }
+      }
+    }
+
     const readableStream = this._transport.messageHandler.sendWithStream(
       "GetOperatorList",
       {
@@ -1826,7 +1835,8 @@ class PDFPageProxy {
         intent: renderingIntent,
         cacheKey,
         annotationStorage: annotationStorageMap,
-      }
+      },
+      transfers
     );
     const reader = readableStream.getReader();
 
@@ -2905,13 +2915,26 @@ class WorkerTransport {
           "please use the getData-method instead."
       );
     }
+    const annotationStorage = this.annotationStorage.serializable;
+    const transfers = [];
+    if (annotationStorage) {
+      for (const annotation of annotationStorage.values()) {
+        if (annotation.bitmap) {
+          transfers.push(annotation.bitmap);
+        }
+      }
+    }
     return this.messageHandler
-      .sendWithPromise("SaveDocument", {
-        isPureXfa: !!this._htmlForXfa,
-        numPages: this._numPages,
-        annotationStorage: this.annotationStorage.serializable,
-        filename: this._fullReader?.filename ?? null,
-      })
+      .sendWithPromise(
+        "SaveDocument",
+        {
+          isPureXfa: !!this._htmlForXfa,
+          numPages: this._numPages,
+          annotationStorage,
+          filename: this._fullReader?.filename ?? null,
+        },
+        transfers
+      )
       .finally(() => {
         this.annotationStorage.resetModified();
       });
