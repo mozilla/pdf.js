@@ -41,6 +41,7 @@ import {
 import {
   AnnotationStorage,
   PrintAnnotationStorage,
+  SerializableEmpty,
 } from "./annotation_storage.js";
 import {
   deprecated,
@@ -1811,22 +1812,18 @@ class PDFPageProxy {
   /**
    * @private
    */
-  _pumpOperatorList({ renderingIntent, cacheKey, annotationStorageMap }) {
+  _pumpOperatorList({
+    renderingIntent,
+    cacheKey,
+    annotationStorageSerializable,
+  }) {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
         Number.isInteger(renderingIntent) && renderingIntent > 0,
         '_pumpOperatorList: Expected valid "renderingIntent" argument.'
       );
     }
-
-    const transfers = [];
-    if (annotationStorageMap) {
-      for (const annotation of annotationStorageMap.values()) {
-        if (annotation.bitmap) {
-          transfers.push(annotation.bitmap);
-        }
-      }
-    }
+    const { map, transfers } = annotationStorageSerializable;
 
     const readableStream = this._transport.messageHandler.sendWithStream(
       "GetOperatorList",
@@ -1834,7 +1831,7 @@ class PDFPageProxy {
         pageIndex: this._pageIndex,
         intent: renderingIntent,
         cacheKey,
-        annotationStorage: annotationStorageMap,
+        annotationStorage: map,
       },
       transfers
     );
@@ -2459,7 +2456,7 @@ class WorkerTransport {
     isOpList = false
   ) {
     let renderingIntent = RenderingIntentFlag.DISPLAY; // Default value.
-    let annotationMap = null;
+    let annotationStorageSerializable = SerializableEmpty;
 
     switch (intent) {
       case "any":
@@ -2492,7 +2489,7 @@ class WorkerTransport {
             ? printAnnotationStorage
             : this.annotationStorage;
 
-        annotationMap = annotationStorage.serializable;
+        annotationStorageSerializable = annotationStorage.serializable;
         break;
       default:
         warn(`getRenderingIntent - invalid annotationMode: ${annotationMode}`);
@@ -2504,10 +2501,8 @@ class WorkerTransport {
 
     return {
       renderingIntent,
-      cacheKey: `${renderingIntent}_${AnnotationStorage.getHash(
-        annotationMap
-      )}`,
-      annotationStorageMap: annotationMap,
+      cacheKey: `${renderingIntent}_${annotationStorageSerializable.hash}`,
+      annotationStorageSerializable,
     };
   }
 
@@ -2915,22 +2910,15 @@ class WorkerTransport {
           "please use the getData-method instead."
       );
     }
-    const annotationStorage = this.annotationStorage.serializable;
-    const transfers = [];
-    if (annotationStorage) {
-      for (const annotation of annotationStorage.values()) {
-        if (annotation.bitmap) {
-          transfers.push(annotation.bitmap);
-        }
-      }
-    }
+    const { map, transfers } = this.annotationStorage.serializable;
+
     return this.messageHandler
       .sendWithPromise(
         "SaveDocument",
         {
           isPureXfa: !!this._htmlForXfa,
           numPages: this._numPages,
-          annotationStorage,
+          annotationStorage: map,
           filename: this._fullReader?.filename ?? null,
         },
         transfers
