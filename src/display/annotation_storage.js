@@ -17,6 +17,12 @@ import { objectFromMap, unreachable } from "../shared/util.js";
 import { AnnotationEditor } from "./editor/editor.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 
+const SerializableEmpty = Object.freeze({
+  map: null,
+  hash: "",
+  transfers: undefined,
+});
+
 /**
  * Key/value storage for annotation data in forms.
  */
@@ -171,34 +177,27 @@ class AnnotationStorage {
    */
   get serializable() {
     if (this.#storage.size === 0) {
-      return null;
+      return SerializableEmpty;
     }
-    const clone = new Map();
-
+    const map = new Map(),
+      hash = new MurmurHash3_64(),
+      transfers = [];
     for (const [key, val] of this.#storage) {
       const serialized =
         val instanceof AnnotationEditor ? val.serialize() : val;
       if (serialized) {
-        clone.set(key, serialized);
+        map.set(key, serialized);
+
+        hash.update(`${key}:${JSON.stringify(serialized)}`);
+
+        if (serialized.bitmap) {
+          transfers.push(serialized.bitmap);
+        }
       }
     }
-    return clone;
-  }
-
-  /**
-   * PLEASE NOTE: Only intended for usage within the API itself.
-   * @ignore
-   */
-  static getHash(map) {
-    if (!map) {
-      return "";
-    }
-    const hash = new MurmurHash3_64();
-
-    for (const [key, val] of map) {
-      hash.update(`${key}:${JSON.stringify(val)}`);
-    }
-    return hash.hexdigest();
+    return map.size > 0
+      ? { map, hash: hash.hexdigest(), transfers }
+      : SerializableEmpty;
   }
 }
 
@@ -208,12 +207,21 @@ class AnnotationStorage {
  * contents. (Necessary since printing is triggered synchronously in browsers.)
  */
 class PrintAnnotationStorage extends AnnotationStorage {
-  #serializable = null;
+  #serializable;
 
   constructor(parent) {
     super();
+    const { map, hash, transfers } = parent.serializable;
     // Create a *copy* of the data, since Objects are passed by reference in JS.
-    this.#serializable = structuredClone(parent.serializable);
+    const clone = structuredClone(
+      map,
+      (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("SKIP_BABEL || TESTING")) &&
+        transfers
+        ? { transfer: transfers }
+        : null
+    );
+    this.#serializable = { map: clone, hash, transfers };
   }
 
   /**
@@ -233,4 +241,4 @@ class PrintAnnotationStorage extends AnnotationStorage {
   }
 }
 
-export { AnnotationStorage, PrintAnnotationStorage };
+export { AnnotationStorage, PrintAnnotationStorage, SerializableEmpty };

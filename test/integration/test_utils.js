@@ -136,9 +136,11 @@ const mockClipboard = async pages => {
 exports.mockClipboard = mockClipboard;
 
 const getSerialized = page =>
-  page.evaluate(() => [
-    ...window.PDFViewerApplication.pdfDocument.annotationStorage.serializable.values(),
-  ]);
+  page.evaluate(() => {
+    const { map } =
+      window.PDFViewerApplication.pdfDocument.annotationStorage.serializable;
+    return map ? [...map.values()] : [];
+  });
 exports.getSerialized = getSerialized;
 
 function getEditors(page, kind) {
