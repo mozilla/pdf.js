@@ -21,18 +21,10 @@ class GrabToPan {
   /**
    * Construct a GrabToPan instance for a given HTML element.
    * @param {Element} options.element
-   * @param {function} [options.ignoreTarget] - See `ignoreTarget(node)`.
-   * @param {function(boolean)} [options.onActiveChanged] - Called when
-   *   grab-to-pan is (de)activated. The first argument is a boolean that
-   *   shows whether grab-to-pan is activated.
    */
-  constructor(options) {
-    this.element = options.element;
-    this.document = options.element.ownerDocument;
-    if (typeof options.ignoreTarget === "function") {
-      this.ignoreTarget = options.ignoreTarget;
-    }
-    this.onActiveChanged = options.onActiveChanged;
+  constructor({ element }) {
+    this.element = element;
+    this.document = element.ownerDocument;
 
     // Bind the contexts to ensure that `this` always points to
     // the GrabToPan instance.
@@ -57,8 +49,6 @@ class GrabToPan {
       this.active = true;
       this.element.addEventListener("mousedown", this._onMouseDown, true);
       this.element.classList.add(CSS_CLASS_GRAB);
-
-      this.onActiveChanged?.(true);
     }
   }
 
@@ -71,8 +61,6 @@ class GrabToPan {
       this.element.removeEventListener("mousedown", this._onMouseDown, true);
       this._endPan();
       this.element.classList.remove(CSS_CLASS_GRAB);
-
-      this.onActiveChanged?.(false);
     }
   }
 
