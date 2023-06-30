@@ -1424,16 +1424,6 @@ class PDFPageProxy {
     pageColors = null,
     printAnnotationStorage = null,
   }) {
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      arguments[0]?.canvasFactory
-    ) {
-      throw new Error(
-        "render no longer accepts the `canvasFactory`-option, " +
-          "please pass it to the `getDocument`-function instead."
-      );
-    }
-
     this._stats?.time("Overall");
 
     const intentArgs = this._transport.getRenderingIntent(
