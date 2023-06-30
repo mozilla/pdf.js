@@ -283,23 +283,6 @@ class PDFViewer {
     this.#enablePermissions = options.enablePermissions || false;
     this.pageColors = options.pageColors || null;
 
-    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-      if (
-        this.pageColors &&
-        !(
-          CSS.supports("color", this.pageColors.background) &&
-          CSS.supports("color", this.pageColors.foreground)
-        )
-      ) {
-        if (this.pageColors.background || this.pageColors.foreground) {
-          console.warn(
-            "PDFViewer: Ignoring `pageColors`-option, since the browser doesn't support the values used."
-          );
-        }
-        this.pageColors = null;
-      }
-    }
-
     this.defaultRenderingQueue = !options.renderingQueue;
     if (
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
