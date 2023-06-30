@@ -18,20 +18,6 @@ import { Jbig2Image } from "./core/jbig2.js";
 import { JpegImage } from "./core/jpg.js";
 import { JpxImage } from "./core/jpx.js";
 
-// To ensure that the standalone PDF.js image decoders have the same
-// browser/environment compatibility as the regular PDF.js library,
-// the standard set of polyfills are thus included in this build as well.
-//
-// Given that the (current) image decoders don't use all of the features
-// of the complete PDF.js library, e.g. they are completely synchronous,
-// some of the larger polyfills are thus unnecessary.
-//
-// In an attempt to reduce the size of the standalone PDF.js image decoders,
-// the following polyfills are currently being excluded:
-//  - ReadableStream
-//  - Promise
-//  - URL
-
 // eslint-disable-next-line no-unused-vars
 const pdfjsVersion = PDFJSDev.eval("BUNDLE_VERSION");
 // eslint-disable-next-line no-unused-vars
