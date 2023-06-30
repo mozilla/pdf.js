@@ -688,13 +688,12 @@ describe("FreeText Editor", () => {
           }
 
           const serialize = proprName =>
-            page.evaluate(
-              name =>
-                [
-                  ...window.PDFViewerApplication.pdfDocument.annotationStorage.serializable.values(),
-                ].map(x => x[name]),
-              proprName
-            );
+            page.evaluate(name => {
+              const { map } =
+                window.PDFViewerApplication.pdfDocument.annotationStorage
+                  .serializable;
+              return map ? Array.from(map.values(), x => x[name]) : [];
+            }, proprName);
 
           expect(await serialize("value"))
             .withContext(`In ${browserName}`)
@@ -805,13 +804,12 @@ describe("FreeText Editor", () => {
           }
 
           const serialize = proprName =>
-            page.evaluate(
-              name =>
-                [
-                  ...window.PDFViewerApplication.pdfDocument.annotationStorage.serializable.values(),
-                ].map(x => x[name]),
-              proprName
-            );
+            page.evaluate(name => {
+              const { map } =
+                window.PDFViewerApplication.pdfDocument.annotationStorage
+                  .serializable;
+              return map ? Array.from(map.values(), x => x[name]) : [];
+            }, proprName);
 
           const rects = (await serialize("rect")).map(rect =>
             rect.slice(0, 2).map(x => Math.floor(x))
