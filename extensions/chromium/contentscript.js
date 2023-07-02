@@ -22,11 +22,7 @@ function getViewerURL(pdf_url) {
   return VIEWER_URL + "?file=" + encodeURIComponent(pdf_url);
 }
 
-if (CSS.supports("animation", "0s")) {
-  document.addEventListener("animationstart", onAnimationStart, true);
-} else {
-  document.addEventListener("webkitAnimationStart", onAnimationStart, true);
-}
+document.addEventListener("animationstart", onAnimationStart, true);
 
 function onAnimationStart(event) {
   if (event.animationName === "pdfjs-detected-object-or-embed") {
