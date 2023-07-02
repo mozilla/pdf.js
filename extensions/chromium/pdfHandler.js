@@ -20,7 +20,15 @@ limitations under the License.
 var VIEWER_URL = chrome.extension.getURL("content/web/viewer.html");
 
 function getViewerURL(pdf_url) {
-  return VIEWER_URL + "?file=" + encodeURIComponent(pdf_url);
+  // |pdf_url| may contain a fragment such as "#page=2". That should be passed
+  // as a fragment to the viewer, not encoded in pdf_url.
+  var hash = "";
+  var i = pdf_url.indexOf("#");
+  if (i > 0) {
+    hash = pdf_url.slice(i);
+    pdf_url = pdf_url.slice(0, i);
+  }
+  return VIEWER_URL + "?file=" + encodeURIComponent(pdf_url) + hash;
 }
 
 /**
