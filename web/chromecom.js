@@ -42,6 +42,9 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) {
   }
 
   AppOptions.set("defaultUrl", defaultUrl);
+  // Ensure that PDFViewerApplication.initialBookmark reflects the current hash,
+  // in case the URL rewrite above results in a different hash.
+  PDFViewerApplication.initialBookmark = location.hash.slice(1);
 })();
 
 const ChromeCom = {
