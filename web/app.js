@@ -768,13 +768,15 @@ const PDFViewerApplication = {
     return this.externalServices.supportedMouseWheelZoomModifierKeys;
   },
 
-  initPassiveLoading() {
+  initPassiveLoading(file) {
     if (
       typeof PDFJSDev === "undefined" ||
       !PDFJSDev.test("MOZCENTRAL || CHROME")
     ) {
       throw new Error("Not implemented: initPassiveLoading");
     }
+    this.setTitleUsingUrl(file, /* downloadUrl = */ file);
+
     this.externalServices.initPassiveLoading({
       onOpenWithTransport: range => {
         this.open({ range });
@@ -2285,8 +2287,7 @@ function webViewerInitialized() {
         PDFViewerApplication._hideViewBookmark();
       }
     } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
-      PDFViewerApplication.setTitleUsingUrl(file, /* downloadUrl = */ file);
-      PDFViewerApplication.initPassiveLoading();
+      PDFViewerApplication.initPassiveLoading(file);
     } else {
       throw new Error("Not implemented: webViewerInitialized");
     }
