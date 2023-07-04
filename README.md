@@ -70,7 +70,7 @@ and then you can open:
 
 + http://localhost:8888/web/viewer.html
 
-Please keep in mind that this requires a modern and fully up-to-date browser; refer to [Building PDF.js](https://github.com/mozilla/pdf.js/blob/master/README.md#building-pdfjs) for non-development usage of the PDF.js library.
+Please keep in mind that this assumes the latest version of Mozilla Firefox; refer to [Building PDF.js](https://github.com/mozilla/pdf.js/blob/master/README.md#building-pdfjs) for non-development usage of the PDF.js library.
 
 It is also possible to view all test PDF files on the right side by opening:
 
@@ -139,7 +139,3 @@ Talk to us on Matrix:
 File an issue:
 
 + https://github.com/mozilla/pdf.js/issues/new
-
-Follow us on Twitter: @pdfjs
-
-+ https://twitter.com/pdfjs
