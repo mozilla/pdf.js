@@ -342,8 +342,15 @@ class FreeTextEditor extends AnnotationEditor {
       div.style.display = savedDisplay;
     }
 
-    this.width = rect.width / parentWidth;
-    this.height = rect.height / parentHeight;
+    // The dimensions are relative to the rotation of the page, hence we need to
+    // take that into account (see issue #16636).
+    if (this.rotation % 180 === this.parentRotation % 180) {
+      this.width = rect.width / parentWidth;
+      this.height = rect.height / parentHeight;
+    } else {
+      this.width = rect.height / parentWidth;
+      this.height = rect.width / parentHeight;
+    }
   }
 
   /**
