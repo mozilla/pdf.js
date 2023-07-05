@@ -1178,4 +1178,88 @@ describe("FreeText Editor", () => {
       );
     });
   });
+
+  describe("FreeText rotation", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the dimensions of a rotated annotations are correct after a font size change", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.keyboard.press("r");
+          await page.click("#editorFreeText");
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          const data = "Hello PDF.js World !!";
+          await page.mouse.click(rect.x + 100, rect.y + 100);
+          await page.type(`${getEditorSelector(0)} .internal`, data);
+
+          const editorRect = await page.$eval(getEditorSelector(0), el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return {
+              x,
+              y,
+              width,
+              height,
+            };
+          });
+
+          // Commit.
+          await page.mouse.click(
+            editorRect.x,
+            editorRect.y + 2 * editorRect.height
+          );
+
+          let serialized = await getSerialized(page);
+          let bbox = serialized[0].rect;
+          let width = bbox[2] - bbox[0];
+          let height = bbox[3] - bbox[1];
+          expect(width < height)
+            .withContext(`In ${browserName}`)
+            .toEqual(true);
+
+          for (let i = 0; i < 3; i++) {
+            await page.keyboard.press("r");
+            await page.waitForTimeout(10);
+          }
+
+          await page.keyboard.down("Control");
+          await page.keyboard.press("a");
+          await page.keyboard.up("Control");
+          await page.waitForTimeout(10);
+
+          page.evaluate(() => {
+            window.PDFViewerApplication.eventBus.dispatch(
+              "switchannotationeditorparams",
+              {
+                source: null,
+                type: /* AnnotationEditorParamsType.FREETEXT_SIZE */ 1,
+                value: 50,
+              }
+            );
+          });
+          await page.waitForTimeout(10);
+
+          serialized = await getSerialized(page);
+          bbox = serialized[0].rect;
+          width = bbox[2] - bbox[0];
+          height = bbox[3] - bbox[1];
+          expect(width < height)
+            .withContext(`In ${browserName}`)
+            .toEqual(true);
+        })
+      );
+    });
+  });
 });
