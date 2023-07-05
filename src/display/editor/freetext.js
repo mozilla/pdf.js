@@ -502,8 +502,47 @@ class FreeTextEditor extends AnnotationEditor {
       // This editor was created in using copy (ctrl+c).
       const [parentWidth, parentHeight] = this.parentDimensions;
       if (this.annotationElementId) {
-        const [tx] = this.getInitialTranslation();
-        this.setAt(baseX * parentWidth, baseY * parentHeight, tx, tx);
+        // This stuff is hard to test: if something is changed here, please
+        // test with the following PDF file:
+        //  - freetexts.pdf
+        //  - rotated_freetexts.pdf
+        // Only small variations between the original annotation and its editor
+        // are allowed.
+
+        // position is the position of the first glyph in the annotation
+        // and it's relative to its container.
+        const { position } = this.#initialData;
+        let [tx, ty] = this.getInitialTranslation();
+        [tx, ty] = this.pageTranslationToScreen(tx, ty);
+        const [pageWidth, pageHeight] = this.pageDimensions;
+        const [pageX, pageY] = this.pageTranslation;
+        let posX, posY;
+        switch (this.rotation) {
+          case 0:
+            posX = baseX + (position[0] - pageX) / pageWidth;
+            posY = baseY + this.height - (position[1] - pageY) / pageHeight;
+            break;
+          case 90:
+            posX = baseX + (position[0] - pageX) / pageWidth;
+            posY = baseY - (position[1] - pageY) / pageHeight;
+            [tx, ty] = [ty, -tx];
+            break;
+          case 180:
+            posX = baseX - this.width + (position[0] - pageX) / pageWidth;
+            posY = baseY - (position[1] - pageY) / pageHeight;
+            [tx, ty] = [-tx, -ty];
+            break;
+          case 270:
+            posX =
+              baseX +
+              (position[0] - pageX - this.height * pageHeight) / pageWidth;
+            posY =
+              baseY +
+              (position[1] - pageY - this.width * pageWidth) / pageHeight;
+            [tx, ty] = [-ty, tx];
+            break;
+        }
+        this.setAt(posX * parentWidth, posY * parentHeight, tx, ty);
       } else {
         this.setAt(
           baseX * parentWidth,
@@ -519,6 +558,10 @@ class FreeTextEditor extends AnnotationEditor {
     } else {
       this.div.draggable = false;
       this.editorDiv.contentEditable = true;
+    }
+
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
+      this.div.setAttribute("annotation-id", this.annotationElementId);
     }
 
     return this.div;
@@ -554,6 +597,7 @@ class FreeTextEditor extends AnnotationEditor {
           id,
         },
         textContent,
+        textPosition,
         parent: {
           page: { pageNumber },
         },
@@ -569,6 +613,7 @@ class FreeTextEditor extends AnnotationEditor {
         color: Array.from(fontColor),
         fontSize,
         value: textContent.join("\n"),
+        position: textPosition,
         pageIndex: pageNumber - 1,
         rect,
         rotation,

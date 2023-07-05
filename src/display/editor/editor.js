@@ -296,6 +296,24 @@ class AnnotationEditor {
     }
   }
 
+  /**
+   * Convert a page translation into a screen one.
+   * @param {number} x
+   * @param {number} y
+   */
+  pageTranslationToScreen(x, y) {
+    switch (this.parentRotation) {
+      case 90:
+        return [-y, x];
+      case 180:
+        return [-x, -y];
+      case 270:
+        return [y, -x];
+      default:
+        return [x, y];
+    }
+  }
+
   get parentScale() {
     return this._uiManager.viewParameters.realScale;
   }
@@ -398,6 +416,9 @@ class AnnotationEditor {
     this.#hasBeenSelected = true;
   }
 
+  /**
+   * Convert the current rect into a page one.
+   */
   getRect(tx, ty) {
     const scale = this.parentScale;
     const [pageWidth, pageHeight] = this.pageDimensions;
