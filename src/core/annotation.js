@@ -3743,7 +3743,7 @@ class FreeTextAnnotation extends MarkupAnnotation {
       evaluator,
       task,
       {
-        fontName: "Helvetica",
+        fontName: "Helv",
         fontSize,
       },
       resources
@@ -3783,26 +3783,52 @@ class FreeTextAnnotation extends MarkupAnnotation {
     }
     let vscale = 1;
     const lineHeight = LINE_FACTOR * fontSize;
-    const lineDescent = LINE_DESCENT_FACTOR * fontSize;
+    const lineAscent = (LINE_FACTOR - LINE_DESCENT_FACTOR) * fontSize;
     const totalHeight = lineHeight * lines.length;
     if (totalHeight > h) {
       vscale = h / totalHeight;
     }
     const fscale = Math.min(hscale, vscale);
     const newFontSize = fontSize * fscale;
+    let firstPoint, clipBox, matrix;
+    switch (rotation) {
+      case 0:
+        matrix = [1, 0, 0, 1];
+        clipBox = [rect[0], rect[1], w, h];
+        firstPoint = [rect[0], rect[3] - lineAscent];
+        break;
+      case 90:
+        matrix = [0, 1, -1, 0];
+        clipBox = [rect[1], -rect[2], w, h];
+        firstPoint = [rect[1], -rect[0] - lineAscent];
+        break;
+      case 180:
+        matrix = [-1, 0, 0, -1];
+        clipBox = [-rect[2], -rect[3], w, h];
+        firstPoint = [-rect[2], -rect[1] - lineAscent];
+        break;
+      case 270:
+        matrix = [0, -1, 1, 0];
+        clipBox = [-rect[3], rect[0], w, h];
+        firstPoint = [-rect[3], rect[2] - lineAscent];
+        break;
+    }
+
     const buffer = [
       "q",
-      `0 0 ${numberToString(w)} ${numberToString(h)} re W n`,
+      `${matrix.join(" ")} 0 0 cm`,
+      `${clipBox.join(" ")} re W n`,
       `BT`,
-      `1 0 0 1 0 ${numberToString(h + lineDescent)} Tm 0 Tc ${getPdfColor(
-        color,
-        /* isFill */ true
-      )}`,
-      `/Helv ${numberToString(newFontSize)} Tf`,
+      `${getPdfColor(color, /* isFill */ true)}`,
+      `0 Tc /Helv ${numberToString(newFontSize)} Tf`,
     ];
 
+    buffer.push(
+      `${firstPoint.join(" ")} Td (${escapeString(encodedLines[0])}) Tj`
+    );
     const vShift = numberToString(lineHeight);
-    for (const line of encodedLines) {
+    for (let i = 1, ii = encodedLines.length; i < ii; i++) {
+      const line = encodedLines[i];
       buffer.push(`0 -${vShift} Td (${escapeString(line)}) Tj`);
     }
     buffer.push("ET", "Q");
@@ -3812,13 +3838,9 @@ class FreeTextAnnotation extends MarkupAnnotation {
     appearanceStreamDict.set("FormType", 1);
     appearanceStreamDict.set("Subtype", Name.get("Form"));
     appearanceStreamDict.set("Type", Name.get("XObject"));
-    appearanceStreamDict.set("BBox", [0, 0, w, h]);
+    appearanceStreamDict.set("BBox", rect);
     appearanceStreamDict.set("Resources", resources);
-
-    if (rotation) {
-      const matrix = getRotationMatrix(rotation, w, h);
-      appearanceStreamDict.set("Matrix", matrix);
-    }
+    appearanceStreamDict.set("Matrix", [1, 0, 0, 1, -rect[0], -rect[1]]);
 
     const ap = new StringStream(appearance);
     ap.dict = appearanceStreamDict;
