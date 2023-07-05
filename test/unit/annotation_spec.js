@@ -4110,14 +4110,16 @@ describe("annotation", function () {
       const appearance = data.dependencies[1].data;
       expect(appearance).toEqual(
         "3 0 obj\n" +
-          "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [0 0 44 44] " +
-          "/Resources << /Font << /Helv 1 0 R>>>> /Length 101>> stream\n" +
+          "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [12 34 56 78] " +
+          "/Resources << /Font << /Helv 1 0 R>>>> /Matrix [1 0 0 1 -12 -34] " +
+          "/Length 98>> stream\n" +
           "q\n" +
-          "0 0 44 44 re W n\n" +
+          "1 0 0 1 0 0 cm\n" +
+          "12 34 44 44 re W n\n" +
           "BT\n" +
-          "1 0 0 1 0 47.5 Tm 0 Tc 0 g\n" +
-          "/Helv 10 Tf\n" +
-          "0 -13.5 Td (Hello PDF.js World!) Tj\n" +
+          "0 g\n" +
+          "0 Tc /Helv 10 Tf\n" +
+          "12 68 Td (Hello PDF.js World!) Tj\n" +
           "ET\n" +
           "Q\n" +
           "endstream\n" +
@@ -4153,13 +4155,13 @@ describe("annotation", function () {
       expect(opList.fnArray).toEqual([
         OPS.beginAnnotation,
         OPS.save,
+        OPS.transform,
         OPS.constructPath,
         OPS.clip,
         OPS.endPath,
         OPS.beginText,
-        OPS.setTextMatrix,
-        OPS.setCharSpacing,
         OPS.setFillRGBColor,
+        OPS.setCharSpacing,
         OPS.dependency,
         OPS.setFont,
         OPS.moveText,
