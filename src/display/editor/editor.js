@@ -21,6 +21,11 @@
 import { bindEvents, ColorManager } from "./tools.js";
 import { FeatureTest, shadow, unreachable } from "../../shared/util.js";
 
+// The dimensions of the resizer is 15x15:
+// https://searchfox.org/mozilla-central/rev/1ce190047b9556c3c10ab4de70a0e61d893e2954/toolkit/content/minimal-xul.css#136-137
+// so each dimension must be greater than RESIZER_SIZE.
+const RESIZER_SIZE = 16;
+
 /**
  * @typedef {Object} AnnotationEditorParameters
  * @property {AnnotationEditorUIManager} uiManager - the global manager
@@ -34,6 +39,8 @@ import { FeatureTest, shadow, unreachable } from "../../shared/util.js";
  * Base class for editors.
  */
 class AnnotationEditor {
+  #aspectRatio = 0;
+
   #boundFocusin = this.focusin.bind(this);
 
   #boundFocusout = this.focusout.bind(this);
@@ -613,6 +620,44 @@ class AnnotationEditor {
     } else {
       this.parent.setActiveEditor(null);
     }
+  }
+
+  /**
+   * Set the minimum dimensions of the editor.
+   */
+  setMinDims() {
+    const { style } = this.div;
+    if (this.#aspectRatio >= 1) {
+      style.minHeight = `${RESIZER_SIZE}px`;
+      style.minWidth = `${Math.round(this.#aspectRatio * RESIZER_SIZE)}px`;
+    } else {
+      style.minWidth = `${RESIZER_SIZE}px`;
+      style.minHeight = `${Math.round(RESIZER_SIZE / this.#aspectRatio)}px`;
+    }
+  }
+
+  /**
+   * Set the aspect ratio to use when resizing.
+   * @param {number} width
+   * @param {number} height
+   */
+  setAspectRatio(width, height) {
+    this.#aspectRatio = width / height;
+  }
+
+  getHeight(width, height) {
+    if (
+      this.#aspectRatio &&
+      Math.abs(this.#aspectRatio - width / height) > 1e-2
+    ) {
+      height = Math.ceil(width / this.#aspectRatio);
+      this.setDims(width, height);
+    }
+    return height;
+  }
+
+  static get MIN_SIZE() {
+    return RESIZER_SIZE;
   }
 }
 
