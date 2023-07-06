@@ -39,7 +39,7 @@ const RESIZER_SIZE = 16;
  * Base class for editors.
  */
 class AnnotationEditor {
-  #aspectRatio = 0;
+  #keepAspectRatio = false;
 
   #boundFocusin = this.focusin.bind(this);
 
@@ -289,14 +289,16 @@ class AnnotationEditor {
   setDims(width, height) {
     const [parentWidth, parentHeight] = this.parentDimensions;
     this.div.style.width = `${(100 * width) / parentWidth}%`;
-    this.div.style.height = `${(100 * height) / parentHeight}%`;
+    if (!this.#keepAspectRatio) {
+      this.div.style.height = `${(100 * height) / parentHeight}%`;
+    }
   }
 
   fixDims() {
     const { style } = this.div;
     const { height, width } = style;
     const widthPercent = width.endsWith("%");
-    const heightPercent = height.endsWith("%");
+    const heightPercent = !this.#keepAspectRatio && height.endsWith("%");
     if (widthPercent && heightPercent) {
       return;
     }
@@ -305,7 +307,7 @@ class AnnotationEditor {
     if (!widthPercent) {
       style.width = `${(100 * parseFloat(width)) / parentWidth}%`;
     }
-    if (!heightPercent) {
+    if (!this.#keepAspectRatio && !heightPercent) {
       style.height = `${(100 * parseFloat(height)) / parentHeight}%`;
     }
   }
@@ -623,37 +625,23 @@ class AnnotationEditor {
   }
 
   /**
-   * Set the minimum dimensions of the editor.
-   */
-  setMinDims() {
-    const { style } = this.div;
-    if (this.#aspectRatio >= 1) {
-      style.minHeight = `${RESIZER_SIZE}px`;
-      style.minWidth = `${Math.round(this.#aspectRatio * RESIZER_SIZE)}px`;
-    } else {
-      style.minWidth = `${RESIZER_SIZE}px`;
-      style.minHeight = `${Math.round(RESIZER_SIZE / this.#aspectRatio)}px`;
-    }
-  }
-
-  /**
    * Set the aspect ratio to use when resizing.
    * @param {number} width
    * @param {number} height
    */
   setAspectRatio(width, height) {
-    this.#aspectRatio = width / height;
-  }
-
-  getHeight(width, height) {
-    if (
-      this.#aspectRatio &&
-      Math.abs(this.#aspectRatio - width / height) > 1e-2
-    ) {
-      height = Math.ceil(width / this.#aspectRatio);
-      this.setDims(width, height);
+    this.#keepAspectRatio = true;
+    const aspectRatio = width / height;
+    const { style } = this.div;
+    style.aspectRatio = aspectRatio;
+    style.height = "auto";
+    if (aspectRatio >= 1) {
+      style.minHeight = `${RESIZER_SIZE}px`;
+      style.minWidth = `${Math.round(aspectRatio * RESIZER_SIZE)}px`;
+    } else {
+      style.minWidth = `${RESIZER_SIZE}px`;
+      style.minHeight = `${Math.round(RESIZER_SIZE / aspectRatio)}px`;
     }
-    return height;
   }
 
   static get MIN_SIZE() {
