@@ -33,6 +33,7 @@ async function runTests(results) {
       "freetext_editor_spec.js",
       "ink_editor_spec.js",
       "scripting_spec.js",
+      "stamp_editor_spec.js",
     ],
   });
 
