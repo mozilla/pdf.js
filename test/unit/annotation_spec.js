@@ -57,6 +57,7 @@ describe("annotation", function () {
         },
       };
       this.evaluatorOptions = {
+        isEvalSupported: true,
         isOffscreenCanvasSupported: false,
       };
     }
@@ -314,35 +315,55 @@ describe("annotation", function () {
     });
 
     it("should set and get valid contents", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setContents("Foo bar baz");
 
       expect(annotation._contents).toEqual({ str: "Foo bar baz", dir: "ltr" });
     });
 
     it("should not set and get invalid contents", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setContents(undefined);
 
       expect(annotation._contents).toEqual({ str: "", dir: "ltr" });
     });
 
     it("should set and get a valid modification date", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setModificationDate("D:20190422");
 
       expect(annotation.modificationDate).toEqual("D:20190422");
     });
 
     it("should not set and get an invalid modification date", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setModificationDate(undefined);
 
       expect(annotation.modificationDate).toEqual(null);
     });
 
     it("should set and get flags", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setFlags(13);
 
       expect(annotation.hasFlag(AnnotationFlag.INVISIBLE)).toEqual(true);
@@ -353,63 +374,99 @@ describe("annotation", function () {
     });
 
     it("should be viewable and not printable by default", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
 
       expect(annotation.viewable).toEqual(true);
       expect(annotation.printable).toEqual(false);
     });
 
     it("should set and get a valid rectangle", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setRectangle([117, 694, 164.298, 720]);
 
       expect(annotation.rectangle).toEqual([117, 694, 164.298, 720]);
     });
 
     it("should not set and get an invalid rectangle", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setRectangle([117, 694, 164.298]);
 
       expect(annotation.rectangle).toEqual([0, 0, 0, 0]);
     });
 
     it("should reject a color if it is not an array", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setColor("red");
 
       expect(annotation.color).toEqual(new Uint8ClampedArray([0, 0, 0]));
     });
 
     it("should set and get a transparent color", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setColor([]);
 
       expect(annotation.color).toEqual(null);
     });
 
     it("should set and get a grayscale color", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setColor([0.4]);
 
       expect(annotation.color).toEqual(new Uint8ClampedArray([102, 102, 102]));
     });
 
     it("should set and get an RGB color", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setColor([0, 0, 1]);
 
       expect(annotation.color).toEqual(new Uint8ClampedArray([0, 0, 255]));
     });
 
     it("should set and get a CMYK color", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setColor([0.1, 0.92, 0.84, 0.02]);
 
       expect(annotation.color).toEqual(new Uint8ClampedArray([234, 59, 48]));
     });
 
     it("should not set and get an invalid color", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setColor([0.4, 0.6]);
 
       expect(annotation.color).toEqual(new Uint8ClampedArray([0, 0, 0]));
@@ -514,14 +571,22 @@ describe("annotation", function () {
     });
 
     it("should set and get a valid creation date", function () {
-      const markupAnnotation = new MarkupAnnotation({ dict, ref });
+      const markupAnnotation = new MarkupAnnotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       markupAnnotation.setCreationDate("D:20190422");
 
       expect(markupAnnotation.creationDate).toEqual("D:20190422");
     });
 
     it("should not set and get an invalid creation date", function () {
-      const markupAnnotation = new MarkupAnnotation({ dict, ref });
+      const markupAnnotation = new MarkupAnnotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       markupAnnotation.setCreationDate(undefined);
 
       expect(markupAnnotation.creationDate).toEqual(null);
