@@ -639,7 +639,7 @@ describe("FreeText Editor", () => {
           await page.click("#editorFreeText");
           let currentId = 0;
           const expected = [];
-          const oneToFourteen = [...new Array(14).keys()].map(x => x + 1);
+          const oneToFourteen = Array.from(new Array(14).keys(), x => x + 1);
 
           for (const pageNumber of oneToFourteen) {
             const pageSelector = `.page[data-page-number = "${pageNumber}"]`;
@@ -1258,6 +1258,90 @@ describe("FreeText Editor", () => {
           expect(width < height)
             .withContext(`In ${browserName}`)
             .toEqual(true);
+        })
+      );
+    });
+  });
+
+  describe("FreeText (remove)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must delete invisible annotations", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorFreeText");
+          let currentId = 0;
+          const oneToFourteen = Array.from(new Array(14).keys(), x => x + 1);
+
+          for (const pageNumber of oneToFourteen) {
+            const pageSelector = `.page[data-page-number = "${pageNumber}"]`;
+
+            await page.evaluate(selector => {
+              const element = window.document.querySelector(selector);
+              element.scrollIntoView();
+            }, pageSelector);
+
+            const annotationLayerSelector = `${pageSelector} > .annotationEditorLayer`;
+            await page.waitForSelector(annotationLayerSelector, {
+              visible: true,
+              timeout: 0,
+            });
+            await page.waitForTimeout(50);
+            if (![1, 14].includes(pageNumber)) {
+              continue;
+            }
+
+            const rect = await page.$eval(annotationLayerSelector, el => {
+              // With Chrome something is wrong when serializing a DomRect,
+              // hence we extract the values and just return them.
+              const { x, y } = el.getBoundingClientRect();
+              return { x, y };
+            });
+
+            const data = `Hello PDF.js World !! on page ${pageNumber}`;
+            await page.mouse.click(rect.x + 100, rect.y + 100);
+            await page.type(`${getEditorSelector(currentId)} .internal`, data);
+
+            // Commit.
+            await page.keyboard.press("Escape");
+            await page.waitForTimeout(10);
+
+            currentId += 1;
+          }
+
+          // Select all.
+          await page.keyboard.down("Control");
+          await page.keyboard.press("a");
+          await page.keyboard.up("Control");
+          await page.waitForTimeout(10);
+
+          const serialize = () =>
+            page.evaluate(() => {
+              const { map } =
+                window.PDFViewerApplication.pdfDocument.annotationStorage
+                  .serializable;
+              return map ? Array.from(map.values(), x => x.pageIndex) : [];
+            });
+
+          expect(await serialize())
+            .withContext(`In ${browserName}`)
+            .toEqual([0, 13]);
+
+          // Delete
+          await page.keyboard.press("Backspace");
+          await page.waitForTimeout(10);
+
+          expect(await serialize())
+            .withContext(`In ${browserName}`)
+            .toEqual([]);
         })
       );
     });

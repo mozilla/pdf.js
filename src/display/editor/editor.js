@@ -581,7 +581,11 @@ class AnnotationEditor {
       // undo/redo so we must commit it before.
       this.commit();
     }
-    this.parent.remove(this);
+    if (this.parent) {
+      this.parent.remove(this);
+    } else {
+      this._uiManager.removeEditor(this);
+    }
   }
 
   /**
@@ -638,6 +642,9 @@ class AnnotationEditor {
    */
   set isEditing(value) {
     this.#isEditing = value;
+    if (!this.parent) {
+      return;
+    }
     if (value) {
       this.parent.setSelected(this);
       this.parent.setActiveEditor(this);
