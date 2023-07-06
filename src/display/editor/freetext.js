@@ -307,8 +307,10 @@ class FreeTextEditor extends AnnotationEditor {
   /** @inheritdoc */
   remove() {
     this.isEditing = false;
-    this.parent.setEditingState(true);
-    this.parent.div.classList.add("freeTextEditing");
+    if (this.parent) {
+      this.parent.setEditingState(true);
+      this.parent.div.classList.add("freeTextEditing");
+    }
     super.remove();
   }
 
