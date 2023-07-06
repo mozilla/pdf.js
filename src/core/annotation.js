@@ -148,8 +148,7 @@ class AnnotationFactory {
       needAppearances:
         !collectFields && acroFormDict.get("NeedAppearances") === true,
       pageIndex,
-      isOffscreenCanvasSupported:
-        pdfManager.evaluatorOptions.isOffscreenCanvasSupported,
+      evaluatorOptions: pdfManager.evaluatorOptions,
     };
 
     switch (subtype) {
@@ -341,7 +340,7 @@ class AnnotationFactory {
               xref,
               annotation,
               dependencies,
-              image
+              { image }
             )
           );
           break;
@@ -364,8 +363,7 @@ class AnnotationFactory {
       return null;
     }
 
-    const xref = evaluator.xref;
-    const { isOffscreenCanvasSupported } = evaluator.options;
+    const { options, xref } = evaluator;
     const promises = [];
     for (const annotation of annotations) {
       if (annotation.deleted) {
@@ -377,19 +375,19 @@ class AnnotationFactory {
             FreeTextAnnotation.createNewPrintAnnotation(xref, annotation, {
               evaluator,
               task,
-              isOffscreenCanvasSupported,
+              evaluatorOptions: options,
             })
           );
           break;
         case AnnotationEditorType.INK:
           promises.push(
             InkAnnotation.createNewPrintAnnotation(xref, annotation, {
-              isOffscreenCanvasSupported,
+              evaluatorOptions: options,
             })
           );
           break;
         case AnnotationEditorType.STAMP:
-          if (!isOffscreenCanvasSupported) {
+          if (!options.isOffscreenCanvasSupported) {
             break;
           }
           const image = await imagePromises.get(annotation.bitmapId);
@@ -402,7 +400,10 @@ class AnnotationFactory {
             image.imageStream = image.smaskStream = null;
           }
           promises.push(
-            StampAnnotation.createNewPrintAnnotation(xref, annotation, image)
+            StampAnnotation.createNewPrintAnnotation(xref, annotation, {
+              image,
+              evaluatorOptions: options,
+            })
           );
           break;
       }
@@ -600,7 +601,8 @@ class Annotation {
       this.data.pageIndex = params.pageIndex;
     }
 
-    this._isOffscreenCanvasSupported = params.isOffscreenCanvasSupported;
+    this._isOffscreenCanvasSupported =
+      params.evaluatorOptions.isOffscreenCanvasSupported;
     this._fallbackFontDict = null;
     this._needAppearances = false;
   }
@@ -1587,7 +1589,7 @@ class MarkupAnnotation extends Annotation {
     const newAnnotation = new this.prototype.constructor({
       dict: annotationDict,
       xref,
-      isOffscreenCanvasSupported: params.isOffscreenCanvasSupported,
+      evaluatorOptions: params.evaluatorOptions,
     });
 
     if (annotation.ref) {
@@ -3648,11 +3650,15 @@ class FreeTextAnnotation extends MarkupAnnotation {
 
     this.data.hasOwnCanvas = true;
 
-    const { xref } = params;
+    const { evaluatorOptions, xref } = params;
     this.data.annotationType = AnnotationType.FREETEXT;
     this.setDefaultAppearance(params);
     if (this.appearance) {
-      const { fontColor, fontSize } = parseAppearanceStream(this.appearance);
+      const { fontColor, fontSize } = parseAppearanceStream(
+        this.appearance,
+        evaluatorOptions,
+        xref
+      );
       this.data.defaultAppearanceData.fontColor = fontColor;
       this.data.defaultAppearanceData.fontSize = fontSize || 10;
     } else if (this._isOffscreenCanvasSupported) {
@@ -4570,7 +4576,7 @@ class StampAnnotation extends MarkupAnnotation {
 
   static async createNewAppearanceStream(annotation, xref, params) {
     const { rotation } = annotation;
-    const { imageRef, width, height } = params;
+    const { imageRef, width, height } = params.image;
     const resources = new Dict(xref);
     const xobject = new Dict(xref);
     resources.set("XObject", xobject);
