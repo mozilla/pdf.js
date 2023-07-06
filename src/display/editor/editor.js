@@ -115,6 +115,35 @@ class AnnotationEditor {
   }
 
   /**
+   * Initialize the l10n stuff for this type of editor.
+   * @param {Object} _l10n
+   */
+  static initialize(_l10n) {}
+
+  /**
+   * Update the default parameters for this type of editor.
+   * @param {number} _type
+   * @param {*} _value
+   */
+  static updateDefaultParams(_type, _value) {}
+
+  /**
+   * Get the default properties to set in the UI for this type of editor.
+   * @returns {Array}
+   */
+  static get defaultPropertiesToUpdate() {
+    return [];
+  }
+
+  /**
+   * Get the properties to update in the UI for this editor.
+   * @returns {Array}
+   */
+  get propertiesToUpdate() {
+    return [];
+  }
+
+  /**
    * Add some commands into the CommandManager (undo/redo stuff).
    * @param {Object} params
    */
@@ -503,8 +532,9 @@ class AnnotationEditor {
    *
    * To implement in subclasses.
    * @param {boolean} isForCopying
+   * @param {Object} [context]
    */
-  serialize(_isForCopying = false) {
+  serialize(_isForCopying = false, _context = null) {
     unreachable("An editor must be serializable");
   }
 
@@ -586,14 +616,6 @@ class AnnotationEditor {
    * their properties.
    */
   enableEditing() {}
-
-  /**
-   * Get some properties to update in the UI.
-   * @returns {Object}
-   */
-  get propertiesToUpdate() {
-    return {};
-  }
 
   /**
    * Get the div which really contains the displayed content.

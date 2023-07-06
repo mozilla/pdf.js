@@ -92,6 +92,7 @@ class FreeTextEditor extends AnnotationEditor {
     this.#fontSize = params.fontSize || FreeTextEditor._defaultFontSize;
   }
 
+  /** @inheritdoc */
   static initialize(l10n) {
     this._l10nPromise = new Map(
       ["free_text2_default_content", "editor_free_text2_aria_label"].map(
@@ -116,6 +117,7 @@ class FreeTextEditor extends AnnotationEditor {
     );
   }
 
+  /** @inheritdoc */
   static updateDefaultParams(type, value) {
     switch (type) {
       case AnnotationEditorParamsType.FREETEXT_SIZE:
@@ -139,6 +141,7 @@ class FreeTextEditor extends AnnotationEditor {
     }
   }
 
+  /** @inheritdoc */
   static get defaultPropertiesToUpdate() {
     return [
       [
@@ -152,6 +155,7 @@ class FreeTextEditor extends AnnotationEditor {
     ];
   }
 
+  /** @inheritdoc */
   get propertiesToUpdate() {
     return [
       [AnnotationEditorParamsType.FREETEXT_SIZE, this.#fontSize],

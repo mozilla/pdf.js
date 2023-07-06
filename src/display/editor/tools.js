@@ -21,6 +21,7 @@ import {
   AnnotationEditorPrefix,
   AnnotationEditorType,
   FeatureTest,
+  getUuid,
   shadow,
   Util,
   warn,
@@ -56,6 +57,113 @@ class IdManager {
    */
   getId() {
     return `${AnnotationEditorPrefix}${this.#id++}`;
+  }
+}
+
+/**
+ * Class to manage the images used by the editors.
+ * The main idea is to try to minimize the memory used by the images.
+ * The images are cached and reused when possible
+ * We use a refCounter to know when an image is not used anymore but we need to
+ * be able to restore an image after a remove+undo, so we keep a file reference
+ * or an url one.
+ */
+class ImageManager {
+  #baseId = getUuid();
+
+  #id = 0;
+
+  #cache = null;
+
+  async #get(key, rawData) {
+    this.#cache ||= new Map();
+    let data = this.#cache.get(key);
+    if (data === null) {
+      // We already tried to load the image but it failed.
+      return null;
+    }
+    if (data?.bitmap) {
+      data.refCounter += 1;
+      return data;
+    }
+    try {
+      data ||= {
+        bitmap: null,
+        id: `image_${this.#baseId}_${this.#id++}`,
+        refCounter: 0,
+      };
+      let image;
+      if (typeof rawData === "string") {
+        data.url = rawData;
+
+        const response = await fetch(rawData);
+        if (!response.ok) {
+          throw new Error(response.statusText);
+        }
+        image = await response.blob();
+      } else {
+        data.file = rawData;
+
+        image = rawData;
+      }
+      data.bitmap = await createImageBitmap(image);
+      data.refCounter = 1;
+    } catch (e) {
+      console.error(e);
+      data = null;
+    }
+    this.#cache.set(key, data);
+    if (data) {
+      this.#cache.set(data.id, data);
+    }
+    return data;
+  }
+
+  async getFromFile(file) {
+    const { lastModified, name, size, type } = file;
+    return this.#get(`${lastModified}_${name}_${size}_${type}`, file);
+  }
+
+  async getFromUrl(url) {
+    return this.#get(url, url);
+  }
+
+  async getFromId(id) {
+    this.#cache ||= new Map();
+    const data = this.#cache.get(id);
+    if (!data) {
+      return null;
+    }
+    if (data.bitmap) {
+      data.refCounter += 1;
+      return data;
+    }
+
+    if (data.file) {
+      return this.getFromFile(data.file);
+    }
+    return this.getFromUrl(data.url);
+  }
+
+  deleteId(id) {
+    this.#cache ||= new Map();
+    const data = this.#cache.get(id);
+    if (!data) {
+      return;
+    }
+    data.refCounter -= 1;
+    if (data.refCounter !== 0) {
+      return;
+    }
+    data.bitmap = null;
+  }
+
+  // We can use the id only if it belongs this manager.
+  // We must take care of having the right manager because we can copy/paste
+  // some images from other documents, hence it'd be a pity to use an id from an
+  // other manager.
+  isValidId(id) {
+    return id.startsWith(`image_${this.#baseId}_`);
   }
 }
 
@@ -370,6 +478,8 @@ class AnnotationEditorUIManager {
 
   #eventBus = null;
 
+  #filterFactory = null;
+
   #idManager = new IdManager();
 
   #isEnabled = false;
@@ -377,6 +487,8 @@ class AnnotationEditorUIManager {
   #mode = AnnotationEditorType.NONE;
 
   #selectedEditors = new Set();
+
+  #pageColors = null;
 
   #boundCopy = this.copy.bind(this);
 
@@ -441,14 +553,16 @@ class AnnotationEditorUIManager {
     );
   }
 
-  constructor(container, eventBus, annotationStorage) {
+  constructor(container, eventBus, pdfDocument, pageColors) {
     this.#container = container;
     this.#eventBus = eventBus;
     this.#eventBus._on("editingaction", this.#boundOnEditingAction);
     this.#eventBus._on("pagechanging", this.#boundOnPageChanging);
     this.#eventBus._on("scalechanging", this.#boundOnScaleChanging);
     this.#eventBus._on("rotationchanging", this.#boundOnRotationChanging);
-    this.#annotationStorage = annotationStorage;
+    this.#annotationStorage = pdfDocument.annotationStorage;
+    this.#filterFactory = pdfDocument.filterFactory;
+    this.#pageColors = pageColors;
     this.viewParameters = {
       realScale: PixelsPerInch.PDF_TO_CSS_UNITS,
       rotation: 0,
@@ -470,6 +584,19 @@ class AnnotationEditorUIManager {
     this.#activeEditor = null;
     this.#selectedEditors.clear();
     this.#commandManager.destroy();
+  }
+
+  get hcmFilter() {
+    return shadow(
+      this,
+      "hcmFilter",
+      this.#pageColors
+        ? this.#filterFactory.addHCMFilter(
+            this.#pageColors.foreground,
+            this.#pageColors.background
+          )
+        : "none"
+    );
   }
 
   onPageChanging({ pageNumber }) {
@@ -1144,6 +1271,10 @@ class AnnotationEditorUIManager {
    */
   getMode() {
     return this.#mode;
+  }
+
+  get imageManager() {
+    return shadow(this, "imageManager", new ImageManager());
   }
 }
 

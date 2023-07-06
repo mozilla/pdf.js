@@ -560,6 +560,16 @@ const PDFViewerApplication = {
 
     if (appConfig.annotationEditorParams) {
       if (annotationEditorMode !== AnnotationEditorType.DISABLE) {
+        const editorStampButton = appConfig.toolbar?.editorStampButton;
+        if (
+          editorStampButton &&
+          AppOptions.get("enableStampEditor") &&
+          AppOptions.get("isOffscreenCanvasSupported") &&
+          FeatureTest.isOffscreenCanvasSupported
+        ) {
+          editorStampButton.hidden = false;
+        }
+
         this.annotationEditorParams = new AnnotationEditorParams(
           appConfig.annotationEditorParams,
           eventBus
