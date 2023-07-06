@@ -20,9 +20,17 @@ import {
   numberToString,
   stringToUTF16HexString,
 } from "./core_utils.js";
-import { LINE_DESCENT_FACTOR, LINE_FACTOR, OPS, warn } from "../shared/util.js";
+import {
+  LINE_DESCENT_FACTOR,
+  LINE_FACTOR,
+  OPS,
+  shadow,
+  warn,
+} from "../shared/util.js";
 import { ColorSpace } from "./colorspace.js";
 import { EvaluatorPreprocessor } from "./evaluator.js";
+import { LocalColorSpaceCache } from "./image_utils.js";
+import { PDFFunctionFactory } from "./function.js";
 import { StringStream } from "./stream.js";
 
 class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
@@ -88,9 +96,13 @@ function parseDefaultAppearance(str) {
 }
 
 class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
-  constructor(stream) {
+  constructor(stream, evaluatorOptions, xref) {
     super(stream);
     this.stream = stream;
+    this.evaluatorOptions = evaluatorOptions;
+    this.xref = xref;
+
+    this.resources = stream.dict?.get("Resources");
   }
 
   parse() {
@@ -103,6 +115,7 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
       fontSize: 0,
       fontName: "",
       fontColor: /* black = */ new Uint8ClampedArray(3),
+      fillColorSpace: ColorSpace.singletons.gray,
     };
     let breakLoop = false;
     const stack = [];
@@ -123,6 +136,7 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
               fontSize: result.fontSize,
               fontName: result.fontName,
               fontColor: result.fontColor.slice(),
+              fillColorSpace: result.fillColorSpace,
             });
             break;
           case OPS.restore:
@@ -139,6 +153,19 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
             if (typeof fontSize === "number" && fontSize > 0) {
               result.fontSize = fontSize * result.scaleFactor;
             }
+            break;
+          case OPS.setFillColorSpace:
+            result.fillColorSpace = ColorSpace.parse({
+              cs: args[0],
+              xref: this.xref,
+              resources: this.resources,
+              pdfFunctionFactory: this._pdfFunctionFactory,
+              localColorSpaceCache: this._localColorSpaceCache,
+            });
+            break;
+          case OPS.setFillColor:
+            const cs = result.fillColorSpace;
+            cs.getRgbItem(args, 0, result.fontColor, 0);
             break;
           case OPS.setFillRGBColor:
             ColorSpace.singletons.rgb.getRgbItem(args, 0, result.fontColor, 0);
@@ -162,15 +189,28 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
     }
     this.stream.reset();
     delete result.scaleFactor;
+    delete result.fillColorSpace;
 
     return result;
+  }
+
+  get _localColorSpaceCache() {
+    return shadow(this, "_localColorSpaceCache", new LocalColorSpaceCache());
+  }
+
+  get _pdfFunctionFactory() {
+    const pdfFunctionFactory = new PDFFunctionFactory({
+      xref: this.xref,
+      isEvalSupported: this.evaluatorOptions.isEvalSupported,
+    });
+    return shadow(this, "_pdfFunctionFactory", pdfFunctionFactory);
   }
 }
 
 // Parse appearance stream to extract font and color information.
 // It returns the font properties used to render the first text object.
-function parseAppearanceStream(stream) {
-  return new AppearanceStreamEvaluator(stream).parse();
+function parseAppearanceStream(stream, evaluatorOptions, xref) {
+  return new AppearanceStreamEvaluator(stream, evaluatorOptions, xref).parse();
 }
 
 function getPdfColor(color, isFill) {
