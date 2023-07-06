@@ -69,7 +69,7 @@ class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
           case OPS.setFillGray:
             ColorSpace.singletons.gray.getRgbItem(args, 0, result.fontColor, 0);
             break;
-          case OPS.setFillColorSpace:
+          case OPS.setFillCMYKColor:
             ColorSpace.singletons.cmyk.getRgbItem(args, 0, result.fontColor, 0);
             break;
         }
@@ -146,7 +146,7 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
           case OPS.setFillGray:
             ColorSpace.singletons.gray.getRgbItem(args, 0, result.fontColor, 0);
             break;
-          case OPS.setFillColorSpace:
+          case OPS.setFillCMYKColor:
             ColorSpace.singletons.cmyk.getRgbItem(args, 0, result.fontColor, 0);
             break;
           case OPS.showText:
