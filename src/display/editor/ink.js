@@ -81,6 +81,7 @@ class InkEditor extends AnnotationEditor {
     this.y = 0;
   }
 
+  /** @inheritdoc */
   static initialize(l10n) {
     this._l10nPromise = new Map(
       ["editor_ink_canvas_aria_label", "editor_ink2_aria_label"].map(str => [
@@ -90,6 +91,7 @@ class InkEditor extends AnnotationEditor {
     );
   }
 
+  /** @inheritdoc */
   static updateDefaultParams(type, value) {
     switch (type) {
       case AnnotationEditorParamsType.INK_THICKNESS:
@@ -119,6 +121,7 @@ class InkEditor extends AnnotationEditor {
     }
   }
 
+  /** @inheritdoc */
   static get defaultPropertiesToUpdate() {
     return [
       [AnnotationEditorParamsType.INK_THICKNESS, InkEditor._defaultThickness],

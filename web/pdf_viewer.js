@@ -846,7 +846,8 @@ class PDFViewer {
             this.#annotationEditorUIManager = new AnnotationEditorUIManager(
               this.container,
               this.eventBus,
-              pdfDocument?.annotationStorage
+              pdfDocument,
+              this.pageColors
             );
             if (mode !== AnnotationEditorType.NONE) {
               this.#annotationEditorUIManager.updateMode(mode);
