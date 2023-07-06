@@ -778,6 +778,7 @@ class InkEditor extends AnnotationEditor {
     if (this.width) {
       // This editor was created in using copy (ctrl+c).
       const [parentWidth, parentHeight] = this.parentDimensions;
+      this.setAspectRatio(this.width * parentWidth, this.height * parentHeight);
       this.setAt(
         baseX * parentWidth,
         baseY * parentHeight,
@@ -788,7 +789,6 @@ class InkEditor extends AnnotationEditor {
       this.#setCanvasDims();
       this.setDims(this.width * parentWidth, this.height * parentHeight);
       this.#redraw();
-      this.setMinDims();
       this.div.classList.add("disabled");
     } else {
       this.div.classList.add("editing");
@@ -831,8 +831,6 @@ class InkEditor extends AnnotationEditor {
     this.#realHeight = roundedHeight;
 
     this.canvas.style.visibility = "hidden";
-
-    height = this.getHeight(width, height);
 
     const [parentWidth, parentHeight] = this.parentDimensions;
     this.width = width / parentWidth;
@@ -1084,7 +1082,6 @@ class InkEditor extends AnnotationEditor {
     this.height = height / parentHeight;
 
     this.setAspectRatio(width, height);
-    this.setMinDims();
 
     const prevTranslationX = this.translationX;
     const prevTranslationY = this.translationY;
@@ -1122,7 +1119,6 @@ class InkEditor extends AnnotationEditor {
     const scaleFactor = editor.parentScale;
     const padding = data.thickness / 2;
 
-    editor.setAspectRatio(width, height);
     editor.#disableEditing = true;
     editor.#realWidth = Math.round(width);
     editor.#realHeight = Math.round(height);
