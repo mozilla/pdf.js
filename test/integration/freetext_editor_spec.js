@@ -1115,6 +1115,39 @@ describe("FreeText Editor", () => {
     });
   });
 
+  describe("FreeText (edit existing in double clicking on it)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("freetexts.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must move an annotation", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("[data-annotation-id='26R']", { clickCount: 2 });
+          await page.waitForTimeout(10);
+
+          const [focusedId, editable] = await page.evaluate(() => {
+            const el = document.activeElement;
+            return [el.id, el.contentEditable];
+          });
+          expect(focusedId)
+            .withContext(`In ${browserName}`)
+            .toEqual("pdfjs_internal_editor_0-editor");
+          expect(editable).withContext(`In ${browserName}`).toEqual("true");
+
+          const editorIds = await getEditors(page, "freeText");
+          expect(editorIds.length).withContext(`In ${browserName}`).toEqual(6);
+        })
+      );
+    });
+  });
+
   describe("FreeText with popup", () => {
     let pages;
 
