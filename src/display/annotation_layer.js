@@ -2157,7 +2157,7 @@ class PopupElement {
    */
   #hide() {
     this.#container.classList.remove("focused");
-    if (this.#pinned) {
+    if (this.#pinned || !this.isVisible) {
       return;
     }
     this.#container.hidden = true;
