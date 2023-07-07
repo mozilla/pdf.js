@@ -15,6 +15,7 @@
 
 import { AnnotationEditor } from "./editor.js";
 import { AnnotationEditorType } from "../../shared/util.js";
+import { PixelsPerInch } from "../display_utils.js";
 import { StampAnnotationElement } from "../annotation_layer.js";
 
 /**
@@ -34,6 +35,8 @@ class StampEditor extends AnnotationEditor {
   #observer = null;
 
   #resizeTimeoutId = null;
+
+  #isSvg = false;
 
   static _type = "stamp";
 
@@ -66,13 +69,22 @@ class StampEditor extends AnnotationEditor {
             this.remove();
             return;
           }
-          ({ bitmap: this.#bitmap, id: this.#bitmapId } = data);
+          ({
+            bitmap: this.#bitmap,
+            id: this.#bitmapId,
+            isSvg: this.#isSvg,
+          } = data);
           this.#createCanvas();
         });
       return;
     }
 
     const input = document.createElement("input");
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
+      input.hidden = true;
+      input.id = "stampEditorFileInput";
+      document.body.append(input);
+    }
     input.type = "file";
     input.accept = "image/*";
     this.#bitmapPromise = new Promise(resolve => {
@@ -88,8 +100,15 @@ class StampEditor extends AnnotationEditor {
             this.remove();
             return;
           }
-          ({ bitmap: this.#bitmap, id: this.#bitmapId } = data);
+          ({
+            bitmap: this.#bitmap,
+            id: this.#bitmapId,
+            isSvg: this.#isSvg,
+          } = data);
           this.#createCanvas();
+        }
+        if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
+          input.remove();
         }
         resolve();
       });
@@ -99,7 +118,9 @@ class StampEditor extends AnnotationEditor {
         resolve();
       });
     });
-    input.click();
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("TESTING")) {
+      input.click();
+    }
   }
 
   /** @inheritdoc */
@@ -142,7 +163,11 @@ class StampEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   isEmpty() {
-    return this.#bitmapPromise === null && this.#bitmap === null;
+    return (
+      this.#bitmapPromise === null &&
+      this.#bitmap === null &&
+      this.#bitmapUrl === null
+    );
   }
 
   /** @inheritdoc */
@@ -302,7 +327,9 @@ class StampEditor extends AnnotationEditor {
     }
     canvas.width = width;
     canvas.height = height;
-    const bitmap = this.#scaleBitmap(width, height);
+    const bitmap = this.#isSvg
+      ? this.#bitmap
+      : this.#scaleBitmap(width, height);
     const ctx = canvas.getContext("2d");
     ctx.filter = this._uiManager.hcmFilter;
     ctx.drawImage(
@@ -320,6 +347,12 @@ class StampEditor extends AnnotationEditor {
 
   #serializeBitmap(toUrl) {
     if (toUrl) {
+      if (this.#isSvg) {
+        const url = this._uiManager.imageManager.getSvgUrl(this.#bitmapId);
+        if (url) {
+          return url;
+        }
+      }
       // We convert to a data url because it's sync and the url can live in the
       // clipboard.
       const canvas = document.createElement("canvas");
@@ -328,6 +361,32 @@ class StampEditor extends AnnotationEditor {
       ctx.drawImage(this.#bitmap, 0, 0);
 
       return canvas.toDataURL();
+    }
+
+    if (this.#isSvg) {
+      const [pageWidth, pageHeight] = this.pageDimensions;
+      // Multiply by PixelsPerInch.PDF_TO_CSS_UNITS in order to increase the
+      // image resolution when rasterizing it.
+      const width = Math.round(
+        this.width * pageWidth * PixelsPerInch.PDF_TO_CSS_UNITS
+      );
+      const height = Math.round(
+        this.height * pageHeight * PixelsPerInch.PDF_TO_CSS_UNITS
+      );
+      const offscreen = new OffscreenCanvas(width, height);
+      const ctx = offscreen.getContext("2d");
+      ctx.drawImage(
+        this.#bitmap,
+        0,
+        0,
+        this.#bitmap.width,
+        this.#bitmap.height,
+        0,
+        0,
+        width,
+        height
+      );
+      return offscreen.transferToImageBitmap();
     }
 
     return structuredClone(this.#bitmap);
@@ -352,12 +411,13 @@ class StampEditor extends AnnotationEditor {
       return null;
     }
     const editor = super.deserialize(data, parent, uiManager);
-    const { rect, bitmapUrl, bitmapId } = data;
+    const { rect, bitmapUrl, bitmapId, isSvg } = data;
     if (bitmapId && uiManager.imageManager.isValidId(bitmapId)) {
       editor.#bitmapId = bitmapId;
     } else {
       editor.#bitmapUrl = bitmapUrl;
     }
+    editor.#isSvg = isSvg;
 
     const [parentWidth, parentHeight] = editor.pageDimensions;
     editor.width = (rect[2] - rect[0]) / parentWidth;
@@ -378,6 +438,7 @@ class StampEditor extends AnnotationEditor {
       pageIndex: this.pageIndex,
       rect: this.getRect(0, 0),
       rotation: this.rotation,
+      isSvg: this.#isSvg,
     };
 
     if (isForCopying) {
@@ -392,12 +453,25 @@ class StampEditor extends AnnotationEditor {
       return serialized;
     }
 
-    context.stamps ||= new Set();
+    context.stamps ||= new Map();
+    const area = this.#isSvg
+      ? (serialized.rect[2] - serialized.rect[0]) *
+        (serialized.rect[3] - serialized.rect[1])
+      : null;
     if (!context.stamps.has(this.#bitmapId)) {
       // We don't want to have multiple copies of the same bitmap in the
       // annotationMap, hence we only add the bitmap the first time we meet it.
-      context.stamps.add(this.#bitmapId);
+      context.stamps.set(this.#bitmapId, { area, serialized });
       serialized.bitmap = this.#serializeBitmap(/* toUrl = */ false);
+    } else if (this.#isSvg) {
+      // If we have multiple copies of the same svg but with different sizes,
+      // then we want to keep the biggest one.
+      const prevData = context.stamps.get(this.#bitmapId);
+      if (area > prevData.area) {
+        prevData.area = area;
+        prevData.serialized.bitmap.close();
+        prevData.serialized.bitmap = this.#serializeBitmap(/* toUrl = */ false);
+      }
     }
     return serialized;
   }

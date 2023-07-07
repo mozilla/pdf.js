@@ -154,3 +154,25 @@ function getEditors(page, kind) {
   }, kind);
 }
 exports.getEditors = getEditors;
+
+function getEditorDimensions(page, id) {
+  return page.evaluate(n => {
+    const element = document.getElementById(`pdfjs_internal_editor_${n}`);
+    const { style } = element;
+    return { width: style.width, height: style.height };
+  }, id);
+}
+exports.getEditorDimensions = getEditorDimensions;
+
+function serializeBitmapDimensions(page) {
+  return page.evaluate(() => {
+    const { map } =
+      window.PDFViewerApplication.pdfDocument.annotationStorage.serializable;
+    return map
+      ? Array.from(map.values(), x => {
+          return { width: x.bitmap.width, height: x.bitmap.height };
+        })
+      : [];
+  });
+}
+exports.serializeBitmapDimensions = serializeBitmapDimensions;

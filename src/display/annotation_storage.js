@@ -183,6 +183,7 @@ class AnnotationStorage {
       hash = new MurmurHash3_64(),
       transfers = [];
     const context = Object.create(null);
+    let hasBitmap = false;
 
     for (const [key, val] of this.#storage) {
       const serialized =
@@ -193,12 +194,20 @@ class AnnotationStorage {
         map.set(key, serialized);
 
         hash.update(`${key}:${JSON.stringify(serialized)}`);
+        hasBitmap ||= !!serialized.bitmap;
+      }
+    }
 
-        if (serialized.bitmap) {
-          transfers.push(serialized.bitmap);
+    if (hasBitmap) {
+      // We must transfer the bitmap data separately, since it can be changed
+      // during serialization with SVG images.
+      for (const value of map.values()) {
+        if (value.bitmap) {
+          transfers.push(value.bitmap);
         }
       }
     }
+
     return map.size > 0
       ? { map, hash: hash.hexdigest(), transfers }
       : SerializableEmpty;

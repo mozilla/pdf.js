@@ -91,6 +91,7 @@ class ImageManager {
         bitmap: null,
         id: `image_${this.#baseId}_${this.#id++}`,
         refCounter: 0,
+        isSvg: false,
       };
       let image;
       if (typeof rawData === "string") {
@@ -102,11 +103,35 @@ class ImageManager {
         }
         image = await response.blob();
       } else {
-        data.file = rawData;
-
-        image = rawData;
+        image = data.file = rawData;
       }
-      data.bitmap = await createImageBitmap(image);
+
+      if (image.type === "image/svg+xml") {
+        // Unfortunately, createImageBitmap doesn't work with SVG images.
+        // (see https://bugzilla.mozilla.org/1841972).
+        const fileReader = new FileReader();
+        const dataUrlPromise = new Promise(resolve => {
+          fileReader.onload = () => {
+            data.svgUrl = fileReader.result;
+            resolve();
+          };
+        });
+        fileReader.readAsDataURL(image);
+        const url = URL.createObjectURL(image);
+        image = new Image();
+        const imagePromise = new Promise(resolve => {
+          image.onload = () => {
+            URL.revokeObjectURL(url);
+            data.bitmap = image;
+            data.isSvg = true;
+            resolve();
+          };
+        });
+        image.src = url;
+        await Promise.all([imagePromise, dataUrlPromise]);
+      } else {
+        data.bitmap = await createImageBitmap(image);
+      }
       data.refCounter = 1;
     } catch (e) {
       console.error(e);
@@ -143,6 +168,14 @@ class ImageManager {
       return this.getFromFile(data.file);
     }
     return this.getFromUrl(data.url);
+  }
+
+  getSvgUrl(id) {
+    const data = this.#cache.get(id);
+    if (!data?.isSvg) {
+      return null;
+    }
+    return data.svgUrl;
   }
 
   deleteId(id) {
