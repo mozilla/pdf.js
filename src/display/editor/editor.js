@@ -622,6 +622,11 @@ class AnnotationEditor {
   enableEditing() {}
 
   /**
+   * The editor is about to be edited.
+   */
+  enterInEditMode() {}
+
+  /**
    * Get the div which really contains the displayed content.
    */
   get contentDiv() {

@@ -403,13 +403,18 @@ class FreeTextEditor extends AnnotationEditor {
     return this.isInEditMode();
   }
 
+  /** @inheritdoc */
+  enterInEditMode() {
+    this.enableEditMode();
+    this.editorDiv.focus();
+  }
+
   /**
    * ondblclick callback.
    * @param {MouseEvent} event
    */
   dblclick(event) {
-    this.enableEditMode();
-    this.editorDiv.focus();
+    this.enterInEditMode();
   }
 
   /**
@@ -418,8 +423,7 @@ class FreeTextEditor extends AnnotationEditor {
    */
   keydown(event) {
     if (event.target === this.div && event.key === "Enter") {
-      this.enableEditMode();
-      this.editorDiv.focus();
+      this.enterInEditMode();
     }
   }
 

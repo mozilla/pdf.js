@@ -175,7 +175,9 @@ class PDFPresentationMode {
       this.pdfViewer.currentScaleValue = "page-fit";
 
       if (this.#args.annotationEditorMode !== null) {
-        this.pdfViewer.annotationEditorMode = AnnotationEditorType.NONE;
+        this.pdfViewer.annotationEditorMode = {
+          mode: AnnotationEditorType.NONE,
+        };
       }
     }, 0);
 
