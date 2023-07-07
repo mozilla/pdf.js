@@ -601,6 +601,20 @@ class AnnotationElement {
       triggers.classList.add("highlightArea");
     }
   }
+
+  _editOnDoubleClick() {
+    const {
+      annotationEditorType: mode,
+      data: { id: editId },
+    } = this;
+    this.container.addEventListener("dblclick", () => {
+      this.linkService.eventBus?.dispatch("switchannotationeditormode", {
+        source: this,
+        mode,
+        editId,
+      });
+    });
+  }
 }
 
 class LinkAnnotationElement extends AnnotationElement {
@@ -2217,6 +2231,9 @@ class FreeTextAnnotationElement extends AnnotationElement {
     if (!this.data.popupRef) {
       this._createPopup();
     }
+
+    this._editOnDoubleClick();
+
     return this.container;
   }
 }
