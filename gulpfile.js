@@ -1559,7 +1559,7 @@ function buildLib(defines, dir) {
       [
         "src/{core,display,shared}/**/*.js",
         "!src/shared/{cffStandardStrings,fonts_utils}.js",
-        "src/{pdf,pdf.worker}.js",
+        "src/{pdf,pdf.image_decoders,pdf.worker}.js",
       ],
       { base: "src/" }
     ),
