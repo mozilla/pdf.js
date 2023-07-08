@@ -13,9 +13,7 @@
  * limitations under the License.
  */
 
-"use strict";
-
-const Jasmine = require("jasmine");
+import Jasmine from "jasmine";
 
 async function runTests(results) {
   const jasmine = new Jasmine();
@@ -57,4 +55,4 @@ async function runTests(results) {
   return jasmine.execute();
 }
 
-exports.runTests = runTests;
+export { runTests };

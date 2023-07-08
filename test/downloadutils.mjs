@@ -15,12 +15,11 @@
  */
 /* eslint-disable no-var */
 
-"use strict";
-
-var fs = require("fs");
-var crypto = require("crypto");
-var http = require("http");
-var https = require("https");
+import crypto from "crypto";
+import fs from "fs";
+import http from "http";
+import https from "https";
+import { resolve as urlResolve } from "url";
 
 function rewriteWebArchiveUrl(url) {
   // Web Archive URLs need to be transformed to add `if_` after the ID.
@@ -51,7 +50,7 @@ function downloadFile(file, url, callback, redirects) {
           callback("Too many redirects");
         }
         var redirectTo = response.headers.location;
-        redirectTo = require("url").resolve(url, redirectTo);
+        redirectTo = urlResolve(url, redirectTo);
         downloadFile(file, redirectTo, callback, (redirects || 0) + 1);
         return;
       }
@@ -186,5 +185,4 @@ function verifyManifestFiles(manifest, callback) {
   verifyNext();
 }
 
-exports.downloadManifestFiles = downloadManifestFiles;
-exports.verifyManifestFiles = verifyManifestFiles;
+export { downloadManifestFiles, verifyManifestFiles };

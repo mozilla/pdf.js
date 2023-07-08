@@ -1,6 +1,6 @@
-const fs = require("fs");
-const crypto = require("crypto");
-const execSync = require("child_process").execSync;
+import crypto from "crypto";
+import { execSync } from "child_process";
+import fs from "fs";
 
 const testManifest = "test/test_manifest.json";
 const pdfFolder = "test/pdfs/";

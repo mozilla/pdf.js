@@ -634,7 +634,7 @@ function createTestSource(testsName, { bot = false, xfaOnly = false } = {}) {
 
     const PDF_TEST = process.env.PDF_TEST || "test_manifest.json";
     let forceNoChrome = false;
-    const args = ["test.js"];
+    const args = ["test.mjs"];
     switch (testsName) {
       case "browser":
         if (!bot) {
@@ -686,7 +686,7 @@ function makeRef(done, bot) {
   console.log("### Creating reference images");
 
   let forceNoChrome = false;
-  const args = ["test.js", "--masterMode"];
+  const args = ["test.mjs", "--masterMode"];
   if (bot) {
     const os = process.env.OS;
     if (/windows/i.test(os)) {
@@ -1985,11 +1985,11 @@ gulp.task(
         gulp.series("dev-sandbox")
       );
     },
-    function createServer() {
+    async function createServer() {
       console.log();
       console.log("### Starting local server");
 
-      const WebServer = require("./test/webserver.js").WebServer;
+      const { WebServer } = await import("./test/webserver.mjs");
       const server = new WebServer();
       server.port = 8888;
       server.start();
