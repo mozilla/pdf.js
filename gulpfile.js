@@ -1122,7 +1122,7 @@ async function parseMinified(dir) {
   console.log();
   console.log("### Minifying js files");
 
-  const Terser = require("terser");
+  const { minify } = await import("terser");
   const options = {
     compress: {
       // V8 chokes on very long sequences, work around that.
@@ -1134,23 +1134,23 @@ async function parseMinified(dir) {
 
   fs.writeFileSync(
     dir + "/web/pdf.viewer.js",
-    (await Terser.minify(viewerFiles, options)).code
+    (await minify(viewerFiles, options)).code
   );
   fs.writeFileSync(
     dir + "/build/pdf.min.js",
-    (await Terser.minify(pdfFile, options)).code
+    (await minify(pdfFile, options)).code
   );
   fs.writeFileSync(
     dir + "/build/pdf.worker.min.js",
-    (await Terser.minify(pdfWorkerFile, options)).code
+    (await minify(pdfWorkerFile, options)).code
   );
   fs.writeFileSync(
     dir + "/build/pdf.sandbox.min.js",
-    (await Terser.minify(pdfSandboxFile, options)).code
+    (await minify(pdfSandboxFile, options)).code
   );
   fs.writeFileSync(
     dir + "image_decoders/pdf.image_decoders.min.js",
-    (await Terser.minify(pdfImageDecodersFile, options)).code
+    (await minify(pdfImageDecodersFile, options)).code
   );
 
   console.log();
