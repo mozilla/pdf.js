@@ -848,7 +848,7 @@ gulp.task("locale", function () {
   ]);
 });
 
-gulp.task("cmaps", function (done) {
+gulp.task("cmaps", async function () {
   const CMAP_INPUT = "external/cmaps";
   const VIEWER_CMAP_OUTPUT = "external/bcmaps";
 
@@ -869,10 +869,10 @@ gulp.task("cmaps", function (done) {
     }
   });
 
-  const compressCmaps =
-    require("./external/cmapscompress/compress.js").compressCmaps;
+  const { compressCmaps } = await import(
+    "./external/cmapscompress/compress.mjs"
+  );
   compressCmaps(CMAP_INPUT, VIEWER_CMAP_OUTPUT, true);
-  done();
 });
 
 function preprocessCSS(source, defines) {

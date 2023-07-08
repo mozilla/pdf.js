@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-const fs = require("fs");
-const path = require("path");
-const parseAdobeCMap = require("./parse.js").parseAdobeCMap;
-const optimizeCMap = require("./optimize.js").optimizeCMap;
+import fs from "fs";
+import { optimizeCMap } from "./optimize.mjs";
+import { parseAdobeCMap } from "./parse.mjs";
+import path from "path";
 
 function compressCmap(srcPath, destPath, verify) {
   const content = fs.readFileSync(srcPath).toString();
@@ -469,7 +469,7 @@ function incHex(a) {
   return s;
 }
 
-exports.compressCmaps = function (src, dest, verify) {
+function compressCmaps(src, dest, verify) {
   const files = fs.readdirSync(src).filter(function (fn) {
     return !fn.includes("."); // skipping files with the extension
   });
@@ -489,4 +489,6 @@ exports.compressCmaps = function (src, dest, verify) {
         "%"
     );
   });
-};
+}
+
+export { compressCmaps };
