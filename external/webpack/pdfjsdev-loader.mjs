@@ -13,12 +13,10 @@
  * limitations under the License.
  */
 
-"use strict";
+import path from "path";
+import { preprocessPDFJSCode } from "../builder/preprocessor2.mjs";
 
-const preprocessor2 = require("../builder/preprocessor2.js");
-const path = require("path");
-
-module.exports = function (source) {
+export default function (source) {
   // Options must be specified, ignoring request if not.
   if (!this.query || typeof this.query !== "object") {
     return source;
@@ -34,10 +32,10 @@ module.exports = function (source) {
   ctx.sourceFile = sourcePath;
 
   const callback = this.callback;
-  const sourceAndMap = preprocessor2.preprocessPDFJSCode(ctx, source);
+  const sourceAndMap = preprocessPDFJSCode(ctx, source);
   const map = sourceAndMap.map.toJSON();
   // escodegen does not embed source -- setting map's sourcesContent.
   map.sourcesContent = [source];
   callback(null, sourceAndMap.code, map);
   return undefined;
-};
+}
