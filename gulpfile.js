@@ -1880,7 +1880,7 @@ gulp.task("lint", function (done) {
   const esLintOptions = [
     "node_modules/eslint/bin/eslint",
     "--ext",
-    ".js,.jsm,.json",
+    ".js,.jsm,.mjs,.json",
     ".",
     "--report-unused-disable-directives",
   ];
@@ -2004,8 +2004,8 @@ gulp.task("clean", function (done) {
   rimraf(BUILD_DIR, done);
 });
 
-gulp.task("importl10n", function (done) {
-  const locales = require("./external/importL10n/locales.js");
+gulp.task("importl10n", async function () {
+  const { downloadL10n } = await import("./external/importL10n/locales.mjs");
 
   console.log();
   console.log("### Importing translations from mozilla-central");
@@ -2013,7 +2013,7 @@ gulp.task("importl10n", function (done) {
   if (!fs.existsSync(L10N_DIR)) {
     fs.mkdirSync(L10N_DIR);
   }
-  locales.downloadL10n(L10N_DIR, done);
+  await downloadL10n(L10N_DIR);
 });
 
 function ghPagesPrepare() {
