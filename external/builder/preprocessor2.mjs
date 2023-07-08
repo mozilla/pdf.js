@@ -1,10 +1,8 @@
-"use strict";
-
-const acorn = require("acorn");
-const escodegen = require("@javascript-obfuscator/escodegen");
-const vm = require("vm");
-const fs = require("fs");
-const path = require("path");
+import * as acorn from "acorn";
+import escodegen from "@javascript-obfuscator/escodegen";
+import fs from "fs";
+import path from "path";
+import vm from "vm";
 
 const PDFJS_PREPROCESSOR_NAME = "PDFJSDev";
 const ROOT_PREFIX = "$ROOT/";
@@ -346,4 +344,4 @@ function preprocessPDFJSCode(ctx, code) {
   return escodegen.generate(syntax, codegenOptions);
 }
 
-exports.preprocessPDFJSCode = preprocessPDFJSCode;
+export { preprocessPDFJSCode };

@@ -1,8 +1,6 @@
-"use strict";
-
-const fs = require("fs"),
-  path = require("path"),
-  vm = require("vm");
+import fs from "fs";
+import path from "path";
+import vm from "vm";
 
 const AllWhitespaceRegexp = /^\s+$/g;
 
@@ -226,7 +224,6 @@ function preprocess(inFilename, outFilename, defines) {
     fs.writeFileSync(outFilename, out.join("\n"));
   }
 }
-exports.preprocess = preprocess;
 
 /**
  * Merge two defines arrays. Values in the second param will override values in
@@ -242,4 +239,5 @@ function merge(defaults, defines) {
   }
   return ret;
 }
-exports.merge = merge;
+
+export { merge, preprocess };

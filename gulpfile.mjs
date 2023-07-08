@@ -14,9 +14,9 @@
  */
 /* eslint-env node */
 
+import * as builder from "./external/builder/builder.mjs";
 import { exec, spawn, spawnSync } from "child_process";
 import autoprefixer from "autoprefixer";
-import builder from "./external/builder/builder.js";
 import { createRequire } from "module";
 import crypto from "crypto";
 import { fileURLToPath } from "url";
@@ -27,6 +27,7 @@ import { mkdirp } from "mkdirp";
 import path from "path";
 import postcss from "gulp-postcss";
 import postcssDirPseudoClass from "postcss-dir-pseudo-class";
+import { preprocessPDFJSCode } from "./external/builder/preprocessor2.mjs";
 import rename from "gulp-rename";
 import replace from "gulp-replace";
 import rimraf from "rimraf";
@@ -295,7 +296,7 @@ function createWebpackConfig(
           },
         },
         {
-          loader: path.join(__dirname, "external/webpack/pdfjsdev-loader.js"),
+          loader: path.join(__dirname, "external/webpack/pdfjsdev-loader.mjs"),
           options: {
             rootPath: __dirname,
             saveComments: false,
@@ -428,7 +429,6 @@ function createScriptingBundle(defines, extraOptions = undefined) {
 }
 
 function createSandboxExternal(defines) {
-  const preprocessor2 = require("./external/builder/preprocessor2.js");
   const licenseHeader = fs.readFileSync("./src/license_header.js").toString();
 
   const ctx = {
@@ -440,7 +440,7 @@ function createSandboxExternal(defines) {
     .pipe(rename("pdf.sandbox.external.sys.mjs"))
     .pipe(
       transform("utf8", content => {
-        content = preprocessor2.preprocessPDFJSCode(ctx, content);
+        content = preprocessPDFJSCode(ctx, content);
         return `${licenseHeader}\n${content}`;
       })
     );
@@ -1268,7 +1268,6 @@ gulp.task(
 );
 
 function preprocessDefaultPreferences(content) {
-  const preprocessor2 = require("./external/builder/preprocessor2.js");
   const licenseHeader = fs.readFileSync("./src/license_header.js").toString();
 
   const MODIFICATION_WARNING =
@@ -1278,7 +1277,7 @@ function preprocessDefaultPreferences(content) {
     DEFAULT_PREFERENCES: getDefaultPreferences("mozcentral/"),
   });
 
-  content = preprocessor2.preprocessPDFJSCode(
+  content = preprocessPDFJSCode(
     {
       rootPath: __dirname,
       defines: bundleDefines,
@@ -1545,7 +1544,7 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
   function preprocess(content) {
     const skipBabel =
       bundleDefines.SKIP_BABEL || /\/\*\s*no-babel-preset\s*\*\//.test(content);
-    content = preprocessor2.preprocessPDFJSCode(ctx, content);
+    content = preprocessPDFJSCode(ctx, content);
     content = babel.transform(content, {
       sourceType: "module",
       presets: skipBabel ? undefined : ["@babel/preset-env"],
@@ -1575,7 +1574,6 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
   const licenseHeaderLibre = fs
     .readFileSync("./src/license_header_libre.js")
     .toString();
-  const preprocessor2 = require("./external/builder/preprocessor2.js");
   return inputStream
     .pipe(transform("utf8", preprocess))
     .pipe(gulp.dest(outputDir));
@@ -2411,13 +2409,13 @@ gulp.task(
 gulp.task("externaltest", function (done) {
   console.log();
   console.log("### Running test-fixtures.js");
-  safeSpawnSync("node", ["external/builder/test-fixtures.js"], {
+  safeSpawnSync("node", ["external/builder/test-fixtures.mjs"], {
     stdio: "inherit",
   });
 
   console.log();
   console.log("### Running test-fixtures_esprima.js");
-  safeSpawnSync("node", ["external/builder/test-fixtures_esprima.js"], {
+  safeSpawnSync("node", ["external/builder/test-fixtures_esprima.mjs"], {
     stdio: "inherit",
   });
   done();
