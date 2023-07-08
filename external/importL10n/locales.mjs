@@ -13,11 +13,9 @@
  * limitations under the License.
  */
 
-"use strict";
-
-const fs = require("fs");
-const https = require("https");
-const path = require("path");
+import fs from "fs";
+import https from "https";
+import path from "path";
 
 // Fetches all languages that have an *active* translation in mozilla-central.
 // This is used in gulpfile.js for the `importl10n` command.
@@ -112,7 +110,7 @@ function downloadLanguageFiles(root, langCode) {
   });
 }
 
-async function downloadL10n(root, callback) {
+async function downloadL10n(root) {
   const langCodes = await downloadLanguageCodes();
 
   for (const langCode of langCodes) {
@@ -142,10 +140,6 @@ async function downloadL10n(root, callback) {
         "\n"
     );
   }
-
-  if (callback) {
-    callback();
-  }
 }
 
-exports.downloadL10n = downloadL10n;
+export { downloadL10n };

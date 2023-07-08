@@ -7,7 +7,7 @@
   ],
 
   "parserOptions": {
-    "sourceType": "script",
+    "sourceType": "module",
   },
 
   "plugins": [
