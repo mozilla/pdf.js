@@ -2039,23 +2039,26 @@ function ghPagesPrepare() {
   ]);
 }
 
-gulp.task("wintersmith", function (done) {
-  const wintersmith = require("wintersmith");
+gulp.task("wintersmith", async function () {
+  const { default: wintersmith } = await import("wintersmith");
   const env = wintersmith("docs/config.json");
-  env.build(GH_PAGES_DIR, function (error) {
-    if (error) {
-      done(error);
-      return;
-    }
 
-    replaceInFile(
-      GH_PAGES_DIR + "/getting_started/index.html",
-      /STABLE_VERSION/g,
-      config.stableVersion
-    );
+  return new Promise((resolve, reject) => {
+    env.build(GH_PAGES_DIR, function (error) {
+      if (error) {
+        reject(error);
+        return;
+      }
 
-    console.log("Done building with wintersmith.");
-    done();
+      replaceInFile(
+        GH_PAGES_DIR + "/getting_started/index.html",
+        /STABLE_VERSION/g,
+        config.stableVersion
+      );
+
+      console.log("Done building with wintersmith.");
+      resolve();
+    });
   });
 });
 
