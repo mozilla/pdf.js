@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-"use strict";
+import fs from "fs";
+import path from "path";
+import rimraf from "rimraf";
 
-const fs = require("fs");
-const path = require("path");
-const rimrafSync = require("rimraf").sync;
+const rimrafSync = rimraf.sync;
 
-exports.removeDirSync = function removeDirSync(dir) {
+function removeDirSync(dir) {
   fs.readdirSync(dir); // Will throw if dir is not a directory
   rimrafSync(dir, {
     disableGlob: true,
   });
-};
+}
 
-exports.copySubtreeSync = function copySubtreeSync(src, dest) {
+function copySubtreeSync(src, dest) {
   const files = fs.readdirSync(src);
   if (!fs.existsSync(dest)) {
     fs.mkdirSync(dest);
@@ -42,9 +42,9 @@ exports.copySubtreeSync = function copySubtreeSync(src, dest) {
       fs.writeFileSync(file, fs.readFileSync(srcFile));
     }
   });
-};
+}
 
-exports.ensureDirSync = function ensureDirSync(dir) {
+function ensureDirSync(dir) {
   if (fs.existsSync(dir)) {
     return;
   }
@@ -61,4 +61,6 @@ exports.ensureDirSync = function ensureDirSync(dir) {
     fs.mkdirSync(parts.slice(0, i).join(path.sep));
     i++;
   }
-};
+}
+
+export { copySubtreeSync, ensureDirSync, removeDirSync };

@@ -15,16 +15,15 @@
  */
 /* eslint-disable no-var */
 
-"use strict";
-
-var http = require("http");
-var path = require("path");
-var fs = require("fs");
+import fs from "fs";
+import http from "http";
+import path from "path";
 
 var mimeTypes = {
   ".css": "text/css",
   ".html": "text/html",
   ".js": "application/javascript",
+  ".mjs": "application/javascript",
   ".json": "application/json",
   ".svg": "image/svg+xml",
   ".pdf": "application/pdf",
@@ -352,4 +351,4 @@ function crossOriginHandler(req, res) {
   }
 }
 
-exports.WebServer = WebServer;
+export { WebServer };
