@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-exports.optimizeCMap = function (data) {
+function optimizeCMap(data) {
   let i = 1;
   while (i < data.body.length) {
     if (data.body[i - 1].type === data.body[i].type) {
@@ -206,7 +206,7 @@ exports.optimizeCMap = function (data) {
     }
     i++;
   }
-};
+}
 
 function incHex(a) {
   let c = 1,
@@ -223,3 +223,5 @@ function incHex(a) {
   }
   return s;
 }
+
+export { optimizeCMap };
