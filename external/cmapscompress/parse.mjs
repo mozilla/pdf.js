@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-exports.parseAdobeCMap = function (content) {
+function parseAdobeCMap(content) {
   let m = /(\bbegincmap\b[\s\S]*?)\bendcmap\b/.exec(content);
   if (!m) {
     throw new Error("cmap was not found");
@@ -100,4 +100,6 @@ exports.parseAdobeCMap = function (content) {
   }
 
   return result;
-};
+}
+
+export { parseAdobeCMap };
