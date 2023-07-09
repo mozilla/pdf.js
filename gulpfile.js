@@ -770,32 +770,52 @@ function buildDefaultPreferences(defines, dir) {
 
   const bundleDefines = builder.merge(defines, {
     LIB: true,
-    SKIP_BABEL: false,
-    BUNDLE_VERSION: 0, // Dummy version
-    BUNDLE_BUILD: 0, // Dummy build
     TESTING: defines.TESTING ?? process.env.TESTING === "true",
   });
 
-  const inputStream = merge([
-    gulp.src(["web/app_options.js"], {
-      base: ".",
-    }),
-  ]);
-
-  return buildLibHelper(
+  const defaultPreferencesConfig = createWebpackConfig(
     bundleDefines,
-    inputStream,
-    DEFAULT_PREFERENCES_DIR + dir
+    {
+      filename: "app_options.mjs",
+      library: {
+        type: "module",
+      },
+    },
+    {
+      disableVersionInfo: true,
+    }
+  );
+  return gulp
+    .src("web/app_options.js")
+    .pipe(webpack2Stream(defaultPreferencesConfig))
+    .pipe(gulp.dest(DEFAULT_PREFERENCES_DIR + dir));
+}
+
+async function parseDefaultPreferences(dir) {
+  console.log();
+  console.log("### Parsing default preferences");
+
+  // eslint-disable-next-line no-unsanitized/method
+  const { AppOptions, OptionKind } = await import(
+    "./" + DEFAULT_PREFERENCES_DIR + dir + "app_options.mjs"
+  );
+
+  const prefs = AppOptions.getAll(OptionKind.PREFERENCE);
+  if (Object.keys(prefs).length === 0) {
+    throw new Error("No default preferences found.");
+  }
+
+  fs.writeFileSync(
+    DEFAULT_PREFERENCES_DIR + dir + "default_preferences.json",
+    JSON.stringify(prefs)
   );
 }
 
 function getDefaultPreferences(dir) {
-  const { AppOptions, OptionKind } = require("./" +
-    DEFAULT_PREFERENCES_DIR +
-    dir +
-    "web/app_options.js");
-
-  return AppOptions.getAll(OptionKind.PREFERENCE);
+  const str = fs
+    .readFileSync(DEFAULT_PREFERENCES_DIR + dir + "default_preferences.json")
+    .toString();
+  return JSON.parse(str);
 }
 
 gulp.task("locale", function () {
@@ -948,6 +968,9 @@ gulp.task(
         createTemporaryScriptingBundle(defines),
       ]);
     },
+    async function prefsGeneric() {
+      await parseDefaultPreferences("generic/");
+    },
     function createGeneric() {
       console.log();
       console.log("### Creating generic viewer");
@@ -974,6 +997,9 @@ gulp.task(
         buildDefaultPreferences(defines, "generic-legacy/"),
         createTemporaryScriptingBundle(defines),
       ]);
+    },
+    async function prefsGenericLegacy() {
+      await parseDefaultPreferences("generic-legacy/");
     },
     function createGenericLegacy() {
       console.log();
@@ -1186,6 +1212,9 @@ gulp.task(
         createTemporaryScriptingBundle(defines),
       ]);
     },
+    async function prefsMinified() {
+      await parseDefaultPreferences("minified/");
+    },
     function createMinified() {
       console.log();
       console.log("### Creating minified viewer");
@@ -1215,6 +1244,9 @@ gulp.task(
         buildDefaultPreferences(defines, "minified-legacy/"),
         createTemporaryScriptingBundle(defines),
       ]);
+    },
+    async function prefsMinifiedLegacy() {
+      await parseDefaultPreferences("minified-legacy/");
     },
     function createMinifiedLegacy() {
       console.log();
@@ -1267,6 +1299,9 @@ gulp.task(
     function scriptingMozcentral() {
       const defines = builder.merge(DEFINES, { MOZCENTRAL: true });
       return buildDefaultPreferences(defines, "mozcentral/");
+    },
+    async function prefsMozcentral() {
+      await parseDefaultPreferences("mozcentral/");
     },
     function createMozcentral() {
       console.log();
@@ -1364,6 +1399,9 @@ gulp.task(
         buildDefaultPreferences(defines, "chromium/"),
         createTemporaryScriptingBundle(defines),
       ]);
+    },
+    async function prefsChromium() {
+      await parseDefaultPreferences("chromium/");
     },
     function createChromium() {
       console.log();
@@ -1589,6 +1627,9 @@ gulp.task(
         createTemporaryScriptingBundle(defines),
       ]);
     },
+    async function prefsLib() {
+      await parseDefaultPreferences("lib/");
+    },
     function createLib() {
       const defines = builder.merge(DEFINES, { GENERIC: true, LIB: true });
 
@@ -1614,6 +1655,9 @@ gulp.task(
         buildDefaultPreferences(defines, "lib-legacy/"),
         createTemporaryScriptingBundle(defines),
       ]);
+    },
+    async function prefsLibLegacy() {
+      await parseDefaultPreferences("lib-legacy/");
     },
     function createLibLegacy() {
       const defines = builder.merge(DEFINES, {
@@ -1926,6 +1970,9 @@ gulp.task(
         TESTING: false,
       });
       return buildDefaultPreferences(defines, "lint-chromium/");
+    },
+    async function prefsLintChromium() {
+      await parseDefaultPreferences("lint-chromium/");
     },
     function runLintChromium(done) {
       console.log();
