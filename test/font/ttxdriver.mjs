@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-"use strict";
+import { fileURLToPath } from "url";
+import fs from "fs";
+import path from "path";
+import { spawn } from "child_process";
 
-const fs = require("fs");
-const path = require("path");
-const spawn = require("child_process").spawn;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const ttxResourcesHome = path.join(__dirname, "..", "ttx");
 
@@ -64,11 +65,7 @@ function runTtx(ttxResourcesHomePath, fontPath, registerOnCancel, callback) {
   });
 }
 
-exports.translateFont = function translateFont(
-  content,
-  registerOnCancel,
-  callback
-) {
+function translateFont(content, registerOnCancel, callback) {
   const buffer = Buffer.from(content, "base64");
   const taskId = (nextTTXTaskId++).toString();
   const fontPath = path.join(ttxResourcesHome, taskId + ".otf");
@@ -87,4 +84,6 @@ exports.translateFont = function translateFont(
       fs.unlinkSync(resultPath);
     }
   });
-};
+}
+
+export { translateFont };
