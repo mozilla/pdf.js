@@ -1,12 +1,13 @@
-"use strict";
+import * as builder from "./builder.mjs";
+import { fileURLToPath } from "url";
+import fs from "fs";
+import path from "path";
 
-const p2 = require("./preprocessor2.js");
-const fs = require("fs");
-const path = require("path");
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let errors = 0;
 
-const baseDir = path.join(__dirname, "fixtures_esprima");
+const baseDir = path.join(__dirname, "fixtures");
 const files = fs
   .readdirSync(baseDir)
   .filter(function (name) {
@@ -22,25 +23,19 @@ files.forEach(function (expectationFilename) {
     .toString()
     .trim()
     .replaceAll("__filename", fs.realpathSync(inFilename));
-  const input = fs.readFileSync(inFilename).toString();
+  const outLines = [];
 
+  const outFilename = function (line) {
+    outLines.push(line);
+  };
   const defines = {
     TRUE: true,
     FALSE: false,
-    OBJ: { obj: { i: 1 }, j: 2 },
-    TEXT: "text",
-  };
-  const map = {
-    "import-alias": "import-name",
-  };
-  const ctx = {
-    defines,
-    map,
-    rootPath: __dirname + "/../..",
   };
   let out;
   try {
-    out = p2.preprocessPDFJSCode(ctx, input);
+    builder.preprocess(inFilename, outFilename, defines);
+    out = outLines.join("\n").trim();
   } catch (e) {
     out = ("Error: " + e.message).replaceAll(/^/gm, "//");
   }
