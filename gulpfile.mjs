@@ -14,30 +14,33 @@
  */
 /* eslint-env node */
 
-"use strict";
+import { exec, spawn, spawnSync } from "child_process";
+import autoprefixer from "autoprefixer";
+import builder from "./external/builder/builder.js";
+import { createRequire } from "module";
+import crypto from "crypto";
+import { fileURLToPath } from "url";
+import fs from "fs";
+import gulp from "gulp";
+import merge from "merge-stream";
+import { mkdirp } from "mkdirp";
+import path from "path";
+import postcss from "gulp-postcss";
+import postcssDirPseudoClass from "postcss-dir-pseudo-class";
+import rename from "gulp-rename";
+import replace from "gulp-replace";
+import rimraf from "rimraf";
+import stream from "stream";
+import streamqueue from "streamqueue";
+import through from "through2";
+import vfs from "vinyl-fs";
+import Vinyl from "vinyl";
+import webpack2 from "webpack";
+import webpackStream from "webpack-stream";
+import zip from "gulp-zip";
 
-const autoprefixer = require("autoprefixer");
-const postcssDirPseudoClass = require("postcss-dir-pseudo-class");
-const fs = require("fs");
-const gulp = require("gulp");
-const postcss = require("gulp-postcss");
-const rename = require("gulp-rename");
-const replace = require("gulp-replace");
-const { mkdirp } = require("mkdirp");
-const path = require("path");
-const rimraf = require("rimraf");
-const stream = require("stream");
-const exec = require("child_process").exec;
-const spawn = require("child_process").spawn;
-const spawnSync = require("child_process").spawnSync;
-const streamqueue = require("streamqueue");
-const merge = require("merge-stream");
-const zip = require("gulp-zip");
-const webpack2 = require("webpack");
-const webpackStream = require("webpack-stream");
-const Vinyl = require("vinyl");
-const vfs = require("vinyl-fs");
-const through = require("through2");
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const require = createRequire(import.meta.url);
 
 const BUILD_DIR = "build/";
 const L10N_DIR = "l10n/";
@@ -69,8 +72,6 @@ const COMMON_WEB_FILES = [
 const MOZCENTRAL_DIFF_FILE = "mozcentral.diff";
 
 const DIST_REPO_URL = "https://github.com/mozilla/pdfjs-dist";
-
-const builder = require("./external/builder/builder.js");
 
 const CONFIG_FILE = "pdfjs.config";
 const config = JSON.parse(fs.readFileSync(CONFIG_FILE).toString());
@@ -620,7 +621,7 @@ function replaceInFile(filePath, find, replacement) {
 
 function getTempFile(prefix, suffix) {
   mkdirp.sync(BUILD_DIR + "tmp/");
-  const bytes = require("crypto").randomBytes(6).toString("hex");
+  const bytes = crypto.randomBytes(6).toString("hex");
   const filePath = BUILD_DIR + "tmp/" + prefix + bytes + suffix;
   fs.writeFileSync(filePath, "");
   return filePath;
