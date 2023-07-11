@@ -44,7 +44,7 @@
     "puppeteer": "^20.7.3",
     "rimraf": "^3.0.2",
     "streamqueue": "^1.1.2",
-    "stylelint": "^15.9.0",
+    "stylelint": "^15.10.1",
     "stylelint-prettier": "^3.0.0",
     "terser": "^5.18.1",
     "through2": "^4.0.2",
