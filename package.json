@@ -38,6 +38,7 @@
     "mkdirp": "^3.0.1",
     "needle": "^3.2.0",
     "path2d-polyfill": "^2.0.1",
+    "pngjs": "^7.0.0",
     "postcss": "^8.4.24",
     "postcss-dir-pseudo-class": "^7.0.2",
     "prettier": "^2.8.8",

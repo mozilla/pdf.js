@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-exports.loadAndWait = (filename, selector) =>
+exports.loadAndWait = (filename, selector, zoom) =>
   Promise.all(
     global.integrationSessions.map(async session => {
       const page = await session.browser.newPage();
@@ -33,9 +33,11 @@ exports.loadAndWait = (filename, selector) =>
         });
       });
 
-      await page.goto(
-        `${global.integrationBaseUrl}?file=/test/pdfs/${filename}`
-      );
+      let url = `${global.integrationBaseUrl}?file=/test/pdfs/${filename}`;
+      if (zoom) {
+        url += `#zoom=${zoom}`;
+      }
+      await page.goto(url);
       await page.bringToFront();
       await page.waitForSelector(selector, {
         timeout: 0,

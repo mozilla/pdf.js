@@ -25,6 +25,8 @@ const {
   waitForStorageEntries,
 } = require("./test_utils.js");
 
+const PNG = require("pngjs").PNG;
+
 const copyPaste = async page => {
   let promise = waitForEvent(page, "copy");
   await page.keyboard.down("Control");
@@ -1375,6 +1377,304 @@ describe("FreeText Editor", () => {
           expect(await serialize())
             .withContext(`In ${browserName}`)
             .toEqual([]);
+        })
+      );
+    });
+  });
+
+  describe("FreeText (open existing)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "issue16633.pdf",
+        ".annotationEditorLayer",
+        100
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must open an existing annotation and check that the position are good", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorFreeText");
+
+          await page.evaluate(() => {
+            document.getElementById("editorFreeTextParamsToolbar").remove();
+          });
+
+          const toBinary = buf => {
+            for (let i = 0; i < buf.length; i += 4) {
+              const gray =
+                (0.2126 * buf[i] + 0.7152 * buf[i + 1] + 0.0722 * buf[i + 2]) /
+                255;
+              buf[i] = buf[i + 1] = buf[i + 2] = gray <= 0.5 ? 0 : 255;
+            }
+          };
+
+          // We want to detect the first non-white pixel in the image.
+          // But we can have some antialiasing...
+          // The idea to just try to detect the beginning of the vertical bar
+          // of the "H" letter.
+          // Hence we just take the first non-white pixel in the image which is
+          // the most repeated one.
+          const getFirstPixel = (buf, width, height) => {
+            toBinary(buf);
+            const firsts = [];
+            const stats = {};
+            // Get the position of the first pixels.
+            // The position of char depends on a lot of different parameters,
+            // hence it's possible to not have a pixel where we expect to have
+            // it. So we just collect the positions of the first black pixel and
+            // take the first one where its abscissa is the most frequent.
+            for (let i = height - 1; i >= 0; i--) {
+              for (let j = 0; j < width; j++) {
+                const idx = (width * i + j) << 2;
+                if (buf[idx] === 0) {
+                  firsts.push([j, i]);
+                  stats[j] = (stats[j] || 0) + 1;
+                  break;
+                }
+              }
+            }
+
+            let maxValue = -Infinity;
+            let maxJ = 0;
+            for (const [j, count] of Object.entries(stats)) {
+              if (count > maxValue) {
+                maxValue = count;
+                maxJ = j;
+              }
+            }
+            maxJ = parseInt(maxJ, 10);
+            for (const [j, i] of firsts) {
+              if (j === maxJ) {
+                return [j, i];
+              }
+            }
+            return null;
+          };
+
+          for (const n of [0, 1, 2, 3, 4]) {
+            const rect = await page.$eval(getEditorSelector(n), el => {
+              // With Chrome something is wrong when serializing a DomRect,
+              // hence we extract the values and just return them.
+              const { x, y, width, height } = el.getBoundingClientRect();
+              return { x, y, width, height };
+            });
+            const editorPng = await page.screenshot({
+              clip: rect,
+              type: "png",
+            });
+            const editorImage = PNG.sync.read(editorPng);
+            const editorFirstPix = getFirstPixel(
+              editorImage.data,
+              editorImage.width,
+              editorImage.height
+            );
+
+            await page.evaluate(N => {
+              const editor = document.getElementById(
+                `pdfjs_internal_editor_${N}`
+              );
+              const annotationId = editor.getAttribute("annotation-id");
+              const annotation = document.querySelector(
+                `[data-annotation-id="${annotationId}"]`
+              );
+              editor.hidden = true;
+              annotation.hidden = false;
+            }, n);
+            await page.waitForTimeout(10);
+            const annotationPng = await page.screenshot({
+              clip: rect,
+              type: "png",
+            });
+            const annotationImage = PNG.sync.read(annotationPng);
+            const annotationFirstPix = getFirstPixel(
+              annotationImage.data,
+              annotationImage.width,
+              annotationImage.height
+            );
+
+            expect(
+              Math.abs(editorFirstPix[0] - annotationFirstPix[0]) <= 3 &&
+                Math.abs(editorFirstPix[1] - annotationFirstPix[1]) <= 3
+            )
+              .withContext(
+                `In ${browserName}, first pix coords in editor: ${editorFirstPix} and in annotation: ${annotationFirstPix}`
+              )
+              .toEqual(true);
+          }
+        })
+      );
+    });
+  });
+
+  describe("FreeText (open existing and rotated)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "rotated_freetexts.pdf",
+        ".annotationEditorLayer",
+        100
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must open an existing rotated annotation and check that the position are good", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorFreeText");
+
+          await page.evaluate(() => {
+            document.getElementById("editorFreeTextParamsToolbar").remove();
+          });
+
+          const toBinary = buf => {
+            for (let i = 0; i < buf.length; i += 4) {
+              const gray =
+                (0.2126 * buf[i] + 0.7152 * buf[i + 1] + 0.0722 * buf[i + 2]) /
+                255;
+              buf[i] = buf[i + 1] = buf[i + 2] = gray >= 0.5 ? 255 : 0;
+            }
+          };
+
+          const getFirstPixel = (buf, width, height, start) => {
+            toBinary(buf);
+            const firsts = [];
+            const stats = {};
+            switch (start) {
+              case "TL":
+                for (let j = 0; j < width; j++) {
+                  for (let i = 0; i < height; i++) {
+                    const idx = (width * i + j) << 2;
+                    if (buf[idx] === 0) {
+                      firsts.push([j, i]);
+                      stats[j] = (stats[j] || 0) + 1;
+                      break;
+                    }
+                  }
+                }
+                break;
+              case "TR":
+                for (let i = 0; i < height; i++) {
+                  for (let j = width - 1; j >= 0; j--) {
+                    const idx = (width * i + j) << 2;
+                    if (buf[idx] === 0) {
+                      firsts.push([j, i]);
+                      stats[j] = (stats[j] || 0) + 1;
+                      break;
+                    }
+                  }
+                }
+                break;
+              case "BR":
+                for (let j = width - 1; j >= 0; j--) {
+                  for (let i = height - 1; i >= 0; i--) {
+                    const idx = (width * i + j) << 2;
+                    if (buf[idx] === 0) {
+                      firsts.push([j, i]);
+                      stats[j] = (stats[j] || 0) + 1;
+                      break;
+                    }
+                  }
+                }
+                break;
+              case "BL":
+                for (let i = height - 1; i >= 0; i--) {
+                  for (let j = 0; j < width; j++) {
+                    const idx = (width * i + j) << 2;
+                    if (buf[idx] === 0) {
+                      firsts.push([j, i]);
+                      stats[j] = (stats[j] || 0) + 1;
+                      break;
+                    }
+                  }
+                }
+                break;
+            }
+
+            let maxValue = -Infinity;
+            let maxJ = 0;
+            for (const [j, count] of Object.entries(stats)) {
+              if (count > maxValue) {
+                maxValue = count;
+                maxJ = j;
+              }
+            }
+            maxJ = parseInt(maxJ, 10);
+            for (const [j, i] of firsts) {
+              if (j === maxJ) {
+                return [j, i];
+              }
+            }
+            return null;
+          };
+
+          for (const [n, start] of [
+            [0, "BL"],
+            [1, "BR"],
+            [2, "TR"],
+            [3, "TL"],
+          ]) {
+            const rect = await page.$eval(getEditorSelector(n), el => {
+              // With Chrome something is wrong when serializing a DomRect,
+              // hence we extract the values and just return them.
+              const { x, y, width, height } = el.getBoundingClientRect();
+              return { x, y, width, height };
+            });
+            const editorPng = await page.screenshot({
+              clip: rect,
+              type: "png",
+            });
+            const editorImage = PNG.sync.read(editorPng);
+            const editorFirstPix = getFirstPixel(
+              editorImage.data,
+              editorImage.width,
+              editorImage.height,
+              start
+            );
+
+            await page.evaluate(N => {
+              const editor = document.getElementById(
+                `pdfjs_internal_editor_${N}`
+              );
+              const annotationId = editor.getAttribute("annotation-id");
+              const annotation = document.querySelector(
+                `[data-annotation-id="${annotationId}"]`
+              );
+              editor.hidden = true;
+              annotation.hidden = false;
+            }, n);
+            await page.waitForTimeout(10);
+            const annotationPng = await page.screenshot({
+              clip: rect,
+              type: "png",
+            });
+            const annotationImage = PNG.sync.read(annotationPng);
+            const annotationFirstPix = getFirstPixel(
+              annotationImage.data,
+              annotationImage.width,
+              annotationImage.height,
+              start
+            );
+
+            expect(
+              Math.abs(editorFirstPix[0] - annotationFirstPix[0]) <= 3 &&
+                Math.abs(editorFirstPix[1] - annotationFirstPix[1]) <= 3
+            )
+              .withContext(
+                `In ${browserName}, first pix coords in editor: ${editorFirstPix} and in annotation: ${annotationFirstPix}`
+              )
+              .toEqual(true);
+          }
         })
       );
     });

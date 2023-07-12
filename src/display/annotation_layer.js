@@ -304,6 +304,9 @@ class AnnotationElement {
   }
 
   setRotation(angle, container = this.container) {
+    if (!this.data.rect) {
+      return;
+    }
     const { pageWidth, pageHeight } = this.parent.viewport.rawDims;
     const { width, height } = getRectDims(this.data.rect);
 
@@ -2210,6 +2213,7 @@ class FreeTextAnnotationElement extends AnnotationElement {
     );
     super(parameters, { isRenderable, ignoreBorder: true });
     this.textContent = parameters.data.textContent;
+    this.textPosition = parameters.data.textPosition;
     this.annotationEditorType = AnnotationEditorType.FREETEXT;
   }
 
