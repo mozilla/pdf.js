@@ -85,6 +85,10 @@
       "type": "boolean",
       "default": true
     },
+    "enableSignatureEditor": {
+      "type": "boolean",
+      "default": false
+    },
     "disableRange": {
       "title": "Disable range requests",
       "description": "Whether to disable range requests (not recommended).",

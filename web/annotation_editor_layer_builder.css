@@ -145,7 +145,9 @@
 }
 
 .annotationEditorLayer
-  :is(.freeTextEditor, .inkEditor, .stampEditor):hover:not(.selectedEditor) {
+  :is(.freeTextEditor, .inkEditor, .stampEditor, .signatureEditor):hover:not(
+    .selectedEditor
+  ) {
   outline: var(--hover-outline);
 }
 
@@ -167,12 +169,12 @@
   touch-action: none;
 }
 
-.annotationEditorLayer .stampEditor {
+.annotationEditorLayer :is(.stampEditor, .signatureEditor) {
   width: auto;
   height: auto;
 }
 
-.annotationEditorLayer .stampEditor.loading {
+.annotationEditorLayer :is(.stampEditor, .signatureEditor).loading {
   aspect-ratio: 1;
   width: 10%;
   height: auto;
@@ -185,7 +187,7 @@
   transition-delay: var(--loading-icon-delay);
 }
 
-.annotationEditorLayer .stampEditor canvas {
+.annotationEditorLayer :is(.stampEditor, .signatureEditor) canvas {
   width: 100%;
   height: 100%;
 }

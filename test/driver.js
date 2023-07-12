@@ -15,6 +15,7 @@
 /* globals pdfjsLib, pdfjsViewer */
 
 const {
+  AnnotationEditorLayer,
   AnnotationLayer,
   AnnotationMode,
   getDocument,
@@ -27,6 +28,8 @@ const {
 } = pdfjsLib;
 const { GenericL10n, NullL10n, parseQueryString, SimpleLinkService } =
   pdfjsViewer;
+
+const SignatureEditor = AnnotationEditorLayer.SignatureEditor;
 
 const WAITING_TIME = 100; // ms
 const CMAP_URL = "/build/generic/web/cmaps/";
@@ -443,6 +446,7 @@ class Driver {
       task.pageNum = task.firstPage || 1;
       task.stats = { times: [] };
       task.enableXfa = task.enableXfa === true;
+      task.signature = task.signature === true;
 
       const prevFile = md5FileMap.get(task.md5);
       if (prevFile) {
@@ -472,6 +476,31 @@ class Driver {
       }
 
       this._log('Loading file "' + task.file + '"\n');
+
+      if (task.signature) {
+        fetch(new URL(`./${task.file}`, window.location))
+          .then(response => response.blob())
+          .then(blob => createImageBitmap(blob))
+          .then(bitmap => {
+            bitmap = SignatureEditor.preProcess(bitmap);
+            const canvas = document.createElement("canvas");
+            canvas.width = bitmap.width;
+            canvas.height = bitmap.height;
+            const ctx = canvas.getContext("2d");
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(bitmap, 0, 0);
+            const dataUrl = canvas.toDataURL("image/png");
+            this._sendResult(dataUrl, task, failure).then(() => {
+              this._log(
+                "done" + (failure ? " (failed !: " + failure + ")" : "") + "\n"
+              );
+              this.currentTask++;
+              this._nextTask();
+            });
+          });
+        return;
+      }
 
       try {
         let xfaStyleElement = null;

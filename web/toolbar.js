@@ -102,6 +102,18 @@ class Toolbar {
           },
         },
       },
+      {
+        element: options.editorSignatureButton,
+        eventName: "switchannotationeditormode",
+        eventDetails: {
+          get mode() {
+            const { classList } = options.editorSignatureButton;
+            return classList.contains("toggled")
+              ? AnnotationEditorType.NONE
+              : AnnotationEditorType.SIGNATURE;
+          },
+        },
+      },
     ];
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       this.buttons.push({ element: options.openFile, eventName: "openfile" });
@@ -218,6 +230,7 @@ class Toolbar {
     editorInkButton,
     editorInkParamsToolbar,
     editorStampButton,
+    editorSignatureButton,
   }) {
     const editorModeChanged = ({ mode }) => {
       toggleCheckedBtn(
@@ -231,11 +244,16 @@ class Toolbar {
         editorInkParamsToolbar
       );
       toggleCheckedBtn(editorStampButton, mode === AnnotationEditorType.STAMP);
+      toggleCheckedBtn(
+        editorSignatureButton,
+        mode === AnnotationEditorType.SIGNATURE
+      );
 
       const isDisable = mode === AnnotationEditorType.DISABLE;
       editorFreeTextButton.disabled = isDisable;
       editorInkButton.disabled = isDisable;
       editorStampButton.disabled = isDisable;
+      editorSignatureButton.disabled = isDisable;
     };
     this.eventBus._on("annotationeditormodechanged", editorModeChanged);
 

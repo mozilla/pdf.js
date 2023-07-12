@@ -8038,5 +8038,19 @@
           "rotation": 0
         }
       }
+   },
+   {
+      "id": "signature-hello1",
+      "file": "images/signature1.jpg",
+      "type": "eq",
+      "md5": "bcd840f44b71da179431a11f9db59640",
+      "signature": true
+   },
+   {
+      "id": "signature-hello2",
+      "file": "images/signature2.png",
+      "type": "eq",
+      "md5": "8a9fbc71831f636054548db900cf698b",
+      "signature": true
    }
 ]

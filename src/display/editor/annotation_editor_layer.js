@@ -28,6 +28,7 @@ import { bindEvents } from "./tools.js";
 import { FreeTextEditor } from "./freetext.js";
 import { InkEditor } from "./ink.js";
 import { setLayerDimensions } from "../display_utils.js";
+import { SignatureEditor } from "./signature.js";
 import { StampEditor } from "./stamp.js";
 
 /**
@@ -86,7 +87,12 @@ class AnnotationEditorLayer {
     viewport,
     l10n,
   }) {
-    const editorTypes = [FreeTextEditor, InkEditor, StampEditor];
+    const editorTypes = [
+      FreeTextEditor,
+      InkEditor,
+      StampEditor,
+      SignatureEditor,
+    ];
     if (!AnnotationEditorLayer._initialized) {
       AnnotationEditorLayer._initialized = true;
       for (const editorType of editorTypes) {
@@ -144,6 +150,10 @@ class AnnotationEditorLayer {
       this.div.classList.toggle(
         "stampEditing",
         mode === AnnotationEditorType.STAMP
+      );
+      this.div.classList.toggle(
+        "signatureEditing",
+        mode === AnnotationEditorType.SIGNATURE
       );
       this.div.hidden = false;
     }
@@ -442,6 +452,8 @@ class AnnotationEditorLayer {
         return new InkEditor(params);
       case AnnotationEditorType.STAMP:
         return new StampEditor(params);
+      case AnnotationEditorType.SIGNATURE:
+        return new SignatureEditor(params);
     }
     return null;
   }
@@ -459,6 +471,8 @@ class AnnotationEditorLayer {
         return InkEditor.deserialize(data, this, this.#uiManager);
       case AnnotationEditorType.STAMP:
         return StampEditor.deserialize(data, this, this.#uiManager);
+      case AnnotationEditorType.SIGNATURE:
+        return SignatureEditor.deserialize(data, this, this.#uiManager);
     }
     return null;
   }
@@ -671,6 +685,10 @@ class AnnotationEditorLayer {
     const { pageWidth, pageHeight } = this.viewport.rawDims;
     return [pageWidth, pageHeight];
   }
+}
+
+if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
+  AnnotationEditorLayer.SignatureEditor = SignatureEditor;
 }
 
 export { AnnotationEditorLayer };

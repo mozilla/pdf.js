@@ -70,6 +70,10 @@ class DOMFilterFactory extends BaseFilterFactory {
 
   #hcmHighlightUrl;
 
+  #signatureFilter;
+
+  #signatureFilterUrl;
+
   #id = 0;
 
   constructor({ docId, ownerDocument = globalThis.document } = {}) {
@@ -308,6 +312,26 @@ class DOMFilterFactory extends BaseFilterFactory {
 
     this.#hcmHighlightUrl = `url(#${id})`;
     return this.#hcmHighlightUrl;
+  }
+
+  addSignatureFilter() {
+    if (this.#signatureFilterUrl) {
+      return this.#signatureFilterUrl;
+    }
+
+    this.#signatureFilterUrl = "none";
+    this.#signatureFilter?.remove();
+
+    const id = `g_${this.#docId}_signature_filter`;
+    const filter = (this.#signatureFilter = this.#createFilter(id));
+
+    const feMorphology = this.#document.createElementNS(SVG_NS, "feMorphology");
+    feMorphology.setAttribute("operator", "erode");
+    feMorphology.setAttribute("radius", "1");
+    filter.append(feMorphology);
+
+    this.#signatureFilterUrl = `url(#${id})`;
+    return this.#signatureFilterUrl;
   }
 
   destroy(keepHCM = false) {

@@ -74,6 +74,7 @@ const AnnotationEditorType = {
   FREETEXT: 3,
   STAMP: 13,
   INK: 15,
+  SIGNATURE: 27,
 };
 
 const AnnotationEditorParamsType = {
@@ -145,6 +146,7 @@ const AnnotationType = {
   WATERMARK: 24,
   THREED: 25,
   REDACT: 26,
+  SIGNATURE: 27,
 };
 
 const AnnotationReplyType = {

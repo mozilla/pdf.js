@@ -566,6 +566,12 @@ const PDFViewerApplication = {
         if (AppOptions.get("enableStampEditor") && isOffscreenCanvasSupported) {
           appConfig.toolbar?.editorStampButton?.classList.remove("hidden");
         }
+        if (
+          AppOptions.get("enableSignatureEditor") &&
+          isOffscreenCanvasSupported
+        ) {
+          appConfig.toolbar?.editorSignatureButton?.classList.remove("hidden");
+        }
 
         this.annotationEditorParams = new AnnotationEditorParams(
           appConfig.annotationEditorParams,

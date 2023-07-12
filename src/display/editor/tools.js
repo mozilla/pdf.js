@@ -642,6 +642,10 @@ class AnnotationEditorUIManager {
     );
   }
 
+  get signatureFilter() {
+    return this.#filterFactory.addSignatureFilter();
+  }
+
   onPageChanging({ pageNumber }) {
     this.#currentPageIndex = pageNumber - 1;
   }

@@ -103,6 +103,17 @@ const defaultOptions = {
     value: typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME"),
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  enableSignatureEditor: {
+    // We want to be able to add a signature in a pdf.
+    // It's almost the same thing as the stamp editor but we try to remove the
+    // background from the image.
+    // We need to have some inputs from the UI/UX team in order to make it
+    // suitable for Firefox, it's why it's disabled by default.
+    // TODO: remove it when unnecessary.
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   enableStampEditor: {
     // We'll probably want to make some experiments before enabling this
     // in Firefox release, but it has to be temporary.

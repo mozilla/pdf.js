@@ -218,11 +218,21 @@ class StampEditor extends AnnotationEditor {
     return this.div;
   }
 
+  _preProcess(bitmap) {
+    return bitmap;
+  }
+
+  get MAX_RATIO() {
+    return 0.75;
+  }
+
   #createCanvas() {
     const { div } = this;
     let { width, height } = this.#bitmap;
-    const [pageWidth, pageHeight] = this.pageDimensions;
-    const MAX_RATIO = 0.75;
+    const {
+      pageDimensions: [pageWidth, pageHeight],
+      MAX_RATIO,
+    } = this;
     if (this.width) {
       width = this.width * pageWidth;
       height = this.height * pageHeight;
@@ -247,6 +257,7 @@ class StampEditor extends AnnotationEditor {
 
     const canvas = (this.#canvas = document.createElement("canvas"));
     div.append(canvas);
+    this.#bitmap = this._preProcess(this.#bitmap);
     this.#drawBitmap(width, height);
     this.#createObserver();
     div.classList.remove("loading");
@@ -279,12 +290,11 @@ class StampEditor extends AnnotationEditor {
     }, TIME_TO_WAIT);
   }
 
-  #scaleBitmap(width, height) {
-    const { width: bitmapWidth, height: bitmapHeight } = this.#bitmap;
+  static _scaleBitmap(bitmap, width, height) {
+    const { width: bitmapWidth, height: bitmapHeight } = bitmap;
 
     let newWidth = bitmapWidth;
     let newHeight = bitmapHeight;
-    let bitmap = this.#bitmap;
     while (newWidth > 2 * width || newHeight > 2 * height) {
       const prevWidth = newWidth;
       const prevHeight = newHeight;
@@ -333,7 +343,7 @@ class StampEditor extends AnnotationEditor {
     canvas.height = height;
     const bitmap = this.#isSvg
       ? this.#bitmap
-      : this.#scaleBitmap(width, height);
+      : StampEditor._scaleBitmap(this.#bitmap, width, height);
     const ctx = canvas.getContext("2d");
     ctx.filter = this._uiManager.hcmFilter;
     ctx.drawImage(

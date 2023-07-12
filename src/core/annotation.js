@@ -266,12 +266,15 @@ class AnnotationFactory {
       return null;
     }
     let imagePromises;
-    for (const { bitmapId, bitmap } of annotations) {
+    for (const { bitmapId, bitmap, onlyAlpha } of annotations) {
       if (!bitmap) {
         continue;
       }
       imagePromises ||= new Map();
-      imagePromises.set(bitmapId, StampAnnotation.createImage(bitmap, xref));
+      imagePromises.set(
+        bitmapId,
+        StampAnnotation.createImage(bitmap, onlyAlpha, xref)
+      );
     }
 
     return imagePromises;
@@ -288,6 +291,27 @@ class AnnotationFactory {
       if (annotation.deleted) {
         continue;
       }
+
+      let image;
+      if (annotation.bitmapId && isOffscreenCanvasSupported) {
+        image = await imagePromises.get(annotation.bitmapId);
+        if (image.imageStream) {
+          const { imageStream, smaskStream } = image;
+          const buffer = [];
+          if (smaskStream) {
+            const smaskRef = xref.getNewTemporaryRef();
+            await writeObject(smaskRef, smaskStream, buffer, null);
+            dependencies.push({ ref: smaskRef, data: buffer.join("") });
+            imageStream.dict.set("SMask", smaskRef);
+            buffer.length = 0;
+          }
+          const imageRef = (image.imageRef = xref.getNewTemporaryRef());
+          await writeObject(imageRef, imageStream, buffer, null);
+          dependencies.push({ ref: imageRef, data: buffer.join("") });
+          image.imageStream = image.smaskStream = null;
+        }
+      }
+
       switch (annotation.annotationType) {
         case AnnotationEditorType.FREETEXT:
           if (!baseFontRef) {
@@ -316,24 +340,9 @@ class AnnotationFactory {
           );
           break;
         case AnnotationEditorType.STAMP:
-          if (!isOffscreenCanvasSupported) {
+        case AnnotationEditorType.SIGNATURE:
+          if (!image) {
             break;
-          }
-          const image = await imagePromises.get(annotation.bitmapId);
-          if (image.imageStream) {
-            const { imageStream, smaskStream } = image;
-            const buffer = [];
-            if (smaskStream) {
-              const smaskRef = xref.getNewTemporaryRef();
-              await writeObject(smaskRef, smaskStream, buffer, null);
-              dependencies.push({ ref: smaskRef, data: buffer.join("") });
-              imageStream.dict.set("SMask", smaskRef);
-              buffer.length = 0;
-            }
-            const imageRef = (image.imageRef = xref.getNewTemporaryRef());
-            await writeObject(imageRef, imageStream, buffer, null);
-            dependencies.push({ ref: imageRef, data: buffer.join("") });
-            image.imageStream = image.smaskStream = null;
           }
           promises.push(
             StampAnnotation.createNewAnnotation(
@@ -369,6 +378,20 @@ class AnnotationFactory {
       if (annotation.deleted) {
         continue;
       }
+
+      let image;
+      if (annotation.bitmapId && options.isOffscreenCanvasSupported) {
+        image = await imagePromises.get(annotation.bitmapId);
+        if (image.imageStream) {
+          const { imageStream, smaskStream } = image;
+          if (smaskStream) {
+            imageStream.dict.set("SMask", smaskStream);
+          }
+          image.imageRef = new JpegStream(imageStream, imageStream.length);
+          image.imageStream = image.smaskStream = null;
+        }
+      }
+
       switch (annotation.annotationType) {
         case AnnotationEditorType.FREETEXT:
           promises.push(
@@ -387,17 +410,9 @@ class AnnotationFactory {
           );
           break;
         case AnnotationEditorType.STAMP:
-          if (!options.isOffscreenCanvasSupported) {
+        case AnnotationEditorType.SIGNATURE:
+          if (!image) {
             break;
-          }
-          const image = await imagePromises.get(annotation.bitmapId);
-          if (image.imageStream) {
-            const { imageStream, smaskStream } = image;
-            if (smaskStream) {
-              imageStream.dict.set("SMask", smaskStream);
-            }
-            image.imageRef = new JpegStream(imageStream, imageStream.length);
-            image.imageStream = image.smaskStream = null;
           }
           promises.push(
             StampAnnotation.createNewPrintAnnotation(xref, annotation, {
@@ -1685,7 +1700,7 @@ class WidgetAnnotation extends Annotation {
     data.fieldType = fieldType instanceof Name ? fieldType.name : null;
 
     const localResources = getInheritableProperty({ dict, key: "DR" });
-    const acroFormResources = params.acroForm.get("DR");
+    const acroFormResources = params.acroForm?.get("DR");
     const appearanceResources = this.appearance?.dict.get("Resources");
 
     this._fieldResources = {
@@ -4482,7 +4497,7 @@ class StampAnnotation extends MarkupAnnotation {
     this.data.hasOwnCanvas = this.data.noRotate;
   }
 
-  static async createImage(bitmap, xref) {
+  static async createImage(bitmap, onlyAlpha, xref) {
     // TODO: when printing, we could have a specific internal colorspace
     // (e.g. something like DeviceRGBA) in order avoid any conversion (i.e. no
     // jpeg, no rgba to rgb conversion, etc...)
@@ -4495,22 +4510,30 @@ class StampAnnotation extends MarkupAnnotation {
     ctx.drawImage(bitmap, 0, 0);
     const data = ctx.getImageData(0, 0, width, height).data;
     const buf32 = new Uint32Array(data.buffer);
-    const hasAlpha = buf32.some(
-      FeatureTest.isLittleEndian
-        ? x => x >>> 24 !== 0xff
-        : x => (x & 0xff) !== 0xff
-    );
+    const hasAlpha =
+      onlyAlpha ||
+      buf32.some(
+        FeatureTest.isLittleEndian
+          ? x => x >>> 24 !== 0xff
+          : x => (x & 0xff) !== 0xff
+      );
 
     if (hasAlpha) {
       // Redraw the image on a white background in order to remove the thin gray
       // line which can appear when exporting to jpeg.
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, width, height);
-      ctx.drawImage(bitmap, 0, 0);
+      if (!onlyAlpha) {
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(bitmap, 0, 0);
+      } else {
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, width, height);
+      }
     }
+    const quality = onlyAlpha ? 0 : 1;
 
     const jpegBufferPromise = canvas
-      .convertToBlob({ type: "image/jpeg", quality: 1 })
+      .convertToBlob({ type: "image/jpeg", quality })
       .then(blob => {
         return blob.arrayBuffer();
       });
