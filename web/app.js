@@ -495,6 +495,9 @@ const PDFViewerApplication = {
     const container = appConfig.mainContainer,
       viewer = appConfig.viewerContainer;
     const annotationEditorMode = AppOptions.get("annotationEditorMode");
+    const isOffscreenCanvasSupported =
+      AppOptions.get("isOffscreenCanvasSupported") &&
+      FeatureTest.isOffscreenCanvasSupported;
     const pageColors =
       AppOptions.get("forcePageColors") ||
       window.matchMedia("(forced-colors: active)").matches
@@ -521,7 +524,7 @@ const PDFViewerApplication = {
       imageResourcesPath: AppOptions.get("imageResourcesPath"),
       enablePrintAutoRotate: AppOptions.get("enablePrintAutoRotate"),
       useOnlyCssZoom: AppOptions.get("useOnlyCssZoom"),
-      isOffscreenCanvasSupported: AppOptions.get("isOffscreenCanvasSupported"),
+      isOffscreenCanvasSupported,
       maxCanvasPixels: AppOptions.get("maxCanvasPixels"),
       enablePermissions: AppOptions.get("enablePermissions"),
       pageColors,
@@ -560,14 +563,8 @@ const PDFViewerApplication = {
 
     if (appConfig.annotationEditorParams) {
       if (annotationEditorMode !== AnnotationEditorType.DISABLE) {
-        const editorStampButton = appConfig.toolbar?.editorStampButton;
-        if (
-          editorStampButton &&
-          AppOptions.get("enableStampEditor") &&
-          AppOptions.get("isOffscreenCanvasSupported") &&
-          FeatureTest.isOffscreenCanvasSupported
-        ) {
-          editorStampButton.hidden = false;
+        if (AppOptions.get("enableStampEditor") && isOffscreenCanvasSupported) {
+          appConfig.toolbar?.editorStampButton?.classList.remove("hidden");
         }
 
         this.annotationEditorParams = new AnnotationEditorParams(
