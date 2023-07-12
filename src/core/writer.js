@@ -51,16 +51,10 @@ async function writeStream(stream, buffer, transform) {
   }
   const { dict } = stream;
 
-  // eslint-disable-next-line no-undef
-  if (typeof CompressionStream === "undefined") {
-    dict.set("Length", string.length);
-    await writeDict(dict, buffer, transform);
-    buffer.push(" stream\n", string, "\nendstream");
-    return;
-  }
-
-  const filter = await dict.getAsync("Filter");
-  const params = await dict.getAsync("DecodeParms");
+  const [filter, params] = await Promise.all([
+    dict.getAsync("Filter"),
+    dict.getAsync("DecodeParms"),
+  ]);
 
   const filterZero = Array.isArray(filter)
     ? await dict.xref.fetchIfRefAsync(filter[0])
@@ -71,7 +65,11 @@ async function writeStream(stream, buffer, transform) {
   // The number 256 is arbitrary, but it should be reasonable.
   const MIN_LENGTH_FOR_COMPRESSING = 256;
 
-  if (string.length >= MIN_LENGTH_FOR_COMPRESSING || isFilterZeroFlateDecode) {
+  if (
+    // eslint-disable-next-line no-undef
+    typeof CompressionStream !== "undefined" &&
+    (string.length >= MIN_LENGTH_FOR_COMPRESSING || isFilterZeroFlateDecode)
+  ) {
     try {
       const byteArray = stringToBytes(string);
       // eslint-disable-next-line no-undef
