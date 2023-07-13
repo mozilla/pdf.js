@@ -39,6 +39,7 @@ import {
   getDocument,
   PDFDataRangeTransport,
   PDFWorker,
+  SVGGraphics,
   version,
 } from "../../src/display/api.js";
 import {
@@ -110,10 +111,7 @@ describe("pdfjs_api", function () {
       renderTextLayer,
       setLayerDimensions,
       shadow,
-      SVGGraphics:
-        typeof PDFJSDev !== "undefined" && PDFJSDev.test("LIB")
-          ? require("../../display/svg.js").SVGGraphics
-          : null,
+      SVGGraphics,
       UnexpectedResponseException,
       updateTextLayer,
       Util,
