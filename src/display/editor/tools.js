@@ -110,25 +110,20 @@ class ImageManager {
         // Unfortunately, createImageBitmap doesn't work with SVG images.
         // (see https://bugzilla.mozilla.org/1841972).
         const fileReader = new FileReader();
-        const dataUrlPromise = new Promise(resolve => {
-          fileReader.onload = () => {
-            data.svgUrl = fileReader.result;
-            resolve();
-          };
-        });
-        fileReader.readAsDataURL(image);
-        const url = URL.createObjectURL(image);
-        image = new Image();
-        const imagePromise = new Promise(resolve => {
-          image.onload = () => {
-            URL.revokeObjectURL(url);
-            data.bitmap = image;
+        const imageElement = new Image();
+        const imagePromise = new Promise((resolve, reject) => {
+          imageElement.onload = () => {
+            data.bitmap = imageElement;
             data.isSvg = true;
             resolve();
           };
+          fileReader.onload = () => {
+            imageElement.src = data.svgUrl = fileReader.result;
+          };
+          imageElement.onerror = fileReader.onerror = reject;
         });
-        image.src = url;
-        await Promise.all([imagePromise, dataUrlPromise]);
+        fileReader.readAsDataURL(image);
+        await imagePromise;
       } else {
         data.bitmap = await createImageBitmap(image);
       }
