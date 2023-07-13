@@ -251,13 +251,6 @@ class StampEditor extends AnnotationEditor {
    */
   #setDimensions(width, height) {
     const [parentWidth, parentHeight] = this.parentDimensions;
-    if (
-      Math.abs(width - this.width * parentWidth) < 1 &&
-      Math.abs(height - this.height * parentHeight) < 1
-    ) {
-      return;
-    }
-
     this.width = width / parentWidth;
     this.height = height / parentHeight;
     this.setDims(width, height);
