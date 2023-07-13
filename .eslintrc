@@ -42,7 +42,7 @@
     "import/no-mutable-exports": "error",
     "import/no-self-import": "error",
     "import/no-unresolved": ["error", {
-      "ignore": ["pdfjs", "pdfjs-lib", "pdfjs-web", "web"]
+      "ignore": ["display", "pdfjs", "pdfjs-lib", "pdfjs-web", "web"]
     }],
     "mozilla/avoid-removeChild": "error",
     "mozilla/use-includes-instead-of-indexOf": "error",

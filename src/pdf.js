@@ -50,6 +50,7 @@ import {
   getDocument,
   PDFDataRangeTransport,
   PDFWorker,
+  SVGGraphics,
   version,
 } from "./display/api.js";
 import {
@@ -77,11 +78,6 @@ const pdfjsVersion =
 /* eslint-disable-next-line no-unused-vars */
 const pdfjsBuild =
   typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_BUILD") : void 0;
-
-const SVGGraphics =
-  typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")
-    ? require("./display/svg.js").SVGGraphics
-    : null;
 
 export {
   AbortException,
