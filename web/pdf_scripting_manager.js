@@ -66,30 +66,6 @@ class PDFScriptingManager {
     }
     this.#externalServices = externalServices;
     this.#docProperties = docProperties;
-
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("COMPONENTS")) {
-      const gs = require("./generic_scripting.js");
-
-      this.#externalServices ||= {
-        createScripting: options => {
-          return new gs.GenericScripting(options.sandboxBundleSrc);
-        },
-      };
-      this.#docProperties ||= pdfDocument => {
-        return gs.docProperties(pdfDocument);
-      };
-
-      // The default viewer already handles adding/removing of DOM events,
-      // hence limit this to only the viewer components.
-      if (!externalServices) {
-        window.addEventListener("updatefromsandbox", event => {
-          this.#eventBus.dispatch("updatefromsandbox", {
-            source: window,
-            detail: event.detail,
-          });
-        });
-      }
-    }
   }
 
   setViewer(pdfViewer) {
