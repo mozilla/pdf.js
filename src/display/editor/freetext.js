@@ -357,6 +357,7 @@ class FreeTextEditor extends AnnotationEditor {
       this.width = rect.height / parentWidth;
       this.height = rect.width / parentHeight;
     }
+    this.fixAndSetPosition();
   }
 
   /**

@@ -161,7 +161,12 @@ function getEditorDimensions(page, id) {
   return page.evaluate(n => {
     const element = document.getElementById(`pdfjs_internal_editor_${n}`);
     const { style } = element;
-    return { width: style.width, height: style.height };
+    return {
+      left: style.left,
+      top: style.top,
+      width: style.width,
+      height: style.height,
+    };
   }, id);
 }
 exports.getEditorDimensions = getEditorDimensions;

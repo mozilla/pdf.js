@@ -128,4 +128,51 @@ describe("Stamp Editor", () => {
       );
     });
   });
+
+  describe("Page overflow", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer", 50);
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that an added image stay within the page", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          if (browserName === "firefox") {
+            pending(
+              "Disabled in Firefox, because of https://bugzilla.mozilla.org/1553847."
+            );
+          }
+
+          await page.click("#editorStamp");
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            // With Chrome something is wrong when serializing a DomRect,
+            // hence we extract the values and just return them.
+            const { right, bottom } = el.getBoundingClientRect();
+            return { x: right, y: bottom };
+          });
+
+          await page.mouse.click(rect.x - 10, rect.y - 10);
+          const input = await page.$("#stampEditorFileInput");
+          await input.uploadFile(
+            `${path.join(__dirname, "../images/firefox_logo.png")}`
+          );
+
+          await page.waitForTimeout(300);
+
+          const { left } = await getEditorDimensions(page, 0);
+
+          // The image is bigger than the page, so it has been scaled down to
+          // 75% of the page width.
+          expect(left).toEqual("25%");
+        })
+      );
+    });
+  });
 });
