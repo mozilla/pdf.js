@@ -145,6 +145,7 @@ class TextHighlighter {
         divIdx: i,
         offset: matchIdx - iIndex,
       };
+      match.str = textContentItemsStr.join("").slice(matches[m],matchesLength[m] + matches[m])
       result.push(match);
     }
     return result;
@@ -226,7 +227,7 @@ class TextHighlighter {
       const isSelected = isSelectedPage && i === selectedMatchIdx;
       const highlightSuffix = isSelected ? " selected" : "";
       let selectedLeft = 0;
-
+      let queryIdx = findController.state.query.indexOf(match.str);
       // Match inside new div.
       if (!prevEnd || begin.divIdx !== prevEnd.divIdx) {
         // If there was a previous div, then add the text at the end.
@@ -244,19 +245,19 @@ class TextHighlighter {
           begin.divIdx,
           begin.offset,
           end.offset,
-          "highlight" + highlightSuffix
+          "highlight m"+queryIdx + highlightSuffix
         );
       } else {
         selectedLeft = appendTextToDiv(
           begin.divIdx,
           begin.offset,
           infinity.offset,
-          "highlight begin" + highlightSuffix
+          "highlight m"+queryIdx+" begin" + highlightSuffix
         );
         for (let n0 = begin.divIdx + 1, n1 = end.divIdx; n0 < n1; n0++) {
-          textDivs[n0].className = "highlight middle" + highlightSuffix;
+          textDivs[n0].className = "highlight m"+queryIdx+" middle" + highlightSuffix;
         }
-        beginText(end, "highlight end" + highlightSuffix);
+        beginText(end, "highlight m"+queryIdx+" end" + highlightSuffix);
       }
       prevEnd = end;
 
