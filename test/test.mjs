@@ -262,11 +262,13 @@ function examineRefImages() {
 function startRefTest(masterMode, showRefImages) {
   function finalize() {
     stopServer();
+    let numRuns = 0;
     var numErrors = 0;
     var numFBFFailures = 0;
     var numEqFailures = 0;
     var numEqNoSnapshot = 0;
     sessions.forEach(function (session) {
+      numRuns += session.numRuns;
       numErrors += session.numErrors;
       numFBFFailures += session.numFBFFailures;
       numEqFailures += session.numEqFailures;
@@ -274,7 +276,9 @@ function startRefTest(masterMode, showRefImages) {
     });
     var numFatalFailures = numErrors + numFBFFailures;
     console.log();
-    if (numFatalFailures + numEqFailures > 0) {
+    if (!numRuns) {
+      console.log(`OHNOES!  No tests ran!`);
+    } else if (numFatalFailures + numEqFailures > 0) {
       console.log("OHNOES!  Some tests failed!");
       if (numErrors > 0) {
         console.log("  errors: " + numErrors);
@@ -348,6 +352,7 @@ function startRefTest(masterMode, showRefImages) {
         session.taskResults[item.id] = roundsResults;
         session.tasks[item.id] = item;
       });
+      session.numRuns = 0;
       session.numErrors = 0;
       session.numFBFFailures = 0;
       session.numEqNoSnapshot = 0;
@@ -608,6 +613,8 @@ function checkRefTestResults(browser, id, results) {
   var failed = false;
   var session = getSession(browser);
   var task = session.tasks[id];
+  session.numRuns++;
+
   results.forEach(function (roundResults, round) {
     roundResults.forEach(function (pageResult, page) {
       if (!pageResult) {
@@ -773,7 +780,9 @@ function onAllSessionsClosedAfterTests(name) {
     });
     console.log();
     console.log("Run " + numRuns + " tests");
-    if (numErrors > 0) {
+    if (!numRuns) {
+      console.log(`OHNOES!  No ${name} tests ran!`);
+    } else if (numErrors > 0) {
       console.log("OHNOES!  Some " + name + " tests failed!");
       console.log("  " + numErrors + " of " + numRuns + " failed");
     } else {
