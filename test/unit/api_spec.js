@@ -2427,13 +2427,13 @@ describe("api", function () {
           docBaseUrl: "http://www.example.com/test/pdfs/qwerty.pdf",
         })
       );
-      const docBaseUrlPromise = docBaseUrlLoadingTask.promise.then(function (
-        pdfDoc
-      ) {
-        return pdfDoc.getPage(1).then(function (pdfPage) {
-          return pdfPage.getAnnotations();
-        });
-      });
+      const docBaseUrlPromise = docBaseUrlLoadingTask.promise.then(
+        function (pdfDoc) {
+          return pdfDoc.getPage(1).then(function (pdfPage) {
+            return pdfPage.getAnnotations();
+          });
+        }
+      );
 
       const invalidDocBaseUrlLoadingTask = getDocument(
         buildGetDocumentParams(filename, {
