@@ -217,9 +217,12 @@ describe("FreeText Editor", () => {
           await page.waitForTimeout(10);
         }
 
-        let length = await page.evaluate(sel => {
-          return document.querySelectorAll(sel).length;
-        }, `${getEditorSelector(5)}, ${getEditorSelector(6)}`);
+        let length = await page.evaluate(
+          sel => {
+            return document.querySelectorAll(sel).length;
+          },
+          `${getEditorSelector(5)}, ${getEditorSelector(6)}`
+        );
         expect(length).withContext(`In ${browserName}`).toEqual(2);
 
         for (let i = 0; i < 2; i++) {
@@ -229,9 +232,12 @@ describe("FreeText Editor", () => {
           await page.waitForTimeout(10);
         }
 
-        length = await page.evaluate(sel => {
-          return document.querySelectorAll(sel).length;
-        }, `${getEditorSelector(5)}, ${getEditorSelector(6)}`);
+        length = await page.evaluate(
+          sel => {
+            return document.querySelectorAll(sel).length;
+          },
+          `${getEditorSelector(5)}, ${getEditorSelector(6)}`
+        );
         expect(length).withContext(`In ${browserName}`).toEqual(0);
       }
     });
