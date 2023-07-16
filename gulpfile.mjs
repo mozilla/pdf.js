@@ -17,7 +17,7 @@
 import * as builder from "./external/builder/builder.mjs";
 import { exec, spawn, spawnSync } from "child_process";
 import autoprefixer from "autoprefixer";
-import { createRequire } from "module";
+import babel from "@babel/core";
 import crypto from "crypto";
 import { fileURLToPath } from "url";
 import fs from "fs";
@@ -41,7 +41,6 @@ import webpackStream from "webpack-stream";
 import zip from "gulp-zip";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const require = createRequire(import.meta.url);
 
 const BUILD_DIR = "build/";
 const L10N_DIR = "l10n/";
@@ -1528,14 +1527,14 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
   // __non_webpack_require__ has to be used.
   // In this target, we don't create a bundle, so we have to replace the
   // occurrences of __non_webpack_require__ ourselves.
-  function babelPluginReplaceNonWebpackImports(babel) {
+  function babelPluginReplaceNonWebpackImports(b) {
     return {
       visitor: {
         Identifier(curPath, state) {
           if (curPath.node.name === "__non_webpack_require__") {
-            curPath.replaceWith(babel.types.identifier("require"));
+            curPath.replaceWith(b.types.identifier("require"));
           } else if (curPath.node.name === "__non_webpack_import__") {
-            curPath.replaceWith(babel.types.identifier("import"));
+            curPath.replaceWith(b.types.identifier("import"));
           }
         },
       },
@@ -1562,7 +1561,6 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
     );
     return licenseHeaderLibre + content;
   }
-  const babel = require("@babel/core");
   const ctx = {
     rootPath: __dirname,
     saveComments: false,

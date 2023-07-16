@@ -33,7 +33,7 @@ import { GenericL10n } from "../../web/genericl10n.js";
 import { NullL10n } from "../../web/l10n_utils.js";
 import { PDFHistory } from "../../web/pdf_history.js";
 import { PDFPageView } from "../../web/pdf_page_view.js";
-import { PDFScriptingManager } from "../../web/pdf_scripting_manager.js";
+import { PDFScriptingManager } from "../../web/pdf_scripting_manager.component.js";
 import { PDFSinglePageViewer } from "../../web/pdf_single_page_viewer.js";
 import { PDFViewer } from "../../web/pdf_viewer.js";
 import { StructTreeLayerBuilder } from "../../web/struct_tree_layer_builder.js";
