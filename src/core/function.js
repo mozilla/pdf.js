@@ -718,7 +718,7 @@ class PostScriptEvaluator {
           break;
         case "log":
           a = stack.pop();
-          stack.push(Math.log(a) / Math.LN10);
+          stack.push(Math.log10(a));
           break;
         case "lt":
           b = stack.pop();
