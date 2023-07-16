@@ -12,14 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals module, __non_webpack_require__ */
+/* globals module */
 
 "use strict";
 
-let pdfjsLib;
-if (typeof window !== "undefined" && window["pdfjs-dist/build/pdf"]) {
-  pdfjsLib = window["pdfjs-dist/build/pdf"];
-} else {
-  pdfjsLib = __non_webpack_require__("../build/pdf.js");
-}
-module.exports = pdfjsLib;
+module.exports = globalThis.pdfjsLib;
