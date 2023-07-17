@@ -20,7 +20,7 @@ import {
   BaseFilterFactory,
   BaseStandardFontDataFactory,
 } from "./base_factory.js";
-import { isNodeJS } from "../shared/is_node.js";
+import { isNodeJS } from "../shared/util.js";
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(

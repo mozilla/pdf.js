@@ -12,6 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals process */
+
+// NW.js / Electron is a browser context, but copies some Node.js objects; see
+// http://docs.nwjs.io/en/latest/For%20Users/Advanced/JavaScript%20Contexts%20in%20NW.js/#access-nodejs-and-nwjs-api-in-browser-context
+// https://www.electronjs.org/docs/api/process#processversionselectron-readonly
+// https://www.electronjs.org/docs/api/process#processtype-readonly
+const isNodeJS =
+  (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+  typeof process === "object" &&
+  process + "" === "[object process]" &&
+  !process.versions.nw &&
+  !(process.versions.electron && process.type && process.type !== "browser");
 
 const IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
@@ -1056,6 +1068,7 @@ export {
   InvalidPDFException,
   isArrayBuffer,
   isArrayEqual,
+  isNodeJS,
   LINE_DESCENT_FACTOR,
   LINE_FACTOR,
   MAX_IMAGE_SIZE_TO_CACHE,
