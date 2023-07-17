@@ -19,6 +19,7 @@ import {
   AnnotationType,
   ImageKind,
   InvalidPDFException,
+  isNodeJS,
   MissingPDFException,
   objectSize,
   OPS,
@@ -53,7 +54,6 @@ import {
 import { AutoPrintRegExp } from "../../web/ui_utils.js";
 import { GlobalImageCache } from "../../src/core/image_utils.js";
 import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
-import { isNodeJS } from "../../src/shared/is_node.js";
 import { Metadata } from "../../src/display/metadata.js";
 
 describe("api", function () {

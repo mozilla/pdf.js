@@ -211,6 +211,14 @@ function createWebpackConfig(
   }
   const babelExcludeRegExp = new RegExp(`(${babelExcludes.join("|")})`);
 
+  const babelPresets = skipBabel
+    ? undefined
+    : [
+        [
+          "@babel/preset-env",
+          { corejs: "3.31.1", shippedProposals: true, useBuiltIns: "usage" },
+        ],
+      ];
   const babelPlugins = ["@babel/plugin-transform-modules-commonjs"];
 
   const plugins = [];
@@ -289,7 +297,7 @@ function createWebpackConfig(
           loader: "babel-loader",
           exclude: babelExcludeRegExp,
           options: {
-            presets: skipBabel ? undefined : ["@babel/preset-env"],
+            presets: babelPresets,
             plugins: babelPlugins,
             targets: BABEL_TARGETS,
           },

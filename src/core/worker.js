@@ -19,6 +19,7 @@ import {
   getVerbosityLevel,
   info,
   InvalidPDFException,
+  isNodeJS,
   MissingPDFException,
   PasswordException,
   PromiseCapability,
@@ -39,7 +40,6 @@ import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager.js";
 import { AnnotationFactory } from "./annotation.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
 import { incrementalUpdate } from "./writer.js";
-import { isNodeJS } from "../shared/is_node.js";
 import { MessageHandler } from "../shared/message_handler.js";
 import { PDFWorkerStream } from "./worker_stream.js";
 
