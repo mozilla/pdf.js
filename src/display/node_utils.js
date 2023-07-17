@@ -20,11 +20,32 @@ import {
   BaseFilterFactory,
   BaseStandardFontDataFactory,
 } from "./base_factory.js";
+import { isNodeJS } from "../shared/is_node.js";
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
     'Module "./node_utils.js" shall not be used with MOZCENTRAL builds.'
   );
+}
+
+if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("SKIP_BABEL")) {
+  (function checkDOMMatrix() {
+    if (globalThis.DOMMatrix || !isNodeJS) {
+      return;
+    }
+    globalThis.DOMMatrix = __non_webpack_require__("canvas").DOMMatrix;
+  })();
+
+  (function checkPath2D() {
+    if (globalThis.Path2D || !isNodeJS) {
+      return;
+    }
+    const { CanvasRenderingContext2D } = __non_webpack_require__("canvas");
+    const { polyfillPath2D } = __non_webpack_require__("path2d-polyfill");
+
+    globalThis.CanvasRenderingContext2D = CanvasRenderingContext2D;
+    polyfillPath2D(globalThis);
+  })();
 }
 
 const fetchData = function (url) {
