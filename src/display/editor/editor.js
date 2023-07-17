@@ -367,9 +367,9 @@ class AnnotationEditor {
    */
   setDims(width, height) {
     const [parentWidth, parentHeight] = this.parentDimensions;
-    this.div.style.width = `${(100 * width) / parentWidth}%`;
+    this.div.style.width = `${((100 * width) / parentWidth).toFixed(2)}%`;
     if (!this.#keepAspectRatio) {
-      this.div.style.height = `${(100 * height) / parentHeight}%`;
+      this.div.style.height = `${((100 * height) / parentHeight).toFixed(2)}%`;
     }
   }
 
@@ -384,10 +384,12 @@ class AnnotationEditor {
 
     const [parentWidth, parentHeight] = this.parentDimensions;
     if (!widthPercent) {
-      style.width = `${(100 * parseFloat(width)) / parentWidth}%`;
+      style.width = `${((100 * parseFloat(width)) / parentWidth).toFixed(2)}%`;
     }
     if (!this.#keepAspectRatio && !heightPercent) {
-      style.height = `${(100 * parseFloat(height)) / parentHeight}%`;
+      style.height = `${((100 * parseFloat(height)) / parentHeight).toFixed(
+        2
+      )}%`;
     }
   }
 
