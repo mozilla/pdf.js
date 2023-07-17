@@ -41,7 +41,7 @@
 "use strict";
 
 import { GlobalWorkerOptions } from "pdfjs/display/worker_options.js";
-import { isNodeJS } from "pdfjs/shared/is_node.js";
+import { isNodeJS } from "../../src/shared/util.js";
 import { TestReporter } from "./testreporter.js";
 
 async function initializePDFJS(callback) {

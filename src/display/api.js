@@ -25,6 +25,7 @@ import {
   info,
   InvalidPDFException,
   isArrayBuffer,
+  isNodeJS,
   MAX_IMAGE_SIZE_TO_CACHE,
   MissingPDFException,
   PasswordException,
@@ -59,7 +60,6 @@ import {
 import { FontFaceObject, FontLoader } from "./font_loader.js";
 import { CanvasGraphics } from "./canvas.js";
 import { GlobalWorkerOptions } from "./worker_options.js";
-import { isNodeJS } from "../shared/is_node.js";
 import { MessageHandler } from "../shared/message_handler.js";
 import { Metadata } from "./metadata.js";
 import { OptionalContentConfig } from "./optional_content_config.js";
