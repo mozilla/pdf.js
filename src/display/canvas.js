@@ -19,6 +19,7 @@ import {
   IDENTITY_MATRIX,
   ImageKind,
   info,
+  isNodeJS,
   OPS,
   shadow,
   TextRenderingMode,
@@ -37,7 +38,6 @@ import {
   TilingPattern,
 } from "./pattern_helper.js";
 import { convertBlackAndWhiteToRGBA } from "../shared/image_utils.js";
-import { isNodeJS } from "../shared/is_node.js";
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.

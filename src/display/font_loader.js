@@ -17,12 +17,12 @@ import {
   assert,
   bytesToString,
   FeatureTest,
+  isNodeJS,
   shadow,
   string32,
   unreachable,
   warn,
 } from "../shared/util.js";
-import { isNodeJS } from "../shared/is_node.js";
 
 class FontLoader {
   #systemFonts = new Set();

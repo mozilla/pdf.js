@@ -19,12 +19,12 @@ import {
   FONT_IDENTITY_MATRIX,
   IDENTITY_MATRIX,
   ImageKind,
+  isNodeJS,
   OPS,
   TextRenderingMode,
   Util,
   warn,
 } from "../shared/util.js";
-import { isNodeJS } from "../shared/is_node.js";
 
 if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
   throw new Error(

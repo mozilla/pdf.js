@@ -19,7 +19,7 @@ import {
 } from "../../src/display/text_layer.js";
 import { buildGetDocumentParams } from "./test_utils.js";
 import { getDocument } from "../../src/display/api.js";
-import { isNodeJS } from "../../src/shared/is_node.js";
+import { isNodeJS } from "../../src/shared/util.js";
 
 describe("textLayer", function () {
   it("creates textLayer from ReadableStream", async function () {

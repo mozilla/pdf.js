@@ -14,8 +14,7 @@
  */
 /* globals __non_webpack_require__ */
 
-import { AbortException } from "../../src/shared/util.js";
-import { isNodeJS } from "../../src/shared/is_node.js";
+import { AbortException, isNodeJS } from "../../src/shared/util.js";
 import { PDFNodeStream } from "../../src/display/node_stream.js";
 
 // Ensure that these tests only run in Node.js environments.
