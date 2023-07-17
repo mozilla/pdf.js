@@ -258,8 +258,7 @@ class AnnotationEditor {
     this.x = (x + tx) / width;
     this.y = (y + ty) / height;
 
-    this.div.style.left = `${100 * this.x}%`;
-    this.div.style.top = `${100 * this.y}%`;
+    this.fixAndSetPosition();
   }
 
   /**
@@ -274,8 +273,41 @@ class AnnotationEditor {
     this.x += x / width;
     this.y += y / height;
 
-    this.div.style.left = `${100 * this.x}%`;
-    this.div.style.top = `${100 * this.y}%`;
+    this.fixAndSetPosition();
+  }
+
+  fixAndSetPosition() {
+    const [pageWidth, pageHeight] = this.pageDimensions;
+    let { x, y, width, height } = this;
+    width *= pageWidth;
+    height *= pageHeight;
+    x *= pageWidth;
+    y *= pageHeight;
+
+    switch (this.rotation) {
+      case 0:
+        x = Math.max(0, Math.min(pageWidth - width, x));
+        y = Math.max(0, Math.min(pageHeight - height, y));
+        break;
+      case 90:
+        x = Math.max(0, Math.min(pageWidth - height, x));
+        y = Math.min(pageHeight, Math.max(width, y));
+        break;
+      case 180:
+        x = Math.min(pageWidth, Math.max(width, x));
+        y = Math.min(pageHeight, Math.max(height, y));
+        break;
+      case 270:
+        x = Math.min(pageWidth, Math.max(height, x));
+        y = Math.max(0, Math.min(pageHeight - width, y));
+        break;
+    }
+
+    this.x = x / pageWidth;
+    this.y = y / pageHeight;
+
+    this.div.style.left = `${(100 * this.x).toFixed(2)}%`;
+    this.div.style.top = `${(100 * this.y).toFixed(2)}%`;
   }
 
   /**
@@ -382,6 +414,17 @@ class AnnotationEditor {
 
     this.div.addEventListener("focusin", this.#boundFocusin);
     this.div.addEventListener("focusout", this.#boundFocusout);
+
+    const [parentWidth, parentHeight] = this.parentDimensions;
+    if (this.parentRotation % 180 !== 0) {
+      this.div.style.maxWidth = `${((100 * parentHeight) / parentWidth).toFixed(
+        2
+      )}%`;
+      this.div.style.maxHeight = `${(
+        (100 * parentWidth) /
+        parentHeight
+      ).toFixed(2)}%`;
+    }
 
     const [tx, ty] = this.getInitialTranslation();
     this.translate(tx, ty);

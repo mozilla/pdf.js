@@ -838,6 +838,7 @@ class InkEditor extends AnnotationEditor {
     const [parentWidth, parentHeight] = this.parentDimensions;
     this.width = width / parentWidth;
     this.height = height / parentHeight;
+    this.fixAndSetPosition();
 
     if (this.#disableEditing) {
       this.#setScaleFactor(width, height);
