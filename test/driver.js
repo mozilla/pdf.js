@@ -492,13 +492,35 @@ class Driver {
 
         if (task.annotationStorage) {
           for (const annotation of Object.values(task.annotationStorage)) {
-            if (annotation.bitmapName) {
+            const { bitmapName } = annotation;
+            if (bitmapName) {
               promise = promise.then(async doc => {
                 const response = await fetch(
-                  new URL(`./images/${annotation.bitmapName}`, window.location)
+                  new URL(`./images/${bitmapName}`, window.location)
                 );
                 const blob = await response.blob();
-                annotation.bitmap = await createImageBitmap(blob);
+                if (bitmapName.endsWith(".svg")) {
+                  const image = new Image();
+                  const url = URL.createObjectURL(blob);
+                  const imagePromise = new Promise((resolve, reject) => {
+                    image.onload = () => {
+                      const canvas = new OffscreenCanvas(
+                        image.width,
+                        image.height
+                      );
+                      const ctx = canvas.getContext("2d");
+                      ctx.drawImage(image, 0, 0);
+                      annotation.bitmap = canvas.transferToImageBitmap();
+                      URL.revokeObjectURL(url);
+                      resolve();
+                    };
+                    image.onerror = reject;
+                  });
+                  image.src = url;
+                  await imagePromise;
+                } else {
+                  annotation.bitmap = await createImageBitmap(blob);
+                }
 
                 return doc;
               });
