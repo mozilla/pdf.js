@@ -39,6 +39,7 @@ import {
 } from "./display_utils.js";
 import { AnnotationStorage } from "./annotation_storage.js";
 import { ColorConverters } from "../shared/scripting_utils.js";
+import { NullL10n } from "display-l10n_utils";
 import { XfaLayer } from "./xfa_layer.js";
 
 const DEFAULT_TAB_INDEX = 1000;
@@ -2872,7 +2873,6 @@ class AnnotationLayer {
       typeof PDFJSDev !== "undefined" &&
       PDFJSDev.test("GENERIC && !TESTING")
     ) {
-      const { NullL10n } = require("pdfjs-web/l10n_utils.js");
       this.l10n ||= NullL10n;
     }
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
