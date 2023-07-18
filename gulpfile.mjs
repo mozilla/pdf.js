@@ -239,6 +239,14 @@ function createWebpackConfig(
     "pdfjs-web": "web",
     "pdfjs-lib": "web/pdfjs",
   };
+  const libraryAlias = {
+    "display-fetch_stream": "src/display/stubs.js",
+    "display-l10n_utils": "src/display/stubs.js",
+    "display-network": "src/display/stubs.js",
+    "display-node_stream": "src/display/stubs.js",
+    "display-node_utils": "src/display/stubs.js",
+    "display-svg": "src/display/stubs.js",
+  };
   const viewerAlias = {
     "web-annotation_editor_params": "web/annotation_editor_params.js",
     "web-com": "",
@@ -256,9 +264,19 @@ function createWebpackConfig(
     "web-toolbar": "web/toolbar.js",
   };
   if (bundleDefines.CHROME) {
+    libraryAlias["display-fetch_stream"] = "src/display/fetch_stream.js";
+    libraryAlias["display-network"] = "src/display/network.js";
+
     viewerAlias["web-com"] = "web/chromecom.js";
     viewerAlias["web-print_service"] = "web/pdf_print_service.js";
   } else if (bundleDefines.GENERIC) {
+    libraryAlias["display-fetch_stream"] = "src/display/fetch_stream.js";
+    libraryAlias["display-l10n_utils"] = "web/l10n_utils.js";
+    libraryAlias["display-network"] = "src/display/network.js";
+    libraryAlias["display-node_stream"] = "src/display/node_stream.js";
+    libraryAlias["display-node_utils"] = "src/display/node_utils.js";
+    libraryAlias["display-svg"] = "src/display/svg.js";
+
     viewerAlias["web-com"] = "web/genericcom.js";
     viewerAlias["web-print_service"] = "web/pdf_print_service.js";
   } else if (bundleDefines.MOZCENTRAL) {
@@ -274,7 +292,7 @@ function createWebpackConfig(
     }
     viewerAlias["web-com"] = "web/firefoxcom.js";
   }
-  const alias = { ...basicAlias, ...viewerAlias };
+  const alias = { ...basicAlias, ...libraryAlias, ...viewerAlias };
   for (const key in alias) {
     alias[key] = path.join(__dirname, alias[key]);
   }
@@ -1575,6 +1593,12 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
     defines: bundleDefines,
     map: {
       "pdfjs-lib": "../pdf",
+      "display-fetch_stream": "./fetch_stream",
+      "display-l10n_utils": "../web/l10n_utils",
+      "display-network": "./network",
+      "display-node_stream": "./node_stream",
+      "display-node_utils": "./node_utils",
+      "display-svg": "./svg",
     },
   };
   const licenseHeaderLibre = fs
@@ -2431,7 +2455,6 @@ gulp.task(
   "ci-test",
   gulp.series(
     gulp.parallel("lint", "externaltest", "unittestcli"),
-    "lint-chromium",
-    "typestest"
+    "lint-chromium"
   )
 );

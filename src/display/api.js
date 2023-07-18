@@ -58,12 +58,22 @@ import {
   StatTimer,
 } from "./display_utils.js";
 import { FontFaceObject, FontLoader } from "./font_loader.js";
+import {
+  NodeCanvasFactory,
+  NodeCMapReaderFactory,
+  NodeFilterFactory,
+  NodeStandardFontDataFactory,
+} from "display-node_utils";
 import { CanvasGraphics } from "./canvas.js";
 import { GlobalWorkerOptions } from "./worker_options.js";
 import { MessageHandler } from "../shared/message_handler.js";
 import { Metadata } from "./metadata.js";
 import { OptionalContentConfig } from "./optional_content_config.js";
 import { PDFDataTransportStream } from "./transport_stream.js";
+import { PDFFetchStream } from "display-fetch_stream";
+import { PDFNetworkStream } from "display-network";
+import { PDFNodeStream } from "display-node_stream";
+import { SVGGraphics } from "display-svg";
 import { XfaText } from "./xfa_text.js";
 
 const DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
@@ -72,53 +82,20 @@ const DELAYED_CLEANUP_TIMEOUT = 5000; // ms
 
 const DefaultCanvasFactory =
   typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
-    ? require("./node_utils.js").NodeCanvasFactory
+    ? NodeCanvasFactory
     : DOMCanvasFactory;
 const DefaultCMapReaderFactory =
   typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
-    ? require("./node_utils.js").NodeCMapReaderFactory
+    ? NodeCMapReaderFactory
     : DOMCMapReaderFactory;
 const DefaultFilterFactory =
   typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
-    ? require("./node_utils.js").NodeFilterFactory
+    ? NodeFilterFactory
     : DOMFilterFactory;
 const DefaultStandardFontDataFactory =
   typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
-    ? require("./node_utils.js").NodeStandardFontDataFactory
+    ? NodeStandardFontDataFactory
     : DOMStandardFontDataFactory;
-
-let createPDFNetworkStream;
-if (typeof PDFJSDev === "undefined") {
-  const streamsPromise = Promise.all([
-    import("./network.js"),
-    import("./fetch_stream.js"),
-  ]);
-
-  createPDFNetworkStream = async params => {
-    const [{ PDFNetworkStream }, { PDFFetchStream }] = await streamsPromise;
-
-    return isValidFetchUrl(params.url)
-      ? new PDFFetchStream(params)
-      : new PDFNetworkStream(params);
-  };
-} else if (PDFJSDev.test("GENERIC || CHROME")) {
-  if (PDFJSDev.test("GENERIC") && isNodeJS) {
-    const { PDFNodeStream } = require("./node_stream.js");
-
-    createPDFNetworkStream = params => {
-      return new PDFNodeStream(params);
-    };
-  } else {
-    const { PDFNetworkStream } = require("./network.js");
-    const { PDFFetchStream } = require("./fetch_stream.js");
-
-    createPDFNetworkStream = params => {
-      return isValidFetchUrl(params.url)
-        ? new PDFFetchStream(params)
-        : new PDFNetworkStream(params);
-    };
-  }
-}
 
 /**
  * @typedef { Int8Array | Uint8Array | Uint8ClampedArray |
@@ -448,6 +425,19 @@ function getDocument(src) {
           if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
             throw new Error("Not implemented: createPDFNetworkStream");
           }
+          const createPDFNetworkStream = params => {
+            if (
+              typeof PDFJSDev !== "undefined" &&
+              PDFJSDev.test("GENERIC") &&
+              isNodeJS
+            ) {
+              return new PDFNodeStream(params);
+            }
+            return isValidFetchUrl(params.url)
+              ? new PDFFetchStream(params)
+              : new PDFNetworkStream(params);
+          };
+
           networkStream = createPDFNetworkStream({
             url,
             length,
@@ -3454,5 +3444,6 @@ export {
   PDFWorker,
   PDFWorkerUtil,
   RenderTask,
+  SVGGraphics,
   version,
 };
