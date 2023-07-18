@@ -450,7 +450,7 @@ class Page {
 
         const { isOffscreenCanvasSupported } = this.evaluatorOptions;
         if (missingBitmaps.size > 0) {
-          const annotationWithBitmaps = [];
+          const annotationWithBitmaps = newAnnotations.slice();
           for (const [key, annotation] of annotationStorage) {
             if (!key.startsWith(AnnotationEditorPrefix)) {
               continue;
