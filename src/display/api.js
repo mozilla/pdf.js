@@ -98,6 +98,10 @@ const DefaultStandardFontDataFactory =
     : DOMStandardFontDataFactory;
 
 /**
+ * @typedef { import("./svg.js").SVGGraphics } SVGGraphics
+ */
+
+/**
  * @typedef { Int8Array | Uint8Array | Uint8ClampedArray |
  *            Int16Array | Uint16Array |
  *            Int32Array | Uint32Array | Float32Array |
