@@ -61,22 +61,31 @@ function loadStyles(styles) {
   return Promise.all(promises);
 }
 
-function writeSVG(svgElement, ctx) {
-  // We need to have UTF-8 encoded XML.
-  const svg_xml = unescape(
-    encodeURIComponent(new XMLSerializer().serializeToString(svgElement))
-  );
+function loadImage(svg_xml, ctx) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.src = "data:image/svg+xml;base64," + btoa(svg_xml);
     img.onload = function () {
-      ctx.drawImage(img, 0, 0);
+      ctx?.drawImage(img, 0, 0);
       resolve();
     };
     img.onerror = function (e) {
       reject(new Error(`Error rasterizing SVG: ${e}`));
     };
   });
+}
+
+async function writeSVG(svgElement, ctx) {
+  // We need to have UTF-8 encoded XML.
+  const svg_xml = unescape(
+    encodeURIComponent(new XMLSerializer().serializeToString(svgElement))
+  );
+  if (svg_xml.includes("background-image: url(&quot;data:image")) {
+    // Workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=1844414
+    // we load the image two times.
+    await loadImage(svg_xml, null);
+  }
+  return loadImage(svg_xml, ctx);
 }
 
 async function inlineImages(node, silentErrors = false) {
