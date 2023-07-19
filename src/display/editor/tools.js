@@ -555,7 +555,15 @@ class AnnotationEditorUIManager {
         ],
         [["ctrl+z", "mac+meta+z"], AnnotationEditorUIManager.prototype.undo],
         [
-          ["ctrl+y", "ctrl+shift+Z", "mac+meta+shift+Z"],
+          // On mac, depending of the OS version, the event.key is either "z" or
+          // "Z" when the user presses "meta+shift+z".
+          [
+            "ctrl+y",
+            "ctrl+shift+z",
+            "mac+meta+shift+z",
+            "ctrl+shift+Z",
+            "mac+meta+shift+Z",
+          ],
           AnnotationEditorUIManager.prototype.redo,
         ],
         [
