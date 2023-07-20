@@ -111,7 +111,7 @@ const defaultOptions = {
     // suitable for Firefox, it's why it's disabled by default.
     // TODO: remove it when unnecessary.
     /** @type {boolean} */
-    value: false,
+    value: true,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   enableStampEditor: {
