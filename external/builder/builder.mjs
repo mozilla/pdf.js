@@ -198,21 +198,19 @@ function preprocess(inFilename, outFilename, defines) {
           }
           break;
       }
-    } else {
-      if (state === STATE_NONE) {
-        writeLine(line);
-      } else if (
-        (state === STATE_IF_TRUE || state === STATE_ELSE_TRUE) &&
-        !stack.includes(STATE_IF_FALSE) &&
-        !stack.includes(STATE_ELSE_FALSE)
-      ) {
-        writeLine(
-          line
-            .replaceAll(/^\/\/|^<!--/g, "  ")
-            .replaceAll(/(^\s*)\/\*/g, "$1  ")
-            .replaceAll(/\*\/$|-->$/g, "")
-        );
-      }
+    } else if (state === STATE_NONE) {
+      writeLine(line);
+    } else if (
+      (state === STATE_IF_TRUE || state === STATE_ELSE_TRUE) &&
+      !stack.includes(STATE_IF_FALSE) &&
+      !stack.includes(STATE_ELSE_FALSE)
+    ) {
+      writeLine(
+        line
+          .replaceAll(/^\/\/|^<!--/g, "  ")
+          .replaceAll(/(^\s*)\/\*/g, "$1  ")
+          .replaceAll(/\*\/$|-->$/g, "")
+      );
     }
   }
   if (state !== STATE_NONE || stack.length !== 0) {
