@@ -79,9 +79,12 @@ class XfaLayer {
         break;
       case "select":
         if (storedData.value !== null) {
+          html.setAttribute("value", storedData.value);
           for (const option of element.children) {
             if (option.attributes.value === storedData.value) {
               option.attributes.selected = true;
+            } else if (option.attributes.hasOwnProperty("selected")) {
+              delete option.attributes.selected;
             }
           }
         }
