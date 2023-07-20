@@ -22,7 +22,6 @@ import {
   AnnotationBorderStyleType,
   AnnotationEditorType,
   AnnotationType,
-  assert,
   FeatureTest,
   LINE_FACTOR,
   shadow,
@@ -156,6 +155,8 @@ class AnnotationElementFactory {
 }
 
 class AnnotationElement {
+  #hasBorder = false;
+
   constructor(
     parameters,
     {
@@ -182,7 +183,7 @@ class AnnotationElement {
       this.container = this._createContainer(ignoreBorder);
     }
     if (createQuadrilaterals) {
-      this.quadrilaterals = this._createQuadrilaterals(ignoreBorder);
+      this._createQuadrilaterals();
     }
   }
 
@@ -279,6 +280,7 @@ class AnnotationElement {
 
       const borderColor = data.borderColor || null;
       if (borderColor) {
+        this.#hasBorder = true;
         container.style.borderColor = Util.makeHexColor(
           borderColor[0] | 0,
           borderColor[1] | 0,
@@ -441,31 +443,90 @@ class AnnotationElement {
    * Create quadrilaterals from the annotation's quadpoints.
    *
    * @private
-   * @param {boolean} ignoreBorder
    * @memberof AnnotationElement
-   * @returns {Array<HTMLElement>} An array of section elements.
    */
-  _createQuadrilaterals(ignoreBorder = false) {
-    if (!this.data.quadPoints) {
-      return null;
+  _createQuadrilaterals() {
+    if (!this.container) {
+      return;
+    }
+    const { quadPoints } = this.data;
+    if (!quadPoints) {
+      return;
     }
 
-    const quadrilaterals = [];
-    const savedRect = this.data.rect;
-    let firstQuadRect = null;
-    for (const quadPoint of this.data.quadPoints) {
-      this.data.rect = [
-        quadPoint[2].x,
-        quadPoint[2].y,
-        quadPoint[1].x,
-        quadPoint[1].y,
-      ];
-      quadrilaterals.push(this._createContainer(ignoreBorder));
-      firstQuadRect ||= this.data.rect;
+    const [rectBlX, rectBlY, rectTrX, rectTrY] = this.data.rect;
+
+    if (quadPoints.length === 1) {
+      const [, { x: trX, y: trY }, { x: blX, y: blY }] = quadPoints[0];
+      if (
+        rectTrX === trX &&
+        rectTrY === trY &&
+        rectBlX === blX &&
+        rectBlY === blY
+      ) {
+        // The quadpoints cover the whole annotation rectangle, so no need to
+        // create a quadrilateral.
+        return;
+      }
     }
-    this.data.rect = savedRect;
-    this.firstQuadRect = firstQuadRect;
-    return quadrilaterals;
+
+    const { style } = this.container;
+    let svgBuffer;
+    if (this.#hasBorder) {
+      const { borderColor, borderWidth } = style;
+      style.borderWidth = 0;
+      svgBuffer = [
+        "url('data:image/svg+xml;utf8,",
+        `<svg xmlns="http://www.w3.org/2000/svg"`,
+        ` preserveAspectRatio="none" viewBox="0 0 1 1">`,
+        `<g fill="transparent" stroke="${borderColor}" stroke-width="${borderWidth}">`,
+      ];
+      this.container.classList.add("hasBorder");
+    }
+
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
+      this.container.classList.add("hasClipPath");
+    }
+
+    const width = rectTrX - rectBlX;
+    const height = rectTrY - rectBlY;
+
+    const { svgFactory } = this;
+    const svg = svgFactory.createElement("svg");
+    svg.classList.add("quadrilateralsContainer");
+    svg.setAttribute("width", 0);
+    svg.setAttribute("height", 0);
+    const defs = svgFactory.createElement("defs");
+    svg.append(defs);
+    const clipPath = svgFactory.createElement("clipPath");
+    const id = `clippath_${this.data.id}`;
+    clipPath.setAttribute("id", id);
+    clipPath.setAttribute("clipPathUnits", "objectBoundingBox");
+    defs.append(clipPath);
+
+    for (const [, { x: trX, y: trY }, { x: blX, y: blY }] of quadPoints) {
+      const rect = svgFactory.createElement("rect");
+      const x = (blX - rectBlX) / width;
+      const y = (rectTrY - trY) / height;
+      const rectWidth = (trX - blX) / width;
+      const rectHeight = (trY - blY) / height;
+      rect.setAttribute("x", x);
+      rect.setAttribute("y", y);
+      rect.setAttribute("width", rectWidth);
+      rect.setAttribute("height", rectHeight);
+      clipPath.append(rect);
+      svgBuffer?.push(
+        `<rect vector-effect="non-scaling-stroke" x="${x}" y="${y}" width="${rectWidth}" height="${rectHeight}"/>`
+      );
+    }
+
+    if (this.#hasBorder) {
+      svgBuffer.push(`</g></svg>')`);
+      style.backgroundImage = svgBuffer.join("");
+    }
+
+    this.container.append(svg);
+    this.container.style.clipPath = `url(#${id})`;
   }
 
   /**
@@ -487,7 +548,7 @@ class AnnotationElement {
         modificationDate: data.modificationDate,
         contentsObj: data.contentsObj,
         richText: data.richText,
-        parentRect: this.firstQuadRect || data.rect,
+        parentRect: data.rect,
         borderStyle: 0,
         id: `popup_${data.id}`,
         rotation: data.rotation,
@@ -499,31 +560,10 @@ class AnnotationElement {
   }
 
   /**
-   * Render the quadrilaterals of the annotation.
-   *
-   * @private
-   * @param {string} className
-   * @memberof AnnotationElement
-   * @returns {Array<HTMLElement>} An array of section elements.
-   */
-  _renderQuadrilaterals(className) {
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
-      assert(this.quadrilaterals, "Missing quadrilaterals during rendering");
-    }
-
-    for (const quadrilateral of this.quadrilaterals) {
-      quadrilateral.classList.add(className);
-    }
-    return this.quadrilaterals;
-  }
-
-  /**
    * Render the annotation's HTML element(s).
    *
    * @public
    * @memberof AnnotationElement
-   * @returns {HTMLElement|Array<HTMLElement>|undefined} A section element or
-   *   an array of section elements.
    */
   render() {
     unreachable("Abstract method `AnnotationElement.render` called");
@@ -591,8 +631,16 @@ class AnnotationElement {
     this.popup?.forceHide();
   }
 
+  /**
+   * Get the HTML element(s) which can trigger a popup when clicked or hovered.
+   *
+   * @public
+   * @memberof AnnotationElement
+   * @returns {Array<HTMLElement>|HTMLElement} An array of elements or an
+   *          element.
+   */
   getElementsToTriggerPopup() {
-    return this.quadrilaterals || this.container;
+    return this.container;
   }
 
   addHighlightArea() {
@@ -672,16 +720,6 @@ class LinkAnnotationElement extends AnnotationElement {
         this._bindLink(link, "");
         isBound = true;
       }
-    }
-
-    if (this.quadrilaterals) {
-      return this._renderQuadrilaterals("linkAnnotation").map(
-        (quadrilateral, index) => {
-          const linkElement = index === 0 ? link : link.cloneNode();
-          quadrilateral.append(linkElement);
-          return quadrilateral;
-        }
-      );
     }
 
     this.container.classList.add("linkAnnotation");
@@ -2632,10 +2670,6 @@ class HighlightAnnotationElement extends AnnotationElement {
       this._createPopup();
     }
 
-    if (this.quadrilaterals) {
-      return this._renderQuadrilaterals("highlightAnnotation");
-    }
-
     this.container.classList.add("highlightAnnotation");
     return this.container;
   }
@@ -2659,10 +2693,6 @@ class UnderlineAnnotationElement extends AnnotationElement {
   render() {
     if (!this.data.popupRef) {
       this._createPopup();
-    }
-
-    if (this.quadrilaterals) {
-      return this._renderQuadrilaterals("underlineAnnotation");
     }
 
     this.container.classList.add("underlineAnnotation");
@@ -2690,10 +2720,6 @@ class SquigglyAnnotationElement extends AnnotationElement {
       this._createPopup();
     }
 
-    if (this.quadrilaterals) {
-      return this._renderQuadrilaterals("squigglyAnnotation");
-    }
-
     this.container.classList.add("squigglyAnnotation");
     return this.container;
   }
@@ -2717,10 +2743,6 @@ class StrikeOutAnnotationElement extends AnnotationElement {
   render() {
     if (!this.data.popupRef) {
       this._createPopup();
-    }
-
-    if (this.quadrilaterals) {
-      return this._renderQuadrilaterals("strikeoutAnnotation");
     }
 
     this.container.classList.add("strikeoutAnnotation");
@@ -2971,13 +2993,7 @@ class AnnotationLayer {
       if (data.hidden) {
         rendered.style.visibility = "hidden";
       }
-      if (Array.isArray(rendered)) {
-        for (const renderedElement of rendered) {
-          this.#appendElement(renderedElement, data.id);
-        }
-      } else {
-        this.#appendElement(rendered, data.id);
-      }
+      this.#appendElement(rendered, data.id);
     }
 
     this.#setAnnotationCanvasMap();
