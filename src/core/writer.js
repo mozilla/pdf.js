@@ -231,7 +231,7 @@ async function updateAcroform({
     warn("XFA - Cannot save it");
   }
 
-  if (!needAppearances && (!hasXfa || !xfaDatasetsRef)) {
+  if (!needAppearances && (!hasXfa || !xfaDatasetsRef || hasXfaDatasetsEntry)) {
     return;
   }
 
