@@ -578,6 +578,7 @@ class AnnotationEditorUIManager {
             "Delete",
             "ctrl+Delete",
             "shift+Delete",
+            "mac+Delete",
           ],
           AnnotationEditorUIManager.prototype.delete,
         ],
