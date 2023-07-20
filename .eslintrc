@@ -139,6 +139,7 @@
     "no-implied-eval": "error",
     "no-iterator": "error",
     "no-lone-blocks": "error",
+    "no-lonely-if": "error",
     "no-multi-str": "error",
     "no-new-func": "error",
     "no-new-wrappers": "error",

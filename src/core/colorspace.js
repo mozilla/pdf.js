@@ -206,22 +206,12 @@ class ColorSpace {
           rgbBuf[rgbPos++] = colorMap[key + 2];
         }
       }
+    } else if (!needsResizing) {
+      // Fill in the RGB values directly into |dest|.
+      this.getRgbBuffer(comps, 0, width * actualHeight, dest, 0, bpc, alpha01);
     } else {
-      if (!needsResizing) {
-        // Fill in the RGB values directly into |dest|.
-        this.getRgbBuffer(
-          comps,
-          0,
-          width * actualHeight,
-          dest,
-          0,
-          bpc,
-          alpha01
-        );
-      } else {
-        rgbBuf = new Uint8ClampedArray(count * 3);
-        this.getRgbBuffer(comps, 0, count, rgbBuf, 0, bpc, /* alpha01 = */ 0);
-      }
+      rgbBuf = new Uint8ClampedArray(count * 3);
+      this.getRgbBuffer(comps, 0, count, rgbBuf, 0, bpc, /* alpha01 = */ 0);
     }
 
     if (rgbBuf) {
