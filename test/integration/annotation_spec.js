@@ -508,4 +508,32 @@ describe("ResetForm action", () => {
       });
     });
   });
+
+  describe("Don't use AP when /NeedAppearances is true", () => {
+    describe("bug1844583.pdf", () => {
+      let pages;
+
+      beforeAll(async () => {
+        pages = await loadAndWait(
+          "bug1844583.pdf",
+          "[data-annotation-id='8R']"
+        );
+      });
+
+      afterAll(async () => {
+        await closePages(pages);
+      });
+
+      it("must check the content of the text field", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const text = await page.$eval(getSelector("8R"), el => el.value);
+            expect(text)
+              .withContext(`In ${browserName}`)
+              .toEqual("Hello World");
+          })
+        );
+      });
+    });
+  });
 });

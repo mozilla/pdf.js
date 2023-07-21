@@ -2572,7 +2572,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
   }
 
   get hasTextContent() {
-    return !!this.appearance;
+    return !!this.appearance && !this._needAppearances;
   }
 
   _getCombAppearance(
