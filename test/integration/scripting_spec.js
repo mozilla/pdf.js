@@ -1963,4 +1963,65 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("in bug1844576.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("bug1844576.pdf", getSelector("9R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that a field has the correct formatted value", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const hasVisibleCanvas = await page.evaluate(_ => {
+            const elem = document.querySelector(
+              `[data-annotation-id="9R"] > canvas`
+            );
+            return elem && !elem.hasAttribute("hidden");
+          });
+          expect(hasVisibleCanvas)
+            .withContext(`In ${browserName}`)
+            .toEqual(true);
+
+          const hasHiddenInput = await page.evaluate(_ => {
+            const elem = document.querySelector(
+              `[data-annotation-id="9R"] > input`
+            );
+            return elem?.hasAttribute("hidden");
+          });
+
+          expect(hasHiddenInput).withContext(`In ${browserName}`).toEqual(true);
+
+          await page.click(getSelector("12R"));
+          await page.waitForTimeout(10);
+
+          const hasHiddenCanvas = await page.evaluate(_ => {
+            const elem = document.querySelector(
+              `[data-annotation-id="9R"] > canvas`
+            );
+            return elem?.hasAttribute("hidden");
+          });
+          expect(hasHiddenCanvas)
+            .withContext(`In ${browserName}`)
+            .toEqual(true);
+
+          const hasVisibleInput = await page.evaluate(_ => {
+            const elem = document.querySelector(
+              `[data-annotation-id="9R"] > input`
+            );
+            return elem && !elem.hasAttribute("hidden");
+          });
+
+          expect(hasVisibleInput)
+            .withContext(`In ${browserName}`)
+            .toEqual(true);
+        })
+      );
+    });
+  });
 });
