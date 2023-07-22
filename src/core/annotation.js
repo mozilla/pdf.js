@@ -2698,24 +2698,22 @@ class TextWidgetAnnotation extends WidgetAnnotation {
           lastSpacePosInStringEnd = end;
           lastSpacePos = i;
         }
-      } else {
-        if (currentWidth + glyphWidth > width) {
-          // We must break to the last white position (if available)
-          if (lastSpacePosInStringStart !== -1) {
-            chunks.push(line.substring(startChunk, lastSpacePosInStringEnd));
-            startChunk = lastSpacePosInStringEnd;
-            i = lastSpacePos + 1;
-            lastSpacePosInStringStart = -1;
-            currentWidth = 0;
-          } else {
-            // Just break in the middle of the word
-            chunks.push(line.substring(startChunk, start));
-            startChunk = start;
-            currentWidth = glyphWidth;
-          }
+      } else if (currentWidth + glyphWidth > width) {
+        // We must break to the last white position (if available)
+        if (lastSpacePosInStringStart !== -1) {
+          chunks.push(line.substring(startChunk, lastSpacePosInStringEnd));
+          startChunk = lastSpacePosInStringEnd;
+          i = lastSpacePos + 1;
+          lastSpacePosInStringStart = -1;
+          currentWidth = 0;
         } else {
-          currentWidth += glyphWidth;
+          // Just break in the middle of the word
+          chunks.push(line.substring(startChunk, start));
+          startChunk = start;
+          currentWidth = glyphWidth;
         }
+      } else {
+        currentWidth += glyphWidth;
       }
     }
 

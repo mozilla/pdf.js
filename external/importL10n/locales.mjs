@@ -100,10 +100,8 @@ function downloadLanguageFiles(root, langCode) {
               resolve();
             }
           });
-        } else {
-          if (--downloadsLeft === 0) {
-            resolve();
-          }
+        } else if (--downloadsLeft === 0) {
+          resolve();
         }
       });
     });
