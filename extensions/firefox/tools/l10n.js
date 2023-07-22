@@ -40,7 +40,7 @@
       property = "textContent";
     }
     const data = getL10nData(name);
-    const value = (data && data[property]) || fallback;
+    const value = data?.[property] || fallback;
     if (!value) {
       return "{{" + key + "}}";
     }
@@ -49,7 +49,7 @@
 
   // translate an HTML element
   function translateElement(element) {
-    if (!element || !element.dataset) {
+    if (!element?.dataset) {
       return;
     }
 
@@ -80,7 +80,7 @@
 
   // translate an HTML subtree
   function translateFragment(element) {
-    element = element || document.querySelector("html");
+    element ||= document.querySelector("html");
 
     // check all translatable children (= w/ a `data-l10n-id' attribute)
     const children = element.querySelectorAll("*[data-l10n-id]");
