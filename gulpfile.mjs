@@ -1962,7 +1962,7 @@ gulp.task("lint", function (done) {
   }
 
   const styleLintOptions = [
-    "node_modules/stylelint/bin/stylelint",
+    "node_modules/stylelint/bin/stylelint.mjs",
     "**/*.css",
     "--report-needless-disables",
   ];
