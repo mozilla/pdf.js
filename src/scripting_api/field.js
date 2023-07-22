@@ -127,12 +127,10 @@ class Field extends PDFObject {
       indices.forEach(i => {
         this._value.push(this._items[i].displayValue);
       });
-    } else {
-      if (indices.length > 0) {
-        indices = indices.splice(1, indices.length - 1);
-        this._currentValueIndices = indices[0];
-        this._value = this._items[this._currentValueIndices];
-      }
+    } else if (indices.length > 0) {
+      indices = indices.splice(1, indices.length - 1);
+      this._currentValueIndices = indices[0];
+      this._value = this._items[this._currentValueIndices];
     }
     this._send({ id: this._id, indices });
   }
@@ -389,12 +387,10 @@ class Field extends PDFObject {
           --this._currentValueIndices[index];
         }
       }
-    } else {
-      if (this._currentValueIndices === nIdx) {
-        this._currentValueIndices = this.numItems > 0 ? 0 : -1;
-      } else if (this._currentValueIndices > nIdx) {
-        --this._currentValueIndices;
-      }
+    } else if (this._currentValueIndices === nIdx) {
+      this._currentValueIndices = this.numItems > 0 ? 0 : -1;
+    } else if (this._currentValueIndices > nIdx) {
+      --this._currentValueIndices;
     }
 
     this._send({ id: this._id, remove: nIdx });

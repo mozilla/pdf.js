@@ -623,11 +623,10 @@ class PDFFindController {
       if (newQuery !== prevQuery) {
         return true;
       }
-    } else {
-      // Array
-      if (JSON.stringify(newQuery) !== JSON.stringify(prevQuery)) {
-        return true;
-      }
+    } else if (
+      /* isArray && */ JSON.stringify(newQuery) !== JSON.stringify(prevQuery)
+    ) {
+      return true;
     }
 
     switch (state.type) {
