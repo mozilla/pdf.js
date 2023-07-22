@@ -15,9 +15,6 @@
   ],
 
   "rules": {
-    // Items different from the mozilla/recommended configuration.
-    "no-var": "off",
-
     // Other rules mozilla/recommended hasn't enabled yet.
     "no-shadow": "error",
     "arrow-body-style": ["error", "as-needed"],
