@@ -53,7 +53,6 @@
     "typescript": "^5.1.6",
     "typogr": "^0.6.8",
     "vinyl": "^3.0.0",
-    "vinyl-fs": "^3.0.3",
     "webpack": "^5.88.2",
     "webpack-stream": "^7.0.0",
     "wintersmith": "^2.5.0",

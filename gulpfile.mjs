@@ -34,7 +34,6 @@ import rimraf from "rimraf";
 import stream from "stream";
 import streamqueue from "streamqueue";
 import through from "through2";
-import vfs from "vinyl-fs";
 import Vinyl from "vinyl";
 import webpack2 from "webpack";
 import webpackStream from "webpack-stream";
@@ -2098,15 +2097,14 @@ function ghPagesPrepare() {
 
   rimraf.sync(GH_PAGES_DIR);
 
-  // 'vfs' because web/viewer.html needs its BOM.
   return merge([
-    vfs
-      .src(GENERIC_DIR + "**/*", { base: GENERIC_DIR, stripBOM: false })
+    gulp
+      .src(GENERIC_DIR + "**/*", { base: GENERIC_DIR, removeBOM: false })
       .pipe(gulp.dest(GH_PAGES_DIR)),
-    vfs
+    gulp
       .src(GENERIC_LEGACY_DIR + "**/*", {
         base: GENERIC_LEGACY_DIR,
-        stripBOM: false,
+        removeBOM: false,
       })
       .pipe(gulp.dest(GH_PAGES_DIR + "legacy/")),
     gulp
@@ -2223,8 +2221,11 @@ gulp.task(
 
       return merge([
         packageJson().pipe(gulp.dest(DIST_DIR)),
-        vfs
-          .src("external/dist/**/*", { base: "external/dist", stripBOM: false })
+        gulp
+          .src("external/dist/**/*", {
+            base: "external/dist",
+            removeBOM: false,
+          })
           .pipe(gulp.dest(DIST_DIR)),
         gulp.src(GENERIC_DIR + "LICENSE").pipe(gulp.dest(DIST_DIR)),
         gulp
