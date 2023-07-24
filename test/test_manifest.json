@@ -8008,5 +8008,28 @@
           "rotation": 0
         }
       }
+   },
+   {
+      "id": "bug1844572-save-print",
+      "file": "pdfs/bug1844572.pdf",
+      "md5": "22a96775e884131d59c05fa92e0a42f6",
+      "rounds": 1,
+      "type": "eq",
+      "link": true,
+      "save": true,
+      "print": true,
+      "annotationStorage": {
+        "pdfjs_internal_editor_0": {
+          "annotationType": 3,
+          "color": [0, 0, 0],
+          "fontSize": 10,
+          "value": "Hello World",
+          "pageIndex": 0,
+          "rect": [
+            115.80000000000001, 325.0679969482421, 171.3, 342.5679999999999
+          ],
+          "rotation": 0
+        }
+      }
    }
 ]
