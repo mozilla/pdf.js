@@ -14,10 +14,18 @@
  */
 
 :root {
-  --focus-outline: solid 2px blue;
-  --hover-outline: dashed 2px blue;
+  --outline-width: 2px;
+  --outline-color: blue;
+  --focus-outline: solid var(--outline-width) var(--outline-color);
+  --hover-outline: dashed var(--outline-width) var(--outline-color);
   --freetext-line-height: 1.35;
   --freetext-padding: 2px;
+  --resizer-size: 8px;
+  --resizer-shift: calc(
+    0px - var(--outline-width) - var(--resizer-size) / 2 - var(--outline-width) /
+      2
+  );
+  --resizer-color: white;
   --editorFreeText-editing-cursor: text;
   /*#if COMPONENTS*/
   --editorInk-editing-cursor: pointer;
@@ -37,8 +45,10 @@
 
 @media screen and (forced-colors: active) {
   :root {
-    --focus-outline: solid 3px ButtonText;
-    --hover-outline: dashed 3px ButtonText;
+    --outline-width: 3px;
+    --outline-color: ButtonText;
+    --resizer-size: 12px;
+    --resizer-color: ButtonFace;
   }
 }
 
@@ -78,7 +88,6 @@
 
 .annotationEditorLayer .selectedEditor {
   outline: var(--focus-outline);
-  resize: none;
 }
 
 .annotationEditorLayer :is(.freeTextEditor, .inkEditor, .stampEditor) {
@@ -92,13 +101,8 @@
   max-height: 100%;
 }
 
-.annotationEditorLayer :is(.inkEditor, .stampEditor) {
-  overflow: auto;
-}
-
 .annotationEditorLayer .freeTextEditor {
   padding: calc(var(--freetext-padding) * var(--scale-factor));
-  resize: none;
   width: auto;
   height: auto;
   touch-action: none;
@@ -111,7 +115,6 @@
   left: 0;
   overflow: visible;
   white-space: nowrap;
-  resize: none;
   font: 10px sans-serif;
   line-height: var(--freetext-line-height);
 }
@@ -139,14 +142,6 @@
   outline: none;
 }
 
-.annotationEditorLayer .inkEditor.disabled {
-  resize: none;
-}
-
-.annotationEditorLayer .inkEditor.disabled.selectedEditor {
-  resize: horizontal;
-}
-
 .annotationEditorLayer
   :is(.freeTextEditor, .inkEditor, .stampEditor):hover:not(.selectedEditor) {
   outline: var(--hover-outline);
@@ -158,7 +153,6 @@
 }
 
 .annotationEditorLayer .inkEditor.editing {
-  resize: none;
   cursor: inherit;
 }
 
@@ -189,11 +183,107 @@
   transition-delay: var(--loading-icon-delay);
 }
 
-.annotationEditorLayer .stampEditor.selectedEditor {
-  resize: horizontal;
-}
-
 .annotationEditorLayer .stampEditor canvas {
   width: 100%;
   height: 100%;
+}
+
+.annotationEditorLayer .resizers {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+}
+
+.annotationEditorLayer .resizers.hidden {
+  display: none;
+}
+
+.annotationEditorLayer .resizer {
+  width: var(--resizer-size);
+  height: var(--resizer-size);
+  border-radius: 50%;
+  background: var(--resizer-color);
+  border: var(--focus-outline);
+  position: absolute;
+}
+
+.annotationEditorLayer .resizer.topLeft {
+  cursor: nw-resize;
+  top: var(--resizer-shift);
+  left: var(--resizer-shift);
+}
+
+.annotationEditorLayer .resizer.topMiddle {
+  cursor: n-resize;
+  top: var(--resizer-shift);
+  left: calc(50% + var(--resizer-shift));
+}
+
+.annotationEditorLayer .resizer.topRight {
+  cursor: ne-resize;
+  top: var(--resizer-shift);
+  right: var(--resizer-shift);
+}
+
+.annotationEditorLayer .resizer.middleRight {
+  cursor: e-resize;
+  top: calc(50% + var(--resizer-shift));
+  right: var(--resizer-shift);
+}
+
+.annotationEditorLayer .resizer.bottomRight {
+  cursor: se-resize;
+  bottom: var(--resizer-shift);
+  right: var(--resizer-shift);
+}
+
+.annotationEditorLayer .resizer.bottomMiddle {
+  cursor: s-resize;
+  bottom: var(--resizer-shift);
+  left: calc(50% + var(--resizer-shift));
+}
+
+.annotationEditorLayer .resizer.bottomLeft {
+  cursor: sw-resize;
+  bottom: var(--resizer-shift);
+  left: var(--resizer-shift);
+}
+
+.annotationEditorLayer .resizer.middleLeft {
+  cursor: w-resize;
+  top: calc(50% + var(--resizer-shift));
+  left: var(--resizer-shift);
+}
+
+.annotationEditorLayer.resizingTopLeft {
+  cursor: nw-resize;
+}
+
+.annotationEditorLayer.resizingTopMiddle {
+  cursor: n-resize;
+}
+
+.annotationEditorLayer.resizingTopRight {
+  cursor: ne-resize;
+}
+
+.annotationEditorLayer.resizingMiddleRight {
+  cursor: e-resize;
+}
+
+.annotationEditorLayer.resizingBottomRight {
+  cursor: se-resize;
+}
+
+.annotationEditorLayer.resizingBottomMiddle {
+  cursor: s-resize;
+}
+
+.annotationEditorLayer.resizingBottomLeft {
+  cursor: sw-resize;
+}
+
+.annotationEditorLayer.resizingMiddleLeft {
+  cursor: w-resize;
 }
