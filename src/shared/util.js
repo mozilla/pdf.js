@@ -83,6 +83,8 @@ const AnnotationEditorParamsType = {
   INK_COLOR: 11,
   INK_THICKNESS: 12,
   INK_OPACITY: 13,
+  INK_DIMS: 14,
+  STAMP_DIMS: 21,
 };
 
 // Permission flags from Table 22, Section 7.6.3.2 of the PDF specification.
