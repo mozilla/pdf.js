@@ -20,7 +20,7 @@ import {
   BaseFilterFactory,
   BaseStandardFontDataFactory,
 } from "./base_factory.js";
-import { isNodeJS } from "../shared/util.js";
+import { isNodeJS, warn } from "../shared/util.js";
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
@@ -33,18 +33,26 @@ if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("SKIP_BABEL")) {
     if (globalThis.DOMMatrix || !isNodeJS) {
       return;
     }
-    globalThis.DOMMatrix = __non_webpack_require__("canvas").DOMMatrix;
+    try {
+      globalThis.DOMMatrix = __non_webpack_require__("canvas").DOMMatrix;
+    } catch (ex) {
+      warn(`Cannot polyfill \`DOMMatrix\`, rendering may be broken: "${ex}".`);
+    }
   })();
 
   (function checkPath2D() {
     if (globalThis.Path2D || !isNodeJS) {
       return;
     }
-    const { CanvasRenderingContext2D } = __non_webpack_require__("canvas");
-    const { polyfillPath2D } = __non_webpack_require__("path2d-polyfill");
+    try {
+      const { CanvasRenderingContext2D } = __non_webpack_require__("canvas");
+      const { polyfillPath2D } = __non_webpack_require__("path2d-polyfill");
 
-    globalThis.CanvasRenderingContext2D = CanvasRenderingContext2D;
-    polyfillPath2D(globalThis);
+      globalThis.CanvasRenderingContext2D = CanvasRenderingContext2D;
+      polyfillPath2D(globalThis);
+    } catch (ex) {
+      warn(`Cannot polyfill \`Path2D\`, rendering may be broken: "${ex}".`);
+    }
   })();
 }
 
