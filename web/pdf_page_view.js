@@ -71,13 +71,11 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
  *   The default value is `AnnotationMode.ENABLE_FORMS`.
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
- * @property {boolean} [useOnlyCssZoom] - Enables CSS only zooming. The default
- *   value is `false`.
  * @property {boolean} [isOffscreenCanvasSupported] - Allows to use an
  *   OffscreenCanvas if needed.
  * @property {number} [maxCanvasPixels] - The maximum supported canvas size in
- *   total pixels, i.e. width * height. Use -1 for no limit. The default value
- *   is 4096 * 4096 (16 mega-pixels).
+ *   total pixels, i.e. width * height. Use `-1` for no limit, or `0` for
+ *   CSS-only zooming. The default value is 4096 * 4096 (16 mega-pixels).
  * @property {Object} [pageColors] - Overwrites background and foreground colors
  *   with user defined ones in order to improve readability in high contrast
  *   mode.
@@ -111,6 +109,8 @@ const DEFAULT_LAYER_PROPERTIES = () => {
  */
 class PDFPageView {
   #annotationMode = AnnotationMode.ENABLE_FORMS;
+
+  #hasRestrictedScaling = false;
 
   #layerProperties = null;
 
@@ -151,15 +151,13 @@ class PDFPageView {
     this.pdfPageRotate = defaultViewport.rotation;
     this._optionalContentConfigPromise =
       options.optionalContentConfigPromise || null;
-    this.hasRestrictedScaling = false;
     this.#textLayerMode = options.textLayerMode ?? TextLayerMode.ENABLE;
     this.#annotationMode =
       options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
     this.imageResourcesPath = options.imageResourcesPath || "";
-    this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.isOffscreenCanvasSupported =
       options.isOffscreenCanvasSupported ?? true;
-    this.maxCanvasPixels = options.maxCanvasPixels || MAX_CANVAS_PIXELS;
+    this.maxCanvasPixels = options.maxCanvasPixels ?? MAX_CANVAS_PIXELS;
     this.pageColors = options.pageColors || null;
 
     this.eventBus = options.eventBus;
@@ -171,6 +169,13 @@ class PDFPageView {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       this._isStandalone = !this.renderingQueue?.hasViewer();
       this._container = container;
+
+      if (options.useOnlyCssZoom) {
+        console.error(
+          "useOnlyCssZoom was removed, please use `maxCanvasPixels = 0` instead."
+        );
+        this.maxCanvasPixels = 0;
+      }
     }
 
     this._annotationCanvasMap = null;
@@ -586,23 +591,25 @@ class PDFPageView {
       this._container?.style.setProperty("--scale-factor", this.viewport.scale);
     }
 
-    let isScalingRestricted = false;
-    if (this.canvas && this.maxCanvasPixels > 0) {
-      const { width, height } = this.viewport;
-      const { sx, sy } = this.outputScale;
-      if (
-        ((Math.floor(width) * sx) | 0) * ((Math.floor(height) * sy) | 0) >
-        this.maxCanvasPixels
-      ) {
-        isScalingRestricted = true;
-      }
-    }
-    const onlyCssZoom =
-      this.useOnlyCssZoom || (this.hasRestrictedScaling && isScalingRestricted);
-    const postponeDrawing =
-      !onlyCssZoom && drawingDelay >= 0 && drawingDelay < 1000;
-
     if (this.canvas) {
+      let onlyCssZoom = false;
+      if (this.#hasRestrictedScaling) {
+        if (
+          (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+          this.maxCanvasPixels === 0
+        ) {
+          onlyCssZoom = true;
+        } else if (this.maxCanvasPixels > 0) {
+          const { width, height } = this.viewport;
+          const { sx, sy } = this.outputScale;
+          onlyCssZoom =
+            ((Math.floor(width) * sx) | 0) * ((Math.floor(height) * sy) | 0) >
+            this.maxCanvasPixels;
+        }
+      }
+      const postponeDrawing =
+        !onlyCssZoom && drawingDelay >= 0 && drawingDelay < 1000;
+
       if (postponeDrawing || onlyCssZoom) {
         if (
           postponeDrawing &&
@@ -921,25 +928,25 @@ class PDFPageView {
     const ctx = canvas.getContext("2d", { alpha: false });
     const outputScale = (this.outputScale = new OutputScale());
 
-    if (this.useOnlyCssZoom) {
-      const actualSizeViewport = viewport.clone({
-        scale: PixelsPerInch.PDF_TO_CSS_UNITS,
-      });
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      this.maxCanvasPixels === 0
+    ) {
+      const invScale = 1 / this.scale;
       // Use a scale that makes the canvas have the originally intended size
       // of the page.
-      outputScale.sx *= actualSizeViewport.width / width;
-      outputScale.sy *= actualSizeViewport.height / height;
-    }
-
-    if (this.maxCanvasPixels > 0) {
+      outputScale.sx *= invScale;
+      outputScale.sy *= invScale;
+      this.#hasRestrictedScaling = true;
+    } else if (this.maxCanvasPixels > 0) {
       const pixelsInViewport = width * height;
       const maxScale = Math.sqrt(this.maxCanvasPixels / pixelsInViewport);
       if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
         outputScale.sx = maxScale;
         outputScale.sy = maxScale;
-        this.hasRestrictedScaling = true;
+        this.#hasRestrictedScaling = true;
       } else {
-        this.hasRestrictedScaling = false;
+        this.#hasRestrictedScaling = false;
       }
     }
     const sfx = approximateFraction(outputScale.sx);

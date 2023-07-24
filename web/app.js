@@ -522,7 +522,6 @@ const PDFViewerApplication = {
       annotationEditorMode,
       imageResourcesPath: AppOptions.get("imageResourcesPath"),
       enablePrintAutoRotate: AppOptions.get("enablePrintAutoRotate"),
-      useOnlyCssZoom: AppOptions.get("useOnlyCssZoom"),
       isOffscreenCanvasSupported,
       maxCanvasPixels: AppOptions.get("maxCanvasPixels"),
       enablePermissions: AppOptions.get("enablePermissions"),
