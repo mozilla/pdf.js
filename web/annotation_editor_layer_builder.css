@@ -114,6 +114,7 @@
   resize: none;
   font: 10px sans-serif;
   line-height: var(--freetext-line-height);
+  user-select: none;
 }
 
 .annotationEditorLayer .freeTextEditor .overlay {
@@ -137,6 +138,7 @@
 
 .annotationEditorLayer .freeTextEditor .internal:focus {
   outline: none;
+  user-select: auto;
 }
 
 .annotationEditorLayer .inkEditor.disabled {
