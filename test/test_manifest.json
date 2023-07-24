@@ -207,6 +207,13 @@
        "link": false,
        "type": "text"
     },
+    {  "id": "reduced_planck_constant",
+       "file": "pdfs/reduced_planck_constant.pdf",
+       "md5": "54636f82714926335da5cec6d92d6482",
+       "rounds": 1,
+       "link": true,
+       "type": "text"
+    },
     {  "id": "issue1293",
        "file": "pdfs/issue1293r.pdf",
        "md5": "4a098f5051f34fab036f5bbe88f8deef",
