@@ -544,6 +544,7 @@ class WorkerMessageHandler {
           pdfManager.ensureCatalog("acroForm"),
           pdfManager.ensureCatalog("acroFormRef"),
           pdfManager.ensureDoc("startXRef"),
+          pdfManager.ensureDoc("linearization"),
         ];
 
         const newAnnotationsByPage = !isPureXfa
@@ -595,6 +596,7 @@ class WorkerMessageHandler {
           acroForm,
           acroFormRef,
           startXRef,
+          linearization,
           ...refs
         ]) {
           let newRefs = [];
@@ -656,7 +658,9 @@ class WorkerMessageHandler {
               infoRef: xref.trailer.getRaw("Info") || null,
               info: infoObj,
               fileIds: xref.trailer.get("ID") || null,
-              startXRef: xref.lastXRefStreamPos ?? startXRef,
+              startXRef: linearization
+                ? startXRef
+                : xref.lastXRefStreamPos ?? startXRef,
               filename,
             };
           }
