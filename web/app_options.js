@@ -189,11 +189,6 @@ const defaultOptions = {
     value: 1,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
-  useOnlyCssZoom: {
-    /** @type {boolean} */
-    value: false,
-    kind: OptionKind.VIEWER,
-  },
   viewerCssTheme: {
     /** @type {number} */
     value: typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME") ? 2 : 0,
