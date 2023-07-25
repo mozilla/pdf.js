@@ -688,11 +688,13 @@ class AnnotationEditorUIManager {
   #addKeyboardManager() {
     // The keyboard events are caught at the container level in order to be able
     // to execute some callbacks even if the current page doesn't have focus.
-    this.#container.addEventListener("keydown", this.#boundKeydown);
+    window.addEventListener("keydown", this.#boundKeydown, { capture: true });
   }
 
   #removeKeyboardManager() {
-    this.#container.removeEventListener("keydown", this.#boundKeydown);
+    window.removeEventListener("keydown", this.#boundKeydown, {
+      capture: true,
+    });
   }
 
   #addCopyPasteListeners() {
