@@ -280,6 +280,12 @@ class CommandManager {
     this.#commands.push(save);
   }
 
+  stopUndoAccumulation() {
+    if (this.#position !== -1) {
+      this.#commands[this.#position].type = NaN;
+    }
+  }
+
   /**
    * Undo the last command.
    */
@@ -1166,6 +1172,10 @@ class AnnotationEditorUIManager {
 
   get hasSelection() {
     return this.#selectedEditors.size !== 0;
+  }
+
+  stopUndoAccumulation() {
+    this.#commandManager.stopUndoAccumulation();
   }
 
   /**
