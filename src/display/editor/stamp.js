@@ -13,8 +13,11 @@
  * limitations under the License.
  */
 
+import {
+  AnnotationEditorParamsType,
+  AnnotationEditorType,
+} from "../../shared/util.js";
 import { AnnotationEditor } from "./editor.js";
-import { AnnotationEditorType } from "../../shared/util.js";
 import { PixelsPerInch } from "../display_utils.js";
 import { StampAnnotationElement } from "../annotation_layer.js";
 
@@ -124,6 +127,11 @@ class StampEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
+  get resizeType() {
+    return AnnotationEditorParamsType.STAMP_DIMS;
+  }
+
+  /** @inheritdoc */
   remove() {
     if (this.#bitmapId) {
       this.#bitmap = null;
@@ -171,6 +179,11 @@ class StampEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
+  get isResizable() {
+    return true;
+  }
+
+  /** @inheritdoc */
   render() {
     if (this.div) {
       return this.div;
@@ -194,7 +207,6 @@ class StampEditor extends AnnotationEditor {
     if (this.width) {
       // This editor was created in using copy (ctrl+c).
       const [parentWidth, parentHeight] = this.parentDimensions;
-      this.setAspectRatio(this.width * parentWidth, this.height * parentHeight);
       this.setAt(
         baseX * parentWidth,
         baseY * parentHeight,
@@ -232,8 +244,6 @@ class StampEditor extends AnnotationEditor {
       (width * parentWidth) / pageWidth,
       (height * parentHeight) / pageHeight
     );
-
-    this.setAspectRatio(width, height);
 
     const canvas = (this.#canvas = document.createElement("canvas"));
     div.append(canvas);
