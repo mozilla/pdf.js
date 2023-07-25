@@ -46,7 +46,6 @@ import {
   isPdfFile,
   loadScript,
   MissingPDFException,
-  OPS,
   PDFWorker,
   PromiseCapability,
   shadow,
@@ -375,7 +374,7 @@ const PDFViewerApplication = {
       const enabled = params.get("pdfbug").split(",");
       try {
         await loadPDFBug(this);
-        this._PDFBug.init({ OPS }, mainContainer, enabled);
+        this._PDFBug.init(mainContainer, enabled);
       } catch (ex) {
         console.error(`_parseHashParams: "${ex.message}".`);
       }
