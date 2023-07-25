@@ -553,6 +553,15 @@ class AnnotationEditorLayer {
    * @param {PointerEvent} event
    */
   pointerdown(event) {
+    if (this.#hadPointerDown) {
+      // It's possible to have a second pointerdown event before a pointerup one
+      // when the user puts a finger on a touchscreen and then add a second one
+      // to start a pinch-to-zoom gesture.
+      // That said, in case it's possible to have two pointerdown events with
+      // a mouse, we don't want to create a new editor in such a case either.
+      this.#hadPointerDown = false;
+      return;
+    }
     const { isMac } = FeatureTest.platform;
     if (event.button !== 0 || (event.ctrlKey && isMac)) {
       // Do nothing on right click.
