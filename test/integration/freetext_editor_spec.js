@@ -143,9 +143,13 @@ describe("FreeText Editor", () => {
           await page.keyboard.press("a");
           await page.keyboard.up("Control");
 
+          await page.waitForTimeout(10);
+
           await page.keyboard.down("Control");
           await page.keyboard.press("Backspace");
           await page.keyboard.up("Control");
+
+          await page.waitForTimeout(10);
 
           for (const n of [0, 1, 2]) {
             const hasEditor = await page.evaluate(sel => {
@@ -182,11 +186,16 @@ describe("FreeText Editor", () => {
           editorRect.x,
           editorRect.y + 2 * editorRect.height
         );
+
+        await page.waitForTimeout(10);
+
         // And select it again.
         await page.mouse.click(
           editorRect.x + editorRect.width / 2,
           editorRect.y + editorRect.height / 2
         );
+
+        await page.waitForTimeout(10);
 
         await waitForSelectedEditor(page, getEditorSelector(3));
         await copyPaste(page);
@@ -300,9 +309,13 @@ describe("FreeText Editor", () => {
           await page.keyboard.press("a");
           await page.keyboard.up("Control");
 
+          await page.waitForTimeout(10);
+
           await page.keyboard.down("Control");
           await page.keyboard.press("Backspace");
           await page.keyboard.up("Control");
+
+          await page.waitForTimeout(10);
 
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
@@ -338,6 +351,7 @@ describe("FreeText Editor", () => {
 
           // Escape.
           await page.keyboard.press("Escape");
+          await page.waitForTimeout(10);
 
           expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
@@ -385,6 +399,7 @@ describe("FreeText Editor", () => {
             editorRect.x,
             editorRect.y + 2 * editorRect.height
           );
+          await page.waitForTimeout(10);
 
           if (i < 4) {
             // And select it again.
@@ -393,6 +408,7 @@ describe("FreeText Editor", () => {
               editorRect.y + editorRect.height / 2,
               { clickCount: 2 }
             );
+            await page.waitForTimeout(10);
           }
         }
 
@@ -468,6 +484,7 @@ describe("FreeText Editor", () => {
           editorRect.x,
           editorRect.y + 2 * editorRect.height
         );
+        await page.waitForTimeout(10);
 
         text = await page.$eval(`${getEditorSelector(9)} .internal`, el => {
           return el.innerText;
@@ -533,6 +550,7 @@ describe("FreeText Editor", () => {
         await page.keyboard.down("Control");
         await page.keyboard.press("a");
         await page.keyboard.up("Control");
+        await page.waitForTimeout(10);
 
         expect(await getSelectedEditors(page))
           .withContext(`In ${browserName}`)
@@ -540,6 +558,7 @@ describe("FreeText Editor", () => {
 
         await page.keyboard.down("Control");
         await page.mouse.click(editorCenters[1].x, editorCenters[1].y);
+        await page.waitForTimeout(10);
 
         expect(await getSelectedEditors(page))
           .withContext(`In ${browserName}`)
@@ -553,6 +572,7 @@ describe("FreeText Editor", () => {
 
         await page.mouse.click(editorCenters[1].x, editorCenters[1].y);
         await page.keyboard.up("Control");
+        await page.waitForTimeout(10);
 
         expect(await getSelectedEditors(page))
           .withContext(`In ${browserName}`)
@@ -587,10 +607,12 @@ describe("FreeText Editor", () => {
 
         // Delete 1 and 3.
         await page.keyboard.press("Backspace");
+        await page.waitForTimeout(10);
 
         await page.keyboard.down("Control");
         await page.keyboard.press("a");
         await page.keyboard.up("Control");
+        await page.waitForTimeout(10);
 
         expect(await getSelectedEditors(page))
           .withContext(`In ${browserName}`)
@@ -615,11 +637,13 @@ describe("FreeText Editor", () => {
           .toEqual([8]);
         // Dismiss it.
         await page.keyboard.press("Escape");
+        await page.waitForTimeout(10);
 
         // Select all.
         await page.keyboard.down("Control");
         await page.keyboard.press("a");
         await page.keyboard.up("Control");
+        await page.waitForTimeout(10);
 
         // Check that all the editors are correctly selected (and the focus
         // didn't move to the body when the empty editor was removed).
@@ -1235,6 +1259,7 @@ describe("FreeText Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await page.keyboard.press("r");
+          await page.waitForTimeout(10);
           await page.click("#editorFreeText");
 
           const rect = await page.$eval(".annotationEditorLayer", el => {
@@ -1681,6 +1706,76 @@ describe("FreeText Editor", () => {
               )
               .toEqual(true);
           }
+        })
+      );
+    });
+  });
+
+  describe("Keyboard shortcuts when the editor layer isn't focused", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the shortcuts are working correctly", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorFreeText");
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          const data = "Hello PDF.js World !!";
+          await page.mouse.click(rect.x + 100, rect.y + 100);
+          await page.type(`${getEditorSelector(0)} .internal`, data);
+
+          const editorRect = await page.$eval(getEditorSelector(0), el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return {
+              x,
+              y,
+              width,
+              height,
+            };
+          });
+
+          // Commit.
+          await page.mouse.click(
+            editorRect.x,
+            editorRect.y + 2 * editorRect.height
+          );
+          await page.waitForTimeout(10);
+
+          await page.focus("#editorFreeTextColor");
+
+          await page.keyboard.down("Control");
+          await page.keyboard.press("z");
+          await page.keyboard.up("Control");
+          await page.waitForTimeout(10);
+
+          let hasEditor = await page.evaluate(sel => {
+            return !!document.querySelector(sel);
+          }, getEditorSelector(0));
+
+          expect(hasEditor).withContext(`In ${browserName}`).toEqual(false);
+
+          await page.keyboard.down("Control");
+          await page.keyboard.press("y");
+          await page.keyboard.up("Control");
+          await page.waitForTimeout(10);
+
+          hasEditor = await page.evaluate(sel => {
+            return !!document.querySelector(sel);
+          }, getEditorSelector(0));
+
+          expect(hasEditor).withContext(`In ${browserName}`).toEqual(true);
         })
       );
     });
