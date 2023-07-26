@@ -1289,13 +1289,13 @@ const PDFViewerApplication = {
 
     // Since the `setInitialView` call below depends on this being resolved,
     // fetch it early to avoid delaying initial rendering of the PDF document.
-    const pageLayoutPromise = pdfDocument.getPageLayout().catch(function () {
+    const pageLayoutPromise = pdfDocument.getPageLayout().catch(() => {
       /* Avoid breaking initial rendering; ignoring errors. */
     });
-    const pageModePromise = pdfDocument.getPageMode().catch(function () {
+    const pageModePromise = pdfDocument.getPageMode().catch(() => {
       /* Avoid breaking initial rendering; ignoring errors. */
     });
-    const openActionPromise = pdfDocument.getOpenAction().catch(function () {
+    const openActionPromise = pdfDocument.getOpenAction().catch(() => {
       /* Avoid breaking initial rendering; ignoring errors. */
     });
 
@@ -1336,7 +1336,6 @@ const PDFViewerApplication = {
       })
       .catch(() => {
         /* Unable to read from storage; ignoring errors. */
-        return Object.create(null);
       });
 
     firstPagePromise.then(pdfPage => {
@@ -1369,7 +1368,7 @@ const PDFViewerApplication = {
           let scrollMode = AppOptions.get("scrollModeOnLoad");
           let spreadMode = AppOptions.get("spreadModeOnLoad");
 
-          if (stored.page && viewOnLoad !== ViewOnLoad.INITIAL) {
+          if (stored?.page && viewOnLoad !== ViewOnLoad.INITIAL) {
             hash =
               `page=${stored.page}&zoom=${zoom || stored.zoom},` +
               `${stored.scrollLeft},${stored.scrollTop}`;
