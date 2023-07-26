@@ -71,7 +71,7 @@ class FreeTextEditor extends AnnotationEditor {
           // See bug 1831574.
           ["ctrl+s", "mac+meta+s", "ctrl+p", "mac+meta+p"],
           FreeTextEditor.prototype.commitOrRemove,
-          /* bubbles = */ true,
+          { bubbles: true },
         ],
         [
           ["ctrl+Enter", "mac+meta+Enter", "Escape", "mac+Escape"],

@@ -13,11 +13,8 @@
  * limitations under the License.
  */
 
-import {
-  AnnotationEditorParamsType,
-  AnnotationEditorType,
-} from "../../shared/util.js";
 import { AnnotationEditor } from "./editor.js";
+import { AnnotationEditorType } from "../../shared/util.js";
 import { PixelsPerInch } from "../display_utils.js";
 import { StampAnnotationElement } from "../annotation_layer.js";
 
@@ -124,11 +121,6 @@ class StampEditor extends AnnotationEditor {
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("TESTING")) {
       input.click();
     }
-  }
-
-  /** @inheritdoc */
-  get resizeType() {
-    return AnnotationEditorParamsType.STAMP_DIMS;
   }
 
   /** @inheritdoc */

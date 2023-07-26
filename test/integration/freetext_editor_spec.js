@@ -18,6 +18,7 @@ const {
   getEditors,
   getEditorSelector,
   getSelectedEditors,
+  getFirstSerialized,
   getSerialized,
   loadAndWait,
   waitForEvent,
@@ -752,7 +753,7 @@ describe("FreeText Editor", () => {
               "switchannotationeditorparams",
               {
                 source: null,
-                type: /* AnnotationEditorParamsType.FREETEXT_SIZE */ 1,
+                type: window.pdfjsLib.AnnotationEditorParamsType.FREETEXT_SIZE,
                 value: 13,
               }
             );
@@ -769,7 +770,7 @@ describe("FreeText Editor", () => {
               "switchannotationeditorparams",
               {
                 source: null,
-                type: /* AnnotationEditorParamsType.FREETEXT_COLOR */ 2,
+                type: window.pdfjsLib.AnnotationEditorParamsType.FREETEXT_COLOR,
                 value: "#FF0000",
               }
             );
@@ -1310,7 +1311,7 @@ describe("FreeText Editor", () => {
               "switchannotationeditorparams",
               {
                 source: null,
-                type: /* AnnotationEditorParamsType.FREETEXT_SIZE */ 1,
+                type: window.pdfjsLib.AnnotationEditorParamsType.FREETEXT_SIZE,
                 value: 50,
               }
             );
@@ -1776,6 +1777,144 @@ describe("FreeText Editor", () => {
           }, getEditorSelector(0));
 
           expect(hasEditor).withContext(`In ${browserName}`).toEqual(true);
+        })
+      );
+    });
+  });
+
+  describe("Move editor with arrows", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check the position of moved editor", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorFreeText");
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          const data = "Hello PDF.js World !!";
+          await page.mouse.click(rect.x + 200, rect.y + 200);
+          await page.type(`${getEditorSelector(0)} .internal`, data);
+
+          const editorRect = await page.$eval(getEditorSelector(0), el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return {
+              x,
+              y,
+              width,
+              height,
+            };
+          });
+
+          // Commit.
+          await page.mouse.click(
+            editorRect.x,
+            editorRect.y + 2 * editorRect.height
+          );
+          await page.waitForTimeout(10);
+
+          const [pageX, pageY] = await getFirstSerialized(page, x => x.rect);
+
+          for (let i = 0; i < 20; i++) {
+            await page.keyboard.press("ArrowRight");
+            await page.waitForTimeout(1);
+          }
+
+          let [newX, newY] = await getFirstSerialized(page, x => x.rect);
+          expect(Math.round(newX))
+            .withContext(`In ${browserName}`)
+            .toEqual(Math.round(pageX + 20));
+          expect(Math.round(newY))
+            .withContext(`In ${browserName}`)
+            .toEqual(Math.round(pageY));
+
+          for (let i = 0; i < 20; i++) {
+            await page.keyboard.press("ArrowDown");
+            await page.waitForTimeout(1);
+          }
+
+          [newX, newY] = await getFirstSerialized(page, x => x.rect);
+          expect(Math.round(newX))
+            .withContext(`In ${browserName}`)
+            .toEqual(Math.round(pageX + 20));
+          expect(Math.round(newY))
+            .withContext(`In ${browserName}`)
+            .toEqual(Math.round(pageY - 20));
+
+          for (let i = 0; i < 2; i++) {
+            await page.keyboard.down("Control");
+            await page.keyboard.press("ArrowLeft");
+            await page.keyboard.up("Control");
+            await page.waitForTimeout(1);
+          }
+
+          [newX, newY] = await getFirstSerialized(page, x => x.rect);
+          expect(Math.round(newX))
+            .withContext(`In ${browserName}`)
+            .toEqual(Math.round(pageX));
+          expect(Math.round(newY))
+            .withContext(`In ${browserName}`)
+            .toEqual(Math.round(pageY - 20));
+
+          for (let i = 0; i < 2; i++) {
+            await page.keyboard.down("Control");
+            await page.keyboard.press("ArrowUp");
+            await page.keyboard.up("Control");
+            await page.waitForTimeout(1);
+          }
+
+          [newX, newY] = await getFirstSerialized(page, x => x.rect);
+          expect(Math.round(newX))
+            .withContext(`In ${browserName}`)
+            .toEqual(Math.round(pageX));
+          expect(Math.round(newY))
+            .withContext(`In ${browserName}`)
+            .toEqual(Math.round(pageY));
+        })
+      );
+    });
+
+    it("must check arrow doesn't move an editor when a slider is focused", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.keyboard.down("Control");
+          await page.keyboard.press("a");
+          await page.keyboard.up("Control");
+          await page.waitForTimeout(10);
+
+          await page.focus("#editorFreeTextFontSize");
+
+          const [page1X, , page2X] = await getFirstSerialized(
+            page,
+            x => x.rect
+          );
+          const pageWidth = page2X - page1X;
+
+          for (let i = 0; i < 5; i++) {
+            await page.keyboard.press("ArrowRight");
+            await page.waitForTimeout(1);
+          }
+          await page.waitForTimeout(10);
+
+          const [new1X, , new2X] = await getFirstSerialized(page, x => x.rect);
+          const newWidth = new2X - new1X;
+          expect(Math.round(new1X))
+            .withContext(`In ${browserName}`)
+            .not.toEqual(Math.round(page1X + 5));
+          expect(newWidth)
+            .withContext(`In ${browserName}`)
+            .not.toEqual(pageWidth);
         })
       );
     });

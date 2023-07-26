@@ -355,14 +355,14 @@ class KeyboardManager {
     this.allKeys = new Set();
 
     const { isMac } = FeatureTest.platform;
-    for (const [keys, callback, bubbles = false] of callbacks) {
+    for (const [keys, callback, options = {}] of callbacks) {
       for (const key of keys) {
         const isMacKey = key.startsWith("mac+");
         if (isMac && isMacKey) {
-          this.callbacks.set(key.slice(4), { callback, bubbles });
+          this.callbacks.set(key.slice(4), { callback, options });
           this.allKeys.add(key.split("+").at(-1));
         } else if (!isMac && !isMacKey) {
-          this.callbacks.set(key, { callback, bubbles });
+          this.callbacks.set(key, { callback, options });
           this.allKeys.add(key.split("+").at(-1));
         }
       }
@@ -410,8 +410,15 @@ class KeyboardManager {
     if (!info) {
       return;
     }
-    const { callback, bubbles } = info;
-    callback.bind(self)();
+    const {
+      callback,
+      options: { bubbles = false, args = [], checker = null },
+    } = info;
+
+    if (checker && !checker(self, event)) {
+      return;
+    }
+    callback.bind(self, ...args)();
 
     // For example, ctrl+s in a FreeText must be handled by the viewer, hence
     // the event must bubble.
@@ -548,9 +555,29 @@ class AnnotationEditorUIManager {
     hasSelectedEditor: false,
   };
 
+  #translation = [0, 0];
+
+  #translationTimeoutId = null;
+
   #container = null;
 
+  static #TRANSLATE_SMALL = 1; // page units.
+
+  static #TRANSLATE_BIG = 10; // page units.
+
   static get _keyboardManager() {
+    const arrowChecker = self => {
+      // If the focused element is an input, we don't want to handle the arrow.
+      // For example, sliders can be controlled with the arrow keys.
+      const { activeElement } = document;
+      return (
+        activeElement &&
+        self.#container.contains(activeElement) &&
+        self.hasSomethingToControl()
+      );
+    };
+    const small = this.#TRANSLATE_SMALL;
+    const big = this.#TRANSLATE_BIG;
     return shadow(
       this,
       "_keyboardManager",
@@ -591,6 +618,46 @@ class AnnotationEditorUIManager {
         [
           ["Escape", "mac+Escape"],
           AnnotationEditorUIManager.prototype.unselectAll,
+        ],
+        [
+          ["ArrowLeft", "mac+ArrowLeft"],
+          AnnotationEditorUIManager.prototype.translateSelectedEditors,
+          { args: [-small, 0], checker: arrowChecker },
+        ],
+        [
+          ["ctrl+ArrowLeft", "mac+meta+ArrowLeft"],
+          AnnotationEditorUIManager.prototype.translateSelectedEditors,
+          { args: [-big, 0], checker: arrowChecker },
+        ],
+        [
+          ["ArrowRight", "mac+ArrowRight"],
+          AnnotationEditorUIManager.prototype.translateSelectedEditors,
+          { args: [small, 0], checker: arrowChecker },
+        ],
+        [
+          ["ctrl+ArrowRight", "mac+meta+ArrowRight"],
+          AnnotationEditorUIManager.prototype.translateSelectedEditors,
+          { args: [big, 0], checker: arrowChecker },
+        ],
+        [
+          ["ArrowUp", "mac+ArrowUp"],
+          AnnotationEditorUIManager.prototype.translateSelectedEditors,
+          { args: [0, -small], checker: arrowChecker },
+        ],
+        [
+          ["ctrl+ArrowUp", "mac+meta+ArrowUp"],
+          AnnotationEditorUIManager.prototype.translateSelectedEditors,
+          { args: [0, -big], checker: arrowChecker },
+        ],
+        [
+          ["ArrowDown", "mac+ArrowDown"],
+          AnnotationEditorUIManager.prototype.translateSelectedEditors,
+          { args: [0, small], checker: arrowChecker },
+        ],
+        [
+          ["ctrl+ArrowDown", "mac+meta+ArrowDown"],
+          AnnotationEditorUIManager.prototype.translateSelectedEditors,
+          { args: [0, big], checker: arrowChecker },
         ],
       ])
     );
@@ -1260,6 +1327,10 @@ class AnnotationEditorUIManager {
     this.#activeEditor?.commitOrRemove();
   }
 
+  hasSomethingToControl() {
+    return this.#activeEditor || this.hasSelection;
+  }
+
   /**
    * Select the editors.
    * @param {Array<AnnotationEditor>} editors
@@ -1296,7 +1367,7 @@ class AnnotationEditorUIManager {
       return;
     }
 
-    if (this.#selectedEditors.size === 0) {
+    if (!this.hasSelection) {
       return;
     }
     for (const editor of this.#selectedEditors) {
@@ -1306,6 +1377,53 @@ class AnnotationEditorUIManager {
     this.#dispatchUpdateStates({
       hasSelectedEditor: false,
     });
+  }
+
+  translateSelectedEditors(x, y) {
+    this.commitOrRemove();
+    if (!this.hasSelection) {
+      return;
+    }
+
+    this.#translation[0] += x;
+    this.#translation[1] += y;
+    const [totalX, totalY] = this.#translation;
+    const editors = [...this.#selectedEditors];
+
+    // We don't want to have an undo/redo for each translation so we wait a bit
+    // before adding the command to the command manager.
+    const TIME_TO_WAIT = 1000;
+
+    if (this.#translationTimeoutId) {
+      clearTimeout(this.#translationTimeoutId);
+    }
+
+    this.#translationTimeoutId = setTimeout(() => {
+      this.#translationTimeoutId = null;
+      this.#translation[0] = this.#translation[1] = 0;
+
+      this.addCommands({
+        cmd: () => {
+          for (const editor of editors) {
+            if (this.#allEditors.has(editor.id)) {
+              editor.translateInPage(totalX, totalY);
+            }
+          }
+        },
+        undo: () => {
+          for (const editor of editors) {
+            if (this.#allEditors.has(editor.id)) {
+              editor.translateInPage(-totalX, -totalY);
+            }
+          }
+        },
+        mustExec: false,
+      });
+    }, TIME_TO_WAIT);
+
+    for (const editor of editors) {
+      editor.translateInPage(x, y);
+    }
   }
 
   /**
