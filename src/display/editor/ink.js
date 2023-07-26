@@ -157,11 +157,6 @@ class InkEditor extends AnnotationEditor {
     ];
   }
 
-  /** @inheritdoc */
-  get resizeType() {
-    return AnnotationEditorParamsType.INK_DIMS;
-  }
-
   /**
    * Update the thickness and make this action undoable.
    * @param {number} thickness

@@ -18,8 +18,13 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./tools.js").AnnotationEditorUIManager} AnnotationEditorUIManager */
 
+import {
+  AnnotationEditorParamsType,
+  FeatureTest,
+  shadow,
+  unreachable,
+} from "../../shared/util.js";
 import { bindEvents, ColorManager } from "./tools.js";
-import { FeatureTest, shadow, unreachable } from "../../shared/util.js";
 
 /**
  * @typedef {Object} AnnotationEditorParameters
@@ -261,19 +266,33 @@ class AnnotationEditor {
     this.fixAndSetPosition();
   }
 
-  /**
-   * Translate the editor position within its parent.
-   * @param {number} x - x-translation in screen coordinates.
-   * @param {number} y - y-translation in screen coordinates.
-   */
-  translate(x, y) {
-    const [width, height] = this.parentDimensions;
+  #translate([width, height], x, y) {
     [x, y] = this.screenToPageTranslation(x, y);
 
     this.x += x / width;
     this.y += y / height;
 
     this.fixAndSetPosition();
+  }
+
+  /**
+   * Translate the editor position within its parent.
+   * @param {number} x - x-translation in screen coordinates.
+   * @param {number} y - y-translation in screen coordinates.
+   */
+  translate(x, y) {
+    this.#translate(this.parentDimensions, x, y);
+  }
+
+  /**
+   * Translate the editor position within its page and adjust the scroll
+   * in order to have the editor in the view.
+   * @param {number} x - x-translation in page coordinates.
+   * @param {number} y - y-translation in page coordinates.
+   */
+  translateInPage(x, y) {
+    this.#translate(this.pageDimensions, x, y);
+    this.div.scrollIntoView({ block: "nearest" });
   }
 
   fixAndSetPosition() {
@@ -663,7 +682,7 @@ class AnnotationEditor {
       cmd,
       undo,
       mustExec: true,
-      type: this.resizeType,
+      type: AnnotationEditorParamsType.RESIZE,
       overwriteIfSameType: true,
       keepUndo: true,
     });
@@ -920,13 +939,6 @@ class AnnotationEditor {
     } else {
       this._uiManager.removeEditor(this);
     }
-  }
-
-  /**
-   * @returns {number} the type to use in the undo/redo stack when resizing.
-   */
-  get resizeType() {
-    return -1;
   }
 
   /**

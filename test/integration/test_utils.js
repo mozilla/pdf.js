@@ -137,13 +137,19 @@ const mockClipboard = async pages => {
 };
 exports.mockClipboard = mockClipboard;
 
-const getSerialized = page =>
-  page.evaluate(() => {
+async function getSerialized(page, filter = undefined) {
+  const values = await page.evaluate(() => {
     const { map } =
       window.PDFViewerApplication.pdfDocument.annotationStorage.serializable;
     return map ? [...map.values()] : [];
   });
+  return filter ? values.map(filter) : values;
+}
 exports.getSerialized = getSerialized;
+
+const getFirstSerialized = async (page, filter = undefined) =>
+  (await getSerialized(page, filter))[0];
+exports.getFirstSerialized = getFirstSerialized;
 
 function getEditors(page, kind) {
   return page.evaluate(aKind => {
