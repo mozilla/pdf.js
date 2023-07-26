@@ -694,7 +694,7 @@ const PDFViewerApplication = {
   async run(config) {
     await this.initialize(config);
 
-    const { appConfig, eventBus, l10n } = this;
+    const { appConfig, eventBus } = this;
     let file;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       const queryString = document.location.search.substring(1);
@@ -745,7 +745,7 @@ const PDFViewerApplication = {
 
     if (!this.supportsDocumentFonts) {
       AppOptions.set("disableFontFace", true);
-      l10n.get("web_fonts_disabled").then(msg => {
+      this.l10n.get("web_fonts_disabled").then(msg => {
         console.warn(msg);
       });
     }
@@ -775,22 +775,16 @@ const PDFViewerApplication = {
       true
     );
 
-    try {
-      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-        if (file) {
-          this.open({ url: file });
-        } else {
-          this._hideViewBookmark();
-        }
-      } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
-        this.initPassiveLoading(file);
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+      if (file) {
+        this.open({ url: file });
       } else {
-        throw new Error("Not implemented: run");
+        this._hideViewBookmark();
       }
-    } catch (reason) {
-      l10n.get("loading_error").then(msg => {
-        this._documentError(msg, reason);
-      });
+    } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
+      this.initPassiveLoading(file);
+    } else {
+      throw new Error("Not implemented: run");
     }
   },
 
