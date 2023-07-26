@@ -53,6 +53,7 @@
   --toggled-btn-color: rgba(0, 0, 0, 1);
   --toggled-btn-bg-color: rgba(0, 0, 0, 0.3);
   --toggled-hover-active-btn-color: rgba(0, 0, 0, 0.4);
+  --toggled-hover-btn-outline: none;
   --dropdown-btn-bg-color: rgba(215, 215, 219, 1);
   --dropdown-btn-border: none;
   --separator-color: rgba(0, 0, 0, 0.3);
@@ -181,6 +182,8 @@
     --toolbar-icon-opacity: 1;
     --toolbar-icon-bg-color: ButtonText;
     --toolbar-icon-hover-bg-color: ButtonFace;
+    --toggled-hover-active-btn-color: ButtonText;
+    --toggled-hover-btn-outline: 2px solid ButtonBorder;
     --toolbar-border-color: CanvasText;
     --toolbar-border-bottom: 1px solid var(--toolbar-border-color);
     --toolbar-box-shadow: none;
@@ -762,6 +765,11 @@ body {
 .splitToolbarButton.toggled > .toolbarButton.toggled {
   background-color: var(--toggled-btn-bg-color);
   color: var(--toggled-btn-color);
+}
+
+:is(.toolbarButton, .secondaryToolbarButton).toggled:hover,
+.splitToolbarButton.toggled > .toolbarButton.toggled:hover {
+  outline: var(--toggled-hover-btn-outline) !important;
 }
 
 :is(.toolbarButton, .secondaryToolbarButton).toggled::before {
