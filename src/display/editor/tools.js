@@ -625,7 +625,7 @@ class AnnotationEditorUIManager {
           { args: [-small, 0], checker: arrowChecker },
         ],
         [
-          ["ctrl+ArrowLeft", "mac+meta+ArrowLeft"],
+          ["ctrl+ArrowLeft", "mac+shift+ArrowLeft"],
           AnnotationEditorUIManager.prototype.translateSelectedEditors,
           { args: [-big, 0], checker: arrowChecker },
         ],
@@ -635,7 +635,7 @@ class AnnotationEditorUIManager {
           { args: [small, 0], checker: arrowChecker },
         ],
         [
-          ["ctrl+ArrowRight", "mac+meta+ArrowRight"],
+          ["ctrl+ArrowRight", "mac+shift+ArrowRight"],
           AnnotationEditorUIManager.prototype.translateSelectedEditors,
           { args: [big, 0], checker: arrowChecker },
         ],
@@ -645,7 +645,7 @@ class AnnotationEditorUIManager {
           { args: [0, -small], checker: arrowChecker },
         ],
         [
-          ["ctrl+ArrowUp", "mac+meta+ArrowUp"],
+          ["ctrl+ArrowUp", "mac+shift+ArrowUp"],
           AnnotationEditorUIManager.prototype.translateSelectedEditors,
           { args: [0, -big], checker: arrowChecker },
         ],
@@ -655,7 +655,7 @@ class AnnotationEditorUIManager {
           { args: [0, small], checker: arrowChecker },
         ],
         [
-          ["ctrl+ArrowDown", "mac+meta+ArrowDown"],
+          ["ctrl+ArrowDown", "mac+shift+ArrowDown"],
           AnnotationEditorUIManager.prototype.translateSelectedEditors,
           { args: [0, big], checker: arrowChecker },
         ],
