@@ -561,9 +561,9 @@ class AnnotationEditorUIManager {
 
   #container = null;
 
-  static #TRANSLATE_SMALL = 1; // page units.
+  static TRANSLATE_SMALL = 1; // page units.
 
-  static #TRANSLATE_BIG = 10; // page units.
+  static TRANSLATE_BIG = 10; // page units.
 
   static get _keyboardManager() {
     const arrowChecker = self => {
@@ -576,8 +576,8 @@ class AnnotationEditorUIManager {
         self.hasSomethingToControl()
       );
     };
-    const small = this.#TRANSLATE_SMALL;
-    const big = this.#TRANSLATE_BIG;
+    const small = this.TRANSLATE_SMALL;
+    const big = this.TRANSLATE_BIG;
     return shadow(
       this,
       "_keyboardManager",
@@ -1379,8 +1379,10 @@ class AnnotationEditorUIManager {
     });
   }
 
-  translateSelectedEditors(x, y) {
-    this.commitOrRemove();
+  translateSelectedEditors(x, y, noCommit = false) {
+    if (!noCommit) {
+      this.commitOrRemove();
+    }
     if (!this.hasSelection) {
       return;
     }
