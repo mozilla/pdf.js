@@ -213,11 +213,9 @@ class XfaLayer {
       }
 
       let childHtml;
-      if (child?.attributes?.xmlns) {
-        childHtml = document.createElementNS(child.attributes.xmlns, name);
-      } else {
-        childHtml = document.createElement(name);
-      }
+      childHtml = child?.attributes?.xmlns
+        ? document.createElementNS(child.attributes.xmlns, name)
+        : document.createElement(name);
 
       html.append(childHtml);
       if (child.attributes) {

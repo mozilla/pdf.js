@@ -559,11 +559,7 @@ class CFFParser {
         validationCommand = CharstringValidationData[value];
       } else if (value === 10 || value === 29) {
         let subrsIndex;
-        if (value === 10) {
-          subrsIndex = localSubrIndex;
-        } else {
-          subrsIndex = globalSubrIndex;
-        }
+        subrsIndex = value === 10 ? localSubrIndex : globalSubrIndex;
         if (!subrsIndex) {
           validationCommand = CharstringValidationData[value];
           warn("Missing subrsIndex for " + validationCommand.id);

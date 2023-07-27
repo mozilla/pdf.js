@@ -271,11 +271,7 @@ function applyAssist(obj, attributes) {
   } else {
     const parent = obj[$getParent]();
     if (parent.layout === "row") {
-      if (parent.assist?.role === "TH") {
-        attributes.role = "columnheader";
-      } else {
-        attributes.role = "cell";
-      }
+      attributes.role = parent.assist?.role === "TH" ? "columnheader" : "cell";
     }
   }
 }

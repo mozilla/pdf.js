@@ -589,11 +589,10 @@ class OperatorList {
     this._streamSink = streamSink;
     this.fnArray = [];
     this.argsArray = [];
-    if (streamSink && !(intent & RenderingIntentFlag.OPLIST)) {
-      this.optimizer = new QueueOptimizer(this);
-    } else {
-      this.optimizer = new NullOptimizer(this);
-    }
+    this.optimizer =
+      streamSink && !(intent & RenderingIntentFlag.OPLIST)
+        ? new QueueOptimizer(this)
+        : new NullOptimizer(this);
     this.dependencies = new Set();
     this._totalLength = 0;
     this.weight = 0;
