@@ -127,18 +127,13 @@ function mapStyle(styleStr, node, richText) {
     }
     let newValue = value;
     if (mapping) {
-      if (typeof mapping === "string") {
-        newValue = mapping;
-      } else {
-        newValue = mapping(value, original);
-      }
+      newValue =
+        typeof mapping === "string" ? mapping : mapping(value, original);
     }
     if (key.endsWith("scale")) {
-      if (style.transform) {
-        style.transform = `${style[key]} ${newValue}`;
-      } else {
-        style.transform = newValue;
-      }
+      style.transform = style.transform
+        ? `${style[key]} ${newValue}`
+        : newValue;
     } else {
       style[key.replaceAll(/-([a-zA-Z])/g, (_, x) => x.toUpperCase())] =
         newValue;

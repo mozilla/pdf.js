@@ -247,11 +247,7 @@ class PDFFunction {
     }
 
     let decode = toNumberArray(dict.getArray("Decode"));
-    if (!decode) {
-      decode = range;
-    } else {
-      decode = toMultiArray(decode);
-    }
+    decode = !decode ? range : toMultiArray(decode);
 
     const samples = this.getSampleArray(size, outputSize, bps, fn);
     // const mask = 2 ** bps - 1;

@@ -1707,11 +1707,7 @@ class PDFDocument {
     const field = this.xref.fetchIfRef(fieldRef);
     if (field.has("T")) {
       const partName = stringToPDFString(field.get("T"));
-      if (name === "") {
-        name = partName;
-      } else {
-        name = `${name}.${partName}`;
-      }
+      name = name === "" ? partName : `${name}.${partName}`;
     }
 
     if (!field.has("Kids") && /\[\d+\]$/.test(name)) {

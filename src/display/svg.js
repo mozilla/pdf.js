@@ -78,11 +78,7 @@ const convertImgDataToPng = (function () {
   for (let i = 0; i < 256; i++) {
     let c = i;
     for (let h = 0; h < 8; h++) {
-      if (c & 1) {
-        c = 0xedb88320 ^ ((c >> 1) & 0x7fffffff);
-      } else {
-        c = (c >> 1) & 0x7fffffff;
-      }
+      c = c & 1 ? 0xedb88320 ^ ((c >> 1) & 0x7fffffff) : (c >> 1) & 0x7fffffff;
     }
     crcTable[i] = c;
   }
@@ -156,14 +152,9 @@ const convertImgDataToPng = (function () {
       // Node v0.11.12 zlib.deflateSync is introduced (and returns a Buffer).
       // Node v3.0.0   Buffer inherits from Uint8Array.
       // Node v8.0.0   zlib.deflateSync accepts Uint8Array as input.
-      let input;
-      // eslint-disable-next-line no-undef
-      if (parseInt(process.versions.node) >= 8) {
-        input = literals;
-      } else {
+      const input =
         // eslint-disable-next-line no-undef
-        input = Buffer.from(literals);
-      }
+        parseInt(process.versions.node) >= 8 ? literals : Buffer.from(literals);
       const output = __non_webpack_require__("zlib").deflateSync(input, {
         level: 9,
       });
@@ -861,12 +852,9 @@ class SVGGraphics {
         // might actually map to a different glyph.
       }
 
-      let charWidth;
-      if (vertical) {
-        charWidth = width * widthAdvanceScale - spacing * fontDirection;
-      } else {
-        charWidth = width * widthAdvanceScale + spacing * fontDirection;
-      }
+      const charWidth = vertical
+        ? width * widthAdvanceScale - spacing * fontDirection
+        : width * widthAdvanceScale + spacing * fontDirection;
 
       x += charWidth;
     }

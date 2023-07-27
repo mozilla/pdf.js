@@ -795,11 +795,7 @@ class AESBaseCipher {
 
     this._mixCol = new Uint8Array(256);
     for (let i = 0; i < 256; i++) {
-      if (i < 128) {
-        this._mixCol[i] = i << 1;
-      } else {
-        this._mixCol[i] = (i << 1) ^ 0x1b;
-      }
+      this._mixCol[i] = i < 128 ? i << 1 : (i << 1) ^ 0x1b;
     }
 
     this.buffer = new Uint8Array(16);
@@ -1449,12 +1445,7 @@ const CipherTransformFactory = (function CipherTransformFactoryClosure() {
     } else {
       password = [];
     }
-    let pdfAlgorithm;
-    if (revision === 6) {
-      pdfAlgorithm = new PDF20();
-    } else {
-      pdfAlgorithm = new PDF17();
-    }
+    const pdfAlgorithm = revision === 6 ? new PDF20() : new PDF17();
 
     if (
       pdfAlgorithm.checkUserPassword(password, userValidationSalt, userPassword)
