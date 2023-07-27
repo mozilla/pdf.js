@@ -837,7 +837,7 @@ class AnnotationEditorUIManager {
     }
 
     this.unselectAll();
-    const layer = this.#allLayers.get(this.#currentPageIndex);
+    const layer = this.currentLayer;
 
     try {
       const newEditors = [];
