@@ -78,11 +78,7 @@ const convertImgDataToPng = (function () {
   for (let i = 0; i < 256; i++) {
     let c = i;
     for (let h = 0; h < 8; h++) {
-      if (c & 1) {
-        c = 0xedb88320 ^ ((c >> 1) & 0x7fffffff);
-      } else {
-        c = (c >> 1) & 0x7fffffff;
-      }
+      c = c & 1 ? 0xedb88320 ^ ((c >> 1) & 0x7fffffff) : (c >> 1) & 0x7fffffff;
     }
     crcTable[i] = c;
   }
@@ -862,11 +858,9 @@ class SVGGraphics {
       }
 
       let charWidth;
-      if (vertical) {
-        charWidth = width * widthAdvanceScale - spacing * fontDirection;
-      } else {
-        charWidth = width * widthAdvanceScale + spacing * fontDirection;
-      }
+      charWidth = vertical
+        ? width * widthAdvanceScale - spacing * fontDirection
+        : width * widthAdvanceScale + spacing * fontDirection;
 
       x += charWidth;
     }

@@ -463,11 +463,10 @@ class PartialEvaluator {
     const dict = xobj.dict;
     const matrix = dict.getArray("Matrix");
     let bbox = dict.getArray("BBox");
-    if (Array.isArray(bbox) && bbox.length === 4) {
-      bbox = Util.normalizeRect(bbox);
-    } else {
-      bbox = null;
-    }
+    bbox =
+      Array.isArray(bbox) && bbox.length === 4
+        ? Util.normalizeRect(bbox)
+        : null;
 
     let optionalContent, groupOptions;
     if (dict.has("OC")) {
@@ -795,11 +794,9 @@ class PartialEvaluator {
 
         if (cacheKey && imageRef && cacheGlobally) {
           let length = 0;
-          if (imgData.bitmap) {
-            length = imgData.width * imgData.height * 4;
-          } else {
-            length = imgData.data.length;
-          }
+          length = imgData.bitmap
+            ? imgData.width * imgData.height * 4
+            : imgData.data.length;
           this.globalImageCache.addByteSize(imageRef, length);
         }
 
@@ -3953,11 +3950,7 @@ class PartialEvaluator {
     if (!(lookupName in Metrics)) {
       // Use default fonts for looking up font metrics if the passed
       // font is not a base font
-      if (this.isSerifFont(name)) {
-        lookupName = "Times-Roman";
-      } else {
-        lookupName = "Helvetica";
-      }
+      lookupName = this.isSerifFont(name) ? "Times-Roman" : "Helvetica";
     }
     const glyphWidths = Metrics[lookupName];
 

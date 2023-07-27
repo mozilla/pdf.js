@@ -211,11 +211,9 @@ function searchNode(
             break;
           case operators.dotHash:
             children = node[$getChildrenByClass](name);
-            if (children.isXFAObjectArray) {
-              children = children.children;
-            } else {
-              children = [children];
-            }
+            children = children.isXFAObjectArray
+              ? children.children
+              : [children];
             break;
           default:
             break;
@@ -244,11 +242,9 @@ function searchNode(
       continue;
     }
 
-    if (isFinite(index)) {
-      root = nodes.filter(node => index < node.length).map(node => node[index]);
-    } else {
-      root = nodes.flat();
-    }
+    root = isFinite(index)
+      ? nodes.filter(node => index < node.length).map(node => node[index])
+      : nodes.flat();
   }
 
   if (root.length === 0) {
@@ -294,11 +290,7 @@ function createDataNode(root, container, expr) {
         break;
       case operators.dotHash:
         children = root[$getChildrenByClass](name);
-        if (children.isXFAObjectArray) {
-          children = children.children;
-        } else {
-          children = [children];
-        }
+        children = children.isXFAObjectArray ? children.children : [children];
         break;
       default:
         break;

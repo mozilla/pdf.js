@@ -376,17 +376,9 @@ function getFontFileType(file, { type, subtype, composite }) {
   let fileType, fileSubtype;
 
   if (isTrueTypeFile(file) || isTrueTypeCollectionFile(file)) {
-    if (composite) {
-      fileType = "CIDFontType2";
-    } else {
-      fileType = "TrueType";
-    }
+    fileType = composite ? "CIDFontType2" : "TrueType";
   } else if (isOpenTypeFile(file)) {
-    if (composite) {
-      fileType = "CIDFontType2";
-    } else {
-      fileType = "OpenType";
-    }
+    fileType = composite ? "CIDFontType2" : "OpenType";
   } else if (isType1File(file)) {
     if (composite) {
       fileType = "CIDFontType0";

@@ -116,11 +116,10 @@ class RadialAxialShading extends BaseShading {
       localColorSpaceCache,
     });
     const bbox = dict.getArray("BBox");
-    if (Array.isArray(bbox) && bbox.length === 4) {
-      this.bbox = Util.normalizeRect(bbox);
-    } else {
-      this.bbox = null;
-    }
+    this.bbox =
+      Array.isArray(bbox) && bbox.length === 4
+        ? Util.normalizeRect(bbox)
+        : null;
 
     let t0 = 0.0,
       t1 = 1.0;
@@ -458,11 +457,10 @@ class MeshShading extends BaseShading {
     const dict = stream.dict;
     this.shadingType = dict.get("ShadingType");
     const bbox = dict.getArray("BBox");
-    if (Array.isArray(bbox) && bbox.length === 4) {
-      this.bbox = Util.normalizeRect(bbox);
-    } else {
-      this.bbox = null;
-    }
+    this.bbox =
+      Array.isArray(bbox) && bbox.length === 4
+        ? Util.normalizeRect(bbox)
+        : null;
     const cs = ColorSpace.parse({
       cs: dict.getRaw("CS") || dict.getRaw("ColorSpace"),
       xref,
