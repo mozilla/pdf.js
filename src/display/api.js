@@ -316,6 +316,8 @@ function getDocument(src) {
       : (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
         (CMapReaderFactory === DOMCMapReaderFactory &&
           StandardFontDataFactory === DOMStandardFontDataFactory &&
+          cMapUrl &&
+          standardFontDataUrl &&
           isValidFetchUrl(cMapUrl, document.baseURI) &&
           isValidFetchUrl(standardFontDataUrl, document.baseURI));
   const canvasFactory =
