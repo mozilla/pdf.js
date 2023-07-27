@@ -1305,9 +1305,7 @@ const CalRGBCS = (function CalRGBCSClosure() {
 const LabCS = (function LabCSClosure() {
   // Function g(x) from spec
   function fn_g(x) {
-    let result;
-    result = x >= 6 / 29 ? x ** 3 : (108 / 841) * (x - 4 / 29);
-    return result;
+    return x >= 6 / 29 ? x ** 3 : (108 / 841) * (x - 4 / 29);
   }
 
   function decode(value, high1, low2, high2) {

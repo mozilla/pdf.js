@@ -793,8 +793,7 @@ class PartialEvaluator {
         );
 
         if (cacheKey && imageRef && cacheGlobally) {
-          let length = 0;
-          length = imgData.bitmap
+          const length = imgData.bitmap
             ? imgData.width * imgData.height * 4
             : imgData.data.length;
           this.globalImageCache.addByteSize(imageRef, length);

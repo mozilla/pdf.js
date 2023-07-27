@@ -152,14 +152,9 @@ const convertImgDataToPng = (function () {
       // Node v0.11.12 zlib.deflateSync is introduced (and returns a Buffer).
       // Node v3.0.0   Buffer inherits from Uint8Array.
       // Node v8.0.0   zlib.deflateSync accepts Uint8Array as input.
-      let input;
-      // eslint-disable-next-line no-undef
-      if (parseInt(process.versions.node) >= 8) {
-        input = literals;
-      } else {
+      const input =
         // eslint-disable-next-line no-undef
-        input = Buffer.from(literals);
-      }
+        parseInt(process.versions.node) >= 8 ? literals : Buffer.from(literals);
       const output = __non_webpack_require__("zlib").deflateSync(input, {
         level: 9,
       });
@@ -857,8 +852,7 @@ class SVGGraphics {
         // might actually map to a different glyph.
       }
 
-      let charWidth;
-      charWidth = vertical
+      const charWidth = vertical
         ? width * widthAdvanceScale - spacing * fontDirection
         : width * widthAdvanceScale + spacing * fontDirection;
 
