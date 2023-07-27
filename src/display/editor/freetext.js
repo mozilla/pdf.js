@@ -65,9 +65,13 @@ class FreeTextEditor extends AnnotationEditor {
   static _defaultFontSize = 10;
 
   static get _keyboardManager() {
+    const proto = FreeTextEditor.prototype;
+
     const arrowChecker = self => self.isEmpty();
+
     const small = AnnotationEditorUIManager.TRANSLATE_SMALL;
     const big = AnnotationEditorUIManager.TRANSLATE_BIG;
+
     return shadow(
       this,
       "_keyboardManager",
@@ -77,51 +81,51 @@ class FreeTextEditor extends AnnotationEditor {
           // The event must bubble in order to be caught by the viewer.
           // See bug 1831574.
           ["ctrl+s", "mac+meta+s", "ctrl+p", "mac+meta+p"],
-          FreeTextEditor.prototype.commitOrRemove,
+          proto.commitOrRemove,
           { bubbles: true },
         ],
         [
           ["ctrl+Enter", "mac+meta+Enter", "Escape", "mac+Escape"],
-          FreeTextEditor.prototype.commitOrRemove,
+          proto.commitOrRemove,
         ],
         [
           ["ArrowLeft", "mac+ArrowLeft"],
-          FreeTextEditor.prototype._translateEmpty,
+          proto._translateEmpty,
           { args: [-small, 0], checker: arrowChecker },
         ],
         [
           ["ctrl+ArrowLeft", "mac+shift+ArrowLeft"],
-          FreeTextEditor.prototype._translateEmpty,
+          proto._translateEmpty,
           { args: [-big, 0], checker: arrowChecker },
         ],
         [
           ["ArrowRight", "mac+ArrowRight"],
-          FreeTextEditor.prototype._translateEmpty,
+          proto._translateEmpty,
           { args: [small, 0], checker: arrowChecker },
         ],
         [
           ["ctrl+ArrowRight", "mac+shift+ArrowRight"],
-          FreeTextEditor.prototype._translateEmpty,
+          proto._translateEmpty,
           { args: [big, 0], checker: arrowChecker },
         ],
         [
           ["ArrowUp", "mac+ArrowUp"],
-          FreeTextEditor.prototype._translateEmpty,
+          proto._translateEmpty,
           { args: [0, -small], checker: arrowChecker },
         ],
         [
           ["ctrl+ArrowUp", "mac+shift+ArrowUp"],
-          FreeTextEditor.prototype._translateEmpty,
+          proto._translateEmpty,
           { args: [0, -big], checker: arrowChecker },
         ],
         [
           ["ArrowDown", "mac+ArrowDown"],
-          FreeTextEditor.prototype._translateEmpty,
+          proto._translateEmpty,
           { args: [0, small], checker: arrowChecker },
         ],
         [
           ["ctrl+ArrowDown", "mac+shift+ArrowDown"],
-          FreeTextEditor.prototype._translateEmpty,
+          proto._translateEmpty,
           { args: [0, big], checker: arrowChecker },
         ],
       ])
