@@ -44,6 +44,17 @@ const copyPaste = async page => {
   await promise;
 };
 
+const clearAll = async page => {
+  await page.keyboard.down("Control");
+  await page.keyboard.press("a");
+  await page.keyboard.up("Control");
+  await page.waitForTimeout(10);
+  await page.keyboard.down("Control");
+  await page.keyboard.press("Backspace");
+  await page.keyboard.up("Control");
+  await page.waitForTimeout(10);
+};
+
 describe("FreeText Editor", () => {
   describe("FreeText", () => {
     let pages;
@@ -140,17 +151,7 @@ describe("FreeText Editor", () => {
     it("must clear all", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.keyboard.down("Control");
-          await page.keyboard.press("a");
-          await page.keyboard.up("Control");
-
-          await page.waitForTimeout(10);
-
-          await page.keyboard.down("Control");
-          await page.keyboard.press("Backspace");
-          await page.keyboard.up("Control");
-
-          await page.waitForTimeout(10);
+          await clearAll(page);
 
           for (const n of [0, 1, 2]) {
             const hasEditor = await page.evaluate(sel => {
@@ -285,6 +286,7 @@ describe("FreeText Editor", () => {
 
           // Commit.
           await page.keyboard.press("Escape");
+          await page.waitForTimeout(10);
 
           const ariaOwns = await page.$eval(".textLayer", el => {
             const span = el.querySelector(`span[pdfjs="true"]`);
@@ -306,17 +308,7 @@ describe("FreeText Editor", () => {
             return { x, y };
           });
 
-          await page.keyboard.down("Control");
-          await page.keyboard.press("a");
-          await page.keyboard.up("Control");
-
-          await page.waitForTimeout(10);
-
-          await page.keyboard.down("Control");
-          await page.keyboard.press("Backspace");
-          await page.keyboard.up("Control");
-
-          await page.waitForTimeout(10);
+          await clearAll(page);
 
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
@@ -377,13 +369,7 @@ describe("FreeText Editor", () => {
           return { x, y };
         });
 
-        await page.keyboard.down("Control");
-        await page.keyboard.press("a");
-        await page.keyboard.up("Control");
-
-        await page.keyboard.down("Control");
-        await page.keyboard.press("Backspace");
-        await page.keyboard.up("Control");
+        await clearAll(page);
 
         await page.mouse.click(rect.x + 200, rect.y + 100);
 
@@ -1915,6 +1901,101 @@ describe("FreeText Editor", () => {
           expect(newWidth)
             .withContext(`In ${browserName}`)
             .not.toEqual(pageWidth);
+        })
+      );
+    });
+
+    it("must check the position of an empty freetext", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await clearAll(page);
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          const data = "Hello PDF.js World !!";
+          await page.mouse.click(rect.x + 100, rect.y + 100);
+          await page.type(`${getEditorSelector(1)} .internal`, data);
+
+          const editorRect = await page.$eval(getEditorSelector(1), el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return {
+              x,
+              y,
+              width,
+              height,
+            };
+          });
+
+          // Commit.
+          await page.mouse.click(
+            editorRect.x,
+            editorRect.y + 2 * editorRect.height
+          );
+          await page.waitForTimeout(10);
+
+          const [pageX, pageY] = await getFirstSerialized(page, x => x.rect);
+
+          await clearAll(page);
+          await page.mouse.click(rect.x + 100, rect.y + 100);
+
+          for (let i = 0; i < 20; i++) {
+            await page.keyboard.press("ArrowRight");
+            await page.waitForTimeout(1);
+          }
+          await page.waitForTimeout(10);
+
+          for (let i = 0; i < 2; i++) {
+            await page.keyboard.down("Control");
+            await page.keyboard.press("ArrowDown");
+            await page.keyboard.up("Control");
+            await page.waitForTimeout(1);
+          }
+          await page.waitForTimeout(10);
+
+          for (let i = 0; i < 20; i++) {
+            await page.keyboard.press("ArrowLeft");
+            await page.waitForTimeout(1);
+          }
+          await page.waitForTimeout(10);
+
+          for (let i = 0; i < 2; i++) {
+            await page.keyboard.down("Control");
+            await page.keyboard.press("ArrowUp");
+            await page.keyboard.up("Control");
+            await page.waitForTimeout(1);
+          }
+          await page.waitForTimeout(10);
+
+          for (let i = 0; i < 2; i++) {
+            await page.keyboard.down("Control");
+            await page.keyboard.press("ArrowRight");
+            await page.keyboard.up("Control");
+            await page.waitForTimeout(1);
+          }
+          await page.waitForTimeout(10);
+
+          for (let i = 0; i < 2; i++) {
+            await page.keyboard.down("Control");
+            await page.keyboard.press("ArrowLeft");
+            await page.keyboard.up("Control");
+            await page.waitForTimeout(1);
+          }
+          await page.waitForTimeout(10);
+
+          await page.type(`${getEditorSelector(2)} .internal`, data);
+          await page.keyboard.press("Escape");
+          await page.waitForTimeout(10);
+
+          const [newX, newY] = await getFirstSerialized(page, x => x.rect);
+          expect(Math.round(newX))
+            .withContext(`In ${browserName}`)
+            .toEqual(Math.round(pageX));
+          expect(Math.round(newY))
+            .withContext(`In ${browserName}`)
+            .toEqual(Math.round(pageY));
         })
       );
     });
