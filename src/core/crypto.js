@@ -1445,8 +1445,7 @@ const CipherTransformFactory = (function CipherTransformFactoryClosure() {
     } else {
       password = [];
     }
-    let pdfAlgorithm;
-    pdfAlgorithm = revision === 6 ? new PDF20() : new PDF17();
+    const pdfAlgorithm = revision === 6 ? new PDF20() : new PDF17();
 
     if (
       pdfAlgorithm.checkUserPassword(password, userValidationSalt, userPassword)

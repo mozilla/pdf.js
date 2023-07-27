@@ -854,8 +854,7 @@ function genericComposeSMask(
   const g0 = hasBackdrop ? backdrop[1] : 0;
   const b0 = hasBackdrop ? backdrop[2] : 0;
 
-  let composeFn;
-  composeFn =
+  const composeFn =
     subtype === "Luminosity" ? composeSMaskLuminosity : composeSMaskAlpha;
 
   // processing image in chunks to save memory
@@ -2254,8 +2253,7 @@ class CanvasGraphics {
         }
       }
 
-      let charWidth;
-      charWidth = vertical
+      const charWidth = vertical
         ? width * widthAdvanceScale - spacing * fontDirection
         : width * widthAdvanceScale + spacing * fontDirection;
       x += charWidth;

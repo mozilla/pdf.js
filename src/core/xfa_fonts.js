@@ -224,8 +224,7 @@ function getXfaFontWidths(name) {
   }
 
   const { baseWidths, baseMapping, factors } = info;
-  let rescaledBaseWidths;
-  rescaledBaseWidths = !factors
+  const rescaledBaseWidths = !factors
     ? baseWidths
     : baseWidths.map((w, i) => w * factors[i]);
 

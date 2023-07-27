@@ -839,8 +839,7 @@ class Annotation {
 
   setRotation(mk, dict) {
     this.rotation = 0;
-    let angle;
-    angle = mk instanceof Dict ? mk.get("R") || 0 : dict.get("Rotate") || 0;
+    let angle = mk instanceof Dict ? mk.get("R") || 0 : dict.get("Rotate") || 0;
     if (Number.isInteger(angle) && angle !== 0) {
       angle %= 360;
       if (angle < 0) {

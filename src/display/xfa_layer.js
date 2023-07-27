@@ -212,8 +212,7 @@ class XfaLayer {
         continue;
       }
 
-      let childHtml;
-      childHtml = child?.attributes?.xmlns
+      const childHtml = child?.attributes?.xmlns
         ? document.createElementNS(child.attributes.xmlns, name)
         : document.createElement(name);
 
