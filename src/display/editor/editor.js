@@ -975,7 +975,7 @@ class AnnotationEditor {
     if (this.div?.contains(document.activeElement)) {
       // Don't use this.div.blur() because we don't know where the focus will
       // go.
-      this.parent.div.focus();
+      this._uiManager.currentLayer.div.focus();
     }
   }
 
