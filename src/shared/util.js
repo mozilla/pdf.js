@@ -616,14 +616,15 @@ class FeatureTest {
 
   static get platform() {
     if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      typeof navigator === "undefined"
+      (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+      (typeof navigator !== "undefined" &&
+        typeof navigator?.platform === "string")
     ) {
-      return shadow(this, "platform", { isMac: false });
+      return shadow(this, "platform", {
+        isMac: navigator.platform.includes("Mac"),
+      });
     }
-    return shadow(this, "platform", {
-      isMac: navigator.platform.includes("Mac"),
-    });
+    return shadow(this, "platform", { isMac: false });
   }
 
   static get isCSSRoundSupported() {
