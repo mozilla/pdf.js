@@ -854,12 +854,8 @@ function genericComposeSMask(
   const g0 = hasBackdrop ? backdrop[1] : 0;
   const b0 = hasBackdrop ? backdrop[2] : 0;
 
-  let composeFn;
-  if (subtype === "Luminosity") {
-    composeFn = composeSMaskLuminosity;
-  } else {
-    composeFn = composeSMaskAlpha;
-  }
+  const composeFn =
+    subtype === "Luminosity" ? composeSMaskLuminosity : composeSMaskAlpha;
 
   // processing image in chunks to save memory
   const PIXELS_TO_PROCESS = 1048576;
@@ -2257,12 +2253,9 @@ class CanvasGraphics {
         }
       }
 
-      let charWidth;
-      if (vertical) {
-        charWidth = width * widthAdvanceScale - spacing * fontDirection;
-      } else {
-        charWidth = width * widthAdvanceScale + spacing * fontDirection;
-      }
+      const charWidth = vertical
+        ? width * widthAdvanceScale - spacing * fontDirection
+        : width * widthAdvanceScale + spacing * fontDirection;
       x += charWidth;
 
       if (restoreNeeded) {

@@ -1384,11 +1384,7 @@ function copyCoefficients(
           }
           nb = bitsDecoded[position];
           const pos = interleave ? levelOffset + (offset << 1) : offset;
-          if (reversible && nb >= mb) {
-            coefficients[pos] = n;
-          } else {
-            coefficients[pos] = n * (1 << (mb - nb));
-          }
+          coefficients[pos] = reversible && nb >= mb ? n : n * (1 << (mb - nb));
         }
         offset++;
         position++;
