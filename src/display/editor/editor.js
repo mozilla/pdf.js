@@ -972,6 +972,11 @@ class AnnotationEditor {
   unselect() {
     this.#resizersDiv?.classList.add("hidden");
     this.div?.classList.remove("selectedEditor");
+    if (this.div?.contains(document.activeElement)) {
+      // Don't use this.div.blur() because we don't know where the focus will
+      // go.
+      this.parent.div.focus();
+    }
   }
 
   /**
