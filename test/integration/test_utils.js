@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-exports.loadAndWait = (filename, selector, zoom) =>
+exports.loadAndWait = (filename, selector, zoom, pageSetup) =>
   Promise.all(
     global.integrationSessions.map(async session => {
       const page = await session.browser.newPage();
@@ -38,6 +38,10 @@ exports.loadAndWait = (filename, selector, zoom) =>
         url += `#zoom=${zoom}`;
       }
       await page.goto(url);
+      if (pageSetup) {
+        await pageSetup(page);
+      }
+
       await page.bringToFront();
       await page.waitForSelector(selector, {
         timeout: 0,
