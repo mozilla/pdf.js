@@ -81,6 +81,7 @@ describe("FreeText Editor", () => {
 
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
+          await page.waitForTimeout(10);
           await page.type(`${getEditorSelector(0)} .internal`, data);
 
           const editorRect = await page.$eval(getEditorSelector(0), el => {
@@ -176,6 +177,7 @@ describe("FreeText Editor", () => {
 
         const data = "Hello PDF.js World !!";
         await page.mouse.click(rect.x + 100, rect.y + 100);
+        await page.waitForTimeout(10);
         await page.type(`${getEditorSelector(3)} .internal`, data);
 
         const editorRect = await page.$eval(getEditorSelector(3), el => {
@@ -282,6 +284,7 @@ describe("FreeText Editor", () => {
             stacksRect.x + stacksRect.width + 1,
             stacksRect.y + stacksRect.height / 2
           );
+          await page.waitForTimeout(10);
           await page.type(`${getEditorSelector(7)} .internal`, data);
 
           // Commit.
@@ -312,6 +315,7 @@ describe("FreeText Editor", () => {
 
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
+          await page.waitForTimeout(10);
           await page.type(`${getEditorSelector(8)} .internal`, data);
 
           const editorRect = await page.$eval(getEditorSelector(8), el => {
@@ -464,6 +468,7 @@ describe("FreeText Editor", () => {
           editorRect.y + editorRect.height / 2,
           { clickCount: 2 }
         );
+        await page.waitForTimeout(10);
         await page.type(`${getEditorSelector(9)} .internal`, "A");
 
         // Commit.
@@ -511,6 +516,7 @@ describe("FreeText Editor", () => {
             rect.x + (i + 1) * 100,
             rect.y + (i + 1) * 100
           );
+          await page.waitForTimeout(10);
           await page.type(`${getEditorSelector(i)} .internal`, data);
 
           const editorRect = await page.$eval(getEditorSelector(i), el => {
@@ -688,6 +694,7 @@ describe("FreeText Editor", () => {
             const data = `Hello PDF.js World !! on page ${pageNumber}`;
             expected.push(data);
             await page.mouse.click(rect.x + 100, rect.y + 100);
+            await page.waitForTimeout(10);
             await page.type(`${getEditorSelector(currentId)} .internal`, data);
 
             // Commit.
@@ -809,6 +816,7 @@ describe("FreeText Editor", () => {
             const x = rect.x + 0.1 * rect.width;
             const y = rect.y + 0.1 * rect.height;
             await page.mouse.click(x, y);
+            await page.waitForTimeout(10);
             await page.type(`${getEditorSelector(currentId)} .internal`, data);
 
             // Commit.
@@ -820,6 +828,18 @@ describe("FreeText Editor", () => {
             });
             currentId += 1;
             await page.waitForTimeout(10);
+            await page.waitForSelector(
+              ".page[data-page-number='1'] .canvasWrapper",
+              {
+                timeout: 0,
+              }
+            );
+            await page.waitForSelector(
+              ".page[data-page-number='1'] .annotationEditorLayer:not([hidden])",
+              {
+                timeout: 0,
+              }
+            );
           }
 
           const serialize = proprName =>
@@ -1060,7 +1080,7 @@ describe("FreeText Editor", () => {
             editorRect.x + editorRect.width / 2,
             editorRect.y + editorRect.height / 2
           );
-
+          await page.waitForTimeout(10);
           await page.keyboard.press("Backspace");
           await page.waitForTimeout(10);
 
@@ -1256,6 +1276,7 @@ describe("FreeText Editor", () => {
 
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
+          await page.waitForTimeout(10);
           await page.type(`${getEditorSelector(0)} .internal`, data);
 
           const editorRect = await page.$eval(getEditorSelector(0), el => {
@@ -1361,6 +1382,7 @@ describe("FreeText Editor", () => {
 
             const data = `Hello PDF.js World !! on page ${pageNumber}`;
             await page.mouse.click(rect.x + 100, rect.y + 100);
+            await page.waitForTimeout(10);
             await page.type(`${getEditorSelector(currentId)} .internal`, data);
 
             // Commit.
@@ -1721,6 +1743,7 @@ describe("FreeText Editor", () => {
 
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
+          await page.waitForTimeout(10);
           await page.type(`${getEditorSelector(0)} .internal`, data);
 
           const editorRect = await page.$eval(getEditorSelector(0), el => {
@@ -1791,6 +1814,7 @@ describe("FreeText Editor", () => {
 
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 200, rect.y + 200);
+          await page.waitForTimeout(10);
           await page.type(`${getEditorSelector(0)} .internal`, data);
 
           const editorRect = await page.$eval(getEditorSelector(0), el => {
@@ -1917,6 +1941,7 @@ describe("FreeText Editor", () => {
 
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
+          await page.waitForTimeout(10);
           await page.type(`${getEditorSelector(1)} .internal`, data);
 
           const editorRect = await page.$eval(getEditorSelector(1), el => {
