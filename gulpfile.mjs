@@ -286,10 +286,9 @@ function createWebpackConfig(
       for (const key in viewerAlias) {
         viewerAlias[key] = gvAlias[key] || "web/stubs-geckoview.js";
       }
-    } else {
-      viewerAlias["web-print_service"] = "web/firefox_print_service.js";
     }
     viewerAlias["web-com"] = "web/firefoxcom.js";
+    viewerAlias["web-print_service"] = "web/firefox_print_service.js";
   }
   const alias = { ...basicAlias, ...libraryAlias, ...viewerAlias };
   for (const key in alias) {
