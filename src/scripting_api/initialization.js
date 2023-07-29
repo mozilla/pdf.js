@@ -34,6 +34,7 @@ import { Color } from "./color.js";
 import { Console } from "./console.js";
 import { Doc } from "./doc.js";
 import { ProxyHandler } from "./proxy.js";
+import { serializeError } from "./app_utils.js";
 import { Util } from "./util.js";
 
 function initSandbox(params) {
@@ -214,8 +215,7 @@ function initSandbox(params) {
     try {
       functions[name](args);
     } catch (error) {
-      const value = `${error.toString()}\n${error.stack}`;
-      send({ command: "error", value });
+      send(serializeError(error));
     }
   };
 }
