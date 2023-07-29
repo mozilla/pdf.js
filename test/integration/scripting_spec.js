@@ -20,6 +20,7 @@ const {
   getQuerySelector,
   getComputedStyleSelector,
   loadAndWait,
+  getFirstSerialized,
 } = require("./test_utils.js");
 
 describe("Interaction", () => {
@@ -751,10 +752,22 @@ describe("Interaction", () => {
               delay: 10,
             });
 
-            for (const [id, propName, expected] of [
-              [41, "backgroundColor", "rgb(255, 0, 0)"],
-              [43, "color", "rgb(0, 255, 0)"],
-              [44, "border-top-color", "rgb(0, 0, 255)"],
+            for (const [id, propName, storedName, expected, storedExpected] of [
+              [
+                41,
+                "backgroundColor",
+                "backgroundColor",
+                "rgb(255, 0, 0)",
+                [255, 0, 0],
+              ],
+              [43, "color", "color", "rgb(0, 255, 0)", [0, 255, 0]],
+              [
+                44,
+                "border-top-color",
+                "borderColor",
+                "rgb(0, 0, 255)",
+                [0, 0, 255],
+              ],
             ]) {
               const current = await page.$eval(
                 getSelector(ref),
@@ -775,6 +788,11 @@ describe("Interaction", () => {
                 propName
               );
               expect(color).withContext(`In ${browserName}`).toEqual(expected);
+
+              const storedValue = (await getFirstSerialized(page))[storedName];
+              expect(storedValue)
+                .withContext(`In ${browserName}`)
+                .toEqual(storedExpected);
             }
           }
         })

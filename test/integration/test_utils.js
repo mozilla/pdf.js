@@ -63,6 +63,7 @@ exports.clearInput = async (page, selector) => {
   await page.keyboard.press("A");
   await page.keyboard.up("Control");
   await page.keyboard.press("Backspace");
+  await page.waitForTimeout(10);
 };
 
 function getSelector(id) {
