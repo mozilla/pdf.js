@@ -51,6 +51,8 @@ class PDFScriptingManager {
 
   #scripting = null;
 
+  #willPrintCapability = null;
+
   /**
    * @param {PDFScriptingManagerOptions} options
    */
@@ -203,10 +205,23 @@ class PDFScriptingManager {
   }
 
   async dispatchWillPrint() {
-    return this.#scripting?.dispatchEventInSandbox({
-      id: "doc",
-      name: "WillPrint",
-    });
+    if (!this.#scripting) {
+      return;
+    }
+    await this.#willPrintCapability?.promise;
+    this.#willPrintCapability = new PromiseCapability();
+    try {
+      await this.#scripting.dispatchEventInSandbox({
+        id: "doc",
+        name: "WillPrint",
+      });
+    } catch (ex) {
+      this.#willPrintCapability.resolve();
+      this.#willPrintCapability = null;
+      throw ex;
+    }
+
+    await this.#willPrintCapability.promise;
   }
 
   async dispatchDidPrint() {
@@ -305,6 +320,10 @@ class PDFScriptingManager {
           if (!isInPresentationMode) {
             pdfViewer.decreaseScale();
           }
+          break;
+        case "WillPrintFinished":
+          this.#willPrintCapability?.resolve();
+          this.#willPrintCapability = null;
           break;
       }
       return;
@@ -431,6 +450,9 @@ class PDFScriptingManager {
     try {
       await this.#scripting.destroySandbox();
     } catch {}
+
+    this.#willPrintCapability?.reject(new Error("Scripting destroyed."));
+    this.#willPrintCapability = null;
 
     for (const [name, listener] of this._internalEvents) {
       this.#eventBus._off(name, listener);
