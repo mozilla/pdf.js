@@ -2042,4 +2042,60 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("in annotation_hidden_noview.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "annotation_hidden_noview.pdf",
+        getSelector("11R")
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that invisible fields are made visible", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          let visibility = await page.$eval(
+            getSelector("7R"),
+            el => getComputedStyle(el).visibility
+          );
+          expect(visibility).withContext(`In ${browserName}`).toEqual("hidden");
+
+          visibility = await page.$eval(
+            getSelector("8R"),
+            el => getComputedStyle(el).visibility
+          );
+          expect(visibility).withContext(`In ${browserName}`).toEqual("hidden");
+
+          await page.click(getSelector("11R"));
+          await page.waitForTimeout(10);
+
+          visibility = await page.$eval(
+            getSelector("7R"),
+            el => getComputedStyle(el).visibility
+          );
+          expect(visibility)
+            .withContext(`In ${browserName}`)
+            .toEqual("visible");
+
+          visibility = await page.$eval(
+            getSelector("8R"),
+            el => getComputedStyle(el).visibility
+          );
+          expect(visibility)
+            .withContext(`In ${browserName}`)
+            .toEqual("visible");
+        })
+      );
+    });
+  });
 });

@@ -3420,7 +3420,7 @@
        "print": true,
        "annotationStorage": {
          "427R": {
-           "hidden": false,
+           "noPrint": false,
            "value": "hello world"
          }
        }
@@ -8054,5 +8054,21 @@
           "rotation": 0
         }
       }
+   },
+   {
+      "id": "widget_hidden_print",
+      "file": "pdfs/widget_hidden_print.pdf",
+      "md5": "0b8d5a8e8c7c7598232a79044c312cbb",
+      "rounds": 1,
+      "type": "eq",
+      "print": true
+   },
+   {
+      "id": "annotation_hidden_print",
+      "file": "pdfs/annotation_hidden_print.pdf",
+      "md5": "5cfa86df9b080feeb4aa320ad68d6cbd",
+      "rounds": 1,
+      "type": "eq",
+      "print": true
    }
 ]

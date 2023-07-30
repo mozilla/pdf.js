@@ -342,24 +342,27 @@ class AnnotationElement {
 
     return shadow(this, "_commonActions", {
       display: event => {
-        const hidden = event.detail.display % 2 === 1;
+        const { display } = event.detail;
+        // See scripting/constants.js for the values of `Display`.
+        // 0 = visible, 1 = hidden, 2 = noPrint and 3 = noView.
+        const hidden = display % 2 === 1;
         this.container.style.visibility = hidden ? "hidden" : "visible";
         this.annotationStorage.setValue(this.data.id, {
-          hidden,
-          print: event.detail.display === 0 || event.detail.display === 3,
+          noView: hidden,
+          noPrint: display === 1 || display === 2,
         });
       },
       print: event => {
         this.annotationStorage.setValue(this.data.id, {
-          print: event.detail.print,
+          noPrint: !event.detail.print,
         });
       },
       hidden: event => {
-        this.container.style.visibility = event.detail.hidden
-          ? "hidden"
-          : "visible";
+        const { hidden } = event.detail;
+        this.container.style.visibility = hidden ? "hidden" : "visible";
         this.annotationStorage.setValue(this.data.id, {
-          hidden: event.detail.hidden,
+          noPrint: hidden,
+          noView: hidden,
         });
       },
       focus: event => {
