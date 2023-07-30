@@ -556,7 +556,8 @@ class Page {
       for (const annotation of annotations) {
         if (
           intentAny ||
-          (intentDisplay && annotation.mustBeViewed(annotationStorage)) ||
+          (intentDisplay &&
+            annotation.mustBeViewed(annotationStorage, renderForms)) ||
           (intentPrint && annotation.mustBePrinted(annotationStorage))
         ) {
           opListPromises.push(
