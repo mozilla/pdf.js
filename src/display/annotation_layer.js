@@ -331,9 +331,13 @@ class AnnotationElement {
   get _commonActions() {
     const setColor = (jsName, styleName, event) => {
       const color = event.detail[jsName];
-      event.target.style[styleName] = ColorConverters[`${color[0]}_HTML`](
-        color.slice(1)
-      );
+      const colorType = color[0];
+      const colorArray = color.slice(1);
+      event.target.style[styleName] =
+        ColorConverters[`${colorType}_HTML`](colorArray);
+      this.annotationStorage.setValue(this.data.id, {
+        [styleName]: ColorConverters[`${colorType}_rgb`](colorArray),
+      });
     };
 
     return shadow(this, "_commonActions", {
