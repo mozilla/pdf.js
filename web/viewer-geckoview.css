@@ -26,6 +26,10 @@
   --body-bg-color: rgba(212, 212, 215, 1);
   --scrollbar-color: auto;
   --scrollbar-bg-color: auto;
+  --field-color: rgba(6, 6, 6, 1);
+  --field-bg-color: rgba(255, 255, 255, 1);
+  --field-border-color: rgba(187, 187, 188, 1);
+  --doorhanger-bg-color: rgba(255, 255, 255, 1);
   --dialog-button-border: none;
   --dialog-button-bg-color: rgba(12, 12, 13, 0.1);
   --dialog-button-hover-bg-color: rgba(12, 12, 13, 0.3);
@@ -48,6 +52,10 @@
     --body-bg-color: rgba(42, 42, 46, 1);
     --scrollbar-color: rgba(121, 121, 123, 1);
     --scrollbar-bg-color: rgba(35, 35, 39, 1);
+    --field-color: rgba(250, 250, 250, 1);
+    --field-bg-color: rgba(64, 64, 68, 1);
+    --field-border-color: rgba(115, 115, 115, 1);
+    --doorhanger-bg-color: rgba(74, 74, 79, 1);
     --dialog-button-bg-color: rgba(92, 92, 97, 1);
     --dialog-button-hover-bg-color: rgba(115, 115, 115, 1);
 
@@ -62,6 +70,7 @@
     --dialog-button-border: 1px solid Highlight;
     --dialog-button-hover-bg-color: Highlight;
     --dialog-button-hover-color: ButtonFace;
+    --field-border-color: ButtonText;
     --main-color: CanvasText;
   }
 }
