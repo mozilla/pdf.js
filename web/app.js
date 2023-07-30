@@ -1005,7 +1005,10 @@ const PDFViewerApplication = {
     this._saveInProgress = false;
     this._hasAnnotationEditors = false;
 
-    promises.push(this.pdfScriptingManager.destroyPromise);
+    promises.push(
+      this.pdfScriptingManager.destroyPromise,
+      this.passwordPrompt.close()
+    );
 
     this.setTitle();
     this.pdfSidebar?.reset();
