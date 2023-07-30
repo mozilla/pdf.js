@@ -74,7 +74,7 @@ class PasswordPrompt {
     try {
       await this.overlayManager.open(this.dialog);
     } catch (ex) {
-      this.#activeCapability = null;
+      this.#activeCapability.resolve();
       throw ex;
     }
 
