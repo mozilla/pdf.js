@@ -21,8 +21,14 @@ const FORMS_VERSION = 21.00720099;
 const USERACTIVATION_CALLBACKID = 0;
 const USERACTIVATION_MAXTIME_VALIDITY = 5000;
 
+function serializeError(error) {
+  const value = `${error.toString()}\n${error.stack}`;
+  return { command: "error", value };
+}
+
 export {
   FORMS_VERSION,
+  serializeError,
   USERACTIVATION_CALLBACKID,
   USERACTIVATION_MAXTIME_VALIDITY,
   VIEWER_TYPE,
