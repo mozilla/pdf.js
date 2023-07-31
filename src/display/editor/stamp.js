@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
+import { AnnotationEditorType, shadow } from "../../shared/util.js";
 import { AnnotationEditor } from "./editor.js";
-import { AnnotationEditorType } from "../../shared/util.js";
 import { PixelsPerInch } from "../display_utils.js";
 import { StampAnnotationElement } from "../annotation_layer.js";
 
@@ -43,6 +43,27 @@ class StampEditor extends AnnotationEditor {
   constructor(params) {
     super({ ...params, name: "stampEditor" });
     this.#bitmapUrl = params.bitmapUrl;
+  }
+
+  static get supportedTypes() {
+    // See https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types
+    // to know which types are supported by the browser.
+    const types = [
+      "apng",
+      "avif",
+      "bmp",
+      "gif",
+      "jpeg",
+      "png",
+      "svg+xml",
+      "webp",
+      "x-icon",
+    ];
+    return shadow(
+      this,
+      "supportedTypes",
+      types.map(type => `image/${type}`).join(",")
+    );
   }
 
   #getBitmap() {
@@ -86,7 +107,7 @@ class StampEditor extends AnnotationEditor {
       document.body.append(input);
     }
     input.type = "file";
-    input.accept = "image/*";
+    input.accept = StampEditor.supportedTypes;
     this.#bitmapPromise = new Promise(resolve => {
       input.addEventListener("change", async () => {
         this.#bitmapPromise = null;
