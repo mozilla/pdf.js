@@ -208,7 +208,7 @@ class OptionalContentConfig {
   }
 
   get hasInitialVisibility() {
-    return this.getHash() === this.#initialHash;
+    return this.#initialHash === null || this.getHash() === this.#initialHash;
   }
 
   getOrder() {

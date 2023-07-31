@@ -285,6 +285,50 @@ class MozL10n {
   window.addEventListener("editingaction", handleEvent);
 })();
 
+if (PDFJSDev.test("GECKOVIEW")) {
+  (function listenQueryEvents() {
+    window.addEventListener("pdf.js.query", async ({ detail: { queryId } }) => {
+      let result = null;
+      if (queryId === "canDownloadInsteadOfPrint") {
+        result = false;
+        const { pdfDocument, pdfViewer } = PDFViewerApplication;
+        if (pdfDocument) {
+          try {
+            const hasUnchangedAnnotations =
+              pdfDocument.annotationStorage.size === 0;
+            // WillPrint is called just before printing the document and could
+            // lead to have modified annotations.
+            const hasWillPrint =
+              pdfViewer.enableScripting &&
+              !!(await pdfDocument.getJSActions())?.WillPrint;
+            const hasUnchangedOptionalContent = (
+              await pdfViewer.optionalContentConfigPromise
+            ).hasInitialVisibility;
+
+            result =
+              hasUnchangedAnnotations &&
+              !hasWillPrint &&
+              hasUnchangedOptionalContent;
+          } catch {
+            console.warn("Unable to check if the document can be downloaded.");
+          }
+        }
+      }
+
+      window.dispatchEvent(
+        new CustomEvent("pdf.js.query.answer", {
+          bubbles: true,
+          cancelable: false,
+          detail: {
+            queryId,
+            value: result,
+          },
+        })
+      );
+    });
+  })();
+}
+
 class FirefoxComDataRangeTransport extends PDFDataRangeTransport {
   requestDataRange(begin, end) {
     FirefoxCom.request("requestDataRange", { begin, end });
