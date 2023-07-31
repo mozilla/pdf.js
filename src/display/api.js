@@ -3021,7 +3021,7 @@ class WorkerTransport {
   }
 
   getDocJSActions() {
-    return this.messageHandler.sendWithPromise("GetDocJSActions", null);
+    return this.#cacheSimpleMethod("GetDocJSActions");
   }
 
   getPageJSActions(pageIndex) {
