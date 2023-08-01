@@ -987,7 +987,10 @@ class Catalog {
         return;
       }
       js = stringToPDFString(js).replaceAll("\x00", "");
-      (javaScript ||= new Map()).set(name, js);
+      // Skip empty entries, similar to the `_collectJS` function.
+      if (js) {
+        (javaScript ||= new Map()).set(name, js);
+      }
     }
 
     if (obj instanceof Dict && obj.has("JavaScript")) {
@@ -1005,15 +1008,6 @@ class Catalog {
     return javaScript;
   }
 
-  get javaScript() {
-    const javaScript = this._collectJavaScript();
-    return shadow(
-      this,
-      "javaScript",
-      javaScript ? [...javaScript.values()] : null
-    );
-  }
-
   get jsActions() {
     const javaScript = this._collectJavaScript();
     let actions = collectActions(
@@ -1023,9 +1017,8 @@ class Catalog {
     );
 
     if (javaScript) {
-      if (!actions) {
-        actions = Object.create(null);
-      }
+      actions ||= Object.create(null);
+
       for (const [key, val] of javaScript) {
         if (key in actions) {
           actions[key].push(val);

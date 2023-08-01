@@ -463,10 +463,6 @@ class WorkerMessageHandler {
       return pdfManager.ensureCatalog("attachments");
     });
 
-    handler.on("GetJavaScript", function (data) {
-      return pdfManager.ensureCatalog("javaScript");
-    });
-
     handler.on("GetDocJSActions", function (data) {
       return pdfManager.ensureCatalog("jsActions");
     });
