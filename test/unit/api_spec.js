@@ -1358,21 +1358,16 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
-    it("gets javascript", async function () {
-      const javascript = await pdfDocument.getJavaScript();
-      expect(javascript).toEqual(null);
-    });
-
     it("gets javascript with printing instructions (JS action)", async function () {
       // PDF document with "JavaScript" action in the OpenAction dictionary.
       const loadingTask = getDocument(buildGetDocumentParams("issue6106.pdf"));
       const pdfDoc = await loadingTask.promise;
-      const javascript = await pdfDoc.getJavaScript();
+      const { OpenAction } = await pdfDoc.getJSActions();
 
-      expect(javascript).toEqual([
+      expect(OpenAction).toEqual([
         "this.print({bUI:true,bSilent:false,bShrinkToFit:true});",
       ]);
-      expect(javascript[0]).toMatch(AutoPrintRegExp);
+      expect(OpenAction[0]).toMatch(AutoPrintRegExp);
 
       await loadingTask.destroy();
     });
