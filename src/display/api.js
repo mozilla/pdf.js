@@ -760,6 +760,26 @@ class PDFDocumentProxy {
     this._pdfInfo = pdfInfo;
     this._transport = transport;
 
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+      Object.defineProperty(this, "getJavaScript", {
+        value: () => {
+          deprecated(
+            "`PDFDocumentProxy.getJavaScript`, " +
+              "please use `PDFDocumentProxy.getJSActions` instead."
+          );
+          return this.getJSActions().then(js => {
+            if (!js) {
+              return js;
+            }
+            const jsArr = [];
+            for (const name in js) {
+              jsArr.push(...js[name]);
+            }
+            return jsArr;
+          });
+        },
+      });
+    }
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       // For testing purposes.
       Object.defineProperty(this, "getXFADatasets", {
@@ -918,18 +938,9 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @returns {Promise<Array<string> | null>} A promise that is resolved with
-   *   an {Array} of all the JavaScript strings in the name tree, or `null`
-   *   if no JavaScript exists.
-   */
-  getJavaScript() {
-    return this._transport.getJavaScript();
-  }
-
-  /**
    * @returns {Promise<Object | null>} A promise that is resolved with
    *   an {Object} with the JavaScript actions:
-   *     - from the name tree (like getJavaScript);
+   *     - from the name tree.
    *     - from A or AA entries in the catalog dictionary.
    *   , or `null` if no JavaScript exists.
    */
@@ -3014,10 +3025,6 @@ class WorkerTransport {
 
   getAttachments() {
     return this.messageHandler.sendWithPromise("GetAttachments", null);
-  }
-
-  getJavaScript() {
-    return this.messageHandler.sendWithPromise("GetJavaScript", null);
   }
 
   getDocJSActions() {
