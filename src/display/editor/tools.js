@@ -75,6 +75,25 @@ class ImageManager {
 
   #cache = null;
 
+  static _checkIfSVGFitsInCanvas() {
+    // By default, Firefox doesn't rescale without preserving the aspect ratio
+    // when drawing an SVG image on a canvas, see https://bugzilla.mozilla.org/1547776.
+    // The "workaround" is to append "svgView(preserveAspectRatio(none))" to the
+    // url, but according to comment #15, it seems that it leads to unexpected
+    // behavior in Safari.
+    const svg = `data:image/svg+xml;charset=UTF-8,<svg viewBox="0 0 1 1" width="1" height="1" xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1" style="fill:red;"/></svg>`;
+    const canvas = new OffscreenCanvas(1, 3);
+    const ctx = canvas.getContext("2d");
+    const image = new Image();
+    image.src = svg;
+    const promise = image.decode().then(() => {
+      ctx.drawImage(image, 0, 0, 1, 1, 0, 0, 1, 3);
+      return new Uint32Array(ctx.getImageData(0, 0, 1, 1).data.buffer)[0] === 0;
+    });
+
+    return shadow(this, "_checkIfSVGFitsInCanvas", promise);
+  }
+
   async #get(key, rawData) {
     this.#cache ||= new Map();
     let data = this.#cache.get(key);
@@ -109,6 +128,8 @@ class ImageManager {
       if (image.type === "image/svg+xml") {
         // Unfortunately, createImageBitmap doesn't work with SVG images.
         // (see https://bugzilla.mozilla.org/1841972).
+        const mustRemoveAspectRatioPromise =
+          ImageManager._checkIfSVGFitsInCanvas();
         const fileReader = new FileReader();
         const imageElement = new Image();
         const imagePromise = new Promise((resolve, reject) => {
@@ -117,8 +138,13 @@ class ImageManager {
             data.isSvg = true;
             resolve();
           };
-          fileReader.onload = () => {
-            imageElement.src = data.svgUrl = fileReader.result;
+          fileReader.onload = async () => {
+            const url = (data.svgUrl = fileReader.result);
+            // We need to set the preserveAspectRatio to none in order to let
+            // the image fits the canvas when resizing.
+            imageElement.src = (await mustRemoveAspectRatioPromise)
+              ? `${url}#svgView(preserveAspectRatio(none))`
+              : url;
           };
           imageElement.onerror = fileReader.onerror = reject;
         });
