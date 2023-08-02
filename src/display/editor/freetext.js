@@ -304,7 +304,7 @@ class FreeTextEditor extends AnnotationEditor {
     super.enableEditMode();
     this.overlayDiv.classList.remove("enabled");
     this.editorDiv.contentEditable = true;
-    this.div.draggable = false;
+    this._isDraggable = false;
     this.div.removeAttribute("aria-activedescendant");
     this.editorDiv.addEventListener("keydown", this.#boundEditorDivKeydown);
     this.editorDiv.addEventListener("focus", this.#boundEditorDivFocus);
@@ -323,7 +323,7 @@ class FreeTextEditor extends AnnotationEditor {
     this.overlayDiv.classList.add("enabled");
     this.editorDiv.contentEditable = false;
     this.div.setAttribute("aria-activedescendant", this.#editorDivId);
-    this.div.draggable = true;
+    this._isDraggable = true;
     this.editorDiv.removeEventListener("keydown", this.#boundEditorDivKeydown);
     this.editorDiv.removeEventListener("focus", this.#boundEditorDivFocus);
     this.editorDiv.removeEventListener("blur", this.#boundEditorDivBlur);
@@ -614,10 +614,10 @@ class FreeTextEditor extends AnnotationEditor {
       }
 
       this.#setContent();
-      this.div.draggable = true;
+      this._isDraggable = true;
       this.editorDiv.contentEditable = false;
     } else {
-      this.div.draggable = false;
+      this._isDraggable = false;
       this.editorDiv.contentEditable = true;
     }
 
