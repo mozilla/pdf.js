@@ -87,6 +87,10 @@
   height: var(--viewer-container-height);
 }
 
+.pdfViewer.noUserSelect {
+  user-select: none;
+}
+
 /*#if GENERIC*/
 .pdfViewer.removePageBorders .page {
   margin: 0 auto 10px;

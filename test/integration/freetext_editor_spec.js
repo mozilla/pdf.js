@@ -15,6 +15,7 @@
 
 const {
   closePages,
+  dragAndDropAnnotation,
   getEditors,
   getEditorSelector,
   getSelectedEditors,
@@ -891,13 +892,6 @@ describe("FreeText Editor", () => {
     it("must move an annotation", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          if (browserName === "firefox") {
-            pending(
-              "Disabled in Firefox, because DnD isn't implemented yet (see bug 1838638)."
-            );
-          }
-
-          await page.setDragInterception(true);
           await page.click("#editorFreeText");
 
           const editorIds = await getEditors(page, "freeText");
@@ -913,16 +907,12 @@ describe("FreeText Editor", () => {
             return { x, y, width, height };
           });
 
-          await page.mouse.dragAndDrop(
-            {
-              x: editorRect.x + editorRect.width / 2,
-              y: editorRect.y + editorRect.height / 2,
-            },
-            {
-              x: editorRect.x + editorRect.width / 2 + 100,
-              y: editorRect.y + editorRect.height / 2 + 100,
-            },
-            { delay: 100 }
+          await dragAndDropAnnotation(
+            page,
+            editorRect.x + editorRect.width / 2,
+            editorRect.y + editorRect.height / 2,
+            100,
+            100
           );
 
           serialized = await getSerialized(page);

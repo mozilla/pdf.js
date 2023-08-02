@@ -24,7 +24,6 @@
 
 import { AnnotationEditorType, FeatureTest } from "../../shared/util.js";
 import { AnnotationEditor } from "./editor.js";
-import { bindEvents } from "./tools.js";
 import { FreeTextEditor } from "./freetext.js";
 import { InkEditor } from "./ink.js";
 import { setLayerDimensions } from "../display_utils.js";
@@ -345,7 +344,7 @@ class AnnotationEditorLayer {
    * being dragged and droped from a page to another.
    * @param {AnnotationEditor} editor
    */
-  #changeParent(editor) {
+  changeParent(editor) {
     if (editor.parent === this) {
       return;
     }
@@ -370,7 +369,7 @@ class AnnotationEditorLayer {
    * @param {AnnotationEditor} editor
    */
   add(editor) {
-    this.#changeParent(editor);
+    this.changeParent(editor);
     this.#uiManager.addEditor(editor);
     this.attach(editor);
 
@@ -579,36 +578,19 @@ class AnnotationEditorLayer {
   }
 
   /**
-   * Drag callback.
-   * @param {DragEvent} event
+   *
+   * @param {AnnotationEditor} editor
+   * @param {number} x
+   * @param {number} y
+   * @returns
    */
-  drop(event) {
-    const id = event.dataTransfer.getData("text/plain");
-    const editor = this.#uiManager.getEditor(id);
-    if (!editor) {
-      return;
+  findNewParent(editor, x, y) {
+    const layer = this.#uiManager.findParent(x, y);
+    if (layer === null || layer === this) {
+      return false;
     }
-
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-
-    this.#changeParent(editor);
-
-    const rect = this.div.getBoundingClientRect();
-    const endX = event.clientX - rect.x;
-    const endY = event.clientY - rect.y;
-
-    editor.translate(endX - editor.startX, endY - editor.startY);
-    this.moveEditorInDOM(editor);
-    editor.div.focus();
-  }
-
-  /**
-   * Dragover callback.
-   * @param {DragEvent} event
-   */
-  dragover(event) {
-    event.preventDefault();
+    layer.changeParent(editor);
+    return true;
   }
 
   /**
@@ -650,7 +632,6 @@ class AnnotationEditorLayer {
   render({ viewport }) {
     this.viewport = viewport;
     setLayerDimensions(this.div, viewport);
-    bindEvents(this, this.div, ["dragover", "drop"]);
     for (const editor of this.#uiManager.getEditors(this.pageIndex)) {
       this.add(editor);
     }

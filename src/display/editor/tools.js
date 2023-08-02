@@ -587,6 +587,8 @@ class AnnotationEditorUIManager {
 
   #container = null;
 
+  #viewer = null;
+
   static TRANSLATE_SMALL = 1; // page units.
 
   static TRANSLATE_BIG = 10; // page units.
@@ -687,8 +689,9 @@ class AnnotationEditorUIManager {
     );
   }
 
-  constructor(container, eventBus, pdfDocument, pageColors) {
+  constructor(container, viewer, eventBus, pdfDocument, pageColors) {
     this.#container = container;
+    this.#viewer = viewer;
     this.#eventBus = eventBus;
     this.#eventBus._on("editingaction", this.#boundOnEditingAction);
     this.#eventBus._on("pagechanging", this.#boundOnPageChanging);
@@ -739,6 +742,30 @@ class AnnotationEditorUIManager {
 
   focusMainContainer() {
     this.#container.focus();
+  }
+
+  findParent(x, y) {
+    for (const layer of this.#allLayers.values()) {
+      const {
+        x: layerX,
+        y: layerY,
+        width,
+        height,
+      } = layer.div.getBoundingClientRect();
+      if (
+        x >= layerX &&
+        x <= layerX + width &&
+        y >= layerY &&
+        y <= layerY + height
+      ) {
+        return layer;
+      }
+    }
+    return null;
+  }
+
+  disableUserSelect(value = false) {
+    this.#viewer.classList.toggle("noUserSelect", value);
   }
 
   addShouldRescale(editor) {
@@ -962,6 +989,7 @@ class AnnotationEditorUIManager {
       this.#dispatchUpdateStates({
         isEditing: false,
       });
+      this.disableUserSelect(false);
     }
   }
 
