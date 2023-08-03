@@ -398,12 +398,28 @@ function replaceNonWebpackImport() {
   return replace("__non_webpack_import__", "import");
 }
 
-function replaceJSRootName(amdName, jsName) {
-  // Saving old-style JS module name.
-  return replace(
-    'root["' + amdName + '"] = factory()',
-    'root["' + amdName + '"] = root.' + jsName + " = factory()"
-  );
+function addGlobalExports(amdName, jsName) {
+  const replacer = [
+    `module\\.exports = factory\\(\\);`,
+    `define\\("${amdName}", \\[\\], factory\\);`,
+    `exports\\["${amdName}"\\] = factory\\(\\);`,
+    `root\\["${amdName}"\\] = factory\\(\\);`,
+  ];
+  const regex = new RegExp(`(${replacer.join("|")})`, "gm");
+
+  return replace(regex, match => {
+    switch (match) {
+      case `module.exports = factory();`:
+        return `module.exports = root.${jsName} = factory();`;
+      case `define("${amdName}", [], factory);`:
+        return `define("${amdName}", [], () => { return (root.${jsName} = factory()); });`;
+      case `exports["${amdName}"] = factory();`:
+        return `exports["${amdName}"] = root.${jsName} = factory();`;
+      case `root["${amdName}"] = factory();`:
+        return `root["${amdName}"] = root.${jsName} = factory();`;
+    }
+    return match;
+  });
 }
 
 function createMainBundle(defines) {
@@ -421,7 +437,7 @@ function createMainBundle(defines) {
     .pipe(webpack2Stream(mainFileConfig))
     .pipe(replaceWebpackRequire())
     .pipe(replaceNonWebpackImport())
-    .pipe(replaceJSRootName(mainAMDName, "pdfjsLib"));
+    .pipe(addGlobalExports(mainAMDName, "pdfjsLib"));
 }
 
 function createScriptingBundle(defines, extraOptions = undefined) {
@@ -443,12 +459,7 @@ function createScriptingBundle(defines, extraOptions = undefined) {
     .pipe(webpack2Stream(scriptingFileConfig))
     .pipe(replaceWebpackRequire())
     .pipe(replaceNonWebpackImport())
-    .pipe(
-      replace(
-        'root["' + scriptingAMDName + '"] = factory()',
-        "root.pdfjsScripting = factory()"
-      )
-    );
+    .pipe(addGlobalExports(scriptingAMDName, "pdfjsScripting"));
 }
 
 function createSandboxExternal(defines) {
@@ -504,7 +515,7 @@ function createSandboxBundle(defines, extraOptions = undefined) {
     .pipe(webpack2Stream(sandboxFileConfig))
     .pipe(replaceWebpackRequire())
     .pipe(replaceNonWebpackImport())
-    .pipe(replaceJSRootName(sandboxAMDName, "pdfjsSandbox"));
+    .pipe(addGlobalExports(sandboxAMDName, "pdfjsSandbox"));
 }
 
 function createWorkerBundle(defines) {
@@ -522,7 +533,7 @@ function createWorkerBundle(defines) {
     .pipe(webpack2Stream(workerFileConfig))
     .pipe(replaceWebpackRequire())
     .pipe(replaceNonWebpackImport())
-    .pipe(replaceJSRootName(workerAMDName, "pdfjsWorker"));
+    .pipe(addGlobalExports(workerAMDName, "pdfjsWorker"));
 }
 
 function createWebBundle(defines, options) {
@@ -577,7 +588,7 @@ function createComponentsBundle(defines) {
     .pipe(webpack2Stream(componentsFileConfig))
     .pipe(replaceWebpackRequire())
     .pipe(replaceNonWebpackImport())
-    .pipe(replaceJSRootName(componentsAMDName, "pdfjsViewer"));
+    .pipe(addGlobalExports(componentsAMDName, "pdfjsViewer"));
 }
 
 function createImageDecodersBundle(defines) {
@@ -595,7 +606,7 @@ function createImageDecodersBundle(defines) {
     .pipe(webpack2Stream(componentsFileConfig))
     .pipe(replaceWebpackRequire())
     .pipe(replaceNonWebpackImport())
-    .pipe(replaceJSRootName(imageDecodersAMDName, "pdfjsImageDecoders"));
+    .pipe(addGlobalExports(imageDecodersAMDName, "pdfjsImageDecoders"));
 }
 
 function createCMapBundle() {
