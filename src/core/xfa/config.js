@@ -959,7 +959,7 @@ class Range extends ContentObject {
       .trim()
       .split(/\s*,\s*/, 2)
       .map(range => range.split("-").map(x => parseInt(x.trim(), 10)))
-      .filter(range => range.every(x => !isNaN(x)))
+      .filter(range => range.every(x => !Number.isNaN(x)))
       .map(range => {
         if (range.length === 1) {
           range.push(range[0]);
@@ -977,7 +977,7 @@ class Record extends ContentObject {
   [$finalize]() {
     this[$content] = this[$content].trim();
     const n = parseInt(this[$content], 10);
-    if (!isNaN(n) && n >= 0) {
+    if (!Number.isNaN(n) && n >= 0) {
       this[$content] = n;
     }
   }
@@ -1312,7 +1312,7 @@ class Window extends ContentObject {
       .trim()
       .split(/\s*,\s*/, 2)
       .map(x => parseInt(x, 10));
-    if (pair.some(x => isNaN(x))) {
+    if (pair.some(x => Number.isNaN(x))) {
       this[$content] = [0, 0];
       return;
     }

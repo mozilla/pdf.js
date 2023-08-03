@@ -712,7 +712,7 @@ class ProgressBar {
   set percent(val) {
     this.#percent = clamp(val, 0, 100);
 
-    if (isNaN(val)) {
+    if (Number.isNaN(val)) {
       this.#classList.add("indeterminate");
       return;
     }
@@ -736,7 +736,7 @@ class ProgressBar {
   }
 
   setDisableAutoFetch(delay = /* ms = */ 5000) {
-    if (isNaN(this.#percent)) {
+    if (Number.isNaN(this.#percent)) {
       return;
     }
     if (this.#disableAutoFetchTimeout) {

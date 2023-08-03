@@ -753,7 +753,7 @@ class AstString extends Leaf {
   }
 
   toNumber() {
-    return !isNaN(this.str) ? parseFloat(this.str) : 0;
+    return !Number.isNaN(this.str) ? parseFloat(this.str) : 0;
   }
 
   toComparable() {

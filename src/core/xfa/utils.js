@@ -37,7 +37,7 @@ function getInteger({ data, defaultValue, validate }) {
   }
   data = data.trim();
   const n = parseInt(data, 10);
-  if (!isNaN(n) && validate(n)) {
+  if (!Number.isNaN(n) && validate(n)) {
     return n;
   }
   return defaultValue;
@@ -49,7 +49,7 @@ function getFloat({ data, defaultValue, validate }) {
   }
   data = data.trim();
   const n = parseFloat(data);
-  if (!isNaN(n) && validate(n)) {
+  if (!Number.isNaN(n) && validate(n)) {
     return n;
   }
   return defaultValue;
@@ -85,7 +85,7 @@ function getMeasurement(str, def = "0") {
   }
   const [, valueStr, unit] = match;
   const value = parseFloat(valueStr);
-  if (isNaN(value)) {
+  if (Number.isNaN(value)) {
     return getMeasurement(def);
   }
 
@@ -109,7 +109,7 @@ function getRatio(data) {
     .trim()
     .split(/\s*:\s*/)
     .map(x => parseFloat(x))
-    .filter(x => !isNaN(x));
+    .filter(x => !Number.isNaN(x));
   if (ratio.length === 1) {
     ratio.push(1);
   }
@@ -146,7 +146,7 @@ function getColor(data, def = [0, 0, 0]) {
     .trim()
     .split(/\s*,\s*/)
     .map(c => Math.min(Math.max(0, parseInt(c.trim(), 10)), 255))
-    .map(c => (isNaN(c) ? 0 : c));
+    .map(c => (Number.isNaN(c) ? 0 : c));
 
   if (color.length < 3) {
     return { r, g, b };

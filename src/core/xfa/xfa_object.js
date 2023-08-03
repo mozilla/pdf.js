@@ -124,7 +124,7 @@ class XFAObject {
     let root = this,
       node = null;
     for (const { name, index } of path) {
-      for (let i = 0, ii = isFinite(index) ? index : 0; i <= ii; i++) {
+      for (let i = 0, ii = Number.isFinite(index) ? index : 0; i <= ii; i++) {
         const nsId =
           root[$namespaceId] === NS_DATASETS ? -1 : root[$namespaceId];
         node = new XmlObject(nsId, name);

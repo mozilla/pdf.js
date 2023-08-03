@@ -98,7 +98,7 @@ const converters = {
           (extra.currentColumn + node.colSpan) % extra.columnWidths.length;
       }
 
-      if (!isNaN(w)) {
+      if (!Number.isNaN(w)) {
         width = node.w = w;
       }
     }
@@ -336,7 +336,7 @@ function fixDimensions(node) {
         .slice(extra.currentColumn, extra.currentColumn + colSpan)
         .reduce((a, w) => a + w, 0);
     }
-    if (!isNaN(width)) {
+    if (!Number.isNaN(width)) {
       node.w = width;
     }
   }

@@ -116,7 +116,7 @@ class FontSelector {
     }
 
     for (const name of ["top", "bottom", "left", "right"]) {
-      if (isNaN(margin[name])) {
+      if (Number.isNaN(margin[name])) {
         margin[name] = lastFont.paraMargin[name];
       }
     }

@@ -483,7 +483,7 @@ function validateCSSFont(cssFontInfo) {
 
   const angle = parseFloat(italicAngle);
   cssFontInfo.italicAngle =
-    isNaN(angle) || angle < -90 || angle > 90
+    Number.isNaN(angle) || angle < -90 || angle > 90
       ? DEFAULT_CSS_FONT_OBLIQUE
       : italicAngle.toString();
 

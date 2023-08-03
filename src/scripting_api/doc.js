@@ -900,7 +900,7 @@ class Doc extends PDFObject {
 
     for (const [name, field] of this._fields.entries()) {
       if (name.endsWith(cName)) {
-        if (!isNaN(childIndex)) {
+        if (!Number.isNaN(childIndex)) {
           const children = this._getChildren(name);
           if (childIndex < 0 || childIndex >= children.length) {
             childIndex = 0;

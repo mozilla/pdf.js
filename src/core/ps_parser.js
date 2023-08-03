@@ -258,7 +258,7 @@ class PostScriptLexer {
       }
     }
     const value = parseFloat(strBuf.join(""));
-    if (isNaN(value)) {
+    if (Number.isNaN(value)) {
       throw new FormatError(`Invalid floating point number: ${value}`);
     }
     return value;

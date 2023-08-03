@@ -1149,13 +1149,13 @@ class Font {
     const fontBasicMetricsMap = getFontBasicMetrics();
     const metrics = fontBasicMetricsMap[fontName];
     if (metrics) {
-      if (isNaN(this.ascent)) {
+      if (Number.isNaN(this.ascent)) {
         this.ascent = metrics.ascent / PDF_GLYPH_SPACE_UNITS;
       }
-      if (isNaN(this.descent)) {
+      if (Number.isNaN(this.descent)) {
         this.descent = metrics.descent / PDF_GLYPH_SPACE_UNITS;
       }
-      if (isNaN(this.capHeight)) {
+      if (Number.isNaN(this.capHeight)) {
         this.capHeight = metrics.capHeight / PDF_GLYPH_SPACE_UNITS;
       }
     }
@@ -2382,7 +2382,7 @@ class Font {
           if (!inFDEF && !inELSE) {
             // collecting information about which functions are used
             funcId = stack.at(-1);
-            if (isNaN(funcId)) {
+            if (Number.isNaN(funcId)) {
               info("TT: CALL empty stack (or invalid entry).");
             } else {
               ttContext.functionsUsed[funcId] = true;
@@ -2483,7 +2483,7 @@ class Font {
           }
           if (op >= 0x71 && op <= 0x75) {
             n = stack.pop();
-            if (!isNaN(n)) {
+            if (!Number.isNaN(n)) {
               stackDelta = -n * 2;
             }
           }

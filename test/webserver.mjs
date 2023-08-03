@@ -181,7 +181,7 @@ WebServer.prototype = {
         serveRequestedFileRange(
           filePath,
           start,
-          isNaN(end) ? fileSize : end + 1
+          Number.isNaN(end) ? fileSize : end + 1
         );
         return;
       }

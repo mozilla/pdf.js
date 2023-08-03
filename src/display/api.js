@@ -554,7 +554,7 @@ function getDataProp(val) {
   if (typeof val === "string") {
     return stringToBytes(val);
   }
-  if ((typeof val === "object" && !isNaN(val?.length)) || isArrayBuffer(val)) {
+  if ((typeof val === "object" && !Number.isNaN(val?.length)) || isArrayBuffer(val)) {
     return new Uint8Array(val);
   }
   throw new Error(

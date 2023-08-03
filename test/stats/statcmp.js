@@ -88,8 +88,8 @@ function compareRow(a, b) {
   for (let i = 0; i < Math.min(a.length, b.length); i++) {
     const intA = parseInt(a[i], 10);
     const intB = parseInt(b[i], 10);
-    const ai = isNaN(intA) ? a[i] : intA;
-    const bi = isNaN(intB) ? b[i] : intB;
+    const ai = Number.isNaN(intA) ? a[i] : intA;
+    const bi = Number.isNaN(intB) ? b[i] : intB;
     if (ai < bi) {
       return -1;
     }

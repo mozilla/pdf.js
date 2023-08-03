@@ -1756,7 +1756,7 @@ class Decimal extends ContentObject {
 
   [$finalize]() {
     const number = parseFloat(this[$content].trim());
-    this[$content] = isNaN(number) ? null : number;
+    this[$content] = Number.isNaN(number) ? null : number;
   }
 
   [$toHTML](availableSpace) {
@@ -2992,7 +2992,7 @@ class Field extends XFAObject {
         if (value) {
           if (this.ui.numericEdit) {
             value = parseFloat(value);
-            value = isNaN(value) ? "" : value.toString();
+            value = Number.isNaN(value) ? "" : value.toString();
           }
 
           if (ui.children[0].name === "textarea") {
@@ -3194,7 +3194,7 @@ class Float extends ContentObject {
 
   [$finalize]() {
     const number = parseFloat(this[$content].trim());
-    this[$content] = isNaN(number) ? null : number;
+    this[$content] = Number.isNaN(number) ? null : number;
   }
 
   [$toHTML](availableSpace) {
@@ -3528,7 +3528,7 @@ class Integer extends ContentObject {
 
   [$finalize]() {
     const number = parseInt(this[$content].trim(), 10);
-    this[$content] = isNaN(number) ? null : number;
+    this[$content] = Number.isNaN(number) ? null : number;
   }
 
   [$toHTML](availableSpace) {

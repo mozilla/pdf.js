@@ -147,7 +147,7 @@ class AForm {
     } catch {}
     if (!date) {
       date = Date.parse(cDate);
-      date = isNaN(date)
+      date = Number.isNaN(date)
         ? this._tryToGuessDate(cFormat, cDate)
         : new Date(date);
     }
@@ -197,7 +197,7 @@ class AForm {
 
     str = str.trim().replace(",", ".");
     const number = parseFloat(str);
-    if (isNaN(number) || !isFinite(number)) {
+    if (Number.isNaN(number) || !Number.isFinite(number)) {
       return null;
     }
 

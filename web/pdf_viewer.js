@@ -1893,7 +1893,7 @@ class PDFViewer {
     // Non-numeric scale values can be sensitive to the scroll orientation.
     // Call this before re-scrolling to the current page, to ensure that any
     // changes in scale don't move the current page.
-    if (this._currentScaleValue && isNaN(this._currentScaleValue)) {
+    if (this._currentScaleValue && Number.isNaN(this._currentScaleValue)) {
       this.#setScale(this._currentScaleValue, { noScroll: true });
     }
     this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
@@ -1974,7 +1974,7 @@ class PDFViewer {
     // Non-numeric scale values can be sensitive to the scroll orientation.
     // Call this before re-scrolling to the current page, to ensure that any
     // changes in scale don't move the current page.
-    if (this._currentScaleValue && isNaN(this._currentScaleValue)) {
+    if (this._currentScaleValue && Number.isNaN(this._currentScaleValue)) {
       this.#setScale(this._currentScaleValue, { noScroll: true });
     }
     this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);

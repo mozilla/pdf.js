@@ -253,7 +253,7 @@ class Field extends PDFObject {
 
     this._originalValue = value;
     const _value = value.trim().replace(",", ".");
-    this._value = !isNaN(_value) ? parseFloat(_value) : value;
+    this._value = !Number.isNaN(_value) ? parseFloat(_value) : value;
   }
 
   _getValue() {

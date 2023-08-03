@@ -950,7 +950,7 @@ class PDFDocument {
           ch = stream.getByte();
         }
         startXRef = parseInt(str, 10);
-        if (isNaN(startXRef)) {
+        if (Number.isNaN(startXRef)) {
           startXRef = 0;
         }
       }

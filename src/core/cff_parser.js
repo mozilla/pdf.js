@@ -574,7 +574,7 @@ class CFFParser {
         if (
           subrNumber < 0 ||
           subrNumber >= subrsIndex.count ||
-          isNaN(subrNumber)
+          Number.isNaN(subrNumber)
         ) {
           validationCommand = CharstringValidationData[value];
           warn("Out of bounds subrIndex for " + validationCommand.id);
@@ -1130,7 +1130,7 @@ class CFFDict {
     }
     // Ignore invalid values (fixes bug1068432.pdf and bug1308536.pdf).
     for (const val of value) {
-      if (isNaN(val)) {
+      if (Number.isNaN(val)) {
         warn(`Invalid CFFDict value: "${value}" for key "${key}".`);
         return true;
       }

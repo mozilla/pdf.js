@@ -2275,7 +2275,7 @@ class WidgetAnnotation extends Annotation {
     }
 
     let descent = font.descent;
-    if (isNaN(descent)) {
+    if (Number.isNaN(descent)) {
       descent = BASELINE_FACTOR * lineHeight;
     } else {
       descent = Math.max(

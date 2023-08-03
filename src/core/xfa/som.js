@@ -242,7 +242,7 @@ function searchNode(
       continue;
     }
 
-    root = isFinite(index)
+    root = Number.isFinite(index)
       ? nodes.filter(node => index < node.length).map(node => node[index])
       : nodes.flat();
   }
@@ -275,7 +275,7 @@ function createDataNode(root, container, expr) {
 
   for (let ii = parsed.length; i < ii; i++) {
     const { name, operator, index } = parsed[i];
-    if (!isFinite(index)) {
+    if (!Number.isFinite(index)) {
       parsed[i].index = 0;
       return root.createNodes(parsed.slice(i));
     }
