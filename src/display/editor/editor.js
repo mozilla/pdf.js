@@ -464,15 +464,18 @@ class AnnotationEditor {
       this._uiManager.stopUndoAccumulation();
       this.div.draggable = savedDraggable;
       this.parent.div.classList.remove(resizingClassName);
+      window.removeEventListener("pointerup", pointerUpCallback);
+      window.removeEventListener("blur", pointerUpCallback);
       window.removeEventListener(
         "pointermove",
         boundResizerPointermove,
         pointerMoveOptions
       );
     };
-    window.addEventListener("pointerup", pointerUpCallback, {
-      once: true,
-    });
+    window.addEventListener("pointerup", pointerUpCallback);
+    // If the user switch to another window (with alt+tab), then we end the
+    // resize session.
+    window.addEventListener("blur", pointerUpCallback);
   }
 
   #resizerPointermove(name, event) {
