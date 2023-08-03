@@ -294,7 +294,7 @@ class InkEditor extends AnnotationEditor {
     }
 
     super.enableEditMode();
-    this.div.draggable = false;
+    this._isDraggable = false;
     this.canvas.addEventListener("pointerdown", this.#boundCanvasPointerdown);
   }
 
@@ -305,7 +305,7 @@ class InkEditor extends AnnotationEditor {
     }
 
     super.disableEditMode();
-    this.div.draggable = !this.isEmpty();
+    this._isDraggable = !this.isEmpty();
     this.div.classList.remove("editing");
 
     this.canvas.removeEventListener(
@@ -316,7 +316,7 @@ class InkEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   onceAdded() {
-    this.div.draggable = !this.isEmpty();
+    this._isDraggable = !this.isEmpty();
   }
 
   /** @inheritdoc */

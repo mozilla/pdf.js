@@ -177,7 +177,7 @@ class StampEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   onceAdded() {
-    this.div.draggable = true;
+    this._isDraggable = true;
     this.parent.addUndoableEditor(this);
     this.div.focus();
   }
