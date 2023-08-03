@@ -57,6 +57,8 @@ class AnnotationEditor {
 
   _uiManager = null;
 
+  #isDraggable = false;
+
   #zIndex = AnnotationEditor._zIndex++;
 
   static _colorManager = new ColorManager();
@@ -148,6 +150,15 @@ class AnnotationEditor {
     return [];
   }
 
+  get _isDraggable() {
+    return this.#isDraggable;
+  }
+
+  set _isDraggable(value) {
+    this.#isDraggable = value;
+    this.div?.classList.toggle("draggable", value);
+  }
+
   /**
    * Add some commands into the CommandManager (undo/redo stuff).
    * @param {Object} params
@@ -235,18 +246,6 @@ class AnnotationEditor {
 
   addToAnnotationStorage() {
     this._uiManager.addToAnnotationStorage(this);
-  }
-
-  /**
-   * We use drag-and-drop in order to move an editor on a page.
-   * @param {DragEvent} event
-   */
-  dragstart(event) {
-    const rect = this.parent.div.getBoundingClientRect();
-    this.startX = event.clientX - rect.x;
-    this.startY = event.clientY - rect.y;
-    event.dataTransfer.setData("text/plain", this.id);
-    event.dataTransfer.effectAllowed = "move";
   }
 
   /**
@@ -446,8 +445,8 @@ class AnnotationEditor {
     event.preventDefault();
     this.#resizePosition = [event.clientX, event.clientY];
     const boundResizerPointermove = this.#resizerPointermove.bind(this, name);
-    const savedDraggable = this.div.draggable;
-    this.div.draggable = false;
+    const savedDraggable = this._isDraggable;
+    this._isDraggable = false;
     const resizingClassName = `resizing${name
       .charAt(0)
       .toUpperCase()}${name.slice(1)}`;
@@ -462,7 +461,7 @@ class AnnotationEditor {
       // Stop the undo accumulation in order to have an undo action for each
       // resize session.
       this._uiManager.stopUndoAccumulation();
-      this.div.draggable = savedDraggable;
+      this._isDraggable = savedDraggable;
       this.parent.div.classList.remove(resizingClassName);
       window.removeEventListener("pointerup", pointerUpCallback);
       window.removeEventListener("blur", pointerUpCallback);
@@ -721,7 +720,7 @@ class AnnotationEditor {
     const [tx, ty] = this.getInitialTranslation();
     this.translate(tx, ty);
 
-    bindEvents(this, this.div, ["dragstart", "pointerdown"]);
+    bindEvents(this, this.div, ["pointerdown"]);
 
     return this.div;
   }
@@ -749,6 +748,90 @@ class AnnotationEditor {
     }
 
     this.#hasBeenSelected = true;
+
+    this.#setUpDragSession(event);
+  }
+
+  #setUpDragSession(event) {
+    if (!this._isDraggable) {
+      return;
+    }
+
+    // Avoid to have spurious text selection in the text layer when dragging.
+    this._uiManager.disableUserSelect(true);
+
+    const savedParent = this.parent;
+    const savedX = this.x;
+    const savedY = this.y;
+
+    const pointerMoveOptions = { passive: true, capture: true };
+    const pointerMoveCallback = e => {
+      const [parentWidth, parentHeight] = this.parentDimensions;
+      const [tx, ty] = this.screenToPageTranslation(e.movementX, e.movementY);
+      this.x += tx / parentWidth;
+      this.y += ty / parentHeight;
+      if (this.x < 0 || this.x > 1 || this.y < 0 || this.y > 1) {
+        // The element will be outside of its parent so change the parent.
+        const { x, y } = this.div.getBoundingClientRect();
+        if (this.parent.findNewParent(this, x, y)) {
+          this.x -= Math.floor(this.x);
+          this.y -= Math.floor(this.y);
+        }
+      }
+
+      this.div.style.left = `${(100 * this.x).toFixed(2)}%`;
+      this.div.style.top = `${(100 * this.y).toFixed(2)}%`;
+      this.div.scrollIntoView({ block: "nearest" });
+    };
+    window.addEventListener(
+      "pointermove",
+      pointerMoveCallback,
+      pointerMoveOptions
+    );
+
+    const pointerUpCallback = () => {
+      this._uiManager.disableUserSelect(false);
+      window.removeEventListener("pointerup", pointerUpCallback);
+      window.removeEventListener("blur", pointerUpCallback);
+      window.removeEventListener(
+        "pointermove",
+        pointerMoveCallback,
+        pointerMoveOptions
+      );
+      const newParent = this.parent;
+      const newX = this.x;
+      const newY = this.y;
+      if (newParent === savedParent && newX === savedX && newY === savedY) {
+        return;
+      }
+
+      this.addCommands({
+        cmd: () => {
+          newParent.changeParent(this);
+          this.x = newX;
+          this.y = newY;
+          this.fixAndSetPosition();
+          newParent.moveEditorInDOM(this);
+        },
+        undo: () => {
+          savedParent.changeParent(this);
+          this.x = savedX;
+          this.y = savedY;
+          this.fixAndSetPosition();
+          savedParent.moveEditorInDOM(this);
+        },
+        mustExec: false,
+      });
+
+      this.fixAndSetPosition();
+      this.parent.moveEditorInDOM(this);
+      this.div.focus();
+    };
+    window.addEventListener("pointerup", pointerUpCallback);
+    // If the user is using alt+tab during the dragging session, the pointerup
+    // event could be not fired, but a blur event is fired so we can use it in
+    // order to interrupt the dragging session.
+    window.addEventListener("blur", pointerUpCallback);
   }
 
   /**
