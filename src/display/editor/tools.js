@@ -75,7 +75,7 @@ class ImageManager {
 
   #cache = null;
 
-  static _checkIfSVGFitsInCanvas() {
+  static get _isSVGFittingCanvas() {
     // By default, Firefox doesn't rescale without preserving the aspect ratio
     // when drawing an SVG image on a canvas, see https://bugzilla.mozilla.org/1547776.
     // The "workaround" is to append "svgView(preserveAspectRatio(none))" to the
@@ -91,7 +91,7 @@ class ImageManager {
       return new Uint32Array(ctx.getImageData(0, 0, 1, 1).data.buffer)[0] === 0;
     });
 
-    return shadow(this, "_checkIfSVGFitsInCanvas", promise);
+    return shadow(this, "_isSVGFittingCanvas", promise);
   }
 
   async #get(key, rawData) {
@@ -128,8 +128,7 @@ class ImageManager {
       if (image.type === "image/svg+xml") {
         // Unfortunately, createImageBitmap doesn't work with SVG images.
         // (see https://bugzilla.mozilla.org/1841972).
-        const mustRemoveAspectRatioPromise =
-          ImageManager._checkIfSVGFitsInCanvas();
+        const mustRemoveAspectRatioPromise = ImageManager._isSVGFittingCanvas;
         const fileReader = new FileReader();
         const imageElement = new Image();
         const imagePromise = new Promise((resolve, reject) => {
