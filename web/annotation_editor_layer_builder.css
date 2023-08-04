@@ -186,86 +186,128 @@
   height: 100%;
 }
 
-.annotationEditorLayer .resizers {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  inset: 0;
-}
+.annotationEditorLayer {
+  :is(.freeTextEditor, .inkEditor, .stampEditor) {
+    & > .resizers {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      inset: 0;
 
-.annotationEditorLayer .resizers.hidden {
-  display: none;
-}
+      &.hidden {
+        display: none;
+      }
 
-.annotationEditorLayer .resizer {
-  width: var(--resizer-size);
-  height: var(--resizer-size);
-  border-radius: 50%;
-  background: var(--resizer-color);
-  border: var(--focus-outline);
-  position: absolute;
-}
+      & > .resizer {
+        width: var(--resizer-size);
+        height: var(--resizer-size);
+        border-radius: 50%;
+        background: var(--resizer-color);
+        border: var(--focus-outline);
+        position: absolute;
 
-.annotationEditorLayer .resizer.topLeft {
-  cursor: nwse-resize;
-  top: var(--resizer-shift);
-  left: var(--resizer-shift);
-}
+        &.topLeft {
+          top: var(--resizer-shift);
+          left: var(--resizer-shift);
+        }
 
-.annotationEditorLayer .resizer.topMiddle {
-  cursor: ns-resize;
-  top: var(--resizer-shift);
-  left: calc(50% + var(--resizer-shift));
-}
+        &.topMiddle {
+          top: var(--resizer-shift);
+          left: calc(50% + var(--resizer-shift));
+        }
 
-.annotationEditorLayer .resizer.topRight {
-  cursor: nesw-resize;
-  top: var(--resizer-shift);
-  right: var(--resizer-shift);
-}
+        &.topRight {
+          top: var(--resizer-shift);
+          right: var(--resizer-shift);
+        }
 
-.annotationEditorLayer .resizer.middleRight {
-  cursor: ew-resize;
-  top: calc(50% + var(--resizer-shift));
-  right: var(--resizer-shift);
-}
+        &.middleRight {
+          top: calc(50% + var(--resizer-shift));
+          right: var(--resizer-shift);
+        }
 
-.annotationEditorLayer .resizer.bottomRight {
-  cursor: nwse-resize;
-  bottom: var(--resizer-shift);
-  right: var(--resizer-shift);
-}
+        &.bottomRight {
+          bottom: var(--resizer-shift);
+          right: var(--resizer-shift);
+        }
 
-.annotationEditorLayer .resizer.bottomMiddle {
-  cursor: ns-resize;
-  bottom: var(--resizer-shift);
-  left: calc(50% + var(--resizer-shift));
-}
+        &.bottomMiddle {
+          bottom: var(--resizer-shift);
+          left: calc(50% + var(--resizer-shift));
+        }
 
-.annotationEditorLayer .resizer.bottomLeft {
-  cursor: nesw-resize;
-  bottom: var(--resizer-shift);
-  left: var(--resizer-shift);
-}
+        &.bottomLeft {
+          bottom: var(--resizer-shift);
+          left: var(--resizer-shift);
+        }
 
-.annotationEditorLayer .resizer.middleLeft {
-  cursor: ew-resize;
-  top: calc(50% + var(--resizer-shift));
-  left: var(--resizer-shift);
-}
+        &.middleLeft {
+          top: calc(50% + var(--resizer-shift));
+          left: var(--resizer-shift);
+        }
+      }
+    }
+  }
 
-.annotationEditorLayer:is(.resizingTopLeft, .resizingBottomRight) {
-  cursor: nwse-resize;
-}
+  &[data-main-rotation="0"]
+    :is([data-editor-rotation="0"], [data-editor-rotation="180"]),
+  &[data-main-rotation="90"]
+    :is([data-editor-rotation="270"], [data-editor-rotation="90"]),
+  &[data-main-rotation="180"]
+    :is([data-editor-rotation="180"], [data-editor-rotation="0"]),
+  &[data-main-rotation="270"]
+    :is([data-editor-rotation="90"], [data-editor-rotation="270"]) {
+    & > .resizers > .resizer {
+      &.topLeft,
+      &.bottomRight {
+        cursor: nwse-resize;
+      }
 
-.annotationEditorLayer:is(.resizingTopMiddle, .resizingBottomMiddle) {
-  cursor: ns-resize;
-}
+      &.topMiddle,
+      &.bottomMiddle {
+        cursor: ns-resize;
+      }
 
-.annotationEditorLayer:is(.resizingTopRight, .resizingBottomLeft) {
-  cursor: nesw-resize;
-}
+      &.topRight,
+      &.bottomLeft {
+        cursor: nesw-resize;
+      }
 
-.annotationEditorLayer:is(.resizingMiddleRight, .resizingMiddleLeft) {
-  cursor: ew-resize;
+      &.middleRight,
+      &.middleLeft {
+        cursor: ew-resize;
+      }
+    }
+  }
+
+  &[data-main-rotation="0"]
+    :is([data-editor-rotation="90"], [data-editor-rotation="270"]),
+  &[data-main-rotation="90"]
+    :is([data-editor-rotation="0"], [data-editor-rotation="180"]),
+  &[data-main-rotation="180"]
+    :is([data-editor-rotation="270"], [data-editor-rotation="90"]),
+  &[data-main-rotation="270"]
+    :is([data-editor-rotation="180"], [data-editor-rotation="0"]) {
+    & > .resizers > .resizer {
+      &.topLeft,
+      &.bottomRight {
+        cursor: nesw-resize;
+      }
+
+      &.topMiddle,
+      &.bottomMiddle {
+        cursor: ew-resize;
+      }
+
+      &.topRight,
+      &.bottomLeft {
+        cursor: nwse-resize;
+      }
+
+      &.middleRight,
+      &.middleLeft {
+        cursor: ns-resize;
+      }
+    }
+  }
 }

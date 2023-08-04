@@ -27,6 +27,7 @@ import { mkdirp } from "mkdirp";
 import path from "path";
 import postcss from "gulp-postcss";
 import postcssDirPseudoClass from "postcss-dir-pseudo-class";
+import postcssNesting from "postcss-nesting";
 import { preprocessPDFJSCode } from "./external/builder/preprocessor2.mjs";
 import rename from "gulp-rename";
 import replace from "gulp-replace";
@@ -979,7 +980,11 @@ function buildGeneric(defines, dir) {
     preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
     preprocessCSS("web/viewer.css", defines)
       .pipe(
-        postcss([postcssDirPseudoClass(), autoprefixer(AUTOPREFIXER_CONFIG)])
+        postcss([
+          postcssDirPseudoClass(),
+          postcssNesting(),
+          autoprefixer(AUTOPREFIXER_CONFIG),
+        ])
       )
       .pipe(gulp.dest(dir + "web")),
 
@@ -1062,7 +1067,11 @@ function buildComponents(defines, dir) {
     gulp.src(COMPONENTS_IMAGES).pipe(gulp.dest(dir + "images")),
     preprocessCSS("web/pdf_viewer.css", defines)
       .pipe(
-        postcss([postcssDirPseudoClass(), autoprefixer(AUTOPREFIXER_CONFIG)])
+        postcss([
+          postcssDirPseudoClass(),
+          postcssNesting(),
+          autoprefixer(AUTOPREFIXER_CONFIG),
+        ])
       )
       .pipe(gulp.dest(dir)),
   ]);
@@ -1154,7 +1163,11 @@ function buildMinified(defines, dir) {
     preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
     preprocessCSS("web/viewer.css", defines)
       .pipe(
-        postcss([postcssDirPseudoClass(), autoprefixer(AUTOPREFIXER_CONFIG)])
+        postcss([
+          postcssDirPseudoClass(),
+          postcssNesting(),
+          autoprefixer(AUTOPREFIXER_CONFIG),
+        ])
       )
       .pipe(gulp.dest(dir + "web")),
 
@@ -1495,6 +1508,7 @@ gulp.task(
           .pipe(
             postcss([
               postcssDirPseudoClass(),
+              postcssNesting(),
               autoprefixer(AUTOPREFIXER_CONFIG),
             ])
           )
