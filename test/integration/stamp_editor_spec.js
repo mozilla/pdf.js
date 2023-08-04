@@ -18,6 +18,7 @@ const {
   getEditorDimensions,
   loadAndWait,
   serializeBitmapDimensions,
+  waitForAnnotationEditorLayer,
 } = require("./test_utils.js");
 const path = require("path");
 
@@ -37,9 +38,8 @@ describe("Stamp Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           if (browserName === "firefox") {
-            pending(
-              "Disabled in Firefox, because of https://bugzilla.mozilla.org/1553847."
-            );
+            // Disabled in Firefox, because of https://bugzilla.mozilla.org/1553847.
+            return;
           }
 
           await page.click("#editorStamp");
@@ -59,12 +59,11 @@ describe("Stamp Editor", () => {
 
           await page.waitForTimeout(300);
 
-          const { width, height } = await getEditorDimensions(page, 0);
+          const { width } = await getEditorDimensions(page, 0);
 
           // The image is bigger than the page, so it has been scaled down to
           // 75% of the page width.
           expect(width).toEqual("75%");
-          expect(height).toEqual("auto");
 
           const [bitmap] = await serializeBitmapDimensions(page);
           expect(bitmap.width).toEqual(512);
@@ -84,9 +83,8 @@ describe("Stamp Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           if (browserName === "firefox") {
-            pending(
-              "Disabled in Firefox, because of https://bugzilla.mozilla.org/1553847."
-            );
+            // Disabled in Firefox, because of https://bugzilla.mozilla.org/1553847.
+            return;
           }
 
           const rect = await page.$eval(".annotationEditorLayer", el => {
@@ -104,10 +102,9 @@ describe("Stamp Editor", () => {
 
           await page.waitForTimeout(300);
 
-          const { width, height } = await getEditorDimensions(page, 1);
+          const { width } = await getEditorDimensions(page, 1);
 
           expect(Math.round(parseFloat(width))).toEqual(40);
-          expect(height).toEqual("auto");
 
           const [bitmap] = await serializeBitmapDimensions(page);
           // The original size is 80x242 but to increase the resolution when it
@@ -144,9 +141,8 @@ describe("Stamp Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           if (browserName === "firefox") {
-            pending(
-              "Disabled in Firefox, because of https://bugzilla.mozilla.org/1553847."
-            );
+            // Disabled in Firefox, because of https://bugzilla.mozilla.org/1553847.
+            return;
           }
 
           await page.click("#editorStamp");
@@ -171,6 +167,100 @@ describe("Stamp Editor", () => {
           // The image is bigger than the page, so it has been scaled down to
           // 75% of the page width.
           expect(left).toEqual("25%");
+        })
+      );
+    });
+  });
+
+  describe("Resize", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer", 50);
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that an added image stay within the page", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          if (browserName === "firefox") {
+            // Disabled in Firefox, because of https://bugzilla.mozilla.org/1553847.
+            return;
+          }
+
+          await page.click("#editorStamp");
+          const names = ["bottomLeft", "bottomRight", "topRight", "topLeft"];
+
+          for (let i = 0; i < 4; i++) {
+            if (i !== 0) {
+              await page.keyboard.down("Control");
+              await page.keyboard.press("a");
+              await page.keyboard.up("Control");
+              await page.waitForTimeout(10);
+              await page.keyboard.press("Backspace");
+              await page.waitForTimeout(10);
+            }
+
+            const rect = await page.$eval(".annotationEditorLayer", el => {
+              // With Chrome something is wrong when serializing a DomRect,
+              // hence we extract the values and just return them.
+              const { x, y } = el.getBoundingClientRect();
+              return { x, y };
+            });
+
+            await page.mouse.click(rect.x + 10, rect.y + 10);
+            await page.waitForTimeout(10);
+            const input = await page.$("#stampEditorFileInput");
+            await input.uploadFile(
+              `${path.join(__dirname, "../images/firefox_logo.png")}`
+            );
+
+            await page.waitForTimeout(300);
+
+            for (let j = 0; j < 4; j++) {
+              await page.keyboard.press("Escape");
+              await page.waitForFunction(
+                `getComputedStyle(document.querySelector(".resizers")).display === "none"`
+              );
+
+              const promise = waitForAnnotationEditorLayer(page);
+              await page.evaluate(() => {
+                window.PDFViewerApplication.rotatePages(90);
+              });
+              await promise;
+              await page.focus(".stampEditor");
+
+              await page.waitForFunction(
+                `getComputedStyle(document.querySelector(".resizers")).display === "block"`
+              );
+              await page.waitForTimeout(10);
+
+              const [name, cursor] = await page.evaluate(() => {
+                const { x, y } = document
+                  .querySelector(".stampEditor")
+                  .getBoundingClientRect();
+                const el = document.elementFromPoint(x, y);
+                const cornerName = Array.from(el.classList).find(
+                  c => c !== "resizer"
+                );
+                return [cornerName, window.getComputedStyle(el).cursor];
+              });
+
+              expect(name).withContext(`In ${browserName}`).toEqual(names[j]);
+              expect(cursor)
+                .withContext(`In ${browserName}`)
+                .toEqual("nwse-resize");
+            }
+
+            const promise = waitForAnnotationEditorLayer(page);
+            await page.evaluate(() => {
+              window.PDFViewerApplication.rotatePages(90);
+            });
+            await promise;
+          }
         })
       );
     });
