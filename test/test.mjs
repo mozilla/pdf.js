@@ -945,6 +945,8 @@ async function startBrowser(browserName, startUrl = "") {
       "gfx.offscreencanvas.enabled": true,
       // Disable gpu acceleration
       "gfx.canvas.accelerated": false,
+      // Enable the `round` CSS function.
+      "layout.css.round.enabled": true,
     };
   }
 
