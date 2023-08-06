@@ -207,81 +207,65 @@
 }
 
 .annotationEditorLayer .resizer.topLeft {
-  cursor: nw-resize;
+  cursor: nwse-resize;
   top: var(--resizer-shift);
   left: var(--resizer-shift);
 }
 
 .annotationEditorLayer .resizer.topMiddle {
-  cursor: n-resize;
+  cursor: ns-resize;
   top: var(--resizer-shift);
   left: calc(50% + var(--resizer-shift));
 }
 
 .annotationEditorLayer .resizer.topRight {
-  cursor: ne-resize;
+  cursor: nesw-resize;
   top: var(--resizer-shift);
   right: var(--resizer-shift);
 }
 
 .annotationEditorLayer .resizer.middleRight {
-  cursor: e-resize;
+  cursor: ew-resize;
   top: calc(50% + var(--resizer-shift));
   right: var(--resizer-shift);
 }
 
 .annotationEditorLayer .resizer.bottomRight {
-  cursor: se-resize;
+  cursor: nwse-resize;
   bottom: var(--resizer-shift);
   right: var(--resizer-shift);
 }
 
 .annotationEditorLayer .resizer.bottomMiddle {
-  cursor: s-resize;
+  cursor: ns-resize;
   bottom: var(--resizer-shift);
   left: calc(50% + var(--resizer-shift));
 }
 
 .annotationEditorLayer .resizer.bottomLeft {
-  cursor: sw-resize;
+  cursor: nesw-resize;
   bottom: var(--resizer-shift);
   left: var(--resizer-shift);
 }
 
 .annotationEditorLayer .resizer.middleLeft {
-  cursor: w-resize;
+  cursor: ew-resize;
   top: calc(50% + var(--resizer-shift));
   left: var(--resizer-shift);
 }
 
-.annotationEditorLayer.resizingTopLeft {
-  cursor: nw-resize;
+.annotationEditorLayer:is(.resizingTopLeft, .resizingBottomRight) {
+  cursor: nwse-resize;
 }
 
-.annotationEditorLayer.resizingTopMiddle {
-  cursor: n-resize;
+.annotationEditorLayer:is(.resizingTopMiddle, .resizingBottomMiddle) {
+  cursor: ns-resize;
 }
 
-.annotationEditorLayer.resizingTopRight {
-  cursor: ne-resize;
+.annotationEditorLayer:is(.resizingTopRight, .resizingBottomLeft) {
+  cursor: nesw-resize;
 }
 
-.annotationEditorLayer.resizingMiddleRight {
-  cursor: e-resize;
-}
-
-.annotationEditorLayer.resizingBottomRight {
-  cursor: se-resize;
-}
-
-.annotationEditorLayer.resizingBottomMiddle {
-  cursor: s-resize;
-}
-
-.annotationEditorLayer.resizingBottomLeft {
-  cursor: sw-resize;
-}
-
-.annotationEditorLayer.resizingMiddleLeft {
-  cursor: w-resize;
+.annotationEditorLayer:is(.resizingMiddleRight, .resizingMiddleLeft) {
+  cursor: ew-resize;
 }
