@@ -215,7 +215,7 @@ function createWebpackConfig(
     : [
         [
           "@babel/preset-env",
-          { corejs: "3.31.1", shippedProposals: true, useBuiltIns: "usage" },
+          { corejs: "3.32.0", shippedProposals: true, useBuiltIns: "usage" },
         ],
       ];
   const babelPlugins = ["@babel/plugin-transform-modules-commonjs"];
