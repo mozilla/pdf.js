@@ -6270,6 +6270,16 @@
        "type": "eq",
        "annotations": true
     },
+    {  "id": "issue16800",
+       "file": "pdfs/issue16800.pdf",
+       "md5": "771bc170a55f923d7903af28ccca196c",
+       "link": true,
+       "rounds": 1,
+       "firstPage": 2,
+       "lastPage": 2,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "issue14117",
        "file": "pdfs/issue14117.pdf",
        "md5": "9b1c33ad2f59f4e723c258e863149abf",
