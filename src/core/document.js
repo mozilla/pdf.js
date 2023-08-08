@@ -1711,7 +1711,7 @@ class PDFDocument {
       name = name === "" ? partName : `${name}.${partName}`;
     }
 
-    if (!field.has("Kids") && /\[\d+\]$/.test(name)) {
+    if (!field.has("Kids") && field.has("T") && /\[\d+\]$/.test(name)) {
       // We've a terminal node: strip the index.
       name = name.substring(0, name.lastIndexOf("["));
     }
