@@ -2798,8 +2798,12 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
   render() {
     this.container.classList.add("fileAttachmentAnnotation");
 
+    const { data } = this;
+    const m = /paperclip|pushpin/.exec(data.name.toLowerCase());
+    const imgName = m?.[0];
+
     let trigger;
-    if (this.data.hasAppearance) {
+    if (data.hasAppearance || !imgName) {
       trigger = document.createElement("div");
     } else {
       // Unfortunately it seems that it's not clearly specified exactly what
@@ -2808,19 +2812,15 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
       //   least the following standard names: GraphPushPin, PaperclipTag.
       //   Additional names may be supported as well. Default value: PushPin.
       trigger = document.createElement("img");
-      trigger.src = `${this.imageResourcesPath}annotation-${
-        /paperclip/i.test(this.data.name) ? "paperclip" : "pushpin"
-      }.svg`;
+      trigger.src = `${this.imageResourcesPath}annotation-${imgName}.svg`;
     }
     trigger.classList.add("popupTriggerArea");
     trigger.addEventListener("dblclick", this._download.bind(this));
     this.#trigger = trigger;
 
     if (
-      !this.data.popupRef &&
-      (this.data.titleObj?.str ||
-        this.data.contentsObj?.str ||
-        this.data.richText)
+      !data.popupRef &&
+      (data.titleObj?.str || data.contentsObj?.str || data.richText)
     ) {
       this._createPopup();
     }
