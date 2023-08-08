@@ -18,13 +18,8 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./tools.js").AnnotationEditorUIManager} AnnotationEditorUIManager */
 
-import {
-  AnnotationEditorParamsType,
-  FeatureTest,
-  shadow,
-  unreachable,
-} from "../../shared/util.js";
 import { bindEvents, ColorManager } from "./tools.js";
+import { FeatureTest, shadow, unreachable } from "../../shared/util.js";
 
 /**
  * @typedef {Object} AnnotationEditorParameters
@@ -42,8 +37,6 @@ class AnnotationEditor {
   #keepAspectRatio = false;
 
   #resizersDiv = null;
-
-  #resizePosition = null;
 
   #boundFocusin = this.focusin.bind(this);
 
@@ -328,13 +321,8 @@ class AnnotationEditor {
     this.div.style.top = `${(100 * this.y).toFixed(2)}%`;
   }
 
-  /**
-   * Convert a screen translation into a page one.
-   * @param {number} x
-   * @param {number} y
-   */
-  screenToPageTranslation(x, y) {
-    switch (this.parentRotation) {
+  static #rotatePoint(x, y, angle) {
+    switch (angle) {
       case 90:
         return [y, -x];
       case 180:
@@ -347,20 +335,37 @@ class AnnotationEditor {
   }
 
   /**
+   * Convert a screen translation into a page one.
+   * @param {number} x
+   * @param {number} y
+   */
+  screenToPageTranslation(x, y) {
+    return AnnotationEditor.#rotatePoint(x, y, this.parentRotation);
+  }
+
+  /**
    * Convert a page translation into a screen one.
    * @param {number} x
    * @param {number} y
    */
   pageTranslationToScreen(x, y) {
-    switch (this.parentRotation) {
-      case 90:
-        return [-y, x];
+    return AnnotationEditor.#rotatePoint(x, y, 360 - this.parentRotation);
+  }
+
+  #getRotationMatrix(rotation) {
+    switch (rotation) {
+      case 90: {
+        const [pageWidth, pageHeight] = this.pageDimensions;
+        return [0, -pageWidth / pageHeight, pageHeight / pageWidth, 0];
+      }
       case 180:
-        return [-x, -y];
-      case 270:
-        return [y, -x];
+        return [-1, 0, 0, -1];
+      case 270: {
+        const [pageWidth, pageHeight] = this.pageDimensions;
+        return [0, pageWidth / pageHeight, -pageHeight / pageWidth, 0];
+      }
       default:
-        return [x, y];
+        return [1, 0, 0, 1];
     }
   }
 
@@ -449,26 +454,26 @@ class AnnotationEditor {
 
   #resizerPointerdown(name, event) {
     event.preventDefault();
-    this.#resizePosition = [event.clientX, event.clientY];
     const boundResizerPointermove = this.#resizerPointermove.bind(this, name);
     const savedDraggable = this._isDraggable;
     this._isDraggable = false;
-    const resizingClassName = `resizing${name
-      .charAt(0)
-      .toUpperCase()}${name.slice(1)}`;
-    this.parent.div.classList.add(resizingClassName);
     const pointerMoveOptions = { passive: true, capture: true };
     window.addEventListener(
       "pointermove",
       boundResizerPointermove,
       pointerMoveOptions
     );
+    const savedX = this.x;
+    const savedY = this.y;
+    const savedWidth = this.width;
+    const savedHeight = this.height;
+    const savedParentCursor = this.parent.div.style.cursor;
+    const savedCursor = this.div.style.cursor;
+    this.div.style.cursor = this.parent.div.style.cursor =
+      window.getComputedStyle(event.target).cursor;
+
     const pointerUpCallback = () => {
-      // Stop the undo accumulation in order to have an undo action for each
-      // resize session.
-      this._uiManager.stopUndoAccumulation();
       this._isDraggable = savedDraggable;
-      this.parent.div.classList.remove(resizingClassName);
       window.removeEventListener("pointerup", pointerUpCallback);
       window.removeEventListener("blur", pointerUpCallback);
       window.removeEventListener(
@@ -476,19 +481,53 @@ class AnnotationEditor {
         boundResizerPointermove,
         pointerMoveOptions
       );
+      this.parent.div.style.cursor = savedParentCursor;
+      this.div.style.cursor = savedCursor;
+
+      const newX = this.x;
+      const newY = this.y;
+      const newWidth = this.width;
+      const newHeight = this.height;
+      if (
+        newX === savedX &&
+        newY === savedY &&
+        newWidth === savedWidth &&
+        newHeight === savedHeight
+      ) {
+        return;
+      }
+
+      this.addCommands({
+        cmd: () => {
+          this.width = newWidth;
+          this.height = newHeight;
+          this.x = newX;
+          this.y = newY;
+          const [parentWidth, parentHeight] = this.parentDimensions;
+          this.setDims(parentWidth * newWidth, parentHeight * newHeight);
+          this.fixAndSetPosition();
+          this.parent.moveEditorInDOM(this);
+        },
+        undo: () => {
+          this.width = savedWidth;
+          this.height = savedHeight;
+          this.x = savedX;
+          this.y = savedY;
+          const [parentWidth, parentHeight] = this.parentDimensions;
+          this.setDims(parentWidth * savedWidth, parentHeight * savedHeight);
+          this.fixAndSetPosition();
+          this.parent.moveEditorInDOM(this);
+        },
+        mustExec: true,
+      });
     };
     window.addEventListener("pointerup", pointerUpCallback);
-    // If the user switch to another window (with alt+tab), then we end the
+    // If the user switches to another window (with alt+tab), then we end the
     // resize session.
     window.addEventListener("blur", pointerUpCallback);
   }
 
   #resizerPointermove(name, event) {
-    const { clientX, clientY } = event;
-    const deltaX = clientX - this.#resizePosition[0];
-    const deltaY = clientY - this.#resizePosition[1];
-    this.#resizePosition[0] = clientX;
-    this.#resizePosition[1] = clientY;
     const [parentWidth, parentHeight] = this.parentDimensions;
     const savedX = this.x;
     const savedY = this.y;
@@ -496,204 +535,124 @@ class AnnotationEditor {
     const savedHeight = this.height;
     const minWidth = AnnotationEditor.MIN_SIZE / parentWidth;
     const minHeight = AnnotationEditor.MIN_SIZE / parentHeight;
-    let cmd;
 
     // 10000 because we multiply by 100 and use toFixed(2) in fixAndSetPosition.
     // Without rounding, the positions of the corners other than the top left
     // one can be slightly wrong.
     const round = x => Math.round(x * 10000) / 10000;
-    const updatePosition = (width, height) => {
-      // We must take the parent dimensions as they are when undo/redo.
-      const [pWidth, pHeight] = this.parentDimensions;
-      this.setDims(pWidth * width, pHeight * height);
-      this.fixAndSetPosition();
-    };
-    const undo = () => {
-      this.width = savedWidth;
-      this.height = savedHeight;
-      this.x = savedX;
-      this.y = savedY;
-      updatePosition(savedWidth, savedHeight);
-    };
+    const rotationMatrix = this.#getRotationMatrix(this.rotation);
+    const transf = (x, y) => [
+      rotationMatrix[0] * x + rotationMatrix[2] * y,
+      rotationMatrix[1] * x + rotationMatrix[3] * y,
+    ];
+    const invRotationMatrix = this.#getRotationMatrix(360 - this.rotation);
+    const invTransf = (x, y) => [
+      invRotationMatrix[0] * x + invRotationMatrix[2] * y,
+      invRotationMatrix[1] * x + invRotationMatrix[3] * y,
+    ];
+    let getPoint;
+    let getOpposite;
+    let isDiagonal = false;
+    let isHorizontal = false;
 
     switch (name) {
-      case "topLeft": {
-        if (Math.sign(deltaX) * Math.sign(deltaY) < 0) {
-          return;
-        }
-        const dist = Math.hypot(deltaX, deltaY);
-        const oldDiag = Math.hypot(
-          savedWidth * parentWidth,
-          savedHeight * parentHeight
-        );
-        const brX = round(savedX + savedWidth);
-        const brY = round(savedY + savedHeight);
-        const ratio = Math.max(
-          Math.min(
-            1 - Math.sign(deltaX) * (dist / oldDiag),
-            // Avoid the editor to be larger than the page.
-            1 / savedWidth,
-            1 / savedHeight
-          ),
-          // Avoid the editor to be smaller than the minimum size.
-          minWidth / savedWidth,
-          minHeight / savedHeight
-        );
-        const newWidth = round(savedWidth * ratio);
-        const newHeight = round(savedHeight * ratio);
-        const newX = brX - newWidth;
-        const newY = brY - newHeight;
-        cmd = () => {
-          this.width = newWidth;
-          this.height = newHeight;
-          this.x = newX;
-          this.y = newY;
-          updatePosition(newWidth, newHeight);
-        };
+      case "topLeft":
+        isDiagonal = true;
+        getPoint = (w, h) => [0, 0];
+        getOpposite = (w, h) => [w, h];
         break;
-      }
-      case "topMiddle": {
-        const bmY = round(this.y + savedHeight);
-        const newHeight = round(
-          Math.max(minHeight, Math.min(1, savedHeight - deltaY / parentHeight))
-        );
-        const newY = bmY - newHeight;
-        cmd = () => {
-          this.height = newHeight;
-          this.y = newY;
-          updatePosition(savedWidth, newHeight);
-        };
+      case "topMiddle":
+        getPoint = (w, h) => [w / 2, 0];
+        getOpposite = (w, h) => [w / 2, h];
         break;
-      }
-      case "topRight": {
-        if (Math.sign(deltaX) * Math.sign(deltaY) > 0) {
-          return;
-        }
-        const dist = Math.hypot(deltaX, deltaY);
-        const oldDiag = Math.hypot(
-          this.width * parentWidth,
-          this.height * parentHeight
-        );
-        const blY = round(savedY + this.height);
-        const ratio = Math.max(
-          Math.min(
-            1 + Math.sign(deltaX) * (dist / oldDiag),
-            1 / savedWidth,
-            1 / savedHeight
-          ),
-          minWidth / savedWidth,
-          minHeight / savedHeight
-        );
-        const newWidth = round(savedWidth * ratio);
-        const newHeight = round(savedHeight * ratio);
-        const newY = blY - newHeight;
-        cmd = () => {
-          this.width = newWidth;
-          this.height = newHeight;
-          this.y = newY;
-          updatePosition(newWidth, newHeight);
-        };
+      case "topRight":
+        isDiagonal = true;
+        getPoint = (w, h) => [w, 0];
+        getOpposite = (w, h) => [0, h];
         break;
-      }
-      case "middleRight": {
-        const newWidth = round(
-          Math.max(minWidth, Math.min(1, savedWidth + deltaX / parentWidth))
-        );
-        cmd = () => {
-          this.width = newWidth;
-          updatePosition(newWidth, savedHeight);
-        };
+      case "middleRight":
+        isHorizontal = true;
+        getPoint = (w, h) => [w, h / 2];
+        getOpposite = (w, h) => [0, h / 2];
         break;
-      }
-      case "bottomRight": {
-        if (Math.sign(deltaX) * Math.sign(deltaY) < 0) {
-          return;
-        }
-        const dist = Math.hypot(deltaX, deltaY);
-        const oldDiag = Math.hypot(
-          this.width * parentWidth,
-          this.height * parentHeight
-        );
-        const ratio = Math.max(
-          Math.min(
-            1 + Math.sign(deltaX) * (dist / oldDiag),
-            1 / savedWidth,
-            1 / savedHeight
-          ),
-          minWidth / savedWidth,
-          minHeight / savedHeight
-        );
-        const newWidth = round(savedWidth * ratio);
-        const newHeight = round(savedHeight * ratio);
-        cmd = () => {
-          this.width = newWidth;
-          this.height = newHeight;
-          updatePosition(newWidth, newHeight);
-        };
+      case "bottomRight":
+        isDiagonal = true;
+        getPoint = (w, h) => [w, h];
+        getOpposite = (w, h) => [0, 0];
         break;
-      }
-      case "bottomMiddle": {
-        const newHeight = round(
-          Math.max(minHeight, Math.min(1, savedHeight + deltaY / parentHeight))
-        );
-        cmd = () => {
-          this.height = newHeight;
-          updatePosition(savedWidth, newHeight);
-        };
+      case "bottomMiddle":
+        getPoint = (w, h) => [w / 2, h];
+        getOpposite = (w, h) => [w / 2, 0];
         break;
-      }
-      case "bottomLeft": {
-        if (Math.sign(deltaX) * Math.sign(deltaY) > 0) {
-          return;
-        }
-        const dist = Math.hypot(deltaX, deltaY);
-        const oldDiag = Math.hypot(
-          this.width * parentWidth,
-          this.height * parentHeight
-        );
-        const trX = round(savedX + this.width);
-        const ratio = Math.max(
-          Math.min(
-            1 - Math.sign(deltaX) * (dist / oldDiag),
-            1 / savedWidth,
-            1 / savedHeight
-          ),
-          minWidth / savedWidth,
-          minHeight / savedHeight
-        );
-        const newWidth = round(savedWidth * ratio);
-        const newHeight = round(savedHeight * ratio);
-        const newX = trX - newWidth;
-        cmd = () => {
-          this.width = newWidth;
-          this.height = newHeight;
-          this.x = newX;
-          updatePosition(newWidth, newHeight);
-        };
+      case "bottomLeft":
+        isDiagonal = true;
+        getPoint = (w, h) => [0, h];
+        getOpposite = (w, h) => [w, 0];
         break;
-      }
-      case "middleLeft": {
-        const mrX = round(savedX + savedWidth);
-        const newWidth = round(
-          Math.max(minWidth, Math.min(1, savedWidth - deltaX / parentWidth))
-        );
-        const newX = mrX - newWidth;
-        cmd = () => {
-          this.width = newWidth;
-          this.x = newX;
-          updatePosition(newWidth, savedHeight);
-        };
+      case "middleLeft":
+        isHorizontal = true;
+        getPoint = (w, h) => [0, h / 2];
+        getOpposite = (w, h) => [w, h / 2];
         break;
-      }
     }
-    this.addCommands({
-      cmd,
-      undo,
-      mustExec: true,
-      type: AnnotationEditorParamsType.RESIZE,
-      overwriteIfSameType: true,
-      keepUndo: true,
-    });
+
+    const point = getPoint(savedWidth, savedHeight);
+    const oppositePoint = getOpposite(savedWidth, savedHeight);
+    let transfOppositePoint = transf(...oppositePoint);
+    const oppositeX = round(savedX + transfOppositePoint[0]);
+    const oppositeY = round(savedY + transfOppositePoint[1]);
+    let ratioX = 1;
+    let ratioY = 1;
+
+    let [deltaX, deltaY] = this.screenToPageTranslation(
+      event.movementX,
+      event.movementY
+    );
+    [deltaX, deltaY] = invTransf(deltaX / parentWidth, deltaY / parentHeight);
+
+    if (isDiagonal) {
+      const oldDiag = Math.hypot(savedWidth, savedHeight);
+      ratioX = ratioY = Math.max(
+        Math.min(
+          Math.hypot(
+            oppositePoint[0] - point[0] - deltaX,
+            oppositePoint[1] - point[1] - deltaY
+          ) / oldDiag,
+          // Avoid the editor to be larger than the page.
+          1 / savedWidth,
+          1 / savedHeight
+        ),
+        // Avoid the editor to be smaller than the minimum size.
+        minWidth / savedWidth,
+        minHeight / savedHeight
+      );
+    } else if (isHorizontal) {
+      ratioX =
+        Math.max(
+          minWidth,
+          Math.min(1, Math.abs(oppositePoint[0] - point[0] - deltaX))
+        ) / savedWidth;
+    } else {
+      ratioY =
+        Math.max(
+          minHeight,
+          Math.min(1, Math.abs(oppositePoint[1] - point[1] - deltaY))
+        ) / savedHeight;
+    }
+
+    const newWidth = round(savedWidth * ratioX);
+    const newHeight = round(savedHeight * ratioY);
+    transfOppositePoint = transf(...getOpposite(newWidth, newHeight));
+    const newX = oppositeX - transfOppositePoint[0];
+    const newY = oppositeY - transfOppositePoint[1];
+
+    this.width = newWidth;
+    this.height = newHeight;
+    this.x = newX;
+    this.y = newY;
+
+    this.setDims(parentWidth * newWidth, parentHeight * newHeight);
+    this.fixAndSetPosition();
   }
 
   /**
