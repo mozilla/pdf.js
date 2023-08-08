@@ -1630,7 +1630,8 @@ class WidgetAnnotation extends Annotation {
     if (
       data.fieldName &&
       /\[\d+\]$/.test(data.fieldName) &&
-      !dict.has("Kids")
+      !dict.has("Kids") &&
+      dict.has("T")
     ) {
       data.baseFieldName = data.fieldName.substring(
         0,
