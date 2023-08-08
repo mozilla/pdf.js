@@ -342,6 +342,9 @@ class FreeTextEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   focusin(event) {
+    if (!this._focusEventsAllowed) {
+      return;
+    }
     super.focusin(event);
     if (event.target !== this.editorDiv) {
       this.editorDiv.focus();

@@ -634,6 +634,9 @@ class InkEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   focusin(event) {
+    if (!this._focusEventsAllowed) {
+      return;
+    }
     super.focusin(event);
     this.enableEditMode();
   }

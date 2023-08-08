@@ -50,6 +50,8 @@ class AnnotationEditor {
 
   _uiManager = null;
 
+  _focusEventsAllowed = true;
+
   #isDraggable = false;
 
   #zIndex = AnnotationEditor._zIndex++;
@@ -190,6 +192,9 @@ class AnnotationEditor {
    * onfocus callback.
    */
   focusin(event) {
+    if (!this._focusEventsAllowed) {
+      return;
+    }
     if (!this.#hasBeenSelected) {
       this.parent.setSelected(this);
     } else {
@@ -202,6 +207,10 @@ class AnnotationEditor {
    * @param {FocusEvent} event
    */
   focusout(event) {
+    if (!this._focusEventsAllowed) {
+      return;
+    }
+
     if (!this.isAttachedToDOM) {
       return;
     }
@@ -284,6 +293,7 @@ class AnnotationEditor {
    */
   translateInPage(x, y) {
     this.#translate(this.pageDimensions, x, y);
+    this.parent.moveEditorInDOM(this);
     this.div.scrollIntoView({ block: "nearest" });
   }
 
@@ -790,7 +800,6 @@ class AnnotationEditor {
 
       this.fixAndSetPosition();
       this.parent.moveEditorInDOM(this);
-      this.div.focus();
     };
     window.addEventListener("pointerup", pointerUpCallback);
     // If the user is using alt+tab during the dragging session, the pointerup
