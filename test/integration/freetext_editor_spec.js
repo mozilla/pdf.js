@@ -104,7 +104,20 @@ describe("FreeText Editor", () => {
           await waitForSelectedEditor(page, getEditorSelector(0));
           await waitForStorageEntries(page, 1);
 
-          const content = await page.$eval(getEditorSelector(0), el =>
+          let content = await page.$eval(getEditorSelector(0), el =>
+            el.innerText.trimEnd()
+          );
+          expect(content).withContext(`In ${browserName}`).toEqual(data);
+
+          // Edit again.
+          await page.keyboard.press("Enter");
+          await page.waitForTimeout(10);
+
+          // Commit.
+          await page.keyboard.press("Escape");
+          await page.waitForTimeout(10);
+
+          content = await page.$eval(getEditorSelector(0), el =>
             el.innerText.trimEnd()
           );
           expect(content).withContext(`In ${browserName}`).toEqual(data);
