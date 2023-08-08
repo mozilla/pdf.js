@@ -160,6 +160,37 @@ describe("Checkbox annotation", () => {
       );
     });
   });
+
+  describe("bug1847733.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("bug1847733.pdf", "[data-annotation-id='18R']");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check the checkbox", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const selectors = [18, 30, 42, 54].map(
+            id => `[data-annotation-id='${id}R']`
+          );
+          for (const selector of selectors) {
+            await page.click(selector);
+            page.waitForTimeout(10);
+          }
+          for (const selector of selectors) {
+            await page.waitForFunction(
+              `document.querySelector("${selector} > :first-child").checked`
+            );
+          }
+        })
+      );
+    });
+  });
 });
 
 describe("Text widget", () => {

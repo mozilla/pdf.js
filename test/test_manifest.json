@@ -8070,5 +8070,13 @@
       "rounds": 1,
       "type": "eq",
       "print": true
+   },
+   {
+      "id": "bug1847733",
+      "file": "pdfs/bug1847733.pdf",
+      "md5": "d2e167216493a50f732b4b3685a91792",
+      "rounds": 1,
+      "link": true,
+      "type": "other"
    }
 ]
