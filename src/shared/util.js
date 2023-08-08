@@ -625,6 +625,14 @@ class FeatureTest {
       isMac: navigator.platform.includes("Mac"),
     });
   }
+
+  static get isCSSRoundSupported() {
+    return shadow(
+      this,
+      "isCSSRoundSupported",
+      globalThis.CSS?.supports?.("width: round(1.5px, 1px)")
+    );
+  }
 }
 
 const hexNumbers = [...Array(256).keys()].map(n =>
