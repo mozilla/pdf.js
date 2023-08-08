@@ -22,6 +22,7 @@ import {
 } from "./base_factory.js";
 import {
   BaseException,
+  FeatureTest,
   shadow,
   stringToBytes,
   Util,
@@ -967,8 +968,6 @@ function getCurrentTransformInverse(ctx) {
   return [a, b, c, d, e, f];
 }
 
-const useRound = globalThis.CSS?.supports?.("width: round(1.5px, 1px)");
-
 /**
  * @param {HTMLDivElement} div
  * @param {PageViewport} viewport
@@ -984,6 +983,7 @@ function setLayerDimensions(
   if (viewport instanceof PageViewport) {
     const { pageWidth, pageHeight } = viewport.rawDims;
     const { style } = div;
+    const useRound = FeatureTest.isCSSRoundSupported;
 
     const w = `var(--scale-factor) * ${pageWidth}px`,
       h = `var(--scale-factor) * ${pageHeight}px`;
