@@ -485,6 +485,8 @@ class FreeTextEditor extends AnnotationEditor {
   keydown(event) {
     if (event.target === this.div && event.key === "Enter") {
       this.enterInEditMode();
+      // Avoid to add an unwanted new line.
+      event.preventDefault();
     }
   }
 
