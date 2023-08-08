@@ -4652,6 +4652,12 @@ class FileAttachmentAnnotation extends MarkupAnnotation {
     const name = dict.get("Name");
     this.data.name =
       name instanceof Name ? stringToPDFString(name.name) : "PushPin";
+
+    const fillAlpha = dict.get("ca");
+    this.data.fillAlpha =
+      typeof fillAlpha === "number" && fillAlpha >= 0 && fillAlpha <= 1
+        ? fillAlpha
+        : null;
   }
 }
 

@@ -2798,8 +2798,9 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
   render() {
     this.container.classList.add("fileAttachmentAnnotation");
 
+    const { data } = this;
     let trigger;
-    if (this.data.hasAppearance) {
+    if (data.hasAppearance || data.fillAlpha === 0) {
       trigger = document.createElement("div");
     } else {
       // Unfortunately it seems that it's not clearly specified exactly what
@@ -2809,18 +2810,26 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
       //   Additional names may be supported as well. Default value: PushPin.
       trigger = document.createElement("img");
       trigger.src = `${this.imageResourcesPath}annotation-${
-        /paperclip/i.test(this.data.name) ? "paperclip" : "pushpin"
+        /paperclip/i.test(data.name) ? "paperclip" : "pushpin"
       }.svg`;
+
+      if (data.fillAlpha && data.fillAlpha < 1) {
+        trigger.style = `filter: opacity(${Math.round(
+          data.fillAlpha * 100
+        )}%);`;
+
+        if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
+          this.container.classList.add("hasFillAlpha");
+        }
+      }
     }
     trigger.classList.add("popupTriggerArea");
     trigger.addEventListener("dblclick", this._download.bind(this));
     this.#trigger = trigger;
 
     if (
-      !this.data.popupRef &&
-      (this.data.titleObj?.str ||
-        this.data.contentsObj?.str ||
-        this.data.richText)
+      !data.popupRef &&
+      (data.titleObj?.str || data.contentsObj?.str || data.richText)
     ) {
       this._createPopup();
     }
