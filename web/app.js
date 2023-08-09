@@ -2230,11 +2230,6 @@ const PDFViewerApplication = {
 };
 
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-  const HOSTED_VIEWER_ORIGINS = [
-    "null",
-    "http://mozilla.github.io",
-    "https://mozilla.github.io",
-  ];
   // eslint-disable-next-line no-var
   var validateFileURL = function (file) {
     return true;
