@@ -921,6 +921,9 @@ describe("FreeText Editor", () => {
             return { x, y, width, height };
           });
 
+          // Select the annotation we want to move.
+          await page.mouse.click(editorRect.x + 2, editorRect.y + 2);
+
           await dragAndDropAnnotation(
             page,
             editorRect.x + editorRect.width / 2,
@@ -2189,6 +2192,75 @@ describe("FreeText Editor", () => {
           expect(await pos(1))
             .withContext(`In ${browserName}`)
             .toEqual(0);
+        })
+      );
+    });
+  });
+
+  describe("Move several FreeTexts", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must move several annotations", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorFreeText");
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          const allPositions = [];
+
+          for (let i = 0; i < 10; i++) {
+            await page.mouse.click(rect.x + 10 + 30 * i, rect.y + 100 + 5 * i);
+            await page.waitForTimeout(10);
+            await page.type(
+              `${getEditorSelector(i)} .internal`,
+              String.fromCharCode(65 + i)
+            );
+
+            // Commit.
+            await page.keyboard.press("Escape");
+            await page.waitForTimeout(10);
+
+            allPositions.push(
+              await page.$eval(getEditorSelector(i), el => {
+                const { x, y } = el.getBoundingClientRect();
+                return { x, y };
+              })
+            );
+          }
+
+          await page.keyboard.down("Control");
+          await page.keyboard.press("a");
+          await page.keyboard.up("Control");
+
+          await page.waitForTimeout(10);
+          await dragAndDropAnnotation(page, rect.x + 161, rect.y + 126, 39, 74);
+          await page.waitForTimeout(10);
+
+          for (let i = 0; i < 10; i++) {
+            const pos = await page.$eval(getEditorSelector(i), el => {
+              const { x, y } = el.getBoundingClientRect();
+              return { x, y };
+            });
+            const oldPos = allPositions[i];
+            expect(Math.round(pos.x))
+              .withContext(`In ${browserName}`)
+              .toEqual(Math.round(oldPos.x + 39));
+            expect(Math.round(pos.y))
+              .withContext(`In ${browserName}`)
+              .toEqual(Math.round(oldPos.y + 74));
+          }
         })
       );
     });

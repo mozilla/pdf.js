@@ -532,6 +532,8 @@ class AnnotationEditorUIManager {
 
   #deletedAnnotationsElementIds = new Set();
 
+  #draggingEditors = null;
+
   #editorTypes = null;
 
   #editorsToRescale = new Set();
@@ -1059,6 +1061,10 @@ class AnnotationEditorUIManager {
     return this.#allLayers.get(this.#currentPageIndex);
   }
 
+  getLayer(pageIndex) {
+    return this.#allLayers.get(pageIndex);
+  }
+
   get currentPageIndex() {
     return this.#currentPageIndex;
   }
@@ -1173,7 +1179,7 @@ class AnnotationEditorUIManager {
   }
 
   /**
-   * Get all the editors belonging to a give page.
+   * Get all the editors belonging to a given page.
    * @param {number} pageIndex
    * @returns {Array<AnnotationEditor>}
    */
@@ -1517,6 +1523,123 @@ class AnnotationEditorUIManager {
 
     for (const editor of editors) {
       editor.translateInPage(x, y);
+    }
+  }
+
+  /**
+   * Set up the drag session for moving the selected editors.
+   */
+  setUpDragSession() {
+    if (!this.hasSelection) {
+      return;
+    }
+    // Avoid to have spurious text selection in the text layer when dragging.
+    this.disableUserSelect(true);
+    this.#draggingEditors = new Map();
+    for (const editor of this.#selectedEditors) {
+      this.#draggingEditors.set(editor, {
+        savedX: editor.x,
+        savedY: editor.y,
+        savedPageIndex: editor.parent.pageIndex,
+        newX: 0,
+        newY: 0,
+        newPageIndex: -1,
+      });
+    }
+  }
+
+  /**
+   * Ends the drag session.
+   * @returns {boolean} true if at least one editor has been moved.
+   */
+  endDragSession() {
+    if (!this.#draggingEditors) {
+      return false;
+    }
+    this.disableUserSelect(false);
+    const map = this.#draggingEditors;
+    this.#draggingEditors = null;
+    let mustBeAddedInUndoStack = false;
+
+    for (const [{ x, y, parent }, value] of map) {
+      value.newX = x;
+      value.newY = y;
+      value.newPageIndex = parent.pageIndex;
+      mustBeAddedInUndoStack ||=
+        x !== value.savedX ||
+        y !== value.savedY ||
+        parent.pageIndex !== value.savedPageIndex;
+    }
+
+    if (!mustBeAddedInUndoStack) {
+      return false;
+    }
+
+    const move = (editor, x, y, pageIndex) => {
+      if (this.#allEditors.has(editor.id)) {
+        // The editor can be undone/redone on a page which is not visible (and
+        // which potentially has no annotation editor layer), hence we need to
+        // use the pageIndex instead of the parent.
+        const parent = this.#allLayers.get(pageIndex);
+        if (parent) {
+          editor._setParentAndPosition(parent, x, y);
+        } else {
+          editor.pageIndex = pageIndex;
+          editor.x = x;
+          editor.y = y;
+        }
+      }
+    };
+
+    this.addCommands({
+      cmd: () => {
+        for (const [editor, { newX, newY, newPageIndex }] of map) {
+          move(editor, newX, newY, newPageIndex);
+        }
+      },
+      undo: () => {
+        for (const [editor, { savedX, savedY, savedPageIndex }] of map) {
+          move(editor, savedX, savedY, savedPageIndex);
+        }
+      },
+      mustExec: true,
+    });
+
+    return true;
+  }
+
+  /**
+   * Drag the set of selected editors.
+   * @param {number} tx
+   * @param {number} ty
+   */
+  dragSelectedEditors(tx, ty) {
+    if (!this.#draggingEditors) {
+      return;
+    }
+    for (const editor of this.#draggingEditors.keys()) {
+      editor.drag(tx, ty);
+    }
+  }
+
+  /**
+   * Rebuild the editor (usually on undo/redo actions) on a potentially
+   * non-rendered page.
+   * @param {AnnotationEditor} editor
+   */
+  rebuild(editor) {
+    if (editor.parent === null) {
+      const parent = this.getLayer(editor.pageIndex);
+      if (parent) {
+        parent.changeParent(editor);
+        parent.addOrRebuild(editor);
+      } else {
+        this.addEditor(editor);
+        this.addToAnnotationStorage(editor);
+        editor.rebuild();
+      }
+    } else {
+      editor.parent.addOrRebuild(editor);
     }
   }
 

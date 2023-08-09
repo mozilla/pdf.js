@@ -381,6 +381,10 @@ class AnnotationEditorLayer {
   }
 
   moveEditorInDOM(editor) {
+    if (!editor.isAttachedToDOM) {
+      return;
+    }
+
     const { activeElement } = document;
     if (editor.div.contains(activeElement)) {
       // When the div is moved in the DOM the focus can move somewhere else,
@@ -425,9 +429,7 @@ class AnnotationEditorLayer {
    * @param {AnnotationEditor} editor
    */
   addUndoableEditor(editor) {
-    const cmd = () => {
-      this.addOrRebuild(editor);
-    };
+    const cmd = () => editor._uiManager.rebuild(editor);
     const undo = () => {
       editor.remove();
     };
