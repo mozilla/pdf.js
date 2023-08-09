@@ -363,6 +363,10 @@ class FreeTextEditor extends AnnotationEditor {
     }
     this.enableEditMode();
     this.editorDiv.focus();
+    if (this._initialOptions?.isCentered) {
+      this.center();
+    }
+    this._initialOptions = null;
   }
 
   /** @inheritdoc */
