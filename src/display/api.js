@@ -2533,11 +2533,9 @@ class WorkerTransport {
       this.#methodPromises.clear();
       this.filterFactory.destroy();
 
-      if (this._networkStream) {
-        this._networkStream.cancelAllRequests(
-          new AbortException("Worker was terminated.")
-        );
-      }
+      this._networkStream?.cancelAllRequests(
+        new AbortException("Worker was terminated.")
+      );
 
       if (this.messageHandler) {
         this.messageHandler.destroy();
