@@ -81,7 +81,7 @@
 }
 
 .annotationEditorLayer
-  :is(.freeTextEditor, .inkEditor, .stampEditor).draggable {
+  :is(.freeTextEditor, .inkEditor, .stampEditor).draggable.selectedEditor {
   cursor: move;
 }
 

@@ -42,7 +42,7 @@ class AnnotationEditor {
 
   #boundFocusout = this.focusout.bind(this);
 
-  #hasBeenSelected = false;
+  #hasBeenClicked = false;
 
   #isEditing = false;
 
@@ -195,10 +195,10 @@ class AnnotationEditor {
     if (!this._focusEventsAllowed) {
       return;
     }
-    if (!this.#hasBeenSelected) {
+    if (!this.#hasBeenClicked) {
       this.parent.setSelected(this);
     } else {
-      this.#hasBeenSelected = false;
+      this.#hasBeenClicked = false;
     }
   }
 
@@ -293,7 +293,27 @@ class AnnotationEditor {
    */
   translateInPage(x, y) {
     this.#translate(this.pageDimensions, x, y);
-    this.parent.moveEditorInDOM(this);
+    this.moveInDOM();
+    this.div.scrollIntoView({ block: "nearest" });
+  }
+
+  drag(tx, ty) {
+    const [parentWidth, parentHeight] = this.parentDimensions;
+    this.x += tx / parentWidth;
+    this.y += ty / parentHeight;
+    if (this.x < 0 || this.x > 1 || this.y < 0 || this.y > 1) {
+      // The element will be outside of its parent so change the parent.
+      const { x, y } = this.div.getBoundingClientRect();
+      if (this.parent.findNewParent(this, x, y)) {
+        this.x -= Math.floor(this.x);
+        this.y -= Math.floor(this.y);
+      }
+    }
+
+    // The editor can be moved wherever the user wants, so we don't need to fix
+    // the position: it'll be done when the user will release the mouse button.
+    this.div.style.left = `${(100 * this.x).toFixed(2)}%`;
+    this.div.style.top = `${(100 * this.y).toFixed(2)}%`;
     this.div.scrollIntoView({ block: "nearest" });
   }
 
@@ -516,7 +536,7 @@ class AnnotationEditor {
           const [parentWidth, parentHeight] = this.parentDimensions;
           this.setDims(parentWidth * newWidth, parentHeight * newHeight);
           this.fixAndSetPosition();
-          this.parent.moveEditorInDOM(this);
+          this.moveInDOM();
         },
         undo: () => {
           this.width = savedWidth;
@@ -526,7 +546,7 @@ class AnnotationEditor {
           const [parentWidth, parentHeight] = this.parentDimensions;
           this.setDims(parentWidth * savedWidth, parentHeight * savedHeight);
           this.fixAndSetPosition();
-          this.parent.moveEditorInDOM(this);
+          this.moveInDOM();
         },
         mustExec: true,
       });
@@ -712,17 +732,7 @@ class AnnotationEditor {
       return;
     }
 
-    if (
-      (event.ctrlKey && !isMac) ||
-      event.shiftKey ||
-      (event.metaKey && isMac)
-    ) {
-      this.parent.toggleSelected(this);
-    } else {
-      this.parent.setSelected(this);
-    }
-
-    this.#hasBeenSelected = true;
+    this.#hasBeenClicked = true;
 
     this.#setUpDragSession(event);
   }
@@ -732,80 +742,65 @@ class AnnotationEditor {
       return;
     }
 
-    // Avoid to have spurious text selection in the text layer when dragging.
-    this._uiManager.disableUserSelect(true);
+    const isSelected = this._uiManager.isSelected(this);
+    this._uiManager.setUpDragSession();
 
-    const savedParent = this.parent;
-    const savedX = this.x;
-    const savedY = this.y;
-
-    const pointerMoveOptions = { passive: true, capture: true };
-    const pointerMoveCallback = e => {
-      const [parentWidth, parentHeight] = this.parentDimensions;
-      const [tx, ty] = this.screenToPageTranslation(e.movementX, e.movementY);
-      this.x += tx / parentWidth;
-      this.y += ty / parentHeight;
-      if (this.x < 0 || this.x > 1 || this.y < 0 || this.y > 1) {
-        // The element will be outside of its parent so change the parent.
-        const { x, y } = this.div.getBoundingClientRect();
-        if (this.parent.findNewParent(this, x, y)) {
-          this.x -= Math.floor(this.x);
-          this.y -= Math.floor(this.y);
-        }
-      }
-
-      this.div.style.left = `${(100 * this.x).toFixed(2)}%`;
-      this.div.style.top = `${(100 * this.y).toFixed(2)}%`;
-      this.div.scrollIntoView({ block: "nearest" });
-    };
-    window.addEventListener(
-      "pointermove",
-      pointerMoveCallback,
-      pointerMoveOptions
-    );
-
-    const pointerUpCallback = () => {
-      this._uiManager.disableUserSelect(false);
-      window.removeEventListener("pointerup", pointerUpCallback);
-      window.removeEventListener("blur", pointerUpCallback);
-      window.removeEventListener(
+    let pointerMoveOptions, pointerMoveCallback;
+    if (isSelected) {
+      pointerMoveOptions = { passive: true, capture: true };
+      pointerMoveCallback = e => {
+        const [tx, ty] = this.screenToPageTranslation(e.movementX, e.movementY);
+        this._uiManager.dragSelectedEditors(tx, ty);
+      };
+      window.addEventListener(
         "pointermove",
         pointerMoveCallback,
         pointerMoveOptions
       );
-      const newParent = this.parent;
-      const newX = this.x;
-      const newY = this.y;
-      if (newParent === savedParent && newX === savedX && newY === savedY) {
-        return;
+    }
+
+    const pointerUpCallback = () => {
+      window.removeEventListener("pointerup", pointerUpCallback);
+      window.removeEventListener("blur", pointerUpCallback);
+      if (isSelected) {
+        window.removeEventListener(
+          "pointermove",
+          pointerMoveCallback,
+          pointerMoveOptions
+        );
       }
 
-      this.addCommands({
-        cmd: () => {
-          newParent.changeParent(this);
-          this.x = newX;
-          this.y = newY;
-          this.fixAndSetPosition();
-          newParent.moveEditorInDOM(this);
-        },
-        undo: () => {
-          savedParent.changeParent(this);
-          this.x = savedX;
-          this.y = savedY;
-          this.fixAndSetPosition();
-          savedParent.moveEditorInDOM(this);
-        },
-        mustExec: false,
-      });
-
-      this.fixAndSetPosition();
-      this.parent.moveEditorInDOM(this);
+      this.#hasBeenClicked = false;
+      if (!this._uiManager.endDragSession()) {
+        const { isMac } = FeatureTest.platform;
+        if (
+          (event.ctrlKey && !isMac) ||
+          event.shiftKey ||
+          (event.metaKey && isMac)
+        ) {
+          this.parent.toggleSelected(this);
+        } else {
+          this.parent.setSelected(this);
+        }
+      }
     };
     window.addEventListener("pointerup", pointerUpCallback);
     // If the user is using alt+tab during the dragging session, the pointerup
     // event could be not fired, but a blur event is fired so we can use it in
     // order to interrupt the dragging session.
     window.addEventListener("blur", pointerUpCallback);
+  }
+
+  moveInDOM() {
+    this.parent.moveEditorInDOM(this);
+  }
+
+  _setParentAndPosition(parent, x, y) {
+    parent.changeParent(this);
+    this.x = x;
+    this.y = y;
+    this.fixAndSetPosition();
+    this.moveInDOM();
   }
 
   /**
