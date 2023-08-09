@@ -118,6 +118,7 @@
   --secondaryToolbarButton-spreadOdd-icon: url(images/secondaryToolbarButton-spreadOdd.svg);
   --secondaryToolbarButton-spreadEven-icon: url(images/secondaryToolbarButton-spreadEven.svg);
   --secondaryToolbarButton-documentProperties-icon: url(images/secondaryToolbarButton-documentProperties.svg);
+  --editorParams-stampAddImage-icon: url(images/toolbarButton-zoomIn.svg);
 }
 
 :root:dir(rtl) {
@@ -576,6 +577,11 @@ body {
   margin-bottom: -4px;
 }
 
+#editorStampParamsToolbar {
+  inset-inline-end: 40px;
+  background-color: var(--toolbar-bg-color);
+}
+
 #editorInkParamsToolbar {
   inset-inline-end: 68px;
   background-color: var(--toolbar-bg-color);
@@ -584,6 +590,10 @@ body {
 #editorFreeTextParamsToolbar {
   inset-inline-end: 96px;
   background-color: var(--toolbar-bg-color);
+}
+
+#editorStampAddImage::before {
+  mask-image: var(--editorParams-stampAddImage-icon);
 }
 
 .doorHanger,

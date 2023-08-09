@@ -218,6 +218,7 @@ class Toolbar {
     editorInkButton,
     editorInkParamsToolbar,
     editorStampButton,
+    editorStampParamsToolbar,
   }) {
     const editorModeChanged = ({ mode }) => {
       toggleCheckedBtn(
@@ -230,7 +231,11 @@ class Toolbar {
         mode === AnnotationEditorType.INK,
         editorInkParamsToolbar
       );
-      toggleCheckedBtn(editorStampButton, mode === AnnotationEditorType.STAMP);
+      toggleCheckedBtn(
+        editorStampButton,
+        mode === AnnotationEditorType.STAMP,
+        editorStampParamsToolbar
+      );
 
       const isDisable = mode === AnnotationEditorType.DISABLE;
       editorFreeTextButton.disabled = isDisable;

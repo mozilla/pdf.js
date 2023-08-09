@@ -78,6 +78,7 @@ const AnnotationEditorType = {
 
 const AnnotationEditorParamsType = {
   RESIZE: 1,
+  CREATE: 2,
   FREETEXT_SIZE: 11,
   FREETEXT_COLOR: 12,
   FREETEXT_OPACITY: 13,
