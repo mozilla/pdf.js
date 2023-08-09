@@ -544,11 +544,17 @@ class AnnotationEditorUIManager {
 
   #isEnabled = false;
 
+  #lastActiveElement = null;
+
   #mode = AnnotationEditorType.NONE;
 
   #selectedEditors = new Set();
 
   #pageColors = null;
+
+  #boundBlur = this.blur.bind(this);
+
+  #boundFocus = this.focus.bind(this);
 
   #boundCopy = this.copy.bind(this);
 
@@ -701,6 +707,7 @@ class AnnotationEditorUIManager {
 
   destroy() {
     this.#removeKeyboardManager();
+    this.#removeFocusManager();
     this.#eventBus._off("editingaction", this.#boundOnEditingAction);
     this.#eventBus._off("pagechanging", this.#boundOnPageChanging);
     this.#eventBus._off("scalechanging", this.#boundOnScaleChanging);
@@ -794,6 +801,50 @@ class AnnotationEditorUIManager {
     ) {
       this.#annotationStorage.setValue(editor.id, editor);
     }
+  }
+
+  #addFocusManager() {
+    window.addEventListener("focus", this.#boundFocus);
+    window.addEventListener("blur", this.#boundBlur);
+  }
+
+  #removeFocusManager() {
+    window.removeEventListener("focus", this.#boundFocus);
+    window.removeEventListener("blur", this.#boundBlur);
+  }
+
+  blur() {
+    if (!this.hasSelection) {
+      return;
+    }
+    // When several editors are selected and the window loses focus, we want to
+    // keep the last active element in order to be able to focus it again when
+    // the window gets the focus back but we don't want to trigger any focus
+    // callbacks else only one editor will be selected.
+    const { activeElement } = document;
+    for (const editor of this.#selectedEditors) {
+      if (editor.div.contains(activeElement)) {
+        this.#lastActiveElement = [editor, activeElement];
+        editor._focusEventsAllowed = false;
+        break;
+      }
+    }
+  }
+
+  focus() {
+    if (!this.#lastActiveElement) {
+      return;
+    }
+    const [lastEditor, lastActiveElement] = this.#lastActiveElement;
+    this.#lastActiveElement = null;
+    lastActiveElement.addEventListener(
+      "focusin",
+      () => {
+        lastEditor._focusEventsAllowed = true;
+      },
+      { once: true }
+    );
+    lastActiveElement.focus();
   }
 
   #addKeyboardManager() {
@@ -967,6 +1018,7 @@ class AnnotationEditorUIManager {
    */
   setEditingState(isEditing) {
     if (isEditing) {
+      this.#addFocusManager();
       this.#addKeyboardManager();
       this.#addCopyPasteListeners();
       this.#dispatchUpdateStates({
@@ -977,6 +1029,7 @@ class AnnotationEditorUIManager {
         hasSelectedEditor: false,
       });
     } else {
+      this.#removeFocusManager();
       this.#removeKeyboardManager();
       this.#removeCopyPasteListeners();
       this.#dispatchUpdateStates({
