@@ -18,7 +18,7 @@ import {
   waitOnEventOrTimeout,
   WaitOnType,
 } from "../../web/event_utils.js";
-import { isNodeJS } from "../../src/shared/is_node.js";
+import { isNodeJS } from "../../src/shared/util.js";
 
 describe("event_utils", function () {
   describe("EventBus", function () {

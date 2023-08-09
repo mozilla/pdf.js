@@ -27,10 +27,7 @@ function validateRangeRequestCapabilities({
   rangeChunkSize,
   disableRange,
 }) {
-  if (
-    typeof PDFJSDev === "undefined" ||
-    PDFJSDev.test("!PRODUCTION || TESTING")
-  ) {
+  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
     assert(
       Number.isInteger(rangeChunkSize) && rangeChunkSize > 0,
       "rangeChunkSize must be an integer larger than zero."
@@ -77,7 +74,7 @@ function extractFilenameFromHeader(getResponseHeader) {
     if (filename.includes("%")) {
       try {
         filename = decodeURIComponent(filename);
-      } catch (ex) {}
+      } catch {}
     }
     if (isPdfFile(filename)) {
       return filename;

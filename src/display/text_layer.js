@@ -18,8 +18,8 @@
 
 import {
   AbortException,
-  createPromiseCapability,
   FeatureTest,
+  PromiseCapability,
   Util,
 } from "../shared/util.js";
 import { deprecated, setLayerDimensions } from "./display_utils.js";
@@ -311,12 +311,13 @@ class TextLayerRenderTask {
     this._container = this._rootContainer = container;
     this._textDivs = textDivs || [];
     this._textContentItemsStr = textContentItemsStr || [];
+    this._isOffscreenCanvasSupported = isOffscreenCanvasSupported;
     this._fontInspectorEnabled = !!globalThis.FontInspector?.enabled;
 
     this._reader = null;
     this._textDivProperties = textDivProperties || new WeakMap();
     this._canceled = false;
-    this._capability = createPromiseCapability();
+    this._capability = new PromiseCapability();
     this._layoutTextParams = {
       prevFontSize: null,
       prevFontFamily: null,
@@ -416,7 +417,7 @@ class TextLayerRenderTask {
    * @private
    */
   _render() {
-    const capability = createPromiseCapability();
+    const capability = new PromiseCapability();
     let styleCache = Object.create(null);
 
     if (this._isReadableStream) {
@@ -465,6 +466,23 @@ function renderTextLayer(params) {
         "will be removed in the future, please use `textContentSource` instead."
     );
     params.textContentSource = params.textContent || params.textContentStream;
+  }
+  if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC && !TESTING")) {
+    const { container, viewport } = params;
+    const style = getComputedStyle(container);
+    const visibility = style.getPropertyValue("visibility");
+    const scaleFactor = parseFloat(style.getPropertyValue("--scale-factor"));
+
+    if (
+      visibility === "visible" &&
+      (!scaleFactor || Math.abs(scaleFactor - viewport.scale) > 1e-5)
+    ) {
+      console.error(
+        "The `--scale-factor` CSS-variable must be set, " +
+          "to the same value as `viewport.scale`, " +
+          "either on the `container`-element itself or higher up in the DOM."
+      );
+    }
   }
   const task = new TextLayerRenderTask(params);
   task._render();

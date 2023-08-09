@@ -24,12 +24,12 @@ import {
   $pushGlyphs,
   $text,
   $toStyle,
-  XFAObject,
-} from "./xfa_object.js";
+} from "./symbol_utils.js";
 import { createValidAbsoluteUrl, warn } from "../../shared/util.js";
 import { getMeasurement, stripQuotes } from "./utils.js";
 import { selectFont } from "./fonts.js";
 import { TextMeasure } from "./text.js";
+import { XFAObject } from "./xfa_object.js";
 
 function measureToString(m) {
   if (typeof m === "string") {
@@ -81,7 +81,7 @@ const converters = {
     const parent = node[$getSubformParent]();
     let width = node.w;
     const height = node.h;
-    if (parent.layout && parent.layout.includes("row")) {
+    if (parent.layout?.includes("row")) {
       const extra = parent[$extra];
       const colSpan = node.colSpan;
       let w;
@@ -103,21 +103,13 @@ const converters = {
       }
     }
 
-    if (width !== "") {
-      style.width = measureToString(width);
-    } else {
-      style.width = "auto";
-    }
+    style.width = width !== "" ? measureToString(width) : "auto";
 
-    if (height !== "") {
-      style.height = measureToString(height);
-    } else {
-      style.height = "auto";
-    }
+    style.height = height !== "" ? measureToString(height) : "auto";
   },
   position(node, style) {
     const parent = node[$getSubformParent]();
-    if (parent && parent.layout && parent.layout !== "position") {
+    if (parent?.layout && parent.layout !== "position") {
       // IRL, we've some x/y in tb layout.
       // Specs say x/y is only used in positioned layout.
       return;
@@ -305,11 +297,7 @@ function computeBbox(node, html, availableSpace) {
     if (width === "") {
       if (node.maxW === 0) {
         const parent = node[$getSubformParent]();
-        if (parent.layout === "position" && parent.w !== "") {
-          width = 0;
-        } else {
-          width = node.minW;
-        }
+        width = parent.layout === "position" && parent.w !== "" ? 0 : node.minW;
       } else {
         width = Math.min(node.maxW, availableSpace.width);
       }
@@ -320,11 +308,8 @@ function computeBbox(node, html, availableSpace) {
     if (height === "") {
       if (node.maxH === 0) {
         const parent = node[$getSubformParent]();
-        if (parent.layout === "position" && parent.h !== "") {
-          height = 0;
-        } else {
-          height = node.minH;
-        }
+        height =
+          parent.layout === "position" && parent.h !== "" ? 0 : node.minH;
       } else {
         height = Math.min(node.maxH, availableSpace.height);
       }
@@ -338,7 +323,7 @@ function computeBbox(node, html, availableSpace) {
 
 function fixDimensions(node) {
   const parent = node[$getSubformParent]();
-  if (parent.layout && parent.layout.includes("row")) {
+  if (parent.layout?.includes("row")) {
     const extra = parent[$extra];
     const colSpan = node.colSpan;
     let width;
@@ -510,11 +495,8 @@ function createWrapper(node, html) {
     }
   }
 
-  if (style.position === "absolute") {
-    wrapper.attributes.style.position = "absolute";
-  } else {
-    wrapper.attributes.style.position = "relative";
-  }
+  wrapper.attributes.style.position =
+    style.position === "absolute" ? "absolute" : "relative";
   delete style.position;
 
   if (style.alignSelf) {
@@ -566,7 +548,7 @@ function getCurrentPara(node) {
 }
 
 function setPara(node, nodeStyle, value) {
-  if (value.attributes.class && value.attributes.class.includes("xfaRich")) {
+  if (value.attributes.class?.includes("xfaRich")) {
     if (nodeStyle) {
       if (node.h === "") {
         nodeStyle.height = "auto";

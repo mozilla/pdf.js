@@ -28,7 +28,7 @@ class CFFFont {
     this.seacs = this.cff.seacs;
     try {
       this.data = compiler.compile();
-    } catch (e) {
+    } catch {
       warn("Failed to compile font " + properties.loadedName);
       // There may have just been an issue with the compiler, set the data
       // anyway and hope the font loaded.
@@ -55,7 +55,7 @@ class CFFFont {
 
     if (properties.composite) {
       let invCidToGidMap;
-      if (cidToGidMap && cidToGidMap.length > 0) {
+      if (cidToGidMap?.length > 0) {
         invCidToGidMap = Object.create(null);
         for (let i = 0, ii = cidToGidMap.length; i < ii; i++) {
           const gid = cidToGidMap[i];
@@ -74,7 +74,7 @@ class CFFFont {
           const cid = charsets[glyphId];
           charCode = cMap.charCodeOf(cid);
 
-          if (invCidToGidMap && invCidToGidMap[charCode] !== undefined) {
+          if (invCidToGidMap?.[charCode] !== undefined) {
             // According to the PDF specification, see Table 117, it's not clear
             // that a /CIDToGIDMap should be used with any non-TrueType fonts,
             // however it's necessary to do so in order to fix issue 15559.

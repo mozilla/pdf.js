@@ -38,22 +38,6 @@ function getLookupTableFactory(initializer) {
   };
 }
 
-function getArrayLookupTableFactory(initializer) {
-  let lookup;
-  return function () {
-    if (initializer) {
-      let arr = initializer();
-      initializer = null;
-      lookup = Object.create(null);
-      for (let i = 0, ii = arr.length; i < ii; i += 2) {
-        lookup[arr[i]] = arr[i + 1];
-      }
-      arr = null;
-    }
-    return lookup;
-  };
-}
-
 class MissingDataException extends BaseException {
   constructor(begin, end) {
     super(`Missing data [${begin}, ${end})`, "MissingDataException");
@@ -78,6 +62,41 @@ class XRefParseException extends BaseException {
   constructor(msg) {
     super(msg, "XRefParseException");
   }
+}
+
+/**
+ * Combines multiple ArrayBuffers into a single Uint8Array.
+ * @param {Array<ArrayBuffer>} arr - An array of ArrayBuffers.
+ * @returns {Uint8Array}
+ */
+function arrayBuffersToBytes(arr) {
+  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+    for (const item of arr) {
+      assert(
+        item instanceof ArrayBuffer,
+        "arrayBuffersToBytes - expected an ArrayBuffer."
+      );
+    }
+  }
+  const length = arr.length;
+  if (length === 0) {
+    return new Uint8Array(0);
+  }
+  if (length === 1) {
+    return new Uint8Array(arr[0]);
+  }
+  let dataLength = 0;
+  for (let i = 0; i < length; i++) {
+    dataLength += arr[i].byteLength;
+  }
+  const data = new Uint8Array(dataLength);
+  let pos = 0;
+  for (let i = 0; i < length; i++) {
+    const item = new Uint8Array(arr[i]);
+    data.set(item, pos);
+    pos += item.byteLength;
+  }
+  return data;
 }
 
 /**
@@ -118,10 +137,7 @@ function getInheritableProperty({
       if (stopWhenFound) {
         return value;
       }
-      if (!values) {
-        values = [];
-      }
-      values.push(value);
+      (values ||= []).push(value);
     }
     dict = dict.get("Parent");
   }
@@ -265,7 +281,7 @@ function escapePDFName(str) {
 // Replace "(", ")", "\n", "\r" and "\" by "\(", "\)", "\\n", "\\r" and "\\"
 // in order to write it in a PDF file.
 function escapeString(str) {
-  return str.replace(/([()\\\n\r])/g, match => {
+  return str.replaceAll(/([()\\\n\r])/g, match => {
     if (match === "\n") {
       return "\\n";
     } else if (match === "\r") {
@@ -303,7 +319,7 @@ function _collectJS(entry, xref, list, parents) {
       } else if (typeof js === "string") {
         code = js;
       }
-      code = code && stringToPDFString(code).replace(/\u0000/g, "");
+      code &&= stringToPDFString(code).replaceAll("\x00", "");
       if (code) {
         list.push(code);
       }
@@ -407,6 +423,31 @@ function encodeToXmlString(str) {
   return buffer.join("");
 }
 
+function validateFontName(fontFamily, mustWarn = false) {
+  // See https://developer.mozilla.org/en-US/docs/Web/CSS/string.
+  const m = /^("|').*("|')$/.exec(fontFamily);
+  if (m && m[1] === m[2]) {
+    const re = new RegExp(`[^\\\\]${m[1]}`);
+    if (re.test(fontFamily.slice(1, -1))) {
+      if (mustWarn) {
+        warn(`FontFamily contains unescaped ${m[1]}: ${fontFamily}.`);
+      }
+      return false;
+    }
+  } else {
+    // See https://developer.mozilla.org/en-US/docs/Web/CSS/custom-ident.
+    for (const ident of fontFamily.split(/[ \t]+/)) {
+      if (/^(\d|(-(\d|-)))/.test(ident) || !/^[\w-\\]+$/.test(ident)) {
+        if (mustWarn) {
+          warn(`FontFamily contains invalid <custom-ident>: ${fontFamily}.`);
+        }
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 function validateCSSFont(cssFontInfo) {
   // See https://developer.mozilla.org/en-US/docs/Web/CSS/font-style.
   const DEFAULT_CSS_FONT_OBLIQUE = "14";
@@ -431,27 +472,8 @@ function validateCSSFont(cssFontInfo) {
 
   const { fontFamily, fontWeight, italicAngle } = cssFontInfo;
 
-  // See https://developer.mozilla.org/en-US/docs/Web/CSS/string.
-  if (/^".*"$/.test(fontFamily)) {
-    if (/[^\\]"/.test(fontFamily.slice(1, fontFamily.length - 1))) {
-      warn(`XFA - FontFamily contains some unescaped ": ${fontFamily}.`);
-      return false;
-    }
-  } else if (/^'.*'$/.test(fontFamily)) {
-    if (/[^\\]'/.test(fontFamily.slice(1, fontFamily.length - 1))) {
-      warn(`XFA - FontFamily contains some unescaped ': ${fontFamily}.`);
-      return false;
-    }
-  } else {
-    // See https://developer.mozilla.org/en-US/docs/Web/CSS/custom-ident.
-    for (const ident of fontFamily.split(/[ \t]+/)) {
-      if (/^(\d|(-(\d|-)))/.test(ident) || !/^[\w-\\]+$/.test(ident)) {
-        warn(
-          `XFA - FontFamily contains some invalid <custom-ident>: ${fontFamily}.`
-        );
-        return false;
-      }
-    }
+  if (!validateFontName(fontFamily, true)) {
+    return false;
   }
 
   const weight = fontWeight ? fontWeight.toString() : "";
@@ -477,13 +499,13 @@ function recoverJsURL(str) {
   const URL_OPEN_METHODS = ["app.launchURL", "window.open", "xfa.host.gotoURL"];
   const regex = new RegExp(
     "^\\s*(" +
-      URL_OPEN_METHODS.join("|").split(".").join("\\.") +
+      URL_OPEN_METHODS.join("|").replaceAll(".", "\\.") +
       ")\\((?:'|\")([^'\"]*)(?:'|\")(?:,\\s*(\\w+)\\)|\\))",
     "i"
   );
 
   const jsUrl = regex.exec(str);
-  if (jsUrl && jsUrl[2]) {
+  if (jsUrl?.[2]) {
     const url = jsUrl[2];
     let newWindow = false;
 
@@ -579,11 +601,11 @@ function getRotationMatrix(rotation, width, height) {
 }
 
 export {
+  arrayBuffersToBytes,
   collectActions,
   encodeToXmlString,
   escapePDFName,
   escapeString,
-  getArrayLookupTableFactory,
   getInheritableProperty,
   getLookupTableFactory,
   getNewAnnotationsMap,
@@ -604,6 +626,7 @@ export {
   stringToUTF16String,
   toRomanNumerals,
   validateCSSFont,
+  validateFontName,
   XRefEntryException,
   XRefParseException,
 };

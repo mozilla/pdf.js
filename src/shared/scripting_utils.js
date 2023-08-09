@@ -26,6 +26,10 @@ function makeColorComp(n) {
     .padStart(2, "0");
 }
 
+function scaleAndClamp(x) {
+  return Math.max(0, Math.min(255, 255 * x));
+}
+
 // PDF specifications section 10.3
 class ColorConverters {
   static CMYK_G([c, y, m, k]) {
@@ -40,6 +44,11 @@ class ColorConverters {
     return ["RGB", g, g, g];
   }
 
+  static G_rgb([g]) {
+    g = scaleAndClamp(g);
+    return [g, g, g];
+  }
+
   static G_HTML([g]) {
     const G = makeColorComp(g);
     return `#${G}${G}${G}`;
@@ -49,15 +58,20 @@ class ColorConverters {
     return ["G", 0.3 * r + 0.59 * g + 0.11 * b];
   }
 
-  static RGB_HTML([r, g, b]) {
-    const R = makeColorComp(r);
-    const G = makeColorComp(g);
-    const B = makeColorComp(b);
-    return `#${R}${G}${B}`;
+  static RGB_rgb(color) {
+    return color.map(scaleAndClamp);
+  }
+
+  static RGB_HTML(color) {
+    return `#${color.map(makeColorComp).join("")}`;
   }
 
   static T_HTML() {
     return "#00000000";
+  }
+
+  static T_rgb() {
+    return [null];
   }
 
   static CMYK_RGB([c, y, m, k]) {
@@ -66,6 +80,14 @@ class ColorConverters {
       1 - Math.min(1, c + k),
       1 - Math.min(1, m + k),
       1 - Math.min(1, y + k),
+    ];
+  }
+
+  static CMYK_rgb([c, y, m, k]) {
+    return [
+      scaleAndClamp(1 - Math.min(1, c + k)),
+      scaleAndClamp(1 - Math.min(1, m + k)),
+      scaleAndClamp(1 - Math.min(1, y + k)),
     ];
   }
 

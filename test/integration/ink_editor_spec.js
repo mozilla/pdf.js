@@ -19,8 +19,8 @@ const {
   loadAndWait,
 } = require("./test_utils.js");
 
-describe("Editor", () => {
-  describe("Ink", () => {
+describe("Ink Editor", () => {
+  describe("Basic operations", () => {
     let pages;
 
     beforeAll(async () => {
@@ -50,23 +50,28 @@ describe("Editor", () => {
             await page.mouse.down();
             await page.mouse.move(x + 50, y + 50);
             await page.mouse.up();
+            await page.waitForTimeout(10);
 
             await page.keyboard.press("Escape");
+            await page.waitForTimeout(10);
           }
 
           await page.keyboard.down("Control");
           await page.keyboard.press("a");
           await page.keyboard.up("Control");
+          await page.waitForTimeout(10);
 
           expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
             .toEqual([0, 1, 2]);
 
           await page.keyboard.press("Backspace");
+          await page.waitForTimeout(10);
 
           await page.keyboard.down("Control");
           await page.keyboard.press("z");
           await page.keyboard.up("Control");
+          await page.waitForTimeout(10);
 
           expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
@@ -81,8 +86,10 @@ describe("Editor", () => {
           await page.keyboard.down("Control");
           await page.keyboard.press("a");
           await page.keyboard.up("Control");
+          await page.waitForTimeout(10);
 
           await page.keyboard.press("Backspace");
+          await page.waitForTimeout(10);
 
           const rect = await page.$eval(".annotationEditorLayer", el => {
             // With Chrome something is wrong when serializing a DomRect,
@@ -97,8 +104,10 @@ describe("Editor", () => {
           await page.mouse.down();
           await page.mouse.move(xStart + 50, yStart + 50);
           await page.mouse.up();
+          await page.waitForTimeout(10);
 
           await page.keyboard.press("Escape");
+          await page.waitForTimeout(10);
 
           const rectBefore = await page.$eval(".inkEditor canvas", el => {
             const { x, y } = el.getBoundingClientRect();
@@ -131,6 +140,53 @@ describe("Editor", () => {
           expect(Math.round(rectBefore.y))
             .withContext(`In ${browserName}`)
             .toEqual(Math.round(rectAfter.y));
+        })
+      );
+    });
+  });
+
+  describe("with a rotated pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue16278.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must draw something", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorInk");
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            // With Chrome something is wrong when serializing a DomRect,
+            // hence we extract the values and just return them.
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          const x = rect.x + 20;
+          const y = rect.y + 20;
+          await page.mouse.move(x, y);
+          await page.mouse.down();
+          await page.mouse.move(x + 50, y + 50);
+          await page.mouse.up();
+
+          await page.waitForTimeout(10);
+          await page.keyboard.press("Escape");
+          await page.waitForTimeout(10);
+
+          await page.keyboard.down("Control");
+          await page.keyboard.press("a");
+          await page.keyboard.up("Control");
+          await page.waitForTimeout(10);
+
+          expect(await getSelectedEditors(page))
+            .withContext(`In ${browserName}`)
+            .toEqual([0]);
         })
       );
     });

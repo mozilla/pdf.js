@@ -138,9 +138,9 @@ describe("function", function () {
       const expectedStack = [254 & 1];
       expect(stack).toEqual(expectedStack);
     });
-    it("calculates the inverse tangent of a number", function () {
-      const stack = evaluate("{ 90 atan }");
-      const expectedStack = [Math.atan(90)];
+    it("the angle in degrees (0-360) whose tangent is num/den.", function () {
+      const stack = evaluate("{ 1 -1 atan }");
+      const expectedStack = [135];
       expect(stack).toEqual(expectedStack);
     });
     it("handles bitshifting ", function () {
@@ -158,9 +158,9 @@ describe("function", function () {
       const expectedStack = [99, 98, 99, 98];
       expect(stack).toEqual(expectedStack);
     });
-    it("calculates the cosine of a number", function () {
-      const stack = evaluate("{ 90 cos }");
-      const expectedStack = [Math.cos(90)];
+    it("calculates the cosine of an angle in degrees", function () {
+      const stack = evaluate("{ 180 cos }");
+      const expectedStack = [-1];
       expect(stack).toEqual(expectedStack);
     });
     it("converts to int", function () {
@@ -358,9 +358,9 @@ describe("function", function () {
       const expectedStack = [10];
       expect(stack).toEqual(expectedStack);
     });
-    it("calculates the sine of a number", function () {
+    it("calculates the sine of an angle in degrees", function () {
       const stack = evaluate("{ 90 sin }");
-      const expectedStack = [Math.sin(90)];
+      const expectedStack = [1];
       expect(stack).toEqual(expectedStack);
     });
     it("calculates a square root (integer)", function () {

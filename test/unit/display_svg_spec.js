@@ -16,7 +16,7 @@
 
 import { buildGetDocumentParams } from "./test_utils.js";
 import { getDocument } from "../../src/display/api.js";
-import { isNodeJS } from "../../src/shared/is_node.js";
+import { isNodeJS } from "../../src/shared/util.js";
 import { SVGGraphics } from "../../src/display/svg.js";
 
 const XLINK_NS = "http://www.w3.org/1999/xlink";
@@ -61,7 +61,11 @@ describe("SVGGraphics", function () {
   let page;
 
   beforeAll(async function () {
-    loadingTask = getDocument(buildGetDocumentParams("xobject-image.pdf"));
+    loadingTask = getDocument(
+      buildGetDocumentParams("xobject-image.pdf", {
+        isOffscreenCanvasSupported: false,
+      })
+    );
     const doc = await loadingTask.promise;
     page = await doc.getPage(1);
   });

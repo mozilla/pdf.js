@@ -275,7 +275,7 @@ class SimpleExprParser {
   }
 
   parse(tok) {
-    tok = tok || this.lexer.next();
+    tok ||= this.lexer.next();
 
     while (true) {
       // Token ids (see form_lexer.js) are consecutive in order
@@ -1005,7 +1005,7 @@ class Parser {
   }
 
   parseExpr(tok) {
-    tok = tok || this.lexer.next();
+    tok ||= this.lexer.next();
     switch (tok.id) {
       case TOKEN.identifier:
         return this.parseAssigmentOrExpr(tok);
@@ -1282,7 +1282,7 @@ class Parser {
     tok = tok2 || this.lexer.next();
     if (tok.id === TOKEN.step) {
       [tok, step] = this.parseSimpleExpr();
-      tok = tok || this.lexer.next();
+      tok ||= this.lexer.next();
     }
 
     if (tok.id !== TOKEN.do) {

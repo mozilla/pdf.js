@@ -20,7 +20,7 @@ import {
   $setValue,
   $toString,
   $uid,
-} from "./xfa_object.js";
+} from "./symbol_utils.js";
 
 class DataHandler {
   constructor(root, data) {

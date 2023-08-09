@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-exports.loadAndWait = (filename, selector) =>
+exports.loadAndWait = (filename, selector, zoom, pageSetup) =>
   Promise.all(
     global.integrationSessions.map(async session => {
       const page = await session.browser.newPage();
@@ -33,9 +33,15 @@ exports.loadAndWait = (filename, selector) =>
         });
       });
 
-      await page.goto(
-        `${global.integrationBaseUrl}?file=/test/pdfs/${filename}`
-      );
+      let url = `${global.integrationBaseUrl}?file=/test/pdfs/${filename}`;
+      if (zoom) {
+        url += `#zoom=${zoom}`;
+      }
+      await page.goto(url);
+      if (pageSetup) {
+        await pageSetup(page);
+      }
+
       await page.bringToFront();
       await page.waitForSelector(selector, {
         timeout: 0,
@@ -57,6 +63,7 @@ exports.clearInput = async (page, selector) => {
   await page.keyboard.press("A");
   await page.keyboard.up("Control");
   await page.keyboard.press("Backspace");
+  await page.waitForTimeout(10);
 };
 
 function getSelector(id) {
@@ -118,3 +125,92 @@ const waitForSelectedEditor = async (page, selector) => {
   );
 };
 exports.waitForSelectedEditor = waitForSelectedEditor;
+
+const mockClipboard = async pages => {
+  await Promise.all(
+    pages.map(async ([_, page]) => {
+      await page.evaluate(() => {
+        let data = null;
+        const clipboard = {
+          writeText: async text => (data = text),
+          readText: async () => data,
+        };
+        Object.defineProperty(navigator, "clipboard", { value: clipboard });
+      });
+    })
+  );
+};
+exports.mockClipboard = mockClipboard;
+
+async function getSerialized(page, filter = undefined) {
+  const values = await page.evaluate(() => {
+    const { map } =
+      window.PDFViewerApplication.pdfDocument.annotationStorage.serializable;
+    return map ? [...map.values()] : [];
+  });
+  return filter ? values.map(filter) : values;
+}
+exports.getSerialized = getSerialized;
+
+const getFirstSerialized = async (page, filter = undefined) =>
+  (await getSerialized(page, filter))[0];
+exports.getFirstSerialized = getFirstSerialized;
+
+function getEditors(page, kind) {
+  return page.evaluate(aKind => {
+    const elements = document.querySelectorAll(`.${aKind}Editor`);
+    const results = [];
+    for (const { id } of elements) {
+      results.push(id);
+    }
+    return results;
+  }, kind);
+}
+exports.getEditors = getEditors;
+
+function getEditorDimensions(page, id) {
+  return page.evaluate(n => {
+    const element = document.getElementById(`pdfjs_internal_editor_${n}`);
+    const { style } = element;
+    return {
+      left: style.left,
+      top: style.top,
+      width: style.width,
+      height: style.height,
+    };
+  }, id);
+}
+exports.getEditorDimensions = getEditorDimensions;
+
+function serializeBitmapDimensions(page) {
+  return page.evaluate(() => {
+    const { map } =
+      window.PDFViewerApplication.pdfDocument.annotationStorage.serializable;
+    return map
+      ? Array.from(map.values(), x => {
+          return { width: x.bitmap.width, height: x.bitmap.height };
+        })
+      : [];
+  });
+}
+exports.serializeBitmapDimensions = serializeBitmapDimensions;
+
+async function dragAndDropAnnotation(page, startX, startY, tX, tY) {
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + tX, startY + tY);
+  await page.mouse.up();
+}
+exports.dragAndDropAnnotation = dragAndDropAnnotation;
+
+async function waitForAnnotationEditorLayer(page) {
+  return page.evaluate(() => {
+    return new Promise(resolve => {
+      window.PDFViewerApplication.eventBus.on(
+        "annotationeditorlayerrendered",
+        resolve
+      );
+    });
+  });
+}
+exports.waitForAnnotationEditorLayer = waitForAnnotationEditorLayer;

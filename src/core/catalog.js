@@ -81,6 +81,7 @@ class Catalog {
     this.pageKidsCountCache = new RefSetCache();
     this.pageIndexCache = new RefSetCache();
     this.nonBlendModesSet = new RefSet();
+    this.systemFontCache = new Map();
   }
 
   get version() {
@@ -161,10 +162,10 @@ class Catalog {
 
     let metadata = null;
     try {
-      const suppressEncryption = !(
-        this.xref.encrypt && this.xref.encrypt.encryptMetadata
+      const stream = this.xref.fetch(
+        streamRef,
+        /* suppressEncryption = */ !this.xref.encrypt?.encryptMetadata
       );
-      const stream = this.xref.fetch(streamRef, suppressEncryption);
 
       if (stream instanceof BaseStream && stream.dict instanceof Dict) {
         const type = stream.dict.get("Type");
@@ -615,7 +616,7 @@ class Catalog {
    */
   _readDests() {
     const obj = this._catDict.get("Names");
-    if (obj && obj.has("Dests")) {
+    if (obj?.has("Dests")) {
       return new NameTree(obj.getRaw("Dests"), this.xref);
     } else if (this._catDict.has("Dests")) {
       // Simple destination dictionary.
@@ -985,12 +986,11 @@ class Catalog {
       } else if (typeof js !== "string") {
         return;
       }
-
-      if (javaScript === null) {
-        javaScript = new Map();
+      js = stringToPDFString(js).replaceAll("\x00", "");
+      // Skip empty entries, similar to the `_collectJS` function.
+      if (js) {
+        (javaScript ||= new Map()).set(name, js);
       }
-      js = stringToPDFString(js).replace(/\u0000/g, "");
-      javaScript.set(name, js);
     }
 
     if (obj instanceof Dict && obj.has("JavaScript")) {
@@ -1008,15 +1008,6 @@ class Catalog {
     return javaScript;
   }
 
-  get javaScript() {
-    const javaScript = this._collectJavaScript();
-    return shadow(
-      this,
-      "javaScript",
-      javaScript ? [...javaScript.values()] : null
-    );
-  }
-
   get jsActions() {
     const javaScript = this._collectJavaScript();
     let actions = collectActions(
@@ -1026,9 +1017,8 @@ class Catalog {
     );
 
     if (javaScript) {
-      if (!actions) {
-        actions = Object.create(null);
-      }
+      actions ||= Object.create(null);
+
       for (const [key, val] of javaScript) {
         if (key in actions) {
           actions[key].push(val);
@@ -1066,6 +1056,7 @@ class Catalog {
     this.fontCache.clear();
     this.builtInCMapCache.clear();
     this.standardFontDataCache.clear();
+    this.systemFontCache.clear();
   }
 
   async getPageDict(pageIndex) {

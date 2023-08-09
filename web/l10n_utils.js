@@ -14,6 +14,13 @@
  */
 
 /**
+ * PLEASE NOTE: This file is currently imported in both the `web/` and
+ *              `src/display/` folders, hence be EXTREMELY careful about
+ *              introducing any dependencies here since that can lead to an
+ *              unexpected/unnecessary size increase of the *built* files.
+ */
+
+/**
  * A subset of the l10n strings in the `l10n/en-US/viewer.properties` file.
  */
 const DEFAULT_L10N_STRINGS = {
@@ -57,12 +64,13 @@ const DEFAULT_L10N_STRINGS = {
   page_scale_actual: "Actual Size",
   page_scale_percent: "{{scale}}%",
 
-  loading: "Loading…",
   loading_error: "An error occurred while loading the PDF.",
   invalid_file_error: "Invalid or corrupted PDF file.",
   missing_file_error: "Missing PDF file.",
   unexpected_response_error: "Unexpected server response.",
   rendering_error: "An error occurred while rendering the page.",
+
+  annotation_date_string: "{{date}}, {{time}}",
 
   printing_not_supported:
     "Warning: Printing is not fully supported by this browser.",
@@ -91,34 +99,12 @@ function getL10nFallback(key, args) {
   return DEFAULT_L10N_STRINGS[key] || "";
 }
 
-const PARTIAL_LANG_CODES = {
-  en: "en-US",
-  es: "es-ES",
-  fy: "fy-NL",
-  ga: "ga-IE",
-  gu: "gu-IN",
-  hi: "hi-IN",
-  hy: "hy-AM",
-  nb: "nb-NO",
-  ne: "ne-NP",
-  nn: "nn-NO",
-  pa: "pa-IN",
-  pt: "pt-PT",
-  sv: "sv-SE",
-  zh: "zh-CN",
-};
-
-// Try to support "incompletely" specified language codes (see issue 13689).
-function fixupLangCode(langCode) {
-  return PARTIAL_LANG_CODES[langCode?.toLowerCase()] || langCode;
-}
-
 // Replaces {{arguments}} with their values.
 function formatL10nValue(text, args) {
   if (!args) {
     return text;
   }
-  return text.replace(/\{\{\s*(\w+)\s*\}\}/g, (all, name) => {
+  return text.replaceAll(/\{\{\s*(\w+)\s*\}\}/g, (all, name) => {
     return name in args ? args[name] : "{{" + name + "}}";
   });
 }
@@ -143,4 +129,4 @@ const NullL10n = {
   async translate(element) {},
 };
 
-export { fixupLangCode, getL10nFallback, NullL10n };
+export { getL10nFallback, NullL10n };

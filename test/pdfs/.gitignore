@@ -21,6 +21,7 @@
 !issue14881.pdf
 !issue3214.pdf
 !issue4665.pdf
+!checkbox-bad-appearance.pdf
 !issue4684.pdf
 !issue8092.pdf
 !issue5256.pdf
@@ -117,6 +118,7 @@
 !issue6127.pdf
 !issue7891_bc0.pdf
 !issue11242_reduced.pdf
+!issue16176.pdf
 !issue11279.pdf
 !issue11362.pdf
 !issue13325_reduced.pdf
@@ -223,6 +225,7 @@
 !issue840.pdf
 !160F-2019.pdf
 !issue4402_reduced.pdf
+!issue16263.pdf
 !issue845r.pdf
 !issue3405r.pdf
 !issue14130.pdf
@@ -241,6 +244,7 @@
 !bug1108301.pdf
 !issue10301.pdf
 !bug1157493.pdf
+!issue15910.pdf
 !issue4260_reduced.pdf
 !bug1250079.pdf
 !bug1473809.pdf
@@ -269,7 +273,9 @@
 !issue4379.pdf
 !issue4550.pdf
 !issue13316_reduced.pdf
+!issue15977_reduced.pdf
 !issue4575.pdf
+!colorspace_atan.pdf
 !bug1011159.pdf
 !issue5734.pdf
 !issue4875.pdf
@@ -291,6 +297,7 @@
 !find_all.pdf
 !helloworld-bad.pdf
 !zerowidthline.pdf
+!colorspace_cos.pdf
 !issue13242.pdf
 !js-colors.pdf
 !annotation-line-without-appearance-empty-Rect.pdf
@@ -338,6 +345,7 @@
 !issue12810.pdf
 !bug866395.pdf
 !issue12010_reduced.pdf
+!issue10572.pdf
 !issue11718_reduced.pdf
 !bug1027533.pdf
 !bug1028735.pdf
@@ -375,6 +383,7 @@
 !issue4650.pdf
 !issue6721_reduced.pdf
 !issue3025.pdf
+!bug1365930.pdf
 !french_diacritics.pdf
 !issue2099-1.pdf
 !issue3371.pdf
@@ -397,6 +406,7 @@
 !issue4461.pdf
 !issue4573.pdf
 !issue4722.pdf
+!bug1811668_reduced.pdf
 !issue4800.pdf
 !issue9243.pdf
 !issue13147.pdf
@@ -419,6 +429,7 @@
 !issue5475.pdf
 !issue10519_reduced.pdf
 !annotation-border-styles.pdf
+!colorspace_sin.pdf
 !IdentityToUnicodeMap_charCodeOf.pdf
 !PDFJS-9279-reduced.pdf
 !issue5481.pdf
@@ -479,6 +490,7 @@
 !issue11656.pdf
 !annotation-fileattachment.pdf
 !annotation-text-widget.pdf
+!issue7454.pdf
 !issue15443.pdf
 !annotation-choice-widget.pdf
 !issue10900.pdf
@@ -525,6 +537,7 @@
 !issue15012.pdf
 !issue15150.pdf
 !poppler-395-0-fuzzed.pdf
+!issue14165.pdf
 !GHOSTSCRIPT-698804-1-fuzzed.pdf
 !issue14814.pdf
 !poppler-91414-0-53.pdf
@@ -565,3 +578,34 @@
 !issue15815.pdf
 !issue15818.pdf
 !autoprint.pdf
+!bug1811694.pdf
+!bug1811510.pdf
+!bug1815476.pdf
+!issue16021.pdf
+!bug1770750.pdf
+!issue16063.pdf
+!issue16067.pdf
+!bug1820909.1.pdf
+!issue16221.pdf
+!issue16224.pdf
+!issue16278.pdf
+!copy_paste_ligatures.pdf
+!issue16316.pdf
+!issue14565.pdf
+!multiline.pdf
+!bug1825002.pdf
+!issue14755.pdf
+!issue16473.pdf
+!bug1529502.pdf
+!issue16500.pdf
+!issue16538.pdf
+!freetexts.pdf
+!issue16553.pdf
+!empty.pdf
+!rotated_freetexts.pdf
+!issue16633.pdf
+!bug1844576.pdf
+!bug1844583.pdf
+!annotation_hidden_print.pdf
+!annotation_hidden_noview.pdf
+!widget_hidden_print.pdf

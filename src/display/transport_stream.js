@@ -13,18 +13,15 @@
  * limitations under the License.
  */
 
-import { assert, createPromiseCapability } from "../shared/util.js";
+import { assert, PromiseCapability } from "../shared/util.js";
 import { isPdfFile } from "./display_utils.js";
 
 /** @implements {IPDFStream} */
 class PDFDataTransportStream {
-  #transferPdfData = false;
-
   constructor(
     {
       length,
       initialData,
-      transferPdfData = false,
       progressiveDone = false,
       contentDispositionFilename = null,
       disableRange = false,
@@ -38,14 +35,17 @@ class PDFDataTransportStream {
     );
 
     this._queuedChunks = [];
-    this.#transferPdfData = transferPdfData;
     this._progressiveDone = progressiveDone;
     this._contentDispositionFilename = contentDispositionFilename;
 
     if (initialData?.length > 0) {
-      const buffer = this.#transferPdfData
-        ? initialData.buffer
-        : new Uint8Array(initialData).buffer;
+      // Prevent any possible issues by only transferring a Uint8Array that
+      // completely "utilizes" its underlying ArrayBuffer.
+      const buffer =
+        initialData instanceof Uint8Array &&
+        initialData.byteLength === initialData.buffer.byteLength
+          ? initialData.buffer
+          : new Uint8Array(initialData).buffer;
       this._queuedChunks.push(buffer);
     }
 
@@ -77,8 +77,11 @@ class PDFDataTransportStream {
   }
 
   _onReceiveData({ begin, chunk }) {
+    // Prevent any possible issues by only transferring a Uint8Array that
+    // completely "utilizes" its underlying ArrayBuffer.
     const buffer =
-      this.#transferPdfData && chunk?.length >= 0
+      chunk instanceof Uint8Array &&
+      chunk.byteLength === chunk.buffer.byteLength
         ? chunk.buffer
         : new Uint8Array(chunk).buffer;
 
@@ -232,7 +235,7 @@ class PDFDataTransportStreamReader {
     if (this._done) {
       return { value: undefined, done: true };
     }
-    const requestCapability = createPromiseCapability();
+    const requestCapability = new PromiseCapability();
     this._requests.push(requestCapability);
     return requestCapability.promise;
   }
@@ -297,7 +300,7 @@ class PDFDataTransportStreamRangeReader {
     if (this._done) {
       return { value: undefined, done: true };
     }
-    const requestCapability = createPromiseCapability();
+    const requestCapability = new PromiseCapability();
     this._requests.push(requestCapability);
     return requestCapability.promise;
   }

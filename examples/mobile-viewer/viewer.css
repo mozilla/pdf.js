@@ -13,10 +13,6 @@
  * limitations under the License.
  */
 
-:root {
-  --progressBar-percent: 0%;
-}
-
 * {
   padding: 0;
   margin: 0;
@@ -157,10 +153,7 @@ footer {
   position: absolute;
   overflow: auto;
   width: 100%;
-  top: 5rem;
-  bottom: 4rem;
-  left: 0;
-  right: 0;
+  inset: 5rem 0 4rem;
 }
 
 canvas {
@@ -191,6 +184,10 @@ canvas {
 }
 
 #loadingBar {
+  /* Define this variable here, and not in :root, to avoid reflowing the
+     entire viewer when updating progress (see issue 15958). */
+  --progressBar-percent: 0%;
+
   position: relative;
   height: 0.6rem;
   background-color: rgba(51, 51, 51, 1);

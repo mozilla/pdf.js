@@ -3,16 +3,18 @@
     "stylelint-prettier"
   ],
 
-  "extends": [
-    "stylelint-prettier/recommended"
-  ],
-
-
   "rules": {
+    "prettier/prettier": true,
+
     "block-no-empty": true,
+    "declaration-block-no-redundant-longhand-properties": true,
+    "declaration-property-value-disallowed-list": {
+      "float": ["inline-start", "inline-end"]
+    },
     "length-zero-no-unit": [true, {
       ignore: ["custom-properties"]
     }],
+    "selector-pseudo-element-colon-notation": "double",
     "shorthand-property-no-redundant-values": true,
   },
 }

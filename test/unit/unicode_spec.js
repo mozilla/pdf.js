@@ -15,11 +15,9 @@
 
 import {
   getCharUnicodeCategory,
-  getNormalizedUnicodes,
   getUnicodeForGlyph,
   getUnicodeRangeFor,
   mapSpecialUnicodeValues,
-  reverseIfRtl,
 } from "../../src/core/unicode.js";
 import {
   getDingbatsGlyphsUnicode,
@@ -152,69 +150,12 @@ describe("unicode", function () {
       expect(getUnicodeRangeFor(0x0041)).toEqual(0);
       // fi (Alphabetic Presentation Forms)
       expect(getUnicodeRangeFor(0xfb01)).toEqual(62);
+      // Combining diacritic (Cyrillic Extended-A)
+      expect(getUnicodeRangeFor(0x2dff)).toEqual(9);
     });
 
     it("should not get a Unicode range", function () {
-      expect(getUnicodeRangeFor(0x05ff)).toEqual(-1);
-    });
-  });
-
-  describe("getNormalizedUnicodes", function () {
-    let NormalizedUnicodes;
-
-    beforeAll(function () {
-      NormalizedUnicodes = getNormalizedUnicodes();
-    });
-
-    afterAll(function () {
-      NormalizedUnicodes = null;
-    });
-
-    it("should get normalized Unicode values for ligatures", function () {
-      // fi => f + i
-      expect(NormalizedUnicodes["\uFB01"]).toEqual("fi");
-      // Arabic
-      expect(NormalizedUnicodes["\u0675"]).toEqual("\u0627\u0674");
-    });
-
-    it("should not normalize standard characters", function () {
-      expect(NormalizedUnicodes.A).toEqual(undefined);
-    });
-  });
-
-  describe("reverseIfRtl", function () {
-    let NormalizedUnicodes;
-
-    function getGlyphUnicode(char) {
-      if (NormalizedUnicodes[char] !== undefined) {
-        return NormalizedUnicodes[char];
-      }
-      return char;
-    }
-
-    beforeAll(function () {
-      NormalizedUnicodes = getNormalizedUnicodes();
-    });
-
-    afterAll(function () {
-      NormalizedUnicodes = null;
-    });
-
-    it("should not reverse LTR characters", function () {
-      const A = getGlyphUnicode("A");
-      expect(reverseIfRtl(A)).toEqual("A");
-
-      const fi = getGlyphUnicode("\uFB01");
-      expect(reverseIfRtl(fi)).toEqual("fi");
-    });
-
-    it("should reverse RTL characters", function () {
-      // Hebrew (no-op, since it's not a combined character)
-      const heAlef = getGlyphUnicode("\u05D0");
-      expect(reverseIfRtl(heAlef)).toEqual("\u05D0");
-      // Arabic
-      const arAlef = getGlyphUnicode("\u0675");
-      expect(reverseIfRtl(arAlef)).toEqual("\u0674\u0627");
+      expect(getUnicodeRangeFor(0xaa60)).toEqual(-1);
     });
   });
 });

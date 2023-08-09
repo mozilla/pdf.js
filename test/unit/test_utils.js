@@ -15,16 +15,12 @@
 
 import { NullStream, StringStream } from "../../src/core/stream.js";
 import { Page, PDFDocument } from "../../src/core/document.js";
-import { assert } from "../../src/shared/util.js";
-import { isNodeJS } from "../../src/shared/is_node.js";
+import { isNodeJS } from "../../src/shared/util.js";
 import { Ref } from "../../src/core/primitives.js";
 
 const TEST_PDFS_PATH = isNodeJS ? "./test/pdfs/" : "../pdfs/";
 
-const CMAP_PARAMS = {
-  cMapUrl: isNodeJS ? "./external/bcmaps/" : "../../external/bcmaps/",
-  cMapPacked: true,
-};
+const CMAP_URL = isNodeJS ? "./external/bcmaps/" : "../../external/bcmaps/";
 
 const STANDARD_FONT_DATA_URL = isNodeJS
   ? "./external/standard_fonts/"
@@ -144,20 +140,11 @@ function createIdFactory(pageIndex) {
   return page._localIdFactory;
 }
 
-function isEmptyObj(obj) {
-  assert(
-    typeof obj === "object" && obj !== null,
-    "isEmptyObj - invalid argument."
-  );
-  return Object.keys(obj).length === 0;
-}
-
 export {
   buildGetDocumentParams,
-  CMAP_PARAMS,
+  CMAP_URL,
   createIdFactory,
   DefaultFileReaderFactory,
-  isEmptyObj,
   STANDARD_FONT_DATA_URL,
   TEST_PDFS_PATH,
   XRefMock,

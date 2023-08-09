@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { Dict, Ref } from "../../src/core/primitives.js";
 import {
+  arrayBuffersToBytes,
   encodeToXmlString,
   escapePDFName,
   escapeString,
@@ -22,15 +22,44 @@ import {
   isAscii,
   isWhiteSpace,
   log2,
+  numberToString,
   parseXFAPath,
+  recoverJsURL,
   stringToUTF16HexString,
   stringToUTF16String,
   toRomanNumerals,
   validateCSSFont,
 } from "../../src/core/core_utils.js";
+import { Dict, Ref } from "../../src/core/primitives.js";
 import { XRefMock } from "./test_utils.js";
 
 describe("core_utils", function () {
+  describe("arrayBuffersToBytes", function () {
+    it("handles zero ArrayBuffers", function () {
+      const bytes = arrayBuffersToBytes([]);
+
+      expect(bytes).toEqual(new Uint8Array(0));
+    });
+
+    it("handles one ArrayBuffer", function () {
+      const buffer = new Uint8Array([1, 2, 3]).buffer;
+      const bytes = arrayBuffersToBytes([buffer]);
+
+      expect(bytes).toEqual(new Uint8Array([1, 2, 3]));
+      // Ensure that the fast-path works correctly.
+      expect(bytes.buffer).toBe(buffer);
+    });
+
+    it("handles multiple ArrayBuffers", function () {
+      const buffer1 = new Uint8Array([1, 2, 3]).buffer,
+        buffer2 = new Uint8Array(0).buffer,
+        buffer3 = new Uint8Array([4, 5]).buffer;
+      const bytes = arrayBuffersToBytes([buffer1, buffer2, buffer3]);
+
+      expect(bytes).toEqual(new Uint8Array([1, 2, 3, 4, 5]));
+    });
+  });
+
   describe("getInheritableProperty", function () {
     it("handles non-dictionary arguments", function () {
       expect(getInheritableProperty({ dict: null, key: "foo" })).toEqual(
@@ -181,6 +210,21 @@ describe("core_utils", function () {
     });
   });
 
+  describe("numberToString", function () {
+    it("should stringify integers", function () {
+      expect(numberToString(1)).toEqual("1");
+      expect(numberToString(0)).toEqual("0");
+      expect(numberToString(-1)).toEqual("-1");
+    });
+
+    it("should stringify floats", function () {
+      expect(numberToString(1.0)).toEqual("1");
+      expect(numberToString(1.2)).toEqual("1.2");
+      expect(numberToString(1.23)).toEqual("1.23");
+      expect(numberToString(1.234)).toEqual("1.23");
+    });
+  });
+
   describe("isWhiteSpace", function () {
     it("handles space characters", function () {
       expect(isWhiteSpace(0x20)).toEqual(true);
@@ -207,6 +251,39 @@ describe("core_utils", function () {
         { name: "FOO", pos: 123 },
         { name: "BAR", pos: 456 },
       ]);
+    });
+  });
+
+  describe("recoverJsURL", function () {
+    it("should get valid URLs without `newWindow` property", function () {
+      const inputs = [
+        "window.open('https://test.local')",
+        "window.open('https://test.local', true)",
+        "app.launchURL('https://test.local')",
+        "app.launchURL('https://test.local', false)",
+        "xfa.host.gotoURL('https://test.local')",
+        "xfa.host.gotoURL('https://test.local', true)",
+      ];
+
+      for (const input of inputs) {
+        expect(recoverJsURL(input)).toEqual({
+          url: "https://test.local",
+          newWindow: false,
+        });
+      }
+    });
+
+    it("should get valid URLs with `newWindow` property", function () {
+      const input = "app.launchURL('https://test.local', true)";
+      expect(recoverJsURL(input)).toEqual({
+        url: "https://test.local",
+        newWindow: true,
+      });
+    });
+
+    it("should not get invalid URLs", function () {
+      const input = "navigateToUrl('https://test.local')";
+      expect(recoverJsURL(input)).toBeNull();
     });
   });
 

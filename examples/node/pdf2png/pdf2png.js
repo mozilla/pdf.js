@@ -58,6 +58,8 @@ const CMAP_PACKED = true;
 const STANDARD_FONT_DATA_URL =
   "../../../node_modules/pdfjs-dist/standard_fonts/";
 
+const canvasFactory = new NodeCanvasFactory();
+
 // Loading file from file system into typed array.
 const pdfPath =
   process.argv[2] || "../../../web/compressed.tracemonkey-pldi-09.pdf";
@@ -69,6 +71,7 @@ const loadingTask = pdfjsLib.getDocument({
   cMapUrl: CMAP_URL,
   cMapPacked: CMAP_PACKED,
   standardFontDataUrl: STANDARD_FONT_DATA_URL,
+  canvasFactory,
 });
 
 (async function () {
@@ -79,7 +82,6 @@ const loadingTask = pdfjsLib.getDocument({
     const page = await pdfDocument.getPage(1);
     // Render the page on a Node canvas with 100% scale.
     const viewport = page.getViewport({ scale: 1.0 });
-    const canvasFactory = new NodeCanvasFactory();
     const canvasAndContext = canvasFactory.create(
       viewport.width,
       viewport.height
@@ -87,7 +89,6 @@ const loadingTask = pdfjsLib.getDocument({
     const renderContext = {
       canvasContext: canvasAndContext.context,
       viewport,
-      canvasFactory,
     };
 
     const renderTask = page.render(renderContext);

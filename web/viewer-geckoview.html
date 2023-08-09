@@ -31,7 +31,7 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
 
 <!--#if MOZCENTRAL-->
-<!--<link rel="stylesheet" href="viewer.css">-->
+<!--<link rel="stylesheet" href="resource://pdf.js/web/viewer.css">-->
 <!--#else-->
 <link rel="stylesheet" href="viewer-geckoview.css">
 <!--#endif-->
@@ -48,14 +48,35 @@ See https://github.com/adobe-type-tools/cmap-resources
           "pdfjs/": "../src/",
           "pdfjs-lib": "../src/pdf.js",
           "pdfjs-web/": "./",
-          "pdfjs-fitCurve": "../build/dev-fitCurve/fit_curve.js"
+
+          "display-fetch_stream": "../src/display/fetch_stream.js",
+          "display-l10n_utils": "../src/display/stubs.js",
+          "display-network": "../src/display/network.js",
+          "display-node_stream": "../src/display/stubs.js",
+          "display-node_utils": "../src/display/stubs.js",
+          "display-svg": "../src/display/stubs.js",
+
+          "web-annotation_editor_params": "./stubs-geckoview.js",
+          "web-com": "./genericcom.js",
+          "web-pdf_attachment_viewer": "./stubs-geckoview.js",
+          "web-pdf_cursor_tools": "./stubs-geckoview.js",
+          "web-pdf_document_properties": "./stubs-geckoview.js",
+          "web-pdf_find_bar": "./stubs-geckoview.js",
+          "web-pdf_layer_viewer": "./stubs-geckoview.js",
+          "web-pdf_outline_viewer": "./stubs-geckoview.js",
+          "web-pdf_presentation_mode": "./stubs-geckoview.js",
+          "web-pdf_sidebar": "./stubs-geckoview.js",
+          "web-pdf_thumbnail_viewer": "./stubs-geckoview.js",
+          "web-print_service": "./pdf_print_service.js",
+          "web-secondary_toolbar": "./stubs-geckoview.js",
+          "web-toolbar": "./toolbar-geckoview.js"
         }
       }
     </script>
 
     <script src="viewer-geckoview.js" type="module-shim"></script>
 <!--#else-->
-<!--<script src="viewer.js"></script>-->
+<!--<script src="resource://pdf.js/web/viewer.js"></script>-->
 <!--#endif-->
 
   </head>
@@ -64,6 +85,15 @@ See https://github.com/adobe-type-tools/cmap-resources
     <div id="outerContainer">
 
       <div id="mainContainer">
+
+        <div id="floatingToolbar">
+          <button id="download" class="toolbarButton" title="Download" tabindex="31" data-l10n-id="download_button">
+            <span data-l10n-id="download_button_label">Download</span>
+          </button>
+          <button id="openInApp" class="toolbarButton" title="Open in app" tabindex="32" data-l10n-id="open_in_app">
+            <span data-l10n-id="open_in_app_label">Open in app</span>
+          </button>
+        </div>
 
         <div id="viewerContainer" tabindex="0">
           <div id="viewer" class="pdfViewer"></div>
@@ -86,6 +116,7 @@ See https://github.com/adobe-type-tools/cmap-resources
       </div>  <!-- dialogContainer -->
 
     </div> <!-- outerContainer -->
+    <div id="printContainer"></div>
 
 <!--#if !MOZCENTRAL-->
     <input type="file" id="fileInput" class="hidden">

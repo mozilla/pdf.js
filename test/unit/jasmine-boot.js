@@ -41,7 +41,7 @@
 "use strict";
 
 import { GlobalWorkerOptions } from "pdfjs/display/worker_options.js";
-import { isNodeJS } from "pdfjs/shared/is_node.js";
+import { isNodeJS } from "../../src/shared/util.js";
 import { TestReporter } from "./testreporter.js";
 
 async function initializePDFJS(callback) {
@@ -65,17 +65,22 @@ async function initializePDFJS(callback) {
       "pdfjs-test/unit/encodings_spec.js",
       "pdfjs-test/unit/evaluator_spec.js",
       "pdfjs-test/unit/event_utils_spec.js",
-      "pdfjs-test/unit/function_spec.js",
       "pdfjs-test/unit/fetch_stream_spec.js",
+      "pdfjs-test/unit/font_substitutions_spec.js",
+      "pdfjs-test/unit/function_spec.js",
       "pdfjs-test/unit/message_handler_spec.js",
       "pdfjs-test/unit/metadata_spec.js",
       "pdfjs-test/unit/murmurhash3_spec.js",
       "pdfjs-test/unit/network_spec.js",
       "pdfjs-test/unit/network_utils_spec.js",
       "pdfjs-test/unit/parser_spec.js",
+      "pdfjs-test/unit/pdf.image_decoders_spec.js",
+      "pdfjs-test/unit/pdf.worker_spec.js",
       "pdfjs-test/unit/pdf_find_controller_spec.js",
       "pdfjs-test/unit/pdf_find_utils_spec.js",
       "pdfjs-test/unit/pdf_history_spec.js",
+      "pdfjs-test/unit/pdf_spec.js",
+      "pdfjs-test/unit/pdf_viewer.component_spec.js",
       "pdfjs-test/unit/pdf_viewer_spec.js",
       "pdfjs-test/unit/primitives_spec.js",
       "pdfjs-test/unit/scripting_spec.js",

@@ -14,10 +14,18 @@
  */
 
 :root {
-  --focus-outline: solid 2px blue;
-  --hover-outline: dashed 2px blue;
+  --outline-width: 2px;
+  --outline-color: blue;
+  --focus-outline: solid var(--outline-width) var(--outline-color);
+  --hover-outline: dashed var(--outline-width) var(--outline-color);
   --freetext-line-height: 1.35;
   --freetext-padding: 2px;
+  --resizer-size: 8px;
+  --resizer-shift: calc(
+    0px - var(--outline-width) - var(--resizer-size) / 2 - var(--outline-width) /
+      2
+  );
+  --resizer-color: white;
   --editorFreeText-editing-cursor: text;
   /*#if COMPONENTS*/
   --editorInk-editing-cursor: pointer;
@@ -35,10 +43,12 @@
   }
 }
 
-@media (forced-colors: active) {
+@media screen and (forced-colors: active) {
   :root {
-    --focus-outline: solid 3px ButtonText;
-    --hover-outline: dashed 3px ButtonText;
+    --outline-width: 3px;
+    --outline-color: ButtonText;
+    --resizer-size: 12px;
+    --resizer-color: ButtonFace;
   }
 }
 
@@ -55,8 +65,7 @@
 .annotationEditorLayer {
   background: transparent;
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   font-size: calc(100px * var(--scale-factor));
   transform-origin: 0 0;
   cursor: auto;
@@ -71,43 +80,49 @@
   cursor: var(--editorInk-editing-cursor);
 }
 
-.annotationEditorLayer .selectedEditor {
-  outline: var(--focus-outline);
-  resize: none;
+.annotationEditorLayer
+  :is(.freeTextEditor, .inkEditor, .stampEditor).draggable {
+  cursor: move;
 }
 
-.annotationEditorLayer .freeTextEditor {
+.annotationEditorLayer .selectedEditor {
+  outline: var(--focus-outline);
+}
+
+.annotationEditorLayer :is(.freeTextEditor, .inkEditor, .stampEditor) {
   position: absolute;
   background: transparent;
   border-radius: 3px;
-  padding: calc(var(--freetext-padding) * var(--scale-factor));
-  resize: none;
-  width: auto;
-  height: auto;
   z-index: 1;
   transform-origin: 0 0;
-  touch-action: none;
   cursor: auto;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.annotationEditorLayer .freeTextEditor {
+  padding: calc(var(--freetext-padding) * var(--scale-factor));
+  width: auto;
+  height: auto;
+  touch-action: none;
 }
 
 .annotationEditorLayer .freeTextEditor .internal {
   background: transparent;
   border: none;
-  top: 0;
-  left: 0;
+  inset: 0;
   overflow: visible;
   white-space: nowrap;
-  resize: none;
   font: 10px sans-serif;
   line-height: var(--freetext-line-height);
+  user-select: none;
 }
 
 .annotationEditorLayer .freeTextEditor .overlay {
   position: absolute;
   display: none;
   background: transparent;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
 }
@@ -123,43 +138,176 @@
 
 .annotationEditorLayer .freeTextEditor .internal:focus {
   outline: none;
+  user-select: auto;
 }
 
-.annotationEditorLayer .inkEditor.disabled {
-  resize: none;
-}
-
-.annotationEditorLayer .inkEditor.disabled.selectedEditor {
-  resize: horizontal;
-}
-
-.annotationEditorLayer .freeTextEditor:hover:not(.selectedEditor),
-.annotationEditorLayer .inkEditor:hover:not(.selectedEditor) {
+.annotationEditorLayer
+  :is(.freeTextEditor, .inkEditor, .stampEditor):hover:not(.selectedEditor) {
   outline: var(--hover-outline);
 }
 
 .annotationEditorLayer .inkEditor {
-  position: absolute;
-  background: transparent;
-  border-radius: 3px;
-  overflow: auto;
   width: 100%;
   height: 100%;
-  z-index: 1;
-  transform-origin: 0 0;
-  cursor: auto;
 }
 
 .annotationEditorLayer .inkEditor.editing {
-  resize: none;
   cursor: inherit;
 }
 
 .annotationEditorLayer .inkEditor .inkEditorCanvas {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
   touch-action: none;
+}
+
+.annotationEditorLayer .stampEditor {
+  width: auto;
+  height: auto;
+}
+
+.annotationEditorLayer .stampEditor.loading {
+  aspect-ratio: 1;
+  width: 10%;
+  height: auto;
+  background-color: rgba(128, 128, 128, 0.5);
+  background-image: var(--loading-icon);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  background-size: 16px 16px;
+  transition-property: background-size;
+  transition-delay: var(--loading-icon-delay);
+}
+
+.annotationEditorLayer .stampEditor canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.annotationEditorLayer {
+  :is(.freeTextEditor, .inkEditor, .stampEditor) {
+    & > .resizers {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      inset: 0;
+
+      &.hidden {
+        display: none;
+      }
+
+      & > .resizer {
+        width: var(--resizer-size);
+        height: var(--resizer-size);
+        border-radius: 50%;
+        background: var(--resizer-color);
+        border: var(--focus-outline);
+        position: absolute;
+
+        &.topLeft {
+          top: var(--resizer-shift);
+          left: var(--resizer-shift);
+        }
+
+        &.topMiddle {
+          top: var(--resizer-shift);
+          left: calc(50% + var(--resizer-shift));
+        }
+
+        &.topRight {
+          top: var(--resizer-shift);
+          right: var(--resizer-shift);
+        }
+
+        &.middleRight {
+          top: calc(50% + var(--resizer-shift));
+          right: var(--resizer-shift);
+        }
+
+        &.bottomRight {
+          bottom: var(--resizer-shift);
+          right: var(--resizer-shift);
+        }
+
+        &.bottomMiddle {
+          bottom: var(--resizer-shift);
+          left: calc(50% + var(--resizer-shift));
+        }
+
+        &.bottomLeft {
+          bottom: var(--resizer-shift);
+          left: var(--resizer-shift);
+        }
+
+        &.middleLeft {
+          top: calc(50% + var(--resizer-shift));
+          left: var(--resizer-shift);
+        }
+      }
+    }
+  }
+
+  &[data-main-rotation="0"]
+    :is([data-editor-rotation="0"], [data-editor-rotation="180"]),
+  &[data-main-rotation="90"]
+    :is([data-editor-rotation="270"], [data-editor-rotation="90"]),
+  &[data-main-rotation="180"]
+    :is([data-editor-rotation="180"], [data-editor-rotation="0"]),
+  &[data-main-rotation="270"]
+    :is([data-editor-rotation="90"], [data-editor-rotation="270"]) {
+    & > .resizers > .resizer {
+      &.topLeft,
+      &.bottomRight {
+        cursor: nwse-resize;
+      }
+
+      &.topMiddle,
+      &.bottomMiddle {
+        cursor: ns-resize;
+      }
+
+      &.topRight,
+      &.bottomLeft {
+        cursor: nesw-resize;
+      }
+
+      &.middleRight,
+      &.middleLeft {
+        cursor: ew-resize;
+      }
+    }
+  }
+
+  &[data-main-rotation="0"]
+    :is([data-editor-rotation="90"], [data-editor-rotation="270"]),
+  &[data-main-rotation="90"]
+    :is([data-editor-rotation="0"], [data-editor-rotation="180"]),
+  &[data-main-rotation="180"]
+    :is([data-editor-rotation="270"], [data-editor-rotation="90"]),
+  &[data-main-rotation="270"]
+    :is([data-editor-rotation="180"], [data-editor-rotation="0"]) {
+    & > .resizers > .resizer {
+      &.topLeft,
+      &.bottomRight {
+        cursor: nesw-resize;
+      }
+
+      &.topMiddle,
+      &.bottomMiddle {
+        cursor: ew-resize;
+      }
+
+      &.topRight,
+      &.bottomLeft {
+        cursor: nwse-resize;
+      }
+
+      &.middleRight,
+      &.middleLeft {
+        cursor: ns-resize;
+      }
+    }
+  }
 }

@@ -33,11 +33,13 @@ import { BaseStream } from "./base_stream.js";
 import { CipherTransformFactory } from "./crypto.js";
 
 class XRef {
+  #firstXRefStmPos = null;
+
   constructor(stream, pdfManager) {
     this.stream = stream;
     this.pdfManager = pdfManager;
     this.entries = [];
-    this.xrefstms = Object.create(null);
+    this._xrefStms = new Set();
     this._cacheMap = new Map(); // Prepare the XRef cache.
     this._pendingRefs = new RefSet();
     this._newPersistentRefNum = null;
@@ -98,7 +100,7 @@ class XRef {
     }
     if (encrypt instanceof Dict) {
       const ids = trailerDict.get("ID");
-      const fileId = ids && ids.length ? ids[0] : "";
+      const fileId = ids?.length ? ids[0] : "";
       // The 'Encrypt' dictionary itself should not be encrypted, and by
       // setting `suppressEncryption` we can prevent an infinite loop inside
       // of `XRef_fetchUncompressed` if the dictionary contains indirect
@@ -429,7 +431,7 @@ class XRef {
       }
       return skipped;
     }
-    const gEndobjRegExp = /\b(endobj|\d+\s+\d+\s+obj|xref|trailer)\b/g;
+    const gEndobjRegExp = /\b(endobj|\d+\s+\d+\s+obj|xref|trailer\s*<<)\b/g;
     const gStartxrefRegExp = /\b(startxref|\d+\s+\d+\s+obj)\b/g;
     const objRegExp = /^(\d+)\s+(\d+)\s+obj\b/;
 
@@ -540,7 +542,7 @@ class XRef {
         const xrefTagOffset = skipUntil(content, 0, xrefBytes);
         if (xrefTagOffset < contentLength && content[xrefTagOffset + 5] < 64) {
           xrefStms.push(position - stream.start);
-          this.xrefstms[position - stream.start] = 1; // Avoid recursion
+          this._xrefStms.add(position - stream.start); // Avoid recursion
         }
 
         position += contentLength;
@@ -700,14 +702,12 @@ class XRef {
 
           // Recursively get other XRefs 'XRefStm', if any
           obj = dict.get("XRefStm");
-          if (Number.isInteger(obj)) {
-            const pos = obj;
+          if (Number.isInteger(obj) && !this._xrefStms.has(obj)) {
             // ignore previously loaded xref streams
             // (possible infinite recursion)
-            if (!(pos in this.xrefstms)) {
-              this.xrefstms[pos] = 1;
-              this.startXRefQueue.push(pos);
-            }
+            this._xrefStms.add(obj);
+            this.startXRefQueue.push(obj);
+            this.#firstXRefStmPos ??= obj;
           }
         } else if (Number.isInteger(obj)) {
           // Parse in-stream XRef
@@ -754,6 +754,13 @@ class XRef {
       return undefined;
     }
     throw new XRefParseException();
+  }
+
+  get lastXRefStreamPos() {
+    return (
+      this.#firstXRefStmPos ??
+      (this._xrefStms.size > 0 ? Math.max(...this._xrefStms) : null)
+    );
   }
 
   getEntry(i) {
@@ -807,11 +814,9 @@ class XRef {
     this._pendingRefs.put(ref);
 
     try {
-      if (xrefEntry.uncompressed) {
-        xrefEntry = this.fetchUncompressed(ref, xrefEntry, suppressEncryption);
-      } else {
-        xrefEntry = this.fetchCompressed(ref, xrefEntry, suppressEncryption);
-      }
+      xrefEntry = xrefEntry.uncompressed
+        ? this.fetchUncompressed(ref, xrefEntry, suppressEncryption)
+        : this.fetchCompressed(ref, xrefEntry, suppressEncryption);
       this._pendingRefs.remove(ref);
     } catch (ex) {
       this._pendingRefs.remove(ref);
@@ -866,16 +871,12 @@ class XRef {
       }
       throw new XRefEntryException(`Bad (uncompressed) XRef entry: ${ref}`);
     }
-    if (this.encrypt && !suppressEncryption) {
-      xrefEntry = parser.getObj(this.encrypt.createCipherTransform(num, gen));
-    } else {
-      xrefEntry = parser.getObj();
-    }
+    xrefEntry =
+      this.encrypt && !suppressEncryption
+        ? parser.getObj(this.encrypt.createCipherTransform(num, gen))
+        : parser.getObj();
     if (!(xrefEntry instanceof BaseStream)) {
-      if (
-        typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || TESTING")
-      ) {
+      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
         assert(
           xrefEntry !== undefined,
           'fetchUncompressed: The "xrefEntry" cannot be undefined.'
@@ -946,10 +947,7 @@ class XRef {
       const num = nums[i],
         entry = this.entries[num];
       if (entry && entry.offset === tableOffset && entry.gen === i) {
-        if (
-          typeof PDFJSDev === "undefined" ||
-          PDFJSDev.test("!PRODUCTION || TESTING")
-        ) {
+        if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
           assert(
             obj !== undefined,
             'fetchCompressed: The "obj" cannot be undefined.'

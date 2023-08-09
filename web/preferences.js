@@ -22,7 +22,7 @@ import { AppOptions, OptionKind } from "./app_options.js";
  */
 class BasePreferences {
   #defaults = Object.freeze(
-    typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
+    typeof PDFJSDev === "undefined"
       ? AppOptions.getAll(OptionKind.PREFERENCE)
       : PDFJSDev.eval("DEFAULT_PREFERENCES")
   );
@@ -83,6 +83,9 @@ class BasePreferences {
    *                    have been reset.
    */
   async reset() {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      throw new Error("Please use `about:config` to change preferences.");
+    }
     await this.#initializedPromise;
     const prefs = this.#prefs;
 
@@ -102,6 +105,9 @@ class BasePreferences {
    *                    provided that the preference exists and the types match.
    */
   async set(name, value) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      throw new Error("Please use `about:config` to change preferences.");
+    }
     await this.#initializedPromise;
     const defaultValue = this.#defaults[name],
       prefs = this.#prefs;
@@ -122,10 +128,8 @@ class BasePreferences {
           `Set preference: "${value}" is a ${valueType}, expected a ${defaultType}.`
         );
       }
-    } else {
-      if (valueType === "number" && !Number.isInteger(value)) {
-        throw new Error(`Set preference: "${value}" must be an integer.`);
-      }
+    } else if (valueType === "number" && !Number.isInteger(value)) {
+      throw new Error(`Set preference: "${value}" must be an integer.`);
     }
 
     this.#prefs[name] = value;

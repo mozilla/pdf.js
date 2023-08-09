@@ -14,7 +14,6 @@
  */
 
 import { CommandManager } from "../../src/display/editor/tools.js";
-import { fitCurve } from "../../src/display/editor/ink.js";
 
 describe("editor", function () {
   describe("Command Manager", function () {
@@ -90,30 +89,5 @@ describe("editor", function () {
     expect(x).toEqual(6);
     manager.add({ ...makeDoUndo(5), mustExec: true });
     expect(x).toEqual(11);
-  });
-
-  describe("fitCurve", function () {
-    it("should return a function", function () {
-      expect(typeof fitCurve).toEqual("function");
-    });
-
-    it("should compute an Array of bezier curves", function () {
-      const bezier = fitCurve(
-        [
-          [1, 2],
-          [4, 5],
-        ],
-        30,
-        null
-      );
-      expect(bezier).toEqual([
-        [
-          [1, 2],
-          [2, 3],
-          [3, 4],
-          [4, 5],
-        ],
-      ]);
-    });
   });
 });

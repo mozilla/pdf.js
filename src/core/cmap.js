@@ -21,6 +21,7 @@ import {
 } from "../shared/util.js";
 import { Cmd, EOF, isCmd, Name } from "./primitives.js";
 import { BaseStream } from "./base_stream.js";
+import { BinaryCMapReader } from "./binary_cmap.js";
 import { Lexer } from "./parser.js";
 import { MissingDataException } from "./core_utils.js";
 import { Stream } from "./stream.js";
@@ -443,602 +444,283 @@ class IdentityCMap extends CMap {
   }
 }
 
-const BinaryCMapReader = (function BinaryCMapReaderClosure() {
-  function hexToInt(a, size) {
-    let n = 0;
-    for (let i = 0; i <= size; i++) {
-      n = (n << 8) | a[i];
-    }
-    return n >>> 0;
+function strToInt(str) {
+  let a = 0;
+  for (let i = 0; i < str.length; i++) {
+    a = (a << 8) | str.charCodeAt(i);
   }
+  return a >>> 0;
+}
 
-  function hexToStr(a, size) {
-    // This code is hot. Special-case some common values to avoid creating an
-    // object with subarray().
-    if (size === 1) {
-      return String.fromCharCode(a[0], a[1]);
-    }
-    if (size === 3) {
-      return String.fromCharCode(a[0], a[1], a[2], a[3]);
-    }
-    return String.fromCharCode.apply(null, a.subarray(0, size + 1));
+function expectString(obj) {
+  if (typeof obj !== "string") {
+    throw new FormatError("Malformed CMap: expected string.");
   }
+}
 
-  function addHex(a, b, size) {
-    let c = 0;
-    for (let i = size; i >= 0; i--) {
-      c += a[i] + b[i];
-      a[i] = c & 255;
-      c >>= 8;
-    }
+function expectInt(obj) {
+  if (!Number.isInteger(obj)) {
+    throw new FormatError("Malformed CMap: expected int.");
   }
+}
 
-  function incHex(a, size) {
-    let c = 1;
-    for (let i = size; i >= 0 && c > 0; i--) {
-      c += a[i];
-      a[i] = c & 255;
-      c >>= 8;
+function parseBfChar(cMap, lexer) {
+  while (true) {
+    let obj = lexer.getObj();
+    if (obj === EOF) {
+      break;
     }
+    if (isCmd(obj, "endbfchar")) {
+      return;
+    }
+    expectString(obj);
+    const src = strToInt(obj);
+    obj = lexer.getObj();
+    // TODO are /dstName used?
+    expectString(obj);
+    const dst = obj;
+    cMap.mapOne(src, dst);
   }
+}
 
-  const MAX_NUM_SIZE = 16;
-  const MAX_ENCODED_NUM_SIZE = 19; // ceil(MAX_NUM_SIZE * 7 / 8)
-
-  class BinaryCMapStream {
-    constructor(data) {
-      this.buffer = data;
-      this.pos = 0;
-      this.end = data.length;
-      this.tmpBuf = new Uint8Array(MAX_ENCODED_NUM_SIZE);
+function parseBfRange(cMap, lexer) {
+  while (true) {
+    let obj = lexer.getObj();
+    if (obj === EOF) {
+      break;
     }
-
-    readByte() {
-      if (this.pos >= this.end) {
-        return -1;
-      }
-      return this.buffer[this.pos++];
+    if (isCmd(obj, "endbfrange")) {
+      return;
     }
-
-    readNumber() {
-      let n = 0;
-      let last;
-      do {
-        const b = this.readByte();
-        if (b < 0) {
-          throw new FormatError("unexpected EOF in bcmap");
-        }
-        last = !(b & 0x80);
-        n = (n << 7) | (b & 0x7f);
-      } while (!last);
-      return n;
-    }
-
-    readSigned() {
-      const n = this.readNumber();
-      return n & 1 ? ~(n >>> 1) : n >>> 1;
-    }
-
-    readHex(num, size) {
-      num.set(this.buffer.subarray(this.pos, this.pos + size + 1));
-      this.pos += size + 1;
-    }
-
-    readHexNumber(num, size) {
-      let last;
-      const stack = this.tmpBuf;
-      let sp = 0;
-      do {
-        const b = this.readByte();
-        if (b < 0) {
-          throw new FormatError("unexpected EOF in bcmap");
-        }
-        last = !(b & 0x80);
-        stack[sp++] = b & 0x7f;
-      } while (!last);
-      let i = size,
-        buffer = 0,
-        bufferSize = 0;
-      while (i >= 0) {
-        while (bufferSize < 8 && stack.length > 0) {
-          buffer |= stack[--sp] << bufferSize;
-          bufferSize += 7;
-        }
-        num[i] = buffer & 255;
-        i--;
-        buffer >>= 8;
-        bufferSize -= 8;
-      }
-    }
-
-    readHexSigned(num, size) {
-      this.readHexNumber(num, size);
-      const sign = num[size] & 1 ? 255 : 0;
-      let c = 0;
-      for (let i = 0; i <= size; i++) {
-        c = ((c & 1) << 8) | num[i];
-        num[i] = (c >> 1) ^ sign;
-      }
-    }
-
-    readString() {
-      const len = this.readNumber();
-      let s = "";
-      for (let i = 0; i < len; i++) {
-        s += String.fromCharCode(this.readNumber());
-      }
-      return s;
-    }
-  }
-
-  // eslint-disable-next-line no-shadow
-  class BinaryCMapReader {
-    async process(data, cMap, extend) {
-      const stream = new BinaryCMapStream(data);
-      const header = stream.readByte();
-      cMap.vertical = !!(header & 1);
-
-      let useCMap = null;
-      const start = new Uint8Array(MAX_NUM_SIZE);
-      const end = new Uint8Array(MAX_NUM_SIZE);
-      const char = new Uint8Array(MAX_NUM_SIZE);
-      const charCode = new Uint8Array(MAX_NUM_SIZE);
-      const tmp = new Uint8Array(MAX_NUM_SIZE);
-      let code;
-
-      let b;
-      while ((b = stream.readByte()) >= 0) {
-        const type = b >> 5;
-        if (type === 7) {
-          // metadata, e.g. comment or usecmap
-          switch (b & 0x1f) {
-            case 0:
-              stream.readString(); // skipping comment
-              break;
-            case 1:
-              useCMap = stream.readString();
-              break;
-          }
-          continue;
-        }
-        const sequence = !!(b & 0x10);
-        const dataSize = b & 15;
-
-        if (dataSize + 1 > MAX_NUM_SIZE) {
-          throw new Error("BinaryCMapReader.process: Invalid dataSize.");
-        }
-
-        const ucs2DataSize = 1;
-        const subitemsCount = stream.readNumber();
-        switch (type) {
-          case 0: // codespacerange
-            stream.readHex(start, dataSize);
-            stream.readHexNumber(end, dataSize);
-            addHex(end, start, dataSize);
-            cMap.addCodespaceRange(
-              dataSize + 1,
-              hexToInt(start, dataSize),
-              hexToInt(end, dataSize)
-            );
-            for (let i = 1; i < subitemsCount; i++) {
-              incHex(end, dataSize);
-              stream.readHexNumber(start, dataSize);
-              addHex(start, end, dataSize);
-              stream.readHexNumber(end, dataSize);
-              addHex(end, start, dataSize);
-              cMap.addCodespaceRange(
-                dataSize + 1,
-                hexToInt(start, dataSize),
-                hexToInt(end, dataSize)
-              );
-            }
-            break;
-          case 1: // notdefrange
-            stream.readHex(start, dataSize);
-            stream.readHexNumber(end, dataSize);
-            addHex(end, start, dataSize);
-            stream.readNumber(); // code
-            // undefined range, skipping
-            for (let i = 1; i < subitemsCount; i++) {
-              incHex(end, dataSize);
-              stream.readHexNumber(start, dataSize);
-              addHex(start, end, dataSize);
-              stream.readHexNumber(end, dataSize);
-              addHex(end, start, dataSize);
-              stream.readNumber(); // code
-              // nop
-            }
-            break;
-          case 2: // cidchar
-            stream.readHex(char, dataSize);
-            code = stream.readNumber();
-            cMap.mapOne(hexToInt(char, dataSize), code);
-            for (let i = 1; i < subitemsCount; i++) {
-              incHex(char, dataSize);
-              if (!sequence) {
-                stream.readHexNumber(tmp, dataSize);
-                addHex(char, tmp, dataSize);
-              }
-              code = stream.readSigned() + (code + 1);
-              cMap.mapOne(hexToInt(char, dataSize), code);
-            }
-            break;
-          case 3: // cidrange
-            stream.readHex(start, dataSize);
-            stream.readHexNumber(end, dataSize);
-            addHex(end, start, dataSize);
-            code = stream.readNumber();
-            cMap.mapCidRange(
-              hexToInt(start, dataSize),
-              hexToInt(end, dataSize),
-              code
-            );
-            for (let i = 1; i < subitemsCount; i++) {
-              incHex(end, dataSize);
-              if (!sequence) {
-                stream.readHexNumber(start, dataSize);
-                addHex(start, end, dataSize);
-              } else {
-                start.set(end);
-              }
-              stream.readHexNumber(end, dataSize);
-              addHex(end, start, dataSize);
-              code = stream.readNumber();
-              cMap.mapCidRange(
-                hexToInt(start, dataSize),
-                hexToInt(end, dataSize),
-                code
-              );
-            }
-            break;
-          case 4: // bfchar
-            stream.readHex(char, ucs2DataSize);
-            stream.readHex(charCode, dataSize);
-            cMap.mapOne(
-              hexToInt(char, ucs2DataSize),
-              hexToStr(charCode, dataSize)
-            );
-            for (let i = 1; i < subitemsCount; i++) {
-              incHex(char, ucs2DataSize);
-              if (!sequence) {
-                stream.readHexNumber(tmp, ucs2DataSize);
-                addHex(char, tmp, ucs2DataSize);
-              }
-              incHex(charCode, dataSize);
-              stream.readHexSigned(tmp, dataSize);
-              addHex(charCode, tmp, dataSize);
-              cMap.mapOne(
-                hexToInt(char, ucs2DataSize),
-                hexToStr(charCode, dataSize)
-              );
-            }
-            break;
-          case 5: // bfrange
-            stream.readHex(start, ucs2DataSize);
-            stream.readHexNumber(end, ucs2DataSize);
-            addHex(end, start, ucs2DataSize);
-            stream.readHex(charCode, dataSize);
-            cMap.mapBfRange(
-              hexToInt(start, ucs2DataSize),
-              hexToInt(end, ucs2DataSize),
-              hexToStr(charCode, dataSize)
-            );
-            for (let i = 1; i < subitemsCount; i++) {
-              incHex(end, ucs2DataSize);
-              if (!sequence) {
-                stream.readHexNumber(start, ucs2DataSize);
-                addHex(start, end, ucs2DataSize);
-              } else {
-                start.set(end);
-              }
-              stream.readHexNumber(end, ucs2DataSize);
-              addHex(end, start, ucs2DataSize);
-              stream.readHex(charCode, dataSize);
-              cMap.mapBfRange(
-                hexToInt(start, ucs2DataSize),
-                hexToInt(end, ucs2DataSize),
-                hexToStr(charCode, dataSize)
-              );
-            }
-            break;
-          default:
-            throw new Error(`BinaryCMapReader.process - unknown type: ${type}`);
-        }
-      }
-
-      if (useCMap) {
-        return extend(useCMap);
-      }
-      return cMap;
-    }
-  }
-
-  return BinaryCMapReader;
-})();
-
-const CMapFactory = (function CMapFactoryClosure() {
-  function strToInt(str) {
-    let a = 0;
-    for (let i = 0; i < str.length; i++) {
-      a = (a << 8) | str.charCodeAt(i);
-    }
-    return a >>> 0;
-  }
-
-  function expectString(obj) {
-    if (typeof obj !== "string") {
-      throw new FormatError("Malformed CMap: expected string.");
-    }
-  }
-
-  function expectInt(obj) {
-    if (!Number.isInteger(obj)) {
-      throw new FormatError("Malformed CMap: expected int.");
-    }
-  }
-
-  function parseBfChar(cMap, lexer) {
-    while (true) {
-      let obj = lexer.getObj();
-      if (obj === EOF) {
-        break;
-      }
-      if (isCmd(obj, "endbfchar")) {
-        return;
-      }
-      expectString(obj);
-      const src = strToInt(obj);
+    expectString(obj);
+    const low = strToInt(obj);
+    obj = lexer.getObj();
+    expectString(obj);
+    const high = strToInt(obj);
+    obj = lexer.getObj();
+    if (Number.isInteger(obj) || typeof obj === "string") {
+      const dstLow = Number.isInteger(obj) ? String.fromCharCode(obj) : obj;
+      cMap.mapBfRange(low, high, dstLow);
+    } else if (isCmd(obj, "[")) {
       obj = lexer.getObj();
-      // TODO are /dstName used?
-      expectString(obj);
-      const dst = obj;
-      cMap.mapOne(src, dst);
-    }
-  }
-
-  function parseBfRange(cMap, lexer) {
-    while (true) {
-      let obj = lexer.getObj();
-      if (obj === EOF) {
-        break;
-      }
-      if (isCmd(obj, "endbfrange")) {
-        return;
-      }
-      expectString(obj);
-      const low = strToInt(obj);
-      obj = lexer.getObj();
-      expectString(obj);
-      const high = strToInt(obj);
-      obj = lexer.getObj();
-      if (Number.isInteger(obj) || typeof obj === "string") {
-        const dstLow = Number.isInteger(obj) ? String.fromCharCode(obj) : obj;
-        cMap.mapBfRange(low, high, dstLow);
-      } else if (isCmd(obj, "[")) {
+      const array = [];
+      while (!isCmd(obj, "]") && obj !== EOF) {
+        array.push(obj);
         obj = lexer.getObj();
-        const array = [];
-        while (!isCmd(obj, "]") && obj !== EOF) {
-          array.push(obj);
-          obj = lexer.getObj();
-        }
-        cMap.mapBfRangeToArray(low, high, array);
-      } else {
-        break;
       }
+      cMap.mapBfRangeToArray(low, high, array);
+    } else {
+      break;
     }
-    throw new FormatError("Invalid bf range.");
   }
+  throw new FormatError("Invalid bf range.");
+}
 
-  function parseCidChar(cMap, lexer) {
-    while (true) {
-      let obj = lexer.getObj();
+function parseCidChar(cMap, lexer) {
+  while (true) {
+    let obj = lexer.getObj();
+    if (obj === EOF) {
+      break;
+    }
+    if (isCmd(obj, "endcidchar")) {
+      return;
+    }
+    expectString(obj);
+    const src = strToInt(obj);
+    obj = lexer.getObj();
+    expectInt(obj);
+    const dst = obj;
+    cMap.mapOne(src, dst);
+  }
+}
+
+function parseCidRange(cMap, lexer) {
+  while (true) {
+    let obj = lexer.getObj();
+    if (obj === EOF) {
+      break;
+    }
+    if (isCmd(obj, "endcidrange")) {
+      return;
+    }
+    expectString(obj);
+    const low = strToInt(obj);
+    obj = lexer.getObj();
+    expectString(obj);
+    const high = strToInt(obj);
+    obj = lexer.getObj();
+    expectInt(obj);
+    const dstLow = obj;
+    cMap.mapCidRange(low, high, dstLow);
+  }
+}
+
+function parseCodespaceRange(cMap, lexer) {
+  while (true) {
+    let obj = lexer.getObj();
+    if (obj === EOF) {
+      break;
+    }
+    if (isCmd(obj, "endcodespacerange")) {
+      return;
+    }
+    if (typeof obj !== "string") {
+      break;
+    }
+    const low = strToInt(obj);
+    obj = lexer.getObj();
+    if (typeof obj !== "string") {
+      break;
+    }
+    const high = strToInt(obj);
+    cMap.addCodespaceRange(obj.length, low, high);
+  }
+  throw new FormatError("Invalid codespace range.");
+}
+
+function parseWMode(cMap, lexer) {
+  const obj = lexer.getObj();
+  if (Number.isInteger(obj)) {
+    cMap.vertical = !!obj;
+  }
+}
+
+function parseCMapName(cMap, lexer) {
+  const obj = lexer.getObj();
+  if (obj instanceof Name) {
+    cMap.name = obj.name;
+  }
+}
+
+async function parseCMap(cMap, lexer, fetchBuiltInCMap, useCMap) {
+  let previous, embeddedUseCMap;
+  objLoop: while (true) {
+    try {
+      const obj = lexer.getObj();
       if (obj === EOF) {
         break;
-      }
-      if (isCmd(obj, "endcidchar")) {
-        return;
-      }
-      expectString(obj);
-      const src = strToInt(obj);
-      obj = lexer.getObj();
-      expectInt(obj);
-      const dst = obj;
-      cMap.mapOne(src, dst);
-    }
-  }
-
-  function parseCidRange(cMap, lexer) {
-    while (true) {
-      let obj = lexer.getObj();
-      if (obj === EOF) {
-        break;
-      }
-      if (isCmd(obj, "endcidrange")) {
-        return;
-      }
-      expectString(obj);
-      const low = strToInt(obj);
-      obj = lexer.getObj();
-      expectString(obj);
-      const high = strToInt(obj);
-      obj = lexer.getObj();
-      expectInt(obj);
-      const dstLow = obj;
-      cMap.mapCidRange(low, high, dstLow);
-    }
-  }
-
-  function parseCodespaceRange(cMap, lexer) {
-    while (true) {
-      let obj = lexer.getObj();
-      if (obj === EOF) {
-        break;
-      }
-      if (isCmd(obj, "endcodespacerange")) {
-        return;
-      }
-      if (typeof obj !== "string") {
-        break;
-      }
-      const low = strToInt(obj);
-      obj = lexer.getObj();
-      if (typeof obj !== "string") {
-        break;
-      }
-      const high = strToInt(obj);
-      cMap.addCodespaceRange(obj.length, low, high);
-    }
-    throw new FormatError("Invalid codespace range.");
-  }
-
-  function parseWMode(cMap, lexer) {
-    const obj = lexer.getObj();
-    if (Number.isInteger(obj)) {
-      cMap.vertical = !!obj;
-    }
-  }
-
-  function parseCMapName(cMap, lexer) {
-    const obj = lexer.getObj();
-    if (obj instanceof Name) {
-      cMap.name = obj.name;
-    }
-  }
-
-  async function parseCMap(cMap, lexer, fetchBuiltInCMap, useCMap) {
-    let previous, embeddedUseCMap;
-    objLoop: while (true) {
-      try {
-        const obj = lexer.getObj();
-        if (obj === EOF) {
-          break;
-        } else if (obj instanceof Name) {
-          if (obj.name === "WMode") {
-            parseWMode(cMap, lexer);
-          } else if (obj.name === "CMapName") {
-            parseCMapName(cMap, lexer);
-          }
-          previous = obj;
-        } else if (obj instanceof Cmd) {
-          switch (obj.cmd) {
-            case "endcmap":
-              break objLoop;
-            case "usecmap":
-              if (previous instanceof Name) {
-                embeddedUseCMap = previous.name;
-              }
-              break;
-            case "begincodespacerange":
-              parseCodespaceRange(cMap, lexer);
-              break;
-            case "beginbfchar":
-              parseBfChar(cMap, lexer);
-              break;
-            case "begincidchar":
-              parseCidChar(cMap, lexer);
-              break;
-            case "beginbfrange":
-              parseBfRange(cMap, lexer);
-              break;
-            case "begincidrange":
-              parseCidRange(cMap, lexer);
-              break;
-          }
+      } else if (obj instanceof Name) {
+        if (obj.name === "WMode") {
+          parseWMode(cMap, lexer);
+        } else if (obj.name === "CMapName") {
+          parseCMapName(cMap, lexer);
         }
-      } catch (ex) {
-        if (ex instanceof MissingDataException) {
-          throw ex;
+        previous = obj;
+      } else if (obj instanceof Cmd) {
+        switch (obj.cmd) {
+          case "endcmap":
+            break objLoop;
+          case "usecmap":
+            if (previous instanceof Name) {
+              embeddedUseCMap = previous.name;
+            }
+            break;
+          case "begincodespacerange":
+            parseCodespaceRange(cMap, lexer);
+            break;
+          case "beginbfchar":
+            parseBfChar(cMap, lexer);
+            break;
+          case "begincidchar":
+            parseCidChar(cMap, lexer);
+            break;
+          case "beginbfrange":
+            parseBfRange(cMap, lexer);
+            break;
+          case "begincidrange":
+            parseCidRange(cMap, lexer);
+            break;
         }
-        warn("Invalid cMap data: " + ex);
-        continue;
       }
+    } catch (ex) {
+      if (ex instanceof MissingDataException) {
+        throw ex;
+      }
+      warn("Invalid cMap data: " + ex);
+      continue;
     }
+  }
 
-    if (!useCMap && embeddedUseCMap) {
-      // Load the useCMap definition from the file only if there wasn't one
-      // specified.
-      useCMap = embeddedUseCMap;
+  if (!useCMap && embeddedUseCMap) {
+    // Load the useCMap definition from the file only if there wasn't one
+    // specified.
+    useCMap = embeddedUseCMap;
+  }
+  if (useCMap) {
+    return extendCMap(cMap, fetchBuiltInCMap, useCMap);
+  }
+  return cMap;
+}
+
+async function extendCMap(cMap, fetchBuiltInCMap, useCMap) {
+  cMap.useCMap = await createBuiltInCMap(useCMap, fetchBuiltInCMap);
+  // If there aren't any code space ranges defined clone all the parent ones
+  // into this cMap.
+  if (cMap.numCodespaceRanges === 0) {
+    const useCodespaceRanges = cMap.useCMap.codespaceRanges;
+    for (let i = 0; i < useCodespaceRanges.length; i++) {
+      cMap.codespaceRanges[i] = useCodespaceRanges[i].slice();
     }
-    if (useCMap) {
+    cMap.numCodespaceRanges = cMap.useCMap.numCodespaceRanges;
+  }
+  // Merge the map into the current one, making sure not to override
+  // any previously defined entries.
+  cMap.useCMap.forEach(function (key, value) {
+    if (!cMap.contains(key)) {
+      cMap.mapOne(key, cMap.useCMap.lookup(key));
+    }
+  });
+
+  return cMap;
+}
+
+async function createBuiltInCMap(name, fetchBuiltInCMap) {
+  if (name === "Identity-H") {
+    return new IdentityCMap(false, 2);
+  } else if (name === "Identity-V") {
+    return new IdentityCMap(true, 2);
+  }
+  if (!BUILT_IN_CMAPS.includes(name)) {
+    throw new Error("Unknown CMap name: " + name);
+  }
+  if (!fetchBuiltInCMap) {
+    throw new Error("Built-in CMap parameters are not provided.");
+  }
+
+  const { cMapData, compressionType } = await fetchBuiltInCMap(name);
+  const cMap = new CMap(true);
+
+  if (compressionType === CMapCompressionType.BINARY) {
+    return new BinaryCMapReader().process(cMapData, cMap, useCMap => {
       return extendCMap(cMap, fetchBuiltInCMap, useCMap);
-    }
-    return cMap;
-  }
-
-  async function extendCMap(cMap, fetchBuiltInCMap, useCMap) {
-    cMap.useCMap = await createBuiltInCMap(useCMap, fetchBuiltInCMap);
-    // If there aren't any code space ranges defined clone all the parent ones
-    // into this cMap.
-    if (cMap.numCodespaceRanges === 0) {
-      const useCodespaceRanges = cMap.useCMap.codespaceRanges;
-      for (let i = 0; i < useCodespaceRanges.length; i++) {
-        cMap.codespaceRanges[i] = useCodespaceRanges[i].slice();
-      }
-      cMap.numCodespaceRanges = cMap.useCMap.numCodespaceRanges;
-    }
-    // Merge the map into the current one, making sure not to override
-    // any previously defined entries.
-    cMap.useCMap.forEach(function (key, value) {
-      if (!cMap.contains(key)) {
-        cMap.mapOne(key, cMap.useCMap.lookup(key));
-      }
     });
-
-    return cMap;
   }
-
-  async function createBuiltInCMap(name, fetchBuiltInCMap) {
-    if (name === "Identity-H") {
-      return new IdentityCMap(false, 2);
-    } else if (name === "Identity-V") {
-      return new IdentityCMap(true, 2);
-    }
-    if (!BUILT_IN_CMAPS.includes(name)) {
-      throw new Error("Unknown CMap name: " + name);
-    }
-    if (!fetchBuiltInCMap) {
-      throw new Error("Built-in CMap parameters are not provided.");
-    }
-
-    const { cMapData, compressionType } = await fetchBuiltInCMap(name);
-    const cMap = new CMap(true);
-
-    if (compressionType === CMapCompressionType.BINARY) {
-      return new BinaryCMapReader().process(cMapData, cMap, useCMap => {
-        return extendCMap(cMap, fetchBuiltInCMap, useCMap);
-      });
-    }
-    if (compressionType === CMapCompressionType.NONE) {
-      const lexer = new Lexer(new Stream(cMapData));
-      return parseCMap(cMap, lexer, fetchBuiltInCMap, null);
-    }
-    throw new Error(`Invalid CMap "compressionType" value: ${compressionType}`);
+  if (compressionType === CMapCompressionType.NONE) {
+    const lexer = new Lexer(new Stream(cMapData));
+    return parseCMap(cMap, lexer, fetchBuiltInCMap, null);
   }
+  throw new Error(`Invalid CMap "compressionType" value: ${compressionType}`);
+}
 
-  return {
-    async create(params) {
-      const encoding = params.encoding;
-      const fetchBuiltInCMap = params.fetchBuiltInCMap;
-      const useCMap = params.useCMap;
+class CMapFactory {
+  static async create({ encoding, fetchBuiltInCMap, useCMap }) {
+    if (encoding instanceof Name) {
+      return createBuiltInCMap(encoding.name, fetchBuiltInCMap);
+    } else if (encoding instanceof BaseStream) {
+      const parsedCMap = await parseCMap(
+        /* cMap = */ new CMap(),
+        /* lexer = */ new Lexer(encoding),
+        fetchBuiltInCMap,
+        useCMap
+      );
 
-      if (encoding instanceof Name) {
-        return createBuiltInCMap(encoding.name, fetchBuiltInCMap);
-      } else if (encoding instanceof BaseStream) {
-        const parsedCMap = await parseCMap(
-          /* cMap = */ new CMap(),
-          /* lexer = */ new Lexer(encoding),
-          fetchBuiltInCMap,
-          useCMap
-        );
-
-        if (parsedCMap.isIdentityCMap) {
-          return createBuiltInCMap(parsedCMap.name, fetchBuiltInCMap);
-        }
-        return parsedCMap;
+      if (parsedCMap.isIdentityCMap) {
+        return createBuiltInCMap(parsedCMap.name, fetchBuiltInCMap);
       }
-      throw new Error("Encoding required.");
-    },
-  };
-})();
+      return parsedCMap;
+    }
+    throw new Error("Encoding required.");
+  }
+}
 
 export { CMap, CMapFactory, IdentityCMap };

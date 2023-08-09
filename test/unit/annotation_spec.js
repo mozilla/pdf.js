@@ -32,7 +32,7 @@ import {
   stringToUTF8String,
 } from "../../src/shared/util.js";
 import {
-  CMAP_PARAMS,
+  CMAP_URL,
   createIdFactory,
   STANDARD_FONT_DATA_URL,
   XRefMock,
@@ -57,6 +57,7 @@ describe("annotation", function () {
         },
       };
       this.evaluatorOptions = {
+        isEvalSupported: true,
         isOffscreenCanvasSupported: false,
       };
     }
@@ -108,8 +109,7 @@ describe("annotation", function () {
     });
 
     const CMapReaderFactory = new DefaultCMapReaderFactory({
-      baseUrl: CMAP_PARAMS.cMapUrl,
-      isCompressed: CMAP_PARAMS.cMapPacked,
+      baseUrl: CMAP_URL,
     });
 
     const builtInCMapCache = new Map();
@@ -131,6 +131,7 @@ describe("annotation", function () {
       fontCache: new RefSetCache(),
       builtInCMapCache,
       standardFontDataCache: new Map(),
+      systemFontCache: new Map(),
     });
   });
 
@@ -314,35 +315,55 @@ describe("annotation", function () {
     });
 
     it("should set and get valid contents", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setContents("Foo bar baz");
 
       expect(annotation._contents).toEqual({ str: "Foo bar baz", dir: "ltr" });
     });
 
     it("should not set and get invalid contents", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setContents(undefined);
 
       expect(annotation._contents).toEqual({ str: "", dir: "ltr" });
     });
 
     it("should set and get a valid modification date", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setModificationDate("D:20190422");
 
       expect(annotation.modificationDate).toEqual("D:20190422");
     });
 
     it("should not set and get an invalid modification date", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setModificationDate(undefined);
 
       expect(annotation.modificationDate).toEqual(null);
     });
 
     it("should set and get flags", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setFlags(13);
 
       expect(annotation.hasFlag(AnnotationFlag.INVISIBLE)).toEqual(true);
@@ -353,63 +374,99 @@ describe("annotation", function () {
     });
 
     it("should be viewable and not printable by default", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
 
       expect(annotation.viewable).toEqual(true);
       expect(annotation.printable).toEqual(false);
     });
 
     it("should set and get a valid rectangle", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setRectangle([117, 694, 164.298, 720]);
 
       expect(annotation.rectangle).toEqual([117, 694, 164.298, 720]);
     });
 
     it("should not set and get an invalid rectangle", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setRectangle([117, 694, 164.298]);
 
       expect(annotation.rectangle).toEqual([0, 0, 0, 0]);
     });
 
     it("should reject a color if it is not an array", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setColor("red");
 
       expect(annotation.color).toEqual(new Uint8ClampedArray([0, 0, 0]));
     });
 
     it("should set and get a transparent color", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setColor([]);
 
       expect(annotation.color).toEqual(null);
     });
 
     it("should set and get a grayscale color", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setColor([0.4]);
 
       expect(annotation.color).toEqual(new Uint8ClampedArray([102, 102, 102]));
     });
 
     it("should set and get an RGB color", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setColor([0, 0, 1]);
 
       expect(annotation.color).toEqual(new Uint8ClampedArray([0, 0, 255]));
     });
 
     it("should set and get a CMYK color", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setColor([0.1, 0.92, 0.84, 0.02]);
 
       expect(annotation.color).toEqual(new Uint8ClampedArray([234, 59, 48]));
     });
 
     it("should not set and get an invalid color", function () {
-      const annotation = new Annotation({ dict, ref });
+      const annotation = new Annotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       annotation.setColor([0.4, 0.6]);
 
       expect(annotation.color).toEqual(new Uint8ClampedArray([0, 0, 0]));
@@ -514,14 +571,22 @@ describe("annotation", function () {
     });
 
     it("should set and get a valid creation date", function () {
-      const markupAnnotation = new MarkupAnnotation({ dict, ref });
+      const markupAnnotation = new MarkupAnnotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       markupAnnotation.setCreationDate("D:20190422");
 
       expect(markupAnnotation.creationDate).toEqual("D:20190422");
     });
 
     it("should not set and get an invalid creation date", function () {
-      const markupAnnotation = new MarkupAnnotation({ dict, ref });
+      const markupAnnotation = new MarkupAnnotation({
+        dict,
+        ref,
+        evaluatorOptions: pdfManagerMock.evaluatorOptions,
+      });
       markupAnnotation.setCreationDate(undefined);
 
       expect(markupAnnotation.creationDate).toEqual(null);
@@ -623,7 +688,7 @@ describe("annotation", function () {
       expect(data.creationDate).toEqual("D:20180423");
       expect(data.modificationDate).toEqual("D:20190423");
       expect(data.color).toEqual(new Uint8ClampedArray([0, 0, 255]));
-      expect(data.hasPopup).toEqual(true);
+      expect(data.popupRef).toEqual("820R");
     });
 
     it("should parse IRT/RT for a reply type", async function () {
@@ -678,7 +743,7 @@ describe("annotation", function () {
       expect(data.creationDate).toEqual("D:20180523");
       expect(data.modificationDate).toEqual("D:20190523");
       expect(data.color).toEqual(new Uint8ClampedArray([102, 102, 102]));
-      expect(data.hasPopup).toEqual(false);
+      expect(data.popupRef).toEqual(null);
     });
   });
 
@@ -2063,8 +2128,8 @@ describe("annotation", function () {
           "/V (hello world) /AP << /N 2 0 R>> /M (date)>>\nendobj\n"
       );
       expect(newData.data).toEqual(
-        "2 0 obj\n<< /Length 74 /Subtype /Form /Resources " +
-          "<< /Font << /Helv 314 0 R>>>> /BBox [0 0 32 10]>> stream\n" +
+        "2 0 obj\n<< /Subtype /Form /Resources " +
+          "<< /Font << /Helv 314 0 R>>>> /BBox [0 0 32 10] /Length 74>> stream\n" +
           "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2 3.07 Td (hello world) Tj " +
           "ET Q EMC\nendstream\nendobj\n"
       );
@@ -2109,10 +2174,62 @@ describe("annotation", function () {
           "/V (hello world) /MK << /R 90>> /AP << /N 2 0 R>> /M (date)>>\nendobj\n"
       );
       expect(newData.data).toEqual(
-        "2 0 obj\n<< /Length 74 /Subtype /Form /Resources " +
-          "<< /Font << /Helv 314 0 R>>>> /BBox [0 0 32 10] /Matrix [0 1 -1 0 32 0]>> stream\n" +
+        "2 0 obj\n<< /Subtype /Form /Resources " +
+          "<< /Font << /Helv 314 0 R>>>> /BBox [0 0 32 10] /Matrix [0 1 -1 0 32 0] /Length 74>> stream\n" +
           "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2 2.94 Td (hello world) Tj " +
           "ET Q EMC\nendstream\nendobj\n"
+      );
+    });
+
+    it("should compress and save text", async function () {
+      const textWidgetRef = Ref.get(123, 0);
+      const xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict },
+        helvRefObj,
+      ]);
+      partialEvaluator.xref = xref;
+      const task = new WorkerTask("test save");
+
+      const annotation = await AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      );
+      const annotationStorage = new Map();
+      const value = "a".repeat(256);
+      annotationStorage.set(annotation.data.id, { value });
+
+      const data = await annotation.save(
+        partialEvaluator,
+        task,
+        annotationStorage
+      );
+      expect(data.length).toEqual(2);
+      const [oldData, newData] = data;
+      expect(oldData.ref).toEqual(Ref.get(123, 0));
+      expect(newData.ref).toEqual(Ref.get(2, 0));
+
+      oldData.data = oldData.data.replace(/\(D:\d+\)/, "(date)");
+      expect(oldData.data).toEqual(
+        "123 0 obj\n" +
+          "<< /Type /Annot /Subtype /Widget /FT /Tx /DA (/Helv 5 Tf) /DR " +
+          "<< /Font << /Helv 314 0 R>>>> /Rect [0 0 32 10] " +
+          `/V (${value}) /AP << /N 2 0 R>> /M (date)>>\nendobj\n`
+      );
+
+      const compressedData = [
+        120, 156, 211, 15, 169, 80, 112, 242, 117, 86, 40, 84, 112, 10, 81, 208,
+        247, 72, 205, 41, 83, 48, 85, 8, 73, 83, 48, 84, 48, 0, 66, 8, 25, 146,
+        171, 96, 164, 96, 172, 103, 96, 174, 16, 146, 162, 160, 145, 56, 194,
+        129, 166, 66, 72, 150, 130, 107, 136, 66, 160, 130, 171, 175, 51, 0,
+        222, 235, 111, 133,
+      ];
+      const compressedStream = String.fromCharCode(...compressedData);
+      expect(newData.data).toEqual(
+        "2 0 obj\n<< /Subtype /Form /Resources " +
+          "<< /Font << /Helv 314 0 R>>>> /BBox [0 0 32 10] /Filter /FlateDecode /Length 68>> stream\n" +
+          `${compressedStream}\nendstream\nendobj\n`
       );
     });
 
@@ -2240,8 +2357,8 @@ describe("annotation", function () {
           `/V (\xfe\xff${utf16String}) /AP << /N 2 0 R>> /M (date)>>\nendobj\n`
       );
       expect(newData.data).toEqual(
-        "2 0 obj\n<< /Length 79 /Subtype /Form /Resources " +
-          "<< /Font << /Helv 314 0 R /Goth 159 0 R>>>> /BBox [0 0 32 10]>> stream\n" +
+        "2 0 obj\n<< /Subtype /Form /Resources " +
+          "<< /Font << /Helv 314 0 R /Goth 159 0 R>>>> /BBox [0 0 32 10] /Length 79>> stream\n" +
           `/Tx BMC q BT /Goth 5 Tf 1 0 0 1 0 0 Tm 2 3.07 Td (${utf16String}) Tj ` +
           "ET Q EMC\nendstream\nendobj\n"
       );
@@ -3627,8 +3744,8 @@ describe("annotation", function () {
       expect(newData.data).toEqual(
         [
           "2 0 obj",
-          "<< /Length 170 /Subtype /Form /Resources << /Font << /Helv 314 0 R>>>> " +
-            "/BBox [0 0 32 10] /Matrix [0 -1 1 0 0 10]>> stream",
+          "<< /Subtype /Form /Resources << /Font << /Helv 314 0 R>>>> " +
+            "/BBox [0 0 32 10] /Matrix [0 -1 1 0 0 10] /Length 170>> stream",
           "/Tx BMC q",
           "1 1 10 32 re W n",
           "0.600006 0.756866 0.854904 rg",
@@ -3688,8 +3805,8 @@ describe("annotation", function () {
       expect(newData.data).toEqual(
         [
           "2 0 obj",
-          "<< /Length 133 /Subtype /Form /Resources << /Font << /Helv 314 0 R>>>> " +
-            "/BBox [0 0 32 10]>> stream",
+          "<< /Subtype /Form /Resources << /Font << /Helv 314 0 R>>>> " +
+            "/BBox [0 0 32 10] /Length 133>> stream",
           "/Tx BMC q",
           "1 1 32 10 re W n",
           "0.600006 0.756866 0.854904 rg",
@@ -3754,8 +3871,8 @@ describe("annotation", function () {
       expect(newData.data).toEqual(
         [
           "2 0 obj",
-          "<< /Length 171 /Subtype /Form /Resources << /Font << /Helv 314 0 R>>>> " +
-            "/BBox [0 0 32 10]>> stream",
+          "<< /Subtype /Form /Resources << /Font << /Helv 314 0 R>>>> " +
+            "/BBox [0 0 32 10] /Length 171>> stream",
           "/Tx BMC q",
           "1 1 32 10 re W n",
           "0.600006 0.756866 0.854904 rg",
@@ -4058,14 +4175,16 @@ describe("annotation", function () {
       const appearance = data.dependencies[1].data;
       expect(appearance).toEqual(
         "3 0 obj\n" +
-          "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [0 0 44 44] " +
-          "/Length 101 /Resources << /Font << /Helv 1 0 R>>>>>> stream\n" +
+          "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [12 34 56 78] " +
+          "/Resources << /Font << /Helv 1 0 R>>>> /Matrix [1 0 0 1 -12 -34] " +
+          "/Length 98>> stream\n" +
           "q\n" +
-          "0 0 44 44 re W n\n" +
+          "1 0 0 1 0 0 cm\n" +
+          "12 34 44 44 re W n\n" +
           "BT\n" +
-          "1 0 0 1 0 47.5 Tm 0 Tc 0 g\n" +
-          "/Helv 10 Tf\n" +
-          "0 -13.5 Td (Hello PDF.js World!) Tj\n" +
+          "0 g\n" +
+          "0 Tc /Helv 10 Tf\n" +
+          "12 68 Td (Hello PDF.js World!) Tj\n" +
           "ET\n" +
           "Q\n" +
           "endstream\n" +
@@ -4101,13 +4220,13 @@ describe("annotation", function () {
       expect(opList.fnArray).toEqual([
         OPS.beginAnnotation,
         OPS.save,
+        OPS.transform,
         OPS.constructPath,
         OPS.clip,
         OPS.endPath,
         OPS.beginText,
-        OPS.setTextMatrix,
-        OPS.setCharSpacing,
         OPS.setFillRGBColor,
+        OPS.setCharSpacing,
         OPS.dependency,
         OPS.setFont,
         OPS.moveText,
@@ -4241,15 +4360,15 @@ describe("annotation", function () {
       expect(base).toEqual(
         "1 0 obj\n" +
           "<< /Type /Annot /Subtype /Ink /CreationDate (date) /Rect [12 34 56 78] " +
-          "/InkList [[1 2 3 4 5 6 7 8] [91 92 93 94 95 96 97 98]] /F 4 /Border [0 0 0] " +
-          "/Rotate 0 /AP << /N 2 0 R>>>>\n" +
+          "/InkList [[1 2 3 4 5 6 7 8] [91 92 93 94 95 96 97 98]] /F 4 " +
+          "/Rotate 0 /BS << /W 1>> /C [0 0 0] /CA 1 /AP << /N 2 0 R>>>>\n" +
           "endobj\n"
       );
 
       const appearance = data.dependencies[0].data;
       expect(appearance).toEqual(
         "2 0 obj\n" +
-          "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [0 0 44 44] /Length 129>> stream\n" +
+          "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [12 34 56 78] /Length 129>> stream\n" +
           "1 w 1 J 1 j\n" +
           "0 G\n" +
           "10 11 m\n" +
@@ -4302,15 +4421,15 @@ describe("annotation", function () {
       expect(base).toEqual(
         "1 0 obj\n" +
           "<< /Type /Annot /Subtype /Ink /CreationDate (date) /Rect [12 34 56 78] " +
-          "/InkList [[1 2 3 4 5 6 7 8] [91 92 93 94 95 96 97 98]] /F 4 /Border [0 0 0] " +
-          "/Rotate 0 /AP << /N 2 0 R>>>>\n" +
+          "/InkList [[1 2 3 4 5 6 7 8] [91 92 93 94 95 96 97 98]] /F 4 " +
+          "/Rotate 0 /BS << /W 1>> /C [0 0 0] /CA 0.12 /AP << /N 2 0 R>>>>\n" +
           "endobj\n"
       );
 
       const appearance = data.dependencies[0].data;
       expect(appearance).toEqual(
         "2 0 obj\n" +
-          "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [0 0 44 44] /Length 136 /Resources " +
+          "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [12 34 56 78] /Length 136 /Resources " +
           "<< /ExtGState << /R0 << /CA 0.12 /Type /ExtGState>>>>>>>> stream\n" +
           "1 w 1 J 1 j\n" +
           "0 G\n" +

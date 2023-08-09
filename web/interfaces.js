@@ -112,16 +112,6 @@ class IPDFLinkService {
    * @param {Object} pageRef - reference to the page.
    */
   cachePageRef(pageNum, pageRef) {}
-
-  /**
-   * @param {number} pageNumber
-   */
-  isPageVisible(pageNumber) {}
-
-  /**
-   * @param {number} pageNumber
-   */
-  isPageCached(pageNumber) {}
 }
 
 /**
@@ -146,7 +136,7 @@ class IRenderableView {
   /**
    * @returns {Promise} Resolved on draw completion.
    */
-  draw() {}
+  async draw() {}
 }
 
 /**
@@ -156,8 +146,9 @@ class IDownloadManager {
   /**
    * @param {string} url
    * @param {string} filename
+   * @param {Object} [options]
    */
-  downloadUrl(url, filename) {}
+  downloadUrl(url, filename, options) {}
 
   /**
    * @param {Uint8Array} data
@@ -178,8 +169,9 @@ class IDownloadManager {
    * @param {Blob} blob
    * @param {string} url
    * @param {string} filename
+   * @param {Object} [options]
    */
-  download(blob, url, filename) {}
+  download(blob, url, filename, options) {}
 }
 
 /**

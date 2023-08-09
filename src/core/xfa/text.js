@@ -59,7 +59,7 @@ class FontInfo {
       fontFinder.find("Myriad Pro", false) ||
       fontFinder.find("Arial", false) ||
       fontFinder.getDefault();
-    if (font && font.regular) {
+    if (font?.regular) {
       const pdfFont = font.regular;
       const info = pdfFont.cssFontInfo;
       const xfaFont = {

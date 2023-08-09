@@ -17,10 +17,10 @@ import {
   animationStarted,
   DEFAULT_SCALE,
   DEFAULT_SCALE_VALUE,
-  docStyle,
   MAX_SCALE,
   MIN_SCALE,
   noContextMenuHandler,
+  toggleCheckedBtn,
 } from "./ui_utils.js";
 import { AnnotationEditorType } from "pdfjs-lib";
 
@@ -90,6 +90,18 @@ class Toolbar {
           },
         },
       },
+      {
+        element: options.editorStampButton,
+        eventName: "switchannotationeditormode",
+        eventDetails: {
+          get mode() {
+            const { classList } = options.editorStampButton;
+            return classList.contains("toggled")
+              ? AnnotationEditorType.NONE
+              : AnnotationEditorType.STAMP;
+          },
+        },
+      },
     ];
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       this.buttons.push({ element: options.openFile, eventName: "openfile" });
@@ -151,13 +163,7 @@ class Toolbar {
     for (const { element, eventName, eventDetails } of this.buttons) {
       element.addEventListener("click", evt => {
         if (eventName !== null) {
-          const details = { source: this };
-          if (eventDetails) {
-            for (const property in eventDetails) {
-              details[property] = eventDetails[property];
-            }
-          }
-          this.eventBus.dispatch(eventName, details);
+          this.eventBus.dispatch(eventName, { source: this, ...eventDetails });
         }
       });
     }
@@ -211,37 +217,31 @@ class Toolbar {
     editorFreeTextParamsToolbar,
     editorInkButton,
     editorInkParamsToolbar,
+    editorStampButton,
   }) {
-    const editorModeChanged = (evt, disableButtons = false) => {
-      const editorButtons = [
-        {
-          mode: AnnotationEditorType.FREETEXT,
-          button: editorFreeTextButton,
-          toolbar: editorFreeTextParamsToolbar,
-        },
-        {
-          mode: AnnotationEditorType.INK,
-          button: editorInkButton,
-          toolbar: editorInkParamsToolbar,
-        },
-      ];
+    const editorModeChanged = ({ mode }) => {
+      toggleCheckedBtn(
+        editorFreeTextButton,
+        mode === AnnotationEditorType.FREETEXT,
+        editorFreeTextParamsToolbar
+      );
+      toggleCheckedBtn(
+        editorInkButton,
+        mode === AnnotationEditorType.INK,
+        editorInkParamsToolbar
+      );
+      toggleCheckedBtn(editorStampButton, mode === AnnotationEditorType.STAMP);
 
-      for (const { mode, button, toolbar } of editorButtons) {
-        const checked = mode === evt.mode;
-        button.classList.toggle("toggled", checked);
-        button.setAttribute("aria-checked", checked);
-        button.disabled = disableButtons;
-        toolbar?.classList.toggle("hidden", !checked);
-      }
+      const isDisable = mode === AnnotationEditorType.DISABLE;
+      editorFreeTextButton.disabled = isDisable;
+      editorInkButton.disabled = isDisable;
+      editorStampButton.disabled = isDisable;
     };
     this.eventBus._on("annotationeditormodechanged", editorModeChanged);
 
     this.eventBus._on("toolbarreset", evt => {
       if (evt.source === this) {
-        editorModeChanged(
-          { mode: AnnotationEditorType.NONE },
-          /* disableButtons = */ true
-        );
+        editorModeChanged({ mode: AnnotationEditorType.DISABLE });
       }
     });
   }
@@ -342,7 +342,8 @@ class Toolbar {
     maxWidth += 0.3 * scaleSelectWidth;
 
     if (maxWidth > scaleSelectWidth) {
-      docStyle.setProperty("--scale-select-width", `${maxWidth}px`);
+      const container = items.scaleSelect.parentNode;
+      container.style.setProperty("--scale-select-width", `${maxWidth}px`);
     }
     // Zeroing the width and height cause Firefox to release graphics resources
     // immediately, which can greatly reduce memory consumption.

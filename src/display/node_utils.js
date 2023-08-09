@@ -17,13 +17,43 @@
 import {
   BaseCanvasFactory,
   BaseCMapReaderFactory,
+  BaseFilterFactory,
   BaseStandardFontDataFactory,
 } from "./base_factory.js";
+import { isNodeJS, warn } from "../shared/util.js";
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
     'Module "./node_utils.js" shall not be used with MOZCENTRAL builds.'
   );
+}
+
+if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("SKIP_BABEL")) {
+  (function checkDOMMatrix() {
+    if (globalThis.DOMMatrix || !isNodeJS) {
+      return;
+    }
+    try {
+      globalThis.DOMMatrix = __non_webpack_require__("canvas").DOMMatrix;
+    } catch (ex) {
+      warn(`Cannot polyfill \`DOMMatrix\`, rendering may be broken: "${ex}".`);
+    }
+  })();
+
+  (function checkPath2D() {
+    if (globalThis.Path2D || !isNodeJS) {
+      return;
+    }
+    try {
+      const { CanvasRenderingContext2D } = __non_webpack_require__("canvas");
+      const { polyfillPath2D } = __non_webpack_require__("path2d-polyfill");
+
+      globalThis.CanvasRenderingContext2D = CanvasRenderingContext2D;
+      polyfillPath2D(globalThis);
+    } catch (ex) {
+      warn(`Cannot polyfill \`Path2D\`, rendering may be broken: "${ex}".`);
+    }
+  })();
 }
 
 const fetchData = function (url) {
@@ -38,6 +68,8 @@ const fetchData = function (url) {
     });
   });
 };
+
+class NodeFilterFactory extends BaseFilterFactory {}
 
 class NodeCanvasFactory extends BaseCanvasFactory {
   /**
@@ -72,5 +104,6 @@ class NodeStandardFontDataFactory extends BaseStandardFontDataFactory {
 export {
   NodeCanvasFactory,
   NodeCMapReaderFactory,
+  NodeFilterFactory,
   NodeStandardFontDataFactory,
 };

@@ -24,7 +24,7 @@ import {
   $onChild,
   $onText,
   $setId,
-} from "./xfa_object.js";
+} from "./symbol_utils.js";
 import { XMLParserBase, XMLParserErrorCode } from "../xml_parser.js";
 import { Builder } from "./builder.js";
 import { warn } from "../../shared/util.js";
@@ -107,10 +107,7 @@ class XFAParser extends XMLParserBase {
             nsAttrs = attributeObj[$nsAttributes] = Object.create(null);
           }
           const [ns, attrName] = [name.slice(0, i), name.slice(i + 1)];
-          let attrs = nsAttrs[ns];
-          if (!attrs) {
-            attrs = nsAttrs[ns] = Object.create(null);
-          }
+          const attrs = (nsAttrs[ns] ||= Object.create(null));
           attrs[attrName] = value;
         }
       }

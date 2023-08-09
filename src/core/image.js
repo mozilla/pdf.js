@@ -21,10 +21,14 @@ import {
   info,
   warn,
 } from "../shared/util.js";
-import { applyMaskImageData } from "../shared/image_utils.js";
+import {
+  convertBlackAndWhiteToRGBA,
+  convertToRGBA,
+} from "../shared/image_utils.js";
 import { BaseStream } from "./base_stream.js";
 import { ColorSpace } from "./colorspace.js";
 import { DecodeStream } from "./decode_stream.js";
+import { ImageResizer } from "./image_resizer.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { JpxImage } from "./jpx.js";
 import { Name } from "./primitives.js";
@@ -217,7 +221,7 @@ class PDFImage {
       const max = (1 << bitsPerComponent) - 1;
       this.decodeCoefficients = [];
       this.decodeAddends = [];
-      const isIndexed = this.colorSpace && this.colorSpace.name === "Indexed";
+      const isIndexed = this.colorSpace?.name === "Indexed";
       for (let i = 0, j = 0; i < this.decode.length; i += 2, ++j) {
         const dmin = this.decode[i];
         const dmax = this.decode[i + 1];
@@ -349,14 +353,14 @@ class PDFImage {
     return { data, width, height, interpolate };
   }
 
-  static createMask({
+  static async createMask({
     imgArray,
     width,
     height,
     imageIsFromDecodeStream,
     inverseDecode,
     interpolate,
-    isOffscreenCanvasSupported = true,
+    isOffscreenCanvasSupported = false,
   }) {
     const isSingleOpaquePixel =
       width === 1 &&
@@ -367,15 +371,35 @@ class PDFImage {
       return { isSingleOpaquePixel };
     }
 
-    if (isOffscreenCanvasSupported && FeatureTest.isOffscreenCanvasSupported) {
+    if (isOffscreenCanvasSupported) {
+      if (ImageResizer.needsToBeResized(width, height)) {
+        const data = new Uint8ClampedArray(width * height * 4);
+        convertBlackAndWhiteToRGBA({
+          src: imgArray,
+          dest: data,
+          width,
+          height,
+          nonBlackColor: 0,
+          inverseDecode,
+        });
+        return ImageResizer.createImage({
+          kind: ImageKind.RGBA_32BPP,
+          data,
+          width,
+          height,
+          interpolate,
+        });
+      }
+
       const canvas = new OffscreenCanvas(width, height);
       const ctx = canvas.getContext("2d");
       const imgData = ctx.createImageData(width, height);
-      applyMaskImageData({
+      convertBlackAndWhiteToRGBA({
         src: imgArray,
         dest: imgData.data,
         width,
         height,
+        nonBlackColor: 0,
         inverseDecode,
       });
 
@@ -404,18 +428,14 @@ class PDFImage {
   }
 
   get drawWidth() {
-    return Math.max(
-      this.width,
-      (this.smask && this.smask.width) || 0,
-      (this.mask && this.mask.width) || 0
-    );
+    return Math.max(this.width, this.smask?.width || 0, this.mask?.width || 0);
   }
 
   get drawHeight() {
     return Math.max(
       this.height,
-      (this.smask && this.smask.height) || 0,
-      (this.mask && this.mask.height) || 0
+      this.smask?.height || 0,
+      this.mask?.height || 0
     );
   }
 
@@ -540,10 +560,7 @@ class PDFImage {
   }
 
   fillOpacity(rgbaBuf, width, height, actualHeight, image) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
         rgbaBuf instanceof Uint8ClampedArray,
         'PDFImage.fillOpacity: Unsupported "rgbaBuf" type.'
@@ -613,16 +630,13 @@ class PDFImage {
   }
 
   undoPreblend(buffer, width, height) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
         buffer instanceof Uint8ClampedArray,
         'PDFImage.undoPreblend: Unsupported "buffer" type.'
       );
     }
-    const matte = this.smask && this.smask.matte;
+    const matte = this.smask?.matte;
     if (!matte) {
       return;
     }
@@ -648,7 +662,7 @@ class PDFImage {
     }
   }
 
-  createImageData(forceRGBA = false) {
+  async createImageData(forceRGBA = false, isOffscreenCanvasSupported = false) {
     const drawWidth = this.drawWidth;
     const drawHeight = this.drawHeight;
     const imgData = {
@@ -667,6 +681,9 @@ class PDFImage {
 
     // Rows start at byte boundary.
     const rowBytes = (originalWidth * numComps * bpc + 7) >> 3;
+    const mustBeResized =
+      isOffscreenCanvasSupported &&
+      ImageResizer.needsToBeResized(drawWidth, drawHeight);
 
     if (!forceRGBA) {
       // If it is a 1-bit-per-pixel grayscale (i.e. black-and-white) image
@@ -693,8 +710,24 @@ class PDFImage {
         drawWidth === originalWidth &&
         drawHeight === originalHeight
       ) {
+        const data = this.getImageBytes(originalHeight * rowBytes, {});
+        if (isOffscreenCanvasSupported) {
+          if (mustBeResized) {
+            return ImageResizer.createImage(
+              {
+                data,
+                kind,
+                width: drawWidth,
+                height: drawHeight,
+                interpolate: this.interpolate,
+              },
+              this.needsDecode
+            );
+          }
+          return this.createBitmap(kind, originalWidth, originalHeight, data);
+        }
         imgData.kind = kind;
-        imgData.data = this.getImageBytes(originalHeight * rowBytes, {});
+        imgData.data = data;
 
         if (this.needsDecode) {
           // Invert the buffer (which must be grayscale if we reached here).
@@ -709,23 +742,63 @@ class PDFImage {
         }
         return imgData;
       }
-      if (this.image instanceof JpegStream && !this.smask && !this.mask) {
+      if (
+        this.image instanceof JpegStream &&
+        !this.smask &&
+        !this.mask &&
+        !this.needsDecode
+      ) {
         let imageLength = originalHeight * rowBytes;
-        switch (this.colorSpace.name) {
-          case "DeviceGray":
-            // Avoid truncating the image, since `JpegImage.getData`
-            // will expand the image data when `forceRGB === true`.
-            imageLength *= 3;
-          /* falls through */
-          case "DeviceRGB":
-          case "DeviceCMYK":
-            imgData.kind = ImageKind.RGB_24BPP;
-            imgData.data = this.getImageBytes(imageLength, {
+        if (isOffscreenCanvasSupported && !mustBeResized) {
+          let isHandled = false;
+          switch (this.colorSpace.name) {
+            case "DeviceGray":
+              // Avoid truncating the image, since `JpegImage.getData`
+              // will expand the image data when `forceRGB === true`.
+              imageLength *= 4;
+              isHandled = true;
+              break;
+            case "DeviceRGB":
+              imageLength = (imageLength / 3) * 4;
+              isHandled = true;
+              break;
+            case "DeviceCMYK":
+              isHandled = true;
+              break;
+          }
+
+          if (isHandled) {
+            const rgba = this.getImageBytes(imageLength, {
               drawWidth,
               drawHeight,
-              forceRGB: true,
+              forceRGBA: true,
             });
-            return imgData;
+            return this.createBitmap(
+              ImageKind.RGBA_32BPP,
+              drawWidth,
+              drawHeight,
+              rgba
+            );
+          }
+        } else {
+          switch (this.colorSpace.name) {
+            case "DeviceGray":
+              imageLength *= 3;
+            /* falls through */
+            case "DeviceRGB":
+            case "DeviceCMYK":
+              imgData.kind = ImageKind.RGB_24BPP;
+              imgData.data = this.getImageBytes(imageLength, {
+                drawWidth,
+                drawHeight,
+                forceRGB: true,
+              });
+              if (mustBeResized) {
+                // The image is too big so we resize it.
+                return ImageResizer.createImage(imgData);
+              }
+              return imgData;
+          }
         }
       }
     }
@@ -742,32 +815,45 @@ class PDFImage {
     // If opacity data is present, use RGBA_32BPP form. Otherwise, use the
     // more compact RGB_24BPP form if allowable.
     let alpha01, maybeUndoPreblend;
+
+    let canvas, ctx, canvasImgData, data;
+    if (isOffscreenCanvasSupported && !mustBeResized) {
+      canvas = new OffscreenCanvas(drawWidth, drawHeight);
+      ctx = canvas.getContext("2d");
+      canvasImgData = ctx.createImageData(drawWidth, drawHeight);
+      data = canvasImgData.data;
+    }
+
+    imgData.kind = ImageKind.RGBA_32BPP;
+
     if (!forceRGBA && !this.smask && !this.mask) {
-      imgData.kind = ImageKind.RGB_24BPP;
-      imgData.data = new Uint8ClampedArray(drawWidth * drawHeight * 3);
-      alpha01 = 0;
+      if (!isOffscreenCanvasSupported || mustBeResized) {
+        imgData.kind = ImageKind.RGB_24BPP;
+        data = new Uint8ClampedArray(drawWidth * drawHeight * 3);
+        alpha01 = 0;
+      } else {
+        const arr = new Uint32Array(data.buffer);
+        arr.fill(FeatureTest.isLittleEndian ? 0xff000000 : 0x000000ff);
+        alpha01 = 1;
+      }
       maybeUndoPreblend = false;
     } else {
-      imgData.kind = ImageKind.RGBA_32BPP;
-      imgData.data = new Uint8ClampedArray(drawWidth * drawHeight * 4);
+      if (!isOffscreenCanvasSupported || mustBeResized) {
+        data = new Uint8ClampedArray(drawWidth * drawHeight * 4);
+      }
+
       alpha01 = 1;
       maybeUndoPreblend = true;
 
       // Color key masking (opacity) must be performed before decoding.
-      this.fillOpacity(
-        imgData.data,
-        drawWidth,
-        drawHeight,
-        actualHeight,
-        comps
-      );
+      this.fillOpacity(data, drawWidth, drawHeight, actualHeight, comps);
     }
 
     if (this.needsDecode) {
       this.decodeBuffer(comps);
     }
     this.colorSpace.fillRgb(
-      imgData.data,
+      data,
       originalWidth,
       originalHeight,
       drawWidth,
@@ -778,17 +864,31 @@ class PDFImage {
       alpha01
     );
     if (maybeUndoPreblend) {
-      this.undoPreblend(imgData.data, drawWidth, actualHeight);
+      this.undoPreblend(data, drawWidth, actualHeight);
     }
 
+    if (isOffscreenCanvasSupported && !mustBeResized) {
+      ctx.putImageData(canvasImgData, 0, 0);
+      const bitmap = canvas.transferToImageBitmap();
+
+      return {
+        data: null,
+        width: drawWidth,
+        height: drawHeight,
+        bitmap,
+        interpolate: this.interpolate,
+      };
+    }
+
+    imgData.data = data;
+    if (mustBeResized) {
+      return ImageResizer.createImage(imgData);
+    }
     return imgData;
   }
 
   fillGrayBuffer(buffer) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
         buffer instanceof Uint8ClampedArray,
         'PDFImage.fillGrayBuffer: Unsupported "buffer" type.'
@@ -840,13 +940,49 @@ class PDFImage {
     }
   }
 
+  createBitmap(kind, width, height, src) {
+    const canvas = new OffscreenCanvas(width, height);
+    const ctx = canvas.getContext("2d");
+    let imgData;
+    if (kind === ImageKind.RGBA_32BPP) {
+      imgData = new ImageData(src, width, height);
+    } else {
+      imgData = ctx.createImageData(width, height);
+      convertToRGBA({
+        kind,
+        src,
+        dest: new Uint32Array(imgData.data.buffer),
+        width,
+        height,
+        inverseDecode: this.needsDecode,
+      });
+    }
+    ctx.putImageData(imgData, 0, 0);
+    const bitmap = canvas.transferToImageBitmap();
+
+    return {
+      data: null,
+      width,
+      height,
+      bitmap,
+      interpolate: this.interpolate,
+    };
+  }
+
   getImageBytes(
     length,
-    { drawWidth, drawHeight, forceRGB = false, internal = false }
+    {
+      drawWidth,
+      drawHeight,
+      forceRGBA = false,
+      forceRGB = false,
+      internal = false,
+    }
   ) {
     this.image.reset();
     this.image.drawWidth = drawWidth || this.width;
     this.image.drawHeight = drawHeight || this.height;
+    this.image.forceRGBA = !!forceRGBA;
     this.image.forceRGB = !!forceRGB;
     const imageBytes = this.image.getBytes(length);
 

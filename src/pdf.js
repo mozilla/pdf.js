@@ -30,16 +30,18 @@ import {
   AnnotationEditorType,
   AnnotationMode,
   CMapCompressionType,
-  createPromiseCapability,
   createValidAbsoluteUrl,
+  FeatureTest,
+  ImageKind,
   InvalidPDFException,
   MissingPDFException,
+  normalizeUnicode,
   OPS,
   PasswordResponses,
   PermissionFlag,
+  PromiseCapability,
   shadow,
   UnexpectedResponseException,
-  UNSUPPORTED_FEATURES,
   Util,
   VerbosityLevel,
 } from "./shared/util.js";
@@ -48,6 +50,7 @@ import {
   getDocument,
   PDFDataRangeTransport,
   PDFWorker,
+  SVGGraphics,
   version,
 } from "./display/api.js";
 import {
@@ -67,7 +70,6 @@ import { AnnotationEditorLayer } from "./display/editor/annotation_editor_layer.
 import { AnnotationEditorUIManager } from "./display/editor/tools.js";
 import { AnnotationLayer } from "./display/annotation_layer.js";
 import { GlobalWorkerOptions } from "./display/worker_options.js";
-import { SVGGraphics } from "./display/svg.js";
 import { XfaLayer } from "./display/xfa_layer.js";
 
 /* eslint-disable-next-line no-unused-vars */
@@ -87,18 +89,20 @@ export {
   AnnotationMode,
   build,
   CMapCompressionType,
-  createPromiseCapability,
   createValidAbsoluteUrl,
+  FeatureTest,
   getDocument,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
   getXfaPageViewport,
   GlobalWorkerOptions,
+  ImageKind,
   InvalidPDFException,
   isDataScheme,
   isPdfFile,
   loadScript,
   MissingPDFException,
+  normalizeUnicode,
   OPS,
   PasswordResponses,
   PDFDataRangeTransport,
@@ -106,13 +110,13 @@ export {
   PDFWorker,
   PermissionFlag,
   PixelsPerInch,
+  PromiseCapability,
   RenderingCancelledException,
   renderTextLayer,
   setLayerDimensions,
   shadow,
   SVGGraphics,
   UnexpectedResponseException,
-  UNSUPPORTED_FEATURES,
   updateTextLayer,
   Util,
   VerbosityLevel,

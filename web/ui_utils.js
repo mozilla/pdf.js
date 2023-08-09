@@ -46,17 +46,10 @@ const SidebarView = {
   LAYERS: 4,
 };
 
-const RendererType =
-  typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || GENERIC")
-    ? {
-        CANVAS: "canvas",
-        SVG: "svg",
-      }
-    : null;
-
 const TextLayerMode = {
   DISABLE: 0,
   ENABLE: 1,
+  ENABLE_PERMISSIONS: 2,
 };
 
 const ScrollMode = {
@@ -72,6 +65,12 @@ const SpreadMode = {
   NONE: 0, // Default value.
   ODD: 1,
   EVEN: 2,
+};
+
+const CursorTool = {
+  SELECT: 0, // The default value.
+  HAND: 1,
+  ZOOM: 2,
 };
 
 // Used by `PDFViewerApplication`, and by the API unit-tests.
@@ -105,9 +104,11 @@ class OutputScale {
 
 /**
  * Scrolls specified element into view of its parent.
- * @param {Object} element - The element to be visible.
- * @param {Object} spot - An object with optional top and left properties,
+ * @param {HTMLElement} element - The element to be visible.
+ * @param {Object} [spot] - An object with optional top and left properties,
  *   specifying the offset from the top left edge.
+ * @param {number} [spot.left]
+ * @param {number} [spot.top]
  * @param {boolean} [scrollMatches] - When scrolling search results into view,
  *   ignore elements that either: Contains marked content identifiers,
  *   or have the CSS-rule `overflow: hidden;` set. The default value is `false`.
@@ -205,7 +206,6 @@ function parseQueryString(query) {
   return params;
 }
 
-const NullCharactersRegExp = /\x00/g;
 const InvisibleCharactersRegExp = /[\x01-\x1F]/g;
 
 /**
@@ -218,9 +218,9 @@ function removeNullCharacters(str, replaceInvisible = false) {
     return str;
   }
   if (replaceInvisible) {
-    str = str.replace(InvisibleCharactersRegExp, " ");
+    str = str.replaceAll(InvisibleCharactersRegExp, " ");
   }
-  return str.replace(NullCharactersRegExp, "");
+  return str.replaceAll("\x00", "");
 }
 
 /**
@@ -622,17 +622,16 @@ function normalizeWheelEventDirection(evt) {
 }
 
 function normalizeWheelEventDelta(evt) {
+  const deltaMode = evt.deltaMode; // Avoid being affected by bug 1392460.
   let delta = normalizeWheelEventDirection(evt);
 
-  const MOUSE_DOM_DELTA_PIXEL_MODE = 0;
-  const MOUSE_DOM_DELTA_LINE_MODE = 1;
   const MOUSE_PIXELS_PER_LINE = 30;
   const MOUSE_LINES_PER_PAGE = 30;
 
   // Converts delta to per-page units
-  if (evt.deltaMode === MOUSE_DOM_DELTA_PIXEL_MODE) {
+  if (deltaMode === WheelEvent.DOM_DELTA_PIXEL) {
     delta /= MOUSE_PIXELS_PER_LINE * MOUSE_LINES_PER_PAGE;
-  } else if (evt.deltaMode === MOUSE_DOM_DELTA_LINE_MODE) {
+  } else if (deltaMode === WheelEvent.DOM_DELTA_LINE) {
     delta /= MOUSE_LINES_PER_PAGE;
   }
   return delta;
@@ -693,12 +692,17 @@ function clamp(v, min, max) {
 class ProgressBar {
   #classList = null;
 
+  #disableAutoFetchTimeout = null;
+
   #percent = 0;
+
+  #style = null;
 
   #visible = true;
 
   constructor(bar) {
     this.#classList = bar.classList;
+    this.#style = bar.style;
   }
 
   get percent() {
@@ -714,7 +718,7 @@ class ProgressBar {
     }
     this.#classList.remove("indeterminate");
 
-    docStyle.setProperty("--progressBar-percent", `${this.#percent}%`);
+    this.#style.setProperty("--progressBar-percent", `${this.#percent}%`);
   }
 
   setWidth(viewer) {
@@ -724,8 +728,26 @@ class ProgressBar {
     const container = viewer.parentNode;
     const scrollbarWidth = container.offsetWidth - viewer.offsetWidth;
     if (scrollbarWidth > 0) {
-      docStyle.setProperty("--progressBar-end-offset", `${scrollbarWidth}px`);
+      this.#style.setProperty(
+        "--progressBar-end-offset",
+        `${scrollbarWidth}px`
+      );
     }
+  }
+
+  setDisableAutoFetch(delay = /* ms = */ 5000) {
+    if (isNaN(this.#percent)) {
+      return;
+    }
+    if (this.#disableAutoFetchTimeout) {
+      clearTimeout(this.#disableAutoFetchTimeout);
+    }
+    this.show();
+
+    this.#disableAutoFetchTimeout = setTimeout(() => {
+      this.#disableAutoFetchTimeout = null;
+      this.hide();
+    }, delay);
   }
 
   hide() {
@@ -822,6 +844,20 @@ function apiPageModeToSidebarView(mode) {
   return SidebarView.NONE; // Default value.
 }
 
+function toggleCheckedBtn(button, toggle, view = null) {
+  button.classList.toggle("toggled", toggle);
+  button.setAttribute("aria-checked", toggle);
+
+  view?.classList.toggle("hidden", !toggle);
+}
+
+function toggleExpandedBtn(button, toggle, view = null) {
+  button.classList.toggle("toggled", toggle);
+  button.setAttribute("aria-expanded", toggle);
+
+  view?.classList.toggle("hidden", !toggle);
+}
+
 export {
   animationStarted,
   apiPageLayoutToViewerModes,
@@ -830,6 +866,7 @@ export {
   AutoPrintRegExp,
   backtrackBeforeAllVisibleElements, // only exported for testing
   binarySearchFirstItem,
+  CursorTool,
   DEFAULT_SCALE,
   DEFAULT_SCALE_DELTA,
   DEFAULT_SCALE_VALUE,
@@ -852,7 +889,6 @@ export {
   PresentationModeState,
   ProgressBar,
   removeNullCharacters,
-  RendererType,
   RenderingStates,
   roundToDivide,
   SCROLLBAR_PADDING,
@@ -861,6 +897,8 @@ export {
   SidebarView,
   SpreadMode,
   TextLayerMode,
+  toggleCheckedBtn,
+  toggleExpandedBtn,
   UNKNOWN_SCALE,
   VERTICAL_PADDING,
   watchScroll,

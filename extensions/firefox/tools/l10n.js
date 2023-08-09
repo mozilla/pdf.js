@@ -23,15 +23,15 @@
     if (!args) {
       return text;
     }
-    return text.replace(/\{\{\s*(\w+)\s*\}\}/g, function (all, name) {
+    return text.replaceAll(/\{\{\s*(\w+)\s*\}\}/g, function (all, name) {
       return name in args ? args[name] : "{{" + name + "}}";
     });
   }
 
   // translate a string
   function translateString(key, args, fallback) {
-    var i = key.lastIndexOf(".");
-    var name, property;
+    const i = key.lastIndexOf(".");
+    let name, property;
     if (i >= 0) {
       name = key.substring(0, i);
       property = key.substring(i + 1);
@@ -39,8 +39,8 @@
       name = key;
       property = "textContent";
     }
-    var data = getL10nData(name);
-    var value = (data && data[property]) || fallback;
+    const data = getL10nData(name);
+    const value = data?.[property] || fallback;
     if (!value) {
       return "{{" + key + "}}";
     }
@@ -49,43 +49,43 @@
 
   // translate an HTML element
   function translateElement(element) {
-    if (!element || !element.dataset) {
+    if (!element?.dataset) {
       return;
     }
 
     // get the related l10n object
-    var key = element.dataset.l10nId;
-    var data = getL10nData(key);
+    const key = element.dataset.l10nId;
+    const data = getL10nData(key);
     if (!data) {
       return;
     }
 
     // get arguments (if any)
     // TODO: more flexible parser?
-    var args;
+    let args;
     if (element.dataset.l10nArgs) {
       try {
         args = JSON.parse(element.dataset.l10nArgs);
-      } catch (e) {
+      } catch {
         console.warn("[l10n] could not parse arguments for #" + key + "");
       }
     }
 
     // translate element
     // TODO: security check?
-    for (var k in data) {
+    for (const k in data) {
       element[k] = substArguments(data[k], args);
     }
   }
 
   // translate an HTML subtree
   function translateFragment(element) {
-    element = element || document.querySelector("html");
+    element ||= document.querySelector("html");
 
     // check all translatable children (= w/ a `data-l10n-id' attribute)
-    var children = element.querySelectorAll("*[data-l10n-id]");
-    var elementCount = children.length;
-    for (var i = 0; i < elementCount; i++) {
+    const children = element.querySelectorAll("*[data-l10n-id]");
+    const elementCount = children.length;
+    for (let i = 0; i < elementCount; i++) {
       translateElement(children[i]);
     }
 
@@ -109,10 +109,10 @@
     getDirection() {
       // http://www.w3.org/International/questions/qa-scripts
       // Arabic, Hebrew, Farsi, Pashto, Urdu
-      var rtlList = ["ar", "he", "fa", "ps", "ur"];
+      const rtlList = ["ar", "he", "fa", "ps", "ur"];
 
       // use the short language code for "full" codes like 'ar-sa' (issue 5440)
-      var shortCode = gLanguage.split("-")[0];
+      const shortCode = gLanguage.split("-")[0];
 
       return rtlList.includes(shortCode) ? "rtl" : "ltr";
     },

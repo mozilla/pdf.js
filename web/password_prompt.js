@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { createPromiseCapability, PasswordResponses } from "pdfjs-lib";
+import { PasswordResponses, PromiseCapability } from "pdfjs-lib";
 
 /**
  * @typedef {Object} PasswordPromptOptions
@@ -69,12 +69,12 @@ class PasswordPrompt {
     if (this.#activeCapability) {
       await this.#activeCapability.promise;
     }
-    this.#activeCapability = createPromiseCapability();
+    this.#activeCapability = new PromiseCapability();
 
     try {
       await this.overlayManager.open(this.dialog);
     } catch (ex) {
-      this.#activeCapability = null;
+      this.#activeCapability.resolve();
       throw ex;
     }
 

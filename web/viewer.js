@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import "web-com";
+import "web-print_service";
 import { RenderingStates, ScrollMode, SpreadMode } from "./ui_utils.js";
 import { AppOptions } from "./app_options.js";
 import { LinkTarget } from "./pdf_link_service.js";
@@ -33,40 +35,6 @@ const AppConstants =
 window.PDFViewerApplication = PDFViewerApplication;
 window.PDFViewerApplicationConstants = AppConstants;
 window.PDFViewerApplicationOptions = AppOptions;
-
-if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
-  (function rewriteUrlClosure() {
-    // Run this code outside DOMContentLoaded to make sure that the URL
-    // is rewritten as soon as possible.
-    const queryString = document.location.search.slice(1);
-    const m = /(^|&)file=([^&]*)/.exec(queryString);
-    const defaultUrl = m ? decodeURIComponent(m[2]) : "";
-
-    // Example: chrome-extension://.../http://example.com/file.pdf
-    const humanReadableUrl = "/" + defaultUrl + location.hash;
-    history.replaceState(history.state, "", humanReadableUrl);
-    if (top === window) {
-      // eslint-disable-next-line no-undef
-      chrome.runtime.sendMessage("showPageAction");
-    }
-
-    AppOptions.set("defaultUrl", defaultUrl);
-  })();
-}
-
-if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-  require("./firefoxcom.js");
-  require("./firefox_print_service.js");
-}
-if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
-  require("./genericcom.js");
-}
-if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
-  require("./chromecom.js");
-}
-if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME || GENERIC")) {
-  require("./pdf_print_service.js");
-}
 
 function getViewerConfiguration() {
   return {
@@ -95,6 +63,7 @@ function getViewerConfiguration() {
       ),
       editorInkButton: document.getElementById("editorInk"),
       editorInkParamsToolbar: document.getElementById("editorInkParamsToolbar"),
+      editorStampButton: document.getElementById("editorStamp"),
       download: document.getElementById("download"),
     },
     secondaryToolbar: {
@@ -128,6 +97,7 @@ function getViewerConfiguration() {
       outerContainer: document.getElementById("outerContainer"),
       sidebarContainer: document.getElementById("sidebarContainer"),
       toggleButton: document.getElementById("sidebarToggle"),
+      resizer: document.getElementById("sidebarResizer"),
       // Buttons
       thumbnailButton: document.getElementById("viewThumbnail"),
       outlineButton: document.getElementById("viewOutline"),
@@ -143,10 +113,6 @@ function getViewerConfiguration() {
         "outlineOptionsContainer"
       ),
       currentOutlineItemButton: document.getElementById("currentOutlineItem"),
-    },
-    sidebarResizer: {
-      outerContainer: document.getElementById("outerContainer"),
-      resizer: document.getElementById("sidebarResizer"),
     },
     findBar: {
       bar: document.getElementById("findbar"),
@@ -206,45 +172,31 @@ function getViewerConfiguration() {
 
 function webViewerLoad() {
   const config = getViewerConfiguration();
-  if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
-    if (window.chrome) {
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = "../build/dev-css/viewer.css";
 
-      document.head.append(link);
-    }
-
-    Promise.all([
-      import("pdfjs-web/genericcom.js"),
-      import("pdfjs-web/pdf_print_service.js"),
-    ]).then(function ([genericCom, pdfPrintService]) {
-      PDFViewerApplication.run(config);
-    });
-  } else {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
-      // Give custom implementations of the default viewer a simpler way to
-      // set various `AppOptions`, by dispatching an event once all viewer
-      // files are loaded but *before* the viewer initialization has run.
-      const event = document.createEvent("CustomEvent");
-      event.initCustomEvent("webviewerloaded", true, true, {
+  if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
+    // Give custom implementations of the default viewer a simpler way to
+    // set various `AppOptions`, by dispatching an event once all viewer
+    // files are loaded but *before* the viewer initialization has run.
+    const event = new CustomEvent("webviewerloaded", {
+      bubbles: true,
+      cancelable: true,
+      detail: {
         source: window,
-      });
-      try {
-        // Attempt to dispatch the event at the embedding `document`,
-        // in order to support cases where the viewer is embedded in
-        // a *dynamically* created <iframe> element.
-        parent.document.dispatchEvent(event);
-      } catch (ex) {
-        // The viewer could be in e.g. a cross-origin <iframe> element,
-        // fallback to dispatching the event at the current `document`.
-        console.error(`webviewerloaded: ${ex}`);
-        document.dispatchEvent(event);
-      }
+      },
+    });
+    try {
+      // Attempt to dispatch the event at the embedding `document`,
+      // in order to support cases where the viewer is embedded in
+      // a *dynamically* created <iframe> element.
+      parent.document.dispatchEvent(event);
+    } catch (ex) {
+      // The viewer could be in e.g. a cross-origin <iframe> element,
+      // fallback to dispatching the event at the current `document`.
+      console.error(`webviewerloaded: ${ex}`);
+      document.dispatchEvent(event);
     }
-
-    PDFViewerApplication.run(config);
   }
+  PDFViewerApplication.run(config);
 }
 
 // Block the "load" event until all pages are loaded, to ensure that printing
