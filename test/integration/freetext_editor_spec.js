@@ -390,6 +390,7 @@ describe("FreeText Editor", () => {
         await clearAll(page);
 
         await page.mouse.click(rect.x + 200, rect.y + 100);
+        await page.waitForTimeout(10);
 
         for (let i = 0; i < 5; i++) {
           await page.type(`${getEditorSelector(9)} .internal`, "A");
@@ -2107,6 +2108,87 @@ describe("FreeText Editor", () => {
             .withContext(`In ${browserName}`)
             .not.toEqual(0);
           expect(visitedPages).withContext(`In ${browserName}`).toEqual(sorted);
+        })
+      );
+    });
+  });
+
+  describe("Freetext must stay focused after having been moved", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must keep the focus", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorFreeText");
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          await page.mouse.click(rect.x + 100, rect.y + 100);
+          await page.waitForTimeout(10);
+          await page.type(`${getEditorSelector(0)} .internal`, "A");
+
+          // Commit.
+          await page.keyboard.press("Escape");
+          await page.waitForTimeout(10);
+
+          await page.mouse.click(rect.x + 110, rect.y + 150);
+          await page.waitForTimeout(10);
+          await page.type(`${getEditorSelector(0)} .internal`, "B");
+
+          // Commit.
+          await page.keyboard.press("Escape");
+          await page.waitForTimeout(10);
+
+          await page.mouse.click(rect.x + 115, rect.y + 155);
+          await page.waitForTimeout(10);
+
+          const pos = n =>
+            page.evaluate(sel => {
+              const editor = document.querySelector(sel);
+              return Array.prototype.indexOf.call(
+                editor.parentNode.childNodes,
+                editor
+              );
+            }, getEditorSelector(n));
+
+          expect(await pos(0))
+            .withContext(`In ${browserName}`)
+            .toEqual(0);
+          expect(await pos(1))
+            .withContext(`In ${browserName}`)
+            .toEqual(1);
+
+          for (let i = 0; i < 6; i++) {
+            await page.keyboard.down("Control");
+            await page.keyboard.press("ArrowUp");
+            await page.keyboard.up("Control");
+            await page.waitForTimeout(1);
+          }
+
+          await page.waitForTimeout(100);
+          const focused = await page.evaluate(sel => {
+            const editor = document.querySelector(sel);
+            return editor === document.activeElement;
+          }, getEditorSelector(1));
+          expect(focused).withContext(`In ${browserName}`).toEqual(true);
+
+          expect(await pos(0))
+            .withContext(`In ${browserName}`)
+            .toEqual(1);
+          expect(await pos(1))
+            .withContext(`In ${browserName}`)
+            .toEqual(0);
         })
       );
     });

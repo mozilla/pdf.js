@@ -320,19 +320,15 @@ class AnnotationEditorLayer {
 
     this.detach(editor);
     this.#uiManager.removeEditor(editor);
-    editor.div.style.display = "none";
-    setTimeout(() => {
-      // When the div is removed from DOM the focus can move on the
-      // document.body, so we just slightly postpone the removal in
-      // order to let an element potentially grab the focus before
-      // the body.
-      editor.div.style.display = "";
-      editor.div.remove();
-      editor.isAttachedToDOM = false;
-      if (document.activeElement === document.body) {
+    if (editor.div.contains(document.activeElement)) {
+      setTimeout(() => {
+        // When the div is removed from DOM the focus can move on the
+        // document.body, so we need to move it back to the main container.
         this.#uiManager.focusMainContainer();
-      }
-    }, 0);
+      }, 0);
+    }
+    editor.div.remove();
+    editor.isAttachedToDOM = false;
 
     if (!this.#isCleaningUp) {
       this.addInkEditorIfNeeded(/* isCommitting = */ false);
@@ -385,6 +381,25 @@ class AnnotationEditorLayer {
   }
 
   moveEditorInDOM(editor) {
+    const { activeElement } = document;
+    if (editor.div.contains(activeElement)) {
+      // When the div is moved in the DOM the focus can move somewhere else,
+      // so we want to be sure that the focus will stay on the editor but we
+      // don't want to call any focus callbacks, hence we disable them and only
+      // re-enable them when the editor has the focus.
+      editor._focusEventsAllowed = false;
+      setTimeout(() => {
+        editor.div.addEventListener(
+          "focusin",
+          () => {
+            editor._focusEventsAllowed = true;
+          },
+          { once: true }
+        );
+        activeElement.focus();
+      }, 0);
+    }
+
     this.#accessibilityManager?.moveElementInDOM(
       this.div,
       editor.div,
