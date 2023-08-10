@@ -2265,4 +2265,83 @@ describe("FreeText Editor", () => {
       );
     });
   });
+
+  describe("Don't unselect all when scrolling", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        100,
+        async page => {
+          await page.waitForFunction(async () => {
+            await window.PDFViewerApplication.initializedPromise;
+            return true;
+          });
+          await page.evaluate(() => {
+            window.PDFViewerApplication.eventBus.on(
+              "annotationeditorstateschanged",
+              ({ details }) => {
+                window.editingEvents?.push(details);
+              }
+            );
+          });
+        }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that selected editor stay selected", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorFreeText");
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          const data = "Hello PDF.js World !!";
+          await page.mouse.click(rect.x + 100, rect.y + 100);
+          await page.waitForTimeout(10);
+          await page.type(`${getEditorSelector(0)} .internal`, data);
+          // Commit.
+          await page.keyboard.press("Escape");
+          await page.waitForTimeout(10);
+
+          await page.evaluate(() => {
+            window.editingEvents = [];
+          });
+          await page.waitForTimeout(10);
+
+          for (let pageNumber = 1; pageNumber <= 4; pageNumber++) {
+            const pageSelector = `.page[data-page-number = "${pageNumber}"]`;
+            await page.evaluate(selector => {
+              const element = window.document.querySelector(selector);
+              element.scrollIntoView();
+            }, pageSelector);
+
+            const annotationLayerSelector = `${pageSelector} > .annotationEditorLayer`;
+            await page.waitForSelector(annotationLayerSelector, {
+              visible: true,
+              timeout: 0,
+            });
+          }
+
+          const editingEvents = await page.evaluate(() => {
+            const e = window.editingEvents;
+            delete window.editingEvents;
+            return e;
+          });
+          expect(editingEvents.length)
+            .withContext(`In ${browserName}`)
+            .toEqual(0);
+        })
+      );
+    });
+  });
 });
