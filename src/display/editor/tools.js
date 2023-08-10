@@ -1104,6 +1104,7 @@ class AnnotationEditorUIManager {
     }
     this.setEditingState(true);
     this.#enableAll();
+    this.unselectAll();
     for (const layer of this.#allLayers.values()) {
       layer.updateMode(mode);
     }
