@@ -298,7 +298,13 @@ class AnnotationFactory {
             baseFont.set("Encoding", Name.get("WinAnsiEncoding"));
             const buffer = [];
             baseFontRef = xref.getNewTemporaryRef();
-            await writeObject(baseFontRef, baseFont, buffer, null);
+            const transform = xref.encrypt
+              ? xref.encrypt.createCipherTransform(
+                  baseFontRef.num,
+                  baseFontRef.gen
+                )
+              : null;
+            await writeObject(baseFontRef, baseFont, buffer, transform);
             dependencies.push({ ref: baseFontRef, data: buffer.join("") });
           }
           promises.push(
@@ -325,13 +331,19 @@ class AnnotationFactory {
             const buffer = [];
             if (smaskStream) {
               const smaskRef = xref.getNewTemporaryRef();
-              await writeObject(smaskRef, smaskStream, buffer, null);
+              const transform = xref.encrypt
+                ? xref.encrypt.createCipherTransform(smaskRef.num, smaskRef.gen)
+                : null;
+              await writeObject(smaskRef, smaskStream, buffer, transform);
               dependencies.push({ ref: smaskRef, data: buffer.join("") });
               imageStream.dict.set("SMask", smaskRef);
               buffer.length = 0;
             }
             const imageRef = (image.imageRef = xref.getNewTemporaryRef());
-            await writeObject(imageRef, imageStream, buffer, null);
+            const transform = xref.encrypt
+              ? xref.encrypt.createCipherTransform(imageRef.num, imageRef.gen)
+              : null;
+            await writeObject(imageRef, imageStream, buffer, transform);
             dependencies.push({ ref: imageRef, data: buffer.join("") });
             image.imageStream = image.smaskStream = null;
           }
