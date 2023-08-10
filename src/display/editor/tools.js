@@ -878,10 +878,8 @@ class AnnotationEditorUIManager {
   copy(event) {
     event.preventDefault();
 
-    if (this.#activeEditor) {
-      // An editor is being edited so just commit it.
-      this.#activeEditor.commitOrRemove();
-    }
+    // An editor is being edited so just commit it.
+    this.#activeEditor?.commitOrRemove();
 
     if (!this.hasSelection) {
       return;
