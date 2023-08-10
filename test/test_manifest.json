@@ -8088,5 +8088,36 @@
       "rounds": 1,
       "link": true,
       "type": "other"
+   },
+   {
+      "id": "protected-stamp-editor-save-print",
+      "file": "pdfs/empty_protected.pdf",
+      "md5": "3a9e0ede729dceb1052bda48db47dca1",
+      "rounds": 1,
+      "type": "eq",
+      "save": true,
+      "print": true,
+      "annotationStorage": {
+        "pdfjs_internal_editor_0": {
+          "annotationType": 13,
+          "pageIndex": 0,
+          "bitmapName": "firefox_logo.png",
+          "bitmapId": "image_c29eaeb9-8839-4a09-bf7c-75a5785805cd_0",
+          "rect": [37.5, 32.406246185302734, 496.5000057220459, 519.1875],
+          "rotation": 0
+        },
+        "pdfjs_internal_editor_1": {
+          "annotationType": 13,
+          "bitmapId": "image_c29eaeb9-8839-4a09-bf7c-75a5785805cd_0",
+          "pageIndex": 0,
+          "rect": [
+           458.06250572204584,
+           473.04686737060547,
+           571.5000057220459,
+           582.7187461853027
+          ],
+          "rotation": 0
+       }
+     }
    }
 ]
