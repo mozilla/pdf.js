@@ -46,9 +46,6 @@ async function writeDict(dict, buffer, transform) {
 
 async function writeStream(stream, buffer, transform) {
   let string = stream.getString();
-  if (transform !== null) {
-    string = transform.encryptString(string);
-  }
   const { dict } = stream;
 
   const [filter, params] = await Promise.all([
@@ -104,6 +101,10 @@ async function writeStream(stream, buffer, transform) {
     } catch (ex) {
       info(`writeStream - cannot compress data: "${ex}".`);
     }
+  }
+
+  if (transform !== null) {
+    string = transform.encryptString(string);
   }
 
   dict.set("Length", string.length);
