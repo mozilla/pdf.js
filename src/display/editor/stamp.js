@@ -38,6 +38,8 @@ class StampEditor extends AnnotationEditor {
 
   #isSvg = false;
 
+  #hasBeenAddedInUndoStack = false;
+
   static _type = "stamp";
 
   constructor(params) {
@@ -178,7 +180,6 @@ class StampEditor extends AnnotationEditor {
   /** @inheritdoc */
   onceAdded() {
     this._isDraggable = true;
-    this.parent.addUndoableEditor(this);
     this.div.focus();
   }
 
@@ -263,6 +264,10 @@ class StampEditor extends AnnotationEditor {
     this.#drawBitmap(width, height);
     this.#createObserver();
     div.classList.remove("loading");
+    if (!this.#hasBeenAddedInUndoStack) {
+      this.parent.addUndoableEditor(this);
+      this.#hasBeenAddedInUndoStack = true;
+    }
   }
 
   /**
