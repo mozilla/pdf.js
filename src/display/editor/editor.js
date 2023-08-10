@@ -460,6 +460,10 @@ class AnnotationEditor {
     return [0, 0];
   }
 
+  static #noContextMenu(e) {
+    e.preventDefault();
+  }
+
   #createResizers() {
     if (this.#resizersDiv) {
       return;
@@ -478,12 +482,18 @@ class AnnotationEditor {
         "pointerdown",
         this.#resizerPointerdown.bind(this, name)
       );
+      div.addEventListener("contextmenu", AnnotationEditor.#noContextMenu);
     }
     this.div.prepend(this.#resizersDiv);
   }
 
   #resizerPointerdown(name, event) {
     event.preventDefault();
+    const { isMac } = FeatureTest.platform;
+    if (event.button !== 0 || (event.ctrlKey && isMac)) {
+      return;
+    }
+
     const boundResizerPointermove = this.#resizerPointermove.bind(this, name);
     const savedDraggable = this._isDraggable;
     this._isDraggable = false;
