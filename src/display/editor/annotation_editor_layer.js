@@ -129,7 +129,6 @@ class AnnotationEditorLayer {
     } else {
       this.enableClick();
     }
-    this.#uiManager.unselectAll();
 
     if (mode !== AnnotationEditorType.NONE) {
       this.div.classList.toggle(
