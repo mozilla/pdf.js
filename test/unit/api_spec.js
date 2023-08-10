@@ -1485,6 +1485,42 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("gets fieldObjects with missing /P-entries", async function () {
+      if (isNodeJS) {
+        pending("Linked test-cases are not supported in Node.js.");
+      }
+
+      const loadingTask = getDocument(buildGetDocumentParams("bug1847733.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const fieldObjects = await pdfDoc.getFieldObjects();
+
+      for (const name in fieldObjects) {
+        const pageIndexes = fieldObjects[name].map(o => o.page);
+        let expected;
+
+        switch (name) {
+          case "formID":
+          case "pdf_submission_new":
+          case "simple_spc":
+          case "adobeWarning":
+            expected = [0];
+            break;
+          case "typeA13":
+            expected = [0, 0, 0, 0];
+            break;
+          case "typeA15[0]":
+          case "typeA15[1]":
+          case "typeA15[2]":
+          case "typeA15[3]":
+            expected = [-1, 0, 0, 0, 0];
+            break;
+        }
+        expect(pageIndexes).toEqual(expected);
+      }
+
+      await loadingTask.destroy();
+    });
+
     it("check field object for group of buttons", async function () {
       if (isNodeJS) {
         pending("Linked test-cases are not supported in Node.js.");

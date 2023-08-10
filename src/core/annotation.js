@@ -26,6 +26,7 @@ import {
   FeatureTest,
   getModificationDate,
   IDENTITY_MATRIX,
+  info,
   LINE_DESCENT_FACTOR,
   LINE_FACTOR,
   OPS,
@@ -52,7 +53,7 @@ import {
   parseAppearanceStream,
   parseDefaultAppearance,
 } from "./default_appearance.js";
-import { Dict, isName, Name, Ref, RefSet } from "./primitives.js";
+import { Dict, isName, isRefsEqual, Name, Ref, RefSet } from "./primitives.js";
 import { Stream, StringStream } from "./stream.js";
 import { writeDict, writeObject } from "./writer.js";
 import { BaseStream } from "./base_stream.js";
@@ -245,17 +246,38 @@ class AnnotationFactory {
         return -1;
       }
       const pageRef = annotDict.getRaw("P");
-      if (!(pageRef instanceof Ref)) {
-        return -1;
+      if (pageRef instanceof Ref) {
+        try {
+          const pageIndex = await pdfManager.ensureCatalog("getPageIndex", [
+            pageRef,
+          ]);
+          return pageIndex;
+        } catch (ex) {
+          info(`_getPageIndex -- not a valid page reference: "${ex}".`);
+        }
       }
-      const pageIndex = await pdfManager.ensureCatalog("getPageIndex", [
-        pageRef,
-      ]);
-      return pageIndex;
+      if (annotDict.has("Kids")) {
+        return -1; // Not an annotation reference.
+      }
+      // Fallback to, potentially, checking the annotations of all pages.
+      // PLEASE NOTE: This could force the *entire* PDF document to load,
+      //              hence it absolutely cannot be done unconditionally.
+      const numPages = await pdfManager.ensureDoc("numPages");
+
+      for (let pageIndex = 0; pageIndex < numPages; pageIndex++) {
+        const page = await pdfManager.getPage(pageIndex);
+        const annotations = await pdfManager.ensure(page, "annotations");
+
+        for (const annotRef of annotations) {
+          if (annotRef instanceof Ref && isRefsEqual(annotRef, ref)) {
+            return pageIndex;
+          }
+        }
+      }
     } catch (ex) {
       warn(`_getPageIndex: "${ex}".`);
-      return -1;
     }
+    return -1;
   }
 
   static generateImages(annotations, xref, isOffscreenCanvasSupported) {
