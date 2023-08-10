@@ -343,6 +343,8 @@ class StampEditor extends AnnotationEditor {
   }
 
   #drawBitmap(width, height) {
+    width = Math.ceil(width);
+    height = Math.ceil(height);
     const canvas = this.#canvas;
     if (!canvas || (canvas.width === width && canvas.height === height)) {
       return;
