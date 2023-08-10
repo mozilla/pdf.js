@@ -281,6 +281,9 @@ class FreeTextEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   rebuild() {
+    if (!this.parent) {
+      return;
+    }
     super.rebuild();
     if (this.div === null) {
       return;
@@ -447,7 +450,7 @@ class FreeTextEditor extends AnnotationEditor {
         return;
       }
       this.#setContent();
-      this.rebuild();
+      this._uiManager.rebuild(this);
       this.#setEditorDimensions();
     };
     this.addCommands({

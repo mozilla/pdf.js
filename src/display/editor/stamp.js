@@ -161,6 +161,14 @@ class StampEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   rebuild() {
+    if (!this.parent) {
+      // It's possible to have to rebuild an editor which is not on a visible
+      // page.
+      if (this.#bitmapId) {
+        this.#getBitmap();
+      }
+      return;
+    }
     super.rebuild();
     if (this.div === null) {
       return;
