@@ -68,22 +68,34 @@ class StampEditor extends AnnotationEditor {
     );
   }
 
+  #getBitmapDone() {
+    this._uiManager.enableWaiting(false);
+    if (this.#canvas) {
+      this.div.focus();
+    }
+  }
+
   #getBitmap() {
     if (this.#bitmapId) {
-      this._uiManager.imageManager.getFromId(this.#bitmapId).then(data => {
-        if (!data) {
-          this.remove();
-          return;
-        }
-        this.#bitmap = data.bitmap;
-        this.#createCanvas();
-      });
+      this._uiManager.enableWaiting(true);
+      this._uiManager.imageManager
+        .getFromId(this.#bitmapId)
+        .then(data => {
+          if (!data) {
+            this.remove();
+            return;
+          }
+          this.#bitmap = data.bitmap;
+          this.#createCanvas();
+        })
+        .finally(() => this.#getBitmapDone());
       return;
     }
 
     if (this.#bitmapUrl) {
       const url = this.#bitmapUrl;
       this.#bitmapUrl = null;
+      this._uiManager.enableWaiting(true);
       this.#bitmapPromise = this._uiManager.imageManager
         .getFromUrl(url)
         .then(data => {
@@ -98,7 +110,8 @@ class StampEditor extends AnnotationEditor {
             isSvg: this.#isSvg,
           } = data);
           this.#createCanvas();
-        });
+        })
+        .finally(() => this.#getBitmapDone());
       return;
     }
 
@@ -116,6 +129,7 @@ class StampEditor extends AnnotationEditor {
         if (!input.files || input.files.length === 0) {
           this.remove();
         } else {
+          this._uiManager.enableWaiting(true);
           const data = await this._uiManager.imageManager.getFromFile(
             input.files[0]
           );
@@ -140,7 +154,7 @@ class StampEditor extends AnnotationEditor {
         this.remove();
         resolve();
       });
-    });
+    }).finally(() => this.#getBitmapDone());
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("TESTING")) {
       input.click();
     }
@@ -218,11 +232,11 @@ class StampEditor extends AnnotationEditor {
     }
 
     super.render();
+    this.div.hidden = true;
 
     if (this.#bitmap) {
       this.#createCanvas();
     } else {
-      this.div.classList.add("loading");
       this.#getBitmap();
     }
 
@@ -267,11 +281,12 @@ class StampEditor extends AnnotationEditor {
       (height * parentHeight) / pageHeight
     );
 
+    this._uiManager.enableWaiting(false);
     const canvas = (this.#canvas = document.createElement("canvas"));
     div.append(canvas);
+    div.hidden = false;
     this.#drawBitmap(width, height);
     this.#createObserver();
-    div.classList.remove("loading");
     if (!this.#hasBeenAddedInUndoStack) {
       this.parent.addUndoableEditor(this);
       this.#hasBeenAddedInUndoStack = true;
