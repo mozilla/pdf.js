@@ -141,6 +141,26 @@ class AnnotationEditor {
   }
 
   /**
+   * Check if this kind of editor is able to handle the given mime type for
+   * pasting.
+   * @param {string} mime
+   * @returns {boolean}
+   */
+  static isHandlingMimeForPasting(_mime) {
+    return false;
+  }
+
+  /**
+   * Extract the data from the clipboard item and delegate the creation of the
+   * editor to the parent.
+   * @param {DataTransferItem} item
+   * @param {AnnotationEditorLayer} parent
+   */
+  static paste(item, parent) {
+    unreachable("Not implemented");
+  }
+
+  /**
    * Get the properties to update in the UI for this editor.
    * @returns {Array}
    */
