@@ -72,6 +72,15 @@
   z-index: 4;
 }
 
+.annotationEditorLayer.waiting {
+  content: "";
+  cursor: wait;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
 .annotationEditorLayer.freeTextEditing {
   cursor: var(--editorFreeText-editing-cursor);
 }
@@ -166,19 +175,6 @@
 .annotationEditorLayer .stampEditor {
   width: auto;
   height: auto;
-}
-
-.annotationEditorLayer .stampEditor.loading {
-  aspect-ratio: 1;
-  width: 10%;
-  height: auto;
-  background-color: rgba(128, 128, 128, 0.5);
-  background-image: var(--loading-icon);
-  background-repeat: no-repeat;
-  background-position: 50%;
-  background-size: 16px 16px;
-  transition-property: background-size;
-  transition-delay: var(--loading-icon-delay);
 }
 
 .annotationEditorLayer .stampEditor canvas {

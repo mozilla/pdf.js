@@ -547,6 +547,8 @@ class AnnotationEditorUIManager {
 
   #isEnabled = false;
 
+  #isWaiting = false;
+
   #lastActiveElement = null;
 
   #mode = AnnotationEditorType.NONE;
@@ -1156,6 +1158,21 @@ class AnnotationEditorUIManager {
 
     for (const editorType of this.#editorTypes) {
       editorType.updateDefaultParams(type, value);
+    }
+  }
+
+  enableWaiting(mustWait = false) {
+    if (this.#isWaiting === mustWait) {
+      return;
+    }
+    this.#isWaiting = mustWait;
+    for (const layer of this.#allLayers.values()) {
+      if (mustWait) {
+        layer.disableClick();
+      } else {
+        layer.enableClick();
+      }
+      layer.div.classList.toggle("waiting", mustWait);
     }
   }
 
