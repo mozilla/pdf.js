@@ -465,6 +465,31 @@ class AnnotationEditorLayer {
   }
 
   /**
+   * Paste some content into a new editor.
+   * @param {number} mode
+   * @param {Object} params
+   */
+  pasteEditor(mode, params) {
+    this.#uiManager.updateToolbar(mode);
+    this.#uiManager.updateMode(mode);
+
+    const { offsetX, offsetY } = this.#getCenterPoint();
+    const id = this.getNextId();
+    const editor = this.#createNewEditor({
+      parent: this,
+      id,
+      x: offsetX,
+      y: offsetY,
+      uiManager: this.#uiManager,
+      isCentered: true,
+      ...params,
+    });
+    if (editor) {
+      this.add(editor);
+    }
+  }
+
+  /**
    * Create a new editor
    * @param {Object} data
    * @returns {AnnotationEditor}
@@ -504,10 +529,7 @@ class AnnotationEditorLayer {
     return editor;
   }
 
-  /**
-   * Create and add a new editor.
-   */
-  addNewEditor() {
+  #getCenterPoint() {
     const { x, y, width, height } = this.div.getBoundingClientRect();
     const tlX = Math.max(0, x);
     const tlY = Math.max(0, y);
@@ -520,11 +542,15 @@ class AnnotationEditorLayer {
         ? [centerX, centerY]
         : [centerY, centerX];
 
+    return { offsetX, offsetY };
+  }
+
+  /**
+   * Create and add a new editor.
+   */
+  addNewEditor() {
     this.#createAndAddNewEditor(
-      {
-        offsetX,
-        offsetY,
-      },
+      this.#getCenterPoint(),
       /* isCentered = */ true
     );
   }
