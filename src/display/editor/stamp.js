@@ -290,7 +290,12 @@ class StampEditor extends AnnotationEditor {
     this.width = width / parentWidth;
     this.height = height / parentHeight;
     this.setDims(width, height);
-    this.fixAndSetPosition();
+    if (this._initialOptions?.isCentered) {
+      this.center();
+    } else {
+      this.fixAndSetPosition();
+    }
+    this._initialOptions = null;
     if (this.#resizeTimeoutId !== null) {
       clearTimeout(this.#resizeTimeoutId);
     }

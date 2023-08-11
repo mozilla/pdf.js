@@ -48,6 +48,8 @@ class AnnotationEditor {
 
   #isInEditMode = false;
 
+  _initialOptions = Object.create(null);
+
   _uiManager = null;
 
   _focusEventsAllowed = true;
@@ -77,6 +79,7 @@ class AnnotationEditor {
     this._uiManager = parameters.uiManager;
     this.annotationElementId = null;
     this._willKeepAspectRatio = false;
+    this._initialOptions.isCentered = parameters.isCentered;
 
     const {
       rotation,
@@ -152,6 +155,29 @@ class AnnotationEditor {
   set _isDraggable(value) {
     this.#isDraggable = value;
     this.div?.classList.toggle("draggable", value);
+  }
+
+  center() {
+    const [pageWidth, pageHeight] = this.pageDimensions;
+    switch (this.parentRotation) {
+      case 90:
+        this.x -= (this.height * pageHeight) / (pageWidth * 2);
+        this.y += (this.width * pageWidth) / (pageHeight * 2);
+        break;
+      case 180:
+        this.x += this.width / 2;
+        this.y += this.height / 2;
+        break;
+      case 270:
+        this.x += (this.height * pageHeight) / (pageWidth * 2);
+        this.y -= (this.width * pageWidth) / (pageHeight * 2);
+        break;
+      default:
+        this.x -= this.width / 2;
+        this.y -= this.height / 2;
+        break;
+    }
+    this.fixAndSetPosition();
   }
 
   /**

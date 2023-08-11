@@ -18,6 +18,7 @@
 /** @typedef {import("./annotation_editor_layer.js").AnnotationEditorLayer} AnnotationEditorLayer */
 
 import {
+  AnnotationEditorParamsType,
   AnnotationEditorPrefix,
   AnnotationEditorType,
   FeatureTest,
@@ -1142,6 +1143,10 @@ class AnnotationEditorUIManager {
    */
   updateParams(type, value) {
     if (!this.#editorTypes) {
+      return;
+    }
+    if (type === AnnotationEditorParamsType.CREATE) {
+      this.currentLayer.addNewEditor(type);
       return;
     }
 
