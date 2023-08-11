@@ -1545,29 +1545,32 @@ const PDFViewerApplication = {
   async _initializeAutoPrint(pdfDocument, openActionPromise) {
     const [openAction, jsActions] = await Promise.all([
       openActionPromise,
-      !this.pdfViewer.enableScripting ? pdfDocument.getJSActions() : null,
+      this.pdfViewer.enableScripting ? null : pdfDocument.getJSActions(),
     ]);
 
     if (pdfDocument !== this.pdfDocument) {
       return; // The document was closed while the auto print data resolved.
     }
-    let triggerAutoPrint = false;
+    let triggerAutoPrint = openAction?.action === "Print";
 
-    if (openAction?.action === "Print") {
-      triggerAutoPrint = true;
-    }
     if (jsActions) {
-      for (const name in jsActions) {
-        if (jsActions[name]) {
-          console.warn("Warning: JavaScript support is not enabled");
-          break;
-        }
-      }
+      console.warn("Warning: JavaScript support is not enabled");
 
       // Hack to support auto printing.
-      triggerAutoPrint ||= !!(
-        jsActions.OpenAction && AutoPrintRegExp.test(jsActions.OpenAction)
-      );
+      for (const name in jsActions) {
+        if (triggerAutoPrint) {
+          break;
+        }
+        switch (name) {
+          case "WillClose":
+          case "WillSave":
+          case "DidSave":
+          case "WillPrint":
+          case "DidPrint":
+            continue;
+        }
+        triggerAutoPrint = jsActions[name].some(js => AutoPrintRegExp.test(js));
+      }
     }
 
     if (triggerAutoPrint) {
