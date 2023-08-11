@@ -30,6 +30,8 @@ class StampEditor extends AnnotationEditor {
 
   #bitmapUrl = null;
 
+  #bitmapFile = null;
+
   #canvas = null;
 
   #observer = null;
@@ -45,6 +47,7 @@ class StampEditor extends AnnotationEditor {
   constructor(params) {
     super({ ...params, name: "stampEditor" });
     this.#bitmapUrl = params.bitmapUrl;
+    this.#bitmapFile = params.bitmapFile;
   }
 
   static get supportedTypes() {
@@ -64,8 +67,24 @@ class StampEditor extends AnnotationEditor {
     return shadow(
       this,
       "supportedTypes",
-      types.map(type => `image/${type}`).join(",")
+      types.map(type => `image/${type}`)
     );
+  }
+
+  static get supportedTypesStr() {
+    return shadow(this, "supportedTypesStr", this.supportedTypes.join(","));
+  }
+
+  /** @inheritdoc */
+  static isHandlingMimeForPasting(mime) {
+    return this.supportedTypes.includes(mime);
+  }
+
+  /** @inheritdoc */
+  static paste(item, parent) {
+    parent.pasteEditor(AnnotationEditorType.STAMP, {
+      bitmapFile: item.getAsFile(),
+    });
   }
 
   #getBitmapDone() {
@@ -115,6 +134,29 @@ class StampEditor extends AnnotationEditor {
       return;
     }
 
+    if (this.#bitmapFile) {
+      const file = this.#bitmapFile;
+      this.#bitmapFile = null;
+      this._uiManager.enableWaiting(true);
+      this.#bitmapPromise = this._uiManager.imageManager
+        .getFromFile(file)
+        .then(data => {
+          this.#bitmapPromise = null;
+          if (!data) {
+            this.remove();
+            return;
+          }
+          ({
+            bitmap: this.#bitmap,
+            id: this.#bitmapId,
+            isSvg: this.#isSvg,
+          } = data);
+          this.#createCanvas();
+        })
+        .finally(() => this.#getBitmapDone());
+      return;
+    }
+
     const input = document.createElement("input");
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
       input.hidden = true;
@@ -122,7 +164,7 @@ class StampEditor extends AnnotationEditor {
       document.body.append(input);
     }
     input.type = "file";
-    input.accept = StampEditor.supportedTypes;
+    input.accept = StampEditor.supportedTypesStr;
     this.#bitmapPromise = new Promise(resolve => {
       input.addEventListener("change", async () => {
         this.#bitmapPromise = null;

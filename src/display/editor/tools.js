@@ -919,8 +919,17 @@ class AnnotationEditorUIManager {
    */
   paste(event) {
     event.preventDefault();
+    const { clipboardData } = event;
+    for (const item of clipboardData.items) {
+      for (const editorType of this.#editorTypes) {
+        if (editorType.isHandlingMimeForPasting(item.type)) {
+          editorType.paste(item, this.currentLayer);
+          return;
+        }
+      }
+    }
 
-    let data = event.clipboardData.getData("application/pdfjs");
+    let data = clipboardData.getData("application/pdfjs");
     if (!data) {
       return;
     }
@@ -1099,6 +1108,9 @@ class AnnotationEditorUIManager {
    * @param {string|null} editId
    */
   updateMode(mode, editId = null) {
+    if (this.#mode === mode) {
+      return;
+    }
     this.#mode = mode;
     if (mode === AnnotationEditorType.NONE) {
       this.setEditingState(false);
