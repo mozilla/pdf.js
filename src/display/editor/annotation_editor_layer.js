@@ -166,7 +166,10 @@ class AnnotationEditorLayer {
       }
     }
 
-    const editor = this.#createAndAddNewEditor({ offsetX: 0, offsetY: 0 });
+    const editor = this.#createAndAddNewEditor(
+      { offsetX: 0, offsetY: 0 },
+      /* isCentered = */ false
+    );
     editor.setInBackground();
   }
 
@@ -481,9 +484,10 @@ class AnnotationEditorLayer {
   /**
    * Create and add a new editor.
    * @param {PointerEvent} event
+   * @param {boolean} isCentered
    * @returns {AnnotationEditor}
    */
-  #createAndAddNewEditor(event) {
+  #createAndAddNewEditor(event, isCentered) {
     const id = this.getNextId();
     const editor = this.#createNewEditor({
       parent: this,
@@ -491,12 +495,38 @@ class AnnotationEditorLayer {
       x: event.offsetX,
       y: event.offsetY,
       uiManager: this.#uiManager,
+      isCentered,
     });
     if (editor) {
       this.add(editor);
     }
 
     return editor;
+  }
+
+  /**
+   * Create and add a new editor.
+   */
+  addNewEditor() {
+    const { x, y, width, height } = this.div.getBoundingClientRect();
+    const tlX = Math.max(0, x);
+    const tlY = Math.max(0, y);
+    const brX = Math.min(window.innerWidth, x + width);
+    const brY = Math.min(window.innerHeight, y + height);
+    const centerX = (tlX + brX) / 2 - x;
+    const centerY = (tlY + brY) / 2 - y;
+    const [offsetX, offsetY] =
+      this.viewport.rotation % 180 === 0
+        ? [centerX, centerY]
+        : [centerY, centerX];
+
+    this.#createAndAddNewEditor(
+      {
+        offsetX,
+        offsetY,
+      },
+      /* isCentered = */ true
+    );
   }
 
   /**
@@ -560,7 +590,12 @@ class AnnotationEditorLayer {
       return;
     }
 
-    this.#createAndAddNewEditor(event);
+    if (this.#uiManager.getMode() === AnnotationEditorType.STAMP) {
+      this.#uiManager.unselectAll();
+      return;
+    }
+
+    this.#createAndAddNewEditor(event, /* isCentered = */ false);
   }
 
   /**
