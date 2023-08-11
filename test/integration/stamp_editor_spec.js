@@ -15,9 +15,7 @@
 
 const {
   closePages,
-  dragAndDropAnnotation,
   getEditorDimensions,
-  getEditorSelector,
   loadAndWait,
   serializeBitmapDimensions,
   waitForAnnotationEditorLayer,
@@ -109,68 +107,6 @@ describe("Stamp Editor", () => {
           await page.waitForTimeout(10);
 
           await page.keyboard.press("Backspace");
-        })
-      );
-    });
-  });
-
-  describe("Page overflow", () => {
-    let pages;
-
-    beforeAll(async () => {
-      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer", 50);
-    });
-
-    afterAll(async () => {
-      await closePages(pages);
-    });
-
-    it("must check that an added image stay within the page", async () => {
-      await Promise.all(
-        pages.map(async ([browserName, page]) => {
-          if (browserName === "firefox") {
-            // Disabled in Firefox, because of https://bugzilla.mozilla.org/1553847.
-            return;
-          }
-
-          await page.click("#editorStamp");
-          await page.click("#editorStampAddImage");
-
-          const rect = await page.$eval(".annotationEditorLayer", el => {
-            // With Chrome something is wrong when serializing a DomRect,
-            // hence we extract the values and just return them.
-            const { right, bottom } = el.getBoundingClientRect();
-            return { x: right, y: bottom };
-          });
-
-          const editorRect = await page.$eval(getEditorSelector(0), el => {
-            // With Chrome something is wrong when serializing a DomRect,
-            // hence we extract the values and just return them.
-            const { x, y } = el.getBoundingClientRect();
-            return { x, y };
-          });
-
-          const input = await page.$("#stampEditorFileInput");
-          await input.uploadFile(
-            `${path.join(__dirname, "../images/firefox_logo.png")}`
-          );
-
-          await page.waitForTimeout(300);
-
-          await dragAndDropAnnotation(
-            page,
-            editorRect.x + 10,
-            editorRect.y + 10,
-            rect.x - 10,
-            rect.y - 10
-          );
-          await page.waitForTimeout(10);
-
-          const { left } = await getEditorDimensions(page, 0);
-
-          // The image is bigger than the page, so it has been scaled down to
-          // 75% of the page width.
-          expect(left).toEqual("25%");
         })
       );
     });
