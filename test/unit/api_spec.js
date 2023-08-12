@@ -898,6 +898,70 @@ describe("api", function () {
     });
   });
 
+  describe("GlobalWorkerOptions", function () {
+    let savedGlobalWorkerPort;
+
+    beforeAll(function () {
+      savedGlobalWorkerPort = GlobalWorkerOptions.workerPort;
+    });
+
+    afterAll(function () {
+      GlobalWorkerOptions.workerPort = savedGlobalWorkerPort;
+    });
+
+    it("use global `workerPort` with multiple, sequential, documents", async function () {
+      if (isNodeJS) {
+        pending("Worker is not supported in Node.js.");
+      }
+
+      GlobalWorkerOptions.workerPort = new Worker(
+        new URL("../../build/generic/build/pdf.worker.js", window.location)
+      );
+
+      const loadingTask1 = getDocument(basicApiGetDocumentParams);
+      const pdfDoc1 = await loadingTask1.promise;
+      expect(pdfDoc1.numPages).toEqual(3);
+      await loadingTask1.destroy();
+
+      const loadingTask2 = getDocument(
+        buildGetDocumentParams("tracemonkey.pdf")
+      );
+      const pdfDoc2 = await loadingTask2.promise;
+      expect(pdfDoc2.numPages).toEqual(14);
+      await loadingTask2.destroy();
+    });
+
+    it(
+      "avoid using the global `workerPort` when destruction has started, " +
+        "but not yet finished (issue 16777)",
+      async function () {
+        if (isNodeJS) {
+          pending("Worker is not supported in Node.js.");
+        }
+
+        GlobalWorkerOptions.workerPort = new Worker(
+          new URL("../../build/generic/build/pdf.worker.js", window.location)
+        );
+
+        const loadingTask = getDocument(basicApiGetDocumentParams);
+        const pdfDoc = await loadingTask.promise;
+        expect(pdfDoc.numPages).toEqual(3);
+        const destroyPromise = loadingTask.destroy();
+
+        expect(function () {
+          getDocument(buildGetDocumentParams("tracemonkey.pdf"));
+        }).toThrow(
+          new Error(
+            "PDFWorker.fromPort - the worker is being destroyed.\n" +
+              "Please remember to await `PDFDocumentLoadingTask.destroy()`-calls."
+          )
+        );
+
+        await destroyPromise;
+      }
+    );
+  });
+
   describe("PDFDocument", function () {
     let pdfLoadingTask, pdfDocument;
 
