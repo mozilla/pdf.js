@@ -626,7 +626,17 @@ class PDFDocumentLoadingTask {
    */
   async destroy() {
     this.destroyed = true;
-    await this._transport?.destroy();
+    try {
+      if (this._worker?.port) {
+        this._worker._pendingDestroy = true;
+      }
+      await this._transport?.destroy();
+    } catch (ex) {
+      if (this._worker?.port) {
+        delete this._worker._pendingDestroy;
+      }
+      throw ex;
+    }
 
     this._transport = null;
     if (this._worker) {
@@ -2058,10 +2068,6 @@ class PDFWorker {
     port = null,
     verbosity = getVerbosityLevel(),
   } = {}) {
-    if (port && PDFWorker.#workerPorts.has(port)) {
-      throw new Error("Cannot use more than one PDFWorker per port.");
-    }
-
     this.name = name;
     this.destroyed = false;
     this.verbosity = verbosity;
@@ -2072,6 +2078,9 @@ class PDFWorker {
     this._messageHandler = null;
 
     if (port) {
+      if (PDFWorker.#workerPorts.has(port)) {
+        throw new Error("Cannot use more than one PDFWorker per port.");
+      }
       PDFWorker.#workerPorts.set(port, this);
       this._initializeFromPort(port);
       return;
@@ -2287,11 +2296,21 @@ class PDFWorker {
    * @param {PDFWorkerParameters} params - The worker initialization parameters.
    */
   static fromPort(params) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      throw new Error("Not implemented: fromPort");
+    }
     if (!params?.port) {
       throw new Error("PDFWorker.fromPort - invalid method signature.");
     }
-    if (this.#workerPorts.has(params.port)) {
-      return this.#workerPorts.get(params.port);
+    const cachedPort = this.#workerPorts.get(params.port);
+    if (cachedPort) {
+      if (cachedPort._pendingDestroy) {
+        throw new Error(
+          "PDFWorker.fromPort - the worker is being destroyed.\n" +
+            "Please remember to await `PDFDocumentLoadingTask.destroy()`-calls."
+        );
+      }
+      return cachedPort;
     }
     return new PDFWorker(params);
   }
