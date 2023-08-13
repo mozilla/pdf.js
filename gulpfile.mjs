@@ -1586,8 +1586,7 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
     };
   }
   function preprocess(content) {
-    const skipBabel =
-      bundleDefines.SKIP_BABEL || /\/\*\s*no-babel-preset\s*\*\//.test(content);
+    const skipBabel = bundleDefines.SKIP_BABEL;
     content = preprocessPDFJSCode(ctx, content);
     content = babel.transform(content, {
       sourceType: "module",
