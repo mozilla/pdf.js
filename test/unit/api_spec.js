@@ -2203,8 +2203,14 @@ describe("api", function () {
       We have learned that we should more explicitly set out our aspirations for the human experience of the internet.
       We do so now.
       `.repeat(100);
+      expect(manifesto.length).toEqual(80500);
+
       let loadingTask = getDocument(buildGetDocumentParams("empty.pdf"));
       let pdfDoc = await loadingTask.promise;
+      // The initial document size (indirectly) affects the length check below.
+      let typedArray = await pdfDoc.getData();
+      expect(typedArray.length).toBeLessThan(5000);
+
       pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
         annotationType: AnnotationEditorType.FREETEXT,
         rect: [10, 10, 500, 500],
@@ -2214,12 +2220,15 @@ describe("api", function () {
         value: manifesto,
         pageIndex: 0,
       });
-
       const data = await pdfDoc.saveDocument();
       await loadingTask.destroy();
 
       loadingTask = getDocument(data);
       pdfDoc = await loadingTask.promise;
+      // Ensure that the Annotation text-content was actually compressed.
+      typedArray = await pdfDoc.getData();
+      expect(typedArray.length).toBeLessThan(90000);
+
       const page = await pdfDoc.getPage(1);
       const annotations = await page.getAnnotations();
 
