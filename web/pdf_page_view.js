@@ -922,7 +922,6 @@ class PDFPageView {
         showCanvas = null; // Only invoke the function once.
       }
     };
-    canvasWrapper.append(canvas);
     this.canvas = canvas;
 
     const ctx = canvas.getContext("2d", { alpha: false });
@@ -979,6 +978,9 @@ class PDFPageView {
 
     const resultPromise = renderTask.promise.then(
       async () => {
+        // Append canvas after rendering to workaround Chromium rendering issue.
+        canvasWrapper.append(canvas);
+
         showCanvas?.(true);
         await this.#finishRenderTask(renderTask);
 
