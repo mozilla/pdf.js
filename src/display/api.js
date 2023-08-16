@@ -14,6 +14,10 @@
  */
 
 /**
+ * @ignore @typedef { import("./svg.js").SVGGraphics } SVGGraphics
+ */
+
+/**
  * @module pdfjsLib
  */
 
