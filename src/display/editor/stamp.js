@@ -221,10 +221,11 @@ class StampEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   isEmpty() {
-    return (
-      this.#bitmapPromise === null &&
-      this.#bitmap === null &&
-      this.#bitmapUrl === null
+    return !(
+      this.#bitmapPromise ||
+      this.#bitmap ||
+      this.#bitmapUrl ||
+      this.#bitmapFile
     );
   }
 
