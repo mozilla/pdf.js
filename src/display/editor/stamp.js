@@ -87,7 +87,21 @@ class StampEditor extends AnnotationEditor {
     });
   }
 
+  #getBitmapFetched(data, fromId = false) {
+    if (!data) {
+      this.remove();
+      return;
+    }
+    this.#bitmap = data.bitmap;
+    if (!fromId) {
+      this.#bitmapId = data.id;
+      this.#isSvg = data.isSvg;
+    }
+    this.#createCanvas();
+  }
+
   #getBitmapDone() {
+    this.#bitmapPromise = null;
     this._uiManager.enableWaiting(false);
     if (this.#canvas) {
       this.div.focus();
@@ -99,14 +113,7 @@ class StampEditor extends AnnotationEditor {
       this._uiManager.enableWaiting(true);
       this._uiManager.imageManager
         .getFromId(this.#bitmapId)
-        .then(data => {
-          if (!data) {
-            this.remove();
-            return;
-          }
-          this.#bitmap = data.bitmap;
-          this.#createCanvas();
-        })
+        .then(data => this.#getBitmapFetched(data, /* fromId = */ true))
         .finally(() => this.#getBitmapDone());
       return;
     }
@@ -117,19 +124,7 @@ class StampEditor extends AnnotationEditor {
       this._uiManager.enableWaiting(true);
       this.#bitmapPromise = this._uiManager.imageManager
         .getFromUrl(url)
-        .then(data => {
-          this.#bitmapPromise = null;
-          if (!data) {
-            this.remove();
-            return;
-          }
-          ({
-            bitmap: this.#bitmap,
-            id: this.#bitmapId,
-            isSvg: this.#isSvg,
-          } = data);
-          this.#createCanvas();
-        })
+        .then(data => this.#getBitmapFetched(data))
         .finally(() => this.#getBitmapDone());
       return;
     }
@@ -140,19 +135,7 @@ class StampEditor extends AnnotationEditor {
       this._uiManager.enableWaiting(true);
       this.#bitmapPromise = this._uiManager.imageManager
         .getFromFile(file)
-        .then(data => {
-          this.#bitmapPromise = null;
-          if (!data) {
-            this.remove();
-            return;
-          }
-          ({
-            bitmap: this.#bitmap,
-            id: this.#bitmapId,
-            isSvg: this.#isSvg,
-          } = data);
-          this.#createCanvas();
-        })
+        .then(data => this.#getBitmapFetched(data))
         .finally(() => this.#getBitmapDone());
       return;
     }
@@ -167,7 +150,6 @@ class StampEditor extends AnnotationEditor {
     input.accept = StampEditor.supportedTypesStr;
     this.#bitmapPromise = new Promise(resolve => {
       input.addEventListener("change", async () => {
-        this.#bitmapPromise = null;
         if (!input.files || input.files.length === 0) {
           this.remove();
         } else {
@@ -175,16 +157,7 @@ class StampEditor extends AnnotationEditor {
           const data = await this._uiManager.imageManager.getFromFile(
             input.files[0]
           );
-          if (!data) {
-            this.remove();
-            return;
-          }
-          ({
-            bitmap: this.#bitmap,
-            id: this.#bitmapId,
-            isSvg: this.#isSvg,
-          } = data);
-          this.#createCanvas();
+          this.#getBitmapFetched(data);
         }
         if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
           input.remove();
@@ -192,7 +165,6 @@ class StampEditor extends AnnotationEditor {
         resolve();
       });
       input.addEventListener("cancel", () => {
-        this.#bitmapPromise = null;
         this.remove();
         resolve();
       });
