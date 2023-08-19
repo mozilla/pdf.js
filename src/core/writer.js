@@ -63,13 +63,11 @@ async function writeStream(stream, buffer, transform) {
   const MIN_LENGTH_FOR_COMPRESSING = 256;
 
   if (
-    // eslint-disable-next-line no-undef
     typeof CompressionStream !== "undefined" &&
     (string.length >= MIN_LENGTH_FOR_COMPRESSING || isFilterZeroFlateDecode)
   ) {
     try {
       const byteArray = stringToBytes(string);
-      // eslint-disable-next-line no-undef
       const cs = new CompressionStream("deflate");
       const writer = cs.writable.getWriter();
       writer.write(byteArray);

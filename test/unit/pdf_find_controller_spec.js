@@ -722,9 +722,8 @@ describe("pdf_find_controller", function () {
       pending("Linked test-cases are not supported in Node.js.");
     }
 
-    const { eventBus, pdfFindController } = await initPdfFindController(
-      "issue14562.pdf"
-    );
+    const { eventBus, pdfFindController } =
+      await initPdfFindController("issue14562.pdf");
 
     await testSearch({
       eventBus,
@@ -762,9 +761,8 @@ describe("pdf_find_controller", function () {
   });
 
   it("performs a search in a text containing some Hangul syllables", async function () {
-    const { eventBus, pdfFindController } = await initPdfFindController(
-      "bug1771477.pdf"
-    );
+    const { eventBus, pdfFindController } =
+      await initPdfFindController("bug1771477.pdf");
 
     await testSearch({
       eventBus,
@@ -783,9 +781,8 @@ describe("pdf_find_controller", function () {
   });
 
   it("performs a search in a text containing an ideographic at the end of a line", async function () {
-    const { eventBus, pdfFindController } = await initPdfFindController(
-      "issue15340.pdf"
-    );
+    const { eventBus, pdfFindController } =
+      await initPdfFindController("issue15340.pdf");
 
     await testSearch({
       eventBus,
@@ -804,9 +801,8 @@ describe("pdf_find_controller", function () {
   });
 
   it("performs a search in a text containing fullwidth chars", async function () {
-    const { eventBus, pdfFindController } = await initPdfFindController(
-      "issue15690.pdf"
-    );
+    const { eventBus, pdfFindController } =
+      await initPdfFindController("issue15690.pdf");
 
     await testSearch({
       eventBus,
@@ -825,9 +821,8 @@ describe("pdf_find_controller", function () {
   });
 
   it("performs a search in a text with some Katakana at the end of a line", async function () {
-    const { eventBus, pdfFindController } = await initPdfFindController(
-      "issue15759.pdf"
-    );
+    const { eventBus, pdfFindController } =
+      await initPdfFindController("issue15759.pdf");
 
     await testSearch({
       eventBus,
@@ -862,9 +857,8 @@ describe("pdf_find_controller", function () {
       pending("Linked test-cases are not supported in Node.js.");
     }
 
-    const { eventBus, pdfFindController } = await initPdfFindController(
-      "issue12909.pdf"
-    );
+    const { eventBus, pdfFindController } =
+      await initPdfFindController("issue12909.pdf");
 
     await testSearch({
       eventBus,
@@ -896,9 +890,8 @@ describe("pdf_find_controller", function () {
   });
 
   it("performs a search in a text with some Hiragana diacritics at the end of a line", async function () {
-    const { eventBus, pdfFindController } = await initPdfFindController(
-      "issue16063.pdf"
-    );
+    const { eventBus, pdfFindController } =
+      await initPdfFindController("issue16063.pdf");
 
     await testSearch({
       eventBus,
@@ -936,9 +929,8 @@ describe("pdf_find_controller", function () {
       pending("Linked test-cases are not supported in Node.js.");
     }
 
-    const { eventBus, pdfFindController } = await initPdfFindController(
-      "bug1820909.pdf"
-    );
+    const { eventBus, pdfFindController } =
+      await initPdfFindController("bug1820909.pdf");
 
     await testSearch({
       eventBus,
@@ -957,9 +949,8 @@ describe("pdf_find_controller", function () {
   });
 
   it("performs a search in a text with some UTF-32 chars followed by a dash at the end of a line", async function () {
-    const { eventBus, pdfFindController } = await initPdfFindController(
-      "bug1820909.1.pdf"
-    );
+    const { eventBus, pdfFindController } =
+      await initPdfFindController("bug1820909.1.pdf");
 
     await testSearch({
       eventBus,

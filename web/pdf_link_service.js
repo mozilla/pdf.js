@@ -505,8 +505,8 @@ class PDFLinkService {
    */
   async executeSetOCGState(action) {
     const pdfDocument = this.pdfDocument;
-    const optionalContentConfig = await this.pdfViewer
-      .optionalContentConfigPromise;
+    const optionalContentConfig =
+      await this.pdfViewer.optionalContentConfigPromise;
 
     if (pdfDocument !== this.pdfDocument) {
       return; // The document was closed while the optional content resolved.
