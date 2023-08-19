@@ -646,9 +646,8 @@ class Page {
   }
 
   async getStructTree() {
-    const structTreeRoot = await this.pdfManager.ensureCatalog(
-      "structTreeRoot"
-    );
+    const structTreeRoot =
+      await this.pdfManager.ensureCatalog("structTreeRoot");
     if (!structTreeRoot) {
       return null;
     }
