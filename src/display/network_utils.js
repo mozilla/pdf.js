@@ -94,7 +94,7 @@ function createResponseStatusError(status, url) {
 }
 
 function validateResponseStatus(status) {
-  return status === 200 || status === 206;
+  return [200,206,304].includes(status);
 }
 
 export {
