@@ -2098,4 +2098,60 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("in issue16863.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue16863.pdf", getSelector("334R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that checkboxes are correctly resetted", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          let readonly = await page.$eval(
+            getSelector("353R"),
+            el => el.disabled
+          );
+          expect(readonly).withContext(`In ${browserName}`).toEqual(true);
+          await page.click(getSelector("334R"));
+          await page.waitForTimeout(10);
+
+          readonly = await page.$eval(getSelector("353R"), el => el.disabled);
+          expect(readonly).withContext(`In ${browserName}`).toEqual(true);
+          await page.click(getSelector("351R"));
+          await page.waitForTimeout(10);
+
+          readonly = await page.$eval(getSelector("353R"), el => el.disabled);
+          expect(readonly).withContext(`In ${browserName}`).toEqual(true);
+          await page.click(getSelector("352R"));
+          await page.waitForTimeout(10);
+
+          readonly = await page.$eval(getSelector("353R"), el => el.disabled);
+          expect(readonly).withContext(`In ${browserName}`).toEqual(false);
+
+          await page.click(getSelector("353R"));
+          await page.waitForTimeout(10);
+
+          let checked = await page.$eval(getSelector("353R"), el => el.checked);
+          expect(checked).withContext(`In ${browserName}`).toEqual(true);
+          await page.click(getSelector("334R"));
+          await page.waitForTimeout(10);
+
+          readonly = await page.$eval(getSelector("353R"), el => el.disabled);
+          expect(readonly).withContext(`In ${browserName}`).toEqual(true);
+          checked = await page.$eval(getSelector("353R"), el => el.checked);
+          expect(checked).withContext(`In ${browserName}`).toEqual(false);
+        })
+      );
+    });
+  });
 });
