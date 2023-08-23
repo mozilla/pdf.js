@@ -1197,7 +1197,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       element.setAttribute("data-element-id", id);
 
       element.disabled = this.data.readOnly;
-      element.name = this.data.baseFieldName || this.data.fieldName;
+      element.name = this.data.fieldName;
       element.tabIndex = DEFAULT_TAB_INDEX;
 
       this._setRequired(element, this.data.required);
@@ -1499,7 +1499,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     element.disabled = data.readOnly;
     this._setRequired(element, this.data.required);
     element.type = "checkbox";
-    element.name = data.baseFieldName || data.fieldName;
+    element.name = data.fieldName;
     if (value) {
       element.setAttribute("checked", true);
     }
@@ -1584,7 +1584,7 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     element.disabled = data.readOnly;
     this._setRequired(element, this.data.required);
     element.type = "radio";
-    element.name = data.baseFieldName || data.fieldName;
+    element.name = data.fieldName;
     if (value) {
       element.setAttribute("checked", true);
     }
@@ -1697,7 +1697,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
 
     selectElement.disabled = this.data.readOnly;
     this._setRequired(selectElement, this.data.required);
-    selectElement.name = this.data.baseFieldName || this.data.fieldName;
+    selectElement.name = this.data.fieldName;
     selectElement.tabIndex = DEFAULT_TAB_INDEX;
 
     let addAnEmptyEntry = this.data.combo && this.data.options.length > 0;
