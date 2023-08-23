@@ -1,6 +1,6 @@
 root = true
 
-[*.{js,jsm,json,html,css,pdf.link}]
+[*.{js,jsm,mjs,json,html,css,pdf.link}]
 charset = utf-8
 end_of_line = lf
 indent_size = 2
