@@ -1661,17 +1661,6 @@ class WidgetAnnotation extends Annotation {
     if (data.fieldName === undefined) {
       data.fieldName = this._constructFieldName(dict);
     }
-    if (
-      data.fieldName &&
-      /\[\d+\]$/.test(data.fieldName) &&
-      !dict.has("Kids") &&
-      dict.has("T")
-    ) {
-      data.baseFieldName = data.fieldName.substring(
-        0,
-        data.fieldName.lastIndexOf("[")
-      );
-    }
 
     if (data.actions === undefined) {
       data.actions = collectActions(xref, dict, AnnotationActionEventType);
