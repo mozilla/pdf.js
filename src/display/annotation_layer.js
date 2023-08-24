@@ -373,11 +373,7 @@ class AnnotationElement {
         event.target.title = event.detail.userName;
       },
       readonly: event => {
-        if (event.detail.readonly) {
-          event.target.setAttribute("readonly", "");
-        } else {
-          event.target.removeAttribute("readonly");
-        }
+        event.target.disabled = event.detail.readonly;
       },
       required: event => {
         this._setRequired(event.target, event.detail.required);
