@@ -1586,10 +1586,11 @@ describe("api", function () {
           case "pdf_submission_new":
           case "simple_spc":
           case "adobeWarning":
+          case "typeA13[0]":
+          case "typeA13[1]":
+          case "typeA13[2]":
+          case "typeA13[3]":
             expected = [0];
-            break;
-          case "typeA13":
-            expected = [0, 0, 0, 0];
             break;
           case "typeA15[0]":
           case "typeA15[1]":
@@ -1600,22 +1601,6 @@ describe("api", function () {
         }
         expect(pageIndexes).toEqual(expected);
       }
-
-      await loadingTask.destroy();
-    });
-
-    it("check field object for group of buttons", async function () {
-      if (isNodeJS) {
-        pending("Linked test-cases are not supported in Node.js.");
-      }
-
-      const loadingTask = getDocument(buildGetDocumentParams("f1040_2022.pdf"));
-      const pdfDoc = await loadingTask.promise;
-      const fieldObjects = await pdfDoc.getFieldObjects();
-
-      expect(
-        fieldObjects["topmostSubform[0].Page1[0].c1_01"].map(o => o.id)
-      ).toEqual(["1566R", "1568R", "1569R", "1570R", "1571R"]);
 
       await loadingTask.destroy();
     });
