@@ -40,9 +40,8 @@ class PDFWorkerStream {
   }
 
   cancelAllRequests(reason) {
-    if (this._fullRequestReader) {
-      this._fullRequestReader.cancel(reason);
-    }
+    this._fullRequestReader?.cancel(reason);
+
     for (const reader of this._rangeRequestReaders.slice(0)) {
       reader.cancel(reason);
     }

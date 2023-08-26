@@ -107,9 +107,7 @@ class Sandbox {
   }
 
   dumpMemoryUse() {
-    if (this._module) {
-      this._module.ccall("dumpMemoryUse", null, []);
-    }
+    this._module?.ccall("dumpMemoryUse", null, []);
   }
 
   nukeSandbox() {
