@@ -3153,11 +3153,7 @@ class PDFObjects {
    * @returns {Object}
    */
   #ensureObj(objId) {
-    const obj = this.#objs[objId];
-    if (obj) {
-      return obj;
-    }
-    return (this.#objs[objId] = {
+    return (this.#objs[objId] ||= {
       capability: new PromiseCapability(),
       data: null,
     });
