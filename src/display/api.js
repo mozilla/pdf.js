@@ -3437,7 +3437,7 @@ class InternalRenderTask {
     if (this.operatorListIdx === this.operatorList.argsArray.length) {
       this.running = false;
       if (this.operatorList.lastChunk) {
-        this.gfx.endDrawing(this.pageColors);
+        this.gfx.endDrawing();
         InternalRenderTask.#canvasInUse.delete(this._canvas);
 
         this.callback();
