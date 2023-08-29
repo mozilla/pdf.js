@@ -20,7 +20,8 @@
     foreach ($files as $file_name) {
         if(is_file($dir_path . "/" . $file_name)) {
             $book_name = substr($file_name, 0, strpos($file_name, ".pdf"));
-            $str = '<li><a href="https://bulba.site/lib2/engine/back/open-book.php?book=' . $book_name . '&email=' . $email .'">' . $book_name . '</a></li>';
+            $str = '<li><a href="https://bulba.site/lib2/engine/back/open-book.php?book=' . $book_name . '">' . $book_name . '</a>    
+                <a href="https://bulba.site/lib2/engine/back/delete.php?book=' . $book_name . '">del</a></li>';
             print($str);
         }
     }
