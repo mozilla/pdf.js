@@ -1,0 +1,3 @@
+<?php
+    $email_config = "";
+?>
