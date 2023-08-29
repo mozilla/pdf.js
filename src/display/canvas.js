@@ -716,35 +716,19 @@ function putBinaryImageMask(ctx, imgData) {
   }
 
   // Slow path: OffscreenCanvas isn't available in the worker.
-  const height = imgData.height,
-    width = imgData.width;
-  const partialChunkHeight = height % FULL_CHUNK_HEIGHT;
-  const fullChunks = (height - partialChunkHeight) / FULL_CHUNK_HEIGHT;
-  const totalChunks = partialChunkHeight === 0 ? fullChunks : fullChunks + 1;
+  const { width, height, data: src } = imgData;
 
-  const chunkImgData = ctx.createImageData(width, FULL_CHUNK_HEIGHT);
-  let srcPos = 0;
-  const src = imgData.data;
-  const dest = chunkImgData.data;
+  const fullImageData = ctx.createImageData(width, height);
+  const dest = fullImageData.data;
 
-  for (let i = 0; i < totalChunks; i++) {
-    const thisChunkHeight =
-      i < fullChunks ? FULL_CHUNK_HEIGHT : partialChunkHeight;
-
-    // Expand the mask so it can be used by the canvas.  Any required
-    // inversion has already been handled.
-
-    ({ srcPos } = convertBlackAndWhiteToRGBA({
-      src,
-      srcPos,
-      dest,
-      width,
-      height: thisChunkHeight,
-      nonBlackColor: 0,
-    }));
-
-    ctx.putImageData(chunkImgData, 0, i * FULL_CHUNK_HEIGHT);
-  }
+  convertBlackAndWhiteToRGBA({
+    src,
+    dest,
+    width,
+    height,
+    nonBlackColor: 0,
+  });
+  ctx.putImageData(fullImageData, 0, 0);
 }
 
 function copyCtxState(sourceCtx, destCtx) {
