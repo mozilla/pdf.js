@@ -1365,7 +1365,7 @@ dialog :link {
   *:not(input):not(textarea):not(button):not(select):not(:link) {
   cursor: inherit !important;
 }
-.grab-to-pan-grab:active,
+
 .grab-to-pan-grabbing {
   cursor: grabbing !important;
   position: fixed;
