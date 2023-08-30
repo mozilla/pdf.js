@@ -139,4 +139,35 @@ describe("accessibility", () => {
       );
     });
   });
+
+  describe("Stamp annotation accessibility", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tagged_stamp.pdf", ".annotationLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the stamp annotation is linked to the struct tree", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForSelector(".structTree");
+
+          const isLinkedToStampAnnotation = await page.$eval(
+            ".structTree [role='figure']",
+            el =>
+              document
+                .getElementById(el.getAttribute("aria-owns"))
+                .classList.contains("stampAnnotation")
+          );
+          expect(isLinkedToStampAnnotation)
+            .withContext(`In ${browserName}`)
+            .toEqual(true);
+        })
+      );
+    });
+  });
 });
