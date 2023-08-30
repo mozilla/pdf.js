@@ -31,8 +31,6 @@ import {
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
-const AnnotationPrefix = "pdfjs_internal_id_";
-
 class PixelsPerInch {
   static CSS = 96.0;
 
@@ -1005,7 +1003,6 @@ function setLayerDimensions(
 }
 
 export {
-  AnnotationPrefix,
   deprecated,
   DOMCanvasFactory,
   DOMCMapReaderFactory,

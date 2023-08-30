@@ -77,10 +77,11 @@ class AnnotationFactory {
    * @param {PDFManager} pdfManager
    * @param {Object} idFactory
    * @param {boolean} collectFields
+   * @param {Object} [pageRef]
    * @returns {Promise} A promise that is resolved with an {Annotation}
    *   instance.
    */
-  static create(xref, ref, pdfManager, idFactory, collectFields) {
+  static create(xref, ref, pdfManager, idFactory, collectFields, pageRef) {
     return Promise.all([
       pdfManager.ensureCatalog("acroForm"),
       // Only necessary to prevent the `pdfManager.docBaseUrl`-getter, used
@@ -91,18 +92,29 @@ class AnnotationFactory {
       pdfManager.ensureCatalog("attachments"),
       pdfManager.ensureDoc("xfaDatasets"),
       collectFields ? this._getPageIndex(xref, ref, pdfManager) : -1,
-    ]).then(([acroForm, baseUrl, attachments, xfaDatasets, pageIndex]) =>
-      pdfManager.ensure(this, "_create", [
-        xref,
-        ref,
-        pdfManager,
-        idFactory,
+      pageRef ? pdfManager.ensureCatalog("structTreeRoot") : null,
+    ]).then(
+      ([
         acroForm,
+        baseUrl,
         attachments,
         xfaDatasets,
-        collectFields,
         pageIndex,
-      ])
+        structTreeRoot,
+      ]) =>
+        pdfManager.ensure(this, "_create", [
+          xref,
+          ref,
+          pdfManager,
+          idFactory,
+          acroForm,
+          attachments,
+          xfaDatasets,
+          collectFields,
+          pageIndex,
+          structTreeRoot,
+          pageRef,
+        ])
     );
   }
 
@@ -118,7 +130,9 @@ class AnnotationFactory {
     attachments = null,
     xfaDatasets,
     collectFields,
-    pageIndex = -1
+    pageIndex = -1,
+    structTreeRoot = null,
+    pageRef = null
   ) {
     const dict = xref.fetchIfRef(ref);
     if (!(dict instanceof Dict)) {
@@ -150,6 +164,8 @@ class AnnotationFactory {
         !collectFields && acroFormDict.get("NeedAppearances") === true,
       pageIndex,
       evaluatorOptions: pdfManager.evaluatorOptions,
+      structTreeRoot,
+      pageRef,
     };
 
     switch (subtype) {
@@ -593,6 +609,13 @@ class Annotation {
     // a HTML element for it.
     const isLocked = !!(this.flags & AnnotationFlag.LOCKED);
     const isContentLocked = !!(this.flags & AnnotationFlag.LOCKEDCONTENTS);
+
+    if (params.structTreeRoot) {
+      let structParent = dict.get("StructParent");
+      structParent =
+        Number.isInteger(structParent) && structParent >= 0 ? structParent : -1;
+      params.structTreeRoot.addAnnotationIdToPage(params.pageRef, structParent);
+    }
 
     // Expose public properties using a data object.
     this.data = {
