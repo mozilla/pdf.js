@@ -2469,6 +2469,7 @@ gulp.task(
   "ci-test",
   gulp.series(
     gulp.parallel("lint", "externaltest", "unittestcli"),
-    "lint-chromium"
+    "lint-chromium",
+    "typestest"
   )
 );
