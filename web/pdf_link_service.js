@@ -16,7 +16,7 @@
 /** @typedef {import("./event_utils").EventBus} EventBus */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 
-import { parseQueryString, removeNullCharacters } from "./ui_utils.js";
+import { parseQueryString } from "./ui_utils.js";
 
 const DEFAULT_LINK_REL = "noopener noreferrer nofollow";
 
@@ -49,12 +49,11 @@ function addLinkAttributes(link, { url, target, rel, enabled = true } = {}) {
     throw new Error('A valid "url" parameter must provided.');
   }
 
-  const urlNullRemoved = removeNullCharacters(url);
   if (enabled) {
-    link.href = link.title = urlNullRemoved;
+    link.href = link.title = url;
   } else {
     link.href = "";
-    link.title = `Disabled: ${urlNullRemoved}`;
+    link.title = `Disabled: ${url}`;
     link.onclick = () => {
       return false;
     };
