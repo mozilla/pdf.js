@@ -23,6 +23,10 @@
 /** @typedef {import("./interfaces").IDownloadManager} IDownloadManager */
 /** @typedef {import("./interfaces").IL10n} IL10n */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
+// eslint-disable-next-line max-len
+/** @typedef {import("./pdf_find_controller").PDFFindController} PDFFindController */
+// eslint-disable-next-line max-len
+/** @typedef {import("./pdf_scripting_manager").PDFScriptingManager} PDFScriptingManager */
 
 import {
   AnnotationEditorType,
