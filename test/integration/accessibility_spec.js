@@ -151,6 +151,24 @@ describe("accessibility", () => {
       await closePages(pages);
     });
 
+    it("must check the id in aria-controls", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForSelector(".annotationLayer");
+          const stampId = "pdfjs_internal_id_20R";
+          await page.click(`#${stampId}`);
+
+          const controlledId = await page.$eval(
+            "#pdfjs_internal_id_21R",
+            el => document.getElementById(el.getAttribute("aria-controls")).id
+          );
+          expect(controlledId)
+            .withContext(`In ${browserName}`)
+            .toEqual(stampId);
+        })
+      );
+    });
+
     it("must check that the stamp annotation is linked to the struct tree", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
