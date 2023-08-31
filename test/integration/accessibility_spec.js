@@ -169,6 +169,22 @@ describe("accessibility", () => {
       );
     });
 
+    it("must check the aria-label linked to the stamp annotation", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForSelector(".structTree");
+
+          const ariaLabel = await page.$eval(
+            ".structTree [role='figure']",
+            el => el.getAttribute("aria-label")
+          );
+          expect(ariaLabel)
+            .withContext(`In ${browserName}`)
+            .toEqual("Secondary text for stamp");
+        })
+      );
+    });
+
     it("must check that the stamp annotation is linked to the struct tree", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
