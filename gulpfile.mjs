@@ -1549,19 +1549,8 @@ gulp.task("jsdoc", function (done) {
 
 gulp.task("types", function (done) {
   console.log("### Generating TypeScript definitions using `tsc`");
-  const args = [
-    "target ESNext",
-    "allowJS",
-    "declaration",
-    `outDir ${TYPES_DIR}`,
-    "strict",
-    "esModuleInterop",
-    "forceConsistentCasingInFileNames",
-    "emitDeclarationOnly",
-    "moduleResolution node",
-  ].join(" --");
   exec(
-    `"node_modules/.bin/tsc" --${args} src/pdf.js web/pdf_viewer.component.js`,
+    `"node_modules/.bin/tsc" --outDir ${TYPES_DIR} --project .`,
     done
   );
 });
