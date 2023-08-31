@@ -1954,7 +1954,10 @@ class PopupAnnotationElement extends AnnotationElement {
       element.addHighlightArea();
     }
 
-    this.container.setAttribute("aria-controls", elementIds.join(","));
+    this.container.setAttribute(
+      "aria-controls",
+      elementIds.map(id => `${AnnotationPrefix}${id}`).join(",")
+    );
 
     return this.container;
   }
