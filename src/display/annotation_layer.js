@@ -21,6 +21,7 @@
 import {
   AnnotationBorderStyleType,
   AnnotationEditorType,
+  AnnotationPrefix,
   AnnotationType,
   FeatureTest,
   LINE_FACTOR,
@@ -30,7 +31,6 @@ import {
   warn,
 } from "../shared/util.js";
 import {
-  AnnotationPrefix,
   DOMSVGFactory,
   getFilenameFromUrl,
   PDFDateString,

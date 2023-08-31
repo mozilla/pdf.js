@@ -100,14 +100,15 @@ class StructTreeLayerBuilder {
   }
 
   #setAttributes(structElement, htmlElement) {
-    if (structElement.alt !== undefined) {
-      htmlElement.setAttribute("aria-label", structElement.alt);
+    const { alt, id, lang } = structElement;
+    if (alt !== undefined) {
+      htmlElement.setAttribute("aria-label", alt);
     }
-    if (structElement.id !== undefined) {
-      htmlElement.setAttribute("aria-owns", structElement.id);
+    if (id !== undefined) {
+      htmlElement.setAttribute("aria-owns", id);
     }
-    if (structElement.lang !== undefined) {
-      htmlElement.setAttribute("lang", structElement.lang);
+    if (lang !== undefined) {
+      htmlElement.setAttribute("lang", lang);
     }
   }
 
