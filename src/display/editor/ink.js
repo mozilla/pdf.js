@@ -891,7 +891,7 @@ class InkEditor extends AnnotationEditor {
 
   /**
    * Convert into a Path2D.
-   * @param {Arra<Array<number>} bezier
+   * @param {Array<Array<number>>} bezier
    * @returns {Path2D}
    */
   static #buildPath2D(bezier) {

@@ -15,6 +15,8 @@
 
 /** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
 // eslint-disable-next-line max-len
+/** @typedef {import("../src/display/annotation_storage").AnnotationStorage} AnnotationStorage */
+// eslint-disable-next-line max-len
 /** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 

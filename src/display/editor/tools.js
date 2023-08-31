@@ -418,7 +418,7 @@ class KeyboardManager {
   /**
    * Execute a callback, if any, for a given keyboard event.
    * The self is used as `this` in the callback.
-   * @param {Object} self.
+   * @param {Object} self
    * @param {KeyboardEvent} event
    * @returns
    */
