@@ -266,6 +266,9 @@ function createWebpackConfig(
     viewerAlias["web-com"] = "web/chromecom.js";
     viewerAlias["web-print_service"] = "web/pdf_print_service.js";
   } else if (bundleDefines.GENERIC) {
+    // Aliases defined here must also be replicated in the paths section of
+    // the tsconfig.json file for the type generation to work.
+    // In the tsconfig.json files, the .js extension must be omitted.
     libraryAlias["display-fetch_stream"] = "src/display/fetch_stream.js";
     libraryAlias["display-l10n_utils"] = "web/l10n_utils.js";
     libraryAlias["display-network"] = "src/display/network.js";
@@ -1549,20 +1552,11 @@ gulp.task("jsdoc", function (done) {
 
 gulp.task("types", function (done) {
   console.log("### Generating TypeScript definitions using `tsc`");
-  const args = [
-    "target ESNext",
-    "allowJS",
-    "declaration",
-    `outDir ${TYPES_DIR}`,
-    "strict",
-    "esModuleInterop",
-    "forceConsistentCasingInFileNames",
-    "emitDeclarationOnly",
-    "moduleResolution node",
-  ].join(" --");
   exec(
-    `"node_modules/.bin/tsc" --${args} src/pdf.js web/pdf_viewer.component.js`,
-    done
+    `"node_modules/.bin/tsc" --outDir ${TYPES_DIR} --project .`,
+    function () {
+      exec(`"node_modules/.bin/tsc-alias" --outDir ${TYPES_DIR}`, done);
+    }
   );
 });
 
@@ -2475,6 +2469,7 @@ gulp.task(
   "ci-test",
   gulp.series(
     gulp.parallel("lint", "externaltest", "unittestcli"),
-    "lint-chromium"
+    "lint-chromium",
+    "typestest"
   )
 );

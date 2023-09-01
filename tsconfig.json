@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "allowJs": true,
+    "declaration": true,
+    "strict": true,
+    "emitDeclarationOnly": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "paths": {
+      "display-fetch_stream": ["./src/display/fetch_stream"],
+      "display-l10n_utils": ["./web/l10n_utils"],
+      "display-network": ["./src/display/network"],
+      "display-node_stream": ["./src/display/node_stream"],
+      "display-node_utils": ["./src/display/node_utils"],
+      "display-svg": ["./src/display/svg"],
+      "pdfjs-lib": ["./src/pdf"]
+    }
+  },
+  "files": [
+    "src/pdf.js",
+    "web/pdf_viewer.component.js"
+  ]
+}
