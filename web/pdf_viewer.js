@@ -35,6 +35,7 @@ import {
   PermissionFlag,
   PixelsPerInch,
   PromiseCapability,
+  removeNullChars,
   version,
 } from "pdfjs-lib";
 import {
@@ -51,7 +52,6 @@ import {
   MAX_SCALE,
   MIN_SCALE,
   PresentationModeState,
-  removeNullCharacters,
   RenderingStates,
   SCROLLBAR_PADDING,
   scrollIntoView,
@@ -679,7 +679,7 @@ class PDFViewer {
           buffer.push("\n");
         }
       }
-      texts.push(removeNullCharacters(buffer.join("")));
+      texts.push(removeNullChars(buffer.join("")));
     }
 
     return texts.join("\n");

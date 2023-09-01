@@ -206,23 +206,6 @@ function parseQueryString(query) {
   return params;
 }
 
-const InvisibleCharactersRegExp = /[\x01-\x1F]/g;
-
-/**
- * @param {string} str
- * @param {boolean} [replaceInvisible]
- */
-function removeNullCharacters(str, replaceInvisible = false) {
-  if (typeof str !== "string") {
-    console.error(`The argument must be a string.`);
-    return str;
-  }
-  if (replaceInvisible) {
-    str = str.replaceAll(InvisibleCharactersRegExp, " ");
-  }
-  return str.replaceAll("\x00", "");
-}
-
 /**
  * Use binary search to find the index of the first item in a given array which
  * passes a given condition. The items are expected to be sorted in the sense
@@ -888,7 +871,6 @@ export {
   parseQueryString,
   PresentationModeState,
   ProgressBar,
-  removeNullCharacters,
   RenderingStates,
   roundToDivide,
   SCROLLBAR_PADDING,

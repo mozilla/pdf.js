@@ -941,6 +941,19 @@ function utf8StringToString(str) {
   return unescape(encodeURIComponent(str));
 }
 
+const InvisibleCharsRegExp = /[\x01-\x1F]/g;
+
+/**
+ * @param {string} str
+ * @param {boolean} [replaceInvisible]
+ */
+function removeNullChars(str, replaceInvisible = false) {
+  if (replaceInvisible) {
+    str = str.replaceAll(InvisibleCharsRegExp, " ");
+  }
+  return str.replaceAll("\x00", "");
+}
+
 function isArrayBuffer(v) {
   return typeof v === "object" && v?.byteLength !== undefined;
 }
@@ -1095,6 +1108,7 @@ export {
   PasswordResponses,
   PermissionFlag,
   PromiseCapability,
+  removeNullChars,
   RenderingIntentFlag,
   setVerbosityLevel,
   shadow,

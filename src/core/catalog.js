@@ -28,6 +28,7 @@ import {
   info,
   objectSize,
   PermissionFlag,
+  removeNullChars,
   shadow,
   stringToPDFString,
   stringToUTF8String,
@@ -313,12 +314,13 @@ class Catalog {
         docBaseUrl: this.pdfManager.docBaseUrl,
         docAttachments: this.attachments,
       });
-      const title = outlineDict.get("Title");
+      const rawTitle = stringToPDFString(outlineDict.get("Title"));
       const flags = outlineDict.get("F") || 0;
       const color = outlineDict.getArray("C");
       const count = outlineDict.get("Count");
       let rgbColor = blackColor;
 
+      const title = removeNullChars(rawTitle, /* replaceInvisible = */ true);
       // We only need to parse the color when it's valid, and non-default.
       if (
         Array.isArray(color) &&
@@ -336,7 +338,8 @@ class Catalog {
         unsafeUrl: data.unsafeUrl,
         newWindow: data.newWindow,
         setOCGState: data.setOCGState,
-        title: stringToPDFString(title),
+        title,
+        rawTitle: rawTitle !== title ? rawTitle : undefined,
         color: rgbColor,
         count: Number.isInteger(count) ? count : undefined,
         bold: !!(flags & 2),
@@ -986,7 +989,7 @@ class Catalog {
       } else if (typeof js !== "string") {
         return;
       }
-      js = stringToPDFString(js).replaceAll("\x00", "");
+      js = removeNullChars(stringToPDFString(js));
       // Skip empty entries, similar to the `_collectJS` function.
       if (js) {
         (javaScript ||= new Map()).set(name, js);

@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-import { removeNullCharacters } from "./ui_utils.js";
-
 const TREEITEM_OFFSET_TOP = -100; // px
 const TREEITEM_SELECTED_CLASS = "selected";
 
@@ -59,12 +57,7 @@ class BaseTreeViewer {
    * @private
    */
   _normalizeTextContent(str) {
-    // Chars in range [0x01-0x1F] will be replaced with a white space
-    // and 0x00 by "".
-    return (
-      removeNullCharacters(str, /* replaceInvisible */ true) ||
-      /* en dash = */ "\u2013"
-    );
+    return str || /* en dash = */ "\u2013";
   }
 
   /**

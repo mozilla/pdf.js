@@ -961,6 +961,7 @@ class PDFDocumentProxy {
   /**
    * @typedef {Object} OutlineNode
    * @property {string} title
+   * @property {string | undefined} rawTitle
    * @property {boolean} bold
    * @property {boolean} italic
    * @property {Uint8ClampedArray} color - The color in RGB format to use for

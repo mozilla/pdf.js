@@ -20,8 +20,12 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 
-import { normalizeUnicode, renderTextLayer, updateTextLayer } from "pdfjs-lib";
-import { removeNullCharacters } from "./ui_utils.js";
+import {
+  normalizeUnicode,
+  removeNullChars,
+  renderTextLayer,
+  updateTextLayer,
+} from "pdfjs-lib";
 
 /**
  * @typedef {Object} TextLayerBuilderOptions
@@ -223,7 +227,7 @@ class TextLayerBuilder {
         const selection = document.getSelection();
         event.clipboardData.setData(
           "text/plain",
-          removeNullCharacters(normalizeUnicode(selection.toString()))
+          removeNullChars(normalizeUnicode(selection.toString()))
         );
       }
       event.preventDefault();

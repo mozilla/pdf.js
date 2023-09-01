@@ -13,7 +13,12 @@
  * limitations under the License.
  */
 
-import { AnnotationPrefix, stringToPDFString, warn } from "../shared/util.js";
+import {
+  AnnotationPrefix,
+  removeNullChars,
+  stringToPDFString,
+  warn,
+} from "../shared/util.js";
 import { Dict, isName, Name, Ref, RefSetCache } from "./primitives.js";
 import { NumberTree } from "./name_number_tree.js";
 
@@ -335,11 +340,14 @@ class StructTreePage {
       parent.children.push(obj);
       const alt = node.dict.get("Alt");
       if (typeof alt === "string") {
-        obj.alt = stringToPDFString(alt);
+        obj.alt = removeNullChars(stringToPDFString(alt));
       }
       const lang = node.dict.get("Lang");
       if (typeof lang === "string") {
-        obj.lang = stringToPDFString(lang);
+        obj.lang = removeNullChars(
+          stringToPDFString(lang),
+          /* replaceInvisible = */ true
+        );
       }
 
       for (const kid of node.kids) {

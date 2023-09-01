@@ -18,6 +18,7 @@ import {
   assert,
   BaseException,
   objectSize,
+  removeNullChars,
   stringToPDFString,
   warn,
 } from "../shared/util.js";
@@ -319,7 +320,7 @@ function _collectJS(entry, xref, list, parents) {
       } else if (typeof js === "string") {
         code = js;
       }
-      code &&= stringToPDFString(code).replaceAll("\x00", "");
+      code &&= removeNullChars(stringToPDFString(code));
       if (code) {
         list.push(code);
       }

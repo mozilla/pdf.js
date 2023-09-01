@@ -19,6 +19,7 @@ import {
   getModificationDate,
   isArrayBuffer,
   PromiseCapability,
+  removeNullChars,
   string32,
   stringToBytes,
   stringToPDFString,
@@ -133,6 +134,31 @@ describe("util", function () {
       // UTF-8
       const str4 = "\xEF\xBB\xBF";
       expect(stringToPDFString(str4)).toEqual("");
+    });
+  });
+
+  describe("removeNullChars", function () {
+    it("should not modify string without null characters", function () {
+      const str = "string without null chars";
+      expect(removeNullChars(str)).toEqual("string without null chars");
+    });
+
+    it("should modify string with null characters", function () {
+      const str = "string\x00With\x00Null\x00Chars";
+      expect(removeNullChars(str)).toEqual("stringWithNullChars");
+    });
+
+    it("should modify string with non-displayable characters", function () {
+      const str = Array.from(
+        Array(32).keys(),
+        x => String.fromCharCode(x) + "a"
+      ).join("");
+      // \x00 is replaced by an empty string.
+      const expected =
+        "a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a";
+      expect(removeNullChars(str, /* replaceInvisible */ true)).toEqual(
+        expected
+      );
     });
   });
 

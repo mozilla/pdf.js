@@ -1660,6 +1660,7 @@ describe("api", function () {
       // Make sure some basic attributes are set.
       const outlineItem = outline[1];
       expect(outlineItem.title).toEqual("Chapter 1");
+      expect(outlineItem.rawTitle).toBeUndefined();
       expect(Array.isArray(outlineItem.dest)).toEqual(true);
       expect(outlineItem.url).toEqual(null);
       expect(outlineItem.unsafeUrl).toBeUndefined();
@@ -1671,6 +1672,7 @@ describe("api", function () {
 
       expect(outlineItem.items.length).toEqual(1);
       expect(outlineItem.items[0].title).toEqual("Paragraph 1.1");
+      expect(outlineItem.items[0].rawTitle).toBeUndefined();
     });
 
     it("gets outline containing a URL", async function () {
@@ -1682,6 +1684,7 @@ describe("api", function () {
 
       const outlineItemTwo = outline[2];
       expect(typeof outlineItemTwo.title).toEqual("string");
+      expect(outlineItemTwo.rawTitle).toBeUndefined();
       expect(outlineItemTwo.dest).toEqual(null);
       expect(outlineItemTwo.url).toEqual("http://google.com/");
       expect(outlineItemTwo.unsafeUrl).toEqual("http://google.com");
@@ -1715,6 +1718,7 @@ describe("api", function () {
         newWindow: undefined,
         setOCGState: undefined,
         title: "Händel -- Halle🎆lujah",
+        rawTitle: undefined,
         color: new Uint8ClampedArray([0, 0, 0]),
         count: undefined,
         bold: false,
@@ -1742,6 +1746,7 @@ describe("api", function () {
         newWindow: undefined,
         setOCGState: undefined,
         title: "Previous Page",
+        rawTitle: undefined,
         color: new Uint8ClampedArray([0, 0, 0]),
         count: undefined,
         bold: false,
@@ -1769,6 +1774,7 @@ describe("api", function () {
         newWindow: undefined,
         setOCGState: { state: ["OFF", "ON", "50R"], preserveRB: false },
         title: "Display Layer",
+        rawTitle: undefined,
         color: new Uint8ClampedArray([0, 0, 0]),
         count: undefined,
         bold: false,
@@ -1787,7 +1793,8 @@ describe("api", function () {
       expect(outline.length).toEqual(1);
 
       const outlineItem = outline[0];
-      expect(outlineItem.title).toEqual("hello\x11world");
+      expect(outlineItem.title).toEqual("hello world");
+      expect(outlineItem.rawTitle).toEqual("hello\x11world");
 
       await loadingTask.destroy();
     });
