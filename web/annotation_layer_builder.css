@@ -337,20 +337,7 @@
   font-size: calc(9px * var(--scale-factor));
 }
 
-.annotationLayer .highlightAnnotation,
-.annotationLayer .underlineAnnotation,
-.annotationLayer .squigglyAnnotation,
-.annotationLayer .strikeoutAnnotation,
-.annotationLayer .freeTextAnnotation,
-.annotationLayer .lineAnnotation svg line,
-.annotationLayer .squareAnnotation svg rect,
-.annotationLayer .circleAnnotation svg ellipse,
-.annotationLayer .polylineAnnotation svg polyline,
-.annotationLayer .polygonAnnotation svg polygon,
-.annotationLayer .caretAnnotation,
-.annotationLayer .inkAnnotation svg polyline,
-.annotationLayer .stampAnnotation,
-.annotationLayer .fileAttachmentAnnotation {
+.annotationLayer .popupTriggerArea {
   cursor: pointer;
 }
 
