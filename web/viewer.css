@@ -1368,6 +1368,8 @@ dialog :link {
 .grab-to-pan-grab:active,
 .grab-to-pan-grabbing {
   cursor: grabbing !important;
+}
+.grab-to-pan-grabbing {
   position: fixed;
   background: rgba(0, 0, 0, 0);
   display: block;
