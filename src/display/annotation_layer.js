@@ -206,6 +206,9 @@ class AnnotationElement {
 
     const container = document.createElement("section");
     container.setAttribute("data-annotation-id", data.id);
+    if (!(this instanceof WidgetAnnotationElement)) {
+      container.tabIndex = DEFAULT_TAB_INDEX;
+    }
 
     // The accessibility manager will move the annotation in the DOM in
     // order to match the visual ordering.
@@ -1969,6 +1972,8 @@ class PopupAnnotationElement extends AnnotationElement {
 class PopupElement {
   #dateTimePromise = null;
 
+  #boundKeyDown = this.#keyDown.bind(this);
+
   #boundHide = this.#hide.bind(this);
 
   #boundShow = this.#show.bind(this);
@@ -2042,6 +2047,11 @@ class PopupElement {
       if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
         element.classList.add("popupTriggerArea");
       }
+    }
+
+    // Attach the event listener to toggle the popup with the keyboard.
+    for (const element of elements) {
+      element.container?.addEventListener("keydown", this.#boundKeyDown);
     }
 
     this.#container.hidden = true;
@@ -2187,6 +2197,16 @@ class PopupElement {
     return p;
   }
 
+  #keyDown(event) {
+    if (event.altKey || event.shiftKey || event.ctrlKey || event.metaKey) {
+      return;
+    }
+
+    if (event.key === "Enter" || (event.key === "Escape" && this.#pinned)) {
+      this.#toggle();
+    }
+  }
+
   /**
    * Toggle the visibility of the popup.
    */
@@ -2195,9 +2215,11 @@ class PopupElement {
     if (this.#pinned) {
       this.#show();
       this.#container.addEventListener("click", this.#boundToggle);
+      this.#container.addEventListener("keydown", this.#boundKeyDown);
     } else {
       this.#hide();
       this.#container.removeEventListener("click", this.#boundToggle);
+      this.#container.removeEventListener("keydown", this.#boundKeyDown);
     }
   }
 
