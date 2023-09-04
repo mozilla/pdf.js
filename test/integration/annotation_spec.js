@@ -527,4 +527,65 @@ describe("ResetForm action", () => {
       });
     });
   });
+
+  describe("Toggle popup with keyboard", () => {
+    describe("tagged_stamp.pdf", () => {
+      let pages;
+
+      beforeAll(async () => {
+        pages = await loadAndWait(
+          "tagged_stamp.pdf",
+          "[data-annotation-id='20R']"
+        );
+      });
+
+      afterAll(async () => {
+        await closePages(pages);
+      });
+
+      it("must check that the popup has the correct visibility", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            let hidden = await page.$eval(
+              "[data-annotation-id='21R']",
+              el => el.hidden
+            );
+            expect(hidden).withContext(`In ${browserName}`).toEqual(true);
+            await page.focus("[data-annotation-id='20R']");
+            await page.keyboard.press("Enter");
+            await page.waitForTimeout(10);
+            hidden = await page.$eval(
+              "[data-annotation-id='21R']",
+              el => el.hidden
+            );
+            expect(hidden).withContext(`In ${browserName}`).toEqual(false);
+
+            await page.keyboard.press("Enter");
+            await page.waitForTimeout(10);
+            hidden = await page.$eval(
+              "[data-annotation-id='21R']",
+              el => el.hidden
+            );
+            expect(hidden).withContext(`In ${browserName}`).toEqual(true);
+
+            await page.keyboard.press("Enter");
+            await page.waitForTimeout(10);
+            hidden = await page.$eval(
+              "[data-annotation-id='21R']",
+              el => el.hidden
+            );
+            expect(hidden).withContext(`In ${browserName}`).toEqual(false);
+
+            await page.keyboard.press("Escape");
+            await page.waitForTimeout(10);
+            hidden = await page.$eval(
+              "[data-annotation-id='21R']",
+              el => el.hidden
+            );
+            expect(hidden).withContext(`In ${browserName}`).toEqual(true);
+          })
+        );
+      });
+    });
+  });
 });
