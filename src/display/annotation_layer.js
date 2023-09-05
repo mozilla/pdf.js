@@ -1013,7 +1013,7 @@ class WidgetAnnotationElement extends AnnotationElement {
     return (isWin && event.ctrlKey) || (isMac && event.metaKey);
   }
 
-  _setEventListener(element, baseName, eventName, valueGetter) {
+  _setEventListener(element, elementData, baseName, eventName, valueGetter) {
     if (baseName.includes("mouse")) {
       // Mouse events
       element.addEventListener(baseName, event => {
@@ -1029,8 +1029,24 @@ class WidgetAnnotationElement extends AnnotationElement {
         });
       });
     } else {
-      // Non mouse event
+      // Non-mouse events
       element.addEventListener(baseName, event => {
+        if (baseName === "blur") {
+          if (!elementData.focused || !event.relatedTarget) {
+            return;
+          }
+          elementData.focused = false;
+        } else if (baseName === "focus") {
+          if (elementData.focused) {
+            return;
+          }
+          elementData.focused = true;
+        }
+
+        if (!valueGetter) {
+          return;
+        }
+
         this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
           source: this,
           detail: {
@@ -1043,10 +1059,25 @@ class WidgetAnnotationElement extends AnnotationElement {
     }
   }
 
-  _setEventListeners(element, names, getter) {
+  _setEventListeners(element, elementData, names, getter) {
     for (const [baseName, eventName] of names) {
       if (eventName === "Action" || this.data.actions?.[eventName]) {
-        this._setEventListener(element, baseName, eventName, getter);
+        if (eventName === "Focus" || eventName === "Blur") {
+          elementData ||= { focused: false };
+        }
+        this._setEventListener(
+          element,
+          elementData,
+          baseName,
+          eventName,
+          getter
+        );
+        if (eventName === "Focus" && !this.data.actions?.Blur) {
+          // Ensure that elementData will have the correct value.
+          this._setEventListener(element, elementData, "blur", "Blur", null);
+        } else if (eventName === "Blur" && !this.data.actions?.Focus) {
+          this._setEventListener(element, elementData, "focus", "Focus", null);
+        }
       }
     }
   }
@@ -1178,6 +1209,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         formattedValue: fieldFormattedValues,
         lastCommittedValue: null,
         commitKey: 1,
+        focused: false,
       };
 
       if (this.data.multiLine) {
@@ -1238,12 +1270,16 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
 
       if (this.enableScripting && this.hasJSActions) {
         element.addEventListener("focus", event => {
+          if (elementData.focused) {
+            return;
+          }
           const { target } = event;
           if (elementData.userValue) {
             target.value = elementData.userValue;
           }
           elementData.lastCommittedValue = target.value;
           elementData.commitKey = 1;
+          elementData.focused = true;
         });
 
         element.addEventListener("updatefromsandbox", jsEvent => {
@@ -1349,9 +1385,10 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         const _blurListener = blurListener;
         blurListener = null;
         element.addEventListener("blur", event => {
-          if (!event.relatedTarget) {
+          if (!elementData.focused || !event.relatedTarget) {
             return;
           }
+          elementData.focused = false;
           const { value } = event.target;
           elementData.userValue = value;
           if (elementData.lastCommittedValue !== value) {
@@ -1431,6 +1468,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
 
         this._setEventListeners(
           element,
+          elementData,
           [
             ["focus", "Focus"],
             ["blur", "Blur"],
@@ -1540,6 +1578,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
 
       this._setEventListeners(
         element,
+        null,
         [
           ["change", "Validate"],
           ["change", "Action"],
@@ -1630,6 +1669,7 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
 
       this._setEventListeners(
         element,
+        null,
         [
           ["change", "Validate"],
           ["change", "Action"],
@@ -1894,6 +1934,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
 
       this._setEventListeners(
         selectElement,
+        null,
         [
           ["focus", "Focus"],
           ["blur", "Blur"],
