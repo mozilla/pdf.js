@@ -2154,4 +2154,50 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("Textfields and focus", () => {
+    let pages;
+    let otherPages;
+
+    beforeAll(async () => {
+      otherPages = await Promise.all(
+        global.integrationSessions.map(async session =>
+          session.browser.newPage()
+        )
+      );
+      pages = await loadAndWait("evaljs.pdf", getSelector("55R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+      await Promise.all(otherPages.map(page => page.close()));
+    });
+
+    it("must check that focus/blur callbacks aren't called", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page], i) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          await page.click(getSelector("55R"));
+          await page.type(getSelector("55R"), "Hello", { delay: 10 });
+          await page.click(getSelector("56R"));
+          await page.waitForTimeout(10);
+
+          await page.click(getSelector("55R"));
+          await page.type(getSelector("55R"), " World", { delay: 10 });
+          await page.waitForTimeout(10);
+
+          await otherPages[i].bringToFront();
+          await otherPages[i].waitForTimeout(100);
+          await page.bringToFront();
+          await page.waitForTimeout(100);
+
+          const text = await page.$eval(getSelector("55R"), el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("Hello World");
+        })
+      );
+    });
+  });
 });
