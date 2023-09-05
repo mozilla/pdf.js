@@ -2745,7 +2745,7 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
   render() {
     this.container.classList.add("fileAttachmentAnnotation");
 
-    const { data } = this;
+    const { container, data } = this;
     let trigger;
     if (data.hasAppearance || data.fillAlpha === 0) {
       trigger = document.createElement("div");
@@ -2770,8 +2770,15 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
         }
       }
     }
-    trigger.addEventListener("dblclick", this._download.bind(this));
+    trigger.addEventListener("dblclick", this.#download.bind(this));
     this.#trigger = trigger;
+
+    const { isMac } = FeatureTest.platform;
+    container.addEventListener("keydown", evt => {
+      if (evt.key === "Enter" && (isMac ? evt.metaKey : evt.ctrlKey)) {
+        this.#download();
+      }
+    });
 
     if (!data.popupRef && this.hasPopupData) {
       this._createPopup();
@@ -2779,8 +2786,8 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
       trigger.classList.add("popupTriggerArea");
     }
 
-    this.container.append(trigger);
-    return this.container;
+    container.append(trigger);
+    return container;
   }
 
   getElementsToTriggerPopup() {
@@ -2793,11 +2800,8 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
 
   /**
    * Download the file attachment associated with this annotation.
-   *
-   * @private
-   * @memberof FileAttachmentAnnotationElement
    */
-  _download() {
+  #download() {
     this.downloadManager?.openOrDownloadData(
       this.container,
       this.content,
