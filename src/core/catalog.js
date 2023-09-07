@@ -310,7 +310,7 @@ class Catalog {
       Catalog.parseDestDictionary({
         destDict: outlineDict,
         resultObj: data,
-        docBaseUrl: this.pdfManager.docBaseUrl,
+        docBaseUrl: this.baseUrl,
         docAttachments: this.attachments,
       });
       const title = outlineDict.get("Title");
@@ -1405,7 +1405,7 @@ class Catalog {
         }
       }
     }
-    return shadow(this, "baseUrl", null);
+    return shadow(this, "baseUrl", this.pdfManager.docBaseUrl);
   }
 
   /**
