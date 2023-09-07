@@ -1758,6 +1758,11 @@ class WidgetAnnotation extends Annotation {
     data.hidden =
       this._hasFlag(data.annotationFlags, AnnotationFlag.HIDDEN) ||
       this._hasFlag(data.annotationFlags, AnnotationFlag.NOVIEW);
+
+    if(data.fieldType === 'Sig') {
+      data.isSigned = this._hasSingContent(fieldValue);
+    }
+
   }
 
   /**
@@ -2600,6 +2605,16 @@ class WidgetAnnotation extends Annotation {
 
   getFieldObject() {
     return null;
+  }
+
+  /**
+   * @private
+   * ByteRange and Contents are Required in the signature value. See Table 252 – Entries in a signature dictionary of ISO 32000 is the family of ISO standards defining the core PDF specification.
+   */
+  _hasSingContent(fieldValue) {
+    return fieldValue instanceof Dict ?
+        fieldValue.get('ByteRange')
+        && fieldValue.get('Contents') : false;
   }
 }
 

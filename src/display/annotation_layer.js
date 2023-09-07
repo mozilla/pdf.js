@@ -1510,8 +1510,8 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
 
 class SignatureWidgetAnnotationElement extends WidgetAnnotationElement {
   constructor(parameters) {
-    if(window?.PDFViewerApplicationOptions
-      && window.PDFViewerApplicationOptions.get('showSignatureWidgetAnnotation')) {
+    if(window?.PDFViewerApplicationOptions?.get('showSignatureWidgetAnnotationEmpty')
+      && !parameters.data.isSigned) {
       parameters.data.hasOwnCanvas = true;
     }
     super(parameters, { isRenderable: !!parameters.data.hasOwnCanvas });
