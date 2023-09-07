@@ -1565,6 +1565,8 @@ class AnnotationEditorUIManager {
    * Set up the drag session for moving the selected editors.
    */
   setUpDragSession() {
+    // Note: don't use any references to the editor's parent which can be null
+    // if the editor belongs to a destroyed page.
     if (!this.hasSelection) {
       return;
     }
@@ -1575,7 +1577,7 @@ class AnnotationEditorUIManager {
       this.#draggingEditors.set(editor, {
         savedX: editor.x,
         savedY: editor.y,
-        savedPageIndex: editor.parent.pageIndex,
+        savedPageIndex: editor.pageIndex,
         newX: 0,
         newY: 0,
         newPageIndex: -1,
@@ -1596,14 +1598,14 @@ class AnnotationEditorUIManager {
     this.#draggingEditors = null;
     let mustBeAddedInUndoStack = false;
 
-    for (const [{ x, y, parent }, value] of map) {
+    for (const [{ x, y, pageIndex }, value] of map) {
       value.newX = x;
       value.newY = y;
-      value.newPageIndex = parent.pageIndex;
+      value.newPageIndex = pageIndex;
       mustBeAddedInUndoStack ||=
         x !== value.savedX ||
         y !== value.savedY ||
-        parent.pageIndex !== value.savedPageIndex;
+        pageIndex !== value.savedPageIndex;
     }
 
     if (!mustBeAddedInUndoStack) {

@@ -377,7 +377,10 @@ class AnnotationEditorLayer {
       editor.isAttachedToDOM = true;
     }
 
+    // The editor must have the right position before being moved in the DOM.
+    editor.fixAndSetPosition();
     this.moveEditorInDOM(editor);
+
     editor.onceAdded();
     this.#uiManager.addToAnnotationStorage(editor);
   }
@@ -675,6 +678,8 @@ class AnnotationEditorLayer {
    */
   destroy() {
     if (this.#uiManager.getActive()?.parent === this) {
+      // We need to commit the current editor before destroying the layer.
+      this.#uiManager.commitOrRemove();
       this.#uiManager.setActiveEditor(null);
     }
 
