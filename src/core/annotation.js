@@ -1760,7 +1760,7 @@ class WidgetAnnotation extends Annotation {
       this._hasFlag(data.annotationFlags, AnnotationFlag.NOVIEW);
 
     if(data.fieldType === 'Sig') {
-      data.isSigned = this._hasSingContent(fieldValue);
+      data.isSigned = this._hasSignatureContent(fieldValue);
     }
 
   }
@@ -2609,9 +2609,12 @@ class WidgetAnnotation extends Annotation {
 
   /**
    * @private
-   * ByteRange and Contents are Required in the signature value. See Table 252 – Entries in a signature dictionary of ISO 32000 is the family of ISO standards defining the core PDF specification.
+   * @memberof WidgetAnnotation
+   * @param {any} fieldValue
+   * @returns {boolean}
+   * The method checks if there is any signature content on the annotation fieldValue. ByteRange and Contents are required in the signature value. See Table 252 – Entries in a signature dictionary of ISO 32000 is the family of ISO standards defining the core PDF specification.
    */
-  _hasSingContent(fieldValue) {
+  _hasSignatureContent(fieldValue) {
     return fieldValue instanceof Dict ?
         fieldValue.get('ByteRange')
         && fieldValue.get('Contents') : false;
