@@ -409,7 +409,7 @@ class AnnotationEditorLayer {
       }, 0);
     }
 
-    this.#accessibilityManager?.moveElementInDOM(
+    editor._structTreeParentId = this.#accessibilityManager?.moveElementInDOM(
       this.div,
       editor.div,
       editor.contentDiv,

@@ -735,6 +735,7 @@ class FreeTextEditor extends AnnotationEditor {
       pageIndex: this.pageIndex,
       rect,
       rotation: this.rotation,
+      structTreeParentId: this._structTreeParentId,
     };
 
     if (isForCopying) {

@@ -1199,6 +1199,7 @@ class InkEditor extends AnnotationEditor {
       pageIndex: this.pageIndex,
       rect,
       rotation: this.rotation,
+      structTreeParentId: this._structTreeParentId,
     };
   }
 }
