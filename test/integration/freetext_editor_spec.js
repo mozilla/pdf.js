@@ -2344,4 +2344,89 @@ describe("FreeText Editor", () => {
       );
     });
   });
+
+  describe("FreeText on several pages", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that first annotation is selected without errors", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorFreeText");
+
+          const page1Selector = `.page[data-page-number = "1"] > .annotationEditorLayer`;
+          let rect = await page.$eval(page1Selector, el => {
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+          await page.mouse.click(rect.x + 10, rect.y + 10);
+          await page.waitForTimeout(10);
+          await page.type(`${getEditorSelector(0)} .internal`, "Hello");
+
+          // Commit.
+          await page.keyboard.press("Escape");
+          await page.waitForTimeout(10);
+
+          // Go to the last page.
+          await page.keyboard.press("End");
+          await page.waitForTimeout(10);
+
+          const page14Selector = `.page[data-page-number = "14"] > .annotationEditorLayer`;
+          await page.waitForSelector(page14Selector, {
+            visible: true,
+            timeout: 0,
+          });
+          await page.waitForTimeout(10);
+
+          rect = await page.$eval(page14Selector, el => {
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+          await page.mouse.click(rect.x + 10, rect.y + 10);
+          await page.waitForTimeout(10);
+          await page.type(`${getEditorSelector(0)} .internal`, "World");
+
+          await page.keyboard.press("Escape");
+          await page.waitForTimeout(10);
+
+          for (let i = 0; i <= 13; i++) {
+            await page.keyboard.press("P");
+            await page.waitForTimeout(10);
+          }
+
+          await page.waitForSelector(getEditorSelector(0), {
+            visible: true,
+            timeout: 0,
+          });
+          await page.waitForTimeout(10);
+
+          rect = await page.$eval(getEditorSelector(0), el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return {
+              x,
+              y,
+              width,
+              height,
+            };
+          });
+          await page.mouse.click(
+            rect.x + rect.width / 2,
+            rect.y + rect.height / 2
+          );
+
+          const content = await page.$eval(getEditorSelector(0), el =>
+            el.innerText.trimEnd()
+          );
+          expect(content).withContext(`In ${browserName}`).toEqual("Hello");
+        })
+      );
+    });
+  });
 });
