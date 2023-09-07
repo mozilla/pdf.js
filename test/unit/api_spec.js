@@ -2037,6 +2037,7 @@ describe("api", function () {
       const value = "Hello World";
 
       pdfDoc.annotationStorage.setValue("2055R", { value });
+      pdfDoc.annotationStorage.setValue("2090R", { value });
 
       const data = await pdfDoc.saveDocument();
       await loadingTask.destroy();
@@ -2050,6 +2051,17 @@ describe("api", function () {
         "xfa:data.PPTC_153.Page1.PersonalInformation.TitleAndNameInformation.PersonalInfo.Surname.#text"
       );
       expect(surName.nodeValue).toEqual(value);
+
+      // The path for the date is:
+      // PPTC_153[0].Page1[0].DeclerationAndSignatures[0]
+      //            .#subform[2].currentDate[0]
+      // and it contains a class (i.e. #subform[2]) which is irrelevant in the
+      // context of datasets (it's more a template concept).
+      const date = getNamedNodeInXML(
+        datasets.node,
+        "xfa:data.PPTC_153.Page1.DeclerationAndSignatures.currentDate.#text"
+      );
+      expect(date.nodeValue).toEqual(value);
 
       await loadingTask.destroy();
     });
