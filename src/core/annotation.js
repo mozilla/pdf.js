@@ -55,7 +55,6 @@ import {
 } from "./default_appearance.js";
 import { Dict, isName, isRefsEqual, Name, Ref, RefSet } from "./primitives.js";
 import { Stream, StringStream } from "./stream.js";
-import { writeDict, writeObject } from "./writer.js";
 import { BaseStream } from "./base_stream.js";
 import { bidi } from "./bidi.js";
 import { Catalog } from "./catalog.js";
@@ -64,6 +63,7 @@ import { FileSpec } from "./file_spec.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
+import { writeObject } from "./writer.js";
 import { XFAFactory } from "./xfa/factory.js";
 
 class AnnotationFactory {
@@ -336,13 +336,7 @@ class AnnotationFactory {
             baseFont.set("Encoding", Name.get("WinAnsiEncoding"));
             const buffer = [];
             baseFontRef = xref.getNewTemporaryRef();
-            const transform = xref.encrypt
-              ? xref.encrypt.createCipherTransform(
-                  baseFontRef.num,
-                  baseFontRef.gen
-                )
-              : null;
-            await writeObject(baseFontRef, baseFont, buffer, transform);
+            await writeObject(baseFontRef, baseFont, buffer, xref);
             dependencies.push({ ref: baseFontRef, data: buffer.join("") });
           }
           promises.push(
@@ -369,19 +363,13 @@ class AnnotationFactory {
             const buffer = [];
             if (smaskStream) {
               const smaskRef = xref.getNewTemporaryRef();
-              const transform = xref.encrypt
-                ? xref.encrypt.createCipherTransform(smaskRef.num, smaskRef.gen)
-                : null;
-              await writeObject(smaskRef, smaskStream, buffer, transform);
+              await writeObject(smaskRef, smaskStream, buffer, xref);
               dependencies.push({ ref: smaskRef, data: buffer.join("") });
               imageStream.dict.set("SMask", smaskRef);
               buffer.length = 0;
             }
             const imageRef = (image.imageRef = xref.getNewTemporaryRef());
-            const transform = xref.encrypt
-              ? xref.encrypt.createCipherTransform(imageRef.num, imageRef.gen)
-              : null;
-            await writeObject(imageRef, imageStream, buffer, transform);
+            await writeObject(imageRef, imageStream, buffer, xref);
             dependencies.push({ ref: imageRef, data: buffer.join("") });
             image.imageStream = image.smaskStream = null;
           }
@@ -1634,20 +1622,14 @@ class MarkupAnnotation extends Annotation {
     if (ap) {
       const apRef = xref.getNewTemporaryRef();
       annotationDict = this.createNewDict(annotation, xref, { apRef });
-      const transform = xref.encrypt
-        ? xref.encrypt.createCipherTransform(apRef.num, apRef.gen)
-        : null;
-      await writeObject(apRef, ap, buffer, transform);
+      await writeObject(apRef, ap, buffer, xref);
       dependencies.push({ ref: apRef, data: buffer.join("") });
     } else {
       annotationDict = this.createNewDict(annotation, xref, {});
     }
 
     buffer.length = 0;
-    const transform = xref.encrypt
-      ? xref.encrypt.createCipherTransform(annotationRef.num, annotationRef.gen)
-      : null;
-    await writeObject(annotationRef, annotationDict, buffer, transform);
+    await writeObject(annotationRef, annotationDict, buffer, xref);
 
     return { ref: annotationRef, data: buffer.join("") };
   }
@@ -2063,11 +2045,6 @@ class WidgetAnnotation extends Annotation {
       dict.set("MK", maybeMK);
     }
 
-    const encrypt = xref.encrypt;
-    const originalTransform = encrypt
-      ? encrypt.createCipherTransform(this.ref.num, this.ref.gen)
-      : null;
-
     const buffer = [];
     const changes = [
       // data for the original object
@@ -2079,11 +2056,6 @@ class WidgetAnnotation extends Annotation {
       const AP = new Dict(xref);
       dict.set("AP", AP);
       AP.set("N", newRef);
-
-      let newTransform = null;
-      if (encrypt) {
-        newTransform = encrypt.createCipherTransform(newRef.num, newRef.gen);
-      }
 
       const resources = this._getSaveFieldResources(xref);
       const appearanceStream = new StringStream(appearance);
@@ -2103,7 +2075,7 @@ class WidgetAnnotation extends Annotation {
         appearanceDict.set("Matrix", rotationMatrix);
       }
 
-      await writeObject(newRef, appearanceStream, buffer, newTransform);
+      await writeObject(newRef, appearanceStream, buffer, xref);
 
       changes.push(
         // data for the new AP
@@ -2118,7 +2090,7 @@ class WidgetAnnotation extends Annotation {
     }
 
     dict.set("M", `D:${getModificationDate()}`);
-    await writeObject(this.ref, dict, buffer, originalTransform);
+    await writeObject(this.ref, dict, buffer, xref);
 
     changes[0].data = buffer.join("");
 
@@ -2980,18 +2952,8 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       dict.set("MK", maybeMK);
     }
 
-    const encrypt = evaluator.xref.encrypt;
-    let originalTransform = null;
-    if (encrypt) {
-      originalTransform = encrypt.createCipherTransform(
-        this.ref.num,
-        this.ref.gen
-      );
-    }
-
-    const buffer = [`${this.ref.num} ${this.ref.gen} obj\n`];
-    await writeDict(dict, buffer, originalTransform);
-    buffer.push("\nendobj\n");
+    const buffer = [];
+    await writeObject(this.ref, dict, buffer, evaluator.xref);
 
     return [{ ref: this.ref, data: buffer.join(""), xfa }];
   }
@@ -3034,23 +2996,16 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     };
 
     const name = Name.get(value ? this.data.buttonValue : "Off");
-    let parentBuffer = null;
-    const encrypt = evaluator.xref.encrypt;
+    const buffer = [];
+    let parentData = null;
 
     if (value) {
       if (this.parent instanceof Ref) {
         const parent = evaluator.xref.fetch(this.parent);
-        let parentTransform = null;
-        if (encrypt) {
-          parentTransform = encrypt.createCipherTransform(
-            this.parent.num,
-            this.parent.gen
-          );
-        }
         parent.set("V", name);
-        parentBuffer = [`${this.parent.num} ${this.parent.gen} obj\n`];
-        await writeDict(parent, parentBuffer, parentTransform);
-        parentBuffer.push("\nendobj\n");
+        await writeObject(this.parent, parent, buffer, evaluator.xref);
+        parentData = buffer.join("");
+        buffer.length = 0;
       } else if (this.parent instanceof Dict) {
         this.parent.set("V", name);
       }
@@ -3064,25 +3019,10 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       dict.set("MK", maybeMK);
     }
 
-    let originalTransform = null;
-    if (encrypt) {
-      originalTransform = encrypt.createCipherTransform(
-        this.ref.num,
-        this.ref.gen
-      );
-    }
-
-    const buffer = [`${this.ref.num} ${this.ref.gen} obj\n`];
-    await writeDict(dict, buffer, originalTransform);
-    buffer.push("\nendobj\n");
-
+    await writeObject(this.ref, dict, buffer, evaluator.xref);
     const newRefs = [{ ref: this.ref, data: buffer.join(""), xfa }];
-    if (parentBuffer !== null) {
-      newRefs.push({
-        ref: this.parent,
-        data: parentBuffer.join(""),
-        xfa: null,
-      });
+    if (parentData) {
+      newRefs.push({ ref: this.parent, data: parentData, xfa: null });
     }
 
     return newRefs;

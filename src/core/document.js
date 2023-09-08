@@ -321,16 +321,7 @@ class Page {
     const savedDict = pageDict.get("Annots");
     pageDict.set("Annots", annotationsArray);
     const buffer = [];
-
-    let transform = null;
-    if (this.xref.encrypt) {
-      transform = this.xref.encrypt.createCipherTransform(
-        this.ref.num,
-        this.ref.gen
-      );
-    }
-
-    await writeObject(this.ref, pageDict, buffer, transform);
+    await writeObject(this.ref, pageDict, buffer, this.xref);
     if (savedDict) {
       pageDict.set("Annots", savedDict);
     }
