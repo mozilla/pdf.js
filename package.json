@@ -1,7 +1,7 @@
 {
   "name": "pdf.js",
   "devDependencies": {
-    "@babel/core": "^7.22.11",
+    "@babel/core": "^7.22.17",
     "@babel/plugin-transform-modules-commonjs": "^7.22.11",
     "@babel/preset-env": "^7.22.14",
     "@babel/runtime": "^7.22.11",
