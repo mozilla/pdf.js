@@ -506,6 +506,7 @@ class StampEditor extends AnnotationEditor {
       rect: this.getRect(0, 0),
       rotation: this.rotation,
       isSvg: this.#isSvg,
+      structTreeParentId: this._structTreeParentId,
     };
 
     if (isForCopying) {

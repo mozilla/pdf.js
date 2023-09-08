@@ -80,6 +80,7 @@ class AnnotationEditor {
     this.annotationElementId = null;
     this._willKeepAspectRatio = false;
     this._initialOptions.isCentered = parameters.isCentered;
+    this._structTreeParentId = null;
 
     const {
       rotation,

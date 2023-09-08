@@ -2429,4 +2429,53 @@ describe("FreeText Editor", () => {
       );
     });
   });
+
+  describe("FreeText accessibility", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("bug1823296.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the parent structTree id is correct", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorFreeText");
+
+          const parentId = "p3R_mc8";
+          const rect = await page.evaluate(id => {
+            const parent = document.getElementById(id);
+            let span = null;
+            for (const child of parent.childNodes) {
+              if (child.innerText === "000.[5]") {
+                span = child;
+                break;
+              }
+            }
+            const { x, y, width, height } = span.getBoundingClientRect();
+            return { x, y, width, height };
+          }, parentId);
+          await page.mouse.click(
+            rect.x + rect.width + 5,
+            rect.y + rect.height / 2
+          );
+          await page.waitForTimeout(10);
+          await page.type(`${getEditorSelector(0)} .internal`, "Hello Wolrd");
+
+          // Commit.
+          await page.keyboard.press("Escape");
+          await page.waitForTimeout(10);
+
+          await waitForStorageEntries(page, 1);
+
+          const id = await getFirstSerialized(page, x => x.structTreeParentId);
+          expect(id).withContext(`In ${browserName}`).toEqual(parentId);
+        })
+      );
+    });
+  });
 });
