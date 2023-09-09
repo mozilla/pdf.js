@@ -310,7 +310,7 @@ class Catalog {
       Catalog.parseDestDictionary({
         destDict: outlineDict,
         resultObj: data,
-        docBaseUrl: this.pdfManager.docBaseUrl,
+        docBaseUrl: this.baseUrl,
         docAttachments: this.attachments,
       });
       const title = outlineDict.get("Title");
@@ -1405,7 +1405,7 @@ class Catalog {
         }
       }
     }
-    return shadow(this, "baseUrl", null);
+    return shadow(this, "baseUrl", this.pdfManager.docBaseUrl);
   }
 
   /**
@@ -1423,19 +1423,16 @@ class Catalog {
    * Helper function used to parse the contents of destination dictionaries.
    * @param {ParseDestDictionaryParameters} params
    */
-  static parseDestDictionary(params) {
-    const destDict = params.destDict;
+  static parseDestDictionary({
+    destDict,
+    resultObj,
+    docBaseUrl = null,
+    docAttachments = null,
+  }) {
     if (!(destDict instanceof Dict)) {
       warn("parseDestDictionary: `destDict` must be a dictionary.");
       return;
     }
-    const resultObj = params.resultObj;
-    if (typeof resultObj !== "object") {
-      warn("parseDestDictionary: `resultObj` must be an object.");
-      return;
-    }
-    const docBaseUrl = params.docBaseUrl || null;
-    const docAttachments = params.docAttachments || null;
 
     let action = destDict.get("A"),
       url,
