@@ -268,10 +268,6 @@ describe("api", function () {
     });
 
     it("creates pdf doc from non-existent URL", async function () {
-      if (!isNodeJS) {
-        // Re-enable in https://github.com/mozilla/pdf.js/issues/13061.
-        pending("Fails intermittently on Linux in browsers.");
-      }
       const loadingTask = getDocument(
         buildGetDocumentParams("non-existent.pdf")
       );
