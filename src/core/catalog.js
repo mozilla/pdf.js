@@ -84,6 +84,10 @@ class Catalog {
     this.systemFontCache = new Map();
   }
 
+  cloneDict() {
+    return this._catDict.clone();
+  }
+
   get version() {
     const version = this._catDict.get("Version");
     if (version instanceof Name) {
@@ -245,11 +249,13 @@ class Catalog {
    * @private
    */
   _readStructTreeRoot() {
-    const obj = this._catDict.get("StructTreeRoot");
+    const rawObj = this._catDict.getRaw("StructTreeRoot");
+    const obj = this.xref.fetchIfRef(rawObj);
     if (!(obj instanceof Dict)) {
       return null;
     }
-    const root = new StructTreeRoot(obj);
+
+    const root = new StructTreeRoot(obj, rawObj);
     root.init();
     return root;
   }

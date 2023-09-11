@@ -42,6 +42,7 @@ import { clearGlobalCaches } from "./cleanup_helper.js";
 import { incrementalUpdate } from "./writer.js";
 import { MessageHandler } from "../shared/message_handler.js";
 import { PDFWorkerStream } from "./worker_stream.js";
+import { StructTreeRoot } from "./struct_tree.js";
 
 class WorkerTask {
   constructor(name) {
@@ -542,24 +543,54 @@ class WorkerMessageHandler {
           pdfManager.ensureDoc("startXRef"),
           pdfManager.ensureDoc("xref"),
           pdfManager.ensureDoc("linearization"),
+          pdfManager.ensureCatalog("structTreeRoot"),
         ];
         const promises = [];
 
         const newAnnotationsByPage = !isPureXfa
           ? getNewAnnotationsMap(annotationStorage)
           : null;
-        const [stream, acroForm, acroFormRef, startXRef, xref, linearization] =
-          await Promise.all(globalPromises);
+        const [
+          stream,
+          acroForm,
+          acroFormRef,
+          startXRef,
+          xref,
+          linearization,
+          _structTreeRoot,
+        ] = await Promise.all(globalPromises);
+        const catalogRef = xref.trailer.getRaw("Root") || null;
+        let structTreeRoot;
 
         if (newAnnotationsByPage) {
+          if (!_structTreeRoot) {
+            if (
+              await StructTreeRoot.canCreateStructureTree({
+                catalogRef,
+                pdfManager,
+                newAnnotationsByPage,
+              })
+            ) {
+              structTreeRoot = null;
+            }
+          } else if (
+            await _structTreeRoot.canUpdateStructTree({
+              pdfManager,
+              newAnnotationsByPage,
+            })
+          ) {
+            structTreeRoot = _structTreeRoot;
+          }
+
           const imagePromises = AnnotationFactory.generateImages(
             annotationStorage.values(),
             xref,
             pdfManager.evaluatorOptions.isOffscreenCanvasSupported
           );
-
+          const newAnnotationPromises =
+            structTreeRoot === undefined ? promises : [];
           for (const [pageIndex, annotations] of newAnnotationsByPage) {
-            promises.push(
+            newAnnotationPromises.push(
               pdfManager.getPage(pageIndex).then(page => {
                 const task = new WorkerTask(`Save (editor): page ${pageIndex}`);
                 return page
@@ -567,6 +598,32 @@ class WorkerMessageHandler {
                   .finally(function () {
                     finishWorkerTask(task);
                   });
+              })
+            );
+          }
+          if (structTreeRoot === null) {
+            // No structTreeRoot exists, so we need to create one.
+            promises.push(
+              Promise.all(newAnnotationPromises).then(async newRefs => {
+                await StructTreeRoot.createStructureTree({
+                  newAnnotationsByPage,
+                  xref,
+                  catalogRef,
+                  pdfManager,
+                  newRefs,
+                });
+                return newRefs;
+              })
+            );
+          } else if (structTreeRoot) {
+            promises.push(
+              Promise.all(newAnnotationPromises).then(async newRefs => {
+                await structTreeRoot.updateStructureTree({
+                  newAnnotationsByPage,
+                  pdfManager,
+                  newRefs,
+                });
+                return newRefs;
               })
             );
           }
@@ -643,7 +700,7 @@ class WorkerMessageHandler {
           }
 
           newXrefInfo = {
-            rootRef: xref.trailer.getRaw("Root") || null,
+            rootRef: catalogRef,
             encryptRef: xref.trailer.getRaw("Encrypt") || null,
             newRef: xref.getNewTemporaryRef(),
             infoRef: xref.trailer.getRaw("Info") || null,
