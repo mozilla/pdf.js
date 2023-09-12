@@ -535,19 +535,21 @@ class WorkerMessageHandler {
     handler.on(
       "SaveDocument",
       async function ({ isPureXfa, numPages, annotationStorage, filename }) {
-        const promises = [
+        const globalPromises = [
           pdfManager.requestLoadedStream(),
           pdfManager.ensureCatalog("acroForm"),
           pdfManager.ensureCatalog("acroFormRef"),
           pdfManager.ensureDoc("startXRef"),
+          pdfManager.ensureDoc("xref"),
           pdfManager.ensureDoc("linearization"),
         ];
+        const promises = [];
 
         const newAnnotationsByPage = !isPureXfa
           ? getNewAnnotationsMap(annotationStorage)
           : null;
-
-        const xref = await pdfManager.ensureDoc("xref");
+        const [stream, acroForm, acroFormRef, startXRef, xref, linearization] =
+          await Promise.all(globalPromises);
 
         if (newAnnotationsByPage) {
           const imagePromises = AnnotationFactory.generateImages(
@@ -587,14 +589,7 @@ class WorkerMessageHandler {
           }
         }
 
-        return Promise.all(promises).then(function ([
-          stream,
-          acroForm,
-          acroFormRef,
-          startXRef,
-          linearization,
-          ...refs
-        ]) {
+        return Promise.all(promises).then(refs => {
           let newRefs = [];
           let xfaData = null;
           if (isPureXfa) {
