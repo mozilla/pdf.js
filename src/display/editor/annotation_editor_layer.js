@@ -398,14 +398,18 @@ class AnnotationEditorLayer {
       // re-enable them when the editor has the focus.
       editor._focusEventsAllowed = false;
       setTimeout(() => {
-        editor.div.addEventListener(
-          "focusin",
-          () => {
-            editor._focusEventsAllowed = true;
-          },
-          { once: true }
-        );
-        activeElement.focus();
+        if (!editor.div.contains(document.activeElement)) {
+          editor.div.addEventListener(
+            "focusin",
+            () => {
+              editor._focusEventsAllowed = true;
+            },
+            { once: true }
+          );
+          activeElement.focus();
+        } else {
+          editor._focusEventsAllowed = true;
+        }
       }, 0);
     }
 
