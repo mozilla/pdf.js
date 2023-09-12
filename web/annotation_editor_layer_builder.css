@@ -15,17 +15,21 @@
 
 :root {
   --outline-width: 2px;
-  --outline-color: blue;
+  --outline-color: #0060df;
+  --outline-around-width: 1px;
+  --outline-around-color: #f0f0f4;
   --focus-outline: solid var(--outline-width) var(--outline-color);
+  --unfocus-outline: solid var(--outline-width) transparent;
+  --focus-outline-around: solid var(--outline-around-width)
+    var(--outline-around-color);
   --hover-outline: dashed var(--outline-width) var(--outline-color);
   --freetext-line-height: 1.35;
   --freetext-padding: 2px;
-  --resizer-size: 8px;
+  --resizer-size: 6px;
   --resizer-shift: calc(
-    0px - var(--outline-width) - var(--resizer-size) / 2 - var(--outline-width) /
-      2
+    0px - (var(--outline-width) + var(--resizer-size)) / 2 -
+      var(--outline-around-width)
   );
-  --resizer-color: white;
   --editorFreeText-editing-cursor: text;
   /*#if COMPONENTS*/
   --editorInk-editing-cursor: pointer;
@@ -45,10 +49,8 @@
 
 @media screen and (forced-colors: active) {
   :root {
-    --outline-width: 3px;
     --outline-color: ButtonText;
-    --resizer-size: 12px;
-    --resizer-color: ButtonFace;
+    --outline-around-color: ButtonFace;
   }
 }
 
@@ -89,15 +91,6 @@
   cursor: var(--editorInk-editing-cursor);
 }
 
-.annotationEditorLayer
-  :is(.freeTextEditor, .inkEditor, .stampEditor).draggable.selectedEditor {
-  cursor: move;
-}
-
-.annotationEditorLayer .selectedEditor {
-  outline: var(--focus-outline);
-}
-
 .annotationEditorLayer :is(.freeTextEditor, .inkEditor, .stampEditor) {
   position: absolute;
   background: transparent;
@@ -107,6 +100,44 @@
   cursor: auto;
   max-width: 100%;
   max-height: 100%;
+  border: var(--unfocus-outline);
+
+  &.draggable.selectedEditor {
+    cursor: move;
+  }
+
+  &.selectedEditor {
+    border: var(--focus-outline);
+    outline: var(--focus-outline-around);
+
+    &::before {
+      /*
+        This is a workaround for the lack of support for stripes(...) (see
+        https://drafts.csswg.org/css-images-4/#stripes).
+        The outline should be composed of 1px white, 2px blue and 1px white.
+        This could be achieved in different ways:
+          - using a linear-gradient;
+          - using a box-shadow;
+          - using an outline on the selected element and an outline+border on
+            the ::before pseudo-element.
+        All these options lead to incorrect rendering likely due to rounding
+        issues.
+        That said it doesn't mean that the current is ideal, but it's the best
+        we could come up with for the moment.
+        One drawback of this approach is that we use a border on the selected
+        element which means that we must take care of it when positioning the
+        div in js (see AnnotationEditor._borderLineWidth in editor.js).
+      */
+      content: "";
+      position: absolute;
+      inset: 0;
+      border: var(--focus-outline-around);
+    }
+  }
+
+  &:hover:not(.selectedEditor) {
+    border: var(--hover-outline);
+  }
 }
 
 .annotationEditorLayer .freeTextEditor {
@@ -150,11 +181,6 @@
   user-select: auto;
 }
 
-.annotationEditorLayer
-  :is(.freeTextEditor, .inkEditor, .stampEditor):hover:not(.selectedEditor) {
-  outline: var(--hover-outline);
-}
-
 .annotationEditorLayer .inkEditor {
   width: 100%;
   height: 100%;
@@ -185,8 +211,6 @@
 .annotationEditorLayer {
   :is(.freeTextEditor, .inkEditor, .stampEditor) {
     & > .resizers {
-      width: 100%;
-      height: 100%;
       position: absolute;
       inset: 0;
 
@@ -197,9 +221,8 @@
       & > .resizer {
         width: var(--resizer-size);
         height: var(--resizer-size);
-        border-radius: 50%;
-        background: var(--resizer-color);
-        border: var(--focus-outline);
+        background: var(--outline-color);
+        border: var(--focus-outline-around);
         position: absolute;
 
         &.topLeft {
