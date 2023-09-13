@@ -340,7 +340,6 @@ class AnnotationEditor {
    */
   translateInPage(x, y) {
     this.#translate(this.pageDimensions, x, y);
-    this.moveInDOM();
     this.div.scrollIntoView({ block: "nearest" });
   }
 
@@ -398,11 +397,14 @@ class AnnotationEditor {
         break;
     }
 
-    this.x = x / pageWidth;
-    this.y = y / pageHeight;
+    this.x = x /= pageWidth;
+    this.y = y /= pageHeight;
 
-    this.div.style.left = `${(100 * this.x).toFixed(2)}%`;
-    this.div.style.top = `${(100 * this.y).toFixed(2)}%`;
+    const { style } = this.div;
+    style.left = `${(100 * x).toFixed(2)}%`;
+    style.top = `${(100 * y).toFixed(2)}%`;
+
+    this.moveInDOM();
   }
 
   static #rotatePoint(x, y, angle) {
@@ -600,7 +602,6 @@ class AnnotationEditor {
           const [parentWidth, parentHeight] = this.parentDimensions;
           this.setDims(parentWidth * newWidth, parentHeight * newHeight);
           this.fixAndSetPosition();
-          this.moveInDOM();
         },
         undo: () => {
           this.width = savedWidth;
@@ -610,7 +611,6 @@ class AnnotationEditor {
           const [parentWidth, parentHeight] = this.parentDimensions;
           this.setDims(parentWidth * savedWidth, parentHeight * savedHeight);
           this.fixAndSetPosition();
-          this.moveInDOM();
         },
         mustExec: true,
       });
@@ -856,7 +856,7 @@ class AnnotationEditor {
   }
 
   moveInDOM() {
-    this.parent.moveEditorInDOM(this);
+    this.parent?.moveEditorInDOM(this);
   }
 
   _setParentAndPosition(parent, x, y) {
@@ -864,7 +864,6 @@ class AnnotationEditor {
     this.x = x;
     this.y = y;
     this.fixAndSetPosition();
-    this.moveInDOM();
   }
 
   /**

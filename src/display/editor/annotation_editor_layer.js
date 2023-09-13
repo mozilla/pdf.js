@@ -377,10 +377,8 @@ class AnnotationEditorLayer {
       editor.isAttachedToDOM = true;
     }
 
-    // The editor must have the right position before being moved in the DOM.
+    // The editor will be correctly moved into the DOM (see fixAndSetPosition).
     editor.fixAndSetPosition();
-    this.moveEditorInDOM(editor);
-
     editor.onceAdded();
     this.#uiManager.addToAnnotationStorage(editor);
   }
