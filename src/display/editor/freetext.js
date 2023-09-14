@@ -145,6 +145,7 @@ class FreeTextEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   static initialize(l10n) {
+    super.initialize(l10n);
     this._l10nPromise = new Map(
       ["free_text2_default_content", "editor_free_text2_aria_label"].map(
         str => [str, l10n.get(str)]

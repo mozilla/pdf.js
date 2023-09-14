@@ -84,6 +84,7 @@ class InkEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   static initialize(l10n) {
+    super.initialize(l10n);
     this._l10nPromise = new Map(
       ["editor_ink_canvas_aria_label", "editor_ink2_aria_label"].map(str => [
         str,
