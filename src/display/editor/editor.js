@@ -58,6 +58,8 @@ class AnnotationEditor {
 
   #zIndex = AnnotationEditor._zIndex++;
 
+  static _borderLineWidth = -1;
+
   static _colorManager = new ColorManager();
 
   static _zIndex = 1;
@@ -124,7 +126,14 @@ class AnnotationEditor {
    * Initialize the l10n stuff for this type of editor.
    * @param {Object} _l10n
    */
-  static initialize(_l10n) {}
+  static initialize(_l10n) {
+    if (AnnotationEditor._borderLineWidth !== -1) {
+      return;
+    }
+    const style = getComputedStyle(document.documentElement);
+    AnnotationEditor._borderLineWidth =
+      parseFloat(style.getPropertyValue("--outline-width")) || 0;
+  }
 
   /**
    * Update the default parameters for this type of editor.
@@ -365,9 +374,32 @@ class AnnotationEditor {
 
     // The editor can be moved wherever the user wants, so we don't need to fix
     // the position: it'll be done when the user will release the mouse button.
-    this.div.style.left = `${(100 * this.x).toFixed(2)}%`;
-    this.div.style.top = `${(100 * this.y).toFixed(2)}%`;
+
+    let { x, y } = this;
+    const [bx, by] = this.#getBaseTranslation();
+    x += bx;
+    y += by;
+
+    this.div.style.left = `${(100 * x).toFixed(2)}%`;
+    this.div.style.top = `${(100 * y).toFixed(2)}%`;
     this.div.scrollIntoView({ block: "nearest" });
+  }
+
+  #getBaseTranslation() {
+    const [parentWidth, parentHeight] = this.parentDimensions;
+    const { _borderLineWidth } = AnnotationEditor;
+    const x = _borderLineWidth / parentWidth;
+    const y = _borderLineWidth / parentHeight;
+    switch (this.rotation) {
+      case 90:
+        return [-x, y];
+      case 180:
+        return [x, y];
+      case 270:
+        return [x, -y];
+      default:
+        return [-x, -y];
+    }
   }
 
   fixAndSetPosition() {
@@ -399,6 +431,10 @@ class AnnotationEditor {
 
     this.x = x /= pageWidth;
     this.y = y /= pageHeight;
+
+    const [bx, by] = this.#getBaseTranslation();
+    x += bx;
+    y += by;
 
     const { style } = this.div;
     style.left = `${(100 * x).toFixed(2)}%`;
