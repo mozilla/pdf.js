@@ -25,6 +25,7 @@
   --hover-outline: dashed var(--outline-width) var(--outline-color);
   --freetext-line-height: 1.35;
   --freetext-padding: 2px;
+  --resizer-bg-color: var(--outline-color);
   --resizer-size: 6px;
   --resizer-shift: calc(
     0px - (var(--outline-width) + var(--resizer-size)) / 2 -
@@ -49,8 +50,9 @@
 
 @media screen and (forced-colors: active) {
   :root {
-    --outline-color: ButtonText;
+    --outline-color: CanvasText;
     --outline-around-color: ButtonFace;
+    --resizer-bg-color: ButtonText;
   }
 }
 
@@ -221,7 +223,7 @@
       & > .resizer {
         width: var(--resizer-size);
         height: var(--resizer-size);
-        background: var(--outline-color);
+        background: var(--resizer-bg-color);
         border: var(--focus-outline-around);
         position: absolute;
 
