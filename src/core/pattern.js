@@ -411,24 +411,26 @@ class MeshStreamReader {
   }
 }
 
-const getB = (function getBClosure() {
-  function buildB(count) {
-    const lut = [];
-    for (let i = 0; i <= count; i++) {
-      const t = i / count,
-        t_ = 1 - t;
-      lut.push(
-        new Float32Array([t_ ** 3, 3 * t * t_ ** 2, 3 * t ** 2 * t_, t ** 3])
-      );
-    }
-    return lut;
-  }
-  const cache = Object.create(null);
+let bCache = Object.create(null);
 
-  return function (count) {
-    return (cache[count] ||= buildB(count));
-  };
-})();
+function buildB(count) {
+  const lut = [];
+  for (let i = 0; i <= count; i++) {
+    const t = i / count,
+      t_ = 1 - t;
+    lut.push(
+      new Float32Array([t_ ** 3, 3 * t * t_ ** 2, 3 * t ** 2 * t_, t ** 3])
+    );
+  }
+  return lut;
+}
+function getB(count) {
+  return (bCache[count] ||= buildB(count));
+}
+
+function clearPatternCaches() {
+  bCache = Object.create(null);
+}
 
 class MeshShading extends BaseShading {
   static MIN_SPLIT_PATCH_CHUNKS_AMOUNT = 3;
@@ -1000,4 +1002,4 @@ function getTilingPatternIR(operatorList, dict, color) {
   ];
 }
 
-export { getTilingPatternIR, Pattern };
+export { clearPatternCaches, getTilingPatternIR, Pattern };
