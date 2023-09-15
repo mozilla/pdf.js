@@ -527,3 +527,271 @@
     mask-image: var(--alt-text-done-image);
   }
 }
+
+#altTextDialog {
+  --dialog-bg-color: white;
+  --dialog-border-color: white;
+  --dialog-shadow: 0 2px 14px 0 rgba(58, 57, 68, 0.2);
+  --text-primary-color: #15141a;
+  --text-secondary-color: #5b5b66;
+  --hover-filter: brightness(0.9);
+  --focus-ring-color: #0060df;
+  --focus-ring-outline: 2px solid var(--focus-ring-color);
+
+  --textarea-border-color: #8f8f9d;
+  --textarea-bg-color: white;
+  --textarea-fg-color: var(--text-secondary-color);
+
+  --radio-bg-color: #f0f0f4;
+  --radio-checked-bg-color: #fbfbfe;
+  --radio-border-color: #8f8f9d;
+  --radio-checked-border-color: #0060df;
+
+  --button-cancel-bg-color: #f0f0f4;
+  --button-cancel-fg-color: var(--text-primary-color);
+  --button-cancel-border-color: var(--button-cancel-bg-color);
+  --button-cancel-hover-bg-color: var(--button-cancel-bg-color);
+  --button-cancel-hover-fg-color: var(--button-cancel-fg-color);
+  --button-cancel-hover-border-color: var(--button-cancel-hover-bg-color);
+
+  --button-save-bg-color: #0060df;
+  --button-save-fg-color: #fbfbfe;
+  --button-save-hover-bg-color: var(--button-save-bg-color);
+  --button-save-hover-fg-color: var(--button-save-fg-color);
+  --button-save-hover-border-color: var(--button-save-hover-bg-color);
+
+  @media (prefers-color-scheme: dark) {
+    --dialog-bg-color: #1c1b22;
+    --dialog-border-color: #1c1b22;
+    --dialog-shadow: 0 2px 14px 0 #15141a;
+    --text-primary-color: #fbfbfe;
+    --text-secondary-color: #cfcfd8;
+    --focus-ring-color: #00ddff;
+    --hover-filter: brightness(1.4);
+
+    --textarea-bg-color: #42414d;
+
+    --radio-bg-color: #2b2a33;
+    --radio-checked-bg-color: #15141a;
+    --radio-checked-border-color: #00ddff;
+
+    --button-cancel-bg-color: #2b2a33;
+    --button-save-bg-color: #00ddff;
+    --button-save-fg-color: #15141a;
+  }
+
+  @media screen and (forced-colors: active) {
+    --dialog-bg-color: Canvas;
+    --dialog-border-color: CanvasText;
+    --dialog-shadow: none;
+    --text-primary-color: CanvasText;
+    --text-secondary-color: CanvasText;
+    --hover-filter: none;
+    --focus-ring-color: ButtonBorder;
+
+    --textarea-border-color: ButtonBorder;
+    --textarea-bg-color: Field;
+    --textarea-fg-color: ButtonText;
+
+    --radio-bg-color: ButtonFace;
+    --radio-checked-bg-color: ButtonFace;
+    --radio-border-color: ButtonText;
+    --radio-checked-border-color: ButtonText;
+
+    --button-cancel-bg-color: ButtonFace;
+    --button-cancel-fg-color: ButtonText;
+    --button-cancel-border-color: ButtonText;
+    --button-cancel-hover-bg-color: AccentColor;
+    --button-cancel-hover-fg-color: AccentColorText;
+
+    --button-save-bg-color: ButtonText;
+    --button-save-fg-color: ButtonFace;
+    --button-save-hover-bg-color: AccentColor;
+    --button-save-hover-fg-color: AccentColorText;
+  }
+
+  font: message-box;
+  font-size: 14px;
+  line-height: 150%;
+  border-radius: 4px;
+  padding: 12px 16px;
+  border: 1px solid var(--dialog-border-color);
+  background: var(--dialog-bg-color);
+  color: var(--text-primary-color);
+  box-shadow: var(--dialog-shadow);
+
+  & #altTextContainer {
+    width: 300px;
+    height: fit-content;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+
+    & *:focus {
+      outline: var(--focus-ring-outline);
+      outline-offset: 2px;
+    }
+
+    & .radio {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+
+      & .radioButton {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        align-self: stretch;
+        align-items: center;
+
+        & input {
+          appearance: none;
+          box-sizing: border-box;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background-color: var(--radio-bg-color);
+          border: 1px solid var(--radio-border-color);
+
+          &:hover {
+            filter: var(--hover-filter);
+          }
+
+          &:checked {
+            background-color: var(--radio-checked-bg-color);
+            border: 4px solid var(--radio-checked-border-color);
+          }
+        }
+      }
+
+      & .radioLabel {
+        display: flex;
+        padding-inline-start: 24px;
+        align-items: flex-start;
+        gap: 10px;
+        align-self: stretch;
+
+        & span {
+          flex: 1 0 0;
+          font-size: 0.9em;
+          color: var(--text-secondary-color);
+        }
+      }
+    }
+
+    & #overallDescription {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      align-self: stretch;
+
+      & span {
+        align-self: stretch;
+      }
+
+      & .title {
+        font-weight: 600;
+      }
+    }
+
+    & #addDescription {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+
+      & .descriptionArea {
+        flex: 1;
+        padding-inline: 24px 10px;
+
+        textarea {
+          font: inherit;
+          width: 100%;
+          min-height: 75px;
+          padding: 8px;
+          resize: none;
+          margin: 0;
+          box-sizing: border-box;
+          border-radius: 4px;
+          border: 1px solid var(--textarea-border-color);
+          background: var(--textarea-bg-color);
+          color: var(--textarea-fg-color);
+
+          &:focus {
+            outline-offset: 0;
+            border-color: transparent;
+          }
+          &:disabled {
+            pointer-events: none;
+          }
+        }
+      }
+    }
+
+    & #buttons {
+      display: flex;
+      justify-content: flex-end;
+      align-items: flex-start;
+      gap: 8px;
+      align-self: stretch;
+
+      button {
+        border-radius: 4px;
+        border: 1px solid;
+        font: menu;
+        font-weight: 600;
+        padding: 4px 16px;
+        width: auto;
+        height: 32px;
+
+        &:focus {
+          outline: none;
+          outline-offset: 0;
+        }
+
+        &:focus-visible {
+          outline: var(--focus-ring-outline);
+          outline-offset: 2px;
+        }
+
+        &:hover {
+          cursor: pointer;
+          filter: var(--hover-filter);
+        }
+
+        &#altTextCancel {
+          color: var(--button-cancel-fg-color);
+          background-color: var(--button-cancel-bg-color);
+          border-color: var(--button-cancel-border-color);
+
+          &:hover {
+            color: var(--button-cancel-hover-fg-color);
+            background-color: var(--button-cancel-hover-bg-color);
+            border-color: var(--button-cancel-hover-border-color);
+          }
+        }
+
+        &#altTextSave {
+          color: var(--button-save-hover-fg-color);
+          background-color: var(--button-save-hover-bg-color);
+          border-color: var(--button-save-hover-border-color);
+          opacity: 1;
+
+          &:hover {
+            color: var(--button-save-hover-fg-color);
+            background-color: var(--button-save-hover-bg-color);
+            border-color: var(--button-save-hover-border-color);
+          }
+
+          &:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+          }
+        }
+      }
+    }
+  }
+}
