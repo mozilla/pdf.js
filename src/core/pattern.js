@@ -418,12 +418,7 @@ const getB = (function getBClosure() {
       const t = i / count,
         t_ = 1 - t;
       lut.push(
-        new Float32Array([
-          t_ * t_ * t_,
-          3 * t * t_ * t_,
-          3 * t * t * t_,
-          t * t * t,
-        ])
+        new Float32Array([t_ ** 3, 3 * t * t_ ** 2, 3 * t ** 2 * t_, t ** 3])
       );
     }
     return lut;
