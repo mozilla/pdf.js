@@ -62,8 +62,6 @@ class InkEditor extends AnnotationEditor {
 
   static _defaultThickness = 1;
 
-  static _l10nPromise;
-
   static _type = "ink";
 
   constructor(params) {
@@ -84,13 +82,9 @@ class InkEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   static initialize(l10n) {
-    super.initialize(l10n);
-    this._l10nPromise = new Map(
-      ["editor_ink_canvas_aria_label", "editor_ink2_aria_label"].map(str => [
-        str,
-        l10n.get(str),
-      ])
-    );
+    AnnotationEditor.initialize(l10n, {
+      strings: ["editor_ink_canvas_aria_label", "editor_ink2_aria_label"],
+    });
   }
 
   /** @inheritdoc */
@@ -743,7 +737,7 @@ class InkEditor extends AnnotationEditor {
     this.canvas.width = this.canvas.height = 0;
     this.canvas.className = "inkEditorCanvas";
 
-    InkEditor._l10nPromise
+    AnnotationEditor._l10nPromise
       .get("editor_ink_canvas_aria_label")
       .then(msg => this.canvas?.setAttribute("aria-label", msg));
     this.div.append(this.canvas);
@@ -782,7 +776,7 @@ class InkEditor extends AnnotationEditor {
 
     super.render();
 
-    InkEditor._l10nPromise
+    AnnotationEditor._l10nPromise
       .get("editor_ink2_aria_label")
       .then(msg => this.div?.setAttribute("aria-label", msg));
 

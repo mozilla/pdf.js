@@ -741,6 +741,14 @@ class AnnotationEditorUIManager {
     );
   }
 
+  get direction() {
+    return shadow(
+      this,
+      "direction",
+      getComputedStyle(this.#container).direction
+    );
+  }
+
   onPageChanging({ pageNumber }) {
     this.#currentPageIndex = pageNumber - 1;
   }
