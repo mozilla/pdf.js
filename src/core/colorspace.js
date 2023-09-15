@@ -781,14 +781,18 @@ class DeviceRgbCS extends ColorSpace {
 /**
  * The default color is `new Float32Array([0, 0, 0, 1])`.
  */
-const DeviceCmykCS = (function DeviceCmykCSClosure() {
+class DeviceCmykCS extends ColorSpace {
+  constructor() {
+    super("DeviceCMYK", 4);
+  }
+
   // The coefficients below was found using numerical analysis: the method of
   // steepest descent for the sum((f_i - color_value_i)^2) for r/g/b colors,
   // where color_value is the tabular value from the table of sampled RGB colors
   // from CMYK US Web Coated (SWOP) colorspace, and f_i is the corresponding
   // CMYK color conversion using the estimation below:
   //   f(A, B,.. N) = Acc+Bcm+Ccy+Dck+c+Fmm+Gmy+Hmk+Im+Jyy+Kyk+Ly+Mkk+Nk+255
-  function convertToRgb(src, srcOffset, srcScale, dest, destOffset) {
+  #toRgb(src, srcOffset, srcScale, dest, destOffset) {
     const c = src[srcOffset] * srcScale;
     const m = src[srcOffset + 1] * srcScale;
     const y = src[srcOffset + 2] * srcScale;
@@ -847,43 +851,35 @@ const DeviceCmykCS = (function DeviceCmykCSClosure() {
       k * (-22.33816807309886 * k - 180.12613974708367);
   }
 
-  // eslint-disable-next-line no-shadow
-  class DeviceCmykCS extends ColorSpace {
-    constructor() {
-      super("DeviceCMYK", 4);
+  getRgbItem(src, srcOffset, dest, destOffset) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      assert(
+        dest instanceof Uint8ClampedArray,
+        'DeviceCmykCS.getRgbItem: Unsupported "dest" type.'
+      );
     }
+    this.#toRgb(src, srcOffset, 1, dest, destOffset);
+  }
 
-    getRgbItem(src, srcOffset, dest, destOffset) {
-      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
-        assert(
-          dest instanceof Uint8ClampedArray,
-          'DeviceCmykCS.getRgbItem: Unsupported "dest" type.'
-        );
-      }
-      convertToRgb(src, srcOffset, 1, dest, destOffset);
+  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      assert(
+        dest instanceof Uint8ClampedArray,
+        'DeviceCmykCS.getRgbBuffer: Unsupported "dest" type.'
+      );
     }
-
-    getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
-        assert(
-          dest instanceof Uint8ClampedArray,
-          'DeviceCmykCS.getRgbBuffer: Unsupported "dest" type.'
-        );
-      }
-      const scale = 1 / ((1 << bits) - 1);
-      for (let i = 0; i < count; i++) {
-        convertToRgb(src, srcOffset, scale, dest, destOffset);
-        srcOffset += 4;
-        destOffset += 3 + alpha01;
-      }
-    }
-
-    getOutputLength(inputLength, alpha01) {
-      return ((inputLength / 4) * (3 + alpha01)) | 0;
+    const scale = 1 / ((1 << bits) - 1);
+    for (let i = 0; i < count; i++) {
+      this.#toRgb(src, srcOffset, scale, dest, destOffset);
+      srcOffset += 4;
+      destOffset += 3 + alpha01;
     }
   }
-  return DeviceCmykCS;
-})();
+
+  getOutputLength(inputLength, alpha01) {
+    return ((inputLength / 4) * (3 + alpha01)) | 0;
+  }
+}
 
 /**
  * CalGrayCS: Based on "PDF Reference, Sixth Ed", p.245
