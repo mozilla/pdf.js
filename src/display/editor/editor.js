@@ -34,6 +34,8 @@ import { FeatureTest, shadow, unreachable } from "../../shared/util.js";
  * Base class for editors.
  */
 class AnnotationEditor {
+  #altTextButton = null;
+
   #keepAspectRatio = false;
 
   #resizersDiv = null;
@@ -54,6 +56,8 @@ class AnnotationEditor {
 
   _focusEventsAllowed = true;
 
+  _l10nPromise = null;
+
   #isDraggable = false;
 
   #zIndex = AnnotationEditor._zIndex++;
@@ -63,6 +67,10 @@ class AnnotationEditor {
   static _colorManager = new ColorManager();
 
   static _zIndex = 1;
+
+  // When one of the dimensions of an editor is smaller than this value, the
+  // button to edit the alt text is visually moved outside of the editor.
+  static SMALL_EDITOR_SIZE = 0;
 
   /**
    * @param {AnnotationEditorParameters} parameters
@@ -124,9 +132,17 @@ class AnnotationEditor {
 
   /**
    * Initialize the l10n stuff for this type of editor.
-   * @param {Object} _l10n
+   * @param {Object} l10n
    */
-  static initialize(_l10n) {
+  static initialize(l10n, options = null) {
+    AnnotationEditor._l10nPromise ||= new Map(
+      ["alt_text_button_label"].map(str => [str, l10n.get(str)])
+    );
+    if (options?.strings) {
+      for (const str of options.strings) {
+        AnnotationEditor._l10nPromise.set(str, l10n.get(str));
+      }
+    }
     if (AnnotationEditor._borderLineWidth !== -1) {
       return;
     }
@@ -522,6 +538,11 @@ class AnnotationEditor {
     if (!this.#keepAspectRatio) {
       this.div.style.height = `${((100 * height) / parentHeight).toFixed(2)}%`;
     }
+    this.#altTextButton?.classList.toggle(
+      "small",
+      width < AnnotationEditor.SMALL_EDITOR_SIZE ||
+        height < AnnotationEditor.SMALL_EDITOR_SIZE
+    );
   }
 
   fixDims() {
@@ -783,6 +804,40 @@ class AnnotationEditor {
 
     this.setDims(parentWidth * newWidth, parentHeight * newHeight);
     this.fixAndSetPosition();
+  }
+
+  addAltTextButton() {
+    if (this.#altTextButton) {
+      return;
+    }
+    const altText = (this.#altTextButton = document.createElement("span"));
+    altText.className = "altText";
+    AnnotationEditor._l10nPromise.get("alt_text_button_label").then(msg => {
+      altText.textContent = msg;
+    });
+    altText.tabIndex = "0";
+    altText.addEventListener(
+      "click",
+      event => {
+        event.preventDefault();
+      },
+      { capture: true }
+    );
+    altText.addEventListener("keydown", event => {
+      if (event.target === altText && event.key === "Enter") {
+        event.preventDefault();
+      }
+    });
+    this.div.append(altText);
+    if (!AnnotationEditor.SMALL_EDITOR_SIZE) {
+      // We take the width of the alt text button and we add 40% to it to be
+      // sure to have enough space for it.
+      const PERCENT = 40;
+      AnnotationEditor.SMALL_EDITOR_SIZE = Math.min(
+        128,
+        Math.round(altText.getBoundingClientRect().width * (1 + PERCENT / 100))
+      );
+    }
   }
 
   /**
@@ -1144,13 +1199,21 @@ class AnnotationEditor {
    * When the user disables the editing mode some editors can change some of
    * their properties.
    */
-  disableEditing() {}
+  disableEditing() {
+    if (this.#altTextButton) {
+      this.#altTextButton.hidden = true;
+    }
+  }
 
   /**
    * When the user enables the editing mode some editors can change some of
    * their properties.
    */
-  enableEditing() {}
+  enableEditing() {
+    if (this.#altTextButton) {
+      this.#altTextButton.hidden = false;
+    }
+  }
 
   /**
    * The editor is about to be edited.

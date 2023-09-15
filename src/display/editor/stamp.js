@@ -50,6 +50,11 @@ class StampEditor extends AnnotationEditor {
     this.#bitmapFile = params.bitmapFile;
   }
 
+  /** @inheritdoc */
+  static initialize(l10n) {
+    AnnotationEditor.initialize(l10n);
+  }
+
   static get supportedTypes() {
     // See https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types
     // to know which types are supported by the browser.
@@ -306,6 +311,7 @@ class StampEditor extends AnnotationEditor {
       this.parent.addUndoableEditor(this);
       this.#hasBeenAddedInUndoStack = true;
     }
+    this.addAltTextButton();
   }
 
   /**
