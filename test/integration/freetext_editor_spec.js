@@ -2254,12 +2254,12 @@ describe("FreeText Editor", () => {
               return { x, y };
             });
             const oldPos = allPositions[i];
-            expect(Math.round(pos.x))
+            expect(Math.round(pos.x - oldPos.x))
               .withContext(`In ${browserName}`)
-              .toEqual(Math.round(oldPos.x + 39));
-            expect(Math.round(pos.y))
+              .toEqual(39);
+            expect(Math.round(pos.y - oldPos.y))
               .withContext(`In ${browserName}`)
-              .toEqual(Math.round(oldPos.y + 74));
+              .toEqual(74);
           }
         })
       );
