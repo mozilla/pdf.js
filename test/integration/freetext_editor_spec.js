@@ -2208,7 +2208,7 @@ describe("FreeText Editor", () => {
       await closePages(pages);
     });
 
-    it("must move several annotations", async () => {
+    fit("must move several annotations", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await page.click("#editorFreeText");
@@ -2217,6 +2217,7 @@ describe("FreeText Editor", () => {
             const { x, y } = el.getBoundingClientRect();
             return { x, y };
           });
+          console.error("rect", rect.x, rect.y);
 
           const allPositions = [];
 
@@ -2254,6 +2255,7 @@ describe("FreeText Editor", () => {
               return { x, y };
             });
             const oldPos = allPositions[i];
+            console.error(oldPos, pos);
             expect(Math.round(pos.x))
               .withContext(`In ${browserName}`)
               .toEqual(Math.round(oldPos.x + 39));
