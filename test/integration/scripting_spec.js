@@ -1996,45 +1996,37 @@ describe("Interaction", () => {
     it("must check that a field has the correct formatted value", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          const hasVisibleCanvas = await page.evaluate(_ => {
-            const elem = document.querySelector(
-              `[data-annotation-id="9R"] > canvas`
-            );
-            return elem && !elem.hasAttribute("hidden");
-          });
+          const hasVisibleCanvas = await page.$eval(
+            `[data-annotation-id="9R"] > canvas`,
+            elem => elem && !elem.hasAttribute("hidden")
+          );
           expect(hasVisibleCanvas)
             .withContext(`In ${browserName}`)
             .toEqual(true);
 
-          const hasHiddenInput = await page.evaluate(_ => {
-            const elem = document.querySelector(
-              `[data-annotation-id="9R"] > input`
-            );
-            return elem?.hasAttribute("hidden");
-          });
-
+          const hasHiddenInput = await page.$eval(
+            `[data-annotation-id="9R"] > input`,
+            elem => elem?.hasAttribute("hidden")
+          );
           expect(hasHiddenInput).withContext(`In ${browserName}`).toEqual(true);
 
           await page.click(getSelector("12R"));
-          await page.waitForTimeout(10);
+          await page.waitForSelector(
+            `[data-annotation-id="9R"] > canvas[hidden]`
+          );
 
-          const hasHiddenCanvas = await page.evaluate(_ => {
-            const elem = document.querySelector(
-              `[data-annotation-id="9R"] > canvas`
-            );
-            return elem?.hasAttribute("hidden");
-          });
+          const hasHiddenCanvas = await page.$eval(
+            `[data-annotation-id="9R"] > canvas`,
+            elem => elem?.hasAttribute("hidden")
+          );
           expect(hasHiddenCanvas)
             .withContext(`In ${browserName}`)
             .toEqual(true);
 
-          const hasVisibleInput = await page.evaluate(_ => {
-            const elem = document.querySelector(
-              `[data-annotation-id="9R"] > input`
-            );
-            return elem && !elem.hasAttribute("hidden");
-          });
-
+          const hasVisibleInput = await page.$eval(
+            `[data-annotation-id="9R"] > input`,
+            elem => elem && !elem.hasAttribute("hidden")
+          );
           expect(hasVisibleInput)
             .withContext(`In ${browserName}`)
             .toEqual(true);
