@@ -2011,7 +2011,9 @@ describe("Interaction", () => {
           expect(hasHiddenInput).withContext(`In ${browserName}`).toEqual(true);
 
           await page.click(getSelector("12R"));
-          await page.waitForTimeout(10);
+          await page.waitForSelector(
+            `[data-annotation-id="9R"] > canvas[hidden]`
+          );
 
           const hasHiddenCanvas = await page.$eval(
             `[data-annotation-id="9R"] > canvas`,
