@@ -492,7 +492,6 @@ const Stats = (function Stats() {
 
 // Manages all the debugging tools.
 const PDFBug = (function PDFBugClosure() {
-  const panelWidth = 300;
   const buttons = [];
   let activePanel = null;
 
@@ -541,7 +540,7 @@ const PDFBug = (function PDFBugClosure() {
       ui.append(panels);
 
       container.append(ui);
-      container.style.right = panelWidth + "px";
+      container.style.right = "var(--panel-width)";
 
       // Initialize all the debugging tools.
       for (const tool of this.tools) {
