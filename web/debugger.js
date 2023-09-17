@@ -491,114 +491,118 @@ const Stats = (function Stats() {
 })();
 
 // Manages all the debugging tools.
-const PDFBug = (function PDFBugClosure() {
-  const buttons = [];
-  let activePanel = null;
+class PDFBug {
+  static #buttons = [];
 
-  return {
-    tools: [FontInspector, StepperManager, Stats],
-    enable(ids) {
-      const all = ids.length === 1 && ids[0] === "all";
-      const tools = this.tools;
-      for (const tool of tools) {
-        if (all || ids.includes(tool.id)) {
-          tool.enabled = true;
-        }
-      }
-      if (!all) {
-        // Sort the tools by the order they are enabled.
-        tools.sort(function (a, b) {
-          let indexA = ids.indexOf(a.id);
-          indexA = indexA < 0 ? tools.length : indexA;
-          let indexB = ids.indexOf(b.id);
-          indexB = indexB < 0 ? tools.length : indexB;
-          return indexA - indexB;
-        });
-      }
-    },
-    init(container, ids) {
-      this.loadCSS();
-      this.enable(ids);
-      /*
-       * Basic Layout:
-       * PDFBug
-       *  Controls
-       *  Panels
-       *    Panel
-       *    Panel
-       *    ...
-       */
-      const ui = document.createElement("div");
-      ui.id = "PDFBug";
+  static #activePanel = null;
 
-      const controls = document.createElement("div");
-      controls.setAttribute("class", "controls");
-      ui.append(controls);
+  static tools = [FontInspector, StepperManager, Stats];
 
-      const panels = document.createElement("div");
-      panels.setAttribute("class", "panels");
-      ui.append(panels);
+  static enable(ids) {
+    const all = ids.length === 1 && ids[0] === "all";
+    const tools = this.tools;
+    for (const tool of tools) {
+      if (all || ids.includes(tool.id)) {
+        tool.enabled = true;
+      }
+    }
+    if (!all) {
+      // Sort the tools by the order they are enabled.
+      tools.sort(function (a, b) {
+        let indexA = ids.indexOf(a.id);
+        indexA = indexA < 0 ? tools.length : indexA;
+        let indexB = ids.indexOf(b.id);
+        indexB = indexB < 0 ? tools.length : indexB;
+        return indexA - indexB;
+      });
+    }
+  }
 
-      container.append(ui);
-      container.style.right = "var(--panel-width)";
+  static init(container, ids) {
+    this.loadCSS();
+    this.enable(ids);
+    /*
+     * Basic Layout:
+     * PDFBug
+     *  Controls
+     *  Panels
+     *    Panel
+     *    Panel
+     *    ...
+     */
+    const ui = document.createElement("div");
+    ui.id = "PDFBug";
 
-      // Initialize all the debugging tools.
-      for (const tool of this.tools) {
-        const panel = document.createElement("div");
-        const panelButton = document.createElement("button");
-        panelButton.textContent = tool.name;
-        panelButton.addEventListener("click", event => {
-          event.preventDefault();
-          this.selectPanel(tool);
-        });
-        controls.append(panelButton);
-        panels.append(panel);
-        tool.panel = panel;
-        tool.manager = this;
-        if (tool.enabled) {
-          tool.init();
-        } else {
-          panel.textContent =
-            `${tool.name} is disabled. To enable add "${tool.id}" to ` +
-            "the pdfBug parameter and refresh (separate multiple by commas).";
-        }
-        buttons.push(panelButton);
-      }
-      this.selectPanel(0);
-    },
-    loadCSS() {
-      const { url } = import.meta;
+    const controls = document.createElement("div");
+    controls.setAttribute("class", "controls");
+    ui.append(controls);
 
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = url.replace(/.js$/, ".css");
+    const panels = document.createElement("div");
+    panels.setAttribute("class", "panels");
+    ui.append(panels);
 
-      document.head.append(link);
-    },
-    cleanup() {
-      for (const tool of this.tools) {
-        if (tool.enabled) {
-          tool.cleanup();
-        }
+    container.append(ui);
+    container.style.right = "var(--panel-width)";
+
+    // Initialize all the debugging tools.
+    for (const tool of this.tools) {
+      const panel = document.createElement("div");
+      const panelButton = document.createElement("button");
+      panelButton.textContent = tool.name;
+      panelButton.addEventListener("click", event => {
+        event.preventDefault();
+        this.selectPanel(tool);
+      });
+      controls.append(panelButton);
+      panels.append(panel);
+      tool.panel = panel;
+      tool.manager = this;
+      if (tool.enabled) {
+        tool.init();
+      } else {
+        panel.textContent =
+          `${tool.name} is disabled. To enable add "${tool.id}" to ` +
+          "the pdfBug parameter and refresh (separate multiple by commas).";
       }
-    },
-    selectPanel(index) {
-      if (typeof index !== "number") {
-        index = this.tools.indexOf(index);
+      this.#buttons.push(panelButton);
+    }
+    this.selectPanel(0);
+  }
+
+  static loadCSS() {
+    const { url } = import.meta;
+
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = url.replace(/.js$/, ".css");
+
+    document.head.append(link);
+  }
+
+  static cleanup() {
+    for (const tool of this.tools) {
+      if (tool.enabled) {
+        tool.cleanup();
       }
-      if (index === activePanel) {
-        return;
-      }
-      activePanel = index;
-      for (const [j, tool] of this.tools.entries()) {
-        const isActive = j === index;
-        buttons[j].classList.toggle("active", isActive);
-        tool.active = isActive;
-        tool.panel.hidden = !isActive;
-      }
-    },
-  };
-})();
+    }
+  }
+
+  static selectPanel(index) {
+    if (typeof index !== "number") {
+      index = this.tools.indexOf(index);
+    }
+    if (index === this.#activePanel) {
+      return;
+    }
+    this.#activePanel = index;
+    for (const [j, tool] of this.tools.entries()) {
+      const isActive = j === index;
+      this.#buttons[j].classList.toggle("active", isActive);
+      tool.active = isActive;
+      tool.panel.hidden = !isActive;
+    }
+  }
+}
 
 globalThis.FontInspector = FontInspector;
 globalThis.StepperManager = StepperManager;
