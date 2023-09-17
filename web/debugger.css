@@ -13,6 +13,10 @@
  * limitations under the License.
  */
 
+:root {
+  --panel-width: 300px;
+}
+
 #PDFBug,
 #PDFBug :is(input, button, select) {
   font: message-box;
@@ -26,7 +30,7 @@
   bottom: 0;
   font-size: 10px;
   padding: 0;
-  width: 300px;
+  width: var(--panel-width);
 }
 #PDFBug .controls {
   background: rgba(238, 238, 238, 1);
