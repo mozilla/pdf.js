@@ -514,12 +514,11 @@
   &::before {
     content: "";
     mask-image: var(--alt-text-add-image);
-    mask-size: cover;
     mask-repeat: no-repeat;
     mask-position: center;
     display: inline-block;
     width: 12px;
-    height: 12px;
+    height: 13px;
     background-color: var(--alt-text-fg-color);
     margin-inline-end: 4px;
   }
