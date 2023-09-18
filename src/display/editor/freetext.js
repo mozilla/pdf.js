@@ -56,8 +56,6 @@ class FreeTextEditor extends AnnotationEditor {
 
   static _freeTextDefaultContent = "";
 
-  static _l10nPromise;
-
   static _internalPadding = 0;
 
   static _defaultColor = null;
@@ -145,13 +143,9 @@ class FreeTextEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   static initialize(l10n) {
-    super.initialize(l10n);
-    this._l10nPromise = new Map(
-      ["free_text2_default_content", "editor_free_text2_aria_label"].map(
-        str => [str, l10n.get(str)]
-      )
-    );
-
+    AnnotationEditor.initialize(l10n, {
+      strings: ["free_text2_default_content", "editor_free_text2_aria_label"],
+    });
     const style = getComputedStyle(document.documentElement);
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
@@ -548,11 +542,11 @@ class FreeTextEditor extends AnnotationEditor {
     this.editorDiv.setAttribute("id", this.#editorDivId);
     this.enableEditing();
 
-    FreeTextEditor._l10nPromise
+    AnnotationEditor._l10nPromise
       .get("editor_free_text2_aria_label")
       .then(msg => this.editorDiv?.setAttribute("aria-label", msg));
 
-    FreeTextEditor._l10nPromise
+    AnnotationEditor._l10nPromise
       .get("free_text2_default_content")
       .then(msg => this.editorDiv?.setAttribute("default-content", msg));
     this.editorDiv.contentEditable = true;

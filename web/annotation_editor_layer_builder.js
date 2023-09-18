@@ -82,6 +82,7 @@ class AnnotationEditorLayerBuilder {
     div.className = "annotationEditorLayer";
     div.tabIndex = 0;
     div.hidden = true;
+    div.dir = this.#uiManager.direction;
     this.pageDiv.append(div);
 
     this.annotationEditorLayer = new AnnotationEditorLayer({

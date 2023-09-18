@@ -82,6 +82,7 @@ const DEFAULT_L10N_STRINGS = {
   editor_free_text2_aria_label: "Text Editor",
   editor_ink2_aria_label: "Draw Editor",
   editor_ink_canvas_aria_label: "User-created image",
+  alt_text_button_label: "Alt text",
 };
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
   DEFAULT_L10N_STRINGS.print_progress_percent = "{{progress}}%";
