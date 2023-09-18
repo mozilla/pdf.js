@@ -38,21 +38,21 @@
   --editorInk-editing-cursor: url(images/cursor-editorInk.svg) 0 16, pointer;
   /*#endif*/
 
+  --alt-text-opacity: 0.8;
   --alt-text-add-image: url(images/altText_add.svg);
   --alt-text-done-image: url(images/altText_done.svg);
-  --alt-text-bg-color: #2b2a33;
+  --alt-text-bg-color: rgba(43, 42, 51, var(--alt-text-opacity));
   --alt-text-fg-color: #fbfbfe;
   --alt-text-border-color: var(--alt-text-bg-color);
-  --alt-text-hover-bg-color: #52525e;
+  --alt-text-hover-bg-color: rgba(82, 82, 94, var(--alt-text-opacity));
   --alt-text-hover-fg-color: var(--alt-text-fg-color);
   --alt-text-hover-border-color: var(--alt-text-hover-bg-color);
-  --alt-text-active-bg-color: #5b5b66;
+  --alt-text-active-bg-color: rgba(91, 91, 102, var(--alt-text-opacity));
   --alt-text-active-fg-color: var(--alt-text-fg-color);
   --alt-text-active-border-color: var(--alt-text-hover-bg-color);
   --alt-text-focus-outline-color: #0060df;
   --alt-text-focus-border-color: #f0f0f4;
   --alt-text-shadow: 0 2px 6px 0 rgba(28, 27, 34, 0.5);
-  --alt-text-opacity: 0.8;
 }
 
 @media (min-resolution: 1.1dppx) {
@@ -461,7 +461,6 @@
   font-size: 12px;
   border-radius: 4px;
   border: 1px solid var(--alt-text-border-color);
-  opacity: var(--alt-text-opacity);
   background-color: var(--alt-text-bg-color);
   box-shadow: var(--alt-text-shadow);
 
