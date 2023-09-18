@@ -32,6 +32,8 @@ async function writeObject(ref, obj, buffer, { encrypt = null }) {
     await writeDict(obj, buffer, transform);
   } else if (obj instanceof BaseStream) {
     await writeStream(obj, buffer, transform);
+  } else if (Array.isArray(obj)) {
+    await writeArray(obj, buffer, transform);
   }
   buffer.push("\nendobj\n");
 }
@@ -233,11 +235,7 @@ async function updateAcroform({
     return;
   }
 
-  // Clone the acroForm.
-  const dict = new Dict(xref);
-  for (const key of acroForm.getKeys()) {
-    dict.set(key, acroForm.getRaw(key));
-  }
+  const dict = acroForm.clone();
 
   if (hasXfa && !hasXfaDatasetsEntry) {
     // We've a XFA array which doesn't contain a datasets entry.

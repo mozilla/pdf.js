@@ -64,6 +64,10 @@ class BasePdfManager {
     return this._docBaseUrl;
   }
 
+  get catalog() {
+    return this.pdfDocument.catalog;
+  }
+
   ensureDoc(prop, args) {
     return this.ensure(this.pdfDocument, prop, args);
   }
