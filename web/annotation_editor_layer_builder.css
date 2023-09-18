@@ -367,8 +367,7 @@
       [data-main-rotation="0"] [data-editor-rotation="90"],
       [data-main-rotation="90"] [data-editor-rotation="0"],
       [data-main-rotation="180"] [data-editor-rotation="270"],
-      [data-main-rotation="270"] [data-editor-rotation="180"],
-
+      [data-main-rotation="270"] [data-editor-rotation="180"]
     ) {
     & .altText {
       rotate: 270deg;
@@ -398,8 +397,7 @@
       [data-main-rotation="0"] [data-editor-rotation="180"],
       [data-main-rotation="90"] [data-editor-rotation="90"],
       [data-main-rotation="180"] [data-editor-rotation="0"],
-      [data-main-rotation="270"] [data-editor-rotation="270"],
-
+      [data-main-rotation="270"] [data-editor-rotation="270"]
     ) {
     & .altText {
       rotate: 180deg;
@@ -419,8 +417,7 @@
       [data-main-rotation="0"] [data-editor-rotation="270"],
       [data-main-rotation="90"] [data-editor-rotation="180"],
       [data-main-rotation="180"] [data-editor-rotation="90"],
-      [data-main-rotation="270"] [data-editor-rotation="0"],
-
+      [data-main-rotation="270"] [data-editor-rotation="0"]
     ) {
     & .altText {
       rotate: 90deg;
