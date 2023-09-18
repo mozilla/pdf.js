@@ -484,7 +484,7 @@ class StampEditor extends AnnotationEditor {
       return null;
     }
     const editor = super.deserialize(data, parent, uiManager);
-    const { rect, bitmapUrl, bitmapId, isSvg } = data;
+    const { rect, bitmapUrl, bitmapId, isSvg, accessibilityData } = data;
     if (bitmapId && uiManager.imageManager.isValidId(bitmapId)) {
       editor.#bitmapId = bitmapId;
     } else {
@@ -495,6 +495,10 @@ class StampEditor extends AnnotationEditor {
     const [parentWidth, parentHeight] = editor.pageDimensions;
     editor.width = (rect[2] - rect[0]) / parentWidth;
     editor.height = (rect[3] - rect[1]) / parentHeight;
+
+    if (accessibilityData) {
+      editor.altTextData = accessibilityData;
+    }
 
     return editor;
   }
@@ -520,7 +524,13 @@ class StampEditor extends AnnotationEditor {
       // of this annotation and the clipboard doesn't support ImageBitmaps,
       // hence we serialize the bitmap to a data url.
       serialized.bitmapUrl = this.#serializeBitmap(/* toUrl = */ true);
+      serialized.accessibilityData = this.altTextData;
       return serialized;
+    }
+
+    const { decorative, altText } = this.altTextData;
+    if (!decorative && altText) {
+      serialized.accessibilityData = { type: "Figure", alt: altText };
     }
 
     if (context === null) {
