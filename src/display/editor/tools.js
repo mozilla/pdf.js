@@ -525,6 +525,8 @@ class AnnotationEditorUIManager {
 
   #allLayers = new Map();
 
+  #altTextManager = null;
+
   #annotationStorage = null;
 
   #commandManager = new CommandManager();
@@ -693,9 +695,17 @@ class AnnotationEditorUIManager {
     );
   }
 
-  constructor(container, viewer, eventBus, pdfDocument, pageColors) {
+  constructor(
+    container,
+    viewer,
+    altTextManager,
+    eventBus,
+    pdfDocument,
+    pageColors
+  ) {
     this.#container = container;
     this.#viewer = viewer;
+    this.#altTextManager = altTextManager;
     this.#eventBus = eventBus;
     this.#eventBus._on("editingaction", this.#boundOnEditingAction);
     this.#eventBus._on("pagechanging", this.#boundOnPageChanging);
@@ -711,7 +721,7 @@ class AnnotationEditorUIManager {
   }
 
   destroy() {
-    this.#removeKeyboardManager();
+    this.removeKeyboardManager();
     this.#removeFocusManager();
     this.#eventBus._off("editingaction", this.#boundOnEditingAction);
     this.#eventBus._off("pagechanging", this.#boundOnPageChanging);
@@ -726,6 +736,7 @@ class AnnotationEditorUIManager {
     this.#activeEditor = null;
     this.#selectedEditors.clear();
     this.#commandManager.destroy();
+    this.#altTextManager.destroy();
   }
 
   get hcmFilter() {
@@ -747,6 +758,10 @@ class AnnotationEditorUIManager {
       "direction",
       getComputedStyle(this.#container).direction
     );
+  }
+
+  editAltText(editor) {
+    this.#altTextManager?.editAltText(this, editor);
   }
 
   onPageChanging({ pageNumber }) {
@@ -860,13 +875,13 @@ class AnnotationEditorUIManager {
     lastActiveElement.focus();
   }
 
-  #addKeyboardManager() {
+  addKeyboardManager() {
     // The keyboard events are caught at the container level in order to be able
     // to execute some callbacks even if the current page doesn't have focus.
     window.addEventListener("keydown", this.#boundKeydown, { capture: true });
   }
 
-  #removeKeyboardManager() {
+  removeKeyboardManager() {
     window.removeEventListener("keydown", this.#boundKeydown, {
       capture: true,
     });
@@ -1039,7 +1054,7 @@ class AnnotationEditorUIManager {
   setEditingState(isEditing) {
     if (isEditing) {
       this.#addFocusManager();
-      this.#addKeyboardManager();
+      this.addKeyboardManager();
       this.#addCopyPasteListeners();
       this.#dispatchUpdateStates({
         isEditing: this.#mode !== AnnotationEditorType.NONE,
@@ -1050,7 +1065,7 @@ class AnnotationEditorUIManager {
       });
     } else {
       this.#removeFocusManager();
-      this.#removeKeyboardManager();
+      this.removeKeyboardManager();
       this.#removeCopyPasteListeners();
       this.#dispatchUpdateStates({
         isEditing: false,

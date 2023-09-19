@@ -34,7 +34,13 @@ import { FeatureTest, shadow, unreachable } from "../../shared/util.js";
  * Base class for editors.
  */
 class AnnotationEditor {
+  #altText = "";
+
+  #altTextDecorative = false;
+
   #altTextButton = null;
+
+  #altTextAriaDescription = null;
 
   #keepAspectRatio = false;
 
@@ -810,7 +816,7 @@ class AnnotationEditor {
     if (this.#altTextButton) {
       return;
     }
-    const altText = (this.#altTextButton = document.createElement("span"));
+    const altText = (this.#altTextButton = document.createElement("button"));
     altText.className = "altText";
     AnnotationEditor._l10nPromise.get("alt_text_button_label").then(msg => {
       altText.textContent = msg;
@@ -820,14 +826,17 @@ class AnnotationEditor {
       "click",
       event => {
         event.preventDefault();
+        this._uiManager.editAltText(this);
       },
       { capture: true }
     );
     altText.addEventListener("keydown", event => {
       if (event.target === altText && event.key === "Enter") {
         event.preventDefault();
+        this._uiManager.editAltText(this);
       }
     });
+    this.#setAltTextButtonState();
     this.div.append(altText);
     if (!AnnotationEditor.SMALL_EDITOR_SIZE) {
       // We take the width of the alt text button and we add 40% to it to be
@@ -838,6 +847,55 @@ class AnnotationEditor {
         Math.round(altText.getBoundingClientRect().width * (1 + PERCENT / 100))
       );
     }
+  }
+
+  #setAltTextButtonState() {
+    const button = this.#altTextButton;
+    if (!button) {
+      return;
+    }
+    // TODO: remove the aria-describedby once the tooltip stuff is implemented:
+    // the tooltip willl contain a span with the description, hence we could use
+    // it.
+    if (this.#altTextDecorative) {
+      button.classList.add("done");
+      button.title = "";
+      if (this.#altTextAriaDescription) {
+        button.removeAttribute("aria-describedby");
+        this.#altTextAriaDescription.remove();
+        this.#altTextAriaDescription = null;
+      }
+    } else if (this.#altText) {
+      button.classList.add("done");
+      button.title = this.#altText;
+      let description = this.#altTextAriaDescription;
+      if (!description) {
+        this.#altTextAriaDescription = description =
+          document.createElement("span");
+        description.className = "description";
+        const id = (description.id = `${this.id}-alt-text`);
+        button.append(description);
+        button.setAttribute("aria-describedby", id);
+      }
+      description.innerText = this.#altText;
+    }
+  }
+
+  getClientDimensions() {
+    return this.div.getBoundingClientRect();
+  }
+
+  get altTextData() {
+    return {
+      altText: this.#altText,
+      decorative: this.#altTextDecorative,
+    };
+  }
+
+  set altTextData({ altText, decorative }) {
+    this.#altText = altText;
+    this.#altTextDecorative = decorative;
+    this.#setAltTextButtonState();
   }
 
   /**

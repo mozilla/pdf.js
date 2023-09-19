@@ -528,6 +528,15 @@
   &.done::before {
     mask-image: var(--alt-text-done-image);
   }
+
+  & .description {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: none;
+    width: 0;
+    height: 0;
+  }
 }
 
 #altTextDialog {
@@ -621,6 +630,10 @@
   background: var(--dialog-bg-color);
   color: var(--text-primary-color);
   box-shadow: var(--dialog-shadow);
+
+  &.positioned {
+    margin: 0;
+  }
 
   & #altTextContainer {
     width: 300px;
@@ -728,6 +741,7 @@
           }
           &:disabled {
             pointer-events: none;
+            opacity: 0.4;
           }
         }
       }
