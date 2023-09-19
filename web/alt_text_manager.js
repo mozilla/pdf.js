@@ -84,7 +84,7 @@ class AltTextManager {
 
     this.#currentEditor = editor;
     this.#uiManager = uiManager;
-    this.#uiManager.removeKeyboardManager();
+    this.#uiManager.removeEditListeners();
     this.#eventBus._on("resize", this.#boundSetPosition);
 
     try {
@@ -158,7 +158,7 @@ class AltTextManager {
   }
 
   #close() {
-    this.#uiManager?.addKeyboardManager();
+    this.#uiManager?.addEditListeners();
     this.#eventBus._off("resize", this.#boundSetPosition);
     this.#currentEditor = null;
     this.#uiManager = null;
