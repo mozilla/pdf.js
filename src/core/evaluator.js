@@ -1581,7 +1581,7 @@ class PartialEvaluator {
       throw new FormatError("Optional content properties malformed.");
     }
 
-    const optionalContentType = optionalContent.get("Type").name;
+    const optionalContentType = optionalContent.get("Type")?.name;
     if (optionalContentType === "OCG") {
       return {
         type: optionalContentType,
