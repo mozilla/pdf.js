@@ -5590,6 +5590,14 @@
        "lastPage": 1,
        "type": "text"
     },
+    {  "id": "mupdf-707147",
+       "file": "pdfs/mupdf-707147.pdf",
+       "md5": "3b6f4e142baed0585bb52c1eb79f918a",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue5421",
        "file": "pdfs/issue5421.pdf",
        "md5": "273f6813758a2349090003c7c8a0d85e",
