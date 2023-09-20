@@ -615,8 +615,7 @@ const PDFViewerApplication = {
           appConfig.toolbar,
           eventBus,
           l10n,
-          await this._nimbusDataPromise,
-          externalServices
+          await this._nimbusDataPromise
         );
       } else {
         this.toolbar = new Toolbar(appConfig.toolbar, eventBus, l10n);
@@ -626,8 +625,7 @@ const PDFViewerApplication = {
     if (appConfig.secondaryToolbar) {
       this.secondaryToolbar = new SecondaryToolbar(
         appConfig.secondaryToolbar,
-        eventBus,
-        externalServices
+        eventBus
       );
     }
 
@@ -2141,7 +2139,6 @@ const PDFViewerApplication = {
       eventBus._off("fileinputchange", webViewerFileInputChange);
       eventBus._off("openfile", webViewerOpenFile);
     }
-
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       eventBus._off("reporttelemetry", webViewerReportTelemetry);
     }
