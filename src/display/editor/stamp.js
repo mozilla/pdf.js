@@ -311,6 +311,20 @@ class StampEditor extends AnnotationEditor {
       this.parent.addUndoableEditor(this);
       this.#hasBeenAddedInUndoStack = true;
     }
+
+    // There are multiple ways to add an image to the page, so here we just
+    // count the number of times an image is added to the page whatever the way
+    // is.
+    this._uiManager._eventBus.dispatch("reporttelemetry", {
+      source: this,
+      details: {
+        type: "editing",
+        subtype: this.editorType,
+        data: {
+          action: "inserted_image",
+        },
+      },
+    });
     this.addAltTextButton();
   }
 
