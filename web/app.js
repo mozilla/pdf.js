@@ -2012,6 +2012,7 @@ const PDFViewerApplication = {
         "annotationeditorstateschanged",
         webViewerAnnotationEditorStatesChanged
       );
+      eventBus._on("reporttelemetry", webViewerReportTelemetry);
     }
   },
 
@@ -2139,6 +2140,10 @@ const PDFViewerApplication = {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       eventBus._off("fileinputchange", webViewerFileInputChange);
       eventBus._off("openfile", webViewerOpenFile);
+    }
+
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      eventBus._off("reporttelemetry", webViewerReportTelemetry);
     }
 
     _boundEvents.beforePrint = null;
@@ -3287,6 +3292,10 @@ function beforeUnload(evt) {
 
 function webViewerAnnotationEditorStatesChanged(data) {
   PDFViewerApplication.externalServices.updateEditorStates(data);
+}
+
+function webViewerReportTelemetry({ details }) {
+  PDFViewerApplication.externalServices.reportTelemetry(details);
 }
 
 /* Abstract factory for the print service. */

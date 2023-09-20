@@ -13,16 +13,24 @@
  * limitations under the License.
  */
 
+import { shadow } from "pdfjs-lib";
+
 class AltTextManager {
   #boundUpdateUIState = this.#updateUIState.bind(this);
 
   #boundSetPosition = this.#setPosition.bind(this);
 
+  #boundPointerDown = this.#pointerDown.bind(this);
+
   #currentEditor = null;
+
+  #cancelButton;
 
   #dialog;
 
-  #eventBus = null;
+  #eventBus;
+
+  #hasUsedPointer = false;
 
   #optionDescription;
 
@@ -35,6 +43,8 @@ class AltTextManager {
   #textarea;
 
   #uiManager;
+
+  #previousAltText = null;
 
   constructor(
     {
@@ -52,12 +62,13 @@ class AltTextManager {
     this.#optionDescription = optionDescription;
     this.#optionDecorative = optionDecorative;
     this.#textarea = textarea;
+    this.#cancelButton = cancelButton;
     this.#saveButton = saveButton;
     this.#overlayManager = overlayManager;
     this.#eventBus = eventBus;
 
     dialog.addEventListener("close", this.#close.bind(this));
-    cancelButton.addEventListener("click", this.#finish.bind(this));
+    cancelButton.addEventListener("click", this.#cancel.bind(this));
     saveButton.addEventListener("click", this.#save.bind(this));
     optionDescription.addEventListener("change", this.#boundUpdateUIState);
     optionDecorative.addEventListener("change", this.#boundUpdateUIState);
@@ -66,9 +77,24 @@ class AltTextManager {
     this.#overlayManager.register(dialog);
   }
 
+  get _elements() {
+    return shadow(this, "_elements", [
+      this.#optionDescription,
+      this.#optionDecorative,
+      this.#textarea,
+      this.#saveButton,
+      this.#cancelButton,
+    ]);
+  }
+
   async editAltText(uiManager, editor) {
     if (this.#currentEditor || !editor) {
       return;
+    }
+
+    this.#hasUsedPointer = false;
+    for (const element of this._elements) {
+      element.addEventListener("pointerdown", this.#boundPointerDown);
     }
 
     const { altText, decorative } = editor.altTextData;
@@ -79,7 +105,7 @@ class AltTextManager {
       this.#optionDecorative.checked = false;
       this.#optionDescription.checked = true;
     }
-    this.#textarea.value = altText?.trim() || "";
+    this.#previousAltText = this.#textarea.value = altText?.trim() || "";
     this.#updateUIState();
 
     this.#currentEditor = editor;
@@ -157,7 +183,23 @@ class AltTextManager {
     }
   }
 
+  #cancel() {
+    this.#eventBus.dispatch("reporttelemetry", {
+      source: this,
+      details: {
+        type: "editing",
+        subtype: this.#currentEditor.editorType,
+        data: {
+          action: "alt_text_cancel",
+          alt_text_keyboard: !this.#hasUsedPointer,
+        },
+      },
+    });
+    this.#finish();
+  }
+
   #close() {
+    this.#removePointerDownListeners();
     this.#uiManager?.addEditListeners();
     this.#eventBus._off("resize", this.#boundSetPosition);
     this.#currentEditor = null;
@@ -173,11 +215,39 @@ class AltTextManager {
   }
 
   #save() {
+    const altText = this.#textarea.value.trim();
+    const decorative = this.#optionDecorative.checked;
     this.#currentEditor.altTextData = {
-      altText: this.#textarea.value.trim(),
-      decorative: this.#optionDecorative.checked,
+      altText,
+      decorative,
     };
+    this.#eventBus.dispatch("reporttelemetry", {
+      source: this,
+      details: {
+        type: "editing",
+        subtype: this.#currentEditor.editorType,
+        data: {
+          action: "alt_text_save",
+          alt_text_description: !!altText,
+          alt_text_edit:
+            this.#previousAltText && this.#previousAltText !== altText,
+          alt_text_decorative: decorative,
+          alt_text_keyboard: !this.#hasUsedPointer,
+        },
+      },
+    });
     this.#finish();
+  }
+
+  #pointerDown() {
+    this.#hasUsedPointer = true;
+    this.#removePointerDownListeners();
+  }
+
+  #removePointerDownListeners() {
+    for (const element of this._elements) {
+      element.removeEventListener("pointerdown", this.#boundPointerDown);
+    }
   }
 
   destroy() {
