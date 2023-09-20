@@ -493,7 +493,7 @@ See https://github.com/adobe-type-tools/cmap-resources
             <div id="addDescription">
               <div class="radio">
                 <div class="radioButton">
-                  <input type="radio" id="descriptionButton" name="altTextOption" tabindex="0" checked>
+                  <input type="radio" id="descriptionButton" name="altTextOption" tabindex="0" aria-describedby="descriptionAreaLabel" checked>
                   <label for="descriptionButton" data-l10n-id="editor_alt_text_add_description_label">Add a description</label>
                 </div>
                 <div class="radioLabel">
@@ -509,11 +509,11 @@ See https://github.com/adobe-type-tools/cmap-resources
             <div id="markAsDecorative">
               <div class="radio">
                 <div class="radioButton">
-                  <input type="radio" id="decorativeButton" name="altTextOption">
+                  <input type="radio" id="decorativeButton" name="altTextOption" aria-describedby="decorativeLabel">
                   <label for="decorativeButton" data-l10n-id="editor_alt_text_mark_decorative_label">Mark as decorative</label>
                 </div>
                 <div class="radioLabel">
-                  <span data-l10n-id="editor_alt_text_mark_decorative_description">
+                  <span id="decorativeLabel" data-l10n-id="editor_alt_text_mark_decorative_description">
                     This is used for ornamental images, like borders or watermarks.
                   </span>
                 </div>
