@@ -610,6 +610,9 @@
   --button-save-hover-bg-color: var(--button-save-bg-color);
   --button-save-hover-fg-color: var(--button-save-fg-color);
   --button-save-hover-border-color: var(--button-save-hover-bg-color);
+  --button-save-disabled-bg-color: var(--button-save-bg-color);
+  --button-save-disabled-fg-color: var(--button-save-fg-color);
+  --button-save-disabled-opacity: 0.4;
 
   @media (prefers-color-scheme: dark) {
     --dialog-bg-color: #1c1b22;
@@ -659,6 +662,9 @@
     --button-save-fg-color: ButtonFace;
     --button-save-hover-bg-color: AccentColor;
     --button-save-hover-fg-color: AccentColorText;
+    --button-save-disabled-bg-color: GrayText;
+    --button-save-disabled-fg-color: Canvas;
+    --button-save-disabled-opacity: 1;
   }
 
   font: message-box;
@@ -843,7 +849,9 @@
           }
 
           &:disabled {
-            opacity: 0.4;
+            color: var(--button-save-disabled-fg-color);
+            background-color: var(--button-save-disabled-bg-color);
+            opacity: var(--button-save-disabled-opacity);
             pointer-events: none;
           }
         }
