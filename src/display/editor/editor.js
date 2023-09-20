@@ -874,7 +874,7 @@ class AnnotationEditor {
       button.append(tooltip);
       button.setAttribute("aria-describedby", id);
 
-      const DELAY_TO_SHOW_TOOLTIP = 500;
+      const DELAY_TO_SHOW_TOOLTIP = 100;
       button.addEventListener("mouseenter", () => {
         this.#altTextTooltipTimeout = setTimeout(() => {
           this.#altTextTooltipTimeout = null;
@@ -898,15 +898,11 @@ class AnnotationEditor {
       });
     }
     button.classList.add("done");
-    if (this.#altTextDecorative) {
-      tooltip.innerText = await AnnotationEditor._l10nPromise.get(
-        "editor_alt_text_decorative_tooltip"
-      );
-      tooltip.classList.add("decorative");
-      return;
-    }
-    tooltip.innerText = this.#altText;
-    tooltip.classList.remove("decorative");
+    tooltip.innerText = this.#altTextDecorative
+      ? await AnnotationEditor._l10nPromise.get(
+          "editor_alt_text_decorative_tooltip"
+        )
+      : this.#altText;
   }
 
   getClientDimensions() {
