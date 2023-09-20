@@ -40,7 +40,9 @@ class AnnotationEditor {
 
   #altTextButton = null;
 
-  #altTextAriaDescription = null;
+  #altTextTooltip = null;
+
+  #altTextTooltipTimeout = null;
 
   #keepAspectRatio = false;
 
@@ -142,7 +144,10 @@ class AnnotationEditor {
    */
   static initialize(l10n, options = null) {
     AnnotationEditor._l10nPromise ||= new Map(
-      ["alt_text_button_label"].map(str => [str, l10n.get(str)])
+      [
+        "editor_alt_text_button_label",
+        "editor_alt_text_decorative_tooltip",
+      ].map(str => [str, l10n.get(str)])
     );
     if (options?.strings) {
       for (const str of options.strings) {
@@ -818,9 +823,11 @@ class AnnotationEditor {
     }
     const altText = (this.#altTextButton = document.createElement("button"));
     altText.className = "altText";
-    AnnotationEditor._l10nPromise.get("alt_text_button_label").then(msg => {
-      altText.textContent = msg;
-    });
+    AnnotationEditor._l10nPromise
+      .get("editor_alt_text_button_label")
+      .then(msg => {
+        altText.textContent = msg;
+      });
     altText.tabIndex = "0";
     altText.addEventListener(
       "click",
@@ -836,6 +843,18 @@ class AnnotationEditor {
         this._uiManager.editAltText(this);
       }
     });
+    const DELAY_TO_SHOW_TOOLTIP = 500;
+    altText.addEventListener("mouseenter", () => {
+      this.#altTextTooltipTimeout = setTimeout(() => {
+        this.#altTextTooltipTimeout = null;
+        this.#altTextTooltip?.classList.add("show");
+      }, DELAY_TO_SHOW_TOOLTIP);
+    });
+    altText.addEventListener("mouseleave", () => {
+      clearTimeout(this.#altTextTooltipTimeout);
+      this.#altTextTooltipTimeout = null;
+      this.#altTextTooltip?.classList.remove("show");
+    });
     this.#setAltTextButtonState();
     this.div.append(altText);
     if (!AnnotationEditor.SMALL_EDITOR_SIZE) {
@@ -849,36 +868,30 @@ class AnnotationEditor {
     }
   }
 
-  #setAltTextButtonState() {
+  async #setAltTextButtonState() {
     const button = this.#altTextButton;
-    if (!button) {
+    if (!button || (!this.#altTextDecorative && !this.#altText)) {
       return;
     }
-    // TODO: remove the aria-describedby once the tooltip stuff is implemented:
-    // the tooltip willl contain a span with the description, hence we could use
-    // it.
-    if (this.#altTextDecorative) {
-      button.classList.add("done");
-      button.title = "";
-      if (this.#altTextAriaDescription) {
-        button.removeAttribute("aria-describedby");
-        this.#altTextAriaDescription.remove();
-        this.#altTextAriaDescription = null;
-      }
-    } else if (this.#altText) {
-      button.classList.add("done");
-      button.title = this.#altText;
-      let description = this.#altTextAriaDescription;
-      if (!description) {
-        this.#altTextAriaDescription = description =
-          document.createElement("span");
-        description.className = "description";
-        const id = (description.id = `${this.id}-alt-text`);
-        button.append(description);
-        button.setAttribute("aria-describedby", id);
-      }
-      description.innerText = this.#altText;
+    let tooltip = this.#altTextTooltip;
+    if (!tooltip) {
+      this.#altTextTooltip = tooltip = document.createElement("span");
+      tooltip.className = "tooltip";
+      tooltip.setAttribute("role", "tooltip");
+      const id = (tooltip.id = `alt-text-tooltip-${this.id}`);
+      button.append(tooltip);
+      button.setAttribute("aria-describedby", id);
     }
+    button.classList.add("done");
+    if (this.#altTextDecorative) {
+      tooltip.innerText = await AnnotationEditor._l10nPromise.get(
+        "editor_alt_text_decorative_tooltip"
+      );
+      tooltip.classList.add("decorative");
+      return;
+    }
+    tooltip.innerText = this.#altText;
+    tooltip.classList.remove("decorative");
   }
 
   getClientDimensions() {
