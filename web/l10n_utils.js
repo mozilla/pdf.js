@@ -83,6 +83,7 @@ const DEFAULT_L10N_STRINGS = {
   editor_ink2_aria_label: "Draw Editor",
   editor_ink_canvas_aria_label: "User-created image",
   editor_alt_text_button_label: "Alt text",
+  editor_alt_text_edit_button_label: "Edit alt text",
   editor_alt_text_decorative_tooltip: "Marked as decorative",
 };
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {

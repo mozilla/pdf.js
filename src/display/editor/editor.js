@@ -150,6 +150,7 @@ class AnnotationEditor {
     AnnotationEditor._l10nPromise ||= new Map(
       [
         "editor_alt_text_button_label",
+        "editor_alt_text_edit_button_label",
         "editor_alt_text_decorative_tooltip",
       ].map(str => [str, l10n.get(str)])
     );
@@ -831,6 +832,7 @@ class AnnotationEditor {
       .get("editor_alt_text_button_label")
       .then(msg => {
         altText.textContent = msg;
+        altText.setAttribute("aria-label", msg);
       });
     altText.tabIndex = "0";
     altText.addEventListener(
@@ -865,6 +867,12 @@ class AnnotationEditor {
     if (!button || (!this.#altTextDecorative && !this.#altText)) {
       return;
     }
+    AnnotationEditor._l10nPromise
+      .get("editor_alt_text_edit_button_label")
+      .then(msg => {
+        button.setAttribute("aria-label", msg);
+      });
+
     let tooltip = this.#altTextTooltip;
     if (!tooltip) {
       this.#altTextTooltip = tooltip = document.createElement("span");
