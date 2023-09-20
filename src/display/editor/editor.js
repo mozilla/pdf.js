@@ -119,6 +119,10 @@ class AnnotationEditor {
     this.deleted = false;
   }
 
+  get editorType() {
+    return Object.getPrototypeOf(this).constructor._type;
+  }
+
   static get _defaultLineColor() {
     return shadow(
       this,
@@ -843,18 +847,6 @@ class AnnotationEditor {
         this._uiManager.editAltText(this);
       }
     });
-    const DELAY_TO_SHOW_TOOLTIP = 500;
-    altText.addEventListener("mouseenter", () => {
-      this.#altTextTooltipTimeout = setTimeout(() => {
-        this.#altTextTooltipTimeout = null;
-        this.#altTextTooltip?.classList.add("show");
-      }, DELAY_TO_SHOW_TOOLTIP);
-    });
-    altText.addEventListener("mouseleave", () => {
-      clearTimeout(this.#altTextTooltipTimeout);
-      this.#altTextTooltipTimeout = null;
-      this.#altTextTooltip?.classList.remove("show");
-    });
     this.#setAltTextButtonState();
     this.div.append(altText);
     if (!AnnotationEditor.SMALL_EDITOR_SIZE) {
@@ -881,6 +873,29 @@ class AnnotationEditor {
       const id = (tooltip.id = `alt-text-tooltip-${this.id}`);
       button.append(tooltip);
       button.setAttribute("aria-describedby", id);
+
+      const DELAY_TO_SHOW_TOOLTIP = 500;
+      button.addEventListener("mouseenter", () => {
+        this.#altTextTooltipTimeout = setTimeout(() => {
+          this.#altTextTooltipTimeout = null;
+          this.#altTextTooltip.classList.add("show");
+          this._uiManager._eventBus.dispatch("reporttelemetry", {
+            source: this,
+            details: {
+              type: "editing",
+              subtype: this.editorType,
+              data: {
+                action: "alt_text_tooltip",
+              },
+            },
+          });
+        }, DELAY_TO_SHOW_TOOLTIP);
+      });
+      button.addEventListener("mouseleave", () => {
+        clearTimeout(this.#altTextTooltipTimeout);
+        this.#altTextTooltipTimeout = null;
+        this.#altTextTooltip?.classList.remove("show");
+      });
     }
     button.classList.add("done");
     if (this.#altTextDecorative) {
