@@ -43,6 +43,7 @@ import {
   version,
 } from "../../src/display/api.js";
 import {
+  DOMSVGFactory,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
   getXfaPageViewport,
@@ -86,6 +87,7 @@ describe("pdfjs_api", function () {
       build,
       CMapCompressionType,
       createValidAbsoluteUrl,
+      DOMSVGFactory,
       FeatureTest,
       getDocument,
       getFilenameFromUrl,
