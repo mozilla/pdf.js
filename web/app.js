@@ -2736,7 +2736,11 @@ function webViewerWheel(evt) {
     // Only zoom the pages, not the entire viewer.
     evt.preventDefault();
     // NOTE: this check must be placed *after* preventDefault.
-    if (zoomDisabledTimeout || document.visibilityState === "hidden") {
+    if (
+      zoomDisabledTimeout ||
+      document.visibilityState === "hidden" ||
+      PDFViewerApplication.overlayManager.active
+    ) {
       return;
     }
 
@@ -2812,7 +2816,7 @@ function webViewerTouchStart(evt) {
   }
   evt.preventDefault();
 
-  if (evt.touches.length !== 2) {
+  if (evt.touches.length !== 2 || PDFViewerApplication.overlayManager.active) {
     PDFViewerApplication._touchInfo = null;
     return;
   }
