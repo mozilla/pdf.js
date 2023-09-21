@@ -688,7 +688,7 @@
 
   &::backdrop {
     /* This is needed to avoid to darken the image the user want to describe. */
-    display: none;
+    mask: url(#alttext-manager-mask);
   }
 
   &.positioned {
