@@ -135,7 +135,7 @@ class AltTextManager {
     const isLTR = this.#uiManager.direction === "ltr";
 
     let left = null;
-    let top = Math.max(0, y - MARGIN);
+    let top = y;
     top += Math.min(windowH - (top + dialogH), 0);
 
     if (isLTR) {
@@ -153,7 +153,7 @@ class AltTextManager {
 
     if (left === null) {
       top = null;
-      left = Math.max(0, x - MARGIN);
+      left = x;
       left += Math.min(windowW - (left + dialogW), 0);
       if (y > dialogH + MARGIN) {
         top = y - dialogH - MARGIN;
