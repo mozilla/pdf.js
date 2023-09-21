@@ -244,6 +244,7 @@ function createWebpackConfig(
     "display-svg": "src/display/stubs.js",
   };
   const viewerAlias = {
+    "web-alt_text_manager": "web/alt_text_manager.js",
     "web-annotation_editor_params": "web/annotation_editor_params.js",
     "web-com": "",
     "web-pdf_attachment_viewer": "web/pdf_attachment_viewer.js",
