@@ -13,14 +13,10 @@
  * limitations under the License.
  */
 
-import { shadow } from "pdfjs-lib";
-
 class AltTextManager {
   #boundUpdateUIState = this.#updateUIState.bind(this);
 
   #boundSetPosition = this.#setPosition.bind(this);
-
-  #boundPointerDown = this.#pointerDown.bind(this);
 
   #currentEditor = null;
 
@@ -30,7 +26,7 @@ class AltTextManager {
 
   #eventBus;
 
-  #hasUsedPointer = false;
+  #hasUsedPointer = null;
 
   #optionDescription;
 
@@ -77,25 +73,27 @@ class AltTextManager {
     this.#overlayManager.register(dialog);
   }
 
-  get _elements() {
-    return shadow(this, "_elements", [
-      this.#optionDescription,
-      this.#optionDecorative,
-      this.#textarea,
-      this.#saveButton,
-      this.#cancelButton,
-    ]);
-  }
-
   async editAltText(uiManager, editor) {
     if (this.#currentEditor || !editor) {
       return;
     }
 
-    this.#hasUsedPointer = false;
-    for (const element of this._elements) {
-      element.addEventListener("pointerdown", this.#boundPointerDown);
+    if (this.#hasUsedPointer === null) {
+      const onPointerDown = () => {
+        this.#hasUsedPointer = true;
+      };
+
+      for (const element of [
+        this.#optionDescription,
+        this.#optionDecorative,
+        this.#textarea,
+        this.#saveButton,
+        this.#cancelButton,
+      ]) {
+        element.addEventListener("pointerdown", onPointerDown);
+      }
     }
+    this.#hasUsedPointer = false;
 
     const { altText, decorative } = editor.altTextData;
     if (decorative === true) {
@@ -199,7 +197,6 @@ class AltTextManager {
   }
 
   #close() {
-    this.#removePointerDownListeners();
     this.#uiManager?.addEditListeners();
     this.#eventBus._off("resize", this.#boundSetPosition);
     this.#currentEditor = null;
@@ -237,17 +234,6 @@ class AltTextManager {
       },
     });
     this.#finish();
-  }
-
-  #pointerDown() {
-    this.#hasUsedPointer = true;
-    this.#removePointerDownListeners();
-  }
-
-  #removePointerDownListeners() {
-    for (const element of this._elements) {
-      element.removeEventListener("pointerdown", this.#boundPointerDown);
-    }
   }
 
   destroy() {
