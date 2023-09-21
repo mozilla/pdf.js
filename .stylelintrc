@@ -7,6 +7,7 @@
     "prettier/prettier": true,
 
     "block-no-empty": true,
+    "declaration-block-no-duplicate-properties": true,
     "declaration-block-no-redundant-longhand-properties": true,
     "declaration-property-value-disallowed-list": {
       "float": ["inline-start", "inline-end"]
