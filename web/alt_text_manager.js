@@ -230,7 +230,7 @@ class AltTextManager {
           action: "alt_text_save",
           alt_text_description: !!altText,
           alt_text_edit:
-            this.#previousAltText && this.#previousAltText !== altText,
+            !!this.#previousAltText && this.#previousAltText !== altText,
           alt_text_decorative: decorative,
           alt_text_keyboard: !this.#hasUsedPointer,
         },
