@@ -18,11 +18,15 @@
   --outline-color: #0060df;
   --outline-around-width: 1px;
   --outline-around-color: #f0f0f4;
+  --hover-outline-around-color: var(--outline-around-color);
   --focus-outline: solid var(--outline-width) var(--outline-color);
   --unfocus-outline: solid var(--outline-width) transparent;
   --focus-outline-around: solid var(--outline-around-width)
     var(--outline-around-color);
-  --hover-outline: dashed var(--outline-width) var(--outline-color);
+  --hover-outline-color: #8f8f9d;
+  --hover-outline: solid var(--outline-width) var(--hover-outline-color);
+  --hover-outline-around: solid var(--outline-around-width)
+    var(--hover-outline-around-color);
   --freetext-line-height: 1.35;
   --freetext-padding: 2px;
   --resizer-bg-color: var(--outline-color);
@@ -69,6 +73,8 @@
     --outline-color: CanvasText;
     --outline-around-color: ButtonFace;
     --resizer-bg-color: ButtonText;
+    --hover-outline-color: Highlight;
+    --hover-outline-around-color: SelectedItemText;
 
     --alt-text-bg-color: Canvas;
     --alt-text-fg-color: ButtonText;
@@ -126,7 +132,6 @@
 .annotationEditorLayer :is(.freeTextEditor, .inkEditor, .stampEditor) {
   position: absolute;
   background: transparent;
-  border-radius: 3px;
   z-index: 1;
   transform-origin: 0 0;
   cursor: auto;
@@ -169,6 +174,14 @@
 
   &:hover:not(.selectedEditor) {
     border: var(--hover-outline);
+    outline: var(--hover-outline-around);
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border: var(--focus-outline-around);
+    }
   }
 }
 
@@ -532,10 +545,6 @@
   & .tooltip {
     display: none;
 
-    &.decorative {
-      font-style: italic;
-    }
-
     &.show {
       --alt-text-tooltip-bg: #f0f0f4;
       --alt-text-tooltip-fg: #15141a;
@@ -668,7 +677,8 @@
   }
 
   font: message-box;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 400;
   line-height: 150%;
   border-radius: 4px;
   padding: 12px 16px;
@@ -676,6 +686,11 @@
   background: var(--dialog-bg-color);
   color: var(--text-primary-color);
   box-shadow: var(--dialog-shadow);
+
+  &::backdrop {
+    /* This is needed to avoid to darken the image the user want to describe. */
+    display: none;
+  }
 
   &.positioned {
     margin: 0;
@@ -689,7 +704,7 @@
     align-items: flex-start;
     gap: 16px;
 
-    & *:focus {
+    & *:focus-visible {
       outline: var(--focus-ring-outline);
       outline-offset: 2px;
     }
@@ -736,7 +751,7 @@
 
         & span {
           flex: 1 0 0;
-          font-size: 0.9em;
+          font-size: 11px;
           color: var(--text-secondary-color);
         }
       }
@@ -754,7 +769,9 @@
       }
 
       & .title {
-        font-weight: 600;
+        font-size: 13px;
+        font-style: normal;
+        font-weight: 590;
       }
     }
 
@@ -808,16 +825,6 @@
         padding: 4px 16px;
         width: auto;
         height: 32px;
-
-        &:focus {
-          outline: none;
-          outline-offset: 0;
-        }
-
-        &:focus-visible {
-          outline: var(--focus-ring-outline);
-          outline-offset: 2px;
-        }
 
         &:hover {
           cursor: pointer;
