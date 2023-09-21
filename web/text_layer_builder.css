@@ -86,7 +86,7 @@
   /*#if !MOZCENTRAL*/
   background: blue;
   /*#endif*/
-  background: AccentColor;
+  background: AccentColor; /* stylelint-disable-line declaration-block-no-duplicate-properties */
 }
 
 /* Avoids https://github.com/mozilla/pdf.js/issues/13840 in Chrome */
