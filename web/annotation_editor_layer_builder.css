@@ -717,7 +717,6 @@
 
       & .radioButton {
         display: flex;
-        align-items: flex-start;
         gap: 8px;
         align-self: stretch;
         align-items: center;
