@@ -42,6 +42,12 @@ function preprocess(inFilename, outFilename, defines) {
     return content.replaceAll(
       /^\s*@import\s+url\(([^)]+)\);\s*$/gm,
       function (all, url) {
+        if (defines.GECKOVIEW) {
+          switch (url) {
+            case "annotation_editor_layer_builder.css":
+              return "";
+          }
+        }
         const file = path.join(path.dirname(baseUrl), url);
         const imported = fs.readFileSync(file, "utf8").toString();
         return expandCssImports(imported, file);
