@@ -266,8 +266,7 @@
       & > .resizer {
         width: var(--resizer-size);
         height: var(--resizer-size);
-        background: var(--resizer-bg-color);
-        background-clip: content-box;
+        background: content-box var(--resizer-bg-color);
         border: var(--focus-outline-around);
         border-radius: 2px;
         position: absolute;
