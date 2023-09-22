@@ -50,6 +50,8 @@ class AltTextManager {
 
   #rectElement = null;
 
+  #container;
+
   constructor(
     {
       dialog,
@@ -59,6 +61,7 @@ class AltTextManager {
       cancelButton,
       saveButton,
     },
+    container,
     overlayManager,
     eventBus
   ) {
@@ -70,6 +73,7 @@ class AltTextManager {
     this.#saveButton = saveButton;
     this.#overlayManager = overlayManager;
     this.#eventBus = eventBus;
+    this.#container = container;
 
     dialog.addEventListener("close", this.#close.bind(this));
     cancelButton.addEventListener("click", this.#cancel.bind(this));
@@ -167,19 +171,29 @@ class AltTextManager {
     }
     const dialog = this.#dialog;
     const { style } = dialog;
+    const {
+      x: containerX,
+      y: containerY,
+      width: containerW,
+      height: containerH,
+    } = this.#container.getBoundingClientRect();
     const { innerWidth: windowW, innerHeight: windowH } = window;
     const { width: dialogW, height: dialogH } = dialog.getBoundingClientRect();
     const { x, y, width, height } = this.#currentEditor.getClientDimensions();
     const MARGIN = 10;
     const isLTR = this.#uiManager.direction === "ltr";
 
-    this.#rectElement.setAttribute("width", `${width / windowW}`);
-    this.#rectElement.setAttribute("height", `${height / windowH}`);
-    this.#rectElement.setAttribute("x", `${x / windowW}`);
-    this.#rectElement.setAttribute("y", `${y / windowH}`);
+    const xs = Math.max(x, containerX);
+    const xe = Math.min(x + width, containerX + containerW);
+    const ys = Math.max(y, containerY);
+    const ye = Math.min(y + height, containerY + containerH);
+    this.#rectElement.setAttribute("width", `${(xe - xs) / windowW}`);
+    this.#rectElement.setAttribute("height", `${(ye - ys) / windowH}`);
+    this.#rectElement.setAttribute("x", `${xs / windowW}`);
+    this.#rectElement.setAttribute("y", `${ys / windowH}`);
 
     let left = null;
-    let top = y;
+    let top = Math.max(y, 0);
     top += Math.min(windowH - (top + dialogH), 0);
 
     if (isLTR) {
@@ -197,7 +211,7 @@ class AltTextManager {
 
     if (left === null) {
       top = null;
-      left = x;
+      left = Math.max(x, 0);
       left += Math.min(windowW - (left + dialogW), 0);
       if (y > dialogH + MARGIN) {
         top = y - dialogH - MARGIN;
