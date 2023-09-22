@@ -822,18 +822,17 @@ class AnnotationEditor {
     this.fixAndSetPosition();
   }
 
-  addAltTextButton() {
+  async addAltTextButton() {
     if (this.#altTextButton) {
       return;
     }
     const altText = (this.#altTextButton = document.createElement("button"));
     altText.className = "altText";
-    AnnotationEditor._l10nPromise
-      .get("editor_alt_text_button_label")
-      .then(msg => {
-        altText.textContent = msg;
-        altText.setAttribute("aria-label", msg);
-      });
+    const msg = await AnnotationEditor._l10nPromise.get(
+      "editor_alt_text_button_label"
+    );
+    altText.textContent = msg;
+    altText.setAttribute("aria-label", msg);
     altText.tabIndex = "0";
     altText.addEventListener(
       "click",
@@ -864,7 +863,12 @@ class AnnotationEditor {
 
   async #setAltTextButtonState() {
     const button = this.#altTextButton;
-    if (!button || (!this.#altTextDecorative && !this.#altText)) {
+    if (!button) {
+      return;
+    }
+    if (!this.#altText && !this.#altTextDecorative) {
+      button.classList.remove("done");
+      this.#altTextTooltip?.remove();
       return;
     }
     AnnotationEditor._l10nPromise
@@ -879,7 +883,6 @@ class AnnotationEditor {
       tooltip.className = "tooltip";
       tooltip.setAttribute("role", "tooltip");
       const id = (tooltip.id = `alt-text-tooltip-${this.id}`);
-      button.append(tooltip);
       button.setAttribute("aria-describedby", id);
 
       const DELAY_TO_SHOW_TOOLTIP = 100;
@@ -911,6 +914,10 @@ class AnnotationEditor {
           "editor_alt_text_decorative_tooltip"
         )
       : this.#altText;
+
+    if (!tooltip.parentNode) {
+      button.append(tooltip);
+    }
   }
 
   getClientDimensions() {
@@ -1238,6 +1245,12 @@ class AnnotationEditor {
     } else {
       this._uiManager.removeEditor(this);
     }
+
+    // The editor is removed so we can remove the alt text button and if it's
+    // restored then it's up to the subclass to add it back.
+    this.#altTextButton?.remove();
+    this.#altTextButton = null;
+    this.#altTextTooltip = null;
   }
 
   /**
