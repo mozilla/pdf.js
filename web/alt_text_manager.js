@@ -307,8 +307,7 @@ class AltTextManager {
   }
 
   destroy() {
-    this.#currentEditor = null;
-    this.#uiManager = null;
+    this.#uiManager = null; // Avoid re-adding the edit listeners.
     this.#finish();
     this.#svgElement?.remove();
     this.#svgElement = this.#rectElement = null;
