@@ -127,6 +127,7 @@ class AnnotationFactory {
       ref,
       annotationGlobals,
       idFactory,
+      collectFields,
       pageIndex,
       pageRef,
     ]);
@@ -140,6 +141,7 @@ class AnnotationFactory {
     ref,
     annotationGlobals,
     idFactory,
+    collectFields = false,
     pageIndex = null,
     pageRef = null
   ) {
@@ -164,8 +166,9 @@ class AnnotationFactory {
       subtype,
       id,
       annotationGlobals,
+      collectFields,
       needAppearances:
-        pageIndex === null && acroForm.get("NeedAppearances") === true,
+        !collectFields && acroForm.get("NeedAppearances") === true,
       pageIndex,
       evaluatorOptions: pdfManager.evaluatorOptions,
       pageRef,
@@ -244,7 +247,7 @@ class AnnotationFactory {
         return new FileAttachmentAnnotation(parameters);
 
       default:
-        if (pageIndex === null) {
+        if (!collectFields) {
           if (!subtype) {
             warn("Annotation is missing the required /Subtype.");
           } else {
@@ -647,7 +650,7 @@ class Annotation {
       noHTML: isLocked && isContentLocked,
     };
 
-    if (params.pageIndex !== null) {
+    if (params.collectFields) {
       // Fields can act as container for other fields and have
       // some actions even if no Annotation inherit from them.
       // Those fields can be referenced by CO (calculation order).
