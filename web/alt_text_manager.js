@@ -52,8 +52,6 @@ class AltTextManager {
 
   #container;
 
-  #previousDecorative = null;
-
   constructor(
     {
       dialog,
@@ -82,7 +80,6 @@ class AltTextManager {
     saveButton.addEventListener("click", this.#save.bind(this));
     optionDescription.addEventListener("change", this.#boundUpdateUIState);
     optionDecorative.addEventListener("change", this.#boundUpdateUIState);
-    textarea.addEventListener("input", this.#boundUpdateUIState);
 
     this.#overlayManager.register(dialog);
   }
@@ -151,7 +148,6 @@ class AltTextManager {
       this.#optionDescription.checked = true;
     }
     this.#previousAltText = this.#textarea.value = altText?.trim() || "";
-    this.#previousDecorative = decorative;
     this.#updateUIState();
 
     this.#currentEditor = editor;
@@ -268,14 +264,7 @@ class AltTextManager {
   }
 
   #updateUIState() {
-    const altText = this.#textarea.value.trim();
-    const decorative = this.#optionDecorative.checked;
-
-    this.#textarea.disabled = decorative;
-    this.#saveButton.disabled = !(
-      this.#previousDecorative !== decorative ||
-      this.#previousAltText !== altText
-    );
+    this.#textarea.disabled = this.#optionDecorative.checked;
   }
 
   #save() {

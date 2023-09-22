@@ -932,6 +932,9 @@ class AnnotationEditor {
   }
 
   set altTextData({ altText, decorative }) {
+    if (this.#altText === altText && this.#altTextDecorative === decorative) {
+      return;
+    }
     this.#altText = altText;
     this.#altTextDecorative = decorative;
     this.#setAltTextButtonState();
