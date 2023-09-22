@@ -834,6 +834,8 @@ class AnnotationEditor {
     altText.textContent = msg;
     altText.setAttribute("aria-label", msg);
     altText.tabIndex = "0";
+    altText.addEventListener("contextmenu", AnnotationEditor.#noContextMenu);
+    altText.addEventListener("pointerdown", event => event.stopPropagation());
     altText.addEventListener(
       "click",
       event => {

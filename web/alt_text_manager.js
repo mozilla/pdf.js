@@ -78,6 +78,11 @@ class AltTextManager {
     this.#container = container;
 
     dialog.addEventListener("close", this.#close.bind(this));
+    dialog.addEventListener("contextmenu", event => {
+      if (event.target !== this.#textarea) {
+        event.preventDefault();
+      }
+    });
     cancelButton.addEventListener("click", this.#finish.bind(this));
     saveButton.addEventListener("click", this.#save.bind(this));
     optionDescription.addEventListener("change", this.#boundUpdateUIState);
