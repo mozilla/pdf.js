@@ -41,6 +41,7 @@
     "pngjs": "^7.0.0",
     "postcss": "^8.4.30",
     "postcss-dir-pseudo-class": "^8.0.0",
+    "postcss-discard-comments": "^6.0.0",
     "postcss-nesting": "^12.0.1",
     "prettier": "^3.0.3",
     "puppeteer": "^21.2.1",
