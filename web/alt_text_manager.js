@@ -52,6 +52,8 @@ class AltTextManager {
 
   #container;
 
+  #telemetryData = null;
+
   constructor(
     {
       dialog,
@@ -76,7 +78,7 @@ class AltTextManager {
     this.#container = container;
 
     dialog.addEventListener("close", this.#close.bind(this));
-    cancelButton.addEventListener("click", this.#cancel.bind(this));
+    cancelButton.addEventListener("click", this.#finish.bind(this));
     saveButton.addEventListener("click", this.#save.bind(this));
     optionDescription.addEventListener("change", this.#boundUpdateUIState);
     optionDecorative.addEventListener("change", this.#boundUpdateUIState);
@@ -240,22 +242,20 @@ class AltTextManager {
     }
   }
 
-  #cancel() {
+  #close() {
     this.#eventBus.dispatch("reporttelemetry", {
       source: this,
       details: {
         type: "editing",
         subtype: this.#currentEditor.editorType,
-        data: {
+        data: this.#telemetryData || {
           action: "alt_text_cancel",
           alt_text_keyboard: !this.#hasUsedPointer,
         },
       },
     });
-    this.#finish();
-  }
+    this.#telemetryData = null;
 
-  #close() {
     this.#removeOnClickListeners();
     this.#uiManager?.addEditListeners();
     this.#eventBus._off("resize", this.#boundSetPosition);
@@ -274,21 +274,14 @@ class AltTextManager {
       altText,
       decorative,
     };
-    this.#eventBus.dispatch("reporttelemetry", {
-      source: this,
-      details: {
-        type: "editing",
-        subtype: this.#currentEditor.editorType,
-        data: {
-          action: "alt_text_save",
-          alt_text_description: !!altText,
-          alt_text_edit:
-            !!this.#previousAltText && this.#previousAltText !== altText,
-          alt_text_decorative: decorative,
-          alt_text_keyboard: !this.#hasUsedPointer,
-        },
-      },
-    });
+    this.#telemetryData = {
+      action: "alt_text_save",
+      alt_text_description: !!altText,
+      alt_text_edit:
+        !!this.#previousAltText && this.#previousAltText !== altText,
+      alt_text_decorative: decorative,
+      alt_text_keyboard: !this.#hasUsedPointer,
+    };
     this.#finish();
   }
 
