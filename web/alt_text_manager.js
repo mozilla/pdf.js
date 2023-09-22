@@ -52,6 +52,8 @@ class AltTextManager {
 
   #container;
 
+  #previousDecorative = null;
+
   constructor(
     {
       dialog,
@@ -149,6 +151,7 @@ class AltTextManager {
       this.#optionDescription.checked = true;
     }
     this.#previousAltText = this.#textarea.value = altText?.trim() || "";
+    this.#previousDecorative = decorative;
     this.#updateUIState();
 
     this.#currentEditor = editor;
@@ -265,11 +268,14 @@ class AltTextManager {
   }
 
   #updateUIState() {
-    const hasAltText = !!this.#textarea.value.trim();
+    const altText = this.#textarea.value.trim();
     const decorative = this.#optionDecorative.checked;
 
     this.#textarea.disabled = decorative;
-    this.#saveButton.disabled = !decorative && !hasAltText;
+    this.#saveButton.disabled = !(
+      this.#previousDecorative !== decorative ||
+      this.#previousAltText !== altText
+    );
   }
 
   #save() {
