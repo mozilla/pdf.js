@@ -54,6 +54,7 @@ import {
   version,
 } from "./display/api.js";
 import {
+  DOMSVGFactory,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
   getXfaPageViewport,
@@ -90,6 +91,7 @@ export {
   build,
   CMapCompressionType,
   createValidAbsoluteUrl,
+  DOMSVGFactory,
   FeatureTest,
   getDocument,
   getFilenameFromUrl,

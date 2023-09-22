@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { shadow } from "pdfjs-lib";
+import { DOMSVGFactory, shadow } from "pdfjs-lib";
 
 class AltTextManager {
   #boundUpdateUIState = this.#updateUIState.bind(this);
@@ -45,6 +45,10 @@ class AltTextManager {
   #uiManager;
 
   #previousAltText = null;
+
+  #svgElement = null;
+
+  #rectElement = null;
 
   constructor(
     {
@@ -87,10 +91,45 @@ class AltTextManager {
     ]);
   }
 
+  #createSVGElement() {
+    if (this.#svgElement) {
+      return;
+    }
+
+    // We create a mask to add to the dialog backdrop: the idea is to have a
+    // darken background everywhere except on the editor to clearly see the
+    // picture to describe.
+
+    const svgFactory = new DOMSVGFactory();
+    const svg = (this.#svgElement = svgFactory.createElement("svg"));
+    svg.setAttribute("width", "0");
+    svg.setAttribute("height", "0");
+    const defs = svgFactory.createElement("defs");
+    svg.append(defs);
+    const mask = svgFactory.createElement("mask");
+    defs.append(mask);
+    mask.setAttribute("id", "alttext-manager-mask");
+    mask.setAttribute("maskContentUnits", "objectBoundingBox");
+    let rect = svgFactory.createElement("rect");
+    mask.append(rect);
+    rect.setAttribute("fill", "white");
+    rect.setAttribute("width", "1");
+    rect.setAttribute("height", "1");
+    rect.setAttribute("x", "0");
+    rect.setAttribute("y", "0");
+
+    rect = this.#rectElement = svgFactory.createElement("rect");
+    mask.append(rect);
+    rect.setAttribute("fill", "black");
+    this.#dialog.append(svg);
+  }
+
   async editAltText(uiManager, editor) {
     if (this.#currentEditor || !editor) {
       return;
     }
+
+    this.#createSVGElement();
 
     this.#hasUsedPointer = false;
     for (const element of this._elements) {
@@ -133,6 +172,11 @@ class AltTextManager {
     const { x, y, width, height } = this.#currentEditor.getClientDimensions();
     const MARGIN = 10;
     const isLTR = this.#uiManager.direction === "ltr";
+
+    this.#rectElement.setAttribute("width", `${width / windowW}`);
+    this.#rectElement.setAttribute("height", `${height / windowH}`);
+    this.#rectElement.setAttribute("x", `${x / windowW}`);
+    this.#rectElement.setAttribute("y", `${y / windowH}`);
 
     let left = null;
     let top = y;
@@ -254,6 +298,8 @@ class AltTextManager {
     this.#currentEditor = null;
     this.#uiManager = null;
     this.#finish();
+    this.#svgElement?.remove();
+    this.#svgElement = this.#rectElement = null;
   }
 }
 
