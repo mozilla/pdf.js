@@ -20,7 +20,7 @@ class AltTextManager {
 
   #boundSetPosition = this.#setPosition.bind(this);
 
-  #boundPointerDown = this.#pointerDown.bind(this);
+  #boundOnClick = this.#onClick.bind(this);
 
   #currentEditor = null;
 
@@ -133,7 +133,7 @@ class AltTextManager {
 
     this.#hasUsedPointer = false;
     for (const element of this._elements) {
-      element.addEventListener("pointerdown", this.#boundPointerDown);
+      element.addEventListener("click", this.#boundOnClick);
     }
 
     const { altText, decorative } = editor.altTextData;
@@ -243,7 +243,7 @@ class AltTextManager {
   }
 
   #close() {
-    this.#removePointerDownListeners();
+    this.#removeOnClickListeners();
     this.#uiManager?.addEditListeners();
     this.#eventBus._off("resize", this.#boundSetPosition);
     this.#currentEditor = null;
@@ -283,14 +283,17 @@ class AltTextManager {
     this.#finish();
   }
 
-  #pointerDown() {
+  #onClick(evt) {
+    if (evt.detail === 0) {
+      return; // The keyboard was used.
+    }
     this.#hasUsedPointer = true;
-    this.#removePointerDownListeners();
+    this.#removeOnClickListeners();
   }
 
-  #removePointerDownListeners() {
+  #removeOnClickListeners() {
     for (const element of this._elements) {
-      element.removeEventListener("pointerdown", this.#boundPointerDown);
+      element.removeEventListener("click", this.#boundOnClick);
     }
   }
 
