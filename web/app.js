@@ -509,6 +509,7 @@ const PDFViewerApplication = {
     const altTextManager = appConfig.altTextDialog
       ? new AltTextManager(
           appConfig.altTextDialog,
+          container,
           this.overlayManager,
           eventBus
         )
