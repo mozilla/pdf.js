@@ -2478,4 +2478,55 @@ describe("FreeText Editor", () => {
       );
     });
   });
+
+  describe("Bug 1854818: mouse events in a selected FreeText editor", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check the text can be selected with the mouse", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorFreeText");
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            // With Chrome something is wrong when serializing a DomRect,
+            // hence we extract the values and just return them.
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          const data = "Hello PDF.js World !!";
+          await page.mouse.click(rect.x + 100, rect.y + 100);
+          await page.waitForSelector(getEditorSelector(0), {
+            visible: true,
+          });
+          const internalEditorSelector = `${getEditorSelector(0)} .internal`;
+          await page.type(internalEditorSelector, data);
+          await page.keyboard.press("Escape");
+          await page.waitForSelector(
+            `${getEditorSelector(0)} .overlay.enabled`
+          );
+          await page.click(getEditorSelector(0), { clickCount: 2 });
+          await page.waitForSelector(
+            `${getEditorSelector(0)} .overlay:not(.enabled)`
+          );
+          await page.click(internalEditorSelector, {
+            clickCount: 3,
+          });
+          const selection = await page.evaluate(() =>
+            window.getSelection().toString()
+          );
+
+          expect(selection).withContext(`In ${browserName}`).toEqual(data);
+        })
+      );
+    });
+  });
 });
