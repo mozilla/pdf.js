@@ -21,6 +21,7 @@ const {
   waitForAnnotationEditorLayer,
 } = require("./test_utils.js");
 const path = require("path");
+const fs = require("fs");
 
 describe("Stamp Editor", () => {
   describe("Basic operations", () => {
@@ -194,6 +195,161 @@ describe("Stamp Editor", () => {
             });
             await promise;
           }
+        })
+      );
+    });
+  });
+
+  describe("Alt text dialog", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer", 50);
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the alt-text flow is correctly implemented", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorStamp");
+
+          const data = fs
+            .readFileSync(path.join(__dirname, "../images/firefox_logo.png"))
+            .toString("base64");
+          await page.evaluate(async imageData => {
+            const resp = await fetch(`data:image/png;base64,${imageData}`);
+            const blob = await resp.blob();
+
+            await navigator.clipboard.write([
+              new ClipboardItem({
+                [blob.type]: blob,
+              }),
+            ]);
+          }, data);
+
+          await page.keyboard.down("Control");
+          await page.keyboard.press("v");
+          await page.keyboard.up("Control");
+
+          // Wait for the alt-text button to be visible.
+          const buttonSelector = "#pdfjs_internal_editor_0 button.altText";
+          await page.waitForSelector(buttonSelector);
+
+          // Click on the alt-text button.
+          await page.click(buttonSelector);
+
+          // Wait for the alt-text dialog to be visible.
+          await page.waitForSelector("#altTextDialog", { visible: true });
+
+          // Click on the alt-text editor.
+          const textareaSelector = "#altTextDialog textarea";
+          await page.click(textareaSelector);
+          await page.type(textareaSelector, "Hello World");
+
+          // Click on save button.
+          const saveButtonSelector = "#altTextDialog #altTextSave";
+          await page.click(saveButtonSelector);
+
+          // Wait for the alt-text button to have the correct icon.
+          await page.waitForSelector(`${buttonSelector}.done`);
+
+          // Hover the button.
+          await page.hover(buttonSelector);
+
+          // Wait for the tooltip to be visible.
+          const tooltipSelector = `${buttonSelector} .tooltip`;
+          await page.waitForSelector(tooltipSelector, { visible: true });
+
+          let tooltipText = await page.evaluate(
+            sel => document.querySelector(`${sel}`).innerText,
+            tooltipSelector
+          );
+          expect(tooltipText).toEqual("Hello World");
+
+          // Now we change the alt-text and check that the tooltip is updated.
+          await page.click(buttonSelector);
+          await page.waitForSelector("#altTextDialog", { visible: true });
+          await page.evaluate(sel => {
+            document.querySelector(`${sel}`).value = "";
+          }, textareaSelector);
+          await page.click(textareaSelector);
+          await page.type(textareaSelector, "Dlrow Olleh");
+          await page.click(saveButtonSelector);
+          await page.waitForSelector(`${buttonSelector}.done`);
+          await page.hover(buttonSelector);
+          await page.waitForSelector(tooltipSelector, { visible: true });
+          tooltipText = await page.evaluate(
+            sel => document.querySelector(`${sel}`).innerText,
+            tooltipSelector
+          );
+          expect(tooltipText).toEqual("Dlrow Olleh");
+
+          // Now we just check that cancel didn't change anything.
+          await page.click(buttonSelector);
+          await page.waitForSelector("#altTextDialog", { visible: true });
+          await page.evaluate(sel => {
+            document.querySelector(`${sel}`).value = "";
+          }, textareaSelector);
+          await page.click(textareaSelector);
+          await page.type(textareaSelector, "Hello PDF.js");
+          const cancelButtonSelector = "#altTextDialog #altTextCancel";
+          await page.click(cancelButtonSelector);
+          await page.waitForSelector(`${buttonSelector}.done`);
+          await page.hover(buttonSelector);
+          await page.waitForSelector(tooltipSelector, { visible: true });
+          tooltipText = await page.evaluate(
+            sel => document.querySelector(`${sel}`).innerText,
+            tooltipSelector
+          );
+          // The tooltip should still be "Dlrow Olleh".
+          expect(tooltipText).toEqual("Dlrow Olleh");
+
+          // Now we switch to decorative.
+          await page.click(buttonSelector);
+          await page.waitForSelector("#altTextDialog", { visible: true });
+          const decorativeSelector = "#altTextDialog #decorativeButton";
+          await page.click(decorativeSelector);
+          await page.click(saveButtonSelector);
+          await page.waitForSelector(`${buttonSelector}.done`);
+          await page.hover(buttonSelector);
+          await page.waitForSelector(tooltipSelector, { visible: true });
+          tooltipText = await page.evaluate(
+            sel => document.querySelector(`${sel}`).innerText,
+            tooltipSelector
+          );
+          expect(tooltipText).toEqual("Marked as decorative");
+
+          // Now we switch back to non-decorative.
+          await page.click(buttonSelector);
+          await page.waitForSelector("#altTextDialog", { visible: true });
+          const descriptionSelector = "#altTextDialog #descriptionButton";
+          await page.click(descriptionSelector);
+          await page.click(saveButtonSelector);
+          await page.waitForSelector(`${buttonSelector}.done`);
+          await page.hover(buttonSelector);
+          await page.waitForSelector(tooltipSelector, { visible: true });
+          tooltipText = await page.evaluate(
+            sel => document.querySelector(`${sel}`).innerText,
+            tooltipSelector
+          );
+          expect(tooltipText).toEqual("Dlrow Olleh");
+
+          // Now we remove the alt-text and check that the tooltip is removed.
+          await page.click(buttonSelector);
+          await page.waitForSelector("#altTextDialog", { visible: true });
+          await page.evaluate(sel => {
+            document.querySelector(`${sel}`).value = "";
+          }, textareaSelector);
+          await page.click(saveButtonSelector);
+          await page.waitForSelector(`${buttonSelector}:not(.done)`);
+          await page.hover(buttonSelector);
+          await page.evaluate(
+            sel => document.querySelector(sel) === null,
+            tooltipSelector
+          );
         })
       );
     });
