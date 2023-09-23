@@ -1414,6 +1414,9 @@ describe("Interaction", () => {
             .toEqual("visible");
 
           await page.click(getSelector("44R"));
+          await page.waitForFunction(
+            `document.querySelector("[data-annotation-id='35R']").style.visibility === "hidden"`
+          );
 
           visibility = await page.$eval(
             "[data-annotation-id='35R']",
