@@ -604,13 +604,6 @@ function getVisibleElements({
   return { first, last, views: visible, ids };
 }
 
-/**
- * Event handler to suppress context menu.
- */
-function noContextMenuHandler(evt) {
-  evt.preventDefault();
-}
-
 function normalizeWheelEventDirection(evt) {
   let delta = Math.hypot(evt.deltaX, evt.deltaY);
   const angle = Math.atan2(evt.deltaY, evt.deltaX);
@@ -881,7 +874,6 @@ export {
   MAX_AUTO_SCALE,
   MAX_SCALE,
   MIN_SCALE,
-  noContextMenuHandler,
   normalizeWheelEventDelta,
   normalizeWheelEventDirection,
   OutputScale,
