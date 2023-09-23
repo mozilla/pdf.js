@@ -790,6 +790,13 @@ function isValidFetchUrl(url, baseUrl) {
 }
 
 /**
+ * Event handler to suppress context menu.
+ */
+function noContextMenu(e) {
+  e.preventDefault();
+}
+
+/**
  * @param {string} src
  * @param {boolean} [removeScriptElement]
  * @returns {Promise<void>}
@@ -1020,6 +1027,7 @@ export {
   isPdfFile,
   isValidFetchUrl,
   loadScript,
+  noContextMenu,
   PageViewport,
   PDFDateString,
   PixelsPerInch,
