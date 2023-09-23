@@ -1176,7 +1176,7 @@ describe("FreeText Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await page.click("[data-annotation-id='26R']", { clickCount: 2 });
-          await page.waitForTimeout(10);
+          await page.waitForSelector(`${getEditorSelector(0)}-editor`);
 
           const [focusedId, editable] = await page.evaluate(() => {
             const el = document.activeElement;
