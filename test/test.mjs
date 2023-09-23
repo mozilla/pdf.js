@@ -947,6 +947,8 @@ async function startBrowser(browserName, startUrl = "") {
       "gfx.canvas.accelerated": false,
       // Enable the `round` CSS function.
       "layout.css.round.enabled": true,
+      // This allow to copy some data in the clipboard.
+      "dom.events.asyncClipboard.clipboardItem": true,
     };
   }
 
