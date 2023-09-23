@@ -20,6 +20,7 @@
 
 import { bindEvents, ColorManager } from "./tools.js";
 import { FeatureTest, shadow, unreachable } from "../../shared/util.js";
+import { noContextMenu } from "../display_utils.js";
 
 /**
  * @typedef {Object} AnnotationEditorParameters
@@ -589,10 +590,6 @@ class AnnotationEditor {
     return [0, 0];
   }
 
-  static #noContextMenu(e) {
-    e.preventDefault();
-  }
-
   #createResizers() {
     if (this.#resizersDiv) {
       return;
@@ -611,7 +608,7 @@ class AnnotationEditor {
         "pointerdown",
         this.#resizerPointerdown.bind(this, name)
       );
-      div.addEventListener("contextmenu", AnnotationEditor.#noContextMenu);
+      div.addEventListener("contextmenu", noContextMenu);
     }
     this.div.prepend(this.#resizersDiv);
   }
@@ -834,7 +831,7 @@ class AnnotationEditor {
     altText.textContent = msg;
     altText.setAttribute("aria-label", msg);
     altText.tabIndex = "0";
-    altText.addEventListener("contextmenu", AnnotationEditor.#noContextMenu);
+    altText.addEventListener("contextmenu", noContextMenu);
     altText.addEventListener("pointerdown", event => event.stopPropagation());
     altText.addEventListener(
       "click",

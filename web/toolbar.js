@@ -19,10 +19,9 @@ import {
   DEFAULT_SCALE_VALUE,
   MAX_SCALE,
   MIN_SCALE,
-  noContextMenuHandler,
   toggleCheckedBtn,
 } from "./ui_utils.js";
-import { AnnotationEditorType } from "pdfjs-lib";
+import { AnnotationEditorType, noContextMenu } from "pdfjs-lib";
 
 const PAGE_NUMBER_LOADING_INDICATOR = "visiblePageIsLoading";
 
@@ -201,7 +200,7 @@ class Toolbar {
       }
     });
     // Suppress context menus for some controls.
-    scaleSelect.oncontextmenu = noContextMenuHandler;
+    scaleSelect.oncontextmenu = noContextMenu;
 
     this.eventBus._on("localized", () => {
       this.#wasLocalized = true;
