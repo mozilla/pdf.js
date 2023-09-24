@@ -169,6 +169,7 @@
       position: absolute;
       inset: 0;
       border: var(--focus-outline-around);
+      pointer-events: none;
     }
   }
 
