@@ -59,6 +59,8 @@ class AnnotationEditor {
 
   #isInEditMode = false;
 
+  #moveInDOMTimeout = null;
+
   _initialOptions = Object.create(null);
 
   _uiManager = null;
@@ -1046,7 +1048,16 @@ class AnnotationEditor {
   }
 
   moveInDOM() {
-    this.parent?.moveEditorInDOM(this);
+    // Moving the editor in the DOM can be expensive, so we wait a bit before.
+    // It's important to not block the UI (for example when changing the font
+    // size in a FreeText).
+    if (this.#moveInDOMTimeout) {
+      clearTimeout(this.#moveInDOMTimeout);
+    }
+    this.#moveInDOMTimeout = setTimeout(() => {
+      this.#moveInDOMTimeout = null;
+      this.parent?.moveEditorInDOM(this);
+    }, 0);
   }
 
   _setParentAndPosition(parent, x, y) {
@@ -1253,6 +1264,10 @@ class AnnotationEditor {
     this.#altTextButton?.remove();
     this.#altTextButton = null;
     this.#altTextTooltip = null;
+    if (this.#moveInDOMTimeout) {
+      clearTimeout(this.#moveInDOMTimeout);
+      this.#moveInDOMTimeout = null;
+    }
   }
 
   /**
