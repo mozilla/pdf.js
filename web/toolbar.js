@@ -127,20 +127,6 @@ class Toolbar {
     this.pageNumber = pageNumber;
     this.pageLabel = pageLabel;
     this.#updateUIState(false);
-
-    const queryString = window.location.search;
-    const urlParams = new URLSearchParams(queryString);
-    const bookPath = urlParams.get('file');
-    var bookName = bookPath.substring(
-      bookPath.lastIndexOf("/") + 1, 
-      bookPath.lastIndexOf(".")
-    );
-    const email = bookPath.match(new RegExp("private/(.*)/"))[1];
-    const updateCurrentPageUrl = "https://bulba.site/lib2/engine/back/update-current-page.php?book=" + 
-      bookName + "&current-page=" + pageNumber + "&email=" + email;
-    fetch(updateCurrentPageUrl, {
-      method: "GET"
-    });
   }
 
   setPagesCount(pagesCount, hasPageLabels) {

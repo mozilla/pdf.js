@@ -4,6 +4,7 @@
      */
     $book = $_GET["book"];
     $current_page = $_GET["current-page"];
+    $current_scroll = $_GET["scroll"];
     $email = $_GET["email"];
     
     $dirname = "../../shelf/private/". $email ."/curpages/";
@@ -13,5 +14,5 @@
     }
     
     $current_page_file = fopen($dirname . $book, "w") or die("Unable to open file!");
-    fwrite($current_page_file, $current_page);
+    fwrite($current_page_file, $current_page . PHP_EOL . $current_scroll);
 ?>

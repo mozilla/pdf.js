@@ -2419,6 +2419,36 @@ function webViewerUpdateViewarea({ location }) {
     PDFViewerApplication.appConfig.secondaryToolbar.viewBookmarkButton.href =
       href;
   }
+
+  saveLocationOnServer(location);
+}
+
+function saveLocationOnServer(location) {
+  
+  // get path to book ex.g. "../../../shelf/private/prefixoid@gmail.com/Turn%20The%20Ship%20Arround.pdf"
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  const bookPath = urlParams.get('file');
+
+  // get book name without file extension ex.g. "Turn%20The%20Ship%20Arround"
+  var bookName = bookPath.substring(
+    bookPath.lastIndexOf("/") + 1, 
+    bookPath.lastIndexOf(".")
+  );
+
+  const email = bookPath.match(new RegExp("private/(.*)/"))[1];
+  
+  // call backend script which updates params on server
+  const updateCurrentPageUrl = 
+    "https://bulba.site/lib2/engine/back/update-current-page.php?" + //TODO: fix hardcoded lib2 path
+    "book=" + bookName + 
+    "&current-page=" + location.pageNumber + 
+    "&scroll=" + location.top +
+    "&email=" + email;
+  fetch(updateCurrentPageUrl, {method: "GET"})
+    .then((responce) => {
+      console.log(responce);
+    });
 }
 
 function webViewerScrollModeChanged(evt) {
