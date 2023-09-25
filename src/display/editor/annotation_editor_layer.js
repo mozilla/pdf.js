@@ -73,6 +73,13 @@ class AnnotationEditorLayer {
 
   static _initialized = false;
 
+  static #editorTypes = new Map(
+    [FreeTextEditor, InkEditor, StampEditor].map(type => [
+      type._editorType,
+      type,
+    ])
+  );
+
   /**
    * @param {AnnotationEditorLayerOptions} options
    */
@@ -85,7 +92,7 @@ class AnnotationEditorLayer {
     viewport,
     l10n,
   }) {
-    const editorTypes = [FreeTextEditor, InkEditor, StampEditor];
+    const editorTypes = [...AnnotationEditorLayer.#editorTypes.values()];
     if (!AnnotationEditorLayer._initialized) {
       AnnotationEditorLayer._initialized = true;
       for (const editorType of editorTypes) {
@@ -131,18 +138,13 @@ class AnnotationEditorLayer {
     }
 
     if (mode !== AnnotationEditorType.NONE) {
-      this.div.classList.toggle(
-        "freeTextEditing",
-        mode === AnnotationEditorType.FREETEXT
-      );
-      this.div.classList.toggle(
-        "inkEditing",
-        mode === AnnotationEditorType.INK
-      );
-      this.div.classList.toggle(
-        "stampEditing",
-        mode === AnnotationEditorType.STAMP
-      );
+      const { classList } = this.div;
+      for (const editorType of AnnotationEditorLayer.#editorTypes.values()) {
+        classList.toggle(
+          `${editorType._type}Editing`,
+          mode === editorType._editorType
+        );
+      }
       this.div.hidden = false;
     }
   }
@@ -262,6 +264,11 @@ class AnnotationEditorLayer {
     if (this.isEmpty) {
       this.div.hidden = true;
     }
+    const { classList } = this.div;
+    for (const editorType of AnnotationEditorLayer.#editorTypes.values()) {
+      classList.remove(`${editorType._type}Editing`);
+    }
+
     this.#isDisabling = false;
   }
 
@@ -458,15 +465,10 @@ class AnnotationEditorLayer {
    * @returns {AnnotationEditor}
    */
   #createNewEditor(params) {
-    switch (this.#uiManager.getMode()) {
-      case AnnotationEditorType.FREETEXT:
-        return new FreeTextEditor(params);
-      case AnnotationEditorType.INK:
-        return new InkEditor(params);
-      case AnnotationEditorType.STAMP:
-        return new StampEditor(params);
-    }
-    return null;
+    const editorType = AnnotationEditorLayer.#editorTypes.get(
+      this.#uiManager.getMode()
+    );
+    return editorType ? new editorType.prototype.constructor(params) : null;
   }
 
   /**
@@ -497,18 +499,14 @@ class AnnotationEditorLayer {
   /**
    * Create a new editor
    * @param {Object} data
-   * @returns {AnnotationEditor}
+   * @returns {AnnotationEditor | null}
    */
   deserialize(data) {
-    switch (data.annotationType ?? data.annotationEditorType) {
-      case AnnotationEditorType.FREETEXT:
-        return FreeTextEditor.deserialize(data, this, this.#uiManager);
-      case AnnotationEditorType.INK:
-        return InkEditor.deserialize(data, this, this.#uiManager);
-      case AnnotationEditorType.STAMP:
-        return StampEditor.deserialize(data, this, this.#uiManager);
-    }
-    return null;
+    return (
+      AnnotationEditorLayer.#editorTypes
+        .get(data.annotationType ?? data.annotationEditorType)
+        ?.deserialize(data, this, this.#uiManager) || null
+    );
   }
 
   /**

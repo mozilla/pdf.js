@@ -44,6 +44,8 @@ class StampEditor extends AnnotationEditor {
 
   static _type = "stamp";
 
+  static _editorType = AnnotationEditorType.STAMP;
+
   constructor(params) {
     super({ ...params, name: "stampEditor" });
     this.#bitmapUrl = params.bitmapUrl;

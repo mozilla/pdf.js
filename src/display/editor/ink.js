@@ -63,6 +63,8 @@ class InkEditor extends AnnotationEditor {
 
   static _type = "ink";
 
+  static _editorType = AnnotationEditorType.INK;
+
   constructor(params) {
     super({ ...params, name: "inkEditor" });
     this.color = params.color || null;

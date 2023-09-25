@@ -121,7 +121,7 @@
   height: 100%;
 }
 
-.annotationEditorLayer.freeTextEditing {
+.annotationEditorLayer.freetextEditing {
   cursor: var(--editorFreeText-editing-cursor);
 }
 
