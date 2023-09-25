@@ -941,7 +941,7 @@ class AnnotationEditor {
 
   /**
    * Render this editor in a div.
-   * @returns {HTMLDivElement}
+   * @returns {HTMLDivElement | null}
    */
   render() {
     this.div = document.createElement("div");
@@ -1192,8 +1192,9 @@ class AnnotationEditor {
    * new annotation to add to the pdf document.
    *
    * To implement in subclasses.
-   * @param {boolean} isForCopying
-   * @param {Object} [context]
+   * @param {boolean} [isForCopying]
+   * @param {Object | null} [context]
+   * @returns {Object | null}
    */
   serialize(isForCopying = false, context = null) {
     unreachable("An editor must be serializable");
@@ -1206,7 +1207,7 @@ class AnnotationEditor {
    * @param {Object} data
    * @param {AnnotationEditorLayer} parent
    * @param {AnnotationEditorUIManager} uiManager
-   * @returns {AnnotationEditor}
+   * @returns {AnnotationEditor | null}
    */
   static deserialize(data, parent, uiManager) {
     const editor = new this.prototype.constructor({
@@ -1327,6 +1328,7 @@ class AnnotationEditor {
 
   /**
    * Get the div which really contains the displayed content.
+   * @returns {HTMLDivElement | undefined}
    */
   get contentDiv() {
     return this.div;
