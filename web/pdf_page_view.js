@@ -80,29 +80,27 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
  *   with user defined ones in order to improve readability in high contrast
  *   mode.
  * @property {IL10n} [l10n] - Localization service.
- * @property {function} [layerProperties] - The function that is used to lookup
+ * @property {Object} [layerProperties] - The object that is used to lookup
  *   the necessary layer-properties.
  */
 
 const MAX_CANVAS_PIXELS = compatibilityParams.maxCanvasPixels || 16777216;
 
-const DEFAULT_LAYER_PROPERTIES = () => {
-  if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("COMPONENTS")) {
-    return null;
-  }
-  return {
-    annotationEditorUIManager: null,
-    annotationStorage: null,
-    downloadManager: null,
-    enableScripting: false,
-    fieldObjectsPromise: null,
-    findController: null,
-    hasJSActionsPromise: null,
-    get linkService() {
-      return new SimpleLinkService();
-    },
-  };
-};
+const DEFAULT_LAYER_PROPERTIES =
+  typeof PDFJSDev === "undefined" || !PDFJSDev.test("COMPONENTS")
+    ? null
+    : {
+        annotationEditorUIManager: null,
+        annotationStorage: null,
+        downloadManager: null,
+        enableScripting: false,
+        fieldObjectsPromise: null,
+        findController: null,
+        hasJSActionsPromise: null,
+        get linkService() {
+          return new SimpleLinkService();
+        },
+      };
 
 /**
  * @implements {IRenderableView}
@@ -322,7 +320,7 @@ class PDFPageView {
       new TextHighlighter({
         pageIndex: this.id - 1,
         eventBus: this.eventBus,
-        findController: this.#layerProperties().findController,
+        findController: this.#layerProperties.findController,
       })
     );
   }
@@ -871,7 +869,7 @@ class PDFPageView {
         fieldObjectsPromise,
         hasJSActionsPromise,
         linkService,
-      } = this.#layerProperties();
+      } = this.#layerProperties;
 
       this._annotationCanvasMap ||= new Map();
       this.annotationLayer = new AnnotationLayerBuilder({
@@ -989,7 +987,7 @@ class PDFPageView {
         }
 
         if (!this.annotationEditorLayer) {
-          const { annotationEditorUIManager } = this.#layerProperties();
+          const { annotationEditorUIManager } = this.#layerProperties;
 
           if (!annotationEditorUIManager) {
             return;
@@ -1018,7 +1016,7 @@ class PDFPageView {
 
     if (pdfPage.isPureXfa) {
       if (!this.xfaLayer) {
-        const { annotationStorage, linkService } = this.#layerProperties();
+        const { annotationStorage, linkService } = this.#layerProperties;
 
         this.xfaLayer = new XfaLayerBuilder({
           pageDiv: div,
