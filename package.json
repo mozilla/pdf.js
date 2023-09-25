@@ -44,7 +44,7 @@
     "postcss-discard-comments": "^6.0.0",
     "postcss-nesting": "^12.0.1",
     "prettier": "^3.0.3",
-    "puppeteer": "^21.2.1",
+    "puppeteer": "^21.3.4",
     "rimraf": "^3.0.2",
     "streamqueue": "^1.1.2",
     "stylelint": "^15.10.3",
@@ -62,7 +62,7 @@
     "yargs": "^17.7.2"
   },
   "scripts": {
-    "postinstall": "cross-env PUPPETEER_PRODUCT=firefox node node_modules/puppeteer/install.js"
+    "postinstall": "cross-env PUPPETEER_PRODUCT=firefox node node_modules/puppeteer/install.mjs"
   },
   "repository": {
     "type": "git",
