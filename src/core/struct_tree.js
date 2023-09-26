@@ -313,11 +313,16 @@ class StructTreeRoot {
     for (const [pageIndex, elements] of newAnnotationsByPage) {
       const { ref: pageRef } = await pdfManager.getPage(pageIndex);
       for (const {
-        accessibilityData: { type, title, lang, alt, expanded, actualText },
+        accessibilityData,
         ref,
         parentTreeId,
         structTreeParent,
       } of elements) {
+        if (!accessibilityData?.type) {
+          continue;
+        }
+        const { type, title, lang, alt, expanded, actualText } =
+          accessibilityData;
         nextKey = Math.max(nextKey, parentTreeId);
 
         const tagRef = xref.getNewTemporaryRef();

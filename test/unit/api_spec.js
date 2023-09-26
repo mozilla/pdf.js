@@ -2405,6 +2405,76 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("write a text and a stamp annotation but no alt text (bug 1855157)", async function () {
+      if (isNodeJS) {
+        pending("Cannot create a bitmap from Node.js.");
+      }
+
+      const TEST_IMAGES_PATH = "../images/";
+      const filename = "firefox_logo.png";
+      const path = new URL(TEST_IMAGES_PATH + filename, window.location).href;
+
+      const response = await fetch(path);
+      const blob = await response.blob();
+      const bitmap = await createImageBitmap(blob);
+
+      let loadingTask = getDocument(buildGetDocumentParams("empty.pdf"));
+      let pdfDoc = await loadingTask.promise;
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+        annotationType: AnnotationEditorType.STAMP,
+        rect: [128, 400, 148, 420],
+        rotation: 0,
+        bitmap,
+        bitmapId: "im1",
+        pageIndex: 0,
+        structTreeParentId: null,
+        accessibilityData: {
+          type: "Figure",
+          alt: "Hello World",
+        },
+      });
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_1", {
+        annotationType: AnnotationEditorType.FREETEXT,
+        color: [0, 0, 0],
+        fontSize: 10,
+        value: "Hello World",
+        pageIndex: 0,
+        rect: [
+          133.2444863336475, 653.5583423367227, 191.03166882427766,
+          673.363146394756,
+        ],
+        rotation: 0,
+        structTreeParentId: null,
+        id: null,
+      });
+
+      const data = await pdfDoc.saveDocument();
+      await loadingTask.destroy();
+
+      loadingTask = getDocument(data);
+      pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      const tree = await page.getStructTree();
+
+      expect(tree).toEqual({
+        children: [
+          {
+            role: "Figure",
+            children: [
+              {
+                type: "annotation",
+                id: "pdfjs_internal_id_18R",
+              },
+            ],
+            alt: "Hello World",
+          },
+        ],
+        role: "Root",
+      });
+
+      await loadingTask.destroy();
+    });
+
     describe("Cross-origin", function () {
       let loadingTask;
       function _checkCanLoad(expectSuccess, filename, options) {
