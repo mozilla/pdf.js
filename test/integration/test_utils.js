@@ -97,16 +97,27 @@ function getSelectedEditors(page) {
 }
 exports.getSelectedEditors = getSelectedEditors;
 
-async function waitForEvent(page, eventName, timeout = 30000) {
-  await Promise.race([
+async function waitForEvent(page, eventName, timeout = 5000) {
+  const hasTimedout = await Promise.race([
     // add event listener and wait for event to fire before returning
-    page.evaluate(name => {
-      return new Promise(resolve => {
-        document.addEventListener(name, resolve, { once: true });
-      });
-    }, eventName),
-    page.waitForTimeout(timeout),
+    page.evaluate(
+      name =>
+        new Promise(resolve => {
+          document.addEventListener(name, () => resolve(false), { once: true });
+        }),
+      eventName
+    ),
+    page.evaluate(
+      timeOut =>
+        new Promise(resolve => {
+          setTimeout(() => resolve(true), timeOut);
+        }),
+      timeout
+    ),
   ]);
+  if (hasTimedout === true) {
+    console.log(`waitForEvent: timeout waiting for ${eventName}`);
+  }
 }
 exports.waitForEvent = waitForEvent;
 
@@ -119,14 +130,26 @@ const waitForStorageEntries = async (page, nEntries) => {
 };
 exports.waitForStorageEntries = waitForStorageEntries;
 
-const waitForSelectedEditor = async (page, selector) => {
+const waitForSerialized = async (page, nEntries) => {
   await page.waitForFunction(
-    sel => document.querySelector(sel).classList.contains("selectedEditor"),
+    n =>
+      (window.PDFViewerApplication.pdfDocument.annotationStorage.serializable
+        .map?.size ?? 0) === n,
     {},
-    selector
+    nEntries
   );
 };
+exports.waitForSerialized = waitForSerialized;
+
+const waitForSelectedEditor = async (page, selector) => {
+  await page.waitForSelector(`${selector}.selectedEditor`);
+};
 exports.waitForSelectedEditor = waitForSelectedEditor;
+
+const waitForUnselectedEditor = async (page, selector) => {
+  await page.waitForSelector(`${selector}:not(.selectedEditor)`);
+};
+exports.waitForUnselectedEditor = waitForUnselectedEditor;
 
 const mockClipboard = async pages => {
   await Promise.all(
@@ -203,6 +226,7 @@ async function dragAndDropAnnotation(page, startX, startY, tX, tY) {
   await page.waitForTimeout(10);
   await page.mouse.move(startX + tX, startY + tY);
   await page.mouse.up();
+  await page.waitForSelector("#viewer:not(.noUserSelect)");
 }
 exports.dragAndDropAnnotation = dragAndDropAnnotation;
 
@@ -217,3 +241,39 @@ async function waitForAnnotationEditorLayer(page) {
   });
 }
 exports.waitForAnnotationEditorLayer = waitForAnnotationEditorLayer;
+
+async function scrollIntoView(page, selector) {
+  const promise = page.evaluate(
+    sel =>
+      new Promise(resolve => {
+        const el = document.querySelector(sel);
+        const observer = new IntersectionObserver(
+          () => {
+            observer.disconnect();
+            resolve();
+          },
+          {
+            root: document.querySelector("#viewerContainer"),
+            threshold: 0.1,
+          }
+        );
+        observer.observe(el);
+      }),
+    selector
+  );
+  await page.evaluate(sel => {
+    const element = document.querySelector(sel);
+    element.scrollIntoView({ behavior: "instant", block: "start" });
+  }, selector);
+  await promise;
+  await page.waitForFunction(
+    sel => {
+      const element = document.querySelector(sel);
+      const { top, bottom } = element.getBoundingClientRect();
+      return Math.abs(top) < 100 || Math.abs(bottom - window.innerHeight) < 100;
+    },
+    {},
+    selector
+  );
+}
+exports.scrollIntoView = scrollIntoView;
