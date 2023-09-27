@@ -481,6 +481,10 @@
   inset-block-end: 8px;
   inset-inline-start: 8px;
 
+  &:disabled {
+    pointer-events: none;
+  }
+
   &:dir(ltr) {
     transform-origin: 0 100%;
   }

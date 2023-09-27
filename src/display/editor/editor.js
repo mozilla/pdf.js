@@ -622,6 +622,8 @@ class AnnotationEditor {
       return;
     }
 
+    this.#toggleAltTextButton(false);
+
     const boundResizerPointermove = this.#resizerPointermove.bind(this, name);
     const savedDraggable = this._isDraggable;
     this._isDraggable = false;
@@ -641,6 +643,7 @@ class AnnotationEditor {
       window.getComputedStyle(event.target).cursor;
 
     const pointerUpCallback = () => {
+      this.#toggleAltTextButton(true);
       this._isDraggable = savedDraggable;
       window.removeEventListener("pointerup", pointerUpCallback);
       window.removeEventListener("blur", pointerUpCallback);
@@ -904,8 +907,10 @@ class AnnotationEditor {
         }, DELAY_TO_SHOW_TOOLTIP);
       });
       button.addEventListener("mouseleave", () => {
-        clearTimeout(this.#altTextTooltipTimeout);
-        this.#altTextTooltipTimeout = null;
+        if (this.#altTextTooltipTimeout) {
+          clearTimeout(this.#altTextTooltipTimeout);
+          this.#altTextTooltipTimeout = null;
+        }
         this.#altTextTooltip?.classList.remove("show");
       });
     }
@@ -919,6 +924,17 @@ class AnnotationEditor {
     if (!tooltip.parentNode) {
       button.append(tooltip);
     }
+  }
+
+  #toggleAltTextButton(enabled = false) {
+    if (!this.#altTextButton) {
+      return;
+    }
+    if (!enabled && this.#altTextTooltipTimeout) {
+      clearTimeout(this.#altTextTooltipTimeout);
+      this.#altTextTooltipTimeout = null;
+    }
+    this.#altTextButton.disabled = !enabled;
   }
 
   getClientDimensions() {
