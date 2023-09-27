@@ -21,6 +21,7 @@ const {
   getComputedStyleSelector,
   loadAndWait,
   getFirstSerialized,
+  scrollIntoView,
 } = require("./test_utils.js");
 
 describe("Interaction", () => {
@@ -538,12 +539,7 @@ describe("Interaction", () => {
               text = await actAndWaitForInput(
                 page,
                 getSelector(refOpen),
-                async () => {
-                  await page.evaluate(selector => {
-                    const element = window.document.querySelector(selector);
-                    element.scrollIntoView();
-                  }, getSelector(refOpen));
-                },
+                () => scrollIntoView(page, getSelector(refOpen)),
                 false
               );
               expect(text)
@@ -818,9 +814,7 @@ describe("Interaction", () => {
             "window.PDFViewerApplication.scriptingReady === true"
           );
 
-          await page.evaluate(selector => {
-            window.document.querySelector(selector).scrollIntoView();
-          }, getSelector("171R"));
+          await scrollIntoView(page, getSelector("171R"));
 
           let sum = 0;
           for (const [id, val] of [
@@ -853,11 +847,7 @@ describe("Interaction", () => {
 
           // Some unrendered annotations have been updated, so check
           // that they've the correct value when rendered.
-          await page.evaluate(() => {
-            window.document
-              .querySelector('.page[data-page-number = "4"]')
-              .scrollIntoView();
-          });
+          await scrollIntoView(page, '.page[data-page-number = "4"]');
           await page.waitForSelector(getSelector("299R"), {
             timeout: 0,
           });
