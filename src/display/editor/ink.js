@@ -39,6 +39,8 @@ class InkEditor extends AnnotationEditor {
 
   #boundCanvasPointerdown = this.canvasPointerdown.bind(this);
 
+  #canvasContextMenuTimeoutId = null;
+
   #currentPath2D = new Path2D();
 
   #disableEditing = false;
@@ -258,6 +260,11 @@ class InkEditor extends AnnotationEditor {
     this.canvas.width = this.canvas.height = 0;
     this.canvas.remove();
     this.canvas = null;
+
+    if (this.#canvasContextMenuTimeoutId) {
+      clearTimeout(this.#canvasContextMenuTimeoutId);
+      this.#canvasContextMenuTimeoutId = null;
+    }
 
     this.#observer.disconnect();
     this.#observer = null;
@@ -706,7 +713,11 @@ class InkEditor extends AnnotationEditor {
 
     // Slight delay to avoid the context menu to appear (it can happen on a long
     // tap with a pen).
-    setTimeout(() => {
+    if (this.#canvasContextMenuTimeoutId) {
+      clearTimeout(this.#canvasContextMenuTimeoutId);
+    }
+    this.#canvasContextMenuTimeoutId = setTimeout(() => {
+      this.#canvasContextMenuTimeoutId = null;
       this.canvas.removeEventListener("contextmenu", noContextMenu);
     }, 10);
 

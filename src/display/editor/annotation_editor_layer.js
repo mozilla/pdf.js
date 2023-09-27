@@ -61,6 +61,8 @@ class AnnotationEditorLayer {
 
   #boundPointerdown = this.pointerdown.bind(this);
 
+  #editorFocusTimeoutId = null;
+
   #editors = new Map();
 
   #hadPointerDown = false;
@@ -329,13 +331,6 @@ class AnnotationEditorLayer {
 
     this.detach(editor);
     this.#uiManager.removeEditor(editor);
-    if (editor.div.contains(document.activeElement)) {
-      setTimeout(() => {
-        // When the div is removed from DOM the focus can move on the
-        // document.body, so we need to move it back to the main container.
-        this.#uiManager.focusMainContainer();
-      }, 0);
-    }
     editor.div.remove();
     editor.isAttachedToDOM = false;
 
@@ -396,13 +391,14 @@ class AnnotationEditorLayer {
     }
 
     const { activeElement } = document;
-    if (editor.div.contains(activeElement)) {
+    if (editor.div.contains(activeElement) && !this.#editorFocusTimeoutId) {
       // When the div is moved in the DOM the focus can move somewhere else,
       // so we want to be sure that the focus will stay on the editor but we
       // don't want to call any focus callbacks, hence we disable them and only
       // re-enable them when the editor has the focus.
       editor._focusEventsAllowed = false;
-      setTimeout(() => {
+      this.#editorFocusTimeoutId = setTimeout(() => {
+        this.#editorFocusTimeoutId = null;
         if (!editor.div.contains(document.activeElement)) {
           editor.div.addEventListener(
             "focusin",
@@ -681,6 +677,11 @@ class AnnotationEditorLayer {
       // We need to commit the current editor before destroying the layer.
       this.#uiManager.commitOrRemove();
       this.#uiManager.setActiveEditor(null);
+    }
+
+    if (this.#editorFocusTimeoutId) {
+      clearTimeout(this.#editorFocusTimeoutId);
+      this.#editorFocusTimeoutId = null;
     }
 
     for (const editor of this.#editors.values()) {
