@@ -1154,38 +1154,9 @@ function buildMinified(defines, dir) {
     createMainBundle(defines).pipe(gulp.dest(dir + "build")),
     createWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
     createSandboxBundle(defines).pipe(gulp.dest(dir + "build")),
-    createWebBundle(defines, {
-      defaultPreferencesDir: defines.SKIP_BABEL
-        ? "minified/"
-        : "minified-legacy/",
-    }).pipe(gulp.dest(dir + "web")),
     createImageDecodersBundle(
       builder.merge(defines, { IMAGE_DECODERS: true })
     ).pipe(gulp.dest(dir + "image_decoders")),
-    gulp.src(COMMON_WEB_FILES, { base: "web/" }).pipe(gulp.dest(dir + "web")),
-    gulp
-      .src(["web/locale/*/viewer.properties", "web/locale/locale.properties"], {
-        base: "web/",
-      })
-      .pipe(gulp.dest(dir + "web")),
-    createCMapBundle().pipe(gulp.dest(dir + "web/cmaps")),
-    createStandardFontBundle().pipe(gulp.dest(dir + "web/standard_fonts")),
-
-    preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
-    preprocessCSS("web/viewer.css", defines)
-      .pipe(
-        postcss([
-          postcssDirPseudoClass(),
-          discardCommentsCSS(),
-          postcssNesting(),
-          autoprefixer(AUTOPREFIXER_CONFIG),
-        ])
-      )
-      .pipe(gulp.dest(dir + "web")),
-
-    gulp
-      .src("web/compressed.tracemonkey-pldi-09.pdf")
-      .pipe(gulp.dest(dir + "web")),
   ]);
 }
 
@@ -1200,10 +1171,6 @@ async function parseMinified(dir) {
   const pdfImageDecodersFile = fs
     .readFileSync(dir + "/image_decoders/pdf.image_decoders.js")
     .toString();
-  const viewerFiles = {
-    "pdf.js": pdfFile,
-    "viewer.js": fs.readFileSync(dir + "/web/viewer.js").toString(),
-  };
 
   console.log();
   console.log("### Minifying js files");
@@ -1218,10 +1185,6 @@ async function parseMinified(dir) {
     keep_fnames: true,
   };
 
-  fs.writeFileSync(
-    dir + "/web/pdf.viewer.js",
-    (await minify(viewerFiles, options)).code
-  );
   fs.writeFileSync(
     dir + "/build/pdf.min.js",
     (await minify(pdfFile, options)).code
@@ -1242,8 +1205,6 @@ async function parseMinified(dir) {
   console.log();
   console.log("### Cleaning js files");
 
-  fs.unlinkSync(dir + "/web/viewer.js");
-  fs.unlinkSync(dir + "/web/debugger.js");
   fs.unlinkSync(dir + "/build/pdf.js");
   fs.unlinkSync(dir + "/build/pdf.worker.js");
   fs.unlinkSync(dir + "/build/pdf.sandbox.js");
