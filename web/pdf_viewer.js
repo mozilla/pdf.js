@@ -35,6 +35,7 @@ import {
   PermissionFlag,
   PixelsPerInch,
   PromiseCapability,
+  shadow,
   version,
 } from "pdfjs-lib";
 import {
@@ -549,9 +550,9 @@ class PDFViewer {
     return this.pdfDocument ? this._pagesCapability.promise : null;
   }
 
-  #layerProperties() {
+  get _layerProperties() {
     const self = this;
-    return {
+    return shadow(this, "_layerProperties", {
       get annotationEditorUIManager() {
         return self.#annotationEditorUIManager;
       },
@@ -576,7 +577,7 @@ class PDFViewer {
       get linkService() {
         return self.linkService;
       },
-    };
+    });
   }
 
   /**
@@ -870,7 +871,6 @@ class PDFViewer {
           }
         }
 
-        const layerProperties = this.#layerProperties.bind(this);
         const viewerElement =
           this._scrollMode === ScrollMode.PAGE ? null : this.viewer;
         const scale = this.currentScale;
@@ -911,7 +911,7 @@ class PDFViewer {
             maxCanvasPixels: this.maxCanvasPixels,
             pageColors: this.pageColors,
             l10n: this.l10n,
-            layerProperties,
+            layerProperties: this._layerProperties,
           });
           this._pages.push(pageView);
         }
