@@ -190,6 +190,10 @@ class StampEditor extends AnnotationEditor {
       this.#canvas = null;
       this.#observer?.disconnect();
       this.#observer = null;
+      if (this.#resizeTimeoutId) {
+        clearTimeout(this.#resizeTimeoutId);
+        this.#resizeTimeoutId = null;
+      }
     }
     super.remove();
   }
