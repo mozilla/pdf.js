@@ -2297,7 +2297,7 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
-    it("write a new stamp annotation in a tagged pdf, save and check that the structure tree", async function () {
+    it("write a new stamp annotation in a tagged pdf, save and check the structure tree", async function () {
       if (isNodeJS) {
         pending("Cannot create a bitmap from Node.js.");
       }
@@ -2344,6 +2344,76 @@ describe("api", function () {
           },
         ],
         alt: "Hello World",
+      });
+
+      await loadingTask.destroy();
+    });
+
+    it("write a new stamp annotation in a tagged pdf, save, repeat and check the structure tree", async function () {
+      if (isNodeJS) {
+        pending("Cannot create a bitmap from Node.js.");
+      }
+
+      const TEST_IMAGES_PATH = "../images/";
+      const filename = "firefox_logo.png";
+      const path = new URL(TEST_IMAGES_PATH + filename, window.location).href;
+
+      const response = await fetch(path);
+      const blob = await response.blob();
+      let loadingTask, pdfDoc;
+      let data = buildGetDocumentParams("empty.pdf");
+
+      for (let i = 1; i <= 2; i++) {
+        const bitmap = await createImageBitmap(blob);
+        loadingTask = getDocument(data);
+        pdfDoc = await loadingTask.promise;
+        pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+          annotationType: AnnotationEditorType.STAMP,
+          rect: [10 * i, 10 * i, 20 * i, 20 * i],
+          rotation: 0,
+          bitmap,
+          bitmapId: "im1",
+          pageIndex: 0,
+          structTreeParentId: null,
+          accessibilityData: {
+            type: "Figure",
+            alt: `Hello World ${i}`,
+          },
+        });
+
+        data = await pdfDoc.saveDocument();
+        await loadingTask.destroy();
+      }
+
+      loadingTask = getDocument(data);
+      pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      const tree = await page.getStructTree();
+
+      expect(tree).toEqual({
+        children: [
+          {
+            role: "Figure",
+            children: [
+              {
+                type: "annotation",
+                id: "pdfjs_internal_id_18R",
+              },
+            ],
+            alt: "Hello World 1",
+          },
+          {
+            role: "Figure",
+            children: [
+              {
+                type: "annotation",
+                id: "pdfjs_internal_id_26R",
+              },
+            ],
+            alt: "Hello World 2",
+          },
+        ],
+        role: "Root",
       });
 
       await loadingTask.destroy();

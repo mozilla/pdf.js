@@ -158,7 +158,7 @@ class StructTreeRoot {
     newRefs.push({ ref: structTreeRootRef, data: buffer.join("") });
   }
 
-  async canUpdateStructTree({ pdfManager, newAnnotationsByPage }) {
+  async canUpdateStructTree({ pdfManager, xref, newAnnotationsByPage }) {
     if (!this.ref) {
       warn("Cannot update the struct tree: no root reference.");
       return false;
@@ -180,17 +180,18 @@ class StructTreeRoot {
       warn("Cannot update the struct tree: nums isn't an array.");
       return false;
     }
+    const numberTree = new NumberTree(parentTree, xref);
 
-    const { numPages } = pdfManager.catalog;
     for (const pageIndex of newAnnotationsByPage.keys()) {
-      const { pageDict, ref: pageRef } = await pdfManager.getPage(pageIndex);
-      if (!(pageRef instanceof Ref)) {
-        warn(`Cannot save the struct tree: page ${pageIndex} has no ref.`);
-        return false;
+      const { pageDict } = await pdfManager.getPage(pageIndex);
+      if (!pageDict.has("StructParents")) {
+        // StructParents is required when the content stream has some tagged
+        // contents but a page can just have tagged annotations.
+        continue;
       }
       const id = pageDict.get("StructParents");
-      if (!Number.isInteger(id) || id < 0 || id >= numPages) {
-        warn(`Cannot save the struct tree: page ${pageIndex} has no id.`);
+      if (!Number.isInteger(id) || !Array.isArray(numberTree.get(id))) {
+        warn(`Cannot save the struct tree: page ${pageIndex} has a wrong id.`);
         return false;
       }
     }
@@ -202,7 +203,7 @@ class StructTreeRoot {
         elements,
         xref: this.dict.xref,
         pageDict,
-        parentTree,
+        numberTree,
       });
 
       for (const element of elements) {
@@ -312,6 +313,7 @@ class StructTreeRoot {
 
     for (const [pageIndex, elements] of newAnnotationsByPage) {
       const { ref: pageRef } = await pdfManager.getPage(pageIndex);
+      const isPageRef = pageRef instanceof Ref;
       for (const {
         accessibilityData,
         ref,
@@ -364,7 +366,10 @@ class StructTreeRoot {
         const objDict = new Dict(xref);
         tagDict.set("K", objDict);
         objDict.set("Type", objr);
-        objDict.set("Pg", pageRef);
+        if (isPageRef) {
+          // Pg is optional.
+          objDict.set("Pg", pageRef);
+        }
         objDict.set("Obj", ref);
 
         buffer.length = 0;
@@ -378,7 +383,7 @@ class StructTreeRoot {
     return nextKey + 1;
   }
 
-  static #collectParents({ elements, xref, pageDict, parentTree }) {
+  static #collectParents({ elements, xref, pageDict, numberTree }) {
     const idToElement = new Map();
     for (const element of elements) {
       if (element.structTreeParentId) {
@@ -388,11 +393,12 @@ class StructTreeRoot {
     }
 
     const id = pageDict.get("StructParents");
-    const numberTree = new NumberTree(parentTree, xref);
-    const parentArray = numberTree.get(id);
-    if (!Array.isArray(parentArray)) {
+    if (!Number.isInteger(id)) {
       return;
     }
+    // The parentArray type has already been checked by the caller.
+    const parentArray = numberTree.get(id);
+
     const updateElement = (kid, pageKid, kidRef) => {
       const element = idToElement.get(kid);
       if (element) {
