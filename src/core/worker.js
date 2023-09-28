@@ -576,6 +576,7 @@ class WorkerMessageHandler {
           } else if (
             await _structTreeRoot.canUpdateStructTree({
               pdfManager,
+              xref,
               newAnnotationsByPage,
             })
           ) {
