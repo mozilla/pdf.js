@@ -628,6 +628,7 @@ class AnnotationEditor {
     const savedDraggable = this._isDraggable;
     this._isDraggable = false;
     const pointerMoveOptions = { passive: true, capture: true };
+    this.parent.togglePointerEvents(false);
     window.addEventListener(
       "pointermove",
       boundResizerPointermove,
@@ -643,6 +644,7 @@ class AnnotationEditor {
       window.getComputedStyle(event.target).cursor;
 
     const pointerUpCallback = () => {
+      this.parent.togglePointerEvents(true);
       this.#toggleAltTextButton(true);
       this._isDraggable = savedDraggable;
       window.removeEventListener("pointerup", pointerUpCallback);
