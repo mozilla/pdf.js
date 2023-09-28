@@ -121,6 +121,10 @@
   height: 100%;
 }
 
+.annotationEditorLayer.disabled {
+  pointer-events: none;
+}
+
 .annotationEditorLayer.freetextEditing {
   cursor: var(--editorFreeText-editing-cursor);
 }
