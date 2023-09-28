@@ -193,12 +193,16 @@ class AnnotationEditorLayer {
     this.#uiManager.addCommands(params);
   }
 
+  togglePointerEvents(enabled = false) {
+    this.div.classList.toggle("disabled", !enabled);
+  }
+
   /**
    * Enable pointer events on the main div in order to enable
    * editor creation.
    */
   enable() {
-    this.div.style.pointerEvents = "auto";
+    this.togglePointerEvents(true);
     const annotationElementIds = new Set();
     for (const editor of this.#editors.values()) {
       editor.enableEditing();
@@ -235,7 +239,7 @@ class AnnotationEditorLayer {
    */
   disable() {
     this.#isDisabling = true;
-    this.div.style.pointerEvents = "none";
+    this.togglePointerEvents(false);
     const hiddenAnnotationIds = new Set();
     for (const editor of this.#editors.values()) {
       editor.disableEditing();
