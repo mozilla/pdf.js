@@ -56,6 +56,8 @@ import { GlobalImageCache } from "../../src/core/image_utils.js";
 import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
 import { Metadata } from "../../src/display/metadata.js";
 
+const WORKER_SRC = "../../build/generic/build/pdf.worker.mjs";
+
 describe("api", function () {
   const basicApiFileName = "basicapi.pdf";
   const basicApiFileLength = 105779; // bytes
@@ -914,7 +916,8 @@ describe("api", function () {
       }
 
       GlobalWorkerOptions.workerPort = new Worker(
-        new URL("../../build/generic/build/pdf.worker.js", window.location)
+        new URL(WORKER_SRC, window.location),
+        { type: "module" }
       );
 
       const loadingTask1 = getDocument(basicApiGetDocumentParams);
@@ -934,7 +937,8 @@ describe("api", function () {
       }
 
       GlobalWorkerOptions.workerPort = new Worker(
-        new URL("../../build/generic/build/pdf.worker.js", window.location)
+        new URL(WORKER_SRC, window.location),
+        { type: "module" }
       );
 
       const loadingTask1 = getDocument(basicApiGetDocumentParams);
@@ -963,7 +967,8 @@ describe("api", function () {
         }
 
         GlobalWorkerOptions.workerPort = new Worker(
-          new URL("../../build/generic/build/pdf.worker.js", window.location)
+          new URL(WORKER_SRC, window.location),
+          { type: "module" }
         );
 
         const loadingTask = getDocument(basicApiGetDocumentParams);

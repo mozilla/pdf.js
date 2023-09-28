@@ -13,9 +13,7 @@
  * limitations under the License.
  */
 
-import { loadScript } from "../../src/display/display_utils.js";
-
-const sandboxBundleSrc = "../../build/generic/build/pdf.sandbox.js";
+const sandboxBundleSrc = "../../build/generic/build/pdf.sandbox.mjs";
 
 describe("Scripting", function () {
   let sandbox, send_queue, test_id, ref, windowAlert;
@@ -53,8 +51,9 @@ describe("Scripting", function () {
       const command = "alert";
       send_queue.set(command, { command, value });
     };
-    const promise = loadScript(sandboxBundleSrc).then(() => {
-      return window.pdfjsSandbox.QuickJSSandbox();
+    // eslint-disable-next-line no-unsanitized/method
+    const promise = import(sandboxBundleSrc).then(pdfjsSandbox => {
+      return pdfjsSandbox.QuickJSSandbox();
     });
     sandbox = {
       createSandbox(data) {
