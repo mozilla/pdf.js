@@ -432,6 +432,7 @@ class AnnotationEditorLayer {
    */
   addOrRebuild(editor) {
     if (editor.needsToBeRebuilt()) {
+      editor.parent ||= this;
       editor.rebuild();
     } else {
       this.add(editor);
