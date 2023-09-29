@@ -207,7 +207,18 @@ function getEditorDimensions(page, id) {
 }
 exports.getEditorDimensions = getEditorDimensions;
 
-function serializeBitmapDimensions(page) {
+async function serializeBitmapDimensions(page) {
+  await page.waitForFunction(() => {
+    try {
+      const map =
+        window.PDFViewerApplication.pdfDocument.annotationStorage.serializable
+          .map;
+      return !!map;
+    } catch {
+      return false;
+    }
+  });
+
   return page.evaluate(() => {
     const { map } =
       window.PDFViewerApplication.pdfDocument.annotationStorage.serializable;
