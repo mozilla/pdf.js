@@ -17,7 +17,38 @@ const {
   closePages,
   getSelectedEditors,
   loadAndWait,
+  waitForStorageEntries,
 } = require("./test_utils.js");
+
+const waitForClick = async page =>
+  page.evaluate(
+    () =>
+      new Promise(resolve => {
+        window.addEventListener("click", resolve, { once: true });
+      })
+  );
+
+const selectAll = async page => {
+  await page.keyboard.down("Control");
+  await page.keyboard.press("a");
+  await page.keyboard.up("Control");
+  await page.waitForFunction(
+    () => !document.querySelector(".inkEditor.disabled:not(.selectedEditor)")
+  );
+};
+
+const clearAll = async page => {
+  await selectAll(page);
+  await page.keyboard.down("Control");
+  await page.keyboard.press("Backspace");
+  await page.keyboard.up("Control");
+  await waitForStorageEntries(page, 0);
+};
+
+const commit = async page => {
+  await page.keyboard.press("Escape");
+  await page.waitForSelector(".inkEditor.selectedEditor.draggable.disabled");
+};
 
 describe("Ink Editor", () => {
   describe("Basic operations", () => {
@@ -46,32 +77,22 @@ describe("Ink Editor", () => {
           for (let i = 0; i < 3; i++) {
             const x = rect.x + 100 + i * 100;
             const y = rect.y + 100 + i * 100;
+            const promise = waitForClick(page);
             await page.mouse.move(x, y);
             await page.mouse.down();
             await page.mouse.move(x + 50, y + 50);
             await page.mouse.up();
-            await page.waitForTimeout(10);
+            await promise;
 
-            await page.keyboard.press("Escape");
-            await page.waitForTimeout(10);
+            await commit(page);
           }
 
-          await page.keyboard.down("Control");
-          await page.keyboard.press("a");
-          await page.keyboard.up("Control");
-          await page.waitForTimeout(10);
-
-          expect(await getSelectedEditors(page))
-            .withContext(`In ${browserName}`)
-            .toEqual([0, 1, 2]);
-
-          await page.keyboard.press("Backspace");
-          await page.waitForTimeout(10);
+          await clearAll(page);
 
           await page.keyboard.down("Control");
           await page.keyboard.press("z");
           await page.keyboard.up("Control");
-          await page.waitForTimeout(10);
+          await waitForStorageEntries(page, 3);
 
           expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
@@ -83,13 +104,7 @@ describe("Ink Editor", () => {
     it("must draw, undo/redo and check that the editor don't move", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.keyboard.down("Control");
-          await page.keyboard.press("a");
-          await page.keyboard.up("Control");
-          await page.waitForTimeout(10);
-
-          await page.keyboard.press("Backspace");
-          await page.waitForTimeout(10);
+          await clearAll(page);
 
           const rect = await page.$eval(".annotationEditorLayer", el => {
             // With Chrome something is wrong when serializing a DomRect,
@@ -100,14 +115,14 @@ describe("Ink Editor", () => {
 
           const xStart = rect.x + 300;
           const yStart = rect.y + 300;
+          const clickPromise = waitForClick(page);
           await page.mouse.move(xStart, yStart);
           await page.mouse.down();
           await page.mouse.move(xStart + 50, yStart + 50);
           await page.mouse.up();
-          await page.waitForTimeout(10);
+          await clickPromise;
 
-          await page.keyboard.press("Escape");
-          await page.waitForTimeout(10);
+          await commit(page);
 
           const rectBefore = await page.$eval(".inkEditor canvas", el => {
             const { x, y } = el.getBoundingClientRect();
@@ -119,13 +134,13 @@ describe("Ink Editor", () => {
             await page.keyboard.press("z");
             await page.keyboard.up("Control");
 
-            await page.waitForTimeout(10);
+            await waitForStorageEntries(page, 0);
 
             await page.keyboard.down("Control");
             await page.keyboard.press("y");
             await page.keyboard.up("Control");
 
-            await page.waitForTimeout(10);
+            await waitForStorageEntries(page, 1);
           }
 
           const rectAfter = await page.$eval(".inkEditor canvas", el => {
@@ -170,19 +185,16 @@ describe("Ink Editor", () => {
 
           const x = rect.x + 20;
           const y = rect.y + 20;
+          const clickPromise = waitForClick(page);
           await page.mouse.move(x, y);
           await page.mouse.down();
           await page.mouse.move(x + 50, y + 50);
           await page.mouse.up();
+          await clickPromise;
 
-          await page.waitForTimeout(10);
-          await page.keyboard.press("Escape");
-          await page.waitForTimeout(10);
+          await commit(page);
 
-          await page.keyboard.down("Control");
-          await page.keyboard.press("a");
-          await page.keyboard.up("Control");
-          await page.waitForTimeout(10);
+          await selectAll(page);
 
           expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
