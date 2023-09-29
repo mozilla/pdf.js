@@ -2636,6 +2636,75 @@ describe("FreeText Editor", () => {
     });
   });
 
+  describe("Deleted FreeText", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that a deleted freetext can be restored", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          const page1Selector = `.page[data-page-number = "1"] > .annotationEditorLayer.freetextEditing`;
+          const rect = await page.$eval(page1Selector, el => {
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+          await page.mouse.click(rect.x + 10, rect.y + 10);
+          await page.waitForSelector(getEditorSelector(0), {
+            visible: true,
+          });
+          await page.type(`${getEditorSelector(0)} .internal`, "Hello");
+
+          // Commit.
+          await page.keyboard.press("Escape");
+          await page.waitForSelector(
+            `${getEditorSelector(0)} .overlay.enabled`
+          );
+
+          // Go to the last page.
+          await page.keyboard.press("End");
+          await page.waitForSelector(
+            `.page[data-page-number = "14"] > .annotationEditorLayer.freetextEditing`,
+            {
+              visible: true,
+              timeout: 0,
+            }
+          );
+
+          await clearAll(page);
+
+          // Go to the first page.
+          await page.keyboard.press("Home");
+          await page.waitForSelector(page1Selector, {
+            visible: true,
+            timeout: 0,
+          });
+
+          // Make sure that nothing has be added.
+          await waitForStorageEntries(page, 0);
+
+          // Undo.
+          await page.keyboard.down("Control");
+          await page.keyboard.press("z");
+          await page.keyboard.up("Control");
+          await waitForSerialized(page, 1);
+
+          await page.waitForSelector(getEditorSelector(0), {
+            visible: true,
+          });
+        })
+      );
+    });
+  });
+
   describe("FreeText accessibility", () => {
     let pages;
 
