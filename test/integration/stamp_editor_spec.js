@@ -16,12 +16,32 @@
 const {
   closePages,
   getEditorDimensions,
+  getEditorSelector,
   loadAndWait,
   serializeBitmapDimensions,
   waitForAnnotationEditorLayer,
+  waitForStorageEntries,
+  waitForSelectedEditor,
 } = require("./test_utils.js");
 const path = require("path");
 const fs = require("fs");
+
+const selectAll = async page => {
+  await page.keyboard.down("Control");
+  await page.keyboard.press("a");
+  await page.keyboard.up("Control");
+  await page.waitForFunction(
+    () => !document.querySelector(".stampEditor:not(.selectedEditor)")
+  );
+};
+
+const clearAll = async page => {
+  await selectAll(page);
+  await page.keyboard.down("Control");
+  await page.keyboard.press("Backspace");
+  await page.keyboard.up("Control");
+  await waitForStorageEntries(page, 0);
+};
 
 describe("Stamp Editor", () => {
   describe("Basic operations", () => {
@@ -50,8 +70,7 @@ describe("Stamp Editor", () => {
           await input.uploadFile(
             `${path.join(__dirname, "../images/firefox_logo.png")}`
           );
-
-          await page.waitForTimeout(300);
+          await page.waitForSelector(`${getEditorSelector(0)} .altText`);
 
           const { width } = await getEditorDimensions(page, 0);
 
@@ -63,12 +82,7 @@ describe("Stamp Editor", () => {
           expect(bitmap.width).toEqual(512);
           expect(bitmap.height).toEqual(543);
 
-          await page.keyboard.down("Control");
-          await page.keyboard.press("a");
-          await page.keyboard.up("Control");
-          await page.waitForTimeout(10);
-
-          await page.keyboard.press("Backspace");
+          await clearAll(page);
         })
       );
     });
@@ -86,8 +100,7 @@ describe("Stamp Editor", () => {
           await input.uploadFile(
             `${path.join(__dirname, "../images/firefox_logo.svg")}`
           );
-
-          await page.waitForTimeout(300);
+          await page.waitForSelector(`${getEditorSelector(1)} .altText`);
 
           const { width } = await getEditorDimensions(page, 1);
 
@@ -102,12 +115,7 @@ describe("Stamp Editor", () => {
           expect(bitmap.width).toEqual(Math.round(242 * ratio));
           expect(bitmap.height).toEqual(Math.round(80 * ratio));
 
-          await page.keyboard.down("Control");
-          await page.keyboard.press("a");
-          await page.keyboard.up("Control");
-          await page.waitForTimeout(10);
-
-          await page.keyboard.press("Backspace");
+          await clearAll(page);
         })
       );
     });
@@ -137,27 +145,20 @@ describe("Stamp Editor", () => {
 
           for (let i = 0; i < 4; i++) {
             if (i !== 0) {
-              await page.keyboard.down("Control");
-              await page.keyboard.press("a");
-              await page.keyboard.up("Control");
-              await page.waitForTimeout(10);
-              await page.keyboard.press("Backspace");
-              await page.waitForTimeout(10);
+              await clearAll(page);
             }
 
             await page.click("#editorStampAddImage");
-            await page.waitForTimeout(10);
             const input = await page.$("#stampEditorFileInput");
             await input.uploadFile(
               `${path.join(__dirname, "../images/firefox_logo.png")}`
             );
-
-            await page.waitForTimeout(300);
+            await page.waitForSelector(`${getEditorSelector(i)} .altText`);
 
             for (let j = 0; j < 4; j++) {
               await page.keyboard.press("Escape");
-              await page.waitForFunction(
-                `getComputedStyle(document.querySelector(".resizers")).display === "none"`
+              await page.waitForSelector(
+                `${getEditorSelector(i)} .resizers.hidden`
               );
 
               const promise = waitForAnnotationEditorLayer(page);
@@ -165,12 +166,13 @@ describe("Stamp Editor", () => {
                 window.PDFViewerApplication.rotatePages(90);
               });
               await promise;
-              await page.focus(".stampEditor");
 
-              await page.waitForFunction(
-                `getComputedStyle(document.querySelector(".resizers")).display === "block"`
+              await page.focus(".stampEditor");
+              await waitForSelectedEditor(page, getEditorSelector(i));
+
+              await page.waitForSelector(
+                `${getEditorSelector(i)} .resizers:not(.hidden)`
               );
-              await page.waitForTimeout(10);
 
               const [name, cursor] = await page.evaluate(() => {
                 const { x, y } = document
