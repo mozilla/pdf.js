@@ -1071,6 +1071,7 @@ function buildComponents(defines, dir) {
   const COMPONENTS_IMAGES = [
     "web/images/annotation-*.svg",
     "web/images/loading-icon.gif",
+    "web/images/altText_*.svg",
   ];
 
   return merge([
