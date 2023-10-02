@@ -262,6 +262,9 @@ describe("Stamp Editor", () => {
           // Click on the alt-text button.
           await page.click(buttonSelector);
 
+          // Check that the alt-text button has been hidden.
+          await page.waitForSelector(`${buttonSelector}[hidden]`);
+
           // Wait for the alt-text dialog to be visible.
           await page.waitForSelector("#altTextDialog", { visible: true });
 
@@ -275,7 +278,7 @@ describe("Stamp Editor", () => {
           await page.click(saveButtonSelector);
 
           // Wait for the alt-text button to have the correct icon.
-          await page.waitForSelector(`${buttonSelector}.done`);
+          await page.waitForSelector(`${buttonSelector}:not([hidden]).done`);
 
           // Hover the button.
           await page.hover(buttonSelector);
@@ -371,6 +374,30 @@ describe("Stamp Editor", () => {
             sel => document.querySelector(sel) === null,
             tooltipSelector
           );
+
+          // We check that the alt-text button works correctly with the
+          // keyboard.
+          await page.evaluate(sel => {
+            document.getElementById("viewerContainer").focus();
+            return new Promise(resolve => {
+              setTimeout(() => {
+                const el = document.querySelector(sel);
+                el.addEventListener("focus", resolve, { once: true });
+                el.focus({ focusVisible: true });
+              }, 0);
+            });
+          }, buttonSelector);
+          await (browserName === "chrome"
+            ? page.waitForSelector(`${buttonSelector}:focus`)
+            : page.waitForSelector(`${buttonSelector}:focus-visible`));
+          await page.keyboard.press("Enter");
+          await page.waitForSelector(`${buttonSelector}[hidden]`);
+          await page.waitForSelector("#altTextDialog", { visible: true });
+          await page.keyboard.press("Escape");
+          await page.waitForSelector(`${buttonSelector}:not([hidden])`);
+          await (browserName === "chrome"
+            ? page.waitForSelector(`${buttonSelector}:focus`)
+            : page.waitForSelector(`${buttonSelector}:focus-visible`));
         })
       );
     });

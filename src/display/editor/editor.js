@@ -45,6 +45,8 @@ class AnnotationEditor {
 
   #altTextTooltipTimeout = null;
 
+  #altTextWasFromKeyBoard = false;
+
   #keepAspectRatio = false;
 
   #resizersDiv = null;
@@ -840,18 +842,17 @@ class AnnotationEditor {
     altText.tabIndex = "0";
     altText.addEventListener("contextmenu", noContextMenu);
     altText.addEventListener("pointerdown", event => event.stopPropagation());
-    altText.addEventListener(
-      "click",
-      event => {
-        event.preventDefault();
-        this._uiManager.editAltText(this);
-      },
-      { capture: true }
-    );
+
+    const onClick = event => {
+      this.#altTextButton.hidden = true;
+      event.preventDefault();
+      this._uiManager.editAltText(this);
+    };
+    altText.addEventListener("click", onClick, { capture: true });
     altText.addEventListener("keydown", event => {
       if (event.target === altText && event.key === "Enter") {
-        event.preventDefault();
-        this._uiManager.editAltText(this);
+        this.#altTextWasFromKeyBoard = true;
+        onClick(event);
       }
     });
     this.#setAltTextButtonState();
@@ -877,12 +878,13 @@ class AnnotationEditor {
       this.#altTextTooltip?.remove();
       return;
     }
+    button.classList.add("done");
+
     AnnotationEditor._l10nPromise
       .get("editor_alt_text_edit_button_label")
       .then(msg => {
         button.setAttribute("aria-label", msg);
       });
-
     let tooltip = this.#altTextTooltip;
     if (!tooltip) {
       this.#altTextTooltip = tooltip = document.createElement("span");
@@ -916,7 +918,6 @@ class AnnotationEditor {
         this.#altTextTooltip?.classList.remove("show");
       });
     }
-    button.classList.add("done");
     tooltip.innerText = this.#altTextDecorative
       ? await AnnotationEditor._l10nPromise.get(
           "editor_alt_text_decorative_tooltip"
@@ -937,6 +938,15 @@ class AnnotationEditor {
       this.#altTextTooltipTimeout = null;
     }
     this.#altTextButton.disabled = !enabled;
+  }
+
+  altTextFinish() {
+    if (!this.#altTextButton) {
+      return;
+    }
+    this.#altTextButton.hidden = false;
+    this.#altTextButton.focus({ focusVisible: this.#altTextWasFromKeyBoard });
+    this.#altTextWasFromKeyBoard = false;
   }
 
   getClientDimensions() {
