@@ -927,6 +927,9 @@ class AnnotationEditor {
     if (!tooltip.parentNode) {
       button.append(tooltip);
     }
+
+    const element = this.getImageForAltText();
+    element?.setAttribute("aria-describedby", tooltip.id);
   }
 
   #toggleAltTextButton(enabled = false) {
@@ -960,6 +963,9 @@ class AnnotationEditor {
     };
   }
 
+  /**
+   * Set the alt text data.
+   */
   set altTextData({ altText, decorative }) {
     if (this.#altText === altText && this.#altTextDecorative === decorative) {
       return;
@@ -1368,6 +1374,13 @@ class AnnotationEditor {
    * The editor is about to be edited.
    */
   enterInEditMode() {}
+
+  /**
+   * @returns {HTMLElement | null} the element requiring an alt text.
+   */
+  getImageForAltText() {
+    return null;
+  }
 
   /**
    * Get the div which really contains the displayed content.

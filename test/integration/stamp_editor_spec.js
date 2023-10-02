@@ -249,9 +249,34 @@ describe("Stamp Editor", () => {
             ]);
           }, data);
 
-          await page.keyboard.down("Control");
-          await page.keyboard.press("v");
-          await page.keyboard.up("Control");
+          let hasPasteEvent = false;
+          while (!hasPasteEvent) {
+            // We retry to paste if nothing has been pasted before 500ms.
+            const promise = Promise.race([
+              page.evaluate(
+                () =>
+                  new Promise(resolve => {
+                    document.addEventListener(
+                      "paste",
+                      e => resolve(e.clipboardData.items.length !== 0),
+                      {
+                        once: true,
+                      }
+                    );
+                  })
+              ),
+              page.evaluate(
+                () =>
+                  new Promise(resolve => {
+                    setTimeout(() => resolve(false), 500);
+                  })
+              ),
+            ]);
+            await page.keyboard.down("Control");
+            await page.keyboard.press("v");
+            await page.keyboard.up("Control");
+            hasPasteEvent = await promise;
+          }
 
           await waitForImage(page, getEditorSelector(0));
 
@@ -276,6 +301,11 @@ describe("Stamp Editor", () => {
           // Click on save button.
           const saveButtonSelector = "#altTextDialog #altTextSave";
           await page.click(saveButtonSelector);
+
+          // Check that the canvas has an aria-describedby attribute.
+          await page.waitForSelector(
+            `${getEditorSelector(0)} canvas[aria-describedby]`
+          );
 
           // Wait for the alt-text button to have the correct icon.
           await page.waitForSelector(`${buttonSelector}:not([hidden]).done`);
