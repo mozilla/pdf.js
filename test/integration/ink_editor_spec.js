@@ -20,11 +20,11 @@ const {
   waitForStorageEntries,
 } = require("./test_utils.js");
 
-const waitForClick = async page =>
+const waitForPointerUp = page =>
   page.evaluate(
     () =>
       new Promise(resolve => {
-        window.addEventListener("click", resolve, { once: true });
+        window.addEventListener("pointerup", resolve, { once: true });
       })
   );
 
@@ -77,7 +77,7 @@ describe("Ink Editor", () => {
           for (let i = 0; i < 3; i++) {
             const x = rect.x + 100 + i * 100;
             const y = rect.y + 100 + i * 100;
-            const promise = waitForClick(page);
+            const promise = waitForPointerUp(page);
             await page.mouse.move(x, y);
             await page.mouse.down();
             await page.mouse.move(x + 50, y + 50);
@@ -115,7 +115,7 @@ describe("Ink Editor", () => {
 
           const xStart = rect.x + 300;
           const yStart = rect.y + 300;
-          const clickPromise = waitForClick(page);
+          const clickPromise = waitForPointerUp(page);
           await page.mouse.move(xStart, yStart);
           await page.mouse.down();
           await page.mouse.move(xStart + 50, yStart + 50);
@@ -185,7 +185,7 @@ describe("Ink Editor", () => {
 
           const x = rect.x + 20;
           const y = rect.y + 20;
-          const clickPromise = waitForClick(page);
+          const clickPromise = waitForPointerUp(page);
           await page.mouse.move(x, y);
           await page.mouse.down();
           await page.mouse.move(x + 50, y + 50);

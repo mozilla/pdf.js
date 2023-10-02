@@ -43,6 +43,22 @@ const clearAll = async page => {
   await waitForStorageEntries(page, 0);
 };
 
+const waitForImage = async (page, selector) => {
+  await page.waitForSelector(`${selector} canvas`);
+  await page.waitForFunction(
+    sel => {
+      const canvas = document.querySelector(sel);
+      const data = canvas
+        .getContext("2d")
+        .getImageData(0, 0, canvas.width, canvas.height);
+      return data.data.some(x => x !== 0);
+    },
+    {},
+    `${selector} canvas`
+  );
+  await page.waitForSelector(`${selector} .altText`);
+};
+
 describe("Stamp Editor", () => {
   describe("Basic operations", () => {
     let pages;
@@ -70,7 +86,7 @@ describe("Stamp Editor", () => {
           await input.uploadFile(
             `${path.join(__dirname, "../images/firefox_logo.png")}`
           );
-          await page.waitForSelector(`${getEditorSelector(0)} .altText`);
+          await waitForImage(page, getEditorSelector(0));
 
           const { width } = await getEditorDimensions(page, 0);
 
@@ -100,7 +116,7 @@ describe("Stamp Editor", () => {
           await input.uploadFile(
             `${path.join(__dirname, "../images/firefox_logo.svg")}`
           );
-          await page.waitForSelector(`${getEditorSelector(1)} .altText`);
+          await waitForImage(page, getEditorSelector(1));
 
           const { width } = await getEditorDimensions(page, 1);
 
@@ -153,6 +169,7 @@ describe("Stamp Editor", () => {
             await input.uploadFile(
               `${path.join(__dirname, "../images/firefox_logo.png")}`
             );
+            await waitForImage(page, getEditorSelector(i));
             await page.waitForSelector(`${getEditorSelector(i)} .altText`);
 
             for (let j = 0; j < 4; j++) {
@@ -236,8 +253,10 @@ describe("Stamp Editor", () => {
           await page.keyboard.press("v");
           await page.keyboard.up("Control");
 
+          await waitForImage(page, getEditorSelector(0));
+
           // Wait for the alt-text button to be visible.
-          const buttonSelector = "#pdfjs_internal_editor_0 button.altText";
+          const buttonSelector = `${getEditorSelector(0)} button.altText`;
           await page.waitForSelector(buttonSelector);
 
           // Click on the alt-text button.
