@@ -50,7 +50,6 @@ import {
   getDocument,
   PDFDataRangeTransport,
   PDFWorker,
-  SVGGraphics,
   version,
 } from "./display/api.js";
 import {
@@ -119,7 +118,6 @@ export {
   renderTextLayer,
   setLayerDimensions,
   shadow,
-  SVGGraphics,
   UnexpectedResponseException,
   updateTextLayer,
   Util,
