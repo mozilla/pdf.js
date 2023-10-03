@@ -17,6 +17,7 @@ const {
   closePages,
   getEditorDimensions,
   getEditorSelector,
+  getFirstSerialized,
   loadAndWait,
   serializeBitmapDimensions,
   waitForAnnotationEditorLayer,
@@ -57,6 +58,53 @@ const waitForImage = async (page, selector) => {
     `${selector} canvas`
   );
   await page.waitForSelector(`${selector} .altText`);
+};
+
+const copyImage = async (page, imagePath, number) => {
+  const data = fs
+    .readFileSync(path.join(__dirname, imagePath))
+    .toString("base64");
+  await page.evaluate(async imageData => {
+    const resp = await fetch(`data:image/png;base64,${imageData}`);
+    const blob = await resp.blob();
+
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        [blob.type]: blob,
+      }),
+    ]);
+  }, data);
+
+  let hasPasteEvent = false;
+  while (!hasPasteEvent) {
+    // We retry to paste if nothing has been pasted before 500ms.
+    const promise = Promise.race([
+      page.evaluate(
+        () =>
+          new Promise(resolve => {
+            document.addEventListener(
+              "paste",
+              e => resolve(e.clipboardData.items.length !== 0),
+              {
+                once: true,
+              }
+            );
+          })
+      ),
+      page.evaluate(
+        () =>
+          new Promise(resolve => {
+            setTimeout(() => resolve(false), 500);
+          })
+      ),
+    ]);
+    await page.keyboard.down("Control");
+    await page.keyboard.press("v");
+    await page.keyboard.up("Control");
+    hasPasteEvent = await promise;
+  }
+
+  await waitForImage(page, getEditorSelector(number));
 };
 
 describe("Stamp Editor", () => {
@@ -235,50 +283,7 @@ describe("Stamp Editor", () => {
         pages.map(async ([browserName, page]) => {
           await page.click("#editorStamp");
 
-          const data = fs
-            .readFileSync(path.join(__dirname, "../images/firefox_logo.png"))
-            .toString("base64");
-          await page.evaluate(async imageData => {
-            const resp = await fetch(`data:image/png;base64,${imageData}`);
-            const blob = await resp.blob();
-
-            await navigator.clipboard.write([
-              new ClipboardItem({
-                [blob.type]: blob,
-              }),
-            ]);
-          }, data);
-
-          let hasPasteEvent = false;
-          while (!hasPasteEvent) {
-            // We retry to paste if nothing has been pasted before 500ms.
-            const promise = Promise.race([
-              page.evaluate(
-                () =>
-                  new Promise(resolve => {
-                    document.addEventListener(
-                      "paste",
-                      e => resolve(e.clipboardData.items.length !== 0),
-                      {
-                        once: true,
-                      }
-                    );
-                  })
-              ),
-              page.evaluate(
-                () =>
-                  new Promise(resolve => {
-                    setTimeout(() => resolve(false), 500);
-                  })
-              ),
-            ]);
-            await page.keyboard.down("Control");
-            await page.keyboard.press("v");
-            await page.keyboard.up("Control");
-            hasPasteEvent = await promise;
-          }
-
-          await waitForImage(page, getEditorSelector(0));
+          await copyImage(page, "../images/firefox_logo.png", 0);
 
           // Wait for the alt-text button to be visible.
           const buttonSelector = `${getEditorSelector(0)} button.altText`;
@@ -428,6 +433,144 @@ describe("Stamp Editor", () => {
           await (browserName === "chrome"
             ? page.waitForSelector(`${buttonSelector}:focus`)
             : page.waitForSelector(`${buttonSelector}:focus-visible`));
+        })
+      );
+    });
+  });
+
+  describe("Resize an image with the keyboard", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer", 50);
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the dimensions change", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorStamp");
+
+          await copyImage(page, "../images/firefox_logo.png", 0);
+
+          const editorSelector = getEditorSelector(0);
+
+          await page.click(editorSelector);
+          await waitForSelectedEditor(page, editorSelector);
+
+          await page.waitForSelector(
+            `${editorSelector} .resizer.topLeft[tabindex="-1"]`
+          );
+
+          const getDims = async () => {
+            const [blX, blY, trX, trY] = await getFirstSerialized(
+              page,
+              x => x.rect
+            );
+            return [trX - blX, trY - blY];
+          };
+
+          const [width, height] = await getDims();
+
+          // Press Enter to enter in resize-with-keyboard mode.
+          await page.keyboard.press("Enter");
+
+          // The resizer must become keyboard focusable.
+          await page.waitForSelector(
+            `${editorSelector} .resizer.topLeft[tabindex="0"]`
+          );
+
+          let prevWidth = width;
+          let prevHeight = height;
+
+          const waitForDimsChange = async (w, h) => {
+            await page.waitForFunction(
+              (prevW, prevH) => {
+                const [x1, y1, x2, y2] =
+                  window.PDFViewerApplication.pdfDocument.annotationStorage.serializable.map
+                    .values()
+                    .next().value.rect;
+                const newWidth = x2 - x1;
+                const newHeight = y2 - y1;
+                return newWidth !== prevW || newHeight !== prevH;
+              },
+              {},
+              w,
+              h
+            );
+          };
+
+          for (let i = 0; i < 40; i++) {
+            await page.keyboard.press("ArrowLeft");
+            await waitForDimsChange(prevWidth, prevHeight);
+            [prevWidth, prevHeight] = await getDims();
+          }
+
+          let [newWidth, newHeight] = await getDims();
+          expect(newWidth > width + 30)
+            .withContext(`In ${browserName}`)
+            .toEqual(true);
+          expect(newHeight > height + 30)
+            .withContext(`In ${browserName}`)
+            .toEqual(true);
+
+          for (let i = 0; i < 4; i++) {
+            await page.keyboard.down("Control");
+            await page.keyboard.press("ArrowRight");
+            await page.keyboard.up("Control");
+            await waitForDimsChange(prevWidth, prevHeight);
+            [prevWidth, prevHeight] = await getDims();
+          }
+
+          [newWidth, newHeight] = await getDims();
+          expect(Math.abs(newWidth - width) < 2)
+            .withContext(`In ${browserName}`)
+            .toEqual(true);
+          expect(Math.abs(newHeight - height) < 2)
+            .withContext(`In ${browserName}`)
+            .toEqual(true);
+
+          // Move the focus to the next resizer.
+          await page.keyboard.press("Tab");
+          await page.waitForFunction(
+            () => !!document.activeElement?.classList.contains("topMiddle")
+          );
+
+          for (let i = 0; i < 40; i++) {
+            await page.keyboard.press("ArrowUp");
+            await waitForDimsChange(prevWidth, prevHeight);
+            [prevWidth, prevHeight] = await getDims();
+          }
+
+          [, newHeight] = await getDims();
+          expect(newHeight > height + 50)
+            .withContext(`In ${browserName}`)
+            .toEqual(true);
+
+          for (let i = 0; i < 4; i++) {
+            await page.keyboard.down("Control");
+            await page.keyboard.press("ArrowDown");
+            await page.keyboard.up("Control");
+            await waitForDimsChange(prevWidth, prevHeight);
+            [prevWidth, prevHeight] = await getDims();
+          }
+
+          [, newHeight] = await getDims();
+          expect(Math.abs(newHeight - height) < 2)
+            .withContext(`In ${browserName}`)
+            .toEqual(true);
+
+          // Escape should remove the focus from the resizer.
+          await page.keyboard.press("Escape");
+          await page.waitForSelector(
+            `${editorSelector} .resizer.topLeft[tabindex="-1"]`
+          );
+          await page.waitForFunction(
+            () => !document.activeElement?.classList.contains("resizer")
+          );
         })
       );
     });
