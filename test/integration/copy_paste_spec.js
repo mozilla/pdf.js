@@ -13,14 +13,44 @@
  * limitations under the License.
  */
 
-const { closePages, loadAndWait, mockClipboard } = require("./test_utils.js");
+const {
+  closePages,
+  loadAndWait,
+  mockClipboard,
+  waitForEvent,
+  waitForTextLayer,
+} = require("./test_utils.js");
+
+const selectAll = async page => {
+  const promise = waitForEvent(page, "selectionchange");
+  await page.keyboard.down("Control");
+  await page.keyboard.press("a");
+  await page.keyboard.up("Control");
+  await promise;
+
+  await page.waitForFunction(() => {
+    const selection = document.getSelection();
+    const hiddenCopyElement = document.getElementById("hiddenCopyElement");
+    return selection.containsNode(hiddenCopyElement);
+  });
+};
 
 describe("Copy and paste", () => {
   describe("all text", () => {
     let pages;
 
     beforeAll(async () => {
-      pages = await loadAndWait("tracemonkey.pdf", ".textLayer");
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        "#hiddenCopyElement",
+        100,
+        async page => {
+          await page.waitForFunction(
+            () => !!window.PDFViewerApplication.eventBus
+          );
+          await waitForTextLayer(page);
+        }
+      );
       await mockClipboard(pages);
     });
 
@@ -31,30 +61,28 @@ describe("Copy and paste", () => {
     it("must check that we've all the contents on copy/paste", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.keyboard.down("Control");
-          await page.keyboard.press("a");
-          await page.keyboard.up("Control");
+          await selectAll(page);
 
-          await page.waitForTimeout(500);
-
+          const promise = waitForEvent(page, "copy");
           await page.keyboard.down("Control");
           await page.keyboard.press("c");
           await page.keyboard.up("Control");
-
-          await page.waitForTimeout(500);
+          await promise;
 
           await page.waitForFunction(
             `document.querySelector('#viewerContainer').style.cursor !== "wait"`
           );
 
+          await page.waitForFunction(
+            async () =>
+              !!(await navigator.clipboard.readText())?.includes(
+                "Dynamic languages such as JavaScript"
+              )
+          );
           const text = await page.evaluate(() =>
             navigator.clipboard.readText()
           );
 
-          expect(!!text).withContext(`In ${browserName}`).toEqual(true);
-          expect(text.includes("Dynamic languages such as JavaScript"))
-            .withContext(`In ${browserName}`)
-            .toEqual(true);
           expect(
             text.includes("This section provides an overview of our system")
           )
@@ -117,11 +145,21 @@ describe("Copy and paste", () => {
       );
     });
   });
-  describe("all text", () => {
+  describe("Copy/paste and ligatures", () => {
     let pages;
 
     beforeAll(async () => {
-      pages = await loadAndWait("copy_paste_ligatures.pdf", ".textLayer");
+      pages = await loadAndWait(
+        "copy_paste_ligatures.pdf",
+        "#hiddenCopyElement",
+        100,
+        async page => {
+          await page.waitForFunction(
+            () => !!window.PDFViewerApplication.eventBus
+          );
+          await waitForTextLayer(page);
+        }
+      );
       await mockClipboard(pages);
     });
 
@@ -129,30 +167,29 @@ describe("Copy and paste", () => {
       await closePages(pages);
     });
 
-    it("must check that we've all the contents on copy/paste", async () => {
+    it("must check that the ligatures have been removed when the text has been copied", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.keyboard.down("Control");
-          await page.keyboard.press("a");
-          await page.keyboard.up("Control");
+          await selectAll(page);
 
-          await page.waitForTimeout(100);
-
+          const promise = waitForEvent(page, "copy");
           await page.keyboard.down("Control");
           await page.keyboard.press("c");
           await page.keyboard.up("Control");
-
-          await page.waitForTimeout(100);
+          await promise;
 
           await page.waitForFunction(
             `document.querySelector('#viewerContainer').style.cursor !== "wait"`
+          );
+
+          await page.waitForFunction(
+            async () => !!(await navigator.clipboard.readText())
           );
 
           const text = await page.evaluate(() =>
             navigator.clipboard.readText()
           );
 
-          expect(!!text).withContext(`In ${browserName}`).toEqual(true);
           expect(text)
             .withContext(`In ${browserName}`)
             .toEqual("abcdeffffiflffifflſtstghijklmno");
