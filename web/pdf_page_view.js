@@ -167,13 +167,6 @@ class PDFPageView {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       this._isStandalone = !this.renderingQueue?.hasViewer();
       this._container = container;
-
-      if (options.useOnlyCssZoom) {
-        console.error(
-          "useOnlyCssZoom was removed, please use `maxCanvasPixels = 0` instead."
-        );
-        this.maxCanvasPixels = 0;
-      }
     }
 
     this._annotationCanvasMap = null;

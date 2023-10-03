@@ -280,13 +280,6 @@ class PDFViewer {
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       this.removePageBorders = options.removePageBorders || false;
-
-      if (options.useOnlyCssZoom) {
-        console.error(
-          "useOnlyCssZoom was removed, please use `maxCanvasPixels = 0` instead."
-        );
-        options.maxCanvasPixels = 0;
-      }
     }
     this.isOffscreenCanvasSupported =
       options.isOffscreenCanvasSupported ?? true;
