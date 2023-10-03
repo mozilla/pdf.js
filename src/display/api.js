@@ -770,26 +770,6 @@ class PDFDocumentProxy {
     this._pdfInfo = pdfInfo;
     this._transport = transport;
 
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      Object.defineProperty(this, "getJavaScript", {
-        value: () => {
-          deprecated(
-            "`PDFDocumentProxy.getJavaScript`, " +
-              "please use `PDFDocumentProxy.getJSActions` instead."
-          );
-          return this.getJSActions().then(js => {
-            if (!js) {
-              return js;
-            }
-            const jsArr = [];
-            for (const name in js) {
-              jsArr.push(...js[name]);
-            }
-            return jsArr;
-          });
-        },
-      });
-    }
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       // For testing purposes.
       Object.defineProperty(this, "getXFADatasets", {

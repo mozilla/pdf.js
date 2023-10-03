@@ -22,7 +22,7 @@ import {
   PromiseCapability,
   Util,
 } from "../shared/util.js";
-import { deprecated, setLayerDimensions } from "./display_utils.js";
+import { setLayerDimensions } from "./display_utils.js";
 
 /**
  * Text layer render parameters.
@@ -456,34 +456,6 @@ class TextLayerRenderTask {
  * @returns {TextLayerRenderTask}
  */
 function renderTextLayer(params) {
-  if (
-    (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-    !params.textContentSource &&
-    (params.textContent || params.textContentStream)
-  ) {
-    deprecated(
-      "The TextLayerRender `textContent`/`textContentStream` parameters " +
-        "will be removed in the future, please use `textContentSource` instead."
-    );
-    params.textContentSource = params.textContent || params.textContentStream;
-  }
-  if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC && !TESTING")) {
-    const { container, viewport } = params;
-    const style = getComputedStyle(container);
-    const visibility = style.getPropertyValue("visibility");
-    const scaleFactor = parseFloat(style.getPropertyValue("--scale-factor"));
-
-    if (
-      visibility === "visible" &&
-      (!scaleFactor || Math.abs(scaleFactor - viewport.scale) > 1e-5)
-    ) {
-      console.error(
-        "The `--scale-factor` CSS-variable must be set, " +
-          "to the same value as `viewport.scale`, " +
-          "either on the `container`-element itself or higher up in the DOM."
-      );
-    }
-  }
   const task = new TextLayerRenderTask(params);
   task._render();
   return task;
