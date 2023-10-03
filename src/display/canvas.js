@@ -517,10 +517,13 @@ class CanvasExtraState {
   updateRectMinMax(transform, rect) {
     const p1 = Util.applyTransform(rect, transform);
     const p2 = Util.applyTransform(rect.slice(2), transform);
-    this.minX = Math.min(this.minX, p1[0], p2[0]);
-    this.minY = Math.min(this.minY, p1[1], p2[1]);
-    this.maxX = Math.max(this.maxX, p1[0], p2[0]);
-    this.maxY = Math.max(this.maxY, p1[1], p2[1]);
+    const p3 = Util.applyTransform([rect[0], rect[3]], transform);
+    const p4 = Util.applyTransform([rect[2], rect[1]], transform);
+
+    this.minX = Math.min(this.minX, p1[0], p2[0], p3[0], p4[0]);
+    this.minY = Math.min(this.minY, p1[1], p2[1], p3[1], p4[1]);
+    this.maxX = Math.max(this.maxX, p1[0], p2[0], p3[0], p4[0]);
+    this.maxY = Math.max(this.maxY, p1[1], p2[1], p3[1], p4[1]);
   }
 
   updateScalingPathMinMax(transform, minMax) {
