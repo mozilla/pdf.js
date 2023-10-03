@@ -67,7 +67,7 @@ class DownloadManager {
   /**
    * @returns {boolean} Indicating if the data was opened.
    */
-  openOrDownloadData(element, data, filename) {
+  openOrDownloadData(element, data, filename, dest = null) {
     const isPdfData = isPdfFile(filename);
     const contentType = isPdfData ? "application/pdf" : "";
 
@@ -92,6 +92,9 @@ class DownloadManager {
           chrome.runtime.getURL("/content/web/viewer.html") +
           "?file=" +
           encodeURIComponent(blobUrl + "#" + filename);
+      }
+      if (dest) {
+        viewerUrl += `#${escape(dest)}`;
       }
 
       try {
