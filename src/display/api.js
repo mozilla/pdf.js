@@ -73,7 +73,6 @@ import { PDFDataTransportStream } from "./transport_stream.js";
 import { PDFFetchStream } from "display-fetch_stream";
 import { PDFNetworkStream } from "display-network";
 import { PDFNodeStream } from "display-node_stream";
-import { SVGGraphics } from "display-svg";
 import { XfaText } from "./xfa_text.js";
 
 const DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
@@ -3448,6 +3447,5 @@ export {
   PDFWorker,
   PDFWorkerUtil,
   RenderTask,
-  SVGGraphics,
   version,
 };
