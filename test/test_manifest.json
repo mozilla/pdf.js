@@ -3143,6 +3143,13 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue17064_readonly",
+       "file": "pdfs/issue17064_readonly.pdf",
+       "md5": "cb84f8e8301e935a3b9ea8ef320f45bf",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "issue12714",
        "file": "pdfs/issue12714.pdf",
        "md5": "f9ee31c74f9e342e95122b0b3bc84fa0",
