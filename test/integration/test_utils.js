@@ -253,6 +253,15 @@ async function waitForAnnotationEditorLayer(page) {
 }
 exports.waitForAnnotationEditorLayer = waitForAnnotationEditorLayer;
 
+async function waitForTextLayer(page) {
+  return page.evaluate(() => {
+    return new Promise(resolve => {
+      window.PDFViewerApplication.eventBus.on("textlayerrendered", resolve);
+    });
+  });
+}
+exports.waitForTextLayer = waitForTextLayer;
+
 async function scrollIntoView(page, selector) {
   const promise = page.evaluate(
     sel =>
