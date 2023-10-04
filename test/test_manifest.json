@@ -8156,5 +8156,13 @@
       "md5": "16a70b9941ba049a61612109e0e1d719",
       "rounds": 1,
       "type": "eq"
+   },
+   {
+      "id": "issue17069",
+      "file": "pdfs/issue17069.pdf",
+      "md5": "e44a3920c83d8e7be112c52da4db8e57",
+      "rounds": 1,
+      "type": "eq",
+      "annotations": true
    }
 ]
