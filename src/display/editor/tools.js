@@ -1021,7 +1021,7 @@ class AnnotationEditorUIManager {
    * @param {KeyboardEvent} event
    */
   keydown(event) {
-    if (!this.getActive()?.shouldGetKeyboardEvents()) {
+    if (!this.isEditorHandlingKeyboard) {
       AnnotationEditorUIManager._keyboardManager.exec(this, event);
     }
   }
@@ -1730,6 +1730,14 @@ class AnnotationEditorUIManager {
     } else {
       editor.parent.addOrRebuild(editor);
     }
+  }
+
+  get isEditorHandlingKeyboard() {
+    return (
+      this.getActive()?.shouldGetKeyboardEvents() ||
+      (this.#selectedEditors.size === 1 &&
+        this.#selectedEditors.values().next().value.shouldGetKeyboardEvents())
+    );
   }
 
   /**
