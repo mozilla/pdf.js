@@ -2855,6 +2855,29 @@ describe("api", function () {
       expect(content instanceof Uint8Array).toEqual(true);
       expect(content.length).toEqual(4508);
 
+      expect(annotations[0].attachmentDest).toEqual('[-1,{"name":"Fit"}]');
+
+      await loadingTask.destroy();
+    });
+
+    it("gets annotations containing GoToE action with destination (issue 17056)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue17056.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+
+      const annotations = await pdfPage.getAnnotations();
+      expect(annotations.length).toEqual(30);
+
+      const { annotationType, attachment, attachmentDest } = annotations[0];
+      expect(annotationType).toEqual(AnnotationType.LINK);
+
+      const { filename, content } = attachment;
+      expect(filename).toEqual("destination-doc.pdf");
+      expect(content instanceof Uint8Array).toEqual(true);
+      expect(content.length).toEqual(10305);
+
+      expect(attachmentDest).toEqual('[0,{"name":"Fit"}]');
+
       await loadingTask.destroy();
     });
 

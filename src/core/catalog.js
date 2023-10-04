@@ -59,6 +59,21 @@ function fetchDestination(dest) {
   return Array.isArray(dest) ? dest : null;
 }
 
+function fetchRemoteDest(action) {
+  let dest = action.get("D");
+  if (dest) {
+    if (dest instanceof Name) {
+      dest = dest.name;
+    }
+    if (typeof dest === "string") {
+      return stringToPDFString(dest);
+    } else if (Array.isArray(dest)) {
+      return JSON.stringify(dest);
+    }
+  }
+  return null;
+}
+
 class Catalog {
   constructor(pdfManager, xref) {
     this.pdfManager = pdfManager;
@@ -1514,19 +1529,9 @@ class Catalog {
           }
 
           // NOTE: the destination is relative to the *remote* document.
-          let remoteDest = action.get("D");
-          if (remoteDest) {
-            if (remoteDest instanceof Name) {
-              remoteDest = remoteDest.name;
-            }
-            if (typeof url === "string") {
-              const baseUrl = url.split("#")[0];
-              if (typeof remoteDest === "string") {
-                url = baseUrl + "#" + remoteDest;
-              } else if (Array.isArray(remoteDest)) {
-                url = baseUrl + "#" + JSON.stringify(remoteDest);
-              }
-            }
+          const remoteDest = fetchRemoteDest(action);
+          if (remoteDest && typeof url === "string") {
+            url = /* baseUrl = */ url.split("#", 1)[0] + "#" + remoteDest;
           }
           // The 'NewWindow' property, equal to `LinkTarget.BLANK`.
           const newWindow = action.get("NewWindow");
@@ -1550,6 +1555,12 @@ class Catalog {
 
           if (attachment) {
             resultObj.attachment = attachment;
+
+            // NOTE: the destination is relative to the *attachment*.
+            const attachmentDest = fetchRemoteDest(action);
+            if (attachmentDest) {
+              resultObj.attachmentDest = attachmentDest;
+            }
           } else {
             warn(`parseDestDictionary - unimplemented "GoToE" action.`);
           }
