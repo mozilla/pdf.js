@@ -1422,6 +1422,7 @@ class AnnotationEditor {
       const boundResizerBlur = this.#resizerBlur.bind(this);
       for (const div of this.#allResizerDivs) {
         const name = div.getAttribute("data-resizer-name");
+        div.setAttribute("role", "spinbutton");
         div.addEventListener("keydown", boundResizerKeydown);
         div.addEventListener("blur", boundResizerBlur);
         div.addEventListener("focus", this.#resizerFocus.bind(this, name));
