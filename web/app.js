@@ -1816,7 +1816,9 @@ const PDFViewerApplication = {
     this.pdfViewer.cleanup();
     this.pdfThumbnailViewer?.cleanup();
 
-    this.pdfDocument.cleanup();
+    this.pdfDocument.cleanup(
+      /* keepLoadedFonts = */ AppOptions.get("fontExtraProperties")
+    );
   },
 
   forceRendering() {

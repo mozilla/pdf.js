@@ -80,7 +80,7 @@ class FontLoader {
     }
   }
 
-  async loadSystemFont(info) {
+  async loadSystemFont({ systemFontInfo: info, _inspectFont }) {
     if (!info || this.#systemFonts.has(info.loadedName)) {
       return;
     }
@@ -96,6 +96,7 @@ class FontLoader {
       try {
         await fontFace.load();
         this.#systemFonts.add(loadedName);
+        _inspectFont?.(info);
       } catch {
         warn(
           `Cannot load system font: ${info.baseFontName}, installing it could help to improve PDF rendering.`
@@ -119,7 +120,7 @@ class FontLoader {
     font.attached = true;
 
     if (font.systemFontInfo) {
-      await this.loadSystemFont(font.systemFontInfo);
+      await this.loadSystemFont(font);
       return;
     }
 
