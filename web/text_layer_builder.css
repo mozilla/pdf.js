@@ -14,8 +14,8 @@
  */
 
 :root {
-  --highlight-bg-color: rgba(180, 0, 170, 1);
-  --highlight-selected-bg-color: rgba(0, 100, 0, 1);
+  --highlight-bg-color: rgb(180 0 170 / 1);
+  --highlight-selected-bg-color: rgb(0 100 0 / 1);
 }
 
 @media screen and (forced-colors: active) {
