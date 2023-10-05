@@ -45,18 +45,18 @@
   --alt-text-opacity: 0.8;
   --alt-text-add-image: url(images/altText_add.svg);
   --alt-text-done-image: url(images/altText_done.svg);
-  --alt-text-bg-color: rgba(43, 42, 51, var(--alt-text-opacity));
+  --alt-text-bg-color: rgb(43 42 51 / var(--alt-text-opacity));
   --alt-text-fg-color: #fbfbfe;
   --alt-text-border-color: var(--alt-text-bg-color);
-  --alt-text-hover-bg-color: rgba(82, 82, 94, var(--alt-text-opacity));
+  --alt-text-hover-bg-color: rgb(82 82 94 / var(--alt-text-opacity));
   --alt-text-hover-fg-color: var(--alt-text-fg-color);
   --alt-text-hover-border-color: var(--alt-text-hover-bg-color);
-  --alt-text-active-bg-color: rgba(91, 91, 102, var(--alt-text-opacity));
+  --alt-text-active-bg-color: rgb(91 91 102 / var(--alt-text-opacity));
   --alt-text-active-fg-color: var(--alt-text-fg-color);
   --alt-text-active-border-color: var(--alt-text-hover-bg-color);
   --alt-text-focus-outline-color: #0060df;
   --alt-text-focus-border-color: #f0f0f4;
-  --alt-text-shadow: 0 2px 6px 0 rgba(28, 27, 34, 0.5);
+  --alt-text-shadow: 0 2px 6px 0 rgb(28 27 34 / 0.5);
 }
 
 @media (min-resolution: 1.1dppx) {
@@ -558,7 +558,7 @@
       --alt-text-tooltip-bg: #f0f0f4;
       --alt-text-tooltip-fg: #15141a;
       --alt-text-tooltip-border: #8f8f9d;
-      --alt-text-tooltip-shadow: 0px 2px 6px 0px rgba(58, 57, 68, 0.2);
+      --alt-text-tooltip-shadow: 0px 2px 6px 0px rgb(58 57 68 / 0.2);
 
       @media (prefers-color-scheme: dark) {
         --alt-text-tooltip-bg: #1c1b22;
@@ -600,7 +600,7 @@
 #altTextDialog {
   --dialog-bg-color: white;
   --dialog-border-color: white;
-  --dialog-shadow: 0 2px 14px 0 rgba(58, 57, 68, 0.2);
+  --dialog-shadow: 0 2px 14px 0 rgb(58 57 68 / 0.2);
   --text-primary-color: #15141a;
   --text-secondary-color: #5b5b66;
   --hover-filter: brightness(0.9);
@@ -635,17 +635,17 @@
     --dialog-shadow: 0 2px 14px 0 #15141a;
     --text-primary-color: #fbfbfe;
     --text-secondary-color: #cfcfd8;
-    --focus-ring-color: #00ddff;
+    --focus-ring-color: #0df;
     --hover-filter: brightness(1.4);
 
     --textarea-bg-color: #42414d;
 
     --radio-bg-color: #2b2a33;
     --radio-checked-bg-color: #15141a;
-    --radio-checked-border-color: #00ddff;
+    --radio-checked-border-color: #0df;
 
     --button-cancel-bg-color: #2b2a33;
-    --button-save-bg-color: #00ddff;
+    --button-save-bg-color: #0df;
     --button-save-fg-color: #15141a;
   }
 
