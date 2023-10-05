@@ -29,52 +29,52 @@
   --toolbar-icon-opacity: 0.7;
   --doorhanger-icon-opacity: 0.9;
 
-  --main-color: rgba(12, 12, 13, 1);
-  --body-bg-color: rgba(212, 212, 215, 1);
-  --progressBar-color: rgba(10, 132, 255, 1);
-  --progressBar-bg-color: rgba(221, 221, 222, 1);
-  --progressBar-blend-color: rgba(116, 177, 239, 1);
+  --main-color: rgb(12 12 13 / 1);
+  --body-bg-color: rgb(212 212 215 / 1);
+  --progressBar-color: rgb(10 132 255 / 1);
+  --progressBar-bg-color: rgb(221 221 222 / 1);
+  --progressBar-blend-color: rgb(116 177 239 / 1);
   --scrollbar-color: auto;
   --scrollbar-bg-color: auto;
-  --toolbar-icon-bg-color: rgba(0, 0, 0, 1);
-  --toolbar-icon-hover-bg-color: rgba(0, 0, 0, 1);
+  --toolbar-icon-bg-color: rgb(0 0 0 / 1);
+  --toolbar-icon-hover-bg-color: rgb(0 0 0 / 1);
 
-  --sidebar-narrow-bg-color: rgba(212, 212, 215, 0.9);
-  --sidebar-toolbar-bg-color: rgba(245, 246, 247, 1);
-  --toolbar-bg-color: rgba(249, 249, 250, 1);
-  --toolbar-border-color: rgba(184, 184, 184, 1);
+  --sidebar-narrow-bg-color: rgb(212 212 215 / 0.9);
+  --sidebar-toolbar-bg-color: rgb(245 246 247 / 1);
+  --toolbar-bg-color: rgb(249 249 250 / 1);
+  --toolbar-border-color: rgb(184 184 184 / 1);
   --toolbar-box-shadow: 0 1px 0 var(--toolbar-border-color);
   --toolbar-border-bottom: none;
   --toolbarSidebar-box-shadow: inset calc(-1px * var(--dir-factor)) 0 0
-      rgba(0, 0, 0, 0.25),
-    0 1px 0 rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1);
+      rgb(0 0 0 / 0.25),
+    0 1px 0 rgb(0 0 0 / 0.15), 0 0 1px rgb(0 0 0 / 0.1);
   --toolbarSidebar-border-bottom: none;
-  --button-hover-color: rgba(221, 222, 223, 1);
-  --toggled-btn-color: rgba(0, 0, 0, 1);
-  --toggled-btn-bg-color: rgba(0, 0, 0, 0.3);
-  --toggled-hover-active-btn-color: rgba(0, 0, 0, 0.4);
+  --button-hover-color: rgb(221 222 223 / 1);
+  --toggled-btn-color: rgb(0 0 0 / 1);
+  --toggled-btn-bg-color: rgb(0 0 0 / 0.3);
+  --toggled-hover-active-btn-color: rgb(0 0 0 / 0.4);
   --toggled-hover-btn-outline: none;
-  --dropdown-btn-bg-color: rgba(215, 215, 219, 1);
+  --dropdown-btn-bg-color: rgb(215 215 219 / 1);
   --dropdown-btn-border: none;
-  --separator-color: rgba(0, 0, 0, 0.3);
-  --field-color: rgba(6, 6, 6, 1);
-  --field-bg-color: rgba(255, 255, 255, 1);
-  --field-border-color: rgba(187, 187, 188, 1);
-  --treeitem-color: rgba(0, 0, 0, 0.8);
-  --treeitem-bg-color: rgba(0, 0, 0, 0.15);
-  --treeitem-hover-color: rgba(0, 0, 0, 0.9);
-  --treeitem-selected-color: rgba(0, 0, 0, 0.9);
-  --treeitem-selected-bg-color: rgba(0, 0, 0, 0.25);
-  --thumbnail-hover-color: rgba(0, 0, 0, 0.1);
-  --thumbnail-selected-color: rgba(0, 0, 0, 0.2);
-  --doorhanger-bg-color: rgba(255, 255, 255, 1);
-  --doorhanger-border-color: rgba(12, 12, 13, 0.2);
-  --doorhanger-hover-color: rgba(12, 12, 13, 1);
-  --doorhanger-hover-bg-color: rgba(237, 237, 237, 1);
-  --doorhanger-separator-color: rgba(222, 222, 222, 1);
+  --separator-color: rgb(0 0 0 / 0.3);
+  --field-color: rgb(6 6 6 / 1);
+  --field-bg-color: rgb(255 255 255 / 1);
+  --field-border-color: rgb(187 187 188 / 1);
+  --treeitem-color: rgb(0 0 0 / 0.8);
+  --treeitem-bg-color: rgb(0 0 0 / 0.15);
+  --treeitem-hover-color: rgb(0 0 0 / 0.9);
+  --treeitem-selected-color: rgb(0 0 0 / 0.9);
+  --treeitem-selected-bg-color: rgb(0 0 0 / 0.25);
+  --thumbnail-hover-color: rgb(0 0 0 / 0.1);
+  --thumbnail-selected-color: rgb(0 0 0 / 0.2);
+  --doorhanger-bg-color: rgb(255 255 255 / 1);
+  --doorhanger-border-color: rgb(12 12 13 / 0.2);
+  --doorhanger-hover-color: rgb(12 12 13 / 1);
+  --doorhanger-hover-bg-color: rgb(237 237 237 / 1);
+  --doorhanger-separator-color: rgb(222 222 222 / 1);
   --dialog-button-border: none;
-  --dialog-button-bg-color: rgba(12, 12, 13, 0.1);
-  --dialog-button-hover-bg-color: rgba(12, 12, 13, 0.3);
+  --dialog-button-bg-color: rgb(12 12 13 / 0.1);
+  --dialog-button-hover-bg-color: rgb(12 12 13 / 0.3);
 
   --loading-icon: url(images/loading.svg);
   --treeitem-expanded-icon: url(images/treeitem-expanded.svg);
@@ -131,43 +131,43 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --main-color: rgba(249, 249, 250, 1);
-    --body-bg-color: rgba(42, 42, 46, 1);
-    --progressBar-color: rgba(0, 96, 223, 1);
-    --progressBar-bg-color: rgba(40, 40, 43, 1);
-    --progressBar-blend-color: rgba(20, 68, 133, 1);
-    --scrollbar-color: rgba(121, 121, 123, 1);
-    --scrollbar-bg-color: rgba(35, 35, 39, 1);
-    --toolbar-icon-bg-color: rgba(255, 255, 255, 1);
-    --toolbar-icon-hover-bg-color: rgba(255, 255, 255, 1);
+    --main-color: rgb(249 249 250 / 1);
+    --body-bg-color: rgb(42 42 46 / 1);
+    --progressBar-color: rgb(0 96 223 / 1);
+    --progressBar-bg-color: rgb(40 40 43 / 1);
+    --progressBar-blend-color: rgb(20 68 133 / 1);
+    --scrollbar-color: rgb(121 121 123 / 1);
+    --scrollbar-bg-color: rgb(35 35 39 / 1);
+    --toolbar-icon-bg-color: rgb(255 255 255 / 1);
+    --toolbar-icon-hover-bg-color: rgb(255 255 255 / 1);
 
-    --sidebar-narrow-bg-color: rgba(42, 42, 46, 0.9);
-    --sidebar-toolbar-bg-color: rgba(50, 50, 52, 1);
-    --toolbar-bg-color: rgba(56, 56, 61, 1);
-    --toolbar-border-color: rgba(12, 12, 13, 1);
-    --button-hover-color: rgba(102, 102, 103, 1);
-    --toggled-btn-color: rgba(255, 255, 255, 1);
-    --toggled-btn-bg-color: rgba(0, 0, 0, 0.3);
-    --toggled-hover-active-btn-color: rgba(0, 0, 0, 0.4);
-    --dropdown-btn-bg-color: rgba(74, 74, 79, 1);
-    --separator-color: rgba(0, 0, 0, 0.3);
-    --field-color: rgba(250, 250, 250, 1);
-    --field-bg-color: rgba(64, 64, 68, 1);
-    --field-border-color: rgba(115, 115, 115, 1);
-    --treeitem-color: rgba(255, 255, 255, 0.8);
-    --treeitem-bg-color: rgba(255, 255, 255, 0.15);
-    --treeitem-hover-color: rgba(255, 255, 255, 0.9);
-    --treeitem-selected-color: rgba(255, 255, 255, 0.9);
-    --treeitem-selected-bg-color: rgba(255, 255, 255, 0.25);
-    --thumbnail-hover-color: rgba(255, 255, 255, 0.1);
-    --thumbnail-selected-color: rgba(255, 255, 255, 0.2);
-    --doorhanger-bg-color: rgba(74, 74, 79, 1);
-    --doorhanger-border-color: rgba(39, 39, 43, 1);
-    --doorhanger-hover-color: rgba(249, 249, 250, 1);
-    --doorhanger-hover-bg-color: rgba(93, 94, 98, 1);
-    --doorhanger-separator-color: rgba(92, 92, 97, 1);
-    --dialog-button-bg-color: rgba(92, 92, 97, 1);
-    --dialog-button-hover-bg-color: rgba(115, 115, 115, 1);
+    --sidebar-narrow-bg-color: rgb(42 42 46 / 0.9);
+    --sidebar-toolbar-bg-color: rgb(50 50 52 / 1);
+    --toolbar-bg-color: rgb(56 56 61 / 1);
+    --toolbar-border-color: rgb(12 12 13 / 1);
+    --button-hover-color: rgb(102 102 103 / 1);
+    --toggled-btn-color: rgb(255 255 255 / 1);
+    --toggled-btn-bg-color: rgb(0 0 0 / 0.3);
+    --toggled-hover-active-btn-color: rgb(0 0 0 / 0.4);
+    --dropdown-btn-bg-color: rgb(74 74 79 / 1);
+    --separator-color: rgb(0 0 0 / 0.3);
+    --field-color: rgb(250 250 250 / 1);
+    --field-bg-color: rgb(64 64 68 / 1);
+    --field-border-color: rgb(115 115 115 / 1);
+    --treeitem-color: rgb(255 255 255 / 0.8);
+    --treeitem-bg-color: rgb(255 255 255 / 0.15);
+    --treeitem-hover-color: rgb(255 255 255 / 0.9);
+    --treeitem-selected-color: rgb(255 255 255 / 0.9);
+    --treeitem-selected-bg-color: rgb(255 255 255 / 0.25);
+    --thumbnail-hover-color: rgb(255 255 255 / 0.1);
+    --thumbnail-selected-color: rgb(255 255 255 / 0.2);
+    --doorhanger-bg-color: rgb(74 74 79 / 1);
+    --doorhanger-border-color: rgb(39 39 43 / 1);
+    --doorhanger-hover-color: rgb(249 249 250 / 1);
+    --doorhanger-hover-bg-color: rgb(93 94 98 / 1);
+    --doorhanger-separator-color: rgb(92 92 97 / 1);
+    --dialog-button-bg-color: rgb(92 92 97 / 1);
+    --dialog-button-hover-bg-color: rgb(115 115 115 / 1);
 
     /* This image is used in <input> elements, which unfortunately means that
      * the `mask-image` approach used with all of the other images doesn't work
@@ -235,7 +235,7 @@ body {
 
 #viewerContainer.pdfPresentationMode:fullscreen {
   top: 0;
-  background-color: rgba(0, 0, 0, 1);
+  background-color: rgb(0 0 0 / 1);
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -270,7 +270,7 @@ body {
   visibility: hidden;
   z-index: 100;
   font: message-box;
-  border-top: 1px solid rgba(51, 51, 51, 1);
+  border-top: 1px solid rgb(51 51 51 / 1);
   border-inline-end: var(--doorhanger-border-color-whcm);
   transition-property: inset-inline-start;
   transition-duration: var(--sidebar-transition-duration);
@@ -296,7 +296,7 @@ body {
   overflow: auto;
   position: absolute;
   width: 100%;
-  box-shadow: inset calc(-1px * var(--dir-factor)) 0 0 rgba(0, 0, 0, 0.25);
+  box-shadow: inset calc(-1px * var(--dir-factor)) 0 0 rgb(0 0 0 / 0.25);
 }
 
 #viewerContainer {
@@ -497,7 +497,7 @@ body {
 }
 /*#if !MOZCENTRAL*/
 #findInput::-webkit-input-placeholder {
-  color: rgba(191, 191, 191, 1);
+  color: rgb(191 191 191 / 1);
 }
 /*#endif*/
 #findInput::placeholder {
@@ -509,7 +509,7 @@ body {
   background-position: calc(50% + 48% * var(--dir-factor));
 }
 #findInput[data-status="notFound"] {
-  background-color: rgba(255, 102, 102, 1);
+  background-color: rgb(255 102 102 / 1);
 }
 
 .secondaryToolbar,
@@ -607,7 +607,7 @@ body {
 :is(.doorHanger, .doorHangerRight)::after,
 :is(.doorHanger, .doorHangerRight)::before {
   bottom: 100%;
-  border: 8px solid rgba(0, 0, 0, 0);
+  border: 8px solid rgb(0 0 0 / 0);
   content: " ";
   height: 0;
   width: 0;
@@ -639,8 +639,8 @@ body {
 }
 
 #findResultsCount {
-  background-color: rgba(217, 217, 217, 1);
-  color: rgba(82, 82, 82, 1);
+  background-color: rgb(217 217 217 / 1);
+  color: rgb(82 82 82 / 1);
   text-align: center;
   padding: 4px 5px;
   margin: 5px;
@@ -981,7 +981,7 @@ a:is(.toolbarButton, .secondaryToolbarButton)[href="#"] {
   inset-inline-end: 2px;
   /* Create a filled circle, with a diameter of 9 pixels, using only CSS: */
   content: "";
-  background-color: rgba(112, 219, 85, 1);
+  background-color: rgb(112 219 85 / 1);
   height: 9px;
   width: 9px;
   border-radius: 50%;
@@ -1206,7 +1206,7 @@ a:focus > .thumbnail > .thumbnailImage,
 .thumbnail:not([data-loaded]) > .thumbnailImage {
   width: calc(var(--thumbnail-width) - 2px);
   height: calc(var(--thumbnail-height) - 2px);
-  border: 1px dashed rgba(132, 132, 132, 1);
+  border: 1px dashed rgb(132 132 132 / 1);
 }
 
 .treeWithDeepNesting > .treeItem,
@@ -1248,7 +1248,7 @@ a:focus > .thumbnail > .thumbnailImage,
   float: var(--inline-start);
   height: 0;
   width: 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(255 255 255 / 0.5);
 }
 .treeItemToggler::before {
   inset-inline-end: 4px;
@@ -1295,12 +1295,12 @@ dialog {
   font-size: 12px;
   line-height: 14px;
   background-color: var(--doorhanger-bg-color);
-  border: 1px solid rgba(0, 0, 0, 0.5);
+  border: 1px solid rgb(0 0 0 / 0.5);
   border-radius: 4px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.3);
 }
 dialog::backdrop {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgb(0 0 0 / 0.2);
 }
 
 dialog > .row {
@@ -1329,7 +1329,7 @@ dialog .buttonRow {
 }
 
 dialog :link {
-  color: rgba(255, 255, 255, 1);
+  color: rgb(255 255 255 / 1);
 }
 
 #passwordDialog {
@@ -1371,7 +1371,7 @@ dialog :link {
 }
 .grab-to-pan-grabbing {
   position: fixed;
-  background: rgba(0, 0, 0, 0);
+  background: rgb(0 0 0 / 0);
   display: block;
   inset: 0;
   overflow: hidden;
@@ -1388,7 +1388,7 @@ dialog :link {
 
 @media print {
   body {
-    background: rgba(0, 0, 0, 0) none;
+    background: rgb(0 0 0 / 0) none;
   }
   body[data-pdfjsprinting] #outerContainer {
     display: none;
