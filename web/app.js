@@ -3100,6 +3100,8 @@ function webViewerKeyDown(evt) {
     curElementTagName === "INPUT" ||
     curElementTagName === "TEXTAREA" ||
     curElementTagName === "SELECT" ||
+    (curElementTagName === "BUTTON" &&
+      (evt.keyCode === /* Enter = */ 13 || evt.keyCode === /* Space = */ 32)) ||
     curElement?.isContentEditable
   ) {
     // Make sure that the secondary toolbar is closed when Escape is pressed.
