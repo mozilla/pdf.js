@@ -671,7 +671,14 @@ class AnnotationElement {
     }
   }
 
+  get _isEditable() {
+    return false;
+  }
+
   _editOnDoubleClick() {
+    if (!this._isEditable) {
+      return;
+    }
     const {
       annotationEditorType: mode,
       data: { id: editId },
@@ -2346,6 +2353,10 @@ class FreeTextAnnotationElement extends AnnotationElement {
     this._editOnDoubleClick();
 
     return this.container;
+  }
+
+  get _isEditable() {
+    return this.data.hasOwnCanvas;
   }
 }
 
