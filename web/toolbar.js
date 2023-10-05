@@ -162,7 +162,12 @@ class Toolbar {
     for (const { element, eventName, eventDetails } of this.buttons) {
       element.addEventListener("click", evt => {
         if (eventName !== null) {
-          this.eventBus.dispatch(eventName, { source: this, ...eventDetails });
+          this.eventBus.dispatch(eventName, {
+            source: this,
+            ...eventDetails,
+            // evt.detail is the number of clicks.
+            isFromKeyboard: evt.detail === 0,
+          });
         }
       });
     }
