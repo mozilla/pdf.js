@@ -605,10 +605,8 @@ class AnnotationEditorUIManager {
     const arrowChecker = self => {
       // If the focused element is an input, we don't want to handle the arrow.
       // For example, sliders can be controlled with the arrow keys.
-      const { activeElement } = document;
       return (
-        activeElement &&
-        self.#container.contains(activeElement) &&
+        self.#container.contains(document.activeElement) &&
         self.hasSomethingToControl()
       );
     };
@@ -649,6 +647,28 @@ class AnnotationEditorUIManager {
             "mac+Delete",
           ],
           proto.delete,
+        ],
+        [
+          ["Enter", "mac+Enter"],
+          proto.addNewEditorFromKeyboard,
+          {
+            // Those shortcuts can be used in the toolbar for some other actions
+            // like zooming, hence we need to check if the container has the
+            // focus.
+            checker: self =>
+              self.#container.contains(document.activeElement) &&
+              !self.isEnterHandled,
+          },
+        ],
+        [
+          [" ", "mac+ "],
+          proto.addNewEditorFromKeyboard,
+          {
+            // Those shortcuts can be used in the toolbar for some other actions
+            // like zooming, hence we need to check if the container has the
+            // focus.
+            checker: self => self.#container.contains(document.activeElement),
+          },
         ],
         [["Escape", "mac+Escape"], proto.unselectAll],
         [
@@ -1147,8 +1167,10 @@ class AnnotationEditorUIManager {
    * Change the editor mode (None, FreeText, Ink, ...)
    * @param {number} mode
    * @param {string|null} editId
+   * @param {boolean} [isFromKeyboard] - true if the mode change is due to a
+   *   keyboard action.
    */
-  updateMode(mode, editId = null) {
+  updateMode(mode, editId = null, isFromKeyboard = false) {
     if (this.#mode === mode) {
       return;
     }
@@ -1164,6 +1186,11 @@ class AnnotationEditorUIManager {
     for (const layer of this.#allLayers.values()) {
       layer.updateMode(mode);
     }
+    if (!editId && isFromKeyboard) {
+      this.addNewEditorFromKeyboard();
+      return;
+    }
+
     if (!editId) {
       return;
     }
@@ -1174,6 +1201,10 @@ class AnnotationEditorUIManager {
         break;
       }
     }
+  }
+
+  addNewEditorFromKeyboard() {
+    this.currentLayer.addNewEditor();
   }
 
   /**
@@ -1201,7 +1232,7 @@ class AnnotationEditorUIManager {
       return;
     }
     if (type === AnnotationEditorParamsType.CREATE) {
-      this.currentLayer.addNewEditor(type);
+      this.currentLayer.addNewEditor();
       return;
     }
 
@@ -1416,6 +1447,10 @@ class AnnotationEditorUIManager {
     return this.#selectedEditors.has(editor);
   }
 
+  get firstSelectedEditor() {
+    return this.#selectedEditors.values().next().value;
+  }
+
   /**
    * Unselect an editor.
    * @param {AnnotationEditor} editor
@@ -1430,6 +1465,13 @@ class AnnotationEditorUIManager {
 
   get hasSelection() {
     return this.#selectedEditors.size !== 0;
+  }
+
+  get isEnterHandled() {
+    return (
+      this.#selectedEditors.size === 1 &&
+      this.firstSelectedEditor.isEnterHandled
+    );
   }
 
   /**
@@ -1736,7 +1778,7 @@ class AnnotationEditorUIManager {
     return (
       this.getActive()?.shouldGetKeyboardEvents() ||
       (this.#selectedEditors.size === 1 &&
-        this.#selectedEditors.values().next().value.shouldGetKeyboardEvents())
+        this.firstSelectedEditor.shouldGetKeyboardEvents())
     );
   }
 

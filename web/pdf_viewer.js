@@ -2208,7 +2208,7 @@ class PDFViewer {
   /**
    * @param {number} mode - AnnotationEditor mode (None, FreeText, Ink, ...)
    */
-  set annotationEditorMode({ mode, editId = null }) {
+  set annotationEditorMode({ mode, editId = null, isFromKeyboard = false }) {
     if (!this.#annotationEditorUIManager) {
       throw new Error(`The AnnotationEditor is not enabled.`);
     }
@@ -2227,7 +2227,7 @@ class PDFViewer {
       mode,
     });
 
-    this.#annotationEditorUIManager.updateMode(mode, editId);
+    this.#annotationEditorUIManager.updateMode(mode, editId, isFromKeyboard);
   }
 
   // eslint-disable-next-line accessor-pairs
