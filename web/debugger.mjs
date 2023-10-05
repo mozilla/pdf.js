@@ -111,21 +111,29 @@ const FontInspector = (function FontInspectorClosure() {
         }
         return moreInfo;
       }
-      const moreInfo = properties(fontObj, ["name", "type"]);
+
+      const moreInfo = fontObj.css
+        ? properties(fontObj, ["baseFontName"])
+        : properties(fontObj, ["name", "type"]);
+
       const fontName = fontObj.loadedName;
       const font = document.createElement("div");
       const name = document.createElement("span");
       name.textContent = fontName;
-      const download = document.createElement("a");
-      if (url) {
-        url = /url\(['"]?([^)"']+)/.exec(url);
-        download.href = url[1];
-      } else if (fontObj.data) {
-        download.href = URL.createObjectURL(
-          new Blob([fontObj.data], { type: fontObj.mimetype })
-        );
+      let download;
+      if (!fontObj.css) {
+        download = document.createElement("a");
+        if (url) {
+          url = /url\(['"]?([^)"']+)/.exec(url);
+          download.href = url[1];
+        } else if (fontObj.data) {
+          download.href = URL.createObjectURL(
+            new Blob([fontObj.data], { type: fontObj.mimetype })
+          );
+        }
+        download.textContent = "Download";
       }
-      download.textContent = "Download";
+
       const logIt = document.createElement("a");
       logIt.href = "";
       logIt.textContent = "Log";
@@ -139,7 +147,11 @@ const FontInspector = (function FontInspectorClosure() {
       select.addEventListener("click", function () {
         selectFont(fontName, select.checked);
       });
-      font.append(select, name, " ", download, " ", logIt, moreInfo);
+      if (download) {
+        font.append(select, name, " ", download, " ", logIt, moreInfo);
+      } else {
+        font.append(select, name, " ", logIt, moreInfo);
+      }
       fonts.append(font);
       // Somewhat of a hack, should probably add a hook for when the text layer
       // is done rendering.

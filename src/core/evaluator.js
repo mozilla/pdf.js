@@ -2427,13 +2427,17 @@ class PartialEvaluator {
       const { font, loadedName } = textState;
       if (!seenStyles.has(loadedName)) {
         seenStyles.add(loadedName);
-
         textContent.styles[loadedName] = {
           fontFamily: font.fallbackName,
           ascent: font.ascent,
           descent: font.descent,
           vertical: font.vertical,
         };
+        if (self.options.fontExtraProperties && font.systemFontInfo) {
+          const style = textContent.styles[loadedName];
+          style.fontSubstitution = font.systemFontInfo.css;
+          style.fontSubstitutionLoadedName = font.systemFontInfo.loadedName;
+        }
       }
       textContentItem.fontName = loadedName;
 
