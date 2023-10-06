@@ -2808,4 +2808,159 @@ describe("FreeText Editor", () => {
       );
     });
   });
+
+  describe("Create editor with keyboard", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must create an editor from the toolbar", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.focus("#editorFreeText");
+          await page.keyboard.press("Enter");
+
+          let selectorEditor = getEditorSelector(0);
+          await page.waitForSelector(selectorEditor, {
+            visible: true,
+          });
+
+          let xy = await getXY(page, selectorEditor);
+          for (let i = 0; i < 5; i++) {
+            await page.keyboard.down("Control");
+            await page.keyboard.press("ArrowUp");
+            await page.keyboard.up("Control");
+            await waitForPositionChange(page, selectorEditor, xy);
+            xy = await getXY(page, selectorEditor);
+          }
+
+          const data = "Hello PDF.js World !!";
+          await page.type(`${selectorEditor} .internal`, data);
+
+          // Commit.
+          await page.keyboard.press("Escape");
+          await page.waitForSelector(`${selectorEditor} .overlay.enabled`);
+
+          let content = await page.$eval(selectorEditor, el =>
+            el.innerText.trimEnd()
+          );
+
+          expect(content).withContext(`In ${browserName}`).toEqual(data);
+
+          // Disable editing mode.
+          await page.click("#editorFreeText");
+          await page.waitForSelector(
+            `.annotationEditorLayer:not(.freetextEditing)`
+          );
+
+          await page.focus("#editorFreeText");
+          await page.keyboard.press(" ");
+          selectorEditor = getEditorSelector(1);
+          await page.waitForSelector(selectorEditor, {
+            visible: true,
+          });
+
+          xy = await getXY(page, selectorEditor);
+          for (let i = 0; i < 5; i++) {
+            await page.keyboard.down("Control");
+            await page.keyboard.press("ArrowDown");
+            await page.keyboard.up("Control");
+            await waitForPositionChange(page, selectorEditor, xy);
+            xy = await getXY(page, selectorEditor);
+          }
+
+          await page.type(`${selectorEditor} .internal`, data);
+
+          // Commit.
+          await page.keyboard.press("Escape");
+          await page.waitForSelector(`${selectorEditor} .overlay.enabled`);
+
+          // Unselect.
+          await page.keyboard.press("Escape");
+          await waitForUnselectedEditor(page, selectorEditor);
+
+          content = await page.$eval(getEditorSelector(1), el =>
+            el.innerText.trimEnd()
+          );
+
+          expect(content).withContext(`In ${browserName}`).toEqual(data);
+        })
+      );
+    });
+
+    it("must create an editor with keyboard", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.keyboard.press("Enter");
+          let selectorEditor = getEditorSelector(2);
+          await page.waitForSelector(selectorEditor, {
+            visible: true,
+          });
+
+          let xy = await getXY(page, selectorEditor);
+          for (let i = 0; i < 10; i++) {
+            await page.keyboard.down("Control");
+            await page.keyboard.press("ArrowLeft");
+            await page.keyboard.up("Control");
+            await waitForPositionChange(page, selectorEditor, xy);
+            xy = await getXY(page, selectorEditor);
+          }
+
+          const data = "Hello PDF.js World !!";
+          await page.type(`${selectorEditor} .internal`, data);
+
+          // Commit.
+          await page.keyboard.press("Escape");
+          await page.waitForSelector(`${selectorEditor} .overlay.enabled`);
+
+          // Unselect.
+          await page.keyboard.press("Escape");
+          await waitForUnselectedEditor(page, selectorEditor);
+
+          let content = await page.$eval(getEditorSelector(2), el =>
+            el.innerText.trimEnd()
+          );
+
+          expect(content).withContext(`In ${browserName}`).toEqual(data);
+
+          await page.keyboard.press(" ");
+          selectorEditor = getEditorSelector(3);
+          await page.waitForSelector(selectorEditor, {
+            visible: true,
+          });
+
+          xy = await getXY(page, selectorEditor);
+          for (let i = 0; i < 10; i++) {
+            await page.keyboard.down("Control");
+            await page.keyboard.press("ArrowRight");
+            await page.keyboard.up("Control");
+            await waitForPositionChange(page, selectorEditor, xy);
+            xy = await getXY(page, selectorEditor);
+          }
+
+          await page.type(`${selectorEditor} .internal`, data);
+
+          // Commit.
+          await page.keyboard.press("Escape");
+          await page.waitForSelector(`${selectorEditor} .overlay.enabled`);
+
+          // Unselect.
+          await page.keyboard.press("Escape");
+          await waitForUnselectedEditor(page, selectorEditor);
+
+          content = await page.$eval(selectorEditor, el =>
+            el.innerText.trimEnd()
+          );
+
+          expect(content).withContext(`In ${browserName}`).toEqual(data);
+        })
+      );
+    });
+  });
 });

@@ -276,6 +276,13 @@ class AnnotationEditor {
     this.div?.classList.toggle("draggable", value);
   }
 
+  /**
+   * @returns {boolean} true if the editor handles the Enter key itself.
+   */
+  get isEnterHandled() {
+    return true;
+  }
+
   center() {
     const [pageWidth, pageHeight] = this.pageDimensions;
     switch (this.parentRotation) {
