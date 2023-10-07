@@ -20,7 +20,7 @@ import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 const SerializableEmpty = Object.freeze({
   map: null,
   hash: "",
-  transfers: undefined,
+  transfer: undefined,
 });
 
 /**
@@ -181,7 +181,7 @@ class AnnotationStorage {
     }
     const map = new Map(),
       hash = new MurmurHash3_64(),
-      transfers = [];
+      transfer = [];
     const context = Object.create(null);
     let hasBitmap = false;
 
@@ -203,13 +203,13 @@ class AnnotationStorage {
       // during serialization with SVG images.
       for (const value of map.values()) {
         if (value.bitmap) {
-          transfers.push(value.bitmap);
+          transfer.push(value.bitmap);
         }
       }
     }
 
     return map.size > 0
-      ? { map, hash: hash.hexdigest(), transfers }
+      ? { map, hash: hash.hexdigest(), transfer }
       : SerializableEmpty;
   }
 }
@@ -224,17 +224,11 @@ class PrintAnnotationStorage extends AnnotationStorage {
 
   constructor(parent) {
     super();
-    const { map, hash, transfers } = parent.serializable;
+    const { map, hash, transfer } = parent.serializable;
     // Create a *copy* of the data, since Objects are passed by reference in JS.
-    const clone = structuredClone(
-      map,
-      (typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("SKIP_BABEL || TESTING")) &&
-        transfers
-        ? { transfer: transfers }
-        : null
-    );
-    this.#serializable = { map: clone, hash, transfers };
+    const clone = structuredClone(map, transfer ? { transfer } : null);
+
+    this.#serializable = { map: clone, hash, transfer };
   }
 
   /**

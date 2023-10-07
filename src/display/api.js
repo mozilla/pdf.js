@@ -1802,7 +1802,7 @@ class PDFPageProxy {
         '_pumpOperatorList: Expected valid "renderingIntent" argument.'
       );
     }
-    const { map, transfers } = annotationStorageSerializable;
+    const { map, transfer } = annotationStorageSerializable;
 
     const readableStream = this._transport.messageHandler.sendWithStream(
       "GetOperatorList",
@@ -1812,7 +1812,7 @@ class PDFPageProxy {
         cacheKey,
         annotationStorage: map,
       },
-      transfers
+      transfer
     );
     const reader = readableStream.getReader();
 
@@ -1942,14 +1942,7 @@ class LoopbackPort {
 
   postMessage(obj, transfer) {
     const event = {
-      data: structuredClone(
-        obj,
-        (typeof PDFJSDev === "undefined" ||
-          PDFJSDev.test("SKIP_BABEL || TESTING")) &&
-          transfer
-          ? { transfer }
-          : null
-      ),
+      data: structuredClone(obj, transfer ? { transfer } : null),
     };
 
     this.#deferred.then(() => {
@@ -2853,7 +2846,7 @@ class WorkerTransport {
           "please use the getData-method instead."
       );
     }
-    const { map, transfers } = this.annotationStorage.serializable;
+    const { map, transfer } = this.annotationStorage.serializable;
 
     return this.messageHandler
       .sendWithPromise(
@@ -2864,7 +2857,7 @@ class WorkerTransport {
           annotationStorage: map,
           filename: this._fullReader?.filename ?? null,
         },
-        transfers
+        transfer
       )
       .finally(() => {
         this.annotationStorage.resetModified();
