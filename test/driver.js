@@ -34,7 +34,7 @@ const STANDARD_FONT_DATA_URL = "/build/generic/web/standard_fonts/";
 const IMAGE_RESOURCES_PATH = "/web/images/";
 const VIEWER_CSS = "../build/components/pdf_viewer.css";
 const VIEWER_LOCALE = "en-US";
-const WORKER_SRC = "../build/generic/build/pdf.worker.js";
+const WORKER_SRC = "../build/generic/build/pdf.worker.mjs";
 const RENDER_TASK_ON_CONTINUE_DELAY = 5; // ms
 const SVG_NS = "http://www.w3.org/2000/svg";
 

@@ -49,7 +49,6 @@ import {
   getXfaPageViewport,
   isDataScheme,
   isPdfFile,
-  loadScript,
   noContextMenu,
   PDFDateString,
   PixelsPerInch,
@@ -88,7 +87,6 @@ const expectedAPI = Object.freeze({
   InvalidPDFException,
   isDataScheme,
   isPdfFile,
-  loadScript,
   MissingPDFException,
   noContextMenu,
   normalizeUnicode,
@@ -132,10 +130,9 @@ describe("web_pdfjsLib", function () {
     if (isNodeJS) {
       pending("loadScript is not supported in Node.js.");
     }
-    await loadScript(
-      "../../build/generic/build/pdf.js",
-      /* removeScriptElement = */ true
-    );
+    const apiPath = "../../build/generic/build/pdf.mjs";
+    await import(apiPath);
+
     const webPdfjsLib = await import("../../web/pdfjs.js");
 
     expect(Object.keys(webPdfjsLib).sort()).toEqual(
