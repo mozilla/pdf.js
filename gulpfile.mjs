@@ -418,30 +418,6 @@ function tweakWebpackOutput(jsName) {
   });
 }
 
-function addGlobalExports(amdName, jsName) {
-  const replacer = [
-    `module\\.exports = factory\\(\\);`,
-    `define\\("${amdName}", \\[\\], factory\\);`,
-    `exports\\["${amdName}"\\] = factory\\(\\);`,
-    `root\\["${amdName}"\\] = factory\\(\\);`,
-  ];
-  const regex = new RegExp(`(${replacer.join("|")})`, "gm");
-
-  return replace(regex, match => {
-    switch (match) {
-      case `module.exports = factory();`:
-        return `module.exports = root.${jsName} = factory();`;
-      case `define("${amdName}", [], factory);`:
-        return `define("${amdName}", [], () => { return (root.${jsName} = factory()); });`;
-      case `exports["${amdName}"] = factory();`:
-        return `exports["${amdName}"] = root.${jsName} = factory();`;
-      case `root["${amdName}"] = factory();`:
-        return `root["${amdName}"] = root.${jsName} = factory();`;
-    }
-    return match;
-  });
-}
-
 function createMainBundle(defines) {
   const mainFileConfig = createWebpackConfig(defines, {
     filename: "pdf.mjs",
@@ -456,23 +432,20 @@ function createMainBundle(defines) {
 }
 
 function createScriptingBundle(defines, extraOptions = undefined) {
-  const scriptingAMDName = "pdfjs-dist/build/pdf.scripting";
-  const scriptingOutputName = "pdf.scripting.js";
-
   const scriptingFileConfig = createWebpackConfig(
     defines,
     {
-      filename: scriptingOutputName,
-      library: scriptingAMDName,
-      libraryTarget: "umd",
-      umdNamedDefine: true,
+      filename: "pdf.scripting.mjs",
+      library: {
+        type: "module",
+      },
     },
     extraOptions
   );
   return gulp
     .src("./src/pdf.scripting.js")
     .pipe(webpack2Stream(scriptingFileConfig))
-    .pipe(addGlobalExports(scriptingAMDName, "pdfjsScripting"));
+    .pipe(tweakWebpackOutput());
 }
 
 function createSandboxExternal(defines) {
@@ -502,7 +475,7 @@ function createTemporaryScriptingBundle(defines, extraOptions = undefined) {
 }
 
 function createSandboxBundle(defines, extraOptions = undefined) {
-  const scriptingPath = TMP_DIR + "pdf.scripting.js";
+  const scriptingPath = TMP_DIR + "pdf.scripting.mjs";
   // Insert the source as a string to be `eval`-ed in the sandbox.
   const sandboxDefines = builder.merge(defines, {
     PDF_SCRIPTING_JS_SOURCE: fs.readFileSync(scriptingPath).toString(),
