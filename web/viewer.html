@@ -33,8 +33,6 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#include viewer-snippet-firefox-extension.html-->
 <!--#elif CHROME-->
 <!--#include viewer-snippet-chrome-extension.html-->
-<!--#elif MINIFIED-->
-<!--#include viewer-snippet-minified.html-->
 <!--#else-->
 <!--#include viewer-snippet.html-->
 <!--#endif-->
@@ -46,9 +44,9 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
 
 <!--#if MOZCENTRAL-->
-<!--<script src="resource://pdf.js/web/viewer.js"></script>-->
-<!--#elif !MINIFIED-->
-<!--<script src="viewer.js"></script>-->
+<!--<script src="resource://pdf.js/web/viewer.mjs" type="module"></script>-->
+<!--#elif !MOZCENTRAL-->
+<!--<script src="viewer.mjs" type="module"></script>-->
 <!--#elif /* Development mode. */-->
     <link rel="resource" type="application/l10n" href="locale/locale.properties">
 

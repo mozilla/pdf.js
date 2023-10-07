@@ -796,29 +796,6 @@ function noContextMenu(e) {
   e.preventDefault();
 }
 
-/**
- * @param {string} src
- * @param {boolean} [removeScriptElement]
- * @returns {Promise<void>}
- */
-function loadScript(src, removeScriptElement = false) {
-  return new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = src;
-
-    script.onload = function (evt) {
-      if (removeScriptElement) {
-        script.remove();
-      }
-      resolve(evt);
-    };
-    script.onerror = function () {
-      reject(new Error(`Cannot load script at: ${script.src}`));
-    };
-    (document.head || document.documentElement).append(script);
-  });
-}
-
 // Deprecated API function -- display regardless of the `verbosity` setting.
 function deprecated(details) {
   console.log("Deprecated API usage: " + details);
@@ -1026,7 +1003,6 @@ export {
   isDataScheme,
   isPdfFile,
   isValidFetchUrl,
-  loadScript,
   noContextMenu,
   PageViewport,
   PDFDateString,
