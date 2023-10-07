@@ -79,7 +79,7 @@
   overflow: visible;
   border: var(--page-border);
   background-clip: content-box;
-  background-color: rgb(255 255 255 / 1);
+  background-color: rgb(255 255 255);
 }
 
 .pdfViewer .dummyPage {
