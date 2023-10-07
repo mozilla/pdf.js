@@ -23,11 +23,12 @@ const {
   getSerialized,
   loadAndWait,
   scrollIntoView,
+  waitForBeingReady,
   waitForEvent,
   waitForSelectedEditor,
-  waitForUnselectedEditor,
   waitForSerialized,
   waitForStorageEntries,
+  waitForUnselectedEditor,
 } = require("./test_utils.js");
 
 const PNG = require("pngjs").PNG;
@@ -85,6 +86,30 @@ const waitForPositionChange = (page, selector, xy) =>
     selector,
     xy
   );
+
+const unselect = async (page, selector) => {
+  // In moveEditorInDOM we check that the editor still have the
+  // focus after having been moved in the DOM.
+  await waitForBeingReady(page);
+
+  // Unselect.
+  await page.keyboard.press("Escape");
+  await waitForUnselectedEditor(page, selector);
+};
+
+const unselectAndSelect = async (page, selector) => {
+  await unselect(page, selector);
+
+  const editorRect = await page.$eval(selector, el => {
+    const { x, y, width, height } = el.getBoundingClientRect();
+    return { x, y, width, height };
+  });
+  await page.mouse.click(
+    editorRect.x + editorRect.width / 2,
+    editorRect.y + editorRect.height / 2
+  );
+  await waitForSelectedEditor(page, selector);
+};
 
 describe("FreeText Editor", () => {
   describe("FreeText", () => {
@@ -2511,6 +2536,7 @@ describe("FreeText Editor", () => {
           await page.waitForSelector(
             `${getEditorSelector(0)} .overlay.enabled`
           );
+          await unselectAndSelect(page, getEditorSelector(0));
 
           await page.evaluate(() => {
             window.editingEvents = [];
@@ -2571,6 +2597,7 @@ describe("FreeText Editor", () => {
           await page.waitForSelector(
             `${getEditorSelector(0)} .overlay.enabled`
           );
+          await unselectAndSelect(page, getEditorSelector(0));
 
           // Go to the last page.
           await page.keyboard.press("End");
@@ -2881,9 +2908,7 @@ describe("FreeText Editor", () => {
           await page.keyboard.press("Escape");
           await page.waitForSelector(`${selectorEditor} .overlay.enabled`);
 
-          // Unselect.
-          await page.keyboard.press("Escape");
-          await waitForUnselectedEditor(page, selectorEditor);
+          await unselect(page, selectorEditor);
 
           content = await page.$eval(getEditorSelector(1), el =>
             el.innerText.trimEnd()
@@ -2919,9 +2944,7 @@ describe("FreeText Editor", () => {
           await page.keyboard.press("Escape");
           await page.waitForSelector(`${selectorEditor} .overlay.enabled`);
 
-          // Unselect.
-          await page.keyboard.press("Escape");
-          await waitForUnselectedEditor(page, selectorEditor);
+          await unselect(page, selectorEditor);
 
           let content = await page.$eval(getEditorSelector(2), el =>
             el.innerText.trimEnd()
@@ -2950,9 +2973,7 @@ describe("FreeText Editor", () => {
           await page.keyboard.press("Escape");
           await page.waitForSelector(`${selectorEditor} .overlay.enabled`);
 
-          // Unselect.
-          await page.keyboard.press("Escape");
-          await waitForUnselectedEditor(page, selectorEditor);
+          await unselect(page, selectorEditor);
 
           content = await page.$eval(selectorEditor, el =>
             el.innerText.trimEnd()

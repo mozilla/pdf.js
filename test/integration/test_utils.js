@@ -297,3 +297,36 @@ async function scrollIntoView(page, selector) {
   );
 }
 exports.scrollIntoView = scrollIntoView;
+
+exports.waitForBeingReady = async page => {
+  // We wait for the potential focus stuff in moveEditorInDOM is executed.
+  await page.evaluate(
+    () =>
+      new Promise(resolve => {
+        setTimeout(resolve, 0);
+      })
+  );
+
+  // We check that the UI is ready to be used.
+  let isReady = false;
+  while (!isReady) {
+    const promise = Promise.race([
+      page.evaluate(
+        () =>
+          new Promise(resolve => {
+            window.addEventListener("pointermove", () => resolve(true), {
+              once: true,
+            });
+          })
+      ),
+      page.evaluate(
+        () =>
+          new Promise(resolve => {
+            setTimeout(() => resolve(false), 10);
+          })
+      ),
+    ]);
+    await page.mouse.move(0, 0);
+    isReady = await promise;
+  }
+};
