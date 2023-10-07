@@ -1773,7 +1773,16 @@ describe("Interaction", () => {
     let pages;
 
     beforeAll(async () => {
-      pages = await loadAndWait("autoprint.pdf", ".endOfContent");
+      // Autoprinting is triggered by the `Open` event, which is one of the
+      // first events to be dispatched to the sandbox, even before scripting
+      // is reported to be ready. It's therefore important that `loadAndWait`
+      // returns control as soon as possible after opening the PDF document,
+      // and the first element we can check for is the `<html>` tag of the
+      // viewer. Note that the `autoprint.pdf` file is very small, so printing
+      // it is usually very fast and therefore activating the selector check
+      // too late will cause it to never resolve because printing is already
+      // done (and the printed page div removed) before we even get to it.
+      pages = await loadAndWait("autoprint.pdf", "html");
     });
 
     afterAll(async () => {
