@@ -39,7 +39,7 @@
     "needle": "^3.2.0",
     "path2d-polyfill": "^2.0.1",
     "pngjs": "^7.0.0",
-    "postcss": "^8.4.30",
+    "postcss": "^8.4.31",
     "postcss-dir-pseudo-class": "^8.0.0",
     "postcss-discard-comments": "^6.0.0",
     "postcss-nesting": "^12.0.1",
