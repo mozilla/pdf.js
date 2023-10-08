@@ -68,7 +68,7 @@ const TMP_DIR = BUILD_DIR + "tmp/";
 const TYPESTEST_DIR = BUILD_DIR + "typestest/";
 const COMMON_WEB_FILES = [
   "web/images/*.{png,svg,gif}",
-  "web/debugger.{css,js}",
+  "web/debugger.{css,mjs}",
 ];
 const MOZCENTRAL_DIFF_FILE = "mozcentral.diff";
 
