@@ -574,7 +574,7 @@ class PDFBug {
 
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = url.replace(/.js$/, ".css");
+    link.href = url.replace(/\.mjs$/, ".css");
 
     document.head.append(link);
   }
