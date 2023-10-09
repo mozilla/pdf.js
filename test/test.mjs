@@ -907,6 +907,11 @@ async function startBrowser(browserName, startUrl = "") {
     headless: false,
     defaultViewport: null,
     ignoreDefaultArgs: ["--disable-extensions"],
+    // The timeout for individual protocol (CDP) calls should always be lower
+    // than the Jasmine timeout. This way protocol errors are always raised in
+    // the context of the tests that actually triggered them and don't leak
+    // through to other tests (causing unrelated failures or tracebacks).
+    protocolTimeout: /* jasmine.DEFAULT_TIMEOUT_INTERVAL = */ 30000 - 1000,
   };
 
   if (!tempDir) {
