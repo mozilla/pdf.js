@@ -218,17 +218,26 @@ class TextLayerBuilder {
       end.classList.remove("active");
     });
 
-    div.addEventListener("copy", event => {
-      if (!this.#enablePermissions) {
-        const selection = document.getSelection();
-        event.clipboardData.setData(
-          "text/plain",
-          removeNullCharacters(normalizeUnicode(selection.toString()))
-        );
-      }
-      event.preventDefault();
-      event.stopPropagation();
-    });
+    div.addEventListener(
+      "copy",
+      event => {
+        if (!this.#enablePermissions) {
+          const selection = document.getSelection();
+          event.clipboardData.setData(
+            "text/plain",
+            removeNullCharacters(normalizeUnicode(selection.toString()))
+          );
+        } else {
+          event.stopPropagation();
+        }
+        // It's required after the clipboard data have been changed else the
+        // clipboard will contain the selection!
+        event.preventDefault();
+      },
+      // Capture the event in order to be sure that the copy event has the
+      // correct value.
+      { capture: true }
+    );
   }
 }
 
