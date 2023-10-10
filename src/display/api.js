@@ -2768,6 +2768,11 @@ class WorkerTransport {
       if (pageProxy.objs.has(id)) {
         return;
       }
+      // Don't store data *after* cleanup has successfully run, see bug 1854145.
+      if (pageProxy._intentStates.size === 0) {
+        imageData?.bitmap?.close(); // Release any `ImageBitmap` data.
+        return;
+      }
 
       switch (type) {
         case "Image":
