@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-const { closePages, loadAndWait } = require("./test_utils.js");
+import { closePages, loadAndWait } from "./test_utils.mjs";
 
 describe("accessibility", () => {
   describe("structure tree", () => {

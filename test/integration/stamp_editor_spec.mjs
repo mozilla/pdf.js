@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-const {
+import {
   closePages,
   getEditorDimensions,
   getEditorSelector,
@@ -21,11 +21,14 @@ const {
   loadAndWait,
   serializeBitmapDimensions,
   waitForAnnotationEditorLayer,
-  waitForStorageEntries,
   waitForSelectedEditor,
-} = require("./test_utils.js");
-const path = require("path");
-const fs = require("fs");
+  waitForStorageEntries,
+} from "./test_utils.mjs";
+import { fileURLToPath } from "url";
+import fs from "fs";
+import path from "path";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const selectAll = async page => {
   await page.keyboard.down("Control");
