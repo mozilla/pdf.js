@@ -13,24 +13,23 @@
  * limitations under the License.
  */
 
-const {
+import {
   closePages,
   dragAndDropAnnotation,
   getEditors,
   getEditorSelector,
-  getSelectedEditors,
   getFirstSerialized,
+  getSelectedEditors,
   getSerialized,
   loadAndWait,
   scrollIntoView,
   waitForEvent,
   waitForSelectedEditor,
-  waitForUnselectedEditor,
   waitForSerialized,
   waitForStorageEntries,
-} = require("./test_utils.js");
-
-const PNG = require("pngjs").PNG;
+  waitForUnselectedEditor,
+} from "./test_utils.mjs";
+import { PNG } from "pngjs";
 
 const copyPaste = async page => {
   let promise = waitForEvent(page, "copy");
