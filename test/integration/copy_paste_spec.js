@@ -145,6 +145,7 @@ describe("Copy and paste", () => {
       );
     });
   });
+
   describe("Copy/paste and ligatures", () => {
     let pages;
 
@@ -193,6 +194,118 @@ describe("Copy and paste", () => {
           expect(text)
             .withContext(`In ${browserName}`)
             .toEqual("abcdeffffiflffifflſtstghijklmno");
+        })
+      );
+    });
+  });
+
+  describe("Copy/paste and ligatures (but without selecting all)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "copy_paste_ligatures.pdf",
+        "#hiddenCopyElement",
+        100,
+        async page => {
+          await page.waitForFunction(
+            () => !!window.PDFViewerApplication.eventBus
+          );
+          await waitForTextLayer(page);
+        }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the ligatures have been removed when the text has been copied", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.evaluate(async () => {
+            const promise = new Promise(resolve => {
+              document.addEventListener("selectionchange", resolve, {
+                once: true,
+              });
+            });
+            const range = document.createRange();
+            range.selectNodeContents(document.querySelector(".textLayer"));
+            const selection = window.getSelection();
+            selection.addRange(range);
+            await promise;
+          });
+          const promise = page.evaluate(
+            () =>
+              new Promise(resolve => {
+                document.addEventListener(
+                  "copy",
+                  e => resolve(e.clipboardData.getData("text/plain")),
+                  {
+                    once: true,
+                  }
+                );
+              })
+          );
+          await page.keyboard.down("Control");
+          await page.keyboard.press("c");
+          await page.keyboard.up("Control");
+          const text = await promise;
+
+          if (browserName === "chrome") {
+            // In Firefox the copy event hasn't the correct value.
+            expect(text)
+              .withContext(`In ${browserName}`)
+              .toEqual("abcdeffffiflffifflſtstghijklmno");
+          }
+        })
+      );
+    });
+  });
+
+  describe("Copy event", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".textLayer .endOfContent",
+        100,
+        async page => {
+          await page.waitForFunction(
+            () => !!window.PDFViewerApplication.eventBus
+          );
+          await waitForTextLayer(page);
+        }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the copy event is not stolen (bug 1857823)", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.evaluate(async () => {
+            const promise = new Promise(resolve => {
+              document.addEventListener("selectionchange", resolve, {
+                once: true,
+              });
+            });
+            const range = document.createRange();
+            const span = document.querySelector(".textLayer span");
+            range.selectNode(span);
+            const selection = window.getSelection();
+            selection.addRange(range);
+            await promise;
+          });
+
+          const promise = waitForEvent(page, "copy", 300000);
+          await page.keyboard.down("Control");
+          await page.keyboard.press("c");
+          await page.keyboard.up("Control");
+          await promise;
         })
       );
     });
