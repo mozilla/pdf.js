@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-const {
+import {
   closePages,
-  getSelector,
   getQuerySelector,
+  getSelector,
   loadAndWait,
-} = require("./test_utils.js");
+} from "./test_utils.mjs";
 
 describe("Annotation highlight", () => {
   describe("annotation-highlight.pdf", () => {

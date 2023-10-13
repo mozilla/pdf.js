@@ -24,14 +24,14 @@ async function runTests(results) {
     random: false,
     spec_dir: "integration",
     spec_files: [
-      "accessibility_spec.js",
-      "annotation_spec.js",
-      "copy_paste_spec.js",
-      "find_spec.js",
-      "freetext_editor_spec.js",
-      "ink_editor_spec.js",
-      "scripting_spec.js",
-      "stamp_editor_spec.js",
+      "accessibility_spec.mjs",
+      "annotation_spec.mjs",
+      "copy_paste_spec.mjs",
+      "find_spec.mjs",
+      "freetext_editor_spec.mjs",
+      "ink_editor_spec.mjs",
+      "scripting_spec.mjs",
+      "stamp_editor_spec.mjs",
     ],
   });
 
