@@ -1,8 +1,8 @@
 {
   "name": "pdf.js",
+  "type": "module",
   "devDependencies": {
     "@babel/core": "^7.22.20",
-    "@babel/plugin-transform-modules-commonjs": "^7.22.15",
     "@babel/preset-env": "^7.22.20",
     "@babel/runtime": "^7.22.15",
     "@javascript-obfuscator/escodegen": "2.3.0",

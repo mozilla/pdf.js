@@ -12,10 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals __non_webpack_import__ */
 
 import {
   AbortException,
   assert,
+  isNodeJS,
   MissingPDFException,
   PromiseCapability,
 } from "../shared/util.js";
@@ -30,10 +32,18 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   );
 }
 
+let fs, http, https, url;
+if (isNodeJS) {
+  // Native packages.
+  fs = await __non_webpack_import__("fs");
+  http = await __non_webpack_import__("http");
+  https = await __non_webpack_import__("https");
+  url = await __non_webpack_import__("url");
+}
+
 const fileUriRegex = /^file:\/\/\/[a-zA-Z]:\//;
 
 function parseUrl(sourceUrl) {
-  const { url } = globalThis.__pdfjsPackages__;
   const parsedUrl = url.parse(sourceUrl);
   if (parsedUrl.protocol === "file:" || parsedUrl.host) {
     return parsedUrl;
@@ -339,13 +349,11 @@ class PDFNodeStreamFullReader extends BaseFullReader {
 
     this._request = null;
     if (this._url.protocol === "http:") {
-      const { http } = globalThis.__pdfjsPackages__;
       this._request = http.request(
         createRequestOptions(this._url, stream.httpHeaders),
         handleResponse
       );
     } else {
-      const { https } = globalThis.__pdfjsPackages__;
       this._request = https.request(
         createRequestOptions(this._url, stream.httpHeaders),
         handleResponse
@@ -388,13 +396,11 @@ class PDFNodeStreamRangeReader extends BaseRangeReader {
 
     this._request = null;
     if (this._url.protocol === "http:") {
-      const { http } = globalThis.__pdfjsPackages__;
       this._request = http.request(
         createRequestOptions(this._url, this._httpHeaders),
         handleResponse
       );
     } else {
-      const { https } = globalThis.__pdfjsPackages__;
       this._request = https.request(
         createRequestOptions(this._url, this._httpHeaders),
         handleResponse
@@ -419,7 +425,6 @@ class PDFNodeStreamFsFullReader extends BaseFullReader {
       path = path.replace(/^\//, "");
     }
 
-    const { fs } = globalThis.__pdfjsPackages__;
     fs.lstat(path, (error, stat) => {
       if (error) {
         if (error.code === "ENOENT") {
@@ -449,7 +454,6 @@ class PDFNodeStreamFsRangeReader extends BaseRangeReader {
       path = path.replace(/^\//, "");
     }
 
-    const { fs } = globalThis.__pdfjsPackages__;
     this._setReadableStream(fs.createReadStream(path, { start, end: end - 1 }));
   }
 }

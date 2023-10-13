@@ -1,6 +1,7 @@
-"use strict";
+import { createRequire } from "module";
+import fs from "fs";
 
-const fs = require("fs");
+const require = createRequire(import.meta.url);
 const ttest = require("ttest");
 
 const VALID_GROUP_BYS = ["browser", "pdf", "page", "round", "stat"];
