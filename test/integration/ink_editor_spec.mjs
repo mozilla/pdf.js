@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-const {
+import {
   closePages,
   getSelectedEditors,
   loadAndWait,
   waitForStorageEntries,
-} = require("./test_utils.js");
+} from "./test_utils.mjs";
 
 const waitForPointerUp = page =>
   page.evaluate(

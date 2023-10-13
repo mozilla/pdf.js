@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 
-const {
+import {
   clearInput,
   closePages,
-  getSelector,
-  getQuerySelector,
   getComputedStyleSelector,
-  loadAndWait,
   getFirstSerialized,
+  getQuerySelector,
+  getSelector,
+  loadAndWait,
   scrollIntoView,
-} = require("./test_utils.js");
+} from "./test_utils.mjs";
 
 describe("Interaction", () => {
   async function actAndWaitForInput(page, selector, action, clear = true) {

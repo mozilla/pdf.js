@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-const {
+import {
   closePages,
   loadAndWait,
   mockClipboard,
   waitForEvent,
   waitForTextLayer,
-} = require("./test_utils.js");
+} from "./test_utils.mjs";
 
 const selectAll = async page => {
   const promise = waitForEvent(page, "selectionchange");
