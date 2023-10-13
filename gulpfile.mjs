@@ -222,9 +222,7 @@ function createWebpackConfig(
           },
         ],
       ];
-  const babelPlugins = isModule
-    ? []
-    : ["@babel/plugin-transform-modules-commonjs"];
+  const babelPlugins = [];
 
   const plugins = [];
   if (!disableLicenseHeader) {
@@ -1522,18 +1520,11 @@ gulp.task("types", function (done) {
 });
 
 function buildLibHelper(bundleDefines, inputStream, outputDir) {
-  // When we create a bundle, webpack is run on the source and it will replace
-  // require with __webpack_require__. When we want to use the real require,
-  // __non_webpack_require__ has to be used.
-  // In this target, we don't create a bundle, so we have to replace the
-  // occurrences of __non_webpack_require__ ourselves.
-  function babelPluginReplaceNonWebpackImports(b) {
+  function babelPluginReplaceNonWebpackImport(b) {
     return {
       visitor: {
         Identifier(curPath, state) {
-          if (curPath.node.name === "__non_webpack_require__") {
-            curPath.replaceWith(b.types.identifier("require"));
-          } else if (curPath.node.name === "__non_webpack_import__") {
+          if (curPath.node.name === "__non_webpack_import__") {
             curPath.replaceWith(b.types.identifier("import"));
           }
         },
@@ -1545,18 +1536,15 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
     content = preprocessPDFJSCode(ctx, content);
     content = babel.transform(content, {
       sourceType: "module",
-      presets: skipBabel ? undefined : ["@babel/preset-env"],
-      plugins: [
-        "@babel/plugin-transform-modules-commonjs",
-        babelPluginReplaceNonWebpackImports,
-      ],
+      presets: skipBabel
+        ? undefined
+        : [["@babel/preset-env", { loose: false, modules: false }]],
+      plugins: [babelPluginReplaceNonWebpackImport],
       targets: BABEL_TARGETS,
     }).code;
-    const removeCjsSrc =
-      /^(var\s+\w+\s*=\s*(_interopRequireDefault\()?require\(".*?)(?:\/src)(\/[^"]*"\)\)?;)$/gm;
     content = content.replaceAll(
-      removeCjsSrc,
-      (all, prefix, interop, suffix) => prefix + suffix
+      /(\sfrom\s".*?)(?:\/src)(\/[^"]*"?;)$/gm,
+      (all, prefix, suffix) => prefix + suffix
     );
     return licenseHeaderLibre + content;
   }
@@ -1565,12 +1553,12 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
     saveComments: false,
     defines: bundleDefines,
     map: {
-      "pdfjs-lib": "../pdf",
-      "display-fetch_stream": "./fetch_stream",
-      "display-l10n_utils": "../web/l10n_utils",
-      "display-network": "./network",
-      "display-node_stream": "./node_stream",
-      "display-node_utils": "./node_utils",
+      "pdfjs-lib": "../pdf.js",
+      "display-fetch_stream": "./fetch_stream.js",
+      "display-l10n_utils": "../web/l10n_utils.js",
+      "display-network": "./network.js",
+      "display-node_stream": "./node_stream.js",
+      "display-node_utils": "./node_utils.js",
     },
   };
   const licenseHeaderLibre = fs
