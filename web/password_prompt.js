@@ -85,7 +85,7 @@ class PasswordPrompt {
       this.input.focus();
     }
     this.label.textContent = await this.l10n.get(
-      `password_${passwordIncorrect ? "invalid" : "label"}`
+      `pdfjs-password-${passwordIncorrect ? "invalid" : "label"}`
     );
   }
 

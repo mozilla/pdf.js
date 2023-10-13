@@ -32,12 +32,13 @@ See https://github.com/adobe-type-tools/cmap-resources
 
 <!--#if MOZCENTRAL-->
 <!--<link rel="stylesheet" href="resource://pdf.js/web/viewer.css">-->
+<!--<link rel="localization" href="toolkit/pdfviewer/viewer.ftl"/>-->
 <!--#else-->
 <link rel="stylesheet" href="viewer-geckoview.css">
 <!--#endif-->
 
 <!--#if !MOZCENTRAL-->
-    <link rel="resource" type="application/l10n" href="locale/locale.properties">
+    <link rel="resource" type="application/l10n" href="locale/locale.json">
 <!--#endif-->
 
 <!--#if !MOZCENTRAL-->
@@ -47,6 +48,10 @@ See https://github.com/adobe-type-tools/cmap-resources
           "pdfjs/": "../src/",
           "pdfjs-lib": "../src/pdf.js",
           "pdfjs-web/": "./",
+
+          "fluent-bundle": "../node_modules/@fluent/bundle/esm/index.js",
+          "fluent-dom": "../node_modules/@fluent/dom/esm/index.js",
+          "cached-iterable": "../node_modules/cached-iterable/src/index.mjs",
 
           "display-fetch_stream": "../src/display/fetch_stream.js",
           "display-l10n_utils": "../src/display/stubs.js",
@@ -85,11 +90,11 @@ See https://github.com/adobe-type-tools/cmap-resources
       <div id="mainContainer">
 
         <div id="floatingToolbar">
-          <button id="download" class="toolbarButton" title="Download" tabindex="31" data-l10n-id="download_button">
-            <span data-l10n-id="download_button_label">Download</span>
+          <button id="download" class="toolbarButton" title="Download" tabindex="31" data-l10n-id="pdfjs-download-button">
+            <span data-l10n-id="pdfjs-download-button-label">Download</span>
           </button>
-          <button id="openInApp" class="toolbarButton" title="Open in app" tabindex="32" data-l10n-id="open_in_app">
-            <span data-l10n-id="open_in_app_label">Open in app</span>
+          <button id="openInApp" class="toolbarButton" title="Open in app" tabindex="32" data-l10n-id="pdfjs-open-in-app-button">
+            <span data-l10n-id="pdfjs-open-in-app-button-label">Open in app</span>
           </button>
         </div>
 
@@ -101,14 +106,14 @@ See https://github.com/adobe-type-tools/cmap-resources
       <div id="dialogContainer">
         <dialog id="passwordDialog">
           <div class="row">
-            <label for="password" id="passwordText" data-l10n-id="password_label">Enter the password to open this PDF file:</label>
+            <label for="password" id="passwordText" data-l10n-id="pdfjs-password-label">Enter the password to open this PDF file:</label>
           </div>
           <div class="row">
             <input type="password" id="password" class="toolbarField">
           </div>
           <div class="buttonRow">
-            <button id="passwordCancel" class="dialogButton"><span data-l10n-id="password_cancel">Cancel</span></button>
-            <button id="passwordSubmit" class="dialogButton"><span data-l10n-id="password_ok">OK</span></button>
+            <button id="passwordCancel" class="dialogButton"><span data-l10n-id="pdfjs-password-cancel-button">Cancel</span></button>
+            <button id="passwordSubmit" class="dialogButton"><span data-l10n-id="pdfjs-password-ok-button">OK</span></button>
           </div>
         </dialog>
       </div>  <!-- dialogContainer -->

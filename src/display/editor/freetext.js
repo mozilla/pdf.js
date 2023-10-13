@@ -146,7 +146,7 @@ class FreeTextEditor extends AnnotationEditor {
   /** @inheritdoc */
   static initialize(l10n) {
     AnnotationEditor.initialize(l10n, {
-      strings: ["free_text2_default_content", "editor_free_text2_aria_label"],
+      strings: ["pdfjs-free-text-default-content"],
     });
     const style = getComputedStyle(document.documentElement);
 
@@ -542,14 +542,11 @@ class FreeTextEditor extends AnnotationEditor {
     this.editorDiv.className = "internal";
 
     this.editorDiv.setAttribute("id", this.#editorDivId);
+    this.editorDiv.setAttribute("data-l10n-id", "pdfjs-free-text");
     this.enableEditing();
 
     AnnotationEditor._l10nPromise
-      .get("editor_free_text2_aria_label")
-      .then(msg => this.editorDiv?.setAttribute("aria-label", msg));
-
-    AnnotationEditor._l10nPromise
-      .get("free_text2_default_content")
+      .get("pdfjs-free-text-default-content")
       .then(msg => this.editorDiv?.setAttribute("default-content", msg));
     this.editorDiv.contentEditable = true;
 

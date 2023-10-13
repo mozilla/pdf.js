@@ -182,7 +182,7 @@ class PDFPageView {
     div.className = "page";
     div.setAttribute("data-page-number", this.id);
     div.setAttribute("role", "region");
-    this.l10n.get("page_landmark", { page: this.id }).then(msg => {
+    this.l10n.get("pdfjs-page-landmark", { page: this.id }).then(msg => {
       div.setAttribute("aria-label", msg);
     });
     this.div = div;

@@ -15,63 +15,68 @@
 
 /** @typedef {import("./interfaces").IL10n} IL10n */
 
-import "../external/webL10n/l10n.js";
-import { getL10nFallback } from "./l10n_utils.js";
-
-const PARTIAL_LANG_CODES = {
-  en: "en-US",
-  es: "es-ES",
-  fy: "fy-NL",
-  ga: "ga-IE",
-  gu: "gu-IN",
-  hi: "hi-IN",
-  hy: "hy-AM",
-  nb: "nb-NO",
-  ne: "ne-NP",
-  nn: "nn-NO",
-  pa: "pa-IN",
-  pt: "pt-PT",
-  sv: "sv-SE",
-  zh: "zh-CN",
-};
-
-// Try to support "incompletely" specified language codes (see issue 13689).
-function fixupLangCode(langCode) {
-  return PARTIAL_LANG_CODES[langCode?.toLowerCase()] || langCode;
-}
+import { FluentBundle, FluentResource } from "fluent-bundle";
+import { DOMLocalization } from "fluent-dom";
+import { L10n } from "./l10n.js";
 
 /**
  * @implements {IL10n}
  */
-class GenericL10n {
+class GenericL10n extends L10n {
   constructor(lang) {
-    const { webL10n } = document;
-    this._lang = lang;
-    this._ready = new Promise((resolve, reject) => {
-      webL10n.setLanguage(fixupLangCode(lang), () => {
-        resolve(webL10n);
-      });
-    });
+    super({ lang });
+    this.setL10n(
+      new DOMLocalization(
+        [],
+        GenericL10n.#generateBundles.bind(
+          GenericL10n,
+          "en-US",
+          this.getLanguage()
+        )
+      )
+    );
   }
 
-  async getLanguage() {
-    const l10n = await this._ready;
-    return l10n.getLanguage();
+  /**
+   * Generate the bundles for Fluent.
+   * @param {String} defaultLang - The fallback language to use for
+   *   translations.
+   * @param {String} baseLang - The base language to use for translations.
+   */
+  static async *#generateBundles(defaultLang, baseLang) {
+    const { baseURL, paths } = await this.#getPaths();
+    const langs =
+      baseLang === defaultLang ? [baseLang] : [baseLang, defaultLang];
+    for (const lang of langs) {
+      const bundle = await this.#createBundle(lang, baseURL, paths);
+      if (bundle) {
+        yield bundle;
+      }
+    }
   }
 
-  async getDirection() {
-    const l10n = await this._ready;
-    return l10n.getDirection();
+  static async #createBundle(lang, baseURL, paths) {
+    const path = paths[lang];
+    if (!path) {
+      return null;
+    }
+    const url = new URL(path, baseURL);
+    const data = await fetch(url);
+    const text = await data.text();
+    const resource = new FluentResource(text);
+    const bundle = new FluentBundle(lang);
+    const errors = bundle.addResource(resource);
+    if (errors.length) {
+      console.error("L10n errors", errors);
+    }
+    return bundle;
   }
 
-  async get(key, args = null, fallback = getL10nFallback(key, args)) {
-    const l10n = await this._ready;
-    return l10n.get(key, args, fallback);
-  }
-
-  async translate(element) {
-    const l10n = await this._ready;
-    return l10n.translate(element);
+  static async #getPaths() {
+    const { href } = document.querySelector(`link[type="application/l10n"]`);
+    const data = await fetch(href);
+    const paths = await data.json();
+    return { baseURL: href.replace(/[^/]*$/, "") || "./", paths };
   }
 }
 

@@ -14,7 +14,9 @@
       "display-network": ["./src/display/network"],
       "display-node_stream": ["./src/display/node_stream"],
       "display-node_utils": ["./src/display/node_utils"],
-      "pdfjs-lib": ["./src/pdf"]
+      "pdfjs-lib": ["./src/pdf"],
+      "fluent-bundle": ["./node_modules/@fluent/bundle/esm/index.js"],
+      "fluent-dom": ["./node_modules/@fluent/dom/esm/index.js"]
     }
   },
   "files": [

@@ -28,8 +28,8 @@ const US_PAGE_NAMES = {
   "8.5x14": "Legal",
 };
 const METRIC_PAGE_NAMES = {
-  "297x420": "A3",
-  "210x297": "A4",
+  "297x420": "a-three",
+  "210x297": "a-four",
 };
 
 function getPageName(size, isPortrait, pageNames) {
@@ -83,10 +83,7 @@ class PDFDocumentProperties {
       this._pagesRotation = evt.pagesRotation;
     });
 
-    this._isNonMetricLocale = true; // The default viewer locale is 'en-us'.
-    l10n.getLanguage().then(locale => {
-      this._isNonMetricLocale = NON_METRIC_LOCALES.includes(locale);
-    });
+    this._isNonMetricLocale = NON_METRIC_LOCALES.includes(l10n.getLanguage());
   }
 
   /**
@@ -236,7 +233,7 @@ class PDFDocumentProperties {
     if (!kb) {
       return undefined;
     }
-    return this.l10n.get(`document_properties_${mb >= 1 ? "mb" : "kb"}`, {
+    return this.l10n.get(`pdfjs-document-properties-${mb >= 1 ? "mb" : "kb"}`, {
       size_mb: mb >= 1 && (+mb.toPrecision(3)).toLocaleString(),
       size_kb: mb < 1 && (+kb.toPrecision(3)).toLocaleString(),
       size_b: fileSize.toLocaleString(),
@@ -310,23 +307,25 @@ class PDFDocumentProperties {
     const [{ width, height }, unit, name, orientation] = await Promise.all([
       this._isNonMetricLocale ? sizeInches : sizeMillimeters,
       this.l10n.get(
-        `document_properties_page_size_unit_${
+        `pdfjs-document-properties-page-size-unit-${
           this._isNonMetricLocale ? "inches" : "millimeters"
         }`
       ),
       rawName &&
         this.l10n.get(
-          `document_properties_page_size_name_${rawName.toLowerCase()}`
+          `pdfjs-document-properties-page-size-name-${rawName.toLowerCase()}`
         ),
       this.l10n.get(
-        `document_properties_page_size_orientation_${
+        `pdfjs-document-properties-page-size-orientation-${
           isPortrait ? "portrait" : "landscape"
         }`
       ),
     ]);
 
     return this.l10n.get(
-      `document_properties_page_size_dimension_${name ? "name_" : ""}string`,
+      `pdfjs-document-properties-page-size-dimension-${
+        name ? "name-" : ""
+      }string`,
       {
         width: width.toLocaleString(),
         height: height.toLocaleString(),
@@ -342,7 +341,7 @@ class PDFDocumentProperties {
     if (!dateObject) {
       return undefined;
     }
-    return this.l10n.get("document_properties_date_string", {
+    return this.l10n.get("pdfjs-document-properties-date-string", {
       date: dateObject.toLocaleDateString(),
       time: dateObject.toLocaleTimeString(),
     });
@@ -350,7 +349,7 @@ class PDFDocumentProperties {
 
   #parseLinearization(isLinearized) {
     return this.l10n.get(
-      `document_properties_linearized_${isLinearized ? "yes" : "no"}`
+      `pdfjs-document-properties-linearized-${isLinearized ? "yes" : "no"}`
     );
   }
 }

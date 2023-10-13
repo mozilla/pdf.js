@@ -24,6 +24,8 @@
     "eslint-plugin-prettier": "^5.0.1",
     "eslint-plugin-sort-exports": "^0.8.0",
     "eslint-plugin-unicorn": "^48.0.1",
+    "@fluent/bundle": "^0.18.0" ,
+    "@fluent/dom": "^0.9.0",
     "globals": "^13.23.0",
     "gulp": "^4.0.2",
     "gulp-postcss": "^9.0.1",
