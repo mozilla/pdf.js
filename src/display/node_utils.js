@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals __non_webpack_import__, __non_webpack_require__ */
+/* globals __non_webpack_import__ */
 
 import {
   BaseCanvasFactory,
@@ -28,46 +28,17 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   );
 }
 
-if (isNodeJS && !globalThis.__pdfjsPackages__) {
-  let fs, http, https, url, canvas, path2d_polyfill;
-
-  if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("LIB")) {
-    // Native packages.
-    fs = __non_webpack_require__("fs");
-    http = __non_webpack_require__("http");
-    https = __non_webpack_require__("https");
-    url = __non_webpack_require__("url");
-    // Optional, third-party, packages.
-    try {
-      canvas = __non_webpack_require__("canvas");
-    } catch {}
-    try {
-      path2d_polyfill = __non_webpack_require__("path2d-polyfill");
-    } catch {}
-  } else {
-    // Native packages.
-    fs = await __non_webpack_import__("fs");
-    http = await __non_webpack_import__("http");
-    https = await __non_webpack_import__("https");
-    url = await __non_webpack_import__("url");
-    // Optional, third-party, packages.
-    try {
-      canvas = await __non_webpack_import__("canvas");
-    } catch {}
-    try {
-      path2d_polyfill = await __non_webpack_import__("path2d-polyfill");
-    } catch {}
-  }
-  globalThis.__pdfjsPackages__ = {
-    CanvasRenderingContext2D: canvas?.CanvasRenderingContext2D,
-    createCanvas: canvas?.createCanvas,
-    DOMMatrix: canvas?.DOMMatrix,
-    fs,
-    http,
-    https,
-    polyfillPath2D: path2d_polyfill?.polyfillPath2D,
-    url,
-  };
+let fs, canvas, path2d_polyfill;
+if (isNodeJS) {
+  // Native packages.
+  fs = await __non_webpack_import__("fs");
+  // Optional, third-party, packages.
+  try {
+    canvas = await __non_webpack_import__("canvas");
+  } catch {}
+  try {
+    path2d_polyfill = await __non_webpack_import__("path2d-polyfill");
+  } catch {}
 }
 
 if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("SKIP_BABEL")) {
@@ -75,7 +46,7 @@ if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("SKIP_BABEL")) {
     if (globalThis.DOMMatrix || !isNodeJS) {
       return;
     }
-    const { DOMMatrix } = globalThis.__pdfjsPackages__;
+    const DOMMatrix = canvas?.DOMMatrix;
 
     if (DOMMatrix) {
       globalThis.DOMMatrix = DOMMatrix;
@@ -88,8 +59,8 @@ if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("SKIP_BABEL")) {
     if (globalThis.Path2D || !isNodeJS) {
       return;
     }
-    const { CanvasRenderingContext2D, polyfillPath2D } =
-      globalThis.__pdfjsPackages__;
+    const CanvasRenderingContext2D = canvas?.CanvasRenderingContext2D;
+    const polyfillPath2D = path2d_polyfill?.polyfillPath2D;
 
     if (CanvasRenderingContext2D && polyfillPath2D) {
       globalThis.CanvasRenderingContext2D = CanvasRenderingContext2D;
@@ -102,7 +73,6 @@ if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("SKIP_BABEL")) {
 
 const fetchData = function (url) {
   return new Promise((resolve, reject) => {
-    const { fs } = globalThis.__pdfjsPackages__;
     fs.readFile(url, (error, data) => {
       if (error || !data) {
         reject(new Error(error));
@@ -120,8 +90,7 @@ class NodeCanvasFactory extends BaseCanvasFactory {
    * @ignore
    */
   _createCanvas(width, height) {
-    const { createCanvas } = globalThis.__pdfjsPackages__;
-    return createCanvas(width, height);
+    return canvas.createCanvas(width, height);
   }
 }
 

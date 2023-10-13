@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals __non_webpack_require__ */
+/* globals __non_webpack_import__ */
 
 import { AbortException, isNodeJS } from "../../src/shared/util.js";
 import { PDFNodeStream } from "../../src/display/node_stream.js";
@@ -24,10 +24,10 @@ if (!isNodeJS) {
   );
 }
 
-const path = __non_webpack_require__("path");
-const url = __non_webpack_require__("url");
-const http = __non_webpack_require__("http");
-const fs = __non_webpack_require__("fs");
+const path = await __non_webpack_import__("path");
+const url = await __non_webpack_import__("url");
+const http = await __non_webpack_import__("http");
+const fs = await __non_webpack_import__("fs");
 
 describe("node_stream", function () {
   let server = null;
