@@ -6,10 +6,6 @@
     "plugin:mozilla/recommended",
   ],
 
-  "parserOptions": {
-    "sourceType": "module",
-  },
-
   "plugins": [
     "mozilla"
   ],
