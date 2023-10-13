@@ -70,7 +70,7 @@ function downloadLanguageFiles(root, langCode) {
   const MOZ_CENTRAL_PDFJS_DIR = "/raw-file/default/browser/pdfviewer/";
 
   // Defines which files to download for each language.
-  const files = ["viewer.properties"];
+  const files = ["viewer.ftl"];
   let downloadsLeft = files.length;
 
   const outputDir = path.join(root, langCode);

@@ -435,7 +435,7 @@ class ChromeExternalServices extends DefaultExternalServices {
     return new ChromePreferences();
   }
 
-  static createL10n(options) {
+  static async createL10n(options) {
     return new GenericL10n(navigator.language);
   }
 

@@ -424,13 +424,13 @@ class PDFThumbnailView {
   }
 
   get _thumbPageTitle() {
-    return this.l10n.get("thumb_page_title", {
+    return this.l10n.get("pdfjs-thumb-page-title", {
       page: this.pageLabel ?? this.id,
     });
   }
 
   get _thumbPageCanvas() {
-    return this.l10n.get("thumb_page_canvas", {
+    return this.l10n.get("pdfjs-thumb-page-canvas", {
       page: this.pageLabel ?? this.id,
     });
   }

@@ -267,7 +267,7 @@ class Toolbar {
         items.pageNumber.type = "text";
       } else {
         items.pageNumber.type = "number";
-        this.l10n.get("of_pages", { pagesCount }).then(msg => {
+        this.l10n.get("pdfjs-of-pages", { pagesCount }).then(msg => {
           items.numPages.textContent = msg;
         });
       }
@@ -276,9 +276,11 @@ class Toolbar {
 
     if (this.hasPageLabels) {
       items.pageNumber.value = this.pageLabel;
-      this.l10n.get("page_of_pages", { pageNumber, pagesCount }).then(msg => {
-        items.numPages.textContent = msg;
-      });
+      this.l10n
+        .get("pdfjs-page-of-pages", { pageNumber, pagesCount })
+        .then(msg => {
+          items.numPages.textContent = msg;
+        });
     } else {
       items.pageNumber.value = pageNumber;
     }
@@ -290,7 +292,9 @@ class Toolbar {
     items.zoomIn.disabled = pageScale >= MAX_SCALE;
 
     this.l10n
-      .get("page_scale_percent", { scale: Math.round(pageScale * 10000) / 100 })
+      .get("pdfjs-page-scale-percent", {
+        scale: Math.round(pageScale * 10000) / 100,
+      })
       .then(msg => {
         let predefinedValueFound = false;
         for (const option of items.scaleSelect.options) {
@@ -321,11 +325,11 @@ class Toolbar {
   async #adjustScaleWidth() {
     const { items, l10n } = this;
 
-    const predefinedValuesPromise = Promise.all([
-      l10n.get("page_scale_auto"),
-      l10n.get("page_scale_actual"),
-      l10n.get("page_scale_fit"),
-      l10n.get("page_scale_width"),
+    const predefinedValuesPromise = l10n.get([
+      "pdfjs-page-scale-auto",
+      "pdfjs-page-scale-actual",
+      "pdfjs-page-scale-fit",
+      "pdfjs-page-scale-width",
     ]);
     await animationStarted;
 

@@ -297,7 +297,7 @@ function renderProgress(index, total, l10n) {
   const progressBar = dialog.querySelector("progress");
   const progressPerc = dialog.querySelector(".relative-progress");
   progressBar.value = progress;
-  l10n.get("print_progress_percent", { progress }).then(msg => {
+  l10n.get("pdfjs-print-progress-percent", { progress }).then(msg => {
     progressPerc.textContent = msg;
   });
 }

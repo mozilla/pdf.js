@@ -113,9 +113,7 @@ class PDFSidebar {
     this.eventBus = eventBus;
     this.l10n = l10n;
 
-    l10n.getDirection().then(dir => {
-      this.#isRTL = dir === "rtl";
-    });
+    this.#isRTL = l10n.getDirection() === "rtl";
     this.#addEventListeners();
   }
 
@@ -303,9 +301,8 @@ class PDFSidebar {
   #showUINotification() {
     this.toggleButton.setAttribute(
       "data-l10n-id",
-      "toggle_sidebar_notification2"
+      "pdfjs-toggle-sidebar-notification-button"
     );
-    this.l10n.translate(this.toggleButton);
 
     if (!this.isOpen) {
       // Only show the notification on the `toggleButton` if the sidebar is
@@ -322,8 +319,10 @@ class PDFSidebar {
     }
 
     if (reset) {
-      this.toggleButton.setAttribute("data-l10n-id", "toggle_sidebar");
-      this.l10n.translate(this.toggleButton);
+      this.toggleButton.setAttribute(
+        "data-l10n-id",
+        "pdfjs-toggle-sidebar-button"
+      );
     }
   }
 

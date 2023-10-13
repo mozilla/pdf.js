@@ -46,7 +46,7 @@ class GenericExternalServices extends DefaultExternalServices {
     return new GenericPreferences();
   }
 
-  static createL10n({ locale = "en-US" }) {
+  static async createL10n({ locale = "en-US" }) {
     return new GenericL10n(locale);
   }
 
