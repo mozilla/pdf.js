@@ -1,14 +1,12 @@
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-/* eslint-disable import/no-commonjs */
-
 //
 // Basic node example that prints document metadata and text content.
 //
 
 // Run `gulp dist-install` to generate 'pdfjs-dist' npm package files.
-const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
+import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 
 // Loading file from file system into typed array
 const pdfPath =
@@ -16,7 +14,7 @@ const pdfPath =
 
 // Will be using promises to load document, pages and misc data instead of
 // callback.
-const loadingTask = pdfjsLib.getDocument(pdfPath);
+const loadingTask = getDocument(pdfPath);
 loadingTask.promise
   .then(function (doc) {
     const numPages = doc.numPages;
