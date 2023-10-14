@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-"use strict";
-
 if (!pdfjsLib.getDocument || !pdfjsViewer.PDFViewer) {
   // eslint-disable-next-line no-alert
   alert("Please build the pdfjs-dist library using\n `gulp dist-install`");
@@ -27,7 +25,7 @@ const CMAP_URL = "../../node_modules/pdfjs-dist/cmaps/";
 const CMAP_PACKED = true;
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "../../node_modules/pdfjs-dist/build/pdf.worker.js";
+  "../../node_modules/pdfjs-dist/build/pdf.worker.mjs";
 
 const DEFAULT_URL = "../../web/compressed.tracemonkey-pldi-09.pdf";
 const DEFAULT_SCALE_DELTA = 1.1;

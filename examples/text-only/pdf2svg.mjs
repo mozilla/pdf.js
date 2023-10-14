@@ -19,7 +19,7 @@ const PAGE_SCALE = 1.5;
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "../../node_modules/pdfjs-dist/build/pdf.worker.js";
+  "../../node_modules/pdfjs-dist/build/pdf.worker.mjs";
 
 function buildSVG(viewport, textContent) {
   // Building SVG with size of the viewport (for simplicity)
