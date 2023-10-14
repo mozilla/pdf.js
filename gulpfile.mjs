@@ -215,7 +215,7 @@ function createWebpackConfig(
         [
           "@babel/preset-env",
           {
-            corejs: "3.32.2",
+            corejs: "3.33.0",
             exclude: ["web.structured-clone"],
             shippedProposals: true,
             useBuiltIns: "usage",
