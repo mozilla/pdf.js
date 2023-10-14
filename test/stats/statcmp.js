@@ -1,3 +1,5 @@
+/* eslint-disable import/no-commonjs */
+
 import { createRequire } from "module";
 import fs from "fs";
 

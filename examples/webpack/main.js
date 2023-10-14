@@ -1,6 +1,8 @@
 // Any copyright is dedicated to the Public Domain.
 // http://creativecommons.org/licenses/publicdomain/
 
+/* eslint-disable import/no-commonjs */
+
 // Hello world example for webpack.
 
 const pdfjsLib = require("pdfjs-dist");
