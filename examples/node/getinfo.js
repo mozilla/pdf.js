@@ -1,6 +1,8 @@
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
+/* eslint-disable import/no-commonjs */
+
 //
 // Basic node example that prints document metadata and text content.
 //

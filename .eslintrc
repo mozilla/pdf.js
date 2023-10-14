@@ -39,6 +39,7 @@
     "import/named": "error",
     "import/no-cycle": "error",
     "import/no-empty-named-blocks": "error",
+    "import/no-commonjs": "error",
     "import/no-mutable-exports": "error",
     "import/no-self-import": "error",
     "import/no-unresolved": ["error", {

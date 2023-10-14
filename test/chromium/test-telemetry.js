@@ -15,11 +15,9 @@
  */
 /* eslint-disable no-var */
 
-"use strict";
-
-var assert = require("assert");
-var fs = require("fs");
-var vm = require("vm");
+import assert from "assert";
+import fs from "fs";
+import vm from "vm";
 
 var SRC_DIR = __dirname + "/../../";
 var telemetryJsPath = "extensions/chromium/telemetry.js";
