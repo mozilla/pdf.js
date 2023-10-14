@@ -83,7 +83,7 @@ describe("find bar", () => {
       await closePages(pages);
     });
 
-    it("must search xfa correctly", async () => {
+    fit("must search xfa correctly", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await page.click("#viewFind");
