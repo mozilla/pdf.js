@@ -1793,7 +1793,6 @@ describe("Interaction", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await page.waitForSelector(".printedPage");
-          await page.keyboard.press("Escape");
         })
       );
     });
