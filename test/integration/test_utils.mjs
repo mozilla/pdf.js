@@ -33,9 +33,9 @@ function loadAndWait(filename, selector, zoom, pageSetup) {
         });
       });
 
-      let url = `${global.integrationBaseUrl}?file=/test/pdfs/${filename}`;
+      let url = `${global.integrationBaseUrl}?file=/test/pdfs/${filename}#page=1`;
       if (zoom) {
-        url += `#zoom=${zoom}`;
+        url += `&zoom=${zoom}`;
       }
       await page.goto(url);
       if (pageSetup) {

@@ -29,7 +29,7 @@ describe("find bar", () => {
     let pages;
 
     beforeAll(async () => {
-      pages = await loadAndWait("find_all.pdf#zoom=100", ".textLayer");
+      pages = await loadAndWait("find_all.pdf", ".textLayer", 100);
     });
 
     afterAll(async () => {
@@ -76,7 +76,7 @@ describe("find bar", () => {
     let pages;
 
     beforeAll(async () => {
-      pages = await loadAndWait("xfa_imm5257e.pdf#zoom=100", ".xfaLayer");
+      pages = await loadAndWait("xfa_imm5257e.pdf", ".xfaLayer", 100);
     });
 
     afterAll(async () => {
