@@ -22,7 +22,6 @@
     "browser": true,
     "es2022": true,
     "worker": true,
-    "amd": true,
   },
 
   "globals": {
