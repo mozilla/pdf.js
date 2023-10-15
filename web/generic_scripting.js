@@ -45,7 +45,7 @@ class GenericScripting {
       const sandbox =
         typeof PDFJSDev === "undefined"
           ? import(sandboxBundleSrc) // eslint-disable-line no-unsanitized/method
-          : __non_webpack_import__(sandboxBundleSrc); // eslint-disable-line no-undef
+          : __non_webpack_import__(sandboxBundleSrc);
       sandbox
         .then(pdfjsSandbox => {
           resolve(pdfjsSandbox.QuickJSSandbox());
