@@ -26,8 +26,8 @@
   },
 
   "globals": {
-    "PDFJSDev": false,
-    "exports": false,
+    "PDFJSDev": "readonly",
+    "__non_webpack_import__": "readonly",
   },
 
   "rules": {

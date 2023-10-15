@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals __non_webpack_import__ */
 
 import { AbortException, isNodeJS } from "../../src/shared/util.js";
 import { PDFNodeStream } from "../../src/display/node_stream.js";
