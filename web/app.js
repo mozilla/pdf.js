@@ -2268,7 +2268,7 @@ async function loadFakeWorker() {
     globalThis.pdfjsWorker = await import("pdfjs/pdf.worker.js");
     return;
   }
-  await __non_webpack_import__(PDFWorker.workerSrc); // eslint-disable-line no-undef
+  await __non_webpack_import__(PDFWorker.workerSrc);
 }
 
 async function loadPDFBug(self) {
@@ -2276,7 +2276,7 @@ async function loadPDFBug(self) {
   const { PDFBug } =
     typeof PDFJSDev === "undefined"
       ? await import(debuggerScriptPath) // eslint-disable-line no-unsanitized/method
-      : await __non_webpack_import__(debuggerScriptPath); // eslint-disable-line no-undef
+      : await __non_webpack_import__(debuggerScriptPath);
 
   self._PDFBug = PDFBug;
 }

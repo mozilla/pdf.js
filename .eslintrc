@@ -22,12 +22,11 @@
     "browser": true,
     "es2022": true,
     "worker": true,
-    "amd": true,
   },
 
   "globals": {
-    "PDFJSDev": false,
-    "exports": false,
+    "PDFJSDev": "readonly",
+    "__non_webpack_import__": "readonly",
   },
 
   "rules": {
