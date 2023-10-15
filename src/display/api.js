@@ -2306,7 +2306,7 @@ class PDFWorker {
       const worker =
         typeof PDFJSDev === "undefined"
           ? await import("pdfjs/pdf.worker.js")
-          : await __non_webpack_import__(this.workerSrc); // eslint-disable-line no-undef
+          : await __non_webpack_import__(this.workerSrc);
       return worker.WorkerMessageHandler;
     };
 
