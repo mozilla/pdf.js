@@ -88,19 +88,19 @@ describe("find bar", () => {
         pages.map(async ([browserName, page]) => {
           await page.click("#viewFind");
           await page.waitForSelector("#viewFind", { hidden: false });
-          await page.type("#findInput", "city");
+          await page.type("#findInput", "preferences");
           await page.waitForSelector("#findInput[data-status='']");
           await page.waitForSelector(".xfaLayer .highlight");
           const resultElement = await page.waitForSelector("#findResultsCount");
           const resultText = await resultElement.evaluate(el => el.textContent);
-          expect(resultText).toEqual("1 of 7 matches");
+          expect(resultText).toEqual("1 of 1 match");
           const selectedElement = await page.waitForSelector(
             ".highlight.selected"
           );
           const selectedText = await selectedElement.evaluate(
             el => el.textContent
           );
-          expect(selectedText).toEqual("City");
+          expect(selectedText).toEqual("Preferences");
         })
       );
     });
