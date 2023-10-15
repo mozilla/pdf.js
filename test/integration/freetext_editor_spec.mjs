@@ -66,7 +66,9 @@ const clearAll = async page => {
 
 const switchToFreeText = async page => {
   await page.click("#editorFreeText");
-  await page.waitForSelector(".annotationEditorLayer.freetextEditing");
+  const foundElement = await page.waitForSelector(".annotationEditorLayer.freetextEditing");
+  const foundParent = await foundElement.evaluate(el => el.parentElement.getAttribute('data-page-number'));
+  console.log('Current page: ', foundParent);
 };
 
 const getXY = (page, selector) =>
@@ -2538,7 +2540,7 @@ describe("FreeText Editor", () => {
     });
   });
 
-  describe("FreeText on several pages", () => {
+  fdescribe("FreeText on several pages", () => {
     let pages;
 
     beforeAll(async () => {
@@ -2552,51 +2554,84 @@ describe("FreeText Editor", () => {
     it("must check that first annotation is selected without errors", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
+          console.log('Print 1 in ', browserName);
           await switchToFreeText(page);
+          console.log('Print 2 in ', browserName);
+
+          let foundElement = await page.waitForSelector("input#pageNumber");
+          let foundParent = await foundElement.evaluate(el => el.value);
+          console.log('Page field: ', foundParent);
 
           const page1Selector = `.page[data-page-number = "1"] > .annotationEditorLayer.freetextEditing`;
+          foundElement = await page.waitForSelector(page1Selector);
+          foundParent = await foundElement.evaluate(el => el.classList);
+          console.log('Page 1 classes: ', foundParent);
+
           let rect = await page.$eval(page1Selector, el => {
             const { x, y } = el.getBoundingClientRect();
             return { x, y };
           });
+          console.log('Print 3 in ', browserName);
           await page.mouse.click(rect.x + 10, rect.y + 10);
+          console.log('Print 4 in ', browserName);
           await page.waitForSelector(getEditorSelector(0), {
             visible: true,
           });
+          console.log('Print 5 in ', browserName);
           await page.type(`${getEditorSelector(0)} .internal`, "Hello");
+          console.log('Print 6 in ', browserName);
 
           // Commit.
           await page.keyboard.press("Escape");
+          console.log('Print 7 in ', browserName);
           await page.waitForSelector(
             `${getEditorSelector(0)} .overlay.enabled`
           );
+          console.log('Print 8 in ', browserName);
 
           // Go to the last page.
           await page.keyboard.press("End");
+          console.log('Print 9 in ', browserName);
+
+          foundElement = await page.waitForSelector("input#pageNumber");
+          foundParent = await foundElement.evaluate(el => el.value);
+          console.log('Page field: ', foundParent);
 
           const page14Selector = `.page[data-page-number = "14"] > .annotationEditorLayer.freetextEditing`;
+          foundElement = await page.waitForSelector(page14Selector);
+          foundParent = await foundElement.evaluate(el => el.classList);
+          console.log('Page 14 classes: ', foundParent);
+
           await page.waitForSelector(page14Selector, {
             visible: true,
             timeout: 0,
           });
+          console.log('Print 10 in ', browserName);
 
           rect = await page.$eval(page14Selector, el => {
             const { x, y } = el.getBoundingClientRect();
             return { x, y };
           });
+          console.log('Print 11 in ', browserName);
           await page.mouse.click(rect.x + 10, rect.y + 10);
+          console.log('Print 12 in ', browserName);
           await page.waitForSelector(getEditorSelector(1), {
             visible: true,
           });
+          console.log('Print 13 in ', browserName);
           await page.type(`${getEditorSelector(1)} .internal`, "World");
+          console.log('Print 14 in ', browserName);
 
           await page.keyboard.press("Escape");
+          console.log('Print 15 in ', browserName);
           await page.waitForSelector(
             `${getEditorSelector(0)} .overlay.enabled`
           );
+          console.log('Print 16 in ', browserName);
 
           for (let i = 0; i < 13; i++) {
             await page.keyboard.press("P");
+            console.log('Print 17 iteration ', i, ' in ', browserName);
             const pageSelector = `.page[data-page-number = "${
               13 - i
             }"] > .annotationEditorLayer.freetextEditing`;
@@ -2604,11 +2639,13 @@ describe("FreeText Editor", () => {
               visible: true,
               timeout: 0,
             });
+            console.log('Print 18 iteration ', i, ' in ', browserName);
           }
 
           await page.waitForSelector(getEditorSelector(0), {
             visible: true,
           });
+          console.log('Print 19 in ', browserName);
 
           rect = await page.$eval(getEditorSelector(0), el => {
             const { x, y, width, height } = el.getBoundingClientRect();
@@ -2619,16 +2656,20 @@ describe("FreeText Editor", () => {
               height,
             };
           });
+          console.log('Print 20 in ', browserName);
           await page.mouse.click(
             rect.x + rect.width / 2,
             rect.y + rect.height / 2
           );
+          console.log('Print 21 in ', browserName);
 
           await waitForSelectedEditor(page, getEditorSelector(0));
+          console.log('Print 22 in ', browserName);
 
           const content = await page.$eval(getEditorSelector(0), el =>
             el.innerText.trimEnd()
           );
+          console.log('Print 23 in ', browserName);
           expect(content).withContext(`In ${browserName}`).toEqual("Hello");
         })
       );
