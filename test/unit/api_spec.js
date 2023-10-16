@@ -2883,6 +2883,11 @@ describe("api", function () {
 
       expect(attachmentDest).toEqual('[0,{"name":"Fit"}]');
 
+      // Check that the attachments, which are identical, aren't duplicated.
+      for (let i = 1, ii = annotations.length; i < ii; i++) {
+        expect(annotations[i].attachment).toBe(attachment);
+      }
+
       await loadingTask.destroy();
     });
 

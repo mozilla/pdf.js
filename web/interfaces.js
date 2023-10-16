@@ -158,12 +158,12 @@ class IDownloadManager {
   downloadData(data, filename, contentType) {}
 
   /**
-   * @param {HTMLElement} element
    * @param {Uint8Array} data
    * @param {string} filename
+   * @param {string | null} [dest]
    * @returns {boolean} Indicating if the data was opened.
    */
-  openOrDownloadData(element, data, filename) {}
+  openOrDownloadData(data, filename, dest = null) {}
 
   /**
    * @param {Blob} blob
