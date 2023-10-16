@@ -91,7 +91,7 @@ class PDFAttachmentViewer extends BaseTreeViewer {
    */
   _bindLink(element, { content, filename }) {
     element.onclick = () => {
-      this.downloadManager.openOrDownloadData(element, content, filename);
+      this.downloadManager.openOrDownloadData(content, filename);
       return false;
     };
   }

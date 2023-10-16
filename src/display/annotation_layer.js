@@ -806,7 +806,6 @@ class LinkAnnotationElement extends AnnotationElement {
     link.href = this.linkService.getAnchorUrl("");
     link.onclick = () => {
       this.downloadManager?.openOrDownloadData(
-        this.container,
         attachment.content,
         attachment.filename,
         dest
@@ -2861,11 +2860,7 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
    * Download the file attachment associated with this annotation.
    */
   #download() {
-    this.downloadManager?.openOrDownloadData(
-      this.container,
-      this.content,
-      this.filename
-    );
+    this.downloadManager?.openOrDownloadData(this.content, this.filename);
   }
 }
 
