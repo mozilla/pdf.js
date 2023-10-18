@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { bytesToString, info, stringToBytes, warn } from "../shared/util.js";
+import { bytesToString, info, warn } from "../shared/util.js";
 import { Dict, isName, Name, Ref } from "./primitives.js";
 import {
   escapePDFName,
@@ -48,7 +48,7 @@ async function writeDict(dict, buffer, transform) {
 }
 
 async function writeStream(stream, buffer, transform) {
-  let string = stream.getString();
+  let bytes = stream.getBytes();
   const { dict } = stream;
 
   const [filter, params] = await Promise.all([
@@ -67,18 +67,17 @@ async function writeStream(stream, buffer, transform) {
 
   if (
     typeof CompressionStream !== "undefined" &&
-    (string.length >= MIN_LENGTH_FOR_COMPRESSING || isFilterZeroFlateDecode)
+    (bytes.length >= MIN_LENGTH_FOR_COMPRESSING || isFilterZeroFlateDecode)
   ) {
     try {
-      const byteArray = stringToBytes(string);
       const cs = new CompressionStream("deflate");
       const writer = cs.writable.getWriter();
-      writer.write(byteArray);
+      writer.write(bytes);
       writer.close();
 
       // Response::text doesn't return the correct data.
       const buf = await new Response(cs.readable).arrayBuffer();
-      string = bytesToString(new Uint8Array(buf));
+      bytes = new Uint8Array(buf);
 
       let newFilter, newParams;
       if (!filter) {
@@ -104,6 +103,7 @@ async function writeStream(stream, buffer, transform) {
     }
   }
 
+  let string = bytesToString(bytes);
   if (transform) {
     string = transform.encryptString(string);
   }
