@@ -9,14 +9,15 @@
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
     "paths": {
+      "pdfjs-lib": ["./src/pdf"],
       "display-fetch_stream": ["./src/display/fetch_stream"],
       "display-l10n_utils": ["./web/l10n_utils"],
       "display-network": ["./src/display/network"],
       "display-node_stream": ["./src/display/node_stream"],
       "display-node_utils": ["./src/display/node_utils"],
-      "pdfjs-lib": ["./src/pdf"],
       "fluent-bundle": ["./node_modules/@fluent/bundle/esm/index.js"],
-      "fluent-dom": ["./node_modules/@fluent/dom/esm/index.js"]
+      "fluent-dom": ["./node_modules/@fluent/dom/esm/index.js"],
+      "web-l10n_utils": ["./web/l10n_utils"]
     }
   },
   "files": [
