@@ -58,10 +58,6 @@ const DEFAULT_L10N_STRINGS = {
   "pdfjs-find-match-count-limit[other]": "More than { $limit } matches",
   "pdfjs-find-not-found": "Phrase not found",
 
-  "pdfjs-page-scale-width": "Page Width",
-  "pdfjs-page-scale-fit": "Page Fit",
-  "pdfjs-page-scale-auto": "Automatic Zoom",
-  "pdfjs-page-scale-actual": "Actual Size",
   "pdfjs-page-scale-percent": "{ $scale }%",
 
   "pdfjs-loading-error": "An error occurred while loading the PDF.",
