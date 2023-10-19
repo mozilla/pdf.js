@@ -19,7 +19,6 @@ import { BaseTreeViewer } from "./base_tree_viewer.js";
  * @typedef {Object} PDFLayerViewerOptions
  * @property {HTMLDivElement} container - The viewer element.
  * @property {EventBus} eventBus - The application event bus.
- * @property {IL10n} l10n - Localization service.
  */
 
 /**
@@ -32,7 +31,6 @@ import { BaseTreeViewer } from "./base_tree_viewer.js";
 class PDFLayerViewer extends BaseTreeViewer {
   constructor(options) {
     super(options);
-    this.l10n = options.l10n;
 
     this.eventBus._on("optionalcontentconfigchanged", evt => {
       this.#updateLayers(evt.promise);
@@ -89,7 +87,7 @@ class PDFLayerViewer extends BaseTreeViewer {
   /**
    * @private
    */
-  async _setNestedName(element, { name = null }) {
+  _setNestedName(element, { name = null }) {
     if (typeof name === "string") {
       element.textContent = this._normalizeTextContent(name);
       return;
