@@ -984,8 +984,7 @@ class TextAnnotationElement extends AnnotationElement {
       "annotation-" +
       this.data.name.toLowerCase() +
       ".svg";
-    image.alt = "[{{type}} Annotation]";
-    image.dataset.l10nId = "text_annotation_type";
+    image.dataset.l10nId = "pdfjs-text-annotation-type";
     image.dataset.l10nArgs = JSON.stringify({ type: this.data.name });
 
     if (!this.data.popupRef && this.hasPopupData) {
@@ -2021,8 +2020,6 @@ class PopupAnnotationElement extends AnnotationElement {
 }
 
 class PopupElement {
-  #dateTimePromise = null;
-
   #boundKeyDown = this.#keyDown.bind(this);
 
   #boundHide = this.#hide.bind(this);
@@ -2036,6 +2033,8 @@ class PopupElement {
   #container = null;
 
   #contentsObj = null;
+
+  #dateObj = null;
 
   #elements = null;
 
@@ -2078,16 +2077,10 @@ class PopupElement {
     this.#parentRect = parentRect;
     this.#elements = elements;
 
-    const dateObject = PDFDateString.toDateObject(modificationDate);
-    if (dateObject) {
-      // The modification date is shown in the popup instead of the creation
-      // date if it is available and can be parsed correctly, which is
-      // consistent with other viewers such as Adobe Acrobat.
-      this.#dateTimePromise = parent.l10n.get("annotation_date_string", {
-        date: dateObject.toLocaleDateString(),
-        time: dateObject.toLocaleTimeString(),
-      });
-    }
+    // The modification date is shown in the popup instead of the creation
+    // date if it is available and can be parsed correctly, which is
+    // consistent with other viewers such as Adobe Acrobat.
+    this.#dateObj = PDFDateString.toDateObject(modificationDate);
 
     this.trigger = elements.flatMap(e => e.getElementsToTriggerPopup());
     // Attach the event listeners to the trigger element.
@@ -2114,9 +2107,6 @@ class PopupElement {
       this.#parent.popupShow.push(async () => {
         if (this.#container.hidden) {
           this.#show();
-        }
-        if (this.#dateTimePromise) {
-          await this.#dateTimePromise;
         }
       });
     }
@@ -2166,11 +2156,13 @@ class PopupElement {
     ({ dir: title.dir, str: title.textContent } = this.#titleObj);
     popup.append(header);
 
-    if (this.#dateTimePromise) {
+    if (this.#dateObj) {
       const modificationDate = document.createElement("span");
       modificationDate.classList.add("popupDate");
-      this.#dateTimePromise.then(localized => {
-        modificationDate.textContent = localized;
+      modificationDate.dataset.l10nId = "pdfjs-annotation-date-string";
+      modificationDate.dataset.l10nArgs = JSON.stringify({
+        date: this.#dateObj.toLocaleDateString(),
+        time: this.#dateObj.toLocaleTimeString(),
       });
       header.append(modificationDate);
     }
@@ -3017,7 +3009,13 @@ class AnnotationLayer {
 
     this.#setAnnotationCanvasMap();
 
-    await this.l10n.translate(layer);
+    if (
+      typeof PDFJSDev !== "undefined" &&
+      PDFJSDev.test("GENERIC && !TESTING") &&
+      this.l10n instanceof NullL10n
+    ) {
+      await this.l10n.translate(layer);
+    }
   }
 
   /**

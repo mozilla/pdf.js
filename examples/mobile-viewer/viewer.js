@@ -97,26 +97,26 @@ const PDFViewerApplication = {
         if (exception instanceof pdfjsLib.InvalidPDFException) {
           // change error message also for other builds
           loadingErrorMessage = l10n.get(
-            "invalid_file_error",
+            "pdfjs-invalid-file-error",
             null,
             "Invalid or corrupted PDF file."
           );
         } else if (exception instanceof pdfjsLib.MissingPDFException) {
           // special message for missing PDFs
           loadingErrorMessage = l10n.get(
-            "missing_file_error",
+            "pdfjs-missing-file-error",
             null,
             "Missing PDF file."
           );
         } else if (exception instanceof pdfjsLib.UnexpectedResponseException) {
           loadingErrorMessage = l10n.get(
-            "unexpected_response_error",
+            "pdfjs-unexpected-response-error",
             null,
             "Unexpected server response."
           );
         } else {
           loadingErrorMessage = l10n.get(
-            "loading_error",
+            "pdfjs-loading-error",
             null,
             "An error occurred while loading the PDF."
           );
@@ -234,40 +234,44 @@ const PDFViewerApplication = {
     const l10n = this.l10n;
     const moreInfoText = [
       l10n.get(
-        "error_version_info",
+        "pdfjs-error-version-info",
         { version: pdfjsLib.version || "?", build: pdfjsLib.build || "?" },
-        "PDF.js v{{version}} (build: {{build}})"
+        "PDF.js v{ $version } (build: { $build })"
       ),
     ];
 
     if (moreInfo) {
       moreInfoText.push(
         l10n.get(
-          "error_message",
+          "pdfjs-error-message",
           { message: moreInfo.message },
-          "Message: {{message}}"
+          "Message: { $message }"
         )
       );
       if (moreInfo.stack) {
         moreInfoText.push(
-          l10n.get("error_stack", { stack: moreInfo.stack }, "Stack: {{stack}}")
+          l10n.get(
+            "pdfjs-error-stack",
+            { stack: moreInfo.stack },
+            "Stack: { $stack }"
+          )
         );
       } else {
         if (moreInfo.filename) {
           moreInfoText.push(
             l10n.get(
-              "error_file",
+              "pdfjs-error-file",
               { file: moreInfo.filename },
-              "File: {{file}}"
+              "File: { $file }"
             )
           );
         }
         if (moreInfo.lineNumber) {
           moreInfoText.push(
             l10n.get(
-              "error_line",
+              "pdfjs-error-line",
               { line: moreInfo.lineNumber },
-              "Line: {{line}}"
+              "Line: { $line }"
             )
           );
         }

@@ -13,12 +13,11 @@
  * limitations under the License.
  */
 
-import "../extensions/firefox/tools/l10n.js";
 import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
 import { isPdfFile, PDFDataRangeTransport, shadow } from "pdfjs-lib";
 import { BasePreferences } from "./preferences.js";
 import { DEFAULT_SCALE_VALUE } from "./ui_utils.js";
-import { getL10nFallback } from "./l10n_utils.js";
+import { L10n } from "./l10n.js";
 
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
@@ -179,28 +178,6 @@ class DownloadManager {
 class FirefoxPreferences extends BasePreferences {
   async _readFromStorage(prefObj) {
     return FirefoxCom.requestAsync("getPreferences", prefObj);
-  }
-}
-
-class MozL10n {
-  constructor(mozL10n) {
-    this.mozL10n = mozL10n;
-  }
-
-  async getLanguage() {
-    return this.mozL10n.getLanguage();
-  }
-
-  async getDirection() {
-    return this.mozL10n.getDirection();
-  }
-
-  async get(key, args = null, fallback = getL10nFallback(key, args)) {
-    return this.mozL10n.get(key, args, fallback);
-  }
-
-  async translate(element) {
-    this.mozL10n.translate(element);
   }
 }
 
@@ -445,10 +422,12 @@ class FirefoxExternalServices extends DefaultExternalServices {
     FirefoxCom.request("updateEditorStates", data);
   }
 
-  static createL10n(options) {
-    const mozL10n = document.mozL10n;
-    // TODO refactor mozL10n.setExternalLocalizerServices
-    return new MozL10n(mozL10n);
+  static async createL10n(_options) {
+    const [localeProperties] = await Promise.all([
+      FirefoxCom.requestAsync("getLocaleProperties", null),
+      document.l10n.ready,
+    ]);
+    return new L10n(localeProperties, document.l10n);
   }
 
   static createScripting(options) {
@@ -498,16 +477,5 @@ class FirefoxExternalServices extends DefaultExternalServices {
   }
 }
 PDFViewerApplication.externalServices = FirefoxExternalServices;
-
-// l10n.js for Firefox extension expects services to be set.
-document.mozL10n.setExternalLocalizerServices({
-  getLocale() {
-    return FirefoxCom.requestSync("getLocale", null);
-  },
-
-  getStrings(key) {
-    return FirefoxCom.requestSync("getStrings", null);
-  },
-});
 
 export { DownloadManager, FirefoxCom };

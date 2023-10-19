@@ -93,7 +93,11 @@ describe("find bar", () => {
           await page.waitForSelector(".xfaLayer .highlight");
           const resultElement = await page.waitForSelector("#findResultsCount");
           const resultText = await resultElement.evaluate(el => el.textContent);
-          expect(resultText).toEqual("1 of 1 match");
+          /** Unicode bidi isolation characters. */
+          const FSI = "\u2068";
+          const PDI = "\u2069";
+          // Fluent adds these markers to the result text.
+          expect(resultText).toEqual(`${FSI}1${PDI} of ${FSI}1${PDI} match`);
           const selectedElement = await page.waitForSelector(
             ".highlight.selected"
           );

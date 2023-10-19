@@ -119,11 +119,13 @@ class PDFFindBar {
         status = "pending";
         break;
       case FindState.NOT_FOUND:
-        findMsg = this.l10n.get("find_not_found");
+        findMsg = this.l10n.get("pdfjs-find-not-found");
         status = "notFound";
         break;
       case FindState.WRAPPED:
-        findMsg = this.l10n.get(`find_reached_${previous ? "top" : "bottom"}`);
+        findMsg = this.l10n.get(
+          `pdfjs-find-reached-${previous ? "top" : "bottom"}`
+        );
         break;
     }
     this.findField.setAttribute("data-status", status);
@@ -143,25 +145,10 @@ class PDFFindBar {
     let matchCountMsg = Promise.resolve("");
 
     if (total > 0) {
-      if (total > limit) {
-        let key = "find_match_count_limit";
-
-        if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-          // TODO: Remove this hard-coded `[other]` form once plural support has
-          // been implemented in the mozilla-central specific `l10n.js` file.
-          key += "[other]";
-        }
-        matchCountMsg = this.l10n.get(key, { limit });
-      } else {
-        let key = "find_match_count";
-
-        if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-          // TODO: Remove this hard-coded `[other]` form once plural support has
-          // been implemented in the mozilla-central specific `l10n.js` file.
-          key += "[other]";
-        }
-        matchCountMsg = this.l10n.get(key, { current, total });
-      }
+      matchCountMsg =
+        total > limit
+          ? this.l10n.get("pdfjs-find-match-count-limit", { limit })
+          : this.l10n.get("pdfjs-find-match-count", { current, total });
     }
     matchCountMsg.then(msg => {
       this.findResultsCount.textContent = msg;

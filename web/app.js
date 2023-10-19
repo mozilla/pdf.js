@@ -112,7 +112,7 @@ class DefaultExternalServices {
     throw new Error("Not implemented: createPreferences");
   }
 
-  static createL10n(options) {
+  static async createL10n(options) {
     throw new Error("Not implemented: createL10n");
   }
 
@@ -392,13 +392,12 @@ const PDFViewerApplication = {
    * @private
    */
   async _initializeL10n() {
-    this.l10n = this.externalServices.createL10n(
+    this.l10n = await this.externalServices.createL10n(
       typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")
         ? { locale: AppOptions.get("locale") }
         : null
     );
-    const dir = await this.l10n.getDirection();
-    document.getElementsByTagName("html")[0].dir = dir;
+    document.getElementsByTagName("html")[0].dir = this.l10n.getDirection();
   },
 
   /**
@@ -751,7 +750,7 @@ const PDFViewerApplication = {
 
     if (!this.supportsDocumentFonts) {
       AppOptions.set("disableFontFace", true);
-      this.l10n.get("web_fonts_disabled").then(msg => {
+      this.l10n.get("pdfjs-web-fonts-disabled").then(msg => {
         console.warn(msg);
       });
     }
@@ -896,7 +895,7 @@ const PDFViewerApplication = {
         this.open({ url, length, originalUrl });
       },
       onError: err => {
-        this.l10n.get("loading_error").then(msg => {
+        this.l10n.get("pdfjs-loading-error").then(msg => {
           this._documentError(msg, err);
         });
       },
@@ -1100,13 +1099,13 @@ const PDFViewerApplication = {
           return undefined; // Ignore errors for previously opened PDF files.
         }
 
-        let key = "loading_error";
+        let key = "pdfjs-loading-error";
         if (reason instanceof InvalidPDFException) {
-          key = "invalid_file_error";
+          key = "pdfjs-invalid-file-error";
         } else if (reason instanceof MissingPDFException) {
-          key = "missing_file_error";
+          key = "pdfjs-missing-file-error";
         } else if (reason instanceof UnexpectedResponseException) {
-          key = "unexpected_response_error";
+          key = "pdfjs-unexpected-response-error";
         }
         return this.l10n.get(key).then(msg => {
           this._documentError(msg, { message: reason?.message });
@@ -1446,7 +1445,7 @@ const PDFViewerApplication = {
         this._initializeAutoPrint(pdfDocument, openActionPromise);
       },
       reason => {
-        this.l10n.get("loading_error").then(msg => {
+        this.l10n.get("pdfjs-loading-error").then(msg => {
           this._documentError(msg, { message: reason?.message });
         });
       }
@@ -1846,7 +1845,7 @@ const PDFViewerApplication = {
     }
 
     if (!this.supportsPrinting) {
-      this.l10n.get("printing_not_supported").then(msg => {
+      this.l10n.get("pdfjs-printing-not-supported").then(msg => {
         this._otherError(msg);
       });
       return;
@@ -1855,7 +1854,7 @@ const PDFViewerApplication = {
     // The beforePrint is a sync method and we need to know layout before
     // returning from this method. Ensure that we can get sizes of the pages.
     if (!this.pdfViewer.pageViewsReady) {
-      this.l10n.get("printing_not_ready").then(msg => {
+      this.l10n.get("pdfjs-printing-not-ready").then(msg => {
         // eslint-disable-next-line no-alert
         window.alert(msg);
       });
@@ -2253,7 +2252,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         throw new Error("file origin does not match viewer's");
       }
     } catch (ex) {
-      PDFViewerApplication.l10n.get("loading_error").then(msg => {
+      PDFViewerApplication.l10n.get("pdfjs-loading-error").then(msg => {
         PDFViewerApplication._documentError(msg, { message: ex?.message });
       });
       throw ex;
@@ -2320,7 +2319,7 @@ function webViewerPageRendered({ pageNumber, error }) {
   }
 
   if (error) {
-    PDFViewerApplication.l10n.get("rendering_error").then(msg => {
+    PDFViewerApplication.l10n.get("pdfjs-rendering-error").then(msg => {
       PDFViewerApplication._otherError(msg, error);
     });
   }

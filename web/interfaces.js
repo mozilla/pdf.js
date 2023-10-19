@@ -179,14 +179,14 @@ class IDownloadManager {
  */
 class IL10n {
   /**
-   * @returns {Promise<string>} - Resolves to the current locale.
+   * @returns {string} - The current locale.
    */
-  async getLanguage() {}
+  getLanguage() {}
 
   /**
-   * @returns {Promise<string>} - Resolves to 'rtl' or 'ltr'.
+   * @returns {string} - 'rtl' or 'ltr'.
    */
-  async getDirection() {}
+  getDirection() {}
 
   /**
    * Translates text identified by the key and adds/formats data using the args
