@@ -46,8 +46,6 @@ const PAGE_NUMBER_LOADING_INDICATOR = "visiblePageIsLoading";
  */
 
 class Toolbar {
-  #wasLocalized = false;
-
   /**
    * @param {ToolbarOptions} options
    * @param {EventBus} eventBus
@@ -206,11 +204,6 @@ class Toolbar {
     // Suppress context menus for some controls.
     scaleSelect.oncontextmenu = noContextMenu;
 
-    this.eventBus._on("localized", () => {
-      this.#wasLocalized = true;
-      this.#updateUIState(true);
-    });
-
     this.#bindEditorToolsListener(options);
   }
 
@@ -254,10 +247,6 @@ class Toolbar {
   }
 
   #updateUIState(resetNumPages = false) {
-    if (!this.#wasLocalized) {
-      // Don't update the UI state until we localize the toolbar.
-      return;
-    }
     const { pageNumber, pagesCount, pageScaleValue, pageScale, items } = this;
 
     if (resetNumPages) {
