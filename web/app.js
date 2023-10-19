@@ -234,7 +234,6 @@ const PDFViewerApplication = {
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
-    this.preferences = this.externalServices.createPreferences();
     this.appConfig = appConfig;
 
     if (
@@ -245,7 +244,16 @@ const PDFViewerApplication = {
       this._nimbusDataPromise = this.externalServices.getNimbusExperimentData();
     }
 
-    await this._initializeOptions();
+    // Ensure that `Preferences`, and indirectly `AppOptions`, have initialized
+    // before creating e.g. the various viewer components.
+    try {
+      await this.preferences.initializedPromise;
+    } catch (ex) {
+      console.error(`initialize: "${ex.message}".`);
+    }
+    if (AppOptions.get("pdfBugEnabled")) {
+      await this._parseHashParams();
+    }
     this._forceCssTheme();
     await this._initializeL10n();
 
@@ -273,37 +281,6 @@ const PDFViewerApplication = {
     });
 
     this._initializedCapability.resolve();
-  },
-
-  /**
-   * @private
-   */
-  async _initializeOptions() {
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      if (AppOptions.get("disablePreferences")) {
-        if (AppOptions.get("pdfBugEnabled")) {
-          await this._parseHashParams();
-        }
-        // Give custom implementations of the default viewer a simpler way to
-        // opt-out of having the `Preferences` override existing `AppOptions`.
-        return;
-      }
-      if (AppOptions._hasUserOptions()) {
-        console.warn(
-          "_initializeOptions: The Preferences may override manually set AppOptions; " +
-            'please use the "disablePreferences"-option in order to prevent that.'
-        );
-      }
-    }
-    try {
-      AppOptions.setAll(await this.preferences.getAll());
-    } catch (reason) {
-      console.error(`_initializeOptions: "${reason.message}".`);
-    }
-
-    if (AppOptions.get("pdfBugEnabled")) {
-      await this._parseHashParams();
-    }
   },
 
   /**
@@ -697,6 +674,7 @@ const PDFViewerApplication = {
   },
 
   async run(config) {
+    this.preferences = this.externalServices.createPreferences();
     await this.initialize(config);
 
     const { appConfig, eventBus } = this;
