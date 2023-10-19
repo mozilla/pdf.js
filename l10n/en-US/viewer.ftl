@@ -218,11 +218,13 @@ pdfjs-additional-layers = Additional Layers
 
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-title = Page { $page }
+pdfjs-thumb-page-title =
+    .title = Page { $page }
 
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-canvas = Thumbnail of Page { $page }
+pdfjs-thumb-page-canvas =
+    .aria-label = Thumbnail of Page { $page }
 
 ## Find panel button title and messages
 
@@ -276,7 +278,8 @@ pdfjs-page-scale-percent = { $scale }%
 
 # Variables:
 #   $page (Number) - the page number
-pdfjs-page-landmark = Page { $page }
+pdfjs-page-landmark =
+    .aria-label = Page { $page }
 
 ## Loading indicator messages
 

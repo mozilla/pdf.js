@@ -25,8 +25,7 @@ const {
   shadow,
   XfaLayer,
 } = pdfjsLib;
-const { GenericL10n, NullL10n, parseQueryString, SimpleLinkService } =
-  pdfjsViewer;
+const { GenericL10n, parseQueryString, SimpleLinkService } = pdfjsViewer;
 
 const WAITING_TIME = 100; // ms
 const CMAP_URL = "/build/generic/web/cmaps/";
@@ -215,8 +214,7 @@ class Rasterize {
     annotationCanvasMap,
     page,
     imageResourcesPath,
-    renderForms = false,
-    l10n = NullL10n
+    renderForms = false
   ) {
     try {
       const { svg, foreignObject, style, div } = this.createContainer(viewport);
@@ -248,7 +246,6 @@ class Rasterize {
         div,
         annotationCanvasMap: annotationImageMap,
         page,
-        l10n,
         viewport: annotationViewport,
       });
       await annotationLayer.render(parameters);
@@ -356,6 +353,8 @@ class Driver {
     // Configure the global worker options.
     GlobalWorkerOptions.workerSrc = WORKER_SRC;
 
+    // We only need to initialize the `L10n`-instance here, since translation is
+    // triggered by a `MutationObserver`; see e.g. `Rasterize.annotationLayer`.
     this._l10n = new GenericL10n(VIEWER_LOCALE);
 
     // Set the passed options
@@ -879,8 +878,7 @@ class Driver {
                       annotationCanvasMap,
                       page,
                       IMAGE_RESOURCES_PATH,
-                      renderForms,
-                      this._l10n
+                      renderForms
                     ).then(() => {
                       completeRender(false);
                     });

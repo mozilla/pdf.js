@@ -49,12 +49,10 @@ class Toolbar {
   /**
    * @param {ToolbarOptions} options
    * @param {EventBus} eventBus
-   * @param {IL10n} l10n - Localization service.
    */
-  constructor(options, eventBus, l10n) {
+  constructor(options, eventBus) {
     this.toolbar = options.container;
     this.eventBus = eventBus;
-    this.l10n = l10n;
     this.buttons = [
       { element: options.previous, eventName: "previouspage" },
       { element: options.next, eventName: "nextpage" },
@@ -252,22 +250,27 @@ class Toolbar {
     if (resetNumPages) {
       if (this.hasPageLabels) {
         items.pageNumber.type = "text";
+
+        items.numPages.setAttribute("data-l10n-id", "pdfjs-page-of-pages");
       } else {
         items.pageNumber.type = "number";
-        this.l10n.get("pdfjs-of-pages", { pagesCount }).then(msg => {
-          items.numPages.textContent = msg;
-        });
+
+        items.numPages.setAttribute("data-l10n-id", "pdfjs-of-pages");
+        items.numPages.setAttribute(
+          "data-l10n-args",
+          JSON.stringify({ pagesCount })
+        );
       }
       items.pageNumber.max = pagesCount;
     }
 
     if (this.hasPageLabels) {
       items.pageNumber.value = this.pageLabel;
-      this.l10n
-        .get("pdfjs-page-of-pages", { pageNumber, pagesCount })
-        .then(msg => {
-          items.numPages.textContent = msg;
-        });
+
+      items.numPages.setAttribute(
+        "data-l10n-args",
+        JSON.stringify({ pageNumber, pagesCount })
+      );
     } else {
       items.pageNumber.value = pageNumber;
     }
@@ -278,25 +281,24 @@ class Toolbar {
     items.zoomOut.disabled = pageScale <= MIN_SCALE;
     items.zoomIn.disabled = pageScale >= MAX_SCALE;
 
-    this.l10n
-      .get("pdfjs-page-scale-percent", {
-        scale: Math.round(pageScale * 10000) / 100,
-      })
-      .then(msg => {
-        let predefinedValueFound = false;
-        for (const option of items.scaleSelect.options) {
-          if (option.value !== pageScaleValue) {
-            option.selected = false;
-            continue;
-          }
-          option.selected = true;
-          predefinedValueFound = true;
-        }
-        if (!predefinedValueFound) {
-          items.customScaleOption.textContent = msg;
-          items.customScaleOption.selected = true;
-        }
-      });
+    let predefinedValueFound = false;
+    for (const option of items.scaleSelect.options) {
+      if (option.value !== pageScaleValue) {
+        option.selected = false;
+        continue;
+      }
+      option.selected = true;
+      predefinedValueFound = true;
+    }
+    if (!predefinedValueFound) {
+      items.customScaleOption.selected = true;
+      items.customScaleOption.setAttribute(
+        "data-l10n-args",
+        JSON.stringify({
+          scale: Math.round(pageScale * 10000) / 100,
+        })
+      );
+    }
   }
 
   updateLoadingIndicatorState(loading = false) {
