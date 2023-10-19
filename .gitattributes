@@ -4,7 +4,7 @@
 *.css        text eol=lf
 *.html       text eol=lf
 *.md         text eol=lf
-*.properties text eol=lf
+*.ftl        text eol=lf
 *.yml        text eol=lf
 *.json       text eol=lf
 *.config     text eol=lf

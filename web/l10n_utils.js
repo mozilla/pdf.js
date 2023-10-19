@@ -21,102 +21,102 @@
  */
 
 /**
- * A subset of the l10n strings in the `l10n/en-US/viewer.properties` file.
+ * A subset of the l10n strings in the `l10n/en-US/viewer.ftl` file.
  */
 const DEFAULT_L10N_STRINGS = {
-  of_pages: "of {{pagesCount}}",
-  page_of_pages: "({{pageNumber}} of {{pagesCount}})",
+  "pdfjs-of-pages": "of { $pagesCount }",
+  "pdfjs-page-of-pages": "({ $pageNumber } of { $pagesCount })",
 
-  document_properties_kb: "{{size_kb}} KB ({{size_b}} bytes)",
-  document_properties_mb: "{{size_mb}} MB ({{size_b}} bytes)",
-  document_properties_date_string: "{{date}}, {{time}}",
-  document_properties_page_size_unit_inches: "in",
-  document_properties_page_size_unit_millimeters: "mm",
-  document_properties_page_size_orientation_portrait: "portrait",
-  document_properties_page_size_orientation_landscape: "landscape",
-  document_properties_page_size_name_a3: "A3",
-  document_properties_page_size_name_a4: "A4",
-  document_properties_page_size_name_letter: "Letter",
-  document_properties_page_size_name_legal: "Legal",
-  document_properties_page_size_dimension_string:
-    "{{width}} × {{height}} {{unit}} ({{orientation}})",
-  document_properties_page_size_dimension_name_string:
-    "{{width}} × {{height}} {{unit}} ({{name}}, {{orientation}})",
-  document_properties_linearized_yes: "Yes",
-  document_properties_linearized_no: "No",
+  "pdfjs-document-properties-kb": "{ $size-kb } KB ({ $size-b } bytes)",
+  "pdfjs-document-properties-mb": "{ $size-mb } MB ({ $size-b } bytes)",
+  "pdfjs-document-properties-date-string": "{ $date }, { $time }",
+  "pdfjs-document-properties-page-size-unit-inches": "in",
+  "pdfjs-document-properties-page-size-unit-millimeters": "mm",
+  "pdfjs-document-properties-page-size-orientation-portrait": "portrait",
+  "pdfjs-document-properties-page-size-orientation-landscape": "landscape",
+  "pdfjs-document-properties-page-size-name-a3": "A3",
+  "pdfjs-document-properties-page-size-name-a4": "A4",
+  "pdfjs-document-properties-page-size-name-letter": "Letter",
+  "pdfjs-document-properties-page-size-name-legal": "Legal",
+  "pdfjs-document-properties-page-size-dimension-string":
+    "{ $width } × { $height } { $unit } ({ $orientation })",
+  "pdfjs-document-properties-page-size-dimension-name-string":
+    "{ $width } × { $height } { $unit } ({ $name }, { $orientation })",
+  "pdfjs-document-properties-linearized-yes": "Yes",
+  "pdfjs-document-properties-linearized-no": "No",
 
-  additional_layers: "Additional Layers",
-  page_landmark: "Page {{page}}",
-  thumb_page_title: "Page {{page}}",
-  thumb_page_canvas: "Thumbnail of Page {{page}}",
+  "pdfjs-additional-layers": "Additional Layers",
+  "pdfjs-page-landmark": "Page { $page }",
+  "pdfjs-thumb-page-title": "Page { $page }",
+  "pdfjs-thumb-page-canvas": "Thumbnail of Page { $page }",
 
-  find_reached_top: "Reached top of document, continued from bottom",
-  find_reached_bottom: "Reached end of document, continued from top",
-  "find_match_count[one]": "{{current}} of {{total}} match",
-  "find_match_count[other]": "{{current}} of {{total}} matches",
-  "find_match_count_limit[one]": "More than {{limit}} match",
-  "find_match_count_limit[other]": "More than {{limit}} matches",
-  find_not_found: "Phrase not found",
+  "pdfjs-find-reached-top": "Reached top of document, continued from bottom",
+  "pdfjs-find-reached-bottom": "Reached end of document, continued from top",
+  "pdfjs-find-match-count[one]": "{ $current } of { $total } match",
+  "pdfjs-find-match-count[other]": "{ $current } of { $total } matches",
+  "pdfjs-find-match-count-limit[one]": "More than { $limit } match",
+  "pdfjs-find-match-count-limit[other]": "More than { $limit } matches",
+  "pdfjs-find-not-found": "Phrase not found",
 
-  page_scale_width: "Page Width",
-  page_scale_fit: "Page Fit",
-  page_scale_auto: "Automatic Zoom",
-  page_scale_actual: "Actual Size",
-  page_scale_percent: "{{scale}}%",
+  "pdfjs-page-scale-width": "Page Width",
+  "pdfjs-page-scale-fit": "Page Fit",
+  "pdfjs-page-scale-auto": "Automatic Zoom",
+  "pdfjs-page-scale-actual": "Actual Size",
+  "pdfjs-page-scale-percent": "{ $scale }%",
 
-  loading_error: "An error occurred while loading the PDF.",
-  invalid_file_error: "Invalid or corrupted PDF file.",
-  missing_file_error: "Missing PDF file.",
-  unexpected_response_error: "Unexpected server response.",
-  rendering_error: "An error occurred while rendering the page.",
+  "pdfjs-loading-error": "An error occurred while loading the PDF.",
+  "pdfjs-invalid-file-error": "Invalid or corrupted PDF file.",
+  "pdfjs-missing-file-error": "Missing PDF file.",
+  "pdfjs-unexpected-response-error": "Unexpected server response.",
+  "pdfjs-rendering-error": "An error occurred while rendering the page.",
 
-  annotation_date_string: "{{date}}, {{time}}",
+  "pdfjs-annotation-date-string": "{ $date }, { $time }",
 
-  printing_not_supported:
+  "pdfjs-printing-not-supported":
     "Warning: Printing is not fully supported by this browser.",
-  printing_not_ready: "Warning: The PDF is not fully loaded for printing.",
-  web_fonts_disabled:
+  "pdfjs-printing-not-ready":
+    "Warning: The PDF is not fully loaded for printing.",
+  "pdfjs-web-fonts-disabled":
     "Web fonts are disabled: unable to use embedded PDF fonts.",
 
-  free_text2_default_content: "Start typing…",
-  editor_free_text2_aria_label: "Text Editor",
-  editor_ink2_aria_label: "Draw Editor",
-  editor_ink_canvas_aria_label: "User-created image",
-  editor_alt_text_button_label: "Alt text",
-  editor_alt_text_edit_button_label: "Edit alt text",
-  editor_alt_text_decorative_tooltip: "Marked as decorative",
-  editor_resizer_label_topLeft: "Top left corner — resize",
-  editor_resizer_label_topMiddle: "Top middle — resize",
-  editor_resizer_label_topRight: "Top right corner — resize",
-  editor_resizer_label_middleRight: "Middle right — resize",
-  editor_resizer_label_bottomRight: "Bottom right corner — resize",
-  editor_resizer_label_bottomMiddle: "Bottom middle — resize",
-  editor_resizer_label_bottomLeft: "Bottom left corner — resize",
-  editor_resizer_label_middleLeft: "Middle left — resize",
+  "pdfjs-free-text-default-content": "Start typing…",
+  "pdfjs-editor-alt-text-button-label": "Alt text",
+  "pdfjs-editor-alt-text-edit-button-label": "Edit alt text",
+  "pdfjs-editor-alt-text-decorative-tooltip": "Marked as decorative",
+  "pdfjs-editor-resizer-label-top-left": "Top left corner — resize",
+  "pdfjs-editor-resizer-label-top-middle": "Top middle — resize",
+  "pdfjs-editor-resizer-label-top-right": "Top right corner — resize",
+  "pdfjs-editor-resizer-label-middle-right": "Middle right — resize",
+  "pdfjs-editor-resizer-label-bottom-right": "Bottom right corner — resize",
+  "pdfjs-editor-resizer-label-bottom-middle": "Bottom middle — resize",
+  "pdfjs-editor-resizer-label-bottom-left": "Bottom left corner — resize",
+  "pdfjs-editor-resizer-label-middle-left": "Middle left — resize",
 };
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-  DEFAULT_L10N_STRINGS.print_progress_percent = "{{progress}}%";
+  DEFAULT_L10N_STRINGS.print_progress_percent = "{ $progress }%";
 }
 
 function getL10nFallback(key, args) {
   switch (key) {
-    case "find_match_count":
-      key = `find_match_count[${args.total === 1 ? "one" : "other"}]`;
+    case "pdfjs-find-match-count":
+      key = `pdfjs-find-match-count[${args.total === 1 ? "one" : "other"}]`;
       break;
-    case "find_match_count_limit":
-      key = `find_match_count_limit[${args.limit === 1 ? "one" : "other"}]`;
+    case "pdfjs-find-match-count-limit":
+      key = `pdfjs-find-match-count-limit[${
+        args.limit === 1 ? "one" : "other"
+      }]`;
       break;
   }
   return DEFAULT_L10N_STRINGS[key] || "";
 }
 
-// Replaces {{arguments}} with their values.
+// Replaces { $arguments } with their values.
 function formatL10nValue(text, args) {
   if (!args) {
     return text;
   }
-  return text.replaceAll(/\{\{\s*(\w+)\s*\}\}/g, (all, name) => {
-    return name in args ? args[name] : "{{" + name + "}}";
+  return text.replaceAll(/\{\s*$(\w+)\s*\}/g, (all, name) => {
+    return name in args ? args[name] : "{$" + name + "}";
   });
 }
 
@@ -125,11 +125,11 @@ function formatL10nValue(text, args) {
  * @implements {IL10n}
  */
 const NullL10n = {
-  async getLanguage() {
+  getLanguage() {
     return "en-us";
   },
 
-  async getDirection() {
+  getDirection() {
     return "ltr";
   },
 
@@ -140,4 +140,4 @@ const NullL10n = {
   async translate(element) {},
 };
 
-export { getL10nFallback, NullL10n };
+export { NullL10n };

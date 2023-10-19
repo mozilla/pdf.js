@@ -240,6 +240,10 @@ class Rasterize {
         imageResourcesPath,
         renderForms,
       };
+
+      // Ensure that the annotationLayer gets translated.
+      document.l10n.connectRoot(div);
+
       const annotationLayer = new AnnotationLayer({
         div,
         annotationCanvasMap: annotationImageMap,
@@ -249,6 +253,15 @@ class Rasterize {
       });
       await annotationLayer.render(parameters);
       await annotationLayer.showPopups();
+
+      // With Fluent, the translations are triggered by the MutationObserver
+      // hence the translations could be not finished when we rasterize the div.
+      // So in order to be sure that all translations are done, we wait for
+      // them here.
+      await document.l10n.translateRoots();
+
+      // All translation should be complete here.
+      document.l10n.disconnectRoot(div);
 
       // Inline SVG images from text annotations.
       await inlineImages(div);
