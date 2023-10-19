@@ -272,14 +272,6 @@ const PDFViewerApplication = {
     this.bindEvents();
     this.bindWindowEvents();
 
-    // We can start UI localization now.
-    const appContainer = appConfig.appContainer || document.documentElement;
-    this.l10n.translate(appContainer).then(() => {
-      // Dispatch the 'localized' event on the `eventBus` once the viewer
-      // has been fully initialized and translated.
-      this.eventBus.dispatch("localized", { source: this });
-    });
-
     this._initializedCapability.resolve();
   },
 
@@ -375,6 +367,12 @@ const PDFViewerApplication = {
         : null
     );
     document.getElementsByTagName("html")[0].dir = this.l10n.getDirection();
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+      const appContainer =
+        this.appConfig.appContainer || document.documentElement;
+      // Connect Fluent and translate what we already have.
+      this.l10n.translate(appContainer);
+    }
   },
 
   /**
