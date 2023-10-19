@@ -422,7 +422,7 @@ class FirefoxExternalServices extends DefaultExternalServices {
     FirefoxCom.request("updateEditorStates", data);
   }
 
-  static async createL10n(_options) {
+  static async createL10n() {
     const [localeProperties] = await Promise.all([
       FirefoxCom.requestAsync("getLocaleProperties", null),
       document.l10n.ready,
