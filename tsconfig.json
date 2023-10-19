@@ -11,7 +11,6 @@
     "paths": {
       "pdfjs-lib": ["./src/pdf"],
       "display-fetch_stream": ["./src/display/fetch_stream"],
-      "display-l10n_utils": ["./web/l10n_utils"],
       "display-network": ["./src/display/network"],
       "display-node_stream": ["./src/display/node_stream"],
       "display-node_utils": ["./src/display/node_utils"],
