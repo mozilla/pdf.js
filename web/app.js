@@ -112,7 +112,7 @@ class DefaultExternalServices {
     throw new Error("Not implemented: createPreferences");
   }
 
-  static async createL10n(options) {
+  static async createL10n() {
     throw new Error("Not implemented: createL10n");
   }
 
@@ -234,6 +234,12 @@ const PDFViewerApplication = {
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
+    let l10nPromise;
+    // In the (various) extension builds, where the locale is set automatically,
+    // initialize the `L10n`-instance as soon as possible.
+    if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
+      l10nPromise = this.externalServices.createL10n();
+    }
     this.appConfig = appConfig;
 
     if (
@@ -255,7 +261,18 @@ const PDFViewerApplication = {
       await this._parseHashParams();
     }
     this._forceCssTheme();
-    await this._initializeL10n();
+
+    // Ensure that the `L10n`-instance has been initialized before creating
+    // e.g. the various viewer components.
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+      l10nPromise = this.externalServices.createL10n();
+    }
+    this.l10n = await l10nPromise;
+    document.getElementsByTagName("html")[0].dir = this.l10n.getDirection();
+    // Connect Fluent, when necessary, and translate what we already have.
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+      this.l10n.translate(appConfig.appContainer || document.documentElement);
+    }
 
     if (
       this.isViewerEmbedded &&
@@ -354,24 +371,6 @@ const PDFViewerApplication = {
       params.has("locale")
     ) {
       AppOptions.set("locale", params.get("locale"));
-    }
-  },
-
-  /**
-   * @private
-   */
-  async _initializeL10n() {
-    this.l10n = await this.externalServices.createL10n(
-      typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")
-        ? { locale: AppOptions.get("locale") }
-        : null
-    );
-    document.getElementsByTagName("html")[0].dir = this.l10n.getDirection();
-    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-      const appContainer =
-        this.appConfig.appContainer || document.documentElement;
-      // Connect Fluent and translate what we already have.
-      this.l10n.translate(appContainer);
     }
   },
 
