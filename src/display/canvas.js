@@ -1313,11 +1313,12 @@ class CanvasGraphics {
       0,
     ]);
     maskToCanvas = Util.transform(maskToCanvas, [1, 0, 0, 1, 0, -height]);
-    const cord1 = Util.applyTransform([0, 0], maskToCanvas);
-    const cord2 = Util.applyTransform([width, height], maskToCanvas);
-    const rect = Util.normalizeRect([cord1[0], cord1[1], cord2[0], cord2[1]]);
-    const drawnWidth = Math.round(rect[2] - rect[0]) || 1;
-    const drawnHeight = Math.round(rect[3] - rect[1]) || 1;
+    const [minX, minY, maxX, maxY] = Util.getAxialAlignedBoundingBox(
+      [0, 0, width, height],
+      maskToCanvas
+    );
+    const drawnWidth = Math.round(maxX - minX) || 1;
+    const drawnHeight = Math.round(maxY - minY) || 1;
     const fillCanvas = this.cachedCanvases.getCanvas(
       "fillCanvas",
       drawnWidth,
@@ -1329,8 +1330,8 @@ class CanvasGraphics {
     // If objToCanvas is [a,b,c,d,e,f] then:
     //   - offsetX = min(a, c) + e
     //   - offsetY = min(b, d) + f
-    const offsetX = Math.min(cord1[0], cord2[0]);
-    const offsetY = Math.min(cord1[1], cord2[1]);
+    const offsetX = minX;
+    const offsetY = minY;
     fillCtx.translate(-offsetX, -offsetY);
     fillCtx.transform(...maskToCanvas);
 
