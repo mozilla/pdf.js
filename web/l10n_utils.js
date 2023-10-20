@@ -75,6 +75,14 @@ const NullL10n = {
   async translate(element) {
     return ConstL10n.instance.translate(element);
   },
+
+  pause() {
+    return ConstL10n.instance.pause();
+  },
+
+  resume() {
+    return ConstL10n.instance.resume();
+  },
 };
 
 export { NullL10n };

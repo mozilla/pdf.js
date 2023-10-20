@@ -398,6 +398,12 @@ class PDFPageView {
       error = ex;
     }
 
+    // The text layer doesn't need to be localized, hence we disable
+    // the l10n when inserting it in the DOM.
+    this.l10n.pause();
+    this.div.append(this.textLayer.div);
+    this.l10n.resume();
+
     this.eventBus.dispatch("textlayerrendered", {
       source: this,
       pageNumber: this.id,
@@ -425,8 +431,12 @@ class PDFPageView {
       ? this.pdfPage.getStructTree()
       : null);
     const treeDom = this.structTreeLayer?.render(tree);
-    if (treeDom) {
-      this.canvas?.append(treeDom);
+    if (treeDom && this.canvas) {
+      // The struct tree layer doesn't need to be localized, hence we disable
+      // the l10n when inserting it in the DOM.
+      this.l10n.pause();
+      this.canvas.append(treeDom);
+      this.l10n.resume();
     }
     this.structTreeLayer?.show();
   }
@@ -853,7 +863,6 @@ class PDFPageView {
         enablePermissions:
           this.#textLayerMode === TextLayerMode.ENABLE_PERMISSIONS,
       });
-      div.append(this.textLayer.div);
     }
 
     if (

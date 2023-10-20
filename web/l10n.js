@@ -75,6 +75,16 @@ class L10n {
     }
   }
 
+  /** @inheritdoc */
+  pause() {
+    this.#l10n.pauseObserving();
+  }
+
+  /** @inheritdoc */
+  resume() {
+    this.#l10n.resumeObserving();
+  }
+
   static #fixupLangCode(langCode) {
     // Try to support "incompletely" specified language codes (see issue 13689).
     const PARTIAL_LANG_CODES = {
