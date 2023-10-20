@@ -32,6 +32,12 @@
        "type": "eq",
        "renderTaskOnContinue": true
     },
+    {  "id": "issue17147",
+       "file": "pdfs/issue17147.pdf",
+       "md5": "47012ba13ee819ec0af278c9d943f010",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue13130",
        "file": "pdfs/issue13130.pdf",
        "md5": "318518299132fe3b52252ca43a69a23e",
