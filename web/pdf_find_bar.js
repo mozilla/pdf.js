@@ -25,6 +25,8 @@ const MATCHES_COUNT_LIMIT = 1000;
  * is done by PDFFindController.
  */
 class PDFFindBar {
+  #resizeObserver = new ResizeObserver(this.#resizeObserverCallback.bind(this));
+
   constructor(options, eventBus, l10n) {
     this.opened = false;
 
@@ -87,8 +89,6 @@ class PDFFindBar {
     this.matchDiacritics.addEventListener("click", () => {
       this.dispatchEvent("diacriticmatchingchange");
     });
-
-    this.eventBus._on("resize", this.#adjustWidth.bind(this));
   }
 
   reset() {
@@ -134,7 +134,6 @@ class PDFFindBar {
     findMsg.then(msg => {
       this.findMsg.setAttribute("data-status", status);
       this.findMsg.textContent = msg;
-      this.#adjustWidth();
     });
 
     this.updateResultsCount(matchesCount);
@@ -152,27 +151,31 @@ class PDFFindBar {
     }
     matchCountMsg.then(msg => {
       this.findResultsCount.textContent = msg;
-      // Since `updateResultsCount` may be called from `PDFFindController`,
-      // ensure that the width of the findbar is always updated correctly.
-      this.#adjustWidth();
     });
   }
 
   open() {
     if (!this.opened) {
+      // Potentially update the findbar layout, row vs column, when:
+      //  - The width of the viewer itself changes.
+      //  - The width of the findbar changes, by toggling the visibility
+      //    (or localization) of find count/status messages.
+      this.#resizeObserver.observe(this.bar.parentNode);
+      this.#resizeObserver.observe(this.bar);
+
       this.opened = true;
       toggleExpandedBtn(this.toggleButton, true, this.bar);
     }
     this.findField.select();
     this.findField.focus();
-
-    this.#adjustWidth();
   }
 
   close() {
     if (!this.opened) {
       return;
     }
+    this.#resizeObserver.disconnect();
+
     this.opened = false;
     toggleExpandedBtn(this.toggleButton, false, this.bar);
 
@@ -187,25 +190,22 @@ class PDFFindBar {
     }
   }
 
-  #adjustWidth() {
-    if (!this.opened) {
-      return;
-    }
-
+  #resizeObserverCallback(entries) {
+    const { bar } = this;
     // The find bar has an absolute position and thus the browser extends
     // its width to the maximum possible width once the find bar does not fit
     // entirely within the window anymore (and its elements are automatically
     // wrapped). Here we detect and fix that.
-    this.bar.classList.remove("wrapContainers");
+    bar.classList.remove("wrapContainers");
 
-    const findbarHeight = this.bar.clientHeight;
-    const inputContainerHeight = this.bar.firstElementChild.clientHeight;
+    const findbarHeight = bar.clientHeight;
+    const inputContainerHeight = bar.firstElementChild.clientHeight;
 
     if (findbarHeight > inputContainerHeight) {
       // The findbar is taller than the input container, which means that
       // the browser wrapped some of the elements. For a consistent look,
       // wrap all of them to adjust the width of the find bar.
-      this.bar.classList.add("wrapContainers");
+      bar.classList.add("wrapContainers");
     }
   }
 }
