@@ -13,107 +13,46 @@
  * limitations under the License.
  */
 
-/**
- * PLEASE NOTE: This file is currently imported in both the `web/` and
- *              `src/display/` folders, hence be EXTREMELY careful about
- *              introducing any dependencies here since that can lead to an
- *              unexpected/unnecessary size increase of the *built* files.
- */
+/** @typedef {import("./interfaces").IL10n} IL10n */
+
+import { FluentBundle, FluentResource } from "fluent-bundle";
+import { DOMLocalization } from "fluent-dom";
+import { L10n } from "./l10n.js";
 
 /**
- * A subset of the l10n strings in the `l10n/en-US/viewer.ftl` file.
+ * @implements {IL10n}
  */
-const DEFAULT_L10N_STRINGS = {
-  "pdfjs-of-pages": "of { $pagesCount }",
-  "pdfjs-page-of-pages": "({ $pageNumber } of { $pagesCount })",
+class ConstL10n extends L10n {
+  static #instance;
 
-  "pdfjs-document-properties-kb": "{ $size-kb } KB ({ $size-b } bytes)",
-  "pdfjs-document-properties-mb": "{ $size-mb } MB ({ $size-b } bytes)",
-  "pdfjs-document-properties-date-string": "{ $date }, { $time }",
-  "pdfjs-document-properties-page-size-unit-inches": "in",
-  "pdfjs-document-properties-page-size-unit-millimeters": "mm",
-  "pdfjs-document-properties-page-size-orientation-portrait": "portrait",
-  "pdfjs-document-properties-page-size-orientation-landscape": "landscape",
-  "pdfjs-document-properties-page-size-name-a3": "A3",
-  "pdfjs-document-properties-page-size-name-a4": "A4",
-  "pdfjs-document-properties-page-size-name-letter": "Letter",
-  "pdfjs-document-properties-page-size-name-legal": "Legal",
-  "pdfjs-document-properties-page-size-dimension-string":
-    "{ $width } × { $height } { $unit } ({ $orientation })",
-  "pdfjs-document-properties-page-size-dimension-name-string":
-    "{ $width } × { $height } { $unit } ({ $name }, { $orientation })",
-  "pdfjs-document-properties-linearized-yes": "Yes",
-  "pdfjs-document-properties-linearized-no": "No",
-
-  "pdfjs-additional-layers": "Additional Layers",
-  "pdfjs-page-landmark": "Page { $page }",
-  "pdfjs-thumb-page-title": "Page { $page }",
-  "pdfjs-thumb-page-canvas": "Thumbnail of Page { $page }",
-
-  "pdfjs-find-reached-top": "Reached top of document, continued from bottom",
-  "pdfjs-find-reached-bottom": "Reached end of document, continued from top",
-  "pdfjs-find-match-count[one]": "{ $current } of { $total } match",
-  "pdfjs-find-match-count[other]": "{ $current } of { $total } matches",
-  "pdfjs-find-match-count-limit[one]": "More than { $limit } match",
-  "pdfjs-find-match-count-limit[other]": "More than { $limit } matches",
-  "pdfjs-find-not-found": "Phrase not found",
-
-  "pdfjs-page-scale-percent": "{ $scale }%",
-
-  "pdfjs-loading-error": "An error occurred while loading the PDF.",
-  "pdfjs-invalid-file-error": "Invalid or corrupted PDF file.",
-  "pdfjs-missing-file-error": "Missing PDF file.",
-  "pdfjs-unexpected-response-error": "Unexpected server response.",
-  "pdfjs-rendering-error": "An error occurred while rendering the page.",
-
-  "pdfjs-annotation-date-string": "{ $date }, { $time }",
-
-  "pdfjs-printing-not-supported":
-    "Warning: Printing is not fully supported by this browser.",
-  "pdfjs-printing-not-ready":
-    "Warning: The PDF is not fully loaded for printing.",
-  "pdfjs-web-fonts-disabled":
-    "Web fonts are disabled: unable to use embedded PDF fonts.",
-
-  "pdfjs-free-text-default-content": "Start typing…",
-  "pdfjs-editor-alt-text-button-label": "Alt text",
-  "pdfjs-editor-alt-text-edit-button-label": "Edit alt text",
-  "pdfjs-editor-alt-text-decorative-tooltip": "Marked as decorative",
-  "pdfjs-editor-resizer-label-top-left": "Top left corner — resize",
-  "pdfjs-editor-resizer-label-top-middle": "Top middle — resize",
-  "pdfjs-editor-resizer-label-top-right": "Top right corner — resize",
-  "pdfjs-editor-resizer-label-middle-right": "Middle right — resize",
-  "pdfjs-editor-resizer-label-bottom-right": "Bottom right corner — resize",
-  "pdfjs-editor-resizer-label-bottom-middle": "Bottom middle — resize",
-  "pdfjs-editor-resizer-label-bottom-left": "Bottom left corner — resize",
-  "pdfjs-editor-resizer-label-middle-left": "Middle left — resize",
-};
-if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-  DEFAULT_L10N_STRINGS.print_progress_percent = "{ $progress }%";
-}
-
-function getL10nFallback(key, args) {
-  switch (key) {
-    case "pdfjs-find-match-count":
-      key = `pdfjs-find-match-count[${args.total === 1 ? "one" : "other"}]`;
-      break;
-    case "pdfjs-find-match-count-limit":
-      key = `pdfjs-find-match-count-limit[${
-        args.limit === 1 ? "one" : "other"
-      }]`;
-      break;
+  constructor(lang) {
+    super({ lang });
+    this.setL10n(
+      new DOMLocalization([], ConstL10n.#generateBundles.bind(ConstL10n, lang))
+    );
   }
-  return DEFAULT_L10N_STRINGS[key] || "";
-}
 
-// Replaces { $arguments } with their values.
-function formatL10nValue(text, args) {
-  if (!args) {
-    return text;
+  static async *#generateBundles(lang) {
+    let text;
+    if (typeof PDFJSDev === "undefined") {
+      const url = new URL(`./locale/${lang}/viewer.ftl`, window.location.href);
+      const data = await fetch(url);
+      text = await data.text();
+    } else {
+      text = PDFJSDev.eval("DEFAULT_FTL");
+    }
+    const resource = new FluentResource(text);
+    const bundle = new FluentBundle(lang);
+    const errors = bundle.addResource(resource);
+    if (errors.length) {
+      console.error("L10n errors", errors);
+    }
+    yield bundle;
   }
-  return text.replaceAll(/\{\s*$(\w+)\s*\}/g, (all, name) => {
-    return name in args ? args[name] : "{$" + name + "}";
-  });
+
+  static get instance() {
+    return (this.#instance ||= new ConstL10n("en-US"));
+  }
 }
 
 /**
@@ -122,18 +61,20 @@ function formatL10nValue(text, args) {
  */
 const NullL10n = {
   getLanguage() {
-    return "en-us";
+    return ConstL10n.instance.getLanguage();
   },
 
   getDirection() {
-    return "ltr";
+    return ConstL10n.instance.getDirection();
   },
 
-  async get(key, args = null, fallback = getL10nFallback(key, args)) {
-    return formatL10nValue(fallback, args);
+  async get(ids, args = null, fallback) {
+    return ConstL10n.instance.get(ids, args, fallback);
   },
 
-  async translate(element) {},
+  async translate(element) {
+    return ConstL10n.instance.translate(element);
+  },
 };
 
 export { NullL10n };

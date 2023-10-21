@@ -192,6 +192,7 @@ function createWebpackConfig(
     DEFAULT_PREFERENCES: defaultPreferencesDir
       ? getDefaultPreferences(defaultPreferencesDir)
       : {},
+    DEFAULT_FTL: defines.GENERIC ? getDefaultFtl() : "",
   };
   const licenseHeaderLibre = fs
     .readFileSync("./src/license_header_libre.js")
@@ -246,7 +247,6 @@ function createWebpackConfig(
   };
   const libraryAlias = {
     "display-fetch_stream": "src/display/stubs.js",
-    "display-l10n_utils": "src/display/stubs.js",
     "display-network": "src/display/stubs.js",
     "display-node_stream": "src/display/stubs.js",
     "display-node_utils": "src/display/stubs.js",
@@ -280,7 +280,6 @@ function createWebpackConfig(
     // the tsconfig.json file for the type generation to work.
     // In the tsconfig.json files, the .js extension must be omitted.
     libraryAlias["display-fetch_stream"] = "src/display/fetch_stream.js";
-    libraryAlias["display-l10n_utils"] = "web/l10n_utils.js";
     libraryAlias["display-network"] = "src/display/network.js";
     libraryAlias["display-node_stream"] = "src/display/node_stream.js";
     libraryAlias["display-node_utils"] = "src/display/node_utils.js";
@@ -829,6 +828,21 @@ function getDefaultPreferences(dir) {
     .readFileSync(DEFAULT_PREFERENCES_DIR + dir + "default_preferences.json")
     .toString();
   return JSON.parse(str);
+}
+
+function getDefaultFtl() {
+  const content = fs.readFileSync("l10n/en-US/viewer.ftl").toString(),
+    stringBuf = [];
+
+  // Strip out comments and line-breaks.
+  const regExp = /^\s*#/;
+  for (const line of content.split("\n")) {
+    if (!line || regExp.test(line)) {
+      continue;
+    }
+    stringBuf.push(line);
+  }
+  return stringBuf.join("\n");
 }
 
 gulp.task("locale", function () {
@@ -1544,7 +1558,6 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
     map: {
       "pdfjs-lib": "../pdf.js",
       "display-fetch_stream": "./fetch_stream.js",
-      "display-l10n_utils": "../web/l10n_utils.js",
       "display-network": "./network.js",
       "display-node_stream": "./node_stream.js",
       "display-node_utils": "./node_utils.js",
@@ -1572,6 +1585,7 @@ function buildLib(defines, dir) {
     DEFAULT_PREFERENCES: getDefaultPreferences(
       defines.SKIP_BABEL ? "lib/" : "lib-legacy/"
     ),
+    DEFAULT_FTL: getDefaultFtl(),
   };
 
   const inputStream = merge([

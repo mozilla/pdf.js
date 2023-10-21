@@ -322,6 +322,14 @@ class PDFViewer {
         pdfPage?.cleanup();
       }
     });
+
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      this.l10n === NullL10n
+    ) {
+      // Ensure that Fluent is connected in e.g. the COMPONENTS build.
+      this.l10n.translate(this.container);
+    }
   }
 
   get pagesCount() {

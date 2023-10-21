@@ -41,7 +41,6 @@ import {
 } from "./display_utils.js";
 import { AnnotationStorage } from "./annotation_storage.js";
 import { ColorConverters } from "../shared/scripting_utils.js";
-import { NullL10n } from "display-l10n_utils";
 import { XfaLayer } from "./xfa_layer.js";
 
 const DEFAULT_TAB_INDEX = 1000;
@@ -2902,12 +2901,6 @@ class AnnotationLayer {
     this.viewport = viewport;
     this.zIndex = 0;
 
-    if (
-      typeof PDFJSDev !== "undefined" &&
-      PDFJSDev.test("GENERIC && !TESTING")
-    ) {
-      this.l10n ||= NullL10n;
-    }
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
       // For testing purposes.
       Object.defineProperty(this, "showPopups", {
@@ -3008,14 +3001,6 @@ class AnnotationLayer {
     }
 
     this.#setAnnotationCanvasMap();
-
-    if (
-      typeof PDFJSDev !== "undefined" &&
-      PDFJSDev.test("GENERIC && !TESTING") &&
-      this.l10n instanceof NullL10n
-    ) {
-      await this.l10n.translate(layer);
-    }
   }
 
   /**
