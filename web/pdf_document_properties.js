@@ -19,13 +19,14 @@ import { PDFDateString, PromiseCapability } from "pdfjs-lib";
 const DEFAULT_FIELD_CONTENT = "-";
 
 // See https://en.wikibooks.org/wiki/Lentis/Conversion_to_the_Metric_Standard_in_the_United_States
-const NON_METRIC_LOCALES = ["en-us", "en-lr", "my"];
+const NON_METRIC_LOCALES = ["en-US", "en-LR", "my"];
 
-// Should use the format: `width x height`, in portrait orientation.
+// Should use the format: `width x height`, in portrait orientation. The names,
+// which are l10n-ids, should be lowercase.
 // See https://en.wikipedia.org/wiki/Paper_size
 const US_PAGE_NAMES = {
-  "8.5x11": "Letter",
-  "8.5x14": "Legal",
+  "8.5x11": "letter",
+  "8.5x14": "legal",
 };
 const METRIC_PAGE_NAMES = {
   "297x420": "a-three",
@@ -312,9 +313,7 @@ class PDFDocumentProperties {
         }`
       ),
       rawName &&
-        this.l10n.get(
-          `pdfjs-document-properties-page-size-name-${rawName.toLowerCase()}`
-        ),
+        this.l10n.get(`pdfjs-document-properties-page-size-name-${rawName}`),
       this.l10n.get(
         `pdfjs-document-properties-page-size-orientation-${
           isPortrait ? "portrait" : "landscape"
