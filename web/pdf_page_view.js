@@ -215,6 +215,11 @@ class PDFPageView {
             optionalContentConfig.hasInitialVisibility;
         });
       }
+
+      // Ensure that Fluent is connected in e.g. the COMPONENTS build.
+      if (this.l10n === NullL10n) {
+        this.l10n.translate(this.div);
+      }
     }
   }
 

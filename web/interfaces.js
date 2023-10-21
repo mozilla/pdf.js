@@ -192,12 +192,12 @@ class IL10n {
    * Translates text identified by the key and adds/formats data using the args
    * property bag. If the key was not found, translation falls back to the
    * fallback text.
-   * @param {string} key
+   * @param {Array | string} ids
    * @param {Object | null} [args]
    * @param {string} [fallback]
    * @returns {Promise<string>}
    */
-  async get(key, args = null, fallback) {}
+  async get(ids, args = null, fallback) {}
 
   /**
    * Translates HTML element.
