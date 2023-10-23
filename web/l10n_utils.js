@@ -18,13 +18,12 @@
 import { FluentBundle, FluentResource } from "fluent-bundle";
 import { DOMLocalization } from "fluent-dom";
 import { L10n } from "./l10n.js";
+import { shadow } from "pdfjs-lib";
 
 /**
  * @implements {IL10n}
  */
 class ConstL10n extends L10n {
-  static #instance;
-
   constructor(lang) {
     super({ lang });
     this.setL10n(
@@ -51,7 +50,7 @@ class ConstL10n extends L10n {
   }
 
   static get instance() {
-    return (this.#instance ||= new ConstL10n("en-US"));
+    return shadow(this, "instance", new ConstL10n("en-US"));
   }
 }
 

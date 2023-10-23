@@ -28,10 +28,9 @@ class Toolbar {
   /**
    * @param {ToolbarOptions} options
    * @param {EventBus} eventBus
-   * @param {IL10n} _l10n - Localization service.
    * @param {Object} nimbusData - Nimbus configuration.
    */
-  constructor(options, eventBus, _l10n, nimbusData) {
+  constructor(options, eventBus, nimbusData) {
     this.#eventBus = eventBus;
     const buttons = [
       {

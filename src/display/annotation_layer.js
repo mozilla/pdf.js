@@ -983,8 +983,11 @@ class TextAnnotationElement extends AnnotationElement {
       "annotation-" +
       this.data.name.toLowerCase() +
       ".svg";
-    image.dataset.l10nId = "pdfjs-text-annotation-type";
-    image.dataset.l10nArgs = JSON.stringify({ type: this.data.name });
+    image.setAttribute("data-l10n-id", "pdfjs-text-annotation-type");
+    image.setAttribute(
+      "data-l10n-args",
+      JSON.stringify({ type: this.data.name })
+    );
 
     if (!this.data.popupRef && this.hasPopupData) {
       this._createPopup();
@@ -2158,11 +2161,17 @@ class PopupElement {
     if (this.#dateObj) {
       const modificationDate = document.createElement("span");
       modificationDate.classList.add("popupDate");
-      modificationDate.dataset.l10nId = "pdfjs-annotation-date-string";
-      modificationDate.dataset.l10nArgs = JSON.stringify({
-        date: this.#dateObj.toLocaleDateString(),
-        time: this.#dateObj.toLocaleTimeString(),
-      });
+      modificationDate.setAttribute(
+        "data-l10n-id",
+        "pdfjs-annotation-date-string"
+      );
+      modificationDate.setAttribute(
+        "data-l10n-args",
+        JSON.stringify({
+          date: this.#dateObj.toLocaleDateString(),
+          time: this.#dateObj.toLocaleTimeString(),
+        })
+      );
       header.append(modificationDate);
     }
 
@@ -2889,14 +2898,12 @@ class AnnotationLayer {
     div,
     accessibilityManager,
     annotationCanvasMap,
-    l10n,
     page,
     viewport,
   }) {
     this.div = div;
     this.#accessibilityManager = accessibilityManager;
     this.#annotationCanvasMap = annotationCanvasMap;
-    this.l10n = l10n;
     this.page = page;
     this.viewport = viewport;
     this.zIndex = 0;

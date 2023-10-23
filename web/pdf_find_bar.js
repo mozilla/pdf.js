@@ -27,7 +27,7 @@ const MATCHES_COUNT_LIMIT = 1000;
 class PDFFindBar {
   #resizeObserver = new ResizeObserver(this.#resizeObserverCallback.bind(this));
 
-  constructor(options, eventBus, l10n) {
+  constructor(options, eventBus) {
     this.opened = false;
 
     this.bar = options.bar;
@@ -42,7 +42,6 @@ class PDFFindBar {
     this.findPreviousButton = options.findPreviousButton;
     this.findNextButton = options.findNextButton;
     this.eventBus = eventBus;
-    this.l10n = l10n;
 
     // Add event listeners to the DOM elements.
     this.toggleButton.addEventListener("click", () => {
@@ -109,8 +108,9 @@ class PDFFindBar {
   }
 
   updateUIState(state, previous, matchesCount) {
-    let findMsg = Promise.resolve("");
-    let status = "";
+    const { findField, findMsg } = this;
+    let findMsgId = "",
+      status = "";
 
     switch (state) {
       case FindState.FOUND:
@@ -119,39 +119,46 @@ class PDFFindBar {
         status = "pending";
         break;
       case FindState.NOT_FOUND:
-        findMsg = this.l10n.get("pdfjs-find-not-found");
+        findMsgId = "pdfjs-find-not-found";
         status = "notFound";
         break;
       case FindState.WRAPPED:
-        findMsg = this.l10n.get(
-          `pdfjs-find-reached-${previous ? "top" : "bottom"}`
-        );
+        findMsgId = `pdfjs-find-reached-${previous ? "top" : "bottom"}`;
         break;
     }
-    this.findField.setAttribute("data-status", status);
-    this.findField.setAttribute("aria-invalid", state === FindState.NOT_FOUND);
+    findField.setAttribute("data-status", status);
+    findField.setAttribute("aria-invalid", state === FindState.NOT_FOUND);
 
-    findMsg.then(msg => {
-      this.findMsg.setAttribute("data-status", status);
-      this.findMsg.textContent = msg;
-    });
+    findMsg.setAttribute("data-status", status);
+    if (findMsgId) {
+      findMsg.setAttribute("data-l10n-id", findMsgId);
+    } else {
+      findMsg.removeAttribute("data-l10n-id");
+      findMsg.textContent = "";
+    }
 
     this.updateResultsCount(matchesCount);
   }
 
   updateResultsCount({ current = 0, total = 0 } = {}) {
-    const limit = MATCHES_COUNT_LIMIT;
-    let matchCountMsg = Promise.resolve("");
+    const { findResultsCount } = this;
 
     if (total > 0) {
-      matchCountMsg =
-        total > limit
-          ? this.l10n.get("pdfjs-find-match-count-limit", { limit })
-          : this.l10n.get("pdfjs-find-match-count", { current, total });
+      const limit = MATCHES_COUNT_LIMIT,
+        isLimited = total > limit;
+
+      findResultsCount.setAttribute(
+        "data-l10n-id",
+        `pdfjs-find-match-count${isLimited ? "-limit" : ""}`
+      );
+      findResultsCount.setAttribute(
+        "data-l10n-args",
+        JSON.stringify(isLimited ? { limit } : { current, total })
+      );
+    } else {
+      findResultsCount.removeAttribute("data-l10n-id");
+      findResultsCount.textContent = "";
     }
-    matchCountMsg.then(msg => {
-      this.findResultsCount.textContent = msg;
-    });
   }
 
   open() {

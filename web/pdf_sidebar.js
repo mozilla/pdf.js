@@ -111,7 +111,6 @@ class PDFSidebar {
     this._currentOutlineItemButton = elements.currentOutlineItemButton;
 
     this.eventBus = eventBus;
-    this.l10n = l10n;
 
     this.#isRTL = l10n.getDirection() === "rtl";
     this.#addEventListeners();

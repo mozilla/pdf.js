@@ -182,9 +182,8 @@ class PDFPageView {
     div.className = "page";
     div.setAttribute("data-page-number", this.id);
     div.setAttribute("role", "region");
-    this.l10n.get("pdfjs-page-landmark", { page: this.id }).then(msg => {
-      div.setAttribute("aria-label", msg);
-    });
+    div.setAttribute("data-l10n-id", "pdfjs-page-landmark");
+    div.setAttribute("data-l10n-args", JSON.stringify({ page: this.id }));
     this.div = div;
 
     this.#setDimensions();
@@ -878,7 +877,6 @@ class PDFPageView {
         renderForms: this.#annotationMode === AnnotationMode.ENABLE_FORMS,
         linkService,
         downloadManager,
-        l10n,
         enableScripting,
         hasJSActionsPromise,
         fieldObjectsPromise,
