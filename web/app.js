@@ -521,7 +521,6 @@ const PDFViewerApplication = {
         eventBus,
         renderingQueue: pdfRenderingQueue,
         linkService: pdfLinkService,
-        l10n,
         pageColors,
       });
       pdfRenderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
@@ -538,7 +537,7 @@ const PDFViewerApplication = {
     }
 
     if (!this.supportsIntegratedFind && appConfig.findBar) {
-      this.findBar = new PDFFindBar(appConfig.findBar, eventBus, l10n);
+      this.findBar = new PDFFindBar(appConfig.findBar, eventBus);
     }
 
     if (appConfig.annotationEditorParams) {
@@ -587,11 +586,10 @@ const PDFViewerApplication = {
         this.toolbar = new Toolbar(
           appConfig.toolbar,
           eventBus,
-          l10n,
           await this._nimbusDataPromise
         );
       } else {
-        this.toolbar = new Toolbar(appConfig.toolbar, eventBus, l10n);
+        this.toolbar = new Toolbar(appConfig.toolbar, eventBus);
       }
     }
 
@@ -617,7 +615,6 @@ const PDFViewerApplication = {
       this.passwordPrompt = new PasswordPrompt(
         appConfig.passwordOverlay,
         this.overlayManager,
-        l10n,
         this.isViewerEmbedded
       );
     }
@@ -643,7 +640,6 @@ const PDFViewerApplication = {
       this.pdfLayerViewer = new PDFLayerViewer({
         container: appConfig.sidebar.layersView,
         eventBus,
-        l10n,
       });
     }
 
@@ -1848,8 +1844,7 @@ const PDFViewerApplication = {
       printContainer,
       printResolution,
       optionalContentConfigPromise,
-      this._printAnnotationStoragePromise,
-      this.l10n
+      this._printAnnotationStoragePromise
     );
     this.printService = printService;
     this.forceRendering();
