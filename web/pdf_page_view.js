@@ -1042,6 +1042,11 @@ class PDFPageView {
   setPageLabel(label) {
     this.pageLabel = typeof label === "string" ? label : null;
 
+    this.div.setAttribute(
+      "data-l10n-args",
+      JSON.stringify({ page: this.pageLabel ?? this.id })
+    );
+
     if (this.pageLabel !== null) {
       this.div.setAttribute("data-page-label", this.pageLabel);
     } else {
