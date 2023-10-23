@@ -2010,6 +2010,13 @@ gulp.task(
 gulp.task(
   "server",
   gulp.parallel(
+    function watchLocale() {
+      gulp.watch(
+        "l10n/**/*.ftl",
+        { ignoreInitial: false },
+        gulp.series("locale")
+      );
+    },
     function watchDevSandbox() {
       gulp.watch(
         [
