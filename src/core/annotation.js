@@ -3196,7 +3196,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
   }
 
   _processRadioButton(params) {
-    this.data.fieldValue = this.data.buttonValue = null;
+    this.data.buttonValue = null;
 
     // The parent field's `V` entry holds a `Name` object with the appearance
     // state of whichever child field is currently in the "on" state.

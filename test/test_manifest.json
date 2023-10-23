@@ -8170,5 +8170,16 @@
       "rounds": 1,
       "type": "eq",
       "annotations": true
+   },
+   {
+      "id": "bug1860602",
+      "file": "pdfs/bug1860602.pdf",
+      "md5": "37de2fbd0a02c5a3ca27c6e75fea8932",
+      "rounds": 1,
+      "link": true,
+      "firstPage": 2,
+      "lastPage": 2,
+      "type": "eq",
+      "forms": true
    }
 ]
