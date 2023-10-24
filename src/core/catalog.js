@@ -438,14 +438,14 @@ class Catalog {
         return shadow(this, "optionalContentConfig", null);
       }
       const groups = [];
-      const groupRefs = [];
+      const groupRefs = new RefSet();
       // Ensure all the optional content groups are valid.
       for (const groupRef of groupsData) {
-        if (!(groupRef instanceof Ref)) {
+        if (!(groupRef instanceof Ref) || groupRefs.has(groupRef)) {
           continue;
         }
-        groupRefs.push(groupRef);
-        const group = this.xref.fetchIfRef(groupRef);
+        groupRefs.put(groupRef);
+        const group = this.xref.fetch(groupRef);
         groups.push({
           id: groupRef.toString(),
           name:
@@ -477,7 +477,7 @@ class Catalog {
           if (!(value instanceof Ref)) {
             continue;
           }
-          if (contentGroupRefs.includes(value)) {
+          if (contentGroupRefs.has(value)) {
             onParsed.push(value.toString());
           }
         }
@@ -492,7 +492,7 @@ class Catalog {
       const order = [];
 
       for (const value of refs) {
-        if (value instanceof Ref && contentGroupRefs.includes(value)) {
+        if (value instanceof Ref && contentGroupRefs.has(value)) {
           parsedOrderRefs.put(value); // Handle "hidden" groups, see below.
 
           order.push(value.toString());
