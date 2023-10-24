@@ -25,7 +25,7 @@ import { L10n } from "./l10n.js";
 class GenericL10n extends L10n {
   constructor(lang) {
     super({ lang });
-    this.setL10n(
+    this._setL10n(
       new DOMLocalization(
         [],
         GenericL10n.#generateBundles.bind(
