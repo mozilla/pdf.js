@@ -144,16 +144,15 @@ class PDFFindBar {
     const { findResultsCount } = this;
 
     if (total > 0) {
-      const limit = MATCHES_COUNT_LIMIT,
-        isLimited = total > limit;
+      const limit = MATCHES_COUNT_LIMIT;
 
       findResultsCount.setAttribute(
         "data-l10n-id",
-        `pdfjs-find-match-count${isLimited ? "-limit" : ""}`
+        `pdfjs-find-match-count${total > limit ? "-limit" : ""}`
       );
       findResultsCount.setAttribute(
         "data-l10n-args",
-        JSON.stringify(isLimited ? { limit } : { current, total })
+        JSON.stringify({ limit, current, total })
       );
     } else {
       findResultsCount.removeAttribute("data-l10n-id");
