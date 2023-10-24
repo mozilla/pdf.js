@@ -31,7 +31,7 @@ class L10n {
     this.#dir = isRTL ?? L10n.#isRTL(this.#lang) ? "rtl" : "ltr";
   }
 
-  setL10n(l10n) {
+  _setL10n(l10n) {
     this.#l10n = l10n;
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
       document.l10n = l10n;
