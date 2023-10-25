@@ -838,6 +838,17 @@ class Annotation {
    */
   setFlags(flags) {
     this.flags = Number.isInteger(flags) && flags > 0 ? flags : 0;
+    if (
+      this.flags & AnnotationFlag.INVISIBLE &&
+      this.constructor.name !== "Annotation"
+    ) {
+      // From the pdf spec v1.7, section 12.5.3 (Annotation Flags):
+      //   If set, do not display the annotation if it does not belong to one of
+      //   the standard annotation types and no annotation handler is available.
+      //
+      // So we can remove the flag in case we have a known annotation type.
+      this.flags ^= AnnotationFlag.INVISIBLE;
+    }
   }
 
   /**
@@ -1817,7 +1828,9 @@ class WidgetAnnotation extends Annotation {
     // since the visibility can be changed by js code, hence in case
     // it's made viewable, we should render it (with visibility set to
     // hidden).
-    return !this._hasFlag(flags, AnnotationFlag.INVISIBLE);
+    // We don't take into account the `INVISIBLE` flag here, since we've a known
+    // annotation type.
+    return true;
   }
 
   /** @inheritdoc */
