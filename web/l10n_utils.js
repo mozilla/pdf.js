@@ -26,7 +26,7 @@ import { shadow } from "pdfjs-lib";
 class ConstL10n extends L10n {
   constructor(lang) {
     super({ lang });
-    this.setL10n(
+    this._setL10n(
       new DOMLocalization([], ConstL10n.#generateBundles.bind(ConstL10n, lang))
     );
   }
