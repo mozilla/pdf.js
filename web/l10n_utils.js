@@ -76,11 +76,11 @@ const NullL10n = {
   },
 
   pause() {
-    ConstL10n.instance.pause();
+    return ConstL10n.instance.pause();
   },
 
   resume() {
-    ConstL10n.instance.resume();
+    return ConstL10n.instance.resume();
   },
 };
 
