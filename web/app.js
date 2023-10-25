@@ -623,6 +623,7 @@ const PDFViewerApplication = {
       this.pdfOutlineViewer = new PDFOutlineViewer({
         container: appConfig.sidebar.outlineView,
         eventBus,
+        l10n,
         linkService: pdfLinkService,
         downloadManager,
       });
@@ -632,6 +633,7 @@ const PDFViewerApplication = {
       this.pdfAttachmentViewer = new PDFAttachmentViewer({
         container: appConfig.sidebar.attachmentsView,
         eventBus,
+        l10n,
         downloadManager,
       });
     }
@@ -640,6 +642,7 @@ const PDFViewerApplication = {
       this.pdfLayerViewer = new PDFLayerViewer({
         container: appConfig.sidebar.layersView,
         eventBus,
+        l10n,
       });
     }
 
