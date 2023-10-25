@@ -205,6 +205,16 @@ class IL10n {
    * @returns {Promise<void>}
    */
   async translate(element) {}
+
+  /**
+   * Pause the localization.
+   */
+  pause() {}
+
+  /**
+   * Resume the localization.
+   */
+  resume() {}
 }
 
 export { IDownloadManager, IL10n, IPDFLinkService, IRenderableView };
