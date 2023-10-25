@@ -4082,7 +4082,7 @@ describe("annotation", function () {
         const popupDict = new Dict();
         popupDict.set("Type", Name.get("Annot"));
         popupDict.set("Subtype", Name.get("Popup"));
-        popupDict.set("F", 25); // not viewable
+        popupDict.set("F", 56); // not viewable
         popupDict.set("Parent", parentDict);
 
         const popupRef = Ref.get(13, 0);
@@ -4097,7 +4097,7 @@ describe("annotation", function () {
         expect(data.annotationType).toEqual(AnnotationType.POPUP);
         // We should not modify the `annotationFlags` returned through
         // e.g., the API.
-        expect(data.annotationFlags).toEqual(25);
+        expect(data.annotationFlags).toEqual(56);
         // The popup should inherit the `viewable` property of the parent.
         expect(viewable).toEqual(true);
       }
