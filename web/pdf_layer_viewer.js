@@ -87,12 +87,12 @@ class PDFLayerViewer extends BaseTreeViewer {
   /**
    * @private
    */
-  _setNestedName(element, { name = null }) {
+  async _setNestedName(element, { name = null }) {
     if (typeof name === "string") {
       element.textContent = this._normalizeTextContent(name);
       return;
     }
-    element.setAttribute("data-l10n-id", "pdfjs-additional-layers");
+    element.textContent = await this._l10n.get("pdfjs-additional-layers");
     element.style.fontStyle = "italic";
   }
 
