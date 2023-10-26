@@ -1018,8 +1018,7 @@ class WidgetAnnotationElement extends AnnotationElement {
   }
 
   _getKeyModifier(event) {
-    const { isWin, isMac } = FeatureTest.platform;
-    return (isWin && event.ctrlKey) || (isMac && event.metaKey);
+    return FeatureTest.platform.isMac ? event.metaKey : event.ctrlKey;
   }
 
   _setEventListener(element, elementData, baseName, eventName, valueGetter) {
