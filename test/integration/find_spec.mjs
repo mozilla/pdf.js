@@ -29,7 +29,7 @@ describe("find bar", () => {
     let pages;
 
     beforeAll(async () => {
-      pages = await loadAndWait("find_all.pdf#zoom=100", ".textLayer");
+      pages = await loadAndWait("find_all.pdf", ".textLayer", 100);
     });
 
     afterAll(async () => {
@@ -76,7 +76,7 @@ describe("find bar", () => {
     let pages;
 
     beforeAll(async () => {
-      pages = await loadAndWait("xfa_imm5257e.pdf#zoom=100", ".xfaLayer");
+      pages = await loadAndWait("xfa_imm5257e.pdf", ".xfaLayer");
     });
 
     afterAll(async () => {
@@ -91,6 +91,9 @@ describe("find bar", () => {
           await page.type("#findInput", "preferences");
           await page.waitForSelector("#findInput[data-status='']");
           await page.waitForSelector(".xfaLayer .highlight");
+          await page.waitForFunction(
+            () => !!document.querySelector("#findResultsCount")?.textContent
+          );
           const resultElement = await page.waitForSelector("#findResultsCount");
           const resultText = await resultElement.evaluate(el => el.textContent);
           /** Unicode bidi isolation characters. */

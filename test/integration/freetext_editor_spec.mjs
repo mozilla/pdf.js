@@ -93,6 +93,20 @@ const waitForPositionChange = (page, selector, xy) =>
     xy
   );
 
+const cancelFocusIn = async (page, selector) => {
+  page.evaluate(sel => {
+    const el = document.querySelector(sel);
+    el.addEventListener(
+      "focusin",
+      evt => {
+        evt.preventDefault();
+        evt.stopPropagation();
+      },
+      { capture: true, once: true }
+    );
+  }, selector);
+};
+
 describe("FreeText Editor", () => {
   describe("FreeText", () => {
     let pages;
@@ -300,22 +314,23 @@ describe("FreeText Editor", () => {
     it("must check that aria-owns is correct", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          const [stacksRect, oldAriaOwns] = await page.$eval(
-            ".textLayer",
-            el => {
-              for (const span of el.querySelectorAll(
-                `span[role="presentation"]`
-              )) {
-                if (span.innerText.includes("Stacks are simple to create")) {
-                  span.setAttribute("pdfjs", true);
-                  const { x, y, width, height } = span.getBoundingClientRect();
-                  return [
-                    { x, y, width, height },
-                    span.getAttribute("aria-owns"),
-                  ];
-                }
+          await page.$eval(".textLayer", el => {
+            for (const span of el.querySelectorAll(
+              `span[role="presentation"]`
+            )) {
+              if (span.innerText.includes("Stacks are simple to create")) {
+                span.setAttribute("pdfjs", true);
               }
-              return null;
+            }
+          });
+
+          await scrollIntoView(page, `span[pdfjs="true"]`);
+
+          const [stacksRect, oldAriaOwns] = await page.$eval(
+            `span[pdfjs="true"]`,
+            el => {
+              const { x, y, width, height } = el.getBoundingClientRect();
+              return [{ x, y, width, height }, el.getAttribute("aria-owns")];
             }
           );
 
@@ -345,6 +360,7 @@ describe("FreeText Editor", () => {
           expect(ariaOwns.endsWith("_7-editor"))
             .withContext(`In ${browserName}`)
             .toEqual(true);
+          await scrollIntoView(page, ".annotationEditorLayer");
         })
       );
     });
@@ -2236,6 +2252,7 @@ describe("FreeText Editor", () => {
           });
           await page.type(`${getEditorSelector(0)} .internal`, data);
           // Commit.
+          await cancelFocusIn(page, getEditorSelector(0));
           await page.keyboard.press("Escape");
           await page.waitForSelector(
             `${getEditorSelector(0)} .overlay.enabled`
@@ -2488,6 +2505,7 @@ describe("FreeText Editor", () => {
           await page.type(`${getEditorSelector(0)} .internal`, data);
 
           // Commit.
+          await cancelFocusIn(page, getEditorSelector(0));
           await page.keyboard.press("Escape");
           await page.waitForSelector(
             `${getEditorSelector(0)} .overlay.enabled`
@@ -2541,20 +2559,35 @@ describe("FreeText Editor", () => {
             const { x, y } = el.getBoundingClientRect();
             return { x, y };
           });
+          const selectorEditor = getEditorSelector(0);
           await page.mouse.click(rect.x + 10, rect.y + 10);
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(selectorEditor, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(0)} .internal`, "Hello");
+          await page.type(`${selectorEditor} .internal`, "Hello");
 
           // Commit.
+          await cancelFocusIn(page, selectorEditor);
           await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay.enabled`
+          await page.waitForSelector(`${selectorEditor} .overlay.enabled`);
+
+          // Unselect.
+          await page.keyboard.press("Escape");
+          await waitForUnselectedEditor(page, selectorEditor);
+
+          const editorRect = await page.$eval(selectorEditor, el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+
+          // Select the editor created previously.
+          await page.mouse.click(
+            editorRect.x + editorRect.width / 2,
+            editorRect.y + editorRect.height / 2
           );
 
           // Go to the last page.
-          await page.keyboard.press("End");
+          await scrollIntoView(page, `.page[data-page-number = "14"]`);
 
           const page14Selector = `.page[data-page-number = "14"] > .annotationEditorLayer.freetextEditing`;
           await page.waitForSelector(page14Selector, {
@@ -2638,20 +2671,35 @@ describe("FreeText Editor", () => {
             const { x, y } = el.getBoundingClientRect();
             return { x, y };
           });
+          const selectorEditor = getEditorSelector(0);
           await page.mouse.click(rect.x + 10, rect.y + 10);
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(selectorEditor, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(0)} .internal`, "Hello");
+          await page.type(`${selectorEditor} .internal`, "Hello");
 
           // Commit.
+          await cancelFocusIn(page, selectorEditor);
           await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay.enabled`
+          await page.waitForSelector(`${selectorEditor} .overlay.enabled`);
+
+          // Unselect.
+          await page.keyboard.press("Escape");
+          await waitForUnselectedEditor(page, selectorEditor);
+
+          const editorRect = await page.$eval(selectorEditor, el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+
+          // Select the editor created previously.
+          await page.mouse.click(
+            editorRect.x + editorRect.width / 2,
+            editorRect.y + editorRect.height / 2
           );
 
           // Go to the last page.
-          await kbGoToEnd(page);
+          await scrollIntoView(page, `.page[data-page-number = "14"]`);
           await page.waitForSelector(
             `.page[data-page-number = "14"] > .annotationEditorLayer.freetextEditing`,
             {
