@@ -1,0 +1,37 @@
+name: Lint Fluent Reference Files
+on:
+  push:
+    paths:
+      - 'l10n/en-US/**.ftl'
+      - '.github/fluent_linter_config.yml'
+      - '.github/workflows/fluent_linter.yml'
+    branches:
+      - master
+  pull_request:
+    paths:
+      - 'l10n/en-US/**.ftl'
+      - '.github/fluent_linter_config.yml'
+      - '.github/workflows/fluent_linter.yml'
+    branches:
+      - master
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  linter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - name: Set up Python 3
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      - name: Install Python dependencies
+        run: |
+          pip install -r .github/requirements.txt
+      - name: Lint reference
+        run: |
+          moz-fluent-lint ./l10n/en-US --config .github/linter_config.yml
