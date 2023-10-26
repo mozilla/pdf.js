@@ -619,10 +619,9 @@ class FeatureTest {
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
       typeof navigator === "undefined"
     ) {
-      return shadow(this, "platform", { isWin: false, isMac: false });
+      return shadow(this, "platform", { isMac: false });
     }
     return shadow(this, "platform", {
-      isWin: navigator.platform.includes("Win"),
       isMac: navigator.platform.includes("Mac"),
     });
   }
