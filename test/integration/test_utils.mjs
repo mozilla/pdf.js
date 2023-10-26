@@ -252,34 +252,22 @@ async function waitForTextLayer(page) {
 }
 
 async function scrollIntoView(page, selector) {
-  const promise = page.evaluate(
-    sel =>
-      new Promise(resolve => {
-        const el = document.querySelector(sel);
-        const observer = new IntersectionObserver(
-          () => {
-            observer.disconnect();
-            resolve();
-          },
-          {
-            root: document.querySelector("#viewerContainer"),
-            threshold: 0.1,
-          }
-        );
-        observer.observe(el);
-      }),
-    selector
-  );
   await page.evaluate(sel => {
     const element = document.querySelector(sel);
     element.scrollIntoView({ behavior: "instant", block: "start" });
   }, selector);
-  await promise;
   await page.waitForFunction(
     sel => {
+      const toolbarHeight = document
+        .querySelector("#toolbarContainer")
+        .getBoundingClientRect().height;
       const element = document.querySelector(sel);
       const { top, bottom } = element.getBoundingClientRect();
-      return Math.abs(top) < 100 || Math.abs(bottom - window.innerHeight) < 100;
+      return (
+        Math.abs(top) < toolbarHeight + 100 ||
+        Math.abs(bottom - window.innerHeight) < 100 ||
+        (top > toolbarHeight && bottom < window.innerHeight)
+      );
     },
     {},
     selector
