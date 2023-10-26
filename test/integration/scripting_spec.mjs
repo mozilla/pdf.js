@@ -20,6 +20,8 @@ import {
   getFirstSerialized,
   getQuerySelector,
   getSelector,
+  kbDeleteLastWord,
+  kbSelectAll,
   loadAndWait,
   scrollIntoView,
 } from "./test_utils.mjs";
@@ -1228,9 +1230,7 @@ describe("Interaction", () => {
 
           await page.type(getSelector("27R"), " ", { delay: 200 });
 
-          await page.keyboard.down("Control");
-          await page.keyboard.press("Backspace");
-          await page.keyboard.up("Control");
+          await kbDeleteLastWord(page);
 
           await page.waitForFunction(
             `${getQuerySelector("27R")}.value !== "HELLO WORDL "`
@@ -1654,9 +1654,7 @@ describe("Interaction", () => {
           value = await page.$eval(getSelector("28R"), el => el.value);
           expect(value).withContext(`In ${browserName}`).toEqual("abcdef");
 
-          await page.keyboard.down("Control");
-          await page.keyboard.press("A");
-          await page.keyboard.up("Control");
+          await kbSelectAll(page);
           await page.keyboard.press("Backspace");
 
           await page.keyboard.press("Enter");
@@ -1962,9 +1960,7 @@ describe("Interaction", () => {
           await page.waitForTimeout(10);
           await page.click(getSelector("26R"));
 
-          await page.keyboard.down("Control");
-          await page.keyboard.press("A");
-          await page.keyboard.up("Control");
+          await kbSelectAll(page);
           await page.keyboard.press("Backspace");
 
           await page.click(getSelector("23R"));

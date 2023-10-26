@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+import os from "os";
+const isMac = os.platform() === "darwin";
+
 function loadAndWait(filename, selector, zoom, pageSetup) {
   return Promise.all(
     global.integrationSessions.map(async session => {
@@ -33,10 +36,10 @@ function loadAndWait(filename, selector, zoom, pageSetup) {
         });
       });
 
-      let url = `${global.integrationBaseUrl}?file=/test/pdfs/${filename}`;
-      if (zoom) {
-        url += `#zoom=${zoom}`;
-      }
+      const url = `${
+        global.integrationBaseUrl
+      }?file=/test/pdfs/${filename}#zoom=${zoom ?? "page-fit"}`;
+
       await page.goto(url);
       if (pageSetup) {
         await pageSetup(page);
@@ -63,9 +66,7 @@ function closePages(pages) {
 
 async function clearInput(page, selector) {
   await page.click(selector);
-  await page.keyboard.down("Control");
-  await page.keyboard.press("A");
-  await page.keyboard.up("Control");
+  await kbSelectAll(page);
   await page.keyboard.press("Backspace");
   await page.waitForTimeout(10);
 }
@@ -285,6 +286,137 @@ async function scrollIntoView(page, selector) {
   );
 }
 
+async function hover(page, selector) {
+  const rect = await page.$eval(selector, el => {
+    const { x, y, width, height } = el.getBoundingClientRect();
+    return { x, y, width, height };
+  });
+  await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2);
+}
+
+const modifier = isMac ? "Meta" : "Control";
+async function kbCopy(page) {
+  await page.keyboard.down(modifier);
+  await page.keyboard.press("c", { commands: ["Copy"] });
+  await page.keyboard.up(modifier);
+}
+async function kbPaste(page) {
+  await page.keyboard.down(modifier);
+  await page.keyboard.press("v", { commands: ["Paste"] });
+  await page.keyboard.up(modifier);
+}
+async function kbUndo(page) {
+  await page.keyboard.down(modifier);
+  await page.keyboard.press("z");
+  await page.keyboard.up(modifier);
+}
+async function kbRedo(page) {
+  if (isMac) {
+    await page.keyboard.down("Meta");
+    await page.keyboard.down("Shift");
+    await page.keyboard.press("z");
+    await page.keyboard.up("Shift");
+    await page.keyboard.up("Meta");
+  } else {
+    await page.keyboard.down("Control");
+    await page.keyboard.press("y");
+    await page.keyboard.up("Control");
+  }
+}
+async function kbSelectAll(page) {
+  await page.keyboard.down(modifier);
+  await page.keyboard.press("a", { commands: ["SelectAll"] });
+  await page.keyboard.up(modifier);
+}
+async function kbModifierDown(page) {
+  await page.keyboard.down(modifier);
+}
+async function kbModifierUp(page) {
+  await page.keyboard.up(modifier);
+}
+async function kbGoToEnd(page) {
+  if (isMac) {
+    await page.keyboard.down("Meta");
+    await page.keyboard.press("ArrowDown", {
+      commands: ["MoveToEndOfDocument"],
+    });
+    await page.keyboard.up("Meta");
+  } else {
+    await page.keyboard.down("Control");
+    await page.keyboard.press("End");
+    await page.keyboard.up("Control");
+  }
+}
+async function kbGoToBegin(page) {
+  if (isMac) {
+    await page.keyboard.down("Meta");
+    await page.keyboard.press("ArrowUp", {
+      commands: ["MoveToBeginningOfDocument"],
+    });
+    await page.keyboard.up("Meta");
+  } else {
+    await page.keyboard.down("Control");
+    await page.keyboard.press("Home");
+    await page.keyboard.up("Control");
+  }
+}
+async function kbBigMoveLeft(page) {
+  if (isMac) {
+    await page.keyboard.down("Shift");
+    await page.keyboard.press("ArrowLeft");
+    await page.keyboard.up("Shift");
+  } else {
+    await page.keyboard.down("Control");
+    await page.keyboard.press("ArrowLeft");
+    await page.keyboard.up("Control");
+  }
+}
+async function kbBigMoveRight(page) {
+  if (isMac) {
+    await page.keyboard.down("Shift");
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.up("Shift");
+  } else {
+    await page.keyboard.down("Control");
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.up("Control");
+  }
+}
+async function kbBigMoveUp(page) {
+  if (isMac) {
+    await page.keyboard.down("Shift");
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.up("Shift");
+  } else {
+    await page.keyboard.down("Control");
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.up("Control");
+  }
+}
+async function kbBigMoveDown(page) {
+  if (isMac) {
+    await page.keyboard.down("Shift");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.up("Shift");
+  } else {
+    await page.keyboard.down("Control");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.up("Control");
+  }
+}
+
+async function kbDeleteLastWord(page) {
+  if (isMac) {
+    await page.keyboard.down("Alt");
+    await page.keyboard.press("Backspace");
+    await page.keyboard.up("Alt");
+  } else {
+    await page.keyboard.down("Control");
+    await page.keyboard.press("Backspace");
+    await page.keyboard.up("Control");
+  }
+}
+
 export {
   clearInput,
   closePages,
@@ -298,6 +430,21 @@ export {
   getSelectedEditors,
   getSelector,
   getSerialized,
+  hover,
+  kbBigMoveDown,
+  kbBigMoveLeft,
+  kbBigMoveRight,
+  kbBigMoveUp,
+  kbCopy,
+  kbDeleteLastWord,
+  kbGoToBegin,
+  kbGoToEnd,
+  kbModifierDown,
+  kbModifierUp,
+  kbPaste,
+  kbRedo,
+  kbSelectAll,
+  kbUndo,
   loadAndWait,
   mockClipboard,
   scrollIntoView,

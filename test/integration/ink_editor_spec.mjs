@@ -16,6 +16,9 @@
 import {
   closePages,
   getSelectedEditors,
+  kbRedo,
+  kbSelectAll,
+  kbUndo,
   loadAndWait,
   waitForStorageEntries,
 } from "./test_utils.mjs";
@@ -29,9 +32,7 @@ const waitForPointerUp = page =>
   );
 
 const selectAll = async page => {
-  await page.keyboard.down("Control");
-  await page.keyboard.press("a");
-  await page.keyboard.up("Control");
+  await kbSelectAll(page);
   await page.waitForFunction(
     () => !document.querySelector(".inkEditor.disabled:not(.selectedEditor)")
   );
@@ -39,9 +40,7 @@ const selectAll = async page => {
 
 const clearAll = async page => {
   await selectAll(page);
-  await page.keyboard.down("Control");
   await page.keyboard.press("Backspace");
-  await page.keyboard.up("Control");
   await waitForStorageEntries(page, 0);
 };
 
@@ -89,9 +88,7 @@ describe("Ink Editor", () => {
 
           await clearAll(page);
 
-          await page.keyboard.down("Control");
-          await page.keyboard.press("z");
-          await page.keyboard.up("Control");
+          await kbUndo(page);
           await waitForStorageEntries(page, 3);
 
           expect(await getSelectedEditors(page))
@@ -130,16 +127,9 @@ describe("Ink Editor", () => {
           });
 
           for (let i = 0; i < 30; i++) {
-            await page.keyboard.down("Control");
-            await page.keyboard.press("z");
-            await page.keyboard.up("Control");
-
+            await kbUndo(page);
             await waitForStorageEntries(page, 0);
-
-            await page.keyboard.down("Control");
-            await page.keyboard.press("y");
-            await page.keyboard.up("Control");
-
+            await kbRedo(page);
             await waitForStorageEntries(page, 1);
           }
 
