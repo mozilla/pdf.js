@@ -15,6 +15,8 @@
 
 import {
   closePages,
+  kbCopy,
+  kbSelectAll,
   loadAndWait,
   mockClipboard,
   waitForEvent,
@@ -23,9 +25,7 @@ import {
 
 const selectAll = async page => {
   const promise = waitForEvent(page, "selectionchange");
-  await page.keyboard.down("Control");
-  await page.keyboard.press("a");
-  await page.keyboard.up("Control");
+  await kbSelectAll(page);
   await promise;
 
   await page.waitForFunction(() => {
@@ -64,9 +64,7 @@ describe("Copy and paste", () => {
           await selectAll(page);
 
           const promise = waitForEvent(page, "copy");
-          await page.keyboard.down("Control");
-          await page.keyboard.press("c");
-          await page.keyboard.up("Control");
+          await kbCopy(page);
           await promise;
 
           await page.waitForFunction(
@@ -173,9 +171,7 @@ describe("Copy and paste", () => {
           await selectAll(page);
 
           const promise = waitForEvent(page, "copy");
-          await page.keyboard.down("Control");
-          await page.keyboard.press("c");
-          await page.keyboard.up("Control");
+          await kbCopy(page);
           await promise;
 
           await page.waitForFunction(
