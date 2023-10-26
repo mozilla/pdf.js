@@ -1026,7 +1026,6 @@ class PDFPageView {
         const { annotationStorage, linkService } = this.#layerProperties;
 
         this.xfaLayer = new XfaLayerBuilder({
-          pageDiv: div,
           pdfPage,
           annotationStorage,
           linkService,
