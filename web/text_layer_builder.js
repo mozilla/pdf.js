@@ -62,9 +62,14 @@ class TextLayerBuilder {
     this.isOffscreenCanvasSupported = isOffscreenCanvasSupported;
     this.#enablePermissions = enablePermissions === true;
 
+    /**
+     * Callback used to attach the textLayer to the DOM.
+     * @type {function}
+     */
+    this.onAppend = null;
+
     this.div = document.createElement("div");
     this.div.className = "textLayer";
-    this.hide();
   }
 
   #finishRendering() {
@@ -131,12 +136,15 @@ class TextLayerBuilder {
     this.#finishRendering();
     this.#scale = scale;
     this.#rotation = rotation;
-    this.show();
+    // Ensure that the textLayer is appended to the DOM *before* handling
+    // e.g. a pending search operation.
+    this.onAppend(this.div);
+    this.highlighter?.enable();
     this.accessibilityManager?.enable();
   }
 
   hide() {
-    if (!this.div.hidden) {
+    if (!this.div.hidden && this.renderingDone) {
       // We turn off the highlighter in order to avoid to scroll into view an
       // element of the text layer which could be hidden.
       this.highlighter?.disable();
