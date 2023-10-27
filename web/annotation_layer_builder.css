@@ -36,14 +36,18 @@
       outline: 1.5px solid selectedItem;
     }
 
-    .linkAnnotation:hover {
-      backdrop-filter: var(--hcm-highligh-filter);
-    }
+    .linkAnnotation {
+      outline: var(--link-outline);
 
-    .linkAnnotation > a:hover {
-      opacity: 0 !important;
-      background: none !important;
-      box-shadow: none;
+      &:hover {
+        backdrop-filter: var(--hcm-highligh-filter);
+      }
+
+      & > a:hover {
+        opacity: 0 !important;
+        background: none !important;
+        box-shadow: none;
+      }
     }
 
     .popupAnnotation .popup {
@@ -98,10 +102,6 @@
     pointer-events: auto;
     box-sizing: border-box;
     transform-origin: 0 0;
-  }
-
-  .linkAnnotation {
-    outline: var(--link-outline);
   }
 
   :is(.linkAnnotation, .buttonWidgetAnnotation.pushButton) > a {
