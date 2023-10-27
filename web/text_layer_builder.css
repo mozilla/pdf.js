@@ -13,18 +13,6 @@
  * limitations under the License.
  */
 
-:root {
-  --highlight-bg-color: rgb(180 0 170);
-  --highlight-selected-bg-color: rgb(0 100 0);
-}
-
-@media screen and (forced-colors: active) {
-  :root {
-    --highlight-bg-color: Highlight;
-    --highlight-selected-bg-color: ButtonText;
-  }
-}
-
 .textLayer {
   position: absolute;
   text-align: initial;
@@ -36,75 +24,83 @@
   forced-color-adjust: none;
   transform-origin: 0 0;
   z-index: 2;
-}
 
-.textLayer :is(span, br) {
-  color: transparent;
-  position: absolute;
-  white-space: pre;
-  cursor: text;
-  transform-origin: 0% 0%;
-}
+  :is(span, br) {
+    color: transparent;
+    position: absolute;
+    white-space: pre;
+    cursor: text;
+    transform-origin: 0% 0%;
+  }
 
-/* Only necessary in Google Chrome, see issue 14205, and most unfortunately
- * the problem doesn't show up in "text" reference tests. */
-/*#if !MOZCENTRAL*/
-.textLayer span.markedContent {
-  top: 0;
-  height: 0;
-}
-/*#endif*/
-
-.textLayer .highlight {
-  margin: -1px;
-  padding: 1px;
-  background-color: var(--highlight-bg-color);
-  border-radius: 4px;
-}
-
-.textLayer .highlight.appended {
-  position: initial;
-}
-
-.textLayer .highlight.begin {
-  border-radius: 4px 0 0 4px;
-}
-
-.textLayer .highlight.end {
-  border-radius: 0 4px 4px 0;
-}
-
-.textLayer .highlight.middle {
-  border-radius: 0;
-}
-
-.textLayer .highlight.selected {
-  background-color: var(--highlight-selected-bg-color);
-}
-
-.textLayer ::selection {
+  /* Only necessary in Google Chrome, see issue 14205, and most unfortunately
+   * the problem doesn't show up in "text" reference tests. */
   /*#if !MOZCENTRAL*/
-  background: blue;
+  span.markedContent {
+    top: 0;
+    height: 0;
+  }
   /*#endif*/
-  background: AccentColor; /* stylelint-disable-line declaration-block-no-duplicate-properties */
-}
 
-/* Avoids https://github.com/mozilla/pdf.js/issues/13840 in Chrome */
-/*#if !MOZCENTRAL*/
-.textLayer br::selection {
-  background: transparent;
-}
-/*#endif*/
+  .highlight {
+    --highlight-bg-color: rgb(180 0 170);
+    --highlight-selected-bg-color: rgb(0 100 0);
 
-.textLayer .endOfContent {
-  display: block;
-  position: absolute;
-  inset: 100% 0 0;
-  z-index: -1;
-  cursor: default;
-  user-select: none;
-}
+    @media screen and (forced-colors: active) {
+      --highlight-bg-color: Highlight;
+      --highlight-selected-bg-color: ButtonText;
+    }
 
-.textLayer .endOfContent.active {
-  top: 0;
+    margin: -1px;
+    padding: 1px;
+    background-color: var(--highlight-bg-color);
+    border-radius: 4px;
+
+    &.appended {
+      position: initial;
+    }
+
+    &.begin {
+      border-radius: 4px 0 0 4px;
+    }
+
+    &.end {
+      border-radius: 0 4px 4px 0;
+    }
+
+    &.middle {
+      border-radius: 0;
+    }
+
+    &.selected {
+      background-color: var(--highlight-selected-bg-color);
+    }
+  }
+
+  ::selection {
+    /*#if !MOZCENTRAL*/
+    background: blue;
+    /*#endif*/
+    background: AccentColor; /* stylelint-disable-line declaration-block-no-duplicate-properties */
+  }
+
+  /* Avoids https://github.com/mozilla/pdf.js/issues/13840 in Chrome */
+  /*#if !MOZCENTRAL*/
+  br::selection {
+    background: transparent;
+  }
+  /*#endif*/
+
+  .endOfContent {
+    display: block;
+    position: absolute;
+    inset: 100% 0 0;
+    z-index: -1;
+    cursor: default;
+    user-select: none;
+
+    &.active {
+      top: 0;
+    }
+  }
 }
