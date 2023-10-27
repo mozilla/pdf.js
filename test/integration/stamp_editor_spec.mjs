@@ -18,6 +18,10 @@ import {
   getEditorDimensions,
   getEditorSelector,
   getFirstSerialized,
+  kbBigMoveDown,
+  kbBigMoveRight,
+  kbPaste,
+  kbSelectAll,
   loadAndWait,
   serializeBitmapDimensions,
   waitForAnnotationEditorLayer,
@@ -31,9 +35,7 @@ import path from "path";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const selectAll = async page => {
-  await page.keyboard.down("Control");
-  await page.keyboard.press("a");
-  await page.keyboard.up("Control");
+  await kbSelectAll(page);
   await page.waitForFunction(
     () => !document.querySelector(".stampEditor:not(.selectedEditor)")
   );
@@ -41,9 +43,7 @@ const selectAll = async page => {
 
 const clearAll = async page => {
   await selectAll(page);
-  await page.keyboard.down("Control");
   await page.keyboard.press("Backspace");
-  await page.keyboard.up("Control");
   await waitForStorageEntries(page, 0);
 };
 
@@ -101,9 +101,7 @@ const copyImage = async (page, imagePath, number) => {
           })
       ),
     ]);
-    await page.keyboard.down("Control");
-    await page.keyboard.press("v");
-    await page.keyboard.up("Control");
+    await kbPaste(page);
     hasPasteEvent = await promise;
   }
 
@@ -521,9 +519,7 @@ describe("Stamp Editor", () => {
             .toEqual(true);
 
           for (let i = 0; i < 4; i++) {
-            await page.keyboard.down("Control");
-            await page.keyboard.press("ArrowRight");
-            await page.keyboard.up("Control");
+            await kbBigMoveRight(page);
             await waitForDimsChange(prevWidth, prevHeight);
             [prevWidth, prevHeight] = await getDims();
           }
@@ -554,9 +550,7 @@ describe("Stamp Editor", () => {
             .toEqual(true);
 
           for (let i = 0; i < 4; i++) {
-            await page.keyboard.down("Control");
-            await page.keyboard.press("ArrowDown");
-            await page.keyboard.up("Control");
+            await kbBigMoveDown(page);
             await waitForDimsChange(prevWidth, prevHeight);
             [prevWidth, prevHeight] = await getDims();
           }

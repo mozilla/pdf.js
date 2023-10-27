@@ -21,6 +21,20 @@ import {
   getFirstSerialized,
   getSelectedEditors,
   getSerialized,
+  hover,
+  kbBigMoveDown,
+  kbBigMoveLeft,
+  kbBigMoveRight,
+  kbBigMoveUp,
+  kbCopy,
+  kbGoToBegin,
+  kbGoToEnd,
+  kbModifierDown,
+  kbModifierUp,
+  kbPaste,
+  kbRedo,
+  kbSelectAll,
+  kbUndo,
   loadAndWait,
   scrollIntoView,
   waitForEvent,
@@ -33,24 +47,18 @@ import { PNG } from "pngjs";
 
 const copyPaste = async page => {
   let promise = waitForEvent(page, "copy");
-  await page.keyboard.down("Control");
-  await page.keyboard.press("c");
-  await page.keyboard.up("Control");
+  await kbCopy(page);
   await promise;
 
   await page.waitForTimeout(10);
 
   promise = waitForEvent(page, "paste");
-  await page.keyboard.down("Control");
-  await page.keyboard.press("v");
-  await page.keyboard.up("Control");
+  await kbPaste(page);
   await promise;
 };
 
 const selectAll = async page => {
-  await page.keyboard.down("Control");
-  await page.keyboard.press("a");
-  await page.keyboard.up("Control");
+  await kbSelectAll(page);
   await page.waitForFunction(
     () => !document.querySelector(".freeTextEditor:not(.selectedEditor)")
   );
@@ -84,6 +92,20 @@ const waitForPositionChange = (page, selector, xy) =>
     selector,
     xy
   );
+
+const cancelFocusIn = async (page, selector) => {
+  page.evaluate(sel => {
+    const el = document.querySelector(sel);
+    el.addEventListener(
+      "focusin",
+      evt => {
+        evt.preventDefault();
+        evt.stopPropagation();
+      },
+      { capture: true, once: true }
+    );
+  }, selector);
+};
 
 describe("FreeText Editor", () => {
   describe("FreeText", () => {
@@ -264,9 +286,7 @@ describe("FreeText Editor", () => {
           visible: true,
         });
 
-        await page.keyboard.down("Control");
-        await page.keyboard.press("z");
-        await page.keyboard.up("Control");
+        await kbUndo(page);
         await page.waitForFunction(
           sel => !document.querySelector(sel),
           {},
@@ -275,17 +295,13 @@ describe("FreeText Editor", () => {
 
         for (let i = 0; i < 2; i++) {
           const promise = waitForEvent(page, "paste");
-          await page.keyboard.down("Control");
-          await page.keyboard.press("v");
-          await page.keyboard.up("Control");
+          await kbPaste(page);
           await promise;
           await page.waitForSelector(getEditorSelector(5 + i));
         }
 
         for (let i = 0; i < 2; i++) {
-          await page.keyboard.down("Control");
-          await page.keyboard.press("z");
-          await page.keyboard.up("Control");
+          await kbUndo(page);
           await page.waitForFunction(
             sel => !document.querySelector(sel),
             {},
@@ -298,22 +314,23 @@ describe("FreeText Editor", () => {
     it("must check that aria-owns is correct", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          const [stacksRect, oldAriaOwns] = await page.$eval(
-            ".textLayer",
-            el => {
-              for (const span of el.querySelectorAll(
-                `span[role="presentation"]`
-              )) {
-                if (span.innerText.includes("Stacks are simple to create")) {
-                  span.setAttribute("pdfjs", true);
-                  const { x, y, width, height } = span.getBoundingClientRect();
-                  return [
-                    { x, y, width, height },
-                    span.getAttribute("aria-owns"),
-                  ];
-                }
+          await page.$eval(".textLayer", el => {
+            for (const span of el.querySelectorAll(
+              `span[role="presentation"]`
+            )) {
+              if (span.innerText.includes("Stacks are simple to create")) {
+                span.setAttribute("pdfjs", true);
               }
-              return null;
+            }
+          });
+
+          await scrollIntoView(page, `span[pdfjs="true"]`);
+
+          const [stacksRect, oldAriaOwns] = await page.$eval(
+            `span[pdfjs="true"]`,
+            el => {
+              const { x, y, width, height } = el.getBoundingClientRect();
+              return [{ x, y, width, height }, el.getAttribute("aria-owns")];
             }
           );
 
@@ -343,6 +360,7 @@ describe("FreeText Editor", () => {
           expect(ariaOwns.endsWith("_7-editor"))
             .withContext(`In ${browserName}`)
             .toEqual(true);
+          await scrollIntoView(page, ".annotationEditorLayer");
         })
       );
     });
@@ -473,26 +491,20 @@ describe("FreeText Editor", () => {
           page.$eval(`${getEditorSelector(9)} .internal`, el => el.innerText);
 
         // We're in the middle of the text.
-        await page.keyboard.down("Control");
-        await page.keyboard.press("z");
-        await page.keyboard.up("Control");
+        await kbUndo(page);
         await waitForTextChange(prevText);
 
         let text = (prevText = await getText());
         expect(text).withContext(`In ${browserName}`).toEqual("AAAA");
 
-        await page.keyboard.down("Control");
-        await page.keyboard.press("z");
-        await page.keyboard.up("Control");
+        await kbUndo(page);
         await waitForTextChange(prevText);
 
         text = prevText = await getText();
 
         expect(text).withContext(`In ${browserName}`).toEqual("AAA");
 
-        await page.keyboard.down("Control");
-        await page.keyboard.press("y");
-        await page.keyboard.up("Control");
+        await kbRedo(page);
         await waitForTextChange(prevText);
 
         text = prevText = await getText();
@@ -500,9 +512,7 @@ describe("FreeText Editor", () => {
         expect(text).withContext(`In ${browserName}`).toEqual("AAAA");
 
         for (let i = 0; i < 4; i++) {
-          await page.keyboard.down("Control");
-          await page.keyboard.press("z");
-          await page.keyboard.up("Control");
+          await kbUndo(page);
           if (i < 3) {
             await waitForTextChange(prevText);
             prevText = await getText();
@@ -513,9 +523,7 @@ describe("FreeText Editor", () => {
           () => !document.querySelector(".selectedEditor")
         );
 
-        await page.keyboard.down("Control");
-        await page.keyboard.press("y");
-        await page.keyboard.up("Control");
+        await kbRedo(page);
         await page.waitForSelector(getEditorSelector(9), {
           visible: true,
         });
@@ -570,16 +578,16 @@ describe("FreeText Editor", () => {
         const rect = await page.$eval(".annotationEditorLayer", el => {
           // With Chrome something is wrong when serializing a DomRect,
           // hence we extract the values and just return them.
-          const { x, y } = el.getBoundingClientRect();
-          return { x, y };
+          const { x, y, width, height } = el.getBoundingClientRect();
+          return { x, y, width, height };
         });
 
         const editorCenters = [];
         for (let i = 0; i < 4; i++) {
           const data = `FreeText ${i}`;
           await page.mouse.click(
-            rect.x + (i + 1) * 100,
-            rect.y + (i + 1) * 100
+            rect.x + ((i + 1) * rect.width) / 10,
+            rect.y + ((i + 1) * rect.height) / 10
           );
           await page.waitForSelector(getEditorSelector(i), {
             visible: true,
@@ -617,7 +625,7 @@ describe("FreeText Editor", () => {
           .toEqual([0, 1, 2, 3]);
 
         // Unselect the editor.
-        await page.keyboard.down("Control");
+        await kbModifierDown(page);
         await page.mouse.click(editorCenters[1].x, editorCenters[1].y);
         await waitForUnselectedEditor(page, getEditorSelector(1));
 
@@ -633,7 +641,7 @@ describe("FreeText Editor", () => {
           .toEqual([0, 3]);
 
         await page.mouse.click(editorCenters[1].x, editorCenters[1].y);
-        await page.keyboard.up("Control");
+        await kbModifierUp(page);
         await waitForSelectedEditor(page, getEditorSelector(1));
 
         expect(await getSelectedEditors(page))
@@ -663,7 +671,7 @@ describe("FreeText Editor", () => {
           .withContext(`In ${browserName}`)
           .toEqual([1]);
 
-        await page.keyboard.down("Control");
+        await kbModifierDown(page);
 
         await page.mouse.click(editorCenters[3].x, editorCenters[3].y);
         await waitForSelectedEditor(page, getEditorSelector(3));
@@ -671,7 +679,7 @@ describe("FreeText Editor", () => {
           .withContext(`In ${browserName}`)
           .toEqual([1, 3]);
 
-        await page.keyboard.up("Control");
+        await kbModifierUp(page);
 
         // Delete 1 and 3.
         await page.keyboard.press("Backspace");
@@ -688,7 +696,10 @@ describe("FreeText Editor", () => {
           .toEqual([0, 2, 4, 5, 6]);
 
         // Create an empty editor.
-        await page.mouse.click(rect.x + 700, rect.y + 100);
+        await page.mouse.click(
+          rect.x + (rect.width / 10) * 7,
+          rect.y + rect.height / 10
+        );
         await page.waitForSelector(getEditorSelector(7), {
           visible: true,
         });
@@ -704,7 +715,10 @@ describe("FreeText Editor", () => {
           .toEqual([2]);
 
         // Create an empty editor.
-        await page.mouse.click(rect.x + 700, rect.y + 100);
+        await page.mouse.click(
+          rect.x + (rect.width / 10) * 8,
+          rect.y + rect.height / 10
+        );
         await page.waitForSelector(getEditorSelector(8), {
           visible: true,
         });
@@ -1057,9 +1071,7 @@ describe("FreeText Editor", () => {
             `${getEditorSelector(0)} .overlay:not(.enabled)`
           );
 
-          await page.keyboard.down("Control");
-          await page.keyboard.press("End");
-          await page.keyboard.up("Control");
+          await kbGoToEnd(page);
           await page.waitForFunction(
             sel =>
               document.getSelection().anchorOffset ===
@@ -1113,19 +1125,14 @@ describe("FreeText Editor", () => {
           await switchToFreeText(page);
           await page.focus(".annotationEditorLayer");
 
-          // Undo.
-          await page.keyboard.down("Control");
-          await page.keyboard.press("z");
-          await page.keyboard.up("Control");
+          await kbUndo(page);
           await waitForSerialized(page, 0);
 
           editorIds = await getEditors(page, "freeText");
           expect(editorIds.length).withContext(`In ${browserName}`).toEqual(6);
 
           // Undo again.
-          await page.keyboard.down("Control");
-          await page.keyboard.press("z");
-          await page.keyboard.up("Control");
+          await kbUndo(page);
           // Nothing should happen, it's why we can't wait for something
           // specific!
           await page.waitForTimeout(200);
@@ -1224,10 +1231,7 @@ describe("FreeText Editor", () => {
           await switchToFreeText(page);
           await page.focus(".annotationEditorLayer");
 
-          // Undo.
-          await page.keyboard.down("Control");
-          await page.keyboard.press("z");
-          await page.keyboard.up("Control");
+          await kbUndo(page);
           await waitForSerialized(page, 0);
         })
       );
@@ -1322,7 +1326,11 @@ describe("FreeText Editor", () => {
     it("must not remove an empty annotation", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.hover("[data-annotation-id='23R']");
+          await page.waitForSelector("[data-annotation-id='23R']");
+          // Cannot use page.hover with Firefox on Mac because of a bug.
+          // TODO: remove this when we switch to BiDi.
+          await hover(page, "[data-annotation-id='23R']");
+
           // Wait for the popup to be displayed.
           await page.waitForFunction(
             () =>
@@ -1341,7 +1349,8 @@ describe("FreeText Editor", () => {
             `.annotationEditorLayer:not(.freetextEditing)`
           );
 
-          await page.hover("[data-annotation-id='23R']");
+          // TODO: remove this when we switch to BiDi.
+          await hover(page, "[data-annotation-id='23R']");
           // Wait for the popup to be displayed.
           await page.waitForFunction(
             () =>
@@ -1592,11 +1601,7 @@ describe("FreeText Editor", () => {
     let pages;
 
     beforeAll(async () => {
-      pages = await loadAndWait(
-        "issue16633.pdf",
-        ".annotationEditorLayer",
-        100
-      );
+      pages = await loadAndWait("issue16633.pdf", ".annotationEditorLayer");
     });
 
     afterAll(async () => {
@@ -1944,10 +1949,7 @@ describe("FreeText Editor", () => {
           );
 
           await page.focus("#editorFreeTextColor");
-
-          await page.keyboard.down("Control");
-          await page.keyboard.press("z");
-          await page.keyboard.up("Control");
+          await kbUndo(page);
 
           await page.waitForFunction(
             sel => !document.querySelector(sel),
@@ -1955,9 +1957,7 @@ describe("FreeText Editor", () => {
             getEditorSelector(0)
           );
 
-          await page.keyboard.down("Control");
-          await page.keyboard.press("y");
-          await page.keyboard.up("Control");
+          await kbRedo(page);
           await page.waitForFunction(
             sel => !!document.querySelector(sel),
             {},
@@ -2046,9 +2046,7 @@ describe("FreeText Editor", () => {
             .toEqual(Math.round(pageY - 20));
 
           for (let i = 0; i < 2; i++) {
-            await page.keyboard.down("Control");
-            await page.keyboard.press("ArrowLeft");
-            await page.keyboard.up("Control");
+            await kbBigMoveLeft(page);
             await waitForPositionChange(page, selectorEditor, xy);
             xy = await getXY(page, selectorEditor);
           }
@@ -2062,9 +2060,7 @@ describe("FreeText Editor", () => {
             .toEqual(Math.round(pageY - 20));
 
           for (let i = 0; i < 2; i++) {
-            await page.keyboard.down("Control");
-            await page.keyboard.press("ArrowUp");
-            await page.keyboard.up("Control");
+            await kbBigMoveUp(page);
             await waitForPositionChange(page, selectorEditor, xy);
             xy = await getXY(page, selectorEditor);
           }
@@ -2164,9 +2160,7 @@ describe("FreeText Editor", () => {
           }
 
           for (let i = 0; i < 2; i++) {
-            await page.keyboard.down("Control");
-            await page.keyboard.press("ArrowDown");
-            await page.keyboard.up("Control");
+            await kbBigMoveDown(page);
             await waitForPositionChange(page, selectorEditor, xy);
             xy = await getXY(page, selectorEditor);
           }
@@ -2178,25 +2172,19 @@ describe("FreeText Editor", () => {
           }
 
           for (let i = 0; i < 2; i++) {
-            await page.keyboard.down("Control");
-            await page.keyboard.press("ArrowUp");
-            await page.keyboard.up("Control");
+            await kbBigMoveUp(page);
             await waitForPositionChange(page, selectorEditor, xy);
             xy = await getXY(page, selectorEditor);
           }
 
           for (let i = 0; i < 2; i++) {
-            await page.keyboard.down("Control");
-            await page.keyboard.press("ArrowRight");
-            await page.keyboard.up("Control");
+            await kbBigMoveRight(page);
             await waitForPositionChange(page, selectorEditor, xy);
             xy = await getXY(page, selectorEditor);
           }
 
           for (let i = 0; i < 2; i++) {
-            await page.keyboard.down("Control");
-            await page.keyboard.press("ArrowLeft");
-            await page.keyboard.up("Control");
+            await kbBigMoveLeft(page);
             await waitForPositionChange(page, selectorEditor, xy);
             xy = await getXY(page, selectorEditor);
           }
@@ -2264,6 +2252,7 @@ describe("FreeText Editor", () => {
           });
           await page.type(`${getEditorSelector(0)} .internal`, data);
           // Commit.
+          await cancelFocusIn(page, getEditorSelector(0));
           await page.keyboard.press("Escape");
           await page.waitForSelector(
             `${getEditorSelector(0)} .overlay.enabled`
@@ -2342,7 +2331,7 @@ describe("FreeText Editor", () => {
             `${getEditorSelector(1)} .overlay.enabled`
           );
 
-          await page.mouse.click(rect.x + 115, rect.y + 155);
+          await page.mouse.click(rect.x + 111, rect.y + 151);
           await waitForSelectedEditor(page, getEditorSelector(1));
 
           const pos = n =>
@@ -2361,12 +2350,21 @@ describe("FreeText Editor", () => {
             .withContext(`In ${browserName}`)
             .toEqual(1);
 
+          const getY = selector =>
+            page.evaluate(
+              sel => document.querySelector(sel).getBoundingClientRect().y,
+              selector
+            );
+          const height = await page.evaluate(
+            sel => document.querySelector(sel).getBoundingClientRect().height,
+            getEditorSelector(0)
+          );
+
+          const y0 = await getY(getEditorSelector(0));
           const selectorEditor = getEditorSelector(1);
           let xy = await getXY(page, selectorEditor);
-          for (let i = 0; i < 6; i++) {
-            await page.keyboard.down("Control");
-            await page.keyboard.press("ArrowUp");
-            await page.keyboard.up("Control");
+          while ((await getY(selectorEditor)) > y0 - height) {
+            await kbBigMoveUp(page);
             await waitForPositionChange(page, selectorEditor, xy);
             xy = await getXY(page, selectorEditor);
           }
@@ -2448,12 +2446,12 @@ describe("FreeText Editor", () => {
               return { x, y };
             });
             const oldPos = allPositions[i];
-            expect(Math.round(pos.x - oldPos.x))
+            expect(Math.abs(Math.round(pos.x - oldPos.x) - 39))
               .withContext(`In ${browserName}`)
-              .toEqual(39);
-            expect(Math.round(pos.y - oldPos.y))
+              .toBeLessThanOrEqual(1);
+            expect(Math.abs(Math.round(pos.y - oldPos.y) - 74))
               .withContext(`In ${browserName}`)
-              .toEqual(74);
+              .toBeLessThanOrEqual(1);
           }
         })
       );
@@ -2505,7 +2503,9 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${getEditorSelector(0)} .internal`, data);
+
           // Commit.
+          await cancelFocusIn(page, getEditorSelector(0));
           await page.keyboard.press("Escape");
           await page.waitForSelector(
             `${getEditorSelector(0)} .overlay.enabled`
@@ -2559,20 +2559,35 @@ describe("FreeText Editor", () => {
             const { x, y } = el.getBoundingClientRect();
             return { x, y };
           });
+          const selectorEditor = getEditorSelector(0);
           await page.mouse.click(rect.x + 10, rect.y + 10);
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(selectorEditor, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(0)} .internal`, "Hello");
+          await page.type(`${selectorEditor} .internal`, "Hello");
 
           // Commit.
+          await cancelFocusIn(page, selectorEditor);
           await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay.enabled`
+          await page.waitForSelector(`${selectorEditor} .overlay.enabled`);
+
+          // Unselect.
+          await page.keyboard.press("Escape");
+          await waitForUnselectedEditor(page, selectorEditor);
+
+          const editorRect = await page.$eval(selectorEditor, el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+
+          // Select the editor created previously.
+          await page.mouse.click(
+            editorRect.x + editorRect.width / 2,
+            editorRect.y + editorRect.height / 2
           );
 
           // Go to the last page.
-          await page.keyboard.press("End");
+          await scrollIntoView(page, `.page[data-page-number = "14"]`);
 
           const page14Selector = `.page[data-page-number = "14"] > .annotationEditorLayer.freetextEditing`;
           await page.waitForSelector(page14Selector, {
@@ -2656,20 +2671,35 @@ describe("FreeText Editor", () => {
             const { x, y } = el.getBoundingClientRect();
             return { x, y };
           });
+          const selectorEditor = getEditorSelector(0);
           await page.mouse.click(rect.x + 10, rect.y + 10);
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(selectorEditor, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(0)} .internal`, "Hello");
+          await page.type(`${selectorEditor} .internal`, "Hello");
 
           // Commit.
+          await cancelFocusIn(page, selectorEditor);
           await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay.enabled`
+          await page.waitForSelector(`${selectorEditor} .overlay.enabled`);
+
+          // Unselect.
+          await page.keyboard.press("Escape");
+          await waitForUnselectedEditor(page, selectorEditor);
+
+          const editorRect = await page.$eval(selectorEditor, el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+
+          // Select the editor created previously.
+          await page.mouse.click(
+            editorRect.x + editorRect.width / 2,
+            editorRect.y + editorRect.height / 2
           );
 
           // Go to the last page.
-          await page.keyboard.press("End");
+          await scrollIntoView(page, `.page[data-page-number = "14"]`);
           await page.waitForSelector(
             `.page[data-page-number = "14"] > .annotationEditorLayer.freetextEditing`,
             {
@@ -2681,7 +2711,7 @@ describe("FreeText Editor", () => {
           await clearAll(page);
 
           // Go to the first page.
-          await page.keyboard.press("Home");
+          await kbGoToBegin(page);
           await page.waitForSelector(page1Selector, {
             visible: true,
             timeout: 0,
@@ -2690,10 +2720,7 @@ describe("FreeText Editor", () => {
           // Make sure that nothing has be added.
           await waitForStorageEntries(page, 0);
 
-          // Undo.
-          await page.keyboard.down("Control");
-          await page.keyboard.press("z");
-          await page.keyboard.up("Control");
+          await kbUndo(page);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(getEditorSelector(0), {
@@ -2832,9 +2859,7 @@ describe("FreeText Editor", () => {
 
           let xy = await getXY(page, selectorEditor);
           for (let i = 0; i < 5; i++) {
-            await page.keyboard.down("Control");
-            await page.keyboard.press("ArrowUp");
-            await page.keyboard.up("Control");
+            await kbBigMoveUp(page);
             await waitForPositionChange(page, selectorEditor, xy);
             xy = await getXY(page, selectorEditor);
           }
@@ -2867,9 +2892,7 @@ describe("FreeText Editor", () => {
 
           xy = await getXY(page, selectorEditor);
           for (let i = 0; i < 5; i++) {
-            await page.keyboard.down("Control");
-            await page.keyboard.press("ArrowDown");
-            await page.keyboard.up("Control");
+            await kbBigMoveDown(page);
             await waitForPositionChange(page, selectorEditor, xy);
             xy = await getXY(page, selectorEditor);
           }
@@ -2904,9 +2927,7 @@ describe("FreeText Editor", () => {
 
           let xy = await getXY(page, selectorEditor);
           for (let i = 0; i < 10; i++) {
-            await page.keyboard.down("Control");
-            await page.keyboard.press("ArrowLeft");
-            await page.keyboard.up("Control");
+            await kbBigMoveLeft(page);
             await waitForPositionChange(page, selectorEditor, xy);
             xy = await getXY(page, selectorEditor);
           }
@@ -2936,9 +2957,7 @@ describe("FreeText Editor", () => {
 
           xy = await getXY(page, selectorEditor);
           for (let i = 0; i < 10; i++) {
-            await page.keyboard.down("Control");
-            await page.keyboard.press("ArrowRight");
-            await page.keyboard.up("Control");
+            await kbBigMoveRight(page);
             await waitForPositionChange(page, selectorEditor, xy);
             xy = await getXY(page, selectorEditor);
           }
