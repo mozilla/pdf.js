@@ -13,9 +13,7 @@
  * limitations under the License.
  */
 
-"use strict";
-
-if (!pdfjsLib.getDocument || !pdfjsViewer.PDFSinglePageViewer) {
+if (!pdfjsLib.getDocument || !pdfjsViewer.PDFViewer) {
   // eslint-disable-next-line no-alert
   alert("Please build the pdfjs-dist library using\n  `gulp dist-install`");
 }
@@ -23,7 +21,7 @@ if (!pdfjsLib.getDocument || !pdfjsViewer.PDFSinglePageViewer) {
 // The workerSrc property shall be specified.
 //
 pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "../../node_modules/pdfjs-dist/build/pdf.worker.js";
+  "../../node_modules/pdfjs-dist/build/pdf.worker.mjs";
 
 // Some PDFs need external cmaps.
 //
@@ -37,7 +35,10 @@ const DEFAULT_URL = "../../web/compressed.tracemonkey-pldi-09.pdf";
 const ENABLE_XFA = true;
 const SEARCH_FOR = ""; // try "Mozilla";
 
-const SANDBOX_BUNDLE_SRC = "../../node_modules/pdfjs-dist/build/pdf.sandbox.js";
+const SANDBOX_BUNDLE_SRC = new URL(
+  "../../node_modules/pdfjs-dist/build/pdf.sandbox.mjs",
+  window.location
+);
 
 const container = document.getElementById("viewerContainer");
 
@@ -60,19 +61,19 @@ const pdfScriptingManager = new pdfjsViewer.PDFScriptingManager({
   sandboxBundleSrc: SANDBOX_BUNDLE_SRC,
 });
 
-const pdfSinglePageViewer = new pdfjsViewer.PDFSinglePageViewer({
+const pdfViewer = new pdfjsViewer.PDFViewer({
   container,
   eventBus,
   linkService: pdfLinkService,
   findController: pdfFindController,
   scriptingManager: pdfScriptingManager,
 });
-pdfLinkService.setViewer(pdfSinglePageViewer);
-pdfScriptingManager.setViewer(pdfSinglePageViewer);
+pdfLinkService.setViewer(pdfViewer);
+pdfScriptingManager.setViewer(pdfViewer);
 
 eventBus.on("pagesinit", function () {
-  // We can use pdfSinglePageViewer now, e.g. let's change default scale.
-  pdfSinglePageViewer.currentScaleValue = "page-width";
+  // We can use pdfViewer now, e.g. let's change default scale.
+  pdfViewer.currentScaleValue = "page-width";
 
   // We can try searching for things.
   if (SEARCH_FOR) {
@@ -87,10 +88,10 @@ const loadingTask = pdfjsLib.getDocument({
   cMapPacked: CMAP_PACKED,
   enableXfa: ENABLE_XFA,
 });
-loadingTask.promise.then(function (pdfDocument) {
-  // Document loaded, specifying document for the viewer and
-  // the (optional) linkService.
-  pdfSinglePageViewer.setDocument(pdfDocument);
 
-  pdfLinkService.setDocument(pdfDocument, null);
-});
+const pdfDocument = await loadingTask.promise;
+// Document loaded, specifying document for the viewer and
+// the (optional) linkService.
+pdfViewer.setDocument(pdfDocument);
+
+pdfLinkService.setDocument(pdfDocument, null);

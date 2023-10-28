@@ -31,5 +31,3 @@ importing `pdfjs-dist/webpack` which is the zero-configuration method for
 Webpack users. Installing `worker-loader` is no longer necessary.
 
     import * as pdfjsLib from 'pdfjs-dist/webpack';
-
-For a full working example refer to [this repository](https://github.com/yurydelendik/pdfjs-react).
