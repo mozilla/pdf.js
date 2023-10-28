@@ -19,19 +19,24 @@ permissions:
   contents: read
 
 jobs:
-  linter:
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
+
     steps:
-      - name: Clone repository
+      - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Set up Python 3
+
+      - name: Use Python 3.12
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.12'
           cache: 'pip'
-      - name: Install Python dependencies
+
+      - name: Install Fluent dependencies
         run: |
           pip install -r .github/requirements.txt
-      - name: Lint reference
+
+      - name: Lint Fluent reference files
         run: |
-          moz-fluent-lint ./l10n/en-US --config .github/linter_config.yml
+          moz-fluent-lint ./l10n/en-US --config .github/fluent_linter_config.yml
