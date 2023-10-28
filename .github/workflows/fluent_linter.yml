@@ -39,4 +39,4 @@ jobs:
 
       - name: Lint Fluent reference files
         run: |
-          moz-fluent-lint ./l10n/en-US --config .github/linter_config.yml
+          moz-fluent-lint ./l10n/en-US --config .github/fluent_linter_config.yml
