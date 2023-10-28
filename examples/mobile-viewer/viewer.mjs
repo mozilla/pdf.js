@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-"use strict";
-
 if (!pdfjsLib.getDocument || !pdfjsViewer.PDFViewer) {
   // eslint-disable-next-line no-alert
   alert("Please build the pdfjs-dist library using\n `gulp dist-install`");
@@ -27,7 +25,7 @@ const CMAP_URL = "../../node_modules/pdfjs-dist/cmaps/";
 const CMAP_PACKED = true;
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "../../node_modules/pdfjs-dist/build/pdf.worker.js";
+  "../../node_modules/pdfjs-dist/build/pdf.worker.mjs";
 
 const DEFAULT_URL = "../../web/compressed.tracemonkey-pldi-09.pdf";
 const DEFAULT_SCALE_DELTA = 1.1;
@@ -89,41 +87,17 @@ const PDFViewerApplication = {
         self.loadingBar.hide();
         self.setTitleUsingMetadata(pdfDocument);
       },
-      function (exception) {
-        const message = exception && exception.message;
-        const l10n = self.l10n;
-        let loadingErrorMessage;
-
-        if (exception instanceof pdfjsLib.InvalidPDFException) {
-          // change error message also for other builds
-          loadingErrorMessage = l10n.get(
-            "pdfjs-invalid-file-error",
-            null,
-            "Invalid or corrupted PDF file."
-          );
-        } else if (exception instanceof pdfjsLib.MissingPDFException) {
-          // special message for missing PDFs
-          loadingErrorMessage = l10n.get(
-            "pdfjs-missing-file-error",
-            null,
-            "Missing PDF file."
-          );
-        } else if (exception instanceof pdfjsLib.UnexpectedResponseException) {
-          loadingErrorMessage = l10n.get(
-            "pdfjs-unexpected-response-error",
-            null,
-            "Unexpected server response."
-          );
-        } else {
-          loadingErrorMessage = l10n.get(
-            "pdfjs-loading-error",
-            null,
-            "An error occurred while loading the PDF."
-          );
+      function (reason) {
+        let key = "pdfjs-loading-error";
+        if (reason instanceof pdfjsLib.InvalidPDFException) {
+          key = "pdfjs-invalid-file-error";
+        } else if (reason instanceof pdfjsLib.MissingPDFException) {
+          key = "pdfjs-missing-file-error";
+        } else if (reason instanceof pdfjsLib.UnexpectedResponseException) {
+          key = "pdfjs-unexpected-response-error";
         }
-
-        loadingErrorMessage.then(function (msg) {
-          self.error(msg, { message });
+        self.l10n.get(key).then(msg => {
+          self.error(msg, { message: reason?.message });
         });
         self.loadingBar.hide();
       }
@@ -136,9 +110,6 @@ const PDFViewerApplication = {
    *                      destruction is completed.
    */
   close() {
-    const errorWrapper = document.getElementById("errorWrapper");
-    errorWrapper.hidden = true;
-
     if (!this.pdfLoadingTask) {
       return Promise.resolve();
     }
@@ -231,83 +202,25 @@ const PDFViewerApplication = {
   },
 
   error: function pdfViewError(message, moreInfo) {
-    const l10n = this.l10n;
     const moreInfoText = [
-      l10n.get(
-        "pdfjs-error-version-info",
-        { version: pdfjsLib.version || "?", build: pdfjsLib.build || "?" },
-        "PDF.js v{ $version } (build: { $build })"
-      ),
+      `PDF.js v${pdfjsLib.version || "?"} (build: ${pdfjsLib.build || "?"})`,
     ];
-
     if (moreInfo) {
-      moreInfoText.push(
-        l10n.get(
-          "pdfjs-error-message",
-          { message: moreInfo.message },
-          "Message: { $message }"
-        )
-      );
+      moreInfoText.push(`Message: ${moreInfo.message}`);
+
       if (moreInfo.stack) {
-        moreInfoText.push(
-          l10n.get(
-            "pdfjs-error-stack",
-            { stack: moreInfo.stack },
-            "Stack: { $stack }"
-          )
-        );
+        moreInfoText.push(`Stack: ${moreInfo.stack}`);
       } else {
         if (moreInfo.filename) {
-          moreInfoText.push(
-            l10n.get(
-              "pdfjs-error-file",
-              { file: moreInfo.filename },
-              "File: { $file }"
-            )
-          );
+          moreInfoText.push(`File: ${moreInfo.filename}`);
         }
         if (moreInfo.lineNumber) {
-          moreInfoText.push(
-            l10n.get(
-              "pdfjs-error-line",
-              { line: moreInfo.lineNumber },
-              "Line: { $line }"
-            )
-          );
+          moreInfoText.push(`Line: ${moreInfo.lineNumber}`);
         }
       }
     }
 
-    const errorWrapper = document.getElementById("errorWrapper");
-    errorWrapper.hidden = false;
-
-    const errorMessage = document.getElementById("errorMessage");
-    errorMessage.textContent = message;
-
-    const closeButton = document.getElementById("errorClose");
-    closeButton.onclick = function () {
-      errorWrapper.hidden = true;
-    };
-
-    const errorMoreInfo = document.getElementById("errorMoreInfo");
-    const moreInfoButton = document.getElementById("errorShowMore");
-    const lessInfoButton = document.getElementById("errorShowLess");
-    moreInfoButton.onclick = function () {
-      errorMoreInfo.hidden = false;
-      moreInfoButton.hidden = true;
-      lessInfoButton.hidden = false;
-      errorMoreInfo.style.height = errorMoreInfo.scrollHeight + "px";
-    };
-    lessInfoButton.onclick = function () {
-      errorMoreInfo.hidden = true;
-      moreInfoButton.hidden = false;
-      lessInfoButton.hidden = true;
-    };
-    moreInfoButton.hidden = false;
-    lessInfoButton.hidden = true;
-    Promise.all(moreInfoText).then(function (parts) {
-      errorMoreInfo.value = parts.join("\n");
-    });
+    console.error(`${message}\n\n${moreInfoText.join("\n")}`);
   },
 
   progress: function pdfViewProgress(level) {
