@@ -226,6 +226,21 @@ pdfjs-find-match-diacritics-checkbox-label = Passa við broddstafi
 pdfjs-find-entire-word-checkbox-label = Heil orð
 pdfjs-find-reached-top = Náði efst í skjal, held áfram neðst
 pdfjs-find-reached-bottom = Náði enda skjals, held áfram efst
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count =
+    { $total ->
+        [one] { $current } af { $total } passar við
+       *[other] { $current } af { $total } passa við
+    }
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit =
+    { $limit ->
+        [one] Fleiri en { $limit } passar við
+       *[other] Fleiri en { $limit } passa við
+    }
 pdfjs-find-not-found = Fann ekki orðið
 
 ## Predefined zoom values
@@ -324,3 +339,11 @@ pdfjs-editor-alt-text-textarea =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
+pdfjs-editor-resizer-label-top-left = Efst í vinstra horni - breyta stærð
+pdfjs-editor-resizer-label-top-middle = Efst á miðju - breyta stærð
+pdfjs-editor-resizer-label-top-right = Efst í hægra horni - breyta stærð
+pdfjs-editor-resizer-label-middle-right = Miðja til hægri - breyta stærð
+pdfjs-editor-resizer-label-bottom-right = Neðst í hægra horni - breyta stærð
+pdfjs-editor-resizer-label-bottom-middle = Neðst á miðju - breyta stærð
+pdfjs-editor-resizer-label-bottom-left = Neðst í vinstra horni - breyta stærð
+pdfjs-editor-resizer-label-middle-left = Miðja til vinstri - breyta stærð
