@@ -184,6 +184,7 @@ class FontLoader {
         supported = true;
       } else if (
         typeof navigator !== "undefined" &&
+        typeof navigator?.userAgent === "string" &&
         // User agent string sniffing is bad, but there is no reliable way to
         // tell if the font is fully loaded and ready to be used with canvas.
         /Mozilla\/5.0.*?rv:\d+.*? Gecko/.test(navigator.userAgent)
