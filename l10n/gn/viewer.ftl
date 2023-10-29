@@ -226,6 +226,21 @@ pdfjs-find-match-diacritics-checkbox-label = Diacrítico moñondive
 pdfjs-find-entire-word-checkbox-label = Ñe’ẽ oĩmbáva
 pdfjs-find-reached-top = Ojehupyty kuatia ñepyrũ, oku’ejeýta kuatia paha guive
 pdfjs-find-reached-bottom = Ojehupyty kuatia paha, oku’ejeýta kuatia ñepyrũ guive
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count =
+    { $total ->
+        [one] { $current } ha { $total } ojueheguáva
+       *[other] { $current } ha { $total } ojueheguáva
+    }
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit =
+    { $limit ->
+        [one] Hetave { $limit } ojueheguáva
+       *[other] Hetave { $limit } ojueheguáva
+    }
 pdfjs-find-not-found = Ñe’ẽrysýi ojejuhu’ỹva
 
 ## Predefined zoom values
@@ -250,7 +265,7 @@ pdfjs-page-landmark =
 pdfjs-loading-error = Oiko jejavy PDF oñemyeñyhẽnguévo.
 pdfjs-invalid-file-error = PDF marandurenda ndoikóiva térã ivaipyréva.
 pdfjs-missing-file-error = Ndaipóri PDF marandurenda
-pdfjs-unexpected-response-error = Mohendahavusu mbohovái ñeha’arõ’ỹva.
+pdfjs-unexpected-response-error = Mohendahavusu mbohovái eha’ãrõ’ỹva.
 pdfjs-rendering-error = Oiko jejavy ehechaukasévo kuatiarogue.
 
 ## Annotations

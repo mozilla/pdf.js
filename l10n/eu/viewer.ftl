@@ -226,6 +226,21 @@ pdfjs-find-match-diacritics-checkbox-label = Bereizi diakritikoak
 pdfjs-find-entire-word-checkbox-label = Hitz osoak
 pdfjs-find-reached-top = Dokumentuaren hasierara heldu da, bukaeratik jarraitzen
 pdfjs-find-reached-bottom = Dokumentuaren bukaerara heldu da, hasieratik jarraitzen
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count =
+    { $total ->
+        [one] { $total }/{ $current }. bat-etortzea
+       *[other] { $total }/{ $current }. bat-etortzea
+    }
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit =
+    { $limit ->
+        [one] Bat datorren { $limit } baino gehiago
+       *[other] Bat datozen { $limit } baino gehiago
+    }
 pdfjs-find-not-found = Esaldia ez da aurkitu
 
 ## Predefined zoom values
@@ -324,3 +339,11 @@ pdfjs-editor-alt-text-textarea =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
+pdfjs-editor-resizer-label-top-left = Goiko ezkerreko izkina — aldatu tamaina
+pdfjs-editor-resizer-label-top-middle = Goian erdian — aldatu tamaina
+pdfjs-editor-resizer-label-top-right = Goiko eskuineko izkina — aldatu tamaina
+pdfjs-editor-resizer-label-middle-right = Erdian eskuinean — aldatu tamaina
+pdfjs-editor-resizer-label-bottom-right = Beheko eskuineko izkina — aldatu tamaina
+pdfjs-editor-resizer-label-bottom-middle = Behean erdian — aldatu tamaina
+pdfjs-editor-resizer-label-bottom-left = Beheko ezkerreko izkina — aldatu tamaina
+pdfjs-editor-resizer-label-middle-left = Erdian ezkerrean —  aldatu tamaina
