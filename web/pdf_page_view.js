@@ -436,7 +436,10 @@ class PDFPageView {
       : null);
     const treeDom = this.structTreeLayer?.render(tree);
     if (treeDom) {
+      // Pause translation when inserting the structTree in the DOM.
+      this.l10n.pause();
       this.canvas?.append(treeDom);
+      this.l10n.resume();
     }
     this.structTreeLayer?.show();
   }
@@ -863,7 +866,12 @@ class PDFPageView {
         enablePermissions:
           this.#textLayerMode === TextLayerMode.ENABLE_PERMISSIONS,
       });
-      div.append(this.textLayer.div);
+      this.textLayer.onAppend = textLayerDiv => {
+        // Pause translation when inserting the textLayer in the DOM.
+        this.l10n.pause();
+        this.div.append(textLayerDiv);
+        this.l10n.resume();
+      };
     }
 
     if (
