@@ -255,23 +255,12 @@ async function scrollIntoView(page, selector) {
   await page.evaluate(sel => {
     const element = document.querySelector(sel);
     element.scrollIntoView({ behavior: "instant", block: "start" });
+    return new Promise(resolve => {
+      document
+        .getElementById("viewerContainer")
+        .addEventListener("scrollend", resolve, { once: true });
+    });
   }, selector);
-  await page.waitForFunction(
-    sel => {
-      const toolbarHeight = document
-        .querySelector("#toolbarContainer")
-        .getBoundingClientRect().height;
-      const element = document.querySelector(sel);
-      const { top, bottom } = element.getBoundingClientRect();
-      return (
-        Math.abs(top) < toolbarHeight + 100 ||
-        Math.abs(bottom - window.innerHeight) < 100 ||
-        (top > toolbarHeight && bottom < window.innerHeight)
-      );
-    },
-    {},
-    selector
-  );
 }
 
 async function hover(page, selector) {
