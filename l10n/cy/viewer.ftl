@@ -226,6 +226,29 @@ pdfjs-find-match-diacritics-checkbox-label = Diacritigau Cyfatebol
 pdfjs-find-entire-word-checkbox-label = Geiriau Cyfan
 pdfjs-find-reached-top = Wedi cyrraedd brig y dudalen, parhau o'r gwaelod
 pdfjs-find-reached-bottom = Wedi cyrraedd diwedd y dudalen, parhau o'r brig
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count =
+    { $total ->
+        [zero] { $current } o { $total } cydweddiadau
+        [one] { $current } o { $total } cydweddiad
+        [two] { $current } o { $total } gydweddiad
+        [few] { $current } o { $total } cydweddiad
+        [many] { $current } o { $total } chydweddiad
+       *[other] { $current } o { $total } cydweddiad
+    }
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit =
+    { $limit ->
+        [zero] Mwy nag { $limit } cydweddiadau
+        [one] Mwy nag { $limit } cydweddiad
+        [two] Mwy nag { $limit } gydweddiad
+        [few] Mwy nag { $limit } cydweddiad
+        [many] Mwy nag { $limit } chydweddiad
+       *[other] Mwy nag { $limit } cydweddiad
+    }
 pdfjs-find-not-found = Heb ganfod ymadrodd
 
 ## Predefined zoom values

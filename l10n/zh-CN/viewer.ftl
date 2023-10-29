@@ -226,6 +226,13 @@ pdfjs-find-match-diacritics-checkbox-label = 匹配变音符号
 pdfjs-find-entire-word-checkbox-label = 全词匹配
 pdfjs-find-reached-top = 到达文档开头，从末尾继续
 pdfjs-find-reached-bottom = 到达文档末尾，从开头继续
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count = 第 { $current } 项，共找到 { $total } 个匹配项
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit = 匹配超过 { $limit } 项
 pdfjs-find-not-found = 找不到指定词语
 
 ## Predefined zoom values

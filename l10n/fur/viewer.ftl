@@ -226,6 +226,21 @@ pdfjs-find-match-diacritics-checkbox-label = Corispondence diacritiche
 pdfjs-find-entire-word-checkbox-label = Peraulis interiis
 pdfjs-find-reached-top = Si è rivâts al inizi dal document e si à continuât de fin
 pdfjs-find-reached-bottom = Si è rivât ae fin dal document e si à continuât dal inizi
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count =
+    { $total ->
+        [one] { $current } di { $total } corispondence
+       *[other] { $current } di { $total } corispondencis
+    }
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit =
+    { $limit ->
+        [one] Plui di { $limit } corispondence
+       *[other] Plui di { $limit } corispondencis
+    }
 pdfjs-find-not-found = Test no cjatât
 
 ## Predefined zoom values

@@ -226,6 +226,21 @@ pdfjs-find-match-diacritics-checkbox-label = Диакритиканы ескер
 pdfjs-find-entire-word-checkbox-label = Сөздер толығымен
 pdfjs-find-reached-top = Құжаттың басына жеттік, соңынан бастап жалғастырамыз
 pdfjs-find-reached-bottom = Құжаттың соңына жеттік, басынан бастап жалғастырамыз
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count =
+    { $total ->
+        [one] { $current } сәйкестік, барлығы { $total }
+       *[other] { $current } сәйкестік, барлығы { $total }
+    }
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit =
+    { $limit ->
+        [one] { $limit } сәйкестіктен көп
+       *[other] { $limit } сәйкестіктен көп
+    }
 pdfjs-find-not-found = Сөз(дер) табылмады
 
 ## Predefined zoom values

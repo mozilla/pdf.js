@@ -226,6 +226,13 @@ pdfjs-find-match-diacritics-checkbox-label = Khớp dấu phụ
 pdfjs-find-entire-word-checkbox-label = Toàn bộ từ
 pdfjs-find-reached-top = Đã đến phần đầu tài liệu, quay trở lại từ cuối
 pdfjs-find-reached-bottom = Đã đến phần cuối của tài liệu, quay trở lại từ đầu
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count = { $current } trên { $total } kết quả
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit = Tìm thấy hơn { $limit } kết quả
 pdfjs-find-not-found = Không tìm thấy cụm từ này
 
 ## Predefined zoom values
