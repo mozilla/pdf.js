@@ -816,7 +816,7 @@ describe("Interaction", () => {
             "window.PDFViewerApplication.scriptingReady === true"
           );
 
-          await scrollIntoView(page, getSelector("171R"));
+          await scrollIntoView(page, getSelector("138R"));
 
           let sum = 0;
           for (const [id, val] of [
