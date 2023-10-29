@@ -570,7 +570,7 @@ class FreeTextEditor extends AnnotationEditor {
     // The goal is to sanitize and have something suitable for this
     // editor.
     bindEvents(this, this.div, ["dblclick", "keydown"]);
-
+    this.#setContent(); // still useful
     if (this.width) {
       // This editor was created in using copy (ctrl+c).
       const [parentWidth, parentHeight] = this.parentDimensions;
