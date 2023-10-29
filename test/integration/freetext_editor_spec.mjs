@@ -2981,4 +2981,76 @@ describe("FreeText Editor", () => {
       );
     });
   });
+
+  describe("Avoid to steal keyboard events", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check the keyboard event is limited to the input", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            // With Chrome something is wrong when serializing a DomRect,
+            // hence we extract the values and just return them.
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          const data = "Hello PDF.js World !!";
+          await page.mouse.click(rect.x + 100, rect.y + 100);
+          await page.waitForSelector(getEditorSelector(0), {
+            visible: true,
+          });
+          await page.type(`${getEditorSelector(0)} .internal`, data);
+
+          // Commit.
+          await page.keyboard.press("Escape");
+          await page.waitForSelector(
+            `${getEditorSelector(0)} .overlay.enabled`
+          );
+
+          let promise = page.evaluate(
+            () =>
+              new Promise(resolve => {
+                document.addEventListener("selectionchange", resolve, {
+                  once: true,
+                });
+              })
+          );
+          await page.click("#pageNumber");
+          await promise;
+
+          promise = page.evaluate(
+            () =>
+              new Promise(resolve => {
+                document
+                  .getElementById("pageNumber")
+                  .addEventListener("keyup", resolve, { once: true });
+              })
+          );
+          await page.keyboard.press("Backspace");
+          await promise;
+
+          let content = await page.$eval("#pageNumber", el =>
+            el.innerText.trimEnd()
+          );
+          expect(content).withContext(`In ${browserName}`).toEqual("");
+
+          content = await page.$eval(getEditorSelector(0), el =>
+            el.innerText.trimEnd()
+          );
+          expect(content).withContext(`In ${browserName}`).toEqual(data);
+        })
+      );
+    });
+  });
 });
