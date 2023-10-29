@@ -734,11 +734,9 @@ class AnnotationEditorLayer {
     }
     this.updateMode();
     if (this.#initialAnnotationsAdded) {
-      return;
+      // return;
     }
-    console.log(annotations, 'annotations3')
     if (!!annotations?.length) {
-      console.log(annotations, 'drawing ann4')
       for (const annotation of annotations) {
         const editor = new FreeTextEditor({
           parent: this,
