@@ -187,6 +187,8 @@ class PDFPageView {
     this.xfaLayer = null;
     this.structTreeLayer = null;
 
+    this.initialAnnotations = options.initialAnnotations;
+
     const div = document.createElement("div");
     div.className = "page";
     div.setAttribute("data-page-number", this.id);
@@ -343,10 +345,11 @@ class PDFPageView {
     }
   }
 
-  async #renderAnnotationEditorLayer() {
+  async #renderAnnotationEditorLayer(annotations) {
     let error = null;
     try {
-      await this.annotationEditorLayer.render(this.viewport, "display");
+      console.log(annotations, 'annot 654')
+      await this.annotationEditorLayer.render(this.viewport, "display", annotations);
     } catch (ex) {
       console.error(`#renderAnnotationEditorLayer: "${ex}".`);
       error = ex;
@@ -823,7 +826,8 @@ class PDFPageView {
     }
   }
 
-  async draw() {
+  async draw(annotations) {
+    console.log(annotations, 'annotationsdraw2')
     if (this.renderingState !== RenderingStates.INITIAL) {
       console.error("Must be in new state before drawing");
       this.reset(); // Ensure that we reset all state to prevent issues.
@@ -1003,7 +1007,7 @@ class PDFPageView {
             annotationLayer: this.annotationLayer?.annotationLayer,
           });
         }
-        this.#renderAnnotationEditorLayer();
+        this.#renderAnnotationEditorLayer(annotations);
       },
       error => {
         // When zooming with a `drawingDelay` set, avoid temporarily showing

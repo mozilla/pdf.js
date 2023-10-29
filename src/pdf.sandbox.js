@@ -17,7 +17,7 @@ import ModuleLoader from "../external/quickjs/quickjs-eval.js";
 import { SandboxSupportBase } from "./pdf.sandbox.external.js";
 
 /* eslint-disable-next-line no-unused-vars */
-const pdfjsVersion = PDFJSDev.eval("BUNDLE_VERSION");
+const pdfjsVersion = '3.10.111'
 /* eslint-disable-next-line no-unused-vars */
 const pdfjsBuild = PDFJSDev.eval("BUNDLE_BUILD");
 

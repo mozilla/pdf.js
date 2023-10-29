@@ -61,7 +61,7 @@ class AnnotationEditorLayerBuilder {
    * @param {PageViewport} viewport
    * @param {string} intent (default value is 'display')
    */
-  async render(viewport, intent = "display") {
+  async render(viewport, intent = "display", annotations) {
     if (intent !== "display") {
       return;
     }
@@ -93,11 +93,11 @@ class AnnotationEditorLayerBuilder {
       viewport: clonedViewport,
       annotationLayer: this.#annotationLayer,
     });
-
+    console.log(annotations, 'annotations66')
     const parameters = {
       viewport: clonedViewport,
       div,
-      annotations: null,
+      annotations: annotations || null,
       intent,
     };
 

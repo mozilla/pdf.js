@@ -231,11 +231,6 @@ class PDFViewer {
   constructor(options) {
     const viewerVersion =
       typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_VERSION") : null;
-    if (version !== viewerVersion) {
-      throw new Error(
-        `The API version "${version}" does not match the Viewer version "${viewerVersion}".`
-      );
-    }
     this.container = options.container;
     this.viewer = options.viewer || options.container.firstElementChild;
 
@@ -887,7 +882,38 @@ class PDFViewer {
           );
         }
 
+        const allAnnotations = [
+          {
+            pageNumber: 1,
+            content: "Fruit5",
+            x: 60,
+            y: 40
+          },
+          {
+            pageNumber: 1,
+            content: "Fruit52",
+            x: 20,
+            y: 100
+          },
+          {
+            pageNumber: 3,
+            content: "Fruit9",
+            x: 80,
+            y: 30
+          }
+        ]
+        console.log(allAnnotations, 'whadd')
+        const annotationsByPage = {};
+        allAnnotations.forEach(annotation => {
+            if (!annotationsByPage[annotation.pageNumber]) {
+                annotationsByPage[annotation.pageNumber] = [];
+            }
+            annotationsByPage[annotation.pageNumber].push(annotation);
+        });
+
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
+          const pageAnnotations = annotationsByPage[pageNum] || [];
+
           const pageView = new PDFPageView({
             container: viewerElement,
             eventBus: this.eventBus,
@@ -904,6 +930,7 @@ class PDFViewer {
             pageColors: this.pageColors,
             l10n: this.l10n,
             layerProperties,
+            initialAnnotations: pageAnnotations
           });
           this._pages.push(pageView);
         }
@@ -1734,7 +1761,7 @@ class PDFViewer {
 
     if (pageView) {
       this.#ensurePdfPageLoaded(pageView).then(() => {
-        this.renderingQueue.renderView(pageView);
+        this.renderingQueue.renderView(pageView, pageView.initialAnnotations);
       });
       return true;
     }

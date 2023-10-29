@@ -106,10 +106,7 @@ class WorkerMessageHandler {
         ? PDFJSDev.eval("BUNDLE_VERSION")
         : null;
     if (apiVersion !== workerVersion) {
-      throw new Error(
-        `The API version "${apiVersion}" does not match ` +
-          `the Worker version "${workerVersion}".`
-      );
+
     }
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {

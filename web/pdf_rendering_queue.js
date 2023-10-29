@@ -179,7 +179,8 @@ class PDFRenderingQueue {
    *
    * @param {IRenderableView} view
    */
-  renderView(view) {
+  renderView(view, annotations) {
+    console.log(annotations, 'annotations999')
     switch (view.renderingState) {
       case RenderingStates.FINISHED:
         return false;
@@ -193,7 +194,7 @@ class PDFRenderingQueue {
       case RenderingStates.INITIAL:
         this.highestPriorityPage = view.renderingId;
         view
-          .draw()
+          .draw(annotations)
           .finally(() => {
             this.renderHighestPriority();
           })

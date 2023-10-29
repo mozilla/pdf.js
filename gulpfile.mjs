@@ -2167,7 +2167,7 @@ gulp.task(
 );
 
 function packageJson() {
-  const VERSION = getVersionJSON().version;
+  const VERSION = '3.10.111'
 
   const DIST_NAME = "pdfjs-dist";
   const DIST_DESCRIPTION = "Generic build of Mozilla's PDF.js library.";
@@ -2341,7 +2341,7 @@ gulp.task(
 gulp.task(
   "dist",
   gulp.series("dist-pre", function createDist(done) {
-    const VERSION = getVersionJSON().version;
+    const VERSION = '3.10.111'
 
     console.log();
     console.log("### Committing changes");
