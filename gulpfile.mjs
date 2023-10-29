@@ -1749,7 +1749,6 @@ gulp.task(
     return streamqueue(
       { objectMode: true },
       createTestSource("unit", { bot: true }),
-      createTestSource("font", { bot: true }),
       createTestSource("browser", { bot: true }),
       createTestSource("integration")
     );
@@ -1774,7 +1773,6 @@ gulp.task(
     return streamqueue(
       { objectMode: true },
       createTestSource("unit", { bot: true }),
-      createTestSource("font", { bot: true }),
       createTestSource("browser", { bot: true, xfaOnly: true }),
       createTestSource("integration")
     );
