@@ -511,10 +511,12 @@ class FreeTextEditor extends AnnotationEditor {
 
   editorDivBlur(event) {
     this.isEditing = false;
+    console.log(this, 'this bro')
   }
 
   editorDivInput(event) {
     this.parent.div.classList.toggle("freeTextEditing", this.isEmpty());
+    this._uiManager.dispatchUpdateAnnotation({event, current: this})
   }
 
   /** @inheritdoc */

@@ -1022,6 +1022,14 @@ class AnnotationEditorUIManager {
     });
   }
 
+  dispatchUpdateAnnotation(details) {
+    console.log("DOGGG")
+    this.#eventBus.dispatch("annotationchanged", {
+      source: this,
+      details,
+    });
+  }
+
   /**
    * Set the editing state.
    * It can be useful to temporarily disable it when the user is editing a

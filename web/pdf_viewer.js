@@ -739,7 +739,7 @@ class PDFViewer {
   /**
    * @param {PDFDocumentProxy} pdfDocument
    */
-  setDocument(pdfDocument) {
+  setDocument(pdfDocument, initialAnnotations) {
     if (this.pdfDocument) {
       this.eventBus.dispatch("pagesdestroy", { source: this });
 
@@ -882,29 +882,8 @@ class PDFViewer {
           );
         }
 
-        const allAnnotations = [
-          {
-            pageNumber: 1,
-            content: "Fruit5",
-            x: 60,
-            y: 40
-          },
-          {
-            pageNumber: 1,
-            content: "Fruit52",
-            x: 20,
-            y: 100
-          },
-          {
-            pageNumber: 3,
-            content: "Fruit9",
-            x: 80,
-            y: 30
-          }
-        ]
-        console.log(allAnnotations, 'whadd')
         const annotationsByPage = {};
-        allAnnotations.forEach(annotation => {
+        initialAnnotations.forEach(annotation => {
             if (!annotationsByPage[annotation.pageNumber]) {
                 annotationsByPage[annotation.pageNumber] = [];
             }
