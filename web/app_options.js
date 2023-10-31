@@ -400,10 +400,13 @@ class AppOptions {
     for (const name in defaultOptions) {
       const defaultOption = defaultOptions[name];
       if (kind) {
-        if ((kind & defaultOption.kind) === 0) {
+        if (!(kind & defaultOption.kind)) {
           continue;
         }
-        if (kind === OptionKind.PREFERENCE) {
+        if (
+          (typeof PDFJSDev === "undefined" || PDFJSDev.test("LIB")) &&
+          kind === OptionKind.PREFERENCE
+        ) {
           if (defaultOption.kind & OptionKind.BROWSER) {
             throw new Error(`Invalid kind for preference: ${name}`);
           }
