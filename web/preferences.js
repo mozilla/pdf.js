@@ -45,14 +45,25 @@ class BasePreferences {
     }
 
     this.#initializedPromise = this._readFromStorage(this.#defaults).then(
-      prefs => {
+      ({ browserPrefs, prefs }) => {
+        const BROWSER_PREFS =
+          typeof PDFJSDev === "undefined"
+            ? AppOptions.getAll(OptionKind.BROWSER)
+            : PDFJSDev.eval("BROWSER_PREFERENCES");
+        const options = Object.create(null);
+
+        for (const [name, defaultVal] of Object.entries(BROWSER_PREFS)) {
+          const prefVal = browserPrefs?.[name];
+          options[name] =
+            typeof prefVal === typeof defaultVal ? prefVal : defaultVal;
+        }
         for (const [name, defaultVal] of Object.entries(this.#defaults)) {
           const prefVal = prefs?.[name];
           // Ignore preferences whose types don't match the default values.
-          this.#prefs[name] =
+          options[name] = this.#prefs[name] =
             typeof prefVal === typeof defaultVal ? prefVal : defaultVal;
         }
-        AppOptions.setAll(this.#prefs, /* init = */ true);
+        AppOptions.setAll(options, /* init = */ true);
       }
     );
   }
