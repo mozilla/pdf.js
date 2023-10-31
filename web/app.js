@@ -120,35 +120,8 @@ class DefaultExternalServices {
     throw new Error("Not implemented: createScripting");
   }
 
-  static get supportsPinchToZoom() {
-    return shadow(this, "supportsPinchToZoom", true);
-  }
-
-  static get supportsIntegratedFind() {
-    return shadow(this, "supportsIntegratedFind", false);
-  }
-
-  static get supportsDocumentFonts() {
-    return shadow(this, "supportsDocumentFonts", true);
-  }
-
-  static get supportedMouseWheelZoomModifierKeys() {
-    return shadow(this, "supportedMouseWheelZoomModifierKeys", {
-      ctrlKey: true,
-      metaKey: true,
-    });
-  }
-
-  static get isInAutomation() {
-    return shadow(this, "isInAutomation", false);
-  }
-
   static updateEditorStates(data) {
     throw new Error("Not implemented: updateEditorStates");
-  }
-
-  static get canvasMaxAreaInBytes() {
-    return shadow(this, "canvasMaxAreaInBytes", -1);
   }
 
   static getNimbusExperimentData() {
@@ -421,7 +394,7 @@ const PDFViewerApplication = {
   async _initializeViewerComponents() {
     const { appConfig, externalServices, l10n } = this;
 
-    const eventBus = externalServices.isInAutomation
+    const eventBus = AppOptions.get("isInAutomation")
       ? new AutomationEventBus()
       : new EventBus();
     this.eventBus = eventBus;
@@ -722,7 +695,7 @@ const PDFViewerApplication = {
       });
     }
 
-    if (!this.supportsDocumentFonts) {
+    if (!AppOptions.get("supportsDocumentFonts")) {
       AppOptions.set("disableFontFace", true);
       this.l10n.get("pdfjs-web-fonts-disabled").then(msg => {
         console.warn(msg);
@@ -825,15 +798,19 @@ const PDFViewerApplication = {
   },
 
   get supportsPinchToZoom() {
-    return this.externalServices.supportsPinchToZoom;
+    return shadow(
+      this,
+      "supportsPinchToZoom",
+      AppOptions.get("supportsPinchToZoom")
+    );
   },
 
   get supportsIntegratedFind() {
-    return this.externalServices.supportsIntegratedFind;
-  },
-
-  get supportsDocumentFonts() {
-    return this.externalServices.supportsDocumentFonts;
+    return shadow(
+      this,
+      "supportsIntegratedFind",
+      AppOptions.get("supportsIntegratedFind")
+    );
   },
 
   get loadingBar() {
@@ -842,8 +819,20 @@ const PDFViewerApplication = {
     return shadow(this, "loadingBar", bar);
   },
 
-  get supportedMouseWheelZoomModifierKeys() {
-    return this.externalServices.supportedMouseWheelZoomModifierKeys;
+  get supportsMouseWheelZoomCtrlKey() {
+    return shadow(
+      this,
+      "supportsMouseWheelZoomCtrlKey",
+      AppOptions.get("supportsMouseWheelZoomCtrlKey")
+    );
+  },
+
+  get supportsMouseWheelZoomMetaKey() {
+    return shadow(
+      this,
+      "supportsMouseWheelZoomMetaKey",
+      AppOptions.get("supportsMouseWheelZoomMetaKey")
+    );
   },
 
   initPassiveLoading(file) {
@@ -1034,7 +1023,7 @@ const PDFViewerApplication = {
     // Set the necessary API parameters, using all the available options.
     const apiParams = AppOptions.getAll(OptionKind.API);
     const params = {
-      canvasMaxAreaInBytes: this.externalServices.canvasMaxAreaInBytes,
+      canvasMaxAreaInBytes: AppOptions.get("canvasMaxAreaInBytes"),
       ...apiParams,
       ...args,
     };
@@ -2648,7 +2637,8 @@ function setZoomDisabledTimeout() {
 function webViewerWheel(evt) {
   const {
     pdfViewer,
-    supportedMouseWheelZoomModifierKeys,
+    supportsMouseWheelZoomCtrlKey,
+    supportsMouseWheelZoomMetaKey,
     supportsPinchToZoom,
   } = PDFViewerApplication;
 
@@ -2687,8 +2677,8 @@ function webViewerWheel(evt) {
 
   if (
     isPinchToZoom ||
-    (evt.ctrlKey && supportedMouseWheelZoomModifierKeys.ctrlKey) ||
-    (evt.metaKey && supportedMouseWheelZoomModifierKeys.metaKey)
+    (evt.ctrlKey && supportsMouseWheelZoomCtrlKey) ||
+    (evt.metaKey && supportsMouseWheelZoomMetaKey)
   ) {
     // Only zoom the pages, not the entire viewer.
     evt.preventDefault();

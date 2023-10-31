@@ -41,6 +41,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 }
 
 const OptionKind = {
+  BROWSER: 0x01,
   VIEWER: 0x02,
   API: 0x04,
   WORKER: 0x08,
@@ -53,6 +54,42 @@ const OptionKind = {
  *       primitive types and cannot rely on any imported types.
  */
 const defaultOptions = {
+  canvasMaxAreaInBytes: {
+    /** @type {number} */
+    value: -1,
+    kind: OptionKind.BROWSER,
+  },
+  isInAutomation: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.BROWSER,
+  },
+  supportsDocumentFonts: {
+    /** @type {boolean} */
+    value: true,
+    kind: OptionKind.BROWSER,
+  },
+  supportsIntegratedFind: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.BROWSER,
+  },
+  supportsMouseWheelZoomCtrlKey: {
+    /** @type {boolean} */
+    value: true,
+    kind: OptionKind.BROWSER,
+  },
+  supportsMouseWheelZoomMetaKey: {
+    /** @type {boolean} */
+    value: true,
+    kind: OptionKind.BROWSER,
+  },
+  supportsPinchToZoom: {
+    /** @type {boolean} */
+    value: true,
+    kind: OptionKind.BROWSER,
+  },
+
   annotationEditorMode: {
     /** @type {number} */
     value: 0,
@@ -367,6 +404,9 @@ class AppOptions {
           continue;
         }
         if (kind === OptionKind.PREFERENCE) {
+          if (defaultOption.kind & OptionKind.BROWSER) {
+            throw new Error(`Invalid kind for preference: ${name}`);
+          }
           const value = defaultOption.value,
             valueType = typeof value;
 
