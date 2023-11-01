@@ -188,6 +188,9 @@ function createWebpackConfig(
     BUNDLE_VERSION: versionInfo.version,
     BUNDLE_BUILD: versionInfo.commit,
     TESTING: defines.TESTING ?? process.env.TESTING === "true",
+    BROWSER_PREFERENCES: defaultPreferencesDir
+      ? getBrowserPreferences(defaultPreferencesDir)
+      : {},
     DEFAULT_PREFERENCES: defaultPreferencesDir
       ? getDefaultPreferences(defaultPreferencesDir)
       : {},
@@ -811,15 +814,30 @@ async function parseDefaultPreferences(dir) {
     "./" + DEFAULT_PREFERENCES_DIR + dir + "app_options.mjs"
   );
 
+  const browserPrefs = AppOptions.getAll(OptionKind.BROWSER);
+  if (Object.keys(browserPrefs).length === 0) {
+    throw new Error("No browser preferences found.");
+  }
   const prefs = AppOptions.getAll(OptionKind.PREFERENCE);
   if (Object.keys(prefs).length === 0) {
     throw new Error("No default preferences found.");
   }
 
   fs.writeFileSync(
+    DEFAULT_PREFERENCES_DIR + dir + "browser_preferences.json",
+    JSON.stringify(browserPrefs)
+  );
+  fs.writeFileSync(
     DEFAULT_PREFERENCES_DIR + dir + "default_preferences.json",
     JSON.stringify(prefs)
   );
+}
+
+function getBrowserPreferences(dir) {
+  const str = fs
+    .readFileSync(DEFAULT_PREFERENCES_DIR + dir + "browser_preferences.json")
+    .toString();
+  return JSON.parse(str);
 }
 
 function getDefaultPreferences(dir) {
@@ -1581,6 +1599,9 @@ function buildLib(defines, dir) {
     BUNDLE_VERSION: versionInfo.version,
     BUNDLE_BUILD: versionInfo.commit,
     TESTING: defines.TESTING ?? process.env.TESTING === "true",
+    BROWSER_PREFERENCES: getBrowserPreferences(
+      defines.SKIP_BABEL ? "lib/" : "lib-legacy/"
+    ),
     DEFAULT_PREFERENCES: getDefaultPreferences(
       defines.SKIP_BABEL ? "lib/" : "lib-legacy/"
     ),
