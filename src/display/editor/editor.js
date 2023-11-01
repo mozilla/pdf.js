@@ -91,7 +91,7 @@ class AnnotationEditor {
       (360 + rotation - this._uiManager.viewParameters.rotation) % 360;
     this.pageDimensions = [pageWidth, pageHeight];
     this.pageTranslation = [pageX, pageY];
-
+    
     const [width, height] = this.parentDimensions;
     this.x = parameters.x / width;
     this.y = parameters.y / height;
@@ -392,6 +392,8 @@ class AnnotationEditor {
 
     this.x = x / pageWidth;
     this.y = y / pageHeight;
+
+    console.log(this.x, 'setted x', pageWidth, 'ww', x)
 
     this.div.style.left = `${(100 * this.x).toFixed(2)}%`;
     this.div.style.top = `${(100 * this.y).toFixed(2)}%`;

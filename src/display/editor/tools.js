@@ -1023,7 +1023,6 @@ class AnnotationEditorUIManager {
   }
 
   dispatchUpdateAnnotation(details) {
-    console.log("DOGGG")
     this.#eventBus.dispatch("annotationchanged", {
       source: this,
       details,

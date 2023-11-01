@@ -46,7 +46,7 @@ class FreeTextEditor extends AnnotationEditor {
 
   #color;
 
-  #content = "";
+  content = "";
 
   #editorDivId = `${this.id}-editor`;
 
@@ -141,7 +141,7 @@ class FreeTextEditor extends AnnotationEditor {
       FreeTextEditor._defaultColor ||
       AnnotationEditor._defaultLineColor;
     this.#fontSize = params.fontSize || FreeTextEditor._defaultFontSize;
-    this.#content = params.content;
+    this.content = params.content;
   }
 
   /** @inheritdoc */
@@ -442,14 +442,14 @@ class FreeTextEditor extends AnnotationEditor {
 
     super.commit();
     this.disableEditMode();
-    const savedText = this.#content;
-    const newText = (this.#content = this.#extractText().trimEnd());
+    const savedText = this.content;
+    const newText = (this.content = this.#extractText().trimEnd());
     if (savedText === newText) {
       return;
     }
 
     const setText = text => {
-      this.#content = text;
+      this.content = text;
       if (!text) {
         this.remove();
         return;
@@ -516,7 +516,7 @@ class FreeTextEditor extends AnnotationEditor {
 
   editorDivInput(event) {
     this.parent.div.classList.toggle("freeTextEditing", this.isEmpty());
-    this._uiManager.dispatchUpdateAnnotation({event, current: this})
+    this._uiManager.dispatchUpdateAnnotation({event, current: this, text: event.target.innerText})
   }
 
   /** @inheritdoc */
@@ -645,10 +645,10 @@ class FreeTextEditor extends AnnotationEditor {
 
   #setContent() {
     this.editorDiv.replaceChildren();
-    if (!this.#content) {
+    if (!this.content) {
       return;
     }
-    for (const line of this.#content.split("\n")) {
+    for (const line of this.content.split("\n")) {
       const div = document.createElement("div");
       div.append(
         line ? document.createTextNode(line) : document.createElement("br")
@@ -701,7 +701,7 @@ class FreeTextEditor extends AnnotationEditor {
 
     editor.#fontSize = data.fontSize;
     editor.#color = Util.makeHexColor(...data.color);
-    editor.#content = data.value;
+    editor.content = data.value;
     editor.annotationElementId = data.id || null;
     editor.#initialData = initialData;
 
@@ -734,7 +734,7 @@ class FreeTextEditor extends AnnotationEditor {
       annotationType: AnnotationEditorType.FREETEXT,
       color,
       fontSize: this.#fontSize,
-      value: this.#content,
+      value: this.content,
       pageIndex: this.pageIndex,
       rect,
       rotation: this.rotation,

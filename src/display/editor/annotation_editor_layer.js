@@ -720,9 +720,10 @@ class AnnotationEditorLayer {
     }
     if (!!annotations?.length) {
       for (const annotation of annotations) {
+        console.log(annotation.x, 'annotx22')
         const editor = new FreeTextEditor({
           parent: this,
-          id: this.getNextId(),
+          id: annotation.id || this.getNextId(),
           x: annotation.x, // Top right corner
           y: annotation.y, // Top right corner
           uiManager: this.#uiManager,
