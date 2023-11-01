@@ -352,7 +352,7 @@ class ChromePreferences extends BasePreferences {
           defaultPrefs = this.defaults;
         }
         storageArea.get(defaultPrefs, function (readPrefs) {
-          resolve(readPrefs);
+          resolve({ prefs: readPrefs });
         });
       };
 

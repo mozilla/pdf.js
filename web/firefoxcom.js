@@ -14,7 +14,7 @@
  */
 
 import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
-import { isPdfFile, PDFDataRangeTransport, shadow } from "pdfjs-lib";
+import { isPdfFile, PDFDataRangeTransport } from "pdfjs-lib";
 import { BasePreferences } from "./preferences.js";
 import { DEFAULT_SCALE_VALUE } from "./ui_utils.js";
 import { L10n } from "./l10n.js";
@@ -432,40 +432,6 @@ class FirefoxExternalServices extends DefaultExternalServices {
 
   static createScripting(options) {
     return FirefoxScripting;
-  }
-
-  static get supportsPinchToZoom() {
-    const support = FirefoxCom.requestSync("supportsPinchToZoom");
-    return shadow(this, "supportsPinchToZoom", support);
-  }
-
-  static get supportsIntegratedFind() {
-    const support = FirefoxCom.requestSync("supportsIntegratedFind");
-    return shadow(this, "supportsIntegratedFind", support);
-  }
-
-  static get supportsDocumentFonts() {
-    const support = FirefoxCom.requestSync("supportsDocumentFonts");
-    return shadow(this, "supportsDocumentFonts", support);
-  }
-
-  static get supportedMouseWheelZoomModifierKeys() {
-    const support = FirefoxCom.requestSync(
-      "supportedMouseWheelZoomModifierKeys"
-    );
-    return shadow(this, "supportedMouseWheelZoomModifierKeys", support);
-  }
-
-  static get isInAutomation() {
-    // Returns the value of `Cu.isInAutomation`, which is only `true` when e.g.
-    // various test-suites are running in mozilla-central.
-    const isInAutomation = FirefoxCom.requestSync("isInAutomation");
-    return shadow(this, "isInAutomation", isInAutomation);
-  }
-
-  static get canvasMaxAreaInBytes() {
-    const maxArea = FirefoxCom.requestSync("getCanvasMaxArea");
-    return shadow(this, "canvasMaxAreaInBytes", maxArea);
   }
 
   static async getNimbusExperimentData() {
