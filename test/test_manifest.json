@@ -8189,5 +8189,13 @@
       "link": true,
       "rounds": 1,
       "type": "eq"
-   }
+   },
+   { 
+      "id": "issue17215-annotations",
+      "file": "pdfs/issue17215.pdf",
+      "md5": "968848af6ef593a3d1d6aba030ef47cb",
+      "rounds": 1,
+      "type": "eq",
+      "annotations": true
+   }   
 ]
