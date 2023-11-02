@@ -244,7 +244,7 @@ class XfaLayer {
         });
       }
 
-      if (child.children && child.children.length > 0) {
+      if (child.children?.length > 0) {
         stack.push([child, -1, childHtml]);
       } else if (child.value) {
         const node = document.createTextNode(child.value);
