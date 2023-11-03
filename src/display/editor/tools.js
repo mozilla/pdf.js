@@ -58,7 +58,7 @@ class IdManager {
   getId() {
     const timestamp = Date.now();
     const random = crypto.randomUUID();
-    return `${timestamp}${random}`;
+    return `id_${timestamp}${random}`;
   }
 }
 
