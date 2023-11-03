@@ -1020,19 +1020,20 @@ const PDFViewerApplication = {
         /* downloadUrl = */ args.url
       );
     }
+    // Always set `docBaseUrl` in development mode, and in the (various)
+    // extension builds.
+    if (typeof PDFJSDev === "undefined") {
+      AppOptions.set("docBaseUrl", document.URL.split("#")[0]);
+    } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
+      AppOptions.set("docBaseUrl", this.baseUrl);
+    }
+
     // Set the necessary API parameters, using all the available options.
     const apiParams = AppOptions.getAll(OptionKind.API);
-    const params = {
+    const loadingTask = getDocument({
       ...apiParams,
       ...args,
-    };
-
-    if (typeof PDFJSDev === "undefined") {
-      params.docBaseUrl ||= document.URL.split("#")[0];
-    } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
-      params.docBaseUrl ||= this.baseUrl;
-    }
-    const loadingTask = getDocument(params);
+    });
     this.pdfLoadingTask = loadingTask;
 
     loadingTask.onPassword = (updateCallback, reason) => {
