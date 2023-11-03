@@ -883,7 +883,7 @@ class PDFViewer {
         }
 
         const annotationsByPage = {};
-        initialAnnotations.forEach(annotation => {
+        initialAnnotations?.forEach(annotation => {
             if (!annotationsByPage[annotation.pageNumber]) {
                 annotationsByPage[annotation.pageNumber] = [];
             }
