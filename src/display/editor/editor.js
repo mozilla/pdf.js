@@ -96,6 +96,11 @@ class AnnotationEditor {
     this.x = parameters.x / width;
     this.y = parameters.y / height;
 
+    if (parameters.initialX && parameters.initialY) {
+      this.x = parameters.initialX;
+      this.y = parameters.initialY;
+    }
+
     this.isAttachedToDOM = false;
     this.deleted = false;
   }
@@ -309,7 +314,7 @@ class AnnotationEditor {
 
     this.x = (x + tx) / width;
     this.y = (y + ty) / height;
-
+    console.log("setat3")
     this.fixAndSetPosition();
   }
 
@@ -562,6 +567,7 @@ class AnnotationEditor {
 
     const pointerUpCallback = () => {
       this._isDraggable = savedDraggable;
+
       window.removeEventListener("pointerup", pointerUpCallback);
       window.removeEventListener("blur", pointerUpCallback);
       window.removeEventListener(
@@ -771,6 +777,7 @@ class AnnotationEditor {
     }
 
     const [tx, ty] = this.getInitialTranslation();
+    console.log('txty', tx, ty)
     this.translate(tx, ty);
 
     bindEvents(this, this.div, ["pointerdown"]);
@@ -818,6 +825,17 @@ class AnnotationEditor {
     }
 
     const pointerUpCallback = () => {
+      console.log(this, "up callback", this._isDraggable, this.x, 'con', this.y, 'id', this.id)
+      if (!this.id) {
+        console.log(this, 'bad this')
+        return;
+      }
+      this._uiManager._eventBus.dispatch("annotationeditormoved", {
+        source: this,
+        id: this.id,
+        x: this.x,
+        y: this.y
+      });
       window.removeEventListener("pointerup", pointerUpCallback);
       window.removeEventListener("blur", pointerUpCallback);
       if (isSelected) {
@@ -857,6 +875,7 @@ class AnnotationEditor {
     parent.changeParent(this);
     this.x = x;
     this.y = y;
+    console.log("_setParentAndPosition44")
     this.fixAndSetPosition();
     this.moveInDOM();
   }

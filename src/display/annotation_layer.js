@@ -3000,7 +3000,7 @@ class AnnotationLayer {
       if (element.annotationEditorType > 0) {
         this.#editableAnnotations.set(element.data.id, element);
       }
-
+      console.log("rendering3", element)
       const rendered = element.render();
       if (data.hidden) {
         rendered.style.visibility = "hidden";

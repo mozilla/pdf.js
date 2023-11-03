@@ -142,6 +142,8 @@ class FreeTextEditor extends AnnotationEditor {
       AnnotationEditor._defaultLineColor;
     this.#fontSize = params.fontSize || FreeTextEditor._defaultFontSize;
     this.content = params.content;
+    this.initialX = params.initialX;
+    this.initialY = params.initialY;
   }
 
   /** @inheritdoc */
@@ -272,6 +274,10 @@ class FreeTextEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   getInitialTranslation() {
+    if (typeof this.initialX === "number") {
+      return [0, 0]
+    }
+    console.log(this.initialX, 'anything here?')
     // The start of the base line is where the user clicked.
     const scale = this.parentScale;
     return [

@@ -719,13 +719,18 @@ class AnnotationEditorLayer {
       return;
     }
     if (!!annotations?.length) {
+      const [pageWidth, pageHeight] = this.pageDimensions;
+      const test = this.parentDimensions;
+      console.log(test, 'parentWidth, parentHeight', this, pageWidth, pageHeight)
+      // const { parentScale } = this;
+      // console.log(pageWidth, 'pagewidth33', parentScale)
       for (const annotation of annotations) {
         console.log(annotation.x, 'annotx22')
         const editor = new FreeTextEditor({
           parent: this,
           id: annotation.id || this.getNextId(),
-          x: annotation.x, // Top right corner
-          y: annotation.y, // Top right corner
+          initialX: annotation.x, // Top right corner
+          initialY: annotation.y, // Top right corner
           uiManager: this.#uiManager,
           isCentered: false,
           content: annotation.content
