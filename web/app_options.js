@@ -57,7 +57,7 @@ const defaultOptions = {
   canvasMaxAreaInBytes: {
     /** @type {number} */
     value: -1,
-    kind: OptionKind.BROWSER,
+    kind: OptionKind.BROWSER + OptionKind.API,
   },
   isInAutomation: {
     /** @type {boolean} */
