@@ -1023,7 +1023,6 @@ const PDFViewerApplication = {
     // Set the necessary API parameters, using all the available options.
     const apiParams = AppOptions.getAll(OptionKind.API);
     const params = {
-      canvasMaxAreaInBytes: AppOptions.get("canvasMaxAreaInBytes"),
       ...apiParams,
       ...args,
     };
