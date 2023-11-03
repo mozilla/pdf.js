@@ -870,10 +870,10 @@ const PDFViewerApplication = {
 
   setTitleUsingUrl(url = "", downloadUrl = null) {
     this.url = url;
-    this.baseUrl = url.split("#")[0];
+    this.baseUrl = url.split("#", 1)[0];
     if (downloadUrl) {
       this._downloadUrl =
-        downloadUrl === url ? this.baseUrl : downloadUrl.split("#")[0];
+        downloadUrl === url ? this.baseUrl : downloadUrl.split("#", 1)[0];
     }
     if (isDataScheme(url)) {
       this._hideViewBookmark();
@@ -1023,7 +1023,7 @@ const PDFViewerApplication = {
     // Always set `docBaseUrl` in development mode, and in the (various)
     // extension builds.
     if (typeof PDFJSDev === "undefined") {
-      AppOptions.set("docBaseUrl", document.URL.split("#")[0]);
+      AppOptions.set("docBaseUrl", document.URL.split("#", 1)[0]);
     } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
       AppOptions.set("docBaseUrl", this.baseUrl);
     }
@@ -1252,7 +1252,7 @@ const PDFViewerApplication = {
     this.secondaryToolbar?.setPagesCount(pdfDocument.numPages);
 
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
-      const baseUrl = location.href.split("#")[0];
+      const baseUrl = location.href.split("#", 1)[0];
       // Ignore "data:"-URLs for performance reasons, even though it may cause
       // internal links to not work perfectly in all cases (see bug 1803050).
       this.pdfLinkService.setDocument(
