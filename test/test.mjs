@@ -339,7 +339,7 @@ function startRefTest(masterMode, showRefImages) {
     server.hooks.POST.push(refTestPostHandler);
     onAllSessionsClosed = finalize;
 
-    const startUrl = `http://${host}:${server.port}/test/test_slave.html`;
+    const baseUrl = `http://${host}:${server.port}/test/test_slave.html`;
     await startBrowsers(function (session) {
       session.masterMode = masterMode;
       session.taskResults = {};
@@ -358,7 +358,7 @@ function startRefTest(masterMode, showRefImages) {
       session.numEqNoSnapshot = 0;
       session.numEqFailures = 0;
       monitorBrowserTimeout(session, handleSessionTimeout);
-    }, makeTestUrl(startUrl));
+    }, baseUrl);
   }
   function checkRefsTmp() {
     if (masterMode && fs.existsSync(refsTmpDir)) {
@@ -793,29 +793,16 @@ function onAllSessionsClosedAfterTests(name) {
   };
 }
 
-function makeTestUrl(startUrl) {
-  return function (browserName) {
-    const queryParameters =
-      `?browser=${encodeURIComponent(browserName)}` +
-      `&manifestFile=${encodeURIComponent("/test/" + options.manifestFile)}` +
-      `&testFilter=${JSON.stringify(options.testfilter)}` +
-      `&xfaOnly=${options.xfaOnly}` +
-      `&delay=${options.statsDelay}` +
-      `&masterMode=${options.masterMode}`;
-    return startUrl + queryParameters;
-  };
-}
-
 async function startUnitTest(testUrl, name) {
   onAllSessionsClosed = onAllSessionsClosedAfterTests(name);
   startServer();
   server.hooks.POST.push(unitTestPostHandler);
 
-  const startUrl = `http://${host}:${server.port}${testUrl}`;
+  const baseUrl = `http://${host}:${server.port}${testUrl}`;
   await startBrowsers(function (session) {
     session.numRuns = 0;
     session.numErrors = 0;
-  }, makeTestUrl(startUrl));
+  }, baseUrl);
 }
 
 async function startIntegrationTest() {
@@ -971,7 +958,7 @@ async function startBrowser(browserName, startUrl = "") {
   return browser;
 }
 
-async function startBrowsers(initSessionCallback, makeStartUrl = null) {
+async function startBrowsers(initSessionCallback, baseUrl = null) {
   // Remove old browser revisions from Puppeteer's cache. Updating Puppeteer can
   // cause new browser revisions to be downloaded, so trimming the cache will
   // prevent the disk from filling up over time.
@@ -995,7 +982,20 @@ async function startBrowsers(initSessionCallback, makeStartUrl = null) {
       closed: false,
     };
     sessions.push(session);
-    const startUrl = makeStartUrl ? makeStartUrl(browserName) : "";
+
+    // Construct the start URL from the base URL by appending query parameters
+    // for the runner if necessary.
+    let startUrl = "";
+    if (baseUrl) {
+      const queryParameters =
+        `?browser=${encodeURIComponent(browserName)}` +
+        `&manifestFile=${encodeURIComponent("/test/" + options.manifestFile)}` +
+        `&testFilter=${JSON.stringify(options.testfilter)}` +
+        `&xfaOnly=${options.xfaOnly}` +
+        `&delay=${options.statsDelay}` +
+        `&masterMode=${options.masterMode}`;
+      startUrl = baseUrl + queryParameters;
+    }
 
     await startBrowser(browserName, startUrl)
       .then(function (browser) {
