@@ -161,6 +161,8 @@ class BaseTreeViewer {
     if (!treeItem) {
       return;
     }
+    // Pause translation when expanding the treeItem.
+    this._l10n.pause();
     // Ensure that the treeItem is *fully* expanded, such that it will first of
     // all be visible and secondly that scrolling it into view works correctly.
     let currentNode = treeItem.parentNode;
@@ -171,6 +173,8 @@ class BaseTreeViewer {
       }
       currentNode = currentNode.parentNode;
     }
+    this._l10n.resume();
+
     this._updateCurrentTreeItem(treeItem);
 
     this.container.scrollTo(
