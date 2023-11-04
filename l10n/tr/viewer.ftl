@@ -226,6 +226,21 @@ pdfjs-find-match-diacritics-checkbox-label = Fonetik işaretleri bul
 pdfjs-find-entire-word-checkbox-label = Tam sözcükler
 pdfjs-find-reached-top = Belgenin başına ulaşıldı, sonundan devam edildi
 pdfjs-find-reached-bottom = Belgenin sonuna ulaşıldı, başından devam edildi
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count =
+    { $total ->
+        [one] { $total } eşleşmeden { $current }. eşleşme
+       *[other] { $total } eşleşmeden { $current }. eşleşme
+    }
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit =
+    { $limit ->
+        [one] { $limit } eşleşmeden fazla
+       *[other] { $limit } eşleşmeden fazla
+    }
 pdfjs-find-not-found = Eşleşme bulunamadı
 
 ## Predefined zoom values
