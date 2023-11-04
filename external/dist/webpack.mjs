@@ -12,17 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable import/no-commonjs */
+/* eslint-disable import/no-unresolved */
 
-"use strict";
-
-const pdfjs = require("./build/pdf.mjs");
+import { GlobalWorkerOptions } from "./build/pdf.mjs";
 
 if (typeof window !== "undefined" && "Worker" in window) {
-  pdfjs.GlobalWorkerOptions.workerPort = new Worker(
+  GlobalWorkerOptions.workerPort = new Worker(
     new URL("./build/pdf.worker.mjs", import.meta.url),
     { type: "module" }
   );
 }
 
-module.exports = pdfjs;
+export * from "./build/pdf.mjs";
