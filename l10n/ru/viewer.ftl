@@ -226,6 +226,23 @@ pdfjs-find-match-diacritics-checkbox-label = С учётом диакритич�
 pdfjs-find-entire-word-checkbox-label = Слова целиком
 pdfjs-find-reached-top = Достигнут верх документа, продолжено снизу
 pdfjs-find-reached-bottom = Достигнут конец документа, продолжено сверху
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count =
+    { $total ->
+        [one] { $current } из { $total } совпадения
+        [few] { $current } из { $total } совпадений
+       *[many] { $current } из { $total } совпадений
+    }
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit =
+    { $limit ->
+        [one] Более { $limit } совпадения
+        [few] Более { $limit } совпадений
+       *[many] Более { $limit } совпадений
+    }
 pdfjs-find-not-found = Фраза не найдена
 
 ## Predefined zoom values

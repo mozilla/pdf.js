@@ -226,6 +226,21 @@ pdfjs-find-match-diacritics-checkbox-label = Erota tarkkeet
 pdfjs-find-entire-word-checkbox-label = Kokonaiset sanat
 pdfjs-find-reached-top = Päästiin dokumentin alkuun, jatketaan lopusta
 pdfjs-find-reached-bottom = Päästiin dokumentin loppuun, jatketaan alusta
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count =
+    { $total ->
+        [one] { $current } / { $total } osuma
+       *[other] { $current } / { $total } osumaa
+    }
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit =
+    { $limit ->
+        [one] Yli { $limit } osuma
+       *[other] Yli { $limit } osumaa
+    }
 pdfjs-find-not-found = Hakusanaa ei löytynyt
 
 ## Predefined zoom values
@@ -324,3 +339,11 @@ pdfjs-editor-alt-text-textarea =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
+pdfjs-editor-resizer-label-top-left = Vasen yläkulma - muuta kokoa
+pdfjs-editor-resizer-label-top-middle = Ylhäällä keskellä - muuta kokoa
+pdfjs-editor-resizer-label-top-right = Oikea yläkulma - muuta kokoa
+pdfjs-editor-resizer-label-middle-right = Keskellä oikealla - muuta kokoa
+pdfjs-editor-resizer-label-bottom-right = Oikea alakulma - muuta kokoa
+pdfjs-editor-resizer-label-bottom-middle = Alhaalla keskellä - muuta kokoa
+pdfjs-editor-resizer-label-bottom-left = Vasen alakulma - muuta kokoa
+pdfjs-editor-resizer-label-middle-left = Keskellä vasemmalla - muuta kokoa

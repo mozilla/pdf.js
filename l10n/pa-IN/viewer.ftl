@@ -226,6 +226,21 @@ pdfjs-find-match-diacritics-checkbox-label = ਭੇਦਸੂਚਕ ਮੇਲ
 pdfjs-find-entire-word-checkbox-label = ਪੂਰੇ ਸ਼ਬਦ
 pdfjs-find-reached-top = ਦਸਤਾਵੇਜ਼ ਦੇ ਉੱਤੇ ਆ ਗਏ ਹਾਂ, ਥੱਲੇ ਤੋਂ ਜਾਰੀ ਰੱਖਿਆ ਹੈ
 pdfjs-find-reached-bottom = ਦਸਤਾਵੇਜ਼ ਦੇ ਅੰਤ ਉੱਤੇ ਆ ਗਏ ਹਾਂ, ਉੱਤੇ ਤੋਂ ਜਾਰੀ ਰੱਖਿਆ ਹੈ
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count =
+    { $total ->
+        [one] { $total } ਵਿੱਚੋਂ { $current } ਮੇਲ
+       *[other] { $total } ਵਿੱਚੋਂ { $current } ਮੇਲ
+    }
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit =
+    { $limit ->
+        [one] { $limit } ਤੋਂ ਵੱਧ ਮੇਲ
+       *[other] { $limit } ਤੋਂ ਵੱਧ ਮੇਲ
+    }
 pdfjs-find-not-found = ਵਾਕ ਨਹੀਂ ਲੱਭਿਆ
 
 ## Predefined zoom values
@@ -324,3 +339,11 @@ pdfjs-editor-alt-text-textarea =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
+pdfjs-editor-resizer-label-top-left = ਉੱਤੇ ਖੱਬਾ ਕੋਨਾ — ਮੁੜ-ਆਕਾਰ ਕਰੋ
+pdfjs-editor-resizer-label-top-middle = ਉੱਤੇ ਮੱਧ — ਮੁੜ-ਆਕਾਰ ਕਰੋ
+pdfjs-editor-resizer-label-top-right = ਉੱਤੇ ਸੱਜਾ ਕੋਨਾ — ਮੁੜ-ਆਕਾਰ ਕਰੋ
+pdfjs-editor-resizer-label-middle-right = ਮੱਧ ਸੱਜਾ — ਮੁੜ-ਆਕਾਰ ਕਰੋ
+pdfjs-editor-resizer-label-bottom-right = ਹੇਠਾਂ ਸੱਜਾ ਕੋਨਾ — ਮੁੜ-ਆਕਾਰ ਕਰੋ
+pdfjs-editor-resizer-label-bottom-middle = ਹੇਠਾਂ ਮੱਧ — ਮੁੜ-ਆਕਾਰ ਕਰੋ
+pdfjs-editor-resizer-label-bottom-left = ਹੇਠਾਂ ਖੱਬਾ ਕੋਨਾ — ਮੁੜ-ਆਕਾਰ ਕਰੋ
+pdfjs-editor-resizer-label-middle-left = ਮੱਧ ਖੱਬਾ — ਮੁੜ-ਆਕਾਰ ਕਰੋ
