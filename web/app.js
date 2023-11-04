@@ -85,12 +85,6 @@ const ViewOnLoad = {
   INITIAL: 1,
 };
 
-const ViewerCssTheme = {
-  AUTOMATIC: 0, // Default value.
-  LIGHT: 1,
-  DARK: 2,
-};
-
 class DefaultExternalServices {
   constructor() {
     throw new Error("Cannot initialize DefaultExternalServices.");
@@ -233,7 +227,6 @@ const PDFViewerApplication = {
     if (AppOptions.get("pdfBugEnabled")) {
       await this._parseHashParams();
     }
-    this._forceCssTheme();
 
     // Ensure that the `L10n`-instance has been initialized before creating
     // e.g. the various viewer components.
@@ -344,47 +337,6 @@ const PDFViewerApplication = {
       params.has("locale")
     ) {
       AppOptions.set("locale", params.get("locale"));
-    }
-  },
-
-  /**
-   * @private
-   */
-  _forceCssTheme() {
-    const cssTheme = AppOptions.get("viewerCssTheme");
-    if (
-      cssTheme === ViewerCssTheme.AUTOMATIC ||
-      !Object.values(ViewerCssTheme).includes(cssTheme)
-    ) {
-      return;
-    }
-    try {
-      const styleSheet = document.styleSheets[0];
-      const cssRules = styleSheet?.cssRules || [];
-      for (let i = 0, ii = cssRules.length; i < ii; i++) {
-        const rule = cssRules[i];
-        if (
-          rule instanceof CSSMediaRule &&
-          rule.media?.[0] === "(prefers-color-scheme: dark)"
-        ) {
-          if (cssTheme === ViewerCssTheme.LIGHT) {
-            styleSheet.deleteRule(i);
-            return;
-          }
-          // cssTheme === ViewerCssTheme.DARK
-          const darkRules =
-            /^@media \(prefers-color-scheme: dark\) {\n\s*([\w\s-.,:;/\\{}()]+)\n}$/.exec(
-              rule.cssText
-            );
-          if (darkRules?.[1]) {
-            styleSheet.deleteRule(i);
-            styleSheet.insertRule(darkRules[1], i);
-          }
-          return;
-        }
-      }
-    } catch (reason) {
-      console.error(`_forceCssTheme: "${reason?.message}".`);
     }
   },
 
