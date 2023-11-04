@@ -9,8 +9,9 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
-        node-version: [18, lts/*]
+        node-version: [18, lts/*, latest]
 
     steps:
       - name: Checkout repository

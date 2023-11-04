@@ -26,6 +26,7 @@ import {
   AnnotationFieldFlag,
   AnnotationFlag,
   AnnotationType,
+  isNodeJS,
   OPS,
   RenderingIntentFlag,
   stringToBytes,
@@ -34,6 +35,7 @@ import {
 import {
   CMAP_URL,
   createIdFactory,
+  getNodeVersion,
   STANDARD_FONT_DATA_URL,
   XRefMock,
 } from "./test_utils.js";
@@ -2207,6 +2209,12 @@ describe("annotation", function () {
     });
 
     it("should compress and save text", async function () {
+      if (isNodeJS && getNodeVersion().major === 21) {
+        pending(
+          "CompressionStream behaves differently in Node.js 21, " +
+            "compared to Firefox, Chrome, and Node.js 18/20."
+        );
+      }
       const textWidgetRef = Ref.get(123, 0);
       const xref = new XRefMock([
         { ref: textWidgetRef, data: textWidgetDict },
