@@ -733,7 +733,9 @@ class AnnotationEditorLayer {
           initialY: annotation.y, // Top right corner
           uiManager: this.#uiManager,
           isCentered: false,
-          content: annotation.content
+          content: annotation.content,
+          fontSize: 12,
+          color: "#FFF"
         });
         editor.isEditing = false;
         this.add(editor);

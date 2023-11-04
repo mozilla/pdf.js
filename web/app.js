@@ -2508,6 +2508,7 @@ function webViewerSwitchAnnotationEditorMode(evt) {
   PDFViewerApplication.pdfViewer.annotationEditorMode = evt;
 }
 function webViewerSwitchAnnotationEditorParams(evt) {
+  console.log(evt, 'evt bro44')
   PDFViewerApplication.pdfViewer.annotationEditorParams = evt;
 }
 function webViewerPrint() {

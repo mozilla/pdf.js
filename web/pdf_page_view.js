@@ -348,7 +348,6 @@ class PDFPageView {
   async #renderAnnotationEditorLayer(annotations) {
     let error = null;
     try {
-      console.log(annotations, 'annot 654')
       await this.annotationEditorLayer.render(this.viewport, "display", annotations);
     } catch (ex) {
       console.error(`#renderAnnotationEditorLayer: "${ex}".`);
@@ -827,7 +826,6 @@ class PDFPageView {
   }
 
   async draw(annotations) {
-    console.log(annotations, 'annotationsdraw2')
     if (this.renderingState !== RenderingStates.INITIAL) {
       console.error("Must be in new state before drawing");
       this.reset(); // Ensure that we reset all state to prevent issues.
