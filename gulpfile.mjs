@@ -684,6 +684,9 @@ function createTestSource(testsName, { bot = false, xfaOnly = false } = {}) {
     if (process.argv.includes("--noChrome") || forceNoChrome) {
       args.push("--noChrome");
     }
+    if (process.argv.includes("--headless")) {
+      args.push("--headless");
+    }
 
     const testProcess = startNode(args, { cwd: TEST_DIR, stdio: "inherit" });
     testProcess.on("close", function (code) {
@@ -711,6 +714,9 @@ function makeRef(done, bot) {
   }
   if (process.argv.includes("--noChrome") || forceNoChrome) {
     args.push("--noChrome");
+  }
+  if (process.argv.includes("--headless")) {
+    args.push("--headless");
   }
 
   const testProcess = startNode(args, { cwd: TEST_DIR, stdio: "inherit" });
