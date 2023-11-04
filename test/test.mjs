@@ -460,7 +460,7 @@ function checkEq(task, results, browser, masterMode) {
     }
     const pageResult = pageResults[page];
     let testSnapshot = pageResult.snapshot;
-    if (testSnapshot && testSnapshot.startsWith("data:image/png;base64,")) {
+    if (testSnapshot?.startsWith("data:image/png;base64,")) {
       testSnapshot = Buffer.from(testSnapshot.substring(22), "base64");
     } else {
       console.error("Valid snapshot was not found.");
@@ -759,7 +759,7 @@ function refTestPostHandler(req, res) {
       });
     }
 
-    var isDone = taskResults.at(-1) && taskResults.at(-1)[lastPageNum - 1];
+    var isDone = taskResults.at(-1)?.[lastPageNum - 1];
     if (isDone) {
       checkRefTestResults(browser, id, taskResults);
       session.remaining--;
