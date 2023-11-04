@@ -250,8 +250,10 @@ function updateRefImages() {
 function examineRefImages() {
   startServer();
 
-  const startUrl = `http://${host}:${server.port}/test/resources/reftest-analyzer.html#web=/test/eq.log`;
-  startBrowser("firefox", startUrl).then(function (browser) {
+  startBrowser({
+    browserName: "firefox",
+    startUrl: `http://${host}:${server.port}/test/resources/reftest-analyzer.html#web=/test/eq.log`,
+  }).then(function (browser) {
     browser.on("disconnected", function () {
       stopServer();
       process.exit(0);
@@ -339,26 +341,28 @@ function startRefTest(masterMode, showRefImages) {
     server.hooks.POST.push(refTestPostHandler);
     onAllSessionsClosed = finalize;
 
-    const baseUrl = `http://${host}:${server.port}/test/test_slave.html`;
-    await startBrowsers(function (session) {
-      session.masterMode = masterMode;
-      session.taskResults = {};
-      session.tasks = {};
-      session.remaining = manifest.length;
-      manifest.forEach(function (item) {
-        var rounds = item.rounds || 1;
-        var roundsResults = [];
-        roundsResults.length = rounds;
-        session.taskResults[item.id] = roundsResults;
-        session.tasks[item.id] = item;
-      });
-      session.numRuns = 0;
-      session.numErrors = 0;
-      session.numFBFFailures = 0;
-      session.numEqNoSnapshot = 0;
-      session.numEqFailures = 0;
-      monitorBrowserTimeout(session, handleSessionTimeout);
-    }, baseUrl);
+    await startBrowsers({
+      baseUrl: `http://${host}:${server.port}/test/test_slave.html`,
+      initializeSession: session => {
+        session.masterMode = masterMode;
+        session.taskResults = {};
+        session.tasks = {};
+        session.remaining = manifest.length;
+        manifest.forEach(function (item) {
+          var rounds = item.rounds || 1;
+          var roundsResults = [];
+          roundsResults.length = rounds;
+          session.taskResults[item.id] = roundsResults;
+          session.tasks[item.id] = item;
+        });
+        session.numRuns = 0;
+        session.numErrors = 0;
+        session.numFBFFailures = 0;
+        session.numEqNoSnapshot = 0;
+        session.numEqFailures = 0;
+        monitorBrowserTimeout(session, handleSessionTimeout);
+      },
+    });
   }
   function checkRefsTmp() {
     if (masterMode && fs.existsSync(refsTmpDir)) {
@@ -798,11 +802,13 @@ async function startUnitTest(testUrl, name) {
   startServer();
   server.hooks.POST.push(unitTestPostHandler);
 
-  const baseUrl = `http://${host}:${server.port}${testUrl}`;
-  await startBrowsers(function (session) {
-    session.numRuns = 0;
-    session.numErrors = 0;
-  }, baseUrl);
+  await startBrowsers({
+    baseUrl: `http://${host}:${server.port}${testUrl}`,
+    initializeSession: session => {
+      session.numRuns = 0;
+      session.numErrors = 0;
+    },
+  });
 }
 
 async function startIntegrationTest() {
@@ -810,9 +816,12 @@ async function startIntegrationTest() {
   startServer();
 
   const { runTests } = await import("./integration-boot.mjs");
-  await startBrowsers(function (session) {
-    session.numRuns = 0;
-    session.numErrors = 0;
+  await startBrowsers({
+    baseUrl: null,
+    initializeSession: session => {
+      session.numRuns = 0;
+      session.numErrors = 0;
+    },
   });
   global.integrationBaseUrl = `http://${host}:${server.port}/build/generic/web/viewer.html`;
   global.integrationSessions = sessions;
@@ -888,7 +897,7 @@ function unitTestPostHandler(req, res) {
   return true;
 }
 
-async function startBrowser(browserName, startUrl = "") {
+async function startBrowser({ browserName, startUrl }) {
   const options = {
     product: browserName,
     headless: false,
@@ -958,7 +967,7 @@ async function startBrowser(browserName, startUrl = "") {
   return browser;
 }
 
-async function startBrowsers(initSessionCallback, baseUrl = null) {
+async function startBrowsers({ baseUrl, initializeSession }) {
   // Remove old browser revisions from Puppeteer's cache. Updating Puppeteer can
   // cause new browser revisions to be downloaded, so trimming the cache will
   // prevent the disk from filling up over time.
@@ -997,10 +1006,10 @@ async function startBrowsers(initSessionCallback, baseUrl = null) {
       startUrl = baseUrl + queryParameters;
     }
 
-    await startBrowser(browserName, startUrl)
+    await startBrowser({ browserName, startUrl })
       .then(function (browser) {
         session.browser = browser;
-        initSessionCallback?.(session);
+        initializeSession(session);
       })
       .catch(function (ex) {
         console.log(`Error while starting ${browserName}: ${ex.message}`);
