@@ -99,6 +99,12 @@ function parseOptions() {
       describe: "Uses default answers (intended for CLOUD TESTS only!).",
       type: "boolean",
     })
+    .option("headless", {
+      default: false,
+      describe:
+        "Run the tests in headless mode, i.e. without visible browser windows.",
+      type: "boolean",
+    })
     .option("port", {
       default: 0,
       describe: "The port the HTTP server should listen on.",
@@ -252,6 +258,7 @@ function examineRefImages() {
 
   startBrowser({
     browserName: "firefox",
+    headless: false,
     startUrl: `http://${host}:${server.port}/test/resources/reftest-analyzer.html#web=/test/eq.log`,
   }).then(function (browser) {
     browser.on("disconnected", function () {
@@ -897,10 +904,12 @@ function unitTestPostHandler(req, res) {
   return true;
 }
 
-async function startBrowser({ browserName, startUrl }) {
+async function startBrowser({ browserName, headless, startUrl }) {
   const options = {
     product: browserName,
-    headless: false,
+    // Note that using `headless: true` gives a deprecation warning; see
+    // https://github.com/puppeteer/puppeteer#default-runtime-settings.
+    headless: headless === true ? "new" : false,
     defaultViewport: null,
     ignoreDefaultArgs: ["--disable-extensions"],
     // The timeout for individual protocol (CDP) calls should always be lower
@@ -1006,7 +1015,7 @@ async function startBrowsers({ baseUrl, initializeSession }) {
       startUrl = baseUrl + queryParameters;
     }
 
-    await startBrowser({ browserName, startUrl })
+    await startBrowser({ browserName, headless: options.headless, startUrl })
       .then(function (browser) {
         session.browser = browser;
         initializeSession(session);
