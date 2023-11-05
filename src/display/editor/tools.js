@@ -1023,6 +1023,13 @@ class AnnotationEditorUIManager {
     });
   }
 
+  dispatchFocusAnnotation(details) {
+    this._eventBus.dispatch("annotationfocused", {
+      source: this,
+      details
+    });
+  }
+
   dispatchUpdateAnnotation(details) {
     this._eventBus.dispatch("annotationchanged", {
       source: this,

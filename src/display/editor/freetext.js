@@ -44,13 +44,13 @@ class FreeTextEditor extends AnnotationEditor {
 
   #boundEditorDivKeydown = this.editorDivKeydown.bind(this);
 
-  #color;
+  color;
 
   content = "";
 
   #editorDivId = `${this.id}-editor`;
 
-  #fontSize;
+  fontSize;
 
   #initialData = null;
 
@@ -136,11 +136,11 @@ class FreeTextEditor extends AnnotationEditor {
 
   constructor(params) {
     super({ ...params, name: "freeTextEditor" });
-    this.#color =
+    this.color =
       params.color ||
       FreeTextEditor._defaultColor ||
       AnnotationEditor._defaultLineColor;
-    this.#fontSize = params.fontSize || FreeTextEditor._defaultFontSize;
+    this.fontSize = params.fontSize || FreeTextEditor._defaultFontSize;
     this.content = params.content;
     this.initialX = params.initialX;
     this.initialY = params.initialY;
@@ -212,8 +212,8 @@ class FreeTextEditor extends AnnotationEditor {
   /** @inheritdoc */
   get propertiesToUpdate() {
     return [
-      [AnnotationEditorParamsType.FREETEXT_SIZE, this.#fontSize],
-      [AnnotationEditorParamsType.FREETEXT_COLOR, this.#color],
+      [AnnotationEditorParamsType.FREETEXT_SIZE, this.fontSize],
+      [AnnotationEditorParamsType.FREETEXT_COLOR, this.color],
     ];
   }
 
@@ -224,11 +224,11 @@ class FreeTextEditor extends AnnotationEditor {
   #updateFontSize(fontSize) {
     const setFontsize = size => {
       this.editorDiv.style.fontSize = `calc(${size}px * var(--scale-factor))`;
-      this.translate(0, -(size - this.#fontSize) * this.parentScale);
-      this.#fontSize = size;
+      this.translate(0, -(size - this.fontSize) * this.parentScale);
+      this.fontSize = size;
       this.#setEditorDimensions();
     };
-    const savedFontsize = this.#fontSize;
+    const savedFontsize = this.fontSize;
     this.addCommands({
       cmd: () => {
         setFontsize(fontSize);
@@ -248,13 +248,13 @@ class FreeTextEditor extends AnnotationEditor {
    * @param {string} color
    */
   #updateColor(color) {
-    const savedColor = this.#color;
+    const savedColor = this.color;
     this.addCommands({
       cmd: () => {
-        this.#color = this.editorDiv.style.color = color;
+        this.color = this.editorDiv.style.color = color;
       },
       undo: () => {
-        this.#color = this.editorDiv.style.color = savedColor;
+        this.color = this.editorDiv.style.color = savedColor;
       },
       mustExec: true,
       type: AnnotationEditorParamsType.FREETEXT_COLOR,
@@ -282,7 +282,7 @@ class FreeTextEditor extends AnnotationEditor {
     const scale = this.parentScale;
     return [
       -FreeTextEditor._internalPadding * scale,
-      -(FreeTextEditor._internalPadding + this.#fontSize) * scale,
+      -(FreeTextEditor._internalPadding + this.fontSize) * scale,
     ];
   }
 
@@ -512,7 +512,13 @@ class FreeTextEditor extends AnnotationEditor {
   }
 
   editorDivFocus(event) {
+    console.log("focus ev3")
     this.isEditing = true;
+    this._uiManager.dispatchFocusAnnotation({
+      event,
+      current: this,
+      text: event.target.innerText
+    });
   }
 
   editorDivBlur(event) {
@@ -566,8 +572,8 @@ class FreeTextEditor extends AnnotationEditor {
     this.editorDiv.contentEditable = true;
 
     const { style } = this.editorDiv;
-    style.fontSize = `calc(${this.#fontSize}px * var(--scale-factor))`;
-    style.color = this.#color;
+    style.fontSize = `calc(${this.fontSize}px * var(--scale-factor))`;
+    style.color = this.color;
 
     this.div.append(this.editorDiv);
 
@@ -705,8 +711,8 @@ class FreeTextEditor extends AnnotationEditor {
     }
     const editor = super.deserialize(data, parent, uiManager);
 
-    editor.#fontSize = data.fontSize;
-    editor.#color = Util.makeHexColor(...data.color);
+    editor.fontSize = data.fontSize;
+    editor.color = Util.makeHexColor(...data.color);
     editor.content = data.value;
     editor.annotationElementId = data.id || null;
     editor.#initialData = initialData;
@@ -733,13 +739,13 @@ class FreeTextEditor extends AnnotationEditor {
     const color = AnnotationEditor._colorManager.convert(
       this.isAttachedToDOM
         ? getComputedStyle(this.editorDiv).color
-        : this.#color
+        : this.color
     );
 
     const serialized = {
       annotationType: AnnotationEditorType.FREETEXT,
       color,
-      fontSize: this.#fontSize,
+      fontSize: this.fontSize,
       value: this.content,
       pageIndex: this.pageIndex,
       rect,

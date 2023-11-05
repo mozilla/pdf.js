@@ -1969,7 +1969,7 @@ class PopupElement {
 
   #boundToggle = this.#toggle.bind(this);
 
-  #color = null;
+  color = null;
 
   #container = null;
 
@@ -2011,7 +2011,7 @@ class PopupElement {
     this.#contentsObj = contentsObj;
     this.#richText = richText;
     this.#parent = parent;
-    this.#color = color;
+    this.color = color;
     this.#rect = rect;
     this.#parentRect = parentRect;
     this.#elements = elements;
@@ -2071,9 +2071,9 @@ class PopupElement {
     const popup = (this.#popup = document.createElement("div"));
     popup.className = "popup";
 
-    if (this.#color) {
+    if (this.color) {
       const baseColor = (popup.style.outlineColor = Util.makeHexColor(
-        ...this.#color
+        ...this.color
       ));
       if (
         (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
@@ -2087,7 +2087,7 @@ class PopupElement {
         // Enlighten the color.
         const BACKGROUND_ENLIGHT = 0.7;
         popup.style.backgroundColor = Util.makeHexColor(
-          ...this.#color.map(c =>
+          ...this.color.map(c =>
             Math.floor(BACKGROUND_ENLIGHT * (255 - c) + c)
           )
         );
