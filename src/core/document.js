@@ -1713,6 +1713,9 @@ class PDFDocument {
 
   #collectFieldObjects(name, fieldRef, promises, annotationGlobals) {
     const field = this.xref.fetchIfRef(fieldRef);
+    if (!(field instanceof Dict)) {
+      return;
+    }
     if (field.has("T")) {
       const partName = stringToPDFString(field.get("T"));
       name = name === "" ? partName : `${name}.${partName}`;
@@ -1737,8 +1740,9 @@ class PDFDocument {
         })
     );
 
-    if (field.has("Kids")) {
-      for (const kid of field.get("Kids")) {
+    const kids = field.get("Kids");
+    if (Array.isArray(kids)) {
+      for (const kid of kids) {
         this.#collectFieldObjects(name, kid, promises, annotationGlobals);
       }
     }
