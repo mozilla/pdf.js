@@ -8197,5 +8197,14 @@
       "rounds": 1,
       "type": "eq",
       "annotations": true
-   }   
+   },
+   {
+      "id": "issue17232-annotations",
+      "file": "pdfs/issue17232.pdf",
+      "md5": "90ade9fc5721ddf8d17e8cfc43e186a4",
+      "rounds": 1,
+      "link": true,
+      "type": "eq",
+      "annotations": true
+   }
 ]
