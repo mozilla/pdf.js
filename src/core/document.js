@@ -1714,7 +1714,10 @@ class PDFDocument {
   async #collectFieldObjects(name, fieldRef, promises, annotationGlobals) {
     const { xref } = this;
 
-    const field = await xref.fetchIfRefAsync(fieldRef);
+    if (!(fieldRef instanceof Ref)) {
+      return;
+    }
+    const field = await xref.fetchAsync(fieldRef);
     if (!(field instanceof Dict)) {
       return;
     }
@@ -1731,7 +1734,7 @@ class PDFDocument {
         xref,
         fieldRef,
         annotationGlobals,
-        this._localIdFactory,
+        /* idFactory = */ null,
         /* collectFields */ true,
         /* pageRef */ null
       )
