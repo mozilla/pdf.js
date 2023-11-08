@@ -23,6 +23,7 @@ import {
   KeyboardManager,
 } from "./tools.js";
 import { FeatureTest, shadow, unreachable } from "../../shared/util.js";
+import { EditorToolbar } from "./toolbar.js";
 import { noContextMenu } from "../display_utils.js";
 
 /**
@@ -61,6 +62,8 @@ class AnnotationEditor {
   #boundFocusin = this.focusin.bind(this);
 
   #boundFocusout = this.focusout.bind(this);
+
+  #editToolbar = null;
 
   #focusedResizerName = "";
 
@@ -1034,6 +1037,22 @@ class AnnotationEditor {
     this.#altTextWasFromKeyBoard = false;
   }
 
+  addEditToolbar() {
+    if (this.#editToolbar || this.#isInEditMode) {
+      return;
+    }
+    this.#editToolbar = new EditorToolbar(this);
+    this.div.append(this.#editToolbar.render());
+  }
+
+  removeEditToolbar() {
+    if (!this.#editToolbar) {
+      return;
+    }
+    this.#editToolbar.remove();
+    this.#editToolbar = null;
+  }
+
   getClientDimensions() {
     return this.div.getBoundingClientRect();
   }
@@ -1386,6 +1405,7 @@ class AnnotationEditor {
       this.#moveInDOMTimeout = null;
     }
     this.#stopResizing();
+    this.removeEditToolbar();
   }
 
   /**
@@ -1543,6 +1563,8 @@ class AnnotationEditor {
   select() {
     this.makeResizable();
     this.div?.classList.add("selectedEditor");
+    this.addEditToolbar();
+    this.#editToolbar?.show();
   }
 
   /**
@@ -1556,6 +1578,7 @@ class AnnotationEditor {
       // go.
       this._uiManager.currentLayer.div.focus();
     }
+    this.#editToolbar?.hide();
   }
 
   /**
