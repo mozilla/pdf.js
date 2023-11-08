@@ -1711,13 +1711,18 @@ class PDFDocument {
       : clearGlobalCaches();
   }
 
-  #collectFieldObjects(name, fieldRef, promises, annotationGlobals) {
-    const field = this.xref.fetchIfRef(fieldRef);
+  async #collectFieldObjects(name, fieldRef, promises, annotationGlobals) {
+    const { xref } = this;
+
+    if (!(fieldRef instanceof Ref)) {
+      return;
+    }
+    const field = await xref.fetchAsync(fieldRef);
     if (!(field instanceof Dict)) {
       return;
     }
     if (field.has("T")) {
-      const partName = stringToPDFString(field.get("T"));
+      const partName = stringToPDFString(await field.getAsync("T"));
       name = name === "" ? partName : `${name}.${partName}`;
     }
 
@@ -1726,10 +1731,10 @@ class PDFDocument {
     }
     promises.get(name).push(
       AnnotationFactory.create(
-        this.xref,
+        xref,
         fieldRef,
         annotationGlobals,
-        this._localIdFactory,
+        /* idFactory = */ null,
         /* collectFields */ true,
         /* pageRef */ null
       )
@@ -1740,10 +1745,13 @@ class PDFDocument {
         })
     );
 
-    const kids = field.get("Kids");
+    if (!field.has("Kids")) {
+      return;
+    }
+    const kids = await field.getAsync("Kids");
     if (Array.isArray(kids)) {
       for (const kid of kids) {
-        this.#collectFieldObjects(name, kid, promises, annotationGlobals);
+        await this.#collectFieldObjects(name, kid, promises, annotationGlobals);
       }
     }
   }
@@ -1753,39 +1761,40 @@ class PDFDocument {
       return shadow(this, "fieldObjects", Promise.resolve(null));
     }
 
-    const promise = this.pdfManager
-      .ensureDoc("annotationGlobals")
-      .then(async annotationGlobals => {
-        if (!annotationGlobals) {
-          return null;
-        }
+    const promise = Promise.all([
+      this.pdfManager.ensureDoc("annotationGlobals"),
+      this.pdfManager.ensureCatalog("acroForm"),
+    ]).then(async ([annotationGlobals, acroForm]) => {
+      if (!annotationGlobals) {
+        return null;
+      }
 
-        const allFields = Object.create(null);
-        const fieldPromises = new Map();
-        for (const fieldRef of this.catalog.acroForm.get("Fields")) {
-          this.#collectFieldObjects(
-            "",
-            fieldRef,
-            fieldPromises,
-            annotationGlobals
-          );
-        }
+      const allFields = Object.create(null);
+      const fieldPromises = new Map();
+      for (const fieldRef of await acroForm.getAsync("Fields")) {
+        await this.#collectFieldObjects(
+          "",
+          fieldRef,
+          fieldPromises,
+          annotationGlobals
+        );
+      }
 
-        const allPromises = [];
-        for (const [name, promises] of fieldPromises) {
-          allPromises.push(
-            Promise.all(promises).then(fields => {
-              fields = fields.filter(field => !!field);
-              if (fields.length > 0) {
-                allFields[name] = fields;
-              }
-            })
-          );
-        }
+      const allPromises = [];
+      for (const [name, promises] of fieldPromises) {
+        allPromises.push(
+          Promise.all(promises).then(fields => {
+            fields = fields.filter(field => !!field);
+            if (fields.length > 0) {
+              allFields[name] = fields;
+            }
+          })
+        );
+      }
 
-        await Promise.all(allPromises);
-        return allFields;
-      });
+      await Promise.all(allPromises);
+      return allFields;
+    });
 
     return shadow(this, "fieldObjects", promise);
   }
