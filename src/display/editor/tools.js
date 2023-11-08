@@ -669,8 +669,9 @@ class AnnotationEditorUIManager {
             // Those shortcuts can be used in the toolbar for some other actions
             // like zooming, hence we need to check if the container has the
             // focus.
-            checker: self =>
-              self.#container.contains(document.activeElement) &&
+            checker: (self, { target: el }) =>
+              !(el instanceof HTMLButtonElement) &&
+              self.#container.contains(el) &&
               !self.isEnterHandled,
           },
         ],

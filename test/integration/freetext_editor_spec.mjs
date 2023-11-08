@@ -3053,4 +3053,138 @@ describe("FreeText Editor", () => {
       );
     });
   });
+
+  describe("Delete a freetext in using the delete button", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that a freetext is deleted", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            // With Chrome something is wrong when serializing a DomRect,
+            // hence we extract the values and just return them.
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          const data = "Hello PDF.js World !!";
+          await page.mouse.click(rect.x + 100, rect.y + 100);
+          await page.waitForSelector(getEditorSelector(0), {
+            visible: true,
+          });
+          await page.type(`${getEditorSelector(0)} .internal`, data);
+
+          // Commit.
+          await page.keyboard.press("Escape");
+          await page.waitForSelector(
+            `${getEditorSelector(0)} .overlay.enabled`
+          );
+
+          // Delete it in using the button.
+          await page.click(`${getEditorSelector(0)} button.delete`);
+          await page.waitForFunction(
+            sel => !document.querySelector(sel),
+            {},
+            getEditorSelector(0)
+          );
+          await waitForStorageEntries(page, 0);
+
+          // Undo.
+          await kbUndo(page);
+          await waitForSerialized(page, 1);
+
+          await page.waitForSelector(getEditorSelector(0), {
+            visible: true,
+          });
+        })
+      );
+    });
+  });
+
+  describe("Delete two freetexts in using the delete button and the keyboard", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that freetexts are deleted", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            // With Chrome something is wrong when serializing a DomRect,
+            // hence we extract the values and just return them.
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          const data = "Hello PDF.js World !!";
+
+          for (let i = 1; i <= 2; i++) {
+            const editorSelector = getEditorSelector(i - 1);
+            await page.mouse.click(rect.x + i * 100, rect.y + i * 100);
+            await page.waitForSelector(editorSelector, {
+              visible: true,
+            });
+            await page.type(`${editorSelector} .internal`, data);
+
+            // Commit.
+            await page.keyboard.press("Escape");
+            await page.waitForSelector(`${editorSelector} .overlay.enabled`);
+          }
+
+          // Select the editor created previously.
+          const editorRect = await page.$eval(getEditorSelector(0), el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+          await page.mouse.click(
+            editorRect.x + editorRect.width / 2,
+            editorRect.y + editorRect.height / 2
+          );
+          await waitForSelectedEditor(page, getEditorSelector(0));
+
+          await selectAll(page);
+
+          // Delete it in using the button.
+          await page.focus(`${getEditorSelector(0)} button.delete`);
+          await page.keyboard.press("Enter");
+          await page.waitForFunction(
+            sel => !document.querySelector(sel),
+            {},
+            getEditorSelector(0)
+          );
+          await waitForStorageEntries(page, 0);
+
+          // Undo.
+          await kbUndo(page);
+          await waitForSerialized(page, 2);
+
+          await page.waitForSelector(getEditorSelector(0), {
+            visible: true,
+          });
+
+          await page.waitForSelector(getEditorSelector(1), {
+            visible: true,
+          });
+        })
+      );
+    });
+  });
 });
