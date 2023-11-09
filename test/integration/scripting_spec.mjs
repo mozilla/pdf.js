@@ -2183,4 +2183,46 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("Textfield with a Blur callback", () => {
+    let pages;
+    let otherPages;
+
+    beforeAll(async () => {
+      otherPages = await Promise.all(
+        global.integrationSessions.map(async session =>
+          session.browser.newPage()
+        )
+      );
+      pages = await loadAndWait("bug1863910.pdf", getSelector("25R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+      await Promise.all(otherPages.map(page => page.close()));
+    });
+
+    it("must check that blur callback is called", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page], i) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          await page.click(getSelector("25R"));
+          await page.waitForTimeout(10);
+          await page.click(getSelector("26R"));
+
+          await page.waitForFunction(
+            sel => document.querySelector(sel).value !== "",
+            {},
+            getSelector("26R")
+          );
+
+          const text = await page.$eval(getSelector("26R"), el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("hello");
+        })
+      );
+    });
+  });
 });
