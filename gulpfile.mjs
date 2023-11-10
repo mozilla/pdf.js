@@ -1846,11 +1846,11 @@ gulp.task(
       return merge([
         packageJson().pipe(gulp.dest(TYPESTEST_DIR)),
         gulp
-          .src([
-            GENERIC_DIR + "build/pdf.mjs",
-            GENERIC_DIR + "build/pdf.worker.mjs",
-          ])
-          .pipe(gulp.dest(TYPESTEST_DIR + "build/")),
+          .src("external/dist/**/*", {
+            base: "external/dist",
+            removeBOM: false,
+          })
+          .pipe(gulp.dest(TYPESTEST_DIR)),
         gulp
           .src(TYPES_DIR + "**/*", { base: TYPES_DIR })
           .pipe(gulp.dest(TYPESTEST_DIR + "types/")),
