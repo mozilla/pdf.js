@@ -579,17 +579,14 @@ body {
 
 #editorStampParamsToolbar {
   inset-inline-end: 40px;
-  background-color: var(--toolbar-bg-color);
 }
 
 #editorInkParamsToolbar {
   inset-inline-end: 68px;
-  background-color: var(--toolbar-bg-color);
 }
 
 #editorFreeTextParamsToolbar {
   inset-inline-end: 96px;
-  background-color: var(--toolbar-bg-color);
 }
 
 #editorStampAddImage::before {
