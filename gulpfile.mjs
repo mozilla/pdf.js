@@ -422,7 +422,7 @@ function tweakWebpackOutput(jsName) {
       case " __webpack_exports__ = {};":
         return ` __webpack_exports__ = globalThis.${jsName} = {};`;
       case " __webpack_exports__ = await __webpack_exports__;":
-        return ` __webpack_exports__ = globalThis.${jsName} = await __webpack_exports__;`;
+        return ` __webpack_exports__ = globalThis.${jsName} = await (globalThis.${jsName}Promise = __webpack_exports__);`;
     }
     return match;
   });
