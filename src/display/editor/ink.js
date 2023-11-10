@@ -624,7 +624,7 @@ class InkEditor extends AnnotationEditor {
     this.div.classList.add("disabled");
 
     this.#fitToContent(/* firstTime = */ true);
-    this.makeResizable();
+    this.select();
 
     this.parent.addInkEditorIfNeeded(/* isCommitting = */ true);
 
