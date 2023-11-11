@@ -455,8 +455,8 @@ describe("FreeText Editor", () => {
 
           // Commit.
           await page.mouse.click(
-            editorRect.x,
-            editorRect.y + 2 * editorRect.height
+            editorRect.x + 1.5 * editorRect.width,
+            editorRect.y
           );
           await page.waitForSelector(
             `${getEditorSelector(9)} .overlay.enabled`
@@ -548,8 +548,8 @@ describe("FreeText Editor", () => {
 
         // Commit.
         await page.mouse.click(
-          editorRect.x,
-          editorRect.y + 2 * editorRect.height
+          editorRect.x + 1.5 * editorRect.width,
+          editorRect.y
         );
         await page.waitForSelector(`${getEditorSelector(9)} .overlay.enabled`);
 
@@ -583,12 +583,10 @@ describe("FreeText Editor", () => {
         });
 
         const editorCenters = [];
+        let lastX = rect.x + rect.width / 10;
         for (let i = 0; i < 4; i++) {
           const data = `FreeText ${i}`;
-          await page.mouse.click(
-            rect.x + ((i + 1) * rect.width) / 10,
-            rect.y + ((i + 1) * rect.height) / 10
-          );
+          await page.mouse.click(lastX, rect.y + rect.height / 10);
           await page.waitForSelector(getEditorSelector(i), {
             visible: true,
           });
@@ -603,6 +601,7 @@ describe("FreeText Editor", () => {
               height,
             };
           });
+          lastX = editorRect.x + editorRect.width + 10;
           editorCenters.push({
             x: editorRect.x + editorRect.width / 2,
             y: editorRect.y + editorRect.height / 2,
@@ -610,8 +609,8 @@ describe("FreeText Editor", () => {
 
           // Commit.
           await page.mouse.click(
-            editorRect.x,
-            editorRect.y + 2 * editorRect.height
+            editorRect.x + 1.5 * editorRect.width,
+            editorRect.y
           );
           await page.waitForSelector(
             `${getEditorSelector(i)} .overlay.enabled`
