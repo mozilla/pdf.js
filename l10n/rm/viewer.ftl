@@ -226,6 +226,21 @@ pdfjs-find-match-diacritics-checkbox-label = Resguardar ils segns diacritics
 pdfjs-find-entire-word-checkbox-label = Pleds entirs
 pdfjs-find-reached-top = Il cumenzament dal document è cuntanschì, la tschertga cuntinuescha a la fin dal document
 pdfjs-find-reached-bottom = La fin dal document è cuntanschì, la tschertga cuntinuescha al cumenzament dal document
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count =
+    { $total ->
+        [one] { $current } dad { $total } correspundenza
+       *[other] { $current } da { $total } correspundenzas
+    }
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit =
+    { $limit ->
+        [one] Dapli che { $limit } correspundenza
+       *[other] Dapli che { $limit } correspundenzas
+    }
 pdfjs-find-not-found = Impussibel da chattar l'expressiun
 
 ## Predefined zoom values
@@ -324,3 +339,11 @@ pdfjs-editor-alt-text-textarea =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
+pdfjs-editor-resizer-label-top-left = Chantun sura a sanestra — redimensiunar
+pdfjs-editor-resizer-label-top-middle = Sura amez — redimensiunar
+pdfjs-editor-resizer-label-top-right = Chantun sura a dretga — redimensiunar
+pdfjs-editor-resizer-label-middle-right = Da vart dretga amez — redimensiunar
+pdfjs-editor-resizer-label-bottom-right = Chantun sut a dretga — redimensiunar
+pdfjs-editor-resizer-label-bottom-middle = Sutvart amez — redimensiunar
+pdfjs-editor-resizer-label-bottom-left = Chantun sut a sanestra — redimensiunar
+pdfjs-editor-resizer-label-middle-left = Vart sanestra amez — redimensiunar
