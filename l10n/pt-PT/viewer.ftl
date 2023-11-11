@@ -226,6 +226,21 @@ pdfjs-find-match-diacritics-checkbox-label = Corresponder diacríticos
 pdfjs-find-entire-word-checkbox-label = Palavras completas
 pdfjs-find-reached-top = Topo do documento atingido, a continuar a partir do fundo
 pdfjs-find-reached-bottom = Fim do documento atingido, a continuar a partir do topo
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count =
+    { $total ->
+        [one] { $current } de { $total } correspondência
+       *[other] { $current } de { $total } correspondências
+    }
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit =
+    { $limit ->
+        [one] Mais de { $limit } correspondência
+       *[other] Mais de { $limit } correspondências
+    }
 pdfjs-find-not-found = Frase não encontrada
 
 ## Predefined zoom values
@@ -305,7 +320,30 @@ pdfjs-ink-canvas =
 
 ## Alt-text dialog
 
+# Alternative text (alt text) helps when people can't see the image.
+pdfjs-editor-alt-text-button-label = Texto alternativo
+pdfjs-editor-alt-text-edit-button-label = Editar texto alternativo
+pdfjs-editor-alt-text-dialog-label = Escolher uma opção
+pdfjs-editor-alt-text-dialog-description = O texto alternativo (texto alternativo) ajuda quando as pessoas não conseguem ver a imagem ou quando a mesma não é carregada.
+pdfjs-editor-alt-text-add-description-label = Adicionar uma descrição
+pdfjs-editor-alt-text-add-description-description = Aponte para 1-2 frases que descrevam o assunto, definição ou ações.
+pdfjs-editor-alt-text-mark-decorative-label = Marcar como decorativa
+pdfjs-editor-alt-text-mark-decorative-description = Isto é utilizado para imagens decorativas, tais como limites ou marcas d'água.
+pdfjs-editor-alt-text-cancel-button = Cancelar
+pdfjs-editor-alt-text-save-button = Guardar
+pdfjs-editor-alt-text-decorative-tooltip = Marcada como decorativa
+# .placeholder: This is a placeholder for the alt text input area
+pdfjs-editor-alt-text-textarea =
+    .placeholder = Por exemplo, “Um jovem senta-se à mesa para comer uma refeição”
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
+pdfjs-editor-resizer-label-top-left = Canto superior esquerdo — redimensionar
+pdfjs-editor-resizer-label-top-middle = Superior ao centro — redimensionar
+pdfjs-editor-resizer-label-top-right = Canto superior direito — redimensionar
+pdfjs-editor-resizer-label-middle-right = Centro à direita — redimensionar
+pdfjs-editor-resizer-label-bottom-right = Canto inferior direito — redimensionar
+pdfjs-editor-resizer-label-bottom-middle = Inferior ao centro — redimensionar
+pdfjs-editor-resizer-label-bottom-left = Canto inferior esquerdo — redimensionar
+pdfjs-editor-resizer-label-middle-left = Centro à esquerda — redimensionar
