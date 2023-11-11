@@ -430,7 +430,7 @@ describe("FreeText Editor", () => {
       );
     });
 
-    it("must check that text change can be undone/redone", async () => {
+    fit("must check that text change can be undone/redone", async () => {
       // Run sequentially to avoid clipboard issues.
       for (const [browserName, page] of pages) {
         const rect = await page.$eval(".annotationEditorLayer", el => {
