@@ -226,6 +226,17 @@ pdfjs-find-match-diacritics-checkbox-label = Respecter les accents et diacritiqu
 pdfjs-find-entire-word-checkbox-label = Mots entiers
 pdfjs-find-reached-top = Haut de la page atteint, poursuite depuis la fin
 pdfjs-find-reached-bottom = Bas de la page atteint, poursuite au début
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count = Occurrence { $current } sur { $total }
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit =
+    { $limit ->
+        [one] Plus d’{ $limit } occurrence
+       *[other] Plus de { $limit } occurrences
+    }
 pdfjs-find-not-found = Expression non trouvée
 
 ## Predefined zoom values
@@ -324,3 +335,11 @@ pdfjs-editor-alt-text-textarea =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
+pdfjs-editor-resizer-label-top-left = Coin supérieur gauche — redimensionner
+pdfjs-editor-resizer-label-top-middle = Milieu haut — redimensionner
+pdfjs-editor-resizer-label-top-right = Coin supérieur droit — redimensionner
+pdfjs-editor-resizer-label-middle-right = Milieu droit — redimensionner
+pdfjs-editor-resizer-label-bottom-right = Coin inférieur droit — redimensionner
+pdfjs-editor-resizer-label-bottom-middle = Centre bas — redimensionner
+pdfjs-editor-resizer-label-bottom-left = Coin inférieur gauche — redimensionner
+pdfjs-editor-resizer-label-middle-left = Milieu gauche — redimensionner
