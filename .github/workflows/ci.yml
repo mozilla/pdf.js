@@ -30,5 +30,8 @@ jobs:
       - name: Install other dependencies
         run: npm install
 
-      - name: Run tests
-        run: gulp ci-test
+      - name: Run external tests
+        run: gulp externaltest
+
+      - name: Run CLI unit tests
+        run: gulp unittestcli
