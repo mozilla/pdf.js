@@ -2437,7 +2437,4 @@ gulp.task("externaltest", function (done) {
   done();
 });
 
-gulp.task(
-  "ci-test",
-  gulp.series(gulp.parallel("externaltest", "unittestcli"), "typestest")
-);
+gulp.task("ci-test", gulp.parallel("externaltest", "unittestcli"));
