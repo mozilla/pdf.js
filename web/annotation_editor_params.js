@@ -56,7 +56,7 @@ class AnnotationEditorParams {
       dispatchEvent("INK_OPACITY", this.valueAsNumber);
     });
     editorStampAddImage.addEventListener("click", () => {
-      dispatchEvent("CREATE");
+      dispatchEvent("CREATE", "DOGGO");
     });
 
     this.eventBus._on("annotationeditorparamschanged", evt => {

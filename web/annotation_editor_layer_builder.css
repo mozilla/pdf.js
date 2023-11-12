@@ -122,7 +122,7 @@
   inset: 0;
   overflow: visible;
   white-space: nowrap;
-  font: 10px sans-serif;
+  font: 10px;
   line-height: var(--freetext-line-height);
   user-select: none;
 }

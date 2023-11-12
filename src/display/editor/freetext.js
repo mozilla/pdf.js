@@ -52,6 +52,8 @@ class FreeTextEditor extends AnnotationEditor {
 
   fontSize;
 
+  fontFamily;
+
   #initialData = null;
 
   static _freeTextDefaultContent = "";
@@ -63,6 +65,8 @@ class FreeTextEditor extends AnnotationEditor {
   static _defaultColor = null;
 
   static _defaultFontSize = 10;
+
+  static _defaultFontFamily = "courier";
 
   static get _keyboardManager() {
     const proto = FreeTextEditor.prototype;
@@ -144,6 +148,7 @@ class FreeTextEditor extends AnnotationEditor {
     this.content = params.content;
     this.initialX = params.initialX;
     this.initialY = params.initialY;
+    this.fontFamily = params.fontFamily || FreeTextEditor._defaultFontFamily;
   }
 
   /** @inheritdoc */
@@ -180,17 +185,24 @@ class FreeTextEditor extends AnnotationEditor {
       case AnnotationEditorParamsType.FREETEXT_COLOR:
         FreeTextEditor._defaultColor = value;
         break;
+      case AnnotationEditorParamsType.FREETEXT_FONT:
+        FreeTextEditor._defaultFontFamily = value;
+        break;
     }
   }
 
   /** @inheritdoc */
   updateParams(type, value) {
+    console.log(type, value, 'updateparams')
     switch (type) {
       case AnnotationEditorParamsType.FREETEXT_SIZE:
         this.#updateFontSize(value);
         break;
       case AnnotationEditorParamsType.FREETEXT_COLOR:
         this.#updateColor(value);
+        break;
+      case AnnotationEditorParamsType.FREETEXT_FONT:
+        this.#updateFontFamily(value);
         break;
     }
   }
@@ -206,6 +218,10 @@ class FreeTextEditor extends AnnotationEditor {
         AnnotationEditorParamsType.FREETEXT_COLOR,
         FreeTextEditor._defaultColor || AnnotationEditor._defaultLineColor,
       ],
+      [
+        AnnotationEditorParamsType.FREETEXT_FONT,
+        FreeTextEditor._defaultFontFamily,
+      ]
     ];
   }
 
@@ -214,6 +230,7 @@ class FreeTextEditor extends AnnotationEditor {
     return [
       [AnnotationEditorParamsType.FREETEXT_SIZE, this.fontSize],
       [AnnotationEditorParamsType.FREETEXT_COLOR, this.color],
+      [AnnotationEditorParamsType.FREETEXT_FONT, this.fontFamily],
     ];
   }
 
@@ -258,6 +275,27 @@ class FreeTextEditor extends AnnotationEditor {
       },
       mustExec: true,
       type: AnnotationEditorParamsType.FREETEXT_COLOR,
+      overwriteIfSameType: true,
+      keepUndo: true,
+    });
+  }
+
+  /**
+   * Update the font family and make this action undoable.
+   * @param {string} fontFamily
+   */
+  #updateFontFamily(fontFamily) {
+    const savedFontFamily = this.fontFamily;
+    this.addCommands({
+      cmd: () => {
+        this.fontFamily = this.editorDiv.style.fontFamily = fontFamily;
+        console.log(fontFamily, this.fontFamily, this.editorDiv.style, 'dog335')
+      },
+      undo: () => {
+        this.fontFamily = this.editorDiv.style.fontFamily = savedFontFamily;
+      },
+      mustExec: true,
+      type: AnnotationEditorParamsType.FREETEXT_FONT,
       overwriteIfSameType: true,
       keepUndo: true,
     });
@@ -575,6 +613,8 @@ class FreeTextEditor extends AnnotationEditor {
     style.fontSize = `calc(${this.fontSize}px * var(--scale-factor))`;
     style.color = this.color;
 
+    style.fontFamily = this.fontFamily;
+
     this.div.append(this.editorDiv);
 
     this.overlayDiv = document.createElement("div");
@@ -679,7 +719,7 @@ class FreeTextEditor extends AnnotationEditor {
     if (data instanceof FreeTextAnnotationElement) {
       const {
         data: {
-          defaultAppearanceData: { fontSize, fontColor },
+          defaultAppearanceData: { fontSize, fontColor, fontFamily },
           rect,
           rotation,
           id,
@@ -700,6 +740,7 @@ class FreeTextEditor extends AnnotationEditor {
         annotationType: AnnotationEditorType.FREETEXT,
         color: Array.from(fontColor),
         fontSize,
+        fontFamily,
         value: textContent.join("\n"),
         position: textPosition,
         pageIndex: pageNumber - 1,
@@ -712,6 +753,7 @@ class FreeTextEditor extends AnnotationEditor {
     const editor = super.deserialize(data, parent, uiManager);
 
     editor.fontSize = data.fontSize;
+    editor.fontFamily = data.fontFamily;
     editor.color = Util.makeHexColor(...data.color);
     editor.content = data.value;
     editor.annotationElementId = data.id || null;
@@ -746,6 +788,7 @@ class FreeTextEditor extends AnnotationEditor {
       annotationType: AnnotationEditorType.FREETEXT,
       color,
       fontSize: this.fontSize,
+      fontFamily: this.fontFamily,
       value: this.content,
       pageIndex: this.pageIndex,
       rect,
@@ -768,14 +811,15 @@ class FreeTextEditor extends AnnotationEditor {
   }
 
   #hasElementChanged(serialized) {
-    const { value, fontSize, color, rect, pageIndex } = this.#initialData;
+    const { value, fontSize, color, rect, pageIndex, fontFamily } = this.#initialData;
 
     return (
       serialized.value !== value ||
       serialized.fontSize !== fontSize ||
       serialized.rect.some((x, i) => Math.abs(x - rect[i]) >= 1) ||
       serialized.color.some((c, i) => c !== color[i]) ||
-      serialized.pageIndex !== pageIndex
+      serialized.pageIndex !== pageIndex ||
+      serialized.fontFamily !== fontFamily
     );
   }
 

@@ -1174,8 +1174,9 @@ class AnnotationEditorUIManager {
     if (!this.#editorTypes) {
       return;
     }
+    console.log(value, 'value here')
     if (type === AnnotationEditorParamsType.CREATE) {
-      this.currentLayer.addNewEditor(type);
+      this.currentLayer.addNewEditor(type, value);
       return;
     }
 

@@ -30,6 +30,8 @@ class StampEditor extends AnnotationEditor {
 
   #bitmapUrl = null;
 
+  urlPath = null;
+
   #bitmapFile = null;
 
   #canvas = null;
@@ -45,9 +47,14 @@ class StampEditor extends AnnotationEditor {
   static _type = "stamp";
 
   constructor(params) {
+    console.log(params, 'params constructor stamp')
     super({ ...params, name: "stampEditor" });
     this.#bitmapUrl = params.bitmapUrl;
+    this.urlPath = params.bitmapUrl;
     this.#bitmapFile = params.bitmapFile;
+    this.isPreloaded = typeof params.initialX === "number";
+    this.initialWidth = params.initialWidth;
+    this.initialHeight = params.initialHeight;
   }
 
   static get supportedTypes() {
@@ -104,7 +111,15 @@ class StampEditor extends AnnotationEditor {
     this.#bitmapPromise = null;
     this._uiManager.enableWaiting(false);
     if (this.#canvas) {
-      this.div.focus();
+      if (!this.isPreloaded) {
+        // means this is brand new
+        this.div.focus();
+      }
+      this._uiManager.dispatchFocusAnnotation({
+        event: null,
+        current: this,
+        text: ""
+      });
     }
   }
 
@@ -291,11 +306,21 @@ class StampEditor extends AnnotationEditor {
       height *= factor;
     }
     const [parentWidth, parentHeight] = this.parentDimensions;
-    this.setDims(
-      (width * parentWidth) / pageWidth,
-      (height * parentHeight) / pageHeight
-    );
-
+    console.log("setdim2", parentWidth, parentHeight);
+    if (this.initialHeight) {
+      this.setDims(
+        (this.initialWidth * parentWidth),
+        (this.initialHeight * parentHeight)
+      );
+    } else {
+      this.setDims(
+        (width * parentWidth) / pageWidth,
+        (height * parentHeight) / pageHeight
+      );
+    }
+    
+    this.initialHeight = null;
+    this.initialWidth = null;
     this._uiManager.enableWaiting(false);
     const canvas = (this.#canvas = document.createElement("canvas"));
     div.append(canvas);

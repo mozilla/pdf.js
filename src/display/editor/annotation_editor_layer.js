@@ -455,6 +455,7 @@ class AnnotationEditorLayer {
    * @returns {AnnotationEditor}
    */
   #createNewEditor(params) {
+    console.log(params, 'params createNewEditor', this.#uiManager.getMode())
     switch (this.#uiManager.getMode()) {
       case AnnotationEditorType.FREETEXT:
         return new FreeTextEditor(params);
@@ -514,7 +515,7 @@ class AnnotationEditorLayer {
    * @param {boolean} isCentered
    * @returns {AnnotationEditor}
    */
-  #createAndAddNewEditor(event, isCentered) {
+  #createAndAddNewEditor(event, isCentered, imageData) {
     const id = this.getNextId();
     const editor = this.#createNewEditor({
       parent: this,
@@ -523,6 +524,8 @@ class AnnotationEditorLayer {
       y: event.offsetY,
       uiManager: this.#uiManager,
       isCentered,
+      bitmapUrl: imageData?.bitmapUrl,
+      bitmapFile: imageData?.bitmapFile
     });
     if (editor) {
       this.add(editor);
@@ -550,10 +553,12 @@ class AnnotationEditorLayer {
   /**
    * Create and add a new editor.
    */
-  addNewEditor() {
+  addNewEditor(type, value) {
+    console.log("addNewEditor", type, 'tt', value)
     this.#createAndAddNewEditor(
       this.#getCenterPoint(),
-      /* isCentered = */ true
+      /* isCentered = */ true,
+      value
     );
   }
 
@@ -725,21 +730,49 @@ class AnnotationEditorLayer {
       // const { parentScale } = this;
       // console.log(pageWidth, 'pagewidth33', parentScale)
       for (const annotation of annotations) {
-        console.log(annotation.x, 'annotx22')
-        const editor = new FreeTextEditor({
-          parent: this,
-          id: annotation.id || this.getNextId(),
-          initialX: annotation.x, // Top right corner
-          initialY: annotation.y, // Top right corner
-          uiManager: this.#uiManager,
-          isCentered: false,
-          content: annotation.content,
-          fontSize: annotation.fontSize,
-          color: annotation.color
-        });
-        editor.isEditing = false;
-        this.add(editor);
-        editor.editorDiv?.blur();
+        console.log(annotation, 'annotx22')
+        let editor = null;
+        switch (annotation.name) {
+          case "freeTextEditor": {
+            editor = new FreeTextEditor({
+              parent: this,
+              id: annotation.id || this.getNextId(),
+              initialX: annotation.x, // Top right corner
+              initialY: annotation.y, // Top right corner
+              uiManager: this.#uiManager,
+              isCentered: false,
+              content: annotation.content,
+              fontSize: annotation.fontSize,
+              fontFamily: annotation.fontFamily,
+              color: annotation.color
+            });
+            editor.isEditing = false;
+            this.add(editor);
+            editor.editorDiv?.blur();
+            break;
+          }
+          case "stampEditor": {
+            editor = new StampEditor({
+              parent: this,
+              id: annotation.id || this.getNextId(),
+              initialX: annotation.x, // Top right corner
+              initialY: annotation.y, // Top right corner
+              uiManager: this.#uiManager,
+              isCentered: false,
+              bitmapUrl: annotation.urlPath,
+              initialWidth: annotation.width,
+              initialHeight: annotation.height
+            });
+            editor.isEditing = false;
+            this.add(editor);
+            editor.editorDiv?.blur();
+            editor.disableEditing();
+            editor.unselect();
+            editor.disableEditMode();
+            break;
+          }
+        }
+        
       }
       
     }

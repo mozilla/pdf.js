@@ -781,7 +781,7 @@ function resetCtxToDefault(ctx) {
   ctx.lineJoin = "miter";
   ctx.miterLimit = 10;
   ctx.globalCompositeOperation = "source-over";
-  ctx.font = "10px sans-serif";
+  ctx.font = "10px";
   if (ctx.setLineDash !== undefined) {
     ctx.setLineDash([]);
     ctx.lineDashOffset = 0;

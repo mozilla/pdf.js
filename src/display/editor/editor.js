@@ -598,6 +598,7 @@ class AnnotationEditor {
           this.x = newX;
           this.y = newY;
           const [parentWidth, parentHeight] = this.parentDimensions;
+          // console.log("cmd adding here", newWidth)
           this.setDims(parentWidth * newWidth, parentHeight * newHeight);
           this.fixAndSetPosition();
           this.moveInDOM();
@@ -744,7 +745,13 @@ class AnnotationEditor {
     this.height = newHeight;
     this.x = newX;
     this.y = newY;
-
+    this._uiManager._eventBus.dispatch("annotationeditorresized", {
+      source: this,
+      id: this.id,
+      width: this.width,
+      height: this.height
+    });
+    console.log("resizing", newWidth)
     this.setDims(parentWidth * newWidth, parentHeight * newHeight);
     this.fixAndSetPosition();
   }
@@ -817,6 +824,7 @@ class AnnotationEditor {
         const [tx, ty] = this.screenToPageTranslation(e.movementX, e.movementY);
         this._uiManager.dragSelectedEditors(tx, ty);
       };
+      console.log("selected2")
       window.addEventListener(
         "pointermove",
         pointerMoveCallback,
