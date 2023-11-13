@@ -45,8 +45,18 @@ class GenericL10n extends L10n {
    */
   static async *#generateBundles(defaultLang, baseLang) {
     const { baseURL, paths } = await this.#getPaths();
-    const langs =
-      baseLang === defaultLang ? [baseLang] : [baseLang, defaultLang];
+
+    const langs = [baseLang];
+    if (defaultLang !== baseLang) {
+      // Also fallback to the short-format of the base language
+      // (see issue 17269).
+      const shortLang = baseLang.split("-", 1)[0];
+
+      if (shortLang !== baseLang) {
+        langs.push(shortLang);
+      }
+      langs.push(defaultLang);
+    }
     for (const lang of langs) {
       const bundle = await this.#createBundle(lang, baseURL, paths);
       if (bundle) {
