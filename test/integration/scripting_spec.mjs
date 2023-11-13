@@ -16,6 +16,7 @@
 import {
   clearInput,
   closePages,
+  getAnnotationStorage,
   getComputedStyleSelector,
   getFirstSerialized,
   getQuerySelector,
@@ -24,6 +25,7 @@ import {
   kbSelectAll,
   loadAndWait,
   scrollIntoView,
+  waitForEntryInStorage,
 } from "./test_utils.mjs";
 
 describe("Interaction", () => {
@@ -2221,6 +2223,60 @@ describe("Interaction", () => {
 
           const text = await page.$eval(getSelector("26R"), el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("hello");
+        })
+      );
+    });
+  });
+
+  describe("Radio button without T value", () => {
+    let pages;
+    let otherPages;
+
+    beforeAll(async () => {
+      otherPages = await Promise.all(
+        global.integrationSessions.map(async session =>
+          session.browser.newPage()
+        )
+      );
+      pages = await loadAndWait("bug1860602.pdf", getSelector("22R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+      await Promise.all(otherPages.map(page => page.close()));
+    });
+
+    it("must check that only one radio is selected", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page], i) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+          await scrollIntoView(page, getSelector("22R"));
+
+          await page.click(getSelector("25R"));
+          await waitForEntryInStorage(page, "25R", { value: true });
+
+          let storage = await getAnnotationStorage(page);
+          expect(storage)
+            .withContext(`In ${browserName}`)
+            .toEqual({
+              "22R": { value: false },
+              "25R": { value: true },
+              "28R": { value: false },
+            });
+
+          await page.click(getSelector("22R"));
+          await waitForEntryInStorage(page, "22R", { value: true });
+
+          storage = await getAnnotationStorage(page);
+          expect(storage)
+            .withContext(`In ${browserName}`)
+            .toEqual({
+              "22R": { value: true },
+              "25R": { value: false },
+              "28R": { value: false },
+            });
         })
       );
     });

@@ -1711,12 +1711,19 @@ class PDFDocument {
       : clearGlobalCaches();
   }
 
-  async #collectFieldObjects(name, fieldRef, promises, annotationGlobals) {
+  async #collectFieldObjects(
+    name,
+    fieldRef,
+    promises,
+    annotationGlobals,
+    visitedRefs
+  ) {
     const { xref } = this;
 
-    if (!(fieldRef instanceof Ref)) {
+    if (!(fieldRef instanceof Ref) || visitedRefs.has(fieldRef)) {
       return;
     }
+    visitedRefs.put(fieldRef);
     const field = await xref.fetchAsync(fieldRef);
     if (!(field instanceof Dict)) {
       return;
@@ -1724,6 +1731,25 @@ class PDFDocument {
     if (field.has("T")) {
       const partName = stringToPDFString(await field.getAsync("T"));
       name = name === "" ? partName : `${name}.${partName}`;
+    } else {
+      let obj = field;
+      while (true) {
+        obj = obj.getRaw("Parent");
+        if (obj instanceof Ref) {
+          if (visitedRefs.has(obj)) {
+            break;
+          }
+          obj = await xref.fetchAsync(obj);
+        }
+        if (!(obj instanceof Dict)) {
+          break;
+        }
+        if (obj.has("T")) {
+          const partName = stringToPDFString(await obj.getAsync("T"));
+          name = name === "" ? partName : `${name}.${partName}`;
+          break;
+        }
+      }
     }
 
     if (!promises.has(name)) {
@@ -1751,7 +1777,13 @@ class PDFDocument {
     const kids = await field.getAsync("Kids");
     if (Array.isArray(kids)) {
       for (const kid of kids) {
-        await this.#collectFieldObjects(name, kid, promises, annotationGlobals);
+        await this.#collectFieldObjects(
+          name,
+          kid,
+          promises,
+          annotationGlobals,
+          visitedRefs
+        );
       }
     }
   }
@@ -1769,6 +1801,7 @@ class PDFDocument {
         return null;
       }
 
+      const visitedRefs = new RefSet();
       const allFields = Object.create(null);
       const fieldPromises = new Map();
       for (const fieldRef of await acroForm.getAsync("Fields")) {
@@ -1776,7 +1809,8 @@ class PDFDocument {
           "",
           fieldRef,
           fieldPromises,
-          annotationGlobals
+          annotationGlobals,
+          visitedRefs
         );
       }
 
