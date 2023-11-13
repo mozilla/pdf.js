@@ -684,6 +684,9 @@ function createTestSource(testsName, { bot = false, xfaOnly = false } = {}) {
     if (process.argv.includes("--noChrome") || forceNoChrome) {
       args.push("--noChrome");
     }
+    if (process.argv.includes("--headless")) {
+      args.push("--headless");
+    }
 
     const testProcess = startNode(args, { cwd: TEST_DIR, stdio: "inherit" });
     testProcess.on("close", function (code) {
@@ -711,6 +714,9 @@ function makeRef(done, bot) {
   }
   if (process.argv.includes("--noChrome") || forceNoChrome) {
     args.push("--noChrome");
+  }
+  if (process.argv.includes("--headless")) {
+    args.push("--headless");
   }
 
   const testProcess = startNode(args, { cwd: TEST_DIR, stdio: "inherit" });
@@ -1743,7 +1749,6 @@ gulp.task(
     return streamqueue(
       { objectMode: true },
       createTestSource("unit", { bot: true }),
-      createTestSource("font", { bot: true }),
       createTestSource("browser", { bot: true }),
       createTestSource("integration")
     );
@@ -1768,7 +1773,6 @@ gulp.task(
     return streamqueue(
       { objectMode: true },
       createTestSource("unit", { bot: true }),
-      createTestSource("font", { bot: true }),
       createTestSource("browser", { bot: true, xfaOnly: true }),
       createTestSource("integration")
     );

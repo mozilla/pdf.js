@@ -1,3 +1,0 @@
-[submodule "test/ttx/fonttools-code"]
-	path = test/ttx/fonttools-code
-	url = https://github.com/behdad/fonttools.git
