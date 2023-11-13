@@ -896,10 +896,11 @@ gulp.task("locale", function () {
     locales.push(locale);
 
     if (checkFile(dirPath + "/viewer.ftl")) {
-      viewerOutput[locale] = `${locale}/viewer.ftl`;
+      // The L10n-implementations, in the viewer, use lowercase language-codes
+      // internally.
+      viewerOutput[locale.toLowerCase()] = `${locale}/viewer.ftl`;
     }
   }
-
   const glob = locales.length === 1 ? locales[0] : `{${locales.join(",")}}`;
 
   return merge([
