@@ -176,6 +176,28 @@ async function getFirstSerialized(page, filter = undefined) {
   return (await getSerialized(page, filter))[0];
 }
 
+function getAnnotationStorage(page) {
+  return page.evaluate(() =>
+    Object.fromEntries(
+      window.PDFViewerApplication.pdfDocument.annotationStorage.serializable.map?.entries() ||
+        []
+    )
+  );
+}
+
+function waitForEntryInStorage(page, key, value) {
+  return page.waitForFunction(
+    (k, v) => {
+      const { map } =
+        window.PDFViewerApplication.pdfDocument.annotationStorage.serializable;
+      return map && JSON.stringify(map.get(k)) === v;
+    },
+    {},
+    key,
+    JSON.stringify(value)
+  );
+}
+
 function getEditors(page, kind) {
   return page.evaluate(aKind => {
     const elements = document.querySelectorAll(`.${aKind}Editor`);
@@ -398,6 +420,7 @@ export {
   clearInput,
   closePages,
   dragAndDropAnnotation,
+  getAnnotationStorage,
   getComputedStyleSelector,
   getEditorDimensions,
   getEditors,
@@ -427,6 +450,7 @@ export {
   scrollIntoView,
   serializeBitmapDimensions,
   waitForAnnotationEditorLayer,
+  waitForEntryInStorage,
   waitForEvent,
   waitForSelectedEditor,
   waitForSerialized,
