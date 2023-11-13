@@ -886,7 +886,7 @@ class PDFViewer {
           this.pageColors?.background === "Canvas"
         ) {
           this.viewer.style.setProperty(
-            "--hcm-highligh-filter",
+            "--hcm-highlight-filter",
             pdfDocument.filterFactory.addHighlightHCMFilter(
               "CanvasText",
               "Canvas",
