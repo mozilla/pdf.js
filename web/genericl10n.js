@@ -30,7 +30,7 @@ class GenericL10n extends L10n {
         [],
         GenericL10n.#generateBundles.bind(
           GenericL10n,
-          "en-US",
+          "en-us",
           this.getLanguage()
         )
       )

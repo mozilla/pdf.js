@@ -50,7 +50,7 @@ class ConstL10n extends L10n {
   }
 
   static get instance() {
-    return shadow(this, "instance", new ConstL10n("en-US"));
+    return shadow(this, "instance", new ConstL10n("en-us"));
   }
 }
 
