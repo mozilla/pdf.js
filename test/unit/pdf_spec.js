@@ -44,6 +44,7 @@ import {
 } from "../../src/display/api.js";
 import {
   DOMSVGFactory,
+  fetchData,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
   getXfaPageViewport,
@@ -78,6 +79,7 @@ const expectedAPI = Object.freeze({
   createValidAbsoluteUrl,
   DOMSVGFactory,
   FeatureTest,
+  fetchData,
   getDocument,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
