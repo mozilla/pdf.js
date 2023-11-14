@@ -54,6 +54,7 @@ import {
 } from "./display/api.js";
 import {
   DOMSVGFactory,
+  fetchData,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
   getXfaPageViewport,
@@ -92,6 +93,7 @@ export {
   createValidAbsoluteUrl,
   DOMSVGFactory,
   FeatureTest,
+  fetchData,
   getDocument,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
