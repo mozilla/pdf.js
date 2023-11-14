@@ -17,6 +17,7 @@
 
 import { FluentBundle, FluentResource } from "fluent-bundle";
 import { DOMLocalization } from "fluent-dom";
+import { fetchData } from "pdfjs-lib";
 import { L10n } from "./l10n.js";
 
 /**
@@ -71,8 +72,8 @@ class GenericL10n extends L10n {
       return null;
     }
     const url = new URL(path, baseURL);
-    const data = await fetch(url);
-    const text = await data.text();
+    const text = await fetchData(url, /* type = */ "text");
+
     const resource = new FluentResource(text);
     const bundle = new FluentBundle(lang);
     const errors = bundle.addResource(resource);
@@ -84,8 +85,8 @@ class GenericL10n extends L10n {
 
   static async #getPaths() {
     const { href } = document.querySelector(`link[type="application/l10n"]`);
-    const data = await fetch(href);
-    const paths = await data.json();
+    const paths = await fetchData(href, /* type = */ "json");
+
     return { baseURL: href.replace(/[^/]*$/, "") || "./", paths };
   }
 }
