@@ -19,7 +19,7 @@ import { PDFDateString, PromiseCapability } from "pdfjs-lib";
 const DEFAULT_FIELD_CONTENT = "-";
 
 // See https://en.wikibooks.org/wiki/Lentis/Conversion_to_the_Metric_Standard_in_the_United_States
-const NON_METRIC_LOCALES = ["en-US", "en-LR", "my"];
+const NON_METRIC_LOCALES = ["en-us", "en-lr", "my"];
 
 // Should use the format: `width x height`, in portrait orientation. The names,
 // which are l10n-ids, should be lowercase.
