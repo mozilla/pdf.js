@@ -82,6 +82,7 @@ class EditorToolbar {
     const button = document.createElement("button");
     button.className = "delete";
     button.tabIndex = 0;
+    button.setAttribute("data-l10n-id", "pdfjs-editor-remove-button");
     this.#addListenersToElement(button);
     button.addEventListener("click", e => {
       this.#editor._uiManager.delete();
