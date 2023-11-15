@@ -1037,6 +1037,13 @@ class AnnotationEditorUIManager {
     });
   }
 
+  dispatchRemoveAnnotation(details) {
+    this._eventBus.dispatch("annotationremoved", {
+      source: this,
+      details,
+    });
+  }
+
   /**
    * Set the editing state.
    * It can be useful to temporarily disable it when the user is editing a
@@ -1274,6 +1281,7 @@ class AnnotationEditorUIManager {
     ) {
       this.#annotationStorage?.remove(editor.id);
     }
+    this.dispatchRemoveAnnotation(editor.id);
   }
 
   /**
