@@ -168,11 +168,6 @@
     --doorhanger-separator-color: rgb(92 92 97);
     --dialog-button-bg-color: rgb(92 92 97);
     --dialog-button-hover-bg-color: rgb(115 115 115);
-
-    /* This image is used in <input> elements, which unfortunately means that
-     * the `mask-image` approach used with all of the other images doesn't work
-     * here; hence why we still have two versions of this particular image. */
-    --loading-icon: url(images/loading-dark.svg);
   }
 }
 
@@ -494,22 +489,21 @@ body {
 
 #findInput {
   width: 200px;
-}
-/*#if !MOZCENTRAL*/
-#findInput::-webkit-input-placeholder {
-  color: rgb(191 191 191);
-}
-/*#endif*/
-#findInput::placeholder {
-  font-style: normal;
-}
-#findInput[data-status="pending"] {
-  background-image: var(--loading-icon);
-  background-repeat: no-repeat;
-  background-position: calc(50% + 48% * var(--dir-factor));
-}
-#findInput[data-status="notFound"] {
-  background-color: rgb(255 102 102);
+
+  /*#if !MOZCENTRAL*/
+  &::-webkit-input-placeholder {
+    color: rgb(191 191 191);
+  }
+  /*#endif*/
+  &::placeholder {
+    font-style: normal;
+  }
+  .loadingInput:has(> &[data-status="pending"])::after {
+    visibility: visible;
+  }
+  &[data-status="notFound"] {
+    background-color: rgb(255 102 102);
+  }
 }
 
 .secondaryToolbar,
@@ -1100,22 +1094,42 @@ a:is(.toolbarButton, .secondaryToolbarButton)[href="#"] {
   width: 40px;
   background-size: 0 0;
   transition-property: none;
+
+  /*#if !MOZCENTRAL*/
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+  }
+  /*#endif*/
+
+  .loadingInput:has(> &.loading)::after {
+    visibility: visible;
+
+    transition-property: visibility;
+    transition-delay: var(--loading-icon-delay);
+  }
 }
-#pageNumber.visiblePageIsLoading {
-  background-image: var(--loading-icon);
-  background-repeat: no-repeat;
-  background-position: calc(50% - 42% * var(--dir-factor));
-  background-size: 16px 16px;
-  /* Using a delay with background-image doesn't work,
-     consequently we use background-size. */
-  transition-property: background-size;
-  transition-delay: var(--loading-icon-delay);
+
+.loadingInput {
+  &::after {
+    position: absolute;
+    visibility: hidden;
+    top: calc(50% - 8px);
+    width: 16px;
+    height: 16px;
+
+    content: "";
+    background-color: var(--toolbar-icon-bg-color);
+    mask-size: cover;
+    mask-image: var(--loading-icon);
+  }
+
+  &.start::after {
+    inset-inline-start: 4px;
+  }
+  &.end::after {
+    inset-inline-end: 4px;
+  }
 }
-/*#if !MOZCENTRAL*/
-#pageNumber::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-}
-/*#endif*/
 
 .toolbarField:focus {
   border-color: #0a84ff;
