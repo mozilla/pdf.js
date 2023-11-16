@@ -22,8 +22,6 @@ import {
   toggleCheckedBtn,
 } from "./ui_utils.js";
 
-const PAGE_NUMBER_LOADING_INDICATOR = "visiblePageIsLoading";
-
 /**
  * @typedef {Object} ToolbarOptions
  * @property {HTMLDivElement} container - Container for the secondary toolbar.
@@ -300,7 +298,7 @@ class Toolbar {
   updateLoadingIndicatorState(loading = false) {
     const { pageNumber } = this.items;
 
-    pageNumber.classList.toggle(PAGE_NUMBER_LOADING_INDICATOR, loading);
+    pageNumber.classList.toggle("loading", loading);
   }
 }
 
