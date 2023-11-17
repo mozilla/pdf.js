@@ -63,7 +63,9 @@ import {
 import { AnnotationEditorLayer } from "../../src/display/editor/annotation_editor_layer.js";
 import { AnnotationEditorUIManager } from "../../src/display/editor/tools.js";
 import { AnnotationLayer } from "../../src/display/annotation_layer.js";
+import { DrawLayer } from "../../src/display/draw_layer.js";
 import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
+import { Outliner } from "../../src/display/editor/outliner.js";
 import { XfaLayer } from "../../src/display/xfa_layer.js";
 
 const expectedAPI = Object.freeze({
@@ -78,6 +80,7 @@ const expectedAPI = Object.freeze({
   CMapCompressionType,
   createValidAbsoluteUrl,
   DOMSVGFactory,
+  DrawLayer,
   FeatureTest,
   fetchData,
   getDocument,
@@ -93,6 +96,7 @@ const expectedAPI = Object.freeze({
   noContextMenu,
   normalizeUnicode,
   OPS,
+  Outliner,
   PasswordResponses,
   PDFDataRangeTransport,
   PDFDateString,
