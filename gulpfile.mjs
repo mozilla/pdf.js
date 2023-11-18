@@ -25,6 +25,7 @@ import merge from "merge-stream";
 import { mkdirp } from "mkdirp";
 import path from "path";
 import postcss from "gulp-postcss";
+import postcssDarkThemeClass from "postcss-dark-theme-class";
 import postcssDirPseudoClass from "postcss-dir-pseudo-class";
 import postcssDiscardComments from "postcss-discard-comments";
 import postcssNesting from "postcss-nesting";
@@ -1004,6 +1005,7 @@ function buildGeneric(defines, dir) {
           postcssDirPseudoClass(),
           discardCommentsCSS(),
           postcssNesting(),
+          postcssDarkThemeClass(),
           autoprefixer(AUTOPREFIXER_CONFIG),
         ])
       )
@@ -1495,6 +1497,7 @@ gulp.task(
               postcssDirPseudoClass(),
               discardCommentsCSS(),
               postcssNesting(),
+              postcssDarkThemeClass(),
               autoprefixer(AUTOPREFIXER_CONFIG),
             ])
           )

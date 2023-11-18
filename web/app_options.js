@@ -329,6 +329,13 @@ const defaultOptions = {
     kind: OptionKind.WORKER,
   },
 };
+if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+  defaultOptions.viewerCssTheme = {
+    /** @type {number} */
+    value: typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME") ? 2 : 0,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  };
+}
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   defaultOptions.defaultUrl = {
     /** @type {string} */

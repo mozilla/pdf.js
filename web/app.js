@@ -228,6 +228,21 @@ const PDFViewerApplication = {
       await this._parseHashParams();
     }
 
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+      let mode;
+      switch (AppOptions.get("viewerCssTheme")) {
+        case 1:
+          mode = "is-light";
+          break;
+        case 2:
+          mode = "is-dark";
+          break;
+      }
+      if (mode) {
+        document.documentElement.classList.add(mode);
+      }
+    }
+
     // Ensure that the `L10n`-instance has been initialized before creating
     // e.g. the various viewer components.
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
