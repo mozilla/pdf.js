@@ -603,7 +603,7 @@
   align-items: center;
   justify-content: center;
   padding-inline: 4px;
-  width: auto;
+  width: max-content;
   height: 24px;
   min-width: 88px;
   z-index: 1;
