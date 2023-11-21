@@ -551,6 +551,14 @@ class Driver {
       task.stats = { times: [] };
       task.enableXfa = task.enableXfa === true;
 
+      if (task.enableXfa) {
+        this._log(`Skipping XFA file "${task.file}" (see issue 17311)\n`);
+
+        this.currentTask++;
+        this._nextTask();
+        return;
+      }
+
       const prevFile = md5FileMap.get(task.md5);
       if (prevFile) {
         if (task.file !== prevFile) {
