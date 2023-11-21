@@ -670,6 +670,7 @@ function checkRefTestResults(browser, id, results) {
   switch (task.type) {
     case "eq":
     case "text":
+    case "highlight":
       checkEq(task, results, browser, session.masterMode);
       break;
     case "fbf":

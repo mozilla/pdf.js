@@ -8214,5 +8214,19 @@
       "rounds": 1,
       "link": true,
       "type": "eq"
+   },
+   {
+      "id": "tracemonkey-highlight",
+      "file": "pdfs/tracemonkey.pdf",
+      "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+      "rounds": 1,
+      "type": "highlight"
+   },
+   { 
+      "id": "160F-2019-highlight",
+      "file": "pdfs/160F-2019.pdf",
+      "md5": "71591f11ee717e12887f529c84d5ae89",
+      "rounds": 1,
+      "type": "highlight"
    }
 ]
