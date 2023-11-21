@@ -494,8 +494,8 @@
         inset-inline-start: calc(100% - 8px);
 
         &.small {
-          inset-inline-start: calc(100% + 8px);
-          inset-block-start: 100%;
+          inset-inline-start: calc(150% + 10px);
+          inset-block-start: 120%;
         }
       }
 
@@ -540,7 +540,7 @@
 
       &.small {
         inset-inline-start: 100%;
-        inset-block-start: -8px;
+        inset-block-start: -40px;
       }
     }
 
@@ -566,7 +566,7 @@
         inset-block-end: calc(100% - 8px);
 
         &.small {
-          inset-inline-start: -8px;
+          inset-inline-start: -40px;
           inset-block-start: 0;
         }
       }
@@ -575,8 +575,8 @@
         inset-inline-start: calc(100% - 8px);
 
         &.small {
-          inset-inline-start: calc(100% + 8px);
-          inset-block-start: 100%;
+          inset-inline-start: calc(100% + 10px);
+          inset-block-start: 120%;
         }
       }
     }
@@ -644,7 +644,7 @@
 
     inset-block-end: unset;
     inset-inline-start: 0;
-    inset-block-start: calc(100% + 8px);
+    inset-block-start: calc(150% + 20px);
   }
 
   &:hover {
