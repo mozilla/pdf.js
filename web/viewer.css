@@ -28,6 +28,7 @@
 
   --toolbar-icon-opacity: 0.7;
   --doorhanger-icon-opacity: 0.9;
+  --editor-toolbar-base-offset: 105px;
 
   --main-color: rgb(12 12 13);
   --body-bg-color: rgb(212 212 215);
@@ -572,15 +573,15 @@ body {
 }
 
 #editorStampParamsToolbar {
-  inset-inline-end: 40px;
+  inset-inline-end: calc(var(--editor-toolbar-base-offset) + 0px);
 }
 
 #editorInkParamsToolbar {
-  inset-inline-end: 68px;
+  inset-inline-end: calc(var(--editor-toolbar-base-offset) + 28px);
 }
 
 #editorFreeTextParamsToolbar {
-  inset-inline-end: 96px;
+  inset-inline-end: calc(var(--editor-toolbar-base-offset) + 56px);
 }
 
 #editorStampAddImage::before {
@@ -1469,6 +1470,9 @@ dialog :link {
 }
 
 @media all and (max-width: 750px) {
+  :root {
+    --editor-toolbar-base-offset: 40px;
+  }
   #outerContainer .hiddenMediumView {
     display: none;
   }
