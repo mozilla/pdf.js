@@ -4554,7 +4554,7 @@ describe("annotation", function () {
     });
   });
 
-  describe("HightlightAnnotation", function () {
+  describe("HighlightAnnotation", function () {
     it("should set quadpoints to null if not defined", async function () {
       const highlightDict = new Dict();
       highlightDict.set("Type", Name.get("Annot"));
@@ -4618,6 +4618,97 @@ describe("annotation", function () {
       );
       expect(data.annotationType).toEqual(AnnotationType.HIGHLIGHT);
       expect(data.quadPoints).toEqual(null);
+    });
+
+    it("should create a new Highlight annotation", async function () {
+      partialEvaluator.xref = new XRefMock();
+      const task = new WorkerTask("test Highlight creation");
+      const data = await AnnotationFactory.saveNewAnnotations(
+        partialEvaluator,
+        task,
+        [
+          {
+            annotationType: AnnotationEditorType.HIGHLIGHT,
+            rect: [12, 34, 56, 78],
+            rotation: 0,
+            opacity: 1,
+            color: [0, 0, 0],
+            quadPoints: [1, 2, 3, 4, 5, 6, 7],
+            outlines: [
+              [8, 9, 10, 11],
+              [12, 13, 14, 15],
+            ],
+          },
+        ]
+      );
+
+      const base = data.annotations[0].data.replace(/\(D:\d+\)/, "(date)");
+      expect(base).toEqual(
+        "1 0 obj\n" +
+          "<< /Type /Annot /Subtype /Highlight /CreationDate (date) /Rect [12 34 56 78] " +
+          "/F 4 /Border [0 0 0] /Rotate 0 /QuadPoints [1 2 3 4 5 6 7] /C [0 0 0] " +
+          "/CA 1 /AP << /N 2 0 R>>>>\n" +
+          "endobj\n"
+      );
+
+      const appearance = data.dependencies[0].data;
+      expect(appearance).toEqual(
+        "2 0 obj\n" +
+          "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [12 34 56 78] " +
+          "/Length 47 /Resources << /ExtGState << /R0 << /BM /Multiply>>>>>>>> stream\n" +
+          "0 g\n" +
+          "/R0 gs\n" +
+          "8 9 m\n" +
+          "10 11 l\n" +
+          "h\n" +
+          "12 13 m\n" +
+          "14 15 l\n" +
+          "h\n" +
+          "f*\n" +
+          "endstream\n" +
+          "endobj\n"
+      );
+    });
+
+    it("should render a new Highlight annotation for printing", async function () {
+      partialEvaluator.xref = new XRefMock();
+      const task = new WorkerTask("test Highlight printing");
+      const highlightAnnotation = (
+        await AnnotationFactory.printNewAnnotations(
+          annotationGlobalsMock,
+          partialEvaluator,
+          task,
+          [
+            {
+              annotationType: AnnotationEditorType.HIGHLIGHT,
+              rect: [12, 34, 56, 78],
+              rotation: 0,
+              opacity: 0.5,
+              color: [0, 255, 0],
+              quadPoints: [1, 2, 3, 4, 5, 6, 7],
+              outlines: [[8, 9, 10, 11]],
+            },
+          ]
+        )
+      )[0];
+
+      const { opList } = await highlightAnnotation.getOperatorList(
+        partialEvaluator,
+        task,
+        RenderingIntentFlag.PRINT,
+        false,
+        null
+      );
+
+      expect(opList.argsArray.length).toEqual(6);
+      expect(opList.fnArray).toEqual([
+        OPS.beginAnnotation,
+        OPS.setFillRGBColor,
+        OPS.setGState,
+        OPS.constructPath,
+        OPS.eoFill,
+        OPS.endAnnotation,
+      ]);
     });
   });
 
