@@ -36,6 +36,19 @@ class EditorToolbar {
     buttons.className = "buttons";
     editToolbar.append(buttons);
 
+    const position = this.#editor.toolbarPosition;
+    if (position) {
+      const { style } = editToolbar;
+      const x =
+        this.#editor._uiManager.direction === "ltr"
+          ? 1 - position[0]
+          : position[0];
+      style.insetInlineEnd = `${100 * x}%`;
+      style.top = `calc(${
+        100 * position[1]
+      }% + var(--editor-toolbar-vert-offset))`;
+    }
+
     this.#addDeleteButton();
 
     return editToolbar;

@@ -1217,7 +1217,9 @@ class AnnotationEditorUIManager {
   }
 
   addNewEditorFromKeyboard() {
-    this.currentLayer.addNewEditor();
+    if (this.currentLayer.canCreateNewEmptyEditor()) {
+      this.currentLayer.addNewEditor();
+    }
   }
 
   /**

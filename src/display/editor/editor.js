@@ -507,7 +507,11 @@ class AnnotationEditor {
     }
   }
 
-  fixAndSetPosition() {
+  /**
+   * Fix the position of the editor in order to keep it inside its parent page.
+   * @param {number} [rotation] - the rotation of the page.
+   */
+  fixAndSetPosition(rotation = this.rotation) {
     const [pageWidth, pageHeight] = this.pageDimensions;
     let { x, y, width, height } = this;
     width *= pageWidth;
@@ -515,7 +519,7 @@ class AnnotationEditor {
     x *= pageWidth;
     y *= pageHeight;
 
-    switch (this.rotation) {
+    switch (rotation) {
       case 0:
         x = Math.max(0, Math.min(pageWidth - width, x));
         y = Math.max(0, Math.min(pageHeight - height, y));
@@ -1125,14 +1129,28 @@ class AnnotationEditor {
 
     this.#hasBeenClicked = true;
 
-    this.#setUpDragSession(event);
-  }
-
-  #setUpDragSession(event) {
-    if (!this._isDraggable) {
+    if (this._isDraggable) {
+      this.#setUpDragSession(event);
       return;
     }
 
+    this.#selectOnPointerEvent(event);
+  }
+
+  #selectOnPointerEvent(event) {
+    const { isMac } = FeatureTest.platform;
+    if (
+      (event.ctrlKey && !isMac) ||
+      event.shiftKey ||
+      (event.metaKey && isMac)
+    ) {
+      this.parent.toggleSelected(this);
+    } else {
+      this.parent.setSelected(this);
+    }
+  }
+
+  #setUpDragSession(event) {
     const isSelected = this._uiManager.isSelected(this);
     this._uiManager.setUpDragSession();
 
@@ -1163,16 +1181,7 @@ class AnnotationEditor {
 
       this.#hasBeenClicked = false;
       if (!this._uiManager.endDragSession()) {
-        const { isMac } = FeatureTest.platform;
-        if (
-          (event.ctrlKey && !isMac) ||
-          event.shiftKey ||
-          (event.metaKey && isMac)
-        ) {
-          this.parent.toggleSelected(this);
-        } else {
-          this.parent.setSelected(this);
-        }
+        this.#selectOnPointerEvent(event);
       }
     };
     window.addEventListener("pointerup", pointerUpCallback);
@@ -1204,8 +1213,11 @@ class AnnotationEditor {
 
   /**
    * Convert the current rect into a page one.
+   * @param {number} tx - x-translation in screen coordinates.
+   * @param {number} ty - y-translation in screen coordinates.
+   * @param {number} [rotation] - the rotation of the page.
    */
-  getRect(tx, ty) {
+  getRect(tx, ty, rotation = this.rotation) {
     const scale = this.parentScale;
     const [pageWidth, pageHeight] = this.pageDimensions;
     const [pageX, pageY] = this.pageTranslation;
@@ -1216,7 +1228,7 @@ class AnnotationEditor {
     const width = this.width * pageWidth;
     const height = this.height * pageHeight;
 
-    switch (this.rotation) {
+    switch (rotation) {
       case 0:
         return [
           x + shiftX + pageX,
@@ -1333,6 +1345,12 @@ class AnnotationEditor {
   }
 
   /**
+   * Rotate the editor.
+   * @param {number} angle
+   */
+  rotate(_angle) {}
+
+  /**
    * Serialize the editor.
    * The result of the serialization will be used to construct a
    * new annotation to add to the pdf document.
@@ -1424,6 +1442,10 @@ class AnnotationEditor {
       this.#resizersDiv.classList.remove("hidden");
       bindEvents(this, this.div, ["keydown"]);
     }
+  }
+
+  get toolbarPosition() {
+    return null;
   }
 
   /**
@@ -1668,6 +1690,10 @@ class AnnotationEditor {
 
   static get MIN_SIZE() {
     return 16;
+  }
+
+  static canCreateNewEmptyEditor() {
+    return true;
   }
 }
 

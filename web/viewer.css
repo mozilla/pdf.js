@@ -81,6 +81,7 @@
   --treeitem-expanded-icon: url(images/treeitem-expanded.svg);
   --treeitem-collapsed-icon: url(images/treeitem-collapsed.svg);
   --toolbarButton-editorFreeText-icon: url(images/toolbarButton-editorFreeText.svg);
+  --toolbarButton-editorHighlight-icon: url(images/toolbarButton-editorHighlight.svg);
   --toolbarButton-editorInk-icon: url(images/toolbarButton-editorInk.svg);
   --toolbarButton-editorStamp-icon: url(images/toolbarButton-editorStamp.svg);
   --toolbarButton-menuArrow-icon: url(images/toolbarButton-menuArrow.svg);
@@ -584,6 +585,10 @@ body {
   inset-inline-end: calc(var(--editor-toolbar-base-offset) + 56px);
 }
 
+#editorHighlightParamsToolbar {
+  inset-inline-end: calc(var(--editor-toolbar-base-offset) + 84px);
+}
+
 #editorStampAddImage::before {
   mask-image: var(--editorParams-stampAddImage-icon);
 }
@@ -901,6 +906,10 @@ body {
 
 #editorFreeText::before {
   mask-image: var(--toolbarButton-editorFreeText-icon);
+}
+
+#editorHighlight::before {
+  mask-image: var(--toolbarButton-editorHighlight-icon);
 }
 
 #editorInk::before {
