@@ -2261,9 +2261,15 @@ describe("Interaction", () => {
           expect(storage)
             .withContext(`In ${browserName}`)
             .toEqual({
-              "22R": { value: false },
               "25R": { value: true },
               "28R": { value: false },
+              "35R": { value: false },
+              "38R": { value: false },
+              "41R": { value: false },
+              "44R": { value: false },
+              "47R": { value: false },
+              "50R": { value: false },
+              "22R": { value: false },
             });
 
           await page.click(getSelector("22R"));
@@ -2273,9 +2279,15 @@ describe("Interaction", () => {
           expect(storage)
             .withContext(`In ${browserName}`)
             .toEqual({
-              "22R": { value: true },
               "25R": { value: false },
               "28R": { value: false },
+              "35R": { value: false },
+              "38R": { value: false },
+              "41R": { value: false },
+              "44R": { value: false },
+              "47R": { value: false },
+              "50R": { value: false },
+              "22R": { value: true },
             });
         })
       );
