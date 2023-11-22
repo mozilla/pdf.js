@@ -8361,5 +8361,16 @@
             "rotation": 0
          }
       }
+   },
+   {
+      "id": "bug1864136-forms",
+      "file": "pdfs/bug1864136.pdf",
+      "md5": "97357ad5b0fde2c4e79c07819e4d9710",
+      "rounds": 1,
+      "link": true,
+      "firstPage": 2,
+      "lastPage": 2,
+      "type": "eq",
+      "forms": true
    }
 ]
