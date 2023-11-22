@@ -125,6 +125,14 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  enableHighlightEditor: {
+    // We'll probably want to make some experiments before enabling this
+    // in Firefox release, but it has to be temporary.
+    // TODO: remove it when unnecessary.
+    /** @type {boolean} */
+    value: typeof PDFJSDev === "undefined",
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   enablePermissions: {
     /** @type {boolean} */
     value: false,
