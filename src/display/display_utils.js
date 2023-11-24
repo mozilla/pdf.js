@@ -399,6 +399,8 @@ async function fetchData(url, type = "text") {
     switch (type) {
       case "arraybuffer":
         return response.arrayBuffer();
+      case "blob":
+        return response.blob();
       case "json":
         return response.json();
     }
@@ -419,6 +421,7 @@ async function fetchData(url, type = "text") {
         let data;
         switch (type) {
           case "arraybuffer":
+          case "blob":
           case "json":
             data = request.response;
             break;
