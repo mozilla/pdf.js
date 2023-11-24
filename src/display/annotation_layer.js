@@ -1637,6 +1637,21 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
       storage.setValue(id, { value });
     }
 
+    if (value) {
+      // It's possible that multiple radio buttons are checked.
+      // So if this one is checked we just reset the other ones.
+      // (see bug 1864136). Then when the other ones will be rendered they will
+      // unchecked (because of their value in the storage).
+      // Consequently, the first checked radio button will be the only checked
+      // one.
+      for (const radio of this._getElementsByName(
+        data.fieldName,
+        /* skipId = */ id
+      )) {
+        storage.setValue(radio.id, { value: false });
+      }
+    }
+
     const element = document.createElement("input");
     GetElementsByNameSet.add(element);
     element.setAttribute("data-element-id", id);

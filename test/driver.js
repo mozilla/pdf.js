@@ -219,6 +219,8 @@ class Rasterize {
     outputScale,
     annotations,
     annotationCanvasMap,
+    annotationStorage,
+    fieldObjects,
     page,
     imageResourcesPath,
     renderForms = false
@@ -244,6 +246,8 @@ class Rasterize {
         linkService: new SimpleLinkService(),
         imageResourcesPath,
         renderForms,
+        annotationStorage,
+        fieldObjects,
       };
 
       // Ensure that the annotationLayer gets translated.
@@ -682,6 +686,10 @@ class Driver {
               }
             }
 
+            if (task.forms) {
+              task.fieldObjects = await doc.getFieldObjects();
+            }
+
             this._nextPage(task, failure);
           },
           err => {
@@ -928,9 +936,7 @@ class Driver {
               transform,
             };
             if (renderForms) {
-              renderContext.annotationMode = task.annotationStorage
-                ? AnnotationMode.ENABLE_STORAGE
-                : AnnotationMode.ENABLE_FORMS;
+              renderContext.annotationMode = AnnotationMode.ENABLE_FORMS;
             } else if (renderPrint) {
               if (task.annotationStorage) {
                 renderContext.annotationMode = AnnotationMode.ENABLE_STORAGE;
@@ -984,6 +990,8 @@ class Driver {
                       outputScale,
                       data,
                       annotationCanvasMap,
+                      task.pdfDoc.annotationStorage,
+                      task.fieldObjects,
                       page,
                       IMAGE_RESOURCES_PATH,
                       renderForms
