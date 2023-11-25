@@ -301,6 +301,8 @@ pdfjs-editor-ink-button-label = Moha’ãnga
 pdfjs-editor-stamp-button =
     .title = Embojuaju térã embosako’i ta’ãnga
 pdfjs-editor-stamp-button-label = Embojuaju térã embosako’i ta’ãnga
+pdfjs-editor-remove-button =
+    .title = Mboguete
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Sa’y
 pdfjs-editor-free-text-size-input = Tuichakue

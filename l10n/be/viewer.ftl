@@ -226,6 +226,23 @@ pdfjs-find-match-diacritics-checkbox-label = З улікам дыякрытык
 pdfjs-find-entire-word-checkbox-label = Словы цалкам
 pdfjs-find-reached-top = Дасягнуты пачатак дакумента, працяг з канца
 pdfjs-find-reached-bottom = Дасягнуты канец дакумента, працяг з пачатку
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count =
+    { $total ->
+        [one] { $current } з { $total } супадзенняў
+        [few] { $current } з { $total } супадзенняў
+       *[many] { $current } з { $total } супадзенняў
+    }
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit =
+    { $limit ->
+        [one] Больш за { $limit } супадзенне
+        [few] Больш за { $limit } супадзенні
+       *[many] Больш за { $limit } супадзенняў
+    }
 pdfjs-find-not-found = Выраз не знойдзены
 
 ## Predefined zoom values
@@ -324,3 +341,11 @@ pdfjs-editor-alt-text-textarea =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
+pdfjs-editor-resizer-label-top-left = Верхні левы кут — змяніць памер
+pdfjs-editor-resizer-label-top-middle = Уверсе пасярэдзіне — змяніць памер
+pdfjs-editor-resizer-label-top-right = Верхні правы кут — змяніць памер
+pdfjs-editor-resizer-label-middle-right = Пасярэдзіне справа — змяніць памер
+pdfjs-editor-resizer-label-bottom-right = Правы ніжні кут — змяніць памер
+pdfjs-editor-resizer-label-bottom-middle = Пасярэдзіне ўнізе — змяніць памер
+pdfjs-editor-resizer-label-bottom-left = Левы ніжні кут — змяніць памер
+pdfjs-editor-resizer-label-middle-left = Пасярэдзіне злева — змяніць памер

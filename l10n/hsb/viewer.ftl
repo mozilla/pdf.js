@@ -305,6 +305,8 @@ pdfjs-editor-ink-button-label = Rysować
 pdfjs-editor-stamp-button =
     .title = Wobrazy přidać abo wobdźěłać
 pdfjs-editor-stamp-button-label = Wobrazy přidać abo wobdźěłać
+pdfjs-editor-remove-button =
+    .title = Wotstronić
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Barba
 pdfjs-editor-free-text-size-input = Wulkosć

@@ -301,6 +301,8 @@ pdfjs-editor-ink-button-label = Çiz
 pdfjs-editor-stamp-button =
     .title = Resim ekle veya düzenle
 pdfjs-editor-stamp-button-label = Resim ekle veya düzenle
+pdfjs-editor-remove-button =
+    .title = Kaldır
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Renk
 pdfjs-editor-free-text-size-input = Boyut

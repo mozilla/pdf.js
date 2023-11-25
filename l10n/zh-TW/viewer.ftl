@@ -220,7 +220,7 @@ pdfjs-find-previous-button-label = 上一個
 pdfjs-find-next-button =
     .title = 尋找文字下次出現的位置
 pdfjs-find-next-button-label = 下一個
-pdfjs-find-highlight-checkbox = 全部強調標示
+pdfjs-find-highlight-checkbox = 強調全部
 pdfjs-find-match-case-checkbox-label = 區分大小寫
 pdfjs-find-match-diacritics-checkbox-label = 符合變音符號
 pdfjs-find-entire-word-checkbox-label = 符合整個字
@@ -293,6 +293,8 @@ pdfjs-editor-ink-button-label = 繪圖
 pdfjs-editor-stamp-button =
     .title = 新增或編輯圖片
 pdfjs-editor-stamp-button-label = 新增或編輯圖片
+pdfjs-editor-remove-button =
+    .title = 移除
 # Editor Parameters
 pdfjs-editor-free-text-color-input = 色彩
 pdfjs-editor-free-text-size-input = 大小

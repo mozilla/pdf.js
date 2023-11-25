@@ -301,6 +301,8 @@ pdfjs-editor-ink-button-label = Designar
 pdfjs-editor-stamp-button =
     .title = Adder o rediger imagines
 pdfjs-editor-stamp-button-label = Adder o rediger imagines
+pdfjs-editor-remove-button =
+    .title = Remover
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Color
 pdfjs-editor-free-text-size-input = Dimension

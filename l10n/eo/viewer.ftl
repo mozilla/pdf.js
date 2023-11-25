@@ -226,6 +226,21 @@ pdfjs-find-match-diacritics-checkbox-label = Respekti supersignojn
 pdfjs-find-entire-word-checkbox-label = Tutaj vortoj
 pdfjs-find-reached-top = Komenco de la dokumento atingita, daŭrigado ekde la fino
 pdfjs-find-reached-bottom = Fino de la dokumento atingita, daŭrigado ekde la komenco
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count =
+    { $total ->
+        [one] { $current } el { $total } kongruo
+       *[other] { $current } el { $total } kongruoj
+    }
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit =
+    { $limit ->
+        [one] Pli ol { $limit } kongruo
+       *[other] Pli ol { $limit } kongruoj
+    }
 pdfjs-find-not-found = Frazo ne trovita
 
 ## Predefined zoom values
@@ -324,3 +339,11 @@ pdfjs-editor-alt-text-textarea =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
+pdfjs-editor-resizer-label-top-left = Supra maldekstra angulo — ŝangi grandon
+pdfjs-editor-resizer-label-top-middle = Supra mezo — ŝanĝi grandon
+pdfjs-editor-resizer-label-top-right = Supran dekstran angulon — ŝanĝi grandon
+pdfjs-editor-resizer-label-middle-right = Dekstra mezo — ŝanĝi grandon
+pdfjs-editor-resizer-label-bottom-right = Malsupra deksta angulo — ŝanĝi grandon
+pdfjs-editor-resizer-label-bottom-middle = Malsupra mezo — ŝanĝi grandon
+pdfjs-editor-resizer-label-bottom-left = Malsupra maldekstra angulo — ŝanĝi grandon
+pdfjs-editor-resizer-label-middle-left = Maldekstra mezo — ŝanĝi grandon
