@@ -226,6 +226,13 @@ pdfjs-find-match-diacritics-checkbox-label = เครื่องหมาย�
 pdfjs-find-entire-word-checkbox-label = ทั้งคำ
 pdfjs-find-reached-top = ค้นหาถึงจุดเริ่มต้นของหน้า เริ่มค้นต่อจากด้านล่าง
 pdfjs-find-reached-bottom = ค้นหาถึงจุดสิ้นสุดหน้า เริ่มค้นต่อจากด้านบน
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count = { $current } จาก { $total } รายการที่ตรงกัน
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit = มากกว่า { $limit } รายการที่ตรงกัน
 pdfjs-find-not-found = ไม่พบวลี
 
 ## Predefined zoom values
@@ -305,7 +312,30 @@ pdfjs-ink-canvas =
 
 ## Alt-text dialog
 
+# Alternative text (alt text) helps when people can't see the image.
+pdfjs-editor-alt-text-button-label = ข้อความทดแทน
+pdfjs-editor-alt-text-edit-button-label = แก้ไขข้อความทดแทน
+pdfjs-editor-alt-text-dialog-label = เลือกตัวเลือก
+pdfjs-editor-alt-text-dialog-description = ข้อความทดแทนสามารถช่วยเหลือได้เมื่อผู้ใช้มองไม่เห็นภาพ หรือภาพไม่โหลด
+pdfjs-editor-alt-text-add-description-label = เพิ่มคำอธิบาย
+pdfjs-editor-alt-text-add-description-description = แนะนำให้ใช้ 1-2 ประโยคซึ่งอธิบายหัวเรื่อง ฉาก หรือการกระทำ
+pdfjs-editor-alt-text-mark-decorative-label = ทำเครื่องหมายเป็นสิ่งตกแต่ง
+pdfjs-editor-alt-text-mark-decorative-description = สิ่งนี้ใช้สำหรับภาพที่เป็นสิ่งประดับ เช่น ขอบ หรือลายน้ำ
+pdfjs-editor-alt-text-cancel-button = ยกเลิก
+pdfjs-editor-alt-text-save-button = บันทึก
+pdfjs-editor-alt-text-decorative-tooltip = ทำเครื่องหมายเป็นสิ่งตกแต่งแล้ว
+# .placeholder: This is a placeholder for the alt text input area
+pdfjs-editor-alt-text-textarea =
+    .placeholder = ตัวอย่างเช่น “ชายหนุ่มคนหนึ่งนั่งลงที่โต๊ะเพื่อรับประทานอาหารมื้อหนึ่ง”
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
+pdfjs-editor-resizer-label-top-left = มุมซ้ายบน — ปรับขนาด
+pdfjs-editor-resizer-label-top-middle = ตรงกลางด้านบน — ปรับขนาด
+pdfjs-editor-resizer-label-top-right = มุมขวาบน — ปรับขนาด
+pdfjs-editor-resizer-label-middle-right = ตรงกลางด้านขวา — ปรับขนาด
+pdfjs-editor-resizer-label-bottom-right = มุมขวาล่าง — ปรับขนาด
+pdfjs-editor-resizer-label-bottom-middle = ตรงกลางด้านล่าง — ปรับขนาด
+pdfjs-editor-resizer-label-bottom-left = มุมซ้ายล่าง — ปรับขนาด
+pdfjs-editor-resizer-label-middle-left = ตรงกลางด้านซ้าย — ปรับขนาด

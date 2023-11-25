@@ -226,6 +226,23 @@ pdfjs-find-match-diacritics-checkbox-label = Rozróżnianie liter diakrytyzowany
 pdfjs-find-entire-word-checkbox-label = Całe słowa
 pdfjs-find-reached-top = Początek dokumentu. Wyszukiwanie od końca.
 pdfjs-find-reached-bottom = Koniec dokumentu. Wyszukiwanie od początku.
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count =
+    { $total ->
+        [one] { $current }. z { $total } trafienia
+        [few] { $current }. z { $total } trafień
+       *[many] { $current }. z { $total } trafień
+    }
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit =
+    { $limit ->
+        [one] Więcej niż { $limit } trafienie
+        [few] Więcej niż { $limit } trafienia
+       *[many] Więcej niż { $limit } trafień
+    }
 pdfjs-find-not-found = Nie znaleziono tekstu
 
 ## Predefined zoom values
@@ -324,3 +341,11 @@ pdfjs-editor-alt-text-textarea =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
+pdfjs-editor-resizer-label-top-left = Lewy górny róg — zmień rozmiar
+pdfjs-editor-resizer-label-top-middle = Górny środkowy — zmień rozmiar
+pdfjs-editor-resizer-label-top-right = Prawy górny róg — zmień rozmiar
+pdfjs-editor-resizer-label-middle-right = Prawy środkowy — zmień rozmiar
+pdfjs-editor-resizer-label-bottom-right = Prawy dolny róg — zmień rozmiar
+pdfjs-editor-resizer-label-bottom-middle = Dolny środkowy — zmień rozmiar
+pdfjs-editor-resizer-label-bottom-left = Lewy dolny róg — zmień rozmiar
+pdfjs-editor-resizer-label-middle-left = Lewy środkowy — zmień rozmiar

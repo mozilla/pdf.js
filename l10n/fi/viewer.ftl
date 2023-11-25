@@ -301,6 +301,8 @@ pdfjs-editor-ink-button-label = Piirros
 pdfjs-editor-stamp-button =
     .title = Lisää tai muokkaa kuvia
 pdfjs-editor-stamp-button-label = Lisää tai muokkaa kuvia
+pdfjs-editor-remove-button =
+    .title = Poista
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Väri
 pdfjs-editor-free-text-size-input = Koko

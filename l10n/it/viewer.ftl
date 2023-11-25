@@ -304,6 +304,8 @@ pdfjs-editor-ink-button-label = Disegno
 pdfjs-editor-stamp-button =
     .title = Aggiungi o rimuovi immagine
 pdfjs-editor-stamp-button-label = Aggiungi o rimuovi immagine
+pdfjs-editor-remove-button =
+    .title = Rimuovi
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Colore
 pdfjs-editor-free-text-size-input = Dimensione
@@ -350,4 +352,5 @@ pdfjs-editor-resizer-label-bottom-right = Angolo in basso a destra — ridimensi
 pdfjs-editor-resizer-label-bottom-middle = Lato inferiore nel mezzo — ridimensiona
 pdfjs-editor-resizer-label-bottom-left = Angolo in basso a sinistra — ridimensiona
 pdfjs-editor-resizer-label-middle-left = Lato sinistro nel mezzo — ridimensiona
+
 

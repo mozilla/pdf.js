@@ -301,6 +301,8 @@ pdfjs-editor-ink-button-label = Сурет салу
 pdfjs-editor-stamp-button =
     .title = Суреттерді қосу немесе түзету
 pdfjs-editor-stamp-button-label = Суреттерді қосу немесе түзету
+pdfjs-editor-remove-button =
+    .title = Өшіру
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Түс
 pdfjs-editor-free-text-size-input = Өлшемі

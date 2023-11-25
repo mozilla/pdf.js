@@ -301,6 +301,8 @@ pdfjs-editor-ink-button-label = Rita
 pdfjs-editor-stamp-button =
     .title = Lägg till eller redigera bilder
 pdfjs-editor-stamp-button-label = Lägg till eller redigera bilder
+pdfjs-editor-remove-button =
+    .title = Ta bort
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Färg
 pdfjs-editor-free-text-size-input = Storlek
