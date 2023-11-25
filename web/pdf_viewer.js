@@ -2204,9 +2204,6 @@ class PDFViewer {
     ]);
   }
 
-  /**
-   * @type {number}
-   */
   get annotationEditorMode() {
     return this.#annotationEditorUIManager
       ? this.#annotationEditorMode
@@ -2214,7 +2211,15 @@ class PDFViewer {
   }
 
   /**
-   * @param {number} mode - AnnotationEditor mode (None, FreeText, Ink, ...)
+   * @typedef {Object} AnnotationEditorModeOptions
+   * @property {number} mode - The editor mode (none, FreeText, ink, ...).
+   * @property {string|null} [editId] - ID of the existing annotation to edit.
+   * @property {boolean} [isFromKeyboard] - True if the mode change is due to a
+   *   keyboard action.
+   */
+
+  /**
+   * @param {AnnotationEditorModeOptions} options
    */
   set annotationEditorMode({ mode, editId = null, isFromKeyboard = false }) {
     if (!this.#annotationEditorUIManager) {
