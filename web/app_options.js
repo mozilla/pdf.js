@@ -236,8 +236,8 @@ const defaultOptions = {
       typeof PDFJSDev === "undefined"
         ? "../external/bcmaps/"
         : PDFJSDev.test("MOZCENTRAL")
-        ? "resource://pdf.js/web/cmaps/"
-        : "../web/cmaps/",
+          ? "resource://pdf.js/web/cmaps/"
+          : "../web/cmaps/",
     kind: OptionKind.API,
   },
   disableAutoFetch: {
@@ -302,8 +302,8 @@ const defaultOptions = {
       typeof PDFJSDev === "undefined"
         ? "../external/standard_fonts/"
         : PDFJSDev.test("MOZCENTRAL")
-        ? "resource://pdf.js/web/standard_fonts/"
-        : "../web/standard_fonts/",
+          ? "resource://pdf.js/web/standard_fonts/"
+          : "../web/standard_fonts/",
     kind: OptionKind.API,
   },
   verbosity: {
@@ -324,8 +324,8 @@ const defaultOptions = {
       typeof PDFJSDev === "undefined"
         ? "../src/pdf.worker.js"
         : PDFJSDev.test("MOZCENTRAL")
-        ? "resource://pdf.js/build/pdf.worker.mjs"
-        : "../build/pdf.worker.mjs",
+          ? "resource://pdf.js/build/pdf.worker.mjs"
+          : "../build/pdf.worker.mjs",
     kind: OptionKind.WORKER,
   },
 };

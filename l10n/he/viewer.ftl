@@ -301,6 +301,8 @@ pdfjs-editor-ink-button-label = ציור
 pdfjs-editor-stamp-button =
     .title = הוספה או עריכת תמונות
 pdfjs-editor-stamp-button-label = הוספה או עריכת תמונות
+pdfjs-editor-remove-button =
+    .title = הסרה
 # Editor Parameters
 pdfjs-editor-free-text-color-input = צבע
 pdfjs-editor-free-text-size-input = גודל

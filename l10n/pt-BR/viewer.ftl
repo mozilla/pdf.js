@@ -301,6 +301,8 @@ pdfjs-editor-ink-button-label = Desenho
 pdfjs-editor-stamp-button =
     .title = Adicionar ou editar imagens
 pdfjs-editor-stamp-button-label = Adicionar ou editar imagens
+pdfjs-editor-remove-button =
+    .title = Remover
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Cor
 pdfjs-editor-free-text-size-input = Tamanho
@@ -327,11 +329,11 @@ pdfjs-editor-alt-text-dialog-label = Escolha uma opção
 pdfjs-editor-alt-text-dialog-description = O texto alternativo ajuda quando uma imagem não aparece ou não for carregada.
 pdfjs-editor-alt-text-add-description-label = Adicione uma descrição
 pdfjs-editor-alt-text-add-description-description = Procure usar uma ou duas frases que descrevam o assunto, o cenário ou as ações.
-pdfjs-editor-alt-text-mark-decorative-label = Marcar como decorativo
+pdfjs-editor-alt-text-mark-decorative-label = Marcar como decorativa
 pdfjs-editor-alt-text-mark-decorative-description = Isto é usado para imagens ornamentais, como bordas ou marcas d'água.
 pdfjs-editor-alt-text-cancel-button = Cancelar
 pdfjs-editor-alt-text-save-button = Salvar
-pdfjs-editor-alt-text-decorative-tooltip = Marcado como decorativo
+pdfjs-editor-alt-text-decorative-tooltip = Marcado como decorativa
 # .placeholder: This is a placeholder for the alt text input area
 pdfjs-editor-alt-text-textarea =
     .placeholder = Por exemplo, “Um jovem senta-se à mesa para comer uma refeição”

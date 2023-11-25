@@ -293,6 +293,8 @@ pdfjs-editor-ink-button-label = 그리기
 pdfjs-editor-stamp-button =
     .title = 이미지 추가 또는 편집
 pdfjs-editor-stamp-button-label = 이미지 추가 또는 편집
+pdfjs-editor-remove-button =
+    .title = 제거
 # Editor Parameters
 pdfjs-editor-free-text-color-input = 색상
 pdfjs-editor-free-text-size-input = 크기
