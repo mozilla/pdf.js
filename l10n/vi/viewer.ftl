@@ -293,6 +293,8 @@ pdfjs-editor-ink-button-label = Vẽ
 pdfjs-editor-stamp-button =
     .title = Thêm hoặc chỉnh sửa hình ảnh
 pdfjs-editor-stamp-button-label = Thêm hoặc chỉnh sửa hình ảnh
+pdfjs-editor-remove-button =
+    .title = Xóa
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Màu
 pdfjs-editor-free-text-size-input = Kích cỡ

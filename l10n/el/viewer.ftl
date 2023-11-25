@@ -301,6 +301,8 @@ pdfjs-editor-ink-button-label = Σχέδιο
 pdfjs-editor-stamp-button =
     .title = Προσθήκη ή επεξεργασία εικόνων
 pdfjs-editor-stamp-button-label = Προσθήκη ή επεξεργασία εικόνων
+pdfjs-editor-remove-button =
+    .title = Αφαίρεση
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Χρώμα
 pdfjs-editor-free-text-size-input = Μέγεθος

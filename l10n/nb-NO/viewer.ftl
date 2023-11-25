@@ -226,6 +226,21 @@ pdfjs-find-match-diacritics-checkbox-label = Samsvar diakritiske tegn
 pdfjs-find-entire-word-checkbox-label = Hele ord
 pdfjs-find-reached-top = Nådde toppen av dokumentet, fortsetter fra bunnen
 pdfjs-find-reached-bottom = Nådde bunnen av dokumentet, fortsetter fra toppen
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count =
+    { $total ->
+        [one] { $current } av { $total } treff
+       *[other] { $current } av { $total } treff
+    }
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit =
+    { $limit ->
+        [one] Mer enn { $limit } treff
+       *[other] Mer enn { $limit } treff
+    }
 pdfjs-find-not-found = Fant ikke teksten
 
 ## Predefined zoom values
@@ -286,6 +301,8 @@ pdfjs-editor-ink-button-label = Tegn
 pdfjs-editor-stamp-button =
     .title = Legg til eller rediger bilder
 pdfjs-editor-stamp-button-label = Legg til eller rediger bilder
+pdfjs-editor-remove-button =
+    .title = Fjern
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Farge
 pdfjs-editor-free-text-size-input = Størrelse
@@ -324,3 +341,11 @@ pdfjs-editor-alt-text-textarea =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
+pdfjs-editor-resizer-label-top-left = Øverste venstre hjørne – endre størrelse
+pdfjs-editor-resizer-label-top-middle = Øverst i midten — endre størrelse
+pdfjs-editor-resizer-label-top-right = Øverste høyre hjørne – endre størrelse
+pdfjs-editor-resizer-label-middle-right = Midt til høyre – endre størrelse
+pdfjs-editor-resizer-label-bottom-right = Nederste høyre hjørne – endre størrelse
+pdfjs-editor-resizer-label-bottom-middle = Nederst i midten — endre størrelse
+pdfjs-editor-resizer-label-bottom-left = Nederste venstre hjørne – endre størrelse
+pdfjs-editor-resizer-label-middle-left = Midt til venstre — endre størrelse

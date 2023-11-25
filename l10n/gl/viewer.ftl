@@ -226,6 +226,21 @@ pdfjs-find-match-diacritics-checkbox-label = Distinguir os diacríticos
 pdfjs-find-entire-word-checkbox-label = Palabras completas
 pdfjs-find-reached-top = Chegouse ao inicio do documento, continuar desde o final
 pdfjs-find-reached-bottom = Chegouse ao final do documento, continuar desde o inicio
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count =
+    { $total ->
+        [one] Coincidencia { $current } de { $total }
+       *[other] Coincidencia { $current } de { $total }
+    }
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit =
+    { $limit ->
+        [one] Máis de { $limit } coincidencia
+       *[other] Máis de { $limit } coincidencias
+    }
 pdfjs-find-not-found = Non se atopou a frase
 
 ## Predefined zoom values
@@ -305,7 +320,28 @@ pdfjs-ink-canvas =
 
 ## Alt-text dialog
 
+# Alternative text (alt text) helps when people can't see the image.
+pdfjs-editor-alt-text-button-label = Texto alternativo
+pdfjs-editor-alt-text-edit-button-label = Editar o texto alternativo
+pdfjs-editor-alt-text-dialog-label = Escoller unha opción
+pdfjs-editor-alt-text-add-description-label = Engadir unha descrición
+pdfjs-editor-alt-text-mark-decorative-label = Marcar como decorativo
+pdfjs-editor-alt-text-mark-decorative-description = Utilízase para imaxes ornamentais, como bordos ou marcas de auga.
+pdfjs-editor-alt-text-cancel-button = Cancelar
+pdfjs-editor-alt-text-save-button = Gardar
+pdfjs-editor-alt-text-decorative-tooltip = Marcado como decorativo
+# .placeholder: This is a placeholder for the alt text input area
+pdfjs-editor-alt-text-textarea =
+    .placeholder = Por exemplo, «Un mozo séntase á mesa para comer»
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
+pdfjs-editor-resizer-label-top-left = Esquina superior esquerda: cambia o tamaño
+pdfjs-editor-resizer-label-top-middle = Medio superior: cambia o tamaño
+pdfjs-editor-resizer-label-top-right = Esquina superior dereita: cambia o tamaño
+pdfjs-editor-resizer-label-middle-right = Medio dereito: cambia o tamaño
+pdfjs-editor-resizer-label-bottom-right = Esquina inferior dereita: cambia o tamaño
+pdfjs-editor-resizer-label-bottom-middle = Abaixo medio: cambia o tamaño
+pdfjs-editor-resizer-label-bottom-left = Esquina inferior esquerda: cambia o tamaño
+pdfjs-editor-resizer-label-middle-left = Medio esquerdo: cambia o tamaño
