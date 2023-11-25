@@ -27,7 +27,12 @@ import {
   Util,
   warn,
 } from "../../shared/util.js";
-import { getColorValues, getRGB, PixelsPerInch } from "../display_utils.js";
+import {
+  fetchData,
+  getColorValues,
+  getRGB,
+  PixelsPerInch,
+} from "../display_utils.js";
 
 function bindEvents(obj, element, names) {
   for (const name of names) {
@@ -116,12 +121,7 @@ class ImageManager {
       let image;
       if (typeof rawData === "string") {
         data.url = rawData;
-
-        const response = await fetch(rawData);
-        if (!response.ok) {
-          throw new Error(response.statusText);
-        }
-        image = await response.blob();
+        image = await fetchData(rawData, "blob");
       } else {
         image = data.file = rawData;
       }
