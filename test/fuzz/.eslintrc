@@ -1,0 +1,9 @@
+{
+  "extends": [
+    "../.eslintrc"
+  ],
+
+  "rules": {
+    "import/no-unresolved": ["error", { "ignore": [".*/build/image_decoders/.*"] }],
+  },
+}
