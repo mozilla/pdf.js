@@ -15,10 +15,10 @@
 
 /** @typedef {import("./interfaces").IL10n} IL10n */
 
+import { fetchData, shadow } from "pdfjs-lib";
 import { FluentBundle, FluentResource } from "fluent-bundle";
 import { DOMLocalization } from "fluent-dom";
 import { L10n } from "./l10n.js";
-import { shadow } from "pdfjs-lib";
 
 /**
  * @implements {IL10n}
@@ -32,14 +32,14 @@ class ConstL10n extends L10n {
   }
 
   static async *#generateBundles(lang) {
-    let text;
-    if (typeof PDFJSDev === "undefined") {
-      const url = new URL(`./locale/${lang}/viewer.ftl`, window.location.href);
-      const data = await fetch(url);
-      text = await data.text();
-    } else {
-      text = PDFJSDev.eval("DEFAULT_FTL");
-    }
+    const text =
+      typeof PDFJSDev === "undefined"
+        ? await fetchData(
+            new URL(`./locale/${lang}/viewer.ftl`, window.location.href),
+            /* type = */ "text"
+          )
+        : PDFJSDev.eval("DEFAULT_FTL");
+
     const resource = new FluentResource(text);
     const bundle = new FluentBundle(lang);
     const errors = bundle.addResource(resource);
