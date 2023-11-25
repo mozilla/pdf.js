@@ -87,8 +87,11 @@ class WorkerMessageHandler {
       setVerbosityLevel(data.verbosity);
     });
 
-    handler.on("GetDocRequest", function (data) {
-      return WorkerMessageHandler.createDocumentHandler(data, port);
+    handler.on("GetDocRequest", function ({ source, singleUse }) {
+      if (singleUse) {
+        handler.destroy();
+      }
+      return WorkerMessageHandler.createDocumentHandler(source, port);
     });
   }
 
