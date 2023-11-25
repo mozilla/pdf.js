@@ -8,6 +8,7 @@
     "@fluent/bundle": "^0.18.0",
     "@fluent/dom": "^0.9.0",
     "@javascript-obfuscator/escodegen": "2.3.0",
+    "@jazzer.js/core": "^2.1.0",
     "acorn": "^8.11.2",
     "autoprefixer": "^10.4.16",
     "babel-loader": "^9.1.3",
