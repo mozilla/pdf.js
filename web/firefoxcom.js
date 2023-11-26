@@ -403,7 +403,7 @@ class FirefoxExternalServices extends DefaultExternalServices {
           break;
       }
     });
-    FirefoxCom.requestSync("initPassiveLoading", null);
+    FirefoxCom.request("initPassiveLoading", null);
   }
 
   static reportTelemetry(data) {
