@@ -8372,5 +8372,14 @@
       "lastPage": 2,
       "type": "eq",
       "forms": true
+   },
+   {
+      "id": "issue17332-annotations",
+      "file": "pdfs/issue17332.pdf",
+      "md5": "140c34d900b797e1310b1cb142a4b8e3",
+      "rounds": 1,
+      "link": true,
+      "type": "eq",
+      "annotations": true
    }
 ]
