@@ -314,9 +314,9 @@ class FirefoxComDataRangeTransport extends PDFDataRangeTransport {
     FirefoxCom.request("requestDataRange", { begin, end });
   }
 
+  // NOTE: This method is currently not invoked in the Firefox PDF Viewer.
   abort() {
-    // Sync call to ensure abort is really started.
-    FirefoxCom.requestSync("abortLoading", null);
+    FirefoxCom.request("abortLoading", null);
   }
 }
 
