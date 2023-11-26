@@ -19,8 +19,8 @@
  * license.
  */
 
+import { FormatError, info } from "../shared/util.js";
 import { DecodeStream } from "./decode_stream.js";
-import { FormatError } from "../shared/util.js";
 
 const codeLenCodeMap = new Int32Array([
   16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15,
@@ -238,6 +238,11 @@ class FlateStream extends DecodeStream {
     return [codes, maxLen];
   }
 
+  #endsStreamOnError(err) {
+    info(err);
+    this.eof = true;
+  }
+
   readBlock() {
     let buffer, len;
     const str = this.str;
@@ -253,19 +258,23 @@ class FlateStream extends DecodeStream {
       let b;
 
       if ((b = str.getByte()) === -1) {
-        throw new FormatError("Bad block header in flate stream");
+        this.#endsStreamOnError("Bad block header in flate stream");
+        return;
       }
       let blockLen = b;
       if ((b = str.getByte()) === -1) {
-        throw new FormatError("Bad block header in flate stream");
+        this.#endsStreamOnError("Bad block header in flate stream");
+        return;
       }
       blockLen |= b << 8;
       if ((b = str.getByte()) === -1) {
-        throw new FormatError("Bad block header in flate stream");
+        this.#endsStreamOnError("Bad block header in flate stream");
+        return;
       }
       let check = b;
       if ((b = str.getByte()) === -1) {
-        throw new FormatError("Bad block header in flate stream");
+        this.#endsStreamOnError("Bad block header in flate stream");
+        return;
       }
       check |= b << 8;
       if (check !== (~blockLen & 0xffff) && (blockLen !== 0 || check !== 0)) {
