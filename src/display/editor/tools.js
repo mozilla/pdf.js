@@ -1604,7 +1604,11 @@ class AnnotationEditorUIManager {
     if (this.#activeEditor) {
       // An editor is being edited so just commit it.
       this.#activeEditor.commitOrRemove();
-      return;
+      if (this.#mode !== AnnotationEditorType.NONE) {
+        // If the mode is NONE, we want to really unselect the editor, hence we
+        // mustn't return here.
+        return;
+      }
     }
 
     if (!this.hasSelection) {
