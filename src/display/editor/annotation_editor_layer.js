@@ -152,10 +152,8 @@ class AnnotationEditorLayer {
   }
 
   addInkEditorIfNeeded(isCommitting) {
-    if (
-      !isCommitting &&
-      this.#uiManager.getMode() !== AnnotationEditorType.INK
-    ) {
+    if (this.#uiManager.getMode() !== AnnotationEditorType.INK) {
+      // We don't want to add an ink editor if we're not in ink mode!
       return;
     }
 
