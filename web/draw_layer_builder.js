@@ -13,13 +13,11 @@
  * limitations under the License.
  */
 
-/** @typedef {import("../src/display/draw_layer.js").DrawLayer} DrawLayer */
-
 import { DrawLayer } from "pdfjs-lib";
 
 /**
  * @typedef {Object} DrawLayerBuilderOptions
- * @property {DrawLayer} [drawLayer]
+ * @property {number} pageIndex
  */
 
 class DrawLayerBuilder {
@@ -52,6 +50,14 @@ class DrawLayerBuilder {
     }
     this.#drawLayer.destroy();
     this.#drawLayer = null;
+  }
+
+  setParent(parent) {
+    this.#drawLayer?.setParent(parent);
+  }
+
+  getDrawLayer() {
+    return this.#drawLayer;
   }
 }
 

@@ -70,6 +70,18 @@ class Toolbar {
         },
       },
       {
+        element: options.editorHighlightButton,
+        eventName: "switchannotationeditormode",
+        eventDetails: {
+          get mode() {
+            const { classList } = options.editorHighlightButton;
+            return classList.contains("toggled")
+              ? AnnotationEditorType.NONE
+              : AnnotationEditorType.HIGHLIGHT;
+          },
+        },
+      },
+      {
         element: options.editorInkButton,
         eventName: "switchannotationeditormode",
         eventDetails: {
@@ -202,6 +214,8 @@ class Toolbar {
   #bindEditorToolsListener({
     editorFreeTextButton,
     editorFreeTextParamsToolbar,
+    editorHighlightButton,
+    editorHighlightParamsToolbar,
     editorInkButton,
     editorInkParamsToolbar,
     editorStampButton,
@@ -212,6 +226,11 @@ class Toolbar {
         editorFreeTextButton,
         mode === AnnotationEditorType.FREETEXT,
         editorFreeTextParamsToolbar
+      );
+      toggleCheckedBtn(
+        editorHighlightButton,
+        mode === AnnotationEditorType.HIGHLIGHT,
+        editorHighlightParamsToolbar
       );
       toggleCheckedBtn(
         editorInkButton,
@@ -226,6 +245,7 @@ class Toolbar {
 
       const isDisable = mode === AnnotationEditorType.DISABLE;
       editorFreeTextButton.disabled = isDisable;
+      editorHighlightButton.disabled = isDisable;
       editorInkButton.disabled = isDisable;
       editorStampButton.disabled = isDisable;
     };
