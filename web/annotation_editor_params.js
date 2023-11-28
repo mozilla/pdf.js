@@ -28,6 +28,8 @@ class AnnotationEditorParams {
   #bindListeners({
     editorFreeTextFontSize,
     editorFreeTextColor,
+    editorHighlightColor,
+    editorHighlightOpacity,
     editorInkColor,
     editorInkThickness,
     editorInkOpacity,
@@ -45,6 +47,12 @@ class AnnotationEditorParams {
     });
     editorFreeTextColor.addEventListener("input", function () {
       dispatchEvent("FREETEXT_COLOR", this.value);
+    });
+    editorHighlightColor.addEventListener("input", function () {
+      dispatchEvent("HIGHLIGHT_COLOR", this.value);
+    });
+    editorHighlightOpacity.addEventListener("input", function () {
+      dispatchEvent("HIGHLIGHT_OPACITY", this.valueAsNumber);
     });
     editorInkColor.addEventListener("input", function () {
       dispatchEvent("INK_COLOR", this.value);
@@ -67,6 +75,12 @@ class AnnotationEditorParams {
             break;
           case AnnotationEditorParamsType.FREETEXT_COLOR:
             editorFreeTextColor.value = value;
+            break;
+          case AnnotationEditorParamsType.HIGHLIGHT_COLOR:
+            editorHighlightColor.value = value;
+            break;
+          case AnnotationEditorParamsType.HIGHLIGHT_OPACITY:
+            editorHighlightOpacity.value = value;
             break;
           case AnnotationEditorParamsType.INK_COLOR:
             editorInkColor.value = value;

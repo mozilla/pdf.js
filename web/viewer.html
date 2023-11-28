@@ -171,15 +171,28 @@ See https://github.com/adobe-type-tools/cmap-resources
           </div>
         </div>  <!-- findbar -->
 
+        <div class="editorParamsToolbar hidden doorHangerRight" id="editorHighlightParamsToolbar">
+          <div class="editorParamsToolbarContainer">
+            <div class="editorParamsSetter">
+              <label for="editorHighlightColor" class="editorParamsLabel" data-l10n-id="editor_highlight_color">Color</label>
+              <input type="color" value="#FFFF00" id="editorHighlightColor" class="editorParamsColor" tabindex="100">
+            </div>
+            <div class="editorParamsSetter">
+              <label for="editorHighlightOpacity" class="editorParamsLabel" data-l10n-id="editor_highlight_opacity">Opacity</label>
+              <input type="range" id="editorHighlightOpacity" class="editorParamsSlider" value="100" min="1" max="100" step="1" tabindex="101">
+            </div>
+          </div>
+        </div>
+
         <div class="editorParamsToolbar hidden doorHangerRight" id="editorFreeTextParamsToolbar">
           <div class="editorParamsToolbarContainer">
             <div class="editorParamsSetter">
               <label for="editorFreeTextColor" class="editorParamsLabel" data-l10n-id="pdfjs-editor-free-text-color-input">Color</label>
-              <input type="color" id="editorFreeTextColor" class="editorParamsColor" tabindex="100">
+              <input type="color" id="editorFreeTextColor" class="editorParamsColor" tabindex="102">
             </div>
             <div class="editorParamsSetter">
               <label for="editorFreeTextFontSize" class="editorParamsLabel" data-l10n-id="pdfjs-editor-free-text-size-input">Size</label>
-              <input type="range" id="editorFreeTextFontSize" class="editorParamsSlider" value="10" min="5" max="100" step="1" tabindex="101">
+              <input type="range" id="editorFreeTextFontSize" class="editorParamsSlider" value="10" min="5" max="100" step="1" tabindex="103">
             </div>
           </div>
         </div>
@@ -188,22 +201,22 @@ See https://github.com/adobe-type-tools/cmap-resources
           <div class="editorParamsToolbarContainer">
             <div class="editorParamsSetter">
               <label for="editorInkColor" class="editorParamsLabel" data-l10n-id="pdfjs-editor-ink-color-input">Color</label>
-              <input type="color" id="editorInkColor" class="editorParamsColor" tabindex="102">
+              <input type="color" id="editorInkColor" class="editorParamsColor" tabindex="104">
             </div>
             <div class="editorParamsSetter">
               <label for="editorInkThickness" class="editorParamsLabel" data-l10n-id="pdfjs-editor-ink-thickness-input">Thickness</label>
-              <input type="range" id="editorInkThickness" class="editorParamsSlider" value="1" min="1" max="20" step="1" tabindex="103">
+              <input type="range" id="editorInkThickness" class="editorParamsSlider" value="1" min="1" max="20" step="1" tabindex="105">
             </div>
             <div class="editorParamsSetter">
               <label for="editorInkOpacity" class="editorParamsLabel" data-l10n-id="pdfjs-editor-ink-opacity-input">Opacity</label>
-              <input type="range" id="editorInkOpacity" class="editorParamsSlider" value="100" min="1" max="100" step="1" tabindex="104">
+              <input type="range" id="editorInkOpacity" class="editorParamsSlider" value="100" min="1" max="100" step="1" tabindex="106">
             </div>
           </div>
         </div>
 
         <div class="editorParamsToolbar hidden doorHangerRight" id="editorStampParamsToolbar">
           <div class="editorParamsToolbarContainer">
-            <button id="editorStampAddImage" class="secondaryToolbarButton" title="Add image" tabindex="105" data-l10n-id="pdfjs-editor-stamp-add-image-button">
+            <button id="editorStampAddImage" class="secondaryToolbarButton" title="Add image" tabindex="107" data-l10n-id="pdfjs-editor-stamp-add-image-button">
               <span data-l10n-id="pdfjs-editor-stamp-add-image-button-label">Add image</span>
             </button>
           </div>
@@ -334,13 +347,15 @@ See https://github.com/adobe-type-tools/cmap-resources
               </div>
               <div id="toolbarViewerRight">
                 <div id="editorModeButtons" class="splitToolbarButton toggled" role="radiogroup">
-                  <button id="editorFreeText" class="toolbarButton" disabled="disabled" title="Text" role="radio" aria-checked="false" aria-controls="editorFreeTextParamsToolbar" tabindex="31" data-l10n-id="pdfjs-editor-free-text-button">
+                  <button id="editorHighlight" class="toolbarButton" hidden="true" disabled="disabled" title="Highlight" role="radio" aria-checked="false" aria-controls="editorHighlightParamsToolbar" tabindex="31" data-l10n-id="pdfjs-editor-highlight">
+                    <span data-l10n-id="pdfjs-editor-highlight-label">Highlight</span>
+                  <button id="editorFreeText" class="toolbarButton" disabled="disabled" title="Text" role="radio" aria-checked="false" aria-controls="editorFreeTextParamsToolbar" tabindex="32" data-l10n-id="pdfjs-editor-free-text-button">
                     <span data-l10n-id="pdfjs-editor-free-text-button-label">Text</span>
                   </button>
-                  <button id="editorInk" class="toolbarButton" disabled="disabled" title="Draw" role="radio" aria-checked="false" aria-controls="editorInkParamsToolbar" tabindex="32" data-l10n-id="pdfjs-editor-ink-button">
+                  <button id="editorInk" class="toolbarButton" disabled="disabled" title="Draw" role="radio" aria-checked="false" aria-controls="editorInkParamsToolbar" tabindex="33" data-l10n-id="pdfjs-editor-ink-button">
                     <span data-l10n-id="pdfjs-editor-ink-button-label">Draw</span>
                   </button>
-                  <button id="editorStamp" class="toolbarButton" disabled="disabled" title="Add or edit images" role="radio" aria-checked="false" aria-controls="editorStampParamsToolbar" tabindex="33" data-l10n-id="pdfjs-editor-stamp-button">
+                  <button id="editorStamp" class="toolbarButton" disabled="disabled" title="Add or edit images" role="radio" aria-checked="false" aria-controls="editorStampParamsToolbar" tabindex="34" data-l10n-id="pdfjs-editor-stamp-button">
                     <span data-l10n-id="pdfjs-editor-stamp-button-label">Add or edit images</span>
                   </button>
                 </div>

@@ -486,6 +486,11 @@ const PDFViewerApplication = {
           appConfig.toolbar?.editorStampButton?.classList.add("hidden");
         }
 
+        const editorHighlightButton = appConfig.toolbar?.editorHighlightButton;
+        if (editorHighlightButton && AppOptions.get("enableHighlightEditor")) {
+          editorHighlightButton.hidden = false;
+        }
+
         this.annotationEditorParams = new AnnotationEditorParams(
           appConfig.annotationEditorParams,
           eventBus

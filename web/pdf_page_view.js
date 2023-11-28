@@ -42,6 +42,7 @@ import {
 import { AnnotationEditorLayerBuilder } from "./annotation_editor_layer_builder.js";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
 import { compatibilityParams } from "./app_options.js";
+import { DrawLayerBuilder } from "./draw_layer_builder.js";
 import { NullL10n } from "web-l10n_utils";
 import { SimpleLinkService } from "./pdf_link_service.js";
 import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
@@ -177,6 +178,7 @@ class PDFPageView {
     this.zoomLayer = null;
     this.xfaLayer = null;
     this.structTreeLayer = null;
+    this.drawLayer = null;
 
     const div = document.createElement("div");
     div.className = "page";
@@ -351,6 +353,14 @@ class PDFPageView {
         pageNumber: this.id,
         error,
       });
+    }
+  }
+
+  async #renderDrawLayer() {
+    try {
+      await this.drawLayer.render("display");
+    } catch (ex) {
+      console.error(`#renderDrawLayer: "${ex}".`);
     }
   }
 
@@ -718,6 +728,10 @@ class PDFPageView {
       this.annotationEditorLayer &&
       (!keepAnnotationEditorLayer || !this.annotationEditorLayer.div)
     ) {
+      if (this.drawLayer) {
+        this.drawLayer.cancel();
+        this.drawLayer = null;
+      }
       this.annotationEditorLayer.cancel();
       this.annotationEditorLayer = null;
     }
@@ -770,6 +784,9 @@ class PDFPageView {
       this.#renderAnnotationLayer();
     }
     if (redrawAnnotationEditorLayer && this.annotationEditorLayer) {
+      if (this.drawLayer) {
+        this.#renderDrawLayer();
+      }
       this.#renderAnnotationEditorLayer();
     }
     if (redrawXfaLayer && this.xfaLayer) {
@@ -1001,12 +1018,19 @@ class PDFPageView {
           await this.#renderAnnotationLayer();
         }
 
-        if (!this.annotationEditorLayer) {
-          const { annotationEditorUIManager } = this.#layerProperties;
+        const { annotationEditorUIManager } = this.#layerProperties;
 
-          if (!annotationEditorUIManager) {
-            return;
-          }
+        if (!annotationEditorUIManager) {
+          return;
+        }
+
+        this.drawLayer ||= new DrawLayerBuilder({
+          pageIndex: this.id,
+        });
+        await this.#renderDrawLayer();
+        this.drawLayer.setParent(canvasWrapper);
+
+        if (!this.annotationEditorLayer) {
           this.annotationEditorLayer = new AnnotationEditorLayerBuilder({
             uiManager: annotationEditorUIManager,
             pageDiv: div,
@@ -1014,6 +1038,8 @@ class PDFPageView {
             l10n,
             accessibilityManager: this._accessibilityManager,
             annotationLayer: this.annotationLayer?.annotationLayer,
+            textLayer: this.textLayer,
+            drawLayer: this.drawLayer.getDrawLayer(),
           });
         }
         this.#renderAnnotationEditorLayer();

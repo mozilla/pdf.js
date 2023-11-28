@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+@import url(draw_layer_builder.css);
+
 :root {
   --outline-width: 2px;
   --outline-color: #0060df;
@@ -188,7 +190,10 @@
       border: var(--focus-outline-around);
     }
   }
+}
 
+.annotationEditorLayer
+  :is(.freeTextEditor, .inkEditor, .stampEditor, .highlightEditor) {
   .editToolbar {
     --editor-toolbar-delete-image: url(images/editor-toolbar-delete.svg);
     --editor-toolbar-bg-color: #f0f0f4;
@@ -198,6 +203,7 @@
     --editor-toolbar-active-bg-color: #cfcfd8;
     --editor-toolbar-focus-outline-color: #0060df;
     --editor-toolbar-shadow: 0 2px 6px 0 rgb(58 57 68 / 0.2);
+    --editor-toolbar-vert-offset: 6px;
 
     @media (prefers-color-scheme: dark) {
       --editor-toolbar-bg-color: #2b2a33;
@@ -225,10 +231,11 @@
     justify-content: center;
     align-items: center;
     cursor: default;
+    pointer-events: auto;
 
     position: absolute;
     inset-inline-end: 0;
-    inset-block-start: calc(100% + 6px);
+    inset-block-start: calc(100% + var(--editor-toolbar-vert-offset));
 
     border-radius: 4px;
     background-color: var(--editor-toolbar-bg-color);
@@ -316,7 +323,7 @@
   height: 100%;
 }
 
-.annotationEditorLayer .freeTextEditor .overlay.enabled {
+.annotationEditorLayer freeTextEditor .overlay.enabled {
   display: block;
 }
 
@@ -513,12 +520,12 @@
       rotate: 270deg;
 
       &:dir(ltr) {
-        inset-inline-start: calc(100% + 6px);
+        inset-inline-start: calc(100% + var(--editor-toolbar-vert-offset));
         inset-block-start: 0;
       }
 
       &:dir(rtl) {
-        inset-inline-end: calc(100% + 6px);
+        inset-inline-end: calc(100% + var(--editor-toolbar-vert-offset));
         inset-block-end: 0;
         inset-block-start: unset;
       }
@@ -547,7 +554,7 @@
     .editToolbar {
       rotate: 180deg;
       inset-inline-start: 0;
-      inset-block-end: calc(100% + 6px);
+      inset-block-end: calc(100% + var(--editor-toolbar-vert-offset));
       inset-block-start: unset;
     }
   }
@@ -585,13 +592,13 @@
       rotate: 90deg;
 
       &:dir(ltr) {
-        inset-inline-end: calc(100% + 6px);
+        inset-inline-end: calc(100% + var(--editor-toolbar-vert-offset));
         inset-block-end: 0;
         inset-block-start: unset;
       }
 
       &:dir(rtl) {
-        inset-inline-start: calc(100% + 6px);
+        inset-inline-start: calc(100% + var(--editor-toolbar-vert-offset));
         inset-block-start: 0;
       }
     }
@@ -997,6 +1004,65 @@
           }
         }
       }
+    }
+  }
+}
+
+.annotationEditorLayer {
+  &[data-main-rotation="0"] {
+    .highlightEditor > .editToolbar {
+      rotate: 0deg;
+    }
+  }
+
+  &[data-main-rotation="90"] {
+    .highlightEditor > .editToolbar {
+      rotate: 270deg;
+    }
+  }
+
+  &[data-main-rotation="180"] {
+    .highlightEditor > .editToolbar {
+      rotate: 180deg;
+    }
+  }
+
+  &[data-main-rotation="270"] {
+    .highlightEditor > .editToolbar {
+      rotate: 90deg;
+    }
+  }
+
+  .highlightEditor {
+    position: absolute;
+    background: transparent;
+    z-index: 1;
+    transform-origin: 0 0;
+    cursor: auto;
+    max-width: 100%;
+    max-height: 100%;
+    border: none;
+    outline: none;
+    pointer-events: none;
+    transform: none;
+
+    .internal {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: auto;
+    }
+
+    &.selectedEditor {
+      .internal {
+        cursor: pointer;
+      }
+    }
+
+    .editToolbar {
+      transform-origin: center;
     }
   }
 }
