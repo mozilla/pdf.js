@@ -28,35 +28,6 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
 class FirefoxCom {
   /**
    * Creates an event that the extension is listening for and will
-   * synchronously respond to.
-   * NOTE: It is recommended to use requestAsync() instead since one day we may
-   *       not be able to synchronously reply.
-   * @param {string} action - The action to trigger.
-   * @param {Object|string} [data] - The data to send.
-   * @returns {*} The response.
-   */
-  static requestSync(action, data) {
-    const request = document.createTextNode("");
-    document.documentElement.append(request);
-
-    const sender = new CustomEvent("pdf.js.message", {
-      bubbles: true,
-      cancelable: false,
-      detail: {
-        action,
-        data,
-        sync: true,
-      },
-    });
-    request.dispatchEvent(sender);
-    const response = sender.detail.response;
-    request.remove();
-
-    return response;
-  }
-
-  /**
-   * Creates an event that the extension is listening for and will
    * asynchronously respond to.
    * @param {string} action - The action to trigger.
    * @param {Object|string} [data] - The data to send.
@@ -96,7 +67,6 @@ class FirefoxCom {
       detail: {
         action,
         data,
-        sync: false,
         responseExpected: !!callback,
       },
     });
@@ -314,9 +284,9 @@ class FirefoxComDataRangeTransport extends PDFDataRangeTransport {
     FirefoxCom.request("requestDataRange", { begin, end });
   }
 
+  // NOTE: This method is currently not invoked in the Firefox PDF Viewer.
   abort() {
-    // Sync call to ensure abort is really started.
-    FirefoxCom.requestSync("abortLoading", null);
+    FirefoxCom.request("abortLoading", null);
   }
 }
 
@@ -403,7 +373,7 @@ class FirefoxExternalServices extends DefaultExternalServices {
           break;
       }
     });
-    FirefoxCom.requestSync("initPassiveLoading", null);
+    FirefoxCom.request("initPassiveLoading", null);
   }
 
   static reportTelemetry(data) {
