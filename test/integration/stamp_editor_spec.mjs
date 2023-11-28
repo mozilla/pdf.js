@@ -293,9 +293,6 @@ describe("Stamp Editor", () => {
           // Click on the alt-text button.
           await page.click(buttonSelector);
 
-          // Check that the alt-text button has been hidden.
-          await page.waitForSelector(`${buttonSelector}[hidden]`);
-
           // Wait for the alt-text dialog to be visible.
           await page.waitForSelector("#altTextDialog", { visible: true });
 
@@ -314,7 +311,7 @@ describe("Stamp Editor", () => {
           );
 
           // Wait for the alt-text button to have the correct icon.
-          await page.waitForSelector(`${buttonSelector}:not([hidden]).done`);
+          await page.waitForSelector(`${buttonSelector}.done`);
 
           // Hover the button.
           await page.hover(buttonSelector);
@@ -427,10 +424,8 @@ describe("Stamp Editor", () => {
             ? page.waitForSelector(`${buttonSelector}:focus`)
             : page.waitForSelector(`${buttonSelector}:focus-visible`));
           await page.keyboard.press("Enter");
-          await page.waitForSelector(`${buttonSelector}[hidden]`);
           await page.waitForSelector("#altTextDialog", { visible: true });
           await page.keyboard.press("Escape");
-          await page.waitForSelector(`${buttonSelector}:not([hidden])`);
           await (browserName === "chrome"
             ? page.waitForSelector(`${buttonSelector}:focus`)
             : page.waitForSelector(`${buttonSelector}:focus-visible`));

@@ -95,12 +95,26 @@ class EditorToolbar {
     const button = document.createElement("button");
     button.className = "delete";
     button.tabIndex = 0;
-    button.setAttribute("data-l10n-id", "pdfjs-editor-remove-button");
+    button.setAttribute(
+      "data-l10n-id",
+      `pdfjs-editor-remove-${this.#editor.editorType}-button`
+    );
     this.#addListenersToElement(button);
     button.addEventListener("click", e => {
       this.#editor._uiManager.delete();
     });
     this.#buttons.append(button);
+  }
+
+  addAltTextButton(button) {
+    this.#addListenersToElement(button);
+    this.#buttons.prepend(button, this.#divider);
+  }
+
+  get #divider() {
+    const divider = document.createElement("div");
+    divider.className = "divider";
+    return divider;
   }
 
   remove() {
