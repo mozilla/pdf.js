@@ -146,7 +146,7 @@ class AltText {
             source: this,
             details: {
               type: "editing",
-              subtype: this.editorType,
+              subtype: this.#editor.editorType,
               data: {
                 action: "alt_text_tooltip",
               },
