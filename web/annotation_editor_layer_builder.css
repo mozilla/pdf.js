@@ -171,7 +171,10 @@
     --editor-toolbar-bg-color: #f0f0f4;
     --editor-toolbar-fg-color: #2e2e56;
     --editor-toolbar-border-color: #8f8f9d;
+    --editor-toolbar-hover-border-color: var(--editor-toolbar-border-color);
     --editor-toolbar-hover-bg-color: #e0e0e6;
+    --editor-toolbar-hover-fg-color: var(--editor-toolbar-fg-color);
+    --editor-toolbar-hover-outline: none;
     --editor-toolbar-active-bg-color: #cfcfd8;
     --editor-toolbar-focus-outline-color: #0060df;
     --editor-toolbar-shadow: 0 2px 6px 0 rgb(58 57 68 / 0.2);
@@ -191,7 +194,11 @@
       --editor-toolbar-bg-color: ButtonFace;
       --editor-toolbar-fg-color: ButtonText;
       --editor-toolbar-border-color: ButtonText;
-      --editor-toolbar-hover-bg-color: AccentColor;
+      --editor-toolbar-hover-border-color: AccentColor;
+      --editor-toolbar-hover-bg-color: ButtonFace;
+      --editor-toolbar-hover-fg-color: AccentColor;
+      --editor-toolbar-hover-outline: 2px solid
+        var(--editor-toolbar-hover-border-color);
       --editor-toolbar-active-bg-color: ButtonFace;
       --editor-toolbar-focus-outline-color: ButtonBorder;
       --editor-toolbar-shadow: none;
@@ -263,6 +270,10 @@
           width: 100%;
           height: 100%;
         }
+
+        &:hover::before {
+          background-color: var(--editor-toolbar-hover-fg-color);
+        }
       }
 
       > * {
@@ -277,11 +288,13 @@
         &:hover {
           border-radius: 2px;
           background-color: var(--editor-toolbar-hover-bg-color);
-        }
+          color: var(--editor-toolbar-hover-fg-color);
+          outline: var(--editor-toolbar-hover-outline);
+          outline-offset: 1px;
 
-        &:active {
-          border-radius: 2px;
-          background-color: var(--editor-toolbar-active-bg-color);
+          &:active {
+            outline: none;
+          }
         }
 
         &:focus-visible {
@@ -319,6 +332,10 @@
           height: 13px;
           background-color: var(--editor-toolbar-fg-color);
           margin-inline-end: 4px;
+        }
+
+        &:hover::before {
+          background-color: var(--editor-toolbar-hover-fg-color);
         }
 
         &.done::before {
