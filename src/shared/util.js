@@ -87,7 +87,7 @@ const AnnotationEditorParamsType = {
   INK_THICKNESS: 22,
   INK_OPACITY: 23,
   HIGHLIGHT_COLOR: 31,
-  HIGHLIGHT_OPACITY: 32,
+  HIGHLIGHT_DEFAULT_COLOR: 32,
 };
 
 // Permission flags from Table 22, Section 7.6.3.2 of the PDF specification.

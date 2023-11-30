@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { AnnotationEditorType, noContextMenu } from "pdfjs-lib";
+import { AnnotationEditorType, ColorPicker, noContextMenu } from "pdfjs-lib";
 import {
   DEFAULT_SCALE,
   DEFAULT_SCALE_VALUE,
@@ -120,7 +120,22 @@ class Toolbar {
     // Bind the event listeners for click and various other actions.
     this.#bindListeners(options);
 
+    if (options.editorHighlightColorPicker) {
+      this.eventBus._on("annotationeditoruimanager", ({ uiManager }) => {
+        this.#setAnnotationEditorUIManager(
+          uiManager,
+          options.editorHighlightColorPicker
+        );
+      });
+    }
+
     this.reset();
+  }
+
+  #setAnnotationEditorUIManager(uiManager, parentContainer) {
+    const colorPicker = new ColorPicker({ uiManager });
+    uiManager.setMainHighlightColorPicker(colorPicker);
+    parentContainer.append(colorPicker.renderMainDropdown());
   }
 
   setPageNumber(pageNumber, pageLabel) {

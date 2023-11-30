@@ -20,6 +20,7 @@ import {
 } from "../../shared/util.js";
 import { AnnotationEditor } from "./editor.js";
 import { bindEvents } from "./tools.js";
+import { ColorPicker } from "./color_picker.js";
 import { Outliner } from "./outliner.js";
 
 /**
@@ -30,7 +31,7 @@ class HighlightEditor extends AnnotationEditor {
 
   #clipPathId = null;
 
-  #color;
+  #colorPicker = null;
 
   #focusOutlines = null;
 
@@ -46,9 +47,9 @@ class HighlightEditor extends AnnotationEditor {
 
   #outlineId = null;
 
-  static _defaultColor = "#FFF066";
+  static _defaultColor = null;
 
-  static _defaultOpacity = 0.4;
+  static _defaultOpacity = 1;
 
   static _l10nPromise;
 
@@ -58,7 +59,9 @@ class HighlightEditor extends AnnotationEditor {
 
   constructor(params) {
     super({ ...params, name: "highlightEditor" });
-    this.#color = params.color || HighlightEditor._defaultColor;
+    HighlightEditor._defaultColor ||=
+      this._uiManager.highlightColors?.values().next().value || "#fff066";
+    this.color = params.color || HighlightEditor._defaultColor;
     this.#opacity = params.opacity || HighlightEditor._defaultOpacity;
     this.#boxes = params.boxes || null;
     this._isDraggable = false;
@@ -100,11 +103,8 @@ class HighlightEditor extends AnnotationEditor {
 
   static updateDefaultParams(type, value) {
     switch (type) {
-      case AnnotationEditorParamsType.HIGHLIGHT_COLOR:
+      case AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR:
         HighlightEditor._defaultColor = value;
-        break;
-      case AnnotationEditorParamsType.HIGHLIGHT_OPACITY:
-        HighlightEditor._defaultOpacity = value / 100;
         break;
     }
   }
@@ -120,21 +120,14 @@ class HighlightEditor extends AnnotationEditor {
       case AnnotationEditorParamsType.HIGHLIGHT_COLOR:
         this.#updateColor(value);
         break;
-      case AnnotationEditorParamsType.HIGHLIGHT_OPACITY:
-        this.#updateOpacity(value);
-        break;
     }
   }
 
   static get defaultPropertiesToUpdate() {
     return [
       [
-        AnnotationEditorParamsType.HIGHLIGHT_COLOR,
+        AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR,
         HighlightEditor._defaultColor,
-      ],
-      [
-        AnnotationEditorParamsType.HIGHLIGHT_OPACITY,
-        Math.round(HighlightEditor._defaultOpacity * 100),
       ],
     ];
   }
@@ -144,11 +137,7 @@ class HighlightEditor extends AnnotationEditor {
     return [
       [
         AnnotationEditorParamsType.HIGHLIGHT_COLOR,
-        this.#color || HighlightEditor._defaultColor,
-      ],
-      [
-        AnnotationEditorParamsType.HIGHLIGHT_OPACITY,
-        Math.round(100 * (this.#opacity ?? HighlightEditor._defaultOpacity)),
+        this.color || HighlightEditor._defaultColor,
       ],
     ];
   }
@@ -161,12 +150,14 @@ class HighlightEditor extends AnnotationEditor {
     const savedColor = this.color;
     this.addCommands({
       cmd: () => {
-        this.#color = color;
+        this.color = color;
         this.parent.drawLayer.changeColor(this.#id, color);
+        this.#colorPicker?.updateColor(color);
       },
       undo: () => {
-        this.#color = savedColor;
+        this.color = savedColor;
         this.parent.drawLayer.changeColor(this.#id, savedColor);
+        this.#colorPicker?.updateColor(savedColor);
       },
       mustExec: true,
       type: AnnotationEditorParamsType.HIGHLIGHT_COLOR,
@@ -175,27 +166,17 @@ class HighlightEditor extends AnnotationEditor {
     });
   }
 
-  /**
-   * Update the opacity and make this action undoable.
-   * @param {number} opacity
-   */
-  #updateOpacity(opacity) {
-    opacity /= 100;
-    const savedOpacity = this.#opacity;
-    this.addCommands({
-      cmd: () => {
-        this.#opacity = opacity;
-        this.parent.drawLayer.changeOpacity(this.#id, opacity);
-      },
-      undo: () => {
-        this.#opacity = savedOpacity;
-        this.parent.drawLayer.changeOpacity(this.#id, savedOpacity);
-      },
-      mustExec: true,
-      type: AnnotationEditorParamsType.HIGHLIGHT_OPACITY,
-      overwriteIfSameType: true,
-      keepUndo: true,
-    });
+  /** @inheritdoc */
+  async addEditToolbar() {
+    const toolbar = await super.addEditToolbar();
+    if (!toolbar) {
+      return null;
+    }
+    if (this._uiManager.highlightColors) {
+      this.#colorPicker = new ColorPicker({ editor: this });
+      toolbar.addColorPicker(this.#colorPicker);
+    }
+    return toolbar;
   }
 
   /** @inheritdoc */
@@ -277,7 +258,7 @@ class HighlightEditor extends AnnotationEditor {
     ({ id: this.#id, clipPathId: this.#clipPathId } =
       parent.drawLayer.highlight(
         this.#highlightOutlines,
-        this.#color,
+        this.color,
         this.#opacity
       ));
     if (this.#highlightDiv) {
@@ -415,7 +396,7 @@ class HighlightEditor extends AnnotationEditor {
     const editor = super.deserialize(data, parent, uiManager);
 
     const { rect, color, quadPoints } = data;
-    editor.#color = Util.makeHexColor(...color);
+    editor.color = Util.makeHexColor(...color);
     editor.#opacity = data.opacity;
 
     const [pageWidth, pageHeight] = editor.pageDimensions;
@@ -443,7 +424,7 @@ class HighlightEditor extends AnnotationEditor {
     }
 
     const rect = this.getRect(0, 0);
-    const color = AnnotationEditor._colorManager.convert(this.#color);
+    const color = AnnotationEditor._colorManager.convert(this.color);
 
     return {
       annotationType: AnnotationEditorType.HIGHLIGHT,

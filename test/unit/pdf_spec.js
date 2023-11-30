@@ -63,6 +63,7 @@ import {
 import { AnnotationEditorLayer } from "../../src/display/editor/annotation_editor_layer.js";
 import { AnnotationEditorUIManager } from "../../src/display/editor/tools.js";
 import { AnnotationLayer } from "../../src/display/annotation_layer.js";
+import { ColorPicker } from "../../src/display/editor/color_picker.js";
 import { DrawLayer } from "../../src/display/draw_layer.js";
 import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
 import { Outliner } from "../../src/display/editor/outliner.js";
@@ -78,6 +79,7 @@ const expectedAPI = Object.freeze({
   AnnotationMode,
   build,
   CMapCompressionType,
+  ColorPicker,
   createValidAbsoluteUrl,
   DOMSVGFactory,
   DrawLayer,
