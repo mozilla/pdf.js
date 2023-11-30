@@ -467,7 +467,7 @@ describe("FreeText Editor", () => {
             await page.mouse.click(
               editorRect.x + editorRect.width / 2,
               editorRect.y + editorRect.height / 2,
-              { clickCount: 2 }
+              { count: 2 }
             );
             await page.waitForSelector(
               `${getEditorSelector(9)} .overlay:not(.enabled)`
@@ -539,7 +539,7 @@ describe("FreeText Editor", () => {
         await page.mouse.click(
           editorRect.x + editorRect.width / 2,
           editorRect.y + editorRect.height / 2,
-          { clickCount: 2 }
+          { count: 2 }
         );
         await page.waitForSelector(
           `${getEditorSelector(9)} .overlay:not(.enabled)`
@@ -1064,7 +1064,7 @@ describe("FreeText Editor", () => {
           await page.mouse.click(
             editorRect.x + editorRect.width / 2,
             editorRect.y + editorRect.height / 2,
-            { clickCount: 2 }
+            { count: 2 }
           );
           await page.waitForSelector(
             `${getEditorSelector(0)} .overlay:not(.enabled)`
@@ -1289,7 +1289,7 @@ describe("FreeText Editor", () => {
     it("must move an annotation", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("[data-annotation-id='26R']", { clickCount: 2 });
+          await page.click("[data-annotation-id='26R']", { count: 2 });
           await page.waitForSelector(`${getEditorSelector(0)}-editor`);
 
           const [focusedId, editable] = await page.evaluate(() => {
@@ -2817,12 +2817,12 @@ describe("FreeText Editor", () => {
           await page.waitForSelector(
             `${getEditorSelector(0)} .overlay.enabled`
           );
-          await page.click(getEditorSelector(0), { clickCount: 2 });
+          await page.click(getEditorSelector(0), { count: 2 });
           await page.waitForSelector(
             `${getEditorSelector(0)} .overlay:not(.enabled)`
           );
           await page.click(internalEditorSelector, {
-            clickCount: 3,
+            count: 3,
           });
           const selection = await page.evaluate(() =>
             window.getSelection().toString()
