@@ -903,15 +903,21 @@ class AnnotationEditor {
     this.#altText?.finish();
   }
 
+  /**
+   * Add a toolbar for this editor.
+   * @returns {Promise<EditorToolbar|null>}
+   */
   async addEditToolbar() {
     if (this.#editToolbar || this.#isInEditMode) {
-      return;
+      return this.#editToolbar;
     }
     this.#editToolbar = new EditorToolbar(this);
     this.div.append(this.#editToolbar.render());
     if (this.#altText) {
       this.#editToolbar.addAltTextButton(await this.#altText.render());
     }
+
+    return this.#editToolbar;
   }
 
   removeEditToolbar() {

@@ -18,6 +18,8 @@ import { noContextMenu } from "../display_utils.js";
 class EditorToolbar {
   #toolbar = null;
 
+  #colorPicker = null;
+
   #editor;
 
   #buttons = null;
@@ -85,6 +87,7 @@ class EditorToolbar {
 
   hide() {
     this.#toolbar.classList.add("hidden");
+    this.#colorPicker?.hideDropdown();
   }
 
   show() {
@@ -106,19 +109,28 @@ class EditorToolbar {
     this.#buttons.append(button);
   }
 
-  addAltTextButton(button) {
-    this.#addListenersToElement(button);
-    this.#buttons.prepend(button, this.#divider);
-  }
-
   get #divider() {
     const divider = document.createElement("div");
     divider.className = "divider";
     return divider;
   }
 
+  addAltTextButton(button) {
+    this.#addListenersToElement(button);
+    this.#buttons.prepend(button, this.#divider);
+  }
+
+  addColorPicker(colorPicker) {
+    this.#colorPicker = colorPicker;
+    const button = colorPicker.renderButton();
+    this.#addListenersToElement(button);
+    this.#buttons.prepend(button, this.#divider);
+  }
+
   remove() {
     this.#toolbar.remove();
+    this.#colorPicker?.destroy();
+    this.#colorPicker = null;
   }
 }
 
