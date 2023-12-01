@@ -954,6 +954,10 @@
       pointer-events: auto;
     }
 
+    &.disabled .internal {
+      pointer-events: none;
+    }
+
     &.selectedEditor {
       .internal {
         cursor: pointer;

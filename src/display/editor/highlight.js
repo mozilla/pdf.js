@@ -199,6 +199,18 @@ class HighlightEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
+  disableEditing() {
+    super.disableEditing();
+    this.div.classList.toggle("disabled", true);
+  }
+
+  /** @inheritdoc */
+  enableEditing() {
+    super.enableEditing();
+    this.div.classList.toggle("disabled", false);
+  }
+
+  /** @inheritdoc */
   fixAndSetPosition() {
     return super.fixAndSetPosition(0);
   }
