@@ -431,32 +431,41 @@ class PDFLinkService {
       if (params.has("nameddest")) {
         this.goToDestination(params.get("nameddest"));
       }
-    } else {
-      // Named (or explicit) destination.
-      dest = unescape(hash);
-      try {
-        dest = JSON.parse(dest);
 
-        if (!Array.isArray(dest)) {
-          // Avoid incorrectly rejecting a valid named destination, such as
-          // e.g. "4.3" or "true", because `JSON.parse` converted its type.
-          dest = dest.toString();
-        }
-      } catch {}
-
-      if (
-        typeof dest === "string" ||
-        PDFLinkService.#isValidExplicitDestination(dest)
-      ) {
-        this.goToDestination(dest);
+      if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
         return;
       }
-      console.error(
-        `PDFLinkService.setHash: "${unescape(
-          hash
-        )}" is not a valid destination.`
-      );
+      // Support opening of PDF attachments in the Firefox PDF Viewer,
+      // which uses a couple of non-standard hash parameters; refer to
+      // `DownloadManager.openOrDownloadData` in the firefoxcom.js file.
+      if (!params.has("filename") || !params.has("filedest")) {
+        return;
+      }
+      hash = params.get("filedest");
     }
+
+    // Named (or explicit) destination.
+    dest = unescape(hash);
+    try {
+      dest = JSON.parse(dest);
+
+      if (!Array.isArray(dest)) {
+        // Avoid incorrectly rejecting a valid named destination, such as
+        // e.g. "4.3" or "true", because `JSON.parse` converted its type.
+        dest = dest.toString();
+      }
+    } catch {}
+
+    if (
+      typeof dest === "string" ||
+      PDFLinkService.#isValidExplicitDestination(dest)
+    ) {
+      this.goToDestination(dest);
+      return;
+    }
+    console.error(
+      `PDFLinkService.setHash: "${unescape(hash)}" is not a valid destination.`
+    );
   }
 
   /**
