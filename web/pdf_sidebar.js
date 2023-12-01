@@ -329,6 +329,8 @@ class PDFSidebar {
     this.sidebarContainer.addEventListener("transitionend", evt => {
       if (evt.target === this.sidebarContainer) {
         this.outerContainer.classList.remove("sidebarMoving");
+        // Ensure that rendering is triggered after opening/closing the sidebar.
+        this.eventBus.dispatch("resize", { source: this });
       }
     });
 
