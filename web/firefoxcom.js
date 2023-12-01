@@ -112,9 +112,11 @@ class DownloadManager {
         this.#openBlobUrls.set(data, blobUrl);
       }
       // Let Firefox's content handler catch the URL and display the PDF.
-      let viewerUrl = blobUrl + "?filename=" + encodeURIComponent(filename);
+      // NOTE: This cannot use a query string for the filename, see
+      //       https://bugzilla.mozilla.org/show_bug.cgi?id=1632644#c5
+      let viewerUrl = blobUrl + "#filename=" + encodeURIComponent(filename);
       if (dest) {
-        viewerUrl += `#${escape(dest)}`;
+        viewerUrl += `&filedest=${escape(dest)}`;
       }
 
       try {
