@@ -689,16 +689,6 @@ const PDFViewerApplication = {
       appConfig.toolbar?.viewFind?.classList.add("hidden");
     }
 
-    appConfig.mainContainer.addEventListener(
-      "transitionend",
-      function (evt) {
-        if (evt.target === /* mainContainer */ this) {
-          eventBus.dispatch("resize", { source: this });
-        }
-      },
-      true
-    );
-
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       if (file) {
         this.open({ url: file });

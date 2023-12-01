@@ -2209,10 +2209,10 @@ describe("annotation", function () {
     });
 
     it("should compress and save text", async function () {
-      if (isNodeJS && getNodeVersion().major === 21) {
+      if (isNodeJS && getNodeVersion().major >= 20) {
         pending(
-          "CompressionStream behaves differently in Node.js 21, " +
-            "compared to Firefox, Chrome, and Node.js 18/20."
+          "CompressionStream behaves differently in Node.js >= 20, " +
+            "compared to Firefox, Chrome, and Node.js 18."
         );
       }
       const textWidgetRef = Ref.get(123, 0);
