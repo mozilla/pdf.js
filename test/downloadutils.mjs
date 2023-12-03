@@ -120,30 +120,24 @@ function calculateMD5(file) {
   });
 }
 
-function verifyManifestFiles(manifest, callback) {
-  async function verifyNext() {
-    if (i >= manifest.length) {
-      callback(error);
-      return;
-    }
-    var item = manifest[i];
-    if (fs.existsSync(item.file + ".error")) {
+async function verifyManifestFiles(manifest) {
+  let error = false;
+
+  for (const item of manifest) {
+    if (fs.existsSync(`${item.file}.error`)) {
       console.error(
-        'WARNING: File was not downloaded. See "' + item.file + '.error" file.'
+        `WARNING: "${item.file}" was not downloaded; see "${item.file}.error" file.`
       );
       error = true;
-      i++;
-      verifyNext();
-      return;
+      continue;
     }
-    if (item.link && !fs.existsSync(item.file + ".link")) {
+
+    if (item.link && !fs.existsSync(`${item.file}.link`)) {
       console.error(
         `WARNING: Unneeded \`"link": true\`-entry for the "${item.id}" test.`
       );
       error = true;
-      i++;
-      verifyNext();
-      return;
+      continue;
     }
 
     try {
@@ -165,13 +159,11 @@ function verifyManifestFiles(manifest, callback) {
       );
       error = true;
     }
-
-    i++;
-    verifyNext();
   }
-  var i = 0;
-  var error = false;
-  verifyNext();
+
+  if (error) {
+    throw new Error("Manifest validation failed");
+  }
 }
 
 export { downloadManifestFiles, verifyManifestFiles };
