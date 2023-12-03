@@ -110,23 +110,18 @@ function downloadManifestFiles(manifest, callback) {
   downloadNext();
 }
 
-function calculateMD5(file, callback) {
-  var hash = crypto.createHash("md5");
-  var stream = fs.createReadStream(file);
-  stream.on("data", function (data) {
-    hash.update(data);
-  });
-  stream.on("error", function (err) {
-    callback(err);
-  });
-  stream.on("end", function () {
-    var result = hash.digest("hex");
-    callback(null, result);
+function calculateMD5(file) {
+  return new Promise((resolve, reject) => {
+    const hash = crypto.createHash("md5");
+    const stream = fs.createReadStream(file);
+    stream.on("data", data => hash.update(data));
+    stream.on("error", error => reject(error));
+    stream.on("end", () => resolve(hash.digest("hex")));
   });
 }
 
 function verifyManifestFiles(manifest, callback) {
-  function verifyNext() {
+  async function verifyNext() {
     if (i >= manifest.length) {
       callback(error);
       return;
@@ -150,35 +145,29 @@ function verifyManifestFiles(manifest, callback) {
       verifyNext();
       return;
     }
-    calculateMD5(item.file, function (err, md5) {
-      if (err) {
-        console.log('WARNING: Unable to open file for reading "' + err + '".');
-        error = true;
-      } else if (!item.md5) {
+
+    try {
+      const md5 = await calculateMD5(item.file);
+      if (!item.md5) {
         console.error(
-          'WARNING: Missing md5 for file "' +
-            item.file +
-            '". ' +
-            'Hash for current file is "' +
-            md5 +
-            '"'
+          `WARNING: MD5 hash missing for "${item.file}" (computed "${md5}").`
         );
         error = true;
       } else if (md5 !== item.md5) {
         console.error(
-          'WARNING: MD5 of file "' +
-            item.file +
-            '" does not match file. Expected "' +
-            item.md5 +
-            '" computed "' +
-            md5 +
-            '"'
+          `WARNING: MD5 hash mismatch for "${item.file}" (expected "${item.md5}", computed "${md5}").`
         );
         error = true;
       }
-      i++;
-      verifyNext();
-    });
+    } catch (ex) {
+      console.log(
+        `WARNING: MD5 hash calculation failed for "${item.file}" ("${ex}").`
+      );
+      error = true;
+    }
+
+    i++;
+    verifyNext();
   }
   var i = 0;
   var error = false;
