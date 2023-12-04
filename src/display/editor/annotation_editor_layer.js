@@ -146,6 +146,11 @@ class AnnotationEditorLayer {
   updateMode(mode = this.#uiManager.getMode()) {
     this.#cleanup();
     switch (mode) {
+      case AnnotationEditorType.NONE:
+        this.disableTextSelection();
+        this.togglePointerEvents(false);
+        this.disableClick();
+        break;
       case AnnotationEditorType.INK:
         // We always want to have an ink editor ready to draw in.
         this.addInkEditorIfNeeded(false);

@@ -20,6 +20,7 @@ import {
   kbSelectAll,
   kbUndo,
   loadAndWait,
+  scrollIntoView,
   waitForStorageEntries,
 } from "./test_utils.mjs";
 
@@ -189,6 +190,68 @@ describe("Ink Editor", () => {
           expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
             .toEqual([0]);
+        })
+      );
+    });
+  });
+
+  describe("Invisible layers must be disabled", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the editor layer is disabled", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorInk");
+          await page.waitForSelector(".annotationEditorLayer.inkEditing");
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            // With Chrome something is wrong when serializing a DomRect,
+            // hence we extract the values and just return them.
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          const x = rect.x + 20;
+          const y = rect.y + 20;
+          const clickPromise = waitForPointerUp(page);
+          await page.mouse.move(x, y);
+          await page.mouse.down();
+          await page.mouse.move(x + 50, y + 50);
+          await page.mouse.up();
+          await clickPromise;
+
+          await commit(page);
+
+          const oneToFourteen = Array.from(new Array(13).keys(), n => n + 2);
+          for (const pageNumber of oneToFourteen) {
+            await scrollIntoView(
+              page,
+              `.page[data-page-number = "${pageNumber}"]`
+            );
+          }
+
+          await page.click("#editorInk");
+          await page.waitForSelector(".annotationEditorLayer:not(.inkEditing)");
+
+          const fourteenToOne = Array.from(new Array(13).keys(), n => 13 - n);
+          for (const pageNumber of fourteenToOne) {
+            await scrollIntoView(
+              page,
+              `.page[data-page-number = "${pageNumber}"]`
+            );
+          }
+
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] .annotationEditorLayer.disabled:not(.inkEditing)`
+          );
         })
       );
     });
