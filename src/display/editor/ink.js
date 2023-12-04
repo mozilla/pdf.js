@@ -660,10 +660,7 @@ class InkEditor extends AnnotationEditor {
 
     event.preventDefault();
 
-    if (
-      event.pointerType !== "mouse" &&
-      !this.div.contains(document.activeElement)
-    ) {
+    if (!this.div.contains(document.activeElement)) {
       this.div.focus({
         preventScroll: true /* See issue #17327 */,
       });
