@@ -1071,23 +1071,23 @@ async function closeSession(browser) {
 
 function ensurePDFsDownloaded(callback) {
   var manifest = getTestManifest();
-  downloadManifestFiles(manifest, function () {
-    verifyManifestFiles(manifest, function (hasErrors) {
-      if (hasErrors) {
-        console.log(
-          "Unable to verify the checksum for the files that are " +
-            "used for testing."
-        );
-        console.log(
-          "Please re-download the files, or adjust the MD5 " +
-            "checksum in the manifest for the files listed above.\n"
-        );
-        if (options.strictVerify) {
-          process.exit(1);
-        }
+  downloadManifestFiles(manifest, async function () {
+    try {
+      await verifyManifestFiles(manifest);
+    } catch {
+      console.log(
+        "Unable to verify the checksum for the files that are " +
+          "used for testing."
+      );
+      console.log(
+        "Please re-download the files, or adjust the MD5 " +
+          "checksum in the manifest for the files listed above.\n"
+      );
+      if (options.strictVerify) {
+        process.exit(1);
       }
-      callback();
-    });
+    }
+    callback();
   });
 }
 
