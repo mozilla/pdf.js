@@ -13,7 +13,11 @@
  * limitations under the License.
  */
 
-import { getVerbosityLevel, setVerbosityLevel } from "../../src/shared/util.js";
+import {
+  getVerbosityLevel,
+  setVerbosityLevel,
+  VerbosityLevel,
+} from "../../src/shared/util.js";
 import { Jbig2Image } from "../../src/core/jbig2.js";
 import { JpegImage } from "../../src/core/jpg.js";
 import { JpxImage } from "../../src/core/jpx.js";
@@ -35,6 +39,7 @@ describe("pdfimage_api", function () {
       JpegImage,
       JpxImage,
       setVerbosityLevel,
+      VerbosityLevel,
     });
   });
 });

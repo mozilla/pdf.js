@@ -1,4 +1,11 @@
-import { Jbig2Image } from "../../build/image_decoders/pdf.image_decoders.mjs";
+import {
+  Jbig2Image,
+  setVerbosityLevel,
+  VerbosityLevel,
+} from "../../build/image_decoders/pdf.image_decoders.mjs";
+
+// Avoid unnecessary console "spam", by ignoring `info`/`warn` calls.
+setVerbosityLevel(VerbosityLevel.ERRORS);
 
 const ignored = ["Cannot read properties", "JBIG2 error"];
 
