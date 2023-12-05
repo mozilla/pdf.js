@@ -419,6 +419,10 @@ function getFontSubstitution(
   baseFontName,
   standardFontName
 ) {
+  if (baseFontName.startsWith("InvalidPDFjsFont_")) {
+    return null;
+  }
+
   // It's possible to have a font name with spaces, commas or dashes, hence we
   // just replace them by a dash.
   baseFontName = normalizeFontName(baseFontName);

@@ -8381,5 +8381,26 @@
       "link": true,
       "type": "eq",
       "annotations": true
+   },
+   {
+      "id": "bug1865341",
+      "file": "pdfs/bug1865341.pdf",
+      "md5": "e241b6d1dc493df73e77e3eeabc71721",
+      "rounds": 1,
+      "type": "eq",
+      "save": true,
+      "print": true,
+      "loadAnnotations": true,
+      "annotationStorage": {
+         "pdfjs_internal_editor_0": {
+            "annotationType": 3,
+            "color": [255, 0, 0],
+            "fontSize": 10,
+            "value": "Załącznik",
+            "pageIndex": 0,
+            "rect": [ 238, 629, 287, 649],
+            "rotation": 0
+         }
+      }
    }
 ]
