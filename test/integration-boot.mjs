@@ -29,6 +29,7 @@ async function runTests(results) {
       "copy_paste_spec.mjs",
       "find_spec.mjs",
       "freetext_editor_spec.mjs",
+      "highlight_editor_spec.mjs",
       "ink_editor_spec.mjs",
       "scripting_spec.mjs",
       "stamp_editor_spec.mjs",
