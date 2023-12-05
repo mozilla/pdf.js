@@ -175,7 +175,6 @@
     --editor-toolbar-hover-bg-color: #e0e0e6;
     --editor-toolbar-hover-fg-color: var(--editor-toolbar-fg-color);
     --editor-toolbar-hover-outline: none;
-    --editor-toolbar-active-bg-color: #cfcfd8;
     --editor-toolbar-focus-outline-color: #0060df;
     --editor-toolbar-shadow: 0 2px 6px 0 rgb(58 57 68 / 0.2);
     --editor-toolbar-vert-offset: 6px;
@@ -186,7 +185,6 @@
       --editor-toolbar-bg-color: #2b2a33;
       --editor-toolbar-fg-color: #fbfbfe;
       --editor-toolbar-hover-bg-color: #52525e;
-      --editor-toolbar-active-bg-color: #5b5b66;
       --editor-toolbar-focus-outline-color: #0df;
     }
 
@@ -199,7 +197,6 @@
       --editor-toolbar-hover-fg-color: AccentColor;
       --editor-toolbar-hover-outline: 2px solid
         var(--editor-toolbar-hover-border-color);
-      --editor-toolbar-active-bg-color: ButtonFace;
       --editor-toolbar-focus-outline-color: ButtonBorder;
       --editor-toolbar-shadow: none;
     }
