@@ -15,6 +15,7 @@
 
 import {
   closePages,
+  getEditorSelector,
   getSelectedEditors,
   kbRedo,
   kbSelectAll,
@@ -252,6 +253,46 @@ describe("Ink Editor", () => {
           await page.waitForSelector(
             `.page[data-page-number = "1"] .annotationEditorLayer.disabled:not(.inkEditing)`
           );
+        })
+      );
+    });
+  });
+
+  describe("Ink editor must be committed when blurred", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the ink editor is committed", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorInk");
+          await page.waitForSelector(".annotationEditorLayer.inkEditing");
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            // With Chrome something is wrong when serializing a DomRect,
+            // hence we extract the values and just return them.
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          const x = rect.x + 20;
+          const y = rect.y + 20;
+          const clickPromise = waitForPointerUp(page);
+          await page.mouse.move(x, y);
+          await page.mouse.down();
+          await page.mouse.move(x + 50, y + 50);
+          await page.mouse.up();
+          await clickPromise;
+
+          page.mouse.click(rect.x - 10, rect.y + 10);
+          await page.waitForSelector(`${getEditorSelector(0)}.disabled`);
         })
       );
     });
