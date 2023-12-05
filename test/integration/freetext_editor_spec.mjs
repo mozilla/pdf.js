@@ -3017,27 +3017,9 @@ describe("FreeText Editor", () => {
             `${getEditorSelector(0)} .overlay.enabled`
           );
 
-          let promise = page.evaluate(
-            () =>
-              new Promise(resolve => {
-                document.addEventListener("selectionchange", resolve, {
-                  once: true,
-                });
-              })
-          );
           await page.click("#pageNumber");
-          await promise;
 
-          promise = page.evaluate(
-            () =>
-              new Promise(resolve => {
-                document
-                  .getElementById("pageNumber")
-                  .addEventListener("keyup", resolve, { once: true });
-              })
-          );
           await page.keyboard.press("Backspace");
-          await promise;
 
           let content = await page.$eval("#pageNumber", el =>
             el.innerText.trimEnd()
