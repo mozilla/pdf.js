@@ -44,6 +44,7 @@ class XRef {
     this._pendingRefs = new RefSet();
     this._newPersistentRefNum = null;
     this._newTemporaryRefNum = null;
+    this._persistentRefsCache = null;
   }
 
   getNewPersistentRef(obj) {
@@ -63,6 +64,19 @@ class XRef {
     // stream.
     if (this._newTemporaryRefNum === null) {
       this._newTemporaryRefNum = this.entries.length || 1;
+      if (this._newPersistentRefNum) {
+        this._persistentRefsCache = new Map();
+        for (
+          let i = this._newTemporaryRefNum;
+          i < this._newPersistentRefNum;
+          i++
+        ) {
+          // We *temporarily* clear the cache, see `resetNewTemporaryRef` below,
+          // to avoid any conflict with the refs created during saving.
+          this._persistentRefsCache.set(i, this._cacheMap.get(i));
+          this._cacheMap.delete(i);
+        }
+      }
     }
     return Ref.get(this._newTemporaryRefNum++, 0);
   }
@@ -70,6 +84,12 @@ class XRef {
   resetNewTemporaryRef() {
     // Called once saving is finished.
     this._newTemporaryRefNum = null;
+    if (this._persistentRefsCache) {
+      for (const [num, obj] of this._persistentRefsCache) {
+        this._cacheMap.set(num, obj);
+      }
+    }
+    this._persistentRefsCache = null;
   }
 
   setStartXRef(startXRef) {

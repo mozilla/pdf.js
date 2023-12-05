@@ -656,6 +656,12 @@ class Driver {
             if (!task.annotationStorage) {
               throw new Error("Missing `annotationStorage` entry.");
             }
+            if (task.loadAnnotations) {
+              for (let num = 1; num <= doc.numPages; num++) {
+                const page = await doc.getPage(num);
+                await page.getAnnotations({ intent: "display" });
+              }
+            }
             doc.annotationStorage.setAll(task.annotationStorage);
 
             const data = await doc.saveDocument();
