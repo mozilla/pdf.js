@@ -185,6 +185,9 @@ class DrawLayer {
   }
 
   remove(id) {
+    if (this.#parent === null) {
+      return;
+    }
     this.#mapping.get(id).remove();
     this.#mapping.delete(id);
   }
