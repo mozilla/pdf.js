@@ -36,8 +36,14 @@
     }
 
     &.highlight {
+      --blend-mode: multiply;
+
+      @media screen and (forced-colors: active) {
+        --blend-mode: difference;
+      }
+
       position: absolute;
-      mix-blend-mode: multiply;
+      mix-blend-mode: var(--blend-mode);
       fill-rule: evenodd;
     }
 

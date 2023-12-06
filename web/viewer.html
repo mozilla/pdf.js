@@ -172,14 +172,9 @@ See https://github.com/adobe-type-tools/cmap-resources
         </div>  <!-- findbar -->
 
         <div class="editorParamsToolbar hidden doorHangerRight" id="editorHighlightParamsToolbar">
-          <div class="editorParamsToolbarContainer">
-            <div class="editorParamsSetter">
-              <label for="editorHighlightColor" class="editorParamsLabel" data-l10n-id="editor_highlight_color">Color</label>
-              <input type="color" value="#FFFF00" id="editorHighlightColor" class="editorParamsColor" tabindex="100">
-            </div>
-            <div class="editorParamsSetter">
-              <label for="editorHighlightOpacity" class="editorParamsLabel" data-l10n-id="editor_highlight_opacity">Opacity</label>
-              <input type="range" id="editorHighlightOpacity" class="editorParamsSlider" value="100" min="1" max="100" step="1" tabindex="101">
+          <div id="highlightParamsToolbarContainer" class="editorParamsToolbarContainer">
+            <div id="editorHighlightColorPicker" class="colorPicker">
+              <span id="highlightColorPickerLabel" class="editorParamsLabel" data-l10n-id="pdfjs-editor-highlight-colorpicker-label">Highlight color</span>
             </div>
           </div>
         </div>
@@ -217,7 +212,7 @@ See https://github.com/adobe-type-tools/cmap-resources
         <div class="editorParamsToolbar hidden doorHangerRight" id="editorStampParamsToolbar">
           <div class="editorParamsToolbarContainer">
             <button id="editorStampAddImage" class="secondaryToolbarButton" title="Add image" tabindex="107" data-l10n-id="pdfjs-editor-stamp-add-image-button">
-              <span data-l10n-id="pdfjs-editor-stamp-add-image-button-label">Add image</span>
+              <span class="editorParamsLabel" data-l10n-id="pdfjs-editor-stamp-add-image-button-label">Add image</span>
             </button>
           </div>
         </div>
