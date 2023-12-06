@@ -14,7 +14,9 @@
  */
 
 import {
+  awaitPromise,
   closePages,
+  createPromise,
   dragAndDropAnnotation,
   getEditors,
   getEditorSelector,
@@ -3017,27 +3019,21 @@ describe("FreeText Editor", () => {
             `${getEditorSelector(0)} .overlay.enabled`
           );
 
-          let promise = page.evaluate(
-            () =>
-              new Promise(resolve => {
-                document.addEventListener("selectionchange", resolve, {
-                  once: true,
-                });
-              })
-          );
+          let handle = await createPromise(page, resolve => {
+            document.addEventListener("selectionchange", resolve, {
+              once: true,
+            });
+          });
           await page.click("#pageNumber");
-          await promise;
+          await awaitPromise(handle);
 
-          promise = page.evaluate(
-            () =>
-              new Promise(resolve => {
-                document
-                  .getElementById("pageNumber")
-                  .addEventListener("keyup", resolve, { once: true });
-              })
-          );
+          handle = await createPromise(page, resolve => {
+            document
+              .getElementById("pageNumber")
+              .addEventListener("keyup", resolve, { once: true });
+          });
           await page.keyboard.press("Backspace");
-          await promise;
+          await awaitPromise(handle);
 
           let content = await page.$eval("#pageNumber", el =>
             el.innerText.trimEnd()
