@@ -264,7 +264,7 @@ class PDFSidebar {
     this.#hideUINotification();
   }
 
-  close() {
+  close(evt = null) {
     if (!this.isOpen) {
       return;
     }
@@ -276,11 +276,16 @@ class PDFSidebar {
 
     this.onToggled();
     this.#dispatchEvent();
+
+    if (evt?.detail > 0) {
+      // Remove focus from the toggleButton if it's clicked (see issue 17361).
+      this.toggleButton.blur();
+    }
   }
 
-  toggle() {
+  toggle(evt = null) {
     if (this.isOpen) {
-      this.close();
+      this.close(evt);
     } else {
       this.open();
     }
@@ -334,8 +339,8 @@ class PDFSidebar {
       }
     });
 
-    this.toggleButton.addEventListener("click", () => {
-      this.toggle();
+    this.toggleButton.addEventListener("click", evt => {
+      this.toggle(evt);
     });
 
     // Buttons for switching views.
