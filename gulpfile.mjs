@@ -1079,6 +1079,7 @@ function buildComponents(defines, dir) {
     "web/images/loading-icon.gif",
     "web/images/altText_*.svg",
     "web/images/editor-toolbar-*.svg",
+    "web/images/toolbarButton-menuArrow.svg",
   ];
 
   return merge([

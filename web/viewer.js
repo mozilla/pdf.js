@@ -61,6 +61,9 @@ function getViewerConfiguration() {
       editorHighlightParamsToolbar: document.getElementById(
         "editorHighlightParamsToolbar"
       ),
+      editorHighlightColorPicker: document.getElementById(
+        "editorHighlightColorPicker"
+      ),
       editorInkButton: document.getElementById("editorInk"),
       editorInkParamsToolbar: document.getElementById("editorInkParamsToolbar"),
       editorStampButton: document.getElementById("editorStamp"),
@@ -168,8 +171,6 @@ function getViewerConfiguration() {
     annotationEditorParams: {
       editorFreeTextFontSize: document.getElementById("editorFreeTextFontSize"),
       editorFreeTextColor: document.getElementById("editorFreeTextColor"),
-      editorHighlightColor: document.getElementById("editorHighlightColor"),
-      editorHighlightOpacity: document.getElementById("editorHighlightOpacity"),
       editorInkColor: document.getElementById("editorInkColor"),
       editorInkThickness: document.getElementById("editorInkThickness"),
       editorInkOpacity: document.getElementById("editorInkOpacity"),

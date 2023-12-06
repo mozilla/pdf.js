@@ -442,6 +442,7 @@ const PDFViewerApplication = {
       textLayerMode: AppOptions.get("textLayerMode"),
       annotationMode: AppOptions.get("annotationMode"),
       annotationEditorMode,
+      annotationEditorHighlightColors: AppOptions.get("highlightEditorColors"),
       imageResourcesPath: AppOptions.get("imageResourcesPath"),
       enablePrintAutoRotate: AppOptions.get("enablePrintAutoRotate"),
       isOffscreenCanvasSupported,

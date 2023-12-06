@@ -109,6 +109,8 @@ function isValidAnnotationEditorMode(mode) {
  * @property {number} [annotationEditorMode] - Enables the creation and editing
  *   of new Annotations. The constants from {@link AnnotationEditorType} should
  *   be used. The default value is `AnnotationEditorType.NONE`.
+ * @property {string} [annotationEditorHighlightColors] - A comma separated list
+ *   of colors to propose to highlight some text in the pdf.
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   mainly for annotation icons. Include trailing slash.
  * @property {boolean} [enablePrintAutoRotate] - Enables automatic rotation of
@@ -202,6 +204,8 @@ class PDFViewer {
 
   #altTextManager = null;
 
+  #annotationEditorHighlightColors = null;
+
   #annotationEditorMode = AnnotationEditorType.NONE;
 
   #annotationEditorUIManager = null;
@@ -276,6 +280,8 @@ class PDFViewer {
       options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
     this.#annotationEditorMode =
       options.annotationEditorMode ?? AnnotationEditorType.NONE;
+    this.#annotationEditorHighlightColors =
+      options.annotationEditorHighlightColors || null;
     this.imageResourcesPath = options.imageResourcesPath || "";
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
@@ -862,8 +868,13 @@ class PDFViewer {
               this.#altTextManager,
               this.eventBus,
               pdfDocument,
-              this.pageColors
+              this.pageColors,
+              this.#annotationEditorHighlightColors
             );
+            this.eventBus.dispatch("annotationeditoruimanager", {
+              source: this,
+              uiManager: this.#annotationEditorUIManager,
+            });
             if (mode !== AnnotationEditorType.NONE) {
               this.#annotationEditorUIManager.updateMode(mode);
             }

@@ -532,6 +532,11 @@ body {
 .editorParamsToolbarContainer .editorParamsLabel {
   padding-inline-end: 10px;
   flex: none;
+  font: menu;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 150%;
   color: var(--main-color);
 }
 

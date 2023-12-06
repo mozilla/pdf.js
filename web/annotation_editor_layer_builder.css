@@ -904,6 +904,38 @@
   }
 }
 
+.colorPicker {
+  --hover-outline-color: #0250bb;
+  --selected-outline-color: #0060df;
+  --swatch-border-color: #cfcfd8;
+
+  @media (prefers-color-scheme: dark) {
+    --hover-outline-color: #80ebff;
+    --selected-outline-color: #aaf2ff;
+    --swatch-border-color: #52525e;
+  }
+
+  @media screen and (forced-colors: active) {
+    --hover-outline-color: Highlight;
+    --selected-outline-color: var(--hover-outline-color);
+    --swatch-border-color: ButtonText;
+  }
+
+  .swatch {
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--swatch-border-color);
+    border-radius: 100%;
+    outline-offset: 2px;
+    box-sizing: border-box;
+    forced-color-adjust: none;
+  }
+
+  button:is(:hover, .selected) > .swatch {
+    border: none;
+  }
+}
+
 .annotationEditorLayer {
   &[data-main-rotation="0"] {
     .highlightEditor > .editToolbar {
@@ -962,7 +994,144 @@
     }
 
     .editToolbar {
+      --editor-toolbar-colorpicker-arrow-image: url(images/toolbarButton-menuArrow.svg);
+
       transform-origin: center !important;
+
+      .buttons {
+        .colorPicker {
+          position: relative;
+          width: auto;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 4px;
+          padding: 4px;
+
+          &::after {
+            content: "";
+            mask-image: var(--editor-toolbar-colorpicker-arrow-image);
+            mask-repeat: no-repeat;
+            mask-position: center;
+            display: inline-block;
+            background-color: var(--editor-toolbar-fg-color);
+            width: 12px;
+            height: 12px;
+          }
+
+          &:hover::after {
+            background-color: var(--editor-toolbar-hover-fg-color);
+          }
+
+          &:has(.dropdown:not(.hidden)) {
+            background-color: var(--editor-toolbar-hover-bg-color);
+          }
+
+          .dropdown {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 11px;
+            padding-block: 8px;
+            border-radius: 6px;
+            background-color: var(--editor-toolbar-bg-color);
+            border: 1px solid var(--editor-toolbar-border-color);
+            box-shadow: var(--editor-toolbar-shadow);
+            inset-block-start: calc(100% + 4px);
+            width: calc(100% + 2 * var(--editor-toolbar-padding));
+
+            button {
+              width: 100%;
+              height: auto;
+              border: none;
+              cursor: pointer;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              background: none;
+
+              &:is(:active, :focus-visible) {
+                outline: none;
+              }
+
+              > .swatch {
+                outline-offset: 2px;
+              }
+
+              &[aria-selected="true"] > .swatch {
+                outline: 2px solid var(--selected-outline-color);
+              }
+
+              &:is(:hover, :active, :focus-visible) > .swatch {
+                outline: 2px solid var(--hover-outline-color);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+.editorParamsToolbar:has(#highlightParamsToolbarContainer) {
+  padding: unset;
+}
+
+#highlightParamsToolbarContainer {
+  height: auto;
+  padding-inline: 10px;
+  padding-block: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+
+  .colorPicker {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    #highlightColorPickerLabel {
+      width: fit-content;
+      inset-inline-start: 0;
+    }
+
+    .dropdown {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-direction: row;
+      height: auto;
+
+      button {
+        width: auto;
+        height: auto;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: none;
+        flex: 0 0 auto;
+
+        .swatch {
+          width: 24px;
+          height: 24px;
+        }
+
+        &:is(:active, :focus-visible) {
+          outline: none;
+        }
+
+        &[aria-selected="true"] > .swatch {
+          outline: 2px solid var(--selected-outline-color);
+        }
+
+        &:is(:hover, :active, :focus-visible) > .swatch {
+          outline: 2px solid var(--hover-outline-color);
+        }
+      }
     }
   }
 }

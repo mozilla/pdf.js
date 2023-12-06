@@ -332,6 +332,8 @@ pdfjs-editor-remove-freetext-button =
     .title = Remove text
 pdfjs-editor-remove-stamp-button =
     .title = Remove image
+pdfjs-editor-remove-highlight-button =
+    .title = Remove highlight
 
 ##
 
@@ -384,3 +386,23 @@ pdfjs-editor-resizer-label-bottom-right = Bottom right corner — resize
 pdfjs-editor-resizer-label-bottom-middle = Bottom middle — resize
 pdfjs-editor-resizer-label-bottom-left = Bottom left corner — resize
 pdfjs-editor-resizer-label-middle-left = Middle left — resize
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = Highlight color
+
+pdfjs-editor-colorpicker-button =
+    .title = Change color
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = Color choices
+pdfjs-editor-colorpicker-yellow =
+    .title = Yellow
+pdfjs-editor-colorpicker-green =
+    .title = Green
+pdfjs-editor-colorpicker-blue =
+    .title = Blue
+pdfjs-editor-colorpicker-pink =
+    .title = Pink
+pdfjs-editor-colorpicker-red =
+    .title = Red
