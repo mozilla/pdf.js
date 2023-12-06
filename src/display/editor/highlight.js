@@ -252,12 +252,21 @@ class HighlightEditor extends AnnotationEditor {
   }
 
   setParent(parent) {
+    let mustBeSelected = false;
     if (this.parent && !parent) {
       this.#cleanDrawLayer();
     } else if (parent) {
       this.#addToDrawLayer(parent);
+      // If mustBeSelected is true it means that this editor was selected
+      // when its parent has been destroyed, hence we must select it again.
+      mustBeSelected =
+        !this.parent && this.div?.classList.contains("selectedEditor");
     }
     super.setParent(parent);
+    if (mustBeSelected) {
+      // We select it after the parent has been set.
+      this.select();
+    }
   }
 
   #cleanDrawLayer() {
