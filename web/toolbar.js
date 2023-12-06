@@ -121,12 +121,17 @@ class Toolbar {
     this.#bindListeners(options);
 
     if (options.editorHighlightColorPicker) {
-      this.eventBus._on("annotationeditoruimanager", ({ uiManager }) => {
-        this.#setAnnotationEditorUIManager(
-          uiManager,
-          options.editorHighlightColorPicker
-        );
-      });
+      this.eventBus._on(
+        "annotationeditoruimanager",
+        ({ uiManager }) => {
+          this.#setAnnotationEditorUIManager(
+            uiManager,
+            options.editorHighlightColorPicker
+          );
+        },
+        // Once the color picker has been added, we don't want to add it again.
+        { once: true }
+      );
     }
 
     this.reset();
