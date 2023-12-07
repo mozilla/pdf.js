@@ -54,6 +54,18 @@ function loadAndWait(filename, selector, zoom, pageSetup) {
   );
 }
 
+function createPromise(page, callback) {
+  return page.evaluateHandle(
+    // eslint-disable-next-line no-eval
+    cb => [new Promise(eval(`(${cb})`))],
+    callback.toString()
+  );
+}
+
+function awaitPromise(promise) {
+  return promise.evaluate(([p]) => p);
+}
+
 function closePages(pages) {
   return Promise.all(
     pages.map(async ([_, page]) => {
@@ -100,23 +112,29 @@ function getSelectedEditors(page) {
 }
 
 async function waitForEvent(page, eventName, timeout = 5000) {
-  const hasTimedout = await Promise.race([
-    // add event listener and wait for event to fire before returning
-    page.evaluate(
-      name =>
-        new Promise(resolve => {
-          document.addEventListener(name, () => resolve(false), { once: true });
-        }),
-      eventName
-    ),
-    page.evaluate(
-      timeOut =>
-        new Promise(resolve => {
-          setTimeout(() => resolve(true), timeOut);
-        }),
-      timeout
-    ),
-  ]);
+  const handle = await page.evaluateHandle(
+    (name, timeOut) => {
+      let callback = null;
+      return [
+        Promise.race([
+          new Promise(resolve => {
+            // add event listener and wait for event to fire before returning
+            callback = () => resolve(false);
+            document.addEventListener(name, callback, { once: true });
+          }),
+          new Promise(resolve => {
+            setTimeout(() => {
+              document.removeEventListener(name, callback);
+              resolve(true);
+            }, timeOut);
+          }),
+        ]),
+      ];
+    },
+    eventName,
+    timeout
+  );
+  const hasTimedout = await awaitPromise(handle);
   if (hasTimedout === true) {
     console.log(`waitForEvent: timeout waiting for ${eventName}`);
   }
@@ -254,35 +272,36 @@ async function dragAndDropAnnotation(page, startX, startY, tX, tY) {
   await page.waitForSelector("#viewer:not(.noUserSelect)");
 }
 
-async function waitForAnnotationEditorLayer(page) {
-  return page.evaluate(() => {
-    return new Promise(resolve => {
-      window.PDFViewerApplication.eventBus.on(
-        "annotationeditorlayerrendered",
-        resolve
-      );
-    });
+function waitForAnnotationEditorLayer(page) {
+  return createPromise(page, resolve => {
+    window.PDFViewerApplication.eventBus.on(
+      "annotationeditorlayerrendered",
+      resolve
+    );
   });
 }
 
 async function waitForTextLayer(page) {
-  return page.evaluate(() => {
-    return new Promise(resolve => {
-      window.PDFViewerApplication.eventBus.on("textlayerrendered", resolve);
-    });
+  const handle = await createPromise(page, resolve => {
+    window.PDFViewerApplication.eventBus.on("textlayerrendered", resolve);
   });
+  return awaitPromise(handle);
 }
 
 async function scrollIntoView(page, selector) {
-  await page.evaluate(sel => {
-    const element = document.querySelector(sel);
-    element.scrollIntoView({ behavior: "instant", block: "start" });
-    return new Promise(resolve => {
-      document
-        .getElementById("viewerContainer")
-        .addEventListener("scrollend", resolve, { once: true });
-    });
-  }, selector);
+  const handle = await page.evaluateHandle(
+    sel => [
+      new Promise(resolve => {
+        document
+          .getElementById("viewerContainer")
+          .addEventListener("scrollend", resolve, { once: true });
+        const element = document.querySelector(sel);
+        element.scrollIntoView({ behavior: "instant", block: "start" });
+      }),
+    ],
+    selector
+  );
+  return awaitPromise(handle);
 }
 
 async function hover(page, selector) {
@@ -417,8 +436,10 @@ async function kbDeleteLastWord(page) {
 }
 
 export {
+  awaitPromise,
   clearInput,
   closePages,
+  createPromise,
   dragAndDropAnnotation,
   getAnnotationStorage,
   getComputedStyleSelector,
