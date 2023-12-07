@@ -14,6 +14,7 @@
  */
 
 import {
+  awaitPromise,
   closePages,
   getEditorDimensions,
   getEditorSelector,
@@ -81,28 +82,27 @@ const copyImage = async (page, imagePath, number) => {
   let hasPasteEvent = false;
   while (!hasPasteEvent) {
     // We retry to paste if nothing has been pasted before 500ms.
-    const promise = Promise.race([
-      page.evaluate(
-        () =>
+    const handle = await page.evaluateHandle(() => {
+      let callback = null;
+      return [
+        Promise.race([
           new Promise(resolve => {
-            document.addEventListener(
-              "paste",
-              e => resolve(e.clipboardData.items.length !== 0),
-              {
-                once: true,
-              }
-            );
-          })
-      ),
-      page.evaluate(
-        () =>
+            callback = e => resolve(e.clipboardData.items.length !== 0);
+            document.addEventListener("paste", callback, {
+              once: true,
+            });
+          }),
           new Promise(resolve => {
-            setTimeout(() => resolve(false), 500);
-          })
-      ),
-    ]);
+            setTimeout(() => {
+              document.removeEventListener("paste", callback);
+              resolve(false);
+            }, 500);
+          }),
+        ]),
+      ];
+    });
     await kbPaste(page);
-    hasPasteEvent = await promise;
+    hasPasteEvent = await awaitPromise(handle);
   }
 
   await waitForImage(page, getEditorSelector(number));
@@ -227,11 +227,11 @@ describe("Stamp Editor", () => {
                 `${getEditorSelector(i)} .resizers.hidden`
               );
 
-              const promise = waitForAnnotationEditorLayer(page);
+              const handle = await waitForAnnotationEditorLayer(page);
               await page.evaluate(() => {
                 window.PDFViewerApplication.rotatePages(90);
               });
-              await promise;
+              await awaitPromise(handle);
 
               await page.focus(".stampEditor");
               await waitForSelectedEditor(page, getEditorSelector(i));
@@ -257,11 +257,11 @@ describe("Stamp Editor", () => {
                 .toEqual("nwse-resize");
             }
 
-            const promise = waitForAnnotationEditorLayer(page);
+            const handle = await waitForAnnotationEditorLayer(page);
             await page.evaluate(() => {
               window.PDFViewerApplication.rotatePages(90);
             });
-            await promise;
+            await awaitPromise(handle);
           }
         })
       );
@@ -410,16 +410,19 @@ describe("Stamp Editor", () => {
 
           // We check that the alt-text button works correctly with the
           // keyboard.
-          await page.evaluate(sel => {
+          const handle = await page.evaluateHandle(sel => {
             document.getElementById("viewerContainer").focus();
-            return new Promise(resolve => {
-              setTimeout(() => {
-                const el = document.querySelector(sel);
-                el.addEventListener("focus", resolve, { once: true });
-                el.focus({ focusVisible: true });
-              }, 0);
-            });
+            return [
+              new Promise(resolve => {
+                setTimeout(() => {
+                  const el = document.querySelector(sel);
+                  el.addEventListener("focus", resolve, { once: true });
+                  el.focus({ focusVisible: true });
+                }, 0);
+              }),
+            ];
           }, buttonSelector);
+          await awaitPromise(handle);
           await (browserName === "chrome"
             ? page.waitForSelector(`${buttonSelector}:focus`)
             : page.waitForSelector(`${buttonSelector}:focus-visible`));

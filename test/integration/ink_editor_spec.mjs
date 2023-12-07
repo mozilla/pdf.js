@@ -14,7 +14,9 @@
  */
 
 import {
+  awaitPromise,
   closePages,
+  createPromise,
   getEditorSelector,
   getSelectedEditors,
   kbRedo,
@@ -26,12 +28,9 @@ import {
 } from "./test_utils.mjs";
 
 const waitForPointerUp = page =>
-  page.evaluate(
-    () =>
-      new Promise(resolve => {
-        window.addEventListener("pointerup", resolve, { once: true });
-      })
-  );
+  createPromise(page, resolve => {
+    window.addEventListener("pointerup", resolve, { once: true });
+  });
 
 const selectAll = async page => {
   await kbSelectAll(page);
@@ -78,12 +77,12 @@ describe("Ink Editor", () => {
           for (let i = 0; i < 3; i++) {
             const x = rect.x + 100 + i * 100;
             const y = rect.y + 100 + i * 100;
-            const promise = waitForPointerUp(page);
+            const clickHandle = await waitForPointerUp(page);
             await page.mouse.move(x, y);
             await page.mouse.down();
             await page.mouse.move(x + 50, y + 50);
             await page.mouse.up();
-            await promise;
+            await awaitPromise(clickHandle);
 
             await commit(page);
           }
@@ -114,12 +113,12 @@ describe("Ink Editor", () => {
 
           const xStart = rect.x + 300;
           const yStart = rect.y + 300;
-          const clickPromise = waitForPointerUp(page);
+          const clickHandle = await waitForPointerUp(page);
           await page.mouse.move(xStart, yStart);
           await page.mouse.down();
           await page.mouse.move(xStart + 50, yStart + 50);
           await page.mouse.up();
-          await clickPromise;
+          await awaitPromise(clickHandle);
 
           await commit(page);
 
@@ -177,12 +176,12 @@ describe("Ink Editor", () => {
 
           const x = rect.x + 20;
           const y = rect.y + 20;
-          const clickPromise = waitForPointerUp(page);
+          const clickHandle = await waitForPointerUp(page);
           await page.mouse.move(x, y);
           await page.mouse.down();
           await page.mouse.move(x + 50, y + 50);
           await page.mouse.up();
-          await clickPromise;
+          await awaitPromise(clickHandle);
 
           await commit(page);
 
@@ -222,12 +221,12 @@ describe("Ink Editor", () => {
 
           const x = rect.x + 20;
           const y = rect.y + 20;
-          const clickPromise = waitForPointerUp(page);
+          const clickHandle = await waitForPointerUp(page);
           await page.mouse.move(x, y);
           await page.mouse.down();
           await page.mouse.move(x + 50, y + 50);
           await page.mouse.up();
-          await clickPromise;
+          await awaitPromise(clickHandle);
 
           await commit(page);
 
@@ -284,12 +283,12 @@ describe("Ink Editor", () => {
 
           const x = rect.x + 20;
           const y = rect.y + 20;
-          const clickPromise = waitForPointerUp(page);
+          const clickHandle = await waitForPointerUp(page);
           await page.mouse.move(x, y);
           await page.mouse.down();
           await page.mouse.move(x + 50, y + 50);
           await page.mouse.up();
-          await clickPromise;
+          await awaitPromise(clickHandle);
 
           page.mouse.click(rect.x - 10, rect.y + 10);
           await page.waitForSelector(`${getEditorSelector(0)}.disabled`);
