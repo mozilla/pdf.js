@@ -937,6 +937,10 @@ async function startBrowser({ browserName, headless, startUrl }) {
   }
 
   if (browserName === "firefox") {
+    // Run tests with the WebDriver BiDi protocol enabled only for Firefox for
+    // now given that for Chrome further fixes are needed first.
+    options.protocol = "webDriverBiDi";
+
     options.extraPrefsFirefox = {
       // avoid to have a prompt when leaving a page with a form
       "dom.disable_beforeunload": true,
@@ -1052,9 +1056,6 @@ async function closeSession(browser) {
       continue;
     }
     if (session.browser !== undefined) {
-      for (const page of await session.browser.pages()) {
-        await page.close();
-      }
       await session.browser.close();
     }
     session.closed = true;
