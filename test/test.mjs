@@ -1056,9 +1056,6 @@ async function closeSession(browser) {
       continue;
     }
     if (session.browser !== undefined) {
-      for (const page of await session.browser.pages()) {
-        await page.close();
-      }
       await session.browser.close();
     }
     session.closed = true;
