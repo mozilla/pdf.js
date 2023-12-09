@@ -71,7 +71,7 @@ function closePages(pages) {
     pages.map(async ([_, page]) => {
       // Avoid to keep something from a previous test.
       await page.evaluate(() => window.localStorage.clear());
-      await page.close();
+      await page.close({ runBeforeUnload: false });
     })
   );
 }
