@@ -144,22 +144,11 @@ function createIdFactory(pageIndex) {
   return page._localIdFactory;
 }
 
-function getNodeVersion() {
-  if (!isNodeJS) {
-    throw new Error("getNodeVersion - only valid in Node.js environments.");
-  }
-  const [major, minor, patch] = process.versions.node
-    .split(".")
-    .map(parseFloat);
-  return { major, minor, patch };
-}
-
 export {
   buildGetDocumentParams,
   CMAP_URL,
   createIdFactory,
   DefaultFileReaderFactory,
-  getNodeVersion,
   STANDARD_FONT_DATA_URL,
   TEST_PDFS_PATH,
   XRefMock,
