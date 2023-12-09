@@ -110,7 +110,7 @@ class DefaultExternalServices {
     throw new Error("Not implemented: createL10n");
   }
 
-  static createScripting(options) {
+  static createScripting() {
     throw new Error("Not implemented: createScripting");
   }
 
@@ -395,10 +395,6 @@ const PDFViewerApplication = {
 
     const pdfScriptingManager = new PDFScriptingManager({
       eventBus,
-      sandboxBundleSrc:
-        typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC || CHROME")
-          ? AppOptions.get("sandboxBundleSrc")
-          : null,
       externalServices,
       docProperties: this._scriptingDocProperties.bind(this),
     });
