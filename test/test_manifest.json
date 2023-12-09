@@ -4902,6 +4902,15 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "pypdf2332",
+       "file": "pdfs/pypdf2332.pdf",
+       "md5": "883d2cf4d0ed16e32c917498fe9843dd",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "issue6151",
        "file": "pdfs/issue6151.pdf",
        "md5": "926f8c6b25e6f0978759f7947d70e079",
