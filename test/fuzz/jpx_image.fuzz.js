@@ -1,4 +1,11 @@
-import { JpxImage } from "../../build/image_decoders/pdf.image_decoders.mjs";
+import {
+  JpxImage,
+  setVerbosityLevel,
+  VerbosityLevel,
+} from "../../build/image_decoders/pdf.image_decoders.mjs";
+
+// Avoid unnecessary console "spam", by ignoring `info`/`warn` calls.
+setVerbosityLevel(VerbosityLevel.ERRORS);
 
 const ignored = ["Cannot read properties", "JPX error"];
 
