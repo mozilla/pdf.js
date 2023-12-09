@@ -46,9 +46,11 @@ function loadAndWait(filename, selector, zoom, pageSetup) {
       }
 
       await page.bringToFront();
-      await page.waitForSelector(selector, {
-        timeout: 0,
-      });
+      if (selector) {
+        await page.waitForSelector(selector, {
+          timeout: 0,
+        });
+      }
       return [session.name, page];
     })
   );

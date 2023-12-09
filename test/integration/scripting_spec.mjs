@@ -14,6 +14,7 @@
  */
 
 import {
+  awaitPromise,
   clearInput,
   closePages,
   getAnnotationStorage,
@@ -1771,28 +1772,58 @@ describe("Interaction", () => {
 
   describe("in autoprint.pdf", () => {
     let pages;
+    const printHandles = new Map();
 
     beforeAll(async () => {
       // Autoprinting is triggered by the `Open` event, which is one of the
       // first events to be dispatched to the sandbox, even before scripting
       // is reported to be ready. It's therefore important that `loadAndWait`
-      // returns control as soon as possible after opening the PDF document,
-      // and the first element we can check for is the `<html>` tag of the
-      // viewer. Note that the `autoprint.pdf` file is very small, so printing
+      // returns control as soon as possible after opening the PDF document.
+      // Note that the `autoprint.pdf` file is very small, so printing
       // it is usually very fast and therefore activating the selector check
       // too late will cause it to never resolve because printing is already
       // done (and the printed page div removed) before we even get to it.
-      pages = await loadAndWait("autoprint.pdf", "html");
+      pages = await loadAndWait(
+        "autoprint.pdf",
+        "",
+        null /* pageSetup = */,
+        async page => {
+          printHandles.set(
+            page,
+            await page.evaluateHandle(() => [
+              new Promise(resolve => {
+                globalThis.printResolve = resolve;
+              }),
+            ])
+          );
+          await page.waitForFunction(() => {
+            if (!window.PDFViewerApplication?.eventBus) {
+              return false;
+            }
+            window.PDFViewerApplication.eventBus.on(
+              "print",
+              () => {
+                const resolve = globalThis.printResolve;
+                delete globalThis.printResolve;
+                resolve();
+              },
+              { once: true }
+            );
+            return true;
+          });
+        }
+      );
     });
 
     afterAll(async () => {
       await closePages(pages);
+      printHandles.clear();
     });
 
     it("must check if printing is triggered when the document is open", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.waitForSelector(".printedPage");
+          await awaitPromise(printHandles.get(page));
         })
       );
     });
