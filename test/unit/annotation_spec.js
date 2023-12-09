@@ -35,7 +35,6 @@ import {
 import {
   CMAP_URL,
   createIdFactory,
-  getNodeVersion,
   STANDARD_FONT_DATA_URL,
   XRefMock,
 } from "./test_utils.js";
@@ -2209,10 +2208,9 @@ describe("annotation", function () {
     });
 
     it("should compress and save text", async function () {
-      if (isNodeJS && getNodeVersion().major >= 20) {
+      if (isNodeJS) {
         pending(
-          "CompressionStream behaves differently in Node.js >= 20, " +
-            "compared to Firefox, Chrome, and Node.js 18."
+          "CompressionStream behaves differently in Node.js, compared to Firefox and Chrome."
         );
       }
       const textWidgetRef = Ref.get(123, 0);
