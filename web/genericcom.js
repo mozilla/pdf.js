@@ -51,8 +51,8 @@ class GenericExternalServices extends DefaultExternalServices {
     return new GenericL10n(AppOptions.get("locale"));
   }
 
-  static createScripting({ sandboxBundleSrc }) {
-    return new GenericScripting(sandboxBundleSrc);
+  static createScripting() {
+    return new GenericScripting(AppOptions.get("sandboxBundleSrc"));
   }
 }
 PDFViewerApplication.externalServices = GenericExternalServices;

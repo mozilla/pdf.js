@@ -402,7 +402,7 @@ class FirefoxExternalServices extends DefaultExternalServices {
     return new L10n(localeProperties, document.l10n);
   }
 
-  static createScripting(options) {
+  static createScripting() {
     return FirefoxScripting;
   }
 
