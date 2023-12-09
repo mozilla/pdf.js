@@ -13,7 +13,11 @@
  * limitations under the License.
  */
 
-import { getVerbosityLevel, setVerbosityLevel } from "./shared/util.js";
+import {
+  getVerbosityLevel,
+  setVerbosityLevel,
+  VerbosityLevel,
+} from "./shared/util.js";
 import { Jbig2Image } from "./core/jbig2.js";
 import { JpegImage } from "./core/jpg.js";
 import { JpxImage } from "./core/jpx.js";
@@ -31,4 +35,5 @@ export {
   JpegImage,
   JpxImage,
   setVerbosityLevel,
+  VerbosityLevel,
 };
