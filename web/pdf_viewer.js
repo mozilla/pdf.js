@@ -76,6 +76,15 @@ const PagesCountLimit = {
   PAUSE_EAGER_PAGE_INIT: 250,
 };
 
+// These constants need to be chosen such that the maximum delay, before
+// rendering is triggered, cannot exceed the `DELAYED_CLEANUP_TIMEOUT` value
+// defined in the `src/display/api.js` file. (Also, keep in mind that the
+// scroll-events are handled in a `requestAnimationFrame`-callback.)
+const RenderHighestPriorityDelay = {
+  CALLS: 10, // num
+  TIMEOUT: 50, // ms
+};
+
 function isValidAnnotationEditorMode(mode) {
   return (
     Object.values(AnnotationEditorType).includes(mode) &&
@@ -227,6 +236,8 @@ class PDFViewer {
   #previousContainerHeight = 0;
 
   #resizeObserver = new ResizeObserver(this.#resizeObserverCallback.bind(this));
+
+  #rhp = null;
 
   #scrollModePageState = null;
 
@@ -1073,6 +1084,15 @@ class PDFViewer {
     this._previousScrollMode = ScrollMode.UNKNOWN;
     this._spreadMode = SpreadMode.NONE;
 
+    if (this.#rhp?.timeout) {
+      clearTimeout(this.#rhp.timeout);
+    }
+    this.#rhp = {
+      calls: 0,
+      timeout: null,
+      timeStamp: performance.now(),
+    };
+
     this.#scrollModePageState = {
       previousPageNumber: 1,
       scrollDown: true,
@@ -1177,7 +1197,7 @@ class PDFViewer {
     if (this.pagesCount === 0) {
       return;
     }
-    this.update();
+    this.update(/* scrolled = */ true);
   }
 
   #scrollIntoView(pageView, pageSpot = null) {
@@ -1594,7 +1614,7 @@ class PDFViewer {
     };
   }
 
-  update() {
+  update(scrolled = false) {
     const visible = this._getVisiblePages();
     const visiblePages = visible.views,
       numVisiblePages = visiblePages.length;
@@ -1605,7 +1625,48 @@ class PDFViewer {
     const newCacheSize = Math.max(DEFAULT_CACHE_SIZE, 2 * numVisiblePages + 1);
     this.#buffer.resize(newCacheSize, visible.ids);
 
-    this.renderingQueue.renderHighestPriority(visible);
+    const rhp = this.#rhp;
+    rhp.calls++;
+    if (rhp.timeout) {
+      clearTimeout(rhp.timeout);
+      rhp.timeout = null;
+    }
+    const timeStamp = performance.now(),
+      timeDelta = timeStamp - rhp.timeStamp;
+    rhp.timeStamp = timeStamp;
+
+    // To improve overall performance, when scrolling very quickly through long
+    // and complex PDF documents, we try to *slightly* delay rendering here.
+    // For PDF documents that contain e.g. large images this should also help
+    // reduce overall memory usage during parsing.
+    //
+    // Note that while main-thread rendering will be cancelled quickly, any
+    // ongoing worker-thread parsing will be aborted with a small delay.
+    // Hence it's possible to "overburden" the worker-thread with pages that
+    // are almost immediately evicted from the `PDFPageViewBuffer` cache,
+    // if rendering is triggered on every single scroll-event.
+    //
+    // To avoid the viewer feeling more "sluggish" than before, for short and
+    // simple PDF documents, we need to ensure that rendering won't be delayed
+    // "indefinitely" hence the following heuristics are used to trigger
+    // rendering immediately:
+    //  - If the `update`-method was *not* called from a scroll-event.
+    //  - For every nth time that the `update`-method is called.
+    //  - At least once for every nth milliseconds.
+    if (
+      !scrolled ||
+      rhp.calls > RenderHighestPriorityDelay.CALLS ||
+      timeDelta > RenderHighestPriorityDelay.TIMEOUT
+    ) {
+      rhp.calls = 0;
+      this.renderingQueue.renderHighestPriority(visible);
+    } else {
+      rhp.timeout = setTimeout(() => {
+        rhp.calls = 0;
+        rhp.timeout = null;
+        this.renderingQueue.renderHighestPriority(visible);
+      }, RenderHighestPriorityDelay.TIMEOUT);
+    }
 
     const isSimpleLayout =
       this._spreadMode === SpreadMode.NONE &&
