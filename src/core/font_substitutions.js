@@ -48,6 +48,8 @@ const substitutionMap = new Map([
         "Thorndale",
         "TeX Gyre Termes",
         "FreeSerif",
+        "Linux Libertine O",
+        "Libertinus Serif",
         "DejaVu Serif",
         "Bitstream Vera Serif",
         "Ubuntu",
@@ -148,6 +150,8 @@ const substitutionMap = new Map([
         "Cumberland",
         "TeX Gyre Cursor",
         "FreeMono",
+        "Linux Libertine Mono O",
+        "Libertinus Mono",
       ],
       style: NORMAL,
       ultimate: "monospace",
@@ -323,6 +327,48 @@ function getStyleToAppend(style) {
   return "";
 }
 
+function getFamilyName(str) {
+  // See https://gitlab.freedesktop.org/fontconfig/fontconfig/-/blob/14d466b30a8ab4a9d789977ed94f2c30e7209267/src/fcname.c#L137.
+  const keywords = new Set([
+    "thin",
+    "extralight",
+    "ultralight",
+    "demilight",
+    "semilight",
+    "light",
+    "book",
+    "regular",
+    "normal",
+    "medium",
+    "demibold",
+    "semibold",
+    "bold",
+    "extrabold",
+    "ultrabold",
+    "black",
+    "heavy",
+    "extrablack",
+    "ultrablack",
+    "roman",
+    "italic",
+    "oblique",
+    "ultracondensed",
+    "extracondensed",
+    "condensed",
+    "semicondensed",
+    "normal",
+    "semiexpanded",
+    "expanded",
+    "extraexpanded",
+    "ultraexpanded",
+    "bolditalic",
+  ]);
+  return str
+    .split(/[- ,+]+/g)
+    .filter(tok => !keywords.has(tok.toLowerCase()))
+    .join(" ");
+}
+
 /**
  * Generate font description.
  * @param {Object} param0, font substitution description.
@@ -470,7 +516,7 @@ function getFontSubstitution(
       (italic && ITALIC) ||
       NORMAL;
     substitutionInfo = {
-      css: loadedName,
+      css: `"${getFamilyName(baseFontName)}",${loadedName}`,
       guessFallback: true,
       loadedName,
       baseFontName,
@@ -492,7 +538,7 @@ function getFontSubstitution(
   const fallback = guessFallback ? "" : `,${ultimate}`;
 
   substitutionInfo = {
-    css: `${loadedName}${fallback}`,
+    css: `"${getFamilyName(baseFontName)}",${loadedName}${fallback}`,
     guessFallback,
     loadedName,
     baseFontName,
