@@ -70,6 +70,14 @@ function wrapReason(reason) {
 }
 
 class MessageHandler {
+  #cancelledStreamIds = new Set();
+
+  #executorRunning = false;
+
+  #isPostponed = false;
+
+  #queue = [];
+
   constructor(sourceName, targetName, comObj) {
     this.sourceName = sourceName;
     this.targetName = targetName;
@@ -81,71 +89,116 @@ class MessageHandler {
     this.callbackCapabilities = Object.create(null);
     this.actionHandler = Object.create(null);
 
-    this._onComObjOnMessage = event => {
-      const data = event.data;
-      if (data.targetName !== this.sourceName) {
-        return;
-      }
-      if (data.stream) {
-        this.#processStreamMessage(data);
-        return;
-      }
-      if (data.callback) {
-        const callbackId = data.callbackId;
-        const capability = this.callbackCapabilities[callbackId];
-        if (!capability) {
-          throw new Error(`Cannot resolve callback ${callbackId}`);
+    this._onComObjOnMessage = ({ data }) => {
+      if (data.targetName === this.sourceName) {
+        // The meesages in the worker queue are processed with a
+        // higher priority than the tasks in the event queue.
+        // So, postponing the task execution, will ensure that the message
+        // queue is drained.
+        // If at some point we've a cancelled task (e.g. GetOperatorList),
+        // we're able to skip the task execution with the same streamId.
+        this.#queue.push(data);
+        this.#isPostponed ||= data.action === "GetOperatorList";
+        if (data.stream === StreamKind.CANCEL) {
+          this.#cancelledStreamIds.add(data.streamId);
         }
-        delete this.callbackCapabilities[callbackId];
-
-        if (data.callback === CallbackKind.DATA) {
-          capability.resolve(data.data);
-        } else if (data.callback === CallbackKind.ERROR) {
-          capability.reject(wrapReason(data.reason));
-        } else {
-          throw new Error("Unexpected callback case");
+        if (!this.#executorRunning) {
+          this.#executorRunning = true;
+          this.#postponeExecution();
         }
-        return;
       }
-      const action = this.actionHandler[data.action];
-      if (!action) {
-        throw new Error(`Unknown action from worker: ${data.action}`);
-      }
-      if (data.callbackId) {
-        const cbSourceName = this.sourceName;
-        const cbTargetName = data.sourceName;
-
-        new Promise(function (resolve) {
-          resolve(action(data.data));
-        }).then(
-          function (result) {
-            comObj.postMessage({
-              sourceName: cbSourceName,
-              targetName: cbTargetName,
-              callback: CallbackKind.DATA,
-              callbackId: data.callbackId,
-              data: result,
-            });
-          },
-          function (reason) {
-            comObj.postMessage({
-              sourceName: cbSourceName,
-              targetName: cbTargetName,
-              callback: CallbackKind.ERROR,
-              callbackId: data.callbackId,
-              reason: wrapReason(reason),
-            });
-          }
-        );
-        return;
-      }
-      if (data.streamId) {
-        this.#createStreamSink(data);
-        return;
-      }
-      action(data.data);
     };
     comObj.addEventListener("message", this._onComObjOnMessage);
+  }
+
+  #postponeExecution() {
+    if (this.#isPostponed) {
+      setTimeout(this.#executor.bind(this), 0);
+    } else {
+      this.#executor();
+    }
+  }
+
+  #executor() {
+    if (this.#queue.length === 0) {
+      this.#cancelledStreamIds.clear();
+      this.#executorRunning = false;
+      return;
+    }
+
+    const data = this.#queue.shift();
+    const { stream, streamId } = data;
+
+    if (stream) {
+      if (
+        stream === StreamKind.CANCEL ||
+        !this.#cancelledStreamIds.has(streamId)
+      ) {
+        this.#processStreamMessage(data);
+      }
+      this.#postponeExecution();
+      return;
+    }
+
+    if (streamId && this.#cancelledStreamIds.has(streamId)) {
+      this.#postponeExecution();
+      return;
+    }
+
+    if (data.callback) {
+      const callbackId = data.callbackId;
+      const capability = this.callbackCapabilities[callbackId];
+      if (!capability) {
+        throw new Error(`Cannot resolve callback ${callbackId}`);
+      }
+      delete this.callbackCapabilities[callbackId];
+
+      if (data.callback === CallbackKind.DATA) {
+        capability.resolve(data.data);
+      } else if (data.callback === CallbackKind.ERROR) {
+        capability.reject(wrapReason(data.reason));
+      } else {
+        throw new Error("Unexpected callback case");
+      }
+      this.#postponeExecution();
+      return;
+    }
+    const action = this.actionHandler[data.action];
+    if (!action) {
+      throw new Error(`Unknown action from worker: ${data.action}`);
+    }
+    if (data.callbackId) {
+      const cbSourceName = this.sourceName;
+      const cbTargetName = data.sourceName;
+
+      new Promise(function (resolve) {
+        resolve(action(data.data));
+      }).then(
+        result => {
+          this.comObj.postMessage({
+            sourceName: cbSourceName,
+            targetName: cbTargetName,
+            callback: CallbackKind.DATA,
+            callbackId: data.callbackId,
+            data: result,
+          });
+        },
+        reason => {
+          this.comObj.postMessage({
+            sourceName: cbSourceName,
+            targetName: cbTargetName,
+            callback: CallbackKind.ERROR,
+            callbackId: data.callbackId,
+            reason: wrapReason(reason),
+          });
+        }
+      );
+    } else if (data.streamId) {
+      this.#createStreamSink(data);
+    } else {
+      action(data.data);
+    }
+    this.#postponeExecution();
   }
 
   on(actionName, handler) {
