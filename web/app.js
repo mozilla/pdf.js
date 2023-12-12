@@ -1,4 +1,4 @@
-/* Copyright 2012 Mozilla Foundation
+é/* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,7 +122,7 @@ class DefaultExternalServices {
     return shadow(this, "getNimbusExperimentData", Promise.resolve(null));
   }
 }
-
+Nouveauté
 const PDFViewerApplication = {
   initialBookmark: document.location.hash.substring(1),
   _initializedCapability: new PromiseCapability(),
