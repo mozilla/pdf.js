@@ -3125,7 +3125,7 @@ class PDFObjects {
    */
   has(objId) {
     const obj = this.#objs[objId];
-    return obj?.capability.settled || false;
+    return obj?.capability.settled ?? false;
   }
 
   /**
@@ -3146,6 +3146,17 @@ class PDFObjects {
       data?.bitmap?.close(); // Release any `ImageBitmap` data.
     }
     this.#objs = Object.create(null);
+  }
+
+  *[Symbol.iterator]() {
+    for (const objId in this.#objs) {
+      const { capability, data } = this.#objs[objId];
+
+      if (!capability.settled) {
+        continue;
+      }
+      yield [objId, data];
+    }
   }
 }
 
