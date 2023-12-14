@@ -546,6 +546,12 @@ class PartialEvaluator {
   }
 
   _sendImgData(objId, imgData, cacheGlobally = false) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      imgData
+    ) {
+      assert(Number.isInteger(imgData.dataLen), "Expected dataLen to be set.");
+    }
     const transfers = imgData ? [imgData.bitmap || imgData.data.buffer] : null;
 
     if (this.parsingType3Font || cacheGlobally) {
@@ -690,6 +696,10 @@ class PartialEvaluator {
 
       const objId = `mask_${this.idFactory.createObjId()}`;
       operatorList.addDependency(objId);
+
+      imgData.dataLen = imgData.bitmap
+        ? imgData.width * imgData.height * 4
+        : imgData.data.length;
       this._sendImgData(objId, imgData);
 
       args = [
@@ -790,12 +800,12 @@ class PartialEvaluator {
           /* isOffscreenCanvasSupported = */ this.options
             .isOffscreenCanvasSupported
         );
+        imgData.dataLen = imgData.bitmap
+          ? imgData.width * imgData.height * 4
+          : imgData.data.length;
 
         if (cacheKey && imageRef && cacheGlobally) {
-          const length = imgData.bitmap
-            ? imgData.width * imgData.height * 4
-            : imgData.data.length;
-          this.globalImageCache.addByteSize(imageRef, length);
+          this.globalImageCache.addByteSize(imageRef, imgData.dataLen);
         }
 
         return this._sendImgData(objId, imgData, cacheGlobally);
