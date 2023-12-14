@@ -2704,11 +2704,11 @@ class WorkerTransport {
 
     messageHandler.on("commonobj", ([id, type, exportedData]) => {
       if (this.destroyed) {
-        return; // Ignore any pending requests if the worker was terminated.
+        return null; // Ignore any pending requests if the worker was terminated.
       }
 
       if (this.commonObjs.has(id)) {
-        return;
+        return null;
       }
 
       switch (type) {
@@ -2750,6 +2750,23 @@ class WorkerTransport {
               this.commonObjs.resolve(id, font);
             });
           break;
+        case "CopyLocalImage":
+          const { imageRef } = exportedData;
+          assert(imageRef, "The imageRef must be defined.");
+
+          for (const pageProxy of this.#pageCache.values()) {
+            for (const [, data] of pageProxy.objs) {
+              if (data.ref !== imageRef) {
+                continue;
+              }
+              if (!data.dataLen) {
+                return null;
+              }
+              this.commonObjs.resolve(id, structuredClone(data));
+              return data.dataLen;
+            }
+          }
+          break;
         case "FontPath":
         case "Image":
         case "Pattern":
@@ -2758,6 +2775,8 @@ class WorkerTransport {
         default:
           throw new Error(`Got unknown common object type ${type}`);
       }
+
+      return null;
     });
 
     messageHandler.on("obj", ([id, pageIndex, type, imageData]) => {
@@ -3166,6 +3185,15 @@ class RenderTask {
      * @type {function}
      */
     this.onContinue = null;
+
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      // For testing purposes.
+      Object.defineProperty(this, "getOperatorList", {
+        value: () => {
+          return this.#internalRenderTask.operatorList;
+        },
+      });
+    }
   }
 
   /**
