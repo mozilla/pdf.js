@@ -238,8 +238,8 @@
   .buttonWidgetAnnotation.radioButton input:checked::before {
     border-radius: 50%;
     height: 50%;
-    left: 30%;
-    top: 20%;
+    left: 25%;
+    top: 25%;
     width: 50%;
   }
 
