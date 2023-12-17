@@ -34,48 +34,47 @@ function rewriteWebArchiveUrl(url) {
   return url;
 }
 
-function downloadFile(file, url, callback, redirects) {
+function downloadFile(file, url, redirects = 0) {
   url = rewriteWebArchiveUrl(url);
+  const protocol = /^https:\/\//.test(url) ? https : http;
 
-  var protocol = /^https:\/\//.test(url) ? https : http;
-  protocol
-    .get(url, function (response) {
-      if (
-        response.statusCode === 301 ||
-        response.statusCode === 302 ||
-        response.statusCode === 307 ||
-        response.statusCode === 308
-      ) {
-        if (redirects > 10) {
-          callback("Too many redirects");
+  return new Promise((resolve, reject) => {
+    protocol
+      .get(url, async function (response) {
+        if ([301, 302, 307, 308].includes(response.statusCode)) {
+          if (redirects > 10) {
+            reject(new Error("Too many redirects"));
+            return;
+          }
+          const redirectTo = urlResolve(url, response.headers.location);
+          try {
+            await downloadFile(file, redirectTo, ++redirects);
+            resolve();
+          } catch (ex) {
+            reject(ex);
+          }
+          return;
         }
-        var redirectTo = response.headers.location;
-        redirectTo = urlResolve(url, redirectTo);
-        downloadFile(file, redirectTo, callback, (redirects || 0) + 1);
-        return;
-      }
 
-      if (response.statusCode !== 200) {
-        callback("HTTP " + response.statusCode);
-        return;
-      }
-      var stream = fs.createWriteStream(file);
-      stream.on("error", function (err) {
-        callback(err);
-      });
-      response.pipe(stream);
-      stream.on("finish", function () {
-        stream.end();
-        callback();
-      });
-    })
-    .on("error", function (err) {
-      callback(err);
-    });
+        if (response.statusCode !== 200) {
+          reject(new Error(`HTTP ${response.statusCode}`));
+          return;
+        }
+
+        const stream = fs.createWriteStream(file);
+        stream.on("error", error => reject(error));
+        stream.on("finish", () => {
+          stream.end();
+          resolve();
+        });
+        response.pipe(stream);
+      })
+      .on("error", error => reject(error));
+  });
 }
 
 function downloadManifestFiles(manifest, callback) {
-  function downloadNext() {
+  async function downloadNext() {
     if (i >= links.length) {
       callback();
       return;
@@ -83,15 +82,15 @@ function downloadManifestFiles(manifest, callback) {
     var file = links[i].file;
     var url = links[i].url;
     console.log("Downloading " + url + " to " + file + "...");
-    downloadFile(file, url, function (err) {
-      if (err) {
-        console.error("Error during downloading of " + url + ": " + err);
-        fs.writeFileSync(file, ""); // making it empty file
-        fs.writeFileSync(file + ".error", err);
-      }
-      i++;
-      downloadNext();
-    });
+    try {
+      await downloadFile(file, url);
+    } catch (ex) {
+      console.error(`Error during downloading of ${url}: ${ex}`);
+      fs.writeFileSync(file, ""); // making it empty file
+      fs.writeFileSync(`${file}.error`, ex);
+    }
+    i++;
+    downloadNext();
   }
 
   var links = manifest
