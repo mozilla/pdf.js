@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import crypto from "crypto";
 import fs from "fs";
@@ -25,11 +24,11 @@ function rewriteWebArchiveUrl(url) {
   // Web Archive URLs need to be transformed to add `if_` after the ID.
   // Without this, an HTML page containing an iframe with the PDF file
   // will be served instead (issue 8920).
-  var webArchiveRegex =
+  const webArchiveRegex =
     /(^https?:\/\/web\.archive\.org\/web\/)(\d+)(\/https?:\/\/.+)/g;
-  var urlParts = webArchiveRegex.exec(url);
+  const urlParts = webArchiveRegex.exec(url);
   if (urlParts) {
-    return urlParts[1] + (urlParts[2] + "if_") + urlParts[3];
+    return `${urlParts[1]}${urlParts[2]}if_${urlParts[3]}`;
   }
   return url;
 }
