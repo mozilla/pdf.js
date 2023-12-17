@@ -268,7 +268,7 @@ function examineRefImages() {
   });
 }
 
-function startRefTest(masterMode, showRefImages) {
+async function startRefTest(masterMode, showRefImages) {
   function finalize() {
     stopServer();
     let numRuns = 0;
@@ -402,11 +402,10 @@ function startRefTest(masterMode, showRefImages) {
   if (!manifest) {
     return;
   }
-  if (options.noDownload) {
-    checkRefsTmp();
-  } else {
-    ensurePDFsDownloaded(checkRefsTmp);
+  if (!options.noDownload) {
+    await ensurePDFsDownloaded();
   }
+  checkRefsTmp();
 }
 
 function handleSessionTimeout(session) {
@@ -1071,47 +1070,43 @@ async function closeSession(browser) {
   }
 }
 
-function ensurePDFsDownloaded(callback) {
-  var manifest = getTestManifest();
-  downloadManifestFiles(manifest, async function () {
-    try {
-      await verifyManifestFiles(manifest);
-    } catch {
-      console.log(
-        "Unable to verify the checksum for the files that are " +
-          "used for testing."
-      );
-      console.log(
-        "Please re-download the files, or adjust the MD5 " +
-          "checksum in the manifest for the files listed above.\n"
-      );
-      if (options.strictVerify) {
-        process.exit(1);
-      }
+async function ensurePDFsDownloaded() {
+  const manifest = getTestManifest();
+  await downloadManifestFiles(manifest);
+  try {
+    await verifyManifestFiles(manifest);
+  } catch {
+    console.log(
+      "Unable to verify the checksum for the files that are " +
+        "used for testing."
+    );
+    console.log(
+      "Please re-download the files, or adjust the MD5 " +
+        "checksum in the manifest for the files listed above.\n"
+    );
+    if (options.strictVerify) {
+      process.exit(1);
     }
-    callback();
-  });
+  }
 }
 
-function main() {
+async function main() {
   if (options.statsFile) {
     stats = [];
   }
 
   if (options.downloadOnly) {
-    ensurePDFsDownloaded(function () {});
+    await ensurePDFsDownloaded();
   } else if (options.unitTest) {
     // Allows linked PDF files in unit-tests as well.
-    ensurePDFsDownloaded(function () {
-      startUnitTest("/test/unit/unit_test.html", "unit");
-    });
+    await ensurePDFsDownloaded();
+    startUnitTest("/test/unit/unit_test.html", "unit");
   } else if (options.fontTest) {
     startUnitTest("/test/font/font_test.html", "font");
   } else if (options.integration) {
     // Allows linked PDF files in integration-tests as well.
-    ensurePDFsDownloaded(function () {
-      startIntegrationTest();
-    });
+    await ensurePDFsDownloaded();
+    startIntegrationTest();
   } else {
     startRefTest(options.masterMode, options.reftest);
   }
