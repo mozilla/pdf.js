@@ -909,6 +909,7 @@ async function startBrowser({ browserName, headless, startUrl }) {
   const options = {
     product: browserName,
     protocol: "cdp",
+    dumpio: true,
     // Note that using `headless: true` gives a deprecation warning; see
     // https://github.com/puppeteer/puppeteer#default-runtime-settings.
     headless: headless === true ? "new" : false,
@@ -968,6 +969,7 @@ async function startBrowser({ browserName, headless, startUrl }) {
       "layout.css.round.enabled": true,
       // This allow to copy some data in the clipboard.
       "dom.events.asyncClipboard.clipboardItem": true,
+      "remote.log.level": "Trace",
     };
   }
 
