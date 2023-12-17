@@ -73,15 +73,17 @@ function downloadFile(file, url, redirects = 0) {
   });
 }
 
-function downloadManifestFiles(manifest, callback) {
-  async function downloadNext() {
-    if (i >= links.length) {
-      callback();
-      return;
-    }
-    var file = links[i].file;
-    var url = links[i].url;
-    console.log("Downloading " + url + " to " + file + "...");
+async function downloadManifestFiles(manifest) {
+  const links = manifest
+    .filter(item => item.link && !fs.existsSync(item.file))
+    .map(item => {
+      let url = fs.readFileSync(`${item.file}.link`).toString();
+      url = url.replace(/\s+$/, "");
+      return { file: item.file, url };
+    });
+
+  for (const { file, url } of links) {
+    console.log(`Downloading ${url} to ${file}...`);
     try {
       await downloadFile(file, url);
     } catch (ex) {
@@ -89,24 +91,7 @@ function downloadManifestFiles(manifest, callback) {
       fs.writeFileSync(file, ""); // making it empty file
       fs.writeFileSync(`${file}.error`, ex);
     }
-    i++;
-    downloadNext();
   }
-
-  var links = manifest
-    .filter(function (item) {
-      return item.link && !fs.existsSync(item.file);
-    })
-    .map(function (item) {
-      var file = item.file;
-      var linkfile = file + ".link";
-      var url = fs.readFileSync(linkfile).toString();
-      url = url.replace(/\s+$/, "");
-      return { file, url };
-    });
-
-  var i = 0;
-  downloadNext();
 }
 
 function calculateMD5(file) {
