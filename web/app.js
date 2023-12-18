@@ -2170,7 +2170,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       // start accepting URLs from foreign origin -- CORS headers on the remote
       // server must be properly configured.
       if (fileOrigin !== viewerOrigin) {
-        throw new Error("file origin does not match viewer's");
+        // throw new Error("file origin does not match viewer's");
       }
     } catch (ex) {
       PDFViewerApplication.l10n.get("pdfjs-loading-error").then(msg => {
