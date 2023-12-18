@@ -1752,3 +1752,7 @@ dialog :link {
     display: none;
   }
 }
+
+#editorModeButtons, #editorModeSeparator, #pageRotateCw, #pageRotateCcw, #pageRotateCcw + .horizontalToolbarSeparator, #download {
+  display: none;
+}
