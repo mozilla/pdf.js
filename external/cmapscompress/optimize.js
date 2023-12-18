@@ -151,7 +151,10 @@ exports.optimizeCMap = function (data) {
       const maxDistance = 100,
         minItems = 10,
         itemsPerBucket = 50;
-      if (subitems.length > minItems && codes.at(-1) - codes[0] > maxDistance) {
+      if (
+        subitems.length > minItems &&
+        codes[codes.length - 1] - codes[0] > maxDistance
+      ) {
         const gapsCount = Math.max(2, (subitems.length / itemsPerBucket) | 0);
         const gaps = [];
         for (let q = 0; q < gapsCount; q++) {

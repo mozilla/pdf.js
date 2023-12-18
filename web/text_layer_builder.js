@@ -20,8 +20,7 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 
-import { normalizeUnicode, renderTextLayer, updateTextLayer } from "pdfjs-lib";
-import { removeNullCharacters } from "./ui_utils.js";
+import { renderTextLayer, updateTextLayer } from "pdfjs-lib";
 
 /**
  * @typedef {Object} TextLayerBuilderOptions
@@ -38,8 +37,6 @@ import { removeNullCharacters } from "./ui_utils.js";
  * contain text that matches the PDF text they are overlaying.
  */
 class TextLayerBuilder {
-  #enablePermissions = false;
-
   #rotation = 0;
 
   #scale = 0;
@@ -50,7 +47,6 @@ class TextLayerBuilder {
     highlighter = null,
     accessibilityManager = null,
     isOffscreenCanvasSupported = true,
-    enablePermissions = false,
   }) {
     this.textContentItemsStr = [];
     this.renderingDone = false;
@@ -60,16 +56,10 @@ class TextLayerBuilder {
     this.highlighter = highlighter;
     this.accessibilityManager = accessibilityManager;
     this.isOffscreenCanvasSupported = isOffscreenCanvasSupported;
-    this.#enablePermissions = enablePermissions === true;
-
-    /**
-     * Callback used to attach the textLayer to the DOM.
-     * @type {function}
-     */
-    this.onAppend = null;
 
     this.div = document.createElement("div");
     this.div.className = "textLayer";
+    this.hide();
   }
 
   #finishRendering() {
@@ -136,15 +126,12 @@ class TextLayerBuilder {
     this.#finishRendering();
     this.#scale = scale;
     this.#rotation = rotation;
-    // Ensure that the textLayer is appended to the DOM *before* handling
-    // e.g. a pending search operation.
-    this.onAppend(this.div);
-    this.highlighter?.enable();
+    this.show();
     this.accessibilityManager?.enable();
   }
 
   hide() {
-    if (!this.div.hidden && this.renderingDone) {
+    if (!this.div.hidden) {
       // We turn off the highlighter in order to avoid to scroll into view an
       // element of the text layer which could be hidden.
       this.highlighter?.disable();
@@ -224,18 +211,6 @@ class TextLayerBuilder {
         end.style.top = "";
       }
       end.classList.remove("active");
-    });
-
-    div.addEventListener("copy", event => {
-      if (!this.#enablePermissions) {
-        const selection = document.getSelection();
-        event.clipboardData.setData(
-          "text/plain",
-          removeNullCharacters(normalizeUnicode(selection.toString()))
-        );
-      }
-      event.preventDefault();
-      event.stopPropagation();
     });
   }
 }

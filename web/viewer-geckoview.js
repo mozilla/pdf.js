@@ -14,7 +14,6 @@
  */
 
 import "web-com";
-import "web-print_service";
 import { RenderingStates, ScrollMode, SpreadMode } from "./ui_utils.js";
 import { AppOptions } from "./app_options.js";
 import { LinkTarget } from "./pdf_link_service.js";
@@ -37,17 +36,10 @@ window.PDFViewerApplicationConstants = AppConstants;
 window.PDFViewerApplicationOptions = AppOptions;
 
 function getViewerConfiguration() {
-  const mainContainer = document.getElementById("viewerContainer");
   return {
     appContainer: document.body,
-    mainContainer,
+    mainContainer: document.getElementById("viewerContainer"),
     viewerContainer: document.getElementById("viewer"),
-    toolbar: {
-      mainContainer,
-      container: document.getElementById("floatingToolbar"),
-      download: document.getElementById("download"),
-      openInApp: document.getElementById("openInApp"),
-    },
 
     passwordOverlay: {
       dialog: document.getElementById("passwordDialog"),
@@ -56,7 +48,6 @@ function getViewerConfiguration() {
       submitButton: document.getElementById("passwordSubmit"),
       cancelButton: document.getElementById("passwordCancel"),
     },
-    printContainer: document.getElementById("printContainer"),
     openFileInput:
       typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")
         ? document.getElementById("fileInput")
@@ -67,7 +58,7 @@ function getViewerConfiguration() {
 function webViewerLoad() {
   const config = getViewerConfiguration();
 
-  if (typeof PDFJSDev === "undefined") {
+  if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
     window.isGECKOVIEW = true;
   }
   PDFViewerApplication.run(config);

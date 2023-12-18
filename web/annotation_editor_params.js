@@ -31,32 +31,41 @@ class AnnotationEditorParams {
     editorInkColor,
     editorInkThickness,
     editorInkOpacity,
-    editorStampAddImage,
   }) {
-    const dispatchEvent = (typeStr, value) => {
+    editorFreeTextFontSize.addEventListener("input", evt => {
       this.eventBus.dispatch("switchannotationeditorparams", {
         source: this,
-        type: AnnotationEditorParamsType[typeStr],
-        value,
+        type: AnnotationEditorParamsType.FREETEXT_SIZE,
+        value: editorFreeTextFontSize.valueAsNumber,
       });
-    };
-    editorFreeTextFontSize.addEventListener("input", function () {
-      dispatchEvent("FREETEXT_SIZE", this.valueAsNumber);
     });
-    editorFreeTextColor.addEventListener("input", function () {
-      dispatchEvent("FREETEXT_COLOR", this.value);
+    editorFreeTextColor.addEventListener("input", evt => {
+      this.eventBus.dispatch("switchannotationeditorparams", {
+        source: this,
+        type: AnnotationEditorParamsType.FREETEXT_COLOR,
+        value: editorFreeTextColor.value,
+      });
     });
-    editorInkColor.addEventListener("input", function () {
-      dispatchEvent("INK_COLOR", this.value);
+    editorInkColor.addEventListener("input", evt => {
+      this.eventBus.dispatch("switchannotationeditorparams", {
+        source: this,
+        type: AnnotationEditorParamsType.INK_COLOR,
+        value: editorInkColor.value,
+      });
     });
-    editorInkThickness.addEventListener("input", function () {
-      dispatchEvent("INK_THICKNESS", this.valueAsNumber);
+    editorInkThickness.addEventListener("input", evt => {
+      this.eventBus.dispatch("switchannotationeditorparams", {
+        source: this,
+        type: AnnotationEditorParamsType.INK_THICKNESS,
+        value: editorInkThickness.valueAsNumber,
+      });
     });
-    editorInkOpacity.addEventListener("input", function () {
-      dispatchEvent("INK_OPACITY", this.valueAsNumber);
-    });
-    editorStampAddImage.addEventListener("click", () => {
-      dispatchEvent("CREATE");
+    editorInkOpacity.addEventListener("input", evt => {
+      this.eventBus.dispatch("switchannotationeditorparams", {
+        source: this,
+        type: AnnotationEditorParamsType.INK_OPACITY,
+        value: editorInkOpacity.valueAsNumber,
+      });
     });
 
     this.eventBus._on("annotationeditorparamschanged", evt => {

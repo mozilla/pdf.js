@@ -179,18 +179,17 @@ class TextAccessibilityManager {
    * in order to correctly position this editor in the text flow.
    * @param {HTMLElement} element
    * @param {boolean} isRemovable
-   * @returns {string|null} The id in the struct tree if any.
    */
   addPointerInTextLayer(element, isRemovable) {
     const { id } = element;
     if (!id) {
-      return null;
+      return;
     }
 
     if (!this.#enabled) {
       // The text layer needs to be there, so we postpone the association.
       this.#waitingElements.set(element, isRemovable);
-      return null;
+      return;
     }
 
     if (isRemovable) {
@@ -199,7 +198,7 @@ class TextAccessibilityManager {
 
     const children = this.#textChildren;
     if (!children || children.length === 0) {
-      return null;
+      return;
     }
 
     const index = binarySearchFirstItem(
@@ -209,25 +208,20 @@ class TextAccessibilityManager {
     );
 
     const nodeIndex = Math.max(0, index - 1);
-    const child = children[nodeIndex];
-    this.#addIdToAriaOwns(id, child);
+    this.#addIdToAriaOwns(id, children[nodeIndex]);
     this.#textNodes.set(id, nodeIndex);
-
-    const parent = child.parentNode;
-    return parent?.classList.contains("markedContent") ? parent.id : null;
   }
 
   /**
    * Move a div in the DOM in order to respect the visual order.
    * @param {HTMLDivElement} element
-   * @returns {string|null} The id in the struct tree if any.
    */
   moveElementInDOM(container, element, contentElement, isRemovable) {
-    const id = this.addPointerInTextLayer(contentElement, isRemovable);
+    this.addPointerInTextLayer(contentElement, isRemovable);
 
     if (!container.hasChildNodes()) {
       container.append(element);
-      return id;
+      return;
     }
 
     const children = Array.from(container.childNodes).filter(
@@ -235,7 +229,7 @@ class TextAccessibilityManager {
     );
 
     if (children.length === 0) {
-      return id;
+      return;
     }
 
     const elementToCompare = contentElement || element;
@@ -253,8 +247,6 @@ class TextAccessibilityManager {
     } else {
       children[index - 1].after(element);
     }
-
-    return id;
   }
 }
 

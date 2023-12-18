@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-import { removeNullCharacters } from "./ui_utils.js";
-
 const PDF_ROLE_TO_HTML_ROLE = {
   // Document level structure types
   Document: null, // There's a "document" role, but it doesn't make sense here.
@@ -102,18 +100,14 @@ class StructTreeLayerBuilder {
   }
 
   #setAttributes(structElement, htmlElement) {
-    const { alt, id, lang } = structElement;
-    if (alt !== undefined) {
-      htmlElement.setAttribute("aria-label", removeNullCharacters(alt));
+    if (structElement.alt !== undefined) {
+      htmlElement.setAttribute("aria-label", structElement.alt);
     }
-    if (id !== undefined) {
-      htmlElement.setAttribute("aria-owns", id);
+    if (structElement.id !== undefined) {
+      htmlElement.setAttribute("aria-owns", structElement.id);
     }
-    if (lang !== undefined) {
-      htmlElement.setAttribute(
-        "lang",
-        removeNullCharacters(lang, /* replaceInvisible = */ true)
-      );
+    if (structElement.lang !== undefined) {
+      htmlElement.setAttribute("lang", structElement.lang);
     }
   }
 

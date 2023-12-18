@@ -34,7 +34,7 @@
 .xfaLayer .highlight {
   margin: -1px;
   padding: 1px;
-  background-color: rgb(239 203 237);
+  background-color: rgba(239, 203, 237, 1);
   border-radius: 4px;
 }
 
@@ -55,7 +55,7 @@
 }
 
 .xfaLayer .highlight.selected {
-  background-color: rgb(203 223 203);
+  background-color: rgba(203, 223, 203, 1);
 }
 
 .xfaPage {
@@ -101,8 +101,14 @@
   outline: 1.5px solid red;
 }
 
-.xfaLayer div,
-.xfaLayer svg,
+.xfaLayer div {
+  pointer-events: none;
+}
+
+.xfaLayer svg {
+  pointer-events: none;
+}
+
 .xfaLayer svg * {
   pointer-events: none;
 }
@@ -153,7 +159,10 @@
   align-items: center;
 }
 
-:is(.xfaLeft, .xfaRight) > :is(.xfaCaption, .xfaCaptionForCheckButton) {
+.xfaLeft > .xfaCaption,
+.xfaLeft > .xfaCaptionForCheckButton,
+.xfaRight > .xfaCaption,
+.xfaRight > .xfaCaptionForCheckButton {
   max-height: 100%;
 }
 
@@ -169,7 +178,10 @@
   align-items: flex-start;
 }
 
-:is(.xfaTop, .xfaBottom) > :is(.xfaCaption, .xfaCaptionForCheckButton) {
+.xfaTop > .xfaCaption,
+.xfaTop > .xfaCaptionForCheckButton,
+.xfaBottom > .xfaCaption,
+.xfaBottom > .xfaCaptionForCheckButton {
   width: 100%;
 }
 
@@ -184,14 +196,16 @@
   height: 100%;
 }
 
-:is(.xfaTextfield, .xfaSelect):focus {
+.xfaTextfield:focus,
+.xfaSelect:focus {
   background-image: none;
   background-color: transparent;
   outline: var(--xfa-focus-outline);
   outline-offset: -1px;
 }
 
-:is(.xfaCheckbox, .xfaRadio):focus {
+.xfaCheckbox:focus,
+.xfaRadio:focus {
   outline: var(--xfa-focus-outline);
 }
 
@@ -209,7 +223,10 @@
   padding-inline: 2px;
 }
 
-:is(.xfaTop, .xfaBottom) > :is(.xfaTextfield, .xfaSelect) {
+.xfaTop > .xfaTextfield,
+.xfaTop > .xfaSelect,
+.xfaBottom > .xfaTextfield,
+.xfaBottom > .xfaSelect {
   flex: 0 1 auto;
 }
 
@@ -310,7 +327,12 @@
   flex: 1;
 }
 
-:is(.xfaNonInteractive, .xfaDisabled, .xfaReadOnly) :is(input, textarea) {
+.xfaNonInteractive input,
+.xfaNonInteractive textarea,
+.xfaDisabled input,
+.xfaDisabled textarea,
+.xfaReadOnly input,
+.xfaReadOnly textarea {
   background: initial;
 }
 

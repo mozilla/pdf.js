@@ -23,19 +23,14 @@
 /** @typedef {import("./interfaces").IDownloadManager} IDownloadManager */
 /** @typedef {import("./interfaces").IL10n} IL10n */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
-// eslint-disable-next-line max-len
-/** @typedef {import("./pdf_find_controller").PDFFindController} PDFFindController */
-// eslint-disable-next-line max-len
-/** @typedef {import("./pdf_scripting_manager").PDFScriptingManager} PDFScriptingManager */
 
 import {
   AnnotationEditorType,
   AnnotationEditorUIManager,
   AnnotationMode,
+  createPromiseCapability,
   PermissionFlag,
   PixelsPerInch,
-  PromiseCapability,
-  shadow,
   version,
 } from "pdfjs-lib";
 import {
@@ -52,7 +47,7 @@ import {
   MAX_SCALE,
   MIN_SCALE,
   PresentationModeState,
-  removeNullCharacters,
+  RendererType,
   RenderingStates,
   SCROLLBAR_PADDING,
   scrollIntoView,
@@ -63,12 +58,15 @@ import {
   VERTICAL_PADDING,
   watchScroll,
 } from "./ui_utils.js";
-import { NullL10n } from "web-l10n_utils";
+import { NullL10n } from "./l10n_utils.js";
 import { PDFPageView } from "./pdf_page_view.js";
 import { PDFRenderingQueue } from "./pdf_rendering_queue.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
+// MODIF - importing WordLayer in next 1 line
+import { WordLayer } from '../../src/layers/word_layer';
 
 const DEFAULT_CACHE_SIZE = 10;
+const ENABLE_PERMISSIONS_CLASS = "enablePermissions";
 
 const PagesCountLimit = {
   FORCE_SCROLL_MODE_PAGE: 15000,
@@ -88,7 +86,7 @@ function isValidAnnotationEditorMode(mode) {
  * @property {HTMLDivElement} container - The container for the viewer element.
  * @property {HTMLDivElement} [viewer] - The viewer element.
  * @property {EventBus} eventBus - The application event bus.
- * @property {IPDFLinkService} [linkService] - The navigation/linking service.
+ * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {IDownloadManager} [downloadManager] - The download manager
  *   component.
  * @property {PDFFindController} [findController] - The find controller
@@ -109,18 +107,18 @@ function isValidAnnotationEditorMode(mode) {
  * @property {number} [annotationEditorMode] - Enables the creation and editing
  *   of new Annotations. The constants from {@link AnnotationEditorType} should
  *   be used. The default value is `AnnotationEditorType.NONE`.
- * @property {string} [annotationEditorHighlightColors] - A comma separated list
- *   of colors to propose to highlight some text in the pdf.
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   mainly for annotation icons. Include trailing slash.
  * @property {boolean} [enablePrintAutoRotate] - Enables automatic rotation of
  *   landscape pages upon printing. The default is `false`.
+ * @property {boolean} [useOnlyCssZoom] - Enables CSS only zooming. The default
+ *   value is `false`.
  * @property {boolean} [isOffscreenCanvasSupported] - Allows to use an
  *   OffscreenCanvas if needed.
  * @property {number} [maxCanvasPixels] - The maximum supported canvas size in
- *   total pixels, i.e. width * height. Use `-1` for no limit, or `0` for
- *   CSS-only zooming. The default value is 4096 * 4096 (16 mega-pixels).
- * @property {IL10n} [l10n] - Localization service.
+ *   total pixels, i.e. width * height. Use -1 for no limit. The default value
+ *   is 4096 * 4096 (16 mega-pixels).
+ * @property {IL10n} l10n - Localization service.
  * @property {boolean} [enablePermissions] - Enables PDF document permissions,
  *   when they exist. The default value is `false`.
  * @property {Object} [pageColors] - Overwrites background and foreground colors
@@ -202,10 +200,6 @@ class PDFPageViewBuffer {
 class PDFViewer {
   #buffer = null;
 
-  #altTextManager = null;
-
-  #annotationEditorHighlightColors = null;
-
   #annotationEditorMode = AnnotationEditorType.NONE;
 
   #annotationEditorUIManager = null;
@@ -214,15 +208,7 @@ class PDFViewer {
 
   #containerTopLeft = null;
 
-  #copyCallbackBound = null;
-
   #enablePermissions = false;
-
-  #getAllTextInProgress = false;
-
-  #hiddenCopyElement = null;
-
-  #interruptCopyCondition = false;
 
   #previousContainerHeight = 0;
 
@@ -234,23 +220,27 @@ class PDFViewer {
 
   #scaleTimeoutId = null;
 
-  #textLayerMode = TextLayerMode.ENABLE;
-
   /**
    * @param {PDFViewerOptions} options
    */
   constructor(options) {
-    const viewerVersion =
-      typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_VERSION") : null;
-    if (version !== viewerVersion) {
-      throw new Error(
-        `The API version "${version}" does not match the Viewer version "${viewerVersion}".`
-      );
-    }
+    // MODIF comment next 7 lines
+    // const viewerVersion =
+    //   typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_VERSION") : null;
+    // if (version !== viewerVersion) {
+    //   throw new Error(
+    //     `The API version "${version}" does not match the Viewer version "${viewerVersion}".`
+    //   );
+    // }
+    // MODIF - adding cursorTools in next 1 line
+    this.cursorTools = options.cursorTools;
     this.container = options.container;
     this.viewer = options.viewer || options.container.firstElementChild;
 
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || GENERIC")
+    ) {
       if (this.container?.tagName !== "DIV" || this.viewer?.tagName !== "DIV") {
         throw new Error("Invalid `container` and/or `viewer` option.");
       }
@@ -268,25 +258,22 @@ class PDFViewer {
     this.linkService = options.linkService || new SimpleLinkService();
     this.downloadManager = options.downloadManager || null;
     this.findController = options.findController || null;
-    this.#altTextManager = options.altTextManager || null;
-
-    if (this.findController) {
-      this.findController.onIsPageVisible = pageNumber =>
-        this._getVisiblePages().ids.has(pageNumber);
-    }
     this._scriptingManager = options.scriptingManager || null;
-    this.#textLayerMode = options.textLayerMode ?? TextLayerMode.ENABLE;
+    this.textLayerMode = options.textLayerMode ?? TextLayerMode.ENABLE;
     this.#annotationMode =
       options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
     this.#annotationEditorMode =
       options.annotationEditorMode ?? AnnotationEditorType.NONE;
-    this.#annotationEditorHighlightColors =
-      options.annotationEditorHighlightColors || null;
     this.imageResourcesPath = options.imageResourcesPath || "";
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || GENERIC")
+    ) {
       this.removePageBorders = options.removePageBorders || false;
+      this.renderer = options.renderer || RendererType.CANVAS;
     }
+    this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.isOffscreenCanvasSupported =
       options.isOffscreenCanvasSupported ?? true;
     this.maxCanvasPixels = options.maxCanvasPixels;
@@ -294,11 +281,29 @@ class PDFViewer {
     this.#enablePermissions = options.enablePermissions || false;
     this.pageColors = options.pageColors || null;
 
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+      if (
+        this.pageColors &&
+        !(
+          CSS.supports("color", this.pageColors.background) &&
+          CSS.supports("color", this.pageColors.foreground)
+        )
+      ) {
+        if (this.pageColors.background || this.pageColors.foreground) {
+          console.warn(
+            "PDFViewer: Ignoring `pageColors`-option, since the browser doesn't support the values used."
+          );
+        }
+        this.pageColors = null;
+      }
+    }
+
+    // MODIF - add custom variables in next 2 lines
+    this.customConfig = options.customConfig;
+    this.customViewer = options.customViewer;
+
     this.defaultRenderingQueue = !options.renderingQueue;
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      this.defaultRenderingQueue
-    ) {
+    if (this.defaultRenderingQueue) {
       // Custom rendering queue is not specified, using default one
       this.renderingQueue = new PDFRenderingQueue();
       this.renderingQueue.setViewer(this);
@@ -319,23 +324,6 @@ class PDFViewer {
     }
 
     this.#updateContainerHeightCss();
-
-    // Trigger API-cleanup, once thumbnail rendering has finished,
-    // if the relevant pageView is *not* cached in the buffer.
-    this.eventBus._on("thumbnailrendered", ({ pageNumber, pdfPage }) => {
-      const pageView = this._pages[pageNumber - 1];
-      if (!this.#buffer.has(pageView)) {
-        pdfPage?.cleanup();
-      }
-    });
-
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      this.l10n === NullL10n
-    ) {
-      // Ensure that Fluent is connected in e.g. the COMPONENTS build.
-      this.l10n.translate(this.container);
-    }
   }
 
   get pagesCount() {
@@ -346,20 +334,18 @@ class PDFViewer {
     return this._pages[index];
   }
 
-  getCachedPageViews() {
-    return new Set(this.#buffer);
-  }
-
   /**
    * @type {boolean} - True if all {PDFPageView} objects are initialized.
    */
   get pageViewsReady() {
+    if (!this._pagesCapability.settled) {
+      return false;
+    }
     // Prevent printing errors when 'disableAutoFetch' is set, by ensuring
     // that *all* pages have in fact been completely loaded.
-    return (
-      this._pagesCapability.settled &&
-      this._pages.every(pageView => pageView?.pdfPage)
-    );
+    return this._pages.every(function (pageView) {
+      return pageView?.pdfPage;
+    });
   }
 
   /**
@@ -480,6 +466,14 @@ class PDFViewer {
     this.#setScale(val, { noScroll: false });
   }
 
+  // MODIF - add new function in next 6 lines
+  setCurrentScaleValue(val, fromScaleChangingButtons) {
+    if (!this.pdfDocument) {
+      return;
+    }
+    this.#setScale(val, { noScroll: false }, fromScaleChangingButtons);
+  }
+
   /**
    * @type {string}
    */
@@ -515,18 +509,31 @@ class PDFViewer {
       return;
     }
     // Normalize the rotation, by clamping it to the [0, 360) range.
-    rotation %= 360;
-    if (rotation < 0) {
-      rotation += 360;
-    }
+    // MODIF - commenting next 4 lines
+    // rotation %= 360;
+    // if (rotation < 0) {
+    //   rotation += 360;
+    // }
     if (this._pagesRotation === rotation) {
       return; // The rotation didn't change.
+    }
+    // MODIF - add next 6 lines
+    let pagesList = [];
+    for (let k = 0, kk = this._pages.length; k < kk; k++) {
+      if (rotation[k] !== this._pagesRotation[k]) {
+        pagesList.push(k+1);
+      }
     }
     this._pagesRotation = rotation;
 
     const pageNumber = this._currentPageNumber;
 
     this.refresh(true, { rotation });
+    // MODIF - modifing next 3 lines
+    // const updateArgs = { rotation };
+    for (let k = 0, kk = this._pages.length; k < kk; k++) {
+      this._pages[k].update({ rotation: rotation[k] });
+    }
 
     // Prevent errors in case the rotation changes *before* the scale has been
     // set to a non-default value.
@@ -557,9 +564,9 @@ class PDFViewer {
     return this.pdfDocument ? this._pagesCapability.promise : null;
   }
 
-  get _layerProperties() {
+  #layerProperties() {
     const self = this;
-    return shadow(this, "_layerProperties", {
+    return {
       get annotationEditorUIManager() {
         return self.#annotationEditorUIManager;
       },
@@ -584,7 +591,7 @@ class PDFViewer {
       get linkService() {
         return self.linkService;
       },
-    });
+    };
   }
 
   /**
@@ -595,17 +602,14 @@ class PDFViewer {
     const params = {
       annotationEditorMode: this.#annotationEditorMode,
       annotationMode: this.#annotationMode,
-      textLayerMode: this.#textLayerMode,
+      textLayerMode: this.textLayerMode,
     };
     if (!permissions) {
       return params;
     }
 
-    if (
-      !permissions.includes(PermissionFlag.COPY) &&
-      this.#textLayerMode === TextLayerMode.ENABLE
-    ) {
-      params.textLayerMode = TextLayerMode.ENABLE_PERMISSIONS;
+    if (!permissions.includes(PermissionFlag.COPY)) {
+      this.viewer.classList.add(ENABLE_PERMISSIONS_CLASS);
     }
 
     if (!permissions.includes(PermissionFlag.MODIFY_CONTENTS)) {
@@ -664,96 +668,6 @@ class PDFViewer {
       this._onePageRenderedCapability.promise,
       visibilityChangePromise,
     ]);
-  }
-
-  async getAllText() {
-    const texts = [];
-    const buffer = [];
-    for (
-      let pageNum = 1, pagesCount = this.pdfDocument.numPages;
-      pageNum <= pagesCount;
-      ++pageNum
-    ) {
-      if (this.#interruptCopyCondition) {
-        return null;
-      }
-      buffer.length = 0;
-      const page = await this.pdfDocument.getPage(pageNum);
-      // By default getTextContent pass disableNormalization equals to false
-      // which is fine because we want a normalized string.
-      const { items } = await page.getTextContent();
-      for (const item of items) {
-        if (item.str) {
-          buffer.push(item.str);
-        }
-        if (item.hasEOL) {
-          buffer.push("\n");
-        }
-      }
-      texts.push(removeNullCharacters(buffer.join("")));
-    }
-
-    return texts.join("\n");
-  }
-
-  #copyCallback(textLayerMode, event) {
-    const selection = document.getSelection();
-    const { focusNode, anchorNode } = selection;
-    if (
-      anchorNode &&
-      focusNode &&
-      selection.containsNode(this.#hiddenCopyElement)
-    ) {
-      // About the condition above:
-      //  - having non-null anchorNode and focusNode are here to guaranty that
-      //    we have at least a kind of selection.
-      //  - this.#hiddenCopyElement is an invisible element which is impossible
-      //    to select manually (its display is none) but ctrl+A will select all
-      //    including this element so having it in the selection means that all
-      //    has been selected.
-
-      if (
-        this.#getAllTextInProgress ||
-        textLayerMode === TextLayerMode.ENABLE_PERMISSIONS
-      ) {
-        event.preventDefault();
-        event.stopPropagation();
-        return;
-      }
-      this.#getAllTextInProgress = true;
-
-      // TODO: if all the pages are rendered we don't need to wait for
-      // getAllText and we could just get text from the Selection object.
-
-      // Select all the document.
-      const savedCursor = this.container.style.cursor;
-      this.container.style.cursor = "wait";
-
-      const interruptCopy = ev =>
-        (this.#interruptCopyCondition = ev.key === "Escape");
-      window.addEventListener("keydown", interruptCopy);
-
-      this.getAllText()
-        .then(async text => {
-          if (text !== null) {
-            await navigator.clipboard.writeText(text);
-          }
-        })
-        .catch(reason => {
-          console.warn(
-            `Something goes wrong when extracting the text: ${reason.message}`
-          );
-        })
-        .finally(() => {
-          this.#getAllTextInProgress = false;
-          this.#interruptCopyCondition = false;
-          window.removeEventListener("keydown", interruptCopy);
-          this.container.style.cursor = savedCursor;
-        });
-
-      event.preventDefault();
-      event.stopPropagation();
-    }
   }
 
   /**
@@ -849,13 +763,6 @@ class PDFViewer {
         const { annotationEditorMode, annotationMode, textLayerMode } =
           this.#initializePermissions(permissions);
 
-        if (textLayerMode !== TextLayerMode.DISABLE) {
-          const element = (this.#hiddenCopyElement =
-            document.createElement("div"));
-          element.id = "hiddenCopyElement";
-          this.viewer.before(element);
-        }
-
         if (annotationEditorMode !== AnnotationEditorType.DISABLE) {
           const mode = annotationEditorMode;
 
@@ -864,17 +771,9 @@ class PDFViewer {
           } else if (isValidAnnotationEditorMode(mode)) {
             this.#annotationEditorUIManager = new AnnotationEditorUIManager(
               this.container,
-              this.viewer,
-              this.#altTextManager,
               this.eventBus,
-              pdfDocument,
-              this.pageColors,
-              this.#annotationEditorHighlightColors
+              pdfDocument?.annotationStorage
             );
-            this.eventBus.dispatch("annotationeditoruimanager", {
-              source: this,
-              uiManager: this.#annotationEditorUIManager,
-            });
             if (mode !== AnnotationEditorType.NONE) {
               this.#annotationEditorUIManager.updateMode(mode);
             }
@@ -883,6 +782,7 @@ class PDFViewer {
           }
         }
 
+        const layerProperties = this.#layerProperties.bind(this);
         const viewerElement =
           this._scrollMode === ScrollMode.PAGE ? null : this.viewer;
         const scale = this.currentScale;
@@ -892,20 +792,6 @@ class PDFViewer {
         // Ensure that the various layers always get the correct initial size,
         // see issue 15795.
         this.viewer.style.setProperty("--scale-factor", viewport.scale);
-        if (
-          this.pageColors?.foreground === "CanvasText" ||
-          this.pageColors?.background === "Canvas"
-        ) {
-          this.viewer.style.setProperty(
-            "--hcm-highlight-filter",
-            pdfDocument.filterFactory.addHighlightHCMFilter(
-              "CanvasText",
-              "Canvas",
-              "HighlightText",
-              "Highlight"
-            )
-          );
-        }
 
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           const pageView = new PDFPageView({
@@ -917,14 +803,24 @@ class PDFViewer {
             optionalContentConfigPromise,
             renderingQueue: this.renderingQueue,
             textLayerMode,
+            // MODIF - adding baseViewer in next 1 line
+            baseViewer: this,
             annotationMode,
             imageResourcesPath: this.imageResourcesPath,
+            renderer:
+              typeof PDFJSDev === "undefined" ||
+              PDFJSDev.test("!PRODUCTION || GENERIC")
+                ? this.renderer
+                : null,
+            useOnlyCssZoom: this.useOnlyCssZoom,
             isOffscreenCanvasSupported: this.isOffscreenCanvasSupported,
             maxCanvasPixels: this.maxCanvasPixels,
             pageColors: this.pageColors,
             l10n: this.l10n,
-            layerProperties: this._layerProperties,
+            layerProperties,
           });
+          // MODIF - add default rotation
+          this._pagesRotation.push(0);
           this._pages.push(pageView);
         }
         // Set the first `pdfPage` immediately, since it's already loaded,
@@ -949,14 +845,6 @@ class PDFViewer {
         this.#onePageRenderedOrForceFetch().then(async () => {
           this.findController?.setDocument(pdfDocument); // Enable searching.
           this._scriptingManager?.setDocument(pdfDocument); // Enable scripting.
-
-          if (this.#hiddenCopyElement) {
-            this.#copyCallbackBound = this.#copyCallback.bind(
-              this,
-              textLayerMode
-            );
-            document.addEventListener("copy", this.#copyCallbackBound);
-          }
 
           if (this.#annotationEditorUIManager) {
             // Ensure that the Editor buttons, in the toolbar, are updated.
@@ -1064,11 +952,12 @@ class PDFViewer {
     this._pageLabels = null;
     this.#buffer = new PDFPageViewBuffer(DEFAULT_CACHE_SIZE);
     this._location = null;
-    this._pagesRotation = 0;
+    // MODIF - rotations is an array
+    this._pagesRotation = [];
     this._optionalContentConfigPromise = null;
-    this._firstPageCapability = new PromiseCapability();
-    this._onePageRenderedCapability = new PromiseCapability();
-    this._pagesCapability = new PromiseCapability();
+    this._firstPageCapability = createPromiseCapability();
+    this._onePageRenderedCapability = createPromiseCapability();
+    this._pagesCapability = createPromiseCapability();
     this._scrollMode = ScrollMode.VERTICAL;
     this._previousScrollMode = ScrollMode.UNKNOWN;
     this._spreadMode = SpreadMode.NONE;
@@ -1100,14 +989,8 @@ class PDFViewer {
     this._updateScrollMode();
 
     this.viewer.removeAttribute("lang");
-
-    if (this.#hiddenCopyElement) {
-      document.removeEventListener("copy", this.#copyCallbackBound);
-      this.#copyCallbackBound = null;
-
-      this.#hiddenCopyElement.remove();
-      this.#hiddenCopyElement = null;
-    }
+    // Reset all PDF document permissions.
+    this.viewer.classList.remove(ENABLE_PERMISSIONS_CLASS);
   }
 
   #ensurePageViewVisible() {
@@ -1230,10 +1113,12 @@ class PDFViewer {
     );
   }
 
+  // MODIF - add new arg on next 1 line
   #setScaleUpdatePages(
     newScale,
     newValue,
-    { noScroll = false, preset = false, drawingDelay = -1 }
+    { noScroll = false, preset = false, drawingDelay = -1 },
+    fromScaleChangingButtons = false
   ) {
     this._currentScaleValue = newValue.toString();
 
@@ -1243,6 +1128,8 @@ class PDFViewer {
           source: this,
           scale: newScale,
           presetValue: newValue,
+          // MODIF - add new arg on next 1 line
+          fromScaleChangingButtons,
         });
       }
       return;
@@ -1295,6 +1182,8 @@ class PDFViewer {
       source: this,
       scale: newScale,
       presetValue: preset ? newValue : undefined,
+      // MODIF - add new arg on next 1 line
+      fromScaleChangingButtons,
     });
 
     if (this.defaultRenderingQueue) {
@@ -1312,12 +1201,13 @@ class PDFViewer {
     return 1;
   }
 
-  #setScale(value, options) {
+  #setScale(value, options, fromScaleChangingButtons) {
     let scale = parseFloat(value);
 
     if (scale > 0) {
       options.preset = false;
-      this.#setScaleUpdatePages(scale, value, options);
+      // MODIF - add new arg in next 1 line
+      this.#setScaleUpdatePages(scale, value, options, fromScaleChangingButtons);
     } else {
       const currentPage = this._pages[this._currentPageNumber - 1];
       if (!currentPage) {
@@ -1376,7 +1266,8 @@ class PDFViewer {
           return;
       }
       options.preset = true;
-      this.#setScaleUpdatePages(scale, value, options);
+      // MODIF - add new arg in next 1 line
+      this.#setScaleUpdatePages(scale, value, options, fromScaleChangingButtons);
     }
   }
 
@@ -1683,6 +1574,47 @@ class PDFViewer {
     });
   }
 
+  /**
+   * @param {number} pageNumber
+   */
+  isPageVisible(pageNumber) {
+    if (!this.pdfDocument) {
+      return false;
+    }
+    if (
+      !(
+        Number.isInteger(pageNumber) &&
+        pageNumber > 0 &&
+        pageNumber <= this.pagesCount
+      )
+    ) {
+      console.error(`isPageVisible: "${pageNumber}" is not a valid page.`);
+      return false;
+    }
+    return this._getVisiblePages().ids.has(pageNumber);
+  }
+
+  /**
+   * @param {number} pageNumber
+   */
+  isPageCached(pageNumber) {
+    if (!this.pdfDocument) {
+      return false;
+    }
+    if (
+      !(
+        Number.isInteger(pageNumber) &&
+        pageNumber > 0 &&
+        pageNumber <= this.pagesCount
+      )
+    ) {
+      console.error(`isPageCached: "${pageNumber}" is not a valid page.`);
+      return false;
+    }
+    const pageView = this._pages[pageNumber - 1];
+    return this.#buffer.has(pageView);
+  }
+
   cleanup() {
     for (const pageView of this._pages) {
       if (pageView.renderingState !== RenderingStates.FINISHED) {
@@ -1760,7 +1692,28 @@ class PDFViewer {
     }
     return false;
   }
-
+  // MODIF - adding createWordLayer function in next 21 lines
+  createWordLayerBuilder(
+    wordLayerDiv,
+    pageIndex,
+    viewport,
+    textContent
+  ) {
+    return new WordLayer({
+      wordLayerDiv,
+      eventBus: this.eventBus,
+      pageIndex,
+      viewport,
+      findController: this.isInPresentationMode ? null : this.findController,
+      textContent,
+      container: this.container,
+      linkService: this.linkService,
+      pageView: this.getPageView(pageIndex),
+      cursorTools: this.cursorTools,
+      config: this.customConfig,
+      viewer: this.customViewer
+    });
+  }
   /**
    * @type {boolean} Whether all pages of the PDF document have identical
    *   widths and heights.
@@ -1784,27 +1737,21 @@ class PDFViewer {
    * @returns {Array} Array of objects with width/height/rotation fields.
    */
   getPagesOverview() {
-    let initialOrientation;
     return this._pages.map(pageView => {
       const viewport = pageView.pdfPage.getViewport({ scale: 1 });
-      const orientation = isPortraitOrientation(viewport);
-      if (initialOrientation === undefined) {
-        initialOrientation = orientation;
-      } else if (
-        this.enablePrintAutoRotate &&
-        orientation !== initialOrientation
-      ) {
-        // Rotate to fit the initial orientation.
+
+      if (!this.enablePrintAutoRotate || isPortraitOrientation(viewport)) {
         return {
-          width: viewport.height,
-          height: viewport.width,
-          rotation: (viewport.rotation - 90) % 360,
+          width: viewport.width,
+          height: viewport.height,
+          rotation: viewport.rotation,
         };
       }
+      // Landscape orientation.
       return {
-        width: viewport.width,
-        height: viewport.height,
-        rotation: viewport.rotation,
+        width: viewport.height,
+        height: viewport.width,
+        rotation: (viewport.rotation - 90) % 360,
       };
     });
   }
@@ -1864,15 +1811,6 @@ class PDFViewer {
    *   The constants from {ScrollMode} should be used.
    */
   set scrollMode(mode) {
-    if (
-      typeof PDFJSDev === "undefined"
-        ? window.isGECKOVIEW
-        : PDFJSDev.test("GECKOVIEW")
-    ) {
-      // NOTE: Always ignore the pageLayout in GeckoView since there's
-      // no UI available to change Scroll/Spread modes for the user.
-      return;
-    }
     if (this._scrollMode === mode) {
       return; // The Scroll mode didn't change.
     }
@@ -1934,15 +1872,6 @@ class PDFViewer {
    *   The constants from {SpreadMode} should be used.
    */
   set spreadMode(mode) {
-    if (
-      typeof PDFJSDev === "undefined"
-        ? window.isGECKOVIEW
-        : PDFJSDev.test("GECKOVIEW")
-    ) {
-      // NOTE: Always ignore the pageLayout in GeckoView since there's
-      // no UI available to change Scroll/Spread modes for the user.
-      return;
-    }
     if (this._spreadMode === mode) {
       return; // The Spread mode didn't change.
     }
@@ -2215,6 +2144,9 @@ class PDFViewer {
     ]);
   }
 
+  /**
+   * @type {number}
+   */
   get annotationEditorMode() {
     return this.#annotationEditorUIManager
       ? this.#annotationEditorMode
@@ -2222,17 +2154,9 @@ class PDFViewer {
   }
 
   /**
-   * @typedef {Object} AnnotationEditorModeOptions
-   * @property {number} mode - The editor mode (none, FreeText, ink, ...).
-   * @property {string|null} [editId] - ID of the existing annotation to edit.
-   * @property {boolean} [isFromKeyboard] - True if the mode change is due to a
-   *   keyboard action.
+   * @param {number} mode - AnnotationEditor mode (None, FreeText, Ink, ...)
    */
-
-  /**
-   * @param {AnnotationEditorModeOptions} options
-   */
-  set annotationEditorMode({ mode, editId = null, isFromKeyboard = false }) {
+  set annotationEditorMode(mode) {
     if (!this.#annotationEditorUIManager) {
       throw new Error(`The AnnotationEditor is not enabled.`);
     }
@@ -2251,7 +2175,7 @@ class PDFViewer {
       mode,
     });
 
-    this.#annotationEditorUIManager.updateMode(mode, editId, isFromKeyboard);
+    this.#annotationEditorUIManager.updateMode(mode);
   }
 
   // eslint-disable-next-line accessor-pairs

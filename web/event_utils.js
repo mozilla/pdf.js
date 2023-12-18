@@ -172,7 +172,7 @@ class AutomationEventBus extends EventBus {
     }
     super.dispatch(eventName, data);
 
-    const detail = Object.create(null);
+    const details = Object.create(null);
     if (data) {
       for (const key in data) {
         const value = data[key];
@@ -182,14 +182,11 @@ class AutomationEventBus extends EventBus {
           }
           continue; // Ignore the `source` property.
         }
-        detail[key] = value;
+        details[key] = value;
       }
     }
-    const event = new CustomEvent(eventName, {
-      bubbles: true,
-      cancelable: true,
-      detail,
-    });
+    const event = document.createEvent("CustomEvent");
+    event.initCustomEvent(eventName, true, true, details);
     document.dispatchEvent(event);
   }
 }

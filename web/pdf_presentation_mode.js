@@ -101,7 +101,7 @@ class PDFPresentationMode {
       await promise;
       pdfViewer.focus(); // Fixes bug 1787456.
       return true;
-    } catch {
+    } catch (reason) {
       this.#removeFullscreenChangeListeners();
       this.#notifyStateChange(PresentationModeState.NORMAL);
     }
@@ -175,9 +175,7 @@ class PDFPresentationMode {
       this.pdfViewer.currentScaleValue = "page-fit";
 
       if (this.#args.annotationEditorMode !== null) {
-        this.pdfViewer.annotationEditorMode = {
-          mode: AnnotationEditorType.NONE,
-        };
+        this.pdfViewer.annotationEditorMode = AnnotationEditorType.NONE;
       }
     }, 0);
 
@@ -209,9 +207,7 @@ class PDFPresentationMode {
       this.pdfViewer.currentPageNumber = pageNumber;
 
       if (this.#args.annotationEditorMode !== null) {
-        this.pdfViewer.annotationEditorMode = {
-          mode: this.#args.annotationEditorMode,
-        };
+        this.pdfViewer.annotationEditorMode = this.#args.annotationEditorMode;
       }
       this.#args = null;
     }, 0);

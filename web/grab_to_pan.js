@@ -21,10 +21,18 @@ class GrabToPan {
   /**
    * Construct a GrabToPan instance for a given HTML element.
    * @param {Element} options.element
+   * @param {function} [options.ignoreTarget] - See `ignoreTarget(node)`.
+   * @param {function(boolean)} [options.onActiveChanged] - Called when
+   *   grab-to-pan is (de)activated. The first argument is a boolean that
+   *   shows whether grab-to-pan is activated.
    */
-  constructor({ element }) {
-    this.element = element;
-    this.document = element.ownerDocument;
+  constructor(options) {
+    this.element = options.element;
+    this.document = options.element.ownerDocument;
+    if (typeof options.ignoreTarget === "function") {
+      this.ignoreTarget = options.ignoreTarget;
+    }
+    this.onActiveChanged = options.onActiveChanged;
 
     // Bind the contexts to ensure that `this` always points to
     // the GrabToPan instance.
@@ -49,6 +57,8 @@ class GrabToPan {
       this.active = true;
       this.element.addEventListener("mousedown", this._onMouseDown, true);
       this.element.classList.add(CSS_CLASS_GRAB);
+
+      this.onActiveChanged?.(true);
     }
   }
 
@@ -61,6 +71,8 @@ class GrabToPan {
       this.element.removeEventListener("mousedown", this._onMouseDown, true);
       this._endPan();
       this.element.classList.remove(CSS_CLASS_GRAB);
+
+      this.onActiveChanged?.(false);
     }
   }
 
@@ -94,7 +106,7 @@ class GrabToPan {
       try {
         // eslint-disable-next-line no-unused-expressions
         event.originalTarget.tagName;
-      } catch {
+      } catch (e) {
         // Mozilla-specific: element is a scrollbar (XUL element)
         return;
       }
@@ -128,12 +140,18 @@ class GrabToPan {
     }
     const xDiff = event.clientX - this.clientXStart;
     const yDiff = event.clientY - this.clientYStart;
-    this.element.scrollTo({
-      top: this.scrollTopStart - yDiff,
-      left: this.scrollLeftStart - xDiff,
-      behavior: "instant",
-    });
-
+    const scrollTop = this.scrollTopStart - yDiff;
+    const scrollLeft = this.scrollLeftStart - xDiff;
+    if (this.element.scrollTo) {
+      this.element.scrollTo({
+        top: scrollTop,
+        left: scrollLeft,
+        behavior: "instant",
+      });
+    } else {
+      this.element.scrollTop = scrollTop;
+      this.element.scrollLeft = scrollLeft;
+    }
     if (!this.overlay.parentNode) {
       document.body.append(this.overlay);
     }

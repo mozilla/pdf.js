@@ -208,20 +208,9 @@ class TextHighlighter {
       return;
     }
 
-    let lastDivIdx = -1;
-    let lastOffset = -1;
     for (let i = i0; i < i1; i++) {
       const match = matches[i];
       const begin = match.begin;
-      if (begin.divIdx === lastDivIdx && begin.offset === lastOffset) {
-        // It's possible to be in this situation if we searched for a 'f' and we
-        // have a ligature 'ff' in the text. The 'ff' has to be highlighted two
-        // times.
-        continue;
-      }
-      lastDivIdx = begin.divIdx;
-      lastOffset = begin.offset;
-
       const end = match.end;
       const isSelected = isSelectedPage && i === selectedMatchIdx;
       const highlightSuffix = isSelected ? " selected" : "";

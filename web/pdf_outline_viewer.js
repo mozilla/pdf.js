@@ -14,7 +14,7 @@
  */
 
 import { BaseTreeViewer } from "./base_tree_viewer.js";
-import { PromiseCapability } from "pdfjs-lib";
+import { createPromiseCapability } from "pdfjs-lib";
 import { SidebarView } from "./ui_utils.js";
 
 /**
@@ -89,7 +89,7 @@ class PDFOutlineViewer extends BaseTreeViewer {
    * @private
    */
   _dispatchEvent(outlineCount) {
-    this._currentOutlineItemCapability = new PromiseCapability();
+    this._currentOutlineItemCapability = createPromiseCapability();
     if (
       outlineCount === 0 ||
       this._pdfDocument?.loadingParams.disableAutoFetch
@@ -133,6 +133,7 @@ class PDFOutlineViewer extends BaseTreeViewer {
       element.href = linkService.getAnchorUrl("");
       element.onclick = () => {
         this.downloadManager.openOrDownloadData(
+          element,
           attachment.content,
           attachment.filename
         );
@@ -307,7 +308,7 @@ class PDFOutlineViewer extends BaseTreeViewer {
     if (this._pageNumberToDestHashCapability) {
       return this._pageNumberToDestHashCapability.promise;
     }
-    this._pageNumberToDestHashCapability = new PromiseCapability();
+    this._pageNumberToDestHashCapability = createPromiseCapability();
 
     const pageNumberToDestHash = new Map(),
       pageNumberNesting = new Map();
@@ -340,7 +341,7 @@ class PDFOutlineViewer extends BaseTreeViewer {
                   return null; // The document was closed while the data resolved.
                 }
                 this.linkService.cachePageRef(pageNumber, destRef);
-              } catch {
+              } catch (ex) {
                 // Invalid page reference, ignore it and continue parsing.
               }
             }

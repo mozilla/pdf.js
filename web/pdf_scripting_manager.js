@@ -16,59 +16,68 @@
 /** @typedef {import("./event_utils").EventBus} EventBus */
 
 import { apiPageLayoutToViewerModes, RenderingStates } from "./ui_utils.js";
-import { PromiseCapability, shadow } from "pdfjs-lib";
+import { createPromiseCapability, shadow } from "pdfjs-lib";
 
 /**
  * @typedef {Object} PDFScriptingManagerOptions
  * @property {EventBus} eventBus - The application event bus.
- * @property {string} [sandboxBundleSrc] - The path and filename of the
- *   scripting bundle.
- * @property {Object} [externalServices] - The factory that is used when
+ * @property {string} sandboxBundleSrc - The path and filename of the scripting
+ *   bundle.
+ * @property {Object} [scriptingFactory] - The factory that is used when
  *   initializing scripting; must contain a `createScripting` method.
  *   PLEASE NOTE: Primarily intended for the default viewer use-case.
- * @property {function} [docProperties] - The function that is used to lookup
- *   the necessary document properties.
+ * @property {function} [docPropertiesLookup] - The function that is used to
+ *   lookup the necessary document properties.
  */
 
 class PDFScriptingManager {
-  #closeCapability = null;
-
-  #destroyCapability = null;
-
-  #docProperties = null;
-
-  #eventBus = null;
-
-  #externalServices = null;
-
-  #pdfDocument = null;
-
-  #pdfViewer = null;
-
-  #ready = false;
-
-  #scripting = null;
-
-  #willPrintCapability = null;
-
   /**
    * @param {PDFScriptingManagerOptions} options
    */
-  constructor({ eventBus, externalServices = null, docProperties = null }) {
-    this.#eventBus = eventBus;
-    this.#externalServices = externalServices;
-    this.#docProperties = docProperties;
+  constructor({
+    eventBus,
+    sandboxBundleSrc = null,
+    scriptingFactory = null,
+    docPropertiesLookup = null,
+  }) {
+    this._pdfDocument = null;
+    this._pdfViewer = null;
+    this._closeCapability = null;
+    this._destroyCapability = null;
+
+    this._scripting = null;
+    this._ready = false;
+
+    this._eventBus = eventBus;
+    this._sandboxBundleSrc = sandboxBundleSrc;
+    this._scriptingFactory = scriptingFactory;
+    this._docPropertiesLookup = docPropertiesLookup;
+
+    // The default viewer already handles adding/removing of DOM events,
+    // hence limit this to only the viewer components.
+    if (
+      typeof PDFJSDev !== "undefined" &&
+      PDFJSDev.test("COMPONENTS") &&
+      !this._scriptingFactory
+    ) {
+      window.addEventListener("updatefromsandbox", event => {
+        this._eventBus.dispatch("updatefromsandbox", {
+          source: window,
+          detail: event.detail,
+        });
+      });
+    }
   }
 
   setViewer(pdfViewer) {
-    this.#pdfViewer = pdfViewer;
+    this._pdfViewer = pdfViewer;
   }
 
   async setDocument(pdfDocument) {
-    if (this.#pdfDocument) {
-      await this.#destroyScripting();
+    if (this._pdfDocument) {
+      await this._destroyScripting();
     }
-    this.#pdfDocument = pdfDocument;
+    this._pdfDocument = pdfDocument;
 
     if (!pdfDocument) {
       return;
@@ -81,68 +90,69 @@ class PDFScriptingManager {
 
     if (!objects && !docActions) {
       // No FieldObjects or JavaScript actions were found in the document.
-      await this.#destroyScripting();
+      await this._destroyScripting();
       return;
     }
-    if (pdfDocument !== this.#pdfDocument) {
+    if (pdfDocument !== this._pdfDocument) {
       return; // The document was closed while the data resolved.
     }
     try {
-      this.#scripting = this.#initScripting();
+      this._scripting = this._createScripting();
     } catch (error) {
-      console.error(`setDocument: "${error.message}".`);
+      console.error(`PDFScriptingManager.setDocument: "${error?.message}".`);
 
-      await this.#destroyScripting();
+      await this._destroyScripting();
       return;
     }
 
     this._internalEvents.set("updatefromsandbox", event => {
-      if (event?.source === window) {
-        this.#updateFromSandbox(event.detail);
+      if (event?.source !== window) {
+        return;
       }
+      this._updateFromSandbox(event.detail);
     });
     this._internalEvents.set("dispatcheventinsandbox", event => {
-      this.#scripting?.dispatchEventInSandbox(event.detail);
+      this._scripting?.dispatchEventInSandbox(event.detail);
     });
 
     this._internalEvents.set("pagechanging", ({ pageNumber, previous }) => {
       if (pageNumber === previous) {
         return; // The current page didn't change.
       }
-      this.#dispatchPageClose(previous);
-      this.#dispatchPageOpen(pageNumber);
+      this._dispatchPageClose(previous);
+      this._dispatchPageOpen(pageNumber);
     });
     this._internalEvents.set("pagerendered", ({ pageNumber }) => {
       if (!this._pageOpenPending.has(pageNumber)) {
         return; // No pending "PageOpen" event for the newly rendered page.
       }
-      if (pageNumber !== this.#pdfViewer.currentPageNumber) {
+      if (pageNumber !== this._pdfViewer.currentPageNumber) {
         return; // The newly rendered page is no longer the current one.
       }
-      this.#dispatchPageOpen(pageNumber);
+      this._dispatchPageOpen(pageNumber);
     });
-    this._internalEvents.set("pagesdestroy", async () => {
-      await this.#dispatchPageClose(this.#pdfViewer.currentPageNumber);
+    this._internalEvents.set("pagesdestroy", async event => {
+      await this._dispatchPageClose(this._pdfViewer.currentPageNumber);
 
-      await this.#scripting?.dispatchEventInSandbox({
+      await this._scripting?.dispatchEventInSandbox({
         id: "doc",
         name: "WillClose",
       });
 
-      this.#closeCapability?.resolve();
+      this._closeCapability?.resolve();
     });
 
     for (const [name, listener] of this._internalEvents) {
-      this.#eventBus._on(name, listener);
+      this._eventBus._on(name, listener);
     }
 
     try {
-      const docProperties = await this.#docProperties(pdfDocument);
-      if (pdfDocument !== this.#pdfDocument) {
+      const docProperties = await this._getDocProperties();
+      if (pdfDocument !== this._pdfDocument) {
         return; // The document was closed while the properties resolved.
       }
 
-      await this.#scripting.createSandbox({
+      await this._scripting.createSandbox({
         objects,
         calculationOrder,
         appInfo: {
@@ -155,78 +165,65 @@ class PDFScriptingManager {
         },
       });
 
-      this.#eventBus.dispatch("sandboxcreated", { source: this });
+      this._eventBus.dispatch("sandboxcreated", { source: this });
     } catch (error) {
-      console.error(`setDocument: "${error.message}".`);
+      console.error(`PDFScriptingManager.setDocument: "${error?.message}".`);
 
-      await this.#destroyScripting();
+      await this._destroyScripting();
       return;
     }
 
-    await this.#scripting?.dispatchEventInSandbox({
+    await this._scripting?.dispatchEventInSandbox({
       id: "doc",
       name: "Open",
     });
-    await this.#dispatchPageOpen(
-      this.#pdfViewer.currentPageNumber,
+    await this._dispatchPageOpen(
+      this._pdfViewer.currentPageNumber,
       /* initialize = */ true
     );
 
     // Defer this slightly, to ensure that scripting is *fully* initialized.
     Promise.resolve().then(() => {
-      if (pdfDocument === this.#pdfDocument) {
-        this.#ready = true;
+      if (pdfDocument === this._pdfDocument) {
+        this._ready = true;
       }
     });
   }
 
-  async dispatchWillSave() {
-    return this.#scripting?.dispatchEventInSandbox({
+  async dispatchWillSave(detail) {
+    return this._scripting?.dispatchEventInSandbox({
       id: "doc",
       name: "WillSave",
     });
   }
 
-  async dispatchDidSave() {
-    return this.#scripting?.dispatchEventInSandbox({
+  async dispatchDidSave(detail) {
+    return this._scripting?.dispatchEventInSandbox({
       id: "doc",
       name: "DidSave",
     });
   }
 
-  async dispatchWillPrint() {
-    if (!this.#scripting) {
-      return;
-    }
-    await this.#willPrintCapability?.promise;
-    this.#willPrintCapability = new PromiseCapability();
-    try {
-      await this.#scripting.dispatchEventInSandbox({
-        id: "doc",
-        name: "WillPrint",
-      });
-    } catch (ex) {
-      this.#willPrintCapability.resolve();
-      this.#willPrintCapability = null;
-      throw ex;
-    }
-
-    await this.#willPrintCapability.promise;
+  async dispatchWillPrint(detail) {
+    return this._scripting?.dispatchEventInSandbox({
+      id: "doc",
+      name: "WillPrint",
+    });
   }
 
-  async dispatchDidPrint() {
-    return this.#scripting?.dispatchEventInSandbox({
+  async dispatchDidPrint(detail) {
+    return this._scripting?.dispatchEventInSandbox({
       id: "doc",
       name: "DidPrint",
     });
   }
 
   get destroyPromise() {
-    return this.#destroyCapability?.promise || null;
+    return this._destroyCapability?.promise || null;
   }
 
   get ready() {
-    return this.#ready;
+    return this._ready;
   }
 
   /**
@@ -250,11 +247,14 @@ class PDFScriptingManager {
     return shadow(this, "_visitedPages", new Map());
   }
 
-  async #updateFromSandbox(detail) {
-    const pdfViewer = this.#pdfViewer;
+  /**
+   * @private
+   */
+  async _updateFromSandbox(detail) {
     // Ignore some events, see below, that don't make sense in PresentationMode.
     const isInPresentationMode =
-      pdfViewer.isInPresentationMode || pdfViewer.isChangingPresentationMode;
+      this._pdfViewer.isInPresentationMode ||
+      this._pdfViewer.isChangingPresentationMode;
 
     const { id, siblings, command, value } = detail;
     if (!id) {
@@ -265,62 +265,72 @@ class PDFScriptingManager {
         case "error":
           console.error(value);
           break;
-        case "layout":
-          if (!isInPresentationMode) {
-            const modes = apiPageLayoutToViewerModes(value);
-            pdfViewer.spreadMode = modes.spreadMode;
+        case "layout": {
+          // NOTE: Always ignore the pageLayout in GeckoView since there's
+          // no UI available to change Scroll/Spread modes for the user.
+          if (
+            (typeof PDFJSDev === "undefined"
+              ? window.isGECKOVIEW
+              : PDFJSDev.test("GECKOVIEW")) ||
+            isInPresentationMode
+          ) {
+            return;
           }
+          const modes = apiPageLayoutToViewerModes(value);
+          this._pdfViewer.spreadMode = modes.spreadMode;
           break;
+        }
         case "page-num":
-          pdfViewer.currentPageNumber = value + 1;
+          this._pdfViewer.currentPageNumber = value + 1;
           break;
         case "print":
-          await pdfViewer.pagesPromise;
-          this.#eventBus.dispatch("print", { source: this });
+          await this._pdfViewer.pagesPromise;
+          this._eventBus.dispatch("print", { source: this });
           break;
         case "println":
           console.log(value);
           break;
         case "zoom":
-          if (!isInPresentationMode) {
-            pdfViewer.currentScaleValue = value;
+          if (isInPresentationMode) {
+            return;
           }
+          this._pdfViewer.currentScaleValue = value;
           break;
         case "SaveAs":
-          this.#eventBus.dispatch("download", { source: this });
+          this._eventBus.dispatch("download", { source: this });
           break;
         case "FirstPage":
-          pdfViewer.currentPageNumber = 1;
+          this._pdfViewer.currentPageNumber = 1;
           break;
         case "LastPage":
-          pdfViewer.currentPageNumber = pdfViewer.pagesCount;
+          this._pdfViewer.currentPageNumber = this._pdfViewer.pagesCount;
           break;
         case "NextPage":
-          pdfViewer.nextPage();
+          this._pdfViewer.nextPage();
           break;
         case "PrevPage":
-          pdfViewer.previousPage();
+          this._pdfViewer.previousPage();
           break;
         case "ZoomViewIn":
-          if (!isInPresentationMode) {
-            pdfViewer.increaseScale();
+          if (isInPresentationMode) {
+            return;
           }
+          this._pdfViewer.increaseScale();
           break;
         case "ZoomViewOut":
-          if (!isInPresentationMode) {
-            pdfViewer.decreaseScale();
+          if (isInPresentationMode) {
+            return;
           }
-          break;
-        case "WillPrintFinished":
-          this.#willPrintCapability?.resolve();
-          this.#willPrintCapability = null;
+          this._pdfViewer.decreaseScale();
           break;
       }
       return;
     }
 
-    if (isInPresentationMode && detail.focus) {
-      return;
+    if (isInPresentationMode) {
+      if (detail.focus) {
+        return;
+      }
     }
     delete detail.id;
     delete detail.siblings;
@@ -334,22 +344,25 @@ class PDFScriptingManager {
         element.dispatchEvent(new CustomEvent("updatefromsandbox", { detail }));
       } else {
         // The element hasn't been rendered yet, use the AnnotationStorage.
-        this.#pdfDocument?.annotationStorage.setValue(elementId, detail);
+        this._pdfDocument?.annotationStorage.setValue(elementId, detail);
       }
     }
   }
 
-  async #dispatchPageOpen(pageNumber, initialize = false) {
-    const pdfDocument = this.#pdfDocument,
+  /**
+   * @private
+   */
+  async _dispatchPageOpen(pageNumber, initialize = false) {
+    const pdfDocument = this._pdfDocument,
       visitedPages = this._visitedPages;
 
     if (initialize) {
-      this.#closeCapability = new PromiseCapability();
+      this._closeCapability = createPromiseCapability();
     }
-    if (!this.#closeCapability) {
+    if (!this._closeCapability) {
       return; // Scripting isn't fully initialized yet.
     }
-    const pageView = this.#pdfViewer.getPageView(/* index = */ pageNumber - 1);
+    const pageView = this._pdfViewer.getPageView(/* index = */ pageNumber - 1);
 
     if (pageView?.renderingState !== RenderingStates.FINISHED) {
       this._pageOpenPending.add(pageNumber);
@@ -362,11 +375,11 @@ class PDFScriptingManager {
       const actions = await (!visitedPages.has(pageNumber)
         ? pageView.pdfPage?.getJSActions()
         : null);
-      if (pdfDocument !== this.#pdfDocument) {
+      if (pdfDocument !== this._pdfDocument) {
         return; // The document was closed while the actions resolved.
       }
 
-      await this.#scripting?.dispatchEventInSandbox({
+      await this._scripting?.dispatchEventInSandbox({
         id: "page",
         name: "PageOpen",
         pageNumber,
@@ -376,11 +389,14 @@ class PDFScriptingManager {
     visitedPages.set(pageNumber, actionsPromise);
   }
 
-  async #dispatchPageClose(pageNumber) {
-    const pdfDocument = this.#pdfDocument,
+  /**
+   * @private
+   */
+  async _dispatchPageClose(pageNumber) {
+    const pdfDocument = this._pdfDocument,
       visitedPages = this._visitedPages;
 
-    if (!this.#closeCapability) {
+    if (!this._closeCapability) {
       return; // Scripting isn't fully initialized yet.
     }
     if (this._pageOpenPending.has(pageNumber)) {
@@ -394,66 +410,97 @@ class PDFScriptingManager {
 
     // Ensure that the "PageOpen" event is dispatched first.
     await actionsPromise;
-    if (pdfDocument !== this.#pdfDocument) {
+    if (pdfDocument !== this._pdfDocument) {
       return; // The document was closed while the actions resolved.
     }
 
-    await this.#scripting?.dispatchEventInSandbox({
+    await this._scripting?.dispatchEventInSandbox({
       id: "page",
       name: "PageClose",
       pageNumber,
     });
   }
 
-  #initScripting() {
-    this.#destroyCapability = new PromiseCapability();
-
-    if (this.#scripting) {
-      throw new Error("#initScripting: Scripting already exists.");
+  /**
+   * @returns {Promise<Object>} A promise that is resolved with an {Object}
+   *   containing the necessary document properties; please find the expected
+   *   format in `PDFViewerApplication._scriptingDocProperties`.
+   * @private
+   */
+  async _getDocProperties() {
+    if (this._docPropertiesLookup) {
+      return this._docPropertiesLookup(this._pdfDocument);
     }
-    return this.#externalServices.createScripting();
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("COMPONENTS")) {
+      const { docPropertiesLookup } = require("./generic_scripting.js");
+
+      return docPropertiesLookup(this._pdfDocument);
+    }
+    throw new Error("_getDocProperties: Unable to lookup properties.");
   }
 
-  async #destroyScripting() {
-    if (!this.#scripting) {
-      this.#pdfDocument = null;
+  /**
+   * @private
+   */
+  _createScripting() {
+    this._destroyCapability = createPromiseCapability();
 
-      this.#destroyCapability?.resolve();
+    if (this._scripting) {
+      throw new Error("_createScripting: Scripting already exists.");
+    }
+    if (this._scriptingFactory) {
+      return this._scriptingFactory.createScripting({
+        sandboxBundleSrc: this._sandboxBundleSrc,
+      });
+    }
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("COMPONENTS")) {
+      const { GenericScripting } = require("./generic_scripting.js");
+
+      return new GenericScripting(this._sandboxBundleSrc);
+    }
+    throw new Error("_createScripting: Cannot create scripting.");
+  }
+
+  /**
+   * @private
+   */
+  async _destroyScripting() {
+    if (!this._scripting) {
+      this._pdfDocument = null;
+
+      this._destroyCapability?.resolve();
       return;
     }
-    if (this.#closeCapability) {
+    if (this._closeCapability) {
       await Promise.race([
-        this.#closeCapability.promise,
+        this._closeCapability.promise,
         new Promise(resolve => {
           // Avoid the scripting/sandbox-destruction hanging indefinitely.
           setTimeout(resolve, 1000);
         }),
-      ]).catch(() => {
+      ]).catch(reason => {
         // Ignore any errors, to ensure that the sandbox is always destroyed.
       });
-      this.#closeCapability = null;
+      this._closeCapability = null;
     }
-    this.#pdfDocument = null;
+    this._pdfDocument = null;
 
     try {
-      await this.#scripting.destroySandbox();
-    } catch {}
-
-    this.#willPrintCapability?.reject(new Error("Scripting destroyed."));
-    this.#willPrintCapability = null;
+      await this._scripting.destroySandbox();
+    } catch (ex) {}
 
     for (const [name, listener] of this._internalEvents) {
-      this.#eventBus._off(name, listener);
+      this._eventBus._off(name, listener);
     }
     this._internalEvents.clear();
 
     this._pageOpenPending.clear();
     this._visitedPages.clear();
 
-    this.#scripting = null;
-    this.#ready = false;
+    this._scripting = null;
+    this._ready = false;
 
-    this.#destroyCapability?.resolve();
+    this._destroyCapability?.resolve();
   }
 }
 

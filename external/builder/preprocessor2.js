@@ -244,8 +244,8 @@ function postprocessNode(ctx, node) {
       const block = node.body;
       if (
         block.body.length > 0 &&
-        block.body.at(-1).type === "ReturnStatement" &&
-        !block.body.at(-1).argument
+        block.body[block.body.length - 1].type === "ReturnStatement" &&
+        !block.body[block.body.length - 1].argument
       ) {
         // Function body ends with return without arg -- removing it.
         block.body.pop();

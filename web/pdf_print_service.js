@@ -62,41 +62,47 @@ function renderPage(
   });
 }
 
-class PDFPrintService {
-  constructor(
-    pdfDocument,
-    pagesOverview,
-    printContainer,
-    printResolution,
-    optionalContentConfigPromise = null,
-    printAnnotationStoragePromise = null
-  ) {
-    this.pdfDocument = pdfDocument;
-    this.pagesOverview = pagesOverview;
-    this.printContainer = printContainer;
-    this._printResolution = printResolution || 150;
-    this._optionalContentConfigPromise =
-      optionalContentConfigPromise || pdfDocument.getOptionalContentConfig();
-    this._printAnnotationStoragePromise =
-      printAnnotationStoragePromise || Promise.resolve();
-    this.currentPage = -1;
-    // The temporary canvas where renderPage paints one page at a time.
-    this.scratchCanvas = document.createElement("canvas");
-  }
+function PDFPrintService(
+  pdfDocument,
+  pagesOverview,
+  printContainer,
+  printResolution,
+  optionalContentConfigPromise = null,
+  printAnnotationStoragePromise = null,
+  l10n
+) {
+  this.pdfDocument = pdfDocument;
+  this.pagesOverview = pagesOverview;
+  this.printContainer = printContainer;
+  this._printResolution = printResolution || 150;
+  this._optionalContentConfigPromise =
+    optionalContentConfigPromise || pdfDocument.getOptionalContentConfig();
+  this._printAnnotationStoragePromise =
+    printAnnotationStoragePromise || Promise.resolve();
+  this.l10n = l10n;
+  this.currentPage = -1;
+  // The temporary canvas where renderPage paints one page at a time.
+  this.scratchCanvas = document.createElement("canvas");
+}
 
+PDFPrintService.prototype = {
   layout() {
     this.throwIfInactive();
 
-    const body = document.querySelector("body");
+    // MODIF - Next 1 line
+    const body = document.querySelector('.outerBody');
     body.setAttribute("data-pdfjsprinting", true);
 
-    const { width, height } = this.pagesOverview[0];
-    const hasEqualPageSizes = this.pagesOverview.every(
-      size => size.width === width && size.height === height
-    );
+    const hasEqualPageSizes = this.pagesOverview.every(function (size) {
+      return (
+        size.width === this.pagesOverview[0].width &&
+        size.height === this.pagesOverview[0].height
+      );
+    }, this);
     if (!hasEqualPageSizes) {
       console.warn(
-        "Not all pages have the same size. The printed result may be incorrect!"
+        "Not all pages have the same size. The printed " +
+          "result may be incorrect!"
       );
     }
 
@@ -106,13 +112,15 @@ class PDFPrintService {
     // TODO(robwu): Use named pages when size calculation bugs get resolved
     // (e.g. https://crbug.com/355116) AND when support for named pages is
     // added (http://www.w3.org/TR/css3-page/#using-named-pages).
-    // In browsers where @page + size is not supported, the next stylesheet
-    // will be ignored and the user has to select the correct paper size in
-    // the UI if wanted.
+    // In browsers where @page + size is not supported (such as Firefox,
+    // https://bugzil.la/851441), the next stylesheet will be ignored and the
+    // user has to select the correct paper size in the UI if wanted.
     this.pageStyleSheet = document.createElement("style");
-    this.pageStyleSheet.textContent = `@page { size: ${width}pt ${height}pt;}`;
+    const pageSize = this.pagesOverview[0];
+    this.pageStyleSheet.textContent =
+      "@page { size: " + pageSize.width + "pt " + pageSize.height + "pt;}";
     body.append(this.pageStyleSheet);
-  }
+  },
 
   destroy() {
     if (activeService !== this) {
@@ -137,7 +145,7 @@ class PDFPrintService {
         overlayManager.close(dialog);
       }
     });
-  }
+  },
 
   renderPages() {
     if (this.pdfDocument.isPureXfa) {
@@ -149,12 +157,12 @@ class PDFPrintService {
     const renderNextPage = (resolve, reject) => {
       this.throwIfInactive();
       if (++this.currentPage >= pageCount) {
-        renderProgress(pageCount, pageCount);
+        renderProgress(pageCount, pageCount, this.l10n);
         resolve();
         return;
       }
       const index = this.currentPage;
-      renderProgress(index, pageCount);
+      renderProgress(index, pageCount, this.l10n);
       renderPage(
         this,
         this.pdfDocument,
@@ -170,7 +178,7 @@ class PDFPrintService {
         }, reject);
     };
     return new Promise(renderNextPage);
-  }
+  },
 
   useRenderedPage() {
     this.throwIfInactive();
@@ -193,7 +201,7 @@ class PDFPrintService {
       img.onload = resolve;
       img.onerror = reject;
     });
-  }
+  },
 
   performPrint() {
     this.throwIfInactive();
@@ -206,23 +214,61 @@ class PDFPrintService {
           resolve();
           return;
         }
-        print.call(window);
+        // MODIF - change print call function for next 36 lines
+        /**
+         * EFR DR-8560 On injecte le css nescessaire pour que l'impression ce passe bien
+         */
+        const openWindow = window.open("", "title", "attributes");
+        openWindow.document.write(`
+        <html>
+          <head>
+            <style>
+              @page {
+                margin: 0;
+              }
+              body{
+                margin: 0;
+              }
+              .printedPage {
+                height: 100%;
+                width: 100%;
+              }
+              .printedPage img {
+                /* The intrinsic canvas / image size will make sure that we fit the page. */
+                max-width: 100%;
+                max-height: 100%;
+              }
+            </style>
+            <script>
+              window.addEventListener("load", function(){
+                window.onafterprint = () => {
+                  window.close();
+                };
+                window.print();
+              });
+            </script>
+        </head>`);
+        openWindow.document.write(this.printContainer.innerHTML);
+        openWindow.document.close();
+        openWindow.focus();
+        // fin Modif
+        
         // Delay promise resolution in case print() was not synchronous.
         setTimeout(resolve, 20); // Tidy-up.
       }, 0);
     });
-  }
+  },
 
   get active() {
     return this === activeService;
-  }
+  },
 
   throwIfInactive() {
     if (!this.active) {
       throw new Error("This print request was cancelled or completed.");
     }
-  }
-}
+  },
+};
 
 const print = window.print;
 window.print = function () {
@@ -271,11 +317,8 @@ window.print = function () {
 };
 
 function dispatchEvent(eventType) {
-  const event = new CustomEvent(eventType, {
-    bubbles: false,
-    cancelable: false,
-    detail: "custom",
-  });
+  const event = document.createEvent("CustomEvent");
+  event.initCustomEvent(eventType, false, false, "custom");
   window.dispatchEvent(event);
 }
 
@@ -286,16 +329,15 @@ function abort() {
   }
 }
 
-function renderProgress(index, total) {
-  if (typeof PDFJSDev === "undefined" && window.isGECKOVIEW) {
-    return;
-  }
+function renderProgress(index, total, l10n) {
   dialog ||= document.getElementById("printServiceDialog");
   const progress = Math.round((100 * index) / total);
   const progressBar = dialog.querySelector("progress");
   const progressPerc = dialog.querySelector(".relative-progress");
   progressBar.value = progress;
-  progressPerc.setAttribute("data-l10n-args", JSON.stringify({ progress }));
+  l10n.get("print_progress_percent", { progress }).then(msg => {
+    progressPerc.textContent = msg;
+  });
 }
 
 window.addEventListener(
@@ -307,7 +349,8 @@ window.addEventListener(
       event.keyCode === /* P= */ 80 &&
       (event.ctrlKey || event.metaKey) &&
       !event.altKey &&
-      (!event.shiftKey || window.chrome || window.opera)
+      // MODIF - alter condition in next 1 line
+      (!event.shiftKey || window.chrome || window.opera) && !document.disablePrinting
     ) {
       window.print();
 
@@ -332,11 +375,6 @@ if ("onbeforeprint" in window) {
 
 let overlayPromise;
 function ensureOverlay() {
-  if (typeof PDFJSDev === "undefined" && window.isGECKOVIEW) {
-    return Promise.reject(
-      new Error("ensureOverlay not implemented in GECKOVIEW development mode.")
-    );
-  }
   if (!overlayPromise) {
     overlayManager = PDFViewerApplication.overlayManager;
     if (!overlayManager) {
@@ -364,7 +402,8 @@ PDFPrintServiceFactory.instance = {
     printContainer,
     printResolution,
     optionalContentConfigPromise,
-    printAnnotationStoragePromise
+    printAnnotationStoragePromise,
+    l10n
   ) {
     if (activeService) {
       throw new Error("The print service is created and active.");
@@ -375,7 +414,8 @@ PDFPrintServiceFactory.instance = {
       printContainer,
       printResolution,
       optionalContentConfigPromise,
-      printAnnotationStoragePromise
+      printAnnotationStoragePromise,
+      l10n
     );
     return activeService;
   },

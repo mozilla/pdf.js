@@ -46,10 +46,17 @@ const SidebarView = {
   LAYERS: 4,
 };
 
+const RendererType =
+  typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || GENERIC")
+    ? {
+        CANVAS: "canvas",
+        SVG: "svg",
+      }
+    : null;
+
 const TextLayerMode = {
   DISABLE: 0,
   ENABLE: 1,
-  ENABLE_PERMISSIONS: 2,
 };
 
 const ScrollMode = {
@@ -104,11 +111,9 @@ class OutputScale {
 
 /**
  * Scrolls specified element into view of its parent.
- * @param {HTMLElement} element - The element to be visible.
- * @param {Object} [spot] - An object with optional top and left properties,
+ * @param {Object} element - The element to be visible.
+ * @param {Object} spot - An object with optional top and left properties,
  *   specifying the offset from the top left edge.
- * @param {number} [spot.left]
- * @param {number} [spot.top]
  * @param {boolean} [scrollMatches] - When scrolling search results into view,
  *   ignore elements that either: Contains marked content identifiers,
  *   or have the CSS-rule `overflow: hidden;` set. The default value is `false`.
@@ -195,7 +200,7 @@ function watchScroll(viewAreaElement, callback) {
 
 /**
  * Helper function to parse query string (e.g. ?param1=value&param2=...).
- * @param {string} query
+ * @param {string}
  * @returns {Map}
  */
 function parseQueryString(query) {
@@ -206,20 +211,19 @@ function parseQueryString(query) {
   return params;
 }
 
-const InvisibleCharactersRegExp = /[\x00-\x1F]/g;
+const InvisibleCharactersRegExp = /[\x01-\x1F]/g;
 
 /**
  * @param {string} str
  * @param {boolean} [replaceInvisible]
  */
 function removeNullCharacters(str, replaceInvisible = false) {
-  if (!InvisibleCharactersRegExp.test(str)) {
+  if (typeof str !== "string") {
+    console.error(`The argument must be a string.`);
     return str;
   }
   if (replaceInvisible) {
-    return str.replaceAll(InvisibleCharactersRegExp, m => {
-      return m === "\x00" ? "" : " ";
-    });
+    str = str.replaceAll(InvisibleCharactersRegExp, " ");
   }
   return str.replaceAll("\x00", "");
 }
@@ -462,7 +466,7 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
  * rendering canvas. Earlier and later refer to index in `views`, not page
  * layout.)
  *
- * @param {GetVisibleElementsParameters} params
+ * @param {GetVisibleElementsParameters}
  * @returns {Object} `{ first, last, views: [{ id, x, y, view, percent }] }`
  */
 function getVisibleElements({
@@ -605,6 +609,13 @@ function getVisibleElements({
   return { first, last, views: visible, ids };
 }
 
+/**
+ * Event handler to suppress context menu.
+ */
+function noContextMenuHandler(evt) {
+  evt.preventDefault();
+}
+
 function normalizeWheelEventDirection(evt) {
   let delta = Math.hypot(evt.deltaX, evt.deltaY);
   const angle = Math.atan2(evt.deltaY, evt.deltaX);
@@ -631,8 +642,20 @@ function normalizeWheelEventDelta(evt) {
   return delta;
 }
 
-function isValidRotation(angle) {
-  return Number.isInteger(angle) && angle % 90 === 0;
+// MODIF - change function in next 14 lines
+function isValidRotation(pagesRotation) {
+  if (!pagesRotation) {
+    return false;
+  }
+  let res = true;
+  for (let i = 0; i < pagesRotation.length; i++) {
+    let angle = pagesRotation[i];
+    let isCorrect = Number.isInteger(angle) && angle % 90 === 0;
+    if (!isCorrect) {
+      res = false;
+    }
+  }
+  return res;
 }
 
 function isValidScrollMode(mode) {
@@ -785,7 +808,7 @@ function getActiveOrFocusedElement() {
 
 /**
  * Converts API PageLayout values to the format used by `BaseViewer`.
- * @param {string} layout - The API PageLayout value.
+ * @param {string} mode - The API PageLayout value.
  * @returns {Object}
  */
 function apiPageLayoutToViewerModes(layout) {
@@ -838,20 +861,6 @@ function apiPageModeToSidebarView(mode) {
   return SidebarView.NONE; // Default value.
 }
 
-function toggleCheckedBtn(button, toggle, view = null) {
-  button.classList.toggle("toggled", toggle);
-  button.setAttribute("aria-checked", toggle);
-
-  view?.classList.toggle("hidden", !toggle);
-}
-
-function toggleExpandedBtn(button, toggle, view = null) {
-  button.classList.toggle("toggled", toggle);
-  button.setAttribute("aria-expanded", toggle);
-
-  view?.classList.toggle("hidden", !toggle);
-}
-
 export {
   animationStarted,
   apiPageLayoutToViewerModes,
@@ -875,6 +884,7 @@ export {
   MAX_AUTO_SCALE,
   MAX_SCALE,
   MIN_SCALE,
+  noContextMenuHandler,
   normalizeWheelEventDelta,
   normalizeWheelEventDirection,
   OutputScale,
@@ -882,6 +892,7 @@ export {
   PresentationModeState,
   ProgressBar,
   removeNullCharacters,
+  RendererType,
   RenderingStates,
   roundToDivide,
   SCROLLBAR_PADDING,
@@ -890,8 +901,6 @@ export {
   SidebarView,
   SpreadMode,
   TextLayerMode,
-  toggleCheckedBtn,
-  toggleExpandedBtn,
   UNKNOWN_SCALE,
   VERTICAL_PADDING,
   watchScroll,

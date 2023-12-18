@@ -19,27 +19,16 @@
   --dir-factor: 1;
   --scale-select-width: 140px;
 
-  --toolbar-icon-opacity: 1;
+  --toolbar-icon-opacity: 0.7;
   --doorhanger-icon-opacity: 0.9;
 
-  --main-color: rgb(12 12 13);
-  --body-bg-color: rgb(212 212 215);
+  --main-color: rgba(12, 12, 13, 1);
+  --body-bg-color: rgba(212, 212, 215, 1);
   --scrollbar-color: auto;
   --scrollbar-bg-color: auto;
-  --field-color: rgb(6 6 6);
-  --field-bg-color: rgb(255 255 255);
-  --field-border-color: rgb(187 187 188);
-  --doorhanger-bg-color: rgb(255 255 255);
   --dialog-button-border: none;
-  --dialog-button-bg-color: rgb(12 12 13 / 0.1);
-  --dialog-button-hover-bg-color: rgb(12 12 13 / 0.3);
-
-  --toolbar-bg-color: #f9f9fb;
-  --toolbar-divider-color: #e0e0e6;
-  --toolbar-fg-color: #15141a;
-
-  --toolbarButton-download-icon: url(images/gv-toolbarButton-download.svg);
-  --toolbarButton-openinapp-icon: url(images/gv-toolbarButton-openinapp.svg);
+  --dialog-button-bg-color: rgba(12, 12, 13, 0.1);
+  --dialog-button-hover-bg-color: rgba(12, 12, 13, 0.3);
 }
 
 :root:dir(rtl) {
@@ -48,20 +37,12 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --main-color: rgb(249 249 250);
-    --body-bg-color: rgb(42 42 46);
-    --scrollbar-color: rgb(121 121 123);
-    --scrollbar-bg-color: rgb(35 35 39);
-    --field-color: rgb(250 250 250);
-    --field-bg-color: rgb(64 64 68);
-    --field-border-color: rgb(115 115 115);
-    --doorhanger-bg-color: rgb(74 74 79);
-    --dialog-button-bg-color: rgb(92 92 97);
-    --dialog-button-hover-bg-color: rgb(115 115 115);
-
-    --toolbar-bg-color: #2b2a33;
-    --toolbar-divider-color: #5b5b66;
-    --toolbar-fg-color: #fbfbfe;
+    --main-color: rgba(249, 249, 250, 1);
+    --body-bg-color: rgba(42, 42, 46, 1);
+    --scrollbar-color: rgba(121, 121, 123, 1);
+    --scrollbar-bg-color: rgba(35, 35, 39, 1);
+    --dialog-button-bg-color: rgba(92, 92, 97, 1);
+    --dialog-button-hover-bg-color: rgba(115, 115, 115, 1);
   }
 }
 
@@ -70,7 +51,6 @@
     --dialog-button-border: 1px solid Highlight;
     --dialog-button-hover-bg-color: Highlight;
     --dialog-button-hover-color: ButtonFace;
-    --field-border-color: ButtonText;
     --main-color: CanvasText;
   }
 }
@@ -111,13 +91,8 @@ body {
 #viewerContainer {
   overflow: auto;
   position: absolute;
-  inset-block: 41px 0;
-  inset-inline: 0;
+  inset: 0;
   outline: none;
-}
-
-#viewerContainer.noToolbar {
-  inset-block-start: 0;
 }
 
 .dialogButton {
@@ -128,11 +103,13 @@ body {
   outline: none;
 }
 
-.dialogButton:is(:hover, :focus-visible) {
+.dialogButton:hover,
+.dialogButton:focus-visible {
   background-color: var(--dialog-button-hover-bg-color);
 }
 
-.dialogButton:is(:hover, :focus-visible) > span {
+.dialogButton:hover > span,
+.dialogButton:focus-visible > span {
   color: var(--dialog-button-hover-color);
 }
 
@@ -172,70 +149,6 @@ body {
   border-color: #0a84ff;
 }
 
-#floatingToolbar {
-  display: flex;
-  align-items: center;
-  position: absolute;
-  width: 100%;
-  height: 40px;
-  top: 0;
-  left: 0;
-  box-sizing: content-box;
-  border-block-end: solid 1px var(--toolbar-divider-color);
-  background-color: var(--toolbar-bg-color);
-}
-
-#floatingToolbar.show {
-  z-index: 100000;
-  opacity: 1;
-}
-
-#floatingToolbar:not(show) {
-  z-index: -1;
-  opacity: 0;
-}
-
-.toolbarButton {
-  display: flex;
-  align-items: center;
-  border-style: none;
-  user-select: none;
-  box-sizing: border-box;
-  background-color: transparent;
-  width: auto;
-  height: auto;
-  outline: none;
-  position: relative;
-}
-
-.toolbarButton > span {
-  color: var(--toolbar-fg-color);
-  width: auto;
-  height: auto;
-  overflow: hidden;
-}
-
-:is(.toolbarButton .dialogButton)[disabled] {
-  opacity: 0.5;
-}
-
-.toolbarButton::before {
-  width: 24px;
-  height: 24px;
-  content: "";
-  background-color: var(--toolbar-fg-color);
-  mask-size: cover;
-  margin-inline: 12px 8px;
-}
-
-#download::before {
-  mask-image: var(--toolbarButton-download-icon);
-}
-
-#openInApp::before {
-  mask-image: var(--toolbarButton-openinapp-icon);
-}
-
 .dialogButton {
   width: auto;
   margin: 3px 4px 2px !important;
@@ -254,12 +167,12 @@ dialog {
   font-size: 12px;
   line-height: 14px;
   background-color: var(--doorhanger-bg-color);
-  border: 1px solid rgb(0 0 0 / 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.5);
   border-radius: 4px;
-  box-shadow: 0 1px 4px rgb(0 0 0 / 0.3);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 dialog::backdrop {
-  background-color: rgb(0 0 0 / 0.2);
+  background-color: rgba(0, 0, 0, 0.2);
 }
 
 dialog > .row {
@@ -288,7 +201,7 @@ dialog .buttonRow {
 }
 
 dialog :link {
-  color: rgb(255 255 255);
+  color: rgba(255, 255, 255, 1);
 }
 
 #passwordDialog {
@@ -300,58 +213,4 @@ dialog :link {
 
 @page {
   margin: 0;
-}
-
-#printContainer {
-  display: none;
-}
-
-@media print {
-  body {
-    background: rgb(0 0 0 / 0) none;
-  }
-  body[data-pdfjsprinting] #outerContainer {
-    display: none;
-  }
-  body[data-pdfjsprinting] #printContainer {
-    display: block;
-  }
-  #printContainer {
-    height: 100%;
-  }
-  /* wrapper around (scaled) print canvas elements */
-  #printContainer > .printedPage {
-    page-break-after: always;
-    page-break-inside: avoid;
-
-    /* The wrapper always cover the whole page. */
-    height: 100%;
-    width: 100%;
-
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  }
-
-  #printContainer > .xfaPrintedPage .xfaPage {
-    position: absolute;
-  }
-
-  #printContainer > .xfaPrintedPage {
-    page-break-after: always;
-    page-break-inside: avoid;
-    width: 100%;
-    height: 100%;
-    position: relative;
-  }
-
-  #printContainer > .printedPage :is(canvas, img) {
-    /* The intrinsic canvas / image size will make sure that we fit the page. */
-    max-width: 100%;
-    max-height: 100%;
-
-    direction: ltr;
-    display: block;
-  }
 }
