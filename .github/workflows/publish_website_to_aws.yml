@@ -1,0 +1,52 @@
+name: Publish website
+on:
+  push:
+    branches:
+      - publish-website-to-aws
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [lts/*]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install Gulp
+        run: npm install -g gulp-cli
+
+      - name: Install other dependencies
+        run: npm install
+
+      - name: Build the website
+        run: gulp web
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: Deploy site to S3 bucket
+        run: aws s3 cp ./build/gh-pages/ s3://test-zafir-pdf/test/
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: build
+    
