@@ -32,18 +32,8 @@ jobs:
       - name: Install other dependencies
         run: npm install
 
-  deploy:
-    name: Deploy
-    runs-on: ubuntu-latest
-    needs: build
-    
-    steps:
       - name: Build the website
         run: gulp web
-
-      - name: Debug
-        run: |
-          ls -R build/
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -53,6 +43,17 @@ jobs:
           aws-region: us-east-2
 
       - name: Deploy site to S3 bucket
-        run: |
-          aws s3 sync build/gh-pages/ s3://test-zafir-pdf/test/
+        run: aws s3 sync build/gh-pages/ s3://test-zafir-pdf/test/
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+      - name: Build test
+        run: ls 
+      
+
+      
         
