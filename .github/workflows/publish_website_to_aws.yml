@@ -1,8 +1,5 @@
 name: Publish website to aws
-on:
-  push:
-    branches:
-      - publish-website-to-aws
+on: [push, pull_request]
 
 jobs:
   build-deploy:
