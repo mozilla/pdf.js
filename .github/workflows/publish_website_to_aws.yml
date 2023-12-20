@@ -35,6 +35,10 @@ jobs:
       - name: Build the website
         run: gulp web
 
+      - name: Debug
+        run: |
+          ls -R build/
+
       - name: Upload the website
         uses: actions/upload-artifact@v4
         with:
