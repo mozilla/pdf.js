@@ -52,7 +52,7 @@ jobs:
     
     steps:
       - name: Build test
-        run: ls
+        run: ls -a
       
 
       
