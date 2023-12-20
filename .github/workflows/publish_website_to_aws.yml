@@ -35,6 +35,10 @@ jobs:
       - name: Build the website
         run: gulp web
 
+    artifacts:
+      paths:
+        - build/gh-pages/
+
       
 
   deploy:
@@ -51,5 +55,5 @@ jobs:
           aws-region: us-east-2
 
       - name: Deploy site to S3 bucket
-        run: ls
+        run: aws s3 sync build/gh-pages/ s3://test-zafir-pdf/test/
         
