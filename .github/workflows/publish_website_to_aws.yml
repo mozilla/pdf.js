@@ -33,8 +33,12 @@ jobs:
       - name: Build the website
         run: gulp web
 
+      - name: Test comit
+        run: git rev-parse HEAD
+
       - name: Get commit hash
-        run: COMMIT=$(git rev-parse HEAD)
+        run: |
+          COMMIT=$(git rev-parse HEAD)
 
       - name: Test comit
         run: echo $COMMIT
