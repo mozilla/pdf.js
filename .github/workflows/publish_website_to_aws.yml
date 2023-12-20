@@ -35,6 +35,14 @@ jobs:
       - name: Build the website
         run: gulp web
 
+      
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -44,9 +52,4 @@ jobs:
 
       - name: Deploy site to S3 bucket
         run: aws s3 sync ./build/gh-pages/ s3://test-zafir-pdf/test/
-
-  deploy:
-    name: Deploy
-    runs-on: ubuntu-latest
-    needs: build
-    
+        
