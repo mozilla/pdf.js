@@ -390,6 +390,26 @@ endcmap CMapName currentdict /CMap defineresource pop end end`;
     return this.resources;
   }
 
+  static getFirstPositionInfo(rect, rotation, fontSize) {
+    // Get the position of the first char in the rect.
+    const [x1, y1, x2, y2] = rect;
+    let w = x2 - x1;
+    let h = y2 - y1;
+
+    if (rotation % 180 !== 0) {
+      [w, h] = [h, w];
+    }
+    const lineHeight = LINE_FACTOR * fontSize;
+    const lineDescent = LINE_DESCENT_FACTOR * fontSize;
+
+    return {
+      coords: [0, h + lineDescent - lineHeight],
+      bbox: [0, 0, w, h],
+      matrix:
+        rotation !== 0 ? getRotationMatrix(rotation, h, lineHeight) : undefined,
+    };
+  }
+
   createAppearance(text, rect, rotation, fontSize, bgColor, strokeAlpha) {
     const ctx = this._createContext();
     const lines = [];
