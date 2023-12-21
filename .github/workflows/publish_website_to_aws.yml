@@ -59,5 +59,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: 'https://test-zafir-pdf.s3.us-east-2.amazonaws.com/$(git rev-parse HEAD)/web/viewer.html?file=https%3A%2F%2Fpdf-test-sharinpix.s3.eu-west-3.amazonaws.com%2Fpdf_photo_field.pdf'
+              body: '${{ steps.aws-deployment-url.outputs.s3_url }}'
             })
