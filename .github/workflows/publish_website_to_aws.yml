@@ -5,6 +5,7 @@ jobs:
   build-deploy:
     name: Build
     runs-on: ubuntu-latest
+    permissions: write-all
 
     environment:
       name: aws
