@@ -42,6 +42,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-2
       
+      - name: Test commit number
+        run: git rev-parse HEAD
+
       - name: Deploy site to S3 bucket
         run: aws s3 sync build/gh-pages/ s3://test-zafir-pdf/$(git rev-parse HEAD)/ --acl public-read
 
