@@ -1,5 +1,5 @@
 name: Publish website to aws
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
   build-deploy:
@@ -7,7 +7,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions: write-all
 
-    if: github.event_name == 'pull_request'
     environment:
       name: aws
       url: ${{ steps.aws-deployment-url.outputs.s3_url }}
