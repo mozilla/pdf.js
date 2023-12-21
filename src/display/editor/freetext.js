@@ -648,6 +648,14 @@ class FreeTextEditor extends AnnotationEditor {
     }
   }
 
+  #serializeContent() {
+    return this.#content.replaceAll("\xa0", " ");
+  }
+
+  static #deserializeContent(content) {
+    return content.replaceAll(" ", "\xa0");
+  }
+
   /** @inheritdoc */
   get contentDiv() {
     return this.editorDiv;
@@ -690,10 +698,9 @@ class FreeTextEditor extends AnnotationEditor {
       };
     }
     const editor = super.deserialize(data, parent, uiManager);
-
     editor.#fontSize = data.fontSize;
     editor.#color = Util.makeHexColor(...data.color);
-    editor.#content = data.value;
+    editor.#content = FreeTextEditor.#deserializeContent(data.value);
     editor.annotationElementId = data.id || null;
     editor.#initialData = initialData;
 
@@ -726,7 +733,7 @@ class FreeTextEditor extends AnnotationEditor {
       annotationType: AnnotationEditorType.FREETEXT,
       color,
       fontSize: this.#fontSize,
-      value: this.#content,
+      value: this.#serializeContent(),
       pageIndex: this.pageIndex,
       rect,
       rotation: this.rotation,

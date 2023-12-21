@@ -209,11 +209,11 @@ describe("FreeText Editor", () => {
         await waitForStorageEntries(page, 2);
 
         const content = await page.$eval(getEditorSelector(0), el =>
-          el.innerText.trimEnd()
+          el.innerText.trimEnd().replaceAll("\xa0", " ")
         );
 
         let pastedContent = await page.$eval(getEditorSelector(1), el =>
-          el.innerText.trimEnd()
+          el.innerText.trimEnd().replaceAll("\xa0", " ")
         );
 
         expect(pastedContent).withContext(`In ${browserName}`).toEqual(content);
@@ -225,7 +225,7 @@ describe("FreeText Editor", () => {
         await waitForStorageEntries(page, 3);
 
         pastedContent = await page.$eval(getEditorSelector(2), el =>
-          el.innerText.trimEnd()
+          el.innerText.trimEnd().replaceAll("\xa0", " ")
         );
         expect(pastedContent).withContext(`In ${browserName}`).toEqual(content);
       }
@@ -3178,6 +3178,70 @@ describe("FreeText Editor", () => {
           await page.waitForSelector(getEditorSelector(1), {
             visible: true,
           });
+        })
+      );
+    });
+  });
+
+  describe("Consecutive white spaces in Freetext without appearance", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("bug1871353.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that consecutive white spaces are preserved when a freetext is edited", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+          await page.click(getEditorSelector(0), { count: 2 });
+          await page.type(`${getEditorSelector(0)} .internal`, "C");
+
+          await page.click("#editorFreeText");
+          await page.waitForSelector(
+            `.annotationEditorLayer:not(.freetextEditing)`
+          );
+
+          const [value] = await getSerialized(page, x => x.value);
+          expect(value)
+            .withContext(`In ${browserName}`)
+            .toEqual("CA          B");
+        })
+      );
+    });
+  });
+
+  describe("Consecutive white spaces in Freetext with appearance", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("bug1871353.1.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that consecutive white spaces are preserved when a freetext is edited", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+          await page.click(getEditorSelector(0), { count: 2 });
+          await page.type(`${getEditorSelector(0)} .internal`, "Z");
+
+          await page.click("#editorFreeText");
+          await page.waitForSelector(
+            `.annotationEditorLayer:not(.freetextEditing)`
+          );
+
+          const [value] = await getSerialized(page, x => x.value);
+          expect(value)
+            .withContext(`In ${browserName}`)
+            .toEqual("ZX          Y");
         })
       );
     });
