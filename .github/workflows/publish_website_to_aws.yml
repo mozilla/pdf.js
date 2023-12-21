@@ -43,12 +43,12 @@ jobs:
           aws-region: us-east-2
       
       - name: Deploy site to S3 bucket
-        run: aws s3 sync build/gh-pages/ s3://test-zafir-pdf/${{ github.event.pull_request.head.sha }}/ --acl public-read
+        run: aws s3 sync build/gh-pages/ s3://${{ secrets.AWS_BUCKET_NAME }}/${{ github.event.pull_request.head.sha }}/ --acl public-read
 
       - name: Save aws s3 deployment url for aws environment
         id: aws-deployment-url
         run: |
-          echo "s3_url=https://test-zafir-pdf.s3.us-east-2.amazonaws.com/${{ github.event.pull_request.head.sha }}/web/viewer.html?file=https%3A%2F%2Fpdf-test-sharinpix.s3.eu-west-3.amazonaws.com%2Fpdf_photo_field.pdf" >> $GITHUB_OUTPUT
+          echo "s3_url=https://${{ secrets.AWS_BUCKET_NAME }}.s3.us-east-2.amazonaws.com/${{ github.event.pull_request.head.sha }}/web/viewer.html?file=${{ secrets.TEST_PDF }}" >> $GITHUB_OUTPUT
 
       - name: Comment deployed url to PR
         if: github.event_name == 'pull_request'
