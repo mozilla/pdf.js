@@ -1514,6 +1514,11 @@ dialog :link {
   }
 }
 
-#editorModeButtons, #editorModeSeparator, #pageRotateCw, #pageRotateCcw, #pageRotateCcw + .horizontalToolbarSeparator, #download {
+#editorModeButtons, 
+#editorModeSeparator, 
+#pageRotateCw, 
+#pageRotateCcw, 
+#pageRotateCcw + .horizontalToolbarSeparator, 
+#download {
   display: none;
 }
