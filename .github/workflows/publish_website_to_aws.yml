@@ -6,6 +6,10 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
 
+    environment:
+      name: aws
+      url: ${{ steps.aws-deployment-url.outputs.s3_url }}
+
     strategy:
       matrix:
         node-version: [lts/*]
@@ -39,10 +43,20 @@ jobs:
       
       - name: Deploy site to S3 bucket
         run: aws s3 sync build/gh-pages/ s3://test-zafir-pdf/$(git rev-parse HEAD)/ --acl public-read
-        
 
-      
-      
+      - name: Save aws s3 deployment url for aws environment
+        id: aws-deployment-url
+        run: |
+          echo "s3_url=https://test-zafir-pdf.s3.us-east-2.amazonaws.com/$(git rev-parse HEAD)/web/viewer.html?file=https%3A%2F%2Fpdf-test-sharinpix.s3.eu-west-3.amazonaws.com%2Fpdf_photo_field.pdf" >> $GITHUB_OUTPUT
 
-      
-        
+      - name: Comment deployed url to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'https://test-zafir-pdf.s3.us-east-2.amazonaws.com/$(git rev-parse HEAD)/web/viewer.html?file=https%3A%2F%2Fpdf-test-sharinpix.s3.eu-west-3.amazonaws.com%2Fpdf_photo_field.pdf'
+            })
