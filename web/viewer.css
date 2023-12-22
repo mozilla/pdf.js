@@ -862,6 +862,14 @@ a:focus > .thumbnail > .thumbnailImage,
   color: var(--treeitem-hover-color);
 }
 
+#outlineOptionsContainer {
+  display: none;
+
+  #sidebarContainer:has(#outlineView:not(.hidden)) & {
+    display: inherit;
+  }
+}
+
 .dialogButton {
   width: auto;
   margin: 3px 4px 2px !important;
