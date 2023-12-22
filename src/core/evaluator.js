@@ -546,6 +546,12 @@ class PartialEvaluator {
   }
 
   _sendImgData(objId, imgData, cacheGlobally = false) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      imgData
+    ) {
+      assert(Number.isInteger(imgData.dataLen), "Expected dataLen to be set.");
+    }
     const transfers = imgData ? [imgData.bitmap || imgData.data.buffer] : null;
 
     if (this.parsingType3Font || cacheGlobally) {
@@ -690,6 +696,10 @@ class PartialEvaluator {
 
       const objId = `mask_${this.idFactory.createObjId()}`;
       operatorList.addDependency(objId);
+
+      imgData.dataLen = imgData.bitmap
+        ? imgData.width * imgData.height * 4
+        : imgData.data.length;
       this._sendImgData(objId, imgData);
 
       args = [
@@ -761,13 +771,15 @@ class PartialEvaluator {
 
     if (this.parsingType3Font) {
       objId = `${this.idFactory.getDocId()}_type3_${objId}`;
-    } else if (imageRef) {
+    } else if (cacheKey && imageRef) {
       cacheGlobally = this.globalImageCache.shouldCache(
         imageRef,
         this.pageIndex
       );
 
       if (cacheGlobally) {
+        assert(!isInline, "Cannot cache an inline image globally.");
+
         objId = `${this.idFactory.getDocId()}_${objId}`;
       }
     }
@@ -775,6 +787,30 @@ class PartialEvaluator {
     // Ensure that the dependency is added before the image is decoded.
     operatorList.addDependency(objId);
     args = [objId, w, h];
+    operatorList.addImageOps(OPS.paintImageXObject, args, optionalContent);
+
+    // For large images, at least 500x500 in size, that we'll cache globally
+    // check if the image is still cached locally on the main-thread to avoid
+    // having to re-parse the image (since that can be slow).
+    if (cacheGlobally && w * h > 250000) {
+      const localLength = await this.handler.sendWithPromise("commonobj", [
+        objId,
+        "CopyLocalImage",
+        { imageRef },
+      ]);
+
+      if (localLength) {
+        this.globalImageCache.setData(imageRef, {
+          objId,
+          fn: OPS.paintImageXObject,
+          args,
+          optionalContent,
+          byteSize: 0, // Temporary entry, to avoid `setData` returning early.
+        });
+        this.globalImageCache.addByteSize(imageRef, localLength);
+        return;
+      }
+    }
 
     PDFImage.buildImage({
       xref: this.xref,
@@ -790,14 +826,14 @@ class PartialEvaluator {
           /* isOffscreenCanvasSupported = */ this.options
             .isOffscreenCanvasSupported
         );
+        imgData.dataLen = imgData.bitmap
+          ? imgData.width * imgData.height * 4
+          : imgData.data.length;
+        imgData.ref = imageRef;
 
-        if (cacheKey && imageRef && cacheGlobally) {
-          const length = imgData.bitmap
-            ? imgData.width * imgData.height * 4
-            : imgData.data.length;
-          this.globalImageCache.addByteSize(imageRef, length);
+        if (cacheGlobally) {
+          this.globalImageCache.addByteSize(imageRef, imgData.dataLen);
         }
-
         return this._sendImgData(objId, imgData, cacheGlobally);
       })
       .catch(reason => {
@@ -805,8 +841,6 @@ class PartialEvaluator {
 
         return this._sendImgData(objId, /* imgData = */ null, cacheGlobally);
       });
-
-    operatorList.addImageOps(OPS.paintImageXObject, args, optionalContent);
 
     if (cacheKey) {
       const cacheData = {
@@ -820,8 +854,6 @@ class PartialEvaluator {
         this._regionalImageCache.set(/* name = */ null, imageRef, cacheData);
 
         if (cacheGlobally) {
-          assert(!isInline, "Cannot cache an inline image globally.");
-
           this.globalImageCache.setData(imageRef, {
             objId,
             fn: OPS.paintImageXObject,
