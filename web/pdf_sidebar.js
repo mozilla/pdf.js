@@ -59,8 +59,6 @@ const UI_NOTIFICATION_CLASS = "pdfSidebarNotification";
  *   the attachments are placed.
  * @property {HTMLDivElement} layersView - The container in which
  *   the layers are placed.
- * @property {HTMLDivElement} outlineOptionsContainer - The container in which
- *   the outline view-specific option button(s) are placed.
  * @property {HTMLButtonElement} currentOutlineItemButton - The button used to
  *   find the current outline item.
  */
@@ -107,7 +105,6 @@ class PDFSidebar {
     this.attachmentsView = elements.attachmentsView;
     this.layersView = elements.layersView;
 
-    this._outlineOptionsContainer = elements.outlineOptionsContainer;
     this._currentOutlineItemButton = elements.currentOutlineItemButton;
 
     this.eventBus = eventBus;
@@ -225,12 +222,6 @@ class PDFSidebar {
       this.layersButton,
       view === SidebarView.LAYERS,
       this.layersView
-    );
-
-    // Finally, update view-specific CSS classes.
-    this._outlineOptionsContainer.classList.toggle(
-      "hidden",
-      view !== SidebarView.OUTLINE
     );
 
     if (forceOpen && !this.isOpen) {
