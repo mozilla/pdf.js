@@ -3811,14 +3811,36 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const loadingTask = getDocument(
         buildGetDocumentParams("issue11878.pdf", {
           isOffscreenCanvasSupported: false,
+          pdfBug: true,
         })
       );
       const pdfDoc = await loadingTask.promise;
-      let firstImgData = null;
+      let checkedCopyLocalImage = false,
+        firstImgData = null,
+        firstStatsOverall = null;
 
       for (let i = 1; i <= pdfDoc.numPages; i++) {
         const pdfPage = await pdfDoc.getPage(i);
-        const opList = await pdfPage.getOperatorList();
+        const viewport = pdfPage.getViewport({ scale: 1 });
+
+        const canvasAndCtx = CanvasFactory.create(
+          viewport.width,
+          viewport.height
+        );
+        const renderTask = pdfPage.render({
+          canvasContext: canvasAndCtx.context,
+          viewport,
+        });
+
+        await renderTask.promise;
+        const opList = renderTask.getOperatorList();
+        // The canvas is no longer necessary, since we only care about
+        // the image-data below.
+        CanvasFactory.destroy(canvasAndCtx);
+
+        const [statsOverall] = pdfPage.stats.times
+          .filter(time => time.name === "Overall")
+          .map(time => time.end - time.start);
 
         const { commonObjs, objs } = pdfPage;
         const imgIndex = opList.fnArray.indexOf(OPS.paintImageXObject);
@@ -3843,6 +3865,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         // Ensure that the actual image data is identical for all pages.
         if (i === 1) {
           firstImgData = objs.get(objId);
+          firstStatsOverall = statsOverall;
 
           expect(firstImgData.width).toEqual(EXPECTED_WIDTH);
           expect(firstImgData.height).toEqual(EXPECTED_HEIGHT);
@@ -3853,6 +3876,8 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         } else {
           const objsPool = i >= NUM_PAGES_THRESHOLD ? commonObjs : objs;
           const currentImgData = objsPool.get(objId);
+
+          expect(currentImgData).not.toBe(firstImgData);
 
           expect(currentImgData.width).toEqual(firstImgData.width);
           expect(currentImgData.height).toEqual(firstImgData.height);
@@ -3866,11 +3891,20 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
               return value === firstImgData.data[index];
             })
           ).toEqual(true);
+
+          if (i === NUM_PAGES_THRESHOLD) {
+            checkedCopyLocalImage = true;
+            // Ensure that the image was copied in the main-thread, rather
+            // than being re-parsed in the worker-thread (which is slower).
+            expect(statsOverall).toBeLessThan(firstStatsOverall / 5);
+          }
         }
       }
+      expect(checkedCopyLocalImage).toBeTruthy();
 
       await loadingTask.destroy();
       firstImgData = null;
+      firstStatsOverall = null;
     });
 
     it("render for printing, with `printAnnotationStorage` set", async function () {
