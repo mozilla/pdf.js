@@ -301,6 +301,8 @@ pdfjs-editor-ink-button-label = ხაზვა
 pdfjs-editor-stamp-button =
     .title = სურათების დართვა ან ჩასწორება
 pdfjs-editor-stamp-button-label = სურათების დართვა ან ჩასწორება
+pdfjs-editor-remove-button =
+    .title = მოცილება
 # Editor Parameters
 pdfjs-editor-free-text-color-input = ფერი
 pdfjs-editor-free-text-size-input = ზომა

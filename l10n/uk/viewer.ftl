@@ -303,6 +303,22 @@ pdfjs-editor-ink-button-label = Малювати
 pdfjs-editor-stamp-button =
     .title = Додати чи редагувати зображення
 pdfjs-editor-stamp-button-label = Додати чи редагувати зображення
+pdfjs-editor-remove-button =
+    .title = Вилучити
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = Вилучити малюнок
+pdfjs-editor-remove-freetext-button =
+    .title = Вилучити текст
+pdfjs-editor-remove-stamp-button =
+    .title = Вилучити зображення
+pdfjs-editor-remove-highlight-button =
+    .title = Вилучити підсвічування
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Колір
 pdfjs-editor-free-text-size-input = Розмір
@@ -349,3 +365,22 @@ pdfjs-editor-resizer-label-bottom-right = Нижній правий кут — �
 pdfjs-editor-resizer-label-bottom-middle = Внизу посередині — зміна розміру
 pdfjs-editor-resizer-label-bottom-left = Нижній лівий кут — зміна розміру
 pdfjs-editor-resizer-label-middle-left = Ліворуч посередині — зміна розміру
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = Колір підсвічування
+pdfjs-editor-colorpicker-button =
+    .title = Змінити колір
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = Вибір кольору
+pdfjs-editor-colorpicker-yellow =
+    .title = Жовтий
+pdfjs-editor-colorpicker-green =
+    .title = Зелений
+pdfjs-editor-colorpicker-blue =
+    .title = Блакитний
+pdfjs-editor-colorpicker-pink =
+    .title = Рожевий
+pdfjs-editor-colorpicker-red =
+    .title = Червоний

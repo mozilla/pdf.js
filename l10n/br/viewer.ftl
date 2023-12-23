@@ -39,6 +39,15 @@ pdfjs-open-file-button-label = Digeriñ ur restr
 pdfjs-print-button =
     .title = Moullañ
 pdfjs-print-button-label = Moullañ
+pdfjs-save-button =
+    .title = Enrollañ
+pdfjs-save-button-label = Enrollañ
+# Used in Firefox for Android as a tooltip for the download button (“download” is a verb).
+pdfjs-download-button =
+    .title = Pellgargañ
+# Used in Firefox for Android as a label for the download button (“download” is a verb).
+# Length of the translation matters since we are in a mobile context, with limited screen estate.
+pdfjs-download-button-label = Pellgargañ
 
 ##  Secondary toolbar and context menu
 
@@ -252,10 +261,31 @@ pdfjs-web-fonts-disabled = Diweredekaet eo an nodrezhoù web: n'haller ket arver
 
 ## Editing
 
+pdfjs-editor-free-text-button =
+    .title = Testenn
+pdfjs-editor-free-text-button-label = Testenn
+pdfjs-editor-ink-button =
+    .title = Tresañ
+pdfjs-editor-ink-button-label = Tresañ
+
+## Remove button for the various kind of editor.
+
+
+##
+
+# Editor Parameters
+pdfjs-editor-free-text-color-input = Liv
+pdfjs-editor-free-text-size-input = Ment
+pdfjs-editor-ink-color-input = Liv
 
 ## Alt-text dialog
 
+pdfjs-editor-alt-text-cancel-button = Nullañ
+pdfjs-editor-alt-text-save-button = Enrollañ
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
+
+
+## Color picker
 
