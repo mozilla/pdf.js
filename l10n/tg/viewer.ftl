@@ -301,6 +301,22 @@ pdfjs-editor-ink-button-label = Расмкашӣ
 pdfjs-editor-stamp-button =
     .title = Илова ё таҳрир кардани тасвирҳо
 pdfjs-editor-stamp-button-label = Илова ё таҳрир кардани тасвирҳо
+pdfjs-editor-remove-button =
+    .title = Тоза кардан
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = Тоза кардани нақша
+pdfjs-editor-remove-freetext-button =
+    .title = Тоза кардани матн
+pdfjs-editor-remove-stamp-button =
+    .title = Тоза кардани тасвир
+pdfjs-editor-remove-highlight-button =
+    .title = Тоза кардани ҷудокунӣ
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Ранг
 pdfjs-editor-free-text-size-input = Андоза
@@ -347,3 +363,22 @@ pdfjs-editor-resizer-label-bottom-right = Кунҷи рости поён — т�
 pdfjs-editor-resizer-label-bottom-middle = Канори миёнаи поён — тағйир додани андоза
 pdfjs-editor-resizer-label-bottom-left = Кунҷи чапи поён — тағйир додани андоза
 pdfjs-editor-resizer-label-middle-left = Канори миёнаи чап — тағйир додани андоза
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = Ранги ҷудокунӣ
+pdfjs-editor-colorpicker-button =
+    .title = Иваз кардани ранг
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = Интихоби ранг
+pdfjs-editor-colorpicker-yellow =
+    .title = Зард
+pdfjs-editor-colorpicker-green =
+    .title = Сабз
+pdfjs-editor-colorpicker-blue =
+    .title = Кабуд
+pdfjs-editor-colorpicker-pink =
+    .title = Гулобӣ
+pdfjs-editor-colorpicker-red =
+    .title = Сурх

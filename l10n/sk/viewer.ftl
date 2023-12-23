@@ -307,6 +307,20 @@ pdfjs-editor-stamp-button =
 pdfjs-editor-stamp-button-label = Pridať alebo upraviť obrázky
 pdfjs-editor-remove-button =
     .title = Odstrániť
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = Odstrániť kresbu
+pdfjs-editor-remove-freetext-button =
+    .title = Odstrániť text
+pdfjs-editor-remove-stamp-button =
+    .title = Odstrániť obrázok
+pdfjs-editor-remove-highlight-button =
+    .title = Odstrániť zvýraznenie
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Farba
 pdfjs-editor-free-text-size-input = Veľkosť
@@ -353,3 +367,22 @@ pdfjs-editor-resizer-label-bottom-right = Pravý dolný roh – zmena veľkosti
 pdfjs-editor-resizer-label-bottom-middle = Stred dole – zmena veľkosti
 pdfjs-editor-resizer-label-bottom-left = Ľavý dolný roh – zmena veľkosti
 pdfjs-editor-resizer-label-middle-left = Vľavo uprostred – zmena veľkosti
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = Farba zvýraznenia
+pdfjs-editor-colorpicker-button =
+    .title = Zmeniť farbu
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = Výber farieb
+pdfjs-editor-colorpicker-yellow =
+    .title = Žltá
+pdfjs-editor-colorpicker-green =
+    .title = Zelená
+pdfjs-editor-colorpicker-blue =
+    .title = Modrá
+pdfjs-editor-colorpicker-pink =
+    .title = Ružová
+pdfjs-editor-colorpicker-red =
+    .title = Červená

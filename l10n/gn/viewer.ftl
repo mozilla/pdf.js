@@ -303,6 +303,20 @@ pdfjs-editor-stamp-button =
 pdfjs-editor-stamp-button-label = Embojuaju térã embosako’i ta’ãnga
 pdfjs-editor-remove-button =
     .title = Mboguete
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = Emboguete ta’ãnga
+pdfjs-editor-remove-freetext-button =
+    .title = Emboguete moñe’ẽrã
+pdfjs-editor-remove-stamp-button =
+    .title = Emboguete ta’ãnga
+pdfjs-editor-remove-highlight-button =
+    .title = Eipe’a jehechaveha
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Sa’y
 pdfjs-editor-free-text-size-input = Tuichakue
@@ -349,3 +363,22 @@ pdfjs-editor-resizer-label-bottom-right = Yvy gotyo akatúape — emoambue tuich
 pdfjs-editor-resizer-label-bottom-middle = Yvy gotyo mbytépe — emoambue tuichakue
 pdfjs-editor-resizer-label-bottom-left = Iguýpe asu gotyo — emoambue tuichakue
 pdfjs-editor-resizer-label-middle-left = Mbyte asu gotyo — emoambue tuichakue
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = Jehechaveha sa’y
+pdfjs-editor-colorpicker-button =
+    .title = Emoambue sa’y
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = Sa’y poravopyrã
+pdfjs-editor-colorpicker-yellow =
+    .title = Sa’yju
+pdfjs-editor-colorpicker-green =
+    .title = Hovyũ
+pdfjs-editor-colorpicker-blue =
+    .title = Hovy
+pdfjs-editor-colorpicker-pink =
+    .title = Pytãngy
+pdfjs-editor-colorpicker-red =
+    .title = Pyha

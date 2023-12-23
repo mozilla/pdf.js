@@ -303,6 +303,20 @@ pdfjs-editor-stamp-button =
 pdfjs-editor-stamp-button-label = Προσθήκη ή επεξεργασία εικόνων
 pdfjs-editor-remove-button =
     .title = Αφαίρεση
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = Αφαίρεση σχεδίου
+pdfjs-editor-remove-freetext-button =
+    .title = Αφαίρεση κειμένου
+pdfjs-editor-remove-stamp-button =
+    .title = Αφαίρεση εικόνας
+pdfjs-editor-remove-highlight-button =
+    .title = Αφαίρεση επισήμανσης
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Χρώμα
 pdfjs-editor-free-text-size-input = Μέγεθος
@@ -349,3 +363,22 @@ pdfjs-editor-resizer-label-bottom-right = Κάτω δεξιά γωνία — α�
 pdfjs-editor-resizer-label-bottom-middle = Μέσο κάτω πλευράς — αλλαγή μεγέθους
 pdfjs-editor-resizer-label-bottom-left = Κάτω αριστερή γωνία — αλλαγή μεγέθους
 pdfjs-editor-resizer-label-middle-left = Μέσο αριστερής πλευράς — αλλαγή μεγέθους
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = Χρώμα επισήμανσης
+pdfjs-editor-colorpicker-button =
+    .title = Αλλαγή χρώματος
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = Επιλογές χρωμάτων
+pdfjs-editor-colorpicker-yellow =
+    .title = Κίτρινο
+pdfjs-editor-colorpicker-green =
+    .title = Πράσινο
+pdfjs-editor-colorpicker-blue =
+    .title = Μπλε
+pdfjs-editor-colorpicker-pink =
+    .title = Ροζ
+pdfjs-editor-colorpicker-red =
+    .title = Κόκκινο
