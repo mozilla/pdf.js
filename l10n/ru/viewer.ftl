@@ -305,6 +305,20 @@ pdfjs-editor-stamp-button =
 pdfjs-editor-stamp-button-label = Добавить или изменить изображения
 pdfjs-editor-remove-button =
     .title = Удалить
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = Удалить рисунок
+pdfjs-editor-remove-freetext-button =
+    .title = Удалить текст
+pdfjs-editor-remove-stamp-button =
+    .title = Удалить изображение
+pdfjs-editor-remove-highlight-button =
+    .title = Удалить выделение
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Цвет
 pdfjs-editor-free-text-size-input = Размер
@@ -351,3 +365,22 @@ pdfjs-editor-resizer-label-bottom-right = Нижний правый угол —
 pdfjs-editor-resizer-label-bottom-middle = Внизу посередине — изменить размер
 pdfjs-editor-resizer-label-bottom-left = Нижний левый угол — изменить размер
 pdfjs-editor-resizer-label-middle-left = В центре слева — изменить размер
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = Цвет выделения
+pdfjs-editor-colorpicker-button =
+    .title = Изменить цвет
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = Выбор цвета
+pdfjs-editor-colorpicker-yellow =
+    .title = Жёлтый
+pdfjs-editor-colorpicker-green =
+    .title = Зелёный
+pdfjs-editor-colorpicker-blue =
+    .title = Синий
+pdfjs-editor-colorpicker-pink =
+    .title = Розовый
+pdfjs-editor-colorpicker-red =
+    .title = Красный
