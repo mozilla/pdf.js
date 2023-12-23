@@ -967,6 +967,7 @@ async function startBrowser({ browserName, headless, startUrl }) {
       "layout.css.round.enabled": true,
       // This allow to copy some data in the clipboard.
       "dom.events.asyncClipboard.clipboardItem": true,
+      "media.sanity-test.disabled": true,
     };
   }
 
