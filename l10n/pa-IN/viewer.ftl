@@ -301,6 +301,20 @@ pdfjs-editor-ink-button-label = ਵਾਹੋ
 pdfjs-editor-stamp-button =
     .title = ਚਿੱਤਰ ਜੋੜੋ ਜਾਂ ਸੋਧੋ
 pdfjs-editor-stamp-button-label = ਚਿੱਤਰ ਜੋੜੋ ਜਾਂ ਸੋਧੋ
+pdfjs-editor-remove-button =
+    .title = ਹਟਾਓ
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = ਡਰਾਇੰਗ ਨੂੰ ਹਟਾਓ
+pdfjs-editor-remove-freetext-button =
+    .title = ਲਿਖਤ ਨੂੰ ਹਟਾਓ
+pdfjs-editor-remove-stamp-button =
+    .title = ਚਿੱਤਰ ਨੂੰ ਹਟਾਓ
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = ਰੰਗ
 pdfjs-editor-free-text-size-input = ਆਕਾਰ

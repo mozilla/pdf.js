@@ -303,6 +303,22 @@ pdfjs-editor-ink-button-label = Rysunek
 pdfjs-editor-stamp-button =
     .title = Dodaj lub edytuj obrazy
 pdfjs-editor-stamp-button-label = Dodaj lub edytuj obrazy
+pdfjs-editor-remove-button =
+    .title = Usuń
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = Usuń rysunek
+pdfjs-editor-remove-freetext-button =
+    .title = Usuń tekst
+pdfjs-editor-remove-stamp-button =
+    .title = Usuń obraz
+pdfjs-editor-remove-highlight-button =
+    .title = Usuń wyróżnienie
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Kolor
 pdfjs-editor-free-text-size-input = Rozmiar
@@ -349,3 +365,22 @@ pdfjs-editor-resizer-label-bottom-right = Prawy dolny róg — zmień rozmiar
 pdfjs-editor-resizer-label-bottom-middle = Dolny środkowy — zmień rozmiar
 pdfjs-editor-resizer-label-bottom-left = Lewy dolny róg — zmień rozmiar
 pdfjs-editor-resizer-label-middle-left = Lewy środkowy — zmień rozmiar
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = Kolor wyróżnienia
+pdfjs-editor-colorpicker-button =
+    .title = Zmień kolor
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = Wybór kolorów
+pdfjs-editor-colorpicker-yellow =
+    .title = Żółty
+pdfjs-editor-colorpicker-green =
+    .title = Zielony
+pdfjs-editor-colorpicker-blue =
+    .title = Niebieski
+pdfjs-editor-colorpicker-pink =
+    .title = Różowy
+pdfjs-editor-colorpicker-red =
+    .title = Czerwony

@@ -234,6 +234,13 @@ pdfjs-find-match-count =
         [one] Timeḍriwt { $current } ɣef { $total }
        *[other] Timeḍriwin { $current } ɣef { $total }
     }
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit =
+    { $limit ->
+        [one] Ugar n { $limit } umṣada
+       *[other] Ugar n { $limit } yimṣadayen
+    }
 pdfjs-find-not-found = Ulac tawinest
 
 ## Predefined zoom values
@@ -315,10 +322,15 @@ pdfjs-ink-canvas =
 
 ## Alt-text dialog
 
+# Alternative text (alt text) helps when people can't see the image.
+pdfjs-editor-alt-text-button-label = Aḍris amaskal
+pdfjs-editor-alt-text-edit-button-label = Ẓreg aḍris amaskal
 pdfjs-editor-alt-text-dialog-label = Fren taxtirt
 pdfjs-editor-alt-text-add-description-label = Rnu aglam
+pdfjs-editor-alt-text-mark-decorative-label = Creḍ d adlag
 pdfjs-editor-alt-text-cancel-button = Sefsex
 pdfjs-editor-alt-text-save-button = Sekles
+pdfjs-editor-alt-text-decorative-tooltip = Yettwacreḍ d adlag
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.

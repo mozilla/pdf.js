@@ -301,6 +301,22 @@ pdfjs-editor-ink-button-label = Rajzolás
 pdfjs-editor-stamp-button =
     .title = Képek hozzáadása vagy szerkesztése
 pdfjs-editor-stamp-button-label = Képek hozzáadása vagy szerkesztése
+pdfjs-editor-remove-button =
+    .title = Eltávolítás
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = Rajz eltávolítása
+pdfjs-editor-remove-freetext-button =
+    .title = Szöveg eltávolítása
+pdfjs-editor-remove-stamp-button =
+    .title = Kép eltávolítása
+pdfjs-editor-remove-highlight-button =
+    .title = Kiemelés eltávolítása
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Szín
 pdfjs-editor-free-text-size-input = Méret
@@ -347,3 +363,22 @@ pdfjs-editor-resizer-label-bottom-right = Jobb alsó sarok – átméretezés
 pdfjs-editor-resizer-label-bottom-middle = Alul középen – átméretezés
 pdfjs-editor-resizer-label-bottom-left = Bal alsó sarok – átméretezés
 pdfjs-editor-resizer-label-middle-left = Balra középen – átméretezés
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = Kiemelés színe
+pdfjs-editor-colorpicker-button =
+    .title = Szín módosítása
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = Színválasztások
+pdfjs-editor-colorpicker-yellow =
+    .title = Sárga
+pdfjs-editor-colorpicker-green =
+    .title = Zöld
+pdfjs-editor-colorpicker-blue =
+    .title = Kék
+pdfjs-editor-colorpicker-pink =
+    .title = Rózsaszín
+pdfjs-editor-colorpicker-red =
+    .title = Vörös

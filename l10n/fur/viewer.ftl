@@ -301,6 +301,20 @@ pdfjs-editor-ink-button-label = Dissen
 pdfjs-editor-stamp-button =
     .title = Zonte o modifiche imagjins
 pdfjs-editor-stamp-button-label = Zonte o modifiche imagjins
+pdfjs-editor-remove-button =
+    .title = Gjave
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = Gjave dissen
+pdfjs-editor-remove-freetext-button =
+    .title = Gjave test
+pdfjs-editor-remove-stamp-button =
+    .title = Gjave imagjin
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Colôr
 pdfjs-editor-free-text-size-input = Dimension

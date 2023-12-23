@@ -303,6 +303,20 @@ pdfjs-editor-stamp-button =
 pdfjs-editor-stamp-button-label = Resim ekle veya düzenle
 pdfjs-editor-remove-button =
     .title = Kaldır
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = Çizimi kaldır
+pdfjs-editor-remove-freetext-button =
+    .title = Metni kaldır
+pdfjs-editor-remove-stamp-button =
+    .title = Resmi kaldır
+pdfjs-editor-remove-highlight-button =
+    .title = Vurgulamayı kaldır
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Renk
 pdfjs-editor-free-text-size-input = Boyut
@@ -349,3 +363,22 @@ pdfjs-editor-resizer-label-bottom-right = Sağ alt köşe — yeniden boyutland�
 pdfjs-editor-resizer-label-bottom-middle = Alt orta — yeniden boyutlandır
 pdfjs-editor-resizer-label-bottom-left = Sol alt köşe — yeniden boyutlandır
 pdfjs-editor-resizer-label-middle-left = Orta sol — yeniden boyutlandır
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = Vurgu rengi
+pdfjs-editor-colorpicker-button =
+    .title = Rengi değiştir
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = Renk seçenekleri
+pdfjs-editor-colorpicker-yellow =
+    .title = Sarı
+pdfjs-editor-colorpicker-green =
+    .title = Yeşil
+pdfjs-editor-colorpicker-blue =
+    .title = Mavi
+pdfjs-editor-colorpicker-pink =
+    .title = Pembe
+pdfjs-editor-colorpicker-red =
+    .title = Kırmızı

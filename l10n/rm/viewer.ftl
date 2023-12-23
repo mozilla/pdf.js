@@ -301,6 +301,22 @@ pdfjs-editor-ink-button-label = Dissegnar
 pdfjs-editor-stamp-button =
     .title = Agiuntar u modifitgar maletgs
 pdfjs-editor-stamp-button-label = Agiuntar u modifitgar maletgs
+pdfjs-editor-remove-button =
+    .title = Allontanar
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = Allontanar il dissegn
+pdfjs-editor-remove-freetext-button =
+    .title = Allontanar il text
+pdfjs-editor-remove-stamp-button =
+    .title = Allontanar la grafica
+pdfjs-editor-remove-highlight-button =
+    .title = Allontanar l'emfasa
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Colur
 pdfjs-editor-free-text-size-input = Grondezza
@@ -347,3 +363,22 @@ pdfjs-editor-resizer-label-bottom-right = Chantun sut a dretga — redimensiunar
 pdfjs-editor-resizer-label-bottom-middle = Sutvart amez — redimensiunar
 pdfjs-editor-resizer-label-bottom-left = Chantun sut a sanestra — redimensiunar
 pdfjs-editor-resizer-label-middle-left = Vart sanestra amez — redimensiunar
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = Colur per l'emfasa
+pdfjs-editor-colorpicker-button =
+    .title = Midar la colur
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = Colurs disponiblas
+pdfjs-editor-colorpicker-yellow =
+    .title = Mellen
+pdfjs-editor-colorpicker-green =
+    .title = Verd
+pdfjs-editor-colorpicker-blue =
+    .title = Blau
+pdfjs-editor-colorpicker-pink =
+    .title = Rosa
+pdfjs-editor-colorpicker-red =
+    .title = Cotschen
