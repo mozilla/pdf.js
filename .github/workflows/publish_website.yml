@@ -69,4 +69,4 @@ jobs:
 
     steps:
       - name: Deploy the website
-        uses: actions/deploy-pages@v3
+        uses: actions/deploy-pages@v4
