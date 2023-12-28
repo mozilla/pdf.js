@@ -20,18 +20,35 @@
  * JavaScript code in this page
  */
 
+/******/ // The require scope
+/******/ var __webpack_require__ = {};
+/******/ 
+/************************************************************************/
+/******/ /* webpack/runtime/define property getters */
+/******/ (() => {
+/******/ 	// define getter functions for harmony exports
+/******/ 	__webpack_require__.d = (exports, definition) => {
+/******/ 		for(var key in definition) {
+/******/ 			if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 				Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 			}
+/******/ 		}
+/******/ 	};
+/******/ })();
+/******/ 
+/******/ /* webpack/runtime/hasOwnProperty shorthand */
+/******/ (() => {
+/******/ 	__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ })();
+/******/ 
+/************************************************************************/
 var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it uses a non-standard name for the exports (exports).
-(() => {
-var exports = __webpack_exports__;
-
-
-Object.defineProperty(exports, "__esModule", ({
-  value: true
-}));
-exports.compatibilityParams = exports.OptionKind = exports.AppOptions = void 0;
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   AppOptions: () => (/* binding */ AppOptions),
+/* harmony export */   OptionKind: () => (/* binding */ OptionKind),
+/* harmony export */   compatibilityParams: () => (/* binding */ compatibilityParams)
+/* harmony export */ });
 const compatibilityParams = Object.create(null);
-exports.compatibilityParams = compatibilityParams;
 {
   if (typeof navigator === "undefined") {
     globalThis.navigator = Object.create(null);
@@ -48,13 +65,41 @@ exports.compatibilityParams = compatibilityParams;
   })();
 }
 const OptionKind = {
+  BROWSER: 0x01,
   VIEWER: 0x02,
   API: 0x04,
   WORKER: 0x08,
   PREFERENCE: 0x80
 };
-exports.OptionKind = OptionKind;
 const defaultOptions = {
+  canvasMaxAreaInBytes: {
+    value: -1,
+    kind: OptionKind.BROWSER + OptionKind.API
+  },
+  isInAutomation: {
+    value: false,
+    kind: OptionKind.BROWSER
+  },
+  supportsDocumentFonts: {
+    value: true,
+    kind: OptionKind.BROWSER
+  },
+  supportsIntegratedFind: {
+    value: false,
+    kind: OptionKind.BROWSER
+  },
+  supportsMouseWheelZoomCtrlKey: {
+    value: true,
+    kind: OptionKind.BROWSER
+  },
+  supportsMouseWheelZoomMetaKey: {
+    value: true,
+    kind: OptionKind.BROWSER
+  },
+  supportsPinchToZoom: {
+    value: true,
+    kind: OptionKind.BROWSER
+  },
   annotationEditorMode: {
     value: 0,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
@@ -83,6 +128,10 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
+  enableHighlightEditor: {
+    value: false,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE
+  },
   enablePermissions: {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
@@ -95,16 +144,16 @@ const defaultOptions = {
     value: true,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
-  enableStampEditor: {
-    value: true,
-    kind: OptionKind.VIEWER + OptionKind.PREFERENCE
-  },
   externalLinkRel: {
     value: "noopener noreferrer nofollow",
     kind: OptionKind.VIEWER
   },
   externalLinkTarget: {
     value: 0,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE
+  },
+  highlightEditorColors: {
+    value: "yellow=#FFFF98,green=#53FFBC,blue=#80EBFF,pink=#FFCBE6,red=#FF4F5F",
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
   historyUpdateUrl: {
@@ -157,10 +206,6 @@ const defaultOptions = {
   },
   textLayerMode: {
     value: 1,
-    kind: OptionKind.VIEWER + OptionKind.PREFERENCE
-  },
-  viewerCssTheme: {
-    value: 0,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
   viewOnLoad: {
@@ -232,7 +277,7 @@ const defaultOptions = {
     kind: OptionKind.WORKER
   },
   workerSrc: {
-    value: "../build/pdf.worker.js",
+    value: "../build/pdf.worker.mjs",
     kind: OptionKind.WORKER
   }
 };
@@ -241,16 +286,22 @@ const defaultOptions = {
     value: "compressed.tracemonkey-pldi-09.pdf",
     kind: OptionKind.VIEWER
   };
+  defaultOptions.sandboxBundleSrc = {
+    value: "../build/pdf.sandbox.mjs",
+    kind: OptionKind.VIEWER
+  };
+  defaultOptions.viewerCssTheme = {
+    value: 0,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE
+  };
+}
+{
   defaultOptions.disablePreferences = {
     value: false,
     kind: OptionKind.VIEWER
   };
   defaultOptions.locale = {
     value: navigator.language || "en-US",
-    kind: OptionKind.VIEWER
-  };
-  defaultOptions.sandboxBundleSrc = {
-    value: "../build/pdf.sandbox.js",
     kind: OptionKind.VIEWER
   };
 }
@@ -275,10 +326,13 @@ class AppOptions {
     for (const name in defaultOptions) {
       const defaultOption = defaultOptions[name];
       if (kind) {
-        if ((kind & defaultOption.kind) === 0) {
+        if (!(kind & defaultOption.kind)) {
           continue;
         }
         if (kind === OptionKind.PREFERENCE) {
+          if (defaultOption.kind & OptionKind.BROWSER) {
+            throw new Error(`Invalid kind for preference: ${name}`);
+          }
           const value = defaultOption.value,
             valueType = typeof value;
           if (valueType === "boolean" || valueType === "string" || valueType === "number" && Number.isInteger(value)) {
@@ -296,7 +350,15 @@ class AppOptions {
   static set(name, value) {
     userOptions[name] = value;
   }
-  static setAll(options) {
+  static setAll(options, init = false) {
+    if (init) {
+      if (this.get("disablePreferences")) {
+        return;
+      }
+      if (Object.keys(userOptions).length) {
+        console.warn("setAll: The Preferences may override manually set AppOptions; " + 'please use the "disablePreferences"-option in order to prevent that.');
+      }
+    }
     for (const name in options) {
       userOptions[name] = options[name];
     }
@@ -305,16 +367,8 @@ class AppOptions {
     delete userOptions[name];
   }
 }
-exports.AppOptions = AppOptions;
-{
-  AppOptions._hasUserOptions = function () {
-    return Object.keys(userOptions).length > 0;
-  };
-}
-})();
 
 var __webpack_exports__AppOptions = __webpack_exports__.AppOptions;
 var __webpack_exports__OptionKind = __webpack_exports__.OptionKind;
-var __webpack_exports___esModule = __webpack_exports__.__esModule;
 var __webpack_exports__compatibilityParams = __webpack_exports__.compatibilityParams;
-export { __webpack_exports__AppOptions as AppOptions, __webpack_exports__OptionKind as OptionKind, __webpack_exports___esModule as __esModule, __webpack_exports__compatibilityParams as compatibilityParams };
+export { __webpack_exports__AppOptions as AppOptions, __webpack_exports__OptionKind as OptionKind, __webpack_exports__compatibilityParams as compatibilityParams };
