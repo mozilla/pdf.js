@@ -15,6 +15,7 @@
 @import url(text_layer_builder.css);
 @import url(annotation_layer_builder.css);
 @import url(xfa_layer_builder.css);
+/* Ignored in GECKOVIEW builds: */
 @import url(annotation_editor_layer_builder.css);
 
 :root {
@@ -23,7 +24,6 @@
   --page-margin: 1px auto -8px;
   --page-border: 9px solid transparent;
   --spreadHorizontalWrapped-margin-LR: -3.5px;
-  --scale-factor: 1;
   --loading-icon-delay: 400ms;
 }
 
@@ -46,7 +46,20 @@
   transform: rotate(270deg) translateX(-100%);
 }
 
+#hiddenCopyElement {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  display: none;
+}
+
 .pdfViewer {
+  /* Define this variable here and not in :root to avoid to reflow all the UI
+     when scaling (see #15929). */
+  --scale-factor: 1;
+
   padding-bottom: var(--pdfViewer-padding-bottom);
 }
 
@@ -66,7 +79,7 @@
   overflow: visible;
   border: var(--page-border);
   background-clip: content-box;
-  background-color: rgba(255, 255, 255, 1);
+  background-color: rgb(255 255 255);
 }
 
 .pdfViewer .dummyPage {
@@ -75,11 +88,18 @@
   height: var(--viewer-container-height);
 }
 
+.pdfViewer.noUserSelect {
+  user-select: none;
+}
+
+/*#if GENERIC*/
 .pdfViewer.removePageBorders .page {
   margin: 0 auto 10px;
   border: none;
 }
+/*#endif*/
 
+/*#if COMPONENTS*/
 .pdfViewer.singlePageView {
   display: inline-block;
 }
@@ -88,12 +108,11 @@
   margin: 0;
   border: none;
 }
+/*#endif*/
 
-.pdfViewer.scrollHorizontal,
-.pdfViewer.scrollWrapped,
+.pdfViewer:is(.scrollHorizontal, .scrollWrapped),
 .spread {
-  margin-left: 3.5px;
-  margin-right: 3.5px;
+  margin-inline: 3.5px;
   text-align: center;
 }
 
@@ -102,40 +121,38 @@
   white-space: nowrap;
 }
 
+/*#if GENERIC*/
 .pdfViewer.removePageBorders,
-.pdfViewer.scrollHorizontal .spread,
-.pdfViewer.scrollWrapped .spread {
-  margin-left: 0;
-  margin-right: 0;
+/*#endif*/
+.pdfViewer:is(.scrollHorizontal, .scrollWrapped) .spread {
+  margin-inline: 0;
 }
 
-.spread .page,
-.spread .dummyPage,
-.pdfViewer.scrollHorizontal .page,
-.pdfViewer.scrollWrapped .page,
-.pdfViewer.scrollHorizontal .spread,
-.pdfViewer.scrollWrapped .spread {
+.spread :is(.page, .dummyPage),
+.pdfViewer:is(.scrollHorizontal, .scrollWrapped) :is(.page, .spread) {
   display: inline-block;
   vertical-align: middle;
 }
 
 .spread .page,
-.pdfViewer.scrollHorizontal .page,
-.pdfViewer.scrollWrapped .page {
-  margin-left: var(--spreadHorizontalWrapped-margin-LR);
-  margin-right: var(--spreadHorizontalWrapped-margin-LR);
+.pdfViewer:is(.scrollHorizontal, .scrollWrapped) .page {
+  margin-inline: var(--spreadHorizontalWrapped-margin-LR);
 }
 
+/*#if GENERIC*/
 .pdfViewer.removePageBorders .spread .page,
-.pdfViewer.removePageBorders.scrollHorizontal .page,
-.pdfViewer.removePageBorders.scrollWrapped .page {
-  margin-left: 5px;
-  margin-right: 5px;
+.pdfViewer.removePageBorders:is(.scrollHorizontal, .scrollWrapped) .page {
+  margin-inline: 5px;
 }
+/*#endif*/
 
 .pdfViewer .page canvas {
   margin: 0;
   display: block;
+}
+
+.pdfViewer .page canvas .structTree {
+  contain: strict;
 }
 
 .pdfViewer .page canvas[hidden] {
@@ -147,29 +164,30 @@
   height: 100%;
 }
 
-.pdfViewer .page .loadingIcon {
+.pdfViewer .page.loadingIcon::after {
   position: absolute;
-  display: block;
-  left: 0;
   top: 0;
-  right: 0;
-  bottom: 0;
+  left: 0;
+  content: "";
+  width: 100%;
+  height: 100%;
   background: url("images/loading-icon.gif") center no-repeat;
-  visibility: visible;
+  display: none;
   /* Using a delay with background-image doesn't work,
-     consequently we use the visibility. */
-  transition-property: visibility;
+     consequently we use the display. */
+  transition-property: display;
   transition-delay: var(--loading-icon-delay);
   z-index: 5;
-}
-.pdfViewer .page .loadingIcon.notVisible {
-  transition-property: none;
-  visibility: hidden;
+  contain: strict;
 }
 
-.pdfViewer.enablePermissions .textLayer span {
-  user-select: none !important;
-  cursor: not-allowed;
+.pdfViewer .page.loading::after {
+  display: block;
+}
+
+.pdfViewer .page:not(.loading)::after {
+  transition-property: none;
+  display: none;
 }
 
 .pdfPresentationMode .pdfViewer {

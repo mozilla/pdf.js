@@ -112,4 +112,46 @@ function getCharacterType(charCode) {
   return CharacterType.ALPHA_LETTER;
 }
 
-export { CharacterType, getCharacterType };
+let NormalizeWithNFKC;
+function getNormalizeWithNFKC() {
+  /* eslint-disable no-irregular-whitespace */
+  NormalizeWithNFKC ||= ` ¨ª¯²-µ¸-º¼-¾Ĳ-ĳĿ-ŀŉſǄ-ǌǱ-ǳʰ-ʸ˘-˝ˠ-ˤʹͺ;΄-΅·ϐ-ϖϰ-ϲϴ-ϵϹևٵ-ٸक़-य़ড়-ঢ়য়ਲ਼ਸ਼ਖ਼-ਜ਼ਫ਼ଡ଼-ଢ଼ำຳໜ-ໝ༌གྷཌྷདྷབྷཛྷཀྵჼᴬ-ᴮᴰ-ᴺᴼ-ᵍᵏ-ᵪᵸᶛ-ᶿẚ-ẛάέήίόύώΆ᾽-῁ΈΉ῍-῏ΐΊ῝-῟ΰΎ῭-`ΌΏ´-῾ - ‑‗․-… ″-‴‶-‷‼‾⁇-⁉⁗ ⁰-ⁱ⁴-₎ₐ-ₜ₨℀-℃℅-ℇ℉-ℓℕ-№ℙ-ℝ℠-™ℤΩℨK-ℭℯ-ℱℳ-ℹ℻-⅀ⅅ-ⅉ⅐-ⅿ↉∬-∭∯-∰〈-〉①-⓪⨌⩴-⩶⫝̸ⱼ-ⱽⵯ⺟⻳⼀-⿕　〶〸-〺゛-゜ゟヿㄱ-ㆎ㆒-㆟㈀-㈞㈠-㉇㉐-㉾㊀-㏿ꚜ-ꚝꝰꟲ-ꟴꟸ-ꟹꭜ-ꭟꭩ豈-嗀塚晴凞-羽蘒諸逸-都飯-舘並-龎ﬀ-ﬆﬓ-ﬗיִײַ-זּטּ-לּמּנּ-סּףּ-פּצּ-ﮱﯓ-ﴽﵐ-ﶏﶒ-ﷇﷰ-﷼︐-︙︰-﹄﹇-﹒﹔-﹦﹨-﹫ﹰ-ﹲﹴﹶ-ﻼ！-ﾾￂ-ￇￊ-ￏￒ-ￗￚ-ￜ￠-￦`;
+
+  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+    const ranges = [];
+    const range = [];
+    const diacriticsRegex = /^\p{M}$/u;
+    // Some chars must be replaced by their NFKC counterpart during a search.
+    for (let i = 0; i < 65536; i++) {
+      const c = String.fromCharCode(i);
+      if (c.normalize("NFKC") !== c && !diacriticsRegex.test(c)) {
+        if (range.length !== 2) {
+          range[0] = range[1] = i;
+          continue;
+        }
+        if (range[1] + 1 !== i) {
+          if (range[0] === range[1]) {
+            ranges.push(String.fromCharCode(range[0]));
+          } else {
+            ranges.push(
+              `${String.fromCharCode(range[0])}-${String.fromCharCode(
+                range[1]
+              )}`
+            );
+          }
+          range[0] = range[1] = i;
+        } else {
+          range[1] = i;
+        }
+      }
+    }
+    if (ranges.join("") !== NormalizeWithNFKC) {
+      throw new Error(
+        "getNormalizeWithNFKC - update the `NormalizeWithNFKC` string."
+      );
+    }
+  }
+  return NormalizeWithNFKC;
+}
+
+export { CharacterType, getCharacterType, getNormalizeWithNFKC };

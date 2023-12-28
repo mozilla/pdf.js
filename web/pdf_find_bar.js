@@ -14,6 +14,7 @@
  */
 
 import { FindState } from "./pdf_find_controller.js";
+import { toggleExpandedBtn } from "./ui_utils.js";
 
 const MATCHES_COUNT_LIMIT = 1000;
 
@@ -24,7 +25,9 @@ const MATCHES_COUNT_LIMIT = 1000;
  * is done by PDFFindController.
  */
 class PDFFindBar {
-  constructor(options, eventBus, l10n) {
+  #resizeObserver = new ResizeObserver(this.#resizeObserverCallback.bind(this));
+
+  constructor(options, eventBus) {
     this.opened = false;
 
     this.bar = options.bar;
@@ -39,7 +42,6 @@ class PDFFindBar {
     this.findPreviousButton = options.findPreviousButton;
     this.findNextButton = options.findNextButton;
     this.eventBus = eventBus;
-    this.l10n = l10n;
 
     // Add event listeners to the DOM elements.
     this.toggleButton.addEventListener("click", () => {
@@ -86,8 +88,6 @@ class PDFFindBar {
     this.matchDiacritics.addEventListener("click", () => {
       this.dispatchEvent("diacriticmatchingchange");
     });
-
-    this.eventBus._on("resize", this.#adjustWidth.bind(this));
   }
 
   reset() {
@@ -99,7 +99,6 @@ class PDFFindBar {
       source: this,
       type,
       query: this.findField.value,
-      phraseSearch: true,
       caseSensitive: this.caseSensitive.checked,
       entireWord: this.entireWord.checked,
       highlightAll: this.highlightAll.checked,
@@ -109,8 +108,9 @@ class PDFFindBar {
   }
 
   updateUIState(state, previous, matchesCount) {
-    let findMsg = Promise.resolve("");
-    let status = "";
+    const { findField, findMsg } = this;
+    let findMsgId = "",
+      status = "";
 
     switch (state) {
       case FindState.FOUND:
@@ -119,78 +119,71 @@ class PDFFindBar {
         status = "pending";
         break;
       case FindState.NOT_FOUND:
-        findMsg = this.l10n.get("find_not_found");
+        findMsgId = "pdfjs-find-not-found";
         status = "notFound";
         break;
       case FindState.WRAPPED:
-        findMsg = this.l10n.get(`find_reached_${previous ? "top" : "bottom"}`);
+        findMsgId = `pdfjs-find-reached-${previous ? "top" : "bottom"}`;
         break;
     }
-    this.findField.setAttribute("data-status", status);
-    this.findField.setAttribute("aria-invalid", state === FindState.NOT_FOUND);
+    findField.setAttribute("data-status", status);
+    findField.setAttribute("aria-invalid", state === FindState.NOT_FOUND);
 
-    findMsg.then(msg => {
-      this.findMsg.textContent = msg;
-      this.#adjustWidth();
-    });
+    findMsg.setAttribute("data-status", status);
+    if (findMsgId) {
+      findMsg.setAttribute("data-l10n-id", findMsgId);
+    } else {
+      findMsg.removeAttribute("data-l10n-id");
+      findMsg.textContent = "";
+    }
 
     this.updateResultsCount(matchesCount);
   }
 
   updateResultsCount({ current = 0, total = 0 } = {}) {
-    const limit = MATCHES_COUNT_LIMIT;
-    let matchCountMsg = Promise.resolve("");
+    const { findResultsCount } = this;
 
     if (total > 0) {
-      if (total > limit) {
-        let key = "find_match_count_limit";
+      const limit = MATCHES_COUNT_LIMIT;
 
-        if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-          // TODO: Remove this hard-coded `[other]` form once plural support has
-          // been implemented in the mozilla-central specific `l10n.js` file.
-          key += "[other]";
-        }
-        matchCountMsg = this.l10n.get(key, { limit });
-      } else {
-        let key = "find_match_count";
-
-        if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-          // TODO: Remove this hard-coded `[other]` form once plural support has
-          // been implemented in the mozilla-central specific `l10n.js` file.
-          key += "[other]";
-        }
-        matchCountMsg = this.l10n.get(key, { current, total });
-      }
+      findResultsCount.setAttribute(
+        "data-l10n-id",
+        `pdfjs-find-match-count${total > limit ? "-limit" : ""}`
+      );
+      findResultsCount.setAttribute(
+        "data-l10n-args",
+        JSON.stringify({ limit, current, total })
+      );
+    } else {
+      findResultsCount.removeAttribute("data-l10n-id");
+      findResultsCount.textContent = "";
     }
-    matchCountMsg.then(msg => {
-      this.findResultsCount.textContent = msg;
-      // Since `updateResultsCount` may be called from `PDFFindController`,
-      // ensure that the width of the findbar is always updated correctly.
-      this.#adjustWidth();
-    });
   }
 
   open() {
     if (!this.opened) {
+      // Potentially update the findbar layout, row vs column, when:
+      //  - The width of the viewer itself changes.
+      //  - The width of the findbar changes, by toggling the visibility
+      //    (or localization) of find count/status messages.
+      this.#resizeObserver.observe(this.bar.parentNode);
+      this.#resizeObserver.observe(this.bar);
+
       this.opened = true;
-      this.toggleButton.classList.add("toggled");
-      this.toggleButton.setAttribute("aria-expanded", "true");
-      this.bar.classList.remove("hidden");
+      toggleExpandedBtn(this.toggleButton, true, this.bar);
     }
     this.findField.select();
     this.findField.focus();
-
-    this.#adjustWidth();
   }
 
   close() {
     if (!this.opened) {
       return;
     }
+    this.#resizeObserver.disconnect();
+
     this.opened = false;
-    this.toggleButton.classList.remove("toggled");
-    this.toggleButton.setAttribute("aria-expanded", "false");
-    this.bar.classList.add("hidden");
+    toggleExpandedBtn(this.toggleButton, false, this.bar);
 
     this.eventBus.dispatch("findbarclose", { source: this });
   }
@@ -203,25 +196,22 @@ class PDFFindBar {
     }
   }
 
-  #adjustWidth() {
-    if (!this.opened) {
-      return;
-    }
-
+  #resizeObserverCallback(entries) {
+    const { bar } = this;
     // The find bar has an absolute position and thus the browser extends
     // its width to the maximum possible width once the find bar does not fit
     // entirely within the window anymore (and its elements are automatically
     // wrapped). Here we detect and fix that.
-    this.bar.classList.remove("wrapContainers");
+    bar.classList.remove("wrapContainers");
 
-    const findbarHeight = this.bar.clientHeight;
-    const inputContainerHeight = this.bar.firstElementChild.clientHeight;
+    const findbarHeight = bar.clientHeight;
+    const inputContainerHeight = bar.firstElementChild.clientHeight;
 
     if (findbarHeight > inputContainerHeight) {
       // The findbar is taller than the input container, which means that
       // the browser wrapped some of the elements. For a consistent look,
       // wrap all of them to adjust the width of the find bar.
-      this.bar.classList.add("wrapContainers");
+      bar.classList.add("wrapContainers");
     }
   }
 }

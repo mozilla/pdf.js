@@ -17,65 +17,73 @@
 
 :root {
   --dir-factor: 1;
+  /*#if !MOZCENTRAL*/
+  --inline-start: left;
+  --inline-end: right;
+  /*#endif*/
+
   --sidebar-width: 200px;
   --sidebar-transition-duration: 200ms;
   --sidebar-transition-timing-function: ease;
-  --scale-select-width: 140px;
 
   --toolbar-icon-opacity: 0.7;
   --doorhanger-icon-opacity: 0.9;
+  --editor-toolbar-base-offset: 105px;
 
-  --main-color: rgba(12, 12, 13, 1);
-  --body-bg-color: rgba(212, 212, 215, 1);
-  --progressBar-percent: 0%;
-  --progressBar-end-offset: 0;
-  --progressBar-color: rgba(10, 132, 255, 1);
-  --progressBar-bg-color: rgba(221, 221, 222, 1);
-  --progressBar-blend-color: rgba(116, 177, 239, 1);
+  --main-color: rgb(12 12 13);
+  --body-bg-color: rgb(212 212 215);
+  --progressBar-color: rgb(10 132 255);
+  --progressBar-bg-color: rgb(221 221 222);
+  --progressBar-blend-color: rgb(116 177 239);
   --scrollbar-color: auto;
   --scrollbar-bg-color: auto;
-  --toolbar-icon-bg-color: rgba(0, 0, 0, 1);
-  --toolbar-icon-hover-bg-color: rgba(0, 0, 0, 1);
+  --toolbar-icon-bg-color: rgb(0 0 0);
+  --toolbar-icon-hover-bg-color: rgb(0 0 0);
 
-  --sidebar-narrow-bg-color: rgba(212, 212, 215, 0.9);
-  --sidebar-toolbar-bg-color: rgba(245, 246, 247, 1);
-  --toolbar-bg-color: rgba(249, 249, 250, 1);
-  --toolbar-border-color: rgba(184, 184, 184, 1);
+  --sidebar-narrow-bg-color: rgb(212 212 215 / 0.9);
+  --sidebar-toolbar-bg-color: rgb(245 246 247);
+  --toolbar-bg-color: rgb(249 249 250);
+  --toolbar-border-color: rgb(184 184 184);
   --toolbar-box-shadow: 0 1px 0 var(--toolbar-border-color);
   --toolbar-border-bottom: none;
   --toolbarSidebar-box-shadow: inset calc(-1px * var(--dir-factor)) 0 0
-      rgba(0, 0, 0, 0.25),
-    0 1px 0 rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1);
+      rgb(0 0 0 / 0.25),
+    0 1px 0 rgb(0 0 0 / 0.15), 0 0 1px rgb(0 0 0 / 0.1);
   --toolbarSidebar-border-bottom: none;
-  --button-hover-color: rgba(221, 222, 223, 1);
-  --toggled-btn-color: rgba(0, 0, 0, 1);
-  --toggled-btn-bg-color: rgba(0, 0, 0, 0.3);
-  --toggled-hover-active-btn-color: rgba(0, 0, 0, 0.4);
-  --dropdown-btn-bg-color: rgba(215, 215, 219, 1);
+  --button-hover-color: rgb(221 222 223);
+  --toggled-btn-color: rgb(0 0 0);
+  --toggled-btn-bg-color: rgb(0 0 0 / 0.3);
+  --toggled-hover-active-btn-color: rgb(0 0 0 / 0.4);
+  --toggled-hover-btn-outline: none;
+  --dropdown-btn-bg-color: rgb(215 215 219);
   --dropdown-btn-border: none;
-  --separator-color: rgba(0, 0, 0, 0.3);
-  --field-color: rgba(6, 6, 6, 1);
-  --field-bg-color: rgba(255, 255, 255, 1);
-  --field-border-color: rgba(187, 187, 188, 1);
-  --treeitem-color: rgba(0, 0, 0, 0.8);
-  --treeitem-hover-color: rgba(0, 0, 0, 0.9);
-  --treeitem-selected-color: rgba(0, 0, 0, 0.9);
-  --treeitem-selected-bg-color: rgba(0, 0, 0, 0.25);
-  --sidebaritem-bg-color: rgba(0, 0, 0, 0.15);
-  --doorhanger-bg-color: rgba(255, 255, 255, 1);
-  --doorhanger-border-color: rgba(12, 12, 13, 0.2);
-  --doorhanger-hover-color: rgba(12, 12, 13, 1);
-  --doorhanger-hover-bg-color: rgba(237, 237, 237, 1);
-  --doorhanger-separator-color: rgba(222, 222, 222, 1);
+  --separator-color: rgb(0 0 0 / 0.3);
+  --field-color: rgb(6 6 6);
+  --field-bg-color: rgb(255 255 255);
+  --field-border-color: rgb(187 187 188);
+  --treeitem-color: rgb(0 0 0 / 0.8);
+  --treeitem-bg-color: rgb(0 0 0 / 0.15);
+  --treeitem-hover-color: rgb(0 0 0 / 0.9);
+  --treeitem-selected-color: rgb(0 0 0 / 0.9);
+  --treeitem-selected-bg-color: rgb(0 0 0 / 0.25);
+  --thumbnail-hover-color: rgb(0 0 0 / 0.1);
+  --thumbnail-selected-color: rgb(0 0 0 / 0.2);
+  --doorhanger-bg-color: rgb(255 255 255);
+  --doorhanger-border-color: rgb(12 12 13 / 0.2);
+  --doorhanger-hover-color: rgb(12 12 13);
+  --doorhanger-hover-bg-color: rgb(237 237 237);
+  --doorhanger-separator-color: rgb(222 222 222);
   --dialog-button-border: none;
-  --dialog-button-bg-color: rgba(12, 12, 13, 0.1);
-  --dialog-button-hover-bg-color: rgba(12, 12, 13, 0.3);
+  --dialog-button-bg-color: rgb(12 12 13 / 0.1);
+  --dialog-button-hover-bg-color: rgb(12 12 13 / 0.3);
 
   --loading-icon: url(images/loading.svg);
   --treeitem-expanded-icon: url(images/treeitem-expanded.svg);
   --treeitem-collapsed-icon: url(images/treeitem-collapsed.svg);
   --toolbarButton-editorFreeText-icon: url(images/toolbarButton-editorFreeText.svg);
+  --toolbarButton-editorHighlight-icon: url(images/toolbarButton-editorHighlight.svg);
   --toolbarButton-editorInk-icon: url(images/toolbarButton-editorInk.svg);
+  --toolbarButton-editorStamp-icon: url(images/toolbarButton-editorStamp.svg);
   --toolbarButton-menuArrow-icon: url(images/toolbarButton-menuArrow.svg);
   --toolbarButton-sidebarToggle-icon: url(images/toolbarButton-sidebarToggle.svg);
   --toolbarButton-secondaryToolbarToggle-icon: url(images/toolbarButton-secondaryToolbarToggle.svg);
@@ -112,54 +120,56 @@
   --secondaryToolbarButton-spreadOdd-icon: url(images/secondaryToolbarButton-spreadOdd.svg);
   --secondaryToolbarButton-spreadEven-icon: url(images/secondaryToolbarButton-spreadEven.svg);
   --secondaryToolbarButton-documentProperties-icon: url(images/secondaryToolbarButton-documentProperties.svg);
+  --editorParams-stampAddImage-icon: url(images/toolbarButton-zoomIn.svg);
 }
 
 :root:dir(rtl) {
   --dir-factor: -1;
+  /*#if !MOZCENTRAL*/
+  --inline-start: right;
+  --inline-end: left;
+  /*#endif*/
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --main-color: rgba(249, 249, 250, 1);
-    --body-bg-color: rgba(42, 42, 46, 1);
-    --progressBar-color: rgba(0, 96, 223, 1);
-    --progressBar-bg-color: rgba(40, 40, 43, 1);
-    --progressBar-blend-color: rgba(20, 68, 133, 1);
-    --scrollbar-color: rgba(121, 121, 123, 1);
-    --scrollbar-bg-color: rgba(35, 35, 39, 1);
-    --toolbar-icon-bg-color: rgba(255, 255, 255, 1);
-    --toolbar-icon-hover-bg-color: rgba(255, 255, 255, 1);
+    --main-color: rgb(249 249 250);
+    --body-bg-color: rgb(42 42 46);
+    --progressBar-color: rgb(0 96 223);
+    --progressBar-bg-color: rgb(40 40 43);
+    --progressBar-blend-color: rgb(20 68 133);
+    --scrollbar-color: rgb(121 121 123);
+    --scrollbar-bg-color: rgb(35 35 39);
+    --toolbar-icon-bg-color: rgb(255 255 255);
+    --toolbar-icon-hover-bg-color: rgb(255 255 255);
 
-    --sidebar-narrow-bg-color: rgba(42, 42, 46, 0.9);
-    --sidebar-toolbar-bg-color: rgba(50, 50, 52, 1);
-    --toolbar-bg-color: rgba(56, 56, 61, 1);
-    --toolbar-border-color: rgba(12, 12, 13, 1);
-    --button-hover-color: rgba(102, 102, 103, 1);
-    --toggled-btn-color: rgba(255, 255, 255, 1);
-    --toggled-btn-bg-color: rgba(0, 0, 0, 0.3);
-    --toggled-hover-active-btn-color: rgba(0, 0, 0, 0.4);
-    --dropdown-btn-bg-color: rgba(74, 74, 79, 1);
-    --separator-color: rgba(0, 0, 0, 0.3);
-    --field-color: rgba(250, 250, 250, 1);
-    --field-bg-color: rgba(64, 64, 68, 1);
-    --field-border-color: rgba(115, 115, 115, 1);
-    --treeitem-color: rgba(255, 255, 255, 0.8);
-    --treeitem-hover-color: rgba(255, 255, 255, 0.9);
-    --treeitem-selected-color: rgba(255, 255, 255, 0.9);
-    --treeitem-selected-bg-color: rgba(255, 255, 255, 0.25);
-    --sidebaritem-bg-color: rgba(255, 255, 255, 0.15);
-    --doorhanger-bg-color: rgba(74, 74, 79, 1);
-    --doorhanger-border-color: rgba(39, 39, 43, 1);
-    --doorhanger-hover-color: rgba(249, 249, 250, 1);
-    --doorhanger-hover-bg-color: rgba(93, 94, 98, 1);
-    --doorhanger-separator-color: rgba(92, 92, 97, 1);
-    --dialog-button-bg-color: rgba(92, 92, 97, 1);
-    --dialog-button-hover-bg-color: rgba(115, 115, 115, 1);
-
-    /* This image is used in <input> elements, which unfortunately means that
-     * the `mask-image` approach used with all of the other images doesn't work
-     * here; hence why we still have two versions of this particular image. */
-    --loading-icon: url(images/loading-dark.svg);
+    --sidebar-narrow-bg-color: rgb(42 42 46 / 0.9);
+    --sidebar-toolbar-bg-color: rgb(50 50 52);
+    --toolbar-bg-color: rgb(56 56 61);
+    --toolbar-border-color: rgb(12 12 13);
+    --button-hover-color: rgb(102 102 103);
+    --toggled-btn-color: rgb(255 255 255);
+    --toggled-btn-bg-color: rgb(0 0 0 / 0.3);
+    --toggled-hover-active-btn-color: rgb(0 0 0 / 0.4);
+    --dropdown-btn-bg-color: rgb(74 74 79);
+    --separator-color: rgb(0 0 0 / 0.3);
+    --field-color: rgb(250 250 250);
+    --field-bg-color: rgb(64 64 68);
+    --field-border-color: rgb(115 115 115);
+    --treeitem-color: rgb(255 255 255 / 0.8);
+    --treeitem-bg-color: rgb(255 255 255 / 0.15);
+    --treeitem-hover-color: rgb(255 255 255 / 0.9);
+    --treeitem-selected-color: rgb(255 255 255 / 0.9);
+    --treeitem-selected-bg-color: rgb(255 255 255 / 0.25);
+    --thumbnail-hover-color: rgb(255 255 255 / 0.1);
+    --thumbnail-selected-color: rgb(255 255 255 / 0.2);
+    --doorhanger-bg-color: rgb(74 74 79);
+    --doorhanger-border-color: rgb(39 39 43);
+    --doorhanger-hover-color: rgb(249 249 250);
+    --doorhanger-hover-bg-color: rgb(93 94 98);
+    --doorhanger-separator-color: rgb(92 92 97);
+    --dialog-button-bg-color: rgb(92 92 97);
+    --dialog-button-hover-bg-color: rgb(115 115 115);
   }
 }
 
@@ -170,6 +180,8 @@
     --toolbar-icon-opacity: 1;
     --toolbar-icon-bg-color: ButtonText;
     --toolbar-icon-hover-bg-color: ButtonFace;
+    --toggled-hover-active-btn-color: ButtonText;
+    --toggled-hover-btn-outline: 2px solid ButtonBorder;
     --toolbar-border-color: CanvasText;
     --toolbar-border-bottom: 1px solid var(--toolbar-border-color);
     --toolbar-box-shadow: none;
@@ -188,6 +200,12 @@
     --doorhanger-separator-color: GrayText;
     --toolbarSidebar-box-shadow: none;
     --toolbarSidebar-border-bottom: 1px solid var(--toolbar-border-color);
+  }
+}
+
+@media screen and (prefers-reduced-motion: reduce) {
+  :root {
+    --sidebar-transition-duration: 0;
   }
 }
 
@@ -214,7 +232,7 @@ body {
 
 #viewerContainer.pdfPresentationMode:fullscreen {
   top: 0;
-  background-color: rgba(0, 0, 0, 1);
+  background-color: rgb(0 0 0);
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -243,22 +261,20 @@ body {
 
 #sidebarContainer {
   position: absolute;
-  top: 32px;
-  bottom: 0;
+  inset-block: 32px 0;
   inset-inline-start: calc(-1 * var(--sidebar-width));
   width: var(--sidebar-width);
   visibility: hidden;
   z-index: 100;
   font: message-box;
-  border-top: 1px solid rgba(51, 51, 51, 1);
+  border-top: 1px solid rgb(51 51 51);
   border-inline-end: var(--doorhanger-border-color-whcm);
   transition-property: inset-inline-start;
   transition-duration: var(--sidebar-transition-duration);
   transition-timing-function: var(--sidebar-transition-timing-function);
 }
 
-#outerContainer.sidebarMoving #sidebarContainer,
-#outerContainer.sidebarOpen #sidebarContainer {
+#outerContainer:is(.sidebarMoving, .sidebarOpen) #sidebarContainer {
   visibility: visible;
 }
 #outerContainer.sidebarOpen #sidebarContainer {
@@ -267,30 +283,23 @@ body {
 
 #mainContainer {
   position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  inset: 0;
   min-width: 350px;
 }
 
 #sidebarContent {
-  top: 32px;
-  bottom: 0;
+  inset-block: 32px 0;
   inset-inline-start: 0;
   overflow: auto;
   position: absolute;
   width: 100%;
-  box-shadow: inset calc(-1px * var(--dir-factor)) 0 0 rgba(0, 0, 0, 0.25);
+  box-shadow: inset calc(-1px * var(--dir-factor)) 0 0 rgb(0 0 0 / 0.25);
 }
 
 #viewerContainer {
   overflow: auto;
   position: absolute;
-  top: 32px;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  inset: 32px 0 0;
   outline: none;
 }
 #viewerContainer:not(.pdfPresentationMode) {
@@ -305,29 +314,15 @@ body {
 
 .toolbar {
   position: relative;
-  left: 0;
-  right: 0;
+  inset-inline: 0;
   z-index: 9999;
   cursor: default;
   font: message-box;
 }
 
-.toolbar input,
-.toolbar button,
-.toolbar select,
-.secondaryToolbar input,
-.secondaryToolbar button,
-.secondaryToolbar a,
-.secondaryToolbar select,
-.editorParamsToolbar input,
-.editorParamsToolbar button,
-.editorParamsToolbar select,
-.findbar input,
-.findbar button,
-.findbar select,
-#sidebarContainer input,
-#sidebarContainer button,
-#sidebarContainer select {
+:is(.toolbar, .editorParamsToolbar, .findbar, #sidebarContainer)
+  :is(input, button, select),
+.secondaryToolbar :is(input, button, a, select) {
   outline: none;
   font: message-box;
 }
@@ -346,8 +341,7 @@ body {
 
 #sidebarResizer {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  inset-block: 0;
   inset-inline-end: -6px;
   width: 6px;
   z-index: 200;
@@ -370,6 +364,11 @@ body {
 }
 
 #loadingBar {
+  /* Define these variables here, and not in :root, to avoid reflowing the
+     entire viewer when updating progress (see issue 15958). */
+  --progressBar-percent: 0%;
+  --progressBar-end-offset: 0;
+
   position: absolute;
   inset-inline: 0 var(--progressBar-end-offset);
   height: 4px;
@@ -387,10 +386,10 @@ body {
 #loadingBar .progress {
   position: absolute;
   top: 0;
-  left: 0;
+  inset-inline-start: 0;
   width: 100%;
   transform: scaleX(var(--progressBar-percent));
-  transform-origin: 0 0;
+  transform-origin: calc(50% - 50% * var(--dir-factor)) 0;
   height: 100%;
   background-color: var(--progressBar-color);
   overflow: hidden;
@@ -399,7 +398,7 @@ body {
 
 @keyframes progressIndeterminate {
   0% {
-    transform: translateX(-142px);
+    transform: translateX(calc(-142px * var(--dir-factor)));
   }
   100% {
     transform: translateX(0);
@@ -415,7 +414,7 @@ body {
 #loadingBar.indeterminate .progress .glimmer {
   position: absolute;
   top: 0;
-  left: 0;
+  inset-inline-start: 0;
   height: 100%;
   width: calc(100% + 150px);
   background: repeating-linear-gradient(
@@ -430,9 +429,8 @@ body {
   animation: progressIndeterminate 1s linear infinite;
 }
 
-#outerContainer.sidebarResizing #sidebarContainer,
-#outerContainer.sidebarResizing #viewerContainer,
-#outerContainer.sidebarResizing #loadingBar {
+#outerContainer.sidebarResizing
+  :is(#sidebarContainer, #viewerContainer, #loadingBar) {
   /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
   transition-duration: 0s;
 }
@@ -493,22 +491,21 @@ body {
 
 #findInput {
   width: 200px;
-}
-/*#if !MOZCENTRAL*/
-#findInput::-webkit-input-placeholder {
-  color: rgba(191, 191, 191, 1);
-}
-/*#endif*/
-#findInput::placeholder {
-  font-style: normal;
-}
-#findInput[data-status="pending"] {
-  background-image: var(--loading-icon);
-  background-repeat: no-repeat;
-  background-position: calc(50% + 48% * var(--dir-factor));
-}
-#findInput[data-status="notFound"] {
-  background-color: rgba(255, 102, 102, 1);
+
+  /*#if !MOZCENTRAL*/
+  &::-webkit-input-placeholder {
+    color: rgb(191 191 191);
+  }
+  /*#endif*/
+  &::placeholder {
+    font-style: normal;
+  }
+  .loadingInput:has(> &[data-status="pending"])::after {
+    visibility: visible;
+  }
+  &[data-status="notFound"] {
+    background-color: rgb(255 102 102);
+  }
 }
 
 .secondaryToolbar,
@@ -535,6 +532,11 @@ body {
 .editorParamsToolbarContainer .editorParamsLabel {
   padding-inline-end: 10px;
   flex: none;
+  font: menu;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 150%;
   color: var(--main-color);
 }
 
@@ -576,29 +578,38 @@ body {
   margin-bottom: -4px;
 }
 
+#editorStampParamsToolbar {
+  inset-inline-end: calc(var(--editor-toolbar-base-offset) + 0px);
+}
+
 #editorInkParamsToolbar {
-  inset-inline-end: 40px;
-  background-color: var(--toolbar-bg-color);
+  inset-inline-end: calc(var(--editor-toolbar-base-offset) + 28px);
 }
 
 #editorFreeTextParamsToolbar {
-  inset-inline-end: 68px;
-  background-color: var(--toolbar-bg-color);
+  inset-inline-end: calc(var(--editor-toolbar-base-offset) + 56px);
+}
+
+#editorHighlightParamsToolbar {
+  inset-inline-end: calc(var(--editor-toolbar-base-offset) + 84px);
+}
+
+#editorStampAddImage::before {
+  mask-image: var(--editorParams-stampAddImage-icon);
 }
 
 .doorHanger,
 .doorHangerRight {
   border-radius: 2px;
-  box-shadow: 0 1px 5px var(--doorhanger-border-color),
+  box-shadow:
+    0 1px 5px var(--doorhanger-border-color),
     0 0 0 1px var(--doorhanger-border-color);
   border: var(--doorhanger-border-color-whcm);
 }
-.doorHanger:after,
-.doorHanger:before,
-.doorHangerRight:after,
-.doorHangerRight:before {
+:is(.doorHanger, .doorHangerRight)::after,
+:is(.doorHanger, .doorHangerRight)::before {
   bottom: 100%;
-  border: 8px solid rgba(0, 0, 0, 0);
+  border: 8px solid rgb(0 0 0 / 0);
   content: " ";
   height: 0;
   width: 0;
@@ -606,44 +617,42 @@ body {
   pointer-events: none;
   opacity: var(--doorhanger-triangle-opacity-whcm);
 }
-.doorHanger:after {
+.doorHanger::after {
   inset-inline-start: 10px;
   margin-inline-start: -8px;
   border-bottom-color: var(--toolbar-bg-color);
 }
-.doorHangerRight:after {
+.doorHangerRight::after {
   inset-inline-end: 10px;
   margin-inline-end: -8px;
   border-bottom-color: var(--doorhanger-bg-color);
 }
-.doorHanger:before,
-.doorHangerRight:before {
+:is(.doorHanger, .doorHangerRight)::before {
   border-bottom-color: var(--doorhanger-border-color);
   border-width: 9px;
 }
-.doorHanger:before {
+.doorHanger::before {
   inset-inline-start: 10px;
   margin-inline-start: -9px;
 }
-.doorHangerRight:before {
+.doorHangerRight::before {
   inset-inline-end: 10px;
   margin-inline-end: -9px;
 }
 
 #findResultsCount {
-  background-color: rgba(217, 217, 217, 1);
-  color: rgba(82, 82, 82, 1);
+  background-color: rgb(217 217 217);
+  color: rgb(82 82 82);
   text-align: center;
   padding: 4px 5px;
   margin: 5px;
 }
 
-#findMsg {
-  color: rgba(251, 0, 0, 1);
+#findMsg[data-status="notFound"] {
+  font-weight: bold;
 }
 
-#findResultsCount:empty,
-#findMsg:empty {
+:is(#findResultsCount, #findMsg):empty {
   display: none;
 }
 
@@ -655,11 +664,11 @@ body {
 
 #toolbarViewerLeft,
 #toolbarSidebarLeft {
-  float: inline-start;
+  float: var(--inline-start);
 }
 #toolbarViewerRight,
 #toolbarSidebarRight {
-  float: inline-end;
+  float: var(--inline-end);
 }
 
 #toolbarViewerLeft > *,
@@ -669,7 +678,7 @@ body {
 #toolbarSidebarRight *,
 .findbar * {
   position: relative;
-  float: inline-start;
+  float: var(--inline-start);
 }
 
 #toolbarViewerLeft {
@@ -687,7 +696,7 @@ body {
   display: inline-block;
 }
 .splitToolbarButton > .toolbarButton {
-  float: inline-start;
+  float: var(--inline-start);
 }
 
 .toolbarButton,
@@ -700,13 +709,11 @@ body {
   outline: none;
 }
 
-.dialogButton:hover,
-.dialogButton:focus-visible {
+.dialogButton:is(:hover, :focus-visible) {
   background-color: var(--dialog-button-hover-bg-color);
 }
 
-.dialogButton:hover > span,
-.dialogButton:focus-visible > span {
+.dialogButton:is(:hover, :focus-visible) > span {
   color: var(--dialog-button-hover-color);
 }
 
@@ -717,14 +724,11 @@ body {
   overflow: hidden;
 }
 
-.toolbarButton[disabled],
-.secondaryToolbarButton[disabled],
-.dialogButton[disabled] {
+:is(.toolbarButton, .secondaryToolbarButton, .dialogButton)[disabled] {
   opacity: 0.5;
 }
 
-.splitToolbarButton > .toolbarButton:hover,
-.splitToolbarButton > .toolbarButton:focus-visible,
+.splitToolbarButton > .toolbarButton:is(:hover, :focus-visible),
 .dropdownToolbarButton:hover {
   background-color: var(--button-hover-color);
 }
@@ -737,7 +741,7 @@ body {
 }
 
 .splitToolbarButtonSeparator {
-  float: inline-start;
+  float: var(--inline-start);
   margin: 4px 0;
   width: 1px;
   height: 20px;
@@ -761,36 +765,38 @@ body {
   box-sizing: border-box;
 }
 
-.toolbarButton:hover,
-.toolbarButton:focus-visible {
+.toolbarButton:is(:hover, :focus-visible) {
   background-color: var(--button-hover-color);
 }
-.secondaryToolbarButton:hover,
-.secondaryToolbarButton:focus-visible {
+.secondaryToolbarButton:is(:hover, :focus-visible) {
   background-color: var(--doorhanger-hover-bg-color);
   color: var(--doorhanger-hover-color);
 }
 
-.toolbarButton.toggled,
-.splitToolbarButton.toggled > .toolbarButton.toggled,
-.secondaryToolbarButton.toggled {
+:is(.toolbarButton, .secondaryToolbarButton).toggled,
+.splitToolbarButton.toggled > .toolbarButton.toggled {
   background-color: var(--toggled-btn-bg-color);
   color: var(--toggled-btn-color);
 }
 
-.toolbarButton.toggled::before,
-.secondaryToolbarButton.toggled::before {
+:is(.toolbarButton, .secondaryToolbarButton).toggled:hover,
+.splitToolbarButton.toggled > .toolbarButton.toggled:hover {
+  outline: var(--toggled-hover-btn-outline) !important;
+}
+
+:is(.toolbarButton, .secondaryToolbarButton).toggled::before {
   background-color: var(--toggled-btn-color);
 }
 
-.toolbarButton.toggled:hover:active,
-.splitToolbarButton.toggled > .toolbarButton.toggled:hover:active,
-.secondaryToolbarButton.toggled:hover:active {
+:is(.toolbarButton, .secondaryToolbarButton).toggled:hover:active,
+.splitToolbarButton.toggled > .toolbarButton.toggled:hover:active {
   background-color: var(--toggled-hover-active-btn-color);
 }
 
 .dropdownToolbarButton {
-  width: var(--scale-select-width);
+  display: flex;
+  width: fit-content;
+  min-width: 140px;
   padding: 0;
   background-color: var(--dropdown-btn-bg-color);
   border: var(--dropdown-btn-border);
@@ -805,17 +811,17 @@ body {
 .dropdownToolbarButton > select {
   appearance: none;
   width: inherit;
+  min-width: inherit;
   height: 28px;
   font-size: 12px;
   color: var(--main-color);
   margin: 0;
-  padding: 1px 0 2px;
-  padding-inline-start: 6px;
+  padding-block: 1px 2px;
+  padding-inline: 6px 38px;
   border: none;
   background-color: var(--dropdown-btn-bg-color);
 }
-.dropdownToolbarButton > select:hover,
-.dropdownToolbarButton > select:focus-visible {
+.dropdownToolbarButton > select:is(:hover, :focus-visible) {
   background-color: var(--button-hover-color);
   color: var(--toggled-btn-color);
 }
@@ -830,10 +836,8 @@ body {
   height: 1px;
 }
 
-.toolbarButton::before,
-.secondaryToolbarButton::before,
-.dropdownToolbarButton::after,
-.treeItemToggler::before {
+:is(.toolbarButton, .secondaryToolbarButton, .treeItemToggler)::before,
+.dropdownToolbarButton::after {
   /* All matching images have a size of 16x16
    * All relevant containers have a size of 28x28 */
   position: absolute;
@@ -846,9 +850,7 @@ body {
   mask-size: cover;
 }
 
-.dropdownToolbarButton:hover::after,
-.dropdownToolbarButton:focus-visible::after,
-.dropdownToolbarButton:active::after {
+.dropdownToolbarButton:is(:hover, :focus-visible, :active)::after {
   background-color: var(--toolbar-icon-hover-bg-color);
 }
 
@@ -858,10 +860,8 @@ body {
   left: 6px;
 }
 
-.toolbarButton:hover::before,
-.toolbarButton:focus-visible::before,
-.secondaryToolbarButton:hover::before,
-.secondaryToolbarButton:focus-visible::before {
+.toolbarButton:is(:hover, :focus-visible)::before,
+.secondaryToolbarButton:is(:hover, :focus-visible)::before {
   background-color: var(--toolbar-icon-hover-bg-color);
 }
 
@@ -913,24 +913,29 @@ body {
   mask-image: var(--toolbarButton-editorFreeText-icon);
 }
 
+#editorHighlight::before {
+  mask-image: var(--toolbarButton-editorHighlight-icon);
+}
+
 #editorInk::before {
   mask-image: var(--toolbarButton-editorInk-icon);
 }
 
-#print::before,
-#secondaryPrint::before {
+#editorStamp::before {
+  mask-image: var(--toolbarButton-editorStamp-icon);
+}
+
+:is(#print, #secondaryPrint)::before {
   mask-image: var(--toolbarButton-print-icon);
 }
 
 /*#if GENERIC*/
-#openFile::before,
 #secondaryOpenFile::before {
   mask-image: var(--toolbarButton-openFile-icon);
 }
 /*#endif*/
 
-#download::before,
-#secondaryDownload::before {
+:is(#download, #secondaryDownload)::before {
   mask-image: var(--toolbarButton-download-icon);
 }
 
@@ -938,8 +943,7 @@ a.secondaryToolbarButton {
   padding-top: 5px;
   text-decoration: none;
 }
-a.toolbarButton[href="#"],
-a.secondaryToolbarButton[href="#"] {
+a:is(.toolbarButton, .secondaryToolbarButton)[href="#"] {
   opacity: 0.5;
   pointer-events: none;
 }
@@ -981,7 +985,7 @@ a.secondaryToolbarButton[href="#"] {
   inset-inline-end: 2px;
   /* Create a filled circle, with a diameter of 9 pixels, using only CSS: */
   content: "";
-  background-color: rgba(112, 219, 85, 1);
+  background-color: rgb(112 219 85);
   height: 9px;
   width: 9px;
   border-radius: 50%;
@@ -1101,26 +1105,46 @@ a.secondaryToolbarButton[href="#"] {
 
 #pageNumber {
   -moz-appearance: textfield; /* hides the spinner in moz */
-  text-align: right;
+  text-align: end;
   width: 40px;
   background-size: 0 0;
   transition-property: none;
+
+  /*#if !MOZCENTRAL*/
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+  }
+  /*#endif*/
+
+  .loadingInput:has(> &.loading)::after {
+    visibility: visible;
+
+    transition-property: visibility;
+    transition-delay: var(--loading-icon-delay);
+  }
 }
-#pageNumber.visiblePageIsLoading {
-  background-image: var(--loading-icon);
-  background-repeat: no-repeat;
-  background-position: 3px;
-  background-size: 16px 16px;
-  /* Using a delay with background-image doesn't work,
-     consequently we use background-size. */
-  transition-property: background-size;
-  transition-delay: var(--loading-icon-delay);
+
+.loadingInput {
+  &::after {
+    position: absolute;
+    visibility: hidden;
+    top: calc(50% - 8px);
+    width: 16px;
+    height: 16px;
+
+    content: "";
+    background-color: var(--toolbar-icon-bg-color);
+    mask-size: cover;
+    mask-image: var(--loading-icon);
+  }
+
+  &.start::after {
+    inset-inline-start: 4px;
+  }
+  &.end::after {
+    inset-inline-end: 4px;
+  }
 }
-/*#if !MOZCENTRAL*/
-#pageNumber::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-}
-/*#endif*/
 
 .toolbarField:focus {
   border-color: #0a84ff;
@@ -1149,8 +1173,7 @@ a.secondaryToolbarButton[href="#"] {
 #layersView {
   position: absolute;
   width: calc(100% - 8px);
-  top: 0;
-  bottom: 0;
+  inset-block: 0;
   padding: 4px 4px 0;
   overflow: auto;
   user-select: none;
@@ -1160,62 +1183,54 @@ a.secondaryToolbarButton[href="#"] {
   padding: 10px 30px 0;
 }
 
-#thumbnailView > a:active,
-#thumbnailView > a:focus {
+#thumbnailView > a:is(:active, :focus) {
   outline: 0;
 }
 
 .thumbnail {
-  float: inline-start;
+  /* Define these variables here, and not in :root, since the individual
+     thumbnails may have different sizes. */
+  --thumbnail-width: 0;
+  --thumbnail-height: 0;
+
+  float: var(--inline-start);
+  width: var(--thumbnail-width);
+  height: var(--thumbnail-height);
   margin: 0 10px 5px;
+  padding: 1px;
+  border: 7px solid transparent;
+  border-radius: 2px;
 }
 
 #thumbnailView > a:last-of-type > .thumbnail {
   margin-bottom: 10px;
 }
-#thumbnailView > a:last-of-type > .thumbnail:not([data-loaded]) {
-  margin-bottom: 9px;
-}
 
-.thumbnail:not([data-loaded]) {
-  border: 1px dashed rgba(132, 132, 132, 1);
-  margin: -1px 9px 4px;
+a:focus > .thumbnail,
+.thumbnail:hover {
+  border-color: var(--thumbnail-hover-color);
+}
+.thumbnail.selected {
+  border-color: var(--thumbnail-selected-color) !important;
 }
 
 .thumbnailImage {
-  border: 1px solid rgba(0, 0, 0, 0);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
-  opacity: 0.8;
-  z-index: 99;
-  background-color: rgba(255, 255, 255, 1);
-  background-clip: content-box;
-}
-
-.thumbnailSelectionRing {
-  border-radius: 2px;
-  padding: 7px;
-}
-
-a:focus > .thumbnail > .thumbnailSelectionRing > .thumbnailImage,
-.thumbnail:hover > .thumbnailSelectionRing > .thumbnailImage {
+  width: var(--thumbnail-width);
+  height: var(--thumbnail-height);
   opacity: 0.9;
 }
-
-a:focus > .thumbnail > .thumbnailSelectionRing,
-.thumbnail:hover > .thumbnailSelectionRing {
-  background-color: var(--sidebaritem-bg-color);
-  background-clip: padding-box;
-  color: rgba(255, 255, 255, 0.9);
+a:focus > .thumbnail > .thumbnailImage,
+.thumbnail:hover > .thumbnailImage {
+  opacity: 0.95;
+}
+.thumbnail.selected > .thumbnailImage {
+  opacity: 1 !important;
 }
 
-.thumbnail.selected > .thumbnailSelectionRing > .thumbnailImage {
-  opacity: 1;
-}
-
-.thumbnail.selected > .thumbnailSelectionRing {
-  background-color: var(--sidebaritem-bg-color);
-  background-clip: padding-box;
-  color: rgba(255, 255, 255, 1);
+.thumbnail:not([data-loaded]) > .thumbnailImage {
+  width: calc(var(--thumbnail-width) - 2px);
+  height: calc(var(--thumbnail-height) - 2px);
+  border: 1px dashed rgb(132 132 132);
 }
 
 .treeWithDeepNesting > .treeItem,
@@ -1248,16 +1263,16 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   padding-inline-start: 4px;
 }
 #layersView .treeItem > a > label > input {
-  float: inline-start;
+  float: var(--inline-start);
   margin-top: 1px;
 }
 
 .treeItemToggler {
   position: relative;
-  float: inline-start;
+  float: var(--inline-start);
   height: 0;
   width: 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(255 255 255 / 0.5);
 }
 .treeItemToggler::before {
   inset-inline-end: 4px;
@@ -1280,10 +1295,18 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
 .treeItemToggler:hover + a,
 .treeItemToggler:hover ~ .treeItems,
 .treeItem > a:hover {
-  background-color: var(--sidebaritem-bg-color);
+  background-color: var(--treeitem-bg-color);
   background-clip: padding-box;
   border-radius: 2px;
   color: var(--treeitem-hover-color);
+}
+
+#outlineOptionsContainer {
+  display: none;
+
+  #sidebarContainer:has(#outlineView:not(.hidden)) & {
+    display: inherit;
+  }
 }
 
 .dialogButton {
@@ -1304,12 +1327,12 @@ dialog {
   font-size: 12px;
   line-height: 14px;
   background-color: var(--doorhanger-bg-color);
-  border: 1px solid rgba(0, 0, 0, 0.5);
+  border: 1px solid rgb(0 0 0 / 0.5);
   border-radius: 4px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.3);
 }
 dialog::backdrop {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgb(0 0 0 / 0.2);
 }
 
 dialog > .row {
@@ -1338,7 +1361,7 @@ dialog .buttonRow {
 }
 
 dialog :link {
-  color: rgba(255, 255, 255, 1);
+  color: rgb(255 255 255);
 }
 
 #passwordDialog {
@@ -1377,13 +1400,12 @@ dialog :link {
 .grab-to-pan-grab:active,
 .grab-to-pan-grabbing {
   cursor: grabbing !important;
+}
+.grab-to-pan-grabbing {
   position: fixed;
-  background: rgba(0, 0, 0, 0);
+  background: rgb(0 0 0 / 0);
   display: block;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   overflow: hidden;
   z-index: 50000; /* should be higher than anything else in PDF.js! */
 }
@@ -1398,7 +1420,7 @@ dialog :link {
 
 @media print {
   body {
-    background: rgba(0, 0, 0, 0) none;
+    background: rgb(0 0 0 / 0) none;
   }
   body[data-pdfjsprinting] #outerContainer {
     display: none;
@@ -1436,8 +1458,7 @@ dialog :link {
     position: relative;
   }
 
-  #printContainer > .printedPage canvas,
-  #printContainer > .printedPage img {
+  #printContainer > .printedPage :is(canvas, img) {
     /* The intrinsic canvas / image size will make sure that we fit the page. */
     max-width: 100%;
     max-height: 100%;
@@ -1447,7 +1468,6 @@ dialog :link {
   }
 }
 
-.visibleLargeView,
 .visibleMediumView {
   display: none;
 }
@@ -1471,16 +1491,10 @@ dialog :link {
   }
 }
 
-@media all and (max-width: 820px) {
-  #outerContainer .hiddenLargeView {
-    display: none;
-  }
-  #outerContainer .visibleLargeView {
-    display: inherit;
-  }
-}
-
 @media all and (max-width: 750px) {
+  :root {
+    --editor-toolbar-base-offset: 40px;
+  }
   #outerContainer .hiddenMediumView {
     display: none;
   }

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { createPromiseCapability, getFilenameFromUrl } from "pdfjs-lib";
+import { getFilenameFromUrl, PromiseCapability } from "pdfjs-lib";
 import { BaseTreeViewer } from "./base_tree_viewer.js";
 import { waitOnEventOrTimeout } from "./event_utils.js";
 
@@ -50,7 +50,7 @@ class PDFAttachmentViewer extends BaseTreeViewer {
     if (!keepRenderedCapability) {
       // The only situation in which the `_renderedCapability` should *not* be
       // replaced is when appending FileAttachment annotations.
-      this._renderedCapability = createPromiseCapability();
+      this._renderedCapability = new PromiseCapability();
     }
     this._pendingDispatchEvent = false;
   }
@@ -91,7 +91,7 @@ class PDFAttachmentViewer extends BaseTreeViewer {
    */
   _bindLink(element, { content, filename }) {
     element.onclick = () => {
-      this.downloadManager.openOrDownloadData(element, content, filename);
+      this.downloadManager.openOrDownloadData(content, filename);
       return false;
     };
   }
@@ -109,13 +109,10 @@ class PDFAttachmentViewer extends BaseTreeViewer {
       this._dispatchEvent(/* attachmentsCount = */ 0);
       return;
     }
-    const names = Object.keys(attachments).sort(function (a, b) {
-      return a.toLowerCase().localeCompare(b.toLowerCase());
-    });
 
     const fragment = document.createDocumentFragment();
     let attachmentsCount = 0;
-    for (const name of names) {
+    for (const name in attachments) {
       const item = attachments[name];
       const content = item.content,
         filename = getFilenameFromUrl(

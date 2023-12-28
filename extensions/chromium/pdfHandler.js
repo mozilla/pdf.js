@@ -20,7 +20,15 @@ limitations under the License.
 var VIEWER_URL = chrome.extension.getURL("content/web/viewer.html");
 
 function getViewerURL(pdf_url) {
-  return VIEWER_URL + "?file=" + encodeURIComponent(pdf_url);
+  // |pdf_url| may contain a fragment such as "#page=2". That should be passed
+  // as a fragment to the viewer, not encoded in pdf_url.
+  var hash = "";
+  var i = pdf_url.indexOf("#");
+  if (i > 0) {
+    hash = pdf_url.slice(i);
+    pdf_url = pdf_url.slice(0, i);
+  }
+  return VIEWER_URL + "?file=" + encodeURIComponent(pdf_url) + hash;
 }
 
 /**
@@ -154,19 +162,7 @@ chrome.webRequest.onBeforeRequest.addListener(
     return { redirectUrl: viewerUrl };
   },
   {
-    urls: [
-      "file://*/*.pdf",
-      "file://*/*.PDF",
-      ...// Duck-typing: MediaError.prototype.message was added in Chrome 59.
-      (MediaError.prototype.hasOwnProperty("message")
-        ? []
-        : [
-            // Note: Chrome 59 has disabled ftp resource loading by default:
-            // https://www.chromestatus.com/feature/5709390967472128
-            "ftp://*/*.pdf",
-            "ftp://*/*.PDF",
-          ]),
-    ],
+    urls: ["file://*/*.pdf", "file://*/*.PDF"],
     types: ["main_frame", "sub_frame"],
   },
   ["blocking"]
@@ -252,10 +248,3 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   }
   return undefined;
 });
-
-// Remove keys from storage that were once part of the deleted feature-detect.js
-chrome.storage.local.remove([
-  "featureDetectLastUA",
-  "webRequestRedirectUrl",
-  "extensionSupportsFTP",
-]);

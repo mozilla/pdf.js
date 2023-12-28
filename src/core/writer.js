@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { bytesToString, warn } from "../shared/util.js";
-import { Dict, Name, Ref } from "./primitives.js";
+import { bytesToString, info, warn } from "../shared/util.js";
+import { Dict, isName, Name, Ref } from "./primitives.js";
 import {
   escapePDFName,
   escapeString,
@@ -25,36 +25,95 @@ import { SimpleDOMNode, SimpleXMLParser } from "./xml_parser.js";
 import { BaseStream } from "./base_stream.js";
 import { calculateMD5 } from "./crypto.js";
 
-function writeObject(ref, obj, buffer, transform) {
+async function writeObject(ref, obj, buffer, { encrypt = null }) {
+  const transform = encrypt?.createCipherTransform(ref.num, ref.gen);
   buffer.push(`${ref.num} ${ref.gen} obj\n`);
   if (obj instanceof Dict) {
-    writeDict(obj, buffer, transform);
+    await writeDict(obj, buffer, transform);
   } else if (obj instanceof BaseStream) {
-    writeStream(obj, buffer, transform);
+    await writeStream(obj, buffer, transform);
+  } else if (Array.isArray(obj)) {
+    await writeArray(obj, buffer, transform);
   }
   buffer.push("\nendobj\n");
 }
 
-function writeDict(dict, buffer, transform) {
+async function writeDict(dict, buffer, transform) {
   buffer.push("<<");
   for (const key of dict.getKeys()) {
     buffer.push(` /${escapePDFName(key)} `);
-    writeValue(dict.getRaw(key), buffer, transform);
+    await writeValue(dict.getRaw(key), buffer, transform);
   }
   buffer.push(">>");
 }
 
-function writeStream(stream, buffer, transform) {
-  writeDict(stream.dict, buffer, transform);
-  buffer.push(" stream\n");
-  let string = stream.getString();
-  if (transform !== null) {
+async function writeStream(stream, buffer, transform) {
+  let bytes = stream.getBytes();
+  const { dict } = stream;
+
+  const [filter, params] = await Promise.all([
+    dict.getAsync("Filter"),
+    dict.getAsync("DecodeParms"),
+  ]);
+
+  const filterZero = Array.isArray(filter)
+    ? await dict.xref.fetchIfRefAsync(filter[0])
+    : filter;
+  const isFilterZeroFlateDecode = isName(filterZero, "FlateDecode");
+
+  // If the string is too small there is no real benefit in compressing it.
+  // The number 256 is arbitrary, but it should be reasonable.
+  const MIN_LENGTH_FOR_COMPRESSING = 256;
+
+  if (
+    typeof CompressionStream !== "undefined" &&
+    (bytes.length >= MIN_LENGTH_FOR_COMPRESSING || isFilterZeroFlateDecode)
+  ) {
+    try {
+      const cs = new CompressionStream("deflate");
+      const writer = cs.writable.getWriter();
+      writer.write(bytes);
+      writer.close();
+
+      // Response::text doesn't return the correct data.
+      const buf = await new Response(cs.readable).arrayBuffer();
+      bytes = new Uint8Array(buf);
+
+      let newFilter, newParams;
+      if (!filter) {
+        newFilter = Name.get("FlateDecode");
+      } else if (!isFilterZeroFlateDecode) {
+        newFilter = Array.isArray(filter)
+          ? [Name.get("FlateDecode"), ...filter]
+          : [Name.get("FlateDecode"), filter];
+        if (params) {
+          newParams = Array.isArray(params)
+            ? [null, ...params]
+            : [null, params];
+        }
+      }
+      if (newFilter) {
+        dict.set("Filter", newFilter);
+      }
+      if (newParams) {
+        dict.set("DecodeParms", newParams);
+      }
+    } catch (ex) {
+      info(`writeStream - cannot compress data: "${ex}".`);
+    }
+  }
+
+  let string = bytesToString(bytes);
+  if (transform) {
     string = transform.encryptString(string);
   }
-  buffer.push(string, "\nendstream");
+
+  dict.set("Length", string.length);
+  await writeDict(dict, buffer, transform);
+  buffer.push(" stream\n", string, "\nendstream");
 }
 
-function writeArray(array, buffer, transform) {
+async function writeArray(array, buffer, transform) {
   buffer.push("[");
   let first = true;
   for (const val of array) {
@@ -63,20 +122,20 @@ function writeArray(array, buffer, transform) {
     } else {
       first = false;
     }
-    writeValue(val, buffer, transform);
+    await writeValue(val, buffer, transform);
   }
   buffer.push("]");
 }
 
-function writeValue(value, buffer, transform) {
+async function writeValue(value, buffer, transform) {
   if (value instanceof Name) {
     buffer.push(`/${escapePDFName(value.name)}`);
   } else if (value instanceof Ref) {
     buffer.push(`${value.num} ${value.gen} R`);
   } else if (Array.isArray(value)) {
-    writeArray(value, buffer, transform);
+    await writeArray(value, buffer, transform);
   } else if (typeof value === "string") {
-    if (transform !== null) {
+    if (transform) {
       value = transform.encryptString(value);
     }
     buffer.push(`(${escapeString(value)})`);
@@ -85,9 +144,9 @@ function writeValue(value, buffer, transform) {
   } else if (typeof value === "boolean") {
     buffer.push(value.toString());
   } else if (value instanceof Dict) {
-    writeDict(value, buffer, transform);
+    await writeDict(value, buffer, transform);
   } else if (value instanceof BaseStream) {
-    writeStream(value, buffer, transform);
+    await writeStream(value, buffer, transform);
   } else if (value === null) {
     buffer.push("null");
   } else {
@@ -139,13 +198,16 @@ function writeXFADataForAcroform(str, newRefs) {
     if (!path) {
       continue;
     }
-    const node = xml.documentElement.searchNode(parseXFAPath(path), 0);
+    const nodePath = parseXFAPath(path);
+    let node = xml.documentElement.searchNode(nodePath, 0);
+    if (!node && nodePath.length > 1) {
+      // If we're lucky the last element in the path will identify the node.
+      node = xml.documentElement.searchNode([nodePath.at(-1)], 0);
+    }
     if (node) {
-      if (Array.isArray(value)) {
-        node.childNodes = value.map(val => new SimpleDOMNode("value", val));
-      } else {
-        node.childNodes = [new SimpleDOMNode("#text", value)];
-      }
+      node.childNodes = Array.isArray(value)
+        ? value.map(val => new SimpleDOMNode("value", val))
+        : [new SimpleDOMNode("#text", value)];
     } else {
       warn(`Node not found for path: ${path}`);
     }
@@ -155,7 +217,7 @@ function writeXFADataForAcroform(str, newRefs) {
   return buffer.join("");
 }
 
-function updateAcroform({
+async function updateAcroform({
   xref,
   acroForm,
   acroFormRef,
@@ -169,15 +231,11 @@ function updateAcroform({
     warn("XFA - Cannot save it");
   }
 
-  if (!needAppearances && (!hasXfa || !xfaDatasetsRef)) {
+  if (!needAppearances && (!hasXfa || !xfaDatasetsRef || hasXfaDatasetsEntry)) {
     return;
   }
 
-  // Clone the acroForm.
-  const dict = new Dict(xref);
-  for (const key of acroForm.getKeys()) {
-    dict.set(key, acroForm.getRaw(key));
-  }
+  const dict = acroForm.clone();
 
   if (hasXfa && !hasXfaDatasetsEntry) {
     // We've a XFA array which doesn't contain a datasets entry.
@@ -194,14 +252,8 @@ function updateAcroform({
     dict.set("NeedAppearances", true);
   }
 
-  const encrypt = xref.encrypt;
-  let transform = null;
-  if (encrypt) {
-    transform = encrypt.createCipherTransform(acroFormRef.num, acroFormRef.gen);
-  }
-
   const buffer = [];
-  writeObject(acroFormRef, dict, buffer, transform);
+  await writeObject(acroFormRef, dict, buffer, xref);
 
   newRefs.push({ ref: acroFormRef, data: buffer.join("") });
 }
@@ -229,7 +281,7 @@ function updateXFA({ xfaData, xfaDatasetsRef, newRefs, xref }) {
   newRefs.push({ ref: xfaDatasetsRef, data });
 }
 
-function incrementalUpdate({
+async function incrementalUpdate({
   originalData,
   xrefInfo,
   newRefs,
@@ -242,7 +294,7 @@ function incrementalUpdate({
   acroForm = null,
   xfaData = null,
 }) {
-  updateAcroform({
+  await updateAcroform({
     xref,
     acroForm,
     acroFormRef,
@@ -323,7 +375,7 @@ function incrementalUpdate({
   newXref.set("Length", tableLength);
 
   buffer.push(`${refForXrefTable.num} ${refForXrefTable.gen} obj\n`);
-  writeDict(newXref, buffer, null);
+  await writeDict(newXref, buffer, null);
   buffer.push(" stream\n");
 
   const bufferLen = buffer.reduce((a, str) => a + str.length, 0);

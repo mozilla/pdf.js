@@ -13,15 +13,9 @@
  * limitations under the License.
  */
 
-import { AnnotationEditorType } from "pdfjs-lib";
+import { AnnotationEditorType, shadow } from "pdfjs-lib";
+import { CursorTool, PresentationModeState } from "./ui_utils.js";
 import { GrabToPan } from "./grab_to_pan.js";
-import { PresentationModeState } from "./ui_utils.js";
-
-const CursorTool = {
-  SELECT: 0, // The default value.
-  HAND: 1,
-  ZOOM: 2,
-};
 
 /**
  * @typedef {Object} PDFCursorToolsOptions
@@ -33,19 +27,16 @@ const CursorTool = {
  */
 
 class PDFCursorTools {
+  #active = CursorTool.SELECT;
+
+  #prevActive = null;
+
   /**
    * @param {PDFCursorToolsOptions} options
    */
   constructor({ container, eventBus, cursorToolOnLoad = CursorTool.SELECT }) {
     this.container = container;
     this.eventBus = eventBus;
-
-    this.active = CursorTool.SELECT;
-    this.previouslyActive = null;
-
-    this.handTool = new GrabToPan({
-      element: this.container,
-    });
 
     this.#addEventListeners();
 
@@ -60,7 +51,7 @@ class PDFCursorTools {
    * @type {number} One of the values in {CursorTool}.
    */
   get activeTool() {
-    return this.active;
+    return this.#active;
   }
 
   /**
@@ -68,20 +59,20 @@ class PDFCursorTools {
    *                        must be one of the values in {CursorTool}.
    */
   switchTool(tool) {
-    if (this.previouslyActive !== null) {
+    if (this.#prevActive !== null) {
       // Cursor tools cannot be used in PresentationMode/AnnotationEditor.
       return;
     }
-    if (tool === this.active) {
+    if (tool === this.#active) {
       return; // The requested tool is already active.
     }
 
     const disableActiveTool = () => {
-      switch (this.active) {
+      switch (this.#active) {
         case CursorTool.SELECT:
           break;
         case CursorTool.HAND:
-          this.handTool.deactivate();
+          this._handTool.deactivate();
           break;
         case CursorTool.ZOOM:
         /* falls through */
@@ -95,7 +86,7 @@ class PDFCursorTools {
         break;
       case CursorTool.HAND:
         disableActiveTool();
-        this.handTool.activate();
+        this._handTool.activate();
         break;
       case CursorTool.ZOOM:
       /* falls through */
@@ -105,15 +96,11 @@ class PDFCursorTools {
     }
     // Update the active tool *after* it has been validated above,
     // in order to prevent setting it to an invalid state.
-    this.active = tool;
+    this.#active = tool;
 
-    this.#dispatchEvent();
-  }
-
-  #dispatchEvent() {
     this.eventBus.dispatch("cursortoolchanged", {
       source: this,
-      tool: this.active,
+      tool,
     });
   }
 
@@ -126,26 +113,26 @@ class PDFCursorTools {
       presentationModeState = PresentationModeState.NORMAL;
 
     const disableActive = () => {
-      const previouslyActive = this.active;
+      const prevActive = this.#active;
 
       this.switchTool(CursorTool.SELECT);
-      this.previouslyActive ??= previouslyActive; // Keep track of the first one.
+      this.#prevActive ??= prevActive; // Keep track of the first one.
     };
     const enableActive = () => {
-      const previouslyActive = this.previouslyActive;
+      const prevActive = this.#prevActive;
 
       if (
-        previouslyActive !== null &&
+        prevActive !== null &&
         annotationEditorMode === AnnotationEditorType.NONE &&
         presentationModeState === PresentationModeState.NORMAL
       ) {
-        this.previouslyActive = null;
-        this.switchTool(previouslyActive);
+        this.#prevActive = null;
+        this.switchTool(prevActive);
       }
     };
 
     this.eventBus._on("secondarytoolbarreset", evt => {
-      if (this.previouslyActive !== null) {
+      if (this.#prevActive !== null) {
         annotationEditorMode = AnnotationEditorType.NONE;
         presentationModeState = PresentationModeState.NORMAL;
 
@@ -173,6 +160,19 @@ class PDFCursorTools {
       }
     });
   }
+
+  /**
+   * @private
+   */
+  get _handTool() {
+    return shadow(
+      this,
+      "_handTool",
+      new GrabToPan({
+        element: this.container,
+      })
+    );
+  }
 }
 
-export { CursorTool, PDFCursorTools };
+export { PDFCursorTools };

@@ -58,6 +58,9 @@ const getStdFontMap = getLookupTableFactory(function (t) {
   t["Arial-BoldItalicMT"] = "Helvetica-BoldOblique";
   t["Arial-BoldMT"] = "Helvetica-Bold";
   t["Arial-ItalicMT"] = "Helvetica-Oblique";
+  t["Arial-BoldItalicMT-BoldItalic"] = "Helvetica-BoldOblique";
+  t["Arial-BoldMT-Bold"] = "Helvetica-Bold";
+  t["Arial-ItalicMT-Italic"] = "Helvetica-Oblique";
   t.ArialUnicodeMS = "Helvetica";
   t["ArialUnicodeMS-Bold"] = "Helvetica-Bold";
   t["ArialUnicodeMS-BoldItalic"] = "Helvetica-BoldOblique";
@@ -100,10 +103,10 @@ const getFontNameToFileMap = getLookupTableFactory(function (t) {
   t["Courier-Bold"] = "FoxitFixedBold.pfb";
   t["Courier-BoldOblique"] = "FoxitFixedBoldItalic.pfb";
   t["Courier-Oblique"] = "FoxitFixedItalic.pfb";
-  t.Helvetica = "FoxitSans.pfb";
-  t["Helvetica-Bold"] = "FoxitSansBold.pfb";
-  t["Helvetica-BoldOblique"] = "FoxitSansBoldItalic.pfb";
-  t["Helvetica-Oblique"] = "FoxitSansItalic.pfb";
+  t.Helvetica = "LiberationSans-Regular.ttf";
+  t["Helvetica-Bold"] = "LiberationSans-Bold.ttf";
+  t["Helvetica-BoldOblique"] = "LiberationSans-BoldItalic.ttf";
+  t["Helvetica-Oblique"] = "LiberationSans-Italic.ttf";
   t["Times-Roman"] = "FoxitSerif.pfb";
   t["Times-Bold"] = "FoxitSerifBold.pfb";
   t["Times-BoldItalic"] = "FoxitSerifBoldItalic.pfb";
@@ -133,6 +136,7 @@ const getNonStdFontMap = getLookupTableFactory(function (t) {
   t["ComicSansMS-Bold"] = "Comic Sans MS-Bold";
   t["ComicSansMS-BoldItalic"] = "Comic Sans MS-BoldItalic";
   t["ComicSansMS-Italic"] = "Comic Sans MS-Italic";
+  t.Impact = "Helvetica";
   t["ItcSymbol-Bold"] = "Helvetica-Bold";
   t["ItcSymbol-BoldItalic"] = "Helvetica-BoldOblique";
   t["ItcSymbol-Book"] = "Helvetica";
@@ -162,8 +166,6 @@ const getNonStdFontMap = getLookupTableFactory(function (t) {
   t["MS-PMincho-Italic"] = "MS PMincho-Italic";
   t.NuptialScript = "Times-Italic";
   t.SegoeUISymbol = "Helvetica";
-  t.Wingdings = "ZapfDingbats";
-  t["Wingdings-Regular"] = "ZapfDingbats";
 });
 
 const getSerifFonts = getLookupTableFactory(function (t) {
@@ -307,6 +309,9 @@ const getSymbolsFonts = getLookupTableFactory(function (t) {
   t.Dingbats = true;
   t.Symbol = true;
   t.ZapfDingbats = true;
+  t.Wingdings = true;
+  t["Wingdings-Bold"] = true;
+  t["Wingdings-Regular"] = true;
 });
 
 // Glyph map for well-known standard fonts. Sometimes Ghostscript uses CID
@@ -488,6 +493,7 @@ const getGlyphMapForStandardFonts = getLookupTableFactory(function (t) {
   t[182] = 8217;
   t[200] = 193;
   t[203] = 205;
+  t[207] = 211;
   t[210] = 218;
   t[223] = 711;
   t[224] = 321;
@@ -749,13 +755,13 @@ const getGlyphMapForStandardFonts = getLookupTableFactory(function (t) {
 // The glyph map for ArialBlack differs slightly from the glyph map used for
 // other well-known standard fonts. Hence we use this (incomplete) CID to GID
 // mapping to adjust the glyph map for non-embedded ArialBlack fonts.
-const getSupplementalGlyphMapForArialBlack = getLookupTableFactory(function (
-  t
-) {
-  t[227] = 322;
-  t[264] = 261;
-  t[291] = 346;
-});
+const getSupplementalGlyphMapForArialBlack = getLookupTableFactory(
+  function (t) {
+    t[227] = 322;
+    t[264] = 261;
+    t[291] = 346;
+  }
+);
 
 // The glyph map for Calibri (a Windows font) differs from the glyph map used
 // in the standard fonts. Hence we use this (incomplete) CID to GID mapping to
@@ -885,6 +891,16 @@ function getStandardFontName(name) {
   return stdFontMap[fontName];
 }
 
+function isKnownFontName(name) {
+  const fontName = normalizeFontName(name);
+  return !!(
+    getStdFontMap()[fontName] ||
+    getNonStdFontMap()[fontName] ||
+    getSerifFonts()[fontName] ||
+    getSymbolsFonts()[fontName]
+  );
+}
+
 export {
   getFontNameToFileMap,
   getGlyphMapForStandardFonts,
@@ -895,4 +911,5 @@ export {
   getSupplementalGlyphMapForArialBlack,
   getSupplementalGlyphMapForCalibri,
   getSymbolsFonts,
+  isKnownFontName,
 };

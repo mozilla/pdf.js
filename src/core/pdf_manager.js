@@ -15,7 +15,7 @@
 
 import {
   createValidAbsoluteUrl,
-  shadow,
+  FeatureTest,
   unreachable,
   warn,
 } from "../shared/util.js";
@@ -36,10 +36,20 @@ function parseDocBaseUrl(url) {
 }
 
 class BasePdfManager {
-  constructor() {
+  constructor(args) {
     if (this.constructor === BasePdfManager) {
       unreachable("Cannot initialize BasePdfManager.");
     }
+    this._docBaseUrl = parseDocBaseUrl(args.docBaseUrl);
+    this._docId = args.docId;
+    this._password = args.password;
+    this.enableXfa = args.enableXfa;
+
+    // Check `OffscreenCanvas` support once, rather than repeatedly throughout
+    // the worker-thread code.
+    args.evaluatorOptions.isOffscreenCanvasSupported &&=
+      FeatureTest.isOffscreenCanvasSupported;
+    this.evaluatorOptions = args.evaluatorOptions;
   }
 
   get docId() {
@@ -51,8 +61,11 @@ class BasePdfManager {
   }
 
   get docBaseUrl() {
-    const catalog = this.pdfDocument.catalog;
-    return shadow(this, "docBaseUrl", catalog.baseUrl || this._docBaseUrl);
+    return this._docBaseUrl;
+  }
+
+  get catalog() {
+    return this.pdfDocument.catalog;
   }
 
   ensureDoc(prop, args) {
@@ -117,25 +130,10 @@ class BasePdfManager {
 }
 
 class LocalPdfManager extends BasePdfManager {
-  constructor(
-    docId,
-    data,
-    password,
-    msgHandler,
-    evaluatorOptions,
-    enableXfa,
-    docBaseUrl
-  ) {
-    super();
+  constructor(args) {
+    super(args);
 
-    this._docId = docId;
-    this._password = password;
-    this._docBaseUrl = parseDocBaseUrl(docBaseUrl);
-    this.msgHandler = msgHandler;
-    this.evaluatorOptions = evaluatorOptions;
-    this.enableXfa = enableXfa;
-
-    const stream = new Stream(data);
+    const stream = new Stream(args.source);
     this.pdfDocument = new PDFDocument(this, stream);
     this._loadedStreamPromise = Promise.resolve(stream);
   }
@@ -160,25 +158,11 @@ class LocalPdfManager extends BasePdfManager {
 }
 
 class NetworkPdfManager extends BasePdfManager {
-  constructor(
-    docId,
-    pdfNetworkStream,
-    args,
-    evaluatorOptions,
-    enableXfa,
-    docBaseUrl
-  ) {
-    super();
+  constructor(args) {
+    super(args);
 
-    this._docId = docId;
-    this._password = args.password;
-    this._docBaseUrl = parseDocBaseUrl(docBaseUrl);
-    this.msgHandler = args.msgHandler;
-    this.evaluatorOptions = evaluatorOptions;
-    this.enableXfa = enableXfa;
-
-    this.streamManager = new ChunkedStreamManager(pdfNetworkStream, {
-      msgHandler: args.msgHandler,
+    this.streamManager = new ChunkedStreamManager(args.source, {
+      msgHandler: args.handler,
       length: args.length,
       disableAutoFetch: args.disableAutoFetch,
       rangeChunkSize: args.rangeChunkSize,

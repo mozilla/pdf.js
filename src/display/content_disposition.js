@@ -89,7 +89,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
         const buffer = stringToBytes(value);
         value = decoder.decode(buffer);
         needsEncodingFixup = false;
-      } catch (e) {
+      } catch {
         // TextDecoder constructor threw - unrecognized encoding.
       }
     }
@@ -152,7 +152,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
           parts[i] = parts[i].slice(0, quotindex);
           parts.length = i + 1; // Truncates and stop the iteration.
         }
-        parts[i] = parts[i].replace(/\\(.)/g, "$1");
+        parts[i] = parts[i].replaceAll(/\\(.)/g, "$1");
       }
       value = parts.join('"');
     }
@@ -194,20 +194,20 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
     // encoding = q or b
     // encoded-text = any printable ASCII character other than ? or space.
     //        ... but Firefox permits ? and space.
-    return value.replace(
+    return value.replaceAll(
       /=\?([\w-]*)\?([QqBb])\?((?:[^?]|\?(?!=))*)\?=/g,
       function (matches, charset, encoding, text) {
         if (encoding === "q" || encoding === "Q") {
           // RFC 2047 section 4.2.
-          text = text.replace(/_/g, " ");
-          text = text.replace(/=([0-9a-fA-F]{2})/g, function (match, hex) {
+          text = text.replaceAll("_", " ");
+          text = text.replaceAll(/=([0-9a-fA-F]{2})/g, function (match, hex) {
             return String.fromCharCode(parseInt(hex, 16));
           });
           return textdecode(charset, text);
         } // else encoding is b or B - base64 (RFC 2047 section 4.1)
         try {
           text = atob(text);
-        } catch (e) {}
+        } catch {}
         return textdecode(charset, text);
       }
     );

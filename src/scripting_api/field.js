@@ -127,12 +127,10 @@ class Field extends PDFObject {
       indices.forEach(i => {
         this._value.push(this._items[i].displayValue);
       });
-    } else {
-      if (indices.length > 0) {
-        indices = indices.splice(1, indices.length - 1);
-        this._currentValueIndices = indices[0];
-        this._value = this._items[this._currentValueIndices];
-      }
+    } else if (indices.length > 0) {
+      indices = indices.splice(1, indices.length - 1);
+      this._currentValueIndices = indices[0];
+      this._value = this._items[this._currentValueIndices];
     }
     this._send({ id: this._id, indices });
   }
@@ -247,24 +245,24 @@ class Field extends PDFObject {
       return;
     }
 
-    if (value === "") {
-      this._value = "";
-    } else if (typeof value === "string") {
-      switch (this._fieldType) {
-        case FieldType.none:
-          this._value = !isNaN(value) ? parseFloat(value) : value;
-          break;
-        case FieldType.number:
-        case FieldType.percent:
-          const number = parseFloat(value);
-          this._value = !isNaN(number) ? number : 0;
-          break;
-        default:
-          this._value = value;
-      }
-    } else {
+    if (
+      value === "" ||
+      typeof value !== "string" ||
+      // When the field type is date or time, the value must be a string.
+      this._fieldType >= FieldType.date
+    ) {
+      this._originalValue = undefined;
       this._value = value;
+      return;
     }
+
+    this._originalValue = value;
+    const _value = value.trim().replace(",", ".");
+    this._value = !isNaN(_value) ? parseFloat(_value) : value;
+  }
+
+  _getValue() {
+    return this._originalValue ?? this.value;
   }
 
   _setChoiceValue(value) {
@@ -376,7 +374,7 @@ class Field extends PDFObject {
       nIdx = Array.isArray(this._currentValueIndices)
         ? this._currentValueIndices[0]
         : this._currentValueIndices;
-      nIdx = nIdx || 0;
+      nIdx ||= 0;
     }
 
     if (nIdx < 0 || nIdx >= this.numItems) {
@@ -394,12 +392,10 @@ class Field extends PDFObject {
           --this._currentValueIndices[index];
         }
       }
-    } else {
-      if (this._currentValueIndices === nIdx) {
-        this._currentValueIndices = this.numItems > 0 ? 0 : -1;
-      } else if (this._currentValueIndices > nIdx) {
-        --this._currentValueIndices;
-      }
+    } else if (this._currentValueIndices === nIdx) {
+      this._currentValueIndices = this.numItems > 0 ? 0 : -1;
+    } else if (this._currentValueIndices > nIdx) {
+      --this._currentValueIndices;
     }
 
     this._send({ id: this._id, remove: nIdx });

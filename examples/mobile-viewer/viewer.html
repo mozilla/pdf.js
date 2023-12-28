@@ -24,8 +24,8 @@ limitations under the License.
     <link rel="stylesheet" href="../../node_modules/pdfjs-dist/web/pdf_viewer.css">
     <link rel="stylesheet" type="text/css" href="viewer.css">
 
-    <script src="../../node_modules/pdfjs-dist/build/pdf.js"></script>
-    <script src="../../node_modules/pdfjs-dist/web/pdf_viewer.js"></script>
+    <script src="../../node_modules/pdfjs-dist/build/pdf.mjs" type="module"></script>
+    <script src="../../node_modules/pdfjs-dist/web/pdf_viewer.mjs" type="module"></script>
   </head>
 
   <body>
@@ -42,25 +42,6 @@ limitations under the License.
       <div class="glimmer"></div>
     </div>
 
-    <div id="errorWrapper" hidden="true">
-      <div id="errorMessageLeft">
-        <span id="errorMessage"></span>
-        <button id="errorShowMore">
-          More Information
-        </button>
-        <button id="errorShowLess">
-          Less Information
-        </button>
-      </div>
-      <div id="errorMessageRight">
-        <button id="errorClose">
-          Close
-        </button>
-      </div>
-      <div class="clearBoth"></div>
-      <textarea id="errorMoreInfo" hidden="true" readonly="readonly"></textarea>
-    </div>
-
     <footer>
       <button class="toolbarButton pageUp" title="Previous Page" id="previous"></button>
       <button class="toolbarButton pageDown" title="Next Page" id="next"></button>
@@ -71,6 +52,6 @@ limitations under the License.
       <button class="toolbarButton zoomIn" title="Zoom In" id="zoomIn"></button>
     </footer>
 
-     <script src="viewer.js"></script>
+     <script src="viewer.mjs" type="module"></script>
   </body>
 </html>

@@ -27,6 +27,26 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) {
   );
 }
 
+(function rewriteUrlClosure() {
+  // Run this code outside DOMContentLoaded to make sure that the URL
+  // is rewritten as soon as possible.
+  const queryString = document.location.search.slice(1);
+  const m = /(^|&)file=([^&]*)/.exec(queryString);
+  const defaultUrl = m ? decodeURIComponent(m[2]) : "";
+
+  // Example: chrome-extension://.../http://example.com/file.pdf
+  const humanReadableUrl = "/" + defaultUrl + location.hash;
+  history.replaceState(history.state, "", humanReadableUrl);
+  if (top === window) {
+    chrome.runtime.sendMessage("showPageAction");
+  }
+
+  AppOptions.set("defaultUrl", defaultUrl);
+  // Ensure that PDFViewerApplication.initialBookmark reflects the current hash,
+  // in case the URL rewrite above results in a different hash.
+  PDFViewerApplication.initialBookmark = location.hash.slice(1);
+})();
+
 const ChromeCom = {
   /**
    * Creates an event that the extension is listening for and will
@@ -133,7 +153,7 @@ function isRuntimeAvailable() {
     if (chrome.runtime?.getManifest()) {
       return true;
     }
-  } catch (e) {}
+  } catch {}
   return false;
 }
 
@@ -332,7 +352,7 @@ class ChromePreferences extends BasePreferences {
           defaultPrefs = this.defaults;
         }
         storageArea.get(defaultPrefs, function (readPrefs) {
-          resolve(readPrefs);
+          resolve({ prefs: readPrefs });
         });
       };
 
@@ -356,7 +376,7 @@ class ChromePreferences extends BasePreferences {
         );
 
         chrome.storage.managed.get(defaultManagedPrefs, function (items) {
-          items = items || defaultManagedPrefs;
+          items ||= defaultManagedPrefs;
           // Migration logic for deprecated preferences: If the new preference
           // is not defined by an administrator (i.e. the value is the same as
           // the default value), and a deprecated preference is set with a
@@ -415,12 +435,12 @@ class ChromeExternalServices extends DefaultExternalServices {
     return new ChromePreferences();
   }
 
-  static createL10n(options) {
+  static async createL10n() {
     return new GenericL10n(navigator.language);
   }
 
-  static createScripting({ sandboxBundleSrc }) {
-    return new GenericScripting(sandboxBundleSrc);
+  static createScripting() {
+    return new GenericScripting(AppOptions.get("sandboxBundleSrc"));
   }
 }
 PDFViewerApplication.externalServices = ChromeExternalServices;

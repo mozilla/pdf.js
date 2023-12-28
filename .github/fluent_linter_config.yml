@@ -1,0 +1,27 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# See https://github.com/mozilla-l10n/moz-fluent-linter/blob/main/src/fluent_linter/config.yml
+# for details
+
+---
+ID01:
+    enabled: true
+    exclusions:
+        messages: []
+        files: []
+ID02:
+    enabled: true
+    min_length: 9
+    exclusions:
+        messages: []
+        files: []
+CO01:
+    enabled: true
+    brands:
+        - Firefox
+        - Mozilla
+    exclusions:
+        files: []
+        messages: []

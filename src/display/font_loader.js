@@ -17,27 +17,25 @@ import {
   assert,
   bytesToString,
   FeatureTest,
+  isNodeJS,
   shadow,
   string32,
-  UNSUPPORTED_FEATURES,
+  unreachable,
   warn,
 } from "../shared/util.js";
-import { isNodeJS } from "../shared/is_node.js";
 
 class FontLoader {
+  #systemFonts = new Set();
+
   constructor({
-    onUnsupportedFeature,
     ownerDocument = globalThis.document,
     styleElement = null, // For testing only.
   }) {
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      this._onUnsupportedFeature = onUnsupportedFeature;
-    }
     this._document = ownerDocument;
 
-    this.nativeFontFaces = [];
+    this.nativeFontFaces = new Set();
     this.styleElement =
-      typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || TESTING")
+      typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")
         ? styleElement
         : null;
 
@@ -48,8 +46,13 @@ class FontLoader {
   }
 
   addNativeFontFace(nativeFontFace) {
-    this.nativeFontFaces.push(nativeFontFace);
+    this.nativeFontFaces.add(nativeFontFace);
     this._document.fonts.add(nativeFontFace);
+  }
+
+  removeNativeFontFace(nativeFontFace) {
+    this.nativeFontFaces.delete(nativeFontFace);
+    this._document.fonts.delete(nativeFontFace);
   }
 
   insertRule(rule) {
@@ -67,7 +70,8 @@ class FontLoader {
     for (const nativeFontFace of this.nativeFontFaces) {
       this._document.fonts.delete(nativeFontFace);
     }
-    this.nativeFontFaces.length = 0;
+    this.nativeFontFaces.clear();
+    this.#systemFonts.clear();
 
     if (this.styleElement) {
       // Note: ChildNode.remove doesn't throw if the parentNode is undefined.
@@ -76,12 +80,49 @@ class FontLoader {
     }
   }
 
+  async loadSystemFont({ systemFontInfo: info, _inspectFont }) {
+    if (!info || this.#systemFonts.has(info.loadedName)) {
+      return;
+    }
+    assert(
+      !this.disableFontFace,
+      "loadSystemFont shouldn't be called when `disableFontFace` is set."
+    );
+
+    if (this.isFontLoadingAPISupported) {
+      const { loadedName, src, style } = info;
+      const fontFace = new FontFace(loadedName, src, style);
+      this.addNativeFontFace(fontFace);
+      try {
+        await fontFace.load();
+        this.#systemFonts.add(loadedName);
+        _inspectFont?.(info);
+      } catch {
+        warn(
+          `Cannot load system font: ${info.baseFontName}, installing it could help to improve PDF rendering.`
+        );
+
+        this.removeNativeFontFace(fontFace);
+      }
+      return;
+    }
+
+    unreachable(
+      "Not implemented: loadSystemFont without the Font Loading API."
+    );
+  }
+
   async bind(font) {
     // Add the font to the DOM only once; skip if the font is already loaded.
-    if (font.attached || font.missingFile) {
+    if (font.attached || (font.missingFile && !font.systemFontInfo)) {
       return;
     }
     font.attached = true;
+
+    if (font.systemFontInfo) {
+      await this.loadSystemFont(font);
+      return;
+    }
 
     if (this.isFontLoadingAPISupported) {
       const nativeFontFace = font.createNativeFontFace();
@@ -90,11 +131,6 @@ class FontLoader {
         try {
           await nativeFontFace.loaded;
         } catch (ex) {
-          if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-            this._onUnsupportedFeature({
-              featureId: UNSUPPORTED_FEATURES.errorFontLoadNative,
-            });
-          }
           warn(`Failed to load font '${nativeFontFace.family}': '${ex}'.`);
 
           // When font loading failed, fall back to the built-in font renderer.
@@ -126,10 +162,7 @@ class FontLoader {
 
   get isFontLoadingAPISupported() {
     const hasFonts = !!this._document?.fonts;
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       return shadow(
         this,
         "isFontLoadingAPISupported",
@@ -151,6 +184,7 @@ class FontLoader {
         supported = true;
       } else if (
         typeof navigator !== "undefined" &&
+        typeof navigator?.userAgent === "string" &&
         // User agent string sniffing is bad, but there is no reliable way to
         // tell if the font is fully loaded and ready to be used with canvas.
         /Mozilla\/5.0.*?rv:\d+.*? Gecko/.test(navigator.userAgent)
@@ -332,8 +366,7 @@ class FontFaceObject {
       isEvalSupported = true,
       disableFontFace = false,
       ignoreErrors = false,
-      onUnsupportedFeature,
-      fontRegistry = null,
+      inspectFont = null,
     }
   ) {
     this.compiledGlyphs = Object.create(null);
@@ -344,10 +377,7 @@ class FontFaceObject {
     this.isEvalSupported = isEvalSupported !== false;
     this.disableFontFace = disableFontFace === true;
     this.ignoreErrors = ignoreErrors === true;
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      this._onUnsupportedFeature = onUnsupportedFeature;
-    }
-    this.fontRegistry = fontRegistry;
+    this._inspectFont = inspectFont;
   }
 
   createNativeFontFace() {
@@ -371,7 +401,7 @@ class FontFaceObject {
       );
     }
 
-    this.fontRegistry?.registerFont(this);
+    this._inspectFont?.(this);
     return nativeFontFace;
   }
 
@@ -393,7 +423,7 @@ class FontFaceObject {
       rule = `@font-face {font-family:"${this.cssFontInfo.fontFamily}";${css}src:${url}}`;
     }
 
-    this.fontRegistry?.registerFont(this, url);
+    this._inspectFont?.(this, url);
     return rule;
   }
 
@@ -408,11 +438,6 @@ class FontFaceObject {
     } catch (ex) {
       if (!this.ignoreErrors) {
         throw ex;
-      }
-      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-        this._onUnsupportedFeature({
-          featureId: UNSUPPORTED_FEATURES.errorFontGetPath,
-        });
       }
       warn(`getPathGenerator - ignoring character: "${ex}".`);
 

@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
-import { isNodeJS } from "../../src/shared/is_node.js";
+import { isNodeJS } from "../../src/shared/util.js";
 import { XFAFactory } from "../../src/core/xfa/factory.js";
 
 describe("XFAFactory", function () {
   function searchHtmlNode(root, name, value, byAttributes = false, nth = [0]) {
     if (
       (!byAttributes && root[name] === value) ||
-      (byAttributes && root.attributes && root.attributes[name] === value)
+      (byAttributes && root.attributes?.[name] === value)
     ) {
       if (nth[0]-- === 0) {
         return root;

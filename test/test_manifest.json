@@ -32,6 +32,12 @@
        "type": "eq",
        "renderTaskOnContinue": true
     },
+    {  "id": "issue17147",
+       "file": "pdfs/issue17147.pdf",
+       "md5": "47012ba13ee819ec0af278c9d943f010",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue13130",
        "file": "pdfs/issue13130.pdf",
        "md5": "318518299132fe3b52252ca43a69a23e",
@@ -39,6 +45,31 @@
        "link": true,
        "firstPage": 2,
        "lastPage": 2,
+       "type": "eq"
+    },
+    {  "id": "issue16395",
+       "file": "pdfs/issue16395.pdf",
+       "md5": "a5de985711ec27cd2a2ed97d5f1c536c",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 3,
+       "lastPage": 3,
+       "type": "eq"
+    },
+    {  "id": "issue16432",
+       "file": "pdfs/issue16432.pdf",
+       "md5": "b67b0324c307d8af43d11b0edec88e3e",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
+    {  "id": "issue16464",
+       "file": "pdfs/issue16464.pdf",
+       "md5": "2bd97ff909e2185605788daa70de38ee",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
        "type": "eq"
     },
     {  "id": "tracemonkey-fbf",
@@ -182,6 +213,13 @@
        "link": false,
        "type": "text"
     },
+    {  "id": "reduced_planck_constant",
+       "file": "pdfs/reduced_planck_constant.pdf",
+       "md5": "54636f82714926335da5cec6d92d6482",
+       "rounds": 1,
+       "link": true,
+       "type": "text"
+    },
     {  "id": "issue1293",
        "file": "pdfs/issue1293r.pdf",
        "md5": "4a098f5051f34fab036f5bbe88f8deef",
@@ -230,7 +268,14 @@
       "link": true,
       "type": "eq",
       "annotations": true
-   },
+    },
+    {  "id": "issue15516",
+       "file": "pdfs/issue15516_reduced.pdf",
+       "md5": "a30be78c73d13aa6ff890834ce69adc1",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {  "id": "bug946506",
        "file": "pdfs/bug946506.pdf",
        "md5": "c28911b5c31bdc337c2ce404c5971cfc",
@@ -240,6 +285,15 @@
        "lastPage": 1,
        "type": "eq",
        "about": "Fonts referenced only by name and not by an object identifier."
+    },
+    {  "id": "bug946506-text",
+       "file": "pdfs/bug946506.pdf",
+       "md5": "c28911b5c31bdc337c2ce404c5971cfc",
+       "rounds": 1,
+       "link": false,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "text"
     },
     {  "id": "bug931481",
        "file": "pdfs/bug931481.pdf",
@@ -445,6 +499,14 @@
        "file": "pdfs/german-umlaut-r.pdf",
        "md5": "baa2cd74c76473cf7b914a17403a7f9a",
        "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "bug858128",
+       "file": "pdfs/bug858128.pdf",
+       "md5": "46c7e78250b623782832801d4e6de2dc",
+       "link": true,
+       "lastPage": 1,
        "rounds": 1,
        "type": "eq"
     },
@@ -785,6 +847,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "checkbox-bad-appearance",
+       "file": "pdfs/checkbox-bad-appearance.pdf",
+       "md5": "acdac655911cb3d33c3fb1462cf2ad56",
+       "rounds": 1,
+       "type": "eq",
+       "forms": true
+    },
     {  "id": "artofwar",
        "file": "pdfs/artofwar.pdf",
        "md5": "7bdd51c327b74f1f7abdd90eedb2f912",
@@ -831,6 +900,12 @@
        "md5": "6c5526ae1a9d66cb517153001afc196e",
        "rounds": 1,
        "link": false,
+       "type": "eq"
+    },
+    {  "id": "colorspace_sin",
+       "file": "pdfs/colorspace_sin.pdf",
+       "md5": "4e341c346f4f37cd94b82c532badb8fd",
+       "rounds": 1,
        "type": "eq"
     },
     {  "id": "issue215",
@@ -998,6 +1073,12 @@
        "rounds": 1,
        "lastPage": 1,
        "type": "eq"
+    },
+    {  "id": "bug1811668",
+       "file": "pdfs/bug1811668_reduced.pdf",
+       "md5": "87aa65d89aa0682cbe7b87152b884495",
+       "rounds": 1,
+       "type": "text"
     },
     {  "id": "issue8092",
        "file": "pdfs/issue8092.pdf",
@@ -1777,6 +1858,14 @@
        "type": "eq",
        "annotations": true
     },
+    {  "id": "issue16759",
+       "file": "pdfs/issue16759.pdf",
+       "md5": "07d97ae84f3d757e7ed20c628b94ecd5",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue9105_other",
        "file": "pdfs/issue9105_other.pdf",
        "md5": "4c8b9c2cceb9c5d621e1d50b3dc38efc",
@@ -1993,6 +2082,14 @@
        "file": "pdfs/jbig2_symbol_offset.pdf",
        "md5": "6b22a0f838008fa4d8cb5b40ba095c48",
        "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "issue15942",
+       "file": "pdfs/issue15942.pdf",
+       "md5": "d690e16e6a3a8486ebf7289a9c43ba39",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
        "type": "eq"
     },
     {  "id": "bug1046314",
@@ -2214,6 +2311,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue15977",
+       "file": "pdfs/issue15977_reduced.pdf",
+       "md5": "cd06accb3da81597ad11acffeb0b68fc",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue5084",
        "file": "pdfs/issue5084.pdf",
        "md5": "a42a076ba90e20e3aae9af869eb4de45",
@@ -2269,6 +2372,12 @@
        "file": "pdfs/issue4801.pdf",
        "md5": "7f32764717447a8b5c8eac08c9ab8380",
        "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "bug1365930",
+       "file": "pdfs/bug1365930.pdf",
+       "md5": "0db06efce060d82da16a79e8bd762a1c",
        "rounds": 1,
        "type": "eq"
     },
@@ -2351,6 +2460,16 @@
        "type": "eq",
        "about": "Type3 fonts with image resources; both pages need to be tested, otherwise the bug won't manifest."
     },
+    {  "id": "issue16127",
+       "file": "pdfs/issue16127.pdf",
+       "md5": "42714567a818876f51ef960df21600f5",
+       "link": true,
+       "rounds": 1,
+       "firstPage": 1,
+       "lastPage": 2,
+       "type": "eq",
+       "about": "Type3 fonts with pattern resources; both pages need to be tested, otherwise the bug won't manifest."
+    },
     {  "id": "doc_actions",
        "file": "pdfs/doc_actions.pdf",
        "md5": "ceae4eb405a0b40394f4d63d7525a870",
@@ -2380,6 +2499,12 @@
     {  "id": "issue12418",
        "file": "pdfs/issue12418_reduced.pdf",
        "md5": "596b70f00a5f88ff58f4f4d06fcf75f1",
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "colorspace_cos",
+       "file": "pdfs/colorspace_cos.pdf",
+       "md5": "d3703784c2558f33e03b91dccb745b6c",
        "rounds": 1,
        "type": "eq"
     },
@@ -3024,6 +3149,13 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue17064_readonly",
+       "file": "pdfs/issue17064_readonly.pdf",
+       "md5": "cb84f8e8301e935a3b9ea8ef320f45bf",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "issue12714",
        "file": "pdfs/issue12714.pdf",
        "md5": "f9ee31c74f9e342e95122b0b3bc84fa0",
@@ -3048,6 +3180,12 @@
        "lastPage": 1,
        "link": true,
        "type": "eq"
+    },
+    {  "id": "issue15910",
+       "file": "pdfs/issue15910.pdf",
+       "md5": "6429d8490e11e226b1cbdf2033c04237",
+       "rounds": 1,
+       "type": "text"
     },
     {  "id": "issue7872",
        "file": "pdfs/issue7872.pdf",
@@ -3295,7 +3433,7 @@
        "print": true,
        "annotationStorage": {
          "427R": {
-           "hidden": false,
+           "noPrint": false,
            "value": "hello world"
          }
        }
@@ -3339,6 +3477,23 @@
        "link": false,
        "rounds": 1,
        "type": "text"
+    },
+    {  "id": "issue11451",
+       "file": "pdfs/issue11451.pdf",
+       "md5": "a2fd3c4596ad75562df83a2494263802",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
+    {  "id": "bug1652224",
+       "file": "pdfs/bug1652224.pdf",
+       "md5": "0e1bb427f32e83dc8f091842f7a11ac4",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 5,
+       "lastPage": 5,
+       "type": "eq"
     },
     {  "id": "issue8586",
        "file": "pdfs/issue8586.pdf",
@@ -3793,6 +3948,12 @@
       "md5": "c11439fe3b7f8bc39d89dcff58c50a0c",
       "rounds": 1,
       "type": "eq"
+    },
+    {  "id": "colorspace_atan",
+       "file": "pdfs/colorspace_atan.pdf",
+       "md5": "ec310d65a1849a39ae57d0d16b17261d",
+       "rounds": 1,
+       "type": "eq"
     },
     {
       "id": "bug1199237",
@@ -4653,6 +4814,12 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue16263",
+       "file": "pdfs/issue16263.pdf",
+       "md5": "93c3e7884f1f2d072442898127e0a6fd",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue2006",
       "file": "pdfs/issue2006.pdf",
       "md5": "71ec73831ece9b508ad20efa6ff28642",
@@ -4734,6 +4901,15 @@
        "enableXfa": true,
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "pypdf2332",
+       "file": "pdfs/pypdf2332.pdf",
+       "md5": "883d2cf4d0ed16e32c917498fe9843dd",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq",
+       "annotations": true
     },
     {  "id": "issue6151",
        "file": "pdfs/issue6151.pdf",
@@ -4910,6 +5086,12 @@
       "rounds": 1,
       "link": true,
       "type": "load"
+    },
+    {  "id": "issue7454",
+       "file": "pdfs/issue7454.pdf",
+       "md5": "45889bf6a9d3e2eccd01dc48668b21e5",
+       "rounds": 1,
+       "type": "eq"
     },
     { "id": "bigboundingbox",
       "file": "pdfs/bigboundingbox.pdf",
@@ -5333,6 +5515,12 @@
        "enableXfa": true,
        "type": "eq"
     },
+    {  "id": "issue14165",
+       "file": "pdfs/issue14165.pdf",
+       "md5": "917850af2a387475b34b00010200897d",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "scorecard_reduced",
        "file": "pdfs/scorecard_reduced.pdf",
        "md5": "aa8ed0827092c963eea64adb718a3806",
@@ -5423,6 +5611,14 @@
        "link": true,
        "lastPage": 1,
        "type": "text"
+    },
+    {  "id": "mupdf-707147",
+       "file": "pdfs/mupdf-707147.pdf",
+       "md5": "3b6f4e142baed0585bb52c1eb79f918a",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
     },
     {  "id": "issue5421",
        "file": "pdfs/issue5421.pdf",
@@ -5860,6 +6056,14 @@
        "link": true,
        "type": "eq"
     },
+    {  "id": "issue16454",
+       "file": "pdfs/issue16454.pdf",
+       "md5": "82fe0c54a96667472ce999be7a789199",
+       "rounds": 1,
+       "lastPage": 1,
+       "link": true,
+       "type": "eq"
+    },
     {  "id": "decodeACSuccessive",
        "file": "pdfs/decodeACSuccessive.pdf",
        "md5": "7749c032624fe27ab8e8d7d5e9a4a93f",
@@ -6096,6 +6300,16 @@
        "type": "eq",
        "annotations": true
     },
+    {  "id": "issue16800",
+       "file": "pdfs/issue16800.pdf",
+       "md5": "771bc170a55f923d7903af28ccca196c",
+       "link": true,
+       "rounds": 1,
+       "firstPage": 2,
+       "lastPage": 2,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "issue14117",
        "file": "pdfs/issue14117.pdf",
        "md5": "9b1c33ad2f59f4e723c258e863149abf",
@@ -6208,6 +6422,12 @@
          }
        }
     },
+    {  "id": "issue10572",
+       "file": "pdfs/issue10572.pdf",
+       "md5": "48ad69ed106338b3c6845fc7101488b2",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue11931",
        "file": "pdfs/issue11931.pdf",
        "md5": "9ea233037992e1f10280420a49e72845",
@@ -6219,6 +6439,13 @@
        "md5": "e61388913821a5e044bf85a5846d6d9a",
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "issue6931-disable-isOffscreenCanvasSupported",
+       "file": "pdfs/issue6931_reduced.pdf",
+       "md5": "e61388913821a5e044bf85a5846d6d9a",
+       "rounds": 1,
+       "type": "eq",
+       "isOffscreenCanvasSupported": false
     },
     {  "id": "annotation-button-widget-annotations",
        "file": "pdfs/annotation-button-widget.pdf",
@@ -6820,18 +7047,17 @@
           "opacity": 1,
           "paths": [{
               "bezier": [
-                1.5, 25.727771084724367, 2.8040804485100495, 27.031851533234402,
-                5.396811581133676, 23.25556095123241, 6, 22.727771084724367,
-                10.45407020558315, 18.830459654839103, 15.981183968598401,
-                16.364531104350363, 21, 13.227771084724367, 25.88795894206055,
-                10.172796745936523, 37.988543516372076, 5.739227568352277, 42,
-                1.7277710847243668
+                73, 560.2277710847244, 74.30408044851005, 561.5318515332344,
+                76.89681158113368, 557.7555609512324, 77.5, 557.2277710847244,
+                81.95407020558315, 553.3304596548392, 87.4811839685984, 550.8645311043504,
+                92.5, 547.7277710847244, 97.38795894206055, 544.6727967459365,
+                109.48854351637208, 540.2392275683522, 113.5, 536.2277710847244
               ],
               "points": [
-                1.5, 25.727771084724367, 5.225791198862495, 23.602568747729173,
-                4.012834511116397, 24.914722452856147, 6, 22.727771084724367, 21,
-                13.227771084724367, 37.71378602219673, 4.78737352236285,
-                31.828688421912233, 7.836451889039392, 42, 1.7277710847243668
+                73, 560.2277710847244, 76.7257911988625, 558.1025687477292,
+                75.5128345111164, 559.4147224528562, 77.5, 557.2277710847244,
+                92.5, 547.7277710847244, 109.21378602219673, 539.2873735223628,
+                103.32868842191223, 542.3364518890394, 113.5, 536.2277710847244
               ]
           }],
           "pageIndex": 0,
@@ -6899,101 +7125,113 @@
        },
        "pdfjs_internal_editor_21": {
          "annotationType": 15,
-         "color": [0, 0, 0],
+         "color": [255, 0, 0],
          "thickness": 1,
          "opacity": 1,
          "paths": [
            {
              "bezier": [
-               0.5, 15.653846153846189, 0.5, 10.612792605955292,
-               2.221156193659856, 5.960961418318131, 2.221156193659856,
-               0.7371591421274406
+               417.61538461538464, 520.3461538461538, 419.15384615384613,
+               520.3461538461538, 421.0769230769231, 520.3461538461538,
+               423.38461538461536, 520.3461538461538, 425.6923076923077,
+               520.3461538461538, 429.15384615384613, 519.9615384615385,
+               433.7692307692308, 519.1923076923076
              ],
              "points": [
-               0.5, 15.653846153846189, 2.221156193659856, 0.7371591421274406
+               417.61538461538464, 520.3461538461538, 419.15384615384613,
+               520.3461538461538, 425.6923076923077, 520.3461538461538,
+               433.7692307692308, 519.1923076923076
              ]
            }
          ],
          "pageIndex": 0,
          "rect": [
-           416.53846153846155, 561.8076923076923, 419.41346388596753,
-           577.9615384615385
+           417.11538461538464, 510.46153846153845, 434.42307692307696,
+           520.8461538461538
          ],
          "rotation": 0
        },
        "pdfjs_internal_editor_23": {
          "annotationType": 15,
-         "color": [0, 0, 0],
+         "color": [0, 255, 0],
          "thickness": 1,
          "opacity": 1,
          "paths": [
            {
              "bezier": [
-               0.5, 18.538461538461547, 0.5, 12.869221974582576,
-               3.9307267310416893, 5.207607308237302, 1.6538461538461537,
-               0.653846153846164
+               449.92307692307696, 526.6538461538462, 449.92307692307696,
+               527.423076923077, 449.6346153846154, 528.8653846153846,
+               449.0576923076924, 530.9807692307693, 448.4807692307693,
+               533.0961538461539, 447.8076923076924, 536.6538461538462,
+               447.0384615384616, 541.6538461538462
              ],
              "points": [
-               0.5, 18.538461538461547, 2.434116685812059, 4.572198481030599,
-               1.9307532933714027, 9.17784944259592, 1.6538461538461537,
-               0.653846153846164
+               449.92307692307696, 526.6538461538462, 449.92307692307696,
+               527.423076923077, 448.4807692307693, 533.0961538461539,
+               447.0384615384616, 541.6538461538462
              ]
            }
          ],
          "pageIndex": 0,
          "rect": [
-           390.00000000000006, 543.4615384615386, 409.0384615384616,
-           546.9134638859676
+           446.5384615384616, 526.1538461538462, 456.92307692307696,
+           542.3076923076924
          ],
          "rotation": 90
        },
        "pdfjs_internal_editor_25": {
          "annotationType": 15,
-         "color": [0, 0, 0],
+         "color": [0, 0, 255],
          "thickness": 1,
          "opacity": 1,
          "paths": [
            {
              "bezier": [
-               0.5, 24.307692307692264, 0.5, 16.218230266280443,
-               1.6442331167367787, 8.976323168614734, 1.6442331167367787,
-               0.8509134145882982
+               482.8461538461538, 511.6538461538462, 482.07692307692304,
+               511.6538461538462, 480.53846153846155, 511.6538461538462,
+               478.23076923076917, 511.6538461538462, 475.9230769230769,
+               511.6538461538462, 472.46153846153845, 511.6538461538462,
+               467.8461538461538, 511.6538461538462
              ],
              "points": [
-               0.5, 24.307692307692264, 1.6442331167367787, 0.8509134145882982
+               482.8461538461538, 511.6538461538462, 482.07692307692304,
+               511.6538461538462, 475.9230769230769, 511.6538461538462,
+               467.8461538461538, 511.6538461538462
              ]
            }
          ],
          "pageIndex": 0,
          "rect": [
-           422.7788438063401, 515.7692307692307, 425.07692307692304,
-           540.576923076923
+           467.1923076923077, 511.1538461538462, 483.3461538461538,
+           521.5384615384615
          ],
          "rotation": 180
        },
        "pdfjs_internal_editor_27": {
          "annotationType": 15,
-         "color": [0, 0, 0],
+         "color": [0, 255, 255],
          "thickness": 1,
          "opacity": 1,
          "paths": [
            {
              "bezier": [
-               0.5, 32.96153846153845, 4.262222952239026, 32.96153846153845,
-               2.8076923076923075, 4.355429108316972, 2.8076923076923075,
-               0.6538461538461462
+               445.9230769230769, 509.3846153846154, 445.5384615384615,
+               509.3846153846154, 445.15384615384613, 508.1346153846154,
+               444.7692307692307, 505.6346153846154, 444.38461538461536,
+               503.1346153846154, 443.23076923076917, 499.00000000000006,
+               441.30769230769226, 493.2307692307693
              ],
              "points": [
-               0.5, 32.96153846153845, 2.9761779872739975, 7.263528385840449,
-               3.0646797609357885, 18.195785915618856, 2.8076923076923075,
-               0.6538461538461462
+               445.9230769230769, 509.3846153846154, 445.5384615384615,
+               509.3846153846154, 444.38461538461536, 503.1346153846154,
+               441.30769230769226, 493.2307692307693
              ]
            }
          ],
          "pageIndex": 0,
          "rect": [
-           425.6538461538462, 553.7403822678785, 459.11538461538464,
-           557.7692307692307
+           436.03846153846155, 492.5769230769231, 446.4230769230769,
+           509.8846153846154
          ],
          "rotation": 270
        }
@@ -7299,5 +7537,879 @@
       "rounds": 1,
       "link": true,
       "type": "eq"
+   },
+   {
+      "id": "bug1815476-save-print",
+      "file": "pdfs/bug1815476.pdf",
+      "md5": "476f77da5f9422ef86ea5f4531602e93",
+      "rounds": 1,
+      "type": "eq",
+      "save": true,
+      "print": true,
+      "annotationStorage": {
+         "88R": {
+            "value": "foo"
+         },
+         "87R": {
+            "value": "bar"
+         }
+      }
+   },
+   {
+      "id": "issue16021",
+      "file": "pdfs/issue16021.pdf",
+      "md5": "78a12254cac90ba5219a4c5555ea35ed",
+      "rounds": 1,
+      "type": "eq"
+   },
+   {
+      "id": "bug1770750-annotations",
+      "file": "pdfs/bug1770750.pdf",
+      "md5": "01e6d77eac90b4b08d75240d3db2b826",
+      "rounds": 1,
+      "type": "eq",
+      "annotations": true
+   },
+   {
+      "id": "issue16081",
+      "file": "pdfs/issue16081.pdf",
+      "md5": "e890d55c9527a116431ebef3efb960ff",
+      "link": true,
+      "type": "other"
+   },
+   {
+      "id": "f1040_2022.pdf",
+      "file": "pdfs/f1040_2022.pdf",
+      "md5": "1eec7137e471a3d68a20855a04293b5b",
+      "link": true,
+      "type": "other"
+   },
+   {
+      "id": "issue6741",
+      "file": "pdfs/issue6741.pdf",
+      "md5": "ddbe6ccc7ae414c7ffa6c4110536730d",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+   },
+   {
+      "id": "issue8076",
+      "file": "pdfs/issue8076.pdf",
+      "md5": "4a866bff4209956a6cfa2e2c9456f421",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+   },
+   {
+      "id": "annotation-link-text-popup-rotated-90",
+      "file": "pdfs/annotation-link-text-popup.pdf",
+      "md5": "4bbf56e81d47232de5f305124ab0ba27",
+      "rounds": 1,
+      "type": "eq",
+      "annotations": true,
+      "rotation": 90
+   },
+   {
+      "id": "annotation-link-text-popup-rotated-180",
+      "file": "pdfs/annotation-link-text-popup.pdf",
+      "md5": "4bbf56e81d47232de5f305124ab0ba27",
+      "rounds": 1,
+      "type": "eq",
+      "annotations": true,
+      "rotation": 180
+   },
+   {
+      "id": "annotation-link-text-popup-rotated-270",
+      "file": "pdfs/annotation-link-text-popup.pdf",
+      "md5": "4bbf56e81d47232de5f305124ab0ba27",
+      "rounds": 1,
+      "type": "eq",
+      "annotations": true,
+      "rotation": 270
+   },
+   {
+      "id": "bug1723568",
+      "file": "pdfs/bug1723568.pdf",
+      "md5": "c5cc9f1e01d195b96eadf8be0a819578",
+      "rounds": 1,
+      "link": true,
+      "type": "eq",
+      "forms": true
+   },
+   {
+      "id": "issue16119",
+      "file": "pdfs/issue16119.pdf",
+      "md5": "76d680172c969c77c9fb650b3d822ad6",
+      "link": true,
+      "type": "other"
+   },
+   {
+      "id": "issue16114",
+      "file": "pdfs/issue16114.pdf",
+      "md5": "c04827ea33692e0f94a5e51716d9aa2e",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+   },
+   {
+      "id": "issue16114-disable-isOffscreenCanvasSupported",
+      "file": "pdfs/issue16114.pdf",
+      "md5": "c04827ea33692e0f94a5e51716d9aa2e",
+      "rounds": 1,
+      "link": true,
+      "type": "eq",
+      "isOffscreenCanvasSupported": false
+   },
+   {
+      "id": "bug1820909",
+      "file": "pdfs/bug1820909.pdf",
+      "md5": "d95a83a868671a03cbf322f16b2e2b9d",
+      "link": true,
+      "type": "other"
+   },
+   {
+      "id": "bug1823296",
+      "file": "pdfs/bug1823296.pdf",
+      "md5": "f71e89ebe3d6e75e0c83ce41cd72df1f",
+      "link": true,
+      "type": "other"
+   },
+   {
+      "id": "issue16221-text",
+      "file": "pdfs/issue16221.pdf",
+      "md5": "62d93c9b3aa4ba3af5446504632e78a5",
+      "rounds": 1,
+      "type": "text"
+   },
+   {
+      "id": "issue16224-text",
+      "file": "pdfs/issue16224.pdf",
+      "md5": "1aa34fbb2154f9a647c7fa9e90db0eff",
+      "rounds": 1,
+      "type": "text"
+   },
+   {
+      "id": "annotation-fileattachment-forced-colors-eq",
+      "file": "pdfs/annotation-fileattachment.pdf",
+      "md5": "d20ecee4b53c81b2dd44c8715a1b4a83",
+      "rounds": 1,
+      "pageColors": {
+         "background": "black",
+         "foreground": "#00FF00"
+      },
+      "annotations": true,
+      "type": "eq"
+   },
+   {
+      "id": "issue16384",
+      "file": "pdfs/issue16384.pdf",
+      "md5": "2a4695a9ce6243832a06e989f1dc6599",
+      "rounds": 1,
+      "link": true,
+      "forms": true,
+      "type": "eq"
+   },
+   {
+      "id": "issue14565",
+      "file": "pdfs/issue14565.pdf",
+      "md5": "ee0b064d227fe90a4795ff0c4dd0a47c",
+      "rounds": 1,
+      "annotations": true,
+      "type": "eq"
+   },
+   {
+      "id": "multiline_compress",
+      "file": "pdfs/multiline.pdf",
+      "md5": "4727c7d1e4e5c7d45fded8ab7a2e05e5",
+      "rounds": 1,
+      "type": "eq",
+      "save": true,
+      "print": true,
+      "annotationStorage": {
+         "24R": {
+            "value": "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\nabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\nabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\nabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\nabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\nabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\nabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\nabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\nabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\nabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\nabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\nabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\nabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\nabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\nabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\nabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\nabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\nabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+         }
+      }
+   },
+   {
+      "id": "issue16300",
+      "file": "pdfs/issue16300.pdf",
+      "md5": "45ac5cd3a159a4e9152bc1fdb685750d",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+   },
+   {
+      "id": "issue15813",
+      "file": "pdfs/issue15813.pdf",
+      "md5": "af5124ee1dbc39c679a903690958c5b2",
+      "rounds": 1,
+      "link": true,
+      "print": true,
+      "type": "eq"
+   },
+   {
+      "id": "issue16471",
+      "file": "pdfs/issue16471.pdf",
+      "md5": "8ac3720d6d3ddcc58e2eadab477fd81e",
+      "rounds": 1,
+      "link": true,
+      "forms": true,
+      "type": "eq"
+   },
+   {
+      "id": "bug1529502",
+      "file": "pdfs/bug1529502.pdf",
+      "md5": "4830e765a3d6cb64d39b84de11178f6e",
+      "rounds": 1,
+      "type": "eq"
+   },
+   {
+    "id": "issue16500",
+    "file": "pdfs/issue16500.pdf",
+    "md5": "6466546aaa5fcf31235bdf100496705c",
+    "rounds": 1,
+    "type": "eq",
+    "print": true,
+    "annotationStorage": {
+      "7R": {
+        "value": ["Three", "Five"]
+      }
+    }
+  },
+  {
+   "id": "issue16538",
+   "file": "pdfs/issue16538.pdf",
+   "md5": "35b691c3a343f4531bd287b001b67a77",
+   "rounds": 1,
+   "type": "eq"
+  },
+   {
+      "id": "freetexts-editor-print",
+      "file": "pdfs/freetexts.pdf",
+      "md5": "da1310a25ab796c1201810070d5032a3",
+      "rounds": 1,
+      "lastPage": 1,
+      "type": "eq",
+      "print": true,
+      "annotationStorage": {
+         "pdfjs_internal_editor_0": {
+            "annotationType": 3,
+            "color": [0, 0, 255],
+            "fontSize": 21,
+            "value": "The content must have been changed",
+            "pageIndex": 0,
+            "rect": [ 92.58600000000003, 415.2426115258789, 449.1110015258789, 447.59261],
+            "rotation": 0,
+            "id": "36R"
+         }
+      }
+   },
+   {
+      "id": "freetexts-editor-save",
+      "file": "pdfs/freetexts.pdf",
+      "md5": "da1310a25ab796c1201810070d5032a3",
+      "rounds": 1,
+      "lastPage": 1,
+      "type": "eq",
+      "save": true,
+      "print": true,
+      "annotationStorage": {
+         "pdfjs_internal_editor_0": {
+            "annotationType": 3,
+            "color": [255, 0, 0],
+            "fontSize": 21,
+            "value": "The content must have been changed",
+            "pageIndex": 0,
+            "rect": [ 92.58600000000003, 415.2426115258789, 449.1110015258789, 447.59261],
+            "rotation": 0,
+            "id": "36R"
+         }
+      }
+   },
+   {
+      "id": "freetexts-delete-editor-print",
+      "file": "pdfs/freetexts.pdf",
+      "md5": "da1310a25ab796c1201810070d5032a3",
+      "rounds": 1,
+      "lastPage": 1,
+      "type": "eq",
+      "print": true,
+      "annotationStorage": {
+         "pdfjs_internal_editor_0": {
+            "pageIndex": 0,
+            "deleted": true,
+            "id": "36R"
+         },
+         "pdfjs_internal_editor_1": {
+            "pageIndex": 0,
+            "deleted": true,
+            "id": "53R"
+         }
+      }
+   },
+   {
+      "id": "freetexts-delete-editor-save",
+      "file": "pdfs/freetexts.pdf",
+      "md5": "da1310a25ab796c1201810070d5032a3",
+      "rounds": 1,
+      "lastPage": 1,
+      "type": "eq",
+      "save": true,
+      "print": true,
+      "annotationStorage": {
+         "pdfjs_internal_editor_0": {
+            "pageIndex": 0,
+            "deleted": true,
+            "id": "36R"
+         },
+         "pdfjs_internal_editor_1": {
+            "pageIndex": 0,
+            "deleted": true,
+            "id": "53R"
+         }
+      }
+   },
+   {
+      "id": "issue16553",
+      "file": "pdfs/issue16553.pdf",
+      "md5": "9b67d31ccfd21572b10f77c5449ce97d",
+      "rounds": 1,
+      "type": "eq",
+      "annotations": true
+   },
+   {
+      "id": "tracemonkey-stamp-editor-print",
+      "file": "pdfs/tracemonkey.pdf",
+      "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+      "rounds": 1,
+      "lastPage": 1,
+      "type": "eq",
+      "print": true,
+      "annotationStorage": {
+        "pdfjs_internal_editor_0": {
+          "annotationType": 13,
+          "pageIndex": 0,
+          "bitmapName": "firefox_logo.png",
+          "bitmapId": "image_c29eaeb9-8839-4a09-bf7c-75a5785805cd_0",
+          "rect": [37.5, 32.406246185302734, 496.5000057220459, 519.1875],
+          "rotation": 0
+        },
+        "pdfjs_internal_editor_1": {
+          "annotationType": 13,
+          "bitmapId": "image_c29eaeb9-8839-4a09-bf7c-75a5785805cd_0",
+          "pageIndex": 0,
+          "rect": [
+           458.06250572204584,
+           473.04686737060547,
+           571.5000057220459,
+           582.7187461853027
+          ],
+          "rotation": 0
+       }
+     }
+   },
+   {
+      "id": "tracemonkey-stamp-editor-save-print",
+      "file": "pdfs/tracemonkey.pdf",
+      "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+      "rounds": 1,
+      "lastPage": 1,
+      "type": "eq",
+      "save": true,
+      "print": true,
+      "annotationStorage": {
+        "pdfjs_internal_editor_0": {
+          "annotationType": 13,
+          "pageIndex": 0,
+          "bitmapName": "firefox_logo.png",
+          "bitmapId": "image_c29eaeb9-8839-4a09-bf7c-75a5785805cd_0",
+          "rect": [37.5, 32.406246185302734, 496.5000057220459, 519.1875],
+          "rotation": 0
+        },
+        "pdfjs_internal_editor_1": {
+          "annotationType": 13,
+          "bitmapId": "image_c29eaeb9-8839-4a09-bf7c-75a5785805cd_0",
+          "pageIndex": 0,
+          "rect": [
+           458.06250572204584,
+           473.04686737060547,
+           571.5000057220459,
+           582.7187461853027
+          ],
+          "rotation": 0
+       }
+     }
+   },
+   {
+      "id": "tracemonkey-stamp-editor-print-2-pages",
+      "file": "pdfs/tracemonkey.pdf",
+      "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+      "rounds": 1,
+      "lastPage": 2,
+      "type": "eq",
+      "print": true,
+      "annotationStorage": {
+        "pdfjs_internal_editor_0": {
+          "annotationType": 13,
+          "pageIndex": 0,
+          "bitmapName": "firefox_logo.png",
+          "bitmapId": "image_c29eaeb9-8839-4a09-bf7c-75a5785805cd_0",
+          "rect": [37.5, 32.406246185302734, 496.5000057220459, 519.1875],
+          "rotation": 0
+        },
+        "pdfjs_internal_editor_1": {
+          "annotationType": 13,
+          "bitmapId": "image_c29eaeb9-8839-4a09-bf7c-75a5785805cd_0",
+          "pageIndex": 0,
+          "rect": [
+           458.06250572204584,
+           473.04686737060547,
+           571.5000057220459,
+           582.7187461853027
+          ],
+          "rotation": 0
+        },
+        "pdfjs_internal_editor_2": {
+          "annotationType": 13,
+          "bitmapId": "image_c29eaeb9-8839-4a09-bf7c-75a5785805cd_0",
+          "pageIndex": 1,
+          "rect": [
+           458.06250572204584,
+           473.04686737060547,
+           571.5000057220459,
+           582.7187461853027
+          ],
+          "rotation": 0
+        }
+      }
+   },
+   {
+      "id": "tracemonkey-stamp-editor-save-print-2-pages",
+      "file": "pdfs/tracemonkey.pdf",
+      "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+      "rounds": 1,
+      "lastPage": 2,
+      "type": "eq",
+      "save": true,
+      "print": true,
+      "annotationStorage": {
+        "pdfjs_internal_editor_0": {
+          "annotationType": 13,
+          "pageIndex": 0,
+          "bitmapName": "firefox_logo.png",
+          "bitmapId": "image_c29eaeb9-8839-4a09-bf7c-75a5785805cd_0",
+          "rect": [37.5, 32.406246185302734, 496.5000057220459, 519.1875],
+          "rotation": 0
+        },
+        "pdfjs_internal_editor_1": {
+          "annotationType": 13,
+          "bitmapId": "image_c29eaeb9-8839-4a09-bf7c-75a5785805cd_0",
+          "pageIndex": 0,
+          "rect": [
+           458.06250572204584,
+           473.04686737060547,
+           571.5000057220459,
+           582.7187461853027
+          ],
+          "rotation": 0
+        },
+        "pdfjs_internal_editor_2": {
+          "annotationType": 13,
+          "bitmapId": "image_c29eaeb9-8839-4a09-bf7c-75a5785805cd_0",
+          "pageIndex": 1,
+          "rect": [
+           458.06250572204584,
+           473.04686737060547,
+           571.5000057220459,
+           582.7187461853027
+          ],
+          "rotation": 0
+        }
+     }
+   },
+   {
+      "id": "bug1844036",
+      "file": "pdfs/tracemonkey.pdf",
+      "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+      "rounds": 1,
+      "lastPage": 2,
+      "type": "eq",
+      "print": true,
+      "annotationStorage": {
+        "pdfjs_internal_editor_0": {
+          "annotationType": 13,
+          "pageIndex": 0,
+          "bitmapName": "firefox_logo.png",
+          "bitmapId": "image_c29eaeb9-8839-4a09-bf7c-75a5785805cd_0",
+          "rect": [37.5, 32.406246185302734, 496.5000057220459, 519.1875],
+          "rotation": 0
+        },
+        "pdfjs_internal_editor_1": {
+          "annotationType": 13,
+          "bitmapId": "image_c29eaeb9-8839-4a09-bf7c-75a5785805cd_0",
+          "pageIndex": 1,
+          "rect": [
+           458.06250572204584,
+           473.04686737060547,
+           571.5000057220459,
+           582.7187461853027
+          ],
+          "rotation": 0
+        },
+        "pdfjs_internal_editor_2": {
+          "annotationType": 13,
+          "bitmapName": "firefox_logo.svg",
+          "bitmapId": "image_c29eaeb9-8839-4a09-bf7c-75a5785805cd_1",
+          "pageIndex": 1,
+          "rect": [
+           182.04545454545453,
+           607.011364329945,
+           424.0227231112393,
+           687
+          ],
+          "rotation": 0
+        }
+      }
+   },
+   {
+      "id": "bug1844572-save-print",
+      "file": "pdfs/bug1844572.pdf",
+      "md5": "22a96775e884131d59c05fa92e0a42f6",
+      "rounds": 1,
+      "type": "eq",
+      "link": true,
+      "save": true,
+      "print": true,
+      "annotationStorage": {
+        "pdfjs_internal_editor_0": {
+          "annotationType": 3,
+          "color": [0, 0, 0],
+          "fontSize": 10,
+          "value": "Hello World",
+          "pageIndex": 0,
+          "rect": [
+            115.80000000000001, 325.0679969482421, 171.3, 342.5679999999999
+          ],
+          "rotation": 0
+        }
+      }
+   },
+   {
+      "id": "widget_hidden_print",
+      "file": "pdfs/widget_hidden_print.pdf",
+      "md5": "0b8d5a8e8c7c7598232a79044c312cbb",
+      "rounds": 1,
+      "type": "eq",
+      "print": true
+   },
+   {
+      "id": "annotation_hidden_print",
+      "file": "pdfs/annotation_hidden_print.pdf",
+      "md5": "5cfa86df9b080feeb4aa320ad68d6cbd",
+      "rounds": 1,
+      "type": "eq",
+      "print": true
+   },
+   {
+      "id": "bug1847733",
+      "file": "pdfs/bug1847733.pdf",
+      "md5": "d2e167216493a50f732b4b3685a91792",
+      "rounds": 1,
+      "link": true,
+      "type": "other"
+   },
+   {
+      "id": "protected-stamp-editor-save-print",
+      "file": "pdfs/empty_protected.pdf",
+      "md5": "3a9e0ede729dceb1052bda48db47dca1",
+      "rounds": 1,
+      "type": "eq",
+      "save": true,
+      "print": true,
+      "annotationStorage": {
+        "pdfjs_internal_editor_0": {
+          "annotationType": 13,
+          "pageIndex": 0,
+          "bitmapName": "firefox_logo.png",
+          "bitmapId": "image_c29eaeb9-8839-4a09-bf7c-75a5785805cd_0",
+          "rect": [37.5, 32.406246185302734, 496.5000057220459, 519.1875],
+          "rotation": 0
+        },
+        "pdfjs_internal_editor_1": {
+          "annotationType": 13,
+          "bitmapId": "image_c29eaeb9-8839-4a09-bf7c-75a5785805cd_0",
+          "pageIndex": 0,
+          "rect": [
+           458.06250572204584,
+           473.04686737060547,
+           571.5000057220459,
+           582.7187461853027
+          ],
+          "rotation": 0
+       }
+     }
+   },
+   {
+      "id": "issue16863",
+      "file": "pdfs/issue16863.pdf",
+      "md5": "af8abe281721f92a0d46646969f061de",
+      "link": true,
+      "type": "other"
+   },
+   {
+      "id": "bug1851498",
+      "file": "pdfs/bug1851498.pdf",
+      "md5": "787f092f449016a649c6c9343042429a",
+      "rounds": 1,
+      "type": "eq",
+      "annotations": true
+   },
+   {  
+      "id": "issue17065",
+      "file": "pdfs/issue17065.pdf",
+      "md5": "16a70b9941ba049a61612109e0e1d719",
+      "rounds": 1,
+      "type": "eq"
+   },
+   {
+      "id": "issue17069",
+      "file": "pdfs/issue17069.pdf",
+      "md5": "e44a3920c83d8e7be112c52da4db8e57",
+      "rounds": 1,
+      "type": "eq",
+      "annotations": true
+   },
+   {
+      "id": "bug1860602",
+      "file": "pdfs/bug1860602.pdf",
+      "md5": "37de2fbd0a02c5a3ca27c6e75fea8932",
+      "rounds": 1,
+      "link": true,
+      "firstPage": 2,
+      "lastPage": 2,
+      "type": "eq",
+      "forms": true
+   },
+   {
+      "id": "issue17169",
+      "file": "pdfs/issue17169.pdf",
+      "md5": "fa57aa9442c5e2d6d9e61bbb8856a55f",
+      "link": true,
+      "rounds": 1,
+      "type": "eq"
+   },
+   { 
+      "id": "issue17215-annotations",
+      "file": "pdfs/issue17215.pdf",
+      "md5": "968848af6ef593a3d1d6aba030ef47cb",
+      "rounds": 1,
+      "type": "eq",
+      "annotations": true
+   },
+   {
+      "id": "issue17232-annotations",
+      "file": "pdfs/issue17232.pdf",
+      "md5": "90ade9fc5721ddf8d17e8cfc43e186a4",
+      "rounds": 1,
+      "link": true,
+      "type": "eq",
+      "annotations": true
+   },
+   {
+      "id": "issue16839",
+      "file": "pdfs/issue16839.pdf",
+      "md5": "413fceec0ac31e079dc487bf4c5e44d8",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+   },
+   {
+      "id": "tracemonkey-highlight",
+      "file": "pdfs/tracemonkey.pdf",
+      "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+      "rounds": 1,
+      "type": "highlight"
+   },
+   { 
+      "id": "160F-2019-highlight",
+      "file": "pdfs/160F-2019.pdf",
+      "md5": "71591f11ee717e12887f529c84d5ae89",
+      "rounds": 1,
+      "type": "highlight"
+   },
+   {
+      "id": "tracemonkey-highlight-editor-print",
+      "file": "pdfs/tracemonkey.pdf",
+      "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+      "rounds": 1,
+      "lastPage": 1,
+      "type": "eq",
+      "print": true,
+      "annotationStorage": {
+         "pdfjs_internal_editor_0": {
+            "annotationType": 9,
+            "color": [
+              255,
+              240,
+              102
+            ],
+            "opacity": 0.4,
+            "quadPoints": [
+              80.53230785208449,
+              696.385203481336,
+              528.9234102584737,
+              696.385203481336,
+              80.53230785208449,
+              716.3783153330397,
+              528.9234102584737,
+              716.3783153330397,
+              263.70067924380567,
+              676.5056819423341,
+              346.3002317296901,
+              676.5056819423341,
+              263.70067924380567,
+              696.4987937940379,
+              346.3002317296901,
+              696.4987937940379
+            ],
+            "outlines": [
+              [
+                79.866,
+                695.5343999999999,
+                79.866,
+                717.2352,
+                529.5636000000001,
+                717.2352,
+                529.5636000000001,
+                695.5343999999999,
+                346.94280000000003,
+                695.5343999999999,
+                346.94280000000003,
+                675.6551999999999,
+                263.0376,
+                675.6551999999999,
+                263.0376,
+                695.5343999999999
+              ]
+            ],
+            "pageIndex": 0,
+            "rect": [
+              79.866,
+              675.6551999999999,
+              529.5636000000001,
+              717.2352
+            ],
+            "rotation": 0
+         }
+      }
+   },
+   {
+      "id": "tracemonkey-highlight-editor-save-print",
+      "file": "pdfs/tracemonkey.pdf",
+      "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+      "rounds": 1,
+      "lastPage": 1,
+      "type": "eq",
+      "save": true,
+      "print": true,
+      "annotationStorage": {
+         "pdfjs_internal_editor_0": {
+            "annotationType": 9,
+            "color": [
+              249,
+              108,
+              147
+            ],
+            "opacity": 0.4,
+            "quadPoints": [
+              80.53230785208449,
+              696.385203481336,
+              528.9234102584737,
+              696.385203481336,
+              80.53230785208449,
+              716.3783153330397,
+              528.9234102584737,
+              716.3783153330397,
+              263.70067924380567,
+              676.5056819423341,
+              346.3002317296901,
+              676.5056819423341,
+              263.70067924380567,
+              696.4987937940379,
+              346.3002317296901,
+              696.4987937940379
+            ],
+            "outlines": [
+              [
+                79.866,
+                695.5343999999999,
+                79.866,
+                717.2352,
+                529.5636000000001,
+                717.2352,
+                529.5636000000001,
+                695.5343999999999,
+                346.94280000000003,
+                695.5343999999999,
+                346.94280000000003,
+                675.6551999999999,
+                263.0376,
+                675.6551999999999,
+                263.0376,
+                695.5343999999999
+              ]
+            ],
+            "pageIndex": 0,
+            "rect": [
+              79.866,
+              675.6551999999999,
+              529.5636000000001,
+              717.2352
+            ],
+            "rotation": 0
+         }
+      }
+   },
+   {
+      "id": "bug1864136-forms",
+      "file": "pdfs/bug1864136.pdf",
+      "md5": "97357ad5b0fde2c4e79c07819e4d9710",
+      "rounds": 1,
+      "link": true,
+      "firstPage": 2,
+      "lastPage": 2,
+      "type": "eq",
+      "forms": true
+   },
+   {
+      "id": "issue17332-annotations",
+      "file": "pdfs/issue17332.pdf",
+      "md5": "140c34d900b797e1310b1cb142a4b8e3",
+      "rounds": 1,
+      "link": true,
+      "type": "eq",
+      "annotations": true
+   },
+   {
+      "id": "bug1865341",
+      "file": "pdfs/bug1865341.pdf",
+      "md5": "e241b6d1dc493df73e77e3eeabc71721",
+      "rounds": 1,
+      "type": "eq",
+      "save": true,
+      "print": true,
+      "loadAnnotations": true,
+      "annotationStorage": {
+         "pdfjs_internal_editor_0": {
+            "annotationType": 3,
+            "color": [255, 0, 0],
+            "fontSize": 10,
+            "value": "Załącznik",
+            "pageIndex": 0,
+            "rect": [ 238, 629, 287, 649],
+            "rotation": 0
+         }
+      }
    }
 ]

@@ -1,0 +1,72 @@
+name: Publish website
+on:
+  push:
+    branches:
+      - master
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [lts/*]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install Gulp
+        run: npm install -g gulp-cli
+
+      - name: Install other dependencies
+        run: npm install
+
+      - name: Build the website
+        run: gulp web
+
+      - name: Archive the website
+        shell: sh
+        run: |
+          chmod -c -R +rX "$INPUT_PATH" | while read line; do
+            echo "::warning title=Invalid file permissions automatically fixed::$line"
+          done
+          tar \
+            --dereference --hard-dereference \
+            --directory "$INPUT_PATH" \
+            -cvf "$RUNNER_TEMP/website.tar" \
+            --exclude=.git \
+            --exclude=.github \
+            .
+        env:
+          INPUT_PATH: build/gh-pages
+
+      - name: Upload the website
+        uses: actions/upload-artifact@v3
+        with:
+          name: github-pages
+          path: ${{ runner.temp }}/website.tar
+          retention-days: 1
+          if-no-files-found: error
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      pages: write  # Required to deploy to GitHub Pages.
+      id-token: write  # Required to verify that the deployment originates from this workflow.
+
+    steps:
+      - name: Deploy the website
+        uses: actions/deploy-pages@v3

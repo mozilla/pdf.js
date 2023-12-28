@@ -13,114 +13,45 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./interfaces").IL10n} IL10n */
+
+import { fetchData, shadow } from "pdfjs-lib";
+import { FluentBundle, FluentResource } from "fluent-bundle";
+import { DOMLocalization } from "fluent-dom";
+import { L10n } from "./l10n.js";
+
 /**
- * A subset of the l10n strings in the `l10n/en-US/viewer.properties` file.
+ * @implements {IL10n}
  */
-const DEFAULT_L10N_STRINGS = {
-  of_pages: "of {{pagesCount}}",
-  page_of_pages: "({{pageNumber}} of {{pagesCount}})",
-
-  document_properties_kb: "{{size_kb}} KB ({{size_b}} bytes)",
-  document_properties_mb: "{{size_mb}} MB ({{size_b}} bytes)",
-  document_properties_date_string: "{{date}}, {{time}}",
-  document_properties_page_size_unit_inches: "in",
-  document_properties_page_size_unit_millimeters: "mm",
-  document_properties_page_size_orientation_portrait: "portrait",
-  document_properties_page_size_orientation_landscape: "landscape",
-  document_properties_page_size_name_a3: "A3",
-  document_properties_page_size_name_a4: "A4",
-  document_properties_page_size_name_letter: "Letter",
-  document_properties_page_size_name_legal: "Legal",
-  document_properties_page_size_dimension_string:
-    "{{width}} × {{height}} {{unit}} ({{orientation}})",
-  document_properties_page_size_dimension_name_string:
-    "{{width}} × {{height}} {{unit}} ({{name}}, {{orientation}})",
-  document_properties_linearized_yes: "Yes",
-  document_properties_linearized_no: "No",
-
-  additional_layers: "Additional Layers",
-  page_landmark: "Page {{page}}",
-  thumb_page_title: "Page {{page}}",
-  thumb_page_canvas: "Thumbnail of Page {{page}}",
-
-  find_reached_top: "Reached top of document, continued from bottom",
-  find_reached_bottom: "Reached end of document, continued from top",
-  "find_match_count[one]": "{{current}} of {{total}} match",
-  "find_match_count[other]": "{{current}} of {{total}} matches",
-  "find_match_count_limit[one]": "More than {{limit}} match",
-  "find_match_count_limit[other]": "More than {{limit}} matches",
-  find_not_found: "Phrase not found",
-
-  page_scale_width: "Page Width",
-  page_scale_fit: "Page Fit",
-  page_scale_auto: "Automatic Zoom",
-  page_scale_actual: "Actual Size",
-  page_scale_percent: "{{scale}}%",
-
-  loading: "Loading…",
-  loading_error: "An error occurred while loading the PDF.",
-  invalid_file_error: "Invalid or corrupted PDF file.",
-  missing_file_error: "Missing PDF file.",
-  unexpected_response_error: "Unexpected server response.",
-  rendering_error: "An error occurred while rendering the page.",
-
-  printing_not_supported:
-    "Warning: Printing is not fully supported by this browser.",
-  printing_not_ready: "Warning: The PDF is not fully loaded for printing.",
-  web_fonts_disabled:
-    "Web fonts are disabled: unable to use embedded PDF fonts.",
-
-  free_text2_default_content: "Start typing…",
-  editor_free_text2_aria_label: "Text Editor",
-  editor_ink2_aria_label: "Draw Editor",
-  editor_ink_canvas_aria_label: "User-created image",
-};
-if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-  DEFAULT_L10N_STRINGS.print_progress_percent = "{{progress}}%";
-}
-
-function getL10nFallback(key, args) {
-  switch (key) {
-    case "find_match_count":
-      key = `find_match_count[${args.total === 1 ? "one" : "other"}]`;
-      break;
-    case "find_match_count_limit":
-      key = `find_match_count_limit[${args.limit === 1 ? "one" : "other"}]`;
-      break;
+class ConstL10n extends L10n {
+  constructor(lang) {
+    super({ lang });
+    this._setL10n(
+      new DOMLocalization([], ConstL10n.#generateBundles.bind(ConstL10n, lang))
+    );
   }
-  return DEFAULT_L10N_STRINGS[key] || "";
-}
 
-const PARTIAL_LANG_CODES = {
-  en: "en-US",
-  es: "es-ES",
-  fy: "fy-NL",
-  ga: "ga-IE",
-  gu: "gu-IN",
-  hi: "hi-IN",
-  hy: "hy-AM",
-  nb: "nb-NO",
-  ne: "ne-NP",
-  nn: "nn-NO",
-  pa: "pa-IN",
-  pt: "pt-PT",
-  sv: "sv-SE",
-  zh: "zh-CN",
-};
+  static async *#generateBundles(lang) {
+    const text =
+      typeof PDFJSDev === "undefined"
+        ? await fetchData(
+            new URL(`./locale/${lang}/viewer.ftl`, window.location.href),
+            /* type = */ "text"
+          )
+        : PDFJSDev.eval("DEFAULT_FTL");
 
-// Try to support "incompletely" specified language codes (see issue 13689).
-function fixupLangCode(langCode) {
-  return PARTIAL_LANG_CODES[langCode?.toLowerCase()] || langCode;
-}
-
-// Replaces {{arguments}} with their values.
-function formatL10nValue(text, args) {
-  if (!args) {
-    return text;
+    const resource = new FluentResource(text);
+    const bundle = new FluentBundle(lang);
+    const errors = bundle.addResource(resource);
+    if (errors.length) {
+      console.error("L10n errors", errors);
+    }
+    yield bundle;
   }
-  return text.replace(/\{\{\s*(\w+)\s*\}\}/g, (all, name) => {
-    return name in args ? args[name] : "{{" + name + "}}";
-  });
+
+  static get instance() {
+    return shadow(this, "instance", new ConstL10n("en-us"));
+  }
 }
 
 /**
@@ -128,19 +59,29 @@ function formatL10nValue(text, args) {
  * @implements {IL10n}
  */
 const NullL10n = {
-  async getLanguage() {
-    return "en-us";
+  getLanguage() {
+    return ConstL10n.instance.getLanguage();
   },
 
-  async getDirection() {
-    return "ltr";
+  getDirection() {
+    return ConstL10n.instance.getDirection();
   },
 
-  async get(key, args = null, fallback = getL10nFallback(key, args)) {
-    return formatL10nValue(fallback, args);
+  async get(ids, args = null, fallback) {
+    return ConstL10n.instance.get(ids, args, fallback);
   },
 
-  async translate(element) {},
+  async translate(element) {
+    return ConstL10n.instance.translate(element);
+  },
+
+  pause() {
+    return ConstL10n.instance.pause();
+  },
+
+  resume() {
+    return ConstL10n.instance.resume();
+  },
 };
 
-export { fixupLangCode, getL10nFallback, NullL10n };
+export { NullL10n };

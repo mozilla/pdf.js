@@ -14,9 +14,8 @@
  */
 
 import { $buildXFAObject, NamespaceIds } from "./namespaces.js";
+import { $content, $finalize } from "./symbol_utils.js";
 import {
-  $content,
-  $finalize,
   ContentObject,
   IntegerObject,
   Option01,

@@ -26,7 +26,7 @@ const measurementPattern = /([+-]?\d+\.?\d*)(.*)/;
 
 function stripQuotes(str) {
   if (str.startsWith("'") || str.startsWith('"')) {
-    return str.slice(1, str.length - 1);
+    return str.slice(1, -1);
   }
   return str;
 }
@@ -75,7 +75,7 @@ function getStringOption(data, options) {
 }
 
 function getMeasurement(str, def = "0") {
-  def = def || "0";
+  def ||= "0";
   if (!str) {
     return getMeasurement(def);
   }

@@ -15,10 +15,10 @@
 
 import {
   bytesToString,
-  createPromiseCapability,
   createValidAbsoluteUrl,
   getModificationDate,
   isArrayBuffer,
+  PromiseCapability,
   string32,
   stringToBytes,
   stringToPDFString,
@@ -99,9 +99,19 @@ describe("util", function () {
       expect(stringToPDFString(str)).toEqual("string");
     });
 
+    it("handles incomplete UTF-16 big-endian strings", function () {
+      const str = "\xFE\xFF\x00\x73\x00\x74\x00\x72\x00\x69\x00\x6E\x00";
+      expect(stringToPDFString(str)).toEqual("strin");
+    });
+
     it("handles UTF-16 little-endian strings", function () {
       const str = "\xFF\xFE\x73\x00\x74\x00\x72\x00\x69\x00\x6E\x00\x67\x00";
       expect(stringToPDFString(str)).toEqual("string");
+    });
+
+    it("handles incomplete UTF-16 little-endian strings", function () {
+      const str = "\xFF\xFE\x73\x00\x74\x00\x72\x00\x69\x00\x6E\x00\x67";
+      expect(stringToPDFString(str)).toEqual("strin");
     });
 
     it("handles UTF-8 strings", function () {
@@ -133,6 +143,22 @@ describe("util", function () {
       // UTF-8
       const str4 = "\xEF\xBB\xBF";
       expect(stringToPDFString(str4)).toEqual("");
+    });
+
+    it("handles strings with language code", function () {
+      // ISO Latin 1
+      const str1 = "hello \x1benUS\x1bworld";
+      expect(stringToPDFString(str1)).toEqual("hello world");
+
+      // UTF-16BE
+      const str2 =
+        "\xFE\xFF\x00h\x00e\x00l\x00l\x00o\x00 \x00\x1b\x00e\x00n\x00U\x00S\x00\x1b\x00w\x00o\x00r\x00l\x00d";
+      expect(stringToPDFString(str2)).toEqual("hello world");
+
+      // UTF-16LE
+      const str3 =
+        "\xFF\xFEh\x00e\x00l\x00l\x00o\x00 \x00\x1b\x00e\x00n\x00U\x00S\x00\x1b\x00w\x00o\x00r\x00l\x00d\x00";
+      expect(stringToPDFString(str3)).toEqual("hello world");
     });
   });
 
@@ -212,9 +238,9 @@ describe("util", function () {
     });
   });
 
-  describe("createPromiseCapability", function () {
+  describe("PromiseCapability", function () {
     it("should resolve with correct data", async function () {
-      const promiseCapability = createPromiseCapability();
+      const promiseCapability = new PromiseCapability();
       expect(promiseCapability.settled).toEqual(false);
 
       promiseCapability.resolve({ test: "abc" });
@@ -225,7 +251,7 @@ describe("util", function () {
     });
 
     it("should reject with correct reason", async function () {
-      const promiseCapability = createPromiseCapability();
+      const promiseCapability = new PromiseCapability();
       expect(promiseCapability.settled).toEqual(false);
 
       promiseCapability.reject(new Error("reason"));

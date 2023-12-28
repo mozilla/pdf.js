@@ -19,9 +19,9 @@
   <canvas id="the-canvas" style="border: 1px solid black; direction: ltr;"></canvas>
 </div>
 
-<script src="../../node_modules/pdfjs-dist/build/pdf.js"></script>
+<script src="../../node_modules/pdfjs-dist/build/pdf.mjs" type="module"></script>
 
-<script id="script">
+<script id="script" type="module">
   //
   // If absolute URL from the remote server is provided, configure the CORS
   // header on that server.
@@ -34,7 +34,7 @@
   // shall be specified.
   //
   pdfjsLib.GlobalWorkerOptions.workerSrc =
-    '../../node_modules/pdfjs-dist/build/pdf.worker.js';
+    '../../node_modules/pdfjs-dist/build/pdf.worker.mjs';
 
   var pdfDoc = null,
       pageNum = 1,
@@ -128,13 +128,11 @@
    * Asynchronously downloads PDF.
    */
   var loadingTask = pdfjsLib.getDocument(url);
-  loadingTask.promise.then(function(pdfDoc_) {
-    pdfDoc = pdfDoc_;
-    document.getElementById('page_count').textContent = pdfDoc.numPages;
+  pdfDoc = await loadingTask.promise;
+  document.getElementById('page_count').textContent = pdfDoc.numPages;
 
-    // Initial/first page rendering
-    renderPage(pageNum);
-  });
+  // Initial/first page rendering
+  renderPage(pageNum);
 </script>
 
 </body>

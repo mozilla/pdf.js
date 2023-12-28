@@ -13,7 +13,12 @@
  * limitations under the License.
  */
 
-import { assert, shadow, unreachable, warn } from "../shared/util.js";
+import {
+  assert,
+  MAX_IMAGE_SIZE_TO_CACHE,
+  unreachable,
+  warn,
+} from "../shared/util.js";
 import { RefSetCache } from "./primitives.js";
 
 class BaseLocalCache {
@@ -21,7 +26,7 @@ class BaseLocalCache {
     if (this.constructor === BaseLocalCache) {
       unreachable("Cannot initialize BaseLocalCache.");
     }
-    this._onlyRefs = (options && options.onlyRefs) === true;
+    this._onlyRefs = options?.onlyRefs === true;
 
     if (!this._onlyRefs) {
       this._nameRefMap = new Map();
@@ -150,24 +155,31 @@ class LocalTilingPatternCache extends BaseLocalCache {
   }
 }
 
+class RegionalImageCache extends BaseLocalCache {
+  constructor(options) {
+    super({ onlyRefs: true });
+  }
+
+  set(name = null, ref, data) {
+    if (!ref) {
+      throw new Error('RegionalImageCache.set - expected "ref" argument.');
+    }
+    if (this._imageCache.has(ref)) {
+      return;
+    }
+    this._imageCache.put(ref, data);
+  }
+}
+
 class GlobalImageCache {
-  static get NUM_PAGES_THRESHOLD() {
-    return shadow(this, "NUM_PAGES_THRESHOLD", 2);
-  }
+  static NUM_PAGES_THRESHOLD = 2;
 
-  static get MIN_IMAGES_TO_CACHE() {
-    return shadow(this, "MIN_IMAGES_TO_CACHE", 10);
-  }
+  static MIN_IMAGES_TO_CACHE = 10;
 
-  static get MAX_BYTE_SIZE() {
-    return shadow(this, "MAX_BYTE_SIZE", /* Forty megabytes = */ 40e6);
-  }
+  static MAX_BYTE_SIZE = 5 * MAX_IMAGE_SIZE_TO_CACHE;
 
   constructor() {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
         GlobalImageCache.NUM_PAGES_THRESHOLD > 1,
         "GlobalImageCache - invalid NUM_PAGES_THRESHOLD constant."
@@ -196,27 +208,20 @@ class GlobalImageCache {
   }
 
   shouldCache(ref, pageIndex) {
-    const pageIndexSet = this._refCache.get(ref);
-    const numPages = pageIndexSet
-      ? pageIndexSet.size + (pageIndexSet.has(pageIndex) ? 0 : 1)
-      : 1;
-
-    if (numPages < GlobalImageCache.NUM_PAGES_THRESHOLD) {
-      return false;
-    }
-    if (!this._imageCache.has(ref) && this._cacheLimitReached) {
-      return false;
-    }
-    return true;
-  }
-
-  addPageIndex(ref, pageIndex) {
     let pageIndexSet = this._refCache.get(ref);
     if (!pageIndexSet) {
       pageIndexSet = new Set();
       this._refCache.put(ref, pageIndexSet);
     }
     pageIndexSet.add(pageIndex);
+
+    if (pageIndexSet.size < GlobalImageCache.NUM_PAGES_THRESHOLD) {
+      return false;
+    }
+    if (!this._imageCache.has(ref) && this._cacheLimitReached) {
+      return false;
+    }
+    return true;
   }
 
   /**
@@ -254,7 +259,7 @@ class GlobalImageCache {
   setData(ref, data) {
     if (!this._refCache.has(ref)) {
       throw new Error(
-        'GlobalImageCache.setData - expected "addPageIndex" to have been called.'
+        'GlobalImageCache.setData - expected "shouldCache" to have been called.'
       );
     }
     if (this._imageCache.has(ref)) {
@@ -282,4 +287,5 @@ export {
   LocalGStateCache,
   LocalImageCache,
   LocalTilingPatternCache,
+  RegionalImageCache,
 };

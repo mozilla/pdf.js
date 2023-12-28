@@ -112,16 +112,6 @@ class IPDFLinkService {
    * @param {Object} pageRef - reference to the page.
    */
   cachePageRef(pageNum, pageRef) {}
-
-  /**
-   * @param {number} pageNumber
-   */
-  isPageVisible(pageNumber) {}
-
-  /**
-   * @param {number} pageNumber
-   */
-  isPageCached(pageNumber) {}
 }
 
 /**
@@ -146,7 +136,7 @@ class IRenderableView {
   /**
    * @returns {Promise} Resolved on draw completion.
    */
-  draw() {}
+  async draw() {}
 }
 
 /**
@@ -156,8 +146,9 @@ class IDownloadManager {
   /**
    * @param {string} url
    * @param {string} filename
+   * @param {Object} [options]
    */
-  downloadUrl(url, filename) {}
+  downloadUrl(url, filename, options) {}
 
   /**
    * @param {Uint8Array} data
@@ -167,19 +158,20 @@ class IDownloadManager {
   downloadData(data, filename, contentType) {}
 
   /**
-   * @param {HTMLElement} element
    * @param {Uint8Array} data
    * @param {string} filename
+   * @param {string | null} [dest]
    * @returns {boolean} Indicating if the data was opened.
    */
-  openOrDownloadData(element, data, filename) {}
+  openOrDownloadData(data, filename, dest = null) {}
 
   /**
    * @param {Blob} blob
    * @param {string} url
    * @param {string} filename
+   * @param {Object} [options]
    */
-  download(blob, url, filename) {}
+  download(blob, url, filename, options) {}
 }
 
 /**
@@ -187,25 +179,25 @@ class IDownloadManager {
  */
 class IL10n {
   /**
-   * @returns {Promise<string>} - Resolves to the current locale.
+   * @returns {string} - The current locale.
    */
-  async getLanguage() {}
+  getLanguage() {}
 
   /**
-   * @returns {Promise<string>} - Resolves to 'rtl' or 'ltr'.
+   * @returns {string} - 'rtl' or 'ltr'.
    */
-  async getDirection() {}
+  getDirection() {}
 
   /**
    * Translates text identified by the key and adds/formats data using the args
    * property bag. If the key was not found, translation falls back to the
    * fallback text.
-   * @param {string} key
+   * @param {Array | string} ids
    * @param {Object | null} [args]
    * @param {string} [fallback]
    * @returns {Promise<string>}
    */
-  async get(key, args = null, fallback) {}
+  async get(ids, args = null, fallback) {}
 
   /**
    * Translates HTML element.
@@ -213,6 +205,16 @@ class IL10n {
    * @returns {Promise<void>}
    */
   async translate(element) {}
+
+  /**
+   * Pause the localization.
+   */
+  pause() {}
+
+  /**
+   * Resume the localization.
+   */
+  resume() {}
 }
 
 export { IDownloadManager, IL10n, IPDFLinkService, IRenderableView };

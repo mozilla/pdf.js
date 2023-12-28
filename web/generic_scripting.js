@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import { getPdfFilenameFromUrl, loadScript } from "pdfjs-lib";
+import { getPdfFilenameFromUrl } from "pdfjs-lib";
 
-async function docPropertiesLookup(pdfDocument) {
+async function docProperties(pdfDocument) {
   const url = "",
     baseUrl = url.split("#")[0];
   // eslint-disable-next-line prefer-const
@@ -41,11 +41,16 @@ async function docPropertiesLookup(pdfDocument) {
 
 class GenericScripting {
   constructor(sandboxBundleSrc) {
-    this._ready = loadScript(
-      sandboxBundleSrc,
-      /* removeScriptElement = */ true
-    ).then(() => {
-      return window.pdfjsSandbox.QuickJSSandbox();
+    this._ready = new Promise((resolve, reject) => {
+      const sandbox =
+        typeof PDFJSDev === "undefined"
+          ? import(sandboxBundleSrc) // eslint-disable-line no-unsanitized/method
+          : __non_webpack_import__(sandboxBundleSrc);
+      sandbox
+        .then(pdfjsSandbox => {
+          resolve(pdfjsSandbox.QuickJSSandbox());
+        })
+        .catch(reject);
     });
   }
 
@@ -65,4 +70,4 @@ class GenericScripting {
   }
 }
 
-export { docPropertiesLookup, GenericScripting };
+export { docProperties, GenericScripting };

@@ -14,17 +14,11 @@
  */
 
 import {
-  $appendChild,
   $getChildren,
   $getChildrenByClass,
   $getChildrenByName,
   $getParent,
-  $namespaceId,
-  XFAObject,
-  XFAObjectArray,
-  XmlObject,
-} from "./xfa_object.js";
-import { NamespaceIds } from "./namespaces.js";
+} from "./symbol_utils.js";
 import { warn } from "../../shared/util.js";
 
 const namePattern = /^[^.[]+/;
@@ -58,7 +52,6 @@ const shortcuts = new Map([
 ]);
 
 const somCache = new WeakMap();
-const NS_DATASETS = NamespaceIds.datasets.id;
 
 function parseIndex(index) {
   index = index.trim();
@@ -193,7 +186,7 @@ function searchNode(
     const { name, cacheName, operator, index } = parsed[i];
     const nodes = [];
     for (const node of root) {
-      if (!(node instanceof XFAObject)) {
+      if (!node.isXFAObject) {
         continue;
       }
 
@@ -218,11 +211,9 @@ function searchNode(
             break;
           case operators.dotHash:
             children = node[$getChildrenByClass](name);
-            if (children instanceof XFAObjectArray) {
-              children = children.children;
-            } else {
-              children = [children];
-            }
+            children = children.isXFAObjectArray
+              ? children.children
+              : [children];
             break;
           default:
             break;
@@ -251,11 +242,9 @@ function searchNode(
       continue;
     }
 
-    if (isFinite(index)) {
-      root = nodes.filter(node => index < node.length).map(node => node[index]);
-    } else {
-      root = nodes.flat();
-    }
+    root = isFinite(index)
+      ? nodes.filter(node => index < node.length).map(node => node[index])
+      : nodes.flat();
   }
 
   if (root.length === 0) {
@@ -263,20 +252,6 @@ function searchNode(
   }
 
   return root;
-}
-
-function createNodes(root, path) {
-  let node = null;
-  for (const { name, index } of path) {
-    for (let i = 0, ii = !isFinite(index) ? 0 : index; i <= ii; i++) {
-      const nsId = root[$namespaceId] === NS_DATASETS ? -1 : root[$namespaceId];
-      node = new XmlObject(nsId, name);
-      root[$appendChild](node);
-    }
-
-    root = node;
-  }
-  return node;
 }
 
 function createDataNode(root, container, expr) {
@@ -302,7 +277,7 @@ function createDataNode(root, container, expr) {
     const { name, operator, index } = parsed[i];
     if (!isFinite(index)) {
       parsed[i].index = 0;
-      return createNodes(root, parsed.slice(i));
+      return root.createNodes(parsed.slice(i));
     }
 
     let children;
@@ -315,30 +290,26 @@ function createDataNode(root, container, expr) {
         break;
       case operators.dotHash:
         children = root[$getChildrenByClass](name);
-        if (children instanceof XFAObjectArray) {
-          children = children.children;
-        } else {
-          children = [children];
-        }
+        children = children.isXFAObjectArray ? children.children : [children];
         break;
       default:
         break;
     }
 
     if (children.length === 0) {
-      return createNodes(root, parsed.slice(i));
+      return root.createNodes(parsed.slice(i));
     }
 
     if (index < children.length) {
       const child = children[index];
-      if (!(child instanceof XFAObject)) {
+      if (!child.isXFAObject) {
         warn(`XFA - Cannot create a node.`);
         return null;
       }
       root = child;
     } else {
       parsed[i].index = index - children.length;
-      return createNodes(root, parsed.slice(i));
+      return root.createNodes(parsed.slice(i));
     }
   }
   return null;
