@@ -20,18 +20,19 @@
   inset: 0;
   line-height: 1;
   opacity: 1;
-}
-.textLayer :is(span, br) {
-  color: black;
-  position: absolute;
-  white-space: pre;
-  transform-origin: 0% 0%;
-  border: solid 1px rgba(255, 0, 0, 0.5);
-  background-color: rgba(255, 255, 32, 0.1);
-  box-sizing: border-box;
-}
 
-.textLayer .markedContent {
-  border: none;
-  background-color: transparent;
+  :is(span, br) {
+    color: black;
+    position: absolute;
+    white-space: pre;
+    transform-origin: 0% 0%;
+    border: solid 1px rgb(255 0 0 / 0.5);
+    background-color: rgb(255 255 32 / 0.1);
+    box-sizing: border-box;
+  }
+
+  .markedContent {
+    border: none;
+    background-color: transparent;
+  }
 }

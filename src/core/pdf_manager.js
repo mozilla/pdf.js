@@ -16,7 +16,6 @@
 import {
   createValidAbsoluteUrl,
   FeatureTest,
-  shadow,
   unreachable,
   warn,
 } from "../shared/util.js";
@@ -62,8 +61,11 @@ class BasePdfManager {
   }
 
   get docBaseUrl() {
-    const catalog = this.pdfDocument.catalog;
-    return shadow(this, "docBaseUrl", catalog.baseUrl || this._docBaseUrl);
+    return this._docBaseUrl;
+  }
+
+  get catalog() {
+    return this.pdfDocument.catalog;
   }
 
   ensureDoc(prop, args) {

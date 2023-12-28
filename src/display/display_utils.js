@@ -31,8 +31,6 @@ import {
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
-const AnnotationPrefix = "pdfjs_internal_id_";
-
 class PixelsPerInch {
   static CSS = 96.0;
 
@@ -389,7 +387,7 @@ class DOMCanvasFactory extends BaseCanvasFactory {
   }
 }
 
-async function fetchData(url, asTypedArray = false) {
+async function fetchData(url, type = "text") {
   if (
     (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
     isValidFetchUrl(url, document.baseURI)
@@ -398,29 +396,38 @@ async function fetchData(url, asTypedArray = false) {
     if (!response.ok) {
       throw new Error(response.statusText);
     }
-    return asTypedArray
-      ? new Uint8Array(await response.arrayBuffer())
-      : stringToBytes(await response.text());
+    switch (type) {
+      case "arraybuffer":
+        return response.arrayBuffer();
+      case "blob":
+        return response.blob();
+      case "json":
+        return response.json();
+    }
+    return response.text();
   }
 
   // The Fetch API is not supported.
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
-    request.open("GET", url, /* asTypedArray = */ true);
+    request.open("GET", url, /* async = */ true);
+    request.responseType = type;
 
-    if (asTypedArray) {
-      request.responseType = "arraybuffer";
-    }
     request.onreadystatechange = () => {
       if (request.readyState !== XMLHttpRequest.DONE) {
         return;
       }
       if (request.status === 200 || request.status === 0) {
         let data;
-        if (asTypedArray && request.response) {
-          data = new Uint8Array(request.response);
-        } else if (!asTypedArray && request.responseText) {
-          data = stringToBytes(request.responseText);
+        switch (type) {
+          case "arraybuffer":
+          case "blob":
+          case "json":
+            data = request.response;
+            break;
+          default:
+            data = request.responseText;
+            break;
         }
         if (data) {
           resolve(data);
@@ -439,8 +446,17 @@ class DOMCMapReaderFactory extends BaseCMapReaderFactory {
    * @ignore
    */
   _fetchData(url, compressionType) {
-    return fetchData(url, /* asTypedArray = */ this.isCompressed).then(data => {
-      return { cMapData: data, compressionType };
+    return fetchData(
+      url,
+      /* type = */ this.isCompressed ? "arraybuffer" : "text"
+    ).then(data => {
+      return {
+        cMapData:
+          data instanceof ArrayBuffer
+            ? new Uint8Array(data)
+            : stringToBytes(data),
+        compressionType,
+      };
     });
   }
 }
@@ -450,7 +466,9 @@ class DOMStandardFontDataFactory extends BaseStandardFontDataFactory {
    * @ignore
    */
   _fetchData(url) {
-    return fetchData(url, /* asTypedArray = */ true);
+    return fetchData(url, /* type = */ "arraybuffer").then(data => {
+      return new Uint8Array(data);
+    });
   }
 }
 
@@ -792,26 +810,10 @@ function isValidFetchUrl(url, baseUrl) {
 }
 
 /**
- * @param {string} src
- * @param {boolean} [removeScriptElement]
- * @returns {Promise<void>}
+ * Event handler to suppress context menu.
  */
-function loadScript(src, removeScriptElement = false) {
-  return new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = src;
-
-    script.onload = function (evt) {
-      if (removeScriptElement) {
-        script.remove();
-      }
-      resolve(evt);
-    };
-    script.onerror = function () {
-      reject(new Error(`Cannot load script at: ${script.src}`));
-    };
-    (document.head || document.documentElement).append(script);
-  });
+function noContextMenu(e) {
+  e.preventDefault();
 }
 
 // Deprecated API function -- display regardless of the `verbosity` setting.
@@ -1005,13 +1007,13 @@ function setLayerDimensions(
 }
 
 export {
-  AnnotationPrefix,
   deprecated,
   DOMCanvasFactory,
   DOMCMapReaderFactory,
   DOMFilterFactory,
   DOMStandardFontDataFactory,
   DOMSVGFactory,
+  fetchData,
   getColorValues,
   getCurrentTransform,
   getCurrentTransformInverse,
@@ -1022,7 +1024,7 @@ export {
   isDataScheme,
   isPdfFile,
   isValidFetchUrl,
-  loadScript,
+  noContextMenu,
   PageViewport,
   PDFDateString,
   PixelsPerInch,

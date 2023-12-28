@@ -13,19 +13,30 @@
  * limitations under the License.
  */
 
+@import url(draw_layer_builder.css);
+
 :root {
   --outline-width: 2px;
-  --outline-color: blue;
+  --outline-color: #0060df;
+  --outline-around-width: 1px;
+  --outline-around-color: #f0f0f4;
+  --hover-outline-around-color: var(--outline-around-color);
   --focus-outline: solid var(--outline-width) var(--outline-color);
-  --hover-outline: dashed var(--outline-width) var(--outline-color);
+  --unfocus-outline: solid var(--outline-width) transparent;
+  --focus-outline-around: solid var(--outline-around-width)
+    var(--outline-around-color);
+  --hover-outline-color: #8f8f9d;
+  --hover-outline: solid var(--outline-width) var(--hover-outline-color);
+  --hover-outline-around: solid var(--outline-around-width)
+    var(--hover-outline-around-color);
   --freetext-line-height: 1.35;
   --freetext-padding: 2px;
-  --resizer-size: 8px;
+  --resizer-bg-color: var(--outline-color);
+  --resizer-size: 6px;
   --resizer-shift: calc(
-    0px - var(--outline-width) - var(--resizer-size) / 2 - var(--outline-width) /
-      2
+    0px - (var(--outline-width) + var(--resizer-size)) / 2 -
+      var(--outline-around-width)
   );
-  --resizer-color: white;
   --editorFreeText-editing-cursor: text;
   /*#if COMPONENTS*/
   --editorInk-editing-cursor: pointer;
@@ -45,19 +56,22 @@
 
 @media screen and (forced-colors: active) {
   :root {
-    --outline-width: 3px;
-    --outline-color: ButtonText;
-    --resizer-size: 12px;
-    --resizer-color: ButtonFace;
+    --outline-color: CanvasText;
+    --outline-around-color: ButtonFace;
+    --resizer-bg-color: ButtonText;
+    --hover-outline-color: Highlight;
+    --hover-outline-around-color: SelectedItemText;
   }
 }
 
 [data-editor-rotation="90"] {
   transform: rotate(90deg);
 }
+
 [data-editor-rotation="180"] {
   transform: rotate(180deg);
 }
+
 [data-editor-rotation="270"] {
   transform: rotate(270deg);
 }
@@ -72,7 +86,20 @@
   z-index: 4;
 }
 
-.annotationEditorLayer.freeTextEditing {
+.annotationEditorLayer.waiting {
+  content: "";
+  cursor: wait;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.annotationEditorLayer.disabled {
+  pointer-events: none;
+}
+
+.annotationEditorLayer.freetextEditing {
   cursor: var(--editorFreeText-editing-cursor);
 }
 
@@ -80,24 +107,285 @@
   cursor: var(--editorInk-editing-cursor);
 }
 
-.annotationEditorLayer
-  :is(.freeTextEditor, .inkEditor, .stampEditor).draggable {
-  cursor: move;
-}
-
-.annotationEditorLayer .selectedEditor {
-  outline: var(--focus-outline);
-}
-
 .annotationEditorLayer :is(.freeTextEditor, .inkEditor, .stampEditor) {
   position: absolute;
   background: transparent;
-  border-radius: 3px;
   z-index: 1;
   transform-origin: 0 0;
   cursor: auto;
   max-width: 100%;
   max-height: 100%;
+  border: var(--unfocus-outline);
+
+  &.draggable.selectedEditor {
+    cursor: move;
+  }
+
+  &.selectedEditor {
+    border: var(--focus-outline);
+    outline: var(--focus-outline-around);
+
+    &::before {
+      /*
+        This is a workaround for the lack of support for stripes(...) (see
+        https://drafts.csswg.org/css-images-4/#stripes).
+        The outline should be composed of 1px white, 2px blue and 1px white.
+        This could be achieved in different ways:
+          - using a linear-gradient;
+          - using a box-shadow;
+          - using an outline on the selected element and an outline+border on
+            the ::before pseudo-element.
+        All these options lead to incorrect rendering likely due to rounding
+        issues.
+        That said it doesn't mean that the current is ideal, but it's the best
+        we could come up with for the moment.
+        One drawback of this approach is that we use a border on the selected
+        element which means that we must take care of it when positioning the
+        div in js (see AnnotationEditor._borderLineWidth in editor.js).
+      */
+      content: "";
+      position: absolute;
+      inset: 0;
+      border: var(--focus-outline-around);
+      pointer-events: none;
+    }
+  }
+
+  &:hover:not(.selectedEditor) {
+    border: var(--hover-outline);
+    outline: var(--hover-outline-around);
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border: var(--focus-outline-around);
+    }
+  }
+}
+
+.annotationEditorLayer
+  :is(.freeTextEditor, .inkEditor, .stampEditor, .highlightEditor) {
+  .editToolbar {
+    --editor-toolbar-delete-image: url(images/editor-toolbar-delete.svg);
+    --editor-toolbar-bg-color: #f0f0f4;
+    --editor-toolbar-fg-color: #2e2e56;
+    --editor-toolbar-border-color: #8f8f9d;
+    --editor-toolbar-hover-border-color: var(--editor-toolbar-border-color);
+    --editor-toolbar-hover-bg-color: #e0e0e6;
+    --editor-toolbar-hover-fg-color: var(--editor-toolbar-fg-color);
+    --editor-toolbar-hover-outline: none;
+    --editor-toolbar-focus-outline-color: #0060df;
+    --editor-toolbar-shadow: 0 2px 6px 0 rgb(58 57 68 / 0.2);
+    --editor-toolbar-vert-offset: 6px;
+    --editor-toolbar-height: 28px;
+    --editor-toolbar-padding: 2px;
+
+    @media (prefers-color-scheme: dark) {
+      --editor-toolbar-bg-color: #2b2a33;
+      --editor-toolbar-fg-color: #fbfbfe;
+      --editor-toolbar-hover-bg-color: #52525e;
+      --editor-toolbar-focus-outline-color: #0df;
+    }
+
+    @media screen and (forced-colors: active) {
+      --editor-toolbar-bg-color: ButtonFace;
+      --editor-toolbar-fg-color: ButtonText;
+      --editor-toolbar-border-color: ButtonText;
+      --editor-toolbar-hover-border-color: AccentColor;
+      --editor-toolbar-hover-bg-color: ButtonFace;
+      --editor-toolbar-hover-fg-color: AccentColor;
+      --editor-toolbar-hover-outline: 2px solid
+        var(--editor-toolbar-hover-border-color);
+      --editor-toolbar-focus-outline-color: ButtonBorder;
+      --editor-toolbar-shadow: none;
+    }
+
+    display: flex;
+    width: fit-content;
+    height: var(--editor-toolbar-height);
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: default;
+    pointer-events: auto;
+    box-sizing: content-box;
+    padding: var(--editor-toolbar-padding);
+
+    position: absolute;
+    inset-inline-end: 0;
+    inset-block-start: calc(100% + var(--editor-toolbar-vert-offset));
+
+    border-radius: 6px;
+    background-color: var(--editor-toolbar-bg-color);
+    border: 1px solid var(--editor-toolbar-border-color);
+    box-shadow: var(--editor-toolbar-shadow);
+
+    &.hidden {
+      display: none;
+    }
+
+    &:has(:focus-visible) {
+      border-color: transparent;
+    }
+
+    &:dir(ltr) {
+      transform-origin: 100% 0;
+    }
+
+    &:dir(rtl) {
+      transform-origin: 0 0;
+    }
+
+    .buttons {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0;
+      height: 100%;
+
+      .divider {
+        width: 1px;
+        height: calc(
+          2 * var(--editor-toolbar-padding) + var(--editor-toolbar-height)
+        );
+        background-color: var(--editor-toolbar-border-color);
+        display: inline-block;
+        margin-inline: 2px;
+      }
+
+      .delete {
+        width: var(--editor-toolbar-height);
+
+        &::before {
+          content: "";
+          mask-image: var(--editor-toolbar-delete-image);
+          mask-repeat: no-repeat;
+          mask-position: center;
+          display: inline-block;
+          background-color: var(--editor-toolbar-fg-color);
+          width: 100%;
+          height: 100%;
+        }
+
+        &:hover::before {
+          background-color: var(--editor-toolbar-hover-fg-color);
+        }
+      }
+
+      > * {
+        height: var(--editor-toolbar-height);
+      }
+
+      > :not(.divider) {
+        border: none;
+        background-color: transparent;
+        cursor: pointer;
+
+        &:hover {
+          border-radius: 2px;
+          background-color: var(--editor-toolbar-hover-bg-color);
+          color: var(--editor-toolbar-hover-fg-color);
+          outline: var(--editor-toolbar-hover-outline);
+          outline-offset: 1px;
+
+          &:active {
+            outline: none;
+          }
+        }
+
+        &:focus-visible {
+          border-radius: 2px;
+          outline: 2px solid var(--editor-toolbar-focus-outline-color);
+        }
+      }
+
+      .altText {
+        --alt-text-add-image: url(images/altText_add.svg);
+        --alt-text-done-image: url(images/altText_done.svg);
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: max-content;
+        padding-inline: 8px;
+        pointer-events: all;
+        font: menu;
+        font-weight: 590;
+        font-size: 12px;
+        color: var(--editor-toolbar-fg-color);
+
+        &:disabled {
+          pointer-events: none;
+        }
+
+        &::before {
+          content: "";
+          mask-image: var(--alt-text-add-image);
+          mask-repeat: no-repeat;
+          mask-position: center;
+          display: inline-block;
+          width: 12px;
+          height: 13px;
+          background-color: var(--editor-toolbar-fg-color);
+          margin-inline-end: 4px;
+        }
+
+        &:hover::before {
+          background-color: var(--editor-toolbar-hover-fg-color);
+        }
+
+        &.done::before {
+          mask-image: var(--alt-text-done-image);
+        }
+
+        .tooltip {
+          display: none;
+
+          &.show {
+            --alt-text-tooltip-bg: #f0f0f4;
+            --alt-text-tooltip-fg: #15141a;
+            --alt-text-tooltip-border: #8f8f9d;
+            --alt-text-tooltip-shadow: 0px 2px 6px 0px rgb(58 57 68 / 0.2);
+
+            @media (prefers-color-scheme: dark) {
+              --alt-text-tooltip-bg: #1c1b22;
+              --alt-text-tooltip-fg: #fbfbfe;
+              --alt-text-tooltip-shadow: 0px 2px 6px 0px #15141a;
+            }
+
+            @media screen and (forced-colors: active) {
+              --alt-text-tooltip-bg: Canvas;
+              --alt-text-tooltip-fg: CanvasText;
+              --alt-text-tooltip-border: CanvasText;
+              --alt-text-tooltip-shadow: none;
+            }
+
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: calc(100% + 2px);
+            inset-inline-start: 0;
+            padding-block: 2px 3px;
+            padding-inline: 3px;
+            max-width: 300px;
+            width: max-content;
+            height: auto;
+            font-size: 12px;
+
+            border: 0.5px solid var(--alt-text-tooltip-border);
+            background: var(--alt-text-tooltip-bg);
+            box-shadow: var(--alt-text-tooltip-shadow);
+            color: var(--alt-text-tooltip-fg);
+
+            pointer-events: none;
+          }
+        }
+      }
+    }
+  }
 }
 
 .annotationEditorLayer .freeTextEditor {
@@ -127,7 +415,7 @@
   height: 100%;
 }
 
-.annotationEditorLayer .freeTextEditor .overlay.enabled {
+.annotationEditorLayer freeTextEditor .overlay.enabled {
   display: block;
 }
 
@@ -139,11 +427,6 @@
 .annotationEditorLayer .freeTextEditor .internal:focus {
   outline: none;
   user-select: auto;
-}
-
-.annotationEditorLayer
-  :is(.freeTextEditor, .inkEditor, .stampEditor):hover:not(.selectedEditor) {
-  outline: var(--hover-outline);
 }
 
 .annotationEditorLayer .inkEditor {
@@ -168,19 +451,6 @@
   height: auto;
 }
 
-.annotationEditorLayer .stampEditor.loading {
-  aspect-ratio: 1;
-  width: 10%;
-  height: auto;
-  background-color: rgba(128, 128, 128, 0.5);
-  background-image: var(--loading-icon);
-  background-repeat: no-repeat;
-  background-position: 50%;
-  background-size: 16px 16px;
-  transition-property: background-size;
-  transition-delay: var(--loading-icon-delay);
-}
-
 .annotationEditorLayer .stampEditor canvas {
   width: 100%;
   height: 100%;
@@ -189,8 +459,6 @@
 .annotationEditorLayer {
   :is(.freeTextEditor, .inkEditor, .stampEditor) {
     & > .resizers {
-      width: 100%;
-      height: 100%;
       position: absolute;
       inset: 0;
 
@@ -201,9 +469,9 @@
       & > .resizer {
         width: var(--resizer-size);
         height: var(--resizer-size);
-        border-radius: 50%;
-        background: var(--resizer-color);
-        border: var(--focus-outline);
+        background: content-box var(--resizer-bg-color);
+        border: var(--focus-outline-around);
+        border-radius: 2px;
         position: absolute;
 
         &.topLeft {
@@ -307,6 +575,562 @@
       &.middleRight,
       &.middleLeft {
         cursor: ns-resize;
+      }
+    }
+  }
+
+  &
+    :is(
+      [data-main-rotation="0"] [data-editor-rotation="90"],
+      [data-main-rotation="90"] [data-editor-rotation="0"],
+      [data-main-rotation="180"] [data-editor-rotation="270"],
+      [data-main-rotation="270"] [data-editor-rotation="180"]
+    ) {
+    .editToolbar {
+      rotate: 270deg;
+
+      &:dir(ltr) {
+        inset-inline-end: calc(0px - var(--editor-toolbar-vert-offset));
+        inset-block-start: 0;
+      }
+
+      &:dir(rtl) {
+        inset-inline-end: calc(100% + var(--editor-toolbar-vert-offset));
+        inset-block-start: 0;
+      }
+    }
+  }
+
+  &
+    :is(
+      [data-main-rotation="0"] [data-editor-rotation="180"],
+      [data-main-rotation="90"] [data-editor-rotation="90"],
+      [data-main-rotation="180"] [data-editor-rotation="0"],
+      [data-main-rotation="270"] [data-editor-rotation="270"]
+    ) {
+    .editToolbar {
+      rotate: 180deg;
+      inset-inline-end: 100%;
+      inset-block-start: calc(0pc - var(--editor-toolbar-vert-offset));
+    }
+  }
+
+  &
+    :is(
+      [data-main-rotation="0"] [data-editor-rotation="270"],
+      [data-main-rotation="90"] [data-editor-rotation="180"],
+      [data-main-rotation="180"] [data-editor-rotation="90"],
+      [data-main-rotation="270"] [data-editor-rotation="0"]
+    ) {
+    .editToolbar {
+      rotate: 90deg;
+
+      &:dir(ltr) {
+        inset-inline-end: calc(100% + var(--editor-toolbar-vert-offset));
+        inset-block-start: 100%;
+      }
+
+      &:dir(rtl) {
+        inset-inline-start: calc(0px - var(--editor-toolbar-vert-offset));
+        inset-block-start: 0;
+      }
+    }
+  }
+}
+
+#altTextDialog {
+  --dialog-bg-color: white;
+  --dialog-border-color: white;
+  --dialog-shadow: 0 2px 14px 0 rgb(58 57 68 / 0.2);
+  --text-primary-color: #15141a;
+  --text-secondary-color: #5b5b66;
+  --hover-filter: brightness(0.9);
+  --focus-ring-color: #0060df;
+  --focus-ring-outline: 2px solid var(--focus-ring-color);
+
+  --textarea-border-color: #8f8f9d;
+  --textarea-bg-color: white;
+  --textarea-fg-color: var(--text-secondary-color);
+
+  --radio-bg-color: #f0f0f4;
+  --radio-checked-bg-color: #fbfbfe;
+  --radio-border-color: #8f8f9d;
+  --radio-checked-border-color: #0060df;
+
+  --button-cancel-bg-color: #f0f0f4;
+  --button-cancel-fg-color: var(--text-primary-color);
+  --button-cancel-border-color: var(--button-cancel-bg-color);
+  --button-cancel-hover-bg-color: var(--button-cancel-bg-color);
+  --button-cancel-hover-fg-color: var(--button-cancel-fg-color);
+  --button-cancel-hover-border-color: var(--button-cancel-hover-bg-color);
+
+  --button-save-bg-color: #0060df;
+  --button-save-fg-color: #fbfbfe;
+  --button-save-hover-bg-color: var(--button-save-bg-color);
+  --button-save-hover-fg-color: var(--button-save-fg-color);
+  --button-save-hover-border-color: var(--button-save-hover-bg-color);
+
+  @media (prefers-color-scheme: dark) {
+    --dialog-bg-color: #1c1b22;
+    --dialog-border-color: #1c1b22;
+    --dialog-shadow: 0 2px 14px 0 #15141a;
+    --text-primary-color: #fbfbfe;
+    --text-secondary-color: #cfcfd8;
+    --focus-ring-color: #0df;
+    --hover-filter: brightness(1.4);
+
+    --textarea-bg-color: #42414d;
+
+    --radio-bg-color: #2b2a33;
+    --radio-checked-bg-color: #15141a;
+    --radio-checked-border-color: #0df;
+
+    --button-cancel-bg-color: #2b2a33;
+    --button-save-bg-color: #0df;
+    --button-save-fg-color: #15141a;
+  }
+
+  @media screen and (forced-colors: active) {
+    --dialog-bg-color: Canvas;
+    --dialog-border-color: CanvasText;
+    --dialog-shadow: none;
+    --text-primary-color: CanvasText;
+    --text-secondary-color: CanvasText;
+    --hover-filter: none;
+    --focus-ring-color: ButtonBorder;
+
+    --textarea-border-color: ButtonBorder;
+    --textarea-bg-color: Field;
+    --textarea-fg-color: ButtonText;
+
+    --radio-bg-color: ButtonFace;
+    --radio-checked-bg-color: ButtonFace;
+    --radio-border-color: ButtonText;
+    --radio-checked-border-color: ButtonText;
+
+    --button-cancel-bg-color: ButtonFace;
+    --button-cancel-fg-color: ButtonText;
+    --button-cancel-border-color: ButtonText;
+    --button-cancel-hover-bg-color: AccentColor;
+    --button-cancel-hover-fg-color: AccentColorText;
+
+    --button-save-bg-color: ButtonText;
+    --button-save-fg-color: ButtonFace;
+    --button-save-hover-bg-color: AccentColor;
+    --button-save-hover-fg-color: AccentColorText;
+  }
+
+  font: message-box;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 150%;
+  border-radius: 4px;
+  padding: 12px 16px;
+  border: 1px solid var(--dialog-border-color);
+  background: var(--dialog-bg-color);
+  color: var(--text-primary-color);
+  box-shadow: var(--dialog-shadow);
+
+  &::backdrop {
+    /* This is needed to avoid to darken the image the user want to describe. */
+    mask: url(#alttext-manager-mask);
+  }
+
+  &.positioned {
+    margin: 0;
+  }
+
+  & #altTextContainer {
+    width: 300px;
+    height: fit-content;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+
+    & *:focus-visible {
+      outline: var(--focus-ring-outline);
+      outline-offset: 2px;
+    }
+
+    & .radio {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+
+      & .radioButton {
+        display: flex;
+        gap: 8px;
+        align-self: stretch;
+        align-items: center;
+
+        & input {
+          appearance: none;
+          box-sizing: border-box;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background-color: var(--radio-bg-color);
+          border: 1px solid var(--radio-border-color);
+
+          &:hover {
+            filter: var(--hover-filter);
+          }
+
+          &:checked {
+            background-color: var(--radio-checked-bg-color);
+            border: 4px solid var(--radio-checked-border-color);
+          }
+        }
+      }
+
+      & .radioLabel {
+        display: flex;
+        padding-inline-start: 24px;
+        align-items: flex-start;
+        gap: 10px;
+        align-self: stretch;
+
+        & span {
+          flex: 1 0 0;
+          font-size: 11px;
+          color: var(--text-secondary-color);
+        }
+      }
+    }
+
+    & #overallDescription {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      align-self: stretch;
+
+      & span {
+        align-self: stretch;
+      }
+
+      & .title {
+        font-size: 13px;
+        font-style: normal;
+        font-weight: 590;
+      }
+    }
+
+    & #addDescription {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+
+      & .descriptionArea {
+        flex: 1;
+        padding-inline: 24px 10px;
+
+        textarea {
+          font: inherit;
+          width: 100%;
+          min-height: 75px;
+          padding: 8px;
+          resize: none;
+          margin: 0;
+          box-sizing: border-box;
+          border-radius: 4px;
+          border: 1px solid var(--textarea-border-color);
+          background: var(--textarea-bg-color);
+          color: var(--textarea-fg-color);
+
+          &:focus {
+            outline-offset: 0;
+            border-color: transparent;
+          }
+
+          &:disabled {
+            pointer-events: none;
+            opacity: 0.4;
+          }
+        }
+      }
+    }
+
+    & #buttons {
+      display: flex;
+      justify-content: flex-end;
+      align-items: flex-start;
+      gap: 8px;
+      align-self: stretch;
+
+      button {
+        border-radius: 4px;
+        border: 1px solid;
+        font: menu;
+        font-weight: 600;
+        padding: 4px 16px;
+        width: auto;
+        height: 32px;
+
+        &:hover {
+          cursor: pointer;
+          filter: var(--hover-filter);
+        }
+
+        &#altTextCancel {
+          color: var(--button-cancel-fg-color);
+          background-color: var(--button-cancel-bg-color);
+          border-color: var(--button-cancel-border-color);
+
+          &:hover {
+            color: var(--button-cancel-hover-fg-color);
+            background-color: var(--button-cancel-hover-bg-color);
+            border-color: var(--button-cancel-hover-border-color);
+          }
+        }
+
+        &#altTextSave {
+          color: var(--button-save-hover-fg-color);
+          background-color: var(--button-save-hover-bg-color);
+          border-color: var(--button-save-hover-border-color);
+          opacity: 1;
+
+          &:hover {
+            color: var(--button-save-hover-fg-color);
+            background-color: var(--button-save-hover-bg-color);
+            border-color: var(--button-save-hover-border-color);
+          }
+        }
+      }
+    }
+  }
+}
+
+.colorPicker {
+  --hover-outline-color: #0250bb;
+  --selected-outline-color: #0060df;
+  --swatch-border-color: #cfcfd8;
+
+  @media (prefers-color-scheme: dark) {
+    --hover-outline-color: #80ebff;
+    --selected-outline-color: #aaf2ff;
+    --swatch-border-color: #52525e;
+  }
+
+  @media screen and (forced-colors: active) {
+    --hover-outline-color: Highlight;
+    --selected-outline-color: var(--hover-outline-color);
+    --swatch-border-color: ButtonText;
+  }
+
+  .swatch {
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--swatch-border-color);
+    border-radius: 100%;
+    outline-offset: 2px;
+    box-sizing: border-box;
+    forced-color-adjust: none;
+  }
+
+  button:is(:hover, .selected) > .swatch {
+    border: none;
+  }
+}
+
+.annotationEditorLayer {
+  &[data-main-rotation="0"] {
+    .highlightEditor > .editToolbar {
+      rotate: 0deg;
+    }
+  }
+
+  &[data-main-rotation="90"] {
+    .highlightEditor > .editToolbar {
+      rotate: 270deg;
+    }
+  }
+
+  &[data-main-rotation="180"] {
+    .highlightEditor > .editToolbar {
+      rotate: 180deg;
+    }
+  }
+
+  &[data-main-rotation="270"] {
+    .highlightEditor > .editToolbar {
+      rotate: 90deg;
+    }
+  }
+
+  .highlightEditor {
+    position: absolute;
+    background: transparent;
+    z-index: 1;
+    transform-origin: 0 0;
+    cursor: auto;
+    max-width: 100%;
+    max-height: 100%;
+    border: none;
+    outline: none;
+    pointer-events: none;
+    transform: none;
+
+    .internal {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: auto;
+    }
+
+    &.disabled .internal {
+      pointer-events: none;
+    }
+
+    &.selectedEditor {
+      .internal {
+        cursor: pointer;
+      }
+    }
+
+    .editToolbar {
+      --editor-toolbar-colorpicker-arrow-image: url(images/toolbarButton-menuArrow.svg);
+
+      transform-origin: center !important;
+
+      .buttons {
+        .colorPicker {
+          position: relative;
+          width: auto;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 4px;
+          padding: 4px;
+
+          &::after {
+            content: "";
+            mask-image: var(--editor-toolbar-colorpicker-arrow-image);
+            mask-repeat: no-repeat;
+            mask-position: center;
+            display: inline-block;
+            background-color: var(--editor-toolbar-fg-color);
+            width: 12px;
+            height: 12px;
+          }
+
+          &:hover::after {
+            background-color: var(--editor-toolbar-hover-fg-color);
+          }
+
+          &:has(.dropdown:not(.hidden)) {
+            background-color: var(--editor-toolbar-hover-bg-color);
+          }
+
+          .dropdown {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 11px;
+            padding-block: 8px;
+            border-radius: 6px;
+            background-color: var(--editor-toolbar-bg-color);
+            border: 1px solid var(--editor-toolbar-border-color);
+            box-shadow: var(--editor-toolbar-shadow);
+            inset-block-start: calc(100% + 4px);
+            width: calc(100% + 2 * var(--editor-toolbar-padding));
+
+            button {
+              width: 100%;
+              height: auto;
+              border: none;
+              cursor: pointer;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              background: none;
+
+              &:is(:active, :focus-visible) {
+                outline: none;
+              }
+
+              > .swatch {
+                outline-offset: 2px;
+              }
+
+              &[aria-selected="true"] > .swatch {
+                outline: 2px solid var(--selected-outline-color);
+              }
+
+              &:is(:hover, :active, :focus-visible) > .swatch {
+                outline: 2px solid var(--hover-outline-color);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+.editorParamsToolbar:has(#highlightParamsToolbarContainer) {
+  padding: unset;
+}
+
+#highlightParamsToolbarContainer {
+  height: auto;
+  padding-inline: 10px;
+  padding-block: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+
+  .colorPicker {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    #highlightColorPickerLabel {
+      width: fit-content;
+      inset-inline-start: 0;
+    }
+
+    .dropdown {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-direction: row;
+      height: auto;
+
+      button {
+        width: auto;
+        height: auto;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: none;
+        flex: 0 0 auto;
+
+        .swatch {
+          width: 24px;
+          height: 24px;
+        }
+
+        &:is(:active, :focus-visible) {
+          outline: none;
+        }
+
+        &[aria-selected="true"] > .swatch {
+          outline: 2px solid var(--selected-outline-color);
+        }
+
+        &:is(:hover, :active, :focus-visible) > .swatch {
+          outline: 2px solid var(--hover-outline-color);
+        }
       }
     }
   }

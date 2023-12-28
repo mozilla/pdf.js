@@ -17,16 +17,17 @@
 const {
   AnnotationLayer,
   AnnotationMode,
+  DrawLayer,
   getDocument,
   GlobalWorkerOptions,
+  Outliner,
   PixelsPerInch,
   PromiseCapability,
   renderTextLayer,
   shadow,
   XfaLayer,
 } = pdfjsLib;
-const { GenericL10n, NullL10n, parseQueryString, SimpleLinkService } =
-  pdfjsViewer;
+const { GenericL10n, parseQueryString, SimpleLinkService } = pdfjsViewer;
 
 const WAITING_TIME = 100; // ms
 const CMAP_URL = "/build/generic/web/cmaps/";
@@ -34,7 +35,7 @@ const STANDARD_FONT_DATA_URL = "/build/generic/web/standard_fonts/";
 const IMAGE_RESOURCES_PATH = "/web/images/";
 const VIEWER_CSS = "../build/components/pdf_viewer.css";
 const VIEWER_LOCALE = "en-US";
-const WORKER_SRC = "../build/generic/build/pdf.worker.js";
+const WORKER_SRC = "../build/generic/build/pdf.worker.mjs";
 const RENDER_TASK_ON_CONTINUE_DELAY = 5; // ms
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -182,6 +183,11 @@ class Rasterize {
     return shadow(this, "textStylePromise", loadStyles(styles));
   }
 
+  static get drawLayerStylePromise() {
+    const styles = [VIEWER_CSS, "./draw_layer_test.css"];
+    return shadow(this, "drawLayerStylePromise", loadStyles(styles));
+  }
+
   static get xfaStylePromise() {
     const styles = [VIEWER_CSS, "./xfa_layer_builder_overrides.css"];
     return shadow(this, "xfaStylePromise", loadStyles(styles));
@@ -213,10 +219,11 @@ class Rasterize {
     outputScale,
     annotations,
     annotationCanvasMap,
+    annotationStorage,
+    fieldObjects,
     page,
     imageResourcesPath,
-    renderForms = false,
-    l10n = NullL10n
+    renderForms = false
   ) {
     try {
       const { svg, foreignObject, style, div } = this.createContainer(viewport);
@@ -239,16 +246,30 @@ class Rasterize {
         linkService: new SimpleLinkService(),
         imageResourcesPath,
         renderForms,
+        annotationStorage,
+        fieldObjects,
       };
+
+      // Ensure that the annotationLayer gets translated.
+      document.l10n.connectRoot(div);
+
       const annotationLayer = new AnnotationLayer({
         div,
         annotationCanvasMap: annotationImageMap,
         page,
-        l10n,
         viewport: annotationViewport,
       });
       await annotationLayer.render(parameters);
       await annotationLayer.showPopups();
+
+      // With Fluent, the translations are triggered by the MutationObserver
+      // hence the translations could be not finished when we rasterize the div.
+      // So in order to be sure that all translations are done, we wait for
+      // them here.
+      await document.l10n.translateRoots();
+
+      // All translation should be complete here.
+      document.l10n.disconnectRoot(div);
 
       // Inline SVG images from text annotations.
       await inlineImages(div);
@@ -282,9 +303,97 @@ class Rasterize {
       });
 
       await task.promise;
+
       svg.append(foreignObject);
 
       await writeSVG(svg, ctx);
+    } catch (reason) {
+      throw new Error(`Rasterize.textLayer: "${reason?.message}".`);
+    }
+  }
+
+  static async highlightLayer(ctx, viewport, textContent) {
+    try {
+      const { svg, foreignObject, style, div } = this.createContainer(viewport);
+      const dummyParent = document.createElement("div");
+
+      // Items are transformed to have 1px font size.
+      svg.setAttribute("font-size", 1);
+
+      const [common, overrides] = await this.drawLayerStylePromise;
+      style.textContent =
+        `${common}\n${overrides}` +
+        `:root { --scale-factor: ${viewport.scale} }`;
+
+      // Rendering text layer as HTML.
+      const task = renderTextLayer({
+        textContentSource: textContent,
+        container: dummyParent,
+        viewport,
+      });
+
+      await task.promise;
+
+      const { _pageWidth, _pageHeight, _textContentSource, _textDivs } = task;
+      const boxes = [];
+      let posRegex;
+      for (
+        let i = 0, j = 0, ii = _textContentSource.items.length;
+        i < ii;
+        i++
+      ) {
+        const { width, height, type } = _textContentSource.items[i];
+        if (type) {
+          continue;
+        }
+        const { top, left } = _textDivs[j++].style;
+        let x = parseFloat(left) / 100;
+        let y = parseFloat(top) / 100;
+        if (isNaN(x)) {
+          posRegex ||= /^calc\(var\(--scale-factor\)\*(.*)px\)$/;
+          // The element is tagged so we've to extract the position from the
+          // string, e.g. `calc(var(--scale-factor)*66.32px)`.
+          let match = left.match(posRegex);
+          if (match) {
+            x = parseFloat(match[1]) / _pageWidth;
+          }
+
+          match = top.match(posRegex);
+          if (match) {
+            y = parseFloat(match[1]) / _pageHeight;
+          }
+        }
+        if (width === 0 || height === 0) {
+          continue;
+        }
+        boxes.push({
+          x,
+          y,
+          width: width / _pageWidth,
+          height: height / _pageHeight,
+        });
+      }
+      // We set the borderWidth to 0.001 to slighly increase the size of the
+      // boxes so that they can be merged together.
+      const outliner = new Outliner(boxes, /* borderWidth = */ 0.001);
+      // We set the borderWidth to 0.0025 in order to have an outline which is
+      // slightly bigger than the highlight itself.
+      // We must add an inner margin to avoid to have a partial outline.
+      const outlinerForOutline = new Outliner(
+        boxes,
+        /* borderWidth = */ 0.0025,
+        /* innerMargin = */ 0.001
+      );
+      const drawLayer = new DrawLayer({ pageIndex: 0 });
+      drawLayer.setParent(div);
+      drawLayer.highlight(outliner.getOutlines(), "orange", 0.4);
+      drawLayer.highlightOutline(outlinerForOutline.getOutlines());
+
+      svg.append(foreignObject);
+
+      await writeSVG(svg, ctx);
+
+      drawLayer.destroy();
     } catch (reason) {
       throw new Error(`Rasterize.textLayer: "${reason?.message}".`);
     }
@@ -343,6 +452,8 @@ class Driver {
     // Configure the global worker options.
     GlobalWorkerOptions.workerSrc = WORKER_SRC;
 
+    // We only need to initialize the `L10n`-instance here, since translation is
+    // triggered by a `MutationObserver`; see e.g. `Rasterize.annotationLayer`.
     this._l10n = new GenericL10n(VIEWER_LOCALE);
 
     // Set the passed options
@@ -545,6 +656,12 @@ class Driver {
             if (!task.annotationStorage) {
               throw new Error("Missing `annotationStorage` entry.");
             }
+            if (task.loadAnnotations) {
+              for (let num = 1; num <= doc.numPages; num++) {
+                const page = await doc.getPage(num);
+                await page.getAnnotations({ intent: "display" });
+              }
+            }
             doc.annotationStorage.setAll(task.annotationStorage);
 
             const data = await doc.saveDocument();
@@ -573,6 +690,10 @@ class Driver {
               for (const [id, visible] of entries) {
                 optionalContentConfig.setVisibility(id, visible);
               }
+            }
+
+            if (task.forms) {
+              task.fieldObjects = await doc.getFieldObjects();
             }
 
             this._nextPage(task, failure);
@@ -725,7 +846,7 @@ class Driver {
 
             let textLayerCanvas, annotationLayerCanvas, annotationLayerContext;
             let initPromise;
-            if (task.type === "text") {
+            if (task.type === "text" || task.type === "highlight") {
               // Using a dummy canvas for PDF context drawing operations
               textLayerCanvas = this.textLayerCanvas;
               if (!textLayerCanvas) {
@@ -749,11 +870,17 @@ class Driver {
                   disableNormalization: true,
                 })
                 .then(function (textContent) {
-                  return Rasterize.textLayer(
-                    textLayerContext,
-                    viewport,
-                    textContent
-                  );
+                  return task.type === "text"
+                    ? Rasterize.textLayer(
+                        textLayerContext,
+                        viewport,
+                        textContent
+                      )
+                    : Rasterize.highlightLayer(
+                        textLayerContext,
+                        viewport,
+                        textContent
+                      );
                 });
             } else {
               textLayerCanvas = null;
@@ -815,9 +942,7 @@ class Driver {
               transform,
             };
             if (renderForms) {
-              renderContext.annotationMode = task.annotationStorage
-                ? AnnotationMode.ENABLE_STORAGE
-                : AnnotationMode.ENABLE_FORMS;
+              renderContext.annotationMode = AnnotationMode.ENABLE_FORMS;
             } else if (renderPrint) {
               if (task.annotationStorage) {
                 renderContext.annotationMode = AnnotationMode.ENABLE_STORAGE;
@@ -828,12 +953,19 @@ class Driver {
             const completeRender = error => {
               // if text layer is present, compose it on top of the page
               if (textLayerCanvas) {
-                ctx.save();
-                ctx.globalCompositeOperation = "screen";
-                ctx.fillStyle = "rgb(128, 255, 128)"; // making it green
-                ctx.fillRect(0, 0, pixelWidth, pixelHeight);
-                ctx.restore();
-                ctx.drawImage(textLayerCanvas, 0, 0);
+                if (task.type === "text") {
+                  ctx.save();
+                  ctx.globalCompositeOperation = "screen";
+                  ctx.fillStyle = "rgb(128, 255, 128)"; // making it green
+                  ctx.fillRect(0, 0, pixelWidth, pixelHeight);
+                  ctx.restore();
+                  ctx.drawImage(textLayerCanvas, 0, 0);
+                } else if (task.type === "highlight") {
+                  ctx.save();
+                  ctx.globalCompositeOperation = "multiply";
+                  ctx.drawImage(textLayerCanvas, 0, 0);
+                  ctx.restore();
+                }
               }
               // If we have annotation layer, compose it on top of the page.
               if (annotationLayerCanvas) {
@@ -864,10 +996,11 @@ class Driver {
                       outputScale,
                       data,
                       annotationCanvasMap,
+                      task.pdfDoc.annotationStorage,
+                      task.fieldObjects,
                       page,
                       IMAGE_RESOURCES_PATH,
-                      renderForms,
-                      this._l10n
+                      renderForms
                     ).then(() => {
                       completeRender(false);
                     });

@@ -59,8 +59,6 @@ const UI_NOTIFICATION_CLASS = "pdfSidebarNotification";
  *   the attachments are placed.
  * @property {HTMLDivElement} layersView - The container in which
  *   the layers are placed.
- * @property {HTMLDivElement} outlineOptionsContainer - The container in which
- *   the outline view-specific option button(s) are placed.
  * @property {HTMLButtonElement} currentOutlineItemButton - The button used to
  *   find the current outline item.
  */
@@ -107,15 +105,11 @@ class PDFSidebar {
     this.attachmentsView = elements.attachmentsView;
     this.layersView = elements.layersView;
 
-    this._outlineOptionsContainer = elements.outlineOptionsContainer;
     this._currentOutlineItemButton = elements.currentOutlineItemButton;
 
     this.eventBus = eventBus;
-    this.l10n = l10n;
 
-    l10n.getDirection().then(dir => {
-      this.#isRTL = dir === "rtl";
-    });
+    this.#isRTL = l10n.getDirection() === "rtl";
     this.#addEventListeners();
   }
 
@@ -230,12 +224,6 @@ class PDFSidebar {
       this.layersView
     );
 
-    // Finally, update view-specific CSS classes.
-    this._outlineOptionsContainer.classList.toggle(
-      "hidden",
-      view !== SidebarView.OUTLINE
-    );
-
     if (forceOpen && !this.isOpen) {
       this.open();
       return; // Opening will trigger rendering and dispatch the event.
@@ -267,7 +255,7 @@ class PDFSidebar {
     this.#hideUINotification();
   }
 
-  close() {
+  close(evt = null) {
     if (!this.isOpen) {
       return;
     }
@@ -279,11 +267,16 @@ class PDFSidebar {
 
     this.onToggled();
     this.#dispatchEvent();
+
+    if (evt?.detail > 0) {
+      // Remove focus from the toggleButton if it's clicked (see issue 17361).
+      this.toggleButton.blur();
+    }
   }
 
-  toggle() {
+  toggle(evt = null) {
     if (this.isOpen) {
-      this.close();
+      this.close(evt);
     } else {
       this.open();
     }
@@ -303,9 +296,8 @@ class PDFSidebar {
   #showUINotification() {
     this.toggleButton.setAttribute(
       "data-l10n-id",
-      "toggle_sidebar_notification2"
+      "pdfjs-toggle-sidebar-notification-button"
     );
-    this.l10n.translate(this.toggleButton);
 
     if (!this.isOpen) {
       // Only show the notification on the `toggleButton` if the sidebar is
@@ -322,8 +314,10 @@ class PDFSidebar {
     }
 
     if (reset) {
-      this.toggleButton.setAttribute("data-l10n-id", "toggle_sidebar");
-      this.l10n.translate(this.toggleButton);
+      this.toggleButton.setAttribute(
+        "data-l10n-id",
+        "pdfjs-toggle-sidebar-button"
+      );
     }
   }
 
@@ -331,11 +325,13 @@ class PDFSidebar {
     this.sidebarContainer.addEventListener("transitionend", evt => {
       if (evt.target === this.sidebarContainer) {
         this.outerContainer.classList.remove("sidebarMoving");
+        // Ensure that rendering is triggered after opening/closing the sidebar.
+        this.eventBus.dispatch("resize", { source: this });
       }
     });
 
-    this.toggleButton.addEventListener("click", () => {
-      this.toggle();
+    this.toggleButton.addEventListener("click", evt => {
+      this.toggle(evt);
     });
 
     // Buttons for switching views.

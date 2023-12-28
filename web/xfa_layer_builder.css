@@ -34,7 +34,7 @@
 .xfaLayer .highlight {
   margin: -1px;
   padding: 1px;
-  background-color: rgba(239, 203, 237, 1);
+  background-color: rgb(239 203 237);
   border-radius: 4px;
 }
 
@@ -55,7 +55,7 @@
 }
 
 .xfaLayer .highlight.selected {
-  background-color: rgba(203, 223, 203, 1);
+  background-color: rgb(203 223 203);
 }
 
 .xfaPage {

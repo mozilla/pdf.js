@@ -14,6 +14,7 @@
  */
 
 import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
+import { AppOptions } from "./app_options.js";
 import { BasePreferences } from "./preferences.js";
 import { DownloadManager } from "./download_manager.js";
 import { GenericL10n } from "./genericl10n.js";
@@ -33,7 +34,7 @@ class GenericPreferences extends BasePreferences {
   }
 
   async _readFromStorage(prefObj) {
-    return JSON.parse(localStorage.getItem("pdfjs.preferences"));
+    return { prefs: JSON.parse(localStorage.getItem("pdfjs.preferences")) };
   }
 }
 
@@ -46,12 +47,12 @@ class GenericExternalServices extends DefaultExternalServices {
     return new GenericPreferences();
   }
 
-  static createL10n({ locale = "en-US" }) {
-    return new GenericL10n(locale);
+  static async createL10n() {
+    return new GenericL10n(AppOptions.get("locale"));
   }
 
-  static createScripting({ sandboxBundleSrc }) {
-    return new GenericScripting(sandboxBundleSrc);
+  static createScripting() {
+    return new GenericScripting(AppOptions.get("sandboxBundleSrc"));
   }
 }
 PDFViewerApplication.externalServices = GenericExternalServices;

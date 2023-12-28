@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { bytesToString, info, stringToBytes, warn } from "../shared/util.js";
+import { bytesToString, info, warn } from "../shared/util.js";
 import { Dict, isName, Name, Ref } from "./primitives.js";
 import {
   escapePDFName,
@@ -25,12 +25,15 @@ import { SimpleDOMNode, SimpleXMLParser } from "./xml_parser.js";
 import { BaseStream } from "./base_stream.js";
 import { calculateMD5 } from "./crypto.js";
 
-async function writeObject(ref, obj, buffer, transform) {
+async function writeObject(ref, obj, buffer, { encrypt = null }) {
+  const transform = encrypt?.createCipherTransform(ref.num, ref.gen);
   buffer.push(`${ref.num} ${ref.gen} obj\n`);
   if (obj instanceof Dict) {
     await writeDict(obj, buffer, transform);
   } else if (obj instanceof BaseStream) {
     await writeStream(obj, buffer, transform);
+  } else if (Array.isArray(obj)) {
+    await writeArray(obj, buffer, transform);
   }
   buffer.push("\nendobj\n");
 }
@@ -45,10 +48,7 @@ async function writeDict(dict, buffer, transform) {
 }
 
 async function writeStream(stream, buffer, transform) {
-  let string = stream.getString();
-  if (transform !== null) {
-    string = transform.encryptString(string);
-  }
+  let bytes = stream.getBytes();
   const { dict } = stream;
 
   const [filter, params] = await Promise.all([
@@ -66,21 +66,18 @@ async function writeStream(stream, buffer, transform) {
   const MIN_LENGTH_FOR_COMPRESSING = 256;
 
   if (
-    // eslint-disable-next-line no-undef
     typeof CompressionStream !== "undefined" &&
-    (string.length >= MIN_LENGTH_FOR_COMPRESSING || isFilterZeroFlateDecode)
+    (bytes.length >= MIN_LENGTH_FOR_COMPRESSING || isFilterZeroFlateDecode)
   ) {
     try {
-      const byteArray = stringToBytes(string);
-      // eslint-disable-next-line no-undef
       const cs = new CompressionStream("deflate");
       const writer = cs.writable.getWriter();
-      writer.write(byteArray);
+      writer.write(bytes);
       writer.close();
 
       // Response::text doesn't return the correct data.
       const buf = await new Response(cs.readable).arrayBuffer();
-      string = bytesToString(new Uint8Array(buf));
+      bytes = new Uint8Array(buf);
 
       let newFilter, newParams;
       if (!filter) {
@@ -104,6 +101,11 @@ async function writeStream(stream, buffer, transform) {
     } catch (ex) {
       info(`writeStream - cannot compress data: "${ex}".`);
     }
+  }
+
+  let string = bytesToString(bytes);
+  if (transform) {
+    string = transform.encryptString(string);
   }
 
   dict.set("Length", string.length);
@@ -133,7 +135,7 @@ async function writeValue(value, buffer, transform) {
   } else if (Array.isArray(value)) {
     await writeArray(value, buffer, transform);
   } else if (typeof value === "string") {
-    if (transform !== null) {
+    if (transform) {
       value = transform.encryptString(value);
     }
     buffer.push(`(${escapeString(value)})`);
@@ -233,11 +235,7 @@ async function updateAcroform({
     return;
   }
 
-  // Clone the acroForm.
-  const dict = new Dict(xref);
-  for (const key of acroForm.getKeys()) {
-    dict.set(key, acroForm.getRaw(key));
-  }
+  const dict = acroForm.clone();
 
   if (hasXfa && !hasXfaDatasetsEntry) {
     // We've a XFA array which doesn't contain a datasets entry.
@@ -254,14 +252,8 @@ async function updateAcroform({
     dict.set("NeedAppearances", true);
   }
 
-  const encrypt = xref.encrypt;
-  let transform = null;
-  if (encrypt) {
-    transform = encrypt.createCipherTransform(acroFormRef.num, acroFormRef.gen);
-  }
-
   const buffer = [];
-  await writeObject(acroFormRef, dict, buffer, transform);
+  await writeObject(acroFormRef, dict, buffer, xref);
 
   newRefs.push({ ref: acroFormRef, data: buffer.join("") });
 }

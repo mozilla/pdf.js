@@ -13,9 +13,7 @@
  * limitations under the License.
  */
 
-import { loadScript } from "../../src/display/display_utils.js";
-
-const sandboxBundleSrc = "../../build/generic/build/pdf.sandbox.js";
+const sandboxBundleSrc = "../../build/generic/build/pdf.sandbox.mjs";
 
 describe("Scripting", function () {
   let sandbox, send_queue, test_id, ref, windowAlert;
@@ -53,8 +51,9 @@ describe("Scripting", function () {
       const command = "alert";
       send_queue.set(command, { command, value });
     };
-    const promise = loadScript(sandboxBundleSrc).then(() => {
-      return window.pdfjsSandbox.QuickJSSandbox();
+    // eslint-disable-next-line no-unsanitized/method
+    const promise = import(sandboxBundleSrc).then(pdfjsSandbox => {
+      return pdfjsSandbox.QuickJSSandbox();
     });
     sandbox = {
       createSandbox(data) {
@@ -971,6 +970,76 @@ describe("Scripting", function () {
           id: refId,
           value: "4/15/07 3:14 am",
         });
+      });
+
+      it("should format a date", async () => {
+        const refId = getId();
+        const data = {
+          objects: {
+            field: [
+              {
+                id: refId,
+                value: "",
+                actions: {
+                  Format: [`AFDate_FormatEx("mmddyyyy");`],
+                  Keystroke: [`AFDate_KeystrokeEx("mmddyyyy");`],
+                },
+                type: "text",
+              },
+            ],
+          },
+          appInfo: { language: "en-US", platform: "Linux x86_64" },
+          calculationOrder: [],
+          dispatchEventName: "_dispatchMe",
+        };
+
+        sandbox.createSandbox(data);
+        await sandbox.dispatchEventInSandbox({
+          id: refId,
+          value: "12062023",
+          name: "Keystroke",
+          willCommit: true,
+        });
+        expect(send_queue.has(refId)).toEqual(true);
+        expect(send_queue.get(refId)).toEqual({
+          id: refId,
+          siblings: null,
+          value: "12062023",
+          formattedValue: "12062023",
+        });
+        send_queue.delete(refId);
+
+        await sandbox.dispatchEventInSandbox({
+          id: refId,
+          value: "1206202",
+          name: "Keystroke",
+          willCommit: true,
+        });
+        expect(send_queue.has(refId)).toEqual(true);
+        expect(send_queue.get(refId)).toEqual({
+          id: refId,
+          siblings: null,
+          value: "",
+          formattedValue: null,
+          selRange: [0, 0],
+        });
+        send_queue.delete(refId);
+
+        sandbox.createSandbox(data);
+        await sandbox.dispatchEventInSandbox({
+          id: refId,
+          value: "02062023",
+          name: "Keystroke",
+          willCommit: true,
+        });
+        expect(send_queue.has(refId)).toEqual(true);
+        expect(send_queue.get(refId)).toEqual({
+          id: refId,
+          siblings: null,
+          value: "02062023",
+          formattedValue: "02062023",
+        });
+        send_queue.delete(refId);
       });
     });
 

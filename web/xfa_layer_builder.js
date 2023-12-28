@@ -15,6 +15,8 @@
 
 /** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
 // eslint-disable-next-line max-len
+/** @typedef {import("../src/display/annotation_storage").AnnotationStorage} AnnotationStorage */
+// eslint-disable-next-line max-len
 /** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 
@@ -22,7 +24,6 @@ import { XfaLayer } from "pdfjs-lib";
 
 /**
  * @typedef {Object} XfaLayerBuilderOptions
- * @property {HTMLDivElement} pageDiv
  * @property {PDFPageProxy} pdfPage
  * @property {AnnotationStorage} [annotationStorage]
  * @property {IPDFLinkService} linkService
@@ -34,13 +35,11 @@ class XfaLayerBuilder {
    * @param {XfaLayerBuilderOptions} options
    */
   constructor({
-    pageDiv,
     pdfPage,
     annotationStorage = null,
     linkService,
     xfaHtml = null,
   }) {
-    this.pageDiv = pageDiv;
     this.pdfPage = pdfPage;
     this.annotationStorage = annotationStorage;
     this.linkService = linkService;
@@ -69,9 +68,8 @@ class XfaLayerBuilder {
       };
 
       // Create an xfa layer div and render the form
-      const div = document.createElement("div");
-      this.pageDiv.append(div);
-      parameters.div = div;
+      this.div = document.createElement("div");
+      parameters.div = this.div;
 
       return XfaLayer.render(parameters);
     }
@@ -96,7 +94,6 @@ class XfaLayerBuilder {
     }
     // Create an xfa layer div and render the form
     this.div = document.createElement("div");
-    this.pageDiv.append(this.div);
     parameters.div = this.div;
 
     return XfaLayer.render(parameters);

@@ -22,17 +22,17 @@
   --toolbar-icon-opacity: 1;
   --doorhanger-icon-opacity: 0.9;
 
-  --main-color: rgba(12, 12, 13, 1);
-  --body-bg-color: rgba(212, 212, 215, 1);
+  --main-color: rgb(12 12 13);
+  --body-bg-color: rgb(212 212 215);
   --scrollbar-color: auto;
   --scrollbar-bg-color: auto;
-  --field-color: rgba(6, 6, 6, 1);
-  --field-bg-color: rgba(255, 255, 255, 1);
-  --field-border-color: rgba(187, 187, 188, 1);
-  --doorhanger-bg-color: rgba(255, 255, 255, 1);
+  --field-color: rgb(6 6 6);
+  --field-bg-color: rgb(255 255 255);
+  --field-border-color: rgb(187 187 188);
+  --doorhanger-bg-color: rgb(255 255 255);
   --dialog-button-border: none;
-  --dialog-button-bg-color: rgba(12, 12, 13, 0.1);
-  --dialog-button-hover-bg-color: rgba(12, 12, 13, 0.3);
+  --dialog-button-bg-color: rgb(12 12 13 / 0.1);
+  --dialog-button-hover-bg-color: rgb(12 12 13 / 0.3);
 
   --toolbar-bg-color: #f9f9fb;
   --toolbar-divider-color: #e0e0e6;
@@ -48,16 +48,16 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --main-color: rgba(249, 249, 250, 1);
-    --body-bg-color: rgba(42, 42, 46, 1);
-    --scrollbar-color: rgba(121, 121, 123, 1);
-    --scrollbar-bg-color: rgba(35, 35, 39, 1);
-    --field-color: rgba(250, 250, 250, 1);
-    --field-bg-color: rgba(64, 64, 68, 1);
-    --field-border-color: rgba(115, 115, 115, 1);
-    --doorhanger-bg-color: rgba(74, 74, 79, 1);
-    --dialog-button-bg-color: rgba(92, 92, 97, 1);
-    --dialog-button-hover-bg-color: rgba(115, 115, 115, 1);
+    --main-color: rgb(249 249 250);
+    --body-bg-color: rgb(42 42 46);
+    --scrollbar-color: rgb(121 121 123);
+    --scrollbar-bg-color: rgb(35 35 39);
+    --field-color: rgb(250 250 250);
+    --field-bg-color: rgb(64 64 68);
+    --field-border-color: rgb(115 115 115);
+    --doorhanger-bg-color: rgb(74 74 79);
+    --dialog-button-bg-color: rgb(92 92 97);
+    --dialog-button-hover-bg-color: rgb(115 115 115);
 
     --toolbar-bg-color: #2b2a33;
     --toolbar-divider-color: #5b5b66;
@@ -254,12 +254,12 @@ dialog {
   font-size: 12px;
   line-height: 14px;
   background-color: var(--doorhanger-bg-color);
-  border: 1px solid rgba(0, 0, 0, 0.5);
+  border: 1px solid rgb(0 0 0 / 0.5);
   border-radius: 4px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.3);
 }
 dialog::backdrop {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgb(0 0 0 / 0.2);
 }
 
 dialog > .row {
@@ -288,7 +288,7 @@ dialog .buttonRow {
 }
 
 dialog :link {
-  color: rgba(255, 255, 255, 1);
+  color: rgb(255 255 255);
 }
 
 #passwordDialog {
@@ -308,7 +308,7 @@ dialog :link {
 
 @media print {
   body {
-    background: rgba(0, 0, 0, 0) none;
+    background: rgb(0 0 0 / 0) none;
   }
   body[data-pdfjsprinting] #outerContainer {
     display: none;

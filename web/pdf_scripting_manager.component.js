@@ -30,8 +30,8 @@ class PDFScriptingManagerComponents extends PDFScriptingManager {
     }
 
     options.externalServices ||= {
-      createScripting: ({ sandboxBundleSrc }) => {
-        return new GenericScripting(sandboxBundleSrc);
+      createScripting: () => {
+        return new GenericScripting(options.sandboxBundleSrc);
       },
     };
     options.docProperties ||= pdfDocument => {

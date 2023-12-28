@@ -6,7 +6,12 @@
   "rules": {
     "prettier/prettier": true,
 
+    "alpha-value-notation": "number",
     "block-no-empty": true,
+    "color-function-notation": "modern",
+    "color-hex-length": "short",
+    "color-no-invalid-hex": true,
+    "declaration-block-no-duplicate-properties": true,
     "declaration-block-no-redundant-longhand-properties": true,
     "declaration-property-value-disallowed-list": {
       "float": ["inline-start", "inline-end"]

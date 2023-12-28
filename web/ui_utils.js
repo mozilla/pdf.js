@@ -195,7 +195,7 @@ function watchScroll(viewAreaElement, callback) {
 
 /**
  * Helper function to parse query string (e.g. ?param1=value&param2=...).
- * @param {string}
+ * @param {string} query
  * @returns {Map}
  */
 function parseQueryString(query) {
@@ -206,19 +206,20 @@ function parseQueryString(query) {
   return params;
 }
 
-const InvisibleCharactersRegExp = /[\x01-\x1F]/g;
+const InvisibleCharactersRegExp = /[\x00-\x1F]/g;
 
 /**
  * @param {string} str
  * @param {boolean} [replaceInvisible]
  */
 function removeNullCharacters(str, replaceInvisible = false) {
-  if (typeof str !== "string") {
-    console.error(`The argument must be a string.`);
+  if (!InvisibleCharactersRegExp.test(str)) {
     return str;
   }
   if (replaceInvisible) {
-    str = str.replaceAll(InvisibleCharactersRegExp, " ");
+    return str.replaceAll(InvisibleCharactersRegExp, m => {
+      return m === "\x00" ? "" : " ";
+    });
   }
   return str.replaceAll("\x00", "");
 }
@@ -461,7 +462,7 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
  * rendering canvas. Earlier and later refer to index in `views`, not page
  * layout.)
  *
- * @param {GetVisibleElementsParameters}
+ * @param {GetVisibleElementsParameters} params
  * @returns {Object} `{ first, last, views: [{ id, x, y, view, percent }] }`
  */
 function getVisibleElements({
@@ -602,13 +603,6 @@ function getVisibleElements({
     });
   }
   return { first, last, views: visible, ids };
-}
-
-/**
- * Event handler to suppress context menu.
- */
-function noContextMenuHandler(evt) {
-  evt.preventDefault();
 }
 
 function normalizeWheelEventDirection(evt) {
@@ -791,7 +785,7 @@ function getActiveOrFocusedElement() {
 
 /**
  * Converts API PageLayout values to the format used by `BaseViewer`.
- * @param {string} mode - The API PageLayout value.
+ * @param {string} layout - The API PageLayout value.
  * @returns {Object}
  */
 function apiPageLayoutToViewerModes(layout) {
@@ -881,7 +875,6 @@ export {
   MAX_AUTO_SCALE,
   MAX_SCALE,
   MIN_SCALE,
-  noContextMenuHandler,
   normalizeWheelEventDelta,
   normalizeWheelEventDirection,
   OutputScale,

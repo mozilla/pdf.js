@@ -321,16 +321,7 @@ class Page {
     const savedDict = pageDict.get("Annots");
     pageDict.set("Annots", annotationsArray);
     const buffer = [];
-
-    let transform = null;
-    if (this.xref.encrypt) {
-      transform = this.xref.encrypt.createCipherTransform(
-        this.ref.num,
-        this.ref.gen
-      );
-    }
-
-    await writeObject(this.ref, pageDict, buffer, transform);
+    await writeObject(this.ref, pageDict, buffer, this.xref);
     if (savedDict) {
       pageDict.set("Annots", savedDict);
     }
@@ -435,9 +426,12 @@ class Page {
 
     let newAnnotationsPromise = Promise.resolve(null);
     if (newAnnotationsByPage) {
-      let imagePromises;
       const newAnnotations = newAnnotationsByPage.get(this.pageIndex);
       if (newAnnotations) {
+        const annotationGlobalsPromise =
+          this.pdfManager.ensureDoc("annotationGlobals");
+        let imagePromises;
+
         // An annotation can contain a reference to a bitmap, but this bitmap
         // is defined in another annotation. So we need to find this annotation
         // and generate the bitmap.
@@ -476,11 +470,21 @@ class Page {
 
         deletedAnnotations = new RefSet();
         this.#replaceIdByRef(newAnnotations, deletedAnnotations, null);
-        newAnnotationsPromise = AnnotationFactory.printNewAnnotations(
-          partialEvaluator,
-          task,
-          newAnnotations,
-          imagePromises
+
+        newAnnotationsPromise = annotationGlobalsPromise.then(
+          annotationGlobals => {
+            if (!annotationGlobals) {
+              return null;
+            }
+
+            return AnnotationFactory.printNewAnnotations(
+              annotationGlobals,
+              partialEvaluator,
+              task,
+              newAnnotations,
+              imagePromises
+            );
+          }
         );
       }
     }
@@ -646,12 +650,14 @@ class Page {
   }
 
   async getStructTree() {
-    const structTreeRoot = await this.pdfManager.ensureCatalog(
-      "structTreeRoot"
-    );
+    const structTreeRoot =
+      await this.pdfManager.ensureCatalog("structTreeRoot");
     if (!structTreeRoot) {
       return null;
     }
+    // Ensure that the structTree will contain the page's annotations.
+    await this._parsedAnnotations;
+
     const structTree = await this.pdfManager.ensure(this, "_parseStructTree", [
       structTreeRoot,
     ]);
@@ -663,14 +669,14 @@ class Page {
    */
   _parseStructTree(structTreeRoot) {
     const tree = new StructTreePage(structTreeRoot, this.pageDict);
-    tree.parse();
+    tree.parse(this.ref);
     return tree;
   }
 
   async getAnnotationsData(handler, task, intent) {
     const annotations = await this._parsedAnnotations;
     if (annotations.length === 0) {
-      return [];
+      return annotations;
     }
 
     const annotationsData = [],
@@ -730,18 +736,28 @@ class Page {
   }
 
   get _parsedAnnotations() {
-    const parsedAnnotations = this.pdfManager
+    const promise = this.pdfManager
       .ensure(this, "annotations")
-      .then(() => {
+      .then(async annots => {
+        if (annots.length === 0) {
+          return annots;
+        }
+        const annotationGlobals =
+          await this.pdfManager.ensureDoc("annotationGlobals");
+        if (!annotationGlobals) {
+          return [];
+        }
+
         const annotationPromises = [];
-        for (const annotationRef of this.annotations) {
+        for (const annotationRef of annots) {
           annotationPromises.push(
             AnnotationFactory.create(
               this.xref,
               annotationRef,
-              this.pdfManager,
+              annotationGlobals,
               this._localIdFactory,
-              /* collectFields */ false
+              /* collectFields */ false,
+              this.ref
             ).catch(function (reason) {
               warn(`_parsedAnnotations: "${reason}".`);
               return null;
@@ -749,34 +765,28 @@ class Page {
           );
         }
 
-        return Promise.all(annotationPromises).then(function (annotations) {
-          if (annotations.length === 0) {
-            return annotations;
+        const sortedAnnotations = [];
+        let popupAnnotations;
+        // Ensure that PopupAnnotations are handled last, since they depend on
+        // their parent Annotation in the display layer; fixes issue 11362.
+        for (const annotation of await Promise.all(annotationPromises)) {
+          if (!annotation) {
+            continue;
           }
+          if (annotation instanceof PopupAnnotation) {
+            (popupAnnotations ||= []).push(annotation);
+            continue;
+          }
+          sortedAnnotations.push(annotation);
+        }
+        if (popupAnnotations) {
+          sortedAnnotations.push(...popupAnnotations);
+        }
 
-          const sortedAnnotations = [];
-          let popupAnnotations;
-          // Ensure that PopupAnnotations are handled last, since they depend on
-          // their parent Annotation in the display layer; fixes issue 11362.
-          for (const annotation of annotations) {
-            if (!annotation) {
-              continue;
-            }
-            if (annotation instanceof PopupAnnotation) {
-              (popupAnnotations ||= []).push(annotation);
-              continue;
-            }
-            sortedAnnotations.push(annotation);
-          }
-          if (popupAnnotations) {
-            sortedAnnotations.push(...popupAnnotations);
-          }
-
-          return sortedAnnotations;
-        });
+        return sortedAnnotations;
       });
 
-    return shadow(this, "_parsedAnnotations", parsedAnnotations);
+    return shadow(this, "_parsedAnnotations", promise);
   }
 
   get jsActions() {
@@ -1701,19 +1711,45 @@ class PDFDocument {
       : clearGlobalCaches();
   }
 
-  /**
-   * @private
-   */
-  _collectFieldObjects(name, fieldRef, promises) {
-    const field = this.xref.fetchIfRef(fieldRef);
-    if (field.has("T")) {
-      const partName = stringToPDFString(field.get("T"));
-      name = name === "" ? partName : `${name}.${partName}`;
-    }
+  async #collectFieldObjects(
+    name,
+    fieldRef,
+    promises,
+    annotationGlobals,
+    visitedRefs
+  ) {
+    const { xref } = this;
 
-    if (!field.has("Kids") && field.has("T") && /\[\d+\]$/.test(name)) {
-      // We've a terminal node: strip the index.
-      name = name.substring(0, name.lastIndexOf("["));
+    if (!(fieldRef instanceof Ref) || visitedRefs.has(fieldRef)) {
+      return;
+    }
+    visitedRefs.put(fieldRef);
+    const field = await xref.fetchAsync(fieldRef);
+    if (!(field instanceof Dict)) {
+      return;
+    }
+    if (field.has("T")) {
+      const partName = stringToPDFString(await field.getAsync("T"));
+      name = name === "" ? partName : `${name}.${partName}`;
+    } else {
+      let obj = field;
+      while (true) {
+        obj = obj.getRaw("Parent");
+        if (obj instanceof Ref) {
+          if (visitedRefs.has(obj)) {
+            break;
+          }
+          obj = await xref.fetchAsync(obj);
+        }
+        if (!(obj instanceof Dict)) {
+          break;
+        }
+        if (obj.has("T")) {
+          const partName = stringToPDFString(await obj.getAsync("T"));
+          name = name === "" ? partName : `${name}.${partName}`;
+          break;
+        }
+      }
     }
 
     if (!promises.has(name)) {
@@ -1721,23 +1757,33 @@ class PDFDocument {
     }
     promises.get(name).push(
       AnnotationFactory.create(
-        this.xref,
+        xref,
         fieldRef,
-        this.pdfManager,
-        this._localIdFactory,
-        /* collectFields */ true
+        annotationGlobals,
+        /* idFactory = */ null,
+        /* collectFields */ true,
+        /* pageRef */ null
       )
         .then(annotation => annotation?.getFieldObject())
         .catch(function (reason) {
-          warn(`_collectFieldObjects: "${reason}".`);
+          warn(`#collectFieldObjects: "${reason}".`);
           return null;
         })
     );
 
-    if (field.has("Kids")) {
-      const kids = field.get("Kids");
+    if (!field.has("Kids")) {
+      return;
+    }
+    const kids = await field.getAsync("Kids");
+    if (Array.isArray(kids)) {
       for (const kid of kids) {
-        this._collectFieldObjects(name, kid, promises);
+        await this.#collectFieldObjects(
+          name,
+          kid,
+          promises,
+          annotationGlobals,
+          visitedRefs
+        );
       }
     }
   }
@@ -1747,29 +1793,44 @@ class PDFDocument {
       return shadow(this, "fieldObjects", Promise.resolve(null));
     }
 
-    const allFields = Object.create(null);
-    const fieldPromises = new Map();
-    for (const fieldRef of this.catalog.acroForm.get("Fields")) {
-      this._collectFieldObjects("", fieldRef, fieldPromises);
-    }
+    const promise = Promise.all([
+      this.pdfManager.ensureDoc("annotationGlobals"),
+      this.pdfManager.ensureCatalog("acroForm"),
+    ]).then(async ([annotationGlobals, acroForm]) => {
+      if (!annotationGlobals) {
+        return null;
+      }
 
-    const allPromises = [];
-    for (const [name, promises] of fieldPromises) {
-      allPromises.push(
-        Promise.all(promises).then(fields => {
-          fields = fields.filter(field => !!field);
-          if (fields.length > 0) {
-            allFields[name] = fields;
-          }
-        })
-      );
-    }
+      const visitedRefs = new RefSet();
+      const allFields = Object.create(null);
+      const fieldPromises = new Map();
+      for (const fieldRef of await acroForm.getAsync("Fields")) {
+        await this.#collectFieldObjects(
+          "",
+          fieldRef,
+          fieldPromises,
+          annotationGlobals,
+          visitedRefs
+        );
+      }
 
-    return shadow(
-      this,
-      "fieldObjects",
-      Promise.all(allPromises).then(() => allFields)
-    );
+      const allPromises = [];
+      for (const [name, promises] of fieldPromises) {
+        allPromises.push(
+          Promise.all(promises).then(fields => {
+            fields = fields.filter(field => !!field);
+            if (fields.length > 0) {
+              allFields[name] = fields;
+            }
+          })
+        );
+      }
+
+      await Promise.all(allPromises);
+      return allFields;
+    });
+
+    return shadow(this, "fieldObjects", promise);
   }
 
   get hasJSActions() {
@@ -1818,6 +1879,14 @@ class PDFDocument {
       return shadow(this, "calculationOrderIds", null);
     }
     return shadow(this, "calculationOrderIds", ids);
+  }
+
+  get annotationGlobals() {
+    return shadow(
+      this,
+      "annotationGlobals",
+      AnnotationFactory.createGlobals(this.pdfManager)
+    );
   }
 }
 

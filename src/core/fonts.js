@@ -292,6 +292,13 @@ function signedInt16(b0, b1) {
   return value & (1 << 15) ? value - 0x10000 : value;
 }
 
+function writeUint32(bytes, index, value) {
+  bytes[index + 3] = value & 0xff;
+  bytes[index + 2] = value >>> 8;
+  bytes[index + 1] = value >>> 16;
+  bytes[index] = value >>> 24;
+}
+
 function int32(b0, b1, b2, b3) {
   return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
 }
@@ -2642,8 +2649,20 @@ class Font {
     }
 
     font.pos = (font.start || 0) + tables.maxp.offset;
-    const version = font.getInt32();
+    let version = font.getInt32();
     const numGlyphs = font.getUint16();
+
+    if (version !== 0x00010000 && version !== 0x00005000) {
+      // https://learn.microsoft.com/en-us/typography/opentype/spec/maxp
+      if (tables.maxp.length === 6) {
+        version = 0x0005000;
+      } else if (tables.maxp.length >= 32) {
+        version = 0x00010000;
+      } else {
+        throw new FormatError(`"maxp" table has a wrong version number`);
+      }
+      writeUint32(tables.maxp.data, 0, version);
+    }
 
     if (properties.scaleFactors?.length === numGlyphs && isTrueType) {
       const { scaleFactors } = properties;
@@ -2695,7 +2714,7 @@ class Font {
     }
     let maxFunctionDefs = 0;
     let maxSizeOfInstructions = 0;
-    if (version >= 0x00010000 && tables.maxp.length >= 22) {
+    if (version >= 0x00010000 && tables.maxp.length >= 32) {
       // maxZones can be invalid
       font.pos += 8;
       const maxZones = font.getUint16();
@@ -2761,7 +2780,7 @@ class Font {
 
       // Some fonts have incorrect maxSizeOfInstructions values, so we use
       // the computed value instead.
-      if (version >= 0x00010000 && tables.maxp.length >= 22) {
+      if (version >= 0x00010000 && tables.maxp.length >= 32) {
         tables.maxp.data[26] = glyphsInfo.maxSizeOfInstructions >> 8;
         tables.maxp.data[27] = glyphsInfo.maxSizeOfInstructions & 255;
       }

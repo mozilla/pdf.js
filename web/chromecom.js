@@ -352,7 +352,7 @@ class ChromePreferences extends BasePreferences {
           defaultPrefs = this.defaults;
         }
         storageArea.get(defaultPrefs, function (readPrefs) {
-          resolve(readPrefs);
+          resolve({ prefs: readPrefs });
         });
       };
 
@@ -435,12 +435,12 @@ class ChromeExternalServices extends DefaultExternalServices {
     return new ChromePreferences();
   }
 
-  static createL10n(options) {
+  static async createL10n() {
     return new GenericL10n(navigator.language);
   }
 
-  static createScripting({ sandboxBundleSrc }) {
-    return new GenericScripting(sandboxBundleSrc);
+  static createScripting() {
+    return new GenericScripting(AppOptions.get("sandboxBundleSrc"));
   }
 }
 PDFViewerApplication.externalServices = ChromeExternalServices;

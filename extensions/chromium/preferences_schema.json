@@ -81,9 +81,13 @@
       "description": "Whether to allow execution of active content (JavaScript) by PDF files.",
       "default": false
     },
-    "enableStampEditor": {
+    "enableHighlightEditor": {
       "type": "boolean",
-      "default": true
+      "default": false
+    },
+    "highlightEditorColors": {
+      "type": "string",
+      "default": "yellow=#FFFF98,green=#53FFBC,blue=#80EBFF,pink=#FFCBE6,red=#FF4F5F"
     },
     "disableRange": {
       "title": "Disable range requests",

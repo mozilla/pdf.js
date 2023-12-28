@@ -22,12 +22,11 @@
     "browser": true,
     "es2022": true,
     "worker": true,
-    "amd": true,
   },
 
   "globals": {
-    "PDFJSDev": false,
-    "exports": false,
+    "PDFJSDev": "readonly",
+    "__non_webpack_import__": "readonly",
   },
 
   "rules": {
@@ -39,10 +38,11 @@
     "import/named": "error",
     "import/no-cycle": "error",
     "import/no-empty-named-blocks": "error",
+    "import/no-commonjs": "error",
     "import/no-mutable-exports": "error",
     "import/no-self-import": "error",
     "import/no-unresolved": ["error", {
-      "ignore": ["display", "pdfjs", "pdfjs-lib", "pdfjs-web", "web"]
+      "ignore": ["display", "pdfjs", "pdfjs-lib", "pdfjs-web", "web", "fluent-bundle", "fluent-dom"],
     }],
     "mozilla/avoid-removeChild": "error",
     "mozilla/use-includes-instead-of-indexOf": "error",

@@ -58,7 +58,6 @@ async function initializePDFJS(callback) {
       "pdfjs-test/unit/crypto_spec.js",
       "pdfjs-test/unit/custom_spec.js",
       "pdfjs-test/unit/default_appearance_spec.js",
-      "pdfjs-test/unit/display_svg_spec.js",
       "pdfjs-test/unit/display_utils_spec.js",
       "pdfjs-test/unit/document_spec.js",
       "pdfjs-test/unit/editor_spec.js",
@@ -109,7 +108,7 @@ async function initializePDFJS(callback) {
     );
   }
   // Configure the worker.
-  GlobalWorkerOptions.workerSrc = "../../build/generic/build/pdf.worker.js";
+  GlobalWorkerOptions.workerSrc = "../../build/generic/build/pdf.worker.mjs";
 
   callback();
 }

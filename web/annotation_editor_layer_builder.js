@@ -25,7 +25,7 @@
 /** @typedef {import("../src/display/annotation_layer.js").AnnotationLayer} AnnotationLayer */
 
 import { AnnotationEditorLayer } from "pdfjs-lib";
-import { NullL10n } from "./l10n_utils.js";
+import { NullL10n } from "web-l10n_utils";
 
 /**
  * @typedef {Object} AnnotationEditorLayerBuilderOptions
@@ -35,10 +35,16 @@ import { NullL10n } from "./l10n_utils.js";
  * @property {IL10n} [l10n]
  * @property {TextAccessibilityManager} [accessibilityManager]
  * @property {AnnotationLayer} [annotationLayer]
+ * @property {TextLayer} [textLayer]
+ * @property {DrawLayer} [drawLayer]
  */
 
 class AnnotationEditorLayerBuilder {
   #annotationLayer = null;
+
+  #drawLayer = null;
+
+  #textLayer = null;
 
   #uiManager;
 
@@ -55,6 +61,8 @@ class AnnotationEditorLayerBuilder {
     this._cancelled = false;
     this.#uiManager = options.uiManager;
     this.#annotationLayer = options.annotationLayer || null;
+    this.#textLayer = options.textLayer || null;
+    this.#drawLayer = options.drawLayer || null;
   }
 
   /**
@@ -82,6 +90,7 @@ class AnnotationEditorLayerBuilder {
     div.className = "annotationEditorLayer";
     div.tabIndex = 0;
     div.hidden = true;
+    div.dir = this.#uiManager.direction;
     this.pageDiv.append(div);
 
     this.annotationEditorLayer = new AnnotationEditorLayer({
@@ -92,6 +101,8 @@ class AnnotationEditorLayerBuilder {
       l10n: this.l10n,
       viewport: clonedViewport,
       annotationLayer: this.#annotationLayer,
+      textLayer: this.#textLayer,
+      drawLayer: this.#drawLayer,
     });
 
     const parameters = {

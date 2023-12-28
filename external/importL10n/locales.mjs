@@ -67,10 +67,10 @@ function downloadLanguageFiles(root, langCode) {
   // Constants for constructing the URLs. Translations are taken from the
   // Nightly channel as those are the most recent ones.
   const MOZ_CENTRAL_ROOT = "https://hg.mozilla.org/l10n-central/";
-  const MOZ_CENTRAL_PDFJS_DIR = "/raw-file/default/browser/pdfviewer/";
+  const MOZ_CENTRAL_PDFJS_DIR = "/raw-file/default/toolkit/toolkit/pdfviewer/";
 
   // Defines which files to download for each language.
-  const files = ["viewer.properties"];
+  const files = ["viewer.ftl"];
   let downloadsLeft = files.length;
 
   const outputDir = path.join(root, langCode);

@@ -56,8 +56,6 @@ class FreeTextEditor extends AnnotationEditor {
 
   static _freeTextDefaultContent = "";
 
-  static _l10nPromise;
-
   static _internalPadding = 0;
 
   static _defaultColor = null;
@@ -134,6 +132,8 @@ class FreeTextEditor extends AnnotationEditor {
 
   static _type = "freetext";
 
+  static _editorType = AnnotationEditorType.FREETEXT;
+
   constructor(params) {
     super({ ...params, name: "freeTextEditor" });
     this.#color =
@@ -145,12 +145,9 @@ class FreeTextEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   static initialize(l10n) {
-    this._l10nPromise = new Map(
-      ["free_text2_default_content", "editor_free_text2_aria_label"].map(
-        str => [str, l10n.get(str)]
-      )
-    );
-
+    AnnotationEditor.initialize(l10n, {
+      strings: ["pdfjs-free-text-default-content"],
+    });
     const style = getComputedStyle(document.documentElement);
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
@@ -281,6 +278,9 @@ class FreeTextEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   rebuild() {
+    if (!this.parent) {
+      return;
+    }
     super.rebuild();
     if (this.div === null) {
       return;
@@ -337,7 +337,7 @@ class FreeTextEditor extends AnnotationEditor {
 
     // In case the blur callback hasn't been called.
     this.isEditing = false;
-    this.parent.div.classList.add("freeTextEditing");
+    this.parent.div.classList.add("freetextEditing");
   }
 
   /** @inheritdoc */
@@ -360,6 +360,10 @@ class FreeTextEditor extends AnnotationEditor {
     }
     this.enableEditMode();
     this.editorDiv.focus();
+    if (this._initialOptions?.isCentered) {
+      this.center();
+    }
+    this._initialOptions = null;
   }
 
   /** @inheritdoc */
@@ -372,7 +376,7 @@ class FreeTextEditor extends AnnotationEditor {
     this.isEditing = false;
     if (this.parent) {
       this.parent.setEditingState(true);
-      this.parent.div.classList.add("freeTextEditing");
+      this.parent.div.classList.add("freetextEditing");
     }
     super.remove();
   }
@@ -447,7 +451,7 @@ class FreeTextEditor extends AnnotationEditor {
         return;
       }
       this.#setContent();
-      this.rebuild();
+      this._uiManager.rebuild(this);
       this.#setEditorDimensions();
     };
     this.addCommands({
@@ -506,7 +510,7 @@ class FreeTextEditor extends AnnotationEditor {
   }
 
   editorDivInput(event) {
-    this.parent.div.classList.toggle("freeTextEditing", this.isEmpty());
+    this.parent.div.classList.toggle("freetextEditing", this.isEmpty());
   }
 
   /** @inheritdoc */
@@ -538,14 +542,11 @@ class FreeTextEditor extends AnnotationEditor {
     this.editorDiv.className = "internal";
 
     this.editorDiv.setAttribute("id", this.#editorDivId);
+    this.editorDiv.setAttribute("data-l10n-id", "pdfjs-free-text");
     this.enableEditing();
 
-    FreeTextEditor._l10nPromise
-      .get("editor_free_text2_aria_label")
-      .then(msg => this.editorDiv?.setAttribute("aria-label", msg));
-
-    FreeTextEditor._l10nPromise
-      .get("free_text2_default_content")
+    AnnotationEditor._l10nPromise
+      .get("pdfjs-free-text-default-content")
       .then(msg => this.editorDiv?.setAttribute("default-content", msg));
     this.editorDiv.contentEditable = true;
 
@@ -647,6 +648,7 @@ class FreeTextEditor extends AnnotationEditor {
     }
   }
 
+  /** @inheritdoc */
   get contentDiv() {
     return this.editorDiv;
   }
@@ -728,6 +730,7 @@ class FreeTextEditor extends AnnotationEditor {
       pageIndex: this.pageIndex,
       rect,
       rotation: this.rotation,
+      structTreeParentId: this._structTreeParentId,
     };
 
     if (isForCopying) {

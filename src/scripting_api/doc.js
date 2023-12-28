@@ -1185,7 +1185,7 @@ class Doc extends PDFObject {
 
   resetForm(aFields = null) {
     // Handle the case resetForm({ aFields: ... })
-    if (aFields && typeof aFields === "object") {
+    if (aFields && typeof aFields === "object" && !Array.isArray(aFields)) {
       aFields = aFields.aFields;
     }
 

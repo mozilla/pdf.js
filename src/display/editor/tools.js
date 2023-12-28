@@ -18,6 +18,7 @@
 /** @typedef {import("./annotation_editor_layer.js").AnnotationEditorLayer} AnnotationEditorLayer */
 
 import {
+  AnnotationEditorParamsType,
   AnnotationEditorPrefix,
   AnnotationEditorType,
   FeatureTest,
@@ -26,7 +27,12 @@ import {
   Util,
   warn,
 } from "../../shared/util.js";
-import { getColorValues, getRGB, PixelsPerInch } from "../display_utils.js";
+import {
+  fetchData,
+  getColorValues,
+  getRGB,
+  PixelsPerInch,
+} from "../display_utils.js";
 
 function bindEvents(obj, element, names) {
   for (const name of names) {
@@ -115,12 +121,7 @@ class ImageManager {
       let image;
       if (typeof rawData === "string") {
         data.url = rawData;
-
-        const response = await fetch(rawData);
-        if (!response.ok) {
-          throw new Error(response.statusText);
-        }
-        image = await response.blob();
+        image = await fetchData(rawData, "blob");
       } else {
         image = data.file = rawData;
       }
@@ -417,7 +418,7 @@ class KeyboardManager {
   /**
    * Execute a callback, if any, for a given keyboard event.
    * The self is used as `this` in the callback.
-   * @param {Object} self.
+   * @param {Object} self
    * @param {KeyboardEvent} event
    * @returns
    */
@@ -437,7 +438,7 @@ class KeyboardManager {
     if (checker && !checker(self, event)) {
       return;
     }
-    callback.bind(self, ...args)();
+    callback.bind(self, ...args, event)();
 
     // For example, ctrl+s in a FreeText must be handled by the viewer, hence
     // the event must bubble.
@@ -524,6 +525,8 @@ class AnnotationEditorUIManager {
 
   #allLayers = new Map();
 
+  #altTextManager = null;
+
   #annotationStorage = null;
 
   #commandManager = new CommandManager();
@@ -532,23 +535,37 @@ class AnnotationEditorUIManager {
 
   #deletedAnnotationsElementIds = new Set();
 
+  #draggingEditors = null;
+
   #editorTypes = null;
 
   #editorsToRescale = new Set();
 
-  #eventBus = null;
-
   #filterFactory = null;
+
+  #focusMainContainerTimeoutId = null;
+
+  #highlightColors = null;
 
   #idManager = new IdManager();
 
   #isEnabled = false;
+
+  #isWaiting = false;
+
+  #lastActiveElement = null;
+
+  #mainHighlightColorPicker = null;
 
   #mode = AnnotationEditorType.NONE;
 
   #selectedEditors = new Set();
 
   #pageColors = null;
+
+  #boundBlur = this.blur.bind(this);
+
+  #boundFocus = this.focus.bind(this);
 
   #boundCopy = this.copy.bind(this);
 
@@ -592,12 +609,19 @@ class AnnotationEditorUIManager {
     const arrowChecker = self => {
       // If the focused element is an input, we don't want to handle the arrow.
       // For example, sliders can be controlled with the arrow keys.
-      const { activeElement } = document;
       return (
-        activeElement &&
-        self.#container.contains(activeElement) &&
+        self.#container.contains(document.activeElement) &&
+        document.activeElement.tagName !== "BUTTON" &&
         self.hasSomethingToControl()
       );
+    };
+
+    const textInputChecker = (_self, { target: el }) => {
+      if (el instanceof HTMLInputElement) {
+        const { type } = el;
+        return type !== "text" && type !== "number";
+      }
+      return true;
     };
 
     const small = this.TRANSLATE_SMALL;
@@ -607,8 +631,12 @@ class AnnotationEditorUIManager {
       this,
       "_keyboardManager",
       new KeyboardManager([
-        [["ctrl+a", "mac+meta+a"], proto.selectAll],
-        [["ctrl+z", "mac+meta+z"], proto.undo],
+        [
+          ["ctrl+a", "mac+meta+a"],
+          proto.selectAll,
+          { checker: textInputChecker },
+        ],
+        [["ctrl+z", "mac+meta+z"], proto.undo, { checker: textInputChecker }],
         [
           // On mac, depending of the OS version, the event.key is either "z" or
           // "Z" when the user presses "meta+shift+z".
@@ -620,6 +648,7 @@ class AnnotationEditorUIManager {
             "mac+meta+shift+Z",
           ],
           proto.redo,
+          { checker: textInputChecker },
         ],
         [
           [
@@ -636,6 +665,30 @@ class AnnotationEditorUIManager {
             "mac+Delete",
           ],
           proto.delete,
+          { checker: textInputChecker },
+        ],
+        [
+          ["Enter", "mac+Enter"],
+          proto.addNewEditorFromKeyboard,
+          {
+            // Those shortcuts can be used in the toolbar for some other actions
+            // like zooming, hence we need to check if the container has the
+            // focus.
+            checker: (self, { target: el }) =>
+              !(el instanceof HTMLButtonElement) &&
+              self.#container.contains(el) &&
+              !self.isEnterHandled,
+          },
+        ],
+        [
+          [" ", "mac+ "],
+          proto.addNewEditorFromKeyboard,
+          {
+            // Those shortcuts can be used in the toolbar for some other actions
+            // like zooming, hence we need to check if the container has the
+            // focus.
+            checker: self => self.#container.contains(document.activeElement),
+          },
         ],
         [["Escape", "mac+Escape"], proto.unselectAll],
         [
@@ -682,17 +735,27 @@ class AnnotationEditorUIManager {
     );
   }
 
-  constructor(container, viewer, eventBus, pdfDocument, pageColors) {
+  constructor(
+    container,
+    viewer,
+    altTextManager,
+    eventBus,
+    pdfDocument,
+    pageColors,
+    highlightColors
+  ) {
     this.#container = container;
     this.#viewer = viewer;
-    this.#eventBus = eventBus;
-    this.#eventBus._on("editingaction", this.#boundOnEditingAction);
-    this.#eventBus._on("pagechanging", this.#boundOnPageChanging);
-    this.#eventBus._on("scalechanging", this.#boundOnScaleChanging);
-    this.#eventBus._on("rotationchanging", this.#boundOnRotationChanging);
+    this.#altTextManager = altTextManager;
+    this._eventBus = eventBus;
+    this._eventBus._on("editingaction", this.#boundOnEditingAction);
+    this._eventBus._on("pagechanging", this.#boundOnPageChanging);
+    this._eventBus._on("scalechanging", this.#boundOnScaleChanging);
+    this._eventBus._on("rotationchanging", this.#boundOnRotationChanging);
     this.#annotationStorage = pdfDocument.annotationStorage;
     this.#filterFactory = pdfDocument.filterFactory;
     this.#pageColors = pageColors;
+    this.#highlightColors = highlightColors || null;
     this.viewParameters = {
       realScale: PixelsPerInch.PDF_TO_CSS_UNITS,
       rotation: 0,
@@ -701,10 +764,11 @@ class AnnotationEditorUIManager {
 
   destroy() {
     this.#removeKeyboardManager();
-    this.#eventBus._off("editingaction", this.#boundOnEditingAction);
-    this.#eventBus._off("pagechanging", this.#boundOnPageChanging);
-    this.#eventBus._off("scalechanging", this.#boundOnScaleChanging);
-    this.#eventBus._off("rotationchanging", this.#boundOnRotationChanging);
+    this.#removeFocusManager();
+    this._eventBus._off("editingaction", this.#boundOnEditingAction);
+    this._eventBus._off("pagechanging", this.#boundOnPageChanging);
+    this._eventBus._off("scalechanging", this.#boundOnScaleChanging);
+    this._eventBus._off("rotationchanging", this.#boundOnRotationChanging);
     for (const layer of this.#allLayers.values()) {
       layer.destroy();
     }
@@ -714,6 +778,15 @@ class AnnotationEditorUIManager {
     this.#activeEditor = null;
     this.#selectedEditors.clear();
     this.#commandManager.destroy();
+    this.#altTextManager?.destroy();
+    if (this.#focusMainContainerTimeoutId) {
+      clearTimeout(this.#focusMainContainerTimeoutId);
+      this.#focusMainContainerTimeoutId = null;
+    }
+    if (this.#translationTimeoutId) {
+      clearTimeout(this.#translationTimeoutId);
+      this.#translationTimeoutId = null;
+    }
   }
 
   get hcmFilter() {
@@ -727,6 +800,36 @@ class AnnotationEditorUIManager {
           )
         : "none"
     );
+  }
+
+  get direction() {
+    return shadow(
+      this,
+      "direction",
+      getComputedStyle(this.#container).direction
+    );
+  }
+
+  get highlightColors() {
+    return shadow(
+      this,
+      "highlightColors",
+      this.#highlightColors
+        ? new Map(
+            this.#highlightColors
+              .split(",")
+              .map(pair => pair.split("=").map(x => x.trim()))
+          )
+        : null
+    );
+  }
+
+  setMainHighlightColorPicker(colorPicker) {
+    this.#mainHighlightColorPicker = colorPicker;
+  }
+
+  editAltText(editor) {
+    this.#altTextManager?.editAltText(this, editor);
   }
 
   onPageChanging({ pageNumber }) {
@@ -796,16 +899,58 @@ class AnnotationEditorUIManager {
     }
   }
 
+  #addFocusManager() {
+    window.addEventListener("focus", this.#boundFocus);
+    window.addEventListener("blur", this.#boundBlur);
+  }
+
+  #removeFocusManager() {
+    window.removeEventListener("focus", this.#boundFocus);
+    window.removeEventListener("blur", this.#boundBlur);
+  }
+
+  blur() {
+    if (!this.hasSelection) {
+      return;
+    }
+    // When several editors are selected and the window loses focus, we want to
+    // keep the last active element in order to be able to focus it again when
+    // the window gets the focus back but we don't want to trigger any focus
+    // callbacks else only one editor will be selected.
+    const { activeElement } = document;
+    for (const editor of this.#selectedEditors) {
+      if (editor.div.contains(activeElement)) {
+        this.#lastActiveElement = [editor, activeElement];
+        editor._focusEventsAllowed = false;
+        break;
+      }
+    }
+  }
+
+  focus() {
+    if (!this.#lastActiveElement) {
+      return;
+    }
+    const [lastEditor, lastActiveElement] = this.#lastActiveElement;
+    this.#lastActiveElement = null;
+    lastActiveElement.addEventListener(
+      "focusin",
+      () => {
+        lastEditor._focusEventsAllowed = true;
+      },
+      { once: true }
+    );
+    lastActiveElement.focus();
+  }
+
   #addKeyboardManager() {
     // The keyboard events are caught at the container level in order to be able
     // to execute some callbacks even if the current page doesn't have focus.
-    window.addEventListener("keydown", this.#boundKeydown, { capture: true });
+    window.addEventListener("keydown", this.#boundKeydown);
   }
 
   #removeKeyboardManager() {
-    window.removeEventListener("keydown", this.#boundKeydown, {
-      capture: true,
-    });
+    window.removeEventListener("keydown", this.#boundKeydown);
   }
 
   #addCopyPasteListeners() {
@@ -820,6 +965,16 @@ class AnnotationEditorUIManager {
     document.removeEventListener("paste", this.#boundPaste);
   }
 
+  addEditListeners() {
+    this.#addKeyboardManager();
+    this.#addCopyPasteListeners();
+  }
+
+  removeEditListeners() {
+    this.#removeKeyboardManager();
+    this.#removeCopyPasteListeners();
+  }
+
   /**
    * Copy callback.
    * @param {ClipboardEvent} event
@@ -827,10 +982,8 @@ class AnnotationEditorUIManager {
   copy(event) {
     event.preventDefault();
 
-    if (this.#activeEditor) {
-      // An editor is being edited so just commit it.
-      this.#activeEditor.commitOrRemove();
-    }
+    // An editor is being edited so just commit it.
+    this.#activeEditor?.commitOrRemove();
 
     if (!this.hasSelection) {
       return;
@@ -865,8 +1018,17 @@ class AnnotationEditorUIManager {
    */
   paste(event) {
     event.preventDefault();
+    const { clipboardData } = event;
+    for (const item of clipboardData.items) {
+      for (const editorType of this.#editorTypes) {
+        if (editorType.isHandlingMimeForPasting(item.type)) {
+          editorType.paste(item, this.currentLayer);
+          return;
+        }
+      }
+    }
 
-    let data = event.clipboardData.getData("application/pdfjs");
+    let data = clipboardData.getData("application/pdfjs");
     if (!data) {
       return;
     }
@@ -917,7 +1079,7 @@ class AnnotationEditorUIManager {
    * @param {KeyboardEvent} event
    */
   keydown(event) {
-    if (!this.getActive()?.shouldGetKeyboardEvents()) {
+    if (!this.isEditorHandlingKeyboard) {
       AnnotationEditorUIManager._keyboardManager.exec(this, event);
     }
   }
@@ -945,7 +1107,7 @@ class AnnotationEditorUIManager {
     );
 
     if (hasChanged) {
-      this.#eventBus.dispatch("annotationeditorstateschanged", {
+      this._eventBus.dispatch("annotationeditorstateschanged", {
         source: this,
         details: Object.assign(this.#previousStates, details),
       });
@@ -953,7 +1115,7 @@ class AnnotationEditorUIManager {
   }
 
   #dispatchUpdateUI(details) {
-    this.#eventBus.dispatch("annotationeditorparamschanged", {
+    this._eventBus.dispatch("annotationeditorparamschanged", {
       source: this,
       details,
     });
@@ -967,6 +1129,7 @@ class AnnotationEditorUIManager {
    */
   setEditingState(isEditing) {
     if (isEditing) {
+      this.#addFocusManager();
       this.#addKeyboardManager();
       this.#addCopyPasteListeners();
       this.#dispatchUpdateStates({
@@ -977,6 +1140,7 @@ class AnnotationEditorUIManager {
         hasSelectedEditor: false,
       });
     } else {
+      this.#removeFocusManager();
       this.#removeKeyboardManager();
       this.#removeCopyPasteListeners();
       this.#dispatchUpdateStates({
@@ -1008,6 +1172,10 @@ class AnnotationEditorUIManager {
     return this.#allLayers.get(this.#currentPageIndex);
   }
 
+  getLayer(pageIndex) {
+    return this.#allLayers.get(pageIndex);
+  }
+
   get currentPageIndex() {
     return this.#currentPageIndex;
   }
@@ -1037,8 +1205,13 @@ class AnnotationEditorUIManager {
    * Change the editor mode (None, FreeText, Ink, ...)
    * @param {number} mode
    * @param {string|null} editId
+   * @param {boolean} [isFromKeyboard] - true if the mode change is due to a
+   *   keyboard action.
    */
-  updateMode(mode, editId = null) {
+  updateMode(mode, editId = null, isFromKeyboard = false) {
+    if (this.#mode === mode) {
+      return;
+    }
     this.#mode = mode;
     if (mode === AnnotationEditorType.NONE) {
       this.setEditingState(false);
@@ -1047,9 +1220,15 @@ class AnnotationEditorUIManager {
     }
     this.setEditingState(true);
     this.#enableAll();
+    this.unselectAll();
     for (const layer of this.#allLayers.values()) {
       layer.updateMode(mode);
     }
+    if (!editId && isFromKeyboard) {
+      this.addNewEditorFromKeyboard();
+      return;
+    }
+
     if (!editId) {
       return;
     }
@@ -1062,6 +1241,12 @@ class AnnotationEditorUIManager {
     }
   }
 
+  addNewEditorFromKeyboard() {
+    if (this.currentLayer.canCreateNewEmptyEditor()) {
+      this.currentLayer.addNewEditor();
+    }
+  }
+
   /**
    * Update the toolbar if it's required to reflect the tool currently used.
    * @param {number} mode
@@ -1071,7 +1256,7 @@ class AnnotationEditorUIManager {
     if (mode === this.#mode) {
       return;
     }
-    this.#eventBus.dispatch("switchannotationeditormode", {
+    this._eventBus.dispatch("switchannotationeditormode", {
       source: this,
       mode,
     });
@@ -1087,12 +1272,36 @@ class AnnotationEditorUIManager {
       return;
     }
 
+    switch (type) {
+      case AnnotationEditorParamsType.CREATE:
+        this.currentLayer.addNewEditor();
+        return;
+      case AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR:
+        this.#mainHighlightColorPicker?.updateColor(value);
+        break;
+    }
+
     for (const editor of this.#selectedEditors) {
       editor.updateParams(type, value);
     }
 
     for (const editorType of this.#editorTypes) {
       editorType.updateDefaultParams(type, value);
+    }
+  }
+
+  enableWaiting(mustWait = false) {
+    if (this.#isWaiting === mustWait) {
+      return;
+    }
+    this.#isWaiting = mustWait;
+    for (const layer of this.#allLayers.values()) {
+      if (mustWait) {
+        layer.disableClick();
+      } else {
+        layer.enableClick();
+      }
+      layer.div.classList.toggle("waiting", mustWait);
     }
   }
 
@@ -1122,7 +1331,7 @@ class AnnotationEditorUIManager {
   }
 
   /**
-   * Get all the editors belonging to a give page.
+   * Get all the editors belonging to a given page.
    * @param {number} pageIndex
    * @returns {Array<AnnotationEditor>}
    */
@@ -1158,6 +1367,17 @@ class AnnotationEditorUIManager {
    * @param {AnnotationEditor} editor
    */
   removeEditor(editor) {
+    if (editor.div.contains(document.activeElement)) {
+      if (this.#focusMainContainerTimeoutId) {
+        clearTimeout(this.#focusMainContainerTimeoutId);
+      }
+      this.#focusMainContainerTimeoutId = setTimeout(() => {
+        // When the div is removed from DOM the focus can move on the
+        // document.body, so we need to move it back to the main container.
+        this.focusMainContainer();
+        this.#focusMainContainerTimeoutId = null;
+      }, 0);
+    }
     this.#allEditors.delete(editor.id);
     this.unselect(editor);
     if (
@@ -1272,6 +1492,10 @@ class AnnotationEditorUIManager {
     return this.#selectedEditors.has(editor);
   }
 
+  get firstSelectedEditor() {
+    return this.#selectedEditors.values().next().value;
+  }
+
   /**
    * Unselect an editor.
    * @param {AnnotationEditor} editor
@@ -1286,6 +1510,13 @@ class AnnotationEditorUIManager {
 
   get hasSelection() {
     return this.#selectedEditors.size !== 0;
+  }
+
+  get isEnterHandled() {
+    return (
+      this.#selectedEditors.size === 1 &&
+      this.firstSelectedEditor.isEnterHandled
+    );
   }
 
   /**
@@ -1405,7 +1636,11 @@ class AnnotationEditorUIManager {
     if (this.#activeEditor) {
       // An editor is being edited so just commit it.
       this.#activeEditor.commitOrRemove();
-      return;
+      if (this.#mode !== AnnotationEditorType.NONE) {
+        // If the mode is NONE, we want to really unselect the editor, hence we
+        // mustn't return here.
+        return;
+      }
     }
 
     if (!this.hasSelection) {
@@ -1467,6 +1702,133 @@ class AnnotationEditorUIManager {
     for (const editor of editors) {
       editor.translateInPage(x, y);
     }
+  }
+
+  /**
+   * Set up the drag session for moving the selected editors.
+   */
+  setUpDragSession() {
+    // Note: don't use any references to the editor's parent which can be null
+    // if the editor belongs to a destroyed page.
+    if (!this.hasSelection) {
+      return;
+    }
+    // Avoid to have spurious text selection in the text layer when dragging.
+    this.disableUserSelect(true);
+    this.#draggingEditors = new Map();
+    for (const editor of this.#selectedEditors) {
+      this.#draggingEditors.set(editor, {
+        savedX: editor.x,
+        savedY: editor.y,
+        savedPageIndex: editor.pageIndex,
+        newX: 0,
+        newY: 0,
+        newPageIndex: -1,
+      });
+    }
+  }
+
+  /**
+   * Ends the drag session.
+   * @returns {boolean} true if at least one editor has been moved.
+   */
+  endDragSession() {
+    if (!this.#draggingEditors) {
+      return false;
+    }
+    this.disableUserSelect(false);
+    const map = this.#draggingEditors;
+    this.#draggingEditors = null;
+    let mustBeAddedInUndoStack = false;
+
+    for (const [{ x, y, pageIndex }, value] of map) {
+      value.newX = x;
+      value.newY = y;
+      value.newPageIndex = pageIndex;
+      mustBeAddedInUndoStack ||=
+        x !== value.savedX ||
+        y !== value.savedY ||
+        pageIndex !== value.savedPageIndex;
+    }
+
+    if (!mustBeAddedInUndoStack) {
+      return false;
+    }
+
+    const move = (editor, x, y, pageIndex) => {
+      if (this.#allEditors.has(editor.id)) {
+        // The editor can be undone/redone on a page which is not visible (and
+        // which potentially has no annotation editor layer), hence we need to
+        // use the pageIndex instead of the parent.
+        const parent = this.#allLayers.get(pageIndex);
+        if (parent) {
+          editor._setParentAndPosition(parent, x, y);
+        } else {
+          editor.pageIndex = pageIndex;
+          editor.x = x;
+          editor.y = y;
+        }
+      }
+    };
+
+    this.addCommands({
+      cmd: () => {
+        for (const [editor, { newX, newY, newPageIndex }] of map) {
+          move(editor, newX, newY, newPageIndex);
+        }
+      },
+      undo: () => {
+        for (const [editor, { savedX, savedY, savedPageIndex }] of map) {
+          move(editor, savedX, savedY, savedPageIndex);
+        }
+      },
+      mustExec: true,
+    });
+
+    return true;
+  }
+
+  /**
+   * Drag the set of selected editors.
+   * @param {number} tx
+   * @param {number} ty
+   */
+  dragSelectedEditors(tx, ty) {
+    if (!this.#draggingEditors) {
+      return;
+    }
+    for (const editor of this.#draggingEditors.keys()) {
+      editor.drag(tx, ty);
+    }
+  }
+
+  /**
+   * Rebuild the editor (usually on undo/redo actions) on a potentially
+   * non-rendered page.
+   * @param {AnnotationEditor} editor
+   */
+  rebuild(editor) {
+    if (editor.parent === null) {
+      const parent = this.getLayer(editor.pageIndex);
+      if (parent) {
+        parent.changeParent(editor);
+        parent.addOrRebuild(editor);
+      } else {
+        this.addEditor(editor);
+        this.addToAnnotationStorage(editor);
+        editor.rebuild();
+      }
+    } else {
+      editor.parent.addOrRebuild(editor);
+    }
+  }
+
+  get isEditorHandlingKeyboard() {
+    return (
+      this.getActive()?.shouldGetKeyboardEvents() ||
+      (this.#selectedEditors.size === 1 &&
+        this.firstSelectedEditor.shouldGetKeyboardEvents())
+    );
   }
 
   /**

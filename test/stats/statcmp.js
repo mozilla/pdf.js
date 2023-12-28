@@ -1,6 +1,9 @@
-"use strict";
+/* eslint-disable import/no-commonjs */
 
-const fs = require("fs");
+import { createRequire } from "module";
+import fs from "fs";
+
+const require = createRequire(import.meta.url);
 const ttest = require("ttest");
 
 const VALID_GROUP_BYS = ["browser", "pdf", "page", "round", "stat"];
