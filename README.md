@@ -11,11 +11,11 @@ rendering PDFs.
 
  - Run `npm install` (check if node version is supported, currently supports `>= 14`).
  - Remove build folder from `.gitignore`.
- - Update the `validateFileURL` method in `app.js` and replace code with return true.
- - Run `gulp generic` to generate build files.
- - Create a new `viewer_with_hidden_buttons.html` file in the `build/generic/web` folder (used for pdf previews in some areas of CE).
- - Add `style="display: none !important;"` to the button elements related to Open, Print, Save and Presentation on the toolbar.
- - Push build to repo.
+ - Update the `validateFileURL` method in `app.js` and replace code with `return true`.
+ - Run `gulp generic` to generate build files first.
+ - Then create a new `viewer_with_hidden_buttons.html` file in the `build/generic/web` folder from the `viewer.html` file generated in the build (used for pdf previews in some areas of CE.).
+ - Add `style="display: none !important;"` to the button elements related to Open, Print, Save and Presentation on the pdf toolbars.
+ - Push files to repo.
 
 ## Contributing
 
