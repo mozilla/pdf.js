@@ -361,14 +361,15 @@ class HighlightEditor extends AnnotationEditor {
     this.parent?.drawLayer.removeClass(this.#outlineId, "selected");
   }
 
-  #serializeBoxes() {
+  #serializeBoxes(rect) {
     const [pageWidth, pageHeight] = this.pageDimensions;
     const boxes = this.#boxes;
     const quadPoints = new Array(boxes.length * 8);
+    const [tx, ty] = rect;
     let i = 0;
     for (const { x, y, width, height } of boxes) {
-      const sx = x * pageWidth;
-      const sy = (1 - y - height) * pageHeight;
+      const sx = tx + x * pageWidth;
+      const sy = ty + (1 - y - height) * pageHeight;
       // The specifications say that the rectangle should start from the bottom
       // left corner and go counter-clockwise.
       // But when opening the file in Adobe Acrobat it appears that this isn't
@@ -382,12 +383,11 @@ class HighlightEditor extends AnnotationEditor {
     return quadPoints;
   }
 
-  #serializeOutlines() {
+  #serializeOutlines(rect) {
     const [pageWidth, pageHeight] = this.pageDimensions;
     const width = this.width * pageWidth;
     const height = this.height * pageHeight;
-    const tx = this.x * pageWidth;
-    const ty = (1 - this.y - this.height) * pageHeight;
+    const [tx, ty] = rect;
     const outlines = [];
     for (const outline of this.#highlightOutlines.outlines) {
       const points = new Array(outline.length);
@@ -404,18 +404,22 @@ class HighlightEditor extends AnnotationEditor {
   static deserialize(data, parent, uiManager) {
     const editor = super.deserialize(data, parent, uiManager);
 
-    const { rect, color, quadPoints } = data;
+    const {
+      rect: [blX, blY, trX, trY],
+      color,
+      quadPoints,
+    } = data;
     editor.color = Util.makeHexColor(...color);
     editor.#opacity = data.opacity;
 
     const [pageWidth, pageHeight] = editor.pageDimensions;
-    editor.width = (rect[2] - rect[0]) / pageWidth;
-    editor.height = (rect[3] - rect[1]) / pageHeight;
+    editor.width = (trX - blX) / pageWidth;
+    editor.height = (trY - blY) / pageHeight;
     const boxes = (editor.#boxes = []);
     for (let i = 0; i < quadPoints.length; i += 8) {
       boxes.push({
-        x: quadPoints[4] / pageWidth,
-        y: 1 - quadPoints[i + 5] / pageHeight,
+        x: (quadPoints[4] - trX) / pageWidth,
+        y: (trY - (1 - quadPoints[i + 5])) / pageHeight,
         width: (quadPoints[i + 2] - quadPoints[i]) / pageWidth,
         height: (quadPoints[i + 5] - quadPoints[i + 1]) / pageHeight,
       });
@@ -439,8 +443,8 @@ class HighlightEditor extends AnnotationEditor {
       annotationType: AnnotationEditorType.HIGHLIGHT,
       color,
       opacity: this.#opacity,
-      quadPoints: this.#serializeBoxes(),
-      outlines: this.#serializeOutlines(),
+      quadPoints: this.#serializeBoxes(rect),
+      outlines: this.#serializeOutlines(rect),
       pageIndex: this.pageIndex,
       rect,
       rotation: 0,
