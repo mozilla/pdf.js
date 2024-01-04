@@ -28,8 +28,6 @@ import { removeNullCharacters } from "./ui_utils.js";
  * @property {TextHighlighter} highlighter - Optional object that will handle
  *   highlighting text from the find controller.
  * @property {TextAccessibilityManager} [accessibilityManager]
- * @property {boolean} [isOffscreenCanvasSupported] - Allows to use an
- *   OffscreenCanvas if needed.
  */
 
 /**
@@ -49,7 +47,6 @@ class TextLayerBuilder {
   constructor({
     highlighter = null,
     accessibilityManager = null,
-    isOffscreenCanvasSupported = true,
     enablePermissions = false,
   }) {
     this.textContentItemsStr = [];
@@ -59,7 +56,6 @@ class TextLayerBuilder {
     this.textLayerRenderTask = null;
     this.highlighter = highlighter;
     this.accessibilityManager = accessibilityManager;
-    this.isOffscreenCanvasSupported = isOffscreenCanvasSupported;
     this.#enablePermissions = enablePermissions === true;
 
     /**
@@ -107,7 +103,6 @@ class TextLayerBuilder {
           viewport,
           textDivs: this.textDivs,
           textDivProperties: this.textDivProperties,
-          isOffscreenCanvasSupported: this.isOffscreenCanvasSupported,
           mustRescale,
           mustRotate,
         });
@@ -129,7 +124,6 @@ class TextLayerBuilder {
       textDivs: this.textDivs,
       textDivProperties: this.textDivProperties,
       textContentItemsStr: this.textContentItemsStr,
-      isOffscreenCanvasSupported: this.isOffscreenCanvasSupported,
     });
 
     await this.textLayerRenderTask.promise;

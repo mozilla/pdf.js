@@ -46,7 +46,8 @@
   transform: rotate(270deg) translateX(-100%);
 }
 
-#hiddenCopyElement {
+#hiddenCopyElement,
+.hiddenCanvasElement {
   position: absolute;
   top: 0;
   left: 0;
