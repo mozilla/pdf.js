@@ -63,6 +63,7 @@ import {
   NodeStandardFontDataFactory,
 } from "display-node_utils";
 import { CanvasGraphics } from "./canvas.js";
+import { cleanupTextLayer } from "./text_layer.js";
 import { GlobalWorkerOptions } from "./worker_options.js";
 import { MessageHandler } from "../shared/message_handler.js";
 import { Metadata } from "./metadata.js";
@@ -2481,6 +2482,7 @@ class WorkerTransport {
       this.fontLoader.clear();
       this.#methodPromises.clear();
       this.filterFactory.destroy();
+      cleanupTextLayer();
 
       this._networkStream?.cancelAllRequests(
         new AbortException("Worker was terminated.")
@@ -3065,6 +3067,7 @@ class WorkerTransport {
     }
     this.#methodPromises.clear();
     this.filterFactory.destroy(/* keepHCM = */ true);
+    cleanupTextLayer();
   }
 
   get loadingParams() {
