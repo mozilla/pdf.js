@@ -47,7 +47,7 @@
     "postcss-discard-comments": "^6.0.1",
     "postcss-nesting": "^12.0.2",
     "prettier": "^3.1.1",
-    "puppeteer": "^21.6.1",
+    "puppeteer": "^21.7.0",
     "rimraf": "^3.0.2",
     "streamqueue": "^1.1.2",
     "stylelint": "^16.0.2",
