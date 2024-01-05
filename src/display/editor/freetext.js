@@ -144,8 +144,8 @@ class FreeTextEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
-  static initialize(l10n) {
-    AnnotationEditor.initialize(l10n, {
+  static initialize(l10n, uiManager) {
+    AnnotationEditor.initialize(l10n, uiManager, {
       strings: ["pdfjs-free-text-default-content"],
     });
     const style = getComputedStyle(document.documentElement);
