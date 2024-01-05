@@ -84,8 +84,8 @@ class InkEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
-  static initialize(l10n) {
-    AnnotationEditor.initialize(l10n);
+  static initialize(l10n, uiManager) {
+    AnnotationEditor.initialize(l10n, uiManager);
   }
 
   /** @inheritdoc */
