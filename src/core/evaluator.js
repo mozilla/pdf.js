@@ -2281,6 +2281,7 @@ class PartialEvaluator {
     viewBox,
     markedContentData = null,
     disableNormalization = false,
+    keepWhiteSpace = false,
   }) {
     // Ensure that `resources`/`stateManager` is correctly initialized,
     // even if the provided parameter is e.g. `null`.
@@ -2347,11 +2348,12 @@ class PartialEvaluator {
       twoLastChars[twoLastCharsPos] = char;
       twoLastCharsPos = nextPos;
 
-      return ret;
+      return !keepWhiteSpace && ret;
     }
 
     function shouldAddWhitepsace() {
       return (
+        !keepWhiteSpace &&
         twoLastChars[twoLastCharsPos] !== " " &&
         twoLastChars[(twoLastCharsPos + 1) % 2] === " "
       );
@@ -2836,7 +2838,7 @@ class PartialEvaluator {
         }
         let scaledDim = glyphWidth * scale;
 
-        if (category.isWhitespace) {
+        if (!keepWhiteSpace && category.isWhitespace) {
           // Don't push a " " in the textContentItem
           // (except when it's between two non-spaces chars),
           // it will be done (if required) in next call to
@@ -3272,6 +3274,7 @@ class PartialEvaluator {
                     viewBox,
                     markedContentData,
                     disableNormalization,
+                    keepWhiteSpace,
                   })
                   .then(function () {
                     if (!sinkWrapper.enqueueInvoked) {
