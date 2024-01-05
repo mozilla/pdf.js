@@ -16,7 +16,7 @@
 import os from "os";
 const isMac = os.platform() === "darwin";
 
-function loadAndWait(filename, selector, zoom, pageSetup) {
+function loadAndWait(filename, selector, zoom, pageSetup, options) {
   return Promise.all(
     global.integrationSessions.map(async session => {
       const page = await session.browser.newPage();
@@ -36,9 +36,16 @@ function loadAndWait(filename, selector, zoom, pageSetup) {
         });
       });
 
+      let app_options = "";
+      if (options) {
+        // Options must be handled in app.js::_parseHashParams.
+        for (const [key, value] of Object.entries(options)) {
+          app_options += `&${key}=${encodeURIComponent(value)}`;
+        }
+      }
       const url = `${
         global.integrationBaseUrl
-      }?file=/test/pdfs/${filename}#zoom=${zoom ?? "page-fit"}`;
+      }?file=/test/pdfs/${filename}#zoom=${zoom ?? "page-fit"}${app_options}`;
 
       await page.goto(url);
       if (pageSetup) {

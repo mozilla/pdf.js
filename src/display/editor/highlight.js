@@ -59,8 +59,6 @@ class HighlightEditor extends AnnotationEditor {
 
   constructor(params) {
     super({ ...params, name: "highlightEditor" });
-    HighlightEditor._defaultColor ||=
-      this._uiManager.highlightColors?.values().next().value || "#fff066";
     this.color = params.color || HighlightEditor._defaultColor;
     this.#opacity = params.opacity || HighlightEditor._defaultOpacity;
     this.#boxes = params.boxes || null;
@@ -97,8 +95,10 @@ class HighlightEditor extends AnnotationEditor {
     ];
   }
 
-  static initialize(l10n) {
-    AnnotationEditor.initialize(l10n);
+  static initialize(l10n, uiManager) {
+    AnnotationEditor.initialize(l10n, uiManager);
+    HighlightEditor._defaultColor ||=
+      uiManager.highlightColors?.values().next().value || "#fff066";
   }
 
   static updateDefaultParams(type, value) {

@@ -132,4 +132,61 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("The default color must have the correct value", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        { highlightEditorColors: "red=#AB0000" }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must highlight with red color", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorHighlight");
+          await page.waitForSelector(".annotationEditorLayer.highlightEditing");
+
+          const rect = await page.evaluate(() => {
+            for (const el of document.querySelectorAll(
+              `.page[data-page-number="1"] > .textLayer > span`
+            )) {
+              if (el.textContent === "Abstract") {
+                const { x, y, width, height } = el.getBoundingClientRect();
+                return { x, y, width, height };
+              }
+            }
+            return null;
+          });
+
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2 });
+
+          await page.waitForSelector(`${getEditorSelector(0)}`);
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] svg.highlightOutline.selected`
+          );
+
+          const usedColor = await page.evaluate(() => {
+            const highlight = document.querySelector(
+              `.page[data-page-number = "1"] .canvasWrapper > svg.highlight`
+            );
+            return highlight.getAttribute("fill");
+          });
+
+          expect(usedColor).withContext(`In ${browserName}`).toEqual("#AB0000");
+        })
+      );
+    });
+  });
 });

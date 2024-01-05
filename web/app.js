@@ -353,6 +353,16 @@ const PDFViewerApplication = {
     ) {
       AppOptions.set("locale", params.get("locale"));
     }
+
+    // Set some specific preferences for tests.
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
+      if (params.has("highlighteditorcolors")) {
+        AppOptions.set(
+          "highlightEditorColors",
+          params.get("highlighteditorcolors")
+        );
+      }
+    }
   },
 
   /**
