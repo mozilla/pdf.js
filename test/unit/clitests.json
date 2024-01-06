@@ -52,6 +52,7 @@
     "xfa_parser_spec.js",
     "xfa_serialize_data_spec.js",
     "xfa_tohtml_spec.js",
-    "xml_spec.js"
+    "xml_spec.js",
+    "worker_spec.js"
   ]
 }

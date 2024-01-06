@@ -380,10 +380,13 @@ class DOMCanvasFactory extends BaseCanvasFactory {
    * @ignore
    */
   _createCanvas(width, height) {
-    const canvas = this._document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    return canvas;
+    if (this._document) {
+      const canvas = this._document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      return canvas;
+    }
+    return new OffscreenCanvas(width, height);
   }
 }
 

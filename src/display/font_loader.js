@@ -28,7 +28,7 @@ class FontLoader {
   #systemFonts = new Set();
 
   constructor({
-    ownerDocument = globalThis.document,
+    ownerDocument = globalThis.document || globalThis,
     styleElement = null, // For testing only.
   }) {
     this._document = ownerDocument;

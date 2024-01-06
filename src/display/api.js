@@ -513,7 +513,7 @@ function getUrlProp(val) {
   }
   try {
     // The full path is required in the 'url' field.
-    return new URL(val, window.location).href;
+    return new URL(val, globalThis.location).href;
   } catch {
     if (
       typeof PDFJSDev !== "undefined" &&
@@ -2113,10 +2113,10 @@ class PDFWorker {
         if (
           typeof PDFJSDev !== "undefined" &&
           PDFJSDev.test("GENERIC") &&
-          !PDFWorkerUtil.isSameOrigin(window.location.href, workerSrc)
+          !PDFWorkerUtil.isSameOrigin(globalThis.location.href, workerSrc)
         ) {
           workerSrc = PDFWorkerUtil.createCDNWrapper(
-            new URL(workerSrc, window.location).href
+            new URL(workerSrc, globalThis.location).href
           );
         }
 
@@ -3377,7 +3377,7 @@ class InternalRenderTask {
 
   _scheduleNext() {
     if (this._useRequestAnimationFrame) {
-      window.requestAnimationFrame(() => {
+      globalThis.requestAnimationFrame(() => {
         this._nextBound().catch(this._cancelBound);
       });
     } else {

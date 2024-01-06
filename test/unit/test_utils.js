@@ -64,7 +64,7 @@ function buildGetDocumentParams(filename, options) {
   const params = Object.create(null);
   params.url = isNodeJS
     ? TEST_PDFS_PATH + filename
-    : new URL(TEST_PDFS_PATH + filename, window.location).href;
+    : new URL(TEST_PDFS_PATH + filename, globalThis.location).href;
   params.standardFontDataUrl = STANDARD_FONT_DATA_URL;
 
   for (const option in options) {
