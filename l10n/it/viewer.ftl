@@ -304,6 +304,9 @@ pdfjs-editor-ink-button-label = Disegno
 pdfjs-editor-stamp-button =
     .title = Aggiungi o rimuovi immagine
 pdfjs-editor-stamp-button-label = Aggiungi o rimuovi immagine
+pdfjs-editor-highlight-button =
+    .title = Evidenzia
+pdfjs-editor-highlight-button-label = Evidenzia
 
 ## Remove button for the various kind of editor.
 
