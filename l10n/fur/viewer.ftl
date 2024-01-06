@@ -312,6 +312,8 @@ pdfjs-editor-remove-freetext-button =
     .title = Gjave test
 pdfjs-editor-remove-stamp-button =
     .title = Gjave imagjin
+pdfjs-editor-remove-highlight-button =
+    .title = Gjave evidenziazion
 
 ##
 
@@ -361,3 +363,22 @@ pdfjs-editor-resizer-label-bottom-right = Cjanton in bas a diestre — ridimensi
 pdfjs-editor-resizer-label-bottom-middle = Bande inferiôr tal mieç — ridimensione
 pdfjs-editor-resizer-label-bottom-left = Cjanton in bas a çampe — ridimensione
 pdfjs-editor-resizer-label-middle-left = Bande di çampe tal mieç — ridimensione
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = Colôr par evidenziâ
+pdfjs-editor-colorpicker-button =
+    .title = Cambie colôr
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = Sieltis di colôr
+pdfjs-editor-colorpicker-yellow =
+    .title = Zâl
+pdfjs-editor-colorpicker-green =
+    .title = Vert
+pdfjs-editor-colorpicker-blue =
+    .title = Blu
+pdfjs-editor-colorpicker-pink =
+    .title = Rose
+pdfjs-editor-colorpicker-red =
+    .title = Ros
