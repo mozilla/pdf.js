@@ -312,6 +312,8 @@ pdfjs-editor-remove-freetext-button =
     .title = テキストを削除します
 pdfjs-editor-remove-stamp-button =
     .title = 画像を削除します
+pdfjs-editor-remove-highlight-button =
+    .title = 強調を削除します
 
 ##
 
@@ -361,3 +363,22 @@ pdfjs-editor-resizer-label-bottom-right = 右下隅 — サイズ変更
 pdfjs-editor-resizer-label-bottom-middle = 下中央 — サイズ変更
 pdfjs-editor-resizer-label-bottom-left = 左下隅 — サイズ変更
 pdfjs-editor-resizer-label-middle-left = 左中央 — サイズ変更
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = 強調色
+pdfjs-editor-colorpicker-button =
+    .title = 色を変更します
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = 色の選択
+pdfjs-editor-colorpicker-yellow =
+    .title = 黄色
+pdfjs-editor-colorpicker-green =
+    .title = 緑色
+pdfjs-editor-colorpicker-blue =
+    .title = 青色
+pdfjs-editor-colorpicker-pink =
+    .title = ピンク色
+pdfjs-editor-colorpicker-red =
+    .title = 赤色
