@@ -138,6 +138,12 @@ function parseOptions() {
       describe: "Run specific reftest(s).",
       type: "array",
     })
+    .option("numSlaves", {
+      alias: "j",
+      default: 1,
+      describe: "Number of slaves",
+      type: "number",
+    })
     .example(
       "testfilter",
       "$0 -t=issue5567 -t=issue5909\n" +
@@ -369,6 +375,7 @@ async function startRefTest(masterMode, showRefImages) {
         session.numEqFailures = 0;
         monitorBrowserTimeout(session, handleSessionTimeout);
       },
+      numSlaves: options.numSlaves,
     });
   }
   function checkRefsTmp() {
@@ -422,7 +429,7 @@ function handleSessionTimeout(session) {
   );
   session.numErrors += session.remaining;
   session.remaining = 0;
-  closeSession(browser);
+  closeSession(browser, session.slaveId);
 }
 
 function getTestManifest() {
@@ -450,7 +457,7 @@ function getTestManifest() {
   return manifest;
 }
 
-function checkEq(task, results, browser, masterMode) {
+function checkEq(task, results, browser, slaveId, masterMode) {
   var taskId = task.id;
   var refSnapshotDir = path.join(refsDir, os.platform(), browser, taskId);
   var testSnapshotDir = path.join(
@@ -546,7 +553,7 @@ function checkEq(task, results, browser, masterMode) {
     }
   }
 
-  var session = getSession(browser);
+  var session = getSession(browser, slaveId);
   session.numEqNoSnapshot += numEqNoSnapshot;
   if (numEqFailures > 0) {
     session.numEqFailures += numEqFailures;
@@ -557,7 +564,7 @@ function checkEq(task, results, browser, masterMode) {
   }
 }
 
-function checkFBF(task, results, browser, masterMode) {
+function checkFBF(task, results, browser, slaveId, masterMode) {
   var numFBFFailures = 0;
   var round0 = results[0],
     round1 = results[1];
@@ -605,7 +612,7 @@ function checkFBF(task, results, browser, masterMode) {
   }
 
   if (numFBFFailures > 0) {
-    getSession(browser).numFBFFailures += numFBFFailures;
+    getSession(browser, slaveId).numFBFFailures += numFBFFailures;
   } else {
     console.log(
       "TEST-PASS | forward-back-forward test " + task.id + " | in " + browser
@@ -619,9 +626,9 @@ function checkLoad(task, results, browser) {
   console.log("TEST-PASS | load test " + task.id + " | in " + browser);
 }
 
-function checkRefTestResults(browser, id, results) {
+function checkRefTestResults(browser, slaveId, id, results) {
   var failed = false;
-  var session = getSession(browser);
+  var session = getSession(browser, slaveId);
   var task = session.tasks[id];
   session.numRuns++;
 
@@ -670,10 +677,10 @@ function checkRefTestResults(browser, id, results) {
     case "eq":
     case "text":
     case "highlight":
-      checkEq(task, results, browser, session.masterMode);
+      checkEq(task, results, browser, slaveId, session.masterMode);
       break;
     case "fbf":
-      checkFBF(task, results, browser, session.masterMode);
+      checkFBF(task, results, browser, slaveId, session.masterMode);
       break;
     case "load":
       checkLoad(task, results, browser);
@@ -710,9 +717,12 @@ function refTestPostHandler(req, res) {
 
     var session;
     if (pathname === "/tellMeToQuit") {
-      session = getSession(parsedUrl.query.browser);
+      session = getSession(
+        parsedUrl.query.browser,
+        parseInt(parsedUrl.query.slaveId)
+      );
       monitorBrowserTimeout(session, null);
-      closeSession(session.name);
+      closeSession(session.name, session.slaveId);
       return;
     }
 
@@ -723,6 +733,7 @@ function refTestPostHandler(req, res) {
     }
 
     var browser = data.browser;
+    var slaveId = data.slaveId;
     var round = data.round;
     var id = data.id;
     var page = data.page - 1;
@@ -730,7 +741,7 @@ function refTestPostHandler(req, res) {
     var snapshot = data.snapshot;
     var lastPageNum = data.lastPageNum;
 
-    session = getSession(browser);
+    session = getSession(browser, slaveId);
     monitorBrowserTimeout(session, handleSessionTimeout);
 
     var taskResults = session.taskResults[id];
@@ -772,7 +783,7 @@ function refTestPostHandler(req, res) {
 
     var isDone = taskResults.at(-1)?.[lastPageNum - 1];
     if (isDone) {
-      checkRefTestResults(browser, id, taskResults);
+      checkRefTestResults(browser, slaveId, id, taskResults);
       session.remaining--;
     }
   });
@@ -981,7 +992,7 @@ async function startBrowser({ browserName, headless, startUrl }) {
   return browser;
 }
 
-async function startBrowsers({ baseUrl, initializeSession }) {
+async function startBrowsers({ baseUrl, initializeSession, numSlaves = 1 }) {
   // Remove old browser revisions from Puppeteer's cache. Updating Puppeteer can
   // cause new browser revisions to be downloaded, so trimming the cache will
   // prevent the disk from filling up over time.
@@ -991,44 +1002,51 @@ async function startBrowsers({ baseUrl, initializeSession }) {
 
   sessions = [];
   for (const browserName of browserNames) {
-    // The session must be pushed first and augmented with the browser once
-    // it's initialized. The reason for this is that browser initialization
-    // takes more time when the browser is not found locally yet and we don't
-    // want `onAllSessionsClosed` to trigger if one of the browsers is done
-    // and the other one is still initializing, since that would mean that
-    // once the browser is initialized the server would have stopped already.
-    // Pushing the session first ensures that `onAllSessionsClosed` will
-    // only trigger once all browsers are initialized and done.
-    const session = {
-      name: browserName,
-      browser: undefined,
-      closed: false,
-    };
-    sessions.push(session);
+    for (let i = 0; i < numSlaves; i++) {
+      // The session must be pushed first and augmented with the browser once
+      // it's initialized. The reason for this is that browser initialization
+      // takes more time when the browser is not found locally yet and we don't
+      // want `onAllSessionsClosed` to trigger if one of the browsers is done
+      // and the other one is still initializing, since that would mean that
+      // once the browser is initialized the server would have stopped already.
+      // Pushing the session first ensures that `onAllSessionsClosed` will
+      // only trigger once all browsers are initialized and done.
+      const session = {
+        name: browserName,
+        slaveId: i,
+        browser: undefined,
+        closed: false,
+      };
+      sessions.push(session);
 
-    // Construct the start URL from the base URL by appending query parameters
-    // for the runner if necessary.
-    let startUrl = "";
-    if (baseUrl) {
-      const queryParameters =
-        `?browser=${encodeURIComponent(browserName)}` +
-        `&manifestFile=${encodeURIComponent("/test/" + options.manifestFile)}` +
-        `&testFilter=${JSON.stringify(options.testfilter)}` +
-        `&xfaOnly=${options.xfaOnly}` +
-        `&delay=${options.statsDelay}` +
-        `&masterMode=${options.masterMode}`;
-      startUrl = baseUrl + queryParameters;
+      // Construct the start URL from the base URL by appending query parameters
+      // for the runner if necessary.
+      let startUrl = "";
+      if (baseUrl) {
+        const queryParameters =
+          `?browser=${encodeURIComponent(browserName)}` +
+          `&manifestFile=${encodeURIComponent(
+            "/test/" + options.manifestFile
+          )}` +
+          `&testFilter=${JSON.stringify(options.testfilter)}` +
+          `&xfaOnly=${options.xfaOnly}` +
+          `&delay=${options.statsDelay}` +
+          `&masterMode=${options.masterMode}` +
+          `&slaveId=${i}` +
+          `&numSlaves=${numSlaves}`;
+        startUrl = baseUrl + queryParameters;
+      }
+
+      await startBrowser({ browserName, headless: options.headless, startUrl })
+        .then(function (browser) {
+          session.browser = browser;
+          initializeSession(session);
+        })
+        .catch(function (ex) {
+          console.log(`Error while starting ${browserName}: ${ex.message}`);
+          closeSession(browserName, i);
+        });
     }
-
-    await startBrowser({ browserName, headless: options.headless, startUrl })
-      .then(function (browser) {
-        session.browser = browser;
-        initializeSession(session);
-      })
-      .catch(function (ex) {
-        console.log(`Error while starting ${browserName}: ${ex.message}`);
-        closeSession(browserName);
-      });
   }
 }
 
@@ -1045,13 +1063,15 @@ function stopServer() {
   server.stop();
 }
 
-function getSession(browser) {
-  return sessions.find(session => session.name === browser);
+function getSession(browser, slaveId = 0) {
+  return sessions.find(
+    session => session.name === browser && session.slaveId === slaveId
+  );
 }
 
-async function closeSession(browser) {
+async function closeSession(browser, slaveId = 0) {
   for (const session of sessions) {
-    if (session.name !== browser) {
+    if (session.name !== browser || session.slaveId !== slaveId) {
       continue;
     }
     if (session.browser !== undefined) {

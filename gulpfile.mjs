@@ -688,7 +688,12 @@ function createTestSource(testsName, { bot = false, xfaOnly = false } = {}) {
     if (process.argv.includes("--headless")) {
       args.push("--headless");
     }
-
+    if (process.argv.includes("--numSlaves")) {
+      args.push(
+        "--numSlaves",
+        process.argv[process.argv.indexOf("--numSlaves") + 1]
+      );
+    }
     const testProcess = startNode(args, { cwd: TEST_DIR, stdio: "inherit" });
     testProcess.on("close", function (code) {
       source.push(null);
@@ -718,6 +723,12 @@ function makeRef(done, bot) {
   }
   if (process.argv.includes("--headless")) {
     args.push("--headless");
+  }
+  if (process.argv.includes("--numSlaves")) {
+    args.push(
+      "--numSlaves",
+      process.argv[process.argv.indexOf("--numSlaves") + 1]
+    );
   }
 
   const testProcess = startNode(args, { cwd: TEST_DIR, stdio: "inherit" });

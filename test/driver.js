@@ -470,6 +470,8 @@ class Driver {
     this.inFlightRequests = 0;
     this.testFilter = JSON.parse(params.get("testfilter") || "[]");
     this.xfaOnly = params.get("xfaonly") === "true";
+    this.slaveId = parseInt(params.get("slaveid"));
+    this.numSlaves = parseInt(params.get("numslaves"));
 
     // Create a working canvas
     this.canvas = document.createElement("canvas");
@@ -518,6 +520,10 @@ class Driver {
           return false;
         });
       }
+
+      this.manifest = this.manifest.filter(
+        (_, index) => index % this.numSlaves === this.slaveId
+      );
       this.currentTask = 0;
       this._nextTask();
     }, this.delay);
@@ -1048,9 +1054,12 @@ class Driver {
     this.end.textContent = "Tests finished. Close this window!";
 
     // Send the quit request
-    fetch(`/tellMeToQuit?browser=${escape(this.browser)}`, {
-      method: "POST",
-    });
+    fetch(
+      `/tellMeToQuit?browser=${escape(this.browser)}&slaveId=${this.slaveId}`,
+      {
+        method: "POST",
+      }
+    );
   }
 
   _info(message) {
@@ -1058,6 +1067,7 @@ class Driver {
       "/info",
       JSON.stringify({
         browser: this.browser,
+        slaveId: this.slaveId,
         message,
       })
     );
@@ -1091,6 +1101,7 @@ class Driver {
   _sendResult(snapshot, task, failure) {
     const result = JSON.stringify({
       browser: this.browser,
+      slaveId: this.slaveId,
       id: task.id,
       numPages: task.pdfDoc ? task.lastPage || task.pdfDoc.numPages : 0,
       lastPageNum: this._getLastPageNumber(task),
