@@ -293,6 +293,20 @@ pdfjs-editor-ink-button-label = รูปวาด
 pdfjs-editor-stamp-button =
     .title = เพิ่มหรือแก้ไขภาพ
 pdfjs-editor-stamp-button-label = เพิ่มหรือแก้ไขภาพ
+pdfjs-editor-remove-button =
+    .title = เอาออก
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = เอาภาพวาดออก
+pdfjs-editor-remove-freetext-button =
+    .title = เอาข้อความออก
+pdfjs-editor-remove-stamp-button =
+    .title = เอาภาพออก
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = สี
 pdfjs-editor-free-text-size-input = ขนาด
@@ -339,3 +353,6 @@ pdfjs-editor-resizer-label-bottom-right = มุมขวาล่าง — ป
 pdfjs-editor-resizer-label-bottom-middle = ตรงกลางด้านล่าง — ปรับขนาด
 pdfjs-editor-resizer-label-bottom-left = มุมซ้ายล่าง — ปรับขนาด
 pdfjs-editor-resizer-label-middle-left = ตรงกลางด้านซ้าย — ปรับขนาด
+
+## Color picker
+

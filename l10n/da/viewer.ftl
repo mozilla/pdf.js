@@ -312,6 +312,8 @@ pdfjs-editor-remove-freetext-button =
     .title = Fjern tekst
 pdfjs-editor-remove-stamp-button =
     .title = Fjern billede
+pdfjs-editor-remove-highlight-button =
+    .title = Fjern fremhævning
 
 ##
 
@@ -361,3 +363,22 @@ pdfjs-editor-resizer-label-bottom-right = Nederste højre hjørne - tilpas stør
 pdfjs-editor-resizer-label-bottom-middle = Nederst i midten - tilpas størrelse
 pdfjs-editor-resizer-label-bottom-left = Nederste venstre hjørne - tilpas størrelse
 pdfjs-editor-resizer-label-middle-left = Midten til venstre — tilpas størrelse
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = Fremhævningsfarve
+pdfjs-editor-colorpicker-button =
+    .title = Skift farve
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = Farvevalg
+pdfjs-editor-colorpicker-yellow =
+    .title = Gul
+pdfjs-editor-colorpicker-green =
+    .title = Grøn
+pdfjs-editor-colorpicker-blue =
+    .title = Blå
+pdfjs-editor-colorpicker-pink =
+    .title = Lyserød
+pdfjs-editor-colorpicker-red =
+    .title = Rød
