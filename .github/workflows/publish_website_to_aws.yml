@@ -1,0 +1,63 @@
+name: Publish website to aws
+on: [pull_request]
+
+jobs:
+  build-deploy:
+    name: Build
+    runs-on: ubuntu-latest
+    permissions: write-all
+
+    environment:
+      name: aws
+      url: ${{ steps.aws-deployment-url.outputs.s3_url }}
+
+    strategy:
+      matrix:
+        node-version: [lts/*]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install Gulp
+        run: npm install -g gulp-cli
+
+      - name: Install other dependencies
+        run: npm install
+
+      - name: Build the website
+        run: gulp web
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+      
+      - name: Deploy site to S3 bucket
+        run: aws s3 sync build/gh-pages/ s3://${{ vars.AWS_BUCKET_NAME }}/${{ github.event.pull_request.head.sha }}/ --acl public-read
+
+      - name: Save aws s3 deployment url for aws environment
+        id: aws-deployment-url
+        run: |
+          echo "s3_url=https://${{ vars.AWS_BUCKET_NAME }}.s3.us-east-2.amazonaws.com/${{ github.event.pull_request.head.sha }}/web/viewer.html?file=${{ vars.TEST_PDF }}" >> $GITHUB_OUTPUT
+
+      - name: Comment deployed url to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '${{ steps.aws-deployment-url.outputs.s3_url }}'
+            })
