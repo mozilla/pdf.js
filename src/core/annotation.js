@@ -1195,7 +1195,7 @@ class Annotation {
           firstPosition ||= item.transform.slice(-2);
           buffer.push(item.str);
           if (item.hasEOL) {
-            text.push(buffer.join(""));
+            text.push(buffer.join("").trimEnd());
             buffer.length = 0;
           }
         }
@@ -1214,7 +1214,7 @@ class Annotation {
     this.reset();
 
     if (buffer.length) {
-      text.push(buffer.join(""));
+      text.push(buffer.join("").trimEnd());
     }
 
     if (text.length > 1 || text[0]) {
@@ -3788,7 +3788,9 @@ class FreeTextAnnotation extends MarkupAnnotation {
       this.data.defaultAppearanceData.fontSize ||= 10;
       const { fontColor, fontSize } = this.data.defaultAppearanceData;
       if (this._contents.str) {
-        this.data.textContent = this._contents.str.split(/\r\n?|\n/);
+        this.data.textContent = this._contents.str
+          .split(/\r\n?|\n/)
+          .map(line => line.trimEnd());
         const { coords, bbox, matrix } = FakeUnicodeFont.getFirstPositionInfo(
           this.rectangle,
           this.rotation,
