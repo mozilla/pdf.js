@@ -170,7 +170,7 @@ class Outliner {
       }
       outline.push(lastPointX, lastPointY);
     }
-    return { outlines, box: this.#box };
+    return new HighlightOutline(outlines, this.#box);
   }
 
   #binarySearch(y) {
@@ -256,6 +256,53 @@ class Outliner {
       }
     }
     return results;
+  }
+}
+
+class Outline {
+  toSVGPath() {
+    throw new Error("Abstract method `toSVGPath` must be implemented.");
+  }
+
+  get box() {
+    throw new Error("Abstract getter `box` must be implemented.");
+  }
+}
+
+class HighlightOutline extends Outline {
+  #box;
+
+  #outlines;
+
+  constructor(outlines, box) {
+    super();
+    this.#outlines = outlines;
+    this.#box = box;
+  }
+
+  toSVGPath() {
+    const buffer = [];
+    for (const polygon of this.#outlines) {
+      let [prevX, prevY] = polygon;
+      buffer.push(`M${prevX} ${prevY}`);
+      for (let i = 2; i < polygon.length; i += 2) {
+        const x = polygon[i];
+        const y = polygon[i + 1];
+        if (x === prevX) {
+          buffer.push(`V${y}`);
+          prevY = y;
+        } else if (y === prevY) {
+          buffer.push(`H${x}`);
+          prevX = x;
+        }
+      }
+      buffer.push("Z");
+    }
+    return buffer.join(" ");
+  }
+
+  get box() {
+    return this.#box;
   }
 }
 
