@@ -151,12 +151,12 @@ class HighlightEditor extends AnnotationEditor {
     this.addCommands({
       cmd: () => {
         this.color = color;
-        this.parent.drawLayer.changeColor(this.#id, color);
+        this.parent?.drawLayer.changeColor(this.#id, color);
         this.#colorPicker?.updateColor(color);
       },
       undo: () => {
         this.color = savedColor;
-        this.parent.drawLayer.changeColor(this.#id, savedColor);
+        this.parent?.drawLayer.changeColor(this.#id, savedColor);
         this.#colorPicker?.updateColor(savedColor);
       },
       mustExec: true,
