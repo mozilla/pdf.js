@@ -69,22 +69,7 @@ class DrawLayer {
     return svg;
   }
 
-  highlight({ outlines, box }, color, opacity) {
-    const id = this.#id++;
-    const root = this.#createSVG(box);
-    root.classList.add("highlight");
-    const defs = DrawLayer._svgFactory.createElement("defs");
-    root.append(defs);
-    const path = DrawLayer._svgFactory.createElement("path");
-    defs.append(path);
-    const pathId = `path_p${this.pageIndex}_${id}`;
-    path.setAttribute("id", pathId);
-    path.setAttribute(
-      "d",
-      DrawLayer.#extractPathFromHighlightOutlines(outlines)
-    );
-
-    // Create the clipping path for the editor div.
+  #createClipPath(defs, pathId) {
     const clipPath = DrawLayer._svgFactory.createElement("clipPath");
     defs.append(clipPath);
     const clipPathId = `clip_${pathId}`;
@@ -94,6 +79,24 @@ class DrawLayer {
     clipPath.append(clipPathUse);
     clipPathUse.setAttribute("href", `#${pathId}`);
     clipPathUse.classList.add("clip");
+
+    return clipPathId;
+  }
+
+  highlight(outlines, color, opacity) {
+    const id = this.#id++;
+    const root = this.#createSVG(outlines.box);
+    root.classList.add("highlight");
+    const defs = DrawLayer._svgFactory.createElement("defs");
+    root.append(defs);
+    const path = DrawLayer._svgFactory.createElement("path");
+    defs.append(path);
+    const pathId = `path_p${this.pageIndex}_${id}`;
+    path.setAttribute("id", pathId);
+    path.setAttribute("d", outlines.toSVGPath());
+
+    // Create the clipping path for the editor div.
+    const clipPathId = this.#createClipPath(defs, pathId);
 
     const use = DrawLayer._svgFactory.createElement("use");
     root.append(use);
@@ -106,13 +109,13 @@ class DrawLayer {
     return { id, clipPathId: `url(#${clipPathId})` };
   }
 
-  highlightOutline({ outlines, box }) {
+  highlightOutline(outlines) {
     // We cannot draw the outline directly in the SVG for highlights because
     // it composes with its parent with mix-blend-mode: multiply.
     // But the outline has a different mix-blend-mode, so we need to draw it in
     // its own SVG.
     const id = this.#id++;
-    const root = this.#createSVG(box);
+    const root = this.#createSVG(outlines.box);
     root.classList.add("highlightOutline");
     const defs = DrawLayer._svgFactory.createElement("defs");
     root.append(defs);
@@ -120,10 +123,7 @@ class DrawLayer {
     defs.append(path);
     const pathId = `path_p${this.pageIndex}_${id}`;
     path.setAttribute("id", pathId);
-    path.setAttribute(
-      "d",
-      DrawLayer.#extractPathFromHighlightOutlines(outlines)
-    );
+    path.setAttribute("d", outlines.toSVGPath());
     path.setAttribute("vector-effect", "non-scaling-stroke");
 
     const use1 = DrawLayer._svgFactory.createElement("use");
@@ -137,27 +137,6 @@ class DrawLayer {
     this.#mapping.set(id, root);
 
     return id;
-  }
-
-  static #extractPathFromHighlightOutlines(polygons) {
-    const buffer = [];
-    for (const polygon of polygons) {
-      let [prevX, prevY] = polygon;
-      buffer.push(`M${prevX} ${prevY}`);
-      for (let i = 2; i < polygon.length; i += 2) {
-        const x = polygon[i];
-        const y = polygon[i + 1];
-        if (x === prevX) {
-          buffer.push(`V${y}`);
-          prevY = y;
-        } else if (y === prevY) {
-          buffer.push(`H${x}`);
-          prevX = x;
-        }
-      }
-      buffer.push("Z");
-    }
-    return buffer.join(" ");
   }
 
   updateBox(id, box) {
