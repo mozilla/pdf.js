@@ -385,19 +385,12 @@ class HighlightEditor extends AnnotationEditor {
 
   #serializeOutlines(rect) {
     const [pageWidth, pageHeight] = this.pageDimensions;
-    const width = this.width * pageWidth;
-    const height = this.height * pageHeight;
-    const [tx, ty] = rect;
-    const outlines = [];
-    for (const outline of this.#highlightOutlines.outlines) {
-      const points = new Array(outline.length);
-      for (let i = 0; i < outline.length; i += 2) {
-        points[i] = tx + outline[i] * width;
-        points[i + 1] = ty + (1 - outline[i + 1]) * height;
-      }
-      outlines.push(points);
-    }
-    return outlines;
+    return this.#highlightOutlines.serialize(
+      rect[0],
+      rect[1],
+      this.width * pageWidth,
+      this.height * pageHeight
+    );
   }
 
   /** @inheritdoc */
