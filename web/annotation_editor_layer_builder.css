@@ -942,25 +942,25 @@
 
 .annotationEditorLayer {
   &[data-main-rotation="0"] {
-    .highlightEditor > .editToolbar {
+    .highlightEditor:not(.free) > .editToolbar {
       rotate: 0deg;
     }
   }
 
   &[data-main-rotation="90"] {
-    .highlightEditor > .editToolbar {
+    .highlightEditor:not(.free) > .editToolbar {
       rotate: 270deg;
     }
   }
 
   &[data-main-rotation="180"] {
-    .highlightEditor > .editToolbar {
+    .highlightEditor:not(.free) > .editToolbar {
       rotate: 180deg;
     }
   }
 
   &[data-main-rotation="270"] {
-    .highlightEditor > .editToolbar {
+    .highlightEditor:not(.free) > .editToolbar {
       rotate: 90deg;
     }
   }
@@ -969,14 +969,17 @@
     position: absolute;
     background: transparent;
     z-index: 1;
-    transform-origin: 0 0;
     cursor: auto;
     max-width: 100%;
     max-height: 100%;
     border: none;
     outline: none;
     pointer-events: none;
-    transform: none;
+    transform-origin: 0 0;
+
+    &:not(.free) {
+      transform: none;
+    }
 
     .internal {
       position: absolute;

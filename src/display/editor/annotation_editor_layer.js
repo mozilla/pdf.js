@@ -67,6 +67,8 @@ class AnnotationEditorLayer {
 
   #boundPointerdown = this.pointerdown.bind(this);
 
+  #boundTextLayerPointerDown = this.#textLayerPointerDown.bind(this);
+
   #editorFocusTimeoutId = null;
 
   #boundSelectionStart = this.selectionStart.bind(this);
@@ -199,7 +201,7 @@ class AnnotationEditorLayer {
       }
     }
 
-    const editor = this.#createAndAddNewEditor(
+    const editor = this.createAndAddNewEditor(
       { offsetX: 0, offsetY: 0 },
       /* isCentered = */ false
     );
@@ -328,12 +330,34 @@ class AnnotationEditorLayer {
   enableTextSelection() {
     if (this.#textLayer?.div) {
       document.addEventListener("selectstart", this.#boundSelectionStart);
+      this.#textLayer.div.addEventListener(
+        "pointerdown",
+        this.#boundTextLayerPointerDown
+      );
+      this.#textLayer.div.classList.add("drawing");
     }
   }
 
   disableTextSelection() {
     if (this.#textLayer?.div) {
       document.removeEventListener("selectstart", this.#boundSelectionStart);
+      this.#textLayer.div.removeEventListener(
+        "pointerdown",
+        this.#boundTextLayerPointerDown
+      );
+      this.#textLayer.div.classList.remove("drawing");
+    }
+  }
+
+  #textLayerPointerDown(event) {
+    if (event.target === this.#textLayer.div) {
+      const { isMac } = FeatureTest.platform;
+      if (event.button !== 0 || (event.ctrlKey && isMac)) {
+        // Do nothing on right click.
+        return;
+      }
+      HighlightEditor.startHighlighting(this, event);
+      event.preventDefault();
     }
   }
 
@@ -565,7 +589,7 @@ class AnnotationEditorLayer {
    * @param [Object] data
    * @returns {AnnotationEditor}
    */
-  #createAndAddNewEditor(event, isCentered, data = {}) {
+  createAndAddNewEditor(event, isCentered, data = {}) {
     const id = this.getNextId();
     const editor = this.#createNewEditor({
       parent: this,
@@ -603,10 +627,7 @@ class AnnotationEditorLayer {
    * Create and add a new editor.
    */
   addNewEditor() {
-    this.#createAndAddNewEditor(
-      this.#getCenterPoint(),
-      /* isCentered = */ true
-    );
+    this.createAndAddNewEditor(this.#getCenterPoint(), /* isCentered = */ true);
   }
 
   /**
@@ -726,7 +747,7 @@ class AnnotationEditorLayer {
       boxes.push(rotator(x, y, width, height));
     }
     if (boxes.length !== 0) {
-      this.#createAndAddNewEditor(event, false, {
+      this.createAndAddNewEditor(event, false, {
         boxes,
       });
     }
@@ -767,7 +788,7 @@ class AnnotationEditorLayer {
       return;
     }
 
-    this.#createAndAddNewEditor(event, /* isCentered = */ false);
+    this.createAndAddNewEditor(event, /* isCentered = */ false);
   }
 
   /**
@@ -900,6 +921,10 @@ class AnnotationEditorLayer {
   get pageDimensions() {
     const { pageWidth, pageHeight } = this.viewport.rawDims;
     return [pageWidth, pageHeight];
+  }
+
+  get scale() {
+    return this.#uiManager.viewParameters.realScale;
   }
 }
 

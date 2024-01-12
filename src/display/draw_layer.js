@@ -28,6 +28,8 @@ class DrawLayer {
 
   #mapping = new Map();
 
+  #toUpdate = new Map();
+
   constructor({ pageIndex }) {
     this.pageIndex = pageIndex;
   }
@@ -53,7 +55,7 @@ class DrawLayer {
     return shadow(this, "_svgFactory", new DOMSVGFactory());
   }
 
-  static #setBox(element, { x, y, width, height }) {
+  static #setBox(element, { x = 0, y = 0, width = 1, height = 1 } = {}) {
     const { style } = element;
     style.top = `${100 * y}%`;
     style.left = `${100 * x}%`;
@@ -83,10 +85,13 @@ class DrawLayer {
     return clipPathId;
   }
 
-  highlight(outlines, color, opacity) {
+  highlight(outlines, color, opacity, isPathUpdatable = false) {
     const id = this.#id++;
     const root = this.#createSVG(outlines.box);
     root.classList.add("highlight");
+    if (outlines.free) {
+      root.classList.add("free");
+    }
     const defs = DrawLayer._svgFactory.createElement("defs");
     root.append(defs);
     const path = DrawLayer._svgFactory.createElement("path");
@@ -94,6 +99,10 @@ class DrawLayer {
     const pathId = `path_p${this.pageIndex}_${id}`;
     path.setAttribute("id", pathId);
     path.setAttribute("d", outlines.toSVGPath());
+
+    if (isPathUpdatable) {
+      this.#toUpdate.set(id, path);
+    }
 
     // Create the clipping path for the editor div.
     const clipPathId = this.#createClipPath(defs, pathId);
@@ -137,6 +146,22 @@ class DrawLayer {
     this.#mapping.set(id, root);
 
     return id;
+  }
+
+  finalizeLine(id, line) {
+    const path = this.#toUpdate.get(id);
+    this.#toUpdate.delete(id);
+    this.updateBox(id, line.box);
+    path.setAttribute("d", line.toSVGPath());
+  }
+
+  removeFreeHighlight(id) {
+    this.remove(id);
+    this.#toUpdate.delete(id);
+  }
+
+  updatePath(id, line) {
+    this.#toUpdate.get(id).setAttribute("d", line.toSVGPath());
   }
 
   updateBox(id, box) {
