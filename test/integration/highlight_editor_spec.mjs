@@ -16,9 +16,11 @@
 import {
   closePages,
   getEditorSelector,
+  getSerialized,
   kbSelectAll,
   loadAndWait,
   scrollIntoView,
+  waitForSerialized,
 } from "./test_utils.mjs";
 
 const selectAll = async page => {
@@ -160,18 +162,7 @@ describe("Highlight Editor", () => {
           await page.click("#editorHighlight");
           await page.waitForSelector(".annotationEditorLayer.highlightEditing");
 
-          const rect = await page.evaluate(() => {
-            for (const el of document.querySelectorAll(
-              `.page[data-page-number="1"] > .textLayer > span`
-            )) {
-              if (el.textContent === "Abstract") {
-                const { x, y, width, height } = el.getBoundingClientRect();
-                return { x, y, width, height };
-              }
-            }
-            return null;
-          });
-
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
           await page.mouse.click(x, y, { count: 2 });
@@ -278,6 +269,64 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(
             `.page[data-page-number = "1"] svg.highlight[fill = "#53FFBC"]`
           );
+        })
+      );
+    });
+  });
+
+  describe("Highlight data serialization", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        { highlightEditorColors: "red=#AB0000" }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must be correctly serialized", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorHighlight");
+          await page.waitForSelector(".annotationEditorLayer.highlightEditing");
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2 });
+
+          await page.waitForSelector(`${getEditorSelector(0)}`);
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] svg.highlightOutline.selected`
+          );
+
+          await waitForSerialized(page, 1);
+          const serialized = (await getSerialized(page))[0];
+          expect(serialized.annotationType)
+            .withContext(`In ${browserName}`)
+            .toEqual(9);
+          expect(serialized.color)
+            .withContext(`In ${browserName}`)
+            .toEqual([0xab, 0, 0]);
+
+          // We don't check the quadPoints and outlines values because they're
+          // dependent on the font used in the text layer.
+          expect(serialized.quadPoints.length)
+            .withContext(`In ${browserName}`)
+            .toEqual(8);
+          expect(serialized.outlines.length)
+            .withContext(`In ${browserName}`)
+            .toEqual(1);
+          expect(serialized.outlines[0].length)
+            .withContext(`In ${browserName}`)
+            .toEqual(8);
         })
       );
     });

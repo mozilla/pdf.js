@@ -301,6 +301,19 @@ class HighlightOutline extends Outline {
     return buffer.join(" ");
   }
 
+  serialize(x, y, width, height) {
+    const outlines = [];
+    for (const outline of this.#outlines) {
+      const points = new Array(outline.length);
+      for (let i = 0; i < outline.length; i += 2) {
+        points[i] = x + outline[i] * width;
+        points[i + 1] = y + (1 - outline[i + 1]) * height;
+      }
+      outlines.push(points);
+    }
+    return outlines;
+  }
+
   get box() {
     return this.#box;
   }
