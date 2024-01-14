@@ -303,6 +303,9 @@ pdfjs-editor-stamp-button =
 pdfjs-editor-stamp-button-label = Lisää tai muokkaa kuvia
 pdfjs-editor-remove-button =
     .title = Poista
+pdfjs-editor-highlight-button =
+    .title = Korostus
+pdfjs-editor-highlight-button-label = Korostus
 
 ## Remove button for the various kind of editor.
 

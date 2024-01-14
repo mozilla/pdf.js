@@ -307,6 +307,9 @@ pdfjs-editor-stamp-button =
 pdfjs-editor-stamp-button-label = Přidání či úprava obrázků
 pdfjs-editor-remove-button =
     .title = Odebrat
+pdfjs-editor-highlight-button =
+    .title = Zvýraznění
+pdfjs-editor-highlight-button-label = Zvýraznění
 
 ## Remove button for the various kind of editor.
 

@@ -303,6 +303,9 @@ pdfjs-editor-stamp-button =
 pdfjs-editor-stamp-button-label = Суреттерді қосу немесе түзету
 pdfjs-editor-remove-button =
     .title = Өшіру
+pdfjs-editor-highlight-button =
+    .title = Ерекшелеу
+pdfjs-editor-highlight-button-label = Ерекшелеу
 
 ## Remove button for the various kind of editor.
 

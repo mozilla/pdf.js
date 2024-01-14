@@ -304,6 +304,8 @@ pdfjs-editor-remove-freetext-button =
     .title = เอาข้อความออก
 pdfjs-editor-remove-stamp-button =
     .title = เอาภาพออก
+pdfjs-editor-remove-highlight-button =
+    .title = เอาการเน้นสีออก
 
 ##
 
@@ -356,3 +358,19 @@ pdfjs-editor-resizer-label-middle-left = ตรงกลางด้านซ้
 
 ## Color picker
 
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = สีเน้น
+pdfjs-editor-colorpicker-button =
+    .title = เปลี่ยนสี
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = ทางเลือกสี
+pdfjs-editor-colorpicker-yellow =
+    .title = เหลือง
+pdfjs-editor-colorpicker-green =
+    .title = เขียว
+pdfjs-editor-colorpicker-blue =
+    .title = น้ำเงิน
+pdfjs-editor-colorpicker-pink =
+    .title = ชมพู
+pdfjs-editor-colorpicker-red =
+    .title = แดง
