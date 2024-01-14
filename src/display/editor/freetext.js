@@ -386,13 +386,14 @@ class FreeTextEditor extends AnnotationEditor {
    * @returns {string}
    */
   #extractText() {
-    const divs = this.editorDiv.getElementsByTagName("div");
-    if (divs.length === 0) {
-      return this.editorDiv.innerText;
-    }
+    // We don't use innerText because there are some bugs with line breaks.
     const buffer = [];
-    for (const div of divs) {
-      buffer.push(div.innerText.replace(/\r\n?|\n/, ""));
+    this.editorDiv.normalize();
+    const EOL_PATTERN = /\r\n?|\n/g;
+    for (const child of this.editorDiv.childNodes) {
+      const content =
+        child.nodeType === Node.TEXT_NODE ? child.nodeValue : child.innerText;
+      buffer.push(content.replaceAll(EOL_PATTERN, ""));
     }
     return buffer.join("\n");
   }

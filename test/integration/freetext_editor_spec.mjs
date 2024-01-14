@@ -3246,4 +3246,50 @@ describe("FreeText Editor", () => {
       );
     });
   });
+
+  describe("Freetext with several lines", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that all lines are correctly exported", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            // With Chrome something is wrong when serializing a DomRect,
+            // hence we extract the values and just return them.
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          const data = "Hello\nPDF.js\nWorld\n!!";
+          await page.mouse.click(rect.x + 100, rect.y + 100);
+          await page.waitForSelector(getEditorSelector(0), {
+            visible: true,
+          });
+          await page.type(`${getEditorSelector(0)} .internal`, data);
+
+          // Commit.
+          await page.keyboard.press("Escape");
+          await page.waitForSelector(
+            `${getEditorSelector(0)} .overlay.enabled`
+          );
+
+          await waitForSerialized(page, 1);
+          const serialized = (await getSerialized(page))[0];
+          expect(serialized.value)
+            .withContext(`In ${browserName}`)
+            .toEqual(data);
+        })
+      );
+    });
+  });
 });
