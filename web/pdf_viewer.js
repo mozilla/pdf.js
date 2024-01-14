@@ -619,7 +619,7 @@ class PDFViewer {
     return params;
   }
 
-  #onePageRenderedOrForceFetch() {
+  async #onePageRenderedOrForceFetch() {
     // Unless the viewer *and* its pages are visible, rendering won't start and
     // `this._onePageRenderedCapability` thus won't be resolved.
     // To ensure that automatic printing, on document load, still works even in
@@ -635,7 +635,7 @@ class PDFViewer {
       !this.container.offsetParent ||
       this._getVisiblePages().views.length === 0
     ) {
-      return Promise.resolve();
+      return;
     }
 
     // Handle the window/tab becoming inactive *after* rendering has started;
@@ -646,20 +646,17 @@ class PDFViewer {
           return;
         }
         resolve();
-
-        document.removeEventListener(
-          "visibilitychange",
-          this.#onVisibilityChange
-        );
-        this.#onVisibilityChange = null;
       };
       document.addEventListener("visibilitychange", this.#onVisibilityChange);
     });
 
-    return Promise.race([
+    await Promise.race([
       this._onePageRenderedCapability.promise,
       visibilityChangePromise,
     ]);
+    // Ensure that the "visibilitychange" listener is always removed.
+    document.removeEventListener("visibilitychange", this.#onVisibilityChange);
+    this.#onVisibilityChange = null;
   }
 
   async getAllText() {
@@ -821,14 +818,6 @@ class PDFViewer {
 
       this.eventBus._off("pagerendered", this._onAfterDraw);
       this._onAfterDraw = null;
-
-      if (this.#onVisibilityChange) {
-        document.removeEventListener(
-          "visibilitychange",
-          this.#onVisibilityChange
-        );
-        this.#onVisibilityChange = null;
-      }
     };
     this.eventBus._on("pagerendered", this._onAfterDraw);
 
