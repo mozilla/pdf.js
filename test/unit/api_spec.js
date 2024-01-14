@@ -2550,6 +2550,20 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("read content from multiline textfield containing an empty line", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue17492.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const annotations = await pdfPage.getAnnotations();
+
+      const field = annotations.find(annotation => annotation.id === "144R");
+      expect(!!field).toEqual(true);
+      expect(field.fieldValue).toEqual("Several\n\nOther\nJobs");
+      expect(field.textContent).toEqual(["Several", "", "Other", "Jobs"]);
+
+      await loadingTask.destroy();
+    });
+
     describe("Cross-origin", function () {
       let loadingTask;
       function _checkCanLoad(expectSuccess, filename, options) {
