@@ -628,7 +628,7 @@ class InkEditor extends AnnotationEditor {
 
     this.parent.addInkEditorIfNeeded(/* isCommitting = */ true);
 
-    // When commiting, the position of this editor is changed, hence we must
+    // When committing, the position of this editor is changed, hence we must
     // move it to the right position in the DOM.
     this.moveInDOM();
     this.div.focus({
@@ -994,6 +994,14 @@ class InkEditor extends AnnotationEditor {
       const points = [];
       for (let j = 0, jj = bezier.length; j < jj; j++) {
         const [first, control1, control2, second] = bezier[j];
+        if (first[0] === second[0] && first[1] === second[1] && jj === 1) {
+          // We have only one point.
+          const p0 = s * first[0] + shiftX;
+          const p1 = s * first[1] + shiftY;
+          buffer.push(p0, p1);
+          points.push(p0, p1);
+          break;
+        }
         const p10 = s * first[0] + shiftX;
         const p11 = s * first[1] + shiftY;
         const p20 = s * control1[0] + shiftX;
