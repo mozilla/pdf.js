@@ -61,6 +61,9 @@ If everything worked out, install all dependencies for PDF.js:
 
     $ npm install
 
+> [!NOTE]
+> On MacOS M1/M2 you may see some `node-gyp`-related errors when running `npm install`. This is because one of our dependencies, `"canvas"`, does not provide pre-built binaries for this platform and instead `npm` will try to build it from source. Please make sure to first install the necessary native dependencies using `brew`: https://github.com/Automattic/node-canvas#compiling.
+
 Finally, you need to start a local web server as some browsers do not allow opening
 PDF files using a `file://` URL. Run:
 
