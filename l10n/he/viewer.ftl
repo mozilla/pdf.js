@@ -303,6 +303,9 @@ pdfjs-editor-stamp-button =
 pdfjs-editor-stamp-button-label = הוספה או עריכת תמונות
 pdfjs-editor-remove-button =
     .title = הסרה
+pdfjs-editor-highlight-button =
+    .title = סימון
+pdfjs-editor-highlight-button-label = סימון
 
 ## Remove button for the various kind of editor.
 

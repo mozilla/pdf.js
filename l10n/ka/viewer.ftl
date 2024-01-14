@@ -303,6 +303,9 @@ pdfjs-editor-stamp-button =
 pdfjs-editor-stamp-button-label = სურათების დართვა ან ჩასწორება
 pdfjs-editor-remove-button =
     .title = მოცილება
+pdfjs-editor-highlight-button =
+    .title = მონიშვნა
+pdfjs-editor-highlight-button-label = მონიშვნა
 
 ## Remove button for the various kind of editor.
 

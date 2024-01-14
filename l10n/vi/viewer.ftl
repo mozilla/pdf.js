@@ -295,6 +295,9 @@ pdfjs-editor-stamp-button =
 pdfjs-editor-stamp-button-label = Thêm hoặc chỉnh sửa hình ảnh
 pdfjs-editor-remove-button =
     .title = Xóa
+pdfjs-editor-highlight-button =
+    .title = Tô sáng
+pdfjs-editor-highlight-button-label = Tô sáng
 
 ## Remove button for the various kind of editor.
 
