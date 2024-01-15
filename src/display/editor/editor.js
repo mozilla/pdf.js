@@ -68,6 +68,10 @@ class AnnotationEditor {
 
   #moveInDOMTimeout = null;
 
+  #prevDragX = 0;
+
+  #prevDragY = 0;
+
   _initialOptions = Object.create(null);
 
   _uiManager = null;
@@ -1035,9 +1039,18 @@ class AnnotationEditor {
 
     let pointerMoveOptions, pointerMoveCallback;
     if (isSelected) {
+      this.div.classList.add("moving");
       pointerMoveOptions = { passive: true, capture: true };
+      this.#prevDragX = event.clientX;
+      this.#prevDragY = event.clientY;
       pointerMoveCallback = e => {
-        const [tx, ty] = this.screenToPageTranslation(e.movementX, e.movementY);
+        const { clientX: x, clientY: y } = e;
+        const [tx, ty] = this.screenToPageTranslation(
+          x - this.#prevDragX,
+          y - this.#prevDragY
+        );
+        this.#prevDragX = x;
+        this.#prevDragY = y;
         this._uiManager.dragSelectedEditors(tx, ty);
       };
       window.addEventListener(
@@ -1051,6 +1064,7 @@ class AnnotationEditor {
       window.removeEventListener("pointerup", pointerUpCallback);
       window.removeEventListener("blur", pointerUpCallback);
       if (isSelected) {
+        this.div.classList.remove("moving");
         window.removeEventListener(
           "pointermove",
           pointerMoveCallback,
