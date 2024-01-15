@@ -384,13 +384,7 @@ class HighlightEditor extends AnnotationEditor {
   }
 
   #serializeOutlines(rect) {
-    const [pageWidth, pageHeight] = this.pageDimensions;
-    return this.#highlightOutlines.serialize(
-      rect[0],
-      rect[1],
-      this.width * pageWidth,
-      this.height * pageHeight
-    );
+    return this.#highlightOutlines.serialize(rect, 0);
   }
 
   /** @inheritdoc */
