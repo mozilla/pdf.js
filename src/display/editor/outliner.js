@@ -267,6 +267,10 @@ class Outline {
   get box() {
     throw new Error("Abstract getter `box` must be implemented.");
   }
+
+  serialize(_bbox, _rotation) {
+    throw new Error("Abstract method `serialize` must be implemented.");
+  }
 }
 
 class HighlightOutline extends Outline {
@@ -301,13 +305,21 @@ class HighlightOutline extends Outline {
     return buffer.join(" ");
   }
 
-  serialize(x, y, width, height) {
+  /**
+   * Serialize the outlines into the PDF page coordinate system.
+   * @param {Array<number>} _bbox - the bounding box of the annotation.
+   * @param {number} _rotation - the rotation of the annotation.
+   * @returns {Array<Array<number>>}
+   */
+  serialize([blX, blY, trX, trY], _rotation) {
     const outlines = [];
+    const width = trX - blX;
+    const height = trY - blY;
     for (const outline of this.#outlines) {
       const points = new Array(outline.length);
       for (let i = 0; i < outline.length; i += 2) {
-        points[i] = x + outline[i] * width;
-        points[i + 1] = y + (1 - outline[i + 1]) * height;
+        points[i] = blX + outline[i] * width;
+        points[i + 1] = trY - outline[i + 1] * height;
       }
       outlines.push(points);
     }
