@@ -303,6 +303,9 @@ pdfjs-editor-stamp-button =
 pdfjs-editor-stamp-button-label = ਚਿੱਤਰ ਜੋੜੋ ਜਾਂ ਸੋਧੋ
 pdfjs-editor-remove-button =
     .title = ਹਟਾਓ
+pdfjs-editor-highlight-button =
+    .title = ਹਾਈਲਾਈਟ
+pdfjs-editor-highlight-button-label = ਹਾਈਲਾਈਟ
 
 ## Remove button for the various kind of editor.
 

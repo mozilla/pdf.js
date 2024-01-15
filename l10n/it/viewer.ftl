@@ -389,4 +389,3 @@ pdfjs-editor-colorpicker-pink =
     .title = Rosa
 pdfjs-editor-colorpicker-red =
     .title = Rosso
-
