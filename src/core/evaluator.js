@@ -2816,6 +2816,10 @@ class PartialEvaluator {
           }
         }
 
+        if (keepWhiteSpace) {
+          compareWithLastPosition(0);
+        }
+
         return;
       }
 
