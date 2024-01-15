@@ -295,6 +295,9 @@ pdfjs-editor-stamp-button =
 pdfjs-editor-stamp-button-label = 이미지 추가 또는 편집
 pdfjs-editor-remove-button =
     .title = 제거
+pdfjs-editor-highlight-button =
+    .title = 강조
+pdfjs-editor-highlight-button-label = 강조
 
 ## Remove button for the various kind of editor.
 
