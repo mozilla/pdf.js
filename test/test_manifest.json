@@ -8458,5 +8458,43 @@
             "structTreeParentId": null
          }
       }
+   },
+   {
+      "id": "issue17418",
+      "file": "pdfs/empty.pdf",
+      "md5": "2bfd06746bd5c2e6fc3492c83c152bc5",
+      "rounds": 1,
+      "type": "eq",
+      "save": true,
+      "print": true,
+      "annotationStorage": {
+         "pdfjs_internal_editor_0": {
+            "annotationType": 15,
+            "color": [ 53, 228, 47 ],
+            "thickness": 20,
+            "opacity": 1,
+            "paths": [
+               {
+                  "bezier": [
+                     279.9183673469388,
+                     477.0105263157895
+                  ],
+                  "points": [
+                     279.9183673469388,
+                     477.0105263157895
+                  ]
+               }
+            ],
+            "pageIndex": 0,
+            "rect": [
+               269.9183673469388,
+               443.93684210526317,
+               312.9387755102041,
+               487.0105263157895
+            ],
+            "rotation": 0,
+            "structTreeParentId": null
+         }
+      }
    }
 ]
