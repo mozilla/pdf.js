@@ -36,6 +36,8 @@ class ColorPicker {
 
   #uiManager = null;
 
+  #type;
+
   static get _keyboardManager() {
     return shadow(
       this,
@@ -61,7 +63,13 @@ class ColorPicker {
   }
 
   constructor({ editor = null, uiManager = null }) {
-    this.#isMainColorPicker = !editor;
+    if (editor) {
+      this.#isMainColorPicker = false;
+      this.#type = AnnotationEditorParamsType.HIGHLIGHT_COLOR;
+    } else {
+      this.#isMainColorPicker = true;
+      this.#type = AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR;
+    }
     this.#uiManager = editor?._uiManager || uiManager;
     this.#eventBus = this.#uiManager._eventBus;
     this.#defaultColor =
@@ -85,16 +93,14 @@ class ColorPicker {
   }
 
   renderMainDropdown() {
-    const dropdown = (this.#dropdown = this.#getDropdownRoot(
-      AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR
-    ));
+    const dropdown = (this.#dropdown = this.#getDropdownRoot());
     dropdown.setAttribute("aria-orientation", "horizontal");
     dropdown.setAttribute("aria-labelledby", "highlightColorPickerLabel");
 
     return dropdown;
   }
 
-  #getDropdownRoot(paramType) {
+  #getDropdownRoot() {
     const div = document.createElement("div");
     div.addEventListener("contextmenu", noContextMenu);
     div.className = "dropdown";
@@ -114,10 +120,7 @@ class ColorPicker {
       swatch.className = "swatch";
       swatch.style.backgroundColor = color;
       button.setAttribute("aria-selected", color === this.#defaultColor);
-      button.addEventListener(
-        "click",
-        this.#colorSelect.bind(this, paramType, color)
-      );
+      button.addEventListener("click", this.#colorSelect.bind(this, color));
       div.append(button);
     }
 
@@ -126,11 +129,11 @@ class ColorPicker {
     return div;
   }
 
-  #colorSelect(type, color, event) {
+  #colorSelect(color, event) {
     event.stopPropagation();
     this.#eventBus.dispatch("switchannotationeditorparams", {
       source: this,
-      type,
+      type: this.#type,
       value: color,
     });
   }
