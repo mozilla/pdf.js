@@ -1,9 +1,7 @@
 {
   "spec_dir": "build/lib-legacy/test/unit",
 
-  "helpers": [
-    "clitests_helper.js"
-  ],
+  "helpers": ["clitests_helper.js"],
 
   "spec_files": [
     "annotation_spec.js",

@@ -19,8 +19,5 @@
       "web-l10n_utils": ["./web/l10n_utils"]
     }
   },
-  "files": [
-    "src/pdf.js",
-    "web/pdf_viewer.component.js"
-  ]
+  "files": ["src/pdf.js", "web/pdf_viewer.component.js"]
 }
