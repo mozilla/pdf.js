@@ -121,6 +121,10 @@
     cursor: move;
   }
 
+  &.moving {
+    touch-action: none;
+  }
+
   &.selectedEditor {
     border: var(--focus-outline);
     outline: var(--focus-outline-around);
