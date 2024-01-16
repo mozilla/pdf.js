@@ -110,6 +110,9 @@ class HighlightEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
+  translateInPage(x, y) {}
+
+  /** @inheritdoc */
   get toolbarPosition() {
     return this.#lastPoint;
   }
