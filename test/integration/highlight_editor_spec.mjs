@@ -331,4 +331,100 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Color picker and keyboard", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        {
+          highlightEditorColors:
+            "yellow=#FFFF00,green=#00FF00,blue=#0000FF,pink=#FF00FF,red=#FF0000",
+        }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must be correctly serialized", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorHighlight");
+          await page.waitForSelector(".annotationEditorLayer.highlightEditing");
+          const sel = getEditorSelector(0);
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2 });
+
+          await page.waitForSelector(sel);
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] svg.highlightOutline.selected`
+          );
+
+          await page.waitForSelector(`${sel} .editToolbar button.colorPicker`);
+          await page.click(`${sel} .editToolbar button.colorPicker`);
+          await page.waitForSelector(
+            `${sel} .editToolbar button[title = "Red"]`
+          );
+          await page.click(`${sel} .editToolbar button[title = "Red"]`);
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] svg.highlight[fill = "#FF0000"]`
+          );
+
+          await page.keyboard.press("ArrowUp");
+          await page.waitForSelector(
+            `${sel} .editToolbar button[title = "Pink"]:focus`
+          );
+          await page.keyboard.press("Enter");
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] svg.highlight[fill = "#FF00FF"]`
+          );
+
+          await page.keyboard.press("ArrowUp");
+          await page.waitForSelector(
+            `${sel} .editToolbar button[title = "Blue"]:focus`
+          );
+          await page.keyboard.press(" ");
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] svg.highlight[fill = "#0000FF"]`
+          );
+
+          await page.keyboard.press("ArrowLeft");
+          await page.waitForSelector(
+            `${sel} .editToolbar button[title = "Green"]:focus`
+          );
+          await page.keyboard.press("Enter");
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] svg.highlight[fill = "#00FF00"]`
+          );
+
+          await page.keyboard.press("ArrowRight");
+          await page.waitForSelector(
+            `${sel} .editToolbar button[title = "Blue"]:focus`
+          );
+          await page.keyboard.press("Enter");
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] svg.highlight[fill = "#0000FF"]`
+          );
+
+          await page.keyboard.press("ArrowDown");
+          await page.waitForSelector(
+            `${sel} .editToolbar button[title = "Pink"]:focus`
+          );
+          await page.keyboard.press(" ");
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] svg.highlight[fill = "#FF00FF"]`
+          );
+        })
+      );
+    });
+  });
 });
