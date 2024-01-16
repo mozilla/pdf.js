@@ -8,4 +8,5 @@ external/builder/fixtures_esprima/
 external/quickjs/
 test/tmp/
 test/pdfs/
+web/locale/
 *~/
