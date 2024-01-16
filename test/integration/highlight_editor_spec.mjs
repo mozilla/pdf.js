@@ -17,6 +17,8 @@ import {
   closePages,
   getEditorSelector,
   getSerialized,
+  kbBigMoveLeft,
+  kbBigMoveUp,
   kbSelectAll,
   loadAndWait,
   scrollIntoView,
@@ -29,6 +31,12 @@ const selectAll = async page => {
     () => !document.querySelector(".highlightEditor:not(.selectedEditor)")
   );
 };
+
+const getXY = (page, selector) =>
+  page.evaluate(sel => {
+    const bbox = document.querySelector(sel).getBoundingClientRect();
+    return `${bbox.x}::${bbox.y}`;
+  }, selector);
 
 const getSpanRectFromText = (page, pageNumber, text) => {
   return page.evaluate(
@@ -352,7 +360,7 @@ describe("Highlight Editor", () => {
       await closePages(pages);
     });
 
-    it("must be correctly serialized", async () => {
+    it("must check that we can use the keyboard to select a color", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await page.click("#editorHighlight");
@@ -423,6 +431,59 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(
             `.page[data-page-number = "1"] svg.highlight[fill = "#FF00FF"]`
           );
+        })
+      );
+    });
+  });
+
+  describe("Text highlights aren't draggable", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        { highlightEditorColors: "red=#AB0000" }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that a text highlight don't move when arrows are pressed", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorHighlight");
+          await page.waitForSelector(".annotationEditorLayer.highlightEditing");
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2 });
+
+          await page.waitForSelector(`${getEditorSelector(0)}`);
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] svg.highlightOutline.selected`
+          );
+          await page.focus(getEditorSelector(0));
+
+          const xy = await getXY(page, getEditorSelector(0));
+          for (let i = 0; i < 5; i++) {
+            await kbBigMoveLeft(page);
+          }
+          expect(await getXY(page, getEditorSelector(0)))
+            .withContext(`In ${browserName}`)
+            .toEqual(xy);
+
+          for (let i = 0; i < 5; i++) {
+            await kbBigMoveUp(page);
+          }
+          expect(await getXY(page, getEditorSelector(0)))
+            .withContext(`In ${browserName}`)
+            .toEqual(xy);
         })
       );
     });
