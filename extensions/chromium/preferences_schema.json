@@ -5,11 +5,7 @@
       "title": "Theme",
       "description": "The theme to use.\n0 = Use system theme.\n1 = Light theme.\n2 = Dark theme.",
       "type": "integer",
-      "enum": [
-        0,
-        1,
-        2
-      ],
+      "enum": [0, 1, 2],
       "default": 2
     },
     "showPreviousViewOnLoad": {
@@ -21,11 +17,7 @@
       "title": "View position on load",
       "description": "The position in the document upon load.\n -1 = Default (uses OpenAction if available, otherwise equal to `viewOnLoad = 0`).\n 0 = The last viewed page/position.\n 1 = The initial page/position.",
       "type": "integer",
-      "enum": [
-        -1,
-        0,
-        1
-      ],
+      "enum": [-1, 0, 1],
       "default": 0
     },
     "defaultZoomDelay": {
@@ -45,13 +37,7 @@
       "title": "Sidebar state on load",
       "description": "Controls the state of the sidebar upon load.\n -1 = Default (uses PageMode if available, otherwise the last position if available/enabled).\n 0 = Do not show sidebar.\n 1 = Show thumbnails in sidebar.\n 2 = Show document outline in sidebar.\n 3 = Show attachments in sidebar.",
       "type": "integer",
-      "enum": [
-        -1,
-        0,
-        1,
-        2,
-        3
-      ],
+      "enum": [-1, 0, 1, 2, 3],
       "default": -1
     },
     "enableHandToolOnLoad": {
@@ -63,10 +49,7 @@
       "title": "Cursor tool on load",
       "description": "The cursor tool that is enabled upon load.\n 0 = Text selection tool.\n 1 = Hand tool.",
       "type": "integer",
-      "enum": [
-        0,
-        1
-      ],
+      "enum": [0, 1],
       "default": 0
     },
     "pdfBugEnabled": {
@@ -120,23 +103,14 @@
       "title": "Text layer mode",
       "description": "Controls if the text layer is enabled, and the selection mode that is used.\n 0 = Disabled.\n 1 = Enabled.",
       "type": "integer",
-      "enum": [
-        0,
-        1
-      ],
+      "enum": [0, 1],
       "default": 1
     },
     "externalLinkTarget": {
       "title": "External links target window",
       "description": "Controls how external links will be opened.\n 0 = default.\n 1 = replaces current window.\n 2 = new window/tab.\n 3 = parent.\n 4 = in top window.",
       "type": "integer",
-      "enum": [
-        0,
-        1,
-        2,
-        3,
-        4
-      ],
+      "enum": [0, 1, 2, 3, 4],
       "default": 0
     },
     "disablePageLabels": {
@@ -156,22 +130,12 @@
     },
     "annotationMode": {
       "type": "integer",
-      "enum": [
-        0,
-        1,
-        2,
-        3
-      ],
+      "enum": [0, 1, 2, 3],
       "default": 2
     },
     "annotationEditorMode": {
       "type": "integer",
-      "enum": [
-        -1,
-        0,
-        3,
-        15
-      ],
+      "enum": [-1, 0, 3, 15],
       "default": 0
     },
     "enablePermissions": {
@@ -202,25 +166,14 @@
       "title": "Scroll mode on load",
       "description": "Controls how the viewer scrolls upon load.\n -1 = Default (uses the last position if available/enabled).\n 3 = Page scrolling.\n 0 = Vertical scrolling.\n 1 = Horizontal scrolling.\n 2 = Wrapped scrolling.",
       "type": "integer",
-      "enum": [
-        -1,
-        0,
-        1,
-        2,
-        3
-      ],
+      "enum": [-1, 0, 1, 2, 3],
       "default": -1
     },
     "spreadModeOnLoad": {
       "title": "Spread mode on load",
       "description": "Whether the viewer should join pages into spreads upon load.\n -1 = Default (uses the last position if available/enabled).\n 0 = No spreads.\n 1 = Odd spreads.\n 2 = Even spreads.",
       "type": "integer",
-      "enum": [
-        -1,
-        0,
-        1,
-        2
-      ],
+      "enum": [-1, 0, 1, 2],
       "default": -1
     },
     "forcePageColors": {

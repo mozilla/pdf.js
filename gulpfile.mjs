@@ -1936,7 +1936,7 @@ gulp.task(
 
 gulp.task("lint", function (done) {
   console.log();
-  console.log("### Linting JS/CSS files");
+  console.log("### Linting JS/CSS/JSON files");
 
   // Ensure that we lint the Firefox specific *.jsm files too.
   const esLintOptions = [
@@ -1959,6 +1959,16 @@ gulp.task("lint", function (done) {
     styleLintOptions.push("--fix");
   }
 
+  const prettierOptions = [
+    "node_modules/prettier/bin/prettier.cjs",
+    "**/*.json",
+  ];
+  if (process.argv.includes("--fix")) {
+    prettierOptions.push("--log-level", "silent", "--write");
+  } else {
+    prettierOptions.push("--log-level", "warn", "--check");
+  }
+
   const esLintProcess = startNode(esLintOptions, { stdio: "inherit" });
   esLintProcess.on("close", function (esLintCode) {
     if (esLintCode !== 0) {
@@ -1972,8 +1982,16 @@ gulp.task("lint", function (done) {
         done(new Error("Stylelint failed."));
         return;
       }
-      console.log("files checked, no errors found");
-      done();
+
+      const prettierProcess = startNode(prettierOptions, { stdio: "inherit" });
+      prettierProcess.on("close", function (prettierCode) {
+        if (prettierCode !== 0) {
+          done(new Error("Prettier failed."));
+          return;
+        }
+        console.log("files checked, no errors found");
+        done();
+      });
     });
   });
 });

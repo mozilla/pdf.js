@@ -11,16 +11,11 @@
     "baseUrl": "./",
     "strict": true,
     "types": [],
-    "lib": [
-      "ESNext",
-      "DOM"
-    ],
+    "lib": ["ESNext", "DOM"],
     "paths": {
       "pdfjs-dist": ["../../build/typestest"],
       "pdfjs-dist/*": ["../../build/typestest/*"]
     }
   },
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }
