@@ -34,6 +34,7 @@ import {
   fixURL,
   measureToString,
   setFontFamily,
+  setParaStyle,
 } from "./html_utils.js";
 import { getMeasurement, HTMLResult, stripQuotes } from "./utils.js";
 import { XmlObject } from "./xfa_object.js";
@@ -503,6 +504,19 @@ class P extends XhtmlObject {
       return super[$text]();
     }
     return super[$text]() + "\n";
+  }
+
+  [$toHTML](availableSpace) {
+    const res = super[$toHTML](availableSpace);
+    const { html } = res;
+    if (!html) {
+      return HTMLResult.EMPTY;
+    }
+    if (!html.attributes.style) {
+      html.attributes.style = Object.create(null);
+    }
+    setParaStyle(this, html.attributes.style);
+    return res;
   }
 }
 

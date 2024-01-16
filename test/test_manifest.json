@@ -1256,6 +1256,15 @@
        "enableXfa": true,
        "type": "eq"
     },
+    {  "id": "xfa_bug1722003",
+      "file": "pdfs/xfa_bug1722003.pdf",
+      "md5": "47453e6ea9426d22108c6307805464a2",
+      "link": true,
+      "lastPage": 1,
+      "rounds": 1,
+      "enableXfa": true,
+      "type": "eq"
+   },
     {  "id": "issue14164",
        "file": "pdfs/issue14164.pdf",
        "md5": "feb444c716b0337efff8094b156def32",
