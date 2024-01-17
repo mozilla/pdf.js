@@ -355,13 +355,19 @@ class AnnotationFactory {
           );
           break;
         case AnnotationEditorType.HIGHLIGHT:
-          promises.push(
-            HighlightAnnotation.createNewAnnotation(
-              xref,
-              annotation,
-              dependencies
-            )
-          );
+          if (annotation.quadPoints) {
+            promises.push(
+              HighlightAnnotation.createNewAnnotation(
+                xref,
+                annotation,
+                dependencies
+              )
+            );
+          } else {
+            promises.push(
+              InkAnnotation.createNewAnnotation(xref, annotation, dependencies)
+            );
+          }
           break;
         case AnnotationEditorType.INK:
           promises.push(
@@ -439,16 +445,29 @@ class AnnotationFactory {
           );
           break;
         case AnnotationEditorType.HIGHLIGHT:
-          promises.push(
-            HighlightAnnotation.createNewPrintAnnotation(
-              annotationGlobals,
-              xref,
-              annotation,
-              {
-                evaluatorOptions: options,
-              }
-            )
-          );
+          if (annotation.quadPoints) {
+            promises.push(
+              HighlightAnnotation.createNewPrintAnnotation(
+                annotationGlobals,
+                xref,
+                annotation,
+                {
+                  evaluatorOptions: options,
+                }
+              )
+            );
+          } else {
+            promises.push(
+              InkAnnotation.createNewPrintAnnotation(
+                annotationGlobals,
+                xref,
+                annotation,
+                {
+                  evaluatorOptions: options,
+                }
+              )
+            );
+          }
           break;
         case AnnotationEditorType.INK:
           promises.push(
@@ -4340,18 +4359,24 @@ class InkAnnotation extends MarkupAnnotation {
   }
 
   static createNewDict(annotation, xref, { apRef, ap }) {
-    const { color, opacity, paths, rect, rotation, thickness } = annotation;
+    const { color, opacity, paths, outlines, rect, rotation, thickness } =
+      annotation;
     const ink = new Dict(xref);
     ink.set("Type", Name.get("Annot"));
     ink.set("Subtype", Name.get("Ink"));
     ink.set("CreationDate", `D:${getModificationDate()}`);
     ink.set("Rect", rect);
-    ink.set(
-      "InkList",
-      paths.map(p => p.points)
-    );
+    ink.set("InkList", outlines?.points || paths.map(p => p.points));
     ink.set("F", 4);
     ink.set("Rotate", rotation);
+
+    if (outlines) {
+      // Free highlight.
+      // There's nothing about this in the spec, but it's used when highlighting
+      // in Edge's viewer. Acrobat takes into account this parameter to indicate
+      // that the Ink is used for highlighting.
+      ink.set("IT", Name.get("InkHighlight"));
+    }
 
     // Line thickness.
     const bs = new Dict(xref);
@@ -4380,6 +4405,13 @@ class InkAnnotation extends MarkupAnnotation {
   }
 
   static async createNewAppearanceStream(annotation, xref, params) {
+    if (annotation.outlines) {
+      return this.createNewAppearanceStreamForHighlight(
+        annotation,
+        xref,
+        params
+      );
+    }
     const { color, rect, paths, thickness, opacity } = annotation;
 
     const appearanceBuffer = [
@@ -4431,6 +4463,65 @@ class InkAnnotation extends MarkupAnnotation {
       extGState.set("R0", r0);
       resources.set("ExtGState", extGState);
       appearanceStreamDict.set("Resources", resources);
+    }
+
+    const ap = new StringStream(appearance);
+    ap.dict = appearanceStreamDict;
+
+    return ap;
+  }
+
+  static async createNewAppearanceStreamForHighlight(annotation, xref, params) {
+    const {
+      color,
+      rect,
+      outlines: { outline },
+      opacity,
+    } = annotation;
+    const appearanceBuffer = [
+      `${getPdfColor(color, /* isFill */ true)}`,
+      "/R0 gs",
+    ];
+
+    appearanceBuffer.push(
+      `${numberToString(outline[4])} ${numberToString(outline[5])} m`
+    );
+    for (let i = 6, ii = outline.length; i < ii; i += 6) {
+      if (isNaN(outline[i]) || outline[i] === null) {
+        appearanceBuffer.push(
+          `${numberToString(outline[i + 4])} ${numberToString(
+            outline[i + 5]
+          )} l`
+        );
+      } else {
+        const curve = outline
+          .slice(i, i + 6)
+          .map(numberToString)
+          .join(" ");
+        appearanceBuffer.push(`${curve} c`);
+      }
+    }
+    appearanceBuffer.push("h f");
+    const appearance = appearanceBuffer.join("\n");
+
+    const appearanceStreamDict = new Dict(xref);
+    appearanceStreamDict.set("FormType", 1);
+    appearanceStreamDict.set("Subtype", Name.get("Form"));
+    appearanceStreamDict.set("Type", Name.get("XObject"));
+    appearanceStreamDict.set("BBox", rect);
+    appearanceStreamDict.set("Length", appearance.length);
+
+    const resources = new Dict(xref);
+    const extGState = new Dict(xref);
+    resources.set("ExtGState", extGState);
+    appearanceStreamDict.set("Resources", resources);
+    const r0 = new Dict(xref);
+    extGState.set("R0", r0);
+    r0.set("BM", Name.get("Multiply"));
+
+    if (opacity !== 1) {
+      r0.set("ca", opacity);
+      r0.set("Type", Name.get("ExtGState"));
     }
 
     const ap = new StringStream(appearance);

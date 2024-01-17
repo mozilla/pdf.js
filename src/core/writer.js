@@ -32,7 +32,7 @@ async function writeObject(ref, obj, buffer, { encrypt = null }) {
     await writeDict(obj, buffer, transform);
   } else if (obj instanceof BaseStream) {
     await writeStream(obj, buffer, transform);
-  } else if (Array.isArray(obj)) {
+  } else if (Array.isArray(obj) || ArrayBuffer.isView(obj)) {
     await writeArray(obj, buffer, transform);
   }
   buffer.push("\nendobj\n");
@@ -132,7 +132,7 @@ async function writeValue(value, buffer, transform) {
     buffer.push(`/${escapePDFName(value.name)}`);
   } else if (value instanceof Ref) {
     buffer.push(`${value.num} ${value.gen} R`);
-  } else if (Array.isArray(value)) {
+  } else if (Array.isArray(value) || ArrayBuffer.isView(value)) {
     await writeArray(value, buffer, transform);
   } else if (typeof value === "string") {
     if (transform) {

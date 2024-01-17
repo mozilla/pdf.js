@@ -597,6 +597,7 @@ class HighlightEditor extends AnnotationEditor {
       annotationType: AnnotationEditorType.HIGHLIGHT,
       color,
       opacity: this.#opacity,
+      thickness: 2 * HighlightEditor._defaultThickness,
       quadPoints: this.#serializeBoxes(rect),
       outlines: this.#serializeOutlines(rect),
       pageIndex: this.pageIndex,
