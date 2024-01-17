@@ -596,6 +596,12 @@ class FreeOutliner {
     const lastBottom = last.subarray(16, 18);
     const [layerX, layerY, layerWidth, layerHeight] = this.#box;
 
+    const points = new Float64Array(this.#points?.length ?? 0);
+    for (let i = 0, ii = points.length; i < ii; i += 2) {
+      points[i] = (this.#points[i] - layerX) / layerWidth;
+      points[i + 1] = (this.#points[i + 1] - layerY) / layerHeight;
+    }
+
     if (isNaN(last[6]) && !this.isEmpty()) {
       // We've only two points.
       const outline = new Float64Array(24);
@@ -628,7 +634,12 @@ class FreeOutliner {
         ],
         0
       );
-      return new FreeHighlightOutline(outline, this.#innerMargin, isLTR);
+      return new FreeHighlightOutline(
+        outline,
+        points,
+        this.#innerMargin,
+        isLTR
+      );
     }
 
     const outline = new Float64Array(
@@ -675,7 +686,7 @@ class FreeOutliner {
       }
     }
     outline.set([NaN, NaN, NaN, NaN, bottom[4], bottom[5]], N);
-    return new FreeHighlightOutline(outline, this.#innerMargin, isLTR);
+    return new FreeHighlightOutline(outline, points, this.#innerMargin, isLTR);
   }
 }
 
@@ -684,11 +695,14 @@ class FreeHighlightOutline extends Outline {
 
   #innerMargin;
 
+  #points;
+
   #outline;
 
-  constructor(outline, innerMargin, isLTR) {
+  constructor(outline, points, innerMargin, isLTR) {
     super();
     this.#outline = outline;
+    this.#points = points;
     this.#innerMargin = innerMargin;
     this.#computeMinMax(isLTR);
 
@@ -696,6 +710,10 @@ class FreeHighlightOutline extends Outline {
     for (let i = 0, ii = outline.length; i < ii; i += 2) {
       outline[i] = (outline[i] - x) / width;
       outline[i + 1] = (outline[i + 1] - y) / height;
+    }
+    for (let i = 0, ii = points.length; i < ii; i += 2) {
+      points[i] = (points[i] - x) / width;
+      points[i + 1] = (points[i + 1] - y) / height;
     }
   }
 
@@ -717,36 +735,53 @@ class FreeHighlightOutline extends Outline {
   }
 
   serialize([blX, blY, trX, trY], rotation) {
-    const src = this.#outline;
-    const outline = new Float64Array(src.length);
     const width = trX - blX;
     const height = trY - blY;
+    let outline;
+    let points;
     switch (rotation) {
       case 0:
-        for (let i = 0, ii = src.length; i < ii; i += 2) {
-          outline[i] = blX + src[i] * width;
-          outline[i + 1] = trY - src[i + 1] * height;
-        }
+        outline = this.#rescale(this.#outline, blX, trY, width, -height);
+        points = this.#rescale(this.#points, blX, trY, width, -height);
         break;
       case 90:
-        for (let i = 0, ii = src.length; i < ii; i += 2) {
-          outline[i] = blX + src[i + 1] * width;
-          outline[i + 1] = blY + src[i] * height;
-        }
+        outline = this.#rescaleAndSwap(this.#outline, blX, blY, width, height);
+        points = this.#rescaleAndSwap(this.#points, blX, blY, width, height);
         break;
       case 180:
-        for (let i = 0, ii = src.length; i < ii; i += 2) {
-          outline[i] = trX - src[i] * width;
-          outline[i + 1] = blY + src[i + 1] * height;
-        }
+        outline = this.#rescale(this.#outline, trX, blY, -width, height);
+        points = this.#rescale(this.#points, trX, blY, -width, height);
         break;
       case 270:
-        for (let i = 0, ii = src.length; i < ii; i += 2) {
-          outline[i] = trX - src[i + 1] * width;
-          outline[i + 1] = trY - src[i] * height;
-        }
+        outline = this.#rescaleAndSwap(
+          this.#outline,
+          trX,
+          trY,
+          -width,
+          -height
+        );
+        points = this.#rescaleAndSwap(this.#points, trX, trY, -width, -height);
+        break;
     }
-    return outline;
+    return { outline: Array.from(outline), points: [Array.from(points)] };
+  }
+
+  #rescale(src, tx, ty, sx, sy) {
+    const dest = new Float64Array(src.length);
+    for (let i = 0, ii = src.length; i < ii; i += 2) {
+      dest[i] = tx + src[i] * sx;
+      dest[i + 1] = ty + src[i + 1] * sy;
+    }
+    return dest;
+  }
+
+  #rescaleAndSwap(src, tx, ty, sx, sy) {
+    const dest = new Float64Array(src.length);
+    for (let i = 0, ii = src.length; i < ii; i += 2) {
+      dest[i] = tx + src[i + 1] * sx;
+      dest[i + 1] = ty + src[i] * sy;
+    }
+    return dest;
   }
 
   #computeMinMax(isLTR) {
