@@ -62,6 +62,11 @@
   --scale-factor: 1;
 
   padding-bottom: var(--pdfViewer-padding-bottom);
+
+  --hcm-highlight-filter: none;
+  @media screen and (forced-colors: active) {
+    --hcm-highlight-filter: invert(100%);
+  }
 }
 
 .pdfViewer .canvasWrapper {

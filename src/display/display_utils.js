@@ -57,17 +57,7 @@ class DOMFilterFactory extends BaseFilterFactory {
 
   #document;
 
-  #hcmFilter;
-
-  #hcmKey;
-
-  #hcmUrl;
-
-  #hcmHighlightFilter;
-
-  #hcmHighlightKey;
-
-  #hcmHighlightUrl;
+  #_hcmCache;
 
   #id = 0;
 
@@ -79,6 +69,10 @@ class DOMFilterFactory extends BaseFilterFactory {
 
   get #cache() {
     return (this.#_cache ||= new Map());
+  }
+
+  get #hcmCache() {
+    return (this.#_hcmCache ||= new Map());
   }
 
   get #defs() {
@@ -161,16 +155,28 @@ class DOMFilterFactory extends BaseFilterFactory {
 
   addHCMFilter(fgColor, bgColor) {
     const key = `${fgColor}-${bgColor}`;
-    if (this.#hcmKey === key) {
-      return this.#hcmUrl;
+    const filterName = "base";
+    let info = this.#hcmCache.get(filterName);
+    if (info?.key === key) {
+      return info.url;
     }
 
-    this.#hcmKey = key;
-    this.#hcmUrl = "none";
-    this.#hcmFilter?.remove();
+    if (info) {
+      info.filter?.remove();
+      info.key = key;
+      info.url = "none";
+      info.filter = null;
+    } else {
+      info = {
+        key,
+        url: "none",
+        filter: null,
+      };
+      this.#hcmCache.set(filterName, info);
+    }
 
     if (!fgColor || !bgColor) {
-      return this.#hcmUrl;
+      return info.url;
     }
 
     const fgRGB = this.#getRGB(fgColor);
@@ -183,7 +189,7 @@ class DOMFilterFactory extends BaseFilterFactory {
       (fgColor === "#000000" && bgColor === "#ffffff") ||
       fgColor === bgColor
     ) {
-      return this.#hcmUrl;
+      return info.url;
     }
 
     // https://developer.mozilla.org/en-US/docs/Web/Accessibility/Understanding_Colors_and_Luminance
@@ -203,7 +209,7 @@ class DOMFilterFactory extends BaseFilterFactory {
     const table = map.join(",");
 
     const id = `g_${this.#docId}_hcm_filter`;
-    const filter = (this.#hcmHighlightFilter = this.#createFilter(id));
+    const filter = (info.filter = this.#createFilter(id));
     this.#addTransferMapConversion(table, table, table, filter);
     this.#addGrayConversion(filter);
 
@@ -223,22 +229,33 @@ class DOMFilterFactory extends BaseFilterFactory {
       filter
     );
 
-    this.#hcmUrl = `url(#${id})`;
-    return this.#hcmUrl;
+    info.url = `url(#${id})`;
+    return info.url;
   }
 
-  addHighlightHCMFilter(fgColor, bgColor, newFgColor, newBgColor) {
+  addHighlightHCMFilter(filterName, fgColor, bgColor, newFgColor, newBgColor) {
     const key = `${fgColor}-${bgColor}-${newFgColor}-${newBgColor}`;
-    if (this.#hcmHighlightKey === key) {
-      return this.#hcmHighlightUrl;
+    let info = this.#hcmCache.get(filterName);
+    if (info?.key === key) {
+      return info.url;
     }
 
-    this.#hcmHighlightKey = key;
-    this.#hcmHighlightUrl = "none";
-    this.#hcmHighlightFilter?.remove();
+    if (info) {
+      info.filter?.remove();
+      info.key = key;
+      info.url = "none";
+      info.filter = null;
+    } else {
+      info = {
+        key,
+        url: "none",
+        filter: null,
+      };
+      this.#hcmCache.set(filterName, info);
+    }
 
     if (!fgColor || !bgColor) {
-      return this.#hcmHighlightUrl;
+      return info.url;
     }
 
     const [fgRGB, bgRGB] = [fgColor, bgColor].map(this.#getRGB.bind(this));
@@ -294,8 +311,8 @@ class DOMFilterFactory extends BaseFilterFactory {
       return arr.join(",");
     };
 
-    const id = `g_${this.#docId}_hcm_highlight_filter`;
-    const filter = (this.#hcmHighlightFilter = this.#createFilter(id));
+    const id = `g_${this.#docId}_hcm_${filterName}_filter`;
+    const filter = (info.filter = this.#createFilter(id));
 
     this.#addGrayConversion(filter);
     this.#addTransferMapConversion(
@@ -305,12 +322,12 @@ class DOMFilterFactory extends BaseFilterFactory {
       filter
     );
 
-    this.#hcmHighlightUrl = `url(#${id})`;
-    return this.#hcmHighlightUrl;
+    info.url = `url(#${id})`;
+    return info.url;
   }
 
   destroy(keepHCM = false) {
-    if (keepHCM && (this.#hcmUrl || this.#hcmHighlightUrl)) {
+    if (keepHCM && this.#hcmCache.size !== 0) {
       return;
     }
     if (this.#_defs) {
