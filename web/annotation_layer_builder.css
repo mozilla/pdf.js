@@ -28,7 +28,6 @@
     --input-disabled-border-color: GrayText;
     --input-hover-border-color: Highlight;
     --link-outline: 1.5px solid LinkText;
-    --hcm-highlight-filter: invert(100%);
 
     .textWidgetAnnotation :is(input, textarea):required,
     .choiceWidgetAnnotation select:required,
