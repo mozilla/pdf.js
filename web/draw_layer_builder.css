@@ -44,7 +44,10 @@
 
       position: absolute;
       mix-blend-mode: var(--blend-mode);
-      fill-rule: evenodd;
+
+      &:not(.free) {
+        fill-rule: evenodd;
+      }
     }
 
     &.highlightOutline {
