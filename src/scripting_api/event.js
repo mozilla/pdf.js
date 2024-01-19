@@ -335,7 +335,7 @@ class EventDispatcher {
 
       event.value = null;
       const target = this._objects[targetId];
-      let savedValue = target.obj.value;
+      let savedValue = target.obj._getValue();
       this.runActions(source, target, event, "Calculate");
       if (!event.rc) {
         continue;
@@ -344,18 +344,23 @@ class EventDispatcher {
       if (event.value !== null) {
         // A new value has been calculated so set it.
         target.obj.value = event.value;
+      } else {
+        event.value = target.obj._getValue();
       }
 
-      event.value = target.obj.value;
       this.runActions(target, target, event, "Validate");
       if (!event.rc) {
-        if (target.obj.value !== savedValue) {
+        if (target.obj._getValue() !== savedValue) {
           target.wrapped.value = savedValue;
         }
         continue;
       }
 
-      savedValue = event.value = target.obj.value;
+      if (event.value === null) {
+        event.value = target.obj._getValue();
+      }
+
+      savedValue = target.obj._getValue();
       let formattedValue = null;
       if (this.runActions(target, target, event, "Format")) {
         formattedValue = event.value?.toString?.();

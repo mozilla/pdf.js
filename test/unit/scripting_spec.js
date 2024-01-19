@@ -716,6 +716,11 @@ describe("Scripting", function () {
                     `AFNumber_Format(2, 0, 3, 0, "€", false);` +
                       `event.source.value = event.value;`,
                   ],
+                  test6: [
+                    `event.value = 0;` +
+                      `AFNumber_Format(2, 0, 0, 0, "€", false);` +
+                      `event.source.value = event.value;`,
+                  ],
                 },
                 type: "text",
               },
@@ -727,6 +732,30 @@ describe("Scripting", function () {
         };
 
         sandbox.createSandbox(data);
+        await sandbox.dispatchEventInSandbox({
+          id: refId,
+          value: "0",
+          name: "test1",
+        });
+        expect(send_queue.has(refId)).toEqual(true);
+        expect(send_queue.get(refId)).toEqual({
+          id: refId,
+          value: "0.00€",
+        });
+        send_queue.delete(refId);
+
+        await sandbox.dispatchEventInSandbox({
+          id: refId,
+          value: "",
+          name: "test6",
+        });
+        expect(send_queue.has(refId)).toEqual(true);
+        expect(send_queue.get(refId)).toEqual({
+          id: refId,
+          value: "0.00€",
+        });
+        send_queue.delete(refId);
+
         await sandbox.dispatchEventInSandbox({
           id: refId,
           value: "123456.789",

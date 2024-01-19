@@ -2324,4 +2324,46 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("Textfield with a number and some decimals", () => {
+    let pages;
+    let otherPages;
+
+    beforeAll(async () => {
+      otherPages = await Promise.all(
+        global.integrationSessions.map(async session =>
+          session.browser.newPage()
+        )
+      );
+      pages = await loadAndWait("issue17540.pdf", getSelector("15R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+      await Promise.all(otherPages.map(page => page.close()));
+    });
+
+    it("must check the number has the correct number of decimals", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page], i) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          await page.click(getSelector("15R"));
+          await page.type(getSelector("15R"), "3");
+          await page.keyboard.press("Enter");
+
+          await page.waitForFunction(
+            sel => document.querySelector(sel).value !== "",
+            {},
+            getSelector("16R")
+          );
+
+          const text = await page.$eval(getSelector("16R"), el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("0.900");
+        })
+      );
+    });
+  });
 });
