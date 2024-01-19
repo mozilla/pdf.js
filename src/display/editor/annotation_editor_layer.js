@@ -350,6 +350,9 @@ class AnnotationEditorLayer {
   }
 
   #textLayerPointerDown(event) {
+    // Unselect all the editors in order to let the user select some text
+    // without being annoyed by an editor toolbar.
+    this.#uiManager.unselectAll();
     if (event.target === this.#textLayer.div) {
       const { isMac } = FeatureTest.platform;
       if (event.button !== 0 || (event.ctrlKey && isMac)) {

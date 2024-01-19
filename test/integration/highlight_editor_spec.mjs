@@ -530,4 +530,42 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Color picker can annoy the user when selecting some text", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that editor is unselected when the mouse is down on the text layer", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorHighlight");
+          await page.waitForSelector(".annotationEditorLayer.highlightEditing");
+          const sel = getEditorSelector(0);
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2 });
+
+          await page.waitForSelector(sel);
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] svg.highlightOutline.selected`
+          );
+
+          await page.waitForSelector(`${sel} .editToolbar button.colorPicker`);
+          await page.mouse.click(x, y - rect.height);
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] svg.highlightOutline:not(.selected)`
+          );
+        })
+      );
+    });
+  });
 });
