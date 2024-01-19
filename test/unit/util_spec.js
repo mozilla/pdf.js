@@ -17,7 +17,6 @@ import {
   bytesToString,
   createValidAbsoluteUrl,
   getModificationDate,
-  isArrayBuffer,
   PromiseCapability,
   string32,
   stringToBytes,
@@ -50,20 +49,6 @@ describe("util", function () {
       const string = "a".repeat(length);
 
       expect(bytesToString(bytes)).toEqual(string);
-    });
-  });
-
-  describe("isArrayBuffer", function () {
-    it("handles array buffer values", function () {
-      expect(isArrayBuffer(new ArrayBuffer(0))).toEqual(true);
-      expect(isArrayBuffer(new Uint8Array(0))).toEqual(true);
-    });
-
-    it("handles non-array buffer values", function () {
-      expect(isArrayBuffer("true")).toEqual(false);
-      expect(isArrayBuffer(1)).toEqual(false);
-      expect(isArrayBuffer(null)).toEqual(false);
-      expect(isArrayBuffer(undefined)).toEqual(false);
     });
   });
 

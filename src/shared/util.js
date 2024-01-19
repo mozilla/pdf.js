@@ -963,10 +963,6 @@ function utf8StringToString(str) {
   return unescape(encodeURIComponent(str));
 }
 
-function isArrayBuffer(v) {
-  return typeof v === "object" && v?.byteLength !== undefined;
-}
-
 function isArrayEqual(arr1, arr2) {
   if (arr1.length !== arr2.length) {
     return false;
@@ -1101,7 +1097,6 @@ export {
   ImageKind,
   info,
   InvalidPDFException,
-  isArrayBuffer,
   isArrayEqual,
   isNodeJS,
   LINE_DESCENT_FACTOR,

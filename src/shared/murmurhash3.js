@@ -17,8 +17,6 @@
  * Hashes roughly 100 KB per millisecond on i7 3.4 GHz.
  */
 
-import { isArrayBuffer } from "./util.js";
-
 const SEED = 0xc3d2e1f0;
 // Workaround for missing math precision in JS.
 const MASK_HIGH = 0xffff0000;
@@ -44,14 +42,11 @@ class MurmurHash3_64 {
           data[length++] = code & 0xff;
         }
       }
-    } else if (isArrayBuffer(input)) {
+    } else if (ArrayBuffer.isView(input)) {
       data = input.slice();
       length = data.byteLength;
     } else {
-      throw new Error(
-        "Wrong data format in MurmurHash3_64_update. " +
-          "Input must be a string or array."
-      );
+      throw new Error("Invalid data format, must be a string or TypedArray.");
     }
 
     const blockCounts = length >> 2;
