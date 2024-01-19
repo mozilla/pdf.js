@@ -884,10 +884,21 @@ class PDFViewer {
           this.viewer.style.setProperty(
             "--hcm-highlight-filter",
             pdfDocument.filterFactory.addHighlightHCMFilter(
+              "highlight",
               "CanvasText",
               "Canvas",
               "HighlightText",
               "Highlight"
+            )
+          );
+          this.viewer.style.setProperty(
+            "--hcm-highlight-selected-filter",
+            pdfDocument.filterFactory.addHighlightHCMFilter(
+              "highlight_selected",
+              "CanvasText",
+              "Canvas",
+              "HighlightText",
+              "ButtonText"
             )
           );
         }
