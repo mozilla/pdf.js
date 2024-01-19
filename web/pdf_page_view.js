@@ -284,6 +284,17 @@ class PDFPageView {
       this._container?.style.setProperty(
         "--hcm-highlight-filter",
         pdfPage.filterFactory.addHighlightHCMFilter(
+          "highlight",
+          "CanvasText",
+          "Canvas",
+          "HighlightText",
+          "Highlight"
+        )
+      );
+      this._container?.style.setProperty(
+        "--hcm-highlight-selected-filter",
+        pdfPage.filterFactory.addHighlightHCMFilter(
+          "highlight_selected",
           "CanvasText",
           "Canvas",
           "HighlightText",
