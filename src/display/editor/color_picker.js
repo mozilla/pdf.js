@@ -20,6 +20,8 @@ import { noContextMenu } from "../display_utils.js";
 class ColorPicker {
   #boundKeyDown = this.#keyDown.bind(this);
 
+  #boundPointerDown = this.#pointerDown.bind(this);
+
   #button = null;
 
   #buttonSwatch = null;
@@ -177,18 +179,25 @@ class ColorPicker {
     }
     this.#button.addEventListener("keydown", this.#boundKeyDown);
     this.#dropdownWasFromKeyboard = event.detail === 0;
+    window.addEventListener("pointerdown", this.#boundPointerDown);
     if (this.#dropdown) {
       this.#dropdown.classList.remove("hidden");
       return;
     }
-    const root = (this.#dropdown = this.#getDropdownRoot(
-      AnnotationEditorParamsType.HIGHLIGHT_COLOR
-    ));
+    const root = (this.#dropdown = this.#getDropdownRoot());
     this.#button.append(root);
+  }
+
+  #pointerDown(event) {
+    if (this.#dropdown?.contains(event.target)) {
+      return;
+    }
+    this.hideDropdown();
   }
 
   hideDropdown() {
     this.#dropdown?.classList.add("hidden");
+    window.removeEventListener("pointerdown", this.#boundPointerDown);
   }
 
   _hideDropdownFromKeyboard() {

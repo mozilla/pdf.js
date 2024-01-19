@@ -1032,6 +1032,10 @@
 
           &:has(.dropdown:not(.hidden)) {
             background-color: var(--editor-toolbar-hover-bg-color);
+
+            &::after {
+              scale: -1;
+            }
           }
 
           .dropdown {
