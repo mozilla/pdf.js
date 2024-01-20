@@ -431,6 +431,25 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(
             `.page[data-page-number = "1"] svg.highlight[fill = "#FF00FF"]`
           );
+
+          for (let i = 0; i < 4; i++) {
+            await page.keyboard.press("ArrowUp");
+          }
+          await page.waitForSelector(
+            `${sel} .editToolbar button.colorPicker .dropdown.hidden`
+          );
+          await page.keyboard.press("ArrowDown");
+          await page.waitForSelector(
+            `${sel} .editToolbar button.colorPicker .dropdown:not(.hidden)`
+          );
+          await page.keyboard.press("ArrowUp");
+          await page.waitForSelector(
+            `${sel} .editToolbar button.colorPicker .dropdown.hidden`
+          );
+          await page.keyboard.press(" ");
+          await page.waitForSelector(
+            `${sel} .editToolbar button.colorPicker .dropdown:not(.hidden)`
+          );
         })
       );
     });
