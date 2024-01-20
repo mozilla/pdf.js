@@ -1,10 +1,18 @@
 {
-  "extends": [
-    "../.eslintrc"
-  ],
-
+  "plugins": ["jasmine"],
+  "extends": ["../.eslintrc", "plugin:jasmine/recommended"],
   "env": {
     "node": true,
-    "jasmine": true,
+    "jasmine": true
   },
+  "rules": {
+    "jasmine/new-line-before-expect": "off",
+    "jasmine/new-line-between-declarations": "off",
+    "jasmine/no-focused-tests": "error",
+    "jasmine/no-pending-tests": "off",
+    "jasmine/no-spec-dupes": "off",
+    "jasmine/no-suite-dupes": "off",
+    "jasmine/prefer-jasmine-matcher": "off",
+    "jasmine/prefer-toHaveBeenCalledWith": "off"
+  }
 }
