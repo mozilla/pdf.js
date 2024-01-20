@@ -220,10 +220,6 @@ class AForm {
     bCurrencyPrepend
   ) {
     const event = globalThis.event;
-    if (!event.value) {
-      return;
-    }
-
     let value = this.AFMakeNumber(event.value);
     if (value === null) {
       event.value = "";
