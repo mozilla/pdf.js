@@ -301,6 +301,25 @@ pdfjs-editor-ink-button-label = Marrazkia
 pdfjs-editor-stamp-button =
     .title = Gehitu edo editatu irudiak
 pdfjs-editor-stamp-button-label = Gehitu edo editatu irudiak
+pdfjs-editor-remove-button =
+    .title = Kendu
+pdfjs-editor-highlight-button =
+    .title = Nabarmendu
+pdfjs-editor-highlight-button-label = Nabarmendu
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = Kendu marrazkia
+pdfjs-editor-remove-freetext-button =
+    .title = Kendu testua
+pdfjs-editor-remove-stamp-button =
+    .title = Kendu irudia
+pdfjs-editor-remove-highlight-button =
+    .title = Kendu nabarmentzea
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Kolorea
 pdfjs-editor-free-text-size-input = Tamaina
@@ -347,3 +366,22 @@ pdfjs-editor-resizer-label-bottom-right = Beheko eskuineko izkina — aldatu tam
 pdfjs-editor-resizer-label-bottom-middle = Behean erdian — aldatu tamaina
 pdfjs-editor-resizer-label-bottom-left = Beheko ezkerreko izkina — aldatu tamaina
 pdfjs-editor-resizer-label-middle-left = Erdian ezkerrean —  aldatu tamaina
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = Nabarmentze kolorea
+pdfjs-editor-colorpicker-button =
+    .title = Aldatu kolorea
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = Kolore-aukerak
+pdfjs-editor-colorpicker-yellow =
+    .title = Horia
+pdfjs-editor-colorpicker-green =
+    .title = Berdea
+pdfjs-editor-colorpicker-blue =
+    .title = Urdina
+pdfjs-editor-colorpicker-pink =
+    .title = Arrosa
+pdfjs-editor-colorpicker-red =
+    .title = Gorria

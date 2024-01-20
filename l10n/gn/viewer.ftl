@@ -303,6 +303,9 @@ pdfjs-editor-stamp-button =
 pdfjs-editor-stamp-button-label = Embojuaju térã embosako’i ta’ãnga
 pdfjs-editor-remove-button =
     .title = Mboguete
+pdfjs-editor-highlight-button =
+    .title = Mbosa’y
+pdfjs-editor-highlight-button-label = Mbosa’y
 
 ## Remove button for the various kind of editor.
 

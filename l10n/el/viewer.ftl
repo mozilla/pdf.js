@@ -303,6 +303,9 @@ pdfjs-editor-stamp-button =
 pdfjs-editor-stamp-button-label = Προσθήκη ή επεξεργασία εικόνων
 pdfjs-editor-remove-button =
     .title = Αφαίρεση
+pdfjs-editor-highlight-button =
+    .title = Επισήμανση
+pdfjs-editor-highlight-button-label = Επισήμανση
 
 ## Remove button for the various kind of editor.
 

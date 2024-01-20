@@ -303,6 +303,9 @@ pdfjs-editor-stamp-button =
 pdfjs-editor-stamp-button-label = Ofbyldingen tafoegje of bewurkje
 pdfjs-editor-remove-button =
     .title = Fuortsmite
+pdfjs-editor-highlight-button =
+    .title = Markearje
+pdfjs-editor-highlight-button-label = Markearje
 
 ## Remove button for the various kind of editor.
 

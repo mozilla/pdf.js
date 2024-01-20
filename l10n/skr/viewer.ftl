@@ -283,12 +283,21 @@ pdfjs-editor-free-text-button-label = متن
 pdfjs-editor-ink-button =
     .title = چھکو
 pdfjs-editor-ink-button-label = چھکو
+
+## Remove button for the various kind of editor.
+
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = رنگ
 pdfjs-editor-free-text-size-input = سائز
 pdfjs-editor-ink-color-input = رنگ
 pdfjs-editor-ink-thickness-input = ٹھولھ
 pdfjs-editor-ink-opacity-input = دھندلاپن
+pdfjs-editor-stamp-add-image-button =
+    .title = تصویر شامل کرو
+pdfjs-editor-stamp-add-image-button-label = تصویر شامل کرو
 pdfjs-free-text =
     .aria-label = ٹیکسٹ ایڈیٹر
 pdfjs-free-text-default-content = ٹائپنگ شروع کرو …
@@ -303,3 +312,16 @@ pdfjs-ink-canvas =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
+
+## Color picker
+
+pdfjs-editor-colorpicker-yellow =
+    .title = پیلا
+pdfjs-editor-colorpicker-green =
+    .title = ساوا
+pdfjs-editor-colorpicker-blue =
+    .title = نیلا
+pdfjs-editor-colorpicker-pink =
+    .title = گلابی
+pdfjs-editor-colorpicker-red =
+    .title = لال
