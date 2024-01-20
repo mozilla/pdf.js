@@ -311,6 +311,9 @@ pdfjs-editor-stamp-button =
 pdfjs-editor-stamp-button-label = Ychwanegu neu olygu delweddau
 pdfjs-editor-remove-button =
     .title = Tynnu
+pdfjs-editor-highlight-button =
+    .title = Amlygu
+pdfjs-editor-highlight-button-label = Amlygu
 
 ## Remove button for the various kind of editor.
 

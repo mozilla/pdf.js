@@ -303,6 +303,9 @@ pdfjs-editor-stamp-button =
 pdfjs-editor-stamp-button-label = Képek hozzáadása vagy szerkesztése
 pdfjs-editor-remove-button =
     .title = Eltávolítás
+pdfjs-editor-highlight-button =
+    .title = Kiemelés
+pdfjs-editor-highlight-button-label = Kiemelés
 
 ## Remove button for the various kind of editor.
 
