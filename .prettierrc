@@ -5,5 +5,14 @@
   "semi": true,
   "tabWidth": 2,
   "trailingComma": "es5",
-  "useTabs": false
+  "useTabs": false,
+
+  "overrides": [
+    {
+      files: ["tsconfig.json"],
+      options: {
+        parser: "json",
+      },
+    },
+  ]
 }
