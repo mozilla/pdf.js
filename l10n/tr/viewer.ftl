@@ -303,6 +303,9 @@ pdfjs-editor-stamp-button =
 pdfjs-editor-stamp-button-label = Resim ekle veya düzenle
 pdfjs-editor-remove-button =
     .title = Kaldır
+pdfjs-editor-highlight-button =
+    .title = Vurgula
+pdfjs-editor-highlight-button-label = Vurgula
 
 ## Remove button for the various kind of editor.
 
