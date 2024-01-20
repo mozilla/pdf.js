@@ -87,6 +87,7 @@ class ColorPicker {
     button.setAttribute("data-l10n-id", "pdfjs-editor-colorpicker-button");
     button.setAttribute("aria-haspopup", true);
     button.addEventListener("click", this.#openDropdown.bind(this));
+    button.addEventListener("keydown", this.#boundKeyDown);
     const swatch = (this.#buttonSwatch = document.createElement("span"));
     swatch.className = "swatch";
     swatch.style.backgroundColor = this.#defaultColor;
@@ -141,6 +142,10 @@ class ColorPicker {
   }
 
   _colorSelectFromKeyboard(event) {
+    if (event.target === this.#button) {
+      this.#openDropdown(event);
+      return;
+    }
     const color = event.target.getAttribute("data-color");
     if (!color) {
       return;
@@ -149,6 +154,10 @@ class ColorPicker {
   }
 
   _moveToNext(event) {
+    if (!this.#isDropdownVisible) {
+      this.#openDropdown(event);
+      return;
+    }
     if (event.target === this.#button) {
       this.#dropdown.firstChild?.focus();
       return;
@@ -157,14 +166,34 @@ class ColorPicker {
   }
 
   _moveToPrevious(event) {
+    if (
+      event.target === this.#dropdown?.firstChild ||
+      event.target === this.#button
+    ) {
+      if (this.#isDropdownVisible) {
+        this._hideDropdownFromKeyboard();
+      }
+      return;
+    }
+    if (!this.#isDropdownVisible) {
+      this.#openDropdown(event);
+    }
     event.target.previousSibling?.focus();
   }
 
-  _moveToBeginning() {
+  _moveToBeginning(event) {
+    if (!this.#isDropdownVisible) {
+      this.#openDropdown(event);
+      return;
+    }
     this.#dropdown.firstChild?.focus();
   }
 
-  _moveToEnd() {
+  _moveToEnd(event) {
+    if (!this.#isDropdownVisible) {
+      this.#openDropdown(event);
+      return;
+    }
     this.#dropdown.lastChild?.focus();
   }
 
@@ -173,11 +202,10 @@ class ColorPicker {
   }
 
   #openDropdown(event) {
-    if (this.#dropdown && !this.#dropdown.classList.contains("hidden")) {
+    if (this.#isDropdownVisible) {
       this.hideDropdown();
       return;
     }
-    this.#button.addEventListener("keydown", this.#boundKeyDown);
     this.#dropdownWasFromKeyboard = event.detail === 0;
     window.addEventListener("pointerdown", this.#boundPointerDown);
     if (this.#dropdown) {
@@ -200,16 +228,15 @@ class ColorPicker {
     window.removeEventListener("pointerdown", this.#boundPointerDown);
   }
 
+  get #isDropdownVisible() {
+    return this.#dropdown && !this.#dropdown.classList.contains("hidden");
+  }
+
   _hideDropdownFromKeyboard() {
-    if (
-      this.#isMainColorPicker ||
-      !this.#dropdown ||
-      this.#dropdown.classList.contains("hidden")
-    ) {
+    if (this.#isMainColorPicker || !this.#isDropdownVisible) {
       return;
     }
     this.hideDropdown();
-    this.#button.removeEventListener("keydown", this.#boundKeyDown);
     this.#button.focus({
       preventScroll: true,
       focusVisible: this.#dropdownWasFromKeyboard,
