@@ -307,6 +307,9 @@ pdfjs-editor-stamp-button =
 pdfjs-editor-stamp-button-label = Wobraze pśidaś abo wobźěłaś
 pdfjs-editor-remove-button =
     .title = Wótwónoźeś
+pdfjs-editor-highlight-button =
+    .title = Wuzwignuś
+pdfjs-editor-highlight-button-label = Wuzwignuś
 
 ## Remove button for the various kind of editor.
 

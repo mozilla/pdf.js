@@ -303,6 +303,9 @@ pdfjs-editor-stamp-button =
 pdfjs-editor-stamp-button-label = Añadir o editar imágenes
 pdfjs-editor-remove-button =
     .title = Eliminar
+pdfjs-editor-highlight-button =
+    .title = Resaltar
+pdfjs-editor-highlight-button-label = Resaltar
 
 ## Remove button for the various kind of editor.
 
