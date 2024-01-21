@@ -691,9 +691,9 @@ async function createBuiltInCMap(name, fetchBuiltInCMap) {
   const cMap = new CMap(true);
 
   if (compressionType === CMapCompressionType.BINARY) {
-    return new BinaryCMapReader().process(cMapData, cMap, useCMap => {
-      return extendCMap(cMap, fetchBuiltInCMap, useCMap);
-    });
+    return new BinaryCMapReader().process(cMapData, cMap, useCMap =>
+      extendCMap(cMap, fetchBuiltInCMap, useCMap)
+    );
   }
   if (compressionType === CMapCompressionType.NONE) {
     const lexer = new Lexer(new Stream(cMapData));

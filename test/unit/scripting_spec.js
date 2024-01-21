@@ -52,9 +52,9 @@ describe("Scripting", function () {
       send_queue.set(command, { command, value });
     };
     // eslint-disable-next-line no-unsanitized/method
-    const promise = import(sandboxBundleSrc).then(pdfjsSandbox => {
-      return pdfjsSandbox.QuickJSSandbox();
-    });
+    const promise = import(sandboxBundleSrc).then(pdfjsSandbox =>
+      pdfjsSandbox.QuickJSSandbox()
+    );
     sandbox = {
       createSandbox(data) {
         promise.then(sbx => sbx.create(data));

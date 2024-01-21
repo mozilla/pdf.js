@@ -483,9 +483,9 @@ class DOMStandardFontDataFactory extends BaseStandardFontDataFactory {
    * @ignore
    */
   _fetchData(url) {
-    return fetchData(url, /* type = */ "arraybuffer").then(data => {
-      return new Uint8Array(data);
-    });
+    return fetchData(url, /* type = */ "arraybuffer").then(
+      data => new Uint8Array(data)
+    );
   }
 }
 

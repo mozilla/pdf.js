@@ -62,9 +62,7 @@ describe("node_stream", function () {
             const [start, end] = request.headers.range
               .split("=")[1]
               .split("-")
-              .map(x => {
-                return Number(x);
-              });
+              .map(x => Number(x));
             const stream = fs.createReadStream(filePath, { start, end });
             response.writeHead(206, {
               "Content-Type": "application/pdf",

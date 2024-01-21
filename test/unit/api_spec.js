@@ -942,14 +942,10 @@ describe("api", function () {
       );
 
       const loadingTask1 = getDocument(basicApiGetDocumentParams);
-      const promise1 = loadingTask1.promise.then(pdfDoc => {
-        return pdfDoc.numPages;
-      });
+      const promise1 = loadingTask1.promise.then(pdfDoc => pdfDoc.numPages);
 
       const loadingTask2 = getDocument(tracemonkeyGetDocumentParams);
-      const promise2 = loadingTask2.promise.then(pdfDoc => {
-        return pdfDoc.numPages;
-      });
+      const promise2 = loadingTask2.promise.then(pdfDoc => pdfDoc.numPages);
 
       const [numPages1, numPages2] = await Promise.all([promise1, promise2]);
       expect(numPages1).toEqual(3);
@@ -3901,9 +3897,9 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
             true
           );
           expect(
-            currentImgData.data.every((value, index) => {
-              return value === firstImgData.data[index];
-            })
+            currentImgData.data.every(
+              (value, index) => value === firstImgData.data[index]
+            )
           ).toEqual(true);
 
           if (i === NUM_PAGES_THRESHOLD) {
