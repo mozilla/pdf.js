@@ -942,14 +942,10 @@ describe("api", function () {
       );
 
       const loadingTask1 = getDocument(basicApiGetDocumentParams);
-      const promise1 = loadingTask1.promise.then(pdfDoc => {
-        return pdfDoc.numPages;
-      });
+      const promise1 = loadingTask1.promise.then(pdfDoc => pdfDoc.numPages);
 
       const loadingTask2 = getDocument(tracemonkeyGetDocumentParams);
-      const promise2 = loadingTask2.promise.then(pdfDoc => {
-        return pdfDoc.numPages;
-      });
+      const promise2 = loadingTask2.promise.then(pdfDoc => pdfDoc.numPages);
 
       const [numPages1, numPages2] = await Promise.all([promise1, promise2]);
       expect(numPages1).toEqual(3);
@@ -2693,9 +2689,7 @@ describe("api", function () {
 
       const viewPromises = [];
       for (let i = 0; i < numPages; i++) {
-        viewPromises[i] = pdfDoc.getPage(i + 1).then(pdfPage => {
-          return pdfPage.view;
-        });
+        viewPromises[i] = pdfDoc.getPage(i + 1).then(pdfPage => pdfPage.view);
       }
 
       const [page1, page2, page3] = await Promise.all(viewPromises);
@@ -3416,7 +3410,9 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
           })
         );
 
+        // eslint-disable-next-line arrow-body-style
         const result1 = loadingTask1.promise.then(pdfDoc => {
+          // eslint-disable-next-line arrow-body-style
           return pdfDoc.getPage(1).then(pdfPage => {
             return pdfPage.getOperatorList().then(opList => {
               expect(opList.fnArray.length).toBeGreaterThan(100);
@@ -3429,7 +3425,9 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
           });
         });
 
+        // eslint-disable-next-line arrow-body-style
         const result2 = loadingTask2.promise.then(pdfDoc => {
+          // eslint-disable-next-line arrow-body-style
           return pdfDoc.getPage(1).then(pdfPage => {
             return pdfPage.getOperatorList().then(opList => {
               expect(opList.fnArray.length).toEqual(0);
@@ -3901,9 +3899,9 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
             true
           );
           expect(
-            currentImgData.data.every((value, index) => {
-              return value === firstImgData.data[index];
-            })
+            currentImgData.data.every(
+              (value, index) => value === firstImgData.data[index]
+            )
           ).toEqual(true);
 
           if (i === NUM_PAGES_THRESHOLD) {

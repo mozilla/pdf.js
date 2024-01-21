@@ -2359,8 +2359,8 @@ class CanvasGraphics {
       const color = IR[1];
       const baseTransform = this.baseTransform || getCurrentTransform(this.ctx);
       const canvasGraphicsFactory = {
-        createCanvasGraphics: ctx => {
-          return new CanvasGraphics(
+        createCanvasGraphics: ctx =>
+          new CanvasGraphics(
             ctx,
             this.commonObjs,
             this.objs,
@@ -2370,8 +2370,7 @@ class CanvasGraphics {
               optionalContentConfig: this.optionalContentConfig,
               markedContentStack: this.markedContentStack,
             }
-          );
-        },
+          ),
       };
       pattern = new TilingPattern(
         IR,

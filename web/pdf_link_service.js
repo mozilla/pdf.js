@@ -54,9 +54,7 @@ function addLinkAttributes(link, { url, target, rel, enabled = true } = {}) {
   } else {
     link.href = "";
     link.title = `Disabled: ${url}`;
-    link.onclick = () => {
-      return false;
-    };
+    link.onclick = () => false;
   }
 
   let targetStr = ""; // LinkTarget.NONE

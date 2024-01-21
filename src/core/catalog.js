@@ -893,14 +893,13 @@ class Catalog {
         case "PrintPageRange":
           // The number of elements must be even.
           if (Array.isArray(value) && value.length % 2 === 0) {
-            const isValid = value.every((page, i, arr) => {
-              return (
+            const isValid = value.every(
+              (page, i, arr) =>
                 Number.isInteger(page) &&
                 page > 0 &&
                 (i === 0 || page >= arr[i - 1]) &&
                 page <= this.numPages
-              );
-            });
+            );
             if (isValid) {
               prefValue = value;
             }

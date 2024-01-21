@@ -606,15 +606,14 @@ class AnnotationEditorUIManager {
   static get _keyboardManager() {
     const proto = AnnotationEditorUIManager.prototype;
 
-    const arrowChecker = self => {
-      // If the focused element is an input, we don't want to handle the arrow.
-      // For example, sliders can be controlled with the arrow keys.
-      return (
-        self.#container.contains(document.activeElement) &&
-        document.activeElement.tagName !== "BUTTON" &&
-        self.hasSomethingToControl()
-      );
-    };
+    /**
+     * If the focused element is an input, we don't want to handle the arrow.
+     * For example, sliders can be controlled with the arrow keys.
+     */
+    const arrowChecker = self =>
+      self.#container.contains(document.activeElement) &&
+      document.activeElement.tagName !== "BUTTON" &&
+      self.hasSomethingToControl();
 
     const textInputChecker = (_self, { target: el }) => {
       if (el instanceof HTMLInputElement) {

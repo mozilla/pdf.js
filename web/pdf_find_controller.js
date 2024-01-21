@@ -842,12 +842,11 @@ class PDFFindController {
       const extractTextCapability = new PromiseCapability();
       this._extractTextPromises[i] = extractTextCapability.promise;
 
+      // eslint-disable-next-line arrow-body-style
       promise = promise.then(() => {
         return this._pdfDocument
           .getPage(i + 1)
-          .then(pdfPage => {
-            return pdfPage.getTextContent(textOptions);
-          })
+          .then(pdfPage => pdfPage.getTextContent(textOptions))
           .then(
             textContent => {
               const strBuf = [];

@@ -52,9 +52,9 @@ describe("Scripting", function () {
       send_queue.set(command, { command, value });
     };
     // eslint-disable-next-line no-unsanitized/method
-    const promise = import(sandboxBundleSrc).then(pdfjsSandbox => {
-      return pdfjsSandbox.QuickJSSandbox();
-    });
+    const promise = import(sandboxBundleSrc).then(pdfjsSandbox =>
+      pdfjsSandbox.QuickJSSandbox()
+    );
     sandbox = {
       createSandbox(data) {
         promise.then(sbx => sbx.create(data));
@@ -152,14 +152,12 @@ describe("Scripting", function () {
     });
 
     it("should get field using a path", async () => {
-      const base = value => {
-        return {
-          id: getId(),
-          value,
-          actions: {},
-          type: "text",
-        };
-      };
+      const base = value => ({
+        id: getId(),
+        value,
+        actions: {},
+        type: "text",
+      });
       const data = {
         objects: {
           A: [base(1)],

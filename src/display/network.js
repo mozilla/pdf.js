@@ -279,9 +279,8 @@ class PDFNetworkStreamFullRequestReader {
     const fullRequestXhrId = this._fullRequestId;
     const fullRequestXhr = this._manager.getRequestXhr(fullRequestXhrId);
 
-    const getResponseHeader = name => {
-      return fullRequestXhr.getResponseHeader(name);
-    };
+    const getResponseHeader = name => fullRequestXhr.getResponseHeader(name);
+
     const { allowRangeRequests, suggestedLength } =
       validateRangeRequestCapabilities({
         getResponseHeader,

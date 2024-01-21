@@ -1764,9 +1764,7 @@ const PDFViewerApplication = {
       .catch(() => {
         /* Avoid breaking printing; ignoring errors. */
       })
-      .then(() => {
-        return this.pdfDocument?.annotationStorage.print;
-      });
+      .then(() => this.pdfDocument?.annotationStorage.print);
 
     if (this.printService) {
       // There is no way to suppress beforePrint/afterPrint events,
