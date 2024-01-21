@@ -265,9 +265,10 @@ async function serializeBitmapDimensions(page) {
     const { map } =
       window.PDFViewerApplication.pdfDocument.annotationStorage.serializable;
     return map
-      ? Array.from(map.values(), x => {
-          return { width: x.bitmap.width, height: x.bitmap.height };
-        })
+      ? Array.from(map.values(), x => ({
+          width: x.bitmap.width,
+          height: x.bitmap.height,
+        }))
       : [];
   });
 }

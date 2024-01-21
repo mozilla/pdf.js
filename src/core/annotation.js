@@ -79,6 +79,7 @@ class AnnotationFactory {
       // with "GoToE" actions, from throwing and thus breaking parsing:
       pdfManager.ensureCatalog("attachments"),
     ]).then(
+      // eslint-disable-next-line arrow-body-style
       ([acroForm, xfaDatasets, structTreeRoot, baseUrl, attachments]) => {
         return {
           pdfManager,
@@ -2133,11 +2134,8 @@ class WidgetAnnotation extends Annotation {
       value,
     };
 
-    const encoder = val => {
-      return isAscii(val)
-        ? val
-        : stringToUTF16String(val, /* bigEndian = */ true);
-    };
+    const encoder = val =>
+      isAscii(val) ? val : stringToUTF16String(val, /* bigEndian = */ true);
     dict.set("V", Array.isArray(value) ? value.map(encoder) : encoder(value));
     this.amendSavedDict(annotationStorage, dict);
 

@@ -242,6 +242,7 @@
     }],
 
     // ECMAScript 6
+    "arrow-body-style": ["error", "as-needed"],
     "constructor-super": "error",
     "no-class-assign": "error",
     "no-const-assign": "error",

@@ -2689,9 +2689,7 @@ describe("api", function () {
 
       const viewPromises = [];
       for (let i = 0; i < numPages; i++) {
-        viewPromises[i] = pdfDoc.getPage(i + 1).then(pdfPage => {
-          return pdfPage.view;
-        });
+        viewPromises[i] = pdfDoc.getPage(i + 1).then(pdfPage => pdfPage.view);
       }
 
       const [page1, page2, page3] = await Promise.all(viewPromises);
@@ -3412,7 +3410,9 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
           })
         );
 
+        // eslint-disable-next-line arrow-body-style
         const result1 = loadingTask1.promise.then(pdfDoc => {
+          // eslint-disable-next-line arrow-body-style
           return pdfDoc.getPage(1).then(pdfPage => {
             return pdfPage.getOperatorList().then(opList => {
               expect(opList.fnArray.length).toBeGreaterThan(100);
@@ -3425,7 +3425,9 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
           });
         });
 
+        // eslint-disable-next-line arrow-body-style
         const result2 = loadingTask2.promise.then(pdfDoc => {
+          // eslint-disable-next-line arrow-body-style
           return pdfDoc.getPage(1).then(pdfPage => {
             return pdfPage.getOperatorList().then(opList => {
               expect(opList.fnArray.length).toEqual(0);
