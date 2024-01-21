@@ -4764,124 +4764,128 @@ class EvaluatorPreprocessor {
     //
     // If variableArgs === true: [0, `numArgs`] expected
     // If variableArgs === false: exactly `numArgs` expected
-    return shadow(this, "opMap", {
-      // Graphic state
-      w: { id: OPS.setLineWidth, numArgs: 1, variableArgs: false },
-      J: { id: OPS.setLineCap, numArgs: 1, variableArgs: false },
-      j: { id: OPS.setLineJoin, numArgs: 1, variableArgs: false },
-      M: { id: OPS.setMiterLimit, numArgs: 1, variableArgs: false },
-      d: { id: OPS.setDash, numArgs: 2, variableArgs: false },
-      ri: { id: OPS.setRenderingIntent, numArgs: 1, variableArgs: false },
-      i: { id: OPS.setFlatness, numArgs: 1, variableArgs: false },
-      gs: { id: OPS.setGState, numArgs: 1, variableArgs: false },
-      q: { id: OPS.save, numArgs: 0, variableArgs: false },
-      Q: { id: OPS.restore, numArgs: 0, variableArgs: false },
-      cm: { id: OPS.transform, numArgs: 6, variableArgs: false },
+    return shadow(
+      this,
+      "opMap",
+      Object.assign(Object.create(null), {
+        // Graphic state
+        w: { id: OPS.setLineWidth, numArgs: 1, variableArgs: false },
+        J: { id: OPS.setLineCap, numArgs: 1, variableArgs: false },
+        j: { id: OPS.setLineJoin, numArgs: 1, variableArgs: false },
+        M: { id: OPS.setMiterLimit, numArgs: 1, variableArgs: false },
+        d: { id: OPS.setDash, numArgs: 2, variableArgs: false },
+        ri: { id: OPS.setRenderingIntent, numArgs: 1, variableArgs: false },
+        i: { id: OPS.setFlatness, numArgs: 1, variableArgs: false },
+        gs: { id: OPS.setGState, numArgs: 1, variableArgs: false },
+        q: { id: OPS.save, numArgs: 0, variableArgs: false },
+        Q: { id: OPS.restore, numArgs: 0, variableArgs: false },
+        cm: { id: OPS.transform, numArgs: 6, variableArgs: false },
 
-      // Path
-      m: { id: OPS.moveTo, numArgs: 2, variableArgs: false },
-      l: { id: OPS.lineTo, numArgs: 2, variableArgs: false },
-      c: { id: OPS.curveTo, numArgs: 6, variableArgs: false },
-      v: { id: OPS.curveTo2, numArgs: 4, variableArgs: false },
-      y: { id: OPS.curveTo3, numArgs: 4, variableArgs: false },
-      h: { id: OPS.closePath, numArgs: 0, variableArgs: false },
-      re: { id: OPS.rectangle, numArgs: 4, variableArgs: false },
-      S: { id: OPS.stroke, numArgs: 0, variableArgs: false },
-      s: { id: OPS.closeStroke, numArgs: 0, variableArgs: false },
-      f: { id: OPS.fill, numArgs: 0, variableArgs: false },
-      F: { id: OPS.fill, numArgs: 0, variableArgs: false },
-      "f*": { id: OPS.eoFill, numArgs: 0, variableArgs: false },
-      B: { id: OPS.fillStroke, numArgs: 0, variableArgs: false },
-      "B*": { id: OPS.eoFillStroke, numArgs: 0, variableArgs: false },
-      b: { id: OPS.closeFillStroke, numArgs: 0, variableArgs: false },
-      "b*": { id: OPS.closeEOFillStroke, numArgs: 0, variableArgs: false },
-      n: { id: OPS.endPath, numArgs: 0, variableArgs: false },
+        // Path
+        m: { id: OPS.moveTo, numArgs: 2, variableArgs: false },
+        l: { id: OPS.lineTo, numArgs: 2, variableArgs: false },
+        c: { id: OPS.curveTo, numArgs: 6, variableArgs: false },
+        v: { id: OPS.curveTo2, numArgs: 4, variableArgs: false },
+        y: { id: OPS.curveTo3, numArgs: 4, variableArgs: false },
+        h: { id: OPS.closePath, numArgs: 0, variableArgs: false },
+        re: { id: OPS.rectangle, numArgs: 4, variableArgs: false },
+        S: { id: OPS.stroke, numArgs: 0, variableArgs: false },
+        s: { id: OPS.closeStroke, numArgs: 0, variableArgs: false },
+        f: { id: OPS.fill, numArgs: 0, variableArgs: false },
+        F: { id: OPS.fill, numArgs: 0, variableArgs: false },
+        "f*": { id: OPS.eoFill, numArgs: 0, variableArgs: false },
+        B: { id: OPS.fillStroke, numArgs: 0, variableArgs: false },
+        "B*": { id: OPS.eoFillStroke, numArgs: 0, variableArgs: false },
+        b: { id: OPS.closeFillStroke, numArgs: 0, variableArgs: false },
+        "b*": { id: OPS.closeEOFillStroke, numArgs: 0, variableArgs: false },
+        n: { id: OPS.endPath, numArgs: 0, variableArgs: false },
 
-      // Clipping
-      W: { id: OPS.clip, numArgs: 0, variableArgs: false },
-      "W*": { id: OPS.eoClip, numArgs: 0, variableArgs: false },
+        // Clipping
+        W: { id: OPS.clip, numArgs: 0, variableArgs: false },
+        "W*": { id: OPS.eoClip, numArgs: 0, variableArgs: false },
 
-      // Text
-      BT: { id: OPS.beginText, numArgs: 0, variableArgs: false },
-      ET: { id: OPS.endText, numArgs: 0, variableArgs: false },
-      Tc: { id: OPS.setCharSpacing, numArgs: 1, variableArgs: false },
-      Tw: { id: OPS.setWordSpacing, numArgs: 1, variableArgs: false },
-      Tz: { id: OPS.setHScale, numArgs: 1, variableArgs: false },
-      TL: { id: OPS.setLeading, numArgs: 1, variableArgs: false },
-      Tf: { id: OPS.setFont, numArgs: 2, variableArgs: false },
-      Tr: { id: OPS.setTextRenderingMode, numArgs: 1, variableArgs: false },
-      Ts: { id: OPS.setTextRise, numArgs: 1, variableArgs: false },
-      Td: { id: OPS.moveText, numArgs: 2, variableArgs: false },
-      TD: { id: OPS.setLeadingMoveText, numArgs: 2, variableArgs: false },
-      Tm: { id: OPS.setTextMatrix, numArgs: 6, variableArgs: false },
-      "T*": { id: OPS.nextLine, numArgs: 0, variableArgs: false },
-      Tj: { id: OPS.showText, numArgs: 1, variableArgs: false },
-      TJ: { id: OPS.showSpacedText, numArgs: 1, variableArgs: false },
-      "'": { id: OPS.nextLineShowText, numArgs: 1, variableArgs: false },
-      '"': {
-        id: OPS.nextLineSetSpacingShowText,
-        numArgs: 3,
-        variableArgs: false,
-      },
+        // Text
+        BT: { id: OPS.beginText, numArgs: 0, variableArgs: false },
+        ET: { id: OPS.endText, numArgs: 0, variableArgs: false },
+        Tc: { id: OPS.setCharSpacing, numArgs: 1, variableArgs: false },
+        Tw: { id: OPS.setWordSpacing, numArgs: 1, variableArgs: false },
+        Tz: { id: OPS.setHScale, numArgs: 1, variableArgs: false },
+        TL: { id: OPS.setLeading, numArgs: 1, variableArgs: false },
+        Tf: { id: OPS.setFont, numArgs: 2, variableArgs: false },
+        Tr: { id: OPS.setTextRenderingMode, numArgs: 1, variableArgs: false },
+        Ts: { id: OPS.setTextRise, numArgs: 1, variableArgs: false },
+        Td: { id: OPS.moveText, numArgs: 2, variableArgs: false },
+        TD: { id: OPS.setLeadingMoveText, numArgs: 2, variableArgs: false },
+        Tm: { id: OPS.setTextMatrix, numArgs: 6, variableArgs: false },
+        "T*": { id: OPS.nextLine, numArgs: 0, variableArgs: false },
+        Tj: { id: OPS.showText, numArgs: 1, variableArgs: false },
+        TJ: { id: OPS.showSpacedText, numArgs: 1, variableArgs: false },
+        "'": { id: OPS.nextLineShowText, numArgs: 1, variableArgs: false },
+        '"': {
+          id: OPS.nextLineSetSpacingShowText,
+          numArgs: 3,
+          variableArgs: false,
+        },
 
-      // Type3 fonts
-      d0: { id: OPS.setCharWidth, numArgs: 2, variableArgs: false },
-      d1: {
-        id: OPS.setCharWidthAndBounds,
-        numArgs: 6,
-        variableArgs: false,
-      },
+        // Type3 fonts
+        d0: { id: OPS.setCharWidth, numArgs: 2, variableArgs: false },
+        d1: {
+          id: OPS.setCharWidthAndBounds,
+          numArgs: 6,
+          variableArgs: false,
+        },
 
-      // Color
-      CS: { id: OPS.setStrokeColorSpace, numArgs: 1, variableArgs: false },
-      cs: { id: OPS.setFillColorSpace, numArgs: 1, variableArgs: false },
-      SC: { id: OPS.setStrokeColor, numArgs: 4, variableArgs: true },
-      SCN: { id: OPS.setStrokeColorN, numArgs: 33, variableArgs: true },
-      sc: { id: OPS.setFillColor, numArgs: 4, variableArgs: true },
-      scn: { id: OPS.setFillColorN, numArgs: 33, variableArgs: true },
-      G: { id: OPS.setStrokeGray, numArgs: 1, variableArgs: false },
-      g: { id: OPS.setFillGray, numArgs: 1, variableArgs: false },
-      RG: { id: OPS.setStrokeRGBColor, numArgs: 3, variableArgs: false },
-      rg: { id: OPS.setFillRGBColor, numArgs: 3, variableArgs: false },
-      K: { id: OPS.setStrokeCMYKColor, numArgs: 4, variableArgs: false },
-      k: { id: OPS.setFillCMYKColor, numArgs: 4, variableArgs: false },
+        // Color
+        CS: { id: OPS.setStrokeColorSpace, numArgs: 1, variableArgs: false },
+        cs: { id: OPS.setFillColorSpace, numArgs: 1, variableArgs: false },
+        SC: { id: OPS.setStrokeColor, numArgs: 4, variableArgs: true },
+        SCN: { id: OPS.setStrokeColorN, numArgs: 33, variableArgs: true },
+        sc: { id: OPS.setFillColor, numArgs: 4, variableArgs: true },
+        scn: { id: OPS.setFillColorN, numArgs: 33, variableArgs: true },
+        G: { id: OPS.setStrokeGray, numArgs: 1, variableArgs: false },
+        g: { id: OPS.setFillGray, numArgs: 1, variableArgs: false },
+        RG: { id: OPS.setStrokeRGBColor, numArgs: 3, variableArgs: false },
+        rg: { id: OPS.setFillRGBColor, numArgs: 3, variableArgs: false },
+        K: { id: OPS.setStrokeCMYKColor, numArgs: 4, variableArgs: false },
+        k: { id: OPS.setFillCMYKColor, numArgs: 4, variableArgs: false },
 
-      // Shading
-      sh: { id: OPS.shadingFill, numArgs: 1, variableArgs: false },
+        // Shading
+        sh: { id: OPS.shadingFill, numArgs: 1, variableArgs: false },
 
-      // Images
-      BI: { id: OPS.beginInlineImage, numArgs: 0, variableArgs: false },
-      ID: { id: OPS.beginImageData, numArgs: 0, variableArgs: false },
-      EI: { id: OPS.endInlineImage, numArgs: 1, variableArgs: false },
+        // Images
+        BI: { id: OPS.beginInlineImage, numArgs: 0, variableArgs: false },
+        ID: { id: OPS.beginImageData, numArgs: 0, variableArgs: false },
+        EI: { id: OPS.endInlineImage, numArgs: 1, variableArgs: false },
 
-      // XObjects
-      Do: { id: OPS.paintXObject, numArgs: 1, variableArgs: false },
-      MP: { id: OPS.markPoint, numArgs: 1, variableArgs: false },
-      DP: { id: OPS.markPointProps, numArgs: 2, variableArgs: false },
-      BMC: { id: OPS.beginMarkedContent, numArgs: 1, variableArgs: false },
-      BDC: {
-        id: OPS.beginMarkedContentProps,
-        numArgs: 2,
-        variableArgs: false,
-      },
-      EMC: { id: OPS.endMarkedContent, numArgs: 0, variableArgs: false },
+        // XObjects
+        Do: { id: OPS.paintXObject, numArgs: 1, variableArgs: false },
+        MP: { id: OPS.markPoint, numArgs: 1, variableArgs: false },
+        DP: { id: OPS.markPointProps, numArgs: 2, variableArgs: false },
+        BMC: { id: OPS.beginMarkedContent, numArgs: 1, variableArgs: false },
+        BDC: {
+          id: OPS.beginMarkedContentProps,
+          numArgs: 2,
+          variableArgs: false,
+        },
+        EMC: { id: OPS.endMarkedContent, numArgs: 0, variableArgs: false },
 
-      // Compatibility
-      BX: { id: OPS.beginCompat, numArgs: 0, variableArgs: false },
-      EX: { id: OPS.endCompat, numArgs: 0, variableArgs: false },
+        // Compatibility
+        BX: { id: OPS.beginCompat, numArgs: 0, variableArgs: false },
+        EX: { id: OPS.endCompat, numArgs: 0, variableArgs: false },
 
-      // (reserved partial commands for the lexer)
-      BM: null,
-      BD: null,
-      true: null,
-      fa: null,
-      fal: null,
-      fals: null,
-      false: null,
-      nu: null,
-      nul: null,
-      null: null,
-    });
+        // (reserved partial commands for the lexer)
+        BM: null,
+        BD: null,
+        true: null,
+        fa: null,
+        fal: null,
+        fals: null,
+        false: null,
+        nu: null,
+        nul: null,
+        null: null,
+      })
+    );
   }
 
   static MAX_INVALID_PATH_OPS = 10;
