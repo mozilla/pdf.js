@@ -344,10 +344,9 @@ async function incrementalUpdate({
 
   // Add a ref for the new xref and sort them
   newRefs.push({ ref: refForXrefTable, data: "" });
-  newRefs = newRefs.sort((a, b) => {
-    // compare the refs
-    return a.ref.num - b.ref.num;
-  });
+  newRefs = newRefs.sort(
+    (a, b) => /* compare the refs */ a.ref.num - b.ref.num
+  );
 
   const xrefTableData = [[0, 1, 0xffff]];
   const indexes = [0, 1];

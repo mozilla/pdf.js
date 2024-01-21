@@ -147,9 +147,8 @@ class PDFFetchStreamReader {
         this._reader = response.body.getReader();
         this._headersCapability.resolve();
 
-        const getResponseHeader = name => {
-          return response.headers.get(name);
-        };
+        const getResponseHeader = name => response.headers.get(name);
+
         const { allowRangeRequests, suggestedLength } =
           validateRangeRequestCapabilities({
             getResponseHeader,

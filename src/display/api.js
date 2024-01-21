@@ -771,19 +771,13 @@ class PDFDocumentProxy {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       // For testing purposes.
       Object.defineProperty(this, "getXFADatasets", {
-        value: () => {
-          return this._transport.getXFADatasets();
-        },
+        value: () => this._transport.getXFADatasets(),
       });
       Object.defineProperty(this, "getXRefPrevValue", {
-        value: () => {
-          return this._transport.getXRefPrevValue();
-        },
+        value: () => this._transport.getXRefPrevValue(),
       });
       Object.defineProperty(this, "getAnnotArray", {
-        value: pageIndex => {
-          return this._transport.getAnnotArray(pageIndex);
-        },
+        value: pageIndex => this._transport.getAnnotArray(pageIndex),
       });
     }
   }
@@ -1628,9 +1622,7 @@ class PDFPageProxy {
     if (this._transport._htmlForXfa) {
       // TODO: We need to revisit this once the XFA foreground patch lands and
       // only do this for non-foreground XFA.
-      return this.getXfa().then(xfa => {
-        return XfaText.textContent(xfa);
-      });
+      return this.getXfa().then(xfa => XfaText.textContent(xfa));
     }
     const readableStream = this.streamTextContent(params);
 
@@ -2358,21 +2350,16 @@ class WorkerTransport {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       // For testing purposes.
       Object.defineProperty(this, "getXFADatasets", {
-        value: () => {
-          return this.messageHandler.sendWithPromise("GetXFADatasets", null);
-        },
+        value: () =>
+          this.messageHandler.sendWithPromise("GetXFADatasets", null),
       });
       Object.defineProperty(this, "getXRefPrevValue", {
-        value: () => {
-          return this.messageHandler.sendWithPromise("GetXRefPrevValue", null);
-        },
+        value: () =>
+          this.messageHandler.sendWithPromise("GetXRefPrevValue", null),
       });
       Object.defineProperty(this, "getAnnotArray", {
-        value: pageIndex => {
-          return this.messageHandler.sendWithPromise("GetAnnotArray", {
-            pageIndex,
-          });
-        },
+        value: pageIndex =>
+          this.messageHandler.sendWithPromise("GetAnnotArray", { pageIndex }),
       });
     }
   }
@@ -2737,9 +2724,7 @@ class WorkerTransport {
 
           this.fontLoader
             .bind(font)
-            .catch(reason => {
-              return messageHandler.sendWithPromise("FontFallback", { id });
-            })
+            .catch(() => messageHandler.sendWithPromise("FontFallback", { id }))
             .finally(() => {
               if (!params.fontExtraProperties && font.data) {
                 // Immediately release the `font.data` property once the font
@@ -3013,9 +2998,7 @@ class WorkerTransport {
   getOptionalContentConfig() {
     return this.messageHandler
       .sendWithPromise("GetOptionalContentConfig", null)
-      .then(results => {
-        return new OptionalContentConfig(results);
-      });
+      .then(results => new OptionalContentConfig(results));
   }
 
   getPermissions() {
@@ -3030,14 +3013,12 @@ class WorkerTransport {
     }
     const promise = this.messageHandler
       .sendWithPromise(name, null)
-      .then(results => {
-        return {
-          info: results[0],
-          metadata: results[1] ? new Metadata(results[1]) : null,
-          contentDispositionFilename: this._fullReader?.filename ?? null,
-          contentLength: this._fullReader?.contentLength ?? null,
-        };
-      });
+      .then(results => ({
+        info: results[0],
+        metadata: results[1] ? new Metadata(results[1]) : null,
+        contentDispositionFilename: this._fullReader?.filename ?? null,
+        contentLength: this._fullReader?.contentLength ?? null,
+      }));
     this.#methodPromises.set(name, promise);
     return promise;
   }
@@ -3192,9 +3173,7 @@ class RenderTask {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       // For testing purposes.
       Object.defineProperty(this, "getOperatorList", {
-        value: () => {
-          return this.#internalRenderTask.operatorList;
-        },
+        value: () => this.#internalRenderTask.operatorList,
       });
     }
   }

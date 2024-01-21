@@ -326,11 +326,11 @@ class PDFNodeStreamFullReader extends BaseFullReader {
       this._headersCapability.resolve();
       this._setReadableStream(response);
 
-      const getResponseHeader = name => {
-        // Make sure that headers name are in lower case, as mentioned
-        // here: https://nodejs.org/api/http.html#http_message_headers.
-        return this._readableStream.headers[name.toLowerCase()];
-      };
+      // Make sure that headers name are in lower case, as mentioned
+      // here: https://nodejs.org/api/http.html#http_message_headers.
+      const getResponseHeader = name =>
+        this._readableStream.headers[name.toLowerCase()];
+
       const { allowRangeRequests, suggestedLength } =
         validateRangeRequestCapabilities({
           getResponseHeader,

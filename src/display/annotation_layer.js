@@ -1838,9 +1838,10 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
 
     const getItems = event => {
       const options = event.target.options;
-      return Array.prototype.map.call(options, option => {
-        return { displayValue: option.textContent, exportValue: option.value };
-      });
+      return Array.prototype.map.call(options, option => ({
+        displayValue: option.textContent,
+        exportValue: option.value,
+      }));
     };
 
     if (this.enableScripting && this.hasJSActions) {

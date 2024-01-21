@@ -1577,6 +1577,7 @@ class PDFDocument {
     } else {
       promise = catalog.getPageDict(pageIndex);
     }
+    // eslint-disable-next-line arrow-body-style
     promise = promise.then(([pageDict, ref]) => {
       return new Page({
         pdfManager: this.pdfManager,

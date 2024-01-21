@@ -237,9 +237,10 @@ describe("FreeText Editor", () => {
           await clearAll(page);
 
           for (const n of [0, 1, 2]) {
-            const hasEditor = await page.evaluate(sel => {
-              return !!document.querySelector(sel);
-            }, getEditorSelector(n));
+            const hasEditor = await page.evaluate(
+              sel => !!document.querySelector(sel),
+              getEditorSelector(n)
+            );
 
             expect(hasEditor).withContext(`In ${browserName}`).toEqual(false);
           }

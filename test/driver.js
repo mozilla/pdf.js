@@ -106,6 +106,7 @@ async function inlineImages(node, silentErrors = false) {
           }
           return response.blob();
         })
+        // eslint-disable-next-line arrow-body-style
         .then(blob => {
           return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -117,6 +118,7 @@ async function inlineImages(node, silentErrors = false) {
             reader.readAsDataURL(blob);
           });
         })
+        // eslint-disable-next-line arrow-body-style
         .then(dataUrl => {
           return new Promise((resolve, reject) => {
             image.onload = resolve;

@@ -24,9 +24,7 @@ import { MessageHandler } from "../../src/shared/message_handler.js";
 describe("message_handler", function () {
   // Sleep function to wait for sometime, similar to setTimeout but faster.
   function sleep(ticks) {
-    return Promise.resolve().then(() => {
-      return ticks && sleep(ticks - 1);
-    });
+    return Promise.resolve().then(() => ticks && sleep(ticks - 1));
   }
 
   describe("sendWithStream", function () {

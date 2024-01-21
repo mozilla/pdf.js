@@ -129,6 +129,7 @@ class PDFDocumentProperties {
       this.#parseFileSize(contentLength),
       this.#parseDate(info.CreationDate),
       this.#parseDate(info.ModDate),
+      // eslint-disable-next-line arrow-body-style
       this.pdfDocument.getPage(currentPageNumber).then(pdfPage => {
         return this.#parsePageSize(getPageSizeInches(pdfPage), pagesRotation);
       }),

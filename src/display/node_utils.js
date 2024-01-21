@@ -98,9 +98,7 @@ class NodeCMapReaderFactory extends BaseCMapReaderFactory {
    * @ignore
    */
   _fetchData(url, compressionType) {
-    return fetchData(url).then(data => {
-      return { cMapData: data, compressionType };
-    });
+    return fetchData(url).then(data => ({ cMapData: data, compressionType }));
   }
 }
 
