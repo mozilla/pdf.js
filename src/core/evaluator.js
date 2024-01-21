@@ -1007,7 +1007,7 @@ class PartialEvaluator {
       });
   }
 
-  handleSetFont(
+  async handleSetFont(
     resources,
     fontArgs,
     fontRef,
@@ -1019,41 +1019,33 @@ class PartialEvaluator {
   ) {
     const fontName = fontArgs?.[0] instanceof Name ? fontArgs[0].name : null;
 
-    return this.loadFont(
+    let translated = await this.loadFont(
       fontName,
       fontRef,
       resources,
       fallbackFontDict,
       cssFontInfo
-    )
-      .then(translated => {
-        if (!translated.font.isType3Font) {
-          return translated;
-        }
-        return translated
-          .loadType3Data(this, resources, task)
-          .then(function () {
-            // Add the dependencies to the parent operatorList so they are
-            // resolved before Type3 operatorLists are executed synchronously.
-            operatorList.addDependencies(translated.type3Dependencies);
+    );
 
-            return translated;
-          })
-          .catch(
-            reason =>
-              new TranslatedFont({
-                loadedName: "g_font_error",
-                font: new ErrorFont(`Type3 font load error: ${reason}`),
-                dict: translated.font,
-                evaluatorOptions: this.options,
-              })
-          );
-      })
-      .then(translated => {
-        state.font = translated.font;
-        translated.send(this.handler);
-        return translated.loadedName;
-      });
+    if (translated.font.isType3Font) {
+      try {
+        await translated.loadType3Data(this, resources, task);
+        // Add the dependencies to the parent operatorList so they are
+        // resolved before Type3 operatorLists are executed synchronously.
+        operatorList.addDependencies(translated.type3Dependencies);
+      } catch (reason) {
+        translated = new TranslatedFont({
+          loadedName: "g_font_error",
+          font: new ErrorFont(`Type3 font load error: ${reason}`),
+          dict: translated.font,
+          evaluatorOptions: this.options,
+        });
+      }
+    }
+
+    state.font = translated.font;
+    translated.send(this.handler);
+    return translated.loadedName;
   }
 
   handleText(chars, state) {
@@ -1130,9 +1122,8 @@ class PartialEvaluator {
         case "Font":
           isSimpleGState = false;
 
-          // eslint-disable-next-line arrow-body-style
-          promise = promise.then(() => {
-            return this.handleSetFont(
+          promise = promise.then(() =>
+            this.handleSetFont(
               resources,
               null,
               value[0],
@@ -1142,8 +1133,8 @@ class PartialEvaluator {
             ).then(function (loadedName) {
               operatorList.addDependency(loadedName);
               gStateObj.push([key, [loadedName, value[1]]]);
-            });
-          });
+            })
+          );
           break;
         case "BM":
           gStateObj.push([key, normalizeBlendMode(value)]);
@@ -1156,17 +1147,16 @@ class PartialEvaluator {
           if (value instanceof Dict) {
             isSimpleGState = false;
 
-            // eslint-disable-next-line arrow-body-style
-            promise = promise.then(() => {
-              return this.handleSMask(
+            promise = promise.then(() =>
+              this.handleSMask(
                 value,
                 resources,
                 operatorList,
                 task,
                 stateManager,
                 localColorSpaceCache
-              );
-            });
+              )
+            );
             gStateObj.push([key, true]);
           } else {
             warn("Unsupported SMask type");
@@ -2560,29 +2550,21 @@ class PartialEvaluator {
       };
     }
 
-    function handleSetFont(fontName, fontRef) {
-      return self
-        .loadFont(fontName, fontRef, resources)
-        .then(function (translated) {
-          if (!translated.font.isType3Font) {
-            return translated;
-          }
-          return translated
-            .loadType3Data(self, resources, task)
-            .catch(function () {
-              // Ignore Type3-parsing errors, since we only use `loadType3Data`
-              // here to ensure that we'll always obtain a useful /FontBBox.
-            })
-            .then(function () {
-              return translated;
-            });
-        })
-        .then(function (translated) {
-          textState.loadedName = translated.loadedName;
-          textState.font = translated.font;
-          textState.fontMatrix =
-            translated.font.fontMatrix || FONT_IDENTITY_MATRIX;
-        });
+    async function handleSetFont(fontName, fontRef) {
+      const translated = await self.loadFont(fontName, fontRef, resources);
+
+      if (translated.font.isType3Font) {
+        try {
+          await translated.loadType3Data(self, resources, task);
+        } catch {
+          // Ignore Type3-parsing errors, since we only use `loadType3Data`
+          // here to ensure that we'll always obtain a useful /FontBBox.
+        }
+      }
+
+      textState.loadedName = translated.loadedName;
+      textState.font = translated.font;
+      textState.fontMatrix = translated.font.fontMatrix || FONT_IDENTITY_MATRIX;
     }
 
     function applyInverseRotation(x, y, matrix) {
@@ -4185,7 +4167,6 @@ class PartialEvaluator {
     cssFontInfo,
   }) {
     const isType3Font = type === "Type3";
-    let properties;
 
     if (!descriptor) {
       if (isType3Font) {
@@ -4216,7 +4197,7 @@ class PartialEvaluator {
             ? FontFlags.Symbolic
             : FontFlags.Nonsymbolic);
 
-        properties = {
+        const properties = {
           type,
           name: baseFontName,
           loadedName: baseDict.loadedName,
@@ -4250,24 +4231,26 @@ class PartialEvaluator {
             standardFontName
           );
         }
-        return this.extractDataStructures(dict, dict, properties).then(
-          newProperties => {
-            if (widths) {
-              const glyphWidths = [];
-              let j = firstChar;
-              for (const width of widths) {
-                glyphWidths[j++] = this.xref.fetchIfRef(width);
-              }
-              newProperties.widths = glyphWidths;
-            } else {
-              newProperties.widths = this.buildCharCodeToWidth(
-                metrics.widths,
-                newProperties
-              );
-            }
-            return new Font(baseFontName, file, newProperties);
-          }
+
+        const newProperties = await this.extractDataStructures(
+          dict,
+          dict,
+          properties
         );
+        if (widths) {
+          const glyphWidths = [];
+          let j = firstChar;
+          for (const width of widths) {
+            glyphWidths[j++] = this.xref.fetchIfRef(width);
+          }
+          newProperties.widths = glyphWidths;
+        } else {
+          newProperties.widths = this.buildCharCodeToWidth(
+            metrics.widths,
+            newProperties
+          );
+        }
+        return new Font(baseFontName, file, newProperties);
       }
     }
 
@@ -4371,7 +4354,7 @@ class PartialEvaluator {
       }
     }
 
-    properties = {
+    const properties = {
       type,
       name: fontName.name,
       subtype,
@@ -4414,13 +4397,14 @@ class PartialEvaluator {
       properties.vertical = properties.cMap.vertical;
     }
 
-    return this.extractDataStructures(dict, baseDict, properties).then(
-      newProperties => {
-        this.extractWidths(dict, descriptor, newProperties);
-
-        return new Font(fontName.name, fontFile, newProperties);
-      }
+    const newProperties = await this.extractDataStructures(
+      dict,
+      baseDict,
+      properties
     );
+    this.extractWidths(dict, descriptor, newProperties);
+
+    return new Font(fontName.name, fontFile, newProperties);
   }
 
   static buildFontPaths(font, glyphs, handler, evaluatorOptions) {
