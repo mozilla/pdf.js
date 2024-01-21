@@ -691,6 +691,9 @@ function createTestSource(testsName, { bot = false, xfaOnly = false } = {}) {
 
     const testProcess = startNode(args, { cwd: TEST_DIR, stdio: "inherit" });
     testProcess.on("close", function (code) {
+      if (code !== 0) {
+        throw new Error(`Running ${testsName} tests failed.`);
+      }
       source.push(null);
     });
     return undefined;
@@ -722,6 +725,10 @@ function makeRef(done, bot) {
 
   const testProcess = startNode(args, { cwd: TEST_DIR, stdio: "inherit" });
   testProcess.on("close", function (code) {
+    if (code !== 0) {
+      done(new Error("Creating reference images failed."));
+      return;
+    }
     done();
   });
 }
