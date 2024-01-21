@@ -3013,14 +3013,12 @@ class WorkerTransport {
     }
     const promise = this.messageHandler
       .sendWithPromise(name, null)
-      .then(results => {
-        return {
-          info: results[0],
-          metadata: results[1] ? new Metadata(results[1]) : null,
-          contentDispositionFilename: this._fullReader?.filename ?? null,
-          contentLength: this._fullReader?.contentLength ?? null,
-        };
-      });
+      .then(results => ({
+        info: results[0],
+        metadata: results[1] ? new Metadata(results[1]) : null,
+        contentDispositionFilename: this._fullReader?.filename ?? null,
+        contentLength: this._fullReader?.contentLength ?? null,
+      }));
     this.#methodPromises.set(name, promise);
     return promise;
   }

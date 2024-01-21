@@ -466,15 +466,13 @@ class DOMCMapReaderFactory extends BaseCMapReaderFactory {
     return fetchData(
       url,
       /* type = */ this.isCompressed ? "arraybuffer" : "text"
-    ).then(data => {
-      return {
-        cMapData:
-          data instanceof ArrayBuffer
-            ? new Uint8Array(data)
-            : stringToBytes(data),
-        compressionType,
-      };
-    });
+    ).then(data => ({
+      cMapData:
+        data instanceof ArrayBuffer
+          ? new Uint8Array(data)
+          : stringToBytes(data),
+      compressionType,
+    }));
   }
 }
 

@@ -38,8 +38,8 @@ const getXY = (page, selector) =>
     return `${bbox.x}::${bbox.y}`;
   }, selector);
 
-const getSpanRectFromText = (page, pageNumber, text) => {
-  return page.evaluate(
+const getSpanRectFromText = (page, pageNumber, text) =>
+  page.evaluate(
     (number, content) => {
       for (const el of document.querySelectorAll(
         `.page[data-page-number="${number}"] > .textLayer > span`
@@ -54,7 +54,6 @@ const getSpanRectFromText = (page, pageNumber, text) => {
     pageNumber,
     text
   );
-};
 
 describe("Highlight Editor", () => {
   describe("Editor must be removed without exception", () => {

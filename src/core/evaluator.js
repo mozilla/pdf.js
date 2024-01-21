@@ -1039,14 +1039,15 @@ class PartialEvaluator {
 
             return translated;
           })
-          .catch(reason => {
-            return new TranslatedFont({
-              loadedName: "g_font_error",
-              font: new ErrorFont(`Type3 font load error: ${reason}`),
-              dict: translated.font,
-              evaluatorOptions: this.options,
-            });
-          });
+          .catch(
+            reason =>
+              new TranslatedFont({
+                loadedName: "g_font_error",
+                font: new ErrorFont(`Type3 font load error: ${reason}`),
+                dict: translated.font,
+                evaluatorOptions: this.options,
+              })
+          );
       })
       .then(translated => {
         state.font = translated.font;
@@ -1129,6 +1130,7 @@ class PartialEvaluator {
         case "Font":
           isSimpleGState = false;
 
+          // eslint-disable-next-line arrow-body-style
           promise = promise.then(() => {
             return this.handleSetFont(
               resources,
@@ -1154,6 +1156,7 @@ class PartialEvaluator {
           if (value instanceof Dict) {
             isSimpleGState = false;
 
+            // eslint-disable-next-line arrow-body-style
             promise = promise.then(() => {
               return this.handleSMask(
                 value,
@@ -1214,6 +1217,7 @@ class PartialEvaluator {
     fallbackFontDict = null,
     cssFontInfo = null
   ) {
+    // eslint-disable-next-line arrow-body-style
     const errorFont = async () => {
       return new TranslatedFont({
         loadedName: "g_font_error",
