@@ -1007,7 +1007,7 @@ class PartialEvaluator {
       });
   }
 
-  handleSetFont(
+  async handleSetFont(
     resources,
     fontArgs,
     fontRef,
@@ -1019,41 +1019,33 @@ class PartialEvaluator {
   ) {
     const fontName = fontArgs?.[0] instanceof Name ? fontArgs[0].name : null;
 
-    return this.loadFont(
+    let translated = await this.loadFont(
       fontName,
       fontRef,
       resources,
       fallbackFontDict,
       cssFontInfo
-    )
-      .then(translated => {
-        if (!translated.font.isType3Font) {
-          return translated;
-        }
-        return translated
-          .loadType3Data(this, resources, task)
-          .then(function () {
-            // Add the dependencies to the parent operatorList so they are
-            // resolved before Type3 operatorLists are executed synchronously.
-            operatorList.addDependencies(translated.type3Dependencies);
+    );
 
-            return translated;
-          })
-          .catch(
-            reason =>
-              new TranslatedFont({
-                loadedName: "g_font_error",
-                font: new ErrorFont(`Type3 font load error: ${reason}`),
-                dict: translated.font,
-                evaluatorOptions: this.options,
-              })
-          );
-      })
-      .then(translated => {
-        state.font = translated.font;
-        translated.send(this.handler);
-        return translated.loadedName;
-      });
+    if (translated.font.isType3Font) {
+      try {
+        await translated.loadType3Data(this, resources, task);
+        // Add the dependencies to the parent operatorList so they are
+        // resolved before Type3 operatorLists are executed synchronously.
+        operatorList.addDependencies(translated.type3Dependencies);
+      } catch (reason) {
+        translated = new TranslatedFont({
+          loadedName: "g_font_error",
+          font: new ErrorFont(`Type3 font load error: ${reason}`),
+          dict: translated.font,
+          evaluatorOptions: this.options,
+        });
+      }
+    }
+
+    state.font = translated.font;
+    translated.send(this.handler);
+    return translated.loadedName;
   }
 
   handleText(chars, state) {
@@ -2560,29 +2552,21 @@ class PartialEvaluator {
       };
     }
 
-    function handleSetFont(fontName, fontRef) {
-      return self
-        .loadFont(fontName, fontRef, resources)
-        .then(function (translated) {
-          if (!translated.font.isType3Font) {
-            return translated;
-          }
-          return translated
-            .loadType3Data(self, resources, task)
-            .catch(function () {
-              // Ignore Type3-parsing errors, since we only use `loadType3Data`
-              // here to ensure that we'll always obtain a useful /FontBBox.
-            })
-            .then(function () {
-              return translated;
-            });
-        })
-        .then(function (translated) {
-          textState.loadedName = translated.loadedName;
-          textState.font = translated.font;
-          textState.fontMatrix =
-            translated.font.fontMatrix || FONT_IDENTITY_MATRIX;
-        });
+    async function handleSetFont(fontName, fontRef) {
+      const translated = await self.loadFont(fontName, fontRef, resources);
+
+      if (translated.font.isType3Font) {
+        try {
+          await translated.loadType3Data(self, resources, task);
+        } catch {
+          // Ignore Type3-parsing errors, since we only use `loadType3Data`
+          // here to ensure that we'll always obtain a useful /FontBBox.
+        }
+      }
+
+      textState.loadedName = translated.loadedName;
+      textState.font = translated.font;
+      textState.fontMatrix = translated.font.fontMatrix || FONT_IDENTITY_MATRIX;
     }
 
     function applyInverseRotation(x, y, matrix) {
