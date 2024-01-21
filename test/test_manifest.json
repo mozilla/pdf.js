@@ -9643,5 +9643,30 @@
         "structTreeParentId": null
       }
     }
+  },
+  {
+    "id": "bug1669097",
+    "file": "pdfs/bug1669097.pdf",
+    "md5": "561b3abac1fe49e1c9cd265cbf4a456e",
+    "rounds": 1,
+    "type": "eq",
+    "save": true,
+    "print": true,
+    "annotationStorage": {
+      "24R": {
+        "value": "😇👽🖖"
+      },
+      "pdfjs_internal_editor_0": {
+        "annotationType": 3,
+        "color": [0, 0, 0],
+        "fontSize": 10,
+        "value": "😇😇😇😇😇😇👽👽👽👽👽👽🖖",
+        "pageIndex": 0,
+        "rect": [267, 638, 452, 658],
+        "rotation": 0,
+        "structTreeParentId": null,
+        "id": null
+      }
+    }
   }
 ]
