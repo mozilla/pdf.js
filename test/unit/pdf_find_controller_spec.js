@@ -121,9 +121,7 @@ function testSearch({
       }
     }
 
-    const totalMatches = matchesPerPage.reduce((a, b) => {
-      return a + b;
-    });
+    const totalMatches = matchesPerPage.reduce((a, b) => a + b);
 
     if (updateFindControlState) {
       eventBus.on(

@@ -212,66 +212,26 @@ class Util extends PDFObject {
     }
 
     const handlers = {
-      mmmm: data => {
-        return this._months[data.month];
-      },
-      mmm: data => {
-        return this._months[data.month].substring(0, 3);
-      },
-      mm: data => {
-        return (data.month + 1).toString().padStart(2, "0");
-      },
-      m: data => {
-        return (data.month + 1).toString();
-      },
-      dddd: data => {
-        return this._days[data.dayOfWeek];
-      },
-      ddd: data => {
-        return this._days[data.dayOfWeek].substring(0, 3);
-      },
-      dd: data => {
-        return data.day.toString().padStart(2, "0");
-      },
-      d: data => {
-        return data.day.toString();
-      },
-      yyyy: data => {
-        return data.year.toString();
-      },
-      yy: data => {
-        return (data.year % 100).toString().padStart(2, "0");
-      },
-      HH: data => {
-        return data.hours.toString().padStart(2, "0");
-      },
-      H: data => {
-        return data.hours.toString();
-      },
-      hh: data => {
-        return (1 + ((data.hours + 11) % 12)).toString().padStart(2, "0");
-      },
-      h: data => {
-        return (1 + ((data.hours + 11) % 12)).toString();
-      },
-      MM: data => {
-        return data.minutes.toString().padStart(2, "0");
-      },
-      M: data => {
-        return data.minutes.toString();
-      },
-      ss: data => {
-        return data.seconds.toString().padStart(2, "0");
-      },
-      s: data => {
-        return data.seconds.toString();
-      },
-      tt: data => {
-        return data.hours < 12 ? "am" : "pm";
-      },
-      t: data => {
-        return data.hours < 12 ? "a" : "p";
-      },
+      mmmm: data => this._months[data.month],
+      mmm: data => this._months[data.month].substring(0, 3),
+      mm: data => (data.month + 1).toString().padStart(2, "0"),
+      m: data => (data.month + 1).toString(),
+      dddd: data => this._days[data.dayOfWeek],
+      ddd: data => this._days[data.dayOfWeek].substring(0, 3),
+      dd: data => data.day.toString().padStart(2, "0"),
+      d: data => data.day.toString(),
+      yyyy: data => data.year.toString(),
+      yy: data => (data.year % 100).toString().padStart(2, "0"),
+      HH: data => data.hours.toString().padStart(2, "0"),
+      H: data => data.hours.toString(),
+      hh: data => (1 + ((data.hours + 11) % 12)).toString().padStart(2, "0"),
+      h: data => (1 + ((data.hours + 11) % 12)).toString(),
+      MM: data => data.minutes.toString().padStart(2, "0"),
+      M: data => data.minutes.toString(),
+      ss: data => data.seconds.toString().padStart(2, "0"),
+      s: data => data.seconds.toString(),
+      tt: data => (data.hours < 12 ? "am" : "pm"),
+      t: data => (data.hours < 12 ? "a" : "p"),
     };
 
     const data = {

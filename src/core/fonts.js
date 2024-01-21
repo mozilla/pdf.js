@@ -2093,9 +2093,7 @@ class Font {
           endOffset: 0,
         });
       }
-      locaEntries.sort((a, b) => {
-        return a.offset - b.offset;
-      });
+      locaEntries.sort((a, b) => a.offset - b.offset);
       // Now the offsets are sorted, calculate the end offset of each glyph.
       // The last loca entry's endOffset is not calculated since it's the end
       // of the data and will be stored on the previous entry's endOffset.
@@ -2103,9 +2101,7 @@ class Font {
         locaEntries[i].endOffset = locaEntries[i + 1].offset;
       }
       // Re-sort so glyphs aren't out of order.
-      locaEntries.sort((a, b) => {
-        return a.index - b.index;
-      });
+      locaEntries.sort((a, b) => a.index - b.index);
       // Calculate the endOffset of the "first" glyph correctly when there are
       // *multiple* empty ones at the start of the data (fixes issue14618.pdf).
       for (i = 0; i < numGlyphs; i++) {

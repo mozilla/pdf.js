@@ -4824,9 +4824,7 @@ class StampAnnotation extends MarkupAnnotation {
 
     const jpegBufferPromise = canvas
       .convertToBlob({ type: "image/jpeg", quality: 1 })
-      .then(blob => {
-        return blob.arrayBuffer();
-      });
+      .then(blob => blob.arrayBuffer());
 
     const xobjectName = Name.get("XObject");
     const imageName = Name.get("Image");

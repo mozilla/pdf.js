@@ -206,20 +206,18 @@ function parseQueryString(query) {
   return params;
 }
 
-const InvisibleCharactersRegExp = /[\x00-\x1F]/g;
+const InvisibleCharsRegExp = /[\x00-\x1F]/g;
 
 /**
  * @param {string} str
  * @param {boolean} [replaceInvisible]
  */
 function removeNullCharacters(str, replaceInvisible = false) {
-  if (!InvisibleCharactersRegExp.test(str)) {
+  if (!InvisibleCharsRegExp.test(str)) {
     return str;
   }
   if (replaceInvisible) {
-    return str.replaceAll(InvisibleCharactersRegExp, m => {
-      return m === "\x00" ? "" : " ";
-    });
+    return str.replaceAll(InvisibleCharsRegExp, m => (m === "\x00" ? "" : " "));
   }
   return str.replaceAll("\x00", "");
 }
