@@ -4169,7 +4169,6 @@ class PartialEvaluator {
     cssFontInfo,
   }) {
     const isType3Font = type === "Type3";
-    let properties;
 
     if (!descriptor) {
       if (isType3Font) {
@@ -4200,7 +4199,7 @@ class PartialEvaluator {
             ? FontFlags.Symbolic
             : FontFlags.Nonsymbolic);
 
-        properties = {
+        const properties = {
           type,
           name: baseFontName,
           loadedName: baseDict.loadedName,
@@ -4234,24 +4233,26 @@ class PartialEvaluator {
             standardFontName
           );
         }
-        return this.extractDataStructures(dict, dict, properties).then(
-          newProperties => {
-            if (widths) {
-              const glyphWidths = [];
-              let j = firstChar;
-              for (const width of widths) {
-                glyphWidths[j++] = this.xref.fetchIfRef(width);
-              }
-              newProperties.widths = glyphWidths;
-            } else {
-              newProperties.widths = this.buildCharCodeToWidth(
-                metrics.widths,
-                newProperties
-              );
-            }
-            return new Font(baseFontName, file, newProperties);
-          }
+
+        const newProperties = await this.extractDataStructures(
+          dict,
+          dict,
+          properties
         );
+        if (widths) {
+          const glyphWidths = [];
+          let j = firstChar;
+          for (const width of widths) {
+            glyphWidths[j++] = this.xref.fetchIfRef(width);
+          }
+          newProperties.widths = glyphWidths;
+        } else {
+          newProperties.widths = this.buildCharCodeToWidth(
+            metrics.widths,
+            newProperties
+          );
+        }
+        return new Font(baseFontName, file, newProperties);
       }
     }
 
@@ -4355,7 +4356,7 @@ class PartialEvaluator {
       }
     }
 
-    properties = {
+    const properties = {
       type,
       name: fontName.name,
       subtype,
@@ -4398,13 +4399,14 @@ class PartialEvaluator {
       properties.vertical = properties.cMap.vertical;
     }
 
-    return this.extractDataStructures(dict, baseDict, properties).then(
-      newProperties => {
-        this.extractWidths(dict, descriptor, newProperties);
-
-        return new Font(fontName.name, fontFile, newProperties);
-      }
+    const newProperties = await this.extractDataStructures(
+      dict,
+      baseDict,
+      properties
     );
+    this.extractWidths(dict, descriptor, newProperties);
+
+    return new Font(fontName.name, fontFile, newProperties);
   }
 
   static buildFontPaths(font, glyphs, handler, evaluatorOptions) {
