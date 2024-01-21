@@ -1122,9 +1122,8 @@ class PartialEvaluator {
         case "Font":
           isSimpleGState = false;
 
-          // eslint-disable-next-line arrow-body-style
-          promise = promise.then(() => {
-            return this.handleSetFont(
+          promise = promise.then(() =>
+            this.handleSetFont(
               resources,
               null,
               value[0],
@@ -1134,8 +1133,8 @@ class PartialEvaluator {
             ).then(function (loadedName) {
               operatorList.addDependency(loadedName);
               gStateObj.push([key, [loadedName, value[1]]]);
-            });
-          });
+            })
+          );
           break;
         case "BM":
           gStateObj.push([key, normalizeBlendMode(value)]);
@@ -1148,17 +1147,16 @@ class PartialEvaluator {
           if (value instanceof Dict) {
             isSimpleGState = false;
 
-            // eslint-disable-next-line arrow-body-style
-            promise = promise.then(() => {
-              return this.handleSMask(
+            promise = promise.then(() =>
+              this.handleSMask(
                 value,
                 resources,
                 operatorList,
                 task,
                 stateManager,
                 localColorSpaceCache
-              );
-            });
+              )
+            );
             gStateObj.push([key, true]);
           } else {
             warn("Unsupported SMask type");
