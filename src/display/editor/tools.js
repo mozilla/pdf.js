@@ -244,6 +244,7 @@ class CommandManager {
    * @typedef {Object} addOptions
    * @property {function} cmd
    * @property {function} undo
+   * @property {function} [post]
    * @property {boolean} mustExec
    * @property {number} type
    * @property {boolean} overwriteIfSameType
@@ -257,6 +258,7 @@ class CommandManager {
   add({
     cmd,
     undo,
+    post,
     mustExec,
     type = NaN,
     overwriteIfSameType = false,
@@ -270,7 +272,7 @@ class CommandManager {
       return;
     }
 
-    const save = { cmd, undo, type };
+    const save = { cmd, undo, post, type };
     if (this.#position === -1) {
       if (this.#commands.length > 0) {
         // All the commands have been undone and then a new one is added
@@ -317,7 +319,9 @@ class CommandManager {
 
     // Avoid to insert something during the undo execution.
     this.#locked = true;
-    this.#commands[this.#position].undo();
+    const { undo, post } = this.#commands[this.#position];
+    undo();
+    post?.();
     this.#locked = false;
 
     this.#position -= 1;
@@ -332,7 +336,9 @@ class CommandManager {
 
       // Avoid to insert something during the redo execution.
       this.#locked = true;
-      this.#commands[this.#position].cmd();
+      const { cmd, post } = this.#commands[this.#position];
+      cmd();
+      post?.();
       this.#locked = false;
     }
   }
@@ -1442,6 +1448,24 @@ class AnnotationEditorUIManager {
     }
   }
 
+  get #lastSelectedEditor() {
+    let ed = null;
+    for (ed of this.#selectedEditors) {
+      // Iterate to get the last element.
+    }
+    return ed;
+  }
+
+  /**
+   * Update the UI of the active editor.
+   * @param {AnnotationEditor} editor
+   */
+  updateUI(editor) {
+    if (this.#lastSelectedEditor === editor) {
+      this.#dispatchUpdateUI(editor.propertiesToUpdate);
+    }
+  }
+
   /**
    * Add or remove an editor the current selection.
    * @param {AnnotationEditor} editor
@@ -1607,6 +1631,9 @@ class AnnotationEditorUIManager {
    * @param {Array<AnnotationEditor>} editors
    */
   #selectEditors(editors) {
+    for (const editor of this.#selectedEditors) {
+      editor.unselect();
+    }
     this.#selectedEditors.clear();
     for (const editor of editors) {
       if (editor.isEmpty()) {
@@ -1615,7 +1642,7 @@ class AnnotationEditorUIManager {
       this.#selectedEditors.add(editor);
       editor.select();
     }
-    this.#dispatchUpdateStates({ hasSelectedEditor: true });
+    this.#dispatchUpdateStates({ hasSelectedEditor: this.hasSelection });
   }
 
   /**
