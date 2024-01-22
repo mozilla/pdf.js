@@ -3826,7 +3826,7 @@ class FreeTextAnnotation extends MarkupAnnotation {
           fontColor,
           strokeAlpha
         );
-        this._streams.push(this.appearance, FakeUnicodeFont.toUnicodeStream);
+        this._streams.push(this.appearance);
       } else {
         warn(
           "FreeTextAnnotation: OffscreenCanvas is not supported, annotation may not render correctly."

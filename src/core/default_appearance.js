@@ -13,13 +13,14 @@
  * limitations under the License.
  */
 
-import { Dict, Name } from "./primitives.js";
 import {
+  codePointIter,
   escapePDFName,
   getRotationMatrix,
   numberToString,
   stringToUTF16HexString,
 } from "./core_utils.js";
+import { Dict, Name } from "./primitives.js";
 import {
   LINE_DESCENT_FACTOR,
   LINE_FACTOR,
@@ -251,35 +252,6 @@ class FakeUnicodeFont {
     );
   }
 
-  get toUnicodeRef() {
-    if (!FakeUnicodeFont._toUnicodeRef) {
-      const toUnicode = `/CIDInit /ProcSet findresource begin
-12 dict begin
-begincmap
-/CIDSystemInfo
-<< /Registry (Adobe)
-/Ordering (UCS) /Supplement 0 >> def
-/CMapName /Adobe-Identity-UCS def
-/CMapType 2 def
-1 begincodespacerange
-<0000> <FFFF>
-endcodespacerange
-1 beginbfrange
-<0000> <FFFF> <0000>
-endbfrange
-endcmap CMapName currentdict /CMap defineresource pop end end`;
-      const toUnicodeStream = (FakeUnicodeFont.toUnicodeStream =
-        new StringStream(toUnicode));
-      const toUnicodeDict = new Dict(this.xref);
-      toUnicodeStream.dict = toUnicodeDict;
-      toUnicodeDict.set("Length", toUnicode.length);
-      FakeUnicodeFont._toUnicodeRef =
-        this.xref.getNewPersistentRef(toUnicodeStream);
-    }
-
-    return FakeUnicodeFont._toUnicodeRef;
-  }
-
   get fontDescriptorRef() {
     if (!FakeUnicodeFont._fontDescriptorRef) {
       const fontDescriptor = new Dict(this.xref);
@@ -350,7 +322,7 @@ endcmap CMapName currentdict /CMap defineresource pop end end`;
     baseFont.set("Subtype", Name.get("Type0"));
     baseFont.set("Encoding", Name.get("Identity-H"));
     baseFont.set("DescendantFonts", [this.descendantFontRef]);
-    baseFont.set("ToUnicode", this.toUnicodeRef);
+    baseFont.set("ToUnicode", Name.get("Identity-H"));
 
     return this.xref.getNewPersistentRef(baseFont);
   }
@@ -420,8 +392,8 @@ endcmap CMapName currentdict /CMap defineresource pop end end`;
       // languages, like arabic, it'd be wrong because of ligatures.
       const lineWidth = ctx.measureText(line).width;
       maxWidth = Math.max(maxWidth, lineWidth);
-      for (const char of line.split("")) {
-        const code = char.charCodeAt(0);
+      for (const code of codePointIter(line)) {
+        const char = String.fromCodePoint(code);
         let width = this.widths.get(code);
         if (width === undefined) {
           const metrics = ctx.measureText(char);
