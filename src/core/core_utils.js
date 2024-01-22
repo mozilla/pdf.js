@@ -386,6 +386,17 @@ const XMLEntities = {
   /* ' */ 0x27: "&apos;",
 };
 
+function* codePointIter(str) {
+  for (let i = 0, ii = str.length; i < ii; i++) {
+    const char = str.codePointAt(i);
+    if (char > 0xd7ff && (char < 0xe000 || char > 0xfffd)) {
+      // char is represented by two u16
+      i++;
+    }
+    yield char;
+  }
+}
+
 function encodeToXmlString(str) {
   const buffer = [];
   let start = 0;
@@ -602,6 +613,7 @@ function getRotationMatrix(rotation, width, height) {
 
 export {
   arrayBuffersToBytes,
+  codePointIter,
   collectActions,
   encodeToXmlString,
   escapePDFName,
