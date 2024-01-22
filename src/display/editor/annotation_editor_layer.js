@@ -359,7 +359,11 @@ class AnnotationEditorLayer {
         // Do nothing on right click.
         return;
       }
-      HighlightEditor.startHighlighting(this, event);
+      HighlightEditor.startHighlighting(
+        this,
+        this.#uiManager.direction === "ltr",
+        event
+      );
       event.preventDefault();
     }
   }

@@ -155,6 +155,14 @@ class DrawLayer {
     path.setAttribute("d", line.toSVGPath());
   }
 
+  updateLine(id, line) {
+    const root = this.#mapping.get(id);
+    const defs = root.firstChild;
+    const path = defs.firstChild;
+    this.updateBox(id, line.box);
+    path.setAttribute("d", line.toSVGPath());
+  }
+
   removeFreeHighlight(id) {
     this.remove(id);
     this.#toUpdate.delete(id);
