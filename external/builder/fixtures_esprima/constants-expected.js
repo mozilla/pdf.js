@@ -10,6 +10,6 @@ var i = true;
 var j = false;
 var k = false;
 var l = true;
-var m = '1' === true;
+var m = false;
 var n = false;
 var o = true;

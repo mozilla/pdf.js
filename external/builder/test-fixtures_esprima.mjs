@@ -1,7 +1,7 @@
 import { fileURLToPath } from "url";
 import fs from "fs";
 import path from "path";
-import { preprocessPDFJSCode } from "./preprocessor2.mjs";
+import { preprocessPDFJSCode } from "./babel-plugin-pdfjs-preprocessor.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -47,6 +47,12 @@ files.forEach(function (expectationFilename) {
   }
   if (out !== expectation) {
     errors++;
+
+    // Allow regenerating the expected output using
+    //   OVERWRITE=true node ./external/builder/test-fixtures_esprima.mjs
+    if (process.env.OVERWRITE) {
+      fs.writeFileSync(expectationFilename, out + "\n");
+    }
 
     console.log("Assertion failed for " + inFilename);
     console.log("--------------------------------------------------");

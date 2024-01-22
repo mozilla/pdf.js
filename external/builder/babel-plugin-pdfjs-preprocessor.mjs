@@ -1,347 +1,241 @@
-import * as acorn from "acorn";
-import escodegen from "@javascript-obfuscator/escodegen";
+import { types as t, transformSync } from "@babel/core";
 import fs from "fs";
-import path from "path";
+import { join as joinPaths } from "path";
 import vm from "vm";
 
 const PDFJS_PREPROCESSOR_NAME = "PDFJSDev";
 const ROOT_PREFIX = "$ROOT/";
-const ACORN_ECMA_VERSION = 2022;
-
-function isLiteral(obj, value) {
-  return obj.type === "Literal" && obj.value === value;
-}
 
 function isPDFJSPreprocessor(obj) {
   return obj.type === "Identifier" && obj.name === PDFJS_PREPROCESSOR_NAME;
 }
 
-function evalWithDefines(code, defines, loc) {
+function evalWithDefines(code, defines) {
   if (!code || !code.trim()) {
     throw new Error("No JavaScript expression given");
   }
   return vm.runInNewContext(code, defines, { displayErrors: false });
 }
 
-function handlePreprocessorAction(ctx, actionName, args, loc) {
+function handlePreprocessorAction(ctx, actionName, args, path) {
   try {
-    let arg;
+    const arg = args[0];
     switch (actionName) {
       case "test":
-        arg = args[0];
-        if (!arg || arg.type !== "Literal" || typeof arg.value !== "string") {
+        if (!t.isStringLiteral(arg)) {
           throw new Error("No code for testing is given");
         }
-        const isTrue = !!evalWithDefines(arg.value, ctx.defines);
-        return { type: "Literal", value: isTrue, loc };
+        return !!evalWithDefines(arg.value, ctx.defines);
       case "eval":
-        arg = args[0];
-        if (!arg || arg.type !== "Literal" || typeof arg.value !== "string") {
+        if (!t.isStringLiteral(arg)) {
           throw new Error("No code for eval is given");
         }
         const result = evalWithDefines(arg.value, ctx.defines);
         if (
           typeof result === "boolean" ||
           typeof result === "string" ||
-          typeof result === "number"
+          typeof result === "number" ||
+          typeof result === "object"
         ) {
-          return { type: "Literal", value: result, loc };
-        }
-        if (typeof result === "object") {
-          const parsedObj = acorn.parse("(" + JSON.stringify(result) + ")", {
-            ecmaVersion: ACORN_ECMA_VERSION,
-          });
-          parsedObj.body[0].expression.loc = loc;
-          return parsedObj.body[0].expression;
+          return result;
         }
         break;
       case "json":
-        arg = args[0];
-        if (!arg || arg.type !== "Literal" || typeof arg.value !== "string") {
+        if (!t.isStringLiteral(arg)) {
           throw new Error("Path to JSON is not provided");
         }
         let jsonPath = arg.value;
-        if (jsonPath.indexOf(ROOT_PREFIX) === 0) {
-          jsonPath = path.join(
+        if (jsonPath.startsWith(ROOT_PREFIX)) {
+          jsonPath = joinPaths(
             ctx.rootPath,
             jsonPath.substring(ROOT_PREFIX.length)
           );
         }
-        const jsonContent = fs.readFileSync(jsonPath).toString();
-        const parsedJSON = acorn.parse("(" + jsonContent + ")", {
-          ecmaVersion: ACORN_ECMA_VERSION,
-        });
-        parsedJSON.body[0].expression.loc = loc;
-        return parsedJSON.body[0].expression;
+        return JSON.parse(fs.readFileSync(jsonPath, "utf8"));
     }
     throw new Error("Unsupported action");
   } catch (e) {
-    throw new Error(
+    throw path.buildCodeFrameError(
       "Could not process " +
         PDFJS_PREPROCESSOR_NAME +
         "." +
         actionName +
-        " at " +
-        JSON.stringify(loc) +
-        "\n" +
-        e.name +
         ": " +
         e.message
     );
   }
 }
 
-function postprocessNode(ctx, node) {
-  switch (node.type) {
-    case "ExportNamedDeclaration":
-    case "ImportDeclaration":
-      if (
-        node.source &&
-        node.source.type === "Literal" &&
-        ctx.map &&
-        ctx.map[node.source.value]
-      ) {
-        const newValue = ctx.map[node.source.value];
-        node.source.value = node.source.raw = newValue;
-      }
-      break;
-    case "IfStatement":
-      if (isLiteral(node.test, true)) {
-        // if (true) stmt1; => stmt1
-        return node.consequent;
-      } else if (isLiteral(node.test, false)) {
-        // if (false) stmt1; else stmt2; => stmt2
-        return node.alternate || { type: "EmptyStatement", loc: node.loc };
-      }
-      break;
-    case "ConditionalExpression":
-      if (isLiteral(node.test, true)) {
-        // true ? stmt1 : stmt2 => stmt1
-        return node.consequent;
-      } else if (isLiteral(node.test, false)) {
-        // false ? stmt1 : stmt2 => stmt2
-        return node.alternate;
-      }
-      break;
-    case "UnaryExpression":
-      if (node.operator === "typeof" && isPDFJSPreprocessor(node.argument)) {
-        // typeof PDFJSDev => 'object'
-        return { type: "Literal", value: "object", loc: node.loc };
-      }
-      if (
-        node.operator === "!" &&
-        node.argument.type === "Literal" &&
-        typeof node.argument.value === "boolean"
-      ) {
-        // !true => false,  !false => true
-        return { type: "Literal", value: !node.argument.value, loc: node.loc };
-      }
-      break;
-    case "LogicalExpression":
-      switch (node.operator) {
-        case "&&":
-          if (isLiteral(node.left, true)) {
-            return node.right;
-          }
-          if (isLiteral(node.left, false)) {
-            return node.left;
-          }
-          break;
-        case "||":
-          if (isLiteral(node.left, true)) {
-            return node.left;
-          }
-          if (isLiteral(node.left, false)) {
-            return node.right;
-          }
-          break;
-      }
-      break;
-    case "BinaryExpression":
-      switch (node.operator) {
-        case "==":
-        case "===":
-        case "!=":
-        case "!==":
-          if (
-            node.left.type === "Literal" &&
-            node.right.type === "Literal" &&
-            typeof node.left.value === typeof node.right.value
-          ) {
-            // folding two literals == and != check
-            switch (typeof node.left.value) {
-              case "string":
-              case "boolean":
-              case "number":
-                const equal = node.left.value === node.right.value;
-                return {
-                  type: "Literal",
-                  value: (node.operator[0] === "=") === equal,
-                  loc: node.loc,
-                };
-            }
-          }
-          break;
-      }
-      break;
-    case "CallExpression":
-      if (
-        node.callee.type === "MemberExpression" &&
-        isPDFJSPreprocessor(node.callee.object) &&
-        node.callee.property.type === "Identifier"
-      ) {
-        // PDFJSDev.xxxx(arg1, arg2, ...) => transform
-        const action = node.callee.property.name;
-        return handlePreprocessorAction(ctx, action, node.arguments, node.loc);
-      }
-      // require('string')
-      if (
-        node.callee.type === "Identifier" &&
-        node.callee.name === "require" &&
-        node.arguments.length === 1 &&
-        node.arguments[0].type === "Literal" &&
-        ctx.map &&
-        ctx.map[node.arguments[0].value]
-      ) {
-        const requireName = node.arguments[0];
-        requireName.value = requireName.raw = ctx.map[requireName.value];
-      }
-      break;
-    case "BlockStatement":
-      let subExpressionIndex = 0;
-      while (subExpressionIndex < node.body.length) {
-        switch (node.body[subExpressionIndex].type) {
-          case "EmptyStatement":
-            // Removing empty statements from the blocks.
-            node.body.splice(subExpressionIndex, 1);
-            continue;
-          case "BlockStatement":
-            // Block statements inside a block are moved to the parent one.
-            const subChildren = node.body[subExpressionIndex].body;
-            Array.prototype.splice.apply(node.body, [
-              subExpressionIndex,
-              1,
-              ...subChildren,
-            ]);
-            subExpressionIndex += Math.max(subChildren.length - 1, 0);
-            continue;
-          case "ReturnStatement":
-          case "ThrowStatement":
-            // Removing dead code after return or throw.
-            node.body.splice(
-              subExpressionIndex + 1,
-              node.body.length - subExpressionIndex - 1
+function babelPluginPDFJSPreprocessor(babel, ctx) {
+  return {
+    name: "babel-plugin-pdfjs-preprocessor",
+    manipulateOptions({ parserOpts }) {
+      parserOpts.attachComment = false;
+    },
+    visitor: {
+      "ExportNamedDeclaration|ImportDeclaration": ({ node }) => {
+        if (node.source && ctx.map?.[node.source.value]) {
+          node.source.value = ctx.map[node.source.value];
+        }
+      },
+      "IfStatement|ConditionalExpression": {
+        exit(path) {
+          const { node } = path;
+          if (t.isBooleanLiteral(node.test)) {
+            // if (true) stmt1; => stmt1
+            // if (false) stmt1; else stmt2; => stmt2
+            path.replaceWith(
+              node.test.value === true
+                ? node.consequent
+                : node.alternate || t.emptyStatement()
             );
-            break;
-        }
-        subExpressionIndex++;
-      }
-      break;
-    case "FunctionDeclaration":
-    case "FunctionExpression":
-      const block = node.body;
-      if (
-        block.body.length > 0 &&
-        block.body.at(-1).type === "ReturnStatement" &&
-        !block.body.at(-1).argument
-      ) {
-        // Function body ends with return without arg -- removing it.
-        block.body.pop();
-      }
-      break;
-  }
-  return node;
-}
-
-function fixComments(ctx, node) {
-  if (!ctx.saveComments) {
-    return;
-  }
-  // Fixes double comments in the escodegen output.
-  delete node.trailingComments;
-  // Removes ESLint and other service comments.
-  if (node.leadingComments) {
-    const CopyrightRegExp = /\bcopyright\b/i;
-    const BlockCommentRegExp = /^\s*(globals|eslint|falls through)\b/;
-    const LineCommentRegExp = /^\s*eslint\b/;
-
-    let i = 0;
-    while (i < node.leadingComments.length) {
-      const type = node.leadingComments[i].type;
-      const value = node.leadingComments[i].value;
-
-      if (ctx.saveComments === "copyright") {
-        // Remove all comments, except Copyright notices and License headers.
-        if (!(type === "Block" && CopyrightRegExp.test(value))) {
-          node.leadingComments.splice(i, 1);
-          continue;
-        }
-      } else if (
-        (type === "Block" && BlockCommentRegExp.test(value)) ||
-        (type === "Line" && LineCommentRegExp.test(value))
-      ) {
-        node.leadingComments.splice(i, 1);
-        continue;
-      }
-      i++;
-    }
-  }
-}
-
-function traverseTree(ctx, node) {
-  // generic node processing
-  for (const i in node) {
-    const child = node[i];
-    if (typeof child === "object" && child !== null && child.type) {
-      const result = traverseTree(ctx, child);
-      if (result !== child) {
-        node[i] = result;
-      }
-    } else if (Array.isArray(child)) {
-      child.forEach(function (childItem, index) {
-        if (
-          typeof childItem === "object" &&
-          childItem !== null &&
-          childItem.type
-        ) {
-          const result = traverseTree(ctx, childItem);
-          if (result !== childItem) {
-            child[index] = result;
           }
+        },
+      },
+      UnaryExpression(path) {
+        const { node } = path;
+        if (node.operator === "typeof" && isPDFJSPreprocessor(node.argument)) {
+          // typeof PDFJSDev => 'object'
+          path.replaceWith(t.stringLiteral("object"));
+          return;
         }
-      });
-    }
-  }
+        if (node.operator === "!" && t.isBooleanLiteral(node.argument)) {
+          // !true => false,  !false => true
+          path.replaceWith(t.booleanLiteral(!node.argument.value));
+        }
+      },
+      LogicalExpression: {
+        exit(path) {
+          const { node } = path;
+          if (!t.isBooleanLiteral(node.left)) {
+            return;
+          }
 
-  node = postprocessNode(ctx, node) || node;
+          switch (node.operator) {
+            case "&&":
+              // true && expr => expr
+              // false && expr => false
+              path.replaceWith(
+                node.left.value === true ? node.right : node.left
+              );
+              break;
+            case "||":
+              // true || expr => true
+              // false || expr => expr
+              path.replaceWith(
+                node.left.value === true ? node.left : node.right
+              );
+              break;
+          }
+        },
+      },
+      BinaryExpression: {
+        exit(path) {
+          const { node } = path;
+          switch (node.operator) {
+            case "==":
+            case "===":
+            case "!=":
+            case "!==":
+              if (t.isLiteral(node.left) && t.isLiteral(node.right)) {
+                // folding == and != check that can be statically evaluated
+                const { confident, value } = path.evaluate();
+                if (confident) {
+                  path.replaceWith(t.booleanLiteral(value));
+                }
+              }
+          }
+        },
+      },
+      CallExpression(path) {
+        const { node } = path;
+        if (
+          t.isMemberExpression(node.callee) &&
+          isPDFJSPreprocessor(node.callee.object) &&
+          t.isIdentifier(node.callee.property) &&
+          !node.callee.computed
+        ) {
+          // PDFJSDev.xxxx(arg1, arg2, ...) => transform
+          const action = node.callee.property.name;
+          const result = handlePreprocessorAction(
+            ctx,
+            action,
+            node.arguments,
+            path
+          );
+          path.replaceWith(t.inherits(t.valueToNode(result), path.node));
+        }
 
-  fixComments(ctx, node);
-  return node;
-}
+        // require('string')
+        if (
+          t.isIdentifier(node.callee, { name: "require" }) &&
+          node.arguments.length === 1 &&
+          t.isStringLiteral(node.arguments[0]) &&
+          ctx.map?.[node.arguments[0].value]
+        ) {
+          const requireName = node.arguments[0];
+          requireName.value = requireName.raw = ctx.map[requireName.value];
+        }
+      },
+      BlockStatement: {
+        // Visit node in post-order so that recursive flattening
+        // of blocks works correctly.
+        exit(path) {
+          const { node } = path;
 
-function preprocessPDFJSCode(ctx, code) {
-  const format = ctx.format || {
-    indent: {
-      style: " ",
+          let subExpressionIndex = 0;
+          while (subExpressionIndex < node.body.length) {
+            switch (node.body[subExpressionIndex].type) {
+              case "EmptyStatement":
+                // Removing empty statements from the blocks.
+                node.body.splice(subExpressionIndex, 1);
+                continue;
+              case "BlockStatement":
+                // Block statements inside a block are flattened
+                // into the parent one.
+                const subChildren = node.body[subExpressionIndex].body;
+                node.body.splice(subExpressionIndex, 1, ...subChildren);
+                subExpressionIndex += Math.max(subChildren.length - 1, 0);
+                continue;
+              case "ReturnStatement":
+              case "ThrowStatement":
+                // Removing dead code after return or throw.
+                node.body.splice(
+                  subExpressionIndex + 1,
+                  node.body.length - subExpressionIndex - 1
+                );
+                break;
+            }
+            subExpressionIndex++;
+          }
+        },
+      },
+      Function: {
+        exit(path) {
+          if (!t.isBlockStatement(path.node.body)) {
+            // Arrow function with expression body
+            return;
+          }
+
+          const { body } = path.node.body;
+          if (
+            body.length > 0 &&
+            t.isReturnStatement(body.at(-1), { argument: null })
+          ) {
+            // Function body ends with return without arg -- removing it.
+            body.pop();
+          }
+        },
+      },
     },
   };
-  const parseOptions = {
-    ecmaVersion: ACORN_ECMA_VERSION,
-    locations: true,
-    sourceFile: ctx.sourceFile,
-    sourceType: "module",
-  };
-  const codegenOptions = {
-    format,
-    parse(input) {
-      return acorn.parse(input, { ecmaVersion: ACORN_ECMA_VERSION });
-    },
-    sourceMap: ctx.sourceMap,
-    sourceMapWithCode: ctx.sourceMap,
-  };
-  const syntax = acorn.parse(code, parseOptions);
-  traverseTree(ctx, syntax);
-  return escodegen.generate(syntax, codegenOptions);
 }
 
-export { preprocessPDFJSCode };
+function preprocessPDFJSCode(ctx, content) {
+  return transformSync(content, {
+    configFile: false,
+    plugins: [[babelPluginPDFJSPreprocessor, ctx]],
+  }).code;
+}
+
+export { babelPluginPDFJSPreprocessor, preprocessPDFJSCode };
