@@ -14,6 +14,10 @@
  */
 /* eslint-env node */
 
+import {
+  babelPluginPDFJSPreprocessor,
+  preprocessPDFJSCode,
+} from "./external/builder/babel-plugin-pdfjs-preprocessor.mjs";
 import { exec, spawn, spawnSync } from "child_process";
 import autoprefixer from "autoprefixer";
 import babel from "@babel/core";
@@ -30,7 +34,6 @@ import postcssDirPseudoClass from "postcss-dir-pseudo-class";
 import postcssDiscardComments from "postcss-discard-comments";
 import postcssNesting from "postcss-nesting";
 import { preprocess } from "./external/builder/builder.mjs";
-import { preprocessPDFJSCode } from "./external/builder/preprocessor2.mjs";
 import rename from "gulp-rename";
 import replace from "gulp-replace";
 import rimraf from "rimraf";
@@ -209,10 +212,11 @@ function createWebpackConfig(
   const isModule = output.library?.type === "module";
   const skipBabel = bundleDefines.SKIP_BABEL;
 
-  // `core-js`, see https://github.com/zloirock/core-js/issues/514,
-  // should be excluded from processing.
-  const babelExcludes = ["node_modules[\\\\\\/]core-js"];
-  const babelExcludeRegExp = new RegExp(`(${babelExcludes.join("|")})`);
+  const babelExcludeRegExp = [
+    // `core-js`, see https://github.com/zloirock/core-js/issues/514,
+    // should be excluded from processing.
+    /node_modules[\\/]core-js/,
+  ];
 
   const babelPresets = skipBabel
     ? undefined
@@ -227,7 +231,15 @@ function createWebpackConfig(
           },
         ],
       ];
-  const babelPlugins = [];
+  const babelPlugins = [
+    [
+      babelPluginPDFJSPreprocessor,
+      {
+        rootPath: __dirname,
+        defines: bundleDefines,
+      },
+    ],
+  ];
 
   const plugins = [];
   if (!disableLicenseHeader) {
@@ -333,14 +345,6 @@ function createWebpackConfig(
             presets: babelPresets,
             plugins: babelPlugins,
             targets: BABEL_TARGETS,
-          },
-        },
-        {
-          loader: path.join(__dirname, "external/webpack/pdfjsdev-loader.mjs"),
-          options: {
-            rootPath: __dirname,
-            saveComments: false,
-            defines: bundleDefines,
           },
         },
       ],
@@ -463,7 +467,6 @@ function createSandboxExternal(defines) {
   const licenseHeader = fs.readFileSync("./src/license_header.js").toString();
 
   const ctx = {
-    saveComments: false,
     defines,
   };
   return gulp
@@ -1572,13 +1575,15 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
   }
   function preprocessLib(content) {
     const skipBabel = bundleDefines.SKIP_BABEL;
-    content = preprocessPDFJSCode(ctx, content);
     content = babel.transform(content, {
       sourceType: "module",
       presets: skipBabel
         ? undefined
         : [["@babel/preset-env", { loose: false, modules: false }]],
-      plugins: [babelPluginReplaceNonWebpackImport],
+      plugins: [
+        babelPluginReplaceNonWebpackImport,
+        [babelPluginPDFJSPreprocessor, ctx],
+      ],
       targets: BABEL_TARGETS,
     }).code;
     content = content.replaceAll(
@@ -1589,7 +1594,6 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
   }
   const ctx = {
     rootPath: __dirname,
-    saveComments: false,
     defines: bundleDefines,
     map: {
       "pdfjs-lib": "../pdf.js",

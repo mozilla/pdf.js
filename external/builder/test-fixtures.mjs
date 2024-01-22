@@ -42,6 +42,12 @@ files.forEach(function (expectationFilename) {
   if (out !== expectation) {
     errors++;
 
+    // Allow regenerating the expected output using
+    //   OVERWRITE=true node ./external/builder/test-fixtures.mjs
+    if (process.env.OVERWRITE) {
+      fs.writeFileSync(expectationFilename, out + "\n");
+    }
+
     console.log("Assertion failed for " + inFilename);
     console.log("--------------------------------------------------");
     console.log("EXPECTED:");
