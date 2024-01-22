@@ -50,11 +50,13 @@ class HighlightEditor extends AnnotationEditor {
 
   #outlineId = null;
 
+  #thickness;
+
   static _defaultColor = null;
 
   static _defaultOpacity = 1;
 
-  static _defaultThickness = 10;
+  static _defaultThickness = 12;
 
   static _l10nPromise;
 
@@ -71,6 +73,7 @@ class HighlightEditor extends AnnotationEditor {
   constructor(params) {
     super({ ...params, name: "highlightEditor" });
     this.color = params.color || HighlightEditor._defaultColor;
+    this.#thickness = params.thickness || HighlightEditor._defaultThickness;
     this.#opacity = params.opacity || HighlightEditor._defaultOpacity;
     this.#boxes = params.boxes || null;
     this._isDraggable = false;
@@ -112,17 +115,31 @@ class HighlightEditor extends AnnotationEditor {
     ];
   }
 
-  #createFreeOutlines({ highlight, highlightId, clipPathId }) {
-    this.#highlightOutlines = highlight.getOutlines(
-      this._uiManager.direction === "ltr"
+  #createFreeOutlines({ highlightOutlines, highlightId, clipPathId }) {
+    this.#highlightOutlines = highlightOutlines;
+    const extraThickness = 1.5;
+    this.#focusOutlines = highlightOutlines.getNewOutline(
+      /* Slightly bigger than the highlight in order to have a little
+         space between the highlight and the outline. */
+      this.#thickness / 2 + extraThickness,
+      /* innerMargin = */ 0.0025
     );
-    this.#id = highlightId;
-    this.#clipPathId = clipPathId;
-    const { x, y, width, height, lastPoint } = this.#highlightOutlines.box;
 
-    // We need to redraw the highlight because we change the coordinates to be
-    // in the box coordinate system.
-    this.parent.drawLayer.finalizeLine(this.#id, this.#highlightOutlines);
+    if (highlightId >= 0) {
+      this.#id = highlightId;
+      this.#clipPathId = clipPathId;
+      // We need to redraw the highlight because we change the coordinates to be
+      // in the box coordinate system.
+      this.parent.drawLayer.finalizeLine(highlightId, highlightOutlines);
+      this.#outlineId = this.parent.drawLayer.highlightOutline(
+        this.#focusOutlines
+      );
+    } else if (this.parent) {
+      this.parent.drawLayer.updateLine(this.#id, highlightOutlines);
+      this.parent.drawLayer.updateLine(this.#outlineId, this.#focusOutlines);
+    }
+    const { x, y, width, height, lastPoint } = highlightOutlines.box;
+    this.#lastPoint = lastPoint;
     switch (this.rotation) {
       case 0:
         this.x = x;
@@ -153,29 +170,23 @@ class HighlightEditor extends AnnotationEditor {
         break;
       }
     }
-
-    const innerMargin = 1.5;
-    this.#focusOutlines = highlight.getFocusOutline(
-      /* Slightly bigger than the highlight in order to have a little
-         space between the highlight and the outline. */
-      HighlightEditor._defaultThickness + innerMargin
-    );
-    this.#outlineId = this.parent.drawLayer.highlightOutline(
-      this.#focusOutlines
-    );
-    this.#lastPoint = lastPoint;
   }
 
+  /** @inheritdoc */
   static initialize(l10n, uiManager) {
     AnnotationEditor.initialize(l10n, uiManager);
     HighlightEditor._defaultColor ||=
       uiManager.highlightColors?.values().next().value || "#fff066";
   }
 
+  /** @inheritdoc */
   static updateDefaultParams(type, value) {
     switch (type) {
       case AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR:
         HighlightEditor._defaultColor = value;
+        break;
+      case AnnotationEditorParamsType.HIGHLIGHT_THICKNESS:
+        HighlightEditor._defaultThickness = value;
         break;
     }
   }
@@ -194,6 +205,9 @@ class HighlightEditor extends AnnotationEditor {
       case AnnotationEditorParamsType.HIGHLIGHT_COLOR:
         this.#updateColor(value);
         break;
+      case AnnotationEditorParamsType.HIGHLIGHT_THICKNESS:
+        this.#updateThickness(value);
+        break;
     }
   }
 
@@ -202,6 +216,10 @@ class HighlightEditor extends AnnotationEditor {
       [
         AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR,
         HighlightEditor._defaultColor,
+      ],
+      [
+        AnnotationEditorParamsType.HIGHLIGHT_THICKNESS,
+        HighlightEditor._defaultThickness,
       ],
     ];
   }
@@ -212,6 +230,10 @@ class HighlightEditor extends AnnotationEditor {
       [
         AnnotationEditorParamsType.HIGHLIGHT_COLOR,
         this.color || HighlightEditor._defaultColor,
+      ],
+      [
+        AnnotationEditorParamsType.HIGHLIGHT_THICKNESS,
+        this.#thickness || HighlightEditor._defaultThickness,
       ],
     ];
   }
@@ -233,6 +255,27 @@ class HighlightEditor extends AnnotationEditor {
       post: this._uiManager.updateUI.bind(this._uiManager, this),
       mustExec: true,
       type: AnnotationEditorParamsType.HIGHLIGHT_COLOR,
+      overwriteIfSameType: true,
+      keepUndo: true,
+    });
+  }
+
+  /**
+   * Update the thickness and make this action undoable.
+   * @param {number} thickness
+   */
+  #updateThickness(thickness) {
+    const savedThickness = this.#thickness;
+    const setThickness = th => {
+      this.#thickness = th;
+      this.#changeThickness(th);
+    };
+    this.addCommands({
+      cmd: setThickness.bind(this, thickness),
+      undo: setThickness.bind(this, savedThickness),
+      post: this._uiManager.updateUI.bind(this._uiManager, this),
+      mustExec: true,
+      type: AnnotationEditorParamsType.INK_THICKNESS,
       overwriteIfSameType: true,
       keepUndo: true,
     });
@@ -266,6 +309,13 @@ class HighlightEditor extends AnnotationEditor {
   /** @inheritdoc */
   fixAndSetPosition() {
     return super.fixAndSetPosition(this.#getRotation());
+  }
+
+  /** @inheritdoc */
+  getBaseTranslation() {
+    // The editor itself doesn't have any CSS border (we're drawing one
+    // ourselves in using SVG).
+    return [0, 0];
   }
 
   /** @inheritdoc */
@@ -320,6 +370,18 @@ class HighlightEditor extends AnnotationEditor {
       // We select it after the parent has been set.
       this.select();
     }
+  }
+
+  #changeThickness(thickness) {
+    if (!this.#isFreeHighlight) {
+      return;
+    }
+    this.#createFreeOutlines({
+      highlightOutlines: this.#highlightOutlines.getNewOutline(thickness / 2),
+    });
+    this.fixAndSetPosition();
+    const [parentWidth, parentHeight] = this.parentDimensions;
+    this.setDims(this.width * parentWidth, this.height * parentHeight);
   }
 
   #cleanDrawLayer() {
@@ -480,7 +542,7 @@ class HighlightEditor extends AnnotationEditor {
     return this.#highlightOutlines.serialize(rect, this.#getRotation());
   }
 
-  static startHighlighting(parent, { target: textLayer, x, y }) {
+  static startHighlighting(parent, isLTR, { target: textLayer, x, y }) {
     const {
       x: layerX,
       y: layerY,
@@ -518,7 +580,8 @@ class HighlightEditor extends AnnotationEditor {
       { x, y },
       [layerX, layerY, parentWidth, parentHeight],
       parent.scale,
-      this._defaultThickness,
+      this._defaultThickness / 2,
+      isLTR,
       /* innerMargin = */ 0.001
     );
     ({ id: this._freeHighlightId, clipPathId: this._freeHighlightClipId } =
@@ -541,7 +604,7 @@ class HighlightEditor extends AnnotationEditor {
     if (!this._freeHighlight.isEmpty()) {
       parent.createAndAddNewEditor(event, false, {
         highlightId: this._freeHighlightId,
-        highlight: this._freeHighlight,
+        highlightOutlines: this._freeHighlight.getOutlines(),
         clipPathId: this._freeHighlightClipId,
       });
     } else {
@@ -595,7 +658,7 @@ class HighlightEditor extends AnnotationEditor {
       annotationType: AnnotationEditorType.HIGHLIGHT,
       color,
       opacity: this.#opacity,
-      thickness: 2 * HighlightEditor._defaultThickness,
+      thickness: this.#thickness,
       quadPoints: this.#serializeBoxes(rect),
       outlines: this.#serializeOutlines(rect),
       pageIndex: this.pageIndex,

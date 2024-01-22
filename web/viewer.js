@@ -172,6 +172,9 @@ function getViewerConfiguration() {
       editorInkThickness: document.getElementById("editorInkThickness"),
       editorInkOpacity: document.getElementById("editorInkOpacity"),
       editorStampAddImage: document.getElementById("editorStampAddImage"),
+      editorFreeHighlightThickness: document.getElementById(
+        "editorFreeHighlightThickness"
+      ),
     },
     printContainer: document.getElementById("printContainer"),
     openFileInput:

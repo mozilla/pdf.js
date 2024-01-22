@@ -349,6 +349,8 @@ pdfjs-editor-ink-opacity-input = Opacity
 pdfjs-editor-stamp-add-image-button =
     .title = Add image
 pdfjs-editor-stamp-add-image-button-label = Add image
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Thickness
 
 pdfjs-free-text =
     .aria-label = Text Editor
