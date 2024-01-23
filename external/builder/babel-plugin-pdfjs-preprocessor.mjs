@@ -1,0 +1,241 @@
+import { types as t, transformSync } from "@babel/core";
+import fs from "fs";
+import { join as joinPaths } from "path";
+import vm from "vm";
+
+const PDFJS_PREPROCESSOR_NAME = "PDFJSDev";
+const ROOT_PREFIX = "$ROOT/";
+
+function isPDFJSPreprocessor(obj) {
+  return obj.type === "Identifier" && obj.name === PDFJS_PREPROCESSOR_NAME;
+}
+
+function evalWithDefines(code, defines) {
+  if (!code || !code.trim()) {
+    throw new Error("No JavaScript expression given");
+  }
+  return vm.runInNewContext(code, defines, { displayErrors: false });
+}
+
+function handlePreprocessorAction(ctx, actionName, args, path) {
+  try {
+    const arg = args[0];
+    switch (actionName) {
+      case "test":
+        if (!t.isStringLiteral(arg)) {
+          throw new Error("No code for testing is given");
+        }
+        return !!evalWithDefines(arg.value, ctx.defines);
+      case "eval":
+        if (!t.isStringLiteral(arg)) {
+          throw new Error("No code for eval is given");
+        }
+        const result = evalWithDefines(arg.value, ctx.defines);
+        if (
+          typeof result === "boolean" ||
+          typeof result === "string" ||
+          typeof result === "number" ||
+          typeof result === "object"
+        ) {
+          return result;
+        }
+        break;
+      case "json":
+        if (!t.isStringLiteral(arg)) {
+          throw new Error("Path to JSON is not provided");
+        }
+        let jsonPath = arg.value;
+        if (jsonPath.startsWith(ROOT_PREFIX)) {
+          jsonPath = joinPaths(
+            ctx.rootPath,
+            jsonPath.substring(ROOT_PREFIX.length)
+          );
+        }
+        return JSON.parse(fs.readFileSync(jsonPath, "utf8"));
+    }
+    throw new Error("Unsupported action");
+  } catch (e) {
+    throw path.buildCodeFrameError(
+      "Could not process " +
+        PDFJS_PREPROCESSOR_NAME +
+        "." +
+        actionName +
+        ": " +
+        e.message
+    );
+  }
+}
+
+function babelPluginPDFJSPreprocessor(babel, ctx) {
+  return {
+    name: "babel-plugin-pdfjs-preprocessor",
+    manipulateOptions({ parserOpts }) {
+      parserOpts.attachComment = false;
+    },
+    visitor: {
+      "ExportNamedDeclaration|ImportDeclaration": ({ node }) => {
+        if (node.source && ctx.map?.[node.source.value]) {
+          node.source.value = ctx.map[node.source.value];
+        }
+      },
+      "IfStatement|ConditionalExpression": {
+        exit(path) {
+          const { node } = path;
+          if (t.isBooleanLiteral(node.test)) {
+            // if (true) stmt1; => stmt1
+            // if (false) stmt1; else stmt2; => stmt2
+            path.replaceWith(
+              node.test.value === true
+                ? node.consequent
+                : node.alternate || t.emptyStatement()
+            );
+          }
+        },
+      },
+      UnaryExpression(path) {
+        const { node } = path;
+        if (node.operator === "typeof" && isPDFJSPreprocessor(node.argument)) {
+          // typeof PDFJSDev => 'object'
+          path.replaceWith(t.stringLiteral("object"));
+          return;
+        }
+        if (node.operator === "!" && t.isBooleanLiteral(node.argument)) {
+          // !true => false,  !false => true
+          path.replaceWith(t.booleanLiteral(!node.argument.value));
+        }
+      },
+      LogicalExpression: {
+        exit(path) {
+          const { node } = path;
+          if (!t.isBooleanLiteral(node.left)) {
+            return;
+          }
+
+          switch (node.operator) {
+            case "&&":
+              // true && expr => expr
+              // false && expr => false
+              path.replaceWith(
+                node.left.value === true ? node.right : node.left
+              );
+              break;
+            case "||":
+              // true || expr => true
+              // false || expr => expr
+              path.replaceWith(
+                node.left.value === true ? node.left : node.right
+              );
+              break;
+          }
+        },
+      },
+      BinaryExpression: {
+        exit(path) {
+          const { node } = path;
+          switch (node.operator) {
+            case "==":
+            case "===":
+            case "!=":
+            case "!==":
+              if (t.isLiteral(node.left) && t.isLiteral(node.right)) {
+                // folding == and != check that can be statically evaluated
+                const { confident, value } = path.evaluate();
+                if (confident) {
+                  path.replaceWith(t.booleanLiteral(value));
+                }
+              }
+          }
+        },
+      },
+      CallExpression(path) {
+        const { node } = path;
+        if (
+          t.isMemberExpression(node.callee) &&
+          isPDFJSPreprocessor(node.callee.object) &&
+          t.isIdentifier(node.callee.property) &&
+          !node.callee.computed
+        ) {
+          // PDFJSDev.xxxx(arg1, arg2, ...) => transform
+          const action = node.callee.property.name;
+          const result = handlePreprocessorAction(
+            ctx,
+            action,
+            node.arguments,
+            path
+          );
+          path.replaceWith(t.inherits(t.valueToNode(result), path.node));
+        }
+
+        // require('string')
+        if (
+          t.isIdentifier(node.callee, { name: "require" }) &&
+          node.arguments.length === 1 &&
+          t.isStringLiteral(node.arguments[0]) &&
+          ctx.map?.[node.arguments[0].value]
+        ) {
+          const requireName = node.arguments[0];
+          requireName.value = requireName.raw = ctx.map[requireName.value];
+        }
+      },
+      BlockStatement: {
+        // Visit node in post-order so that recursive flattening
+        // of blocks works correctly.
+        exit(path) {
+          const { node } = path;
+
+          let subExpressionIndex = 0;
+          while (subExpressionIndex < node.body.length) {
+            switch (node.body[subExpressionIndex].type) {
+              case "EmptyStatement":
+                // Removing empty statements from the blocks.
+                node.body.splice(subExpressionIndex, 1);
+                continue;
+              case "BlockStatement":
+                // Block statements inside a block are flattened
+                // into the parent one.
+                const subChildren = node.body[subExpressionIndex].body;
+                node.body.splice(subExpressionIndex, 1, ...subChildren);
+                subExpressionIndex += Math.max(subChildren.length - 1, 0);
+                continue;
+              case "ReturnStatement":
+              case "ThrowStatement":
+                // Removing dead code after return or throw.
+                node.body.splice(
+                  subExpressionIndex + 1,
+                  node.body.length - subExpressionIndex - 1
+                );
+                break;
+            }
+            subExpressionIndex++;
+          }
+        },
+      },
+      Function: {
+        exit(path) {
+          if (!t.isBlockStatement(path.node.body)) {
+            // Arrow function with expression body
+            return;
+          }
+
+          const { body } = path.node.body;
+          if (
+            body.length > 0 &&
+            t.isReturnStatement(body.at(-1), { argument: null })
+          ) {
+            // Function body ends with return without arg -- removing it.
+            body.pop();
+          }
+        },
+      },
+    },
+  };
+}
+
+function preprocessPDFJSCode(ctx, content) {
+  return transformSync(content, {
+    configFile: false,
+    plugins: [[babelPluginPDFJSPreprocessor, ctx]],
+  }).code;
+}
+
+export { babelPluginPDFJSPreprocessor, preprocessPDFJSCode };
