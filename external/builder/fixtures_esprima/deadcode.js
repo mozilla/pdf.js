@@ -23,3 +23,15 @@ function f4() {
   var j = 0;
 }
 
+var obj = {
+  method1() { return; var i = 0; },
+  method2() { return; },
+};
+
+class C {
+  method1() { return; var i = 0; }
+  method2() { return; }
+}
+
+var arrow1 = () => { return; var i = 0; };
+var arrow2 = () => { return; };
