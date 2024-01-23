@@ -526,23 +526,22 @@ class PartialEvaluator {
     const args = group ? [matrix, null] : [matrix, bbox];
     operatorList.addOp(OPS.paintFormXObjectBegin, args);
 
-    return this.getOperatorList({
+    await this.getOperatorList({
       stream: xobj,
       task,
       resources: dict.get("Resources") || resources,
       operatorList,
       initialState,
-    }).then(function () {
-      operatorList.addOp(OPS.paintFormXObjectEnd, []);
-
-      if (group) {
-        operatorList.addOp(OPS.endGroup, [groupOptions]);
-      }
-
-      if (optionalContent !== undefined) {
-        operatorList.addOp(OPS.endMarkedContent, []);
-      }
     });
+    operatorList.addOp(OPS.paintFormXObjectEnd, []);
+
+    if (group) {
+      operatorList.addOp(OPS.endGroup, [groupOptions]);
+    }
+
+    if (optionalContent !== undefined) {
+      operatorList.addOp(OPS.endMarkedContent, []);
+    }
   }
 
   _sendImgData(objId, imgData, cacheGlobally = false) {
@@ -1189,15 +1188,15 @@ class PartialEvaluator {
           break;
       }
     }
-    return promise.then(function () {
-      if (gStateObj.length > 0) {
-        operatorList.addOp(OPS.setGState, [gStateObj]);
-      }
+    await promise;
 
-      if (isSimpleGState) {
-        localGStateCache.set(cacheKey, gStateRef, gStateObj);
-      }
-    });
+    if (gStateObj.length > 0) {
+      operatorList.addOp(OPS.setGState, [gStateObj]);
+    }
+
+    if (isSimpleGState) {
+      localGStateCache.set(cacheKey, gStateRef, gStateObj);
+    }
   }
 
   loadFont(
@@ -3429,13 +3428,11 @@ class PartialEvaluator {
     });
   }
 
-  extractDataStructures(dict, baseDict, properties) {
+  async extractDataStructures(dict, properties) {
     const xref = this.xref;
     let cidToGidBytes;
     // 9.10.2
-    const toUnicodePromise = this.readToUnicode(
-      properties.toUnicode || dict.get("ToUnicode") || baseDict.get("ToUnicode")
-    );
+    const toUnicodePromise = this.readToUnicode(properties.toUnicode);
 
     if (properties.composite) {
       // CIDSystemInfo helps to match CID to glyphs
@@ -3555,21 +3552,19 @@ class PartialEvaluator {
     properties.baseEncodingName = baseEncodingName;
     properties.hasEncoding = !!baseEncodingName || differences.length > 0;
     properties.dict = dict;
-    return toUnicodePromise
-      .then(readToUnicode => {
-        properties.toUnicode = readToUnicode;
-        return this.buildToUnicode(properties);
-      })
-      .then(builtToUnicode => {
-        properties.toUnicode = builtToUnicode;
-        if (cidToGidBytes) {
-          properties.cidToGidMap = this.readCidToGidMap(
-            cidToGidBytes,
-            builtToUnicode
-          );
-        }
-        return properties;
-      });
+
+    properties.toUnicode = await toUnicodePromise;
+
+    const builtToUnicode = await this.buildToUnicode(properties);
+    properties.toUnicode = builtToUnicode;
+
+    if (cidToGidBytes) {
+      properties.cidToGidMap = this.readCidToGidMap(
+        cidToGidBytes,
+        builtToUnicode
+      );
+    }
+    return properties;
   }
 
   /**
@@ -3768,70 +3763,70 @@ class PartialEvaluator {
     return new IdentityToUnicodeMap(properties.firstChar, properties.lastChar);
   }
 
-  readToUnicode(cmapObj) {
+  async readToUnicode(cmapObj) {
     if (!cmapObj) {
-      return Promise.resolve(null);
+      return null;
     }
     if (cmapObj instanceof Name) {
-      return CMapFactory.create({
+      const cmap = await CMapFactory.create({
         encoding: cmapObj,
         fetchBuiltInCMap: this._fetchBuiltInCMapBound,
         useCMap: null,
-      }).then(function (cmap) {
+      });
+
+      if (cmap instanceof IdentityCMap) {
+        return new IdentityToUnicodeMap(0, 0xffff);
+      }
+      return new ToUnicodeMap(cmap.getMap());
+    }
+    if (cmapObj instanceof BaseStream) {
+      try {
+        const cmap = await CMapFactory.create({
+          encoding: cmapObj,
+          fetchBuiltInCMap: this._fetchBuiltInCMapBound,
+          useCMap: null,
+        });
+
         if (cmap instanceof IdentityCMap) {
           return new IdentityToUnicodeMap(0, 0xffff);
         }
-        return new ToUnicodeMap(cmap.getMap());
-      });
-    } else if (cmapObj instanceof BaseStream) {
-      return CMapFactory.create({
-        encoding: cmapObj,
-        fetchBuiltInCMap: this._fetchBuiltInCMapBound,
-        useCMap: null,
-      }).then(
-        function (cmap) {
-          if (cmap instanceof IdentityCMap) {
-            return new IdentityToUnicodeMap(0, 0xffff);
+        const map = new Array(cmap.length);
+        // Convert UTF-16BE
+        // NOTE: cmap can be a sparse array, so use forEach instead of
+        // `for(;;)` to iterate over all keys.
+        cmap.forEach(function (charCode, token) {
+          // Some cmaps contain *only* CID characters (fixes issue9367.pdf).
+          if (typeof token === "number") {
+            map[charCode] = String.fromCodePoint(token);
+            return;
           }
-          const map = new Array(cmap.length);
-          // Convert UTF-16BE
-          // NOTE: cmap can be a sparse array, so use forEach instead of
-          // `for(;;)` to iterate over all keys.
-          cmap.forEach(function (charCode, token) {
-            // Some cmaps contain *only* CID characters (fixes issue9367.pdf).
-            if (typeof token === "number") {
-              map[charCode] = String.fromCodePoint(token);
-              return;
+          const str = [];
+          for (let k = 0; k < token.length; k += 2) {
+            const w1 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);
+            if ((w1 & 0xf800) !== 0xd800) {
+              // w1 < 0xD800 || w1 > 0xDFFF
+              str.push(w1);
+              continue;
             }
-            const str = [];
-            for (let k = 0; k < token.length; k += 2) {
-              const w1 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);
-              if ((w1 & 0xf800) !== 0xd800) {
-                // w1 < 0xD800 || w1 > 0xDFFF
-                str.push(w1);
-                continue;
-              }
-              k += 2;
-              const w2 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);
-              str.push(((w1 & 0x3ff) << 10) + (w2 & 0x3ff) + 0x10000);
-            }
-            map[charCode] = String.fromCodePoint(...str);
-          });
-          return new ToUnicodeMap(map);
-        },
-        reason => {
-          if (reason instanceof AbortException) {
-            return null;
+            k += 2;
+            const w2 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);
+            str.push(((w1 & 0x3ff) << 10) + (w2 & 0x3ff) + 0x10000);
           }
-          if (this.options.ignoreErrors) {
-            warn(`readToUnicode - ignoring ToUnicode data: "${reason}".`);
-            return null;
-          }
-          throw reason;
+          map[charCode] = String.fromCodePoint(...str);
+        });
+        return new ToUnicodeMap(map);
+      } catch (reason) {
+        if (reason instanceof AbortException) {
+          return null;
         }
-      );
+        if (this.options.ignoreErrors) {
+          warn(`readToUnicode - ignoring ToUnicode data: "${reason}".`);
+          return null;
+        }
+        throw reason;
+      }
     }
-    return Promise.resolve(null);
+    return null;
   }
 
   readCidToGidMap(glyphsData, toUnicode) {
@@ -4020,7 +4015,7 @@ class PartialEvaluator {
     }
 
     let composite = false;
-    let hash, toUnicode;
+    let hash;
     if (type.name === "Type0") {
       // If font is a composite
       //  - get the descendant font
@@ -4045,6 +4040,8 @@ class PartialEvaluator {
     const firstChar = dict.get("FirstChar") || 0,
       lastChar = dict.get("LastChar") || (composite ? 0xffff : 0xff);
     const descriptor = dict.get("FontDescriptor");
+    const toUnicode = dict.get("ToUnicode") || baseDict.get("ToUnicode");
+
     if (descriptor) {
       hash = new MurmurHash3_64();
 
@@ -4082,7 +4079,6 @@ class PartialEvaluator {
 
       hash.update(`${firstChar}-${lastChar}`); // Fixes issue10665_reduced.pdf
 
-      toUnicode = dict.get("ToUnicode") || baseDict.get("ToUnicode");
       if (toUnicode instanceof BaseStream) {
         const stream = toUnicode.str || toUnicode;
         const uint8array = stream.buffer
@@ -4233,7 +4229,6 @@ class PartialEvaluator {
         }
 
         const newProperties = await this.extractDataStructures(
-          dict,
           dict,
           properties
         );
@@ -4397,11 +4392,7 @@ class PartialEvaluator {
       properties.vertical = properties.cMap.vertical;
     }
 
-    const newProperties = await this.extractDataStructures(
-      dict,
-      baseDict,
-      properties
-    );
+    const newProperties = await this.extractDataStructures(dict, properties);
     this.extractWidths(dict, descriptor, newProperties);
 
     return new Font(fontName.name, fontFile, newProperties);
