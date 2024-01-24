@@ -472,7 +472,7 @@ class AnnotationEditor {
     // the position: it'll be done when the user will release the mouse button.
 
     let { x, y } = this;
-    const [bx, by] = this.#getBaseTranslation();
+    const [bx, by] = this.getBaseTranslation();
     x += bx;
     y += by;
 
@@ -481,7 +481,14 @@ class AnnotationEditor {
     this.div.scrollIntoView({ block: "nearest" });
   }
 
-  #getBaseTranslation() {
+  /**
+   * Get the translation to take into account the editor border.
+   * The CSS engine positions the element by taking the border into account so
+   * we must apply the opposite translation to have the editor in the right
+   * position.
+   * @returns {Array<number>}
+   */
+  getBaseTranslation() {
     const [parentWidth, parentHeight] = this.parentDimensions;
     const { _borderLineWidth } = AnnotationEditor;
     const x = _borderLineWidth / parentWidth;
@@ -532,7 +539,7 @@ class AnnotationEditor {
     this.x = x /= pageWidth;
     this.y = y /= pageHeight;
 
-    const [bx, by] = this.#getBaseTranslation();
+    const [bx, by] = this.getBaseTranslation();
     x += bx;
     y += by;
 
