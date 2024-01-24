@@ -224,12 +224,9 @@ class FreeTextEditor extends AnnotationEditor {
     };
     const savedFontsize = this.#fontSize;
     this.addCommands({
-      cmd: () => {
-        setFontsize(fontSize);
-      },
-      undo: () => {
-        setFontsize(savedFontsize);
-      },
+      cmd: setFontsize.bind(this, fontSize),
+      undo: setFontsize.bind(this, savedFontsize),
+      post: this._uiManager.updateUI.bind(this._uiManager, this),
       mustExec: true,
       type: AnnotationEditorParamsType.FREETEXT_SIZE,
       overwriteIfSameType: true,
@@ -242,14 +239,14 @@ class FreeTextEditor extends AnnotationEditor {
    * @param {string} color
    */
   #updateColor(color) {
+    const setColor = col => {
+      this.#color = this.editorDiv.style.color = col;
+    };
     const savedColor = this.#color;
     this.addCommands({
-      cmd: () => {
-        this.#color = this.editorDiv.style.color = color;
-      },
-      undo: () => {
-        this.#color = this.editorDiv.style.color = savedColor;
-      },
+      cmd: setColor.bind(this, color),
+      undo: setColor.bind(this, savedColor),
+      post: this._uiManager.updateUI.bind(this._uiManager, this),
       mustExec: true,
       type: AnnotationEditorParamsType.FREETEXT_COLOR,
       overwriteIfSameType: true,
