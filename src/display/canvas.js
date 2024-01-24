@@ -529,18 +529,14 @@ class CanvasExtraState {
   updateScalingPathMinMax(transform, minMax) {
     Util.scaleMinMax(transform, minMax);
     this.minX = Math.min(this.minX, minMax[0]);
-    this.maxX = Math.max(this.maxX, minMax[1]);
-    this.minY = Math.min(this.minY, minMax[2]);
+    this.minY = Math.min(this.minY, minMax[1]);
+    this.maxX = Math.max(this.maxX, minMax[2]);
     this.maxY = Math.max(this.maxY, minMax[3]);
   }
 
   updateCurvePathMinMax(transform, x0, y0, x1, y1, x2, y2, x3, y3, minMax) {
-    const box = Util.bezierBoundingBox(x0, y0, x1, y1, x2, y2, x3, y3);
+    const box = Util.bezierBoundingBox(x0, y0, x1, y1, x2, y2, x3, y3, minMax);
     if (minMax) {
-      minMax[0] = Math.min(minMax[0], box[0], box[2]);
-      minMax[1] = Math.max(minMax[1], box[0], box[2]);
-      minMax[2] = Math.min(minMax[2], box[1], box[3]);
-      minMax[3] = Math.max(minMax[3], box[1], box[3]);
       return;
     }
     this.updateRectMinMax(transform, box);
