@@ -71,7 +71,9 @@
 
 .pdfViewer .canvasWrapper {
   overflow: hidden;
-  width: 100%;
+  /* See  `width: inherit` comment in `.pdfViewer .page canvas[zooming]` for the reason
+   * we use `inherit` and not `100%`. */
+  width: inherit;
   height: 100%;
   z-index: 1;
 }
@@ -166,7 +168,25 @@
 }
 
 .pdfViewer .page canvas[zooming] {
-  width: 100%;
+  /* WebKit has a bug when rendering canvases that have their width defined as
+   * relative to their container, and their parent is resized. This causes a
+   * "tearing" effect when zooming in PDFs past a certain threshold, which
+   * is devide-dependent but tends to be between 120% and 200%.
+   *
+   * The DOM structure around the canvas is as follows:
+   *   div.pdfViewer [ --scale-factor: ...; ]
+   *     > div.page [ width: round(var(--scale-factor) * ..., 1px); ]
+   *       > div.canvasWrapper
+   *         > canvas
+   *
+   * Setting `width: inherit` on the div.canvasWrapper and on the canvas is
+   * equivalent to explicitly specifying the same `width` property in pixels
+   * as in div.page, thus making Safari properly redraw the canvas on resize.
+   *
+   * See https://bugs.webkit.org/show_bug.cgi?id=267986 for more details
+   * on the WebKit bug.
+   */
+  width: inherit;
   height: 100%;
 }
 
