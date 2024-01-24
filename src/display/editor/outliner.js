@@ -350,6 +350,8 @@ class FreeOutliner {
 
   #innerMargin;
 
+  #isLTR;
+
   #top = [];
 
   // The first 6 elements are the last 3 points of the top part of the outline.
@@ -377,9 +379,10 @@ class FreeOutliner {
 
   static #MIN = FreeOutliner.#MIN_DIST + FreeOutliner.#MIN_DIFF;
 
-  constructor({ x, y }, box, scaleFactor, thickness, innerMargin = 0) {
+  constructor({ x, y }, box, scaleFactor, thickness, isLTR, innerMargin = 0) {
     this.#box = box;
     this.#thickness = thickness * scaleFactor;
+    this.#isLTR = isLTR;
     this.#last.set([NaN, NaN, NaN, NaN, x, y], 6);
     this.#innerMargin = innerMargin;
     this.#min_dist = FreeOutliner.#MIN_DIST * scaleFactor;
@@ -571,24 +574,7 @@ class FreeOutliner {
     return buffer.join(" ");
   }
 
-  getFocusOutline(thickness) {
-    // Build the outline of the highlight to use as the focus outline.
-    const [x, y] = this.#points;
-    const outliner = new FreeOutliner(
-      { x, y },
-      this.#box,
-      this.#scaleFactor,
-      thickness,
-      /* innerMargin = */ 0.0025
-    );
-    outliner.#points = null;
-    for (let i = 2; i < this.#points.length; i += 2) {
-      outliner.add({ x: this.#points[i], y: this.#points[i + 1] });
-    }
-    return outliner.getOutlines();
-  }
-
-  getOutlines(isLTR) {
+  getOutlines() {
     const top = this.#top;
     const bottom = this.#bottom;
     const last = this.#last;
@@ -637,8 +623,10 @@ class FreeOutliner {
       return new FreeHighlightOutline(
         outline,
         points,
+        this.#box,
+        this.#scaleFactor,
         this.#innerMargin,
-        isLTR
+        this.#isLTR
       );
     }
 
@@ -686,24 +674,40 @@ class FreeOutliner {
       }
     }
     outline.set([NaN, NaN, NaN, NaN, bottom[4], bottom[5]], N);
-    return new FreeHighlightOutline(outline, points, this.#innerMargin, isLTR);
+    return new FreeHighlightOutline(
+      outline,
+      points,
+      this.#box,
+      this.#scaleFactor,
+      this.#innerMargin,
+      this.#isLTR
+    );
   }
 }
 
 class FreeHighlightOutline extends Outline {
+  #box;
+
   #bbox = null;
 
   #innerMargin;
 
+  #isLTR;
+
   #points;
+
+  #scaleFactor;
 
   #outline;
 
-  constructor(outline, points, innerMargin, isLTR) {
+  constructor(outline, points, box, scaleFactor, innerMargin, isLTR) {
     super();
     this.#outline = outline;
     this.#points = points;
+    this.#box = box;
+    this.#scaleFactor = scaleFactor;
     this.#innerMargin = innerMargin;
+    this.#isLTR = isLTR;
     this.#computeMinMax(isLTR);
 
     const { x, y, width, height } = this.#bbox;
@@ -840,6 +844,34 @@ class FreeHighlightOutline extends Outline {
 
   get box() {
     return this.#bbox;
+  }
+
+  getNewOutline(thickness, innerMargin) {
+    // Build the outline of the highlight to use as the focus outline.
+    const { x, y, width, height } = this.#bbox;
+    const [layerX, layerY, layerWidth, layerHeight] = this.#box;
+    const sx = width * layerWidth;
+    const sy = height * layerHeight;
+    const tx = x * layerWidth + layerX;
+    const ty = y * layerHeight + layerY;
+    const outliner = new FreeOutliner(
+      {
+        x: this.#points[0] * sx + tx,
+        y: this.#points[1] * sy + ty,
+      },
+      this.#box,
+      this.#scaleFactor,
+      thickness,
+      this.#isLTR,
+      innerMargin ?? this.#innerMargin
+    );
+    for (let i = 2; i < this.#points.length; i += 2) {
+      outliner.add({
+        x: this.#points[i] * sx + tx,
+        y: this.#points[i + 1] * sy + ty,
+      });
+    }
+    return outliner.getOutlines();
   }
 }
 

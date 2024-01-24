@@ -14,7 +14,9 @@
  */
 
 import {
+  awaitPromise,
   closePages,
+  createPromise,
   getEditorSelector,
   getSerialized,
   kbBigMoveLeft,
@@ -31,6 +33,11 @@ const selectAll = async page => {
     () => !document.querySelector(".highlightEditor:not(.selectedEditor)")
   );
 };
+
+const waitForPointerUp = page =>
+  createPromise(page, resolve => {
+    window.addEventListener("pointerup", resolve, { once: true });
+  });
 
 const getXY = (page, selector) =>
   page.evaluate(sel => {
@@ -582,6 +589,94 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(
             `.page[data-page-number = "1"] svg.highlightOutline:not(.selected)`
           );
+        })
+      );
+    });
+  });
+
+  describe("Free highlight thickness can be changed", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "empty.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        { highlightEditorColors: "yellow=#000000" }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the thickness is correctly updated", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorHighlight");
+          await page.waitForSelector(".annotationEditorLayer.highlightEditing");
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            // With Chrome something is wrong when serializing a DomRect,
+            // hence we extract the values and just return them.
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          for (let i = 0; i < 3; i++) {
+            const x = rect.x + 120 + i * 120;
+            const y = rect.y + 120 + i * 120;
+            const clickHandle = await waitForPointerUp(page);
+            await page.mouse.move(x, y);
+            await page.mouse.down();
+            await page.mouse.move(x + 100, y + 100);
+            await page.mouse.up();
+            await awaitPromise(clickHandle);
+
+            await page.waitForSelector(getEditorSelector(i));
+          }
+
+          let value = 12;
+          await waitForSerialized(page, 3);
+          let serialized = await getSerialized(page);
+          expect(serialized.map(x => x.thickness))
+            .withContext(`In ${browserName}`)
+            .toEqual([value, value, value]);
+
+          await selectAll(page);
+
+          const prevWidth = await page.evaluate(
+            sel => document.querySelector(sel).getBoundingClientRect().width,
+            getEditorSelector(0)
+          );
+
+          value = 24;
+          page.evaluate(val => {
+            window.PDFViewerApplication.eventBus.dispatch(
+              "switchannotationeditorparams",
+              {
+                source: null,
+                type: window.pdfjsLib.AnnotationEditorParamsType
+                  .HIGHLIGHT_THICKNESS,
+                value: val,
+              }
+            );
+          }, value);
+
+          await page.waitForFunction(
+            (w, sel) =>
+              document.querySelector(sel).getBoundingClientRect().width !== w,
+            {},
+            prevWidth,
+            getEditorSelector(0)
+          );
+
+          await waitForSerialized(page, 3);
+          serialized = await getSerialized(page);
+          expect(serialized.map(x => x.thickness))
+            .withContext(`In ${browserName}`)
+            .toEqual([value, value, value]);
         })
       );
     });
