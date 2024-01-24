@@ -1386,17 +1386,17 @@ class PartialEvaluator {
           const y = args[1] + args[3];
           minMax = [
             Math.min(args[0], x),
-            Math.max(args[0], x),
             Math.min(args[1], y),
+            Math.max(args[0], x),
             Math.max(args[1], y),
           ];
           break;
         case OPS.moveTo:
         case OPS.lineTo:
-          minMax = [args[0], args[0], args[1], args[1]];
+          minMax = [args[0], args[1], args[0], args[1]];
           break;
         default:
-          minMax = [Infinity, -Infinity, Infinity, -Infinity];
+          minMax = [Infinity, Infinity, -Infinity, -Infinity];
           break;
       }
       operatorList.addOp(OPS.constructPath, [[fn], args, minMax]);
@@ -1420,15 +1420,15 @@ class PartialEvaluator {
           const x = args[0] + args[2];
           const y = args[1] + args[3];
           minMax[0] = Math.min(minMax[0], args[0], x);
-          minMax[1] = Math.max(minMax[1], args[0], x);
-          minMax[2] = Math.min(minMax[2], args[1], y);
+          minMax[1] = Math.min(minMax[1], args[1], y);
+          minMax[2] = Math.max(minMax[2], args[0], x);
           minMax[3] = Math.max(minMax[3], args[1], y);
           break;
         case OPS.moveTo:
         case OPS.lineTo:
           minMax[0] = Math.min(minMax[0], args[0]);
-          minMax[1] = Math.max(minMax[1], args[0]);
-          minMax[2] = Math.min(minMax[2], args[1]);
+          minMax[1] = Math.min(minMax[1], args[1]);
+          minMax[2] = Math.max(minMax[2], args[0]);
           minMax[3] = Math.max(minMax[3], args[1]);
           break;
       }

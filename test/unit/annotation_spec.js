@@ -4548,7 +4548,7 @@ describe("annotation", function () {
       expect(opList.argsArray[5][0]).toEqual([OPS.moveTo, OPS.curveTo]);
       expect(opList.argsArray[5][1]).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
       // Min-max.
-      expect(opList.argsArray[5][2]).toEqual([1, 1, 2, 2]);
+      expect(opList.argsArray[5][2]).toEqual([1, 2, 1, 2]);
     });
   });
 
