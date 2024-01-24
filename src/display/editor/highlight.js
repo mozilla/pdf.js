@@ -221,18 +221,16 @@ class HighlightEditor extends AnnotationEditor {
    * @param {string} color
    */
   #updateColor(color) {
+    const setColor = col => {
+      this.color = col;
+      this.parent?.drawLayer.changeColor(this.#id, col);
+      this.#colorPicker?.updateColor(col);
+    };
     const savedColor = this.color;
     this.addCommands({
-      cmd: () => {
-        this.color = color;
-        this.parent?.drawLayer.changeColor(this.#id, color);
-        this.#colorPicker?.updateColor(color);
-      },
-      undo: () => {
-        this.color = savedColor;
-        this.parent?.drawLayer.changeColor(this.#id, savedColor);
-        this.#colorPicker?.updateColor(savedColor);
-      },
+      cmd: setColor.bind(this, color),
+      undo: setColor.bind(this, savedColor),
+      post: this._uiManager.updateUI.bind(this._uiManager, this),
       mustExec: true,
       type: AnnotationEditorParamsType.HIGHLIGHT_COLOR,
       overwriteIfSameType: true,
