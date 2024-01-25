@@ -771,7 +771,7 @@ describe("api", function () {
         [
           [OPS.moveTo, OPS.lineTo],
           [0, 9.75, 0.5, 9.75],
-          [0, 0.5, 9.75, 9.75],
+          [0, 9.75, 0.5, 9.75],
         ],
         null,
       ]);
