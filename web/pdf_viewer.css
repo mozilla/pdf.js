@@ -64,6 +64,8 @@
   padding-bottom: var(--pdfViewer-padding-bottom);
 
   --hcm-highlight-filter: none;
+  --hcm-highlight-selected-filter: none;
+
   @media screen and (forced-colors: active) {
     --hcm-highlight-filter: invert(100%);
   }

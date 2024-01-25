@@ -52,7 +52,6 @@
     --highlight-selected-bg-color: rgb(0 100 0 / 0.25);
     --highlight-backdrop-filter: none;
     --highlight-selected-backdrop-filter: none;
-    --mix-blend-mode: exclusion;
 
     @media screen and (forced-colors: active) {
       --highlight-bg-color: transparent;
