@@ -26,7 +26,7 @@
   z-index: 2;
   caret-color: CanvasText;
 
-  &.drawing {
+  &.highlighting {
     touch-action: none;
   }
 

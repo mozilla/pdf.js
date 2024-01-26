@@ -38,19 +38,31 @@
       var(--outline-around-width)
   );
   --editorFreeText-editing-cursor: text;
-  /*#if COMPONENTS*/
-  --editorInk-editing-cursor: pointer;
-  /*#else*/
   --editorInk-editing-cursor: url(images/cursor-editorInk.svg) 0 16, pointer;
-  /*#endif*/
+  --editorHighlight-editing-cursor: url(images/cursor-editorTextHighlight.svg)
+      23 23,
+    text;
+  --editorFreeHighlight-editing-cursor: url(images/toolbarButton-editorHighlight.svg)
+      0 16,
+    pointer;
+}
+
+.textLayer.highlighting {
+  cursor: var(--editorFreeHighlight-editing-cursor);
+
+  &:not(.free) span {
+    cursor: var(--editorHighlight-editing-cursor);
+  }
+
+  &.free span {
+    cursor: var(--editorFreeHighlight-editing-cursor);
+  }
 }
 
 @media (min-resolution: 1.1dppx) {
   :root {
-    /*#if !COMPONENTS*/
     --editorFreeText-editing-cursor: url(images/cursor-editorFreeText.svg) 0 16,
       text;
-    /*#endif*/
   }
 }
 
