@@ -325,7 +325,7 @@ function setReferer(url, callback) {
 // chrome.storage.local to chrome.storage.sync when needed.
 const storageArea = chrome.storage.sync || chrome.storage.local;
 
-class ChromePreferences extends BasePreferences {
+class Preferences extends BasePreferences {
   async _writeToStorage(prefObj) {
     return new Promise(resolve => {
       if (prefObj === this.defaults) {
@@ -426,10 +426,6 @@ class ChromeExternalServices extends DefaultExternalServices {
     );
   }
 
-  static createPreferences() {
-    return new ChromePreferences();
-  }
-
   static async createL10n() {
     return new GenericL10n(navigator.language);
   }
@@ -440,4 +436,4 @@ class ChromeExternalServices extends DefaultExternalServices {
 }
 PDFViewerApplication.externalServices = ChromeExternalServices;
 
-export { ChromeCom };
+export { ChromeCom, Preferences };

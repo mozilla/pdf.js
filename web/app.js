@@ -73,6 +73,7 @@ import { PDFScriptingManager } from "./pdf_scripting_manager.js";
 import { PDFSidebar } from "web-pdf_sidebar";
 import { PDFThumbnailViewer } from "web-pdf_thumbnail_viewer";
 import { PDFViewer } from "./pdf_viewer.js";
+import { Preferences } from "web-preferences";
 import { SecondaryToolbar } from "web-secondary_toolbar";
 import { Toolbar } from "web-toolbar";
 import { ViewHistory } from "./view_history.js";
@@ -98,10 +99,6 @@ class DefaultExternalServices {
   static initPassiveLoading(callbacks) {}
 
   static reportTelemetry(data) {}
-
-  static createPreferences() {
-    throw new Error("Not implemented: createPreferences");
-  }
 
   static async createL10n() {
     throw new Error("Not implemented: createL10n");
@@ -617,7 +614,7 @@ const PDFViewerApplication = {
   },
 
   async run(config) {
-    this.preferences = this.externalServices.createPreferences();
+    this.preferences = new Preferences();
     await this.initialize(config);
 
     const { appConfig, eventBus } = this;
