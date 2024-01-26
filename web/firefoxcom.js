@@ -382,10 +382,6 @@ class FirefoxExternalServices extends DefaultExternalServices {
     FirefoxCom.request("reportTelemetry", JSON.stringify(data));
   }
 
-  static createDownloadManager() {
-    return new DownloadManager();
-  }
-
   static createPreferences() {
     return new FirefoxPreferences();
   }
