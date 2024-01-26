@@ -334,7 +334,7 @@ class AnnotationEditorLayer {
         "pointerdown",
         this.#boundTextLayerPointerDown
       );
-      this.#textLayer.div.classList.add("drawing");
+      this.#textLayer.div.classList.add("highlighting");
     }
   }
 
@@ -345,7 +345,7 @@ class AnnotationEditorLayer {
         "pointerdown",
         this.#boundTextLayerPointerDown
       );
-      this.#textLayer.div.classList.remove("drawing");
+      this.#textLayer.div.classList.remove("highlighting");
     }
   }
 
@@ -359,10 +359,18 @@ class AnnotationEditorLayer {
         // Do nothing on right click.
         return;
       }
+      this.#textLayer.div.classList.add("free");
       HighlightEditor.startHighlighting(
         this,
         this.#uiManager.direction === "ltr",
         event
+      );
+      this.#textLayer.div.addEventListener(
+        "pointerup",
+        () => {
+          this.#textLayer.div.classList.remove("free");
+        },
+        { once: true }
       );
       event.preventDefault();
     }
