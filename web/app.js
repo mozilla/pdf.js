@@ -57,6 +57,7 @@ import { LinkTarget, PDFLinkService } from "./pdf_link_service.js";
 import { AltTextManager } from "web-alt_text_manager";
 import { AnnotationEditorParams } from "web-annotation_editor_params";
 import { DownloadManager } from "web-download_manager";
+import { ExternalServices } from "web-external_services";
 import { OverlayManager } from "./overlay_manager.js";
 import { PasswordPrompt } from "./password_prompt.js";
 import { PDFAttachmentViewer } from "web-pdf_attachment_viewer";
@@ -86,36 +87,6 @@ const ViewOnLoad = {
   PREVIOUS: 0, // Default value.
   INITIAL: 1,
 };
-
-class DefaultExternalServices {
-  constructor() {
-    throw new Error("Cannot initialize DefaultExternalServices.");
-  }
-
-  static updateFindControlState(data) {}
-
-  static updateFindMatchesCount(data) {}
-
-  static initPassiveLoading(callbacks) {}
-
-  static reportTelemetry(data) {}
-
-  static async createL10n() {
-    throw new Error("Not implemented: createL10n");
-  }
-
-  static createScripting() {
-    throw new Error("Not implemented: createScripting");
-  }
-
-  static updateEditorStates(data) {
-    throw new Error("Not implemented: updateEditorStates");
-  }
-
-  static getNimbusExperimentData() {
-    return shadow(this, "getNimbusExperimentData", Promise.resolve(null));
-  }
-}
 
 const PDFViewerApplication = {
   initialBookmark: document.location.hash.substring(1),
@@ -174,7 +145,7 @@ const PDFViewerApplication = {
   url: "",
   baseUrl: "",
   _downloadUrl: "",
-  externalServices: DefaultExternalServices,
+  externalServices: new ExternalServices(),
   _boundEvents: Object.create(null),
   documentInfo: null,
   metadata: null,
@@ -3217,8 +3188,4 @@ const PDFPrintServiceFactory = {
   },
 };
 
-export {
-  DefaultExternalServices,
-  PDFPrintServiceFactory,
-  PDFViewerApplication,
-};
+export { PDFPrintServiceFactory, PDFViewerApplication };
