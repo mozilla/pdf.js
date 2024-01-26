@@ -17,7 +17,6 @@
 import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
 import { AppOptions } from "./app_options.js";
 import { BasePreferences } from "./preferences.js";
-import { DownloadManager } from "./download_manager.js";
 import { GenericL10n } from "./genericl10n.js";
 import { GenericScripting } from "./generic_scripting.js";
 
@@ -425,10 +424,6 @@ class ChromeExternalServices extends DefaultExternalServices {
         callbacks.onOpenWithURL(url, length, originalUrl);
       }
     );
-  }
-
-  static createDownloadManager() {
-    return new DownloadManager();
   }
 
   static createPreferences() {

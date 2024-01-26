@@ -56,6 +56,7 @@ import { AutomationEventBus, EventBus } from "./event_utils.js";
 import { LinkTarget, PDFLinkService } from "./pdf_link_service.js";
 import { AltTextManager } from "web-alt_text_manager";
 import { AnnotationEditorParams } from "web-annotation_editor_params";
+import { DownloadManager } from "web-download_manager";
 import { OverlayManager } from "./overlay_manager.js";
 import { PasswordPrompt } from "./password_prompt.js";
 import { PDFAttachmentViewer } from "web-pdf_attachment_viewer";
@@ -97,10 +98,6 @@ class DefaultExternalServices {
   static initPassiveLoading(callbacks) {}
 
   static reportTelemetry(data) {}
-
-  static createDownloadManager() {
-    throw new Error("Not implemented: createDownloadManager");
-  }
 
   static createPreferences() {
     throw new Error("Not implemented: createPreferences");
@@ -390,8 +387,7 @@ const PDFViewerApplication = {
     });
     this.pdfLinkService = pdfLinkService;
 
-    const downloadManager = externalServices.createDownloadManager();
-    this.downloadManager = downloadManager;
+    const downloadManager = (this.downloadManager = new DownloadManager());
 
     const findController = new PDFFindController({
       linkService: pdfLinkService,
