@@ -13,11 +13,12 @@
  * limitations under the License.
  */
 
-import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
 import { isPdfFile, PDFDataRangeTransport } from "pdfjs-lib";
+import { BaseExternalServices } from "./external_services.js";
 import { BasePreferences } from "./preferences.js";
 import { DEFAULT_SCALE_VALUE } from "./ui_utils.js";
 import { L10n } from "./l10n.js";
+import { PDFViewerApplication } from "./app.js";
 
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
@@ -309,16 +310,16 @@ class FirefoxScripting {
   }
 }
 
-class FirefoxExternalServices extends DefaultExternalServices {
-  static updateFindControlState(data) {
+class ExternalServices extends BaseExternalServices {
+  updateFindControlState(data) {
     FirefoxCom.request("updateFindControlState", data);
   }
 
-  static updateFindMatchesCount(data) {
+  updateFindMatchesCount(data) {
     FirefoxCom.request("updateFindMatchesCount", data);
   }
 
-  static initPassiveLoading(callbacks) {
+  initPassiveLoading(callbacks) {
     let pdfDataRangeTransport;
 
     window.addEventListener("message", function windowMessage(e) {
@@ -378,15 +379,15 @@ class FirefoxExternalServices extends DefaultExternalServices {
     FirefoxCom.request("initPassiveLoading", null);
   }
 
-  static reportTelemetry(data) {
+  reportTelemetry(data) {
     FirefoxCom.request("reportTelemetry", JSON.stringify(data));
   }
 
-  static updateEditorStates(data) {
+  updateEditorStates(data) {
     FirefoxCom.request("updateEditorStates", data);
   }
 
-  static async createL10n() {
+  async createL10n() {
     const [localeProperties] = await Promise.all([
       FirefoxCom.requestAsync("getLocaleProperties", null),
       document.l10n.ready,
@@ -394,11 +395,11 @@ class FirefoxExternalServices extends DefaultExternalServices {
     return new L10n(localeProperties, document.l10n);
   }
 
-  static createScripting() {
+  createScripting() {
     return FirefoxScripting;
   }
 
-  static async getNimbusExperimentData() {
+  async getNimbusExperimentData() {
     const nimbusData = await FirefoxCom.requestAsync(
       "getNimbusExperimentData",
       null
@@ -406,6 +407,5 @@ class FirefoxExternalServices extends DefaultExternalServices {
     return nimbusData && JSON.parse(nimbusData);
   }
 }
-PDFViewerApplication.externalServices = FirefoxExternalServices;
 
-export { DownloadManager, FirefoxCom, Preferences };
+export { DownloadManager, ExternalServices, FirefoxCom, Preferences };
