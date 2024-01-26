@@ -147,7 +147,7 @@ class DownloadManager {
   }
 }
 
-class FirefoxPreferences extends BasePreferences {
+class Preferences extends BasePreferences {
   async _readFromStorage(prefObj) {
     return FirefoxCom.requestAsync("getPreferences", prefObj);
   }
@@ -382,10 +382,6 @@ class FirefoxExternalServices extends DefaultExternalServices {
     FirefoxCom.request("reportTelemetry", JSON.stringify(data));
   }
 
-  static createPreferences() {
-    return new FirefoxPreferences();
-  }
-
   static updateEditorStates(data) {
     FirefoxCom.request("updateEditorStates", data);
   }
@@ -412,4 +408,4 @@ class FirefoxExternalServices extends DefaultExternalServices {
 }
 PDFViewerApplication.externalServices = FirefoxExternalServices;
 
-export { DownloadManager, FirefoxCom };
+export { DownloadManager, FirefoxCom, Preferences };

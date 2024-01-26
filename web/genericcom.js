@@ -27,7 +27,7 @@ if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
 
 const GenericCom = {};
 
-class GenericPreferences extends BasePreferences {
+class Preferences extends BasePreferences {
   async _writeToStorage(prefObj) {
     localStorage.setItem("pdfjs.preferences", JSON.stringify(prefObj));
   }
@@ -38,10 +38,6 @@ class GenericPreferences extends BasePreferences {
 }
 
 class GenericExternalServices extends DefaultExternalServices {
-  static createPreferences() {
-    return new GenericPreferences();
-  }
-
   static async createL10n() {
     return new GenericL10n(AppOptions.get("locale"));
   }
@@ -52,4 +48,4 @@ class GenericExternalServices extends DefaultExternalServices {
 }
 PDFViewerApplication.externalServices = GenericExternalServices;
 
-export { GenericCom };
+export { GenericCom, Preferences };
