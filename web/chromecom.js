@@ -14,12 +14,12 @@
  */
 /* globals chrome */
 
-import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
 import { AppOptions } from "./app_options.js";
+import { BaseExternalServices } from "./external_services.js";
 import { BasePreferences } from "./preferences.js";
-import { DownloadManager } from "./download_manager.js";
 import { GenericL10n } from "./genericl10n.js";
 import { GenericScripting } from "./generic_scripting.js";
+import { PDFViewerApplication } from "./app.js";
 
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) {
   throw new Error(
@@ -326,7 +326,7 @@ function setReferer(url, callback) {
 // chrome.storage.local to chrome.storage.sync when needed.
 const storageArea = chrome.storage.sync || chrome.storage.local;
 
-class ChromePreferences extends BasePreferences {
+class Preferences extends BasePreferences {
   async _writeToStorage(prefObj) {
     return new Promise(resolve => {
       if (prefObj === this.defaults) {
@@ -415,8 +415,8 @@ class ChromePreferences extends BasePreferences {
   }
 }
 
-class ChromeExternalServices extends DefaultExternalServices {
-  static initPassiveLoading(callbacks) {
+class ExternalServices extends BaseExternalServices {
+  initPassiveLoading(callbacks) {
     // defaultUrl is set in viewer.js
     ChromeCom.resolvePDFFile(
       AppOptions.get("defaultUrl"),
@@ -427,22 +427,13 @@ class ChromeExternalServices extends DefaultExternalServices {
     );
   }
 
-  static createDownloadManager() {
-    return new DownloadManager();
-  }
-
-  static createPreferences() {
-    return new ChromePreferences();
-  }
-
-  static async createL10n() {
+  async createL10n() {
     return new GenericL10n(navigator.language);
   }
 
-  static createScripting() {
+  createScripting() {
     return new GenericScripting(AppOptions.get("sandboxBundleSrc"));
   }
 }
-PDFViewerApplication.externalServices = ChromeExternalServices;
 
-export { ChromeCom };
+export { ChromeCom, ExternalServices, Preferences };
