@@ -2208,9 +2208,9 @@ describe("annotation", function () {
     });
 
     it("should compress and save text", async function () {
-      if (isNodeJS) {
+      if (isNodeJS || !navigator.userAgent.includes("Firefox")) {
         pending(
-          "CompressionStream behaves differently in Node.js, compared to Firefox and Chrome."
+          "CompressionStream behaves differently in Chrome and Node.js, compared to Firefox (issue 17399)."
         );
       }
       const textWidgetRef = Ref.get(123, 0);
