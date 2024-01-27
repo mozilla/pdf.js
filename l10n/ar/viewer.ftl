@@ -39,9 +39,24 @@ pdfjs-open-file-button-label = افتح
 pdfjs-print-button =
     .title = اطبع
 pdfjs-print-button-label = اطبع
+pdfjs-save-button =
+    .title = احفظ
+pdfjs-save-button-label = احفظ
+# Used in Firefox for Android as a tooltip for the download button (“download” is a verb).
+pdfjs-download-button =
+    .title = نزّل
+# Used in Firefox for Android as a label for the download button (“download” is a verb).
+# Length of the translation matters since we are in a mobile context, with limited screen estate.
+pdfjs-download-button-label = نزّل
 pdfjs-bookmark-button =
     .title = الصفحة الحالية (عرض URL من الصفحة الحالية)
 pdfjs-bookmark-button-label = الصفحة الحالية
+# Used in Firefox for Android.
+pdfjs-open-in-app-button =
+    .title = افتح في تطبيق
+# Used in Firefox for Android.
+# Length of the translation matters since we are in a mobile context, with limited screen estate.
+pdfjs-open-in-app-button-label = افتح في تطبيق
 
 ##  Secondary toolbar and context menu
 
@@ -201,6 +216,7 @@ pdfjs-find-next-button =
 pdfjs-find-next-button-label = التالي
 pdfjs-find-highlight-checkbox = أبرِز الكل
 pdfjs-find-match-case-checkbox-label = طابق حالة الأحرف
+pdfjs-find-match-diacritics-checkbox-label = طابِق الحركات
 pdfjs-find-entire-word-checkbox-label = كلمات كاملة
 pdfjs-find-reached-top = تابعت من الأسفل بعدما وصلت إلى بداية المستند
 pdfjs-find-reached-bottom = تابعت من الأعلى بعدما وصلت إلى نهاية المستند
@@ -256,9 +272,18 @@ pdfjs-web-fonts-disabled = خطوط الوب مُعطّلة: تعذّر استخ
 ## Editing
 
 
+## Remove button for the various kind of editor.
+
+
+##
+
+
 ## Alt-text dialog
 
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
+
+
+## Color picker
 
