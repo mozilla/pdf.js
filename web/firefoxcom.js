@@ -400,6 +400,9 @@ class ExternalServices extends BaseExternalServices {
   }
 
   async getNimbusExperimentData() {
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("GECKOVIEW")) {
+      return null;
+    }
     const nimbusData = await FirefoxCom.requestAsync(
       "getNimbusExperimentData",
       null
