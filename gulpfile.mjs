@@ -270,6 +270,8 @@ function createWebpackConfig(
     "web-alt_text_manager": "web/alt_text_manager.js",
     "web-annotation_editor_params": "web/annotation_editor_params.js",
     "web-com": "",
+    "web-download_manager": "",
+    "web-external_services": "",
     "web-l10n_utils": "web/stubs.js",
     "web-pdf_attachment_viewer": "web/pdf_attachment_viewer.js",
     "web-pdf_cursor_tools": "web/pdf_cursor_tools.js",
@@ -280,6 +282,7 @@ function createWebpackConfig(
     "web-pdf_presentation_mode": "web/pdf_presentation_mode.js",
     "web-pdf_sidebar": "web/pdf_sidebar.js",
     "web-pdf_thumbnail_viewer": "web/pdf_thumbnail_viewer.js",
+    "web-preferences": "",
     "web-print_service": "",
     "web-secondary_toolbar": "web/secondary_toolbar.js",
     "web-toolbar": "web/toolbar.js",
@@ -289,6 +292,9 @@ function createWebpackConfig(
     libraryAlias["display-network"] = "src/display/network.js";
 
     viewerAlias["web-com"] = "web/chromecom.js";
+    viewerAlias["web-download_manager"] = "web/download_manager.js";
+    viewerAlias["web-external_services"] = "web/chromecom.js";
+    viewerAlias["web-preferences"] = "web/chromecom.js";
     viewerAlias["web-print_service"] = "web/pdf_print_service.js";
   } else if (bundleDefines.GENERIC) {
     // Aliases defined here must also be replicated in the paths section of
@@ -300,7 +306,10 @@ function createWebpackConfig(
     libraryAlias["display-node_utils"] = "src/display/node_utils.js";
 
     viewerAlias["web-com"] = "web/genericcom.js";
+    viewerAlias["web-download_manager"] = "web/download_manager.js";
+    viewerAlias["web-external_services"] = "web/genericcom.js";
     viewerAlias["web-l10n_utils"] = "web/l10n_utils.js";
+    viewerAlias["web-preferences"] = "web/genericcom.js";
     viewerAlias["web-print_service"] = "web/pdf_print_service.js";
   } else if (bundleDefines.MOZCENTRAL) {
     if (bundleDefines.GECKOVIEW) {
@@ -313,6 +322,9 @@ function createWebpackConfig(
       }
     }
     viewerAlias["web-com"] = "web/firefoxcom.js";
+    viewerAlias["web-download_manager"] = "web/firefoxcom.js";
+    viewerAlias["web-external_services"] = "web/firefoxcom.js";
+    viewerAlias["web-preferences"] = "web/firefoxcom.js";
     viewerAlias["web-print_service"] = "web/firefox_print_service.js";
   }
   const alias = { ...basicAlias, ...libraryAlias, ...viewerAlias };
