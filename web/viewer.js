@@ -177,7 +177,6 @@ function getViewerConfiguration() {
       ),
     },
     printContainer: document.getElementById("printContainer"),
-    debuggerScriptPath: "./debugger.mjs",
   };
 }
 
