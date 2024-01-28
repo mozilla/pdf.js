@@ -26,7 +26,6 @@ import {
   AnnotationFieldFlag,
   AnnotationFlag,
   AnnotationType,
-  isNodeJS,
   OPS,
   RenderingIntentFlag,
   stringToBytes,
@@ -44,6 +43,7 @@ import {
 } from "../../src/display/api.js";
 import { Dict, Name, Ref, RefSetCache } from "../../src/core/primitives.js";
 import { Lexer, Parser } from "../../src/core/parser.js";
+import { FlateStream } from "../../src/core/flate_stream.js";
 import { PartialEvaluator } from "../../src/core/evaluator.js";
 import { StringStream } from "../../src/core/stream.js";
 import { WorkerTask } from "../../src/core/worker.js";
@@ -2208,11 +2208,6 @@ describe("annotation", function () {
     });
 
     it("should compress and save text", async function () {
-      if (isNodeJS || !navigator.userAgent.includes("Firefox")) {
-        pending(
-          "CompressionStream behaves differently in Chrome and Node.js, compared to Firefox (issue 17399)."
-        );
-      }
       const textWidgetRef = Ref.get(123, 0);
       const xref = new XRefMock([
         { ref: textWidgetRef, data: textWidgetDict },
@@ -2249,18 +2244,27 @@ describe("annotation", function () {
           `/V (${value}) /AP << /N 2 0 R>> /M (date)>>\nendobj\n`
       );
 
-      const compressedData = [
-        120, 156, 211, 15, 169, 80, 112, 242, 117, 86, 40, 84, 112, 10, 81, 208,
-        247, 72, 205, 41, 83, 48, 85, 8, 73, 83, 48, 84, 48, 0, 66, 8, 25, 146,
-        171, 96, 164, 96, 172, 103, 96, 174, 16, 146, 162, 160, 145, 56, 194,
-        129, 166, 66, 72, 150, 130, 107, 136, 66, 160, 130, 171, 175, 51, 0,
-        222, 235, 111, 133,
-      ];
-      const compressedStream = String.fromCharCode(...compressedData);
+      const compressedStream = newData.data.substring(
+        newData.data.indexOf("stream\n") + "stream\n".length,
+        newData.data.indexOf("\nendstream")
+      );
+      // Ensure that the data was in fact (significantly) compressed.
+      expect(compressedStream.length).toBeLessThan(value.length / 3);
+
       expect(newData.data).toEqual(
         "2 0 obj\n<< /Subtype /Form /Resources " +
-          "<< /Font << /Helv 314 0 R>>>> /BBox [0 0 32 10] /Filter /FlateDecode /Length 68>> stream\n" +
+          "<< /Font << /Helv 314 0 R>>>> /BBox [0 0 32 10] " +
+          `/Filter /FlateDecode /Length ${compressedStream.length}>> stream\n` +
           `${compressedStream}\nendstream\nendobj\n`
+      );
+
+      // Given that the exact compression-output may differ between environments
+      // and browsers, ensure that the resulting data can be correctly decoded
+      // by our `FlateStream`-implementation since that simulates opening the
+      // generated data with the PDF.js library.
+      const flateStream = new FlateStream(new StringStream(compressedStream));
+      expect(flateStream.getString()).toEqual(
+        `/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2 3.07 Td (${value}) Tj ET Q EMC`
       );
     });
 
