@@ -602,8 +602,12 @@ const PDFViewerApplication = {
     }
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      const fileInput = appConfig.openFileInput;
+      const fileInput = (this._openFileInput = document.createElement("input"));
+      fileInput.id = "fileInput";
+      fileInput.hidden = true;
+      fileInput.type = "file";
       fileInput.value = null;
+      document.body.append(fileInput);
 
       fileInput.addEventListener("change", function (evt) {
         const { files } = evt.target;
@@ -2383,8 +2387,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 
   // eslint-disable-next-line no-var
   var webViewerOpenFile = function (evt) {
-    const fileInput = PDFViewerApplication.appConfig.openFileInput;
-    fileInput.click();
+    PDFViewerApplication._openFileInput?.click();
   };
 }
 
