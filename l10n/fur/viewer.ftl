@@ -301,8 +301,9 @@ pdfjs-editor-ink-button-label = Dissen
 pdfjs-editor-stamp-button =
     .title = Zonte o modifiche imagjins
 pdfjs-editor-stamp-button-label = Zonte o modifiche imagjins
-pdfjs-editor-remove-button =
-    .title = Gjave
+pdfjs-editor-highlight-button =
+    .title = Evidenzie
+pdfjs-editor-highlight-button-label = Evidenzie
 
 ## Remove button for the various kind of editor.
 
