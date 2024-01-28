@@ -105,6 +105,11 @@ const defaultOptions = {
     value: 0,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  debuggerSrc: {
+    /** @type {string} */
+    value: "./debugger.mjs",
+    kind: OptionKind.VIEWER,
+  },
   defaultZoomDelay: {
     /** @type {number} */
     value: 400,

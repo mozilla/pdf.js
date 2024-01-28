@@ -2167,11 +2167,10 @@ async function loadFakeWorker() {
 }
 
 async function loadPDFBug(self) {
-  const { debuggerScriptPath } = self.appConfig;
   const { PDFBug } =
     typeof PDFJSDev === "undefined"
-      ? await import(debuggerScriptPath) // eslint-disable-line no-unsanitized/method
-      : await __non_webpack_import__(debuggerScriptPath);
+      ? await import(AppOptions.get("debuggerSrc")) // eslint-disable-line no-unsanitized/method
+      : await __non_webpack_import__(AppOptions.get("debuggerSrc"));
 
   self._PDFBug = PDFBug;
 }
