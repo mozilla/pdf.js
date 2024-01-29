@@ -17,3 +17,5 @@ var i = '0';
 var j = {
   i: 1
 };
+var k = false;
+var l = true;
