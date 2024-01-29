@@ -8,3 +8,5 @@ var g = PDFJSDev.eval('OBJ');
 var h = PDFJSDev.json('$ROOT/external/builder/fixtures_esprima/evals.json');
 var i = typeof PDFJSDev === 'undefined' ? PDFJSDev.eval('FALSE') : '0';
 var j = typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('OBJ.obj') : '0';
+var k = !PDFJSDev.test('TRUE');
+var l = !PDFJSDev.test('FALSE');

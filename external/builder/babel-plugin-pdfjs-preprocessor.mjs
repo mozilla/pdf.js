@@ -92,17 +92,22 @@ function babelPluginPDFJSPreprocessor(babel, ctx) {
           }
         },
       },
-      UnaryExpression(path) {
-        const { node } = path;
-        if (node.operator === "typeof" && isPDFJSPreprocessor(node.argument)) {
-          // typeof PDFJSDev => 'object'
-          path.replaceWith(t.stringLiteral("object"));
-          return;
-        }
-        if (node.operator === "!" && t.isBooleanLiteral(node.argument)) {
-          // !true => false,  !false => true
-          path.replaceWith(t.booleanLiteral(!node.argument.value));
-        }
+      UnaryExpression: {
+        exit(path) {
+          const { node } = path;
+          if (
+            node.operator === "typeof" &&
+            isPDFJSPreprocessor(node.argument)
+          ) {
+            // typeof PDFJSDev => 'object'
+            path.replaceWith(t.stringLiteral("object"));
+            return;
+          }
+          if (node.operator === "!" && t.isBooleanLiteral(node.argument)) {
+            // !true => false,  !false => true
+            path.replaceWith(t.booleanLiteral(!node.argument.value));
+          }
+        },
       },
       LogicalExpression: {
         exit(path) {
