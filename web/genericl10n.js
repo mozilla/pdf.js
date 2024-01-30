@@ -20,22 +20,34 @@ import { DOMLocalization } from "fluent-dom";
 import { fetchData } from "pdfjs-lib";
 import { L10n } from "./l10n.js";
 
+function createBundle(lang, text) {
+  const resource = new FluentResource(text);
+  const bundle = new FluentBundle(lang);
+  const errors = bundle.addResource(resource);
+  if (errors.length) {
+    console.error("L10n errors", errors);
+  }
+  return bundle;
+}
+
 /**
  * @implements {IL10n}
  */
 class GenericL10n extends L10n {
   constructor(lang) {
     super({ lang });
-    this._setL10n(
-      new DOMLocalization(
-        [],
-        GenericL10n.#generateBundles.bind(
+
+    const generateBundles = !lang
+      ? GenericL10n.#generateBundlesFallback.bind(
+          GenericL10n,
+          this.getLanguage()
+        )
+      : GenericL10n.#generateBundles.bind(
           GenericL10n,
           "en-us",
           this.getLanguage()
-        )
-      )
-    );
+        );
+    this._setL10n(new DOMLocalization([], generateBundles));
   }
 
   /**
@@ -63,6 +75,9 @@ class GenericL10n extends L10n {
       if (bundle) {
         yield bundle;
       }
+      if (lang === "en-us") {
+        yield this.#createBundleFallback(lang);
+      }
     }
   }
 
@@ -74,20 +89,36 @@ class GenericL10n extends L10n {
     const url = new URL(path, baseURL);
     const text = await fetchData(url, /* type = */ "text");
 
-    const resource = new FluentResource(text);
-    const bundle = new FluentBundle(lang);
-    const errors = bundle.addResource(resource);
-    if (errors.length) {
-      console.error("L10n errors", errors);
-    }
-    return bundle;
+    return createBundle(lang, text);
   }
 
   static async #getPaths() {
-    const { href } = document.querySelector(`link[type="application/l10n"]`);
-    const paths = await fetchData(href, /* type = */ "json");
+    try {
+      const { href } = document.querySelector(`link[type="application/l10n"]`);
+      const paths = await fetchData(href, /* type = */ "json");
 
-    return { baseURL: href.replace(/[^/]*$/, "") || "./", paths };
+      return { baseURL: href.replace(/[^/]*$/, "") || "./", paths };
+    } catch {}
+    return { baseURL: "./", paths: Object.create(null) };
+  }
+
+  static async *#generateBundlesFallback(lang) {
+    yield this.#createBundleFallback(lang);
+  }
+
+  static async #createBundleFallback(lang) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
+      throw new Error("Not implemented: #createBundleFallback");
+    }
+    const text =
+      typeof PDFJSDev === "undefined"
+        ? await fetchData(
+            new URL(`./locale/${lang}/viewer.ftl`, window.location.href),
+            /* type = */ "text"
+          )
+        : PDFJSDev.eval("DEFAULT_FTL");
+
+    return createBundle(lang, text);
   }
 }
 
