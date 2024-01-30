@@ -117,4 +117,6 @@ class L10n {
   }
 }
 
-export { L10n };
+const GenericL10n = null;
+
+export { GenericL10n, L10n };
