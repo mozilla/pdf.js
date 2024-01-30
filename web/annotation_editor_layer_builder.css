@@ -40,10 +40,10 @@
   --editorFreeText-editing-cursor: text;
   --editorInk-editing-cursor: url(images/cursor-editorInk.svg) 0 16, pointer;
   --editorHighlight-editing-cursor: url(images/cursor-editorTextHighlight.svg)
-      23 23,
+      24 24,
     text;
-  --editorFreeHighlight-editing-cursor: url(images/toolbarButton-editorHighlight.svg)
-      0 16,
+  --editorFreeHighlight-editing-cursor: url(images/cursor-editorFreeHighlight.svg)
+      1 18,
     pointer;
 }
 
