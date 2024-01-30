@@ -837,8 +837,6 @@ class FreeHighlightOutline extends Outline {
       y = minY - this.#innerMargin,
       width = maxX - minX + 2 * this.#innerMargin,
       height = maxY - minY + 2 * this.#innerMargin;
-    lastPointX = (lastPointX - x) / width;
-    lastPointY = (lastPointY - y) / height;
     this.#bbox = { x, y, width, height, lastPoint: [lastPointX, lastPointY] };
   }
 
