@@ -206,6 +206,24 @@ function webViewerLoad() {
     }
   }
   PDFViewerApplication.run(config);
+  window.addEventListener('message', handlePostMessage);
+}
+
+const postMessageHandlers = {
+  open(msg) {
+    const { pdfData } = msg;
+    PDFViewerApplication.open({ data: pdfData })
+  }
+};
+
+function handlePostMessage(event) {
+  const { type, msg } = event.data;
+  const handler = postMessageHandlers[type];
+  if (!handler) {
+    console.error(`pdf.js: no handler for postMessage with type ${type}`)
+    return;
+  }
+  return handler(msg);
 }
 
 // Block the "load" event until all pages are loaded, to ensure that printing
