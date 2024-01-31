@@ -145,7 +145,6 @@ const PDFViewerApplication = {
   url: "",
   baseUrl: "",
   _downloadUrl: "",
-  externalServices: new ExternalServices(),
   _boundEvents: Object.create(null),
   documentInfo: null,
   metadata: null,
@@ -674,6 +673,10 @@ const PDFViewerApplication = {
     } else {
       throw new Error("Not implemented: run");
     }
+  },
+
+  get externalServices() {
+    return shadow(this, "externalServices", new ExternalServices());
   },
 
   get initialized() {
