@@ -113,7 +113,7 @@ class GenericL10n extends L10n {
     const text =
       typeof PDFJSDev === "undefined"
         ? await fetchData(
-            new URL(`./locale/${lang}/viewer.ftl`, window.location.href),
+            new URL("../l10n/en-US/viewer.ftl", window.location.href),
             /* type = */ "text"
           )
         : PDFJSDev.eval("DEFAULT_FTL");
