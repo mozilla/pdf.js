@@ -745,7 +745,7 @@ class Driver {
     if (!("message" in e)) {
       return JSON.stringify(e);
     }
-    return e.message + ("stack" in e ? " at " + e.stack.split("\n")[0] : "");
+    return e.message + ("stack" in e ? " at " + e.stack.split("\n", 1)[0] : "");
   }
 
   _getLastPageNumber(task) {
