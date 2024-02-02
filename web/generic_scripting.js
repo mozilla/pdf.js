@@ -17,7 +17,7 @@ import { getPdfFilenameFromUrl } from "pdfjs-lib";
 
 async function docProperties(pdfDocument) {
   const url = "",
-    baseUrl = url.split("#")[0];
+    baseUrl = url.split("#", 1)[0];
   // eslint-disable-next-line prefer-const
   let { info, metadata, contentDispositionFilename, contentLength } =
     await pdfDocument.getMetadata();
