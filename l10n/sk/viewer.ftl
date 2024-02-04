@@ -305,8 +305,6 @@ pdfjs-editor-ink-button-label = Kresliť
 pdfjs-editor-stamp-button =
     .title = Pridať alebo upraviť obrázky
 pdfjs-editor-stamp-button-label = Pridať alebo upraviť obrázky
-pdfjs-editor-remove-button =
-    .title = Odstrániť
 pdfjs-editor-highlight-button =
     .title = Zvýrazniť
 pdfjs-editor-highlight-button-label = Zvýrazniť
@@ -333,6 +331,8 @@ pdfjs-editor-ink-opacity-input = Priehľadnosť
 pdfjs-editor-stamp-add-image-button =
     .title = Pridať obrázok
 pdfjs-editor-stamp-add-image-button-label = Pridať obrázok
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Hrúbka
 pdfjs-free-text =
     .aria-label = Textový editor
 pdfjs-free-text-default-content = Začnite písať…

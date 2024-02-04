@@ -301,8 +301,6 @@ pdfjs-editor-ink-button-label = Teikna
 pdfjs-editor-stamp-button =
     .title = Bæta við eða breyta myndum
 pdfjs-editor-stamp-button-label = Bæta við eða breyta myndum
-pdfjs-editor-remove-button =
-    .title = Fjarlægja
 pdfjs-editor-highlight-button =
     .title = Áherslulita
 pdfjs-editor-highlight-button-label = Áherslulita
@@ -329,6 +327,8 @@ pdfjs-editor-ink-opacity-input = Ógegnsæi
 pdfjs-editor-stamp-add-image-button =
     .title = Bæta við mynd
 pdfjs-editor-stamp-add-image-button-label = Bæta við mynd
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Þykkt
 pdfjs-free-text =
     .aria-label = Textaritill
 pdfjs-free-text-default-content = Byrjaðu að skrifa…

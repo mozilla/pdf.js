@@ -309,8 +309,6 @@ pdfjs-editor-ink-button-label = Lluniadu
 pdfjs-editor-stamp-button =
     .title = Ychwanegu neu olygu delweddau
 pdfjs-editor-stamp-button-label = Ychwanegu neu olygu delweddau
-pdfjs-editor-remove-button =
-    .title = Tynnu
 pdfjs-editor-highlight-button =
     .title = Amlygu
 pdfjs-editor-highlight-button-label = Amlygu
@@ -337,6 +335,8 @@ pdfjs-editor-ink-opacity-input = Didreiddedd
 pdfjs-editor-stamp-add-image-button =
     .title = Ychwanegu delwedd
 pdfjs-editor-stamp-add-image-button-label = Ychwanegu delwedd
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Trwch
 pdfjs-free-text =
     .aria-label = Golygydd Testun
 pdfjs-free-text-default-content = Cychwyn teipio…

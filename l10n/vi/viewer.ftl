@@ -293,8 +293,6 @@ pdfjs-editor-ink-button-label = Vẽ
 pdfjs-editor-stamp-button =
     .title = Thêm hoặc chỉnh sửa hình ảnh
 pdfjs-editor-stamp-button-label = Thêm hoặc chỉnh sửa hình ảnh
-pdfjs-editor-remove-button =
-    .title = Xóa
 pdfjs-editor-highlight-button =
     .title = Tô sáng
 pdfjs-editor-highlight-button-label = Tô sáng
@@ -321,6 +319,8 @@ pdfjs-editor-ink-opacity-input = Độ mờ
 pdfjs-editor-stamp-add-image-button =
     .title = Thêm hình ảnh
 pdfjs-editor-stamp-add-image-button-label = Thêm hình ảnh
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Độ dày
 pdfjs-free-text =
     .aria-label = Trình sửa văn bản
 pdfjs-free-text-default-content = Bắt đầu nhập…

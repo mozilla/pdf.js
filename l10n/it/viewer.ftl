@@ -334,6 +334,9 @@ pdfjs-editor-stamp-add-image-button =
 pdfjs-editor-stamp-add-image-button-label = Aggiungi immagine
 # This refers to the thickness of the line used for free highlighting (not bound to text)
 pdfjs-editor-free-highlight-thickness-input = Spessore
+pdfjs-editor-free-highlight-thickness-title =
+    .title = Modifica lo spessore della selezione per elementi non testuali
+
 pdfjs-free-text =
     .aria-label = Editor di testo
 pdfjs-free-text-default-content = Inizia a digitare…
@@ -391,3 +394,4 @@ pdfjs-editor-colorpicker-pink =
     .title = Rosa
 pdfjs-editor-colorpicker-red =
     .title = Rosso
+

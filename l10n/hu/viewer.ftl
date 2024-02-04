@@ -301,8 +301,6 @@ pdfjs-editor-ink-button-label = Rajzolás
 pdfjs-editor-stamp-button =
     .title = Képek hozzáadása vagy szerkesztése
 pdfjs-editor-stamp-button-label = Képek hozzáadása vagy szerkesztése
-pdfjs-editor-remove-button =
-    .title = Eltávolítás
 pdfjs-editor-highlight-button =
     .title = Kiemelés
 pdfjs-editor-highlight-button-label = Kiemelés
@@ -329,6 +327,8 @@ pdfjs-editor-ink-opacity-input = Átlátszatlanság
 pdfjs-editor-stamp-add-image-button =
     .title = Kép hozzáadása
 pdfjs-editor-stamp-add-image-button-label = Kép hozzáadása
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Vastagság
 pdfjs-free-text =
     .aria-label = Szövegszerkesztő
 pdfjs-free-text-default-content = Kezdjen el gépelni…

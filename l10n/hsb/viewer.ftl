@@ -305,8 +305,6 @@ pdfjs-editor-ink-button-label = Rysować
 pdfjs-editor-stamp-button =
     .title = Wobrazy přidać abo wobdźěłać
 pdfjs-editor-stamp-button-label = Wobrazy přidać abo wobdźěłać
-pdfjs-editor-remove-button =
-    .title = Wotstronić
 pdfjs-editor-highlight-button =
     .title = Wuzběhnyć
 pdfjs-editor-highlight-button-label = Wuzběhnyć
@@ -333,6 +331,8 @@ pdfjs-editor-ink-opacity-input = Opacita
 pdfjs-editor-stamp-add-image-button =
     .title = Wobraz přidać
 pdfjs-editor-stamp-add-image-button-label = Wobraz přidać
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Tołstosć
 pdfjs-free-text =
     .aria-label = Tekstowy editor
 pdfjs-free-text-default-content = Započńće pisać…

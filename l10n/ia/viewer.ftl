@@ -301,8 +301,6 @@ pdfjs-editor-ink-button-label = Designar
 pdfjs-editor-stamp-button =
     .title = Adder o rediger imagines
 pdfjs-editor-stamp-button-label = Adder o rediger imagines
-pdfjs-editor-remove-button =
-    .title = Remover
 pdfjs-editor-highlight-button =
     .title = Evidentia
 pdfjs-editor-highlight-button-label = Evidentia
@@ -329,6 +327,8 @@ pdfjs-editor-ink-opacity-input = Opacitate
 pdfjs-editor-stamp-add-image-button =
     .title = Adder imagine
 pdfjs-editor-stamp-add-image-button-label = Adder imagine
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Spissor
 pdfjs-free-text =
     .aria-label = Editor de texto
 pdfjs-free-text-default-content = Comenciar a scriber…

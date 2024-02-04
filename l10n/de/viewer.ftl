@@ -301,8 +301,6 @@ pdfjs-editor-ink-button-label = Zeichnen
 pdfjs-editor-stamp-button =
     .title = Grafiken hinzufügen oder bearbeiten
 pdfjs-editor-stamp-button-label = Grafiken hinzufügen oder bearbeiten
-pdfjs-editor-remove-button =
-    .title = Entfernen
 pdfjs-editor-highlight-button =
     .title = Hervorheben
 pdfjs-editor-highlight-button-label = Hervorheben
@@ -329,6 +327,8 @@ pdfjs-editor-ink-opacity-input = Deckkraft
 pdfjs-editor-stamp-add-image-button =
     .title = Grafik hinzufügen
 pdfjs-editor-stamp-add-image-button-label = Grafik hinzufügen
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Dicke
 pdfjs-free-text =
     .aria-label = Texteditor
 pdfjs-free-text-default-content = Schreiben beginnen…

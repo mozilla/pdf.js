@@ -293,8 +293,6 @@ pdfjs-editor-ink-button-label = 그리기
 pdfjs-editor-stamp-button =
     .title = 이미지 추가 또는 편집
 pdfjs-editor-stamp-button-label = 이미지 추가 또는 편집
-pdfjs-editor-remove-button =
-    .title = 제거
 pdfjs-editor-highlight-button =
     .title = 강조
 pdfjs-editor-highlight-button-label = 강조
@@ -321,6 +319,8 @@ pdfjs-editor-ink-opacity-input = 불투명도
 pdfjs-editor-stamp-add-image-button =
     .title = 이미지 추가
 pdfjs-editor-stamp-add-image-button-label = 이미지 추가
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = 두께
 pdfjs-free-text =
     .aria-label = 텍스트 편집기
 pdfjs-free-text-default-content = 입력하세요…
