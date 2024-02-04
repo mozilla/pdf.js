@@ -405,18 +405,10 @@ function getDocument(src) {
       const networkStreamPromise = new Promise(function (resolve) {
         let networkStream;
         if (rangeTransport) {
-          networkStream = new PDFDataTransportStream(
-            {
-              length,
-              initialData: rangeTransport.initialData,
-              progressiveDone: rangeTransport.progressiveDone,
-              contentDispositionFilename:
-                rangeTransport.contentDispositionFilename,
-              disableRange,
-              disableStream,
-            },
-            rangeTransport
-          );
+          networkStream = new PDFDataTransportStream(rangeTransport, {
+            disableRange,
+            disableStream,
+          });
         } else if (!data) {
           if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
             throw new Error("Not implemented: createPDFNetworkStream");
