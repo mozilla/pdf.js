@@ -70,6 +70,7 @@ import { PDFHistory } from "./pdf_history.js";
 import { PDFLayerViewer } from "web-pdf_layer_viewer";
 import { PDFOutlineViewer } from "web-pdf_outline_viewer";
 import { PDFPresentationMode } from "web-pdf_presentation_mode";
+import { PDFPrintServiceFactory } from "web-print_service";
 import { PDFRenderingQueue } from "./pdf_rendering_queue.js";
 import { PDFScriptingManager } from "./pdf_scripting_manager.js";
 import { PDFSidebar } from "web-pdf_sidebar";
@@ -731,7 +732,7 @@ const PDFViewerApplication = {
   },
 
   get supportsPrinting() {
-    return PDFPrintServiceFactory.instance.supportsPrinting;
+    return PDFPrintServiceFactory.supportsPrinting;
   },
 
   get supportsFullscreen() {
@@ -1786,7 +1787,7 @@ const PDFViewerApplication = {
     const optionalContentConfigPromise =
       this.pdfViewer.optionalContentConfigPromise;
 
-    const printService = PDFPrintServiceFactory.instance.createPrintService(
+    const printService = PDFPrintServiceFactory.createPrintService(
       this.pdfDocument,
       pagesOverview,
       printContainer,
@@ -3234,14 +3235,4 @@ function webViewerReportTelemetry({ details }) {
   PDFViewerApplication.externalServices.reportTelemetry(details);
 }
 
-/* Abstract factory for the print service. */
-const PDFPrintServiceFactory = {
-  instance: {
-    supportsPrinting: false,
-    createPrintService() {
-      throw new Error("Not implemented: createPrintService");
-    },
-  },
-};
-
-export { PDFPrintServiceFactory, PDFViewerApplication };
+export { PDFViewerApplication };

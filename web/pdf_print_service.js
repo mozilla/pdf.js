@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import { AnnotationMode, PixelsPerInch } from "pdfjs-lib";
-import { PDFPrintServiceFactory, PDFViewerApplication } from "./app.js";
+import { AnnotationMode, PixelsPerInch, shadow } from "pdfjs-lib";
 import { getXfaHtmlForPrinting } from "./print_utils.js";
+import { PDFViewerApplication } from "./app.js";
 
 let activeService = null;
 let dialog = null;
@@ -355,10 +355,15 @@ function ensureOverlay() {
   return overlayPromise;
 }
 
-PDFPrintServiceFactory.instance = {
-  supportsPrinting: true,
+/**
+ * @implements {IPDFPrintServiceFactory}
+ */
+class PDFPrintServiceFactory {
+  static get supportsPrinting() {
+    return shadow(this, "supportsPrinting", true);
+  }
 
-  createPrintService(
+  static createPrintService(
     pdfDocument,
     pagesOverview,
     printContainer,
@@ -378,7 +383,7 @@ PDFPrintServiceFactory.instance = {
       printAnnotationStoragePromise
     );
     return activeService;
-  },
-};
+  }
+}
 
-export { PDFPrintService };
+export { PDFPrintServiceFactory };
