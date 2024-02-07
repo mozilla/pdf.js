@@ -64,6 +64,11 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.BROWSER,
   },
+  supportsCaretBrowsingMode: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.BROWSER,
+  },
   supportsDocumentFonts: {
     /** @type {boolean} */
     value: true,

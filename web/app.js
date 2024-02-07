@@ -56,6 +56,7 @@ import { AutomationEventBus, EventBus } from "./event_utils.js";
 import { LinkTarget, PDFLinkService } from "./pdf_link_service.js";
 import { AltTextManager } from "web-alt_text_manager";
 import { AnnotationEditorParams } from "web-annotation_editor_params";
+import { CaretBrowsingMode } from "./caret_browsing.js";
 import { DownloadManager } from "web-download_manager";
 import { ExternalServices } from "web-external_services";
 import { OverlayManager } from "./overlay_manager.js";
@@ -162,6 +163,7 @@ const PDFViewerApplication = {
   _touchInfo: null,
   _isCtrlKeyDown: false,
   _nimbusDataPromise: null,
+  _caretBrowsing: null,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -772,6 +774,23 @@ const PDFViewerApplication = {
       "supportsMouseWheelZoomMetaKey",
       AppOptions.get("supportsMouseWheelZoomMetaKey")
     );
+  },
+
+  get supportsCaretBrowsingMode() {
+    return shadow(
+      this,
+      "supportsCaretBrowsingMode",
+      AppOptions.get("supportsCaretBrowsingMode")
+    );
+  },
+
+  moveCaret(isUp, select) {
+    this._caretBrowsing ||= new CaretBrowsingMode(
+      this.appConfig.mainContainer,
+      this.appConfig.viewerContainer,
+      this.appConfig.toolbar?.container
+    );
+    this._caretBrowsing.moveCaret(isUp, select);
   },
 
   initPassiveLoading(file) {
@@ -3014,6 +3033,15 @@ function webViewerKeyDown(evt) {
       turnOnlyIfPageFit = false;
     switch (evt.keyCode) {
       case 38: // up arrow
+        if (PDFViewerApplication.supportsCaretBrowsingMode) {
+          PDFViewerApplication.moveCaret(
+            /* isUp = */ true,
+            /* select = */ false
+          );
+          handled = true;
+          break;
+        }
+      /* falls through */
       case 33: // pg up
         // vertical scrolling using arrow/pg keys
         if (pdfViewer.isVerticalScrollbarEnabled) {
@@ -3028,6 +3056,9 @@ function webViewerKeyDown(evt) {
         turnPage = -1;
         break;
       case 37: // left arrow
+        if (PDFViewerApplication.supportsCaretBrowsingMode) {
+          return;
+        }
         // horizontal scrolling using arrow keys
         if (pdfViewer.isHorizontalScrollbarEnabled) {
           turnOnlyIfPageFit = true;
@@ -3051,6 +3082,15 @@ function webViewerKeyDown(evt) {
         }
         break;
       case 40: // down arrow
+        if (PDFViewerApplication.supportsCaretBrowsingMode) {
+          PDFViewerApplication.moveCaret(
+            /* isUp = */ false,
+            /* select = */ false
+          );
+          handled = true;
+          break;
+        }
+      /* falls through */
       case 34: // pg down
         // vertical scrolling using arrow/pg keys
         if (pdfViewer.isVerticalScrollbarEnabled) {
@@ -3066,6 +3106,9 @@ function webViewerKeyDown(evt) {
         turnPage = 1;
         break;
       case 39: // right arrow
+        if (PDFViewerApplication.supportsCaretBrowsingMode) {
+          return;
+        }
         // horizontal scrolling using arrow keys
         if (pdfViewer.isHorizontalScrollbarEnabled) {
           turnOnlyIfPageFit = true;
@@ -3139,6 +3182,14 @@ function webViewerKeyDown(evt) {
         handled = true;
         break;
 
+      case 38: // up arrow
+        PDFViewerApplication.moveCaret(/* isUp = */ true, /* select = */ true);
+        handled = true;
+        break;
+      case 40: // down arrow
+        PDFViewerApplication.moveCaret(/* isUp = */ false, /* select = */ true);
+        handled = true;
+        break;
       case 82: // 'r'
         PDFViewerApplication.rotatePages(-90);
         break;
