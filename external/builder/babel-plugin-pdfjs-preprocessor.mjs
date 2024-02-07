@@ -170,17 +170,6 @@ function babelPluginPDFJSPreprocessor(babel, ctx) {
           );
           path.replaceWith(t.inherits(t.valueToNode(result), path.node));
         }
-
-        // require('string')
-        if (
-          t.isIdentifier(node.callee, { name: "require" }) &&
-          node.arguments.length === 1 &&
-          t.isStringLiteral(node.arguments[0]) &&
-          ctx.map?.[node.arguments[0].value]
-        ) {
-          const requireName = node.arguments[0];
-          requireName.value = requireName.raw = ctx.map[requireName.value];
-        }
       },
       BlockStatement: {
         // Visit node in post-order so that recursive flattening
