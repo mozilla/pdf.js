@@ -154,6 +154,7 @@ class DrawLayer {
       use.setAttribute("stroke", "none");
       use.setAttribute("fill", "black");
       use.setAttribute("fill-rule", "nonzero");
+      use.classList.add("mask");
     }
 
     const use1 = DrawLayer._svgFactory.createElement("use");
