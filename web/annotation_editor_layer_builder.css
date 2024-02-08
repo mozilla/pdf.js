@@ -1185,7 +1185,7 @@
       }
 
       @media screen and (forced-colors: active) {
-        --example-color: HighlightText;
+        --example-color: CanvasText;
       }
 
       &::before {
