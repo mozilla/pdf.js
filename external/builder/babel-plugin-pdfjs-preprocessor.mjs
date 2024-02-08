@@ -172,6 +172,22 @@ function babelPluginPDFJSPreprocessor(babel, ctx) {
           );
           path.replaceWith(t.inherits(t.valueToNode(result), path.node));
         }
+
+        if (t.isIdentifier(node.callee, { name: "__non_webpack_import__" })) {
+          if (node.arguments.length !== 1) {
+            throw new Error("Invalid `__non_webpack_import__` usage.");
+          }
+          // Replace it with a standard `import`-call and
+          // ensure that Webpack will leave it alone.
+          const source = node.arguments[0];
+          source.leadingComments = [
+            {
+              type: "CommentBlock",
+              value: "webpackIgnore: true",
+            },
+          ];
+          path.replaceWith(t.importExpression(source));
+        }
       },
       BlockStatement: {
         // Visit node in post-order so that recursive flattening
