@@ -169,11 +169,9 @@ class HighlightEditor extends AnnotationEditor {
         break;
       }
     }
+
     const { lastPoint } = this.#focusOutlines.box;
-    this.#lastPoint = [
-      (lastPoint[0] - this.x) / this.width,
-      (lastPoint[1] - this.y) / this.height,
-    ];
+    this.#lastPoint = [(lastPoint[0] - x) / width, (lastPoint[1] - y) / height];
   }
 
   /** @inheritdoc */
