@@ -72,6 +72,10 @@
       "type": "string",
       "default": "yellow=#FFFF98,green=#53FFBC,blue=#80EBFF,pink=#FFCBE6,red=#FF4F5F"
     },
+    "enableStampEditor": {
+      "type": "boolean",
+      "default": true
+    },
     "disableRange": {
       "title": "Disable range requests",
       "description": "Whether to disable range requests (not recommended).",
