@@ -681,4 +681,64 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Highlight with the keyboard", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that some text has been highlighted", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorHighlight");
+          await page.waitForSelector(".annotationEditorLayer.highlightEditing");
+          const sel = getEditorSelector(0);
+
+          const spanRect = await page.evaluate(() => {
+            const span = document.querySelector(
+              `.page[data-page-number="1"] > .textLayer > span`
+            );
+            const { x, y, width, height } = span.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+          await page.keyboard.down("Shift");
+          await page.mouse.click(
+            spanRect.x + 1,
+            spanRect.y + spanRect.height / 2,
+            { count: 2 }
+          );
+          for (let i = 0; i < 6; i++) {
+            await page.keyboard.press("ArrowRight");
+          }
+          await page.keyboard.press("ArrowDown");
+          await page.keyboard.press("ArrowDown");
+          await page.keyboard.up("Shift");
+
+          const [w, h] = await page.evaluate(s => {
+            const {
+              style: { width, height },
+            } = document.querySelector(s);
+            return [parseFloat(width), parseFloat(height)];
+          }, sel);
+
+          // w & h are the width and height of the highlight in percent.
+          // We expect the highlight to be around 73% wide and 9% high.
+          // We allow a 2% margin of error because of the font used in the text
+          // layer we can't be sure of the dimensions.
+          expect(Math.abs(w - 73) <= 2)
+            .withContext(`In ${browserName}`)
+            .toBe(true);
+          expect(Math.abs(h - 9) <= 2)
+            .withContext(`In ${browserName}`)
+            .toBe(true);
+        })
+      );
+    });
+  });
 });

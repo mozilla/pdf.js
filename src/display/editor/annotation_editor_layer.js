@@ -679,14 +679,35 @@ class AnnotationEditorLayer {
 
   /**
    * SelectionChange callback.
-   * @param {Event} _event
+   * @param {Event} event
    */
-  selectionStart(_event) {
-    this.#textLayer?.div.addEventListener(
-      "pointerup",
-      this.#boundPointerUpAfterSelection,
-      { once: true }
-    );
+  selectionStart(event) {
+    if (
+      !this.#textLayer ||
+      event.target.parentElement.closest(".textLayer") !== this.#textLayer.div
+    ) {
+      return;
+    }
+
+    if (this.#uiManager.isShiftKeyDown) {
+      const keyup = () => {
+        if (this.#uiManager.isShiftKeyDown) {
+          return;
+        }
+
+        window.removeEventListener("keyup", keyup);
+        window.removeEventListener("blur", keyup);
+        this.pointerUpAfterSelection({});
+      };
+      window.addEventListener("keyup", keyup);
+      window.addEventListener("blur", keyup);
+    } else {
+      this.#textLayer.div.addEventListener(
+        "pointerup",
+        this.#boundPointerUpAfterSelection,
+        { once: true }
+      );
+    }
   }
 
   /**
