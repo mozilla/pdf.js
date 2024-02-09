@@ -581,6 +581,8 @@ class AnnotationEditorUIManager {
 
   #boundKeydown = this.keydown.bind(this);
 
+  #boundKeyup = this.keyup.bind(this);
+
   #boundOnEditingAction = this.onEditingAction.bind(this);
 
   #boundOnPageChanging = this.onPageChanging.bind(this);
@@ -765,6 +767,7 @@ class AnnotationEditorUIManager {
       realScale: PixelsPerInch.PDF_TO_CSS_UNITS,
       rotation: 0,
     };
+    this.isShiftKeyDown = false;
   }
 
   destroy() {
@@ -915,6 +918,7 @@ class AnnotationEditorUIManager {
   }
 
   blur() {
+    this.isShiftKeyDown = false;
     if (!this.hasSelection) {
       return;
     }
@@ -952,10 +956,12 @@ class AnnotationEditorUIManager {
     // The keyboard events are caught at the container level in order to be able
     // to execute some callbacks even if the current page doesn't have focus.
     window.addEventListener("keydown", this.#boundKeydown);
+    window.addEventListener("keyup", this.#boundKeyup);
   }
 
   #removeKeyboardManager() {
     window.removeEventListener("keydown", this.#boundKeydown);
+    window.removeEventListener("keyup", this.#boundKeyup);
   }
 
   #addCopyPasteListeners() {
@@ -1084,8 +1090,21 @@ class AnnotationEditorUIManager {
    * @param {KeyboardEvent} event
    */
   keydown(event) {
+    if (!this.isShiftKeyDown && event.key === "Shift") {
+      this.isShiftKeyDown = true;
+    }
     if (!this.isEditorHandlingKeyboard) {
       AnnotationEditorUIManager._keyboardManager.exec(this, event);
+    }
+  }
+
+  /**
+   * Keyup callback.
+   * @param {KeyboardEvent} event
+   */
+  keyup(event) {
+    if (this.isShiftKeyDown && event.key === "Shift") {
+      this.isShiftKeyDown = false;
     }
   }
 
