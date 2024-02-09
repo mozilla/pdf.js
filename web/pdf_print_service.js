@@ -15,11 +15,11 @@
 
 import { AnnotationMode, PixelsPerInch, shadow } from "pdfjs-lib";
 import { getXfaHtmlForPrinting } from "./print_utils.js";
-import { PDFViewerApplication } from "./app.js";
 
 let activeService = null;
 let dialog = null;
 let overlayManager = null;
+let viewerApp = { initialized: false };
 
 // Renders the page to the canvas of the given print service, and returns
 // the suggested dimensions of the output page.
@@ -338,7 +338,7 @@ function ensureOverlay() {
     );
   }
   if (!overlayPromise) {
-    overlayManager = PDFViewerApplication.overlayManager;
+    overlayManager = viewerApp.overlayManager;
     if (!overlayManager) {
       throw new Error("The overlay manager has not yet been initialized.");
     }
@@ -359,6 +359,10 @@ function ensureOverlay() {
  * @implements {IPDFPrintServiceFactory}
  */
 class PDFPrintServiceFactory {
+  static initGlobals(app) {
+    viewerApp = app;
+  }
+
   static get supportsPrinting() {
     return shadow(this, "supportsPrinting", true);
   }

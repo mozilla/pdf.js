@@ -221,6 +221,8 @@ class IL10n {
  * @interface
  */
 class IPDFPrintServiceFactory {
+  static initGlobals() {}
+
   static get supportsPrinting() {
     return false;
   }

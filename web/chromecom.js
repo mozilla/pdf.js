@@ -19,7 +19,6 @@ import { BaseExternalServices } from "./external_services.js";
 import { BasePreferences } from "./preferences.js";
 import { GenericL10n } from "./genericl10n.js";
 import { GenericScripting } from "./generic_scripting.js";
-import { PDFViewerApplication } from "./app.js";
 
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) {
   throw new Error(
@@ -42,10 +41,16 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) {
   }
 
   AppOptions.set("defaultUrl", defaultUrl);
+})();
+
+let viewerApp = { initialized: false };
+function initCom(app) {
+  viewerApp = app;
+
   // Ensure that PDFViewerApplication.initialBookmark reflects the current hash,
   // in case the URL rewrite above results in a different hash.
-  PDFViewerApplication.initialBookmark = location.hash.slice(1);
-})();
+  viewerApp.initialBookmark = location.hash.slice(1);
+}
 
 const ChromeCom = {
   /**
@@ -77,10 +82,9 @@ const ChromeCom = {
    * Resolves a PDF file path and attempts to detects length.
    *
    * @param {string} file - Absolute URL of PDF file.
-   * @param {OverlayManager} overlayManager - Manager for the viewer overlays.
    * @param {Function} callback - A callback with resolved URL and file length.
    */
-  resolvePDFFile(file, overlayManager, callback) {
+  resolvePDFFile(file, callback) {
     // Expand drive:-URLs to filesystem URLs (Chrome OS)
     file = file.replace(
       /^drive:/i,
@@ -104,13 +108,9 @@ const ChromeCom = {
         // Even without this check, the file load in frames is still blocked,
         // but this may change in the future (https://crbug.com/550151).
         if (origin && !/^file:|^chrome-extension:/.test(origin)) {
-          PDFViewerApplication._documentError(
-            "Blocked " +
-              origin +
-              " from loading " +
-              file +
-              ". Refused to load a local file in a non-local page " +
-              "for security reasons."
+          viewerApp._documentError(
+            `Blocked ${origin} from loading ${file}. Refused to load ` +
+              "a local file in a non-local page for security reasons."
           );
           return;
         }
@@ -118,7 +118,7 @@ const ChromeCom = {
           if (isAllowedAccess) {
             callback(file);
           } else {
-            requestAccessToLocalFile(file, overlayManager, callback);
+            requestAccessToLocalFile(file, viewerApp.overlayManager, callback);
           }
         });
       });
@@ -420,7 +420,6 @@ class ExternalServices extends BaseExternalServices {
     // defaultUrl is set in viewer.js
     ChromeCom.resolvePDFFile(
       AppOptions.get("defaultUrl"),
-      PDFViewerApplication.overlayManager,
       function (url, length, originalUrl) {
         callbacks.onOpenWithURL(url, length, originalUrl);
       }
@@ -436,4 +435,4 @@ class ExternalServices extends BaseExternalServices {
   }
 }
 
-export { ChromeCom, ExternalServices, Preferences };
+export { ExternalServices, initCom, Preferences };
