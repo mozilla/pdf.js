@@ -327,6 +327,8 @@ pdfjs-editor-ink-opacity-input = Opacitât
 pdfjs-editor-stamp-add-image-button =
     .title = Zonte imagjin
 pdfjs-editor-stamp-add-image-button-label = Zonte imagjin
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Spessôr
 pdfjs-free-text =
     .aria-label = Editôr di test
 pdfjs-free-text-default-content = Scomence a scrivi…

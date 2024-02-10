@@ -301,8 +301,6 @@ pdfjs-editor-ink-button-label = Σχέδιο
 pdfjs-editor-stamp-button =
     .title = Προσθήκη ή επεξεργασία εικόνων
 pdfjs-editor-stamp-button-label = Προσθήκη ή επεξεργασία εικόνων
-pdfjs-editor-remove-button =
-    .title = Αφαίρεση
 pdfjs-editor-highlight-button =
     .title = Επισήμανση
 pdfjs-editor-highlight-button-label = Επισήμανση
@@ -329,6 +327,8 @@ pdfjs-editor-ink-opacity-input = Αδιαφάνεια
 pdfjs-editor-stamp-add-image-button =
     .title = Προσθήκη εικόνας
 pdfjs-editor-stamp-add-image-button-label = Προσθήκη εικόνας
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Πάχος
 pdfjs-free-text =
     .aria-label = Επεξεργασία κειμένου
 pdfjs-free-text-default-content = Ξεκινήστε να πληκτρολογείτε…
