@@ -293,8 +293,9 @@ pdfjs-editor-ink-button-label = รูปวาด
 pdfjs-editor-stamp-button =
     .title = เพิ่มหรือแก้ไขภาพ
 pdfjs-editor-stamp-button-label = เพิ่มหรือแก้ไขภาพ
-pdfjs-editor-remove-button =
-    .title = เอาออก
+pdfjs-editor-highlight-button =
+    .title = เน้น
+pdfjs-editor-highlight-button-label = เน้น
 
 ## Remove button for the various kind of editor.
 
