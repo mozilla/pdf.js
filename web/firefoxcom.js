@@ -18,12 +18,16 @@ import { BaseExternalServices } from "./external_services.js";
 import { BasePreferences } from "./preferences.js";
 import { DEFAULT_SCALE_VALUE } from "./ui_utils.js";
 import { L10n } from "./l10n.js";
-import { PDFViewerApplication } from "./app.js";
 
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
     'Module "./firefoxcom.js" shall not be used outside MOZCENTRAL builds.'
   );
+}
+
+let viewerApp = { initialized: false };
+function initCom(app) {
+  viewerApp = app;
 }
 
 class FirefoxCom {
@@ -167,14 +171,14 @@ class Preferences extends BasePreferences {
   const findLen = "find".length;
 
   const handleEvent = function ({ type, detail }) {
-    if (!PDFViewerApplication.initialized) {
+    if (!viewerApp.initialized) {
       return;
     }
     if (type === "findbarclose") {
-      PDFViewerApplication.eventBus.dispatch(type, { source: window });
+      viewerApp.eventBus.dispatch(type, { source: window });
       return;
     }
-    PDFViewerApplication.eventBus.dispatch("find", {
+    viewerApp.eventBus.dispatch("find", {
       source: window,
       type: type.substring(findLen),
       query: detail.query,
@@ -194,18 +198,18 @@ class Preferences extends BasePreferences {
 (function listenZoomEvents() {
   const events = ["zoomin", "zoomout", "zoomreset"];
   const handleEvent = function ({ type, detail }) {
-    if (!PDFViewerApplication.initialized) {
+    if (!viewerApp.initialized) {
       return;
     }
     // Avoid attempting to needlessly reset the zoom level *twice* in a row,
     // when using the `Ctrl + 0` keyboard shortcut.
     if (
       type === "zoomreset" &&
-      PDFViewerApplication.pdfViewer.currentScaleValue === DEFAULT_SCALE_VALUE
+      viewerApp.pdfViewer.currentScaleValue === DEFAULT_SCALE_VALUE
     ) {
       return;
     }
-    PDFViewerApplication.eventBus.dispatch(type, { source: window });
+    viewerApp.eventBus.dispatch(type, { source: window });
   };
 
   for (const event of events) {
@@ -215,10 +219,10 @@ class Preferences extends BasePreferences {
 
 (function listenSaveEvent() {
   const handleEvent = function ({ type, detail }) {
-    if (!PDFViewerApplication.initialized) {
+    if (!viewerApp.initialized) {
       return;
     }
-    PDFViewerApplication.eventBus.dispatch("download", { source: window });
+    viewerApp.eventBus.dispatch("download", { source: window });
   };
 
   window.addEventListener("save", handleEvent);
@@ -226,10 +230,10 @@ class Preferences extends BasePreferences {
 
 (function listenEditingEvent() {
   const handleEvent = function ({ detail }) {
-    if (!PDFViewerApplication.initialized) {
+    if (!viewerApp.initialized) {
       return;
     }
-    PDFViewerApplication.eventBus.dispatch("editingaction", {
+    viewerApp.eventBus.dispatch("editingaction", {
       source: window,
       name: detail.name,
     });
@@ -242,9 +246,9 @@ if (PDFJSDev.test("GECKOVIEW")) {
   (function listenQueryEvents() {
     window.addEventListener("pdf.js.query", async ({ detail: { queryId } }) => {
       let result = null;
-      if (queryId === "canDownloadInsteadOfPrint") {
+      if (viewerApp.initialized && queryId === "canDownloadInsteadOfPrint") {
         result = false;
-        const { pdfDocument, pdfViewer } = PDFViewerApplication;
+        const { pdfDocument, pdfViewer } = viewerApp;
         if (pdfDocument) {
           try {
             const hasUnchangedAnnotations =
@@ -411,4 +415,4 @@ class ExternalServices extends BaseExternalServices {
   }
 }
 
-export { DownloadManager, ExternalServices, FirefoxCom, Preferences };
+export { DownloadManager, ExternalServices, initCom, Preferences };

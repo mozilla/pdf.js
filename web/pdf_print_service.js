@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-import { AnnotationMode, PixelsPerInch } from "pdfjs-lib";
-import { PDFPrintServiceFactory, PDFViewerApplication } from "./app.js";
+import { AnnotationMode, PixelsPerInch, shadow } from "pdfjs-lib";
 import { getXfaHtmlForPrinting } from "./print_utils.js";
 
 let activeService = null;
 let dialog = null;
 let overlayManager = null;
+let viewerApp = { initialized: false };
 
 // Renders the page to the canvas of the given print service, and returns
 // the suggested dimensions of the output page.
@@ -338,7 +338,7 @@ function ensureOverlay() {
     );
   }
   if (!overlayPromise) {
-    overlayManager = PDFViewerApplication.overlayManager;
+    overlayManager = viewerApp.overlayManager;
     if (!overlayManager) {
       throw new Error("The overlay manager has not yet been initialized.");
     }
@@ -355,10 +355,19 @@ function ensureOverlay() {
   return overlayPromise;
 }
 
-PDFPrintServiceFactory.instance = {
-  supportsPrinting: true,
+/**
+ * @implements {IPDFPrintServiceFactory}
+ */
+class PDFPrintServiceFactory {
+  static initGlobals(app) {
+    viewerApp = app;
+  }
 
-  createPrintService(
+  static get supportsPrinting() {
+    return shadow(this, "supportsPrinting", true);
+  }
+
+  static createPrintService(
     pdfDocument,
     pagesOverview,
     printContainer,
@@ -378,7 +387,7 @@ PDFPrintServiceFactory.instance = {
       printAnnotationStoragePromise
     );
     return activeService;
-  },
-};
+  }
+}
 
-export { PDFPrintService };
+export { PDFPrintServiceFactory };
