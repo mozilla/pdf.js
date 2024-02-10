@@ -53,12 +53,12 @@ import {
 } from "pdfjs-lib";
 import { AppOptions, OptionKind } from "./app_options.js";
 import { AutomationEventBus, EventBus } from "./event_utils.js";
+import { ExternalServices, initCom } from "web-external_services";
 import { LinkTarget, PDFLinkService } from "./pdf_link_service.js";
 import { AltTextManager } from "web-alt_text_manager";
 import { AnnotationEditorParams } from "web-annotation_editor_params";
 import { CaretBrowsingMode } from "./caret_browsing.js";
 import { DownloadManager } from "web-download_manager";
-import { ExternalServices } from "web-external_services";
 import { OverlayManager } from "./overlay_manager.js";
 import { PasswordPrompt } from "./password_prompt.js";
 import { PDFAttachmentViewer } from "web-pdf_attachment_viewer";
@@ -70,6 +70,7 @@ import { PDFHistory } from "./pdf_history.js";
 import { PDFLayerViewer } from "web-pdf_layer_viewer";
 import { PDFOutlineViewer } from "web-pdf_outline_viewer";
 import { PDFPresentationMode } from "web-pdf_presentation_mode";
+import { PDFPrintServiceFactory } from "web-print_service";
 import { PDFRenderingQueue } from "./pdf_rendering_queue.js";
 import { PDFScriptingManager } from "./pdf_scripting_manager.js";
 import { PDFSidebar } from "web-pdf_sidebar";
@@ -731,7 +732,7 @@ const PDFViewerApplication = {
   },
 
   get supportsPrinting() {
-    return PDFPrintServiceFactory.instance.supportsPrinting;
+    return PDFPrintServiceFactory.supportsPrinting;
   },
 
   get supportsFullscreen() {
@@ -1786,7 +1787,7 @@ const PDFViewerApplication = {
     const optionalContentConfigPromise =
       this.pdfViewer.optionalContentConfigPromise;
 
-    const printService = PDFPrintServiceFactory.instance.createPrintService(
+    const printService = PDFPrintServiceFactory.createPrintService(
       this.pdfDocument,
       pagesOverview,
       printContainer,
@@ -2144,6 +2145,12 @@ const PDFViewerApplication = {
     return this.pdfScriptingManager.ready;
   },
 };
+
+initCom(PDFViewerApplication);
+
+if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+  PDFPrintServiceFactory.initGlobals(PDFViewerApplication);
+}
 
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   const HOSTED_VIEWER_ORIGINS = [
@@ -3234,14 +3241,4 @@ function webViewerReportTelemetry({ details }) {
   PDFViewerApplication.externalServices.reportTelemetry(details);
 }
 
-/* Abstract factory for the print service. */
-const PDFPrintServiceFactory = {
-  instance: {
-    supportsPrinting: false,
-    createPrintService() {
-      throw new Error("Not implemented: createPrintService");
-    },
-  },
-};
-
-export { PDFPrintServiceFactory, PDFViewerApplication };
+export { PDFViewerApplication };

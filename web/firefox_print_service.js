@@ -20,7 +20,6 @@ import {
   shadow,
 } from "pdfjs-lib";
 import { getXfaHtmlForPrinting } from "./print_utils.js";
-import { PDFPrintServiceFactory } from "./app.js";
 
 // Creates a placeholder with div and canvas with right size for the page.
 function composePage(
@@ -194,15 +193,16 @@ class FirefoxPrintService {
   }
 }
 
-PDFPrintServiceFactory.instance = {
-  get supportsPrinting() {
+/**
+ * @implements {IPDFPrintServiceFactory}
+ */
+class PDFPrintServiceFactory {
+  static get supportsPrinting() {
     const canvas = document.createElement("canvas");
-    const value = "mozPrintCallback" in canvas;
+    return shadow(this, "supportsPrinting", "mozPrintCallback" in canvas);
+  }
 
-    return shadow(this, "supportsPrinting", value);
-  },
-
-  createPrintService(
+  static createPrintService(
     pdfDocument,
     pagesOverview,
     printContainer,
@@ -218,7 +218,7 @@ PDFPrintServiceFactory.instance = {
       optionalContentConfigPromise,
       printAnnotationStoragePromise
     );
-  },
-};
+  }
+}
 
-export { FirefoxPrintService };
+export { PDFPrintServiceFactory };
