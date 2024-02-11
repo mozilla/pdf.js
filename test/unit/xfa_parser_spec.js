@@ -1021,7 +1021,7 @@ describe("XFAParser", function () {
       ).toBe("SW1");
     });
 
-    it("should make basic binding with extra subform", function () {
+    it("should make basic binding with extra subform (consumeData)", function () {
       const xml = `
 <?xml version="1.0"?>
 <xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
