@@ -892,9 +892,7 @@ async function startBrowser({ browserName, headless, startUrl }) {
   const options = {
     product: browserName,
     protocol: "cdp",
-    // Note that using `headless: true` gives a deprecation warning; see
-    // https://github.com/puppeteer/puppeteer#default-runtime-settings.
-    headless: headless === true ? "new" : false,
+    headless,
     defaultViewport: null,
     ignoreDefaultArgs: ["--disable-extensions"],
     // The timeout for individual protocol (CDP) calls should always be lower

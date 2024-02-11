@@ -301,8 +301,6 @@ pdfjs-editor-ink-button-label = Dissegnar
 pdfjs-editor-stamp-button =
     .title = Agiuntar u modifitgar maletgs
 pdfjs-editor-stamp-button-label = Agiuntar u modifitgar maletgs
-pdfjs-editor-remove-button =
-    .title = Allontanar
 
 ## Remove button for the various kind of editor.
 
@@ -326,6 +324,10 @@ pdfjs-editor-ink-opacity-input = Opacitad
 pdfjs-editor-stamp-add-image-button =
     .title = Agiuntar in maletg
 pdfjs-editor-stamp-add-image-button-label = Agiuntar in maletg
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Grossezza
+pdfjs-editor-free-highlight-thickness-title =
+    .title = Midar la grossezza cun relevar elements betg textuals
 pdfjs-free-text =
     .aria-label = Editur da text
 pdfjs-free-text-default-content = Cumenzar a tippar…

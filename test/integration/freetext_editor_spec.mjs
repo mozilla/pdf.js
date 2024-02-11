@@ -43,6 +43,7 @@ import {
   waitForSelectedEditor,
   waitForSerialized,
   waitForStorageEntries,
+  waitForTimeout,
   waitForUnselectedEditor,
 } from "./test_utils.mjs";
 import { PNG } from "pngjs";
@@ -52,7 +53,7 @@ const copyPaste = async page => {
   await kbCopy(page);
   await promise;
 
-  await page.waitForTimeout(10);
+  await waitForTimeout(10);
 
   promise = waitForEvent(page, "paste");
   await kbPaste(page);
@@ -1137,7 +1138,7 @@ describe("FreeText Editor", () => {
           await kbUndo(page);
           // Nothing should happen, it's why we can't wait for something
           // specific!
-          await page.waitForTimeout(200);
+          await waitForTimeout(200);
 
           // We check that the editor hasn't been removed.
           editorIds = await getEditors(page, "freeText");
@@ -1343,7 +1344,7 @@ describe("FreeText Editor", () => {
           // Enter in editing mode.
           await switchToFreeText(page);
 
-          await page.waitForTimeout(200);
+          await waitForTimeout(200);
 
           // Disable editing mode.
           await page.click("#editorFreeText");
@@ -2373,7 +2374,7 @@ describe("FreeText Editor", () => {
 
           // The editor must be moved in the DOM and potentially the focus
           // will be lost, hence there's a callback will get back the focus.
-          await page.waitForTimeout(200);
+          await waitForTimeout(200);
 
           const focused = await page.evaluate(sel => {
             const editor = document.querySelector(sel);
