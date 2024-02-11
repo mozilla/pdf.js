@@ -72,7 +72,8 @@ describe("find bar", () => {
       );
     });
   });
-  describe("highlight all", () => {
+
+  describe("highlight all (XFA)", () => {
     let pages;
 
     beforeAll(async () => {
