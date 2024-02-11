@@ -82,6 +82,7 @@ class WebServer {
   }
 
   #handler(req, res) {
+    var self = this;
     var url = req.url.replaceAll("//", "/");
     var urlParts = /([^?]*)((?:\?(.*))?)/.exec(url);
     try {
@@ -126,7 +127,6 @@ class WebServer {
     }
 
     var disableRangeRequests = this.disableRangeRequests;
-    var cacheExpirationTime = this.cacheExpirationTime;
 
     var filePath;
     fs.realpath(path.join(this.root, pathPart), checkFile);
@@ -192,7 +192,7 @@ class WebServer {
       if (verbose) {
         console.log(url);
       }
-      serveRequestedFile(filePath);
+      self.#serveFile(res, filePath, fileSize);
     }
 
     function escapeHTML(untrusted) {
@@ -286,32 +286,6 @@ class WebServer {
       });
     }
 
-    function serveRequestedFile(reqFilePath) {
-      var stream = fs.createReadStream(reqFilePath, { flags: "rs" });
-
-      stream.on("error", function (error) {
-        res.writeHead(500);
-        res.end();
-      });
-
-      var ext = path.extname(reqFilePath).toLowerCase();
-      var contentType = mimeTypes[ext] || defaultMimeType;
-
-      if (!disableRangeRequests) {
-        res.setHeader("Accept-Ranges", "bytes");
-      }
-      res.setHeader("Content-Type", contentType);
-      res.setHeader("Content-Length", fileSize);
-      if (cacheExpirationTime > 0) {
-        var expireTime = new Date();
-        expireTime.setSeconds(expireTime.getSeconds() + cacheExpirationTime);
-        res.setHeader("Expires", expireTime.toUTCString());
-      }
-      res.writeHead(200);
-
-      stream.pipe(res);
-    }
-
     function serveRequestedFileRange(reqFilePath, start, end) {
       var stream = fs.createReadStream(reqFilePath, {
         flags: "rs",
@@ -338,6 +312,30 @@ class WebServer {
 
       stream.pipe(res);
     }
+  }
+
+  #serveFile(response, filePath, fileSize) {
+    const stream = fs.createReadStream(filePath, { flags: "rs" });
+    stream.on("error", error => {
+      response.writeHead(500);
+      response.end();
+    });
+
+    const extension = path.extname(filePath).toLowerCase();
+    const contentType = mimeTypes[extension] || defaultMimeType;
+
+    if (!this.disableRangeRequests) {
+      response.setHeader("Accept-Ranges", "bytes");
+    }
+    response.setHeader("Content-Type", contentType);
+    response.setHeader("Content-Length", fileSize);
+    if (this.cacheExpirationTime > 0) {
+      const expireTime = new Date();
+      expireTime.setSeconds(expireTime.getSeconds() + this.cacheExpirationTime);
+      response.setHeader("Expires", expireTime.toUTCString());
+    }
+    response.writeHead(200);
+    stream.pipe(response);
   }
 }
 
