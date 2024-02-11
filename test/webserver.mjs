@@ -97,7 +97,6 @@ WebServer.prototype = {
       res.end("Bad request", "utf8");
       return;
     }
-    var queryPart = urlParts[3];
     var verbose = this.verbose;
 
     var methodHooks = this.hooks[req.method];
@@ -206,17 +205,6 @@ WebServer.prototype = {
       res.setHeader("Content-Type", "text/html");
       res.writeHead(200);
 
-      if (queryPart === "frame") {
-        res.end(
-          "<html><frameset cols=*,200><frame name=pdf>" +
-            '<frame src="' +
-            encodeURI(pathPart) +
-            '?side"></frameset></html>',
-          "utf8"
-        );
-        return;
-      }
-      var all = queryPart === "all";
       fs.readdir(dir, function (err, files) {
         if (err) {
           res.end();
@@ -224,7 +212,7 @@ WebServer.prototype = {
         }
         res.write(
           '<html><head><meta charset="utf-8"></head><body>' +
-            "<h1>PDFs of " +
+            "<h1>Index of " +
             pathPart +
             "</h1>\n"
         );
@@ -252,7 +240,7 @@ WebServer.prototype = {
               href = "/web/viewer.html?file=" + encodeURIComponent(item);
               label = file;
               extraAttributes = ' target="pdf"';
-            } else if (all) {
+            } else {
               href = encodeURI(item);
               label = file;
             }
@@ -271,12 +259,6 @@ WebServer.prototype = {
         });
         if (files.length === 0) {
           res.write("<p>no files found</p>\n");
-        }
-        if (!all && queryPart !== "side") {
-          res.write(
-            "<hr><p>(only PDF files are shown, " +
-              '<a href="?all">show all</a>)</p>\n'
-          );
         }
         res.end("</body></html>");
       });
