@@ -211,7 +211,7 @@ WebServer.prototype = {
           return;
         }
         res.write(
-          '<html><head><meta charset="utf-8"></head><body>' +
+          '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>' +
             "<h1>Index of " +
             pathPart +
             "</h1>\n"
@@ -239,7 +239,6 @@ WebServer.prototype = {
             } else if (path.extname(file).toLowerCase() === ".pdf") {
               href = "/web/viewer.html?file=" + encodeURIComponent(item);
               label = file;
-              extraAttributes = ' target="pdf"';
             } else {
               href = encodeURI(item);
               label = file;
