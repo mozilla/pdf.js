@@ -237,6 +237,7 @@ class HighlightEditor extends AnnotationEditor {
         AnnotationEditorParamsType.HIGHLIGHT_THICKNESS,
         this.#thickness || HighlightEditor._defaultThickness,
       ],
+      [AnnotationEditorParamsType.HIGHLIGHT_FREE, this.#isFreeHighlight],
     ];
   }
 
