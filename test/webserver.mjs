@@ -82,8 +82,7 @@ class WebServer {
     }
   }
 
-  #handler(req, res) {
-    var self = this;
+  async #handler(req, res) {
     var url = req.url.replaceAll("//", "/");
     var urlParts = /([^?]*)((?:\?(.*))?)/.exec(url);
     try {
@@ -103,8 +102,6 @@ class WebServer {
       res.end("Bad request", "utf8");
       return;
     }
-    var queryPart = urlParts[3];
-    var verbose = this.verbose;
 
     var methodHooks = this.hooks[req.method];
     if (!methodHooks) {
@@ -120,83 +117,83 @@ class WebServer {
     }
 
     if (pathPart === "/favicon.ico") {
-      fs.realpath(
-        path.join(this.root, "test/resources/favicon.ico"),
-        checkFile
+      pathPart = "test/resources/favicon.ico";
+    }
+    await this.#checkRequest(req, res, url, urlParts, pathPart);
+  }
+
+  async #checkRequest(request, response, url, urlParts, pathPart) {
+    // Check if the file/folder exists.
+    let filePath;
+    try {
+      filePath = await fsPromises.realpath(path.join(this.root, pathPart));
+    } catch {
+      response.writeHead(404);
+      response.end();
+      if (this.verbose) {
+        console.error(`${url}: not found`);
+      }
+      return;
+    }
+
+    // Get the properties of the file/folder.
+    let stats;
+    try {
+      stats = await fsPromises.stat(filePath);
+    } catch {
+      response.writeHead(500);
+      response.end();
+      return;
+    }
+    const fileSize = stats.size;
+    const isDir = stats.isDirectory();
+
+    // If a folder is requested, serve the directory listing.
+    if (isDir && !/\/$/.test(pathPart)) {
+      response.setHeader("Location", `${pathPart}/${urlParts[2]}`);
+      response.writeHead(301);
+      response.end("Redirected", "utf8");
+      return;
+    }
+    if (isDir) {
+      const queryPart = urlParts[3];
+      await this.#serveDirectoryIndex(response, pathPart, queryPart, filePath);
+      return;
+    }
+
+    // If a file is requested with range requests, serve it accordingly.
+    const { range } = request.headers;
+    if (range && !this.disableRangeRequests) {
+      const rangesMatches = /^bytes=(\d+)-(\d+)?/.exec(range);
+      if (!rangesMatches) {
+        response.writeHead(501);
+        response.end("Bad range", "utf8");
+        if (this.verbose) {
+          console.error(`${url}: bad range: ${range}`);
+        }
+        return;
+      }
+
+      const start = +rangesMatches[1];
+      const end = +rangesMatches[2];
+      if (this.verbose) {
+        console.log(`${url}: range ${start}-${end}`);
+      }
+      this.#serveFileRange(
+        response,
+        filePath,
+        fileSize,
+        start,
+        isNaN(end) ? fileSize : end + 1
       );
       return;
     }
 
-    var disableRangeRequests = this.disableRangeRequests;
-
-    var filePath;
-    fs.realpath(path.join(this.root, pathPart), checkFile);
-
-    function checkFile(err, file) {
-      if (err) {
-        res.writeHead(404);
-        res.end();
-        if (verbose) {
-          console.error(url + ": not found");
-        }
-        return;
-      }
-      filePath = file;
-      fs.stat(filePath, statFile);
+    // Otherwise, serve the file normally.
+    if (this.verbose) {
+      console.log(url);
     }
-
-    var fileSize;
-
-    function statFile(err, stats) {
-      if (err) {
-        res.writeHead(500);
-        res.end();
-        return;
-      }
-
-      fileSize = stats.size;
-      var isDir = stats.isDirectory();
-      if (isDir && !/\/$/.test(pathPart)) {
-        res.setHeader("Location", pathPart + "/" + urlParts[2]);
-        res.writeHead(301);
-        res.end("Redirected", "utf8");
-        return;
-      }
-      if (isDir) {
-        self.#serveDirectoryIndex(res, pathPart, queryPart, filePath);
-        return;
-      }
-
-      var range = req.headers.range;
-      if (range && !disableRangeRequests) {
-        var rangesMatches = /^bytes=(\d+)-(\d+)?/.exec(range);
-        if (!rangesMatches) {
-          res.writeHead(501);
-          res.end("Bad range", "utf8");
-          if (verbose) {
-            console.error(url + ': bad range: "' + range + '"');
-          }
-          return;
-        }
-        var start = +rangesMatches[1];
-        var end = +rangesMatches[2];
-        if (verbose) {
-          console.log(url + ": range " + start + " - " + end);
-        }
-        self.#serveFileRange(
-          res,
-          filePath,
-          fileSize,
-          start,
-          isNaN(end) ? fileSize : end + 1
-        );
-        return;
-      }
-      if (verbose) {
-        console.log(url);
-      }
-      self.#serveFile(res, filePath, fileSize);
-    }
+    this.#serveFile(response, filePath, fileSize);
   }
 
   async #serveDirectoryIndex(response, pathPart, queryPart, directory) {
