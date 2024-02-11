@@ -38,33 +38,36 @@ var mimeTypes = {
 
 var defaultMimeType = "application/octet-stream";
 
-function WebServer() {
-  this.root = ".";
-  this.host = "localhost";
-  this.port = 0;
-  this.server = null;
-  this.verbose = false;
-  this.cacheExpirationTime = 0;
-  this.disableRangeRequests = false;
-  this.hooks = {
-    GET: [crossOriginHandler],
-    POST: [],
-  };
-}
-WebServer.prototype = {
+class WebServer {
+  constructor() {
+    this.root = ".";
+    this.host = "localhost";
+    this.port = 0;
+    this.server = null;
+    this.verbose = false;
+    this.cacheExpirationTime = 0;
+    this.disableRangeRequests = false;
+    this.hooks = {
+      GET: [crossOriginHandler],
+      POST: [],
+    };
+  }
+
   start(callback) {
-    this._ensureNonZeroPort();
-    this.server = http.createServer(this._handler.bind(this));
+    this.#ensureNonZeroPort();
+    this.server = http.createServer(this.#handler.bind(this));
     this.server.listen(this.port, this.host, callback);
     console.log(
       "Server running at http://" + this.host + ":" + this.port + "/"
     );
-  },
+  }
+
   stop(callback) {
     this.server.close(callback);
     this.server = null;
-  },
-  _ensureNonZeroPort() {
+  }
+
+  #ensureNonZeroPort() {
     if (!this.port) {
       // If port is 0, a random port will be chosen instead. Do not set a host
       // name to make sure that the port is synchronously set by .listen().
@@ -76,8 +79,9 @@ WebServer.prototype = {
       this.port = address ? address.port : 8000;
       server.close();
     }
-  },
-  _handler(req, res) {
+  }
+
+  #handler(req, res) {
     var url = req.url.replaceAll("//", "/");
     var urlParts = /([^?]*)((?:\?(.*))?)/.exec(url);
     try {
@@ -334,8 +338,8 @@ WebServer.prototype = {
 
       stream.pipe(res);
     }
-  },
-};
+  }
+}
 
 // This supports the "Cross-origin" test in test/unit/api_spec.js
 // It is here instead of test.js so that when the test will still complete as
