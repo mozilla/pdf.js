@@ -182,8 +182,10 @@ class WebServer {
         if (verbose) {
           console.log(url + ": range " + start + " - " + end);
         }
-        serveRequestedFileRange(
+        self.#serveFileRange(
+          res,
           filePath,
+          fileSize,
           start,
           isNaN(end) ? fileSize : end + 1
         );
@@ -285,33 +287,6 @@ class WebServer {
         res.end("</body></html>");
       });
     }
-
-    function serveRequestedFileRange(reqFilePath, start, end) {
-      var stream = fs.createReadStream(reqFilePath, {
-        flags: "rs",
-        start,
-        end: end - 1,
-      });
-
-      stream.on("error", function (error) {
-        res.writeHead(500);
-        res.end();
-      });
-
-      var ext = path.extname(reqFilePath).toLowerCase();
-      var contentType = mimeTypes[ext] || defaultMimeType;
-
-      res.setHeader("Accept-Ranges", "bytes");
-      res.setHeader("Content-Type", contentType);
-      res.setHeader("Content-Length", end - start);
-      res.setHeader(
-        "Content-Range",
-        "bytes " + start + "-" + (end - 1) + "/" + fileSize
-      );
-      res.writeHead(206);
-
-      stream.pipe(res);
-    }
   }
 
   #serveFile(response, filePath, fileSize) {
@@ -335,6 +310,31 @@ class WebServer {
       response.setHeader("Expires", expireTime.toUTCString());
     }
     response.writeHead(200);
+    stream.pipe(response);
+  }
+
+  #serveFileRange(response, filePath, fileSize, start, end) {
+    const stream = fs.createReadStream(filePath, {
+      flags: "rs",
+      start,
+      end: end - 1,
+    });
+    stream.on("error", error => {
+      response.writeHead(500);
+      response.end();
+    });
+
+    const extension = path.extname(filePath).toLowerCase();
+    const contentType = mimeTypes[extension] || defaultMimeType;
+
+    response.setHeader("Accept-Ranges", "bytes");
+    response.setHeader("Content-Type", contentType);
+    response.setHeader("Content-Length", end - start);
+    response.setHeader(
+      "Content-Range",
+      `bytes ${start}-${end - 1}/${fileSize}`
+    );
+    response.writeHead(206);
     stream.pipe(response);
   }
 }
