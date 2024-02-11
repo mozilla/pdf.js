@@ -85,11 +85,27 @@ function closePages(pages) {
   );
 }
 
+function waitForTimeout(milliseconds) {
+  /**
+   * Wait for the given number of milliseconds.
+   *
+   * Note that waiting for an arbitrary time in tests is discouraged because it
+   * can easily cause intermittent failures, which is why this functionality is
+   * no longer provided by Puppeteer 22+ and we have to implement it ourselves
+   * for the remaining callers in the integration tests. We should avoid
+   * creating new usages of this function; instead please refer to the better
+   * alternatives at https://github.com/puppeteer/puppeteer/pull/11780.
+   */
+  return new Promise(resolve => {
+    setTimeout(resolve, milliseconds);
+  });
+}
+
 async function clearInput(page, selector) {
   await page.click(selector);
   await kbSelectAll(page);
   await page.keyboard.press("Backspace");
-  await page.waitForTimeout(10);
+  await waitForTimeout(10);
 }
 
 function getSelector(id) {
@@ -276,7 +292,7 @@ async function serializeBitmapDimensions(page) {
 async function dragAndDropAnnotation(page, startX, startY, tX, tY) {
   await page.mouse.move(startX, startY);
   await page.mouse.down();
-  await page.waitForTimeout(10);
+  await waitForTimeout(10);
   await page.mouse.move(startX + tX, startY + tY);
   await page.mouse.up();
   await page.waitForSelector("#viewer:not(.noUserSelect)");
@@ -487,5 +503,6 @@ export {
   waitForSerialized,
   waitForStorageEntries,
   waitForTextLayer,
+  waitForTimeout,
   waitForUnselectedEditor,
 };

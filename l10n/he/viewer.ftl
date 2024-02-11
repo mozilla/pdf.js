@@ -301,8 +301,6 @@ pdfjs-editor-ink-button-label = ציור
 pdfjs-editor-stamp-button =
     .title = הוספה או עריכת תמונות
 pdfjs-editor-stamp-button-label = הוספה או עריכת תמונות
-pdfjs-editor-remove-button =
-    .title = הסרה
 pdfjs-editor-highlight-button =
     .title = סימון
 pdfjs-editor-highlight-button-label = סימון
@@ -329,6 +327,8 @@ pdfjs-editor-ink-opacity-input = אטימות
 pdfjs-editor-stamp-add-image-button =
     .title = הוספת תמונה
 pdfjs-editor-stamp-add-image-button-label = הוספת תמונה
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = עובי
 pdfjs-free-text =
     .aria-label = עורך טקסט
 pdfjs-free-text-default-content = להתחיל להקליד…
