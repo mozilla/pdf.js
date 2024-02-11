@@ -184,7 +184,6 @@ class DrawLayer {
     const root = this.#mapping.get(id);
     const defs = root.firstChild;
     const path = defs.firstChild;
-    this.updateBox(id, line.box);
     path.setAttribute("d", line.toSVGPath());
   }
 
