@@ -10,8 +10,8 @@
     "jasmine/new-line-between-declarations": "off",
     "jasmine/no-focused-tests": "error",
     "jasmine/no-pending-tests": "off",
-    "jasmine/no-spec-dupes": "off",
-    "jasmine/no-suite-dupes": "off",
+    "jasmine/no-spec-dupes": ["error", "branch"],
+    "jasmine/no-suite-dupes": ["error", "branch"],
     "jasmine/prefer-jasmine-matcher": "off",
     "jasmine/prefer-toHaveBeenCalledWith": "off"
   }
