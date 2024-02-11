@@ -82,44 +82,46 @@ class WebServer {
     }
   }
 
-  async #handler(req, res) {
-    var url = req.url.replaceAll("//", "/");
-    var urlParts = /([^?]*)((?:\?(.*))?)/.exec(url);
+  async #handler(request, response) {
+    // Validate and parse the request URL.
+    const url = request.url.replaceAll("//", "/");
+    const urlParts = /([^?]*)((?:\?(.*))?)/.exec(url);
+    let pathPart;
     try {
       // Guard against directory traversal attacks such as
       // `/../../../../../../../etc/passwd`, which let you make GET requests
       // for files outside of `this.root`.
-      var pathPart = path.normalize(decodeURI(urlParts[1]));
-      // path.normalize returns a path on the basis of the current platform.
-      // Windows paths cause issues in statFile and serverDirectoryIndex.
-      // Converting to unix path would avoid platform checks in said functions.
+      pathPart = path.normalize(decodeURI(urlParts[1]));
+      // `path.normalize` returns a path on the basis of the current platform.
+      // Windows paths cause issues in `checkRequest` and underlying methods.
+      // Converting to a Unix path avoids platform checks in said functions.
       pathPart = pathPart.replaceAll("\\", "/");
     } catch {
       // If the URI cannot be decoded, a `URIError` is thrown. This happens for
       // malformed URIs such as `http://localhost:8888/%s%s` and should be
       // handled as a bad request.
-      res.writeHead(400);
-      res.end("Bad request", "utf8");
+      response.writeHead(400);
+      response.end("Bad request", "utf8");
       return;
     }
 
-    var methodHooks = this.hooks[req.method];
+    // Validate the request method and execute method hooks.
+    const methodHooks = this.hooks[request.method];
     if (!methodHooks) {
-      res.writeHead(405);
-      res.end("Unsupported request method", "utf8");
+      response.writeHead(405);
+      response.end("Unsupported request method", "utf8");
       return;
     }
-    var handled = methodHooks.some(function (hook) {
-      return hook(req, res);
-    });
+    const handled = methodHooks.some(hook => hook(request, response));
     if (handled) {
       return;
     }
 
+    // Check the request and serve the file/folder contents.
     if (pathPart === "/favicon.ico") {
       pathPart = "test/resources/favicon.ico";
     }
-    await this.#checkRequest(req, res, url, urlParts, pathPart);
+    await this.#checkRequest(request, response, url, urlParts, pathPart);
   }
 
   async #checkRequest(request, response, url, urlParts, pathPart) {
