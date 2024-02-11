@@ -741,4 +741,103 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Free highlight is drawn at the right place after having been rotated (bug 1879108)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "empty.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        { highlightEditorColors: "yellow=#000000" }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that highlight is at the correct position", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorHighlight");
+          await page.waitForSelector(".annotationEditorLayer.highlightEditing");
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            // With Chrome something is wrong when serializing a DomRect,
+            // hence we extract the values and just return them.
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          const clickHandle = await waitForPointerUp(page);
+          await page.mouse.move(rect.x + 120, rect.y + 120);
+          await page.mouse.down();
+          await page.mouse.move(rect.x + 220, rect.y + 220);
+          await page.mouse.up();
+          await awaitPromise(clickHandle);
+
+          await page.waitForSelector(getEditorSelector(0));
+
+          await page.evaluate(() => {
+            window.PDFViewerApplication.rotatePages(90);
+          });
+          await page.waitForSelector(
+            ".annotationEditorLayer[data-main-rotation='90']"
+          );
+          await selectAll(page);
+
+          const prevWidth = await page.evaluate(
+            sel => document.querySelector(sel).getBoundingClientRect().width,
+            getEditorSelector(0)
+          );
+
+          page.evaluate(val => {
+            window.PDFViewerApplication.eventBus.dispatch(
+              "switchannotationeditorparams",
+              {
+                source: null,
+                type: window.pdfjsLib.AnnotationEditorParamsType
+                  .HIGHLIGHT_THICKNESS,
+                value: val,
+              }
+            );
+          }, 24);
+
+          await page.waitForFunction(
+            (w, sel) =>
+              document.querySelector(sel).getBoundingClientRect().width !== w,
+            {},
+            prevWidth,
+            getEditorSelector(0)
+          );
+
+          const rectDiv = await page.$eval(getEditorSelector(0), el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+
+          const rectSVG = await page.$eval("svg.highlight.free", el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+
+          expect(Math.abs(rectDiv.x - rectSVG.x) <= 2)
+            .withContext(`In ${browserName}`)
+            .toBe(true);
+          expect(Math.abs(rectDiv.y - rectSVG.y) <= 2)
+            .withContext(`In ${browserName}`)
+            .toBe(true);
+          expect(Math.abs(rectDiv.height - rectSVG.height) <= 2)
+            .withContext(`In ${browserName}`)
+            .toBe(true);
+          expect(Math.abs(rectDiv.width - rectSVG.width) <= 2)
+            .withContext(`In ${browserName}`)
+            .toBe(true);
+        })
+      );
+    });
+  });
 });
