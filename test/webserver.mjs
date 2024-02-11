@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import fs from "fs";
 import fsPromises from "fs/promises";
 import http from "http";
 import path from "path";
 
-var mimeTypes = {
+const MIME_TYPES = {
   ".css": "text/css",
   ".html": "text/html",
   ".js": "application/javascript",
@@ -36,8 +35,7 @@ var mimeTypes = {
   ".bcmap": "application/octet-stream",
   ".ftl": "text/plain",
 };
-
-var defaultMimeType = "application/octet-stream";
+const DEFAULT_MIME_TYPE = "application/octet-stream";
 
 class WebServer {
   constructor() {
@@ -58,9 +56,7 @@ class WebServer {
     this.#ensureNonZeroPort();
     this.server = http.createServer(this.#handler.bind(this));
     this.server.listen(this.port, this.host, callback);
-    console.log(
-      "Server running at http://" + this.host + ":" + this.port + "/"
-    );
+    console.log(`Server running at http://${this.host}:${this.port}/`);
   }
 
   stop(callback) {
@@ -71,11 +67,11 @@ class WebServer {
   #ensureNonZeroPort() {
     if (!this.port) {
       // If port is 0, a random port will be chosen instead. Do not set a host
-      // name to make sure that the port is synchronously set by .listen().
-      var server = http.createServer().listen(0);
-      var address = server.address();
-      // .address().port being available synchronously is merely an
-      // implementation detail. So we are defensive here and fall back to some
+      // name to make sure that the port is synchronously set by `.listen()`.
+      const server = http.createServer().listen(0);
+      const address = server.address();
+      // `.address().port` being available synchronously is merely an
+      // implementation detail, so we are defensive here and fall back to a
       // fixed port when the address is not available yet.
       this.port = address ? address.port : 8000;
       server.close();
@@ -300,13 +296,10 @@ class WebServer {
       response.end();
     });
 
-    const extension = path.extname(filePath).toLowerCase();
-    const contentType = mimeTypes[extension] || defaultMimeType;
-
     if (!this.disableRangeRequests) {
       response.setHeader("Accept-Ranges", "bytes");
     }
-    response.setHeader("Content-Type", contentType);
+    response.setHeader("Content-Type", this.#getContentType(filePath));
     response.setHeader("Content-Length", fileSize);
     if (this.cacheExpirationTime > 0) {
       const expireTime = new Date();
@@ -328,11 +321,8 @@ class WebServer {
       response.end();
     });
 
-    const extension = path.extname(filePath).toLowerCase();
-    const contentType = mimeTypes[extension] || defaultMimeType;
-
     response.setHeader("Accept-Ranges", "bytes");
-    response.setHeader("Content-Type", contentType);
+    response.setHeader("Content-Type", this.#getContentType(filePath));
     response.setHeader("Content-Length", end - start);
     response.setHeader(
       "Content-Range",
@@ -341,19 +331,24 @@ class WebServer {
     response.writeHead(206);
     stream.pipe(response);
   }
+
+  #getContentType(filePath) {
+    const extension = path.extname(filePath).toLowerCase();
+    return MIME_TYPES[extension] || DEFAULT_MIME_TYPE;
+  }
 }
 
 // This supports the "Cross-origin" test in test/unit/api_spec.js
 // It is here instead of test.js so that when the test will still complete as
 // expected if the user does "gulp server" and then visits
 // http://localhost:8888/test/unit/unit_test.html?spec=Cross-origin
-function crossOriginHandler(req, res) {
-  if (req.url === "/test/pdfs/basicapi.pdf?cors=withCredentials") {
-    res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
+function crossOriginHandler(request, response) {
+  if (request.url === "/test/pdfs/basicapi.pdf?cors=withCredentials") {
+    response.setHeader("Access-Control-Allow-Origin", request.headers.origin);
+    response.setHeader("Access-Control-Allow-Credentials", "true");
   }
-  if (req.url === "/test/pdfs/basicapi.pdf?cors=withoutCredentials") {
-    res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
+  if (request.url === "/test/pdfs/basicapi.pdf?cors=withoutCredentials") {
+    response.setHeader("Access-Control-Allow-Origin", request.headers.origin);
   }
 }
 
