@@ -999,7 +999,7 @@ describe("Scripting", function () {
         });
       });
 
-      it("should format a date", async () => {
+      it("should format a date (cFormat)", async () => {
         const refId = getId();
         const data = {
           objects: {
