@@ -16,6 +16,7 @@
 /* eslint-disable no-var */
 
 import fs from "fs";
+import fsPromises from "fs/promises";
 import http from "http";
 import path from "path";
 
@@ -162,7 +163,7 @@ class WebServer {
         return;
       }
       if (isDir) {
-        serveDirectoryIndex(filePath);
+        self.#serveDirectoryIndex(res, pathPart, queryPart, filePath);
         return;
       }
 
@@ -196,97 +197,101 @@ class WebServer {
       }
       self.#serveFile(res, filePath, fileSize);
     }
+  }
 
-    function escapeHTML(untrusted) {
+  async #serveDirectoryIndex(response, pathPart, queryPart, directory) {
+    response.setHeader("Content-Type", "text/html");
+    response.writeHead(200);
+
+    if (queryPart === "frame") {
+      response.end(
+        `<html>
+          <frameset cols=*,200>
+            <frame name=pdf>
+            <frame src="${encodeURI(pathPart)}?side">
+          </frameset>
+        </html>`,
+        "utf8"
+      );
+      return;
+    }
+
+    let files;
+    try {
+      files = await fsPromises.readdir(directory);
+    } catch {
+      response.end();
+      return;
+    }
+
+    response.write(
+      `<html>
+         <head>
+           <meta charset="utf-8">
+         </head>
+         <body>
+           <h1>Index of ${pathPart}</h1>`
+    );
+    if (pathPart !== "/") {
+      response.write('<a href="..">..</a><br>');
+    }
+
+    const all = queryPart === "all";
+    const escapeHTML = untrusted =>
       // Escape untrusted input so that it can safely be used in a HTML response
       // in HTML and in HTML attributes.
-      return untrusted
+      untrusted
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#39;");
-    }
 
-    function serveDirectoryIndex(dir) {
-      res.setHeader("Content-Type", "text/html");
-      res.writeHead(200);
+    for (const file of files) {
+      let stat;
+      const item = pathPart + file;
+      let href = "";
+      let label = "";
+      let extraAttributes = "";
 
-      if (queryPart === "frame") {
-        res.end(
-          "<html><frameset cols=*,200><frame name=pdf>" +
-            '<frame src="' +
-            encodeURI(pathPart) +
-            '?side"></frameset></html>',
-          "utf8"
-        );
-        return;
+      try {
+        stat = fs.statSync(path.join(directory, file));
+      } catch (ex) {
+        href = encodeURI(item);
+        label = `${file} (${ex})`;
+        extraAttributes = ' style="color:red"';
       }
-      var all = queryPart === "all";
-      fs.readdir(dir, function (err, files) {
-        if (err) {
-          res.end();
-          return;
+
+      if (stat) {
+        if (stat.isDirectory()) {
+          href = encodeURI(item);
+          label = file;
+        } else if (path.extname(file).toLowerCase() === ".pdf") {
+          href = `/web/viewer.html?file=${encodeURIComponent(item)}`;
+          label = file;
+          extraAttributes = ' target="pdf"';
+        } else if (all) {
+          href = encodeURI(item);
+          label = file;
         }
-        res.write(
-          '<html><head><meta charset="utf-8"></head><body>' +
-            "<h1>PDFs of " +
-            pathPart +
-            "</h1>\n"
+      }
+
+      if (label) {
+        response.write(
+          `<a href="${escapeHTML(href)}"${extraAttributes}>${escapeHTML(label)}</a><br>`
         );
-        if (pathPart !== "/") {
-          res.write('<a href="..">..</a><br>\n');
-        }
-        files.forEach(function (file) {
-          var stat;
-          var item = pathPart + file;
-          var href = "";
-          var label = "";
-          var extraAttributes = "";
-          try {
-            stat = fs.statSync(path.join(dir, file));
-          } catch (e) {
-            href = encodeURI(item);
-            label = file + " (" + e + ")";
-            extraAttributes = ' style="color:red"';
-          }
-          if (stat) {
-            if (stat.isDirectory()) {
-              href = encodeURI(item);
-              label = file;
-            } else if (path.extname(file).toLowerCase() === ".pdf") {
-              href = "/web/viewer.html?file=" + encodeURIComponent(item);
-              label = file;
-              extraAttributes = ' target="pdf"';
-            } else if (all) {
-              href = encodeURI(item);
-              label = file;
-            }
-          }
-          if (label) {
-            res.write(
-              '<a href="' +
-                escapeHTML(href) +
-                '"' +
-                extraAttributes +
-                ">" +
-                escapeHTML(label) +
-                "</a><br>\n"
-            );
-          }
-        });
-        if (files.length === 0) {
-          res.write("<p>no files found</p>\n");
-        }
-        if (!all && queryPart !== "side") {
-          res.write(
-            "<hr><p>(only PDF files are shown, " +
-              '<a href="?all">show all</a>)</p>\n'
-          );
-        }
-        res.end("</body></html>");
-      });
+      }
     }
+
+    if (files.length === 0) {
+      response.write("<p>No files found</p>");
+    }
+    if (!all && queryPart !== "side") {
+      response.write(
+        '<hr><p>(only PDF files are shown, <a href="?all">show all</a>)</p>'
+      );
+    }
+    response.end("</body></html>");
   }
 
   #serveFile(response, filePath, fileSize) {
