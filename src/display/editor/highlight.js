@@ -135,8 +135,21 @@ class HighlightEditor extends AnnotationEditor {
         this.#focusOutlines
       );
     } else if (this.parent) {
+      const angle = this.parent.viewport.rotation;
       this.parent.drawLayer.updateLine(this.#id, highlightOutlines);
+      this.parent.drawLayer.updateBox(
+        this.#id,
+        HighlightEditor.#rotateBbox(
+          this.#highlightOutlines.box,
+          (angle - this.rotation + 360) % 360
+        )
+      );
+
       this.parent.drawLayer.updateLine(this.#outlineId, this.#focusOutlines);
+      this.parent.drawLayer.updateBox(
+        this.#outlineId,
+        HighlightEditor.#rotateBbox(this.#focusOutlines.box, angle)
+      );
     }
     const { x, y, width, height } = highlightOutlines.box;
     switch (this.rotation) {
