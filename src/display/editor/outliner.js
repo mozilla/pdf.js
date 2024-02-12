@@ -363,6 +363,10 @@ class FreeOutliner {
   //  - compute the control points of the quadratic Bézier curve.
   #last = new Float64Array(18);
 
+  #lastX;
+
+  #lastY;
+
   #min;
 
   #min_dist;
@@ -402,7 +406,22 @@ class FreeOutliner {
     return isNaN(this.#last[8]);
   }
 
+  #getLastCoords() {
+    const lastTop = this.#last.subarray(4, 6);
+    const lastBottom = this.#last.subarray(16, 18);
+    const [x, y, width, height] = this.#box;
+
+    return [
+      (this.#lastX + (lastTop[0] - lastBottom[0]) / 2 - x) / width,
+      (this.#lastY + (lastTop[1] - lastBottom[1]) / 2 - y) / height,
+      (this.#lastX + (lastBottom[0] - lastTop[0]) / 2 - x) / width,
+      (this.#lastY + (lastBottom[1] - lastTop[1]) / 2 - y) / height,
+    ];
+  }
+
   add({ x, y }) {
+    this.#lastX = x;
+    this.#lastY = y;
     const [layerX, layerY, layerWidth, layerHeight] = this.#box;
     let [x1, y1, x2, y2] = this.#last.subarray(8, 12);
     const diffX = x - x2;
@@ -528,12 +547,14 @@ class FreeOutliner {
     const lastTop = this.#last.subarray(4, 6);
     const lastBottom = this.#last.subarray(16, 18);
     const [x, y, width, height] = this.#box;
+    const [lastTopX, lastTopY, lastBottomX, lastBottomY] =
+      this.#getLastCoords();
 
     if (isNaN(this.#last[6]) && !this.isEmpty()) {
       // We've only two points.
       return `M${(this.#last[2] - x) / width} ${
         (this.#last[3] - y) / height
-      } L${(this.#last[4] - x) / width} ${(this.#last[5] - y) / height} L${
+      } L${(this.#last[4] - x) / width} ${(this.#last[5] - y) / height} L${lastTopX} ${lastTopY} L${lastBottomX} ${lastBottomY} L${
         (this.#last[16] - x) / width
       } ${(this.#last[17] - y) / height} L${(this.#last[14] - x) / width} ${
         (this.#last[15] - y) / height
@@ -553,8 +574,9 @@ class FreeOutliner {
         );
       }
     }
+
     buffer.push(
-      `L${(lastTop[0] - x) / width} ${(lastTop[1] - y) / height} L${
+      `L${(lastTop[0] - x) / width} ${(lastTop[1] - y) / height} L${lastTopX} ${lastTopY} L${lastBottomX} ${lastBottomY} L${
         (lastBottom[0] - x) / width
       } ${(lastBottom[1] - y) / height}`
     );
@@ -582,15 +604,19 @@ class FreeOutliner {
     const lastBottom = last.subarray(16, 18);
     const [layerX, layerY, layerWidth, layerHeight] = this.#box;
 
-    const points = new Float64Array(this.#points?.length ?? 0);
-    for (let i = 0, ii = points.length; i < ii; i += 2) {
+    const points = new Float64Array((this.#points?.length ?? 0) + 2);
+    for (let i = 0, ii = points.length - 2; i < ii; i += 2) {
       points[i] = (this.#points[i] - layerX) / layerWidth;
       points[i + 1] = (this.#points[i + 1] - layerY) / layerHeight;
     }
+    points[points.length - 2] = (this.#lastX - layerX) / layerWidth;
+    points[points.length - 1] = (this.#lastY - layerY) / layerHeight;
+    const [lastTopX, lastTopY, lastBottomX, lastBottomY] =
+      this.#getLastCoords();
 
     if (isNaN(last[6]) && !this.isEmpty()) {
       // We've only two points.
-      const outline = new Float64Array(24);
+      const outline = new Float64Array(36);
       outline.set(
         [
           NaN,
@@ -605,6 +631,18 @@ class FreeOutliner {
           NaN,
           (last[4] - layerX) / layerWidth,
           (last[5] - layerY) / layerHeight,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          lastTopX,
+          lastTopY,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          lastBottomX,
+          lastBottomY,
           NaN,
           NaN,
           NaN,
@@ -631,7 +669,7 @@ class FreeOutliner {
     }
 
     const outline = new Float64Array(
-      this.#top.length + 12 + this.#bottom.length
+      this.#top.length + 24 + this.#bottom.length
     );
     let N = top.length;
     for (let i = 0; i < N; i += 2) {
@@ -642,6 +680,7 @@ class FreeOutliner {
       outline[i] = top[i];
       outline[i + 1] = top[i + 1];
     }
+
     outline.set(
       [
         NaN,
@@ -654,12 +693,24 @@ class FreeOutliner {
         NaN,
         NaN,
         NaN,
+        lastTopX,
+        lastTopY,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        lastBottomX,
+        lastBottomY,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
         (lastBottom[0] - layerX) / layerWidth,
         (lastBottom[1] - layerY) / layerHeight,
       ],
       N
     );
-    N += 12;
+    N += 24;
 
     for (let i = bottom.length - 6; i >= 6; i -= 6) {
       for (let j = 0; j < 6; j += 2) {
