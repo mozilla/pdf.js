@@ -930,7 +930,14 @@ class PDFDocument {
       // Find the end of the first object.
       stream.reset();
       if (find(stream, ENDOBJ_SIGNATURE)) {
-        startXRef = stream.pos + 6 - stream.start;
+        stream.skip(6);
+
+        let ch = stream.peekByte();
+        while (isWhiteSpace(ch)) {
+          stream.pos++;
+          ch = stream.peekByte();
+        }
+        startXRef = stream.pos - stream.start;
       }
     } else {
       // Find `startxref` by checking backwards from the end of the file.

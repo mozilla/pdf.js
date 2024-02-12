@@ -880,6 +880,9 @@ class WorkerMessageHandler {
           .ensureXRef("trailer")
           .then(trailer => trailer.get("Prev"));
       });
+      handler.on("GetStartXRefPos", function (data) {
+        return pdfManager.ensureDoc("startXRef");
+      });
       handler.on("GetAnnotArray", function (data) {
         return pdfManager.getPage(data.pageIndex).then(function (page) {
           return page.annotations.map(a => a.toString());
