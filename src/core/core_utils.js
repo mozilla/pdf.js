@@ -611,6 +611,19 @@ function getRotationMatrix(rotation, width, height) {
   }
 }
 
+/**
+ * Get the number of bytes to use to represent the given positive integer.
+ * If n is zero, the function returns 0 which means that we don't need to waste
+ * a byte to represent it.
+ * @param {number} x - a positive integer.
+ * @returns {number}
+ */
+function getSizeInBytes(x) {
+  // n bits are required for numbers up to 2^n - 1.
+  // So for a number x, we need ceil(log2(1 + x)) bits.
+  return Math.ceil(Math.ceil(Math.log2(1 + x)) / 8);
+}
+
 export {
   arrayBuffersToBytes,
   codePointIter,
@@ -622,6 +635,7 @@ export {
   getLookupTableFactory,
   getNewAnnotationsMap,
   getRotationMatrix,
+  getSizeInBytes,
   isAscii,
   isWhiteSpace,
   log2,
