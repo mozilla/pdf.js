@@ -19,6 +19,7 @@ import {
   escapePDFName,
   escapeString,
   getInheritableProperty,
+  getSizeInBytes,
   isAscii,
   isWhiteSpace,
   log2,
@@ -466,6 +467,23 @@ describe("core_utils", function () {
       ).toEqual(
         "\xfe\xff\x30\x53\x30\x93\x30\x6b\x30\x61\x30\x6f\x4e\x16\x75\x4c\x30\x6e"
       );
+    });
+  });
+
+  describe("getSizeInBytes", function () {
+    it("should get the size in bytes to use to represent a positive integer", function () {
+      expect(getSizeInBytes(0)).toEqual(0);
+      for (let i = 1; i <= 0xff; i++) {
+        expect(getSizeInBytes(i)).toEqual(1);
+      }
+
+      for (let i = 0x100; i <= 0xffff; i += 0x100) {
+        expect(getSizeInBytes(i)).toEqual(2);
+      }
+
+      for (let i = 0x10000; i <= 0xffffff; i += 0x10000) {
+        expect(getSizeInBytes(i)).toEqual(3);
+      }
     });
   });
 });
