@@ -511,6 +511,18 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("checks the `startxref` position of a linearized pdf doc (issue 17665)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("empty.pdf"));
+      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+
+      const pdfDocument = await loadingTask.promise;
+
+      const startXRefPos = await pdfDocument.getStartXRefPos();
+      expect(startXRefPos).toEqual(116);
+
+      await loadingTask.destroy();
+    });
+
     it("checks that `docId`s are unique and increasing", async function () {
       const loadingTask1 = getDocument(basicApiGetDocumentParams);
       expect(loadingTask1 instanceof PDFDocumentLoadingTask).toEqual(true);
