@@ -63,14 +63,14 @@ function renderPage(
 }
 
 class PDFPrintService {
-  constructor(
+  constructor({
     pdfDocument,
     pagesOverview,
     printContainer,
     printResolution,
     optionalContentConfigPromise = null,
-    printAnnotationStoragePromise = null
-  ) {
+    printAnnotationStoragePromise = null,
+  }) {
     this.pdfDocument = pdfDocument;
     this.pagesOverview = pagesOverview;
     this.printContainer = printContainer;
@@ -367,26 +367,11 @@ class PDFPrintServiceFactory {
     return shadow(this, "supportsPrinting", true);
   }
 
-  static createPrintService(
-    pdfDocument,
-    pagesOverview,
-    printContainer,
-    printResolution,
-    optionalContentConfigPromise,
-    printAnnotationStoragePromise
-  ) {
+  static createPrintService(params) {
     if (activeService) {
       throw new Error("The print service is created and active.");
     }
-    activeService = new PDFPrintService(
-      pdfDocument,
-      pagesOverview,
-      printContainer,
-      printResolution,
-      optionalContentConfigPromise,
-      printAnnotationStoragePromise
-    );
-    return activeService;
+    return (activeService = new PDFPrintService(params));
   }
 }
 
