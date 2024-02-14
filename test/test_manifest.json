@@ -9675,5 +9675,12 @@
         "id": null
       }
     }
+  },
+  {
+    "id": "issue17671",
+    "file": "pdfs/issue17671.pdf",
+    "md5": "407695b36b4611bc7c501a891c8a4b28",
+    "rounds": 1,
+    "type": "eq"
   }
 ]
