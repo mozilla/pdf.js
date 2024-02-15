@@ -198,6 +198,10 @@
       "description": "The color is a string as defined in CSS. Its goal is to help improve readability in high contrast mode",
       "type": "string",
       "default": "CanvasText"
+    },
+    "hasInitializationHook": {
+      "type": "boolean",
+      "default": false
     }
   }
 }

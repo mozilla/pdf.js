@@ -237,6 +237,23 @@ const PDFViewerApplication = {
     this.bindEvents();
     this.bindWindowEvents();
 
+    if (
+      typeof PDFJSDev !== "undefined" &&
+      PDFJSDev.test("TESTING || MOZCENTRAL") &&
+      AppOptions.get("hasInitializationHook")
+    ) {
+      await new Promise(resolve => {
+        this.eventBus.on(
+          "initializationhook",
+          ({ callback }) => {
+            callback();
+            resolve();
+          },
+          { once: true }
+        );
+      });
+    }
+
     this._initializedCapability.resolve();
   },
 
@@ -328,6 +345,9 @@ const PDFViewerApplication = {
           "highlightEditorColors",
           params.get("highlighteditorcolors")
         );
+      }
+      if (params.get("initializationhook") === "true") {
+        AppOptions.set("hasInitializationHook", true);
       }
     }
   },

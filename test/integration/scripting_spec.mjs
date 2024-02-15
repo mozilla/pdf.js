@@ -1773,7 +1773,6 @@ describe("Interaction", () => {
 
   describe("in autoprint.pdf", () => {
     let pages;
-    const printHandles = new Map();
 
     beforeAll(async () => {
       // Autoprinting is triggered by the `Open` event, which is one of the
@@ -1788,29 +1787,9 @@ describe("Interaction", () => {
         "autoprint.pdf",
         "",
         null /* pageSetup = */,
-        async page => {
-          printHandles.set(
-            page,
-            await page.evaluateHandle(() => [
-              new Promise(resolve => {
-                globalThis.printResolve = resolve;
-              }),
-            ])
-          );
-          await page.waitForFunction(() => {
-            if (!window.PDFViewerApplication?.eventBus) {
-              return false;
-            }
-            window.PDFViewerApplication.eventBus.on(
-              "print",
-              () => {
-                const resolve = globalThis.printResolve;
-                delete globalThis.printResolve;
-                resolve();
-              },
-              { once: true }
-            );
-            return true;
+        resolve => {
+          window.PDFViewerApplication.eventBus.on("print", resolve, {
+            once: true,
           });
         }
       );
@@ -1818,13 +1797,12 @@ describe("Interaction", () => {
 
     afterAll(async () => {
       await closePages(pages);
-      printHandles.clear();
     });
 
     it("must check if printing is triggered when the document is open", async () => {
       await Promise.all(
-        pages.map(async ([browserName, page]) => {
-          await awaitPromise(printHandles.get(page));
+        pages.map(async ([browserName, page, pageSetupPromise]) => {
+          await awaitPromise(pageSetupPromise);
         })
       );
     });

@@ -37,6 +37,10 @@ function loadAndWait(filename, selector, zoom, pageSetup, options) {
       });
 
       let app_options = "";
+      if (pageSetup) {
+        options ||= {};
+        options.initializationhook = "true";
+      }
       if (options) {
         // Options must be handled in app.js::_parseHashParams.
         for (const [key, value] of Object.entries(options)) {
@@ -48,8 +52,25 @@ function loadAndWait(filename, selector, zoom, pageSetup, options) {
       }?file=/test/pdfs/${filename}#zoom=${zoom ?? "page-fit"}${app_options}`;
 
       await page.goto(url);
+      let pageSetupPromise = null;
       if (pageSetup) {
-        await pageSetup(page);
+        await page.waitForFunction(
+          () => !!window.PDFViewerApplication.eventBus
+        );
+        pageSetupPromise = await page.evaluateHandle(
+          cb => [
+            new Promise(resolve => {
+              window.PDFViewerApplication.eventBus.dispatch(
+                "initializationhook",
+                {
+                  // eslint-disable-next-line no-eval
+                  callback: () => eval(`(${cb})`)(resolve),
+                }
+              );
+            }),
+          ],
+          pageSetup.toString()
+        );
       }
 
       await page.bringToFront();
@@ -58,7 +79,7 @@ function loadAndWait(filename, selector, zoom, pageSetup, options) {
           timeout: 0,
         });
       }
-      return [session.name, page];
+      return [session.name, page, pageSetupPromise];
     })
   );
 }
@@ -298,20 +319,15 @@ async function dragAndDropAnnotation(page, startX, startY, tX, tY) {
   await page.waitForSelector("#viewer:not(.noUserSelect)");
 }
 
-function waitForAnnotationEditorLayer(page) {
-  return createPromise(page, resolve => {
-    window.PDFViewerApplication.eventBus.on(
-      "annotationeditorlayerrendered",
-      resolve
-    );
-  });
+function waitForAnnotationEditorLayer(resolve) {
+  window.PDFViewerApplication.eventBus.on(
+    "annotationeditorlayerrendered",
+    resolve
+  );
 }
 
-async function waitForTextLayer(page) {
-  const handle = await createPromise(page, resolve => {
-    window.PDFViewerApplication.eventBus.on("textlayerrendered", resolve);
-  });
-  return awaitPromise(handle);
+function waitForTextLayer(resolve) {
+  window.PDFViewerApplication.eventBus.on("textlayerrendered", resolve);
 }
 
 async function scrollIntoView(page, selector) {

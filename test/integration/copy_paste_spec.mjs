@@ -14,6 +14,7 @@
  */
 
 import {
+  awaitPromise,
   closePages,
   kbCopy,
   kbSelectAll,
@@ -44,12 +45,7 @@ describe("Copy and paste", () => {
         "tracemonkey.pdf",
         "#hiddenCopyElement",
         100,
-        async page => {
-          await page.waitForFunction(
-            () => !!window.PDFViewerApplication.eventBus
-          );
-          await waitForTextLayer(page);
-        }
+        waitForTextLayer
       );
       await mockClipboard(pages);
     });
@@ -60,7 +56,8 @@ describe("Copy and paste", () => {
 
     it("must check that we've all the contents on copy/paste", async () => {
       await Promise.all(
-        pages.map(async ([browserName, page]) => {
+        pages.map(async ([browserName, page, pageSetupPromise]) => {
+          awaitPromise(pageSetupPromise);
           await selectAll(page);
 
           const promise = waitForEvent(page, "copy");
@@ -151,12 +148,7 @@ describe("Copy and paste", () => {
         "copy_paste_ligatures.pdf",
         "#hiddenCopyElement",
         100,
-        async page => {
-          await page.waitForFunction(
-            () => !!window.PDFViewerApplication.eventBus
-          );
-          await waitForTextLayer(page);
-        }
+        waitForTextLayer
       );
       await mockClipboard(pages);
     });
@@ -167,7 +159,8 @@ describe("Copy and paste", () => {
 
     it("must check that the ligatures have been removed when the text has been copied", async () => {
       await Promise.all(
-        pages.map(async ([browserName, page]) => {
+        pages.map(async ([browserName, page, pageSetupPromise]) => {
+          awaitPromise(pageSetupPromise);
           await selectAll(page);
 
           const promise = waitForEvent(page, "copy");
