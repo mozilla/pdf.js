@@ -2117,6 +2117,14 @@ class Font {
         break;
       }
 
+      // If the last offset is 0 in the loca table then we can't compute the
+      // endOffset for the last glyph. So in such a case we set the endOffset
+      // to the end of the data (fixes issue #17671).
+      const last = locaEntries.at(-2);
+      if (last.offset !== 0 && last.endOffset === 0) {
+        last.endOffset = oldGlyfDataLength;
+      }
+
       const missingGlyphs = Object.create(null);
       let writeOffset = 0;
       itemEncode(locaData, 0, writeOffset);
