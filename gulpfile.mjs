@@ -1213,22 +1213,23 @@ async function parseMinified(dir) {
     module: true,
   };
 
-  fs.writeFileSync(
-    dir + "build/pdf.min.mjs",
-    (await minify(pdfFile, options)).code
-  );
-  fs.writeFileSync(
-    dir + "build/pdf.worker.min.mjs",
-    (await minify(pdfWorkerFile, options)).code
-  );
-  fs.writeFileSync(
-    dir + "build/pdf.sandbox.min.mjs",
-    (await minify(pdfSandboxFile, options)).code
-  );
-  fs.writeFileSync(
-    dir + "image_decoders/pdf.image_decoders.min.mjs",
-    (await minify(pdfImageDecodersFile, options)).code
-  );
+  await Promise.all([
+    minify(pdfFile, options).then(res => {
+      fs.writeFileSync(dir + "build/pdf.min.mjs", res.code);
+    }),
+    minify(pdfWorkerFile, options).then(res => {
+      fs.writeFileSync(dir + "build/pdf.worker.min.mjs", res.code);
+    }),
+    minify(pdfSandboxFile, options).then(res => {
+      fs.writeFileSync(dir + "build/pdf.sandbox.min.mjs", res.code);
+    }),
+    minify(pdfImageDecodersFile, options).then(res => {
+      fs.writeFileSync(
+        dir + "image_decoders/pdf.image_decoders.min.mjs",
+        res.code
+      );
+    }),
+  ]);
 
   console.log();
   console.log("### Cleaning js files");
@@ -1236,17 +1237,7 @@ async function parseMinified(dir) {
   fs.unlinkSync(dir + "build/pdf.mjs");
   fs.unlinkSync(dir + "build/pdf.worker.mjs");
   fs.unlinkSync(dir + "build/pdf.sandbox.mjs");
-
-  fs.renameSync(dir + "build/pdf.min.mjs", dir + "build/pdf.mjs");
-  fs.renameSync(dir + "build/pdf.worker.min.mjs", dir + "build/pdf.worker.mjs");
-  fs.renameSync(
-    dir + "build/pdf.sandbox.min.mjs",
-    dir + "build/pdf.sandbox.mjs"
-  );
-  fs.renameSync(
-    dir + "image_decoders/pdf.image_decoders.min.mjs",
-    dir + "image_decoders/pdf.image_decoders.mjs"
-  );
+  fs.unlinkSync(dir + "image_decoders/pdf.image_decoders.mjs");
 }
 
 gulp.task(
@@ -2268,36 +2259,30 @@ gulp.task(
           ])
           .pipe(gulp.dest(DIST_DIR + "legacy/build/")),
         gulp
-          .src(MINIFIED_DIR + "build/pdf.mjs")
-          .pipe(rename("pdf.min.mjs"))
+          .src(MINIFIED_DIR + "build/pdf.min.mjs")
           .pipe(gulp.dest(DIST_DIR + "build/")),
         gulp
-          .src(MINIFIED_DIR + "build/pdf.worker.mjs")
-          .pipe(rename("pdf.worker.min.mjs"))
+          .src(MINIFIED_DIR + "build/pdf.worker.min.mjs")
           .pipe(gulp.dest(DIST_DIR + "build/")),
         gulp
-          .src(MINIFIED_DIR + "build/pdf.sandbox.mjs")
-          .pipe(rename("pdf.sandbox.min.mjs"))
+          .src(MINIFIED_DIR + "build/pdf.sandbox.min.mjs")
           .pipe(gulp.dest(DIST_DIR + "build/")),
         gulp
-          .src(MINIFIED_DIR + "image_decoders/pdf.image_decoders.mjs")
-          .pipe(rename("pdf.image_decoders.min.mjs"))
+          .src(MINIFIED_DIR + "image_decoders/pdf.image_decoders.min.mjs")
           .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
         gulp
-          .src(MINIFIED_LEGACY_DIR + "build/pdf.mjs")
-          .pipe(rename("pdf.min.mjs"))
+          .src(MINIFIED_LEGACY_DIR + "build/pdf.min.mjs")
           .pipe(gulp.dest(DIST_DIR + "legacy/build/")),
         gulp
-          .src(MINIFIED_LEGACY_DIR + "build/pdf.worker.mjs")
-          .pipe(rename("pdf.worker.min.mjs"))
+          .src(MINIFIED_LEGACY_DIR + "build/pdf.worker.min.mjs")
           .pipe(gulp.dest(DIST_DIR + "legacy/build/")),
         gulp
-          .src(MINIFIED_LEGACY_DIR + "build/pdf.sandbox.mjs")
-          .pipe(rename("pdf.sandbox.min.mjs"))
+          .src(MINIFIED_LEGACY_DIR + "build/pdf.sandbox.min.mjs")
           .pipe(gulp.dest(DIST_DIR + "legacy/build/")),
         gulp
-          .src(MINIFIED_LEGACY_DIR + "image_decoders/pdf.image_decoders.mjs")
-          .pipe(rename("pdf.image_decoders.min.mjs"))
+          .src(
+            MINIFIED_LEGACY_DIR + "image_decoders/pdf.image_decoders.min.mjs"
+          )
           .pipe(gulp.dest(DIST_DIR + "legacy/image_decoders/")),
         gulp
           .src(COMPONENTS_DIR + "**/*", { base: COMPONENTS_DIR })
