@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { objectFromMap, unreachable, warn } from "../shared/util.js";
+import { info, objectFromMap, unreachable, warn } from "../shared/util.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 
 const INTERNAL = Symbol("INTERNAL");
@@ -130,7 +130,7 @@ class OptionalContentConfig {
       return true;
     }
     if (!group) {
-      warn("Optional content group not defined.");
+      info("Optional content group not defined.");
       return true;
     }
     if (group.type === "OCG") {
