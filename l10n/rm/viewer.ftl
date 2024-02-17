@@ -301,6 +301,9 @@ pdfjs-editor-ink-button-label = Dissegnar
 pdfjs-editor-stamp-button =
     .title = Agiuntar u modifitgar maletgs
 pdfjs-editor-stamp-button-label = Agiuntar u modifitgar maletgs
+pdfjs-editor-highlight-button =
+    .title = Marcar
+pdfjs-editor-highlight-button-label = Marcar
 
 ## Remove button for the various kind of editor.
 

@@ -44,10 +44,10 @@ pdfjs-save-button =
 pdfjs-save-button-label = Cadw
 # Used in Firefox for Android as a tooltip for the download button (“download” is a verb).
 pdfjs-download-button =
-    .title = Llwytho i Lawr
+    .title = Llwytho i lawr
 # Used in Firefox for Android as a label for the download button (“download” is a verb).
 # Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-download-button-label = Llwytho i Lawr
+pdfjs-download-button-label = Llwytho i lawr
 pdfjs-bookmark-button =
     .title = Tudalen Gyfredol (Gweld URL o'r Dudalen Gyfredol)
 pdfjs-bookmark-button-label = Tudalen Gyfredol
