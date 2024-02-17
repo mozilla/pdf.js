@@ -39,6 +39,7 @@ import replace from "gulp-replace";
 import rimraf from "rimraf";
 import stream from "stream";
 import streamqueue from "streamqueue";
+import TerserPlugin from "terser-webpack-plugin";
 import through from "through2";
 import Vinyl from "vinyl";
 import webpack2 from "webpack";
@@ -210,6 +211,7 @@ function createWebpackConfig(
     !bundleDefines.TESTING &&
     !disableSourceMaps;
   const isModule = output.library?.type === "module";
+  const isMinified = bundleDefines.MINIFIED;
   const skipBabel = bundleDefines.SKIP_BABEL;
 
   const babelExcludeRegExp = [
@@ -333,7 +335,28 @@ function createWebpackConfig(
     mode: "production",
     optimization: {
       mangleExports: false,
-      minimize: false,
+      minimize: isMinified,
+      minimizer: !isMinified
+        ? undefined
+        : [
+            new TerserPlugin({
+              extractComments: false,
+              parallel: false,
+              terserOptions: {
+                compress: {
+                  // V8 chokes on very long sequences, work around that.
+                  sequences: false,
+                },
+                mangle: {
+                  // Ensure that the `tweakWebpackOutput` function works.
+                  reserved: ["__webpack_exports__"],
+                },
+                keep_classnames: true,
+                keep_fnames: true,
+                module: isModule,
+              },
+            }),
+          ],
     },
     experiments,
     output,
@@ -421,7 +444,9 @@ function checkChromePreferencesFile(chromePrefsPath, webPrefs) {
 function tweakWebpackOutput(jsName) {
   const replacer = [
     " __webpack_exports__ = {};",
+    ",__webpack_exports__={};",
     " __webpack_exports__ = await __webpack_exports__;",
+    "\\(__webpack_exports__=await __webpack_exports__\\)",
   ];
   const regex = new RegExp(`(${replacer.join("|")})`, "gm");
 
@@ -429,8 +454,12 @@ function tweakWebpackOutput(jsName) {
     switch (match) {
       case " __webpack_exports__ = {};":
         return ` __webpack_exports__ = globalThis.${jsName} = {};`;
+      case ",__webpack_exports__={};":
+        return `,__webpack_exports__=globalThis.${jsName}={};`;
       case " __webpack_exports__ = await __webpack_exports__;":
         return ` __webpack_exports__ = globalThis.${jsName} = await (globalThis.${jsName}Promise = __webpack_exports__);`;
+      case "(__webpack_exports__=await __webpack_exports__)":
+        return `(__webpack_exports__=globalThis.${jsName}=await (globalThis.${jsName}Promise=__webpack_exports__))`;
     }
     return match;
   });
@@ -438,7 +467,7 @@ function tweakWebpackOutput(jsName) {
 
 function createMainBundle(defines) {
   const mainFileConfig = createWebpackConfig(defines, {
-    filename: "pdf.mjs",
+    filename: defines.MINIFIED ? "pdf.min.mjs" : "pdf.mjs",
     library: {
       type: "module",
     },
@@ -502,7 +531,9 @@ function createSandboxBundle(defines, extraOptions = undefined) {
   const sandboxFileConfig = createWebpackConfig(
     sandboxDefines,
     {
-      filename: "pdf.sandbox.mjs",
+      filename: sandboxDefines.MINIFIED
+        ? "pdf.sandbox.min.mjs"
+        : "pdf.sandbox.mjs",
       library: {
         type: "module",
       },
@@ -518,7 +549,7 @@ function createSandboxBundle(defines, extraOptions = undefined) {
 
 function createWorkerBundle(defines) {
   const workerFileConfig = createWebpackConfig(defines, {
-    filename: "pdf.worker.mjs",
+    filename: defines.MINIFIED ? "pdf.worker.min.mjs" : "pdf.worker.mjs",
     library: {
       type: "module",
     },
@@ -578,7 +609,9 @@ function createComponentsBundle(defines) {
 
 function createImageDecodersBundle(defines) {
   const componentsFileConfig = createWebpackConfig(defines, {
-    filename: "pdf.image_decoders.mjs",
+    filename: defines.MINIFIED
+      ? "pdf.image_decoders.min.mjs"
+      : "pdf.image_decoders.mjs",
     library: {
       type: "module",
     },
@@ -1178,59 +1211,6 @@ function buildMinified(defines, dir) {
   ]);
 }
 
-async function parseMinified(dir) {
-  const pdfFile = fs.readFileSync(dir + "build/pdf.mjs").toString();
-  const pdfWorkerFile = fs
-    .readFileSync(dir + "build/pdf.worker.mjs")
-    .toString();
-  const pdfSandboxFile = fs
-    .readFileSync(dir + "build/pdf.sandbox.mjs")
-    .toString();
-  const pdfImageDecodersFile = fs
-    .readFileSync(dir + "image_decoders/pdf.image_decoders.mjs")
-    .toString();
-
-  console.log();
-  console.log("### Minifying js files");
-
-  const { minify } = await import("terser");
-  const options = {
-    compress: {
-      // V8 chokes on very long sequences, work around that.
-      sequences: false,
-    },
-    keep_classnames: true,
-    keep_fnames: true,
-    module: true,
-  };
-
-  await Promise.all([
-    minify(pdfFile, options).then(res => {
-      fs.writeFileSync(dir + "build/pdf.min.mjs", res.code);
-    }),
-    minify(pdfWorkerFile, options).then(res => {
-      fs.writeFileSync(dir + "build/pdf.worker.min.mjs", res.code);
-    }),
-    minify(pdfSandboxFile, options).then(res => {
-      fs.writeFileSync(dir + "build/pdf.sandbox.min.mjs", res.code);
-    }),
-    minify(pdfImageDecodersFile, options).then(res => {
-      fs.writeFileSync(
-        dir + "image_decoders/pdf.image_decoders.min.mjs",
-        res.code
-      );
-    }),
-  ]);
-
-  console.log();
-  console.log("### Cleaning js files");
-
-  fs.unlinkSync(dir + "build/pdf.mjs");
-  fs.unlinkSync(dir + "build/pdf.worker.mjs");
-  fs.unlinkSync(dir + "build/pdf.sandbox.mjs");
-  fs.unlinkSync(dir + "image_decoders/pdf.image_decoders.mjs");
-}
-
 gulp.task(
   "minified",
   gulp.series(
@@ -1252,10 +1232,6 @@ gulp.task(
       const defines = { ...DEFINES, MINIFIED: true, GENERIC: true };
 
       return buildMinified(defines, MINIFIED_DIR);
-    },
-    async function compressMinified(done) {
-      await parseMinified(MINIFIED_DIR);
-      done();
     }
   )
 );
@@ -1291,10 +1267,6 @@ gulp.task(
       };
 
       return buildMinified(defines, MINIFIED_LEGACY_DIR);
-    },
-    async function compressMinifiedLegacy(done) {
-      await parseMinified(MINIFIED_LEGACY_DIR);
-      done();
     }
   )
 );
