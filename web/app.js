@@ -1781,26 +1781,19 @@ const PDFViewerApplication = {
       return;
     }
 
-    const pagesOverview = this.pdfViewer.getPagesOverview();
-    const printContainer = this.appConfig.printContainer;
-    const printResolution = AppOptions.get("printResolution");
-    const optionalContentConfigPromise =
-      this.pdfViewer.optionalContentConfigPromise;
-
-    const printService = PDFPrintServiceFactory.createPrintService(
-      this.pdfDocument,
-      pagesOverview,
-      printContainer,
-      printResolution,
-      optionalContentConfigPromise,
-      this._printAnnotationStoragePromise
-    );
-    this.printService = printService;
+    this.printService = PDFPrintServiceFactory.createPrintService({
+      pdfDocument: this.pdfDocument,
+      pagesOverview: this.pdfViewer.getPagesOverview(),
+      printContainer: this.appConfig.printContainer,
+      printResolution: AppOptions.get("printResolution"),
+      optionalContentConfigPromise: this.pdfViewer.optionalContentConfigPromise,
+      printAnnotationStoragePromise: this._printAnnotationStoragePromise,
+    });
     this.forceRendering();
     // Disable the editor-indicator during printing (fixes bug 1790552).
     this.setTitle();
 
-    printService.layout();
+    this.printService.layout();
 
     if (this._hasAnnotationEditors) {
       this.externalServices.reportTelemetry({
