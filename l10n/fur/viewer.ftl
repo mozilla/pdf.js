@@ -329,6 +329,8 @@ pdfjs-editor-stamp-add-image-button =
 pdfjs-editor-stamp-add-image-button-label = Zonte imagjin
 # This refers to the thickness of the line used for free highlighting (not bound to text)
 pdfjs-editor-free-highlight-thickness-input = Spessôr
+pdfjs-editor-free-highlight-thickness-title =
+    .title = Modifiche il spessôr de selezion pai elements che no son testuâi
 pdfjs-free-text =
     .aria-label = Editôr di test
 pdfjs-free-text-default-content = Scomence a scrivi…

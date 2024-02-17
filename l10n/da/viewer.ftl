@@ -301,8 +301,9 @@ pdfjs-editor-ink-button-label = Tegn
 pdfjs-editor-stamp-button =
     .title = Tilføj eller rediger billeder
 pdfjs-editor-stamp-button-label = Tilføj eller rediger billeder
-pdfjs-editor-remove-button =
-    .title = Fjern
+pdfjs-editor-highlight-button =
+    .title = Fremhæv
+pdfjs-editor-highlight-button-label = Fremhæv
 
 ## Remove button for the various kind of editor.
 
@@ -326,6 +327,10 @@ pdfjs-editor-ink-opacity-input = Uigennemsigtighed
 pdfjs-editor-stamp-add-image-button =
     .title = Tilføj billede
 pdfjs-editor-stamp-add-image-button-label = Tilføj billede
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Tykkelse
+pdfjs-editor-free-highlight-thickness-title =
+    .title = Ændr tykkelse, når andre elementer end tekst fremhæves
 pdfjs-free-text =
     .aria-label = Teksteditor
 pdfjs-free-text-default-content = Begynd at skrive…
