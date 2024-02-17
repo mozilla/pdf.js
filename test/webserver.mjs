@@ -38,13 +38,13 @@ const MIME_TYPES = {
 const DEFAULT_MIME_TYPE = "application/octet-stream";
 
 class WebServer {
-  constructor() {
-    this.root = ".";
-    this.host = "localhost";
-    this.port = 0;
+  constructor({ root, host, port, cacheExpirationTime }) {
+    this.root = root || ".";
+    this.host = host || "localhost";
+    this.port = port || 0;
     this.server = null;
     this.verbose = false;
-    this.cacheExpirationTime = 0;
+    this.cacheExpirationTime = cacheExpirationTime || 0;
     this.disableRangeRequests = false;
     this.hooks = {
       GET: [crossOriginHandler],
