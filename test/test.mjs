@@ -1015,11 +1015,12 @@ async function startBrowsers({ baseUrl, initializeSession }) {
 }
 
 function startServer() {
-  server = new WebServer();
-  server.host = host;
-  server.port = options.port;
-  server.root = "..";
-  server.cacheExpirationTime = 3600;
+  server = new WebServer({
+    root: "..",
+    host,
+    port: options.port,
+    cacheExpirationTime: 3600,
+  });
   server.start();
 }
 
