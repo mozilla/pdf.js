@@ -128,7 +128,7 @@ pdfjs-document-properties-modification-date = Dátum úpravy:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
 pdfjs-document-properties-date-string = { $date }, { $time }
-pdfjs-document-properties-creator = Vytvoril:
+pdfjs-document-properties-creator = Aplikácia:
 pdfjs-document-properties-producer = Tvorca PDF:
 pdfjs-document-properties-version = Verzia PDF:
 pdfjs-document-properties-page-count = Počet strán:
