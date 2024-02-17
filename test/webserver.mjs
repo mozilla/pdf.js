@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import fs from "fs";
 import fsPromises from "fs/promises";
 import http from "http";
 import path from "path";
 
-var mimeTypes = {
+const MIME_TYPES = {
   ".css": "text/css",
   ".html": "text/html",
   ".js": "application/javascript",
@@ -36,17 +35,16 @@ var mimeTypes = {
   ".bcmap": "application/octet-stream",
   ".ftl": "text/plain",
 };
-
-var defaultMimeType = "application/octet-stream";
+const DEFAULT_MIME_TYPE = "application/octet-stream";
 
 class WebServer {
-  constructor() {
-    this.root = ".";
-    this.host = "localhost";
-    this.port = 0;
+  constructor({ root, host, port, cacheExpirationTime }) {
+    this.root = root || ".";
+    this.host = host || "localhost";
+    this.port = port || 0;
     this.server = null;
     this.verbose = false;
-    this.cacheExpirationTime = 0;
+    this.cacheExpirationTime = cacheExpirationTime || 0;
     this.disableRangeRequests = false;
     this.hooks = {
       GET: [crossOriginHandler],
@@ -58,9 +56,7 @@ class WebServer {
     this.#ensureNonZeroPort();
     this.server = http.createServer(this.#handler.bind(this));
     this.server.listen(this.port, this.host, callback);
-    console.log(
-      "Server running at http://" + this.host + ":" + this.port + "/"
-    );
+    console.log(`Server running at http://${this.host}:${this.port}/`);
   }
 
   stop(callback) {
@@ -71,132 +67,131 @@ class WebServer {
   #ensureNonZeroPort() {
     if (!this.port) {
       // If port is 0, a random port will be chosen instead. Do not set a host
-      // name to make sure that the port is synchronously set by .listen().
-      var server = http.createServer().listen(0);
-      var address = server.address();
-      // .address().port being available synchronously is merely an
-      // implementation detail. So we are defensive here and fall back to some
+      // name to make sure that the port is synchronously set by `.listen()`.
+      const server = http.createServer().listen(0);
+      const address = server.address();
+      // `.address().port` being available synchronously is merely an
+      // implementation detail, so we are defensive here and fall back to a
       // fixed port when the address is not available yet.
       this.port = address ? address.port : 8000;
       server.close();
     }
   }
 
-  #handler(req, res) {
-    var self = this;
-    var url = req.url.replaceAll("//", "/");
-    var urlParts = /([^?]*)((?:\?(.*))?)/.exec(url);
+  async #handler(request, response) {
+    // Validate and parse the request URL.
+    const url = request.url.replaceAll("//", "/");
+    const urlParts = /([^?]*)((?:\?(.*))?)/.exec(url);
+    let pathPart;
     try {
       // Guard against directory traversal attacks such as
       // `/../../../../../../../etc/passwd`, which let you make GET requests
       // for files outside of `this.root`.
-      var pathPart = path.normalize(decodeURI(urlParts[1]));
-      // path.normalize returns a path on the basis of the current platform.
-      // Windows paths cause issues in statFile and serverDirectoryIndex.
-      // Converting to unix path would avoid platform checks in said functions.
+      pathPart = path.normalize(decodeURI(urlParts[1]));
+      // `path.normalize` returns a path on the basis of the current platform.
+      // Windows paths cause issues in `checkRequest` and underlying methods.
+      // Converting to a Unix path avoids platform checks in said functions.
       pathPart = pathPart.replaceAll("\\", "/");
     } catch {
       // If the URI cannot be decoded, a `URIError` is thrown. This happens for
       // malformed URIs such as `http://localhost:8888/%s%s` and should be
       // handled as a bad request.
-      res.writeHead(400);
-      res.end("Bad request", "utf8");
+      response.writeHead(400);
+      response.end("Bad request", "utf8");
       return;
     }
-    var queryPart = urlParts[3];
-    var verbose = this.verbose;
 
-    var methodHooks = this.hooks[req.method];
+    // Validate the request method and execute method hooks.
+    const methodHooks = this.hooks[request.method];
     if (!methodHooks) {
-      res.writeHead(405);
-      res.end("Unsupported request method", "utf8");
+      response.writeHead(405);
+      response.end("Unsupported request method", "utf8");
       return;
     }
-    var handled = methodHooks.some(function (hook) {
-      return hook(req, res);
-    });
+    const handled = methodHooks.some(hook => hook(request, response));
     if (handled) {
       return;
     }
 
+    // Check the request and serve the file/folder contents.
     if (pathPart === "/favicon.ico") {
-      fs.realpath(
-        path.join(this.root, "test/resources/favicon.ico"),
-        checkFile
+      pathPart = "test/resources/favicon.ico";
+    }
+    await this.#checkRequest(request, response, url, urlParts, pathPart);
+  }
+
+  async #checkRequest(request, response, url, urlParts, pathPart) {
+    // Check if the file/folder exists.
+    let filePath;
+    try {
+      filePath = await fsPromises.realpath(path.join(this.root, pathPart));
+    } catch {
+      response.writeHead(404);
+      response.end();
+      if (this.verbose) {
+        console.error(`${url}: not found`);
+      }
+      return;
+    }
+
+    // Get the properties of the file/folder.
+    let stats;
+    try {
+      stats = await fsPromises.stat(filePath);
+    } catch {
+      response.writeHead(500);
+      response.end();
+      return;
+    }
+    const fileSize = stats.size;
+    const isDir = stats.isDirectory();
+
+    // If a folder is requested, serve the directory listing.
+    if (isDir && !/\/$/.test(pathPart)) {
+      response.setHeader("Location", `${pathPart}/${urlParts[2]}`);
+      response.writeHead(301);
+      response.end("Redirected", "utf8");
+      return;
+    }
+    if (isDir) {
+      const queryPart = urlParts[3];
+      await this.#serveDirectoryIndex(response, pathPart, queryPart, filePath);
+      return;
+    }
+
+    // If a file is requested with range requests, serve it accordingly.
+    const { range } = request.headers;
+    if (range && !this.disableRangeRequests) {
+      const rangesMatches = /^bytes=(\d+)-(\d+)?/.exec(range);
+      if (!rangesMatches) {
+        response.writeHead(501);
+        response.end("Bad range", "utf8");
+        if (this.verbose) {
+          console.error(`${url}: bad range: ${range}`);
+        }
+        return;
+      }
+
+      const start = +rangesMatches[1];
+      const end = +rangesMatches[2];
+      if (this.verbose) {
+        console.log(`${url}: range ${start}-${end}`);
+      }
+      this.#serveFileRange(
+        response,
+        filePath,
+        fileSize,
+        start,
+        isNaN(end) ? fileSize : end + 1
       );
       return;
     }
 
-    var disableRangeRequests = this.disableRangeRequests;
-
-    var filePath;
-    fs.realpath(path.join(this.root, pathPart), checkFile);
-
-    function checkFile(err, file) {
-      if (err) {
-        res.writeHead(404);
-        res.end();
-        if (verbose) {
-          console.error(url + ": not found");
-        }
-        return;
-      }
-      filePath = file;
-      fs.stat(filePath, statFile);
+    // Otherwise, serve the file normally.
+    if (this.verbose) {
+      console.log(url);
     }
-
-    var fileSize;
-
-    function statFile(err, stats) {
-      if (err) {
-        res.writeHead(500);
-        res.end();
-        return;
-      }
-
-      fileSize = stats.size;
-      var isDir = stats.isDirectory();
-      if (isDir && !/\/$/.test(pathPart)) {
-        res.setHeader("Location", pathPart + "/" + urlParts[2]);
-        res.writeHead(301);
-        res.end("Redirected", "utf8");
-        return;
-      }
-      if (isDir) {
-        self.#serveDirectoryIndex(res, pathPart, queryPart, filePath);
-        return;
-      }
-
-      var range = req.headers.range;
-      if (range && !disableRangeRequests) {
-        var rangesMatches = /^bytes=(\d+)-(\d+)?/.exec(range);
-        if (!rangesMatches) {
-          res.writeHead(501);
-          res.end("Bad range", "utf8");
-          if (verbose) {
-            console.error(url + ': bad range: "' + range + '"');
-          }
-          return;
-        }
-        var start = +rangesMatches[1];
-        var end = +rangesMatches[2];
-        if (verbose) {
-          console.log(url + ": range " + start + " - " + end);
-        }
-        self.#serveFileRange(
-          res,
-          filePath,
-          fileSize,
-          start,
-          isNaN(end) ? fileSize : end + 1
-        );
-        return;
-      }
-      if (verbose) {
-        console.log(url);
-      }
-      self.#serveFile(res, filePath, fileSize);
-    }
+    this.#serveFile(response, filePath, fileSize);
   }
 
   async #serveDirectoryIndex(response, pathPart, queryPart, directory) {
@@ -301,13 +296,10 @@ class WebServer {
       response.end();
     });
 
-    const extension = path.extname(filePath).toLowerCase();
-    const contentType = mimeTypes[extension] || defaultMimeType;
-
     if (!this.disableRangeRequests) {
       response.setHeader("Accept-Ranges", "bytes");
     }
-    response.setHeader("Content-Type", contentType);
+    response.setHeader("Content-Type", this.#getContentType(filePath));
     response.setHeader("Content-Length", fileSize);
     if (this.cacheExpirationTime > 0) {
       const expireTime = new Date();
@@ -329,11 +321,8 @@ class WebServer {
       response.end();
     });
 
-    const extension = path.extname(filePath).toLowerCase();
-    const contentType = mimeTypes[extension] || defaultMimeType;
-
     response.setHeader("Accept-Ranges", "bytes");
-    response.setHeader("Content-Type", contentType);
+    response.setHeader("Content-Type", this.#getContentType(filePath));
     response.setHeader("Content-Length", end - start);
     response.setHeader(
       "Content-Range",
@@ -342,19 +331,24 @@ class WebServer {
     response.writeHead(206);
     stream.pipe(response);
   }
+
+  #getContentType(filePath) {
+    const extension = path.extname(filePath).toLowerCase();
+    return MIME_TYPES[extension] || DEFAULT_MIME_TYPE;
+  }
 }
 
 // This supports the "Cross-origin" test in test/unit/api_spec.js
 // It is here instead of test.js so that when the test will still complete as
 // expected if the user does "gulp server" and then visits
 // http://localhost:8888/test/unit/unit_test.html?spec=Cross-origin
-function crossOriginHandler(req, res) {
-  if (req.url === "/test/pdfs/basicapi.pdf?cors=withCredentials") {
-    res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
+function crossOriginHandler(request, response) {
+  if (request.url === "/test/pdfs/basicapi.pdf?cors=withCredentials") {
+    response.setHeader("Access-Control-Allow-Origin", request.headers.origin);
+    response.setHeader("Access-Control-Allow-Credentials", "true");
   }
-  if (req.url === "/test/pdfs/basicapi.pdf?cors=withoutCredentials") {
-    res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
+  if (request.url === "/test/pdfs/basicapi.pdf?cors=withoutCredentials") {
+    response.setHeader("Access-Control-Allow-Origin", request.headers.origin);
   }
 }
 
