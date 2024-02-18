@@ -208,6 +208,7 @@ function createWebpackConfig(
     !bundleDefines.MOZCENTRAL &&
     !bundleDefines.CHROME &&
     !bundleDefines.LIB &&
+    !bundleDefines.MINIFIED &&
     !bundleDefines.TESTING &&
     !disableSourceMaps;
   const isModule = output.library?.type === "module";
