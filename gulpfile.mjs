@@ -175,6 +175,87 @@ function createStringSource(filename, content) {
   return source;
 }
 
+function createWebpackAlias(defines) {
+  const basicAlias = {
+    pdfjs: "src",
+    "pdfjs-web": "web",
+    "pdfjs-lib": "web/pdfjs",
+    "fluent-bundle": "node_modules/@fluent/bundle/esm/index.js",
+    "fluent-dom": "node_modules/@fluent/dom/esm/index.js",
+  };
+  const libraryAlias = {
+    "display-fetch_stream": "src/display/stubs.js",
+    "display-network": "src/display/stubs.js",
+    "display-node_stream": "src/display/stubs.js",
+    "display-node_utils": "src/display/stubs.js",
+  };
+  const viewerAlias = {
+    "web-alt_text_manager": "web/alt_text_manager.js",
+    "web-annotation_editor_params": "web/annotation_editor_params.js",
+    "web-download_manager": "",
+    "web-external_services": "",
+    "web-null_l10n": "",
+    "web-pdf_attachment_viewer": "web/pdf_attachment_viewer.js",
+    "web-pdf_cursor_tools": "web/pdf_cursor_tools.js",
+    "web-pdf_document_properties": "web/pdf_document_properties.js",
+    "web-pdf_find_bar": "web/pdf_find_bar.js",
+    "web-pdf_layer_viewer": "web/pdf_layer_viewer.js",
+    "web-pdf_outline_viewer": "web/pdf_outline_viewer.js",
+    "web-pdf_presentation_mode": "web/pdf_presentation_mode.js",
+    "web-pdf_sidebar": "web/pdf_sidebar.js",
+    "web-pdf_thumbnail_viewer": "web/pdf_thumbnail_viewer.js",
+    "web-preferences": "",
+    "web-print_service": "",
+    "web-secondary_toolbar": "web/secondary_toolbar.js",
+    "web-toolbar": "web/toolbar.js",
+  };
+
+  if (defines.CHROME) {
+    libraryAlias["display-fetch_stream"] = "src/display/fetch_stream.js";
+    libraryAlias["display-network"] = "src/display/network.js";
+
+    viewerAlias["web-download_manager"] = "web/download_manager.js";
+    viewerAlias["web-external_services"] = "web/chromecom.js";
+    viewerAlias["web-null_l10n"] = "web/l10n.js";
+    viewerAlias["web-preferences"] = "web/chromecom.js";
+    viewerAlias["web-print_service"] = "web/pdf_print_service.js";
+  } else if (defines.GENERIC) {
+    // Aliases defined here must also be replicated in the paths section of
+    // the tsconfig.json file for the type generation to work.
+    // In the tsconfig.json files, the .js extension must be omitted.
+    libraryAlias["display-fetch_stream"] = "src/display/fetch_stream.js";
+    libraryAlias["display-network"] = "src/display/network.js";
+    libraryAlias["display-node_stream"] = "src/display/node_stream.js";
+    libraryAlias["display-node_utils"] = "src/display/node_utils.js";
+
+    viewerAlias["web-download_manager"] = "web/download_manager.js";
+    viewerAlias["web-external_services"] = "web/genericcom.js";
+    viewerAlias["web-null_l10n"] = "web/genericl10n.js";
+    viewerAlias["web-preferences"] = "web/genericcom.js";
+    viewerAlias["web-print_service"] = "web/pdf_print_service.js";
+  } else if (defines.MOZCENTRAL) {
+    if (defines.GECKOVIEW) {
+      const gvAlias = {
+        "web-toolbar": "web/toolbar-geckoview.js",
+      };
+      for (const key in viewerAlias) {
+        viewerAlias[key] = gvAlias[key] || "web/stubs-geckoview.js";
+      }
+    }
+    viewerAlias["web-download_manager"] = "web/firefoxcom.js";
+    viewerAlias["web-external_services"] = "web/firefoxcom.js";
+    viewerAlias["web-null_l10n"] = "web/l10n.js";
+    viewerAlias["web-preferences"] = "web/firefoxcom.js";
+    viewerAlias["web-print_service"] = "web/firefox_print_service.js";
+  }
+
+  const alias = { ...basicAlias, ...libraryAlias, ...viewerAlias };
+  for (const key in alias) {
+    alias[key] = path.join(__dirname, alias[key]);
+  }
+  return alias;
+}
+
 function createWebpackConfig(
   defines,
   output,
@@ -251,86 +332,11 @@ function createWebpackConfig(
     );
   }
 
+  const alias = createWebpackAlias(bundleDefines);
   const experiments = isModule ? { outputModule: true } : undefined;
 
   // Required to expose e.g., the `window` object.
   output.globalObject = "globalThis";
-
-  const basicAlias = {
-    pdfjs: "src",
-    "pdfjs-web": "web",
-    "pdfjs-lib": "web/pdfjs",
-    "fluent-bundle": "node_modules/@fluent/bundle/esm/index.js",
-    "fluent-dom": "node_modules/@fluent/dom/esm/index.js",
-  };
-  const libraryAlias = {
-    "display-fetch_stream": "src/display/stubs.js",
-    "display-network": "src/display/stubs.js",
-    "display-node_stream": "src/display/stubs.js",
-    "display-node_utils": "src/display/stubs.js",
-  };
-  const viewerAlias = {
-    "web-alt_text_manager": "web/alt_text_manager.js",
-    "web-annotation_editor_params": "web/annotation_editor_params.js",
-    "web-download_manager": "",
-    "web-external_services": "",
-    "web-null_l10n": "",
-    "web-pdf_attachment_viewer": "web/pdf_attachment_viewer.js",
-    "web-pdf_cursor_tools": "web/pdf_cursor_tools.js",
-    "web-pdf_document_properties": "web/pdf_document_properties.js",
-    "web-pdf_find_bar": "web/pdf_find_bar.js",
-    "web-pdf_layer_viewer": "web/pdf_layer_viewer.js",
-    "web-pdf_outline_viewer": "web/pdf_outline_viewer.js",
-    "web-pdf_presentation_mode": "web/pdf_presentation_mode.js",
-    "web-pdf_sidebar": "web/pdf_sidebar.js",
-    "web-pdf_thumbnail_viewer": "web/pdf_thumbnail_viewer.js",
-    "web-preferences": "",
-    "web-print_service": "",
-    "web-secondary_toolbar": "web/secondary_toolbar.js",
-    "web-toolbar": "web/toolbar.js",
-  };
-  if (bundleDefines.CHROME) {
-    libraryAlias["display-fetch_stream"] = "src/display/fetch_stream.js";
-    libraryAlias["display-network"] = "src/display/network.js";
-
-    viewerAlias["web-download_manager"] = "web/download_manager.js";
-    viewerAlias["web-external_services"] = "web/chromecom.js";
-    viewerAlias["web-null_l10n"] = "web/l10n.js";
-    viewerAlias["web-preferences"] = "web/chromecom.js";
-    viewerAlias["web-print_service"] = "web/pdf_print_service.js";
-  } else if (bundleDefines.GENERIC) {
-    // Aliases defined here must also be replicated in the paths section of
-    // the tsconfig.json file for the type generation to work.
-    // In the tsconfig.json files, the .js extension must be omitted.
-    libraryAlias["display-fetch_stream"] = "src/display/fetch_stream.js";
-    libraryAlias["display-network"] = "src/display/network.js";
-    libraryAlias["display-node_stream"] = "src/display/node_stream.js";
-    libraryAlias["display-node_utils"] = "src/display/node_utils.js";
-
-    viewerAlias["web-download_manager"] = "web/download_manager.js";
-    viewerAlias["web-external_services"] = "web/genericcom.js";
-    viewerAlias["web-null_l10n"] = "web/genericl10n.js";
-    viewerAlias["web-preferences"] = "web/genericcom.js";
-    viewerAlias["web-print_service"] = "web/pdf_print_service.js";
-  } else if (bundleDefines.MOZCENTRAL) {
-    if (bundleDefines.GECKOVIEW) {
-      const gvAlias = {
-        "web-toolbar": "web/toolbar-geckoview.js",
-      };
-      for (const key in viewerAlias) {
-        viewerAlias[key] = gvAlias[key] || "web/stubs-geckoview.js";
-      }
-    }
-    viewerAlias["web-download_manager"] = "web/firefoxcom.js";
-    viewerAlias["web-external_services"] = "web/firefoxcom.js";
-    viewerAlias["web-null_l10n"] = "web/l10n.js";
-    viewerAlias["web-preferences"] = "web/firefoxcom.js";
-    viewerAlias["web-print_service"] = "web/firefox_print_service.js";
-  }
-  const alias = { ...basicAlias, ...libraryAlias, ...viewerAlias };
-  for (const key in alias) {
-    alias[key] = path.join(__dirname, alias[key]);
-  }
 
   return {
     mode: "production",
