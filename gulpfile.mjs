@@ -2061,7 +2061,6 @@ gulp.task("importl10n", async function () {
   if (!fs.existsSync(L10N_DIR)) {
     fs.mkdirSync(L10N_DIR);
   }
-
   await downloadL10n(L10N_DIR);
 });
 
@@ -2189,7 +2188,9 @@ gulp.task(
 
       console.log();
       console.log("### Overwriting all files");
-      fs.rmSync(DIST_DIR, { recursive: true, force: true });
+      for (const path of fs.readdirSync(DIST_DIR)) {
+        fs.rmSync(DIST_DIR + path, { recursive: true, force: true });
+      }
 
       return merge([
         packageJson().pipe(gulp.dest(DIST_DIR)),
