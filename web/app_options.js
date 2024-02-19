@@ -404,6 +404,35 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 
 const userOptions = Object.create(null);
 
+if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING || LIB")) {
+  // Ensure that the `defaultOptions` are correctly specified.
+  for (const name in defaultOptions) {
+    const { value, kind } = defaultOptions[name];
+
+    if (kind & OptionKind.PREFERENCE) {
+      if (kind === OptionKind.PREFERENCE) {
+        throw new Error(`Cannot use only "PREFERENCE" kind: ${name}`);
+      }
+      if (kind & OptionKind.BROWSER) {
+        throw new Error(`Cannot mix "PREFERENCE" and "BROWSER" kind: ${name}`);
+      }
+      if (compatibilityParams[name] !== undefined) {
+        throw new Error(
+          `Should not have compatibility-value for "PREFERENCE" kind: ${name}`
+        );
+      }
+      // Only "simple" preference-values are allowed.
+      if (
+        typeof value !== "boolean" &&
+        typeof value !== "string" &&
+        !Number.isInteger(value)
+      ) {
+        throw new Error(`Invalid value for "PREFERENCE" kind: ${name}`);
+      }
+    }
+  }
+}
+
 class AppOptions {
   constructor() {
     throw new Error("Cannot initialize AppOptions.");
@@ -421,36 +450,20 @@ class AppOptions {
     return undefined;
   }
 
-  static getAll(kind = null) {
+  static getAll(kind = null, defaultOnly = false) {
     const options = Object.create(null);
     for (const name in defaultOptions) {
       const defaultOption = defaultOptions[name];
-      if (kind) {
-        if (!(kind & defaultOption.kind)) {
-          continue;
-        }
-        if (
-          (typeof PDFJSDev === "undefined" || PDFJSDev.test("LIB")) &&
-          kind === OptionKind.PREFERENCE
-        ) {
-          if (defaultOption.kind & OptionKind.BROWSER) {
-            throw new Error(`Invalid kind for preference: ${name}`);
-          }
-          const value = defaultOption.value,
-            valueType = typeof value;
 
-          if (
-            valueType === "boolean" ||
-            valueType === "string" ||
-            (valueType === "number" && Number.isInteger(value))
-          ) {
-            options[name] = value;
-            continue;
-          }
-          throw new Error(`Invalid type for preference: ${name}`);
-        }
+      if (kind && !(kind & defaultOption.kind)) {
+        continue;
+      }
+      if (defaultOnly) {
+        options[name] = defaultOption.value;
+        continue;
       }
       const userOption = userOptions[name];
+
       options[name] =
         userOption !== undefined
           ? userOption
