@@ -124,9 +124,8 @@ function transform(charEncoding, transformFunction) {
   });
 }
 
-function safeSpawnSync(command, parameters, options) {
+function safeSpawnSync(command, parameters, options = {}) {
   // Execute all commands in a shell.
-  options = options || {};
   options.shell = true;
   // `options.shell = true` requires parameters to be quoted.
   parameters = parameters.map(param => {
@@ -410,7 +409,7 @@ function checkChromePreferencesFile(chromePrefsPath, webPrefs) {
     // Deprecated keys are allowed in the managed preferences file.
     // The code maintainer is responsible for adding migration logic to
     // extensions/chromium/options/migration.js and web/chromecom.js .
-    return !description || !description.startsWith("DEPRECATED.");
+    return !description?.startsWith("DEPRECATED.");
   });
 
   let ret = true;
@@ -520,7 +519,7 @@ function createSandboxExternal(defines) {
 
 function createTemporaryScriptingBundle(defines, extraOptions = undefined) {
   return createScriptingBundle(defines, {
-    disableVersionInfo: !!(extraOptions && extraOptions.disableVersionInfo),
+    disableVersionInfo: !!extraOptions?.disableVersionInfo,
     disableSourceMaps: true,
     disableLicenseHeader: true,
   }).pipe(gulp.dest(TMP_DIR));
