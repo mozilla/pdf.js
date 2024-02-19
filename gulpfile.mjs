@@ -2374,10 +2374,12 @@ gulp.task(
       // The mozcentral baseline directory is a Git repository, so we
       // remove all files and copy the current mozcentral build files
       // into it to create the diff.
-      fs.rmSync(MOZCENTRAL_BASELINE_DIR + "*", {
-        recursive: true,
-        force: true,
-      });
+      for (const path of fs.readdirSync(MOZCENTRAL_BASELINE_DIR)) {
+        fs.rmSync(MOZCENTRAL_BASELINE_DIR + path, {
+          recursive: true,
+          force: true,
+        });
+      }
 
       gulp
         .src([BUILD_DIR + "mozcentral/**/*"])
