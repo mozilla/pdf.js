@@ -26,7 +26,6 @@ import { fileURLToPath } from "url";
 import fs from "fs";
 import gulp from "gulp";
 import merge from "merge-stream";
-import { mkdirp } from "mkdirp";
 import path from "path";
 import postcss from "gulp-postcss";
 import postcssDarkThemeClass from "postcss-dark-theme-class";
@@ -36,7 +35,6 @@ import postcssNesting from "postcss-nesting";
 import { preprocess } from "./external/builder/builder.mjs";
 import rename from "gulp-rename";
 import replace from "gulp-replace";
-import rimraf from "rimraf";
 import stream from "stream";
 import streamqueue from "streamqueue";
 import TerserPlugin from "terser-webpack-plugin";
@@ -668,7 +666,7 @@ function replaceInFile(filePath, find, replacement) {
 }
 
 function getTempFile(prefix, suffix) {
-  mkdirp.sync(BUILD_DIR + "tmp/");
+  fs.mkdirSync(BUILD_DIR + "tmp/", { recursive: true });
   const bytes = crypto.randomBytes(6).toString("hex");
   const filePath = BUILD_DIR + "tmp/" + prefix + bytes + suffix;
   fs.writeFileSync(filePath, "");
@@ -917,8 +915,8 @@ gulp.task("locale", function () {
   console.log();
   console.log("### Building localization files");
 
-  rimraf.sync(VIEWER_LOCALE_OUTPUT);
-  mkdirp.sync(VIEWER_LOCALE_OUTPUT);
+  fs.rmSync(VIEWER_LOCALE_OUTPUT, { recursive: true, force: true });
+  fs.mkdirSync(VIEWER_LOCALE_OUTPUT, { recursive: true });
 
   const subfolders = fs.readdirSync(L10N_DIR);
   subfolders.sort();
@@ -934,7 +932,7 @@ gulp.task("locale", function () {
       continue;
     }
 
-    mkdirp.sync(VIEWER_LOCALE_OUTPUT + "/" + locale);
+    fs.mkdirSync(VIEWER_LOCALE_OUTPUT + "/" + locale, { recursive: true });
 
     locales.push(locale);
 
@@ -1019,7 +1017,7 @@ function preprocessHTML(source, defines) {
 }
 
 function buildGeneric(defines, dir) {
-  rimraf.sync(dir);
+  fs.rmSync(dir, { recursive: true, force: true });
 
   return merge([
     createMainBundle(defines).pipe(gulp.dest(dir + "build")),
@@ -1114,7 +1112,7 @@ gulp.task(
 );
 
 function buildComponents(defines, dir) {
-  rimraf.sync(dir);
+  fs.rmSync(dir, { recursive: true, force: true });
 
   const COMPONENTS_IMAGES = [
     "web/images/annotation-*.svg",
@@ -1200,7 +1198,7 @@ gulp.task(
 );
 
 function buildMinified(defines, dir) {
-  rimraf.sync(dir);
+  fs.rmSync(dir, { recursive: true, force: true });
 
   return merge([
     createMainBundle(defines).pipe(gulp.dest(dir + "build")),
@@ -1331,7 +1329,7 @@ gulp.task(
       };
 
       // Clear out everything in the firefox extension build directory
-      rimraf.sync(MOZCENTRAL_DIR);
+      fs.rmSync(MOZCENTRAL_DIR, { recursive: true, force: true });
 
       return merge([
         createMainBundle(defines).pipe(
@@ -1429,7 +1427,7 @@ gulp.task(
       ];
 
       // Clear out everything in the chrome extension build directory
-      rimraf.sync(CHROME_BUILD_DIR);
+      fs.rmSync(CHROME_BUILD_DIR, { recursive: true, force: true });
 
       const version = getVersionJSON().version;
 
@@ -1502,16 +1500,16 @@ gulp.task("jsdoc", function (done) {
 
   const JSDOC_FILES = ["src/display/api.js"];
 
-  rimraf(JSDOC_BUILD_DIR, function () {
-    mkdirp(JSDOC_BUILD_DIR).then(function () {
-      const command =
-        '"node_modules/.bin/jsdoc" -d ' +
-        JSDOC_BUILD_DIR +
-        " " +
-        JSDOC_FILES.join(" ");
-      exec(command, done);
-    });
-  });
+  fs.rmSync(JSDOC_BUILD_DIR);
+  fs.mkdirSync(JSDOC_BUILD_DIR);
+
+  const command =
+    '"node_modules/.bin/jsdoc" -d ' +
+    JSDOC_BUILD_DIR +
+    " " +
+    JSDOC_FILES.join(" ");
+
+  exec(command, done);
 });
 
 gulp.task("types", function (done) {
@@ -1849,7 +1847,7 @@ function createBaseline(done) {
 
   let initializeCommand = "git fetch origin";
   if (!checkDir(BASELINE_DIR)) {
-    mkdirp.sync(BASELINE_DIR);
+    fs.mkdirSync(BASELINE_DIR, { recursive: true });
     initializeCommand = "git clone ../../ .";
   }
 
@@ -2005,7 +2003,7 @@ gulp.task(
       const defines = { ...DEFINES, GENERIC: true, TESTING: true };
       const sandboxDir = BUILD_DIR + "dev-sandbox/";
 
-      rimraf.sync(sandboxDir);
+      fs.rmSync(sandboxDir, { recursive: true, force: true });
 
       return createSandboxBundle(defines, {
         disableVersionInfo: true,
@@ -2051,7 +2049,7 @@ gulp.task("clean", function (done) {
   console.log();
   console.log("### Cleaning up project builds");
 
-  rimraf(BUILD_DIR, done);
+  fs.rm(BUILD_DIR, { recursive: true }, done);
 });
 
 gulp.task("importl10n", async function () {
@@ -2063,6 +2061,7 @@ gulp.task("importl10n", async function () {
   if (!fs.existsSync(L10N_DIR)) {
     fs.mkdirSync(L10N_DIR);
   }
+
   await downloadL10n(L10N_DIR);
 });
 
@@ -2070,7 +2069,7 @@ function ghPagesPrepare() {
   console.log();
   console.log("### Creating web site");
 
-  rimraf.sync(GH_PAGES_DIR);
+  fs.rmSync(GH_PAGES_DIR, { recursive: true, force: true });
 
   return merge([
     gulp
@@ -2184,13 +2183,13 @@ gulp.task(
       console.log();
       console.log("### Cloning baseline distribution");
 
-      rimraf.sync(DIST_DIR);
-      mkdirp.sync(DIST_DIR);
+      fs.rmSync(DIST_DIR, { recursive: true, force: true });
+      fs.mkdirSync(DIST_DIR, { recursive: true });
       safeSpawnSync("git", ["clone", "--depth", "1", DIST_REPO_URL, DIST_DIR]);
 
       console.log();
       console.log("### Overwriting all files");
-      rimraf.sync(path.join(DIST_DIR, "*"));
+      fs.rmSync(DIST_DIR, { recursive: true, force: true });
 
       return merge([
         packageJson().pipe(gulp.dest(DIST_DIR)),
@@ -2332,7 +2331,7 @@ gulp.task(
     console.log("### Creating mozcentral baseline environment");
 
     // Create a mozcentral build.
-    rimraf.sync(BASELINE_DIR + BUILD_DIR);
+    fs.rmSync(BASELINE_DIR + BUILD_DIR, { recursive: true, force: true });
 
     const workingDirectory = path.resolve(process.cwd(), BASELINE_DIR);
     safeSpawnSync("gulp", ["mozcentral"], {
@@ -2342,8 +2341,8 @@ gulp.task(
     });
 
     // Copy the mozcentral build to the mozcentral baseline directory.
-    rimraf.sync(MOZCENTRAL_BASELINE_DIR);
-    mkdirp.sync(MOZCENTRAL_BASELINE_DIR);
+    fs.rmSync(MOZCENTRAL_BASELINE_DIR, { recursive: true, force: true });
+    fs.mkdirSync(MOZCENTRAL_BASELINE_DIR, { recursive: true });
 
     gulp
       .src([BASELINE_DIR + BUILD_DIR + "mozcentral/**/*"])
@@ -2374,7 +2373,10 @@ gulp.task(
       // The mozcentral baseline directory is a Git repository, so we
       // remove all files and copy the current mozcentral build files
       // into it to create the diff.
-      rimraf.sync(MOZCENTRAL_BASELINE_DIR + "*");
+      fs.rmSync(MOZCENTRAL_BASELINE_DIR + "*", {
+        recursive: true,
+        force: true,
+      });
 
       gulp
         .src([BUILD_DIR + "mozcentral/**/*"])

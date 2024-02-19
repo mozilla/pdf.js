@@ -25,13 +25,10 @@ import os from "os";
 import path from "path";
 import puppeteer from "puppeteer";
 import readline from "readline";
-import rimraf from "rimraf";
 import { translateFont } from "./font/ttxdriver.mjs";
 import url from "url";
 import { WebServer } from "./webserver.mjs";
 import yargs from "yargs";
-
-const rimrafSync = rimraf.sync;
 
 function parseOptions() {
   const parsedArgs = yargs(process.argv)
@@ -1046,7 +1043,7 @@ async function closeSession(browser) {
     });
     if (allClosed) {
       if (tempDir) {
-        rimrafSync(tempDir);
+        fs.rmSync(tempDir, { recursive: true, force: true });
       }
       onAllSessionsClosed?.();
     }
