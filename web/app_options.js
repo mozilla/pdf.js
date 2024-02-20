@@ -438,16 +438,17 @@ class AppOptions {
     throw new Error("Cannot initialize AppOptions.");
   }
 
+  static getCompat(name) {
+    return compatibilityParams[name] ?? undefined;
+  }
+
   static get(name) {
-    const userOption = userOptions[name];
-    if (userOption !== undefined) {
-      return userOption;
-    }
-    const defaultOption = defaultOptions[name];
-    if (defaultOption !== undefined) {
-      return compatibilityParams[name] ?? defaultOption.value;
-    }
-    return undefined;
+    return (
+      userOptions[name] ??
+      compatibilityParams[name] ??
+      defaultOptions[name]?.value ??
+      undefined
+    );
   }
 
   static getAll(kind = null, defaultOnly = false) {
@@ -458,16 +459,9 @@ class AppOptions {
       if (kind && !(kind & defaultOption.kind)) {
         continue;
       }
-      if (defaultOnly) {
-        options[name] = defaultOption.value;
-        continue;
-      }
-      const userOption = userOptions[name];
-
-      options[name] =
-        userOption !== undefined
-          ? userOption
-          : compatibilityParams[name] ?? defaultOption.value;
+      options[name] = defaultOnly
+        ? defaultOption.value
+        : userOptions[name] ?? compatibilityParams[name] ?? defaultOption.value;
     }
     return options;
   }
@@ -501,4 +495,4 @@ class AppOptions {
   }
 }
 
-export { AppOptions, compatibilityParams, OptionKind };
+export { AppOptions, OptionKind };
