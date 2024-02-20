@@ -76,6 +76,10 @@ class AltText {
     this.#altTextWasFromKeyBoard = false;
   }
 
+  isEmpty() {
+    return !this.#altText && !this.#altTextDecorative;
+  }
+
   get data() {
     return {
       altText: this.#altText,
