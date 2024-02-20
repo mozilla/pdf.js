@@ -970,6 +970,10 @@ class AnnotationEditor {
     this.#altText.data = data;
   }
 
+  hasAltText() {
+    return !this.#altText?.isEmpty();
+  }
+
   /**
    * Render this editor in a div.
    * @returns {HTMLDivElement | null}

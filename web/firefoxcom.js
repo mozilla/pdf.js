@@ -314,6 +314,12 @@ class FirefoxScripting {
   }
 }
 
+class MLManager {
+  guess(data) {
+    return FirefoxCom.requestAsync("mlGuess", data);
+  }
+}
+
 class ExternalServices extends BaseExternalServices {
   updateFindControlState(data) {
     FirefoxCom.request("updateFindControlState", data);
@@ -415,4 +421,4 @@ class ExternalServices extends BaseExternalServices {
   }
 }
 
-export { DownloadManager, ExternalServices, initCom, Preferences };
+export { DownloadManager, ExternalServices, initCom, MLManager, Preferences };

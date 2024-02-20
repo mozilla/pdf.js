@@ -431,6 +431,42 @@ class StampEditor extends AnnotationEditor {
     const bitmap = this.#isSvg
       ? this.#bitmap
       : this.#scaleBitmap(width, height);
+
+    if (this._uiManager.hasMLManager && !this.hasAltText()) {
+      const offscreen = new OffscreenCanvas(width, height);
+      const ctx = offscreen.getContext("2d");
+      ctx.drawImage(
+        bitmap,
+        0,
+        0,
+        bitmap.width,
+        bitmap.height,
+        0,
+        0,
+        width,
+        height
+      );
+      offscreen.convertToBlob().then(blob => {
+        const fileReader = new FileReader();
+        fileReader.onload = () => {
+          const url = fileReader.result;
+          this._uiManager
+            .mlGuess({
+              service: "image-to-text",
+              request: {
+                imageData: url,
+              },
+            })
+            .then(response => {
+              const altText = response?.output || "";
+              if (this.parent && altText && !this.hasAltText()) {
+                this.altTextData = { altText, decorative: false };
+              }
+            });
+        };
+        fileReader.readAsDataURL(blob);
+      });
+    }
     const ctx = canvas.getContext("2d");
     ctx.filter = this._uiManager.hcmFilter;
     ctx.drawImage(
