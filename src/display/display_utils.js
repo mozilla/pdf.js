@@ -435,21 +435,15 @@ async function fetchData(url, type = "text") {
         return;
       }
       if (request.status === 200 || request.status === 0) {
-        let data;
         switch (type) {
           case "arraybuffer":
           case "blob":
           case "json":
-            data = request.response;
-            break;
-          default:
-            data = request.responseText;
-            break;
+            resolve(request.response);
+            return;
         }
-        if (data) {
-          resolve(data);
-          return;
-        }
+        resolve(request.responseText);
+        return;
       }
       reject(new Error(request.statusText));
     };
