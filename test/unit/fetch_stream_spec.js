@@ -13,16 +13,40 @@
  * limitations under the License.
  */
 
-import { AbortException } from "../../src/shared/util.js";
+import { AbortException, isNodeJS } from "../../src/shared/util.js";
+import { createTemporaryNodeServer } from "./test_utils.js";
 import { PDFFetchStream } from "../../src/display/fetch_stream.js";
 
 describe("fetch_stream", function () {
-  const pdfUrl = new URL("../pdfs/tracemonkey.pdf", window.location).href;
+  let tempServer = null;
+
+  function getPdfUrl() {
+    return isNodeJS
+      ? `http://127.0.0.1:${tempServer.port}/tracemonkey.pdf`
+      : new URL("../pdfs/tracemonkey.pdf", window.location).href;
+  }
   const pdfLength = 1016315;
+
+  beforeAll(function () {
+    if (isNodeJS) {
+      tempServer = createTemporaryNodeServer();
+    }
+  });
+
+  afterAll(function () {
+    if (isNodeJS) {
+      // Close the server from accepting new connections after all test
+      // finishes.
+      const { server } = tempServer;
+      server.close();
+
+      tempServer = null;
+    }
+  });
 
   it("read with streaming", async function () {
     const stream = new PDFFetchStream({
-      url: pdfUrl,
+      url: getPdfUrl(),
       disableStream: false,
       disableRange: true,
     });
@@ -57,7 +81,7 @@ describe("fetch_stream", function () {
   it("read ranges with streaming", async function () {
     const rangeSize = 32768;
     const stream = new PDFFetchStream({
-      url: pdfUrl,
+      url: getPdfUrl(),
       rangeChunkSize: rangeSize,
       disableStream: false,
       disableRange: false,

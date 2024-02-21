@@ -419,7 +419,16 @@ function getDocument(src) {
               PDFJSDev.test("GENERIC") &&
               isNodeJS
             ) {
-              return new PDFNodeStream(params);
+              const isFetchSupported = function () {
+                return (
+                  typeof fetch !== "undefined" &&
+                  typeof Response !== "undefined" &&
+                  "body" in Response.prototype
+                );
+              };
+              return isFetchSupported() && isValidFetchUrl(params.url)
+                ? new PDFFetchStream(params)
+                : new PDFNodeStream(params);
             }
             return isValidFetchUrl(params.url)
               ? new PDFFetchStream(params)
@@ -762,6 +771,9 @@ class PDFDocumentProxy {
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       // For testing purposes.
+      Object.defineProperty(this, "getNetworkStreamName", {
+        value: () => this._transport.getNetworkStreamName(),
+      });
       Object.defineProperty(this, "getXFADatasets", {
         value: () => this._transport.getXFADatasets(),
       });
@@ -2344,6 +2356,9 @@ class WorkerTransport {
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       // For testing purposes.
+      Object.defineProperty(this, "getNetworkStreamName", {
+        value: () => networkStream?.constructor?.name || null,
+      });
       Object.defineProperty(this, "getXFADatasets", {
         value: () =>
           this.messageHandler.sendWithPromise("GetXFADatasets", null),

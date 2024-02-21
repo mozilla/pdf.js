@@ -32,6 +32,7 @@ import {
 import {
   buildGetDocumentParams,
   CMAP_URL,
+  createTemporaryNodeServer,
   DefaultFileReaderFactory,
   TEST_PDFS_PATH,
 } from "./test_utils.js";
@@ -67,13 +68,27 @@ describe("api", function () {
     buildGetDocumentParams(tracemonkeyFileName);
 
   let CanvasFactory;
+  let tempServer = null;
 
   beforeAll(function () {
     CanvasFactory = new DefaultCanvasFactory();
+
+    if (isNodeJS) {
+      tempServer = createTemporaryNodeServer();
+    }
   });
 
   afterAll(function () {
     CanvasFactory = null;
+
+    if (isNodeJS) {
+      // Close the server from accepting new connections after all test
+      // finishes.
+      const { server } = tempServer;
+      server.close();
+
+      tempServer = null;
+    }
   });
 
   function waitSome(callback) {
@@ -119,13 +134,10 @@ describe("api", function () {
     });
 
     it("creates pdf doc from URL-object", async function () {
-      if (isNodeJS) {
-        pending("window.location is not supported in Node.js.");
-      }
-      const urlObj = new URL(
-        TEST_PDFS_PATH + basicApiFileName,
-        window.location
-      );
+      const urlObj = isNodeJS
+        ? new URL(`http://127.0.0.1:${tempServer.port}/${basicApiFileName}`)
+        : new URL(TEST_PDFS_PATH + basicApiFileName, window.location);
+
       const loadingTask = getDocument(urlObj);
       expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
       const pdfDocument = await loadingTask.promise;
@@ -133,6 +145,9 @@ describe("api", function () {
       expect(urlObj instanceof URL).toEqual(true);
       expect(pdfDocument instanceof PDFDocumentProxy).toEqual(true);
       expect(pdfDocument.numPages).toEqual(3);
+
+      // Ensure that the Fetch API was used to load the PDF document.
+      expect(pdfDocument.getNetworkStreamName()).toEqual("PDFFetchStream");
 
       await loadingTask.destroy();
     });
