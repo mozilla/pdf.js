@@ -551,6 +551,8 @@ class AnnotationEditorUIManager {
 
   #focusMainContainerTimeoutId = null;
 
+  #hasSelection = false;
+
   #highlightColors = null;
 
   #idManager = new IdManager();
@@ -568,6 +570,8 @@ class AnnotationEditorUIManager {
   #mode = AnnotationEditorType.NONE;
 
   #selectedEditors = new Set();
+
+  #selectedTextNode = null;
 
   #pageColors = null;
 
@@ -591,6 +595,8 @@ class AnnotationEditorUIManager {
 
   #boundOnScaleChanging = this.onScaleChanging.bind(this);
 
+  #boundSelectionChange = this.#selectionChange.bind(this);
+
   #boundOnRotationChanging = this.onRotationChanging.bind(this);
 
   #previousStates = {
@@ -599,6 +605,7 @@ class AnnotationEditorUIManager {
     hasSomethingToUndo: false,
     hasSomethingToRedo: false,
     hasSelectedEditor: false,
+    hasSelectedText: false,
   };
 
   #translation = [0, 0];
@@ -762,6 +769,7 @@ class AnnotationEditorUIManager {
     this._eventBus._on("pagechanging", this.#boundOnPageChanging);
     this._eventBus._on("scalechanging", this.#boundOnScaleChanging);
     this._eventBus._on("rotationchanging", this.#boundOnRotationChanging);
+    this.#addSelectionListener();
     this.#annotationStorage = pdfDocument.annotationStorage;
     this.#filterFactory = pdfDocument.filterFactory;
     this.#pageColors = pageColors;
@@ -799,6 +807,7 @@ class AnnotationEditorUIManager {
       clearTimeout(this.#translationTimeoutId);
       this.#translationTimeoutId = null;
     }
+    this.#removeSelectionListener();
   }
 
   async mlGuess(data) {
@@ -905,6 +914,33 @@ class AnnotationEditorUIManager {
     this.viewParameters.rotation = pagesRotation;
   }
 
+  highlightSelection() {
+    const selection = document.getSelection();
+    if (!selection || selection.isCollapsed) {
+      return;
+    }
+    const { anchorNode } = selection;
+    const anchorElement =
+      anchorNode.nodeType === Node.TEXT_NODE
+        ? anchorNode.parentElement
+        : anchorNode;
+    const textLayer = anchorElement.closest(".textLayer");
+    const boxes = this.getSelectionBoxes(textLayer);
+    selection.empty();
+    if (this.#mode === AnnotationEditorType.NONE) {
+      this._eventBus.dispatch("showannotationeditorui", {
+        source: this,
+        mode: AnnotationEditorType.HIGHLIGHT,
+      });
+    }
+    for (const layer of this.#allLayers.values()) {
+      if (layer.hasTextLayer(textLayer)) {
+        layer.createAndAddNewEditor({ x: 0, y: 0 }, false, { boxes });
+        break;
+      }
+    }
+  }
+
   /**
    * Add an editor in the annotation storage.
    * @param {AnnotationEditor} editor
@@ -917,6 +953,52 @@ class AnnotationEditorUIManager {
     ) {
       this.#annotationStorage.setValue(editor.id, editor);
     }
+  }
+
+  #selectionChange() {
+    const selection = document.getSelection();
+    if (!selection || selection.isCollapsed) {
+      if (this.#hasSelection) {
+        this.#hasSelection = false;
+        this.#selectedTextNode = null;
+        this.#dispatchUpdateStates({
+          hasSelectedText: false,
+        });
+      }
+      return;
+    }
+    const { anchorNode } = selection;
+    if (anchorNode === this.#selectedTextNode) {
+      return;
+    }
+
+    const anchorElement =
+      anchorNode.nodeType === Node.TEXT_NODE
+        ? anchorNode.parentElement
+        : anchorNode;
+    if (!anchorElement.closest(".textLayer")) {
+      if (this.#hasSelection) {
+        this.#hasSelection = false;
+        this.#selectedTextNode = null;
+        this.#dispatchUpdateStates({
+          hasSelectedText: false,
+        });
+      }
+      return;
+    }
+    this.#hasSelection = true;
+    this.#selectedTextNode = anchorNode;
+    this.#dispatchUpdateStates({
+      hasSelectedText: true,
+    });
+  }
+
+  #addSelectionListener() {
+    document.addEventListener("selectionchange", this.#boundSelectionChange);
+  }
+
+  #removeSelectionListener() {
+    document.removeEventListener("selectionchange", this.#boundSelectionChange);
   }
 
   #addFocusManager() {
@@ -1127,7 +1209,11 @@ class AnnotationEditorUIManager {
    * @param {Object} details
    */
   onEditingAction(details) {
-    if (["undo", "redo", "delete", "selectAll"].includes(details.name)) {
+    if (
+      ["undo", "redo", "delete", "selectAll", "highlightSelection"].includes(
+        details.name
+      )
+    ) {
       this[details.name]();
     }
   }
@@ -1915,6 +2001,80 @@ class AnnotationEditorUIManager {
 
   get imageManager() {
     return shadow(this, "imageManager", new ImageManager());
+  }
+
+  getSelectionBoxes(textLayer) {
+    if (!textLayer) {
+      return null;
+    }
+    const selection = document.getSelection();
+    for (let i = 0, ii = selection.rangeCount; i < ii; i++) {
+      if (
+        !textLayer.contains(selection.getRangeAt(i).commonAncestorContainer)
+      ) {
+        return null;
+      }
+    }
+
+    const {
+      x: layerX,
+      y: layerY,
+      width: parentWidth,
+      height: parentHeight,
+    } = textLayer.getBoundingClientRect();
+
+    // We must rotate the boxes because we want to have them in the non-rotated
+    // page coordinates.
+    let rotator;
+    switch (textLayer.getAttribute("data-main-rotation")) {
+      case "90":
+        rotator = (x, y, w, h) => ({
+          x: (y - layerY) / parentHeight,
+          y: 1 - (x + w - layerX) / parentWidth,
+          width: h / parentHeight,
+          height: w / parentWidth,
+        });
+        break;
+      case "180":
+        rotator = (x, y, w, h) => ({
+          x: 1 - (x + w - layerX) / parentWidth,
+          y: 1 - (y + h - layerY) / parentHeight,
+          width: w / parentWidth,
+          height: h / parentHeight,
+        });
+        break;
+      case "270":
+        rotator = (x, y, w, h) => ({
+          x: 1 - (y + h - layerY) / parentHeight,
+          y: (x - layerX) / parentWidth,
+          width: h / parentHeight,
+          height: w / parentWidth,
+        });
+        break;
+      default:
+        rotator = (x, y, w, h) => ({
+          x: (x - layerX) / parentWidth,
+          y: (y - layerY) / parentHeight,
+          width: w / parentWidth,
+          height: h / parentHeight,
+        });
+        break;
+    }
+
+    const boxes = [];
+    for (let i = 0, ii = selection.rangeCount; i < ii; i++) {
+      const range = selection.getRangeAt(i);
+      if (range.collapsed) {
+        continue;
+      }
+      for (const { x, y, width, height } of range.getClientRects()) {
+        if (width === 0 || height === 0) {
+          continue;
+        }
+        boxes.push(rotator(x, y, width, height));
+      }
+    }
+    return boxes.length === 0 ? null : boxes;
   }
 }
 

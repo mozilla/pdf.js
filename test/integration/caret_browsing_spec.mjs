@@ -18,7 +18,7 @@ import { closePages, loadAndWait } from "./test_utils.mjs";
 const waitForSelectionChange = (page, selection) =>
   page.waitForFunction(
     // We need to replace EOL on Windows to make the test pass.
-    sel => window.getSelection().toString().replaceAll("\r\n", "\n") === sel,
+    sel => document.getSelection().toString().replaceAll("\r\n", "\n") === sel,
     {},
     selection
   );

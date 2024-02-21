@@ -2829,7 +2829,7 @@ describe("FreeText Editor", () => {
             count: 3,
           });
           const selection = await page.evaluate(() =>
-            window.getSelection().toString()
+            document.getSelection().toString()
           );
 
           expect(selection).withContext(`In ${browserName}`).toEqual(data);
