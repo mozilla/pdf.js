@@ -151,8 +151,9 @@ class AnnotationEditorLayer {
       case AnnotationEditorType.NONE:
         this.disableTextSelection();
         this.togglePointerEvents(false);
+        this.toggleAnnotationLayerPointerEvents(true);
         this.disableClick();
-        break;
+        return;
       case AnnotationEditorType.INK:
         // We always want to have an ink editor ready to draw in.
         this.addInkEditorIfNeeded(false);
@@ -172,16 +173,15 @@ class AnnotationEditorLayer {
         this.enableClick();
     }
 
-    if (mode !== AnnotationEditorType.NONE) {
-      const { classList } = this.div;
-      for (const editorType of AnnotationEditorLayer.#editorTypes.values()) {
-        classList.toggle(
-          `${editorType._type}Editing`,
-          mode === editorType._editorType
-        );
-      }
-      this.div.hidden = false;
+    this.toggleAnnotationLayerPointerEvents(false);
+    const { classList } = this.div;
+    for (const editorType of AnnotationEditorLayer.#editorTypes.values()) {
+      classList.toggle(
+        `${editorType._type}Editing`,
+        mode === editorType._editorType
+      );
     }
+    this.div.hidden = false;
   }
 
   addInkEditorIfNeeded(isCommitting) {
@@ -226,6 +226,10 @@ class AnnotationEditorLayer {
 
   togglePointerEvents(enabled = false) {
     this.div.classList.toggle("disabled", !enabled);
+  }
+
+  toggleAnnotationLayerPointerEvents(enabled = false) {
+    this.#annotationLayer?.div.classList.toggle("disabled", !enabled);
   }
 
   /**
@@ -306,6 +310,7 @@ class AnnotationEditorLayer {
       classList.remove(`${editorType._type}Editing`);
     }
     this.disableTextSelection();
+    this.toggleAnnotationLayerPointerEvents(true);
 
     this.#isDisabling = false;
   }
