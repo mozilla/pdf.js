@@ -563,6 +563,8 @@ class AnnotationEditorUIManager {
 
   #mainHighlightColorPicker = null;
 
+  #mlManager = null;
+
   #mode = AnnotationEditorType.NONE;
 
   #selectedEditors = new Set();
@@ -749,7 +751,8 @@ class AnnotationEditorUIManager {
     eventBus,
     pdfDocument,
     pageColors,
-    highlightColors
+    highlightColors,
+    mlManager
   ) {
     this.#container = container;
     this.#viewer = viewer;
@@ -763,6 +766,7 @@ class AnnotationEditorUIManager {
     this.#filterFactory = pdfDocument.filterFactory;
     this.#pageColors = pageColors;
     this.#highlightColors = highlightColors || null;
+    this.#mlManager = mlManager || null;
     this.viewParameters = {
       realScale: PixelsPerInch.PDF_TO_CSS_UNITS,
       rotation: 0,
@@ -795,6 +799,14 @@ class AnnotationEditorUIManager {
       clearTimeout(this.#translationTimeoutId);
       this.#translationTimeoutId = null;
     }
+  }
+
+  async mlGuess(data) {
+    return this.#mlManager?.guess(data) || null;
+  }
+
+  get hasMLManager() {
+    return !!this.#mlManager;
   }
 
   get hcmFilter() {

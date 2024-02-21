@@ -216,6 +216,8 @@ class PDFViewer {
 
   #enablePermissions = false;
 
+  #mlManager = null;
+
   #getAllTextInProgress = false;
 
   #hiddenCopyElement = null;
@@ -292,6 +294,7 @@ class PDFViewer {
     }
     this.#enablePermissions = options.enablePermissions || false;
     this.pageColors = options.pageColors || null;
+    this.#mlManager = options.mlManager || null;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (
@@ -857,7 +860,8 @@ class PDFViewer {
               this.eventBus,
               pdfDocument,
               this.pageColors,
-              this.#annotationEditorHighlightColors
+              this.#annotationEditorHighlightColors,
+              this.#mlManager
             );
             this.eventBus.dispatch("annotationeditoruimanager", {
               source: this,
