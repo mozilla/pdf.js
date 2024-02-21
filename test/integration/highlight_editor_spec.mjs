@@ -840,4 +840,107 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Highlight links", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "bug1868759.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        { highlightEditorColors: "red=#AB0000" }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that it's possible to highlight a part of a link", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorHighlight");
+          await page.waitForSelector(".annotationEditorLayer.highlightEditing");
+
+          const rect = await getSpanRectFromText(
+            page,
+            1,
+            "Questions courantes"
+          );
+          const x = rect.x + 0.75 * rect.width;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2 });
+
+          await page.waitForSelector(`${getEditorSelector(0)}`);
+          const usedColor = await page.evaluate(() => {
+            const highlight = document.querySelector(
+              `.page[data-page-number = "1"] .canvasWrapper > svg.highlight`
+            );
+            return highlight.getAttribute("fill");
+          });
+
+          expect(usedColor).withContext(`In ${browserName}`).toEqual("#AB0000");
+        })
+      );
+    });
+  });
+
+  describe("Highlight forms", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "issue12233.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        { highlightEditorColors: "red=#AB0000" }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that it's possible to highlight a part of a form", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorHighlight");
+          await page.waitForSelector(".annotationEditorLayer.highlightEditing");
+
+          const rect1 = await page.$eval("#pdfjs_internal_id_5R", el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+          const rect2 = await page.$eval("#pdfjs_internal_id_16R", el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+
+          const x1 = rect1.x + rect1.width / 2;
+          const y1 = rect1.y + rect1.height / 2;
+          const x2 = rect2.x + rect2.width / 2;
+          const y2 = rect2.y + rect2.height / 2;
+          const clickHandle = await waitForPointerUp(page);
+          await page.mouse.move(x1, y1);
+          await page.mouse.down();
+          await page.mouse.move(x2, y2);
+          await page.mouse.up();
+          await awaitPromise(clickHandle);
+
+          await page.waitForSelector(getEditorSelector(0));
+          const usedColor = await page.evaluate(() => {
+            const highlight = document.querySelector(
+              `.page[data-page-number = "1"] .canvasWrapper > svg.highlight`
+            );
+            return highlight.getAttribute("fill");
+          });
+
+          expect(usedColor).withContext(`In ${browserName}`).toEqual("#AB0000");
+        })
+      );
+    });
+  });
 });

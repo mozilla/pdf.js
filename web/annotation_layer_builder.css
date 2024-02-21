@@ -88,6 +88,13 @@
     transform: rotate(90deg) translateY(-100%);
   }
 
+  &.disabled {
+    section,
+    .popup {
+      pointer-events: none;
+    }
+  }
+
   canvas {
     position: absolute;
     width: 100%;
