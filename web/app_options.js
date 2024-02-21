@@ -143,6 +143,11 @@ const defaultOptions = {
     value: typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING"),
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  enableML: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   enablePermissions: {
     /** @type {boolean} */
     value: false,

@@ -45,6 +45,10 @@
       "type": "boolean",
       "default": false
     },
+    "enableML": {
+      "type": "boolean",
+      "default": false
+    },
     "cursorToolOnLoad": {
       "title": "Cursor tool on load",
       "description": "The cursor tool that is enabled upon load.\n 0 = Text selection tool.\n 1 = Hand tool.",
