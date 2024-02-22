@@ -1030,4 +1030,48 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Highlight the selection when enabling the tool", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        { highlightEditorColors: "red=#AB0000" }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that there's a highlighted text", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2 });
+          await page.waitForFunction(() => {
+            const selection = window.getSelection();
+            return selection && !selection.isCollapsed;
+          });
+
+          await page.click("#editorHighlight");
+          await page.waitForSelector(getEditorSelector(0));
+          const usedColor = await page.evaluate(() => {
+            const highlight = document.querySelector(
+              `.page[data-page-number = "1"] .canvasWrapper > svg.highlight`
+            );
+            return highlight.getAttribute("fill");
+          });
+
+          expect(usedColor).withContext(`In ${browserName}`).toEqual("#AB0000");
+        })
+      );
+    });
+  });
 });

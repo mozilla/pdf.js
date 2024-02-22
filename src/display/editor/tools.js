@@ -1342,6 +1342,9 @@ class AnnotationEditorUIManager {
     for (const layer of this.#allLayers.values()) {
       layer.updateMode(mode);
     }
+    if (mode === AnnotationEditorType.HIGHLIGHT) {
+      this.highlightSelection();
+    }
     if (!editId && isFromKeyboard) {
       this.addNewEditorFromKeyboard();
       return;
