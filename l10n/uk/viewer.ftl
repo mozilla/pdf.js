@@ -288,7 +288,7 @@ pdfjs-text-annotation-type =
 
 pdfjs-password-label = Введіть пароль для відкриття цього PDF-файла.
 pdfjs-password-invalid = Невірний пароль. Спробуйте ще.
-pdfjs-password-ok-button = Гаразд
+pdfjs-password-ok-button = OK
 pdfjs-password-cancel-button = Скасувати
 pdfjs-web-fonts-disabled = Веб-шрифти вимкнено: неможливо використати вбудовані у PDF шрифти.
 
