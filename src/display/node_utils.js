@@ -71,15 +71,7 @@ if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("SKIP_BABEL")) {
 }
 
 const fetchData = function (url) {
-  return new Promise((resolve, reject) => {
-    fs.readFile(url, (error, data) => {
-      if (error || !data) {
-        reject(new Error(error));
-        return;
-      }
-      resolve(new Uint8Array(data));
-    });
-  });
+  return fs.promises.readFile(url).then(data => new Uint8Array(data));
 };
 
 class NodeFilterFactory extends BaseFilterFactory {}
