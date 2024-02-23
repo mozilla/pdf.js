@@ -130,11 +130,29 @@ class CaretBrowsingMode {
     }
 
     const midY = rect.y + rect.height / 2;
-    const caretPosition = CaretBrowsingMode.#caretPositionFromPoint(
-      caretX,
-      midY
-    );
-    if (caretPosition.offsetNode?.parentElement !== element) {
+    let caretPosition = CaretBrowsingMode.#caretPositionFromPoint(caretX, midY);
+    let parentElement = caretPosition.offsetNode?.parentElement;
+    if (parentElement && parentElement !== element) {
+      // There is an element on top of the one in the text layer, so we
+      // need to hide all the elements (except the one in the text layer)
+      // at this position in order to get the correct caret position.
+      const elementsAtPoint = document.elementsFromPoint(caretX, midY);
+      const savedVisibilities = [];
+      for (const el of elementsAtPoint) {
+        if (el === element) {
+          break;
+        }
+        const { style } = el;
+        savedVisibilities.push([el, style.visibility]);
+        style.visibility = "hidden";
+      }
+      caretPosition = CaretBrowsingMode.#caretPositionFromPoint(caretX, midY);
+      parentElement = caretPosition.offsetNode?.parentElement;
+      for (const [el, visibility] of savedVisibilities) {
+        el.style.visibility = visibility;
+      }
+    }
+    if (parentElement !== element) {
       // The element targeted by caretPositionFromPoint isn't in the text
       // layer.
       if (select) {
