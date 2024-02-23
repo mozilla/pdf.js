@@ -83,7 +83,11 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2 });
+          // Here and elsewhere, we add a small delay between press and release
+          // to make sure that a pointerup event is triggered after
+          // selectionchange.
+          // It works with a value of 1ms, but we use 100ms to be sure.
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
 
           await page.waitForSelector(`${getEditorSelector(0)}`);
 
@@ -128,7 +132,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2 });
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
 
           await page.waitForSelector(`${getEditorSelector(0)}`);
           await page.waitForSelector(
@@ -179,7 +183,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2 });
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
 
           await page.waitForSelector(`${getEditorSelector(0)}`);
           await page.waitForSelector(
@@ -225,7 +229,7 @@ describe("Highlight Editor", () => {
           let rect = await getSpanRectFromText(page, 1, "Abstract");
           let x = rect.x + rect.width / 2;
           let y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2 });
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
 
           await page.waitForSelector(`${getEditorSelector(0)}`);
           await page.waitForSelector(
@@ -248,7 +252,7 @@ describe("Highlight Editor", () => {
           rect = await getSpanRectFromText(page, 14, "References");
           x = rect.x + rect.width / 2;
           y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2 });
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
           await page.waitForSelector(`${getEditorSelector(1)}`);
           await page.waitForSelector(
             `.page[data-page-number = "14"] svg.highlightOutline.selected`
@@ -314,7 +318,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2 });
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
 
           await page.waitForSelector(`${getEditorSelector(0)}`);
           await page.waitForSelector(
@@ -376,7 +380,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2 });
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
 
           await page.waitForSelector(sel);
           await page.waitForSelector(
@@ -487,7 +491,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2 });
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
 
           await page.waitForSelector(`${getEditorSelector(0)}`);
           await page.waitForSelector(
@@ -535,7 +539,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2 });
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
 
           await page.waitForSelector(sel);
           await page.waitForSelector(
@@ -577,7 +581,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2 });
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
 
           await page.waitForSelector(sel);
           await page.waitForSelector(
@@ -871,7 +875,7 @@ describe("Highlight Editor", () => {
           );
           const x = rect.x + 0.75 * rect.width;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2 });
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
 
           await page.waitForSelector(`${getEditorSelector(0)}`);
           const usedColor = await page.evaluate(() => {
@@ -981,7 +985,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2 });
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
           await page.waitForFunction(() => window.editingEvents.length > 0);
 
           let editingEvent = await page.evaluate(() => {
@@ -1008,7 +1012,7 @@ describe("Highlight Editor", () => {
             .withContext(`In ${browserName}`)
             .toBe(false);
 
-          await page.mouse.click(x, y, { count: 2 });
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
           await page.waitForFunction(() => window.editingEvents.length > 0);
 
           await page.evaluate(() => {
@@ -1039,12 +1043,35 @@ describe("Highlight Editor", () => {
         "tracemonkey.pdf",
         ".annotationEditorLayer",
         null,
-        null,
+        async page => {
+          await page.evaluate(async () => {
+            await window.PDFViewerApplication.initializedPromise;
+            window.PDFViewerApplication.eventBus.on(
+              "annotationeditoruimanager",
+              ({ uiManager }) => {
+                window.uiManager = uiManager;
+              }
+            );
+          });
+        },
         {
           highlightEditorColors: "red=#AB0000",
           supportsCaretBrowsingMode: true,
         }
       );
+    });
+
+    afterEach(async () => {
+      for (const [, page] of pages) {
+        await page.evaluate(() => {
+          window.uiManager.reset();
+        });
+        // Disable editing mode.
+        await page.click("#editorHighlight");
+        await page.waitForSelector(
+          `.annotationEditorLayer:not(.highlightEditing)`
+        );
+      }
     });
 
     afterAll(async () => {
@@ -1060,8 +1087,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2 });
-
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
           await page.waitForSelector(`${getEditorSelector(0)}`);
           await page.keyboard.press("Escape");
           await page.waitForSelector(
@@ -1089,6 +1115,42 @@ describe("Highlight Editor", () => {
 
           expect(text).withContext(`In ${browserName}`).toEqual("Abstract");
           expect(offset).withContext(`In ${browserName}`).toEqual(1);
+        })
+      );
+    });
+
+    it("must check that selection is correctly highlighted on arrow down key pressed", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorHighlight");
+          await page.waitForSelector(".annotationEditorLayer.highlightEditing");
+
+          await page.evaluate(() => {
+            const text =
+              "Dynamic languages such as JavaScript are more difﬁcult to com-";
+            for (const el of document.querySelectorAll(
+              `.page[data-page-number="${1}"] > .textLayer > span`
+            )) {
+              if (el.textContent === text) {
+                window.getSelection().setPosition(el.firstChild, 15);
+                break;
+              }
+            }
+          });
+
+          await page.keyboard.down("Shift");
+          await page.keyboard.press("ArrowDown");
+          await page.keyboard.up("Shift");
+
+          await page.waitForSelector(getEditorSelector(0));
+          const usedColor = await page.evaluate(() => {
+            const highlight = document.querySelector(
+              `.page[data-page-number = "1"] .canvasWrapper > svg.highlight`
+            );
+            return highlight.getAttribute("fill");
+          });
+
+          expect(usedColor).withContext(`In ${browserName}`).toEqual("#AB0000");
         })
       );
     });

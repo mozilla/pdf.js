@@ -949,6 +949,8 @@ async function startBrowser({ browserName, headless, startUrl }) {
       "layout.css.round.enabled": true,
       // This allow to copy some data in the clipboard.
       "dom.events.asyncClipboard.clipboardItem": true,
+      // It's helpful to see where the caret is.
+      "accessibility.browsewithcaret": true,
     };
   }
 

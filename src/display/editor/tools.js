@@ -57,11 +57,19 @@ function opacityToHex(opacity) {
 class IdManager {
   #id = 0;
 
+  constructor() {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
+      Object.defineProperty(this, "reset", {
+        value: () => (this.#id = 0),
+      });
+    }
+  }
+
   /**
    * Get a unique id.
    * @returns {string}
    */
-  getId() {
+  get id() {
     return `${AnnotationEditorPrefix}${this.#id++}`;
   }
 }
@@ -551,9 +559,9 @@ class AnnotationEditorUIManager {
 
   #focusMainContainerTimeoutId = null;
 
-  #hasSelection = false;
-
   #highlightColors = null;
+
+  #highlightWhenShiftUp = false;
 
   #idManager = new IdManager();
 
@@ -780,6 +788,16 @@ class AnnotationEditorUIManager {
       rotation: 0,
     };
     this.isShiftKeyDown = false;
+
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
+      Object.defineProperty(this, "reset", {
+        value: () => {
+          this.selectAll();
+          this.delete();
+          this.#idManager.reset();
+        },
+      });
+    }
   }
 
   destroy() {
@@ -958,8 +976,7 @@ class AnnotationEditorUIManager {
   #selectionChange() {
     const selection = document.getSelection();
     if (!selection || selection.isCollapsed) {
-      if (this.#hasSelection) {
-        this.#hasSelection = false;
+      if (this.#selectedTextNode) {
         this.#selectedTextNode = null;
         this.#dispatchUpdateStates({
           hasSelectedText: false,
@@ -977,8 +994,7 @@ class AnnotationEditorUIManager {
         ? anchorNode.parentElement
         : anchorNode;
     if (!anchorElement.closest(".textLayer")) {
-      if (this.#hasSelection) {
-        this.#hasSelection = false;
+      if (this.#selectedTextNode) {
         this.#selectedTextNode = null;
         this.#dispatchUpdateStates({
           hasSelectedText: false,
@@ -986,11 +1002,30 @@ class AnnotationEditorUIManager {
       }
       return;
     }
-    this.#hasSelection = true;
     this.#selectedTextNode = anchorNode;
     this.#dispatchUpdateStates({
       hasSelectedText: true,
     });
+
+    if (this.#mode !== AnnotationEditorType.HIGHLIGHT) {
+      return;
+    }
+    this.#highlightWhenShiftUp = this.isShiftKeyDown;
+    if (!this.isShiftKeyDown) {
+      const pointerup = e => {
+        if (e.type === "pointerup" && e.button !== 0) {
+          // Do nothing on right click.
+          return;
+        }
+        window.removeEventListener("pointerup", pointerup);
+        window.removeEventListener("blur", pointerup);
+        if (e.type === "pointerup") {
+          this.highlightSelection();
+        }
+      };
+      window.addEventListener("pointerup", pointerup);
+      window.addEventListener("blur", pointerup);
+    }
   }
 
   #addSelectionListener() {
@@ -1013,6 +1048,10 @@ class AnnotationEditorUIManager {
 
   blur() {
     this.isShiftKeyDown = false;
+    if (this.#highlightWhenShiftUp) {
+      this.#highlightWhenShiftUp = false;
+      this.highlightSelection();
+    }
     if (!this.hasSelection) {
       return;
     }
@@ -1199,6 +1238,10 @@ class AnnotationEditorUIManager {
   keyup(event) {
     if (this.isShiftKeyDown && event.key === "Shift") {
       this.isShiftKeyDown = false;
+      if (this.#highlightWhenShiftUp) {
+        this.#highlightWhenShiftUp = false;
+        this.highlightSelection();
+      }
     }
   }
 
@@ -1287,7 +1330,7 @@ class AnnotationEditorUIManager {
    * @returns {string}
    */
   getId() {
-    return this.#idManager.getId();
+    return this.#idManager.id;
   }
 
   get currentLayer() {
