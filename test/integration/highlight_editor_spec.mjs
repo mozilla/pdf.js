@@ -1030,4 +1030,67 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Highlight and caret browsing", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        {
+          highlightEditorColors: "red=#AB0000",
+          supportsCaretBrowsingMode: true,
+        }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the caret can move a highlighted text", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorHighlight");
+          await page.waitForSelector(".annotationEditorLayer.highlightEditing");
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2 });
+
+          await page.waitForSelector(`${getEditorSelector(0)}`);
+          await page.keyboard.press("Escape");
+          await page.waitForSelector(
+            `${getEditorSelector(0)}:not(.selectedEditor)`
+          );
+
+          await page.evaluate(() => {
+            const text =
+              "Dynamic languages such as JavaScript are more difﬁcult to com-";
+            for (const el of document.querySelectorAll(
+              `.page[data-page-number="${1}"] > .textLayer > span`
+            )) {
+              if (el.textContent === text) {
+                window.getSelection().setPosition(el.firstChild, 1);
+                break;
+              }
+            }
+          });
+
+          await page.keyboard.press("ArrowUp");
+          const [text, offset] = await page.evaluate(() => {
+            const selection = window.getSelection();
+            return [selection.anchorNode.textContent, selection.anchorOffset];
+          });
+
+          expect(text).withContext(`In ${browserName}`).toEqual("Abstract");
+          expect(offset).withContext(`In ${browserName}`).toEqual(1);
+        })
+      );
+    });
+  });
 });

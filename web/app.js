@@ -329,6 +329,12 @@ const PDFViewerApplication = {
           params.get("highlighteditorcolors")
         );
       }
+      if (params.has("supportscaretbrowsingmode")) {
+        AppOptions.set(
+          "supportsCaretBrowsingMode",
+          params.get("supportscaretbrowsingmode") === "true"
+        );
+      }
     }
   },
 
