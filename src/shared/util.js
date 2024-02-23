@@ -641,7 +641,7 @@ class FeatureTest {
   }
 }
 
-const hexNumbers = [...Array(256).keys()].map(n =>
+const hexNumbers = Array.from(Array(256).keys(), n =>
   n.toString(16).padStart(2, "0")
 );
 
