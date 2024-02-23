@@ -943,4 +943,91 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Send a message when some text is selected", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        `.page[data-page-number = "1"] .endOfContent`,
+        null,
+        async page => {
+          await page.waitForFunction(async () => {
+            await window.PDFViewerApplication.initializedPromise;
+            return true;
+          });
+          await page.evaluate(() => {
+            window.editingEvents = [];
+            window.PDFViewerApplication.eventBus.on(
+              "annotationeditorstateschanged",
+              ({ details }) => {
+                window.editingEvents.push(details);
+              }
+            );
+          });
+        },
+        { highlightEditorColors: "red=#AB0000" }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that a message is sent on selection", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2 });
+          await page.waitForFunction(() => window.editingEvents.length > 0);
+
+          let editingEvent = await page.evaluate(() => {
+            const e = window.editingEvents[0];
+            window.editingEvents.length = 0;
+            return e;
+          });
+          expect(editingEvent.isEditing)
+            .withContext(`In ${browserName}`)
+            .toBe(false);
+          expect(editingEvent.hasSelectedText)
+            .withContext(`In ${browserName}`)
+            .toBe(true);
+
+          // Click somewhere to unselect the current selection.
+          await page.mouse.click(rect.x + rect.width + 10, y, { count: 1 });
+          await page.waitForFunction(() => window.editingEvents.length > 0);
+          editingEvent = await page.evaluate(() => {
+            const e = window.editingEvents[0];
+            window.editingEvents.length = 0;
+            return e;
+          });
+          expect(editingEvent.hasSelectedText)
+            .withContext(`In ${browserName}`)
+            .toBe(false);
+
+          await page.mouse.click(x, y, { count: 2 });
+          await page.waitForFunction(() => window.editingEvents.length > 0);
+
+          await page.evaluate(() => {
+            window.PDFViewerApplication.eventBus.dispatch("editingaction", {
+              name: "highlightSelection",
+            });
+          });
+
+          await page.waitForSelector(getEditorSelector(0));
+          const usedColor = await page.evaluate(() => {
+            const highlight = document.querySelector(
+              `.page[data-page-number = "1"] .canvasWrapper > svg.highlight`
+            );
+            return highlight.getAttribute("fill");
+          });
+
+          expect(usedColor).withContext(`In ${browserName}`).toEqual("#AB0000");
+        })
+      );
+    });
+  });
 });

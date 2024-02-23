@@ -126,6 +126,14 @@ class Toolbar {
       );
     }
 
+    eventBus._on("showannotationeditorui", ({ mode }) => {
+      switch (mode) {
+        case AnnotationEditorType.HIGHLIGHT:
+          options.editorHighlightButton.click();
+          break;
+      }
+    });
+
     this.reset();
   }
 
