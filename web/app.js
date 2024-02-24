@@ -165,6 +165,9 @@ const PDFViewerApplication = {
   _isCtrlKeyDown: false,
   _nimbusDataPromise: null,
   _caretBrowsing: null,
+  _isScrolling: false,
+  _lastScrollTop: 0,
+  _lastScrollLeft: 0,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -683,6 +686,47 @@ const PDFViewerApplication = {
     } else {
       throw new Error("Not implemented: run");
     }
+
+    if (
+      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
+      !("onscrollend" in document.documentElement)
+    ) {
+      return;
+    }
+
+    const { mainContainer } = appConfig;
+    // Using the values lastScrollTop and lastScrollLeft is a workaround to
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1881974.
+    // TODO: remove them once the bug is fixed.
+    ({ scrollTop: this._lastScrollTop, scrollLeft: this._lastScrollLeft } =
+      mainContainer);
+    const scroll = () => {
+      if (
+        this._lastScrollTop === mainContainer.scrollTop &&
+        this._lastScrollLeft === mainContainer.scrollLeft
+      ) {
+        return;
+      }
+      mainContainer.removeEventListener("scroll", scroll, {
+        passive: true,
+      });
+      this._isScrolling = true;
+      const scrollend = () => {
+        ({ scrollTop: this._lastScrollTop, scrollLeft: this._lastScrollLeft } =
+          mainContainer);
+        this._isScrolling = false;
+        mainContainer.addEventListener("scroll", scroll, {
+          passive: true,
+        });
+        mainContainer.removeEventListener("scrollend", scrollend);
+        mainContainer.removeEventListener("blur", scrollend);
+      };
+      mainContainer.addEventListener("scrollend", scrollend);
+      mainContainer.addEventListener("blur", scrollend);
+    };
+    mainContainer.addEventListener("scroll", scroll, {
+      passive: true,
+    });
   },
 
   get externalServices() {
@@ -2653,6 +2697,7 @@ function webViewerWheel(evt) {
     evt.preventDefault();
     // NOTE: this check must be placed *after* preventDefault.
     if (
+      PDFViewerApplication._isScrolling ||
       zoomDisabledTimeout ||
       document.visibilityState === "hidden" ||
       PDFViewerApplication.overlayManager.active
@@ -2718,8 +2763,6 @@ function webViewerWheel(evt) {
     // left corner is restored. When the mouse wheel is used, the position
     // under the cursor should be restored instead.
     PDFViewerApplication._centerAtPos(previousScale, evt.clientX, evt.clientY);
-  } else {
-    setZoomDisabledTimeout();
   }
 }
 
