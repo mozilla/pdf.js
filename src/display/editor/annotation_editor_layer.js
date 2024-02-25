@@ -63,15 +63,11 @@ class AnnotationEditorLayer {
 
   #boundPointerup = this.pointerup.bind(this);
 
-  #boundPointerUpAfterSelection = this.pointerUpAfterSelection.bind(this);
-
   #boundPointerdown = this.pointerdown.bind(this);
 
   #boundTextLayerPointerDown = this.#textLayerPointerDown.bind(this);
 
   #editorFocusTimeoutId = null;
-
-  #boundSelectionStart = this.selectionStart.bind(this);
 
   #editors = new Map();
 
@@ -338,7 +334,6 @@ class AnnotationEditorLayer {
 
   enableTextSelection() {
     if (this.#textLayer?.div) {
-      document.addEventListener("selectstart", this.#boundSelectionStart);
       this.#textLayer.div.addEventListener(
         "pointerdown",
         this.#boundTextLayerPointerDown
@@ -349,7 +344,6 @@ class AnnotationEditorLayer {
 
   disableTextSelection() {
     if (this.#textLayer?.div) {
-      document.removeEventListener("selectstart", this.#boundSelectionStart);
       this.#textLayer.div.removeEventListener(
         "pointerdown",
         this.#boundTextLayerPointerDown
@@ -684,54 +678,6 @@ class AnnotationEditorLayer {
    */
   unselect(editor) {
     this.#uiManager.unselect(editor);
-  }
-
-  /**
-   * SelectionChange callback.
-   * @param {Event} event
-   */
-  selectionStart(event) {
-    if (
-      !this.#textLayer ||
-      event.target.parentElement.closest(".textLayer") !== this.#textLayer.div
-    ) {
-      return;
-    }
-
-    if (this.#uiManager.isShiftKeyDown) {
-      const keyup = () => {
-        if (this.#uiManager.isShiftKeyDown) {
-          return;
-        }
-
-        window.removeEventListener("keyup", keyup);
-        window.removeEventListener("blur", keyup);
-        this.pointerUpAfterSelection({});
-      };
-      window.addEventListener("keyup", keyup);
-      window.addEventListener("blur", keyup);
-    } else {
-      this.#textLayer.div.addEventListener(
-        "pointerup",
-        this.#boundPointerUpAfterSelection,
-        { once: true }
-      );
-    }
-  }
-
-  /**
-   * Called when the user releases the mouse button after having selected
-   * some text.
-   * @param {PointerEvent} event
-   */
-  pointerUpAfterSelection(event) {
-    const boxes = this.#uiManager.getSelectionBoxes(this.#textLayer?.div);
-    if (boxes) {
-      this.createAndAddNewEditor(event, false, {
-        boxes,
-      });
-      document.getSelection().empty();
-    }
   }
 
   /**
