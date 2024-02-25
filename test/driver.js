@@ -684,7 +684,9 @@ class Driver {
             }
 
             task.pdfDoc = doc;
-            task.optionalContentConfigPromise = doc.getOptionalContentConfig();
+            task.optionalContentConfigPromise = doc.getOptionalContentConfig({
+              intent: task.print ? "print" : "display",
+            });
 
             if (task.optionalContent) {
               const entries = Object.entries(task.optionalContent),

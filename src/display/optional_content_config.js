@@ -13,33 +13,63 @@
  * limitations under the License.
  */
 
-import { info, objectFromMap, unreachable, warn } from "../shared/util.js";
+import {
+  info,
+  objectFromMap,
+  RenderingIntentFlag,
+  unreachable,
+  warn,
+} from "../shared/util.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 
 const INTERNAL = Symbol("INTERNAL");
 
 class OptionalContentGroup {
+  #isDisplay = false;
+
+  #isPrint = false;
+
+  #userSet = false;
+
   #visible = true;
 
-  constructor(name, intent) {
+  constructor(renderingIntent, { name, intent, usage }) {
+    this.#isDisplay = !!(renderingIntent & RenderingIntentFlag.DISPLAY);
+    this.#isPrint = !!(renderingIntent & RenderingIntentFlag.PRINT);
+
     this.name = name;
     this.intent = intent;
+    this.usage = usage;
   }
 
   /**
    * @type {boolean}
    */
   get visible() {
-    return this.#visible;
+    if (this.#userSet) {
+      return this.#visible;
+    }
+    if (!this.#visible) {
+      return false;
+    }
+    const { print, view } = this.usage;
+
+    if (this.#isDisplay) {
+      return view?.viewState !== "OFF";
+    } else if (this.#isPrint) {
+      return print?.printState !== "OFF";
+    }
+    return true;
   }
 
   /**
    * @ignore
    */
-  _setVisible(internal, visible) {
+  _setVisible(internal, visible, userSet = false) {
     if (internal !== INTERNAL) {
       unreachable("Internal method `_setVisible` called.");
     }
+    this.#userSet = userSet;
     this.#visible = visible;
   }
 }
@@ -53,7 +83,9 @@ class OptionalContentConfig {
 
   #order = null;
 
-  constructor(data) {
+  constructor(data, renderingIntent = RenderingIntentFlag.DISPLAY) {
+    this.renderingIntent = renderingIntent;
+
     this.name = null;
     this.creator = null;
 
@@ -66,7 +98,7 @@ class OptionalContentConfig {
     for (const group of data.groups) {
       this.#groups.set(
         group.id,
-        new OptionalContentGroup(group.name, group.intent)
+        new OptionalContentGroup(renderingIntent, group)
       );
     }
 
@@ -202,7 +234,7 @@ class OptionalContentConfig {
       warn(`Optional content group not found: ${id}`);
       return;
     }
-    this.#groups.get(id)._setVisible(INTERNAL, !!visible);
+    this.#groups.get(id)._setVisible(INTERNAL, !!visible, /* userSet = */ true);
 
     this.#cachedGetHash = null;
   }
