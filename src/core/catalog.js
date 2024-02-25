@@ -445,20 +445,10 @@ class Catalog {
           continue;
         }
         groupRefs.put(groupRef);
-        const group = this.xref.fetch(groupRef);
-        groups.push({
-          id: groupRef.toString(),
-          name:
-            typeof group.get("Name") === "string"
-              ? stringToPDFString(group.get("Name"))
-              : null,
-          intent:
-            typeof group.get("Intent") === "string"
-              ? stringToPDFString(group.get("Intent"))
-              : null,
-        });
+
+        groups.push(this.#readOptionalContentGroup(groupRef));
       }
-      config = this._readOptionalContentConfig(defaultConfig, groupRefs);
+      config = this.#readOptionalContentConfig(defaultConfig, groupRefs);
       config.groups = groups;
     } catch (ex) {
       if (ex instanceof MissingDataException) {
@@ -469,7 +459,65 @@ class Catalog {
     return shadow(this, "optionalContentConfig", config);
   }
 
-  _readOptionalContentConfig(config, contentGroupRefs) {
+  #readOptionalContentGroup(groupRef) {
+    const group = this.xref.fetch(groupRef);
+    const obj = {
+      id: groupRef.toString(),
+      name: null,
+      intent: null,
+      usage: {
+        print: null,
+        view: null,
+      },
+    };
+
+    const name = group.get("Name");
+    if (typeof name === "string") {
+      obj.name = stringToPDFString(name);
+    }
+
+    let intent = group.getArray("Intent");
+    if (!Array.isArray(intent)) {
+      intent = [intent];
+    }
+    if (intent.every(i => i instanceof Name)) {
+      obj.intent = intent.map(i => i.name);
+    }
+
+    const usage = group.get("Usage");
+    if (!(usage instanceof Dict)) {
+      return obj;
+    }
+    const usageObj = obj.usage;
+
+    const print = usage.get("Print");
+    if (print instanceof Dict) {
+      const printState = print.get("PrintState");
+      if (printState instanceof Name) {
+        switch (printState.name) {
+          case "ON":
+          case "OFF":
+            usageObj.print = { printState: printState.name };
+        }
+      }
+    }
+
+    const view = usage.get("View");
+    if (view instanceof Dict) {
+      const viewState = view.get("ViewState");
+      if (viewState instanceof Name) {
+        switch (viewState.name) {
+          case "ON":
+          case "OFF":
+            usageObj.view = { viewState: viewState.name };
+        }
+      }
+    }
+
+    return obj;
+  }
+
+  #readOptionalContentConfig(config, contentGroupRefs) {
     function parseOnOff(refs) {
       const onParsed = [];
       if (Array.isArray(refs)) {

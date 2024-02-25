@@ -13,7 +13,12 @@
  * limitations under the License.
  */
 
-import { AnnotationMode, PixelsPerInch, shadow } from "pdfjs-lib";
+import {
+  AnnotationMode,
+  PixelsPerInch,
+  RenderingCancelledException,
+  shadow,
+} from "pdfjs-lib";
 import { getXfaHtmlForPrinting } from "./print_utils.js";
 
 let activeService = null;
@@ -58,7 +63,14 @@ function renderPage(
       optionalContentConfigPromise,
       printAnnotationStorage,
     };
-    return pdfPage.render(renderContext).promise;
+    const renderTask = pdfPage.render(renderContext);
+
+    return renderTask.promise.catch(reason => {
+      if (!(reason instanceof RenderingCancelledException)) {
+        console.error(reason);
+      }
+      throw reason;
+    });
   });
 }
 
@@ -68,15 +80,15 @@ class PDFPrintService {
     pagesOverview,
     printContainer,
     printResolution,
-    optionalContentConfigPromise = null,
     printAnnotationStoragePromise = null,
   }) {
     this.pdfDocument = pdfDocument;
     this.pagesOverview = pagesOverview;
     this.printContainer = printContainer;
     this._printResolution = printResolution || 150;
-    this._optionalContentConfigPromise =
-      optionalContentConfigPromise || pdfDocument.getOptionalContentConfig();
+    this._optionalContentConfigPromise = pdfDocument.getOptionalContentConfig({
+      intent: "print",
+    });
     this._printAnnotationStoragePromise =
       printAnnotationStoragePromise || Promise.resolve();
     this.currentPage = -1;

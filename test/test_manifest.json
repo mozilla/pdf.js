@@ -4017,6 +4017,23 @@
     "type": "eq"
   },
   {
+    "id": "bug1826783-display",
+    "file": "pdfs/bug1826783.pdf",
+    "md5": "93e706efee15dd7b32d32d66f15a3ea2",
+    "rounds": 1,
+    "link": true,
+    "type": "eq"
+  },
+  {
+    "id": "bug1826783-print",
+    "file": "pdfs/bug1826783.pdf",
+    "md5": "93e706efee15dd7b32d32d66f15a3ea2",
+    "rounds": 1,
+    "link": true,
+    "type": "eq",
+    "print": true
+  },
+  {
     "id": "issue8586",
     "file": "pdfs/issue8586.pdf",
     "md5": "16b5230364017d3b0d2d65978eb35816",
