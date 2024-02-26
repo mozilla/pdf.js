@@ -1154,5 +1154,81 @@ describe("Highlight Editor", () => {
         })
       );
     });
+
+    it("must check that an highlight can be left with the keyboard", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorHighlight");
+          await page.waitForSelector(".annotationEditorLayer.highlightEditing");
+
+          if (browserName === "chrome") {
+            // Unfortunately, we can't test this on Chrome because we can't set
+            // the caret browsing mode to true.
+            return;
+          }
+
+          let rect = await getSpanRectFromText(
+            page,
+            1,
+            "Dynamic languages such as JavaScript are more difﬁcult to com-"
+          );
+          await page.mouse.click(rect.x + 5, rect.y + rect.height / 2);
+          await page.keyboard.down("Shift");
+          for (let i = 0; i < 10; i++) {
+            await page.keyboard.press("ArrowRight");
+          }
+          const focusOffset = await page.evaluate(
+            () => window.getSelection().focusOffset
+          );
+          await page.keyboard.up("Shift");
+
+          await page.waitForSelector(getEditorSelector(0));
+
+          for (let i = 0; i < 5; i++) {
+            await page.keyboard.press("ArrowRight");
+          }
+
+          let offset = await page.evaluate(
+            () => window.getSelection().anchorOffset
+          );
+
+          expect(offset)
+            .withContext(`In ${browserName}`)
+            .toEqual(focusOffset + 4);
+
+          rect = await getSpanRectFromText(
+            page,
+            1,
+            "experience and enable a new generation of applications, virtual ma-"
+          );
+          await page.mouse.click(
+            rect.x + rect.width / 2,
+            rect.y + rect.height / 2
+          );
+          await page.keyboard.down("Shift");
+          for (let i = 0; i < 10; i++) {
+            await page.keyboard.press("ArrowRight");
+          }
+          const anchorOffset = await page.evaluate(
+            () => window.getSelection().anchorOffset
+          );
+          await page.keyboard.up("Shift");
+
+          await page.waitForSelector(getEditorSelector(1));
+
+          for (let i = 0; i < 5; i++) {
+            await page.keyboard.press("ArrowLeft");
+          }
+
+          offset = await page.evaluate(
+            () => window.getSelection().anchorOffset
+          );
+
+          expect(offset)
+            .withContext(`In ${browserName}`)
+            .toEqual(anchorOffset - 4);
+        })
+      );
+    });
   });
 });
