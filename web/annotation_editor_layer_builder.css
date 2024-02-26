@@ -195,10 +195,12 @@
 }
 
 .annotationEditorLayer
-  :is(.freeTextEditor, .inkEditor, .stampEditor, .highlightEditor) {
+  :is(.freeTextEditor, .inkEditor, .stampEditor, .highlightEditor),
+.textLayer {
   .editToolbar {
     --editor-toolbar-delete-image: url(images/editor-toolbar-delete.svg);
     --editor-toolbar-bg-color: #f0f0f4;
+    --editor-toolbar-highlight-image: url(images/toolbarButton-editorHighlight.svg);
     --editor-toolbar-fg-color: #2e2e56;
     --editor-toolbar-border-color: #8f8f9d;
     --editor-toolbar-hover-border-color: var(--editor-toolbar-border-color);
@@ -282,6 +284,25 @@
         background-color: var(--editor-toolbar-border-color);
         display: inline-block;
         margin-inline: 2px;
+      }
+
+      .highlightButton {
+        width: var(--editor-toolbar-height);
+
+        &::before {
+          content: "";
+          mask-image: var(--editor-toolbar-highlight-image);
+          mask-repeat: no-repeat;
+          mask-position: center;
+          display: inline-block;
+          background-color: var(--editor-toolbar-fg-color);
+          width: 100%;
+          height: 100%;
+        }
+
+        &:hover::before {
+          background-color: var(--editor-toolbar-hover-fg-color);
+        }
       }
 
       .delete {

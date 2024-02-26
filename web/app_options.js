@@ -143,6 +143,14 @@ const defaultOptions = {
     value: typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING"),
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  enableHighlightFloatingButton: {
+    // We'll probably want to make some experiments before enabling this
+    // in Firefox release, but it has to be temporary.
+    // TODO: remove it when unnecessary.
+    /** @type {boolean} */
+    value: typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING"),
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   enableML: {
     /** @type {boolean} */
     value: false,

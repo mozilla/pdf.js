@@ -214,6 +214,8 @@ class PDFViewer {
 
   #copyCallbackBound = null;
 
+  #enableHighlightFloatingButton = false;
+
   #enablePermissions = false;
 
   #mlManager = null;
@@ -282,6 +284,8 @@ class PDFViewer {
       options.annotationEditorMode ?? AnnotationEditorType.NONE;
     this.#annotationEditorHighlightColors =
       options.annotationEditorHighlightColors || null;
+    this.#enableHighlightFloatingButton =
+      options.enableHighlightFloatingButton === true;
     this.imageResourcesPath = options.imageResourcesPath || "";
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
@@ -863,6 +867,7 @@ class PDFViewer {
               pdfDocument,
               this.pageColors,
               this.#annotationEditorHighlightColors,
+              this.#enableHighlightFloatingButton,
               this.#mlManager
             );
             this.eventBus.dispatch("annotationeditoruimanager", {

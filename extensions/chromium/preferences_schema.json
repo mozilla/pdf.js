@@ -72,6 +72,10 @@
       "type": "boolean",
       "default": false
     },
+    "enableHighlightFloatingButton": {
+      "type": "boolean",
+      "default": false
+    },
     "highlightEditorColors": {
       "type": "string",
       "default": "yellow=#FFFF98,green=#53FFBC,blue=#80EBFF,pink=#FFCBE6,red=#FF4F5F"
