@@ -947,7 +947,7 @@ class AnnotationEditorUIManager {
     if (!selection || selection.isCollapsed) {
       return;
     }
-    const { anchorNode } = selection;
+    const { anchorNode, anchorOffset, focusNode, focusOffset } = selection;
     const anchorElement =
       anchorNode.nodeType === Node.TEXT_NODE
         ? anchorNode.parentElement
@@ -966,6 +966,10 @@ class AnnotationEditorUIManager {
         layer.createAndAddNewEditor({ x: 0, y: 0 }, false, {
           methodOfCreation,
           boxes,
+          anchorNode,
+          anchorOffset,
+          focusNode,
+          focusOffset,
         });
         break;
       }
