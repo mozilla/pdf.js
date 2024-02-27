@@ -52,6 +52,8 @@ class HighlightEditor extends AnnotationEditor {
 
   #thickness;
 
+  #methodOfCreation = "";
+
   static _defaultColor = null;
 
   static _defaultOpacity = 1;
@@ -76,6 +78,7 @@ class HighlightEditor extends AnnotationEditor {
     this.#thickness = params.thickness || HighlightEditor._defaultThickness;
     this.#opacity = params.opacity || HighlightEditor._defaultOpacity;
     this.#boxes = params.boxes || null;
+    this.#methodOfCreation = params.methodOfCreation || "";
     this._isDraggable = false;
 
     if (params.highlightId > -1) {
@@ -87,6 +90,34 @@ class HighlightEditor extends AnnotationEditor {
       this.#addToDrawLayer();
       this.rotate(this.rotation);
     }
+  }
+
+  /** @inheritdoc */
+  get telemetryInitialData() {
+    return {
+      action: "added",
+      type: this.#telemetryType,
+      color: this._uiManager.highlightColorNames.get(this.color),
+      thickness: this.#thickness,
+      methodOfCreation: this.#methodOfCreation,
+    };
+  }
+
+  /** @inheritdoc */
+  get telemetryFinalData() {
+    return {
+      type: this.#telemetryType,
+      color: this._uiManager.highlightColorNames.get(this.color),
+    };
+  }
+
+  static computeTelemetryFinalData(data) {
+    // We want to know how many colors have been used.
+    return { numberOfColors: data.get("color").size };
+  }
+
+  get #telemetryType() {
+    return this.#isFreeHighlight ? "free_highlight" : "highlight";
   }
 
   #createOutlines() {
@@ -274,6 +305,14 @@ class HighlightEditor extends AnnotationEditor {
       overwriteIfSameType: true,
       keepUndo: true,
     });
+
+    this._reportTelemetry(
+      {
+        action: "color_changed",
+        color: this._uiManager.highlightColorNames.get(color),
+      },
+      /* mustWait = */ true
+    );
   }
 
   /**
@@ -295,6 +334,10 @@ class HighlightEditor extends AnnotationEditor {
       overwriteIfSameType: true,
       keepUndo: true,
     });
+    this._reportTelemetry(
+      { action: "thickness_changed", thickness },
+      /* mustWait = */ true
+    );
   }
 
   /** @inheritdoc */
@@ -349,6 +392,9 @@ class HighlightEditor extends AnnotationEditor {
   remove() {
     super.remove();
     this.#cleanDrawLayer();
+    this._reportTelemetry({
+      action: "deleted",
+    });
   }
 
   /** @inheritdoc */
