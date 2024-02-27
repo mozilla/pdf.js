@@ -1152,7 +1152,10 @@ const PDFViewerApplication = {
     if (this._hasAnnotationEditors) {
       this.externalServices.reportTelemetry({
         type: "editing",
-        data: { type: "save" },
+        data: {
+          type: "save",
+          stats: this.pdfDocument?.annotationStorage.editorStats,
+        },
       });
     }
   },
@@ -1727,13 +1730,6 @@ const PDFViewerApplication = {
     annotationStorage.onAnnotationEditor = typeStr => {
       this._hasAnnotationEditors = !!typeStr;
       this.setTitle();
-
-      if (typeStr) {
-        this.externalServices.reportTelemetry({
-          type: "editing",
-          data: { type: typeStr },
-        });
-      }
     };
   },
 
@@ -1857,7 +1853,10 @@ const PDFViewerApplication = {
     if (this._hasAnnotationEditors) {
       this.externalServices.reportTelemetry({
         type: "editing",
-        data: { type: "print" },
+        data: {
+          type: "print",
+          stats: this.pdfDocument?.annotationStorage.editorStats,
+        },
       });
     }
   },
