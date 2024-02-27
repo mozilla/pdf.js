@@ -9746,5 +9746,13 @@
     "firstPage": 2,
     "lastPage": 2,
     "type": "eq"
+  },
+  {
+    "id": "issue17730",
+    "file": "pdfs/issue17730.pdf",
+    "md5": "ac9a14a75457468bde78204ca75701d6",
+    "rounds": 1,
+    "annotations": true,
+    "type": "eq"
   }
 ]
