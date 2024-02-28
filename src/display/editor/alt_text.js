@@ -146,15 +146,8 @@ class AltText {
         this.#altTextTooltipTimeout = setTimeout(() => {
           this.#altTextTooltipTimeout = null;
           this.#altTextTooltip.classList.add("show");
-          this.#editor._uiManager._eventBus.dispatch("reporttelemetry", {
-            source: this,
-            details: {
-              type: "editing",
-              subtype: this.#editor.editorType,
-              data: {
-                action: "alt_text_tooltip",
-              },
-            },
+          this.#editor._reportTelemetry({
+            action: "alt_text_tooltip",
           });
         }, DELAY_TO_SHOW_TOOLTIP);
       });

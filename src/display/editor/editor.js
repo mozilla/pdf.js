@@ -72,6 +72,8 @@ class AnnotationEditor {
 
   #prevDragY = 0;
 
+  #telemetryTimeouts = null;
+
   _initialOptions = Object.create(null);
 
   _uiManager = null;
@@ -89,6 +91,11 @@ class AnnotationEditor {
   static _colorManager = new ColorManager();
 
   static _zIndex = 1;
+
+  // Time to wait (in ms) before sending the telemetry data.
+  // We wait a bit to avoid sending too many requests when changing something
+  // like the thickness of a line.
+  static _telemetryTimeout = 1000;
 
   static get _resizerKeyboardManager() {
     const resize = AnnotationEditor.prototype._resizeWithKeyboard;
@@ -1323,6 +1330,12 @@ class AnnotationEditor {
     }
     this.#stopResizing();
     this.removeEditToolbar();
+    if (this.#telemetryTimeouts) {
+      for (const timeout of this.#telemetryTimeouts.values()) {
+        clearTimeout(timeout);
+      }
+      this.#telemetryTimeouts = null;
+    }
   }
 
   /**
@@ -1597,6 +1610,50 @@ class AnnotationEditor {
 
   static canCreateNewEmptyEditor() {
     return true;
+  }
+
+  /**
+   * Get the data to report to the telemetry when the editor is added.
+   * @returns {Object}
+   */
+  get telemetryInitialData() {
+    return { action: "added" };
+  }
+
+  /**
+   * The telemetry data to use when saving/printing.
+   * @returns {Object|null}
+   */
+  get telemetryFinalData() {
+    return null;
+  }
+
+  _reportTelemetry(data, mustWait = false) {
+    if (mustWait) {
+      this.#telemetryTimeouts ||= new Map();
+      const { action } = data;
+      let timeout = this.#telemetryTimeouts.get(action);
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+      timeout = setTimeout(() => {
+        this._reportTelemetry(data);
+        this.#telemetryTimeouts.delete(action);
+        if (this.#telemetryTimeouts.size === 0) {
+          this.#telemetryTimeouts = null;
+        }
+      }, AnnotationEditor._telemetryTimeout);
+      this.#telemetryTimeouts.set(action, timeout);
+      return;
+    }
+    data.type ||= this.editorType;
+    this._uiManager._eventBus.dispatch("reporttelemetry", {
+      source: this,
+      details: {
+        type: "editing",
+        data,
+      },
+    });
   }
 }
 

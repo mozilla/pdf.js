@@ -871,6 +871,16 @@ class AnnotationEditorUIManager {
     );
   }
 
+  get highlightColorNames() {
+    return shadow(
+      this,
+      "highlightColorNames",
+      this.highlightColors
+        ? new Map(Array.from(this.highlightColors, e => e.reverse()))
+        : null
+    );
+  }
+
   setMainHighlightColorPicker(colorPicker) {
     this.#mainHighlightColorPicker = colorPicker;
   }
@@ -932,7 +942,7 @@ class AnnotationEditorUIManager {
     this.viewParameters.rotation = pagesRotation;
   }
 
-  highlightSelection() {
+  highlightSelection(methodOfCreation = "") {
     const selection = document.getSelection();
     if (!selection || selection.isCollapsed) {
       return;
@@ -953,7 +963,10 @@ class AnnotationEditorUIManager {
     }
     for (const layer of this.#allLayers.values()) {
       if (layer.hasTextLayer(textLayer)) {
-        layer.createAndAddNewEditor({ x: 0, y: 0 }, false, { boxes });
+        layer.createAndAddNewEditor({ x: 0, y: 0 }, false, {
+          methodOfCreation,
+          boxes,
+        });
         break;
       }
     }
@@ -1020,7 +1033,7 @@ class AnnotationEditorUIManager {
         window.removeEventListener("pointerup", pointerup);
         window.removeEventListener("blur", pointerup);
         if (e.type === "pointerup") {
-          this.highlightSelection();
+          this.highlightSelection("main_toolbar");
         }
       };
       window.addEventListener("pointerup", pointerup);
@@ -1050,7 +1063,7 @@ class AnnotationEditorUIManager {
     this.isShiftKeyDown = false;
     if (this.#highlightWhenShiftUp) {
       this.#highlightWhenShiftUp = false;
-      this.highlightSelection();
+      this.highlightSelection("main_toolbar");
     }
     if (!this.hasSelection) {
       return;
@@ -1240,7 +1253,7 @@ class AnnotationEditorUIManager {
       this.isShiftKeyDown = false;
       if (this.#highlightWhenShiftUp) {
         this.#highlightWhenShiftUp = false;
-        this.highlightSelection();
+        this.highlightSelection("main_toolbar");
       }
     }
   }
@@ -1249,15 +1262,18 @@ class AnnotationEditorUIManager {
    * Execute an action for a given name.
    * For example, the user can click on the "Undo" entry in the context menu
    * and it'll trigger the undo action.
-   * @param {Object} details
    */
-  onEditingAction(details) {
-    if (
-      ["undo", "redo", "delete", "selectAll", "highlightSelection"].includes(
-        details.name
-      )
-    ) {
-      this[details.name]();
+  onEditingAction({ name }) {
+    switch (name) {
+      case "undo":
+      case "redo":
+      case "delete":
+      case "selectAll":
+        this[name]();
+        break;
+      case "highlightSelection":
+        this.highlightSelection("context_menu");
+        break;
     }
   }
 
