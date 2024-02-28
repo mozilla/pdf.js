@@ -96,7 +96,7 @@ class HighlightEditor extends AnnotationEditor {
   get telemetryInitialData() {
     return {
       action: "added",
-      type: this.#telemetryType,
+      type: this.#isFreeHighlight ? "free_highlight" : "highlight",
       color: this._uiManager.highlightColorNames.get(this.color),
       thickness: this.#thickness,
       methodOfCreation: this.#methodOfCreation,
@@ -114,10 +114,6 @@ class HighlightEditor extends AnnotationEditor {
   static computeTelemetryFinalData(data) {
     // We want to know how many colors have been used.
     return { numberOfColors: data.get("color").size };
-  }
-
-  get #telemetryType() {
-    return this.#isFreeHighlight ? "free_highlight" : "highlight";
   }
 
   #createOutlines() {
