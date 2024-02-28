@@ -82,7 +82,6 @@ import { Toolbar } from "web-toolbar";
 import { ViewHistory } from "./view_history.js";
 
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
-const WHEEL_ZOOM_DISABLED_TIMEOUT = 1000; // ms
 
 const ViewOnLoad = {
   UNKNOWN: -1,
@@ -2018,7 +2017,9 @@ const PDFViewerApplication = {
       });
     };
 
-    window.addEventListener("visibilitychange", webViewerVisibilityChange);
+    if (FeatureTest.platform.isMac) {
+      window.addEventListener("visibilitychange", webViewerVisibilityChange);
+    }
     window.addEventListener("wheel", webViewerWheel, { passive: false });
     window.addEventListener("touchstart", webViewerTouchStart, {
       passive: false,
@@ -2108,7 +2109,9 @@ const PDFViewerApplication = {
     }
     const { _boundEvents } = this;
 
-    window.removeEventListener("visibilitychange", webViewerVisibilityChange);
+    if (FeatureTest.platform.isMac) {
+      window.removeEventListener("visibilitychange", webViewerVisibilityChange);
+    }
     window.removeEventListener("wheel", webViewerWheel, { passive: false });
     window.removeEventListener("touchstart", webViewerTouchStart, {
       passive: false,
@@ -2633,19 +2636,16 @@ function webViewerResolutionChange(evt) {
 function webViewerVisibilityChange(evt) {
   if (document.visibilityState === "visible") {
     // Ignore mouse wheel zooming during tab switches (bug 1503412).
-    setZoomDisabledTimeout();
+    if (zoomDisabledTimeout) {
+      clearTimeout(zoomDisabledTimeout);
+    }
+    zoomDisabledTimeout = setTimeout(function () {
+      zoomDisabledTimeout = null;
+    }, 1000);
   }
 }
 
 let zoomDisabledTimeout = null;
-function setZoomDisabledTimeout() {
-  if (zoomDisabledTimeout) {
-    clearTimeout(zoomDisabledTimeout);
-  }
-  zoomDisabledTimeout = setTimeout(function () {
-    zoomDisabledTimeout = null;
-  }, WHEEL_ZOOM_DISABLED_TIMEOUT);
-}
 
 function webViewerWheel(evt) {
   const {
