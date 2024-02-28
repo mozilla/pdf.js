@@ -106,7 +106,7 @@ class HighlightEditor extends AnnotationEditor {
   /** @inheritdoc */
   get telemetryFinalData() {
     return {
-      type: this.#telemetryType,
+      type: "highlight",
       color: this._uiManager.highlightColorNames.get(this.color),
     };
   }
