@@ -1266,4 +1266,67 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Thickness must be enabled when there's no selected highlights", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check the thickness input state", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorHighlight");
+          await page.waitForSelector(".annotationEditorLayer.highlightEditing");
+
+          let rect = await getSpanRectFromText(page, 1, "Abstract");
+          await page.mouse.click(
+            rect.x + rect.width / 2,
+            rect.y + rect.height / 2,
+            { count: 2, delay: 100 }
+          );
+
+          await page.waitForSelector(getEditorSelector(0));
+
+          rect = await page.$eval(".annotationEditorLayer", el => {
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          const clickHandle = await waitForPointerUp(page);
+          await page.mouse.move(rect.x + 5, rect.y + 5);
+          await page.mouse.down();
+          await page.mouse.move(rect.x + 100, rect.y + 100);
+          await page.mouse.up();
+          await awaitPromise(clickHandle);
+
+          await page.waitForSelector(getEditorSelector(1));
+          await page.waitForSelector(
+            "#editorFreeHighlightThickness:not([disabled])"
+          );
+
+          await page.click(getEditorSelector(0));
+          await page.waitForSelector(getEditorSelector(0));
+          await page.waitForSelector("#editorFreeHighlightThickness[disabled]");
+
+          await page.click("#editorHighlight");
+          await page.waitForSelector(
+            ".annotationEditorLayer:not(.highlightEditing)"
+          );
+
+          await page.click("#editorHighlight");
+          await page.waitForSelector(".annotationEditorLayer.highlightEditing");
+
+          await page.waitForSelector(
+            "#editorFreeHighlightThickness:not([disabled])"
+          );
+        })
+      );
+    });
+  });
 });
