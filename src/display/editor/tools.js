@@ -1298,6 +1298,17 @@ class AnnotationEditorUIManager {
         source: this,
         details: Object.assign(this.#previousStates, details),
       });
+      // We could listen on our own event but it sounds like a bit weird and
+      // it's a way to simpler to handle that stuff here instead of having to
+      // add something in every place where an editor can be unselected.
+      if (
+        this.#mode === AnnotationEditorType.HIGHLIGHT &&
+        details.hasSelectedEditor === false
+      ) {
+        this.#dispatchUpdateUI([
+          [AnnotationEditorParamsType.HIGHLIGHT_FREE, true],
+        ]);
+      }
     }
   }
 
