@@ -16,11 +16,12 @@
 import {
   AnnotationEditorParamsType,
   AnnotationEditorType,
+  shadow,
   Util,
 } from "../../shared/util.js";
+import { bindEvents, KeyboardManager } from "./tools.js";
 import { FreeOutliner, Outliner } from "./outliner.js";
 import { AnnotationEditor } from "./editor.js";
-import { bindEvents } from "./tools.js";
 import { ColorPicker } from "./color_picker.js";
 import { noContextMenu } from "../display_utils.js";
 
@@ -28,6 +29,10 @@ import { noContextMenu } from "../display_utils.js";
  * Basic draw editor in order to generate an Highlight annotation.
  */
 class HighlightEditor extends AnnotationEditor {
+  #anchorNode = null;
+
+  #anchorOffset = 0;
+
   #boxes;
 
   #clipPathId = null;
@@ -36,6 +41,10 @@ class HighlightEditor extends AnnotationEditor {
 
   #focusOutlines = null;
 
+  #focusNode = null;
+
+  #focusOffset = 0;
+
   #highlightDiv = null;
 
   #highlightOutlines = null;
@@ -43,6 +52,8 @@ class HighlightEditor extends AnnotationEditor {
   #id = null;
 
   #isFreeHighlight = false;
+
+  #boundKeydown = this.#keydown.bind(this);
 
   #lastPoint = null;
 
@@ -72,6 +83,20 @@ class HighlightEditor extends AnnotationEditor {
 
   static _freeHighlightClipId = "";
 
+  static get _keyboardManager() {
+    const proto = HighlightEditor.prototype;
+    return shadow(
+      this,
+      "_keyboardManager",
+      new KeyboardManager([
+        [["ArrowLeft", "mac+ArrowLeft"], proto._moveCaret, { args: [0] }],
+        [["ArrowRight", "mac+ArrowRight"], proto._moveCaret, { args: [1] }],
+        [["ArrowUp", "mac+ArrowUp"], proto._moveCaret, { args: [2] }],
+        [["ArrowDown", "mac+ArrowDown"], proto._moveCaret, { args: [3] }],
+      ])
+    );
+  }
+
   constructor(params) {
     super({ ...params, name: "highlightEditor" });
     this.color = params.color || HighlightEditor._defaultColor;
@@ -86,6 +111,10 @@ class HighlightEditor extends AnnotationEditor {
       this.#createFreeOutlines(params);
       this.#addToDrawLayer();
     } else {
+      this.#anchorNode = params.anchorNode;
+      this.#anchorOffset = params.anchorOffset;
+      this.#focusNode = params.focusNode;
+      this.#focusOffset = params.focusOffset;
       this.#createOutlines();
       this.#addToDrawLayer();
       this.rotate(this.rotation);
@@ -530,6 +559,8 @@ class HighlightEditor extends AnnotationEditor {
     const div = super.render();
     if (this.#isFreeHighlight) {
       div.classList.add("free");
+    } else {
+      this.div.addEventListener("keydown", this.#boundKeydown);
     }
     const highlightDiv = (this.#highlightDiv = document.createElement("div"));
     div.append(highlightDiv);
@@ -552,6 +583,36 @@ class HighlightEditor extends AnnotationEditor {
     this.parent.drawLayer.removeClass(this.#outlineId, "hovered");
   }
 
+  #keydown(event) {
+    HighlightEditor._keyboardManager.exec(this, event);
+  }
+
+  _moveCaret(direction) {
+    this.parent.unselect(this);
+    switch (direction) {
+      case 0 /* left */:
+      case 2 /* up */:
+        this.#setCaret(/* start = */ true);
+        break;
+      case 1 /* right */:
+      case 3 /* down */:
+        this.#setCaret(/* start = */ false);
+        break;
+    }
+  }
+
+  #setCaret(start) {
+    if (!this.#anchorNode) {
+      return;
+    }
+    const selection = window.getSelection();
+    if (start) {
+      selection.setPosition(this.#anchorNode, this.#anchorOffset);
+    } else {
+      selection.setPosition(this.#focusNode, this.#focusOffset);
+    }
+  }
+
   /** @inheritdoc */
   select() {
     super.select();
@@ -563,6 +624,9 @@ class HighlightEditor extends AnnotationEditor {
   unselect() {
     super.unselect();
     this.parent?.drawLayer.removeClass(this.#outlineId, "selected");
+    if (!this.#isFreeHighlight) {
+      this.#setCaret(/* start = */ false);
+    }
   }
 
   #getRotation() {
