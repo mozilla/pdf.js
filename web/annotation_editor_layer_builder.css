@@ -1188,6 +1188,10 @@
         --example-color: CanvasText;
       }
 
+      :is(& > .editorParamsSlider[disabled]) {
+        opacity: 0.4;
+      }
+
       &::before {
         content: "";
         width: 8px;
