@@ -1192,7 +1192,8 @@
         opacity: 0.4;
       }
 
-      &::before {
+      &::before,
+      &::after {
         content: "";
         width: 8px;
         aspect-ratio: 1;
@@ -1200,19 +1201,13 @@
         border-radius: 100%;
         background-color: var(--example-color);
       }
+      &::after {
+        width: 24px;
+      }
 
       .editorParamsSlider {
         width: unset;
         height: 14px;
-      }
-
-      &::after {
-        content: "";
-        width: 24px;
-        aspect-ratio: 1;
-        display: block;
-        border-radius: 100%;
-        background-color: var(--example-color);
       }
     }
   }
