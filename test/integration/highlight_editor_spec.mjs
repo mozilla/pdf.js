@@ -18,6 +18,7 @@ import {
   closePages,
   createPromise,
   getEditorSelector,
+  getFirstSerialized,
   getSerialized,
   kbBigMoveLeft,
   kbBigMoveUp,
@@ -1325,6 +1326,42 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(
             "#editorFreeHighlightThickness:not([disabled])"
           );
+        })
+      );
+    });
+  });
+
+  describe("Quadpoints must be correct", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the quadpoints for an highlight are almost correct", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorHighlight");
+          await page.waitForSelector(".annotationEditorLayer.highlightEditing");
+
+          const rect = await getSpanRectFromText(page, 1, "Languages");
+          await page.mouse.click(
+            rect.x + rect.width / 2,
+            rect.y + rect.height / 2,
+            { count: 2, delay: 100 }
+          );
+
+          await page.waitForSelector(getEditorSelector(0));
+          await waitForSerialized(page, 1);
+          const quadPoints = await getFirstSerialized(page, e => e.quadPoints);
+          const expected = [263, 674, 346, 674, 263, 696, 346, 696];
+          expect(quadPoints.every((x, i) => Math.abs(x - expected[i]) <= 5))
+            .withContext(`In ${browserName}`)
+            .toBeTrue();
         })
       );
     });
