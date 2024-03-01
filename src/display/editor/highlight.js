@@ -635,18 +635,17 @@ class HighlightEditor extends AnnotationEditor {
     return this.#isFreeHighlight ? this.rotation : 0;
   }
 
-  #serializeBoxes(rect) {
+  #serializeBoxes() {
     if (this.#isFreeHighlight) {
       return null;
     }
     const [pageWidth, pageHeight] = this.pageDimensions;
     const boxes = this.#boxes;
     const quadPoints = new Array(boxes.length * 8);
-    const [tx, ty] = rect;
     let i = 0;
     for (const { x, y, width, height } of boxes) {
-      const sx = tx + x * pageWidth;
-      const sy = ty + (1 - y - height) * pageHeight;
+      const sx = x * pageWidth;
+      const sy = (1 - y - height) * pageHeight;
       // The specifications say that the rectangle should start from the bottom
       // left corner and go counter-clockwise.
       // But when opening the file in Adobe Acrobat it appears that this isn't
@@ -781,7 +780,7 @@ class HighlightEditor extends AnnotationEditor {
       color,
       opacity: this.#opacity,
       thickness: this.#thickness,
-      quadPoints: this.#serializeBoxes(rect),
+      quadPoints: this.#serializeBoxes(),
       outlines: this.#serializeOutlines(rect),
       pageIndex: this.pageIndex,
       rect,
