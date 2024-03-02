@@ -417,12 +417,11 @@ class Preferences extends BasePreferences {
 }
 
 class ExternalServices extends BaseExternalServices {
-  initPassiveLoading(callbacks) {
-    // defaultUrl is set in viewer.js
+  initPassiveLoading() {
     ChromeCom.resolvePDFFile(
       AppOptions.get("defaultUrl"),
       function (url, length, originalUrl) {
-        callbacks.onOpenWithURL(url, length, originalUrl);
+        viewerApp.open({ url, length, originalUrl });
       }
     );
   }

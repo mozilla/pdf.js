@@ -685,7 +685,9 @@ const PDFViewerApplication = {
         this._hideViewBookmark();
       }
     } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
-      this.initPassiveLoading(file);
+      this.setTitleUsingUrl(file, /* downloadUrl = */ file);
+
+      this.externalServices.initPassiveLoading();
     } else {
       throw new Error("Not implemented: run");
     }
@@ -813,37 +815,6 @@ const PDFViewerApplication = {
       this.appConfig.toolbar?.container
     );
     this._caretBrowsing.moveCaret(isUp, select);
-  },
-
-  initPassiveLoading(file) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      !PDFJSDev.test("MOZCENTRAL || CHROME")
-    ) {
-      throw new Error("Not implemented: initPassiveLoading");
-    }
-    this.setTitleUsingUrl(file, /* downloadUrl = */ file);
-
-    this.externalServices.initPassiveLoading({
-      onOpenWithTransport: range => {
-        this.open({ range });
-      },
-      onOpenWithData: (data, contentDispositionFilename) => {
-        if (isPdfFile(contentDispositionFilename)) {
-          this._contentDispositionFilename = contentDispositionFilename;
-        }
-        this.open({ data });
-      },
-      onOpenWithURL: (url, length, originalUrl) => {
-        this.open({ url, length, originalUrl });
-      },
-      onError: err => {
-        this._documentError("pdfjs-loading-error", err);
-      },
-      onProgress: (loaded, total) => {
-        this.progress(loaded / total);
-      },
-    });
   },
 
   setTitleUsingUrl(url = "", downloadUrl = null) {
@@ -987,10 +958,11 @@ const PDFViewerApplication = {
     const workerParams = AppOptions.getAll(OptionKind.WORKER);
     Object.assign(GlobalWorkerOptions, workerParams);
 
-    if (
-      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
-      args.url
-    ) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      if (args.data && isPdfFile(args.filename)) {
+        this._contentDispositionFilename = args.filename;
+      }
+    } else if (args.url) {
       // The Firefox built-in viewer always calls `setTitleUsingUrl`, before
       // `initPassiveLoading`, and it never provides an `originalUrl` here.
       this.setTitleUsingUrl(
