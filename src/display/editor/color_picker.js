@@ -34,6 +34,8 @@ class ColorPicker {
 
   #isMainColorPicker = false;
 
+  #editor = null;
+
   #eventBus;
 
   #uiManager = null;
@@ -68,6 +70,7 @@ class ColorPicker {
     if (editor) {
       this.#isMainColorPicker = false;
       this.#type = AnnotationEditorParamsType.HIGHLIGHT_COLOR;
+      this.#editor = editor;
     } else {
       this.#isMainColorPicker = true;
       this.#type = AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR;
@@ -233,7 +236,13 @@ class ColorPicker {
   }
 
   _hideDropdownFromKeyboard() {
-    if (this.#isMainColorPicker || !this.#isDropdownVisible) {
+    if (this.#isMainColorPicker) {
+      return;
+    }
+    if (!this.#isDropdownVisible) {
+      // The user pressed Escape with no dropdown visible, so we must
+      // unselect it.
+      this.#editor?.unselect();
       return;
     }
     this.hideDropdown();
