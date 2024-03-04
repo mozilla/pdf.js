@@ -214,7 +214,7 @@ class AnnotationStorage {
   }
 
   get editorStats() {
-    const stats = Object.create(null);
+    let stats = null;
     const typeToEditor = new Map();
     for (const value of this.#storage.values()) {
       if (!(value instanceof AnnotationEditor)) {
@@ -228,6 +228,7 @@ class AnnotationStorage {
       if (!typeToEditor.has(type)) {
         typeToEditor.set(type, Object.getPrototypeOf(value).constructor);
       }
+      stats ||= Object.create(null);
       const map = (stats[type] ||= new Map());
       for (const [key, val] of Object.entries(editorStats)) {
         if (key === "type") {
