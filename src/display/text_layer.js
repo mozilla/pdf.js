@@ -53,6 +53,7 @@ import { setLayerDimensions } from "./display_utils.js";
  *   This is output and shall initially be set to an empty array.
  * @property {WeakMap<HTMLElement,Object>} [textDivProperties] - Some properties
  *   weakly mapped to the HTML elements used to render the text.
+ * @property {String} [lang] - The language of the PDF document.
  * @property {boolean} [mustRotate] true if the text layer must be rotated.
  * @property {boolean} [mustRescale] true if the text layer contents must be
  *   rescaled.
@@ -64,7 +65,10 @@ const DEFAULT_FONT_ASCENT = 0.8;
 const ascentCache = new Map();
 let _canvasContext = null;
 
-function getCtx() {
+function getCtx(lang) {
+  if (_canvasContext && _canvasContext.canvas.lang !== (lang || "")) {
+    cleanupTextLayer();
+  }
   if (!_canvasContext) {
     // We don't use an OffscreenCanvas here because we use serif/sans serif
     // fonts with it and they depends on the locale.
@@ -77,6 +81,9 @@ function getCtx() {
     // OffscreenCanvas.
     const canvas = document.createElement("canvas");
     canvas.className = "hiddenCanvasElement";
+    if (lang) {
+      canvas.lang = lang;
+    }
     document.body.append(canvas);
     _canvasContext = canvas.getContext("2d", { alpha: false });
   }
@@ -89,13 +96,13 @@ function cleanupTextLayer() {
   _canvasContext = null;
 }
 
-function getAscent(fontFamily) {
+function getAscent(fontFamily, lang) {
   const cachedAscent = ascentCache.get(fontFamily);
   if (cachedAscent) {
     return cachedAscent;
   }
 
-  const ctx = getCtx();
+  const ctx = getCtx(lang);
 
   const savedFont = ctx.font;
   ctx.canvas.width = ctx.canvas.height = DEFAULT_FONT_SIZE;
@@ -184,7 +191,7 @@ function appendText(task, geom, styles) {
   const fontFamily =
     (task._fontInspectorEnabled && style.fontSubstitution) || style.fontFamily;
   const fontHeight = Math.hypot(tx[2], tx[3]);
-  const fontAscent = fontHeight * getAscent(fontFamily);
+  const fontAscent = fontHeight * getAscent(fontFamily, task.lang);
 
   let left, top;
   if (angle === 0) {
@@ -315,6 +322,7 @@ class TextLayerRenderTask {
     textDivs,
     textDivProperties,
     textContentItemsStr,
+    lang,
   }) {
     this._textContentSource = textContentSource;
     this._isReadableStream = textContentSource instanceof ReadableStream;
@@ -327,13 +335,14 @@ class TextLayerRenderTask {
     this._textDivProperties = textDivProperties || new WeakMap();
     this._canceled = false;
     this._capability = new PromiseCapability();
+    this.lang = lang;
     this._layoutTextParams = {
       prevFontSize: null,
       prevFontFamily: null,
       div: null,
       scale: viewport.scale * (globalThis.devicePixelRatio || 1),
       properties: null,
-      ctx: getCtx(),
+      ctx: getCtx(lang),
     };
     const { pageWidth, pageHeight, pageX, pageY } = viewport.rawDims;
     this._transform = [1, 0, 0, -1, -pageX, pageY + pageHeight];
@@ -479,6 +488,7 @@ function updateTextLayer({
   viewport,
   textDivs,
   textDivProperties,
+  lang,
   mustRotate = true,
   mustRescale = true,
 }) {
@@ -487,7 +497,7 @@ function updateTextLayer({
   }
 
   if (mustRescale) {
-    const ctx = getCtx();
+    const ctx = getCtx(lang);
     const scale = viewport.scale * (globalThis.devicePixelRatio || 1);
     const params = {
       prevFontSize: null,
