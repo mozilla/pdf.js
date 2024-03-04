@@ -44,7 +44,6 @@ function getViewerConfiguration() {
       mainContainer,
       container: document.getElementById("floatingToolbar"),
       download: document.getElementById("download"),
-      openInApp: document.getElementById("openInApp"),
     },
 
     passwordOverlay: {
