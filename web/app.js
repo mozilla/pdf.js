@@ -686,47 +686,6 @@ const PDFViewerApplication = {
     } else {
       throw new Error("Not implemented: run");
     }
-
-    if (
-      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
-      !("onscrollend" in document.documentElement)
-    ) {
-      return;
-    }
-
-    const { mainContainer } = appConfig;
-    // Using the values lastScrollTop and lastScrollLeft is a workaround to
-    // https://bugzilla.mozilla.org/show_bug.cgi?id=1881974.
-    // TODO: remove them once the bug is fixed.
-    ({ scrollTop: this._lastScrollTop, scrollLeft: this._lastScrollLeft } =
-      mainContainer);
-    const scroll = () => {
-      if (
-        this._lastScrollTop === mainContainer.scrollTop &&
-        this._lastScrollLeft === mainContainer.scrollLeft
-      ) {
-        return;
-      }
-      mainContainer.removeEventListener("scroll", scroll, {
-        passive: true,
-      });
-      this._isScrolling = true;
-      const scrollend = () => {
-        ({ scrollTop: this._lastScrollTop, scrollLeft: this._lastScrollLeft } =
-          mainContainer);
-        this._isScrolling = false;
-        mainContainer.addEventListener("scroll", scroll, {
-          passive: true,
-        });
-        mainContainer.removeEventListener("scrollend", scrollend);
-        mainContainer.removeEventListener("blur", scrollend);
-      };
-      mainContainer.addEventListener("scrollend", scrollend);
-      mainContainer.addEventListener("blur", scrollend);
-    };
-    mainContainer.addEventListener("scroll", scroll, {
-      passive: true,
-    });
   },
 
   get externalServices() {
@@ -1967,7 +1926,11 @@ const PDFViewerApplication = {
   },
 
   bindWindowEvents() {
-    const { eventBus, _boundEvents } = this;
+    const {
+      eventBus,
+      _boundEvents,
+      appConfig: { mainContainer },
+    } = this;
 
     function addWindowResolutionChange(evt = null) {
       if (evt) {
@@ -2034,6 +1997,46 @@ const PDFViewerApplication = {
       "updatefromsandbox",
       _boundEvents.windowUpdateFromSandbox
     );
+
+    if (
+      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
+      !("onscrollend" in document.documentElement)
+    ) {
+      return;
+    }
+
+    // Using the values lastScrollTop and lastScrollLeft is a workaround to
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1881974.
+    // TODO: remove them once the bug is fixed.
+    ({ scrollTop: this._lastScrollTop, scrollLeft: this._lastScrollLeft } =
+      mainContainer);
+    const scrollend = (_boundEvents.mainContainerScrollend = () => {
+      ({ scrollTop: this._lastScrollTop, scrollLeft: this._lastScrollLeft } =
+        mainContainer);
+      this._isScrolling = false;
+      mainContainer.addEventListener("scroll", scroll, {
+        passive: true,
+      });
+      mainContainer.removeEventListener("scrollend", scrollend);
+      mainContainer.removeEventListener("blur", scrollend);
+    });
+    const scroll = (_boundEvents.mainContainerScroll = () => {
+      if (
+        this._lastScrollTop === mainContainer.scrollTop &&
+        this._lastScrollLeft === mainContainer.scrollLeft
+      ) {
+        return;
+      }
+      mainContainer.removeEventListener("scroll", scroll, {
+        passive: true,
+      });
+      this._isScrolling = true;
+      mainContainer.addEventListener("scrollend", scrollend);
+      mainContainer.addEventListener("blur", scrollend);
+    });
+    mainContainer.addEventListener("scroll", scroll, {
+      passive: true,
+    });
   },
 
   unbindEvents() {
@@ -2096,10 +2099,10 @@ const PDFViewerApplication = {
   },
 
   unbindWindowEvents() {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      throw new Error("Not implemented: unbindWindowEvents");
-    }
-    const { _boundEvents } = this;
+    const {
+      _boundEvents,
+      appConfig: { mainContainer },
+    } = this;
 
     window.removeEventListener("visibilitychange", webViewerVisibilityChange);
     window.removeEventListener("wheel", webViewerWheel, { passive: false });
@@ -2123,6 +2126,18 @@ const PDFViewerApplication = {
       "updatefromsandbox",
       _boundEvents.windowUpdateFromSandbox
     );
+    mainContainer.removeEventListener(
+      "scroll",
+      _boundEvents.mainContainerScroll
+    );
+    mainContainer.removeEventListener(
+      "scrollend",
+      _boundEvents.mainContainerScrollend
+    );
+    mainContainer.removeEventListener(
+      "blur",
+      _boundEvents.mainContainerScrollend
+    );
 
     _boundEvents.removeWindowResolutionChange?.();
     _boundEvents.windowResize = null;
@@ -2130,6 +2145,8 @@ const PDFViewerApplication = {
     _boundEvents.windowBeforePrint = null;
     _boundEvents.windowAfterPrint = null;
     _boundEvents.windowUpdateFromSandbox = null;
+    _boundEvents.mainContainerScroll = null;
+    _boundEvents.mainContainerScrollend = null;
   },
 
   _accumulateTicks(ticks, prop) {
