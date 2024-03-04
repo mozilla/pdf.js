@@ -727,6 +727,7 @@ class HighlightEditor extends AnnotationEditor {
         highlightId: this._freeHighlightId,
         highlightOutlines: this._freeHighlight.getOutlines(),
         clipPathId: this._freeHighlightClipId,
+        methodOfCreation: "main_toolbar",
       });
     } else {
       parent.drawLayer.removeFreeHighlight(this._freeHighlightId);
