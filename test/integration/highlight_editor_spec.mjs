@@ -1366,4 +1366,36 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Editor must be unselected when the color picker is Escaped", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the highlight editor is unselected", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorHighlight");
+          await page.waitForSelector(".annotationEditorLayer.highlightEditing");
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+
+          await page.waitForSelector(getEditorSelector(0));
+          await page.focus(`${getEditorSelector(0)} button.colorPicker`);
+
+          await page.keyboard.press("Escape");
+          await page.focus(`${getEditorSelector(0)}:not(selectedEditor)`);
+        })
+      );
+    });
+  });
 });
