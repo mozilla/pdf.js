@@ -230,11 +230,44 @@ class OptionalContentConfig {
   }
 
   setVisibility(id, visible = true) {
-    if (!this.#groups.has(id)) {
+    const group = this.#groups.get(id);
+    if (!group) {
       warn(`Optional content group not found: ${id}`);
       return;
     }
-    this.#groups.get(id)._setVisible(INTERNAL, !!visible, /* userSet = */ true);
+    group._setVisible(INTERNAL, !!visible, /* userSet = */ true);
+
+    this.#cachedGetHash = null;
+  }
+
+  setOCGState({ state, preserveRB }) {
+    let operator;
+
+    for (const elem of state) {
+      switch (elem) {
+        case "ON":
+        case "OFF":
+        case "Toggle":
+          operator = elem;
+          continue;
+      }
+
+      const group = this.#groups.get(elem);
+      if (!group) {
+        continue;
+      }
+      switch (operator) {
+        case "ON":
+          group._setVisible(INTERNAL, true);
+          break;
+        case "OFF":
+          group._setVisible(INTERNAL, false);
+          break;
+        case "Toggle":
+          group._setVisible(INTERNAL, !group.visible);
+          break;
+      }
+    }
 
     this.#cachedGetHash = null;
   }
