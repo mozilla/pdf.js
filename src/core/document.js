@@ -30,7 +30,11 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
-import { AnnotationFactory, PopupAnnotation } from "./annotation.js";
+import {
+  AnnotationFactory,
+  PopupAnnotation,
+  WidgetAnnotation,
+} from "./annotation.js";
 import {
   collectActions,
   getInheritableProperty,
@@ -766,11 +770,15 @@ class Page {
         }
 
         const sortedAnnotations = [];
-        let popupAnnotations;
+        let popupAnnotations, widgetAnnotations;
         // Ensure that PopupAnnotations are handled last, since they depend on
         // their parent Annotation in the display layer; fixes issue 11362.
         for (const annotation of await Promise.all(annotationPromises)) {
           if (!annotation) {
+            continue;
+          }
+          if (annotation instanceof WidgetAnnotation) {
+            (widgetAnnotations ||= []).push(annotation);
             continue;
           }
           if (annotation instanceof PopupAnnotation) {
@@ -778,6 +786,9 @@ class Page {
             continue;
           }
           sortedAnnotations.push(annotation);
+        }
+        if (widgetAnnotations) {
+          sortedAnnotations.push(...widgetAnnotations);
         }
         if (popupAnnotations) {
           sortedAnnotations.push(...popupAnnotations);

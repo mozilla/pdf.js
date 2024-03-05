@@ -58,6 +58,35 @@ describe("Annotation highlight", () => {
       );
     });
   });
+
+  describe("Check that widget annotations are in front of highlight ones", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("bug1883609.pdf", "[data-annotation-id='23R']");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must click on widget annotations", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          for (const i of [23, 22, 14]) {
+            await page.click(`[data-annotation-id='${i}R']`);
+            await page.waitForFunction(
+              id =>
+                document.activeElement ===
+                document.querySelector(`#pdfjs_internal_id_${id}R`),
+              {},
+              i
+            );
+          }
+        })
+      );
+    });
+  });
 });
 
 describe("Checkbox annotation", () => {
