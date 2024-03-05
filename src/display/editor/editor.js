@@ -513,6 +513,14 @@ class AnnotationEditor {
   }
 
   /**
+   * @returns {boolean} true if position must be fixed (i.e. make the x and y
+   * living in the page).
+   */
+  get _mustFixPosition() {
+    return true;
+  }
+
+  /**
    * Fix the position of the editor in order to keep it inside its parent page.
    * @param {number} [rotation] - the rotation of the page.
    */
@@ -524,23 +532,25 @@ class AnnotationEditor {
     x *= pageWidth;
     y *= pageHeight;
 
-    switch (rotation) {
-      case 0:
-        x = Math.max(0, Math.min(pageWidth - width, x));
-        y = Math.max(0, Math.min(pageHeight - height, y));
-        break;
-      case 90:
-        x = Math.max(0, Math.min(pageWidth - height, x));
-        y = Math.min(pageHeight, Math.max(width, y));
-        break;
-      case 180:
-        x = Math.min(pageWidth, Math.max(width, x));
-        y = Math.min(pageHeight, Math.max(height, y));
-        break;
-      case 270:
-        x = Math.min(pageWidth, Math.max(height, x));
-        y = Math.max(0, Math.min(pageHeight - width, y));
-        break;
+    if (this._mustFixPosition) {
+      switch (rotation) {
+        case 0:
+          x = Math.max(0, Math.min(pageWidth - width, x));
+          y = Math.max(0, Math.min(pageHeight - height, y));
+          break;
+        case 90:
+          x = Math.max(0, Math.min(pageWidth - height, x));
+          y = Math.min(pageHeight, Math.max(width, y));
+          break;
+        case 180:
+          x = Math.min(pageWidth, Math.max(width, x));
+          y = Math.min(pageHeight, Math.max(height, y));
+          break;
+        case 270:
+          x = Math.min(pageWidth, Math.max(height, x));
+          y = Math.max(0, Math.min(pageHeight - width, y));
+          break;
+      }
     }
 
     this.x = x /= pageWidth;

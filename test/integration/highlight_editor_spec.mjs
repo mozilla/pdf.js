@@ -1398,4 +1398,47 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Highlight editor mustn't be moved when close to the page limits", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check the editor coordinates", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorHighlight");
+          await page.waitForSelector(".annotationEditorLayer.highlightEditing");
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          const clickHandle = await waitForPointerUp(page);
+          await page.mouse.move(rect.x + 1, rect.y + 50);
+          await page.mouse.down();
+          await page.mouse.move(rect.x + 1, rect.y + 100);
+          await page.mouse.up();
+          await awaitPromise(clickHandle);
+
+          await page.waitForSelector(getEditorSelector(0));
+          const editorX = await page.$eval(
+            getEditorSelector(0),
+            el => el.getBoundingClientRect().x
+          );
+
+          expect(editorX < rect.x)
+            .withContext(`In ${browserName}`)
+            .toBeTrue();
+        })
+      );
+    });
+  });
 });
