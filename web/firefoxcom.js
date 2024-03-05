@@ -390,7 +390,7 @@ class ExternalServices extends BaseExternalServices {
   }
 
   reportTelemetry(data) {
-    FirefoxCom.request("reportTelemetry", JSON.stringify(data));
+    FirefoxCom.request("reportTelemetry", data);
   }
 
   updateEditorStates(data) {
