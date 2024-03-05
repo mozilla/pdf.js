@@ -629,6 +629,11 @@ class HighlightEditor extends AnnotationEditor {
     }
   }
 
+  /** @inheritdoc */
+  get _mustFixPosition() {
+    return !this.#isFreeHighlight;
+  }
+
   #getRotation() {
     // Highlight annotations are always drawn horizontally but if
     // a free highlight annotation can be rotated.
