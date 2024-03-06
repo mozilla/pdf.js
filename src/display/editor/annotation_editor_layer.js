@@ -362,6 +362,11 @@ class AnnotationEditorLayer {
         // Do nothing on right click.
         return;
       }
+      this.#uiManager.showAllEditors(
+        "highlight",
+        true,
+        /* updateButton = */ true
+      );
       this.#textLayer.div.classList.add("free");
       HighlightEditor.startHighlighting(
         this,
