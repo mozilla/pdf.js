@@ -33,6 +33,7 @@ class AnnotationEditorParams {
     editorInkOpacity,
     editorStampAddImage,
     editorFreeHighlightThickness,
+    editorHighlightShowAll,
   }) {
     const dispatchEvent = (typeStr, value) => {
       this.eventBus.dispatch("switchannotationeditorparams", {
@@ -62,6 +63,11 @@ class AnnotationEditorParams {
     editorFreeHighlightThickness.addEventListener("input", function () {
       dispatchEvent("HIGHLIGHT_THICKNESS", this.valueAsNumber);
     });
+    editorHighlightShowAll.addEventListener("click", function () {
+      const checked = this.getAttribute("aria-pressed") === "true";
+      this.setAttribute("aria-pressed", !checked);
+      dispatchEvent("HIGHLIGHT_SHOW_ALL", !checked);
+    });
 
     this.eventBus._on("annotationeditorparamschanged", evt => {
       for (const [type, value] of evt.details) {
@@ -86,6 +92,9 @@ class AnnotationEditorParams {
             break;
           case AnnotationEditorParamsType.HIGHLIGHT_FREE:
             editorFreeHighlightThickness.disabled = !value;
+            break;
+          case AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL:
+            editorHighlightShowAll.setAttribute("aria-pressed", value);
             break;
         }
       }

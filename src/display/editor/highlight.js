@@ -453,6 +453,7 @@ class HighlightEditor extends AnnotationEditor {
         !this.parent && this.div?.classList.contains("selectedEditor");
     }
     super.setParent(parent);
+    this.show(this._isVisible);
     if (mustBeSelected) {
       // We select it after the parent has been set.
       this.select();
@@ -632,6 +633,14 @@ class HighlightEditor extends AnnotationEditor {
   /** @inheritdoc */
   get _mustFixPosition() {
     return !this.#isFreeHighlight;
+  }
+
+  show(visible) {
+    super.show(visible);
+    if (this.parent) {
+      this.parent.drawLayer.show(this.#id, visible);
+      this.parent.drawLayer.show(this.#outlineId, visible);
+    }
   }
 
   #getRotation() {
