@@ -200,6 +200,10 @@ class DrawLayer {
     DrawLayer.#setBox(this.#mapping.get(id), box);
   }
 
+  show(id, visible) {
+    this.#mapping.get(id).classList.toggle("hidden", !visible);
+  }
+
   rotate(id, angle) {
     this.#mapping.get(id).setAttribute("data-main-rotation", angle);
   }

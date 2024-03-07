@@ -14,6 +14,7 @@
  */
 
 @import url(draw_layer_builder.css);
+@import url(toggle_button.css);
 
 :root {
   --outline-width: 2px;
@@ -1210,5 +1211,12 @@
         height: 14px;
       }
     }
+  }
+
+  #editorHighlightVisibility {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    align-self: stretch;
   }
 }

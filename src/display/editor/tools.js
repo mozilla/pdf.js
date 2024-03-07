@@ -583,6 +583,8 @@ class AnnotationEditorUIManager {
 
   #pageColors = null;
 
+  #showAllStates = null;
+
   #boundBlur = this.blur.bind(this);
 
   #boundFocus = this.focus.bind(this);
@@ -1029,6 +1031,9 @@ class AnnotationEditorUIManager {
     if (this.#mode !== AnnotationEditorType.HIGHLIGHT) {
       return;
     }
+
+    this.showAllEditors("highlight", true, /* updateButton = */ true);
+
     this.#highlightWhenShiftUp = this.isShiftKeyDown;
     if (!this.isShiftKeyDown) {
       const pointerup = e => {
@@ -1477,6 +1482,20 @@ class AnnotationEditorUIManager {
       case AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR:
         this.#mainHighlightColorPicker?.updateColor(value);
         break;
+      case AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL:
+        this._eventBus.dispatch("reporttelemetry", {
+          source: this,
+          details: {
+            type: "editing",
+            data: {
+              type: "highlight",
+              action: "toggle_visibility",
+            },
+          },
+        });
+        (this.#showAllStates ||= new Map()).set(type, value);
+        this.showAllEditors("highlight", value);
+        break;
     }
 
     for (const editor of this.#selectedEditors) {
@@ -1485,6 +1504,22 @@ class AnnotationEditorUIManager {
 
     for (const editorType of this.#editorTypes) {
       editorType.updateDefaultParams(type, value);
+    }
+  }
+
+  showAllEditors(type, visible, updateButton = false) {
+    for (const editor of this.#allEditors.values()) {
+      if (editor.editorType === type) {
+        editor.show(visible);
+      }
+    }
+    const state =
+      this.#showAllStates?.get(AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL) ??
+      true;
+    if (state !== visible) {
+      this.#dispatchUpdateUI([
+        [AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL, visible],
+      ]);
     }
   }
 
