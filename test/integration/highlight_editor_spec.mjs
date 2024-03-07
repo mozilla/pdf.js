@@ -1441,4 +1441,73 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Show/hide all the highlights", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the highlights are correctly hidden/shown", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorHighlight");
+          await page.waitForSelector(".annotationEditorLayer.highlightEditing");
+
+          let rect = await page.$eval(".annotationEditorLayer", el => {
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+          const clickHandle = await waitForPointerUp(page);
+          await page.mouse.move(rect.x + 20, rect.y + 20);
+          await page.mouse.down();
+          await page.mouse.move(rect.x + 20, rect.y + 120);
+          await page.mouse.up();
+          await awaitPromise(clickHandle);
+          await page.waitForSelector(getEditorSelector(0));
+
+          rect = await getSpanRectFromText(page, 1, "Languages");
+          await page.mouse.click(
+            rect.x + rect.width / 2,
+            rect.y + rect.height / 2,
+            { count: 2, delay: 100 }
+          );
+          await page.waitForSelector(getEditorSelector(1));
+
+          await page.click("#editorHighlightShowAll");
+          await page.waitForSelector(`${getEditorSelector(0)}.hidden`);
+          await page.waitForSelector(`${getEditorSelector(1)}.hidden`);
+
+          await page.click("#editorHighlightShowAll");
+          await page.waitForSelector(`${getEditorSelector(0)}:not(.hidden)`);
+          await page.waitForSelector(`${getEditorSelector(1)}:not(.hidden)`);
+
+          await page.click("#editorHighlightShowAll");
+          await page.waitForSelector(`${getEditorSelector(0)}.hidden`);
+          await page.waitForSelector(`${getEditorSelector(1)}.hidden`);
+
+          const oneToOne = Array.from(new Array(13).keys(), n => n + 2).concat(
+            Array.from(new Array(13).keys(), n => 13 - n)
+          );
+          for (const pageNumber of oneToOne) {
+            await scrollIntoView(
+              page,
+              `.page[data-page-number = "${pageNumber}"]`
+            );
+            if (pageNumber === 14) {
+              await page.click("#editorHighlightShowAll");
+            }
+          }
+
+          await page.waitForSelector(`${getEditorSelector(0)}:not(.hidden)`);
+          await page.waitForSelector(`${getEditorSelector(1)}:not(.hidden)`);
+        })
+      );
+    });
+  });
 });
