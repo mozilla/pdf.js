@@ -265,6 +265,8 @@ class StampEditor extends AnnotationEditor {
     super.render();
     this.div.hidden = true;
 
+    this.addAltTextButton();
+
     if (this.#bitmap) {
       this.#createCanvas();
     } else {
@@ -329,7 +331,6 @@ class StampEditor extends AnnotationEditor {
     this._reportTelemetry({
       action: "inserted_image",
     });
-    this.addAltTextButton();
     if (this.#bitmapFileName) {
       canvas.setAttribute("aria-label", this.#bitmapFileName);
     }
