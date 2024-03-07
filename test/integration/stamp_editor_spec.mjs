@@ -21,6 +21,7 @@ import {
   getFirstSerialized,
   kbBigMoveDown,
   kbBigMoveRight,
+  kbCopy,
   kbPaste,
   kbSelectAll,
   loadAndWait,
@@ -568,6 +569,40 @@ describe("Stamp Editor", () => {
           );
         })
       );
+    });
+  });
+
+  describe("Copy/paste from a tab to an other", () => {
+    let pages1, pages2;
+
+    beforeAll(async () => {
+      pages1 = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+      pages2 = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages1);
+      await closePages(pages2);
+    });
+
+    it("must check that the alt-text button is here when pasting in the second tab", async () => {
+      for (let i = 0; i < pages1.length; i++) {
+        const [, page1] = pages1[i];
+        page1.bringToFront();
+        await page1.click("#editorStamp");
+
+        await copyImage(page1, "../images/firefox_logo.png", 0);
+        await kbCopy(page1);
+
+        const [, page2] = pages2[i];
+        page2.bringToFront();
+        await page2.click("#editorStamp");
+
+        await kbPaste(page2);
+
+        await waitForImage(page2, getEditorSelector(0));
+        await page2.waitForSelector(`${getEditorSelector(0)} .altText`);
+      }
     });
   });
 });
