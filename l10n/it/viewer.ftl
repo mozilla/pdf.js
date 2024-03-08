@@ -321,8 +321,6 @@ pdfjs-editor-remove-highlight-button =
 
 ##
 
-pdfjs-editor-remove-button =
-    .title = Rimuovi
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Colore
 pdfjs-editor-free-text-size-input = Dimensione
