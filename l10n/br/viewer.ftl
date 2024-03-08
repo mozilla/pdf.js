@@ -274,6 +274,9 @@ pdfjs-editor-free-text-button-label = Testenn
 pdfjs-editor-ink-button =
     .title = Tresañ
 pdfjs-editor-ink-button-label = Tresañ
+pdfjs-editor-stamp-button =
+    .title = Ouzhpennañ pe aozañ skeudennoù
+pdfjs-editor-stamp-button-label = Ouzhpennañ pe aozañ skeudennoù
 
 ## Remove button for the various kind of editor.
 
@@ -289,9 +292,16 @@ pdfjs-editor-ink-opacity-input = Boullder
 pdfjs-editor-stamp-add-image-button =
     .title = Ouzhpennañ ur skeudenn
 pdfjs-editor-stamp-add-image-button-label = Ouzhpennañ ur skeudenn
+pdfjs-free-text =
+    .aria-label = Aozer testennoù
+pdfjs-ink =
+    .aria-label = Aozer tresoù
+pdfjs-ink-canvas =
+    .aria-label = Skeudenn bet krouet gant an implijer·ez
 
 ## Alt-text dialog
 
+pdfjs-editor-alt-text-add-description-label = Ouzhpennañ un deskrivadur
 pdfjs-editor-alt-text-cancel-button = Nullañ
 pdfjs-editor-alt-text-save-button = Enrollañ
 
