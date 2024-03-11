@@ -952,6 +952,7 @@ class AnnotationEditorUIManager {
       return;
     }
     const { anchorNode, anchorOffset, focusNode, focusOffset } = selection;
+    const text = selection.toString();
     const anchorElement =
       anchorNode.nodeType === Node.TEXT_NODE
         ? anchorNode.parentElement
@@ -974,6 +975,7 @@ class AnnotationEditorUIManager {
           anchorOffset,
           focusNode,
           focusOffset,
+          text,
         });
         break;
       }

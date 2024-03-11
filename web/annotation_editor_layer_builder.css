@@ -48,6 +48,19 @@
     pointer;
 }
 
+/* The following class is used to hide an element but keep it available to
+ * for screen readers. */
+.visuallyHidden {
+  position: absolute;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
 .textLayer.highlighting {
   cursor: var(--editorFreeHighlight-editing-cursor);
 
