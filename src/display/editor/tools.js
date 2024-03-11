@@ -1596,6 +1596,9 @@ class AnnotationEditorUIManager {
       for (const layer of this.#allLayers.values()) {
         layer.enable();
       }
+      for (const editor of this.#allEditors.values()) {
+        editor.enable();
+      }
     }
   }
 
@@ -1608,6 +1611,9 @@ class AnnotationEditorUIManager {
       this.#isEnabled = false;
       for (const layer of this.#allLayers.values()) {
         layer.disable();
+      }
+      for (const editor of this.#allEditors.values()) {
+        editor.disable();
       }
     }
   }

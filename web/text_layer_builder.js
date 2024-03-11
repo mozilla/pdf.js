@@ -28,6 +28,7 @@ import { removeNullCharacters } from "./ui_utils.js";
  * @property {TextHighlighter} highlighter - Optional object that will handle
  *   highlighting text from the find controller.
  * @property {TextAccessibilityManager} [accessibilityManager]
+ * @property {function} [onAppend]
  */
 
 /**
@@ -37,6 +38,8 @@ import { removeNullCharacters } from "./ui_utils.js";
  */
 class TextLayerBuilder {
   #enablePermissions = false;
+
+  #onAppend = null;
 
   #rotation = 0;
 
@@ -48,6 +51,7 @@ class TextLayerBuilder {
     highlighter = null,
     accessibilityManager = null,
     enablePermissions = false,
+    onAppend = null,
   }) {
     this.textContentItemsStr = [];
     this.renderingDone = false;
@@ -57,14 +61,10 @@ class TextLayerBuilder {
     this.highlighter = highlighter;
     this.accessibilityManager = accessibilityManager;
     this.#enablePermissions = enablePermissions === true;
-
-    /**
-     * Callback used to attach the textLayer to the DOM.
-     * @type {function}
-     */
-    this.onAppend = null;
+    this.#onAppend = onAppend;
 
     this.div = document.createElement("div");
+    this.div.tabIndex = 0;
     this.div.className = "textLayer";
   }
 
@@ -132,7 +132,7 @@ class TextLayerBuilder {
     this.#rotation = rotation;
     // Ensure that the textLayer is appended to the DOM *before* handling
     // e.g. a pending search operation.
-    this.onAppend(this.div);
+    this.#onAppend?.(this.div);
     this.highlighter?.enable();
     this.accessibilityManager?.enable();
   }
