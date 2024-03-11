@@ -31,6 +31,7 @@ class EditorToolbar {
   render() {
     const editToolbar = (this.#toolbar = document.createElement("div"));
     editToolbar.className = "editToolbar";
+    editToolbar.setAttribute("role", "toolbar");
     editToolbar.addEventListener("contextmenu", noContextMenu);
     editToolbar.addEventListener("pointerdown", EditorToolbar.#pointerDown);
 
