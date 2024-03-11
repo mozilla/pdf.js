@@ -93,6 +93,7 @@ class ColorPicker {
     button.addEventListener("keydown", this.#boundKeyDown);
     const swatch = (this.#buttonSwatch = document.createElement("span"));
     swatch.className = "swatch";
+    swatch.setAttribute("aria-hidden", true);
     swatch.style.backgroundColor = this.#defaultColor;
     button.append(swatch);
     return button;
