@@ -30,19 +30,21 @@ import { GenericL10n } from "web-null_l10n";
 /**
  * @typedef {Object} AnnotationEditorLayerBuilderOptions
  * @property {AnnotationEditorUIManager} [uiManager]
- * @property {HTMLDivElement} pageDiv
  * @property {PDFPageProxy} pdfPage
  * @property {IL10n} [l10n]
  * @property {TextAccessibilityManager} [accessibilityManager]
  * @property {AnnotationLayer} [annotationLayer]
  * @property {TextLayer} [textLayer]
  * @property {DrawLayer} [drawLayer]
+ * @property {function} [onAppend]
  */
 
 class AnnotationEditorLayerBuilder {
   #annotationLayer = null;
 
   #drawLayer = null;
+
+  #onAppend = null;
 
   #textLayer = null;
 
@@ -52,7 +54,6 @@ class AnnotationEditorLayerBuilder {
    * @param {AnnotationEditorLayerBuilderOptions} options
    */
   constructor(options) {
-    this.pageDiv = options.pageDiv;
     this.pdfPage = options.pdfPage;
     this.accessibilityManager = options.accessibilityManager;
     this.l10n = options.l10n;
@@ -66,6 +67,7 @@ class AnnotationEditorLayerBuilder {
     this.#annotationLayer = options.annotationLayer || null;
     this.#textLayer = options.textLayer || null;
     this.#drawLayer = options.drawLayer || null;
+    this.#onAppend = options.onAppend || null;
   }
 
   /**
@@ -91,10 +93,9 @@ class AnnotationEditorLayerBuilder {
     // Create an AnnotationEditor layer div
     const div = (this.div = document.createElement("div"));
     div.className = "annotationEditorLayer";
-    div.tabIndex = 0;
     div.hidden = true;
     div.dir = this.#uiManager.direction;
-    this.pageDiv.append(div);
+    this.#onAppend?.(div);
 
     this.annotationEditorLayer = new AnnotationEditorLayer({
       uiManager: this.#uiManager,
@@ -125,7 +126,6 @@ class AnnotationEditorLayerBuilder {
     if (!this.div) {
       return;
     }
-    this.pageDiv = null;
     this.annotationEditorLayer.destroy();
     this.div.remove();
   }

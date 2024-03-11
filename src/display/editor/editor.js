@@ -44,6 +44,8 @@ class AnnotationEditor {
 
   #altText = null;
 
+  #disabled = false;
+
   #keepAspectRatio = false;
 
   #resizersDiv = null;
@@ -1002,7 +1004,7 @@ class AnnotationEditor {
     this.div.setAttribute("data-editor-rotation", (360 - this.rotation) % 360);
     this.div.className = this.name;
     this.div.setAttribute("id", this.id);
-    this.div.setAttribute("tabIndex", 0);
+    this.div.tabIndex = this.#disabled ? -1 : 0;
     if (!this._isVisible) {
       this.div.classList.add("hidden");
     }
@@ -1679,6 +1681,20 @@ class AnnotationEditor {
   show(visible) {
     this.div.classList.toggle("hidden", !visible);
     this._isVisible = visible;
+  }
+
+  enable() {
+    if (this.div) {
+      this.div.tabIndex = 0;
+    }
+    this.#disabled = false;
+  }
+
+  disable() {
+    if (this.div) {
+      this.div.tabIndex = -1;
+    }
+    this.#disabled = true;
   }
 }
 

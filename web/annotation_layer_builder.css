@@ -76,7 +76,6 @@
   left: 0;
   pointer-events: none;
   transform-origin: 0 0;
-  z-index: 3;
 
   &[data-main-rotation="90"] .norotate {
     transform: rotate(270deg) translateX(-100%);

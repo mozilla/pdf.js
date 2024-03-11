@@ -99,6 +99,14 @@ const DEFAULT_LAYER_PROPERTIES =
         },
       };
 
+const LAYERS_ORDER = new Map([
+  ["canvasWrapper", 0],
+  ["textLayer", 1],
+  ["annotationLayer", 2],
+  ["annotationEditorLayer", 3],
+  ["xfaLayer", 2],
+]);
+
 /**
  * @implements {IRenderableView}
  */
@@ -126,6 +134,8 @@ class PDFPageView {
   };
 
   #viewportMap = new WeakMap();
+
+  #layers = [null, null, null, null];
 
   /**
    * @param {PDFPageViewOptions} options
@@ -221,6 +231,19 @@ class PDFPageView {
         this.l10n.translate(this.div);
       }
     }
+  }
+
+  #addLayer(div, name) {
+    const pos = LAYERS_ORDER.get(name);
+    this.#layers[pos] = div;
+    for (let i = pos - 1; i >= 0; i--) {
+      const layer = this.#layers[i];
+      if (layer) {
+        layer.after(div);
+        return;
+      }
+    }
+    this.div.prepend(div);
   }
 
   get renderingState() {
@@ -392,7 +415,7 @@ class PDFPageView {
       if (this.xfaLayer?.div) {
         // Pause translation when inserting the xfaLayer in the DOM.
         this.l10n.pause();
-        this.div.append(this.xfaLayer.div);
+        this.#addLayer(this.xfaLayer.div, "xfaLayer");
         this.l10n.resume();
       }
 
@@ -531,6 +554,10 @@ class PDFPageView {
           continue;
       }
       node.remove();
+      const layerIndex = this.#layers.indexOf(node);
+      if (layerIndex >= 0) {
+        this.#layers[layerIndex] = null;
+      }
     }
     div.removeAttribute("data-loaded");
 
@@ -877,7 +904,8 @@ class PDFPageView {
     // overflow will be hidden in Firefox.
     const canvasWrapper = document.createElement("div");
     canvasWrapper.classList.add("canvasWrapper");
-    div.append(canvasWrapper);
+    canvasWrapper.setAttribute("aria-hidden", true);
+    this.#addLayer(canvasWrapper, "canvasWrapper");
 
     if (
       !this.textLayer &&
@@ -891,13 +919,13 @@ class PDFPageView {
         accessibilityManager: this._accessibilityManager,
         enablePermissions:
           this.#textLayerMode === TextLayerMode.ENABLE_PERMISSIONS,
+        onAppend: textLayerDiv => {
+          // Pause translation when inserting the textLayer in the DOM.
+          this.l10n.pause();
+          this.#addLayer(textLayerDiv, "textLayer");
+          this.l10n.resume();
+        },
       });
-      this.textLayer.onAppend = textLayerDiv => {
-        // Pause translation when inserting the textLayer in the DOM.
-        this.l10n.pause();
-        this.div.append(textLayerDiv);
-        this.l10n.resume();
-      };
     }
 
     if (
@@ -915,7 +943,6 @@ class PDFPageView {
 
       this._annotationCanvasMap ||= new Map();
       this.annotationLayer = new AnnotationLayerBuilder({
-        pageDiv: div,
         pdfPage,
         annotationStorage,
         imageResourcesPath: this.imageResourcesPath,
@@ -927,6 +954,9 @@ class PDFPageView {
         fieldObjectsPromise,
         annotationCanvasMap: this._annotationCanvasMap,
         accessibilityManager: this._accessibilityManager,
+        onAppend: annotationLayerDiv => {
+          this.#addLayer(annotationLayerDiv, "annotationLayer");
+        },
       });
     }
 
@@ -1042,13 +1072,15 @@ class PDFPageView {
         if (!this.annotationEditorLayer) {
           this.annotationEditorLayer = new AnnotationEditorLayerBuilder({
             uiManager: annotationEditorUIManager,
-            pageDiv: div,
             pdfPage,
             l10n,
             accessibilityManager: this._accessibilityManager,
             annotationLayer: this.annotationLayer?.annotationLayer,
             textLayer: this.textLayer,
             drawLayer: this.drawLayer.getDrawLayer(),
+            onAppend: annotationEditorLayerDiv => {
+              this.#addLayer(annotationEditorLayerDiv, "annotationEditorLayer");
+            },
           });
         }
         this.#renderAnnotationEditorLayer();
