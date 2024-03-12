@@ -863,11 +863,17 @@ async function parseDefaultPreferences(dir) {
     "./" + DEFAULT_PREFERENCES_DIR + dir + "app_options.mjs"
   );
 
-  const browserPrefs = AppOptions.getAll(OptionKind.BROWSER);
+  const browserPrefs = AppOptions.getAll(
+    OptionKind.BROWSER,
+    /* defaultOnly = */ true
+  );
   if (Object.keys(browserPrefs).length === 0) {
     throw new Error("No browser preferences found.");
   }
-  const prefs = AppOptions.getAll(OptionKind.PREFERENCE);
+  const prefs = AppOptions.getAll(
+    OptionKind.PREFERENCE,
+    /* defaultOnly = */ true
+  );
   if (Object.keys(prefs).length === 0) {
     throw new Error("No default preferences found.");
   }
