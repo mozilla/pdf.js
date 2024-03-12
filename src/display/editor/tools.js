@@ -33,6 +33,7 @@ import {
   getRGB,
   PixelsPerInch,
 } from "../display_utils.js";
+import { HighlightToolbar } from "./toolbar.js";
 
 function bindEvents(obj, element, names) {
   for (const name of names) {
@@ -555,6 +556,8 @@ class AnnotationEditorUIManager {
 
   #editorsToRescale = new Set();
 
+  #enableHighlightFloatingButton = false;
+
   #filterFactory = null;
 
   #focusMainContainerTimeoutId = null;
@@ -562,6 +565,8 @@ class AnnotationEditorUIManager {
   #highlightColors = null;
 
   #highlightWhenShiftUp = false;
+
+  #highlightToolbar = null;
 
   #idManager = new IdManager();
 
@@ -771,6 +776,7 @@ class AnnotationEditorUIManager {
     pdfDocument,
     pageColors,
     highlightColors,
+    enableHighlightFloatingButton,
     mlManager
   ) {
     this.#container = container;
@@ -782,10 +788,12 @@ class AnnotationEditorUIManager {
     this._eventBus._on("scalechanging", this.#boundOnScaleChanging);
     this._eventBus._on("rotationchanging", this.#boundOnRotationChanging);
     this.#addSelectionListener();
+    this.#addKeyboardManager();
     this.#annotationStorage = pdfDocument.annotationStorage;
     this.#filterFactory = pdfDocument.filterFactory;
     this.#pageColors = pageColors;
     this.#highlightColors = highlightColors || null;
+    this.#enableHighlightFloatingButton = enableHighlightFloatingButton;
     this.#mlManager = mlManager || null;
     this.viewParameters = {
       realScale: PixelsPerInch.PDF_TO_CSS_UNITS,
@@ -821,6 +829,8 @@ class AnnotationEditorUIManager {
     this.#selectedEditors.clear();
     this.#commandManager.destroy();
     this.#altTextManager?.destroy();
+    this.#highlightToolbar?.hide();
+    this.#highlightToolbar = null;
     if (this.#focusMainContainerTimeoutId) {
       clearTimeout(this.#focusMainContainerTimeoutId);
       this.#focusMainContainerTimeoutId = null;
@@ -946,6 +956,12 @@ class AnnotationEditorUIManager {
     this.viewParameters.rotation = pagesRotation;
   }
 
+  #getAnchorElementForSelection({ anchorNode }) {
+    return anchorNode.nodeType === Node.TEXT_NODE
+      ? anchorNode.parentElement
+      : anchorNode;
+  }
+
   highlightSelection(methodOfCreation = "") {
     const selection = document.getSelection();
     if (!selection || selection.isCollapsed) {
@@ -953,18 +969,19 @@ class AnnotationEditorUIManager {
     }
     const { anchorNode, anchorOffset, focusNode, focusOffset } = selection;
     const text = selection.toString();
-    const anchorElement =
-      anchorNode.nodeType === Node.TEXT_NODE
-        ? anchorNode.parentElement
-        : anchorNode;
+    const anchorElement = this.#getAnchorElementForSelection(selection);
     const textLayer = anchorElement.closest(".textLayer");
     const boxes = this.getSelectionBoxes(textLayer);
+    if (!boxes) {
+      return;
+    }
     selection.empty();
     if (this.#mode === AnnotationEditorType.NONE) {
       this._eventBus.dispatch("showannotationeditorui", {
         source: this,
         mode: AnnotationEditorType.HIGHLIGHT,
       });
+      this.showAllEditors("highlight", true, /* updateButton = */ true);
     }
     for (const layer of this.#allLayers.values()) {
       if (layer.hasTextLayer(textLayer)) {
@@ -980,6 +997,21 @@ class AnnotationEditorUIManager {
         break;
       }
     }
+  }
+
+  #displayHighlightToolbar() {
+    const selection = document.getSelection();
+    if (!selection || selection.isCollapsed) {
+      return;
+    }
+    const anchorElement = this.#getAnchorElementForSelection(selection);
+    const textLayer = anchorElement.closest(".textLayer");
+    const boxes = this.getSelectionBoxes(textLayer);
+    if (!boxes) {
+      return;
+    }
+    this.#highlightToolbar ||= new HighlightToolbar(this);
+    this.#highlightToolbar.show(textLayer, boxes, this.direction === "ltr");
   }
 
   /**
@@ -1000,6 +1032,7 @@ class AnnotationEditorUIManager {
     const selection = document.getSelection();
     if (!selection || selection.isCollapsed) {
       if (this.#selectedTextNode) {
+        this.#highlightToolbar?.hide();
         this.#selectedTextNode = null;
         this.#dispatchUpdateStates({
           hasSelectedText: false,
@@ -1012,12 +1045,11 @@ class AnnotationEditorUIManager {
       return;
     }
 
-    const anchorElement =
-      anchorNode.nodeType === Node.TEXT_NODE
-        ? anchorNode.parentElement
-        : anchorNode;
-    if (!anchorElement.closest(".textLayer")) {
+    const anchorElement = this.#getAnchorElementForSelection(selection);
+    const textLayer = anchorElement.closest(".textLayer");
+    if (!textLayer) {
       if (this.#selectedTextNode) {
+        this.#highlightToolbar?.hide();
         this.#selectedTextNode = null;
         this.#dispatchUpdateStates({
           hasSelectedText: false,
@@ -1025,16 +1057,22 @@ class AnnotationEditorUIManager {
       }
       return;
     }
+    this.#highlightToolbar?.hide();
     this.#selectedTextNode = anchorNode;
     this.#dispatchUpdateStates({
       hasSelectedText: true,
     });
 
-    if (this.#mode !== AnnotationEditorType.HIGHLIGHT) {
+    if (
+      this.#mode !== AnnotationEditorType.HIGHLIGHT &&
+      this.#mode !== AnnotationEditorType.NONE
+    ) {
       return;
     }
 
-    this.showAllEditors("highlight", true, /* updateButton = */ true);
+    if (this.#mode === AnnotationEditorType.HIGHLIGHT) {
+      this.showAllEditors("highlight", true, /* updateButton = */ true);
+    }
 
     this.#highlightWhenShiftUp = this.isShiftKeyDown;
     if (!this.isShiftKeyDown) {
@@ -1046,11 +1084,19 @@ class AnnotationEditorUIManager {
         window.removeEventListener("pointerup", pointerup);
         window.removeEventListener("blur", pointerup);
         if (e.type === "pointerup") {
-          this.highlightSelection("main_toolbar");
+          this.#onSelectEnd("main_toolbar");
         }
       };
       window.addEventListener("pointerup", pointerup);
       window.addEventListener("blur", pointerup);
+    }
+  }
+
+  #onSelectEnd(methodOfCreation = "") {
+    if (this.#mode === AnnotationEditorType.HIGHLIGHT) {
+      this.highlightSelection(methodOfCreation);
+    } else if (this.#enableHighlightFloatingButton) {
+      this.#displayHighlightToolbar();
     }
   }
 
@@ -1076,7 +1122,7 @@ class AnnotationEditorUIManager {
     this.isShiftKeyDown = false;
     if (this.#highlightWhenShiftUp) {
       this.#highlightWhenShiftUp = false;
-      this.highlightSelection("main_toolbar");
+      this.#onSelectEnd("main_toolbar");
     }
     if (!this.hasSelection) {
       return;
@@ -1252,7 +1298,10 @@ class AnnotationEditorUIManager {
     if (!this.isShiftKeyDown && event.key === "Shift") {
       this.isShiftKeyDown = true;
     }
-    if (!this.isEditorHandlingKeyboard) {
+    if (
+      this.#mode !== AnnotationEditorType.NONE &&
+      !this.isEditorHandlingKeyboard
+    ) {
       AnnotationEditorUIManager._keyboardManager.exec(this, event);
     }
   }
@@ -1266,7 +1315,7 @@ class AnnotationEditorUIManager {
       this.isShiftKeyDown = false;
       if (this.#highlightWhenShiftUp) {
         this.#highlightWhenShiftUp = false;
-        this.highlightSelection("main_toolbar");
+        this.#onSelectEnd("main_toolbar");
       }
     }
   }
@@ -1335,7 +1384,6 @@ class AnnotationEditorUIManager {
   setEditingState(isEditing) {
     if (isEditing) {
       this.#addFocusManager();
-      this.#addKeyboardManager();
       this.#addCopyPasteListeners();
       this.#dispatchUpdateStates({
         isEditing: this.#mode !== AnnotationEditorType.NONE,
@@ -1346,7 +1394,6 @@ class AnnotationEditorUIManager {
       });
     } else {
       this.#removeFocusManager();
-      this.#removeKeyboardManager();
       this.#removeCopyPasteListeners();
       this.#dispatchUpdateStates({
         isEditing: false,

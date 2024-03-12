@@ -318,6 +318,8 @@ pdfjs-editor-stamp-button-label = Add or edit images
 pdfjs-editor-highlight-button =
     .title = Highlight
 pdfjs-editor-highlight-button-label = Highlight
+pdfjs-highlight-floating-button =
+    .title = Highlight
 
 ## Remove button for the various kind of editor.
 
