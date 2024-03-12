@@ -41,7 +41,7 @@ import {
 } from "./ui_utils.js";
 import { AnnotationEditorLayerBuilder } from "./annotation_editor_layer_builder.js";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
-import { compatibilityParams } from "./app_options.js";
+import { AppOptions } from "./app_options.js";
 import { DrawLayerBuilder } from "./draw_layer_builder.js";
 import { GenericL10n } from "web-null_l10n";
 import { SimpleLinkService } from "./pdf_link_service.js";
@@ -82,8 +82,6 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
  * @property {Object} [layerProperties] - The object that is used to lookup
  *   the necessary layer-properties.
  */
-
-const MAX_CANVAS_PIXELS = compatibilityParams.maxCanvasPixels || 16777216;
 
 const DEFAULT_LAYER_PROPERTIES =
   typeof PDFJSDev === "undefined" || !PDFJSDev.test("COMPONENTS")
@@ -152,7 +150,9 @@ class PDFPageView {
     this.#annotationMode =
       options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
     this.imageResourcesPath = options.imageResourcesPath || "";
-    this.maxCanvasPixels = options.maxCanvasPixels ?? MAX_CANVAS_PIXELS;
+    this.maxCanvasPixels =
+      options.maxCanvasPixels ??
+      (AppOptions.getCompat("maxCanvasPixels") || 16777216);
     this.pageColors = options.pageColors || null;
 
     this.eventBus = options.eventBus;

@@ -417,57 +417,64 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 
 const userOptions = Object.create(null);
 
+if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING || LIB")) {
+  // Ensure that the `defaultOptions` are correctly specified.
+  for (const name in defaultOptions) {
+    const { value, kind } = defaultOptions[name];
+
+    if (kind & OptionKind.PREFERENCE) {
+      if (kind === OptionKind.PREFERENCE) {
+        throw new Error(`Cannot use only "PREFERENCE" kind: ${name}`);
+      }
+      if (kind & OptionKind.BROWSER) {
+        throw new Error(`Cannot mix "PREFERENCE" and "BROWSER" kind: ${name}`);
+      }
+      if (compatibilityParams[name] !== undefined) {
+        throw new Error(
+          `Should not have compatibility-value for "PREFERENCE" kind: ${name}`
+        );
+      }
+      // Only "simple" preference-values are allowed.
+      if (
+        typeof value !== "boolean" &&
+        typeof value !== "string" &&
+        !Number.isInteger(value)
+      ) {
+        throw new Error(`Invalid value for "PREFERENCE" kind: ${name}`);
+      }
+    }
+  }
+}
+
 class AppOptions {
   constructor() {
     throw new Error("Cannot initialize AppOptions.");
   }
 
-  static get(name) {
-    const userOption = userOptions[name];
-    if (userOption !== undefined) {
-      return userOption;
-    }
-    const defaultOption = defaultOptions[name];
-    if (defaultOption !== undefined) {
-      return compatibilityParams[name] ?? defaultOption.value;
-    }
-    return undefined;
+  static getCompat(name) {
+    return compatibilityParams[name] ?? undefined;
   }
 
-  static getAll(kind = null) {
+  static get(name) {
+    return (
+      userOptions[name] ??
+      compatibilityParams[name] ??
+      defaultOptions[name]?.value ??
+      undefined
+    );
+  }
+
+  static getAll(kind = null, defaultOnly = false) {
     const options = Object.create(null);
     for (const name in defaultOptions) {
       const defaultOption = defaultOptions[name];
-      if (kind) {
-        if (!(kind & defaultOption.kind)) {
-          continue;
-        }
-        if (
-          (typeof PDFJSDev === "undefined" || PDFJSDev.test("LIB")) &&
-          kind === OptionKind.PREFERENCE
-        ) {
-          if (defaultOption.kind & OptionKind.BROWSER) {
-            throw new Error(`Invalid kind for preference: ${name}`);
-          }
-          const value = defaultOption.value,
-            valueType = typeof value;
 
-          if (
-            valueType === "boolean" ||
-            valueType === "string" ||
-            (valueType === "number" && Number.isInteger(value))
-          ) {
-            options[name] = value;
-            continue;
-          }
-          throw new Error(`Invalid type for preference: ${name}`);
-        }
+      if (kind && !(kind & defaultOption.kind)) {
+        continue;
       }
-      const userOption = userOptions[name];
-      options[name] =
-        userOption !== undefined
-          ? userOption
-          : compatibilityParams[name] ?? defaultOption.value;
+      options[name] = defaultOnly
+        ? defaultOption.value
+        : userOptions[name] ?? compatibilityParams[name] ?? defaultOption.value;
     }
     return options;
   }
@@ -501,4 +508,4 @@ class AppOptions {
   }
 }
 
-export { AppOptions, compatibilityParams, OptionKind };
+export { AppOptions, OptionKind };
