@@ -258,14 +258,8 @@ if (PDFJSDev.test("GECKOVIEW")) {
             const hasWillPrint =
               pdfViewer.enableScripting &&
               !!(await pdfDocument.getJSActions())?.WillPrint;
-            const hasUnchangedOptionalContent = (
-              await pdfViewer.optionalContentConfigPromise
-            ).hasInitialVisibility;
 
-            result =
-              hasUnchangedAnnotations &&
-              !hasWillPrint &&
-              hasUnchangedOptionalContent;
+            result = hasUnchangedAnnotations && !hasWillPrint;
           } catch {
             console.warn("Unable to check if the document can be downloaded.");
           }

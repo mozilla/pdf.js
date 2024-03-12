@@ -182,7 +182,7 @@ class PDFLayerViewer extends BaseTreeViewer {
     }
     const pdfDocument = this._pdfDocument;
     const optionalContentConfig = await (promise ||
-      pdfDocument.getOptionalContentConfig());
+      pdfDocument.getOptionalContentConfig({ intent: "display" }));
 
     if (pdfDocument !== this._pdfDocument) {
       return; // The document was closed while the optional content resolved.
