@@ -46,8 +46,11 @@ const getXY = (page, selector) =>
     return `${bbox.x}::${bbox.y}`;
   }, selector);
 
-const getSpanRectFromText = (page, pageNumber, text) =>
-  page.evaluate(
+const getSpanRectFromText = async (page, pageNumber, text) => {
+  await page.waitForSelector(
+    `.page[data-page-number="${pageNumber}"] > .textLayer .endOfContent`
+  );
+  return page.evaluate(
     (number, content) => {
       for (const el of document.querySelectorAll(
         `.page[data-page-number="${number}"] > .textLayer > span`
@@ -62,6 +65,7 @@ const getSpanRectFromText = (page, pageNumber, text) =>
     pageNumber,
     text
   );
+};
 
 describe("Highlight Editor", () => {
   describe("Editor must be removed without exception", () => {
@@ -1506,6 +1510,48 @@ describe("Highlight Editor", () => {
 
           await page.waitForSelector(`${getEditorSelector(0)}:not(.hidden)`);
           await page.waitForSelector(`${getEditorSelector(1)}:not(.hidden)`);
+        })
+      );
+    });
+  });
+
+  describe("Highlight from floating highlight button", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        { highlightEditorColors: "red=#AB0000" }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that clicking on the highlight floating button triggers an highlight", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+
+          await page.waitForSelector(".textLayer .highlightButton");
+          await page.click(".textLayer .highlightButton");
+
+          await page.waitForSelector(getEditorSelector(0));
+          const usedColor = await page.evaluate(() => {
+            const highlight = document.querySelector(
+              `.page[data-page-number = "1"] .canvasWrapper > svg.highlight`
+            );
+            return highlight.getAttribute("fill");
+          });
+
+          expect(usedColor).withContext(`In ${browserName}`).toEqual("#AB0000");
         })
       );
     });

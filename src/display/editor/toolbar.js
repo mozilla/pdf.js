@@ -135,4 +135,80 @@ class EditorToolbar {
   }
 }
 
-export { EditorToolbar };
+class HighlightToolbar {
+  #buttons = null;
+
+  #toolbar = null;
+
+  #uiManager;
+
+  constructor(uiManager) {
+    this.#uiManager = uiManager;
+  }
+
+  #render() {
+    const editToolbar = (this.#toolbar = document.createElement("div"));
+    editToolbar.className = "editToolbar";
+    editToolbar.setAttribute("role", "toolbar");
+    editToolbar.addEventListener("contextmenu", noContextMenu);
+
+    const buttons = (this.#buttons = document.createElement("div"));
+    buttons.className = "buttons";
+    editToolbar.append(buttons);
+
+    this.#addHighlightButton();
+
+    return editToolbar;
+  }
+
+  #getLastPoint(boxes, isLTR) {
+    let lastY = 0;
+    let lastX = 0;
+    for (const box of boxes) {
+      const y = box.y + box.height;
+      if (y < lastY) {
+        continue;
+      }
+      const x = box.x + (isLTR ? box.width : 0);
+      if (y > lastY) {
+        lastX = x;
+        lastY = y;
+        continue;
+      }
+      if (isLTR) {
+        if (x > lastX) {
+          lastX = x;
+        }
+      } else if (x < lastX) {
+        lastX = x;
+      }
+    }
+    return [isLTR ? 1 - lastX : lastX, lastY];
+  }
+
+  show(parent, boxes, isLTR) {
+    const [x, y] = this.#getLastPoint(boxes, isLTR);
+    const { style } = (this.#toolbar ||= this.#render());
+    parent.append(this.#toolbar);
+    style.insetInlineEnd = `${100 * x}%`;
+    style.top = `calc(${100 * y}% + var(--editor-toolbar-vert-offset))`;
+  }
+
+  hide() {
+    this.#toolbar.remove();
+  }
+
+  #addHighlightButton() {
+    const button = document.createElement("button");
+    button.className = "highlightButton";
+    button.tabIndex = 0;
+    button.setAttribute("data-l10n-id", `pdfjs-highlight-floating-button`);
+    button.addEventListener("contextmenu", noContextMenu);
+    button.addEventListener("click", () => {
+      this.#uiManager.highlightSelection("floating_button");
+    });
+    this.#buttons.append(button);
+  }
+}
+
+export { EditorToolbar, HighlightToolbar };
