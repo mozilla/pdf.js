@@ -424,21 +424,22 @@ class PDFNodeStreamFsFullReader extends BaseFullReader {
       path = path.replace(/^\//, "");
     }
 
-    fs.lstat(path, (error, stat) => {
-      if (error) {
+    fs.promises.lstat(path).then(
+      stat => {
+        // Setting right content length.
+        this._contentLength = stat.size;
+
+        this._setReadableStream(fs.createReadStream(path));
+        this._headersCapability.resolve();
+      },
+      error => {
         if (error.code === "ENOENT") {
           error = new MissingPDFException(`Missing PDF "${path}".`);
         }
         this._storedError = error;
         this._headersCapability.reject(error);
-        return;
       }
-      // Setting right content length.
-      this._contentLength = stat.size;
-
-      this._setReadableStream(fs.createReadStream(path));
-      this._headersCapability.resolve();
-    });
+    );
   }
 }
 
