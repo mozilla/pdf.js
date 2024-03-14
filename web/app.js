@@ -2024,8 +2024,9 @@ const PDFViewerApplication = {
     });
     const scroll = (_boundEvents.mainContainerScroll = () => {
       if (
-        this._lastScrollTop === mainContainer.scrollTop &&
-        this._lastScrollLeft === mainContainer.scrollLeft
+        this._isCtrlKeyDown ||
+        (this._lastScrollTop === mainContainer.scrollTop &&
+          this._lastScrollLeft === mainContainer.scrollLeft)
       ) {
         return;
       }
