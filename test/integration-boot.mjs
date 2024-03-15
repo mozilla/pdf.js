@@ -35,6 +35,7 @@ async function runTests(results) {
       "scripting_spec.mjs",
       "stamp_editor_spec.mjs",
       "text_field_spec.mjs",
+      "viewer_spec.mjs",
     ],
   });
 
