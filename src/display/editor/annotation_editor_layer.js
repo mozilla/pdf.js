@@ -61,11 +61,11 @@ class AnnotationEditorLayer {
 
   #annotationLayer = null;
 
-  #boundPointerup = this.pointerup.bind(this);
+  #boundPointerup = null;
 
-  #boundPointerdown = this.pointerdown.bind(this);
+  #boundPointerdown = null;
 
-  #boundTextLayerPointerDown = this.#textLayerPointerDown.bind(this);
+  #boundTextLayerPointerDown = null;
 
   #editorFocusTimeoutId = null;
 
@@ -333,7 +333,8 @@ class AnnotationEditorLayer {
   }
 
   enableTextSelection() {
-    if (this.#textLayer?.div) {
+    if (this.#textLayer?.div && !this.#boundTextLayerPointerDown) {
+      this.#boundTextLayerPointerDown = this.#textLayerPointerDown.bind(this);
       this.#textLayer.div.addEventListener(
         "pointerdown",
         this.#boundTextLayerPointerDown
@@ -343,11 +344,12 @@ class AnnotationEditorLayer {
   }
 
   disableTextSelection() {
-    if (this.#textLayer?.div) {
+    if (this.#textLayer?.div && this.#boundTextLayerPointerDown) {
       this.#textLayer.div.removeEventListener(
         "pointerdown",
         this.#boundTextLayerPointerDown
       );
+      this.#boundTextLayerPointerDown = null;
       this.#textLayer.div.classList.remove("highlighting");
     }
   }
@@ -385,13 +387,23 @@ class AnnotationEditorLayer {
   }
 
   enableClick() {
+    if (this.#boundPointerdown) {
+      return;
+    }
+    this.#boundPointerdown = this.pointerdown.bind(this);
+    this.#boundPointerup = this.pointerup.bind(this);
     this.div.addEventListener("pointerdown", this.#boundPointerdown);
     this.div.addEventListener("pointerup", this.#boundPointerup);
   }
 
   disableClick() {
+    if (!this.#boundPointerdown) {
+      return;
+    }
     this.div.removeEventListener("pointerdown", this.#boundPointerdown);
     this.div.removeEventListener("pointerup", this.#boundPointerup);
+    this.#boundPointerdown = null;
+    this.#boundPointerup = null;
   }
 
   attach(editor) {
@@ -821,6 +833,8 @@ class AnnotationEditorLayer {
     for (const editor of this.#uiManager.getEditors(this.pageIndex)) {
       this.add(editor);
     }
+    // We're maybe rendering a layer which was invisible when we started to edit
+    // so we must set the different callbacks for it.
     this.updateMode();
   }
 
@@ -833,6 +847,7 @@ class AnnotationEditorLayer {
     // issues (see #15582), we must commit the current one before changing
     // the viewport.
     this.#uiManager.commitOrRemove();
+    this.#cleanup();
 
     const oldRotation = this.viewport.rotation;
     const rotation = viewport.rotation;
@@ -843,7 +858,7 @@ class AnnotationEditorLayer {
         editor.rotate(rotation);
       }
     }
-    this.updateMode();
+    this.addInkEditorIfNeeded(/* isCommitting = */ false);
   }
 
   /**
