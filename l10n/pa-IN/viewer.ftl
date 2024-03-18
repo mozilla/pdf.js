@@ -329,6 +329,8 @@ pdfjs-editor-stamp-add-image-button =
 pdfjs-editor-stamp-add-image-button-label = ਚਿੱਤਰ ਜੋੜੋ
 # This refers to the thickness of the line used for free highlighting (not bound to text)
 pdfjs-editor-free-highlight-thickness-input = ਮੋਟਾਈ
+pdfjs-editor-free-highlight-thickness-title =
+    .title = ਚੀਜ਼ਾਂ ਨੂੰ ਹੋਰ ਲਿਖਤਾਂ ਤੋਂ ਉਘਾੜਨ ਸਮੇਂ ਮੋਟਾਈ ਨੂੰ ਬਦਲੋ
 pdfjs-free-text =
     .aria-label = ਲਿਖਤ ਐਡੀਟਰ
 pdfjs-free-text-default-content = …ਲਿਖਣਾ ਸ਼ੁਰੂ ਕਰੋ
