@@ -1,0 +1,31 @@
+# This workflow is triggered on pushes to the master branch and creates a release
+# with the "latest" tag. it also removes any previous associated releases.
+---
+name: "release"
+
+on:
+  push:
+    branches:
+      - "master"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+          node-version: latest
+    - name: Build
+      run: |
+       npm install
+       gulp generic
+    - name: Create Release
+      run: tar czf build.tar.gz -C build .
+    - uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest"
+        files: "build.tar.gz"
