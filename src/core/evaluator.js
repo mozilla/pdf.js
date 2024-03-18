@@ -739,27 +739,36 @@ class PartialEvaluator {
       !dict.has("Mask") &&
       w + h < SMALL_IMAGE_DIMENSIONS
     ) {
-      const imageObj = new PDFImage({
-        xref: this.xref,
-        res: resources,
-        image,
-        isInline,
-        pdfFunctionFactory: this._pdfFunctionFactory,
-        localColorSpaceCache,
-      });
-      // We force the use of RGBA_32BPP images here, because we can't handle
-      // any other kind.
-      imgData = await imageObj.createImageData(
-        /* forceRGBA = */ true,
-        /* isOffscreenCanvasSupported = */ false
-      );
-      operatorList.isOffscreenCanvasSupported =
-        this.options.isOffscreenCanvasSupported;
-      operatorList.addImageOps(
-        OPS.paintInlineImageXObject,
-        [imgData],
-        optionalContent
-      );
+      try {
+        const imageObj = new PDFImage({
+          xref: this.xref,
+          res: resources,
+          image,
+          isInline,
+          pdfFunctionFactory: this._pdfFunctionFactory,
+          localColorSpaceCache,
+        });
+        // We force the use of RGBA_32BPP images here, because we can't handle
+        // any other kind.
+        imgData = await imageObj.createImageData(
+          /* forceRGBA = */ true,
+          /* isOffscreenCanvasSupported = */ false
+        );
+        operatorList.isOffscreenCanvasSupported =
+          this.options.isOffscreenCanvasSupported;
+        operatorList.addImageOps(
+          OPS.paintInlineImageXObject,
+          [imgData],
+          optionalContent
+        );
+      } catch (reason) {
+        const msg = `Unable to decode inline image: "${reason}".`;
+
+        if (!this.options.ignoreErrors) {
+          throw new Error(msg);
+        }
+        warn(msg);
+      }
       return;
     }
 
