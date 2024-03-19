@@ -22,6 +22,7 @@
     "encodings_spec.js",
     "evaluator_spec.js",
     "event_utils_spec.js",
+    "fetch_stream_spec.js",
     "font_substitutions_spec.js",
     "function_spec.js",
     "message_handler_spec.js",

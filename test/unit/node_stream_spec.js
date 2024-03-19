@@ -14,6 +14,7 @@
  */
 
 import { AbortException, isNodeJS } from "../../src/shared/util.js";
+import { createTemporaryNodeServer } from "./test_utils.js";
 import { PDFNodeStream } from "../../src/display/node_stream.js";
 
 // Ensure that these tests only run in Node.js environments.
@@ -25,12 +26,10 @@ if (!isNodeJS) {
 
 const path = await __non_webpack_import__("path");
 const url = await __non_webpack_import__("url");
-const http = await __non_webpack_import__("http");
-const fs = await __non_webpack_import__("fs");
 
 describe("node_stream", function () {
-  let server = null;
-  let port = null;
+  let tempServer = null;
+
   const pdf = url.parse(
     encodeURI(
       "file://" + path.join(process.cwd(), "./test/pdfs/tracemonkey.pdf")
@@ -39,50 +38,20 @@ describe("node_stream", function () {
   const pdfLength = 1016315;
 
   beforeAll(function () {
-    // Create http server to serve pdf data for tests.
-    server = http
-      .createServer((request, response) => {
-        const filePath = process.cwd() + "/test/pdfs" + request.url;
-        fs.lstat(filePath, (error, stat) => {
-          if (error) {
-            response.writeHead(404);
-            response.end(`File ${request.url} not found!`);
-            return;
-          }
-          if (!request.headers.range) {
-            const contentLength = stat.size;
-            const stream = fs.createReadStream(filePath);
-            response.writeHead(200, {
-              "Content-Type": "application/pdf",
-              "Content-Length": contentLength,
-              "Accept-Ranges": "bytes",
-            });
-            stream.pipe(response);
-          } else {
-            const [start, end] = request.headers.range
-              .split("=")[1]
-              .split("-")
-              .map(x => Number(x));
-            const stream = fs.createReadStream(filePath, { start, end });
-            response.writeHead(206, {
-              "Content-Type": "application/pdf",
-            });
-            stream.pipe(response);
-          }
-        });
-      })
-      .listen(0); /* Listen on a random free port */
-    port = server.address().port;
+    tempServer = createTemporaryNodeServer();
   });
 
   afterAll(function () {
     // Close the server from accepting new connections after all test finishes.
+    const { server } = tempServer;
     server.close();
+
+    tempServer = null;
   });
 
   it("read both http(s) and filesystem pdf files", async function () {
     const stream1 = new PDFNodeStream({
-      url: `http://127.0.0.1:${port}/tracemonkey.pdf`,
+      url: `http://127.0.0.1:${tempServer.port}/tracemonkey.pdf`,
       rangeChunkSize: 65536,
       disableStream: true,
       disableRange: true,
@@ -144,7 +113,7 @@ describe("node_stream", function () {
   it("read custom ranges for both http(s) and filesystem urls", async function () {
     const rangeSize = 32768;
     const stream1 = new PDFNodeStream({
-      url: `http://127.0.0.1:${port}/tracemonkey.pdf`,
+      url: `http://127.0.0.1:${tempServer.port}/tracemonkey.pdf`,
       length: pdfLength,
       rangeChunkSize: rangeSize,
       disableStream: true,
