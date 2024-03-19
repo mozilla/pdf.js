@@ -3397,4 +3397,38 @@ describe("FreeText Editor", () => {
       );
     });
   });
+
+  describe("Annotation editor layer visibility", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the annotation layer is visible after a rotation", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          for (let i = 0; i < 4; i++) {
+            await page.waitForSelector(
+              ".page[data-page-number='1'] .annotationEditorLayer:not([hidden])",
+              {
+                timeout: 0,
+              }
+            );
+            const promise = await waitForAnnotationEditorLayer(page);
+            await page.evaluate(() => {
+              document.getElementById("pageRotateCw").click();
+            });
+            await awaitPromise(promise);
+          }
+        })
+      );
+    });
+  });
 });
