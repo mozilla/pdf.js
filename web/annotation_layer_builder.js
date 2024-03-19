@@ -28,7 +28,6 @@ import { PresentationModeState } from "./ui_utils.js";
 
 /**
  * @typedef {Object} AnnotationLayerBuilderOptions
- * @property {HTMLDivElement} pageDiv
  * @property {PDFPageProxy} pdfPage
  * @property {AnnotationStorage} [annotationStorage]
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
@@ -42,16 +41,18 @@ import { PresentationModeState } from "./ui_utils.js";
  *   [fieldObjectsPromise]
  * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap]
  * @property {TextAccessibilityManager} [accessibilityManager]
+ * @property {function} [onAppend]
  */
 
 class AnnotationLayerBuilder {
+  #onAppend = null;
+
   #onPresentationModeChanged = null;
 
   /**
    * @param {AnnotationLayerBuilderOptions} options
    */
   constructor({
-    pageDiv,
     pdfPage,
     linkService,
     downloadManager,
@@ -63,8 +64,8 @@ class AnnotationLayerBuilder {
     fieldObjectsPromise = null,
     annotationCanvasMap = null,
     accessibilityManager = null,
+    onAppend = null,
   }) {
-    this.pageDiv = pageDiv;
     this.pdfPage = pdfPage;
     this.linkService = linkService;
     this.downloadManager = downloadManager;
@@ -76,6 +77,7 @@ class AnnotationLayerBuilder {
     this._fieldObjectsPromise = fieldObjectsPromise || Promise.resolve(null);
     this._annotationCanvasMap = annotationCanvasMap;
     this._accessibilityManager = accessibilityManager;
+    this.#onAppend = onAppend;
 
     this.annotationLayer = null;
     this.div = null;
@@ -115,7 +117,7 @@ class AnnotationLayerBuilder {
     // if there is at least one annotation.
     const div = (this.div = document.createElement("div"));
     div.className = "annotationLayer";
-    this.pageDiv.append(div);
+    this.#onAppend?.(div);
 
     if (annotations.length === 0) {
       this.hide();

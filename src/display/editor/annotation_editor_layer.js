@@ -237,6 +237,7 @@ class AnnotationEditorLayer {
    * editor creation.
    */
   enable() {
+    this.div.tabIndex = 0;
     this.togglePointerEvents(true);
     const annotationElementIds = new Set();
     for (const editor of this.#editors.values()) {
@@ -274,6 +275,7 @@ class AnnotationEditorLayer {
    */
   disable() {
     this.#isDisabling = true;
+    this.div.tabIndex = -1;
     this.togglePointerEvents(false);
     const hiddenAnnotationIds = new Set();
     for (const editor of this.#editors.values()) {
@@ -333,6 +335,7 @@ class AnnotationEditorLayer {
   }
 
   enableTextSelection() {
+    this.div.tabIndex = -1;
     if (this.#textLayer?.div && !this.#boundTextLayerPointerDown) {
       this.#boundTextLayerPointerDown = this.#textLayerPointerDown.bind(this);
       this.#textLayer.div.addEventListener(
@@ -344,6 +347,7 @@ class AnnotationEditorLayer {
   }
 
   disableTextSelection() {
+    this.div.tabIndex = 0;
     if (this.#textLayer?.div && this.#boundTextLayerPointerDown) {
       this.#textLayer.div.removeEventListener(
         "pointerdown",

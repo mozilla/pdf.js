@@ -22,6 +22,8 @@ import {
   getSerialized,
   kbBigMoveLeft,
   kbBigMoveUp,
+  kbFocusNext,
+  kbFocusPrevious,
   kbSelectAll,
   loadAndWait,
   scrollIntoView,
@@ -1552,6 +1554,54 @@ describe("Highlight Editor", () => {
           });
 
           expect(usedColor).withContext(`In ${browserName}`).toEqual("#AB0000");
+        })
+      );
+    });
+  });
+
+  describe("Text layer must have the focus before highlights", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check the focus order", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorHighlight");
+          await page.waitForSelector(".annotationEditorLayer.highlightEditing");
+
+          let rect = await getSpanRectFromText(page, 1, "Abstract");
+          let x = rect.x + rect.width / 2;
+          let y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(getEditorSelector(0));
+
+          rect = await getSpanRectFromText(page, 1, "Languages");
+          x = rect.x + rect.width / 2;
+          y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(getEditorSelector(1));
+          await page.focus(getEditorSelector(1));
+
+          await kbFocusPrevious(page);
+          await page.waitForFunction(
+            sel => document.querySelector(sel) === document.activeElement,
+            {},
+            `.page[data-page-number="1"] > .textLayer`
+          );
+
+          await kbFocusNext(page);
+          await page.waitForFunction(
+            sel => document.querySelector(sel) === document.activeElement,
+            {},
+            getEditorSelector(1)
+          );
         })
       );
     });
