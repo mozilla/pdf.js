@@ -444,15 +444,16 @@ describe("FreeText Editor", () => {
 
         await clearAll(page);
 
+        const editorSelector = getEditorSelector(9);
         await page.mouse.click(rect.x + 200, rect.y + 100);
-        await page.waitForSelector(getEditorSelector(9), {
+        await page.waitForSelector(editorSelector, {
           visible: true,
         });
 
         for (let i = 0; i < 5; i++) {
-          await page.type(`${getEditorSelector(9)} .internal`, "A");
+          await page.type(`${editorSelector} .internal`, "A");
 
-          const editorRect = await page.$eval(getEditorSelector(9), el => {
+          const editorRect = await page.$eval(editorSelector, el => {
             const { x, y, width, height } = el.getBoundingClientRect();
             return { x, y, width, height };
           });
@@ -462,9 +463,7 @@ describe("FreeText Editor", () => {
             editorRect.x + 1.5 * editorRect.width,
             editorRect.y
           );
-          await page.waitForSelector(
-            `${getEditorSelector(9)} .overlay.enabled`
-          );
+          await page.waitForSelector(`${editorSelector} .overlay.enabled`);
 
           if (i < 4) {
             // And select it again.
@@ -474,13 +473,13 @@ describe("FreeText Editor", () => {
               { count: 2 }
             );
             await page.waitForSelector(
-              `${getEditorSelector(9)} .overlay:not(.enabled)`
+              `${editorSelector} .overlay:not(.enabled)`
             );
           }
         }
 
         let prevText = await page.$eval(
-          `${getEditorSelector(9)} .internal`,
+          `${editorSelector} .internal`,
           el => el.innerText
         );
 
@@ -489,10 +488,10 @@ describe("FreeText Editor", () => {
             (prev, sel) => document.querySelector(sel).innerText !== prev,
             {},
             previous,
-            `${getEditorSelector(9)} .internal`
+            `${editorSelector} .internal`
           );
         const getText = () =>
-          page.$eval(`${getEditorSelector(9)} .internal`, el => el.innerText);
+          page.$eval(`${editorSelector} .internal`, el => el.innerText);
 
         // We're in the middle of the text.
         await kbUndo(page);
@@ -528,7 +527,7 @@ describe("FreeText Editor", () => {
         );
 
         await kbRedo(page);
-        await page.waitForSelector(getEditorSelector(9), {
+        await page.waitForSelector(editorSelector, {
           visible: true,
         });
 
@@ -536,7 +535,7 @@ describe("FreeText Editor", () => {
         expect(text).withContext(`In ${browserName}`).toEqual("A");
 
         // Add a new A.
-        const editorRect = await page.$eval(getEditorSelector(9), el => {
+        let editorRect = await page.$eval(editorSelector, el => {
           const { x, y, width, height } = el.getBoundingClientRect();
           return { x, y, width, height };
         });
@@ -545,17 +544,20 @@ describe("FreeText Editor", () => {
           editorRect.y + editorRect.height / 2,
           { count: 2 }
         );
-        await page.waitForSelector(
-          `${getEditorSelector(9)} .overlay:not(.enabled)`
-        );
-        await page.type(`${getEditorSelector(9)} .internal`, "A");
+        await page.waitForSelector(`${editorSelector} .overlay:not(.enabled)`);
+        await page.type(`${editorSelector} .internal`, "A");
+
+        editorRect = await page.$eval(editorSelector, el => {
+          const { x, y, width, height } = el.getBoundingClientRect();
+          return { x, y, width, height };
+        });
 
         // Commit.
         await page.mouse.click(
           editorRect.x + 1.5 * editorRect.width,
           editorRect.y
         );
-        await page.waitForSelector(`${getEditorSelector(9)} .overlay.enabled`);
+        await page.waitForSelector(`${editorSelector} .overlay.enabled`);
 
         text = await getText();
         expect(text).withContext(`In ${browserName}`).toEqual("AA");
@@ -2305,7 +2307,7 @@ describe("FreeText Editor", () => {
         pages.map(async ([browserName, page]) => {
           await switchToFreeText(page);
 
-          const rect = await page.$eval(".annotationEditorLayer", el => {
+          let rect = await page.$eval(".annotationEditorLayer", el => {
             const { x, y } = el.getBoundingClientRect();
             return { x, y };
           });
@@ -2322,7 +2324,15 @@ describe("FreeText Editor", () => {
             `${getEditorSelector(0)} .overlay.enabled`
           );
 
-          await page.mouse.click(rect.x + 110, rect.y + 150);
+          rect = await page.$eval(getEditorSelector(0), el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+
+          await page.mouse.click(
+            rect.x + 5 * rect.width,
+            rect.y + 5 * rect.height
+          );
           await page.waitForSelector(getEditorSelector(1), {
             visible: true,
           });
@@ -2334,7 +2344,15 @@ describe("FreeText Editor", () => {
             `${getEditorSelector(1)} .overlay.enabled`
           );
 
-          await page.mouse.click(rect.x + 111, rect.y + 151);
+          rect = await page.$eval(getEditorSelector(0), el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+
+          await page.mouse.click(
+            rect.x + 5 * rect.width,
+            rect.y + 5 * rect.height
+          );
           await waitForSelectedEditor(page, getEditorSelector(1));
 
           const pos = n =>
