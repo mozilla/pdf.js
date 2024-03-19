@@ -2955,10 +2955,7 @@ class Font {
         // Always prefer the BaseEncoding/Differences arrays, when they exist
         // (fixes issue13433.pdf).
         forcePostTable = true;
-      } else {
-        // When there is only a (1, 0) cmap table, the char code is a single
-        // byte and it is used directly as the char code.
-
+      } else if (cmapPlatformId === 3 && cmapEncodingId === 0) {
         // When a (3, 0) cmap table is present, it is used instead but the
         // spec has special rules for char codes in the range of 0xF000 to
         // 0xF0FF and it says the (3, 0) table should map the values from
@@ -2969,14 +2966,16 @@ class Font {
         // cmap.
         for (const mapping of cmapMappings) {
           let charCode = mapping.charCode;
-          if (
-            cmapPlatformId === 3 &&
-            charCode >= 0xf000 &&
-            charCode <= 0xf0ff
-          ) {
+          if (charCode >= 0xf000 && charCode <= 0xf0ff) {
             charCode &= 0xff;
           }
           charCodeToGlyphId[charCode] = mapping.glyphId;
+        }
+      } else {
+        // When there is only a (1, 0) cmap table, the char code is a single
+        // byte and it is used directly as the char code.
+        for (const mapping of cmapMappings) {
+          charCodeToGlyphId[mapping.charCode] = mapping.glyphId;
         }
       }
 
