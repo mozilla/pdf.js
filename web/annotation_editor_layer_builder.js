@@ -138,7 +138,7 @@ class AnnotationEditorLayerBuilder {
   }
 
   show() {
-    if (!this.div || this.annotationEditorLayer.isEmpty) {
+    if (!this.div || this.annotationEditorLayer.isInvisible) {
       return;
     }
     this.div.hidden = false;

@@ -129,6 +129,12 @@ class AnnotationEditorLayer {
     return this.#editors.size === 0;
   }
 
+  get isInvisible() {
+    return (
+      this.isEmpty && this.#uiManager.getMode() === AnnotationEditorType.NONE
+    );
+  }
+
   /**
    * Update the toolbar if it's required to reflect the tool currently used.
    * @param {number} mode
