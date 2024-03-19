@@ -318,15 +318,33 @@ async function scrollIntoView(page, selector) {
   const handle = await page.evaluateHandle(
     sel => [
       new Promise(resolve => {
-        document
-          .getElementById("viewerContainer")
-          .addEventListener("scrollend", resolve, { once: true });
+        const container = document.getElementById("viewerContainer");
+        if (container.scrollHeight <= container.clientHeight) {
+          resolve();
+          return;
+        }
+        container.addEventListener("scrollend", resolve, { once: true });
         const element = document.querySelector(sel);
         element.scrollIntoView({ behavior: "instant", block: "start" });
       }),
     ],
     selector
   );
+  return awaitPromise(handle);
+}
+
+async function firstPageOnTop(page) {
+  const handle = await page.evaluateHandle(() => [
+    new Promise(resolve => {
+      const container = document.getElementById("viewerContainer");
+      if (container.scrollTop === 0 && container.scrollLeft === 0) {
+        resolve();
+        return;
+      }
+      container.addEventListener("scrollend", resolve, { once: true });
+      container.scrollTo(0, 0);
+    }),
+  ]);
   return awaitPromise(handle);
 }
 
@@ -461,12 +479,31 @@ async function kbDeleteLastWord(page) {
   }
 }
 
+async function kbFocusNext(page) {
+  const handle = await createPromise(page, resolve => {
+    window.addEventListener("focusin", resolve, { once: true });
+  });
+  await page.keyboard.press("Tab");
+  await awaitPromise(handle);
+}
+
+async function kbFocusPrevious(page) {
+  const handle = await createPromise(page, resolve => {
+    window.addEventListener("focusin", resolve, { once: true });
+  });
+  await page.keyboard.down("Shift");
+  await page.keyboard.press("Tab");
+  await page.keyboard.up("Shift");
+  await awaitPromise(handle);
+}
+
 export {
   awaitPromise,
   clearInput,
   closePages,
   createPromise,
   dragAndDropAnnotation,
+  firstPageOnTop,
   getAnnotationStorage,
   getComputedStyleSelector,
   getEditorDimensions,
@@ -484,6 +521,8 @@ export {
   kbBigMoveUp,
   kbCopy,
   kbDeleteLastWord,
+  kbFocusNext,
+  kbFocusPrevious,
   kbGoToBegin,
   kbGoToEnd,
   kbModifierDown,

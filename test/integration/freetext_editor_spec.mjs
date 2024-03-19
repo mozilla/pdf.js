@@ -18,6 +18,7 @@ import {
   closePages,
   createPromise,
   dragAndDropAnnotation,
+  firstPageOnTop,
   getEditors,
   getEditorSelector,
   getFirstSerialized,
@@ -39,6 +40,7 @@ import {
   kbUndo,
   loadAndWait,
   scrollIntoView,
+  waitForAnnotationEditorLayer,
   waitForEvent,
   waitForSelectedEditor,
   waitForSerialized,
@@ -923,6 +925,7 @@ describe("FreeText Editor", () => {
           let currentId = 0;
 
           for (let step = 0; step < 3; step++) {
+            await firstPageOnTop(page);
             const rect = await page.$eval(".annotationEditorLayer", el => {
               // With Chrome something is wrong when serializing a DomRect,
               // hence we extract the values and just return them.
@@ -931,8 +934,8 @@ describe("FreeText Editor", () => {
             });
 
             const data = `Hello ${step}`;
-            const x = rect.x + 0.1 * rect.width;
-            const y = rect.y + 0.1 * rect.height;
+            const x = Math.max(rect.x + 0.1 * rect.width, 10);
+            const y = Math.max(rect.y + 0.1 * rect.height, 10);
             await page.mouse.click(x, y);
             await page.waitForSelector(getEditorSelector(currentId), {
               visible: true,
@@ -945,9 +948,12 @@ describe("FreeText Editor", () => {
               `${getEditorSelector(currentId)} .overlay.enabled`
             );
 
+            const promise = await waitForAnnotationEditorLayer(page);
             await page.evaluate(() => {
               document.getElementById("pageRotateCw").click();
             });
+            await awaitPromise(promise);
+
             currentId += 1;
             await page.waitForSelector(
               ".page[data-page-number='1'] .canvasWrapper",
