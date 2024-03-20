@@ -307,13 +307,6 @@ function waitForAnnotationEditorLayer(page) {
   });
 }
 
-async function waitForTextLayer(page) {
-  const handle = await createPromise(page, resolve => {
-    window.PDFViewerApplication.eventBus.on("textlayerrendered", resolve);
-  });
-  return awaitPromise(handle);
-}
-
 async function scrollIntoView(page, selector) {
   const handle = await page.evaluateHandle(
     sel => [
@@ -541,7 +534,6 @@ export {
   waitForSelectedEditor,
   waitForSerialized,
   waitForStorageEntries,
-  waitForTextLayer,
   waitForTimeout,
   waitForUnselectedEditor,
 };
