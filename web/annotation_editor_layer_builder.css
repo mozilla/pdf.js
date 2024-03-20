@@ -59,6 +59,7 @@
   height: 0;
   overflow: hidden;
   white-space: nowrap;
+  font-size: 0;
 }
 
 .textLayer.highlighting {
