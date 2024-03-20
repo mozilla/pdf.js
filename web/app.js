@@ -146,6 +146,7 @@ const PDFViewerApplication = {
   isViewerEmbedded: window.parent !== window,
   url: "",
   baseUrl: "",
+  supportsCaretBrowsingMode: false,
   _downloadUrl: "",
   _boundEvents: Object.create(null),
   documentInfo: null,
@@ -233,6 +234,9 @@ const PDFViewerApplication = {
       // when it's embedded in e.g. an <iframe> or an <object>.
       AppOptions.set("externalLinkTarget", LinkTarget.TOP);
     }
+    this.supportsCaretBrowsingMode =
+      AppOptions.get("supportsCaretBrowsingMode") === true;
+
     await this._initializeViewerComponents();
 
     // Bind the various event handlers *after* the viewer has been
@@ -795,14 +799,6 @@ const PDFViewerApplication = {
       this,
       "supportsMouseWheelZoomMetaKey",
       AppOptions.get("supportsMouseWheelZoomMetaKey")
-    );
-  },
-
-  get supportsCaretBrowsingMode() {
-    return shadow(
-      this,
-      "supportsCaretBrowsingMode",
-      AppOptions.get("supportsCaretBrowsingMode")
     );
   },
 
@@ -1999,6 +1995,19 @@ const PDFViewerApplication = {
       "updatefromsandbox",
       _boundEvents.windowUpdateFromSandbox
     );
+
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      window.addEventListener(
+        "updatedPreference",
+        ({ detail: { name, value } }) => {
+          switch (name) {
+            case "caretBrowsingMode":
+              this.supportsCaretBrowsingMode = value;
+              break;
+          }
+        }
+      );
+    }
 
     if (
       (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
