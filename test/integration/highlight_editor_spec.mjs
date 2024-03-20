@@ -1606,4 +1606,45 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Text inside mark element", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must have null dimensions", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorHighlight");
+          await page.waitForSelector(".annotationEditorLayer.highlightEditing");
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(getEditorSelector(0));
+
+          const [w, h] = await page.evaluate(
+            sel => {
+              const mark = document.querySelector(sel);
+              const range = document.createRange();
+              range.selectNodeContents(mark);
+              const { width, height } = range.getClientRects()[0];
+              return [width, height];
+            },
+            `${getEditorSelector(0)} mark`
+          );
+
+          expect(w).withContext(`In ${browserName}`).toEqual(0);
+          expect(h).withContext(`In ${browserName}`).toEqual(0);
+        })
+      );
+    });
+  });
 });
