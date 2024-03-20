@@ -11,7 +11,7 @@ function isPDFJSPreprocessor(obj) {
 }
 
 function evalWithDefines(code, defines) {
-  if (!code || !code.trim()) {
+  if (!code?.trim()) {
     throw new Error("No JavaScript expression given");
   }
   return vm.runInNewContext(code, defines, { displayErrors: false });
@@ -56,12 +56,7 @@ function handlePreprocessorAction(ctx, actionName, args, path) {
     throw new Error("Unsupported action");
   } catch (e) {
     throw path.buildCodeFrameError(
-      "Could not process " +
-        PDFJS_PREPROCESSOR_NAME +
-        "." +
-        actionName +
-        ": " +
-        e.message
+      `Could not process ${PDFJS_PREPROCESSOR_NAME}.${actionName}: ${e.message}`
     );
   }
 }
