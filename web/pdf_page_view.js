@@ -104,7 +104,7 @@ const LAYERS_ORDER = new Map([
   ["textLayer", 1],
   ["annotationLayer", 2],
   ["annotationEditorLayer", 3],
-  ["xfaLayer", 2],
+  ["xfaLayer", 3],
 ]);
 
 /**
@@ -235,7 +235,12 @@ class PDFPageView {
 
   #addLayer(div, name) {
     const pos = LAYERS_ORDER.get(name);
+    const oldDiv = this.#layers[pos];
     this.#layers[pos] = div;
+    if (oldDiv) {
+      oldDiv.replaceWith(div);
+      return;
+    }
     for (let i = pos - 1; i >= 0; i--) {
       const layer = this.#layers[i];
       if (layer) {
