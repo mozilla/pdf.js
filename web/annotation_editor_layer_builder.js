@@ -127,7 +127,6 @@ class AnnotationEditorLayerBuilder {
       return;
     }
     this.annotationEditorLayer.destroy();
-    this.div.remove();
   }
 
   hide() {

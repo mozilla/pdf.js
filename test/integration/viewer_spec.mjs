@@ -55,4 +55,36 @@ describe("PDF viewer", () => {
       );
     });
   });
+
+  describe("Zoom commands", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".textLayer .endOfContent");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that zoom commands don't scroll the document", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          for (let i = 0; i < 10; i++) {
+            await page.evaluate(() => window.PDFViewerApplication.zoomIn());
+            await page.evaluate(() => window.PDFViewerApplication.zoomReset());
+            await page.waitForSelector(
+              `.page[data-page-number="1"] .textLayer .endOfContent`
+            );
+            const scrollTop = await page.evaluate(
+              () => document.getElementById("viewerContainer").scrollTop
+            );
+            expect(scrollTop < 100)
+              .withContext(`In ${browserName}`)
+              .toBe(true);
+          }
+        })
+      );
+    });
+  });
 });
