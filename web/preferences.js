@@ -21,6 +21,12 @@ import { AppOptions, OptionKind } from "./app_options.js";
  *   or every time the viewer is loaded.
  */
 class BasePreferences {
+  #browserDefaults = Object.freeze(
+    typeof PDFJSDev === "undefined"
+      ? AppOptions.getAll(OptionKind.BROWSER, /* defaultOnly = */ true)
+      : PDFJSDev.eval("BROWSER_PREFERENCES")
+  );
+
   #defaults = Object.freeze(
     typeof PDFJSDev === "undefined"
       ? AppOptions.getAll(OptionKind.PREFERENCE, /* defaultOnly = */ true)
@@ -46,13 +52,11 @@ class BasePreferences {
 
     this.#initializedPromise = this._readFromStorage(this.#defaults).then(
       ({ browserPrefs, prefs }) => {
-        const BROWSER_PREFS =
-          typeof PDFJSDev === "undefined"
-            ? AppOptions.getAll(OptionKind.BROWSER, /* defaultOnly = */ true)
-            : PDFJSDev.eval("BROWSER_PREFERENCES");
         const options = Object.create(null);
 
-        for (const [name, defaultVal] of Object.entries(BROWSER_PREFS)) {
+        for (const [name, defaultVal] of Object.entries(
+          this.#browserDefaults
+        )) {
           const prefVal = browserPrefs?.[name];
           options[name] =
             typeof prefVal === typeof defaultVal ? prefVal : defaultVal;
@@ -64,6 +68,12 @@ class BasePreferences {
             typeof prefVal === typeof defaultVal ? prefVal : defaultVal;
         }
         AppOptions.setAll(options, /* init = */ true);
+
+        if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+          window.addEventListener("updatedPreference", evt => {
+            this.#updatePref(evt.detail);
+          });
+        }
       }
     );
   }
@@ -86,6 +96,26 @@ class BasePreferences {
    */
   async _readFromStorage(prefObj) {
     throw new Error("Not implemented: _readFromStorage");
+  }
+
+  #updatePref({ name, value }) {
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+      throw new Error("Not implemented: #updatePref");
+    }
+
+    if (name in this.#browserDefaults) {
+      if (typeof value !== typeof this.#browserDefaults[name]) {
+        return; // Invalid preference value.
+      }
+    } else if (name in this.#defaults) {
+      if (typeof value !== typeof this.#defaults[name]) {
+        return; // Invalid preference value.
+      }
+      this.#prefs[name] = value;
+    } else {
+      return; // Invalid preference.
+    }
+    AppOptions.set(name, value);
   }
 
   /**

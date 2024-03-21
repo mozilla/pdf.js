@@ -799,11 +799,7 @@ const PDFViewerApplication = {
   },
 
   get supportsCaretBrowsingMode() {
-    return shadow(
-      this,
-      "supportsCaretBrowsingMode",
-      AppOptions.get("supportsCaretBrowsingMode")
-    );
+    return AppOptions.get("supportsCaretBrowsingMode");
   },
 
   moveCaret(isUp, select) {
