@@ -441,9 +441,6 @@ class AnnotationEditorLayer {
    * @param {AnnotationEditor} editor
    */
   remove(editor) {
-    // Since we can undo a removal we need to keep the
-    // parent property as it is, so don't null it!
-
     this.detach(editor);
     this.#uiManager.removeEditor(editor);
     editor.div.remove();
@@ -546,6 +543,7 @@ class AnnotationEditorLayer {
     if (editor.needsToBeRebuilt()) {
       editor.parent ||= this;
       editor.rebuild();
+      editor.show();
     } else {
       this.add(editor);
     }
@@ -842,6 +840,7 @@ class AnnotationEditorLayer {
     setLayerDimensions(this.div, viewport);
     for (const editor of this.#uiManager.getEditors(this.pageIndex)) {
       this.add(editor);
+      editor.rebuild();
     }
     // We're maybe rendering a layer which was invisible when we started to edit
     // so we must set the different callbacks for it.
