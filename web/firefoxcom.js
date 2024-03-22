@@ -323,7 +323,7 @@ class ExternalServices extends BaseExternalServices {
     FirefoxCom.request("updateFindMatchesCount", data);
   }
 
-  initPassiveLoading(callbacks) {
+  initPassiveLoading() {
     let pdfDataRangeTransport;
 
     window.addEventListener("message", function windowMessage(e) {
@@ -340,7 +340,7 @@ class ExternalServices extends BaseExternalServices {
       switch (args.pdfjsLoadAction) {
         case "supportsRangedLoading":
           if (args.done && !args.data) {
-            callbacks.onError();
+            viewerApp._documentError(null);
             break;
           }
           pdfDataRangeTransport = new FirefoxComDataRangeTransport(
@@ -350,7 +350,7 @@ class ExternalServices extends BaseExternalServices {
             args.filename
           );
 
-          callbacks.onOpenWithTransport(pdfDataRangeTransport);
+          viewerApp.open({ range: pdfDataRangeTransport });
           break;
         case "range":
           pdfDataRangeTransport.onDataRange(args.begin, args.chunk);
@@ -369,14 +369,14 @@ class ExternalServices extends BaseExternalServices {
           pdfDataRangeTransport?.onDataProgressiveDone();
           break;
         case "progress":
-          callbacks.onProgress(args.loaded, args.total);
+          viewerApp.progress(args.loaded / args.total);
           break;
         case "complete":
           if (!args.data) {
-            callbacks.onError(args.errorCode);
+            viewerApp._documentError(null, { message: args.errorCode });
             break;
           }
-          callbacks.onOpenWithData(args.data, args.filename);
+          viewerApp.open({ data: args.data, filename: args.filename });
           break;
       }
     });

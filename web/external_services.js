@@ -24,7 +24,7 @@ class BaseExternalServices {
 
   updateFindMatchesCount(data) {}
 
-  initPassiveLoading(callbacks) {}
+  initPassiveLoading() {}
 
   reportTelemetry(data) {}
 
