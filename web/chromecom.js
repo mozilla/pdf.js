@@ -34,7 +34,7 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) {
   const defaultUrl = m ? decodeURIComponent(m[2]) : "";
 
   // Example: chrome-extension://.../http://example.com/file.pdf
-  const humanReadableUrl = "/" + defaultUrl + location.hash;
+  const humanReadableUrl = location.origin + "/" + defaultUrl + location.hash;
   history.replaceState(history.state, "", humanReadableUrl);
   if (top === window) {
     chrome.runtime.sendMessage("showPageAction");
