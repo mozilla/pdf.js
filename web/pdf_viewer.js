@@ -117,7 +117,7 @@ function isValidAnnotationEditorMode(mode) {
  *   landscape pages upon printing. The default is `false`.
  * @property {number} [maxCanvasPixels] - The maximum supported canvas size in
  *   total pixels, i.e. width * height. Use `-1` for no limit, or `0` for
- *   CSS-only zooming. The default value is 4096 * 4096 (16 mega-pixels).
+ *   CSS-only zooming. The default value is 4096 * 8192 (32 mega-pixels).
  * @property {IL10n} [l10n] - Localization service.
  * @property {boolean} [enablePermissions] - Enables PDF document permissions,
  *   when they exist. The default value is `false`.
