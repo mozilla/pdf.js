@@ -1270,7 +1270,6 @@ class AnnotationEditor {
   rebuild() {
     this.div?.addEventListener("focusin", this.#boundFocusin);
     this.div?.addEventListener("focusout", this.#boundFocusout);
-    this.show(this._isVisible);
   }
 
   /**
@@ -1354,6 +1353,7 @@ class AnnotationEditor {
       }
       this.#telemetryTimeouts = null;
     }
+    this.parent = null;
   }
 
   /**
@@ -1676,9 +1676,9 @@ class AnnotationEditor {
 
   /**
    * Show or hide this editor.
-   * @param {boolean} visible
+   * @param {boolean|undefined} visible
    */
-  show(visible) {
+  show(visible = this._isVisible) {
     this.div.classList.toggle("hidden", !visible);
     this._isVisible = visible;
   }
