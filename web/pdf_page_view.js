@@ -74,7 +74,7 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
  *   for annotation icons. Include trailing slash.
  * @property {number} [maxCanvasPixels] - The maximum supported canvas size in
  *   total pixels, i.e. width * height. Use `-1` for no limit, or `0` for
- *   CSS-only zooming. The default value is 4096 * 4096 (16 mega-pixels).
+ *   CSS-only zooming. The default value is 4096 * 8192 (32 mega-pixels).
  * @property {Object} [pageColors] - Overwrites background and foreground colors
  *   with user defined ones in order to improve readability in high contrast
  *   mode.
@@ -162,7 +162,7 @@ class PDFPageView {
     this.imageResourcesPath = options.imageResourcesPath || "";
     this.maxCanvasPixels =
       options.maxCanvasPixels ??
-      (AppOptions.getCompat("maxCanvasPixels") || 16777216);
+      (AppOptions.getCompat("maxCanvasPixels") || 2 ** 25);
     this.pageColors = options.pageColors || null;
 
     this.eventBus = options.eventBus;
