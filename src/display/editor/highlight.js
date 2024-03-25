@@ -418,11 +418,11 @@ class HighlightEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   remove() {
-    super.remove();
     this.#cleanDrawLayer();
     this._reportTelemetry({
       action: "deleted",
     });
+    super.remove();
   }
 
   /** @inheritdoc */
@@ -628,6 +628,9 @@ class HighlightEditor extends AnnotationEditor {
   /** @inheritdoc */
   select() {
     super.select();
+    if (!this.#outlineId) {
+      return;
+    }
     this.parent?.drawLayer.removeClass(this.#outlineId, "hovered");
     this.parent?.drawLayer.addClass(this.#outlineId, "selected");
   }
@@ -635,6 +638,9 @@ class HighlightEditor extends AnnotationEditor {
   /** @inheritdoc */
   unselect() {
     super.unselect();
+    if (!this.#outlineId) {
+      return;
+    }
     this.parent?.drawLayer.removeClass(this.#outlineId, "selected");
     if (!this.#isFreeHighlight) {
       this.#setCaret(/* start = */ false);
@@ -646,7 +652,8 @@ class HighlightEditor extends AnnotationEditor {
     return !this.#isFreeHighlight;
   }
 
-  show(visible) {
+  /** @inheritdoc */
+  show(visible = this._isVisible) {
     super.show(visible);
     if (this.parent) {
       this.parent.drawLayer.show(this.#id, visible);
