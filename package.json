@@ -39,7 +39,7 @@
     "merge-stream": "^2.0.0",
     "mkdirp": "^3.0.1",
     "needle": "^3.3.1",
-    "path2d-polyfill": "^2.1.1",
+    "path2d": "^0.1.2",
     "pngjs": "^7.0.0",
     "postcss": "^8.4.35",
     "postcss-dark-theme-class": "^1.2.1",
