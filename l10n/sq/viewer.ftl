@@ -292,8 +292,9 @@ pdfjs-editor-ink-button-label = Vizatoni
 pdfjs-editor-stamp-button =
     .title = Shtoni ose përpunoni figura
 pdfjs-editor-stamp-button-label = Shtoni ose përpunoni figura
-pdfjs-editor-remove-button =
-    .title = Hiqe
+pdfjs-editor-highlight-button =
+    .title = Theksim
+pdfjs-editor-highlight-button-label = Theksoje
 
 ## Remove button for the various kind of editor.
 
@@ -317,6 +318,10 @@ pdfjs-editor-ink-opacity-input = Patejdukshmëri
 pdfjs-editor-stamp-add-image-button =
     .title = Shtoni figurë
 pdfjs-editor-stamp-add-image-button-label = Shtoni figurë
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Trashësi
+pdfjs-editor-free-highlight-thickness-title =
+    .title = Ndryshoni trashësinë kur theksoni objekte tjetër nga tekst
 pdfjs-free-text =
     .aria-label = Përpunues Tekstesh
 pdfjs-free-text-default-content = Filloni të shtypni…
