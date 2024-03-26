@@ -206,6 +206,57 @@ async function mockClipboard(pages) {
   );
 }
 
+async function pasteFromClipboard(page, data, selector, timeout = 100) {
+  await page.evaluate(async dat => {
+    const items = Object.create(null);
+    for (const [type, value] of Object.entries(dat)) {
+      if (value.startsWith("data:")) {
+        const resp = await fetch(value);
+        items[type] = await resp.blob();
+      } else {
+        items[type] = new Blob([value], { type });
+      }
+    }
+    await navigator.clipboard.write([new ClipboardItem(items)]);
+  }, data);
+
+  let hasPasteEvent = false;
+  while (!hasPasteEvent) {
+    // We retry to paste if nothing has been pasted before the timeout.
+    const handle = await page.evaluateHandle(
+      (sel, timeOut) => {
+        let callback = null;
+        return [
+          Promise.race([
+            new Promise(resolve => {
+              callback = e => resolve(e.clipboardData.items.length !== 0);
+              (sel ? document.querySelector(sel) : document).addEventListener(
+                "paste",
+                callback,
+                {
+                  once: true,
+                }
+              );
+            }),
+            new Promise(resolve => {
+              setTimeout(() => {
+                document
+                  .querySelector(sel)
+                  .removeEventListener("paste", callback);
+                resolve(false);
+              }, timeOut);
+            }),
+          ]),
+        ];
+      },
+      selector,
+      timeout
+    );
+    await kbPaste(page);
+    hasPasteEvent = await awaitPromise(handle);
+  }
+}
+
 async function getSerialized(page, filter = undefined) {
   const values = await page.evaluate(() => {
     const { map } =
@@ -526,6 +577,7 @@ export {
   kbUndo,
   loadAndWait,
   mockClipboard,
+  pasteFromClipboard,
   scrollIntoView,
   serializeBitmapDimensions,
   waitForAnnotationEditorLayer,

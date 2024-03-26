@@ -39,6 +39,7 @@ import {
   kbSelectAll,
   kbUndo,
   loadAndWait,
+  pasteFromClipboard,
   scrollIntoView,
   waitForAnnotationEditorLayer,
   waitForEvent,
@@ -3542,6 +3543,168 @@ describe("FreeText Editor", () => {
           await kbUndo(page);
           await waitForSerialized(page, 1);
           await page.waitForSelector(getEditorSelector(0));
+        })
+      );
+    });
+  });
+
+  describe("Paste some html", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that pasting html just keep the text", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          let editorSelector = getEditorSelector(0);
+          const data = "Hello PDF.js World !!";
+          await page.mouse.click(rect.x + 100, rect.y + 100);
+          await page.waitForSelector(editorSelector, {
+            visible: true,
+          });
+          await page.type(`${editorSelector} .internal`, data);
+          const editorRect = await page.$eval(editorSelector, el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+
+          // Commit.
+          await page.keyboard.press("Escape");
+          await page.waitForSelector(`${editorSelector} .overlay.enabled`);
+
+          const waitForTextChange = (previous, edSelector) =>
+            page.waitForFunction(
+              (prev, sel) => document.querySelector(sel).innerText !== prev,
+              {},
+              previous,
+              `${edSelector} .internal`
+            );
+          const getText = edSelector =>
+            page.$eval(`${edSelector} .internal`, el => el.innerText.trimEnd());
+
+          await page.mouse.click(
+            editorRect.x + editorRect.width / 2,
+            editorRect.y + editorRect.height / 2,
+            { count: 2 }
+          );
+          await page.waitForSelector(
+            `${editorSelector} .overlay:not(.enabled)`
+          );
+
+          const select = position =>
+            page.evaluate(
+              (sel, pos) => {
+                const el = document.querySelector(sel);
+                document.getSelection().setPosition(el.firstChild, pos);
+              },
+              `${editorSelector} .internal`,
+              position
+            );
+
+          await select(0);
+          await pasteFromClipboard(
+            page,
+            {
+              "text/html": "<b>Bold Foo</b>",
+              "text/plain": "Foo",
+            },
+            `${editorSelector} .internal`
+          );
+
+          let lastText = data;
+
+          await waitForTextChange(lastText, editorSelector);
+          let text = await getText(editorSelector);
+          lastText = `Foo${data}`;
+          expect(text).withContext(`In ${browserName}`).toEqual(lastText);
+
+          await select(3);
+          await pasteFromClipboard(
+            page,
+            {
+              "text/html": "<b>Bold Bar</b><br><b>Oof</b>",
+              "text/plain": "Bar\nOof",
+            },
+            `${editorSelector} .internal`
+          );
+
+          await waitForTextChange(lastText, editorSelector);
+          text = await getText(editorSelector);
+          lastText = `FooBar\nOof${data}`;
+          expect(text).withContext(`In ${browserName}`).toEqual(lastText);
+
+          await select(0);
+          await pasteFromClipboard(
+            page,
+            {
+              "text/html": "<b>basic html</b>",
+            },
+            `${editorSelector} .internal`
+          );
+
+          // Nothing should change, so it's hard to wait on something.
+          await waitForTimeout(100);
+
+          text = await getText(editorSelector);
+          expect(text).withContext(`In ${browserName}`).toEqual(lastText);
+
+          const getHTML = () =>
+            page.$eval(`${editorSelector} .internal`, el => el.innerHTML);
+          const prevHTML = await getHTML();
+
+          // Try to paste an image.
+          await pasteFromClipboard(
+            page,
+            {
+              "image/png":
+                // 1x1 transparent png.
+                "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+            },
+            `${editorSelector} .internal`
+          );
+
+          // Nothing should change, so it's hard to wait on something.
+          await waitForTimeout(100);
+
+          const html = await getHTML();
+          expect(html).withContext(`In ${browserName}`).toEqual(prevHTML);
+
+          // Commit.
+          await page.keyboard.press("Escape");
+          await page.waitForSelector(`${editorSelector} .overlay.enabled`);
+
+          editorSelector = getEditorSelector(1);
+          await page.mouse.click(rect.x + 200, rect.y + 200);
+          await page.waitForSelector(editorSelector, {
+            visible: true,
+          });
+
+          const fooBar = "Foo\nBar\nOof";
+          await pasteFromClipboard(
+            page,
+            {
+              "text/html": "<b>html</b>",
+              "text/plain": fooBar,
+            },
+            `${editorSelector} .internal`
+          );
+
+          await waitForTextChange("", editorSelector);
+          text = await getText(editorSelector);
+          expect(text).withContext(`In ${browserName}`).toEqual(fooBar);
         })
       );
     });

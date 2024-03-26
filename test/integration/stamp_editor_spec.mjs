@@ -26,6 +26,7 @@ import {
   kbSelectAll,
   kbUndo,
   loadAndWait,
+  pasteFromClipboard,
   scrollIntoView,
   serializeBitmapDimensions,
   waitForAnnotationEditorLayer,
@@ -72,43 +73,12 @@ const copyImage = async (page, imagePath, number) => {
   const data = fs
     .readFileSync(path.join(__dirname, imagePath))
     .toString("base64");
-  await page.evaluate(async imageData => {
-    const resp = await fetch(`data:image/png;base64,${imageData}`);
-    const blob = await resp.blob();
-
-    await navigator.clipboard.write([
-      new ClipboardItem({
-        [blob.type]: blob,
-      }),
-    ]);
-  }, data);
-
-  let hasPasteEvent = false;
-  while (!hasPasteEvent) {
-    // We retry to paste if nothing has been pasted before 500ms.
-    const handle = await page.evaluateHandle(() => {
-      let callback = null;
-      return [
-        Promise.race([
-          new Promise(resolve => {
-            callback = e => resolve(e.clipboardData.items.length !== 0);
-            document.addEventListener("paste", callback, {
-              once: true,
-            });
-          }),
-          new Promise(resolve => {
-            setTimeout(() => {
-              document.removeEventListener("paste", callback);
-              resolve(false);
-            }, 500);
-          }),
-        ]),
-      ];
-    });
-    await kbPaste(page);
-    hasPasteEvent = await awaitPromise(handle);
-  }
-
+  await pasteFromClipboard(
+    page,
+    { "image/png": `data:image/png;base64,${data}` },
+    "",
+    500
+  );
   await waitForImage(page, getEditorSelector(number));
 };
 

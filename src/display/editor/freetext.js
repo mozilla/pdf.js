@@ -32,6 +32,8 @@ import {
 import { AnnotationEditor } from "./editor.js";
 import { FreeTextAnnotationElement } from "../annotation_layer.js";
 
+const EOL_PATTERN = /\r\n?|\n/g;
+
 /**
  * Basic text editor in order to create a FreeTex annotation.
  */
@@ -43,6 +45,8 @@ class FreeTextEditor extends AnnotationEditor {
   #boundEditorDivInput = this.editorDivInput.bind(this);
 
   #boundEditorDivKeydown = this.editorDivKeydown.bind(this);
+
+  #boundEditorDivPaste = this.editorDivPaste.bind(this);
 
   #color;
 
@@ -307,6 +311,7 @@ class FreeTextEditor extends AnnotationEditor {
     this.editorDiv.addEventListener("focus", this.#boundEditorDivFocus);
     this.editorDiv.addEventListener("blur", this.#boundEditorDivBlur);
     this.editorDiv.addEventListener("input", this.#boundEditorDivInput);
+    this.editorDiv.addEventListener("paste", this.#boundEditorDivPaste);
   }
 
   /** @inheritdoc */
@@ -325,6 +330,7 @@ class FreeTextEditor extends AnnotationEditor {
     this.editorDiv.removeEventListener("focus", this.#boundEditorDivFocus);
     this.editorDiv.removeEventListener("blur", this.#boundEditorDivBlur);
     this.editorDiv.removeEventListener("input", this.#boundEditorDivInput);
+    this.editorDiv.removeEventListener("paste", this.#boundEditorDivPaste);
 
     // On Chrome, the focus is given to <body> when contentEditable is set to
     // false, hence we focus the div.
@@ -386,11 +392,8 @@ class FreeTextEditor extends AnnotationEditor {
     // We don't use innerText because there are some bugs with line breaks.
     const buffer = [];
     this.editorDiv.normalize();
-    const EOL_PATTERN = /\r\n?|\n/g;
     for (const child of this.editorDiv.childNodes) {
-      const content =
-        child.nodeType === Node.TEXT_NODE ? child.nodeValue : child.innerText;
-      buffer.push(content.replaceAll(EOL_PATTERN, ""));
+      buffer.push(FreeTextEditor.#getNodeContent(child));
     }
     return buffer.join("\n");
   }
@@ -558,9 +561,6 @@ class FreeTextEditor extends AnnotationEditor {
     this.overlayDiv.classList.add("overlay", "enabled");
     this.div.append(this.overlayDiv);
 
-    // TODO: implement paste callback.
-    // The goal is to sanitize and have something suitable for this
-    // editor.
     bindEvents(this, this.div, ["dblclick", "keydown"]);
 
     if (this.width) {
@@ -630,6 +630,96 @@ class FreeTextEditor extends AnnotationEditor {
     }
 
     return this.div;
+  }
+
+  static #getNodeContent(node) {
+    return (
+      node.nodeType === Node.TEXT_NODE ? node.nodeValue : node.innerText
+    ).replaceAll(EOL_PATTERN, "");
+  }
+
+  editorDivPaste(event) {
+    const clipboardData = event.clipboardData || window.clipboardData;
+    const { types } = clipboardData;
+    if (types.length === 1 && types[0] === "text/plain") {
+      return;
+    }
+
+    event.preventDefault();
+    const paste = FreeTextEditor.#deserializeContent(
+      clipboardData.getData("text") || ""
+    ).replaceAll(EOL_PATTERN, "\n");
+    if (!paste) {
+      return;
+    }
+    const selection = window.getSelection();
+    if (!selection.rangeCount) {
+      return;
+    }
+    this.editorDiv.normalize();
+    selection.deleteFromDocument();
+    const range = selection.getRangeAt(0);
+    if (!paste.includes("\n")) {
+      range.insertNode(document.createTextNode(paste));
+      this.editorDiv.normalize();
+      selection.collapseToStart();
+      return;
+    }
+
+    // Collect the text before and after the caret.
+    const { startContainer, startOffset } = range;
+    const bufferBefore = [];
+    const bufferAfter = [];
+    if (startContainer.nodeType === Node.TEXT_NODE) {
+      const parent = startContainer.parentElement;
+      bufferAfter.push(
+        startContainer.nodeValue.slice(startOffset).replaceAll(EOL_PATTERN, "")
+      );
+      if (parent !== this.editorDiv) {
+        let buffer = bufferBefore;
+        for (const child of this.editorDiv.childNodes) {
+          if (child === parent) {
+            buffer = bufferAfter;
+            continue;
+          }
+          buffer.push(FreeTextEditor.#getNodeContent(child));
+        }
+      }
+      bufferBefore.push(
+        startContainer.nodeValue
+          .slice(0, startOffset)
+          .replaceAll(EOL_PATTERN, "")
+      );
+    } else if (startContainer === this.editorDiv) {
+      let buffer = bufferBefore;
+      let i = 0;
+      for (const child of this.editorDiv.childNodes) {
+        if (i++ === startOffset) {
+          buffer = bufferAfter;
+        }
+        buffer.push(FreeTextEditor.#getNodeContent(child));
+      }
+    }
+    this.#content = `${bufferBefore.join("\n")}${paste}${bufferAfter.join("\n")}`;
+    this.#setContent();
+
+    // Set the caret at the right position.
+    const newRange = new Range();
+    let beforeLength = bufferBefore.reduce((acc, line) => acc + line.length, 0);
+    for (const { firstChild } of this.editorDiv.childNodes) {
+      // Each child is either a div with a text node or a br element.
+      if (firstChild.nodeType === Node.TEXT_NODE) {
+        const length = firstChild.nodeValue.length;
+        if (beforeLength <= length) {
+          newRange.setStart(firstChild, beforeLength);
+          newRange.setEnd(firstChild, beforeLength);
+          break;
+        }
+        beforeLength -= length;
+      }
+    }
+    selection.removeAllRanges();
+    selection.addRange(newRange);
   }
 
   #setContent() {
