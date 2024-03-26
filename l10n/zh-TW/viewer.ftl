@@ -296,6 +296,8 @@ pdfjs-editor-stamp-button-label = 新增或編輯圖片
 pdfjs-editor-highlight-button =
     .title = 強調
 pdfjs-editor-highlight-button-label = 強調
+pdfjs-highlight-floating-button =
+    .title = 強調
 
 ## Remove button for the various kind of editor.
 
@@ -379,3 +381,10 @@ pdfjs-editor-colorpicker-pink =
     .title = 粉紅色
 pdfjs-editor-colorpicker-red =
     .title = 紅色
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = 顯示全部
+pdfjs-editor-highlight-show-all-button =
+    .title = 顯示全部

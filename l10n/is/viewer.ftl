@@ -304,6 +304,8 @@ pdfjs-editor-stamp-button-label = Bæta við eða breyta myndum
 pdfjs-editor-highlight-button =
     .title = Áherslulita
 pdfjs-editor-highlight-button-label = Áherslulita
+pdfjs-highlight-floating-button =
+    .title = Áherslulita
 
 ## Remove button for the various kind of editor.
 
@@ -387,3 +389,10 @@ pdfjs-editor-colorpicker-pink =
     .title = Bleikt
 pdfjs-editor-colorpicker-red =
     .title = Rautt
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Birta allt
+pdfjs-editor-highlight-show-all-button =
+    .title = Birta allt

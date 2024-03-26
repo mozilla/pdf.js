@@ -304,6 +304,8 @@ pdfjs-editor-stamp-button-label = Afbeeldingen toevoegen of bewerken
 pdfjs-editor-highlight-button =
     .title = Markeren
 pdfjs-editor-highlight-button-label = Markeren
+pdfjs-highlight-floating-button =
+    .title = Markeren
 
 ## Remove button for the various kind of editor.
 
@@ -387,3 +389,10 @@ pdfjs-editor-colorpicker-pink =
     .title = Roze
 pdfjs-editor-colorpicker-red =
     .title = Rood
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Alles tonen
+pdfjs-editor-highlight-show-all-button =
+    .title = Alles tonen

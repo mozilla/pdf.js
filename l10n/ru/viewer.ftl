@@ -306,6 +306,8 @@ pdfjs-editor-stamp-button-label = Добавить или изменить из�
 pdfjs-editor-highlight-button =
     .title = Выделение
 pdfjs-editor-highlight-button-label = Выделение
+pdfjs-highlight-floating-button =
+    .title = Выделение
 
 ## Remove button for the various kind of editor.
 
@@ -389,3 +391,10 @@ pdfjs-editor-colorpicker-pink =
     .title = Розовый
 pdfjs-editor-colorpicker-red =
     .title = Красный
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Показать все
+pdfjs-editor-highlight-show-all-button =
+    .title = Показать все

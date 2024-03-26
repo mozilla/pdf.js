@@ -82,17 +82,17 @@ pdfjs-cursor-hand-tool-button =
     .title = Aktivigi ilon de mano
 pdfjs-cursor-hand-tool-button-label = Ilo de mano
 pdfjs-scroll-page-button =
-    .title = Uzi ŝovadon de paĝo
-pdfjs-scroll-page-button-label = Ŝovado de paĝo
+    .title = Uzi rulumon de paĝo
+pdfjs-scroll-page-button-label = Rulumo de paĝo
 pdfjs-scroll-vertical-button =
-    .title = Uzi vertikalan ŝovadon
-pdfjs-scroll-vertical-button-label = Vertikala ŝovado
+    .title = Uzi vertikalan rulumon
+pdfjs-scroll-vertical-button-label = Vertikala rulumo
 pdfjs-scroll-horizontal-button =
-    .title = Uzi horizontalan ŝovadon
-pdfjs-scroll-horizontal-button-label = Horizontala ŝovado
+    .title = Uzi horizontalan rulumon
+pdfjs-scroll-horizontal-button-label = Horizontala rulumo
 pdfjs-scroll-wrapped-button =
-    .title = Uzi ambaŭdirektan ŝovadon
-pdfjs-scroll-wrapped-button-label = Ambaŭdirekta ŝovado
+    .title = Uzi ambaŭdirektan rulumon
+pdfjs-scroll-wrapped-button-label = Ambaŭdirekta rulumo
 pdfjs-spread-none-button =
     .title = Ne montri paĝojn po du
 pdfjs-spread-none-button-label = Unupaĝa vido
@@ -304,6 +304,8 @@ pdfjs-editor-stamp-button-label = Aldoni aŭ modifi bildojn
 pdfjs-editor-highlight-button =
     .title = Elstarigi
 pdfjs-editor-highlight-button-label = Elstarigi
+pdfjs-highlight-floating-button =
+    .title = Elstarigi
 
 ## Remove button for the various kind of editor.
 
@@ -387,3 +389,10 @@ pdfjs-editor-colorpicker-pink =
     .title = Roza
 pdfjs-editor-colorpicker-red =
     .title = Ruĝa
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Montri ĉiujn
+pdfjs-editor-highlight-show-all-button =
+    .title = Montri ĉiujn
