@@ -387,3 +387,10 @@ pdfjs-editor-colorpicker-pink =
     .title = Pinkki
 pdfjs-editor-colorpicker-red =
     .title = Punainen
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Näytä kaikki
+pdfjs-editor-highlight-show-all-button =
+    .title = Näytä kaikki

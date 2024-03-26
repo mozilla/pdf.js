@@ -304,6 +304,8 @@ pdfjs-editor-stamp-button-label = Gehitu edo editatu irudiak
 pdfjs-editor-highlight-button =
     .title = Nabarmendu
 pdfjs-editor-highlight-button-label = Nabarmendu
+pdfjs-highlight-floating-button =
+    .title = Nabarmendu
 
 ## Remove button for the various kind of editor.
 
@@ -387,3 +389,10 @@ pdfjs-editor-colorpicker-pink =
     .title = Arrosa
 pdfjs-editor-colorpicker-red =
     .title = Gorria
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Erakutsi denak
+pdfjs-editor-highlight-show-all-button =
+    .title = Erakutsi denak
