@@ -304,6 +304,8 @@ pdfjs-editor-stamp-button-label = Resim ekle veya düzenle
 pdfjs-editor-highlight-button =
     .title = Vurgula
 pdfjs-editor-highlight-button-label = Vurgula
+pdfjs-highlight-floating-button =
+    .title = Vurgula
 
 ## Remove button for the various kind of editor.
 
@@ -387,3 +389,10 @@ pdfjs-editor-colorpicker-pink =
     .title = Pembe
 pdfjs-editor-colorpicker-red =
     .title = Kırmızı
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Tümünü göster
+pdfjs-editor-highlight-show-all-button =
+    .title = Tümünü göster

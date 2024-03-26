@@ -296,6 +296,8 @@ pdfjs-editor-stamp-button-label = Thêm hoặc chỉnh sửa hình ảnh
 pdfjs-editor-highlight-button =
     .title = Đánh dấu
 pdfjs-editor-highlight-button-label = Đánh dấu
+pdfjs-highlight-floating-button =
+    .title = Đánh dấu
 
 ## Remove button for the various kind of editor.
 
@@ -379,3 +381,10 @@ pdfjs-editor-colorpicker-pink =
     .title = Hồng
 pdfjs-editor-colorpicker-red =
     .title = Đỏ
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Hiện tất cả
+pdfjs-editor-highlight-show-all-button =
+    .title = Hiện tất cả
