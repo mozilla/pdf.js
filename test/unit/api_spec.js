@@ -2926,6 +2926,26 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("gets annotations containing /Launch action with /FileSpec dictionary (issue 17846)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue17846.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+
+      const annotations = await pdfPage.getAnnotations();
+      expect(annotations.length).toEqual(1);
+
+      const { annotationType, url, unsafeUrl, newWindow } = annotations[0];
+      expect(annotationType).toEqual(AnnotationType.LINK);
+
+      expect(url).toBeUndefined();
+      expect(unsafeUrl).toEqual(
+        "对不起/没关系/1_1_模块1行政文件和药品信息目录.pdf"
+      );
+      expect(newWindow).toEqual(true);
+
+      await loadingTask.destroy();
+    });
+
     it("gets text content", async function () {
       const { items, styles } = await page.getTextContent();
 
