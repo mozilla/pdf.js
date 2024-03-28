@@ -50,6 +50,7 @@ class TextLayerBuilder {
   constructor({
     highlighter = null,
     accessibilityManager = null,
+    lang,
     enablePermissions = false,
     onAppend = null,
   }) {
@@ -62,6 +63,7 @@ class TextLayerBuilder {
     this.accessibilityManager = accessibilityManager;
     this.#enablePermissions = enablePermissions === true;
     this.#onAppend = onAppend;
+    this.lang = lang;
 
     this.div = document.createElement("div");
     this.div.tabIndex = 0;
@@ -103,6 +105,7 @@ class TextLayerBuilder {
           viewport,
           textDivs: this.textDivs,
           textDivProperties: this.textDivProperties,
+          lang: this.lang,
           mustRescale,
           mustRotate,
         });
@@ -124,6 +127,7 @@ class TextLayerBuilder {
       textDivs: this.textDivs,
       textDivProperties: this.textDivProperties,
       textContentItemsStr: this.textContentItemsStr,
+      lang: this.lang,
     });
 
     await this.textLayerRenderTask.promise;
