@@ -13,12 +13,7 @@
  * limitations under the License.
  */
 
-import {
-  AbortException,
-  assert,
-  PromiseCapability,
-  warn,
-} from "../shared/util.js";
+import { AbortException, assert, warn } from "../shared/util.js";
 import {
   createResponseStatusError,
   extractFilenameFromHeader,
@@ -118,7 +113,7 @@ class PDFFetchStreamReader {
     const source = stream.source;
     this._withCredentials = source.withCredentials || false;
     this._contentLength = source.length;
-    this._headersCapability = new PromiseCapability();
+    this._headersCapability = Promise.withResolvers();
     this._disableRange = source.disableRange || false;
     this._rangeChunkSize = source.rangeChunkSize;
     if (!this._rangeChunkSize && !this._disableRange) {
@@ -223,7 +218,7 @@ class PDFFetchStreamRangeReader {
     this._loaded = 0;
     const source = stream.source;
     this._withCredentials = source.withCredentials || false;
-    this._readCapability = new PromiseCapability();
+    this._readCapability = Promise.withResolvers();
     this._isStreamingSupported = !source.disableStream;
 
     this._abortController = new AbortController();

@@ -99,6 +99,13 @@ const AUTOPREFIXER_CONFIG = {
 // Default Babel targets used for generic, components, minified-pre
 const BABEL_TARGETS = ENV_TARGETS.join(", ");
 
+const BABEL_PRESET_ENV_OPTS = Object.freeze({
+  corejs: "3.36.1",
+  exclude: ["web.structured-clone"],
+  shippedProposals: true,
+  useBuiltIns: "usage",
+});
+
 const DEFINES = Object.freeze({
   SKIP_BABEL: true,
   TESTING: undefined,
@@ -303,17 +310,7 @@ function createWebpackConfig(
 
   const babelPresets = skipBabel
     ? undefined
-    : [
-        [
-          "@babel/preset-env",
-          {
-            corejs: "3.36.1",
-            exclude: ["web.structured-clone"],
-            shippedProposals: true,
-            useBuiltIns: "usage",
-          },
-        ],
-      ];
+    : [["@babel/preset-env", BABEL_PRESET_ENV_OPTS]];
   const babelPlugins = [
     [
       babelPluginPDFJSPreprocessor,
@@ -1542,7 +1539,12 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
       sourceType: "module",
       presets: skipBabel
         ? undefined
-        : [["@babel/preset-env", { loose: false, modules: false }]],
+        : [
+            [
+              "@babel/preset-env",
+              { ...BABEL_PRESET_ENV_OPTS, loose: false, modules: false },
+            ],
+          ],
       plugins: [[babelPluginPDFJSPreprocessor, ctx]],
       targets: BABEL_TARGETS,
     }).code;

@@ -25,7 +25,6 @@ import {
   isArrayEqual,
   normalizeUnicode,
   OPS,
-  PromiseCapability,
   shadow,
   stringToPDFString,
   TextRenderingMode,
@@ -1270,7 +1269,7 @@ class PartialEvaluator {
       return this.fontCache.get(font.cacheKey);
     }
 
-    const fontCapability = new PromiseCapability();
+    const { promise, resolve } = Promise.withResolvers();
 
     let preEvaluatedFont;
     try {
@@ -1328,10 +1327,10 @@ class PartialEvaluator {
     //       keys. Also, since `fontRef` is used when getting cached fonts,
     //       we'll not accidentally match fonts cached with the `fontID`.
     if (fontRefIsRef) {
-      this.fontCache.put(fontRef, fontCapability.promise);
+      this.fontCache.put(fontRef, promise);
     } else {
       font.cacheKey = `cacheKey_${fontID}`;
-      this.fontCache.put(font.cacheKey, fontCapability.promise);
+      this.fontCache.put(font.cacheKey, promise);
     }
 
     // Keep track of each font we translated so the caller can
@@ -1340,7 +1339,7 @@ class PartialEvaluator {
 
     this.translateFont(preEvaluatedFont)
       .then(translatedFont => {
-        fontCapability.resolve(
+        resolve(
           new TranslatedFont({
             loadedName: font.loadedName,
             font: translatedFont,
@@ -1350,10 +1349,10 @@ class PartialEvaluator {
         );
       })
       .catch(reason => {
-        // TODO fontCapability.reject?
+        // TODO reject?
         warn(`loadFont - translateFont failed: "${reason}".`);
 
-        fontCapability.resolve(
+        resolve(
           new TranslatedFont({
             loadedName: font.loadedName,
             font: new ErrorFont(
@@ -1364,7 +1363,7 @@ class PartialEvaluator {
           })
         );
       });
-    return fontCapability.promise;
+    return promise;
   }
 
   buildPath(operatorList, fn, args, parsingText = false) {

@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { getFilenameFromUrl, PromiseCapability } from "pdfjs-lib";
 import { BaseTreeViewer } from "./base_tree_viewer.js";
+import { getFilenameFromUrl } from "pdfjs-lib";
 import { waitOnEventOrTimeout } from "./event_utils.js";
 
 /**
@@ -50,7 +50,7 @@ class PDFAttachmentViewer extends BaseTreeViewer {
     if (!keepRenderedCapability) {
       // The only situation in which the `_renderedCapability` should *not* be
       // replaced is when appending FileAttachment annotations.
-      this._renderedCapability = new PromiseCapability();
+      this._renderedCapability = Promise.withResolvers();
     }
     this._pendingDispatchEvent = false;
   }

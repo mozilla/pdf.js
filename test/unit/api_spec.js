@@ -26,7 +26,6 @@ import {
   PasswordException,
   PasswordResponses,
   PermissionFlag,
-  PromiseCapability,
   UnknownErrorException,
 } from "../../src/shared/util.js";
 import {
@@ -156,13 +155,11 @@ describe("api", function () {
       const loadingTask = getDocument(basicApiGetDocumentParams);
       expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
 
-      const progressReportedCapability = new PromiseCapability();
+      const progressReportedCapability = Promise.withResolvers();
       // Attach the callback that is used to report loading progress;
       // similarly to how viewer.js works.
       loadingTask.onProgress = function (progressData) {
-        if (!progressReportedCapability.settled) {
-          progressReportedCapability.resolve(progressData);
-        }
+        progressReportedCapability.resolve(progressData);
       };
 
       const data = await Promise.all([
@@ -218,7 +215,7 @@ describe("api", function () {
       const loadingTask = getDocument(typedArrayPdf);
       expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
 
-      const progressReportedCapability = new PromiseCapability();
+      const progressReportedCapability = Promise.withResolvers();
       loadingTask.onProgress = function (data) {
         progressReportedCapability.resolve(data);
       };
@@ -248,7 +245,7 @@ describe("api", function () {
       const loadingTask = getDocument(arrayBufferPdf);
       expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
 
-      const progressReportedCapability = new PromiseCapability();
+      const progressReportedCapability = Promise.withResolvers();
       loadingTask.onProgress = function (data) {
         progressReportedCapability.resolve(data);
       };
@@ -306,8 +303,14 @@ describe("api", function () {
       const loadingTask = getDocument(buildGetDocumentParams("pr6531_1.pdf"));
       expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
 
-      const passwordNeededCapability = new PromiseCapability();
-      const passwordIncorrectCapability = new PromiseCapability();
+      const passwordNeededCapability = {
+        ...Promise.withResolvers(),
+        settled: false,
+      };
+      const passwordIncorrectCapability = {
+        ...Promise.withResolvers(),
+        settled: false,
+      };
       // Attach the callback that is used to request a password;
       // similarly to how the default viewer handles passwords.
       loadingTask.onPassword = function (updatePassword, reason) {
@@ -315,6 +318,7 @@ describe("api", function () {
           reason === PasswordResponses.NEED_PASSWORD &&
           !passwordNeededCapability.settled
         ) {
+          passwordNeededCapability.settled = true;
           passwordNeededCapability.resolve();
 
           updatePassword("qwerty"); // Provide an incorrect password.
@@ -324,6 +328,7 @@ describe("api", function () {
           reason === PasswordResponses.INCORRECT_PASSWORD &&
           !passwordIncorrectCapability.settled
         ) {
+          passwordIncorrectCapability.settled = true;
           passwordIncorrectCapability.resolve();
 
           updatePassword("asdfasdf"); // Provide the correct password.
