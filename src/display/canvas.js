@@ -578,6 +578,19 @@ class CanvasExtraState {
     this.maxY = 0;
   }
 
+  isPathInClipBox() {
+    const {
+      clipBox: [x0, y0, x1, y1],
+      minX,
+      minY,
+      maxX,
+      maxY,
+    } = this;
+    return (
+      minX === Infinity || !(minX > x1 || maxX < x0 || minY > y1 || maxY < y0)
+    );
+  }
+
   getClippedPathBoundingBox(pathType = PathType.FILL, transform = null) {
     return Util.intersect(
       this.clipBox,
@@ -1764,6 +1777,9 @@ class CanvasGraphics {
   }
 
   stroke(consumePath = true) {
+    if (!this.current.isPathInClipBox()) {
+      return;
+    }
     const ctx = this.ctx;
     const strokeColor = this.current.strokeColor;
     // For stroke we want to temporarily change the global alpha to the
