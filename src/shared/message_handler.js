@@ -18,7 +18,6 @@ import {
   assert,
   MissingPDFException,
   PasswordException,
-  PromiseCapability,
   UnexpectedResponseException,
   UnknownErrorException,
   unreachable,
@@ -190,7 +189,7 @@ class MessageHandler {
    */
   sendWithPromise(actionName, data, transfers) {
     const callbackId = this.callbackId++;
-    const capability = new PromiseCapability();
+    const capability = Promise.withResolvers();
     this.callbackCapabilities[callbackId] = capability;
     try {
       this.comObj.postMessage(
@@ -228,7 +227,7 @@ class MessageHandler {
     return new ReadableStream(
       {
         start: controller => {
-          const startCapability = new PromiseCapability();
+          const startCapability = Promise.withResolvers();
           this.streamControllers[streamId] = {
             controller,
             startCall: startCapability,
@@ -252,7 +251,7 @@ class MessageHandler {
         },
 
         pull: controller => {
-          const pullCapability = new PromiseCapability();
+          const pullCapability = Promise.withResolvers();
           this.streamControllers[streamId].pullCall = pullCapability;
           comObj.postMessage({
             sourceName,
@@ -268,7 +267,7 @@ class MessageHandler {
 
         cancel: reason => {
           assert(reason instanceof Error, "cancel must have a valid reason");
-          const cancelCapability = new PromiseCapability();
+          const cancelCapability = Promise.withResolvers();
           this.streamControllers[streamId].cancelCall = cancelCapability;
           this.streamControllers[streamId].isClosed = true;
           comObj.postMessage({
@@ -305,7 +304,7 @@ class MessageHandler {
         // so when it changes from positive to negative,
         // set ready as unresolved promise.
         if (lastDesiredSize > 0 && this.desiredSize <= 0) {
-          this.sinkCapability = new PromiseCapability();
+          this.sinkCapability = Promise.withResolvers();
           this.ready = this.sinkCapability.promise;
         }
         comObj.postMessage(
@@ -349,7 +348,7 @@ class MessageHandler {
         });
       },
 
-      sinkCapability: new PromiseCapability(),
+      sinkCapability: Promise.withResolvers(),
       onPull: null,
       onCancel: null,
       isCancelled: false,

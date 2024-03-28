@@ -19,7 +19,6 @@
 
 import { binarySearchFirstItem, scrollIntoView } from "./ui_utils.js";
 import { getCharacterType, getNormalizeWithNFKC } from "./pdf_find_utils.js";
-import { PromiseCapability } from "pdfjs-lib";
 
 const FindState = {
   FOUND: 0,
@@ -576,7 +575,7 @@ class PDFFindController {
     clearTimeout(this._findTimeout);
     this._findTimeout = null;
 
-    this._firstPageCapability = new PromiseCapability();
+    this._firstPageCapability = Promise.withResolvers();
   }
 
   /**
@@ -836,14 +835,14 @@ class PDFFindController {
       return;
     }
 
-    let promise = Promise.resolve();
+    let deferred = Promise.resolve();
     const textOptions = { disableNormalization: true };
     for (let i = 0, ii = this._linkService.pagesCount; i < ii; i++) {
-      const extractTextCapability = new PromiseCapability();
-      this._extractTextPromises[i] = extractTextCapability.promise;
+      const { promise, resolve } = Promise.withResolvers();
+      this._extractTextPromises[i] = promise;
 
       // eslint-disable-next-line arrow-body-style
-      promise = promise.then(() => {
+      deferred = deferred.then(() => {
         return this._pdfDocument
           .getPage(i + 1)
           .then(pdfPage => pdfPage.getTextContent(textOptions))
@@ -864,7 +863,7 @@ class PDFFindController {
                 this._pageDiffs[i],
                 this._hasDiacritics[i],
               ] = normalize(strBuf.join(""));
-              extractTextCapability.resolve();
+              resolve();
             },
             reason => {
               console.error(
@@ -875,7 +874,7 @@ class PDFFindController {
               this._pageContents[i] = "";
               this._pageDiffs[i] = null;
               this._hasDiacritics[i] = false;
-              extractTextCapability.resolve();
+              resolve();
             }
           );
       });
