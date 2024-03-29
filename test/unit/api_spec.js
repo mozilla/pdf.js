@@ -1719,6 +1719,36 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("gets outline, with missing title (issue 17856)", async function () {
+      if (isNodeJS) {
+        pending("Linked test-cases are not supported in Node.js.");
+      }
+      const loadingTask = getDocument(buildGetDocumentParams("issue17856.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const outline = await pdfDoc.getOutline();
+
+      expect(Array.isArray(outline)).toEqual(true);
+      expect(outline.length).toEqual(9);
+
+      expect(outline[0]).toEqual({
+        action: null,
+        attachment: undefined,
+        dest: "section.1",
+        url: null,
+        unsafeUrl: undefined,
+        newWindow: undefined,
+        setOCGState: undefined,
+        title: "",
+        color: new Uint8ClampedArray([0, 0, 0]),
+        count: undefined,
+        bold: false,
+        italic: false,
+        items: [],
+      });
+
+      await loadingTask.destroy();
+    });
+
     it("gets outline, with dest-strings using PDFDocEncoding (issue 14864)", async function () {
       if (isNodeJS) {
         pending("Linked test-cases are not supported in Node.js.");
