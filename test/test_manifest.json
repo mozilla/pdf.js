@@ -2563,6 +2563,13 @@
     "type": "eq"
   },
   {
+    "id": "issue17848",
+    "file": "pdfs/issue17848.pdf",
+    "md5": "9a5b7ee97e1e03ad506115f15f9b57af",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "personwithdog",
     "file": "pdfs/personwithdog.pdf",
     "md5": "cd68fb2ce00dab97801b3e51495b99e3",
