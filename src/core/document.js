@@ -862,10 +862,6 @@ const STARTXREF_SIGNATURE = new Uint8Array([
 ]);
 const ENDOBJ_SIGNATURE = new Uint8Array([0x65, 0x6e, 0x64, 0x6f, 0x62, 0x6a]);
 
-const FINGERPRINT_FIRST_BYTES = 1024;
-const EMPTY_FINGERPRINT =
-  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
-
 function find(stream, signature, limit = 1024, backwards = false) {
   if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
     assert(limit > 0, 'The "limit" must be a positive integer.');
@@ -1548,30 +1544,24 @@ class PDFDocument {
   }
 
   get fingerprints() {
+    const FINGERPRINT_FIRST_BYTES = 1024;
+    const EMPTY_FINGERPRINT = "\x00".repeat(16);
+
     function validate(data) {
       return (
         typeof data === "string" &&
-        data.length > 0 &&
+        data.length === 16 &&
         data !== EMPTY_FINGERPRINT
       );
     }
 
-    function hexString(hash) {
-      const buf = [];
-      for (const num of hash) {
-        const hex = num.toString(16);
-        buf.push(hex.padStart(2, "0"));
-      }
-      return buf.join("");
-    }
-
-    const idArray = this.xref.trailer.get("ID");
+    const id = this.xref.trailer.get("ID");
     let hashOriginal, hashModified;
-    if (Array.isArray(idArray) && validate(idArray[0])) {
-      hashOriginal = stringToBytes(idArray[0]);
+    if (Array.isArray(id) && validate(id[0])) {
+      hashOriginal = stringToBytes(id[0]);
 
-      if (idArray[1] !== idArray[0] && validate(idArray[1])) {
-        hashModified = stringToBytes(idArray[1]);
+      if (id[1] !== id[0] && validate(id[1])) {
+        hashModified = stringToBytes(id[1]);
       }
     } else {
       hashOriginal = calculateMD5(
@@ -1582,8 +1572,8 @@ class PDFDocument {
     }
 
     return shadow(this, "fingerprints", [
-      hexString(hashOriginal),
-      hashModified ? hexString(hashModified) : null,
+      hashOriginal.toHex(),
+      hashModified?.toHex() ?? null,
     ]);
   }
 
