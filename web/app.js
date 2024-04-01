@@ -1915,9 +1915,6 @@ const PDFViewerApplication = {
         once: true,
       });
 
-      if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-        return;
-      }
       _boundEvents.removeWindowResolutionChange ||= function () {
         mediaQueryList.removeEventListener("change", addWindowResolutionChange);
         _boundEvents.removeWindowResolutionChange = null;
