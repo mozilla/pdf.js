@@ -501,6 +501,7 @@ body {
     font-style: normal;
   }
   .loadingInput:has(> &[data-status="pending"])::after {
+    display: block;
     visibility: visible;
   }
   &[data-status="notFound"] {
@@ -1117,6 +1118,7 @@ a:is(.toolbarButton, .secondaryToolbarButton)[href="#"] {
   /*#endif*/
 
   .loadingInput:has(> &.loading)::after {
+    display: block;
     visibility: visible;
 
     transition-property: visibility;
@@ -1128,6 +1130,7 @@ a:is(.toolbarButton, .secondaryToolbarButton)[href="#"] {
   &::after {
     position: absolute;
     visibility: hidden;
+    display: none;
     top: calc(50% - 8px);
     width: 16px;
     height: 16px;
