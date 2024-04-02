@@ -16,7 +16,7 @@
 /** @typedef {import("./event_utils").EventBus} EventBus */
 
 import { apiPageLayoutToViewerModes, RenderingStates } from "./ui_utils.js";
-import { PromiseCapability, shadow } from "pdfjs-lib";
+import { shadow } from "pdfjs-lib";
 
 /**
  * @typedef {Object} PDFScriptingManagerOptions
@@ -199,7 +199,7 @@ class PDFScriptingManager {
       return;
     }
     await this.#willPrintCapability?.promise;
-    this.#willPrintCapability = new PromiseCapability();
+    this.#willPrintCapability = Promise.withResolvers();
     try {
       await this.#scripting.dispatchEventInSandbox({
         id: "doc",
@@ -344,7 +344,7 @@ class PDFScriptingManager {
       visitedPages = this._visitedPages;
 
     if (initialize) {
-      this.#closeCapability = new PromiseCapability();
+      this.#closeCapability = Promise.withResolvers();
     }
     if (!this.#closeCapability) {
       return; // Scripting isn't fully initialized yet.
@@ -406,7 +406,7 @@ class PDFScriptingManager {
   }
 
   #initScripting() {
-    this.#destroyCapability = new PromiseCapability();
+    this.#destroyCapability = Promise.withResolvers();
 
     if (this.#scripting) {
       throw new Error("#initScripting: Scripting already exists.");
