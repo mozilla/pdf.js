@@ -161,8 +161,7 @@ class PDFPageView {
       options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
     this.imageResourcesPath = options.imageResourcesPath || "";
     this.maxCanvasPixels =
-      options.maxCanvasPixels ??
-      (AppOptions.getCompat("maxCanvasPixels") || 2 ** 25);
+      options.maxCanvasPixels ?? AppOptions.get("maxCanvasPixels");
     this.pageColors = options.pageColors || null;
 
     this.eventBus = options.eventBus;
