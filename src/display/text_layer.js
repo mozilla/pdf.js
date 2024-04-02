@@ -16,7 +16,7 @@
 /** @typedef {import("./display_utils").PageViewport} PageViewport */
 /** @typedef {import("./api").TextContent} TextContent */
 
-import { AbortException, PromiseCapability, Util } from "../shared/util.js";
+import { AbortException, Util } from "../shared/util.js";
 import { setLayerDimensions } from "./display_utils.js";
 
 /**
@@ -326,7 +326,7 @@ class TextLayerRenderTask {
     this._reader = null;
     this._textDivProperties = textDivProperties || new WeakMap();
     this._canceled = false;
-    this._capability = new PromiseCapability();
+    this._capability = Promise.withResolvers();
     this._layoutTextParams = {
       prevFontSize: null,
       prevFontFamily: null,
@@ -426,21 +426,21 @@ class TextLayerRenderTask {
    * @private
    */
   _render() {
-    const capability = new PromiseCapability();
+    const { promise, resolve, reject } = Promise.withResolvers();
     let styleCache = Object.create(null);
 
     if (this._isReadableStream) {
       const pump = () => {
         this._reader.read().then(({ value, done }) => {
           if (done) {
-            capability.resolve();
+            resolve();
             return;
           }
 
           Object.assign(styleCache, value.styles);
           this._processItems(value.items, styleCache);
           pump();
-        }, capability.reject);
+        }, reject);
       };
 
       this._reader = this._textContentSource.getReader();
@@ -448,12 +448,12 @@ class TextLayerRenderTask {
     } else if (this._textContentSource) {
       const { items, styles } = this._textContentSource;
       this._processItems(items, styles);
-      capability.resolve();
+      resolve();
     } else {
       throw new Error('No "textContentSource" parameter specified.');
     }
 
-    capability.promise.then(() => {
+    promise.then(() => {
       styleCache = null;
       render(this);
     }, this._capability.reject);

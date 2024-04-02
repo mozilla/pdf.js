@@ -22,7 +22,6 @@ const {
   GlobalWorkerOptions,
   Outliner,
   PixelsPerInch,
-  PromiseCapability,
   renderTextLayer,
   shadow,
   XfaLayer,
@@ -1112,7 +1111,7 @@ class Driver {
   }
 
   _send(url, message) {
-    const capability = new PromiseCapability();
+    const { promise, resolve } = Promise.withResolvers();
     this.inflight.textContent = this.inFlightRequests++;
 
     fetch(url, {
@@ -1129,18 +1128,18 @@ class Driver {
         }
 
         this.inFlightRequests--;
-        capability.resolve();
+        resolve();
       })
       .catch(reason => {
         console.warn(`Driver._send failed (${url}): ${reason}`);
 
         this.inFlightRequests--;
-        capability.resolve();
+        resolve();
 
         this._send(url, message);
       });
 
-    return capability.promise;
+    return promise;
   }
 }
 

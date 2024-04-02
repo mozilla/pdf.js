@@ -1031,43 +1031,6 @@ function getModificationDate(date = new Date()) {
   return buffer.join("");
 }
 
-class PromiseCapability {
-  #settled = false;
-
-  constructor() {
-    /**
-     * @type {Promise<any>} The Promise object.
-     */
-    this.promise = new Promise((resolve, reject) => {
-      /**
-       * @type {function} Fulfills the Promise.
-       */
-      this.resolve = data => {
-        this.#settled = true;
-        resolve(data);
-      };
-
-      /**
-       * @type {function} Rejects the Promise.
-       */
-      this.reject = reason => {
-        if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
-          assert(reason instanceof Error, 'Expected valid "reason" argument.');
-        }
-        this.#settled = true;
-        reject(reason);
-      };
-    });
-  }
-
-  /**
-   * @type {boolean} If the Promise has been fulfilled/rejected.
-   */
-  get settled() {
-    return this.#settled;
-  }
-}
-
 let NormalizeRegex = null;
 let NormalizationMap = null;
 function normalizeUnicode(str) {
@@ -1154,7 +1117,6 @@ export {
   PasswordException,
   PasswordResponses,
   PermissionFlag,
-  PromiseCapability,
   RenderingIntentFlag,
   setVerbosityLevel,
   shadow,

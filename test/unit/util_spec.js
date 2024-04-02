@@ -17,7 +17,6 @@ import {
   bytesToString,
   createValidAbsoluteUrl,
   getModificationDate,
-  PromiseCapability,
   string32,
   stringToBytes,
   stringToPDFString,
@@ -220,37 +219,6 @@ describe("util", function () {
         new URL("tel:+0123456789")
       );
       expect(createValidAbsoluteUrl("/foo", "tel:0123456789")).toEqual(null);
-    });
-  });
-
-  describe("PromiseCapability", function () {
-    it("should resolve with correct data", async function () {
-      const promiseCapability = new PromiseCapability();
-      expect(promiseCapability.settled).toEqual(false);
-
-      promiseCapability.resolve({ test: "abc" });
-
-      const data = await promiseCapability.promise;
-      expect(promiseCapability.settled).toEqual(true);
-      expect(data).toEqual({ test: "abc" });
-    });
-
-    it("should reject with correct reason", async function () {
-      const promiseCapability = new PromiseCapability();
-      expect(promiseCapability.settled).toEqual(false);
-
-      promiseCapability.reject(new Error("reason"));
-
-      try {
-        await promiseCapability.promise;
-
-        // Shouldn't get here.
-        expect(false).toEqual(true);
-      } catch (reason) {
-        expect(promiseCapability.settled).toEqual(true);
-        expect(reason instanceof Error).toEqual(true);
-        expect(reason.message).toEqual("reason");
-      }
     });
   });
 

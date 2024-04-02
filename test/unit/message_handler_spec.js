@@ -15,7 +15,6 @@
 
 import {
   AbortException,
-  PromiseCapability,
   UnknownErrorException,
 } from "../../src/shared/util.js";
 import { LoopbackPort } from "../../src/display/api.js";
@@ -336,7 +335,7 @@ describe("message_handler", function () {
     it("should ignore any pull after close is called", async function () {
       let log = "";
       const port = new LoopbackPort();
-      const capability = new PromiseCapability();
+      const { promise, resolve } = Promise.withResolvers();
       const messageHandler2 = new MessageHandler("worker", "main", port);
       messageHandler2.on("fakeHandler", (data, sink) => {
         sink.onPull = function () {
@@ -350,7 +349,7 @@ describe("message_handler", function () {
           log += "1";
           sink.enqueue([1, 2, 3, 4], 4);
         });
-        return capability.promise.then(() => {
+        return promise.then(() => {
           sink.close();
         });
       });
@@ -371,8 +370,8 @@ describe("message_handler", function () {
       await sleep(10);
       expect(log).toEqual("01");
 
-      capability.resolve();
-      await capability.promise;
+      resolve();
+      await promise;
 
       let result = await reader.read();
       expect(result.value).toEqual([1, 2, 3, 4]);
