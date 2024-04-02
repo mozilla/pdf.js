@@ -913,6 +913,14 @@ function composeSMask(ctx, smask, layerCtx, layerBox) {
 }
 
 function getImageSmoothingEnabled(transform, interpolate) {
+  // In section 8.9.5.3 of the PDF spec, it's mentioned that the interpolate
+  // flag should be used when the image is upscaled.
+  // In Firefox, smoothing is always used when downscaling images (bug 1360415).
+
+  if (interpolate) {
+    return true;
+  }
+
   const scale = Util.singularValueDecompose2dScale(transform);
   // Round to a 32bit float so that `<=` check below will pass for numbers that
   // are very close, but not exactly the same 64bit floats.
@@ -921,15 +929,7 @@ function getImageSmoothingEnabled(transform, interpolate) {
   const actualScale = Math.fround(
     (globalThis.devicePixelRatio || 1) * PixelsPerInch.PDF_TO_CSS_UNITS
   );
-  if (interpolate !== undefined) {
-    // If the value is explicitly set use it.
-    return interpolate;
-  } else if (scale[0] <= actualScale || scale[1] <= actualScale) {
-    // Smooth when downscaling.
-    return true;
-  }
-  // Don't smooth when upscaling.
-  return false;
+  return scale[0] <= actualScale && scale[1] <= actualScale;
 }
 
 const LINE_CAP_STYLES = ["butt", "round", "square"];
