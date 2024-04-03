@@ -9801,5 +9801,19 @@
     "md5": "dd66194bdaa0f62bc96c760384f2e098",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue17871_bottom_right",
+    "file": "pdfs/issue17871_bottom_right.pdf",
+    "md5": "664807166c5279224abfbf259f701958",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
+    "id": "issue17871_top_right",
+    "file": "pdfs/issue17871_top_right.pdf",
+    "md5": "07d95eabf18aee0cf38f09eb7b1390ec",
+    "rounds": 1,
+    "type": "eq"
   }
 ]
