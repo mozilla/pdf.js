@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./event_utils.js").EventBus} EventBus */
+/** @typedef {import("./interfaces.js").IL10n} IL10n */
+
 import {
   docStyle,
   PresentationModeState,

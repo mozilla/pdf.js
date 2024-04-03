@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces.js").IPDFPrintServiceFactory} IPDFPrintServiceFactory */
+
 import {
   AnnotationMode,
   PixelsPerInch,

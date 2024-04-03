@@ -13,6 +13,12 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./event_utils.js").EventBus} EventBus */
+/** @typedef {import("./interfaces.js").IL10n} IL10n */
+/** @typedef {import("./overlay_manager.js").OverlayManager} OverlayManager */
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/api.js").PDFDocumentProxy} PDFDocumentProxy */
+
 import { getPageSizeInches, isPortraitOrientation } from "./ui_utils.js";
 import { PDFDateString } from "pdfjs-lib";
 
