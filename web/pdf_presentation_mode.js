@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./event_utils.js").EventBus} EventBus */
+/** @typedef {import("./pdf_viewer.js").PDFViewer} PDFViewer */
+
 import {
   normalizeWheelEventDelta,
   PresentationModeState,

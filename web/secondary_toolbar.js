@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./event_utils.js").EventBus} EventBus */
+
 import {
   CursorTool,
   ScrollMode,
