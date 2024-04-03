@@ -298,6 +298,10 @@ pdfjs-editor-highlight-button =
 pdfjs-editor-highlight-button-label = Đánh dấu
 pdfjs-highlight-floating-button =
     .title = Đánh dấu
+pdfjs-highlight-floating-button1 =
+    .title = Đánh dấu
+    .aria-label = Đánh dấu
+pdfjs-highlight-floating-button-label = Đánh dấu
 
 ## Remove button for the various kind of editor.
 
