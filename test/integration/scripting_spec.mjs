@@ -27,6 +27,7 @@ import {
   loadAndWait,
   scrollIntoView,
   waitForEntryInStorage,
+  waitForSandboxTrip,
   waitForTimeout,
 } from "./test_utils.mjs";
 
@@ -2363,6 +2364,43 @@ describe("Interaction", () => {
 
           const text = await page.$eval(getSelector("16R"), el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("0.900");
+        })
+      );
+    });
+  });
+
+  describe("Textfield with a zip code starting with 0", () => {
+    let pages;
+    let otherPages;
+
+    beforeAll(async () => {
+      otherPages = await Promise.all(
+        global.integrationSessions.map(async session =>
+          session.browser.newPage()
+        )
+      );
+      pages = await loadAndWait("bug1889122.pdf", getSelector("24R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+      await Promise.all(otherPages.map(page => page.close()));
+    });
+
+    it("must check the zip code is correctly formatted", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page], i) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          await page.click(getSelector("24R"));
+          await page.type(getSelector("24R"), "01234", { delay: 10 });
+          await page.keyboard.press("Tab");
+          await waitForSandboxTrip(page);
+
+          const text = await page.$eval(getSelector("24R"), el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("01234");
         })
       );
     });

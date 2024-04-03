@@ -85,6 +85,16 @@ function closePages(pages) {
   );
 }
 
+async function waitForSandboxTrip(page) {
+  const handle = await page.evaluateHandle(() => [
+    new Promise(resolve => {
+      window.addEventListener("sandboxtripend", resolve, { once: true });
+      window.PDFViewerApplication.pdfScriptingManager.sandboxTrip();
+    }),
+  ]);
+  await awaitPromise(handle);
+}
+
 function waitForTimeout(milliseconds) {
   /**
    * Wait for the given number of milliseconds.
@@ -583,6 +593,7 @@ export {
   waitForAnnotationEditorLayer,
   waitForEntryInStorage,
   waitForEvent,
+  waitForSandboxTrip,
   waitForSelectedEditor,
   waitForSerialized,
   waitForStorageEntries,
