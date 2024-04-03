@@ -304,6 +304,12 @@ pdfjs-editor-stamp-button-label = Lisää tai muokkaa kuvia
 pdfjs-editor-highlight-button =
     .title = Korostus
 pdfjs-editor-highlight-button-label = Korostus
+pdfjs-highlight-floating-button =
+    .title = Korostus
+pdfjs-highlight-floating-button1 =
+    .title = Korostus
+    .aria-label = Korostus
+pdfjs-highlight-floating-button-label = Korostus
 
 ## Remove button for the various kind of editor.
 

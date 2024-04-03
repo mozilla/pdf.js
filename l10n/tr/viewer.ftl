@@ -306,6 +306,10 @@ pdfjs-editor-highlight-button =
 pdfjs-editor-highlight-button-label = Vurgula
 pdfjs-highlight-floating-button =
     .title = Vurgula
+pdfjs-highlight-floating-button1 =
+    .title = Vurgula
+    .aria-label = Vurgula
+pdfjs-highlight-floating-button-label = Vurgula
 
 ## Remove button for the various kind of editor.
 

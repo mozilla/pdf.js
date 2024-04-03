@@ -296,6 +296,8 @@ pdfjs-editor-stamp-button-label = เพิ่มหรือแก้ไขภ�
 pdfjs-editor-highlight-button =
     .title = เน้น
 pdfjs-editor-highlight-button-label = เน้น
+pdfjs-highlight-floating-button =
+    .title = เน้นสี
 
 ## Remove button for the various kind of editor.
 
@@ -379,3 +381,10 @@ pdfjs-editor-colorpicker-pink =
     .title = ชมพู
 pdfjs-editor-colorpicker-red =
     .title = แดง
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = แสดงทั้งหมด
+pdfjs-editor-highlight-show-all-button =
+    .title = แสดงทั้งหมด

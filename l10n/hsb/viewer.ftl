@@ -310,6 +310,10 @@ pdfjs-editor-highlight-button =
 pdfjs-editor-highlight-button-label = Wuzběhnyć
 pdfjs-highlight-floating-button =
     .title = Wuzběhnyć
+pdfjs-highlight-floating-button1 =
+    .title = Wuzběhnjenje
+    .aria-label = Wuzběhnjenje
+pdfjs-highlight-floating-button-label = Wuzběhnjenje
 
 ## Remove button for the various kind of editor.
 
