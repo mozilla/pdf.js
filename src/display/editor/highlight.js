@@ -562,11 +562,8 @@ class HighlightEditor extends AnnotationEditor {
 
     const div = super.render();
     if (this.#text) {
-      const mark = document.createElement("mark");
-      div.append(mark);
-      mark.append(document.createTextNode(this.#text));
-      // The text is invisible but it's still visible by a screen reader.
-      mark.className = "visuallyHidden";
+      div.setAttribute("aria-label", this.#text);
+      div.setAttribute("role", "mark");
     }
     if (this.#isFreeHighlight) {
       div.classList.add("free");
