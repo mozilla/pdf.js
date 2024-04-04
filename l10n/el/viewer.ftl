@@ -304,6 +304,12 @@ pdfjs-editor-stamp-button-label = Προσθήκη ή επεξεργασία ε�
 pdfjs-editor-highlight-button =
     .title = Επισήμανση
 pdfjs-editor-highlight-button-label = Επισήμανση
+pdfjs-highlight-floating-button =
+    .title = Επισήμανση
+pdfjs-highlight-floating-button1 =
+    .title = Επισήμανση
+    .aria-label = Επισήμανση
+pdfjs-highlight-floating-button-label = Επισήμανση
 
 ## Remove button for the various kind of editor.
 
@@ -387,3 +393,10 @@ pdfjs-editor-colorpicker-pink =
     .title = Ροζ
 pdfjs-editor-colorpicker-red =
     .title = Κόκκινο
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Εμφάνιση όλων
+pdfjs-editor-highlight-show-all-button =
+    .title = Εμφάνιση όλων

@@ -308,6 +308,12 @@ pdfjs-editor-stamp-button-label = Wobraze pśidaś abo wobźěłaś
 pdfjs-editor-highlight-button =
     .title = Wuzwignuś
 pdfjs-editor-highlight-button-label = Wuzwignuś
+pdfjs-highlight-floating-button =
+    .title = Wuzwignjenje
+pdfjs-highlight-floating-button1 =
+    .title = Wuzwignuś
+    .aria-label = Wuzwignuś
+pdfjs-highlight-floating-button-label = Wuzwignuś
 
 ## Remove button for the various kind of editor.
 
@@ -391,3 +397,10 @@ pdfjs-editor-colorpicker-pink =
     .title = Pink
 pdfjs-editor-colorpicker-red =
     .title = Cerwjeny
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Wšykne pokazaś
+pdfjs-editor-highlight-show-all-button =
+    .title = Wšykne pokazaś

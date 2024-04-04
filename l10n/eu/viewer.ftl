@@ -306,6 +306,10 @@ pdfjs-editor-highlight-button =
 pdfjs-editor-highlight-button-label = Nabarmendu
 pdfjs-highlight-floating-button =
     .title = Nabarmendu
+pdfjs-highlight-floating-button1 =
+    .title = Nabarmendu
+    .aria-label = Nabarmendu
+pdfjs-highlight-floating-button-label = Nabarmendu
 
 ## Remove button for the various kind of editor.
 

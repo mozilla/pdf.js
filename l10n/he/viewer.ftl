@@ -306,6 +306,10 @@ pdfjs-editor-highlight-button =
 pdfjs-editor-highlight-button-label = סימון
 pdfjs-highlight-floating-button =
     .title = סימון
+pdfjs-highlight-floating-button1 =
+    .title = סימון
+    .aria-label = סימון
+pdfjs-highlight-floating-button-label = סימון
 
 ## Remove button for the various kind of editor.
 

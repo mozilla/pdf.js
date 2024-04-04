@@ -310,6 +310,10 @@ pdfjs-editor-highlight-button =
 pdfjs-editor-highlight-button-label = Zvýrazniť
 pdfjs-highlight-floating-button =
     .title = Zvýrazniť
+pdfjs-highlight-floating-button1 =
+    .title = Zvýrazniť
+    .aria-label = Zvýrazniť
+pdfjs-highlight-floating-button-label = Zvýrazniť
 
 ## Remove button for the various kind of editor.
 
