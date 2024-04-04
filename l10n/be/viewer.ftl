@@ -308,6 +308,10 @@ pdfjs-editor-highlight-button =
 pdfjs-editor-highlight-button-label = Вылучэнне
 pdfjs-highlight-floating-button =
     .title = Вылучэнне
+pdfjs-highlight-floating-button1 =
+    .title = Падфарбаваць
+    .aria-label = Падфарбаваць
+pdfjs-highlight-floating-button-label = Падфарбаваць
 
 ## Remove button for the various kind of editor.
 

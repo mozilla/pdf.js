@@ -304,6 +304,8 @@ pdfjs-editor-stamp-button-label = Képek hozzáadása vagy szerkesztése
 pdfjs-editor-highlight-button =
     .title = Kiemelés
 pdfjs-editor-highlight-button-label = Kiemelés
+pdfjs-highlight-floating-button =
+    .title = Kiemelés
 
 ## Remove button for the various kind of editor.
 
@@ -387,3 +389,10 @@ pdfjs-editor-colorpicker-pink =
     .title = Rózsaszín
 pdfjs-editor-colorpicker-red =
     .title = Vörös
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Összes megjelenítése
+pdfjs-editor-highlight-show-all-button =
+    .title = Összes megjelenítése

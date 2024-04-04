@@ -306,6 +306,10 @@ pdfjs-editor-highlight-button =
 pdfjs-editor-highlight-button-label = Markearje
 pdfjs-highlight-floating-button =
     .title = Markearje
+pdfjs-highlight-floating-button1 =
+    .title = Markearje
+    .aria-label = Markearje
+pdfjs-highlight-floating-button-label = Markearje
 
 ## Remove button for the various kind of editor.
 

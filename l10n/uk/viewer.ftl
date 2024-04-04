@@ -308,6 +308,10 @@ pdfjs-editor-highlight-button =
 pdfjs-editor-highlight-button-label = Підсвітити
 pdfjs-highlight-floating-button =
     .title = Підсвітити
+pdfjs-highlight-floating-button1 =
+    .title = Підсвітити
+    .aria-label = Підсвітити
+pdfjs-highlight-floating-button-label = Підсвітити
 
 ## Remove button for the various kind of editor.
 

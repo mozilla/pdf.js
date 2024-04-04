@@ -304,6 +304,8 @@ pdfjs-editor-stamp-button-label = Agiuntar u modifitgar maletgs
 pdfjs-editor-highlight-button =
     .title = Marcar
 pdfjs-editor-highlight-button-label = Marcar
+pdfjs-highlight-floating-button =
+    .title = Relevar
 
 ## Remove button for the various kind of editor.
 
@@ -387,3 +389,10 @@ pdfjs-editor-colorpicker-pink =
     .title = Rosa
 pdfjs-editor-colorpicker-red =
     .title = Cotschen
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Mussar tut
+pdfjs-editor-highlight-show-all-button =
+    .title = Mussar tut
