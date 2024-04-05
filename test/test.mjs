@@ -840,12 +840,14 @@ function unitTestPostHandler(req, res) {
   req.on("data", function (data) {
     body += data;
   });
-  req.on("end", function () {
+  req.on("end", async function () {
     if (pathname === "/ttx") {
-      translateFont(body, function (err, xml) {
-        res.writeHead(200, { "Content-Type": "text/xml" });
-        res.end(err ? "<error>" + err + "</error>" : xml);
-      });
+      res.writeHead(200, { "Content-Type": "text/xml" });
+      try {
+        res.end(await translateFont(body));
+      } catch (error) {
+        res.end(`<error>${error}</error>`);
+      }
       return;
     }
 
