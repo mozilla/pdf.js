@@ -21,14 +21,9 @@ import { spawn } from "child_process";
 
 let ttxTaskId = Date.now();
 
-function runTtx(fontPath, registerOnCancel, callback) {
+function runTtx(fontPath, callback) {
   const ttx = spawn("ttx", [fontPath], { stdio: "ignore" });
   let ttxRunError;
-  registerOnCancel(function (reason) {
-    ttxRunError = reason;
-    callback(reason);
-    ttx.kill();
-  });
   ttx.on("error", function (errorTtx) {
     ttxRunError = errorTtx;
     callback(
@@ -43,14 +38,14 @@ function runTtx(fontPath, registerOnCancel, callback) {
   });
 }
 
-function translateFont(content, registerOnCancel, callback) {
+function translateFont(content, callback) {
   const buffer = Buffer.from(content, "base64");
   const taskId = (ttxTaskId++).toString();
   const fontPath = path.join(os.tmpdir(), `pdfjs-font-test-${taskId}.otf`);
   const resultPath = path.join(os.tmpdir(), `pdfjs-font-test-${taskId}.ttx`);
 
   fs.writeFileSync(fontPath, buffer);
-  runTtx(fontPath, registerOnCancel, function (err) {
+  runTtx(fontPath, function (err) {
     fs.unlinkSync(fontPath);
     if (err) {
       console.error(err);

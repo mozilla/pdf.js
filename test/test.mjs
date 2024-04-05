@@ -842,22 +842,10 @@ function unitTestPostHandler(req, res) {
   });
   req.on("end", function () {
     if (pathname === "/ttx") {
-      var onCancel = null,
-        ttxTimeout = 10000;
-      var timeoutId = setTimeout(function () {
-        onCancel?.("TTX timeout");
-      }, ttxTimeout);
-      translateFont(
-        body,
-        function (fn) {
-          onCancel = fn;
-        },
-        function (err, xml) {
-          clearTimeout(timeoutId);
-          res.writeHead(200, { "Content-Type": "text/xml" });
-          res.end(err ? "<error>" + err + "</error>" : xml);
-        }
-      );
+      translateFont(body, function (err, xml) {
+        res.writeHead(200, { "Content-Type": "text/xml" });
+        res.end(err ? "<error>" + err + "</error>" : xml);
+      });
       return;
     }
 
