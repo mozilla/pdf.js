@@ -3859,6 +3859,14 @@
     "annotations": true
   },
   {
+    "id": "issue17904",
+    "file": "pdfs/issue17904.pdf",
+    "md5": "4b8f0b565a61bf068ef72d232c997cef",
+    "rounds": 1,
+    "type": "eq",
+    "annotations": true
+  },
+  {
     "id": "issue6179_reduced",
     "file": "pdfs/issue6179_reduced.pdf",
     "md5": "457ff3561b83346ae3caf91acd252040",
