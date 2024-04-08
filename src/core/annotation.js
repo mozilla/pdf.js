@@ -1474,9 +1474,9 @@ class AnnotationBorderStyle {
     // We validate the dash array, but we do not use it because CSS does not
     // allow us to change spacing of dashes. For more information, visit
     // http://www.w3.org/TR/css3-background/#the-border-style.
-    if (Array.isArray(dashArray) && dashArray.length > 0) {
-      // According to the PDF specification: the elements in `dashArray`
-      // shall be numbers that are nonnegative and not all equal to zero.
+    if (Array.isArray(dashArray)) {
+      // The PDF specification states that elements in the dash array, if
+      // present, must be non-negative numbers and must not all equal zero.
       let isValid = true;
       let allZeros = true;
       for (const element of dashArray) {
@@ -1488,7 +1488,7 @@ class AnnotationBorderStyle {
           allZeros = false;
         }
       }
-      if (isValid && !allZeros) {
+      if (dashArray.length === 0 || (isValid && !allZeros)) {
         this.dashArray = dashArray;
 
         if (forceStyle) {
