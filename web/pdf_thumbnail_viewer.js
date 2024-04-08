@@ -64,14 +64,11 @@ class PDFThumbnailViewer {
     this.renderingQueue = renderingQueue;
     this.pageColors = pageColors || null;
 
-    this.scroll = watchScroll(this.container, this._scrollUpdated.bind(this));
-    this._resetView();
+    this.scroll = watchScroll(this.container, this.#scrollUpdated.bind(this));
+    this.#resetView();
   }
 
-  /**
-   * @private
-   */
-  _scrollUpdated() {
+  #scrollUpdated() {
     this.renderingQueue.renderHighestPriority();
   }
 
@@ -79,10 +76,7 @@ class PDFThumbnailViewer {
     return this._thumbnails[index];
   }
 
-  /**
-   * @private
-   */
-  _getVisibleThumbs() {
+  #getVisibleThumbs() {
     return getVisibleElements({
       scrollEl: this.container,
       views: this._thumbnails,
@@ -107,7 +101,7 @@ class PDFThumbnailViewer {
       // ... and add the highlight to the new thumbnail.
       thumbnailView.div.classList.add(THUMBNAIL_SELECTED_CLASS);
     }
-    const { first, last, views } = this._getVisibleThumbs();
+    const { first, last, views } = this.#getVisibleThumbs();
 
     // If the thumbnail isn't currently visible, scroll it into view.
     if (views.length > 0) {
@@ -162,10 +156,7 @@ class PDFThumbnailViewer {
     TempImageFactory.destroyCanvas();
   }
 
-  /**
-   * @private
-   */
-  _resetView() {
+  #resetView() {
     this._thumbnails = [];
     this._currentPageNumber = 1;
     this._pageLabels = null;
@@ -180,8 +171,8 @@ class PDFThumbnailViewer {
    */
   setDocument(pdfDocument) {
     if (this.pdfDocument) {
-      this._cancelRendering();
-      this._resetView();
+      this.#cancelRendering();
+      this.#resetView();
     }
 
     this.pdfDocument = pdfDocument;
@@ -225,10 +216,7 @@ class PDFThumbnailViewer {
       });
   }
 
-  /**
-   * @private
-   */
-  _cancelRendering() {
+  #cancelRendering() {
     for (const thumbnail of this._thumbnails) {
       thumbnail.cancelRendering();
     }
@@ -287,7 +275,7 @@ class PDFThumbnailViewer {
   }
 
   forceRendering() {
-    const visibleThumbs = this._getVisibleThumbs();
+    const visibleThumbs = this.#getVisibleThumbs();
     const scrollAhead = this.#getScrollAhead(visibleThumbs);
     const thumbView = this.renderingQueue.getHighestPriority(
       visibleThumbs,

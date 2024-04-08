@@ -55,7 +55,7 @@ class TempImageFactory {
     tempCanvas.height = height;
 
     // Since this is a temporary canvas, we need to fill it with a white
-    // background ourselves. `_getPageDrawContext` uses CSS rules for this.
+    // background ourselves. `#getPageDrawContext` uses CSS rules for this.
     const ctx = tempCanvas.getContext("2d", { alpha: false });
     ctx.save();
     ctx.fillStyle = "rgb(255, 255, 255)";
@@ -196,10 +196,7 @@ class PDFThumbnailView {
     this.resume = null;
   }
 
-  /**
-   * @private
-   */
-  _getPageDrawContext(upscaleFactor = 1) {
+  #getPageDrawContext(upscaleFactor = 1) {
     // Keep the no-thumbnail outline visible, i.e. `data-loaded === false`,
     // until rendering/image conversion is complete, to avoid display issues.
     const canvas = document.createElement("canvas");
@@ -216,14 +213,11 @@ class PDFThumbnailView {
     return { ctx, canvas, transform };
   }
 
-  /**
-   * @private
-   */
-  _convertCanvasToImage(canvas) {
+  #convertCanvasToImage(canvas) {
     if (this.renderingState !== RenderingStates.FINISHED) {
-      throw new Error("_convertCanvasToImage: Rendering has not finished.");
+      throw new Error("#convertCanvasToImage: Rendering has not finished.");
     }
-    const reducedCanvas = this._reduceImage(canvas);
+    const reducedCanvas = this.#reduceImage(canvas);
 
     const image = document.createElement("img");
     image.className = "thumbnailImage";
@@ -253,7 +247,7 @@ class PDFThumbnailView {
       return;
     }
     this.renderingState = RenderingStates.FINISHED;
-    this._convertCanvasToImage(canvas);
+    this.#convertCanvasToImage(canvas);
 
     if (error) {
       throw error;
@@ -280,7 +274,7 @@ class PDFThumbnailView {
     // NOTE: To primarily avoid increasing memory usage too much, but also to
     //   reduce downsizing overhead, we purposely limit the up-scaling factor.
     const { ctx, canvas, transform } =
-      this._getPageDrawContext(DRAW_UPSCALE_FACTOR);
+      this.#getPageDrawContext(DRAW_UPSCALE_FACTOR);
     const drawViewport = this.viewport.clone({
       scale: DRAW_UPSCALE_FACTOR * this.scale,
     });
@@ -342,14 +336,11 @@ class PDFThumbnailView {
       return;
     }
     this.renderingState = RenderingStates.FINISHED;
-    this._convertCanvasToImage(canvas);
+    this.#convertCanvasToImage(canvas);
   }
 
-  /**
-   * @private
-   */
-  _reduceImage(img) {
-    const { ctx, canvas } = this._getPageDrawContext();
+  #reduceImage(img) {
+    const { ctx, canvas } = this.#getPageDrawContext();
 
     if (img.width <= 2 * canvas.width) {
       ctx.drawImage(
