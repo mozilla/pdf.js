@@ -459,4 +459,45 @@ describe("Ink Editor", () => {
       );
     });
   });
+
+  describe("Draw several times in the same editor", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that we can draw several times on the same canvas", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorInk");
+          await page.waitForSelector(".annotationEditorLayer.inkEditing");
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          let xStart = rect.x + 10;
+          const yStart = rect.y + 10;
+          for (let i = 0; i < 5; i++) {
+            const clickHandle = await waitForPointerUp(page);
+            await page.mouse.move(xStart, yStart);
+            await page.mouse.down();
+            await page.mouse.move(xStart + 50, yStart + 50);
+            await page.mouse.up();
+            await awaitPromise(clickHandle);
+            xStart += 70;
+          }
+          await commit(page);
+
+          await page.waitForSelector(getEditorSelector(0));
+        })
+      );
+    });
+  });
 });
