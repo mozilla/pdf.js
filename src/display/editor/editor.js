@@ -62,6 +62,8 @@ class AnnotationEditor {
 
   #hasBeenClicked = false;
 
+  #initialPosition = null;
+
   #isEditing = false;
 
   #isInEditMode = false;
@@ -445,6 +447,8 @@ class AnnotationEditor {
    * @param {number} y - y-translation in screen coordinates.
    */
   translate(x, y) {
+    // We don't change the initial position because the move here hasn't been
+    // done by the user.
     this.#translate(this.parentDimensions, x, y);
   }
 
@@ -455,11 +459,13 @@ class AnnotationEditor {
    * @param {number} y - y-translation in page coordinates.
    */
   translateInPage(x, y) {
+    this.#initialPosition ||= [this.x, this.y];
     this.#translate(this.pageDimensions, x, y);
     this.div.scrollIntoView({ block: "nearest" });
   }
 
   drag(tx, ty) {
+    this.#initialPosition ||= [this.x, this.y];
     const [parentWidth, parentHeight] = this.parentDimensions;
     this.x += tx / parentWidth;
     this.y += ty / parentHeight;
@@ -490,6 +496,14 @@ class AnnotationEditor {
     this.div.style.left = `${(100 * x).toFixed(2)}%`;
     this.div.style.top = `${(100 * y).toFixed(2)}%`;
     this.div.scrollIntoView({ block: "nearest" });
+  }
+
+  get _hasBeenMoved() {
+    return (
+      !!this.#initialPosition &&
+      (this.#initialPosition[0] !== this.x ||
+        this.#initialPosition[1] !== this.y)
+    );
   }
 
   /**
