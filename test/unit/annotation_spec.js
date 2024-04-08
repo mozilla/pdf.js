@@ -549,6 +549,15 @@ describe("annotation", function () {
       expect(borderStyle.dashArray).toEqual([3]);
     });
 
+    it("should not set the width to zero if the dash array is empty (issue 17904)", function () {
+      const borderStyle = new AnnotationBorderStyle();
+      borderStyle.setWidth(3);
+      borderStyle.setDashArray([]);
+
+      expect(borderStyle.width).toEqual(3);
+      expect(borderStyle.dashArray).toEqual([]);
+    });
+
     it("should set and get a valid horizontal corner radius", function () {
       const borderStyle = new AnnotationBorderStyle();
       borderStyle.setHorizontalCornerRadius(3);
