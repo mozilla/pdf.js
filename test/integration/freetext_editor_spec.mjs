@@ -56,6 +56,7 @@ const copyPaste = async page => {
   await kbCopy(page);
   await promise;
 
+  // eslint-disable-next-line no-restricted-syntax
   await waitForTimeout(10);
 
   promise = waitForEvent(page, "paste");
@@ -1147,6 +1148,7 @@ describe("FreeText Editor", () => {
           await kbUndo(page);
           // Nothing should happen, it's why we can't wait for something
           // specific!
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(200);
 
           // We check that the editor hasn't been removed.
@@ -1353,6 +1355,7 @@ describe("FreeText Editor", () => {
           // Enter in editing mode.
           await switchToFreeText(page);
 
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(200);
 
           // Disable editing mode.
@@ -2399,6 +2402,7 @@ describe("FreeText Editor", () => {
 
           // The editor must be moved in the DOM and potentially the focus
           // will be lost, hence there's a callback will get back the focus.
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(200);
 
           const focused = await page.evaluate(sel => {
@@ -3656,6 +3660,7 @@ describe("FreeText Editor", () => {
           );
 
           // Nothing should change, so it's hard to wait on something.
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(100);
 
           text = await getText(editorSelector);
@@ -3677,6 +3682,7 @@ describe("FreeText Editor", () => {
           );
 
           // Nothing should change, so it's hard to wait on something.
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(100);
 
           const html = await getHTML();
