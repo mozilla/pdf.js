@@ -1125,14 +1125,23 @@ describe("FreeText Editor", () => {
           );
 
           // We want to check that the editor is displayed but not the original
-          // annotation.
+          // canvas.
           editorIds = await getEditors(page, "freeText");
           expect(editorIds.length).withContext(`In ${browserName}`).toEqual(1);
           const hidden = await page.$eval(
-            "[data-annotation-id='26R']",
-            el => el.hidden
+            "[data-annotation-id='26R'] canvas",
+            el => getComputedStyle(el).display === "none"
           );
           expect(hidden).withContext(`In ${browserName}`).toBeTrue();
+
+          // Check we've now a div containing the text.
+          const newDivText = await page.$eval(
+            "[data-annotation-id='26R'] div.annotationContent",
+            el => el.innerText.replaceAll("\xa0", " ")
+          );
+          expect(newDivText)
+            .withContext(`In ${browserName}`)
+            .toEqual("Hello World from Acrobat and edited in Firefox");
 
           // Re-enable editing mode.
           await switchToFreeText(page);
@@ -3711,6 +3720,125 @@ describe("FreeText Editor", () => {
           await waitForTextChange("", editorSelector);
           text = await getText(editorSelector);
           expect(text).withContext(`In ${browserName}`).toEqual(fooBar);
+        })
+      );
+    });
+  });
+
+  describe("Update a freetext and scroll", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "tracemonkey_freetext.pdf",
+        ".annotationEditorLayer"
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that a freetext is still there after having updated it and scroll the doc", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          const editorSelector = getEditorSelector(0);
+          const editorRect = await page.$eval(editorSelector, el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+          await page.mouse.click(
+            editorRect.x + editorRect.width / 2,
+            editorRect.y + editorRect.height / 2,
+            { count: 2 }
+          );
+          await page.waitForSelector(
+            `${editorSelector} .overlay:not(.enabled)`
+          );
+
+          await kbGoToEnd(page);
+          await page.waitForFunction(
+            sel =>
+              document.getSelection().anchorOffset ===
+              document.querySelector(sel).innerText.length,
+            {},
+            `${editorSelector} .internal`
+          );
+
+          await page.type(
+            `${editorSelector} .internal`,
+            " and edited in Firefox"
+          );
+
+          // Disable editing mode.
+          await page.click("#editorFreeText");
+          await page.waitForSelector(
+            `.annotationEditorLayer:not(.freetextEditing)`
+          );
+
+          const oneToOne = Array.from(new Array(13).keys(), n => n + 2).concat(
+            Array.from(new Array(13).keys(), n => 13 - n)
+          );
+          for (const pageNumber of oneToOne) {
+            await scrollIntoView(
+              page,
+              `.page[data-page-number = "${pageNumber}"]`
+            );
+          }
+
+          await page.waitForSelector("[data-annotation-id='998R'] canvas");
+          let hidden = await page.$eval(
+            "[data-annotation-id='998R'] canvas",
+            el => getComputedStyle(el).display === "none"
+          );
+          expect(hidden).withContext(`In ${browserName}`).toBeTrue();
+
+          // Check we've now a div containing the text.
+          await page.waitForSelector(
+            "[data-annotation-id='998R'] div.annotationContent"
+          );
+          const newDivText = await page.$eval(
+            "[data-annotation-id='998R'] div.annotationContent",
+            el => el.innerText.replaceAll("\xa0", " ")
+          );
+          expect(newDivText)
+            .withContext(`In ${browserName}`)
+            .toEqual("Hello World and edited in Firefox");
+
+          const oneToThirteen = Array.from(new Array(13).keys(), n => n + 2);
+          for (const pageNumber of oneToThirteen) {
+            await scrollIntoView(
+              page,
+              `.page[data-page-number = "${pageNumber}"]`
+            );
+          }
+
+          await switchToFreeText(page);
+          await kbUndo(page);
+          await waitForSerialized(page, 0);
+
+          // Disable editing mode.
+          await page.click("#editorFreeText");
+          await page.waitForSelector(
+            `.annotationEditorLayer:not(.freetextEditing)`
+          );
+
+          const thirteenToOne = Array.from(new Array(13).keys(), n => 13 - n);
+          for (const pageNumber of thirteenToOne) {
+            await scrollIntoView(
+              page,
+              `.page[data-page-number = "${pageNumber}"]`
+            );
+          }
+
+          await page.waitForSelector("[data-annotation-id='998R'] canvas");
+          hidden = await page.$eval(
+            "[data-annotation-id='998R'] canvas",
+            el => getComputedStyle(el).display === "none"
+          );
+          expect(hidden).withContext(`In ${browserName}`).toBeFalse();
         })
       );
     });
