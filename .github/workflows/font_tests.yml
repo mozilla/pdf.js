@@ -45,10 +45,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Install Gulp
-        run: npm install -g gulp-cli
-
-      - name: Install other dependencies
+      - name: Install dependencies
         run: npm install
 
       - name: Use Python 3.12
@@ -61,4 +58,4 @@ jobs:
         run: pip install fonttools
 
       - name: Run font tests
-        run: gulp fonttest --headless
+        run: npx gulp fonttest --headless
