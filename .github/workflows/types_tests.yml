@@ -24,11 +24,8 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Install Gulp
-        run: npm install -g gulp-cli
-
-      - name: Install other dependencies
+      - name: Install dependencies
         run: npm install
 
       - name: Run types tests
-        run: gulp typestest
+        run: npx gulp typestest
