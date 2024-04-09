@@ -9823,5 +9823,15 @@
     "md5": "07d95eabf18aee0cf38f09eb7b1390ec",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue17906",
+    "file": "pdfs/issue17906.pdf",
+    "md5": "f81c617e5113e0c510a4cfe8b012798e",
+    "rounds": 1,
+    "link": true,
+    "firstPage": 1,
+    "lastPage": 1,
+    "type": "eq"
   }
 ]
