@@ -1,0 +1,14 @@
+{
+  "extends": [
+    "../.eslintrc"
+  ],
+
+  "rules": {
+    "no-restricted-syntax": ["error",
+      {
+        "selector": "CallExpression[callee.name='waitForTimeout']",
+        "message": "`waitForTimeout` can cause intermittent failures and should not be used (see issue #17656 for replacements).",
+      },
+    ],
+  },
+}
