@@ -357,7 +357,6 @@ class FreeTextEditor extends AnnotationEditor {
   /** @inheritdoc */
   onceAdded() {
     if (this.width) {
-      this.#cheatInitialRect();
       // The editor was created in using ctrl+c.
       return;
     }
@@ -844,34 +843,15 @@ class FreeTextEditor extends AnnotationEditor {
   }
 
   #hasElementChanged(serialized) {
-    const { value, fontSize, color, rect, pageIndex } = this.#initialData;
+    const { value, fontSize, color, pageIndex } = this.#initialData;
 
     return (
+      this._hasBeenMoved ||
       serialized.value !== value ||
       serialized.fontSize !== fontSize ||
-      serialized.rect.some((x, i) => Math.abs(x - rect[i]) >= 1) ||
       serialized.color.some((c, i) => c !== color[i]) ||
       serialized.pageIndex !== pageIndex
     );
-  }
-
-  #cheatInitialRect(delayed = false) {
-    // The annotation has a rect but the editor has an other one.
-    // When we want to know if the annotation has changed (e.g. has been moved)
-    // we must compare the editor initial rect with the current one.
-    // So this method is a hack to have a way to compare the real rects.
-    if (!this.annotationElementId) {
-      return;
-    }
-
-    this.#setEditorDimensions();
-    if (!delayed && (this.width === 0 || this.height === 0)) {
-      setTimeout(() => this.#cheatInitialRect(/* delayed = */ true), 0);
-      return;
-    }
-
-    const padding = FreeTextEditor._internalPadding * this.parentScale;
-    this.#initialData.rect = this.getRect(padding, padding);
   }
 }
 
