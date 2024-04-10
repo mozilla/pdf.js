@@ -81,6 +81,15 @@ class EventDispatcher {
   }
 
   dispatch(baseEvent) {
+    if (
+      typeof PDFJSDev !== "undefined" &&
+      PDFJSDev.test("TESTING") &&
+      baseEvent.name === "sandboxtripbegin"
+    ) {
+      this._externalCall("send", [{ command: "sandboxTripEnd" }]);
+      return;
+    }
+
     const id = baseEvent.id;
     if (!(id in this._objects)) {
       let event;
@@ -233,7 +242,7 @@ class EventDispatcher {
     // Run format actions if any for all the fields.
     const event = (globalThis.event = new Event({}));
     for (const source of Object.values(this._objects)) {
-      event.value = source.obj.value;
+      event.value = source.obj._getValue();
       this.runActions(source, source, event, "Format");
     }
   }
@@ -245,8 +254,7 @@ class EventDispatcher {
 
       this.runCalculate(source, event);
 
-      const savedValue = source.obj._getValue();
-      event.value = source.obj.value;
+      const savedValue = (event.value = source.obj._getValue());
       let formattedValue = null;
 
       if (this.runActions(source, source, event, "Format")) {
