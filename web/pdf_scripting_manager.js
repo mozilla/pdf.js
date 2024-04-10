@@ -58,6 +58,19 @@ class PDFScriptingManager {
     this.#eventBus = eventBus;
     this.#externalServices = externalServices;
     this.#docProperties = docProperties;
+
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
+      Object.defineProperty(this, "sandboxTrip", {
+        value: () =>
+          setTimeout(
+            () =>
+              this.#scripting?.dispatchEventInSandbox({
+                name: "sandboxtripbegin",
+              }),
+            0
+          ),
+      });
+    }
   }
 
   setViewer(pdfViewer) {
@@ -258,6 +271,17 @@ class PDFScriptingManager {
 
     const { id, siblings, command, value } = detail;
     if (!id) {
+      if (
+        typeof PDFJSDev !== "undefined" &&
+        PDFJSDev.test("TESTING") &&
+        command === "sandboxTripEnd"
+      ) {
+        window.setTimeout(() => {
+          window.dispatchEvent(new CustomEvent("sandboxtripend"));
+        }, 0);
+        return;
+      }
+
       switch (command) {
         case "clear":
           console.clear();
