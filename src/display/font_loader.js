@@ -15,7 +15,6 @@
 
 import {
   assert,
-  bytesToString,
   FontRenderOps,
   isNodeJS,
   shadow,
@@ -399,9 +398,8 @@ class FontFaceObject {
     if (!this.data || this.disableFontFace) {
       return null;
     }
-    const data = bytesToString(this.data);
     // Add the @font-face rule to the document.
-    const url = `url(data:${this.mimetype};base64,${btoa(data)});`;
+    const url = `url(data:${this.mimetype};base64,${this.data.toBase64()});`;
     let rule;
     if (!this.cssFontInfo) {
       rule = `@font-face {font-family:"${this.loadedName}";src:${url}}`;
