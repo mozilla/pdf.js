@@ -1119,11 +1119,20 @@ class Annotation {
     renderForms,
     annotationStorage
   ) {
-    const data = this.data;
+    const { hasOwnCanvas, id, rect } = this.data;
     let appearance = this.appearance;
     const isUsingOwnCanvas = !!(
-      this.data.hasOwnCanvas && intent & RenderingIntentFlag.DISPLAY
+      hasOwnCanvas && intent & RenderingIntentFlag.DISPLAY
     );
+    if (isUsingOwnCanvas && (rect[0] === rect[2] || rect[1] === rect[3])) {
+      // Empty annotation, don't draw anything.
+      this.data.hasOwnCanvas = false;
+      return {
+        opList: new OperatorList(),
+        separateForm: false,
+        separateCanvas: false,
+      };
+    }
     if (!appearance) {
       if (!isUsingOwnCanvas) {
         return {
@@ -1143,7 +1152,7 @@ class Annotation {
     );
     const bbox = appearanceDict.getArray("BBox") || [0, 0, 1, 1];
     const matrix = appearanceDict.getArray("Matrix") || [1, 0, 0, 1, 0, 0];
-    const transform = getTransformMatrix(data.rect, bbox, matrix);
+    const transform = getTransformMatrix(rect, bbox, matrix);
 
     const opList = new OperatorList();
 
@@ -1159,8 +1168,8 @@ class Annotation {
     }
 
     opList.addOp(OPS.beginAnnotation, [
-      data.id,
-      data.rect,
+      id,
+      rect,
       transform,
       matrix,
       isUsingOwnCanvas,
