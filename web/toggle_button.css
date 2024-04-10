@@ -151,7 +151,9 @@
     background-color: var(--toggle-dot-background-color-on-pressed);
   }
 
-  &[aria-pressed="true"]:-moz-locale-dir(rtl)::before,
+  /*#if MOZCENTRAL*/
+  /*&[aria-pressed="true"]:-moz-locale-dir(rtl)::before,*/
+  /*#endif*/
   &[aria-pressed="true"]:dir(rtl)::before {
     translate: calc(-1 * var(--toggle-dot-transform-x));
   }
