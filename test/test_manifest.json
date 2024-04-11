@@ -9833,5 +9833,12 @@
     "firstPage": 1,
     "lastPage": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue17929",
+    "file": "pdfs/issue17929.pdf",
+    "md5": "2f5686f77f73fb99037f5c2c7e48ce53",
+    "rounds": 1,
+    "type": "eq"
   }
 ]
