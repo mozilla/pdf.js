@@ -875,7 +875,12 @@ function unitTestPostHandler(req, res) {
   return true;
 }
 
-async function startBrowser({ browserName, headless, startUrl }) {
+async function startBrowser({
+  browserName,
+  headless = options.headless,
+  startUrl,
+  extraPrefsFirefox = {},
+}) {
   const options = {
     product: browserName,
     protocol: "cdp",
@@ -938,6 +943,7 @@ async function startBrowser({ browserName, headless, startUrl }) {
       "dom.events.asyncClipboard.clipboardItem": true,
       // It's helpful to see where the caret is.
       "accessibility.browsewithcaret": true,
+      ...extraPrefsFirefox,
     };
   }
 
@@ -991,7 +997,7 @@ async function startBrowsers({ baseUrl, initializeSession }) {
       startUrl = baseUrl + queryParameters;
     }
 
-    await startBrowser({ browserName, headless: options.headless, startUrl })
+    await startBrowser({ browserName, startUrl })
       .then(function (browser) {
         session.browser = browser;
         initializeSession(session);
@@ -1093,3 +1099,5 @@ var stats;
 var tempDir = null;
 
 main();
+
+export { startBrowser };
