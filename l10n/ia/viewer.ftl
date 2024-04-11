@@ -304,6 +304,12 @@ pdfjs-editor-stamp-button-label = Adder o rediger imagines
 pdfjs-editor-highlight-button =
     .title = Evidentia
 pdfjs-editor-highlight-button-label = Evidentia
+pdfjs-highlight-floating-button =
+    .title = Evidentiar
+pdfjs-highlight-floating-button1 =
+    .title = Evidentiar
+    .aria-label = Evidentiar
+pdfjs-highlight-floating-button-label = Evidentiar
 
 ## Remove button for the various kind of editor.
 
@@ -387,3 +393,10 @@ pdfjs-editor-colorpicker-pink =
     .title = Rosate
 pdfjs-editor-colorpicker-red =
     .title = Rubie
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Monstrar toto
+pdfjs-editor-highlight-show-all-button =
+    .title = Monstrar toto

@@ -314,6 +314,10 @@ pdfjs-editor-highlight-button =
 pdfjs-editor-highlight-button-label = Amlygu
 pdfjs-highlight-floating-button =
     .title = Amlygu
+pdfjs-highlight-floating-button1 =
+    .title = Amlygu
+    .aria-label = Amlygu
+pdfjs-highlight-floating-button-label = Amlygu
 
 ## Remove button for the various kind of editor.
 
