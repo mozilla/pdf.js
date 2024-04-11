@@ -51,12 +51,6 @@ pdfjs-download-button-label = Scarica
 pdfjs-bookmark-button =
     .title = Pagina corrente (mostra URL della pagina corrente)
 pdfjs-bookmark-button-label = Pagina corrente
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = Apri in app
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = Apri in app
 
 ##  Secondary toolbar and context menu
 

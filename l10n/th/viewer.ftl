@@ -298,6 +298,10 @@ pdfjs-editor-highlight-button =
 pdfjs-editor-highlight-button-label = เน้น
 pdfjs-highlight-floating-button =
     .title = เน้นสี
+pdfjs-highlight-floating-button1 =
+    .title = เน้นสี
+    .aria-label = เน้นสี
+pdfjs-highlight-floating-button-label = เน้นสี
 
 ## Remove button for the various kind of editor.
 
