@@ -27,7 +27,32 @@ describe("getFontSubstitution", function () {
       idFactory,
       localFontPath,
       fontName,
-      undefined
+      undefined,
+      "TrueType"
+    );
+    expect(fontSubstitution).toEqual(
+      jasmine.objectContaining({
+        guessFallback: true,
+        baseFontName: "Foo",
+        src: "local(Foo)",
+        style: {
+          style: "normal",
+          weight: "normal",
+        },
+      })
+    );
+    expect(fontSubstitution.css).toMatch(/^"Foo",g_d(\d+)_sf(\d+)$/);
+  });
+
+  it("should substitute an unknown font subset", () => {
+    const fontName = "ABCDEF+Foo";
+    const fontSubstitution = getFontSubstitution(
+      new Map(),
+      idFactory,
+      localFontPath,
+      fontName,
+      undefined,
+      "TrueType"
     );
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
@@ -50,7 +75,8 @@ describe("getFontSubstitution", function () {
       idFactory,
       localFontPath,
       fontName,
-      undefined
+      undefined,
+      "TrueType"
     );
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
@@ -73,7 +99,8 @@ describe("getFontSubstitution", function () {
       idFactory,
       localFontPath,
       fontName,
-      undefined
+      undefined,
+      "TrueType"
     );
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
@@ -96,7 +123,8 @@ describe("getFontSubstitution", function () {
       idFactory,
       localFontPath,
       fontName,
-      undefined
+      undefined,
+      "TrueType"
     );
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
@@ -119,7 +147,8 @@ describe("getFontSubstitution", function () {
       idFactory,
       localFontPath,
       fontName,
-      "Helvetica"
+      "Helvetica",
+      "TrueType"
     );
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
@@ -150,7 +179,8 @@ describe("getFontSubstitution", function () {
       idFactory,
       localFontPath,
       fontName,
-      "Helvetica-Oblique"
+      "Helvetica-Oblique",
+      "TrueType"
     );
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
@@ -183,7 +213,8 @@ describe("getFontSubstitution", function () {
       idFactory,
       localFontPath,
       fontName,
-      "Helvetica-Bold"
+      "Helvetica-Bold",
+      "TrueType"
     );
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
@@ -215,7 +246,8 @@ describe("getFontSubstitution", function () {
       idFactory,
       localFontPath,
       fontName,
-      "Helvetica-BoldOblique"
+      "Helvetica-BoldOblique",
+      "TrueType"
     );
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
@@ -250,7 +282,8 @@ describe("getFontSubstitution", function () {
       idFactory,
       localFontPath,
       fontName,
-      undefined
+      undefined,
+      "TrueType"
     );
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
@@ -283,7 +316,8 @@ describe("getFontSubstitution", function () {
       idFactory,
       localFontPath,
       fontName,
-      undefined
+      undefined,
+      "TrueType"
     );
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
@@ -318,7 +352,8 @@ describe("getFontSubstitution", function () {
       idFactory,
       localFontPath,
       fontName,
-      undefined
+      undefined,
+      "TrueType"
     );
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
@@ -353,7 +388,8 @@ describe("getFontSubstitution", function () {
       idFactory,
       localFontPath,
       fontName,
-      undefined
+      undefined,
+      "TrueType"
     );
     expect(fontSubstitution).toEqual(
       jasmine.objectContaining({
