@@ -2157,7 +2157,7 @@ function packageJson() {
     license: DIST_LICENSE,
     optionalDependencies: {
       canvas: "^2.11.2",
-      path2d: "^0.1.2",
+      path2d: "^0.2.0",
     },
     browser: {
       canvas: false,
