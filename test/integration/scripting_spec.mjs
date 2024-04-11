@@ -1713,6 +1713,7 @@ describe("Interaction", () => {
             await clearInput(page, getSelector("27R"));
             await page.type(getSelector("27R"), exportValue);
             await page.click("[data-annotation-id='28R']");
+            // eslint-disable-next-line no-restricted-syntax
             await waitForTimeout(10);
 
             value = await page.$eval(getSelector("24R"), el => el.value);
@@ -1760,6 +1761,7 @@ describe("Interaction", () => {
           await page.waitForFunction(
             `${getQuerySelector("30R")}.value !== "abc"`
           );
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(100);
 
           const focusedId = await page.evaluate(_ =>
@@ -1856,6 +1858,7 @@ describe("Interaction", () => {
           expect(text).withContext(`In ${browserName}`).toEqual("00000000123");
 
           await page.click(getSelector("26R"));
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(10);
 
           text = await page.$eval(getSelector("25R"), el => el.value);
@@ -1890,12 +1893,14 @@ describe("Interaction", () => {
           expect(text).withContext(`In ${browserName}`).toEqual("5,25");
 
           await page.click(getSelector("22R"));
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(10);
 
           text = await page.$eval(getSelector("22R"), el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("5,25");
 
           await page.click(getSelector("31R"));
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(10);
 
           text = await page.$eval(getSelector("31R"), el => el.value);
@@ -1927,6 +1932,7 @@ describe("Interaction", () => {
           expect(text).withContext(`In ${browserName}`).toEqual("");
 
           await page.select(getSelector("6R"), "Yes");
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(10);
 
           text = await page.$eval(getSelector("44R"), el => el.value);
@@ -1935,6 +1941,7 @@ describe("Interaction", () => {
           await clearInput(page, getSelector("44R"));
 
           await page.select(getSelector("6R"), "No");
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(10);
 
           text = await page.$eval(getSelector("44R"), el => el.value);
@@ -1992,6 +1999,7 @@ describe("Interaction", () => {
           await page.type(getSelector("26R"), "abcde", { delay: 10 });
 
           await page.click(getSelector("23R"));
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(10);
           await page.click(getSelector("26R"));
 
@@ -1999,6 +2007,7 @@ describe("Interaction", () => {
           await page.keyboard.press("Backspace");
 
           await page.click(getSelector("23R"));
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(10);
 
           text = await page.$eval(getSelector("26R"), el => el.value);
@@ -2095,6 +2104,7 @@ describe("Interaction", () => {
           expect(visibility).withContext(`In ${browserName}`).toEqual("hidden");
 
           await page.click(getSelector("11R"));
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(10);
 
           visibility = await page.$eval(
@@ -2141,27 +2151,32 @@ describe("Interaction", () => {
           );
           expect(readonly).withContext(`In ${browserName}`).toEqual(true);
           await page.click(getSelector("334R"));
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(10);
 
           readonly = await page.$eval(getSelector("353R"), el => el.disabled);
           expect(readonly).withContext(`In ${browserName}`).toEqual(true);
           await page.click(getSelector("351R"));
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(10);
 
           readonly = await page.$eval(getSelector("353R"), el => el.disabled);
           expect(readonly).withContext(`In ${browserName}`).toEqual(true);
           await page.click(getSelector("352R"));
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(10);
 
           readonly = await page.$eval(getSelector("353R"), el => el.disabled);
           expect(readonly).withContext(`In ${browserName}`).toEqual(false);
 
           await page.click(getSelector("353R"));
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(10);
 
           let checked = await page.$eval(getSelector("353R"), el => el.checked);
           expect(checked).withContext(`In ${browserName}`).toEqual(true);
           await page.click(getSelector("334R"));
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(10);
 
           readonly = await page.$eval(getSelector("353R"), el => el.disabled);
@@ -2201,15 +2216,19 @@ describe("Interaction", () => {
           await page.click(getSelector("55R"));
           await page.type(getSelector("55R"), "Hello", { delay: 10 });
           await page.click(getSelector("56R"));
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(10);
 
           await page.click(getSelector("55R"));
           await page.type(getSelector("55R"), " World", { delay: 10 });
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(10);
 
           await otherPages[i].bringToFront();
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(100);
           await page.bringToFront();
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(100);
 
           const text = await page.$eval(getSelector("55R"), el => el.value);
@@ -2245,6 +2264,7 @@ describe("Interaction", () => {
           );
 
           await page.click(getSelector("25R"));
+          // eslint-disable-next-line no-restricted-syntax
           await waitForTimeout(10);
           await page.click(getSelector("26R"));
 
