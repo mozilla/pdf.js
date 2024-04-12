@@ -15,6 +15,7 @@
 
 import { normalizeFontName } from "./fonts_utils.js";
 import { validateFontName } from "./core_utils.js";
+import { warn } from "../shared/util.js";
 
 const NORMAL = {
   style: "normal",
@@ -513,6 +514,7 @@ function getFontSubstitution(
   const loadedName = `${idFactory.getDocId()}_s${idFactory.createFontId()}`;
   if (!substitution) {
     if (!validateFontName(baseFontName)) {
+      warn(`Cannot substitute the font because of its name: ${baseFontName}`);
       systemFontCache.set(key, null);
       // If the baseFontName is not valid we don't want to use it.
       return null;
