@@ -306,6 +306,10 @@ pdfjs-editor-highlight-button =
 pdfjs-editor-highlight-button-label = Destaque
 pdfjs-highlight-floating-button =
     .title = Destaque
+pdfjs-highlight-floating-button1 =
+    .title = Realçar
+    .aria-label = Realçar
+pdfjs-highlight-floating-button-label = Realçar
 
 ## Remove button for the various kind of editor.
 
