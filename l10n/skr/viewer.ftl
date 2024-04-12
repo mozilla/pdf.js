@@ -283,6 +283,15 @@ pdfjs-editor-free-text-button-label = متن
 pdfjs-editor-ink-button =
     .title = چھکو
 pdfjs-editor-ink-button-label = چھکو
+pdfjs-editor-highlight-button =
+    .title = نمایاں کرو
+pdfjs-editor-highlight-button-label = نمایاں کرو
+pdfjs-highlight-floating-button =
+    .title = نمایاں کرو
+pdfjs-highlight-floating-button1 =
+    .title = نمایاں کرو
+    .aria-label = نمایاں کرو
+pdfjs-highlight-floating-button-label = نمایاں کرو
 
 ## Remove button for the various kind of editor.
 
@@ -308,6 +317,8 @@ pdfjs-ink-canvas =
 
 ## Alt-text dialog
 
+pdfjs-editor-alt-text-cancel-button = منسوخ
+pdfjs-editor-alt-text-save-button = محفوظ
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
@@ -325,3 +336,10 @@ pdfjs-editor-colorpicker-pink =
     .title = گلابی
 pdfjs-editor-colorpicker-red =
     .title = لال
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = سارے ݙکھاؤ
+pdfjs-editor-highlight-show-all-button =
+    .title = سارے ݙکھاؤ

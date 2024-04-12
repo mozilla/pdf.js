@@ -306,6 +306,12 @@ pdfjs-editor-stamp-button-label = Dodaj lub edytuj obrazy
 pdfjs-editor-highlight-button =
     .title = Wyróżnij
 pdfjs-editor-highlight-button-label = Wyróżnij
+pdfjs-highlight-floating-button =
+    .title = Wyróżnij
+pdfjs-highlight-floating-button1 =
+    .title = Wyróżnij
+    .aria-label = Wyróżnij
+pdfjs-highlight-floating-button-label = Wyróżnij
 
 ## Remove button for the various kind of editor.
 
@@ -389,3 +395,10 @@ pdfjs-editor-colorpicker-pink =
     .title = Różowy
 pdfjs-editor-colorpicker-red =
     .title = Czerwony
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Pokaż wszystkie
+pdfjs-editor-highlight-show-all-button =
+    .title = Pokaż wszystkie

@@ -51,12 +51,6 @@ pdfjs-download-button-label = Letöltés
 pdfjs-bookmark-button =
     .title = Jelenlegi oldal (webcím megtekintése a jelenlegi oldalról)
 pdfjs-bookmark-button-label = Jelenlegi oldal
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = Megnyitás alkalmazásban
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = Megnyitás alkalmazásban
 
 ##  Secondary toolbar and context menu
 
@@ -306,6 +300,10 @@ pdfjs-editor-highlight-button =
 pdfjs-editor-highlight-button-label = Kiemelés
 pdfjs-highlight-floating-button =
     .title = Kiemelés
+pdfjs-highlight-floating-button1 =
+    .title = Kiemelés
+    .aria-label = Kiemelés
+pdfjs-highlight-floating-button-label = Kiemelés
 
 ## Remove button for the various kind of editor.
 
