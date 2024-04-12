@@ -4261,7 +4261,8 @@ class PartialEvaluator {
             this.idFactory,
             this.options.standardFontDataUrl,
             baseFontName,
-            standardFontName
+            standardFontName,
+            type
           );
         }
 
@@ -4381,7 +4382,8 @@ class PartialEvaluator {
           this.idFactory,
           this.options.standardFontDataUrl,
           fontName.name,
-          standardFontName
+          standardFontName,
+          type
         );
       }
     }
