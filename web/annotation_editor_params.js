@@ -13,7 +13,21 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./event_utils.js").EventBus} EventBus */
+
 import { AnnotationEditorParamsType } from "pdfjs-lib";
+
+/**
+ * @typedef {Object} AnnotationEditorParamsOptions
+ * @property {HTMLInputElement} editorFreeTextFontSize
+ * @property {HTMLInputElement} editorFreeTextColor
+ * @property {HTMLInputElement} editorInkColor
+ * @property {HTMLInputElement} editorInkThickness
+ * @property {HTMLInputElement} editorInkOpacity
+ * @property {HTMLButtonElement} editorStampAddImage
+ * @property {HTMLInputElement} editorFreeHighlightThickness
+ * @property {HTMLButtonElement} editorHighlightShowAll
+ */
 
 class AnnotationEditorParams {
   /**
@@ -25,6 +39,9 @@ class AnnotationEditorParams {
     this.#bindListeners(options);
   }
 
+  /**
+   * @param {AnnotationEditorParamsOptions} options
+   */
   #bindListeners({
     editorFreeTextFontSize,
     editorFreeTextColor,

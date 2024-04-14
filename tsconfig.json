@@ -16,7 +16,7 @@
       "display-node_utils": ["./src/display/node_utils"],
       "fluent-bundle": ["./node_modules/@fluent/bundle/esm/index.js"],
       "fluent-dom": ["./node_modules/@fluent/dom/esm/index.js"],
-      "web-null_l10n": ["../web/genericl10n.js"]
+      "web-null_l10n": ["./web/genericl10n"]
     }
   },
   "files": ["src/pdf.js", "web/pdf_viewer.component.js"]

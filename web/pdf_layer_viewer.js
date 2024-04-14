@@ -13,6 +13,12 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./event_utils.js").EventBus} EventBus */
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/optional_content_config.js").OptionalContentConfig} OptionalContentConfig */
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/api.js").PDFDocumentProxy} PDFDocumentProxy */
+
 import { BaseTreeViewer } from "./base_tree_viewer.js";
 
 /**
@@ -25,7 +31,7 @@ import { BaseTreeViewer } from "./base_tree_viewer.js";
  * @typedef {Object} PDFLayerViewerRenderParameters
  * @property {OptionalContentConfig|null} optionalContentConfig - An
  *   {OptionalContentConfig} instance.
- * @property {PDFDocument} pdfDocument - A {PDFDocument} instance.
+ * @property {PDFDocumentProxy} pdfDocument - A {PDFDocument} instance.
  */
 
 class PDFLayerViewer extends BaseTreeViewer {
@@ -48,7 +54,7 @@ class PDFLayerViewer extends BaseTreeViewer {
   }
 
   /**
-   * @private
+   * @protected
    */
   _dispatchEvent(layersCount) {
     this.eventBus.dispatch("layersloaded", {
@@ -58,7 +64,7 @@ class PDFLayerViewer extends BaseTreeViewer {
   }
 
   /**
-   * @private
+   * @protected
    */
   _bindLink(element, { groupId, input }) {
     const setVisibility = () => {
@@ -97,7 +103,7 @@ class PDFLayerViewer extends BaseTreeViewer {
   }
 
   /**
-   * @private
+   * @protected
    */
   _addToggleButton(div, { name = null }) {
     super._addToggleButton(div, /* hidden = */ name === null);

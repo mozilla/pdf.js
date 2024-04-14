@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./event_utils.js").EventBus} EventBus */
+
 import { AnnotationEditorType, ColorPicker, noContextMenu } from "pdfjs-lib";
 import {
   DEFAULT_SCALE,
