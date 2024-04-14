@@ -15,7 +15,7 @@
  */
 /* eslint-disable no-var */
 
-import { copySubtreeSync, ensureDirSync, removeDirSync } from "./testutils.mjs";
+import { copySubtreeSync, ensureDirSync } from "./testutils.mjs";
 import {
   downloadManifestFiles,
   verifyManifestFiles,
@@ -25,13 +25,10 @@ import os from "os";
 import path from "path";
 import puppeteer from "puppeteer";
 import readline from "readline";
-import rimraf from "rimraf";
 import { translateFont } from "./font/ttxdriver.mjs";
 import url from "url";
 import { WebServer } from "./webserver.mjs";
 import yargs from "yargs";
-
-const rimrafSync = rimraf.sync;
 
 function parseOptions() {
   const parsedArgs = yargs(process.argv)
@@ -213,7 +210,7 @@ function updateRefImages() {
     console.log("  Updating ref/ ... ");
     copySubtreeSync(refsTmpDir, refsDir);
     if (removeTmp) {
-      removeDirSync(refsTmpDir);
+      fs.rmSync(refsTmpDir, { recursive: true, force: true });
     }
     console.log("done");
   }
@@ -324,7 +321,7 @@ async function startRefTest(masterMode, showRefImages) {
       fs.unlinkSync(eqLog);
     }
     if (fs.existsSync(testResultDir)) {
-      removeDirSync(testResultDir);
+      fs.rmSync(testResultDir, { recursive: true, force: true });
     }
 
     startTime = Date.now();
@@ -358,7 +355,7 @@ async function startRefTest(masterMode, showRefImages) {
   function checkRefsTmp() {
     if (masterMode && fs.existsSync(refsTmpDir)) {
       if (options.noPrompts) {
-        removeDirSync(refsTmpDir);
+        fs.rmSync(refsTmpDir, { recursive: true, force: true });
         setup();
         return;
       }
@@ -370,7 +367,7 @@ async function startRefTest(masterMode, showRefImages) {
         "SHOULD THIS SCRIPT REMOVE tmp/? THINK CAREFULLY [yn] ",
         function (answer) {
           if (answer.toLowerCase() === "y") {
-            removeDirSync(refsTmpDir);
+            fs.rmSync(refsTmpDir, { recursive: true, force: true });
           }
           setup();
           reader.close();
@@ -1038,7 +1035,7 @@ async function closeSession(browser) {
     });
     if (allClosed) {
       if (tempDir) {
-        rimrafSync(tempDir);
+        fs.rmSync(tempDir, { recursive: true, force: true });
       }
       onAllSessionsClosed?.();
     }
