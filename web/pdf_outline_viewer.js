@@ -13,6 +13,13 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./event_utils.js").EventBus} EventBus */
+// eslint-disable-next-line max-len
+/** @typedef {import("./download_manager.js").DownloadManager} DownloadManager */
+/** @typedef {import("./interfaces.js").IPDFLinkService} IPDFLinkService */
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/api.js").PDFDocumentProxy} PDFDocumentProxy */
+
 import { BaseTreeViewer } from "./base_tree_viewer.js";
 import { SidebarView } from "./ui_utils.js";
 
@@ -27,7 +34,7 @@ import { SidebarView } from "./ui_utils.js";
 /**
  * @typedef {Object} PDFOutlineViewerRenderParameters
  * @property {Array|null} outline - An array of outline objects.
- * @property {PDFDocument} pdfDocument - A {PDFDocument} instance.
+ * @property {PDFDocumentProxy} pdfDocument - A {PDFDocument} instance.
  */
 
 class PDFOutlineViewer extends BaseTreeViewer {
@@ -75,7 +82,7 @@ class PDFOutlineViewer extends BaseTreeViewer {
   }
 
   /**
-   * @private
+   * @protected
    */
   _dispatchEvent(outlineCount) {
     this._currentOutlineItemCapability = Promise.withResolvers();
@@ -98,7 +105,7 @@ class PDFOutlineViewer extends BaseTreeViewer {
   }
 
   /**
-   * @private
+   * @protected
    */
   _bindLink(
     element,
@@ -162,7 +169,7 @@ class PDFOutlineViewer extends BaseTreeViewer {
   }
 
   /**
-   * @private
+   * @protected
    */
   _addToggleButton(div, { count, items }) {
     let hidden = false;

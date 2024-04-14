@@ -13,6 +13,12 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./interfaces.js").IL10n} IL10n */
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/api.js").PDFDocumentProxy} PDFDocumentProxy */
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/api.js").PDFDocumentLoadingTask} PDFDocumentLoadingTask */
+
 import {
   animationStarted,
   apiPageLayoutToViewerModes,
@@ -96,7 +102,9 @@ const PDFViewerApplication = {
     settled: false,
   },
   appConfig: null,
+  /** @type {PDFDocumentProxy} */
   pdfDocument: null,
+  /** @type {PDFDocumentLoadingTask} */
   pdfLoadingTask: null,
   printService: null,
   /** @type {PDFViewer} */

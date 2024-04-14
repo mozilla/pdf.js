@@ -17,10 +17,15 @@
 // Class name of element which can be grabbed.
 const CSS_CLASS_GRAB = "grab-to-pan-grab";
 
+/**
+ * @typedef {Object} GrabToPanOptions
+ * @property {HTMLElement} element
+ */
+
 class GrabToPan {
   /**
    * Construct a GrabToPan instance for a given HTML element.
-   * @param {Element} options.element
+   * @param {GrabToPanOptions} options
    */
   constructor({ element }) {
     this.element = element;
