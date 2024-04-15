@@ -64,7 +64,7 @@ const DEFAULT_FONT_ASCENT = 0.8;
 const ascentCache = new Map();
 let _canvasContext = null;
 
-function getCtx() {
+function getCtx(lang = null) {
   if (!_canvasContext) {
     // We don't use an OffscreenCanvas here because we use serif/sans serif
     // fonts with it and they depends on the locale.
@@ -89,13 +89,13 @@ function cleanupTextLayer() {
   _canvasContext = null;
 }
 
-function getAscent(fontFamily) {
+function getAscent(fontFamily, lang) {
   const cachedAscent = ascentCache.get(fontFamily);
   if (cachedAscent) {
     return cachedAscent;
   }
 
-  const ctx = getCtx();
+  const ctx = getCtx(lang);
 
   const savedFont = ctx.font;
   ctx.canvas.width = ctx.canvas.height = DEFAULT_FONT_SIZE;
@@ -162,7 +162,7 @@ function getAscent(fontFamily) {
   return DEFAULT_FONT_ASCENT;
 }
 
-function appendText(task, geom) {
+function appendText(task, geom, lang) {
   // Initialize all used properties to keep the caches monomorphic.
   const textDiv = document.createElement("span");
   const textDivProperties = {
@@ -184,7 +184,7 @@ function appendText(task, geom) {
   const fontFamily =
     (task._fontInspectorEnabled && style.fontSubstitution) || style.fontFamily;
   const fontHeight = Math.hypot(tx[2], tx[3]);
-  const fontAscent = fontHeight * getAscent(fontFamily);
+  const fontAscent = fontHeight * getAscent(fontFamily, lang);
 
   let left, top;
   if (angle === 0) {
@@ -324,7 +324,7 @@ class TextLayerRenderTask {
       div: null,
       scale: viewport.scale * (globalThis.devicePixelRatio || 1),
       properties: null,
-      ctx: getCtx(),
+      ctx: null,
     };
     this._styleCache = Object.create(null);
     const { pageWidth, pageHeight, pageX, pageY } = viewport.rawDims;
@@ -371,7 +371,11 @@ class TextLayerRenderTask {
   /**
    * @private
    */
-  _processItems(items) {
+  _processItems(items, lang) {
+    if (!this._layoutTextParams.ctx) {
+      this._textDivProperties.set(this._rootContainer, { lang });
+      this._layoutTextParams.ctx = getCtx(lang);
+    }
     const textDivs = this._textDivs,
       textContentItemsStr = this._textContentItemsStr;
 
@@ -403,7 +407,7 @@ class TextLayerRenderTask {
         continue;
       }
       textContentItemsStr.push(item.str);
-      appendText(this, item);
+      appendText(this, item, lang);
     }
   }
 
@@ -440,7 +444,7 @@ class TextLayerRenderTask {
         }
 
         Object.assign(styleCache, value.styles);
-        this._processItems(value.items);
+        this._processItems(value.items, value.lang);
         pump();
       }, this._capability.reject);
     };
@@ -476,7 +480,7 @@ function updateTextLayer({
   }
 
   if (mustRescale) {
-    const ctx = getCtx();
+    const ctx = getCtx(textDivProperties.get(container)?.lang);
     const scale = viewport.scale * (globalThis.devicePixelRatio || 1);
     const params = {
       prevFontSize: null,
