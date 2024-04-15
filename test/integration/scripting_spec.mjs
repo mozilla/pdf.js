@@ -1932,18 +1932,14 @@ describe("Interaction", () => {
           expect(text).withContext(`In ${browserName}`).toEqual("");
 
           await page.select(getSelector("6R"), "Yes");
-          // eslint-disable-next-line no-restricted-syntax
-          await waitForTimeout(10);
-
+          await page.waitForFunction(`${getQuerySelector("44R")}.value !== ""`);
           text = await page.$eval(getSelector("44R"), el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("Yes");
 
           await clearInput(page, getSelector("44R"));
 
           await page.select(getSelector("6R"), "No");
-          // eslint-disable-next-line no-restricted-syntax
-          await waitForTimeout(10);
-
+          await page.waitForFunction(`${getQuerySelector("44R")}.value !== ""`);
           text = await page.$eval(getSelector("44R"), el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("No");
         })
