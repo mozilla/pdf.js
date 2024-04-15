@@ -67,10 +67,7 @@ async function writeStream(stream, buffer, transform) {
   // The number 256 is arbitrary, but it should be reasonable.
   const MIN_LENGTH_FOR_COMPRESSING = 256;
 
-  if (
-    typeof CompressionStream !== "undefined" &&
-    (bytes.length >= MIN_LENGTH_FOR_COMPRESSING || isFilterZeroFlateDecode)
-  ) {
+  if (bytes.length >= MIN_LENGTH_FOR_COMPRESSING || isFilterZeroFlateDecode) {
     try {
       const cs = new CompressionStream("deflate");
       const writer = cs.writable.getWriter();
