@@ -2104,9 +2104,10 @@ describe("Interaction", () => {
           expect(visibility).withContext(`In ${browserName}`).toEqual("hidden");
 
           await page.click(getSelector("11R"));
-          // eslint-disable-next-line no-restricted-syntax
-          await waitForTimeout(10);
 
+          await page.waitForFunction(
+            `${getComputedStyleSelector("7R")}.visibility !== "hidden"`
+          );
           visibility = await page.$eval(
             getSelector("7R"),
             el => getComputedStyle(el).visibility
@@ -2115,6 +2116,9 @@ describe("Interaction", () => {
             .withContext(`In ${browserName}`)
             .toEqual("visible");
 
+          await page.waitForFunction(
+            `${getComputedStyleSelector("8R")}.visibility !== "hidden"`
+          );
           visibility = await page.$eval(
             getSelector("8R"),
             el => getComputedStyle(el).visibility
