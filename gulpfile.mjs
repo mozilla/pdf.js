@@ -84,7 +84,7 @@ const ENV_TARGETS = [
   "last 2 versions",
   "Chrome >= 98",
   "Firefox ESR",
-  "Safari >= 15.4",
+  "Safari >= 16.4",
   "Node >= 18",
   "> 1%",
   "not IE > 0",
