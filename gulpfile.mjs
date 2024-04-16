@@ -1603,6 +1603,7 @@ function buildLib(defines, dir) {
     ),
     gulp.src(["web/*.js", "!web/{pdfjs,viewer}.js"], { base: "." }),
     gulp.src("test/unit/*.js", { base: "." }),
+    gulp.src("external/openjpeg/*.js", { base: "openjpeg/" }),
   ]);
 
   return buildLibHelper(bundleDefines, inputStream, dir);
