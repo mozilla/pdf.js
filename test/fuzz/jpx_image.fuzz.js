@@ -18,7 +18,7 @@ function ignoredError(error) {
  */
 function fuzz(data) {
   try {
-    new JpxImage().parse(new Uint8Array(data));
+    JpxImage.decode(new Uint8Array(data));
   } catch (error) {
     if (error.message && !ignoredError(error)) {
       throw error;
