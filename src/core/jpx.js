@@ -28,8 +28,8 @@ class JpxImage {
   static decode(data, ignoreColorSpace = false) {
     this.#module ||= OpenJPEG();
     const imageData = this.#module.decode(data, ignoreColorSpace);
-    if (!imageData) {
-      throw new JpxError("JPX decode failed");
+    if (typeof imageData === "string") {
+      throw new JpxError(imageData);
     }
     return imageData;
   }
