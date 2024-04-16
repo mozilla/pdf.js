@@ -25,7 +25,7 @@ class JpxError extends BaseException {
 class JpxImage {
   static #module = null;
 
-  static decode(data, ignoreColorSpace) {
+  static decode(data, ignoreColorSpace = false) {
     this.#module ||= OpenJPEG();
     const imageData = this.#module.decode(data, ignoreColorSpace);
     if (!imageData) {
