@@ -3661,7 +3661,7 @@ describe("FreeText Editor", () => {
 
           // Nothing should change, so it's hard to wait on something.
           // eslint-disable-next-line no-restricted-syntax
-          await waitForTimeout(100);
+          await waitForTimeout(250);
 
           text = await getText(editorSelector);
           expect(text).withContext(`In ${browserName}`).toEqual(lastText);
@@ -3683,7 +3683,7 @@ describe("FreeText Editor", () => {
 
           // Nothing should change, so it's hard to wait on something.
           // eslint-disable-next-line no-restricted-syntax
-          await waitForTimeout(100);
+          await waitForTimeout(250);
 
           const html = await getHTML();
           expect(html).withContext(`In ${browserName}`).toEqual(prevHTML);
