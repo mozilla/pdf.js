@@ -9840,5 +9840,84 @@
     "md5": "2f5686f77f73fb99037f5c2c7e48ce53",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue17289",
+    "file": "pdfs/issue17289.pdf",
+    "md5": "acf5bb9e4309ba1c4b3568e7c4a7dd73",
+    "rounds": 1,
+    "link": true,
+    "type": "eq"
+  },
+  {
+    "id": "issue17061",
+    "file": "pdfs/issue17061.pdf",
+    "md5": "21a1b887b7e657b01e4205b22d1f4378",
+    "rounds": 1,
+    "link": true,
+    "firstPage": 1,
+    "lastPage": 5,
+    "type": "eq"
+  },
+  {
+    "id": "issue16485",
+    "file": "pdfs/issue16485.pdf",
+    "md5": "8a2c43161e0d89469fc7ed345c7bd3b1",
+    "rounds": 1,
+    "link": true,
+    "firstPage": 266,
+    "lastPage": 266,
+    "type": "eq"
+  },
+  {
+    "id": "issue13051",
+    "file": "pdfs/issue13051.pdf",
+    "md5": "ead6598c79641a0d266a224160e764d8",
+    "rounds": 1,
+    "link": true,
+    "type": "eq"
+  },
+  {
+    "id": "issue6365",
+    "file": "pdfs/issue6365.pdf",
+    "md5": "fd567f3b4f7c896b5b8071ea762af069",
+    "rounds": 1,
+    "link": true,
+    "firstPage": 2,
+    "lastPage": 5,
+    "type": "eq"
+  },
+  {
+    "id": "issue4648",
+    "file": "pdfs/issue4648.pdf",
+    "md5": "9906cb55f190b8a2d340ea34093ed763",
+    "rounds": 1,
+    "link": true,
+    "firstPage": 1,
+    "lastPage": 4,
+    "type": "eq"
+  },
+  {
+    "id": "bug1659412",
+    "file": "pdfs/bug1659412.pdf",
+    "md5": "0a3220e322d7b899e7604cea947d424c",
+    "rounds": 1,
+    "link": true,
+    "type": "eq"
+  },
+  {
+    "id": "issue12213",
+    "file": "pdfs/issue12213.pdf",
+    "md5": "84df1ce3e3d96e793a2e339aaba138e9",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
+    "id": "issue12213.1",
+    "file": "pdfs/issue12213.1.pdf",
+    "md5": "8ff4af8d7fd391b7f6601406e490d865",
+    "rounds": 1,
+    "link": true,
+    "type": "eq"
   }
 ]

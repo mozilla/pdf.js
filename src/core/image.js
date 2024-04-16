@@ -104,6 +104,7 @@ class PDFImage {
     localColorSpaceCache,
   }) {
     this.image = image;
+    let jpxDecode = false;
     const dict = image.dict;
 
     const filter = dict.get("F", "Filter");
@@ -118,14 +119,14 @@ class PDFImage {
     }
     switch (filterName) {
       case "JPXDecode":
-        const jpxImage = new JpxImage();
-        jpxImage.parseImageProperties(image.stream);
+        ({
+          width: image.width,
+          height: image.height,
+          componentsCount: image.numComps,
+          bitsPerComponent: image.bitsPerComponent,
+        } = JpxImage.parseImageProperties(image.stream));
         image.stream.reset();
-
-        image.width = jpxImage.width;
-        image.height = jpxImage.height;
-        image.bitsPerComponent = jpxImage.bitsPerComponent;
-        image.numComps = jpxImage.componentsCount;
+        jpxDecode = true;
         break;
       case "JBIG2Decode":
         image.bitsPerComponent = 1;
@@ -197,6 +198,7 @@ class PDFImage {
             );
         }
       }
+
       this.colorSpace = ColorSpace.parse({
         cs: colorSpace,
         xref,
@@ -205,6 +207,10 @@ class PDFImage {
         localColorSpaceCache,
       });
       this.numComps = this.colorSpace.numComps;
+
+      // If the jpx image has a color space then it musn't be used in order to
+      // be able to use the color space that comes from the pdf.
+      this.ignoreColorSpace = jpxDecode && this.colorSpace.name === "Indexed";
     }
 
     this.decode = dict.getArray("D", "Decode");
@@ -984,7 +990,7 @@ class PDFImage {
     this.image.drawHeight = drawHeight || this.height;
     this.image.forceRGBA = !!forceRGBA;
     this.image.forceRGB = !!forceRGB;
-    const imageBytes = this.image.getBytes(length);
+    const imageBytes = this.image.getBytes(length, this.ignoreColorSpace);
 
     // If imageBytes came from a DecodeStream, we're safe to transfer it
     // (and thus detach its underlying buffer) because it will constitute
