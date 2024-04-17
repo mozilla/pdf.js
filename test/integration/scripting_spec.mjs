@@ -17,6 +17,7 @@ import {
   awaitPromise,
   clearInput,
   closePages,
+  closeSinglePage,
   getAnnotationStorage,
   getComputedStyleSelector,
   getFirstSerialized,
@@ -418,41 +419,37 @@ describe("Interaction", () => {
       pages = await loadAndWait("doc_actions.pdf", getSelector("47R"));
     });
 
-    afterAll(async () => {
-      await closePages(pages);
-    });
-
     it("must execute WillPrint and DidPrint actions", async () => {
-      await Promise.all(
-        pages.map(async ([browserName, page]) => {
-          if (process.platform === "win32" && browserName === "firefox") {
-            pending("Disabled in Firefox on Windows, because of bug 1662471.");
+      // Run the tests sequentially to avoid to use the same printer at the same
+      // time.
+      // And to make sure that a printer isn't locked by a process we close the
+      // page before running the next test.
+      for (const [browserName, page] of pages) {
+        await page.waitForFunction(
+          "window.PDFViewerApplication.scriptingReady === true"
+        );
+
+        await clearInput(page, getSelector("47R"));
+        await page.evaluate(_ => {
+          window.document.activeElement.blur();
+        });
+        await page.waitForFunction(`${getQuerySelector("47R")}.value === ""`);
+
+        const text = await actAndWaitForInput(
+          page,
+          getSelector("47R"),
+          async () => {
+            await page.click("#print");
           }
-          await page.waitForFunction(
-            "window.PDFViewerApplication.scriptingReady === true"
-          );
+        );
+        expect(text).withContext(`In ${browserName}`).toEqual("WillPrint");
+        await page.keyboard.press("Escape");
 
-          await clearInput(page, getSelector("47R"));
-          await page.evaluate(_ => {
-            window.document.activeElement.blur();
-          });
-          await page.waitForFunction(`${getQuerySelector("47R")}.value === ""`);
-
-          let text = await actAndWaitForInput(
-            page,
-            getSelector("47R"),
-            async () => {
-              await page.click("#print");
-            }
-          );
-          expect(text).withContext(`In ${browserName}`).toEqual("WillPrint");
-
-          await page.waitForFunction(`${getQuerySelector("50R")}.value !== ""`);
-
-          text = await page.$eval(getSelector("50R"), el => el.value);
-          expect(text).withContext(`In ${browserName}`).toEqual("DidPrint");
-        })
-      );
+        await page.waitForFunction(
+          `${getQuerySelector("50R")}.value === "DidPrint"`
+        );
+        await closeSinglePage(page);
+      }
     });
   });
 
@@ -1791,6 +1788,9 @@ describe("Interaction", () => {
         "",
         null /* pageSetup = */,
         async page => {
+          page.on("dialog", async dialog => {
+            await dialog.dismiss();
+          });
           printHandles.set(
             page,
             await page.evaluateHandle(() => [
@@ -1824,11 +1824,9 @@ describe("Interaction", () => {
     });
 
     it("must check if printing is triggered when the document is open", async () => {
-      await Promise.all(
-        pages.map(async ([browserName, page]) => {
-          await awaitPromise(printHandles.get(page));
-        })
-      );
+      for (const [, page] of pages) {
+        await awaitPromise(printHandles.get(page));
+      }
     });
   });
 

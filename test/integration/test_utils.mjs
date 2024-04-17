@@ -76,13 +76,13 @@ function awaitPromise(promise) {
 }
 
 function closePages(pages) {
-  return Promise.all(
-    pages.map(async ([_, page]) => {
-      // Avoid to keep something from a previous test.
-      await page.evaluate(() => window.localStorage.clear());
-      await page.close({ runBeforeUnload: false });
-    })
-  );
+  return Promise.all(pages.map(async ([_, page]) => closeSinglePage(page)));
+}
+
+async function closeSinglePage(page) {
+  // Avoid to keep something from a previous test.
+  await page.evaluate(() => window.localStorage.clear());
+  await page.close({ runBeforeUnload: false });
 }
 
 async function waitForSandboxTrip(page) {
@@ -615,6 +615,7 @@ export {
   awaitPromise,
   clearInput,
   closePages,
+  closeSinglePage,
   createPromise,
   dragAndDropAnnotation,
   firstPageOnTop,
