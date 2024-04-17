@@ -883,12 +883,12 @@ async function startBrowser({
 }) {
   const options = {
     product: browserName,
-    protocol: "cdp",
-    dumpio: true,
+    protocol: "webDriverBiDi",
     headless,
+    dumpio: true,
     defaultViewport: null,
     ignoreDefaultArgs: ["--disable-extensions"],
-    // The timeout for individual protocol (CDP) calls should always be lower
+    // The timeout for individual protocol (BiDi) calls should always be lower
     // than the Jasmine timeout. This way protocol errors are always raised in
     // the context of the tests that actually triggered them and don't leak
     // through to other tests (causing unrelated failures or tracebacks). The
@@ -911,10 +911,6 @@ async function startBrowser({
   }
 
   if (browserName === "firefox") {
-    // Run tests with the WebDriver BiDi protocol enabled only for Firefox for
-    // now given that for Chrome further fixes are needed first.
-    options.protocol = "webDriverBiDi";
-
     options.extraPrefsFirefox = {
       // Disable system addon updates.
       "extensions.systemAddon.update.enabled": false,
