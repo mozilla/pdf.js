@@ -53,6 +53,8 @@ function getCurrentHash() {
 }
 
 class PDFHistory {
+  #eventAbortController = null;
+
   /**
    * @param {PDFHistoryOptions} options
    */
@@ -64,7 +66,6 @@ class PDFHistory {
     this._fingerprint = "";
     this.reset();
 
-    this._boundEvents = null;
     // Ensure that we don't miss a "pagesinit" event,
     // by registering the listener immediately.
     this.eventBus._on("pagesinit", () => {
@@ -679,29 +680,22 @@ class PDFHistory {
   }
 
   #bindEvents() {
-    if (this._boundEvents) {
+    if (this.#eventAbortController) {
       return; // The event listeners were already added.
     }
-    this._boundEvents = {
-      updateViewarea: this.#updateViewarea.bind(this),
-      popState: this.#popState.bind(this),
-      pageHide: this.#pageHide.bind(this),
-    };
+    this.#eventAbortController = new AbortController();
+    const { signal } = this.#eventAbortController;
 
-    this.eventBus._on("updateviewarea", this._boundEvents.updateViewarea);
-    window.addEventListener("popstate", this._boundEvents.popState);
-    window.addEventListener("pagehide", this._boundEvents.pageHide);
+    this.eventBus._on("updateviewarea", this.#updateViewarea.bind(this), {
+      signal,
+    });
+    window.addEventListener("popstate", this.#popState.bind(this), { signal });
+    window.addEventListener("pagehide", this.#pageHide.bind(this), { signal });
   }
 
   #unbindEvents() {
-    if (!this._boundEvents) {
-      return; // The event listeners were already removed.
-    }
-    this.eventBus._off("updateviewarea", this._boundEvents.updateViewarea);
-    window.removeEventListener("popstate", this._boundEvents.popState);
-    window.removeEventListener("pagehide", this._boundEvents.pageHide);
-
-    this._boundEvents = null;
+    this.#eventAbortController?.abort();
+    this.#eventAbortController = null;
   }
 }
 
