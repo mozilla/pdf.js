@@ -39,6 +39,7 @@
     "merge-stream": "^2.0.0",
     "needle": "^3.3.1",
     "path2d": "^0.2.0",
+    "pdfjs-dist": "^4.1.392",
     "pngjs": "^7.0.0",
     "postcss": "^8.4.38",
     "postcss-dark-theme-class": "^1.2.1",
