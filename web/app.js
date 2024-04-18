@@ -177,8 +177,6 @@ const PDFViewerApplication = {
   _nimbusDataPromise: null,
   _caretBrowsing: null,
   _isScrolling: false,
-  _lastScrollTop: 0,
-  _lastScrollLeft: 0,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -2002,15 +2000,20 @@ const PDFViewerApplication = {
     ) {
       return;
     }
-
-    // Using the values lastScrollTop and lastScrollLeft is a workaround to
-    // https://bugzilla.mozilla.org/show_bug.cgi?id=1881974.
-    // TODO: remove them once the bug is fixed.
-    ({ scrollTop: this._lastScrollTop, scrollLeft: this._lastScrollLeft } =
-      mainContainer);
-    const scrollend = () => {
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+      // Using the values lastScrollTop and lastScrollLeft is a workaround to
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=1881974.
+      // TODO: remove them once the bug is fixed.
       ({ scrollTop: this._lastScrollTop, scrollLeft: this._lastScrollLeft } =
         mainContainer);
+    }
+
+    const scrollend = () => {
+      if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+        ({ scrollTop: this._lastScrollTop, scrollLeft: this._lastScrollLeft } =
+          mainContainer);
+      }
+
       this._isScrolling = false;
       mainContainer.addEventListener("scroll", scroll, {
         passive: true,
@@ -2020,13 +2023,17 @@ const PDFViewerApplication = {
       mainContainer.removeEventListener("blur", scrollend, { signal });
     };
     const scroll = () => {
+      if (this._isCtrlKeyDown) {
+        return;
+      }
       if (
-        this._isCtrlKeyDown ||
-        (this._lastScrollTop === mainContainer.scrollTop &&
-          this._lastScrollLeft === mainContainer.scrollLeft)
+        (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
+        this._lastScrollTop === mainContainer.scrollTop &&
+        this._lastScrollLeft === mainContainer.scrollLeft
       ) {
         return;
       }
+
       mainContainer.removeEventListener("scroll", scroll, {
         passive: true,
         signal,
