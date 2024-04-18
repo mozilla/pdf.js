@@ -9919,5 +9919,26 @@
     "rounds": 1,
     "link": true,
     "type": "eq"
+  },
+  {
+    "id": "delete_freetexts",
+    "file": "pdfs/freetexts.pdf",
+    "md5": "da1310a25ab796c1201810070d5032a3",
+    "rounds": 1,
+    "type": "eq",
+    "save": true,
+    "print": true,
+    "annotationStorage": {
+      "pdfjs_internal_editor_0": {
+        "deleted": true,
+        "pageIndex": 0,
+        "id": "26R"
+      },
+      "pdfjs_internal_editor_3": {
+        "deleted": true,
+        "pageIndex": 0,
+        "id": "51R"
+      }
+    }
   }
 ]
