@@ -115,8 +115,9 @@ async function clearInput(page, selector) {
   await page.click(selector);
   await kbSelectAll(page);
   await page.keyboard.press("Backspace");
-  // eslint-disable-next-line no-restricted-syntax
-  await waitForTimeout(10);
+  await page.waitForFunction(
+    `document.querySelector('${selector}').value === ""`
+  );
 }
 
 function getSelector(id) {
