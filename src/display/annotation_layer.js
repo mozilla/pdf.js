@@ -162,6 +162,8 @@ class AnnotationElement {
 
   #hasBorder = false;
 
+  #popupElement = null;
+
   constructor(
     parameters,
     {
@@ -214,6 +216,8 @@ class AnnotationElement {
     if (rect) {
       this.#setRectEdited(rect);
     }
+
+    this.#popupElement?.popup.updateEdited(params);
   }
 
   resetEdited() {
@@ -221,6 +225,7 @@ class AnnotationElement {
       return;
     }
     this.#setRectEdited(this.#updates.rect);
+    this.#popupElement?.popup.resetEdited();
     this.#updates = null;
   }
 
@@ -610,7 +615,7 @@ class AnnotationElement {
     const { container, data } = this;
     container.setAttribute("aria-haspopup", "dialog");
 
-    const popup = new PopupAnnotationElement({
+    const popup = (this.#popupElement = new PopupAnnotationElement({
       data: {
         color: data.color,
         titleObj: data.titleObj,
@@ -624,7 +629,7 @@ class AnnotationElement {
       },
       parent: this.parent,
       elements: [this],
-    });
+    }));
     this.parent.div.append(popup.render());
   }
 
@@ -2055,12 +2060,13 @@ class PopupAnnotationElement extends AnnotationElement {
     const { data, elements } = parameters;
     super(parameters, { isRenderable: AnnotationElement._hasPopupData(data) });
     this.elements = elements;
+    this.popup = null;
   }
 
   render() {
     this.container.classList.add("popupAnnotation");
 
-    const popup = new PopupElement({
+    const popup = (this.popup = new PopupElement({
       container: this.container,
       color: this.data.color,
       titleObj: this.data.titleObj,
@@ -2072,7 +2078,7 @@ class PopupAnnotationElement extends AnnotationElement {
       parent: this.parent,
       elements: this.elements,
       open: this.data.open,
-    });
+    }));
 
     const elementIds = [];
     for (const element of this.elements) {
@@ -2117,11 +2123,15 @@ class PopupElement {
 
   #popup = null;
 
+  #position = null;
+
   #rect = null;
 
   #richText = null;
 
   #titleObj = null;
+
+  #updates = null;
 
   #wasVisible = false;
 
@@ -2188,12 +2198,6 @@ class PopupElement {
       return;
     }
 
-    const {
-      page: { view },
-      viewport: {
-        rawDims: { pageWidth, pageHeight, pageX, pageY },
-      },
-    } = this.#parent;
     const popup = (this.#popup = document.createElement("div"));
     popup.className = "popup";
 
@@ -2244,52 +2248,74 @@ class PopupElement {
       header.append(modificationDate);
     }
 
-    const contentsObj = this.#contentsObj;
-    const richText = this.#richText;
-    if (
-      richText?.str &&
-      (!contentsObj?.str || contentsObj.str === richText.str)
-    ) {
+    const html = this.#html;
+    if (html) {
       XfaLayer.render({
-        xfaHtml: richText.html,
+        xfaHtml: html,
         intent: "richText",
         div: popup,
       });
       popup.lastChild.classList.add("richText", "popupContent");
     } else {
-      const contents = this._formatContents(contentsObj);
+      const contents = this._formatContents(this.#contentsObj);
       popup.append(contents);
     }
-
-    let useParentRect = !!this.#parentRect;
-    let rect = useParentRect ? this.#parentRect : this.#rect;
-    for (const element of this.#elements) {
-      if (!rect || Util.intersect(element.data.rect, rect) !== null) {
-        rect = element.data.rect;
-        useParentRect = true;
-        break;
-      }
-    }
-
-    const normalizedRect = Util.normalizeRect([
-      rect[0],
-      view[3] - rect[1] + view[1],
-      rect[2],
-      view[3] - rect[3] + view[1],
-    ]);
-
-    const HORIZONTAL_SPACE_AFTER_ANNOTATION = 5;
-    const parentWidth = useParentRect
-      ? rect[2] - rect[0] + HORIZONTAL_SPACE_AFTER_ANNOTATION
-      : 0;
-    const popupLeft = normalizedRect[0] + parentWidth;
-    const popupTop = normalizedRect[1];
-
-    const { style } = this.#container;
-    style.left = `${(100 * (popupLeft - pageX)) / pageWidth}%`;
-    style.top = `${(100 * (popupTop - pageY)) / pageHeight}%`;
-
     this.#container.append(popup);
+  }
+
+  get #html() {
+    const richText = this.#richText;
+    const contentsObj = this.#contentsObj;
+    if (
+      richText?.str &&
+      (!contentsObj?.str || contentsObj.str === richText.str)
+    ) {
+      return this.#richText.html || null;
+    }
+    return null;
+  }
+
+  get #fontSize() {
+    return this.#html?.attributes?.style?.fontSize || 0;
+  }
+
+  get #fontColor() {
+    return this.#html?.attributes?.style?.color || null;
+  }
+
+  #makePopupContent(text) {
+    const popupLines = [];
+    const popupContent = {
+      str: text,
+      html: {
+        name: "div",
+        attributes: {
+          dir: "auto",
+        },
+        children: [
+          {
+            name: "p",
+            children: popupLines,
+          },
+        ],
+      },
+    };
+    const lineAttributes = {
+      style: {
+        color: this.#fontColor,
+        fontSize: this.#fontSize
+          ? `calc(${this.#fontSize}px * var(--scale-factor))`
+          : "",
+      },
+    };
+    for (const line of text.split("\n")) {
+      popupLines.push({
+        name: "span",
+        value: line,
+        attributes: lineAttributes,
+      });
+    }
+    return popupContent;
   }
 
   /**
@@ -2325,6 +2351,78 @@ class PopupElement {
     }
   }
 
+  updateEdited({ rect, popupContent }) {
+    this.#updates ||= {
+      contentsObj: this.#contentsObj,
+      richText: this.#richText,
+    };
+    if (rect) {
+      this.#position = null;
+    }
+    if (popupContent) {
+      this.#richText = this.#makePopupContent(popupContent);
+      this.#contentsObj = null;
+    }
+    this.#popup?.remove();
+    this.#popup = null;
+  }
+
+  resetEdited() {
+    if (!this.#updates) {
+      return;
+    }
+    ({ contentsObj: this.#contentsObj, richText: this.#richText } =
+      this.#updates);
+    this.#updates = null;
+    this.#popup?.remove();
+    this.#popup = null;
+    this.#position = null;
+  }
+
+  #setPosition() {
+    if (this.#position !== null) {
+      return;
+    }
+    const {
+      page: { view },
+      viewport: {
+        rawDims: { pageWidth, pageHeight, pageX, pageY },
+      },
+    } = this.#parent;
+
+    let useParentRect = !!this.#parentRect;
+    let rect = useParentRect ? this.#parentRect : this.#rect;
+    for (const element of this.#elements) {
+      if (!rect || Util.intersect(element.data.rect, rect) !== null) {
+        rect = element.data.rect;
+        useParentRect = true;
+        break;
+      }
+    }
+
+    const normalizedRect = Util.normalizeRect([
+      rect[0],
+      view[3] - rect[1] + view[1],
+      rect[2],
+      view[3] - rect[3] + view[1],
+    ]);
+
+    const HORIZONTAL_SPACE_AFTER_ANNOTATION = 5;
+    const parentWidth = useParentRect
+      ? rect[2] - rect[0] + HORIZONTAL_SPACE_AFTER_ANNOTATION
+      : 0;
+    const popupLeft = normalizedRect[0] + parentWidth;
+    const popupTop = normalizedRect[1];
+    this.#position = [
+      (100 * (popupLeft - pageX)) / pageWidth,
+      (100 * (popupTop - pageY)) / pageHeight,
+    ];
+
+    const { style } = this.#container;
+    style.left = `${this.#position[0]}%`;
+    style.top = `${this.#position[1]}%`;
+  }
+
   /**
    * Toggle the visibility of the popup.
    */
@@ -2349,6 +2447,7 @@ class PopupElement {
       this.render();
     }
     if (!this.isVisible) {
+      this.#setPosition();
       this.#container.hidden = false;
       this.#container.style.zIndex =
         parseInt(this.#container.style.zIndex) + 1000;
@@ -2381,6 +2480,9 @@ class PopupElement {
   maybeShow() {
     if (!this.#wasVisible) {
       return;
+    }
+    if (!this.#popup) {
+      this.#show();
     }
     this.#wasVisible = false;
     this.#container.hidden = false;
