@@ -22,6 +22,8 @@
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 // eslint-disable-next-line max-len
 /** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/editor/tools.js").AnnotationEditorUIManager} AnnotationEditorUIManager */
 
 import { AnnotationLayer } from "pdfjs-lib";
 import { PresentationModeState } from "./ui_utils.js";
@@ -41,6 +43,7 @@ import { PresentationModeState } from "./ui_utils.js";
  *   [fieldObjectsPromise]
  * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap]
  * @property {TextAccessibilityManager} [accessibilityManager]
+ * @property {AnnotationEditorUIManager} [annotationEditorUIManager]
  * @property {function} [onAppend]
  */
 
@@ -64,6 +67,7 @@ class AnnotationLayerBuilder {
     fieldObjectsPromise = null,
     annotationCanvasMap = null,
     accessibilityManager = null,
+    annotationEditorUIManager = null,
     onAppend = null,
   }) {
     this.pdfPage = pdfPage;
@@ -77,6 +81,7 @@ class AnnotationLayerBuilder {
     this._fieldObjectsPromise = fieldObjectsPromise || Promise.resolve(null);
     this._annotationCanvasMap = annotationCanvasMap;
     this._accessibilityManager = accessibilityManager;
+    this._annotationEditorUIManager = annotationEditorUIManager;
     this.#onAppend = onAppend;
 
     this.annotationLayer = null;
@@ -128,6 +133,7 @@ class AnnotationLayerBuilder {
       div,
       accessibilityManager: this._accessibilityManager,
       annotationCanvasMap: this._annotationCanvasMap,
+      annotationEditorUIManager: this._annotationEditorUIManager,
       page: this.pdfPage,
       viewport: viewport.clone({ dontFlip: true }),
     });
