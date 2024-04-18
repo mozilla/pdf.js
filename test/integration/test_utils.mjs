@@ -115,8 +115,9 @@ async function clearInput(page, selector) {
   await page.click(selector);
   await kbSelectAll(page);
   await page.keyboard.press("Backspace");
-  // eslint-disable-next-line no-restricted-syntax
-  await waitForTimeout(10);
+  await page.waitForFunction(
+    `document.querySelector('${selector}').value === ""`
+  );
 }
 
 function getSelector(id) {
@@ -354,8 +355,6 @@ async function serializeBitmapDimensions(page) {
 async function dragAndDropAnnotation(page, startX, startY, tX, tY) {
   await page.mouse.move(startX, startY);
   await page.mouse.down();
-  // eslint-disable-next-line no-restricted-syntax
-  await waitForTimeout(10);
   await page.mouse.move(startX + tX, startY + tY);
   await page.mouse.up();
   await page.waitForSelector("#viewer:not(.noUserSelect)");
