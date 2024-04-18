@@ -94,11 +94,22 @@
     }
   }
 
-  canvas {
+  .annotationContent {
     position: absolute;
     width: 100%;
     height: 100%;
     pointer-events: none;
+
+    &.freetext {
+      background: transparent;
+      border: none;
+      inset: 0;
+      overflow: visible;
+      white-space: nowrap;
+      font: 10px sans-serif;
+      line-height: 1.35;
+      user-select: none;
+    }
   }
 
   section {
@@ -107,6 +118,12 @@
     pointer-events: auto;
     box-sizing: border-box;
     transform-origin: 0 0;
+
+    &:has(div.annotationContent) {
+      canvas.annotationContent {
+        display: none;
+      }
+    }
   }
 
   :is(.linkAnnotation, .buttonWidgetAnnotation.pushButton) > a {

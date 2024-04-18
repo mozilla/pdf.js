@@ -1337,6 +1337,17 @@ class AnnotationEditor {
   }
 
   /**
+   * Check if an existing annotation associated with this editor has been
+   * modified.
+   * @returns {boolean}
+   */
+  get hasBeenModified() {
+    return (
+      !!this.annotationElementId && (this.deleted || this.serialize() !== null)
+    );
+  }
+
+  /**
    * Remove this editor.
    * It's used on ctrl+backspace action.
    */
@@ -1709,6 +1720,37 @@ class AnnotationEditor {
       this.div.tabIndex = -1;
     }
     this.#disabled = true;
+  }
+
+  /**
+   * Render an annotation in the annotation layer.
+   * @param {Object} annotation
+   * @returns {HTMLElement}
+   */
+  renderAnnotationElement(annotation) {
+    let content = annotation.container.querySelector(".annotationContent");
+    if (!content) {
+      content = document.createElement("div");
+      content.classList.add("annotationContent", this.editorType);
+      annotation.container.prepend(content);
+    } else if (content.nodeName === "CANVAS") {
+      const canvas = content;
+      content = document.createElement("div");
+      content.classList.add("annotationContent", this.editorType);
+      canvas.before(content);
+    }
+
+    return content;
+  }
+
+  resetAnnotationElement(annotation) {
+    const { firstChild } = annotation.container;
+    if (
+      firstChild.nodeName === "DIV" &&
+      firstChild.classList.contains("annotationContent")
+    ) {
+      firstChild.remove();
+    }
   }
 }
 
