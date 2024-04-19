@@ -157,6 +157,10 @@
   max-height: 100%;
 }
 
+.xfaRight > :is(.xfaRadio, .xfaCheckbox) {
+  margin-right: 4px;
+}
+
 .xfaTop {
   display: flex;
   flex-direction: column;
