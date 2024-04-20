@@ -19,7 +19,7 @@ import { readUint16 } from "./core_utils.js";
 
 class JpegError extends BaseException {
   constructor(msg) {
-    super(`JPEG error: ${msg}`, "JpegError");
+    super(msg, "JpegError");
   }
 }
 
@@ -1580,4 +1580,4 @@ class JpegImage {
   }
 }
 
-export { JpegImage };
+export { JpegError, JpegImage };
