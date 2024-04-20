@@ -15,6 +15,7 @@
 
 import { BaseException } from "../shared/util.js";
 import OpenJPEG from "../../external/openjpeg/openjpeg.js";
+import { Stream } from "./stream.js";
 
 class JpxError extends BaseException {
   constructor(msg) {
@@ -39,6 +40,13 @@ class JpxImage {
   }
 
   static parseImageProperties(stream) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("IMAGE_DECODERS")) {
+      if (stream instanceof ArrayBuffer || ArrayBuffer.isView(stream)) {
+        stream = new Stream(stream);
+      } else {
+        throw new JpxError("Invalid data format, must be a TypedArray.");
+      }
+    }
     // No need to use OpenJPEG here since we're only getting very basic
     // information which are located in the first bytes of the file.
     let newByte = stream.getByte();
