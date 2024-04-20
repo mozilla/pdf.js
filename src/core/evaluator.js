@@ -734,9 +734,9 @@ class PartialEvaluator {
     // Inlining small images into the queue as RGB data
     if (
       isInline &&
+      w + h < SMALL_IMAGE_DIMENSIONS &&
       !dict.has("SMask") &&
-      !dict.has("Mask") &&
-      w + h < SMALL_IMAGE_DIMENSIONS
+      !dict.has("Mask")
     ) {
       try {
         const imageObj = new PDFImage({
@@ -796,10 +796,13 @@ class PartialEvaluator {
     args = [objId, w, h];
     operatorList.addImageOps(OPS.paintImageXObject, args, optionalContent);
 
-    // For large images, at least 500x500 in size, that we'll cache globally
-    // check if the image is still cached locally on the main-thread to avoid
-    // having to re-parse the image (since that can be slow).
-    if (cacheGlobally && w * h > 250000) {
+    // For large (at least 500x500) or more complex images that we'll cache
+    // globally, check if the image is still cached locally on the main-thread
+    // to avoid having to re-parse the image (since that can be slow).
+    if (
+      cacheGlobally &&
+      (w * h > 250000 || dict.has("SMask") || dict.has("Mask"))
+    ) {
       const localLength = await this.handler.sendWithPromise("commonobj", [
         objId,
         "CopyLocalImage",
