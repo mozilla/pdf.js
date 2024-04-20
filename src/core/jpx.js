@@ -18,7 +18,7 @@ import OpenJPEG from "../../external/openjpeg/openjpeg.js";
 
 class JpxError extends BaseException {
   constructor(msg) {
-    super(`JPX error: ${msg}`, "JpxError");
+    super(msg, "JpxError");
   }
 }
 
@@ -68,4 +68,4 @@ class JpxImage {
   }
 }
 
-export { JpxImage };
+export { JpxError, JpxImage };
