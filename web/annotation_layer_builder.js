@@ -50,7 +50,7 @@ import { PresentationModeState } from "./ui_utils.js";
 class AnnotationLayerBuilder {
   #onAppend = null;
 
-  #onPresentationModeChanged = null;
+  #eventAbortController = null;
 
   /**
    * @param {AnnotationLayerBuilderOptions} options
@@ -155,13 +155,15 @@ class AnnotationLayerBuilder {
     if (this.linkService.isInPresentationMode) {
       this.#updatePresentationModeState(PresentationModeState.FULLSCREEN);
     }
-    if (!this.#onPresentationModeChanged) {
-      this.#onPresentationModeChanged = evt => {
-        this.#updatePresentationModeState(evt.state);
-      };
+    if (!this.#eventAbortController) {
+      this.#eventAbortController = new AbortController();
+
       this._eventBus?._on(
         "presentationmodechanged",
-        this.#onPresentationModeChanged
+        evt => {
+          this.#updatePresentationModeState(evt.state);
+        },
+        { signal: this.#eventAbortController.signal }
       );
     }
   }
@@ -169,13 +171,8 @@ class AnnotationLayerBuilder {
   cancel() {
     this._cancelled = true;
 
-    if (this.#onPresentationModeChanged) {
-      this._eventBus?._off(
-        "presentationmodechanged",
-        this.#onPresentationModeChanged
-      );
-      this.#onPresentationModeChanged = null;
-    }
+    this.#eventAbortController?.abort();
+    this.#eventAbortController = null;
   }
 
   hide() {
