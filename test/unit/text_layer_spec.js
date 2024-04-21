@@ -58,5 +58,47 @@ describe("textLayer", function () {
       "",
       "page 1 / 3",
     ]);
+
+    await loadingTask.destroy();
+  });
+
+  it("creates textLayer from TextContent", async function () {
+    if (isNodeJS) {
+      pending("document.createElement is not supported in Node.js.");
+    }
+    const loadingTask = getDocument(buildGetDocumentParams("basicapi.pdf"));
+    const pdfDocument = await loadingTask.promise;
+    const page = await pdfDocument.getPage(1);
+
+    const textContentItemsStr = [];
+
+    const textLayerRenderTask = renderTextLayer({
+      textContentSource: await page.getTextContent(),
+      container: document.createElement("div"),
+      viewport: page.getViewport({ scale: 1 }),
+      textContentItemsStr,
+    });
+    expect(textLayerRenderTask instanceof TextLayerRenderTask).toEqual(true);
+
+    await textLayerRenderTask.promise;
+    expect(textContentItemsStr).toEqual([
+      "Table Of Content",
+      "",
+      "Chapter 1",
+      " ",
+      "..........................................................",
+      " ",
+      "2",
+      "",
+      "Paragraph 1.1",
+      " ",
+      "......................................................",
+      " ",
+      "3",
+      "",
+      "page 1 / 3",
+    ]);
+
+    await loadingTask.destroy();
   });
 });
