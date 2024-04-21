@@ -250,9 +250,7 @@ function appendText(task, geom, styles) {
     textDivProperties.canvasWidth = style.vertical ? geom.height : geom.width;
   }
   task._textDivProperties.set(textDiv, textDivProperties);
-  if (task._isReadableStream) {
-    task._layoutText(textDiv);
-  }
+  task._layoutText(textDiv);
 }
 
 function layout(params) {
@@ -298,16 +296,14 @@ function render(task) {
     capability.resolve();
     return;
   }
-
-  if (!task._isReadableStream) {
-    for (const textDiv of textDivs) {
-      task._layoutText(textDiv);
-    }
-  }
   capability.resolve();
 }
 
 class TextLayerRenderTask {
+  #reader = null;
+
+  #textContentSource = null;
+
   constructor({
     textContentSource,
     container,
@@ -316,14 +312,26 @@ class TextLayerRenderTask {
     textDivProperties,
     textContentItemsStr,
   }) {
-    this._textContentSource = textContentSource;
-    this._isReadableStream = textContentSource instanceof ReadableStream;
+    if (textContentSource instanceof ReadableStream) {
+      this.#textContentSource = textContentSource;
+    } else if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      typeof textContentSource === "object"
+    ) {
+      this.#textContentSource = new ReadableStream({
+        start(controller) {
+          controller.enqueue(textContentSource);
+          controller.close();
+        },
+      });
+    } else {
+      throw new Error('No "textContentSource" parameter specified.');
+    }
     this._container = this._rootContainer = container;
     this._textDivs = textDivs || [];
     this._textContentItemsStr = textContentItemsStr || [];
     this._fontInspectorEnabled = !!globalThis.FontInspector?.enabled;
 
-    this._reader = null;
     this._textDivProperties = textDivProperties || new WeakMap();
     this._canceled = false;
     this._capability = Promise.withResolvers();
@@ -365,15 +373,14 @@ class TextLayerRenderTask {
    */
   cancel() {
     this._canceled = true;
-    if (this._reader) {
-      this._reader
-        .cancel(new AbortException("TextLayer task cancelled."))
-        .catch(() => {
-          // Avoid "Uncaught promise" messages in the console.
-        });
-      this._reader = null;
-    }
-    this._capability.reject(new AbortException("TextLayer task cancelled."));
+    const abortEx = new AbortException("TextLayer task cancelled.");
+
+    this.#reader?.cancel(abortEx).catch(() => {
+      // Avoid "Uncaught promise" messages in the console.
+    });
+    this.#reader = null;
+
+    this._capability.reject(abortEx);
   }
 
   /**
@@ -429,29 +436,21 @@ class TextLayerRenderTask {
     const { promise, resolve, reject } = Promise.withResolvers();
     let styleCache = Object.create(null);
 
-    if (this._isReadableStream) {
-      const pump = () => {
-        this._reader.read().then(({ value, done }) => {
-          if (done) {
-            resolve();
-            return;
-          }
+    const pump = () => {
+      this.#reader.read().then(({ value, done }) => {
+        if (done) {
+          resolve();
+          return;
+        }
 
-          Object.assign(styleCache, value.styles);
-          this._processItems(value.items, styleCache);
-          pump();
-        }, reject);
-      };
+        Object.assign(styleCache, value.styles);
+        this._processItems(value.items, styleCache);
+        pump();
+      }, reject);
+    };
 
-      this._reader = this._textContentSource.getReader();
-      pump();
-    } else if (this._textContentSource) {
-      const { items, styles } = this._textContentSource;
-      this._processItems(items, styles);
-      resolve();
-    } else {
-      throw new Error('No "textContentSource" parameter specified.');
-    }
+    this.#reader = this.#textContentSource.getReader();
+    pump();
 
     promise.then(() => {
       styleCache = null;

@@ -335,15 +335,11 @@ class Rasterize {
 
       await task.promise;
 
-      const { _pageWidth, _pageHeight, _textContentSource, _textDivs } = task;
+      const { _pageWidth, _pageHeight, _textDivs } = task;
       const boxes = [];
-      let posRegex;
-      for (
-        let i = 0, j = 0, ii = _textContentSource.items.length;
-        i < ii;
-        i++
-      ) {
-        const { width, height, type } = _textContentSource.items[i];
+      let j = 0,
+        posRegex;
+      for (const { width, height, type } of textContent.items) {
         if (type) {
           continue;
         }
@@ -396,7 +392,7 @@ class Rasterize {
 
       drawLayer.destroy();
     } catch (reason) {
-      throw new Error(`Rasterize.textLayer: "${reason?.message}".`);
+      throw new Error(`Rasterize.highlightLayer: "${reason?.message}".`);
     }
   }
 
