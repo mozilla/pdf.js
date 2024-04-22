@@ -46,7 +46,15 @@ import {
   XRefEntryException,
   XRefParseException,
 } from "./core_utils.js";
-import { Dict, isName, isRefsEqual, Name, Ref, RefSet } from "./primitives.js";
+import {
+  Dict,
+  isName,
+  isRefsEqual,
+  Name,
+  Ref,
+  RefSet,
+  RefSetCache,
+} from "./primitives.js";
 import { getXfaFontDict, getXfaFontName } from "./xfa_fonts.js";
 import { BaseStream } from "./base_stream.js";
 import { calculateMD5 } from "./crypto.js";
@@ -272,7 +280,7 @@ class Page {
           continue;
         }
         if (annotation.deleted) {
-          deletedAnnotations.put(ref);
+          deletedAnnotations.put(ref, ref);
           continue;
         }
         existingAnnotations?.put(ref);
@@ -300,7 +308,7 @@ class Page {
       options: this.evaluatorOptions,
     });
 
-    const deletedAnnotations = new RefSet();
+    const deletedAnnotations = new RefSetCache();
     const existingAnnotations = new RefSet();
     this.#replaceIdByRef(annotations, deletedAnnotations, existingAnnotations);
 
@@ -335,6 +343,9 @@ class Page {
       { ref: this.ref, data: buffer.join("") },
       ...newData.annotations
     );
+    for (const deletedRef of deletedAnnotations) {
+      objects.push({ ref: deletedRef, data: null });
+    }
 
     return objects;
   }
