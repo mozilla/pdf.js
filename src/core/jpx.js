@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { BaseException } from "../shared/util.js";
+import { BaseException, warn } from "../shared/util.js";
 import OpenJPEG from "../../external/openjpeg/openjpeg.js";
 
 class JpxError extends BaseException {
@@ -26,7 +26,7 @@ class JpxImage {
   static #module = null;
 
   static decode(data, ignoreColorSpace = false) {
-    this.#module ||= OpenJPEG();
+    this.#module ||= OpenJPEG({ warn });
     const imageData = this.#module.decode(data, ignoreColorSpace);
     if (typeof imageData === "string") {
       throw new JpxError(imageData);
