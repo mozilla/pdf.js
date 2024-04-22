@@ -51,12 +51,6 @@ pdfjs-download-button-label = Baixar
 pdfjs-bookmark-button =
     .title = Página atual (ver URL da página atual)
 pdfjs-bookmark-button-label = Pagina atual
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = Abrir em um aplicativo
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = Abrir em um aplicativo
 
 ##  Secondary toolbar and context menu
 
@@ -351,11 +345,11 @@ pdfjs-ink-canvas =
 pdfjs-editor-alt-text-button-label = Texto alternativo
 pdfjs-editor-alt-text-edit-button-label = Editar texto alternativo
 pdfjs-editor-alt-text-dialog-label = Escolha uma opção
-pdfjs-editor-alt-text-dialog-description = O texto alternativo ajuda quando uma imagem não aparece ou não for carregada.
-pdfjs-editor-alt-text-add-description-label = Adicione uma descrição
-pdfjs-editor-alt-text-add-description-description = Procure usar uma ou duas frases que descrevam o assunto, o cenário ou as ações.
+pdfjs-editor-alt-text-dialog-description = O texto alternativo ajuda quando uma imagem não aparece ou não é carregada.
+pdfjs-editor-alt-text-add-description-label = Adicionar uma descrição
+pdfjs-editor-alt-text-add-description-description = Procure usar uma ou duas frases que descrevam o assunto, cenário ou ação.
 pdfjs-editor-alt-text-mark-decorative-label = Marcar como decorativa
-pdfjs-editor-alt-text-mark-decorative-description = Isto é usado para imagens ornamentais, como bordas ou marcas d'água.
+pdfjs-editor-alt-text-mark-decorative-description = Isto é usado em imagens ornamentais, como bordas ou marcas d'água.
 pdfjs-editor-alt-text-cancel-button = Cancelar
 pdfjs-editor-alt-text-save-button = Salvar
 pdfjs-editor-alt-text-decorative-tooltip = Marcado como decorativa
@@ -397,6 +391,6 @@ pdfjs-editor-colorpicker-red =
 ## Show all highlights
 ## This is a toggle button to show/hide all the highlights.
 
-pdfjs-editor-highlight-show-all-button-label = Mostrar tudo
+pdfjs-editor-highlight-show-all-button-label = Mostrar todos
 pdfjs-editor-highlight-show-all-button =
-    .title = Mostrar tudo
+    .title = Mostrar todos

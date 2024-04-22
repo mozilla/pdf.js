@@ -99,7 +99,7 @@ const AUTOPREFIXER_CONFIG = {
 const BABEL_TARGETS = ENV_TARGETS.join(", ");
 
 const BABEL_PRESET_ENV_OPTS = Object.freeze({
-  corejs: "3.36.1",
+  corejs: "3.37.0",
   exclude: ["web.structured-clone"],
   shippedProposals: true,
   useBuiltIns: "usage",
