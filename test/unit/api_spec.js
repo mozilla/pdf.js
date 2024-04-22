@@ -4001,6 +4001,60 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       firstStatsOverall = null;
     });
 
+    it("caches image resources at the document/page level, with main-thread copying of complex images (issue 11518)", async function () {
+      if (isNodeJS) {
+        pending("Linked test-cases are not supported in Node.js.");
+      }
+      const { NUM_PAGES_THRESHOLD } = GlobalImageCache;
+
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue11518.pdf", {
+          pdfBug: true,
+        })
+      );
+      const pdfDoc = await loadingTask.promise;
+      let checkedCopyLocalImage = false,
+        firstStatsOverall = null;
+
+      for (let i = 1; i <= pdfDoc.numPages; i++) {
+        const pdfPage = await pdfDoc.getPage(i);
+        const viewport = pdfPage.getViewport({ scale: 1 });
+
+        const canvasAndCtx = CanvasFactory.create(
+          viewport.width,
+          viewport.height
+        );
+        const renderTask = pdfPage.render({
+          canvasContext: canvasAndCtx.context,
+          viewport,
+        });
+
+        await renderTask.promise;
+        // The canvas is no longer necessary, since we only care about
+        // the stats below.
+        CanvasFactory.destroy(canvasAndCtx);
+
+        const [statsOverall] = pdfPage.stats.times
+          .filter(time => time.name === "Overall")
+          .map(time => time.end - time.start);
+
+        if (i === 1) {
+          firstStatsOverall = statsOverall;
+        } else if (i === NUM_PAGES_THRESHOLD) {
+          checkedCopyLocalImage = true;
+          // Ensure that the images were copied in the main-thread, rather
+          // than being re-parsed in the worker-thread (which is slower).
+          expect(statsOverall).toBeLessThan(firstStatsOverall / 2);
+        } else if (i > NUM_PAGES_THRESHOLD) {
+          break;
+        }
+      }
+      expect(checkedCopyLocalImage).toBeTruthy();
+
+      await loadingTask.destroy();
+      firstStatsOverall = null;
+    });
+
     it("render for printing, with `printAnnotationStorage` set", async function () {
       async function getPrintData(printAnnotationStorage = null) {
         const canvasAndCtx = CanvasFactory.create(
