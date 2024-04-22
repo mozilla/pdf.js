@@ -454,10 +454,7 @@ class PDFLinkService {
       }
     } catch {}
 
-    if (
-      typeof dest === "string" ||
-      PDFLinkService.#isValidExplicitDestination(dest)
-    ) {
+    if (typeof dest === "string" || PDFLinkService.#isValidExplicitDest(dest)) {
       this.goToDestination(dest);
       return;
     }
@@ -549,49 +546,44 @@ class PDFLinkService {
     return this.#pagesRefCache.get(refStr) || null;
   }
 
-  static #isValidExplicitDestination(dest) {
-    if (!Array.isArray(dest)) {
+  static #isValidExplicitDest(dest) {
+    if (!Array.isArray(dest) || dest.length < 2) {
       return false;
     }
-    const destLength = dest.length;
-    if (destLength < 2) {
-      return false;
-    }
-    const page = dest[0];
+    const [page, zoom, ...args] = dest;
     if (
       !(
         typeof page === "object" &&
-        Number.isInteger(page.num) &&
-        Number.isInteger(page.gen)
+        Number.isInteger(page?.num) &&
+        Number.isInteger(page?.gen)
       ) &&
-      !(Number.isInteger(page) && page >= 0)
+      !Number.isInteger(page)
     ) {
       return false;
     }
-    const zoom = dest[1];
-    if (!(typeof zoom === "object" && typeof zoom.name === "string")) {
+    if (!(typeof zoom === "object" && typeof zoom?.name === "string")) {
       return false;
     }
     let allowNull = true;
     switch (zoom.name) {
       case "XYZ":
-        if (destLength !== 5) {
+        if (args.length !== 3) {
           return false;
         }
         break;
       case "Fit":
       case "FitB":
-        return destLength === 2;
+        return args.length === 0;
       case "FitH":
       case "FitBH":
       case "FitV":
       case "FitBV":
-        if (destLength !== 3) {
+        if (args.length !== 1) {
           return false;
         }
         break;
       case "FitR":
-        if (destLength !== 6) {
+        if (args.length !== 4) {
           return false;
         }
         allowNull = false;
@@ -599,9 +591,8 @@ class PDFLinkService {
       default:
         return false;
     }
-    for (let i = 2; i < destLength; i++) {
-      const param = dest[i];
-      if (!(typeof param === "number" || (allowNull && param === null))) {
+    for (const arg of args) {
+      if (!(typeof arg === "number" || (allowNull && arg === null))) {
         return false;
       }
     }

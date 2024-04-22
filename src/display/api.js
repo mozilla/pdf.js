@@ -2933,10 +2933,9 @@ class WorkerTransport {
   getPageIndex(ref) {
     if (
       typeof ref !== "object" ||
-      ref === null ||
-      !Number.isInteger(ref.num) ||
+      !Number.isInteger(ref?.num) ||
       ref.num < 0 ||
-      !Number.isInteger(ref.gen) ||
+      !Number.isInteger(ref?.gen) ||
       ref.gen < 0
     ) {
       return Promise.reject(new Error("Invalid pageIndex request."));

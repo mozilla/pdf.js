@@ -2112,6 +2112,16 @@
     "type": "eq"
   },
   {
+    "id": "issue17981",
+    "file": "pdfs/issue17981.pdf",
+    "md5": "3fd6d2bdcad8ff7cc5c0575da0b70266",
+    "rounds": 1,
+    "link": true,
+    "lastPage": 1,
+    "type": "eq",
+    "annotations": true
+  },
+  {
     "id": "issue9105_other",
     "file": "pdfs/issue9105_other.pdf",
     "md5": "4c8b9c2cceb9c5d621e1d50b3dc38efc",
