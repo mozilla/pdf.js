@@ -20,7 +20,7 @@ import { CCITTFaxDecoder } from "./ccitt.js";
 
 class Jbig2Error extends BaseException {
   constructor(msg) {
-    super(`JBIG2 error: ${msg}`, "Jbig2Error");
+    super(msg, "Jbig2Error");
   }
 }
 
@@ -2593,4 +2593,4 @@ class Jbig2Image {
   }
 }
 
-export { Jbig2Image };
+export { Jbig2Error, Jbig2Image };
