@@ -293,10 +293,18 @@ async function getXRefTable(xrefInfo, baseOffset, newRefs, newXref, buffer) {
     }
     // The EOL is \r\n to make sure that every entry is exactly 20 bytes long.
     // (see 7.5.4 - Cross-Reference Table).
-    buffer.push(
-      `${baseOffset.toString().padStart(10, "0")} ${Math.min(ref.gen, 0xffff).toString().padStart(5, "0")} n\r\n`
-    );
-    baseOffset += data.length;
+    if (data !== null) {
+      buffer.push(
+        `${baseOffset.toString().padStart(10, "0")} ${Math.min(ref.gen, 0xffff).toString().padStart(5, "0")} n\r\n`
+      );
+      baseOffset += data.length;
+    } else {
+      buffer.push(
+        `0000000000 ${Math.min(ref.gen + 1, 0xffff)
+          .toString()
+          .padStart(5, "0")} f\r\n`
+      );
+    }
   }
   computeIDs(baseOffset, xrefInfo, newXref);
   buffer.push("trailer\n");
@@ -327,11 +335,17 @@ async function getXRefStreamTable(
   let maxOffset = 0;
   let maxGen = 0;
   for (const { ref, data } of newRefs) {
+    let gen;
     maxOffset = Math.max(maxOffset, baseOffset);
-    const gen = Math.min(ref.gen, 0xffff);
+    if (data !== null) {
+      gen = Math.min(ref.gen, 0xffff);
+      xrefTableData.push([1, baseOffset, gen]);
+      baseOffset += data.length;
+    } else {
+      gen = Math.min(ref.gen + 1, 0xffff);
+      xrefTableData.push([0, 0, gen]);
+    }
     maxGen = Math.max(maxGen, gen);
-    xrefTableData.push([1, baseOffset, gen]);
-    baseOffset += data.length;
   }
   newXref.set("Index", getIndexes(newRefs));
   const offsetSize = getSizeInBytes(maxOffset);
@@ -420,15 +434,13 @@ async function incrementalUpdate({
     });
   }
 
-  let buffer, baseOffset;
+  const buffer = [];
+  let baseOffset = originalData.length;
   const lastByte = originalData.at(-1);
-  if (lastByte === /* \n */ 0x0a || lastByte === /* \r */ 0x0d) {
-    buffer = [];
-    baseOffset = originalData.length;
-  } else {
+  if (lastByte !== /* \n */ 0x0a && lastByte !== /* \r */ 0x0d) {
     // Avoid to concatenate %%EOF with an object definition
-    buffer = ["\n"];
-    baseOffset = originalData.length + 1;
+    buffer.push("\n");
+    baseOffset += 1;
   }
 
   const newXref = getTrailerDict(xrefInfo, newRefs, useXrefStream);
@@ -436,7 +448,9 @@ async function incrementalUpdate({
     (a, b) => /* compare the refs */ a.ref.num - b.ref.num
   );
   for (const { data } of newRefs) {
-    buffer.push(data);
+    if (data !== null) {
+      buffer.push(data);
+    }
   }
 
   await (useXrefStream
