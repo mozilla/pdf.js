@@ -378,6 +378,12 @@ class RefSetCache {
   clear() {
     this._map.clear();
   }
+
+  *items() {
+    for (const [ref, value] of this._map) {
+      yield [Ref.fromString(ref), value];
+    }
+  }
 }
 
 function isName(v, name) {

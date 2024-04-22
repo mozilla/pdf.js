@@ -1030,6 +1030,20 @@ describe("api", function () {
       await pdfLoadingTask.destroy();
     });
 
+    function findNode(parent, node, index, check) {
+      if (check(node)) {
+        return [parent.children[index - 1], node];
+      }
+      for (let i = 0; i < node.children?.length ?? 0; i++) {
+        const child = node.children[i];
+        const elements = findNode(node, child, i, check);
+        if (elements) {
+          return elements;
+        }
+      }
+      return null;
+    }
+
     it("gets number of pages", function () {
       expect(pdfDocument.numPages).toEqual(3);
     });
@@ -2396,7 +2410,22 @@ describe("api", function () {
       pdfDoc = await loadingTask.promise;
       const page = await pdfDoc.getPage(1);
       const tree = await page.getStructTree();
-      const leaf = tree.children[0].children[6].children[1];
+      const [predecessor, leaf] = findNode(
+        null,
+        tree,
+        0,
+        node => node.role === "Figure"
+      );
+
+      expect(predecessor).toEqual({
+        role: "Span",
+        children: [
+          {
+            type: "content",
+            id: "p3R_mc12",
+          },
+        ],
+      });
 
       expect(leaf).toEqual({
         role: "Figure",
@@ -2407,6 +2436,104 @@ describe("api", function () {
           },
         ],
         alt: "Hello World",
+      });
+
+      await loadingTask.destroy();
+    });
+
+    it("write a new stamp annotation in a tagged pdf (with some MCIDs), save and check the structure tree", async function () {
+      if (isNodeJS) {
+        pending("Cannot create a bitmap from Node.js.");
+      }
+
+      const TEST_IMAGES_PATH = "../images/";
+      const filename = "firefox_logo.png";
+      const path = new URL(TEST_IMAGES_PATH + filename, window.location).href;
+
+      const response = await fetch(path);
+      const blob = await response.blob();
+      const bitmap = await createImageBitmap(blob);
+
+      let loadingTask = getDocument(
+        buildGetDocumentParams("pdfjs_wikipedia.pdf")
+      );
+      let pdfDoc = await loadingTask.promise;
+      for (let i = 0; i < 2; i++) {
+        pdfDoc.annotationStorage.setValue(`pdfjs_internal_editor_${i}`, {
+          annotationType: AnnotationEditorType.STAMP,
+          bitmapId: `im${i}`,
+          pageIndex: 0,
+          rect: [257 + i, 572 + i, 286 + i, 603 + i],
+          rotation: 0,
+          isSvg: false,
+          structTreeParentId: "p2R_mc155",
+          accessibilityData: {
+            type: "Figure",
+            alt: `Firefox logo ${i}`,
+          },
+          bitmap: structuredClone(bitmap),
+        });
+      }
+
+      const data = await pdfDoc.saveDocument();
+      await loadingTask.destroy();
+
+      loadingTask = getDocument(data);
+      pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      const tree = await page.getStructTree();
+
+      let [predecessor, figure] = findNode(
+        null,
+        tree,
+        0,
+        node => node.role === "Figure" && node.alt === "Firefox logo 1"
+      );
+      expect(predecessor).toEqual({
+        role: "NonStruct",
+        children: [
+          {
+            type: "content",
+            id: "p2R_mc155",
+          },
+        ],
+      });
+      expect(figure).toEqual({
+        role: "Figure",
+        children: [
+          {
+            type: "annotation",
+            id: "pdfjs_internal_id_420R",
+          },
+        ],
+        alt: "Firefox logo 1",
+      });
+
+      [predecessor, figure] = findNode(
+        null,
+        tree,
+        0,
+        node => node.role === "Figure" && node.alt === "Firefox logo 0"
+      );
+      expect(predecessor).toEqual({
+        role: "Figure",
+        children: [
+          {
+            type: "annotation",
+            id: "pdfjs_internal_id_420R",
+          },
+        ],
+        alt: "Firefox logo 1",
+      });
+      expect(figure).toEqual({
+        role: "Figure",
+        children: [
+          {
+            type: "annotation",
+            id: "pdfjs_internal_id_416R",
+          },
+        ],
+        alt: "Firefox logo 0",
       });
 
       await loadingTask.destroy();
