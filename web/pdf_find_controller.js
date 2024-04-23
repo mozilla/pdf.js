@@ -584,15 +584,11 @@ class PDFFindController {
   get #query() {
     const { query } = this.#state;
     if (typeof query === "string") {
-      if (query !== this._rawQuery) {
-        this._rawQuery = query;
-        [this._normalizedQuery] = normalize(query);
-      }
-      return this._normalizedQuery;
+      return [normalize(query)];
+    } else if (Array.isArray(query)) {
+      return query.filter(Boolean).map(normalize);
     }
-    // We don't bother caching the normalized search query in the Array-case,
-    // since this code-path is *essentially* unused in the default viewer.
-    return (query || []).filter(q => !!q).map(q => normalize(q)[0]);
+    return [];
   }
 
   #shouldDirtyMatch(state) {
@@ -772,41 +768,51 @@ class PDFFindController {
   }
 
   #calculateMatch(pageIndex) {
-    let query = this.#query;
-    if (query.length === 0) {
-      return; // Do nothing: the matches should be wiped out already.
+    let queries = this.#query;
+    if (!Array.isArray(queries)) {
+      queries = [queries]; // Normalize to array for uniform processing.
+    }
+    if (queries.length === 0) {
+      return; // Do nothing if there are no queries to process.
     }
     const { caseSensitive, entireWord } = this.#state;
     const pageContent = this._pageContents[pageIndex];
-    const hasDiacritics = this._hasDiacritics[pageIndex];
 
-    let isUnicode = false;
-    if (typeof query === "string") {
-      [isUnicode, query] = this.#convertToRegExpString(query, hasDiacritics);
-    } else {
-      // Words are sorted in reverse order to be sure that "foobar" is matched
-      // before "foo" in case the query is "foobar foo".
-      query = query
-        .sort()
-        .reverse()
-        .map(q => {
-          const [isUnicodePart, queryPart] = this.#convertToRegExpString(
-            q,
-            hasDiacritics
-          );
-          isUnicode ||= isUnicodePart;
-          return `(${queryPart})`;
-        })
-        .join("|");
-    }
+    // Initialize page match count before processing.
+    this._pageMatches[pageIndex] = this._pageMatches[pageIndex] || [];
+    this._pageMatchesLength[pageIndex] =
+      this._pageMatchesLength[pageIndex] || [];
 
-    const flags = `g${isUnicode ? "u" : ""}${caseSensitive ? "" : "i"}`;
-    query = query ? new RegExp(query, flags) : null;
+    queries.forEach(query => {
+      const hasDiacritics = this._hasDiacritics[pageIndex];
+      let isUnicode = false;
+      let regexQuery;
+      if (typeof query === "string") {
+        [isUnicode, regexQuery] = this.#convertToRegExpString(
+          query,
+          hasDiacritics
+        );
+      } else {
+        regexQuery = query
+          .sort()
+          .reverse()
+          .map(q => {
+            const [isUnicodePart, queryPart] = this.#convertToRegExpString(
+              q,
+              hasDiacritics
+            );
+            isUnicode ||= isUnicodePart;
+            return `(${queryPart})`;
+          })
+          .join("|");
+      }
+      const flags = `g${isUnicode ? "u" : ""}${caseSensitive ? "" : "i"}`;
+      const regex = new RegExp(regexQuery, flags);
 
-    this.#calculateRegExpMatch(query, entireWord, pageIndex, pageContent);
+      this.#calculateRegExpMatch(regex, entireWord, pageIndex, pageContent);
+    });
 
-    // When `highlightAll` is set, ensure that the matches on previously
-    // rendered (and still active) pages are correctly highlighted.
+    // After processing all queries, update the page if highlightAll is enabled.
     if (this.#state.highlightAll) {
       this.#updatePage(pageIndex);
     }
@@ -815,7 +821,7 @@ class PDFFindController {
       this.#nextPageMatch();
     }
 
-    // Update the match count.
+    // Update the total matches count and handle UI updates.
     const pageMatchesCount = this._pageMatches[pageIndex].length;
     this._matchesCountTotal += pageMatchesCount;
     if (this.#updateMatchesCountOnProgress) {
@@ -823,8 +829,6 @@ class PDFFindController {
         this.#updateUIResultsCount();
       }
     } else if (++this.#visitedPagesCount === this._linkService.pagesCount) {
-      // For example, in GeckoView we want to have only the final update because
-      // the Java side provides only one object to update the counts.
       this.#updateUIResultsCount();
     }
   }
