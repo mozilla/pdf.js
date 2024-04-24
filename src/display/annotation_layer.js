@@ -1993,6 +1993,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
 
       selectElement.addEventListener("input", event => {
         const exportValue = getValue(/* isExport */ true);
+        const change = getValue(/* isExport */ false);
         storage.setValue(id, { value: exportValue });
 
         event.preventDefault();
@@ -2003,6 +2004,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
             id,
             name: "Keystroke",
             value: selectedValues,
+            change,
             changeEx: exportValue,
             willCommit: false,
             commitKey: 1,
