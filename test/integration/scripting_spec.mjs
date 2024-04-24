@@ -2425,4 +2425,47 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("Value of event.change when a choice list is modified", () => {
+    let pages;
+    let otherPages;
+
+    beforeAll(async () => {
+      otherPages = await Promise.all(
+        global.integrationSessions.map(async session =>
+          session.browser.newPage()
+        )
+      );
+      pages = await loadAndWait("issue17998.pdf", getSelector("7R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+      await Promise.all(otherPages.map(page => page.close()));
+    });
+
+    it("must check the properties of the event", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page], i) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          for (const [value, expected] of [
+            ["b", "change=B,changeEx=b,value=A"],
+            ["c", "change=C,changeEx=c,value=B"],
+            ["a", "change=A,changeEx=a,value=C"],
+          ]) {
+            await page.select(getSelector("7R"), value);
+            await page.waitForFunction(
+              `${getQuerySelector("10R")}.value !== ""`
+            );
+            const text = await page.$eval(getSelector("10R"), el => el.value);
+            expect(text).withContext(`In ${browserName}`).toEqual(expected);
+            await clearInput(page, getSelector("10R"));
+          }
+        })
+      );
+    });
+  });
 });
