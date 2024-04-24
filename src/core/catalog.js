@@ -52,11 +52,57 @@ import { GlobalImageCache } from "./image_utils.js";
 import { MetadataParser } from "./metadata_parser.js";
 import { StructTreeRoot } from "./struct_tree.js";
 
-function fetchDestination(dest) {
+function isValidExplicitDest(dest) {
+  if (!Array.isArray(dest) || dest.length < 2) {
+    return false;
+  }
+  const [page, zoom, ...args] = dest;
+  if (!(page instanceof Ref) && !Number.isInteger(page)) {
+    return false;
+  }
+  if (!(zoom instanceof Name)) {
+    return false;
+  }
+  let allowNull = true;
+  switch (zoom.name) {
+    case "XYZ":
+      if (args.length !== 3) {
+        return false;
+      }
+      break;
+    case "Fit":
+    case "FitB":
+      return args.length === 0;
+    case "FitH":
+    case "FitBH":
+    case "FitV":
+    case "FitBV":
+      if (args.length !== 1) {
+        return false;
+      }
+      break;
+    case "FitR":
+      if (args.length !== 4) {
+        return false;
+      }
+      allowNull = false;
+      break;
+    default:
+      return false;
+  }
+  for (const arg of args) {
+    if (!(typeof arg === "number" || (allowNull && arg === null))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function fetchDest(dest) {
   if (dest instanceof Dict) {
     dest = dest.get("D");
   }
-  return Array.isArray(dest) ? dest : null;
+  return isValidExplicitDest(dest) ? dest : null;
 }
 
 function fetchRemoteDest(action) {
@@ -67,7 +113,7 @@ function fetchRemoteDest(action) {
     }
     if (typeof dest === "string") {
       return stringToPDFString(dest);
-    } else if (Array.isArray(dest)) {
+    } else if (isValidExplicitDest(dest)) {
       return JSON.stringify(dest);
     }
   }
@@ -641,14 +687,14 @@ class Catalog {
       dests = Object.create(null);
     if (obj instanceof NameTree) {
       for (const [key, value] of obj.getAll()) {
-        const dest = fetchDestination(value);
+        const dest = fetchDest(value);
         if (dest) {
           dests[stringToPDFString(key)] = dest;
         }
       }
     } else if (obj instanceof Dict) {
       obj.forEach(function (key, value) {
-        const dest = fetchDestination(value);
+        const dest = fetchDest(value);
         if (dest) {
           dests[key] = dest;
         }
@@ -660,7 +706,7 @@ class Catalog {
   getDestination(id) {
     const obj = this._readDests();
     if (obj instanceof NameTree) {
-      const dest = fetchDestination(obj.get(id));
+      const dest = fetchDest(obj.get(id));
       if (dest) {
         return dest;
       }
@@ -672,7 +718,7 @@ class Catalog {
         return allDest;
       }
     } else if (obj instanceof Dict) {
-      const dest = fetchDestination(obj.get(id));
+      const dest = fetchDest(obj.get(id));
       if (dest) {
         return dest;
       }
@@ -1703,7 +1749,7 @@ class Catalog {
       }
       if (typeof dest === "string") {
         resultObj.dest = stringToPDFString(dest);
-      } else if (Array.isArray(dest)) {
+      } else if (isValidExplicitDest(dest)) {
         resultObj.dest = dest;
       }
     }
