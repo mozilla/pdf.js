@@ -131,10 +131,31 @@ class PDFLinkService {
     return this.pdfDocument ? this.pdfViewer.isInPresentationMode : false;
   }
 
-  #goToDestinationHelper(rawDest, namedDest = null, explicitDest) {
+  /**
+   * This method will, when available, also update the browser history.
+   *
+   * @param {string|Array} dest - The named, or explicit, PDF destination.
+   */
+  async goToDestination(dest) {
+    if (!this.pdfDocument) {
+      return;
+    }
+    let namedDest, explicitDest, pageNumber;
+    if (typeof dest === "string") {
+      namedDest = dest;
+      explicitDest = await this.pdfDocument.getDestination(dest);
+    } else {
+      namedDest = null;
+      explicitDest = await dest;
+    }
+    if (!Array.isArray(explicitDest)) {
+      console.error(
+        `goToDestination: "${explicitDest}" is not a valid destination array, for dest="${dest}".`
+      );
+      return;
+    }
     // Dest array looks like that: <page-ref> </XYZ|/FitXXX> <args..>
-    const destRef = explicitDest[0];
-    let pageNumber;
+    const [destRef] = explicitDest;
 
     if (typeof destRef === "object" && destRef !== null) {
       pageNumber = this._cachedPageNumber(destRef);
@@ -142,33 +163,27 @@ class PDFLinkService {
       if (!pageNumber) {
         // Fetch the page reference if it's not yet available. This could
         // only occur during loading, before all pages have been resolved.
-        this.pdfDocument
-          .getPageIndex(destRef)
-          .then(pageIndex => {
-            this.cachePageRef(pageIndex + 1, destRef);
-            this.#goToDestinationHelper(rawDest, namedDest, explicitDest);
-          })
-          .catch(() => {
-            console.error(
-              `PDFLinkService.#goToDestinationHelper: "${destRef}" is not ` +
-                `a valid page reference, for dest="${rawDest}".`
-            );
-          });
-        return;
+        try {
+          pageNumber = (await this.pdfDocument.getPageIndex(destRef)) + 1;
+          this.cachePageRef(pageNumber, destRef);
+        } catch {
+          console.error(
+            `goToDestination: "${destRef}" is not a valid page reference, for dest="${dest}".`
+          );
+          return;
+        }
       }
     } else if (Number.isInteger(destRef)) {
       pageNumber = destRef + 1;
     } else {
       console.error(
-        `PDFLinkService.#goToDestinationHelper: "${destRef}" is not ` +
-          `a valid destination reference, for dest="${rawDest}".`
+        `goToDestination: "${destRef}" is not a valid destination reference, for dest="${dest}".`
       );
       return;
     }
     if (!pageNumber || pageNumber < 1 || pageNumber > this.pagesCount) {
       console.error(
-        `PDFLinkService.#goToDestinationHelper: "${pageNumber}" is not ` +
-          `a valid page number, for dest="${rawDest}".`
+        `goToDestination: "${pageNumber}" is not a valid page number, for dest="${dest}".`
       );
       return;
     }
@@ -185,33 +200,6 @@ class PDFLinkService {
       destArray: explicitDest,
       ignoreDestinationZoom: this._ignoreDestinationZoom,
     });
-  }
-
-  /**
-   * This method will, when available, also update the browser history.
-   *
-   * @param {string|Array} dest - The named, or explicit, PDF destination.
-   */
-  async goToDestination(dest) {
-    if (!this.pdfDocument) {
-      return;
-    }
-    let namedDest, explicitDest;
-    if (typeof dest === "string") {
-      namedDest = dest;
-      explicitDest = await this.pdfDocument.getDestination(dest);
-    } else {
-      namedDest = null;
-      explicitDest = await dest;
-    }
-    if (!Array.isArray(explicitDest)) {
-      console.error(
-        `PDFLinkService.goToDestination: "${explicitDest}" is not ` +
-          `a valid destination array, for dest="${dest}".`
-      );
-      return;
-    }
-    this.#goToDestinationHelper(dest, namedDest, explicitDest);
   }
 
   /**
