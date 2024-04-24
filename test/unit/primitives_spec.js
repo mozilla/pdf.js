@@ -498,6 +498,15 @@ describe("primitives", function () {
       cache.put(ref2, obj2);
       expect([...cache]).toEqual([obj1, obj2]);
     });
+
+    it("should support iteration over key-value pairs", function () {
+      cache.put(ref1, obj1);
+      cache.put(ref2, obj2);
+      expect([...cache.items()]).toEqual([
+        [ref1, obj1],
+        [ref2, obj2],
+      ]);
+    });
   });
 
   describe("isName", function () {
