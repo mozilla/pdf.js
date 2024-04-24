@@ -560,6 +560,16 @@ function getDataProp(val) {
   );
 }
 
+function isRefProxy(ref) {
+  return (
+    typeof ref === "object" &&
+    Number.isInteger(ref?.num) &&
+    ref.num >= 0 &&
+    Number.isInteger(ref?.gen) &&
+    ref.gen >= 0
+  );
+}
+
 /**
  * @typedef {Object} OnProgressParameters
  * @property {number} loaded - Currently loaded number of bytes.
@@ -1064,6 +1074,14 @@ class PDFDocumentProxy {
    */
   destroy() {
     return this.loadingTask.destroy();
+  }
+
+  /**
+   * @param {RefProxy} ref - The page reference.
+   * @returns {number | null} The page number, if it's cached.
+   */
+  cachedPageNumber(ref) {
+    return this._transport.cachedPageNumber(ref);
   }
 
   /**
@@ -2340,6 +2358,8 @@ class WorkerTransport {
 
   #pagePromises = new Map();
 
+  #pageRefCache = new Map();
+
   #passwordCapability = null;
 
   constructor(messageHandler, loadingTask, networkStream, params, factory) {
@@ -2483,6 +2503,7 @@ class WorkerTransport {
     }
     this.#pageCache.clear();
     this.#pagePromises.clear();
+    this.#pageRefCache.clear();
     // Allow `AnnotationStorage`-related clean-up when destroying the document.
     if (this.hasOwnProperty("annotationStorage")) {
       this.annotationStorage.resetModified();
@@ -2915,6 +2936,10 @@ class WorkerTransport {
         if (this.destroyed) {
           throw new Error("Transport destroyed");
         }
+        if (pageInfo.refStr) {
+          this.#pageRefCache.set(pageInfo.refStr, pageNumber);
+        }
+
         const page = new PDFPageProxy(
           pageIndex,
           pageInfo,
@@ -2929,13 +2954,7 @@ class WorkerTransport {
   }
 
   getPageIndex(ref) {
-    if (
-      typeof ref !== "object" ||
-      !Number.isInteger(ref?.num) ||
-      ref.num < 0 ||
-      !Number.isInteger(ref?.gen) ||
-      ref.gen < 0
-    ) {
+    if (!isRefProxy(ref)) {
       return Promise.reject(new Error("Invalid pageIndex request."));
     }
     return this.messageHandler.sendWithPromise("GetPageIndex", {
@@ -3074,6 +3093,14 @@ class WorkerTransport {
     this.#methodPromises.clear();
     this.filterFactory.destroy(/* keepHCM = */ true);
     cleanupTextLayer();
+  }
+
+  cachedPageNumber(ref) {
+    if (!isRefProxy(ref)) {
+      return null;
+    }
+    const refStr = ref.gen === 0 ? `${ref.num}R` : `${ref.num}R${ref.gen}`;
+    return this.#pageRefCache.get(refStr) ?? null;
   }
 
   get loadingParams() {

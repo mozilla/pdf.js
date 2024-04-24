@@ -935,11 +935,7 @@ class PDFViewer {
         // Set the first `pdfPage` immediately, since it's already loaded,
         // rather than having to repeat the `PDFDocumentProxy.getPage` call in
         // the `this.#ensurePdfPageLoaded` method before rendering can start.
-        const firstPageView = this._pages[0];
-        if (firstPageView) {
-          firstPageView.setPdfPage(firstPdfPage);
-          this.linkService.cachePageRef(1, firstPdfPage.ref);
-        }
+        this._pages[0]?.setPdfPage(firstPdfPage);
 
         if (this._scrollMode === ScrollMode.PAGE) {
           // Ensure that the current page becomes visible on document load.
@@ -994,7 +990,6 @@ class PDFViewer {
                 if (!pageView.pdfPage) {
                   pageView.setPdfPage(pdfPage);
                 }
-                this.linkService.cachePageRef(pageNum, pdfPage.ref);
                 if (--getPagesLeft === 0) {
                   this._pagesCapability.resolve();
                 }
@@ -1717,9 +1712,6 @@ class PDFViewer {
       const pdfPage = await this.pdfDocument.getPage(pageView.id);
       if (!pageView.pdfPage) {
         pageView.setPdfPage(pdfPage);
-      }
-      if (!this.linkService._cachedPageNumber?.(pdfPage.ref)) {
-        this.linkService.cachePageRef(pageView.id, pdfPage.ref);
       }
       return pdfPage;
     } catch (reason) {
