@@ -106,12 +106,6 @@ class IPDFLinkService {
    * @param {Object} action
    */
   executeSetOCGState(action) {}
-
-  /**
-   * @param {number} pageNum - page number.
-   * @param {Object} pageRef - reference to the page.
-   */
-  cachePageRef(pageNum, pageRef) {}
 }
 
 /**
