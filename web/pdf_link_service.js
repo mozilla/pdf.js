@@ -171,11 +171,6 @@ class PDFLinkService {
       }
     } else if (Number.isInteger(destRef)) {
       pageNumber = destRef + 1;
-    } else {
-      console.error(
-        `goToDestination: "${destRef}" is not a valid destination reference, for dest="${dest}".`
-      );
-      return;
     }
     if (!pageNumber || pageNumber < 1 || pageNumber > this.pagesCount) {
       console.error(
