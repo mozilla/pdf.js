@@ -469,7 +469,7 @@ const BaseException = (function BaseExceptionClosure() {
     this.message = message;
     this.name = name;
   }
-  BaseException.prototype = new Error();
+  BaseException.prototype = Object.create(Error.prototype);
   BaseException.constructor = BaseException;
 
   return BaseException;
