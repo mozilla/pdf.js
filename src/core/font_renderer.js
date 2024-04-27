@@ -16,6 +16,7 @@
 import {
   bytesToString,
   FONT_IDENTITY_MATRIX,
+  FontRenderOps,
   FormatError,
   unreachable,
   warn,
@@ -180,13 +181,13 @@ function lookupCmap(ranges, unicode) {
 
 function compileGlyf(code, cmds, font) {
   function moveTo(x, y) {
-    cmds.push({ cmd: "moveTo", args: [x, y] });
+    cmds.add(FontRenderOps.MOVE_TO, [x, y]);
   }
   function lineTo(x, y) {
-    cmds.push({ cmd: "lineTo", args: [x, y] });
+    cmds.add(FontRenderOps.LINE_TO, [x, y]);
   }
   function quadraticCurveTo(xa, ya, x, y) {
-    cmds.push({ cmd: "quadraticCurveTo", args: [xa, ya, x, y] });
+    cmds.add(FontRenderOps.QUADRATIC_CURVE_TO, [xa, ya, x, y]);
   }
 
   let i = 0;
@@ -247,20 +248,22 @@ function compileGlyf(code, cmds, font) {
       if (subglyph) {
         // TODO: the transform should be applied only if there is a scale:
         // https://github.com/freetype/freetype/blob/edd4fedc5427cf1cf1f4b045e53ff91eb282e9d4/src/truetype/ttgload.c#L1205
-        cmds.push(
-          { cmd: "save" },
-          {
-            cmd: "transform",
-            args: [scaleX, scale01, scale10, scaleY, x, y],
-          }
-        );
+        cmds.add(FontRenderOps.SAVE);
+        cmds.add(FontRenderOps.TRANSFORM, [
+          scaleX,
+          scale01,
+          scale10,
+          scaleY,
+          x,
+          y,
+        ]);
 
         if (!(flags & 0x02)) {
           // TODO: we must use arg1 and arg2 to make something similar to:
           // https://github.com/freetype/freetype/blob/edd4fedc5427cf1cf1f4b045e53ff91eb282e9d4/src/truetype/ttgload.c#L1209
         }
         compileGlyf(subglyph, cmds, font);
-        cmds.push({ cmd: "restore" });
+        cmds.add(FontRenderOps.RESTORE);
       }
     } while (flags & 0x20);
   } else {
@@ -365,13 +368,13 @@ function compileGlyf(code, cmds, font) {
 
 function compileCharString(charStringCode, cmds, font, glyphId) {
   function moveTo(x, y) {
-    cmds.push({ cmd: "moveTo", args: [x, y] });
+    cmds.add(FontRenderOps.MOVE_TO, [x, y]);
   }
   function lineTo(x, y) {
-    cmds.push({ cmd: "lineTo", args: [x, y] });
+    cmds.add(FontRenderOps.LINE_TO, [x, y]);
   }
   function bezierCurveTo(x1, y1, x2, y2, x, y) {
-    cmds.push({ cmd: "bezierCurveTo", args: [x1, y1, x2, y2, x, y] });
+    cmds.add(FontRenderOps.BEZIER_CURVE_TO, [x1, y1, x2, y2, x, y]);
   }
 
   const stack = [];
@@ -544,7 +547,8 @@ function compileCharString(charStringCode, cmds, font, glyphId) {
             const bchar = stack.pop();
             y = stack.pop();
             x = stack.pop();
-            cmds.push({ cmd: "save" }, { cmd: "translate", args: [x, y] });
+            cmds.add(FontRenderOps.SAVE);
+            cmds.add(FontRenderOps.TRANSLATE, [x, y]);
             let cmap = lookupCmap(
               font.cmap,
               String.fromCharCode(font.glyphNameMap[StandardEncoding[achar]])
@@ -555,7 +559,7 @@ function compileCharString(charStringCode, cmds, font, glyphId) {
               font,
               cmap.glyphId
             );
-            cmds.push({ cmd: "restore" });
+            cmds.add(FontRenderOps.RESTORE);
 
             cmap = lookupCmap(
               font.cmap,
@@ -741,6 +745,27 @@ function compileCharString(charStringCode, cmds, font, glyphId) {
 
 const NOOP = [];
 
+class Commands {
+  cmds = [];
+
+  add(cmd, args) {
+    if (args) {
+      if (args.some(arg => typeof arg !== "number")) {
+        warn(
+          `Commands.add - "${cmd}" has at least one non-number arg: "${args}".`
+        );
+        // "Fix" the wrong args by replacing them with 0.
+        const newArgs = args.map(arg => (typeof arg === "number" ? arg : 0));
+        this.cmds.push(cmd, ...newArgs);
+      } else {
+        this.cmds.push(cmd, ...args);
+      }
+    } else {
+      this.cmds.push(cmd);
+    }
+  }
+}
+
 class CompiledFont {
   constructor(fontMatrix) {
     if (this.constructor === CompiledFont) {
@@ -757,8 +782,10 @@ class CompiledFont {
     let fn = this.compiledGlyphs[glyphId];
     if (!fn) {
       try {
-        fn = this.compileGlyph(this.glyphs[glyphId], glyphId);
-        this.compiledGlyphs[glyphId] = fn;
+        fn = this.compiledGlyphs[glyphId] = this.compileGlyph(
+          this.glyphs[glyphId],
+          glyphId
+        );
       } catch (ex) {
         // Avoid attempting to re-compile a corrupt glyph.
         this.compiledGlyphs[glyphId] = NOOP;
@@ -793,16 +820,14 @@ class CompiledFont {
       }
     }
 
-    const cmds = [
-      { cmd: "save" },
-      { cmd: "transform", args: fontMatrix.slice() },
-      { cmd: "scale", args: ["size", "-size"] },
-    ];
+    const cmds = new Commands();
+    cmds.add(FontRenderOps.SAVE);
+    cmds.add(FontRenderOps.TRANSFORM, fontMatrix.slice());
+    cmds.add(FontRenderOps.SCALE);
     this.compileGlyphImpl(code, cmds, glyphId);
+    cmds.add(FontRenderOps.RESTORE);
 
-    cmds.push({ cmd: "restore" });
-
-    return cmds;
+    return cmds.cmds;
   }
 
   compileGlyphImpl() {
