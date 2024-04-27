@@ -4391,6 +4391,15 @@ class PartialEvaluator {
       }
     }
 
+    let fontMatrix = dict.getArray("FontMatrix");
+    if (
+      !Array.isArray(fontMatrix) ||
+      fontMatrix.length !== 6 ||
+      fontMatrix.some(x => typeof x !== "number")
+    ) {
+      fontMatrix = FONT_IDENTITY_MATRIX;
+    }
+
     const properties = {
       type,
       name: fontName.name,
@@ -4403,7 +4412,7 @@ class PartialEvaluator {
       loadedName: baseDict.loadedName,
       composite,
       fixedPitch: false,
-      fontMatrix: dict.getArray("FontMatrix") || FONT_IDENTITY_MATRIX,
+      fontMatrix,
       firstChar,
       lastChar,
       toUnicode,
