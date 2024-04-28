@@ -219,6 +219,21 @@ function isWhiteSpace(ch) {
 }
 
 /**
+ * Checks if something is an Array containing only numbers,
+ * and (optionally) checks its length.
+ * @param {any} arr
+ * @param {number | null} len
+ * @returns {boolean}
+ */
+function isNumberArray(arr, len) {
+  return (
+    Array.isArray(arr) &&
+    (len === null || arr.length === len) &&
+    arr.every(x => typeof x === "number")
+  );
+}
+
+/**
  * AcroForm field names use an array like notation to refer to
  * repeated XFA elements e.g. foo.bar[nnn].
  * see: XFA Spec Chapter 3 - Repeated Elements
@@ -637,6 +652,7 @@ export {
   getRotationMatrix,
   getSizeInBytes,
   isAscii,
+  isNumberArray,
   isWhiteSpace,
   log2,
   MissingDataException,
