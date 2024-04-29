@@ -73,6 +73,7 @@ import { getGlyphsUnicode } from "./glyphlist.js";
 import { getMetrics } from "./metrics.js";
 import { getUnicodeForGlyph } from "./unicode.js";
 import { ImageResizer } from "./image_resizer.js";
+import { isNumberArray } from "./core_utils.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
@@ -4077,8 +4078,14 @@ class PartialEvaluator {
       composite = true;
     }
 
-    const firstChar = dict.get("FirstChar") || 0,
-      lastChar = dict.get("LastChar") || (composite ? 0xffff : 0xff);
+    let firstChar = dict.get("FirstChar");
+    if (!Number.isInteger(firstChar)) {
+      firstChar = 0;
+    }
+    let lastChar = dict.get("LastChar");
+    if (!Number.isInteger(lastChar)) {
+      lastChar = composite ? 0xffff : 0xff;
+    }
     const descriptor = dict.get("FontDescriptor");
     const toUnicode = dict.get("ToUnicode") || baseDict.get("ToUnicode");
 
@@ -4206,11 +4213,15 @@ class PartialEvaluator {
 
     if (!descriptor) {
       if (isType3Font) {
+        let bbox = dict.getArray("FontBBox");
+        if (!isNumberArray(bbox, 4)) {
+          bbox = [0, 0, 0, 0];
+        }
         // FontDescriptor is only required for Type3 fonts when the document
         // is a tagged pdf. Create a barbebones one to get by.
         descriptor = new Dict(null);
         descriptor.set("FontName", Name.get(type));
-        descriptor.set("FontBBox", dict.getArray("FontBBox") || [0, 0, 0, 0]);
+        descriptor.set("FontBBox", bbox);
       } else {
         // Before PDF 1.5 if the font was one of the base 14 fonts, having a
         // FontDescriptor was not required.
@@ -4392,12 +4403,36 @@ class PartialEvaluator {
     }
 
     let fontMatrix = dict.getArray("FontMatrix");
-    if (
-      !Array.isArray(fontMatrix) ||
-      fontMatrix.length !== 6 ||
-      fontMatrix.some(x => typeof x !== "number")
-    ) {
+    if (!isNumberArray(fontMatrix, 6)) {
       fontMatrix = FONT_IDENTITY_MATRIX;
+    }
+    let bbox = descriptor.getArray("FontBBox") || dict.getArray("FontBBox");
+    if (!isNumberArray(bbox, 4)) {
+      bbox = undefined;
+    }
+    let ascent = descriptor.get("Ascent");
+    if (typeof ascent !== "number") {
+      ascent = undefined;
+    }
+    let descent = descriptor.get("Descent");
+    if (typeof descent !== "number") {
+      descent = undefined;
+    }
+    let xHeight = descriptor.get("XHeight");
+    if (typeof xHeight !== "number") {
+      xHeight = 0;
+    }
+    let capHeight = descriptor.get("CapHeight");
+    if (typeof capHeight !== "number") {
+      capHeight = 0;
+    }
+    let flags = descriptor.get("Flags");
+    if (!Number.isInteger(flags)) {
+      flags = 0;
+    }
+    let italicAngle = descriptor.get("ItalicAngle");
+    if (typeof italicAngle !== "number") {
+      italicAngle = 0;
     }
 
     const properties = {
@@ -4416,13 +4451,13 @@ class PartialEvaluator {
       firstChar,
       lastChar,
       toUnicode,
-      bbox: descriptor.getArray("FontBBox") || dict.getArray("FontBBox"),
-      ascent: descriptor.get("Ascent"),
-      descent: descriptor.get("Descent"),
-      xHeight: descriptor.get("XHeight") || 0,
-      capHeight: descriptor.get("CapHeight") || 0,
-      flags: descriptor.get("Flags"),
-      italicAngle: descriptor.get("ItalicAngle") || 0,
+      bbox,
+      ascent,
+      descent,
+      xHeight,
+      capHeight,
+      flags,
+      italicAngle,
       isType3Font,
       cssFontInfo,
       scaleFactors: glyphScaleFactors,

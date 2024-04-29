@@ -23,6 +23,7 @@ import {
 } from "../shared/util.js";
 import { CFFParser } from "./cff_parser.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
+import { isNumberArray } from "./core_utils.js";
 import { StandardEncoding } from "./encodings.js";
 import { Stream } from "./stream.js";
 
@@ -750,7 +751,7 @@ class Commands {
 
   add(cmd, args) {
     if (args) {
-      if (args.some(arg => typeof arg !== "number")) {
+      if (!isNumberArray(args, null)) {
         warn(
           `Commands.add - "${cmd}" has at least one non-number arg: "${args}".`
         );
