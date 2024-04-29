@@ -325,21 +325,10 @@ class PDFOutlineViewer extends BaseTreeViewer {
         if (Array.isArray(explicitDest)) {
           const [destRef] = explicitDest;
 
-          if (typeof destRef === "object" && destRef !== null) {
-            pageNumber = this.linkService._cachedPageNumber(destRef);
-
-            if (!pageNumber) {
-              try {
-                pageNumber = (await pdfDocument.getPageIndex(destRef)) + 1;
-
-                if (pdfDocument !== this._pdfDocument) {
-                  return null; // The document was closed while the data resolved.
-                }
-                this.linkService.cachePageRef(pageNumber, destRef);
-              } catch {
-                // Invalid page reference, ignore it and continue parsing.
-              }
-            }
+          if (destRef && typeof destRef === "object") {
+            // The page reference must be available, since the current method
+            // won't be invoked until all pages have been loaded.
+            pageNumber = pdfDocument.cachedPageNumber(destRef);
           } else if (Number.isInteger(destRef)) {
             pageNumber = destRef + 1;
           }
