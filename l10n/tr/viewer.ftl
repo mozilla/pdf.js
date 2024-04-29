@@ -51,12 +51,6 @@ pdfjs-download-button-label = İndir
 pdfjs-bookmark-button =
     .title = Geçerli sayfa (geçerli sayfanın adresini görüntüle)
 pdfjs-bookmark-button-label = Geçerli sayfa
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = Uygulamada aç
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = Uygulamada aç
 
 ##  Secondary toolbar and context menu
 
@@ -273,7 +267,7 @@ pdfjs-rendering-error = Sayfa yorumlanırken bir hata oluştu.
 # Variables:
 #   $date (Date) - the modification date of the annotation
 #   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
+pdfjs-annotation-date-string = { $date } { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
