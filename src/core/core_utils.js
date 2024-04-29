@@ -219,6 +219,21 @@ function isWhiteSpace(ch) {
 }
 
 /**
+ * Checks if something is an Array containing only boolean values,
+ * and (optionally) checks its length.
+ * @param {any} arr
+ * @param {number | null} len
+ * @returns {boolean}
+ */
+function isBooleanArray(arr, len) {
+  return (
+    Array.isArray(arr) &&
+    (len === null || arr.length === len) &&
+    arr.every(x => typeof x === "boolean")
+  );
+}
+
+/**
  * Checks if something is an Array containing only numbers,
  * and (optionally) checks its length.
  * @param {any} arr
@@ -652,6 +667,7 @@ export {
   getRotationMatrix,
   getSizeInBytes,
   isAscii,
+  isBooleanArray,
   isNumberArray,
   isWhiteSpace,
   log2,

@@ -460,12 +460,12 @@ class PartialEvaluator {
     localColorSpaceCache
   ) {
     const dict = xobj.dict;
-    const matrix = dict.getArray("Matrix");
+    let matrix = dict.getArray("Matrix");
+    if (!isNumberArray(matrix, 6)) {
+      matrix = null;
+    }
     let bbox = dict.getArray("BBox");
-    bbox =
-      Array.isArray(bbox) && bbox.length === 4
-        ? Util.normalizeRect(bbox)
-        : null;
+    bbox = isNumberArray(bbox, 4) ? Util.normalizeRect(bbox) : null;
 
     let optionalContent, groupOptions;
     if (dict.has("OC")) {
@@ -1578,7 +1578,10 @@ class PartialEvaluator {
             localShadingPatternCache,
           });
           if (objId) {
-            const matrix = dict.getArray("Matrix");
+            let matrix = dict.getArray("Matrix");
+            if (!isNumberArray(matrix, 6)) {
+              matrix = null;
+            }
             operatorList.addOp(fn, ["Shading", objId, matrix]);
           }
           return undefined;
@@ -3266,7 +3269,7 @@ class PartialEvaluator {
                 const xObjStateManager = new StateManager(currentState);
 
                 const matrix = xobj.dict.getArray("Matrix");
-                if (Array.isArray(matrix) && matrix.length === 6) {
+                if (isNumberArray(matrix, 6)) {
                   xObjStateManager.transform(matrix);
                 }
 
