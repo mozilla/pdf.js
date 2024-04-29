@@ -43,7 +43,7 @@
     "postcss": "^8.4.38",
     "postcss-dark-theme-class": "^1.3.0",
     "postcss-dir-pseudo-class": "^8.0.1",
-    "postcss-discard-comments": "^6.0.2",
+    "postcss-discard-comments": "^7.0.0",
     "postcss-nesting": "^12.1.2",
     "prettier": "^3.2.5",
     "puppeteer": "^22.7.1",
