@@ -51,12 +51,6 @@ pdfjs-download-button-label = ਡਾਊਨਲੋਡ
 pdfjs-bookmark-button =
     .title = ਮੌਜੂਦਾ ਸਫ਼਼ਾ (ਮੌਜੂਦਾ ਸਫ਼ੇ ਤੋਂ URL ਵੇਖੋ)
 pdfjs-bookmark-button-label = ਮੌਜੂਦਾ ਸਫ਼਼ਾ
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = ਐਪ ਵਿੱਚ ਖੋਲ੍ਹੋ
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = ਐਪ ਵਿੱਚ ਖੋਲ੍ਹੋ
 
 ##  Secondary toolbar and context menu
 
@@ -304,6 +298,12 @@ pdfjs-editor-stamp-button-label = ਚਿੱਤਰ ਜੋੜੋ ਜਾਂ ਸੋ�
 pdfjs-editor-highlight-button =
     .title = ਹਾਈਲਾਈਟ
 pdfjs-editor-highlight-button-label = ਹਾਈਲਾਈਟ
+pdfjs-highlight-floating-button =
+    .title = ਹਾਈਲਾਈਟ
+pdfjs-highlight-floating-button1 =
+    .title = ਹਾਈਲਾਈਟ
+    .aria-label = ਹਾਈਲਾਈਟ
+pdfjs-highlight-floating-button-label = ਹਾਈਲਾਈਟ
 
 ## Remove button for the various kind of editor.
 
@@ -387,3 +387,10 @@ pdfjs-editor-colorpicker-pink =
     .title = ਗੁਲਾਬੀ
 pdfjs-editor-colorpicker-red =
     .title = ਲਾਲ
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = ਸਭ ਵੇਖੋ
+pdfjs-editor-highlight-show-all-button =
+    .title = ਸਭ ਵੇਖੋ
