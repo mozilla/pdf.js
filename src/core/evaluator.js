@@ -3892,66 +3892,97 @@ class PartialEvaluator {
     let defaultWidth = 0;
     const glyphsVMetrics = [];
     let defaultVMetrics;
-    let i, ii, j, jj, start, code, widths;
     if (properties.composite) {
-      defaultWidth = dict.has("DW") ? dict.get("DW") : 1000;
+      const dw = dict.get("DW");
+      defaultWidth = Number.isInteger(dw) ? dw : 1000;
 
-      widths = dict.get("W");
-      if (widths) {
-        for (i = 0, ii = widths.length; i < ii; i++) {
-          start = xref.fetchIfRef(widths[i++]);
-          code = xref.fetchIfRef(widths[i]);
+      const widths = dict.get("W");
+      if (Array.isArray(widths)) {
+        for (let i = 0, ii = widths.length; i < ii; i++) {
+          let start = xref.fetchIfRef(widths[i++]);
+          if (!Number.isInteger(start)) {
+            break; // Invalid /W data.
+          }
+          const code = xref.fetchIfRef(widths[i]);
+
           if (Array.isArray(code)) {
-            for (j = 0, jj = code.length; j < jj; j++) {
-              glyphsWidths[start++] = xref.fetchIfRef(code[j]);
+            for (const c of code) {
+              const width = xref.fetchIfRef(c);
+              if (typeof width === "number") {
+                glyphsWidths[start] = width;
+              }
+              start++;
             }
-          } else {
+          } else if (Number.isInteger(code)) {
             const width = xref.fetchIfRef(widths[++i]);
-            for (j = start; j <= code; j++) {
+            if (typeof width !== "number") {
+              continue;
+            }
+            for (let j = start; j <= code; j++) {
               glyphsWidths[j] = width;
             }
+          } else {
+            break; // Invalid /W data.
           }
         }
       }
 
       if (properties.vertical) {
-        let vmetrics = dict.getArray("DW2") || [880, -1000];
+        const dw2 = dict.getArray("DW2");
+        let vmetrics = isNumberArray(dw2, 2) ? dw2 : [880, -1000];
         defaultVMetrics = [vmetrics[1], defaultWidth * 0.5, vmetrics[0]];
         vmetrics = dict.get("W2");
-        if (vmetrics) {
-          for (i = 0, ii = vmetrics.length; i < ii; i++) {
-            start = xref.fetchIfRef(vmetrics[i++]);
-            code = xref.fetchIfRef(vmetrics[i]);
+        if (Array.isArray(vmetrics)) {
+          for (let i = 0, ii = vmetrics.length; i < ii; i++) {
+            let start = xref.fetchIfRef(vmetrics[i++]);
+            if (!Number.isInteger(start)) {
+              break; // Invalid /W2 data.
+            }
+            const code = xref.fetchIfRef(vmetrics[i]);
+
             if (Array.isArray(code)) {
-              for (j = 0, jj = code.length; j < jj; j++) {
-                glyphsVMetrics[start++] = [
+              for (let j = 0, jj = code.length; j < jj; j++) {
+                const vmetric = [
                   xref.fetchIfRef(code[j++]),
                   xref.fetchIfRef(code[j++]),
                   xref.fetchIfRef(code[j]),
                 ];
+                if (isNumberArray(vmetric, null)) {
+                  glyphsVMetrics[start] = vmetric;
+                }
+                start++;
               }
-            } else {
+            } else if (Number.isInteger(code)) {
               const vmetric = [
                 xref.fetchIfRef(vmetrics[++i]),
                 xref.fetchIfRef(vmetrics[++i]),
                 xref.fetchIfRef(vmetrics[++i]),
               ];
-              for (j = start; j <= code; j++) {
+              if (!isNumberArray(vmetric, null)) {
+                continue;
+              }
+              for (let j = start; j <= code; j++) {
                 glyphsVMetrics[j] = vmetric;
               }
+            } else {
+              break; // Invalid /W2 data.
             }
           }
         }
       }
     } else {
-      const firstChar = properties.firstChar;
-      widths = dict.get("Widths");
-      if (widths) {
-        j = firstChar;
-        for (i = 0, ii = widths.length; i < ii; i++) {
-          glyphsWidths[j++] = xref.fetchIfRef(widths[i]);
+      const widths = dict.get("Widths");
+      if (Array.isArray(widths)) {
+        let j = properties.firstChar;
+        for (const w of widths) {
+          const width = xref.fetchIfRef(w);
+          if (typeof width === "number") {
+            glyphsWidths[j] = width;
+          }
+          j++;
         }
-        defaultWidth = parseFloat(descriptor.get("MissingWidth")) || 0;
+        const missingWidth = descriptor.get("MissingWidth");
+        defaultWidth = typeof missingWidth === "number" ? missingWidth : 0;
       } else {
         // Trying get the BaseFont metrics (see comment above).
         const baseFontName = dict.get("BaseFont");
