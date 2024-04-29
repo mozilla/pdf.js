@@ -29,57 +29,6 @@ const LinkTarget = {
 };
 
 /**
- * @typedef {Object} ExternalLinkParameters
- * @property {string} url - An absolute URL.
- * @property {LinkTarget} [target] - The link target. The default value is
- *   `LinkTarget.NONE`.
- * @property {string} [rel] - The link relationship. The default value is
- *   `DEFAULT_LINK_REL`.
- * @property {boolean} [enabled] - Whether the link should be enabled. The
- *   default value is true.
- */
-
-/**
- * Adds various attributes (href, title, target, rel) to hyperlinks.
- * @param {HTMLAnchorElement} link - The link element.
- * @param {ExternalLinkParameters} params
- */
-function addLinkAttributes(link, { url, target, rel, enabled = true } = {}) {
-  if (!url || typeof url !== "string") {
-    throw new Error('A valid "url" parameter must provided.');
-  }
-
-  if (enabled) {
-    link.href = link.title = url;
-  } else {
-    link.href = "";
-    link.title = `Disabled: ${url}`;
-    link.onclick = () => false;
-  }
-
-  let targetStr = ""; // LinkTarget.NONE
-  switch (target) {
-    case LinkTarget.NONE:
-      break;
-    case LinkTarget.SELF:
-      targetStr = "_self";
-      break;
-    case LinkTarget.BLANK:
-      targetStr = "_blank";
-      break;
-    case LinkTarget.PARENT:
-      targetStr = "_parent";
-      break;
-    case LinkTarget.TOP:
-      targetStr = "_top";
-      break;
-  }
-  link.target = targetStr;
-
-  link.rel = typeof rel === "string" ? rel : DEFAULT_LINK_REL;
-}
-
-/**
  * @typedef {Object} PDFLinkServiceOptions
  * @property {EventBus} eventBus - The application event bus.
  * @property {number} [externalLinkTarget] - Specifies the `target` attribute
@@ -98,6 +47,8 @@ function addLinkAttributes(link, { url, target, rel, enabled = true } = {}) {
  * @implements {IPDFLinkService}
  */
 class PDFLinkService {
+  externalLinkEnabled = true;
+
   #pagesRefCache = new Map();
 
   /**
@@ -112,7 +63,6 @@ class PDFLinkService {
     this.eventBus = eventBus;
     this.externalLinkTarget = externalLinkTarget;
     this.externalLinkRel = externalLinkRel;
-    this.externalLinkEnabled = true;
     this._ignoreDestinationZoom = ignoreDestinationZoom;
 
     this.baseUrl = null;
@@ -146,35 +96,39 @@ class PDFLinkService {
    * @type {number}
    */
   get page() {
-    return this.pdfViewer.currentPageNumber;
+    return this.pdfDocument ? this.pdfViewer.currentPageNumber : 1;
   }
 
   /**
    * @param {number} value
    */
   set page(value) {
-    this.pdfViewer.currentPageNumber = value;
+    if (this.pdfDocument) {
+      this.pdfViewer.currentPageNumber = value;
+    }
   }
 
   /**
    * @type {number}
    */
   get rotation() {
-    return this.pdfViewer.pagesRotation;
+    return this.pdfDocument ? this.pdfViewer.pagesRotation : 0;
   }
 
   /**
    * @param {number} value
    */
   set rotation(value) {
-    this.pdfViewer.pagesRotation = value;
+    if (this.pdfDocument) {
+      this.pdfViewer.pagesRotation = value;
+    }
   }
 
   /**
    * @type {boolean}
    */
   get isInPresentationMode() {
-    return this.pdfViewer.isInPresentationMode;
+    return this.pdfDocument ? this.pdfViewer.isInPresentationMode : false;
   }
 
   #goToDestinationHelper(rawDest, namedDest = null, explicitDest) {
@@ -294,18 +248,46 @@ class PDFLinkService {
   }
 
   /**
-   * Wrapper around the `addLinkAttributes` helper function.
+   * Adds various attributes (href, title, target, rel) to hyperlinks.
    * @param {HTMLAnchorElement} link
    * @param {string} url
    * @param {boolean} [newWindow]
    */
   addLinkAttributes(link, url, newWindow = false) {
-    addLinkAttributes(link, {
-      url,
-      target: newWindow ? LinkTarget.BLANK : this.externalLinkTarget,
-      rel: this.externalLinkRel,
-      enabled: this.externalLinkEnabled,
-    });
+    if (!url || typeof url !== "string") {
+      throw new Error('A valid "url" parameter must provided.');
+    }
+    const target = newWindow ? LinkTarget.BLANK : this.externalLinkTarget,
+      rel = this.externalLinkRel;
+
+    if (this.externalLinkEnabled) {
+      link.href = link.title = url;
+    } else {
+      link.href = "";
+      link.title = `Disabled: ${url}`;
+      link.onclick = () => false;
+    }
+
+    let targetStr = ""; // LinkTarget.NONE
+    switch (target) {
+      case LinkTarget.NONE:
+        break;
+      case LinkTarget.SELF:
+        targetStr = "_self";
+        break;
+      case LinkTarget.BLANK:
+        targetStr = "_blank";
+        break;
+      case LinkTarget.PARENT:
+        targetStr = "_parent";
+        break;
+      case LinkTarget.TOP:
+        targetStr = "_top";
+        break;
+    }
+    link.target = targetStr;
+
+    link.rel = typeof rel === "string" ? rel : DEFAULT_LINK_REL;
   }
 
   /**
@@ -467,6 +449,9 @@ class PDFLinkService {
    * @param {string} action
    */
   executeNamedAction(action) {
+    if (!this.pdfDocument) {
+      return;
+    }
     // See PDF reference, table 8.45 - Named action
     switch (action) {
       case "GoBack":
@@ -507,9 +492,11 @@ class PDFLinkService {
    * @param {Object} action
    */
   async executeSetOCGState(action) {
-    const pdfDocument = this.pdfDocument;
-    const optionalContentConfig =
-      await this.pdfViewer.optionalContentConfigPromise;
+    if (!this.pdfDocument) {
+      return;
+    }
+    const pdfDocument = this.pdfDocument,
+      optionalContentConfig = await this.pdfViewer.optionalContentConfigPromise;
 
     if (pdfDocument !== this.pdfDocument) {
       return; // The document was closed while the optional content resolved.
@@ -603,98 +590,8 @@ class PDFLinkService {
 /**
  * @implements {IPDFLinkService}
  */
-class SimpleLinkService {
-  constructor() {
-    this.externalLinkEnabled = true;
-  }
-
-  /**
-   * @type {number}
-   */
-  get pagesCount() {
-    return 0;
-  }
-
-  /**
-   * @type {number}
-   */
-  get page() {
-    return 0;
-  }
-
-  /**
-   * @param {number} value
-   */
-  set page(value) {}
-
-  /**
-   * @type {number}
-   */
-  get rotation() {
-    return 0;
-  }
-
-  /**
-   * @param {number} value
-   */
-  set rotation(value) {}
-
-  /**
-   * @type {boolean}
-   */
-  get isInPresentationMode() {
-    return false;
-  }
-
-  /**
-   * @param {string|Array} dest - The named, or explicit, PDF destination.
-   */
-  async goToDestination(dest) {}
-
-  /**
-   * @param {number|string} val - The page number, or page label.
-   */
-  goToPage(val) {}
-
-  /**
-   * @param {HTMLAnchorElement} link
-   * @param {string} url
-   * @param {boolean} [newWindow]
-   */
-  addLinkAttributes(link, url, newWindow = false) {
-    addLinkAttributes(link, { url, enabled: this.externalLinkEnabled });
-  }
-
-  /**
-   * @param dest - The PDF destination object.
-   * @returns {string} The hyperlink to the PDF object.
-   */
-  getDestinationHash(dest) {
-    return "#";
-  }
-
-  /**
-   * @param hash - The PDF parameters/hash.
-   * @returns {string} The hyperlink to the PDF object.
-   */
-  getAnchorUrl(hash) {
-    return "#";
-  }
-
-  /**
-   * @param {string} hash
-   */
-  setHash(hash) {}
-
-  /**
-   * @param {string} action
-   */
-  executeNamedAction(action) {}
-
-  /**
-   * @param {Object} action
-   */
-  executeSetOCGState(action) {}
+class SimpleLinkService extends PDFLinkService {
+  setDocument(pdfDocument, baseUrl = null) {}
 
   /**
    * @param {number} pageNum - page number.
