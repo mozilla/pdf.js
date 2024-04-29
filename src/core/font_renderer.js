@@ -780,25 +780,22 @@ class CompiledFont {
 
   getPathJs(unicode) {
     const { charCode, glyphId } = lookupCmap(this.cmap, unicode);
-    let fn = this.compiledGlyphs[glyphId];
+    let fn = this.compiledGlyphs[glyphId],
+      compileEx;
     if (!fn) {
       try {
-        fn = this.compiledGlyphs[glyphId] = this.compileGlyph(
-          this.glyphs[glyphId],
-          glyphId
-        );
+        fn = this.compileGlyph(this.glyphs[glyphId], glyphId);
       } catch (ex) {
-        // Avoid attempting to re-compile a corrupt glyph.
-        this.compiledGlyphs[glyphId] = NOOP;
+        fn = NOOP; // Avoid attempting to re-compile a corrupt glyph.
 
-        if (this.compiledCharCodeToGlyphId[charCode] === undefined) {
-          this.compiledCharCodeToGlyphId[charCode] = glyphId;
-        }
-        throw ex;
+        compileEx = ex;
       }
+      this.compiledGlyphs[glyphId] = fn;
     }
-    if (this.compiledCharCodeToGlyphId[charCode] === undefined) {
-      this.compiledCharCodeToGlyphId[charCode] = glyphId;
+    this.compiledCharCodeToGlyphId[charCode] ??= glyphId;
+
+    if (compileEx) {
+      throw compileEx;
     }
     return fn;
   }
