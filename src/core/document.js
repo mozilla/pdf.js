@@ -39,6 +39,7 @@ import {
   collectActions,
   getInheritableProperty,
   getNewAnnotationsMap,
+  isNumberArray,
   isWhiteSpace,
   MissingDataException,
   PDF_VERSION_REGEXP,
@@ -162,7 +163,7 @@ class Page {
     }
     let box = this._getInheritableProperty(name, /* getArray = */ true);
 
-    if (Array.isArray(box) && box.length === 4) {
+    if (isNumberArray(box, 4)) {
       box = Util.normalizeRect(box);
       if (box[2] - box[0] > 0 && box[3] - box[1] > 0) {
         return box;
