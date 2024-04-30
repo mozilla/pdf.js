@@ -1475,10 +1475,27 @@ describe("api", function () {
       const pdfDoc = await loadingTask.promise;
       const attachments = await pdfDoc.getAttachments();
 
-      const attachment = attachments["foo.txt"];
-      expect(attachment.filename).toEqual("foo.txt");
-      expect(attachment.content).toEqual(
+      const { filename, content, description } = attachments["foo.txt"];
+      expect(filename).toEqual("foo.txt");
+      expect(content).toEqual(
         new Uint8Array([98, 97, 114, 32, 98, 97, 122, 32, 10])
+      );
+      expect(description).toEqual("");
+
+      await loadingTask.destroy();
+    });
+
+    it("gets attachments, with /Desc", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue18030.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const attachments = await pdfDoc.getAttachments();
+
+      const { filename, content, description } = attachments["empty.pdf"];
+      expect(filename).toEqual("Empty page.pdf");
+      expect(content instanceof Uint8Array).toEqual(true);
+      expect(content.length).toEqual(2357);
+      expect(description).toEqual(
+        "SHA512: 06bec56808f93846f1d41ff0be4e54079c1291b860378c801c0f35f1d127a8680923ff6de59bd5a9692f01f0d97ca4f26da178ed03635fa4813d86c58a6c981a"
       );
 
       await loadingTask.destroy();
