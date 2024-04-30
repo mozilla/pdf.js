@@ -796,122 +796,6 @@ function resetCtxToDefault(ctx) {
   }
 }
 
-function composeSMaskBackdrop(bytes, r0, g0, b0) {
-  const length = bytes.length;
-  for (let i = 3; i < length; i += 4) {
-    const alpha = bytes[i];
-    if (alpha === 0) {
-      bytes[i - 3] = r0;
-      bytes[i - 2] = g0;
-      bytes[i - 1] = b0;
-    } else if (alpha < 255) {
-      const alpha_ = 255 - alpha;
-      bytes[i - 3] = (bytes[i - 3] * alpha + r0 * alpha_) >> 8;
-      bytes[i - 2] = (bytes[i - 2] * alpha + g0 * alpha_) >> 8;
-      bytes[i - 1] = (bytes[i - 1] * alpha + b0 * alpha_) >> 8;
-    }
-  }
-}
-
-function composeSMaskAlpha(maskData, layerData, transferMap) {
-  const length = maskData.length;
-  const scale = 1 / 255;
-  for (let i = 3; i < length; i += 4) {
-    const alpha = transferMap ? transferMap[maskData[i]] : maskData[i];
-    layerData[i] = (layerData[i] * alpha * scale) | 0;
-  }
-}
-
-function composeSMaskLuminosity(maskData, layerData, transferMap) {
-  const length = maskData.length;
-  for (let i = 3; i < length; i += 4) {
-    const y =
-      maskData[i - 3] * 77 + // * 0.3 / 255 * 0x10000
-      maskData[i - 2] * 152 + // * 0.59 ....
-      maskData[i - 1] * 28; // * 0.11 ....
-    layerData[i] = transferMap
-      ? (layerData[i] * transferMap[y >> 8]) >> 8
-      : (layerData[i] * y) >> 16;
-  }
-}
-
-function genericComposeSMask(
-  maskCtx,
-  layerCtx,
-  width,
-  height,
-  subtype,
-  backdrop,
-  transferMap,
-  layerOffsetX,
-  layerOffsetY,
-  maskOffsetX,
-  maskOffsetY
-) {
-  const hasBackdrop = !!backdrop;
-  const r0 = hasBackdrop ? backdrop[0] : 0;
-  const g0 = hasBackdrop ? backdrop[1] : 0;
-  const b0 = hasBackdrop ? backdrop[2] : 0;
-
-  const composeFn =
-    subtype === "Luminosity" ? composeSMaskLuminosity : composeSMaskAlpha;
-
-  // processing image in chunks to save memory
-  const PIXELS_TO_PROCESS = 1048576;
-  const chunkSize = Math.min(height, Math.ceil(PIXELS_TO_PROCESS / width));
-  for (let row = 0; row < height; row += chunkSize) {
-    const chunkHeight = Math.min(chunkSize, height - row);
-    const maskData = maskCtx.getImageData(
-      layerOffsetX - maskOffsetX,
-      row + (layerOffsetY - maskOffsetY),
-      width,
-      chunkHeight
-    );
-    const layerData = layerCtx.getImageData(
-      layerOffsetX,
-      row + layerOffsetY,
-      width,
-      chunkHeight
-    );
-
-    if (hasBackdrop) {
-      composeSMaskBackdrop(maskData.data, r0, g0, b0);
-    }
-    composeFn(maskData.data, layerData.data, transferMap);
-
-    layerCtx.putImageData(layerData, layerOffsetX, row + layerOffsetY);
-  }
-}
-
-function composeSMask(ctx, smask, layerCtx, layerBox) {
-  const layerOffsetX = layerBox[0];
-  const layerOffsetY = layerBox[1];
-  const layerWidth = layerBox[2] - layerOffsetX;
-  const layerHeight = layerBox[3] - layerOffsetY;
-  if (layerWidth === 0 || layerHeight === 0) {
-    return;
-  }
-  genericComposeSMask(
-    smask.context,
-    layerCtx,
-    layerWidth,
-    layerHeight,
-    smask.subtype,
-    smask.backdrop,
-    smask.transferMap,
-    layerOffsetX,
-    layerOffsetY,
-    smask.offsetX,
-    smask.offsetY
-  );
-  ctx.save();
-  ctx.globalAlpha = 1;
-  ctx.globalCompositeOperation = "source-over";
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.drawImage(layerCtx.canvas, 0, 0);
-  ctx.restore();
-}
-
 function getImageSmoothingEnabled(transform, interpolate) {
   // In section 8.9.5.3 of the PDF spec, it's mentioned that the interpolate
   // flag should be used when the image is upscaled.
@@ -1556,13 +1440,124 @@ class CanvasGraphics {
     const smask = this.current.activeSMask;
     const suspendedCtx = this.suspendedCtx;
 
-    composeSMask(suspendedCtx, smask, this.ctx, dirtyBox);
+    this.composeSMask(suspendedCtx, smask, this.ctx, dirtyBox);
     // Whatever was drawn has been moved to the suspended canvas, now clear it
     // out of the current canvas.
     this.ctx.save();
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     this.ctx.restore();
+  }
+
+  composeSMask(ctx, smask, layerCtx, layerBox) {
+    const layerOffsetX = layerBox[0];
+    const layerOffsetY = layerBox[1];
+    const layerWidth = layerBox[2] - layerOffsetX;
+    const layerHeight = layerBox[3] - layerOffsetY;
+    if (layerWidth === 0 || layerHeight === 0) {
+      return;
+    }
+    this.genericComposeSMask(
+      smask.context,
+      layerCtx,
+      layerWidth,
+      layerHeight,
+      smask.subtype,
+      smask.backdrop,
+      smask.transferMap,
+      layerOffsetX,
+      layerOffsetY,
+      smask.offsetX,
+      smask.offsetY
+    );
+    ctx.save();
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(layerCtx.canvas, 0, 0);
+    ctx.restore();
+  }
+
+  genericComposeSMask(
+    maskCtx,
+    layerCtx,
+    width,
+    height,
+    subtype,
+    backdrop,
+    transferMap,
+    layerOffsetX,
+    layerOffsetY,
+    maskOffsetX,
+    maskOffsetY
+  ) {
+    let maskCanvas = maskCtx.canvas;
+    let maskX = layerOffsetX - maskOffsetX;
+    let maskY = layerOffsetY - maskOffsetY;
+
+    if (backdrop) {
+      if (
+        maskX < 0 ||
+        maskY < 0 ||
+        maskX + width > maskCanvas.width ||
+        maskY + height > maskCanvas.height
+      ) {
+        const canvas = this.cachedCanvases.getCanvas(
+          "maskExtension",
+          width,
+          height
+        );
+        const ctx = canvas.context;
+        ctx.drawImage(maskCanvas, -maskX, -maskY);
+        if (backdrop.some(c => c !== 0)) {
+          ctx.globalCompositeOperation = "destination-atop";
+          ctx.fillStyle = Util.makeHexColor(...backdrop);
+          ctx.fillRect(0, 0, width, height);
+          ctx.globalCompositeOperation = "source-over";
+        }
+
+        maskCanvas = canvas.canvas;
+        maskX = maskY = 0;
+      } else if (backdrop.some(c => c !== 0)) {
+        maskCtx.save();
+        maskCtx.globalAlpha = 1;
+        maskCtx.setTransform(1, 0, 0, 1, 0, 0);
+        const clip = new Path2D();
+        clip.rect(maskX, maskY, width, height);
+        maskCtx.clip(clip);
+        maskCtx.globalCompositeOperation = "destination-atop";
+        maskCtx.fillStyle = Util.makeHexColor(...backdrop);
+        maskCtx.fillRect(maskX, maskY, width, height);
+        maskCtx.restore();
+      }
+    }
+
+    layerCtx.save();
+    layerCtx.globalAlpha = 1;
+    layerCtx.setTransform(1, 0, 0, 1, 0, 0);
+
+    if (subtype === "Alpha" && transferMap) {
+      layerCtx.filter = this.filterFactory.addAlphaFilter(transferMap);
+    } else if (subtype === "Luminosity") {
+      layerCtx.filter = this.filterFactory.addLuminosityFilter(transferMap);
+    }
+
+    const clip = new Path2D();
+    clip.rect(layerOffsetX, layerOffsetY, width, height);
+    layerCtx.clip(clip);
+    layerCtx.globalCompositeOperation = "destination-in";
+    layerCtx.drawImage(
+      maskCanvas,
+      maskX,
+      maskY,
+      width,
+      height,
+      layerOffsetX,
+      layerOffsetY,
+      width,
+      height
+    );
+    layerCtx.restore();
   }
 
   save() {
