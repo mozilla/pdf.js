@@ -53,6 +53,7 @@ import {
 import { getTilingPatternIR, Pattern } from "./pattern.js";
 import { getXfaFontDict, getXfaFontName } from "./xfa_fonts.js";
 import { IdentityToUnicodeMap, ToUnicodeMap } from "./to_unicode_map.js";
+import { isNumberArray, lookupMatrix, lookupNormalRect } from "./core_utils.js";
 import { isPDFFunction, PDFFunctionFactory } from "./function.js";
 import { Lexer, Parser } from "./parser.js";
 import {
@@ -73,7 +74,6 @@ import { getGlyphsUnicode } from "./glyphlist.js";
 import { getMetrics } from "./metrics.js";
 import { getUnicodeForGlyph } from "./unicode.js";
 import { ImageResizer } from "./image_resizer.js";
-import { isNumberArray } from "./core_utils.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
@@ -460,12 +460,8 @@ class PartialEvaluator {
     localColorSpaceCache
   ) {
     const dict = xobj.dict;
-    let matrix = dict.getArray("Matrix");
-    if (!isNumberArray(matrix, 6)) {
-      matrix = null;
-    }
-    let bbox = dict.getArray("BBox");
-    bbox = isNumberArray(bbox, 4) ? Util.normalizeRect(bbox) : null;
+    const matrix = lookupMatrix(dict.getArray("Matrix"), null);
+    const bbox = lookupNormalRect(dict.getArray("BBox"), null);
 
     let optionalContent, groupOptions;
     if (dict.has("OC")) {
@@ -1578,10 +1574,7 @@ class PartialEvaluator {
             localShadingPatternCache,
           });
           if (objId) {
-            let matrix = dict.getArray("Matrix");
-            if (!isNumberArray(matrix, 6)) {
-              matrix = null;
-            }
+            const matrix = lookupMatrix(dict.getArray("Matrix"), null);
             operatorList.addOp(fn, ["Shading", objId, matrix]);
           }
           return undefined;
@@ -3268,8 +3261,8 @@ class PartialEvaluator {
                 const currentState = stateManager.state.clone();
                 const xObjStateManager = new StateManager(currentState);
 
-                const matrix = xobj.dict.getArray("Matrix");
-                if (isNumberArray(matrix, 6)) {
+                const matrix = lookupMatrix(xobj.dict.getArray("Matrix"), null);
+                if (matrix) {
                   xObjStateManager.transform(matrix);
                 }
 
@@ -4247,10 +4240,7 @@ class PartialEvaluator {
 
     if (!descriptor) {
       if (isType3Font) {
-        let bbox = dict.getArray("FontBBox");
-        if (!isNumberArray(bbox, 4)) {
-          bbox = [0, 0, 0, 0];
-        }
+        const bbox = lookupNormalRect(dict.getArray("FontBBox"), [0, 0, 0, 0]);
         // FontDescriptor is only required for Type3 fonts when the document
         // is a tagged pdf. Create a barbebones one to get by.
         descriptor = new Dict(null);
@@ -4440,14 +4430,14 @@ class PartialEvaluator {
       }
     }
 
-    let fontMatrix = dict.getArray("FontMatrix");
-    if (!isNumberArray(fontMatrix, 6)) {
-      fontMatrix = FONT_IDENTITY_MATRIX;
-    }
-    let bbox = descriptor.getArray("FontBBox") || dict.getArray("FontBBox");
-    if (!isNumberArray(bbox, 4)) {
-      bbox = undefined;
-    }
+    const fontMatrix = lookupMatrix(
+      dict.getArray("FontMatrix"),
+      FONT_IDENTITY_MATRIX
+    );
+    const bbox = lookupNormalRect(
+      descriptor.getArray("FontBBox") || dict.getArray("FontBBox"),
+      undefined
+    );
     let ascent = descriptor.get("Ascent");
     if (typeof ascent !== "number") {
       ascent = undefined;

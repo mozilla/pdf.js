@@ -19,6 +19,7 @@ import {
   BaseException,
   objectSize,
   stringToPDFString,
+  Util,
   warn,
 } from "../shared/util.js";
 import { Dict, isName, Ref, RefSet } from "./primitives.js";
@@ -246,6 +247,21 @@ function isNumberArray(arr, len) {
     (len === null || arr.length === len) &&
     arr.every(x => typeof x === "number")
   );
+}
+
+// Returns the matrix, or the fallback value if it's invalid.
+function lookupMatrix(arr, fallback) {
+  return isNumberArray(arr, 6) ? arr : fallback;
+}
+
+// Returns the rectangle, or the fallback value if it's invalid.
+function lookupRect(arr, fallback) {
+  return isNumberArray(arr, 4) ? arr : fallback;
+}
+
+// Returns the normalized rectangle, or the fallback value if it's invalid.
+function lookupNormalRect(arr, fallback) {
+  return isNumberArray(arr, 4) ? Util.normalizeRect(arr) : fallback;
 }
 
 /**
@@ -671,6 +687,9 @@ export {
   isNumberArray,
   isWhiteSpace,
   log2,
+  lookupMatrix,
+  lookupNormalRect,
+  lookupRect,
   MissingDataException,
   numberToString,
   ParserEOFException,
