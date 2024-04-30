@@ -44,6 +44,9 @@ import {
   getRotationMatrix,
   isAscii,
   isNumberArray,
+  lookupMatrix,
+  lookupNormalRect,
+  lookupRect,
   numberToString,
   stringToUTF16String,
 } from "./core_utils.js";
@@ -915,9 +918,7 @@ class Annotation {
    * @param {Array} rectangle - The rectangle array with exactly four entries
    */
   setRectangle(rectangle) {
-    this.rectangle = isNumberArray(rectangle, 4)
-      ? Util.normalizeRect(rectangle)
-      : [0, 0, 0, 0];
+    this.rectangle = lookupNormalRect(rectangle, [0, 0, 0, 0]);
   }
 
   /**
@@ -1150,14 +1151,11 @@ class Annotation {
       ["ExtGState", "ColorSpace", "Pattern", "Shading", "XObject", "Font"],
       appearance
     );
-    let bbox = appearanceDict.getArray("BBox");
-    if (!isNumberArray(bbox, 4)) {
-      bbox = [0, 0, 1, 1];
-    }
-    let matrix = appearanceDict.getArray("Matrix");
-    if (!isNumberArray(matrix, 6)) {
-      matrix = [1, 0, 0, 1, 0, 0];
-    }
+    const bbox = lookupRect(appearanceDict.getArray("BBox"), [0, 0, 1, 1]);
+    const matrix = lookupMatrix(
+      appearanceDict.getArray("Matrix"),
+      IDENTITY_MATRIX
+    );
     const transform = getTransformMatrix(rect, bbox, matrix);
 
     const opList = new OperatorList();
@@ -1254,14 +1252,8 @@ class Annotation {
 
     if (text.length > 1 || text[0]) {
       const appearanceDict = this.appearance.dict;
-      let bbox = appearanceDict.getArray("BBox");
-      if (!isNumberArray(bbox, 4)) {
-        bbox = null;
-      }
-      let matrix = appearanceDict.getArray("Matrix");
-      if (!isNumberArray(matrix, 6)) {
-        matrix = null;
-      }
+      const bbox = lookupRect(appearanceDict.getArray("BBox"), null);
+      const matrix = lookupMatrix(appearanceDict.getArray("Matrix"), null);
 
       this.data.textPosition = this._transformPoint(
         firstPosition,
@@ -2987,8 +2979,10 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       : this.uncheckedAppearance;
     if (appearance) {
       const savedAppearance = this.appearance;
-      const matrix = appearance.dict.getArray("Matrix");
-      const savedMatrix = isNumberArray(matrix, 6) ? matrix : IDENTITY_MATRIX;
+      const savedMatrix = lookupMatrix(
+        appearance.dict.getArray("Matrix"),
+        IDENTITY_MATRIX
+      );
 
       if (rotation) {
         appearance.dict.set(
@@ -3753,11 +3747,7 @@ class PopupAnnotation extends Annotation {
       warn("Popup annotation has a missing or invalid parent annotation.");
       return;
     }
-
-    const parentRect = parentItem.getArray("Rect");
-    this.data.parentRect = isNumberArray(parentRect, 4)
-      ? Util.normalizeRect(parentRect)
-      : null;
+    this.data.parentRect = lookupNormalRect(parentItem.getArray("Rect"), null);
 
     const rt = parentItem.get("RT");
     if (isName(rt, AnnotationReplyType.GROUP)) {
@@ -4045,10 +4035,7 @@ class LineAnnotation extends MarkupAnnotation {
     this.data.hasOwnCanvas = this.data.noRotate;
     this.data.noHTML = false;
 
-    let lineCoordinates = dict.getArray("L");
-    if (!isNumberArray(lineCoordinates, 4)) {
-      lineCoordinates = [0, 0, 0, 0];
-    }
+    const lineCoordinates = lookupRect(dict.getArray("L"), [0, 0, 0, 0]);
     this.data.lineCoordinates = Util.normalizeRect(lineCoordinates);
 
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {

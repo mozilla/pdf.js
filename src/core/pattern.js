@@ -25,6 +25,8 @@ import {
 import {
   isBooleanArray,
   isNumberArray,
+  lookupMatrix,
+  lookupNormalRect,
   MissingDataException,
 } from "./core_utils.js";
 import { BaseStream } from "./base_stream.js";
@@ -129,8 +131,7 @@ class RadialAxialShading extends BaseShading {
       pdfFunctionFactory,
       localColorSpaceCache,
     });
-    const bbox = dict.getArray("BBox");
-    this.bbox = isNumberArray(bbox, 4) ? Util.normalizeRect(bbox) : null;
+    this.bbox = lookupNormalRect(dict.getArray("BBox"), null);
 
     let t0 = 0.0,
       t1 = 1.0;
@@ -461,8 +462,7 @@ class MeshShading extends BaseShading {
     }
     const dict = stream.dict;
     this.shadingType = dict.get("ShadingType");
-    const bbox = dict.getArray("BBox");
-    this.bbox = isNumberArray(bbox, 4) ? Util.normalizeRect(bbox) : null;
+    this.bbox = lookupNormalRect(dict.getArray("BBox"), null);
     const cs = ColorSpace.parse({
       cs: dict.getRaw("CS") || dict.getRaw("ColorSpace"),
       xref,
@@ -988,12 +988,8 @@ class DummyShading extends BaseShading {
 }
 
 function getTilingPatternIR(operatorList, dict, color) {
-  let matrix = dict.getArray("Matrix");
-  if (!isNumberArray(matrix, 6)) {
-    matrix = IDENTITY_MATRIX;
-  }
-  let bbox = dict.getArray("BBox");
-  bbox = isNumberArray(bbox, 4) ? Util.normalizeRect(bbox) : null;
+  const matrix = lookupMatrix(dict.getArray("Matrix"), IDENTITY_MATRIX);
+  const bbox = lookupNormalRect(dict.getArray("BBox"), null);
   // Ensure that the pattern has a non-zero width and height, to prevent errors
   // in `pattern_helper.js` (fixes issue8330.pdf).
   if (!bbox || bbox[2] - bbox[0] === 0 || bbox[3] - bbox[1] === 0) {
