@@ -30,6 +30,14 @@ class BaseFilterFactory {
     return "none";
   }
 
+  addAlphaFilter(map) {
+    return "none";
+  }
+
+  addLuminosityFilter(map) {
+    return "none";
+  }
+
   addHighlightHCMFilter(filterName, fgColor, bgColor, newFgColor, newBgColor) {
     return "none";
   }
