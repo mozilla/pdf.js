@@ -729,8 +729,7 @@ class PDFFindController {
     const highlightsLength = (this._pageHighlightsLength[pageIndex] = []);
     const highlightsColors = (this._pageHighlightsColors[pageIndex] = []);
 
-    const hasSomeQuery = queries.some(query => !!query.query);
-    if (!hasSomeQuery) {
+    if (!queries.length) {
       // The query can be empty because some chars like diacritics could have
       // been stripped out.
       return;
@@ -837,18 +836,10 @@ class PDFFindController {
     return [isUnicode, query];
   }
 
-  #calculateMatch(pageIndex) {
-    let query = this.#query;
-    const termHighlighting = this.termHighlighting;
-    if (query.length === 0 && Object.keys(termHighlighting).length === 0) {
-      return; // Do nothing: the matches should be wiped out already.
-    }
-
-    const { caseSensitive, entireWord } = this.#state;
-    const pageContent = this._pageContents[pageIndex];
-    const hasDiacritics = this._hasDiacritics[pageIndex];
-
+  #convertToRegExp(_query, hasDiacritics) {
     let isUnicode = false;
+    let query = _query;
+
     if (typeof query === "string") {
       [isUnicode, query] = this.#convertToRegExpString(query, hasDiacritics);
     } else {
@@ -868,21 +859,44 @@ class PDFFindController {
         .join("|");
     }
 
-    const flags = `g${isUnicode ? "u" : ""}${caseSensitive ? "" : "i"}`;
-    query = query ? new RegExp(query, flags) : null;
+    const flags = `g${isUnicode ? "u" : ""}${this.#state.caseSensitive ? "" : "i"}`;
+    return query ? new RegExp(query, flags) : null;
+  }
 
-    const termHighlightingQueries = termHighlighting.map(termHighlight =>
-      Object.entries(termHighlight).map(([term, color]) => {
+  #calculateMatch(pageIndex) {
+    const query = this.#query;
+    const termHighlighting = this.termHighlighting;
+    if (query.length === 0 && Object.keys(termHighlighting).length === 0) {
+      return; // Do nothing: the matches should be wiped out already.
+    }
+
+    const { entireWord } = this.#state;
+    const pageContent = this._pageContents[pageIndex];
+    const hasDiacritics = this._hasDiacritics[pageIndex];
+
+    let queries = [
+      {
+        query: this.#convertToRegExp(query, hasDiacritics),
+        color: null,
+      },
+    ];
+
+    const termHighlightingQueries = Object.entries(termHighlighting).map(
+      ([term, color]) => {
         const termQuery = this.#normalizeQuery(term);
 
         return {
-          query: this.#convertToRegExpString(termQuery, hasDiacritics),
+          query: this.#convertToRegExp(termQuery, hasDiacritics),
           color,
         };
-      })
+      }
     );
 
-    const queries = [{ query, color: null }, ...termHighlightingQueries];
+    if (termHighlightingQueries.length) {
+      queries.push(...termHighlightingQueries);
+    }
+
+    queries = queries.filter(_query => _query.query !== null);
 
     this.#calculateRegExpMatch(queries, entireWord, pageIndex, pageContent);
 
@@ -1284,21 +1298,22 @@ class PDFFindController {
    * @return {PdfFindControllerMatch[]}
    */
   getAllMatches(pageIndex) {
-    const pageMatches = this.pageMatches[pageIndex];
-    const pageHighlights = this.pageHighlights[pageIndex];
+    const pageMatches = this.pageMatches[pageIndex] ?? [];
+    const pageHighlights = this.pageHighlights[pageIndex] ?? [];
+    const pageMatchesLength = this.pageMatchesLength[pageIndex] ?? [];
+    const pageHighlightsLength = this.pageHighlightsLength[pageIndex] ?? [];
+    const pageHighlightsColors = this.pageHighlightsColors[pageIndex] ?? [];
 
-    const pageMatchesLength = this.pageMatchesLength[pageIndex];
-    const pageHighlightsLength = this.pageHighlightsLength[pageIndex];
-    const pageHighlightsColors = this.pageHighlightsColors[pageIndex];
+    const allMatches = pageHighlights.concat(pageMatches);
+    const allMatchesLength = pageHighlightsLength.concat(pageMatchesLength);
 
-    const allMatches = pageMatches.concat(pageHighlights);
-    const allMatchesLength = pageMatchesLength.concat(pageHighlightsLength);
-
-    return allMatches.map((position, index) => ({
-      position,
-      length: allMatchesLength[index],
-      color: pageHighlightsColors[index],
-    }));
+    return allMatches
+      .map((position, index) => ({
+        position,
+        length: allMatchesLength[index],
+        color: pageHighlightsColors[index],
+      }))
+      .toSorted((a, b) => a.position - b.position);
   }
 }
 

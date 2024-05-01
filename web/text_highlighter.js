@@ -211,12 +211,10 @@ class TextHighlighter {
       return 0;
     }
 
-    let i0 = selectedMatchIdx,
-      i1 = i0 + 1;
-    if (highlightAll) {
-      i0 = 0;
-      i1 = matches.length;
-    } else if (!isSelectedPage) {
+    const i0 = 0;
+    const i1 = matches.length;
+
+    if (!highlightAll && !isSelectedPage) {
       // Not highlighting all and this isn't the selected page, so do nothing.
       return;
     }
@@ -225,6 +223,12 @@ class TextHighlighter {
     let lastOffset = -1;
     for (let i = i0; i < i1; i++) {
       const match = matches[i];
+
+      // only highlight selected match or term highlighting matches
+      if (!highlightAll && i !== selectedMatchIdx && match.color === null) {
+        continue;
+      }
+
       const begin = match.begin;
       if (begin.divIdx === lastDivIdx && begin.offset === lastOffset) {
         // It's possible to be in this situation if we searched for a 'f' and we
@@ -258,7 +262,7 @@ class TextHighlighter {
           begin.offset,
           end.offset,
           "highlight" + highlightSuffix,
-          isSelected ? match.color : null
+          isSelected ? null : match.color
         );
       } else {
         selectedLeft = appendTextToDiv(
@@ -266,7 +270,7 @@ class TextHighlighter {
           begin.offset,
           infinity.offset,
           "highlight begin" + highlightSuffix,
-          isSelected ? match.color : null
+          isSelected ? null : match.color
         );
         for (let n0 = begin.divIdx + 1, n1 = end.divIdx; n0 < n1; n0++) {
           textDivs[n0].className = "highlight middle" + highlightSuffix;
@@ -274,7 +278,7 @@ class TextHighlighter {
         beginText(
           end,
           "highlight end" + highlightSuffix,
-          isSelected ? match.color : null
+          isSelected ? null : match.color
         );
       }
       prevEnd = end;
