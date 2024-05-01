@@ -857,6 +857,9 @@ class LinkAnnotationElement extends AnnotationElement {
    */
   #bindAttachment(link, attachment, dest = null) {
     link.href = this.linkService.getAnchorUrl("");
+    if (attachment.description) {
+      link.title = attachment.description;
+    }
     link.onclick = () => {
       this.downloadManager?.openOrDownloadData(
         attachment.content,
@@ -2856,7 +2859,7 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     super(parameters, { isRenderable: true });
 
-    const { filename, content } = this.data.file;
+    const { filename, content, description } = this.data.file;
     this.filename = getFilenameFromUrl(filename, /* onlyStripPath = */ true);
     this.content = content;
 
@@ -2864,6 +2867,7 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
       source: this,
       filename,
       content,
+      description,
     });
   }
 
