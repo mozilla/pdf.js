@@ -9965,5 +9965,21 @@
     "rounds": 1,
     "link": true,
     "type": "eq"
+  },
+  {
+    "id": "issue14724",
+    "file": "pdfs/issue14724.pdf",
+    "md5": "34ecf91792eb54d58e0e86f877017f71",
+    "rounds": 1,
+    "link": true,
+    "type": "eq"
+  },
+  {
+    "id": "issue14982",
+    "file": "pdfs/issue14982.pdf",
+    "md5": "bbd7d7f75f51a477b56b6e3f69174d06",
+    "rounds": 1,
+    "link": true,
+    "type": "eq"
   }
 ]
