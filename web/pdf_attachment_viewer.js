@@ -18,7 +18,6 @@
 /** @typedef {import("./download_manager.js").DownloadManager} DownloadManager */
 
 import { BaseTreeViewer } from "./base_tree_viewer.js";
-import { getFilenameFromUrl } from "pdfjs-lib";
 import { waitOnEventOrTimeout } from "./event_utils.js";
 
 /**
@@ -122,19 +121,13 @@ class PDFAttachmentViewer extends BaseTreeViewer {
     let attachmentsCount = 0;
     for (const name in attachments) {
       const item = attachments[name];
-      const content = item.content,
-        description = item.description,
-        filename = getFilenameFromUrl(
-          item.filename,
-          /* onlyStripPath = */ true
-        );
 
       const div = document.createElement("div");
       div.className = "treeItem";
 
       const element = document.createElement("a");
-      this._bindLink(element, { content, description, filename });
-      element.textContent = this._normalizeTextContent(filename);
+      this._bindLink(element, item);
+      element.textContent = this._normalizeTextContent(item.filename);
 
       div.append(element);
 
@@ -148,7 +141,7 @@ class PDFAttachmentViewer extends BaseTreeViewer {
   /**
    * Used to append FileAttachment annotations to the sidebar.
    */
-  #appendAttachment({ filename, content, description }) {
+  #appendAttachment(item) {
     const renderedPromise = this._renderedCapability.promise;
 
     renderedPromise.then(() => {
@@ -158,15 +151,12 @@ class PDFAttachmentViewer extends BaseTreeViewer {
       const attachments = this._attachments || Object.create(null);
 
       for (const name in attachments) {
-        if (filename === name) {
+        if (item.filename === name) {
           return; // Ignore the new attachment if it already exists.
         }
       }
-      attachments[filename] = {
-        filename,
-        content,
-        description,
-      };
+      attachments[item.filename] = item;
+
       this.render({
         attachments,
         keepRenderedCapability: true,

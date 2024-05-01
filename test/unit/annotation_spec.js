@@ -4033,9 +4033,12 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.FILEATTACHMENT);
-      expect(data.file.filename).toEqual("Test.txt");
-      expect(data.file.content).toEqual(stringToBytes("Test attachment"));
-      expect(data.file.description).toEqual("abc");
+      expect(data.file).toEqual({
+        rawFilename: "Test.txt",
+        filename: "Test.txt",
+        content: stringToBytes("Test attachment"),
+        description: "abc",
+      });
     });
   });
 
