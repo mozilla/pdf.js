@@ -385,10 +385,17 @@ function getOriginalIndex(diffs, pos, len) {
  * @property {boolean} highlightAll
  * @property {boolean} caseSensitive
  * @property {boolean} entireWord
- * @property {boolean} termHighlighting  -- rrc specific properties start here
+ * @property {Object} termHighlighting  -- rrc specific properties start here
  * @property {string} wordsToSearch
  * @property {boolean} jumpToFirstHighlight
  * @property {string} findControllerCommand
+ */
+
+/**
+ * @typedef {Object} PdfFindControllerMatch
+ * @property {number} position
+ * @property {number} length
+ * @property {string|null} color
  */
 
 /**
@@ -447,6 +454,10 @@ class PDFFindController {
 
   get pageHighlightsLength() {
     return this._pageHighlightsLength;
+  }
+
+  get pageHighlightsColors() {
+    return this._pageHighlightsColors;
   }
 
   get selected() {
@@ -583,6 +594,7 @@ class PDFFindController {
     this._pageMatchesLength = [];
     this._pageHighlights = [];
     this._pageHighlightsLength = [];
+    this._pageHighlightsColors = [];
     this.#visitedPagesCount = 0;
     this.#state = null;
     // Currently selected match.
@@ -715,6 +727,7 @@ class PDFFindController {
     const matchesLength = (this._pageMatchesLength[pageIndex] = []);
     const highlights = (this._pageHighlights[pageIndex] = []);
     const highlightsLength = (this._pageHighlightsLength[pageIndex] = []);
+    const highlightsColors = (this._pageHighlightsColors[pageIndex] = []);
 
     const hasSomeQuery = queries.some(query => !!query.query);
     if (!hasSomeQuery) {
@@ -747,6 +760,7 @@ class PDFFindController {
           } else {
             highlights.push(matchPos);
             highlightsLength.push(matchLen);
+            highlightsColors.push(color);
           }
         }
       }
@@ -1263,6 +1277,28 @@ class PDFFindController {
     }
 
     return this.#query.length > 0;
+  }
+
+  /**
+   * @param {number} pageIndex
+   * @return {PdfFindControllerMatch[]}
+   */
+  getAllMatches(pageIndex) {
+    const pageMatches = this.pageMatches[pageIndex];
+    const pageHighlights = this.pageHighlights[pageIndex];
+
+    const pageMatchesLength = this.pageMatchesLength[pageIndex];
+    const pageHighlightsLength = this.pageHighlightsLength[pageIndex];
+    const pageHighlightsColors = this.pageHighlightsColors[pageIndex];
+
+    const allMatches = pageMatches.concat(pageHighlights);
+    const allMatchesLength = pageMatchesLength.concat(pageHighlightsLength);
+
+    return allMatches.map((position, index) => ({
+      position,
+      length: allMatchesLength[index],
+      color: pageHighlightsColors[index],
+    }));
   }
 }
 
