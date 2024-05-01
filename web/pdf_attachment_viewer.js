@@ -94,7 +94,10 @@ class PDFAttachmentViewer extends BaseTreeViewer {
   /**
    * @protected
    */
-  _bindLink(element, { content, filename }) {
+  _bindLink(element, { content, description, filename }) {
+    if (description) {
+      element.title = description;
+    }
     element.onclick = () => {
       this.downloadManager.openOrDownloadData(content, filename);
       return false;
@@ -120,6 +123,7 @@ class PDFAttachmentViewer extends BaseTreeViewer {
     for (const name in attachments) {
       const item = attachments[name];
       const content = item.content,
+        description = item.description,
         filename = getFilenameFromUrl(
           item.filename,
           /* onlyStripPath = */ true
@@ -129,7 +133,7 @@ class PDFAttachmentViewer extends BaseTreeViewer {
       div.className = "treeItem";
 
       const element = document.createElement("a");
-      this._bindLink(element, { content, filename });
+      this._bindLink(element, { content, description, filename });
       element.textContent = this._normalizeTextContent(filename);
 
       div.append(element);
@@ -144,7 +148,7 @@ class PDFAttachmentViewer extends BaseTreeViewer {
   /**
    * Used to append FileAttachment annotations to the sidebar.
    */
-  #appendAttachment({ filename, content }) {
+  #appendAttachment({ filename, content, description }) {
     const renderedPromise = this._renderedCapability.promise;
 
     renderedPromise.then(() => {
@@ -161,6 +165,7 @@ class PDFAttachmentViewer extends BaseTreeViewer {
       attachments[filename] = {
         filename,
         content,
+        description,
       };
       this.render({
         attachments,

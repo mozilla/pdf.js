@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { stringToPDFString, warn } from "../shared/util.js";
+import { shadow, stringToPDFString, warn } from "../shared/util.js";
 import { BaseStream } from "./base_stream.js";
 import { Dict } from "./primitives.js";
 
@@ -53,9 +53,6 @@ class FileSpec {
     if (root.has("FS")) {
       this.fs = root.get("FS");
     }
-    this.description = root.has("Desc")
-      ? stringToPDFString(root.get("Desc"))
-      : "";
     if (root.has("RF")) {
       warn("Related file specifications are not supported");
     }
@@ -102,10 +99,21 @@ class FileSpec {
     return content;
   }
 
+  get description() {
+    let description = "";
+
+    const desc = this.root?.get("Desc");
+    if (desc && typeof desc === "string") {
+      description = stringToPDFString(desc);
+    }
+    return shadow(this, "description", description);
+  }
+
   get serializable() {
     return {
       filename: this.filename,
       content: this.content,
+      description: this.description,
     };
   }
 }
