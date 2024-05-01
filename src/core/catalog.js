@@ -1619,8 +1619,8 @@ class Catalog {
               /* xref = */ null,
               /* skipContent = */ true
             );
-            const { filename } = fs.serializable;
-            url = filename;
+            const { rawFilename } = fs.serializable;
+            url = rawFilename;
           } else if (typeof urlDict === "string") {
             url = urlDict;
           }

@@ -18,6 +18,9 @@ import { BaseStream } from "./base_stream.js";
 import { Dict } from "./primitives.js";
 
 function pickPlatformItem(dict) {
+  if (!(dict instanceof Dict)) {
+    return null;
+  }
   // Look for the filename in this order:
   // UF, F, Unix, Mac, DOS
   if (dict.has("UF")) {
@@ -32,6 +35,10 @@ function pickPlatformItem(dict) {
     return dict.get("DOS");
   }
   return null;
+}
+
+function stripPath(str) {
+  return str.substring(str.lastIndexOf("/") + 1);
 }
 
 /**
@@ -66,26 +73,27 @@ class FileSpec {
   }
 
   get filename() {
-    if (!this._filename && this.root) {
-      const filename = pickPlatformItem(this.root) || "unnamed";
-      this._filename = stringToPDFString(filename)
+    let filename = "";
+
+    const item = pickPlatformItem(this.root);
+    if (item && typeof item === "string") {
+      filename = stringToPDFString(item)
         .replaceAll("\\\\", "\\")
         .replaceAll("\\/", "/")
         .replaceAll("\\", "/");
     }
-    return this._filename;
+    return shadow(this, "filename", filename || "unnamed");
   }
 
   get content() {
     if (!this.#contentAvailable) {
       return null;
     }
-    if (!this.contentRef && this.root) {
-      this.contentRef = pickPlatformItem(this.root.get("EF"));
-    }
+    this._contentRef ||= pickPlatformItem(this.root?.get("EF"));
+
     let content = null;
-    if (this.contentRef) {
-      const fileObj = this.xref.fetchIfRef(this.contentRef);
+    if (this._contentRef) {
+      const fileObj = this.xref.fetchIfRef(this._contentRef);
       if (fileObj instanceof BaseStream) {
         content = fileObj.getBytes();
       } else {
@@ -94,7 +102,7 @@ class FileSpec {
         );
       }
     } else {
-      warn("Embedded file specification does not have a content");
+      warn("Embedded file specification does not have any content");
     }
     return content;
   }
@@ -111,7 +119,8 @@ class FileSpec {
 
   get serializable() {
     return {
-      filename: this.filename,
+      rawFilename: this.filename,
+      filename: stripPath(this.filename),
       content: this.content,
       description: this.description,
     };

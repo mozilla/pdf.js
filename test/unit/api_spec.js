@@ -1475,12 +1475,12 @@ describe("api", function () {
       const pdfDoc = await loadingTask.promise;
       const attachments = await pdfDoc.getAttachments();
 
-      const { filename, content, description } = attachments["foo.txt"];
-      expect(filename).toEqual("foo.txt");
-      expect(content).toEqual(
-        new Uint8Array([98, 97, 114, 32, 98, 97, 122, 32, 10])
-      );
-      expect(description).toEqual("");
+      expect(attachments["foo.txt"]).toEqual({
+        rawFilename: "foo.txt",
+        filename: "foo.txt",
+        content: new Uint8Array([98, 97, 114, 32, 98, 97, 122, 32, 10]),
+        description: "",
+      });
 
       await loadingTask.destroy();
     });
@@ -1490,7 +1490,9 @@ describe("api", function () {
       const pdfDoc = await loadingTask.promise;
       const attachments = await pdfDoc.getAttachments();
 
-      const { filename, content, description } = attachments["empty.pdf"];
+      const { rawFilename, filename, content, description } =
+        attachments["empty.pdf"];
+      expect(rawFilename).toEqual("Empty page.pdf");
       expect(filename).toEqual("Empty page.pdf");
       expect(content instanceof Uint8Array).toEqual(true);
       expect(content.length).toEqual(2357);
