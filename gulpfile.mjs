@@ -1681,7 +1681,7 @@ function compressPublish(targetName, dir) {
 
 gulp.task(
   "publish",
-  gulp.series("generic", "generic-legacy", function createPublish(done) {
+  gulp.series("generic", function createPublish(done) {
     const version = JSON.parse(
       fs.readFileSync(BUILD_DIR + "version.json").toString()
     ).version;
@@ -1692,11 +1692,7 @@ gulp.task(
       createStringSource(CONFIG_FILE, JSON.stringify(config, null, 2)).pipe(
         gulp.dest(".")
       ),
-      compressPublish("pdfjs-" + version + "-dist.zip", GENERIC_DIR),
-      compressPublish(
-        "pdfjs-" + version + "-legacy-dist.zip",
-        GENERIC_LEGACY_DIR
-      ),
+      compressPublish("rational-pdfjs-mods-" + version + "-dist.zip", GENERIC_DIR)
     ]);
   })
 );
@@ -2139,7 +2135,7 @@ gulp.task(
 function packageJson() {
   const VERSION = getVersionJSON().version;
 
-  const DIST_NAME = "pdfjs-dist";
+  const DIST_NAME = "rational-pdfjs-mods";
   const DIST_DESCRIPTION = "Generic build of Mozilla's PDF.js library.";
   const DIST_KEYWORDS = ["Mozilla", "pdf", "pdf.js"];
   const DIST_HOMEPAGE = "http://mozilla.github.io/pdf.js/";
@@ -2186,13 +2182,9 @@ gulp.task(
   "dist-pre",
   gulp.series(
     "generic",
-    "generic-legacy",
     "components",
-    "components-legacy",
     "image_decoders",
-    "image_decoders-legacy",
     "minified",
-    "minified-legacy",
     "types",
     function createDist() {
       console.log();
@@ -2225,46 +2217,22 @@ gulp.task(
           .pipe(gulp.dest(DIST_DIR)),
         gulp
           .src([
-            GENERIC_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.mjs",
-            GENERIC_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.mjs.map",
+            GENERIC_DIR + "build/{pdf,pdf.worker}.mjs",
+            GENERIC_DIR + "build/{pdf,pdf.worker}.mjs.map",
           ])
           .pipe(gulp.dest(DIST_DIR + "build/")),
         gulp
-          .src([
-            GENERIC_LEGACY_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.mjs",
-            GENERIC_LEGACY_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.mjs.map",
-          ])
-          .pipe(gulp.dest(DIST_DIR + "legacy/build/")),
-        gulp
-          .src(MINIFIED_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.min.mjs")
+          .src(MINIFIED_DIR + "build/{pdf,pdf.worker}.min.mjs")
           .pipe(gulp.dest(DIST_DIR + "build/")),
         gulp
           .src(MINIFIED_DIR + "image_decoders/pdf.image_decoders.min.mjs")
           .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
         gulp
-          .src(
-            MINIFIED_LEGACY_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.min.mjs"
-          )
-          .pipe(gulp.dest(DIST_DIR + "legacy/build/")),
-        gulp
-          .src(
-            MINIFIED_LEGACY_DIR + "image_decoders/pdf.image_decoders.min.mjs"
-          )
-          .pipe(gulp.dest(DIST_DIR + "legacy/image_decoders/")),
-        gulp
           .src(COMPONENTS_DIR + "**/*", { base: COMPONENTS_DIR })
           .pipe(gulp.dest(DIST_DIR + "web/")),
         gulp
-          .src(COMPONENTS_LEGACY_DIR + "**/*", { base: COMPONENTS_LEGACY_DIR })
-          .pipe(gulp.dest(DIST_DIR + "legacy/web/")),
-        gulp
           .src(IMAGE_DECODERS_DIR + "**/*", { base: IMAGE_DECODERS_DIR })
           .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
-        gulp
-          .src(IMAGE_DECODERS_LEGACY_DIR + "**/*", {
-            base: IMAGE_DECODERS_LEGACY_DIR,
-          })
-          .pipe(gulp.dest(DIST_DIR + "legacy/image_decoders/")),
         gulp
           .src(TYPES_DIR + "**/*", { base: TYPES_DIR })
           .pipe(gulp.dest(DIST_DIR + "types/")),
