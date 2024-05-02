@@ -6,13 +6,9 @@
 npm run dist
 ```
 
-2. Package the build into a tarball
-```
-cd build/dist
-npm pack
-```
+2. Copy the tarball into the `angular-ng/vendor` folder
 
-3. Copy the tarball into the `vendor` folder
+![img.png](copy-tarball.png)
 
 ## Standard PDFJS Readme
 <br/>
