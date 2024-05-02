@@ -2388,3 +2388,22 @@ gulp.task("externaltest", function (done) {
   });
   done();
 });
+
+gulp.task("pack", function (done) {
+  console.log();
+
+  if (!fs.existsSync(`${DIST_DIR}package.json`)) {
+    console.warn("EARLY EXIT - dist does not exists, try running \"gulp dist\" first\n");
+    done();
+    return;
+  }
+
+  console.log("### Packaging distribution");
+  safeSpawnSync("npm", [ "pack" ], { cwd: "build/dist" });
+  console.log("\n### Packaged distribution successfully\n");
+  done();
+});
+
+gulp.task("distpack", gulp.series("dist", "pack"), function (done) {
+  done();
+});
