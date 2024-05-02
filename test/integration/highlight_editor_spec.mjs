@@ -1591,18 +1591,12 @@ describe("Highlight Editor", () => {
           await page.focus(getEditorSelector(1));
 
           await kbFocusPrevious(page);
-          await page.waitForFunction(
-            sel => document.querySelector(sel) === document.activeElement,
-            {},
-            `.page[data-page-number="1"] > .textLayer`
+          await page.waitForSelector(
+            `.page[data-page-number="1"] > .textLayer:focus`
           );
 
           await kbFocusNext(page);
-          await page.waitForFunction(
-            sel => document.querySelector(sel) === document.activeElement,
-            {},
-            getEditorSelector(1)
-          );
+          await page.waitForSelector(`${getEditorSelector(1)}:focus`);
         })
       );
     });
