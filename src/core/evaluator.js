@@ -4315,11 +4315,15 @@ class PartialEvaluator {
           dict,
           properties
         );
-        if (widths) {
+        if (Array.isArray(widths)) {
           const glyphWidths = [];
           let j = firstChar;
-          for (const width of widths) {
-            glyphWidths[j++] = this.xref.fetchIfRef(width);
+          for (const w of widths) {
+            const width = this.xref.fetchIfRef(w);
+            if (typeof width === "number") {
+              glyphWidths[j] = width;
+            }
+            j++;
           }
           newProperties.widths = glyphWidths;
         } else {
