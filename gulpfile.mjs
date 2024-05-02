@@ -2136,7 +2136,7 @@ function packageJson() {
   const VERSION = getVersionJSON().version;
 
   const DIST_NAME = "rational-pdfjs-mods";
-  const DIST_DESCRIPTION = "Generic build of Mozilla's PDF.js library.";
+  const DIST_DESCRIPTION = "Rational Enterprise build of Mozilla's PDF.js library.";
   const DIST_KEYWORDS = ["Mozilla", "pdf", "pdf.js"];
   const DIST_HOMEPAGE = "http://mozilla.github.io/pdf.js/";
   const DIST_BUGS_URL = "https://github.com/mozilla/pdf.js/issues";
@@ -2258,43 +2258,43 @@ gulp.task(
 
 gulp.task(
   "dist",
-  gulp.series("dist-pre", function createDist(done) {
-    const VERSION = getVersionJSON().version;
+  gulp.series("dist-pre")
+    // const VERSION = getVersionJSON().version;
 
-    console.log();
-    console.log("### Committing changes");
-
-    let reason = process.env.PDFJS_UPDATE_REASON;
-    // Attempt to work-around the broken link, see https://github.com/mozilla/pdf.js/issues/10391
-    if (typeof reason === "string") {
-      const reasonParts =
-        /^(See )(mozilla\/pdf\.js)@tags\/(v\d+\.\d+\.\d+)\s*$/.exec(reason);
-
-      if (reasonParts) {
-        reason =
-          reasonParts[1] +
-          "https://github.com/" +
-          reasonParts[2] +
-          "/releases/tag/" +
-          reasonParts[3];
-      }
-    }
-    const message =
-      "PDF.js version " + VERSION + (reason ? " - " + reason : "");
-    safeSpawnSync("git", ["add", "*"], { cwd: DIST_DIR });
-    safeSpawnSync("git", ["commit", "-am", message], { cwd: DIST_DIR });
-    safeSpawnSync("git", ["tag", "-a", "v" + VERSION, "-m", message], {
-      cwd: DIST_DIR,
-    });
-
-    console.log();
-    console.log("Done. Push with");
-    console.log(
-      "  cd " + DIST_DIR + "; git push --tags " + DIST_REPO_URL + " master"
-    );
-    console.log();
-    done();
-  })
+    // console.log();
+    // console.log("### Committing changes");
+    //
+    // let reason = process.env.PDFJS_UPDATE_REASON;
+    // // Attempt to work-around the broken link, see https://github.com/mozilla/pdf.js/issues/10391
+    // if (typeof reason === "string") {
+    //   const reasonParts =
+    //     /^(See )(mozilla\/pdf\.js)@tags\/(v\d+\.\d+\.\d+)\s*$/.exec(reason);
+    //
+    //   if (reasonParts) {
+    //     reason =
+    //       reasonParts[1] +
+    //       "https://github.com/" +
+    //       reasonParts[2] +
+    //       "/releases/tag/" +
+    //       reasonParts[3];
+    //   }
+    // }
+    // const message =
+    //   "PDF.js version " + VERSION + (reason ? " - " + reason : "");
+    // safeSpawnSync("git", ["add", "*"], { cwd: DIST_DIR });
+    // safeSpawnSync("git", ["commit", "-am", message], { cwd: DIST_DIR });
+    // safeSpawnSync("git", ["tag", "-a", "v" + VERSION, "-m", message], {
+    //   cwd: DIST_DIR,
+    // });
+    //
+    // console.log();
+    // console.log("Done. Push with");
+    // console.log(
+    //   "  cd " + DIST_DIR + "; git push --tags " + DIST_REPO_URL + " master"
+    // );
+    // console.log();
+    // done();
+  // })
 );
 
 gulp.task(
@@ -2389,7 +2389,7 @@ gulp.task("externaltest", function (done) {
   done();
 });
 
-gulp.task("pack", function (done) {
+gulp.task("pack", function pack(done) {
   console.log();
 
   if (!fs.existsSync(`${DIST_DIR}package.json`)) {
@@ -2399,7 +2399,10 @@ gulp.task("pack", function (done) {
   }
 
   console.log("### Packaging distribution");
-  safeSpawnSync("npm", [ "pack" ], { cwd: "build/dist" });
+  const workingDirectory = path.resolve(process.cwd(), DIST_DIR);
+  safeSpawnSync("npm", [ "pack" ], { cwd: workingDirectory, stdio: "inherit" });
   console.log("\n### Packaged distribution successfully\n");
   done();
 });
+
+gulp.task("distpack", gulp.series("dist", "pack"));
