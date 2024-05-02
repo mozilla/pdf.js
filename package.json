@@ -1,6 +1,6 @@
 {
   "name": "rational-pdfjs-mods",
-  "version": "0.1.0",
+  "version": "0.1.x",
   "type": "module",
   "devDependencies": {
     "@babel/core": "^7.24.4",
@@ -66,8 +66,7 @@
   },
   "scripts": {
     "postinstall": "cross-env PUPPETEER_PRODUCT=firefox node node_modules/puppeteer/install.mjs",
-    "dist": "gulp dist",
-    "postdist": "gulp pack"
+    "dist": "gulp dist"
   },
   "repository": {
     "type": "git",

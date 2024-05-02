@@ -2256,9 +2256,26 @@ gulp.task(
   })
 );
 
+gulp.task("pack", function pack(done) {
+  console.log();
+
+  if (!fs.existsSync(`${DIST_DIR}package.json`)) {
+    console.warn("EARLY EXIT - dist does not exists, try running \"gulp dist\" first\n");
+    done();
+    return;
+  }
+
+  console.log("### Packaging distribution");
+  const workingDirectory = path.resolve(process.cwd(), DIST_DIR);
+  safeSpawnSync("npm", [ "pack" ], { cwd: workingDirectory, stdio: "inherit" });
+  console.log("\n### Packaged distribution successfully\n");
+  console.log("\n### Copy & Paste the tarball into rationalreview/src/main/angular-ng/vendor\n");
+  done();
+});
+
 gulp.task(
   "dist",
-  gulp.series("dist-pre")
+  gulp.series("dist-pre", "pack")
     // const VERSION = getVersionJSON().version;
 
     // console.log();
@@ -2388,21 +2405,3 @@ gulp.task("externaltest", function (done) {
   });
   done();
 });
-
-gulp.task("pack", function pack(done) {
-  console.log();
-
-  if (!fs.existsSync(`${DIST_DIR}package.json`)) {
-    console.warn("EARLY EXIT - dist does not exists, try running \"gulp dist\" first\n");
-    done();
-    return;
-  }
-
-  console.log("### Packaging distribution");
-  const workingDirectory = path.resolve(process.cwd(), DIST_DIR);
-  safeSpawnSync("npm", [ "pack" ], { cwd: workingDirectory, stdio: "inherit" });
-  console.log("\n### Packaged distribution successfully\n");
-  done();
-});
-
-gulp.task("distpack", gulp.series("dist", "pack"));
