@@ -1681,7 +1681,7 @@ function compressPublish(targetName, dir) {
 
 gulp.task(
   "publish",
-  gulp.series("generic", function createPublish(done) {
+  gulp.series("generic", "generic-legacy", function createPublish(done) {
     const version = JSON.parse(
       fs.readFileSync(BUILD_DIR + "version.json").toString()
     ).version;
@@ -1692,7 +1692,11 @@ gulp.task(
       createStringSource(CONFIG_FILE, JSON.stringify(config, null, 2)).pipe(
         gulp.dest(".")
       ),
-      compressPublish("rational-pdfjs-mods-" + version + "-dist.zip", GENERIC_DIR)
+      compressPublish("rational-pdfjs-mods-" + version + "-dist.zip", GENERIC_DIR),
+      compressPublish(
+        "rational-pdfjs-mods-" + version + "-legacy-dist.zip",
+        GENERIC_LEGACY_DIR
+      ),
     ]);
   })
 );
@@ -2182,9 +2186,13 @@ gulp.task(
   "dist-pre",
   gulp.series(
     "generic",
+    "generic-legacy",
     "components",
+    "components-legacy",
     "image_decoders",
+    "image_decoders-legacy",
     "minified",
+    "minified-legacy",
     "types",
     function createDist() {
       console.log();
@@ -2222,17 +2230,41 @@ gulp.task(
           ])
           .pipe(gulp.dest(DIST_DIR + "build/")),
         gulp
+          .src([
+            GENERIC_LEGACY_DIR + "build/{pdf,pdf.worker}.mjs",
+            GENERIC_LEGACY_DIR + "build/{pdf,pdf.worker}.mjs.map",
+          ])
+          .pipe(gulp.dest(DIST_DIR + "legacy/build/")),
+        gulp
           .src(MINIFIED_DIR + "build/{pdf,pdf.worker}.min.mjs")
           .pipe(gulp.dest(DIST_DIR + "build/")),
         gulp
           .src(MINIFIED_DIR + "image_decoders/pdf.image_decoders.min.mjs")
           .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
         gulp
+          .src(
+            MINIFIED_LEGACY_DIR + "build/{pdf,pdf.worker}.min.mjs"
+          )
+          .pipe(gulp.dest(DIST_DIR + "legacy/build/")),
+        gulp
+          .src(
+            MINIFIED_LEGACY_DIR + "image_decoders/pdf.image_decoders.min.mjs"
+          )
+          .pipe(gulp.dest(DIST_DIR + "legacy/image_decoders/")),
+        gulp
           .src(COMPONENTS_DIR + "**/*", { base: COMPONENTS_DIR })
           .pipe(gulp.dest(DIST_DIR + "web/")),
         gulp
+          .src(COMPONENTS_LEGACY_DIR + "**/*", { base: COMPONENTS_LEGACY_DIR })
+          .pipe(gulp.dest(DIST_DIR + "legacy/web/")),
+        gulp
           .src(IMAGE_DECODERS_DIR + "**/*", { base: IMAGE_DECODERS_DIR })
           .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
+        gulp
+          .src(IMAGE_DECODERS_LEGACY_DIR + "**/*", {
+            base: IMAGE_DECODERS_LEGACY_DIR,
+          })
+          .pipe(gulp.dest(DIST_DIR + "legacy/image_decoders/")),
         gulp
           .src(TYPES_DIR + "**/*", { base: TYPES_DIR })
           .pipe(gulp.dest(DIST_DIR + "types/")),
