@@ -2403,7 +2403,3 @@ gulp.task("pack", function (done) {
   console.log("\n### Packaged distribution successfully\n");
   done();
 });
-
-gulp.task("distpack", gulp.series("dist", "pack"), function (done) {
-  done();
-});
