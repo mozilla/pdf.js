@@ -37,7 +37,6 @@ import {
 } from "../shared/util.js";
 import {
   DOMSVGFactory,
-  getFilenameFromUrl,
   PDFDateString,
   setLayerDimensions,
 } from "./display_utils.js";
@@ -2859,15 +2858,13 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     super(parameters, { isRenderable: true });
 
-    const { filename, content, description } = this.data.file;
-    this.filename = getFilenameFromUrl(filename, /* onlyStripPath = */ true);
-    this.content = content;
+    const { file } = this.data;
+    this.filename = file.filename;
+    this.content = file.content;
 
     this.linkService.eventBus?.dispatch("fileattachmentannotation", {
       source: this,
-      filename,
-      content,
-      description,
+      ...file,
     });
   }
 
