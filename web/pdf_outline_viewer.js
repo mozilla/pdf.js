@@ -22,6 +22,7 @@
 
 import { BaseTreeViewer } from "./base_tree_viewer.js";
 import { SidebarView } from "./ui_utils.js";
+import {promiseWithResolvers} from "../src/core/promise_with_resolvers.js";
 
 /**
  * @typedef {Object} PDFOutlineViewerOptions
@@ -85,7 +86,7 @@ class PDFOutlineViewer extends BaseTreeViewer {
    * @protected
    */
   _dispatchEvent(outlineCount) {
-    this._currentOutlineItemCapability = Promise.withResolvers();
+    this._currentOutlineItemCapability = promiseWithResolvers();
     if (
       outlineCount === 0 ||
       this._pdfDocument?.loadingParams.disableAutoFetch
@@ -303,7 +304,7 @@ class PDFOutlineViewer extends BaseTreeViewer {
     if (this._pageNumberToDestHashCapability) {
       return this._pageNumberToDestHashCapability.promise;
     }
-    this._pageNumberToDestHashCapability = Promise.withResolvers();
+    this._pageNumberToDestHashCapability = promiseWithResolvers();
 
     const pageNumberToDestHash = new Map(),
       pageNumberNesting = new Map();

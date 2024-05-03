@@ -21,6 +21,7 @@
 
 import { getPageSizeInches, isPortraitOrientation } from "./ui_utils.js";
 import { PDFDateString } from "pdfjs-lib";
+import {promiseWithResolvers} from "../src/core/promise_with_resolvers.js";
 
 const DEFAULT_FIELD_CONTENT = "-";
 
@@ -206,7 +207,7 @@ class PDFDocumentProperties {
     this.pdfDocument = null;
 
     this.#fieldData = null;
-    this._dataAvailableCapability = Promise.withResolvers();
+    this._dataAvailableCapability = promiseWithResolvers();
     this._currentPageNumber = 1;
     this._pagesRotation = 0;
   }

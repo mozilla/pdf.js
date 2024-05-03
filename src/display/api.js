@@ -71,6 +71,7 @@ import { PDFFetchStream } from "display-fetch_stream";
 import { PDFNetworkStream } from "display-network";
 import { PDFNodeStream } from "display-node_stream";
 import { XfaText } from "./xfa_text.js";
+import { promiseWithResolvers } from "../core/promise_with_resolvers.js";
 
 const DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 const RENDERING_CANCELLED_TIMEOUT = 100; // ms
@@ -575,7 +576,7 @@ class PDFDocumentLoadingTask {
   static #docId = 0;
 
   constructor() {
-    this._capability = Promise.withResolvers();
+    this._capability = promiseWithResolvers();
     this._transport = null;
     this._worker = null;
 
@@ -672,7 +673,7 @@ class PDFDataRangeTransport {
     this._progressListeners = [];
     this._progressiveReadListeners = [];
     this._progressiveDoneListeners = [];
-    this._readyCapability = Promise.withResolvers();
+    this._readyCapability = promiseWithResolvers();
   }
 
   /**
@@ -1459,7 +1460,7 @@ class PDFPageProxy {
     // If there's no displayReadyCapability yet, then the operatorList
     // was never requested before. Make the request and create the promise.
     if (!intentState.displayReadyCapability) {
-      intentState.displayReadyCapability = Promise.withResolvers();
+      intentState.displayReadyCapability = promiseWithResolvers();
       intentState.operatorList = {
         fnArray: [],
         argsArray: [],
@@ -1586,7 +1587,7 @@ class PDFPageProxy {
     if (!intentState.opListReadCapability) {
       opListTask = Object.create(null);
       opListTask.operatorListChanged = operatorListChanged;
-      intentState.opListReadCapability = Promise.withResolvers();
+      intentState.opListReadCapability = promiseWithResolvers();
       (intentState.renderTasks ||= new Set()).add(opListTask);
       intentState.operatorList = {
         fnArray: [],
@@ -2047,7 +2048,7 @@ class PDFWorker {
     this.destroyed = false;
     this.verbosity = verbosity;
 
-    this._readyCapability = Promise.withResolvers();
+    this._readyCapability = promiseWithResolvers();
     this._port = null;
     this._webWorker = null;
     this._messageHandler = null;
@@ -2363,7 +2364,7 @@ class WorkerTransport {
     this._networkStream = networkStream;
     this._fullReader = null;
     this._lastProgress = null;
-    this.downloadInfoCapability = Promise.withResolvers();
+    this.downloadInfoCapability = promiseWithResolvers();
 
     this.setupMessageHandler();
 
@@ -2469,7 +2470,7 @@ class WorkerTransport {
     }
 
     this.destroyed = true;
-    this.destroyCapability = Promise.withResolvers();
+    this.destroyCapability = promiseWithResolvers();
 
     this.#passwordCapability?.reject(
       new Error("Worker was destroyed during onPassword callback")
@@ -2560,7 +2561,7 @@ class WorkerTransport {
     });
 
     messageHandler.on("ReaderHeadersReady", data => {
-      const headersCapability = Promise.withResolvers();
+      const headersCapability = promiseWithResolvers();
       const fullReader = this._fullReader;
       fullReader.headersReady.then(() => {
         // If stream or range are disabled, it's our only way to report
@@ -2675,7 +2676,7 @@ class WorkerTransport {
     });
 
     messageHandler.on("PasswordRequest", exception => {
-      this.#passwordCapability = Promise.withResolvers();
+      this.#passwordCapability = promiseWithResolvers();
 
       if (loadingTask.onPassword) {
         const updatePassword = password => {
@@ -3103,7 +3104,7 @@ class PDFObjects {
    */
   #ensureObj(objId) {
     return (this.#objs[objId] ||= {
-      ...Promise.withResolvers(),
+      ...promiseWithResolvers(),
       data: INITIAL_DATA,
     });
   }
@@ -3281,7 +3282,7 @@ class InternalRenderTask {
     this._useRequestAnimationFrame =
       useRequestAnimationFrame === true && typeof window !== "undefined";
     this.cancelled = false;
-    this.capability = Promise.withResolvers();
+    this.capability = promiseWithResolvers();
     this.task = new RenderTask(this);
     // caching this-bound methods
     this._cancelBound = this.cancel.bind(this);

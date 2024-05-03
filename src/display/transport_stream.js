@@ -20,6 +20,7 @@
 
 import { assert } from "../shared/util.js";
 import { isPdfFile } from "./display_utils.js";
+import {promiseWithResolvers} from "../core/promise_with_resolvers.js";
 
 /** @implements {IPDFStream} */
 class PDFDataTransportStream {
@@ -235,7 +236,7 @@ class PDFDataTransportStreamReader {
     if (this._done) {
       return { value: undefined, done: true };
     }
-    const requestCapability = Promise.withResolvers();
+    const requestCapability = promiseWithResolvers();
     this._requests.push(requestCapability);
     return requestCapability.promise;
   }
@@ -300,7 +301,7 @@ class PDFDataTransportStreamRangeReader {
     if (this._done) {
       return { value: undefined, done: true };
     }
-    const requestCapability = Promise.withResolvers();
+    const requestCapability = promiseWithResolvers();
     this._requests.push(requestCapability);
     return requestCapability.promise;
   }

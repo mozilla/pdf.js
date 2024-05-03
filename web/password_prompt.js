@@ -16,6 +16,7 @@
 /** @typedef {import("./overlay_manager.js").OverlayManager} OverlayManager */
 
 import { PasswordResponses } from "pdfjs-lib";
+import {promiseWithResolvers} from "../src/core/promise_with_resolvers.js";
 
 /**
  * @typedef {Object} PasswordPromptOptions
@@ -67,7 +68,7 @@ class PasswordPrompt {
 
   async open() {
     await this.#activeCapability?.promise;
-    this.#activeCapability = Promise.withResolvers();
+    this.#activeCapability = promiseWithResolvers();
 
     try {
       await this.overlayManager.open(this.dialog);

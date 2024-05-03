@@ -42,12 +42,13 @@ import { incrementalUpdate } from "./writer.js";
 import { MessageHandler } from "../shared/message_handler.js";
 import { PDFWorkerStream } from "./worker_stream.js";
 import { StructTreeRoot } from "./struct_tree.js";
+import { promiseWithResolvers } from "./promise_with_resolvers.js";
 
 class WorkerTask {
   constructor(name) {
     this.name = name;
     this.terminated = false;
-    this._capability = Promise.withResolvers();
+    this._capability = promiseWithResolvers();
   }
 
   get finished() {
@@ -211,7 +212,7 @@ class WorkerMessageHandler {
         password,
         rangeChunkSize,
       };
-      const pdfManagerCapability = Promise.withResolvers();
+      const pdfManagerCapability = promiseWithResolvers();
       let newPdfManager;
 
       if (data) {

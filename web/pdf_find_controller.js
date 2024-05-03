@@ -19,6 +19,7 @@
 
 import { binarySearchFirstItem, scrollIntoView } from "./ui_utils.js";
 import { getCharacterType, getNormalizeWithNFKC } from "./pdf_find_utils.js";
+import {promiseWithResolvers} from "../src/core/promise_with_resolvers.js";
 
 const FindState = {
   FOUND: 0,
@@ -620,7 +621,7 @@ class PDFFindController {
     clearTimeout(this._findTimeout);
     this._findTimeout = null;
 
-    this._firstPageCapability = Promise.withResolvers();
+    this._firstPageCapability = promiseWithResolvers();
   }
 
   /**
@@ -937,7 +938,7 @@ class PDFFindController {
     let deferred = Promise.resolve();
     const textOptions = { disableNormalization: true };
     for (let i = 0, ii = this._linkService.pagesCount; i < ii; i++) {
-      const { promise, resolve } = Promise.withResolvers();
+      const { promise, resolve } = promiseWithResolvers();
       this._extractTextPromises[i] = promise;
 
       // eslint-disable-next-line arrow-body-style

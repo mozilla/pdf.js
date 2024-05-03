@@ -20,6 +20,7 @@ import {
   validateRangeRequestCapabilities,
   validateResponseStatus,
 } from "./network_utils.js";
+import {promiseWithResolvers} from "../core/promise_with_resolvers.js";
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
@@ -113,7 +114,7 @@ class PDFFetchStreamReader {
     const source = stream.source;
     this._withCredentials = source.withCredentials || false;
     this._contentLength = source.length;
-    this._headersCapability = Promise.withResolvers();
+    this._headersCapability = promiseWithResolvers();
     this._disableRange = source.disableRange || false;
     this._rangeChunkSize = source.rangeChunkSize;
     if (!this._rangeChunkSize && !this._disableRange) {
@@ -218,7 +219,7 @@ class PDFFetchStreamRangeReader {
     this._loaded = 0;
     const source = stream.source;
     this._withCredentials = source.withCredentials || false;
-    this._readCapability = Promise.withResolvers();
+    this._readCapability = promiseWithResolvers();
     this._isStreamingSupported = !source.disableStream;
 
     this._abortController = new AbortController();

@@ -230,8 +230,8 @@ function createWebpackAlias(defines) {
     // In the tsconfig.json files, the .js extension must be omitted.
     libraryAlias["display-fetch_stream"] = "src/display/fetch_stream.js";
     libraryAlias["display-network"] = "src/display/network.js";
-    libraryAlias["display-node_stream"] = "src/display/node_stream.js";
-    libraryAlias["display-node_utils"] = "src/display/node_utils.js";
+    // libraryAlias["display-node_stream"] = "src/display/node_stream.js";
+    // libraryAlias["display-node_utils"] = "src/display/node_utils.js";
 
     viewerAlias["web-download_manager"] = "web/download_manager.js";
     viewerAlias["web-external_services"] = "web/genericcom.js";

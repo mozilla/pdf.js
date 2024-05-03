@@ -55,6 +55,7 @@ import { AutoPrintRegExp } from "../../web/ui_utils.js";
 import { GlobalImageCache } from "../../src/core/image_utils.js";
 import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
 import { Metadata } from "../../src/display/metadata.js";
+import {promiseWithResolvers} from "../../src/core/promise_with_resolvers.js";
 
 const WORKER_SRC = "../../build/generic/build/pdf.worker.mjs";
 
@@ -155,7 +156,7 @@ describe("api", function () {
       const loadingTask = getDocument(basicApiGetDocumentParams);
       expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
 
-      const progressReportedCapability = Promise.withResolvers();
+      const progressReportedCapability = promiseWithResolvers();
       // Attach the callback that is used to report loading progress;
       // similarly to how viewer.js works.
       loadingTask.onProgress = function (progressData) {
@@ -215,7 +216,7 @@ describe("api", function () {
       const loadingTask = getDocument(typedArrayPdf);
       expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
 
-      const progressReportedCapability = Promise.withResolvers();
+      const progressReportedCapability = promiseWithResolvers();
       loadingTask.onProgress = function (data) {
         progressReportedCapability.resolve(data);
       };
@@ -245,7 +246,7 @@ describe("api", function () {
       const loadingTask = getDocument(arrayBufferPdf);
       expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
 
-      const progressReportedCapability = Promise.withResolvers();
+      const progressReportedCapability = promiseWithResolvers();
       loadingTask.onProgress = function (data) {
         progressReportedCapability.resolve(data);
       };
@@ -304,11 +305,11 @@ describe("api", function () {
       expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
 
       const passwordNeededCapability = {
-        ...Promise.withResolvers(),
+        ...promiseWithResolvers(),
         settled: false,
       };
       const passwordIncorrectCapability = {
-        ...Promise.withResolvers(),
+        ...promiseWithResolvers(),
         settled: false,
       };
       // Attach the callback that is used to request a password;
@@ -2276,12 +2277,12 @@ describe("api", function () {
       const manifesto = `
       The Mozilla Manifesto Addendum
       Pledge for a Healthy Internet
-      
+
       The open, global internet is the most powerful communication and collaboration resource we have ever seen.
       It embodies some of our deepest hopes for human progress.
       It enables new opportunities for learning, building a sense of shared humanity, and solving the pressing problems
       facing people everywhere.
-      
+
       Over the last decade we have seen this promise fulfilled in many ways.
       We have also seen the power of the internet used to magnify divisiveness,
       incite violence, promote hatred, and intentionally manipulate fact and reality.

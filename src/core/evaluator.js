@@ -77,6 +77,7 @@ import { isNumberArray } from "./core_utils.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
+import {promiseWithResolvers} from "./promise_with_resolvers.js";
 
 const DefaultPartialEvaluatorOptions = Object.freeze({
   maxImageSize: -1,
@@ -1273,7 +1274,7 @@ class PartialEvaluator {
       return this.fontCache.get(font.cacheKey);
     }
 
-    const { promise, resolve } = Promise.withResolvers();
+    const { promise, resolve } = promiseWithResolvers();
 
     let preEvaluatedFont;
     try {

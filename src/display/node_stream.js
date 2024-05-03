@@ -23,6 +23,7 @@ import {
   extractFilenameFromHeader,
   validateRangeRequestCapabilities,
 } from "./network_utils.js";
+import {promiseWithResolvers} from "../core/promise_with_resolvers.js";
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
@@ -127,8 +128,8 @@ class BaseFullReader {
     this._isRangeSupported = !source.disableRange;
 
     this._readableStream = null;
-    this._readCapability = Promise.withResolvers();
-    this._headersCapability = Promise.withResolvers();
+    this._readCapability = promiseWithResolvers();
+    this._headersCapability = promiseWithResolvers();
   }
 
   get headersReady() {
@@ -162,7 +163,7 @@ class BaseFullReader {
 
     const chunk = this._readableStream.read();
     if (chunk === null) {
-      this._readCapability = Promise.withResolvers();
+      this._readCapability = promiseWithResolvers();
       return this.read();
     }
     this._loaded += chunk.length;
@@ -229,7 +230,7 @@ class BaseRangeReader {
     this.onProgress = null;
     this._loaded = 0;
     this._readableStream = null;
-    this._readCapability = Promise.withResolvers();
+    this._readCapability = promiseWithResolvers();
     const source = stream.source;
     this._isStreamingSupported = !source.disableStream;
   }
@@ -249,7 +250,7 @@ class BaseRangeReader {
 
     const chunk = this._readableStream.read();
     if (chunk === null) {
-      this._readCapability = Promise.withResolvers();
+      this._readCapability = promiseWithResolvers();
       return this.read();
     }
     this._loaded += chunk.length;
