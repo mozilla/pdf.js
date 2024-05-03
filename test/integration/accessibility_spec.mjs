@@ -31,6 +31,18 @@ describe("accessibility", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await page.waitForSelector(".structTree");
+          const isVisible = await page.evaluate(() => {
+            let elem = document.querySelector(".structTree");
+            while (elem) {
+              if (elem.getAttribute("aria-hidden") === "true") {
+                return false;
+              }
+              elem = elem.parentElement;
+            }
+            return true;
+          });
+
+          expect(isVisible).withContext(`In ${browserName}`).toBeTrue();
 
           // Check the headings match up.
           const head1 = await page.$eval(
