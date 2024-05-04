@@ -4067,11 +4067,11 @@ class PartialEvaluator {
     const differences = properties.differences;
     const encoding = properties.defaultEncoding;
     for (let charCode = 0; charCode < 256; charCode++) {
-      if (charCode in differences && widthsByGlyphName[differences[charCode]]) {
+      if (charCode in differences && widthsByGlyphName[differences[charCode]] && typeof widthsByGlyphName[differences[charCode]] === 'number') {
         widths[charCode] = widthsByGlyphName[differences[charCode]];
         continue;
       }
-      if (charCode in encoding && widthsByGlyphName[encoding[charCode]]) {
+      if (charCode in encoding && widthsByGlyphName[encoding[charCode]] && typeof widthsByGlyphName[encoding[charCode]] === 'number') {
         widths[charCode] = widthsByGlyphName[encoding[charCode]];
         continue;
       }
