@@ -793,29 +793,41 @@ class PartialEvaluator {
     args = [objId, w, h];
     operatorList.addImageOps(OPS.paintImageXObject, args, optionalContent);
 
-    // For large (at least 500x500) or more complex images that we'll cache
-    // globally, check if the image is still cached locally on the main-thread
-    // to avoid having to re-parse the image (since that can be slow).
-    if (
-      cacheGlobally &&
-      (w * h > 250000 || dict.has("SMask") || dict.has("Mask"))
-    ) {
-      const localLength = await this.handler.sendWithPromise("commonobj", [
-        objId,
-        "CopyLocalImage",
-        { imageRef },
-      ]);
-
-      if (localLength) {
+    if (cacheGlobally) {
+      if (this.globalImageCache.hasDecodeFailed(imageRef)) {
         this.globalImageCache.setData(imageRef, {
           objId,
           fn: OPS.paintImageXObject,
           args,
           optionalContent,
-          byteSize: 0, // Temporary entry, to avoid `setData` returning early.
+          byteSize: 0, // Data is `null`, since decoding failed previously.
         });
-        this.globalImageCache.addByteSize(imageRef, localLength);
+
+        this._sendImgData(objId, /* imgData = */ null, cacheGlobally);
         return;
+      }
+
+      // For large (at least 500x500) or more complex images that we'll cache
+      // globally, check if the image is still cached locally on the main-thread
+      // to avoid having to re-parse the image (since that can be slow).
+      if (w * h > 250000 || dict.has("SMask") || dict.has("Mask")) {
+        const localLength = await this.handler.sendWithPromise("commonobj", [
+          objId,
+          "CopyLocalImage",
+          { imageRef },
+        ]);
+
+        if (localLength) {
+          this.globalImageCache.setData(imageRef, {
+            objId,
+            fn: OPS.paintImageXObject,
+            args,
+            optionalContent,
+            byteSize: 0, // Temporary entry, to avoid `setData` returning early.
+          });
+          this.globalImageCache.addByteSize(imageRef, localLength);
+          return;
+        }
       }
     }
 
@@ -846,6 +858,9 @@ class PartialEvaluator {
       .catch(reason => {
         warn(`Unable to decode image "${objId}": "${reason}".`);
 
+        if (imageRef) {
+          this.globalImageCache.addDecodeFailed(imageRef);
+        }
         return this._sendImgData(objId, /* imgData = */ null, cacheGlobally);
       });
 
