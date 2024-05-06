@@ -74,13 +74,7 @@ describe("Annotation highlight", () => {
         pages.map(async ([browserName, page]) => {
           for (const i of [23, 22, 14]) {
             await page.click(`[data-annotation-id='${i}R']`);
-            await page.waitForFunction(
-              id =>
-                document.activeElement ===
-                document.querySelector(`#pdfjs_internal_id_${id}R`),
-              {},
-              i
-            );
+            await page.waitForSelector(`#pdfjs_internal_id_${i}R:focus`);
           }
         })
       );

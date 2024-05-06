@@ -56,9 +56,6 @@ const copyPaste = async page => {
   await kbCopy(page);
   await promise;
 
-  // eslint-disable-next-line no-restricted-syntax
-  await waitForTimeout(10);
-
   promise = waitForEvent(page, "paste");
   await kbPaste(page);
   await promise;
@@ -1364,9 +1361,6 @@ describe("FreeText Editor", () => {
           // Enter in editing mode.
           await switchToFreeText(page);
 
-          // eslint-disable-next-line no-restricted-syntax
-          await waitForTimeout(200);
-
           // Disable editing mode.
           await page.click("#editorFreeText");
           await page.waitForSelector(
@@ -2411,14 +2405,7 @@ describe("FreeText Editor", () => {
 
           // The editor must be moved in the DOM and potentially the focus
           // will be lost, hence there's a callback will get back the focus.
-          // eslint-disable-next-line no-restricted-syntax
-          await waitForTimeout(200);
-
-          const focused = await page.evaluate(sel => {
-            const editor = document.querySelector(sel);
-            return editor === document.activeElement;
-          }, getEditorSelector(1));
-          expect(focused).withContext(`In ${browserName}`).toEqual(true);
+          await page.waitForSelector(`${getEditorSelector(1)}:focus`);
 
           expect(await pos(0))
             .withContext(`In ${browserName}`)
