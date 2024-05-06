@@ -381,6 +381,7 @@ function getOriginalIndex(diffs, pos, len) {
 /**
  * @typedef {Object} PdfFindControllerState
  * @property {string} query
+ * @property {string} type
  * @property {boolean} findPrevious
  * @property {boolean} matchDiacritics
  * @property {boolean} highlightAll
@@ -1150,7 +1151,7 @@ class PDFFindController {
   }
 
   #updateMatch(found = false) {
-    if (this.#state.jumpToFirstHighlight) {
+    if (this.#state.jumpToFirstHighlight || this.#state.type !== 'find') {
       let state = FindState.NOT_FOUND;
       const wrapped = this._offset.wrapped;
       this._offset.wrapped = false;
