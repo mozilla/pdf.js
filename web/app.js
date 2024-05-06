@@ -69,6 +69,7 @@ import { PasswordPrompt } from "./password_prompt.js";
 import { PDFAttachmentViewer } from "web-pdf_attachment_viewer";
 import { PDFCursorTools } from "web-pdf_cursor_tools";
 import { PDFDocumentProperties } from "web-pdf_document_properties";
+import { PDFSaveCfazDialog } from "web-pdf_save_cfaz_dialog";
 import { PDFFindBar } from "web-pdf_find_bar";
 import { PDFFindController } from "./pdf_find_controller.js";
 import { PDFHistory } from "./pdf_history.js";
@@ -117,6 +118,8 @@ const PDFViewerApplication = {
   pdfPresentationMode: null,
   /** @type {PDFDocumentProperties} */
   pdfDocumentProperties: null,
+  /** @type {PDFSaveCfazDialog} */
+  pdfSaveCfazDialog: null,
   /** @type {PDFLinkService} */
   pdfLinkService: null,
   /** @type {PDFHistory} */
@@ -400,19 +403,19 @@ const PDFViewerApplication = {
     const annotationEditorMode = AppOptions.get("annotationEditorMode");
     const pageColors =
       AppOptions.get("forcePageColors") ||
-      window.matchMedia("(forced-colors: active)").matches
+        window.matchMedia("(forced-colors: active)").matches
         ? {
-            background: AppOptions.get("pageColorsBackground"),
-            foreground: AppOptions.get("pageColorsForeground"),
-          }
+          background: AppOptions.get("pageColorsBackground"),
+          foreground: AppOptions.get("pageColorsForeground"),
+        }
         : null;
     const altTextManager = appConfig.altTextDialog
       ? new AltTextManager(
-          appConfig.altTextDialog,
-          container,
-          this.overlayManager,
-          eventBus
-        )
+        appConfig.altTextDialog,
+        container,
+        this.overlayManager,
+        eventBus
+      )
       : null;
 
     const pdfViewer = new PDFViewer({
@@ -500,7 +503,15 @@ const PDFViewerApplication = {
         this.overlayManager,
         eventBus,
         l10n,
-        /* fileNameLookup = */ () => this._docFilename
+        /* fileNameLookup = */() => this._docFilename
+      );
+    }
+
+    if (appConfig.saveCfazDialog) {
+      this.pdfSaveCfazDialog = new PDFSaveCfazDialog(
+        appConfig.saveCfazDialog,
+        this.overlayManager,
+        l10n
       );
     }
 
@@ -613,9 +624,8 @@ const PDFViewerApplication = {
     const { appConfig, eventBus } = this;
     let file;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      const queryString = document.location.search.substring(1);
-      const params = parseQueryString(queryString);
-      file = params.get("file") ?? AppOptions.get("defaultUrl");
+      const achiveUrl = document.getElementById('archive_url')?.value;
+      file = achiveUrl ?? AppOptions.get("defaultUrl");
       validateFileURL(file);
     } else if (PDFJSDev.test("MOZCENTRAL")) {
       file = window.location.href;
@@ -1042,6 +1052,99 @@ const PDFViewerApplication = {
     throw new Error("PDF document not downloaded.");
   },
 
+  /**
+ * @private
+ */
+  async _sendFileToStorage(directUpload) {
+    return new Promise((resolve, reject) => {
+      directUpload.create((error, blob) => {
+        if (error) {
+          reject(new Error(`Não foi possível atualizar o arquivo. ${error}`));
+        } else {
+          resolve(blob)
+        }
+      })
+    });
+  },
+
+  /**
+ * @private
+ */
+  async _updateArchiveCfaz(archive_id, document_signed_id) {
+    return new Promise((resolve, reject) => {
+      const params = JSON.stringify({ archive: { document: document_signed_id } })
+      let xhr = new XMLHttpRequest();
+      xhr.open('PUT', `/archives/${archive_id}.json`, true);
+
+      const csrfToken = document.head.querySelector("[name='csrf-token']")?.content;
+      if (csrfToken) {
+        xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+      }
+
+      xhr.onload = function () {
+        if (xhr.status === 200) {
+          resolve();
+        } else {
+          reject(new Error("Não foi possível atualizar o arquivo."));
+        }
+      };
+
+      xhr.onerror = function (e) {
+        reject(e);
+      };
+
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.send(params);
+    });
+  },
+
+  async saveCfaz() {
+    if (this._saveInProgress) {
+      return;
+    }
+    this._saveInProgress = true;
+    await this.pdfScriptingManager.dispatchWillSave();
+
+    const ac_url = document.getElementById('active_storage_url')?.value,
+      archive_name = document.getElementById('archive_name')?.value,
+      archiveId = document.getElementById('archive_id')?.value;
+
+    this.pdfSaveCfazDialog?.open();
+    try {
+      this._ensureDownloadComplete();
+
+      const data = await this.pdfDocument.saveDocument();
+      const blob = new Blob([data], { type: "application/pdf" });
+
+      const doc_file = new File([blob], archive_name, { type: "application/pdf" })
+      if(ac_url && archiveId){
+        const directUpload = new ActiveStorage.DirectUpload(doc_file, ac_url)
+        await this._sendFileToStorage(directUpload).then((document)=>{
+          this._updateArchiveCfaz(archiveId, document.signed_id);
+        });
+      }
+
+      this.pdfSaveCfazDialog?.setMessageContent('Arquivo enviado com sucesso.');
+    } catch (reason) {
+      // When the PDF document isn't ready, or the PDF file is still
+      // downloading, simply fallback to a "regular" download.
+      this.pdfSaveCfazDialog?.setMessageContent(`Error when saving the document: ${reason.message}`);
+      console.error(`Error when saving the document: ${reason.message}`);
+      // await this.download();
+    } finally {
+      this.pdfSaveCfazDialog?.setCloseButtonToggle(true)
+      await this.pdfScriptingManager.dispatchDidSave();
+      this._saveInProgress = false;
+    }
+
+    if (this._hasAnnotationEditors) {
+      this.externalServices.reportTelemetry({
+        type: "editing",
+        data: { type: "save" },
+      });
+    }
+  },
+
   async download(options = {}) {
     const url = this._downloadUrl,
       filename = this._docFilename;
@@ -1104,6 +1207,9 @@ const PDFViewerApplication = {
     }
   },
 
+  backButton() {
+    window.history.back();
+  },
   /**
    * Report the error; used for errors affecting loading and/or parsing of
    * the entire PDF document.
@@ -1507,8 +1613,8 @@ const PDFViewerApplication = {
     // Provides some basic debug information
     console.log(
       `PDF ${pdfDocument.fingerprints[0]} [${info.PDFFormatVersion} ` +
-        `${(info.Producer || "-").trim()} / ${(info.Creator || "-").trim()}] ` +
-        `(PDF.js: ${version || "?"} [${build || "?"}])`
+      `${(info.Producer || "-").trim()} / ${(info.Creator || "-").trim()}] ` +
+      `(PDF.js: ${version || "?"} [${build || "?"}])`
     );
     let pdfTitle = info.Title;
 
@@ -1914,6 +2020,8 @@ const PDFViewerApplication = {
       );
       eventBus._on("reporttelemetry", webViewerReportTelemetry, { signal });
     }
+    eventBus._on("saveCfaz", webViewerSaveCfaz);
+    eventBus._on("backButton", webViewerBackButton);
   },
 
   bindWindowEvents() {
@@ -2117,7 +2225,7 @@ const PDFViewerApplication = {
     document.blockUnblockOnload?.(false);
 
     // Ensure that this method is only ever run once.
-    this._unblockDocumentLoadEvent = () => {};
+    this._unblockDocumentLoadEvent = () => { };
   },
 
   /**
@@ -2156,9 +2264,9 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       // Removing of the following line will not guarantee that the viewer will
       // start accepting URLs from foreign origin -- CORS headers on the remote
       // server must be properly configured.
-      if (fileOrigin !== viewerOrigin) {
-        throw new Error("file origin does not match viewer's");
-      }
+      // if (fileOrigin !== viewerOrigin) {
+      //   throw new Error("file origin does not match viewer's");
+      // }
     } catch (ex) {
       PDFViewerApplication._documentError("pdfjs-loading-error", {
         message: ex.message,
@@ -2396,7 +2504,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 
   // eslint-disable-next-line no-var
   var webViewerOpenFile = function (evt) {
-    PDFViewerApplication._openFileInput?.click();
+    // PDFViewerApplication._openFileInput?.click();
   };
 }
 
@@ -3212,6 +3320,14 @@ function beforeUnload(evt) {
 
 function webViewerAnnotationEditorStatesChanged(data) {
   PDFViewerApplication.externalServices.updateEditorStates(data);
+}
+
+function webViewerSaveCfaz() {
+  PDFViewerApplication.saveCfaz();
+}
+
+function webViewerBackButton() {
+  PDFViewerApplication.backButton();
 }
 
 function webViewerReportTelemetry({ details }) {

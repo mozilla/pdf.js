@@ -861,6 +861,14 @@ body {
   left: 6px;
 }
 
+.toolbarButton.customButton {
+  width: auto;
+}
+
+.toolbarButton.customButton::before {
+  content: none;
+}
+
 .toolbarButton:is(:hover, :focus-visible)::before,
 .secondaryToolbarButton:is(:hover, :focus-visible)::before {
   background-color: var(--toolbar-icon-hover-bg-color);

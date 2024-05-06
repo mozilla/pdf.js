@@ -38,7 +38,7 @@
   --toolbar-divider-color: #e0e0e6;
   --toolbar-fg-color: #15141a;
 
-  --toolbarButton-download-icon: url(images/gv-toolbarButton-download.svg);
+  --toolbarButton-download-icon: url(pdf_viewer/web/images/gv-toolbarButton-download.svg);
 }
 
 :root:dir(rtl) {
