@@ -19,6 +19,7 @@ import {
   extractFilenameFromHeader,
   validateRangeRequestCapabilities,
 } from "./network_utils.js";
+import {promiseWithResolvers} from "../core/promise_with_resolvers.js";
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
@@ -255,7 +256,7 @@ class PDFNetworkStreamFullRequestReader {
     };
     this._url = source.url;
     this._fullRequestId = manager.requestFull(args);
-    this._headersReceivedCapability = Promise.withResolvers();
+    this._headersReceivedCapability = promiseWithResolvers();
     this._disableRange = source.disableRange || false;
     this._contentLength = source.length; // Optional
     this._rangeChunkSize = source.rangeChunkSize;
@@ -375,7 +376,7 @@ class PDFNetworkStreamFullRequestReader {
     if (this._done) {
       return { value: undefined, done: true };
     }
-    const requestCapability = Promise.withResolvers();
+    const requestCapability = promiseWithResolvers();
     this._requests.push(requestCapability);
     return requestCapability.promise;
   }
@@ -466,7 +467,7 @@ class PDFNetworkStreamRangeRequestReader {
     if (this._done) {
       return { value: undefined, done: true };
     }
-    const requestCapability = Promise.withResolvers();
+    const requestCapability = promiseWithResolvers();
     this._requests.push(requestCapability);
     return requestCapability.promise;
   }

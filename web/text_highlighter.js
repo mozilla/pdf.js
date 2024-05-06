@@ -37,6 +37,7 @@ class TextHighlighter {
   constructor({ findController, eventBus, pageIndex }) {
     this.findController = findController;
     this.matches = [];
+    this.highlights = [];
     this.eventBus = eventBus;
     this.pageIdx = pageIndex;
     this.textDivs = null;
@@ -99,7 +100,7 @@ class TextHighlighter {
     this._updateMatches(/* reset = */ true);
   }
 
-  _convertMatches(matches, matchesLength) {
+  _convertMatches(matches) {
     // Early exit if there is nothing to convert.
     if (!matches) {
       return [];
@@ -111,12 +112,11 @@ class TextHighlighter {
     const end = textContentItemsStr.length - 1;
     const result = [];
 
-    for (let m = 0, mm = matches.length; m < mm; m++) {
-      // Calculate the start position.
-      let matchIdx = matches[m];
+    matches.forEach(_match => {
+      const startPos = _match.position;
 
       // Loop over the divIdxs.
-      while (i !== end && matchIdx >= iIndex + textContentItemsStr[i].length) {
+      while (i !== end && startPos >= iIndex + textContentItemsStr[i].length) {
         iIndex += textContentItemsStr[i].length;
         i++;
       }
@@ -126,28 +126,29 @@ class TextHighlighter {
       }
 
       const match = {
+        color: _match.color,
         begin: {
           divIdx: i,
-          offset: matchIdx - iIndex,
+          offset: startPos - iIndex,
         },
       };
 
-      // Calculate the end position.
-      matchIdx += matchesLength[m];
+      const endPos = startPos + _match.length;
 
       // Somewhat the same array as above, but use > instead of >= to get
       // the end position right.
-      while (i !== end && matchIdx > iIndex + textContentItemsStr[i].length) {
+      while (i !== end && endPos > iIndex + textContentItemsStr[i].length) {
         iIndex += textContentItemsStr[i].length;
         i++;
       }
 
       match.end = {
         divIdx: i,
-        offset: matchIdx - iIndex,
+        offset: endPos - iIndex,
       };
       result.push(match);
-    }
+    });
+
     return result;
   }
 
@@ -168,13 +169,13 @@ class TextHighlighter {
       offset: undefined,
     };
 
-    function beginText(begin, className) {
+    function beginText(begin, className, bgColor) {
       const divIdx = begin.divIdx;
       textDivs[divIdx].textContent = "";
-      return appendTextToDiv(divIdx, 0, begin.offset, className);
+      return appendTextToDiv(divIdx, 0, begin.offset, className, bgColor);
     }
 
-    function appendTextToDiv(divIdx, fromOffset, toOffset, className) {
+    function appendTextToDiv(divIdx, fromOffset, toOffset, className, bgColor) {
       let div = textDivs[divIdx];
       if (div.nodeType === Node.TEXT_NODE) {
         const span = document.createElement("span");
@@ -188,9 +189,20 @@ class TextHighlighter {
         toOffset
       );
       const node = document.createTextNode(content);
-      if (className) {
+      if (className || bgColor) {
         const span = document.createElement("span");
-        span.className = `${className} appended`;
+
+        if (className) {
+          span.className = `${className} appended`;
+        }
+
+        if (bgColor) {
+          span.style.background = bgColor;
+          span.style.margin = "-1px";
+          span.style.padding = "1px";
+          span.style.borderRadius = "4px";
+        }
+
         span.append(node);
         div.append(span);
         return className.includes("selected") ? span.offsetLeft : 0;
@@ -199,12 +211,10 @@ class TextHighlighter {
       return 0;
     }
 
-    let i0 = selectedMatchIdx,
-      i1 = i0 + 1;
-    if (highlightAll) {
-      i0 = 0;
-      i1 = matches.length;
-    } else if (!isSelectedPage) {
+    const i0 = 0;
+    const i1 = matches.length;
+
+    if (!highlightAll && !isSelectedPage) {
       // Not highlighting all and this isn't the selected page, so do nothing.
       return;
     }
@@ -213,6 +223,12 @@ class TextHighlighter {
     let lastOffset = -1;
     for (let i = i0; i < i1; i++) {
       const match = matches[i];
+
+      // only highlight selected match or term highlighting matches
+      if (!highlightAll && i !== selectedMatchIdx && match.color === null) {
+        continue;
+      }
+
       const begin = match.begin;
       if (begin.divIdx === lastDivIdx && begin.offset === lastOffset) {
         // It's possible to be in this situation if we searched for a 'f' and we
@@ -245,19 +261,25 @@ class TextHighlighter {
           begin.divIdx,
           begin.offset,
           end.offset,
-          "highlight" + highlightSuffix
+          "highlight" + highlightSuffix,
+          isSelected ? null : match.color
         );
       } else {
         selectedLeft = appendTextToDiv(
           begin.divIdx,
           begin.offset,
           infinity.offset,
-          "highlight begin" + highlightSuffix
+          "highlight begin" + highlightSuffix,
+          isSelected ? null : match.color
         );
         for (let n0 = begin.divIdx + 1, n1 = end.divIdx; n0 < n1; n0++) {
           textDivs[n0].className = "highlight middle" + highlightSuffix;
         }
-        beginText(end, "highlight end" + highlightSuffix);
+        beginText(
+          end,
+          "highlight end" + highlightSuffix,
+          isSelected ? null : match.color
+        );
       }
       prevEnd = end;
 
@@ -301,10 +323,9 @@ class TextHighlighter {
     }
     // Convert the matches on the `findController` into the match format
     // used for the textLayer.
-    const pageMatches = findController.pageMatches[pageIdx] || null;
-    const pageMatchesLength = findController.pageMatchesLength[pageIdx] || null;
+    const foundMatches = findController.getAllMatches(pageIdx);
 
-    this.matches = this._convertMatches(pageMatches, pageMatchesLength);
+    this.matches = this._convertMatches(foundMatches);
     this._renderMatches(this.matches);
   }
 }

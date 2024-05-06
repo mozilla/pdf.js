@@ -66,6 +66,7 @@ import { GenericL10n } from "web-null_l10n";
 import { PDFPageView } from "./pdf_page_view.js";
 import { PDFRenderingQueue } from "./pdf_rendering_queue.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
+import {promiseWithResolvers} from "../src/core/promise_with_resolvers.js";
 
 const DEFAULT_CACHE_SIZE = 10;
 
@@ -1071,9 +1072,9 @@ class PDFViewer {
     this._location = null;
     this._pagesRotation = 0;
     this._optionalContentConfigPromise = null;
-    this._firstPageCapability = Promise.withResolvers();
-    this._onePageRenderedCapability = Promise.withResolvers();
-    this._pagesCapability = Promise.withResolvers();
+    this._firstPageCapability = promiseWithResolvers();
+    this._onePageRenderedCapability = promiseWithResolvers();
+    this._pagesCapability = promiseWithResolvers();
     this._scrollMode = ScrollMode.VERTICAL;
     this._previousScrollMode = ScrollMode.UNKNOWN;
     this._spreadMode = SpreadMode.NONE;

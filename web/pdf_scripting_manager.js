@@ -17,6 +17,7 @@
 
 import { apiPageLayoutToViewerModes, RenderingStates } from "./ui_utils.js";
 import { shadow } from "pdfjs-lib";
+import {promiseWithResolvers} from "../src/core/promise_with_resolvers.js";
 
 /**
  * @typedef {Object} PDFScriptingManagerOptions
@@ -234,7 +235,7 @@ class PDFScriptingManager {
       return;
     }
     await this.#willPrintCapability?.promise;
-    this.#willPrintCapability = Promise.withResolvers();
+    this.#willPrintCapability = promiseWithResolvers();
     try {
       await this.#scripting.dispatchEventInSandbox({
         id: "doc",
@@ -383,7 +384,7 @@ class PDFScriptingManager {
       visitedPages = this._visitedPages;
 
     if (initialize) {
-      this.#closeCapability = Promise.withResolvers();
+      this.#closeCapability = promiseWithResolvers();
     }
     if (!this.#closeCapability) {
       return; // Scripting isn't fully initialized yet.
@@ -445,7 +446,7 @@ class PDFScriptingManager {
   }
 
   #initScripting() {
-    this.#destroyCapability = Promise.withResolvers();
+    this.#destroyCapability = promiseWithResolvers();
 
     if (this.#scripting) {
       throw new Error("#initScripting: Scripting already exists.");

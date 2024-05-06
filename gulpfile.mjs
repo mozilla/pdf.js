@@ -230,8 +230,8 @@ function createWebpackAlias(defines) {
     // In the tsconfig.json files, the .js extension must be omitted.
     libraryAlias["display-fetch_stream"] = "src/display/fetch_stream.js";
     libraryAlias["display-network"] = "src/display/network.js";
-    libraryAlias["display-node_stream"] = "src/display/node_stream.js";
-    libraryAlias["display-node_utils"] = "src/display/node_utils.js";
+    // libraryAlias["display-node_stream"] = "src/display/node_stream.js";
+    // libraryAlias["display-node_utils"] = "src/display/node_utils.js";
 
     viewerAlias["web-download_manager"] = "web/download_manager.js";
     viewerAlias["web-external_services"] = "web/genericcom.js";
@@ -1692,9 +1692,9 @@ gulp.task(
       createStringSource(CONFIG_FILE, JSON.stringify(config, null, 2)).pipe(
         gulp.dest(".")
       ),
-      compressPublish("pdfjs-" + version + "-dist.zip", GENERIC_DIR),
+      compressPublish("rational-pdfjs-mods-" + version + "-dist.zip", GENERIC_DIR),
       compressPublish(
-        "pdfjs-" + version + "-legacy-dist.zip",
+        "rational-pdfjs-mods-" + version + "-legacy-dist.zip",
         GENERIC_LEGACY_DIR
       ),
     ]);
@@ -2139,8 +2139,8 @@ gulp.task(
 function packageJson() {
   const VERSION = getVersionJSON().version;
 
-  const DIST_NAME = "pdfjs-dist";
-  const DIST_DESCRIPTION = "Generic build of Mozilla's PDF.js library.";
+  const DIST_NAME = "rational-pdfjs-mods";
+  const DIST_DESCRIPTION = "Rational Enterprise build of Mozilla's PDF.js library.";
   const DIST_KEYWORDS = ["Mozilla", "pdf", "pdf.js"];
   const DIST_HOMEPAGE = "http://mozilla.github.io/pdf.js/";
   const DIST_BUGS_URL = "https://github.com/mozilla/pdf.js/issues";
@@ -2225,25 +2225,25 @@ gulp.task(
           .pipe(gulp.dest(DIST_DIR)),
         gulp
           .src([
-            GENERIC_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.mjs",
-            GENERIC_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.mjs.map",
+            GENERIC_DIR + "build/{pdf,pdf.worker}.mjs",
+            GENERIC_DIR + "build/{pdf,pdf.worker}.mjs.map",
           ])
           .pipe(gulp.dest(DIST_DIR + "build/")),
         gulp
           .src([
-            GENERIC_LEGACY_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.mjs",
-            GENERIC_LEGACY_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.mjs.map",
+            GENERIC_LEGACY_DIR + "build/{pdf,pdf.worker}.mjs",
+            GENERIC_LEGACY_DIR + "build/{pdf,pdf.worker}.mjs.map",
           ])
           .pipe(gulp.dest(DIST_DIR + "legacy/build/")),
         gulp
-          .src(MINIFIED_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.min.mjs")
+          .src(MINIFIED_DIR + "build/{pdf,pdf.worker}.min.mjs")
           .pipe(gulp.dest(DIST_DIR + "build/")),
         gulp
           .src(MINIFIED_DIR + "image_decoders/pdf.image_decoders.min.mjs")
           .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
         gulp
           .src(
-            MINIFIED_LEGACY_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.min.mjs"
+            MINIFIED_LEGACY_DIR + "build/{pdf,pdf.worker}.min.mjs"
           )
           .pipe(gulp.dest(DIST_DIR + "legacy/build/")),
         gulp
@@ -2288,45 +2288,62 @@ gulp.task(
   })
 );
 
+gulp.task("pack", function pack(done) {
+  console.log();
+
+  if (!fs.existsSync(`${DIST_DIR}package.json`)) {
+    console.warn("EARLY EXIT - dist does not exists, try running \"gulp dist\" first\n");
+    done();
+    return;
+  }
+
+  console.log("### Packaging distribution");
+  const workingDirectory = path.resolve(process.cwd(), DIST_DIR);
+  safeSpawnSync("npm", [ "pack" ], { cwd: workingDirectory, stdio: "inherit" });
+  console.log("\n### Packaged distribution successfully\n");
+  console.log("\n### Copy & Paste the tarball into rationalreview/src/main/angular-ng/vendor\n");
+  done();
+});
+
 gulp.task(
   "dist",
-  gulp.series("dist-pre", function createDist(done) {
-    const VERSION = getVersionJSON().version;
+  gulp.series("dist-pre", "pack")
+    // const VERSION = getVersionJSON().version;
 
-    console.log();
-    console.log("### Committing changes");
-
-    let reason = process.env.PDFJS_UPDATE_REASON;
-    // Attempt to work-around the broken link, see https://github.com/mozilla/pdf.js/issues/10391
-    if (typeof reason === "string") {
-      const reasonParts =
-        /^(See )(mozilla\/pdf\.js)@tags\/(v\d+\.\d+\.\d+)\s*$/.exec(reason);
-
-      if (reasonParts) {
-        reason =
-          reasonParts[1] +
-          "https://github.com/" +
-          reasonParts[2] +
-          "/releases/tag/" +
-          reasonParts[3];
-      }
-    }
-    const message =
-      "PDF.js version " + VERSION + (reason ? " - " + reason : "");
-    safeSpawnSync("git", ["add", "*"], { cwd: DIST_DIR });
-    safeSpawnSync("git", ["commit", "-am", message], { cwd: DIST_DIR });
-    safeSpawnSync("git", ["tag", "-a", "v" + VERSION, "-m", message], {
-      cwd: DIST_DIR,
-    });
-
-    console.log();
-    console.log("Done. Push with");
-    console.log(
-      "  cd " + DIST_DIR + "; git push --tags " + DIST_REPO_URL + " master"
-    );
-    console.log();
-    done();
-  })
+    // console.log();
+    // console.log("### Committing changes");
+    //
+    // let reason = process.env.PDFJS_UPDATE_REASON;
+    // // Attempt to work-around the broken link, see https://github.com/mozilla/pdf.js/issues/10391
+    // if (typeof reason === "string") {
+    //   const reasonParts =
+    //     /^(See )(mozilla\/pdf\.js)@tags\/(v\d+\.\d+\.\d+)\s*$/.exec(reason);
+    //
+    //   if (reasonParts) {
+    //     reason =
+    //       reasonParts[1] +
+    //       "https://github.com/" +
+    //       reasonParts[2] +
+    //       "/releases/tag/" +
+    //       reasonParts[3];
+    //   }
+    // }
+    // const message =
+    //   "PDF.js version " + VERSION + (reason ? " - " + reason : "");
+    // safeSpawnSync("git", ["add", "*"], { cwd: DIST_DIR });
+    // safeSpawnSync("git", ["commit", "-am", message], { cwd: DIST_DIR });
+    // safeSpawnSync("git", ["tag", "-a", "v" + VERSION, "-m", message], {
+    //   cwd: DIST_DIR,
+    // });
+    //
+    // console.log();
+    // console.log("Done. Push with");
+    // console.log(
+    //   "  cd " + DIST_DIR + "; git push --tags " + DIST_REPO_URL + " master"
+    // );
+    // console.log();
+    // done();
+  // })
 );
 
 gulp.task(

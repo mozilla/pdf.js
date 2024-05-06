@@ -19,6 +19,7 @@
 
 import { binarySearchFirstItem, scrollIntoView } from "./ui_utils.js";
 import { getCharacterType, getNormalizeWithNFKC } from "./pdf_find_utils.js";
+import { promiseWithResolvers } from "../src/core/promise_with_resolvers.js";
 
 const FindState = {
   FOUND: 0,
@@ -378,10 +379,36 @@ function getOriginalIndex(diffs, pos, len) {
  */
 
 /**
+ * @typedef {Object} PdfFindControllerState
+ * @property {string} query
+ * @property {string} type
+ * @property {boolean} findPrevious
+ * @property {boolean} matchDiacritics
+ * @property {boolean} highlightAll
+ * @property {boolean} caseSensitive
+ * @property {boolean} entireWord
+ * @property {Object} termHighlighting  -- rrc specific properties start here
+ * @property {string} wordsToSearch
+ * @property {boolean} jumpToFirstHighlight
+ */
+
+/**
+ * @typedef {Object} PdfFindControllerMatch
+ * @property {number} position
+ * @property {number} length
+ * @property {string|null} color
+ */
+
+/**
  * Provides search functionality to find a given string in a PDF document.
  */
 class PDFFindController {
+  /** @type {PdfFindControllerState | null}  */
   #state = null;
+
+  #searchMatchIndex = null;
+
+  #termHighlightingMatchIndex = null;
 
   #updateMatchesCountOnProgress = true;
 
@@ -410,12 +437,32 @@ class PDFFindController {
     return this._highlightMatches;
   }
 
+  get termHighlighting() {
+    return this.#state.termHighlighting ?? {};
+  }
+
+  get isTermHighlightingActive() {
+    return Object.keys(this.termHighlighting).length !== 0;
+  }
+
   get pageMatches() {
     return this._pageMatches;
   }
 
   get pageMatchesLength() {
     return this._pageMatchesLength;
+  }
+
+  get pageHighlights() {
+    return this._pageHighlights;
+  }
+
+  get pageHighlightsLength() {
+    return this._pageHighlightsLength;
+  }
+
+  get pageHighlightsColors() {
+    return this._pageHighlightsColors;
   }
 
   get selected() {
@@ -550,6 +597,9 @@ class PDFFindController {
     this._pdfDocument = null;
     this._pageMatches = [];
     this._pageMatchesLength = [];
+    this._pageHighlights = [];
+    this._pageHighlightsLength = [];
+    this._pageHighlightsColors = [];
     this.#visitedPagesCount = 0;
     this.#state = null;
     // Currently selected match.
@@ -575,7 +625,7 @@ class PDFFindController {
     clearTimeout(this._findTimeout);
     this._findTimeout = null;
 
-    this._firstPageCapability = Promise.withResolvers();
+    this._firstPageCapability = promiseWithResolvers();
   }
 
   /**
@@ -583,6 +633,13 @@ class PDFFindController {
    */
   get #query() {
     const { query } = this.#state;
+    return this.#normalizeQuery(query);
+  }
+
+  /**
+   * @type {string|Array} The (current) normalized search query.
+   */
+  #normalizeQuery(query) {
     if (typeof query === "string") {
       if (query !== this._rawQuery) {
         this._rawQuery = query;
@@ -670,33 +727,46 @@ class PDFFindController {
     return true;
   }
 
-  #calculateRegExpMatch(query, entireWord, pageIndex, pageContent) {
+  #calculateRegExpMatch(queries, entireWord, pageIndex, pageContent) {
     const matches = (this._pageMatches[pageIndex] = []);
     const matchesLength = (this._pageMatchesLength[pageIndex] = []);
-    if (!query) {
+    const highlights = (this._pageHighlights[pageIndex] = []);
+    const highlightsLength = (this._pageHighlightsLength[pageIndex] = []);
+    const highlightsColors = (this._pageHighlightsColors[pageIndex] = []);
+
+    if (!queries.length) {
       // The query can be empty because some chars like diacritics could have
       // been stripped out.
       return;
     }
     const diffs = this._pageDiffs[pageIndex];
     let match;
-    while ((match = query.exec(pageContent)) !== null) {
-      if (
-        entireWord &&
-        !this.#isEntireWord(pageContent, match.index, match[0].length)
-      ) {
-        continue;
-      }
 
-      const [matchPos, matchLen] = getOriginalIndex(
-        diffs,
-        match.index,
-        match[0].length
-      );
+    for (const { query, color } of queries) {
+      while ((match = query.exec(pageContent)) !== null) {
+        if (
+          entireWord &&
+          !this.#isEntireWord(pageContent, match.index, match[0].length)
+        ) {
+          continue;
+        }
 
-      if (matchLen) {
-        matches.push(matchPos);
-        matchesLength.push(matchLen);
+        const [matchPos, matchLen] = getOriginalIndex(
+          diffs,
+          match.index,
+          match[0].length
+        );
+
+        if (matchLen) {
+          if (color === null) {
+            matches.push(matchPos);
+            matchesLength.push(matchLen);
+          } else {
+            highlights.push(matchPos);
+            highlightsLength.push(matchLen);
+            highlightsColors.push(color);
+          }
+        }
       }
     }
   }
@@ -771,16 +841,10 @@ class PDFFindController {
     return [isUnicode, query];
   }
 
-  #calculateMatch(pageIndex) {
-    let query = this.#query;
-    if (query.length === 0) {
-      return; // Do nothing: the matches should be wiped out already.
-    }
-    const { caseSensitive, entireWord } = this.#state;
-    const pageContent = this._pageContents[pageIndex];
-    const hasDiacritics = this._hasDiacritics[pageIndex];
-
+  #convertToRegExp(_query, hasDiacritics) {
     let isUnicode = false;
+    let query = _query;
+
     if (typeof query === "string") {
       [isUnicode, query] = this.#convertToRegExpString(query, hasDiacritics);
     } else {
@@ -800,10 +864,46 @@ class PDFFindController {
         .join("|");
     }
 
-    const flags = `g${isUnicode ? "u" : ""}${caseSensitive ? "" : "i"}`;
-    query = query ? new RegExp(query, flags) : null;
+    const flags = `g${isUnicode ? "u" : ""}${this.#state.caseSensitive ? "" : "i"}`;
+    return query ? new RegExp(query, flags) : null;
+  }
 
-    this.#calculateRegExpMatch(query, entireWord, pageIndex, pageContent);
+  #calculateMatch(pageIndex) {
+    const query = this.#query;
+    const termHighlighting = this.termHighlighting;
+    if (query.length === 0 && Object.keys(termHighlighting).length === 0) {
+      return; // Do nothing: the matches should be wiped out already.
+    }
+
+    const { entireWord } = this.#state;
+    const pageContent = this._pageContents[pageIndex];
+    const hasDiacritics = this._hasDiacritics[pageIndex];
+
+    let queries = [
+      {
+        query: this.#convertToRegExp(query, hasDiacritics),
+        color: null,
+      },
+    ];
+
+    const termHighlightingQueries = Object.entries(termHighlighting).map(
+      ([term, color]) => {
+        const termQuery = this.#normalizeQuery(term);
+
+        return {
+          query: this.#convertToRegExp(termQuery, hasDiacritics),
+          color,
+        };
+      }
+    );
+
+    if (termHighlightingQueries.length) {
+      queries.push(...termHighlightingQueries);
+    }
+
+    queries = queries.filter(_query => _query.query !== null);
+
+    this.#calculateRegExpMatch(queries, entireWord, pageIndex, pageContent);
 
     // When `highlightAll` is set, ensure that the matches on previously
     // rendered (and still active) pages are correctly highlighted.
@@ -816,7 +916,11 @@ class PDFFindController {
     }
 
     // Update the match count.
-    const pageMatchesCount = this._pageMatches[pageIndex].length;
+    const pageMatchesCount = this.#getMatchCount(
+      this.pageMatches[pageIndex],
+      this.pageHighlights[pageIndex]
+    );
+
     this._matchesCountTotal += pageMatchesCount;
     if (this.#updateMatchesCountOnProgress) {
       if (pageMatchesCount > 0) {
@@ -838,7 +942,7 @@ class PDFFindController {
     let deferred = Promise.resolve();
     const textOptions = { disableNormalization: true };
     for (let i = 0, ii = this._linkService.pagesCount; i < ii; i++) {
-      const { promise, resolve } = Promise.withResolvers();
+      const { promise, resolve } = promiseWithResolvers();
       this._extractTextPromises[i] = promise;
 
       // eslint-disable-next-line arrow-body-style
@@ -918,7 +1022,9 @@ class PDFFindController {
       this._offset.wrapped = false;
       this._resumePageIdx = null;
       this._pageMatches.length = 0;
+      this._pageHighlights.length = 0;
       this._pageMatchesLength.length = 0;
+      this._pageHighlightsLength.length = 0;
       this.#visitedPagesCount = 0;
       this._matchesCountTotal = 0;
 
@@ -938,8 +1044,7 @@ class PDFFindController {
     }
 
     // If there's no query there's no point in searching.
-    const query = this.#query;
-    if (query.length === 0) {
+    if (!this.#isSearchNeeded()) {
       this.#updateUIState(FindState.FOUND);
       return;
     }
@@ -951,10 +1056,20 @@ class PDFFindController {
     const offset = this._offset;
     // Keep track of how many pages we should maximally iterate through.
     this._pagesToSearch = numPages;
+
     // If there's already a `matchIdx` that means we are iterating through a
     // page's matches.
     if (offset.matchIdx !== null) {
-      const numPageMatches = this._pageMatches[offset.pageIdx].length;
+      offset.matchIdx =
+        this.#state.wordsToSearch === "query"
+          ? this.#searchMatchIndex
+          : this.#termHighlightingMatchIndex;
+
+      const numPageMatches = this.#getMatchCount(
+        this._pageMatches[offset.pageIdx],
+        this._pageHighlights[offset.pageIdx]
+      );
+
       if (
         (!previous && offset.matchIdx + 1 < numPageMatches) ||
         (previous && offset.matchIdx > 0)
@@ -973,9 +1088,9 @@ class PDFFindController {
     this.#nextPageMatch();
   }
 
-  #matchesReady(matches) {
+  #matchesReady(matches, highlights) {
     const offset = this._offset;
-    const numMatches = matches.length;
+    const numMatches = this.#getMatchCount(matches, highlights);
     const previous = this.#state.findPrevious;
 
     if (numMatches) {
@@ -1006,16 +1121,19 @@ class PDFFindController {
     }
 
     let matches = null;
+    let highlights = null;
     do {
       const pageIdx = this._offset.pageIdx;
       matches = this._pageMatches[pageIdx];
-      if (!matches) {
+      highlights = this._pageHighlights[pageIdx];
+
+      if (!matches && !highlights) {
         // The matches don't exist yet for processing by `_matchesReady`,
         // so set a resume point for when they do exist.
         this._resumePageIdx = pageIdx;
         break;
       }
-    } while (!this.#matchesReady(matches));
+    } while (!this.#matchesReady(matches, highlights));
   }
 
   #advanceOffsetPage(previous) {
@@ -1033,29 +1151,42 @@ class PDFFindController {
   }
 
   #updateMatch(found = false) {
-    let state = FindState.NOT_FOUND;
-    const wrapped = this._offset.wrapped;
-    this._offset.wrapped = false;
+    if (this.#state.jumpToFirstHighlight || this.#state.type !== 'find') {
+      let state = FindState.NOT_FOUND;
+      const wrapped = this._offset.wrapped;
+      this._offset.wrapped = false;
 
-    if (found) {
-      const previousPage = this._selected.pageIdx;
-      this._selected.pageIdx = this._offset.pageIdx;
-      this._selected.matchIdx = this._offset.matchIdx;
-      state = wrapped ? FindState.WRAPPED : FindState.FOUND;
+      if (found) {
+        const previousPage = this._selected.pageIdx;
+        this._selected.pageIdx = this._offset.pageIdx;
+        this._selected.matchIdx = this._offset.matchIdx;
+        state = wrapped ? FindState.WRAPPED : FindState.FOUND;
 
-      // Update the currently selected page to wipe out any selected matches.
-      if (previousPage !== -1 && previousPage !== this._selected.pageIdx) {
-        this.#updatePage(previousPage);
+        // Update the currently selected page to wipe out any selected matches.
+        if (previousPage !== -1 && previousPage !== this._selected.pageIdx) {
+          this.#updatePage(previousPage);
+        }
+      }
+
+      this.#updateUIState(state, this.#state.findPrevious);
+      if (this._selected.pageIdx !== -1) {
+        // Ensure that the match will be scrolled into view.
+        this._scrollMatches = true;
+
+        this.#updatePage(this._selected.pageIdx);
       }
     }
 
-    this.#updateUIState(state, this.#state.findPrevious);
-    if (this._selected.pageIdx !== -1) {
-      // Ensure that the match will be scrolled into view.
-      this._scrollMatches = true;
-
-      this.#updatePage(this._selected.pageIdx);
+    if (this.#state.wordsToSearch !== "query") {
+      this.#termHighlightingMatchIndex = this._offset.matchIdx;
+      return;
     }
+
+    this.#searchMatchIndex = this._offset.matchIdx;
+
+    this._eventBus.dispatch("updatefindindex", {
+      index: this.#requestMatchesCount().current,
+    });
   }
 
   #onFindBarClose(evt) {
@@ -1098,7 +1229,12 @@ class PDFFindController {
       total = this._matchesCountTotal;
     if (matchIdx !== -1) {
       for (let i = 0; i < pageIdx; i++) {
-        current += this._pageMatches[i]?.length || 0;
+        const pageMatchCount = this.#getMatchCount(
+          this.pageMatches[i],
+          this.pageHighlights[i]
+        );
+
+        current += pageMatchCount || 0;
       }
       current += matchIdx + 1;
     }
@@ -1136,6 +1272,51 @@ class PDFFindController {
       matchesCount: this.#requestMatchesCount(),
       rawQuery: this.#state?.query ?? null,
     });
+  }
+
+  #getMatchCount(pageMatches, pageHighlights) {
+    if (!this.isTermHighlightingActive) {
+      return pageMatches.length;
+    }
+
+    if (this.#state.wordsToSearch === "both") {
+      return pageMatches.length + pageHighlights.length;
+    } else if (this.#state.wordsToSearch === "termHighlighting") {
+      return pageHighlights.length;
+    }
+
+    return pageMatches.length;
+  }
+
+  #isSearchNeeded() {
+    if (this.#state.termHighlighting) {
+      return true;
+    }
+
+    return this.#query.length > 0;
+  }
+
+  /**
+   * @param {number} pageIndex
+   * @return {PdfFindControllerMatch[]}
+   */
+  getAllMatches(pageIndex) {
+    const pageMatches = this.pageMatches[pageIndex] ?? [];
+    const pageHighlights = this.pageHighlights[pageIndex] ?? [];
+    const pageMatchesLength = this.pageMatchesLength[pageIndex] ?? [];
+    const pageHighlightsLength = this.pageHighlightsLength[pageIndex] ?? [];
+    const pageHighlightsColors = this.pageHighlightsColors[pageIndex] ?? [];
+
+    const allMatches = pageHighlights.concat(pageMatches);
+    const allMatchesLength = pageHighlightsLength.concat(pageMatchesLength);
+
+    return allMatches
+      .map((position, index) => ({
+        position,
+        length: allMatchesLength[index],
+        color: pageHighlightsColors[index],
+      }))
+      .toSorted((a, b) => a.position - b.position);
   }
 }
 

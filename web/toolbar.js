@@ -36,6 +36,8 @@ import {
  *   a non-predefined scale.
  * @property {HTMLButtonElement} previous - Button to go to the previous page.
  * @property {HTMLButtonElement} next - Button to go to the next page.
+ * @property {HTMLButtonElement} previousHighlight - Button to go to the previous highlight.
+ * @property {HTMLButtonElement} nextHighlight - Button to go to the next highlight.
  * @property {HTMLButtonElement} zoomIn - Button to zoom in the pages.
  * @property {HTMLButtonElement} zoomOut - Button to zoom out the pages.
  * @property {HTMLButtonElement} viewFind - Button to open find bar.
@@ -57,6 +59,8 @@ class Toolbar {
     const buttons = [
       { element: options.previous, eventName: "previouspage" },
       { element: options.next, eventName: "nextpage" },
+      { element: options.nextHighlight, eventName: "nextHighlight" },
+      { element: options.previousHighlight, eventName: "nextHighlight" },
       { element: options.zoomIn, eventName: "zoomin" },
       { element: options.zoomOut, eventName: "zoomout" },
       { element: options.print, eventName: "print" },
@@ -111,6 +115,8 @@ class Toolbar {
       },
     ];
 
+    this.#testTermHighlighting(options);
+
     // Bind the event listeners for click and various other actions.
     this.#bindListeners(buttons);
 
@@ -137,6 +143,37 @@ class Toolbar {
     });
 
     this.reset();
+  }
+
+  #testTermHighlighting(options) {
+    this.termHighlighting = {
+      trace: "rgba(255, 0, 255, 0.6)",
+    };
+
+    this.#dispatchHighlightingEvent("find", false);
+
+    options.nextHighlight.addEventListener("click", () => {
+      this.#dispatchHighlightingEvent("again", false);
+    });
+    options.previousHighlight.addEventListener("click", () => {
+      this.#dispatchHighlightingEvent("again", true);
+    });
+  }
+
+  #dispatchHighlightingEvent(type, previous) {
+    this.eventBus.dispatch("find", {
+      source: this,
+      type,
+      query: "",
+      caseSensitive: false,
+      entireWord: true,
+      highlightAll: true,
+      findPrevious: previous,
+      matchDiacritics: false,
+      jumpToFirstHighlight: true,
+      wordsToSearch: "termHighlighting",
+      termHighlighting: this.termHighlighting,
+    });
   }
 
   #setAnnotationEditorUIManager(uiManager, parentContainer) {

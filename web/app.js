@@ -85,6 +85,7 @@ import { Preferences } from "web-preferences";
 import { SecondaryToolbar } from "web-secondary_toolbar";
 import { Toolbar } from "web-toolbar";
 import { ViewHistory } from "./view_history.js";
+import {promiseWithResolvers} from "../src/core/promise_with_resolvers.js";
 
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
 const WHEEL_ZOOM_DISABLED_TIMEOUT = 1000; // ms
@@ -98,7 +99,7 @@ const ViewOnLoad = {
 const PDFViewerApplication = {
   initialBookmark: document.location.hash.substring(1),
   _initializedCapability: {
-    ...Promise.withResolvers(),
+    ...promiseWithResolvers(),
     settled: false,
   },
   appConfig: null,

@@ -13,15 +13,6 @@
  * limitations under the License.
  */
 
-// Ensure that the viewer waits for the library to complete loading,
-// to avoid breaking e.g. the standalone viewer components (see issue 17228).
-if (
-  (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-  !globalThis.pdfjsLib
-) {
-  await globalThis.pdfjsLibPromise;
-}
-
 const {
   AbortException,
   AnnotationEditorLayer,
@@ -68,7 +59,7 @@ const {
   VerbosityLevel,
   version,
   XfaLayer,
-} = globalThis.pdfjsLib;
+} = globalThis.pdfjsLib || import("pdfjs-lib");
 
 export {
   AbortException,

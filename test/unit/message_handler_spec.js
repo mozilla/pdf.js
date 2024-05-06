@@ -19,6 +19,7 @@ import {
 } from "../../src/shared/util.js";
 import { LoopbackPort } from "../../src/display/api.js";
 import { MessageHandler } from "../../src/shared/message_handler.js";
+import {promiseWithResolvers} from "../../src/core/promise_with_resolvers.js";
 
 describe("message_handler", function () {
   // Sleep function to wait for sometime, similar to setTimeout but faster.
@@ -335,7 +336,7 @@ describe("message_handler", function () {
     it("should ignore any pull after close is called", async function () {
       let log = "";
       const port = new LoopbackPort();
-      const { promise, resolve } = Promise.withResolvers();
+      const { promise, resolve } = promiseWithResolvers();
       const messageHandler2 = new MessageHandler("worker", "main", port);
       messageHandler2.on("fakeHandler", (data, sink) => {
         sink.onPull = function () {

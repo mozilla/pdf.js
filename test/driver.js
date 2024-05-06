@@ -14,6 +14,8 @@
  */
 /* globals pdfjsLib, pdfjsViewer */
 
+import {promiseWithResolvers} from "../src/core/promise_with_resolvers.js";
+
 const {
   AnnotationLayer,
   AnnotationMode,
@@ -1111,7 +1113,7 @@ class Driver {
   }
 
   _send(url, message) {
-    const { promise, resolve } = Promise.withResolvers();
+    const { promise, resolve } = promiseWithResolvers();
     this.inflight.textContent = this.inFlightRequests++;
 
     fetch(url, {

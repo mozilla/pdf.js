@@ -18,6 +18,7 @@
 
 import { AbortException, Util } from "../shared/util.js";
 import { setLayerDimensions } from "./display_utils.js";
+import {promiseWithResolvers} from "../core/promise_with_resolvers.js";
 
 /**
  * Text layer render parameters.
@@ -326,7 +327,7 @@ class TextLayerRenderTask {
     this._reader = null;
     this._textDivProperties = textDivProperties || new WeakMap();
     this._canceled = false;
-    this._capability = Promise.withResolvers();
+    this._capability = promiseWithResolvers();
     this._layoutTextParams = {
       prevFontSize: null,
       prevFontFamily: null,
@@ -426,7 +427,7 @@ class TextLayerRenderTask {
    * @private
    */
   _render() {
-    const { promise, resolve, reject } = Promise.withResolvers();
+    const { promise, resolve, reject } = promiseWithResolvers();
     let styleCache = Object.create(null);
 
     if (this._isReadableStream) {

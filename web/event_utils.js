@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import {promiseWithResolvers} from "../src/core/promise_with_resolvers.js";
+
 const WaitOnType = {
   EVENT: "event",
   TIMEOUT: "timeout",
@@ -43,7 +45,7 @@ async function waitOnEventOrTimeout({ target, name, delay = 0 }) {
   ) {
     throw new Error("waitOnEventOrTimeout - invalid parameters.");
   }
-  const { promise, resolve } = Promise.withResolvers();
+  const { promise, resolve } = promiseWithResolvers();
   const ac = new AbortController();
 
   function handler(type) {
