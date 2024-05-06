@@ -69,6 +69,8 @@ function getViewerConfiguration() {
         "editorStampParamsToolbar"
       ),
       download: document.getElementById("download"),
+      saveCfaz: document.getElementById("saveCfaz"),
+      backButton: document.getElementById("backButton"),
     },
     secondaryToolbar: {
       toolbar: document.getElementById("secondaryToolbar"),
@@ -176,6 +178,11 @@ function getViewerConfiguration() {
       editorHighlightShowAll: document.getElementById("editorHighlightShowAll"),
     },
     printContainer: document.getElementById("printContainer"),
+    saveCfazDialog: {
+      dialog: document.getElementById("saveCfazDialog"),
+      message: document.getElementById("saveCfazDialogMessage"),
+      closeButton: document.getElementById("saveCfazDialogClose")
+    }
   };
 }
 

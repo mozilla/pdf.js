@@ -203,6 +203,7 @@ function createWebpackAlias(defines) {
     "web-pdf_attachment_viewer": "web/pdf_attachment_viewer.js",
     "web-pdf_cursor_tools": "web/pdf_cursor_tools.js",
     "web-pdf_document_properties": "web/pdf_document_properties.js",
+    "web-pdf_save_cfaz_dialog": "web/pdf_save_cfaz_dialog.js",
     "web-pdf_find_bar": "web/pdf_find_bar.js",
     "web-pdf_layer_viewer": "web/pdf_layer_viewer.js",
     "web-pdf_outline_viewer": "web/pdf_outline_viewer.js",
