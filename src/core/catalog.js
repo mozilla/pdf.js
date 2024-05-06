@@ -15,6 +15,7 @@
 
 import {
   collectActions,
+  isNumberArray,
   MissingDataException,
   PDF_VERSION_REGEXP,
   recoverJsURL,
@@ -388,8 +389,7 @@ class Catalog {
 
       // We only need to parse the color when it's valid, and non-default.
       if (
-        Array.isArray(color) &&
-        color.length === 3 &&
+        isNumberArray(color, 3) &&
         (color[0] !== 0 || color[1] !== 0 || color[2] !== 0)
       ) {
         rgbColor = ColorSpace.singletons.rgb.getRgb(color, 0);

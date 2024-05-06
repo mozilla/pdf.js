@@ -2465,10 +2465,9 @@ class CanvasGraphics {
     this.save();
     this.baseTransformStack.push(this.baseTransform);
 
-    if (Array.isArray(matrix) && matrix.length === 6) {
+    if (matrix) {
       this.transform(...matrix);
     }
-
     this.baseTransform = getCurrentTransform(this.ctx);
 
     if (bbox) {
@@ -2652,7 +2651,7 @@ class CanvasGraphics {
       this.ctx.setTransform(...this.baseTransform);
     }
 
-    if (Array.isArray(rect) && rect.length === 4) {
+    if (rect) {
       const width = rect[2] - rect[0];
       const height = rect[3] - rect[1];
 
