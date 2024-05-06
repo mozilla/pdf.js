@@ -19,7 +19,7 @@
 
 import { binarySearchFirstItem, scrollIntoView } from "./ui_utils.js";
 import { getCharacterType, getNormalizeWithNFKC } from "./pdf_find_utils.js";
-import {promiseWithResolvers} from "../src/core/promise_with_resolvers.js";
+import { promiseWithResolvers } from "../src/core/promise_with_resolvers.js";
 
 const FindState = {
   FOUND: 0,
@@ -389,7 +389,6 @@ function getOriginalIndex(diffs, pos, len) {
  * @property {Object} termHighlighting  -- rrc specific properties start here
  * @property {string} wordsToSearch
  * @property {boolean} jumpToFirstHighlight
- * @property {string} findControllerCommand
  */
 
 /**
@@ -439,6 +438,10 @@ class PDFFindController {
 
   get termHighlighting() {
     return this.#state.termHighlighting ?? {};
+  }
+
+  get isTermHighlightingActive() {
+    return Object.keys(this.termHighlighting).length === 0;
   }
 
   get pageMatches() {
@@ -1147,10 +1150,7 @@ class PDFFindController {
   }
 
   #updateMatch(found = false) {
-    if (
-      this.#state.jumpToFirstHighlight ||
-      this.#state.findControllerCommand !== "find"
-    ) {
+    if (this.#state.jumpToFirstHighlight) {
       let state = FindState.NOT_FOUND;
       const wrapped = this._offset.wrapped;
       this._offset.wrapped = false;
@@ -1274,7 +1274,7 @@ class PDFFindController {
   }
 
   #getMatchCount(pageMatches, pageHighlights) {
-    if (!this.#state.termHighlighting) {
+    if (!this.isTermHighlightingActive) {
       return pageMatches.length;
     }
 
