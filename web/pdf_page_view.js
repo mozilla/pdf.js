@@ -908,7 +908,6 @@ class PDFPageView {
     // overflow will be hidden in Firefox.
     const canvasWrapper = document.createElement("div");
     canvasWrapper.classList.add("canvasWrapper");
-    canvasWrapper.setAttribute("aria-hidden", true);
     this.#addLayer(canvasWrapper, "canvasWrapper");
 
     if (
