@@ -47,6 +47,8 @@ function getViewerConfiguration() {
       customScaleOption: document.getElementById("customScaleOption"),
       previous: document.getElementById("previous"),
       next: document.getElementById("next"),
+      previousHighlight: document.getElementById("previousHighlight"),
+      nextHighlight: document.getElementById("nextHighlight"),
       zoomIn: document.getElementById("zoomIn"),
       zoomOut: document.getElementById("zoomOut"),
       viewFind: document.getElementById("viewFind"),

@@ -442,7 +442,7 @@ class PDFFindController {
   }
 
   get isTermHighlightingActive() {
-    return Object.keys(this.termHighlighting).length === 0;
+    return Object.keys(this.termHighlighting).length !== 0;
   }
 
   get pageMatches() {
@@ -1057,14 +1057,14 @@ class PDFFindController {
     // Keep track of how many pages we should maximally iterate through.
     this._pagesToSearch = numPages;
 
-    offset.matchIdx =
-      this.#state.wordsToSearch === "query"
-        ? this.#searchMatchIndex
-        : this.#termHighlightingMatchIndex;
-
     // If there's already a `matchIdx` that means we are iterating through a
     // page's matches.
     if (offset.matchIdx !== null) {
+      offset.matchIdx =
+        this.#state.wordsToSearch === "query"
+          ? this.#searchMatchIndex
+          : this.#termHighlightingMatchIndex;
+
       const numPageMatches = this.#getMatchCount(
         this._pageMatches[offset.pageIdx],
         this._pageHighlights[offset.pageIdx]

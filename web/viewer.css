@@ -898,6 +898,16 @@ body {
   mask-image: var(--toolbarButton-pageDown-icon);
 }
 
+#previousHighlight::before {
+  mask-image: var(--toolbarButton-pageDown-icon);
+  rotate: 90deg;
+}
+
+#nextHighlight::before {
+  mask-image: var(--toolbarButton-pageUp-icon);
+  rotate: 90deg;
+}
+
 #zoomOut::before {
   mask-image: var(--toolbarButton-zoomOut-icon);
 }
