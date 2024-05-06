@@ -913,8 +913,8 @@ class PDFFindController {
 
     // Update the match count.
     const pageMatchesCount = this.#getMatchCount(
-      this._pageMatches[pageIndex],
-      this._pageHighlights[pageIndex]
+      this.pageMatches[pageIndex],
+      this.pageHighlights[pageIndex]
     );
 
     this._matchesCountTotal += pageMatchesCount;
@@ -1052,17 +1052,18 @@ class PDFFindController {
     const offset = this._offset;
     // Keep track of how many pages we should maximally iterate through.
     this._pagesToSearch = numPages;
+
+    offset.matchIdx =
+      this.#state.wordsToSearch === "query"
+        ? this.#searchMatchIndex
+        : this.#termHighlightingMatchIndex;
+
     // If there's already a `matchIdx` that means we are iterating through a
     // page's matches.
     if (offset.matchIdx !== null) {
-      offset.matchIdx =
-        this.#state.wordsToSearch === "query"
-          ? this.#searchMatchIndex
-          : this.#termHighlightingMatchIndex;
-
       const numPageMatches = this.#getMatchCount(
         this._pageMatches[offset.pageIdx],
-        this._highlightMatches[offset.pageIdx]
+        this._pageHighlights[offset.pageIdx]
       );
 
       if (
