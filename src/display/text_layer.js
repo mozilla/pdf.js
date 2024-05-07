@@ -16,7 +16,7 @@
 /** @typedef {import("./display_utils").PageViewport} PageViewport */
 /** @typedef {import("./api").TextContent} TextContent */
 
-import { AbortException, Util } from "../shared/util.js";
+import { AbortException, Util, warn } from "../shared/util.js";
 import { setLayerDimensions } from "./display_utils.js";
 
 /**
@@ -282,23 +282,6 @@ function layout(params) {
   }
 }
 
-function render(task) {
-  if (task._canceled) {
-    return;
-  }
-  const textDivs = task._textDivs;
-  const capability = task._capability;
-  const textDivsLength = textDivs.length;
-
-  // No point in rendering many divs as it would make the browser
-  // unusable even after the divs are rendered.
-  if (textDivsLength > MAX_TEXT_DIVS_TO_RENDER) {
-    capability.resolve();
-    return;
-  }
-  capability.resolve();
-}
-
 class TextLayerRenderTask {
   #reader = null;
 
@@ -389,7 +372,19 @@ class TextLayerRenderTask {
    * @private
    */
   _processItems(items) {
+    const textDivs = this._textDivs,
+      textContentItemsStr = this._textContentItemsStr;
+
     for (const item of items) {
+      // No point in rendering many divs as it would make the browser
+      // unusable even after the divs are rendered.
+      if (textDivs.length > MAX_TEXT_DIVS_TO_RENDER) {
+        warn("Ignoring additional textDivs for performance reasons.");
+
+        this._processItems = () => {}; // Avoid multiple warnings for one page.
+        return;
+      }
+
       if (item.str === undefined) {
         if (
           item.type === "beginMarkedContentProps" ||
@@ -407,7 +402,7 @@ class TextLayerRenderTask {
         }
         continue;
       }
-      this._textContentItemsStr.push(item.str);
+      textContentItemsStr.push(item.str);
       appendText(this, item);
     }
   }
@@ -435,28 +430,22 @@ class TextLayerRenderTask {
    * @private
    */
   _render() {
-    const { promise, resolve, reject } = Promise.withResolvers();
     const styleCache = this._styleCache;
 
     const pump = () => {
       this.#reader.read().then(({ value, done }) => {
         if (done) {
-          resolve();
+          this._capability.resolve();
           return;
         }
 
         Object.assign(styleCache, value.styles);
         this._processItems(value.items);
         pump();
-      }, reject);
+      }, this._capability.reject);
     };
-
     this.#reader = this.#textContentSource.getReader();
     pump();
-
-    promise.then(() => {
-      render(this);
-    }, this._capability.reject);
   }
 }
 
