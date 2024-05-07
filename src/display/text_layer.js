@@ -162,7 +162,7 @@ function getAscent(fontFamily) {
   return DEFAULT_FONT_ASCENT;
 }
 
-function appendText(task, geom, styles) {
+function appendText(task, geom) {
   // Initialize all used properties to keep the caches monomorphic.
   const textDiv = document.createElement("span");
   const textDivProperties = {
@@ -176,7 +176,7 @@ function appendText(task, geom, styles) {
 
   const tx = Util.transform(task._transform, geom.transform);
   let angle = Math.atan2(tx[1], tx[0]);
-  const style = styles[geom.fontName];
+  const style = task._styleCache[geom.fontName];
   if (style.vertical) {
     angle += Math.PI / 2;
   }
@@ -343,6 +343,7 @@ class TextLayerRenderTask {
       properties: null,
       ctx: getCtx(),
     };
+    this._styleCache = Object.create(null);
     const { pageWidth, pageHeight, pageX, pageY } = viewport.rawDims;
     this._transform = [1, 0, 0, -1, -pageX, pageY + pageHeight];
     this._pageWidth = pageWidth;
@@ -354,6 +355,7 @@ class TextLayerRenderTask {
     this._capability.promise
       .finally(() => {
         this._layoutTextParams = null;
+        this._styleCache = null;
       })
       .catch(() => {
         // Avoid "Uncaught promise" messages in the console.
@@ -386,7 +388,7 @@ class TextLayerRenderTask {
   /**
    * @private
    */
-  _processItems(items, styleCache) {
+  _processItems(items) {
     for (const item of items) {
       if (item.str === undefined) {
         if (
@@ -406,7 +408,7 @@ class TextLayerRenderTask {
         continue;
       }
       this._textContentItemsStr.push(item.str);
-      appendText(this, item, styleCache);
+      appendText(this, item);
     }
   }
 
@@ -434,7 +436,7 @@ class TextLayerRenderTask {
    */
   _render() {
     const { promise, resolve, reject } = Promise.withResolvers();
-    let styleCache = Object.create(null);
+    const styleCache = this._styleCache;
 
     const pump = () => {
       this.#reader.read().then(({ value, done }) => {
@@ -444,7 +446,7 @@ class TextLayerRenderTask {
         }
 
         Object.assign(styleCache, value.styles);
-        this._processItems(value.items, styleCache);
+        this._processItems(value.items);
         pump();
       }, reject);
     };
@@ -453,7 +455,6 @@ class TextLayerRenderTask {
     pump();
 
     promise.then(() => {
-      styleCache = null;
       render(this);
     }, this._capability.reject);
   }
