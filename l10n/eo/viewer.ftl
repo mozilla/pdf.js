@@ -51,12 +51,6 @@ pdfjs-download-button-label = Elŝuti
 pdfjs-bookmark-button =
     .title = Nuna paĝo (Montri adreson de la nuna paĝo)
 pdfjs-bookmark-button-label = Nuna paĝo
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = Malfermi en programo
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = Malfermi en programo
 
 ##  Secondary toolbar and context menu
 
@@ -306,6 +300,10 @@ pdfjs-editor-highlight-button =
 pdfjs-editor-highlight-button-label = Elstarigi
 pdfjs-highlight-floating-button =
     .title = Elstarigi
+pdfjs-highlight-floating-button1 =
+    .title = Elstarigi
+    .aria-label = Elstarigi
+pdfjs-highlight-floating-button-label = Elstarigi
 
 ## Remove button for the various kind of editor.
 

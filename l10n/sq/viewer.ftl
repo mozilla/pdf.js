@@ -51,12 +51,6 @@ pdfjs-download-button-label = Shkarkoje
 pdfjs-bookmark-button =
     .title = Faqja e Tanishme (Shihni URL nga Faqja e Tanishme)
 pdfjs-bookmark-button-label = Faqja e Tanishme
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = Hape në aplikacion
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = Hape në aplikacion
 
 ##  Secondary toolbar and context menu
 
@@ -295,6 +289,12 @@ pdfjs-editor-stamp-button-label = Shtoni ose përpunoni figura
 pdfjs-editor-highlight-button =
     .title = Theksim
 pdfjs-editor-highlight-button-label = Theksoje
+pdfjs-highlight-floating-button =
+    .title = Theksim
+pdfjs-highlight-floating-button1 =
+    .title = Theksim
+    .aria-label = Theksim
+pdfjs-highlight-floating-button-label = Theksim
 
 ## Remove button for the various kind of editor.
 
@@ -378,3 +378,10 @@ pdfjs-editor-colorpicker-pink =
     .title = Rozë
 pdfjs-editor-colorpicker-red =
     .title = E kuqe
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Shfaqi krejt
+pdfjs-editor-highlight-show-all-button =
+    .title = Shfaqi krejt
