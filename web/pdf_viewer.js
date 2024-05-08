@@ -211,11 +211,11 @@ class PDFViewer {
 
   #containerTopLeft = null;
 
-  #copyCallbackBound = null;
-
   #enableHighlightFloatingButton = false;
 
   #enablePermissions = false;
+
+  #eventAbortController = null;
 
   #mlManager = null;
 
@@ -230,8 +230,6 @@ class PDFViewer {
   #resizeObserver = new ResizeObserver(this.#resizeObserverCallback.bind(this));
 
   #scrollModePageState = null;
-
-  #onVisibilityChange = null;
 
   #scaleTimeoutId = null;
 
@@ -313,7 +311,6 @@ class PDFViewer {
 
     this.scroll = watchScroll(this.container, this._scrollUpdate.bind(this));
     this.presentationModeState = PresentationModeState.UNKNOWN;
-    this._onBeforeDraw = this._onAfterDraw = null;
     this._resetView();
 
     if (
@@ -625,7 +622,7 @@ class PDFViewer {
     return params;
   }
 
-  async #onePageRenderedOrForceFetch() {
+  async #onePageRenderedOrForceFetch(signal) {
     // Unless the viewer *and* its pages are visible, rendering won't start and
     // `this._onePageRenderedCapability` thus won't be resolved.
     // To ensure that automatic printing, on document load, still works even in
@@ -646,23 +643,22 @@ class PDFViewer {
 
     // Handle the window/tab becoming inactive *after* rendering has started;
     // fixes (another part of) bug 1746213.
-    const visibilityChangePromise = new Promise(resolve => {
-      this.#onVisibilityChange = () => {
-        if (document.visibilityState !== "hidden") {
-          return;
-        }
-        resolve();
-      };
-      document.addEventListener("visibilitychange", this.#onVisibilityChange);
+    const hiddenCapability = Promise.withResolvers();
+    function onVisibilityChange() {
+      if (document.visibilityState === "hidden") {
+        hiddenCapability.resolve();
+      }
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange, {
+      signal,
     });
 
     await Promise.race([
       this._onePageRenderedCapability.promise,
-      visibilityChangePromise,
+      hiddenCapability.promise,
     ]);
-    // Ensure that the "visibilitychange" listener is always removed.
-    document.removeEventListener("visibilitychange", this.#onVisibilityChange);
-    this.#onVisibilityChange = null;
+    // Ensure that the "visibilitychange" listener is removed immediately.
+    document.removeEventListener("visibilitychange", onVisibilityChange);
   }
 
   async getAllText() {
@@ -788,6 +784,11 @@ class PDFViewer {
       ? pdfDocument.getPermissions()
       : Promise.resolve();
 
+    const { eventBus, pageColors, viewer } = this;
+
+    this.#eventAbortController = new AbortController();
+    const { signal } = this.#eventAbortController;
+
     // Given that browsers don't handle huge amounts of DOM-elements very well,
     // enforce usage of PAGE-scrolling when loading *very* long/large documents.
     if (pagesCount > PagesCountLimit.FORCE_SCROLL_MODE_PAGE) {
@@ -795,19 +796,19 @@ class PDFViewer {
         "Forcing PAGE-scrolling for performance reasons, given the length of the document."
       );
       const mode = (this._scrollMode = ScrollMode.PAGE);
-      this.eventBus.dispatch("scrollmodechanged", { source: this, mode });
+      eventBus.dispatch("scrollmodechanged", { source: this, mode });
     }
 
     this._pagesCapability.promise.then(
       () => {
-        this.eventBus.dispatch("pagesloaded", { source: this, pagesCount });
+        eventBus.dispatch("pagesloaded", { source: this, pagesCount });
       },
       () => {
         /* Prevent "Uncaught (in promise)"-messages in the console. */
       }
     );
 
-    this._onBeforeDraw = evt => {
+    const onBeforeDraw = evt => {
       const pageView = this._pages[evt.pageNumber - 1];
       if (!pageView) {
         return;
@@ -816,18 +817,17 @@ class PDFViewer {
       // evicted from the buffer and destroyed even if we pause its rendering.
       this.#buffer.push(pageView);
     };
-    this.eventBus._on("pagerender", this._onBeforeDraw);
+    eventBus._on("pagerender", onBeforeDraw, { signal });
 
-    this._onAfterDraw = evt => {
+    const onAfterDraw = evt => {
       if (evt.cssTransform) {
         return;
       }
       this._onePageRenderedCapability.resolve({ timestamp: evt.timestamp });
 
-      this.eventBus._off("pagerendered", this._onAfterDraw);
-      this._onAfterDraw = null;
+      eventBus._off("pagerendered", onAfterDraw); // Remove immediately.
     };
-    this.eventBus._on("pagerendered", this._onAfterDraw);
+    eventBus._on("pagerendered", onAfterDraw, { signal });
 
     // Fetch a single page so we can get a viewport that will be the default
     // viewport for all pages
@@ -846,7 +846,7 @@ class PDFViewer {
           const element = (this.#hiddenCopyElement =
             document.createElement("div"));
           element.id = "hiddenCopyElement";
-          this.viewer.before(element);
+          viewer.before(element);
         }
 
         if (annotationEditorMode !== AnnotationEditorType.DISABLE) {
@@ -857,16 +857,16 @@ class PDFViewer {
           } else if (isValidAnnotationEditorMode(mode)) {
             this.#annotationEditorUIManager = new AnnotationEditorUIManager(
               this.container,
-              this.viewer,
+              viewer,
               this.#altTextManager,
-              this.eventBus,
+              eventBus,
               pdfDocument,
-              this.pageColors,
+              pageColors,
               this.#annotationEditorHighlightColors,
               this.#enableHighlightFloatingButton,
               this.#mlManager
             );
-            this.eventBus.dispatch("annotationeditoruimanager", {
+            eventBus.dispatch("annotationeditoruimanager", {
               source: this,
               uiManager: this.#annotationEditorUIManager,
             });
@@ -879,19 +879,19 @@ class PDFViewer {
         }
 
         const viewerElement =
-          this._scrollMode === ScrollMode.PAGE ? null : this.viewer;
+          this._scrollMode === ScrollMode.PAGE ? null : viewer;
         const scale = this.currentScale;
         const viewport = firstPdfPage.getViewport({
           scale: scale * PixelsPerInch.PDF_TO_CSS_UNITS,
         });
         // Ensure that the various layers always get the correct initial size,
         // see issue 15795.
-        this.viewer.style.setProperty("--scale-factor", viewport.scale);
+        viewer.style.setProperty("--scale-factor", viewport.scale);
         if (
-          this.pageColors?.foreground === "CanvasText" ||
-          this.pageColors?.background === "Canvas"
+          pageColors?.foreground === "CanvasText" ||
+          pageColors?.background === "Canvas"
         ) {
-          this.viewer.style.setProperty(
+          viewer.style.setProperty(
             "--hcm-highlight-filter",
             pdfDocument.filterFactory.addHighlightHCMFilter(
               "highlight",
@@ -901,7 +901,7 @@ class PDFViewer {
               "Highlight"
             )
           );
-          this.viewer.style.setProperty(
+          viewer.style.setProperty(
             "--hcm-highlight-selected-filter",
             pdfDocument.filterFactory.addHighlightHCMFilter(
               "highlight_selected",
@@ -916,7 +916,7 @@ class PDFViewer {
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           const pageView = new PDFPageView({
             container: viewerElement,
-            eventBus: this.eventBus,
+            eventBus,
             id: pageNum,
             scale,
             defaultViewport: viewport.clone(),
@@ -926,7 +926,7 @@ class PDFViewer {
             annotationMode,
             imageResourcesPath: this.imageResourcesPath,
             maxCanvasPixels: this.maxCanvasPixels,
-            pageColors: this.pageColors,
+            pageColors,
             l10n: this.l10n,
             layerProperties: this._layerProperties,
           });
@@ -947,21 +947,24 @@ class PDFViewer {
         // Fetch all the pages since the viewport is needed before printing
         // starts to create the correct size canvas. Wait until one page is
         // rendered so we don't tie up too many resources early on.
-        this.#onePageRenderedOrForceFetch().then(async () => {
+        this.#onePageRenderedOrForceFetch(signal).then(async () => {
+          if (pdfDocument !== this.pdfDocument) {
+            return; // The document was closed while the first page rendered.
+          }
           this.findController?.setDocument(pdfDocument); // Enable searching.
           this._scriptingManager?.setDocument(pdfDocument); // Enable scripting.
 
           if (this.#hiddenCopyElement) {
-            this.#copyCallbackBound = this.#copyCallback.bind(
-              this,
-              textLayerMode
+            document.addEventListener(
+              "copy",
+              this.#copyCallback.bind(this, textLayerMode),
+              { signal }
             );
-            document.addEventListener("copy", this.#copyCallbackBound);
           }
 
           if (this.#annotationEditorUIManager) {
             // Ensure that the Editor buttons, in the toolbar, are updated.
-            this.eventBus.dispatch("annotationeditormodechanged", {
+            eventBus.dispatch("annotationeditormodechanged", {
               source: this,
               mode: this.#annotationEditorMode,
             });
@@ -1011,14 +1014,14 @@ class PDFViewer {
           }
         });
 
-        this.eventBus.dispatch("pagesinit", { source: this });
+        eventBus.dispatch("pagesinit", { source: this });
 
         pdfDocument.getMetadata().then(({ info }) => {
           if (pdfDocument !== this.pdfDocument) {
             return; // The document was closed while the metadata resolved.
           }
           if (info.Language) {
-            this.viewer.lang = info.Language;
+            viewer.lang = info.Language;
           }
         });
 
@@ -1079,21 +1082,9 @@ class PDFViewer {
       pages: [],
     };
 
-    if (this._onBeforeDraw) {
-      this.eventBus._off("pagerender", this._onBeforeDraw);
-      this._onBeforeDraw = null;
-    }
-    if (this._onAfterDraw) {
-      this.eventBus._off("pagerendered", this._onAfterDraw);
-      this._onAfterDraw = null;
-    }
-    if (this.#onVisibilityChange) {
-      document.removeEventListener(
-        "visibilitychange",
-        this.#onVisibilityChange
-      );
-      this.#onVisibilityChange = null;
-    }
+    this.#eventAbortController?.abort();
+    this.#eventAbortController = null;
+
     // Remove the pages from the DOM...
     this.viewer.textContent = "";
     // ... and reset the Scroll mode CSS class(es) afterwards.
@@ -1101,13 +1092,8 @@ class PDFViewer {
 
     this.viewer.removeAttribute("lang");
 
-    if (this.#hiddenCopyElement) {
-      document.removeEventListener("copy", this.#copyCallbackBound);
-      this.#copyCallbackBound = null;
-
-      this.#hiddenCopyElement.remove();
-      this.#hiddenCopyElement = null;
-    }
+    this.#hiddenCopyElement?.remove();
+    this.#hiddenCopyElement = null;
   }
 
   #ensurePageViewVisible() {
