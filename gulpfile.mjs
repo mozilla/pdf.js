@@ -2414,8 +2414,8 @@ gulp.task("externaltest", function (done) {
   });
 
   console.log();
-  console.log("### Running test-fixtures_esprima.js");
-  safeSpawnSync("node", ["external/builder/test-fixtures_esprima.mjs"], {
+  console.log("### Running test-fixtures_babel.js");
+  safeSpawnSync("node", ["external/builder/test-fixtures_babel.mjs"], {
     stdio: "inherit",
   });
   done();
