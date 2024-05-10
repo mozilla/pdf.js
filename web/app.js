@@ -267,7 +267,13 @@ const PDFViewerApplication = {
 
     if (params.get("disableworker") === "true") {
       try {
-        await loadFakeWorker();
+        GlobalWorkerOptions.workerSrc ||= AppOptions.get("workerSrc");
+
+        if (typeof PDFJSDev === "undefined") {
+          globalThis.pdfjsWorker = await import("pdfjs/pdf.worker.js");
+        } else {
+          await __non_webpack_import__(PDFWorker.workerSrc);
+        }
       } catch (ex) {
         console.error(`_parseHashParams: "${ex.message}".`);
       }
@@ -2162,16 +2168,6 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       throw ex;
     }
   };
-}
-
-async function loadFakeWorker() {
-  GlobalWorkerOptions.workerSrc ||= AppOptions.get("workerSrc");
-
-  if (typeof PDFJSDev === "undefined") {
-    globalThis.pdfjsWorker = await import("pdfjs/pdf.worker.js");
-    return;
-  }
-  await __non_webpack_import__(PDFWorker.workerSrc);
 }
 
 async function loadPDFBug(self) {
