@@ -1898,10 +1898,6 @@ const PDFViewerApplication = {
       signal,
     });
 
-    if (AppOptions.get("pdfBug")) {
-      eventBus._on("pagerendered", reportPageStatsPDFBug, { signal });
-      eventBus._on("pagechanging", reportPageStatsPDFBug, { signal });
-    }
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       eventBus._on("fileinputchange", webViewerFileInputChange, { signal });
       eventBus._on("openfile", webViewerOpenFile, { signal });
@@ -2185,16 +2181,6 @@ async function loadPDFBug(self) {
       : await __non_webpack_import__(AppOptions.get("debuggerSrc"));
 
   self._PDFBug = PDFBug;
-}
-
-function reportPageStatsPDFBug({ pageNumber }) {
-  if (!globalThis.Stats?.enabled) {
-    return;
-  }
-  const pageView = PDFViewerApplication.pdfViewer.getPageView(
-    /* index = */ pageNumber - 1
-  );
-  globalThis.Stats.add(pageNumber, pageView?.pdfPage?.stats);
 }
 
 function webViewerPageRender({ pageNumber }) {
