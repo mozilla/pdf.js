@@ -447,16 +447,20 @@ class PDFFunction {
     // seen in our tests.
     const MAX_CACHE_SIZE = 2048 * 4;
     let cache_available = MAX_CACHE_SIZE;
-    const tmpBuf = new Float32Array(numInputs);
+    const input = new Float32Array(numInputs);
 
     return function constructPostScriptFn(src, srcOffset, dest, destOffset) {
       let i, value;
       let key = "";
-      const input = tmpBuf;
       for (i = 0; i < numInputs; i++) {
         value = src[srcOffset + i];
         input[i] = value;
-        key += value + "_";
+        // Fuzzy-match to increase the cache hit rate which helps improve
+        // performance, at the expense of absolute rendering quality.
+        // In practice this seems fine, and in the test-suite there are no
+        // perceivable differences, which is likely because the computed value
+        // will *eventually* be clamped to the [0, 255] range during rendering.
+        key += Math.round(value * 1e8) + "_";
       }
 
       const cachedValue = cache[key];
