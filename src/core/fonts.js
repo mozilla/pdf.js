@@ -3289,44 +3289,6 @@ class Font {
     return builder.toArray();
   }
 
-  get spaceWidth() {
-    // trying to estimate space character width
-    const possibleSpaceReplacements = ["space", "minus", "one", "i", "I"];
-    let width;
-    for (const glyphName of possibleSpaceReplacements) {
-      // if possible, getting width by glyph name
-      if (glyphName in this.widths) {
-        width = this.widths[glyphName];
-        break;
-      }
-      const glyphsUnicodeMap = getGlyphsUnicode();
-      const glyphUnicode = glyphsUnicodeMap[glyphName];
-      // finding the charcode via unicodeToCID map
-      let charcode = 0;
-      if (this.composite && this.cMap.contains(glyphUnicode)) {
-        charcode = this.cMap.lookup(glyphUnicode);
-
-        if (typeof charcode === "string") {
-          charcode = convertCidString(glyphUnicode, charcode);
-        }
-      }
-      // ... via toUnicode map
-      if (!charcode && this.toUnicode) {
-        charcode = this.toUnicode.charCodeOf(glyphUnicode);
-      }
-      // setting it to unicode if negative or undefined
-      if (charcode <= 0) {
-        charcode = glyphUnicode;
-      }
-      // trying to get width via charcode
-      width = this.widths[charcode];
-      if (width) {
-        break; // the non-zero width found
-      }
-    }
-    return shadow(this, "spaceWidth", width || this.defaultWidth);
-  }
-
   /**
    * @private
    */
