@@ -383,7 +383,6 @@ function getDocument(src) {
     },
   };
   const transportParams = {
-    ignoreErrors,
     disableFontFace,
     fontExtraProperties,
     enableXfa,
@@ -2750,8 +2749,7 @@ class WorkerTransport {
 
       switch (type) {
         case "Font":
-          const { disableFontFace, fontExtraProperties, ignoreErrors, pdfBug } =
-            this._params;
+          const { disableFontFace, fontExtraProperties, pdfBug } = this._params;
 
           if ("error" in exportedData) {
             const exportedError = exportedData.error;
@@ -2766,7 +2764,6 @@ class WorkerTransport {
               : null;
           const font = new FontFaceObject(exportedData, {
             disableFontFace,
-            ignoreErrors,
             inspectFont,
           });
 
