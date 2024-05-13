@@ -155,7 +155,14 @@
 
 .pdfViewer .page canvas {
   margin: 0;
+  display: block;
 }
+
+/*#if GENERIC*/
+.pdfViewer .page .canvasWrapper canvas {
+  display: unset;
+}
+/*#endif*/
 
 .pdfViewer .page canvas .structTree {
   contain: strict;
