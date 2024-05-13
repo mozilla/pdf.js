@@ -155,6 +155,7 @@
 
 .pdfViewer .page canvas {
   margin: 0;
+  display: block;
 }
 
 .pdfViewer .page canvas .structTree {
