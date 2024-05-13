@@ -265,9 +265,27 @@ const PDFViewerApplication = {
     const { mainContainer, viewerContainer } = this.appConfig,
       params = parseQueryString(hash);
 
+    const loadPDFBug = async () => {
+      if (this._PDFBug) {
+        return;
+      }
+      const { PDFBug } =
+        typeof PDFJSDev === "undefined"
+          ? await import(AppOptions.get("debuggerSrc")) // eslint-disable-line no-unsanitized/method
+          : await __non_webpack_import__(AppOptions.get("debuggerSrc"));
+
+      this._PDFBug = PDFBug;
+    };
+
     if (params.get("disableworker") === "true") {
       try {
-        await loadFakeWorker();
+        GlobalWorkerOptions.workerSrc ||= AppOptions.get("workerSrc");
+
+        if (typeof PDFJSDev === "undefined") {
+          globalThis.pdfjsWorker = await import("pdfjs/pdf.worker.js");
+        } else {
+          await __non_webpack_import__(PDFWorker.workerSrc);
+        }
       } catch (ex) {
         console.error(`_parseHashParams: "${ex.message}".`);
       }
@@ -306,7 +324,7 @@ const PDFViewerApplication = {
         case "hover":
           viewerContainer.classList.add(`textLayer-${params.get("textlayer")}`);
           try {
-            await loadPDFBug(this);
+            await loadPDFBug();
             this._PDFBug.loadCSS();
           } catch (ex) {
             console.error(`_parseHashParams: "${ex.message}".`);
@@ -315,12 +333,11 @@ const PDFViewerApplication = {
       }
     }
     if (params.has("pdfbug")) {
-      AppOptions.set("pdfBug", true);
-      AppOptions.set("fontExtraProperties", true);
+      AppOptions.setAll({ pdfBug: true, fontExtraProperties: true });
 
       const enabled = params.get("pdfbug").split(",");
       try {
-        await loadPDFBug(this);
+        await loadPDFBug();
         this._PDFBug.init(mainContainer, enabled);
       } catch (ex) {
         console.error(`_parseHashParams: "${ex.message}".`);
@@ -1898,10 +1915,6 @@ const PDFViewerApplication = {
       signal,
     });
 
-    if (AppOptions.get("pdfBug")) {
-      eventBus._on("pagerendered", reportPageStatsPDFBug, { signal });
-      eventBus._on("pagechanging", reportPageStatsPDFBug, { signal });
-    }
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       eventBus._on("fileinputchange", webViewerFileInputChange, { signal });
       eventBus._on("openfile", webViewerOpenFile, { signal });
@@ -2166,35 +2179,6 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       throw ex;
     }
   };
-}
-
-async function loadFakeWorker() {
-  GlobalWorkerOptions.workerSrc ||= AppOptions.get("workerSrc");
-
-  if (typeof PDFJSDev === "undefined") {
-    globalThis.pdfjsWorker = await import("pdfjs/pdf.worker.js");
-    return;
-  }
-  await __non_webpack_import__(PDFWorker.workerSrc);
-}
-
-async function loadPDFBug(self) {
-  const { PDFBug } =
-    typeof PDFJSDev === "undefined"
-      ? await import(AppOptions.get("debuggerSrc")) // eslint-disable-line no-unsanitized/method
-      : await __non_webpack_import__(AppOptions.get("debuggerSrc"));
-
-  self._PDFBug = PDFBug;
-}
-
-function reportPageStatsPDFBug({ pageNumber }) {
-  if (!globalThis.Stats?.enabled) {
-    return;
-  }
-  const pageView = PDFViewerApplication.pdfViewer.getPageView(
-    /* index = */ pageNumber - 1
-  );
-  globalThis.Stats.add(pageNumber, pageView?.pdfPage?.stats);
 }
 
 function webViewerPageRender({ pageNumber }) {
