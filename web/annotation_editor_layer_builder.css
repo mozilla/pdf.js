@@ -502,11 +502,13 @@
 .annotationEditorLayer .stampEditor {
   width: auto;
   height: auto;
-}
 
-.annotationEditorLayer .stampEditor canvas {
-  width: 100%;
-  height: 100%;
+  canvas {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+  }
 }
 
 .annotationEditorLayer {
