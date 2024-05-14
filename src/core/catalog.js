@@ -166,7 +166,7 @@ class Catalog {
     return shadow(
       this,
       "lang",
-      typeof lang === "string" ? stringToPDFString(lang) : null
+      lang && typeof lang === "string" ? stringToPDFString(lang) : null
     );
   }
 
