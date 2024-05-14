@@ -213,6 +213,8 @@ const DefaultStandardFontDataFactory =
  *   when creating canvases. The default value is {new DOMCanvasFactory()}.
  * @property {Object} [filterFactory] - A factory instance that will be used
  *   to create SVG filters when rendering some images on the main canvas.
+ * @property {boolean} [singleUse] - When true the worker will be able to load
+ *   only one PDF document, using the `getDocument` method.
  */
 
 /**
@@ -343,12 +345,13 @@ function getDocument(src) {
       baseUrl: standardFontDataUrl,
     });
   }
-
   if (!worker) {
     const workerParams = {
       verbosity,
       port: GlobalWorkerOptions.workerPort,
+      singleUse: src.singleUse === true,
     };
+
     // Worker was not provided -- creating and owning our own. If message port
     // is specified in global worker options, using it.
     worker = workerParams.port
@@ -452,6 +455,12 @@ function getDocument(src) {
             throw new Error("Loading aborted");
           }
 
+          if (worker._singleUse) {
+            // We don't the messageHandler anymore.
+            worker._messageHandler.destroy();
+            worker._messageHandler = null;
+          }
+
           const messageHandler = new MessageHandler(
             docId,
             workerId,
@@ -489,7 +498,7 @@ async function _fetchDocument(worker, source) {
   }
   const workerId = await worker.messageHandler.sendWithPromise(
     "GetDocRequest",
-    source,
+    { source, singleUse: worker._singleUse },
     source.data ? [source.data.buffer] : null
   );
 
@@ -2069,6 +2078,7 @@ class PDFWorker {
     name = null,
     port = null,
     verbosity = getVerbosityLevel(),
+    singleUse = false,
   } = {}) {
     this.name = name;
     this.destroyed = false;
@@ -2078,6 +2088,7 @@ class PDFWorker {
     this._port = null;
     this._webWorker = null;
     this._messageHandler = null;
+    this._singleUse = singleUse;
 
     if (
       (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
