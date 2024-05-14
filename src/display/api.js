@@ -407,77 +407,69 @@ function getDocument(src) {
         docParams,
         data ? [data.buffer] : null
       );
-      const networkStreamPromise = new Promise(resolve => {
-        let networkStream;
-        if (rangeTransport) {
-          networkStream = new PDFDataTransportStream(rangeTransport, {
-            disableRange,
-            disableStream,
-          });
-        } else if (!data) {
-          if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-            throw new Error("Not implemented: createPDFNetworkStream");
-          }
-          const createPDFNetworkStream = params => {
-            if (
-              typeof PDFJSDev !== "undefined" &&
-              PDFJSDev.test("GENERIC") &&
-              isNodeJS
-            ) {
-              const isFetchSupported = function () {
-                return (
-                  typeof fetch !== "undefined" &&
-                  typeof Response !== "undefined" &&
-                  "body" in Response.prototype
-                );
-              };
-              return isFetchSupported() && isValidFetchUrl(params.url)
-                ? new PDFFetchStream(params)
-                : new PDFNodeStream(params);
-            }
-            return isValidFetchUrl(params.url)
+
+      let networkStream;
+      if (rangeTransport) {
+        networkStream = new PDFDataTransportStream(rangeTransport, {
+          disableRange,
+          disableStream,
+        });
+      } else if (!data) {
+        if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+          throw new Error("Not implemented: createPDFNetworkStream");
+        }
+        const createPDFNetworkStream = params => {
+          if (
+            typeof PDFJSDev !== "undefined" &&
+            PDFJSDev.test("GENERIC") &&
+            isNodeJS
+          ) {
+            const isFetchSupported = function () {
+              return (
+                typeof fetch !== "undefined" &&
+                typeof Response !== "undefined" &&
+                "body" in Response.prototype
+              );
+            };
+            return isFetchSupported() && isValidFetchUrl(params.url)
               ? new PDFFetchStream(params)
-              : new PDFNetworkStream(params);
-          };
+              : new PDFNodeStream(params);
+          }
+          return isValidFetchUrl(params.url)
+            ? new PDFFetchStream(params)
+            : new PDFNetworkStream(params);
+        };
 
-          networkStream = createPDFNetworkStream({
-            url,
-            length,
-            httpHeaders,
-            withCredentials,
-            rangeChunkSize,
-            disableRange,
-            disableStream,
-          });
+        networkStream = createPDFNetworkStream({
+          url,
+          length,
+          httpHeaders,
+          withCredentials,
+          rangeChunkSize,
+          disableRange,
+          disableStream,
+        });
+      }
+
+      return workerIdPromise.then(workerId => {
+        if (task.destroyed) {
+          throw new Error("Loading aborted");
         }
-        resolve(networkStream);
+        if (worker.destroyed) {
+          throw new Error("Worker was destroyed");
+        }
+
+        const messageHandler = new MessageHandler(docId, workerId, worker.port);
+        const transport = new WorkerTransport(
+          messageHandler,
+          task,
+          networkStream,
+          transportParams,
+          transportFactory
+        );
+        task._transport = transport;
+        messageHandler.send("Ready", null);
       });
-
-      return Promise.all([workerIdPromise, networkStreamPromise]).then(
-        function ([workerId, networkStream]) {
-          if (task.destroyed) {
-            throw new Error("Loading aborted");
-          }
-          if (worker.destroyed) {
-            throw new Error("Worker was destroyed");
-          }
-
-          const messageHandler = new MessageHandler(
-            docId,
-            workerId,
-            worker.port
-          );
-          const transport = new WorkerTransport(
-            messageHandler,
-            task,
-            networkStream,
-            transportParams,
-            transportFactory
-          );
-          task._transport = transport;
-          messageHandler.send("Ready", null);
-        }
-      );
     })
     .catch(task._capability.reject);
 
