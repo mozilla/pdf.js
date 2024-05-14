@@ -234,6 +234,26 @@ function babelPluginPDFJSPreprocessor(babel, ctx) {
           }
         },
       },
+      ClassMethod: {
+        exit(path) {
+          const {
+            node,
+            parentPath: { parent: classNode },
+          } = path;
+          if (
+            // Remove empty constructors. We only do this for
+            // base classes, as the default constructor of derived
+            // classes is not empty (and an empty constructor
+            // must throw at runtime when constructed).
+            node.kind === "constructor" &&
+            node.body.body.length === 0 &&
+            node.params.every(p => p.type === "Identifier") &&
+            !classNode.superClass
+          ) {
+            path.remove();
+          }
+        },
+      },
     },
   };
 }

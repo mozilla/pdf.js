@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let errors = 0;
 
-const baseDir = path.join(__dirname, "fixtures_esprima");
+const baseDir = path.join(__dirname, "fixtures_babel");
 const files = fs
   .readdirSync(baseDir)
   .filter(function (name) {
@@ -49,7 +49,7 @@ files.forEach(function (expectationFilename) {
     errors++;
 
     // Allow regenerating the expected output using
-    //   OVERWRITE=true node ./external/builder/test-fixtures_esprima.mjs
+    //   OVERWRITE=true node ./external/builder/test-fixtures_babel.mjs
     if (process.env.OVERWRITE) {
       fs.writeFileSync(expectationFilename, out + "\n");
     }
