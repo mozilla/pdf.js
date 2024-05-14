@@ -14,6 +14,7 @@
  */
 
 import {
+  BaseException,
   bytesToString,
   createValidAbsoluteUrl,
   getModificationDate,
@@ -23,6 +24,25 @@ import {
 } from "../../src/shared/util.js";
 
 describe("util", function () {
+  describe("BaseException", function () {
+    it("can initialize exception classes derived from BaseException", function () {
+      class DerivedException extends BaseException {
+        constructor(message) {
+          super(message, "DerivedException");
+          this.foo = "bar";
+        }
+      }
+
+      const exception = new DerivedException("Something went wrong");
+      expect(exception instanceof DerivedException).toEqual(true);
+      expect(exception instanceof BaseException).toEqual(true);
+      expect(exception.message).toEqual("Something went wrong");
+      expect(exception.name).toEqual("DerivedException");
+      expect(exception.foo).toEqual("bar");
+      expect(exception.stack).toContain("BaseExceptionClosure");
+    });
+  });
+
   describe("bytesToString", function () {
     it("handles non-array arguments", function () {
       expect(function () {
