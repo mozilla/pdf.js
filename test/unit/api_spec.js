@@ -3128,10 +3128,11 @@ describe("api", function () {
     });
 
     it("gets text content", async function () {
-      const { items, styles } = await page.getTextContent();
+      const { items, styles, lang } = await page.getTextContent();
 
       expect(items.length).toEqual(15);
       expect(objectSize(styles)).toEqual(5);
+      expect(lang).toEqual("en");
 
       const text = mergeText(items);
       expect(text).toEqual(`Table Of Content
@@ -3146,13 +3147,14 @@ page 1 / 3`);
       );
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items, styles } = await pdfPage.getTextContent({
+      const { items, styles, lang } = await pdfPage.getTextContent({
         disableNormalization: true,
       });
       expect(items.length).toEqual(1);
       // Font name will be a random object id.
       const fontName = items[0].fontName;
       expect(Object.keys(styles)).toEqual([fontName]);
+      expect(lang).toEqual(null);
 
       expect(items[0]).toEqual({
         dir: "ltr",
