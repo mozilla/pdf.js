@@ -383,7 +383,6 @@ function getDocument(src) {
     },
   };
   const transportParams = {
-    ignoreErrors,
     disableFontFace,
     fontExtraProperties,
     enableXfa,
@@ -2756,7 +2755,7 @@ class WorkerTransport {
 
       switch (type) {
         case "Font":
-          const params = this._params;
+          const { disableFontFace, fontExtraProperties, pdfBug } = this._params;
 
           if ("error" in exportedData) {
             const exportedError = exportedData.error;
@@ -2766,12 +2765,11 @@ class WorkerTransport {
           }
 
           const inspectFont =
-            params.pdfBug && globalThis.FontInspector?.enabled
+            pdfBug && globalThis.FontInspector?.enabled
               ? (font, url) => globalThis.FontInspector.fontAdded(font, url)
               : null;
           const font = new FontFaceObject(exportedData, {
-            disableFontFace: params.disableFontFace,
-            ignoreErrors: params.ignoreErrors,
+            disableFontFace,
             inspectFont,
           });
 
@@ -2779,7 +2777,7 @@ class WorkerTransport {
             .bind(font)
             .catch(() => messageHandler.sendWithPromise("FontFallback", { id }))
             .finally(() => {
-              if (!params.fontExtraProperties && font.data) {
+              if (!fontExtraProperties && font.data) {
                 // Immediately release the `font.data` property once the font
                 // has been attached to the DOM, since it's no longer needed,
                 // rather than waiting for a `PDFDocumentProxy.cleanup` call.

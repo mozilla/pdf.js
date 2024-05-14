@@ -360,17 +360,13 @@ class FontLoader {
 }
 
 class FontFaceObject {
-  constructor(
-    translatedData,
-    { disableFontFace = false, ignoreErrors = false, inspectFont = null }
-  ) {
+  constructor(translatedData, { disableFontFace = false, inspectFont = null }) {
     this.compiledGlyphs = Object.create(null);
     // importing translated data
     for (const i in translatedData) {
       this[i] = translatedData[i];
     }
     this.disableFontFace = disableFontFace === true;
-    this.ignoreErrors = ignoreErrors === true;
     this._inspectFont = inspectFont;
   }
 
@@ -430,9 +426,6 @@ class FontFaceObject {
     try {
       cmds = objs.get(this.loadedName + "_path_" + character);
     } catch (ex) {
-      if (!this.ignoreErrors) {
-        throw ex;
-      }
       warn(`getPathGenerator - ignoring character: "${ex}".`);
     }
 
