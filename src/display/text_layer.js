@@ -16,7 +16,7 @@
 /** @typedef {import("./display_utils").PageViewport} PageViewport */
 /** @typedef {import("./api").TextContent} TextContent */
 
-import { AbortException, Util } from "../shared/util.js";
+import { AbortException, Util, warn } from "../shared/util.js";
 import { setLayerDimensions } from "./display_utils.js";
 
 /**
@@ -162,7 +162,7 @@ function getAscent(fontFamily) {
   return DEFAULT_FONT_ASCENT;
 }
 
-function appendText(task, geom, styles) {
+function appendText(task, geom) {
   // Initialize all used properties to keep the caches monomorphic.
   const textDiv = document.createElement("span");
   const textDivProperties = {
@@ -176,7 +176,7 @@ function appendText(task, geom, styles) {
 
   const tx = Util.transform(task._transform, geom.transform);
   let angle = Math.atan2(tx[1], tx[0]);
-  const style = styles[geom.fontName];
+  const style = task._styleCache[geom.fontName];
   if (style.vertical) {
     angle += Math.PI / 2;
   }
@@ -250,9 +250,7 @@ function appendText(task, geom, styles) {
     textDivProperties.canvasWidth = style.vertical ? geom.height : geom.width;
   }
   task._textDivProperties.set(textDiv, textDivProperties);
-  if (task._isReadableStream) {
-    task._layoutText(textDiv);
-  }
+  task._layoutText(textDiv);
 }
 
 function layout(params) {
@@ -284,30 +282,11 @@ function layout(params) {
   }
 }
 
-function render(task) {
-  if (task._canceled) {
-    return;
-  }
-  const textDivs = task._textDivs;
-  const capability = task._capability;
-  const textDivsLength = textDivs.length;
-
-  // No point in rendering many divs as it would make the browser
-  // unusable even after the divs are rendered.
-  if (textDivsLength > MAX_TEXT_DIVS_TO_RENDER) {
-    capability.resolve();
-    return;
-  }
-
-  if (!task._isReadableStream) {
-    for (const textDiv of textDivs) {
-      task._layoutText(textDiv);
-    }
-  }
-  capability.resolve();
-}
-
 class TextLayerRenderTask {
+  #reader = null;
+
+  #textContentSource = null;
+
   constructor({
     textContentSource,
     container,
@@ -316,14 +295,26 @@ class TextLayerRenderTask {
     textDivProperties,
     textContentItemsStr,
   }) {
-    this._textContentSource = textContentSource;
-    this._isReadableStream = textContentSource instanceof ReadableStream;
+    if (textContentSource instanceof ReadableStream) {
+      this.#textContentSource = textContentSource;
+    } else if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      typeof textContentSource === "object"
+    ) {
+      this.#textContentSource = new ReadableStream({
+        start(controller) {
+          controller.enqueue(textContentSource);
+          controller.close();
+        },
+      });
+    } else {
+      throw new Error('No "textContentSource" parameter specified.');
+    }
     this._container = this._rootContainer = container;
     this._textDivs = textDivs || [];
     this._textContentItemsStr = textContentItemsStr || [];
     this._fontInspectorEnabled = !!globalThis.FontInspector?.enabled;
 
-    this._reader = null;
     this._textDivProperties = textDivProperties || new WeakMap();
     this._canceled = false;
     this._capability = Promise.withResolvers();
@@ -335,6 +326,7 @@ class TextLayerRenderTask {
       properties: null,
       ctx: getCtx(),
     };
+    this._styleCache = Object.create(null);
     const { pageWidth, pageHeight, pageX, pageY } = viewport.rawDims;
     this._transform = [1, 0, 0, -1, -pageX, pageY + pageHeight];
     this._pageWidth = pageWidth;
@@ -346,6 +338,7 @@ class TextLayerRenderTask {
     this._capability.promise
       .finally(() => {
         this._layoutTextParams = null;
+        this._styleCache = null;
       })
       .catch(() => {
         // Avoid "Uncaught promise" messages in the console.
@@ -365,22 +358,33 @@ class TextLayerRenderTask {
    */
   cancel() {
     this._canceled = true;
-    if (this._reader) {
-      this._reader
-        .cancel(new AbortException("TextLayer task cancelled."))
-        .catch(() => {
-          // Avoid "Uncaught promise" messages in the console.
-        });
-      this._reader = null;
-    }
-    this._capability.reject(new AbortException("TextLayer task cancelled."));
+    const abortEx = new AbortException("TextLayer task cancelled.");
+
+    this.#reader?.cancel(abortEx).catch(() => {
+      // Avoid "Uncaught promise" messages in the console.
+    });
+    this.#reader = null;
+
+    this._capability.reject(abortEx);
   }
 
   /**
    * @private
    */
-  _processItems(items, styleCache) {
+  _processItems(items) {
+    const textDivs = this._textDivs,
+      textContentItemsStr = this._textContentItemsStr;
+
     for (const item of items) {
+      // No point in rendering many divs as it would make the browser
+      // unusable even after the divs are rendered.
+      if (textDivs.length > MAX_TEXT_DIVS_TO_RENDER) {
+        warn("Ignoring additional textDivs for performance reasons.");
+
+        this._processItems = () => {}; // Avoid multiple warnings for one page.
+        return;
+      }
+
       if (item.str === undefined) {
         if (
           item.type === "beginMarkedContentProps" ||
@@ -398,8 +402,8 @@ class TextLayerRenderTask {
         }
         continue;
       }
-      this._textContentItemsStr.push(item.str);
-      appendText(this, item, styleCache);
+      textContentItemsStr.push(item.str);
+      appendText(this, item);
     }
   }
 
@@ -426,37 +430,22 @@ class TextLayerRenderTask {
    * @private
    */
   _render() {
-    const { promise, resolve, reject } = Promise.withResolvers();
-    let styleCache = Object.create(null);
+    const styleCache = this._styleCache;
 
-    if (this._isReadableStream) {
-      const pump = () => {
-        this._reader.read().then(({ value, done }) => {
-          if (done) {
-            resolve();
-            return;
-          }
+    const pump = () => {
+      this.#reader.read().then(({ value, done }) => {
+        if (done) {
+          this._capability.resolve();
+          return;
+        }
 
-          Object.assign(styleCache, value.styles);
-          this._processItems(value.items, styleCache);
-          pump();
-        }, reject);
-      };
-
-      this._reader = this._textContentSource.getReader();
-      pump();
-    } else if (this._textContentSource) {
-      const { items, styles } = this._textContentSource;
-      this._processItems(items, styles);
-      resolve();
-    } else {
-      throw new Error('No "textContentSource" parameter specified.');
-    }
-
-    promise.then(() => {
-      styleCache = null;
-      render(this);
-    }, this._capability.reject);
+        Object.assign(styleCache, value.styles);
+        this._processItems(value.items);
+        pump();
+      }, this._capability.reject);
+    };
+    this.#reader = this.#textContentSource.getReader();
+    pump();
   }
 }
 
