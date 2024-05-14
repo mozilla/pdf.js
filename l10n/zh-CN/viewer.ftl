@@ -51,12 +51,6 @@ pdfjs-download-button-label = 下载
 pdfjs-bookmark-button =
     .title = 当前页面（在当前页面查看 URL）
 pdfjs-bookmark-button-label = 当前页面
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = 在应用中打开
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = 在应用中打开
 
 ##  Secondary toolbar and context menu
 
