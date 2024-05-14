@@ -445,10 +445,8 @@ function checkChromePreferencesFile(chromePrefsPath, webPrefs) {
 
 function tweakWebpackOutput(jsName) {
   const replacer = [
-    " __webpack_exports__ = {};",
-    ",__webpack_exports__={};",
-    " __webpack_exports__ = await __webpack_exports__;",
-    "\\(__webpack_exports__=await __webpack_exports__\\)",
+    " __webpack_exports__ = {};", // Normal builds.
+    ",__webpack_exports__={};", // Minified builds.
   ];
   const regex = new RegExp(`(${replacer.join("|")})`, "gm");
 
@@ -458,10 +456,6 @@ function tweakWebpackOutput(jsName) {
         return ` __webpack_exports__ = globalThis.${jsName} = {};`;
       case ",__webpack_exports__={};":
         return `,__webpack_exports__=globalThis.${jsName}={};`;
-      case " __webpack_exports__ = await __webpack_exports__;":
-        return ` __webpack_exports__ = globalThis.${jsName} = await (globalThis.${jsName}Promise = __webpack_exports__);`;
-      case "(__webpack_exports__=await __webpack_exports__)":
-        return `(__webpack_exports__=globalThis.${jsName}=await (globalThis.${jsName}Promise=__webpack_exports__))`;
     }
     return match;
   });
