@@ -300,8 +300,8 @@ pdfjs-editor-stamp-button =
     .title = Dodajanje ali urejanje slik
 pdfjs-editor-stamp-button-label = Dodajanje ali urejanje slik
 pdfjs-editor-highlight-button =
-    .title = Poudarek
-pdfjs-editor-highlight-button-label = Poudarek
+    .title = Označevalnik
+pdfjs-editor-highlight-button-label = Označevalnik
 
 ## Remove button for the various kind of editor.
 
