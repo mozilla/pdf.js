@@ -47,6 +47,10 @@ class TextLayerBuilder {
 
   #textContentSource = null;
 
+  static #textLayers = new Map();
+
+  static #selectionChangeAbortController = null;
+
   constructor({
     highlighter = null,
     accessibilityManager = null,
@@ -75,7 +79,7 @@ class TextLayerBuilder {
     endOfContent.className = "endOfContent";
     this.div.append(endOfContent);
 
-    this.#bindMouse();
+    this.#bindMouse(endOfContent);
   }
 
   get numTextDivs() {
@@ -166,6 +170,7 @@ class TextLayerBuilder {
     this.textContentItemsStr.length = 0;
     this.textDivs.length = 0;
     this.textDivProperties = new WeakMap();
+    TextLayerBuilder.#removeGlobalSelectionListener(this.div);
   }
 
   /**
@@ -181,43 +186,11 @@ class TextLayerBuilder {
    * clicked. This reduces flickering of the content if the mouse is slowly
    * dragged up or down.
    */
-  #bindMouse() {
+  #bindMouse(end) {
     const { div } = this;
 
     div.addEventListener("mousedown", evt => {
-      const end = div.querySelector(".endOfContent");
-      if (!end) {
-        return;
-      }
-      if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-        // On non-Firefox browsers, the selection will feel better if the height
-        // of the `endOfContent` div is adjusted to start at mouse click
-        // location. This avoids flickering when the selection moves up.
-        // However it does not work when selection is started on empty space.
-        let adjustTop = evt.target !== div;
-        if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-          adjustTop &&=
-            getComputedStyle(end).getPropertyValue("-moz-user-select") !==
-            "none";
-        }
-        if (adjustTop) {
-          const divBounds = div.getBoundingClientRect();
-          const r = Math.max(0, (evt.pageY - divBounds.top) / divBounds.height);
-          end.style.top = (r * 100).toFixed(2) + "%";
-        }
-      }
       end.classList.add("active");
-    });
-
-    div.addEventListener("mouseup", () => {
-      const end = div.querySelector(".endOfContent");
-      if (!end) {
-        return;
-      }
-      if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-        end.style.top = "";
-      }
-      end.classList.remove("active");
     });
 
     div.addEventListener("copy", event => {
@@ -231,6 +204,131 @@ class TextLayerBuilder {
       event.preventDefault();
       event.stopPropagation();
     });
+
+    TextLayerBuilder.#textLayers.set(div, end);
+    TextLayerBuilder.#enableGlobalSelectionListener();
+  }
+
+  static #removeGlobalSelectionListener(textLayerDiv) {
+    this.#textLayers.delete(textLayerDiv);
+
+    if (this.#textLayers.size === 0) {
+      this.#selectionChangeAbortController?.abort();
+      this.#selectionChangeAbortController = null;
+    }
+  }
+
+  static #enableGlobalSelectionListener() {
+    if (TextLayerBuilder.#selectionChangeAbortController) {
+      // document-level event listeners already installed
+      return;
+    }
+    TextLayerBuilder.#selectionChangeAbortController = new AbortController();
+
+    const reset = (end, textLayer) => {
+      if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+        textLayer.append(end);
+        end.style.width = "";
+        end.style.height = "";
+      }
+      end.classList.remove("active");
+    };
+
+    document.addEventListener(
+      "pointerup",
+      () => {
+        TextLayerBuilder.#textLayers.forEach(reset);
+      },
+      { signal: TextLayerBuilder.#selectionChangeAbortController.signal }
+    );
+
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+      // eslint-disable-next-line no-var
+      var isFirefox, prevRange;
+    }
+
+    document.addEventListener(
+      "selectionchange",
+      () => {
+        const selection = document.getSelection();
+        if (selection.rangeCount === 0) {
+          TextLayerBuilder.#textLayers.forEach(reset);
+          return;
+        }
+
+        // Even though the spec says that .rangeCount should be 0 or 1, Firefox
+        // creates multiple ranges when selecting across multiple pages.
+        // Make sure to collect all the .textLayer elements where the selection
+        // is happening.
+        const activeTextLayers = new Set();
+        for (let i = 0; i < selection.rangeCount; i++) {
+          const range = selection.getRangeAt(i);
+          for (const textLayerDiv of TextLayerBuilder.#textLayers.keys()) {
+            if (
+              !activeTextLayers.has(textLayerDiv) &&
+              range.intersectsNode(textLayerDiv)
+            ) {
+              activeTextLayers.add(textLayerDiv);
+            }
+          }
+        }
+
+        for (const [textLayerDiv, endDiv] of TextLayerBuilder.#textLayers) {
+          if (activeTextLayers.has(textLayerDiv)) {
+            endDiv.classList.add("active");
+          } else {
+            reset(endDiv, textLayerDiv);
+          }
+        }
+
+        if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+          if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
+            isFirefox = false;
+          } else {
+            isFirefox ??=
+              getComputedStyle(
+                TextLayerBuilder.#textLayers.values().next().value
+              ).getPropertyValue("-moz-user-select") === "none";
+          }
+
+          if (!isFirefox) {
+            // In non-Firefox browsers, when hovering over an empty space (thus,
+            // on .endOfContent), the selection will expand to cover all the
+            // text between the current selection and .endOfContent. By moving
+            // .endOfContent to right after (or before, depending on which side
+            // of the selection the user is moving), we limit the selection jump
+            // to at most cover the enteirety of the <span> where the selection
+            // is being modified.
+            const range = selection.getRangeAt(0);
+            const modifyStart =
+              prevRange &&
+              (range.compareBoundaryPoints(Range.END_TO_END, prevRange) === 0 ||
+                range.compareBoundaryPoints(Range.START_TO_END, prevRange) ===
+                  0);
+            let anchor = modifyStart
+              ? range.startContainer
+              : range.endContainer;
+            if (anchor.nodeType === Node.TEXT_NODE) {
+              anchor = anchor.parentNode;
+            }
+
+            const parentTextLayer = anchor.parentElement.closest(".textLayer");
+            const endDiv = TextLayerBuilder.#textLayers.get(parentTextLayer);
+            if (endDiv) {
+              endDiv.style.width = parentTextLayer.style.width;
+              endDiv.style.height = parentTextLayer.style.height;
+              anchor.parentElement.insertBefore(
+                endDiv,
+                modifyStart ? anchor : anchor.nextSibling
+              );
+            }
+
+            prevRange = range.cloneRange();
+          }
+        }
+      },
+      { signal: TextLayerBuilder.#selectionChangeAbortController.signal }
+    );
   }
 }
 

@@ -17,13 +17,14 @@
   position: absolute;
   text-align: initial;
   inset: 0;
-  overflow: hidden;
+  overflow: clip;
   opacity: 1;
   line-height: 1;
   text-size-adjust: none;
   forced-color-adjust: none;
   transform-origin: 0 0;
   caret-color: CanvasText;
+  z-index: 0;
 
   &.highlighting {
     touch-action: none;
@@ -35,6 +36,11 @@
     white-space: pre;
     cursor: text;
     transform-origin: 0% 0%;
+  }
+
+  > :not(.markedContent),
+  .markedContent span:not(.markedContent) {
+    z-index: 1;
   }
 
   /* Only necessary in Google Chrome, see issue 14205, and most unfortunately
@@ -108,7 +114,7 @@
     display: block;
     position: absolute;
     inset: 100% 0 0;
-    z-index: -1;
+    z-index: 0;
     cursor: default;
     user-select: none;
 

@@ -148,6 +148,27 @@ function getSelectedEditors(page) {
   });
 }
 
+async function getSpanRectFromText(page, pageNumber, text) {
+  await page.waitForSelector(
+    `.page[data-page-number="${pageNumber}"] > .textLayer .endOfContent`
+  );
+  return page.evaluate(
+    (number, content) => {
+      for (const el of document.querySelectorAll(
+        `.page[data-page-number="${number}"] > .textLayer > span`
+      )) {
+        if (el.textContent === content) {
+          const { x, y, width, height } = el.getBoundingClientRect();
+          return { x, y, width, height };
+        }
+      }
+      return null;
+    },
+    pageNumber,
+    text
+  );
+}
+
 async function waitForEvent(page, eventName, timeout = 5000) {
   const handle = await page.evaluateHandle(
     (name, timeOut) => {
@@ -571,6 +592,7 @@ export {
   getSelectedEditors,
   getSelector,
   getSerialized,
+  getSpanRectFromText,
   hover,
   kbBigMoveDown,
   kbBigMoveLeft,
