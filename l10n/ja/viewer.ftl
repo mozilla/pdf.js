@@ -51,12 +51,6 @@ pdfjs-download-button-label = ダウンロード
 pdfjs-bookmark-button =
     .title = 現在のページの URL です (現在のページを表示する URL)
 pdfjs-bookmark-button-label = 現在のページ
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = アプリで開く
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = アプリで開く
 
 ##  Secondary toolbar and context menu
 
