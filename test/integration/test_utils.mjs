@@ -291,16 +291,18 @@ function getAnnotationStorage(page) {
   );
 }
 
-function waitForEntryInStorage(page, key, value) {
+function waitForEntryInStorage(page, key, value, checker = (x, y) => x === y) {
   return page.waitForFunction(
-    (k, v) => {
+    (k, v, c) => {
       const { map } =
         window.PDFViewerApplication.pdfDocument.annotationStorage.serializable;
-      return map && JSON.stringify(map.get(k)) === v;
+      // eslint-disable-next-line no-eval
+      return map && eval(`(${c})`)(JSON.stringify(map.get(k)), v);
     },
     {},
     key,
-    JSON.stringify(value)
+    JSON.stringify(value),
+    checker.toString()
   );
 }
 

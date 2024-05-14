@@ -30,6 +30,7 @@ import {
   scrollIntoView,
   serializeBitmapDimensions,
   waitForAnnotationEditorLayer,
+  waitForEntryInStorage,
   waitForSelectedEditor,
   waitForSerialized,
   waitForStorageEntries,
@@ -694,6 +695,69 @@ describe("Stamp Editor", () => {
           await kbUndo(page);
           await waitForSerialized(page, 1);
           await page.waitForSelector(getEditorSelector(0));
+        })
+      );
+    });
+  });
+
+  describe("Resize a stamp", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that a resized stamp has its canvas at the right position", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorStamp");
+          await page.waitForSelector(".annotationEditorLayer.stampEditing");
+
+          await copyImage(page, "../images/firefox_logo.png", 0);
+          await page.waitForSelector(getEditorSelector(0));
+          await waitForSerialized(page, 1);
+
+          const serializedRect = await getFirstSerialized(page, x => x.rect);
+          const rect = await page.$eval(".resizer.bottomRight", el => {
+            // With Chrome something is wrong when serializing a DomRect,
+            // hence we extract the values and just return them.
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+          const centerX = rect.x + rect.width / 2;
+          const centerY = rect.y + rect.height / 2;
+
+          await page.mouse.move(centerX, centerY);
+          await page.mouse.down();
+          await page.mouse.move(centerX - 500, centerY - 500);
+          await page.mouse.up();
+
+          await waitForEntryInStorage(
+            page,
+            "rect",
+            serializedRect,
+            (x, y) => x !== y
+          );
+
+          const canvasRect = await page.$eval(
+            `${getEditorSelector(0)} canvas`,
+            el => {
+              const { x, y, width, height } = el.getBoundingClientRect();
+              return [x, y, width, height];
+            }
+          );
+          const stampRect = await page.$eval(getEditorSelector(0), el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return [x, y, width, height];
+          });
+
+          expect(
+            canvasRect.every((x, i) => Math.abs(x - stampRect[i]) <= 10)
+          ).toBeTrue();
         })
       );
     });
