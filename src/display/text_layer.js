@@ -162,97 +162,6 @@ function getAscent(fontFamily, lang) {
   return DEFAULT_FONT_ASCENT;
 }
 
-function appendText(task, geom, lang) {
-  // Initialize all used properties to keep the caches monomorphic.
-  const textDiv = document.createElement("span");
-  const textDivProperties = {
-    angle: 0,
-    canvasWidth: 0,
-    hasText: geom.str !== "",
-    hasEOL: geom.hasEOL,
-    fontSize: 0,
-  };
-  task._textDivs.push(textDiv);
-
-  const tx = Util.transform(task._transform, geom.transform);
-  let angle = Math.atan2(tx[1], tx[0]);
-  const style = task._styleCache[geom.fontName];
-  if (style.vertical) {
-    angle += Math.PI / 2;
-  }
-
-  const fontFamily =
-    (task._fontInspectorEnabled && style.fontSubstitution) || style.fontFamily;
-  const fontHeight = Math.hypot(tx[2], tx[3]);
-  const fontAscent = fontHeight * getAscent(fontFamily, lang);
-
-  let left, top;
-  if (angle === 0) {
-    left = tx[4];
-    top = tx[5] - fontAscent;
-  } else {
-    left = tx[4] + fontAscent * Math.sin(angle);
-    top = tx[5] - fontAscent * Math.cos(angle);
-  }
-
-  const scaleFactorStr = "calc(var(--scale-factor)*";
-  const divStyle = textDiv.style;
-  // Setting the style properties individually, rather than all at once,
-  // should be OK since the `textDiv` isn't appended to the document yet.
-  if (task._container === task._rootContainer) {
-    divStyle.left = `${((100 * left) / task._pageWidth).toFixed(2)}%`;
-    divStyle.top = `${((100 * top) / task._pageHeight).toFixed(2)}%`;
-  } else {
-    // We're in a marked content span, hence we can't use percents.
-    divStyle.left = `${scaleFactorStr}${left.toFixed(2)}px)`;
-    divStyle.top = `${scaleFactorStr}${top.toFixed(2)}px)`;
-  }
-  divStyle.fontSize = `${scaleFactorStr}${fontHeight.toFixed(2)}px)`;
-  divStyle.fontFamily = fontFamily;
-
-  textDivProperties.fontSize = fontHeight;
-
-  // Keeps screen readers from pausing on every new text span.
-  textDiv.setAttribute("role", "presentation");
-
-  textDiv.textContent = geom.str;
-  // geom.dir may be 'ttb' for vertical texts.
-  textDiv.dir = geom.dir;
-
-  // `fontName` is only used by the FontInspector, and we only use `dataset`
-  // here to make the font name available in the debugger.
-  if (task._fontInspectorEnabled) {
-    textDiv.dataset.fontName =
-      style.fontSubstitutionLoadedName || geom.fontName;
-  }
-  if (angle !== 0) {
-    textDivProperties.angle = angle * (180 / Math.PI);
-  }
-  // We don't bother scaling single-char text divs, because it has very
-  // little effect on text highlighting. This makes scrolling on docs with
-  // lots of such divs a lot faster.
-  let shouldScaleText = false;
-  if (geom.str.length > 1) {
-    shouldScaleText = true;
-  } else if (geom.str !== " " && geom.transform[0] !== geom.transform[3]) {
-    const absScaleX = Math.abs(geom.transform[0]),
-      absScaleY = Math.abs(geom.transform[3]);
-    // When the horizontal/vertical scaling differs significantly, also scale
-    // even single-char text to improve highlighting (fixes issue11713.pdf).
-    if (
-      absScaleX !== absScaleY &&
-      Math.max(absScaleX, absScaleY) / Math.min(absScaleX, absScaleY) > 1.5
-    ) {
-      shouldScaleText = true;
-    }
-  }
-  if (shouldScaleText) {
-    textDivProperties.canvasWidth = style.vertical ? geom.height : geom.width;
-  }
-  task._textDivProperties.set(textDiv, textDivProperties);
-  task._layoutText(textDiv);
-}
-
 function layout(params) {
   const { div, scale, properties, ctx, prevFontSize, prevFontFamily } = params;
   const { style } = div;
@@ -368,10 +277,7 @@ class TextLayerRenderTask {
     this._capability.reject(abortEx);
   }
 
-  /**
-   * @private
-   */
-  _processItems(items, lang) {
+  #processItems(items, lang) {
     if (!this._layoutTextParams.ctx) {
       this._textDivProperties.set(this._rootContainer, { lang });
       this._layoutTextParams.ctx = getCtx(lang);
@@ -407,17 +313,105 @@ class TextLayerRenderTask {
         continue;
       }
       textContentItemsStr.push(item.str);
-      appendText(this, item, lang);
+      this.#appendText(item, lang);
     }
   }
 
-  /**
-   * @private
-   */
-  _layoutText(textDiv) {
-    const textDivProperties = (this._layoutTextParams.properties =
-      this._textDivProperties.get(textDiv));
+  #appendText(geom, lang) {
+    // Initialize all used properties to keep the caches monomorphic.
+    const textDiv = document.createElement("span");
+    const textDivProperties = {
+      angle: 0,
+      canvasWidth: 0,
+      hasText: geom.str !== "",
+      hasEOL: geom.hasEOL,
+      fontSize: 0,
+    };
+    this._textDivs.push(textDiv);
+
+    const tx = Util.transform(this._transform, geom.transform);
+    let angle = Math.atan2(tx[1], tx[0]);
+    const style = this._styleCache[geom.fontName];
+    if (style.vertical) {
+      angle += Math.PI / 2;
+    }
+
+    const fontFamily =
+      (this._fontInspectorEnabled && style.fontSubstitution) ||
+      style.fontFamily;
+    const fontHeight = Math.hypot(tx[2], tx[3]);
+    const fontAscent = fontHeight * getAscent(fontFamily, lang);
+
+    let left, top;
+    if (angle === 0) {
+      left = tx[4];
+      top = tx[5] - fontAscent;
+    } else {
+      left = tx[4] + fontAscent * Math.sin(angle);
+      top = tx[5] - fontAscent * Math.cos(angle);
+    }
+
+    const scaleFactorStr = "calc(var(--scale-factor)*";
+    const divStyle = textDiv.style;
+    // Setting the style properties individually, rather than all at once,
+    // should be OK since the `textDiv` isn't appended to the document yet.
+    if (this._container === this._rootContainer) {
+      divStyle.left = `${((100 * left) / this._pageWidth).toFixed(2)}%`;
+      divStyle.top = `${((100 * top) / this._pageHeight).toFixed(2)}%`;
+    } else {
+      // We're in a marked content span, hence we can't use percents.
+      divStyle.left = `${scaleFactorStr}${left.toFixed(2)}px)`;
+      divStyle.top = `${scaleFactorStr}${top.toFixed(2)}px)`;
+    }
+    divStyle.fontSize = `${scaleFactorStr}${fontHeight.toFixed(2)}px)`;
+    divStyle.fontFamily = fontFamily;
+
+    textDivProperties.fontSize = fontHeight;
+
+    // Keeps screen readers from pausing on every new text span.
+    textDiv.setAttribute("role", "presentation");
+
+    textDiv.textContent = geom.str;
+    // geom.dir may be 'ttb' for vertical texts.
+    textDiv.dir = geom.dir;
+
+    // `fontName` is only used by the FontInspector, and we only use `dataset`
+    // here to make the font name available in the debugger.
+    if (this._fontInspectorEnabled) {
+      textDiv.dataset.fontName =
+        style.fontSubstitutionLoadedName || geom.fontName;
+    }
+    if (angle !== 0) {
+      textDivProperties.angle = angle * (180 / Math.PI);
+    }
+    // We don't bother scaling single-char text divs, because it has very
+    // little effect on text highlighting. This makes scrolling on docs with
+    // lots of such divs a lot faster.
+    let shouldScaleText = false;
+    if (geom.str.length > 1) {
+      shouldScaleText = true;
+    } else if (geom.str !== " " && geom.transform[0] !== geom.transform[3]) {
+      const absScaleX = Math.abs(geom.transform[0]),
+        absScaleY = Math.abs(geom.transform[3]);
+      // When the horizontal/vertical scaling differs significantly, also scale
+      // even single-char text to improve highlighting (fixes issue11713.pdf).
+      if (
+        absScaleX !== absScaleY &&
+        Math.max(absScaleX, absScaleY) / Math.min(absScaleX, absScaleY) > 1.5
+      ) {
+        shouldScaleText = true;
+      }
+    }
+    if (shouldScaleText) {
+      textDivProperties.canvasWidth = style.vertical ? geom.height : geom.width;
+    }
+    this._textDivProperties.set(textDiv, textDivProperties);
+    this.#layoutText(textDiv, textDivProperties);
+  }
+
+  #layoutText(textDiv, textDivProperties) {
     this._layoutTextParams.div = textDiv;
+    this._layoutTextParams.properties = textDivProperties;
     layout(this._layoutTextParams);
 
     if (textDivProperties.hasText) {
@@ -444,7 +438,7 @@ class TextLayerRenderTask {
         }
 
         Object.assign(styleCache, value.styles);
-        this._processItems(value.items, value.lang);
+        this.#processItems(value.items, value.lang);
         pump();
       }, this._capability.reject);
     };
