@@ -737,34 +737,38 @@ const PDFViewerApplication = {
     return this._initializedCapability.promise;
   },
 
-  zoomIn(steps, scaleFactor) {
+  zoomIn(steps, scaleFactor, center) {
     if (this.pdfViewer.isInPresentationMode) {
-      return;
+        return;
     }
     this.pdfViewer.increaseScale({
-      drawingDelay: AppOptions.get("defaultZoomDelay"),
-      steps,
-      scaleFactor,
+        drawingDelay: AppOptions.get("defaultZoomDelay"),
+        steps: steps,
+        scaleFactor: scaleFactor,
+        center: center
     });
-  },
+},
 
-  zoomOut(steps, scaleFactor) {
+zoomOut(steps, scaleFactor, center) {
     if (this.pdfViewer.isInPresentationMode) {
-      return;
+        return;
     }
     this.pdfViewer.decreaseScale({
-      drawingDelay: AppOptions.get("defaultZoomDelay"),
-      steps,
-      scaleFactor,
+        drawingDelay: AppOptions.get("defaultZoomDelay"),
+        steps: steps,
+        scaleFactor: scaleFactor,
+        center: center
     });
-  },
+},
 
-  zoomReset() {
+zoomReset() {
     if (this.pdfViewer.isInPresentationMode) {
-      return;
+        return;
     }
     this.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
-  },
+},
+
+
 
   get pagesCount() {
     return this.pdfDocument ? this.pdfDocument.numPages : 0;
