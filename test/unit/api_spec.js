@@ -4203,6 +4203,65 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       firstStatsOverall = null;
     });
 
+    it("caches image resources at the document/page level, with corrupt images (issue 18042)", async function () {
+      const { NUM_PAGES_THRESHOLD } = GlobalImageCache;
+
+      const loadingTask = getDocument(buildGetDocumentParams("issue18042.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      let checkedGlobalDecodeFailed = false;
+
+      for (let i = 1; i <= pdfDoc.numPages; i++) {
+        const pdfPage = await pdfDoc.getPage(i);
+        const viewport = pdfPage.getViewport({ scale: 1 });
+
+        const canvasAndCtx = CanvasFactory.create(
+          viewport.width,
+          viewport.height
+        );
+        const renderTask = pdfPage.render({
+          canvasContext: canvasAndCtx.context,
+          viewport,
+        });
+
+        await renderTask.promise;
+        const opList = renderTask.getOperatorList();
+        // The canvas is no longer necessary, since we only care about
+        // the image-data below.
+        CanvasFactory.destroy(canvasAndCtx);
+
+        const { commonObjs, objs } = pdfPage;
+        const imgIndex = opList.fnArray.indexOf(OPS.paintImageXObject);
+        const [objId] = opList.argsArray[imgIndex];
+
+        if (i < NUM_PAGES_THRESHOLD) {
+          expect(objId).toEqual(`img_p${i - 1}_1`);
+
+          expect(objs.has(objId)).toEqual(true);
+          expect(commonObjs.has(objId)).toEqual(false);
+        } else {
+          expect(objId).toEqual(
+            `g_${loadingTask.docId}_img_p${NUM_PAGES_THRESHOLD - 1}_1`
+          );
+
+          expect(objs.has(objId)).toEqual(false);
+          expect(commonObjs.has(objId)).toEqual(true);
+        }
+
+        // Ensure that the actual image data is identical for all pages.
+        const objsPool = i >= NUM_PAGES_THRESHOLD ? commonObjs : objs;
+        const imgData = objsPool.get(objId);
+
+        expect(imgData).toBe(null);
+
+        if (i === NUM_PAGES_THRESHOLD) {
+          checkedGlobalDecodeFailed = true;
+        }
+      }
+      expect(checkedGlobalDecodeFailed).toBeTruthy();
+
+      await loadingTask.destroy();
+    });
+
     it("render for printing, with `printAnnotationStorage` set", async function () {
       async function getPrintData(printAnnotationStorage = null) {
         const canvasAndCtx = CanvasFactory.create(
