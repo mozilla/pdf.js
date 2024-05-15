@@ -2044,8 +2044,8 @@ const PDFViewerApplication = {
         passive: true,
         signal,
       });
-      mainContainer.removeEventListener("scrollend", scrollend, { signal });
-      mainContainer.removeEventListener("blur", scrollend, { signal });
+      mainContainer.removeEventListener("scrollend", scrollend);
+      mainContainer.removeEventListener("blur", scrollend);
     };
     const scroll = () => {
       if (this._isCtrlKeyDown) {
@@ -2059,10 +2059,7 @@ const PDFViewerApplication = {
         return;
       }
 
-      mainContainer.removeEventListener("scroll", scroll, {
-        passive: true,
-        signal,
-      });
+      mainContainer.removeEventListener("scroll", scroll, { passive: true });
       this._isScrolling = true;
       mainContainer.addEventListener("scrollend", scrollend, { signal });
       mainContainer.addEventListener("blur", scrollend, { signal });
