@@ -47,7 +47,6 @@
     "postcss-nesting": "^12.1.4",
     "prettier": "^3.2.5",
     "puppeteer": "^22.8.1",
-    "rimraf": "^3.0.2",
     "streamqueue": "^1.1.2",
     "stylelint": "^16.5.0",
     "stylelint-prettier": "^5.0.0",
