@@ -192,6 +192,8 @@ function layout(params) {
 }
 
 class TextLayerRenderTask {
+  #disableProcessItems = false;
+
   #reader = null;
 
   #textContentSource = null;
@@ -278,6 +280,9 @@ class TextLayerRenderTask {
   }
 
   #processItems(items, lang) {
+    if (this.#disableProcessItems) {
+      return;
+    }
     if (!this._layoutTextParams.ctx) {
       this._textDivProperties.set(this._rootContainer, { lang });
       this._layoutTextParams.ctx = getCtx(lang);
@@ -291,7 +296,7 @@ class TextLayerRenderTask {
       if (textDivs.length > MAX_TEXT_DIVS_TO_RENDER) {
         warn("Ignoring additional textDivs for performance reasons.");
 
-        this._processItems = () => {}; // Avoid multiple warnings for one page.
+        this.#disableProcessItems = true; // Avoid multiple warnings for one page.
         return;
       }
 
