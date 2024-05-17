@@ -2203,6 +2203,15 @@
     "type": "eq"
   },
   {
+    "id": "issue16843-text",
+    "file": "pdfs/issue16843.pdf",
+    "md5": "2845b2f7f02690c388c24c488297028a",
+    "rounds": 1,
+    "link": true,
+    "lastPage": 1,
+    "type": "text"
+  },
+  {
     "id": "issue5509",
     "file": "pdfs/issue5509.pdf",
     "md5": "1975ef8db7355b1d691bc79d0749574b",
