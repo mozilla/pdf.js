@@ -63,6 +63,7 @@ const DEFAULT_FONT_SIZE = 30;
 const DEFAULT_FONT_ASCENT = 0.8;
 const ascentCache = new Map();
 let _canvasContext = null;
+const pendingTextLayers = new Set();
 
 function getCtx(lang = null) {
   if (!_canvasContext) {
@@ -85,6 +86,9 @@ function getCtx(lang = null) {
 }
 
 function cleanupTextLayer() {
+  if (pendingTextLayers.size > 0) {
+    return;
+  }
   _canvasContext?.canvas.remove();
   _canvasContext = null;
 }
@@ -245,9 +249,11 @@ class TextLayerRenderTask {
 
     setLayerDimensions(container, viewport);
 
+    pendingTextLayers.add(this);
     // Always clean-up the temporary canvas once rendering is no longer pending.
     this._capability.promise
       .finally(() => {
+        pendingTextLayers.delete(this);
         this._layoutTextParams = null;
         this._styleCache = null;
       })
