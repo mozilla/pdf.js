@@ -5407,6 +5407,20 @@
     "type": "eq"
   },
   {
+    "id": "issue18117",
+    "file": "pdfs/issue18117.pdf",
+    "md5": "0be6391f9910d807a0ded5e6913ff7e3",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
+    "id": "issue18117-text",
+    "file": "pdfs/issue18117.pdf",
+    "md5": "0be6391f9910d807a0ded5e6913ff7e3",
+    "rounds": 1,
+    "type": "text"
+  },
+  {
     "id": "issue4890",
     "file": "pdfs/issue4890.pdf",
     "md5": "1666feb4cd26318c2bdbea6a175dce87",
