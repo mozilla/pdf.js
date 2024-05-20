@@ -484,8 +484,7 @@ function adjustMapping(charCodeToGlyphId, hasGlyph, newGlyphZeroId, toUnicode) {
   const isInPrivateArea = code =>
     (PRIVATE_USE_AREAS[0][0] <= code && code <= PRIVATE_USE_AREAS[0][1]) ||
     (PRIVATE_USE_AREAS[1][0] <= code && code <= PRIVATE_USE_AREAS[1][1]);
-  for (let originalCharCode in charCodeToGlyphId) {
-    originalCharCode |= 0;
+  for (const originalCharCode in charCodeToGlyphId) {
     let glyphId = charCodeToGlyphId[originalCharCode];
     // For missing glyphs don't create the mappings so the glyph isn't
     // drawn.
@@ -2834,7 +2833,7 @@ class Font {
       data: createPostTable(properties),
     };
 
-    const charCodeToGlyphId = [];
+    const charCodeToGlyphId = Object.create(null);
 
     // Helper function to try to skip mapping of empty glyphs.
     function hasGlyph(glyphId) {
