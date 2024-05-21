@@ -81,7 +81,7 @@ class TextLayer {
 
   static #ascentCache = new Map();
 
-  static #canvasCtx = null;
+  static #canvasContexts = new Map();
 
   static #pendingTextLayers = new Set();
 
@@ -423,13 +423,15 @@ class TextLayer {
       return;
     }
     this.#ascentCache.clear();
-
-    this.#canvasCtx?.canvas.remove();
-    this.#canvasCtx = null;
+    for (const { canvas } of this.#canvasContexts.values()) {
+      canvas.remove();
+    }
+    this.#canvasContexts.clear();
   }
 
   static #getCtx(lang = null) {
-    if (!this.#canvasCtx) {
+    let canvasContext = this.#canvasContexts.get((lang ||= ""));
+    if (!canvasContext) {
       // We don't use an OffscreenCanvas here because we use serif/sans serif
       // fonts with it and they depends on the locale.
       // In Firefox, the <html> element get a lang attribute that depends on
@@ -442,10 +444,12 @@ class TextLayer {
       // OffscreenCanvas.
       const canvas = document.createElement("canvas");
       canvas.className = "hiddenCanvasElement";
+      canvas.lang = lang;
       document.body.append(canvas);
-      this.#canvasCtx = canvas.getContext("2d", { alpha: false });
+      canvasContext = canvas.getContext("2d", { alpha: false });
+      this.#canvasContexts.set(lang, canvasContext);
     }
-    return this.#canvasCtx;
+    return canvasContext;
   }
 
   static #getAscent(fontFamily, lang) {
