@@ -1219,7 +1219,7 @@ class PDFViewer {
   #setScaleUpdatePages(
     newScale,
     newValue,
-    { noScroll = false, preset = false, drawingDelay = -1 }
+    { noScroll = false, preset = false, drawingDelay = -1, origin = null }
   ) {
     this._currentScaleValue = newValue.toString();
 
@@ -1252,6 +1252,7 @@ class PDFViewer {
       }, drawingDelay);
     }
 
+    const previousScale = this._currentScale;
     this._currentScale = newScale;
 
     if (!noScroll) {
@@ -1275,6 +1276,15 @@ class PDFViewer {
         destArray: dest,
         allowNegativeOffset: true,
       });
+      if (Array.isArray(origin)) {
+        // If the origin of the scaling transform is specified, preserve its
+        // location on screen. If not specified, scaling will fix the top-left
+        // corner of the visible PDF area.
+        const scaleDiff = newScale / previousScale - 1;
+        const [top, left] = this.containerTopLeft;
+        this.container.scrollLeft += (origin[0] - left) * scaleDiff;
+        this.container.scrollTop += (origin[1] - top) * scaleDiff;
+      }
     }
 
     this.eventBus.dispatch("scalechanging", {
@@ -2122,13 +2132,15 @@ class PDFViewer {
    * @property {number} [drawingDelay]
    * @property {number} [scaleFactor]
    * @property {number} [steps]
+   * @property {Array} [origin] x and y coordinates of the scale
+   *                            transformation origin.
    */
 
   /**
    * Changes the current zoom level by the specified amount.
    * @param {ChangeScaleOptions} [options]
    */
-  updateScale({ drawingDelay, scaleFactor = null, steps = null }) {
+  updateScale({ drawingDelay, scaleFactor = null, steps = null, origin }) {
     if (steps === null && scaleFactor === null) {
       throw new Error(
         "Invalid updateScale options: either `steps` or `scaleFactor` must be provided."
@@ -2149,7 +2161,7 @@ class PDFViewer {
       } while (--steps > 0);
     }
     newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
-    this.#setScale(newScale, { noScroll: false, drawingDelay });
+    this.#setScale(newScale, { noScroll: false, drawingDelay, origin });
   }
 
   /**
