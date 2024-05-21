@@ -38,7 +38,6 @@ import replace from "gulp-replace";
 import stream from "stream";
 import streamqueue from "streamqueue";
 import TerserPlugin from "terser-webpack-plugin";
-import through from "through2";
 import Vinyl from "vinyl";
 import webpack2 from "webpack";
 import webpackStream from "webpack-stream";
@@ -119,13 +118,16 @@ const DEFINES = Object.freeze({
 });
 
 function transform(charEncoding, transformFunction) {
-  return through.obj(function (vinylFile, enc, done) {
-    const transformedFile = vinylFile.clone();
-    transformedFile.contents = Buffer.from(
-      transformFunction(transformedFile.contents),
-      charEncoding
-    );
-    done(null, transformedFile);
+  return new stream.Transform({
+    objectMode: true,
+    transform(vinylFile, enc, done) {
+      const transformedFile = vinylFile.clone();
+      transformedFile.contents = Buffer.from(
+        transformFunction(transformedFile.contents),
+        charEncoding
+      );
+      done(null, transformedFile);
+    },
   });
 }
 

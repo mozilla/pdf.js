@@ -50,7 +50,6 @@
     "stylelint": "^16.5.0",
     "stylelint-prettier": "^5.0.0",
     "terser-webpack-plugin": "^5.3.10",
-    "through2": "^4.0.2",
     "tsc-alias": "^1.8.10",
     "ttest": "^4.0.0",
     "typescript": "^5.4.5",
