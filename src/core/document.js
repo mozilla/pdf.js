@@ -411,6 +411,8 @@ class Page {
     intent,
     cacheKey,
     annotationStorage = null,
+    isEditing = false,
+    modifiedIds = null,
   }) {
     const contentStreamPromise = this.getContentStream();
     const resourcesPromise = this.loadResources([
@@ -579,7 +581,9 @@ class Page {
         if (
           intentAny ||
           (intentDisplay &&
-            annotation.mustBeViewed(annotationStorage, renderForms)) ||
+            annotation.mustBeViewed(annotationStorage, renderForms) &&
+            ((isEditing && annotation.mustBeViewedWhenEditing()) ||
+              (!isEditing && !modifiedIds?.has(annotation.data.id)))) ||
           (intentPrint && annotation.mustBePrinted(annotationStorage))
         ) {
           opListPromises.push(
