@@ -359,6 +359,12 @@ const PDFViewerApplication = {
           params.get("highlighteditorcolors")
         );
       }
+      if (params.has("maxcanvaspixels")) {
+        AppOptions.set(
+          "maxCanvasPixels",
+          Number(params.get("maxcanvaspixels"))
+        );
+      }
       if (params.has("supportscaretbrowsingmode")) {
         AppOptions.set(
           "supportsCaretBrowsingMode",
