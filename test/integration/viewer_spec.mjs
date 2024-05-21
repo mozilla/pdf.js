@@ -13,7 +13,12 @@
  * limitations under the License.
  */
 
-import { closePages, loadAndWait } from "./test_utils.mjs";
+import {
+  awaitPromise,
+  closePages,
+  createPromise,
+  loadAndWait,
+} from "./test_utils.mjs";
 
 describe("PDF viewer", () => {
   describe("Zoom with the mouse wheel", () => {
@@ -83,6 +88,89 @@ describe("PDF viewer", () => {
               .withContext(`In ${browserName}`)
               .toBe(true);
           }
+        })
+      );
+    });
+  });
+
+  describe("CSS-only zoom", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".textLayer .endOfContent",
+        null,
+        null,
+        {
+          maxCanvasPixels: 0,
+        }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    function createPromiseForFirstPageRendered(page) {
+      return createPromise(page, (resolve, reject) => {
+        const controller = new AbortController();
+        window.PDFViewerApplication.eventBus.on(
+          "pagerendered",
+          ({ pageNumber, timestamp }) => {
+            if (pageNumber === 1) {
+              resolve(timestamp);
+              controller.abort();
+            }
+          },
+          { signal: controller.signal }
+        );
+        setTimeout(reject, 1000, new Error("Timeout"));
+      });
+    }
+
+    it("respects drawing delay when zooming out", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const promise = await createPromiseForFirstPageRendered(page);
+
+          const start = await page.evaluate(() => {
+            const startTime = performance.now();
+            window.PDFViewerApplication.pdfViewer.decreaseScale({
+              drawingDelay: 100,
+              scaleFactor: 0.9,
+            });
+            return startTime;
+          });
+
+          const end = await awaitPromise(promise);
+
+          expect(end - start)
+            .withContext(`In ${browserName}`)
+            .toBeGreaterThanOrEqual(100);
+        })
+      );
+    });
+
+    it("respects drawing delay when zooming in", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const promise = await createPromiseForFirstPageRendered(page);
+
+          const start = await page.evaluate(() => {
+            const startTime = performance.now();
+            window.PDFViewerApplication.pdfViewer.increaseScale({
+              drawingDelay: 100,
+              scaleFactor: 1.1,
+            });
+            return startTime;
+          });
+
+          const end = await awaitPromise(promise);
+
+          expect(end - start)
+            .withContext(`In ${browserName}`)
+            .toBeGreaterThanOrEqual(100);
         })
       );
     });
