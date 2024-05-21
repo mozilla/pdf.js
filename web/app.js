@@ -743,26 +743,23 @@ const PDFViewerApplication = {
     return this._initializedCapability.promise;
   },
 
-  zoomIn(steps, scaleFactor) {
+  updateZoom(steps, scaleFactor) {
     if (this.pdfViewer.isInPresentationMode) {
       return;
     }
-    this.pdfViewer.increaseScale({
+    this.pdfViewer.updateScale({
       drawingDelay: AppOptions.get("defaultZoomDelay"),
       steps,
       scaleFactor,
     });
   },
 
-  zoomOut(steps, scaleFactor) {
-    if (this.pdfViewer.isInPresentationMode) {
-      return;
-    }
-    this.pdfViewer.decreaseScale({
-      drawingDelay: AppOptions.get("defaultZoomDelay"),
-      steps,
-      scaleFactor,
-    });
+  zoomIn() {
+    this.updateZoom(1);
+  },
+
+  zoomOut() {
+    this.updateZoom(-1);
   },
 
   zoomReset() {
@@ -2635,13 +2632,7 @@ function webViewerWheel(evt) {
         scaleFactor,
         "_wheelUnusedFactor"
       );
-      if (scaleFactor < 1) {
-        PDFViewerApplication.zoomOut(null, scaleFactor);
-      } else if (scaleFactor > 1) {
-        PDFViewerApplication.zoomIn(null, scaleFactor);
-      } else {
-        return;
-      }
+      PDFViewerApplication.updateZoom(null, scaleFactor);
     } else {
       const delta = normalizeWheelEventDirection(evt);
 
@@ -2673,13 +2664,7 @@ function webViewerWheel(evt) {
         );
       }
 
-      if (ticks < 0) {
-        PDFViewerApplication.zoomOut(-ticks);
-      } else if (ticks > 0) {
-        PDFViewerApplication.zoomIn(ticks);
-      } else {
-        return;
-      }
+      PDFViewerApplication.updateZoom(ticks);
     }
 
     // After scaling the page via zoomIn/zoomOut, the position of the upper-
@@ -2794,26 +2779,14 @@ function webViewerTouchMove(evt) {
       distance / pDistance,
       "_touchUnusedFactor"
     );
-    if (newScaleFactor < 1) {
-      PDFViewerApplication.zoomOut(null, newScaleFactor);
-    } else if (newScaleFactor > 1) {
-      PDFViewerApplication.zoomIn(null, newScaleFactor);
-    } else {
-      return;
-    }
+    PDFViewerApplication.updateZoom(null, newScaleFactor);
   } else {
     const PIXELS_PER_LINE_SCALE = 30;
     const ticks = PDFViewerApplication._accumulateTicks(
       (distance - pDistance) / PIXELS_PER_LINE_SCALE,
       "_touchUnusedTicks"
     );
-    if (ticks < 0) {
-      PDFViewerApplication.zoomOut(-ticks);
-    } else if (ticks > 0) {
-      PDFViewerApplication.zoomIn(ticks);
-    } else {
-      return;
-    }
+    PDFViewerApplication.updateZoom(ticks);
   }
 
   PDFViewerApplication._centerAtPos(
