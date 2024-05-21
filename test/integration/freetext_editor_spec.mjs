@@ -1165,6 +1165,85 @@ describe("FreeText Editor", () => {
     });
   });
 
+  describe("FreeText (update existing and popups)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("freetexts.pdf", "[data-annotation-id='32R']");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must update an existing annotation and show the right popup", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          // Show the popup on "Hello World from Firefox"
+          await page.click(`[data-annotation-id='32R']`);
+          await page.waitForSelector(`[data-annotation-id='popup_32R']`, {
+            visible: true,
+          });
+
+          await switchToFreeText(page);
+          await page.waitForSelector(`[data-annotation-id='popup_32R']`, {
+            visible: false,
+          });
+
+          const editorSelector = getEditorSelector(1);
+          const editorRect = await page.$eval(editorSelector, el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+          await page.mouse.click(
+            editorRect.x + editorRect.width / 2,
+            editorRect.y + editorRect.height / 2,
+            { count: 2 }
+          );
+          await page.waitForSelector(
+            `${editorSelector} .overlay:not(.enabled)`
+          );
+
+          await kbGoToEnd(page);
+          await page.waitForFunction(
+            sel =>
+              document.getSelection().anchorOffset ===
+              document.querySelector(sel).innerText.length,
+            {},
+            `${editorSelector} .internal`
+          );
+
+          await page.type(
+            `${editorSelector} .internal`,
+            " and edited in Firefox"
+          );
+
+          // Commit.
+          await page.keyboard.press("Escape");
+          await page.waitForSelector(`${editorSelector} .overlay.enabled`);
+
+          // Disable editing mode.
+          await page.click("#editorFreeText");
+          await page.waitForSelector(
+            `.annotationEditorLayer:not(.freetextEditing)`
+          );
+
+          await page.waitForSelector(`[data-annotation-id='popup_32R']`, {
+            visible: true,
+          });
+
+          const newPopupText = await page.$eval(
+            "[data-annotation-id='popup_32R'] .popupContent",
+            el => el.innerText.replaceAll("\xa0", " ")
+          );
+          expect(newPopupText)
+            .withContext(`In ${browserName}`)
+            .toEqual("Hello World From Firefox and edited in Firefox");
+        })
+      );
+    });
+  });
+
   describe("FreeText (update existing but not empty ones)", () => {
     let pages;
 
