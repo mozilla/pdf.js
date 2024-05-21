@@ -879,6 +879,7 @@ class FreeTextEditor extends AnnotationEditor {
     const padding = FreeTextEditor._internalPadding * this.parentScale;
     annotation.updateEdited({
       rect: this.getRect(padding, padding),
+      popupContent: this.#content,
     });
 
     return content;
