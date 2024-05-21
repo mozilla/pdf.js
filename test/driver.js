@@ -22,8 +22,8 @@ const {
   GlobalWorkerOptions,
   Outliner,
   PixelsPerInch,
-  renderTextLayer,
   shadow,
+  TextLayer,
   XfaLayer,
 } = pdfjsLib;
 const { GenericL10n, parseQueryString, SimpleLinkService } = pdfjsViewer;
@@ -297,13 +297,12 @@ class Rasterize {
         `:root { --scale-factor: ${viewport.scale} }`;
 
       // Rendering text layer as HTML.
-      const task = renderTextLayer({
+      const textLayer = new TextLayer({
         textContentSource: textContent,
         container: div,
         viewport,
       });
-
-      await task.promise;
+      await textLayer.render();
 
       svg.append(foreignObject);
 
@@ -327,15 +326,14 @@ class Rasterize {
         `:root { --scale-factor: ${viewport.scale} }`;
 
       // Rendering text layer as HTML.
-      const task = renderTextLayer({
+      const textLayer = new TextLayer({
         textContentSource: textContent,
         container: dummyParent,
         viewport,
       });
+      await textLayer.render();
 
-      await task.promise;
-
-      const { _pageWidth, _pageHeight, _textDivs } = task;
+      const { pageWidth, pageHeight, textDivs } = textLayer;
       const boxes = [];
       let j = 0,
         posRegex;
@@ -343,7 +341,7 @@ class Rasterize {
         if (type) {
           continue;
         }
-        const { top, left } = _textDivs[j++].style;
+        const { top, left } = textDivs[j++].style;
         let x = parseFloat(left) / 100;
         let y = parseFloat(top) / 100;
         if (isNaN(x)) {
@@ -352,12 +350,12 @@ class Rasterize {
           // string, e.g. `calc(var(--scale-factor)*66.32px)`.
           let match = left.match(posRegex);
           if (match) {
-            x = parseFloat(match[1]) / _pageWidth;
+            x = parseFloat(match[1]) / pageWidth;
           }
 
           match = top.match(posRegex);
           if (match) {
-            y = parseFloat(match[1]) / _pageHeight;
+            y = parseFloat(match[1]) / pageHeight;
           }
         }
         if (width === 0 || height === 0) {
@@ -366,8 +364,8 @@ class Rasterize {
         boxes.push({
           x,
           y,
-          width: width / _pageWidth,
-          height: height / _pageHeight,
+          width: width / pageWidth,
+          height: height / pageHeight,
         });
       }
       // We set the borderWidth to 0.001 to slighly increase the size of the
