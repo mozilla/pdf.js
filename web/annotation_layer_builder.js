@@ -182,6 +182,10 @@ class AnnotationLayerBuilder {
     this.div.hidden = true;
   }
 
+  hasEditableAnnotations() {
+    return !!this.annotationLayer?.hasEditableAnnotations();
+  }
+
   #updatePresentationModeState(state) {
     if (!this.div) {
       return;
