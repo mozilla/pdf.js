@@ -17,10 +17,90 @@ import {
   awaitPromise,
   closePages,
   createPromise,
+  getSpanRectFromText,
   loadAndWait,
 } from "./test_utils.mjs";
 
 describe("PDF viewer", () => {
+  describe("Zoom origin", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".textLayer .endOfContent",
+        "page-width",
+        null,
+        { page: 2 }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    async function getTextAt(page, pageNumber, coordX, coordY) {
+      await page.waitForFunction(
+        pageNum =>
+          !document.querySelector(
+            `.page[data-page-number="${pageNum}"] > .textLayer`
+          ).hidden,
+        {},
+        pageNumber
+      );
+      return page.evaluate(
+        (x, y) => document.elementFromPoint(x, y)?.textContent,
+        coordX,
+        coordY
+      );
+    }
+
+    it("supports specifiying a custom origin", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          // We use this text span of page 2 because:
+          // - it's in the visible area even when zooming at page-width
+          // - it's small, so it easily catches if the page moves too much
+          // - it's in a "random" position: not near the center of the
+          //   viewport, and not near the borders
+          const text = "guards";
+
+          const rect = await getSpanRectFromText(page, 2, text);
+          const originX = rect.x + rect.width / 2;
+          const originY = rect.y + rect.height / 2;
+
+          await page.evaluate(
+            origin => {
+              window.PDFViewerApplication.pdfViewer.increaseScale({
+                scaleFactor: 2,
+                origin,
+              });
+            },
+            [originX, originY]
+          );
+          const textAfterZoomIn = await getTextAt(page, 2, originX, originY);
+          expect(textAfterZoomIn)
+            .withContext(`In ${browserName}, zoom in`)
+            .toBe(text);
+
+          await page.evaluate(
+            origin => {
+              window.PDFViewerApplication.pdfViewer.decreaseScale({
+                scaleFactor: 0.8,
+                origin,
+              });
+            },
+            [originX, originY]
+          );
+          const textAfterZoomOut = await getTextAt(page, 2, originX, originY);
+          expect(textAfterZoomOut)
+            .withContext(`In ${browserName}, zoom out`)
+            .toBe(text);
+        })
+      );
+    });
+  });
+
   describe("Zoom with the mouse wheel", () => {
     let pages;
 
