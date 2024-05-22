@@ -25,7 +25,7 @@ import crypto from "crypto";
 import { fileURLToPath } from "url";
 import fs from "fs";
 import gulp from "gulp";
-import merge from "merge-stream";
+import ordered from "ordered-read-streams";
 import path from "path";
 import postcss from "gulp-postcss";
 import postcssDarkThemeClass from "postcss-dark-theme-class";
@@ -948,7 +948,7 @@ gulp.task("locale", function () {
   }
   const glob = locales.length === 1 ? locales[0] : `{${locales.join(",")}}`;
 
-  return merge([
+  return ordered([
     createStringSource("locale.json", JSON.stringify(viewerOutput)).pipe(
       gulp.dest(VIEWER_LOCALE_OUTPUT)
     ),
@@ -1023,7 +1023,7 @@ function preprocessHTML(source, defines) {
 function buildGeneric(defines, dir) {
   fs.rmSync(dir, { recursive: true, force: true });
 
-  return merge([
+  return ordered([
     createMainBundle(defines).pipe(gulp.dest(dir + "build")),
     createWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
     createSandboxBundle(defines).pipe(gulp.dest(dir + "build")),
@@ -1070,7 +1070,7 @@ gulp.task(
     "locale",
     function scriptingGeneric() {
       const defines = { ...DEFINES, GENERIC: true };
-      return merge([
+      return ordered([
         buildDefaultPreferences(defines, "generic/"),
         createTemporaryScriptingBundle(defines),
       ]);
@@ -1097,7 +1097,7 @@ gulp.task(
     "locale",
     function scriptingGenericLegacy() {
       const defines = { ...DEFINES, GENERIC: true, SKIP_BABEL: false };
-      return merge([
+      return ordered([
         buildDefaultPreferences(defines, "generic-legacy/"),
         createTemporaryScriptingBundle(defines),
       ]);
@@ -1127,7 +1127,7 @@ function buildComponents(defines, dir) {
     "web/images/cursor-*.svg",
   ];
 
-  return merge([
+  return ordered([
     createComponentsBundle(defines).pipe(gulp.dest(dir)),
     gulp.src(COMPONENTS_IMAGES).pipe(gulp.dest(dir + "images")),
     preprocessCSS("web/pdf_viewer.css", defines)
@@ -1204,7 +1204,7 @@ gulp.task(
 function buildMinified(defines, dir) {
   fs.rmSync(dir, { recursive: true, force: true });
 
-  return merge([
+  return ordered([
     createMainBundle(defines).pipe(gulp.dest(dir + "build")),
     createWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
     createSandboxBundle(defines).pipe(gulp.dest(dir + "build")),
@@ -1221,7 +1221,7 @@ gulp.task(
     "locale",
     function scriptingMinified() {
       const defines = { ...DEFINES, MINIFIED: true, GENERIC: true };
-      return merge([
+      return ordered([
         buildDefaultPreferences(defines, "minified/"),
         createTemporaryScriptingBundle(defines),
       ]);
@@ -1251,7 +1251,7 @@ gulp.task(
         GENERIC: true,
         SKIP_BABEL: false,
       };
-      return merge([
+      return ordered([
         buildDefaultPreferences(defines, "minified-legacy/"),
         createTemporaryScriptingBundle(defines),
       ]);
@@ -1335,7 +1335,7 @@ gulp.task(
       // Clear out everything in the firefox extension build directory
       fs.rmSync(MOZCENTRAL_DIR, { recursive: true, force: true });
 
-      return merge([
+      return ordered([
         createMainBundle(defines).pipe(
           gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
         ),
@@ -1409,7 +1409,7 @@ gulp.task(
     "locale",
     function scriptingChromium() {
       const defines = { ...DEFINES, CHROME: true, SKIP_BABEL: false };
-      return merge([
+      return ordered([
         buildDefaultPreferences(defines, "chromium/"),
         createTemporaryScriptingBundle(defines),
       ]);
@@ -1435,7 +1435,7 @@ gulp.task(
 
       const version = getVersionJSON().version;
 
-      return merge([
+      return ordered([
         createMainBundle(defines).pipe(
           gulp.dest(CHROME_BUILD_CONTENT_DIR + "build")
         ),
@@ -1587,7 +1587,7 @@ function buildLib(defines, dir) {
     DEFAULT_FTL: getDefaultFtl(),
   };
 
-  const inputStream = merge([
+  const inputStream = ordered([
     gulp.src(
       [
         "src/{core,display,shared}/**/*.js",
@@ -1609,7 +1609,7 @@ gulp.task(
     createBuildNumber,
     function scriptingLib() {
       const defines = { ...DEFINES, GENERIC: true, LIB: true };
-      return merge([
+      return ordered([
         buildDefaultPreferences(defines, "lib/"),
         createTemporaryScriptingBundle(defines),
       ]);
@@ -1620,7 +1620,7 @@ gulp.task(
     function createLib() {
       const defines = { ...DEFINES, GENERIC: true, LIB: true };
 
-      return merge([
+      return ordered([
         buildLib(defines, "build/lib/"),
         createSandboxBundle(defines).pipe(gulp.dest("build/lib/")),
       ]);
@@ -1639,7 +1639,7 @@ gulp.task(
         LIB: true,
         SKIP_BABEL: false,
       };
-      return merge([
+      return ordered([
         buildDefaultPreferences(defines, "lib-legacy/"),
         createTemporaryScriptingBundle(defines),
       ]);
@@ -1655,7 +1655,7 @@ gulp.task(
         SKIP_BABEL: false,
       };
 
-      return merge([
+      return ordered([
         buildLib(defines, "build/lib-legacy/"),
         createSandboxBundle(defines).pipe(gulp.dest("build/lib-legacy/")),
       ]);
@@ -1682,7 +1682,7 @@ gulp.task(
 
     config.stableVersion = version;
 
-    return merge([
+    return ordered([
       createStringSource(CONFIG_FILE, JSON.stringify(config, null, 2)).pipe(
         gulp.dest(".")
       ),
@@ -1821,7 +1821,7 @@ gulp.task(
     "generic",
     "types",
     function createTypesTest() {
-      return merge([
+      return ordered([
         packageJson().pipe(gulp.dest(TYPESTEST_DIR)),
         gulp
           .src("external/dist/**/*", {
@@ -2081,7 +2081,7 @@ function ghPagesPrepare() {
 
   fs.rmSync(GH_PAGES_DIR, { recursive: true, force: true });
 
-  return merge([
+  return ordered([
     gulp
       .src(GENERIC_DIR + "**/*", { base: GENERIC_DIR, removeBOM: false })
       .pipe(gulp.dest(GH_PAGES_DIR)),
@@ -2208,7 +2208,7 @@ gulp.task(
         }
       }
 
-      return merge([
+      return ordered([
         packageJson().pipe(gulp.dest(DIST_DIR)),
         gulp
           .src("external/dist/**/*", {
