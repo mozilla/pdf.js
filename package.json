@@ -36,7 +36,7 @@
     "jasmine": "^5.1.0",
     "jsdoc": "^4.0.3",
     "jstransformer-markdown-it": "^3.0.0",
-    "merge-stream": "^2.0.0",
+    "ordered-read-streams": "^2.0.0",
     "path2d": "^0.2.0",
     "pngjs": "^7.0.0",
     "postcss": "^8.4.38",
