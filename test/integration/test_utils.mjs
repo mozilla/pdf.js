@@ -124,6 +124,15 @@ function getSelector(id) {
   return `[data-element-id="${id}"]`;
 }
 
+async function getRect(page, selector) {
+  // In Chrome something is wrong when serializing a `DomRect`,
+  // so we extract the values and return them ourselves.
+  return page.$eval(selector, el => {
+    const { x, y, width, height } = el.getBoundingClientRect();
+    return { x, y, width, height };
+  });
+}
+
 function getQuerySelector(id) {
   return `document.querySelector('${getSelector(id)}')`;
 }
@@ -427,10 +436,7 @@ async function firstPageOnTop(page) {
 }
 
 async function hover(page, selector) {
-  const rect = await page.$eval(selector, el => {
-    const { x, y, width, height } = el.getBoundingClientRect();
-    return { x, y, width, height };
-  });
+  const rect = await getRect(page, selector);
   await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2);
 }
 
@@ -589,6 +595,7 @@ export {
   getEditorSelector,
   getFirstSerialized,
   getQuerySelector,
+  getRect,
   getSelectedEditors,
   getSelector,
   getSerialized,
