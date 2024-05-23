@@ -188,11 +188,12 @@ class TextLayerBuilder {
   }
 
   static #enableGlobalSelectionListener() {
-    if (TextLayerBuilder.#selectionChangeAbortController) {
+    if (this.#selectionChangeAbortController) {
       // document-level event listeners already installed
       return;
     }
-    TextLayerBuilder.#selectionChangeAbortController = new AbortController();
+    this.#selectionChangeAbortController = new AbortController();
+    const { signal } = this.#selectionChangeAbortController;
 
     const reset = (end, textLayer) => {
       if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
@@ -206,9 +207,9 @@ class TextLayerBuilder {
     document.addEventListener(
       "pointerup",
       () => {
-        TextLayerBuilder.#textLayers.forEach(reset);
+        this.#textLayers.forEach(reset);
       },
-      { signal: TextLayerBuilder.#selectionChangeAbortController.signal }
+      { signal }
     );
 
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
@@ -221,7 +222,7 @@ class TextLayerBuilder {
       () => {
         const selection = document.getSelection();
         if (selection.rangeCount === 0) {
-          TextLayerBuilder.#textLayers.forEach(reset);
+          this.#textLayers.forEach(reset);
           return;
         }
 
@@ -232,7 +233,7 @@ class TextLayerBuilder {
         const activeTextLayers = new Set();
         for (let i = 0; i < selection.rangeCount; i++) {
           const range = selection.getRangeAt(i);
-          for (const textLayerDiv of TextLayerBuilder.#textLayers.keys()) {
+          for (const textLayerDiv of this.#textLayers.keys()) {
             if (
               !activeTextLayers.has(textLayerDiv) &&
               range.intersectsNode(textLayerDiv)
@@ -242,7 +243,7 @@ class TextLayerBuilder {
           }
         }
 
-        for (const [textLayerDiv, endDiv] of TextLayerBuilder.#textLayers) {
+        for (const [textLayerDiv, endDiv] of this.#textLayers) {
           if (activeTextLayers.has(textLayerDiv)) {
             endDiv.classList.add("active");
           } else {
@@ -250,53 +251,50 @@ class TextLayerBuilder {
           }
         }
 
-        if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-          if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
-            isFirefox = false;
-          } else {
-            isFirefox ??=
-              getComputedStyle(
-                TextLayerBuilder.#textLayers.values().next().value
-              ).getPropertyValue("-moz-user-select") === "none";
-          }
+        if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+          return;
+        }
+        if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) {
+          isFirefox ??=
+            getComputedStyle(
+              this.#textLayers.values().next().value
+            ).getPropertyValue("-moz-user-select") === "none";
 
-          if (!isFirefox) {
-            // In non-Firefox browsers, when hovering over an empty space (thus,
-            // on .endOfContent), the selection will expand to cover all the
-            // text between the current selection and .endOfContent. By moving
-            // .endOfContent to right after (or before, depending on which side
-            // of the selection the user is moving), we limit the selection jump
-            // to at most cover the enteirety of the <span> where the selection
-            // is being modified.
-            const range = selection.getRangeAt(0);
-            const modifyStart =
-              prevRange &&
-              (range.compareBoundaryPoints(Range.END_TO_END, prevRange) === 0 ||
-                range.compareBoundaryPoints(Range.START_TO_END, prevRange) ===
-                  0);
-            let anchor = modifyStart
-              ? range.startContainer
-              : range.endContainer;
-            if (anchor.nodeType === Node.TEXT_NODE) {
-              anchor = anchor.parentNode;
-            }
-
-            const parentTextLayer = anchor.parentElement.closest(".textLayer");
-            const endDiv = TextLayerBuilder.#textLayers.get(parentTextLayer);
-            if (endDiv) {
-              endDiv.style.width = parentTextLayer.style.width;
-              endDiv.style.height = parentTextLayer.style.height;
-              anchor.parentElement.insertBefore(
-                endDiv,
-                modifyStart ? anchor : anchor.nextSibling
-              );
-            }
-
-            prevRange = range.cloneRange();
+          if (isFirefox) {
+            return;
           }
         }
+        // In non-Firefox browsers, when hovering over an empty space (thus,
+        // on .endOfContent), the selection will expand to cover all the
+        // text between the current selection and .endOfContent. By moving
+        // .endOfContent to right after (or before, depending on which side
+        // of the selection the user is moving), we limit the selection jump
+        // to at most cover the enteirety of the <span> where the selection
+        // is being modified.
+        const range = selection.getRangeAt(0);
+        const modifyStart =
+          prevRange &&
+          (range.compareBoundaryPoints(Range.END_TO_END, prevRange) === 0 ||
+            range.compareBoundaryPoints(Range.START_TO_END, prevRange) === 0);
+        let anchor = modifyStart ? range.startContainer : range.endContainer;
+        if (anchor.nodeType === Node.TEXT_NODE) {
+          anchor = anchor.parentNode;
+        }
+
+        const parentTextLayer = anchor.parentElement.closest(".textLayer");
+        const endDiv = this.#textLayers.get(parentTextLayer);
+        if (endDiv) {
+          endDiv.style.width = parentTextLayer.style.width;
+          endDiv.style.height = parentTextLayer.style.height;
+          anchor.parentElement.insertBefore(
+            endDiv,
+            modifyStart ? anchor : anchor.nextSibling
+          );
+        }
+
+        prevRange = range.cloneRange();
       },
-      { signal: TextLayerBuilder.#selectionChangeAbortController.signal }
+      { signal }
     );
   }
 }
