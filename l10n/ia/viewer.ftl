@@ -51,12 +51,6 @@ pdfjs-download-button-label = Discargar
 pdfjs-bookmark-button =
     .title = Pagina actual (vide le URL del pagina actual)
 pdfjs-bookmark-button-label = Pagina actual
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = Aperir in app
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = Aperir in app
 
 ##  Secondary toolbar and context menu
 
@@ -67,8 +61,8 @@ pdfjs-first-page-button =
     .title = Ir al prime pagina
 pdfjs-first-page-button-label = Ir al prime pagina
 pdfjs-last-page-button =
-    .title = Ir al prime pagina
-pdfjs-last-page-button-label = Ir al prime pagina
+    .title = Ir al ultime pagina
+pdfjs-last-page-button-label = Ir al ultime pagina
 pdfjs-page-rotate-cw-button =
     .title = Rotar in senso horari
 pdfjs-page-rotate-cw-button-label = Rotar in senso horari
@@ -304,8 +298,6 @@ pdfjs-editor-stamp-button-label = Adder o rediger imagines
 pdfjs-editor-highlight-button =
     .title = Evidentia
 pdfjs-editor-highlight-button-label = Evidentia
-pdfjs-highlight-floating-button =
-    .title = Evidentiar
 pdfjs-highlight-floating-button1 =
     .title = Evidentiar
     .aria-label = Evidentiar
