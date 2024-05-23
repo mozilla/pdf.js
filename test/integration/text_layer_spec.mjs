@@ -1534,4 +1534,30 @@ describe("Text layer", () => {
       expect(getPercentDiff(rect.height, 12)).toBeLessThan(0.03);
     });
   });
+
+  describe("marked-content nesting (bug 1898053)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "bug1898053_minimal.pdf",
+        ".textLayer .endOfContent"
+      );
+    });
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must keep auto-closed sections at the text-layer root", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const count = await page.evaluate(
+            () =>
+              document.querySelectorAll(".textLayer > .markedContent").length
+          );
+          expect(count).toBe(6);
+        })
+      );
+    });
+  });
 });

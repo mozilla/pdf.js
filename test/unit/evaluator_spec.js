@@ -50,6 +50,26 @@ describe("evaluator", function () {
     return operatorList;
   }
 
+  async function runTextContentCheck(evaluator, stream) {
+    const items = [];
+    const sink = {
+      desiredSize: 100,
+      ready: Promise.resolve(),
+      enqueue(chunk) {
+        items.push(...chunk.items);
+      },
+    };
+    const task = new WorkerTask("TextContentCheck");
+    await evaluator.getTextContent({
+      stream,
+      task,
+      resources: new ResourcesMock(),
+      includeMarkedContent: true,
+      sink,
+    });
+    return items;
+  }
+
   let partialEvaluator;
 
   beforeAll(function () {
@@ -441,6 +461,50 @@ describe("evaluator", function () {
       } catch {
         expect(true).toBeTrue();
       }
+    });
+  });
+
+  describe("text content", function () {
+    it("should close marked content opened in a text object", async function () {
+      const stream = new StringStream(
+        "/Outer BMC BT /Inner BMC ET /Sibling BMC EMC EMC"
+      );
+      const items = await runTextContentCheck(partialEvaluator, stream);
+
+      expect(items).toEqual([
+        { type: "beginMarkedContent", tag: "Outer" },
+        { type: "beginMarkedContent", tag: "Inner" },
+        { type: "endMarkedContent" },
+        { type: "beginMarkedContent", tag: "Sibling" },
+        { type: "endMarkedContent" },
+        { type: "endMarkedContent" },
+      ]);
+    });
+
+    it("should preserve marked content opened before a text object", async function () {
+      const stream = new StringStream(
+        "/Outer BMC BT ET BT ET /Inner BMC EMC EMC"
+      );
+      const items = await runTextContentCheck(partialEvaluator, stream);
+
+      expect(items).toEqual([
+        { type: "beginMarkedContent", tag: "Outer" },
+        { type: "beginMarkedContent", tag: "Inner" },
+        { type: "endMarkedContent" },
+        { type: "endMarkedContent" },
+      ]);
+    });
+
+    it("should not close marked content on an unmatched endText", async function () {
+      const stream = new StringStream("/Outer BMC ET /Inner BMC EMC EMC");
+      const items = await runTextContentCheck(partialEvaluator, stream);
+
+      expect(items).toEqual([
+        { type: "beginMarkedContent", tag: "Outer" },
+        { type: "beginMarkedContent", tag: "Inner" },
+        { type: "endMarkedContent" },
+        { type: "endMarkedContent" },
+      ]);
     });
   });
 
