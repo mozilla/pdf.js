@@ -19,6 +19,7 @@ import {
   getEditorDimensions,
   getEditorSelector,
   getFirstSerialized,
+  getRect,
   kbBigMoveDown,
   kbBigMoveRight,
   kbCopy,
@@ -215,16 +216,14 @@ describe("Stamp Editor", () => {
                 `${getEditorSelector(i)} .resizers:not(.hidden)`
               );
 
-              const [name, cursor] = await page.evaluate(() => {
-                const { x, y } = document
-                  .querySelector(".stampEditor")
-                  .getBoundingClientRect();
-                const el = document.elementFromPoint(x, y);
+              const stampRect = await getRect(page, ".stampEditor");
+              const [name, cursor] = await page.evaluate(rect => {
+                const el = document.elementFromPoint(rect.x, rect.y);
                 const cornerName = Array.from(el.classList).find(
                   c => c !== "resizer"
                 );
                 return [cornerName, window.getComputedStyle(el).cursor];
-              });
+              }, stampRect);
 
               expect(name).withContext(`In ${browserName}`).toEqual(names[j]);
               expect(cursor)
@@ -722,12 +721,7 @@ describe("Stamp Editor", () => {
           await waitForSerialized(page, 1);
 
           const serializedRect = await getFirstSerialized(page, x => x.rect);
-          const rect = await page.$eval(".resizer.bottomRight", el => {
-            // With Chrome something is wrong when serializing a DomRect,
-            // hence we extract the values and just return them.
-            const { x, y, width, height } = el.getBoundingClientRect();
-            return { x, y, width, height };
-          });
+          const rect = await getRect(page, ".resizer.bottomRight");
           const centerX = rect.x + rect.width / 2;
           const centerY = rect.y + rect.height / 2;
 
@@ -743,20 +737,16 @@ describe("Stamp Editor", () => {
             (x, y) => x !== y
           );
 
-          const canvasRect = await page.$eval(
-            `${getEditorSelector(0)} canvas`,
-            el => {
-              const { x, y, width, height } = el.getBoundingClientRect();
-              return [x, y, width, height];
-            }
+          const canvasRect = await getRect(
+            page,
+            `${getEditorSelector(0)} canvas`
           );
-          const stampRect = await page.$eval(getEditorSelector(0), el => {
-            const { x, y, width, height } = el.getBoundingClientRect();
-            return [x, y, width, height];
-          });
+          const stampRect = await getRect(page, getEditorSelector(0));
 
           expect(
-            canvasRect.every((x, i) => Math.abs(x - stampRect[i]) <= 10)
+            ["x", "y", "width", "height"].every(
+              key => Math.abs(canvasRect[key] - stampRect[key]) <= 10
+            )
           ).toBeTrue();
         })
       );

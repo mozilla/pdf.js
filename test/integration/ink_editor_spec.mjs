@@ -18,6 +18,7 @@ import {
   closePages,
   createPromise,
   getEditorSelector,
+  getRect,
   getSelectedEditors,
   kbRedo,
   kbSelectAll,
@@ -68,12 +69,7 @@ describe("Ink Editor", () => {
         pages.map(async ([browserName, page]) => {
           await page.click("#editorInk");
 
-          const rect = await page.$eval(".annotationEditorLayer", el => {
-            // With Chrome something is wrong when serializing a DomRect,
-            // hence we extract the values and just return them.
-            const { x, y } = el.getBoundingClientRect();
-            return { x, y };
-          });
+          const rect = await getRect(page, ".annotationEditorLayer");
 
           for (let i = 0; i < 3; i++) {
             const x = rect.x + 100 + i * 100;
@@ -105,12 +101,7 @@ describe("Ink Editor", () => {
         pages.map(async ([browserName, page]) => {
           await clearAll(page);
 
-          const rect = await page.$eval(".annotationEditorLayer", el => {
-            // With Chrome something is wrong when serializing a DomRect,
-            // hence we extract the values and just return them.
-            const { x, y } = el.getBoundingClientRect();
-            return { x, y };
-          });
+          const rect = await getRect(page, ".annotationEditorLayer");
 
           const xStart = rect.x + 300;
           const yStart = rect.y + 300;
@@ -123,10 +114,7 @@ describe("Ink Editor", () => {
 
           await commit(page);
 
-          const rectBefore = await page.$eval(".inkEditor canvas", el => {
-            const { x, y } = el.getBoundingClientRect();
-            return { x, y };
-          });
+          const rectBefore = await getRect(page, ".inkEditor canvas");
 
           for (let i = 0; i < 30; i++) {
             await kbUndo(page);
@@ -135,10 +123,7 @@ describe("Ink Editor", () => {
             await waitForStorageEntries(page, 1);
           }
 
-          const rectAfter = await page.$eval(".inkEditor canvas", el => {
-            const { x, y } = el.getBoundingClientRect();
-            return { x, y };
-          });
+          const rectAfter = await getRect(page, ".inkEditor canvas");
 
           expect(Math.round(rectBefore.x))
             .withContext(`In ${browserName}`)
@@ -168,12 +153,7 @@ describe("Ink Editor", () => {
         pages.map(async ([browserName, page]) => {
           await page.click("#editorInk");
 
-          const rect = await page.$eval(".annotationEditorLayer", el => {
-            // With Chrome something is wrong when serializing a DomRect,
-            // hence we extract the values and just return them.
-            const { x, y } = el.getBoundingClientRect();
-            return { x, y };
-          });
+          const rect = await getRect(page, ".annotationEditorLayer");
 
           const x = rect.x + 20;
           const y = rect.y + 20;
@@ -213,12 +193,7 @@ describe("Ink Editor", () => {
           await page.click("#editorInk");
           await page.waitForSelector(".annotationEditorLayer.inkEditing");
 
-          const rect = await page.$eval(".annotationEditorLayer", el => {
-            // With Chrome something is wrong when serializing a DomRect,
-            // hence we extract the values and just return them.
-            const { x, y } = el.getBoundingClientRect();
-            return { x, y };
-          });
+          const rect = await getRect(page, ".annotationEditorLayer");
 
           const x = rect.x + 20;
           const y = rect.y + 20;
@@ -275,12 +250,7 @@ describe("Ink Editor", () => {
           await page.click("#editorInk");
           await page.waitForSelector(".annotationEditorLayer.inkEditing");
 
-          const rect = await page.$eval(".annotationEditorLayer", el => {
-            // With Chrome something is wrong when serializing a DomRect,
-            // hence we extract the values and just return them.
-            const { x, y } = el.getBoundingClientRect();
-            return { x, y };
-          });
+          const rect = await getRect(page, ".annotationEditorLayer");
 
           const x = rect.x + 20;
           const y = rect.y + 20;
@@ -315,10 +285,7 @@ describe("Ink Editor", () => {
           await page.click("#editorInk");
           await page.waitForSelector(".annotationEditorLayer.inkEditing");
 
-          const rect = await page.$eval(".annotationEditorLayer", el => {
-            const { x, y } = el.getBoundingClientRect();
-            return { x, y };
-          });
+          const rect = await getRect(page, ".annotationEditorLayer");
 
           const xStart = rect.x + 300;
           const yStart = rect.y + 300;
@@ -362,10 +329,7 @@ describe("Ink Editor", () => {
           await page.click("#editorInk");
           await page.waitForSelector(".annotationEditorLayer.inkEditing");
 
-          const rect = await page.$eval(".annotationEditorLayer", el => {
-            const { x, y } = el.getBoundingClientRect();
-            return { x, y };
-          });
+          const rect = await getRect(page, ".annotationEditorLayer");
 
           const xStart = rect.x + 300;
           const yStart = rect.y + 300;
@@ -422,10 +386,7 @@ describe("Ink Editor", () => {
           await page.click("#editorInk");
           await page.waitForSelector(".annotationEditorLayer.inkEditing");
 
-          const rect = await page.$eval(".annotationEditorLayer", el => {
-            const { x, y } = el.getBoundingClientRect();
-            return { x, y };
-          });
+          const rect = await getRect(page, ".annotationEditorLayer");
 
           const xStart = rect.x + 300;
           const yStart = rect.y + 300;
@@ -477,10 +438,7 @@ describe("Ink Editor", () => {
           await page.click("#editorInk");
           await page.waitForSelector(".annotationEditorLayer.inkEditing");
 
-          const rect = await page.$eval(".annotationEditorLayer", el => {
-            const { x, y } = el.getBoundingClientRect();
-            return { x, y };
-          });
+          const rect = await getRect(page, ".annotationEditorLayer");
 
           let xStart = rect.x + 10;
           const yStart = rect.y + 10;

@@ -19,6 +19,7 @@ import {
   createPromise,
   getEditorSelector,
   getFirstSerialized,
+  getRect,
   getSerialized,
   getSpanRectFromText,
   kbBigMoveLeft,
@@ -44,11 +45,10 @@ const waitForPointerUp = page =>
     window.addEventListener("pointerup", resolve, { once: true });
   });
 
-const getXY = (page, selector) =>
-  page.evaluate(sel => {
-    const bbox = document.querySelector(sel).getBoundingClientRect();
-    return `${bbox.x}::${bbox.y}`;
-  }, selector);
+const getXY = async (page, selector) => {
+  const rect = await getRect(page, selector);
+  return `${rect.x}::${rect.y}`;
+};
 
 describe("Highlight Editor", () => {
   describe("Editor must be removed without exception", () => {
@@ -609,12 +609,7 @@ describe("Highlight Editor", () => {
           await page.click("#editorHighlight");
           await page.waitForSelector(".annotationEditorLayer.highlightEditing");
 
-          const rect = await page.$eval(".annotationEditorLayer", el => {
-            // With Chrome something is wrong when serializing a DomRect,
-            // hence we extract the values and just return them.
-            const { x, y } = el.getBoundingClientRect();
-            return { x, y };
-          });
+          const rect = await getRect(page, ".annotationEditorLayer");
 
           for (let i = 0; i < 3; i++) {
             const x = rect.x + 120 + i * 120;
@@ -638,8 +633,8 @@ describe("Highlight Editor", () => {
 
           await selectAll(page);
 
-          const prevWidth = await page.evaluate(
-            sel => document.querySelector(sel).getBoundingClientRect().width,
+          const { width: prevWidth } = await getRect(
+            page,
             getEditorSelector(0)
           );
 
@@ -692,13 +687,10 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(".annotationEditorLayer.highlightEditing");
           const sel = getEditorSelector(0);
 
-          const spanRect = await page.evaluate(() => {
-            const span = document.querySelector(
-              `.page[data-page-number="1"] > .textLayer > span`
-            );
-            const { x, y, width, height } = span.getBoundingClientRect();
-            return { x, y, width, height };
-          });
+          const spanRect = await getRect(
+            page,
+            `.page[data-page-number="1"] > .textLayer > span`
+          );
           await page.keyboard.down("Shift");
           await page.mouse.click(
             spanRect.x + 1,
@@ -757,12 +749,7 @@ describe("Highlight Editor", () => {
           await page.click("#editorHighlight");
           await page.waitForSelector(".annotationEditorLayer.highlightEditing");
 
-          const rect = await page.$eval(".annotationEditorLayer", el => {
-            // With Chrome something is wrong when serializing a DomRect,
-            // hence we extract the values and just return them.
-            const { x, y } = el.getBoundingClientRect();
-            return { x, y };
-          });
+          const rect = await getRect(page, ".annotationEditorLayer");
 
           const clickHandle = await waitForPointerUp(page);
           await page.mouse.move(rect.x + 120, rect.y + 120);
@@ -781,8 +768,8 @@ describe("Highlight Editor", () => {
           );
           await selectAll(page);
 
-          const prevWidth = await page.evaluate(
-            sel => document.querySelector(sel).getBoundingClientRect().width,
+          const { width: prevWidth } = await getRect(
+            page,
             getEditorSelector(0)
           );
 
@@ -806,15 +793,8 @@ describe("Highlight Editor", () => {
             getEditorSelector(0)
           );
 
-          const rectDiv = await page.$eval(getEditorSelector(0), el => {
-            const { x, y, width, height } = el.getBoundingClientRect();
-            return { x, y, width, height };
-          });
-
-          const rectSVG = await page.$eval("svg.highlight.free", el => {
-            const { x, y, width, height } = el.getBoundingClientRect();
-            return { x, y, width, height };
-          });
+          const rectDiv = await getRect(page, getEditorSelector(0));
+          const rectSVG = await getRect(page, "svg.highlight.free");
 
           expect(Math.abs(rectDiv.x - rectSVG.x) <= 2)
             .withContext(`In ${browserName}`)
@@ -902,14 +882,8 @@ describe("Highlight Editor", () => {
           await page.click("#editorHighlight");
           await page.waitForSelector(".annotationEditorLayer.highlightEditing");
 
-          const rect1 = await page.$eval("#pdfjs_internal_id_5R", el => {
-            const { x, y, width, height } = el.getBoundingClientRect();
-            return { x, y, width, height };
-          });
-          const rect2 = await page.$eval("#pdfjs_internal_id_16R", el => {
-            const { x, y, width, height } = el.getBoundingClientRect();
-            return { x, y, width, height };
-          });
+          const rect1 = await getRect(page, "#pdfjs_internal_id_5R");
+          const rect2 = await getRect(page, "#pdfjs_internal_id_16R");
 
           const x1 = rect1.x + rect1.width / 2;
           const y1 = rect1.y + rect1.height / 2;
@@ -1281,10 +1255,7 @@ describe("Highlight Editor", () => {
 
           await page.waitForSelector(getEditorSelector(0));
 
-          rect = await page.$eval(".annotationEditorLayer", el => {
-            const { x, y } = el.getBoundingClientRect();
-            return { x, y };
-          });
+          rect = await getRect(page, ".annotationEditorLayer");
 
           const clickHandle = await waitForPointerUp(page);
           await page.mouse.move(rect.x + 5, rect.y + 5);
@@ -1403,10 +1374,7 @@ describe("Highlight Editor", () => {
           await page.click("#editorHighlight");
           await page.waitForSelector(".annotationEditorLayer.highlightEditing");
 
-          const rect = await page.$eval(".annotationEditorLayer", el => {
-            const { x, y } = el.getBoundingClientRect();
-            return { x, y };
-          });
+          const rect = await getRect(page, ".annotationEditorLayer");
 
           const clickHandle = await waitForPointerUp(page);
           await page.mouse.move(rect.x + 1, rect.y + 50);
@@ -1416,10 +1384,8 @@ describe("Highlight Editor", () => {
           await awaitPromise(clickHandle);
 
           await page.waitForSelector(getEditorSelector(0));
-          const editorX = await page.$eval(
-            getEditorSelector(0),
-            el => el.getBoundingClientRect().x
-          );
+
+          const { x: editorX } = await getRect(page, getEditorSelector(0));
 
           expect(editorX < rect.x)
             .withContext(`In ${browserName}`)
@@ -1446,10 +1412,7 @@ describe("Highlight Editor", () => {
           await page.click("#editorHighlight");
           await page.waitForSelector(".annotationEditorLayer.highlightEditing");
 
-          let rect = await page.$eval(".annotationEditorLayer", el => {
-            const { x, y } = el.getBoundingClientRect();
-            return { x, y };
-          });
+          let rect = await getRect(page, ".annotationEditorLayer");
           const clickHandle = await waitForPointerUp(page);
           await page.mouse.move(rect.x + 20, rect.y + 20);
           await page.mouse.down();

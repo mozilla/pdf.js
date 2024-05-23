@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { closePages, loadAndWait } from "./test_utils.mjs";
+import { closePages, getRect, loadAndWait } from "./test_utils.mjs";
 
 const waitForSelectionChange = (page, selection) =>
   page.waitForFunction(
@@ -38,13 +38,10 @@ describe("Caret browsing", () => {
     it("must move the caret down and check the selection", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          const spanRect = await page.evaluate(() => {
-            const span = document.querySelector(
-              `.page[data-page-number="1"] > .textLayer > span`
-            );
-            const { x, y, width, height } = span.getBoundingClientRect();
-            return { x, y, width, height };
-          });
+          const spanRect = await getRect(
+            page,
+            `.page[data-page-number="1"] > .textLayer > span`
+          );
           await page.mouse.click(
             spanRect.x + 1,
             spanRect.y + spanRect.height / 2,
