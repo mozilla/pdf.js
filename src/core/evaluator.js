@@ -1732,6 +1732,7 @@ class PartialEvaluator {
     const stateManager = new StateManager(initialState);
     const preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
     const timeSlotManager = new TimeSlotManager();
+    let markedContentLevel = 0;
 
     function closePendingRestoreOPS(argument) {
       for (let i = 0, ii = preprocessor.savedStatesDepth; i < ii; i++) {
@@ -1753,7 +1754,7 @@ class PartialEvaluator {
       timeSlotManager.reset();
 
       const operation = {};
-      let stop, i, ii, cs, name, isValidName;
+      let stop, cs, name, isValidName;
       while (!(stop = timeSlotManager.check())) {
         // The arguments parsed by read() are used beyond this loop, so we
         // cannot reuse the same array on each iteration. Therefore we pass
@@ -1914,6 +1915,12 @@ class PartialEvaluator {
             break;
           case OPS.endText:
             parsingText = false;
+            if (markedContentLevel !== 0) {
+              for (let i = 0; i < markedContentLevel; i++) {
+                operatorList.addOp(OPS.endMarkedContent, []);
+              }
+              markedContentLevel = 0;
+            }
             break;
           case OPS.endInlineImage:
             var cacheKey = args[0].cacheKey;
@@ -2227,6 +2234,7 @@ class PartialEvaluator {
             // but doing so is meaningless without knowing the semantics.
             continue;
           case OPS.beginMarkedContentProps:
+            markedContentLevel++;
             if (!(args[0] instanceof Name)) {
               warn(`Expected name for beginMarkedContentProps arg0=${args[0]}`);
               operatorList.addOp(OPS.beginMarkedContentProps, ["OC", null]);
@@ -2269,21 +2277,26 @@ class PartialEvaluator {
 
             break;
           case OPS.beginMarkedContent:
+            markedContentLevel++;
+            if (args?.some(arg => arg instanceof Dict)) {
+              warn(`getOperatorList - ignoring operator: ${fn}`);
+              continue;
+            }
+            break;
           case OPS.endMarkedContent:
+            markedContentLevel--;
+            if (args?.some(arg => arg instanceof Dict)) {
+              warn(`getOperatorList - ignoring operator: ${fn}`);
+              continue;
+            }
+            break;
           default:
             // Note: Ignore the operator if it has `Dict` arguments, since
             // those are non-serializable, otherwise postMessage will throw
             // "An object could not be cloned.".
-            if (args !== null) {
-              for (i = 0, ii = args.length; i < ii; i++) {
-                if (args[i] instanceof Dict) {
-                  break;
-                }
-              }
-              if (i < ii) {
-                warn("getOperatorList - ignoring operator: " + fn);
-                continue;
-              }
+            if (args?.some(arg => arg instanceof Dict)) {
+              warn(`getOperatorList - ignoring operator: ${fn}`);
+              continue;
             }
         }
         operatorList.addOp(fn, args);
@@ -3141,6 +3154,19 @@ class PartialEvaluator {
           case OPS.beginText:
             textState.textMatrix = IDENTITY_MATRIX.slice();
             textState.textLineMatrix = IDENTITY_MATRIX.slice();
+            break;
+          case OPS.endText:
+            if (includeMarkedContent) {
+              if (markedContentData.level !== 0) {
+                flushTextContentItem();
+                for (let i = 0; i < markedContentData.level; i++) {
+                  textContent.items.push({
+                    type: "endMarkedContent",
+                  });
+                }
+                markedContentData.level = 0;
+              }
+            }
             break;
           case OPS.showSpacedText:
             if (!stateManager.state.font) {
