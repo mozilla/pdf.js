@@ -1069,6 +1069,23 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("gets loadingParams", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams(basicApiFileName, {
+          disableAutoFetch: true,
+          enableXfa: true,
+        })
+      );
+      const pdfDoc = await loadingTask.promise;
+
+      expect(pdfDoc.loadingParams).toEqual({
+        disableAutoFetch: true,
+        enableXfa: true,
+      });
+
+      await loadingTask.destroy();
+    });
+
     it("gets page", async function () {
       const data = await pdfDocument.getPage(1);
       expect(data instanceof PDFPageProxy).toEqual(true);
