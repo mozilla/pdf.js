@@ -33,8 +33,6 @@ class InkEditor extends AnnotationEditor {
 
   #boundCanvasPointermove = this.canvasPointermove.bind(this);
 
-  #boundCanvasPointerleave = this.canvasPointerleave.bind(this);
-
   #boundCanvasPointerup = this.canvasPointerup.bind(this);
 
   #boundCanvasPointerdown = this.canvasPointerdown.bind(this);
@@ -66,6 +64,8 @@ class InkEditor extends AnnotationEditor {
   static _type = "ink";
 
   static _editorType = AnnotationEditorType.INK;
+
+  static _isDrawing = false
 
   constructor(params) {
     super({ ...params, name: "inkEditor" });
@@ -364,9 +364,12 @@ class InkEditor extends AnnotationEditor {
    */
   #startDrawing(x, y) {
     this.canvas.addEventListener("contextmenu", noContextMenu);
-    this.canvas.addEventListener("pointerleave", this.#boundCanvasPointerleave);
     this.canvas.addEventListener("pointermove", this.#boundCanvasPointermove);
     this.canvas.addEventListener("pointerup", this.#boundCanvasPointerup);
+
+    //listen the mouse up event outside the canvas too
+    document.addEventListener("pointerup", this.#boundCanvasPointerup);
+
     this.canvas.removeEventListener(
       "pointerdown",
       this.#boundCanvasPointerdown
@@ -663,6 +666,7 @@ class InkEditor extends AnnotationEditor {
       });
     }
 
+    
     this.#startDrawing(event.offsetX, event.offsetY);
   }
 
@@ -685,27 +689,18 @@ class InkEditor extends AnnotationEditor {
   }
 
   /**
-   * onpointerleave callback for the canvas we're drawing on.
-   * @param {PointerEvent} event
-   */
-  canvasPointerleave(event) {
-    this.#endDrawing(event);
-  }
-
-  /**
    * End the drawing.
    * @param {PointerEvent} event
    */
   #endDrawing(event) {
     this.canvas.removeEventListener(
-      "pointerleave",
-      this.#boundCanvasPointerleave
-    );
-    this.canvas.removeEventListener(
       "pointermove",
       this.#boundCanvasPointermove
     );
     this.canvas.removeEventListener("pointerup", this.#boundCanvasPointerup);
+
+    //remove mouse up event listener outside the canvas
+    document.removeEventListener("pointerup", this.#boundCanvasPointerup);
     this.canvas.addEventListener("pointerdown", this.#boundCanvasPointerdown);
 
     // Slight delay to avoid the context menu to appear (it can happen on a long
@@ -997,7 +992,7 @@ class InkEditor extends AnnotationEditor {
           const p1 = s * first[1] + shiftY;
           buffer.push(p0, p1);
           points.push(p0, p1);
-          break;
+          break;`   `
         }
         const p10 = s * first[0] + shiftX;
         const p11 = s * first[1] + shiftY;
