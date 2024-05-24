@@ -303,7 +303,20 @@ async function getSerialized(page, filter = undefined) {
   const values = await page.evaluate(() => {
     const { map } =
       window.PDFViewerApplication.pdfDocument.annotationStorage.serializable;
-    return map ? [...map.values()] : [];
+    if (!map) {
+      return [];
+    }
+    const vals = Array.from(map.values());
+    for (const value of vals) {
+      for (const [k, v] of Object.entries(value)) {
+        // Puppeteer don't serialize typed array correctly, so we convert them
+        // to arrays.
+        if (ArrayBuffer.isView(v)) {
+          value[k] = Array.from(v);
+        }
+      }
+    }
+    return vals;
   });
   return filter ? values.map(filter) : values;
 }
