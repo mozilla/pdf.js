@@ -670,7 +670,7 @@ class HighlightEditor extends AnnotationEditor {
     }
     const [pageWidth, pageHeight] = this.pageDimensions;
     const boxes = this.#boxes;
-    const quadPoints = new Array(boxes.length * 8);
+    const quadPoints = new Float32Array(boxes.length * 8);
     let i = 0;
     for (const { x, y, width, height } of boxes) {
       const sx = x * pageWidth;
