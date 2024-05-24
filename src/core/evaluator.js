@@ -1261,7 +1261,11 @@ class PartialEvaluator {
         return this.fontCache.get(fontRef);
       }
 
-      font = this.xref.fetchIfRef(fontRef);
+      try {
+        font = this.xref.fetchIfRef(fontRef);
+      } catch (ex) {
+        warn(`loadFont - lookup failed: "${ex}".`);
+      }
     }
 
     if (!(font instanceof Dict)) {
