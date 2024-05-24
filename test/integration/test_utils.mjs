@@ -581,6 +581,23 @@ async function kbFocusPrevious(page) {
   await awaitPromise(handle);
 }
 
+async function switchToEditor(name, page, disable = false) {
+  const modeChangedHandle = await createPromise(page, resolve => {
+    window.PDFViewerApplication.eventBus.on(
+      "annotationeditormodechanged",
+      resolve,
+      { once: true }
+    );
+  });
+  await page.click(`#editor${name}`);
+  name = name.toLowerCase();
+  await page.waitForSelector(
+    ".annotationEditorLayer" +
+      (disable ? `:not(.${name}Editing)` : `.${name}Editing`)
+  );
+  await awaitPromise(modeChangedHandle);
+}
+
 export {
   awaitPromise,
   clearInput,
@@ -622,6 +639,7 @@ export {
   pasteFromClipboard,
   scrollIntoView,
   serializeBitmapDimensions,
+  switchToEditor,
   waitForAnnotationEditorLayer,
   waitForEntryInStorage,
   waitForEvent,
