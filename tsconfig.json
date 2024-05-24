@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "ES2022",
     "allowJs": true,
     "declaration": true,
     "strict": true,
