@@ -565,7 +565,7 @@ class PDFImage {
     return output;
   }
 
-  fillOpacity(rgbaBuf, width, height, actualHeight, image) {
+  async fillOpacity(rgbaBuf, width, height, actualHeight, image) {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
         rgbaBuf instanceof Uint8ClampedArray,
@@ -580,7 +580,7 @@ class PDFImage {
       sw = smask.width;
       sh = smask.height;
       alphaBuf = new Uint8ClampedArray(sw * sh);
-      smask.fillGrayBuffer(alphaBuf);
+      await smask.fillGrayBuffer(alphaBuf);
       if (sw !== width || sh !== height) {
         alphaBuf = resizeImageMask(alphaBuf, smask.bpc, sw, sh, width, height);
       }
@@ -590,7 +590,7 @@ class PDFImage {
         sh = mask.height;
         alphaBuf = new Uint8ClampedArray(sw * sh);
         mask.numComps = 1;
-        mask.fillGrayBuffer(alphaBuf);
+        await mask.fillGrayBuffer(alphaBuf);
 
         // Need to invert values in rgbaBuf
         for (i = 0, ii = sw * sh; i < ii; ++i) {
@@ -716,7 +716,7 @@ class PDFImage {
         drawWidth === originalWidth &&
         drawHeight === originalHeight
       ) {
-        const data = this.getImageBytes(originalHeight * rowBytes, {});
+        const data = await this.getImageBytes(originalHeight * rowBytes, {});
         if (isOffscreenCanvasSupported) {
           if (mustBeResized) {
             return ImageResizer.createImage(
@@ -774,7 +774,7 @@ class PDFImage {
           }
 
           if (isHandled) {
-            const rgba = this.getImageBytes(imageLength, {
+            const rgba = await this.getImageBytes(imageLength, {
               drawWidth,
               drawHeight,
               forceRGBA: true,
@@ -794,7 +794,7 @@ class PDFImage {
             case "DeviceRGB":
             case "DeviceCMYK":
               imgData.kind = ImageKind.RGB_24BPP;
-              imgData.data = this.getImageBytes(imageLength, {
+              imgData.data = await this.getImageBytes(imageLength, {
                 drawWidth,
                 drawHeight,
                 forceRGB: true,
@@ -809,7 +809,7 @@ class PDFImage {
       }
     }
 
-    const imgArray = this.getImageBytes(originalHeight * rowBytes, {
+    const imgArray = await this.getImageBytes(originalHeight * rowBytes, {
       internal: true,
     });
     // imgArray can be incomplete (e.g. after CCITT fax encoding).
@@ -852,7 +852,7 @@ class PDFImage {
       maybeUndoPreblend = true;
 
       // Color key masking (opacity) must be performed before decoding.
-      this.fillOpacity(data, drawWidth, drawHeight, actualHeight, comps);
+      await this.fillOpacity(data, drawWidth, drawHeight, actualHeight, comps);
     }
 
     if (this.needsDecode) {
@@ -893,7 +893,7 @@ class PDFImage {
     return imgData;
   }
 
-  fillGrayBuffer(buffer) {
+  async fillGrayBuffer(buffer) {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
         buffer instanceof Uint8ClampedArray,
@@ -913,7 +913,9 @@ class PDFImage {
 
     // rows start at byte boundary
     const rowBytes = (width * numComps * bpc + 7) >> 3;
-    const imgArray = this.getImageBytes(height * rowBytes, { internal: true });
+    const imgArray = await this.getImageBytes(height * rowBytes, {
+      internal: true,
+    });
 
     const comps = this.getComponents(imgArray);
     let i, length;
@@ -975,7 +977,7 @@ class PDFImage {
     };
   }
 
-  getImageBytes(
+  async getImageBytes(
     length,
     {
       drawWidth,
@@ -990,7 +992,10 @@ class PDFImage {
     this.image.drawHeight = drawHeight || this.height;
     this.image.forceRGBA = !!forceRGBA;
     this.image.forceRGB = !!forceRGB;
-    const imageBytes = this.image.getBytes(length, this.ignoreColorSpace);
+    const imageBytes = await this.image.getImageData(
+      length,
+      this.ignoreColorSpace
+    );
 
     // If imageBytes came from a DecodeStream, we're safe to transfer it
     // (and thus detach its underlying buffer) because it will constitute

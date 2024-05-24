@@ -42,13 +42,23 @@ class JpxStream extends DecodeStream {
   }
 
   readBlock(ignoreColorSpace) {
-    if (this.eof) {
-      return;
-    }
+    this.decodeImage(null, ignoreColorSpace);
+  }
 
-    this.buffer = JpxImage.decode(this.bytes, ignoreColorSpace);
+  decodeImage(bytes, ignoreColorSpace) {
+    if (this.eof) {
+      return this.buffer;
+    }
+    bytes ||= this.bytes;
+    this.buffer = JpxImage.decode(bytes, ignoreColorSpace);
     this.bufferLength = this.buffer.length;
     this.eof = true;
+
+    return this.buffer;
+  }
+
+  get canAsyncDecodeImageFromBuffer() {
+    return this.stream.isAsync;
   }
 }
 
