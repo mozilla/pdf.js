@@ -78,20 +78,19 @@ Note that we only mention the most relevant files and folders.
 
 ```
 ├── build/
-│   ├── pdf.js                             - display layer
-│   ├── pdf.js.map                         - display layer's source map
-│   ├── pdf.worker.js                      - core layer
-│   └── pdf.worker.js.map                  - core layer's source map
+│   ├── pdf.mjs                            - display layer
+│   ├── pdf.mjs.map                        - display layer's source map
+│   ├── pdf.worker.mjs                     - core layer
+│   └── pdf.worker.mjs.map                 - core layer's source map
 ├── web/
 │   ├── cmaps/                             - character maps (required by core)
 │   ├── compressed.tracemonkey-pldi-09.pdf - PDF file for testing purposes
-│   ├── debugger.js                        - helpful debugging features
 │   ├── images/                            - images for the viewer and annotation icons
 │   ├── locale/                            - translation files
 │   ├── viewer.css                         - viewer style sheet
 │   ├── viewer.html                        - viewer layout
-│   ├── viewer.js                          - viewer layer
-│   └── viewer.js.map                      - viewer layer's source map
+│   ├── viewer.mjs                         - viewer layer
+│   └── viewer.mjs.map                     - viewer layer's source map
 └── LICENSE
 ```
 
@@ -104,16 +103,16 @@ Note that we only mention the most relevant files and folders.
 ├── external/                              - third party code
 ├── l10n/                                  - translation files
 ├── src/
-│   ├── core/                              - core layer
-│   ├── display/                           - display layer
-│   ├── shared/                            - shared code between the core and display layers
-│   ├── interfaces.js                      - interface definitions for the core/display layers
-│   └── pdf.*.js                           - wrapper files for bundling
+│   ├── core/                              - core layer
+│   ├── display/                           - display layer
+│   ├── shared/                            - shared code between the core and display layers
+│   ├── interfaces.js                      - interface definitions for the core/display layers
+│   └── pdf.*.js                           - wrapper files for bundling
 ├── test/                                  - unit, font, reference, and integration tests
 ├── web/                                   - viewer layer
 ├── LICENSE
 ├── README.md
-├── gulpfile.js                            - build scripts/logic
+├── gulpfile.mjs                           - build scripts/logic
 ├── package-lock.json                      - pinned dependency versions
 └── package.json                           - package definition and dependencies
 ```
