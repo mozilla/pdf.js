@@ -25,6 +25,7 @@ import {
   kbUndo,
   loadAndWait,
   scrollIntoView,
+  switchToEditor,
   waitForSerialized,
   waitForStorageEntries,
 } from "./test_utils.mjs";
@@ -52,6 +53,8 @@ const commit = async page => {
   await page.waitForSelector(".inkEditor.selectedEditor.draggable.disabled");
 };
 
+const switchToInk = switchToEditor.bind(null, "Ink");
+
 describe("Ink Editor", () => {
   describe("Basic operations", () => {
     let pages;
@@ -67,7 +70,7 @@ describe("Ink Editor", () => {
     it("must draw, undo a deletion and check that the editors are not selected", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#editorInk");
+          await switchToInk(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
 
@@ -151,7 +154,7 @@ describe("Ink Editor", () => {
     it("must draw something", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#editorInk");
+          await switchToInk(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
 
@@ -190,8 +193,7 @@ describe("Ink Editor", () => {
     it("must check that the editor layer is disabled", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#editorInk");
-          await page.waitForSelector(".annotationEditorLayer.inkEditing");
+          await switchToInk(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
 
@@ -214,8 +216,7 @@ describe("Ink Editor", () => {
             );
           }
 
-          await page.click("#editorInk");
-          await page.waitForSelector(".annotationEditorLayer:not(.inkEditing)");
+          await switchToInk(page, /* disable */ true);
 
           const fourteenToOne = Array.from(new Array(13).keys(), n => 13 - n);
           for (const pageNumber of fourteenToOne) {
@@ -247,8 +248,7 @@ describe("Ink Editor", () => {
     it("must check that the ink editor is committed", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#editorInk");
-          await page.waitForSelector(".annotationEditorLayer.inkEditing");
+          await switchToInk(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
 
@@ -282,8 +282,7 @@ describe("Ink Editor", () => {
     it("must check that a draw can be undone", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#editorInk");
-          await page.waitForSelector(".annotationEditorLayer.inkEditing");
+          await switchToInk(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
 
@@ -326,8 +325,7 @@ describe("Ink Editor", () => {
     it("must check that a draw can be undone", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#editorInk");
-          await page.waitForSelector(".annotationEditorLayer.inkEditing");
+          await switchToInk(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
 
@@ -383,8 +381,7 @@ describe("Ink Editor", () => {
     it("must check that a draw can be undone", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#editorInk");
-          await page.waitForSelector(".annotationEditorLayer.inkEditing");
+          await switchToInk(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
 
@@ -435,9 +432,7 @@ describe("Ink Editor", () => {
     it("must check that we can draw several times on the same canvas", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#editorInk");
-          await page.waitForSelector(".annotationEditorLayer.inkEditing");
-
+          await switchToInk(page);
           const rect = await getRect(page, ".annotationEditorLayer");
 
           let xStart = rect.x + 10;
