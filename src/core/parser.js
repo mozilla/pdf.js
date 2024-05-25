@@ -710,11 +710,10 @@ class Parser {
       this.shift(); // 'stream'
     } else {
       // Bad stream length, scanning for endstream command.
-      const actualLength = this.#findStreamLength(startPos);
-      if (actualLength < 0) {
+      length = this.#findStreamLength(startPos);
+      if (length < 0) {
         throw new FormatError("Missing endstream command.");
       }
-      length = actualLength;
 
       lexer.nextChar();
       this.shift();
