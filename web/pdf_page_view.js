@@ -432,21 +432,13 @@ class PDFPageView {
   }
 
   async #renderTextLayer() {
-    const { pdfPage, textLayer, viewport } = this;
-    if (!textLayer) {
+    if (!this.textLayer) {
       return;
     }
 
     let error = null;
     try {
-      if (!textLayer.renderingDone) {
-        const readableStream = pdfPage.streamTextContent({
-          includeMarkedContent: true,
-          disableNormalization: true,
-        });
-        textLayer.setTextContentSource(readableStream);
-      }
-      await textLayer.render(viewport);
+      await this.textLayer.render(this.viewport);
     } catch (ex) {
       if (ex instanceof AbortException) {
         return;
@@ -917,6 +909,7 @@ class PDFPageView {
       this._accessibilityManager ||= new TextAccessibilityManager();
 
       this.textLayer = new TextLayerBuilder({
+        pdfPage,
         highlighter: this._textHighlighter,
         accessibilityManager: this._accessibilityManager,
         enablePermissions:
@@ -1047,7 +1040,7 @@ class PDFPageView {
       annotationCanvasMap: this._annotationCanvasMap,
       pageColors,
     };
-    const renderTask = (this.renderTask = this.pdfPage.render(renderContext));
+    const renderTask = (this.renderTask = pdfPage.render(renderContext));
     renderTask.onContinue = renderContinueCallback;
 
     const resultPromise = renderTask.promise.then(
