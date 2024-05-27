@@ -42,6 +42,7 @@ import {
   loadAndWait,
   pasteFromClipboard,
   scrollIntoView,
+  switchToEditor,
   waitForAnnotationEditorLayer,
   waitForEvent,
   waitForSelectedEditor,
@@ -77,10 +78,7 @@ const clearAll = async page => {
   await waitForStorageEntries(page, 0);
 };
 
-const switchToFreeText = async page => {
-  await page.click("#editorFreeText");
-  await page.waitForSelector(".annotationEditorLayer.freetextEditing");
-};
+const switchToFreeText = switchToEditor.bind(null, "FreeText");
 
 const getXY = async (page, selector) => {
   const rect = await getRect(page, selector);
@@ -1045,10 +1043,7 @@ describe("FreeText Editor", () => {
           );
 
           // Disable editing mode.
-          await page.click("#editorFreeText");
-          await page.waitForSelector(
-            `.annotationEditorLayer:not(.freetextEditing)`
-          );
+          await switchToFreeText(page, /* disable = */ true);
 
           // We want to check that the editor is displayed but not the original
           // canvas.
@@ -1149,10 +1144,7 @@ describe("FreeText Editor", () => {
           await page.waitForSelector(`${editorSelector} .overlay.enabled`);
 
           // Disable editing mode.
-          await page.click("#editorFreeText");
-          await page.waitForSelector(
-            `.annotationEditorLayer:not(.freetextEditing)`
-          );
+          await switchToFreeText(page, /* disable = */ true);
 
           await page.waitForSelector(`[data-annotation-id='popup_32R']`, {
             visible: true,
@@ -1235,10 +1227,7 @@ describe("FreeText Editor", () => {
           ]);
 
           // Disable editing mode.
-          await page.click("#editorFreeText");
-          await page.waitForSelector(
-            `.annotationEditorLayer:not(.freetextEditing)`
-          );
+          await switchToFreeText(page, /* disable = */ true);
 
           // We want to check that nothing is displayed.
           editorIds = await getEditors(page, "freeText");
@@ -1361,10 +1350,7 @@ describe("FreeText Editor", () => {
           await switchToFreeText(page);
 
           // Disable editing mode.
-          await page.click("#editorFreeText");
-          await page.waitForSelector(
-            `.annotationEditorLayer:not(.freetextEditing)`
-          );
+          await switchToFreeText(page, /* disable = */ true);
 
           // TODO: remove this when we switch to BiDi.
           await hover(page, "[data-annotation-id='23R']");
@@ -1399,10 +1385,7 @@ describe("FreeText Editor", () => {
           );
 
           // Exit editing mode.
-          await page.click("#editorFreeText");
-          await page.waitForSelector(
-            `.annotationEditorLayer:not(.freetextEditing)`
-          );
+          await switchToFreeText(page, /* disable = */ true);
 
           // Wait for the popup to be visible.
           await page.waitForFunction(
@@ -2782,10 +2765,7 @@ describe("FreeText Editor", () => {
           expect(content).withContext(`In ${browserName}`).toEqual(data);
 
           // Disable editing mode.
-          await page.click("#editorFreeText");
-          await page.waitForSelector(
-            `.annotationEditorLayer:not(.freetextEditing)`
-          );
+          await switchToFreeText(page, /* disable = */ true);
 
           await page.focus("#editorFreeText");
           await page.keyboard.press(" ");
@@ -3086,10 +3066,7 @@ describe("FreeText Editor", () => {
           await page.click(getEditorSelector(0), { count: 2 });
           await page.type(`${getEditorSelector(0)} .internal`, "C");
 
-          await page.click("#editorFreeText");
-          await page.waitForSelector(
-            `.annotationEditorLayer:not(.freetextEditing)`
-          );
+          await switchToFreeText(page, /* disable = */ true);
 
           const [value] = await getSerialized(page, x => x.value);
           expect(value)
@@ -3118,10 +3095,7 @@ describe("FreeText Editor", () => {
           await page.click(getEditorSelector(0), { count: 2 });
           await page.type(`${getEditorSelector(0)} .internal`, "Z");
 
-          await page.click("#editorFreeText");
-          await page.waitForSelector(
-            `.annotationEditorLayer:not(.freetextEditing)`
-          );
+          await switchToFreeText(page, /* disable = */ true);
 
           const [value] = await getSerialized(page, x => x.value);
           expect(value)
@@ -3593,10 +3567,7 @@ describe("FreeText Editor", () => {
           );
 
           // Disable editing mode.
-          await page.click("#editorFreeText");
-          await page.waitForSelector(
-            `.annotationEditorLayer:not(.freetextEditing)`
-          );
+          await switchToFreeText(page, /* disable = */ true);
 
           const oneToOne = Array.from(new Array(13).keys(), n => n + 2).concat(
             Array.from(new Array(13).keys(), n => 13 - n)
@@ -3640,10 +3611,7 @@ describe("FreeText Editor", () => {
           await waitForSerialized(page, 0);
 
           // Disable editing mode.
-          await page.click("#editorFreeText");
-          await page.waitForSelector(
-            `.annotationEditorLayer:not(.freetextEditing)`
-          );
+          await switchToFreeText(page, /* disable = */ true);
 
           const thirteenToOne = Array.from(new Array(13).keys(), n => 13 - n);
           for (const pageNumber of thirteenToOne) {

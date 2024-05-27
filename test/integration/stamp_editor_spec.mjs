@@ -30,6 +30,7 @@ import {
   pasteFromClipboard,
   scrollIntoView,
   serializeBitmapDimensions,
+  switchToEditor,
   waitForAnnotationEditorLayer,
   waitForEntryInStorage,
   waitForSelectedEditor,
@@ -84,6 +85,8 @@ const copyImage = async (page, imagePath, number) => {
   await waitForImage(page, getEditorSelector(number));
 };
 
+const switchToStamp = switchToEditor.bind(null, "Stamp");
+
 describe("Stamp Editor", () => {
   describe("Basic operations", () => {
     let pages;
@@ -104,7 +107,7 @@ describe("Stamp Editor", () => {
             return;
           }
 
-          await page.click("#editorStamp");
+          await switchToStamp(page);
           await page.click("#editorStampAddImage");
 
           const input = await page.$("#stampEditorFileInput");
@@ -181,7 +184,7 @@ describe("Stamp Editor", () => {
             return;
           }
 
-          await page.click("#editorStamp");
+          await switchToStamp(page);
           const names = ["bottomLeft", "bottomRight", "topRight", "topLeft"];
 
           for (let i = 0; i < 4; i++) {
@@ -256,7 +259,7 @@ describe("Stamp Editor", () => {
     it("must check that the alt-text flow is correctly implemented", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#editorStamp");
+          await switchToStamp(page);
 
           await copyImage(page, "../images/firefox_logo.png", 0);
 
@@ -425,7 +428,7 @@ describe("Stamp Editor", () => {
     it("must check that the dimensions change", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#editorStamp");
+          await switchToStamp(page);
 
           await copyImage(page, "../images/firefox_logo.png", 0);
 
@@ -593,8 +596,7 @@ describe("Stamp Editor", () => {
     it("must check that a stamp can be undone", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#editorStamp");
-          await page.waitForSelector(".annotationEditorLayer.stampEditing");
+          await switchToStamp(page);
 
           await copyImage(page, "../images/firefox_logo.png", 0);
           await page.waitForSelector(getEditorSelector(0));
@@ -626,8 +628,7 @@ describe("Stamp Editor", () => {
     it("must check that a stamp can be undone", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#editorStamp");
-          await page.waitForSelector(".annotationEditorLayer.stampEditing");
+          await switchToStamp(page);
 
           await copyImage(page, "../images/firefox_logo.png", 0);
           await page.waitForSelector(getEditorSelector(0));
@@ -672,8 +673,7 @@ describe("Stamp Editor", () => {
     it("must check that a stamp can be undone", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#editorStamp");
-          await page.waitForSelector(".annotationEditorLayer.stampEditing");
+          await switchToStamp(page);
 
           await copyImage(page, "../images/firefox_logo.png", 0);
           await page.waitForSelector(getEditorSelector(0));
@@ -713,8 +713,7 @@ describe("Stamp Editor", () => {
     it("must check that a resized stamp has its canvas at the right position", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#editorStamp");
-          await page.waitForSelector(".annotationEditorLayer.stampEditing");
+          await switchToStamp(page);
 
           await copyImage(page, "../images/firefox_logo.png", 0);
           await page.waitForSelector(getEditorSelector(0));
