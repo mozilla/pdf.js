@@ -1,0 +1,224 @@
+/* Copyright 2022 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+.dialog {
+  --dialog-bg-color: white;
+  --dialog-border-color: white;
+  --dialog-shadow: 0 2px 14px 0 rgb(58 57 68 / 0.2);
+  --text-primary-color: #15141a;
+  --text-secondary-color: #5b5b66;
+  --hover-filter: brightness(0.9);
+  --focus-ring-color: #0060df;
+  --focus-ring-outline: 2px solid var(--focus-ring-color);
+
+  --textarea-border-color: #8f8f9d;
+  --textarea-bg-color: white;
+  --textarea-fg-color: var(--text-secondary-color);
+
+  --radio-bg-color: #f0f0f4;
+  --radio-checked-bg-color: #fbfbfe;
+  --radio-border-color: #8f8f9d;
+  --radio-checked-border-color: #0060df;
+
+  --button-secondary-bg-color: #f0f0f4;
+  --button-secondary-fg-color: var(--text-primary-color);
+  --button-secondary-border-color: var(--button-secondary-bg-color);
+  --button-secondary-hover-bg-color: var(--button-secondary-bg-color);
+  --button-secondary-hover-fg-color: var(--button-secondary-fg-color);
+  --button-secondary-hover-border-color: var(--button-secondary-hover-bg-color);
+
+  --button-primary-bg-color: #0060df;
+  --button-primary-fg-color: #fbfbfe;
+  --button-primary-hover-bg-color: var(--button-primary-bg-color);
+  --button-primary-hover-fg-color: var(--button-primary-fg-color);
+  --button-primary-hover-border-color: var(--button-primary-hover-bg-color);
+
+  @media (prefers-color-scheme: dark) {
+    --dialog-bg-color: #1c1b22;
+    --dialog-border-color: #1c1b22;
+    --dialog-shadow: 0 2px 14px 0 #15141a;
+    --text-primary-color: #fbfbfe;
+    --text-secondary-color: #cfcfd8;
+    --focus-ring-color: #0df;
+    --hover-filter: brightness(1.4);
+
+    --textarea-bg-color: #42414d;
+
+    --radio-bg-color: #2b2a33;
+    --radio-checked-bg-color: #15141a;
+    --radio-checked-border-color: #0df;
+
+    --button-secondary-bg-color: #2b2a33;
+    --button-primary-bg-color: #0df;
+    --button-primary-fg-color: #15141a;
+  }
+
+  @media screen and (forced-colors: active) {
+    --dialog-bg-color: Canvas;
+    --dialog-border-color: CanvasText;
+    --dialog-shadow: none;
+    --text-primary-color: CanvasText;
+    --text-secondary-color: CanvasText;
+    --hover-filter: none;
+    --focus-ring-color: ButtonBorder;
+
+    --textarea-border-color: ButtonBorder;
+    --textarea-bg-color: Field;
+    --textarea-fg-color: ButtonText;
+
+    --radio-bg-color: ButtonFace;
+    --radio-checked-bg-color: ButtonFace;
+    --radio-border-color: ButtonText;
+    --radio-checked-border-color: ButtonText;
+
+    --button-secondary-bg-color: ButtonFace;
+    --button-secondary-fg-color: ButtonText;
+    --button-secondary-border-color: ButtonText;
+    --button-secondary-hover-bg-color: AccentColor;
+    --button-secondary-hover-fg-color: AccentColorText;
+
+    --button-primary-bg-color: ButtonText;
+    --button-primary-fg-color: ButtonFace;
+    --button-primary-hover-bg-color: AccentColor;
+    --button-primary-hover-fg-color: AccentColorText;
+  }
+
+  font: message-box;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 150%;
+  border-radius: 4px;
+  padding: 12px 16px;
+  border: 1px solid var(--dialog-border-color);
+  background: var(--dialog-bg-color);
+  color: var(--text-primary-color);
+  box-shadow: var(--dialog-shadow);
+
+  .mainContainer {
+    *:focus-visible {
+      outline: var(--focus-ring-outline);
+      outline-offset: 2px;
+    }
+
+    .radio {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+
+      > .radioButton {
+        display: flex;
+        gap: 8px;
+        align-self: stretch;
+        align-items: center;
+
+        input {
+          appearance: none;
+          box-sizing: border-box;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background-color: var(--radio-bg-color);
+          border: 1px solid var(--radio-border-color);
+
+          &:hover {
+            filter: var(--hover-filter);
+          }
+
+          &:checked {
+            background-color: var(--radio-checked-bg-color);
+            border: 4px solid var(--radio-checked-border-color);
+          }
+        }
+      }
+
+      > .radioLabel {
+        display: flex;
+        padding-inline-start: 24px;
+        align-items: flex-start;
+        gap: 10px;
+        align-self: stretch;
+
+        > span {
+          flex: 1 0 0;
+          font-size: 11px;
+          color: var(--text-secondary-color);
+        }
+      }
+    }
+
+    button {
+      border-radius: 4px;
+      border: 1px solid;
+      font: menu;
+      font-weight: 600;
+      padding: 4px 16px;
+      width: auto;
+      height: 32px;
+
+      &:hover {
+        cursor: pointer;
+        filter: var(--hover-filter);
+      }
+
+      &.secondaryButton {
+        color: var(--button-secondary-fg-color);
+        background-color: var(--button-secondary-bg-color);
+        border-color: var(--button-secondary-border-color);
+
+        &:hover {
+          color: var(--button-secondary-hover-fg-color);
+          background-color: var(--button-secondary-hover-bg-color);
+          border-color: var(--button-secondary-hover-border-color);
+        }
+      }
+
+      &.primaryButton {
+        color: var(--button-primary-hover-fg-color);
+        background-color: var(--button-primary-hover-bg-color);
+        border-color: var(--button-primary-hover-border-color);
+        opacity: 1;
+
+        &:hover {
+          color: var(--button-primary-hover-fg-color);
+          background-color: var(--button-primary-hover-bg-color);
+          border-color: var(--button-primary-hover-border-color);
+        }
+      }
+    }
+
+    textarea {
+      font: inherit;
+      padding: 8px;
+      resize: none;
+      margin: 0;
+      box-sizing: border-box;
+      border-radius: 4px;
+      border: 1px solid var(--textarea-border-color);
+      background: var(--textarea-bg-color);
+      color: var(--textarea-fg-color);
+
+      &:focus {
+        outline-offset: 0;
+        border-color: transparent;
+      }
+
+      &:disabled {
+        pointer-events: none;
+        opacity: 0.4;
+      }
+    }
+  }
+}
