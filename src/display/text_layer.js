@@ -122,7 +122,6 @@ class TextLayer {
 
     setLayerDimensions(container, viewport);
 
-    TextLayer.#pendingTextLayers.add(this);
     // Always clean-up the temporary canvas once rendering is no longer pending.
     this.#capability.promise
       .catch(() => {
@@ -167,6 +166,7 @@ class TextLayer {
       }, this.#capability.reject);
     };
     this.#reader = this.#textContentSource.getReader();
+    TextLayer.#pendingTextLayers.add(this);
     pump();
 
     return this.#capability.promise;
@@ -423,6 +423,7 @@ class TextLayer {
       return;
     }
     this.#ascentCache.clear();
+
     for (const { canvas } of this.#canvasContexts.values()) {
       canvas.remove();
     }
