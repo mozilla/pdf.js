@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
+/** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
-/** @typedef {import("../src/display/api").TextContent} TextContent */
 /** @typedef {import("./text_highlighter").TextHighlighter} TextHighlighter */
 // eslint-disable-next-line max-len
 /** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
@@ -25,7 +25,8 @@ import { removeNullCharacters } from "./ui_utils.js";
 
 /**
  * @typedef {Object} TextLayerBuilderOptions
- * @property {TextHighlighter} highlighter - Optional object that will handle
+ * @property {PDFPageProxy} pdfPage
+ * @property {TextHighlighter} [highlighter] - Optional object that will handle
  *   highlighting text from the find controller.
  * @property {TextAccessibilityManager} [accessibilityManager]
  * @property {function} [onAppend]
@@ -41,7 +42,7 @@ class TextLayerBuilder {
 
   #onAppend = null;
 
-  #textContentSource = null;
+  #renderingDone = false;
 
   #textLayer = null;
 
@@ -50,12 +51,13 @@ class TextLayerBuilder {
   static #selectionChangeAbortController = null;
 
   constructor({
+    pdfPage,
     highlighter = null,
     accessibilityManager = null,
     enablePermissions = false,
     onAppend = null,
   }) {
-    this.renderingDone = false;
+    this.pdfPage = pdfPage;
     this.highlighter = highlighter;
     this.accessibilityManager = accessibilityManager;
     this.#enablePermissions = enablePermissions === true;
@@ -67,7 +69,7 @@ class TextLayerBuilder {
   }
 
   #finishRendering() {
-    this.renderingDone = true;
+    this.#renderingDone = true;
 
     const endOfContent = document.createElement("div");
     endOfContent.className = "endOfContent";
@@ -79,13 +81,10 @@ class TextLayerBuilder {
   /**
    * Renders the text layer.
    * @param {PageViewport} viewport
+   * @param {Object} [textContentParams]
    */
-  async render(viewport) {
-    if (!this.#textContentSource) {
-      throw new Error('No "textContentSource" parameter specified.');
-    }
-
-    if (this.renderingDone && this.#textLayer) {
+  async render(viewport, textContentParams = null) {
+    if (this.#renderingDone && this.#textLayer) {
       this.#textLayer.update({
         viewport,
         onBefore: this.hide.bind(this),
@@ -96,7 +95,12 @@ class TextLayerBuilder {
 
     this.cancel();
     this.#textLayer = new TextLayer({
-      textContentSource: this.#textContentSource,
+      textContentSource: this.pdfPage.streamTextContent(
+        textContentParams || {
+          includeMarkedContent: true,
+          disableNormalization: true,
+        }
+      ),
       container: this.div,
       viewport,
     });
@@ -115,7 +119,7 @@ class TextLayerBuilder {
   }
 
   hide() {
-    if (!this.div.hidden && this.renderingDone) {
+    if (!this.div.hidden && this.#renderingDone) {
       // We turn off the highlighter in order to avoid to scroll into view an
       // element of the text layer which could be hidden.
       this.highlighter?.disable();
@@ -124,7 +128,7 @@ class TextLayerBuilder {
   }
 
   show() {
-    if (this.div.hidden && this.renderingDone) {
+    if (this.div.hidden && this.#renderingDone) {
       this.div.hidden = false;
       this.highlighter?.enable();
     }
@@ -140,14 +144,6 @@ class TextLayerBuilder {
     this.highlighter?.disable();
     this.accessibilityManager?.disable();
     TextLayerBuilder.#removeGlobalSelectionListener(this.div);
-  }
-
-  /**
-   * @param {ReadableStream | TextContent} source
-   */
-  setTextContentSource(source) {
-    this.cancel();
-    this.#textContentSource = source;
   }
 
   /**

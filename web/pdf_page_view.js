@@ -361,6 +361,14 @@ class PDFPageView {
     );
   }
 
+  #dispatchLayerRendered(name, error) {
+    this.eventBus.dispatch(name, {
+      source: this,
+      pageNumber: this.id,
+      error,
+    });
+  }
+
   async #renderAnnotationLayer() {
     let error = null;
     try {
@@ -369,11 +377,7 @@ class PDFPageView {
       console.error(`#renderAnnotationLayer: "${ex}".`);
       error = ex;
     } finally {
-      this.eventBus.dispatch("annotationlayerrendered", {
-        source: this,
-        pageNumber: this.id,
-        error,
-      });
+      this.#dispatchLayerRendered("annotationlayerrendered", error);
     }
   }
 
@@ -385,11 +389,7 @@ class PDFPageView {
       console.error(`#renderAnnotationEditorLayer: "${ex}".`);
       error = ex;
     } finally {
-      this.eventBus.dispatch("annotationeditorlayerrendered", {
-        source: this,
-        pageNumber: this.id,
-        error,
-      });
+      this.#dispatchLayerRendered("annotationeditorlayerrendered", error);
     }
   }
 
@@ -422,31 +422,18 @@ class PDFPageView {
         this.#addLayer(this.xfaLayer.div, "xfaLayer");
         this.l10n.resume();
       }
-
-      this.eventBus.dispatch("xfalayerrendered", {
-        source: this,
-        pageNumber: this.id,
-        error,
-      });
+      this.#dispatchLayerRendered("xfalayerrendered", error);
     }
   }
 
   async #renderTextLayer() {
-    const { pdfPage, textLayer, viewport } = this;
-    if (!textLayer) {
+    if (!this.textLayer) {
       return;
     }
 
     let error = null;
     try {
-      if (!textLayer.renderingDone) {
-        const readableStream = pdfPage.streamTextContent({
-          includeMarkedContent: true,
-          disableNormalization: true,
-        });
-        textLayer.setTextContentSource(readableStream);
-      }
-      await textLayer.render(viewport);
+      await this.textLayer.render(this.viewport);
     } catch (ex) {
       if (ex instanceof AbortException) {
         return;
@@ -454,12 +441,7 @@ class PDFPageView {
       console.error(`#renderTextLayer: "${ex}".`);
       error = ex;
     }
-
-    this.eventBus.dispatch("textlayerrendered", {
-      source: this,
-      pageNumber: this.id,
-      error,
-    });
+    this.#dispatchLayerRendered("textlayerrendered", error);
 
     this.#renderStructTreeLayer();
   }
@@ -917,6 +899,7 @@ class PDFPageView {
       this._accessibilityManager ||= new TextAccessibilityManager();
 
       this.textLayer = new TextLayerBuilder({
+        pdfPage,
         highlighter: this._textHighlighter,
         accessibilityManager: this._accessibilityManager,
         enablePermissions:
@@ -1047,7 +1030,7 @@ class PDFPageView {
       annotationCanvasMap: this._annotationCanvasMap,
       pageColors,
     };
-    const renderTask = (this.renderTask = this.pdfPage.render(renderContext));
+    const renderTask = (this.renderTask = pdfPage.render(renderContext));
     renderTask.onContinue = renderContinueCallback;
 
     const resultPromise = renderTask.promise.then(
