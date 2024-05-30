@@ -159,6 +159,7 @@ const PDFViewerApplication = {
   _downloadUrl: "",
   _eventBusAbortController: null,
   _windowAbortController: null,
+  _globalAbortController: new AbortController(),
   documentInfo: null,
   metadata: null,
   _contentDispositionFilename: null,
@@ -463,6 +464,7 @@ const PDFViewerApplication = {
       enablePermissions: AppOptions.get("enablePermissions"),
       pageColors,
       mlManager: this.mlManager,
+      abortSignal: this._globalAbortController.signal,
     });
     this.pdfViewer = pdfViewer;
 
@@ -477,6 +479,7 @@ const PDFViewerApplication = {
         renderingQueue: pdfRenderingQueue,
         linkService: pdfLinkService,
         pageColors,
+        abortSignal: this._globalAbortController.signal,
       });
       pdfRenderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
     }
@@ -2092,6 +2095,10 @@ const PDFViewerApplication = {
   unbindWindowEvents() {
     this._windowAbortController?.abort();
     this._windowAbortController = null;
+    if (AppOptions.get("isInAutomation")) {
+      this._globalAbortController?.abort();
+      this._globalAbortController = null;
+    }
   },
 
   _accumulateTicks(ticks, prop) {

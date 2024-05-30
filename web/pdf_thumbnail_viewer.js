@@ -42,6 +42,8 @@ const THUMBNAIL_SELECTED_CLASS = "selected";
  * @property {Object} [pageColors] - Overwrites background and foreground colors
  *   with user defined ones in order to improve readability in high contrast
  *   mode.
+ * @property {AbortSignal} [abortSignal] - The AbortSignal for the window
+ *   events.
  */
 
 /**
@@ -57,6 +59,7 @@ class PDFThumbnailViewer {
     linkService,
     renderingQueue,
     pageColors,
+    abortSignal,
   }) {
     this.container = container;
     this.eventBus = eventBus;
@@ -64,7 +67,11 @@ class PDFThumbnailViewer {
     this.renderingQueue = renderingQueue;
     this.pageColors = pageColors || null;
 
-    this.scroll = watchScroll(this.container, this.#scrollUpdated.bind(this));
+    this.scroll = watchScroll(
+      this.container,
+      this.#scrollUpdated.bind(this),
+      abortSignal
+    );
     this.#resetView();
   }
 
