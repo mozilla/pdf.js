@@ -561,24 +561,16 @@ function getQuadPoints(dict, rect) {
     return null;
   }
 
-  const quadPointsLists = [];
-  for (let i = 0, ii = quadPoints.length / 8; i < ii; i++) {
+  const newQuadPoints = new Float32Array(quadPoints.length);
+  for (let i = 0, ii = quadPoints.length; i < ii; i += 8) {
     // Each series of eight numbers represents the coordinates for one
     // quadrilateral in the order [x1, y1, x2, y2, x3, y3, x4, y4].
     // Convert this to an array of objects with x and y coordinates.
-    let minX = Infinity,
-      maxX = -Infinity,
-      minY = Infinity,
-      maxY = -Infinity;
-    for (let j = i * 8, jj = i * 8 + 8; j < jj; j += 2) {
-      const x = quadPoints[j];
-      const y = quadPoints[j + 1];
-
-      minX = Math.min(x, minX);
-      maxX = Math.max(x, maxX);
-      minY = Math.min(y, minY);
-      maxY = Math.max(y, maxY);
-    }
+    const [x1, y1, x2, y2, x3, y3, x4, y4] = quadPoints.slice(i, i + 8);
+    const minX = Math.min(x1, x2, x3, x4);
+    const maxX = Math.max(x1, x2, x3, x4);
+    const minY = Math.min(y1, y2, y3, y4);
+    const maxY = Math.max(y1, y2, y3, y4);
     // The quadpoints should be ignored if any coordinate in the array
     // lies outside the region specified by the rectangle. The rectangle
     // can be `null` for markup annotations since their rectangle may be
@@ -601,14 +593,9 @@ function getQuadPoints(dict, rect) {
     // top right, bottom right and bottom left. To avoid inconsistency and
     // broken rendering, we normalize all lists to put the quadpoints in the
     // same standard order (see https://stackoverflow.com/a/10729881).
-    quadPointsLists.push([
-      { x: minX, y: maxY },
-      { x: maxX, y: maxY },
-      { x: minX, y: minY },
-      { x: maxX, y: minY },
-    ]);
+    newQuadPoints.set([minX, maxY, maxX, maxY, minX, minY, maxX, minY], i);
   }
-  return quadPointsLists;
+  return newQuadPoints;
 }
 
 function getTransformMatrix(rect, bbox, matrix) {
@@ -1661,18 +1648,23 @@ class MarkupAnnotation extends Annotation {
       // If there are no quadpoints, the rectangle should be used instead.
       // Convert the rectangle definition to a points array similar to how the
       // quadpoints are defined.
-      pointsArray = [
-        [
-          { x: this.rectangle[0], y: this.rectangle[3] },
-          { x: this.rectangle[2], y: this.rectangle[3] },
-          { x: this.rectangle[0], y: this.rectangle[1] },
-          { x: this.rectangle[2], y: this.rectangle[1] },
-        ],
-      ];
+      pointsArray = Float32Array.from([
+        this.rectangle[0],
+        this.rectangle[3],
+        this.rectangle[2],
+        this.rectangle[3],
+        this.rectangle[0],
+        this.rectangle[1],
+        this.rectangle[2],
+        this.rectangle[1],
+      ]);
     }
 
-    for (const points of pointsArray) {
-      const [mX, MX, mY, MY] = pointsCallback(buffer, points);
+    for (let i = 0, ii = pointsArray.length; i < ii; i += 8) {
+      const [mX, MX, mY, MY] = pointsCallback(
+        buffer,
+        pointsArray.subarray(i, i + 8)
+      );
       minX = Math.min(minX, mX);
       maxX = Math.max(maxX, MX);
       minY = Math.min(minY, mY);
@@ -4083,10 +4075,10 @@ class LineAnnotation extends MarkupAnnotation {
             "S"
           );
           return [
-            points[0].x - borderWidth,
-            points[1].x + borderWidth,
-            points[3].y - borderWidth,
-            points[1].y + borderWidth,
+            points[0] - borderWidth,
+            points[2] + borderWidth,
+            points[7] - borderWidth,
+            points[3] + borderWidth,
           ];
         },
       });
@@ -4126,17 +4118,17 @@ class SquareAnnotation extends MarkupAnnotation {
         strokeAlpha,
         fillAlpha,
         pointsCallback: (buffer, points) => {
-          const x = points[2].x + this.borderStyle.width / 2;
-          const y = points[2].y + this.borderStyle.width / 2;
-          const width = points[3].x - points[2].x - this.borderStyle.width;
-          const height = points[1].y - points[3].y - this.borderStyle.width;
+          const x = points[4] + this.borderStyle.width / 2;
+          const y = points[5] + this.borderStyle.width / 2;
+          const width = points[6] - points[4] - this.borderStyle.width;
+          const height = points[3] - points[7] - this.borderStyle.width;
           buffer.push(`${x} ${y} ${width} ${height} re`);
           if (fillColor) {
             buffer.push("B");
           } else {
             buffer.push("S");
           }
-          return [points[0].x, points[1].x, points[3].y, points[1].y];
+          return [points[0], points[2], points[7], points[3]];
         },
       });
     }
@@ -4178,10 +4170,10 @@ class CircleAnnotation extends MarkupAnnotation {
         strokeAlpha,
         fillAlpha,
         pointsCallback: (buffer, points) => {
-          const x0 = points[0].x + this.borderStyle.width / 2;
-          const y0 = points[0].y - this.borderStyle.width / 2;
-          const x1 = points[3].x - this.borderStyle.width / 2;
-          const y1 = points[3].y + this.borderStyle.width / 2;
+          const x0 = points[0] + this.borderStyle.width / 2;
+          const y0 = points[1] - this.borderStyle.width / 2;
+          const x1 = points[6] - this.borderStyle.width / 2;
+          const y1 = points[7] + this.borderStyle.width / 2;
           const xMid = x0 + (x1 - x0) / 2;
           const yMid = y0 + (y1 - y0) / 2;
           const xOffset = ((x1 - x0) / 2) * controlPointsDistance;
@@ -4200,7 +4192,7 @@ class CircleAnnotation extends MarkupAnnotation {
           } else {
             buffer.push("S");
           }
-          return [points[0].x, points[1].x, points[3].y, points[1].y];
+          return [points[0], points[2], points[7], points[3]];
         },
       });
     }
@@ -4215,7 +4207,7 @@ class PolylineAnnotation extends MarkupAnnotation {
     this.data.annotationType = AnnotationType.POLYLINE;
     this.data.hasOwnCanvas = this.data.noRotate;
     this.data.noHTML = false;
-    this.data.vertices = [];
+    this.data.vertices = null;
 
     if (
       (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
@@ -4233,12 +4225,7 @@ class PolylineAnnotation extends MarkupAnnotation {
     if (!isNumberArray(rawVertices, null)) {
       return;
     }
-    for (let i = 0, ii = rawVertices.length; i < ii; i += 2) {
-      this.data.vertices.push({
-        x: rawVertices[i],
-        y: rawVertices[i + 1],
-      });
-    }
+    const vertices = (this.data.vertices = Float32Array.from(rawVertices));
 
     if (!this.appearance) {
       // The default stroke color is black.
@@ -4251,11 +4238,11 @@ class PolylineAnnotation extends MarkupAnnotation {
       // If the /Rect-entry is empty/wrong, create a fallback rectangle so that
       // we get similar rendering/highlighting behaviour as in Adobe Reader.
       const bbox = [Infinity, Infinity, -Infinity, -Infinity];
-      for (const vertex of this.data.vertices) {
-        bbox[0] = Math.min(bbox[0], vertex.x - borderAdjust);
-        bbox[1] = Math.min(bbox[1], vertex.y - borderAdjust);
-        bbox[2] = Math.max(bbox[2], vertex.x + borderAdjust);
-        bbox[3] = Math.max(bbox[3], vertex.y + borderAdjust);
+      for (let i = 0, ii = vertices.length; i < ii; i += 2) {
+        bbox[0] = Math.min(bbox[0], vertices[i] - borderAdjust);
+        bbox[1] = Math.min(bbox[1], vertices[i + 1] - borderAdjust);
+        bbox[2] = Math.max(bbox[2], vertices[i] + borderAdjust);
+        bbox[3] = Math.max(bbox[3], vertices[i + 1] + borderAdjust);
       }
       if (!Util.intersect(this.rectangle, bbox)) {
         this.rectangle = bbox;
@@ -4267,14 +4254,13 @@ class PolylineAnnotation extends MarkupAnnotation {
         strokeColor,
         strokeAlpha,
         pointsCallback: (buffer, points) => {
-          const vertices = this.data.vertices;
-          for (let i = 0, ii = vertices.length; i < ii; i++) {
+          for (let i = 0, ii = vertices.length; i < ii; i += 2) {
             buffer.push(
-              `${vertices[i].x} ${vertices[i].y} ${i === 0 ? "m" : "l"}`
+              `${vertices[i]} ${vertices[i + 1]} ${i === 0 ? "m" : "l"}`
             );
           }
           buffer.push("S");
-          return [points[0].x, points[1].x, points[3].y, points[1].y];
+          return [points[0], points[2], points[7], points[3]];
         },
       });
     }
@@ -4318,15 +4304,17 @@ class InkAnnotation extends MarkupAnnotation {
       // the alternating horizontal and vertical coordinates, respectively,
       // of each vertex. Convert this to an array of objects with x and y
       // coordinates.
-      this.data.inkLists.push([]);
       if (!Array.isArray(rawInkLists[i])) {
         continue;
       }
+      const inkList = new Float32Array(rawInkLists[i].length);
+      this.data.inkLists.push(inkList);
       for (let j = 0, jj = rawInkLists[i].length; j < jj; j += 2) {
         const x = xref.fetchIfRef(rawInkLists[i][j]),
           y = xref.fetchIfRef(rawInkLists[i][j + 1]);
         if (typeof x === "number" && typeof y === "number") {
-          this.data.inkLists[i].push({ x, y });
+          inkList[j] = x;
+          inkList[j + 1] = y;
         }
       }
     }
@@ -4342,12 +4330,12 @@ class InkAnnotation extends MarkupAnnotation {
       // If the /Rect-entry is empty/wrong, create a fallback rectangle so that
       // we get similar rendering/highlighting behaviour as in Adobe Reader.
       const bbox = [Infinity, Infinity, -Infinity, -Infinity];
-      for (const inkLists of this.data.inkLists) {
-        for (const vertex of inkLists) {
-          bbox[0] = Math.min(bbox[0], vertex.x - borderAdjust);
-          bbox[1] = Math.min(bbox[1], vertex.y - borderAdjust);
-          bbox[2] = Math.max(bbox[2], vertex.x + borderAdjust);
-          bbox[3] = Math.max(bbox[3], vertex.y + borderAdjust);
+      for (const inkList of this.data.inkLists) {
+        for (let i = 0, ii = inkList.length; i < ii; i += 2) {
+          bbox[0] = Math.min(bbox[0], inkList[i] - borderAdjust);
+          bbox[1] = Math.min(bbox[1], inkList[i + 1] - borderAdjust);
+          bbox[2] = Math.max(bbox[2], inkList[i] + borderAdjust);
+          bbox[3] = Math.max(bbox[3], inkList[i + 1] + borderAdjust);
         }
       }
       if (!Util.intersect(this.rectangle, bbox)) {
@@ -4365,14 +4353,14 @@ class InkAnnotation extends MarkupAnnotation {
           //   curves in an implementation-dependent way.
           // In order to simplify things, we utilize straight lines for now.
           for (const inkList of this.data.inkLists) {
-            for (let i = 0, ii = inkList.length; i < ii; i++) {
+            for (let i = 0, ii = inkList.length; i < ii; i += 2) {
               buffer.push(
-                `${inkList[i].x} ${inkList[i].y} ${i === 0 ? "m" : "l"}`
+                `${inkList[i]} ${inkList[i + 1]} ${i === 0 ? "m" : "l"}`
               );
             }
             buffer.push("S");
           }
-          return [points[0].x, points[1].x, points[3].y, points[1].y];
+          return [points[0], points[2], points[7], points[3]];
         },
       });
     }
@@ -4581,13 +4569,13 @@ class HighlightAnnotation extends MarkupAnnotation {
           fillAlpha,
           pointsCallback: (buffer, points) => {
             buffer.push(
-              `${points[0].x} ${points[0].y} m`,
-              `${points[1].x} ${points[1].y} l`,
-              `${points[3].x} ${points[3].y} l`,
-              `${points[2].x} ${points[2].y} l`,
+              `${points[0]} ${points[1]} m`,
+              `${points[2]} ${points[3]} l`,
+              `${points[6]} ${points[7]} l`,
+              `${points[4]} ${points[5]} l`,
               "f"
             );
-            return [points[0].x, points[1].x, points[3].y, points[1].y];
+            return [points[0], points[2], points[7], points[3]];
           },
         });
       }
@@ -4709,11 +4697,11 @@ class UnderlineAnnotation extends MarkupAnnotation {
           strokeAlpha,
           pointsCallback: (buffer, points) => {
             buffer.push(
-              `${points[2].x} ${points[2].y + 1.3} m`,
-              `${points[3].x} ${points[3].y + 1.3} l`,
+              `${points[4]} ${points[5] + 1.3} m`,
+              `${points[6]} ${points[7] + 1.3} l`,
               "S"
             );
-            return [points[0].x, points[1].x, points[3].y, points[1].y];
+            return [points[0], points[2], points[7], points[3]];
           },
         });
       }
@@ -4745,11 +4733,11 @@ class SquigglyAnnotation extends MarkupAnnotation {
           strokeColor,
           strokeAlpha,
           pointsCallback: (buffer, points) => {
-            const dy = (points[0].y - points[2].y) / 6;
+            const dy = (points[1] - points[5]) / 6;
             let shift = dy;
-            let x = points[2].x;
-            const y = points[2].y;
-            const xEnd = points[3].x;
+            let x = points[4];
+            const y = points[5];
+            const xEnd = points[6];
             buffer.push(`${x} ${y + shift} m`);
             do {
               x += 2;
@@ -4757,7 +4745,7 @@ class SquigglyAnnotation extends MarkupAnnotation {
               buffer.push(`${x} ${y + shift} l`);
             } while (x < xEnd);
             buffer.push("S");
-            return [points[2].x, xEnd, y - 2 * dy, y + 2 * dy];
+            return [points[4], xEnd, y - 2 * dy, y + 2 * dy];
           },
         });
       }
@@ -4790,13 +4778,13 @@ class StrikeOutAnnotation extends MarkupAnnotation {
           strokeAlpha,
           pointsCallback: (buffer, points) => {
             buffer.push(
-              `${(points[0].x + points[2].x) / 2} ` +
-                `${(points[0].y + points[2].y) / 2} m`,
-              `${(points[1].x + points[3].x) / 2} ` +
-                `${(points[1].y + points[3].y) / 2} l`,
+              `${(points[0] + points[4]) / 2} ` +
+                `${(points[1] + points[5]) / 2} m`,
+              `${(points[2] + points[6]) / 2} ` +
+                `${(points[3] + points[7]) / 2} l`,
               "S"
             );
-            return [points[0].x, points[1].x, points[3].y, points[1].y];
+            return [points[0], points[2], points[7], points[3]];
           },
         });
       }
