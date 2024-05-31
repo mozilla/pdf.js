@@ -70,8 +70,8 @@ import { SimpleLinkService } from "./pdf_link_service.js";
 const DEFAULT_CACHE_SIZE = 10;
 
 const PagesCountLimit = {
-  FORCE_SCROLL_MODE_PAGE: 15000,
-  FORCE_LAZY_PAGE_INIT: 7500,
+  FORCE_SCROLL_MODE_PAGE: 10000,
+  FORCE_LAZY_PAGE_INIT: 5000,
   PAUSE_EAGER_PAGE_INIT: 250,
 };
 
