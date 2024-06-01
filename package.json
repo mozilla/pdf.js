@@ -27,7 +27,7 @@
     "eslint-plugin-sort-exports": "^0.9.1",
     "eslint-plugin-unicorn": "^53.0.0",
     "globals": "^15.3.0",
-    "gulp": "^4.0.2",
+    "gulp": "^5.0.0",
     "gulp-cli": "^3.0.0",
     "gulp-postcss": "^10.0.0",
     "gulp-rename": "^2.0.0",
