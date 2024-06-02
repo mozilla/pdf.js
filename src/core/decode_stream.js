@@ -99,6 +99,14 @@ class DecodeStream extends BaseStream {
     return this.buffer.subarray(pos, end);
   }
 
+  async getImageData(length, ignoreColorSpace = false) {
+    if (!this.canAsyncDecodeImageFromBuffer) {
+      return this.getBytes(length, ignoreColorSpace);
+    }
+    const data = await this.stream.asyncGetBytes();
+    return this.decodeImage(data, ignoreColorSpace);
+  }
+
   reset() {
     this.pos = 0;
   }

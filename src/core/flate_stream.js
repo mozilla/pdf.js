@@ -21,6 +21,7 @@
 
 import { FormatError, info } from "../shared/util.js";
 import { DecodeStream } from "./decode_stream.js";
+import { Stream } from "./stream.js";
 
 const codeLenCodeMap = new Int32Array([
   16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15,
@@ -146,6 +147,57 @@ class FlateStream extends DecodeStream {
 
     this.codeSize = 0;
     this.codeBuf = 0;
+  }
+
+  async getImageData(length, _ignoreColorSpace) {
+    const data = await this.asyncGetBytes();
+    return data?.subarray(0, length) || this.getBytes(length);
+  }
+
+  async asyncGetBytes() {
+    this.str.reset();
+    const bytes = this.str.getBytes();
+
+    try {
+      const { readable, writable } = new DecompressionStream("deflate");
+      const writer = writable.getWriter();
+      writer.write(bytes);
+      writer.close();
+
+      const chunks = [];
+      let totalLength = 0;
+
+      for await (const chunk of readable) {
+        chunks.push(chunk);
+        totalLength += chunk.byteLength;
+      }
+      const data = new Uint8Array(totalLength);
+      let offset = 0;
+      for (const chunk of chunks) {
+        data.set(chunk, offset);
+        offset += chunk.byteLength;
+      }
+
+      return data;
+    } catch {
+      // DecompressionStream failed (for example because there are some extra
+      // bytes after the end of the compressed data), so we fallback to our
+      // decoder.
+      // We already get the bytes from the underlying stream, so we just reuse
+      // them to avoid get them again.
+      this.str = new Stream(
+        bytes,
+        2 /* = header size (see ctor) */,
+        bytes.length,
+        this.str.dict
+      );
+      this.reset();
+      return null;
+    }
+  }
+
+  get isAsync() {
+    return true;
   }
 
   getBits(bits) {

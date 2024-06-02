@@ -24,16 +24,6 @@ import { shadow } from "../shared/util.js";
  */
 class JpegStream extends DecodeStream {
   constructor(stream, maybeLength, params) {
-    // Some images may contain 'junk' before the SOI (start-of-image) marker.
-    // Note: this seems to mainly affect inline images.
-    let ch;
-    while ((ch = stream.getByte()) !== -1) {
-      // Find the first byte of the SOI marker (0xFFD8).
-      if (ch === 0xff) {
-        stream.skip(-1); // Reset the stream position to the SOI.
-        break;
-      }
-    }
     super(maybeLength);
 
     this.stream = stream;
@@ -53,8 +43,24 @@ class JpegStream extends DecodeStream {
   }
 
   readBlock() {
+    this.decodeImage();
+  }
+
+  decodeImage(bytes) {
     if (this.eof) {
-      return;
+      return this.buffer;
+    }
+    bytes ||= this.bytes;
+
+    // Some images may contain 'junk' before the SOI (start-of-image) marker.
+    // Note: this seems to mainly affect inline images.
+    for (let i = 0, ii = bytes.length - 1; i < ii; i++) {
+      if (bytes[i] === 0xff && bytes[i + 1] === 0xd8) {
+        if (i > 0) {
+          bytes = bytes.subarray(i);
+        }
+        break;
+      }
     }
     const jpegOptions = {
       decodeTransform: undefined,
@@ -89,7 +95,7 @@ class JpegStream extends DecodeStream {
     }
     const jpegImage = new JpegImage(jpegOptions);
 
-    jpegImage.parse(this.bytes);
+    jpegImage.parse(bytes);
     const data = jpegImage.getData({
       width: this.drawWidth,
       height: this.drawHeight,
@@ -100,6 +106,12 @@ class JpegStream extends DecodeStream {
     this.buffer = data;
     this.bufferLength = data.length;
     this.eof = true;
+
+    return this.buffer;
+  }
+
+  get canAsyncDecodeImageFromBuffer() {
+    return this.stream.isAsync;
   }
 }
 
