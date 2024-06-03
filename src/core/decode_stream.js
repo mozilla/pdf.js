@@ -73,7 +73,7 @@ class DecodeStream extends BaseStream {
     return this.buffer[this.pos++];
   }
 
-  getBytes(length, ignoreColorSpace = false) {
+  getBytes(length, decoderOptions = null) {
     const pos = this.pos;
     let end;
 
@@ -82,7 +82,7 @@ class DecodeStream extends BaseStream {
       end = pos + length;
 
       while (!this.eof && this.bufferLength < end) {
-        this.readBlock(ignoreColorSpace);
+        this.readBlock(decoderOptions);
       }
       const bufEnd = this.bufferLength;
       if (end > bufEnd) {
@@ -90,7 +90,7 @@ class DecodeStream extends BaseStream {
       }
     } else {
       while (!this.eof) {
-        this.readBlock(ignoreColorSpace);
+        this.readBlock(decoderOptions);
       }
       end = this.bufferLength;
     }
@@ -99,12 +99,12 @@ class DecodeStream extends BaseStream {
     return this.buffer.subarray(pos, end);
   }
 
-  async getImageData(length, ignoreColorSpace = false) {
+  async getImageData(length, decoderOptions = null) {
     if (!this.canAsyncDecodeImageFromBuffer) {
-      return this.getBytes(length, ignoreColorSpace);
+      return this.getBytes(length, decoderOptions);
     }
     const data = await this.stream.asyncGetBytes();
-    return this.decodeImage(data, ignoreColorSpace);
+    return this.decodeImage(data, decoderOptions);
   }
 
   reset() {

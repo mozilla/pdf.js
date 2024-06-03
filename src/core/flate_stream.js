@@ -149,7 +149,7 @@ class FlateStream extends DecodeStream {
     this.codeBuf = 0;
   }
 
-  async getImageData(length, _ignoreColorSpace) {
+  async getImageData(length, _decoderOptions) {
     const data = await this.asyncGetBytes();
     return data?.subarray(0, length) || this.getBytes(length);
   }
