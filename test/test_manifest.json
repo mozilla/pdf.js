@@ -10031,5 +10031,30 @@
     "rounds": 1,
     "link": true,
     "type": "eq"
+  },
+  {
+    "id": "issue16782",
+    "file": "pdfs/issue16782.pdf",
+    "md5": "b203313ae62c0dac2585fae1c5fa6f8b",
+    "rounds": 1,
+    "link": true,
+    "type": "eq"
+  },
+  {
+    "id": "issue11306",
+    "file": "pdfs/issue11306.pdf",
+    "md5": "dfc626ee307f9488d74341d21641db9e",
+    "rounds": 1,
+    "link": true,
+    "lastPage": 1,
+    "type": "eq"
+  },
+  {
+    "id": "isssue18194",
+    "file": "pdfs/isssue18194.pdf",
+    "md5": "dbc12624353401deac99d94a2962df4d",
+    "rounds": 1,
+    "link": true,
+    "type": "eq"
   }
 ]
