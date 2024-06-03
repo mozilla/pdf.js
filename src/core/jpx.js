@@ -26,9 +26,10 @@ class JpxError extends BaseException {
 class JpxImage {
   static #module = null;
 
-  static decode(data, ignoreColorSpace = false) {
+  static decode(data, decoderOptions) {
+    decoderOptions ||= {};
     this.#module ||= OpenJPEG({ warn });
-    const imageData = this.#module.decode(data, ignoreColorSpace);
+    const imageData = this.#module.decode(data, decoderOptions);
     if (typeof imageData === "string") {
       throw new JpxError(imageData);
     }

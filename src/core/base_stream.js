@@ -49,8 +49,8 @@ class BaseStream {
    *       to be fully loaded, since otherwise intermittent errors may occur;
    *       note the `ObjectLoader` class.
    */
-  async getImageData(length, ignoreColorSpace) {
-    return this.getBytes(length, ignoreColorSpace);
+  async getImageData(length, decoderOptions) {
+    return this.getBytes(length, decoderOptions);
   }
 
   async asyncGetBytes() {
