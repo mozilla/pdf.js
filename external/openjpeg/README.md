@@ -9,4 +9,4 @@ In order to generate the file `openjpeg.js`:
 ## Licensing
 
 [OpenJPEG](https://www.openjpeg.org/) is under [BSD 2-clause "Simplified" License](https://github.com/uclouvain/openjpeg/blob/master/LICENSE)
-and [pdf.js.openjpeg](https://github.com/mozilla/pdf.js.openjpeg/) is released under [Apache 2](https://github.com/mozilla/pdf.js.openjpeg/blob/main/LICENSE) license so `openjpeg.js` is released under [Apache 2](https://github.com/mozilla/pdf.js.openjpeg/blob/main/LICENSE) license too.
+and [pdf.js.openjpeg](https://github.com/mozilla/pdf.js.openjpeg/) is released under [BSD 2-clause](https://github.com/mozilla/pdf.js.openjpeg/blob/main/LICENSE) license so `openjpeg.js` is released under [BSD 2-clause](https://github.com/mozilla/pdf.js.openjpeg/blob/main/LICENSE) license too.
