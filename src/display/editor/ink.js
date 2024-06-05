@@ -650,6 +650,14 @@ class InkEditor extends AnnotationEditor {
     if (event.button !== 0 || !this.isInEditMode() || this.#disableEditing) {
       return;
     }
+    document.dispatchEvent(new CustomEvent('signaturePoint', {
+      detail: { 
+        canvasPoint: [event.offsetX, event.offsetY],
+        pdfPoint: InkEditor.#toPDFCoordinates([event.offsetX, event.offsetY], this.getRect(0, 0), this.rotation),
+        pageIndex: this.pageIndex,
+      }
+    }));
+    document.getElementById("editorInk").click();
 
     // We want to draw on top of any other editors.
     // Since it's the last child, there's no need to give it a higher z-index.
@@ -662,8 +670,8 @@ class InkEditor extends AnnotationEditor {
         preventScroll: true /* See issue #17327 */,
       });
     }
-
-    this.#startDrawing(event.offsetX, event.offsetY);
+    
+    //this.#startDrawing(event.offsetX, event.offsetY);
   }
 
   /**
