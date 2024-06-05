@@ -1072,6 +1072,9 @@ class AnnotationEditor {
   }
 
   #selectOnPointerEvent(event) {
+    if (!this.parent) {
+      return;
+    }
     const { isMac } = FeatureTest.platform;
     if (
       (event.ctrlKey && !isMac) ||
