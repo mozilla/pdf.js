@@ -38,8 +38,13 @@ function loadAndWait(filename, selector, zoom, pageSetup, options) {
 
       let app_options = "";
       if (options) {
+        const optionsObject =
+          typeof options === "function"
+            ? await options(page, session.name)
+            : options;
+
         // Options must be handled in app.js::_parseHashParams.
-        for (const [key, value] of Object.entries(options)) {
+        for (const [key, value] of Object.entries(optionsObject)) {
           app_options += `&${key}=${encodeURIComponent(value)}`;
         }
       }
