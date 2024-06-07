@@ -68,16 +68,6 @@ class TextLayerBuilder {
     this.div.className = "textLayer";
   }
 
-  #finishRendering() {
-    this.#renderingDone = true;
-
-    const endOfContent = document.createElement("div");
-    endOfContent.className = "endOfContent";
-    this.div.append(endOfContent);
-
-    this.#bindMouse(endOfContent);
-  }
-
   /**
    * Renders the text layer.
    * @param {PageViewport} viewport
@@ -110,7 +100,13 @@ class TextLayerBuilder {
     this.accessibilityManager?.setTextMapping(textDivs);
 
     await this.#textLayer.render();
-    this.#finishRendering();
+    this.#renderingDone = true;
+
+    const endOfContent = document.createElement("div");
+    endOfContent.className = "endOfContent";
+    this.div.append(endOfContent);
+
+    this.#bindMouse(endOfContent);
     // Ensure that the textLayer is appended to the DOM *before* handling
     // e.g. a pending search operation.
     this.#onAppend?.(this.div);
