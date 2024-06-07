@@ -670,18 +670,22 @@ const PDFViewerApplication = {
 
       // Enable dragging-and-dropping a new PDF file onto the viewerContainer.
       appConfig.mainContainer.addEventListener("dragover", function (evt) {
-        evt.preventDefault();
-
-        evt.dataTransfer.dropEffect =
-          evt.dataTransfer.effectAllowed === "copy" ? "copy" : "move";
+        for (const item of evt.dataTransfer.items) {
+          if (item.type === "application/pdf") {
+            evt.dataTransfer.dropEffect =
+              evt.dataTransfer.effectAllowed === "copy" ? "copy" : "move";
+            evt.preventDefault();
+            evt.stopPropagation();
+            return;
+          }
+        }
       });
       appConfig.mainContainer.addEventListener("drop", function (evt) {
-        evt.preventDefault();
-
-        const { files } = evt.dataTransfer;
-        if (!files || files.length === 0) {
+        if (evt.dataTransfer.files?.[0].type !== "application/pdf") {
           return;
         }
+        evt.preventDefault();
+        evt.stopPropagation();
         eventBus.dispatch("fileinputchange", {
           source: this,
           fileInput: evt.dataTransfer,
