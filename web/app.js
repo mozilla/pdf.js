@@ -1083,13 +1083,11 @@ const PDFViewerApplication = {
       this._ensureDownloadComplete();
 
       const data = await this.pdfDocument.getData();
-      const blob = new Blob([data], { type: "application/pdf" });
-
-      await this.downloadManager.download(blob, url, filename, options);
+      this.downloadManager.download(data, url, filename, options);
     } catch {
       // When the PDF document isn't ready, or the PDF file is still
       // downloading, simply download using the URL.
-      await this.downloadManager.downloadUrl(url, filename, options);
+      this.downloadManager.downloadUrl(url, filename, options);
     }
   },
 
@@ -1106,9 +1104,7 @@ const PDFViewerApplication = {
       this._ensureDownloadComplete();
 
       const data = await this.pdfDocument.saveDocument();
-      const blob = new Blob([data], { type: "application/pdf" });
-
-      await this.downloadManager.download(blob, url, filename, options);
+      this.downloadManager.download(data, url, filename, options);
     } catch (reason) {
       // When the PDF document isn't ready, or the PDF file is still
       // downloading, simply fallback to a "regular" download.

@@ -140,8 +140,10 @@ class DownloadManager {
     return false;
   }
 
-  download(blob, url, filename, options = {}) {
-    const blobUrl = URL.createObjectURL(blob);
+  download(data, url, filename, options = {}) {
+    const blobUrl = URL.createObjectURL(
+      new Blob([data], { type: "application/pdf" })
+    );
 
     FirefoxCom.request("download", {
       blobUrl,

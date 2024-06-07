@@ -160,12 +160,12 @@ class IDownloadManager {
   openOrDownloadData(data, filename, dest = null) {}
 
   /**
-   * @param {Blob} blob
+   * @param {Uint8Array} data
    * @param {string} url
    * @param {string} filename
    * @param {Object} [options]
    */
-  download(blob, url, filename, options) {}
+  download(data, url, filename, options) {}
 }
 
 /**
