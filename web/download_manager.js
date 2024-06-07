@@ -113,8 +113,10 @@ class DownloadManager {
     return false;
   }
 
-  download(blob, url, filename, _options) {
-    const blobUrl = URL.createObjectURL(blob);
+  download(data, url, filename, _options) {
+    const blobUrl = URL.createObjectURL(
+      new Blob([data], { type: "application/pdf" })
+    );
     download(blobUrl, filename);
   }
 }
