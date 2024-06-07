@@ -279,12 +279,13 @@ describe("PDF viewer", () => {
               .withContext(`In ${browserName}`)
               .toBeLessThan(originalCanvasSize * factor ** 2);
 
-            // Disabled because `canvasSize` is `4_012_800`, which is
-            // close to the limit but somehow a bit more.
-            //
-            //  expect(canvasSize)
-            //    .withContext(`In ${browserName}, MAX_CANVAS_PIXELS`)
-            //    .toBeLessThan(MAX_CANVAS_PIXELS.get(browserName));
+            expect(canvasSize)
+              .withContext(`In ${browserName}, <= MAX_CANVAS_PIXELS`)
+              .toBeLessThanOrEqual(MAX_CANVAS_PIXELS.get(browserName));
+
+            expect(canvasSize)
+              .withContext(`In ${browserName}, > MAX_CANVAS_PIXELS * 0.99`)
+              .toBeGreaterThan(MAX_CANVAS_PIXELS.get(browserName) * 0.99);
           })
         );
       });

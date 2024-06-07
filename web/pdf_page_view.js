@@ -34,9 +34,9 @@ import {
 import {
   approximateFraction,
   DEFAULT_SCALE,
+  floorToDivide,
   OutputScale,
   RenderingStates,
-  roundToDivide,
   TextLayerMode,
 } from "./ui_utils.js";
 import { AnnotationEditorLayerBuilder } from "./annotation_editor_layer_builder.js";
@@ -1025,11 +1025,11 @@ class PDFPageView {
     const sfx = approximateFraction(outputScale.sx);
     const sfy = approximateFraction(outputScale.sy);
 
-    canvas.width = roundToDivide(width * outputScale.sx, sfx[0]);
-    canvas.height = roundToDivide(height * outputScale.sy, sfy[0]);
+    canvas.width = floorToDivide(width * outputScale.sx, sfx[0]);
+    canvas.height = floorToDivide(height * outputScale.sy, sfy[0]);
     const { style } = canvas;
-    style.width = roundToDivide(width, sfx[1]) + "px";
-    style.height = roundToDivide(height, sfy[1]) + "px";
+    style.width = floorToDivide(width, sfx[1]) + "px";
+    style.height = floorToDivide(height, sfy[1]) + "px";
 
     // Add the viewport so it's known what it was originally drawn with.
     this.#viewportMap.set(canvas, viewport);
