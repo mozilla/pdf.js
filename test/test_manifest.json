@@ -10064,5 +10064,22 @@
     "rounds": 1,
     "link": true,
     "type": "eq"
+  },
+  {
+    "id": "bug1899804_print",
+    "file": "pdfs/bug1899804.pdf",
+    "md5": "53d82575d6d5d314404ede8970073e1b",
+    "rounds": 1,
+    "link": true,
+    "type": "eq",
+    "print": true
+  },
+  {
+    "id": "bug1899804",
+    "file": "pdfs/bug1899804.pdf",
+    "md5": "53d82575d6d5d314404ede8970073e1b",
+    "rounds": 1,
+    "link": true,
+    "type": "eq"
   }
 ]
