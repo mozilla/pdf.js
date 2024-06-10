@@ -176,6 +176,9 @@ const DefaultStandardFontDataFactory =
  *   `OffscreenCanvas` in the worker. Primarily used to improve performance of
  *   image conversion/rendering.
  *   The default value is `true` in web environments and `false` in Node.js.
+* @property {boolean} [includeTextContentChars] - Determines if we include
+ *   an array of character data in the TextContent output.
+ *   The default value is `false`.
  * @property {number} [canvasMaxAreaInBytes] - The integer value is used to
  *   know when an image must be resized (uses `OffscreenCanvas` in the worker).
  *   If it's -1 then a possibly slow algorithm is used to guess the max value.
@@ -381,6 +384,7 @@ function getDocument(src) {
       useSystemFonts,
       cMapUrl: useWorkerFetch ? cMapUrl : null,
       standardFontDataUrl: useWorkerFetch ? standardFontDataUrl : null,
+      includeTextContentChars,
     },
   };
   const transportParams = {
@@ -1131,6 +1135,16 @@ class PDFDocumentProxy {
  */
 
 /**
+ * Text character in content.
+ *
+ * @typedef {Object} TextCharItem
+ * @property {string} char - Character glyph.
+ * @property {number} width - Scaled width of character.
+ * @property {string} unicode - Character unicode.
+ * @property {Array<any>} transform - Transformation matrix.
+ */
+
+/**
  * Page text content.
  *
  * @typedef {Object} TextContent
@@ -1149,6 +1163,7 @@ class PDFDocumentProxy {
  * @property {string} str - Text content.
  * @property {string} dir - Text direction: 'ttb', 'ltr' or 'rtl'.
  * @property {Array<any>} transform - Transformation matrix.
+ * @property {Array<TextCharItem>} chars - Character list for text string. 
  * @property {number} width - Width in device space.
  * @property {number} height - Height in device space.
  * @property {string} fontName - Font name used by PDF.js for converted font.
