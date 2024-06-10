@@ -1641,7 +1641,7 @@ class PDFPageProxy {
         includeMarkedContent: includeMarkedContent === true,
         disableNormalization: disableNormalization === true,
         keepWhiteSpace: keepWhiteSpace === true,
-        includeTextContentChars: includeMarkedContent === true,
+        includeTextContentChars: includeTextContentChars === true,
       },
       {
         highWaterMark: TEXT_CONTENT_CHUNK_SIZE,

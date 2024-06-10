@@ -3339,6 +3339,7 @@ class PartialEvaluator {
                     markedContentData,
                     disableNormalization,
                     keepWhiteSpace,
+                    includeTextContentChars,
                   })
                   .then(function () {
                     if (!sinkWrapper.enqueueInvoked) {
