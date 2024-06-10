@@ -2681,10 +2681,18 @@ class TextWidgetAnnotation extends WidgetAnnotation {
   constructor(params) {
     super(params);
 
+    const { dict } = params;
+
+    if (dict.has("PMD")) {
+      // It's used to display a barcode but it isn't specified so we just hide
+      // it to avoid any confusion.
+      this.flags |= AnnotationFlag.HIDDEN;
+      this.data.hidden = true;
+      warn("Barcodes are not supported");
+    }
+
     this.data.hasOwnCanvas = this.data.readOnly && !this.data.noHTML;
     this._hasText = true;
-
-    const dict = params.dict;
 
     // The field value is always a string.
     if (typeof this.data.fieldValue !== "string") {
