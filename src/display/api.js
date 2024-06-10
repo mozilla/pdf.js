@@ -176,9 +176,6 @@ const DefaultStandardFontDataFactory =
  *   `OffscreenCanvas` in the worker. Primarily used to improve performance of
  *   image conversion/rendering.
  *   The default value is `true` in web environments and `false` in Node.js.
-* @property {boolean} [includeTextContentChars] - Determines if we include
- *   an array of character data in the TextContent output.
- *   The default value is `false`.
  * @property {number} [canvasMaxAreaInBytes] - The integer value is used to
  *   know when an image must be resized (uses `OffscreenCanvas` in the worker).
  *   If it's -1 then a possibly slow algorithm is used to guess the max value.
@@ -384,7 +381,6 @@ function getDocument(src) {
       useSystemFonts,
       cMapUrl: useWorkerFetch ? cMapUrl : null,
       standardFontDataUrl: useWorkerFetch ? standardFontDataUrl : null,
-      includeTextContentChars,
     },
   };
   const transportParams = {
@@ -1132,6 +1128,9 @@ class PDFDocumentProxy {
  *   content items in the items array of TextContent. The default is `false`.
  * @property {boolean} [disableNormalization] - When true the text is *not*
  *   normalized in the worker-thread. The default is `false`.
+ * @property {boolean} [keepWhiteSpace] - When true keep whitespace characters.
+ * @property {boolean} [includeTextContentChars] - When true include character
+ *  array in text content.
  */
 
 /**
@@ -1630,6 +1629,8 @@ class PDFPageProxy {
   streamTextContent({
     includeMarkedContent = false,
     disableNormalization = false,
+    keepWhiteSpace = false,
+    includeTextContentChars = false,
   } = {}) {
     const TEXT_CONTENT_CHUNK_SIZE = 100;
 
@@ -1639,6 +1640,8 @@ class PDFPageProxy {
         pageIndex: this._pageIndex,
         includeMarkedContent: includeMarkedContent === true,
         disableNormalization: disableNormalization === true,
+        keepWhiteSpace: keepWhiteSpace === true,
+        includeTextContentChars: includeMarkedContent === true,
       },
       {
         highWaterMark: TEXT_CONTENT_CHUNK_SIZE,

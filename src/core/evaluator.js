@@ -89,7 +89,6 @@ const DefaultPartialEvaluatorOptions = Object.freeze({
   useSystemFonts: true,
   cMapUrl: null,
   standardFontDataUrl: null,
-  includeTextContentChars: false,
 });
 
 const PatternType = {
@@ -2334,6 +2333,7 @@ class PartialEvaluator {
     lang = null,
     markedContentData = null,
     disableNormalization = false,
+    includeTextContentChars = false,
     keepWhiteSpace = false,
   }) {
     // Ensure that `resources`/`stateManager` is correctly initialized,
@@ -2969,8 +2969,8 @@ class PartialEvaluator {
         }
 
         // Include each character and its width in output if option is enabled.
-        if(self.options.includeTextContentChars) {
-          textChunk.charsArray.push({
+        if(includeTextContentChars) {
+          textChunk.chars.push({
             char: glyph.fontChar,
             width: scaledDim,
             unicode: glyph.unicode,

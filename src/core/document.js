@@ -631,6 +631,8 @@ class Page {
     includeMarkedContent,
     disableNormalization,
     sink,
+    keepWhiteSpace,
+    includeTextContentChars,
   }) {
     const contentStreamPromise = this.getContentStream();
     const resourcesPromise = this.loadResources([
@@ -668,6 +670,8 @@ class Page {
       sink,
       viewBox: this.view,
       lang,
+      keepWhiteSpace,
+      includeTextContentChars,
     });
   }
 
