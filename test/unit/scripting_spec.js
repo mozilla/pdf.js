@@ -628,6 +628,10 @@ describe("Scripting", function () {
         await check("12", "mm", "2000/12/01");
         await check("2022", "yyyy", "2022/01/01");
         await check("a1$9bbbb21", "dd/mm/yyyy", "2021/09/01");
+        await check("1/2/2024", "dd/mm/yyyy", "2024/02/01");
+        await check("01/2/2024", "dd/mm/yyyy", "2024/02/01");
+        await check("1/02/2024", "dd/mm/yyyy", "2024/02/01");
+        await check("01/02/2024", "dd/mm/yyyy", "2024/02/01");
 
         // The following test isn't working as expected because
         // the quickjs date parser has been replaced by the browser one
