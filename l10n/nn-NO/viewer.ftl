@@ -327,6 +327,8 @@ pdfjs-editor-stamp-add-image-button =
 pdfjs-editor-stamp-add-image-button-label = Legg til bilde
 # This refers to the thickness of the line used for free highlighting (not bound to text)
 pdfjs-editor-free-highlight-thickness-input = Tjukkleik
+pdfjs-editor-free-highlight-thickness-title =
+    .title = Endre tjukn når du markerer andre element enn tekst
 pdfjs-free-text =
     .aria-label = Tekstredigering
 pdfjs-free-text-default-content = Byrje å skrive…
@@ -356,9 +358,19 @@ pdfjs-editor-alt-text-textarea =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
+pdfjs-editor-resizer-label-top-left = Øvste venstre hjørne – endre størrelse
+pdfjs-editor-resizer-label-top-middle = Øvst i midten — endre størrelse
+pdfjs-editor-resizer-label-top-right = Øvste høgre hjørne – endre størrelse
+pdfjs-editor-resizer-label-middle-right = Midt til høgre – endre størrelse
+pdfjs-editor-resizer-label-bottom-right = Nedste høgre hjørne – endre størrelse
+pdfjs-editor-resizer-label-bottom-middle = Nedst i midten — endre størrelse
+pdfjs-editor-resizer-label-bottom-left = Nedste venstre hjørne – endre størrelse
+pdfjs-editor-resizer-label-middle-left = Midt til venstre — endre størrelse
 
 ## Color picker
 
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = Uthevingsfarge
 pdfjs-editor-colorpicker-button =
     .title = Endre farge
 pdfjs-editor-colorpicker-dropdown =
