@@ -2975,7 +2975,7 @@ class PartialEvaluator {
             width: scaledDim,
             unicode: glyph.unicode,
             transform: textChunk.prevTransform
-          })
+          });
         }
       }
     }
