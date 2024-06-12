@@ -477,8 +477,8 @@ class DOMFilterFactory extends BaseFilterFactory {
 }
 
 class DOMCanvasFactory extends BaseCanvasFactory {
-  constructor({ ownerDocument = globalThis.document } = {}) {
-    super();
+  constructor({ ownerDocument = globalThis.document, enableHWA = false } = {}) {
+    super({ enableHWA });
     this._document = ownerDocument;
   }
 

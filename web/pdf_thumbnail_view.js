@@ -44,6 +44,8 @@ const THUMBNAIL_WIDTH = 98; // px
  * @property {Object} [pageColors] - Overwrites background and foreground colors
  *   with user defined ones in order to improve readability in high contrast
  *   mode.
+ * @property {boolean} [enableHWA] - Enables hardware acceleration for
+ *   rendering. The default value is `false`.
  */
 
 class TempImageFactory {
@@ -92,6 +94,7 @@ class PDFThumbnailView {
     linkService,
     renderingQueue,
     pageColors,
+    enableHWA,
   }) {
     this.id = id;
     this.renderingId = "thumbnail" + id;
@@ -103,6 +106,7 @@ class PDFThumbnailView {
     this.pdfPageRotate = defaultViewport.rotation;
     this._optionalContentConfigPromise = optionalContentConfigPromise || null;
     this.pageColors = pageColors || null;
+    this.enableHWA = enableHWA || false;
 
     this.eventBus = eventBus;
     this.linkService = linkService;
@@ -196,11 +200,14 @@ class PDFThumbnailView {
     this.resume = null;
   }
 
-  #getPageDrawContext(upscaleFactor = 1) {
+  #getPageDrawContext(upscaleFactor = 1, enableHWA = this.enableHWA) {
     // Keep the no-thumbnail outline visible, i.e. `data-loaded === false`,
     // until rendering/image conversion is complete, to avoid display issues.
     const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d", { alpha: false });
+    const ctx = canvas.getContext("2d", {
+      alpha: false,
+      willReadFrequently: !enableHWA,
+    });
     const outputScale = new OutputScale();
 
     canvas.width = (upscaleFactor * this.canvasWidth * outputScale.sx) | 0;
@@ -340,7 +347,7 @@ class PDFThumbnailView {
   }
 
   #reduceImage(img) {
-    const { ctx, canvas } = this.#getPageDrawContext();
+    const { ctx, canvas } = this.#getPageDrawContext(1, true);
 
     if (img.width <= 2 * canvas.width) {
       ctx.drawImage(

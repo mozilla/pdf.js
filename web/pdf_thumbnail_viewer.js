@@ -44,6 +44,8 @@ const THUMBNAIL_SELECTED_CLASS = "selected";
  *   mode.
  * @property {AbortSignal} [abortSignal] - The AbortSignal for the window
  *   events.
+ * @property {boolean} [enableHWA] - Enables hardware acceleration for
+ *   rendering. The default value is `false`.
  */
 
 /**
@@ -60,12 +62,14 @@ class PDFThumbnailViewer {
     renderingQueue,
     pageColors,
     abortSignal,
+    enableHWA,
   }) {
     this.container = container;
     this.eventBus = eventBus;
     this.linkService = linkService;
     this.renderingQueue = renderingQueue;
     this.pageColors = pageColors || null;
+    this.enableHWA = enableHWA || false;
 
     this.scroll = watchScroll(
       this.container,
@@ -206,6 +210,7 @@ class PDFThumbnailViewer {
             linkService: this.linkService,
             renderingQueue: this.renderingQueue,
             pageColors: this.pageColors,
+            enableHWA: this.enableHWA,
           });
           this._thumbnails.push(thumbnail);
         }

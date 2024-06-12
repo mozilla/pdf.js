@@ -213,6 +213,8 @@ const DefaultStandardFontDataFactory =
  *   when creating canvases. The default value is {new DOMCanvasFactory()}.
  * @property {Object} [filterFactory] - A factory instance that will be used
  *   to create SVG filters when rendering some images on the main canvas.
+ * @property {boolean} [enableHWA] - Enables hardware acceleration for
+ *   rendering. The default value is `false`.
  */
 
 /**
@@ -297,6 +299,7 @@ function getDocument(src) {
   const disableStream = src.disableStream === true;
   const disableAutoFetch = src.disableAutoFetch === true;
   const pdfBug = src.pdfBug === true;
+  const enableHWA = src.enableHWA === true;
 
   // Parameters whose default values depend on other parameters.
   const length = rangeTransport ? rangeTransport.length : src.length ?? NaN;
@@ -315,7 +318,7 @@ function getDocument(src) {
           isValidFetchUrl(cMapUrl, document.baseURI) &&
           isValidFetchUrl(standardFontDataUrl, document.baseURI));
   const canvasFactory =
-    src.canvasFactory || new DefaultCanvasFactory({ ownerDocument });
+    src.canvasFactory || new DefaultCanvasFactory({ ownerDocument, enableHWA });
   const filterFactory =
     src.filterFactory || new DefaultFilterFactory({ docId, ownerDocument });
 

@@ -45,6 +45,11 @@
       "type": "boolean",
       "default": false
     },
+    "enableHWA": {
+      "description": "Whether to enable hardware acceleration.",
+      "type": "boolean",
+      "default": false
+    },
     "enableML": {
       "type": "boolean",
       "default": false
