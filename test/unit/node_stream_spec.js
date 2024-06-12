@@ -24,11 +24,10 @@ if (!isNodeJS) {
   );
 }
 
-const url = await __non_webpack_import__("url");
-
 describe("node_stream", function () {
   let tempServer = null;
 
+  const url = process.getBuiltinModule("url");
   const cwdURL = url.pathToFileURL(process.cwd()) + "/";
   const pdf = new URL("./test/pdfs/tracemonkey.pdf", cwdURL).href;
   const pdfLength = 1016315;

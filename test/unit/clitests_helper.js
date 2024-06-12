@@ -18,7 +18,6 @@ import {
   setVerbosityLevel,
   VerbosityLevel,
 } from "../../src/shared/util.js";
-import { NodePackages } from "../../src/display/node_utils.js";
 
 // Sets longer timeout, similar to `jasmine-boot.js`.
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 30000;
@@ -29,9 +28,6 @@ if (!isNodeJS) {
     "The `gulp unittestcli` command can only be used in Node.js environments."
   );
 }
-
-// Ensure that all Node.js packages/polyfills have loaded.
-await NodePackages.promise;
 
 // Reduce the amount of console "spam", by ignoring `info`/`warn` calls,
 // when running the unit-tests in Node.js/Travis.
