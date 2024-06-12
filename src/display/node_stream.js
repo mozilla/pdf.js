@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals process */
 
 import { AbortException, assert, MissingPDFException } from "../shared/util.js";
 import {
@@ -19,7 +20,6 @@ import {
   extractFilenameFromHeader,
   validateRangeRequestCapabilities,
 } from "./network_utils.js";
-import { NodePackages } from "./node_utils.js";
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
@@ -33,16 +33,16 @@ function parseUrlOrPath(sourceUrl) {
   if (urlRegex.test(sourceUrl)) {
     return new URL(sourceUrl);
   }
-  const url = NodePackages.get("url");
+  const url = process.getBuiltinModule("url");
   return new URL(url.pathToFileURL(sourceUrl));
 }
 
 function createRequest(url, headers, callback) {
   if (url.protocol === "http:") {
-    const http = NodePackages.get("http");
+    const http = process.getBuiltinModule("http");
     return http.request(url, { headers }, callback);
   }
-  const https = NodePackages.get("https");
+  const https = process.getBuiltinModule("https");
   return https.request(url, { headers }, callback);
 }
 
@@ -365,7 +365,7 @@ class PDFNodeStreamFsFullReader extends BaseFullReader {
   constructor(stream) {
     super(stream);
 
-    const fs = NodePackages.get("fs");
+    const fs = process.getBuiltinModule("fs");
     fs.promises.lstat(this._url).then(
       stat => {
         // Setting right content length.
@@ -389,7 +389,7 @@ class PDFNodeStreamFsRangeReader extends BaseRangeReader {
   constructor(stream, start, end) {
     super(stream);
 
-    const fs = NodePackages.get("fs");
+    const fs = process.getBuiltinModule("fs");
     this._setReadableStream(
       fs.createReadStream(this._url, { start, end: end - 1 })
     );
