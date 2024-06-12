@@ -24,12 +24,11 @@ if (!isNodeJS) {
   );
 }
 
-const path = await __non_webpack_import__("path");
-const url = await __non_webpack_import__("url");
-
 describe("node_stream", function () {
   let tempServer = null;
 
+  const path = process.getBuiltinModule("path"),
+    url = process.getBuiltinModule("url");
   const pdf = url.parse(
     encodeURI(
       "file://" + path.join(process.cwd(), "./test/pdfs/tracemonkey.pdf")
