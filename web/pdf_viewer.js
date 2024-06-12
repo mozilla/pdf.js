@@ -123,6 +123,8 @@ function isValidAnnotationEditorMode(mode) {
  * @property {Object} [pageColors] - Overwrites background and foreground colors
  *   with user defined ones in order to improve readability in high contrast
  *   mode.
+ * @property {boolean} [enableHWA] - Enables hardware acceleration for
+ *   rendering. The default value is `false`.
  */
 
 class PDFPageViewBuffer {
@@ -211,6 +213,8 @@ class PDFViewer {
 
   #containerTopLeft = null;
 
+  #enableHWA = false;
+
   #enableHighlightFloatingButton = false;
 
   #enablePermissions = false;
@@ -296,6 +300,7 @@ class PDFViewer {
     this.#enablePermissions = options.enablePermissions || false;
     this.pageColors = options.pageColors || null;
     this.#mlManager = options.mlManager || null;
+    this.#enableHWA = options.enableHWA || false;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (
@@ -943,6 +948,7 @@ class PDFViewer {
             pageColors,
             l10n: this.l10n,
             layerProperties: this._layerProperties,
+            enableHWA: this.#enableHWA,
           });
           this._pages.push(pageView);
         }

@@ -46,10 +46,13 @@ class BaseFilterFactory {
 }
 
 class BaseCanvasFactory {
-  constructor() {
+  #enableHWA = false;
+
+  constructor({ enableHWA = false } = {}) {
     if (this.constructor === BaseCanvasFactory) {
       unreachable("Cannot initialize BaseCanvasFactory.");
     }
+    this.#enableHWA = enableHWA;
   }
 
   create(width, height) {
@@ -59,7 +62,9 @@ class BaseCanvasFactory {
     const canvas = this._createCanvas(width, height);
     return {
       canvas,
-      context: canvas.getContext("2d"),
+      context: canvas.getContext("2d", {
+        willReadFrequently: !this.#enableHWA,
+      }),
     };
   }
 

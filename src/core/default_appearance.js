@@ -242,7 +242,7 @@ class FakeUnicodeFont {
     this.fontFamily = fontFamily;
 
     const canvas = new OffscreenCanvas(1, 1);
-    this.ctxMeasure = canvas.getContext("2d");
+    this.ctxMeasure = canvas.getContext("2d", { willReadFrequently: true });
 
     if (!FakeUnicodeFont._fontNameId) {
       FakeUnicodeFont._fontNameId = 1;
