@@ -439,6 +439,7 @@ const PDFViewerApplication = {
         )
       : null;
 
+    const enableHWA = AppOptions.get("enableHWA");
     const pdfViewer = new PDFViewer({
       container,
       viewer,
@@ -465,6 +466,7 @@ const PDFViewerApplication = {
       pageColors,
       mlManager: this.mlManager,
       abortSignal: this._globalAbortController.signal,
+      enableHWA,
     });
     this.pdfViewer = pdfViewer;
 
@@ -480,6 +482,7 @@ const PDFViewerApplication = {
         linkService: pdfLinkService,
         pageColors,
         abortSignal: this._globalAbortController.signal,
+        enableHWA,
       });
       pdfRenderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
     }

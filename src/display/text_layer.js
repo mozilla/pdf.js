@@ -447,7 +447,10 @@ class TextLayer {
       canvas.className = "hiddenCanvasElement";
       canvas.lang = lang;
       document.body.append(canvas);
-      canvasContext = canvas.getContext("2d", { alpha: false });
+      canvasContext = canvas.getContext("2d", {
+        alpha: false,
+        willReadFrequently: true,
+      });
       this.#canvasContexts.set(lang, canvasContext);
     }
     return canvasContext;
