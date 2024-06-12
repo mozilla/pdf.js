@@ -3176,6 +3176,7 @@ page 1 / 3`);
       expect(items[0]).toEqual({
         dir: "ltr",
         fontName,
+        chars: [],
         height: 18,
         str: "Issue 8276",
         transform: [18, 0, 0, 18, 441.81, 708.4499999999999],
