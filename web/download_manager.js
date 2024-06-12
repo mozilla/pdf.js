@@ -49,14 +49,6 @@ function download(blobUrl, filename) {
 class DownloadManager {
   #openBlobUrls = new WeakMap();
 
-  downloadUrl(url, filename, _options) {
-    if (!createValidAbsoluteUrl(url, "http://example.com")) {
-      console.error(`downloadUrl - not a valid URL: ${url}`);
-      return; // restricted/invalid URL
-    }
-    download(url + "#pdfjs.action=download", filename);
-  }
-
   downloadData(data, filename, contentType) {
     const blobUrl = URL.createObjectURL(
       new Blob([data], { type: contentType })
@@ -114,9 +106,18 @@ class DownloadManager {
   }
 
   download(data, url, filename, _options) {
-    const blobUrl = URL.createObjectURL(
-      new Blob([data], { type: "application/pdf" })
-    );
+    let blobUrl;
+    if (data) {
+      blobUrl = URL.createObjectURL(
+        new Blob([data], { type: "application/pdf" })
+      );
+    } else {
+      if (!createValidAbsoluteUrl(url, "http://example.com")) {
+        console.error(`download - not a valid URL: ${url}`);
+        return;
+      }
+      blobUrl = url + "#pdfjs.action=download";
+    }
     download(blobUrl, filename);
   }
 }

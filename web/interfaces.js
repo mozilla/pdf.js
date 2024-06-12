@@ -138,13 +138,6 @@ class IRenderableView {
  */
 class IDownloadManager {
   /**
-   * @param {string} url
-   * @param {string} filename
-   * @param {Object} [options]
-   */
-  downloadUrl(url, filename, options) {}
-
-  /**
    * @param {Uint8Array} data
    * @param {string} filename
    * @param {string} [contentType]
