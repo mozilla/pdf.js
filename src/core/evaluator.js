@@ -2969,12 +2969,12 @@ class PartialEvaluator {
         }
 
         // Include each character and its width in output if option is enabled.
-        if(includeTextContentChars) {
+        if (includeTextContentChars) {
           textChunk.chars.push({
             char: glyph.fontChar,
             width: scaledDim,
             unicode: glyph.unicode,
-            transform: textChunk.prevTransform
+            transform: textChunk.prevTransform,
           });
         }
       }

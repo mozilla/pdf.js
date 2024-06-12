@@ -1162,7 +1162,7 @@ class PDFDocumentProxy {
  * @property {string} str - Text content.
  * @property {string} dir - Text direction: 'ttb', 'ltr' or 'rtl'.
  * @property {Array<any>} transform - Transformation matrix.
- * @property {Array<TextCharItem>} chars - Character list for text string. 
+ * @property {Array<TextCharItem>} chars - Character list for text string.
  * @property {number} width - Width in device space.
  * @property {number} height - Height in device space.
  * @property {string} fontName - Font name used by PDF.js for converted font.
