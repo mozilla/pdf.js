@@ -1084,18 +1084,21 @@ const PDFViewerApplication = {
   },
 
   async download(options = {}) {
-    const url = this._downloadUrl,
-      filename = this._docFilename;
+    let data;
     try {
       this._ensureDownloadComplete();
 
-      const data = await this.pdfDocument.getData();
-      this.downloadManager.download(data, url, filename, options);
+      data = await this.pdfDocument.getData();
     } catch {
       // When the PDF document isn't ready, or the PDF file is still
       // downloading, simply download using the URL.
-      this.downloadManager.downloadUrl(url, filename, options);
     }
+    this.downloadManager.download(
+      data,
+      this._downloadUrl,
+      this._docFilename,
+      options
+    );
   },
 
   async save(options = {}) {
@@ -1105,13 +1108,16 @@ const PDFViewerApplication = {
     this._saveInProgress = true;
     await this.pdfScriptingManager.dispatchWillSave();
 
-    const url = this._downloadUrl,
-      filename = this._docFilename;
     try {
       this._ensureDownloadComplete();
 
       const data = await this.pdfDocument.saveDocument();
-      this.downloadManager.download(data, url, filename, options);
+      this.downloadManager.download(
+        data,
+        this._downloadUrl,
+        this._docFilename,
+        options
+      );
     } catch (reason) {
       // When the PDF document isn't ready, or the PDF file is still
       // downloading, simply fallback to a "regular" download.
