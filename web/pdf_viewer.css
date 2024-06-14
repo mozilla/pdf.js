@@ -71,6 +71,10 @@
     --hcm-highlight-filter: invert(100%);
   }
 
+  &.copyAll {
+    cursor: wait;
+  }
+
   .canvasWrapper {
     overflow: hidden;
     width: 100%;
