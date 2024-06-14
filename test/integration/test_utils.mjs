@@ -268,23 +268,18 @@ async function pasteFromClipboard(page, data, selector, timeout = 100) {
     const handle = await page.evaluateHandle(
       (sel, timeOut) => {
         let callback = null;
+        const element = sel ? document.querySelector(sel) : document;
         return [
           Promise.race([
             new Promise(resolve => {
               callback = e => resolve(e.clipboardData.items.length !== 0);
-              (sel ? document.querySelector(sel) : document).addEventListener(
-                "paste",
-                callback,
-                {
-                  once: true,
-                }
-              );
+              element.addEventListener("paste", callback, {
+                once: true,
+              });
             }),
             new Promise(resolve => {
               setTimeout(() => {
-                document
-                  .querySelector(sel)
-                  .removeEventListener("paste", callback);
+                element.removeEventListener("paste", callback);
                 resolve(false);
               }, timeOut);
             }),
