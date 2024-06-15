@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <title>{{ sitename }} - {{ title }}</title>
+  <meta charset="utf-8">
+  <meta name="description" content="{{ description }}">
+  <meta name="viewport" content="device-width, initial-scale=1.0">
+  <script src="/js/jquery-3.7.1.min.js"></script>
+  <script src="/js/bootstrap.min.js"></script>
+  <link rel="shortcut icon" href="/images/favicon.ico">
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/css/a11y-light.css">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <header>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <div class="container">
+        <div class="navbar-brand"><img src="/images/logo.svg"></div>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav mr-auto">
+            <li class="nav-item {{ 'active' if slug == 'home' else '' }}">
+              <a class="nav-link" href="/">Home</a>
+            </li>
+            <li class="nav-item {{ 'active' if slug == 'getting_started' else '' }}">
+              <a class="nav-link" href="/getting_started">Getting started</a>
+            </li>
+            <li class="nav-item {{ 'active' if slug == 'examples' else '' }}">
+              <a class="nav-link" href="/examples">Examples</a>
+            </li>
+            <li class="nav-item {{ 'active' if slug == 'api' else '' }}">
+              <a class="nav-link" href="/api">API</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions">FAQ</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+  </header>
+  <main class="container">
+    {{ contents | safe }}
+  </main>
+  <footer>
+    <p>&copy; Mozilla and individual contributors</p>
+    <p>
+        PDF.js is licensed under <a href="https://github.com/mozilla/pdf.js/blob/master/LICENSE">Apache 2.0</a>,
+        documentation is licensed under <a href="https://creativecommons.org/licenses/by-sa/2.5">CC BY-SA 2.5</a>.
+    </p>
+  </footer>
+</body>
+</html>

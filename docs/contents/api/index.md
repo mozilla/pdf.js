@@ -1,6 +1,7 @@
 ---
 title: API
-template: layout.jade
+layout: layout.njk
+slug: api
 ---
 
 # API
