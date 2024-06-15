@@ -229,21 +229,13 @@ const DefaultStandardFontDataFactory =
  *         already populated with data, or a parameter object.
  * @returns {PDFDocumentLoadingTask}
  */
-function getDocument(src) {
+function getDocument(src = {}) {
   if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     if (typeof src === "string" || src instanceof URL) {
       src = { url: src };
     } else if (src instanceof ArrayBuffer || ArrayBuffer.isView(src)) {
       src = { data: src };
     }
-  }
-  if (typeof src !== "object") {
-    throw new Error("Invalid parameter in getDocument, need parameter object.");
-  }
-  if (!src.url && !src.data && !src.range) {
-    throw new Error(
-      "Invalid parameter object: need either .data, .range or .url"
-    );
   }
   const task = new PDFDocumentLoadingTask();
   const { docId } = task;
@@ -422,6 +414,9 @@ function getDocument(src) {
       } else if (!data) {
         if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
           throw new Error("Not implemented: createPDFNetworkStream");
+        }
+        if (!url) {
+          throw new Error("getDocument - no `url` parameter provided.");
         }
         const createPDFNetworkStream = params => {
           if (
