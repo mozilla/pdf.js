@@ -290,4 +290,30 @@ describe("Text layer", () => {
       });
     });
   });
+
+  describe("check the dom depth (bug 1898053) ", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "bug1898053_minimal.pdf",
+        ".textLayer .endOfContent"
+      );
+    });
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must have the right number of children", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const count = await page.evaluate(
+            () =>
+              document.querySelectorAll(".textLayer > .markedContent").length
+          );
+          expect(count).toBe(6);
+        })
+      );
+    });
+  });
 });
