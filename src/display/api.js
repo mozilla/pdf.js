@@ -2154,7 +2154,7 @@ class PDFWorker {
       const worker = new Worker(workerSrc, { type: "module" });
       const messageHandler = new MessageHandler("main", "worker", worker);
       const terminateEarly = () => {
-        worker.removeEventListener("error", onWorkerError);
+        ac.abort();
         messageHandler.destroy();
         worker.terminate();
         if (this.destroyed) {
@@ -2166,17 +2166,21 @@ class PDFWorker {
         }
       };
 
-      const onWorkerError = () => {
-        if (!this._webWorker) {
-          // Worker failed to initialize due to an error. Clean up and fall
-          // back to the fake worker.
-          terminateEarly();
-        }
-      };
-      worker.addEventListener("error", onWorkerError);
+      const ac = new AbortController();
+      worker.addEventListener(
+        "error",
+        () => {
+          if (!this._webWorker) {
+            // Worker failed to initialize due to an error. Clean up and fall
+            // back to the fake worker.
+            terminateEarly();
+          }
+        },
+        { signal: ac.signal }
+      );
 
       messageHandler.on("test", data => {
-        worker.removeEventListener("error", onWorkerError);
+        ac.abort();
         if (this.destroyed || !data) {
           terminateEarly();
           return;
@@ -2189,7 +2193,7 @@ class PDFWorker {
       });
 
       messageHandler.on("ready", data => {
-        worker.removeEventListener("error", onWorkerError);
+        ac.abort();
         if (this.destroyed) {
           terminateEarly();
           return;
