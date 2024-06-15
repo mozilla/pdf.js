@@ -1109,8 +1109,6 @@ const PDFViewerApplication = {
     await this.pdfScriptingManager.dispatchWillSave();
 
     try {
-      this._ensureDownloadComplete();
-
       const data = await this.pdfDocument.saveDocument();
       this.downloadManager.download(
         data,
@@ -1119,8 +1117,7 @@ const PDFViewerApplication = {
         options
       );
     } catch (reason) {
-      // When the PDF document isn't ready, or the PDF file is still
-      // downloading, simply fallback to a "regular" download.
+      // When the PDF document isn't ready, fallback to a "regular" download.
       console.error(`Error when saving the document: ${reason.message}`);
       await this.download(options);
     } finally {
