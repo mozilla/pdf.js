@@ -24,6 +24,12 @@ main {
     border-radius: 4px;
     padding: 10px;
   }
+
+  iframe {
+    border: none;
+    height: calc(0.55 * 100vh);
+    width: 100%;
+  }
 }
 
 footer {
