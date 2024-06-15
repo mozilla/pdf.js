@@ -25,6 +25,10 @@ import crypto from "crypto";
 import { fileURLToPath } from "url";
 import fs from "fs";
 import gulp from "gulp";
+import hljs from "highlight.js";
+import layouts from "@metalsmith/layouts";
+import markdown from "@metalsmith/markdown";
+import Metalsmith from "metalsmith";
 import ordered from "ordered-read-streams";
 import path from "path";
 import postcss from "gulp-postcss";
@@ -33,6 +37,7 @@ import postcssDirPseudoClass from "postcss-dir-pseudo-class";
 import postcssDiscardComments from "postcss-discard-comments";
 import postcssNesting from "postcss-nesting";
 import { preprocess } from "./external/builder/builder.mjs";
+import relative from "metalsmith-html-relative";
 import rename from "gulp-rename";
 import replace from "gulp-replace";
 import stream from "stream";
@@ -2125,26 +2130,44 @@ function ghPagesPrepare() {
   ]);
 }
 
-gulp.task("wintersmith", async function () {
-  const { default: wintersmith } = await import("wintersmith");
-  const env = wintersmith("docs/config.json");
-
+gulp.task("metalsmith", async function () {
   return new Promise((resolve, reject) => {
-    env.build(GH_PAGES_DIR, function (error) {
-      if (error) {
-        reject(error);
-        return;
-      }
-
-      replaceInFile(
-        GH_PAGES_DIR + "/getting_started/index.html",
-        /STABLE_VERSION/g,
-        config.stableVersion
-      );
-
-      console.log("Done building with wintersmith.");
-      resolve();
-    });
+    Metalsmith(__dirname)
+      .source("docs/contents")
+      .destination(GH_PAGES_DIR)
+      .clean(false)
+      .metadata({
+        sitename: "PDF.js",
+        siteurl: "https://mozilla.github.io/pdf.js",
+        description:
+          "A general-purpose, web standards-based platform for parsing and rendering PDFs.",
+      })
+      .use(
+        markdown({
+          engineOptions: {
+            highlight: (code, language) =>
+              hljs.highlight(code, { language }).value,
+          },
+        })
+      )
+      .use(
+        layouts({
+          directory: "docs/templates",
+        })
+      )
+      .use(relative())
+      .build(error => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        replaceInFile(
+          `${GH_PAGES_DIR}/getting_started/index.html`,
+          /STABLE_VERSION/g,
+          config.stableVersion
+        );
+        resolve();
+      });
   });
 });
 
@@ -2155,7 +2178,7 @@ gulp.task(
     "generic-legacy",
     "jsdoc",
     ghPagesPrepare,
-    "wintersmith"
+    "metalsmith"
   )
 );
 
