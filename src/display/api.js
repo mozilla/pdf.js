@@ -2173,32 +2173,26 @@ class PDFWorker {
 
       messageHandler.on("test", data => {
         worker.removeEventListener("error", onWorkerError);
-        if (this.destroyed) {
+        if (this.destroyed || !data) {
           terminateEarly();
-          return; // worker was destroyed
+          return;
         }
-        if (data) {
-          this._messageHandler = messageHandler;
-          this._port = worker;
-          this._webWorker = worker;
+        this._messageHandler = messageHandler;
+        this._port = worker;
+        this._webWorker = worker;
 
-          this._readyCapability.resolve();
-          // Send global setting, e.g. verbosity level.
-          messageHandler.send("configure", {
-            verbosity: this.verbosity,
-          });
-        } else {
-          this._setupFakeWorker();
-          messageHandler.destroy();
-          worker.terminate();
-        }
+        this._readyCapability.resolve();
+        // Send global setting, e.g. verbosity level.
+        messageHandler.send("configure", {
+          verbosity: this.verbosity,
+        });
       });
 
       messageHandler.on("ready", data => {
         worker.removeEventListener("error", onWorkerError);
         if (this.destroyed) {
           terminateEarly();
-          return; // worker was destroyed
+          return;
         }
         try {
           sendTest();
