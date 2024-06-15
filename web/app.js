@@ -1073,22 +1073,12 @@ const PDFViewerApplication = {
     );
   },
 
-  /**
-   * @private
-   */
-  _ensureDownloadComplete() {
-    if (this.pdfDocument && this.downloadComplete) {
-      return;
-    }
-    throw new Error("PDF document not downloaded.");
-  },
-
   async download(options = {}) {
     let data;
     try {
-      this._ensureDownloadComplete();
-
-      data = await this.pdfDocument.getData();
+      if (this.downloadComplete) {
+        data = await this.pdfDocument.getData();
+      }
     } catch {
       // When the PDF document isn't ready, or the PDF file is still
       // downloading, simply download using the URL.
