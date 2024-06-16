@@ -1526,18 +1526,10 @@ gulp.task("jsdoc", function (done) {
   console.log();
   console.log("### Generating documentation (JSDoc)");
 
-  const JSDOC_FILES = ["src/display/api.js"];
-
   fs.rmSync(JSDOC_BUILD_DIR, { recursive: true, force: true });
   fs.mkdirSync(JSDOC_BUILD_DIR, { recursive: true });
 
-  const command =
-    '"node_modules/.bin/jsdoc" -d ' +
-    JSDOC_BUILD_DIR +
-    " " +
-    JSDOC_FILES.join(" ");
-
-  exec(command, done);
+  exec('"node_modules/.bin/jsdoc" -c jsdoc.json', done);
 });
 
 gulp.task("types", function (done) {

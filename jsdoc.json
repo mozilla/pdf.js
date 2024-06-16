@@ -1,0 +1,13 @@
+{
+  "source": {
+    "include": ["src/display/api.js"]
+  },
+  "opts": {
+    "destination": "build/jsdoc/"
+  },
+  "templates": {
+    "default": {
+      "includeDate": false
+    }
+  }
+}
