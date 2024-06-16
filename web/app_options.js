@@ -312,7 +312,7 @@ const defaultOptions = {
   },
   enableHWA: {
     /** @type {boolean} */
-    value: false,
+    value: typeof PDFJSDev !== "undefined" && !PDFJSDev.test("MOZCENTRAL"),
     kind: OptionKind.API + OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   enableXfa: {
