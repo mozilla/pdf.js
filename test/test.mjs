@@ -884,6 +884,7 @@ async function startBrowser({
   const options = {
     product: browserName,
     protocol: "cdp",
+    dumpio: true,
     headless,
     defaultViewport: null,
     ignoreDefaultArgs: ["--disable-extensions"],
