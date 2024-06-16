@@ -10081,5 +10081,12 @@
     "rounds": 1,
     "link": true,
     "type": "eq"
+  },
+  {
+    "id": "bug1539074",
+    "file": "pdfs/bug1539074.pdf",
+    "md5": "73922be020083d54747af18a4d5e0768",
+    "rounds": 1,
+    "type": "eq"
   }
 ]
