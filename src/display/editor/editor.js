@@ -480,8 +480,14 @@ class AnnotationEditor {
       // The element will be outside of its parent so change the parent.
       const { x, y } = this.div.getBoundingClientRect();
       if (this.parent.findNewParent(this, x, y)) {
-        this.x -= Math.floor(this.x);
-        this.y -= Math.floor(this.y);
+        if (this.isResetRotation) {
+          this.x = this.x > 0 ? 0 : 0.5;
+          this.y = Math.floor(this.y) ? this.y / 2 : Math.floor(this.y * 2);
+          this.isResetRotation = false;
+        } else {
+          this.x -= Math.floor(this.x);
+          this.y -= Math.floor(this.y);
+        }
       }
     }
 

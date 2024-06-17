@@ -488,11 +488,52 @@ class AnnotationEditorLayer {
 
     this.attach(editor);
     editor.parent?.detach(editor);
+    this.resetRotation(editor);
     editor.setParent(this);
     if (editor.div && editor.isAttachedToDOM) {
       editor.div.remove();
       this.div.append(editor.div);
     }
+  }
+
+  resetRotation(editor) {
+    if (this.viewport.rotation === editor.parent.viewport.rotation) {
+      return;
+    }
+    const rotationOfThisPage = this.viewport.rotation;
+    const inkEditor = this.div.querySelector(".inkEditor.editing");
+    if (!inkEditor) {
+      return;
+    }
+    let inkRotation = 0;
+    const currentInkRotation = Number(
+      inkEditor.getAttribute("data-editor-rotation")
+    );
+    if (
+      [90].includes(rotationOfThisPage) &&
+      [270].includes(currentInkRotation)
+    ) {
+      inkRotation = 270;
+    } else if (
+      [180].includes(rotationOfThisPage) &&
+      [0].includes(currentInkRotation)
+    ) {
+      inkRotation = 180;
+    } else if (
+      [270].includes(rotationOfThisPage) &&
+      [0, 90].includes(currentInkRotation)
+    ) {
+      inkRotation = 90;
+    } else if (rotationOfThisPage === currentInkRotation) {
+      inkRotation = rotationOfThisPage;
+    }
+    const pageRotation =
+      (360 + rotationOfThisPage - editor._uiManager.viewParameters.rotation) %
+      360;
+    editor.pageRotation = pageRotation;
+    editor.rotation = rotationOfThisPage;
+    editor.div.setAttribute("data-editor-rotation", inkRotation);
+    editor.isResetRotation = true;
   }
 
   /**
