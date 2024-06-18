@@ -751,4 +751,48 @@ describe("Stamp Editor", () => {
       );
     });
   });
+
+  describe("Add a stamp in odd spread mode", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "empty.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        {
+          spreadModeOnLoad: 1,
+        }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the stamp has its canvas at the right position", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToStamp(page);
+
+          await copyImage(page, "../images/firefox_logo.png", 0);
+          await page.waitForSelector(getEditorSelector(0));
+          await waitForSerialized(page, 1);
+
+          const canvasRect = await getRect(
+            page,
+            `${getEditorSelector(0)} canvas`
+          );
+          const stampRect = await getRect(page, getEditorSelector(0));
+
+          expect(
+            ["x", "y", "width", "height"].every(
+              key => Math.abs(canvasRect[key] - stampRect[key]) <= 10
+            )
+          ).toBeTrue();
+        })
+      );
+    });
+  });
 });
