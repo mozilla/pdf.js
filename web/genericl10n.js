@@ -74,8 +74,7 @@ class GenericL10n extends L10n {
       const bundle = await this.#createBundle(lang, baseURL, paths);
       if (bundle) {
         yield bundle;
-      }
-      if (lang === "en-us") {
+      } else if (lang === "en-us") {
         yield this.#createBundleFallback(lang);
       }
     }
