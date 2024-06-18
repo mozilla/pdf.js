@@ -79,7 +79,13 @@ function closePages(pages) {
   return Promise.all(
     pages.map(async ([_, page]) => {
       // Avoid to keep something from a previous test.
-      await page.evaluate(() => window.localStorage.clear());
+      await page.evaluate(async () => {
+        const viewer = window.PDFViewerApplication;
+        viewer.unbindWindowEvents();
+        viewer.unbindEvents();
+        await viewer.close();
+        window.localStorage.clear();
+      });
       await page.close({ runBeforeUnload: false });
     })
   );
