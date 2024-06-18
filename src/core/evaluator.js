@@ -718,6 +718,7 @@ class PartialEvaluator {
 
       if (cacheKey) {
         const cacheData = {
+          objId,
           fn: OPS.paintImageMaskXObject,
           args,
           optionalContent,
@@ -870,6 +871,7 @@ class PartialEvaluator {
 
     if (cacheKey) {
       const cacheData = {
+        objId,
         fn: OPS.paintImageXObject,
         args,
         optionalContent,
@@ -1783,6 +1785,9 @@ class PartialEvaluator {
             if (isValidName) {
               const localImage = localImageCache.getByName(name);
               if (localImage) {
+                if (localImage.objId) {
+                  operatorList.addDependency(localImage.objId);
+                }
                 operatorList.addImageOps(
                   localImage.fn,
                   localImage.args,
@@ -1807,6 +1812,9 @@ class PartialEvaluator {
                     localImageCache.getByRef(xobj) ||
                     self._regionalImageCache.getByRef(xobj);
                   if (localImage) {
+                    if (localImage.objId) {
+                      operatorList.addDependency(localImage.objId);
+                    }
                     operatorList.addImageOps(
                       localImage.fn,
                       localImage.args,
@@ -1928,6 +1936,9 @@ class PartialEvaluator {
             if (cacheKey) {
               const localImage = localImageCache.getByName(cacheKey);
               if (localImage) {
+                if (localImage.objId) {
+                  operatorList.addDependency(localImage.objId);
+                }
                 operatorList.addImageOps(
                   localImage.fn,
                   localImage.args,
