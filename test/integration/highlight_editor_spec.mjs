@@ -696,6 +696,8 @@ describe("Highlight Editor", () => {
           await page.keyboard.press("ArrowDown");
           await page.keyboard.up("Shift");
 
+          await page.waitForSelector(sel);
+
           const [w, h] = await page.evaluate(s => {
             const {
               style: { width, height },
