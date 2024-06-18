@@ -2111,6 +2111,7 @@ const PDFViewerApplication = {
     ) {
       this._globalAbortController?.abort();
       this._globalAbortController = null;
+      this.l10n?.pause();
     }
   },
 
