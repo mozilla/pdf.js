@@ -307,11 +307,22 @@ class FreeTextEditor extends AnnotationEditor {
     this.editorDiv.contentEditable = true;
     this._isDraggable = false;
     this.div.removeAttribute("aria-activedescendant");
-    this.editorDiv.addEventListener("keydown", this.#boundEditorDivKeydown);
-    this.editorDiv.addEventListener("focus", this.#boundEditorDivFocus);
-    this.editorDiv.addEventListener("blur", this.#boundEditorDivBlur);
-    this.editorDiv.addEventListener("input", this.#boundEditorDivInput);
-    this.editorDiv.addEventListener("paste", this.#boundEditorDivPaste);
+    const signal = this._uiManager._signal;
+    this.editorDiv.addEventListener("keydown", this.#boundEditorDivKeydown, {
+      signal,
+    });
+    this.editorDiv.addEventListener("focus", this.#boundEditorDivFocus, {
+      signal,
+    });
+    this.editorDiv.addEventListener("blur", this.#boundEditorDivBlur, {
+      signal,
+    });
+    this.editorDiv.addEventListener("input", this.#boundEditorDivInput, {
+      signal,
+    });
+    this.editorDiv.addEventListener("paste", this.#boundEditorDivPaste, {
+      signal,
+    });
   }
 
   /** @inheritdoc */

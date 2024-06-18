@@ -261,7 +261,7 @@ class InkEditor extends AnnotationEditor {
       this.#canvasContextMenuTimeoutId = null;
     }
 
-    this.#observer.disconnect();
+    this.#observer?.disconnect();
     this.#observer = null;
 
     super.remove();
@@ -296,7 +296,9 @@ class InkEditor extends AnnotationEditor {
 
     super.enableEditMode();
     this._isDraggable = false;
-    this.canvas.addEventListener("pointerdown", this.#boundCanvasPointerdown);
+    this.canvas.addEventListener("pointerdown", this.#boundCanvasPointerdown, {
+      signal: this._uiManager._signal,
+    });
   }
 
   /** @inheritdoc */
@@ -363,10 +365,19 @@ class InkEditor extends AnnotationEditor {
    * @param {number} y
    */
   #startDrawing(x, y) {
-    this.canvas.addEventListener("contextmenu", noContextMenu);
-    this.canvas.addEventListener("pointerleave", this.#boundCanvasPointerleave);
-    this.canvas.addEventListener("pointermove", this.#boundCanvasPointermove);
-    this.canvas.addEventListener("pointerup", this.#boundCanvasPointerup);
+    const signal = this._uiManager._signal;
+    this.canvas.addEventListener("contextmenu", noContextMenu, { signal });
+    this.canvas.addEventListener(
+      "pointerleave",
+      this.#boundCanvasPointerleave,
+      { signal }
+    );
+    this.canvas.addEventListener("pointermove", this.#boundCanvasPointermove, {
+      signal,
+    });
+    this.canvas.addEventListener("pointerup", this.#boundCanvasPointerup, {
+      signal,
+    });
     this.canvas.removeEventListener(
       "pointerdown",
       this.#boundCanvasPointerdown
@@ -706,7 +717,9 @@ class InkEditor extends AnnotationEditor {
       this.#boundCanvasPointermove
     );
     this.canvas.removeEventListener("pointerup", this.#boundCanvasPointerup);
-    this.canvas.addEventListener("pointerdown", this.#boundCanvasPointerdown);
+    this.canvas.addEventListener("pointerdown", this.#boundCanvasPointerdown, {
+      signal: this._uiManager._signal,
+    });
 
     // Slight delay to avoid the context menu to appear (it can happen on a long
     // tap with a pen).
@@ -751,6 +764,14 @@ class InkEditor extends AnnotationEditor {
       }
     });
     this.#observer.observe(this.div);
+    this._uiManager._signal.addEventListener(
+      "abort",
+      () => {
+        this.#observer?.disconnect();
+        this.#observer = null;
+      },
+      { once: true }
+    );
   }
 
   /** @inheritdoc */
