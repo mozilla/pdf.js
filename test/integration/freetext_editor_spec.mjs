@@ -2256,6 +2256,7 @@ describe("FreeText Editor", () => {
 
           rect = await getRect(page, getEditorSelector(0));
 
+          // Create a new editor.
           await page.mouse.click(
             rect.x + 5 * rect.width,
             rect.y + 5 * rect.height
@@ -2271,11 +2272,12 @@ describe("FreeText Editor", () => {
             `${getEditorSelector(1)} .overlay.enabled`
           );
 
-          rect = await getRect(page, getEditorSelector(0));
+          // Select the second editor.
+          rect = await getRect(page, getEditorSelector(1));
 
           await page.mouse.click(
-            rect.x + 5 * rect.width,
-            rect.y + 5 * rect.height
+            rect.x + 0.5 * rect.width,
+            rect.y + 0.5 * rect.height
           );
           await waitForSelectedEditor(page, getEditorSelector(1));
 
