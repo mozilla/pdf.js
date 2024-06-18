@@ -49,20 +49,27 @@ class AltText {
     altText.textContent = msg;
     altText.setAttribute("aria-label", msg);
     altText.tabIndex = "0";
-    altText.addEventListener("contextmenu", noContextMenu);
-    altText.addEventListener("pointerdown", event => event.stopPropagation());
+    const signal = this.#editor._uiManager._signal;
+    altText.addEventListener("contextmenu", noContextMenu, { signal });
+    altText.addEventListener("pointerdown", event => event.stopPropagation(), {
+      signal,
+    });
 
     const onClick = event => {
       event.preventDefault();
       this.#editor._uiManager.editAltText(this.#editor);
     };
-    altText.addEventListener("click", onClick, { capture: true });
-    altText.addEventListener("keydown", event => {
-      if (event.target === altText && event.key === "Enter") {
-        this.#altTextWasFromKeyBoard = true;
-        onClick(event);
-      }
-    });
+    altText.addEventListener("click", onClick, { capture: true, signal });
+    altText.addEventListener(
+      "keydown",
+      event => {
+        if (event.target === altText && event.key === "Enter") {
+          this.#altTextWasFromKeyBoard = true;
+          onClick(event);
+        }
+      },
+      { signal }
+    );
     await this.#setState();
 
     return altText;
@@ -142,22 +149,39 @@ class AltText {
       button.setAttribute("aria-describedby", id);
 
       const DELAY_TO_SHOW_TOOLTIP = 100;
-      button.addEventListener("mouseenter", () => {
-        this.#altTextTooltipTimeout = setTimeout(() => {
-          this.#altTextTooltipTimeout = null;
-          this.#altTextTooltip.classList.add("show");
-          this.#editor._reportTelemetry({
-            action: "alt_text_tooltip",
-          });
-        }, DELAY_TO_SHOW_TOOLTIP);
-      });
-      button.addEventListener("mouseleave", () => {
-        if (this.#altTextTooltipTimeout) {
+      const signal = this.#editor._uiManager._signal;
+      signal.addEventListener(
+        "abort",
+        () => {
           clearTimeout(this.#altTextTooltipTimeout);
           this.#altTextTooltipTimeout = null;
-        }
-        this.#altTextTooltip?.classList.remove("show");
-      });
+        },
+        { once: true }
+      );
+      button.addEventListener(
+        "mouseenter",
+        () => {
+          this.#altTextTooltipTimeout = setTimeout(() => {
+            this.#altTextTooltipTimeout = null;
+            this.#altTextTooltip.classList.add("show");
+            this.#editor._reportTelemetry({
+              action: "alt_text_tooltip",
+            });
+          }, DELAY_TO_SHOW_TOOLTIP);
+        },
+        { signal }
+      );
+      button.addEventListener(
+        "mouseleave",
+        () => {
+          if (this.#altTextTooltipTimeout) {
+            clearTimeout(this.#altTextTooltipTimeout);
+            this.#altTextTooltipTimeout = null;
+          }
+          this.#altTextTooltip?.classList.remove("show");
+        },
+        { signal }
+      );
     }
     tooltip.innerText = this.#altTextDecorative
       ? await AltText._l10nPromise.get(
