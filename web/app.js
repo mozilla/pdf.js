@@ -372,6 +372,12 @@ const PDFViewerApplication = {
           params.get("supportscaretbrowsingmode") === "true"
         );
       }
+      if (params.has("spreadmodeonload")) {
+        AppOptions.set(
+          "spreadModeOnLoad",
+          parseInt(params.get("spreadmodeonload"))
+        );
+      }
     }
   },
 
