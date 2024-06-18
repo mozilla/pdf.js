@@ -2098,7 +2098,10 @@ const PDFViewerApplication = {
   unbindWindowEvents() {
     this._windowAbortController?.abort();
     this._windowAbortController = null;
-    if (AppOptions.get("isInAutomation")) {
+    if (
+      (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) ||
+      AppOptions.get("isInAutomation")
+    ) {
       this._globalAbortController?.abort();
       this._globalAbortController = null;
     }
