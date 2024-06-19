@@ -233,6 +233,21 @@ async function waitForSerialized(page, nEntries) {
   );
 }
 
+async function applyFunctionToEditor(page, editorId, func) {
+  return page.evaluate(
+    (id, f) => {
+      const editor =
+        window.PDFViewerApplication.pdfDocument.annotationStorage.getRawValue(
+          id
+        );
+      // eslint-disable-next-line no-eval
+      eval(`(${f})`)(editor);
+    },
+    editorId,
+    func.toString()
+  );
+}
+
 async function waitForSelectedEditor(page, selector) {
   return page.waitForSelector(`${selector}.selectedEditor`);
 }
@@ -615,6 +630,7 @@ async function switchToEditor(name, page, disable = false) {
 }
 
 export {
+  applyFunctionToEditor,
   awaitPromise,
   clearInput,
   closePages,
