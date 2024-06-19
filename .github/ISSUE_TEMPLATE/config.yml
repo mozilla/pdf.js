@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Need help?
+    url: https://github.com/mozilla/pdf.js/discussions
+    about: If you need help on how to use PDF.js, please open a discussion where other community members can reply
+  - name: Security report
+    url: https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox&component=PDF%20Viewer&groups=firefox-core-security
+    about: Please report security vulnerabilities in Firefox's bug tracker, making sure that the checkbox in the "Security" section is selected
