@@ -2105,14 +2105,21 @@ const PDFViewerApplication = {
   unbindWindowEvents() {
     this._windowAbortController?.abort();
     this._windowAbortController = null;
-    if (
-      (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) ||
-      AppOptions.get("isInAutomation")
-    ) {
-      this._globalAbortController?.abort();
-      this._globalAbortController = null;
-      this.l10n?.pause();
-    }
+  },
+
+  /**
+   * @ignore
+   */
+  async testingClose() {
+    this.l10n?.pause();
+
+    this.unbindEvents();
+    this.unbindWindowEvents();
+
+    this._globalAbortController?.abort();
+    this._globalAbortController = null;
+
+    await this.close();
   },
 
   _accumulateTicks(ticks, prop) {
