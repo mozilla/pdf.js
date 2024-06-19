@@ -40,33 +40,39 @@ async function docProperties(pdfDocument) {
 }
 
 class GenericScripting {
+  #readyCapability = Promise.withResolvers();
+
+  #sandbox = null;
+
   constructor(sandboxBundleSrc) {
-    this._ready = new Promise((resolve, reject) => {
-      const sandbox =
-        typeof PDFJSDev === "undefined"
-          ? import(sandboxBundleSrc) // eslint-disable-line no-unsanitized/method
-          : __non_webpack_import__(sandboxBundleSrc);
-      sandbox
-        .then(pdfjsSandbox => {
-          resolve(pdfjsSandbox.QuickJSSandbox());
-        })
-        .catch(reject);
-    });
+    const sandbox =
+      typeof PDFJSDev === "undefined"
+        ? import(sandboxBundleSrc) // eslint-disable-line no-unsanitized/method
+        : __non_webpack_import__(sandboxBundleSrc);
+    sandbox
+      .then(async pdfjsSandbox => {
+        this.#sandbox = await pdfjsSandbox.QuickJSSandbox();
+        this.#readyCapability.resolve();
+      })
+      .catch(this.#readyCapability.reject);
   }
 
   async createSandbox(data) {
-    const sandbox = await this._ready;
-    sandbox.create(data);
+    await this.#readyCapability.promise;
+    this.#sandbox?.create(data);
   }
 
   async dispatchEventInSandbox(event) {
-    const sandbox = await this._ready;
-    setTimeout(() => sandbox.dispatchEvent(event), 0);
+    await this.#readyCapability.promise;
+    if (this.#sandbox) {
+      setTimeout(() => this.#sandbox?.dispatchEvent(event), 0);
+    }
   }
 
   async destroySandbox() {
-    const sandbox = await this._ready;
-    sandbox.nukeSandbox();
+    await this.#readyCapability.promise;
+    this.#sandbox?.nukeSandbox();
+    this.#sandbox = null;
   }
 }
 
