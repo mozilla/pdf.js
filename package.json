@@ -50,7 +50,7 @@
     "postcss-discard-comments": "^7.0.0",
     "postcss-nesting": "^12.1.5",
     "prettier": "^3.3.2",
-    "puppeteer": "^22.10.1",
+    "puppeteer": "^22.11.2",
     "streamqueue": "^1.1.2",
     "stylelint": "^16.6.1",
     "stylelint-prettier": "^5.0.0",
