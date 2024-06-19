@@ -450,21 +450,10 @@ function checkChromePreferencesFile(chromePrefsPath, webPrefs) {
 }
 
 function tweakWebpackOutput(jsName) {
-  const replacer = [
-    " __webpack_exports__ = {};", // Normal builds.
-    ",__webpack_exports__={};", // Minified builds.
-  ];
-  const regex = new RegExp(`(${replacer.join("|")})`, "gm");
-
-  return replace(regex, match => {
-    switch (match) {
-      case " __webpack_exports__ = {};":
-        return ` __webpack_exports__ = globalThis.${jsName} = {};`;
-      case ",__webpack_exports__={};":
-        return `,__webpack_exports__=globalThis.${jsName}={};`;
-    }
-    return match;
-  });
+  return replace(
+    /((?:\s|,)__webpack_exports__)(?:\s?)=(?:\s?)({};)/gm,
+    (match, p1, p2) => `${p1} = globalThis.${jsName} = ${p2}`
+  );
 }
 
 function createMainBundle(defines) {
