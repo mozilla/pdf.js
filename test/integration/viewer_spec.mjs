@@ -174,24 +174,6 @@ describe("PDF viewer", () => {
   });
 
   describe("CSS-only zoom", () => {
-    let pages;
-
-    beforeAll(async () => {
-      pages = await loadAndWait(
-        "tracemonkey.pdf",
-        ".textLayer .endOfContent",
-        null,
-        null,
-        {
-          maxCanvasPixels: 0,
-        }
-      );
-    });
-
-    afterAll(async () => {
-      await closePages(pages);
-    });
-
     function createPromiseForFirstPageRendered(page) {
       return createPromise(page, (resolve, reject) => {
         const controller = new AbortController();
@@ -209,50 +191,184 @@ describe("PDF viewer", () => {
       });
     }
 
-    it("respects drawing delay when zooming out", async () => {
-      await Promise.all(
-        pages.map(async ([browserName, page]) => {
-          const promise = await createPromiseForFirstPageRendered(page);
+    describe("forced (maxCanvasPixels: 0)", () => {
+      let pages;
 
-          const start = await page.evaluate(() => {
-            const startTime = performance.now();
-            window.PDFViewerApplication.pdfViewer.decreaseScale({
-              drawingDelay: 100,
-              scaleFactor: 0.9,
+      beforeAll(async () => {
+        pages = await loadAndWait(
+          "tracemonkey.pdf",
+          ".textLayer .endOfContent",
+          null,
+          null,
+          { maxCanvasPixels: 0 }
+        );
+      });
+
+      afterAll(async () => {
+        await closePages(pages);
+      });
+
+      it("respects drawing delay when zooming out", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const promise = await createPromiseForFirstPageRendered(page);
+
+            const start = await page.evaluate(() => {
+              const startTime = performance.now();
+              window.PDFViewerApplication.pdfViewer.decreaseScale({
+                drawingDelay: 100,
+                scaleFactor: 0.9,
+              });
+              return startTime;
             });
-            return startTime;
-          });
 
-          const end = await awaitPromise(promise);
+            const end = await awaitPromise(promise);
 
-          expect(end - start)
-            .withContext(`In ${browserName}`)
-            .toBeGreaterThanOrEqual(100);
-        })
-      );
+            expect(end - start)
+              .withContext(`In ${browserName}`)
+              .toBeGreaterThanOrEqual(100);
+          })
+        );
+      });
+
+      it("respects drawing delay when zooming in", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const promise = await createPromiseForFirstPageRendered(page);
+
+            const start = await page.evaluate(() => {
+              const startTime = performance.now();
+              window.PDFViewerApplication.pdfViewer.increaseScale({
+                drawingDelay: 100,
+                scaleFactor: 1.1,
+              });
+              return startTime;
+            });
+
+            const end = await awaitPromise(promise);
+
+            expect(end - start)
+              .withContext(`In ${browserName}`)
+              .toBeGreaterThanOrEqual(100);
+          })
+        );
+      });
     });
 
-    it("respects drawing delay when zooming in", async () => {
-      await Promise.all(
-        pages.map(async ([browserName, page]) => {
-          const promise = await createPromiseForFirstPageRendered(page);
+    describe("triggers when going bigger than maxCanvasPixels", () => {
+      let pages;
 
-          const start = await page.evaluate(() => {
-            const startTime = performance.now();
-            window.PDFViewerApplication.pdfViewer.increaseScale({
-              drawingDelay: 100,
-              scaleFactor: 1.1,
+      const MAX_CANVAS_PIXELS = new Map();
+
+      beforeAll(async () => {
+        pages = await loadAndWait(
+          "tracemonkey.pdf",
+          ".textLayer .endOfContent",
+          null,
+          null,
+          async (page, browserName) => {
+            const ratio = await page.evaluate(() => window.devicePixelRatio);
+            const maxCanvasPixels = 1_000_000 * ratio ** 2;
+            MAX_CANVAS_PIXELS.set(browserName, maxCanvasPixels);
+
+            return { maxCanvasPixels };
+          }
+        );
+      });
+
+      beforeEach(async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            await page.evaluate(() => {
+              window.PDFViewerApplication.pdfViewer.currentScale = 0.5;
             });
-            return startTime;
-          });
+          })
+        );
+      });
 
-          const end = await awaitPromise(promise);
+      afterAll(async () => {
+        await closePages(pages);
+      });
 
-          expect(end - start)
-            .withContext(`In ${browserName}`)
-            .toBeGreaterThanOrEqual(100);
-        })
-      );
+      function getCanvasSize(page) {
+        return page.evaluate(() => {
+          const canvas = window.document.querySelector(".canvasWrapper canvas");
+          return canvas.width * canvas.height;
+        });
+      }
+
+      // MAX_CANVAS_PIXELS must be big enough that the originally rendered
+      // canvas still has enough space to grow before triggering CSS-only zoom
+      it("test correctly configured", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const canvasSize = await getCanvasSize(page);
+
+            expect(canvasSize)
+              .withContext(`In ${browserName}`)
+              .toBeLessThan(MAX_CANVAS_PIXELS.get(browserName) / 4);
+            expect(canvasSize)
+              .withContext(`In ${browserName}`)
+              .toBeGreaterThan(MAX_CANVAS_PIXELS.get(browserName) / 16);
+          })
+        );
+      });
+
+      it("does not trigger CSS-only zoom below maxCanvasPixels", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const originalCanvasSize = await getCanvasSize(page);
+            const factor = 2;
+
+            await page.evaluate(scaleFactor => {
+              window.PDFViewerApplication.pdfViewer.increaseScale({
+                drawingDelay: 0,
+                scaleFactor,
+              });
+            }, factor);
+
+            const canvasSize = await getCanvasSize(page);
+
+            expect(canvasSize)
+              .withContext(`In ${browserName}`)
+              .toBe(originalCanvasSize * factor ** 2);
+
+            expect(canvasSize)
+              .withContext(`In ${browserName}, MAX_CANVAS_PIXELS`)
+              .toBeLessThan(MAX_CANVAS_PIXELS.get(browserName));
+          })
+        );
+      });
+
+      it("triggers CSS-only zoom above maxCanvasPixels", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const originalCanvasSize = await getCanvasSize(page);
+            const factor = 4;
+
+            await page.evaluate(scaleFactor => {
+              window.PDFViewerApplication.pdfViewer.increaseScale({
+                drawingDelay: 0,
+                scaleFactor,
+              });
+            }, factor);
+
+            const canvasSize = await getCanvasSize(page);
+
+            expect(canvasSize)
+              .withContext(`In ${browserName}`)
+              .toBeLessThan(originalCanvasSize * factor ** 2);
+
+            expect(canvasSize)
+              .withContext(`In ${browserName}, <= MAX_CANVAS_PIXELS`)
+              .toBeLessThanOrEqual(MAX_CANVAS_PIXELS.get(browserName));
+
+            expect(canvasSize)
+              .withContext(`In ${browserName}, > MAX_CANVAS_PIXELS * 0.99`)
+              .toBeGreaterThan(MAX_CANVAS_PIXELS.get(browserName) * 0.99);
+          })
+        );
+      });
     });
   });
 });
