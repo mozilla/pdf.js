@@ -80,10 +80,7 @@ function closePages(pages) {
     pages.map(async ([_, page]) => {
       // Avoid to keep something from a previous test.
       await page.evaluate(async () => {
-        const viewer = window.PDFViewerApplication;
-        viewer.unbindWindowEvents();
-        viewer.unbindEvents();
-        await viewer.close();
+        await window.PDFViewerApplication.testingClose();
         window.localStorage.clear();
       });
       await page.close({ runBeforeUnload: false });
