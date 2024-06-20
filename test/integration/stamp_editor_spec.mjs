@@ -14,12 +14,14 @@
  */
 
 import {
+  applyFunctionToEditor,
   awaitPromise,
   closePages,
   getEditorDimensions,
   getEditorSelector,
   getFirstSerialized,
   getRect,
+  getSerialized,
   kbBigMoveDown,
   kbBigMoveRight,
   kbCopy,
@@ -794,6 +796,55 @@ describe("Stamp Editor", () => {
               key => Math.abs(canvasRect[key] - stampRect[key]) <= 10
             )
           ).toBeTrue();
+        })
+      );
+    });
+  });
+
+  describe("Copy and paste a stamp with an alt text", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the pasted image has an alt text", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToStamp(page);
+
+          await copyImage(page, "../images/firefox_logo.png", 0);
+          await page.waitForSelector(getEditorSelector(0));
+          await waitForSerialized(page, 1);
+          await applyFunctionToEditor(
+            page,
+            "pdfjs_internal_editor_0",
+            editor => {
+              editor.altTextData = {
+                altText: "Hello World",
+                decorative: false,
+              };
+            }
+          );
+          await page.waitForSelector(`${getEditorSelector(0)} .altText.done`);
+
+          await kbCopy(page);
+          await kbPaste(page);
+          await page.waitForSelector(`${getEditorSelector(1)} .altText.done`);
+          await waitForSerialized(page, 2);
+
+          const serialized = await getSerialized(
+            page,
+            x => x.accessibilityData?.alt
+          );
+
+          expect(serialized)
+            .withContext(`In ${browserName}`)
+            .toEqual(["Hello World", "Hello World"]);
         })
       );
     });
