@@ -4811,11 +4811,33 @@ class StampAnnotation extends MarkupAnnotation {
     this.data.noHTML = false;
   }
 
+  static encodePNGFilter(data, columns) {
+    if (data.length % columns !== 0) {
+      return null;
+    }
+    let encoded_data = [];
+
+    let colorCount = 3;
+    let encoded_count = 0;
+
+    for (let i = 0; i < data.length; i++) {
+      if ((i % 4) === 0) {
+        for (let j = i; j < i + colorCount; j++) {
+          if ((encoded_count % columns) === 0) {
+            encoded_data.push(0);
+          }
+          encoded_data.push(data[j]);
+          encoded_count++;
+        }
+      }
+    }
+    return new Uint8Array(encoded_data);
+  }
+
   static async createImage(bitmap, xref) {
     // TODO: when printing, we could have a specific internal colorspace
     // (e.g. something like DeviceRGBA) in order avoid any conversion (i.e. no
     // jpeg, no rgba to rgb conversion, etc...)
-
     const { width, height } = bitmap;
     const canvas = new OffscreenCanvas(width, height);
     const ctx = canvas.getContext("2d", { alpha: true });
@@ -4831,60 +4853,84 @@ class StampAnnotation extends MarkupAnnotation {
     );
 
     if (hasAlpha) {
-      // Redraw the image on a white background in order to remove the thin gray
-      // line which can appear when exporting to jpeg.
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, width, height);
-      ctx.drawImage(bitmap, 0, 0);
-    }
+      const xobjectName = Name.get("XObject");
+      const imageName = Name.get("Image");
+      const image = new Dict(xref);
+      image.set("Type", xobjectName);
+      image.set("Subtype", imageName);
+      image.set("BitsPerComponent", 8);
+      image.set("ColorSpace", Name.get("DeviceRGB"));
+      image.set("Filter", Name.get("FlateDecode"));
+      image.set("BBox", [0, 0, width, height]);
+      image.set("Width", width);
+      image.set("Height", height);
 
-    const jpegBufferPromise = canvas
-      .convertToBlob({ type: "image/jpeg", quality: 1 })
-      .then(blob => blob.arrayBuffer());
+      const decodeParams = new Dict(xref);
+      decodeParams.set("Predictor", 12);
+      decodeParams.set("Columns", width);
+      decodeParams.set("Colors", 1); 
 
-    const xobjectName = Name.get("XObject");
-    const imageName = Name.get("Image");
-    const image = new Dict(xref);
-    image.set("Type", xobjectName);
-    image.set("Subtype", imageName);
-    image.set("BitsPerComponent", 8);
-    image.set("ColorSpace", Name.get("DeviceRGB"));
-    image.set("Filter", Name.get("DCTDecode"));
-    image.set("BBox", [0, 0, width, height]);
-    image.set("Width", width);
-    image.set("Height", height);
+      image.set("DecodeParms", decodeParams);
 
-    let smaskStream = null;
-    if (hasAlpha) {
-      const alphaBuffer = new Uint8Array(buf32.length);
-      if (FeatureTest.isLittleEndian) {
-        for (let i = 0, ii = buf32.length; i < ii; i++) {
-          alphaBuffer[i] = buf32[i] >>> 24;
-        }
-      } else {
-        for (let i = 0, ii = buf32.length; i < ii; i++) {
-          alphaBuffer[i] = buf32[i] & 0xff;
-        }
+      let smaskStream = null;
+
+      // create alphaChannel
+      const alphaChannel = [];
+      for (let i = 3; i < data.length; i += 4) {
+        alphaChannel.push(data[i]&0xff);
       }
+      const alphaBuffer = new Uint8Array(alphaChannel);
 
       const smask = new Dict(xref);
       smask.set("Type", xobjectName);
       smask.set("Subtype", imageName);
       smask.set("BitsPerComponent", 8);
       smask.set("ColorSpace", Name.get("DeviceGray"));
+      smask.set("Filter", Name.get("FlateDecode"));
       smask.set("Width", width);
       smask.set("Height", height);
 
-      smaskStream = new Stream(alphaBuffer, 0, 0, smask);
-    }
-    const imageStream = new Stream(await jpegBufferPromise, 0, 0, image);
+      smaskStream = new Stream(alphaBuffer.buffer, 0, 0, smask);
+      // end of alphaChannel
+      
+      const buffer = new Uint8Array(data.buffer);
+      const encodePng = this.encodePNGFilter(buffer, width);
 
-    return {
-      imageStream,
-      smaskStream,
-      width,
-      height,
-    };
+      const imageStream = new Stream(encodePng.buffer, 0, 0, image);
+
+      return {
+        imageStream,
+        smaskStream,
+        width,
+        height,
+      };
+    } else {
+      let smaskStream = null;
+      const jpegBufferPromise = canvas
+        .convertToBlob({ type: 'image/jpeg', quality : 1})
+        .then(blob => blob.arrayBuffer());
+
+      const xobjectName = Name.get("XObject");
+      const imageName = Name.get("Image");
+      const image = new Dict(xref);
+      image.set("Type", xobjectName);
+      image.set("Subtype", imageName);
+      image.set("BitsPerComponent", 8);
+      image.set("ColorSpace", Name.get("DeviceRGB"));
+      image.set("Filter", Name.get("DCTDecode"));
+      image.set("BBox", [0, 0, width, height]);
+      image.set("Width", width);
+      image.set("Height", height);
+
+      const imageStream = new Stream(await jpegBufferPromise, 0, 0, image);
+
+      return {
+        imageStream,
+        smaskStream,
+        width,
+        height,
+      };
+    }
   }
 
   static createNewDict(annotation, xref, { apRef, ap }) {
