@@ -1022,4 +1022,36 @@ describe("pdf_find_controller", function () {
       pageMatchesLength: [[1, 1, 1, 1, 1, 1, 1, 1, 1]],
     });
   });
+
+  it("dispatches updatefindcontrolstate with correct properties", async function () {
+    const testOnFind = ({ eventBus }) =>
+      new Promise(function (resolve) {
+        const eventState = {
+          source: this,
+          type: "",
+          query: "Foo",
+          caseSensitive: true,
+          entireWord: true,
+          findPrevious: false,
+          matchDiacritics: false,
+        };
+        eventBus.dispatch("find", eventState);
+
+        eventBus.on("updatefindcontrolstate", function (evt) {
+          expect(evt).toEqual(
+            jasmine.objectContaining({
+              state: FindState.NOT_FOUND,
+              previous: false,
+              entireWord: true,
+              matchesCount: { current: 0, total: 0 },
+              rawQuery: "Foo",
+            })
+          );
+          resolve();
+        });
+      });
+
+    const { eventBus } = await initPdfFindController();
+    await testOnFind({ eventBus });
+  });
 });

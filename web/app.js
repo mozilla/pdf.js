@@ -2516,6 +2516,7 @@ function webViewerUpdateFindMatchesCount({ matchesCount }) {
 function webViewerUpdateFindControlState({
   state,
   previous,
+  entireWord,
   matchesCount,
   rawQuery,
 }) {
@@ -2523,6 +2524,7 @@ function webViewerUpdateFindControlState({
     PDFViewerApplication.externalServices.updateFindControlState({
       result: state,
       findPrevious: previous,
+      entireWord,
       matchesCount,
       rawQuery,
     });
