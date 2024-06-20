@@ -538,6 +538,11 @@ class StampEditor extends AnnotationEditor {
    * Create the resize observer.
    */
   #createObserver() {
+    if (!this._uiManager._signal) {
+      // This method is called after the canvas has been created but the canvas
+      // creation is async, so it's possible that the viewer has been closed.
+      return;
+    }
     this.#observer = new ResizeObserver(entries => {
       const rect = entries[0].contentRect;
       if (rect.width && rect.height) {
