@@ -2112,6 +2112,7 @@ const PDFViewerApplication = {
    */
   async testingClose() {
     this.l10n?.pause();
+    this.findBar?.close();
 
     this.unbindEvents();
     this.unbindWindowEvents();
