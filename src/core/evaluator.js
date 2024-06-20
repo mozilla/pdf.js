@@ -3905,7 +3905,7 @@ class PartialEvaluator {
     let defaultVMetrics;
     if (properties.composite) {
       const dw = dict.get("DW");
-      defaultWidth = Number.isInteger(dw) ? dw : 1000;
+      defaultWidth = typeof dw === "number" ? Math.ceil(dw) : 1000;
 
       const widths = dict.get("W");
       if (Array.isArray(widths)) {
