@@ -296,10 +296,15 @@ class FlateStream extends DecodeStream {
   }
 
   readBlock() {
-    let buffer, len;
+    let buffer, hdr, len;
     const str = this.str;
     // read block header
-    let hdr = this.getBits(3);
+    try {
+      hdr = this.getBits(3);
+    } catch (ex) {
+      this.#endsStreamOnError(ex.message);
+      return;
+    }
     if (hdr & 1) {
       this.eof = true;
     }
