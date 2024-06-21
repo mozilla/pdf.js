@@ -1,0 +1,23 @@
+name: Feature request
+description: Propose a new feature or enhancement for PDF.js
+title: "[Feature]: "
+body:
+  - type: dropdown
+    attributes:
+      label: Is the feature relevant to the Firefox PDF Viewer?
+      options: ["Yes", "No"]
+      default: 1
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Feature description
+      description: What new feature would you like PDF.js to have? Why would it be useful? What are the current workarounds?
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Other PDF viewers
+      description: Do other PDF viewers implement similar functionality? Add descriptions, links, and/or screenshots.
