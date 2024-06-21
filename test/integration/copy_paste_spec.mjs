@@ -15,7 +15,7 @@
 
 import {
   closePages,
-  kbCopy,
+  copy,
   kbSelectAll,
   loadAndWait,
   mockClipboard,
@@ -55,10 +55,7 @@ describe("Copy and paste", () => {
           );
           await selectAll(page);
 
-          const promise = waitForEvent(page, "copy");
-          await kbCopy(page);
-          await promise;
-
+          await copy(page);
           await page.waitForFunction(
             `document.querySelector('#viewerContainer').style.cursor !== "wait"`
           );
@@ -159,10 +156,7 @@ describe("Copy and paste", () => {
           );
           await selectAll(page);
 
-          const promise = waitForEvent(page, "copy");
-          await kbCopy(page);
-          await promise;
-
+          await copy(page);
           await page.waitForFunction(
             `document.querySelector('#viewerContainer').style.cursor !== "wait"`
           );

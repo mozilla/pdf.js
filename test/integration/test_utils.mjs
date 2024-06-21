@@ -292,7 +292,13 @@ async function mockClipboard(pages) {
   );
 }
 
-async function pasteFromClipboard(page, data, selector, timeout = 100) {
+async function copy(page) {
+  const promise = waitForEvent(page, "copy");
+  await kbCopy(page);
+  await promise;
+}
+
+async function copyToClipboard(page, data) {
   await page.evaluate(async dat => {
     const items = Object.create(null);
     for (const [type, value] of Object.entries(dat)) {
@@ -305,7 +311,15 @@ async function pasteFromClipboard(page, data, selector, timeout = 100) {
     }
     await navigator.clipboard.write([new ClipboardItem(items)]);
   }, data);
+}
 
+async function paste(page) {
+  const promise = waitForEvent(page, "paste");
+  await kbPaste(page);
+  await promise;
+}
+
+async function pasteFromClipboard(page, selector = null) {
   const validator = e => e.clipboardData.items.length !== 0;
   let hasPasteEvent = false;
   while (!hasPasteEvent) {
@@ -634,6 +648,8 @@ export {
   clearInput,
   closePages,
   closeSinglePage,
+  copy,
+  copyToClipboard,
   createPromise,
   dragAndDropAnnotation,
   firstPageOnTop,
@@ -654,7 +670,6 @@ export {
   kbBigMoveLeft,
   kbBigMoveRight,
   kbBigMoveUp,
-  kbCopy,
   kbDeleteLastWord,
   kbFocusNext,
   kbFocusPrevious,
@@ -662,12 +677,12 @@ export {
   kbGoToEnd,
   kbModifierDown,
   kbModifierUp,
-  kbPaste,
   kbRedo,
   kbSelectAll,
   kbUndo,
   loadAndWait,
   mockClipboard,
+  paste,
   pasteFromClipboard,
   scrollIntoView,
   serializeBitmapDimensions,

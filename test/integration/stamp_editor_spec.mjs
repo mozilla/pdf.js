@@ -17,6 +17,8 @@ import {
   applyFunctionToEditor,
   awaitPromise,
   closePages,
+  copy,
+  copyToClipboard,
   getEditorDimensions,
   getEditorSelector,
   getFirstSerialized,
@@ -24,11 +26,10 @@ import {
   getSerialized,
   kbBigMoveDown,
   kbBigMoveRight,
-  kbCopy,
-  kbPaste,
   kbSelectAll,
   kbUndo,
   loadAndWait,
+  paste,
   pasteFromClipboard,
   scrollIntoView,
   serializeBitmapDimensions,
@@ -78,12 +79,10 @@ const copyImage = async (page, imagePath, number) => {
   const data = fs
     .readFileSync(path.join(__dirname, imagePath))
     .toString("base64");
-  await pasteFromClipboard(
-    page,
-    { "image/png": `data:image/png;base64,${data}` },
-    "",
-    500
-  );
+
+  await copyToClipboard(page, { "image/png": `data:image/png;base64,${data}` });
+  await pasteFromClipboard(page);
+
   await waitForImage(page, getEditorSelector(number));
 };
 
@@ -570,13 +569,13 @@ describe("Stamp Editor", () => {
         await page1.click("#editorStamp");
 
         await copyImage(page1, "../images/firefox_logo.png", 0);
-        await kbCopy(page1);
+        await copy(page1);
 
         const [, page2] = pages2[i];
         await page2.bringToFront();
         await page2.click("#editorStamp");
 
-        await kbPaste(page2);
+        await paste(page2);
 
         await waitForImage(page2, getEditorSelector(0));
       }
@@ -831,8 +830,8 @@ describe("Stamp Editor", () => {
           );
           await page.waitForSelector(`${getEditorSelector(0)} .altText.done`);
 
-          await kbCopy(page);
-          await kbPaste(page);
+          await copy(page);
+          await paste(page);
           await page.waitForSelector(`${getEditorSelector(1)} .altText.done`);
           await waitForSerialized(page, 2);
 
