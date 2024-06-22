@@ -279,7 +279,7 @@ pdfjs-text-annotation-type =
 ## Password
 
 pdfjs-password-label = この PDF ファイルを開くためのパスワードを入力してください。
-pdfjs-password-invalid = 無効なパスワードです。もう一度やり直してください。
+pdfjs-password-invalid = パスワードが正しくありません。もう一度試してください。
 pdfjs-password-ok-button = OK
 pdfjs-password-cancel-button = キャンセル
 pdfjs-web-fonts-disabled = ウェブフォントが無効になっています: 埋め込まれた PDF のフォントを使用できません。
