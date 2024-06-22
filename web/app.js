@@ -2111,16 +2111,15 @@ const PDFViewerApplication = {
    * @ignore
    */
   async testingClose() {
-    this.l10n?.pause();
-    this.findBar?.close();
-
     this.unbindEvents();
     this.unbindWindowEvents();
 
     this._globalAbortController?.abort();
     this._globalAbortController = null;
 
-    await this.close();
+    this.findBar?.close();
+
+    await Promise.all([this.l10n?.destroy(), this.close()]);
   },
 
   _accumulateTicks(ticks, prop) {
