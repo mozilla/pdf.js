@@ -51,12 +51,6 @@ pdfjs-download-button-label = Sækja
 pdfjs-bookmark-button =
     .title = Núverandi síða (Skoða vefslóð frá núverandi síðu)
 pdfjs-bookmark-button-label = Núverandi síða
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = Opna í smáforriti
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = Opna í smáforriti
 
 ##  Secondary toolbar and context menu
 
@@ -284,7 +278,7 @@ pdfjs-text-annotation-type =
 
 ## Password
 
-pdfjs-password-label = Sláðu inn lykilorð til að opna þessa PDF skrá.
+pdfjs-password-label = Settu inn lykilorð til að opna þessa PDF-skrá.
 pdfjs-password-invalid = Ógilt lykilorð. Reyndu aftur.
 pdfjs-password-ok-button = Í lagi
 pdfjs-password-cancel-button = Hætta við
@@ -304,8 +298,6 @@ pdfjs-editor-stamp-button-label = Bæta við eða breyta myndum
 pdfjs-editor-highlight-button =
     .title = Áherslulita
 pdfjs-editor-highlight-button-label = Áherslulita
-pdfjs-highlight-floating-button =
-    .title = Áherslulita
 pdfjs-highlight-floating-button1 =
     .title = Áherslulita
     .aria-label = Áherslulita
