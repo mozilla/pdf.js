@@ -23,6 +23,8 @@
 class L10n {
   #dir;
 
+  #elements = new Set();
+
   #lang;
 
   #l10n;
@@ -69,12 +71,29 @@ class L10n {
 
   /** @inheritdoc */
   async translate(element) {
+    this.#elements.add(element);
     try {
       this.#l10n.connectRoot(element);
       await this.#l10n.translateRoots();
     } catch {
       // Element is under an existing root, so there is no need to add it again.
     }
+  }
+
+  /** @inheritdoc */
+  async destroy() {
+    for (const element of this.#elements) {
+      this.#l10n.disconnectRoot(element);
+    }
+    this.#elements.clear();
+    this.#l10n.pauseObserving();
+
+    // Since `disconnectRoot`/`pauseObserving` can still trigger asynchronous
+    // operations, without any way to actually cancel them, attempt to
+    // workaround timing issues when closing the integration-tests.
+    await new Promise(resolve => {
+      window.requestAnimationFrame(resolve);
+    });
   }
 
   /** @inheritdoc */
