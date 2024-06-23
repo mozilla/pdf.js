@@ -44,6 +44,7 @@ async function runTests(results) {
     jasmineDone(suiteInfo) {},
     jasmineStarted(suiteInfo) {},
     specDone(result) {
+      // Report on the result of individual tests.
       ++results.runs;
       if (result.failedExpectations.length > 0) {
         ++results.failures;
@@ -53,8 +54,20 @@ async function runTests(results) {
       }
     },
     specStarted(result) {},
-    suiteDone(result) {},
-    suiteStarted(result) {},
+    suiteDone(result) {
+      // Report on the result of `afterAll` invocations.
+      if (result.failedExpectations.length > 0) {
+        ++results.failures;
+        console.log(`TEST-UNEXPECTED-FAIL | ${result.description}`);
+      }
+    },
+    suiteStarted(result) {
+      // Report on the result of `beforeAll` invocations.
+      if (result.failedExpectations.length > 0) {
+        ++results.failures;
+        console.log(`TEST-UNEXPECTED-FAIL | ${result.description}`);
+      }
+    },
   });
 
   return jasmine.execute();
