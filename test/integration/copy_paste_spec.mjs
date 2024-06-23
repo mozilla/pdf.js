@@ -23,9 +23,11 @@ import {
 } from "./test_utils.mjs";
 
 const selectAll = async page => {
-  const promise = waitForEvent(page, "selectionchange");
-  await kbSelectAll(page);
-  await promise;
+  await waitForEvent({
+    page,
+    eventName: "selectionchange",
+    action: () => kbSelectAll(page),
+  });
 
   await page.waitForFunction(() => {
     const selection = document.getSelection();
