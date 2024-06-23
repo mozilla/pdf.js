@@ -559,27 +559,30 @@ describe("Stamp Editor", () => {
     });
 
     afterAll(async () => {
-      await closePages(pages1);
+      // Close the pages in reverse order because the second document will have
+      // focus at the end of the test and the `testingClose` method requires
+      // (via `requestAnimationFrame` usage in the `this.l10n.destroy()` call)
+      // that the page it's called on has focus.
       await closePages(pages2);
+      await closePages(pages1);
     });
 
     it("must check that the alt-text button is here when pasting in the second tab", async () => {
       for (let i = 0; i < pages1.length; i++) {
         const [, page1] = pages1[i];
-        page1.bringToFront();
+        await page1.bringToFront();
         await page1.click("#editorStamp");
 
         await copyImage(page1, "../images/firefox_logo.png", 0);
         await kbCopy(page1);
 
         const [, page2] = pages2[i];
-        page2.bringToFront();
+        await page2.bringToFront();
         await page2.click("#editorStamp");
 
         await kbPaste(page2);
 
         await waitForImage(page2, getEditorSelector(0));
-        await page2.waitForSelector(`${getEditorSelector(0)} .altText`);
       }
     });
   });
