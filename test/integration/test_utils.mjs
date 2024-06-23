@@ -186,13 +186,14 @@ async function getSpanRectFromText(page, pageNumber, text) {
   );
 }
 
-async function waitForEvent(
+async function waitForEvent({
   page,
   eventName,
+  action,
   selector = null,
   validator = null,
-  timeout = 5000
-) {
+  timeout = 5000,
+}) {
   const handle = await page.evaluateHandle(
     (name, sel, validate, timeOut) => {
       let callback = null,
@@ -227,13 +228,15 @@ async function waitForEvent(
     validator ? validator.toString() : null,
     timeout
   );
+
+  await action();
+
   const success = await awaitPromise(handle);
   if (success === null) {
     console.log(`waitForEvent: ${eventName} didn't trigger within the timeout`);
   } else if (!success) {
     console.log(`waitForEvent: ${eventName} triggered, but validation failed`);
   }
-  return success;
 }
 
 async function waitForStorageEntries(page, nEntries) {
@@ -293,9 +296,11 @@ async function mockClipboard(pages) {
 }
 
 async function copy(page) {
-  const promise = waitForEvent(page, "copy");
-  await kbCopy(page);
-  await promise;
+  await waitForEvent({
+    page,
+    eventName: "copy",
+    action: () => kbCopy(page),
+  });
 }
 
 async function copyToClipboard(page, data) {
@@ -314,20 +319,22 @@ async function copyToClipboard(page, data) {
 }
 
 async function paste(page) {
-  const promise = waitForEvent(page, "paste");
-  await kbPaste(page);
-  await promise;
+  await waitForEvent({
+    page,
+    eventName: "paste",
+    action: () => kbPaste(page),
+  });
 }
 
 async function pasteFromClipboard(page, selector = null) {
   const validator = e => e.clipboardData.items.length !== 0;
-  let hasPasteEvent = false;
-  while (!hasPasteEvent) {
-    // We retry to paste if nothing has been pasted before the timeout.
-    const promise = waitForEvent(page, "paste", selector, validator);
-    await kbPaste(page);
-    hasPasteEvent = await promise;
-  }
+  await waitForEvent({
+    page,
+    eventName: "paste",
+    action: () => kbPaste(page),
+    selector,
+    validator,
+  });
 }
 
 async function getSerialized(page, filter = undefined) {
