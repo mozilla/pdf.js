@@ -186,39 +186,54 @@ async function getSpanRectFromText(page, pageNumber, text) {
   );
 }
 
-async function waitForEvent(page, eventName, timeout = 5000) {
+async function waitForEvent(
+  page,
+  eventName,
+  selector = null,
+  validator = null,
+  timeout = 5000
+) {
   const handle = await page.evaluateHandle(
-    (name, timeOut) => {
+    (name, sel, validate, timeOut) => {
       let callback = null,
         timeoutId = null;
+      const element = sel ? document.querySelector(sel) : document;
       return [
         Promise.race([
           new Promise(resolve => {
-            // add event listener and wait for event to fire before returning
-            callback = () => {
+            // The promise is resolved if the event fired in the context of the
+            // selector and, if a validator is defined, the event data satisfies
+            // the conditions of the validator function.
+            callback = e => {
               if (timeoutId) {
                 clearTimeout(timeoutId);
               }
-              resolve(false);
+              // eslint-disable-next-line no-eval
+              resolve(validate ? eval(`(${validate})`)(e) : true);
             };
-            document.addEventListener(name, callback, { once: true });
+            element.addEventListener(name, callback, { once: true });
           }),
           new Promise(resolve => {
             timeoutId = setTimeout(() => {
-              document.removeEventListener(name, callback);
-              resolve(true);
+              element.removeEventListener(name, callback);
+              resolve(null);
             }, timeOut);
           }),
         ]),
       ];
     },
     eventName,
+    selector,
+    validator ? validator.toString() : null,
     timeout
   );
-  const hasTimedout = await awaitPromise(handle);
-  if (hasTimedout === true) {
-    console.log(`waitForEvent: timeout waiting for ${eventName}`);
+  const success = await awaitPromise(handle);
+  if (success === null) {
+    console.log(`waitForEvent: ${eventName} didn't trigger within the timeout`);
+  } else if (!success) {
+    console.log(`waitForEvent: ${eventName} triggered, but validation failed`);
   }
+  return success;
 }
 
 async function waitForStorageEntries(page, nEntries) {
@@ -291,35 +306,13 @@ async function pasteFromClipboard(page, data, selector, timeout = 100) {
     await navigator.clipboard.write([new ClipboardItem(items)]);
   }, data);
 
+  const validator = e => e.clipboardData.items.length !== 0;
   let hasPasteEvent = false;
   while (!hasPasteEvent) {
     // We retry to paste if nothing has been pasted before the timeout.
-    const handle = await page.evaluateHandle(
-      (sel, timeOut) => {
-        let callback = null;
-        const element = sel ? document.querySelector(sel) : document;
-        return [
-          Promise.race([
-            new Promise(resolve => {
-              callback = e => resolve(e.clipboardData.items.length !== 0);
-              element.addEventListener("paste", callback, {
-                once: true,
-              });
-            }),
-            new Promise(resolve => {
-              setTimeout(() => {
-                element.removeEventListener("paste", callback);
-                resolve(false);
-              }, timeOut);
-            }),
-          ]),
-        ];
-      },
-      selector,
-      timeout
-    );
+    const promise = waitForEvent(page, "paste", selector, validator);
     await kbPaste(page);
-    hasPasteEvent = await awaitPromise(handle);
+    hasPasteEvent = await promise;
   }
 }
 
