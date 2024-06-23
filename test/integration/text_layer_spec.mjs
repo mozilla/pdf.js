@@ -13,7 +13,12 @@
  * limitations under the License.
  */
 
-import { closePages, getSpanRectFromText, loadAndWait } from "./test_utils.mjs";
+import {
+  closePages,
+  closeSinglePage,
+  getSpanRectFromText,
+  loadAndWait,
+} from "./test_utils.mjs";
 import { startBrowser } from "../test.mjs";
 
 describe("Text layer", () => {
@@ -227,6 +232,7 @@ describe("Text layer", () => {
         );
       });
       afterAll(async () => {
+        await closeSinglePage(page);
         await browser.close();
       });
 
