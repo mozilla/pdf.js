@@ -58,12 +58,7 @@ const TestReporter = function (browser) {
   };
 
   this.suiteStarted = function (result) {
-    // Normally suite starts don't have to be reported because the individual
-    // specs inside them are reported, but it can happen that the suite cannot
-    // start, for instance due to an uncaught exception in `beforeEach`. This
-    // is problematic because the specs inside the suite will never be found
-    // and run, so if we don't report the suite start failure here it would be
-    // ignored silently, leading to passing tests even though some did not run.
+    // Report on the result of `beforeAll` invocations.
     if (result.failedExpectations.length > 0) {
       let failedMessages = "";
       for (const item of result.failedExpectations) {
@@ -76,6 +71,7 @@ const TestReporter = function (browser) {
   this.specStarted = function (result) {};
 
   this.specDone = function (result) {
+    // Report on the result of individual tests.
     if (result.failedExpectations.length === 0) {
       sendResult("TEST-PASSED", result.description);
     } else {
@@ -87,7 +83,16 @@ const TestReporter = function (browser) {
     }
   };
 
-  this.suiteDone = function (result) {};
+  this.suiteDone = function (result) {
+    // Report on the result of `afterAll` invocations.
+    if (result.failedExpectations.length > 0) {
+      let failedMessages = "";
+      for (const item of result.failedExpectations) {
+        failedMessages += `${item.message} `;
+      }
+      sendResult("TEST-UNEXPECTED-FAIL", result.description, failedMessages);
+    }
+  };
 
   this.jasmineDone = function () {
     // Give the test runner some time process any queued requests.
