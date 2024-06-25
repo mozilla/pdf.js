@@ -559,12 +559,8 @@ describe("Stamp Editor", () => {
     });
 
     afterAll(async () => {
-      // Close the pages in reverse order because the second document will have
-      // focus at the end of the test and the `testingClose` method requires
-      // (via `requestAnimationFrame` usage in the `this.l10n.destroy()` call)
-      // that the page it's called on has focus.
-      await closePages(pages2);
       await closePages(pages1);
+      await closePages(pages2);
     });
 
     it("must check that the alt-text button is here when pasting in the second tab", async () => {

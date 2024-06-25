@@ -6,7 +6,7 @@
     "@babel/preset-env": "^7.24.7",
     "@babel/runtime": "^7.24.7",
     "@fluent/bundle": "^0.18.0",
-    "@fluent/dom": "^0.9.0",
+    "@fluent/dom": "^0.10.0",
     "@jazzer.js/core": "^2.1.0",
     "@metalsmith/layouts": "^2.7.0",
     "@metalsmith/markdown": "^1.10.0",

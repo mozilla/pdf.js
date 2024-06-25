@@ -87,13 +87,6 @@ class L10n {
     }
     this.#elements.clear();
     this.#l10n.pauseObserving();
-
-    // Since `disconnectRoot`/`pauseObserving` can still trigger asynchronous
-    // operations, without any way to actually cancel them, attempt to
-    // workaround timing issues when closing the integration-tests.
-    await new Promise(resolve => {
-      window.requestAnimationFrame(resolve);
-    });
   }
 
   /** @inheritdoc */
