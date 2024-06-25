@@ -189,16 +189,22 @@ async function getSpanRectFromText(page, pageNumber, text) {
 async function waitForEvent(page, eventName, timeout = 5000) {
   const handle = await page.evaluateHandle(
     (name, timeOut) => {
-      let callback = null;
+      let callback = null,
+        timeoutId = null;
       return [
         Promise.race([
           new Promise(resolve => {
             // add event listener and wait for event to fire before returning
-            callback = () => resolve(false);
+            callback = () => {
+              if (timeoutId) {
+                clearTimeout(timeoutId);
+              }
+              resolve(false);
+            };
             document.addEventListener(name, callback, { once: true });
           }),
           new Promise(resolve => {
-            setTimeout(() => {
+            timeoutId = setTimeout(() => {
               document.removeEventListener(name, callback);
               resolve(true);
             }, timeOut);
