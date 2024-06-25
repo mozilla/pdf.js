@@ -407,6 +407,14 @@ class ExternalServices extends BaseExternalServices {
     );
     return nimbusData && JSON.parse(nimbusData);
   }
+
+  async getGlobalEventNames() {
+    return FirefoxCom.requestAsync("getGlobalEventNames", null);
+  }
+
+  dispatchGlobalEvent(event) {
+    FirefoxCom.request("dispatchGlobalEvent", event);
+  }
 }
 
 export { DownloadManager, ExternalServices, initCom, MLManager, Preferences };
