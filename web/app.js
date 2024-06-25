@@ -57,7 +57,7 @@ import {
   version,
 } from "pdfjs-lib";
 import { AppOptions, OptionKind } from "./app_options.js";
-import { AutomationEventBus, EventBus } from "./event_utils.js";
+import { EventBus, FirefoxEventBus } from "./event_utils.js";
 import { ExternalServices, initCom, MLManager } from "web-external_services";
 import { LinkTarget, PDFLinkService } from "./pdf_link_service.js";
 import { AltTextManager } from "web-alt_text_manager";
@@ -156,6 +156,7 @@ const PDFViewerApplication = {
   isViewerEmbedded: window.parent !== window,
   url: "",
   baseUrl: "",
+  _allowedGlobalEventsPromise: null,
   _downloadUrl: "",
   _eventBusAbortController: null,
   _windowAbortController: null,
@@ -186,6 +187,10 @@ const PDFViewerApplication = {
     // initialize the `L10n`-instance as soon as possible.
     if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
       l10nPromise = this.externalServices.createL10n();
+      if (PDFJSDev.test("MOZCENTRAL")) {
+        this._allowedGlobalEventsPromise =
+          this.externalServices.getGlobalEventNames();
+      }
     }
     this.appConfig = appConfig;
 
@@ -386,10 +391,17 @@ const PDFViewerApplication = {
    */
   async _initializeViewerComponents() {
     const { appConfig, externalServices, l10n } = this;
-
-    const eventBus = AppOptions.get("isInAutomation")
-      ? new AutomationEventBus()
-      : new EventBus();
+    let eventBus;
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      eventBus = new FirefoxEventBus(
+        await this._allowedGlobalEventsPromise,
+        externalServices,
+        AppOptions.get("isInAutomation")
+      );
+      this._allowedGlobalEventsPromise = null;
+    } else {
+      eventBus = new EventBus();
+    }
     this.eventBus = eventBus;
 
     this.overlayManager = new OverlayManager();

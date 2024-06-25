@@ -46,6 +46,12 @@ class BaseExternalServices {
   }
 
   async getNimbusExperimentData() {}
+
+  async getGlobalEventNames() {
+    return null;
+  }
+
+  dispatchGlobalEvent(_event) {}
 }
 
 export { BaseExternalServices };
