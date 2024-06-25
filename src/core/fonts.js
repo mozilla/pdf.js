@@ -799,7 +799,7 @@ function createOS2Table(properties, charstrings, override) {
   const unitsPerEm =
     override.unitsPerEm ||
     (properties.fontMatrix
-      ? 1 / Math.max(...properties.fontMatrix.slice(0, 4))
+      ? 1 / Math.max(...properties.fontMatrix.slice(0, 4).map(Math.abs))
       : 1000);
 
   // if the font units differ to the PDF glyph space units
@@ -3199,7 +3199,7 @@ class Font {
     }
 
     const unitsPerEm = properties.fontMatrix
-      ? 1 / Math.max(...properties.fontMatrix.slice(0, 4))
+      ? 1 / Math.max(...properties.fontMatrix.slice(0, 4).map(Math.abs))
       : 1000;
 
     const builder = new OpenTypeFileBuilder("\x4F\x54\x54\x4F");
