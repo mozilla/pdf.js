@@ -16,6 +16,8 @@
 import {
   awaitPromise,
   closePages,
+  copy,
+  copyToClipboard,
   createPromise,
   dragAndDropAnnotation,
   firstPageOnTop,
@@ -30,21 +32,19 @@ import {
   kbBigMoveLeft,
   kbBigMoveRight,
   kbBigMoveUp,
-  kbCopy,
   kbGoToBegin,
   kbGoToEnd,
   kbModifierDown,
   kbModifierUp,
-  kbPaste,
   kbRedo,
   kbSelectAll,
   kbUndo,
   loadAndWait,
+  paste,
   pasteFromClipboard,
   scrollIntoView,
   switchToEditor,
   waitForAnnotationEditorLayer,
-  waitForEvent,
   waitForSelectedEditor,
   waitForSerialized,
   waitForStorageEntries,
@@ -52,16 +52,6 @@ import {
   waitForUnselectedEditor,
 } from "./test_utils.mjs";
 import { PNG } from "pngjs";
-
-const copyPaste = async page => {
-  let promise = waitForEvent(page, "copy");
-  await kbCopy(page);
-  await promise;
-
-  promise = waitForEvent(page, "paste");
-  await kbPaste(page);
-  await promise;
-};
 
 const selectAll = async page => {
   await kbSelectAll(page);
@@ -187,7 +177,8 @@ describe("FreeText Editor", () => {
         );
 
         await waitForSelectedEditor(page, getEditorSelector(0));
-        await copyPaste(page);
+        await copy(page);
+        await paste(page);
         await page.waitForSelector(getEditorSelector(1), {
           visible: true,
         });
@@ -203,7 +194,8 @@ describe("FreeText Editor", () => {
 
         expect(pastedContent).withContext(`In ${browserName}`).toEqual(content);
 
-        await copyPaste(page);
+        await copy(page);
+        await paste(page);
         await page.waitForSelector(getEditorSelector(2), {
           visible: true,
         });
@@ -263,7 +255,8 @@ describe("FreeText Editor", () => {
         );
 
         await waitForSelectedEditor(page, getEditorSelector(3));
-        await copyPaste(page);
+        await copy(page);
+        await paste(page);
         await page.waitForSelector(getEditorSelector(4), {
           visible: true,
         });
@@ -276,9 +269,7 @@ describe("FreeText Editor", () => {
         );
 
         for (let i = 0; i < 2; i++) {
-          const promise = waitForEvent(page, "paste");
-          await kbPaste(page);
-          await promise;
+          await paste(page);
           await page.waitForSelector(getEditorSelector(5 + i));
         }
 
@@ -597,7 +588,8 @@ describe("FreeText Editor", () => {
           .withContext(`In ${browserName}`)
           .toEqual([0, 1, 3]);
 
-        await copyPaste(page);
+        await copy(page);
+        await paste(page);
         await page.waitForSelector(getEditorSelector(6), {
           visible: true,
         });
@@ -1275,7 +1267,8 @@ describe("FreeText Editor", () => {
         );
         await waitForSelectedEditor(page, getEditorSelector(1));
 
-        await copyPaste(page);
+        await copy(page);
+        await paste(page);
         await page.waitForSelector(getEditorSelector(6), {
           visible: true,
         });
@@ -3425,14 +3418,11 @@ describe("FreeText Editor", () => {
             );
 
           await select(0);
-          await pasteFromClipboard(
-            page,
-            {
-              "text/html": "<b>Bold Foo</b>",
-              "text/plain": "Foo",
-            },
-            `${editorSelector} .internal`
-          );
+          await copyToClipboard(page, {
+            "text/html": "<b>Bold Foo</b>",
+            "text/plain": "Foo",
+          });
+          await pasteFromClipboard(page, `${editorSelector} .internal`);
 
           let lastText = data;
 
@@ -3442,14 +3432,11 @@ describe("FreeText Editor", () => {
           expect(text).withContext(`In ${browserName}`).toEqual(lastText);
 
           await select(3);
-          await pasteFromClipboard(
-            page,
-            {
-              "text/html": "<b>Bold Bar</b><br><b>Oof</b>",
-              "text/plain": "Bar\nOof",
-            },
-            `${editorSelector} .internal`
-          );
+          await copyToClipboard(page, {
+            "text/html": "<b>Bold Bar</b><br><b>Oof</b>",
+            "text/plain": "Bar\nOof",
+          });
+          await pasteFromClipboard(page, `${editorSelector} .internal`);
 
           await waitForTextChange(lastText, editorSelector);
           text = await getText(editorSelector);
@@ -3457,13 +3444,8 @@ describe("FreeText Editor", () => {
           expect(text).withContext(`In ${browserName}`).toEqual(lastText);
 
           await select(0);
-          await pasteFromClipboard(
-            page,
-            {
-              "text/html": "<b>basic html</b>",
-            },
-            `${editorSelector} .internal`
-          );
+          await copyToClipboard(page, { "text/html": "<b>basic html</b>" });
+          await pasteFromClipboard(page, `${editorSelector} .internal`);
 
           // Nothing should change, so it's hard to wait on something.
           // eslint-disable-next-line no-restricted-syntax
@@ -3477,15 +3459,12 @@ describe("FreeText Editor", () => {
           const prevHTML = await getHTML();
 
           // Try to paste an image.
-          await pasteFromClipboard(
-            page,
-            {
-              "image/png":
-                // 1x1 transparent png.
-                "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-            },
-            `${editorSelector} .internal`
-          );
+          await copyToClipboard(page, {
+            "image/png":
+              // 1x1 transparent png.
+              "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+          });
+          await pasteFromClipboard(page, `${editorSelector} .internal`);
 
           // Nothing should change, so it's hard to wait on something.
           // eslint-disable-next-line no-restricted-syntax
@@ -3505,14 +3484,11 @@ describe("FreeText Editor", () => {
           });
 
           const fooBar = "Foo\nBar\nOof";
-          await pasteFromClipboard(
-            page,
-            {
-              "text/html": "<b>html</b>",
-              "text/plain": fooBar,
-            },
-            `${editorSelector} .internal`
-          );
+          await copyToClipboard(page, {
+            "text/html": "<b>html</b>",
+            "text/plain": fooBar,
+          });
+          await pasteFromClipboard(page, `${editorSelector} .internal`);
 
           await waitForTextChange("", editorSelector);
           text = await getText(editorSelector);

@@ -186,13 +186,14 @@ async function getSpanRectFromText(page, pageNumber, text) {
   );
 }
 
-async function waitForEvent(
+async function waitForEvent({
   page,
   eventName,
+  action,
   selector = null,
   validator = null,
-  timeout = 5000
-) {
+  timeout = 5000,
+}) {
   const handle = await page.evaluateHandle(
     (name, sel, validate, timeOut) => {
       let callback = null,
@@ -227,13 +228,15 @@ async function waitForEvent(
     validator ? validator.toString() : null,
     timeout
   );
+
+  await action();
+
   const success = await awaitPromise(handle);
   if (success === null) {
     console.log(`waitForEvent: ${eventName} didn't trigger within the timeout`);
   } else if (!success) {
     console.log(`waitForEvent: ${eventName} triggered, but validation failed`);
   }
-  return success;
 }
 
 async function waitForStorageEntries(page, nEntries) {
@@ -292,7 +295,15 @@ async function mockClipboard(pages) {
   );
 }
 
-async function pasteFromClipboard(page, data, selector, timeout = 100) {
+async function copy(page) {
+  await waitForEvent({
+    page,
+    eventName: "copy",
+    action: () => kbCopy(page),
+  });
+}
+
+async function copyToClipboard(page, data) {
   await page.evaluate(async dat => {
     const items = Object.create(null);
     for (const [type, value] of Object.entries(dat)) {
@@ -305,15 +316,25 @@ async function pasteFromClipboard(page, data, selector, timeout = 100) {
     }
     await navigator.clipboard.write([new ClipboardItem(items)]);
   }, data);
+}
 
+async function paste(page) {
+  await waitForEvent({
+    page,
+    eventName: "paste",
+    action: () => kbPaste(page),
+  });
+}
+
+async function pasteFromClipboard(page, selector = null) {
   const validator = e => e.clipboardData.items.length !== 0;
-  let hasPasteEvent = false;
-  while (!hasPasteEvent) {
-    // We retry to paste if nothing has been pasted before the timeout.
-    const promise = waitForEvent(page, "paste", selector, validator);
-    await kbPaste(page);
-    hasPasteEvent = await promise;
-  }
+  await waitForEvent({
+    page,
+    eventName: "paste",
+    action: () => kbPaste(page),
+    selector,
+    validator,
+  });
 }
 
 async function getSerialized(page, filter = undefined) {
@@ -634,6 +655,8 @@ export {
   clearInput,
   closePages,
   closeSinglePage,
+  copy,
+  copyToClipboard,
   createPromise,
   dragAndDropAnnotation,
   firstPageOnTop,
@@ -654,7 +677,6 @@ export {
   kbBigMoveLeft,
   kbBigMoveRight,
   kbBigMoveUp,
-  kbCopy,
   kbDeleteLastWord,
   kbFocusNext,
   kbFocusPrevious,
@@ -662,12 +684,12 @@ export {
   kbGoToEnd,
   kbModifierDown,
   kbModifierUp,
-  kbPaste,
   kbRedo,
   kbSelectAll,
   kbUndo,
   loadAndWait,
   mockClipboard,
+  paste,
   pasteFromClipboard,
   scrollIntoView,
   serializeBitmapDimensions,
