@@ -193,6 +193,11 @@ function watchScroll(viewAreaElement, callback, abortSignal = undefined) {
     useCapture: true,
     signal: abortSignal,
   });
+  abortSignal?.addEventListener(
+    "abort",
+    () => window.cancelAnimationFrame(rAF),
+    { once: true }
+  );
   return state;
 }
 
