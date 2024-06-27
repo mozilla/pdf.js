@@ -3254,6 +3254,8 @@ class RenderTask {
  * @ignore
  */
 class InternalRenderTask {
+  #rAF = null;
+
   static #canvasInUse = new WeakSet();
 
   constructor({
@@ -3353,6 +3355,10 @@ class InternalRenderTask {
     this.running = false;
     this.cancelled = true;
     this.gfx?.endDrawing();
+    if (this.#rAF) {
+      window.cancelAnimationFrame(this.#rAF);
+      this.#rAF = null;
+    }
     InternalRenderTask.#canvasInUse.delete(this._canvas);
 
     this.callback(
@@ -3391,7 +3397,8 @@ class InternalRenderTask {
 
   _scheduleNext() {
     if (this._useRequestAnimationFrame) {
-      window.requestAnimationFrame(() => {
+      this.#rAF = window.requestAnimationFrame(() => {
+        this.#rAF = null;
         this._nextBound().catch(this._cancelBound);
       });
     } else {
