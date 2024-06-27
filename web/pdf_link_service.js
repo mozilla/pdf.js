@@ -320,6 +320,16 @@ class PDFLinkService {
       if (params.has("page")) {
         pageNumber = params.get("page") | 0 || 1;
       }
+      if (params.has("toolbar")){
+        let hidden = false;
+        if (params.get("toolbar") === "hidden"){
+          hidden = true;
+        }
+        this.eventBus.dispatch("hidetoolbar", {
+          source: this, 
+          hidden
+        });
+      }
       if (params.has("zoom")) {
         // Build the destination array.
         const zoomArgs = params.get("zoom").split(","); // scale,left,top
@@ -385,6 +395,8 @@ class PDFLinkService {
           mode: params.get("pagemode"),
         });
       }
+      
+
       // Ensure that this parameter is *always* handled last, in order to
       // guarantee that it won't be overridden (e.g. by the "page" parameter).
       if (params.has("nameddest")) {

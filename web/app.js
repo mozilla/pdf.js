@@ -1934,6 +1934,7 @@ const PDFViewerApplication = {
     eventBus._on("zoomin", webViewerZoomIn, { signal });
     eventBus._on("zoomout", webViewerZoomOut, { signal });
     eventBus._on("zoomreset", webViewerZoomReset, { signal });
+    eventBus._on("hidetoolbar", webViewerHideToolbar, { signal });
     eventBus._on("pagenumberchanged", webViewerPageNumberChanged, { signal });
     eventBus._on("scalechanged", webViewerScaleChanged, { signal });
     eventBus._on("rotatecw", webViewerRotateCw, { signal });
@@ -2460,6 +2461,15 @@ function webViewerZoomOut() {
 }
 function webViewerZoomReset() {
   PDFViewerApplication.zoomReset();
+}
+function webViewerHideToolbar(evt) {
+  if (evt.hidden) {
+    document.getElementById("toolbarContainer").style.setProperty("display", "none");
+    document.getElementById("viewerContainer").style.setProperty("inset", 0); 
+  } else {
+    document.getElementById("toolbarContainer").style.removeProperty("display");
+    document.getElementById("viewerContainer").style.removeProperty("inset");
+  }
 }
 function webViewerPageNumberChanged(evt) {
   const pdfViewer = PDFViewerApplication.pdfViewer;
