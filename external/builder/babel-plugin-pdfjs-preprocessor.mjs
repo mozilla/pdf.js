@@ -168,17 +168,21 @@ function babelPluginPDFJSPreprocessor(babel, ctx) {
           path.replaceWith(t.inherits(t.valueToNode(result), path.node));
         }
 
-        if (t.isIdentifier(node.callee, { name: "__non_webpack_import__" })) {
+        if (t.isIdentifier(node.callee, { name: "__raw_import__" })) {
           if (node.arguments.length !== 1) {
-            throw new Error("Invalid `__non_webpack_import__` usage.");
+            throw new Error("Invalid `__raw_import__` usage.");
           }
-          // Replace it with a standard `import`-call and
-          // ensure that Webpack will leave it alone.
+          // Replace it with a standard `import`-call and attempt to ensure
+          // that various bundlers will leave it alone.
           const source = node.arguments[0];
           source.leadingComments = [
             {
               type: "CommentBlock",
               value: "webpackIgnore: true",
+            },
+            {
+              type: "CommentBlock",
+              value: "@vite-ignore",
             },
           ];
           path.replaceWith(t.importExpression(source));

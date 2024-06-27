@@ -35,19 +35,19 @@ if (isNodeJS) {
 
   const loadPackages = async () => {
     // Native packages.
-    const fs = await __non_webpack_import__("fs"),
-      http = await __non_webpack_import__("http"),
-      https = await __non_webpack_import__("https"),
-      url = await __non_webpack_import__("url");
+    const fs = await __raw_import__("fs"),
+      http = await __raw_import__("http"),
+      https = await __raw_import__("https"),
+      url = await __raw_import__("url");
 
     // Optional, third-party, packages.
     let canvas, path2d;
     if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("SKIP_BABEL")) {
       try {
-        canvas = await __non_webpack_import__("canvas");
+        canvas = await __raw_import__("canvas");
       } catch {}
       try {
-        path2d = await __non_webpack_import__("path2d");
+        path2d = await __raw_import__("path2d");
       } catch {}
     }
 

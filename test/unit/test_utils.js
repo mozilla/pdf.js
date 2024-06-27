@@ -21,8 +21,8 @@ import { Ref } from "../../src/core/primitives.js";
 let fs, http;
 if (isNodeJS) {
   // Native packages.
-  fs = await __non_webpack_import__("fs");
-  http = await __non_webpack_import__("http");
+  fs = await __raw_import__("fs");
+  http = await __raw_import__("http");
 }
 
 const TEST_PDFS_PATH = isNodeJS ? "./test/pdfs/" : "../pdfs/";

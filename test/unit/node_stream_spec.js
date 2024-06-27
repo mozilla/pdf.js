@@ -24,8 +24,8 @@ if (!isNodeJS) {
   );
 }
 
-const path = await __non_webpack_import__("path");
-const url = await __non_webpack_import__("url");
+const path = await __raw_import__("path");
+const url = await __raw_import__("url");
 
 describe("node_stream", function () {
   let tempServer = null;

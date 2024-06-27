@@ -278,7 +278,7 @@ const PDFViewerApplication = {
       const { PDFBug } =
         typeof PDFJSDev === "undefined"
           ? await import(AppOptions.get("debuggerSrc")) // eslint-disable-line no-unsanitized/method
-          : await __non_webpack_import__(AppOptions.get("debuggerSrc"));
+          : await __raw_import__(AppOptions.get("debuggerSrc"));
 
       this._PDFBug = PDFBug;
     };
@@ -290,7 +290,7 @@ const PDFViewerApplication = {
         if (typeof PDFJSDev === "undefined") {
           globalThis.pdfjsWorker = await import("pdfjs/pdf.worker.js");
         } else {
-          await __non_webpack_import__(PDFWorker.workerSrc);
+          await __raw_import__(PDFWorker.workerSrc);
         }
       } catch (ex) {
         console.error(`_parseHashParams: "${ex.message}".`);
