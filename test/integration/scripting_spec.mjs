@@ -2456,4 +2456,58 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("PageOpen and PageClose actions in fields", () => {
+    let pages;
+    let otherPages;
+
+    beforeAll(async () => {
+      otherPages = await Promise.all(
+        global.integrationSessions.map(async session =>
+          session.browser.newPage()
+        )
+      );
+      pages = await loadAndWait("issue18305.pdf", getSelector("7R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+      await Promise.all(otherPages.map(page => page.close()));
+    });
+
+    it("must check that PageOpen/PageClose actions are correctly executed", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page], i) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          const buttonSelector = `[data-annotation-id="25R"`;
+          await page.waitForSelector(buttonSelector, {
+            timeout: 0,
+          });
+
+          const inputSelector = getSelector("7R");
+          let text = await page.$eval(inputSelector, el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("");
+
+          text = await actAndWaitForInput(
+            page,
+            inputSelector,
+            () => scrollIntoView(page, buttonSelector),
+            false
+          );
+          expect(text).withContext(`In ${browserName}`).toEqual("PageOpen");
+
+          text = await actAndWaitForInput(
+            page,
+            inputSelector,
+            () => scrollIntoView(page, inputSelector),
+            false
+          );
+          expect(text).withContext(`In ${browserName}`).toEqual("PageClose");
+        })
+      );
+    });
+  });
 });
