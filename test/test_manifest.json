@@ -10021,6 +10021,7 @@
     "id": "issue17779",
     "file": "pdfs/issue17779.pdf",
     "md5": "764b72e8e56e22662b321b308254fd2b",
+    "talos": false,
     "rounds": 1,
     "link": true,
     "type": "eq"
