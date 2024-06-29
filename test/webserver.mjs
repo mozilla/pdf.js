@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+// PLEASE NOTE: This code is intended for development purposes only and
+//              should NOT be used in production environments.
+
 import fs from "fs";
 import fsPromises from "fs/promises";
 import http from "http";
