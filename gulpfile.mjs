@@ -2226,11 +2226,12 @@ function packageJson() {
     },
     repository: {
       type: "git",
-      url: DIST_REPO_URL,
+      url: `git+${DIST_REPO_URL}.git`,
     },
     engines: {
       node: ">=18",
     },
+    scripts: {},
   };
 
   return createStringSource(
