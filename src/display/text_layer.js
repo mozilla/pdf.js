@@ -17,7 +17,7 @@
 /** @typedef {import("./api").TextContent} TextContent */
 
 import { AbortException, Util, warn } from "../shared/util.js";
-import { deprecated, setLayerDimensions } from "./display_utils.js";
+import { setLayerDimensions } from "./display_utils.js";
 
 /**
  * @typedef {Object} TextLayerParameters
@@ -557,40 +557,4 @@ class TextLayer {
   }
 }
 
-function renderTextLayer() {
-  if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-    return;
-  }
-  deprecated("`renderTextLayer`, please use `TextLayer` instead.");
-
-  const { textContentSource, container, viewport, ...rest } = arguments[0];
-  const restKeys = Object.keys(rest);
-  if (restKeys.length > 0) {
-    warn("Ignoring `renderTextLayer` parameters: " + restKeys.join(", "));
-  }
-
-  const textLayer = new TextLayer({
-    textContentSource,
-    container,
-    viewport,
-  });
-
-  const { textDivs, textContentItemsStr } = textLayer;
-  const promise = textLayer.render();
-
-  // eslint-disable-next-line consistent-return
-  return {
-    promise,
-    textDivs,
-    textContentItemsStr,
-  };
-}
-
-function updateTextLayer() {
-  if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-    return;
-  }
-  deprecated("`updateTextLayer`, please use `TextLayer` instead.");
-}
-
-export { renderTextLayer, TextLayer, updateTextLayer };
+export { TextLayer };
