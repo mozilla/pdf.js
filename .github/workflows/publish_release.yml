@@ -4,6 +4,7 @@ on:
     types: [published]
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   publish:
@@ -33,6 +34,6 @@ jobs:
         run: npx gulp dist
 
       - name: Publish the `pdfjs-dist` library to NPM
-        run: npm publish ./build/dist
+        run: npm publish ./build/dist --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
