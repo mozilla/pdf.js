@@ -946,6 +946,8 @@ async function startBrowser({
       "dom.events.asyncClipboard.clipboardItem": true,
       // It's helpful to see where the caret is.
       "accessibility.browsewithcaret": true,
+      // Disable the newtabpage stuff.
+      "browser.newtabpage.enabled": false,
       ...extraPrefsFirefox,
     };
   }
