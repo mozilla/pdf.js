@@ -2226,7 +2226,7 @@ function packageJson() {
     },
     repository: {
       type: "git",
-      url: `git+${DIST_REPO_URL}.git`,
+      url: `git+https://github.com/mozilla/pdf.js.git`,
     },
     engines: {
       node: ">=18",
