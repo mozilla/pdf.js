@@ -1302,6 +1302,41 @@ describe("Highlight Editor", () => {
     });
   });
 
+  describe("Quadpoints must be correct when they're in a translated page", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue18360.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the quadpoints for an highlight are almost correct", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getSpanRectFromText(page, 1, "Hello World");
+          await page.mouse.click(
+            rect.x + rect.width / 4,
+            rect.y + rect.height / 2,
+            { count: 2, delay: 100 }
+          );
+
+          await page.waitForSelector(getEditorSelector(0));
+          await waitForSerialized(page, 1);
+          const quadPoints = await getFirstSerialized(page, e => e.quadPoints);
+          const expected = [148, 624, 176, 624, 148, 637, 176, 637];
+          expect(quadPoints.every((x, i) => Math.abs(x - expected[i]) <= 5))
+            .withContext(`In ${browserName} (got ${quadPoints})`)
+            .toBeTrue();
+        })
+      );
+    });
+  });
+
   describe("Editor must be unselected when the color picker is Escaped", () => {
     let pages;
 
