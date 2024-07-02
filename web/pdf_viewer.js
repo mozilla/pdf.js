@@ -1122,9 +1122,7 @@ class PDFViewer {
     this.#hiddenCopyElement?.remove();
     this.#hiddenCopyElement = null;
 
-    this.#onPageRenderedCallback = null;
-    clearTimeout(this.#switchAnnotationEditorModeTimeoutId);
-    this.#switchAnnotationEditorModeTimeoutId = null;
+    this.#cleanupSwitchAnnotationEditorMode();
   }
 
   #ensurePageViewVisible() {
@@ -2263,6 +2261,17 @@ class PDFViewer {
     ]);
   }
 
+  #cleanupSwitchAnnotationEditorMode() {
+    if (this.#onPageRenderedCallback) {
+      this.eventBus._off("pagerendered", this.#onPageRenderedCallback);
+      this.#onPageRenderedCallback = null;
+    }
+    if (this.#switchAnnotationEditorModeTimeoutId !== null) {
+      clearTimeout(this.#switchAnnotationEditorModeTimeoutId);
+      this.#switchAnnotationEditorModeTimeoutId = null;
+    }
+  }
+
   get annotationEditorMode() {
     return this.#annotationEditorUIManager
       ? this.#annotationEditorMode
@@ -2296,14 +2305,7 @@ class PDFViewer {
 
     const { eventBus } = this;
     const updater = () => {
-      if (this.#onPageRenderedCallback) {
-        eventBus._off("pagerendered", this.#onPageRenderedCallback);
-        this.#onPageRenderedCallback = null;
-      }
-      if (this.#switchAnnotationEditorModeTimeoutId !== null) {
-        clearTimeout(this.#switchAnnotationEditorModeTimeoutId);
-        this.#switchAnnotationEditorModeTimeoutId = null;
-      }
+      this.#cleanupSwitchAnnotationEditorMode();
       this.#annotationEditorMode = mode;
       eventBus.dispatch("annotationeditormodechanged", {
         source: this,
@@ -2329,15 +2331,14 @@ class PDFViewer {
       if (isEditing && editId && idsToRefresh) {
         // We're editing an existing annotation so we must switch to editing
         // mode when the rendering is done.
-        const { signal } = this.#eventAbortController;
+        this.#cleanupSwitchAnnotationEditorMode();
         this.#onPageRenderedCallback = ({ pageNumber }) => {
           idsToRefresh.delete(pageNumber);
           if (idsToRefresh.size === 0) {
-            eventBus._off("pagerendered", this.#onPageRenderedCallback);
-            this.#onPageRenderedCallback = null;
             this.#switchAnnotationEditorModeTimeoutId = setTimeout(updater, 0);
           }
         };
+        const { signal } = this.#eventAbortController;
         eventBus._on("pagerendered", this.#onPageRenderedCallback, { signal });
         return;
       }
