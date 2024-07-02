@@ -135,6 +135,7 @@ function getSelector(id) {
 async function getRect(page, selector) {
   // In Chrome something is wrong when serializing a `DomRect`,
   // so we extract the values and return them ourselves.
+  await page.waitForSelector(selector);
   return page.$eval(selector, el => {
     const { x, y, width, height } = el.getBoundingClientRect();
     return { x, y, width, height };
