@@ -564,14 +564,14 @@ describe("Stamp Editor", () => {
       for (let i = 0; i < pages1.length; i++) {
         const [, page1] = pages1[i];
         await page1.bringToFront();
-        await page1.click("#editorStamp");
+        await switchToStamp(page1);
 
         await copyImage(page1, "../images/firefox_logo.png", 0);
         await copy(page1);
 
         const [, page2] = pages2[i];
         await page2.bringToFront();
-        await page2.click("#editorStamp");
+        await switchToStamp(page2);
 
         await paste(page2);
 
