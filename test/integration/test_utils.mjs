@@ -447,8 +447,27 @@ function waitForAnnotationEditorLayer(page) {
   return createPromise(page, resolve => {
     window.PDFViewerApplication.eventBus.on(
       "annotationeditorlayerrendered",
-      resolve
+      resolve,
+      { once: true }
     );
+  });
+}
+
+function waitForAnnotationModeChanged(page) {
+  return createPromise(page, resolve => {
+    window.PDFViewerApplication.eventBus.on(
+      "annotationeditormodechanged",
+      resolve,
+      { once: true }
+    );
+  });
+}
+
+function waitForPageRendered(page) {
+  return createPromise(page, resolve => {
+    window.PDFViewerApplication.eventBus.on("pagerendered", resolve, {
+      once: true,
+    });
   });
 }
 
@@ -695,8 +714,10 @@ export {
   serializeBitmapDimensions,
   switchToEditor,
   waitForAnnotationEditorLayer,
+  waitForAnnotationModeChanged,
   waitForEntryInStorage,
   waitForEvent,
+  waitForPageRendered,
   waitForSandboxTrip,
   waitForSelectedEditor,
   waitForSerialized,
