@@ -63,11 +63,6 @@ import {
   RenderingCancelledException,
   setLayerDimensions,
 } from "./display/display_utils.js";
-import {
-  renderTextLayer,
-  TextLayer,
-  updateTextLayer,
-} from "./display/text_layer.js";
 import { AnnotationEditorLayer } from "./display/editor/annotation_editor_layer.js";
 import { AnnotationEditorUIManager } from "./display/editor/tools.js";
 import { AnnotationLayer } from "./display/annotation_layer.js";
@@ -75,6 +70,7 @@ import { ColorPicker } from "./display/editor/color_picker.js";
 import { DrawLayer } from "./display/draw_layer.js";
 import { GlobalWorkerOptions } from "./display/worker_options.js";
 import { Outliner } from "./display/editor/outliner.js";
+import { TextLayer } from "./display/text_layer.js";
 import { XfaLayer } from "./display/xfa_layer.js";
 
 /* eslint-disable-next-line no-unused-vars */
@@ -121,12 +117,10 @@ export {
   PermissionFlag,
   PixelsPerInch,
   RenderingCancelledException,
-  renderTextLayer,
   setLayerDimensions,
   shadow,
   TextLayer,
   UnexpectedResponseException,
-  updateTextLayer,
   Util,
   VerbosityLevel,
   version,
