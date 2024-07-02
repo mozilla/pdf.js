@@ -671,12 +671,13 @@ class HighlightEditor extends AnnotationEditor {
       return null;
     }
     const [pageWidth, pageHeight] = this.pageDimensions;
+    const [pageX, pageY] = this.pageTranslation;
     const boxes = this.#boxes;
     const quadPoints = new Float32Array(boxes.length * 8);
     let i = 0;
     for (const { x, y, width, height } of boxes) {
-      const sx = x * pageWidth;
-      const sy = (1 - y - height) * pageHeight;
+      const sx = x * pageWidth + pageX;
+      const sy = (1 - y - height) * pageHeight + pageY;
       // The specifications say that the rectangle should start from the bottom
       // left corner and go counter-clockwise.
       // But when opening the file in Adobe Acrobat it appears that this isn't
