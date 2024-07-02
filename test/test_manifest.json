@@ -10113,5 +10113,15 @@
     "rounds": 1,
     "link": true,
     "type": "eq"
+  },
+  {
+    "id": "bug1905623",
+    "file": "pdfs/bug1905623.pdf",
+    "md5": "6c180a4353bda6b3cb0c693c5e5b32c4",
+    "rounds": 1,
+    "link": true,
+    "firstPage": 2,
+    "lastPage": 2,
+    "type": "eq"
   }
 ]

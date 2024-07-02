@@ -26,6 +26,7 @@ import {
 import { CFFCompiler, CFFParser } from "./cff_parser.js";
 import {
   FontFlags,
+  getVerticalPresentationForm,
   MacStandardGlyphOrdering,
   normalizeFontName,
   recoverGlyphName,
@@ -3363,6 +3364,13 @@ class Font {
         fontChar = String.fromCodePoint(fontCharCode);
       } else {
         warn(`charToGlyph - invalid fontCharCode: ${fontCharCode}`);
+      }
+    }
+
+    if (this.missingFile && this.vertical && fontChar.length === 1) {
+      const vertical = getVerticalPresentationForm()[fontChar.charCodeAt(0)];
+      if (vertical) {
+        fontChar = unicode = String.fromCharCode(vertical);
       }
     }
 
