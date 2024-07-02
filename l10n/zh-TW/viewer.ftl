@@ -51,12 +51,6 @@ pdfjs-download-button-label = 下載
 pdfjs-bookmark-button =
     .title = 目前頁面（含目前檢視頁面的網址）
 pdfjs-bookmark-button-label = 目前頁面
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = 在應用程式中開啟
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = 用程式開啟
 
 ##  Secondary toolbar and context menu
 
@@ -82,8 +76,8 @@ pdfjs-cursor-hand-tool-button =
     .title = 開啟頁面移動工具
 pdfjs-cursor-hand-tool-button-label = 頁面移動工具
 pdfjs-scroll-page-button =
-    .title = 使用頁面捲動功能
-pdfjs-scroll-page-button-label = 頁面捲動功能
+    .title = 使用單頁捲動版面
+pdfjs-scroll-page-button-label = 單頁捲動
 pdfjs-scroll-vertical-button =
     .title = 使用垂直捲動版面
 pdfjs-scroll-vertical-button-label = 垂直捲動
@@ -108,8 +102,8 @@ pdfjs-spread-even-button-label = 偶數跨頁
 pdfjs-document-properties-button =
     .title = 文件內容…
 pdfjs-document-properties-button-label = 文件內容…
-pdfjs-document-properties-file-name = 檔案名稱:
-pdfjs-document-properties-file-size = 檔案大小:
+pdfjs-document-properties-file-name = 檔案名稱：
+pdfjs-document-properties-file-size = 檔案大小：
 # Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
@@ -118,21 +112,21 @@ pdfjs-document-properties-kb = { $size_kb } KB（{ $size_b } 位元組）
 #   $size_mb (Number) - the PDF file size in megabytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-mb = { $size_mb } MB（{ $size_b } 位元組）
-pdfjs-document-properties-title = 標題:
-pdfjs-document-properties-author = 作者:
-pdfjs-document-properties-subject = 主旨:
-pdfjs-document-properties-keywords = 關鍵字:
-pdfjs-document-properties-creation-date = 建立日期:
-pdfjs-document-properties-modification-date = 修改日期:
+pdfjs-document-properties-title = 標題：
+pdfjs-document-properties-author = 作者：
+pdfjs-document-properties-subject = 主旨：
+pdfjs-document-properties-keywords = 關鍵字：
+pdfjs-document-properties-creation-date = 建立日期：
+pdfjs-document-properties-modification-date = 修改日期：
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
 pdfjs-document-properties-date-string = { $date } { $time }
-pdfjs-document-properties-creator = 建立者:
-pdfjs-document-properties-producer = PDF 產生器:
-pdfjs-document-properties-version = PDF 版本:
-pdfjs-document-properties-page-count = 頁數:
-pdfjs-document-properties-page-size = 頁面大小:
+pdfjs-document-properties-creator = 建立者：
+pdfjs-document-properties-producer = PDF 產生器：
+pdfjs-document-properties-version = PDF 版本：
+pdfjs-document-properties-page-count = 頁數：
+pdfjs-document-properties-page-size = 頁面大小：
 pdfjs-document-properties-page-size-unit-inches = in
 pdfjs-document-properties-page-size-unit-millimeters = mm
 pdfjs-document-properties-page-size-orientation-portrait = 垂直
@@ -156,7 +150,7 @@ pdfjs-document-properties-page-size-dimension-name-string = { $width } × { $hei
 
 # The linearization status of the document; usually called "Fast Web View" in
 # English locales of Adobe software.
-pdfjs-document-properties-linearized = 快速 Web 檢視:
+pdfjs-document-properties-linearized = 快速 Web 檢視：
 pdfjs-document-properties-linearized-yes = 是
 pdfjs-document-properties-linearized-no = 否
 pdfjs-document-properties-close-button = 關閉
@@ -296,8 +290,6 @@ pdfjs-editor-stamp-button-label = 新增或編輯圖片
 pdfjs-editor-highlight-button =
     .title = 強調
 pdfjs-editor-highlight-button-label = 強調
-pdfjs-highlight-floating-button =
-    .title = 強調
 pdfjs-highlight-floating-button1 =
     .title = 強調
     .aria-label = 強調
@@ -331,7 +323,7 @@ pdfjs-editor-free-highlight-thickness-title =
     .title = 更改強調文字以外的項目時的線條粗細
 pdfjs-free-text =
     .aria-label = 文本編輯器
-pdfjs-free-text-default-content = 開始打字…
+pdfjs-free-text-default-content = 在此打字…
 pdfjs-ink =
     .aria-label = 圖形編輯器
 pdfjs-ink-canvas =
