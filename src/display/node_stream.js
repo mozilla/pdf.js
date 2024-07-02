@@ -12,13 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals process */
 
 import { AbortException, assert, MissingPDFException } from "../shared/util.js";
 import {
   extractFilenameFromHeader,
   validateRangeRequestCapabilities,
 } from "./network_utils.js";
-import { NodePackages } from "./node_utils.js";
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
@@ -29,7 +29,7 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
 const fileUriRegex = /^file:\/\/\/[a-zA-Z]:\//;
 
 function parseUrl(sourceUrl) {
-  const url = NodePackages.get("url");
+  const url = process.getBuiltinModule("url");
   const parsedUrl = url.parse(sourceUrl);
   if (parsedUrl.protocol === "file:" || parsedUrl.host) {
     return parsedUrl;
@@ -335,13 +335,13 @@ class PDFNodeStreamFullReader extends BaseFullReader {
 
     this._request = null;
     if (this._url.protocol === "http:") {
-      const http = NodePackages.get("http");
+      const http = process.getBuiltinModule("http");
       this._request = http.request(
         createRequestOptions(this._url, stream.httpHeaders),
         handleResponse
       );
     } else {
-      const https = NodePackages.get("https");
+      const https = process.getBuiltinModule("https");
       this._request = https.request(
         createRequestOptions(this._url, stream.httpHeaders),
         handleResponse
@@ -384,13 +384,13 @@ class PDFNodeStreamRangeReader extends BaseRangeReader {
 
     this._request = null;
     if (this._url.protocol === "http:") {
-      const http = NodePackages.get("http");
+      const http = process.getBuiltinModule("http");
       this._request = http.request(
         createRequestOptions(this._url, this._httpHeaders),
         handleResponse
       );
     } else {
-      const https = NodePackages.get("https");
+      const https = process.getBuiltinModule("https");
       this._request = https.request(
         createRequestOptions(this._url, this._httpHeaders),
         handleResponse
@@ -415,7 +415,7 @@ class PDFNodeStreamFsFullReader extends BaseFullReader {
       path = path.replace(/^\//, "");
     }
 
-    const fs = NodePackages.get("fs");
+    const fs = process.getBuiltinModule("fs");
     fs.promises.lstat(path).then(
       stat => {
         // Setting right content length.
@@ -446,7 +446,7 @@ class PDFNodeStreamFsRangeReader extends BaseRangeReader {
       path = path.replace(/^\//, "");
     }
 
-    const fs = NodePackages.get("fs");
+    const fs = process.getBuiltinModule("fs");
     this._setReadableStream(fs.createReadStream(path, { start, end: end - 1 }));
   }
 }

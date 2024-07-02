@@ -18,13 +18,6 @@ import { NullStream, StringStream } from "../../src/core/stream.js";
 import { Page, PDFDocument } from "../../src/core/document.js";
 import { Ref } from "../../src/core/primitives.js";
 
-let fs, http;
-if (isNodeJS) {
-  // Native packages.
-  fs = await __non_webpack_import__("fs");
-  http = await __non_webpack_import__("http");
-}
-
 const TEST_PDFS_PATH = isNodeJS ? "./test/pdfs/" : "../pdfs/";
 
 const CMAP_URL = isNodeJS ? "./external/bcmaps/" : "../../external/bcmaps/";
@@ -46,6 +39,7 @@ class DOMFileReaderFactory {
 class NodeFileReaderFactory {
   static async fetch(params) {
     return new Promise((resolve, reject) => {
+      const fs = process.getBuiltinModule("fs");
       fs.readFile(params.path, (error, data) => {
         if (error || !data) {
           reject(error || new Error(`Empty file for: ${params.path}`));
@@ -148,6 +142,8 @@ function createIdFactory(pageIndex) {
 function createTemporaryNodeServer() {
   assert(isNodeJS, "Should only be used in Node.js environments.");
 
+  const fs = process.getBuiltinModule("fs"),
+    http = process.getBuiltinModule("http");
   // Create http server to serve pdf data for tests.
   const server = http
     .createServer((request, response) => {
