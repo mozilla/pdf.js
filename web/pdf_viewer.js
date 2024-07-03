@@ -1192,6 +1192,7 @@ class PDFViewer {
     if (this.pagesCount === 0) {
       return;
     }
+    this.#setScale(this.currentScaleValue, { noScroll: false });
     this.update();
   }
 
