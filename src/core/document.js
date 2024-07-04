@@ -411,7 +411,6 @@ class Page {
     intent,
     cacheKey,
     annotationStorage = null,
-    isEditing = false,
     modifiedIds = null,
   }) {
     const contentStreamPromise = this.getContentStream();
@@ -570,6 +569,7 @@ class Page {
         return { length: pageOpList.totalLength };
       }
       const renderForms = !!(intent & RenderingIntentFlag.ANNOTATIONS_FORMS),
+        isEditing = !!(intent & RenderingIntentFlag.IS_EDITING),
         intentAny = !!(intent & RenderingIntentFlag.ANY),
         intentDisplay = !!(intent & RenderingIntentFlag.DISPLAY),
         intentPrint = !!(intent & RenderingIntentFlag.PRINT);
