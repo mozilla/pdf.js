@@ -752,7 +752,6 @@ class WorkerMessageHandler {
             intent: data.intent,
             cacheKey: data.cacheKey,
             annotationStorage: data.annotationStorage,
-            isEditing: data.isEditing,
             modifiedIds: data.modifiedIds,
           })
           .then(

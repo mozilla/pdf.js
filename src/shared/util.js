@@ -41,10 +41,12 @@ const BASELINE_FACTOR = LINE_DESCENT_FACTOR / LINE_FACTOR;
  * how these flags are being used:
  *  - ANY, DISPLAY, and PRINT are the normal rendering intents, note the
  *    `PDFPageProxy.{render, getOperatorList, getAnnotations}`-methods.
+ *  - SAVE is used, on the worker-thread, when saving modified annotations.
  *  - ANNOTATIONS_FORMS, ANNOTATIONS_STORAGE, ANNOTATIONS_DISABLE control which
  *    annotations are rendered onto the canvas (i.e. by being included in the
  *    operatorList), note the `PDFPageProxy.{render, getOperatorList}`-methods
  *    and their `annotationMode`-option.
+ *  - IS_EDITING is used when editing is active in the viewer.
  *  - OPLIST is used with the `PDFPageProxy.getOperatorList`-method, note the
  *    `OperatorList`-constructor (on the worker-thread).
  */
@@ -56,6 +58,7 @@ const RenderingIntentFlag = {
   ANNOTATIONS_FORMS: 0x10,
   ANNOTATIONS_STORAGE: 0x20,
   ANNOTATIONS_DISABLE: 0x40,
+  IS_EDITING: 0x80,
   OPLIST: 0x100,
 };
 
