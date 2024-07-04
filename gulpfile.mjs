@@ -2213,7 +2213,7 @@ function packageJson() {
     license: DIST_LICENSE,
     optionalDependencies: {
       canvas: "^2.11.2",
-      path2d: "^0.2.0",
+      path2d: "^0.2.1",
     },
     browser: {
       canvas: false,
