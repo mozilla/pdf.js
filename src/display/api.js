@@ -1818,7 +1818,6 @@ class PDFPageProxy {
     renderingIntent,
     cacheKey,
     annotationStorageSerializable,
-    isEditing,
     modifiedIds,
   }) {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
@@ -1836,7 +1835,6 @@ class PDFPageProxy {
         intent: renderingIntent,
         cacheKey,
         annotationStorage: map,
-        isEditing,
         modifiedIds,
       },
       transfer
@@ -2473,6 +2471,9 @@ class WorkerTransport {
         warn(`getRenderingIntent - invalid annotationMode: ${annotationMode}`);
     }
 
+    if (isEditing) {
+      renderingIntent += RenderingIntentFlag.IS_EDITING;
+    }
     if (isOpList) {
       renderingIntent += RenderingIntentFlag.OPLIST;
     }
@@ -2483,7 +2484,6 @@ class WorkerTransport {
     const cacheKeyBuf = [
       renderingIntent,
       annotationStorageSerializable.hash,
-      isEditing ? 1 : 0,
       modifiedIdsHash,
     ];
 
@@ -2491,7 +2491,6 @@ class WorkerTransport {
       renderingIntent,
       cacheKey: cacheKeyBuf.join("_"),
       annotationStorageSerializable,
-      isEditing,
       modifiedIds,
     };
   }
