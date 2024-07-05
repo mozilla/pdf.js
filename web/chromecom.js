@@ -436,6 +436,10 @@ class ExternalServices extends BaseExternalServices {
 }
 
 class MLManager {
+  isEnabledFor(_name) {
+    return false;
+  }
+
   async guess() {
     return null;
   }
