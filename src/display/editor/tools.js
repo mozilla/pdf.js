@@ -851,8 +851,8 @@ class AnnotationEditorUIManager {
     return this.#mlManager?.guess(data) || null;
   }
 
-  get hasMLManager() {
-    return !!this.#mlManager;
+  isMLEnabledFor(name) {
+    return !!this.#mlManager?.isEnabledFor(name);
   }
 
   get hcmFilter() {

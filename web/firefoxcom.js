@@ -303,6 +303,16 @@ class FirefoxScripting {
 }
 
 class MLManager {
+  #enabled = new Map();
+
+  constructor({ enableAltText }) {
+    this.#enabled.set("altText", enableAltText);
+  }
+
+  isEnabledFor(name) {
+    return this.#enabled.get(name);
+  }
+
   guess(data) {
     return FirefoxCom.requestAsync("mlGuess", data);
   }

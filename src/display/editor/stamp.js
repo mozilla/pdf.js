@@ -430,7 +430,7 @@ class StampEditor extends AnnotationEditor {
       return;
     }
     this.#hasMLBeenQueried = true;
-    if (!this._uiManager.hasMLManager || this.hasAltText()) {
+    if (!this._uiManager.isMLEnabledFor("altText") || this.hasAltText()) {
       return;
     }
     const offscreen = new OffscreenCanvas(width, height);
