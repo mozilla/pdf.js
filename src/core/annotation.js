@@ -777,8 +777,8 @@ class Annotation {
     return this.printable;
   }
 
-  mustBeViewedWhenEditing() {
-    return !this.data.isEditable;
+  mustBeViewedWhenEditing(isEditing, modifiedIds = null) {
+    return isEditing ? !this.data.isEditable : !modifiedIds?.has(this.data.id);
   }
 
   /**
