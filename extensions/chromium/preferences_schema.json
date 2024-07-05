@@ -51,7 +51,7 @@
       "type": "boolean",
       "default": true
     },
-    "enableML": {
+    "enableAltText": {
       "type": "boolean",
       "default": false
     },

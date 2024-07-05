@@ -752,10 +752,11 @@ const PDFViewerApplication = {
   },
 
   get mlManager() {
+    const enableAltText = AppOptions.get("enableAltText");
     return shadow(
       this,
       "mlManager",
-      AppOptions.get("enableML") === true ? new MLManager() : null
+      enableAltText === true ? new MLManager({ enableAltText }) : null
     );
   },
 
