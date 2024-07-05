@@ -95,6 +95,11 @@ const defaultOptions = {
     value: true,
     kind: OptionKind.BROWSER,
   },
+  toolbarDensity: {
+    /** @type {number} */
+    value: 0, // 0 = "normal", 1 = "compact", 2 = "touch"
+    kind: OptionKind.BROWSER,
+  },
 
   annotationEditorMode: {
     /** @type {number} */
