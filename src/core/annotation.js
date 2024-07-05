@@ -1105,13 +1105,7 @@ class Annotation {
     });
   }
 
-  async getOperatorList(
-    evaluator,
-    task,
-    intent,
-    renderForms,
-    annotationStorage
-  ) {
+  async getOperatorList(evaluator, task, intent, annotationStorage) {
     const { hasOwnCanvas, id, rect } = this.data;
     let appearance = this.appearance;
     const isUsingOwnCanvas = !!(
@@ -1959,17 +1953,11 @@ class WidgetAnnotation extends Annotation {
     return str;
   }
 
-  async getOperatorList(
-    evaluator,
-    task,
-    intent,
-    renderForms,
-    annotationStorage
-  ) {
+  async getOperatorList(evaluator, task, intent, annotationStorage) {
     // Do not render form elements on the canvas when interactive forms are
     // enabled. The display layer is responsible for rendering them instead.
     if (
-      renderForms &&
+      intent & RenderingIntentFlag.ANNOTATIONS_FORMS &&
       !(this instanceof SignatureWidgetAnnotation) &&
       !this.data.noHTML &&
       !this.data.hasOwnCanvas
@@ -1982,13 +1970,7 @@ class WidgetAnnotation extends Annotation {
     }
 
     if (!this._hasText) {
-      return super.getOperatorList(
-        evaluator,
-        task,
-        intent,
-        renderForms,
-        annotationStorage
-      );
+      return super.getOperatorList(evaluator, task, intent, annotationStorage);
     }
 
     const content = await this._getAppearance(
@@ -1998,13 +1980,7 @@ class WidgetAnnotation extends Annotation {
       annotationStorage
     );
     if (this.appearance && content === null) {
-      return super.getOperatorList(
-        evaluator,
-        task,
-        intent,
-        renderForms,
-        annotationStorage
-      );
+      return super.getOperatorList(evaluator, task, intent, annotationStorage);
     }
 
     const opList = new OperatorList();
@@ -2934,13 +2910,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
   }
 
-  async getOperatorList(
-    evaluator,
-    task,
-    intent,
-    renderForms,
-    annotationStorage
-  ) {
+  async getOperatorList(evaluator, task, intent, annotationStorage) {
     if (this.data.pushButton) {
       return super.getOperatorList(
         evaluator,
@@ -2962,13 +2932,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     if (value === null && this.appearance) {
       // Nothing in the annotationStorage.
       // But we've a default appearance so use it.
-      return super.getOperatorList(
-        evaluator,
-        task,
-        intent,
-        renderForms,
-        annotationStorage
-      );
+      return super.getOperatorList(evaluator, task, intent, annotationStorage);
     }
 
     if (value === null || value === undefined) {
@@ -3001,7 +2965,6 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
         evaluator,
         task,
         intent,
-        renderForms,
         annotationStorage
       );
       this.appearance = savedAppearance;
