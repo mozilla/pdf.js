@@ -50,8 +50,13 @@ class Toolbar {
   /**
    * @param {ToolbarOptions} options
    * @param {EventBus} eventBus
+   * @param {number} toolbarDensity - The toolbar density value.
+   *   The possible values are:
+   *    - 0 (default) - The regular toolbar size.
+   *    - 1 (compact) - The small toolbar size.
+   *    - 2 (touch) - The large toolbar size.
    */
-  constructor(options, eventBus) {
+  constructor(options, eventBus, toolbarDensity = 0) {
     this.#opts = options;
     this.eventBus = eventBus;
     const buttons = [
@@ -136,8 +141,13 @@ class Toolbar {
       }
     });
 
+    eventBus._on("toolbardensity", this.#updateToolbarDensity.bind(this));
+    this.#updateToolbarDensity({ value: toolbarDensity });
+
     this.reset();
   }
+
+  #updateToolbarDensity() {}
 
   #setAnnotationEditorUIManager(uiManager, parentContainer) {
     const colorPicker = new ColorPicker({ uiManager });
