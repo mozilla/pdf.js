@@ -37,6 +37,8 @@ class BasePreferences {
 
   #initializedPromise = null;
 
+  static #eventToDispatch = new Set(["toolbarDensity"]);
+
   constructor() {
     if (this.constructor === BasePreferences) {
       throw new Error("Cannot initialize BasePreferences.");
@@ -73,6 +75,10 @@ class BasePreferences {
         }
       }
     );
+
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      this.eventBus = null;
+    }
   }
 
   /**
@@ -113,6 +119,10 @@ class BasePreferences {
       return; // Invalid preference.
     }
     AppOptions.set(name, value);
+
+    if (BasePreferences.#eventToDispatch.has(name)) {
+      this.eventBus?.dispatch(name.toLowerCase(), { source: this, value });
+    }
   }
 
   /**

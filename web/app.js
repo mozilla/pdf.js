@@ -393,7 +393,7 @@ const PDFViewerApplication = {
     const { appConfig, externalServices, l10n } = this;
     let eventBus;
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      eventBus = new FirefoxEventBus(
+      eventBus = this.preferences.eventBus = new FirefoxEventBus(
         await this._allowedGlobalEventsPromise,
         externalServices,
         AppOptions.get("isInAutomation")
@@ -569,7 +569,11 @@ const PDFViewerApplication = {
           await this._nimbusDataPromise
         );
       } else {
-        this.toolbar = new Toolbar(appConfig.toolbar, eventBus);
+        this.toolbar = new Toolbar(
+          appConfig.toolbar,
+          eventBus,
+          AppOptions.get("toolbarDensity")
+        );
       }
     }
 
