@@ -592,7 +592,6 @@ class Page {
                 partialEvaluator,
                 task,
                 intent,
-                renderForms,
                 annotationStorage
               )
               .catch(function (reason) {

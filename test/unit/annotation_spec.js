@@ -1768,7 +1768,6 @@ describe("annotation", function () {
         partialEvaluator,
         task,
         RenderingIntentFlag.PRINT,
-        false,
         annotationStorage
       );
       expect(opList.argsArray.length).toEqual(3);
@@ -2523,7 +2522,6 @@ describe("annotation", function () {
         checkboxEvaluator,
         task,
         RenderingIntentFlag.PRINT,
-        false,
         annotationStorage
       );
       expect(opList.argsArray.length).toEqual(5);
@@ -2584,7 +2582,6 @@ describe("annotation", function () {
         partialEvaluator,
         task,
         RenderingIntentFlag.PRINT,
-        false,
         annotationStorage
       );
       expect(opList1.argsArray.length).toEqual(3);
@@ -2608,7 +2605,6 @@ describe("annotation", function () {
         partialEvaluator,
         task,
         RenderingIntentFlag.PRINT,
-        false,
         annotationStorage
       );
       expect(opList2.argsArray.length).toEqual(3);
@@ -2670,7 +2666,6 @@ describe("annotation", function () {
           partialEvaluator,
           task,
           RenderingIntentFlag.PRINT,
-          false,
           annotationStorage
         );
         expect(opList.argsArray.length).toEqual(3);
@@ -2732,7 +2727,6 @@ describe("annotation", function () {
         partialEvaluator,
         task,
         RenderingIntentFlag.PRINT,
-        false,
         annotationStorage
       );
       expect(opList.argsArray.length).toEqual(3);
@@ -2986,7 +2980,6 @@ describe("annotation", function () {
         partialEvaluator,
         task,
         RenderingIntentFlag.PRINT,
-        false,
         annotationStorage
       );
       expect(opList1.argsArray.length).toEqual(3);
@@ -3010,7 +3003,6 @@ describe("annotation", function () {
         partialEvaluator,
         task,
         RenderingIntentFlag.PRINT,
-        false,
         annotationStorage
       );
       expect(opList2.argsArray.length).toEqual(3);
@@ -3070,7 +3062,6 @@ describe("annotation", function () {
         partialEvaluator,
         task,
         RenderingIntentFlag.PRINT,
-        false,
         annotationStorage
       );
       expect(opList.argsArray.length).toEqual(3);
@@ -4242,7 +4233,6 @@ describe("annotation", function () {
         partialEvaluator,
         task,
         RenderingIntentFlag.PRINT,
-        false,
         null
       );
 
@@ -4503,7 +4493,6 @@ describe("annotation", function () {
         partialEvaluator,
         task,
         RenderingIntentFlag.PRINT,
-        false,
         null
       );
 
@@ -4672,7 +4661,6 @@ describe("annotation", function () {
         partialEvaluator,
         task,
         RenderingIntentFlag.PRINT,
-        false,
         null
       );
 
@@ -4791,7 +4779,6 @@ describe("annotation", function () {
         partialEvaluator,
         task,
         RenderingIntentFlag.PRINT,
-        false,
         null
       );
 
