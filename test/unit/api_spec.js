@@ -3419,6 +3419,21 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       await loadingTask.destroy();
     });
 
+    it("gets text content, correctly handling documents with toUnicode cmaps that omit leading zeros on hex-encoded UTF-16", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue18099_reduced.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+      const text = mergeText(items);
+      expect(text).toEqual("Hello world!");
+
+      await loadingTask.destroy();
+    });
+
     it("gets text content, and check that out-of-page text is not present (bug 1755201)", async function () {
       if (isNodeJS) {
         pending("Linked test-cases are not supported in Node.js.");
