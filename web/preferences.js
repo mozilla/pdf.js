@@ -67,16 +67,13 @@ class BasePreferences {
             typeof prefVal === typeof val ? prefVal : val;
         }
         AppOptions.setAll(options, /* init = */ true);
-
-        if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-          window.addEventListener("updatedPreference", evt => {
-            this.#updatePref(evt.detail);
-          });
-        }
       }
     );
 
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      window.addEventListener("updatedPreference", evt => {
+        this.#updatePref(evt.detail);
+      });
       this.eventBus = null;
     }
   }
@@ -101,10 +98,11 @@ class BasePreferences {
     throw new Error("Not implemented: _readFromStorage");
   }
 
-  #updatePref({ name, value }) {
+  async #updatePref({ name, value }) {
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
       throw new Error("Not implemented: #updatePref");
     }
+    await this.#initializedPromise;
 
     if (name in this.#browserDefaults) {
       if (typeof value !== typeof this.#browserDefaults[name]) {
