@@ -970,8 +970,6 @@ async function startBrowsers({ baseUrl, initializeSession }) {
   await puppeteer.trimCache();
 
   const browserNames = options.noChrome ? ["firefox"] : ["firefox", "chrome"];
-
-  sessions = [];
   for (const browserName of browserNames) {
     // The session must be pushed first and augmented with the browser once
     // it's initialized. The reason for this is that browser initialization
@@ -1078,25 +1076,33 @@ async function main() {
     stats = [];
   }
 
-  if (options.downloadOnly) {
-    await ensurePDFsDownloaded();
-  } else if (options.unitTest) {
-    // Allows linked PDF files in unit-tests as well.
-    await ensurePDFsDownloaded();
-    startUnitTest("/test/unit/unit_test.html", "unit");
-  } else if (options.fontTest) {
-    startUnitTest("/test/font/font_test.html", "font");
-  } else if (options.integration) {
-    // Allows linked PDF files in integration-tests as well.
-    await ensurePDFsDownloaded();
-    startIntegrationTest();
-  } else {
-    startRefTest(options.masterMode, options.reftest);
+  try {
+    if (options.downloadOnly) {
+      await ensurePDFsDownloaded();
+    } else if (options.unitTest) {
+      // Allows linked PDF files in unit-tests as well.
+      await ensurePDFsDownloaded();
+      await startUnitTest("/test/unit/unit_test.html", "unit");
+    } else if (options.fontTest) {
+      await startUnitTest("/test/font/font_test.html", "font");
+    } else if (options.integration) {
+      // Allows linked PDF files in integration-tests as well.
+      await ensurePDFsDownloaded();
+      await startIntegrationTest();
+    } else {
+      await startRefTest(options.masterMode, options.reftest);
+    }
+  } catch (e) {
+    // Close the browsers if uncaught exceptions occur, otherwise the spawned
+    // processes can become orphaned and keep running after `test.mjs` exits
+    // because the teardown logic of the tests did not get a chance to run.
+    console.error(e);
+    await Promise.all(sessions.map(session => closeSession(session.name)));
   }
 }
 
 var server;
-var sessions;
+var sessions = [];
 var onAllSessionsClosed;
 var host = "127.0.0.1";
 var options = parseOptions();
