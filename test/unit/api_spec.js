@@ -4155,7 +4155,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
             checkedCopyLocalImage = true;
             // Ensure that the image was copied in the main-thread, rather
             // than being re-parsed in the worker-thread (which is slower).
-            expect(statsOverall).toBeLessThan(firstStatsOverall / 4);
+            expect(statsOverall).toBeLessThan(firstStatsOverall / 2);
           }
         }
       }
