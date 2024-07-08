@@ -5647,6 +5647,14 @@
     "type": "eq"
   },
   {
+    "id": "issue16287",
+    "file": "pdfs/issue16287.pdf",
+    "md5": "cd3e0859140465ae8b8bde0c95cb4929",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Please note that this file currently renders incorrectly."
+  },
+  {
     "id": "issue2006",
     "file": "pdfs/issue2006.pdf",
     "md5": "71ec73831ece9b508ad20efa6ff28642",
