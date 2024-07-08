@@ -88,6 +88,12 @@ const getStdFontMap = getLookupTableFactory(function (t) {
   t["TimesNewRomanPSMT-Bold"] = "Times-Bold";
   t["TimesNewRomanPSMT-BoldItalic"] = "Times-BoldItalic";
   t["TimesNewRomanPSMT-Italic"] = "Times-Italic";
+
+  t.MyriadPro = "Helvetica";
+  t["MyriadPro-Regular"] = "Helvetica";
+  t["MyriadPro-Bold"] = "Helvetica-Bold";
+  t["MyriadPro-Italic"] = "Helvetica-Oblique";
+  t["MyriadPro-BoldItalic"] = "Helvetica-BoldOblique";
 });
 
 const getStdFontNameToFileMap = getLookupTableFactory(function (t) {
