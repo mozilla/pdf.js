@@ -11,7 +11,7 @@
     "acorn": "^8.0.4",
     "autoprefixer": "^10.2.3",
     "babel-loader": "^8.2.2",
-    "canvas": "^2.6.1",
+    "canvas": "^2.11.2",
     "core-js": "^3.8.3",
     "cross-env": "^7.0.3",
     "es-module-shims": "^0.6.0",
