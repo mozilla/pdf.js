@@ -391,9 +391,10 @@ const PDFViewerApplication = {
    */
   async _initializeViewerComponents() {
     const { appConfig, externalServices, l10n } = this;
+
     let eventBus;
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      eventBus = this.preferences.eventBus = new FirefoxEventBus(
+      eventBus = AppOptions.eventBus = new FirefoxEventBus(
         await this._allowedGlobalEventsPromise,
         externalServices,
         AppOptions.get("isInAutomation")

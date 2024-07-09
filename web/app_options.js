@@ -46,6 +46,7 @@ const OptionKind = {
   VIEWER: 0x02,
   API: 0x04,
   WORKER: 0x08,
+  EVENT_DISPATCH: 0x10,
   PREFERENCE: 0x80,
 };
 
@@ -98,7 +99,7 @@ const defaultOptions = {
   toolbarDensity: {
     /** @type {number} */
     value: 0, // 0 = "normal", 1 = "compact", 2 = "touch"
-    kind: OptionKind.BROWSER,
+    kind: OptionKind.BROWSER + OptionKind.EVENT_DISPATCH,
   },
 
   annotationEditorMode: {
@@ -461,6 +462,8 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING || LIB")) {
 }
 
 class AppOptions {
+  static eventBus;
+
   constructor() {
     throw new Error("Cannot initialize AppOptions.");
   }
@@ -488,28 +491,37 @@ class AppOptions {
     userOptions[name] = value;
   }
 
-  static setAll(options, init = false) {
-    if ((typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && init) {
-      if (this.get("disablePreferences")) {
-        // Give custom implementations of the default viewer a simpler way to
-        // opt-out of having the `Preferences` override existing `AppOptions`.
-        return;
-      }
-      for (const name in userOptions) {
-        // Ignore any compatibility-values in the user-options.
-        if (compatibilityParams[name] !== undefined) {
-          continue;
-        }
-        console.warn(
-          "setAll: The Preferences may override manually set AppOptions; " +
-            'please use the "disablePreferences"-option in order to prevent that.'
-        );
-        break;
-      }
-    }
+  static setAll(options, prefs = false) {
+    let events;
 
     for (const name in options) {
-      userOptions[name] = options[name];
+      const userOption = options[name];
+
+      if (prefs) {
+        const defaultOption = defaultOptions[name];
+
+        if (!defaultOption) {
+          continue;
+        }
+        const { kind, value } = defaultOption;
+
+        if (!(kind & OptionKind.BROWSER || kind & OptionKind.PREFERENCE)) {
+          continue;
+        }
+        if (typeof userOption !== typeof value) {
+          continue;
+        }
+        if (this.eventBus && kind & OptionKind.EVENT_DISPATCH) {
+          (events ||= new Map()).set(name, userOption);
+        }
+      }
+      userOptions[name] = userOption;
+    }
+
+    if (events) {
+      for (const [name, value] of events) {
+        this.eventBus.dispatch(name.toLowerCase(), { source: this, value });
+      }
     }
   }
 
@@ -524,6 +536,28 @@ class AppOptions {
       }
     }
   }
+}
+
+if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+  AppOptions._checkDisablePreferences = () => {
+    if (AppOptions.get("disablePreferences")) {
+      // Give custom implementations of the default viewer a simpler way to
+      // opt-out of having the `Preferences` override existing `AppOptions`.
+      return true;
+    }
+    for (const name in userOptions) {
+      // Ignore any compatibility-values in the user-options.
+      if (compatibilityParams[name] !== undefined) {
+        continue;
+      }
+      console.warn(
+        "The Preferences may override manually set AppOptions; " +
+          'please use the "disablePreferences"-option to prevent that.'
+      );
+      break;
+    }
+    return false;
+  };
 }
 
 export { AppOptions, OptionKind };
