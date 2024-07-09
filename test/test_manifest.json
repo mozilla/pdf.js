@@ -2984,6 +2984,13 @@
     "type": "eq"
   },
   {
+    "id": "issue11403-text",
+    "file": "pdfs/issue11403_reduced.pdf",
+    "md5": "08287b64f442cb7c329b97c4774aa1cd",
+    "rounds": 1,
+    "type": "text"
+  },
+  {
     "id": "issue11139",
     "file": "pdfs/issue11139.pdf",
     "md5": "006dd4f4bb1878bc14a12072d81a4524",
@@ -6478,6 +6485,14 @@
     "link": true,
     "type": "eq",
     "about": "Has a 4 bit per component image with mask and decode."
+  },
+  {
+    "id": "issue2770-text",
+    "file": "pdfs/issue2770.pdf",
+    "md5": "36070d756d06eaa35c2227efb069fb1b",
+    "rounds": 1,
+    "link": true,
+    "type": "text"
   },
   {
     "id": "issue2984",
