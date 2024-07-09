@@ -2991,6 +2991,20 @@
     "type": "text"
   },
   {
+    "id": "issue18059",
+    "file": "pdfs/issue18059.pdf",
+    "md5": "b70373894edfcd571a41caa1a0776b6f",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
+    "id": "issue18059-text",
+    "file": "pdfs/issue18059.pdf",
+    "md5": "b70373894edfcd571a41caa1a0776b6f",
+    "rounds": 1,
+    "type": "text"
+  },
+  {
     "id": "issue11139",
     "file": "pdfs/issue11139.pdf",
     "md5": "006dd4f4bb1878bc14a12072d81a4524",

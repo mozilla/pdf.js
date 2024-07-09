@@ -3293,7 +3293,10 @@ class Font {
     return builder.toArray();
   }
 
-  get spaceWidth() {
+  /**
+   * @private
+   */
+  get _spaceWidth() {
     // trying to estimate space character width
     const possibleSpaceReplacements = ["space", "minus", "one", "i", "I"];
     let width;
@@ -3328,7 +3331,7 @@ class Font {
         break; // the non-zero width found
       }
     }
-    return shadow(this, "spaceWidth", width || this.defaultWidth);
+    return shadow(this, "_spaceWidth", width || this.defaultWidth);
   }
 
   /**
@@ -3376,6 +3379,13 @@ class Font {
         // .notdef glyphs should be invisible in non-embedded Type1 fonts, so
         // replace them with spaces.
         fontCharCode = 0x20;
+
+        if (glyphName === "") {
+          // Ensure that other relevant glyph properties are also updated
+          // (fixes issue18059.pdf).
+          width ||= this._spaceWidth;
+          unicode = String.fromCharCode(fontCharCode);
+        }
       }
       fontCharCode = mapSpecialUnicodeValues(fontCharCode);
     }
