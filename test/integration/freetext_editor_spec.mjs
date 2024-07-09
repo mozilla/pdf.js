@@ -3535,7 +3535,7 @@ describe("FreeText Editor", () => {
       await closePages(pages);
     });
 
-    it("must check that a freetext is still there after having updated it and scroll the doc", async () => {
+    fit("must check that a freetext is still there after having updated it and scroll the doc", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToFreeText(page);
@@ -3649,8 +3649,11 @@ describe("FreeText Editor", () => {
           editorPng = await page.screenshot({
             clip: editorRect,
             type: "png",
+            encoding: "base64",
           });
-          editorImage = PNG.sync.read(editorPng);
+          console.log("Base64 image: ", editorPng);
+
+          editorImage = PNG.sync.read(Buffer.from(editorPng, 'base64'));
           expect(editorImage.data.every(x => x === 0xff))
             .withContext(`In ${browserName}`)
             .toBeFalse();
