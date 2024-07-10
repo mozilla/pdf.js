@@ -390,9 +390,10 @@ class PDFFindController {
   /**
    * @param {PDFFindControllerOptions} options
    */
-  constructor({ linkService, eventBus, updateMatchesCountOnProgress = true }) {
+  constructor({ linkService, eventBus, updateMatchesCountOnProgress = true, onMatchesReady = null }) {
     this._linkService = linkService;
     this._eventBus = eventBus;
+    this._onMatchesReady = onMatchesReady;
     this.#updateMatchesCountOnProgress = updateMatchesCountOnProgress;
 
     /**
@@ -982,6 +983,9 @@ class PDFFindController {
       // There were matches for the page, so initialize `matchIdx`.
       offset.matchIdx = previous ? numMatches - 1 : 0;
       this.#updateMatch(/* found = */ true);
+
+      // Run the callback with the match data
+      this._onMatchesReady && this._onMatchesReady(true, matches, this._offset);
       return true;
     }
     // No matches, so attempt to search the next page.
@@ -993,6 +997,9 @@ class PDFFindController {
         this.#updateMatch(/* found = */ false);
         // While matches were not found, searching for a page
         // with matches should nevertheless halt.
+
+        // Run the callback with the match data (No matches found)
+        this._onMatchesReady && this._onMatchesReady(false, matches, this._offset);
         return true;
       }
     }
