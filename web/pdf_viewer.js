@@ -2328,9 +2328,9 @@ class PDFViewer {
       // We must call #switchToEditAnnotationMode unconditionally to ensure that
       // page is rendered if it's useful or not.
       const idsToRefresh = this.#switchToEditAnnotationMode();
-      if (isEditing && editId && idsToRefresh) {
-        // We're editing an existing annotation so we must switch to editing
-        // mode when the rendering is done.
+      if (isEditing && idsToRefresh) {
+        // We're editing so we must switch to editing mode when the rendering is
+        // done.
         this.#cleanupSwitchAnnotationEditorMode();
         this.#onPageRenderedCallback = ({ pageNumber }) => {
           idsToRefresh.delete(pageNumber);
