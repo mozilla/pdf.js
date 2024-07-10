@@ -4257,6 +4257,46 @@ describe("annotation", function () {
       ]);
     });
 
+    it("should update an existing FreeText annotation", async function () {
+      const freeTextDict = new Dict();
+      freeTextDict.set("Type", Name.get("Annot"));
+      freeTextDict.set("Subtype", Name.get("FreeText"));
+      freeTextDict.set("CreationDate", "D:20190423");
+      freeTextDict.set("Foo", Name.get("Bar"));
+
+      const freeTextRef = Ref.get(143, 0);
+      partialEvaluator.xref = new XRefMock([
+        { ref: freeTextRef, data: freeTextDict },
+      ]);
+
+      const task = new WorkerTask("test FreeText update");
+      const data = await AnnotationFactory.saveNewAnnotations(
+        partialEvaluator,
+        task,
+        [
+          {
+            annotationType: AnnotationEditorType.FREETEXT,
+            rect: [12, 34, 56, 78],
+            rotation: 0,
+            fontSize: 10,
+            color: [0, 0, 0],
+            value: "Hello PDF.js World !",
+            id: "143R",
+            ref: freeTextRef,
+          },
+        ]
+      );
+
+      const base = data.annotations[0].data.replaceAll(/\(D:\d+\)/g, "(date)");
+      expect(base).toEqual(
+        "143 0 obj\n" +
+          "<< /Type /Annot /Subtype /FreeText /CreationDate (date) /Foo /Bar /M (date) " +
+          "/Rect [12 34 56 78] /DA (/Helv 10 Tf 0 g) /Contents (Hello PDF.js World !) " +
+          "/F 4 /Border [0 0 0] /Rotate 0 /AP << /N 2 0 R>>>>\n" +
+          "endobj\n"
+      );
+    });
+
     it("should extract the text from a FreeText annotation", async function () {
       partialEvaluator.xref = new XRefMock();
       const task = new WorkerTask("test FreeText text extraction");
