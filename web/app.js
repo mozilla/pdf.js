@@ -87,7 +87,6 @@ import { Toolbar } from "web-toolbar";
 import { ViewHistory } from "./view_history.js";
 
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
-const WHEEL_ZOOM_DISABLED_TIMEOUT = 1000; // ms
 
 const ViewOnLoad = {
   UNKNOWN: -1,
@@ -1996,9 +1995,6 @@ const PDFViewerApplication = {
     }
     addWindowResolutionChange();
 
-    window.addEventListener("visibilitychange", webViewerVisibilityChange, {
-      signal,
-    });
     window.addEventListener("wheel", webViewerWheel, {
       passive: false,
       signal,
@@ -2585,23 +2581,6 @@ function webViewerResolutionChange(evt) {
   PDFViewerApplication.pdfViewer.refresh();
 }
 
-function webViewerVisibilityChange(evt) {
-  if (document.visibilityState === "visible") {
-    // Ignore mouse wheel zooming during tab switches (bug 1503412).
-    setZoomDisabledTimeout();
-  }
-}
-
-let zoomDisabledTimeout = null;
-function setZoomDisabledTimeout() {
-  if (zoomDisabledTimeout) {
-    clearTimeout(zoomDisabledTimeout);
-  }
-  zoomDisabledTimeout = setTimeout(function () {
-    zoomDisabledTimeout = null;
-  }, WHEEL_ZOOM_DISABLED_TIMEOUT);
-}
-
 function webViewerWheel(evt) {
   const {
     pdfViewer,
@@ -2654,7 +2633,6 @@ function webViewerWheel(evt) {
     // NOTE: this check must be placed *after* preventDefault.
     if (
       PDFViewerApplication._isScrolling ||
-      zoomDisabledTimeout ||
       document.visibilityState === "hidden" ||
       PDFViewerApplication.overlayManager.active
     ) {
