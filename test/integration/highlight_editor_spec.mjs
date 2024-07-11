@@ -30,6 +30,7 @@ import {
   kbUndo,
   loadAndWait,
   scrollIntoView,
+  setCaretAt,
   switchToEditor,
   waitForSerialized,
 } from "./test_utils.mjs";
@@ -1043,19 +1044,12 @@ describe("Highlight Editor", () => {
             `${getEditorSelector(0)}:not(.selectedEditor)`
           );
 
-          await page.evaluate(() => {
-            const text =
-              "Dynamic languages such as JavaScript are more difﬁcult to com-";
-            for (const el of document.querySelectorAll(
-              `.page[data-page-number="${1}"] > .textLayer > span`
-            )) {
-              if (el.textContent === text) {
-                window.getSelection().setPosition(el.firstChild, 1);
-                break;
-              }
-            }
-          });
-
+          await setCaretAt(
+            page,
+            1,
+            "Dynamic languages such as JavaScript are more difﬁcult to com-",
+            1
+          );
           await page.keyboard.press("ArrowUp");
           const [text, offset] = await page.evaluate(() => {
             const selection = window.getSelection();
@@ -1073,19 +1067,12 @@ describe("Highlight Editor", () => {
         pages.map(async ([browserName, page]) => {
           await switchToHighlight(page);
 
-          await page.evaluate(() => {
-            const text =
-              "Dynamic languages such as JavaScript are more difﬁcult to com-";
-            for (const el of document.querySelectorAll(
-              `.page[data-page-number="${1}"] > .textLayer > span`
-            )) {
-              if (el.textContent === text) {
-                window.getSelection().setPosition(el.firstChild, 15);
-                break;
-              }
-            }
-          });
-
+          await setCaretAt(
+            page,
+            1,
+            "Dynamic languages such as JavaScript are more difﬁcult to com-",
+            15
+          );
           await page.keyboard.down("Shift");
           await page.keyboard.press("ArrowDown");
           await page.keyboard.up("Shift");
@@ -1697,6 +1684,83 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(getEditorSelector(0));
           await page.waitForSelector(
             `.page[data-page-number = "1"] svg.highlight[fill = "#FFFF00"]`
+          );
+        })
+      );
+    });
+  });
+
+  describe("Use a toolbar overlapping an other highlight", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        {
+          highlightEditorColors:
+            "yellow=#FFFF00,green=#00FF00,blue=#0000FF,pink=#FF00FF,red=#FF0000",
+        }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the toolbar is usable", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          await setCaretAt(
+            page,
+            1,
+            "Dynamic languages such as JavaScript are more difﬁcult to com-",
+            0
+          );
+          await page.keyboard.down("Shift");
+          for (let i = 0; i < 3; i++) {
+            await page.keyboard.press("ArrowDown");
+          }
+          await page.keyboard.up("Shift");
+
+          const editorSelector = getEditorSelector(0);
+          await page.waitForSelector(editorSelector);
+
+          await setCaretAt(
+            page,
+            1,
+            "handle all possible type combinations at runtime. We present an al-",
+            0
+          );
+          await page.keyboard.down("Shift");
+          for (let i = 0; i < 3; i++) {
+            await page.keyboard.press("ArrowDown");
+          }
+          await page.keyboard.up("Shift");
+          await page.waitForSelector(getEditorSelector(1));
+
+          const rect = await getRect(page, editorSelector);
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y);
+
+          await page.waitForSelector(
+            `${editorSelector} .editToolbar button.colorPicker`
+          );
+
+          await page.click(`${editorSelector} .editToolbar button.colorPicker`);
+          await page.waitForSelector(
+            `${editorSelector} .editToolbar button[title = "Green"]`
+          );
+          await page.click(
+            `${editorSelector} .editToolbar button[title = "Green"]`
+          );
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] svg.highlight[fill = "#00FF00"]`
           );
         })
       );
