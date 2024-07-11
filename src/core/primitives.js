@@ -270,6 +270,10 @@ class Dict {
     }
     return dict;
   }
+
+  delete(key) {
+    delete this._map[key];
+  }
 }
 
 class Ref {
