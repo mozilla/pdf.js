@@ -112,6 +112,10 @@
   font-size: calc(100px * var(--scale-factor));
   transform-origin: 0 0;
   cursor: auto;
+
+  .selectedEditor {
+    z-index: 100000 !important;
+  }
 }
 
 .annotationEditorLayer.waiting {
