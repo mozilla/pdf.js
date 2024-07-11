@@ -323,8 +323,10 @@ class AnnotationEditorLayer {
         editor = changedAnnotations.get(id);
         if (editor) {
           this.#uiManager.addChangedExistingAnnotation(editor);
-          editor.renderAnnotationElement(editable);
-          editor.show(false);
+          if (editor.renderAnnotationElement(editable)) {
+            // Content has changed, so we need to hide the editor.
+            editor.show(false);
+          }
         }
         editable.show();
       }
