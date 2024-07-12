@@ -562,6 +562,8 @@ class AnnotationEditorUIManager {
 
   #enableHighlightFloatingButton = false;
 
+  #enableUpdatedAddImage = false;
+
   #filterFactory = null;
 
   #focusMainContainerTimeoutId = null;
@@ -779,6 +781,7 @@ class AnnotationEditorUIManager {
     pageColors,
     highlightColors,
     enableHighlightFloatingButton,
+    enableUpdatedAddImage,
     mlManager
   ) {
     this._signal = this.#abortController.signal;
@@ -798,6 +801,7 @@ class AnnotationEditorUIManager {
     this.#pageColors = pageColors;
     this.#highlightColors = highlightColors || null;
     this.#enableHighlightFloatingButton = enableHighlightFloatingButton;
+    this.#enableUpdatedAddImage = enableUpdatedAddImage;
     this.#mlManager = mlManager || null;
     this.viewParameters = {
       realScale: PixelsPerInch.PDF_TO_CSS_UNITS,
@@ -853,6 +857,10 @@ class AnnotationEditorUIManager {
 
   isMLEnabledFor(name) {
     return !!this.#mlManager?.isEnabledFor(name);
+  }
+
+  get useNewAltTextFlow() {
+    return this.#enableUpdatedAddImage;
   }
 
   get hcmFilter() {
