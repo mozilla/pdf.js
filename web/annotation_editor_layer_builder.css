@@ -116,6 +116,10 @@
   .selectedEditor {
     z-index: 100000 !important;
   }
+
+  &.drawing * {
+    pointer-events: none !important;
+  }
 }
 
 .annotationEditorLayer.waiting {
