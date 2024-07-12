@@ -56,6 +56,11 @@ const OptionKind = {
  *       primitive types and cannot rely on any imported types.
  */
 const defaultOptions = {
+  allowedGlobalEvents: {
+    /** @type {Object} */
+    value: null,
+    kind: OptionKind.BROWSER,
+  },
   canvasMaxAreaInBytes: {
     /** @type {number} */
     value: -1,
@@ -64,6 +69,16 @@ const defaultOptions = {
   isInAutomation: {
     /** @type {boolean} */
     value: false,
+    kind: OptionKind.BROWSER,
+  },
+  localeProperties: {
+    /** @type {Object} */
+    value: null,
+    kind: OptionKind.BROWSER,
+  },
+  nimbusDataStr: {
+    /** @type {string} */
+    value: "",
     kind: OptionKind.BROWSER,
   },
   supportsCaretBrowsingMode: {

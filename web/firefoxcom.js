@@ -14,6 +14,7 @@
  */
 
 import { isPdfFile, PDFDataRangeTransport } from "pdfjs-lib";
+import { AppOptions } from "./app_options.js";
 import { BaseExternalServices } from "./external_services.js";
 import { BasePreferences } from "./preferences.js";
 import { DEFAULT_SCALE_VALUE } from "./ui_utils.js";
@@ -396,30 +397,12 @@ class ExternalServices extends BaseExternalServices {
   }
 
   async createL10n() {
-    const [localeProperties] = await Promise.all([
-      FirefoxCom.requestAsync("getLocaleProperties", null),
-      document.l10n.ready,
-    ]);
-    return new L10n(localeProperties, document.l10n);
+    await document.l10n.ready;
+    return new L10n(AppOptions.get("localeProperties"), document.l10n);
   }
 
   createScripting() {
     return FirefoxScripting;
-  }
-
-  async getNimbusExperimentData() {
-    if (!PDFJSDev.test("GECKOVIEW")) {
-      return null;
-    }
-    const nimbusData = await FirefoxCom.requestAsync(
-      "getNimbusExperimentData",
-      null
-    );
-    return nimbusData && JSON.parse(nimbusData);
-  }
-
-  async getGlobalEventNames() {
-    return FirefoxCom.requestAsync("getGlobalEventNames", null);
   }
 
   dispatchGlobalEvent(event) {
