@@ -1766,4 +1766,128 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Draw a free highlight with the pointer hovering an existing highlight", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that an existing highlight is ignored on hovering", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const editorSelector = getEditorSelector(0);
+          const x = rect.x + rect.width / 2;
+          let y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(editorSelector);
+          await waitForSerialized(page, 1);
+          await page.keyboard.press("Escape");
+          await page.waitForSelector(`${editorSelector}:not(.selectedEditor)`);
+
+          const counterHandle = await page.evaluateHandle(sel => {
+            const el = document.querySelector(sel);
+            const counter = { count: 0 };
+            el.addEventListener(
+              "pointerover",
+              () => {
+                counter.count += 1;
+              },
+              { capture: true }
+            );
+            return counter;
+          }, editorSelector);
+
+          const clickHandle = await waitForPointerUp(page);
+          y = rect.y - rect.height;
+          await page.mouse.move(x, y);
+          await page.mouse.down();
+          for (
+            const endY = rect.y + 2 * rect.height;
+            y <= endY;
+            y += rect.height / 10
+          ) {
+            await page.mouse.move(x, y);
+          }
+          await page.mouse.up();
+          await awaitPromise(clickHandle);
+
+          const { count } = await counterHandle.jsonValue();
+          expect(count).withContext(`In ${browserName}`).toEqual(0);
+        })
+      );
+    });
+  });
+
+  describe("Select text with the pointer hovering an existing highlight", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that an existing highlight is ignored on hovering", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getSpanRectFromText(
+            page,
+            1,
+            "ternative compilation technique for dynamically-typed languages"
+          );
+          const editorSelector = getEditorSelector(0);
+          const x = rect.x + rect.width / 2;
+          let y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 3, delay: 100 });
+          await page.waitForSelector(editorSelector);
+          await waitForSerialized(page, 1);
+          await page.keyboard.press("Escape");
+          await page.waitForSelector(`${editorSelector}:not(.selectedEditor)`);
+
+          const counterHandle = await page.evaluateHandle(sel => {
+            const el = document.querySelector(sel);
+            const counter = { count: 0 };
+            el.addEventListener(
+              "pointerover",
+              () => {
+                counter.count += 1;
+              },
+              { capture: true }
+            );
+            return counter;
+          }, editorSelector);
+
+          const clickHandle = await waitForPointerUp(page);
+          y = rect.y - 3 * rect.height;
+          await page.mouse.move(x, y);
+          await page.mouse.down();
+          for (
+            const endY = rect.y + 3 * rect.height;
+            y <= endY;
+            y += rect.height / 10
+          ) {
+            await page.mouse.move(x, y);
+          }
+          await page.mouse.up();
+          await awaitPromise(clickHandle);
+
+          const { count } = await counterHandle.jsonValue();
+          expect(count).withContext(`In ${browserName}`).toEqual(0);
+        })
+      );
+    });
+  });
 });
