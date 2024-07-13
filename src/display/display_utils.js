@@ -124,22 +124,20 @@ class DOMFilterFactory extends BaseFilterFactory {
   }
 
   #createUrl(id) {
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      if (this.#baseUrl === undefined) {
-        const url = this.#document.URL;
-        if (url === this.#document.baseURI) {
-          // No `<base>`-element present, hence a relative URL should work.
-          this.#baseUrl = "";
-        } else if (isDataScheme(url)) {
+    if (this.#baseUrl === undefined) {
+      // Unless a `<base>`-element is present a relative URL should work.
+      this.#baseUrl = "";
+
+      const url = this.#document.URL;
+      if (url !== this.#document.baseURI) {
+        if (isDataScheme(url)) {
           warn('#createUrl: ignore "data:"-URL for performance reasons.');
-          this.#baseUrl = "";
         } else {
           this.#baseUrl = url.split("#", 1)[0];
         }
       }
-      return `url(${this.#baseUrl}#${id})`;
     }
-    return `url(${id})`;
+    return `url(${this.#baseUrl}#${id})`;
   }
 
   addFilter(maps) {
