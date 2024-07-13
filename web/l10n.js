@@ -32,7 +32,7 @@ class L10n {
   constructor({ lang, isRTL }, l10n = null) {
     this.#lang = L10n.#fixupLangCode(lang);
     this.#l10n = l10n;
-    this.#dir = isRTL ?? L10n.#isRTL(this.#lang) ? "rtl" : "ltr";
+    this.#dir = (isRTL ?? L10n.#isRTL(this.#lang)) ? "rtl" : "ltr";
   }
 
   _setL10n(l10n) {
