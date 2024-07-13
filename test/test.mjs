@@ -944,6 +944,8 @@ async function startBrowser({
       "accessibility.browsewithcaret": true,
       // Disable the newtabpage stuff.
       "browser.newtabpage.enabled": false,
+      // Disable network connections to Contile.
+      "browser.topsites.contile.enabled": false,
       ...extraPrefsFirefox,
     };
   }
