@@ -482,7 +482,7 @@ class AppOptions {
       }
       options[name] = defaultOnly
         ? defaultOption.value
-        : userOptions[name] ?? defaultOption.value;
+        : (userOptions[name] ?? defaultOption.value);
     }
     return options;
   }
