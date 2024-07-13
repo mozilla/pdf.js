@@ -77,8 +77,6 @@ const COMMON_WEB_FILES = [
 ];
 const MOZCENTRAL_DIFF_FILE = "mozcentral.diff";
 
-const DIST_REPO_URL = "https://github.com/mozilla/pdfjs-dist";
-
 const CONFIG_FILE = "pdfjs.config";
 const config = JSON.parse(fs.readFileSync(CONFIG_FILE).toString());
 
@@ -2173,8 +2171,9 @@ function packageJson() {
   const DIST_NAME = "pdfjs-dist";
   const DIST_DESCRIPTION = "Generic build of Mozilla's PDF.js library.";
   const DIST_KEYWORDS = ["Mozilla", "pdf", "pdf.js"];
-  const DIST_HOMEPAGE = "http://mozilla.github.io/pdf.js/";
+  const DIST_HOMEPAGE = "https://mozilla.github.io/pdf.js/";
   const DIST_BUGS_URL = "https://github.com/mozilla/pdf.js/issues";
+  const DIST_GIT_URL = "https://github.com/mozilla/pdf.js.git";
   const DIST_LICENSE = "Apache-2.0";
 
   const npmManifest = {
@@ -2200,7 +2199,7 @@ function packageJson() {
     },
     repository: {
       type: "git",
-      url: `git+https://github.com/mozilla/pdf.js.git`,
+      url: `git+${DIST_GIT_URL}`,
     },
     engines: {
       node: ">=18",
@@ -2227,23 +2226,8 @@ gulp.task(
     "minified-legacy",
     "types",
     function createDist() {
-      console.log();
-      console.log("### Cloning baseline distribution");
-
       fs.rmSync(DIST_DIR, { recursive: true, force: true });
       fs.mkdirSync(DIST_DIR, { recursive: true });
-      safeSpawnSync("git", ["clone", "--depth", "1", DIST_REPO_URL, DIST_DIR]);
-
-      console.log();
-      console.log("### Overwriting all files");
-
-      // Remove all files/folders, except for `.git` because it needs to be a
-      // valid Git repository for the Git commands in the `dist` target to work.
-      for (const entry of fs.readdirSync(DIST_DIR)) {
-        if (entry !== ".git") {
-          fs.rmSync(DIST_DIR + entry, { recursive: true, force: true });
-        }
-      }
 
       return ordered([
         packageJson().pipe(gulp.dest(DIST_DIR)),
