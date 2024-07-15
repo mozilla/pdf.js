@@ -178,6 +178,7 @@ const PDFViewerApplication = {
   _nimbusDataPromise: null,
   _caretBrowsing: null,
   _isScrolling: false,
+  _idsToWatchOutPromise: null,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -187,6 +188,7 @@ const PDFViewerApplication = {
     if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
       l10nPromise = this.externalServices.createL10n();
       if (PDFJSDev.test("MOZCENTRAL")) {
+        this._idsToWatchOutPromise = this.externalServices.getIdsToWatchOut();
         this._allowedGlobalEventsPromise =
           this.externalServices.getGlobalEventNames();
       }
@@ -486,6 +488,7 @@ const PDFViewerApplication = {
       mlManager: this.mlManager,
       abortSignal: this._globalAbortController.signal,
       enableHWA,
+      idsToWatchOutPromise: this._idsToWatchOutPromise,
     });
     this.pdfViewer = pdfViewer;
 
