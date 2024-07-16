@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals pdfjsLib, pdfjsViewer */
+/* globals pdfjsLib, pdfjsTestingUtils, pdfjsViewer */
 
 const {
   AnnotationLayer,
@@ -20,12 +20,12 @@ const {
   DrawLayer,
   getDocument,
   GlobalWorkerOptions,
-  Outliner,
   PixelsPerInch,
   shadow,
   TextLayer,
   XfaLayer,
 } = pdfjsLib;
+const { Outliner } = pdfjsTestingUtils;
 const { GenericL10n, parseQueryString, SimpleLinkService } = pdfjsViewer;
 
 const WAITING_TIME = 100; // ms
