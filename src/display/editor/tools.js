@@ -916,6 +916,18 @@ class AnnotationEditorUIManager {
     this.#altTextManager?.editAltText(this, editor);
   }
 
+  switchToMode(mode, callback) {
+    // Switching to a mode can be asynchronous.
+    this._eventBus.on("annotationeditormodechanged", callback, {
+      once: true,
+      signal: this._signal,
+    });
+    this._eventBus.dispatch("showannotationeditorui", {
+      source: this,
+      mode,
+    });
+  }
+
   onPageChanging({ pageNumber }) {
     this.#currentPageIndex = pageNumber - 1;
   }
@@ -1002,16 +1014,11 @@ class AnnotationEditorUIManager {
       return;
     }
     selection.empty();
-    if (this.#mode === AnnotationEditorType.NONE) {
-      this._eventBus.dispatch("showannotationeditorui", {
-        source: this,
-        mode: AnnotationEditorType.HIGHLIGHT,
-      });
-      this.showAllEditors("highlight", true, /* updateButton = */ true);
-    }
+
     const layer = this.#getLayerForTextLayer(textLayer);
-    if (layer) {
-      layer.createAndAddNewEditor({ x: 0, y: 0 }, false, {
+    const isNoneMode = this.#mode === AnnotationEditorType.NONE;
+    const callback = () => {
+      layer?.createAndAddNewEditor({ x: 0, y: 0 }, false, {
         methodOfCreation,
         boxes,
         anchorNode,
@@ -1020,7 +1027,15 @@ class AnnotationEditorUIManager {
         focusOffset,
         text,
       });
+      if (isNoneMode) {
+        this.showAllEditors("highlight", true, /* updateButton = */ true);
+      }
+    };
+    if (isNoneMode) {
+      this.switchToMode(AnnotationEditorType.HIGHLIGHT, callback);
+      return;
     }
+    callback();
   }
 
   #displayHighlightToolbar() {
