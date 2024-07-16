@@ -1890,4 +1890,46 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Highlight with the floating button in a pdf containing a FreeText", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "file_pdfjs_test.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        { highlightEditorColors: "red=#AB0000" }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the highlight is created", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const rect = await getSpanRectFromText(page, 1, "In production");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 3, delay: 100 });
+
+          await page.waitForSelector(".textLayer .highlightButton");
+          await page.click(".textLayer .highlightButton");
+
+          await page.waitForSelector(getEditorSelector(0));
+          const usedColor = await page.evaluate(() => {
+            const highlight = document.querySelector(
+              `.page[data-page-number = "1"] .canvasWrapper > svg.highlight`
+            );
+            return highlight.getAttribute("fill");
+          });
+
+          expect(usedColor).withContext(`In ${browserName}`).toEqual("#AB0000");
+        })
+      );
+    });
+  });
 });

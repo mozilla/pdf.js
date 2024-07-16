@@ -2311,11 +2311,11 @@ class PDFViewer {
     const updater = () => {
       this.#cleanupSwitchAnnotationEditorMode();
       this.#annotationEditorMode = mode;
+      this.#annotationEditorUIManager.updateMode(mode, editId, isFromKeyboard);
       eventBus.dispatch("annotationeditormodechanged", {
         source: this,
         mode,
       });
-      this.#annotationEditorUIManager.updateMode(mode, editId, isFromKeyboard);
     };
 
     if (
