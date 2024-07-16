@@ -61,7 +61,6 @@ import { AnnotationLayer } from "../../src/display/annotation_layer.js";
 import { ColorPicker } from "../../src/display/editor/color_picker.js";
 import { DrawLayer } from "../../src/display/draw_layer.js";
 import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
-import { Outliner } from "../../src/display/editor/outliner.js";
 import { TextLayer } from "../../src/display/text_layer.js";
 import { XfaLayer } from "../../src/display/xfa_layer.js";
 
@@ -94,7 +93,6 @@ const expectedAPI = Object.freeze({
   noContextMenu,
   normalizeUnicode,
   OPS,
-  Outliner,
   PasswordResponses,
   PDFDataRangeTransport,
   PDFDateString,
