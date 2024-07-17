@@ -108,14 +108,14 @@ class BasePreferences {
    *                    provided that the preference exists and the types match.
    */
   async set(name, value) {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      throw new Error("Please use `about:config` to change preferences.");
-    }
     await this.#initializedPromise;
     AppOptions.setAll({ [name]: value }, /* prefs = */ true);
 
-    const prefs = AppOptions.getAll(OptionKind.PREFERENCE);
-    await this._writeToStorage(prefs);
+    await this._writeToStorage(
+      typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")
+        ? { [name]: AppOptions.get(name) }
+        : AppOptions.getAll(OptionKind.PREFERENCE)
+    );
   }
 
   /**
