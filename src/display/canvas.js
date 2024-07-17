@@ -1006,6 +1006,7 @@ class CanvasGraphics {
       this.restore();
     }
 
+    this.current.activeSMask = null;
     this.ctx.restore();
 
     if (this.transparentCanvas) {
