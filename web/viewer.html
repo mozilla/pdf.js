@@ -221,6 +221,12 @@ See https://github.com/adobe-type-tools/cmap-resources
               <label for="editorInkOpacity" class="editorParamsLabel" data-l10n-id="pdfjs-editor-ink-opacity-input">Opacity</label>
               <input type="range" id="editorInkOpacity" class="editorParamsSlider" value="100" min="1" max="100" step="1" tabindex="107">
             </div>
+            <div class="note-section">
+              <p class="note-title">Note:</p>
+              <p class="note-text">
+                Drawings created with the draw tool can easily be removed. You should not use the draw tool to obscure or redact content.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -544,6 +550,8 @@ See https://github.com/adobe-type-tools/cmap-resources
                 </div>
               </div>
             </div>
+            <button id="editButton">Edit</button>
+            <button id="saveButton">Save</button>
             <div id="buttons">
               <button id="altTextCancel" class="secondaryButton" tabindex="0"><span data-l10n-id="pdfjs-editor-alt-text-cancel-button">Cancel</span></button>
               <button id="altTextSave" class="primaryButton" tabindex="0"><span data-l10n-id="pdfjs-editor-alt-text-save-button">Save</span></button>
