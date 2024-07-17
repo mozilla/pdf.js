@@ -454,6 +454,9 @@
   width: auto;
   height: auto;
   touch-action: none;
+  overflow-wrap: break-word; /* Ensure text wraps */
+  resize: both; /* Allow resizing */
+  box-sizing: border-box; /* Include padding and border in element's total width and height */
 }
 
 .annotationEditorLayer .freeTextEditor .internal {
@@ -461,12 +464,14 @@
   border: none;
   inset: 0;
   overflow: visible;
-  white-space: nowrap;
+  white-space: pre-wrap; 
   font: 10px sans-serif;
   line-height: var(--freetext-line-height);
   user-select: none;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;  
 }
-
 .annotationEditorLayer .freeTextEditor .overlay {
   position: absolute;
   display: none;
@@ -476,7 +481,7 @@
   height: 100%;
 }
 
-.annotationEditorLayer freeTextEditor .overlay.enabled {
+.annotationEditorLayer .freeTextEditor .overlay.enabled {
   display: block;
 }
 
@@ -521,66 +526,63 @@
   }
 }
 
-.annotationEditorLayer {
-  :is(.freeTextEditor, .inkEditor, .stampEditor) {
-    & > .resizers {
-      position: absolute;
-      inset: 0;
+.annotationEditorLayer :is(.freeTextEditor, .inkEditor, .stampEditor) > .resizers {
+  position: absolute;
+  inset: 0;
 
-      &.hidden {
-        display: none;
-      }
+  &.hidden {
+    display: none;
+  }
 
-      & > .resizer {
-        width: var(--resizer-size);
-        height: var(--resizer-size);
-        background: content-box var(--resizer-bg-color);
-        border: var(--focus-outline-around);
-        border-radius: 2px;
-        position: absolute;
+  > .resizer {
+    width: var(--resizer-size);
+    height: var(--resizer-size);
+    background: content-box var(--resizer-bg-color);
+    border: var(--focus-outline-around);
+    border-radius: 2px;
+    position: absolute;
 
-        &.topLeft {
-          top: var(--resizer-shift);
-          left: var(--resizer-shift);
-        }
+    &.topLeft {
+      top: var(--resizer-shift);
+      left: var(--resizer-shift);
+    }
 
-        &.topMiddle {
-          top: var(--resizer-shift);
-          left: calc(50% + var(--resizer-shift));
-        }
+    &.topMiddle {
+      top: var(--resizer-shift);
+      left: calc(50% + var(--resizer-shift));
+    }
 
-        &.topRight {
-          top: var(--resizer-shift);
-          right: var(--resizer-shift);
-        }
+    &.topRight {
+      top: var(--resizer-shift);
+      right: var(--resizer-shift);
+    }
 
-        &.middleRight {
-          top: calc(50% + var(--resizer-shift));
-          right: var(--resizer-shift);
-        }
+    &.middleRight {
+      top: calc(50% + var(--resizer-shift));
+      right: var(--resizer-shift);
+    }
 
-        &.bottomRight {
-          bottom: var(--resizer-shift);
-          right: var(--resizer-shift);
-        }
+    &.bottomRight {
+      bottom: var(--resizer-shift);
+      right: var(--resizer-shift);
+    }
 
-        &.bottomMiddle {
-          bottom: var(--resizer-shift);
-          left: calc(50% + var(--resizer-shift));
-        }
+    &.bottomMiddle {
+      bottom: var(--resizer-shift);
+      left: calc(50% + var(--resizer-shift));
+    }
 
-        &.bottomLeft {
-          bottom: var(--resizer-shift);
-          left: var(--resizer-shift);
-        }
+    &.bottomLeft {
+      bottom: var(--resizer-shift);
+      left: var(--resizer-shift);
+    }
 
-        &.middleLeft {
-          top: calc(50% + var(--resizer-shift));
-          left: var(--resizer-shift);
-        }
-      }
+    &.middleLeft {
+      top: calc(50% + var(--resizer-shift));
+      left: var(--resizer-shift);
     }
   }
+}
 
   &[data-main-rotation="0"]
     :is([data-editor-rotation="0"], [data-editor-rotation="180"]),

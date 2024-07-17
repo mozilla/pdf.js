@@ -2505,20 +2505,31 @@ class FreeTextAnnotationElement extends AnnotationElement {
     this.textContent = parameters.data.textContent;
     this.textPosition = parameters.data.textPosition;
     this.annotationEditorType = AnnotationEditorType.FREETEXT;
+    this.zoomLevel = 1;
+    this.initialFontSize = 16;
+    this.initialLineHeight = 1.2;
+    this.pageWidth = parameters.data.pageWidth || 600; // Default page width if not provided
   }
 
   render() {
     this.container.classList.add("freeTextAnnotation");
+    this.container.style.position = "relative";
+    this.container.style.overflow = "hidden";
 
     if (this.textContent) {
       const content = document.createElement("div");
       content.classList.add("annotationTextContent");
       content.setAttribute("role", "comment");
-      for (const line of this.textContent) {
-        const lineSpan = document.createElement("span");
-        lineSpan.textContent = line;
-        content.append(lineSpan);
-      }
+      content.style.wordWrap = "break-word";
+      content.style.whiteSpace = "pre-wrap"; 
+      content.style.fontSize = `${this.initialFontSize}px`;
+      content.style.lineHeight = `${this.initialLineHeight}`;
+      content.style.width = "100%";
+      content.style.height = "100%";
+      content.style.boxSizing = "border-box";
+      content.textContent = this.textContent;
+
+      this.content = content;
       this.container.append(content);
     }
 
@@ -2527,8 +2538,90 @@ class FreeTextAnnotationElement extends AnnotationElement {
     }
 
     this._editOnDoubleClick();
+    this._addResizeHandles();
+
+    // Listen for zoom changes
+    window.addEventListener("zoom", this._onZoom.bind(this));
 
     return this.container;
+  }
+
+  _addResizeHandles() {
+    const handleSize = 8;
+
+    const createHandle = cursor => {
+      const handle = document.createElement("div");
+      handle.style.width = `${handleSize}px`;
+      handle.style.height = `${handleSize}px`;
+      handle.style.background = "rgba(0, 0, 0, 0.5)";
+      handle.style.position = "absolute";
+      handle.style.cursor = cursor;
+      return handle;
+    };
+
+    // Create resize handles
+    const handles = {
+      se: createHandle("se-resize"),
+    };
+
+    handles.se.style.right = "0px";
+    handles.se.style.bottom = "0px";
+
+    // Append handles to the container
+    this.container.append(handles.se);
+
+    // Add event listeners for resizing
+    this._addResizeListeners(handles);
+  }
+
+  _addResizeListeners(handles) {
+    const onResize = event => {
+      const rect = this.container.getBoundingClientRect();
+      const newWidth = Math.min(
+        (event.clientX - rect.left) / this.zoomLevel,
+        this.pageWidth
+      );
+      const newHeight = (event.clientY - rect.top) / this.zoomLevel;
+      this.container.style.width = `${newWidth}px`;
+      this.container.style.height = `${newHeight}px`;
+      this.content.style.width = `${newWidth}px`;
+
+      // Update font size proportionally
+      const newFontSize = (this.initialFontSize * newHeight) / (rect.height || newHeight);
+      this.content.style.fontSize = `${newFontSize}px`;
+    };
+
+    const onStopResize = () => {
+      window.removeEventListener("mousemove", onResize);
+      window.removeEventListener("mouseup", onStopResize);
+    };
+
+    handles.se.addEventListener("mousedown", () => {
+      window.addEventListener("mousemove", onResize);
+      window.addEventListener("mouseup", onStopResize);
+    });
+  }
+
+  _onZoom(event) {
+    this.zoomLevel = event.detail.zoom;
+    this._applyZoom();
+  }
+
+  _applyZoom() {
+    // Adjust the dimensions and positions according to the zoom level
+    const rect = this.data.rect;
+    const scale = this.zoomLevel;
+
+    this.container.style.width = `${rect[2] - rect[0]}px`;
+    this.container.style.height = `${rect[3] - rect[1]}px`;
+
+    this.container.style.transform = `scale(${scale})`;
+    this.container.style.transformOrigin = "top left";
+  }
+
+  // Make sure to clean up event listeners
+  cleanup() {
+    window.removeEventListener("zoom", this._onZoom.bind(this));
   }
 }
 
