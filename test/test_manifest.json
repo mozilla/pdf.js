@@ -10160,5 +10160,15 @@
     "firstPage": 2,
     "lastPage": 2,
     "type": "eq"
+  },
+  {
+    "id": "issue18444",
+    "file": "pdfs/issue18444.pdf",
+    "md5": "233b7b72d67133044338a728d52d58a9",
+    "rounds": 1,
+    "link": true,
+    "firstPage": 1,
+    "lastPage": 1,
+    "type": "eq"
   }
 ]
