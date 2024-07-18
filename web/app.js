@@ -1942,6 +1942,7 @@ const PDFViewerApplication = {
         { signal }
       );
       eventBus._on("reporttelemetry", webViewerReportTelemetry, { signal });
+      eventBus._on("setpreference", webViewerSetPreference, { signal });
     }
   },
 
@@ -3164,6 +3165,10 @@ function webViewerAnnotationEditorStatesChanged(data) {
 
 function webViewerReportTelemetry({ details }) {
   PDFViewerApplication.externalServices.reportTelemetry(details);
+}
+
+function webViewerSetPreference({ name, value }) {
+  PDFViewerApplication.preferences.set(name, value);
 }
 
 export { PDFViewerApplication };
