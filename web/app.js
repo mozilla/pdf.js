@@ -155,7 +155,6 @@ const PDFViewerApplication = {
   isViewerEmbedded: window.parent !== window,
   url: "",
   baseUrl: "",
-  _allowedGlobalEventsPromise: null,
   _downloadUrl: "",
   _eventBusAbortController: null,
   _windowAbortController: null,
@@ -175,31 +174,12 @@ const PDFViewerApplication = {
   _printAnnotationStoragePromise: null,
   _touchInfo: null,
   _isCtrlKeyDown: false,
-  _nimbusDataPromise: null,
   _caretBrowsing: null,
   _isScrolling: false,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
-    let l10nPromise;
-    // In the (various) extension builds, where the locale is set automatically,
-    // initialize the `L10n`-instance as soon as possible.
-    if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
-      l10nPromise = this.externalServices.createL10n();
-      if (PDFJSDev.test("MOZCENTRAL")) {
-        this._allowedGlobalEventsPromise =
-          this.externalServices.getGlobalEventNames();
-      }
-    }
     this.appConfig = appConfig;
-
-    if (
-      typeof PDFJSDev === "undefined"
-        ? window.isGECKOVIEW
-        : PDFJSDev.test("GECKOVIEW")
-    ) {
-      this._nimbusDataPromise = this.externalServices.getNimbusExperimentData();
-    }
 
     // Ensure that `Preferences`, and indirectly `AppOptions`, have initialized
     // before creating e.g. the various viewer components.
@@ -229,10 +209,7 @@ const PDFViewerApplication = {
 
     // Ensure that the `L10n`-instance has been initialized before creating
     // e.g. the various viewer components.
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      l10nPromise = this.externalServices.createL10n();
-    }
-    this.l10n = await l10nPromise;
+    this.l10n = await this.externalServices.createL10n();
     document.getElementsByTagName("html")[0].dir = this.l10n.getDirection();
     // Connect Fluent, when necessary, and translate what we already have.
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
@@ -394,11 +371,10 @@ const PDFViewerApplication = {
     let eventBus;
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       eventBus = AppOptions.eventBus = new FirefoxEventBus(
-        await this._allowedGlobalEventsPromise,
+        AppOptions.get("allowedGlobalEvents"),
         externalServices,
         AppOptions.get("isInAutomation")
       );
-      this._allowedGlobalEventsPromise = null;
     } else {
       eventBus = new EventBus();
     }
@@ -564,11 +540,10 @@ const PDFViewerApplication = {
           ? window.isGECKOVIEW
           : PDFJSDev.test("GECKOVIEW")
       ) {
-        this.toolbar = new Toolbar(
-          appConfig.toolbar,
-          eventBus,
-          await this._nimbusDataPromise
+        const nimbusData = JSON.parse(
+          AppOptions.get("nimbusDataStr") || "null"
         );
+        this.toolbar = new Toolbar(appConfig.toolbar, eventBus, nimbusData);
       } else {
         this.toolbar = new Toolbar(
           appConfig.toolbar,
