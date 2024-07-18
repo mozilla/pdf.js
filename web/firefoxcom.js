@@ -429,6 +429,10 @@ class ExternalServices extends BaseExternalServices {
   dispatchGlobalEvent(event) {
     FirefoxCom.request("dispatchGlobalEvent", event);
   }
+
+  async getIdsToWatchOut() {
+    return FirefoxCom.requestAsync("getIdsToWatchOut", null);
+  }
 }
 
 export { DownloadManager, ExternalServices, initCom, MLManager, Preferences };

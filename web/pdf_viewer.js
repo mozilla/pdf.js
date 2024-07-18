@@ -68,6 +68,7 @@ import { PDFRenderingQueue } from "./pdf_rendering_queue.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
 
 const DEFAULT_CACHE_SIZE = 10;
+const UPDATE_ELEMENTS_RECT_DELAY = 100;
 
 const PagesCountLimit = {
   FORCE_SCROLL_MODE_PAGE: 10000,
@@ -233,6 +234,10 @@ class PDFViewer {
 
   #hiddenCopyElement = null;
 
+  #idsToWatchOutPromise = null;
+
+  #updateElementsRectTimeoutId = null;
+
   #interruptCopyCondition = false;
 
   #previousContainerHeight = 0;
@@ -308,6 +313,7 @@ class PDFViewer {
     this.pageColors = options.pageColors || null;
     this.#mlManager = options.mlManager || null;
     this.#enableHWA = options.enableHWA || false;
+    this.#idsToWatchOutPromise = options.idsToWatchOutPromise || null;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (
@@ -2246,12 +2252,32 @@ class PDFViewer {
     }
   }
 
+  #updateElementsRect() {
+    this.#idsToWatchOutPromise?.then(ids => {
+      if (!ids?.length) {
+        this.#idsToWatchOutPromise = null;
+        return;
+      }
+      clearTimeout(this.#updateElementsRectTimeoutId);
+      this.#updateElementsRectTimeoutId = setTimeout(() => {
+        const detail = Object.create(null);
+        for (const id of ids) {
+          detail[id] = document.getElementById(id).getBoundingClientRect();
+        }
+        this.eventBus.dispatch("updateelementsposition", {
+          detail,
+        });
+      }, UPDATE_ELEMENTS_RECT_DELAY);
+    });
+  }
+
   #resizeObserverCallback(entries) {
     for (const entry of entries) {
       if (entry.target === this.container) {
         this.#updateContainerHeightCss(
           Math.floor(entry.borderBoxSize[0].blockSize)
         );
+        this.#updateElementsRect();
         this.#containerTopLeft = null;
         break;
       }

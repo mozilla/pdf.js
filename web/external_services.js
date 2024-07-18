@@ -52,6 +52,8 @@ class BaseExternalServices {
   }
 
   dispatchGlobalEvent(_event) {}
+
+  async getIdsToWatchOut() {}
 }
 
 export { BaseExternalServices };
