@@ -1901,6 +1901,49 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("gets outline, with /XYZ destinations that lack zoom parameter (issue 18408)", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue18408_reduced.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const outline = await pdfDoc.getOutline();
+
+      expect(outline).toEqual([
+        {
+          action: null,
+          attachment: undefined,
+          dest: [{ num: 14, gen: 0 }, { name: "XYZ" }, 65, 705],
+          url: null,
+          unsafeUrl: undefined,
+          newWindow: undefined,
+          setOCGState: undefined,
+          title: "Page 1",
+          color: new Uint8ClampedArray([0, 0, 0]),
+          count: undefined,
+          bold: false,
+          italic: false,
+          items: [],
+        },
+        {
+          action: null,
+          attachment: undefined,
+          dest: [{ num: 13, gen: 0 }, { name: "XYZ" }, 60, 710],
+          url: null,
+          unsafeUrl: undefined,
+          newWindow: undefined,
+          setOCGState: undefined,
+          title: "Page 2",
+          color: new Uint8ClampedArray([0, 0, 0]),
+          count: undefined,
+          bold: false,
+          italic: false,
+          items: [],
+        },
+      ]);
+
+      await loadingTask.destroy();
+    });
+
     it("gets outline, with /FitH destinations that lack coordinate parameter (bug 1907000)", async function () {
       const loadingTask = getDocument(
         buildGetDocumentParams("bug1907000_reduced.pdf")
