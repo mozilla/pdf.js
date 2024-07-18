@@ -928,6 +928,14 @@ class AnnotationEditorUIManager {
     });
   }
 
+  setPreference(name, value) {
+    this._eventBus.dispatch("setpreference", {
+      source: this,
+      name,
+      value,
+    });
+  }
+
   onPageChanging({ pageNumber }) {
     this.#currentPageIndex = pageNumber - 1;
   }
