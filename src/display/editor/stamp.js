@@ -430,7 +430,8 @@ class StampEditor extends AnnotationEditor {
       return;
     }
     this.#hasMLBeenQueried = true;
-    if (!this._uiManager.isMLEnabledFor("altText") || this.hasAltText()) {
+    const isMLEnabled = await this._uiManager.isMLEnabledFor("altText");
+    if (!isMLEnabled || this.hasAltText()) {
       return;
     }
     const offscreen = new OffscreenCanvas(width, height);
@@ -447,7 +448,7 @@ class StampEditor extends AnnotationEditor {
       height
     );
     const response = await this._uiManager.mlGuess({
-      service: "image-to-text",
+      service: "moz-image-to-text",
       request: {
         data: ctx.getImageData(0, 0, width, height).data,
         width,

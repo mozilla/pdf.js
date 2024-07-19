@@ -855,8 +855,8 @@ class AnnotationEditorUIManager {
     return this.#mlManager?.guess(data) || null;
   }
 
-  isMLEnabledFor(name) {
-    return !!this.#mlManager?.isEnabledFor(name);
+  async isMLEnabledFor(name) {
+    return !!(await this.#mlManager?.isEnabledFor(name));
   }
 
   get useNewAltTextFlow() {

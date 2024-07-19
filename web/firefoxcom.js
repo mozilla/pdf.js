@@ -308,18 +308,55 @@ class FirefoxScripting {
 }
 
 class MLManager {
-  #enabled = new Map();
+  #enabled = null;
 
-  constructor({ enableAltText }) {
-    this.#enabled.set("altText", enableAltText);
+  eventBus = null;
+
+  constructor(options) {
+    this.enable({ ...options, listenToProgress: false });
   }
 
-  isEnabledFor(name) {
-    return this.#enabled.get(name);
+  async isEnabledFor(name) {
+    return !!(await this.#enabled?.get(name));
   }
 
   guess(data) {
     return FirefoxCom.requestAsync("mlGuess", data);
+  }
+
+  enable({ enableAltText, listenToProgress }) {
+    if (enableAltText) {
+      this.#loadAltTextEngine(listenToProgress);
+    }
+  }
+
+  async #loadAltTextEngine(listenToProgress) {
+    if (this.#enabled?.has("altText")) {
+      // We already have a promise for the "altText" service.
+      return;
+    }
+    const promise = FirefoxCom.requestAsync("loadAIEngine", {
+      service: "moz-image-to-text",
+      listenToProgress,
+    });
+    (this.#enabled ||= new Map()).set("altText", promise);
+    if (listenToProgress) {
+      const callback = ({ detail }) => {
+        this.eventBus.dispatch("loadaiengineprogress", {
+          source: this,
+          detail,
+        });
+        if (detail.finished) {
+          window.removeEventListener("loadAIEngineProgress", callback);
+        }
+      };
+      window.addEventListener("loadAIEngineProgress", callback);
+      promise.then(ok => {
+        if (!ok) {
+          window.removeEventListener("loadAIEngineProgress", callback);
+        }
+      });
+    }
   }
 }
 
