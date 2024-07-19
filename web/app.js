@@ -155,6 +155,7 @@ const PDFViewerApplication = {
   isViewerEmbedded: window.parent !== window,
   url: "",
   baseUrl: "",
+  mlManager: null,
   _downloadUrl: "",
   _eventBusAbortController: null,
   _windowAbortController: null,
@@ -205,6 +206,11 @@ const PDFViewerApplication = {
       if (mode) {
         document.documentElement.classList.add(mode);
       }
+    } else {
+      // We want to load the image-to-text AI engine as soon as possible.
+      this.mlManager = new MLManager({
+        enableAltText: AppOptions.get("enableAltText"),
+      });
     }
 
     // Ensure that the `L10n`-instance has been initialized before creating
@@ -370,11 +376,14 @@ const PDFViewerApplication = {
 
     let eventBus;
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      eventBus = AppOptions.eventBus = new FirefoxEventBus(
-        AppOptions.get("allowedGlobalEvents"),
-        externalServices,
-        AppOptions.get("isInAutomation")
-      );
+      eventBus =
+        AppOptions.eventBus =
+        this.mlManager.eventBus =
+          new FirefoxEventBus(
+            AppOptions.get("allowedGlobalEvents"),
+            externalServices,
+            AppOptions.get("isInAutomation")
+          );
     } else {
       eventBus = new EventBus();
     }
@@ -729,15 +738,6 @@ const PDFViewerApplication = {
 
   get externalServices() {
     return shadow(this, "externalServices", new ExternalServices());
-  },
-
-  get mlManager() {
-    const enableAltText = AppOptions.get("enableAltText");
-    return shadow(
-      this,
-      "mlManager",
-      enableAltText === true ? new MLManager({ enableAltText }) : null
-    );
   },
 
   get initialized() {
