@@ -511,6 +511,11 @@ class AppOptions {
   }
 
   static set(name, value) {
+    const defaultOption = defaultOptions[name];
+
+    if (!defaultOption || typeof value !== typeof defaultOption.value) {
+      return;
+    }
     userOptions[name] = value;
   }
 
@@ -518,20 +523,16 @@ class AppOptions {
     let events;
 
     for (const name in options) {
-      const userOption = options[name];
+      const defaultOption = defaultOptions[name],
+        userOption = options[name];
 
+      if (!defaultOption || typeof userOption !== typeof defaultOption.value) {
+        continue;
+      }
       if (prefs) {
-        const defaultOption = defaultOptions[name];
-
-        if (!defaultOption) {
-          continue;
-        }
-        const { kind, value } = defaultOption;
+        const { kind } = defaultOption;
 
         if (!(kind & OptionKind.BROWSER || kind & OptionKind.PREFERENCE)) {
-          continue;
-        }
-        if (typeof userOption !== typeof value) {
           continue;
         }
         if (this.eventBus && kind & OptionKind.EVENT_DISPATCH) {
