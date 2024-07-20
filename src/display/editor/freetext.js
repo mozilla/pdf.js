@@ -765,30 +765,33 @@ class FreeTextEditor extends AnnotationEditor {
   /** @inheritdoc */
   static deserialize(data, parent, uiManager) {
     let initialData = null;
+  
     if (data instanceof FreeTextAnnotationElement) {
       const {
         data: {
-          defaultAppearanceData: { fontSize, fontColor },
-          rect,
-          rotation,
-          id,
+          defaultAppearanceData: { fontSize, fontColor } = {},
+          rect = [],
+          rotation = 0,
+          id = null,
         },
-        textContent,
-        textPosition,
+        textContent = [],
+        textPosition = [],
         parent: {
-          page: { pageNumber },
-        },
+          page: { pageNumber = 1 },
+        } = {},
       } = data;
+
       // textContent is supposed to be an array of strings containing each line
       // of text. However, it can be null or empty.
       if (!textContent || textContent.length === 0) {
         // Empty annotation.
         return null;
       }
-      initialData = data = {
+
+      initialData = {
         annotationType: AnnotationEditorType.FREETEXT,
-        color: Array.from(fontColor),
-        fontSize,
+        color: Array.from(fontColor || [0, 0, 0]), // Default to black if fontColor is missing
+        fontSize: fontSize || 16,
         value: textContent.join("\n"),
         position: textPosition,
         pageIndex: pageNumber - 1,
@@ -798,12 +801,21 @@ class FreeTextEditor extends AnnotationEditor {
         deleted: false,
       };
     }
-    const editor = super.deserialize(data, parent, uiManager);
-    editor.#fontSize = data.fontSize;
-    editor.#color = Util.makeHexColor(...data.color);
-    editor.#content = FreeTextEditor.#deserializeContent(data.value);
-    editor.annotationElementId = data.id || null;
-    editor.#initialData = initialData;
+
+    const editor = super.deserialize(initialData, parent, uiManager);
+
+    if (editor) {
+      editor.#fontSize = initialData.fontSize;
+      editor.#color = Util.makeHexColor(...initialData.color);
+      editor.#content = FreeTextEditor.#deserializeContent(initialData.value);
+      editor.annotationElementId = initialData.id || null;
+      editor.#initialData = initialData;
+
+      // Apply the necessary styles to ensure text wrapping and resizing
+      editor.container.style.overflowWrap = "break-word";
+      editor.container.style.resize = "both";
+      editor.container.style.boxSizing = "border-box";
+    }
 
     return editor;
   }

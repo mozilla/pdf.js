@@ -2508,26 +2508,29 @@ class FreeTextAnnotationElement extends AnnotationElement {
     this.zoomLevel = 1;
     this.initialFontSize = 16;
     this.initialLineHeight = 1.2;
-    this.pageWidth = parameters.data.pageWidth || 600; // Default page width if not provided
+    this.pageWidth = parameters.data.pageWidth || 600;
   }
 
   render() {
     this.container.classList.add("freeTextAnnotation");
     this.container.style.position = "relative";
-    this.container.style.overflow = "hidden";
+    this.container.style.overflow = "visible"; // Allow content to grow outside the container
 
     if (this.textContent) {
       const content = document.createElement("div");
       content.classList.add("annotationTextContent");
       content.setAttribute("role", "comment");
       content.style.wordWrap = "break-word";
-      content.style.whiteSpace = "pre-wrap"; 
+      content.style.whiteSpace = "pre-wrap";
       content.style.fontSize = `${this.initialFontSize}px`;
       content.style.lineHeight = `${this.initialLineHeight}`;
       content.style.width = "100%";
-      content.style.height = "100%";
+      content.style.height = "auto"; // Allow height to grow dynamically
       content.style.boxSizing = "border-box";
       content.textContent = this.textContent;
+
+      // Add event listener for input to dynamically resize the container
+      content.addEventListener("input", () => this._resizeToFitContent());
 
       this.content = content;
       this.container.append(content);
@@ -2544,6 +2547,15 @@ class FreeTextAnnotationElement extends AnnotationElement {
     window.addEventListener("zoom", this._onZoom.bind(this));
 
     return this.container;
+  }
+
+  _resizeToFitContent() {
+    const contentRect = this.content.getBoundingClientRect();
+    const newHeight = contentRect.height;
+    const newWidth = contentRect.width;
+
+    this.container.style.width = `${newWidth}px`;
+    this.container.style.height = `${newHeight}px`;
   }
 
   _addResizeHandles() {
@@ -2577,17 +2589,33 @@ class FreeTextAnnotationElement extends AnnotationElement {
   _addResizeListeners(handles) {
     const onResize = event => {
       const rect = this.container.getBoundingClientRect();
-      const newWidth = Math.min(
+      const newWidth = Math.max(
         (event.clientX - rect.left) / this.zoomLevel,
-        this.pageWidth
+        50 // minimum width
       );
-      const newHeight = (event.clientY - rect.top) / this.zoomLevel;
-      this.container.style.width = `${newWidth}px`;
-      this.container.style.height = `${newHeight}px`;
-      this.content.style.width = `${newWidth}px`;
+      const newHeight = Math.max(
+        (event.clientY - rect.top) / this.zoomLevel,
+        50 // minimum height
+      );
+
+      // Ensure new dimensions do not exceed page bounds
+      const pageWidth = this.container.parentElement.clientWidth;
+      const pageHeight = this.container.parentElement.clientHeight;
+      const adjustedWidth = Math.min(newWidth, pageWidth - rect.left);
+      const adjustedHeight = Math.min(newHeight, pageHeight - rect.top);
+
+      this.container.style.width = `${adjustedWidth}px`;
+      this.container.style.height = `${adjustedHeight}px`;
+
+      // Update content dimensions
+      this.content.style.width = `${adjustedWidth}px`;
+      this.content.style.height = `${adjustedHeight}px`;
 
       // Update font size proportionally
-      const newFontSize = (this.initialFontSize * newHeight) / (rect.height || newHeight);
+      const newFontSize = Math.max(
+        (this.initialFontSize * adjustedHeight) / (rect.height || adjustedHeight),
+        12 // minimum font size
+      );
       this.content.style.fontSize = `${newFontSize}px`;
     };
 
@@ -2617,6 +2645,13 @@ class FreeTextAnnotationElement extends AnnotationElement {
 
     this.container.style.transform = `scale(${scale})`;
     this.container.style.transformOrigin = "top left";
+
+    // Ensure text stays within bounds
+    const scaledWidth = (rect[2] - rect[0]) * scale;
+    const scaledHeight = (rect[3] - rect[1]) * scale;
+
+    this.content.style.width = `${scaledWidth}px`;
+    this.content.style.height = `${scaledHeight}px`;
   }
 
   // Make sure to clean up event listeners
@@ -2624,6 +2659,7 @@ class FreeTextAnnotationElement extends AnnotationElement {
     window.removeEventListener("zoom", this._onZoom.bind(this));
   }
 }
+
 
 class LineAnnotationElement extends AnnotationElement {
   #line = null;
