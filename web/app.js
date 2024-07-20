@@ -151,7 +151,6 @@ const PDFViewerApplication = {
   /** @type {AnnotationEditorParams} */
   annotationEditorParams: null,
   isInitialViewSet: false,
-  downloadComplete: false,
   isViewerEmbedded: window.parent !== window,
   url: "",
   baseUrl: "",
@@ -942,7 +941,6 @@ const PDFViewerApplication = {
     this.pdfLinkService.externalLinkEnabled = true;
     this.store = null;
     this.isInitialViewSet = false;
-    this.downloadComplete = false;
     this.url = "";
     this.baseUrl = "";
     this._downloadUrl = "";
@@ -1072,12 +1070,9 @@ const PDFViewerApplication = {
   async download(options = {}) {
     let data;
     try {
-      if (this.downloadComplete) {
-        data = await this.pdfDocument.getData();
-      }
+      data = await this.pdfDocument.getData();
     } catch {
-      // When the PDF document isn't ready, or the PDF file is still
-      // downloading, simply download using the URL.
+      // When the PDF document isn't ready, simply download using the URL.
     }
     this.downloadManager.download(
       data,
@@ -1216,7 +1211,6 @@ const PDFViewerApplication = {
 
     pdfDocument.getDownloadInfo().then(({ length }) => {
       this._contentLength = length; // Ensure that the correct length is used.
-      this.downloadComplete = true;
       this.loadingBar?.hide();
 
       firstPagePromise.then(() => {
