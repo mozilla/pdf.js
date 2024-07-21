@@ -320,6 +320,10 @@ class MLManager {
     return !!(await this.#enabled?.get(name));
   }
 
+  deleteModel(service) {
+    return FirefoxCom.requestAsync("mlDelete", service);
+  }
+
   guess(data) {
     return FirefoxCom.requestAsync("mlGuess", data);
   }
