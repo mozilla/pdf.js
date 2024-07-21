@@ -506,23 +506,23 @@ class AppOptions {
   static getAll(kind = null, defaultOnly = false) {
     const options = Object.create(null);
     for (const name in defaultOptions) {
-      const defaultOption = defaultOptions[name];
+      const defaultOpt = defaultOptions[name];
 
-      if (kind && !(kind & defaultOption.kind)) {
+      if (kind && !(kind & defaultOpt.kind)) {
         continue;
       }
       options[name] =
         !defaultOnly && userOptions.has(name)
           ? userOptions.get(name)
-          : defaultOption.value;
+          : defaultOpt.value;
     }
     return options;
   }
 
   static set(name, value) {
-    const defaultOption = defaultOptions[name];
+    const defaultOpt = defaultOptions[name];
 
-    if (!defaultOption || typeof value !== typeof defaultOption.value) {
+    if (!defaultOpt || typeof value !== typeof defaultOpt.value) {
       return;
     }
     userOptions.set(name, value);
@@ -532,23 +532,23 @@ class AppOptions {
     let events;
 
     for (const name in options) {
-      const defaultOption = defaultOptions[name],
-        userOption = options[name];
+      const defaultOpt = defaultOptions[name],
+        userOpt = options[name];
 
-      if (!defaultOption || typeof userOption !== typeof defaultOption.value) {
+      if (!defaultOpt || typeof userOpt !== typeof defaultOpt.value) {
         continue;
       }
       if (prefs) {
-        const { kind } = defaultOption;
+        const { kind } = defaultOpt;
 
         if (!(kind & OptionKind.BROWSER || kind & OptionKind.PREFERENCE)) {
           continue;
         }
         if (this.eventBus && kind & OptionKind.EVENT_DISPATCH) {
-          (events ||= new Map()).set(name, userOption);
+          (events ||= new Map()).set(name, userOpt);
         }
       }
-      userOptions.set(name, userOption);
+      userOptions.set(name, userOpt);
     }
 
     if (events) {
