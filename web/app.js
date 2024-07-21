@@ -1004,16 +1004,6 @@ const PDFViewerApplication = {
       AppOptions.set("docBaseUrl", this.baseUrl);
     }
 
-    // On Android, there is almost no chance to have the font we want so we
-    // don't use the system fonts in this case.
-    if (
-      typeof PDFJSDev === "undefined"
-        ? window.isGECKOVIEW
-        : PDFJSDev.test("GECKOVIEW")
-    ) {
-      args.useSystemFonts = false;
-    }
-
     // Set the necessary API parameters, using all the available options.
     const apiParams = AppOptions.getAll(OptionKind.API);
     const loadingTask = getDocument({
