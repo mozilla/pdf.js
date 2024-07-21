@@ -139,7 +139,7 @@ const PDFViewerApplication = {
   /** @type {OverlayManager} */
   overlayManager: null,
   /** @type {Preferences} */
-  preferences: null,
+  preferences: new Preferences(),
   /** @type {Toolbar} */
   toolbar: null,
   /** @type {SecondaryToolbar} */
@@ -638,7 +638,6 @@ const PDFViewerApplication = {
   },
 
   async run(config) {
-    this.preferences = new Preferences();
     await this.initialize(config);
 
     const { appConfig, eventBus } = this;
