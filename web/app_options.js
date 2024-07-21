@@ -475,8 +475,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 const userOptions = new Map();
 
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-  // Apply any compatibility-values to the user-options,
-  // see also `AppOptions.remove` below.
+  // Apply any compatibility-values to the user-options.
   for (const [name, value] of compatParams) {
     userOptions.set(name, value);
   }
@@ -608,17 +607,6 @@ class AppOptions {
     if (events) {
       for (const [name, value] of events) {
         this.eventBus.dispatch(name.toLowerCase(), { source: this, value });
-      }
-    }
-  }
-
-  static remove(name) {
-    userOptions.delete(name);
-
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      // Re-apply a compatibility-value, if it exists, to the user-options.
-      if (compatParams.has(name)) {
-        userOptions.set(name, compatParams.get(name));
       }
     }
   }
