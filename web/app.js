@@ -854,7 +854,13 @@ const PDFViewerApplication = {
     }
     if (isDataScheme(url)) {
       this._hideViewBookmark();
+    } else if (
+      typeof PDFJSDev !== "undefined" &&
+      PDFJSDev.test("MOZCENTRAL || CHROME")
+    ) {
+      AppOptions.set("docBaseUrl", this.baseUrl);
     }
+
     let title = getPdfFilenameFromUrl(url, "");
     if (!title) {
       try {
@@ -995,13 +1001,6 @@ const PDFViewerApplication = {
         args.originalUrl || args.url,
         /* downloadUrl = */ args.url
       );
-    }
-    // Always set `docBaseUrl` in development mode, and in the (various)
-    // extension builds.
-    if (typeof PDFJSDev === "undefined") {
-      AppOptions.set("docBaseUrl", document.URL.split("#", 1)[0]);
-    } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
-      AppOptions.set("docBaseUrl", this.baseUrl);
     }
 
     // Set the necessary API parameters, using all the available options.
