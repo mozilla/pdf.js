@@ -15,7 +15,7 @@
 
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   // eslint-disable-next-line no-var
-  var compatibilityParams = Object.create(null);
+  var compatParams = new Map();
   if (
     typeof PDFJSDev !== "undefined" &&
     PDFJSDev.test("LIB") &&
@@ -34,9 +34,9 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 
   // Limit canvas size to 5 mega-pixels on mobile.
   // Support: Android, iOS
-  (function checkCanvasSizeLimitation() {
+  (function () {
     if (isIOS || isAndroid) {
-      compatibilityParams.maxCanvasPixels = 5242880;
+      compatParams.set("maxCanvasPixels", 5242880);
     }
   })();
 }
@@ -447,8 +447,8 @@ const userOptions = Object.create(null);
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   // Apply any compatibility-values to the user-options,
   // see also `AppOptions.remove` below.
-  for (const name in compatibilityParams) {
-    userOptions[name] = compatibilityParams[name];
+  for (const [name, value] of compatParams) {
+    userOptions[name] = value;
   }
 }
 
@@ -464,10 +464,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING || LIB")) {
       if (kind & OptionKind.BROWSER) {
         throw new Error(`Cannot mix "PREFERENCE" and "BROWSER" kind: ${name}`);
       }
-      if (
-        typeof compatibilityParams === "object" &&
-        compatibilityParams[name] !== undefined
-      ) {
+      if (typeof compatParams === "object" && compatParams.has(name)) {
         throw new Error(
           `Should not have compatibility-value for "PREFERENCE" kind: ${name}`
         );
@@ -554,9 +551,8 @@ class AppOptions {
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       // Re-apply a compatibility-value, if it exists, to the user-options.
-      const val = compatibilityParams[name];
-      if (val !== undefined) {
-        userOptions[name] = val;
+      if (compatParams.has(name)) {
+        userOptions[name] = compatParams.get(name);
       }
     }
   }
@@ -571,7 +567,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     }
     for (const name in userOptions) {
       // Ignore any compatibility-values in the user-options.
-      if (compatibilityParams[name] !== undefined) {
+      if (compatParams.has(name)) {
         continue;
       }
       console.warn(
