@@ -117,6 +117,14 @@ const defaultOptions = {
     kind: OptionKind.BROWSER + OptionKind.EVENT_DISPATCH,
   },
 
+  altTextLearnMoreUrl: {
+    /** @type {string} */
+    value:
+      typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")
+        ? "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/pdf-alt-text"
+        : "",
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   annotationEditorMode: {
     /** @type {number} */
     value: 0,

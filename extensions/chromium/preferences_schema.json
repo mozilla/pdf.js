@@ -55,6 +55,10 @@
       "type": "boolean",
       "default": false
     },
+    "altTextLearnMoreUrl": {
+      "type": "string",
+      "default": ""
+    },
     "enableUpdatedAddImage": {
       "type": "boolean",
       "default": false

@@ -324,10 +324,14 @@ class MLManager {
     return FirefoxCom.requestAsync("mlGuess", data);
   }
 
-  enable({ enableAltText, listenToProgress }) {
+  enable({ altTextLearnMoreUrl, enableAltText, listenToProgress }) {
     if (enableAltText) {
       this.#loadAltTextEngine(listenToProgress);
     }
+    // The `altTextLearnMoreUrl` is used to provide a link to the user to learn
+    // more about the "alt text" feature.
+    // The link is used in the Alt Text dialog or in the Image Settings.
+    this.altTextLearnMoreUrl = altTextLearnMoreUrl;
   }
 
   async #loadAltTextEngine(listenToProgress) {

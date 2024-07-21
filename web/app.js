@@ -209,6 +209,7 @@ const PDFViewerApplication = {
       // We want to load the image-to-text AI engine as soon as possible.
       this.mlManager = new MLManager({
         enableAltText: AppOptions.get("enableAltText"),
+        altTextLearnMoreUrl: AppOptions.get("altTextLearnMoreUrl"),
       });
     }
 
