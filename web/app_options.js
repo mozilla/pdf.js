@@ -477,6 +477,15 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING || LIB")) {
       ) {
         throw new Error(`Invalid value for "PREFERENCE" kind: ${name}`);
       }
+    } else if (kind & OptionKind.BROWSER) {
+      if (typeof compatParams === "object" && compatParams.has(name)) {
+        throw new Error(
+          `Should not have compatibility-value for "BROWSER" kind: ${name}`
+        );
+      }
+      if (value === undefined) {
+        throw new Error(`Invalid value for "BROWSER" kind: ${name}`);
+      }
     }
   }
 }
