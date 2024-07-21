@@ -39,6 +39,14 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       compatParams.set("maxCanvasPixels", 5242880);
     }
   })();
+
+  // Don't use system fonts on Android (issue 18210).
+  // Support: Android
+  (function () {
+    if (isAndroid) {
+      compatParams.set("useSystemFonts", false);
+    }
+  })();
 }
 
 const OptionKind = {
@@ -47,6 +55,7 @@ const OptionKind = {
   API: 0x04,
   WORKER: 0x08,
   EVENT_DISPATCH: 0x10,
+  UNDEF_ALLOWED: 0x20,
   PREFERENCE: 0x80,
 };
 
@@ -377,6 +386,19 @@ const defaultOptions = {
           : "../web/standard_fonts/",
     kind: OptionKind.API,
   },
+  useSystemFonts: {
+    // On Android, there is almost no chance to have the font we want so we
+    // don't use the system fonts in this case (bug 1882613).
+    /** @type {boolean|undefined} */
+    value: (
+      typeof PDFJSDev === "undefined"
+        ? window.isGECKOVIEW
+        : PDFJSDev.test("GECKOVIEW")
+    )
+      ? false
+      : undefined,
+    kind: OptionKind.API + OptionKind.UNDEF_ALLOWED,
+  },
   verbosity: {
     /** @type {number} */
     value: 1,
@@ -464,6 +486,11 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING || LIB")) {
       if (kind & OptionKind.BROWSER) {
         throw new Error(`Cannot mix "PREFERENCE" and "BROWSER" kind: ${name}`);
       }
+      if (kind & OptionKind.UNDEF_ALLOWED) {
+        throw new Error(
+          `Cannot allow \`undefined\` value for "PREFERENCE" kind: ${name}`
+        );
+      }
       if (typeof compatParams === "object" && compatParams.has(name)) {
         throw new Error(
           `Should not have compatibility-value for "PREFERENCE" kind: ${name}`
@@ -478,6 +505,11 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING || LIB")) {
         throw new Error(`Invalid value for "PREFERENCE" kind: ${name}`);
       }
     } else if (kind & OptionKind.BROWSER) {
+      if (kind & OptionKind.UNDEF_ALLOWED) {
+        throw new Error(
+          `Cannot allow \`undefined\` value for "BROWSER" kind: ${name}`
+        );
+      }
       if (typeof compatParams === "object" && compatParams.has(name)) {
         throw new Error(
           `Should not have compatibility-value for "BROWSER" kind: ${name}`
@@ -522,7 +554,14 @@ class AppOptions {
   static set(name, value) {
     const defaultOpt = defaultOptions[name];
 
-    if (!defaultOpt || typeof value !== typeof defaultOpt.value) {
+    if (
+      !defaultOpt ||
+      !(
+        typeof value === typeof defaultOpt.value ||
+        (defaultOpt.kind & OptionKind.UNDEF_ALLOWED &&
+          (value === undefined || defaultOpt.value === undefined))
+      )
+    ) {
       return;
     }
     userOptions.set(name, value);
@@ -535,7 +574,14 @@ class AppOptions {
       const defaultOpt = defaultOptions[name],
         userOpt = options[name];
 
-      if (!defaultOpt || typeof userOpt !== typeof defaultOpt.value) {
+      if (
+        !defaultOpt ||
+        !(
+          typeof userOpt === typeof defaultOpt.value ||
+          (defaultOpt.kind & OptionKind.UNDEF_ALLOWED &&
+            (userOpt === undefined || defaultOpt.value === undefined))
+        )
+      ) {
         continue;
       }
       if (prefs) {

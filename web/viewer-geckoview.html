@@ -42,6 +42,12 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
 
 <!--#if !MOZCENTRAL-->
+    <script>
+      if (typeof PDFJSDev === "undefined") {
+        window.isGECKOVIEW = true;
+      }
+    </script>
+
     <script type="importmap">
       {
         "imports": {
