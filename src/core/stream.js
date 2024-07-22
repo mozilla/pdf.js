@@ -17,16 +17,12 @@ import { BaseStream } from "./base_stream.js";
 import { stringToBytes } from "../shared/util.js";
 
 class Stream extends BaseStream {
-  constructor(arrayBuffer, start, length, dict) {
+  constructor(arrayBuffer, start = 0, length = null, dict = null) {
     super();
-
-    this.bytes =
-      arrayBuffer instanceof Uint8Array
-        ? arrayBuffer
-        : new Uint8Array(arrayBuffer);
-    this.start = start || 0;
-    this.pos = this.start;
-    this.end = start + length || this.bytes.length;
+    this.bytes = arrayBuffer instanceof Uint8Array ? arrayBuffer : new Uint8Array(arrayBuffer);
+    this.start = start;
+    this.pos = start;
+    this.end = length !== null ? start + length : this.bytes.length;
     this.dict = dict;
   }
 
@@ -39,36 +35,18 @@ class Stream extends BaseStream {
   }
 
   getByte() {
-    if (this.pos >= this.end) {
-      return -1;
-    }
-    return this.bytes[this.pos++];
+    return this.pos < this.end ? this.bytes[this.pos++] : -1;
   }
 
   getBytes(length) {
-    const bytes = this.bytes;
-    const pos = this.pos;
-    const strEnd = this.end;
-
-    if (!length) {
-      return bytes.subarray(pos, strEnd);
-    }
-    let end = pos + length;
-    if (end > strEnd) {
-      end = strEnd;
-    }
+    const end = length ? Math.min(this.pos + length, this.end) : this.end;
+    const result = this.bytes.subarray(this.pos, end);
     this.pos = end;
-    return bytes.subarray(pos, end);
+    return result;
   }
 
   getByteRange(begin, end) {
-    if (begin < 0) {
-      begin = 0;
-    }
-    if (end > this.end) {
-      end = this.end;
-    }
-    return this.bytes.subarray(begin, end);
+    return this.bytes.subarray(Math.max(0, begin), Math.min(this.end, end));
   }
 
   reset() {
