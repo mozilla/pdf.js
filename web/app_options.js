@@ -345,7 +345,7 @@ const defaultOptions = {
   },
   docBaseUrl: {
     /** @type {string} */
-    value: "",
+    value: typeof PDFJSDev === "undefined" ? document.URL.split("#", 1)[0] : "",
     kind: OptionKind.API,
   },
   enableHWA: {
