@@ -342,6 +342,8 @@ const OPS = {
   paintImageMaskXObjectRepeat: 89,
   paintSolidColorImageMask: 90,
   constructPath: 91,
+  setStrokeTransparent: 92,
+  setFillTransparent: 93,
 };
 
 const PasswordResponses = {
