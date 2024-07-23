@@ -205,10 +205,10 @@ const PDFViewerApplication = {
       if (mode) {
         document.documentElement.classList.add(mode);
       }
-    } else {
+    } else if (AppOptions.get("enableAltText")) {
       // We want to load the image-to-text AI engine as soon as possible.
       this.mlManager = new MLManager({
-        enableAltText: AppOptions.get("enableAltText"),
+        enableGuessAltText: AppOptions.get("enableGuessAltText"),
         altTextLearnMoreUrl: AppOptions.get("altTextLearnMoreUrl"),
       });
     }
@@ -376,14 +376,14 @@ const PDFViewerApplication = {
 
     let eventBus;
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      eventBus =
-        AppOptions.eventBus =
-        this.mlManager.eventBus =
-          new FirefoxEventBus(
-            AppOptions.get("allowedGlobalEvents"),
-            externalServices,
-            AppOptions.get("isInAutomation")
-          );
+      eventBus = AppOptions.eventBus = new FirefoxEventBus(
+        AppOptions.get("allowedGlobalEvents"),
+        externalServices,
+        AppOptions.get("isInAutomation")
+      );
+      if (this.mlManager) {
+        this.mlManager.eventBus = eventBus;
+      }
     } else {
       eventBus = new EventBus();
     }

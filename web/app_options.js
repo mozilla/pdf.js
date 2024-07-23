@@ -187,6 +187,11 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  enableGuessAltText: {
+    /** @type {boolean} */
+    value: true,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   enableHighlightEditor: {
     // We'll probably want to make some experiments before enabling this
     // in Firefox release, but it has to be temporary.
