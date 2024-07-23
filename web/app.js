@@ -336,7 +336,7 @@ const PDFViewerApplication = {
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
       params.has("locale")
     ) {
-      AppOptions.set("locale", params.get("locale"));
+      AppOptions.set("localeProperties", { lang: params.get("locale") });
     }
 
     // Set some specific preferences for tests.

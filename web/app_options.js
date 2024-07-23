@@ -90,7 +90,10 @@ const defaultOptions = {
   },
   localeProperties: {
     /** @type {Object} */
-    value: null,
+    value:
+      typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")
+        ? { lang: navigator.language || "en-US" }
+        : null,
     kind: OptionKind.BROWSER,
   },
   nimbusDataStr: {
@@ -466,11 +469,6 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   defaultOptions.disablePreferences = {
     /** @type {boolean} */
     value: typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING"),
-    kind: OptionKind.VIEWER,
-  };
-  defaultOptions.locale = {
-    /** @type {string} */
-    value: navigator.language || "en-US",
     kind: OptionKind.VIEWER,
   };
 } else if (PDFJSDev.test("CHROME")) {
