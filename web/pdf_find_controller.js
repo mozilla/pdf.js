@@ -491,6 +491,8 @@ class PDFFindController {
   }
 
   #onFind(state) {
+    console.log('hi kevin second test');
+
     if (!state) {
       return;
     }
