@@ -51,7 +51,6 @@
     "postcss-nesting": "^12.1.5",
     "prettier": "^3.3.3",
     "puppeteer": "^22.13.0",
-    "streamqueue": "^1.1.2",
     "stylelint": "^16.7.0",
     "stylelint-prettier": "^5.0.0",
     "terser-webpack-plugin": "^5.3.10",
