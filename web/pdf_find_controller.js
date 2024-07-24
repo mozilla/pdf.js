@@ -491,8 +491,6 @@ class PDFFindController {
   }
 
   #onFind(state) {
-    console.log('hi kevin second test');
-
     if (!state) {
       return;
     }
@@ -925,9 +923,9 @@ class PDFFindController {
 
     this._matchesCountTotal += pageMatchesCount;
     if (this.#updateMatchesCountOnProgress) {
-      if (pageMatchesCount > 0) {
+      // if (pageMatchesCount > 0) {
         this.#updateUIResultsCount();
-      }
+      // }
     } else if (++this.#visitedPagesCount === this._linkService.pagesCount) {
       // For example, in GeckoView we want to have only the final update because
       // the Java side provides only one object to update the counts.
