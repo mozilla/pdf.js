@@ -42,12 +42,12 @@ import {
   escapeString,
   getInheritableProperty,
   getRotationMatrix,
-  isAscii,
   isNumberArray,
   lookupMatrix,
   lookupNormalRect,
   lookupRect,
   numberToString,
+  stringToAsciiOrUTF16BE,
   stringToUTF16String,
 } from "./core_utils.js";
 import {
@@ -2133,9 +2133,12 @@ class WidgetAnnotation extends Annotation {
       value,
     };
 
-    const encoder = val =>
-      isAscii(val) ? val : stringToUTF16String(val, /* bigEndian = */ true);
-    dict.set("V", Array.isArray(value) ? value.map(encoder) : encoder(value));
+    dict.set(
+      "V",
+      Array.isArray(value)
+        ? value.map(stringToAsciiOrUTF16BE)
+        : stringToAsciiOrUTF16BE(value)
+    );
     this.amendSavedDict(annotationStorage, dict);
 
     const maybeMK = this._getMKDict(rotation);
@@ -3852,21 +3855,13 @@ class FreeTextAnnotation extends MarkupAnnotation {
     freetext.set("Rect", rect);
     const da = `/Helv ${fontSize} Tf ${getPdfColor(color, /* isFill */ true)}`;
     freetext.set("DA", da);
-    freetext.set(
-      "Contents",
-      isAscii(value)
-        ? value
-        : stringToUTF16String(value, /* bigEndian = */ true)
-    );
+    freetext.set("Contents", stringToAsciiOrUTF16BE(value));
     freetext.set("F", 4);
     freetext.set("Border", [0, 0, 0]);
     freetext.set("Rotate", rotation);
 
     if (user) {
-      freetext.set(
-        "T",
-        isAscii(user) ? user : stringToUTF16String(user, /* bigEndian = */ true)
-      );
+      freetext.set("T", stringToAsciiOrUTF16BE(user));
     }
 
     if (apRef || ap) {
@@ -4600,10 +4595,7 @@ class HighlightAnnotation extends MarkupAnnotation {
     highlight.set("CA", opacity);
 
     if (user) {
-      highlight.set(
-        "T",
-        isAscii(user) ? user : stringToUTF16String(user, /* bigEndian = */ true)
-      );
+      highlight.set("T", stringToAsciiOrUTF16BE(user));
     }
 
     if (apRef || ap) {
@@ -4885,10 +4877,7 @@ class StampAnnotation extends MarkupAnnotation {
     stamp.set("Rotate", rotation);
 
     if (user) {
-      stamp.set(
-        "T",
-        isAscii(user) ? user : stringToUTF16String(user, /* bigEndian = */ true)
-      );
+      stamp.set("T", stringToAsciiOrUTF16BE(user));
     }
 
     if (apRef || ap) {
