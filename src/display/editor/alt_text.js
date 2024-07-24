@@ -16,7 +16,7 @@
 import { noContextMenu } from "../display_utils.js";
 
 class AltText {
-  #altText = "";
+  #altText = null;
 
   #altTextDecorative = false;
 
@@ -28,12 +28,21 @@ class AltText {
 
   #altTextWasFromKeyBoard = false;
 
+  #badge = null;
+
   #editor = null;
+
+  #guessedText = null;
+
+  #textWithDisclaimer = null;
+
+  #useNewAltTextFlow = false;
 
   static _l10nPromise = null;
 
   constructor(editor) {
     this.#editor = editor;
+    this.#useNewAltTextFlow = editor._uiManager.useNewAltTextFlow;
   }
 
   static initialize(l10nPromise) {
@@ -43,9 +52,17 @@ class AltText {
   async render() {
     const altText = (this.#altTextButton = document.createElement("button"));
     altText.className = "altText";
-    const msg = await AltText._l10nPromise.get(
-      "pdfjs-editor-alt-text-button-label"
-    );
+    let msg;
+    if (this.#useNewAltTextFlow) {
+      altText.classList.add("new");
+      msg = await AltText._l10nPromise.get(
+        "pdfjs-editor-new-alt-text-missing-button-label"
+      );
+    } else {
+      msg = await AltText._l10nPromise.get(
+        "pdfjs-editor-alt-text-button-label"
+      );
+    }
     altText.textContent = msg;
     altText.setAttribute("aria-label", msg);
     altText.tabIndex = "0";
@@ -84,7 +101,60 @@ class AltText {
   }
 
   isEmpty() {
+    if (this.#useNewAltTextFlow) {
+      return this.#altText === null;
+    }
     return !this.#altText && !this.#altTextDecorative;
+  }
+
+  hasData() {
+    if (this.#useNewAltTextFlow) {
+      return this.#altText !== null || !!this.#guessedText;
+    }
+    return this.isEmpty();
+  }
+
+  get guessedText() {
+    return this.#guessedText;
+  }
+
+  async setGuessedText(guessedText) {
+    if (this.#altText !== null) {
+      // The user provided their own alt text, so we don't want to overwrite it.
+      return;
+    }
+    this.#guessedText = guessedText;
+    this.#textWithDisclaimer = await AltText._l10nPromise.get(
+      "pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer"
+    )({ generatedAltText: guessedText });
+    this.#setState();
+  }
+
+  toggleAltTextBadge(visibility = false) {
+    if (!this.#useNewAltTextFlow || this.#altText) {
+      this.#badge?.remove();
+      this.#badge = null;
+      return;
+    }
+    if (!this.#badge) {
+      const badge = (this.#badge = document.createElement("div"));
+      badge.className = "noAltTextBadge";
+      this.#editor.div.append(badge);
+    }
+    this.#badge.classList.toggle("hidden", !visibility);
+  }
+
+  serialize(isForCopying) {
+    let altText = this.#altText;
+    if (!isForCopying && this.#guessedText === altText) {
+      altText = this.#textWithDisclaimer;
+    }
+    return {
+      altText,
+      decorative: this.#altTextDecorative,
+      guessedText: this.#guessedText,
+      textWithDisclaimer: this.#textWithDisclaimer,
+    };
   }
 
   get data() {
@@ -97,12 +167,24 @@ class AltText {
   /**
    * Set the alt text data.
    */
-  set data({ altText, decorative }) {
+  set data({
+    altText,
+    decorative,
+    guessedText,
+    textWithDisclaimer,
+    cancel = false,
+  }) {
+    if (guessedText) {
+      this.#guessedText = guessedText;
+      this.#textWithDisclaimer = textWithDisclaimer;
+    }
     if (this.#altText === altText && this.#altTextDecorative === decorative) {
       return;
     }
-    this.#altText = altText;
-    this.#altTextDecorative = decorative;
+    if (!cancel) {
+      this.#altText = altText;
+      this.#altTextDecorative = decorative;
+    }
     this.#setState();
   }
 
@@ -121,6 +203,8 @@ class AltText {
     this.#altTextButton?.remove();
     this.#altTextButton = null;
     this.#altTextTooltip = null;
+    this.#badge?.remove();
+    this.#badge = null;
   }
 
   async #setState() {
@@ -128,18 +212,48 @@ class AltText {
     if (!button) {
       return;
     }
-    if (!this.#altText && !this.#altTextDecorative) {
-      button.classList.remove("done");
-      this.#altTextTooltip?.remove();
-      return;
-    }
-    button.classList.add("done");
 
-    AltText._l10nPromise
-      .get("pdfjs-editor-alt-text-edit-button-label")
-      .then(msg => {
-        button.setAttribute("aria-label", msg);
-      });
+    if (this.#useNewAltTextFlow) {
+      // If we've an alt text, we get an "added".
+      // If we've a guessed text and the alt text has never been set, we get a
+      // "to-review" been set.
+      // Otherwise, we get a "missing".
+      const type =
+        (this.#altText && "added") ||
+        (this.#altText === null && this.guessedText && "to-review") ||
+        "missing";
+      button.classList.toggle("done", !!this.#altText);
+      AltText._l10nPromise
+        .get(`pdfjs-editor-new-alt-text-${type}-button-label`)
+        .then(msg => {
+          button.setAttribute("aria-label", msg);
+          // We can't just use button.textContent here, because it would remove
+          // the existing tooltip element.
+          for (const child of button.childNodes) {
+            if (child.nodeType === Node.TEXT_NODE) {
+              child.textContent = msg;
+              break;
+            }
+          }
+        });
+      if (!this.#altText) {
+        this.#altTextTooltip?.remove();
+        return;
+      }
+    } else {
+      if (!this.#altText && !this.#altTextDecorative) {
+        button.classList.remove("done");
+        this.#altTextTooltip?.remove();
+        return;
+      }
+      button.classList.add("done");
+      AltText._l10nPromise
+        .get("pdfjs-editor-alt-text-edit-button-label")
+        .then(msg => {
+          button.setAttribute("aria-label", msg);
+        });
+    }
+
     let tooltip = this.#altTextTooltip;
     if (!tooltip) {
       this.#altTextTooltip = tooltip = document.createElement("span");

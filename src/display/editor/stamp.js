@@ -36,8 +36,6 @@ class StampEditor extends AnnotationEditor {
 
   #canvas = null;
 
-  #hasMLBeenQueried = false;
-
   #observer = null;
 
   #resizeTimeoutId = null;
@@ -98,6 +96,14 @@ class StampEditor extends AnnotationEditor {
     });
   }
 
+  /** @inheritdoc */
+  altTextFinish() {
+    if (this._uiManager.useNewAltTextFlow) {
+      this.div.hidden = false;
+    }
+    super.altTextFinish();
+  }
+
   #getBitmapFetched(data, fromId = false) {
     if (!data) {
       this.remove();
@@ -117,7 +123,13 @@ class StampEditor extends AnnotationEditor {
   #getBitmapDone() {
     this.#bitmapPromise = null;
     this._uiManager.enableWaiting(false);
-    if (this.#canvas) {
+    if (!this.#canvas) {
+      return;
+    }
+    if (this._uiManager.useNewAltTextFlow && this.#bitmap) {
+      this._editToolbar.hide();
+      this._uiManager.editAltText(this, /* firstTime = */ true);
+    } else {
       this.div.focus();
     }
   }
@@ -329,7 +341,9 @@ class StampEditor extends AnnotationEditor {
     this._uiManager.enableWaiting(false);
     const canvas = (this.#canvas = document.createElement("canvas"));
     div.append(canvas);
-    div.hidden = false;
+    if (!this._uiManager.useNewAltTextFlow) {
+      div.hidden = false;
+    }
     this.#drawBitmap(width, height);
     this.#createObserver();
     if (!this.#hasBeenAddedInUndoStack) {
@@ -346,6 +360,77 @@ class StampEditor extends AnnotationEditor {
     if (this.#bitmapFileName) {
       canvas.setAttribute("aria-label", this.#bitmapFileName);
     }
+  }
+
+  copyCanvas(maxDimension, createImageData = false) {
+    const { width: bitmapWidth, height: bitmapHeight } = this.#bitmap;
+    const canvas = document.createElement("canvas");
+
+    let bitmap = this.#bitmap;
+    let width = bitmapWidth,
+      height = bitmapHeight;
+    if (bitmapWidth > maxDimension || bitmapHeight > maxDimension) {
+      const ratio = Math.min(
+        maxDimension / bitmapWidth,
+        maxDimension / bitmapHeight
+      );
+      width = Math.floor(bitmapWidth * ratio);
+      height = Math.floor(bitmapHeight * ratio);
+
+      if (!this.#isSvg) {
+        bitmap = this.#scaleBitmap(width, height);
+      }
+    }
+
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d", {
+      willReadFrequently: true,
+    });
+    ctx.filter = this._uiManager.hcmFilter;
+
+    if (createImageData && this._uiManager.hcmFilter !== "none") {
+      const offscreen = new OffscreenCanvas(width, height);
+      const offscreenCtx = offscreen.getContext("2d", {
+        willReadFrequently: true,
+      });
+      offscreenCtx.drawImage(
+        bitmap,
+        0,
+        0,
+        bitmap.width,
+        bitmap.height,
+        0,
+        0,
+        width,
+        height
+      );
+      const data = offscreenCtx.getImageData(0, 0, width, height).data;
+      ctx.drawImage(offscreen, 0, 0);
+
+      return { canvas, imageData: { width, height, data } };
+    }
+
+    ctx.drawImage(
+      bitmap,
+      0,
+      0,
+      bitmap.width,
+      bitmap.height,
+      0,
+      0,
+      width,
+      height
+    );
+    let imageData = null;
+    if (createImageData) {
+      imageData = {
+        width,
+        height,
+        data: ctx.getImageData(0, 0, width, height).data,
+      };
+    }
+    return { canvas, imageData };
   }
 
   /**
@@ -425,43 +510,6 @@ class StampEditor extends AnnotationEditor {
     return bitmap;
   }
 
-  async #mlGuessAltText(bitmap, width, height) {
-    if (this.#hasMLBeenQueried) {
-      return;
-    }
-    this.#hasMLBeenQueried = true;
-    const isMLEnabled = await this._uiManager.isMLEnabledFor("altText");
-    if (!isMLEnabled || this.hasAltText()) {
-      return;
-    }
-    const offscreen = new OffscreenCanvas(width, height);
-    const ctx = offscreen.getContext("2d", { willReadFrequently: true });
-    ctx.drawImage(
-      bitmap,
-      0,
-      0,
-      bitmap.width,
-      bitmap.height,
-      0,
-      0,
-      width,
-      height
-    );
-    const response = await this._uiManager.mlGuess({
-      service: "moz-image-to-text",
-      request: {
-        data: ctx.getImageData(0, 0, width, height).data,
-        width,
-        height,
-        channels: 4,
-      },
-    });
-    const altText = response?.output || "";
-    if (this.parent && altText && !this.hasAltText()) {
-      this.altTextData = { altText, decorative: false };
-    }
-  }
-
   #drawBitmap(width, height) {
     width = Math.ceil(width);
     height = Math.ceil(height);
@@ -474,8 +522,6 @@ class StampEditor extends AnnotationEditor {
     const bitmap = this.#isSvg
       ? this.#bitmap
       : this.#scaleBitmap(width, height);
-
-    this.#mlGuessAltText(bitmap, width, height);
 
     const ctx = canvas.getContext("2d");
     ctx.filter = this._uiManager.hcmFilter;
@@ -616,11 +662,11 @@ class StampEditor extends AnnotationEditor {
       // of this annotation and the clipboard doesn't support ImageBitmaps,
       // hence we serialize the bitmap to a data url.
       serialized.bitmapUrl = this.#serializeBitmap(/* toUrl = */ true);
-      serialized.accessibilityData = this.altTextData;
+      serialized.accessibilityData = this.serializeAltText(true);
       return serialized;
     }
 
-    const { decorative, altText } = this.altTextData;
+    const { decorative, altText } = this.serializeAltText(false);
     if (!decorative && altText) {
       serialized.accessibilityData = { type: "Figure", alt: altText };
     }

@@ -56,8 +56,46 @@ class MLManager {
     return null;
   }
 
-  async guess() {
+  isReady(_name) {
+    return false;
+  }
+
+  guess(_data) {}
+
+  toggleService(_name, _enabled) {}
+
+  static getFakeMLManager(options) {
+    return new FakeMLManager(options);
+  }
+}
+
+class FakeMLManager {
+  constructor({ enableGuessAltText }) {
+    this.enableGuessAltText = enableGuessAltText;
+  }
+
+  async isEnabledFor(_name) {
+    return this.enableGuessAltText;
+  }
+
+  async deleteModel(_service) {
     return null;
+  }
+
+  isReady(_name) {
+    return true;
+  }
+
+  guess({ request: { data } }) {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve(data ? { output: "Fake alt text" } : { error: true });
+      }, 3000);
+    });
+  }
+
+  toggleService(_name, enabled) {
+    this.enableGuessAltText = enabled;
   }
 }
 

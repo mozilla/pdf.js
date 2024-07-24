@@ -851,12 +851,20 @@ class AnnotationEditorUIManager {
     }
   }
 
+  hasMLManager() {
+    return !!this.#mlManager;
+  }
+
   async mlGuess(data) {
     return this.#mlManager?.guess(data) || null;
   }
 
   async isMLEnabledFor(name) {
     return !!(await this.#mlManager?.isEnabledFor(name));
+  }
+
+  get mlManager() {
+    return this.#mlManager;
   }
 
   get useNewAltTextFlow() {
@@ -912,8 +920,8 @@ class AnnotationEditorUIManager {
     this.#mainHighlightColorPicker = colorPicker;
   }
 
-  editAltText(editor) {
-    this.#altTextManager?.editAltText(this, editor);
+  editAltText(editor, firstTime = false) {
+    this.#altTextManager?.editAltText(this, editor, firstTime);
   }
 
   switchToMode(mode, callback) {
