@@ -71,6 +71,7 @@ See https://github.com/adobe-type-tools/cmap-resources
           "web-annotation_editor_params": "./annotation_editor_params.js",
           "web-download_manager": "./download_manager.js",
           "web-external_services": "./genericcom.js",
+          "web-new_alt_text_manager": "./new_alt_text_manager.js",
           "web-null_l10n": "./genericl10n.js",
           "web-pdf_attachment_viewer": "./pdf_attachment_viewer.js",
           "web-pdf_cursor_tools": "./pdf_cursor_tools.js",
@@ -550,6 +551,48 @@ See https://github.com/adobe-type-tools/cmap-resources
             </div>
           </div>
         </dialog>
+        <dialog class="dialog newAltText" id="newAltTextDialog" aria-labelledby="newAltTextTitle" aria-describedby="newAltTextDescription" tabindex="0">
+          <div id="newAltTextContainer" class="mainContainer">
+            <div class="title">
+              <span id="newAltTextTitle" data-l10n-id="pdfjs-editor-new-alt-text-dialog-edit-label" role="sectionhead" tabindex="0">Edit alt text (image description)</span>
+            </div>
+            <div id="mainContent">
+              <div id="descriptionAndSettings">
+                <div id="descriptionInstruction">
+                  <div id="newAltTextDescriptionContainer">
+                    <div class="altTextSpinner" role="status" aria-live="polite"></div>
+                    <textarea id="newAltTextDescriptionTextarea" placeholder="Write your description here…" aria-labelledby="descriptionAreaLabel" data-l10n-id="pdfjs-editor-new-alt-text-textarea" tabindex="0"></textarea>
+                  </div>
+                  <span id="newAltTextDescription" role="note" data-l10n-id="pdfjs-editor-new-alt-text-description">Short description for people who can’t see the image or when the image doesn’t load.</span>
+                  <div id="newAltTextDisclaimer" role="note"><span data-l10n-id="pdfjs-editor-new-alt-text-disclaimer">This alt text was created automatically.</span> <a href="https://support.mozilla.org/en-US/kb/pdf-alt-text" target="_blank" rel="noopener noreferrer" id="newAltTextLearnMore" data-l10n-id="pdfjs-editor-new-alt-text-disclaimer-learn-more-url" tabindex="0">Learn more</a></div>
+                </div>
+                <div id="newAltTextCreateAutomatically" class="toggler">
+                  <button id="newAltTextCreateAutomaticallyButton" class="toggle-button" aria-pressed="true" tabindex="0"></button>
+                  <label for="newAltTextCreateAutomaticallyButton" class="togglerLabel" data-l10n-id="pdfjs-editor-new-alt-text-create-automatically-button-label">Create alt text automatically</label>
+                </div>
+                <div id="newAltTextDownloadModel" class="hidden">
+                  <span id="newAltTextDownloadModelDescription" data-l10n-id="pdfjs-editor-new-alt-text-ai-model-downloading-progress" data-l10n-args='{ "totalSize": 0, "downloadedSize": 0 }'>Downloading alt text AI model (0 of 0 MB)</span>
+                </div>
+              </div>
+              <div id="newAltTextImagePreview"></div>
+            </div>
+            <div id="newAltTextError" class="messageBar">
+              <div>
+                <div>
+                  <span class="title" data-l10n-id="pdfjs-editor-new-alt-text-error-title">Couldn’t create alt text automatically</span>
+                  <span  class="description" data-l10n-id="pdfjs-editor-new-alt-text-error-description">Please write your own alt text or try again later.</span>
+                </div>
+                <button id="newAltTextCloseButton" class="closeButton" tabindex="0" title="Close"><span data-l10n-id="pdfjs-editor-new-alt-text-error-close-button">Close</span></button>
+              </div>
+            </div>
+            <div id="newAltTextButtons" class="dialogButtonsGroup">
+              <button id="newAltTextCancel" type="button" class="secondaryButton hidden" tabindex="0"><span data-l10n-id="pdfjs-editor-alt-text-cancel-button">Cancel</span></button>
+              <button id="newAltTextNotNow" type="button" class="secondaryButton" tabindex="0"><span data-l10n-id="pdfjs-editor-new-alt-text-not-now-button">Not now</span></button>
+              <button id="newAltTextSave" type="button" class="primaryButton" tabindex="0"><span data-l10n-id="pdfjs-editor-alt-text-save-button">Save</span></button>
+            </div>
+          </div>
+        </dialog>
+
 <!--#if !MOZCENTRAL-->
         <dialog id="printServiceDialog" style="min-width: 200px;">
           <div class="row">

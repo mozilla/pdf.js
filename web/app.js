@@ -64,6 +64,7 @@ import { AltTextManager } from "web-alt_text_manager";
 import { AnnotationEditorParams } from "web-annotation_editor_params";
 import { CaretBrowsingMode } from "./caret_browsing.js";
 import { DownloadManager } from "web-download_manager";
+import { NewAltTextManager } from "web-new_alt_text_manager";
 import { OverlayManager } from "./overlay_manager.js";
 import { PasswordPrompt } from "./password_prompt.js";
 import { PDFAttachmentViewer } from "web-pdf_attachment_viewer";
@@ -204,6 +205,14 @@ const PDFViewerApplication = {
       }
       if (mode) {
         document.documentElement.classList.add(mode);
+      }
+      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+        if (AppOptions.get("enableFakeMLManager")) {
+          this.mlManager =
+            MLManager.getFakeMLManager?.({
+              enableGuessAltText: AppOptions.get("enableGuessAltText"),
+            }) || null;
+        }
       }
     } else if (AppOptions.get("enableAltText")) {
       // We want to load the image-to-text AI engine as soon as possible.
@@ -433,14 +442,21 @@ const PDFViewerApplication = {
             foreground: AppOptions.get("pageColorsForeground"),
           }
         : null;
-    const altTextManager = appConfig.altTextDialog
-      ? new AltTextManager(
-          appConfig.altTextDialog,
-          container,
-          this.overlayManager,
-          eventBus
-        )
-      : null;
+    let altTextManager;
+    if (AppOptions.get("enableUpdatedAddImage")) {
+      altTextManager = appConfig.newAltTextDialog
+        ? new NewAltTextManager(appConfig.newAltTextDialog, this.overlayManager)
+        : null;
+    } else {
+      altTextManager = appConfig.altTextDialog
+        ? new AltTextManager(
+            appConfig.altTextDialog,
+            container,
+            this.overlayManager,
+            eventBus
+          )
+        : null;
+    }
 
     const enableHWA = AppOptions.get("enableHWA");
     const pdfViewer = new PDFViewer({

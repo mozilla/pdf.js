@@ -310,6 +310,8 @@ class FirefoxScripting {
 class MLManager {
   #enabled = null;
 
+  #ready = null;
+
   eventBus = null;
 
   constructor(options) {
@@ -318,6 +320,10 @@ class MLManager {
 
   async isEnabledFor(name) {
     return !!(await this.#enabled?.get(name));
+  }
+
+  isReady(name) {
+    return this.#ready?.has(name) ?? false;
   }
 
   deleteModel(service) {
@@ -338,14 +344,33 @@ class MLManager {
     this.altTextLearnMoreUrl = altTextLearnMoreUrl;
   }
 
+  async toggleService(name, enabled) {
+    if (name !== "altText") {
+      return;
+    }
+
+    if (enabled) {
+      await this.#loadAltTextEngine(false);
+    } else {
+      this.#enabled?.delete(name);
+      this.#ready?.delete(name);
+    }
+  }
+
   async #loadAltTextEngine(listenToProgress) {
     if (this.#enabled?.has("altText")) {
       // We already have a promise for the "altText" service.
       return;
     }
+    this.#ready ||= new Set();
     const promise = FirefoxCom.requestAsync("loadAIEngine", {
       service: "moz-image-to-text",
       listenToProgress,
+    }).then(ok => {
+      if (ok) {
+        this.#ready.add("altText");
+      }
+      return ok;
     });
     (this.#enabled ||= new Map()).set("altText", promise);
     if (listenToProgress) {
