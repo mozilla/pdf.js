@@ -613,6 +613,10 @@ function getNewAnnotationsMap(annotationStorage) {
   return newAnnotationsByPage.size > 0 ? newAnnotationsByPage : null;
 }
 
+function stringToAsciiOrUTF16BE(str) {
+  return isAscii(str) ? str : stringToUTF16String(str, /* bigEndian = */ true);
+}
+
 function isAscii(str) {
   return /^[\x00-\x7F]*$/.test(str);
 }
@@ -699,6 +703,7 @@ export {
   readUint16,
   readUint32,
   recoverJsURL,
+  stringToAsciiOrUTF16BE,
   stringToUTF16HexString,
   stringToUTF16String,
   toRomanNumerals,

@@ -16,6 +16,7 @@
 import { AnnotationPrefix, stringToPDFString, warn } from "../shared/util.js";
 import { Dict, isName, Name, Ref, RefSetCache } from "./primitives.js";
 import { NumberTree } from "./name_number_tree.js";
+import { stringToAsciiOrUTF16BE } from "./core_utils.js";
 import { writeObject } from "./writer.js";
 
 const MAX_DEPTH = 40;
@@ -316,19 +317,19 @@ class StructTreeRoot {
         tagDict.set("S", Name.get(type));
 
         if (title) {
-          tagDict.set("T", title);
+          tagDict.set("T", stringToAsciiOrUTF16BE(title));
         }
         if (lang) {
           tagDict.set("Lang", lang);
         }
         if (alt) {
-          tagDict.set("Alt", alt);
+          tagDict.set("Alt", stringToAsciiOrUTF16BE(alt));
         }
         if (expanded) {
-          tagDict.set("E", expanded);
+          tagDict.set("E", stringToAsciiOrUTF16BE(expanded));
         }
         if (actualText) {
-          tagDict.set("ActualText", actualText);
+          tagDict.set("ActualText", stringToAsciiOrUTF16BE(actualText));
         }
 
         await this.#updateParentTag({

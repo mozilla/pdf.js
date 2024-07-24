@@ -2524,6 +2524,21 @@ describe("api", function () {
           alt: "Hello World",
         },
       });
+      // Test if an alt-text using utf-16 is correctly handled.
+      // The Mahjong tile code is 0x1F000.
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_1", {
+        annotationType: AnnotationEditorType.STAMP,
+        rect: [128, 400, 148, 420],
+        rotation: 0,
+        bitmap: structuredClone(bitmap),
+        bitmapId: "im2",
+        pageIndex: 0,
+        structTreeParentId: "p3R_mc14",
+        accessibilityData: {
+          type: "Figure",
+          alt: "Γειά σου with a Mahjong tile 🀀",
+        },
+      });
 
       const data = await pdfDoc.saveDocument();
       await loadingTask.destroy();
@@ -2532,7 +2547,7 @@ describe("api", function () {
       pdfDoc = await loadingTask.promise;
       const page = await pdfDoc.getPage(1);
       const tree = await page.getStructTree();
-      const [predecessor, leaf] = findNode(
+      let [predecessor, leaf] = findNode(
         null,
         tree,
         0,
@@ -2558,6 +2573,36 @@ describe("api", function () {
           },
         ],
         alt: "Hello World",
+      });
+
+      let count = 0;
+      [predecessor, leaf] = findNode(null, tree, 0, node => {
+        if (node.role === "Figure") {
+          count += 1;
+          return count === 2;
+        }
+        return false;
+      });
+
+      expect(predecessor).toEqual({
+        role: "Span",
+        children: [
+          {
+            type: "content",
+            id: "p3R_mc14",
+          },
+        ],
+      });
+
+      expect(leaf).toEqual({
+        role: "Figure",
+        children: [
+          {
+            type: "annotation",
+            id: "pdfjs_internal_id_481R",
+          },
+        ],
+        alt: "Γειά σου with a Mahjong tile 🀀",
       });
 
       await loadingTask.destroy();
