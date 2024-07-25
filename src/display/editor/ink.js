@@ -67,6 +67,8 @@ class InkEditor extends AnnotationEditor {
 
   static _editorType = AnnotationEditorType.INK;
 
+  #isDrawingStraightLine = false;
+
   constructor(params) {
     super({ ...params, name: "inkEditor" });
     this.color = params.color || null;
@@ -393,6 +395,8 @@ class InkEditor extends AnnotationEditor {
       this.opacity ??= InkEditor._defaultOpacity;
     }
     this.currentPath.push([x, y]);
+    this.#currentPath2D = new Path2D();
+    this.#currentPath2D.moveTo(x, y);
     this.#hasSomethingToDraw = false;
     this.#setStroke();
 
@@ -411,34 +415,33 @@ class InkEditor extends AnnotationEditor {
    * @param {number} y
    */
   #draw(x, y) {
-    const [lastX, lastY] = this.currentPath.at(-1);
-    if (this.currentPath.length > 1 && x === lastX && y === lastY) {
-      return;
+
+    if (this.#isDrawingStraightLine) {
+      const [startX, startY] = this.currentPath[0];
+      this.currentPath = [[startX, startY], [x, y]];
+      this.#currentPath2D = new Path2D();
+      this.#currentPath2D.moveTo(startX, startY);
+      this.#currentPath2D.lineTo(x, y);
+    }  else {
+      const [lastX, lastY] = this.currentPath.at(-1);
+      if (this.currentPath.length > 1 && x === lastX && y === lastY) {
+        return;
+      }
+      this.currentPath.push([x, y]);
+      if (this.currentPath.length > 2) {
+        this.#makeBezierCurve(
+          this.#currentPath2D,
+          ...this.currentPath.at(-3),
+          ...this.currentPath.at(-2),
+          x,
+          y
+        );
+      } else {
+        this.#currentPath2D.lineTo(x, y);
+      }
     }
-    const currentPath = this.currentPath;
-    let path2D = this.#currentPath2D;
-    currentPath.push([x, y]);
     this.#hasSomethingToDraw = true;
-
-    if (currentPath.length <= 2) {
-      path2D.moveTo(...currentPath[0]);
-      path2D.lineTo(x, y);
-      return;
-    }
-
-    if (currentPath.length === 3) {
-      this.#currentPath2D = path2D = new Path2D();
-      path2D.moveTo(...currentPath[0]);
-    }
-
-    this.#makeBezierCurve(
-      path2D,
-      ...currentPath.at(-3),
-      ...currentPath.at(-2),
-      x,
-      y
-    );
-  }
+}
 
   #endPath() {
     if (this.currentPath.length === 0) {
@@ -460,8 +463,8 @@ class InkEditor extends AnnotationEditor {
     y = Math.min(Math.max(y, 0), this.canvas.height);
 
     this.#draw(x, y);
-    this.#endPath();
-
+    // this.#endPath();
+    // this.#isDrawingStraightLine = false;
     // Interpolate the path entered by the user with some
     // Bezier's curves in order to have a smoother path and
     // to reduce the data size used to draw it in the PDF.
@@ -470,8 +473,8 @@ class InkEditor extends AnnotationEditor {
       bezier = this.#generateBezierPoints();
     } else {
       // We have only one point finally.
-      const xy = [x, y];
-      bezier = [[xy, xy.slice(), xy.slice(), xy]];
+      const [x, y] = this.currentPath[0];
+      bezier = [[[x, y], [x, y], [x, y], [x, y]]];
     }
     const path2D = this.#currentPath2D;
     const currentPath = this.currentPath;
@@ -501,6 +504,10 @@ class InkEditor extends AnnotationEditor {
     };
 
     this.addCommands({ cmd, undo, mustExec: true });
+    this.#isDrawingStraightLine = false;
+    
+     // Re-enable selection
+    setTimeout(() => this.parent.setEditingState(true), 0);
   }
 
   #drawPoints() {
@@ -557,8 +564,18 @@ class InkEditor extends AnnotationEditor {
 
   #generateBezierPoints() {
     const path = this.currentPath;
-    if (path.length <= 2) {
-      return [[path[0], path[0], path.at(-1), path.at(-1)]];
+
+    if (!path || path.length === 0) {
+      return [];
+    }
+    
+    if (path.length === 1) {
+      // If we only have one point, duplicate it to create a tiny line
+      return [[path[0], path[0], path[0], path[0]]];
+    }
+
+    if (path.length === 2 && this.#isDrawingStraightLine)  {
+      return [[path[0], path[0], path[1], path[1]]];
     }
 
     const bezierPoints = [];
@@ -581,6 +598,7 @@ class InkEditor extends AnnotationEditor {
       [x0, y0] = [x3, y3];
     }
 
+    if (path.length > 2) {
     const [x1, y1] = path[i];
     const [x2, y2] = path[i + 1];
 
@@ -589,6 +607,7 @@ class InkEditor extends AnnotationEditor {
     const control2 = [x2 + (2 * (x1 - x2)) / 3, y2 + (2 * (y1 - y2)) / 3];
 
     bezierPoints.push([[x0, y0], control1, control2, [x2, y2]]);
+    }
     return bezierPoints;
   }
 
@@ -664,16 +683,18 @@ class InkEditor extends AnnotationEditor {
 
     // We want to draw on top of any other editors.
     // Since it's the last child, there's no need to give it a higher z-index.
-    this.setInForeground();
+    // this.setInForeground();
 
     event.preventDefault();
+    event.stopPropagation();
 
     if (!this.div.contains(document.activeElement)) {
       this.div.focus({
         preventScroll: true /* See issue #17327 */,
       });
     }
-
+    this.#isDrawingStraightLine = event.shiftKey || event.ctrlKey;
+    this.parent.setEditingState(false);
     this.#startDrawing(event.offsetX, event.offsetY);
   }
 
