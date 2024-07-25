@@ -571,18 +571,7 @@ class AppOptions {
   }
 
   static set(name, value) {
-    const defaultOpt = defaultOptions[name];
-
-    if (
-      !defaultOpt ||
-      !(
-        typeof value === typeof defaultOpt.value ||
-        Type[(typeof value).toUpperCase()] & defaultOpt.type
-      )
-    ) {
-      return;
-    }
-    userOptions.set(name, value);
+    this.setAll({ [name]: value });
   }
 
   static setAll(options, prefs = false) {
@@ -601,15 +590,16 @@ class AppOptions {
       ) {
         continue;
       }
-      if (prefs) {
-        const { kind } = defaultOpt;
+      const { kind } = defaultOpt;
 
-        if (!(kind & OptionKind.BROWSER || kind & OptionKind.PREFERENCE)) {
-          continue;
-        }
-        if (this.eventBus && kind & OptionKind.EVENT_DISPATCH) {
-          (events ||= new Map()).set(name, userOpt);
-        }
+      if (
+        prefs &&
+        !(kind & OptionKind.BROWSER || kind & OptionKind.PREFERENCE)
+      ) {
+        continue;
+      }
+      if (this.eventBus && kind & OptionKind.EVENT_DISPATCH) {
+        (events ||= new Map()).set(name, userOpt);
       }
       userOptions.set(name, userOpt);
     }
