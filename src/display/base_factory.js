@@ -111,8 +111,7 @@ class BaseCMapReaderFactory {
   async fetch({ name }) {
     if (!this.baseUrl) {
       throw new Error(
-        'The CMap "baseUrl" parameter must be specified, ensure that ' +
-          'the "cMapUrl" and "cMapPacked" API parameters are provided.'
+        "Ensure that the `cMapUrl` and `cMapPacked` API parameters are provided."
       );
     }
     if (!name) {
@@ -149,8 +148,7 @@ class BaseStandardFontDataFactory {
   async fetch({ filename }) {
     if (!this.baseUrl) {
       throw new Error(
-        'The standard font "baseUrl" parameter must be specified, ensure that ' +
-          'the "standardFontDataUrl" API parameter is provided.'
+        "Ensure that the `standardFontDataUrl` API parameter is provided."
       );
     }
     if (!filename) {
