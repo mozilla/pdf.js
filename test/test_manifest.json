@@ -16,6 +16,14 @@
     "type": "other"
   },
   {
+    "id": "issue18503",
+    "file": "pdfs/issue18503.pdf",
+    "md5": "b6c7c8db3505d07ce8eabe6712641a94",
+    "rounds": 1,
+    "link": true,
+    "type": "other"
+  },
+  {
     "id": "filled-background-range",
     "file": "pdfs/filled-background.pdf",
     "md5": "2e3120255d9c3e79b96d2543b12d2589",
