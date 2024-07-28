@@ -173,7 +173,7 @@ async function getSpanRectFromText(page, pageNumber, text) {
   return page.evaluate(
     (number, content) => {
       for (const el of document.querySelectorAll(
-        `.page[data-page-number="${number}"] > .textLayer > span`
+        `.page[data-page-number="${number}"] > .textLayer span:not(:has(> span))`
       )) {
         if (el.textContent === content) {
           const { x, y, width, height } = el.getBoundingClientRect();
