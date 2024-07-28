@@ -126,6 +126,10 @@
     }
   }
 
+  .textLayer.selecting ~ & section {
+    pointer-events: none;
+  }
+
   :is(.linkAnnotation, .buttonWidgetAnnotation.pushButton) > a {
     position: absolute;
     font-size: 1em;

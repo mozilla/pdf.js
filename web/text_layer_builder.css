@@ -118,9 +118,9 @@
     z-index: 0;
     cursor: default;
     user-select: none;
+  }
 
-    &.active {
-      top: 0;
-    }
+  &.selecting .endOfContent {
+    top: 0;
   }
 }
