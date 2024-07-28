@@ -671,6 +671,9 @@ class StructTreePage {
       warn("StructTree MAX_DEPTH reached.");
       return null;
     }
+    if (!(dict instanceof Dict)) {
+      return null;
+    }
 
     if (map.has(dict)) {
       return map.get(dict);
