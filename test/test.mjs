@@ -904,6 +904,10 @@ async function startBrowser({
   const printFile = path.join(tempDir, "print.pdf");
 
   if (browserName === "chrome") {
+    // Run tests with the CDP protocol for Chrome only given that the Linux bot
+    // crashes with timeouts or OOM if WebDriver BiDi is used (issue #17961).
+    options.protocol = "cdp";
+
     // avoid crash
     options.args = ["--no-sandbox", "--disable-setuid-sandbox"];
     // silent printing in a pdf
