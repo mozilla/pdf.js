@@ -3755,6 +3755,186 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       await loadingTask.destroy();
     });
 
+    it("gets corrupt structure tree with non-dictionary nodes (issue 18503)", async function () {
+      if (isNodeJS) {
+        pending("Linked test-cases are not supported in Node.js.");
+      }
+
+      const loadingTask = getDocument(buildGetDocumentParams("issue18503.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const tree = await pdfPage.getStructTree();
+
+      expect(tree).toEqual({
+        role: "Root",
+        children: [
+          {
+            role: "Document",
+            lang: "en-US",
+            children: [
+              {
+                role: "Sect",
+                children: [
+                  {
+                    role: "P",
+                    children: [{ type: "content", id: "p406R_mc2" }],
+                  },
+                  {
+                    role: "Figure",
+                    children: [{ type: "content", id: "p406R_mc11" }],
+                    alt: "d h c s logo",
+                  },
+                  {
+                    role: "Figure",
+                    children: [{ type: "content", id: "p406R_mc1" }],
+                    alt: "Great Seal of the State of California",
+                  },
+                  {
+                    role: "P",
+                    children: [
+                      { type: "content", id: "p406R_mc3" },
+                      { type: "content", id: "p406R_mc5" },
+                      { type: "content", id: "p406R_mc7" },
+                    ],
+                  },
+                  {
+                    role: "P",
+                    children: [
+                      { type: "content", id: "p406R_mc4" },
+                      { type: "content", id: "p406R_mc6" },
+                    ],
+                  },
+                  {
+                    role: "P",
+                    children: [{ type: "content", id: "p406R_mc12" }],
+                  },
+                  {
+                    role: "P",
+                    children: [{ type: "content", id: "p406R_mc13" }],
+                  },
+                  {
+                    role: "P",
+                    children: [
+                      {
+                        role: "Span",
+                        children: [
+                          { type: "content", id: "p406R_mc15" },
+                          {
+                            role: "Note",
+                            children: [{ type: "content", id: "p406R_mc32" }],
+                          },
+                        ],
+                      },
+                      { type: "content", id: "p406R_mc14" },
+                      { type: "content", id: "p406R_mc16" },
+                    ],
+                  },
+                  {
+                    role: "H1",
+                    children: [{ type: "content", id: "p406R_mc17" }],
+                  },
+                ],
+              },
+              {
+                role: "Sect",
+                children: [
+                  {
+                    role: "H2",
+                    children: [{ type: "content", id: "p406R_mc18" }],
+                  },
+                  {
+                    role: "P",
+                    children: [{ type: "content", id: "p406R_mc19" }],
+                  },
+                ],
+              },
+              {
+                role: "Sect",
+                children: [
+                  {
+                    role: "H2",
+                    children: [{ type: "content", id: "p406R_mc20" }],
+                  },
+                  {
+                    role: "P",
+                    children: [
+                      { type: "content", id: "p406R_mc21" },
+                      {
+                        role: "Span",
+                        children: [
+                          { type: "content", id: "p406R_mc23" },
+                          {
+                            role: "Note",
+                            children: [
+                              { type: "content", id: "p406R_mc33" },
+                              {
+                                role: "Link",
+                                children: [
+                                  { type: "object", id: "432R" },
+                                  { type: "content", id: "p406R_mc34" },
+                                ],
+                              },
+                            ],
+                          },
+                        ],
+                      },
+                      { type: "content", id: "p406R_mc22" },
+                      { type: "content", id: "p406R_mc24" },
+                      { type: "content", id: "p406R_mc25" },
+                      { type: "content", id: "p406R_mc26" },
+                      {
+                        role: "Span",
+                        children: [
+                          { type: "content", id: "p406R_mc28" },
+                          {
+                            role: "Note",
+                            children: [
+                              { type: "content", id: "p406R_mc35" },
+                              {
+                                role: "Link",
+                                children: [
+                                  { type: "object", id: "433R" },
+                                  { type: "content", id: "p406R_mc36" },
+                                ],
+                              },
+                              { type: "content", id: "p406R_mc37" },
+                            ],
+                          },
+                        ],
+                      },
+                      { type: "content", id: "p406R_mc29" },
+                      { type: "content", id: "p406R_mc27" },
+                      { type: "content", id: "p406R_mc30" },
+                    ],
+                  },
+                  {
+                    role: "P",
+                    children: [{ type: "content", id: "p406R_mc31" }],
+                  },
+                  {
+                    role: "P",
+                    children: [
+                      { type: "content", id: "p406R_mc8" },
+                      { type: "content", id: "p406R_mc9" },
+                      {
+                        role: "Link",
+                        children: [
+                          { type: "object", id: "434R" },
+                          { type: "content", id: "p406R_mc10" },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      await loadingTask.destroy();
+    });
+
     it("gets operator list", async function () {
       const operatorList = await page.getOperatorList();
 
