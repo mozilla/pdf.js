@@ -43,7 +43,6 @@ import {
   PDFDocumentProxy,
   PDFPageProxy,
   PDFWorker,
-  PDFWorkerUtil,
   RenderTask,
 } from "../../src/display/api.js";
 import {
@@ -928,6 +927,31 @@ describe("api", function () {
       const workerSrc = PDFWorker.workerSrc;
       expect(typeof workerSrc).toEqual("string");
       expect(workerSrc).toEqual(GlobalWorkerOptions.workerSrc);
+    });
+
+    describe("isSameOrigin", function () {
+      it("handles invalid base URLs", function () {
+        // The base URL is not valid.
+        expect(PDFWorker._isSameOrigin("/foo", "/bar")).toEqual(false);
+
+        // The base URL has no origin.
+        expect(PDFWorker._isSameOrigin("blob:foo", "/bar")).toEqual(false);
+      });
+
+      it("correctly checks if the origin of both URLs matches", function () {
+        expect(
+          PDFWorker._isSameOrigin(
+            "https://www.mozilla.org/foo",
+            "https://www.mozilla.org/bar"
+          )
+        ).toEqual(true);
+        expect(
+          PDFWorker._isSameOrigin(
+            "https://www.mozilla.org/foo",
+            "https://www.example.com/bar"
+          )
+        ).toEqual(false);
+      });
     });
   });
 
@@ -4884,34 +4908,5 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         await loadingTask.destroy();
       }
     );
-  });
-
-  describe("PDFWorkerUtil", function () {
-    describe("isSameOrigin", function () {
-      const { isSameOrigin } = PDFWorkerUtil;
-
-      it("handles invalid base URLs", function () {
-        // The base URL is not valid.
-        expect(isSameOrigin("/foo", "/bar")).toEqual(false);
-
-        // The base URL has no origin.
-        expect(isSameOrigin("blob:foo", "/bar")).toEqual(false);
-      });
-
-      it("correctly checks if the origin of both URLs matches", function () {
-        expect(
-          isSameOrigin(
-            "https://www.mozilla.org/foo",
-            "https://www.mozilla.org/bar"
-          )
-        ).toEqual(true);
-        expect(
-          isSameOrigin(
-            "https://www.mozilla.org/foo",
-            "https://www.example.com/bar"
-          )
-        ).toEqual(false);
-      });
-    });
   });
 });
