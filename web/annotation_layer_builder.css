@@ -115,7 +115,7 @@
   section {
     position: absolute;
     text-align: initial;
-    pointer-events: auto;
+    pointer-events: none;
     box-sizing: border-box;
     transform-origin: 0 0;
 
