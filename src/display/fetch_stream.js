@@ -127,13 +127,17 @@ class PDFFetchStreamReader {
     this._headers = createHeaders(this._stream.httpHeaders);
 
     const url = source.url;
-    fetch(
-      url,
-      createFetchOptions(
+    const options = createFetchOptions(
         this._headers,
         this._withCredentials,
         this._abortController
-      )
+    );
+	
+	options.method = "HEAD";
+	
+    fetch(
+      url,
+      options
     )
       .then(response => {
         if (!validateResponseStatus(response.status)) {
