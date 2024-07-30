@@ -162,6 +162,32 @@ function getViewerConfiguration() {
       cancelButton: document.getElementById("altTextCancel"),
       saveButton: document.getElementById("altTextSave"),
     },
+    newAltTextDialog: {
+      dialog: document.getElementById("newAltTextDialog"),
+      title: document.getElementById("newAltTextTitle"),
+      descriptionContainer: document.getElementById(
+        "newAltTextDescriptionContainer"
+      ),
+      textarea: document.getElementById("newAltTextDescriptionTextarea"),
+      disclaimer: document.getElementById("newAltTextDisclaimer"),
+      learnMore: document.getElementById("newAltTextLearnMore"),
+      imagePreview: document.getElementById("newAltTextImagePreview"),
+      createAutomatically: document.getElementById(
+        "newAltTextCreateAutomatically"
+      ),
+      createAutomaticallyButton: document.getElementById(
+        "newAltTextCreateAutomaticallyButton"
+      ),
+      downloadModel: document.getElementById("newAltTextDownloadModel"),
+      downloadModelDescription: document.getElementById(
+        "newAltTextDownloadModelDescription"
+      ),
+      error: document.getElementById("newAltTextError"),
+      errorCloseButton: document.getElementById("newAltTextCloseButton"),
+      cancelButton: document.getElementById("newAltTextCancel"),
+      notNowButton: document.getElementById("newAltTextNotNow"),
+      saveButton: document.getElementById("newAltTextSave"),
+    },
     annotationEditorParams: {
       editorFreeTextFontSize: document.getElementById("editorFreeTextFontSize"),
       editorFreeTextColor: document.getElementById("editorFreeTextColor"),

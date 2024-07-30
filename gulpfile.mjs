@@ -201,6 +201,7 @@ function createWebpackAlias(defines) {
     "web-annotation_editor_params": "web/annotation_editor_params.js",
     "web-download_manager": "",
     "web-external_services": "",
+    "web-new_alt_text_manager": "web/new_alt_text_manager.js",
     "web-null_l10n": "",
     "web-pdf_attachment_viewer": "web/pdf_attachment_viewer.js",
     "web-pdf_cursor_tools": "web/pdf_cursor_tools.js",
@@ -1097,6 +1098,7 @@ function buildComponents(defines, dir) {
     "web/images/loading-icon.gif",
     "web/images/altText_*.svg",
     "web/images/editor-toolbar-*.svg",
+    "web/images/messageBar_*.svg",
     "web/images/toolbarButton-{editorHighlight,menuArrow}.svg",
     "web/images/cursor-*.svg",
   ];

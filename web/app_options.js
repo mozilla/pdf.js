@@ -469,6 +469,11 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
     value: typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME") ? 2 : 0,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   };
+  defaultOptions.enableFakeMLManager = {
+    /** @type {boolean} */
+    value: true,
+    kind: OptionKind.VIEWER,
+  };
 }
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   defaultOptions.disablePreferences = {
