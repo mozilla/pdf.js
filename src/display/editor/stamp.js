@@ -384,12 +384,31 @@ class StampEditor extends AnnotationEditor {
 
     canvas.width = width;
     canvas.height = height;
-    const ctx = canvas.getContext("2d", {
-      willReadFrequently: true,
-    });
+    const ctx = canvas.getContext("2d");
     ctx.filter = this._uiManager.hcmFilter;
 
-    if (createImageData && this._uiManager.hcmFilter !== "none") {
+    // Add a checkerboard pattern as a background in case the image has some
+    // transparency.
+    let white = "white",
+      black = "#cfcfd8";
+    if (this._uiManager.hcmFilter !== "none") {
+      black = "black";
+    } else if (window.matchMedia?.("(prefers-color-scheme: dark)").matches) {
+      white = "#8f8f9d";
+      black = "#42414d";
+    }
+    const boxDim = 15;
+    const pattern = new OffscreenCanvas(boxDim * 2, boxDim * 2);
+    const patternCtx = pattern.getContext("2d");
+    patternCtx.fillStyle = white;
+    patternCtx.fillRect(0, 0, boxDim * 2, boxDim * 2);
+    patternCtx.fillStyle = black;
+    patternCtx.fillRect(0, 0, boxDim, boxDim);
+    patternCtx.fillRect(boxDim, boxDim, boxDim, boxDim);
+    ctx.fillStyle = ctx.createPattern(pattern, "repeat");
+    ctx.fillRect(0, 0, width, height);
+
+    if (createImageData) {
       const offscreen = new OffscreenCanvas(width, height);
       const offscreenCtx = offscreen.getContext("2d", {
         willReadFrequently: true,
@@ -422,15 +441,7 @@ class StampEditor extends AnnotationEditor {
       width,
       height
     );
-    let imageData = null;
-    if (createImageData) {
-      imageData = {
-        width,
-        height,
-        data: ctx.getImageData(0, 0, width, height).data,
-      };
-    }
-    return { canvas, imageData };
+    return { canvas, imageData: null };
   }
 
   /**
