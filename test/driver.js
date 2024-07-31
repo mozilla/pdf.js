@@ -610,7 +610,7 @@ class Driver {
 
         if (task.annotationStorage) {
           for (const annotation of Object.values(task.annotationStorage)) {
-            const { bitmapName } = annotation;
+            const { bitmapName, quadPoints } = annotation;
             if (bitmapName) {
               promise = promise.then(async doc => {
                 const response = await fetch(
@@ -642,6 +642,11 @@ class Driver {
 
                 return doc;
               });
+            }
+            if (quadPoints) {
+              // Just to ensure that the quadPoints are always a Float32Array
+              // like IRL (in order to avoid bugs like bug 1907958).
+              annotation.quadPoints = new Float32Array(quadPoints);
             }
           }
         }
