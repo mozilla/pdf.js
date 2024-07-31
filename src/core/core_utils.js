@@ -242,10 +242,19 @@ function isBooleanArray(arr, len) {
  * @returns {boolean}
  */
 function isNumberArray(arr, len) {
+  if (Array.isArray(arr)) {
+    return (
+      (len === null || arr.length === len) &&
+      arr.every(x => typeof x === "number")
+    );
+  }
+
+  // This check allows us to have typed arrays but not the
+  // BigInt64Array/BigUint64Array types (their elements aren't "number").
   return (
-    Array.isArray(arr) &&
-    (len === null || arr.length === len) &&
-    arr.every(x => typeof x === "number")
+    ArrayBuffer.isView(arr) &&
+    (arr.length === 0 || typeof arr[0] === "number") &&
+    (len === null || arr.length === len)
   );
 }
 
