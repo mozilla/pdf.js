@@ -5,6 +5,7 @@ body:
   - type: textarea
     attributes:
       label: Attach (recommended) or Link to PDF file
+      description: Without this information the issue may be closed without comment
     validations:
       required: true
 
