@@ -70,20 +70,57 @@ class MLManager {
 }
 
 class FakeMLManager {
-  constructor({ enableGuessAltText }) {
+  eventBus = null;
+
+  hasProgress = false;
+
+  constructor({ enableGuessAltText, enableAltTextModelDownload }) {
     this.enableGuessAltText = enableGuessAltText;
+    this.enableAltTextModelDownload = enableAltTextModelDownload;
   }
 
   async isEnabledFor(_name) {
     return this.enableGuessAltText;
   }
 
-  async deleteModel(_service) {
+  async deleteModel(_name) {
+    this.enableAltTextModelDownload = false;
     return null;
   }
 
+  async downloadModel(_name) {
+    // Simulate downloading the model but with progress.
+    // The progress can be seen in the new alt-text dialog.
+    this.hasProgress = true;
+
+    const { promise, resolve } = Promise.withResolvers();
+    const total = 1e8;
+    const end = 1.5 * total;
+    const increment = 5e6;
+    let loaded = 0;
+    const id = setInterval(() => {
+      loaded += increment;
+      if (loaded <= end) {
+        this.eventBus.dispatch("loadaiengineprogress", {
+          source: this,
+          detail: {
+            total,
+            totalLoaded: loaded,
+            finished: loaded + increment >= end,
+          },
+        });
+        return;
+      }
+      clearInterval(id);
+      this.hasProgress = false;
+      this.enableAltTextModelDownload = true;
+      resolve(true);
+    }, 900);
+    return promise;
+  }
+
   isReady(_name) {
-    return true;
+    return this.enableAltTextModelDownload;
   }
 
   guess({ request: { data } }) {

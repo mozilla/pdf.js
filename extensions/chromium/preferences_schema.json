@@ -59,6 +59,14 @@
       "type": "boolean",
       "default": true
     },
+    "enableAltTextModelDownload": {
+      "type": "boolean",
+      "default": true
+    },
+    "enableNewAltTextWhenAddingImage": {
+      "type": "boolean",
+      "default": true
+    },
     "altTextLearnMoreUrl": {
       "type": "string",
       "default": ""
