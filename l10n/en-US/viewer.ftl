@@ -446,7 +446,7 @@ pdfjs-editor-new-alt-text-error-close-button = Close
 #   $totalSize (Number) - the total size (in MB) of the AI model.
 #   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
 #   $percent (Number) - the percentage of the downloaded size.
-pdfjs-editor-new-alt-text-ai-model-downloading-progress =
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = Downloading alt text AI model ({ $downloadedSize } of { $totalSize } MB)
     .aria-valuemin = 0
     .aria-valuemax = { $totalSize }
     .aria-valuenow = { $downloadedSize }
@@ -465,3 +465,28 @@ pdfjs-editor-new-alt-text-to-review-button-label = Review alt text
 # Variables:
 #   $generatedAltText (String) - the generated alt-text.
 pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer = Created automatically: { $generatedAltText }
+
+## Image alt-text settings
+
+pdfjs-image-alt-text-settings-button =
+    .title = Image alt text settings
+pdfjs-image-alt-text-settings-button-label = Image alt text settings
+
+pdfjs-editor-alt-text-settings-dialog-label = Image alt text settings
+pdfjs-editor-alt-text-settings-automatic-title = Automatic alt text
+pdfjs-editor-alt-text-settings-create-model-button-label = Create alt text automatically
+pdfjs-editor-alt-text-settings-create-model-description = Suggests descriptions to help people who can’t see the image or when the image doesn’t load.
+
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+pdfjs-editor-alt-text-settings-download-model-label = Alt text AI model ({ $totalSize } MB)
+
+pdfjs-editor-alt-text-settings-ai-model-description = Runs locally on your device so your data stays private. Required for automatic alt text.
+pdfjs-editor-alt-text-settings-delete-model-button = Delete
+pdfjs-editor-alt-text-settings-download-model-button = Download
+pdfjs-editor-alt-text-settings-downloading-model-button = Downloading…
+
+pdfjs-editor-alt-text-settings-editor-title = Alt text editor
+pdfjs-editor-alt-text-settings-show-dialog-button-label = Show alt text editor right away when adding an image
+pdfjs-editor-alt-text-settings-show-dialog-description = Helps you make sure all your images have alt text.
+pdfjs-editor-alt-text-settings-close-button = Close

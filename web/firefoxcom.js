@@ -314,34 +314,62 @@ class MLManager {
 
   eventBus = null;
 
-  constructor(options) {
-    this.enable({ ...options, listenToProgress: false });
+  hasProgress = false;
+
+  static #AI_ALT_TEXT_MODEL_NAME = "moz-image-to-text";
+
+  constructor({
+    altTextLearnMoreUrl,
+    enableGuessAltText,
+    enableAltTextModelDownload,
+  }) {
+    // The `altTextLearnMoreUrl` is used to provide a link to the user to learn
+    // more about the "alt text" feature.
+    // The link is used in the Alt Text dialog or in the Image Settings.
+    this.altTextLearnMoreUrl = altTextLearnMoreUrl;
+    this.enableAltTextModelDownload = enableAltTextModelDownload;
+    this.enableGuessAltText = enableGuessAltText;
+
+    if (enableAltTextModelDownload) {
+      this.#loadAltTextEngine(false);
+    }
   }
 
   async isEnabledFor(name) {
-    return !!(await this.#enabled?.get(name));
+    return this.enableGuessAltText && !!(await this.#enabled?.get(name));
   }
 
   isReady(name) {
     return this.#ready?.has(name) ?? false;
   }
 
-  deleteModel(service) {
-    return FirefoxCom.requestAsync("mlDelete", service);
-  }
-
-  guess(data) {
-    return FirefoxCom.requestAsync("mlGuess", data);
-  }
-
-  enable({ altTextLearnMoreUrl, enableGuessAltText, listenToProgress }) {
-    if (enableGuessAltText) {
-      this.#loadAltTextEngine(listenToProgress);
+  async deleteModel(name) {
+    if (name !== "altText") {
+      return;
     }
-    // The `altTextLearnMoreUrl` is used to provide a link to the user to learn
-    // more about the "alt text" feature.
-    // The link is used in the Alt Text dialog or in the Image Settings.
-    this.altTextLearnMoreUrl = altTextLearnMoreUrl;
+    this.enableAltTextModelDownload = false;
+    this.#ready?.delete(name);
+    this.#enabled?.delete(name);
+    await Promise.all([
+      this.toggleService("altText", false),
+      FirefoxCom.requestAsync("mlDelete", MLManager.#AI_ALT_TEXT_MODEL_NAME),
+    ]);
+  }
+
+  async downloadModel(name) {
+    if (name !== "altText") {
+      return null;
+    }
+    this.enableAltTextModelDownload = true;
+    return this.#loadAltTextEngine(true);
+  }
+
+  async guess(data) {
+    if (data?.name !== "altText") {
+      return null;
+    }
+    data.service = MLManager.#AI_ALT_TEXT_MODEL_NAME;
+    return FirefoxCom.requestAsync("mlGuess", data);
   }
 
   async toggleService(name, enabled) {
@@ -349,11 +377,9 @@ class MLManager {
       return;
     }
 
-    if (enabled) {
+    this.enableGuessAltText = enabled;
+    if (enabled && this.enableAltTextModelDownload) {
       await this.#loadAltTextEngine(false);
-    } else {
-      this.#enabled?.delete(name);
-      this.#ready?.delete(name);
     }
   }
 
@@ -364,7 +390,7 @@ class MLManager {
     }
     this.#ready ||= new Set();
     const promise = FirefoxCom.requestAsync("loadAIEngine", {
-      service: "moz-image-to-text",
+      service: MLManager.#AI_ALT_TEXT_MODEL_NAME,
       listenToProgress,
     }).then(ok => {
       if (ok) {
@@ -374,22 +400,26 @@ class MLManager {
     });
     (this.#enabled ||= new Map()).set("altText", promise);
     if (listenToProgress) {
+      this.hasProgress = true;
       const callback = ({ detail }) => {
         this.eventBus.dispatch("loadaiengineprogress", {
           source: this,
           detail,
         });
         if (detail.finished) {
+          this.hasProgress = false;
           window.removeEventListener("loadAIEngineProgress", callback);
         }
       };
       window.addEventListener("loadAIEngineProgress", callback);
       promise.then(ok => {
         if (!ok) {
+          this.hasProgress = false;
           window.removeEventListener("loadAIEngineProgress", callback);
         }
       });
     }
+    await promise;
   }
 }
 
