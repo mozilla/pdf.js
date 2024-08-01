@@ -1969,15 +1969,19 @@ const PDFViewerApplication = {
     eventBus._on("switchscrollmode", evt => (pdfViewer.scrollMode = evt.mode), {
       signal,
     });
-    eventBus._on("scrollmodechanged", onScrollModeChanged.bind(this), {
-      signal,
-    });
+    eventBus._on(
+      "scrollmodechanged",
+      onViewerModesChanged.bind(this, "scrollMode"),
+      { signal }
+    );
     eventBus._on("switchspreadmode", evt => (pdfViewer.spreadMode = evt.mode), {
       signal,
     });
-    eventBus._on("spreadmodechanged", onSpreadModeChanged.bind(this), {
-      signal,
-    });
+    eventBus._on(
+      "spreadmodechanged",
+      onViewerModesChanged.bind(this, "spreadMode"),
+      { signal }
+    );
     eventBus._on("imagealttextsettings", onImageAltTextSettings.bind(this), {
       signal,
     });
@@ -2402,19 +2406,10 @@ function onUpdateViewarea({ location }) {
   }
 }
 
-function onScrollModeChanged(evt) {
+function onViewerModesChanged(name, evt) {
   if (this.isInitialViewSet && !this.pdfViewer.isInPresentationMode) {
     // Only update the storage when the document has been loaded *and* rendered.
-    this.store?.set("scrollMode", evt.mode).catch(() => {
-      // Unable to write to storage.
-    });
-  }
-}
-
-function onSpreadModeChanged(evt) {
-  if (this.isInitialViewSet && !this.pdfViewer.isInPresentationMode) {
-    // Only update the storage when the document has been loaded *and* rendered.
-    this.store?.set("spreadMode", evt.mode).catch(() => {
+    this.store?.set(name, evt.mode).catch(() => {
       // Unable to write to storage.
     });
   }
