@@ -93,6 +93,12 @@ function getViewerConfiguration() {
       spreadNoneButton: document.getElementById("spreadNone"),
       spreadOddButton: document.getElementById("spreadOdd"),
       spreadEvenButton: document.getElementById("spreadEven"),
+      imageAltTextSettingsButton: document.getElementById(
+        "imageAltTextSettings"
+      ),
+      imageAltTextSettingsSeparator: document.getElementById(
+        "imageAltTextSettingsSeparator"
+      ),
       documentPropertiesButton: document.getElementById("documentProperties"),
     },
     sidebar: {
@@ -187,6 +193,21 @@ function getViewerConfiguration() {
       cancelButton: document.getElementById("newAltTextCancel"),
       notNowButton: document.getElementById("newAltTextNotNow"),
       saveButton: document.getElementById("newAltTextSave"),
+    },
+    altTextSettingsDialog: {
+      dialog: document.getElementById("altTextSettingsDialog"),
+      createModelButton: document.getElementById("createModelButton"),
+      aiModelSettings: document.getElementById("aiModelSettings"),
+      learnMore: document.getElementById("altTextSettingsLearnMore"),
+      deleteModelButton: document.getElementById("deleteModelButton"),
+      downloadModelButton: document.getElementById("downloadModelButton"),
+      showAltTextDialogButton: document.getElementById(
+        "showAltTextDialogButton"
+      ),
+      altTextSettingsCloseButton: document.getElementById(
+        "altTextSettingsCloseButton"
+      ),
+      closeButton: document.getElementById("altTextSettingsCloseButton"),
     },
     annotationEditorParams: {
       editorFreeTextFontSize: document.getElementById("editorFreeTextFontSize"),

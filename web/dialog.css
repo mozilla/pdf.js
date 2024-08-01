@@ -24,6 +24,7 @@
   --focus-ring-outline: 2px solid var(--focus-ring-color);
   --link-fg-color: #0060df;
   --link-hover-fg-color: #0250bb;
+  --separator-color: #f0f0f4;
 
   --textarea-border-color: #8f8f9d;
   --textarea-bg-color: white;
@@ -57,6 +58,7 @@
     --hover-filter: brightness(1.4);
     --link-fg-color: #0df;
     --link-hover-fg-color: #80ebff;
+    --separator-color: #52525e;
 
     --textarea-bg-color: #42414d;
 
@@ -79,6 +81,7 @@
     --focus-ring-color: ButtonBorder;
     --link-fg-color: LinkText;
     --link-hover-fg-color: LinkText;
+    --separator-color: CanvasText;
 
     --textarea-border-color: ButtonBorder;
     --textarea-bg-color: Field;
@@ -132,6 +135,13 @@
         font-weight: 590;
         line-height: 150%; /* 19.5px */
       }
+    }
+
+    .dialogSeparator {
+      width: 100%;
+      height: 1px;
+      margin-block: 4px;
+      background-color: var(--separator-color);
     }
 
     .dialogButtonsGroup {

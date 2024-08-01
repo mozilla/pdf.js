@@ -126,7 +126,11 @@ class StampEditor extends AnnotationEditor {
     if (!this.#canvas) {
       return;
     }
-    if (this._uiManager.useNewAltTextFlow && this.#bitmap) {
+    if (
+      this._uiManager.useNewAltTextWhenAddingImage &&
+      this._uiManager.useNewAltTextFlow &&
+      this.#bitmap
+    ) {
       this._editToolbar.hide();
       this._uiManager.editAltText(this, /* firstTime = */ true);
     } else {
@@ -341,7 +345,10 @@ class StampEditor extends AnnotationEditor {
     this._uiManager.enableWaiting(false);
     const canvas = (this.#canvas = document.createElement("canvas"));
     div.append(canvas);
-    if (!this._uiManager.useNewAltTextFlow) {
+    if (
+      !this._uiManager.useNewAltTextWhenAddingImage ||
+      !this._uiManager.useNewAltTextFlow
+    ) {
       div.hidden = false;
     }
     this.#drawBitmap(width, height);
