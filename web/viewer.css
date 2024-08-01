@@ -46,6 +46,7 @@
   --toolbar-border-color: rgb(184 184 184);
   --toolbar-box-shadow: 0 1px 0 var(--toolbar-border-color);
   --toolbar-border-bottom: none;
+  --toolbar-height: 32px;
   --toolbarSidebar-box-shadow: inset calc(-1px * var(--dir-factor)) 0 0
       rgb(0 0 0 / 0.25),
     0 1px 0 rgb(0 0 0 / 0.15), 0 0 1px rgb(0 0 0 / 0.1);
@@ -270,7 +271,7 @@ body {
 
 #sidebarContainer {
   position: absolute;
-  inset-block: 32px 0;
+  inset-block: var(--toolbar-height) 0;
   inset-inline-start: calc(-1 * var(--sidebar-width));
   width: var(--sidebar-width);
   visibility: hidden;
@@ -297,7 +298,7 @@ body {
 }
 
 #sidebarContent {
-  inset-block: 32px 0;
+  inset-block: var(--toolbar-height) 0;
   inset-inline-start: 0;
   overflow: auto;
   position: absolute;
@@ -308,7 +309,7 @@ body {
 #viewerContainer {
   overflow: auto;
   position: absolute;
-  inset: 32px 0 0;
+  inset: var(--toolbar-height) 0 0;
   outline: none;
 }
 #viewerContainer:not(.pdfPresentationMode) {
@@ -342,7 +343,7 @@ body {
 
 #toolbarSidebar {
   width: 100%;
-  height: 32px;
+  height: var(--toolbar-height);
   background-color: var(--sidebar-toolbar-bg-color);
   box-shadow: var(--toolbarSidebar-box-shadow);
   border-bottom: var(--toolbarSidebar-border-bottom);
@@ -362,14 +363,14 @@ body {
 .secondaryToolbar,
 .editorParamsToolbar {
   position: relative;
-  height: 32px;
+  height: var(--toolbar-height);
   background-color: var(--toolbar-bg-color);
   box-shadow: var(--toolbar-box-shadow);
   border-bottom: var(--toolbar-border-bottom);
 }
 
 #toolbarViewer {
-  height: 32px;
+  height: var(--toolbar-height);
 }
 
 #loadingBar {
@@ -447,7 +448,7 @@ body {
 .findbar,
 .secondaryToolbar,
 .editorParamsToolbar {
-  top: 32px;
+  top: var(--toolbar-height);
   position: absolute;
   z-index: 30000;
   height: auto;
@@ -466,7 +467,7 @@ body {
   background-color: var(--toolbar-bg-color);
 }
 .findbar > div {
-  height: 32px;
+  height: var(--toolbar-height);
 }
 .findbar > div#findbarInputContainer {
   margin-inline-end: 4px;
