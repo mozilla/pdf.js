@@ -1349,3 +1349,63 @@
     }
   }
 }
+
+#altTextSettingsDialog {
+  padding: 16px;
+
+  #altTextSettingsContainer {
+    display: flex;
+    width: 573px;
+    flex-direction: column;
+    gap: 16px;
+
+    .mainContainer {
+      gap: 16px;
+    }
+
+    .description {
+      color: var(--text-secondary-color);
+    }
+
+    #aiModelSettings {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      button {
+        width: fit-content;
+      }
+
+      &.download {
+        #deleteModelButton {
+          display: none;
+        }
+      }
+
+      &:not(.download) {
+        #downloadModelButton {
+          display: none;
+        }
+      }
+    }
+
+    #automaticAltText,
+    #altTextEditor {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #createModelDescription,
+    #aiModelSettings,
+    #showAltTextDialogDescription {
+      padding-inline-start: 40px;
+    }
+
+    #automaticSettings {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+  }
+}

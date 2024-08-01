@@ -49,6 +49,8 @@ import { PagesCountLimit } from "./pdf_viewer.js";
  *   select tool.
  * @property {HTMLButtonElement} cursorHandToolButton - Button to enable the
  *   hand tool.
+ * @property {HTMLButtonElement} imageAltTextSettingsButton - Button for opening
+ *   the image alt-text settings dialog.
  * @property {HTMLButtonElement} documentPropertiesButton - Button for opening
  *   the document properties dialog.
  */
@@ -135,6 +137,11 @@ class SecondaryToolbar {
         element: options.spreadEvenButton,
         eventName: "switchspreadmode",
         eventDetails: { mode: SpreadMode.EVEN },
+        close: true,
+      },
+      {
+        element: options.imageAltTextSettingsButton,
+        eventName: "imagealttextsettings",
         close: true,
       },
       {

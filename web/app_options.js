@@ -190,6 +190,11 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  enableAltTextModelDownload: {
+    /** @type {boolean} */
+    value: true,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   enableGuessAltText: {
     /** @type {boolean} */
     value: true,
@@ -209,6 +214,11 @@ const defaultOptions = {
     // TODO: remove it when unnecessary.
     /** @type {boolean} */
     value: typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING"),
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
+  enableNewAltTextWhenAddingImage: {
+    /** @type {boolean} */
+    value: true,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   enablePermissions: {
