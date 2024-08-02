@@ -44,6 +44,7 @@
 
   --button-primary-bg-color: #0060df;
   --button-primary-fg-color: #fbfbfe;
+  --button-primary-border-color: var(--button-primary-bg-color);
   --button-primary-hover-bg-color: var(--button-primary-bg-color);
   --button-primary-hover-fg-color: var(--button-primary-fg-color);
   --button-primary-hover-border-color: var(--button-primary-hover-bg-color);
@@ -224,9 +225,9 @@
       }
 
       &.primaryButton {
-        color: var(--button-primary-hover-fg-color);
-        background-color: var(--button-primary-hover-bg-color);
-        border-color: var(--button-primary-hover-border-color);
+        color: var(--button-primary-fg-color);
+        background-color: var(--button-primary-bg-color);
+        border-color: var(--button-primary-border-color);
         opacity: 1;
 
         &:hover {
