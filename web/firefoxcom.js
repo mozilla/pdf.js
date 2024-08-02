@@ -329,10 +329,6 @@ class MLManager {
     this.altTextLearnMoreUrl = altTextLearnMoreUrl;
     this.enableAltTextModelDownload = enableAltTextModelDownload;
     this.enableGuessAltText = enableGuessAltText;
-
-    if (enableAltTextModelDownload) {
-      this.#loadAltTextEngine(false);
-    }
   }
 
   async isEnabledFor(name) {
@@ -354,6 +350,12 @@ class MLManager {
       this.toggleService("altText", false),
       FirefoxCom.requestAsync("mlDelete", MLManager.#AI_ALT_TEXT_MODEL_NAME),
     ]);
+  }
+
+  async loadModel(name) {
+    if (name === "altText" && this.enableAltTextModelDownload) {
+      await this.#loadAltTextEngine(false);
+    }
   }
 
   async downloadModel(name) {

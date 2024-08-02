@@ -88,6 +88,8 @@ class FakeMLManager {
     return null;
   }
 
+  async loadModel(_name) {}
+
   async downloadModel(_name) {
     // Simulate downloading the model but with progress.
     // The progress can be seen in the new alt-text dialog.
