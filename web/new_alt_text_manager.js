@@ -299,9 +299,13 @@ class NewAltTextManager {
       totalLoaded = Math.min(0.99 * total, totalLoaded);
 
       // Update the progress.
+      const totalSize = (this.#downloadModelDescription.ariaValueMax =
+        Math.round(total / ONE_MEGA_BYTES));
+      const downloadedSize = (this.#downloadModelDescription.ariaValueNow =
+        Math.round(totalLoaded / ONE_MEGA_BYTES));
       this.#downloadModelDescription.setAttribute(
         "data-l10n-args",
-        `{"totalSize": ${Math.round(total / ONE_MEGA_BYTES)}, "downloadedSize": ${Math.round(totalLoaded / ONE_MEGA_BYTES)}}`
+        JSON.stringify({ totalSize, downloadedSize })
       );
       if (!finished) {
         return;
