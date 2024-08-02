@@ -557,7 +557,10 @@ const PDFViewerApplication = {
       }
     }
 
-    if (appConfig.secondaryToolbar?.imageAltTextSettingsButton) {
+    if (
+      this.mlManager &&
+      appConfig.secondaryToolbar?.imageAltTextSettingsButton
+    ) {
       this.imageAltTextSettings = new ImageAltTextSettings(
         appConfig.altTextSettingsDialog,
         this.overlayManager,
