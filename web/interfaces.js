@@ -156,9 +156,8 @@ class IDownloadManager {
    * @param {Uint8Array} data
    * @param {string} url
    * @param {string} filename
-   * @param {Object} [options]
    */
-  download(data, url, filename, options) {}
+  download(data, url, filename) {}
 }
 
 /**
