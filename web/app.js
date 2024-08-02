@@ -1943,7 +1943,7 @@ const PDFViewerApplication = {
       { signal }
     );
     eventBus._on("print", this.triggerPrinting.bind(this), { signal });
-    eventBus._on("download", this.downloadOrSave.bind(this), { signal });
+    eventBus._on("download", () => this.downloadOrSave(), { signal });
     eventBus._on("firstpage", () => (this.page = 1), { signal });
     eventBus._on("lastpage", () => (this.page = this.pagesCount), { signal });
     eventBus._on("nextpage", () => pdfViewer.nextPage(), { signal });
