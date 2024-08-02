@@ -2466,4 +2466,48 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("Compute product of different fields", () => {
+    let pages;
+    let otherPages;
+
+    beforeAll(async () => {
+      otherPages = await Promise.all(
+        global.integrationSessions.map(async session =>
+          session.browser.newPage()
+        )
+      );
+      pages = await loadAndWait("issue18536.pdf", getSelector("34R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+      await Promise.all(otherPages.map(page => page.close()));
+    });
+
+    it("must check that the product are null", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page], i) => {
+          await waitForScripting(page);
+
+          const inputSelector = getSelector("34R");
+          await page.click(inputSelector);
+          await page.type(inputSelector, "123");
+          await page.click(getSelector("28R"));
+          await page.waitForFunction(
+            `${getQuerySelector("36R")}.value !== "0"`
+          );
+
+          let text = await page.$eval(getSelector("30R"), el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("0");
+
+          text = await page.$eval(getSelector("35R"), el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("0");
+
+          text = await page.$eval(getSelector("36R"), el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("123");
+        })
+      );
+    });
+  });
 });
