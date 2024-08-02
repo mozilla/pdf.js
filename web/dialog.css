@@ -318,6 +318,7 @@
       border-radius: 4px;
       border: 1px solid var(--message-bar-border-color);
       background: var(--message-bar-bg-color);
+      color: var(--message-bar-fg-color);
 
       > div {
         display: flex;
