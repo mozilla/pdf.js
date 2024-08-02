@@ -105,7 +105,7 @@ class DownloadManager {
     return false;
   }
 
-  download(data, url, filename, _options) {
+  download(data, url, filename) {
     let blobUrl;
     if (data) {
       blobUrl = URL.createObjectURL(
