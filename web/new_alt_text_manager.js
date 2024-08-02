@@ -240,29 +240,17 @@ class NewAltTextManager {
 
     let hasError = false;
     try {
-      const { width, height, data } = this.#imageData;
-
-      // Take a reference on the current editor, as it can be set to null (if
-      // the dialog is closed before the end of the guess).
-      // But in case we've an alt-text, we want to set it on the editor.
-      const editor = this.#currentEditor;
-
       // When calling #mlGuessAltText we don't wait for it, so we must take care
       // that the alt text dialog can have been closed before the response is.
-      const response = await this.#uiManager.mlGuess({
-        name: "altText",
-        request: {
-          data,
-          width,
-          height,
-          channels: data.length / (width * height),
-        },
-      });
-      if (!response || response.error || !response.output) {
+
+      const altText = await this.#currentEditor.mlGuessAltText(
+        this.#imageData,
+        /* updateAltTextData = */ false
+      );
+      if (altText === null) {
         throw new Error("No valid response from the AI service.");
       }
-      const altText = (this.#guessedAltText = response.output);
-      await editor.setGuessedAltText(altText);
+      this.#guessedAltText = altText;
       this.#wasAILoading = this.#isAILoading;
       if (this.#isAILoading) {
         this.#addAltText(altText);
