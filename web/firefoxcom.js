@@ -133,7 +133,7 @@ class DownloadManager {
     return false;
   }
 
-  download(data, url, filename, options = {}) {
+  download(data, url, filename) {
     const blobUrl = data
       ? URL.createObjectURL(new Blob([data], { type: "application/pdf" }))
       : null;
@@ -142,7 +142,6 @@ class DownloadManager {
       blobUrl,
       originalUrl: url,
       filename,
-      options,
     });
   }
 }
