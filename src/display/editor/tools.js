@@ -856,18 +856,6 @@ class AnnotationEditorUIManager {
     }
   }
 
-  hasMLManager() {
-    return !!this.#mlManager;
-  }
-
-  async mlGuess(data) {
-    return this.#mlManager?.guess(data) || null;
-  }
-
-  async isMLEnabledFor(name) {
-    return !!(await this.#mlManager?.isEnabledFor(name));
-  }
-
   get mlManager() {
     return this.#mlManager;
   }
