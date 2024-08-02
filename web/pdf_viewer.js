@@ -906,6 +906,9 @@ class PDFViewer {
               uiManager: this.#annotationEditorUIManager,
             });
             if (mode !== AnnotationEditorType.NONE) {
+              if (mode === AnnotationEditorType.STAMP) {
+                this.#mlManager?.loadModel("altText");
+              }
               this.#annotationEditorUIManager.updateMode(mode);
             }
           } else {
@@ -2310,6 +2313,9 @@ class PDFViewer {
     }
     if (!this.pdfDocument) {
       return;
+    }
+    if (mode === AnnotationEditorType.STAMP) {
+      this.#mlManager?.loadModel("altText");
     }
 
     const { eventBus } = this;
