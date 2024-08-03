@@ -514,14 +514,12 @@ class AForm {
       }
       for (const child of field.getArray()) {
         const number = this.AFMakeNumber(child.value);
-        if (number !== null) {
-          values.push(number);
-        }
+        values.push(number ?? 0);
       }
     }
 
     if (values.length === 0) {
-      event.value = cFunction === "PRD" ? 1 : 0;
+      event.value = 0;
       return;
     }
 
