@@ -14,11 +14,11 @@
  */
 
 import {
-  awaitPromise,
   closePages,
   closeSinglePage,
   getSpanRectFromText,
   loadAndWait,
+  waitForEvent,
 } from "./test_utils.mjs";
 import { startBrowser } from "../test.mjs";
 
@@ -228,34 +228,6 @@ describe("Text layer", () => {
           )
         );
 
-        function waitForClick(page, selector, timeout) {
-          return page.evaluateHandle(
-            (sel, timeoutDelay) => {
-              const element = document.querySelector(sel);
-              const timeoutSignal = AbortSignal.timeout(timeoutDelay);
-              return [
-                new Promise(resolve => {
-                  timeoutSignal.addEventListener(
-                    "abort",
-                    () => resolve(false),
-                    { once: true }
-                  );
-                  element.addEventListener(
-                    "click",
-                    e => {
-                      e.preventDefault();
-                      resolve(true);
-                    },
-                    { once: true, signal: timeoutSignal }
-                  );
-                }),
-              ];
-            },
-            selector,
-            timeout
-          );
-        }
-
         it("allows selecting within the link", async () => {
           await Promise.all(
             pages.map(async ([browserName, page]) => {
@@ -315,16 +287,18 @@ describe("Text layer", () => {
               await moveInSteps(page, positionStart, positionEnd, 20);
               await page.mouse.up();
 
-              const clickPromiseHandle = await waitForClick(
+              await waitForEvent({
                 page,
-                "#pdfjs_internal_id_8R",
-                1000
-              );
-
-              await page.mouse.click(positionEnd.x, positionEnd.y);
-
-              const clicked = await awaitPromise(clickPromiseHandle);
-              expect(clicked).toBeTrue();
+                eventName: "click",
+                action: () => page.mouse.click(positionEnd.x, positionEnd.y),
+                selector: "#pdfjs_internal_id_8R",
+                validator: e => {
+                  // Don't navigate to the link destination: the `click` event
+                  // firing is enough validation that the link can be clicked.
+                  e.preventDefault();
+                  return true;
+                },
+              });
             })
           );
         });
@@ -348,16 +322,18 @@ describe("Text layer", () => {
               await page.keyboard.press("ArrowRight");
               await page.keyboard.up("Shift");
 
-              const clickPromiseHandle = await waitForClick(
+              await waitForEvent({
                 page,
-                "#pdfjs_internal_id_8R",
-                1000
-              );
-
-              await page.mouse.click(positionEnd.x, positionEnd.y);
-
-              const clicked = await awaitPromise(clickPromiseHandle);
-              expect(clicked).toBeTrue();
+                eventName: "click",
+                action: () => page.mouse.click(positionEnd.x, positionEnd.y),
+                selector: "#pdfjs_internal_id_8R",
+                validator: e => {
+                  // Don't navigate to the link destination: the `click` event
+                  // firing is enough validation that the link can be clicked.
+                  e.preventDefault();
+                  return true;
+                },
+              });
             })
           );
         });
