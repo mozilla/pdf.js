@@ -333,7 +333,7 @@ body {
   font: message-box;
 }
 
-:is(.toolbar, .editorParamsToolbar, .findbar, #sidebarContainer)
+:is(.toolbar, .editorParamsToolbar, #sidebarContainer)
   :is(input, button, select),
 .secondaryToolbar :is(input, button, a, select) {
   outline: none;
@@ -362,7 +362,6 @@ body {
 }
 
 #toolbarContainer,
-.findbar,
 .secondaryToolbar,
 .editorParamsToolbar {
   position: relative;
@@ -448,7 +447,6 @@ body {
   transition-duration: 0s;
 }
 
-.findbar,
 .secondaryToolbar,
 .editorParamsToolbar {
   top: var(--toolbar-height);
@@ -462,64 +460,6 @@ body {
   line-height: 14px;
   text-align: left;
   cursor: default;
-}
-
-.findbar {
-  inset-inline-start: 64px;
-  min-width: 300px;
-  background-color: var(--toolbar-bg-color);
-}
-.findbar > div {
-  height: var(--toolbar-height);
-}
-.findbar > div#findbarInputContainer {
-  margin-inline-end: 4px;
-}
-.findbar.wrapContainers > div,
-.findbar.wrapContainers > div#findbarMessageContainer > * {
-  clear: both;
-}
-.findbar.wrapContainers > div#findbarMessageContainer {
-  height: auto;
-}
-
-.findbar input[type="checkbox"] {
-  pointer-events: none;
-}
-
-.findbar label {
-  user-select: none;
-}
-
-.findbar label:hover,
-.findbar input:focus-visible + label {
-  color: var(--toggled-btn-color);
-  background-color: var(--button-hover-color);
-}
-
-.findbar .toolbarField[type="checkbox"]:checked + .toolbarLabel {
-  background-color: var(--toggled-btn-bg-color) !important;
-  color: var(--toggled-btn-color);
-}
-
-#findInput {
-  width: 200px;
-
-  /*#if !MOZCENTRAL*/
-  &::-webkit-input-placeholder {
-    color: rgb(191 191 191);
-  }
-  /*#endif*/
-  &::placeholder {
-    font-style: normal;
-  }
-  .loadingInput:has(> &[data-status="pending"])::after {
-    display: block;
-    visibility: visible;
-  }
-  &[data-status="notFound"] {
-    background-color: rgb(255 102 102);
-  }
 }
 
 .secondaryToolbar,
@@ -654,22 +594,6 @@ body {
   margin-inline-end: -9px;
 }
 
-#findResultsCount {
-  background-color: rgb(217 217 217);
-  color: rgb(82 82 82);
-  text-align: center;
-  padding: 4px 5px;
-  margin: 5px;
-}
-
-#findMsg[data-status="notFound"] {
-  font-weight: bold;
-}
-
-:is(#findResultsCount, #findMsg):empty {
-  display: none;
-}
-
 #toolbarViewerMiddle {
   position: absolute;
   left: 50%;
@@ -689,8 +613,7 @@ body {
 #toolbarViewerMiddle > *,
 #toolbarViewerRight > *,
 #toolbarSidebarLeft *,
-#toolbarSidebarRight *,
-.findbar * {
+#toolbarSidebarRight * {
   position: relative;
   float: var(--inline-start);
 }
@@ -893,14 +816,6 @@ body {
 #secondaryToolbarToggle::before {
   mask-image: var(--toolbarButton-secondaryToolbarToggle-icon);
   transform: scaleX(var(--dir-factor));
-}
-
-#findPrevious::before {
-  mask-image: var(--findbarButton-previous-icon);
-}
-
-#findNext::before {
-  mask-image: var(--findbarButton-next-icon);
 }
 
 #previous::before {
@@ -1430,6 +1345,132 @@ dialog :link {
   z-index: 50000; /* should be higher than anything else in PDF.js! */
 }
 
+#findbar {
+  background-color: var(--toolbar-bg-color);
+  cursor: default;
+  font: message-box;
+  font-size: 12px;
+  height: auto;
+  inset-inline-start: 64px;
+  line-height: 14px;
+  margin: 4px 2px;
+  min-width: 300px;
+  padding: 0 4px;
+  position: absolute;
+  text-align: left;
+  top: var(--toolbar-height);
+  z-index: 30000;
+
+  * {
+    float: var(--inline-start);
+    position: relative;
+  }
+
+  > div {
+    height: var(--toolbar-height);
+  }
+
+  :is(button, input) {
+    font: message-box;
+    outline: none;
+  }
+
+  input {
+    &[type="checkbox"] {
+      pointer-events: none;
+
+      &:checked + .toolbarLabel {
+        background-color: var(--toggled-btn-bg-color) !important;
+        color: var(--toggled-btn-color);
+      }
+    }
+  }
+
+  label {
+    user-select: none;
+  }
+
+  :is(label:hover, input:focus-visible + label) {
+    background-color: var(--button-hover-color);
+    color: var(--toggled-btn-color);
+  }
+
+  #findbarInputContainer {
+    margin-inline-end: 4px;
+
+    #findInput {
+      width: 200px;
+
+      /*#if !MOZCENTRAL*/
+      &::-webkit-input-placeholder {
+        color: rgb(191 191 191);
+      }
+      /*#endif*/
+
+      &::placeholder {
+        font-style: normal;
+      }
+
+      .loadingInput:has(> &[data-status="pending"])::after {
+        display: block;
+        visibility: visible;
+      }
+
+      &[data-status="notFound"] {
+        background-color: rgb(255 102 102);
+      }
+    }
+
+    #findPrevious::before {
+      mask-image: var(--findbarButton-previous-icon);
+    }
+
+    #findNext::before {
+      mask-image: var(--findbarButton-next-icon);
+    }
+  }
+
+  #findbarMessageContainer {
+    #findResultsCount {
+      background-color: rgb(217 217 217);
+      color: rgb(82 82 82);
+      margin: 5px;
+      padding: 4px 5px;
+      text-align: center;
+    }
+
+    #findMsg {
+      &[data-status="notFound"] {
+        font-weight: bold;
+      }
+    }
+
+    *:empty {
+      display: none;
+    }
+  }
+
+  &.wrapContainers {
+    > div {
+      clear: both;
+    }
+
+    > #findbarMessageContainer {
+      height: auto;
+
+      > * {
+        clear: both;
+      }
+    }
+  }
+
+  @media all and (max-width: 690px) {
+    & {
+      inset-inline-start: 34px;
+    }
+  }
+}
+
 @page {
   margin: 0;
 }
@@ -1530,9 +1571,6 @@ dialog :link {
   }
   .toolbarButtonSpacer {
     width: 0;
-  }
-  .findbar {
-    inset-inline-start: 34px;
   }
 }
 
