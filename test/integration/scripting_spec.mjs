@@ -2510,4 +2510,32 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("Calculate field value even if one callback throws", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue18561.pdf", getSelector("24R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the product is computed although a callback threw", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page], i) => {
+          await waitForScripting(page);
+
+          const inputSelector = getSelector("24R");
+          await page.click(inputSelector);
+          await page.type(inputSelector, "123");
+          await page.click(getSelector("25R"));
+          await page.waitForFunction(
+            `${getQuerySelector("28R")}.value === "12300"`
+          );
+        })
+      );
+    });
+  });
 });

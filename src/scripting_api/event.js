@@ -14,6 +14,7 @@
  */
 
 import {
+  serializeError,
   USERACTIVATION_CALLBACKID,
   USERACTIVATION_MAXTIME_VALIDITY,
 } from "./app_utils.js";
@@ -344,7 +345,15 @@ class EventDispatcher {
       event.value = null;
       const target = this._objects[targetId];
       let savedValue = target.obj._getValue();
-      this.runActions(source, target, event, "Calculate");
+      try {
+        this.runActions(source, target, event, "Calculate");
+      } catch (error) {
+        const fieldId = target.obj._id;
+        const serializedError = serializeError(error);
+        serializedError.value = `Error when calculating value for field "${fieldId}"\n${serializedError.value}`;
+        this._externalCall("send", [serializedError]);
+        continue;
+      }
       if (!event.rc) {
         continue;
       }
