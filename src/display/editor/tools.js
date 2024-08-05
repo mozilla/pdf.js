@@ -612,16 +612,6 @@ class AnnotationEditorUIManager {
 
   #boundKeyup = this.keyup.bind(this);
 
-  #boundOnEditingAction = this.onEditingAction.bind(this);
-
-  #boundOnPageChanging = this.onPageChanging.bind(this);
-
-  #boundOnScaleChanging = this.onScaleChanging.bind(this);
-
-  #boundOnSetPreference = this.onSetPreference.bind(this);
-
-  #boundOnRotationChanging = this.onRotationChanging.bind(this);
-
   #previousStates = {
     isEditing: false,
     isEmpty: true,
@@ -794,13 +784,21 @@ class AnnotationEditorUIManager {
     this.#viewer = viewer;
     this.#altTextManager = altTextManager;
     this._eventBus = eventBus;
-    this._eventBus._on("editingaction", this.#boundOnEditingAction, { signal });
-    this._eventBus._on("pagechanging", this.#boundOnPageChanging, { signal });
-    this._eventBus._on("scalechanging", this.#boundOnScaleChanging, { signal });
-    this._eventBus._on("rotationchanging", this.#boundOnRotationChanging, {
+    this._eventBus._on("editingaction", this.onEditingAction.bind(this), {
       signal,
     });
-    this._eventBus._on("setpreference", this.#boundOnSetPreference, { signal });
+    this._eventBus._on("pagechanging", this.onPageChanging.bind(this), {
+      signal,
+    });
+    this._eventBus._on("scalechanging", this.onScaleChanging.bind(this), {
+      signal,
+    });
+    this._eventBus._on("rotationchanging", this.onRotationChanging.bind(this), {
+      signal,
+    });
+    this._eventBus._on("setpreference", this.onSetPreference.bind(this), {
+      signal,
+    });
     this.#addSelectionListener();
     this.#addDragAndDropListeners();
     this.#addKeyboardManager();
