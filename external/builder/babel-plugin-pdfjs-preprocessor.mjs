@@ -184,7 +184,7 @@ function babelPluginPDFJSPreprocessor(babel, ctx) {
           path.replaceWith(t.importExpression(source));
         }
       },
-      BlockStatement: {
+      "BlockStatement|StaticBlock": {
         // Visit node in post-order so that recursive flattening
         // of blocks works correctly.
         exit(path) {
@@ -214,6 +214,10 @@ function babelPluginPDFJSPreprocessor(babel, ctx) {
                 break;
             }
             subExpressionIndex++;
+          }
+
+          if (node.type === "StaticBlock" && node.body.length === 0) {
+            path.remove();
           }
         },
       },
