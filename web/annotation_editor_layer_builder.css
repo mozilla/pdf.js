@@ -973,20 +973,20 @@
 
         #newAltTextDisclaimer {
           display: flex;
+          flex-direction: row;
           align-items: center;
           gap: 4px;
-          align-self: stretch;
-          flex-wrap: wrap;
           font-size: 11px;
 
           &::before {
             content: "";
             display: inline-block;
-            width: 16px;
+            width: 17px;
             height: 16px;
             mask-image: var(--new-alt-text-ai-disclaimer-icon);
             mask-size: cover;
             background-color: var(--text-secondary-color);
+            flex: 1 0 auto;
           }
         }
       }
