@@ -79,6 +79,7 @@
     "unicorn/prefer-string-replace-all": "error",
     "unicorn/prefer-string-starts-ends-with": "error",
     "unicorn/prefer-ternary": ["error", "only-single-line"],
+    "unicorn/throw-new-error": "error",
 
     // Possible errors
     "for-direction": "error",
