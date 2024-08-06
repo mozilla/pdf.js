@@ -225,6 +225,10 @@ class DrawLayer {
     this.#mapping.get(id).classList.remove(className);
   }
 
+  getSVGRoot(id) {
+    return this.#mapping.get(id);
+  }
+
   remove(id) {
     if (this.#parent === null) {
       return;
