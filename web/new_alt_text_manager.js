@@ -137,6 +137,10 @@ class NewAltTextManager {
       this.#toggleDisclaimer();
     });
 
+    eventBus._on("enableguessalttext", ({ value }) => {
+      this.#toggleGuessAltText(value, /* isInitial = */ false);
+    });
+
     this.#overlayManager.register(dialog);
   }
 
@@ -247,13 +251,12 @@ class NewAltTextManager {
         this.#imageData,
         /* updateAltTextData = */ false
       );
-      if (altText === null) {
-        throw new Error("No valid response from the AI service.");
-      }
-      this.#guessedAltText = altText;
-      this.#wasAILoading = this.#isAILoading;
-      if (this.#isAILoading) {
-        this.#addAltText(altText);
+      if (altText) {
+        this.#guessedAltText = altText;
+        this.#wasAILoading = this.#isAILoading;
+        if (this.#isAILoading) {
+          this.#addAltText(altText);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -458,6 +461,8 @@ class ImageAltTextSettings {
 
   #createModelButton;
 
+  #downloadModelButton;
+
   #dialog;
 
   #eventBus;
@@ -486,6 +491,7 @@ class ImageAltTextSettings {
     this.#dialog = dialog;
     this.#aiModelSettings = aiModelSettings;
     this.#createModelButton = createModelButton;
+    this.#downloadModelButton = downloadModelButton;
     this.#showAltTextDialogButton = showAltTextDialogButton;
     this.#overlayManager = overlayManager;
     this.#eventBus = eventBus;
@@ -508,40 +514,61 @@ class ImageAltTextSettings {
       this.#togglePref.bind(this, "enableNewAltTextWhenAddingImage")
     );
 
-    deleteModelButton.addEventListener("click", async () => {
-      await mlManager.deleteModel("altText");
+    deleteModelButton.addEventListener("click", this.#delete.bind(this, true));
+    downloadModelButton.addEventListener(
+      "click",
+      this.#download.bind(this, true)
+    );
 
-      aiModelSettings.classList.toggle("download", true);
-      createModelButton.disabled = true;
-      createModelButton.setAttribute("aria-pressed", false);
-      this.#setPref("enableGuessAltText", false);
-      this.#setPref("enableAltTextModelDownload", false);
+    closeButton.addEventListener("click", this.#finish.bind(this));
+
+    eventBus._on("enablealttextmodeldownload", ({ value }) => {
+      if (value) {
+        this.#download(false);
+      } else {
+        this.#delete(false);
+      }
     });
 
-    downloadModelButton.addEventListener("click", async () => {
-      downloadModelButton.disabled = true;
-      downloadModelButton.firstChild.setAttribute(
+    this.#overlayManager.register(dialog);
+  }
+
+  async #download(isFromUI = false) {
+    if (isFromUI) {
+      this.#downloadModelButton.disabled = true;
+      this.#downloadModelButton.firstChild.setAttribute(
         "data-l10n-id",
         "pdfjs-editor-alt-text-settings-downloading-model-button"
       );
 
-      await mlManager.downloadModel("altText");
+      await this.#mlManager.downloadModel("altText");
 
-      aiModelSettings.classList.toggle("download", false);
-      downloadModelButton.firstChild.setAttribute(
+      this.#downloadModelButton.firstChild.setAttribute(
         "data-l10n-id",
         "pdfjs-editor-alt-text-settings-download-model-button"
       );
-      createModelButton.disabled = false;
-      createModelButton.setAttribute("aria-pressed", true);
-      this.#setPref("enableGuessAltText", true);
-      mlManager.toggleService("altText", true);
-      this.#setPref("enableAltTextModelDownload", true);
-      downloadModelButton.disabled = false;
-    });
 
-    closeButton.addEventListener("click", this.#finish.bind(this));
-    this.#overlayManager.register(dialog);
+      this.#createModelButton.disabled = false;
+      this.#setPref("enableGuessAltText", true);
+      this.#mlManager.toggleService("altText", true);
+      this.#setPref("enableAltTextModelDownload", true);
+      this.#downloadModelButton.disabled = false;
+    }
+
+    this.#aiModelSettings.classList.toggle("download", false);
+    this.#createModelButton.setAttribute("aria-pressed", true);
+  }
+
+  async #delete(isFromUI = false) {
+    if (isFromUI) {
+      await this.#mlManager.deleteModel("altText");
+      this.#setPref("enableGuessAltText", false);
+      this.#setPref("enableAltTextModelDownload", false);
+    }
+
+    this.#aiModelSettings.classList.toggle("download", true);
+    this.#createModelButton.disabled = true;
+    this.#createModelButton.setAttribute("aria-pressed", false);
   }
 
   async open({ enableGuessAltText, enableNewAltTextWhenAddingImage }) {
