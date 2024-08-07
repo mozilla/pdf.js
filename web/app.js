@@ -404,9 +404,7 @@ const PDFViewerApplication = {
     } else {
       eventBus = new EventBus();
     }
-    if (this.mlManager) {
-      this.mlManager.eventBus = eventBus;
-    }
+    this.mlManager?.setEventBus(eventBus, this._globalAbortController.signal);
     this.eventBus = eventBus;
 
     this.overlayManager = new OverlayManager();
