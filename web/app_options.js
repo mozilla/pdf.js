@@ -193,12 +193,12 @@ const defaultOptions = {
   enableAltTextModelDownload: {
     /** @type {boolean} */
     value: true,
-    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE + OptionKind.EVENT_DISPATCH,
   },
   enableGuessAltText: {
     /** @type {boolean} */
     value: true,
-    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE + OptionKind.EVENT_DISPATCH,
   },
   enableHighlightEditor: {
     // We'll probably want to make some experiments before enabling this
