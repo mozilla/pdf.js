@@ -997,17 +997,7 @@ describe("Highlight Editor", () => {
         "tracemonkey.pdf",
         ".annotationEditorLayer",
         null,
-        async page => {
-          await page.evaluate(async () => {
-            await window.PDFViewerApplication.initializedPromise;
-            window.PDFViewerApplication.eventBus.on(
-              "annotationeditoruimanager",
-              ({ uiManager }) => {
-                window.uiManager = uiManager;
-              }
-            );
-          });
-        },
+        null,
         {
           highlightEditorColors: "red=#AB0000",
           supportsCaretBrowsingMode: true,
