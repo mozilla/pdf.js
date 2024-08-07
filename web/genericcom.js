@@ -79,6 +79,10 @@ class FakeMLManager {
     this.enableAltTextModelDownload = enableAltTextModelDownload;
   }
 
+  setEventBus(eventBus, abortSignal) {
+    this.eventBus = eventBus;
+  }
+
   async isEnabledFor(_name) {
     return this.enableGuessAltText;
   }

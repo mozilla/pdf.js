@@ -141,9 +141,11 @@ class StampEditor extends AnnotationEditor {
       this._uiManager.useNewAltTextFlow &&
       this.#bitmap
     ) {
-      // The alt-text dialog isn't opened but we still want to guess the alt
-      // text.
-      this.mlGuessAltText();
+      try {
+        // The alt-text dialog isn't opened but we still want to guess the alt
+        // text.
+        this.mlGuessAltText();
+      } catch {}
     }
 
     this.div.focus();
@@ -155,8 +157,11 @@ class StampEditor extends AnnotationEditor {
     }
 
     const { mlManager } = this._uiManager;
-    if (!mlManager || !(await mlManager.isEnabledFor("altText"))) {
-      return null;
+    if (!mlManager) {
+      throw new Error("No ML.");
+    }
+    if (!(await mlManager.isEnabledFor("altText"))) {
+      throw new Error("ML isn't enabled for alt text.");
     }
     const { data, width, height } =
       imageData ||
@@ -170,8 +175,17 @@ class StampEditor extends AnnotationEditor {
         channels: data.length / (width * height),
       },
     });
-    if (!response || response.error || !response.output) {
+    if (!response) {
+      throw new Error("No response from the AI service.");
+    }
+    if (response.error) {
+      throw new Error("Error from the AI service.");
+    }
+    if (response.cancel) {
       return null;
+    }
+    if (!response.output) {
+      throw new Error("No valid response from the AI service.");
     }
     const altText = response.output;
     await this.setGuessedAltText(altText);
