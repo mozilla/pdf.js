@@ -902,6 +902,7 @@
     align-items: flex-start;
     gap: 12px;
     flex: 0 1 auto;
+    line-height: normal;
 
     #mainContent {
       display: flex;
@@ -974,7 +975,7 @@
         #newAltTextDisclaimer {
           display: flex;
           flex-direction: row;
-          align-items: center;
+          align-items: flex-start;
           gap: 4px;
           font-size: 11px;
 
