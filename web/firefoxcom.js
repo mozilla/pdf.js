@@ -307,15 +307,11 @@ class FirefoxScripting {
 }
 
 class MLManager {
-  #abortSignal = null;
-
   #enabled = null;
-
-  #eventBus = null;
 
   #ready = null;
 
-  #requestResolvers = null;
+  eventBus = null;
 
   hasProgress = false;
 
@@ -334,32 +330,6 @@ class MLManager {
     this.enableGuessAltText = enableGuessAltText;
   }
 
-  setEventBus(eventBus, abortSignal) {
-    this.#eventBus = eventBus;
-    this.#abortSignal = abortSignal;
-    eventBus._on(
-      "enablealttextmodeldownload",
-      ({ value }) => {
-        if (this.enableAltTextModelDownload === value) {
-          return;
-        }
-        if (value) {
-          this.downloadModel("altText");
-        } else {
-          this.deleteModel("altText");
-        }
-      },
-      abortSignal
-    );
-    eventBus._on(
-      "enableguessalttext",
-      ({ value }) => {
-        this.toggleService("altText", value);
-      },
-      abortSignal
-    );
-  }
-
   async isEnabledFor(name) {
     return this.enableGuessAltText && !!(await this.#enabled?.get(name));
   }
@@ -369,17 +339,16 @@ class MLManager {
   }
 
   async deleteModel(name) {
-    if (name !== "altText" || !this.enableAltTextModelDownload) {
+    if (name !== "altText") {
       return;
     }
     this.enableAltTextModelDownload = false;
     this.#ready?.delete(name);
     this.#enabled?.delete(name);
-    await this.toggleService("altText", false);
-    await FirefoxCom.requestAsync(
-      "mlDelete",
-      MLManager.#AI_ALT_TEXT_MODEL_NAME
-    );
+    await Promise.all([
+      this.toggleService("altText", false),
+      FirefoxCom.requestAsync("mlDelete", MLManager.#AI_ALT_TEXT_MODEL_NAME),
+    ]);
   }
 
   async loadModel(name) {
@@ -389,7 +358,7 @@ class MLManager {
   }
 
   async downloadModel(name) {
-    if (name !== "altText" || this.enableAltTextModelDownload) {
+    if (name !== "altText") {
       return null;
     }
     this.enableAltTextModelDownload = true;
@@ -400,53 +369,18 @@ class MLManager {
     if (data?.name !== "altText") {
       return null;
     }
-    const resolvers = (this.#requestResolvers ||= new Set());
-    const resolver = Promise.withResolvers();
-    resolvers.add(resolver);
-
     data.service = MLManager.#AI_ALT_TEXT_MODEL_NAME;
-    const requestPromise = FirefoxCom.requestAsync("mlGuess", data);
-
-    requestPromise
-      .then(response => {
-        if (resolvers.has(resolver)) {
-          resolver.resolve(response);
-          resolvers.delete(resolver);
-        }
-      })
-      .catch(reason => {
-        if (resolvers.has(resolver)) {
-          resolver.reject(reason);
-          resolvers.delete(resolver);
-        }
-      });
-
-    return resolver.promise;
-  }
-
-  async #cancelAllRequests() {
-    if (!this.#requestResolvers) {
-      return;
-    }
-    for (const resolver of this.#requestResolvers) {
-      resolver.resolve({ cancel: true });
-    }
-    this.#requestResolvers.clear();
-    this.#requestResolvers = null;
+    return FirefoxCom.requestAsync("mlGuess", data);
   }
 
   async toggleService(name, enabled) {
-    if (name !== "altText" || this.enableGuessAltText === enabled) {
+    if (name !== "altText") {
       return;
     }
 
     this.enableGuessAltText = enabled;
-    if (enabled) {
-      if (this.enableAltTextModelDownload) {
-        await this.#loadAltTextEngine(false);
-      }
-    } else {
-      this.#cancelAllRequests();
+    if (enabled && this.enableAltTextModelDownload) {
+      await this.#loadAltTextEngine(false);
     }
   }
 
@@ -469,7 +403,7 @@ class MLManager {
     if (listenToProgress) {
       this.hasProgress = true;
       const callback = ({ detail }) => {
-        this.#eventBus.dispatch("loadaiengineprogress", {
+        this.eventBus.dispatch("loadaiengineprogress", {
           source: this,
           detail,
         });
@@ -478,9 +412,7 @@ class MLManager {
           window.removeEventListener("loadAIEngineProgress", callback);
         }
       };
-      window.addEventListener("loadAIEngineProgress", callback, {
-        signal: this.#abortSignal,
-      });
+      window.addEventListener("loadAIEngineProgress", callback);
       promise.then(ok => {
         if (!ok) {
           this.hasProgress = false;
