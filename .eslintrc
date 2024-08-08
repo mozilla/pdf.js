@@ -7,7 +7,6 @@
   "plugins": [
     "import",
     "json",
-    "mozilla",
     "no-unsanitized",
     "sort-exports",
     "unicorn",
@@ -44,7 +43,6 @@
     "import/no-unresolved": ["error", {
       "ignore": ["display", "pdfjs", "pdfjs-lib", "pdfjs-web", "web", "fluent-bundle", "fluent-dom"],
     }],
-    "mozilla/avoid-removeChild": "error",
     "no-unsanitized/method": "error",
     "no-unsanitized/property": "error",
     "sort-exports/sort-exports": ["error", {
