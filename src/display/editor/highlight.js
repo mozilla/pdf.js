@@ -700,34 +700,33 @@ class HighlightEditor extends AnnotationEditor {
       width: parentWidth,
       height: parentHeight,
     } = textLayer.getBoundingClientRect();
-    const pointerMove = e => {
-      this.#highlightMove(parent, e);
-    };
-    const signal = parent._signal;
-    const pointerDownOptions = { capture: true, passive: false, signal };
+
+    const ac = new AbortController();
+    const signal = parent.combinedSignal(ac);
+
     const pointerDown = e => {
       // Avoid to have undesired clicks during the drawing.
       e.preventDefault();
       e.stopPropagation();
     };
     const pointerUpCallback = e => {
-      textLayer.removeEventListener("pointermove", pointerMove);
-      window.removeEventListener("blur", pointerUpCallback);
-      window.removeEventListener("pointerup", pointerUpCallback);
-      window.removeEventListener(
-        "pointerdown",
-        pointerDown,
-        pointerDownOptions
-      );
-      window.removeEventListener("contextmenu", noContextMenu);
+      ac.abort();
       this.#endHighlight(parent, e);
     };
     window.addEventListener("blur", pointerUpCallback, { signal });
     window.addEventListener("pointerup", pointerUpCallback, { signal });
-    window.addEventListener("pointerdown", pointerDown, pointerDownOptions);
+    window.addEventListener("pointerdown", pointerDown, {
+      capture: true,
+      passive: false,
+      signal,
+    });
     window.addEventListener("contextmenu", noContextMenu, { signal });
 
-    textLayer.addEventListener("pointermove", pointerMove, { signal });
+    textLayer.addEventListener(
+      "pointermove",
+      this.#highlightMove.bind(this, parent),
+      { signal }
+    );
     this._freeHighlight = new FreeOutliner(
       { x, y },
       [layerX, layerY, parentWidth, parentHeight],
