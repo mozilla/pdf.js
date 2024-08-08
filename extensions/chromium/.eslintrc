@@ -7,16 +7,11 @@
     "webextensions": true
   },
 
-  "plugins": [
-    "mozilla"
-  ],
-
   "parserOptions": {
     "sourceType": "script"
   },
 
   "rules": {
-    "mozilla/import-globals": "error",
     "no-var": "off",
   },
 }
