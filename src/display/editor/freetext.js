@@ -38,21 +38,13 @@ const EOL_PATTERN = /\r\n?|\n/g;
  * Basic text editor in order to create a FreeTex annotation.
  */
 class FreeTextEditor extends AnnotationEditor {
-  #boundEditorDivBlur = this.editorDivBlur.bind(this);
-
-  #boundEditorDivFocus = this.editorDivFocus.bind(this);
-
-  #boundEditorDivInput = this.editorDivInput.bind(this);
-
-  #boundEditorDivKeydown = this.editorDivKeydown.bind(this);
-
-  #boundEditorDivPaste = this.editorDivPaste.bind(this);
-
   #color;
 
   #content = "";
 
   #editorDivId = `${this.id}-editor`;
+
+  #editModeAC = null;
 
   #fontSize;
 
@@ -307,20 +299,31 @@ class FreeTextEditor extends AnnotationEditor {
     this.editorDiv.contentEditable = true;
     this._isDraggable = false;
     this.div.removeAttribute("aria-activedescendant");
-    const signal = this._uiManager._signal;
-    this.editorDiv.addEventListener("keydown", this.#boundEditorDivKeydown, {
+
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      assert(
+        !this.#editModeAC,
+        "No `this.#editModeAC` AbortController should exist."
+      );
+    }
+    this.#editModeAC = new AbortController();
+    const signal = this._uiManager.combinedSignal(this.#editModeAC);
+
+    this.editorDiv.addEventListener(
+      "keydown",
+      this.editorDivKeydown.bind(this),
+      { signal }
+    );
+    this.editorDiv.addEventListener("focus", this.editorDivFocus.bind(this), {
       signal,
     });
-    this.editorDiv.addEventListener("focus", this.#boundEditorDivFocus, {
+    this.editorDiv.addEventListener("blur", this.editorDivBlur.bind(this), {
       signal,
     });
-    this.editorDiv.addEventListener("blur", this.#boundEditorDivBlur, {
+    this.editorDiv.addEventListener("input", this.editorDivInput.bind(this), {
       signal,
     });
-    this.editorDiv.addEventListener("input", this.#boundEditorDivInput, {
-      signal,
-    });
-    this.editorDiv.addEventListener("paste", this.#boundEditorDivPaste, {
+    this.editorDiv.addEventListener("paste", this.editorDivPaste.bind(this), {
       signal,
     });
   }
@@ -337,11 +340,9 @@ class FreeTextEditor extends AnnotationEditor {
     this.editorDiv.contentEditable = false;
     this.div.setAttribute("aria-activedescendant", this.#editorDivId);
     this._isDraggable = true;
-    this.editorDiv.removeEventListener("keydown", this.#boundEditorDivKeydown);
-    this.editorDiv.removeEventListener("focus", this.#boundEditorDivFocus);
-    this.editorDiv.removeEventListener("blur", this.#boundEditorDivBlur);
-    this.editorDiv.removeEventListener("input", this.#boundEditorDivInput);
-    this.editorDiv.removeEventListener("paste", this.#boundEditorDivPaste);
+
+    this.#editModeAC?.abort();
+    this.#editModeAC = null;
 
     // On Chrome, the focus is given to <body> when contentEditable is set to
     // false, hence we focus the div.

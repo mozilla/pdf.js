@@ -54,9 +54,7 @@ class AnnotationEditor {
 
   #savedDimensions = null;
 
-  #boundFocusin = this.focusin.bind(this);
-
-  #boundFocusout = this.focusout.bind(this);
+  #focusAC = null;
 
   #focusedResizerName = "";
 
@@ -758,16 +756,17 @@ class AnnotationEditor {
 
     this.#altText?.toggle(false);
 
-    const boundResizerPointermove = this.#resizerPointermove.bind(this, name);
     const savedDraggable = this._isDraggable;
     this._isDraggable = false;
-    const signal = this._uiManager._signal;
-    const pointerMoveOptions = { passive: true, capture: true, signal };
+
+    const ac = new AbortController();
+    const signal = this._uiManager.combinedSignal(ac);
+
     this.parent.togglePointerEvents(false);
     window.addEventListener(
       "pointermove",
-      boundResizerPointermove,
-      pointerMoveOptions
+      this.#resizerPointermove.bind(this, name),
+      { passive: true, capture: true, signal }
     );
     window.addEventListener("contextmenu", noContextMenu, { signal });
     const savedX = this.x;
@@ -780,17 +779,10 @@ class AnnotationEditor {
       window.getComputedStyle(event.target).cursor;
 
     const pointerUpCallback = () => {
+      ac.abort();
       this.parent.togglePointerEvents(true);
       this.#altText?.toggle(true);
       this._isDraggable = savedDraggable;
-      window.removeEventListener("pointerup", pointerUpCallback);
-      window.removeEventListener("blur", pointerUpCallback);
-      window.removeEventListener(
-        "pointermove",
-        boundResizerPointermove,
-        pointerMoveOptions
-      );
-      window.removeEventListener("contextmenu", noContextMenu);
       this.parent.div.style.cursor = savedParentCursor;
       this.div.style.cursor = savedCursor;
 
@@ -1069,10 +1061,7 @@ class AnnotationEditor {
     }
 
     this.setInForeground();
-
-    const signal = this._uiManager._signal;
-    this.div.addEventListener("focusin", this.#boundFocusin, { signal });
-    this.div.addEventListener("focusout", this.#boundFocusout, { signal });
+    this.#addFocusListeners();
 
     const [parentWidth, parentHeight] = this.parentDimensions;
     if (this.parentRotation % 180 !== 0) {
@@ -1132,14 +1121,14 @@ class AnnotationEditor {
     const isSelected = this._uiManager.isSelected(this);
     this._uiManager.setUpDragSession();
 
-    let pointerMoveOptions, pointerMoveCallback;
-    const signal = this._uiManager._signal;
+    const ac = new AbortController();
+    const signal = this._uiManager.combinedSignal(ac);
+
     if (isSelected) {
       this.div.classList.add("moving");
-      pointerMoveOptions = { passive: true, capture: true, signal };
       this.#prevDragX = event.clientX;
       this.#prevDragY = event.clientY;
-      pointerMoveCallback = e => {
+      const pointerMoveCallback = e => {
         const { clientX: x, clientY: y } = e;
         const [tx, ty] = this.screenToPageTranslation(
           x - this.#prevDragX,
@@ -1149,23 +1138,17 @@ class AnnotationEditor {
         this.#prevDragY = y;
         this._uiManager.dragSelectedEditors(tx, ty);
       };
-      window.addEventListener(
-        "pointermove",
-        pointerMoveCallback,
-        pointerMoveOptions
-      );
+      window.addEventListener("pointermove", pointerMoveCallback, {
+        passive: true,
+        capture: true,
+        signal,
+      });
     }
 
     const pointerUpCallback = () => {
-      window.removeEventListener("pointerup", pointerUpCallback);
-      window.removeEventListener("blur", pointerUpCallback);
+      ac.abort();
       if (isSelected) {
         this.div.classList.remove("moving");
-        window.removeEventListener(
-          "pointermove",
-          pointerMoveCallback,
-          pointerMoveOptions
-        );
       }
 
       this.#hasBeenClicked = false;
@@ -1323,15 +1306,24 @@ class AnnotationEditor {
     return this.div && !this.isAttachedToDOM;
   }
 
+  #addFocusListeners() {
+    if (this.#focusAC || !this.div) {
+      return;
+    }
+    this.#focusAC = new AbortController();
+    const signal = this._uiManager.combinedSignal(this.#focusAC);
+
+    this.div.addEventListener("focusin", this.focusin.bind(this), { signal });
+    this.div.addEventListener("focusout", this.focusout.bind(this), { signal });
+  }
+
   /**
    * Rebuild the editor in case it has been removed on undo.
    *
    * To implement in subclasses.
    */
   rebuild() {
-    const signal = this._uiManager._signal;
-    this.div?.addEventListener("focusin", this.#boundFocusin, { signal });
-    this.div?.addEventListener("focusout", this.#boundFocusout, { signal });
+    this.#addFocusListeners();
   }
 
   /**
@@ -1401,8 +1393,8 @@ class AnnotationEditor {
    * It's used on ctrl+backspace action.
    */
   remove() {
-    this.div.removeEventListener("focusin", this.#boundFocusin);
-    this.div.removeEventListener("focusout", this.#boundFocusout);
+    this.#focusAC?.abort();
+    this.#focusAC = null;
 
     if (!this.isEmpty()) {
       // The editor is removed but it can be back at some point thanks to
