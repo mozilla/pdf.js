@@ -75,6 +75,16 @@ class AltText {
     const onClick = event => {
       event.preventDefault();
       this.#editor._uiManager.editAltText(this.#editor);
+      if (this.#useNewAltTextFlow) {
+        const label =
+          (this.#altText && "added") ||
+          (this.#altText === null && this.guessedText && "review") ||
+          "missing";
+        this.#editor._reportTelemetry({
+          action: "pdfjs.image.alt_text.image_status_label_clicked",
+          label,
+        });
+      }
     };
     altText.addEventListener("click", onClick, { capture: true, signal });
     altText.addEventListener(
@@ -222,6 +232,10 @@ class AltText {
         (this.#altText && "added") ||
         (this.#altText === null && this.guessedText && "to-review") ||
         "missing";
+      this.#editor._reportTelemetry({
+        action: "pdfjs.image.alt_text.image_status_label_displayed",
+        label: type === "to-review" ? "review" : type,
+      });
       button.classList.toggle("done", !!this.#altText);
       AltText._l10nPromise
         .get(`pdfjs-editor-new-alt-text-${type}-button-label`)

@@ -112,6 +112,17 @@ class Toolbar {
               : AnnotationEditorType.STAMP;
           },
         },
+        telemetry: () => {
+          eventBus.dispatch("reporttelemetry", {
+            source: this,
+            details: {
+              type: "editing",
+              data: {
+                action: "pdfjs.image.icon_click",
+              },
+            },
+          });
+        },
       },
     ];
 
@@ -173,7 +184,7 @@ class Toolbar {
     const self = this;
 
     // The buttons within the toolbar.
-    for (const { element, eventName, eventDetails } of buttons) {
+    for (const { element, eventName, eventDetails, telemetry } of buttons) {
       element.addEventListener("click", evt => {
         if (eventName !== null) {
           eventBus.dispatch(eventName, {
@@ -183,6 +194,7 @@ class Toolbar {
             isFromKeyboard: evt.detail === 0,
           });
         }
+        telemetry?.();
       });
     }
     // The non-button elements within the toolbar.
