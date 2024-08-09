@@ -880,7 +880,11 @@ class PDFViewer {
           viewer.before(element);
         }
 
-        if (annotationEditorMode !== AnnotationEditorType.DISABLE) {
+        if (
+          ((typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+            typeof AbortSignal.any === "function") &&
+          annotationEditorMode !== AnnotationEditorType.DISABLE
+        ) {
           const mode = annotationEditorMode;
 
           if (pdfDocument.isPureXfa) {
