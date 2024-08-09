@@ -169,9 +169,7 @@ class StampEditor extends AnnotationEditor {
     const response = await mlManager.guess({
       name: "altText",
       request: {
-        // Pass a buffer to avoid copy, see "run" method in:
-        //  https://searchfox.org/mozilla-central/source/toolkit/components/ml/actors/MLEngineParent.sys.mjs
-        data: data.buffer,
+        data,
         width,
         height,
         channels: data.length / (width * height),
