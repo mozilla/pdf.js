@@ -61,11 +61,7 @@ class AnnotationEditorLayer {
 
   #annotationLayer = null;
 
-  #boundPointerup = null;
-
-  #boundPointerdown = null;
-
-  #boundTextLayerPointerDown = null;
+  #clickAC = null;
 
   #editorFocusTimeoutId = null;
 
@@ -78,6 +74,8 @@ class AnnotationEditorLayer {
   #isDisabling = false;
 
   #textLayer = null;
+
+  #textSelectionAC = null;
 
   #uiManager;
 
@@ -365,12 +363,14 @@ class AnnotationEditorLayer {
 
   enableTextSelection() {
     this.div.tabIndex = -1;
-    if (this.#textLayer?.div && !this.#boundTextLayerPointerDown) {
-      this.#boundTextLayerPointerDown = this.#textLayerPointerDown.bind(this);
+    if (this.#textLayer?.div && !this.#textSelectionAC) {
+      this.#textSelectionAC = new AbortController();
+      const signal = this.#uiManager.combinedSignal(this.#textSelectionAC);
+
       this.#textLayer.div.addEventListener(
         "pointerdown",
-        this.#boundTextLayerPointerDown,
-        { signal: this.#uiManager._signal }
+        this.#textLayerPointerDown.bind(this),
+        { signal }
       );
       this.#textLayer.div.classList.add("highlighting");
     }
@@ -378,12 +378,10 @@ class AnnotationEditorLayer {
 
   disableTextSelection() {
     this.div.tabIndex = 0;
-    if (this.#textLayer?.div && this.#boundTextLayerPointerDown) {
-      this.#textLayer.div.removeEventListener(
-        "pointerdown",
-        this.#boundTextLayerPointerDown
-      );
-      this.#boundTextLayerPointerDown = null;
+    if (this.#textLayer?.div && this.#textSelectionAC) {
+      this.#textSelectionAC.abort();
+      this.#textSelectionAC = null;
+
       this.#textLayer.div.classList.remove("highlighting");
     }
   }
@@ -428,26 +426,23 @@ class AnnotationEditorLayer {
   }
 
   enableClick() {
-    if (this.#boundPointerdown) {
+    if (this.#clickAC) {
       return;
     }
-    const signal = this.#uiManager._signal;
-    this.#boundPointerdown = this.pointerdown.bind(this);
-    this.#boundPointerup = this.pointerup.bind(this);
-    this.div.addEventListener("pointerdown", this.#boundPointerdown, {
+    this.#clickAC = new AbortController();
+    const signal = this.#uiManager.combinedSignal(this.#clickAC);
+
+    this.div.addEventListener("pointerdown", this.pointerdown.bind(this), {
       signal,
     });
-    this.div.addEventListener("pointerup", this.#boundPointerup, { signal });
+    this.div.addEventListener("pointerup", this.pointerup.bind(this), {
+      signal,
+    });
   }
 
   disableClick() {
-    if (!this.#boundPointerdown) {
-      return;
-    }
-    this.div.removeEventListener("pointerdown", this.#boundPointerdown);
-    this.div.removeEventListener("pointerup", this.#boundPointerup);
-    this.#boundPointerdown = null;
-    this.#boundPointerup = null;
+    this.#clickAC?.abort();
+    this.#clickAC = null;
   }
 
   attach(editor) {
@@ -611,8 +606,8 @@ class AnnotationEditorLayer {
     return AnnotationEditorLayer.#editorTypes.get(this.#uiManager.getMode());
   }
 
-  get _signal() {
-    return this.#uiManager._signal;
+  combinedSignal(ac) {
+    return this.#uiManager.combinedSignal(ac);
   }
 
   /**

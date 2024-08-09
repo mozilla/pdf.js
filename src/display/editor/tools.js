@@ -550,6 +550,8 @@ class AnnotationEditorUIManager {
 
   #commandManager = new CommandManager();
 
+  #copyPasteAC = null;
+
   #currentPageIndex = 0;
 
   #deletedAnnotationsElementIds = new Set();
@@ -570,6 +572,8 @@ class AnnotationEditorUIManager {
 
   #focusMainContainerTimeoutId = null;
 
+  #focusManagerAC = null;
+
   #highlightColors = null;
 
   #highlightWhenShiftUp = false;
@@ -581,6 +585,8 @@ class AnnotationEditorUIManager {
   #isEnabled = false;
 
   #isWaiting = false;
+
+  #keyboardManagerAC = null;
 
   #lastActiveElement = null;
 
@@ -597,20 +603,6 @@ class AnnotationEditorUIManager {
   #pageColors = null;
 
   #showAllStates = null;
-
-  #boundBlur = this.blur.bind(this);
-
-  #boundFocus = this.focus.bind(this);
-
-  #boundCopy = this.copy.bind(this);
-
-  #boundCut = this.cut.bind(this);
-
-  #boundPaste = this.paste.bind(this);
-
-  #boundKeydown = this.keydown.bind(this);
-
-  #boundKeyup = this.keyup.bind(this);
 
   #previousStates = {
     isEditing: false,
@@ -853,6 +845,10 @@ class AnnotationEditorUIManager {
       clearTimeout(this.#translationTimeoutId);
       this.#translationTimeoutId = null;
     }
+  }
+
+  combinedSignal(ac) {
+    return AbortSignal.any([this._signal, ac.signal]);
   }
 
   get mlManager() {
@@ -1142,15 +1138,16 @@ class AnnotationEditorUIManager {
           : null;
       activeLayer?.toggleDrawing();
 
-      const signal = this._signal;
+      const ac = new AbortController();
+      const signal = this.combinedSignal(ac);
+
       const pointerup = e => {
         if (e.type === "pointerup" && e.button !== 0) {
           // Do nothing on right click.
           return;
         }
+        ac.abort();
         activeLayer?.toggleDrawing(true);
-        window.removeEventListener("pointerup", pointerup);
-        window.removeEventListener("blur", pointerup);
         if (e.type === "pointerup") {
           this.#onSelectEnd("main_toolbar");
         }
@@ -1172,21 +1169,24 @@ class AnnotationEditorUIManager {
     document.addEventListener(
       "selectionchange",
       this.#selectionChange.bind(this),
-      {
-        signal: this._signal,
-      }
+      { signal: this._signal }
     );
   }
 
   #addFocusManager() {
-    const signal = this._signal;
-    window.addEventListener("focus", this.#boundFocus, { signal });
-    window.addEventListener("blur", this.#boundBlur, { signal });
+    if (this.#focusManagerAC) {
+      return;
+    }
+    this.#focusManagerAC = new AbortController();
+    const signal = this.combinedSignal(this.#focusManagerAC);
+
+    window.addEventListener("focus", this.focus.bind(this), { signal });
+    window.addEventListener("blur", this.blur.bind(this), { signal });
   }
 
   #removeFocusManager() {
-    window.removeEventListener("focus", this.#boundFocus);
-    window.removeEventListener("blur", this.#boundBlur);
+    this.#focusManagerAC?.abort();
+    this.#focusManagerAC = null;
   }
 
   blur() {
@@ -1229,29 +1229,38 @@ class AnnotationEditorUIManager {
   }
 
   #addKeyboardManager() {
-    const signal = this._signal;
+    if (this.#keyboardManagerAC) {
+      return;
+    }
+    this.#keyboardManagerAC = new AbortController();
+    const signal = this.combinedSignal(this.#keyboardManagerAC);
+
     // The keyboard events are caught at the container level in order to be able
     // to execute some callbacks even if the current page doesn't have focus.
-    window.addEventListener("keydown", this.#boundKeydown, { signal });
-    window.addEventListener("keyup", this.#boundKeyup, { signal });
+    window.addEventListener("keydown", this.keydown.bind(this), { signal });
+    window.addEventListener("keyup", this.keyup.bind(this), { signal });
   }
 
   #removeKeyboardManager() {
-    window.removeEventListener("keydown", this.#boundKeydown);
-    window.removeEventListener("keyup", this.#boundKeyup);
+    this.#keyboardManagerAC?.abort();
+    this.#keyboardManagerAC = null;
   }
 
   #addCopyPasteListeners() {
-    const signal = this._signal;
-    document.addEventListener("copy", this.#boundCopy, { signal });
-    document.addEventListener("cut", this.#boundCut, { signal });
-    document.addEventListener("paste", this.#boundPaste, { signal });
+    if (this.#copyPasteAC) {
+      return;
+    }
+    this.#copyPasteAC = new AbortController();
+    const signal = this.combinedSignal(this.#copyPasteAC);
+
+    document.addEventListener("copy", this.copy.bind(this), { signal });
+    document.addEventListener("cut", this.cut.bind(this), { signal });
+    document.addEventListener("paste", this.paste.bind(this), { signal });
   }
 
   #removeCopyPasteListeners() {
-    document.removeEventListener("copy", this.#boundCopy);
-    document.removeEventListener("cut", this.#boundCut);
-    document.removeEventListener("paste", this.#boundPaste);
+    this.#copyPasteAC?.abort();
+    this.#copyPasteAC = null;
   }
 
   #addDragAndDropListeners() {

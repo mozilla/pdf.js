@@ -16,6 +16,7 @@
 import {
   AnnotationEditorParamsType,
   AnnotationEditorType,
+  assert,
   Util,
 } from "../../shared/util.js";
 import { AnnotationEditor } from "./editor.js";
@@ -31,25 +32,21 @@ class InkEditor extends AnnotationEditor {
 
   #baseWidth = 0;
 
-  #boundCanvasPointermove = this.canvasPointermove.bind(this);
-
-  #boundCanvasPointerleave = this.canvasPointerleave.bind(this);
-
-  #boundCanvasPointerup = this.canvasPointerup.bind(this);
-
-  #boundCanvasPointerdown = this.canvasPointerdown.bind(this);
-
   #canvasContextMenuTimeoutId = null;
 
   #currentPath2D = new Path2D();
 
   #disableEditing = false;
 
+  #drawingAC = null;
+
   #hasSomethingToDraw = false;
 
   #isCanvasInitialized = false;
 
   #observer = null;
+
+  #pointerdownAC = null;
 
   #realWidth = 0;
 
@@ -296,9 +293,7 @@ class InkEditor extends AnnotationEditor {
 
     super.enableEditMode();
     this._isDraggable = false;
-    this.canvas.addEventListener("pointerdown", this.#boundCanvasPointerdown, {
-      signal: this._uiManager._signal,
-    });
+    this.#addPointerdownListener();
   }
 
   /** @inheritdoc */
@@ -310,11 +305,7 @@ class InkEditor extends AnnotationEditor {
     super.disableEditMode();
     this._isDraggable = !this.isEmpty();
     this.div.classList.remove("editing");
-
-    this.canvas.removeEventListener(
-      "pointerdown",
-      this.#boundCanvasPointerdown
-    );
+    this.#removePointerdownListener();
   }
 
   /** @inheritdoc */
@@ -365,23 +356,33 @@ class InkEditor extends AnnotationEditor {
    * @param {number} y
    */
   #startDrawing(x, y) {
-    const signal = this._uiManager._signal;
-    this.canvas.addEventListener("contextmenu", noContextMenu, { signal });
+    this.canvas.addEventListener("contextmenu", noContextMenu, {
+      signal: this._uiManager._signal,
+    });
+    this.#removePointerdownListener();
+
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      assert(
+        !this.#drawingAC,
+        "No `this.#drawingAC` AbortController should exist."
+      );
+    }
+    this.#drawingAC = new AbortController();
+    const signal = this._uiManager.combinedSignal(this.#drawingAC);
+
     this.canvas.addEventListener(
       "pointerleave",
-      this.#boundCanvasPointerleave,
+      this.canvasPointerleave.bind(this),
       { signal }
     );
-    this.canvas.addEventListener("pointermove", this.#boundCanvasPointermove, {
-      signal,
-    });
-    this.canvas.addEventListener("pointerup", this.#boundCanvasPointerup, {
-      signal,
-    });
-    this.canvas.removeEventListener(
-      "pointerdown",
-      this.#boundCanvasPointerdown
+    this.canvas.addEventListener(
+      "pointermove",
+      this.canvasPointermove.bind(this),
+      { signal }
     );
+    this.canvas.addEventListener("pointerup", this.canvasPointerup.bind(this), {
+      signal,
+    });
 
     this.isEditing = true;
     if (!this.#isCanvasInitialized) {
@@ -653,6 +654,25 @@ class InkEditor extends AnnotationEditor {
     this.enableEditMode();
   }
 
+  #addPointerdownListener() {
+    if (this.#pointerdownAC) {
+      return;
+    }
+    this.#pointerdownAC = new AbortController();
+    const signal = this._uiManager.combinedSignal(this.#pointerdownAC);
+
+    this.canvas.addEventListener(
+      "pointerdown",
+      this.canvasPointerdown.bind(this),
+      { signal }
+    );
+  }
+
+  #removePointerdownListener() {
+    this.pointerdownAC?.abort();
+    this.pointerdownAC = null;
+  }
+
   /**
    * onpointerdown callback for the canvas we're drawing on.
    * @param {PointerEvent} event
@@ -708,19 +728,10 @@ class InkEditor extends AnnotationEditor {
    * @param {PointerEvent} event
    */
   #endDrawing(event) {
-    this.canvas.removeEventListener(
-      "pointerleave",
-      this.#boundCanvasPointerleave
-    );
-    this.canvas.removeEventListener(
-      "pointermove",
-      this.#boundCanvasPointermove
-    );
-    this.canvas.removeEventListener("pointerup", this.#boundCanvasPointerup);
-    this.canvas.addEventListener("pointerdown", this.#boundCanvasPointerdown, {
-      signal: this._uiManager._signal,
-    });
+    this.#drawingAC?.abort();
+    this.#drawingAC = null;
 
+    this.#addPointerdownListener();
     // Slight delay to avoid the context menu to appear (it can happen on a long
     // tap with a pen).
     if (this.#canvasContextMenuTimeoutId) {
