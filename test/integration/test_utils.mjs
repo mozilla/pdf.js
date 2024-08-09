@@ -84,6 +84,13 @@ function closePages(pages) {
   return Promise.all(pages.map(([_, page]) => closeSinglePage(page)));
 }
 
+function isVisible(page, selector) {
+  return page.evaluate(
+    sel => document.querySelector(sel)?.checkVisibility(),
+    selector
+  );
+}
+
 async function closeSinglePage(page) {
   // Avoid to keep something from a previous test.
   await page.evaluate(async () => {
@@ -119,13 +126,23 @@ function waitForTimeout(milliseconds) {
   });
 }
 
-async function clearInput(page, selector) {
-  await page.click(selector);
-  await kbSelectAll(page);
-  await page.keyboard.press("Backspace");
-  await page.waitForFunction(
-    `document.querySelector('${selector}').value === ""`
-  );
+async function clearInput(page, selector, waitForInputEvent = false) {
+  const action = async () => {
+    await page.click(selector);
+    await kbSelectAll(page);
+    await page.keyboard.press("Backspace");
+    await page.waitForFunction(
+      `document.querySelector('${selector}').value === ""`
+    );
+  };
+  return waitForInputEvent
+    ? waitForEvent({
+        page,
+        eventName: "input",
+        action,
+        selector,
+      })
+    : action();
 }
 
 function getSelector(id) {
@@ -711,6 +728,7 @@ export {
   getSerialized,
   getSpanRectFromText,
   hover,
+  isVisible,
   kbBigMoveDown,
   kbBigMoveLeft,
   kbBigMoveRight,
