@@ -1675,7 +1675,7 @@ describe("FreeText Editor", () => {
               clip: rect,
               type: "png",
             });
-            const editorImage = PNG.sync.read(editorPng);
+            const editorImage = PNG.sync.read(Buffer.from(editorPng));
             const editorFirstPix = getFirstPixel(
               editorImage.data,
               editorImage.width,
@@ -1703,7 +1703,7 @@ describe("FreeText Editor", () => {
               clip: rect,
               type: "png",
             });
-            const editorImage = PNG.sync.read(editorPng);
+            const editorImage = PNG.sync.read(Buffer.from(editorPng));
             const editorFirstPix = getFirstPixel(
               editorImage.data,
               editorImage.width,
@@ -1836,7 +1836,7 @@ describe("FreeText Editor", () => {
               clip: rect,
               type: "png",
             });
-            const editorImage = PNG.sync.read(editorPng);
+            const editorImage = PNG.sync.read(Buffer.from(editorPng));
             const editorFirstPix = getFirstPixel(
               editorImage.data,
               editorImage.width,
@@ -1870,7 +1870,7 @@ describe("FreeText Editor", () => {
               clip: rect,
               type: "png",
             });
-            const editorImage = PNG.sync.read(editorPng);
+            const editorImage = PNG.sync.read(Buffer.from(editorPng));
             const editorFirstPix = getFirstPixel(
               editorImage.data,
               editorImage.width,
@@ -3589,7 +3589,7 @@ describe("FreeText Editor", () => {
             "[data-annotation-id='998R']",
             el => (el.hidden = false)
           );
-          let editorImage = PNG.sync.read(editorPng);
+          let editorImage = PNG.sync.read(Buffer.from(editorPng));
           expect(editorImage.data.every(x => x === 0xff))
             .withContext(`In ${browserName}`)
             .toBeTrue();
@@ -3636,7 +3636,7 @@ describe("FreeText Editor", () => {
             clip: editorRect,
             type: "png",
           });
-          editorImage = PNG.sync.read(editorPng);
+          editorImage = PNG.sync.read(Buffer.from(editorPng));
           expect(editorImage.data.every(x => x === 0xff))
             .withContext(`In ${browserName}`)
             .toBeFalse();

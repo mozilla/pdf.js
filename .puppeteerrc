@@ -1,0 +1,9 @@
+{
+  "chrome": {
+    "skipDownload": false
+  },
+  "firefox": {
+    "skipDownload": false,
+    "version": "nightly"
+  }
+}
