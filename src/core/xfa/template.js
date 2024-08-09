@@ -102,7 +102,7 @@ import {
   getStringOption,
   HTMLResult,
 } from "./utils.js";
-import { stringToBytes, Util, warn } from "../../shared/util.js";
+import { Util, warn } from "../../shared/util.js";
 import { getMetrics } from "./fonts.js";
 import { recoverJsURL } from "../core_utils.js";
 import { searchNode } from "./som.js";
@@ -3427,7 +3427,7 @@ class Image extends StringObject {
     }
 
     if (!buffer && this.transferEncoding === "base64") {
-      buffer = stringToBytes(atob(this[$content]));
+      buffer = Uint8Array.fromBase64(this[$content]);
     }
 
     if (!buffer) {
