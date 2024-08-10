@@ -69,9 +69,7 @@ const UI_NOTIFICATION_CLASS = "pdfSidebarNotification";
 class PDFSidebar {
   #isRTL = false;
 
-  #mouseMoveBound = this.#mouseMove.bind(this);
-
-  #mouseUpBound = this.#mouseUp.bind(this);
+  #mouseAC = null;
 
   #outerContainerWidth = null;
 
@@ -422,9 +420,12 @@ class PDFSidebar {
       // in order to improve responsiveness and to avoid visual glitches.
       outerContainer.classList.add(SIDEBAR_RESIZING_CLASS);
 
-      window.addEventListener("mousemove", this.#mouseMoveBound);
-      window.addEventListener("mouseup", this.#mouseUpBound);
-      window.addEventListener("blur", this.#mouseUpBound);
+      this.#mouseAC = new AbortController();
+      const opts = { signal: this.#mouseAC.signal };
+
+      window.addEventListener("mousemove", this.#mouseMove.bind(this), opts);
+      window.addEventListener("mouseup", this.#mouseUp.bind(this), opts);
+      window.addEventListener("blur", this.#mouseUp.bind(this), opts);
     });
 
     eventBus._on("resize", evt => {
@@ -505,9 +506,8 @@ class PDFSidebar {
     // ... and ensure that rendering will always be triggered.
     this.eventBus.dispatch("resize", { source: this });
 
-    window.removeEventListener("mousemove", this.#mouseMoveBound);
-    window.removeEventListener("mouseup", this.#mouseUpBound);
-    window.removeEventListener("blur", this.#mouseUpBound);
+    this.#mouseAC?.abort();
+    this.#mouseAC = null;
   }
 }
 
