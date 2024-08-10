@@ -16,6 +16,7 @@
 import {
   applyFunctionToEditor,
   awaitPromise,
+  clearInput,
   closePages,
   copy,
   copyToClipboard,
@@ -24,6 +25,7 @@ import {
   getFirstSerialized,
   getRect,
   getSerialized,
+  isVisible,
   kbBigMoveDown,
   kbBigMoveRight,
   kbSelectAll,
@@ -39,6 +41,7 @@ import {
   waitForSelectedEditor,
   waitForSerialized,
   waitForStorageEntries,
+  waitForUnselectedEditor,
 } from "./test_utils.mjs";
 import { fileURLToPath } from "url";
 import fs from "fs";
@@ -832,6 +835,230 @@ describe("Stamp Editor", () => {
         expect(serialized)
           .withContext(`In ${browserName}`)
           .toEqual(["Hello World", "Hello World"]);
+      }
+    });
+  });
+
+  describe("New alt-text flow", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "empty.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        {
+          enableAltText: true,
+          enableUpdatedAddImage: true,
+          enableGuessAltText: true,
+        }
+      );
+    });
+
+    afterEach(async () => {
+      for (const [, page] of pages) {
+        if (await isVisible(page, "#newAltTextDialog")) {
+          await page.keyboard.press("Escape");
+          await page.waitForSelector("#newAltTextDisclaimer", {
+            visible: false,
+          });
+        }
+        await page.evaluate(() => {
+          window.uiManager.reset();
+        });
+        // Disable editing mode.
+        await switchToStamp(page, /* disable */ true);
+      }
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check the new alt text flow (part 1)", async () => {
+      // Run sequentially to avoid clipboard issues.
+      for (const [browserName, page] of pages) {
+        await switchToStamp(page);
+
+        // Add an image.
+        await copyImage(page, "../images/firefox_logo.png", 0);
+        const editorSelector = getEditorSelector(0);
+        await page.waitForSelector(editorSelector);
+        await waitForSerialized(page, 1);
+
+        // Wait for the dialog to be visible.
+        await page.waitForSelector("#newAltTextDialog", { visible: true });
+        // Wait for the spinner to be visible.
+        await page.waitForSelector("#newAltTextDescriptionContainer.loading");
+        // Check we've the disclaimer.
+        await page.waitForSelector("#newAltTextDisclaimer", { visible: true });
+
+        // Check that the dialog has the correct title: "Edit..."
+        await page.waitForFunction(
+          "document.getElementById('newAltTextTitle').textContent.startsWith('Edit')"
+        );
+
+        // Check that AI guessed the correct alt text.
+        await page.waitForFunction(
+          `document.getElementById("newAltTextDescriptionTextarea").value ===
+            "Fake alt text"`
+        );
+
+        // Check that the dialog has the correct title: "Edit..."
+        await page.waitForFunction(
+          "document.getElementById('newAltTextTitle').textContent.startsWith('Edit')"
+        );
+
+        // Check we've the disclaimer.
+        await page.waitForSelector("#newAltTextDisclaimer", { visible: true });
+
+        // Clear the input and check that the title changes to "Add..."
+        await clearInput(
+          page,
+          "#newAltTextDescriptionTextarea",
+          /* waitForInputEvent = */ true
+        );
+        await page.waitForFunction(
+          "document.getElementById('newAltTextTitle').textContent.startsWith('Add')"
+        );
+
+        // Check we haven't the disclaimer.
+        await page.waitForSelector("#newAltTextDisclaimer", { visible: false });
+
+        // Add a new alt text and check that the title changes to "Edit..."
+        await page.type("#newAltTextDescriptionTextarea", "Hello World");
+        await page.waitForFunction(
+          "document.getElementById('newAltTextTitle').textContent.startsWith('Edit')"
+        );
+
+        // Check we haven't the disclaimer after the modification.
+        await page.waitForSelector("#newAltTextDisclaimer", { visible: false });
+
+        // Click on the Not Now button.
+        await page.click("#newAltTextNotNow");
+        await page.waitForSelector("#newAltTextDialog", { visible: false });
+        await waitForSelectedEditor(page, editorSelector);
+
+        // Wait for the alt-text button to be visible.
+        const buttonSelector = `${editorSelector} button.altText.new`;
+        await page.waitForSelector(buttonSelector, { visible: true });
+
+        // Check the text in the button.
+        let text = await page.evaluate(
+          sel => document.querySelector(sel).textContent,
+          buttonSelector
+        );
+        let ariaLabel = await page.evaluate(
+          sel => document.querySelector(sel).getAttribute("aria-label"),
+          buttonSelector
+        );
+        expect(text === ariaLabel && text)
+          .withContext(`In ${browserName}`)
+          .toEqual("Review alt text");
+
+        // Unselect and select the editor and check that the badge is visible.
+        await page.keyboard.press("Escape");
+        await waitForUnselectedEditor(page, editorSelector);
+        await page.waitForSelector(".editToolbar", { visible: false });
+        await page.waitForSelector(".noAltTextBadge", { visible: true });
+
+        await page.evaluate(() => {
+          window.uiManager.selectAll();
+        });
+        await waitForSelectedEditor(page, editorSelector);
+        await page.waitForSelector(".editToolbar", { visible: true });
+        await page.waitForSelector(".noAltTextBadge", { visible: false });
+
+        // Click on the Review button.
+        await page.click(buttonSelector);
+        await page.waitForSelector("#newAltTextDialog", { visible: true });
+
+        // Check that the dialog has the correct title: "Edit..."
+        await page.waitForFunction(
+          "document.getElementById('newAltTextTitle').textContent.startsWith('Edit')"
+        );
+
+        // Click on create automatically toggle button.
+        await page.click("#newAltTextCreateAutomaticallyButton");
+        await clearInput(
+          page,
+          "#newAltTextDescriptionTextarea",
+          /* waitForInputEvent = */ true
+        );
+
+        // Save the empty text.
+        await page.click("#newAltTextSave");
+        await page.waitForSelector("#newAltTextDialog", { visible: false });
+        await waitForSelectedEditor(page, editorSelector);
+        await page.waitForSelector(buttonSelector, { visible: true });
+
+        // Check the text in the button.
+        text = await page.evaluate(
+          sel => document.querySelector(sel).textContent,
+          buttonSelector
+        );
+        ariaLabel = await page.evaluate(
+          sel => document.querySelector(sel).getAttribute("aria-label"),
+          buttonSelector
+        );
+        expect(text === ariaLabel && text)
+          .withContext(`In ${browserName}`)
+          .toEqual("Missing alt text");
+
+        // Unselect and select the editor and check that the badge is visible.
+        await page.keyboard.press("Escape");
+        await waitForUnselectedEditor(page, editorSelector);
+        await page.waitForSelector(".editToolbar", { visible: false });
+        await page.waitForSelector(".noAltTextBadge", { visible: true });
+        await page.evaluate(() => {
+          window.uiManager.selectAll();
+        });
+        await waitForSelectedEditor(page, editorSelector);
+        await page.waitForSelector(".editToolbar", { visible: true });
+        await page.waitForSelector(".noAltTextBadge", { visible: false });
+
+        // Click on the Review button.
+        await page.click(buttonSelector);
+        await page.waitForSelector("#newAltTextDialog", { visible: true });
+
+        await page.waitForFunction(
+          "document.getElementById('newAltTextTitle').textContent.startsWith('Add')"
+        );
+        // Add a new alt text and check that the title changes to "Edit..."
+        await page.type("#newAltTextDescriptionTextarea", "Hello World");
+        await page.waitForFunction(
+          "document.getElementById('newAltTextTitle').textContent.startsWith('Edit')"
+        );
+
+        // Click on the Save button.
+        await page.click("#newAltTextSave");
+        await page.waitForSelector("#newAltTextDialog", { visible: false });
+
+        // Check the text in the button.
+        text = await page.evaluate(
+          sel => document.querySelector(sel).firstChild.textContent,
+          buttonSelector
+        );
+        ariaLabel = await page.evaluate(
+          sel => document.querySelector(sel).getAttribute("aria-label"),
+          buttonSelector
+        );
+        expect(text === ariaLabel && text)
+          .withContext(`In ${browserName}`)
+          .toEqual("Alt text added");
+
+        await page.hover(buttonSelector);
+
+        // Wait for the tooltip to be visible.
+        const tooltipSelector = `${buttonSelector} .tooltip`;
+        await page.waitForSelector(tooltipSelector, { visible: true });
+
+        const tooltipText = await page.evaluate(
+          sel => document.querySelector(`${sel}`).textContent,
+          tooltipSelector
+        );
+        expect(tooltipText).toEqual("Hello World");
       }
     });
   });
