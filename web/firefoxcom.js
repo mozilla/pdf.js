@@ -466,24 +466,28 @@ class MLManager {
     });
     (this.#enabled ||= new Map()).set("altText", promise);
     if (listenToProgress) {
+      const ac = new AbortController();
+      const signal = AbortSignal.any([this.#abortSignal, ac.signal]);
+
       this.hasProgress = true;
-      const callback = ({ detail }) => {
-        this.#eventBus.dispatch("loadaiengineprogress", {
-          source: this,
-          detail,
-        });
-        if (detail.finished) {
-          this.hasProgress = false;
-          window.removeEventListener("loadAIEngineProgress", callback);
-        }
-      };
-      window.addEventListener("loadAIEngineProgress", callback, {
-        signal: this.#abortSignal,
-      });
+      window.addEventListener(
+        "loadAIEngineProgress",
+        ({ detail }) => {
+          this.#eventBus.dispatch("loadaiengineprogress", {
+            source: this,
+            detail,
+          });
+          if (detail.finished) {
+            ac.abort();
+            this.hasProgress = false;
+          }
+        },
+        { signal }
+      );
       promise.then(ok => {
         if (!ok) {
+          ac.abort();
           this.hasProgress = false;
-          window.removeEventListener("loadAIEngineProgress", callback);
         }
       });
     }
