@@ -385,6 +385,21 @@ const PDFViewerApplication = {
           parseInt(params.get("spreadmodeonload"))
         );
       }
+      if (params.has("enablealttext")) {
+        AppOptions.set("enableAltText", params.get("enablealttext") === "true");
+      }
+      if (params.has("enableupdatedaddimage")) {
+        AppOptions.set(
+          "enableUpdatedAddImage",
+          params.get("enableupdatedaddimage") === "true"
+        );
+      }
+      if (params.has("enableguessalttext")) {
+        AppOptions.set(
+          "enableGuessAltText",
+          params.get("enableguessalttext") === "true"
+        );
+      }
     }
   },
 
