@@ -104,6 +104,22 @@ class StampEditor extends AnnotationEditor {
     super.altTextFinish();
   }
 
+  /** @inheritdoc */
+  get telemetryFinalData() {
+    return {
+      type: "stamp",
+      hasAltText: this.hasAltTextData(),
+    };
+  }
+
+  static computeTelemetryFinalData(data) {
+    const hasAltTextStats = data.get("hasAltText");
+    return {
+      hasAltText: hasAltTextStats.get(true) ?? 0,
+      hasNoAltText: hasAltTextStats.get(false) ?? 0,
+    };
+  }
+
   #getBitmapFetched(data, fromId = false) {
     if (!data) {
       this.remove();
@@ -141,6 +157,10 @@ class StampEditor extends AnnotationEditor {
       this._uiManager.useNewAltTextFlow &&
       this.#bitmap
     ) {
+      this._reportTelemetry({
+        action: "pdfjs.image.image_added",
+        data: { alt_text_modal: false },
+      });
       try {
         // The alt-text dialog isn't opened but we still want to guess the alt
         // text.
@@ -247,6 +267,10 @@ class StampEditor extends AnnotationEditor {
             const data = await this._uiManager.imageManager.getFromFile(
               input.files[0]
             );
+            this._reportTelemetry({
+              action: "pdfjs.image.image_selected",
+              data: { alt_text_modal: this._uiManager.useNewAltTextFlow },
+            });
             this.#getBitmapFetched(data);
           }
           if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {

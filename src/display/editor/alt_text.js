@@ -75,6 +75,12 @@ class AltText {
     const onClick = event => {
       event.preventDefault();
       this.#editor._uiManager.editAltText(this.#editor);
+      if (this.#useNewAltTextFlow) {
+        this.#editor._reportTelemetry({
+          action: "pdfjs.image.alt_text.image_status_label_clicked",
+          label: this.#label,
+        });
+      }
     };
     altText.addEventListener("click", onClick, { capture: true, signal });
     altText.addEventListener(
@@ -90,6 +96,14 @@ class AltText {
     await this.#setState();
 
     return altText;
+  }
+
+  get #label() {
+    return (
+      (this.#altText && "added") ||
+      (this.#altText === null && this.guessedText && "review") ||
+      "missing"
+    );
   }
 
   finish() {
@@ -218,10 +232,13 @@ class AltText {
       // If we've a guessed text and the alt text has never been set, we get a
       // "to-review" been set.
       // Otherwise, we get a "missing".
-      const type =
-        (this.#altText && "added") ||
-        (this.#altText === null && this.guessedText && "to-review") ||
-        "missing";
+      const label = this.#label;
+      // TODO: Update the l10n keys to avoid this.
+      const type = label === "review" ? "to-review" : label;
+      this.#editor._reportTelemetry({
+        action: "pdfjs.image.alt_text.image_status_label_displayed",
+        label,
+      });
       button.classList.toggle("done", !!this.#altText);
       AltText._l10nPromise
         .get(`pdfjs-editor-new-alt-text-${type}-button-label`)
