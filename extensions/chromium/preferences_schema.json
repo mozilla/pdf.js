@@ -94,10 +94,6 @@
       "description": "Whether to allow execution of active content (JavaScript) by PDF files.",
       "default": false
     },
-    "enableHighlightEditor": {
-      "type": "boolean",
-      "default": false
-    },
     "enableHighlightFloatingButton": {
       "type": "boolean",
       "default": false
