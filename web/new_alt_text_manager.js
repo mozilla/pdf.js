@@ -64,8 +64,6 @@ class NewAltTextManager {
 
   #previousAltText = null;
 
-  #telemetryData = null;
-
   constructor(
     {
       descriptionContainer,
@@ -142,6 +140,13 @@ class NewAltTextManager {
     });
 
     this.#overlayManager.register(dialog);
+
+    this.#learnMore.addEventListener("click", () => {
+      this.#currentEditor._reportTelemetry({
+        action: "pdfjs.image.alt_text.info",
+        data: { topic: "alt_text" },
+      });
+    });
   }
 
   #toggleLoading(value) {
@@ -401,6 +406,18 @@ class NewAltTextManager {
     this.#currentEditor.altTextData = {
       cancel: true,
     };
+    const altText = this.#textarea.value.trim();
+    this.#currentEditor._reportTelemetry({
+      action: "pdfjs.image.alt_text.dismiss",
+      data: {
+        alt_text_type: altText ? "present" : "empty",
+        flow: this.#firstTime ? "image_add" : "alt_text_edit",
+      },
+    });
+    this.#currentEditor._reportTelemetry({
+      action: "pdfjs.image.image_added",
+      data: { alt_text_modal: false },
+    });
     this.#finish();
   }
 
@@ -416,13 +433,6 @@ class NewAltTextManager {
     canvas.width = canvas.height = 0;
     this.#imageData = null;
 
-    this.#currentEditor._reportTelemetry(
-      this.#telemetryData || {
-        action: "alt_text_cancel",
-      }
-    );
-
-    this.#telemetryData = null;
     this.#toggleLoading(false);
 
     this.#uiManager?.addEditListeners();
@@ -438,15 +448,33 @@ class NewAltTextManager {
       altText,
       decorative: false,
     };
-    this.#telemetryData = {
-      action: "alt_text_save",
-      alt_text_description: !!altText,
-      alt_text_edit:
-        !!this.#previousAltText && this.#previousAltText !== altText,
-      alt_text_decorative: false,
-      alt_text_altered:
-        this.#guessedAltText && this.#guessedAltText !== altText,
-    };
+    this.#currentEditor.altTextData.guessedAltText = this.#guessedAltText;
+
+    if (this.#guessedAltText && this.#guessedAltText !== altText) {
+      const guessedWords = new Set(this.#guessedAltText.split(/\s+/));
+      const words = new Set(altText.split(/\s+/));
+      this.#currentEditor._reportTelemetry({
+        action: "pdfjs.image.alt_text.user_edit",
+        data: {
+          total_words: guessedWords.size,
+          words_removed: guessedWords.difference(words).size,
+          words_added: words.difference(guessedWords).size,
+        },
+      });
+    }
+    this.#currentEditor._reportTelemetry({
+      action: "pdfjs.image.image_added",
+      data: { alt_text_modal: true },
+    });
+
+    this.#currentEditor._reportTelemetry({
+      action: "pdfjs.image.alt_text.save",
+      data: {
+        alt_text_type: altText ? "present" : "empty",
+        flow: this.#firstTime ? "image_add" : "alt_text_edit",
+      },
+    });
+
     this.#finish();
   }
 
@@ -507,12 +535,21 @@ class ImageAltTextSettings {
     createModelButton.addEventListener("click", async e => {
       const checked = this.#togglePref("enableGuessAltText", e);
       await mlManager.toggleService("altText", checked);
+      this.#reportTelemetry({
+        type: "stamp",
+        action: "pdfjs.image.alt_text.settings_ai_generation_check",
+        data: { status: checked },
+      });
     });
 
-    showAltTextDialogButton.addEventListener(
-      "click",
-      this.#togglePref.bind(this, "enableNewAltTextWhenAddingImage")
-    );
+    showAltTextDialogButton.addEventListener("click", e => {
+      const checked = this.#togglePref("enableNewAltTextWhenAddingImage", e);
+      this.#reportTelemetry({
+        type: "stamp",
+        action: "pdfjs.image.alt_text.settings_edit_alt_text_check",
+        data: { status: checked },
+      });
+    });
 
     deleteModelButton.addEventListener("click", this.#delete.bind(this, true));
     downloadModelButton.addEventListener(
@@ -521,6 +558,14 @@ class ImageAltTextSettings {
     );
 
     closeButton.addEventListener("click", this.#finish.bind(this));
+
+    learnMore.addEventListener("click", () => {
+      this.#reportTelemetry({
+        type: "stamp",
+        action: "pdfjs.image.alt_text.info",
+        data: { topic: "ai_generation" },
+      });
+    });
 
     eventBus._on("enablealttextmodeldownload", ({ value }) => {
       if (value) {
@@ -531,6 +576,16 @@ class ImageAltTextSettings {
     });
 
     this.#overlayManager.register(dialog);
+  }
+
+  #reportTelemetry(data) {
+    this.#eventBus.dispatch("reporttelemetry", {
+      source: this,
+      details: {
+        type: "editing",
+        data,
+      },
+    });
   }
 
   async #download(isFromUI = false) {
@@ -589,6 +644,10 @@ class ImageAltTextSettings {
     );
 
     await this.#overlayManager.open(this.#dialog);
+    this.#reportTelemetry({
+      type: "stamp",
+      action: "pdfjs.image.alt_text.settings_displayed",
+    });
   }
 
   #togglePref(name, { target }) {
