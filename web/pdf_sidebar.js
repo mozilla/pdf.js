@@ -424,6 +424,7 @@ class PDFSidebar {
 
       window.addEventListener("mousemove", this.#mouseMoveBound);
       window.addEventListener("mouseup", this.#mouseUpBound);
+      window.addEventListener("blur", this.#mouseUpBound);
     });
 
     eventBus._on("resize", evt => {
@@ -506,6 +507,7 @@ class PDFSidebar {
 
     window.removeEventListener("mousemove", this.#mouseMoveBound);
     window.removeEventListener("mouseup", this.#mouseUpBound);
+    window.removeEventListener("blur", this.#mouseUpBound);
   }
 }
 
