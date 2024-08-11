@@ -524,14 +524,6 @@ body {
   background-color: white;
 }
 
-#secondaryToolbarButtonContainer {
-  max-width: 220px;
-  min-height: 26px;
-  max-height: calc(var(--viewer-container-height) - 40px);
-  overflow-y: auto;
-  margin-bottom: -4px;
-}
-
 #editorStampParamsToolbar {
   inset-inline-end: calc(var(--editor-toolbar-base-offset) + 0px);
 }
@@ -834,10 +826,6 @@ body {
   mask-image: var(--toolbarButton-zoomIn-icon);
 }
 
-#presentationMode::before {
-  mask-image: var(--toolbarButton-presentationMode-icon);
-}
-
 #editorFreeText::before {
   mask-image: var(--toolbarButton-editorFreeText-icon);
 }
@@ -854,17 +842,11 @@ body {
   mask-image: var(--toolbarButton-editorStamp-icon);
 }
 
-:is(#print, #secondaryPrint)::before {
+#print::before {
   mask-image: var(--toolbarButton-print-icon);
 }
 
-/*#if GENERIC*/
-#secondaryOpenFile::before {
-  mask-image: var(--toolbarButton-openFile-icon);
-}
-/*#endif*/
-
-:is(#download, #secondaryDownload)::before {
+#download::before {
   mask-image: var(--toolbarButton-download-icon);
 }
 
@@ -875,10 +857,6 @@ a.secondaryToolbarButton {
 a:is(.toolbarButton, .secondaryToolbarButton)[href="#"] {
   opacity: 0.5;
   pointer-events: none;
-}
-
-#viewBookmark::before {
-  mask-image: var(--toolbarButton-bookmark-icon);
 }
 
 #viewThumbnail::before {
@@ -937,66 +915,6 @@ a:is(.toolbarButton, .secondaryToolbarButton)[href="#"] {
 }
 .secondaryToolbarButton > span {
   padding-inline-end: 4px;
-}
-
-#firstPage::before {
-  mask-image: var(--secondaryToolbarButton-firstPage-icon);
-}
-
-#lastPage::before {
-  mask-image: var(--secondaryToolbarButton-lastPage-icon);
-}
-
-#pageRotateCcw::before {
-  mask-image: var(--secondaryToolbarButton-rotateCcw-icon);
-}
-
-#pageRotateCw::before {
-  mask-image: var(--secondaryToolbarButton-rotateCw-icon);
-}
-
-#cursorSelectTool::before {
-  mask-image: var(--secondaryToolbarButton-selectTool-icon);
-}
-
-#cursorHandTool::before {
-  mask-image: var(--secondaryToolbarButton-handTool-icon);
-}
-
-#scrollPage::before {
-  mask-image: var(--secondaryToolbarButton-scrollPage-icon);
-}
-
-#scrollVertical::before {
-  mask-image: var(--secondaryToolbarButton-scrollVertical-icon);
-}
-
-#scrollHorizontal::before {
-  mask-image: var(--secondaryToolbarButton-scrollHorizontal-icon);
-}
-
-#scrollWrapped::before {
-  mask-image: var(--secondaryToolbarButton-scrollWrapped-icon);
-}
-
-#spreadNone::before {
-  mask-image: var(--secondaryToolbarButton-spreadNone-icon);
-}
-
-#spreadOdd::before {
-  mask-image: var(--secondaryToolbarButton-spreadOdd-icon);
-}
-
-#spreadEven::before {
-  mask-image: var(--secondaryToolbarButton-spreadEven-icon);
-}
-
-#documentProperties::before {
-  mask-image: var(--secondaryToolbarButton-documentProperties-icon);
-}
-
-#imageAltTextSettings::before {
-  mask-image: var(--secondaryToolbarButton-imageAltTextSettings-icon);
 }
 
 .verticalToolbarSeparator {
@@ -1343,6 +1261,98 @@ dialog :link {
   inset: 0;
   overflow: hidden;
   z-index: 50000; /* should be higher than anything else in PDF.js! */
+}
+
+#secondaryToolbar {
+  #secondaryToolbarButtonContainer {
+    margin-bottom: -4px;
+    max-height: calc(var(--viewer-container-height) - 40px);
+    max-width: 220px;
+    min-height: 26px;
+    overflow-y: auto;
+
+    /*#if GENERIC*/
+    #secondaryOpenFile::before {
+      mask-image: var(--toolbarButton-openFile-icon);
+    }
+    /*#endif*/
+
+    #secondaryPrint::before {
+      mask-image: var(--toolbarButton-print-icon);
+    }
+
+    #secondaryDownload::before {
+      mask-image: var(--toolbarButton-download-icon);
+    }
+
+    #presentationMode::before {
+      mask-image: var(--toolbarButton-presentationMode-icon);
+    }
+
+    #viewBookmark::before {
+      mask-image: var(--toolbarButton-bookmark-icon);
+    }
+
+    #firstPage::before {
+      mask-image: var(--secondaryToolbarButton-firstPage-icon);
+    }
+
+    #lastPage::before {
+      mask-image: var(--secondaryToolbarButton-lastPage-icon);
+    }
+
+    #pageRotateCcw::before {
+      mask-image: var(--secondaryToolbarButton-rotateCcw-icon);
+    }
+
+    #pageRotateCw::before {
+      mask-image: var(--secondaryToolbarButton-rotateCw-icon);
+    }
+
+    #cursorSelectTool::before {
+      mask-image: var(--secondaryToolbarButton-selectTool-icon);
+    }
+
+    #cursorHandTool::before {
+      mask-image: var(--secondaryToolbarButton-handTool-icon);
+    }
+
+    #scrollPage::before {
+      mask-image: var(--secondaryToolbarButton-scrollPage-icon);
+    }
+
+    #scrollVertical::before {
+      mask-image: var(--secondaryToolbarButton-scrollVertical-icon);
+    }
+
+    #scrollHorizontal::before {
+      mask-image: var(--secondaryToolbarButton-scrollHorizontal-icon);
+    }
+
+    #scrollWrapped::before {
+      mask-image: var(--secondaryToolbarButton-scrollWrapped-icon);
+    }
+
+    #spreadNone::before {
+      mask-image: var(--secondaryToolbarButton-spreadNone-icon);
+    }
+
+    #spreadOdd::before {
+      mask-image: var(--secondaryToolbarButton-spreadOdd-icon);
+    }
+
+    #spreadEven::before {
+      mask-image: var(--secondaryToolbarButton-spreadEven-icon);
+    }
+
+    #imageAltTextSettings::before {
+      mask-image: var(--secondaryToolbarButton-imageAltTextSettings-icon);
+    }
+
+    #documentProperties::before {
+      mask-image: var(--secondaryToolbarButton-documentProperties-icon);
+    }
+  }
 }
 
 #findbar {
