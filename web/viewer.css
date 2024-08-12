@@ -1213,27 +1213,8 @@ dialog :link {
   z-index: 50000; /* should be higher than anything else in PDF.js! */
 }
 
-#secondaryToolbar {
-  background-color: var(--doorhanger-bg-color);
-  cursor: default;
-  font: message-box;
-  font-size: 12px;
-  height: auto;
-  inset-inline-end: 4px;
-  line-height: 14px;
-  margin: 4px 2px;
-  padding: 6px 0 10px;
-  position: absolute;
-  text-align: left;
-  top: var(--toolbar-height);
-  z-index: 30000;
-
-  :is(button, a) {
-    font: message-box;
-    outline: none;
-  }
-
-  .toolbarButton {
+.toolbarButton {
+  &.labeled {
     border-radius: 0;
     display: inline-block;
     height: auto;
@@ -1272,6 +1253,27 @@ dialog :link {
       display: unset;
       padding-inline-end: 4px;
     }
+  }
+}
+
+#secondaryToolbar {
+  background-color: var(--doorhanger-bg-color);
+  cursor: default;
+  font: message-box;
+  font-size: 12px;
+  height: auto;
+  inset-inline-end: 4px;
+  line-height: 14px;
+  margin: 4px 2px;
+  padding: 6px 0 10px;
+  position: absolute;
+  text-align: left;
+  top: var(--toolbar-height);
+  z-index: 30000;
+
+  :is(button, a) {
+    font: message-box;
+    outline: none;
   }
 
   #secondaryToolbarButtonContainer {
