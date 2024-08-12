@@ -62,7 +62,10 @@ function resizeRgbImage(src, dest, w1, h1, w2, h2, alpha01) {
 
 class ColorSpace {
   constructor(name, numComps) {
-    if (this.constructor === ColorSpace) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === ColorSpace
+    ) {
       unreachable("Cannot initialize ColorSpace.");
     }
     this.name = name;

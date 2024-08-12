@@ -17,7 +17,10 @@ import { CMapCompressionType, unreachable } from "../shared/util.js";
 
 class BaseFilterFactory {
   constructor() {
-    if (this.constructor === BaseFilterFactory) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BaseFilterFactory
+    ) {
       unreachable("Cannot initialize BaseFilterFactory.");
     }
   }
@@ -49,7 +52,10 @@ class BaseCanvasFactory {
   #enableHWA = false;
 
   constructor({ enableHWA = false } = {}) {
-    if (this.constructor === BaseCanvasFactory) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BaseCanvasFactory
+    ) {
       unreachable("Cannot initialize BaseCanvasFactory.");
     }
     this.#enableHWA = enableHWA;
@@ -101,7 +107,10 @@ class BaseCanvasFactory {
 
 class BaseCMapReaderFactory {
   constructor({ baseUrl = null, isCompressed = true }) {
-    if (this.constructor === BaseCMapReaderFactory) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BaseCMapReaderFactory
+    ) {
       unreachable("Cannot initialize BaseCMapReaderFactory.");
     }
     this.baseUrl = baseUrl;
@@ -139,7 +148,10 @@ class BaseCMapReaderFactory {
 
 class BaseStandardFontDataFactory {
   constructor({ baseUrl = null }) {
-    if (this.constructor === BaseStandardFontDataFactory) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BaseStandardFontDataFactory
+    ) {
       unreachable("Cannot initialize BaseStandardFontDataFactory.");
     }
     this.baseUrl = baseUrl;
@@ -171,7 +183,10 @@ class BaseStandardFontDataFactory {
 
 class BaseSVGFactory {
   constructor() {
-    if (this.constructor === BaseSVGFactory) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BaseSVGFactory
+    ) {
       unreachable("Cannot initialize BaseSVGFactory.");
     }
   }

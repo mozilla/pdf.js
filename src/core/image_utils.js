@@ -23,7 +23,10 @@ import { RefSet, RefSetCache } from "./primitives.js";
 
 class BaseLocalCache {
   constructor(options) {
-    if (this.constructor === BaseLocalCache) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BaseLocalCache
+    ) {
       unreachable("Cannot initialize BaseLocalCache.");
     }
     this._onlyRefs = options?.onlyRefs === true;
