@@ -35,7 +35,10 @@ function applyBoundingBox(ctx, bbox) {
 
 class BaseShadingPattern {
   constructor() {
-    if (this.constructor === BaseShadingPattern) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BaseShadingPattern
+    ) {
       unreachable("Cannot initialize BaseShadingPattern.");
     }
   }

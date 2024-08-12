@@ -583,7 +583,9 @@ class AppOptions {
   }
 
   constructor() {
-    throw new Error("Cannot initialize AppOptions.");
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      throw new Error("Cannot initialize AppOptions.");
+    }
   }
 
   static get(name) {

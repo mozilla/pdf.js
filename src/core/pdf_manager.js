@@ -37,7 +37,10 @@ function parseDocBaseUrl(url) {
 
 class BasePdfManager {
   constructor(args) {
-    if (this.constructor === BasePdfManager) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BasePdfManager
+    ) {
       unreachable("Cannot initialize BasePdfManager.");
     }
     this._docBaseUrl = parseDocBaseUrl(args.docBaseUrl);

@@ -769,7 +769,10 @@ class Commands {
 
 class CompiledFont {
   constructor(fontMatrix) {
-    if (this.constructor === CompiledFont) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === CompiledFont
+    ) {
       unreachable("Cannot initialize CompiledFont.");
     }
     this.fontMatrix = fontMatrix;

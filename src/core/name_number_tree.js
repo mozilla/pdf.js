@@ -23,7 +23,10 @@ import { FormatError, unreachable, warn } from "../shared/util.js";
  */
 class NameOrNumberTree {
   constructor(root, xref, type) {
-    if (this.constructor === NameOrNumberTree) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === NameOrNumberTree
+    ) {
       unreachable("Cannot initialize NameOrNumberTree.");
     }
     this.root = root;

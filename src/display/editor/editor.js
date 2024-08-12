@@ -140,7 +140,10 @@ class AnnotationEditor {
    * @param {AnnotationEditorParameters} parameters
    */
   constructor(parameters) {
-    if (this.constructor === AnnotationEditor) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === AnnotationEditor
+    ) {
       unreachable("Cannot initialize AnnotationEditor.");
     }
 
