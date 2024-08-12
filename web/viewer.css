@@ -1247,6 +1247,16 @@ dialog :link {
     white-space: normal;
     width: auto;
 
+    &:is(a) {
+      padding-top: 5px;
+      text-decoration: none;
+
+      &[href="#"] {
+        opacity: 0.5;
+        pointer-events: none;
+      }
+    }
+
     &::before {
       inset-inline-start: 12px;
       opacity: var(--doorhanger-icon-opacity);
@@ -1261,16 +1271,6 @@ dialog :link {
     > span {
       display: unset;
       padding-inline-end: 4px;
-    }
-  }
-
-  a.toolbarButton {
-    padding-top: 5px;
-    text-decoration: none;
-
-    &[href="#"] {
-      opacity: 0.5;
-      pointer-events: none;
     }
   }
 
