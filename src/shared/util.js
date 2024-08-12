@@ -468,7 +468,10 @@ function shadow(obj, prop, value, nonSerializable = false) {
 const BaseException = (function BaseExceptionClosure() {
   // eslint-disable-next-line no-shadow
   function BaseException(message, name) {
-    if (this.constructor === BaseException) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BaseException
+    ) {
       unreachable("Cannot initialize BaseException.");
     }
     this.message = message;
