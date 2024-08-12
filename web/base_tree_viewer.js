@@ -20,7 +20,10 @@ const TREEITEM_SELECTED_CLASS = "selected";
 
 class BaseTreeViewer {
   constructor(options) {
-    if (this.constructor === BaseTreeViewer) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BaseTreeViewer
+    ) {
       throw new Error("Cannot initialize BaseTreeViewer.");
     }
     this.container = options.container;

@@ -30,7 +30,10 @@ class BasePreferences {
   #initializedPromise = null;
 
   constructor() {
-    if (this.constructor === BasePreferences) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BasePreferences
+    ) {
       throw new Error("Cannot initialize BasePreferences.");
     }
 

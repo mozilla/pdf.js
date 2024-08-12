@@ -98,7 +98,10 @@ class BaseShading {
   static SMALL_NUMBER = 1e-6;
 
   constructor() {
-    if (this.constructor === BaseShading) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BaseShading
+    ) {
       unreachable("Cannot initialize BaseShading.");
     }
   }

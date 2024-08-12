@@ -17,7 +17,10 @@
 
 class BaseExternalServices {
   constructor() {
-    if (this.constructor === BaseExternalServices) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BaseExternalServices
+    ) {
       throw new Error("Cannot initialize BaseExternalServices.");
     }
   }
