@@ -334,8 +334,7 @@ body {
 }
 
 :is(.toolbar, .editorParamsToolbar, #sidebarContainer)
-  :is(input, button, select),
-.secondaryToolbar :is(input, button, a, select) {
+  :is(input, button, select) {
   outline: none;
   font: message-box;
 }
@@ -362,7 +361,6 @@ body {
 }
 
 #toolbarContainer,
-.secondaryToolbar,
 .editorParamsToolbar {
   position: relative;
   height: var(--toolbar-height);
@@ -447,7 +445,6 @@ body {
   transition-duration: 0s;
 }
 
-.secondaryToolbar,
 .editorParamsToolbar {
   top: var(--toolbar-height);
   position: absolute;
@@ -462,7 +459,6 @@ body {
   cursor: default;
 }
 
-.secondaryToolbar,
 .editorParamsToolbar {
   padding: 6px 0 10px;
   inset-inline-end: 4px;
@@ -1223,6 +1219,25 @@ dialog :link {
 }
 
 #secondaryToolbar {
+  background-color: var(--doorhanger-bg-color);
+  cursor: default;
+  font: message-box;
+  font-size: 12px;
+  height: auto;
+  inset-inline-end: 4px;
+  line-height: 14px;
+  margin: 4px 2px;
+  padding: 6px 0 10px;
+  position: absolute;
+  text-align: left;
+  top: var(--toolbar-height);
+  z-index: 30000;
+
+  :is(button, a) {
+    font: message-box;
+    outline: none;
+  }
+
   .toolbarButton {
     border-radius: 0;
     display: inline-block;
