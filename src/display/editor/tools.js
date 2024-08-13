@@ -776,21 +776,18 @@ class AnnotationEditorUIManager {
     this.#viewer = viewer;
     this.#altTextManager = altTextManager;
     this._eventBus = eventBus;
-    this._eventBus._on("editingaction", this.onEditingAction.bind(this), {
+    eventBus._on("editingaction", this.onEditingAction.bind(this), { signal });
+    eventBus._on("pagechanging", this.onPageChanging.bind(this), { signal });
+    eventBus._on("scalechanging", this.onScaleChanging.bind(this), { signal });
+    eventBus._on("rotationchanging", this.onRotationChanging.bind(this), {
       signal,
     });
-    this._eventBus._on("pagechanging", this.onPageChanging.bind(this), {
-      signal,
-    });
-    this._eventBus._on("scalechanging", this.onScaleChanging.bind(this), {
-      signal,
-    });
-    this._eventBus._on("rotationchanging", this.onRotationChanging.bind(this), {
-      signal,
-    });
-    this._eventBus._on("setpreference", this.onSetPreference.bind(this), {
-      signal,
-    });
+    eventBus._on("setpreference", this.onSetPreference.bind(this), { signal });
+    eventBus._on(
+      "switchannotationeditorparams",
+      evt => this.updateParams(evt.type, evt.value),
+      { signal }
+    );
     this.#addSelectionListener();
     this.#addDragAndDropListeners();
     this.#addKeyboardManager();
