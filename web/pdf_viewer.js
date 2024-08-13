@@ -2363,14 +2363,6 @@ class PDFViewer {
     updater();
   }
 
-  // eslint-disable-next-line accessor-pairs
-  set annotationEditorParams({ type, value }) {
-    if (!this.#annotationEditorUIManager) {
-      throw new Error(`The AnnotationEditor is not enabled.`);
-    }
-    this.#annotationEditorUIManager.updateParams(type, value);
-  }
-
   refresh(noUpdate = false, updateArgs = Object.create(null)) {
     if (!this.pdfDocument) {
       return;
