@@ -446,24 +446,19 @@ body {
 }
 
 .editorParamsToolbar {
+  background-color: var(--doorhanger-bg-color);
   top: var(--toolbar-height);
   position: absolute;
   z-index: 30000;
   height: auto;
-  padding: 0 4px;
+  inset-inline-end: 4px;
+  padding: 6px 0 10px;
   margin: 4px 2px;
   font: message-box;
   font-size: 12px;
   line-height: 14px;
   text-align: left;
   cursor: default;
-}
-
-.editorParamsToolbar {
-  padding: 6px 0 10px;
-  inset-inline-end: 4px;
-  height: auto;
-  background-color: var(--doorhanger-bg-color);
 }
 
 .editorParamsToolbarContainer {
@@ -1218,6 +1213,49 @@ dialog :link {
   z-index: 50000; /* should be higher than anything else in PDF.js! */
 }
 
+.toolbarButton {
+  &.labeled {
+    border-radius: 0;
+    display: inline-block;
+    height: auto;
+    margin: 0;
+    padding: 0 0 1px;
+    padding-inline-start: 36px;
+    position: relative;
+    min-height: 26px;
+    min-width: 100%;
+    text-align: start;
+    white-space: normal;
+    width: auto;
+
+    &:is(a) {
+      padding-top: 5px;
+      text-decoration: none;
+
+      &[href="#"] {
+        opacity: 0.5;
+        pointer-events: none;
+      }
+    }
+
+    &::before {
+      inset-inline-start: 12px;
+      opacity: var(--doorhanger-icon-opacity);
+      top: 5px;
+    }
+
+    &:not(.toggled):is(:hover, :focus-visible) {
+      background-color: var(--doorhanger-hover-bg-color);
+      color: var(--doorhanger-hover-color);
+    }
+
+    > span {
+      display: unset;
+      padding-inline-end: 4px;
+    }
+  }
+}
+
 #secondaryToolbar {
   background-color: var(--doorhanger-bg-color);
   cursor: default;
@@ -1236,47 +1274,6 @@ dialog :link {
   :is(button, a) {
     font: message-box;
     outline: none;
-  }
-
-  .toolbarButton {
-    border-radius: 0;
-    display: inline-block;
-    height: auto;
-    margin: 0;
-    padding: 0 0 1px;
-    padding-inline-start: 36px;
-    position: relative;
-    min-height: 26px;
-    min-width: 100%;
-    text-align: start;
-    white-space: normal;
-    width: auto;
-
-    &::before {
-      inset-inline-start: 12px;
-      opacity: var(--doorhanger-icon-opacity);
-      top: 5px;
-    }
-
-    &:not(.toggled):is(:hover, :focus-visible) {
-      background-color: var(--doorhanger-hover-bg-color);
-      color: var(--doorhanger-hover-color);
-    }
-
-    > span {
-      display: unset;
-      padding-inline-end: 4px;
-    }
-  }
-
-  a.toolbarButton {
-    padding-top: 5px;
-    text-decoration: none;
-
-    &[href="#"] {
-      opacity: 0.5;
-      pointer-events: none;
-    }
   }
 
   #secondaryToolbarButtonContainer {
