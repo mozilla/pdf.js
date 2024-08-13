@@ -1939,11 +1939,6 @@ const PDFViewerApplication = {
       evt => (pdfViewer.annotationEditorMode = evt),
       { signal }
     );
-    eventBus._on(
-      "switchannotationeditorparams",
-      evt => (pdfViewer.annotationEditorParams = evt),
-      { signal }
-    );
     eventBus._on("print", this.triggerPrinting.bind(this), { signal });
     eventBus._on("download", this.downloadOrSave.bind(this), { signal });
     eventBus._on("firstpage", () => (this.page = 1), { signal });

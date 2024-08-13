@@ -783,6 +783,11 @@ class AnnotationEditorUIManager {
       signal,
     });
     eventBus._on("setpreference", this.onSetPreference.bind(this), { signal });
+    eventBus._on(
+      "switchannotationeditorparams",
+      evt => this.updateParams(evt.type, evt.value),
+      { signal }
+    );
     this.#addSelectionListener();
     this.#addDragAndDropListeners();
     this.#addKeyboardManager();
