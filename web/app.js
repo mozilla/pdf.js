@@ -558,11 +558,6 @@ const PDFViewerApplication = {
           typeof AbortSignal.any === "function") &&
         annotationEditorMode !== AnnotationEditorType.DISABLE
       ) {
-        const editorHighlightButton = appConfig.toolbar?.editorHighlightButton;
-        if (editorHighlightButton && AppOptions.get("enableHighlightEditor")) {
-          editorHighlightButton.hidden = false;
-        }
-
         this.annotationEditorParams = new AnnotationEditorParams(
           appConfig.annotationEditorParams,
           eventBus
