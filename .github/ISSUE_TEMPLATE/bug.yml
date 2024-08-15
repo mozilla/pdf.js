@@ -26,11 +26,13 @@ body:
   - type: input
     attributes:
       label: PDF.js version
+      description: Please find official releases [here](https://github.com/mozilla/pdf.js/releases)
     validations:
       required: true
   - type: dropdown
     attributes:
       label: Is the bug present in the latest PDF.js version?
+      description: Please check the [online demo](https://github.com/mozilla/pdf.js#online-demo)
       options: ["Yes", "No"]
       default: 0
     validations:
