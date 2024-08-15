@@ -51,12 +51,6 @@ pdfjs-download-button-label = Downloaden
 pdfjs-bookmark-button =
     .title = Huidige pagina (URL van huidige pagina bekijken)
 pdfjs-bookmark-button-label = Huidige pagina
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = Openen in app
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = Openen in app
 
 ##  Secondary toolbar and context menu
 
@@ -304,8 +298,6 @@ pdfjs-editor-stamp-button-label = Afbeeldingen toevoegen of bewerken
 pdfjs-editor-highlight-button =
     .title = Markeren
 pdfjs-editor-highlight-button-label = Markeren
-pdfjs-highlight-floating-button =
-    .title = Markeren
 pdfjs-highlight-floating-button1 =
     .title = Markeren
     .aria-label = Markeren
@@ -400,3 +392,60 @@ pdfjs-editor-colorpicker-red =
 pdfjs-editor-highlight-show-all-button-label = Alles tonen
 pdfjs-editor-highlight-show-all-button =
     .title = Alles tonen
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+# Modal header positioned above a text box where users can edit the alt text.
+pdfjs-editor-new-alt-text-dialog-edit-label = Alternatieve tekst (afbeeldingsbeschrijving) bewerken
+# Modal header positioned above a text box where users can add the alt text.
+pdfjs-editor-new-alt-text-dialog-add-label = Alternatieve tekst (afbeeldingsbeschrijving) toevoegen
+pdfjs-editor-new-alt-text-textarea =
+    .placeholder = Schrijf hier uw beschrijving…
+# This text refers to the alt text box above this description. It offers a definition of alt text.
+pdfjs-editor-new-alt-text-description = Korte beschrijving voor mensen die de afbeelding niet kunnen zien of wanneer de afbeelding niet wordt geladen.
+# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
+pdfjs-editor-new-alt-text-disclaimer = Deze alternatieve tekst is automatisch aangemaakt.
+pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Meer info
+pdfjs-editor-new-alt-text-create-automatically-button-label = Alternatieve tekst automatisch aanmaken
+pdfjs-editor-new-alt-text-not-now-button = Niet nu
+pdfjs-editor-new-alt-text-error-title = Kan alternatieve tekst niet automatisch aanmaken
+pdfjs-editor-new-alt-text-error-description = Schrijf uw eigen alternatieve tekst of probeer het later nog eens.
+pdfjs-editor-new-alt-text-error-close-button = Sluiten
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+#   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
+#   $percent (Number) - the percentage of the downloaded size.
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = AI-model voor alternatieve tekst downloaden ({ $downloadedSize } van { $totalSize } MB)
+    .aria-valuetext = AI-model voor alternatieve tekst downloaden ({ $downloadedSize } van { $totalSize } MB)
+# This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button-label = Alternatieve tekst toegevoegd
+# This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button-label = Alternatieve tekst ontbreekt
+# This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button-label = Alternatieve tekst beoordelen
+# "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
+# Variables:
+#   $generatedAltText (String) - the generated alt-text.
+pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer = Automatisch aangemaakt: { $generatedAltText }
+
+## Image alt-text settings
+
+pdfjs-image-alt-text-settings-button =
+    .title = Instellingen voor alternatieve tekst van afbeeldingen
+pdfjs-image-alt-text-settings-button-label = Instellingen voor alternatieve tekst van afbeeldingen
+pdfjs-editor-alt-text-settings-dialog-label = Instellingen voor alternatieve tekst van afbeeldingen
+pdfjs-editor-alt-text-settings-automatic-title = Automatische alternatieve tekst
+pdfjs-editor-alt-text-settings-create-model-button-label = Alternatieve tekst automatisch aanmaken
+pdfjs-editor-alt-text-settings-create-model-description = Stelt beschrijvingen voor om mensen te helpen die de afbeelding niet kunnen zien of voor wie de afbeelding niet wordt geladen.
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+pdfjs-editor-alt-text-settings-download-model-label = AI-model voor alternatieve tekst ({ $totalSize } MB)
+pdfjs-editor-alt-text-settings-ai-model-description = Wordt lokaal op uw apparaat uitgevoerd, zodat uw gegevens privé blijven. Vereist voor automatische alternatieve tekst.
+pdfjs-editor-alt-text-settings-delete-model-button = Verwijderen
+pdfjs-editor-alt-text-settings-download-model-button = Downloaden
+pdfjs-editor-alt-text-settings-downloading-model-button = Downloaden…
+pdfjs-editor-alt-text-settings-editor-title = Alternatieve-tekstbewerker
+pdfjs-editor-alt-text-settings-show-dialog-button-label = Alternatieve-tekstbewerker meteen tonen bij toevoegen van een afbeelding
+pdfjs-editor-alt-text-settings-show-dialog-description = Helpt u ervoor te zorgen dat al uw afbeeldingen alternatieve tekst hebben.
+pdfjs-editor-alt-text-settings-close-button = Sluiten
