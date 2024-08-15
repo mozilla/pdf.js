@@ -106,11 +106,6 @@ describe("Stamp Editor", () => {
     it("must load a PNG which is bigger than a page", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          if (browserName === "firefox") {
-            // Disabled in Firefox, because of https://bugzilla.mozilla.org/1553847.
-            return;
-          }
-
           await switchToStamp(page);
           await page.click("#editorStampAddImage");
 
@@ -138,11 +133,6 @@ describe("Stamp Editor", () => {
     it("must load a SVG", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          if (browserName === "firefox") {
-            // Disabled in Firefox, because of https://bugzilla.mozilla.org/1553847.
-            return;
-          }
-
           await page.click("#editorStampAddImage");
           const input = await page.$("#stampEditorFileInput");
           await input.uploadFile(
@@ -183,11 +173,6 @@ describe("Stamp Editor", () => {
     it("must check that an added image stay within the page", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          if (browserName === "firefox") {
-            // Disabled in Firefox, because of https://bugzilla.mozilla.org/1553847.
-            return;
-          }
-
           await switchToStamp(page);
           const names = ["bottomLeft", "bottomRight", "topRight", "topLeft"];
 

@@ -115,12 +115,6 @@ describe("PDF viewer", () => {
     it("must check that we can zoom with the mouse wheel and pressed control key", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          if (browserName === "firefox") {
-            // Skip this test for Firefox, as it's not working correctly.
-            // See https://github.com/puppeteer/puppeteer/issues/12093.
-            // TODO: Remove this check once the issue is resolved.
-            return;
-          }
           await page.keyboard.down("Control");
           let zoom = 10;
           const zoomGetter = () =>
