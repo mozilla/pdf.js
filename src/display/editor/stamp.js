@@ -108,7 +108,7 @@ class StampEditor extends AnnotationEditor {
   get telemetryFinalData() {
     return {
       type: "stamp",
-      hasAltText: this.hasAltTextData(),
+      hasAltText: !!this.altTextData?.altText,
     };
   }
 

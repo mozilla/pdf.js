@@ -78,7 +78,7 @@ class AltText {
       if (this.#useNewAltTextFlow) {
         this.#editor._reportTelemetry({
           action: "pdfjs.image.alt_text.image_status_label_clicked",
-          label: this.#label,
+          data: { label: this.#label },
         });
       }
     };
@@ -237,7 +237,7 @@ class AltText {
       const type = label === "review" ? "to-review" : label;
       this.#editor._reportTelemetry({
         action: "pdfjs.image.alt_text.image_status_label_displayed",
-        label,
+        data: { label },
       });
       button.classList.toggle("done", !!this.#altText);
       AltText._l10nPromise
