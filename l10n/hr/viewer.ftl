@@ -42,6 +42,15 @@ pdfjs-print-button-label = Ispiši
 pdfjs-save-button =
     .title = Spremi
 pdfjs-save-button-label = Spremi
+# Used in Firefox for Android as a tooltip for the download button (“download” is a verb).
+pdfjs-download-button =
+    .title = Preuzimanja
+# Used in Firefox for Android as a label for the download button (“download” is a verb).
+# Length of the translation matters since we are in a mobile context, with limited screen estate.
+pdfjs-download-button-label = Preuzimanja
+pdfjs-bookmark-button =
+    .title = Trenutna stranica (pogledajte URL s trenutne stranice)
+pdfjs-bookmark-button-label = Trenutna stranica
 
 ##  Secondary toolbar and context menu
 
@@ -66,6 +75,9 @@ pdfjs-cursor-text-select-tool-button-label = Alat za označavanje teksta
 pdfjs-cursor-hand-tool-button =
     .title = Omogući ručni alat
 pdfjs-cursor-hand-tool-button-label = Ručni alat
+pdfjs-scroll-page-button =
+    .title = Koristi klizanje stranice
+pdfjs-scroll-page-button-label = Klizanje stranice
 pdfjs-scroll-vertical-button =
     .title = Koristi okomito pomicanje
 pdfjs-scroll-vertical-button-label = Okomito pomicanje
@@ -90,7 +102,7 @@ pdfjs-spread-even-button-label = Parne duplerice
 pdfjs-document-properties-button =
     .title = Svojstva dokumenta …
 pdfjs-document-properties-button-label = Svojstva dokumenta …
-pdfjs-document-properties-file-name = Naziv datoteke:
+pdfjs-document-properties-file-name = Ime datoteke:
 pdfjs-document-properties-file-size = Veličina datoteke:
 # Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
@@ -112,7 +124,7 @@ pdfjs-document-properties-modification-date = Datum promjene:
 pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Stvaratelj:
 pdfjs-document-properties-producer = PDF stvaratelj:
-pdfjs-document-properties-version = PDF verzija:
+pdfjs-document-properties-version = PDF inačica:
 pdfjs-document-properties-page-count = Broj stranica:
 pdfjs-document-properties-page-size = Dimenzije stranice:
 pdfjs-document-properties-page-size-unit-inches = in
@@ -201,12 +213,30 @@ pdfjs-find-previous-button =
 pdfjs-find-previous-button-label = Prethodno
 pdfjs-find-next-button =
     .title = Pronađi sljedeće pojavljivanje ovog izraza
-pdfjs-find-next-button-label = Sljedeće
+pdfjs-find-next-button-label = Dalje
 pdfjs-find-highlight-checkbox = Istankni sve
 pdfjs-find-match-case-checkbox-label = Razlikovanje velikih i malih slova
+pdfjs-find-match-diacritics-checkbox-label = Razlikuj dijakritičke znakove
 pdfjs-find-entire-word-checkbox-label = Cijele riječi
 pdfjs-find-reached-top = Dosegnut početak dokumenta, nastavak s kraja
 pdfjs-find-reached-bottom = Dosegnut kraj dokumenta, nastavak s početka
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count =
+    { NUMBER($total) ->
+        [one] { $current } od { $total } rezultata
+        [few] { $current } od { $total } rezultata
+       *[other] { $current } od { $total } rezultata
+    }
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit =
+    { NUMBER($limit) ->
+        [one] Više od { $limit } rezultat
+        [few] Više od { $limit } rezultata
+       *[other] Više od { $limit } rezultata
+    }
 pdfjs-find-not-found = Izraz nije pronađen
 
 ## Predefined zoom values
@@ -231,7 +261,7 @@ pdfjs-page-landmark =
 pdfjs-loading-error = Došlo je do greške pri učitavanju PDF-a.
 pdfjs-invalid-file-error = Neispravna ili oštećena PDF datoteka.
 pdfjs-missing-file-error = Nedostaje PDF datoteka.
-pdfjs-unexpected-response-error = Neočekivani odgovor poslužitelja.
+pdfjs-unexpected-response-error = Neočekivani odgovor servera.
 pdfjs-rendering-error = Došlo je do greške prilikom iscrtavanja stranice.
 
 ## Annotations
@@ -261,19 +291,128 @@ pdfjs-web-fonts-disabled = Web fontovi su deaktivirani: nije moguće koristiti u
 pdfjs-editor-free-text-button =
     .title = Tekst
 pdfjs-editor-free-text-button-label = Tekst
+pdfjs-editor-ink-button =
+    .title = Crtanje
+pdfjs-editor-ink-button-label = Crtanje
+pdfjs-editor-stamp-button =
+    .title = Dodajte ili uredite slike
+pdfjs-editor-stamp-button-label = Dodajte ili uredite slike
+pdfjs-editor-highlight-button =
+    .title = Istakni
+pdfjs-editor-highlight-button-label = Istakni
+pdfjs-highlight-floating-button1 =
+    .title = Istakni
+    .aria-label = Istakni
+pdfjs-highlight-floating-button-label = Istakni
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = Ukloni crtež
+pdfjs-editor-remove-freetext-button =
+    .title = Ukloni tekst
+pdfjs-editor-remove-stamp-button =
+    .title = Ukloni sliku
+pdfjs-editor-remove-highlight-button =
+    .title = Ukloni isticanje
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Boja
 pdfjs-editor-free-text-size-input = Veličina
 pdfjs-editor-ink-color-input = Boja
 pdfjs-editor-ink-thickness-input = Debljina
 pdfjs-editor-ink-opacity-input = Neprozirnost
+pdfjs-editor-stamp-add-image-button =
+    .title = Dodaj sliku
+pdfjs-editor-stamp-add-image-button-label = Dodaj sliku
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Debljina
+pdfjs-editor-free-highlight-thickness-title =
+    .title = Promjeni debljinu pri isticanju drugih stavki osim teksta
 pdfjs-free-text =
     .aria-label = Uređivač teksta
 pdfjs-free-text-default-content = Počni tipkati …
+pdfjs-ink =
+    .aria-label = Uređivač crteža
+pdfjs-ink-canvas =
+    .aria-label = Slika koju je izradio korisnik
 
 ## Alt-text dialog
 
+# Alternative text (alt text) helps when people can't see the image.
+pdfjs-editor-alt-text-button-label = Alternativni tekst
+pdfjs-editor-alt-text-edit-button-label = Uredi alternativni tekst
+pdfjs-editor-alt-text-dialog-label = Odaberi jednu opciju
+pdfjs-editor-alt-text-dialog-description = Alternativni tekst pomaže slijepim osobama ili kada se slika ne učita.
+pdfjs-editor-alt-text-add-description-label = Dodaj opis
+pdfjs-editor-alt-text-add-description-description = Sažmi sadržaj predmeta, okruženje ili radnje u jednoj ili dvije rečenice.
+pdfjs-editor-alt-text-mark-decorative-label = Označi kao ukrasno
+pdfjs-editor-alt-text-mark-decorative-description = Ovo se koristi za ukrasne slike, poput rubova ili vodenih žigova.
+pdfjs-editor-alt-text-cancel-button = Odustani
+pdfjs-editor-alt-text-save-button = Spremi
+pdfjs-editor-alt-text-decorative-tooltip = Označeno kao ukrasno
+# .placeholder: This is a placeholder for the alt text input area
+pdfjs-editor-alt-text-textarea =
+    .placeholder = Na primjer, „Mladić sjeda za stol kako bi jeo”
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
+pdfjs-editor-resizer-label-top-left = Gornji lijevi kut — promijenite veličinu
+pdfjs-editor-resizer-label-top-middle = Gore sredina — promijenite veličinu
+pdfjs-editor-resizer-label-top-right = Gornji desni kut — promijenite veličinu
+pdfjs-editor-resizer-label-middle-right = Sredina desno — promijenite veličinu
+pdfjs-editor-resizer-label-bottom-right = Donji desni kut — promijenite veličinu
+pdfjs-editor-resizer-label-bottom-middle = Dolje sredina — promjenite veličinu
+pdfjs-editor-resizer-label-bottom-left = Donji lijevi kut — promijenite veličinu
+pdfjs-editor-resizer-label-middle-left = Sredina lijevo — promijenite veličinu
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = Boja isticanja
+pdfjs-editor-colorpicker-button =
+    .title = Promjeni boju
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = Izbor boja
+pdfjs-editor-colorpicker-yellow =
+    .title = Žuta
+pdfjs-editor-colorpicker-green =
+    .title = Zelena
+pdfjs-editor-colorpicker-blue =
+    .title = Plava
+pdfjs-editor-colorpicker-pink =
+    .title = Ružičasta
+pdfjs-editor-colorpicker-red =
+    .title = Crvena
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Prikaži sve
+pdfjs-editor-highlight-show-all-button =
+    .title = Prikaži sve
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Saznaj više
+pdfjs-editor-new-alt-text-create-automatically-button-label = Automatski stvori zamjenski tekst
+
+## Image alt-text settings
+
+pdfjs-image-alt-text-settings-button =
+    .title = Postavke zamjenskog teksta slike
+pdfjs-image-alt-text-settings-button-label = Postavke zamjenskog teksta slike
+pdfjs-editor-alt-text-settings-dialog-label = Postavke zamjenskog teksta slike
+pdfjs-editor-alt-text-settings-automatic-title = Automatski zamjenski tekst
+pdfjs-editor-alt-text-settings-create-model-button-label = Automatski stvori zamjenski tekst
+pdfjs-editor-alt-text-settings-delete-model-button = Izbriši
+pdfjs-editor-alt-text-settings-download-model-button = Preuzmi
+pdfjs-editor-alt-text-settings-downloading-model-button = Preuzimanje …
+pdfjs-editor-alt-text-settings-editor-title = Uređivač zamjenskog teksta
+pdfjs-editor-alt-text-settings-show-dialog-button-label = Prikaži uređivač zamjenskog teksta odmah pri dodavanju slike
+pdfjs-editor-alt-text-settings-show-dialog-description = Pomaže osigurati da sve tvoje slike imaju zamjenski tekst.
+pdfjs-editor-alt-text-settings-close-button = Zatvori

@@ -51,12 +51,6 @@ pdfjs-download-button-label = Stáhnout
 pdfjs-bookmark-button =
     .title = Aktuální stránka (zobrazit URL od aktuální stránky)
 pdfjs-bookmark-button-label = Aktuální stránka
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = Otevřít v aplikaci
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = Otevřít v aplikaci
 
 ##  Secondary toolbar and context menu
 
@@ -308,8 +302,6 @@ pdfjs-editor-stamp-button-label = Přidání či úprava obrázků
 pdfjs-editor-highlight-button =
     .title = Zvýraznění
 pdfjs-editor-highlight-button-label = Zvýraznění
-pdfjs-highlight-floating-button =
-    .title = Zvýraznit
 pdfjs-highlight-floating-button1 =
     .title = Zvýraznit
     .aria-label = Zvýraznit
@@ -404,3 +396,26 @@ pdfjs-editor-colorpicker-red =
 pdfjs-editor-highlight-show-all-button-label = Zobrazit vše
 pdfjs-editor-highlight-show-all-button =
     .title = Zobrazit vše
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+# Modal header positioned above a text box where users can edit the alt text.
+pdfjs-editor-new-alt-text-dialog-edit-label = Upravit alternativní text (popis obrázku)
+# Modal header positioned above a text box where users can add the alt text.
+pdfjs-editor-new-alt-text-dialog-add-label = Přidat alternativní text (popis obrázku)
+pdfjs-editor-new-alt-text-textarea =
+    .placeholder = Sem napište svůj popis…
+# This text refers to the alt text box above this description. It offers a definition of alt text.
+pdfjs-editor-new-alt-text-description = Krátký popis pro lidi, kteří neuvidí obrázek nebo když se obrázek nenačítá.
+# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
+pdfjs-editor-new-alt-text-disclaimer = Tento alternativní text byl vytvořen automaticky.
+pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Více informací
+pdfjs-editor-new-alt-text-create-automatically-button-label = Vytvořit alternativní text automaticky
+pdfjs-editor-new-alt-text-not-now-button = Teď ne
+pdfjs-editor-new-alt-text-error-title = Nepodařilo se automaticky vytvořit alternativní text
+pdfjs-editor-new-alt-text-error-description = Napište prosím vlastní alternativní text nebo to zkuste znovu později.
+pdfjs-editor-new-alt-text-error-close-button = Zavřít
+
+## Image alt-text settings
+

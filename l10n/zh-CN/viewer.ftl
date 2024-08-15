@@ -290,8 +290,6 @@ pdfjs-editor-stamp-button-label = 添加或编辑图像
 pdfjs-editor-highlight-button =
     .title = 高亮
 pdfjs-editor-highlight-button-label = 高亮
-pdfjs-highlight-floating-button =
-    .title = 高亮
 pdfjs-highlight-floating-button1 =
     .title = 高亮
     .aria-label = 高亮
@@ -386,3 +384,17 @@ pdfjs-editor-colorpicker-red =
 pdfjs-editor-highlight-show-all-button-label = 显示全部
 pdfjs-editor-highlight-show-all-button =
     .title = 显示全部
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+pdfjs-editor-new-alt-text-disclaimer-learn-more-url = 详细了解
+pdfjs-editor-new-alt-text-not-now-button = 暂时不要
+pdfjs-editor-new-alt-text-error-close-button = 关闭
+
+## Image alt-text settings
+
+pdfjs-editor-alt-text-settings-delete-model-button = 删除
+pdfjs-editor-alt-text-settings-download-model-button = 下载
+pdfjs-editor-alt-text-settings-downloading-model-button = 正在下载…
+pdfjs-editor-alt-text-settings-close-button = 关闭

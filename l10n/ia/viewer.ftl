@@ -392,3 +392,17 @@ pdfjs-editor-colorpicker-red =
 pdfjs-editor-highlight-show-all-button-label = Monstrar toto
 pdfjs-editor-highlight-show-all-button =
     .title = Monstrar toto
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Pro saper plus
+pdfjs-editor-new-alt-text-not-now-button = Non ora
+pdfjs-editor-new-alt-text-error-close-button = Clauder
+
+## Image alt-text settings
+
+pdfjs-editor-alt-text-settings-delete-model-button = Deler
+pdfjs-editor-alt-text-settings-download-model-button = Discargar
+pdfjs-editor-alt-text-settings-downloading-model-button = Discargante…
+pdfjs-editor-alt-text-settings-close-button = Clauder
