@@ -285,6 +285,7 @@ const PDFViewerApplication = {
       this._PDFBug = PDFBug;
     };
 
+    // Parameters that need to be handled manually.
     if (params.get("disableworker") === "true") {
       try {
         GlobalWorkerOptions.workerSrc ||= AppOptions.get("workerSrc");
@@ -297,30 +298,6 @@ const PDFViewerApplication = {
       } catch (ex) {
         console.error(`_parseHashParams: "${ex.message}".`);
       }
-    }
-    if (params.has("disablerange")) {
-      AppOptions.set("disableRange", params.get("disablerange") === "true");
-    }
-    if (params.has("disablestream")) {
-      AppOptions.set("disableStream", params.get("disablestream") === "true");
-    }
-    if (params.has("disableautofetch")) {
-      AppOptions.set(
-        "disableAutoFetch",
-        params.get("disableautofetch") === "true"
-      );
-    }
-    if (params.has("disablefontface")) {
-      AppOptions.set(
-        "disableFontFace",
-        params.get("disablefontface") === "true"
-      );
-    }
-    if (params.has("disablehistory")) {
-      AppOptions.set("disableHistory", params.get("disablehistory") === "true");
-    }
-    if (params.has("verbosity")) {
-      AppOptions.set("verbosity", params.get("verbosity") | 0);
     }
     if (params.has("textlayer")) {
       switch (params.get("textlayer")) {
@@ -359,46 +336,35 @@ const PDFViewerApplication = {
       AppOptions.set("localeProperties", { lang: params.get("locale") });
     }
 
+    // Parameters that can be handled automatically.
+    const opts = {
+      disableAutoFetch: x => x === "true",
+      disableFontFace: x => x === "true",
+      disableHistory: x => x === "true",
+      disableRange: x => x === "true",
+      disableStream: x => x === "true",
+      verbosity: x => x | 0,
+    };
+
     // Set some specific preferences for tests.
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
-      if (params.has("highlighteditorcolors")) {
-        AppOptions.set(
-          "highlightEditorColors",
-          params.get("highlighteditorcolors")
-        );
-      }
-      if (params.has("maxcanvaspixels")) {
-        AppOptions.set(
-          "maxCanvasPixels",
-          Number(params.get("maxcanvaspixels"))
-        );
-      }
-      if (params.has("supportscaretbrowsingmode")) {
-        AppOptions.set(
-          "supportsCaretBrowsingMode",
-          params.get("supportscaretbrowsingmode") === "true"
-        );
-      }
-      if (params.has("spreadmodeonload")) {
-        AppOptions.set(
-          "spreadModeOnLoad",
-          parseInt(params.get("spreadmodeonload"))
-        );
-      }
-      if (params.has("enablealttext")) {
-        AppOptions.set("enableAltText", params.get("enablealttext") === "true");
-      }
-      if (params.has("enableupdatedaddimage")) {
-        AppOptions.set(
-          "enableUpdatedAddImage",
-          params.get("enableupdatedaddimage") === "true"
-        );
-      }
-      if (params.has("enableguessalttext")) {
-        AppOptions.set(
-          "enableGuessAltText",
-          params.get("enableguessalttext") === "true"
-        );
+      Object.assign(opts, {
+        enableAltText: x => x === "true",
+        enableGuessAltText: x => x === "true",
+        enableUpdatedAddImage: x => x === "true",
+        highlightEditorColors: x => x,
+        maxCanvasPixels: x => parseInt(x),
+        spreadModeOnLoad: x => parseInt(x),
+        supportsCaretBrowsingMode: x => x === "true",
+      });
+    }
+
+    for (const name in opts) {
+      const check = opts[name],
+        key = name.toLowerCase();
+
+      if (params.has(key)) {
+        AppOptions.set(name, check(params.get(key)));
       }
     }
   },
