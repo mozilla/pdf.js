@@ -51,12 +51,6 @@ pdfjs-download-button-label = Llwytho i lawr
 pdfjs-bookmark-button =
     .title = Tudalen Gyfredol (Gweld URL o'r Dudalen Gyfredol)
 pdfjs-bookmark-button-label = Tudalen Gyfredol
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = Agor yn yr ap
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = Agor yn yr ap
 
 ##  Secondary toolbar and context menu
 
@@ -312,8 +306,6 @@ pdfjs-editor-stamp-button-label = Ychwanegu neu olygu delweddau
 pdfjs-editor-highlight-button =
     .title = Amlygu
 pdfjs-editor-highlight-button-label = Amlygu
-pdfjs-highlight-floating-button =
-    .title = Amlygu
 pdfjs-highlight-floating-button1 =
     .title = Amlygu
     .aria-label = Amlygu
@@ -408,3 +400,60 @@ pdfjs-editor-colorpicker-red =
 pdfjs-editor-highlight-show-all-button-label = Dangos y cyfan
 pdfjs-editor-highlight-show-all-button =
     .title = Dangos y cyfan
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+# Modal header positioned above a text box where users can edit the alt text.
+pdfjs-editor-new-alt-text-dialog-edit-label = Golygu testun amgen (disgrifiad o ddelwedd)
+# Modal header positioned above a text box where users can add the alt text.
+pdfjs-editor-new-alt-text-dialog-add-label = Ychwanegwch destun amgen (disgrifiad delwedd)
+pdfjs-editor-new-alt-text-textarea =
+    .placeholder = Ysgrifennwch eich disgrifiad yma…
+# This text refers to the alt text box above this description. It offers a definition of alt text.
+pdfjs-editor-new-alt-text-description = Disgrifiad byr ar gyfer pobl sydd ddim yn gallu gweld y ddelwedd neu pan nad yw'r ddelwedd yn llwytho.
+# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
+pdfjs-editor-new-alt-text-disclaimer = Crëwyd y testun amgen hwn yn awtomatig.
+pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Dysgu rhagor
+pdfjs-editor-new-alt-text-create-automatically-button-label = Creu testun amgen yn awtomatig
+pdfjs-editor-new-alt-text-not-now-button = Nid nawr
+pdfjs-editor-new-alt-text-error-title = Methu â chreu testun amgen yn awtomatig
+pdfjs-editor-new-alt-text-error-description = Ysgrifennwch eich testun amgen eich hun neu ceisiwch eto yn nes ymlaen.
+pdfjs-editor-new-alt-text-error-close-button = Cau
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+#   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
+#   $percent (Number) - the percentage of the downloaded size.
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = Wrthi'n llwytho i lawr model AI testun amgen ( { $downloadedSize } o { $totalSize } MB)
+    .aria-valuetext = Wrthi'n llwytho i lawr model AI testun amgen ( { $downloadedSize } o { $totalSize } MB)
+# This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button-label = Ychwanegwyd testun amgen
+# This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button-label = Testun amgen coll
+# This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button-label = Adolygu'r testun amgen
+# "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
+# Variables:
+#   $generatedAltText (String) - the generated alt-text.
+pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer = Crëwyd yn awtomatig: { $generatedAltText }
+
+## Image alt-text settings
+
+pdfjs-image-alt-text-settings-button =
+    .title = Gosodiadau testun amgen delwedd
+pdfjs-image-alt-text-settings-button-label = Gosodiadau testun amgen delwedd
+pdfjs-editor-alt-text-settings-dialog-label = Gosodiadau testun amgen delwedd
+pdfjs-editor-alt-text-settings-automatic-title = Testun amgen awtomatig
+pdfjs-editor-alt-text-settings-create-model-button-label = Creu testun amgen yn awtomatig
+pdfjs-editor-alt-text-settings-create-model-description = Yn awgrymu disgrifiadau i helpu pobl sydd ddim yn gallu gweld y ddelwedd neu pan nad yw'r ddelwedd yn llwytho.
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+pdfjs-editor-alt-text-settings-download-model-label = Model AI testun amgen ({ $totalSize } MB)
+pdfjs-editor-alt-text-settings-ai-model-description = Yn rhedeg yn lleol ar eich dyfais fel bod eich data'n aros yn breifat. Yn ofynnol ar gyfer testun amgen awtomatig.
+pdfjs-editor-alt-text-settings-delete-model-button = Dileu
+pdfjs-editor-alt-text-settings-download-model-button = Llwytho i Lawr
+pdfjs-editor-alt-text-settings-downloading-model-button = Wrthi'n llwytho i lawr…
+pdfjs-editor-alt-text-settings-editor-title = Golygydd testun amgen
+pdfjs-editor-alt-text-settings-show-dialog-button-label = Dangoswch y golygydd testun amgen yn syth wrth ychwanegu delwedd
+pdfjs-editor-alt-text-settings-show-dialog-description = Yn eich helpu i wneud yn siŵr bod gan eich holl ddelweddau destun amgen.
+pdfjs-editor-alt-text-settings-close-button = Cau

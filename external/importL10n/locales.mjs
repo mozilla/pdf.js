@@ -31,7 +31,7 @@ async function downloadLanguageCodes() {
   console.log("Downloading language codes...\n");
 
   const ALL_LOCALES =
-    "https://hg.mozilla.org/mozilla-central/raw-file/tip/browser/locales/all-locales";
+    "https://raw.githubusercontent.com/mozilla/gecko-dev/master/browser/locales/all-locales";
 
   const response = await fetch(ALL_LOCALES);
   if (!response.ok) {
@@ -52,8 +52,9 @@ async function downloadLanguageFiles(root, langCode) {
 
   // Constants for constructing the URLs. Translations are taken from the
   // Nightly channel as those are the most recent ones.
-  const MOZ_CENTRAL_ROOT = "https://hg.mozilla.org/l10n-central/";
-  const MOZ_CENTRAL_PDFJS_DIR = "/raw-file/default/toolkit/toolkit/pdfviewer/";
+  const MOZ_CENTRAL_ROOT =
+    "https://raw.githubusercontent.com/mozilla-l10n/firefox-l10n/main/";
+  const MOZ_CENTRAL_PDFJS_DIR = "/toolkit/toolkit/pdfviewer/";
 
   // Defines which files to download for each language.
   const files = ["viewer.ftl"];
