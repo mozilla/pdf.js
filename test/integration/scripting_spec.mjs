@@ -1764,38 +1764,28 @@ describe("Interaction", () => {
       // it is usually very fast and therefore activating the selector check
       // too late will cause it to never resolve because printing is already
       // done (and the printed page div removed) before we even get to it.
-      pages = await loadAndWait(
-        "autoprint.pdf",
-        "",
-        null /* zoom = */,
-        async page => {
+      pages = await loadAndWait("autoprint.pdf", "", null /* zoom = */, {
+        postPageSetup: async page => {
           printHandles.set(
             page,
             page.evaluateHandle(() => [
-              new Promise(resolve => {
-                globalThis.printResolve = resolve;
-              }),
+              window.PDFViewerApplication._testPrintResolver.promise,
             ])
           );
-          await page.waitForFunction(() => {
-            // We don't really need to print the document.
-            window.print = () => {};
-            if (!window.PDFViewerApplication?.eventBus) {
-              return false;
-            }
-            window.PDFViewerApplication.eventBus.on(
-              "print",
-              () => {
-                const resolve = globalThis.printResolve;
-                delete globalThis.printResolve;
-                resolve();
-              },
-              { once: true }
-            );
-            return true;
-          });
-        }
-      );
+        },
+        appSetup: app => {
+          app._testPrintResolver = Promise.withResolvers();
+        },
+        eventBusSetup: eventBus => {
+          eventBus.on(
+            "print",
+            () => {
+              window.PDFViewerApplication._testPrintResolver.resolve();
+            },
+            { once: true }
+          );
+        },
+      });
     });
 
     afterAll(async () => {
