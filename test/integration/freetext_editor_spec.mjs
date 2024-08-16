@@ -2171,20 +2171,13 @@ describe("FreeText Editor", () => {
         "tracemonkey.pdf",
         ".annotationEditorLayer",
         100,
-        async page => {
-          await page.waitForFunction(async () => {
-            await window.PDFViewerApplication.initializedPromise;
-            return true;
-          });
-          await page.evaluate(() => {
+        {
+          eventBusSetup: eventBus => {
             window.visitedPages = [];
-            window.PDFViewerApplication.eventBus.on(
-              "pagechanging",
-              ({ pageNumber }) => {
-                window.visitedPages.push(pageNumber);
-              }
-            );
-          });
+            eventBus.on("pagechanging", ({ pageNumber }) => {
+              window.visitedPages.push(pageNumber);
+            });
+          },
         }
       );
     });
@@ -2403,19 +2396,12 @@ describe("FreeText Editor", () => {
         "tracemonkey.pdf",
         ".annotationEditorLayer",
         100,
-        async page => {
-          await page.waitForFunction(async () => {
-            await window.PDFViewerApplication.initializedPromise;
-            return true;
-          });
-          await page.evaluate(() => {
-            window.PDFViewerApplication.eventBus.on(
-              "annotationeditorstateschanged",
-              ({ details }) => {
-                window.editingEvents?.push(details);
-              }
-            );
-          });
+        {
+          eventBusSetup: eventBus => {
+            eventBus.on("annotationeditorstateschanged", ({ details }) => {
+              window.editingEvents?.push(details);
+            });
+          },
         }
       );
     });
