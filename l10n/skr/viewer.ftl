@@ -298,8 +298,6 @@ pdfjs-editor-stamp-button-label = تصویراں کوں شامل کرو یا ت�
 pdfjs-editor-highlight-button =
     .title = نمایاں کرو
 pdfjs-editor-highlight-button-label = نمایاں کرو
-pdfjs-highlight-floating-button =
-    .title = نمایاں کرو
 pdfjs-highlight-floating-button1 =
     .title = نمایاں کرو
     .aria-label = نمایاں کرو
@@ -394,3 +392,17 @@ pdfjs-editor-colorpicker-red =
 pdfjs-editor-highlight-show-all-button-label = سارے ݙکھاؤ
 pdfjs-editor-highlight-show-all-button =
     .title = سارے ݙکھاؤ
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+pdfjs-editor-new-alt-text-disclaimer-learn-more-url = ٻیا سِکھو
+pdfjs-editor-new-alt-text-not-now-button = ہݨ کائناں
+pdfjs-editor-new-alt-text-error-close-button = بند کرو
+
+## Image alt-text settings
+
+pdfjs-editor-alt-text-settings-delete-model-button = مٹاؤ
+pdfjs-editor-alt-text-settings-download-model-button = ڈاؤن لوڈ
+pdfjs-editor-alt-text-settings-downloading-model-button = ڈاؤن لوڈ تھیندا پئے …
+pdfjs-editor-alt-text-settings-close-button = بند کرو

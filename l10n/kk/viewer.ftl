@@ -51,12 +51,6 @@ pdfjs-download-button-label = Жүктеп алу
 pdfjs-bookmark-button =
     .title = Ағымдағы бет (Ағымдағы беттен URL адресін көру)
 pdfjs-bookmark-button-label = Ағымдағы бет
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = Қолданбада ашу
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = Қолданбада ашу
 
 ##  Secondary toolbar and context menu
 
@@ -304,8 +298,6 @@ pdfjs-editor-stamp-button-label = Суреттерді қосу немесе т�
 pdfjs-editor-highlight-button =
     .title = Ерекшелеу
 pdfjs-editor-highlight-button-label = Ерекшелеу
-pdfjs-highlight-floating-button =
-    .title = Ерекшелеу
 pdfjs-highlight-floating-button1 =
     .title = Ерекшелеу
     .aria-label = Ерекшелеу
@@ -400,3 +392,19 @@ pdfjs-editor-colorpicker-red =
 pdfjs-editor-highlight-show-all-button-label = Барлығын көрсету
 pdfjs-editor-highlight-show-all-button =
     .title = Барлығын көрсету
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Көбірек білу
+pdfjs-editor-new-alt-text-create-automatically-button-label = Балама мәтінді автоматты түрде жасау
+pdfjs-editor-new-alt-text-not-now-button = Қазір емес
+pdfjs-editor-new-alt-text-error-title = Балама мәтінді автоматты түрде жасау мүмкін болмады
+pdfjs-editor-new-alt-text-error-description = Өзіңіздің балама мәтініңізді жазыңыз немесе кейінірек қайталап көріңіз.
+pdfjs-editor-new-alt-text-error-close-button = Жабу
+
+## Image alt-text settings
+
+pdfjs-editor-alt-text-settings-delete-model-button = Өшіру
+pdfjs-editor-alt-text-settings-download-model-button = Жүктеп алу
+pdfjs-editor-alt-text-settings-downloading-model-button = Жүктеліп алынуда…
