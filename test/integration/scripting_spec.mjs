@@ -1494,7 +1494,7 @@ describe("Interaction", () => {
       await closePages(pages);
     });
 
-    it("must check that a values is correctly updated on a field and its siblings", async () => {
+    it("must check that a value is correctly updated on a field and its siblings", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await waitForScripting(page);
@@ -1502,28 +1502,17 @@ describe("Interaction", () => {
           await clearInput(page, getSelector("39R"));
           await page.type(getSelector("39R"), "123", { delay: 10 });
 
-          const prevTotal = await page.$eval(
-            getSelector("43R"),
-            el => el.value
-          );
-
           await clearInput(page, getSelector("42R"));
           await page.type(getSelector("42R"), "456", { delay: 10 });
 
           await page.click(getSelector("45R"));
 
           await page.waitForFunction(
-            `${getQuerySelector("43R")}.value !== "${prevTotal}"`
+            `${getQuerySelector("43R")}.value === "579.00"`
           );
           await page.waitForFunction(
-            `${getQuerySelector("46R")}.value !== "${prevTotal}"`
+            `${getQuerySelector("46R")}.value === "579.00"`
           );
-
-          let total = await page.$eval(getSelector("43R"), el => el.value);
-          expect(total).withContext(`In ${browserName}`).toEqual("579.00");
-
-          total = await page.$eval(getSelector("46R"), el => el.value);
-          expect(total).withContext(`In ${browserName}`).toEqual("579.00");
         })
       );
     });
