@@ -1244,7 +1244,7 @@ class Font {
         getDingbatsGlyphsUnicode(),
         this.differences
       );
-    } else if (isStandardFont) {
+    } else if (isStandardFont || isMappedToStandardFont) {
       const map = buildToFontChar(
         this.defaultEncoding,
         getGlyphsUnicode(),
