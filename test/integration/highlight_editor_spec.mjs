@@ -990,7 +990,13 @@ describe("Highlight Editor", () => {
         "tracemonkey.pdf",
         ".annotationEditorLayer",
         null,
-        null,
+        {
+          eventBusSetup: eventBus => {
+            eventBus.on("annotationeditoruimanager", ({ uiManager }) => {
+              window.uiManager = uiManager;
+            });
+          },
+        },
         {
           highlightEditorColors: "red=#AB0000",
           supportsCaretBrowsingMode: true,

@@ -832,7 +832,13 @@ describe("Stamp Editor", () => {
         "empty.pdf",
         ".annotationEditorLayer",
         null,
-        null,
+        {
+          eventBusSetup: eventBus => {
+            eventBus.on("annotationeditoruimanager", ({ uiManager }) => {
+              window.uiManager = uiManager;
+            });
+          },
+        },
         {
           enableAltText: true,
           enableUpdatedAddImage: true,
