@@ -3013,6 +3013,15 @@
     "type": "text"
   },
   {
+    "id": "issue18208",
+    "file": "pdfs/issue18208.pdf",
+    "md5": "d07311117b5cc970159b09977898996b",
+    "link": true,
+    "rounds": 1,
+    "lastPage": 1,
+    "type": "eq"
+  },
+  {
     "id": "issue11139",
     "file": "pdfs/issue11139.pdf",
     "md5": "006dd4f4bb1878bc14a12072d81a4524",
