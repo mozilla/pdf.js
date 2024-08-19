@@ -806,7 +806,6 @@ class AnnotationEditorUIManager {
     this.isShiftKeyDown = false;
 
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
-      window.uiManager = this;
       Object.defineProperty(this, "reset", {
         value: () => {
           this.selectAll();
