@@ -1212,9 +1212,7 @@ class Catalog {
         }
         visitedNodes.put(currentNode);
 
-        const obj =
-          (await this.pageDictCache.get(currentNode)) ||
-          xref.fetchAsync(currentNode);
+        const obj = await xref.fetchAsync(currentNode);
 
         if (obj instanceof Dict) {
           const isPage = await getIsPage(obj);
@@ -1302,13 +1300,13 @@ class Catalog {
         count >= MIN_PAGES_TO_ASSUME_ALL_TOP_LEVEL &&
         count === kids.length
       ) {
-        const maybePage = await xref.fetchAsync(kids[currentPageIndex]);
+        const maybePage = await xref.fetchAsync(kids[pageIndex]);
         const isPage = await getIsPage(maybePage);
         if (isPage) {
-          return [maybePage, kids[currentPageIndex]];
+          return [maybePage, kids[pageIndex]];
         }
       }
-      
+
       for (let last = kids.length - 1; last >= 0; last--) {
         nodesToVisit.push(kids[last]);
       }
