@@ -121,6 +121,8 @@ function fetchRemoteDest(action) {
   return null;
 }
 
+const MIN_PAGES_TO_ASSUME_ALL_TOP_LEVEL = 20;
+
 class Catalog {
   constructor(pdfManager, xref) {
     this.pdfManager = pdfManager;
@@ -1186,6 +1188,14 @@ class Catalog {
       pageIndexCache = this.pageIndexCache;
     let currentPageIndex = 0;
 
+    const getIsPage = async obj => {
+      let type = obj.getRaw("Type");
+      if (type instanceof Ref) {
+        type = await xref.fetchAsync(type);
+      }
+      return isName(type, "Page") || !obj.has("Kids");
+    };
+
     while (nodesToVisit.length) {
       const currentNode = nodesToVisit.pop();
 
@@ -1202,13 +1212,13 @@ class Catalog {
         }
         visitedNodes.put(currentNode);
 
-        const obj = await xref.fetchAsync(currentNode);
+        const obj =
+          (await this.pageDictCache.get(currentNode)) ||
+          xref.fetchAsync(currentNode);
+
         if (obj instanceof Dict) {
-          let type = obj.getRaw("Type");
-          if (type instanceof Ref) {
-            type = await xref.fetchAsync(type);
-          }
-          if (isName(type, "Page") || !obj.has("Kids")) {
+          const isPage = await getIsPage(obj);
+          if (isPage) {
             // Cache the Page reference, since it can *greatly* improve
             // performance by reducing redundant lookups in long documents
             // where all nodes are found at *one* level of the tree.
@@ -1283,6 +1293,22 @@ class Catalog {
       // Always check all `Kids` nodes, to avoid getting stuck in an empty
       // node further down in the tree (see issue5644.pdf, issue8088.pdf),
       // and to ensure that we actually find the correct `Page` dict.
+
+      // EXCEPT if it looks like this is likely an "everything in the top level
+      // /Pages" PDF and there's enough pages to be worth not reading everything
+      // See if the n'th item is a page
+      if (
+        currentNode === this.toplevelPagesDict &&
+        count >= MIN_PAGES_TO_ASSUME_ALL_TOP_LEVEL &&
+        count === kids.length
+      ) {
+        const maybePage = await xref.fetchAsync(kids[currentPageIndex]);
+        const isPage = await getIsPage(maybePage);
+        if (isPage) {
+          return [maybePage, kids[currentPageIndex]];
+        }
+      }
+      
       for (let last = kids.length - 1; last >= 0; last--) {
         nodesToVisit.push(kids[last]);
       }
