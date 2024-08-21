@@ -96,10 +96,14 @@ See https://github.com/adobe-type-tools/cmap-resources
   <script src="viewer.js" type="module"></script>
   <!--#endif-->
   <!-- No cfaz fazer o import dos scripts abaixo e apagar os acima -->
-  <!-- <link rel="resource" type="application/l10n" href="<%= vite_asset_path('pdf_viewer/web/locale/locale.json') %>">
-<script src="<%= vite_asset_path('pdf_viewer/build/pdf.mjs')%>" type="module"></script>
-<link rel="stylesheet" href="<%= vite_asset_path('pdf_viewer/web/viewer.css')%>">
-<script src="<%= vite_asset_path('pdf_viewer/web/viewer.mjs')%>" type="module"></script> -->
+  <!--
+  <link rel="stylesheet" href="<%= asset_path('pdf_viewer/web/viewer.css') %>">
+  <script src="<%= asset_path('pdf_viewer/build/pdf.js') %>" type="module"></script>
+  <script src="<%= asset_path('pdf_viewer/build/pdf.worker.js') %>" type="module"></script>
+  <script src="<%= asset_path('pdf_viewer/web/viewer.js') %>" type="module"></script>
+  -->
+  <!-- Lembrar de adcionar nas url de images dentro do arquivo `pdf_viewer/web/viewer.css` 'pdf_viewer/web/...' e
+   quando copiar os arquivos lembrar de trocar todos os .mjs para .js -->
 </head>
 
 <body tabindex="1">
