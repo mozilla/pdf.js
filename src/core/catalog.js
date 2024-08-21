@@ -143,6 +143,7 @@ class Catalog {
     this.globalImageCache = new GlobalImageCache();
     this.pageKidsCountCache = new RefSetCache();
     this.pageIndexCache = new RefSetCache();
+    this.pageDictCache = new RefSetCache();
     this.nonBlendModesSet = new RefSet();
     this.systemFontCache = new Map();
   }
@@ -1161,6 +1162,7 @@ class Catalog {
     this.globalImageCache.clear(/* onlyData = */ manuallyTriggered);
     this.pageKidsCountCache.clear();
     this.pageIndexCache.clear();
+    this.pageDictCache.clear();
     this.nonBlendModesSet.clear();
 
     const translatedFonts = await Promise.all(this.fontCache);
@@ -1184,7 +1186,8 @@ class Catalog {
     }
     const xref = this.xref,
       pageKidsCountCache = this.pageKidsCountCache,
-      pageIndexCache = this.pageIndexCache;
+      pageIndexCache = this.pageIndexCache,
+      pageDictCache = this.pageDictCache;
     let currentPageIndex = 0;
 
     while (nodesToVisit.length) {
@@ -1203,7 +1206,8 @@ class Catalog {
         }
         visitedNodes.put(currentNode);
 
-        const obj = await xref.fetchAsync(currentNode);
+        const obj = await (pageDictCache.get(currentNode) ||
+          xref.fetchAsync(currentNode));
         if (obj instanceof Dict) {
           let type = obj.getRaw("Type");
           if (type instanceof Ref) {
@@ -1285,7 +1289,18 @@ class Catalog {
       // node further down in the tree (see issue5644.pdf, issue8088.pdf),
       // and to ensure that we actually find the correct `Page` dict.
       for (let last = kids.length - 1; last >= 0; last--) {
-        nodesToVisit.push(kids[last]);
+        const lastKid = kids[last];
+        nodesToVisit.push(lastKid);
+
+        // Launch all requests in parallel so we don't wait for each one in turn
+        // when looking for a page near the end, if all the pages are top level.
+        if (
+          currentNode === this.toplevelPagesDict &&
+          lastKid instanceof Ref &&
+          !pageDictCache.has(lastKid)
+        ) {
+          pageDictCache.put(lastKid, xref.fetchAsync(lastKid));
+        }
       }
     }
 
