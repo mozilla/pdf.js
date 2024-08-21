@@ -239,17 +239,12 @@ class PDFDocumentProperties {
     return this.l10n.get(`pdfjs-document-properties-${id}`, args);
   }
 
-  async #parseFileSize(fileSize = 0) {
-    const kb = fileSize / 1024,
+  async #parseFileSize(b = 0) {
+    const kb = b / 1024,
       mb = kb / 1024;
-    if (!kb) {
-      return undefined;
-    }
-    return this.#getL10nStr(mb >= 1 ? "mb" : "kb", {
-      size_mb: mb >= 1 && (+mb.toPrecision(3)).toLocaleString(),
-      size_kb: mb < 1 && (+kb.toPrecision(3)).toLocaleString(),
-      size_b: fileSize.toLocaleString(),
-    });
+    return kb
+      ? this.#getL10nStr(`size-${mb >= 1 ? "mb" : "kb"}`, { mb, kb, b })
+      : undefined;
   }
 
   async #parsePageSize(pageSizeInches, pagesRotation) {
@@ -329,25 +324,15 @@ class PDFDocumentProperties {
 
     return this.#getL10nStr(
       `page-size-dimension-${name ? "name-" : ""}string`,
-      {
-        width: width.toLocaleString(),
-        height: height.toLocaleString(),
-        unit,
-        name,
-        orientation,
-      }
+      { width, height, unit, name, orientation }
     );
   }
 
   async #parseDate(inputDate) {
-    const dateObject = PDFDateString.toDateObject(inputDate);
-    if (!dateObject) {
-      return undefined;
-    }
-    return this.#getL10nStr("date-string", {
-      date: dateObject.toLocaleDateString(),
-      time: dateObject.toLocaleTimeString(),
-    });
+    const dateObj = PDFDateString.toDateObject(inputDate);
+    return dateObj
+      ? this.#getL10nStr("date-time-string", { dateObj })
+      : undefined;
   }
 
   #parseLinearization(isLinearized) {
