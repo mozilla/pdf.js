@@ -66,7 +66,7 @@ class L10n {
         args,
       },
     ]);
-    return messages?.[0].value || fallback;
+    return messages[0]?.value || fallback;
   }
 
   /** @inheritdoc */
