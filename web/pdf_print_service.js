@@ -190,14 +190,9 @@ class PDFPrintService {
   useRenderedPage() {
     this.throwIfInactive();
     const img = document.createElement("img");
-    const scratchCanvas = this.scratchCanvas;
-    if ("toBlob" in scratchCanvas) {
-      scratchCanvas.toBlob(function (blob) {
-        img.src = URL.createObjectURL(blob);
-      });
-    } else {
-      img.src = scratchCanvas.toDataURL();
-    }
+    this.scratchCanvas.toBlob(blob => {
+      img.src = URL.createObjectURL(blob);
+    });
 
     const wrapper = document.createElement("div");
     wrapper.className = "printedPage";
