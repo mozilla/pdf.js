@@ -190,24 +190,27 @@ class PDFPrintService {
   useRenderedPage() {
     this.throwIfInactive();
     const img = document.createElement("img");
-    const scratchCanvas = this.scratchCanvas;
-    if ("toBlob" in scratchCanvas) {
-      scratchCanvas.toBlob(function (blob) {
-        img.src = URL.createObjectURL(blob);
-      });
-    } else {
-      img.src = scratchCanvas.toDataURL();
-    }
+    this.scratchCanvas.toBlob(blob => {
+      img.src = URL.createObjectURL(blob);
+    });
 
     const wrapper = document.createElement("div");
     wrapper.className = "printedPage";
     wrapper.append(img);
     this.printContainer.append(wrapper);
 
-    return new Promise(function (resolve, reject) {
-      img.onload = resolve;
-      img.onerror = reject;
-    });
+    const { promise, resolve, reject } = Promise.withResolvers();
+    img.onload = resolve;
+    img.onerror = reject;
+
+    promise
+      .catch(() => {
+        // Avoid "Uncaught promise" messages in the console.
+      })
+      .then(() => {
+        URL.revokeObjectURL(img.src);
+      });
+    return promise;
   }
 
   performPrint() {
