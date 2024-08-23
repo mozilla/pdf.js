@@ -199,10 +199,18 @@ class PDFPrintService {
     wrapper.append(img);
     this.printContainer.append(wrapper);
 
-    return new Promise(function (resolve, reject) {
-      img.onload = resolve;
-      img.onerror = reject;
-    });
+    const { promise, resolve, reject } = Promise.withResolvers();
+    img.onload = resolve;
+    img.onerror = reject;
+
+    promise
+      .catch(() => {
+        // Avoid "Uncaught promise" messages in the console.
+      })
+      .then(() => {
+        URL.revokeObjectURL(img.src);
+      });
+    return promise;
   }
 
   performPrint() {
