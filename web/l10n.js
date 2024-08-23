@@ -81,6 +81,15 @@ class L10n {
   }
 
   /** @inheritdoc */
+  async translateOnce(element) {
+    try {
+      await this.#l10n.translateElements([element]);
+    } catch (ex) {
+      console.error(`translateOnce: "${ex}".`);
+    }
+  }
+
+  /** @inheritdoc */
   async destroy() {
     for (const element of this.#elements) {
       this.#l10n.disconnectRoot(element);
