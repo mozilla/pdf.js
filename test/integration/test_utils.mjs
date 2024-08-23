@@ -60,11 +60,15 @@ function loadAndWait(filename, selector, zoom, setups, options) {
         // and EventBus, so we can inject some code to do whatever we want
         // soon enough especially before the first event in the eventBus is
         // dispatched.
-        const { prePageSetup, appSetup, eventBusSetup } = setups;
+        const { prePageSetup, appSetup, earlySetup, eventBusSetup } = setups;
         await prePageSetup?.(page);
-        if (appSetup || eventBusSetup) {
+        if (earlySetup || appSetup || eventBusSetup) {
           await page.evaluateOnNewDocument(
-            (aSetup, eSetup) => {
+            (eaSetup, aSetup, evSetup) => {
+              if (eaSetup) {
+                // eslint-disable-next-line no-eval
+                eval(`(${eaSetup})`)();
+              }
               let app;
               let eventBus;
               Object.defineProperty(window, "PDFViewerApplication", {
@@ -83,13 +87,16 @@ function loadAndWait(filename, selector, zoom, setups, options) {
                     },
                     set(newV) {
                       eventBus = newV;
-                      // eslint-disable-next-line no-eval
-                      eval(`(${eSetup})`)(eventBus);
+                      if (evSetup) {
+                        // eslint-disable-next-line no-eval
+                        eval(`(${evSetup})`)(eventBus);
+                      }
                     },
                   });
                 },
               });
             },
+            earlySetup?.toString(),
             appSetup?.toString(),
             eventBusSetup?.toString()
           );
