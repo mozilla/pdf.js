@@ -7987,6 +7987,13 @@
     }
   },
   {
+    "id": "issue18645",
+    "file": "pdfs/issue18645.pdf",
+    "md5": "ad05b63db4f21f612adb0900093a3e34",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "bug857031",
     "file": "pdfs/bug857031.pdf",
     "md5": "f11ecd7f75675e0cafbc9880c1a586c7",
