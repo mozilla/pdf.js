@@ -87,11 +87,6 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
   if (port.name !== "chromecom-referrer") {
     return;
   }
-  // Note: sender.frameId is only set in Chrome 41+.
-  if (!("frameId" in port.sender)) {
-    port.disconnect();
-    return;
-  }
   var tabId = port.sender.tab.id;
   var frameId = port.sender.frameId;
 
@@ -127,20 +122,7 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
       delete g_referrers[tabId][frameId];
     }
     chrome.webRequest.onBeforeSendHeaders.removeListener(onBeforeSendHeaders);
-    chrome.webRequest.onHeadersReceived.removeListener(exposeOnHeadersReceived);
   });
-
-  // Expose some response headers for fetch API calls from PDF.js;
-  // This is a work-around for https://crbug.com/784528
-  chrome.webRequest.onHeadersReceived.addListener(
-    exposeOnHeadersReceived,
-    {
-      urls: ["https://*/*"],
-      types: ["xmlhttprequest"],
-      tabId,
-    },
-    ["blocking", "responseHeaders"]
-  );
 
   function onBeforeSendHeaders(details) {
     if (details.frameId !== frameId) {
@@ -161,23 +143,5 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
     }
     refererHeader.value = referer;
     return { requestHeaders: headers };
-  }
-
-  function exposeOnHeadersReceived(details) {
-    if (details.frameId !== frameId) {
-      return undefined;
-    }
-    var headers = details.responseHeaders;
-    var aceh = getHeaderFromHeaders(headers, "access-control-expose-headers");
-    // List of headers that PDF.js uses in src/display/network_utils.js
-    var acehValue =
-      "accept-ranges,content-encoding,content-length,content-disposition";
-    if (aceh) {
-      aceh.value += "," + acehValue;
-    } else {
-      aceh = { name: "Access-Control-Expose-Headers", value: acehValue };
-      headers.push(aceh);
-    }
-    return { responseHeaders: headers };
   }
 });
