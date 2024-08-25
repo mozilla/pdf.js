@@ -416,7 +416,7 @@ class NewAltTextManager {
     });
     this.#currentEditor._reportTelemetry({
       action: "pdfjs.image.image_added",
-      data: { alt_text_modal: false },
+      data: { alt_text_modal: true, alt_text_type: "skipped" },
     });
     this.#finish();
   }
@@ -464,7 +464,10 @@ class NewAltTextManager {
     }
     this.#currentEditor._reportTelemetry({
       action: "pdfjs.image.image_added",
-      data: { alt_text_modal: true },
+      data: {
+        alt_text_modal: true,
+        alt_text_type: altText ? "present" : "empty",
+      },
     });
 
     this.#currentEditor._reportTelemetry({
