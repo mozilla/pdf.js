@@ -402,6 +402,11 @@ pdfjs-editor-new-alt-text-error-close-button = بند کرو
 
 ## Image alt-text settings
 
+pdfjs-image-alt-text-settings-button =
+    .title = تصویر آلٹ عبارت ترتیباں
+pdfjs-image-alt-text-settings-button-label = تصویر آلٹ عبارت ترتیباں
+pdfjs-editor-alt-text-settings-dialog-label = تصویر آلٹ عبارت ترتیباں
+pdfjs-editor-alt-text-settings-automatic-title = خودکار آلٹ عبارت
 pdfjs-editor-alt-text-settings-delete-model-button = مٹاؤ
 pdfjs-editor-alt-text-settings-download-model-button = ڈاؤن لوڈ
 pdfjs-editor-alt-text-settings-downloading-model-button = ڈاؤن لوڈ تھیندا پئے …
