@@ -23,7 +23,6 @@ limitations under the License.
   var schemes = [
     "http",
     "https",
-    "ftp",
     "file",
     "chrome-extension",
     "blob",
