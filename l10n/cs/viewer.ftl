@@ -409,6 +409,8 @@ pdfjs-editor-new-alt-text-textarea =
 # This text refers to the alt text box above this description. It offers a definition of alt text.
 pdfjs-editor-new-alt-text-description = Krátký popis pro lidi, kteří neuvidí obrázek nebo když se obrázek nenačítá.
 # This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
+pdfjs-editor-new-alt-text-disclaimer1 = Tento alternativní text byl vytvořen automaticky a může být nepřesný.
+# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
 pdfjs-editor-new-alt-text-disclaimer = Tento alternativní text byl vytvořen automaticky.
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Více informací
 pdfjs-editor-new-alt-text-create-automatically-button-label = Vytvořit alternativní text automaticky
@@ -416,6 +418,40 @@ pdfjs-editor-new-alt-text-not-now-button = Teď ne
 pdfjs-editor-new-alt-text-error-title = Nepodařilo se automaticky vytvořit alternativní text
 pdfjs-editor-new-alt-text-error-description = Napište prosím vlastní alternativní text nebo to zkuste znovu později.
 pdfjs-editor-new-alt-text-error-close-button = Zavřít
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+#   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
+#   $percent (Number) - the percentage of the downloaded size.
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = Stahuje se model AI pro alternativní texty ({ $downloadedSize } z { $totalSize } MB)
+    .aria-valuetext = Stahuje se model AI pro alternativní texty ({ $downloadedSize } z { $totalSize } MB)
+# This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button-label = Alternativní text byl přidán
+# This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button-label = Chybí alternativní text
+# This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button-label = Zkontrolovat alternativní text
+# "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
+# Variables:
+#   $generatedAltText (String) - the generated alt-text.
+pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer = Vytvořeno automaticky: { $generatedAltText }
 
 ## Image alt-text settings
 
+pdfjs-image-alt-text-settings-button =
+    .title = Nastavení alternativního textu obrázku
+pdfjs-image-alt-text-settings-button-label = Nastavení alternativního textu obrázku
+pdfjs-editor-alt-text-settings-dialog-label = Nastavení alternativního textu obrázku
+pdfjs-editor-alt-text-settings-automatic-title = Automatický alternativní text
+pdfjs-editor-alt-text-settings-create-model-button-label = Vytvořit alternativní text automaticky
+pdfjs-editor-alt-text-settings-create-model-description = Navrhuje popisy, které pomohou lidem, kteří nevidí obrázek nebo když se obrázek nenačte.
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+pdfjs-editor-alt-text-settings-download-model-label = Model AI pro alternativní text ({ $totalSize } MB)
+pdfjs-editor-alt-text-settings-ai-model-description = Běží lokálně na vašem zařízení, takže vaše data zůstávají v bezpečí. Vyžadováno pro automatický alternativní text.
+pdfjs-editor-alt-text-settings-delete-model-button = Smazat
+pdfjs-editor-alt-text-settings-download-model-button = Stáhnout
+pdfjs-editor-alt-text-settings-downloading-model-button = Probíhá stahování...
+pdfjs-editor-alt-text-settings-editor-title = Editor alternativního textu
+pdfjs-editor-alt-text-settings-show-dialog-button-label = Při přidávání obrázku hned zobrazit editor alternativního textu
+pdfjs-editor-alt-text-settings-show-dialog-description = Pomůže vám zajistit, aby všechny vaše obrázky obsahovaly alternativní text.
+pdfjs-editor-alt-text-settings-close-button = Zavřít

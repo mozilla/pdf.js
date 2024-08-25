@@ -396,6 +396,50 @@ pdfjs-editor-highlight-show-all-button =
 ## New alt-text dialog
 ## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
 
+# Modal header positioned above a text box where users can edit the alt text.
+pdfjs-editor-new-alt-text-dialog-edit-label = Rediger alternativ tekst (bildeskildring)
+# Modal header positioned above a text box where users can add the alt text.
+pdfjs-editor-new-alt-text-dialog-add-label = Legg til alternativ tekst (bildeskildring)
+pdfjs-editor-new-alt-text-textarea =
+    .placeholder = Skriv skildringa di her…
+# This text refers to the alt text box above this description. It offers a definition of alt text.
+pdfjs-editor-new-alt-text-description = Kort skildring for personar som ikkje kan sjå bildet, eller når bildet ikkje lastar inn.
+# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
+pdfjs-editor-new-alt-text-disclaimer1 = Denne alternative teksten vart oppretta automatisk, og kan vere unøyaktig.
+# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
+pdfjs-editor-new-alt-text-disclaimer = Denne alternative teksten vart oppretta automatisk.
+pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Les meir
+pdfjs-editor-new-alt-text-create-automatically-button-label = Opprett alternativ tekt automatisk
+pdfjs-editor-new-alt-text-not-now-button = Ikkje no
+pdfjs-editor-new-alt-text-error-title = Klarte ikkje å opprette alternativ tekst automatisk
+pdfjs-editor-new-alt-text-error-description = Skriv din eigen alternative tekst eller prøv igjen seinare.
+pdfjs-editor-new-alt-text-error-close-button = Lat att
+# This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button-label = Alternativ tekst lagt til
+# This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button-label = Manglande alternativ tekst
+# This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button-label = Vurder alternativ tekst
+# "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
+# Variables:
+#   $generatedAltText (String) - the generated alt-text.
+pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer = Oppretta automatisk: { $generatedAltText }
 
 ## Image alt-text settings
 
+pdfjs-image-alt-text-settings-button =
+    .title = Alternative tekst-innstillingar for bilde
+pdfjs-image-alt-text-settings-button-label = Alternative tekst-innstillingar for bilde
+pdfjs-editor-alt-text-settings-dialog-label = Alternative tekst-innstillingar for bilde
+pdfjs-editor-alt-text-settings-automatic-title = Automatisk alternativ tekst
+pdfjs-editor-alt-text-settings-create-model-button-label = Opprett alternativ tekt automatisk
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+pdfjs-editor-alt-text-settings-download-model-label = AI-modell for alternativ tekst ({ $totalSize } MB)
+pdfjs-editor-alt-text-settings-ai-model-description = Køyrer lokalt på eininga di slik at dataa dine blir verande private. Påkravd for automatisk alternativ tekst.
+pdfjs-editor-alt-text-settings-delete-model-button = Slett
+pdfjs-editor-alt-text-settings-download-model-button = Last ned
+pdfjs-editor-alt-text-settings-downloading-model-button = Lastar ned…
+pdfjs-editor-alt-text-settings-editor-title = Alternativ tekst-redigerar
+pdfjs-editor-alt-text-settings-show-dialog-button-label = Vis alternativ tekst-redigerar direkte når du legg til eit bilde
+pdfjs-editor-alt-text-settings-close-button = Lat att
