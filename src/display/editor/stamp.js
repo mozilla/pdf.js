@@ -159,7 +159,7 @@ class StampEditor extends AnnotationEditor {
     ) {
       this._reportTelemetry({
         action: "pdfjs.image.image_added",
-        data: { alt_text_modal: false },
+        data: { alt_text_modal: false, alt_text_type: "empty" },
       });
       try {
         // The alt-text dialog isn't opened but we still want to guess the alt
