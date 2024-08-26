@@ -1004,6 +1004,7 @@ const PDFViewerApplication = {
     this.toolbar?.reset();
     this.secondaryToolbar?.reset();
     this._PDFBug?.cleanup();
+    this.loadingBar?.hide();
 
     await Promise.all(promises);
   },
