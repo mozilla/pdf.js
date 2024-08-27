@@ -86,7 +86,9 @@ class AnnotationEditor {
 
   _focusEventsAllowed = true;
 
-  _l10nPromise = null;
+  static _l10nPromise = null;
+
+  static _l10nResizer = null;
 
   #isDraggable = false;
 
@@ -206,6 +208,17 @@ class AnnotationEditor {
    * @param {Object} l10n
    */
   static initialize(l10n, _uiManager, options) {
+    AnnotationEditor._l10nResizer ||= Object.freeze({
+      topLeft: "pdfjs-editor-resizer-top-left",
+      topMiddle: "pdfjs-editor-resizer-top-middle",
+      topRight: "pdfjs-editor-resizer-top-right",
+      middleRight: "pdfjs-editor-resizer-middle-right",
+      bottomRight: "pdfjs-editor-resizer-bottom-right",
+      bottomMiddle: "pdfjs-editor-resizer-bottom-middle",
+      bottomLeft: "pdfjs-editor-resizer-bottom-left",
+      middleLeft: "pdfjs-editor-resizer-middle-left",
+    });
+
     AnnotationEditor._l10nPromise ||= new Map(
       [
         "pdfjs-editor-alt-text-button-label",
@@ -214,18 +227,7 @@ class AnnotationEditor {
         "pdfjs-editor-new-alt-text-added-button-label",
         "pdfjs-editor-new-alt-text-missing-button-label",
         "pdfjs-editor-new-alt-text-to-review-button-label",
-        "pdfjs-editor-resizer-label-topLeft",
-        "pdfjs-editor-resizer-label-topMiddle",
-        "pdfjs-editor-resizer-label-topRight",
-        "pdfjs-editor-resizer-label-middleRight",
-        "pdfjs-editor-resizer-label-bottomRight",
-        "pdfjs-editor-resizer-label-bottomMiddle",
-        "pdfjs-editor-resizer-label-bottomLeft",
-        "pdfjs-editor-resizer-label-middleLeft",
-      ].map(str => [
-        str,
-        l10n.get(str.replaceAll(/([A-Z])/g, c => `-${c.toLowerCase()}`)),
-      ])
+      ].map(str => [str, l10n.get(str)])
     );
 
     // The string isn't in the above list because the string has a parameter
@@ -1480,9 +1482,7 @@ class AnnotationEditor {
         div.addEventListener("focus", this.#resizerFocus.bind(this, name), {
           signal,
         });
-        AnnotationEditor._l10nPromise
-          .get(`pdfjs-editor-resizer-label-${name}`)
-          .then(msg => div.setAttribute("aria-label", msg));
+        div.setAttribute("data-l10n-id", AnnotationEditor._l10nResizer[name]);
       }
     }
 
@@ -1517,9 +1517,7 @@ class AnnotationEditor {
       for (const child of children) {
         const div = this.#allResizerDivs[i++];
         const name = div.getAttribute("data-resizer-name");
-        AnnotationEditor._l10nPromise
-          .get(`pdfjs-editor-resizer-label-${name}`)
-          .then(msg => child.setAttribute("aria-label", msg));
+        child.setAttribute("data-l10n-id", AnnotationEditor._l10nResizer[name]);
       }
     }
 
