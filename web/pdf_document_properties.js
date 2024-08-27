@@ -22,8 +22,6 @@
 import { getPageSizeInches, isPortraitOrientation } from "./ui_utils.js";
 import { PDFDateString } from "pdfjs-lib";
 
-const DEFAULT_FIELD_CONTENT = "-";
-
 // See https://en.wikibooks.org/wiki/Lentis/Conversion_to_the_Metric_Standard_in_the_United_States
 const NON_METRIC_LOCALES = ["en-us", "en-lr", "my"];
 
@@ -192,7 +190,7 @@ class PDFDocumentProperties {
   setDocument(pdfDocument) {
     if (this.pdfDocument) {
       this.#reset();
-      this.#updateUI(true);
+      this.#updateUI();
     }
     if (!pdfDocument) {
       return;
@@ -214,24 +212,18 @@ class PDFDocumentProperties {
   /**
    * Always updates all of the dialog fields, to prevent inconsistent UI state.
    * NOTE: If the contents of a particular field is neither a non-empty string,
-   *       nor a number, it will fall back to `DEFAULT_FIELD_CONTENT`.
+   *       nor a number, it will fall back to "-".
    */
-  #updateUI(reset = false) {
-    if (reset || !this.#fieldData) {
-      for (const id in this.fields) {
-        this.fields[id].textContent = DEFAULT_FIELD_CONTENT;
-      }
-      return;
-    }
-    if (this.overlayManager.active !== this.dialog) {
-      // Don't bother updating the dialog if has already been closed,
+  #updateUI() {
+    if (this.#fieldData && this.overlayManager.active !== this.dialog) {
+      // Don't bother updating the dialog if it's already been closed,
+      // unless it's being reset (i.e. `this.#fieldData === null`),
       // since it will be updated the next time `this.open` is called.
       return;
     }
     for (const id in this.fields) {
-      const content = this.#fieldData[id];
-      this.fields[id].textContent =
-        content || content === 0 ? content : DEFAULT_FIELD_CONTENT;
+      const content = this.#fieldData?.[id];
+      this.fields[id].textContent = content || content === 0 ? content : "-";
     }
   }
 
