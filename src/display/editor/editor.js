@@ -219,27 +219,20 @@ class AnnotationEditor {
       middleLeft: "pdfjs-editor-resizer-middle-left",
     });
 
-    AnnotationEditor._l10nPromise ||= new Map(
-      [
+    AnnotationEditor._l10nPromise ||= new Map([
+      ...[
         "pdfjs-editor-alt-text-button-label",
         "pdfjs-editor-alt-text-edit-button-label",
         "pdfjs-editor-alt-text-decorative-tooltip",
         "pdfjs-editor-new-alt-text-added-button-label",
         "pdfjs-editor-new-alt-text-missing-button-label",
         "pdfjs-editor-new-alt-text-to-review-button-label",
-      ].map(str => [str, l10n.get(str)])
-    );
-
-    // The string isn't in the above list because the string has a parameter
-    // (i.e. the guessed text) and we must pass it to the l10n function to get
-    // the correct translation.
-    AnnotationEditor._l10nPromise.set(
-      "pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer",
-      l10n.get.bind(
-        l10n,
-        "pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer"
-      )
-    );
+      ].map(str => [str, l10n.get(str)]),
+      ...[
+        // Strings that need l10n-arguments.
+        "pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer",
+      ].map(str => [str, l10n.get.bind(l10n, str)]),
+    ]);
 
     if (options?.strings) {
       for (const str of options.strings) {
