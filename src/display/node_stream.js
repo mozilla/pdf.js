@@ -26,29 +26,20 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   );
 }
 
-const fileUriRegex = /^file:\/\/\/[a-zA-Z]:\//;
+const urlRegex = /^[a-z][a-z0-9\-+.]+:/i;
 
-function parseUrl(sourceUrl) {
+function parseUrlOrPath(sourceUrl) {
+  if (urlRegex.test(sourceUrl)) {
+    return new URL(sourceUrl);
+  }
   const url = NodePackages.get("url");
-  const parsedUrl = url.parse(sourceUrl);
-  if (parsedUrl.protocol === "file:" || parsedUrl.host) {
-    return parsedUrl;
-  }
-  // Prepending 'file:///' to Windows absolute path.
-  if (/^[a-z]:[/\\]/i.test(sourceUrl)) {
-    return url.parse(`file:///${sourceUrl}`);
-  }
-  // Changes protocol to 'file:' if url refers to filesystem.
-  if (!parsedUrl.host) {
-    parsedUrl.protocol = "file:";
-  }
-  return parsedUrl;
+  return new URL(url.pathToFileURL(sourceUrl));
 }
 
 class PDFNodeStream {
   constructor(source) {
     this.source = source;
-    this.url = parseUrl(source.url);
+    this.url = parseUrlOrPath(source.url);
     this.isHttp =
       this.url.protocol === "http:" || this.url.protocol === "https:";
     // Check if url refers to filesystem.
@@ -287,18 +278,6 @@ class BaseRangeReader {
   }
 }
 
-function createRequestOptions(parsedUrl, headers) {
-  return {
-    protocol: parsedUrl.protocol,
-    auth: parsedUrl.auth,
-    host: parsedUrl.hostname,
-    port: parsedUrl.port,
-    path: parsedUrl.path,
-    method: "GET",
-    headers,
-  };
-}
-
 class PDFNodeStreamFullReader extends BaseFullReader {
   constructor(stream) {
     super(stream);
@@ -337,13 +316,15 @@ class PDFNodeStreamFullReader extends BaseFullReader {
     if (this._url.protocol === "http:") {
       const http = NodePackages.get("http");
       this._request = http.request(
-        createRequestOptions(this._url, stream.httpHeaders),
+        this._url,
+        { headers: stream.httpHeaders },
         handleResponse
       );
     } else {
       const https = NodePackages.get("https");
       this._request = https.request(
-        createRequestOptions(this._url, stream.httpHeaders),
+        this._url,
+        { headers: stream.httpHeaders },
         handleResponse
       );
     }
@@ -386,13 +367,15 @@ class PDFNodeStreamRangeReader extends BaseRangeReader {
     if (this._url.protocol === "http:") {
       const http = NodePackages.get("http");
       this._request = http.request(
-        createRequestOptions(this._url, this._httpHeaders),
+        this._url,
+        { headers: this._httpHeaders },
         handleResponse
       );
     } else {
       const https = NodePackages.get("https");
       this._request = https.request(
-        createRequestOptions(this._url, this._httpHeaders),
+        this._url,
+        { headers: this._httpHeaders },
         handleResponse
       );
     }
@@ -408,25 +391,18 @@ class PDFNodeStreamFsFullReader extends BaseFullReader {
   constructor(stream) {
     super(stream);
 
-    let path = decodeURIComponent(this._url.path);
-
-    // Remove the extra slash to get right path from url like `file:///C:/`
-    if (fileUriRegex.test(this._url.href)) {
-      path = path.replace(/^\//, "");
-    }
-
     const fs = NodePackages.get("fs");
-    fs.promises.lstat(path).then(
+    fs.promises.lstat(this._url).then(
       stat => {
         // Setting right content length.
         this._contentLength = stat.size;
 
-        this._setReadableStream(fs.createReadStream(path));
+        this._setReadableStream(fs.createReadStream(this._url));
         this._headersCapability.resolve();
       },
       error => {
         if (error.code === "ENOENT") {
-          error = new MissingPDFException(`Missing PDF "${path}".`);
+          error = new MissingPDFException(`Missing PDF "${this._url}".`);
         }
         this._storedError = error;
         this._headersCapability.reject(error);
@@ -439,15 +415,10 @@ class PDFNodeStreamFsRangeReader extends BaseRangeReader {
   constructor(stream, start, end) {
     super(stream);
 
-    let path = decodeURIComponent(this._url.path);
-
-    // Remove the extra slash to get right path from url like `file:///C:/`
-    if (fileUriRegex.test(this._url.href)) {
-      path = path.replace(/^\//, "");
-    }
-
     const fs = NodePackages.get("fs");
-    this._setReadableStream(fs.createReadStream(path, { start, end: end - 1 }));
+    this._setReadableStream(
+      fs.createReadStream(this._url, { start, end: end - 1 })
+    );
   }
 }
 

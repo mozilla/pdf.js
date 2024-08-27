@@ -26,7 +26,6 @@ import path from "path";
 import puppeteer from "puppeteer";
 import readline from "readline";
 import { translateFont } from "./font/ttxdriver.mjs";
-import url from "url";
 import { WebServer } from "./webserver.mjs";
 import yargs from "yargs";
 
@@ -670,8 +669,7 @@ function checkRefTestResults(browser, id, results) {
   });
 }
 
-function refTestPostHandler(req, res) {
-  var parsedUrl = url.parse(req.url, true);
+function refTestPostHandler(parsedUrl, req, res) {
   var pathname = parsedUrl.pathname;
   if (
     pathname !== "/tellMeToQuit" &&
@@ -691,7 +689,7 @@ function refTestPostHandler(req, res) {
 
     var session;
     if (pathname === "/tellMeToQuit") {
-      session = getSession(parsedUrl.query.browser);
+      session = getSession(parsedUrl.searchParams.get("browser"));
       monitorBrowserTimeout(session, null);
       closeSession(session.name);
       return;
@@ -821,8 +819,7 @@ async function startIntegrationTest() {
   await Promise.all(sessions.map(session => closeSession(session.name)));
 }
 
-function unitTestPostHandler(req, res) {
-  var parsedUrl = url.parse(req.url);
+function unitTestPostHandler(parsedUrl, req, res) {
   var pathname = parsedUrl.pathname;
   if (
     pathname !== "/tellMeToQuit" &&
