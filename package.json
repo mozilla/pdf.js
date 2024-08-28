@@ -61,14 +61,22 @@
     "yargs": "^17.7.2"
   },
   "scripts": {
-    "postinstall": "cross-env PUPPETEER_PRODUCT=firefox node node_modules/puppeteer/install.mjs"
+    "clean": "rimraf node_modules && rimraf ./build",
+    "burn": "rimraf package-lock.json",
+    "distclean": "rimraf ./build",
+    "start": "npx gulp server",
+    "build": "npx gulp generic",
+    "build-min": "npx gulp minified",
+    "build-legacy": "npx gulp generic-legacy",
+    "build-legacy-min": "npx gulp minified-legacy"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/mozilla/pdf.js.git"
+    "url": "git://github.com/Alex313031/pdf.js.git"
   },
   "engines": {
     "node": ">=18"
   },
+  "author": "Alex313031 <alex313031@gmail.com>",
   "license": "Apache-2.0"
 }

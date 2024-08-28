@@ -1059,6 +1059,12 @@ gulp.task(
       const defines = { ...DEFINES, GENERIC: true };
 
       return buildGeneric(defines, GENERIC_DIR);
+    },
+    function copyVersion(done) {
+      fs.copyFileSync(BUILD_DIR + 'version.json', BUILD_DIR + 'generic/version.json');
+      console.log();
+      console.log("### Copied version.json to " + BUILD_DIR + "generic/");
+      done();
     }
   )
 );
@@ -1086,6 +1092,12 @@ gulp.task(
       const defines = { ...DEFINES, GENERIC: true, SKIP_BABEL: false };
 
       return buildGeneric(defines, GENERIC_LEGACY_DIR);
+    },
+    function copyVersion(done) {
+      fs.copyFileSync(BUILD_DIR + 'version.json', BUILD_DIR + 'generic-legacy/version.json');
+      console.log();
+      console.log("### Copied version.json to " + BUILD_DIR + "generic-legacy/");
+      done();
     }
   )
 );
