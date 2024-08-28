@@ -213,6 +213,13 @@ class AltText {
     this.#altTextButton.disabled = !enabled;
   }
 
+  shown() {
+    this.#editor._reportTelemetry({
+      action: "pdfjs.image.alt_text.image_status_label_displayed",
+      data: { label: this.#label },
+    });
+  }
+
   destroy() {
     this.#altTextButton?.remove();
     this.#altTextButton = null;
@@ -235,10 +242,6 @@ class AltText {
       const label = this.#label;
       // TODO: Update the l10n keys to avoid this.
       const type = label === "review" ? "to-review" : label;
-      this.#editor._reportTelemetry({
-        action: "pdfjs.image.alt_text.image_status_label_displayed",
-        data: { label },
-      });
       button.classList.toggle("done", !!this.#altText);
       AltText._l10nPromise
         .get(`pdfjs-editor-new-alt-text-${type}-button-label`)
