@@ -114,6 +114,11 @@ class NewAltTextManager {
     createAutomaticallyButton.addEventListener("click", async () => {
       const checked =
         createAutomaticallyButton.getAttribute("aria-pressed") !== "true";
+      this.#currentEditor._reportTelemetry({
+        action: "pdfjs.image.alt_text.ai_generation_check",
+        data: { status: checked },
+      });
+
       if (this.#uiManager) {
         this.#uiManager.setPreference("enableGuessAltText", checked);
         await this.#uiManager.mlManager.toggleService("altText", checked);

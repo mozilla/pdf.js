@@ -24,6 +24,8 @@ class EditorToolbar {
 
   #buttons = null;
 
+  #altText = null;
+
   constructor(editor) {
     this.#editor = editor;
   }
@@ -99,6 +101,7 @@ class EditorToolbar {
 
   show() {
     this.#toolbar.classList.remove("hidden");
+    this.#altText?.shown();
   }
 
   #addDeleteButton() {
@@ -126,9 +129,11 @@ class EditorToolbar {
     return divider;
   }
 
-  addAltTextButton(button) {
+  async addAltText(altText) {
+    const button = await altText.render();
     this.#addListenersToElement(button);
     this.#buttons.prepend(button, this.#divider);
+    this.#altText = altText;
   }
 
   addColorPicker(colorPicker) {
