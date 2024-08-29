@@ -87,8 +87,6 @@ class PDFDocumentProperties {
     eventBus._on("rotationchanging", evt => {
       this._pagesRotation = evt.pagesRotation;
     });
-
-    this._isNonMetricLocale = NON_METRIC_LOCALES.includes(l10n.getLanguage());
   }
 
   /**
@@ -251,7 +249,8 @@ class PDFDocumentProperties {
         height: pageSizeInches.width,
       };
     }
-    const isPortrait = isPortraitOrientation(pageSizeInches);
+    const isPortrait = isPortraitOrientation(pageSizeInches),
+      nonMetric = NON_METRIC_LOCALES.includes(this.l10n.getLanguage());
 
     let sizeInches = {
       width: Math.round(pageSizeInches.width * 100) / 100,
@@ -305,9 +304,9 @@ class PDFDocumentProperties {
     }
 
     const [{ width, height }, unit, name, orientation] = await Promise.all([
-      this._isNonMetricLocale ? sizeInches : sizeMillimeters,
+      nonMetric ? sizeInches : sizeMillimeters,
       this.l10n.get(
-        this._isNonMetricLocale
+        nonMetric
           ? "pdfjs-document-properties-page-size-unit-inches"
           : "pdfjs-document-properties-page-size-unit-millimeters"
       ),
