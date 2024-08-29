@@ -15,7 +15,6 @@
     "caniuse-lite": "^1.0.30001653",
     "canvas": "^2.11.2",
     "core-js": "^3.38.1",
-    "cross-env": "^7.0.3",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-fetch-options": "^0.0.5",
@@ -48,7 +47,7 @@
     "postcss-discard-comments": "^7.0.2",
     "postcss-nesting": "^13.0.0",
     "prettier": "^3.3.3",
-    "puppeteer": "^22.15.0",
+    "puppeteer": "^23.1.1",
     "stylelint": "^16.8.2",
     "stylelint-prettier": "^5.0.2",
     "terser-webpack-plugin": "^5.3.10",
@@ -59,9 +58,6 @@
     "webpack": "^5.94.0",
     "webpack-stream": "^7.0.0",
     "yargs": "^17.7.2"
-  },
-  "scripts": {
-    "postinstall": "cross-env PUPPETEER_PRODUCT=firefox node node_modules/puppeteer/install.mjs"
   },
   "repository": {
     "type": "git",
