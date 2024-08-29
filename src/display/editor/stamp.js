@@ -373,6 +373,7 @@ class StampEditor extends AnnotationEditor {
 
     super.render();
     this.div.hidden = true;
+    this.div.setAttribute("role", "figure");
 
     this.addAltTextButton();
 
@@ -425,7 +426,9 @@ class StampEditor extends AnnotationEditor {
 
     this._uiManager.enableWaiting(false);
     const canvas = (this.#canvas = document.createElement("canvas"));
-    div.append(canvas);
+    canvas.setAttribute("role", "img");
+    this.addContainer(canvas);
+
     if (
       !this._uiManager.useNewAltTextWhenAddingImage ||
       !this._uiManager.useNewAltTextFlow

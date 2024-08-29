@@ -993,6 +993,15 @@ class AnnotationEditor {
     this.#altText?.destroy();
   }
 
+  addContainer(container) {
+    const editToolbarDiv = this._editToolbar?.div;
+    if (editToolbarDiv) {
+      editToolbarDiv.before(container);
+    } else {
+      this.div.append(container);
+    }
+  }
+
   getClientDimensions() {
     return this.div.getBoundingClientRect();
   }
