@@ -29,12 +29,12 @@ const NON_METRIC_LOCALES = ["en-us", "en-lr", "my"];
 // which are l10n-ids, should be lowercase.
 // See https://en.wikipedia.org/wiki/Paper_size
 const US_PAGE_NAMES = {
-  "8.5x11": "letter",
-  "8.5x14": "legal",
+  "8.5x11": "pdfjs-document-properties-page-size-name-letter",
+  "8.5x14": "pdfjs-document-properties-page-size-name-legal",
 };
 const METRIC_PAGE_NAMES = {
-  "297x420": "a-three",
-  "210x297": "a-four",
+  "297x420": "pdfjs-document-properties-page-size-name-a-three",
+  "210x297": "pdfjs-document-properties-page-size-name-a-four",
 };
 
 function getPageName(size, isPortrait, pageNames) {
@@ -87,8 +87,6 @@ class PDFDocumentProperties {
     eventBus._on("rotationchanging", evt => {
       this._pagesRotation = evt.pagesRotation;
     });
-
-    this._isNonMetricLocale = NON_METRIC_LOCALES.includes(l10n.getLanguage());
   }
 
   /**
@@ -227,15 +225,16 @@ class PDFDocumentProperties {
     }
   }
 
-  #getL10nStr(id, args = null) {
-    return this.l10n.get(`pdfjs-document-properties-${id}`, args);
-  }
-
   async #parseFileSize(b = 0) {
     const kb = b / 1024,
       mb = kb / 1024;
     return kb
-      ? this.#getL10nStr(`size-${mb >= 1 ? "mb" : "kb"}`, { mb, kb, b })
+      ? this.l10n.get(
+          mb >= 1
+            ? "pdfjs-document-properties-size-mb"
+            : "pdfjs-document-properties-size-kb",
+          { mb, kb, b }
+        )
       : undefined;
   }
 
@@ -250,7 +249,8 @@ class PDFDocumentProperties {
         height: pageSizeInches.width,
       };
     }
-    const isPortrait = isPortraitOrientation(pageSizeInches);
+    const isPortrait = isPortraitOrientation(pageSizeInches),
+      nonMetric = NON_METRIC_LOCALES.includes(this.l10n.getLanguage());
 
     let sizeInches = {
       width: Math.round(pageSizeInches.width * 100) / 100,
@@ -262,12 +262,12 @@ class PDFDocumentProperties {
       height: Math.round(pageSizeInches.height * 25.4 * 10) / 10,
     };
 
-    let rawName =
+    let nameId =
       getPageName(sizeInches, isPortrait, US_PAGE_NAMES) ||
       getPageName(sizeMillimeters, isPortrait, METRIC_PAGE_NAMES);
 
     if (
-      !rawName &&
+      !nameId &&
       !(
         Number.isInteger(sizeMillimeters.width) &&
         Number.isInteger(sizeMillimeters.height)
@@ -290,8 +290,8 @@ class PDFDocumentProperties {
         Math.abs(exactMillimeters.width - intMillimeters.width) < 0.1 &&
         Math.abs(exactMillimeters.height - intMillimeters.height) < 0.1
       ) {
-        rawName = getPageName(intMillimeters, isPortrait, METRIC_PAGE_NAMES);
-        if (rawName) {
+        nameId = getPageName(intMillimeters, isPortrait, METRIC_PAGE_NAMES);
+        if (nameId) {
           // Update *both* sizes, computed above, to ensure that the displayed
           // dimensions always correspond to the detected page name.
           sizeInches = {
@@ -304,18 +304,24 @@ class PDFDocumentProperties {
     }
 
     const [{ width, height }, unit, name, orientation] = await Promise.all([
-      this._isNonMetricLocale ? sizeInches : sizeMillimeters,
-      this.#getL10nStr(
-        `page-size-unit-${this._isNonMetricLocale ? "inches" : "millimeters"}`
+      nonMetric ? sizeInches : sizeMillimeters,
+      this.l10n.get(
+        nonMetric
+          ? "pdfjs-document-properties-page-size-unit-inches"
+          : "pdfjs-document-properties-page-size-unit-millimeters"
       ),
-      rawName && this.#getL10nStr(`page-size-name-${rawName}`),
-      this.#getL10nStr(
-        `page-size-orientation-${isPortrait ? "portrait" : "landscape"}`
+      nameId && this.l10n.get(nameId),
+      this.l10n.get(
+        isPortrait
+          ? "pdfjs-document-properties-page-size-orientation-portrait"
+          : "pdfjs-document-properties-page-size-orientation-landscape"
       ),
     ]);
 
-    return this.#getL10nStr(
-      `page-size-dimension-${name ? "name-" : ""}string`,
+    return this.l10n.get(
+      name
+        ? "pdfjs-document-properties-page-size-dimension-name-string"
+        : "pdfjs-document-properties-page-size-dimension-string",
       { width, height, unit, name, orientation }
     );
   }
@@ -323,12 +329,16 @@ class PDFDocumentProperties {
   async #parseDate(inputDate) {
     const dateObj = PDFDateString.toDateObject(inputDate);
     return dateObj
-      ? this.#getL10nStr("date-time-string", { dateObj })
+      ? this.l10n.get("pdfjs-document-properties-date-time-string", { dateObj })
       : undefined;
   }
 
   #parseLinearization(isLinearized) {
-    return this.#getL10nStr(`linearized-${isLinearized ? "yes" : "no"}`);
+    return this.l10n.get(
+      isLinearized
+        ? "pdfjs-document-properties-linearized-yes"
+        : "pdfjs-document-properties-linearized-no"
+    );
   }
 }
 
