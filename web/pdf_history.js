@@ -394,15 +394,6 @@ class PDFHistory {
     } else {
       window.history.pushState(newState, "", newUrl);
     }
-
-    if (
-      typeof PDFJSDev !== "undefined" &&
-      PDFJSDev.test("CHROME") &&
-      top === window
-    ) {
-      // eslint-disable-next-line no-undef
-      chrome.runtime.sendMessage("showPageAction");
-    }
   }
 
   #tryPushCurrentPosition(temporary = false) {
