@@ -882,7 +882,7 @@ async function startBrowser({
   extraPrefsFirefox = {},
 }) {
   const options = {
-    product: browserName,
+    browser: browserName,
     protocol: "webDriverBiDi",
     headless,
     dumpio: true,
