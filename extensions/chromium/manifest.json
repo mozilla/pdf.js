@@ -10,7 +10,6 @@
     "16": "icon16.png"
   },
   "permissions": [
-    "fileBrowserHandler",
     "webRequest",
     "webRequestBlocking",
     "<all_urls>",
@@ -20,19 +19,11 @@
   ],
   "content_scripts": [
     {
-      "matches": ["http://*/*", "https://*/*", "ftp://*/*", "file://*/*"],
+      "matches": ["http://*/*", "https://*/*", "file://*/*"],
       "run_at": "document_start",
       "all_frames": true,
       "css": ["contentstyle.css"],
       "js": ["contentscript.js"]
-    }
-  ],
-  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
-  "file_browser_handlers": [
-    {
-      "id": "open-as-pdf",
-      "default_title": "Open with PDF Viewer",
-      "file_filters": ["filesystem:*.pdf"]
     }
   ],
   "storage": {
@@ -46,20 +37,11 @@
   "background": {
     "page": "pdfHandler.html"
   },
-  "page_action": {
-    "default_icon": {
-      "19": "icon19.png",
-      "38": "icon38.png"
-    },
-    "default_title": "Show PDF URL",
-    "default_popup": "pageActionPopup.html"
-  },
   "incognito": "split",
   "web_accessible_resources": [
     "content/web/viewer.html",
     "http:/*",
     "https:/*",
-    "ftp:/*",
     "file:/*",
     "chrome-extension:/*",
     "blob:*",
