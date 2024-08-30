@@ -3474,5 +3474,6 @@ export {
   PDFPageProxy,
   PDFWorker,
   RenderTask,
+  setVerbosityLevel,
   version,
 };
