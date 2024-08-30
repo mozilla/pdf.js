@@ -14,6 +14,7 @@
  */
 
 import {
+  createHeaders,
   createResponseStatusError,
   extractFilenameFromHeader,
   validateRangeRequestCapabilities,
@@ -25,6 +26,44 @@ import {
 } from "../../src/shared/util.js";
 
 describe("network_utils", function () {
+  describe("createHeaders", function () {
+    it("returns empty `Headers` for invalid input", function () {
+      const headersArr = [
+        createHeaders(
+          /* isHttp = */ false,
+          /* httpHeaders = */ { "Content-Length": 100 }
+        ),
+        createHeaders(/* isHttp = */ true, /* httpHeaders = */ undefined),
+        createHeaders(/* isHttp = */ true, /* httpHeaders = */ null),
+        createHeaders(/* isHttp = */ true, /* httpHeaders = */ "abc"),
+        createHeaders(/* isHttp = */ true, /* httpHeaders = */ 123),
+      ];
+      const emptyObj = Object.create(null);
+
+      for (const headers of headersArr) {
+        expect(Object.fromEntries(headers)).toEqual(emptyObj);
+      }
+    });
+
+    it("returns populated `Headers` for valid input", function () {
+      const headers = createHeaders(
+        /* isHttp = */ true,
+        /* httpHeaders = */ {
+          "Content-Length": 100,
+          "Accept-Ranges": "bytes",
+          "Dummy-null": null,
+          "Dummy-undefined": undefined,
+        }
+      );
+
+      expect(Object.fromEntries(headers)).toEqual({
+        "content-length": "100",
+        "accept-ranges": "bytes",
+        "dummy-null": "null",
+      });
+    });
+  });
+
   describe("validateRangeRequestCapabilities", function () {
     it("rejects invalid rangeChunkSize", function () {
       expect(function () {
