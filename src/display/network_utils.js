@@ -21,6 +21,21 @@ import {
 import { getFilenameFromContentDispositionHeader } from "./content_disposition.js";
 import { isPdfFile } from "./display_utils.js";
 
+function createHeaders(isHttp, httpHeaders) {
+  const headers = new Headers();
+
+  if (!isHttp || !httpHeaders || typeof httpHeaders !== "object") {
+    return headers;
+  }
+  for (const key in httpHeaders) {
+    const val = httpHeaders[key];
+    if (val !== undefined) {
+      headers.append(key, val);
+    }
+  }
+  return headers;
+}
+
 function validateRangeRequestCapabilities({
   getResponseHeader,
   isHttp,
@@ -98,6 +113,7 @@ function validateResponseStatus(status) {
 }
 
 export {
+  createHeaders,
   createResponseStatusError,
   extractFilenameFromHeader,
   validateRangeRequestCapabilities,
