@@ -50,6 +50,7 @@
     "puppeteer": "^23.1.1",
     "stylelint": "^16.8.2",
     "stylelint-prettier": "^5.0.2",
+    "svglint": "^3.0.0",
     "terser-webpack-plugin": "^5.3.10",
     "tsc-alias": "^1.8.10",
     "ttest": "^4.0.0",
