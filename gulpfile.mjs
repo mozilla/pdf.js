@@ -1897,7 +1897,7 @@ gulp.task(
 
 gulp.task("lint", function (done) {
   console.log();
-  console.log("### Linting JS/CSS/JSON files");
+  console.log("### Linting JS/CSS/JSON/SVG files");
 
   // Ensure that we lint the Firefox specific *.jsm files too.
   const esLintOptions = [
@@ -1930,6 +1930,12 @@ gulp.task("lint", function (done) {
     prettierOptions.push("--log-level", "warn", "--check");
   }
 
+  const svgLintOptions = [
+    "node_modules/svglint/bin/cli.js",
+    "web/**/*.svg",
+    "--ci",
+  ];
+
   const esLintProcess = startNode(esLintOptions, { stdio: "inherit" });
   esLintProcess.on("close", function (esLintCode) {
     if (esLintCode !== 0) {
@@ -1950,8 +1956,24 @@ gulp.task("lint", function (done) {
           done(new Error("Prettier failed."));
           return;
         }
-        console.log("files checked, no errors found");
-        done();
+
+        const svgLintProcess = startNode(svgLintOptions, {
+          stdio: "pipe",
+        });
+        svgLintProcess.stdout.setEncoding("utf8");
+        svgLintProcess.stdout.on("data", m => {
+          m = m.toString().replace(/-+ Summary -+.*/ms, "");
+          console.log(m);
+        });
+        svgLintProcess.on("close", function (svgLintCode) {
+          if (svgLintCode !== 0) {
+            done(new Error("svglint failed."));
+            return;
+          }
+
+          console.log("files checked, no errors found");
+          done();
+        });
       });
     });
   });
