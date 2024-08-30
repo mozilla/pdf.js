@@ -1983,8 +1983,9 @@ gulp.task("lint", function (done) {
 
   const svgLintOptions = [
     "node_modules/svglint/bin/cli.js",
-    "web/**/*.svg",
+    "**/*.svg",
     "--ci",
+    "--no-summary",
   ];
 
   const esLintProcess = startNode(esLintOptions, { stdio: "inherit" });
@@ -2009,12 +2010,7 @@ gulp.task("lint", function (done) {
         }
 
         const svgLintProcess = startNode(svgLintOptions, {
-          stdio: "pipe",
-        });
-        svgLintProcess.stdout.setEncoding("utf8");
-        svgLintProcess.stdout.on("data", m => {
-          m = m.toString().replace(/-+ Summary -+.*/ms, "");
-          console.log(m);
+          stdio: "inherit",
         });
         svgLintProcess.on("close", function (svgLintCode) {
           if (svgLintCode !== 0) {
