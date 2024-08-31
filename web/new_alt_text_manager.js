@@ -177,7 +177,9 @@ class NewAltTextManager {
     this.#isEditing = isEditing;
     this.#title.setAttribute(
       "data-l10n-id",
-      `pdfjs-editor-new-alt-text-dialog-${isEditing ? "edit" : "add"}-label`
+      isEditing
+        ? "pdfjs-editor-new-alt-text-dialog-edit-label"
+        : "pdfjs-editor-new-alt-text-dialog-add-label"
     );
   }
 
