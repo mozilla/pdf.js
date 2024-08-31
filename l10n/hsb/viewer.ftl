@@ -105,6 +105,14 @@ pdfjs-document-properties-button-label = Dokumentowe kajkosće…
 pdfjs-document-properties-file-name = Mjeno dataje:
 pdfjs-document-properties-file-size = Wulkosć dataje:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } KB ({ $b } bajtow)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bajtow)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bajtow)
@@ -118,6 +126,9 @@ pdfjs-document-properties-subject = Předmjet:
 pdfjs-document-properties-keywords = Klučowe słowa:
 pdfjs-document-properties-creation-date = Datum wutworjenja:
 pdfjs-document-properties-modification-date = Datum změny:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -279,6 +290,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [Typ přispomnjenki: { $type }]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -410,14 +424,18 @@ pdfjs-editor-new-alt-text-textarea =
 pdfjs-editor-new-alt-text-description = Krótke wopisanje za ludźi, kotřiž njemóžeće wobraz widźeć abo hdyž so wobraz njezačita.
 # This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
 pdfjs-editor-new-alt-text-disclaimer1 = Tutón alternatiwny tekst je so awtomatisce wutworił a je snano njedokładny.
-# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
-pdfjs-editor-new-alt-text-disclaimer = Tutón alternatiwny tekst je so awtomatisce wutworił.
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Dalše informacije
 pdfjs-editor-new-alt-text-create-automatically-button-label = Alternatiwny tekst awtomatisce wutworić
 pdfjs-editor-new-alt-text-not-now-button = Nic nětko
 pdfjs-editor-new-alt-text-error-title = Alternatiwny tekst njeda so awtomatisce wutworić
 pdfjs-editor-new-alt-text-error-description = Prošu pisajće swój alternatiwny tekst abo spytajće pozdźišo hišće raz.
 pdfjs-editor-new-alt-text-error-close-button = Začinić
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+#   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
+#   $percent (Number) - the percentage of the downloaded size.
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = Model KI za alternatiwny tekst so sćahuje ({ $downloadedSize } z { $totalSize } MB)
+    .aria-valuetext = Model KI za alternatiwny tekst so sćahuje ({ $downloadedSize } z { $totalSize } MB)
 # This is a button that users can click to edit the alt text they have already added.
 pdfjs-editor-new-alt-text-added-button-label = Alternatiwny tekst je so přidał
 # This is a button that users can click to open the alt text editor and add alt text when it is not present.
@@ -441,9 +459,11 @@ pdfjs-editor-alt-text-settings-create-model-description = Namjetuje wopisanja, z
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
 pdfjs-editor-alt-text-settings-download-model-label = Model KI alternatiwneho teksta ({ $totalSize } MB)
+pdfjs-editor-alt-text-settings-ai-model-description = Běži lokalnje na wašim graće, zo bychu waše daty priwatne wostali. Za awtomatiski alternatiwny tekst trěbny.
 pdfjs-editor-alt-text-settings-delete-model-button = Zhašeć
 pdfjs-editor-alt-text-settings-download-model-button = Sćahnyć
 pdfjs-editor-alt-text-settings-downloading-model-button = Sćahuje so…
 pdfjs-editor-alt-text-settings-editor-title = Editor za alternatiwny tekst
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Editor alternatiwneho teksta hnydom pokazać, hdyž so wobraz přidawa
+pdfjs-editor-alt-text-settings-show-dialog-description = Pomha, wam wšěm swojim wobrazam alternatiwny tekst přidać.
 pdfjs-editor-alt-text-settings-close-button = Začinić

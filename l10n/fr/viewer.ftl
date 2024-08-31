@@ -105,6 +105,14 @@ pdfjs-document-properties-button-label = Propriétés du document…
 pdfjs-document-properties-file-name = Nom du fichier :
 pdfjs-document-properties-file-size = Taille du fichier :
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } Ko ({ $b } octets)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } Mo ({ $b } octets)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } Ko ({ $size_b } octets)
@@ -118,6 +126,9 @@ pdfjs-document-properties-subject = Sujet :
 pdfjs-document-properties-keywords = Mots-clés :
 pdfjs-document-properties-creation-date = Date de création :
 pdfjs-document-properties-modification-date = Modifié le :
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -271,6 +282,9 @@ pdfjs-annotation-date-string = { $date } à { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [Annotation { $type }]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -402,8 +416,6 @@ pdfjs-editor-new-alt-text-textarea =
 pdfjs-editor-new-alt-text-description = Courte description pour les personnes qui ne peuvent pas voir l’image ou lorsque l’image ne se charge pas.
 # This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
 pdfjs-editor-new-alt-text-disclaimer1 = Ce texte alternatif a été créé automatiquement et peut être inexact.
-# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
-pdfjs-editor-new-alt-text-disclaimer = Ce texte alternatif a été créé automatiquement.
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = En savoir plus
 pdfjs-editor-new-alt-text-create-automatically-button-label = Créer automatiquement le texte alternatif
 pdfjs-editor-new-alt-text-not-now-button = Pas maintenant

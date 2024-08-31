@@ -119,6 +119,9 @@ pdfjs-document-properties-keywords = Ключавыя словы:
 pdfjs-document-properties-creation-date = Дата стварэння:
 pdfjs-document-properties-modification-date = Дата змянення:
 # Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
+# Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
 pdfjs-document-properties-date-string = { $date }, { $time }
@@ -277,6 +280,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [{ $type } Annotation]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -408,8 +414,6 @@ pdfjs-editor-new-alt-text-textarea =
 pdfjs-editor-new-alt-text-description = Кароткае апісанне для людзей, якія не бачаць выяву, ці калі выява не загружаецца.
 # This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
 pdfjs-editor-new-alt-text-disclaimer1 = Гэты тэкст для атрыбута alt быў створаны аўтаматычна і можа быць недакладным
-# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
-pdfjs-editor-new-alt-text-disclaimer = Гэты тэкст для атрыбута alt быў створаны аўтаматычна.
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Даведацца больш
 pdfjs-editor-new-alt-text-create-automatically-button-label = Ствараць тэкст для атрыбута alt аўтаматычна
 pdfjs-editor-new-alt-text-not-now-button = Не зараз

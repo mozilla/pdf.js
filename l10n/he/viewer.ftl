@@ -105,6 +105,14 @@ pdfjs-document-properties-button-label = מאפייני מסמך…
 pdfjs-document-properties-file-name = שם קובץ:
 pdfjs-document-properties-file-size = גודל הקובץ:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } ק״ב ({ $b } בתים)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } מ״ב ({ $b } בתים)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } ק״ב ({ $size_b } בתים)
@@ -118,6 +126,9 @@ pdfjs-document-properties-subject = נושא:
 pdfjs-document-properties-keywords = מילות מפתח:
 pdfjs-document-properties-creation-date = תאריך יצירה:
 pdfjs-document-properties-modification-date = תאריך שינוי:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -275,6 +286,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [הערת { $type }]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
