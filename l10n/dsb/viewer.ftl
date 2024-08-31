@@ -416,6 +416,12 @@ pdfjs-editor-new-alt-text-not-now-button = Nic něnto
 pdfjs-editor-new-alt-text-error-title = Alternatiwny tekst njedajo se awtomatiski napóraś
 pdfjs-editor-new-alt-text-error-description = Pšosym pišćo swój alternatiwny tekst abo wopytajśo pózdźej hyšći raz.
 pdfjs-editor-new-alt-text-error-close-button = Zacyniś
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+#   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
+#   $percent (Number) - the percentage of the downloaded size.
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = Model KI za alternatiwny tekst se ześěgujo ({ $downloadedSize } z { $totalSize } MB)
+    .aria-valuetext = Model KI za alternatiwny tekst se ześěgujo ({ $downloadedSize } z { $totalSize } MB)
 # This is a button that users can click to edit the alt text they have already added.
 pdfjs-editor-new-alt-text-added-button-label = Alternatiwny tekst jo se pśidał
 # This is a button that users can click to open the alt text editor and add alt text when it is not present.
@@ -439,9 +445,11 @@ pdfjs-editor-alt-text-settings-create-model-description = Naraźujo wopisanja, a
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
 pdfjs-editor-alt-text-settings-download-model-label = Model KI alternatiwnego teksta ({ $totalSize } MB)
+pdfjs-editor-alt-text-settings-ai-model-description = Běžy lokalnje na wašom rěźe, aby waše daty priwatne wóstali. Za awtomatiski alternatiwny tekst trjebny.
 pdfjs-editor-alt-text-settings-delete-model-button = Lašowaś
 pdfjs-editor-alt-text-settings-download-model-button = Ześěgnuś
 pdfjs-editor-alt-text-settings-downloading-model-button = Ześěgujo se…
 pdfjs-editor-alt-text-settings-editor-title = Editor za alternatiwny tekst
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Editor alternatiwnego teksta ned pokazaś, gaž se wobraz pśidawa
+pdfjs-editor-alt-text-settings-show-dialog-description = Pomaga, wam wšym swójim wobrazam alternatiwny tekst pśidaś.
 pdfjs-editor-alt-text-settings-close-button = Zacyniś
