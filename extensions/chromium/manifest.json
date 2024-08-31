@@ -10,6 +10,7 @@
     "16": "icon16.png"
   },
   "permissions": [
+    "declarativeNetRequestWithHostAccess",
     "webRequest",
     "webRequestBlocking",
     "<all_urls>",
