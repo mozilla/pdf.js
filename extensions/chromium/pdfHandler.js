@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-/* globals saveReferer */
 
 "use strict";
 
@@ -138,9 +137,6 @@ chrome.webRequest.onHeadersReceived.addListener(
     }
 
     var viewerUrl = getViewerURL(details.url);
-
-    // Implemented in preserve-referer.js
-    saveReferer(details);
 
     return { redirectUrl: viewerUrl };
   },

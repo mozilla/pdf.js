@@ -267,6 +267,7 @@ if (window === top) {
   });
 }
 
+let dnrRequestId;
 // This port is used for several purposes:
 // 1. When disconnected, the background page knows that the frame has unload.
 // 2. When the referrer was saved in history.state.chromecomState, it is sent
@@ -281,6 +282,7 @@ let port;
 // 3. Background -> page: Send latest referer and save to history.
 // 4. Page: Invoke callback.
 function setReferer(url, callback) {
+  dnrRequestId ??= crypto.getRandomValues(new Uint32Array(1))[0] % 0x80000000;
   if (!port) {
     // The background page will accept the port, and keep adding the Referer
     // request header to requests to |url| until the port is disconnected.
@@ -290,6 +292,7 @@ function setReferer(url, callback) {
   port.onMessage.addListener(onMessage);
   // Initiate the information exchange.
   port.postMessage({
+    dnrRequestId,
     referer: window.history.state?.chromecomState,
     requestUrl: url,
   });
