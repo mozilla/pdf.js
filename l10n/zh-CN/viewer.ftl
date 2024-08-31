@@ -105,6 +105,14 @@ pdfjs-document-properties-button-label = 文档属性…
 pdfjs-document-properties-file-name = 文件名:
 pdfjs-document-properties-file-size = 文件大小:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } KB（{ $b } 字节）
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB（{ $b } 字节）
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } 字节)
@@ -118,6 +126,9 @@ pdfjs-document-properties-subject = 主题:
 pdfjs-document-properties-keywords = 关键词:
 pdfjs-document-properties-creation-date = 创建日期:
 pdfjs-document-properties-modification-date = 修改日期:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -267,6 +278,9 @@ pdfjs-annotation-date-string = { $date }，{ $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [{ $type } 注释]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -398,8 +412,6 @@ pdfjs-editor-new-alt-text-textarea =
 pdfjs-editor-new-alt-text-description = 向无法看到或加载图像的用户提供的简短描述。
 # This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
 pdfjs-editor-new-alt-text-disclaimer1 = 此段替换文字为自动创建，有可能不准确。
-# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
-pdfjs-editor-new-alt-text-disclaimer = 此段替换文字为自动创建。
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = 详细了解
 pdfjs-editor-new-alt-text-create-automatically-button-label = 自动创建替换文字
 pdfjs-editor-new-alt-text-not-now-button = 暂时不要
