@@ -1078,27 +1078,24 @@ class PDFPageView {
         if (!annotationEditorUIManager) {
           return;
         }
-
         this.drawLayer ||= new DrawLayerBuilder({
           pageIndex: this.id,
         });
         await this.#renderDrawLayer();
         this.drawLayer.setParent(canvasWrapper);
 
-        if (!this.annotationEditorLayer) {
-          this.annotationEditorLayer = new AnnotationEditorLayerBuilder({
-            uiManager: annotationEditorUIManager,
-            pdfPage,
-            l10n,
-            accessibilityManager: this._accessibilityManager,
-            annotationLayer: this.annotationLayer?.annotationLayer,
-            textLayer: this.textLayer,
-            drawLayer: this.drawLayer.getDrawLayer(),
-            onAppend: annotationEditorLayerDiv => {
-              this.#addLayer(annotationEditorLayerDiv, "annotationEditorLayer");
-            },
-          });
-        }
+        this.annotationEditorLayer ||= new AnnotationEditorLayerBuilder({
+          uiManager: annotationEditorUIManager,
+          pdfPage,
+          l10n,
+          accessibilityManager: this._accessibilityManager,
+          annotationLayer: this.annotationLayer?.annotationLayer,
+          textLayer: this.textLayer,
+          drawLayer: this.drawLayer.getDrawLayer(),
+          onAppend: annotationEditorLayerDiv => {
+            this.#addLayer(annotationEditorLayerDiv, "annotationEditorLayer");
+          },
+        });
         this.#renderAnnotationEditorLayer();
       },
       error => {
