@@ -131,22 +131,12 @@ class PDFPageViewBuffer {
   // Here we rely on the fact that `Set`s preserve the insertion order.
   #buf = new Set();
 
-  #size = 0;
-
-  constructor(size) {
-    this.#size = size;
-  }
-
   push(view) {
     const buf = this.#buf;
     if (buf.has(view)) {
       buf.delete(view); // Move the view to the "end" of the buffer.
     }
     buf.add(view);
-
-    if (buf.size > this.#size) {
-      this.#destroyFirstView();
-    }
   }
 
   /**
@@ -157,8 +147,6 @@ class PDFPageViewBuffer {
    * is larger than `newSize`, some of those pages will be destroyed anyway.
    */
   resize(newSize, idsToKeep = null) {
-    this.#size = newSize;
-
     const buf = this.#buf;
     if (idsToKeep) {
       const ii = buf.size;
@@ -173,10 +161,6 @@ class PDFPageViewBuffer {
         }
       }
     }
-
-    while (buf.size > this.#size) {
-      this.#destroyFirstView();
-    }
   }
 
   has(view) {
@@ -185,13 +169,6 @@ class PDFPageViewBuffer {
 
   [Symbol.iterator]() {
     return this.#buf.keys();
-  }
-
-  #destroyFirstView() {
-    const firstView = this.#buf.keys().next().value;
-
-    firstView?.destroy();
-    this.#buf.delete(firstView);
   }
 }
 
