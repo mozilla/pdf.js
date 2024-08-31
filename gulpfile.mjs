@@ -707,6 +707,9 @@ function runTests(testsName, { bot = false, xfaOnly = false } = {}) {
     if (process.argv.includes("--noChrome") || forceNoChrome) {
       args.push("--noChrome");
     }
+    if (process.argv.includes("--noFirefox")) {
+      args.push("--noFirefox");
+    }
     if (process.argv.includes("--headless")) {
       args.push("--headless");
     }
@@ -738,6 +741,9 @@ function makeRef(done, bot) {
   }
   if (process.argv.includes("--noChrome") || forceNoChrome) {
     args.push("--noChrome");
+  }
+  if (process.argv.includes("--noFirefox")) {
+    args.push("--noFirefox");
   }
   if (process.argv.includes("--headless")) {
     args.push("--headless");
