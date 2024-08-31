@@ -119,6 +119,9 @@ pdfjs-document-properties-keywords = Klíčová slova:
 pdfjs-document-properties-creation-date = Datum vytvoření:
 pdfjs-document-properties-modification-date = Datum úpravy:
 # Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
+# Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
 pdfjs-document-properties-date-string = { $date }, { $time }
@@ -279,6 +282,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [Anotace typu { $type }]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -410,8 +416,6 @@ pdfjs-editor-new-alt-text-textarea =
 pdfjs-editor-new-alt-text-description = Krátký popis pro lidi, kteří neuvidí obrázek nebo když se obrázek nenačítá.
 # This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
 pdfjs-editor-new-alt-text-disclaimer1 = Tento alternativní text byl vytvořen automaticky a může být nepřesný.
-# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
-pdfjs-editor-new-alt-text-disclaimer = Tento alternativní text byl vytvořen automaticky.
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Více informací
 pdfjs-editor-new-alt-text-create-automatically-button-label = Vytvořit alternativní text automaticky
 pdfjs-editor-new-alt-text-not-now-button = Teď ne

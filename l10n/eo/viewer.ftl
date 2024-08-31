@@ -298,8 +298,6 @@ pdfjs-editor-stamp-button-label = Aldoni aŭ modifi bildojn
 pdfjs-editor-highlight-button =
     .title = Elstarigi
 pdfjs-editor-highlight-button-label = Elstarigi
-pdfjs-highlight-floating-button =
-    .title = Elstarigi
 pdfjs-highlight-floating-button1 =
     .title = Elstarigi
     .aria-label = Elstarigi
@@ -394,3 +392,60 @@ pdfjs-editor-colorpicker-red =
 pdfjs-editor-highlight-show-all-button-label = Montri ĉiujn
 pdfjs-editor-highlight-show-all-button =
     .title = Montri ĉiujn
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+# Modal header positioned above a text box where users can edit the alt text.
+pdfjs-editor-new-alt-text-dialog-edit-label = Modifi alternativan tekston (priskribo de bildo)
+# Modal header positioned above a text box where users can add the alt text.
+pdfjs-editor-new-alt-text-dialog-add-label = Aldoni alternativan tekston (priskribo de bildo)
+pdfjs-editor-new-alt-text-textarea =
+    .placeholder = Skribu vian priskribon ĉi tie…
+# This text refers to the alt text box above this description. It offers a definition of alt text.
+pdfjs-editor-new-alt-text-description = Mallonga priskribo por personoj kiuj ne povas vidi la bildon kaj por montri kiam la bildo ne ŝargeblas.
+# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
+pdfjs-editor-new-alt-text-disclaimer1 = Tiu ĉi alternativa teksto estis aŭtomate kreita kaj povus esti malĝusta.
+pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Pli da informo
+pdfjs-editor-new-alt-text-create-automatically-button-label = Aŭtomate krei alternativan tekston
+pdfjs-editor-new-alt-text-not-now-button = Ne nun
+pdfjs-editor-new-alt-text-error-title = Ne eblis aŭtomate krei alternativan tekston
+pdfjs-editor-new-alt-text-error-description = Bonvolu skribi vian propran alternativan tekston aŭ provi denove poste.
+pdfjs-editor-new-alt-text-error-close-button = Fermi
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+#   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
+#   $percent (Number) - the percentage of the downloaded size.
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = Elŝuto de modelo de artefarita intelekto por alternativa teksto ({ $downloadedSize } el { $totalSize } MO)
+    .aria-valuetext = Elŝuto de modelo de artefarita intelekto por alternativa teksto ({ $downloadedSize } el { $totalSize } MO)
+# This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button-label = Alternativa teksto aldonita
+# This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button-label = Mankas alternativa teksto
+# This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button-label = Kontroli alternativan tekston
+# "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
+# Variables:
+#   $generatedAltText (String) - the generated alt-text.
+pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer = Aŭtomate kreita: { $generatedAltText }
+
+## Image alt-text settings
+
+pdfjs-image-alt-text-settings-button =
+    .title = Agordoj por alternativa teksto de bildoj
+pdfjs-image-alt-text-settings-button-label = Agordoj por alternativa teksto de bildoj
+pdfjs-editor-alt-text-settings-dialog-label = Agordoj por alternativa teksto de bildoj
+pdfjs-editor-alt-text-settings-automatic-title = Aŭtomata alternativa teksto
+pdfjs-editor-alt-text-settings-create-model-button-label = Aŭtomate krei alternativan tekston
+pdfjs-editor-alt-text-settings-create-model-description = Tio ĉi sugestas priskribojn por helpi personojn kiuj ne povas vidi aŭ ŝargi la bildon.
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+pdfjs-editor-alt-text-settings-download-model-label = Modelo de artefarita intelekto por alternativa teksto ({ $totalSize } MO)
+pdfjs-editor-alt-text-settings-ai-model-description = Ĝi funkcias en via aparato, do viaj datumoj restas privataj. Ĝi estas postulata por aŭtomata kreado de alternativa teksto.
+pdfjs-editor-alt-text-settings-delete-model-button = Forigi
+pdfjs-editor-alt-text-settings-download-model-button = Elŝuti
+pdfjs-editor-alt-text-settings-downloading-model-button = Elŝuto…
+pdfjs-editor-alt-text-settings-editor-title = Redaktilo de alternativa teksto
+pdfjs-editor-alt-text-settings-show-dialog-button-label = Montri redaktilon de alternativa teksto tuj post aldono de bildo
+pdfjs-editor-alt-text-settings-show-dialog-description = Tio ĉi helpas vin kontroli ĉu ĉiuj bildoj havas alternativan tekston.
+pdfjs-editor-alt-text-settings-close-button = Fermi

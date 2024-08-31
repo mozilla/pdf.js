@@ -406,14 +406,18 @@ pdfjs-editor-new-alt-text-textarea =
 pdfjs-editor-new-alt-text-description = Kort skildring for personar som ikkje kan sjå bildet, eller når bildet ikkje lastar inn.
 # This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
 pdfjs-editor-new-alt-text-disclaimer1 = Denne alternative teksten vart oppretta automatisk, og kan vere unøyaktig.
-# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
-pdfjs-editor-new-alt-text-disclaimer = Denne alternative teksten vart oppretta automatisk.
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Les meir
 pdfjs-editor-new-alt-text-create-automatically-button-label = Opprett alternativ tekt automatisk
 pdfjs-editor-new-alt-text-not-now-button = Ikkje no
 pdfjs-editor-new-alt-text-error-title = Klarte ikkje å opprette alternativ tekst automatisk
 pdfjs-editor-new-alt-text-error-description = Skriv din eigen alternative tekst eller prøv igjen seinare.
 pdfjs-editor-new-alt-text-error-close-button = Lat att
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+#   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
+#   $percent (Number) - the percentage of the downloaded size.
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = Lastar ned AI-modell med alternativ tekst ({ $downloadedSize } av { $totalSize } MB)
+    .aria-valuetext = Lastar ned AI-modell med alternativ tekst ({ $downloadedSize } av { $totalSize } MB)
 # This is a button that users can click to edit the alt text they have already added.
 pdfjs-editor-new-alt-text-added-button-label = Alternativ tekst lagt til
 # This is a button that users can click to open the alt text editor and add alt text when it is not present.
