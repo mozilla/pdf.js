@@ -30,6 +30,8 @@ limitations under the License.
  * See setReferer in chromecom.js for more explanation of this logic.
  */
 
+/* exported canRequestBody */ // Used in pdfHandler.js
+
 // g_referrers[tabId][frameId] = referrer of PDF frame.
 var g_referrers = {};
 var g_referrerTimers = {};
@@ -38,14 +40,18 @@ var g_referrerTimers = {};
 // from being kept in memory for too long, cap the data duration to 5 minutes.
 var REFERRER_IN_MEMORY_TIME = 300000;
 
+// g_postRequests[tabId] = Set of frameId that were loaded via POST.
+var g_postRequests = {};
+
 var rIsReferer = /^referer$/i;
 chrome.webRequest.onSendHeaders.addListener(
   function saveReferer(details) {
-    const { tabId, frameId, requestHeaders } = details;
+    const { tabId, frameId, requestHeaders, method } = details;
     g_referrers[tabId] ??= {};
     g_referrers[tabId][frameId] = requestHeaders.find(h =>
       rIsReferer.test(h.name)
     )?.value;
+    setCanRequestBody(tabId, frameId, method !== "GET");
     forgetReferrerEventually(tabId);
   },
   { urls: ["*://*/*"], types: ["main_frame", "sub_frame"] },
@@ -59,7 +65,28 @@ function forgetReferrerEventually(tabId) {
   g_referrerTimers[tabId] = setTimeout(() => {
     delete g_referrers[tabId];
     delete g_referrerTimers[tabId];
+    delete g_postRequests[tabId];
   }, REFERRER_IN_MEMORY_TIME);
+}
+
+// Keeps track of whether a document in tabId + frameId is loaded through a
+// POST form submission. Although this logic has nothing to do with referrer
+// tracking, it is still here to enable re-use of the webRequest listener above.
+function setCanRequestBody(tabId, frameId, isPOST) {
+  if (isPOST) {
+    g_postRequests[tabId] ??= new Set();
+    g_postRequests[tabId].add(frameId);
+  } else {
+    g_postRequests[tabId]?.delete(frameId);
+  }
+}
+
+function canRequestBody(tabId, frameId) {
+  // Returns true unless the frame is known to be loaded through a POST request.
+  // If the background suspends, the information may be lost. This is acceptable
+  // because the information is only potentially needed shortly after document
+  // load, by contentscript.js.
+  return !g_postRequests[tabId]?.has(frameId);
 }
 
 // This method binds a webRequest event handler which adds the Referer header
