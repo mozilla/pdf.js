@@ -55,49 +55,50 @@ limitations under the License.
     return undefined;
   }
 
-  // TODO(rob): Use declarativeWebRequest once declared URL-encoding is
-  //            supported, see http://crbug.com/273589
-  //            (or rewrite the query string parser in viewer.js to get it to
-  //             recognize the non-URL-encoded PDF URL.)
-  chrome.webRequest.onBeforeRequest.addListener(
-    function (details) {
+  function resolveViewerURL(originalUrl) {
+    if (originalUrl.startsWith(CRX_BASE_URL)) {
       // This listener converts chrome-extension://.../http://...pdf to
       // chrome-extension://.../content/web/viewer.html?file=http%3A%2F%2F...pdf
-      var url = parseExtensionURL(details.url);
+      var url = parseExtensionURL(originalUrl);
       if (url) {
         url = VIEWER_URL + "?file=" + url;
-        var i = details.url.indexOf("#");
+        var i = originalUrl.indexOf("#");
         if (i > 0) {
-          url += details.url.slice(i);
+          url += originalUrl.slice(i);
         }
-        console.log("Redirecting " + details.url + " to " + url);
-        return { redirectUrl: url };
-      }
-      return undefined;
-    },
-    {
-      types: ["main_frame", "sub_frame"],
-      urls: schemes.map(function (scheme) {
-        // Format: "chrome-extension://[EXTENSIONID]/<scheme>*"
-        return CRX_BASE_URL + scheme + "*";
-      }),
-    },
-    ["blocking"]
-  );
-
-  // When session restore is used, viewer pages may be loaded before the
-  // webRequest event listener is attached (= page not found).
-  // Or the extension could have been crashed (OOM), leaving a sad tab behind.
-  // Reload these tabs.
-  chrome.tabs.query(
-    {
-      url: CRX_BASE_URL + "*:*",
-    },
-    function (tabsFromLastSession) {
-      for (const { id } of tabsFromLastSession) {
-        chrome.tabs.reload(id);
+        return url;
       }
     }
+    return undefined;
+  }
+
+  self.addEventListener("fetch", event => {
+    const req = event.request;
+    if (req.destination === "document") {
+      var url = resolveViewerURL(req.url);
+      if (url) {
+        console.log("Redirecting " + req.url + " to " + url);
+        event.respondWith(Response.redirect(url));
+      }
+    }
+  });
+
+  // Ctrl + F5 bypasses service worker. the pretty extension URLs will fail to
+  // resolve in that case. Catch this and redirect to destination.
+  chrome.webNavigation.onErrorOccurred.addListener(
+    details => {
+      if (details.frameId !== 0) {
+        // Not a top-level frame. Cannot easily navigate a specific child frame.
+        return;
+      }
+      const url = resolveViewerURL(details.url);
+      if (url) {
+        console.log(`Redirecting ${details.url} to ${url} (fallback)`);
+        chrome.tabs.update(details.tabId, { url });
+      }
+    },
+    { url: [{ urlPrefix: CRX_BASE_URL }] }
   );
+
   console.log("Set up extension URL router.");
 })();

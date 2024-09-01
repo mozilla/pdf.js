@@ -31,7 +31,11 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) {
   // is rewritten as soon as possible.
   const queryString = document.location.search.slice(1);
   const m = /(^|&)file=([^&]*)/.exec(queryString);
-  const defaultUrl = m ? decodeURIComponent(m[2]) : "";
+  let defaultUrl = m ? decodeURIComponent(m[2]) : "";
+  if (!defaultUrl && queryString.startsWith("DNR:")) {
+    // Redirected via DNR, see registerPdfRedirectRule in pdfHandler.js.
+    defaultUrl = queryString.slice(4);
+  }
 
   // Example: chrome-extension://.../http://example.com/file.pdf
   const humanReadableUrl = "/" + defaultUrl + location.hash;
