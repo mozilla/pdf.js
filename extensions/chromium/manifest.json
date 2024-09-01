@@ -1,6 +1,6 @@
 {
   "minimum_chrome_version": "88",
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "PDF Viewer",
   "version": "PDFJSSCRIPT_VERSION",
   "description": "Uses HTML5 to display PDF files directly in the browser.",
@@ -13,12 +13,11 @@
     "alarms",
     "declarativeNetRequestWithHostAccess",
     "webRequest",
-    "webRequestBlocking",
-    "<all_urls>",
     "tabs",
     "webNavigation",
     "storage"
   ],
+  "host_permissions": ["<all_urls>"],
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*", "file://*/*"],
@@ -36,18 +35,24 @@
   },
   "options_page": "options/options.html",
   "background": {
-    "page": "pdfHandler.html"
+    "service_worker": "background.js"
   },
   "incognito": "split",
   "web_accessible_resources": [
-    "content/web/viewer.html",
-    "http:/*",
-    "https:/*",
-    "file:/*",
-    "chrome-extension:/*",
-    "blob:*",
-    "data:*",
-    "filesystem:/*",
-    "drive:*"
+    {
+      "resources": [
+        "content/web/viewer.html",
+        "http:/*",
+        "https:/*",
+        "file:/*",
+        "chrome-extension:/*",
+        "blob:*",
+        "data:*",
+        "filesystem:/*",
+        "drive:*"
+      ],
+      "matches": ["<all_urls>"],
+      "extension_ids": ["*"]
+    }
   ]
 }
