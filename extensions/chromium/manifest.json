@@ -31,8 +31,7 @@
     "managed_schema": "preferences_schema.json"
   },
   "options_ui": {
-    "page": "options/options.html",
-    "chrome_style": true
+    "page": "options/options.html"
   },
   "options_page": "options/options.html",
   "background": {
