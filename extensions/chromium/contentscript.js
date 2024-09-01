@@ -23,6 +23,9 @@ function getViewerURL(pdf_url) {
 }
 
 document.addEventListener("animationstart", onAnimationStart, true);
+if (document.contentType === "application/pdf") {
+  chrome.runtime.sendMessage({ action: "canRequestBody" }, maybeRenderPdfDoc);
+}
 
 function onAnimationStart(event) {
   if (event.animationName === "pdfjs-detected-object-or-embed") {
@@ -220,4 +223,23 @@ function getEmbeddedViewerURL(path) {
   a.href = path;
   path = a.href;
   return getViewerURL(path) + fragment;
+}
+
+function maybeRenderPdfDoc(isNotPOST) {
+  if (!isNotPOST) {
+    // The document was loaded through a POST request, but we cannot access the
+    // original response body, nor safely send a new request to fetch the PDF.
+    // Until #4483 is fixed, POST requests should be ignored.
+    return;
+  }
+
+  // Detected PDF that was not redirected by the declarativeNetRequest rules.
+  // Maybe because this was served without Content-Type and sniffed as PDF.
+  // Or because this is Chrome 127-, which does not support responseHeaders
+  // condition in declarativeNetRequest (DNR), and PDF requests are therefore
+  // not redirected via DNR.
+
+  // In any case, load the viewer.
+  console.log(`Detected PDF via document, opening viewer for ${document.URL}`);
+  location.href = getEmbeddedViewerURL(document.URL);
 }

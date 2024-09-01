@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/* globals canRequestBody */ // From preserve-referer.js
+
 "use strict";
 
 var VIEWER_URL = chrome.runtime.getURL("content/web/viewer.html");
@@ -202,7 +204,7 @@ async function registerPdfRedirectRule() {
     // https://github.com/w3c/webextensions/issues/638#issuecomment-2181124486
     //
     // We do not bother with detecting that because we fall back to catching
-    // PDF documents via the content script.
+    // PDF documents via maybeRenderPdfDoc in contentscript.js.
   } catch (e) {
     console.error("Failed to register rules to redirect PDF requests.");
     console.error(e);
@@ -303,6 +305,11 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
         url,
       });
     }
+    return undefined;
+  }
+  if (message && message.action === "canRequestBody") {
+    sendResponse(canRequestBody(sender.tab.id, sender.frameId));
+    return undefined;
   }
   return undefined;
 });
