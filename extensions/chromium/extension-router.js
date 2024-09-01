@@ -17,8 +17,8 @@ limitations under the License.
 "use strict";
 
 (function ExtensionRouterClosure() {
-  var VIEWER_URL = chrome.extension.getURL("content/web/viewer.html");
-  var CRX_BASE_URL = chrome.extension.getURL("/");
+  var VIEWER_URL = chrome.runtime.getURL("content/web/viewer.html");
+  var CRX_BASE_URL = chrome.runtime.getURL("/");
 
   var schemes = [
     "http",

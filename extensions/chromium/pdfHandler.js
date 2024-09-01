@@ -16,7 +16,7 @@ limitations under the License.
 
 "use strict";
 
-var VIEWER_URL = chrome.extension.getURL("content/web/viewer.html");
+var VIEWER_URL = chrome.runtime.getURL("content/web/viewer.html");
 
 function getViewerURL(pdf_url) {
   // |pdf_url| may contain a fragment such as "#page=2". That should be passed
