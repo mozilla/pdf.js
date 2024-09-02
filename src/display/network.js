@@ -273,11 +273,20 @@ class PDFNetworkStreamFullRequestReader {
     const fullRequestXhrId = this._fullRequestId;
     const fullRequestXhr = this._manager.getRequestXhr(fullRequestXhrId);
 
-    const getResponseHeader = name => fullRequestXhr.getResponseHeader(name);
+    const responseHeaders = new Headers(
+      fullRequestXhr
+        .getAllResponseHeaders()
+        .trim()
+        .split(/[\r\n]+/)
+        .map(x => {
+          const [key, ...val] = x.split(": ");
+          return [key, val.join(": ")];
+        })
+    );
 
     const { allowRangeRequests, suggestedLength } =
       validateRangeRequestCapabilities({
-        getResponseHeader,
+        responseHeaders,
         isHttp: this._manager.isHttp,
         rangeChunkSize: this._rangeChunkSize,
         disableRange: this._disableRange,
@@ -289,7 +298,7 @@ class PDFNetworkStreamFullRequestReader {
     // Setting right content length.
     this._contentLength = suggestedLength || this._contentLength;
 
-    this._filename = extractFilenameFromHeader(getResponseHeader);
+    this._filename = extractFilenameFromHeader(responseHeaders);
 
     if (this._isRangeSupported) {
       // NOTE: by cancelling the full request, and then issuing range
