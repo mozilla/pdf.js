@@ -241,5 +241,21 @@ function maybeRenderPdfDoc(isNotPOST) {
 
   // In any case, load the viewer.
   console.log(`Detected PDF via document, opening viewer for ${document.URL}`);
-  location.href = getEmbeddedViewerURL(document.URL);
+
+  // Ideally we would use logic consistent with the DNR logic, like this:
+  // location.href = getEmbeddedViewerURL(document.URL);
+  // ... unfortunately, this causes Chrome to crash until version 129, fixed by
+  // https://chromium.googlesource.com/chromium/src/+/8c42358b2cc549553d939efe7d36515d80563da7%5E%21/
+  // Work around this by replacing the body with an iframe of the viewer.
+  // Interestingly, Chrome's built-in PDF viewer uses a similar technique.
+  const shadowRoot = document.body.attachShadow({ mode: "closed" });
+  const iframe = document.createElement("iframe");
+  iframe.style.position = "absolute";
+  iframe.style.top = "0";
+  iframe.style.left = "0";
+  iframe.style.width = "100%";
+  iframe.style.height = "100%";
+  iframe.style.border = "0 none";
+  iframe.src = getEmbeddedViewerURL(document.URL);
+  shadowRoot.append(iframe);
 }
