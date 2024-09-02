@@ -305,14 +305,11 @@ class PDFNodeStreamFullReader extends BaseFullReader {
       this._headersCapability.resolve();
       this._setReadableStream(response);
 
-      // Make sure that headers name are in lower case, as mentioned
-      // here: https://nodejs.org/api/http.html#http_message_headers.
-      const getResponseHeader = name =>
-        this._readableStream.headers[name.toLowerCase()];
+      const responseHeaders = new Headers(this._readableStream.headers);
 
       const { allowRangeRequests, suggestedLength } =
         validateRangeRequestCapabilities({
-          getResponseHeader,
+          responseHeaders,
           isHttp: stream.isHttp,
           rangeChunkSize: this._rangeChunkSize,
           disableRange: this._disableRange,
@@ -322,7 +319,7 @@ class PDFNodeStreamFullReader extends BaseFullReader {
       // Setting right content length.
       this._contentLength = suggestedLength || this._contentLength;
 
-      this._filename = extractFilenameFromHeader(getResponseHeader);
+      this._filename = extractFilenameFromHeader(responseHeaders);
     };
 
     this._request = createRequest(this._url, headers, handleResponse);

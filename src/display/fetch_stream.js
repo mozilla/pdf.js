@@ -127,11 +127,11 @@ class PDFFetchStreamReader {
         this._reader = response.body.getReader();
         this._headersCapability.resolve();
 
-        const getResponseHeader = name => response.headers.get(name);
+        const responseHeaders = response.headers;
 
         const { allowRangeRequests, suggestedLength } =
           validateRangeRequestCapabilities({
-            getResponseHeader,
+            responseHeaders,
             isHttp: stream.isHttp,
             rangeChunkSize: this._rangeChunkSize,
             disableRange: this._disableRange,
@@ -141,7 +141,7 @@ class PDFFetchStreamReader {
         // Setting right content length.
         this._contentLength = suggestedLength || this._contentLength;
 
-        this._filename = extractFilenameFromHeader(getResponseHeader);
+        this._filename = extractFilenameFromHeader(responseHeaders);
 
         // We need to stop reading when range is supported and streaming is
         // disabled.
