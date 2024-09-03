@@ -105,6 +105,14 @@ pdfjs-document-properties-button-label = Vlastnosti dokumentu…
 pdfjs-document-properties-file-name = Názov súboru:
 pdfjs-document-properties-file-size = Veľkosť súboru:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } kB ({ $b } bajtov)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bajtov)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } kB ({ $size_b } bajtov)
@@ -118,6 +126,9 @@ pdfjs-document-properties-subject = Predmet:
 pdfjs-document-properties-keywords = Kľúčové slová:
 pdfjs-document-properties-creation-date = Dátum vytvorenia:
 pdfjs-document-properties-modification-date = Dátum úpravy:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -279,6 +290,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [Anotácia typu { $type }]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -410,8 +424,6 @@ pdfjs-editor-new-alt-text-textarea =
 pdfjs-editor-new-alt-text-description = Krátky popis pre ľudí, ktorí nevidia obrázok alebo ak sa obrázok nenačíta.
 # This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
 pdfjs-editor-new-alt-text-disclaimer1 = Tento alternatívny text bol vytvorený automaticky a môže byť nepresný.
-# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
-pdfjs-editor-new-alt-text-disclaimer = Tento alternatívny text bol vytvorený automaticky.
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Ďalšie informácie
 pdfjs-editor-new-alt-text-create-automatically-button-label = Automaticky vytvoriť alternatívny text
 pdfjs-editor-new-alt-text-not-now-button = Teraz nie
