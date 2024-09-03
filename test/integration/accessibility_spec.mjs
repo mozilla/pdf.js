@@ -13,7 +13,26 @@
  * limitations under the License.
  */
 
-import { closePages, loadAndWait } from "./test_utils.mjs";
+import {
+  awaitPromise,
+  closePages,
+  loadAndWait,
+  waitForPageRendered,
+} from "./test_utils.mjs";
+
+const isStructTreeVisible = async page => {
+  await page.waitForSelector(".structTree");
+  return page.evaluate(() => {
+    let elem = document.querySelector(".structTree");
+    while (elem) {
+      if (elem.getAttribute("aria-hidden") === "true") {
+        return false;
+      }
+      elem = elem.parentElement;
+    }
+    return true;
+  });
+};
 
 describe("accessibility", () => {
   describe("structure tree", () => {
@@ -30,19 +49,9 @@ describe("accessibility", () => {
     it("must build structure that maps to text layer", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.waitForSelector(".structTree");
-          const isVisible = await page.evaluate(() => {
-            let elem = document.querySelector(".structTree");
-            while (elem) {
-              if (elem.getAttribute("aria-hidden") === "true") {
-                return false;
-              }
-              elem = elem.parentElement;
-            }
-            return true;
-          });
-
-          expect(isVisible).withContext(`In ${browserName}`).toBeTrue();
+          expect(await isStructTreeVisible(page))
+            .withContext(`In ${browserName}`)
+            .toBeTrue();
 
           // Check the headings match up.
           const head1 = await page.$eval(
@@ -74,6 +83,22 @@ describe("accessibility", () => {
               "Heading 2",
               "This paragraph 2.",
             ]);
+        })
+      );
+    });
+
+    it("must check that the struct tree is still there after zooming", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          for (let i = 0; i < 8; i++) {
+            expect(await isStructTreeVisible(page))
+              .withContext(`In ${browserName}`)
+              .toBeTrue();
+
+            const handle = await waitForPageRendered(page);
+            await page.click(`#zoom${i < 4 ? "In" : "Out"}`);
+            await awaitPromise(handle);
+          }
         })
       );
     });
@@ -184,10 +209,10 @@ describe("accessibility", () => {
     it("must check the aria-label linked to the stamp annotation", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.waitForSelector(".structTree");
+          await page.waitForSelector(".annotationLayer");
 
           const ariaLabel = await page.$eval(
-            ".structTree [role='figure']",
+            ".annotationLayer section[role='img']",
             el => el.getAttribute("aria-label")
           );
           expect(ariaLabel)
