@@ -279,8 +279,7 @@ class AltText {
       this.#altTextTooltip = tooltip = document.createElement("span");
       tooltip.className = "tooltip";
       tooltip.setAttribute("role", "tooltip");
-      const id = (tooltip.id = `alt-text-tooltip-${this.#editor.id}`);
-      button.setAttribute("aria-describedby", id);
+      tooltip.id = `alt-text-tooltip-${this.#editor.id}`;
 
       const DELAY_TO_SHOW_TOOLTIP = 100;
       const signal = this.#editor._uiManager._signal;
