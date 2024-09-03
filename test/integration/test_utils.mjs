@@ -194,6 +194,11 @@ async function clearInput(page, selector, waitForInputEvent = false) {
     : action();
 }
 
+async function waitAndClick(page, selector, clickOptions = {}) {
+  await page.waitForSelector(selector, { visible: true });
+  await page.click(selector, clickOptions);
+}
+
 function getSelector(id) {
   return `[data-element-id="${id}"]`;
 }
@@ -800,6 +805,7 @@ export {
   serializeBitmapDimensions,
   setCaretAt,
   switchToEditor,
+  waitAndClick,
   waitForAnnotationEditorLayer,
   waitForAnnotationModeChanged,
   waitForEntryInStorage,

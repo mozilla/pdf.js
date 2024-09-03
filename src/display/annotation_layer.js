@@ -2807,7 +2807,11 @@ class InkAnnotationElement extends AnnotationElement {
     // Use the polyline SVG element since it allows us to use coordinates
     // directly and to draw both straight lines and curves.
     this.svgElementName = "svg:polyline";
-    this.annotationEditorType = AnnotationEditorType.INK;
+
+    this.annotationEditorType =
+      this.data.it === "InkHighlight"
+        ? AnnotationEditorType.HIGHLIGHT
+        : AnnotationEditorType.INK;
   }
 
   render() {
@@ -2857,6 +2861,10 @@ class InkAnnotationElement extends AnnotationElement {
     }
 
     this.container.append(svg);
+
+    if (this._isEditable) {
+      this._editOnDoubleClick();
+    }
     return this.container;
   }
 
@@ -2876,6 +2884,7 @@ class HighlightAnnotationElement extends AnnotationElement {
       ignoreBorder: true,
       createQuadrilaterals: true,
     });
+    this.annotationEditorType = AnnotationEditorType.HIGHLIGHT;
   }
 
   render() {
@@ -2884,6 +2893,8 @@ class HighlightAnnotationElement extends AnnotationElement {
     }
 
     this.container.classList.add("highlightAnnotation");
+    this._editOnDoubleClick();
+
     return this.container;
   }
 }
@@ -3247,6 +3258,7 @@ class AnnotationLayer {
 export {
   AnnotationLayer,
   FreeTextAnnotationElement,
+  HighlightAnnotationElement,
   InkAnnotationElement,
   StampAnnotationElement,
 };

@@ -705,6 +705,11 @@ class Annotation {
       this.data.pageIndex = params.pageIndex;
     }
 
+    const it = dict.get("IT");
+    if (it instanceof Name) {
+      this.data.it = it.name;
+    }
+
     this._isOffscreenCanvasSupported =
       params.evaluatorOptions.isOffscreenCanvasSupported;
     this._fallbackFontDict = null;
@@ -1377,6 +1382,7 @@ class Annotation {
 class AnnotationBorderStyle {
   constructor() {
     this.width = 1;
+    this.rawWidth = 1;
     this.style = AnnotationBorderStyleType.SOLID;
     this.dashArray = [3];
     this.horizontalCornerRadius = 0;
@@ -1407,6 +1413,7 @@ class AnnotationBorderStyle {
     }
     if (typeof width === "number") {
       if (width > 0) {
+        this.rawWidth = width;
         const maxWidth = (rect[2] - rect[0]) / 2;
         const maxHeight = (rect[3] - rect[1]) / 2;
 
@@ -4283,6 +4290,10 @@ class InkAnnotation extends MarkupAnnotation {
     const { dict, xref } = params;
     this.data.annotationType = AnnotationType.INK;
     this.data.inkLists = [];
+    this.data.isEditable = !this.data.noHTML && this.data.it === "InkHighlight";
+    // We want to be able to add mouse listeners to the annotation.
+    this.data.noHTML = false;
+    this.data.opacity = dict.get("CA") || 1;
 
     const rawInkLists = dict.getArray("InkList");
     if (!Array.isArray(rawInkLists)) {
@@ -4534,6 +4545,10 @@ class HighlightAnnotation extends MarkupAnnotation {
 
     const { dict, xref } = params;
     this.data.annotationType = AnnotationType.HIGHLIGHT;
+    this.data.isEditable = !this.data.noHTML;
+    // We want to be able to add mouse listeners to the annotation.
+    this.data.noHTML = false;
+    this.data.opacity = dict.get("CA") || 1;
 
     const quadPoints = (this.data.quadPoints = getQuadPoints(dict, null));
     if (quadPoints) {
@@ -4573,11 +4588,15 @@ class HighlightAnnotation extends MarkupAnnotation {
     }
   }
 
-  static createNewDict(annotation, xref, { apRef, ap }) {
+  static createNewDict(annotation, xref, { apRef, ap, oldAnnotation }) {
     const { color, opacity, rect, rotation, user, quadPoints } = annotation;
-    const highlight = new Dict(xref);
+    const highlight = oldAnnotation || new Dict(xref);
     highlight.set("Type", Name.get("Annot"));
     highlight.set("Subtype", Name.get("Highlight"));
+    highlight.set(
+      oldAnnotation ? "M" : "CreationDate",
+      `D:${getModificationDate()}`
+    );
     highlight.set("CreationDate", `D:${getModificationDate()}`);
     highlight.set("Rect", rect);
     highlight.set("F", 4);
