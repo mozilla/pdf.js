@@ -1376,6 +1376,7 @@ class AnnotationEditor {
       data.rect,
       pageHeight
     );
+
     editor.x = x / pageWidth;
     editor.y = y / pageHeight;
     editor.width = width / pageWidth;
@@ -1774,7 +1775,7 @@ class AnnotationEditor {
   /**
    * Render an annotation in the annotation layer.
    * @param {Object} annotation
-   * @returns {HTMLElement}
+   * @returns {HTMLElement|null}
    */
   renderAnnotationElement(annotation) {
     let content = annotation.container.querySelector(".annotationContent");
