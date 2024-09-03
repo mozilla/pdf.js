@@ -74,19 +74,29 @@ const PDF_ROLE_TO_HTML_ROLE = {
 const HEADING_PATTERN = /^H(\d+)$/;
 
 class StructTreeLayerBuilder {
+  #promise;
+
   #treeDom = undefined;
 
-  get renderingDone() {
-    return this.#treeDom !== undefined;
+  #elementAttributes = new Map();
+
+  constructor(pdfPage) {
+    this.#promise = pdfPage.getStructTree();
   }
 
-  render(structTree) {
+  async render() {
     if (this.#treeDom !== undefined) {
       return this.#treeDom;
     }
-    const treeDom = this.#walk(structTree);
+    const treeDom = (this.#treeDom = this.#walk(await this.#promise));
+    this.#promise = null;
     treeDom?.classList.add("structTree");
-    return (this.#treeDom = treeDom);
+    return treeDom;
+  }
+
+  async getAriaAttributes(annotationId) {
+    await this.render();
+    return this.#elementAttributes.get(annotationId);
   }
 
   hide() {
@@ -104,7 +114,24 @@ class StructTreeLayerBuilder {
   #setAttributes(structElement, htmlElement) {
     const { alt, id, lang } = structElement;
     if (alt !== undefined) {
-      htmlElement.setAttribute("aria-label", removeNullCharacters(alt));
+      // Don't add the label in the struct tree layer but on the annotation
+      // in the annotation layer.
+      let added = false;
+      const label = removeNullCharacters(alt);
+      for (const child of structElement.children) {
+        if (child.type === "annotation") {
+          let attrs = this.#elementAttributes.get(child.id);
+          if (!attrs) {
+            attrs = new Map();
+            this.#elementAttributes.set(child.id, attrs);
+          }
+          attrs.set("aria-label", label);
+          added = true;
+        }
+      }
+      if (!added) {
+        htmlElement.setAttribute("aria-label", label);
+      }
     }
     if (id !== undefined) {
       htmlElement.setAttribute("aria-owns", id);
