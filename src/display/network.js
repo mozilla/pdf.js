@@ -15,6 +15,7 @@
 
 import { assert, stringToBytes } from "../shared/util.js";
 import {
+  createHeaders,
   createResponseStatusError,
   extractFilenameFromHeader,
   validateRangeRequestCapabilities,
@@ -38,11 +39,11 @@ function getArrayBuffer(xhr) {
 }
 
 class NetworkManager {
-  constructor(url, args = {}) {
+  constructor({ url, httpHeaders, withCredentials }) {
     this.url = url;
     this.isHttp = /^https?:/i.test(url);
-    this.httpHeaders = (this.isHttp && args.httpHeaders) || Object.create(null);
-    this.withCredentials = args.withCredentials || false;
+    this.headers = createHeaders(this.isHttp, httpHeaders);
+    this.withCredentials = withCredentials || false;
 
     this.currXhrId = 0;
     this.pendingRequests = Object.create(null);
@@ -70,12 +71,8 @@ class NetworkManager {
 
     xhr.open("GET", this.url);
     xhr.withCredentials = this.withCredentials;
-    for (const property in this.httpHeaders) {
-      const value = this.httpHeaders[property];
-      if (value === undefined) {
-        continue;
-      }
-      xhr.setRequestHeader(property, value);
+    for (const [key, val] of this.headers) {
+      xhr.setRequestHeader(key, val);
     }
     if (this.isHttp && "begin" in args && "end" in args) {
       xhr.setRequestHeader("Range", `bytes=${args.begin}-${args.end - 1}`);
@@ -194,10 +191,7 @@ class NetworkManager {
 class PDFNetworkStream {
   constructor(source) {
     this._source = source;
-    this._manager = new NetworkManager(source.url, {
-      httpHeaders: source.httpHeaders,
-      withCredentials: source.withCredentials,
-    });
+    this._manager = new NetworkManager(source);
     this._rangeChunkSize = source.rangeChunkSize;
     this._fullRequestReader = null;
     this._rangeRequestReaders = [];
