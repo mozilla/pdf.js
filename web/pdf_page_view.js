@@ -383,7 +383,11 @@ class PDFPageView {
   async #renderAnnotationLayer() {
     let error = null;
     try {
-      await this.annotationLayer.render(this.viewport, "display");
+      await this.annotationLayer.render(
+        this.viewport,
+        { structTreeLayer: this.structTreeLayer },
+        "display"
+      );
     } catch (ex) {
       console.error(`#renderAnnotationLayer: "${ex}".`);
       error = ex;
@@ -468,16 +472,12 @@ class PDFPageView {
     if (!this.textLayer) {
       return;
     }
-    this.structTreeLayer ||= new StructTreeLayerBuilder();
 
-    const tree = await (!this.structTreeLayer.renderingDone
-      ? this.pdfPage.getStructTree()
-      : null);
-    const treeDom = this.structTreeLayer?.render(tree);
-    if (treeDom) {
+    const treeDom = await this.structTreeLayer?.render();
+    if (treeDom && this.canvas && treeDom.parentNode !== this.canvas) {
       // Pause translation when inserting the structTree in the DOM.
       this.l10n.pause();
-      this.canvas?.append(treeDom);
+      this.canvas.append(treeDom);
       this.l10n.resume();
     }
     this.structTreeLayer?.show();
@@ -760,9 +760,6 @@ class PDFPageView {
       this.textLayer.cancel();
       this.textLayer = null;
     }
-    if (this.structTreeLayer && !this.textLayer) {
-      this.structTreeLayer = null;
-    }
     if (
       this.annotationLayer &&
       (!keepAnnotationLayer || !this.annotationLayer.div)
@@ -770,6 +767,9 @@ class PDFPageView {
       this.annotationLayer.cancel();
       this.annotationLayer = null;
       this._annotationCanvasMap = null;
+    }
+    if (this.structTreeLayer && !(this.textLayer || this.annotationLayer)) {
+      this.structTreeLayer = null;
     }
     if (
       this.annotationEditorLayer &&
@@ -1066,6 +1066,10 @@ class PDFPageView {
       async () => {
         showCanvas?.(true);
         await this.#finishRenderTask(renderTask);
+
+        if (this.textLayer || this.annotationLayer) {
+          this.structTreeLayer ||= new StructTreeLayerBuilder(pdfPage);
+        }
 
         this.#renderTextLayer();
 
