@@ -76,7 +76,9 @@ const HEADING_PATTERN = /^H(\d+)$/;
 class StructTreeLayerBuilder {
   #promise;
 
-  #treeDom = undefined;
+  #treeDom = null;
+
+  #treePromise;
 
   #elementAttributes = new Map();
 
@@ -85,13 +87,23 @@ class StructTreeLayerBuilder {
   }
 
   async render() {
-    if (this.#treeDom !== undefined) {
-      return this.#treeDom;
+    if (this.#treePromise) {
+      return this.#treePromise;
     }
-    const treeDom = (this.#treeDom = this.#walk(await this.#promise));
+    const { promise, resolve, reject } = Promise.withResolvers();
+    this.#treePromise = promise;
+
+    try {
+      this.#treeDom = this.#walk(await this.#promise);
+    } catch (ex) {
+      reject(ex);
+    }
     this.#promise = null;
-    treeDom?.classList.add("structTree");
-    return treeDom;
+
+    this.#treeDom?.classList.add("structTree");
+    resolve(this.#treeDom);
+
+    return promise;
   }
 
   async getAriaAttributes(annotationId) {
