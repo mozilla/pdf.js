@@ -241,4 +241,44 @@ describe("accessibility", () => {
       );
     });
   });
+
+  describe("Figure in the content stream", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("bug1708040.pdf", ".textLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that an image is correctly inserted in the text layer", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          expect(await isStructTreeVisible(page))
+            .withContext(`In ${browserName}`)
+            .toBeTrue();
+
+          const spanId = await page.evaluate(() => {
+            const el = document.querySelector(
+              `.structTree span[role="figure"]`
+            );
+            return el.getAttribute("aria-owns") || null;
+          });
+
+          expect(spanId).withContext(`In ${browserName}`).not.toBeNull();
+
+          const ariaLabel = await page.evaluate(id => {
+            const img = document.querySelector(`#${id} > span[role="img"]`);
+            return img.getAttribute("aria-label");
+          }, spanId);
+
+          expect(ariaLabel)
+            .withContext(`In ${browserName}`)
+            .toEqual("A logo of a fox and a globe");
+        })
+      );
+    });
+  });
 });

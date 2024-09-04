@@ -71,6 +71,10 @@
 
   &:not(.free) span {
     cursor: var(--editorHighlight-editing-cursor);
+
+    &[role="img"] {
+      cursor: var(--editorFreeHighlight-editing-cursor);
+    }
   }
 
   &.free span {
