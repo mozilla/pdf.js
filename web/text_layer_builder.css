@@ -52,6 +52,11 @@
   }
   /*#endif*/
 
+  span[role="img"] {
+    user-select: none;
+    cursor: default;
+  }
+
   .highlight {
     --highlight-bg-color: rgb(180 0 170 / 0.25);
     --highlight-selected-bg-color: rgb(0 100 0 / 0.25);

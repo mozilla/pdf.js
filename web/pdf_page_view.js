@@ -474,10 +474,13 @@ class PDFPageView {
     }
 
     const treeDom = await this.structTreeLayer?.render();
-    if (treeDom && this.canvas && treeDom.parentNode !== this.canvas) {
-      // Pause translation when inserting the structTree in the DOM.
+    if (treeDom) {
       this.l10n.pause();
-      this.canvas.append(treeDom);
+      this.structTreeLayer?.addElementsToTextLayer();
+      if (this.canvas && treeDom.parentNode !== this.canvas) {
+        // Pause translation when inserting the structTree in the DOM.
+        this.canvas.append(treeDom);
+      }
       this.l10n.resume();
     }
     this.structTreeLayer?.show();
@@ -768,7 +771,7 @@ class PDFPageView {
       this.annotationLayer = null;
       this._annotationCanvasMap = null;
     }
-    if (this.structTreeLayer && !(this.textLayer || this.annotationLayer)) {
+    if (this.structTreeLayer && !this.textLayer) {
       this.structTreeLayer = null;
     }
     if (
@@ -1068,7 +1071,10 @@ class PDFPageView {
         await this.#finishRenderTask(renderTask);
 
         if (this.textLayer || this.annotationLayer) {
-          this.structTreeLayer ||= new StructTreeLayerBuilder(pdfPage);
+          this.structTreeLayer ||= new StructTreeLayerBuilder(
+            pdfPage,
+            viewport.rawDims
+          );
         }
 
         this.#renderTextLayer();

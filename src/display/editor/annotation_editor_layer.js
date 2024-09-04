@@ -395,7 +395,8 @@ class AnnotationEditorLayer {
     const { target } = event;
     if (
       target === this.#textLayer.div ||
-      (target.classList.contains("endOfContent") &&
+      ((target.getAttribute("role") === "img" ||
+        target.classList.contains("endOfContent")) &&
         this.#textLayer.div.contains(target))
     ) {
       const { isMac } = FeatureTest.platform;
@@ -413,7 +414,7 @@ class AnnotationEditorLayer {
       HighlightEditor.startHighlighting(
         this,
         this.#uiManager.direction === "ltr",
-        event
+        { target: this.#textLayer.div, x: event.x, y: event.y }
       );
       this.#textLayer.div.addEventListener(
         "pointerup",

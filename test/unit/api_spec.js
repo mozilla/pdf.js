@@ -3807,11 +3807,13 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
                     role: "Figure",
                     children: [{ type: "content", id: "p406R_mc11" }],
                     alt: "d h c s logo",
+                    bbox: [57.75, 676, 133.35, 752],
                   },
                   {
                     role: "Figure",
                     children: [{ type: "content", id: "p406R_mc1" }],
                     alt: "Great Seal of the State of California",
+                    bbox: [481.5, 678, 544.5, 741],
                   },
                   {
                     role: "P",

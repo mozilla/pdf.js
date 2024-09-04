@@ -15,8 +15,8 @@
 
 import { AnnotationPrefix, stringToPDFString, warn } from "../shared/util.js";
 import { Dict, isName, Name, Ref, RefSetCache } from "./primitives.js";
+import { lookupNormalRect, stringToAsciiOrUTF16BE } from "./core_utils.js";
 import { NumberTree } from "./name_number_tree.js";
-import { stringToAsciiOrUTF16BE } from "./core_utils.js";
 import { writeObject } from "./writer.js";
 
 const MAX_DEPTH = 40;
@@ -751,10 +751,38 @@ class StructTreePage {
       obj.role = node.role;
       obj.children = [];
       parent.children.push(obj);
-      const alt = node.dict.get("Alt");
+      let alt = node.dict.get("Alt");
+      if (typeof alt !== "string") {
+        alt = node.dict.get("ActualText");
+      }
       if (typeof alt === "string") {
         obj.alt = stringToPDFString(alt);
       }
+
+      const a = node.dict.get("A");
+      if (a instanceof Dict) {
+        const bbox = lookupNormalRect(a.getArray("BBox"), null);
+        if (bbox) {
+          obj.bbox = bbox;
+        } else {
+          const width = a.get("Width");
+          const height = a.get("Height");
+          if (
+            typeof width === "number" &&
+            width > 0 &&
+            typeof height === "number" &&
+            height > 0
+          ) {
+            obj.bbox = [0, 0, width, height];
+          }
+        }
+        // TODO: If the bbox is not available, we should try to get it from
+        // the content stream.
+        // For example when rendering on the canvas the commands between the
+        // beginning and the end of the marked-content sequence, we can
+        // compute the overall bbox.
+      }
+
       const lang = node.dict.get("Lang");
       if (typeof lang === "string") {
         obj.lang = stringToPDFString(lang);
