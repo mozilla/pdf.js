@@ -1764,7 +1764,7 @@ describe("Interaction", () => {
         },
         eventBusSetup: eventBus => {
           eventBus.on(
-            "print",
+            "afterprint",
             () => {
               window.PDFViewerApplication._testPrintResolver.resolve();
             },
