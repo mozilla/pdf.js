@@ -2053,4 +2053,51 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Free Highlight with an image in the struct tree", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "bug1708040.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        { highlightEditorColors: "red=#AB0000" }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that it's possible to draw on an image in a struct tree", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getRect(page, `.textLayer span[role="img"]`);
+
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          const clickHandle = await waitForPointerUp(page);
+          await page.mouse.move(x, y);
+          await page.mouse.down();
+          await page.mouse.move(rect.x - 1, rect.y - 1);
+          await page.mouse.up();
+          await awaitPromise(clickHandle);
+
+          await page.waitForSelector(getEditorSelector(0));
+          const usedColor = await page.evaluate(() => {
+            const highlight = document.querySelector(
+              `.page[data-page-number = "1"] .canvasWrapper > svg.highlight`
+            );
+            return highlight.getAttribute("fill");
+          });
+
+          expect(usedColor).withContext(`In ${browserName}`).toEqual("#AB0000");
+        })
+      );
+    });
+  });
 });
