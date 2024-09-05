@@ -82,8 +82,13 @@ class StructTreeLayerBuilder {
 
   #elementAttributes = new Map();
 
-  constructor(pdfPage) {
+  #rawDims;
+
+  #elementsToAddToTextLayer = null;
+
+  constructor(pdfPage, rawDims) {
     this.#promise = pdfPage.getStructTree();
+    this.#rawDims = rawDims;
   }
 
   async render() {
@@ -156,6 +161,50 @@ class StructTreeLayerBuilder {
     }
   }
 
+  #addImageInTextLayer(node, element) {
+    const { alt, bbox, children } = node;
+    const child = children?.[0];
+    if (!this.#rawDims || !alt || !bbox || child?.type !== "content") {
+      return false;
+    }
+
+    const { id } = child;
+    if (!id) {
+      return false;
+    }
+
+    // We cannot add the created element to the text layer immediately, as the
+    // text layer might not be ready yet. Instead, we store the element and add
+    // it later in `addElementsToTextLayer`.
+
+    element.setAttribute("aria-owns", id);
+    const img = document.createElement("span");
+    (this.#elementsToAddToTextLayer ||= new Map()).set(id, img);
+    img.setAttribute("role", "img");
+    img.setAttribute("aria-label", removeNullCharacters(alt));
+
+    const { pageHeight, pageX, pageY } = this.#rawDims;
+    const calc = "calc(var(--scale-factor)*";
+    const { style } = img;
+    style.width = `${calc}${bbox[2] - bbox[0]}px)`;
+    style.height = `${calc}${bbox[3] - bbox[1]}px)`;
+    style.left = `${calc}${bbox[0] - pageX}px)`;
+    style.top = `${calc}${pageHeight - bbox[3] + pageY}px)`;
+
+    return true;
+  }
+
+  addElementsToTextLayer() {
+    if (!this.#elementsToAddToTextLayer) {
+      return;
+    }
+    for (const [id, img] of this.#elementsToAddToTextLayer) {
+      document.getElementById(id)?.append(img);
+    }
+    this.#elementsToAddToTextLayer.clear();
+    this.#elementsToAddToTextLayer = null;
+  }
+
   #walk(node) {
     if (!node) {
       return null;
@@ -170,6 +219,9 @@ class StructTreeLayerBuilder {
         element.setAttribute("aria-level", match[1]);
       } else if (PDF_ROLE_TO_HTML_ROLE[role]) {
         element.setAttribute("role", PDF_ROLE_TO_HTML_ROLE[role]);
+      }
+      if (role === "Figure" && this.#addImageInTextLayer(node, element)) {
+        return element;
       }
     }
 
