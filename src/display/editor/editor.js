@@ -1796,7 +1796,7 @@ class AnnotationEditor {
   resetAnnotationElement(annotation) {
     const { firstChild } = annotation.container;
     if (
-      firstChild.nodeName === "DIV" &&
+      firstChild?.nodeName === "DIV" &&
       firstChild.classList.contains("annotationContent")
     ) {
       firstChild.remove();
