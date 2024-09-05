@@ -2020,4 +2020,37 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Highlight editor mustn't throw when disabled", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "annotation-highlight.pdf",
+        ".annotationEditorLayer"
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must enable & disable highlight mode successfully", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const modeChangedHandle = await waitForAnnotationModeChanged(page);
+          await switchToHighlight(page);
+          await awaitPromise(modeChangedHandle);
+
+          await page.waitForSelector("#highlightParamsToolbarContainer", {
+            visible: true,
+          });
+          await switchToHighlight(page, /* disable */ true);
+          await page.waitForSelector("#highlightParamsToolbarContainer", {
+            visible: false,
+          });
+        })
+      );
+    });
+  });
 });
