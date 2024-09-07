@@ -19,7 +19,10 @@ import {
   createPromise,
   getSpanRectFromText,
   loadAndWait,
+  scrollIntoView,
+  waitForPageRendered,
 } from "./test_utils.mjs";
+import { PNG } from "pngjs";
 
 describe("PDF viewer", () => {
   describe("Zoom origin", () => {
@@ -363,6 +366,77 @@ describe("PDF viewer", () => {
           })
         );
       });
+    });
+  });
+
+  describe("Canvas fits the page", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "issue18694.pdf",
+        ".textLayer .endOfContent",
+        "page-width"
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that canvas perfectly fits the page whatever the zoom level is", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const debug = false;
+
+          // The pdf has a single page with a red background.
+          // We set the viewer background to red, because when screenshoting
+          // some part of the viewer background can be visible.
+          // But here we don't care about the viewer background: we only
+          // care about the page background and the canvas default color.
+
+          await page.evaluate(() => {
+            document.body.style.background = "#ff0000";
+            const toolbar = document.querySelector(".toolbar");
+            toolbar.style.display = "none";
+          });
+          await page.waitForSelector(".toolbar", { visible: false });
+          await page.evaluate(() => {
+            const p = document.querySelector(`.page[data-page-number="1"]`);
+            p.style.border = "none";
+          });
+
+          for (let i = 0; ; i++) {
+            const handle = await waitForPageRendered(page);
+            await page.evaluate(() => window.PDFViewerApplication.zoomOut());
+            await awaitPromise(handle);
+            await scrollIntoView(page, `.page[data-page-number="1"]`);
+
+            const element = await page.$(`.page[data-page-number="1"]`);
+            const png = await element.screenshot({
+              type: "png",
+              path: debug ? `foo${i}.png` : "",
+            });
+            const pageImage = PNG.sync.read(Buffer.from(png));
+            let buffer = new Uint32Array(pageImage.data.buffer);
+
+            // Search for the first red pixel.
+            const j = buffer.indexOf(0xff0000ff);
+            buffer = buffer.slice(j);
+
+            expect(buffer.every(x => x === 0xff0000ff))
+              .withContext(`In ${browserName}, in the ${i}th zoom in`)
+              .toBe(true);
+
+            const currentScale = await page.evaluate(
+              () => window.PDFViewerApplication.pdfViewer.currentScale
+            );
+            if (currentScale <= 0.1) {
+              break;
+            }
+          }
+        })
+      );
     });
   });
 });
