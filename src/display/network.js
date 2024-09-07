@@ -249,7 +249,7 @@ class PDFNetworkStreamFullRequestReader {
     };
     this._url = source.url;
     this._fullRequestId = manager.requestFull(args);
-    this._headersReceivedCapability = Promise.withResolvers();
+    this._headersCapability = Promise.withResolvers();
     this._disableRange = source.disableRange || false;
     this._contentLength = source.length; // Optional
     this._rangeChunkSize = source.rangeChunkSize;
@@ -308,7 +308,7 @@ class PDFNetworkStreamFullRequestReader {
       this._manager.abortRequest(fullRequestXhrId);
     }
 
-    this._headersReceivedCapability.resolve();
+    this._headersCapability.resolve();
   }
 
   _onDone(data) {
@@ -332,7 +332,7 @@ class PDFNetworkStreamFullRequestReader {
 
   _onError(status) {
     this._storedError = createResponseStatusError(status, this._url);
-    this._headersReceivedCapability.reject(this._storedError);
+    this._headersCapability.reject(this._storedError);
     for (const requestCapability of this._requests) {
       requestCapability.reject(this._storedError);
     }
@@ -364,7 +364,7 @@ class PDFNetworkStreamFullRequestReader {
   }
 
   get headersReady() {
-    return this._headersReceivedCapability.promise;
+    return this._headersCapability.promise;
   }
 
   async read() {
@@ -385,7 +385,7 @@ class PDFNetworkStreamFullRequestReader {
 
   cancel(reason) {
     this._done = true;
-    this._headersReceivedCapability.reject(reason);
+    this._headersCapability.reject(reason);
     for (const requestCapability of this._requests) {
       requestCapability.resolve({ value: undefined, done: true });
     }
