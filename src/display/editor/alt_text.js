@@ -38,11 +38,19 @@ class AltText {
 
   #useNewAltTextFlow = false;
 
+  static #l10nNewButton = null;
+
   static _l10nPromise = null;
 
   constructor(editor) {
     this.#editor = editor;
     this.#useNewAltTextFlow = editor._uiManager.useNewAltTextFlow;
+
+    AltText.#l10nNewButton ||= Object.freeze({
+      added: "pdfjs-editor-new-alt-text-added-button-label",
+      missing: "pdfjs-editor-new-alt-text-missing-button-label",
+      review: "pdfjs-editor-new-alt-text-to-review-button-label",
+    });
   }
 
   static initialize(l10nPromise) {
@@ -55,9 +63,7 @@ class AltText {
     let msg;
     if (this.#useNewAltTextFlow) {
       altText.classList.add("new");
-      msg = await AltText._l10nPromise.get(
-        "pdfjs-editor-new-alt-text-missing-button-label"
-      );
+      msg = await AltText._l10nPromise.get(AltText.#l10nNewButton.missing);
     } else {
       msg = await AltText._l10nPromise.get(
         "pdfjs-editor-alt-text-button-label"
@@ -235,16 +241,9 @@ class AltText {
     }
 
     if (this.#useNewAltTextFlow) {
-      // If we've an alt text, we get an "added".
-      // If we've a guessed text and the alt text has never been set, we get a
-      // "to-review" been set.
-      // Otherwise, we get a "missing".
-      const label = this.#label;
-      // TODO: Update the l10n keys to avoid this.
-      const type = label === "review" ? "to-review" : label;
       button.classList.toggle("done", !!this.#altText);
       AltText._l10nPromise
-        .get(`pdfjs-editor-new-alt-text-${type}-button-label`)
+        .get(AltText.#l10nNewButton[this.#label])
         .then(msg => {
           button.setAttribute("aria-label", msg);
           // We can't just use button.textContent here, because it would remove
