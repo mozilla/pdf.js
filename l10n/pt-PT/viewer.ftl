@@ -366,6 +366,22 @@ pdfjs-editor-resizer-label-bottom-right = Canto inferior direito — redimension
 pdfjs-editor-resizer-label-bottom-middle = Inferior ao centro — redimensionar
 pdfjs-editor-resizer-label-bottom-left = Canto inferior esquerdo — redimensionar
 pdfjs-editor-resizer-label-middle-left = Centro à esquerda — redimensionar
+pdfjs-editor-resizer-top-left =
+    .aria-label = Canto superior esquerdo — redimensionar
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Superior ao centro — redimensionar
+pdfjs-editor-resizer-top-right =
+    .aria-label = Canto superior direito — redimensionar
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Centro à direita — redimensionar
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Canto inferior direito — redimensionar
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Inferior ao centro — redimensionar
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Canto inferior esquerdo — redimensionar
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Centro à esquerda — redimensionar
 
 ## Color picker
 
@@ -406,8 +422,6 @@ pdfjs-editor-new-alt-text-textarea =
 pdfjs-editor-new-alt-text-description = Descrição curta para as pessoas que não podem visualizar a imagem ou quando a imagem não carrega.
 # This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
 pdfjs-editor-new-alt-text-disclaimer1 = Este texto alternativo foi criado automaticamente e pode ser impreciso.
-# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
-pdfjs-editor-new-alt-text-disclaimer = Este texto alternativo foi criado automaticamente.
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Saber mais
 pdfjs-editor-new-alt-text-create-automatically-button-label = Criar texto alternativo automaticamente
 pdfjs-editor-new-alt-text-not-now-button = Agora não

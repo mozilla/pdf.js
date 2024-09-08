@@ -380,6 +380,22 @@ pdfjs-editor-resizer-label-bottom-right = Chantun sut a dretga — redimensiunar
 pdfjs-editor-resizer-label-bottom-middle = Sutvart amez — redimensiunar
 pdfjs-editor-resizer-label-bottom-left = Chantun sut a sanestra — redimensiunar
 pdfjs-editor-resizer-label-middle-left = Vart sanestra amez — redimensiunar
+pdfjs-editor-resizer-top-left =
+    .aria-label = Chantun sura a sanestra — redimensiunar
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Sura amez — redimensiunar
+pdfjs-editor-resizer-top-right =
+    .aria-label = Chantun sura a dretga — redimensiunar
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Da vart dretga amez — redimensiunar
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Chantun sut a dretga — redimensiunar
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Sutvart amez — redimensiunar
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Chantun sut a sanestra — redimensiunar
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Vart sanestra amez — redimensiunar
 
 ## Color picker
 

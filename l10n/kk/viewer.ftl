@@ -380,6 +380,22 @@ pdfjs-editor-resizer-label-bottom-right = Төменгі оң жақ бұрыш 
 pdfjs-editor-resizer-label-bottom-middle = Төменгі ортасы — өлшемін өзгерту
 pdfjs-editor-resizer-label-bottom-left = Төменгі сол жақ бұрыш — өлшемін өзгерту
 pdfjs-editor-resizer-label-middle-left = Ортаңғы сол жақ — өлшемін өзгерту
+pdfjs-editor-resizer-top-left =
+    .aria-label = Жоғарғы сол жақ бұрыш — өлшемін өзгерту
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Жоғарғы ортасы — өлшемін өзгерту
+pdfjs-editor-resizer-top-right =
+    .aria-label = Жоғарғы оң жақ бұрыш — өлшемін өзгерту
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Ортаңғы оң жақ — өлшемін өзгерту
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Төменгі оң жақ бұрыш — өлшемін өзгерту
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Төменгі ортасы — өлшемін өзгерту
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Төменгі сол жақ бұрыш — өлшемін өзгерту
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Ортаңғы сол жақ — өлшемін өзгерту
 
 ## Color picker
 

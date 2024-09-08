@@ -298,8 +298,6 @@ pdfjs-editor-stamp-button-label = Legg til eller rediger bilder
 pdfjs-editor-highlight-button =
     .title = Markere
 pdfjs-editor-highlight-button-label = Markere
-pdfjs-highlight-floating-button =
-    .title = Markere
 pdfjs-highlight-floating-button1 =
     .title = Markere
     .aria-label = Markere
@@ -368,6 +366,22 @@ pdfjs-editor-resizer-label-bottom-right = Nederste høyre hjørne – endre stø
 pdfjs-editor-resizer-label-bottom-middle = Nederst i midten — endre størrelse
 pdfjs-editor-resizer-label-bottom-left = Nederste venstre hjørne – endre størrelse
 pdfjs-editor-resizer-label-middle-left = Midt til venstre — endre størrelse
+pdfjs-editor-resizer-top-left =
+    .aria-label = Øverste venstre hjørne – endre størrelse
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Øverst i midten — endre størrelse
+pdfjs-editor-resizer-top-right =
+    .aria-label = Øverste høyre hjørne – endre størrelse
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Midt til høyre – endre størrelse
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Nederste høyre hjørne – endre størrelse
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Nederst i midten — endre størrelse
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Nederste venstre hjørne – endre størrelse
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Midt til venstre — endre størrelse
 
 ## Color picker
 
@@ -394,3 +408,10 @@ pdfjs-editor-colorpicker-red =
 pdfjs-editor-highlight-show-all-button-label = Vis alle
 pdfjs-editor-highlight-show-all-button =
     .title = Vis alle
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+
+## Image alt-text settings
+

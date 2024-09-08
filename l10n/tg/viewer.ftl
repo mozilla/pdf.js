@@ -366,6 +366,22 @@ pdfjs-editor-resizer-label-bottom-right = Кунҷи рости поён — т�
 pdfjs-editor-resizer-label-bottom-middle = Канори миёнаи поён — тағйир додани андоза
 pdfjs-editor-resizer-label-bottom-left = Кунҷи чапи поён — тағйир додани андоза
 pdfjs-editor-resizer-label-middle-left = Канори миёнаи чап — тағйир додани андоза
+pdfjs-editor-resizer-top-left =
+    .aria-label = Кунҷи чапи боло — тағйир додани андоза
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Канори миёнаи боло — тағйир додани андоза
+pdfjs-editor-resizer-top-right =
+    .aria-label = Кунҷи рости боло — тағйир додани андоза
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Канори миёнаи рост — тағйир додани андоза
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Кунҷи рости поён — тағйир додани андоза
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Канори миёнаи поён — тағйир додани андоза
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Кунҷи чапи поён — тағйир додани андоза
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Канори миёнаи чап — тағйир додани андоза
 
 ## Color picker
 
