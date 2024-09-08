@@ -111,8 +111,6 @@ class TextLayer {
     this.#scale = viewport.scale * (globalThis.devicePixelRatio || 1);
     this.#rotation = viewport.rotation;
     this.#layoutTextParams = {
-      prevFontSize: null,
-      prevFontFamily: null,
       div: null,
       properties: null,
       ctx: null,
@@ -195,8 +193,6 @@ class TextLayer {
       onBefore?.();
       this.#scale = scale;
       const params = {
-        prevFontSize: null,
-        prevFontFamily: null,
         div: null,
         properties: null,
         ctx: TextLayer.#getCtx(this.#lang),
@@ -394,7 +390,7 @@ class TextLayer {
   }
 
   #layout(params) {
-    const { div, properties, ctx, prevFontSize, prevFontFamily } = params;
+    const { div, properties, ctx } = params;
     const { style } = div;
 
     let transform = "";
@@ -406,10 +402,9 @@ class TextLayer {
       const { fontFamily } = style;
       const { canvasWidth, fontSize } = properties;
 
-      if (prevFontSize !== fontSize || prevFontFamily !== fontFamily) {
-        ctx.font = `${fontSize * this.#scale}px ${fontFamily}`;
-        params.prevFontSize = fontSize;
-        params.prevFontFamily = fontFamily;
+      const font = `${fontSize * this.#scale}px ${fontFamily}`;
+      if (ctx.font !== font) {
+        ctx.font = font;
       }
 
       // Only measure the width for multi-char text divs, see `appendText`.
