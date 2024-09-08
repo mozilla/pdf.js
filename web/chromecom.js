@@ -31,7 +31,11 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) {
   // is rewritten as soon as possible.
   const queryString = document.location.search.slice(1);
   const m = /(^|&)file=([^&]*)/.exec(queryString);
-  const defaultUrl = m ? decodeURIComponent(m[2]) : "";
+  let defaultUrl = m ? decodeURIComponent(m[2]) : "";
+  if (!defaultUrl && queryString.startsWith("DNR:")) {
+    // Redirected via DNR, see registerPdfRedirectRule in pdfHandler.js.
+    defaultUrl = queryString.slice(4);
+  }
 
   // Example: chrome-extension://.../http://example.com/file.pdf
   const humanReadableUrl = "/" + defaultUrl + location.hash;
@@ -249,24 +253,7 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
   });
 }
 
-if (window === top) {
-  // Chrome closes all extension tabs (crbug.com/511670) when the extension
-  // reloads. To counter this, the tab URL and history state is saved to
-  // localStorage and restored by extension-router.js.
-  // Unfortunately, the window and tab index are not restored. And if it was
-  // the only tab in an incognito window, then the tab is not restored either.
-  addEventListener("unload", function () {
-    // If the runtime is still available, the unload is most likely a normal
-    // tab closure. Otherwise it is most likely an extension reload.
-    if (!isRuntimeAvailable()) {
-      localStorage.setItem(
-        "unload-" + Date.now() + "-" + document.hidden + "-" + location.href,
-        JSON.stringify(history.state)
-      );
-    }
-  });
-}
-
+let dnrRequestId;
 // This port is used for several purposes:
 // 1. When disconnected, the background page knows that the frame has unload.
 // 2. When the referrer was saved in history.state.chromecomState, it is sent
@@ -281,6 +268,7 @@ let port;
 // 3. Background -> page: Send latest referer and save to history.
 // 4. Page: Invoke callback.
 function setReferer(url, callback) {
+  dnrRequestId ??= crypto.getRandomValues(new Uint32Array(1))[0] % 0x80000000;
   if (!port) {
     // The background page will accept the port, and keep adding the Referer
     // request header to requests to |url| until the port is disconnected.
@@ -290,6 +278,7 @@ function setReferer(url, callback) {
   port.onMessage.addListener(onMessage);
   // Initiate the information exchange.
   port.postMessage({
+    dnrRequestId,
     referer: window.history.state?.chromecomState,
     requestUrl: url,
   });
