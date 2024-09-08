@@ -37,7 +37,7 @@ function createHeaders(isHttp, httpHeaders) {
 }
 
 function validateRangeRequestCapabilities({
-  getResponseHeader,
+  responseHeaders,
   isHttp,
   rangeChunkSize,
   disableRange,
@@ -53,7 +53,7 @@ function validateRangeRequestCapabilities({
     suggestedLength: undefined,
   };
 
-  const length = parseInt(getResponseHeader("Content-Length"), 10);
+  const length = parseInt(responseHeaders.get("Content-Length"), 10);
   if (!Number.isInteger(length)) {
     return returnValues;
   }
@@ -69,11 +69,11 @@ function validateRangeRequestCapabilities({
   if (disableRange || !isHttp) {
     return returnValues;
   }
-  if (getResponseHeader("Accept-Ranges") !== "bytes") {
+  if (responseHeaders.get("Accept-Ranges") !== "bytes") {
     return returnValues;
   }
 
-  const contentEncoding = getResponseHeader("Content-Encoding") || "identity";
+  const contentEncoding = responseHeaders.get("Content-Encoding") || "identity";
   if (contentEncoding !== "identity") {
     return returnValues;
   }
@@ -82,8 +82,8 @@ function validateRangeRequestCapabilities({
   return returnValues;
 }
 
-function extractFilenameFromHeader(getResponseHeader) {
-  const contentDisposition = getResponseHeader("Content-Disposition");
+function extractFilenameFromHeader(responseHeaders) {
+  const contentDisposition = responseHeaders.get("Content-Disposition");
   if (contentDisposition) {
     let filename = getFilenameFromContentDispositionHeader(contentDisposition);
     if (filename.includes("%")) {
