@@ -1581,7 +1581,7 @@ dialog :link {
   #outerContainer .hiddenMediumView {
     display: none !important;
   }
-  #outerContainer .visibleMediumView {
+  #outerContainer .visibleMediumView:not(.hidden, [hidden]) {
     display: inherit !important;
   }
 }
