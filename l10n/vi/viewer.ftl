@@ -372,6 +372,22 @@ pdfjs-editor-resizer-label-bottom-right = Dưới cùng bên phải — thay đ�
 pdfjs-editor-resizer-label-bottom-middle = Ở giữa dưới cùng — thay đổi kích thước
 pdfjs-editor-resizer-label-bottom-left = Góc dưới bên trái — thay đổi kích thước
 pdfjs-editor-resizer-label-middle-left = Ở giữa bên trái — thay đổi kích thước
+pdfjs-editor-resizer-top-left =
+    .aria-label = Trên cùng bên trái — thay đổi kích thước
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Trên cùng ở giữa — thay đổi kích thước
+pdfjs-editor-resizer-top-right =
+    .aria-label = Trên cùng bên phải — thay đổi kích thước
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Ở giữa bên phải — thay đổi kích thước
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Dưới cùng bên phải — thay đổi kích thước
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Ở giữa dưới cùng — thay đổi kích thước
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Góc dưới bên trái — thay đổi kích thước
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Ở giữa bên trái — thay đổi kích thước
 
 ## Color picker
 

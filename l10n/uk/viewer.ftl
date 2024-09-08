@@ -107,7 +107,7 @@ pdfjs-document-properties-file-size = Розмір файлу:
 # Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } КБ ({ $size_b } байтів)
+pdfjs-document-properties-kb = { $size_kb } кБ ({ $size_b } байтів)
 # Variables:
 #   $size_mb (Number) - the PDF file size in megabytes
 #   $size_b (Number) - the PDF file size in bytes
@@ -368,6 +368,22 @@ pdfjs-editor-resizer-label-bottom-right = Нижній правий кут – �
 pdfjs-editor-resizer-label-bottom-middle = Внизу посередині – зміна розміру
 pdfjs-editor-resizer-label-bottom-left = Нижній лівий кут – зміна розміру
 pdfjs-editor-resizer-label-middle-left = Ліворуч посередині – зміна розміру
+pdfjs-editor-resizer-top-left =
+    .aria-label = Верхній лівий кут – зміна розміру
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Вгорі посередині – зміна розміру
+pdfjs-editor-resizer-top-right =
+    .aria-label = Верхній правий кут – зміна розміру
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Праворуч посередині – зміна розміру
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Нижній правий кут – зміна розміру
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Внизу посередині – зміна розміру
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Нижній лівий кут – зміна розміру
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Ліворуч посередині – зміна розміру
 
 ## Color picker
 

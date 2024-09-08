@@ -374,6 +374,22 @@ pdfjs-editor-resizer-label-bottom-right = Правы ніжні кут — зм�
 pdfjs-editor-resizer-label-bottom-middle = Пасярэдзіне ўнізе — змяніць памер
 pdfjs-editor-resizer-label-bottom-left = Левы ніжні кут — змяніць памер
 pdfjs-editor-resizer-label-middle-left = Пасярэдзіне злева — змяніць памер
+pdfjs-editor-resizer-top-left =
+    .aria-label = Верхні левы кут — змяніць памер
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Уверсе пасярэдзіне — змяніць памер
+pdfjs-editor-resizer-top-right =
+    .aria-label = Верхні правы кут — змяніць памер
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Пасярэдзіне справа — змяніць памер
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Правы ніжні кут — змяніць памер
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Пасярэдзіне ўнізе — змяніць памер
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Левы ніжні кут — змяніць памер
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Пасярэдзіне злева — змяніць памер
 
 ## Color picker
 

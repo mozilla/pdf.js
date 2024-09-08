@@ -105,6 +105,14 @@ pdfjs-document-properties-button-label = Eiginleikar skjals…
 pdfjs-document-properties-file-name = Skráarnafn:
 pdfjs-document-properties-file-size = Skrárstærð:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } KB ({ $b } bæti)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bæti)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bytes)
@@ -118,6 +126,9 @@ pdfjs-document-properties-subject = Efni:
 pdfjs-document-properties-keywords = Stikkorð:
 pdfjs-document-properties-creation-date = Búið til:
 pdfjs-document-properties-modification-date = Dags breytingar:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -275,6 +286,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [{ $type } Skýring]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -366,6 +380,22 @@ pdfjs-editor-resizer-label-bottom-right = Neðst í hægra horni - breyta stær�
 pdfjs-editor-resizer-label-bottom-middle = Neðst á miðju - breyta stærð
 pdfjs-editor-resizer-label-bottom-left = Neðst í vinstra horni - breyta stærð
 pdfjs-editor-resizer-label-middle-left = Miðja til vinstri - breyta stærð
+pdfjs-editor-resizer-top-left =
+    .aria-label = Efst í vinstra horni - breyta stærð
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Efst á miðju - breyta stærð
+pdfjs-editor-resizer-top-right =
+    .aria-label = Efst í hægra horni - breyta stærð
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Miðja til hægri - breyta stærð
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Neðst í hægra horni - breyta stærð
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Neðst á miðju - breyta stærð
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Neðst í vinstra horni - breyta stærð
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Miðja til vinstri - breyta stærð
 
 ## Color picker
 

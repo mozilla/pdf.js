@@ -366,6 +366,22 @@ pdfjs-editor-resizer-label-bottom-right = Yvy gotyo akatúape — emoambue tuich
 pdfjs-editor-resizer-label-bottom-middle = Yvy gotyo mbytépe — emoambue tuichakue
 pdfjs-editor-resizer-label-bottom-left = Iguýpe asu gotyo — emoambue tuichakue
 pdfjs-editor-resizer-label-middle-left = Mbyte asu gotyo — emoambue tuichakue
+pdfjs-editor-resizer-top-left =
+    .aria-label = Yvate asu gotyo — emoambue tuichakue
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Yvate mbytépe — emoambue tuichakue
+pdfjs-editor-resizer-top-right =
+    .aria-label = Yvate akatúape — emoambue tuichakue
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Mbyte akatúape — emoambue tuichakue
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Yvy gotyo akatúape — emoambue tuichakue
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Yvy gotyo mbytépe — emoambue tuichakue
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Iguýpe asu gotyo — emoambue tuichakue
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Mbyte asu gotyo — emoambue tuichakue
 
 ## Color picker
 
@@ -402,8 +418,6 @@ pdfjs-editor-new-alt-text-dialog-edit-label = Embosako’i moñe’ẽrã mokõi
 pdfjs-editor-new-alt-text-dialog-add-label = Embojuaju moñe’ẽrã mokõiha (ta’ãngáre ñeñe’ẽ)
 pdfjs-editor-new-alt-text-textarea =
     .placeholder = Edescribi ko’ápe…
-# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
-pdfjs-editor-new-alt-text-disclaimer = Ko moñe’ẽrã mokõiha heñói ijeheguiete.
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Eikuaave
 pdfjs-editor-new-alt-text-create-automatically-button-label = Emoheñói moñe’ẽrã mokõiha ijeheguíva
 pdfjs-editor-new-alt-text-not-now-button = Ani ko’ág̃a

@@ -380,6 +380,22 @@ pdfjs-editor-resizer-label-bottom-right = Rechterbenedenhoek – formaat wijzige
 pdfjs-editor-resizer-label-bottom-middle = Midden onder – formaat wijzigen
 pdfjs-editor-resizer-label-bottom-left = Linkerbenedenhoek – formaat wijzigen
 pdfjs-editor-resizer-label-middle-left = Links midden – formaat wijzigen
+pdfjs-editor-resizer-top-left =
+    .aria-label = Linkerbovenhoek – formaat wijzigen
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Midden boven – formaat wijzigen
+pdfjs-editor-resizer-top-right =
+    .aria-label = Rechterbovenhoek – formaat wijzigen
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Midden rechts – formaat wijzigen
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Rechterbenedenhoek – formaat wijzigen
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Midden onder – formaat wijzigen
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Linkerbenedenhoek – formaat wijzigen
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Links midden – formaat wijzigen
 
 ## Color picker
 

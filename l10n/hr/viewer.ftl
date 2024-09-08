@@ -368,6 +368,22 @@ pdfjs-editor-resizer-label-bottom-right = Donji desni kut — promijenite velič
 pdfjs-editor-resizer-label-bottom-middle = Dolje sredina — promjenite veličinu
 pdfjs-editor-resizer-label-bottom-left = Donji lijevi kut — promijenite veličinu
 pdfjs-editor-resizer-label-middle-left = Sredina lijevo — promijenite veličinu
+pdfjs-editor-resizer-top-left =
+    .aria-label = Gornji lijevi kut — promijenite veličinu
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Gore sredina — promijenite veličinu
+pdfjs-editor-resizer-top-right =
+    .aria-label = Gornji desni kut — promijenite veličinu
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Sredina desno — promijenite veličinu
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Donji desni kut — promijenite veličinu
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Dolje sredina — promjenite veličinu
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Donji lijevi kut — promijenite veličinu
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Sredina lijevo — promijenite veličinu
 
 ## Color picker
 

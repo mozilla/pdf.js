@@ -380,6 +380,22 @@ pdfjs-editor-resizer-label-bottom-right = تلوِیں سَڄّی نُکَّڑ �
 pdfjs-editor-resizer-label-bottom-middle = تلواں وِچلا — سائز بدلو
 pdfjs-editor-resizer-label-bottom-left = تلوِیں کَھٻّی نُکّڑ — سائز بدلو
 pdfjs-editor-resizer-label-middle-left = وِچلا کَھٻّا — سائز بدلو
+pdfjs-editor-resizer-top-left =
+    .aria-label = اُتلی کَھٻّی نُکّڑ — سائز بدلو
+pdfjs-editor-resizer-top-middle =
+    .aria-label = اُتلا وِچلا — سائز بدلو
+pdfjs-editor-resizer-top-right =
+    .aria-label = اُتلی سَڄّی نُکَّڑ — سائز بدلو
+pdfjs-editor-resizer-middle-right =
+    .aria-label = وِچلا سڄّا — سائز بدلو
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = تلوِیں سَڄّی نُکَّڑ — سائز بدلو
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = تلواں وِچلا — سائز بدلو
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = تلوِیں کَھٻّی نُکّڑ — سائز بدلو
+pdfjs-editor-resizer-middle-left =
+    .aria-label = وِچلا کَھٻّا — سائز بدلو
 
 ## Color picker
 
@@ -410,12 +426,17 @@ pdfjs-editor-highlight-show-all-button =
 ## New alt-text dialog
 ## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
 
+# Modal header positioned above a text box where users can edit the alt text.
+pdfjs-editor-new-alt-text-dialog-edit-label = آلٹ عبارت وچ تبدیلی کرو (تصویر تفصیل)
+# Modal header positioned above a text box where users can add the alt text.
+pdfjs-editor-new-alt-text-dialog-add-label = آلٹ عبارت شامل کرو (تصویر تفصیل)
 pdfjs-editor-new-alt-text-textarea =
     .placeholder = اتھ آپݨی وضاحت لکھو۔۔۔
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = ٻیا سِکھو
 pdfjs-editor-new-alt-text-create-automatically-button-label = آلٹ عبارت خودکار بݨاؤ
 pdfjs-editor-new-alt-text-not-now-button = ہݨ کائناں
 pdfjs-editor-new-alt-text-error-title = آلٹ عبارت خودکار نہ بݨاؤ
+pdfjs-editor-new-alt-text-error-description = سوہݨا، آپݨی آلٹ عبارت لکھو یا ولدا بعد وچ کوشش کرو۔
 pdfjs-editor-new-alt-text-error-close-button = بند کرو
 # This is a button that users can click to edit the alt text they have already added.
 pdfjs-editor-new-alt-text-added-button-label = آلٹ عبارت شامل تھی ڳئی
@@ -436,6 +457,9 @@ pdfjs-image-alt-text-settings-button-label = تصویر آلٹ عبارت ترت
 pdfjs-editor-alt-text-settings-dialog-label = تصویر آلٹ عبارت ترتیباں
 pdfjs-editor-alt-text-settings-automatic-title = خودکار آلٹ عبارت
 pdfjs-editor-alt-text-settings-create-model-button-label = آلٹ عبارت خودکار بݨاؤ
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+pdfjs-editor-alt-text-settings-download-model-label = آلٹ عبارت اے آئی ماڈل ({ $totalSize } ایم بی)
 pdfjs-editor-alt-text-settings-delete-model-button = مٹاؤ
 pdfjs-editor-alt-text-settings-download-model-button = ڈاؤن لوڈ
 pdfjs-editor-alt-text-settings-downloading-model-button = ڈاؤن لوڈ تھیندا پئے …

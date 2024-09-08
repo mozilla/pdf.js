@@ -382,6 +382,22 @@ pdfjs-editor-resizer-label-bottom-right = Нижний правый угол —
 pdfjs-editor-resizer-label-bottom-middle = Внизу посередине — изменить размер
 pdfjs-editor-resizer-label-bottom-left = Нижний левый угол — изменить размер
 pdfjs-editor-resizer-label-middle-left = В центре слева — изменить размер
+pdfjs-editor-resizer-top-left =
+    .aria-label = Левый верхний угол — изменить размер
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Вверху посередине — изменить размер
+pdfjs-editor-resizer-top-right =
+    .aria-label = Верхний правый угол — изменить размер
+pdfjs-editor-resizer-middle-right =
+    .aria-label = В центре справа — изменить размер
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Нижний правый угол — изменить размер
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Внизу посередине — изменить размер
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Нижний левый угол — изменить размер
+pdfjs-editor-resizer-middle-left =
+    .aria-label = В центре слева — изменить размер
 
 ## Color picker
 
@@ -439,7 +455,7 @@ pdfjs-editor-new-alt-text-added-button-label = Альтернативный те
 # This is a button that users can click to open the alt text editor and add alt text when it is not present.
 pdfjs-editor-new-alt-text-missing-button-label = Отсутствует альтернативный текст
 # This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
-pdfjs-editor-new-alt-text-to-review-button-label = Отзыв на альтернативный текст
+pdfjs-editor-new-alt-text-to-review-button-label = Оценить альтернативный текст
 # "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
 # Variables:
 #   $generatedAltText (String) - the generated alt-text.

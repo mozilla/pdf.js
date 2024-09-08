@@ -380,6 +380,22 @@ pdfjs-editor-resizer-label-bottom-right = Angulo inferior dextre — redimension
 pdfjs-editor-resizer-label-bottom-middle = Medio inferior — redimensionar
 pdfjs-editor-resizer-label-bottom-left = Angulo inferior sinistre — redimensionar
 pdfjs-editor-resizer-label-middle-left = Medio sinistre — redimensionar
+pdfjs-editor-resizer-top-left =
+    .aria-label = Angulo superior sinistre — redimensionar
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Medio superior — redimensionar
+pdfjs-editor-resizer-top-right =
+    .aria-label = Angulo superior dextre — redimensionar
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Medio dextre — redimensionar
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Angulo inferior dextre — redimensionar
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Medio inferior — redimensionar
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Angulo inferior sinistre — redimensionar
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Medio sinistre — redimensionar
 
 ## Color picker
 

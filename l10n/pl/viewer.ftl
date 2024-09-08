@@ -368,6 +368,22 @@ pdfjs-editor-resizer-label-bottom-right = Prawy dolny róg — zmień rozmiar
 pdfjs-editor-resizer-label-bottom-middle = Dolny środkowy — zmień rozmiar
 pdfjs-editor-resizer-label-bottom-left = Lewy dolny róg — zmień rozmiar
 pdfjs-editor-resizer-label-middle-left = Lewy środkowy — zmień rozmiar
+pdfjs-editor-resizer-top-left =
+    .aria-label = Lewy górny róg — zmień rozmiar
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Górny środkowy — zmień rozmiar
+pdfjs-editor-resizer-top-right =
+    .aria-label = Prawy górny róg — zmień rozmiar
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Prawy środkowy — zmień rozmiar
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Prawy dolny róg — zmień rozmiar
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Dolny środkowy — zmień rozmiar
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Lewy dolny róg — zmień rozmiar
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Lewy środkowy — zmień rozmiar
 
 ## Color picker
 

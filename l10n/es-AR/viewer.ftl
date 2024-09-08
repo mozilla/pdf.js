@@ -380,6 +380,22 @@ pdfjs-editor-resizer-label-bottom-right = Esquina inferior derecha — cambiar e
 pdfjs-editor-resizer-label-bottom-middle = Abajo en el medio — cambiar el tamaño
 pdfjs-editor-resizer-label-bottom-left = Esquina inferior izquierda — cambiar el tamaño
 pdfjs-editor-resizer-label-middle-left = Al centro a la izquierda — cambiar el tamaño
+pdfjs-editor-resizer-top-left =
+    .aria-label = Esquina superior izquierda — cambiar el tamaño
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Arriba en el medio — cambiar el tamaño
+pdfjs-editor-resizer-top-right =
+    .aria-label = Esquina superior derecha — cambiar el tamaño
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Al centro a la derecha — cambiar el tamaño
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Esquina inferior derecha — cambiar el tamaño
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Abajo en el medio — cambiar el tamaño
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Esquina inferior izquierda — cambiar el tamaño
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Al centro a la izquierda — cambiar el tamaño
 
 ## Color picker
 
