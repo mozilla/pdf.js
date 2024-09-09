@@ -198,16 +198,65 @@ async function registerPdfRedirectRule() {
     rule.priority = addRules.length - i;
   }
   try {
-    await chrome.declarativeNetRequest.updateDynamicRules({ addRules });
     // Note: condition.responseHeaders is only supported in Chrome 128+, but
     // does not trigger errors in Chrome 123 - 127 as explained at:
     // https://github.com/w3c/webextensions/issues/638#issuecomment-2181124486
-    //
-    // We do not bother with detecting that because we fall back to catching
-    // PDF documents via maybeRenderPdfDoc in contentscript.js.
+    // We need to detect this and avoid registering rules, because otherwise all
+    // requests are redirected to the viewer instead of just PDF requests,
+    // because Chrome accepts rules while ignoring the responseHeaders condition
+    // - also reported at https://crbug.com/347186592
+    if (!(await isHeaderConditionSupported())) {
+      throw new Error("DNR responseHeaders condition is not supported.");
+    }
+    await chrome.declarativeNetRequest.updateDynamicRules({ addRules });
   } catch (e) {
+    // When we do not register DNR rules for any reason, fall back to catching
+    // PDF documents via maybeRenderPdfDoc in contentscript.js.
     console.error("Failed to register rules to redirect PDF requests.");
     console.error(e);
+  }
+}
+
+// For the source and explanation of this logic, see
+// https://github.com/w3c/webextensions/issues/638#issuecomment-2181124486
+async function isHeaderConditionSupported() {
+  const ruleId = 123456; // Some rule ID that is not already used elsewhere.
+  try {
+    // Throws synchronously if not supported.
+    await chrome.declarativeNetRequest.updateSessionRules({
+      addRules: [
+        {
+          id: ruleId,
+          urlFilter: "|does_not_match_anything",
+          condition: { responseHeaders: [{ header: "whatever" }] },
+          action: { type: "block" },
+        },
+      ],
+    });
+  } catch {
+    return false; // responseHeaders condition not supported.
+  }
+  // Chrome may recognize the properties but have the implementation behind a
+  // flag. When the implementation is disabled, validation is skipped too.
+  try {
+    await chrome.declarativeNetRequest.updateSessionRules({
+      removeRuleIds: [ruleId],
+      addRules: [
+        {
+          id: ruleId,
+          urlFilter: "|does_not_match_anything",
+          condition: { responseHeaders: [] },
+          action: { type: "block" },
+        },
+      ],
+    });
+    return false; // Validation skipped = feature disabled.
+  } catch {
+    return true; // Validation worked = feature enabled.
+  } finally {
+    await chrome.declarativeNetRequest.updateSessionRules({
+      removeRuleIds: [ruleId],
+    });
   }
 }
 
