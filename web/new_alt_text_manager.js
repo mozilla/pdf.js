@@ -346,6 +346,7 @@ class NewAltTextManager {
     this.#firstTime = firstTime;
     let { mlManager } = uiManager;
     let hasAI = !!mlManager;
+    this.#toggleTitleAndDisclaimer();
 
     if (mlManager && !mlManager.isReady("altText")) {
       hasAI = false;
