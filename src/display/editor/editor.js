@@ -659,11 +659,7 @@ class AnnotationEditor {
       parentScale,
       pageDimensions: [pageWidth, pageHeight],
     } = this;
-    const scaledWidth = pageWidth * parentScale;
-    const scaledHeight = pageHeight * parentScale;
-    return FeatureTest.isCSSRoundSupported
-      ? [Math.round(scaledWidth), Math.round(scaledHeight)]
-      : [scaledWidth, scaledHeight];
+    return [pageWidth * parentScale, pageHeight * parentScale];
   }
 
   /**
