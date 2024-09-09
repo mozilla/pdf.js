@@ -1096,5 +1096,28 @@ describe("Stamp Editor", () => {
         await page.waitForSelector("#newAltTextDialog", { visible: false });
       }
     });
+
+    it("must check the new alt text flow (part 3)", async () => {
+      // Run sequentially to avoid clipboard issues.
+      for (const [, page] of pages) {
+        await page.evaluate(() => {
+          window.PDFViewerApplication.mlManager.enableAltTextModelDownload = false;
+        });
+
+        await switchToStamp(page);
+
+        // Add an image.
+        await copyImage(page, "../images/firefox_logo.png", 0);
+        const editorSelector = getEditorSelector(0);
+        await page.waitForSelector(editorSelector);
+        await waitForSerialized(page, 1);
+
+        // Wait for the dialog to be visible.
+        await page.waitForSelector("#newAltTextDialog", { visible: true });
+
+        // Check we haven't the disclaimer.
+        await page.waitForSelector("#newAltTextDisclaimer[hidden]");
+      }
+    });
   });
 });
