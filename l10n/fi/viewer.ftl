@@ -105,6 +105,14 @@ pdfjs-document-properties-button-label = Dokumentin ominaisuudet…
 pdfjs-document-properties-file-name = Tiedoston nimi:
 pdfjs-document-properties-file-size = Tiedoston koko:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } kt ({ $b } tavua)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } Mt ({ $b } tavua)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } kt ({ $size_b } tavua)
@@ -118,6 +126,9 @@ pdfjs-document-properties-subject = Aihe:
 pdfjs-document-properties-keywords = Avainsanat:
 pdfjs-document-properties-creation-date = Luomispäivämäärä:
 pdfjs-document-properties-modification-date = Muokkauspäivämäärä:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -275,6 +286,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [{ $type }-merkintä]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -366,6 +380,22 @@ pdfjs-editor-resizer-label-bottom-right = Oikea alakulma - muuta kokoa
 pdfjs-editor-resizer-label-bottom-middle = Alhaalla keskellä - muuta kokoa
 pdfjs-editor-resizer-label-bottom-left = Vasen alakulma - muuta kokoa
 pdfjs-editor-resizer-label-middle-left = Keskellä vasemmalla - muuta kokoa
+pdfjs-editor-resizer-top-left =
+    .aria-label = Vasen yläkulma - muuta kokoa
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Ylhäällä keskellä - muuta kokoa
+pdfjs-editor-resizer-top-right =
+    .aria-label = Oikea yläkulma - muuta kokoa
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Keskellä oikealla - muuta kokoa
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Oikea alakulma - muuta kokoa
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Alhaalla keskellä - muuta kokoa
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Vasen alakulma - muuta kokoa
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Keskellä vasemmalla - muuta kokoa
 
 ## Color picker
 
@@ -406,8 +436,6 @@ pdfjs-editor-new-alt-text-textarea =
 pdfjs-editor-new-alt-text-description = Lyhyt kuvaus ihmisille, jotka eivät näe kuvaa tai kun kuva ei lataudu.
 # This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
 pdfjs-editor-new-alt-text-disclaimer1 = Tämä vaihtoehtoinen teksti luotiin automaattisesti, ja se voi olla epätarkka.
-# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
-pdfjs-editor-new-alt-text-disclaimer = Tämä vaihtoehtoinen teksti luotiin automaattisesti.
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Lue lisää
 pdfjs-editor-new-alt-text-create-automatically-button-label = Luo vaihtoehtoinen teksti automaattisesti
 pdfjs-editor-new-alt-text-not-now-button = Ei nyt

@@ -372,6 +372,22 @@ pdfjs-editor-resizer-label-bottom-right = 오른쪽 아래 - 크기 조정
 pdfjs-editor-resizer-label-bottom-middle = 가운데 아래 — 크기 조정
 pdfjs-editor-resizer-label-bottom-left = 왼쪽 아래 - 크기 조정
 pdfjs-editor-resizer-label-middle-left = 왼쪽 가운데 — 크기 조정
+pdfjs-editor-resizer-top-left =
+    .aria-label = 왼쪽 위 — 크기 조정
+pdfjs-editor-resizer-top-middle =
+    .aria-label = 가운데 위 - 크기 조정
+pdfjs-editor-resizer-top-right =
+    .aria-label = 오른쪽 위 — 크기 조정
+pdfjs-editor-resizer-middle-right =
+    .aria-label = 오른쪽 가운데 — 크기 조정
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = 오른쪽 아래 - 크기 조정
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = 가운데 아래 — 크기 조정
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = 왼쪽 아래 - 크기 조정
+pdfjs-editor-resizer-middle-left =
+    .aria-label = 왼쪽 가운데 — 크기 조정
 
 ## Color picker
 

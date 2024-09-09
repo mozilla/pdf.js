@@ -105,6 +105,14 @@ pdfjs-document-properties-button-label = Proprietâts dal document…
 pdfjs-document-properties-file-name = Non dal file:
 pdfjs-document-properties-file-size = Dimension dal file:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } KB ({ $b } bytes)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bytes)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bytes)
@@ -118,6 +126,9 @@ pdfjs-document-properties-subject = Ogjet:
 pdfjs-document-properties-keywords = Peraulis clâf:
 pdfjs-document-properties-creation-date = Date di creazion:
 pdfjs-document-properties-modification-date = Date di modifiche:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -275,6 +286,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [Anotazion { $type }]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -366,6 +380,22 @@ pdfjs-editor-resizer-label-bottom-right = Cjanton in bas a diestre — ridimensi
 pdfjs-editor-resizer-label-bottom-middle = Bande inferiôr tal mieç — ridimensione
 pdfjs-editor-resizer-label-bottom-left = Cjanton in bas a çampe — ridimensione
 pdfjs-editor-resizer-label-middle-left = Bande di çampe tal mieç — ridimensione
+pdfjs-editor-resizer-top-left =
+    .aria-label = Cjanton in alt a çampe — ridimensione
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Bande superiôr tal mieç — ridimensione
+pdfjs-editor-resizer-top-right =
+    .aria-label = Cjanton in alt a diestre — ridimensione
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Bande diestre tal mieç — ridimensione
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Cjanton in bas a diestre — ridimensione
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Bande inferiôr tal mieç — ridimensione
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Cjanton in bas a çampe — ridimensione
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Bande di çampe tal mieç — ridimensione
 
 ## Color picker
 
@@ -406,8 +436,6 @@ pdfjs-editor-new-alt-text-textarea =
 pdfjs-editor-new-alt-text-description = Curte descrizion par personis che no rivin a viodi la imagjin, o che e ven mostrade cuant che no si rive a cjariâle.
 # This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
 pdfjs-editor-new-alt-text-disclaimer1 = Chest test alternatîf al è stât creât in automatic e al è pussibil che nol sedi cret.
-# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
-pdfjs-editor-new-alt-text-disclaimer = Chest test alternatîf al è stât creât in automatic.
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Plui informazions
 pdfjs-editor-new-alt-text-create-automatically-button-label = Cree test alternatîf in automatic
 pdfjs-editor-new-alt-text-not-now-button = No cumò

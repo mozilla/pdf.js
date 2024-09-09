@@ -380,6 +380,22 @@ pdfjs-editor-resizer-label-bottom-right = Canto inferior direito — redimension
 pdfjs-editor-resizer-label-bottom-middle = No centro da base — redimensionar
 pdfjs-editor-resizer-label-bottom-left = Canto inferior esquerdo — redimensionar
 pdfjs-editor-resizer-label-middle-left = No meio à esquerda — redimensionar
+pdfjs-editor-resizer-top-left =
+    .aria-label = Canto superior esquerdo — redimensionar
+pdfjs-editor-resizer-top-middle =
+    .aria-label = No centro do topo — redimensionar
+pdfjs-editor-resizer-top-right =
+    .aria-label = Canto superior direito — redimensionar
+pdfjs-editor-resizer-middle-right =
+    .aria-label = No meio à direita — redimensionar
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Canto inferior direito — redimensionar
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = No centro da base — redimensionar
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Canto inferior esquerdo — redimensionar
+pdfjs-editor-resizer-middle-left =
+    .aria-label = No meio à esquerda — redimensionar
 
 ## Color picker
 

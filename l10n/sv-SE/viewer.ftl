@@ -380,6 +380,22 @@ pdfjs-editor-resizer-label-bottom-right = Nedre högra hörnet — ändra storle
 pdfjs-editor-resizer-label-bottom-middle = Nedre mitten — ändra storlek
 pdfjs-editor-resizer-label-bottom-left = Nedre vänstra hörnet — ändra storlek
 pdfjs-editor-resizer-label-middle-left = Mitten till vänster — ändra storlek
+pdfjs-editor-resizer-top-left =
+    .aria-label = Det övre vänstra hörnet — ändra storlek
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Överst i mitten — ändra storlek
+pdfjs-editor-resizer-top-right =
+    .aria-label = Det övre högra hörnet — ändra storlek
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Mitten höger — ändra storlek
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Nedre högra hörnet — ändra storlek
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Nedre mitten — ändra storlek
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Nedre vänstra hörnet — ändra storlek
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Mitten till vänster — ändra storlek
 
 ## Color picker
 

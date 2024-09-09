@@ -376,6 +376,22 @@ pdfjs-editor-resizer-label-bottom-right = Coin inférieur droit — redimensionn
 pdfjs-editor-resizer-label-bottom-middle = Centre bas — redimensionner
 pdfjs-editor-resizer-label-bottom-left = Coin inférieur gauche — redimensionner
 pdfjs-editor-resizer-label-middle-left = Milieu gauche — redimensionner
+pdfjs-editor-resizer-top-left =
+    .aria-label = Coin supérieur gauche — redimensionner
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Milieu haut — redimensionner
+pdfjs-editor-resizer-top-right =
+    .aria-label = Coin supérieur droit — redimensionner
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Milieu droit — redimensionner
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Coin inférieur droit — redimensionner
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Centre bas — redimensionner
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Coin inférieur gauche — redimensionner
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Milieu gauche — redimensionner
 
 ## Color picker
 
