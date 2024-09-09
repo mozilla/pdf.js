@@ -41,6 +41,7 @@ import {
   waitForSelectedEditor,
   waitForSerialized,
   waitForStorageEntries,
+  waitForTimeout,
   waitForUnselectedEditor,
 } from "./test_utils.mjs";
 import { fileURLToPath } from "url";
@@ -150,8 +151,8 @@ describe("Stamp Editor", () => {
           const ratio = await page.evaluate(
             () => window.pdfjsLib.PixelsPerInch.PDF_TO_CSS_UNITS
           );
-          expect(bitmap.width).toEqual(Math.round(242 * ratio));
-          expect(bitmap.height).toEqual(Math.round(80 * ratio));
+          expect(Math.abs(bitmap.width - 242 * ratio) < 1).toBeTrue();
+          expect(Math.abs(bitmap.height - 80 * ratio) < 1).toBeTrue();
 
           await clearAll(page);
         })
@@ -1118,6 +1119,52 @@ describe("Stamp Editor", () => {
         // Check we haven't the disclaimer.
         await page.waitForSelector("#newAltTextDisclaimer[hidden]");
       }
+    });
+  });
+
+  describe("No auto-resize", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer", 67);
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that a stamp editor isn't resizing itself", async () => {
+      // Run sequentially to avoid clipboard issues.
+      const editorSelector = getEditorSelector(0);
+
+      for (const [, page] of pages) {
+        await switchToStamp(page);
+
+        await copyImage(page, "../images/firefox_logo.png", 0);
+        await page.waitForSelector(editorSelector);
+        await waitForSerialized(page, 1);
+      }
+
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const getDims = () =>
+            page.evaluate(sel => {
+              const bbox = document.querySelector(sel).getBoundingClientRect();
+              return `${bbox.width}::${bbox.height}`;
+            }, editorSelector);
+          const initialDims = await getDims();
+          for (let i = 0; i < 50; i++) {
+            // We want to make sure that the editor doesn't resize itself, so we
+            // check every 10ms that the dimensions are the same.
+
+            // eslint-disable-next-line no-restricted-syntax
+            await waitForTimeout(10);
+
+            const dims = await getDims();
+            expect(dims).withContext(`In ${browserName}`).toEqual(initialDims);
+          }
+        })
+      );
     });
   });
 });
