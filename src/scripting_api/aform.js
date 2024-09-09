@@ -560,6 +560,22 @@ class AForm {
   }
 
   AFSpecial_KeystrokeEx(cMask) {
+    const event = globalThis.event;
+
+    // Simplify the format string by removing all characters that are not
+    // specific to the format because the user could enter 1234567 when the
+    // format is 999-9999.
+    const simplifiedFormatStr = cMask.replaceAll(/[^9AOX]/g, "");
+    this.#AFSpecial_KeystrokeEx_helper(simplifiedFormatStr, false);
+    if (event.rc) {
+      return;
+    }
+
+    event.rc = true;
+    this.#AFSpecial_KeystrokeEx_helper(cMask, true);
+  }
+
+  #AFSpecial_KeystrokeEx_helper(cMask, warn) {
     if (!cMask) {
       return;
     }
@@ -605,20 +621,26 @@ class AForm {
     const err = `${GlobalConstants.IDS_INVALID_VALUE} = "${cMask}"`;
 
     if (value.length > cMask.length) {
-      this._app.alert(err);
+      if (warn) {
+        this._app.alert(err);
+      }
       event.rc = false;
       return;
     }
 
     if (event.willCommit) {
       if (value.length < cMask.length) {
-        this._app.alert(err);
+        if (warn) {
+          this._app.alert(err);
+        }
         event.rc = false;
         return;
       }
 
       if (!_checkValidity(value, cMask)) {
-        this._app.alert(err);
+        if (warn) {
+          this._app.alert(err);
+        }
         event.rc = false;
         return;
       }
@@ -631,7 +653,9 @@ class AForm {
     }
 
     if (!_checkValidity(value, cMask)) {
-      this._app.alert(err);
+      if (warn) {
+        this._app.alert(err);
+      }
       event.rc = false;
     }
   }
@@ -651,7 +675,7 @@ class AForm {
       case 2:
         const value = this.AFMergeChange(event);
         formatStr =
-          value.length > 8 || value.startsWith("(")
+          value.startsWith("(") || (value.length > 7 && /^\p{N}+$/.test(value))
             ? "(999) 999-9999"
             : "999-9999";
         break;
