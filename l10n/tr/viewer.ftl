@@ -380,6 +380,22 @@ pdfjs-editor-resizer-label-bottom-right = Sağ alt köşe — yeniden boyutland�
 pdfjs-editor-resizer-label-bottom-middle = Alt orta — yeniden boyutlandır
 pdfjs-editor-resizer-label-bottom-left = Sol alt köşe — yeniden boyutlandır
 pdfjs-editor-resizer-label-middle-left = Orta sol — yeniden boyutlandır
+pdfjs-editor-resizer-top-left =
+    .aria-label = Sol üst köşe — yeniden boyutlandır
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Üst orta — yeniden boyutlandır
+pdfjs-editor-resizer-top-right =
+    .aria-label = Sağ üst köşe — yeniden boyutlandır
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Orta sağ — yeniden boyutlandır
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Sağ alt köşe — yeniden boyutlandır
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Alt orta — yeniden boyutlandır
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Sol alt köşe — yeniden boyutlandır
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Orta sol — yeniden boyutlandır
 
 ## Color picker
 

@@ -380,6 +380,22 @@ pdfjs-editor-resizer-label-bottom-right = Κάτω δεξιά γωνία — α�
 pdfjs-editor-resizer-label-bottom-middle = Μέσο κάτω πλευράς — αλλαγή μεγέθους
 pdfjs-editor-resizer-label-bottom-left = Κάτω αριστερή γωνία — αλλαγή μεγέθους
 pdfjs-editor-resizer-label-middle-left = Μέσο αριστερής πλευράς — αλλαγή μεγέθους
+pdfjs-editor-resizer-top-left =
+    .aria-label = Επάνω αριστερή γωνία — αλλαγή μεγέθους
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Μέσο επάνω πλευράς — αλλαγή μεγέθους
+pdfjs-editor-resizer-top-right =
+    .aria-label = Επάνω δεξιά γωνία — αλλαγή μεγέθους
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Μέσο δεξιάς πλευράς — αλλαγή μεγέθους
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Κάτω δεξιά γωνία — αλλαγή μεγέθους
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Μέσο κάτω πλευράς — αλλαγή μεγέθους
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Κάτω αριστερή γωνία — αλλαγή μεγέθους
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Μέσο αριστερής πλευράς — αλλαγή μεγέθους
 
 ## Color picker
 

@@ -384,6 +384,22 @@ pdfjs-editor-resizer-label-bottom-right = Deleka naprawo – wulkosć změnić
 pdfjs-editor-resizer-label-bottom-middle = Deleka wosrjedź – wulkosć změnić
 pdfjs-editor-resizer-label-bottom-left = Deleka nalěwo – wulkosć změnić
 pdfjs-editor-resizer-label-middle-left = Wosrjedź nalěwo – wulkosć změnić
+pdfjs-editor-resizer-top-left =
+    .aria-label = Horjeka nalěwo – wulkosć změnić
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Horjeka wosrjedź – wulkosć změnić
+pdfjs-editor-resizer-top-right =
+    .aria-label = Horjeka naprawo – wulkosć změnić
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Wosrjedź naprawo – wulkosć změnić
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Deleka naprawo – wulkosć změnić
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Deleka wosrjedź – wulkosć změnić
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Deleka nalěwo – wulkosć změnić
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Wosrjedź nalěwo – wulkosć změnić
 
 ## Color picker
 

@@ -372,6 +372,22 @@ pdfjs-editor-resizer-label-bottom-right = Nedste høgre hjørne – endre størr
 pdfjs-editor-resizer-label-bottom-middle = Nedst i midten — endre størrelse
 pdfjs-editor-resizer-label-bottom-left = Nedste venstre hjørne – endre størrelse
 pdfjs-editor-resizer-label-middle-left = Midt til venstre — endre størrelse
+pdfjs-editor-resizer-top-left =
+    .aria-label = Øvste venstre hjørne – endre størrelse
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Øvst i midten — endre størrelse
+pdfjs-editor-resizer-top-right =
+    .aria-label = Øvste høgre hjørne – endre størrelse
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Midt til høgre – endre størrelse
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Nedste høgre hjørne – endre størrelse
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Nedst i midten — endre størrelse
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Nedste venstre hjørne – endre størrelse
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Midt til venstre — endre størrelse
 
 ## Color picker
 

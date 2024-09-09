@@ -372,6 +372,22 @@ pdfjs-editor-resizer-label-bottom-right = 右下角 — 調整大小
 pdfjs-editor-resizer-label-bottom-middle = 底部中間 — 調整大小
 pdfjs-editor-resizer-label-bottom-left = 左下角 — 調整大小
 pdfjs-editor-resizer-label-middle-left = 中間左方 — 調整大小
+pdfjs-editor-resizer-top-left =
+    .aria-label = 左上角 — 調整大小
+pdfjs-editor-resizer-top-middle =
+    .aria-label = 頂部中間 — 調整大小
+pdfjs-editor-resizer-top-right =
+    .aria-label = 右上角 — 調整大小
+pdfjs-editor-resizer-middle-right =
+    .aria-label = 中間右方 — 調整大小
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = 右下角 — 調整大小
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = 底部中間 — 調整大小
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = 左下角 — 調整大小
+pdfjs-editor-resizer-middle-left =
+    .aria-label = 中間左方 — 調整大小
 
 ## Color picker
 
