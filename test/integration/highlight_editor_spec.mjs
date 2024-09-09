@@ -1802,6 +1802,7 @@ describe("Highlight Editor", () => {
           y = rect.y - rect.height;
           await page.mouse.move(x, y);
           await page.mouse.down();
+          await page.waitForSelector(".annotationEditorLayer.drawing");
           for (
             const endY = rect.y + 2 * rect.height;
             y <= endY;
@@ -1866,6 +1867,7 @@ describe("Highlight Editor", () => {
           y = rect.y - 3 * rect.height;
           await page.mouse.move(x, y);
           await page.mouse.down();
+          await page.waitForSelector(".textLayer.selecting");
           for (
             const endY = rect.y + 3 * rect.height;
             y <= endY;
