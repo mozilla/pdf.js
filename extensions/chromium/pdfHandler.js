@@ -227,8 +227,10 @@ async function isHeaderConditionSupported() {
       addRules: [
         {
           id: ruleId,
-          urlFilter: "|does_not_match_anything",
-          condition: { responseHeaders: [{ header: "whatever" }] },
+          condition: {
+            responseHeaders: [{ header: "whatever" }],
+            urlFilter: "|does_not_match_anything",
+          },
           action: { type: "block" },
         },
       ],
@@ -244,8 +246,10 @@ async function isHeaderConditionSupported() {
       addRules: [
         {
           id: ruleId,
-          urlFilter: "|does_not_match_anything",
-          condition: { responseHeaders: [] },
+          condition: {
+            responseHeaders: [],
+            urlFilter: "|does_not_match_anything",
+          },
           action: { type: "block" },
         },
       ],
