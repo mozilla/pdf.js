@@ -2701,9 +2701,12 @@ class CanvasGraphics {
       } else {
         resetCtxToDefault(this.ctx);
 
+        // Consume a potential path before clipping.
+        this.endPath();
+
         this.ctx.rect(rect[0], rect[1], width, height);
         this.ctx.clip();
-        this.endPath();
+        this.ctx.beginPath();
       }
     }
 
