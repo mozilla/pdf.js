@@ -1062,6 +1062,26 @@ describe("pdf_find_controller", function () {
     await testOnFind({ eventBus });
   });
 
+  it("performs a search in a text with compound word on two lines", async function () {
+    const { eventBus, pdfFindController } =
+      await initPdfFindController("issue18693.pdf");
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: "hel-Lo",
+      },
+      matchesPerPage: [1],
+      selectedMatch: {
+        pageIndex: 0,
+        matchIndex: 0,
+      },
+      pageMatches: [[6]],
+      pageMatchesLength: [[7]],
+    });
+  });
+
   describe("custom matcher", () => {
     it("calls to the matcher with the right arguments", async () => {
       const QUERY = "Foo  bar";
