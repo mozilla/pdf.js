@@ -77,8 +77,6 @@ class HighlightEditor extends AnnotationEditor {
 
   static _defaultThickness = 12;
 
-  static _l10nPromise;
-
   static _type = "highlight";
 
   static _editorType = AnnotationEditorType.HIGHLIGHT;
