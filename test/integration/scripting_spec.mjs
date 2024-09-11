@@ -2468,4 +2468,32 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("Correctly format numbers", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("bug1918115.pdf", getSelector("33R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the computed value is correct", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page], i) => {
+          await waitForScripting(page);
+
+          const inputSelector = getSelector("33R");
+          await page.click(inputSelector);
+          await page.type(inputSelector, "7");
+          await page.click(getSelector("34R"));
+          await page.waitForFunction(
+            `${getQuerySelector("35R")}.value === "324,00"`
+          );
+        })
+      );
+    });
+  });
 });

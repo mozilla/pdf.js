@@ -153,7 +153,12 @@ class Util extends PDFObject {
               ? Math.abs(arg - intPart).toFixed(nPrecision)
               : Math.abs(arg - intPart).toString();
           if (decPart.length > 2) {
-            decPart = `${decimalSep}${decPart.substring(2)}`;
+            if (/^1\.0+$/.test(decPart)) {
+              intPart += Math.sign(arg);
+              decPart = `${decimalSep}${decPart.split(".")[1]}`;
+            } else {
+              decPart = `${decimalSep}${decPart.substring(2)}`;
+            }
           } else {
             if (decPart === "1") {
               intPart += Math.sign(arg);
