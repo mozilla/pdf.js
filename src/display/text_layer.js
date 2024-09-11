@@ -83,6 +83,8 @@ class TextLayer {
 
   static #canvasContexts = new Map();
 
+  static #canvasCtxFonts = new WeakMap();
+
   static #minFontSize = null;
 
   static #pendingTextLayers = new Set();
@@ -111,8 +113,6 @@ class TextLayer {
     this.#scale = viewport.scale * (globalThis.devicePixelRatio || 1);
     this.#rotation = viewport.rotation;
     this.#layoutTextParams = {
-      prevFontSize: null,
-      prevFontFamily: null,
       div: null,
       properties: null,
       ctx: null,
@@ -128,13 +128,13 @@ class TextLayer {
 
     // Always clean-up the temporary canvas once rendering is no longer pending.
     this.#capability.promise
-      .catch(() => {
-        // Avoid "Uncaught promise" messages in the console.
-      })
-      .then(() => {
+      .finally(() => {
         TextLayer.#pendingTextLayers.delete(this);
         this.#layoutTextParams = null;
         this.#styleCache = null;
+      })
+      .catch(() => {
+        // Avoid "Uncaught promise" messages in the console.
       });
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
@@ -195,8 +195,6 @@ class TextLayer {
       onBefore?.();
       this.#scale = scale;
       const params = {
-        prevFontSize: null,
-        prevFontFamily: null,
         div: null,
         properties: null,
         ctx: TextLayer.#getCtx(this.#lang),
@@ -394,7 +392,7 @@ class TextLayer {
   }
 
   #layout(params) {
-    const { div, properties, ctx, prevFontSize, prevFontFamily } = params;
+    const { div, properties, ctx } = params;
     const { style } = div;
 
     let transform = "";
@@ -406,12 +404,7 @@ class TextLayer {
       const { fontFamily } = style;
       const { canvasWidth, fontSize } = properties;
 
-      if (prevFontSize !== fontSize || prevFontFamily !== fontFamily) {
-        ctx.font = `${fontSize * this.#scale}px ${fontFamily}`;
-        params.prevFontSize = fontSize;
-        params.prevFontFamily = fontFamily;
-      }
-
+      TextLayer.#ensureCtxFont(ctx, fontSize * this.#scale, fontFamily);
       // Only measure the width for multi-char text divs, see `appendText`.
       const { width } = ctx.measureText(div.textContent);
 
@@ -444,8 +437,8 @@ class TextLayer {
   }
 
   static #getCtx(lang = null) {
-    let canvasContext = this.#canvasContexts.get((lang ||= ""));
-    if (!canvasContext) {
+    let ctx = this.#canvasContexts.get((lang ||= ""));
+    if (!ctx) {
       // We don't use an OffscreenCanvas here because we use serif/sans serif
       // fonts with it and they depends on the locale.
       // In Firefox, the <html> element get a lang attribute that depends on
@@ -460,13 +453,26 @@ class TextLayer {
       canvas.className = "hiddenCanvasElement";
       canvas.lang = lang;
       document.body.append(canvas);
-      canvasContext = canvas.getContext("2d", {
+      ctx = canvas.getContext("2d", {
         alpha: false,
         willReadFrequently: true,
       });
-      this.#canvasContexts.set(lang, canvasContext);
+      this.#canvasContexts.set(lang, ctx);
+
+      // Also, initialize state for the `#ensureCtxFont` method.
+      this.#canvasCtxFonts.set(ctx, { size: 0, family: "" });
     }
-    return canvasContext;
+    return ctx;
+  }
+
+  static #ensureCtxFont(ctx, size, family) {
+    const cached = this.#canvasCtxFonts.get(ctx);
+    if (size === cached.size && family === cached.family) {
+      return; // The font is already set.
+    }
+    ctx.font = `${size}px ${family}`;
+    cached.size = size;
+    cached.family = family;
   }
 
   /**
@@ -497,9 +503,8 @@ class TextLayer {
     }
     const ctx = this.#getCtx(lang);
 
-    const savedFont = ctx.font;
     ctx.canvas.width = ctx.canvas.height = DEFAULT_FONT_SIZE;
-    ctx.font = `${DEFAULT_FONT_SIZE}px ${fontFamily}`;
+    this.#ensureCtxFont(ctx, DEFAULT_FONT_SIZE, fontFamily);
     const metrics = ctx.measureText("");
 
     // Both properties aren't available by default in Firefox.
@@ -510,7 +515,6 @@ class TextLayer {
       this.#ascentCache.set(fontFamily, ratio);
 
       ctx.canvas.width = ctx.canvas.height = 0;
-      ctx.font = savedFont;
       return ratio;
     }
 
@@ -550,7 +554,6 @@ class TextLayer {
     }
 
     ctx.canvas.width = ctx.canvas.height = 0;
-    ctx.font = savedFont;
 
     const ratio = ascent ? ascent / (ascent + descent) : DEFAULT_FONT_ASCENT;
     this.#ascentCache.set(fontFamily, ratio);
