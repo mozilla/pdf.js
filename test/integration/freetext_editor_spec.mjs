@@ -3644,4 +3644,47 @@ describe("FreeText Editor", () => {
       );
     });
   });
+
+  describe("Freetext and shift+enter", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that a freetext has the correct data", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          const rect = await getRect(page, ".annotationEditorLayer");
+          const editorSelector = getEditorSelector(0);
+
+          const data = "Hello\nPDF.js\nWorld\n!!";
+          await page.mouse.click(rect.x + 100, rect.y + 100);
+          await page.waitForSelector(editorSelector, {
+            visible: true,
+          });
+          for (const line of data.split("\n")) {
+            await page.type(`${editorSelector} .internal`, line);
+            await page.keyboard.down("Shift");
+            await page.keyboard.press("Enter");
+            await page.keyboard.up("Shift");
+          }
+
+          // Commit.
+          await page.keyboard.press("Escape");
+          await page.waitForSelector(`${editorSelector} .overlay.enabled`);
+          await waitForSerialized(page, 1);
+
+          const serialized = await getSerialized(page, x => x.value);
+          expect(serialized[0]).withContext(`In ${browserName}`).toEqual(data);
+        })
+      );
+    });
+  });
 });
