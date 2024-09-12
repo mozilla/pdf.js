@@ -222,6 +222,13 @@ class PDFPageView {
         this.scale * PixelsPerInch.PDF_TO_CSS_UNITS
       );
 
+      if (this.pageColors?.background) {
+        container?.style.setProperty(
+          "--page-bg-color",
+          this.pageColors.background
+        );
+      }
+
       const { optionalContentConfigPromise } = options;
       if (optionalContentConfigPromise) {
         // Ensure that the thumbnails always display the *initial* document

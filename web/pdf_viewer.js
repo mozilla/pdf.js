@@ -927,6 +927,10 @@ class PDFViewer {
         // Ensure that the various layers always get the correct initial size,
         // see issue 15795.
         viewer.style.setProperty("--scale-factor", viewport.scale);
+
+        if (pageColors?.background) {
+          viewer.style.setProperty("--page-bg-color", pageColors.background);
+        }
         if (
           pageColors?.foreground === "CanvasText" ||
           pageColors?.background === "Canvas"
