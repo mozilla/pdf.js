@@ -403,8 +403,16 @@ class FreeTextEditor extends AnnotationEditor {
     // We don't use innerText because there are some bugs with line breaks.
     const buffer = [];
     this.editorDiv.normalize();
+    let prevChild = null;
     for (const child of this.editorDiv.childNodes) {
+      if (prevChild?.nodeType === Node.TEXT_NODE && child.nodeName === "BR") {
+        // It can happen if the user uses shift+enter to add a new line.
+        // If we don't skip it, we'll end up with an extra line (one for the
+        // text and one for the br element).
+        continue;
+      }
       buffer.push(FreeTextEditor.#getNodeContent(child));
+      prevChild = child;
     }
     return buffer.join("\n");
   }
