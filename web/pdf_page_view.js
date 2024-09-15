@@ -26,6 +26,7 @@
 import {
   AbortException,
   AnnotationMode,
+  OutputScale,
   PixelsPerInch,
   RenderingCancelledException,
   setLayerDimensions,
@@ -36,7 +37,6 @@ import {
   calcRound,
   DEFAULT_SCALE,
   floorToDivide,
-  OutputScale,
   RenderingStates,
   TextLayerMode,
 } from "./ui_utils.js";

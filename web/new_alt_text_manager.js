@@ -371,14 +371,21 @@ class NewAltTextManager {
     // TODO: get this value from Firefox
     //   (https://bugzilla.mozilla.org/show_bug.cgi?id=1908184)
     const AI_MAX_IMAGE_DIMENSION = 224;
+    const MAX_PREVIEW_DIMENSION = 180;
 
     // The max dimension of the preview in the dialog is 180px, so we keep 224px
     // and rescale it thanks to css.
 
-    let canvas;
+    let canvas, width, height;
     if (mlManager) {
-      ({ canvas, imageData: this.#imageData } = editor.copyCanvas(
+      ({
+        canvas,
+        width,
+        height,
+        imageData: this.#imageData,
+      } = editor.copyCanvas(
         AI_MAX_IMAGE_DIMENSION,
+        MAX_PREVIEW_DIMENSION,
         /* createImageData = */ true
       ));
       if (hasAI) {
@@ -388,13 +395,17 @@ class NewAltTextManager {
         );
       }
     } else {
-      ({ canvas } = editor.copyCanvas(
+      ({ canvas, width, height } = editor.copyCanvas(
         AI_MAX_IMAGE_DIMENSION,
+        MAX_PREVIEW_DIMENSION,
         /* createImageData = */ false
       ));
     }
 
     canvas.setAttribute("role", "presentation");
+    const { style } = canvas;
+    style.width = `${width}px`;
+    style.height = `${height}px`;
     this.#imagePreview.append(canvas);
 
     this.#toggleNotNow();
