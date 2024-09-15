@@ -16,8 +16,6 @@
 import { FindState } from "./pdf_find_controller.js";
 import { toggleExpandedBtn } from "./ui_utils.js";
 
-const MATCHES_COUNT_LIMIT = 1000;
-
 /**
  * Creates a "search bar" given a set of DOM elements that act as controls
  * for searching or for setting search preferences in the UI. This object
@@ -25,6 +23,8 @@ const MATCHES_COUNT_LIMIT = 1000;
  * is done by PDFFindController.
  */
 class PDFFindBar {
+  #matchesCountLimit = 1000;
+
   #resizeObserver = new ResizeObserver(this.#resizeObserverCallback.bind(this));
 
   constructor(options, eventBus) {
@@ -109,7 +109,7 @@ class PDFFindBar {
 
   updateUIState(state, previous, matchesCount) {
     const { findField, findMsg } = this;
-    let findMsgId = "",
+    let findMsgId = "pdfjs-find-empty-message",
       status = "";
 
     switch (state) {
@@ -132,36 +132,27 @@ class PDFFindBar {
     findField.setAttribute("aria-invalid", state === FindState.NOT_FOUND);
 
     findMsg.setAttribute("data-status", status);
-    if (findMsgId) {
-      findMsg.setAttribute("data-l10n-id", findMsgId);
-    } else {
-      findMsg.removeAttribute("data-l10n-id");
-      findMsg.textContent = "";
-    }
+    findMsg.setAttribute("data-l10n-id", findMsgId);
 
     this.updateResultsCount(matchesCount);
   }
 
   updateResultsCount({ current = 0, total = 0 } = {}) {
     const { findResultsCount } = this;
+    let l10nId = "pdfjs-find-empty-message",
+      l10nArgs = "{}";
 
     if (total > 0) {
-      const limit = MATCHES_COUNT_LIMIT;
+      const limit = this.#matchesCountLimit;
 
-      findResultsCount.setAttribute(
-        "data-l10n-id",
+      l10nId =
         total > limit
           ? "pdfjs-find-match-count-limit"
-          : "pdfjs-find-match-count"
-      );
-      findResultsCount.setAttribute(
-        "data-l10n-args",
-        JSON.stringify({ limit, current, total })
-      );
-    } else {
-      findResultsCount.removeAttribute("data-l10n-id");
-      findResultsCount.textContent = "";
+          : "pdfjs-find-match-count";
+      l10nArgs = JSON.stringify({ limit, current, total });
     }
+    findResultsCount.setAttribute("data-l10n-id", l10nId);
+    findResultsCount.setAttribute("data-l10n-args", l10nArgs);
   }
 
   open() {

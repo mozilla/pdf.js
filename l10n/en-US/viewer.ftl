@@ -253,6 +253,8 @@ pdfjs-find-match-count-limit =
     }
 
 pdfjs-find-not-found = Phrase not found
+# Must contain an empty string.
+pdfjs-find-empty-message = {""}
 
 ## Predefined zoom values
 
