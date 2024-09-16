@@ -1124,6 +1124,36 @@ function setLayerDimensions(
   }
 }
 
+/**
+ * Scale factors for the canvas, necessary with HiDPI displays.
+ */
+class OutputScale {
+  constructor() {
+    const pixelRatio = window.devicePixelRatio || 1;
+
+    /**
+     * @type {number} Horizontal scale.
+     */
+    this.sx = pixelRatio;
+
+    /**
+     * @type {number} Vertical scale.
+     */
+    this.sy = pixelRatio;
+  }
+
+  /**
+   * @type {boolean} Returns `true` when scaling is required, `false` otherwise.
+   */
+  get scaled() {
+    return this.sx !== 1 || this.sy !== 1;
+  }
+
+  get symmetric() {
+    return this.sx === this.sy;
+  }
+}
+
 export {
   deprecated,
   DOMCanvasFactory,
@@ -1143,6 +1173,7 @@ export {
   isPdfFile,
   isValidFetchUrl,
   noContextMenu,
+  OutputScale,
   PageViewport,
   PDFDateString,
   PixelsPerInch,
