@@ -14,8 +14,8 @@
  */
 
 import { AnnotationEditorType, shadow } from "../../shared/util.js";
+import { OutputScale, PixelsPerInch } from "../display_utils.js";
 import { AnnotationEditor } from "./editor.js";
-import { PixelsPerInch } from "../display_utils.js";
 import { StampAnnotationElement } from "../annotation_layer.js";
 
 /**
@@ -185,7 +185,7 @@ class StampEditor extends AnnotationEditor {
     }
     const { data, width, height } =
       imageData ||
-      this.copyCanvas(null, /* createImageData = */ true).imageData;
+      this.copyCanvas(null, null, /* createImageData = */ true).imageData;
     const response = await mlManager.guess({
       name: "altText",
       request: {
@@ -453,61 +453,108 @@ class StampEditor extends AnnotationEditor {
     }
   }
 
-  copyCanvas(maxDimension, createImageData = false) {
-    if (!maxDimension) {
+  copyCanvas(maxDataDimension, maxPreviewDimension, createImageData = false) {
+    if (!maxDataDimension) {
       // TODO: get this value from Firefox
       //   (https://bugzilla.mozilla.org/show_bug.cgi?id=1908184)
       // It's the maximum dimension that the AI can handle.
-      maxDimension = 224;
+      maxDataDimension = 224;
     }
 
     const { width: bitmapWidth, height: bitmapHeight } = this.#bitmap;
-    const canvas = document.createElement("canvas");
+    const outputScale = new OutputScale();
 
     let bitmap = this.#bitmap;
     let width = bitmapWidth,
       height = bitmapHeight;
-    if (bitmapWidth > maxDimension || bitmapHeight > maxDimension) {
-      const ratio = Math.min(
-        maxDimension / bitmapWidth,
-        maxDimension / bitmapHeight
-      );
-      width = Math.floor(bitmapWidth * ratio);
-      height = Math.floor(bitmapHeight * ratio);
+    let canvas = null;
+
+    if (maxPreviewDimension) {
+      if (
+        bitmapWidth > maxPreviewDimension ||
+        bitmapHeight > maxPreviewDimension
+      ) {
+        const ratio = Math.min(
+          maxPreviewDimension / bitmapWidth,
+          maxPreviewDimension / bitmapHeight
+        );
+        width = Math.floor(bitmapWidth * ratio);
+        height = Math.floor(bitmapHeight * ratio);
+      }
+
+      canvas = document.createElement("canvas");
+      const scaledWidth = (canvas.width = Math.ceil(width * outputScale.sx));
+      const scaledHeight = (canvas.height = Math.ceil(height * outputScale.sy));
 
       if (!this.#isSvg) {
-        bitmap = this.#scaleBitmap(width, height);
+        bitmap = this.#scaleBitmap(scaledWidth, scaledHeight);
       }
+
+      const ctx = canvas.getContext("2d");
+      ctx.filter = this._uiManager.hcmFilter;
+
+      // Add a checkerboard pattern as a background in case the image has some
+      // transparency.
+      let white = "white",
+        black = "#cfcfd8";
+      if (this._uiManager.hcmFilter !== "none") {
+        black = "black";
+      } else if (window.matchMedia?.("(prefers-color-scheme: dark)").matches) {
+        white = "#8f8f9d";
+        black = "#42414d";
+      }
+      const boxDim = 15;
+      const boxDimWidth = boxDim * outputScale.sx;
+      const boxDimHeight = boxDim * outputScale.sy;
+      const pattern = new OffscreenCanvas(boxDimWidth * 2, boxDimHeight * 2);
+      const patternCtx = pattern.getContext("2d");
+      patternCtx.fillStyle = white;
+      patternCtx.fillRect(0, 0, boxDimWidth * 2, boxDimHeight * 2);
+      patternCtx.fillStyle = black;
+      patternCtx.fillRect(0, 0, boxDimWidth, boxDimHeight);
+      patternCtx.fillRect(boxDimWidth, boxDimHeight, boxDimWidth, boxDimHeight);
+      ctx.fillStyle = ctx.createPattern(pattern, "repeat");
+      ctx.fillRect(0, 0, scaledWidth, scaledHeight);
+      ctx.drawImage(
+        bitmap,
+        0,
+        0,
+        bitmap.width,
+        bitmap.height,
+        0,
+        0,
+        scaledWidth,
+        scaledHeight
+      );
     }
 
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    ctx.filter = this._uiManager.hcmFilter;
-
-    // Add a checkerboard pattern as a background in case the image has some
-    // transparency.
-    let white = "white",
-      black = "#cfcfd8";
-    if (this._uiManager.hcmFilter !== "none") {
-      black = "black";
-    } else if (window.matchMedia?.("(prefers-color-scheme: dark)").matches) {
-      white = "#8f8f9d";
-      black = "#42414d";
-    }
-    const boxDim = 15;
-    const pattern = new OffscreenCanvas(boxDim * 2, boxDim * 2);
-    const patternCtx = pattern.getContext("2d");
-    patternCtx.fillStyle = white;
-    patternCtx.fillRect(0, 0, boxDim * 2, boxDim * 2);
-    patternCtx.fillStyle = black;
-    patternCtx.fillRect(0, 0, boxDim, boxDim);
-    patternCtx.fillRect(boxDim, boxDim, boxDim, boxDim);
-    ctx.fillStyle = ctx.createPattern(pattern, "repeat");
-    ctx.fillRect(0, 0, width, height);
-
+    let imageData = null;
     if (createImageData) {
-      const offscreen = new OffscreenCanvas(width, height);
+      let dataWidth, dataHeight;
+      if (
+        outputScale.symmetric &&
+        bitmap.width < maxDataDimension &&
+        bitmap.height < maxDataDimension
+      ) {
+        dataWidth = bitmap.width;
+        dataHeight = bitmap.height;
+      } else {
+        bitmap = this.#bitmap;
+        if (bitmapWidth > maxDataDimension || bitmapHeight > maxDataDimension) {
+          const ratio = Math.min(
+            maxDataDimension / bitmapWidth,
+            maxDataDimension / bitmapHeight
+          );
+          dataWidth = Math.floor(bitmapWidth * ratio);
+          dataHeight = Math.floor(bitmapHeight * ratio);
+
+          if (!this.#isSvg) {
+            bitmap = this.#scaleBitmap(dataWidth, dataHeight);
+          }
+        }
+      }
+
+      const offscreen = new OffscreenCanvas(dataWidth, dataHeight);
       const offscreenCtx = offscreen.getContext("2d", {
         willReadFrequently: true,
       });
@@ -519,27 +566,17 @@ class StampEditor extends AnnotationEditor {
         bitmap.height,
         0,
         0,
-        width,
-        height
+        dataWidth,
+        dataHeight
       );
-      const data = offscreenCtx.getImageData(0, 0, width, height).data;
-      ctx.drawImage(offscreen, 0, 0);
-
-      return { canvas, imageData: { width, height, data } };
+      imageData = {
+        width: dataWidth,
+        height: dataHeight,
+        data: offscreenCtx.getImageData(0, 0, dataWidth, dataHeight).data,
+      };
     }
 
-    ctx.drawImage(
-      bitmap,
-      0,
-      0,
-      bitmap.width,
-      bitmap.height,
-      0,
-      0,
-      width,
-      height
-    );
-    return { canvas, imageData: null };
+    return { canvas, width, height, imageData };
   }
 
   /**
@@ -619,17 +656,23 @@ class StampEditor extends AnnotationEditor {
   }
 
   #drawBitmap(width, height) {
-    width = Math.ceil(width);
-    height = Math.ceil(height);
+    const outputScale = new OutputScale();
+    const scaledWidth = Math.ceil(width * outputScale.sx);
+    const scaledHeight = Math.ceil(height * outputScale.sy);
+
     const canvas = this.#canvas;
-    if (!canvas || (canvas.width === width && canvas.height === height)) {
+    if (
+      !canvas ||
+      (canvas.width === scaledWidth && canvas.height === scaledHeight)
+    ) {
       return;
     }
-    canvas.width = width;
-    canvas.height = height;
+    canvas.width = scaledWidth;
+    canvas.height = scaledHeight;
+
     const bitmap = this.#isSvg
       ? this.#bitmap
-      : this.#scaleBitmap(width, height);
+      : this.#scaleBitmap(scaledWidth, scaledHeight);
 
     const ctx = canvas.getContext("2d");
     ctx.filter = this._uiManager.hcmFilter;
@@ -641,8 +684,8 @@ class StampEditor extends AnnotationEditor {
       bitmap.height,
       0,
       0,
-      width,
-      height
+      scaledWidth,
+      scaledHeight
     );
   }
 
