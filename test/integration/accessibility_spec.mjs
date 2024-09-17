@@ -96,7 +96,7 @@ describe("accessibility", () => {
               .toBeTrue();
 
             const handle = await waitForPageRendered(page);
-            await page.click(`#zoom${i < 4 ? "In" : "Out"}`);
+            await page.click(`#zoom${i < 4 ? "In" : "Out"}Button`);
             await awaitPromise(handle);
           }
         })
