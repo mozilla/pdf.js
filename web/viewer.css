@@ -778,12 +778,12 @@ body {
   background-color: var(--toolbar-icon-hover-bg-color);
 }
 
-#sidebarToggle::before {
+#sidebarToggleButton::before {
   mask-image: var(--toolbarButton-sidebarToggle-icon);
   transform: scaleX(var(--dir-factor));
 }
 
-#secondaryToolbarToggle::before {
+#secondaryToolbarToggleButton::before {
   mask-image: var(--toolbarButton-secondaryToolbarToggle-icon);
   transform: scaleX(var(--dir-factor));
 }
@@ -796,35 +796,35 @@ body {
   mask-image: var(--toolbarButton-pageDown-icon);
 }
 
-#zoomOut::before {
+#zoomOutButton::before {
   mask-image: var(--toolbarButton-zoomOut-icon);
 }
 
-#zoomIn::before {
+#zoomInButton::before {
   mask-image: var(--toolbarButton-zoomIn-icon);
 }
 
-#editorFreeText::before {
+#editorFreeTextButton::before {
   mask-image: var(--toolbarButton-editorFreeText-icon);
 }
 
-#editorHighlight::before {
+#editorHighlightButton::before {
   mask-image: var(--toolbarButton-editorHighlight-icon);
 }
 
-#editorInk::before {
+#editorInkButton::before {
   mask-image: var(--toolbarButton-editorInk-icon);
 }
 
-#editorStamp::before {
+#editorStampButton::before {
   mask-image: var(--toolbarButton-editorStamp-icon);
 }
 
-#print::before {
+#printButton::before {
   mask-image: var(--toolbarButton-print-icon);
 }
 
-#download::before {
+#downloadButton::before {
   mask-image: var(--toolbarButton-download-icon);
 }
 
@@ -850,7 +850,7 @@ body {
   transform: scaleX(var(--dir-factor));
 }
 
-#viewFind::before {
+#viewFindButton::before {
   mask-image: var(--toolbarButton-search-icon);
 }
 
@@ -1443,11 +1443,11 @@ dialog :link {
       }
     }
 
-    #findPrevious::before {
+    #findPreviousButton::before {
       mask-image: var(--findbarButton-previous-icon);
     }
 
-    #findNext::before {
+    #findNextButton::before {
       mask-image: var(--findbarButton-next-icon);
     }
   }
