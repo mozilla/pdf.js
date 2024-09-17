@@ -2741,7 +2741,7 @@ describe("FreeText Editor", () => {
     it("must create an editor from the toolbar", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.focus("#editorFreeText");
+          await page.focus("#editorFreeTextButton");
           await page.keyboard.press("Enter");
 
           let selectorEditor = getEditorSelector(0);
@@ -2772,7 +2772,7 @@ describe("FreeText Editor", () => {
           // Disable editing mode.
           await switchToFreeText(page, /* disable = */ true);
 
-          await page.focus("#editorFreeText");
+          await page.focus("#editorFreeTextButton");
           await page.keyboard.press(" ");
           selectorEditor = getEditorSelector(1);
           await page.waitForSelector(selectorEditor, {
