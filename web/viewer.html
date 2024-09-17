@@ -145,11 +145,11 @@ See https://github.com/adobe-type-tools/cmap-resources
               <input id="findInput" class="toolbarField" title="Find" placeholder="Find in document…" tabindex="91" data-l10n-id="pdfjs-find-input" aria-invalid="false">
             </span>
             <div class="splitToolbarButton">
-              <button id="findPrevious" class="toolbarButton" type="button" title="Find the previous occurrence of the phrase" tabindex="92" data-l10n-id="pdfjs-find-previous-button">
+              <button id="findPreviousButton" class="toolbarButton" type="button" title="Find the previous occurrence of the phrase" tabindex="92" data-l10n-id="pdfjs-find-previous-button">
                 <span data-l10n-id="pdfjs-find-previous-button-label">Previous</span>
               </button>
               <div class="splitToolbarButtonSeparator"></div>
-              <button id="findNext" class="toolbarButton" type="button" title="Find the next occurrence of the phrase" tabindex="93" data-l10n-id="pdfjs-find-next-button">
+              <button id="findNextButton" class="toolbarButton" type="button" title="Find the next occurrence of the phrase" tabindex="93" data-l10n-id="pdfjs-find-next-button">
                 <span data-l10n-id="pdfjs-find-next-button-label">Next</span>
               </button>
             </div>
@@ -340,11 +340,11 @@ See https://github.com/adobe-type-tools/cmap-resources
           <div id="toolbarContainer">
             <div id="toolbarViewer">
               <div id="toolbarViewerLeft">
-                <button id="sidebarToggle" class="toolbarButton" type="button" title="Toggle Sidebar" tabindex="11" data-l10n-id="pdfjs-toggle-sidebar-button" aria-expanded="false" aria-controls="sidebarContainer">
+                <button id="sidebarToggleButton" class="toolbarButton" type="button" title="Toggle Sidebar" tabindex="11" data-l10n-id="pdfjs-toggle-sidebar-button" aria-expanded="false" aria-controls="sidebarContainer">
                   <span data-l10n-id="pdfjs-toggle-sidebar-button-label">Toggle Sidebar</span>
                 </button>
                 <div class="toolbarButtonSpacer"></div>
-                <button id="viewFind" class="toolbarButton" type="button" title="Find in Document" tabindex="12" data-l10n-id="pdfjs-findbar-button" aria-expanded="false" aria-controls="findbar">
+                <button id="viewFindButton" class="toolbarButton" type="button" title="Find in Document" tabindex="12" data-l10n-id="pdfjs-findbar-button" aria-expanded="false" aria-controls="findbar">
                   <span data-l10n-id="pdfjs-findbar-button-label">Find</span>
                 </button>
                 <div class="splitToolbarButton hiddenSmallView">
@@ -363,43 +363,43 @@ See https://github.com/adobe-type-tools/cmap-resources
               </div>
               <div id="toolbarViewerRight">
                 <div id="editorModeButtons" class="splitToolbarButton toggled" role="radiogroup">
-                  <button id="editorHighlight" class="toolbarButton" type="button" disabled="disabled" title="Highlight" role="radio" aria-checked="false" aria-controls="editorHighlightParamsToolbar" tabindex="31" data-l10n-id="pdfjs-editor-highlight-button">
+                  <button id="editorHighlightButton" class="toolbarButton" type="button" disabled="disabled" title="Highlight" role="radio" aria-checked="false" aria-controls="editorHighlightParamsToolbar" tabindex="31" data-l10n-id="pdfjs-editor-highlight-button">
                     <span data-l10n-id="pdfjs-editor-highlight-button-label">Highlight</span>
                   </button>
-                  <button id="editorFreeText" class="toolbarButton" type="button" disabled="disabled" title="Text" role="radio" aria-checked="false" aria-controls="editorFreeTextParamsToolbar" tabindex="32" data-l10n-id="pdfjs-editor-free-text-button">
+                  <button id="editorFreeTextButton" class="toolbarButton" type="button" disabled="disabled" title="Text" role="radio" aria-checked="false" aria-controls="editorFreeTextParamsToolbar" tabindex="32" data-l10n-id="pdfjs-editor-free-text-button">
                     <span data-l10n-id="pdfjs-editor-free-text-button-label">Text</span>
                   </button>
-                  <button id="editorInk" class="toolbarButton" type="button" disabled="disabled" title="Draw" role="radio" aria-checked="false" aria-controls="editorInkParamsToolbar" tabindex="33" data-l10n-id="pdfjs-editor-ink-button">
+                  <button id="editorInkButton" class="toolbarButton" type="button" disabled="disabled" title="Draw" role="radio" aria-checked="false" aria-controls="editorInkParamsToolbar" tabindex="33" data-l10n-id="pdfjs-editor-ink-button">
                     <span data-l10n-id="pdfjs-editor-ink-button-label">Draw</span>
                   </button>
-                  <button id="editorStamp" class="toolbarButton" type="button" disabled="disabled" title="Add or edit images" role="radio" aria-checked="false" aria-controls="editorStampParamsToolbar" tabindex="34" data-l10n-id="pdfjs-editor-stamp-button">
+                  <button id="editorStampButton" class="toolbarButton" type="button" disabled="disabled" title="Add or edit images" role="radio" aria-checked="false" aria-controls="editorStampParamsToolbar" tabindex="34" data-l10n-id="pdfjs-editor-stamp-button">
                     <span data-l10n-id="pdfjs-editor-stamp-button-label">Add or edit images</span>
                   </button>
                 </div>
 
                 <div id="editorModeSeparator" class="verticalToolbarSeparator"></div>
 
-                <button id="print" class="toolbarButton hiddenMediumView" type="button" title="Print" tabindex="41" data-l10n-id="pdfjs-print-button">
+                <button id="printButton" class="toolbarButton hiddenMediumView" type="button" title="Print" tabindex="41" data-l10n-id="pdfjs-print-button">
                   <span data-l10n-id="pdfjs-print-button-label">Print</span>
                 </button>
 
-                <button id="download" class="toolbarButton hiddenMediumView" type="button" title="Save" tabindex="42" data-l10n-id="pdfjs-save-button">
+                <button id="downloadButton" class="toolbarButton hiddenMediumView" type="button" title="Save" tabindex="42" data-l10n-id="pdfjs-save-button">
                   <span data-l10n-id="pdfjs-save-button-label">Save</span>
                 </button>
 
                 <div class="verticalToolbarSeparator hiddenMediumView"></div>
 
-                <button id="secondaryToolbarToggle" class="toolbarButton" type="button" title="Tools" tabindex="43" data-l10n-id="pdfjs-tools-button" aria-expanded="false" aria-controls="secondaryToolbar">
+                <button id="secondaryToolbarToggleButton" class="toolbarButton" type="button" title="Tools" tabindex="43" data-l10n-id="pdfjs-tools-button" aria-expanded="false" aria-controls="secondaryToolbar">
                   <span data-l10n-id="pdfjs-tools-button-label">Tools</span>
                 </button>
               </div>
               <div id="toolbarViewerMiddle">
                 <div class="splitToolbarButton">
-                  <button id="zoomOut" class="toolbarButton" type="button" title="Zoom Out" tabindex="21" data-l10n-id="pdfjs-zoom-out-button">
+                  <button id="zoomOutButton" class="toolbarButton" type="button" title="Zoom Out" tabindex="21" data-l10n-id="pdfjs-zoom-out-button">
                     <span data-l10n-id="pdfjs-zoom-out-button-label">Zoom Out</span>
                   </button>
                   <div class="splitToolbarButtonSeparator"></div>
-                  <button id="zoomIn" class="toolbarButton" type="button" title="Zoom In" tabindex="22" data-l10n-id="pdfjs-zoom-in-button">
+                  <button id="zoomInButton" class="toolbarButton" type="button" title="Zoom In" tabindex="22" data-l10n-id="pdfjs-zoom-in-button">
                     <span data-l10n-id="pdfjs-zoom-in-button-label">Zoom In</span>
                    </button>
                 </div>
