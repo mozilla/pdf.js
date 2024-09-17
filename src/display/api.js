@@ -413,34 +413,34 @@ function getDocument(src = {}) {
         });
       } else if (!data) {
         if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-          throw new Error("Not implemented: createPDFNetworkStream");
+          throw new Error("Not implemented: NetworkStream");
         }
         if (!url) {
           throw new Error("getDocument - no `url` parameter provided.");
         }
-        const createPDFNetworkStream = params => {
-          if (
-            typeof PDFJSDev !== "undefined" &&
-            PDFJSDev.test("GENERIC") &&
-            isNodeJS
-          ) {
-            const isFetchSupported = function () {
-              return (
-                typeof fetch !== "undefined" &&
-                typeof Response !== "undefined" &&
-                "body" in Response.prototype
-              );
-            };
-            return isFetchSupported() && isValidFetchUrl(params.url)
-              ? new PDFFetchStream(params)
-              : new PDFNodeStream(params);
-          }
-          return isValidFetchUrl(params.url)
-            ? new PDFFetchStream(params)
-            : new PDFNetworkStream(params);
-        };
+        let NetworkStream;
 
-        networkStream = createPDFNetworkStream({
+        if (
+          typeof PDFJSDev !== "undefined" &&
+          PDFJSDev.test("GENERIC") &&
+          isNodeJS
+        ) {
+          const isFetchSupported =
+            typeof fetch !== "undefined" &&
+            typeof Response !== "undefined" &&
+            "body" in Response.prototype;
+
+          NetworkStream =
+            isFetchSupported && isValidFetchUrl(url)
+              ? PDFFetchStream
+              : PDFNodeStream;
+        } else {
+          NetworkStream = isValidFetchUrl(url)
+            ? PDFFetchStream
+            : PDFNetworkStream;
+        }
+
+        networkStream = new NetworkStream({
           url,
           length,
           httpHeaders,
