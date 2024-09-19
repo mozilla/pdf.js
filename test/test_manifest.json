@@ -3022,6 +3022,16 @@
     "type": "eq"
   },
   {
+    "id": "issue18765",
+    "file": "pdfs/issue18765.pdf",
+    "md5": "7763ead2aa69db3a5263f92bb1922e31",
+    "link": true,
+    "talos": false,
+    "rounds": 1,
+    "lastPage": 1,
+    "type": "eq"
+  },
+  {
     "id": "issue11139",
     "file": "pdfs/issue11139.pdf",
     "md5": "006dd4f4bb1878bc14a12072d81a4524",
