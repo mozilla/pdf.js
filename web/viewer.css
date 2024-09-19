@@ -662,9 +662,10 @@ body {
 .splitToolbarButtonSeparator {
   float: var(--inline-start);
   margin: 4px 0;
-  width: 1px;
+  width: 0;
   height: 20px;
-  background-color: var(--separator-color);
+  border-left: 1px solid var(--separator-color);
+  border-right: none;
 }
 
 .toolbarButton,
@@ -870,16 +871,18 @@ body {
 .verticalToolbarSeparator {
   display: block;
   margin: 5px 2px;
-  width: 1px;
+  width: 0;
   height: 22px;
-  background-color: var(--separator-color);
+  border-left: 1px solid var(--separator-color);
+  border-right: none;
 }
 .horizontalToolbarSeparator {
   display: block;
   margin: 6px 0;
-  height: 1px;
+  border-top: 1px solid var(--doorhanger-separator-color);
+  border-bottom: none;
+  height: 0;
   width: 100%;
-  background-color: var(--doorhanger-separator-color);
 }
 
 .toolbarField {
@@ -1153,9 +1156,10 @@ dialog .toolbarField {
 dialog .separator {
   display: block;
   margin: 4px 0;
-  height: 1px;
+  height: 0;
   width: 100%;
-  background-color: var(--separator-color);
+  border-top: 1px solid var(--separator-color);
+  border-bottom: none;
 }
 
 dialog .buttonRow {
