@@ -309,11 +309,12 @@
       height: 100%;
 
       .divider {
-        width: 1px;
+        width: 0;
         height: calc(
           2 * var(--editor-toolbar-padding) + var(--editor-toolbar-height)
         );
-        background-color: var(--editor-toolbar-border-color);
+        border-left: 1px solid var(--editor-toolbar-border-color);
+        border-right: none;
         display: inline-block;
         margin-inline: 2px;
       }
