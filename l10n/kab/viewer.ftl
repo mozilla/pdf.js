@@ -105,6 +105,14 @@ pdfjs-document-properties-button-label = Taɣaṛa n isemli…
 pdfjs-document-properties-file-name = Isem n ufaylu:
 pdfjs-document-properties-file-size = Teɣzi n ufaylu:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } KB ({ $b } yibiten)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } yibiten)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } KAṬ ({ $size_b } ibiten)
@@ -118,6 +126,9 @@ pdfjs-document-properties-subject = Amgay:
 pdfjs-document-properties-keywords = Awalen n tsaruţ
 pdfjs-document-properties-creation-date = Azemz n tmerna:
 pdfjs-document-properties-modification-date = Azemz n usnifel:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -275,6 +286,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [Tabzimt { $type }]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -327,6 +341,8 @@ pdfjs-editor-stamp-add-image-button =
 pdfjs-editor-stamp-add-image-button-label = Rnu tawlaft
 # This refers to the thickness of the line used for free highlighting (not bound to text)
 pdfjs-editor-free-highlight-thickness-input = Tuzert
+pdfjs-editor-free-highlight-thickness-title =
+    .title = Beddel tuzert mi ara d-tesbeggneḍ iferdisen niḍen ur nelli d aḍris
 pdfjs-free-text =
     .aria-label = Amaẓrag n uḍris
 pdfjs-free-text-default-content = Bdu tira...
@@ -404,6 +420,19 @@ pdfjs-editor-highlight-show-all-button =
 ## New alt-text dialog
 ## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
 
+# Modal header positioned above a text box where users can add the alt text.
+pdfjs-editor-new-alt-text-dialog-add-label = Rnu aḍris niḍen (aglam n tugna)
+pdfjs-editor-new-alt-text-textarea =
+    .placeholder = Aru aglam-ik dagi…
+pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Issin ugar
+pdfjs-editor-new-alt-text-create-automatically-button-label = Rnu aḍris niḍen s wudem awurman
+pdfjs-editor-new-alt-text-not-now-button = Mačči tura
+pdfjs-editor-new-alt-text-error-title = D awezɣi timerna n uḍris niḍen s wudem awurman
+pdfjs-editor-new-alt-text-error-close-button = Mdel
 
 ## Image alt-text settings
 
+pdfjs-editor-alt-text-settings-delete-model-button = Kkes
+pdfjs-editor-alt-text-settings-download-model-button = Sader
+pdfjs-editor-alt-text-settings-downloading-model-button = Asader…
+pdfjs-editor-alt-text-settings-close-button = Mdel

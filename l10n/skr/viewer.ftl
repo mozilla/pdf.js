@@ -432,12 +432,22 @@ pdfjs-editor-new-alt-text-dialog-edit-label = آلٹ عبارت وچ تبدی�
 pdfjs-editor-new-alt-text-dialog-add-label = آلٹ عبارت شامل کرو (تصویر تفصیل)
 pdfjs-editor-new-alt-text-textarea =
     .placeholder = اتھ آپݨی وضاحت لکھو۔۔۔
+# This text refers to the alt text box above this description. It offers a definition of alt text.
+pdfjs-editor-new-alt-text-description = اُنہاں لوکاں کیتے مختصر تفصیل جہڑے تصویر کائنی ݙیکھ سڳدے یا ڄݙݨ تصویر لوڈ کائبی تھیندی۔
+# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
+pdfjs-editor-new-alt-text-disclaimer1 = آلٹ عبارت خودکار تخلیق تھئی ہے تے غلط تھی سڳدی ہے۔
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = ٻیا سِکھو
 pdfjs-editor-new-alt-text-create-automatically-button-label = آلٹ عبارت خودکار بݨاؤ
 pdfjs-editor-new-alt-text-not-now-button = ہݨ کائناں
 pdfjs-editor-new-alt-text-error-title = آلٹ عبارت خودکار نہ بݨاؤ
 pdfjs-editor-new-alt-text-error-description = سوہݨا، آپݨی آلٹ عبارت لکھو یا ولدا بعد وچ کوشش کرو۔
 pdfjs-editor-new-alt-text-error-close-button = بند کرو
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+#   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
+#   $percent (Number) - the percentage of the downloaded size.
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = آلٹ عبارت اے آئی ماڈل({ $totalSize }ایم بی دے { $downloadedSize }) ڈاؤن لوڈ تھیندا پئے
+    .aria-valuetext = آلٹ عبارت اے آئی ماڈل({ $totalSize }ایم بی دے { $downloadedSize }) ڈاؤن لوڈ تھیندا پئے
 # This is a button that users can click to edit the alt text they have already added.
 pdfjs-editor-new-alt-text-added-button-label = آلٹ عبارت شامل تھی ڳئی
 # This is a button that users can click to open the alt text editor and add alt text when it is not present.
@@ -457,6 +467,7 @@ pdfjs-image-alt-text-settings-button-label = تصویر آلٹ عبارت ترت
 pdfjs-editor-alt-text-settings-dialog-label = تصویر آلٹ عبارت ترتیباں
 pdfjs-editor-alt-text-settings-automatic-title = خودکار آلٹ عبارت
 pdfjs-editor-alt-text-settings-create-model-button-label = آلٹ عبارت خودکار بݨاؤ
+pdfjs-editor-alt-text-settings-create-model-description = اُنہاں لوکاں دی مدد کیتے  تفصیل تجویز کرو جہڑے تصویر کائنی ݙیکھ سڳدے یا ڄݙݨ تصویر لوڈ کائبی تھیندی۔
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
 pdfjs-editor-alt-text-settings-download-model-label = آلٹ عبارت اے آئی ماڈل ({ $totalSize } ایم بی)
@@ -464,4 +475,6 @@ pdfjs-editor-alt-text-settings-delete-model-button = مٹاؤ
 pdfjs-editor-alt-text-settings-download-model-button = ڈاؤن لوڈ
 pdfjs-editor-alt-text-settings-downloading-model-button = ڈاؤن لوڈ تھیندا پئے …
 pdfjs-editor-alt-text-settings-editor-title = متبادل ٹیکسٹ ایڈیٹر
+pdfjs-editor-alt-text-settings-show-dialog-button-label = تصویر شامل کرݨ ویلے فوری طور تے آلٹ ٹیکسٹ ایڈیٹر ݙکھاؤ
+pdfjs-editor-alt-text-settings-show-dialog-description = ایہ تہاکوں یقینی بݨاوݨ وچ مدد کریندے جو تہاݙیاں ساریاں تصویراں وچ آلٹ عبارت ہے۔
 pdfjs-editor-alt-text-settings-close-button = بند کرو

@@ -105,6 +105,10 @@ pdfjs-document-properties-button-label = Atributoj de dokumento…
 pdfjs-document-properties-file-name = Nomo de dosiero:
 pdfjs-document-properties-file-size = Grando de dosiero:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } KO ({ $b } oktetoj)
+# Variables:
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } Mo ({ $b } oktetoj)

@@ -105,6 +105,14 @@ pdfjs-document-properties-button-label = Хусусиятҳои ҳуҷҷат…
 pdfjs-document-properties-file-name = Номи файл:
 pdfjs-document-properties-file-size = Андозаи файл:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } КБ ({ $b } байт)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } МБ ({ $b } байт)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } КБ ({ $size_b } байт)
@@ -118,6 +126,9 @@ pdfjs-document-properties-subject = Мавзуъ:
 pdfjs-document-properties-keywords = Калимаҳои калидӣ:
 pdfjs-document-properties-creation-date = Санаи эҷод:
 pdfjs-document-properties-modification-date = Санаи тағйирот:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -275,6 +286,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [Ҳошиянависӣ - { $type }]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -340,8 +354,8 @@ pdfjs-ink-canvas =
 ## Alt-text dialog
 
 # Alternative text (alt text) helps when people can't see the image.
-pdfjs-editor-alt-text-button-label = Матни ивазкунанда
-pdfjs-editor-alt-text-edit-button-label = Таҳрир кардани матни ивазкунанда
+pdfjs-editor-alt-text-button-label = Матни иловагӣ
+pdfjs-editor-alt-text-edit-button-label = Таҳрир кардани матни иловагӣ
 pdfjs-editor-alt-text-dialog-label = Имконеро интихоб намоед
 pdfjs-editor-alt-text-dialog-description = Вақте ки одамон тасвирро дида наметавонанд ё вақте ки тасвир бор карда намешавад, матни иловагӣ (Alt text) кумак мерасонад.
 pdfjs-editor-alt-text-add-description-label = Илова кардани тавсиф
@@ -412,7 +426,36 @@ pdfjs-editor-highlight-show-all-button =
 ## New alt-text dialog
 ## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
 
+# Modal header positioned above a text box where users can edit the alt text.
+pdfjs-editor-new-alt-text-dialog-edit-label = Таҳрир кардани матни иловагӣ (тафсири тасвир)
+# Modal header positioned above a text box where users can add the alt text.
+pdfjs-editor-new-alt-text-dialog-add-label = Илова кардани матни иловагӣ (тафсири тасвир)
+pdfjs-editor-new-alt-text-textarea =
+    .placeholder = Тафсири худро дар ин ҷо нависед…
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Маълумоти бештар
+pdfjs-editor-new-alt-text-not-now-button = Ҳоло не
+pdfjs-editor-new-alt-text-error-close-button = Пӯшидан
+# This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button-label = Матни иловагӣ илова карда шуд
+# This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button-label = Матни иловагӣ вуҷуд надорад
+# This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button-label = Бознигарӣ кардани матни иловагӣ
+# "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
+# Variables:
+#   $generatedAltText (String) - the generated alt-text.
+pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer = Ба таври худкор сохта шудааст: «{ $generatedAltText }»
 
 ## Image alt-text settings
 
+pdfjs-image-alt-text-settings-button =
+    .title = Танзимоти матни иловагии тасвир
+pdfjs-image-alt-text-settings-button-label = Танзимоти матни иловагии тасвир
+pdfjs-editor-alt-text-settings-dialog-label = Танзимоти матни иловагии тасвир
+pdfjs-editor-alt-text-settings-automatic-title = Матни иловагии худкор
+pdfjs-editor-alt-text-settings-create-model-button-label = Ба таври худкор эҷод кардани матни иловагӣ
+pdfjs-editor-alt-text-settings-delete-model-button = Нест кардан
+pdfjs-editor-alt-text-settings-download-model-button = Боргирӣ кардан
+pdfjs-editor-alt-text-settings-downloading-model-button = Дар ҳоли боргирӣ…
+pdfjs-editor-alt-text-settings-editor-title = Муҳаррири матни иловагӣ
+pdfjs-editor-alt-text-settings-close-button = Пӯшидан
