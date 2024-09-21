@@ -105,6 +105,14 @@ pdfjs-document-properties-button-label = 文書のプロパティ...
 pdfjs-document-properties-file-name = ファイル名:
 pdfjs-document-properties-file-size = ファイルサイズ:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } KB ({ $b } バイト)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } バイト)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } バイト)
@@ -118,6 +126,9 @@ pdfjs-document-properties-subject = 件名:
 pdfjs-document-properties-keywords = キーワード:
 pdfjs-document-properties-creation-date = 作成日:
 pdfjs-document-properties-modification-date = 更新日:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -267,6 +278,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [{ $type } 注釈]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -413,6 +427,7 @@ pdfjs-editor-new-alt-text-textarea =
     .placeholder = ここに説明を記入してください...
 # This text refers to the alt text box above this description. It offers a definition of alt text.
 pdfjs-editor-new-alt-text-description = 画像が読み込まれない場合や見えない人のための短い説明です。
+pdfjs-editor-new-alt-text-disclaimer1 = この代替テキストは自動的に生成されたため正確でない可能性があります。
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = 詳細情報
 pdfjs-editor-new-alt-text-create-automatically-button-label = 代替テキストを自動生成
 pdfjs-editor-new-alt-text-not-now-button = 後で
