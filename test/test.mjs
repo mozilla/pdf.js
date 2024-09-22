@@ -161,7 +161,7 @@ function parseOptions() {
       );
     })
     .check(argv => {
-      if (argv.testfilter && argv.testfilter.length > 0 && argv.xfaOnly) {
+      if (argv.testfilter?.length > 0 && argv.xfaOnly) {
         throw new Error("--testfilter and --xfaOnly cannot be used together.");
       }
       return true;
