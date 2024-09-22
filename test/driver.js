@@ -782,7 +782,7 @@ class Driver {
       }
     }
 
-    if (task.skipPages && task.skipPages.includes(task.pageNum)) {
+    if (task.skipPages?.includes(task.pageNum)) {
       this._log(
         " Skipping page " + task.pageNum + "/" + task.pdfDoc.numPages + "...\n"
       );
