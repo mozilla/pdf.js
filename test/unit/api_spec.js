@@ -69,7 +69,7 @@ describe("api", function () {
   let tempServer = null;
 
   beforeAll(function () {
-    CanvasFactory = new DefaultCanvasFactory();
+    CanvasFactory = new DefaultCanvasFactory({});
 
     if (isNodeJS) {
       tempServer = createTemporaryNodeServer();

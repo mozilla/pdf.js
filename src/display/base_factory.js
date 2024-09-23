@@ -51,7 +51,7 @@ class BaseFilterFactory {
 class BaseCanvasFactory {
   #enableHWA = false;
 
-  constructor({ enableHWA = false } = {}) {
+  constructor({ enableHWA = false }) {
     if (
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       this.constructor === BaseCanvasFactory
