@@ -40,7 +40,7 @@ class NewAltTextManager {
 
   #guessedAltText;
 
-  #hasAI = false;
+  #hasAI = null;
 
   #isEditing = null;
 
