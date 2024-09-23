@@ -28,7 +28,7 @@ describe("display_utils", function () {
     let canvasFactory;
 
     beforeAll(function () {
-      canvasFactory = new DOMCanvasFactory();
+      canvasFactory = new DOMCanvasFactory({});
     });
 
     afterAll(function () {
