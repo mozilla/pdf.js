@@ -96,6 +96,14 @@ pdfjs-document-properties-button-label = Veti Dokumenti…
 pdfjs-document-properties-file-name = Emër kartele:
 pdfjs-document-properties-file-size = Madhësi kartele:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } KB ({ $b } bajte)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bajte)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bajte)
