@@ -33,7 +33,6 @@
 
   --toolbar-icon-opacity: 0.7;
   --doorhanger-icon-opacity: 0.9;
-  --editor-toolbar-base-offset: 105px;
   --doorhanger-height: 8px;
 
   --main-color: rgb(12 12 13);
@@ -1725,9 +1724,6 @@ dialog :link {
 }
 
 @media all and (max-width: 750px) {
-  :root {
-    --editor-toolbar-base-offset: 40px;
-  }
   #outerContainer .hiddenMediumView {
     display: none !important;
   }
