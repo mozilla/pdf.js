@@ -227,6 +227,15 @@
   }
 }
 
+html {
+  &[data-toolbar-density="compact"] {
+    --toolbar-height: 30px;
+  }
+  &[data-toolbar-density="touch"] {
+    --toolbar-height: 44px;
+  }
+}
+
 html,
 body {
   height: 100%;
@@ -1093,6 +1102,10 @@ dialog :link {
     height: 100%;
   }
 
+  .menu {
+    padding-block: 5px;
+  }
+
   .menuContainer {
     width: 100%;
     height: auto;
@@ -1103,7 +1116,6 @@ dialog :link {
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    padding-block: 5px;
     overflow-y: auto;
   }
 
