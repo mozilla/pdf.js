@@ -516,7 +516,11 @@ const PDFViewerApplication = {
     }
 
     if (!this.supportsIntegratedFind && appConfig.findBar) {
-      this.findBar = new PDFFindBar(appConfig.findBar, eventBus);
+      this.findBar = new PDFFindBar(
+        appConfig.findBar,
+        appConfig.principalContainer,
+        eventBus
+      );
     }
 
     if (appConfig.annotationEditorParams) {

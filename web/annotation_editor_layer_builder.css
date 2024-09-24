@@ -1227,18 +1227,9 @@
 }
 
 #highlightParamsToolbarContainer {
-  height: auto;
-  padding-inline: 10px;
-  padding-block: 10px 16px;
   gap: 16px;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-
-  .editorParamsLabel {
-    width: fit-content;
-    inset-inline-start: 0;
-  }
+  padding-inline: 10px;
+  padding-block-end: 12px;
 
   .colorPicker {
     display: flex;
@@ -1262,6 +1253,7 @@
         align-items: center;
         background: none;
         flex: 0 0 auto;
+        padding: 0;
 
         .swatch {
           width: 24px;
@@ -1291,7 +1283,6 @@
     align-self: stretch;
 
     .editorParamsLabel {
-      width: 100%;
       height: auto;
       align-self: stretch;
     }
