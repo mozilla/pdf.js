@@ -43,7 +43,7 @@ describe("find bar", () => {
           await page.click("#viewFindButton");
           await page.waitForSelector("#viewFindButton", { hidden: false });
           await page.type("#findInput", "a");
-          await page.click("#findHighlightAll");
+          await page.click("#findHighlightAll + label");
           await page.waitForSelector(".textLayer .highlight");
 
           // The PDF file contains the text 'AB BA' in a monospace font on a
