@@ -84,7 +84,7 @@ class PasswordPrompt {
     }
     this.label.setAttribute(
       "data-l10n-id",
-      `pdfjs-password-${passwordIncorrect ? "invalid" : "label"}`
+      passwordIncorrect ? "pdfjs-password-invalid" : "pdfjs-password-label"
     );
   }
 

@@ -131,7 +131,8 @@ function normalize(text) {
     // 30A0-30FF: Katakana
     const CJK = "(?:\\p{Ideographic}|[\u3040-\u30FF])";
     const HKDiacritics = "(?:\u3099|\u309A)";
-    const regexp = `([${replace}])|([${toNormalizeWithNFKC}])|(${HKDiacritics}\\n)|(\\p{M}+(?:-\\n)?)|(\\S-\\n)|(${CJK}\\n)|(\\n)`;
+    const CompoundWord = "\\p{Ll}-\\n\\p{Lu}";
+    const regexp = `([${replace}])|([${toNormalizeWithNFKC}])|(${HKDiacritics}\\n)|(\\p{M}+(?:-\\n)?)|(${CompoundWord})|(\\S-\\n)|(${CJK}\\n)|(\\n)`;
 
     if (syllablePositions.length === 0) {
       // Most of the syllables belong to Hangul so there are no need
@@ -193,7 +194,7 @@ function normalize(text) {
 
   normalized = normalized.replace(
     normalizationRegex,
-    (match, p1, p2, p3, p4, p5, p6, p7, p8, i) => {
+    (match, p1, p2, p3, p4, p5, p6, p7, p8, p9, i) => {
       i -= shiftOrigin;
       if (p1) {
         // Maybe fractions or quotations mark...
@@ -267,7 +268,7 @@ function normalize(text) {
 
         if (hasTrailingDashEOL) {
           // Diacritics are followed by a -\n.
-          // See comments in `if (p5)` block.
+          // See comments in `if (p6)` block.
           i += len - 1;
           positions.push([i - shift + 1, 1 + shift]);
           shift += 1;
@@ -280,32 +281,41 @@ function normalize(text) {
       }
 
       if (p5) {
+        // Compound word with a line break after the hyphen.
+        positions.push([i - shift + 3, 1 + shift]);
+        shift += 1;
+        shiftOrigin += 1;
+        eol += 1;
+        return p5.replace("\n", "");
+      }
+
+      if (p6) {
         // "X-\n" is removed because an hyphen at the end of a line
         // with not a space before is likely here to mark a break
         // in a word.
         // If X is encoded with UTF-32 then it can have a length greater than 1.
         // The \n isn't in the original text so here y = i, n = X.len - 2 and
         // o = X.len - 1.
-        const len = p5.length - 2;
+        const len = p6.length - 2;
         positions.push([i - shift + len, 1 + shift]);
         shift += 1;
         shiftOrigin += 1;
         eol += 1;
-        return p5.slice(0, -2);
-      }
-
-      if (p6) {
-        // An ideographic at the end of a line doesn't imply adding an extra
-        // white space.
-        // A CJK can be encoded in UTF-32, hence their length isn't always 1.
-        const len = p6.length - 1;
-        positions.push([i - shift + len, shift]);
-        shiftOrigin += 1;
-        eol += 1;
-        return p6.slice(0, -1);
+        return p6.slice(0, -2);
       }
 
       if (p7) {
+        // An ideographic at the end of a line doesn't imply adding an extra
+        // white space.
+        // A CJK can be encoded in UTF-32, hence their length isn't always 1.
+        const len = p7.length - 1;
+        positions.push([i - shift + len, shift]);
+        shiftOrigin += 1;
+        eol += 1;
+        return p7.slice(0, -1);
+      }
+
+      if (p8) {
         // eol is replaced by space: "foo\nbar" is likely equivalent to
         // "foo bar".
         positions.push([i - shift + 1, shift - 1]);
@@ -327,7 +337,7 @@ function normalize(text) {
         shift -= newCharLen;
         shiftOrigin += newCharLen;
       }
-      return p8;
+      return p9;
     }
   );
 

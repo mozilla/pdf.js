@@ -105,6 +105,14 @@ pdfjs-document-properties-button-label = Thuộc tính của tài liệu…
 pdfjs-document-properties-file-name = Tên tập tin:
 pdfjs-document-properties-file-size = Kích thước:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } KB ({ $b } bytes)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bytes)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } byte)
@@ -118,6 +126,9 @@ pdfjs-document-properties-subject = Chủ đề:
 pdfjs-document-properties-keywords = Từ khóa:
 pdfjs-document-properties-creation-date = Ngày tạo:
 pdfjs-document-properties-modification-date = Ngày sửa đổi:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -267,6 +278,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [{ $type } Chú thích]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -358,6 +372,22 @@ pdfjs-editor-resizer-label-bottom-right = Dưới cùng bên phải — thay đ�
 pdfjs-editor-resizer-label-bottom-middle = Ở giữa dưới cùng — thay đổi kích thước
 pdfjs-editor-resizer-label-bottom-left = Góc dưới bên trái — thay đổi kích thước
 pdfjs-editor-resizer-label-middle-left = Ở giữa bên trái — thay đổi kích thước
+pdfjs-editor-resizer-top-left =
+    .aria-label = Trên cùng bên trái — thay đổi kích thước
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Trên cùng ở giữa — thay đổi kích thước
+pdfjs-editor-resizer-top-right =
+    .aria-label = Trên cùng bên phải — thay đổi kích thước
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Ở giữa bên phải — thay đổi kích thước
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Dưới cùng bên phải — thay đổi kích thước
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Ở giữa dưới cùng — thay đổi kích thước
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Góc dưới bên trái — thay đổi kích thước
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Ở giữa bên trái — thay đổi kích thước
 
 ## Color picker
 
@@ -398,8 +428,6 @@ pdfjs-editor-new-alt-text-textarea =
 pdfjs-editor-new-alt-text-description = Mô tả ngắn gọn dành cho người không xem được ảnh hoặc khi không thể tải ảnh.
 # This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
 pdfjs-editor-new-alt-text-disclaimer1 = Văn bản thay thế này được tạo tự động và có thể không chính xác.
-# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
-pdfjs-editor-new-alt-text-disclaimer = Văn bản thay thế này được tạo tự động.
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Tìm hiểu thêm
 pdfjs-editor-new-alt-text-create-automatically-button-label = Tạo văn bản thay thế tự động
 pdfjs-editor-new-alt-text-not-now-button = Không phải bây giờ

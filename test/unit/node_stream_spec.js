@@ -24,17 +24,13 @@ if (!isNodeJS) {
   );
 }
 
-const path = await __non_webpack_import__("path");
 const url = await __non_webpack_import__("url");
 
 describe("node_stream", function () {
   let tempServer = null;
 
-  const pdf = url.parse(
-    encodeURI(
-      "file://" + path.join(process.cwd(), "./test/pdfs/tracemonkey.pdf")
-    )
-  ).href;
+  const cwdURL = url.pathToFileURL(process.cwd()) + "/";
+  const pdf = new URL("./test/pdfs/tracemonkey.pdf", cwdURL).href;
   const pdfLength = 1016315;
 
   beforeAll(function () {

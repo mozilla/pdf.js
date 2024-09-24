@@ -1,6 +1,6 @@
 {
-  "minimum_chrome_version": "88",
-  "manifest_version": 2,
+  "minimum_chrome_version": "103",
+  "manifest_version": 3,
   "name": "PDF Viewer",
   "version": "PDFJSSCRIPT_VERSION",
   "description": "Uses HTML5 to display PDF files directly in the browser.",
@@ -10,61 +10,52 @@
     "16": "icon16.png"
   },
   "permissions": [
-    "fileBrowserHandler",
+    "alarms",
+    "declarativeNetRequestWithHostAccess",
     "webRequest",
-    "webRequestBlocking",
-    "<all_urls>",
     "tabs",
     "webNavigation",
     "storage"
   ],
+  "host_permissions": ["<all_urls>"],
   "content_scripts": [
     {
-      "matches": ["http://*/*", "https://*/*", "ftp://*/*", "file://*/*"],
+      "matches": ["http://*/*", "https://*/*", "file://*/*"],
       "run_at": "document_start",
       "all_frames": true,
       "css": ["contentstyle.css"],
       "js": ["contentscript.js"]
     }
   ],
-  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
-  "file_browser_handlers": [
-    {
-      "id": "open-as-pdf",
-      "default_title": "Open with PDF Viewer",
-      "file_filters": ["filesystem:*.pdf"]
-    }
-  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
   "storage": {
     "managed_schema": "preferences_schema.json"
   },
   "options_ui": {
-    "page": "options/options.html",
-    "chrome_style": true
+    "page": "options/options.html"
   },
   "options_page": "options/options.html",
   "background": {
-    "page": "pdfHandler.html"
-  },
-  "page_action": {
-    "default_icon": {
-      "19": "icon19.png",
-      "38": "icon38.png"
-    },
-    "default_title": "Show PDF URL",
-    "default_popup": "pageActionPopup.html"
+    "service_worker": "background.js"
   },
   "incognito": "split",
   "web_accessible_resources": [
-    "content/web/viewer.html",
-    "http:/*",
-    "https:/*",
-    "ftp:/*",
-    "file:/*",
-    "chrome-extension:/*",
-    "blob:*",
-    "data:*",
-    "filesystem:/*",
-    "drive:*"
+    {
+      "resources": [
+        "content/web/viewer.html",
+        "http:/*",
+        "https:/*",
+        "file:/*",
+        "chrome-extension:/*",
+        "blob:*",
+        "data:*",
+        "filesystem:/*",
+        "drive:*"
+      ],
+      "matches": ["<all_urls>"],
+      "extension_ids": ["*"]
+    }
   ]
 }

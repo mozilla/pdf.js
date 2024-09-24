@@ -105,6 +105,14 @@ pdfjs-document-properties-button-label = Kuatia mba’etee…
 pdfjs-document-properties-file-name = Marandurenda réra:
 pdfjs-document-properties-file-size = Marandurenda tuichakue:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } KB ({ $b } bytes)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bytes)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bytes)
@@ -118,6 +126,9 @@ pdfjs-document-properties-subject = Mba’egua:
 pdfjs-document-properties-keywords = Jehero:
 pdfjs-document-properties-creation-date = Teñoihague arange:
 pdfjs-document-properties-modification-date = Iñambue hague arange:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -275,6 +286,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [Jehaipy { $type }]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -366,6 +380,22 @@ pdfjs-editor-resizer-label-bottom-right = Yvy gotyo akatúape — emoambue tuich
 pdfjs-editor-resizer-label-bottom-middle = Yvy gotyo mbytépe — emoambue tuichakue
 pdfjs-editor-resizer-label-bottom-left = Iguýpe asu gotyo — emoambue tuichakue
 pdfjs-editor-resizer-label-middle-left = Mbyte asu gotyo — emoambue tuichakue
+pdfjs-editor-resizer-top-left =
+    .aria-label = Yvate asu gotyo — emoambue tuichakue
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Yvate mbytépe — emoambue tuichakue
+pdfjs-editor-resizer-top-right =
+    .aria-label = Yvate akatúape — emoambue tuichakue
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Mbyte akatúape — emoambue tuichakue
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Yvy gotyo akatúape — emoambue tuichakue
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Yvy gotyo mbytépe — emoambue tuichakue
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Iguýpe asu gotyo — emoambue tuichakue
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Mbyte asu gotyo — emoambue tuichakue
 
 ## Color picker
 
@@ -402,8 +432,6 @@ pdfjs-editor-new-alt-text-dialog-edit-label = Embosako’i moñe’ẽrã mokõi
 pdfjs-editor-new-alt-text-dialog-add-label = Embojuaju moñe’ẽrã mokõiha (ta’ãngáre ñeñe’ẽ)
 pdfjs-editor-new-alt-text-textarea =
     .placeholder = Edescribi ko’ápe…
-# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
-pdfjs-editor-new-alt-text-disclaimer = Ko moñe’ẽrã mokõiha heñói ijeheguiete.
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Eikuaave
 pdfjs-editor-new-alt-text-create-automatically-button-label = Emoheñói moñe’ẽrã mokõiha ijeheguíva
 pdfjs-editor-new-alt-text-not-now-button = Ani ko’ág̃a

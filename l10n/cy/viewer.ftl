@@ -105,6 +105,14 @@ pdfjs-document-properties-button-label = Priodweddau Dogfen…
 pdfjs-document-properties-file-name = Enw ffeil:
 pdfjs-document-properties-file-size = Maint ffeil:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } KB ({ $b } beit)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } beit)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } beit)
@@ -118,6 +126,9 @@ pdfjs-document-properties-subject = Pwnc:
 pdfjs-document-properties-keywords = Allweddair:
 pdfjs-document-properties-creation-date = Dyddiad Creu:
 pdfjs-document-properties-modification-date = Dyddiad Addasu:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -283,6 +294,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [Anodiad { $type } ]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -374,6 +388,22 @@ pdfjs-editor-resizer-label-bottom-right = Y gornel dde isaf — newid maint
 pdfjs-editor-resizer-label-bottom-middle = Canol gwaelod — newid maint
 pdfjs-editor-resizer-label-bottom-left = Y gornel chwith isaf — newid maint
 pdfjs-editor-resizer-label-middle-left = Chwith canol — newid maint
+pdfjs-editor-resizer-top-left =
+    .aria-label = Y gornel chwith uchaf — newid maint
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Canol uchaf - newid maint
+pdfjs-editor-resizer-top-right =
+    .aria-label = Y gornel dde uchaf - newid maint
+pdfjs-editor-resizer-middle-right =
+    .aria-label = De canol - newid maint
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Y gornel dde isaf — newid maint
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Canol gwaelod — newid maint
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Y gornel chwith isaf — newid maint
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Chwith canol — newid maint
 
 ## Color picker
 
@@ -413,7 +443,7 @@ pdfjs-editor-new-alt-text-textarea =
 # This text refers to the alt text box above this description. It offers a definition of alt text.
 pdfjs-editor-new-alt-text-description = Disgrifiad byr ar gyfer pobl sydd ddim yn gallu gweld y ddelwedd neu pan nad yw'r ddelwedd yn llwytho.
 # This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
-pdfjs-editor-new-alt-text-disclaimer = Crëwyd y testun amgen hwn yn awtomatig.
+pdfjs-editor-new-alt-text-disclaimer1 = Cafodd y testun amgen hwn ei greu'n awtomatig a gall fod yn anghywir.
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Dysgu rhagor
 pdfjs-editor-new-alt-text-create-automatically-button-label = Creu testun amgen yn awtomatig
 pdfjs-editor-new-alt-text-not-now-button = Nid nawr

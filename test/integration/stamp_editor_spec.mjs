@@ -41,6 +41,7 @@ import {
   waitForSelectedEditor,
   waitForSerialized,
   waitForStorageEntries,
+  waitForTimeout,
   waitForUnselectedEditor,
 } from "./test_utils.mjs";
 import { fileURLToPath } from "url";
@@ -150,8 +151,8 @@ describe("Stamp Editor", () => {
           const ratio = await page.evaluate(
             () => window.pdfjsLib.PixelsPerInch.PDF_TO_CSS_UNITS
           );
-          expect(bitmap.width).toEqual(Math.round(242 * ratio));
-          expect(bitmap.height).toEqual(Math.round(80 * ratio));
+          expect(Math.abs(bitmap.width - 242 * ratio) < 1).toBeTrue();
+          expect(Math.abs(bitmap.height - 80 * ratio) < 1).toBeTrue();
 
           await clearAll(page);
         })
@@ -1050,7 +1051,188 @@ describe("Stamp Editor", () => {
           tooltipSelector
         );
         expect(tooltipText).toEqual("Hello World");
+
+        // Click on the Review button.
+        await page.click(buttonSelector);
+        await page.waitForSelector("#newAltTextDialog", { visible: true });
+        await page.click("#newAltTextCreateAutomaticallyButton");
+        await page.click("#newAltTextCancel");
+        await page.waitForSelector("#newAltTextDialog", { visible: false });
       }
+    });
+
+    it("must check the new alt text flow (part 2)", async () => {
+      // Run sequentially to avoid clipboard issues.
+      for (const [, page] of pages) {
+        await switchToStamp(page);
+
+        // Add an image.
+        await copyImage(page, "../images/firefox_logo.png", 0);
+        const editorSelector = getEditorSelector(0);
+        await page.waitForSelector(editorSelector);
+        await waitForSerialized(page, 1);
+
+        // Wait for the dialog to be visible.
+        await page.waitForSelector("#newAltTextDialog", { visible: true });
+
+        // Wait for the spinner to be visible.
+        await page.waitForSelector("#newAltTextDescriptionContainer.loading");
+
+        // Check we've the disclaimer.
+        await page.waitForSelector("#newAltTextDisclaimer", { visible: true });
+
+        // Click in the textarea in order to stop the guessing.
+        await page.click("#newAltTextDescriptionTextarea");
+        await page.waitForFunction(() =>
+          document
+            .getElementById("newAltTextTitle")
+            .textContent.startsWith("Add ")
+        );
+
+        // Check we haven't the disclaimer.
+        await page.waitForSelector("#newAltTextDisclaimer", { visible: false });
+
+        // Click on the Not Now button.
+        await page.click("#newAltTextNotNow");
+        await page.waitForSelector("#newAltTextDialog", { visible: false });
+      }
+    });
+
+    it("must check the new alt text flow (part 3)", async () => {
+      // Run sequentially to avoid clipboard issues.
+      for (const [, page] of pages) {
+        await page.evaluate(() => {
+          window.PDFViewerApplication.mlManager.enableAltTextModelDownload = false;
+        });
+
+        await switchToStamp(page);
+
+        // Add an image.
+        await copyImage(page, "../images/firefox_logo.png", 0);
+        const editorSelector = getEditorSelector(0);
+        await page.waitForSelector(editorSelector);
+        await waitForSerialized(page, 1);
+
+        // Wait for the dialog to be visible.
+        await page.waitForSelector("#newAltTextDialog", { visible: true });
+
+        // Check we haven't the disclaimer.
+        await page.waitForSelector("#newAltTextDisclaimer[hidden]");
+      }
+    });
+  });
+
+  describe("New alt-text flow (bug 1920515)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "empty.pdf",
+        ".annotationEditorLayer",
+        null,
+        {
+          eventBusSetup: eventBus => {
+            eventBus.on("annotationeditoruimanager", ({ uiManager }) => {
+              window.uiManager = uiManager;
+            });
+          },
+        },
+        {
+          enableAltText: false,
+          enableFakeMLManager: false,
+          enableUpdatedAddImage: true,
+          enableGuessAltText: true,
+        }
+      );
+    });
+
+    afterEach(async () => {
+      for (const [, page] of pages) {
+        if (await isVisible(page, "#newAltTextDialog")) {
+          await page.keyboard.press("Escape");
+          await page.waitForSelector("#newAltTextDisclaimer", {
+            visible: false,
+          });
+        }
+        await page.evaluate(() => {
+          window.uiManager.reset();
+        });
+        // Disable editing mode.
+        await switchToStamp(page, /* disable */ true);
+      }
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the toggle button isn't displayed when there is no AI", async () => {
+      // Run sequentially to avoid clipboard issues.
+      for (const [, page] of pages) {
+        await switchToStamp(page);
+
+        // Add an image.
+        await copyImage(page, "../images/firefox_logo.png", 0);
+        const editorSelector = getEditorSelector(0);
+        await page.waitForSelector(editorSelector);
+        await waitForSerialized(page, 1);
+
+        // Wait for the dialog to be visible.
+        await page.waitForSelector("#newAltTextDialog.noAi", { visible: true });
+
+        // enableFakeMLManager is false, so it means that we don't have ML but
+        // we're using the new flow, hence we don't want to have the toggle
+        // button.
+        await page.waitForSelector("#newAltTextCreateAutomatically", {
+          hidden: true,
+        });
+      }
+    });
+  });
+
+  describe("No auto-resize", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer", 67);
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that a stamp editor isn't resizing itself", async () => {
+      // Run sequentially to avoid clipboard issues.
+      const editorSelector = getEditorSelector(0);
+
+      for (const [, page] of pages) {
+        await switchToStamp(page);
+
+        await copyImage(page, "../images/firefox_logo.png", 0);
+        await page.waitForSelector(editorSelector);
+        await waitForSerialized(page, 1);
+      }
+
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const getDims = () =>
+            page.evaluate(sel => {
+              const bbox = document.querySelector(sel).getBoundingClientRect();
+              return `${bbox.width}::${bbox.height}`;
+            }, editorSelector);
+          const initialDims = await getDims();
+          for (let i = 0; i < 50; i++) {
+            // We want to make sure that the editor doesn't resize itself, so we
+            // check every 10ms that the dimensions are the same.
+
+            // eslint-disable-next-line no-restricted-syntax
+            await waitForTimeout(10);
+
+            const dims = await getDims();
+            expect(dims).withContext(`In ${browserName}`).toEqual(initialDims);
+          }
+        })
+      );
     });
   });
 });

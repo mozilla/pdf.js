@@ -77,32 +77,6 @@ const CursorTool = {
 const AutoPrintRegExp = /\bprint\s*\(/;
 
 /**
- * Scale factors for the canvas, necessary with HiDPI displays.
- */
-class OutputScale {
-  constructor() {
-    const pixelRatio = window.devicePixelRatio || 1;
-
-    /**
-     * @type {number} Horizontal scale.
-     */
-    this.sx = pixelRatio;
-
-    /**
-     * @type {number} Vertical scale.
-     */
-    this.sy = pixelRatio;
-  }
-
-  /**
-   * @type {boolean} Returns `true` when scaling is required, `false` otherwise.
-   */
-  get scaled() {
-    return this.sx !== 1 || this.sy !== 1;
-  }
-}
-
-/**
  * Scrolls specified element into view of its parent.
  * @param {HTMLElement} element - The element to be visible.
  * @param {Object} [spot] - An object with optional top and left properties,
@@ -862,6 +836,25 @@ function toggleExpandedBtn(button, toggle, view = null) {
   view?.classList.toggle("hidden", !toggle);
 }
 
+// In Firefox, the css calc function uses f32 precision but the Chrome or Safari
+// are using f64 one. So in order to have the same rendering in all browsers, we
+// need to use the right precision in order to have correct dimensions.
+const calcRound =
+  typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")
+    ? Math.fround
+    : (function () {
+        if (
+          typeof PDFJSDev !== "undefined" &&
+          PDFJSDev.test("LIB") &&
+          typeof document === "undefined"
+        ) {
+          return x => x;
+        }
+        const e = document.createElement("div");
+        e.style.width = "round(down, calc(1.6666666666666665 * 792px), 1px)";
+        return e.style.width === "calc(1320px)" ? Math.fround : x => x;
+      })();
+
 export {
   animationStarted,
   apiPageLayoutToViewerModes,
@@ -870,6 +863,7 @@ export {
   AutoPrintRegExp,
   backtrackBeforeAllVisibleElements, // only exported for testing
   binarySearchFirstItem,
+  calcRound,
   CursorTool,
   DEFAULT_SCALE,
   DEFAULT_SCALE_DELTA,
@@ -888,7 +882,6 @@ export {
   MIN_SCALE,
   normalizeWheelEventDelta,
   normalizeWheelEventDirection,
-  OutputScale,
   parseQueryString,
   PresentationModeState,
   ProgressBar,

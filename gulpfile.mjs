@@ -98,7 +98,7 @@ const AUTOPREFIXER_CONFIG = {
 const BABEL_TARGETS = ENV_TARGETS.join(", ");
 
 const BABEL_PRESET_ENV_OPTS = Object.freeze({
-  corejs: "3.38.0",
+  corejs: "3.38.1",
   exclude: ["web.structured-clone"],
   shippedProposals: true,
   useBuiltIns: "usage",
@@ -707,6 +707,9 @@ function runTests(testsName, { bot = false, xfaOnly = false } = {}) {
     if (process.argv.includes("--noChrome") || forceNoChrome) {
       args.push("--noChrome");
     }
+    if (process.argv.includes("--noFirefox")) {
+      args.push("--noFirefox");
+    }
     if (process.argv.includes("--headless")) {
       args.push("--headless");
     }
@@ -738,6 +741,9 @@ function makeRef(done, bot) {
   }
   if (process.argv.includes("--noChrome") || forceNoChrome) {
     args.push("--noChrome");
+  }
+  if (process.argv.includes("--noFirefox")) {
+    args.push("--noFirefox");
   }
   if (process.argv.includes("--headless")) {
     args.push("--headless");
@@ -1897,7 +1903,7 @@ gulp.task(
 
 gulp.task("lint", function (done) {
   console.log();
-  console.log("### Linting JS/CSS/JSON files");
+  console.log("### Linting JS/CSS/JSON/SVG files");
 
   // Ensure that we lint the Firefox specific *.jsm files too.
   const esLintOptions = [
@@ -1930,6 +1936,12 @@ gulp.task("lint", function (done) {
     prettierOptions.push("--log-level", "warn", "--check");
   }
 
+  const svgLintOptions = [
+    "node_modules/svglint/bin/cli.js",
+    "web/**/*.svg",
+    "--ci",
+  ];
+
   const esLintProcess = startNode(esLintOptions, { stdio: "inherit" });
   esLintProcess.on("close", function (esLintCode) {
     if (esLintCode !== 0) {
@@ -1950,8 +1962,24 @@ gulp.task("lint", function (done) {
           done(new Error("Prettier failed."));
           return;
         }
-        console.log("files checked, no errors found");
-        done();
+
+        const svgLintProcess = startNode(svgLintOptions, {
+          stdio: "pipe",
+        });
+        svgLintProcess.stdout.setEncoding("utf8");
+        svgLintProcess.stdout.on("data", m => {
+          m = m.toString().replace(/-+ Summary -+.*/ms, "");
+          console.log(m);
+        });
+        svgLintProcess.on("close", function (svgLintCode) {
+          if (svgLintCode !== 0) {
+            done(new Error("svglint failed."));
+            return;
+          }
+
+          console.log("files checked, no errors found");
+          done();
+        });
       });
     });
   });

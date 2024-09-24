@@ -61,6 +61,7 @@
   /* Define this variable here and not in :root to avoid to reflow all the UI
      when scaling (see #15929). */
   --scale-factor: 1;
+  --page-bg-color: unset;
 
   padding-bottom: var(--pdfViewer-padding-bottom);
 
@@ -83,6 +84,8 @@
     canvas {
       margin: 0;
       display: block;
+      width: 100%;
+      height: 100%;
 
       &[hidden] {
         display: none;
@@ -101,6 +104,9 @@
 }
 
 .pdfViewer .page {
+  --scale-round-x: 1px;
+  --scale-round-y: 1px;
+
   direction: ltr;
   width: 816px;
   height: 1056px;
@@ -109,7 +115,7 @@
   overflow: visible;
   border: var(--page-border);
   background-clip: content-box;
-  background-color: rgb(255 255 255);
+  background-color: var(--page-bg-color, rgb(255 255 255));
 }
 
 .pdfViewer .dummyPage {

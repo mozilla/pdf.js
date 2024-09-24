@@ -66,7 +66,7 @@ class L10n {
         args,
       },
     ]);
-    return messages?.[0].value || fallback;
+    return messages[0]?.value || fallback;
   }
 
   /** @inheritdoc */
@@ -77,6 +77,15 @@ class L10n {
       await this.#l10n.translateRoots();
     } catch {
       // Element is under an existing root, so there is no need to add it again.
+    }
+  }
+
+  /** @inheritdoc */
+  async translateOnce(element) {
+    try {
+      await this.#l10n.translateElements([element]);
+    } catch (ex) {
+      console.error(`translateOnce: "${ex}".`);
     }
   }
 

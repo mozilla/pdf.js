@@ -40,10 +40,10 @@ describe("find bar", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           // Highlight all occurrences of the letter A (case insensitive).
-          await page.click("#viewFind");
-          await page.waitForSelector("#viewFind", { hidden: false });
+          await page.click("#viewFindButton");
+          await page.waitForSelector("#viewFindButton", { hidden: false });
           await page.type("#findInput", "a");
-          await page.click("#findHighlightAll");
+          await page.click("#findHighlightAll + label");
           await page.waitForSelector(".textLayer .highlight");
 
           // The PDF file contains the text 'AB BA' in a monospace font on a
@@ -100,8 +100,8 @@ describe("find bar", () => {
     it("must search xfa correctly", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#viewFind");
-          await page.waitForSelector("#viewFind", { hidden: false });
+          await page.click("#viewFindButton");
+          await page.waitForSelector("#viewFindButton", { hidden: false });
           await page.type("#findInput", "preferences");
           await page.waitForSelector("#findInput[data-status='']");
           await page.waitForSelector(".xfaLayer .highlight");

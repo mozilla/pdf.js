@@ -40,6 +40,8 @@ class NewAltTextManager {
 
   #guessedAltText;
 
+  #hasAI = null;
+
   #isEditing = null;
 
   #imagePreview;
@@ -114,6 +116,11 @@ class NewAltTextManager {
     createAutomaticallyButton.addEventListener("click", async () => {
       const checked =
         createAutomaticallyButton.getAttribute("aria-pressed") !== "true";
+      this.#currentEditor._reportTelemetry({
+        action: "pdfjs.image.alt_text.ai_generation_check",
+        data: { status: checked },
+      });
+
       if (this.#uiManager) {
         this.#uiManager.setPreference("enableGuessAltText", checked);
         await this.#uiManager.mlManager.toggleService("altText", checked);
@@ -123,16 +130,16 @@ class NewAltTextManager {
     textarea.addEventListener("focus", () => {
       this.#wasAILoading = this.#isAILoading;
       this.#toggleLoading(false);
+      this.#toggleTitleAndDisclaimer();
     });
     textarea.addEventListener("blur", () => {
-      if (textarea.value) {
-        return;
+      if (!textarea.value) {
+        this.#toggleLoading(this.#wasAILoading);
       }
-      this.#toggleLoading(this.#wasAILoading);
+      this.#toggleTitleAndDisclaimer();
     });
     textarea.addEventListener("input", () => {
-      this.#toggleTitle();
-      this.#toggleDisclaimer();
+      this.#toggleTitleAndDisclaimer();
     });
 
     eventBus._on("enableguessalttext", ({ value }) => {
@@ -164,18 +171,6 @@ class NewAltTextManager {
     this.#dialog.classList.toggle("error", value);
   }
 
-  #toggleTitle() {
-    const isEditing = this.#isAILoading || !!this.#textarea.value;
-    if (this.#isEditing === isEditing) {
-      return;
-    }
-    this.#isEditing = isEditing;
-    this.#title.setAttribute(
-      "data-l10n-id",
-      `pdfjs-editor-new-alt-text-dialog-${isEditing ? "edit" : "add"}-label`
-    );
-  }
-
   async #toggleGuessAltText(value, isInitial = false) {
     if (!this.#uiManager) {
       return;
@@ -192,8 +187,7 @@ class NewAltTextManager {
     } else {
       this.#toggleLoading(false);
       this.#isAILoading = false;
-      this.#toggleTitle();
-      this.#toggleDisclaimer();
+      this.#toggleTitleAndDisclaimer();
     }
   }
 
@@ -203,19 +197,34 @@ class NewAltTextManager {
   }
 
   #toggleAI(value) {
-    this.#dialog.classList.toggle("noAi", !value);
-    this.#toggleTitle();
-  }
-
-  #toggleDisclaimer(value = null) {
-    if (!this.#uiManager) {
+    if (!this.#uiManager || this.#hasAI === value) {
       return;
     }
-    const hidden =
-      value === null
-        ? !this.#guessedAltText || this.#guessedAltText !== this.#textarea.value
-        : !value;
-    this.#disclaimer.classList.toggle("hidden", hidden);
+    this.#hasAI = value;
+    this.#dialog.classList.toggle("noAi", !value);
+    this.#toggleTitleAndDisclaimer();
+  }
+
+  #toggleTitleAndDisclaimer() {
+    // Disclaimer is visible when the AI is loading or the user didn't change
+    // the guessed alt text.
+    const visible =
+      this.#isAILoading ||
+      (this.#guessedAltText && this.#guessedAltText === this.#textarea.value);
+    this.#disclaimer.hidden = !visible;
+
+    // The title changes depending if the text area is empty or not.
+    const isEditing = this.#isAILoading || !!this.#textarea.value;
+    if (this.#isEditing === isEditing) {
+      return;
+    }
+    this.#isEditing = isEditing;
+    this.#title.setAttribute(
+      "data-l10n-id",
+      isEditing
+        ? "pdfjs-editor-new-alt-text-dialog-edit-label"
+        : "pdfjs-editor-new-alt-text-dialog-add-label"
+    );
   }
 
   async #mlGuessAltText(isInitial) {
@@ -238,14 +247,11 @@ class NewAltTextManager {
     if (this.#previousAltText === null && this.#guessedAltText) {
       // We have a guessed alt text and the user didn't change it.
       this.#addAltText(this.#guessedAltText);
-      this.#toggleDisclaimer();
-      this.#toggleTitle();
       return;
     }
 
     this.#toggleLoading(true);
-    this.#toggleTitle();
-    this.#toggleDisclaimer(true);
+    this.#toggleTitleAndDisclaimer();
 
     let hasError = false;
     try {
@@ -269,11 +275,10 @@ class NewAltTextManager {
     }
 
     this.#toggleLoading(false);
+    this.#toggleTitleAndDisclaimer();
 
     if (hasError && this.#uiManager) {
       this.#toggleError(true);
-      this.#toggleTitle();
-      this.#toggleDisclaimer();
     }
   }
 
@@ -282,6 +287,7 @@ class NewAltTextManager {
       return;
     }
     this.#textarea.value = altText;
+    this.#toggleTitleAndDisclaimer();
   }
 
   #setProgress() {
@@ -340,6 +346,7 @@ class NewAltTextManager {
     this.#firstTime = firstTime;
     let { mlManager } = uiManager;
     let hasAI = !!mlManager;
+    this.#toggleTitleAndDisclaimer();
 
     if (mlManager && !mlManager.isReady("altText")) {
       hasAI = false;
@@ -364,14 +371,21 @@ class NewAltTextManager {
     // TODO: get this value from Firefox
     //   (https://bugzilla.mozilla.org/show_bug.cgi?id=1908184)
     const AI_MAX_IMAGE_DIMENSION = 224;
+    const MAX_PREVIEW_DIMENSION = 180;
 
     // The max dimension of the preview in the dialog is 180px, so we keep 224px
     // and rescale it thanks to css.
 
-    let canvas;
+    let canvas, width, height;
     if (mlManager) {
-      ({ canvas, imageData: this.#imageData } = editor.copyCanvas(
+      ({
+        canvas,
+        width,
+        height,
+        imageData: this.#imageData,
+      } = editor.copyCanvas(
         AI_MAX_IMAGE_DIMENSION,
+        MAX_PREVIEW_DIMENSION,
         /* createImageData = */ true
       ));
       if (hasAI) {
@@ -381,13 +395,17 @@ class NewAltTextManager {
         );
       }
     } else {
-      ({ canvas } = editor.copyCanvas(
+      ({ canvas, width, height } = editor.copyCanvas(
         AI_MAX_IMAGE_DIMENSION,
+        MAX_PREVIEW_DIMENSION,
         /* createImageData = */ false
       ));
     }
 
     canvas.setAttribute("role", "presentation");
+    const { style } = canvas;
+    style.width = `${width}px`;
+    style.height = `${height}px`;
     this.#imagePreview.append(canvas);
 
     this.#toggleNotNow();
@@ -416,7 +434,7 @@ class NewAltTextManager {
     });
     this.#currentEditor._reportTelemetry({
       action: "pdfjs.image.image_added",
-      data: { alt_text_modal: false },
+      data: { alt_text_modal: true, alt_text_type: "skipped" },
     });
     this.#finish();
   }
@@ -464,7 +482,10 @@ class NewAltTextManager {
     }
     this.#currentEditor._reportTelemetry({
       action: "pdfjs.image.image_added",
-      data: { alt_text_modal: true },
+      data: {
+        alt_text_modal: true,
+        alt_text_type: altText ? "present" : "empty",
+      },
     });
 
     this.#currentEditor._reportTelemetry({

@@ -45,15 +45,8 @@ class DOMFileReaderFactory {
 
 class NodeFileReaderFactory {
   static async fetch(params) {
-    return new Promise((resolve, reject) => {
-      fs.readFile(params.path, (error, data) => {
-        if (error || !data) {
-          reject(error || new Error(`Empty file for: ${params.path}`));
-          return;
-        }
-        resolve(new Uint8Array(data));
-      });
-    });
+    const data = await fs.promises.readFile(params.path);
+    return new Uint8Array(data);
   }
 }
 
@@ -152,33 +145,34 @@ function createTemporaryNodeServer() {
   const server = http
     .createServer((request, response) => {
       const filePath = process.cwd() + "/test/pdfs" + request.url;
-      fs.lstat(filePath, (error, stat) => {
-        if (error) {
+      fs.promises.lstat(filePath).then(
+        stat => {
+          if (!request.headers.range) {
+            const contentLength = stat.size;
+            const stream = fs.createReadStream(filePath);
+            response.writeHead(200, {
+              "Content-Type": "application/pdf",
+              "Content-Length": contentLength,
+              "Accept-Ranges": "bytes",
+            });
+            stream.pipe(response);
+          } else {
+            const [start, end] = request.headers.range
+              .split("=")[1]
+              .split("-")
+              .map(x => Number(x));
+            const stream = fs.createReadStream(filePath, { start, end });
+            response.writeHead(206, {
+              "Content-Type": "application/pdf",
+            });
+            stream.pipe(response);
+          }
+        },
+        error => {
           response.writeHead(404);
           response.end(`File ${request.url} not found!`);
-          return;
         }
-        if (!request.headers.range) {
-          const contentLength = stat.size;
-          const stream = fs.createReadStream(filePath);
-          response.writeHead(200, {
-            "Content-Type": "application/pdf",
-            "Content-Length": contentLength,
-            "Accept-Ranges": "bytes",
-          });
-          stream.pipe(response);
-        } else {
-          const [start, end] = request.headers.range
-            .split("=")[1]
-            .split("-")
-            .map(x => Number(x));
-          const stream = fs.createReadStream(filePath, { start, end });
-          response.writeHead(206, {
-            "Content-Type": "application/pdf",
-          });
-          stream.pipe(response);
-        }
-      });
+      );
     })
     .listen(0); /* Listen on a random free port */
 

@@ -32,6 +32,9 @@ import {
   scrollIntoView,
   setCaretAt,
   switchToEditor,
+  waitAndClick,
+  waitForAnnotationModeChanged,
+  waitForSelectedEditor,
   waitForSerialized,
 } from "./test_utils.mjs";
 
@@ -1907,6 +1910,182 @@ describe("Highlight Editor", () => {
 
           await page.waitForSelector(".textLayer .highlightButton");
           await page.click(".textLayer .highlightButton");
+
+          await page.waitForSelector(getEditorSelector(0));
+          const usedColor = await page.evaluate(() => {
+            const highlight = document.querySelector(
+              `.page[data-page-number = "1"] .canvasWrapper > svg.highlight`
+            );
+            return highlight.getAttribute("fill");
+          });
+
+          expect(usedColor).withContext(`In ${browserName}`).toEqual("#AB0000");
+        })
+      );
+    });
+  });
+
+  describe("Highlight (edit existing in double clicking on it)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "highlights.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        {
+          highlightEditorColors:
+            "yellow=#FFFF00,green=#00FF00,blue=#0000FF,pink=#FF00FF,red=#FF0102",
+        }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must change the color of an highlight", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const modeChangedHandle = await waitForAnnotationModeChanged(page);
+          await waitAndClick(page, "[data-annotation-id='687R']", { count: 2 });
+          await awaitPromise(modeChangedHandle);
+          await page.waitForSelector("#highlightParamsToolbarContainer");
+
+          const editorSelector = getEditorSelector(5);
+          await page.waitForSelector(editorSelector);
+
+          await waitAndClick(
+            page,
+            `${editorSelector} .editToolbar button.colorPicker`
+          );
+          await waitAndClick(
+            page,
+            `${editorSelector} .editToolbar button[title = "Red"]`
+          );
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] svg.highlight[fill = "#FF0102"]`
+          );
+        })
+      );
+    });
+  });
+
+  describe("Free Highlight (edit existing in double clicking on it)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "highlights.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        {
+          highlightEditorColors:
+            "yellow=#FFFF00,green=#00FF00,blue=#0000FF,pink=#FF00FF,red=#FF0102",
+        }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must change the color of a free highlight", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const modeChangedHandle = await waitForAnnotationModeChanged(page);
+          await page.click("[data-annotation-id='693R']", { count: 2 });
+          await awaitPromise(modeChangedHandle);
+          await page.waitForSelector("#highlightParamsToolbarContainer");
+
+          const editorSelector = getEditorSelector(6);
+          await page.waitForSelector(editorSelector);
+          await page.focus(editorSelector);
+          await waitForSelectedEditor(page, editorSelector);
+
+          await waitAndClick(
+            page,
+            `${editorSelector} .editToolbar button.colorPicker`
+          );
+          await waitAndClick(
+            page,
+            `${editorSelector} .editToolbar button[title = "Red"]`
+          );
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] svg.highlight[fill = "#FF0102"]`
+          );
+        })
+      );
+    });
+  });
+
+  describe("Highlight editor mustn't throw when disabled", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "annotation-highlight.pdf",
+        ".annotationEditorLayer"
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must enable & disable highlight mode successfully", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const modeChangedHandle = await waitForAnnotationModeChanged(page);
+          await switchToHighlight(page);
+          await awaitPromise(modeChangedHandle);
+
+          await page.waitForSelector("#highlightParamsToolbarContainer", {
+            visible: true,
+          });
+          await switchToHighlight(page, /* disable */ true);
+          await page.waitForSelector("#highlightParamsToolbarContainer", {
+            visible: false,
+          });
+        })
+      );
+    });
+  });
+
+  describe("Free Highlight with an image in the struct tree", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "bug1708040.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        { highlightEditorColors: "red=#AB0000" }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that it's possible to draw on an image in a struct tree", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getRect(page, `.textLayer span[role="img"]`);
+
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          const clickHandle = await waitForPointerUp(page);
+          await page.mouse.move(x, y);
+          await page.mouse.down();
+          await page.mouse.move(rect.x - 1, rect.y - 1);
+          await page.mouse.up();
+          await awaitPromise(clickHandle);
 
           await page.waitForSelector(getEditorSelector(0));
           const usedColor = await page.evaluate(() => {

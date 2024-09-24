@@ -22,6 +22,8 @@
 /** @typedef {import("../../web/interfaces").IPDFLinkService} IPDFLinkService */
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/editor/tools.js").AnnotationEditorUIManager} AnnotationEditorUIManager */
+// eslint-disable-next-line max-len
+/** @typedef {import("../../web/struct_tree_layer_builder.js").StructTreeLayerBuilder} StructTreeLayerBuilder */
 
 import {
   AnnotationBorderStyleType,
@@ -2242,14 +2244,11 @@ class PopupElement {
       modificationDate.classList.add("popupDate");
       modificationDate.setAttribute(
         "data-l10n-id",
-        "pdfjs-annotation-date-string"
+        "pdfjs-annotation-date-time-string"
       );
       modificationDate.setAttribute(
         "data-l10n-args",
-        JSON.stringify({
-          date: this.#dateObj.toLocaleDateString(),
-          time: this.#dateObj.toLocaleTimeString(),
-        })
+        JSON.stringify({ dateObj: this.#dateObj.valueOf() })
       );
       header.append(modificationDate);
     }
@@ -2810,7 +2809,11 @@ class InkAnnotationElement extends AnnotationElement {
     // Use the polyline SVG element since it allows us to use coordinates
     // directly and to draw both straight lines and curves.
     this.svgElementName = "svg:polyline";
-    this.annotationEditorType = AnnotationEditorType.INK;
+
+    this.annotationEditorType =
+      this.data.it === "InkHighlight"
+        ? AnnotationEditorType.HIGHLIGHT
+        : AnnotationEditorType.INK;
   }
 
   render() {
@@ -2860,6 +2863,10 @@ class InkAnnotationElement extends AnnotationElement {
     }
 
     this.container.append(svg);
+
+    if (this._isEditable) {
+      this._editOnDoubleClick();
+    }
     return this.container;
   }
 
@@ -2879,6 +2886,7 @@ class HighlightAnnotationElement extends AnnotationElement {
       ignoreBorder: true,
       createQuadrilaterals: true,
     });
+    this.annotationEditorType = AnnotationEditorType.HIGHLIGHT;
   }
 
   render() {
@@ -2887,6 +2895,8 @@ class HighlightAnnotationElement extends AnnotationElement {
     }
 
     this.container.classList.add("highlightAnnotation");
+    this._editOnDoubleClick();
+
     return this.container;
   }
 }
@@ -2955,6 +2965,7 @@ class StampAnnotationElement extends AnnotationElement {
 
   render() {
     this.container.classList.add("stampAnnotation");
+    this.container.setAttribute("role", "img");
 
     if (!this.data.popupRef && this.hasPopupData) {
       this._createPopup();
@@ -3062,6 +3073,7 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
  * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap]
  * @property {TextAccessibilityManager} [accessibilityManager]
  * @property {AnnotationEditorUIManager} [annotationEditorUIManager]
+ * @property {StructTreeLayerBuilder} [structTreeLayer]
  */
 
 /**
@@ -3074,6 +3086,8 @@ class AnnotationLayer {
 
   #editableAnnotations = new Map();
 
+  #structTreeLayer = null;
+
   constructor({
     div,
     accessibilityManager,
@@ -3081,10 +3095,12 @@ class AnnotationLayer {
     annotationEditorUIManager,
     page,
     viewport,
+    structTreeLayer,
   }) {
     this.div = div;
     this.#accessibilityManager = accessibilityManager;
     this.#annotationCanvasMap = annotationCanvasMap;
+    this.#structTreeLayer = structTreeLayer || null;
     this.page = page;
     this.viewport = viewport;
     this.zIndex = 0;
@@ -3107,9 +3123,16 @@ class AnnotationLayer {
     return this.#editableAnnotations.size > 0;
   }
 
-  #appendElement(element, id) {
+  async #appendElement(element, id) {
     const contentElement = element.firstChild || element;
-    contentElement.id = `${AnnotationPrefix}${id}`;
+    const annotationId = (contentElement.id = `${AnnotationPrefix}${id}`);
+    const ariaAttributes =
+      await this.#structTreeLayer?.getAriaAttributes(annotationId);
+    if (ariaAttributes) {
+      for (const [key, value] of ariaAttributes) {
+        contentElement.setAttribute(key, value);
+      }
+    }
 
     this.div.append(element);
     this.#accessibilityManager?.moveElementInDOM(
@@ -3186,7 +3209,7 @@ class AnnotationLayer {
       if (data.hidden) {
         rendered.style.visibility = "hidden";
       }
-      this.#appendElement(rendered, data.id);
+      await this.#appendElement(rendered, data.id);
 
       if (element._isEditable) {
         this.#editableAnnotations.set(element.data.id, element);
@@ -3250,6 +3273,7 @@ class AnnotationLayer {
 export {
   AnnotationLayer,
   FreeTextAnnotationElement,
+  HighlightAnnotationElement,
   InkAnnotationElement,
   StampAnnotationElement,
 };

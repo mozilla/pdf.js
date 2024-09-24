@@ -16,13 +16,16 @@ limitations under the License.
 
 "use strict";
 
-var VIEWER_URL = chrome.extension.getURL("content/web/viewer.html");
+var VIEWER_URL = chrome.runtime.getURL("content/web/viewer.html");
 
 function getViewerURL(pdf_url) {
   return VIEWER_URL + "?file=" + encodeURIComponent(pdf_url);
 }
 
 document.addEventListener("animationstart", onAnimationStart, true);
+if (document.contentType === "application/pdf") {
+  chrome.runtime.sendMessage({ action: "canRequestBody" }, maybeRenderPdfDoc);
+}
 
 function onAnimationStart(event) {
   if (event.animationName === "pdfjs-detected-object-or-embed") {
@@ -220,4 +223,39 @@ function getEmbeddedViewerURL(path) {
   a.href = path;
   path = a.href;
   return getViewerURL(path) + fragment;
+}
+
+function maybeRenderPdfDoc(isNotPOST) {
+  if (!isNotPOST) {
+    // The document was loaded through a POST request, but we cannot access the
+    // original response body, nor safely send a new request to fetch the PDF.
+    // Until #4483 is fixed, POST requests should be ignored.
+    return;
+  }
+
+  // Detected PDF that was not redirected by the declarativeNetRequest rules.
+  // Maybe because this was served without Content-Type and sniffed as PDF.
+  // Or because this is Chrome 127-, which does not support responseHeaders
+  // condition in declarativeNetRequest (DNR), and PDF requests are therefore
+  // not redirected via DNR.
+
+  // In any case, load the viewer.
+  console.log(`Detected PDF via document, opening viewer for ${document.URL}`);
+
+  // Ideally we would use logic consistent with the DNR logic, like this:
+  // location.href = getEmbeddedViewerURL(document.URL);
+  // ... unfortunately, this causes Chrome to crash until version 129, fixed by
+  // https://chromium.googlesource.com/chromium/src/+/8c42358b2cc549553d939efe7d36515d80563da7%5E%21/
+  // Work around this by replacing the body with an iframe of the viewer.
+  // Interestingly, Chrome's built-in PDF viewer uses a similar technique.
+  const shadowRoot = document.body.attachShadow({ mode: "closed" });
+  const iframe = document.createElement("iframe");
+  iframe.style.position = "absolute";
+  iframe.style.top = "0";
+  iframe.style.left = "0";
+  iframe.style.width = "100%";
+  iframe.style.height = "100%";
+  iframe.style.border = "0 none";
+  iframe.src = getEmbeddedViewerURL(document.URL);
+  shadowRoot.append(iframe);
 }

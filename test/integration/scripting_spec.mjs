@@ -439,38 +439,40 @@ describe("Interaction", () => {
     let pages;
 
     beforeAll(async () => {
-      pages = await loadAndWait("doc_actions.pdf", getSelector("47R"));
+      pages = await loadAndWait("doc_actions.pdf", getSelector("47R"), null, {
+        earlySetup: () => {
+          // No need to trigger the print dialog.
+          window.print = () => {};
+        },
+      });
     });
 
     it("must execute WillPrint and DidPrint actions", async () => {
-      // Run the tests sequentially to avoid to use the same printer at the same
-      // time.
-      // And to make sure that a printer isn't locked by a process we close the
-      // page before running the next test.
-      for (const [browserName, page] of pages) {
-        await waitForScripting(page);
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForScripting(page);
 
-        await clearInput(page, getSelector("47R"));
-        await page.evaluate(_ => {
-          window.document.activeElement.blur();
-        });
-        await page.waitForFunction(`${getQuerySelector("47R")}.value === ""`);
+          await clearInput(page, getSelector("47R"));
+          await page.evaluate(_ => {
+            window.document.activeElement.blur();
+          });
+          await page.waitForFunction(`${getQuerySelector("47R")}.value === ""`);
 
-        const text = await actAndWaitForInput(
-          page,
-          getSelector("47R"),
-          async () => {
-            await page.click("#print");
-          }
-        );
-        expect(text).withContext(`In ${browserName}`).toEqual("WillPrint");
-        await page.keyboard.press("Escape");
+          const text = await actAndWaitForInput(
+            page,
+            getSelector("47R"),
+            async () => {
+              await page.click("#printButton");
+            }
+          );
+          expect(text).withContext(`In ${browserName}`).toEqual("WillPrint");
 
-        await page.waitForFunction(
-          `${getQuerySelector("50R")}.value === "DidPrint"`
-        );
-        await closeSinglePage(page);
-      }
+          await page.waitForFunction(
+            `${getQuerySelector("50R")}.value === "DidPrint"`
+          );
+          await closeSinglePage(page);
+        })
+      );
     });
   });
 
@@ -507,7 +509,7 @@ describe("Interaction", () => {
             page,
             getSelector("47R"),
             async () => {
-              await page.click("#download");
+              await page.click("#downloadButton");
             }
           );
           expect(text).withContext(`In ${browserName}`).toEqual("WillSave");
@@ -1742,7 +1744,6 @@ describe("Interaction", () => {
 
   describe("in autoprint.pdf", () => {
     let pages;
-    const printHandles = new Map();
 
     beforeAll(async () => {
       // Autoprinting is triggered by the `Open` event, which is one of the
@@ -1754,20 +1755,16 @@ describe("Interaction", () => {
       // too late will cause it to never resolve because printing is already
       // done (and the printed page div removed) before we even get to it.
       pages = await loadAndWait("autoprint.pdf", "", null /* zoom = */, {
-        postPageSetup: async page => {
-          printHandles.set(
-            page,
-            page.evaluateHandle(() => [
-              window.PDFViewerApplication._testPrintResolver.promise,
-            ])
-          );
+        earlySetup: () => {
+          // No need to trigger the print dialog.
+          window.print = () => {};
         },
         appSetup: app => {
           app._testPrintResolver = Promise.withResolvers();
         },
         eventBusSetup: eventBus => {
           eventBus.on(
-            "print",
+            "afterprint",
             () => {
               window.PDFViewerApplication._testPrintResolver.resolve();
             },
@@ -1779,7 +1776,6 @@ describe("Interaction", () => {
 
     afterAll(async () => {
       await closePages(pages);
-      printHandles.clear();
     });
 
     it("must check if printing is triggered when the document is open", async () => {
@@ -1787,7 +1783,11 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page]) => {
           await waitForScripting(page);
 
-          await awaitPromise(await printHandles.get(page));
+          await awaitPromise(
+            await page.evaluateHandle(() => [
+              window.PDFViewerApplication._testPrintResolver.promise,
+            ])
+          );
         })
       );
     });
@@ -2463,6 +2463,34 @@ describe("Interaction", () => {
           await page.click(getSelector("25R"));
           await page.waitForFunction(
             `${getQuerySelector("28R")}.value === "12300"`
+          );
+        })
+      );
+    });
+  });
+
+  describe("Correctly format numbers", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("bug1918115.pdf", getSelector("33R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the computed value is correct", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page], i) => {
+          await waitForScripting(page);
+
+          const inputSelector = getSelector("33R");
+          await page.click(inputSelector);
+          await page.type(inputSelector, "7");
+          await page.click(getSelector("34R"));
+          await page.waitForFunction(
+            `${getQuerySelector("35R")}.value === "324,00"`
           );
         })
       );

@@ -137,4 +137,4 @@ Talk to us on Matrix:
 
 File an issue:
 
-+ https://github.com/mozilla/pdf.js/issues/new
++ https://github.com/mozilla/pdf.js/issues/new/choose

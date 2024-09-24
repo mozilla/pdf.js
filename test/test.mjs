@@ -26,7 +26,6 @@ import path from "path";
 import puppeteer from "puppeteer";
 import readline from "readline";
 import { translateFont } from "./font/ttxdriver.mjs";
-import url from "url";
 import { WebServer } from "./webserver.mjs";
 import yargs from "yargs";
 
@@ -68,6 +67,11 @@ function parseOptions() {
     .option("noChrome", {
       default: false,
       describe: "Skip Chrome when running tests.",
+      type: "boolean",
+    })
+    .option("noFirefox", {
+      default: false,
+      describe: "Skip Firefox when running tests.",
       type: "boolean",
     })
     .option("noDownload", {
@@ -157,7 +161,7 @@ function parseOptions() {
       );
     })
     .check(argv => {
-      if (argv.testfilter && argv.testfilter.length > 0 && argv.xfaOnly) {
+      if (argv.testfilter?.length > 0 && argv.xfaOnly) {
         throw new Error("--testfilter and --xfaOnly cannot be used together.");
       }
       return true;
@@ -670,8 +674,7 @@ function checkRefTestResults(browser, id, results) {
   });
 }
 
-function refTestPostHandler(req, res) {
-  var parsedUrl = url.parse(req.url, true);
+function refTestPostHandler(parsedUrl, req, res) {
   var pathname = parsedUrl.pathname;
   if (
     pathname !== "/tellMeToQuit" &&
@@ -691,7 +694,7 @@ function refTestPostHandler(req, res) {
 
     var session;
     if (pathname === "/tellMeToQuit") {
-      session = getSession(parsedUrl.query.browser);
+      session = getSession(parsedUrl.searchParams.get("browser"));
       monitorBrowserTimeout(session, null);
       closeSession(session.name);
       return;
@@ -821,8 +824,7 @@ async function startIntegrationTest() {
   await Promise.all(sessions.map(session => closeSession(session.name)));
 }
 
-function unitTestPostHandler(req, res) {
-  var parsedUrl = url.parse(req.url);
+function unitTestPostHandler(parsedUrl, req, res) {
   var pathname = parsedUrl.pathname;
   if (
     pathname !== "/tellMeToQuit" &&
@@ -882,7 +884,7 @@ async function startBrowser({
   extraPrefsFirefox = {},
 }) {
   const options = {
-    product: browserName,
+    browser: browserName,
     protocol: "webDriverBiDi",
     headless,
     dumpio: true,
@@ -971,7 +973,13 @@ async function startBrowsers({ baseUrl, initializeSession }) {
   // prevent the disk from filling up over time.
   await puppeteer.trimCache();
 
-  const browserNames = options.noChrome ? ["firefox"] : ["firefox", "chrome"];
+  const browserNames = ["firefox", "chrome"];
+  if (options.noChrome) {
+    browserNames.splice(1, 1);
+  }
+  if (options.noFirefox) {
+    browserNames.splice(0, 1);
+  }
   for (const browserName of browserNames) {
     // The session must be pushed first and augmented with the browser once
     // it's initialized. The reason for this is that browser initialization

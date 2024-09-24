@@ -105,6 +105,14 @@ pdfjs-document-properties-button-label = Belge özellikleri…
 pdfjs-document-properties-file-name = Dosya adı:
 pdfjs-document-properties-file-size = Dosya boyutu:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } KB ({ $b } bayt)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bayt)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bayt)
@@ -118,6 +126,9 @@ pdfjs-document-properties-subject = Konu:
 pdfjs-document-properties-keywords = Anahtar kelimeler:
 pdfjs-document-properties-creation-date = Oluşturma tarihi:
 pdfjs-document-properties-modification-date = Değiştirme tarihi:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -275,6 +286,9 @@ pdfjs-annotation-date-string = { $date } { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [{ $type } işareti]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -366,6 +380,22 @@ pdfjs-editor-resizer-label-bottom-right = Sağ alt köşe — yeniden boyutland�
 pdfjs-editor-resizer-label-bottom-middle = Alt orta — yeniden boyutlandır
 pdfjs-editor-resizer-label-bottom-left = Sol alt köşe — yeniden boyutlandır
 pdfjs-editor-resizer-label-middle-left = Orta sol — yeniden boyutlandır
+pdfjs-editor-resizer-top-left =
+    .aria-label = Sol üst köşe — yeniden boyutlandır
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Üst orta — yeniden boyutlandır
+pdfjs-editor-resizer-top-right =
+    .aria-label = Sağ üst köşe — yeniden boyutlandır
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Orta sağ — yeniden boyutlandır
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Sağ alt köşe — yeniden boyutlandır
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Alt orta — yeniden boyutlandır
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Sol alt köşe — yeniden boyutlandır
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Orta sol — yeniden boyutlandır
 
 ## Color picker
 
@@ -406,8 +436,6 @@ pdfjs-editor-new-alt-text-textarea =
 pdfjs-editor-new-alt-text-description = Görme engelli kişilere gösterilecek veya resmin yüklenemediği durumlarda gösterilecek kısa açıklama.
 # This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
 pdfjs-editor-new-alt-text-disclaimer1 = Bu alt metin otomatik olarak oluşturulmuştur ve hatalı olabilir.
-# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
-pdfjs-editor-new-alt-text-disclaimer = Bu alt metin otomatik olarak oluşturuldu.
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Daha fazla bilgi alın
 pdfjs-editor-new-alt-text-create-automatically-button-label = Otomatik olarak alt metin oluştur
 pdfjs-editor-new-alt-text-not-now-button = Şimdi değil

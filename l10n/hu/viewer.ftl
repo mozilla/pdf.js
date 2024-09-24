@@ -105,6 +105,14 @@ pdfjs-document-properties-button-label = Dokumentum tulajdonságai…
 pdfjs-document-properties-file-name = Fájlnév:
 pdfjs-document-properties-file-size = Fájlméret:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } kB ({ $b } bájt)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bájt)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bájt)
@@ -118,6 +126,9 @@ pdfjs-document-properties-subject = Tárgy:
 pdfjs-document-properties-keywords = Kulcsszavak:
 pdfjs-document-properties-creation-date = Létrehozás dátuma:
 pdfjs-document-properties-modification-date = Módosítás dátuma:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -275,6 +286,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [{ $type } megjegyzés]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -366,6 +380,22 @@ pdfjs-editor-resizer-label-bottom-right = Jobb alsó sarok – átméretezés
 pdfjs-editor-resizer-label-bottom-middle = Alul középen – átméretezés
 pdfjs-editor-resizer-label-bottom-left = Bal alsó sarok – átméretezés
 pdfjs-editor-resizer-label-middle-left = Balra középen – átméretezés
+pdfjs-editor-resizer-top-left =
+    .aria-label = Bal felső sarok – átméretezés
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Felül középen – átméretezés
+pdfjs-editor-resizer-top-right =
+    .aria-label = Jobb felső sarok – átméretezés
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Jobbra középen – átméretezés
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Jobb alsó sarok – átméretezés
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Alul középen – átméretezés
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Bal alsó sarok – átméretezés
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Balra középen – átméretezés
 
 ## Color picker
 
@@ -406,8 +436,6 @@ pdfjs-editor-new-alt-text-textarea =
 pdfjs-editor-new-alt-text-description = Rövid leírás azoknak, akik nem látják a képet, vagy arra az esetre, ha a kép nem tölt be.
 # This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
 pdfjs-editor-new-alt-text-disclaimer1 = Ez az alternatív szöveg automatikusan lett létrehozva, és pontatlan lehet.
-# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
-pdfjs-editor-new-alt-text-disclaimer = Ez az alternatív szöveg automatikusan lett létrehozva.
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = További tudnivalók
 pdfjs-editor-new-alt-text-create-automatically-button-label = Alternatív szöveg automatikus létrehozása
 pdfjs-editor-new-alt-text-not-now-button = Most nem

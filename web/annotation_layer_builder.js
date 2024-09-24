@@ -92,11 +92,12 @@ class AnnotationLayerBuilder {
 
   /**
    * @param {PageViewport} viewport
+   * @param {Object} options
    * @param {string} intent (default value is 'display')
    * @returns {Promise<void>} A promise that is resolved when rendering of the
    *   annotations is complete.
    */
-  async render(viewport, intent = "display") {
+  async render(viewport, options, intent = "display") {
     if (this.div) {
       if (this._cancelled || !this.annotationLayer) {
         return;
@@ -136,6 +137,7 @@ class AnnotationLayerBuilder {
       annotationEditorUIManager: this._annotationEditorUIManager,
       page: this.pdfPage,
       viewport: viewport.clone({ dontFlip: true }),
+      structTreeLayer: options?.structTreeLayer || null,
     });
 
     await this.annotationLayer.render({

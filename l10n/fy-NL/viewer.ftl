@@ -105,6 +105,14 @@ pdfjs-document-properties-button-label = Dokuminteigenskippen…
 pdfjs-document-properties-file-name = Bestânsnamme:
 pdfjs-document-properties-file-size = Bestânsgrutte:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } KB ({ $b } bytes)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bytes)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bytes)
@@ -118,6 +126,9 @@ pdfjs-document-properties-subject = Underwerp:
 pdfjs-document-properties-keywords = Kaaiwurden:
 pdfjs-document-properties-creation-date = Oanmaakdatum:
 pdfjs-document-properties-modification-date = Bewurkingsdatum:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -275,6 +286,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [{ $type }-annotaasje]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -366,6 +380,22 @@ pdfjs-editor-resizer-label-bottom-right = Rjochterûnderhoek – formaat wizigje
 pdfjs-editor-resizer-label-bottom-middle = Midden ûnder – formaat wizigje
 pdfjs-editor-resizer-label-bottom-left = Linkerûnderhoek – formaat wizigje
 pdfjs-editor-resizer-label-middle-left = Links midden – formaat wizigje
+pdfjs-editor-resizer-top-left =
+    .aria-label = Linkerboppehoek – formaat wizigje
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Midden boppe – formaat wizigje
+pdfjs-editor-resizer-top-right =
+    .aria-label = Rjochterboppehoek – formaat wizigje
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Midden rjochts – formaat wizigje
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Rjochterûnderhoek – formaat wizigje
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Midden ûnder – formaat wizigje
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Linkerûnderhoek – formaat wizigje
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Links midden – formaat wizigje
 
 ## Color picker
 
@@ -405,7 +435,7 @@ pdfjs-editor-new-alt-text-textarea =
 # This text refers to the alt text box above this description. It offers a definition of alt text.
 pdfjs-editor-new-alt-text-description = Koarte beskriuwing foar minsken dy’t de ôfbylding net sjen kinne of wannear’t de ôfbylding net laden wurdt.
 # This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
-pdfjs-editor-new-alt-text-disclaimer = Dizze alternative tekst is automatysk oanmakke.
+pdfjs-editor-new-alt-text-disclaimer1 = Dizze alternative tekst is automatysk makke en is mooglik net korrekt.
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Mear ynfo
 pdfjs-editor-new-alt-text-create-automatically-button-label = Alternative tekst automatysk oanmeitsje
 pdfjs-editor-new-alt-text-not-now-button = No net
