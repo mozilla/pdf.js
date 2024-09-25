@@ -2526,12 +2526,13 @@ class WidgetAnnotation extends Annotation {
       const roundWithTwoDigits = x => Math.floor(x * 100) / 100;
 
       if (lineCount === -1) {
+        // Get the text width for a font size of 1.
         const textWidth = this._getTextWidth(text, font);
+
+        // width / textWidth is the max font size to fit the width.
+        // height / LINE_FACTOR is the max font size to fit the height.
         fontSize = roundWithTwoDigits(
-          Math.min(
-            height / LINE_FACTOR,
-            textWidth > width ? width / textWidth : Infinity
-          )
+          Math.min(height / LINE_FACTOR, width / textWidth)
         );
         numberOfLines = 1;
       } else {

@@ -1850,7 +1850,7 @@ describe("annotation", function () {
       const utf16String =
         "\x30\x53\x30\x93\x30\x6b\x30\x61\x30\x6f\x4e\x16\x75\x4c\x30\x6e";
       expect(appearance).toEqual(
-        "/Tx BMC q BT /Goth 5.92 Tf 0 g 1 0 0 1 0 0 Tm" +
+        "/Tx BMC q BT /Goth 3.5 Tf 0 g 1 0 0 1 0 0 Tm" +
           ` 2 3.07 Td (${utf16String}) Tj ET Q EMC`
       );
     });
