@@ -30,6 +30,50 @@ latest JavaScript features; please also see [this wiki page](https://github.com/
 
 + Older browsers: https://mozilla.github.io/pdf.js/legacy/web/viewer.html
 
+## Setup Instructions (Platform-Specific)
+
+### Windows
+1. Install [Node.js](https://nodejs.org/) and [npm](https://www.npmjs.com/get-npm).
+2. Clone the repository and navigate into the project folder:
+   bash
+   git clone https://github.com/mozilla/pdf.js
+   cd pdf.js
+3. Install dependencies
+   npm install
+   npm start
+
+### MacOS/Linux
+1. Install Node.js using Homebrew or your package manager: 
+   brew install node
+2. Clone the repository and navigate into the project folder:
+   git clone https://github.com/your-username/pdf.js
+   cd pdf.js
+3. Install dependencies and start the server:
+   npm install 
+   npm start
+
+If you encounter any issues during setup, please refer to the troubleshooting section
+
+### Trouble Shooting Section
+
+If you encounter issues during setup or development, here are some common problems and their solutions:
+
+ - **Error: 'npm' command not found**: Ensure that Node,js and npm are installed correctly. Verify by running `node -v` and `npm -v`
+ - **Dependency installation fails**: Run `npm cache clean --force` and try `npm install` again. 
+ - **Server not starting**: Check for conflicting processes using the same port (usually 3000). Try running `npx kill-port 300` and restarting the server. 
+
+If your issues persists, feel free to open a discussion or consult the [issues section](https://github.com/mozilla/pdf.js/issues). 
+
+### Contribution Guide (Summary)
+
+We welcome contributions from everyone! Here's a brief overview of how to contribute:
+ 1. **Find an issue**: Look for 'good first issue' or 'help wanted' tags in the [issues section]
+ 2. **Fork the repo**: Fork the project and create a new branch for your changes.
+ 3. **Make your changes**: Ensure your changes follow the coding guidelines. 
+ 4. **Submit a pull request**: After testing your changes, submit a PR and wait for review. 
+
+For more details, check out our [Contribution Guide]
+
 ### Browser Extensions
 
 #### Firefox
