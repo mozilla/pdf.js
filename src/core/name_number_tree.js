@@ -74,7 +74,7 @@ class NameOrNumberTree {
     return map;
   }
 
-  get(key) {
+  getRaw(key) {
     if (!this.root) {
       return null;
     }
@@ -135,11 +135,15 @@ class NameOrNumberTree {
         } else if (key > currentKey) {
           l = m + 2;
         } else {
-          return xref.fetchIfRef(entries[m + 1]);
+          return entries[m + 1];
         }
       }
     }
     return null;
+  }
+
+  get(key) {
+    return this.xref.fetchIfRef(this.getRaw(key));
   }
 }
 

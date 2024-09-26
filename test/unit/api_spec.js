@@ -2800,7 +2800,7 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
-    it("write a new stamp annotation in a non-tagged pdf, save and check that the structure tree", async function () {
+    it("write a new stamp annotation in a non-tagged pdf, save and check the structure tree", async function () {
       if (isNodeJS) {
         pending("Cannot create a bitmap from Node.js.");
       }
@@ -2946,6 +2946,52 @@ describe("api", function () {
       const annotations = await page.getAnnotations();
 
       expect(annotations).toEqual([]);
+      await loadingTask.destroy();
+    });
+
+    it("write an updated stamp annotation in a tagged pdf, save and check the structure tree", async function () {
+      let loadingTask = getDocument(buildGetDocumentParams("stamps.pdf"));
+      let pdfDoc = await loadingTask.promise;
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_1", {
+        annotationType: AnnotationEditorType.STAMP,
+        pageIndex: 0,
+        rect: [72.5, 134.17, 246.49, 318.7],
+        rotation: 0,
+        isSvg: false,
+        structTreeParentId: null,
+        accessibilityData: {
+          type: "Figure",
+          alt: "The Firefox logo",
+          structParent: -1,
+        },
+        id: "34R",
+      });
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_4", {
+        annotationType: AnnotationEditorType.STAMP,
+        pageIndex: 0,
+        rect: [335.1, 394.83, 487.17, 521.47],
+        rotation: 0,
+        isSvg: false,
+        structTreeParentId: null,
+        accessibilityData: {
+          type: "Figure",
+          alt: "An elephant with a red hat",
+          structParent: 0,
+        },
+        id: "58R",
+      });
+
+      const data = await pdfDoc.saveDocument();
+      await loadingTask.destroy();
+
+      loadingTask = getDocument(data);
+      pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      const tree = await page.getStructTree();
+
+      expect(tree.children[0].alt).toEqual("An elephant with a red hat");
+      expect(tree.children[1].alt).toEqual("The Firefox logo");
+
       await loadingTask.destroy();
     });
 

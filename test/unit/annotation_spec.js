@@ -4283,6 +4283,7 @@ describe("annotation", function () {
             value: "Hello PDF.js World !",
             id: "143R",
             ref: freeTextRef,
+            oldAnnotation: freeTextDict,
           },
         ]
       );
