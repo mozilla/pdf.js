@@ -10500,5 +10500,20 @@
     "rounds": 1,
     "talos": false,
     "type": "eq"
+  },
+  {
+    "id": "issue16444",
+    "file": "pdfs/issue16444.pdf",
+    "md5": "b3f594ad122e281c615bb2d62c5ccd4d",
+    "rounds": 1,
+    "link": true,
+    "type": "eq"
+  },
+  {
+    "id": "issue16038",
+    "file": "pdfs/issue16038.pdf",
+    "md5": "47262993e04689c327b7ce85396bce99",
+    "rounds": 1,
+    "type": "eq"
   }
 ]
