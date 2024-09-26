@@ -298,9 +298,9 @@ body {
   inset-inline-start: calc(-1 * var(--sidebar-width));
   width: var(--sidebar-width);
   visibility: hidden;
-  z-index: 100;
+  z-index: 1;
   font: message-box;
-  border-top: 1px solid rgb(51 51 51);
+  border-top: 1px solid transparent;
   border-inline-end: var(--doorhanger-border-color-whcm);
   transition-property: inset-inline-start;
   transition-duration: var(--sidebar-transition-duration);
@@ -338,6 +338,7 @@ body {
   position: absolute;
   inset: var(--toolbar-height) 0 0;
   outline: none;
+  z-index: 0;
 }
 
 #viewerContainer:not(.pdfPresentationMode) {
@@ -355,7 +356,7 @@ body {
 }
 
 .toolbar {
-  z-index: 9999;
+  z-index: 2;
 }
 
 #toolbarSidebar {
