@@ -478,11 +478,6 @@ body {
   }
 }
 
-.splitToolbarButton {
-  margin: 2px;
-  display: inline-block;
-}
-
 .dialogButton {
   border: none;
   background: none;
