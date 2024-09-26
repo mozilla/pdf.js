@@ -1972,6 +1972,50 @@ describe("Highlight Editor", () => {
     });
   });
 
+  describe("Highlight (delete an existing annotation)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "highlight_popup.pdf",
+        ".annotationEditorLayer"
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must delete an existing annotation and its popup", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const modeChangedHandle = await waitForAnnotationModeChanged(page);
+          await waitAndClick(page, "[data-annotation-id='24R']", { count: 2 });
+          await awaitPromise(modeChangedHandle);
+          await page.waitForSelector("#highlightParamsToolbarContainer");
+
+          const editorSelector = getEditorSelector(0);
+          await page.waitForSelector(editorSelector);
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
+          await waitForSerialized(page, 1);
+
+          const serialized = await getSerialized(page);
+          expect(serialized)
+            .withContext(`In ${browserName}`)
+            .toEqual([
+              {
+                pageIndex: 0,
+                id: "24R",
+                deleted: true,
+                popupRef: "25R",
+              },
+            ]);
+        })
+      );
+    });
+  });
+
   describe("Free Highlight (edit existing in double clicking on it)", () => {
     let pages;
 

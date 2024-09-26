@@ -2926,6 +2926,29 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("write an highlight annotation and delete its popup", async function () {
+      let loadingTask = getDocument(
+        buildGetDocumentParams("highlight_popup.pdf")
+      );
+      let pdfDoc = await loadingTask.promise;
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+        deleted: true,
+        id: "24R",
+        pageIndex: 0,
+        popupRef: "25R",
+      });
+      const data = await pdfDoc.saveDocument();
+      await loadingTask.destroy();
+
+      loadingTask = getDocument(data);
+      pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      const annotations = await page.getAnnotations();
+
+      expect(annotations).toEqual([]);
+      await loadingTask.destroy();
+    });
+
     it("read content from multiline textfield containing an empty line", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("issue17492.pdf"));
       const pdfDoc = await loadingTask.promise;

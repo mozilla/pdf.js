@@ -80,6 +80,8 @@ class AnnotationEditor {
 
   _initialOptions = Object.create(null);
 
+  _initialData = null;
+
   _isVisible = true;
 
   _uiManager = null;
@@ -1336,6 +1338,19 @@ class AnnotationEditor {
   rotate(_angle) {}
 
   /**
+   * Serialize the editor when it has been deleted.
+   * @returns {Object}
+   */
+  serializeDeleted() {
+    return {
+      id: this.annotationElementId,
+      deleted: true,
+      pageIndex: this.pageIndex,
+      popupRef: this._initialData?.popupRef || "",
+    };
+  }
+
+  /**
    * Serialize the editor.
    * The result of the serialization will be used to construct a
    * new annotation to add to the pdf document.
@@ -1809,11 +1824,7 @@ class FakeEditor extends AnnotationEditor {
   }
 
   serialize() {
-    return {
-      id: this.annotationElementId,
-      deleted: true,
-      pageIndex: this.pageIndex,
-    };
+    return this.serializeDeleted();
   }
 }
 
