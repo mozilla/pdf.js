@@ -47,6 +47,7 @@ import {
 import { fileURLToPath } from "url";
 import fs from "fs";
 import path from "path";
+import { PNG } from "pngjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -1231,6 +1232,51 @@ describe("Stamp Editor", () => {
             const dims = await getDims();
             expect(dims).withContext(`In ${browserName}`).toEqual(initialDims);
           }
+        })
+      );
+    });
+  });
+
+  describe("A stamp musn't be on top of the secondary toolbar", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer", 600);
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that a stamp editor isn't on top of the secondary toolbar", async () => {
+      // Run sequentially to avoid clipboard issues.
+      const editorSelector = getEditorSelector(0);
+
+      for (const [, page] of pages) {
+        await switchToStamp(page);
+
+        await copyImage(page, "../images/red.png", 0);
+
+        await page.waitForSelector(editorSelector);
+        await waitForSerialized(page, 1);
+      }
+
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const debug = false;
+
+          await page.click("#secondaryToolbarToggleButton");
+          await page.waitForSelector("#secondaryToolbar", { visible: true });
+          const secondary = await page.$("#secondaryToolbar");
+          const png = await secondary.screenshot({
+            type: "png",
+            path: debug ? `foo.png` : "",
+          });
+          const secondaryImage = PNG.sync.read(Buffer.from(png));
+          const buffer = new Uint32Array(secondaryImage.data.buffer);
+          expect(buffer.every(x => x === 0xff0000ff))
+            .withContext(`In ${browserName}`)
+            .toBeFalse();
         })
       );
     });
