@@ -358,10 +358,6 @@ body {
   z-index: 9999;
 }
 
-#toolbarContainer {
-  width: 100%;
-}
-
 #toolbarSidebar {
   width: 100%;
   height: var(--toolbar-height);
@@ -1578,6 +1574,7 @@ dialog :link {
 #toolbarContainer {
   --menuitem-height: calc(var(--toolbar-height) - 6px);
 
+  width: 100%;
   height: var(--toolbar-height);
   padding: var(--toolbar-vertical-padding) var(--toolbar-horizontal-padding);
   position: relative;
