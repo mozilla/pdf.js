@@ -341,16 +341,17 @@ function getDocument(src = {}) {
   const transportFactory = {
     canvasFactory: new CanvasFactory({ ownerDocument, enableHWA }),
     filterFactory: new FilterFactory({ docId, ownerDocument }),
+    cMapReaderFactory:
+      (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+      useWorkerFetch
+        ? null
+        : new CMapReaderFactory({ baseUrl: cMapUrl, isCompressed: cMapPacked }),
+    standardFontDataFactory:
+      (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+      useWorkerFetch
+        ? null
+        : new StandardFontDataFactory({ baseUrl: standardFontDataUrl }),
   };
-  if (!useWorkerFetch) {
-    transportFactory.cMapReaderFactory = new CMapReaderFactory({
-      baseUrl: cMapUrl,
-      isCompressed: cMapPacked,
-    });
-    transportFactory.standardFontDataFactory = new StandardFontDataFactory({
-      baseUrl: standardFontDataUrl,
-    });
-  }
 
   if (!worker) {
     const workerParams = {
