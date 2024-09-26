@@ -274,7 +274,8 @@ class Page {
     );
   }
 
-  #replaceIdByRef(annotations, deletedAnnotations, existingAnnotations) {
+  async #replaceIdByRef(annotations, deletedAnnotations, existingAnnotations) {
+    const promises = [];
     for (const annotation of annotations) {
       if (annotation.id) {
         const ref = Ref.fromString(annotation.id);
@@ -294,9 +295,22 @@ class Page {
         }
         existingAnnotations?.put(ref);
         annotation.ref = ref;
+        promises.push(
+          this.xref.fetchAsync(ref).then(
+            obj => {
+              if (obj instanceof Dict) {
+                annotation.oldAnnotation = obj.clone();
+              }
+            },
+            () => {
+              warn(`Cannot fetch \`oldAnnotation\` for: ${ref}.`);
+            }
+          )
+        );
         delete annotation.id;
       }
     }
+    await Promise.all(promises);
   }
 
   async saveNewAnnotations(handler, task, annotations, imagePromises) {
@@ -319,7 +333,11 @@ class Page {
 
     const deletedAnnotations = new RefSetCache();
     const existingAnnotations = new RefSet();
-    this.#replaceIdByRef(annotations, deletedAnnotations, existingAnnotations);
+    await this.#replaceIdByRef(
+      annotations,
+      deletedAnnotations,
+      existingAnnotations
+    );
 
     const pageDict = this.pageDict;
     const annotationsArray = this.annotations.filter(
@@ -489,23 +507,23 @@ class Page {
       }
 
       deletedAnnotations = new RefSet();
-      this.#replaceIdByRef(newAnnots, deletedAnnotations, null);
 
-      newAnnotationsPromise = annotationGlobalsPromise.then(
-        annotationGlobals => {
-          if (!annotationGlobals) {
-            return null;
-          }
-
-          return AnnotationFactory.printNewAnnotations(
-            annotationGlobals,
-            partialEvaluator,
-            task,
-            newAnnots,
-            imagePromises
-          );
+      newAnnotationsPromise = Promise.all([
+        annotationGlobalsPromise,
+        this.#replaceIdByRef(newAnnots, deletedAnnotations, null),
+      ]).then(([annotationGlobals]) => {
+        if (!annotationGlobals) {
+          return null;
         }
-      );
+
+        return AnnotationFactory.printNewAnnotations(
+          annotationGlobals,
+          partialEvaluator,
+          task,
+          newAnnots,
+          imagePromises
+        );
+      });
     }
 
     const pageListPromise = Promise.all([
