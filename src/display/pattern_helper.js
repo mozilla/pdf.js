@@ -103,8 +103,7 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
       const tmpCanvas = owner.cachedCanvases.getCanvas(
         "pattern",
         width,
-        height,
-        true
+        height
       );
 
       const tmpCtx = tmpCanvas.context;
@@ -360,8 +359,7 @@ class MeshShadingPattern extends BaseShadingPattern {
     const tmpCanvas = cachedCanvases.getCanvas(
       "mesh",
       paddedWidth,
-      paddedHeight,
-      false
+      paddedHeight
     );
     const tmpCtx = tmpCanvas.context;
 
@@ -556,8 +554,7 @@ class TilingPattern {
     const tmpCanvas = owner.cachedCanvases.getCanvas(
       "pattern",
       dimx.size,
-      dimy.size,
-      true
+      dimy.size
     );
     const tmpCtx = tmpCanvas.context;
     const graphics = canvasGraphicsFactory.createCanvasGraphics(tmpCtx);
@@ -614,8 +611,7 @@ class TilingPattern {
       const tmpCanvas2 = owner.cachedCanvases.getCanvas(
         "pattern-workaround",
         xSize,
-        ySize,
-        true
+        ySize
       );
       const tmpCtx2 = tmpCanvas2.context;
       const ii = redrawHorizontally ? Math.floor(width / xstep) : 0;
