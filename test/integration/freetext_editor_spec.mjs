@@ -1237,6 +1237,7 @@ describe("FreeText Editor", () => {
               pageIndex: 0,
               id: "51R",
               deleted: true,
+              popupRef: "",
             },
           ]);
 
