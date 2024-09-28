@@ -31,7 +31,7 @@ Before downloading PDF.js please take a moment to understand the different layer
     </tr>
     <tr>
       <td>Viewer</td>
-      <td>The viewer is built on the display layer and is the UI for PDF viewer in Firefox and the other browser extensions within the project. It can be a good starting point for building your own viewer. <em>However, we do ask if you plan to embed the viewer in your own site, that it not just be an unmodified version. Please re-skin it or build upon it.</em></td>
+      <td>The viewer is built on the display layer and is the UI(User Interface) for PDF viewer in Firefox and the other browser extensions within the project. It can be a good starting point for building your own viewer. <em>However, we do ask if you plan to embed the viewer in your own site, that it not just be an unmodified version. Please re-skin it or build upon it.</em></td>
     </tr>
   </tbody>
 </table>
