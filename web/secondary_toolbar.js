@@ -240,11 +240,14 @@ class SecondaryToolbar {
     eventBus._on("spreadmodechanged", this.#spreadModeChanged.bind(this));
   }
 
-  #cursorToolChanged({ tool }) {
+  #cursorToolChanged({ tool, disabled }) {
     const { cursorSelectToolButton, cursorHandToolButton } = this.#opts;
 
     toggleCheckedBtn(cursorSelectToolButton, tool === CursorTool.SELECT);
     toggleCheckedBtn(cursorHandToolButton, tool === CursorTool.HAND);
+
+    cursorSelectToolButton.disabled = disabled;
+    cursorHandToolButton.disabled = disabled;
   }
 
   #scrollModeChanged({ mode }) {
