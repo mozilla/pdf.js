@@ -65,7 +65,19 @@ class PDFCursorTools {
       // Cursor tools cannot be used in PresentationMode/AnnotationEditor.
       return;
     }
+    this.#switchTool(tool);
+  }
+
+  #switchTool(tool, disabled = false) {
     if (tool === this.#active) {
+      if (this.#prevActive !== null) {
+        // Ensure that the `disabled`-attribute of the buttons will be updated.
+        this.eventBus.dispatch("cursortoolchanged", {
+          source: this,
+          tool,
+          disabled,
+        });
+      }
       return; // The requested tool is already active.
     }
 
@@ -103,6 +115,7 @@ class PDFCursorTools {
     this.eventBus.dispatch("cursortoolchanged", {
       source: this,
       tool,
+      disabled,
     });
   }
 
@@ -122,21 +135,17 @@ class PDFCursorTools {
       presentationModeState = PresentationModeState.NORMAL;
 
     const disableActive = () => {
-      const prevActive = this.#active;
-
-      this.switchTool(CursorTool.SELECT);
-      this.#prevActive ??= prevActive; // Keep track of the first one.
+      this.#prevActive ??= this.#active; // Keep track of the first one.
+      this.#switchTool(CursorTool.SELECT, /* disabled = */ true);
     };
     const enableActive = () => {
-      const prevActive = this.#prevActive;
-
       if (
-        prevActive !== null &&
+        this.#prevActive !== null &&
         annotationEditorMode === AnnotationEditorType.NONE &&
         presentationModeState === PresentationModeState.NORMAL
       ) {
+        this.#switchTool(this.#prevActive);
         this.#prevActive = null;
-        this.switchTool(prevActive);
       }
     };
 
