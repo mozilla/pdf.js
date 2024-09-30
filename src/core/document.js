@@ -378,9 +378,6 @@ class Page {
     return this._parsedAnnotations.then(function (annotations) {
       const newRefsPromises = [];
       for (const annotation of annotations) {
-        if (!annotation.mustBePrinted(annotationStorage)) {
-          continue;
-        }
         newRefsPromises.push(
           annotation
             .save(partialEvaluator, task, annotationStorage)
