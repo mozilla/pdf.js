@@ -27,6 +27,7 @@ import {
   getModificationDate,
   IDENTITY_MATRIX,
   info,
+  isArrayEqual,
   LINE_DESCENT_FACTOR,
   LINE_FACTOR,
   OPS,
@@ -721,6 +722,38 @@ class Annotation {
    */
   _hasFlag(flags, flag) {
     return !!(flags & flag);
+  }
+
+  _buildFlags(noView, noPrint) {
+    let { flags } = this;
+    if (noView === undefined) {
+      if (noPrint === undefined) {
+        return undefined;
+      }
+      if (noPrint) {
+        return flags & ~AnnotationFlag.PRINT;
+      }
+      return (flags & ~AnnotationFlag.HIDDEN) | AnnotationFlag.PRINT;
+    }
+
+    if (noView) {
+      flags |= AnnotationFlag.PRINT;
+      if (noPrint) {
+        // display === 1.
+        return (flags & ~AnnotationFlag.NOVIEW) | AnnotationFlag.HIDDEN;
+      }
+      // display === 3.
+      return (flags & ~AnnotationFlag.HIDDEN) | AnnotationFlag.NOVIEW;
+    }
+
+    flags &= ~(AnnotationFlag.HIDDEN | AnnotationFlag.NOVIEW);
+    if (noPrint) {
+      // display === 2.
+      return flags & ~AnnotationFlag.PRINT;
+    }
+
+    // display === 0.
+    return flags | AnnotationFlag.PRINT;
   }
 
   /**
@@ -2073,10 +2106,15 @@ class WidgetAnnotation extends Annotation {
 
   async save(evaluator, task, annotationStorage) {
     const storageEntry = annotationStorage?.get(this.data.id);
+    const flags = this._buildFlags(storageEntry?.noView, storageEntry?.noPrint);
     let value = storageEntry?.value,
       rotation = storageEntry?.rotation;
     if (value === this.data.fieldValue || value === undefined) {
-      if (!this._hasValueFromXFA && rotation === undefined) {
+      if (
+        !this._hasValueFromXFA &&
+        rotation === undefined &&
+        flags === undefined
+      ) {
         return null;
       }
       value ||= this.data.fieldValue;
@@ -2088,8 +2126,8 @@ class WidgetAnnotation extends Annotation {
       !this._hasValueFromXFA &&
       Array.isArray(value) &&
       Array.isArray(this.data.fieldValue) &&
-      value.length === this.data.fieldValue.length &&
-      value.every((x, i) => x === this.data.fieldValue[i])
+      isArrayEqual(value, this.data.fieldValue) &&
+      flags === undefined
     ) {
       return null;
     }
@@ -2106,7 +2144,7 @@ class WidgetAnnotation extends Annotation {
         RenderingIntentFlag.SAVE,
         annotationStorage
       );
-      if (appearance === null) {
+      if (appearance === null && flags === undefined) {
         // Appearance didn't change.
         return null;
       }
@@ -2132,6 +2170,15 @@ class WidgetAnnotation extends Annotation {
     for (const key of originalDict.getKeys()) {
       if (key !== "AP") {
         dict.set(key, originalDict.getRaw(key));
+      }
+    }
+    if (flags !== undefined) {
+      dict.set("F", flags);
+      if (appearance === null && !needAppearances) {
+        const ap = originalDict.getRaw("AP");
+        if (ap) {
+          dict.set("AP", ap);
+        }
       }
     }
 
@@ -3019,10 +3066,11 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       return null;
     }
     const storageEntry = annotationStorage.get(this.data.id);
+    const flags = this._buildFlags(storageEntry?.noView, storageEntry?.noPrint);
     let rotation = storageEntry?.rotation,
       value = storageEntry?.value;
 
-    if (rotation === undefined) {
+    if (rotation === undefined && flags === undefined) {
       if (value === undefined) {
         return null;
       }
@@ -3033,10 +3081,11 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       }
     }
 
-    const dict = evaluator.xref.fetchIfRef(this.ref);
+    let dict = evaluator.xref.fetchIfRef(this.ref);
     if (!(dict instanceof Dict)) {
       return null;
     }
+    dict = dict.clone();
 
     if (rotation === undefined) {
       rotation = this.rotation;
@@ -3054,6 +3103,9 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     dict.set("V", name);
     dict.set("AS", name);
     dict.set("M", `D:${getModificationDate()}`);
+    if (flags !== undefined) {
+      dict.set("F", flags);
+    }
 
     const maybeMK = this._getMKDict(rotation);
     if (maybeMK) {
@@ -3071,10 +3123,11 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       return null;
     }
     const storageEntry = annotationStorage.get(this.data.id);
+    const flags = this._buildFlags(storageEntry?.noView, storageEntry?.noPrint);
     let rotation = storageEntry?.rotation,
       value = storageEntry?.value;
 
-    if (rotation === undefined) {
+    if (rotation === undefined && flags === undefined) {
       if (value === undefined) {
         return null;
       }
@@ -3085,10 +3138,11 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       }
     }
 
-    const dict = evaluator.xref.fetchIfRef(this.ref);
+    let dict = evaluator.xref.fetchIfRef(this.ref);
     if (!(dict instanceof Dict)) {
       return null;
     }
+    dict = dict.clone();
 
     if (value === undefined) {
       value = this.data.fieldValue === this.data.buttonValue;
@@ -3121,6 +3175,9 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
     dict.set("AS", name);
     dict.set("M", `D:${getModificationDate()}`);
+    if (flags !== undefined) {
+      dict.set("F", flags);
+    }
 
     const maybeMK = this._getMKDict(rotation);
     if (maybeMK) {
