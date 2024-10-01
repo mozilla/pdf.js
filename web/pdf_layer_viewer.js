@@ -50,7 +50,9 @@ class PDFLayerViewer extends BaseTreeViewer {
   reset() {
     super.reset();
     this._optionalContentConfig = null;
-    this._optionalContentHash = null;
+
+    this._optionalContentVisibility?.clear();
+    this._optionalContentVisibility = null;
   }
 
   /**
@@ -68,8 +70,13 @@ class PDFLayerViewer extends BaseTreeViewer {
    */
   _bindLink(element, { groupId, input }) {
     const setVisibility = () => {
-      this._optionalContentConfig.setVisibility(groupId, input.checked);
-      this._optionalContentHash = this._optionalContentConfig.getHash();
+      const visible = input.checked;
+      this._optionalContentConfig.setVisibility(groupId, visible);
+
+      const cached = this._optionalContentVisibility.get(groupId);
+      if (cached) {
+        cached.visible = visible;
+      }
 
       this.eventBus.dispatch("optionalcontentconfig", {
         source: this,
@@ -137,7 +144,7 @@ class PDFLayerViewer extends BaseTreeViewer {
       this._dispatchEvent(/* layersCount = */ 0);
       return;
     }
-    this._optionalContentHash = optionalContentConfig.getHash();
+    this._optionalContentVisibility = new Map();
 
     const fragment = document.createDocumentFragment(),
       queue = [{ parent: fragment, groups }];
@@ -170,6 +177,11 @@ class PDFLayerViewer extends BaseTreeViewer {
           input.type = "checkbox";
           input.checked = group.visible;
 
+          this._optionalContentVisibility.set(groupId, {
+            input,
+            visible: input.checked,
+          });
+
           const label = document.createElement("label");
           label.textContent = this._normalizeTextContent(group.name);
 
@@ -197,15 +209,20 @@ class PDFLayerViewer extends BaseTreeViewer {
       return; // The document was closed while the optional content resolved.
     }
     if (promise) {
-      if (optionalContentConfig.getHash() === this._optionalContentHash) {
-        return; // The optional content didn't change, hence no need to reset the UI.
+      // Ensure that the UI displays the correct state (e.g. with RBGroups).
+      for (const [groupId, cached] of this._optionalContentVisibility) {
+        const group = optionalContentConfig.getGroup(groupId);
+
+        if (group && cached.visible !== group.visible) {
+          cached.input.checked = cached.visible = !cached.visible;
+        }
       }
-    } else {
-      this.eventBus.dispatch("optionalcontentconfig", {
-        source: this,
-        promise: Promise.resolve(optionalContentConfig),
-      });
+      return;
     }
+    this.eventBus.dispatch("optionalcontentconfig", {
+      source: this,
+      promise: Promise.resolve(optionalContentConfig),
+    });
 
     // Reset the sidebarView to the new state.
     this.render({
