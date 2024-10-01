@@ -2750,7 +2750,10 @@ function onClick(evt) {
   if (
     this.pdfViewer.containsElement(evt.target) ||
     (appConfig.toolbar?.container.contains(evt.target) &&
-      evt.target !== appConfig.secondaryToolbar?.toggleButton)
+      // TODO: change the `contains` for an equality check when the bug:
+      //  https://bugzilla.mozilla.org/show_bug.cgi?id=1921984
+      // is fixed.
+      !appConfig.secondaryToolbar?.toggleButton.contains(evt.target))
   ) {
     this.secondaryToolbar.close();
   }
