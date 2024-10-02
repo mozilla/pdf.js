@@ -376,18 +376,16 @@ const PDFViewerApplication = {
   async _initializeViewerComponents() {
     const { appConfig, externalServices, l10n } = this;
 
-    let eventBus;
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      eventBus = AppOptions.eventBus = new FirefoxEventBus(
-        AppOptions.get("allowedGlobalEvents"),
-        externalServices,
-        AppOptions.get("isInAutomation")
-      );
-    } else {
-      eventBus = new EventBus();
-    }
+    const eventBus =
+      typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")
+        ? new FirefoxEventBus(
+            AppOptions.get("allowedGlobalEvents"),
+            externalServices,
+            AppOptions.get("isInAutomation")
+          )
+        : new EventBus();
+    this.eventBus = AppOptions.eventBus = eventBus;
     this.mlManager?.setEventBus(eventBus, this._globalAbortController.signal);
-    this.eventBus = eventBus;
 
     this.overlayManager = new OverlayManager();
 
@@ -876,6 +874,7 @@ const PDFViewerApplication = {
 
   moveCaret(isUp, select) {
     this._caretBrowsing ||= new CaretBrowsingMode(
+      this._globalAbortController.signal,
       this.appConfig.mainContainer,
       this.appConfig.viewerContainer,
       this.appConfig.toolbar?.container
