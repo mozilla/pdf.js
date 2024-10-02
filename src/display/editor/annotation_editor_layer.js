@@ -22,6 +22,8 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("../annotation_layer.js").AnnotationLayer} AnnotationLayer */
 /** @typedef {import("../draw_layer.js").DrawLayer} DrawLayer */
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/struct_tree_layer_builder.js").StructTreeLayerBuilder} StructTreeLayerBuilder */
 
 import { AnnotationEditorType, FeatureTest } from "../../shared/util.js";
 import { AnnotationEditor } from "./editor.js";
@@ -35,6 +37,7 @@ import { StampEditor } from "./stamp.js";
  * @typedef {Object} AnnotationEditorLayerOptions
  * @property {Object} mode
  * @property {HTMLDivElement} div
+ * @property {StructTreeLayerBuilder} structTreeLayer
  * @property {AnnotationEditorUIManager} uiManager
  * @property {boolean} enabled
  * @property {TextAccessibilityManager} [accessibilityManager]
@@ -95,6 +98,7 @@ class AnnotationEditorLayer {
     uiManager,
     pageIndex,
     div,
+    structTreeLayer,
     accessibilityManager,
     annotationLayer,
     drawLayer,
@@ -119,6 +123,7 @@ class AnnotationEditorLayer {
     this.viewport = viewport;
     this.#textLayer = textLayer;
     this.drawLayer = drawLayer;
+    this._structTree = structTreeLayer;
 
     this.#uiManager.addLayer(this);
   }

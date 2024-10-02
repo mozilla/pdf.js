@@ -20,7 +20,10 @@ import {
   closePages,
   copy,
   copyToClipboard,
+  dragAndDropAnnotation,
+  getAnnotationSelector,
   getEditorDimensions,
+  getEditors,
   getEditorSelector,
   getFirstSerialized,
   getRect,
@@ -1277,6 +1280,110 @@ describe("Stamp Editor", () => {
           expect(buffer.every(x => x === 0xff0000ff))
             .withContext(`In ${browserName}`)
             .toBeFalse();
+        })
+      );
+    });
+  });
+
+  describe("Stamp (move existing)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("stamps.pdf", getAnnotationSelector("25R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must move an annotation", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click(getAnnotationSelector("25R"), { count: 2 });
+          await waitForSelectedEditor(page, getEditorSelector(0));
+
+          const editorIds = await getEditors(page, "stamp");
+          expect(editorIds.length).withContext(`In ${browserName}`).toEqual(5);
+
+          // All the current annotations should be serialized as null objects
+          // because they haven't been edited yet.
+          const serialized = await getSerialized(page);
+          expect(serialized).withContext(`In ${browserName}`).toEqual([]);
+
+          const editorRect = await page.$eval(getEditorSelector(0), el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+
+          // Select the annotation we want to move.
+          await page.mouse.click(editorRect.x + 2, editorRect.y + 2);
+          await waitForSelectedEditor(page, getEditorSelector(0));
+
+          await dragAndDropAnnotation(
+            page,
+            editorRect.x + editorRect.width / 2,
+            editorRect.y + editorRect.height / 2,
+            100,
+            100
+          );
+          await waitForSerialized(page, 1);
+        })
+      );
+    });
+  });
+
+  describe("Stamp (change alt-text)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("stamps.pdf", getAnnotationSelector("58R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must update an existing alt-text", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click(getAnnotationSelector("58R"), { count: 2 });
+          await waitForSelectedEditor(page, getEditorSelector(4));
+
+          const editorIds = await getEditors(page, "stamp");
+          expect(editorIds.length).withContext(`In ${browserName}`).toEqual(5);
+
+          await page.click(`${getEditorSelector(4)} button.altText`);
+          await page.waitForSelector("#altTextDialog", { visible: true });
+
+          const textareaSelector = "#altTextDialog textarea";
+          await page.waitForFunction(
+            sel => document.querySelector(sel).value !== "",
+            {},
+            textareaSelector
+          );
+
+          const altText = await page.evaluate(
+            sel => document.querySelector(sel).value,
+            textareaSelector
+          );
+          expect(altText).toEqual("An elephant");
+
+          await page.evaluate(sel => {
+            document.querySelector(sel).value = "";
+          }, textareaSelector);
+
+          await page.click(textareaSelector);
+          await page.type(textareaSelector, "Hello World");
+
+          // All the current annotations should be serialized as null objects
+          // because they haven't been edited yet.
+          const serialized = await getSerialized(page);
+          expect(serialized).withContext(`In ${browserName}`).toEqual([]);
+
+          const saveButtonSelector = "#altTextDialog #altTextSave";
+          await page.click(saveButtonSelector);
+
+          await waitForSerialized(page, 1);
         })
       );
     });
