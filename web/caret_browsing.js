@@ -19,14 +19,32 @@ const PRECISION = 1e-1;
 class CaretBrowsingMode {
   #mainContainer;
 
-  #toolBarHeight;
+  #toolBarHeight = 0;
 
   #viewerContainer;
 
-  constructor(mainContainer, viewerContainer, toolbarContainer) {
+  constructor(abortSignal, mainContainer, viewerContainer, toolbarContainer) {
     this.#mainContainer = mainContainer;
     this.#viewerContainer = viewerContainer;
-    this.#toolBarHeight = toolbarContainer?.getBoundingClientRect().height ?? 0;
+
+    if (!toolbarContainer) {
+      return;
+    }
+    this.#toolBarHeight = toolbarContainer.getBoundingClientRect().height;
+
+    const toolbarObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        if (entry.target === toolbarContainer) {
+          this.#toolBarHeight = Math.floor(entry.borderBoxSize[0].blockSize);
+          break;
+        }
+      }
+    });
+    toolbarObserver.observe(toolbarContainer);
+
+    abortSignal.addEventListener("abort", () => toolbarObserver.disconnect(), {
+      once: true,
+    });
   }
 
   /**
