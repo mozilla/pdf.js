@@ -10578,5 +10578,94 @@
         "noPrint": false
       }
     }
+  },
+  {
+    "id": "stamps-editor-save-print",
+    "file": "pdfs/stamps.pdf",
+    "md5": "0f8e16d204d4863be159f77aa8045938",
+    "rounds": 1,
+    "lastPage": 1,
+    "type": "eq",
+    "save": true,
+    "print": true,
+    "annotationStorage": {
+      "pdfjs_internal_editor_0": {
+        "annotationType": 13,
+        "pageIndex": 0,
+        "rect": [87, 72, 251, 382],
+        "rotation": 0,
+        "isSvg": false,
+        "structTreeParentId": null,
+        "id": "25R"
+      },
+      "pdfjs_internal_editor_1": {
+        "annotationType": 13,
+        "pageIndex": 0,
+        "rect": [350, 337, 524, 522],
+        "rotation": 0,
+        "isSvg": false,
+        "structTreeParentId": null,
+        "id": "34R"
+      },
+      "pdfjs_internal_editor_2": {
+        "annotationType": 13,
+        "pageIndex": 0,
+        "rect": [82, 608, 234, 735],
+        "rotation": 0,
+        "isSvg": false,
+        "structTreeParentId": null,
+        "id": "58R"
+      },
+      "pdfjs_internal_editor_3": {
+        "pageIndex": 0,
+        "deleted": true,
+        "id": "37R",
+        "popupRef": "44R"
+      }
+    }
+  },
+  {
+    "id": "stamps-editor-print",
+    "file": "pdfs/stamps.pdf",
+    "md5": "0f8e16d204d4863be159f77aa8045938",
+    "rounds": 1,
+    "lastPage": 1,
+    "type": "eq",
+    "print": true,
+    "annotationStorage": {
+      "pdfjs_internal_editor_0": {
+        "annotationType": 13,
+        "pageIndex": 0,
+        "rect": [87, 72, 251, 382],
+        "rotation": 0,
+        "isSvg": false,
+        "structTreeParentId": null,
+        "id": "25R"
+      },
+      "pdfjs_internal_editor_1": {
+        "annotationType": 13,
+        "pageIndex": 0,
+        "rect": [350, 337, 524, 522],
+        "rotation": 0,
+        "isSvg": false,
+        "structTreeParentId": null,
+        "id": "34R"
+      },
+      "pdfjs_internal_editor_2": {
+        "annotationType": 13,
+        "pageIndex": 0,
+        "rect": [82, 608, 234, 735],
+        "rotation": 0,
+        "isSvg": false,
+        "structTreeParentId": null,
+        "id": "58R"
+      },
+      "pdfjs_internal_editor_3": {
+        "pageIndex": 0,
+        "deleted": true,
+        "id": "37R",
+        "popupRef": "44R"
+      }
+    }
   }
 ]

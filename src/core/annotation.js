@@ -381,11 +381,10 @@ class AnnotationFactory {
           );
           break;
         case AnnotationEditorType.STAMP:
-          if (!isOffscreenCanvasSupported) {
-            break;
-          }
-          const image = await imagePromises.get(annotation.bitmapId);
-          if (image.imageStream) {
+          const image = isOffscreenCanvasSupported
+            ? await imagePromises?.get(annotation.bitmapId)
+            : null;
+          if (image?.imageStream) {
             const { imageStream, smaskStream } = image;
             const buffer = [];
             if (smaskStream) {
@@ -488,11 +487,10 @@ class AnnotationFactory {
           );
           break;
         case AnnotationEditorType.STAMP:
-          if (!options.isOffscreenCanvasSupported) {
-            break;
-          }
-          const image = await imagePromises.get(annotation.bitmapId);
-          if (image.imageStream) {
+          const image = options.isOffscreenCanvasSupported
+            ? await imagePromises?.get(annotation.bitmapId)
+            : null;
+          if (image?.imageStream) {
             const { imageStream, smaskStream } = image;
             if (smaskStream) {
               imageStream.dict.set("SMask", smaskStream);
@@ -653,17 +651,6 @@ class Annotation {
     const isLocked = !!(this.flags & AnnotationFlag.LOCKED);
     const isContentLocked = !!(this.flags & AnnotationFlag.LOCKEDCONTENTS);
 
-    if (annotationGlobals.structTreeRoot) {
-      let structParent = dict.get("StructParent");
-      structParent =
-        Number.isInteger(structParent) && structParent >= 0 ? structParent : -1;
-
-      annotationGlobals.structTreeRoot.addAnnotationIdToPage(
-        params.pageRef,
-        structParent
-      );
-    }
-
     // Expose public properties using a data object.
     this.data = {
       annotationFlags: this.flags,
@@ -682,7 +669,19 @@ class Annotation {
       noRotate: !!(this.flags & AnnotationFlag.NOROTATE),
       noHTML: isLocked && isContentLocked,
       isEditable: false,
+      structParent: -1,
     };
+
+    if (annotationGlobals.structTreeRoot) {
+      let structParent = dict.get("StructParent");
+      this.data.structParent = structParent =
+        Number.isInteger(structParent) && structParent >= 0 ? structParent : -1;
+
+      annotationGlobals.structTreeRoot.addAnnotationIdToPage(
+        params.pageRef,
+        structParent
+      );
+    }
 
     if (params.collectFields) {
       // Fields can act as container for other fields and have
@@ -1751,10 +1750,7 @@ class MarkupAnnotation extends Annotation {
   }
 
   static async createNewAnnotation(xref, annotation, dependencies, params) {
-    let oldAnnotation;
-    if (annotation.ref) {
-      oldAnnotation = (await xref.fetchIfRefAsync(annotation.ref)).clone();
-    } else {
+    if (!annotation.ref) {
       annotation.ref = xref.getNewTemporaryRef();
     }
 
@@ -1767,12 +1763,11 @@ class MarkupAnnotation extends Annotation {
       const apRef = xref.getNewTemporaryRef();
       annotationDict = this.createNewDict(annotation, xref, {
         apRef,
-        oldAnnotation,
       });
       await writeObject(apRef, ap, buffer, xref);
       dependencies.push({ ref: apRef, data: buffer.join("") });
     } else {
-      annotationDict = this.createNewDict(annotation, xref, { oldAnnotation });
+      annotationDict = this.createNewDict(annotation, xref, {});
     }
     if (Number.isInteger(annotation.parentTreeId)) {
       annotationDict.set("StructParent", annotation.parentTreeId);
@@ -1791,7 +1786,11 @@ class MarkupAnnotation extends Annotation {
     params
   ) {
     const ap = await this.createNewAppearanceStream(annotation, xref, params);
-    const annotationDict = this.createNewDict(annotation, xref, { ap });
+    const annotationDict = this.createNewDict(
+      annotation,
+      xref,
+      ap ? { ap } : {}
+    );
 
     const newAnnotation = new this.prototype.constructor({
       dict: annotationDict,
@@ -3904,8 +3903,9 @@ class FreeTextAnnotation extends MarkupAnnotation {
     return this._hasAppearance;
   }
 
-  static createNewDict(annotation, xref, { apRef, ap, oldAnnotation }) {
-    const { color, fontSize, rect, rotation, user, value } = annotation;
+  static createNewDict(annotation, xref, { apRef, ap }) {
+    const { color, fontSize, oldAnnotation, rect, rotation, user, value } =
+      annotation;
     const freetext = oldAnnotation || new Dict(xref);
     freetext.set("Type", Name.get("Annot"));
     freetext.set("Subtype", Name.get("FreeText"));
@@ -4646,8 +4646,9 @@ class HighlightAnnotation extends MarkupAnnotation {
     }
   }
 
-  static createNewDict(annotation, xref, { apRef, ap, oldAnnotation }) {
-    const { color, opacity, rect, rotation, user, quadPoints } = annotation;
+  static createNewDict(annotation, xref, { apRef, ap }) {
+    const { color, oldAnnotation, opacity, rect, rotation, user, quadPoints } =
+      annotation;
     const highlight = oldAnnotation || new Dict(xref);
     highlight.set("Type", Name.get("Annot"));
     highlight.set("Subtype", Name.get("Highlight"));
@@ -4943,10 +4944,14 @@ class StampAnnotation extends MarkupAnnotation {
   }
 
   static createNewDict(annotation, xref, { apRef, ap }) {
-    const { rect, rotation, user } = annotation;
-    const stamp = new Dict(xref);
+    const { oldAnnotation, rect, rotation, user } = annotation;
+    const stamp = oldAnnotation || new Dict(xref);
     stamp.set("Type", Name.get("Annot"));
     stamp.set("Subtype", Name.get("Stamp"));
+    stamp.set(
+      oldAnnotation ? "M" : "CreationDate",
+      `D:${getModificationDate()}`
+    );
     stamp.set("CreationDate", `D:${getModificationDate()}`);
     stamp.set("Rect", rect);
     stamp.set("F", 4);
@@ -4972,6 +4977,11 @@ class StampAnnotation extends MarkupAnnotation {
   }
 
   static async createNewAppearanceStream(annotation, xref, params) {
+    if (annotation.oldAnnotation) {
+      // We'll use the AP we already have.
+      return null;
+    }
+
     const { rotation } = annotation;
     const { imageRef, width, height } = params.image;
     const resources = new Dict(xref);
