@@ -10524,5 +10524,59 @@
     "md5": "47262993e04689c327b7ce85396bce99",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue18072-save-print",
+    "file": "pdfs/issue18072.pdf",
+    "md5": "231fe6f035da1f2ddf84f2a78ada20c5",
+    "rounds": 1,
+    "type": "eq",
+    "save": true,
+    "print": true,
+    "annotationStorage": {
+      "28R": {
+        "noView": true,
+        "noPrint": true
+      },
+      "29R": {
+        "noView": true,
+        "noPrint": false
+      },
+      "30R": {
+        "noView": false,
+        "noPrint": true
+      },
+      "31R": {
+        "noView": false,
+        "noPrint": false
+      }
+    }
+  },
+  {
+    "id": "issue18072-save-annotations",
+    "file": "pdfs/issue18072.pdf",
+    "md5": "231fe6f035da1f2ddf84f2a78ada20c5",
+    "rounds": 1,
+    "type": "eq",
+    "save": true,
+    "annotations": true,
+    "annotationStorage": {
+      "28R": {
+        "noView": true,
+        "noPrint": true
+      },
+      "29R": {
+        "noView": true,
+        "noPrint": false
+      },
+      "30R": {
+        "noView": false,
+        "noPrint": true
+      },
+      "31R": {
+        "noView": false,
+        "noPrint": false
+      }
+    }
   }
 ]
