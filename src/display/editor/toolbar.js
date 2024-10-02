@@ -41,7 +41,7 @@ class EditorToolbar {
 
   render() {
     const editToolbar = (this.#toolbar = document.createElement("div"));
-    editToolbar.className = "editToolbar";
+    editToolbar.classList.add("editToolbar", "hidden");
     editToolbar.setAttribute("role", "toolbar");
     const signal = this.#editor._uiManager._signal;
     editToolbar.addEventListener("contextmenu", noContextMenu, { signal });

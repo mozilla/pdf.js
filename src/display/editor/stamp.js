@@ -13,7 +13,11 @@
  * limitations under the License.
  */
 
-import { AnnotationEditorType, shadow } from "../../shared/util.js";
+import {
+  AnnotationEditorType,
+  AnnotationPrefix,
+  shadow,
+} from "../../shared/util.js";
 import { OutputScale, PixelsPerInch } from "../display_utils.js";
 import { AnnotationEditor } from "./editor.js";
 import { StampAnnotationElement } from "../annotation_layer.js";
@@ -383,7 +387,7 @@ class StampEditor extends AnnotationEditor {
       this.#getBitmap();
     }
 
-    if (this.width) {
+    if (this.width && !this.annotationElementId) {
       // This editor was created in using copy (ctrl+c).
       const [parentWidth, parentHeight] = this.parentDimensions;
       this.setAt(
@@ -431,7 +435,8 @@ class StampEditor extends AnnotationEditor {
 
     if (
       !this._uiManager.useNewAltTextWhenAddingImage ||
-      !this._uiManager.useNewAltTextFlow
+      !this._uiManager.useNewAltTextFlow ||
+      this.annotationElementId
     ) {
       div.hidden = false;
     }
@@ -769,13 +774,55 @@ class StampEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   static async deserialize(data, parent, uiManager) {
+    let initialData = null;
     if (data instanceof StampAnnotationElement) {
-      return null;
+      const {
+        data: { rect, rotation, id, structParent, popupRef },
+        container,
+        parent: {
+          page: { pageNumber },
+        },
+      } = data;
+      const canvas = container.querySelector("canvas");
+      const imageData = uiManager.imageManager.getFromCanvas(
+        container.id,
+        canvas
+      );
+      canvas.remove();
+
+      // When switching to edit mode, we wait for the structure tree to be
+      // ready (see pdf_viewer.js), so it's fine to use getAriaAttributesSync.
+      const altText =
+        (
+          await parent._structTree.getAriaAttributes(`${AnnotationPrefix}${id}`)
+        )?.get("aria-label") || "";
+
+      initialData = data = {
+        annotationType: AnnotationEditorType.STAMP,
+        bitmapId: imageData.id,
+        bitmap: imageData.bitmap,
+        pageIndex: pageNumber - 1,
+        rect: rect.slice(0),
+        rotation,
+        id,
+        deleted: false,
+        accessibilityData: {
+          decorative: false,
+          altText,
+        },
+        isSvg: false,
+        structParent,
+        popupRef,
+      };
     }
     const editor = await super.deserialize(data, parent, uiManager);
-    const { rect, bitmapUrl, bitmapId, isSvg, accessibilityData } = data;
+    const { rect, bitmap, bitmapUrl, bitmapId, isSvg, accessibilityData } =
+      data;
     if (bitmapId && uiManager.imageManager.isValidId(bitmapId)) {
       editor.#bitmapId = bitmapId;
+      if (bitmap) {
+        editor.#bitmap = bitmap;
+      }
     } else {
       editor.#bitmapUrl = bitmapUrl;
     }
@@ -785,9 +832,11 @@ class StampEditor extends AnnotationEditor {
     editor.width = (rect[2] - rect[0]) / parentWidth;
     editor.height = (rect[3] - rect[1]) / parentHeight;
 
+    editor.annotationElementId = data.id || null;
     if (accessibilityData) {
       editor.altTextData = accessibilityData;
     }
+    editor._initialData = initialData;
 
     return editor;
   }
@@ -796,6 +845,10 @@ class StampEditor extends AnnotationEditor {
   serialize(isForCopying = false, context = null) {
     if (this.isEmpty()) {
       return null;
+    }
+
+    if (this.deleted) {
+      return this.serializeDeleted();
     }
 
     const serialized = {
@@ -821,6 +874,20 @@ class StampEditor extends AnnotationEditor {
     if (!decorative && altText) {
       serialized.accessibilityData = { type: "Figure", alt: altText };
     }
+    if (this.annotationElementId) {
+      const changes = this.#hasElementChanged(serialized);
+      if (changes.isSame) {
+        // Nothing has been changed.
+        return null;
+      }
+      if (changes.isSameAltText) {
+        delete serialized.accessibilityData;
+      } else {
+        serialized.accessibilityData.structParent =
+          this._initialData.structParent ?? -1;
+      }
+    }
+    serialized.id = this.annotationElementId;
 
     if (context === null) {
       return serialized;
@@ -847,6 +914,34 @@ class StampEditor extends AnnotationEditor {
       }
     }
     return serialized;
+  }
+
+  #hasElementChanged(serialized) {
+    const {
+      rect,
+      pageIndex,
+      accessibilityData: { altText },
+    } = this._initialData;
+
+    const isSameRect = serialized.rect.every(
+      (x, i) => Math.abs(x - rect[i]) < 1
+    );
+    const isSamePageIndex = serialized.pageIndex === pageIndex;
+    const isSameAltText = (serialized.accessibilityData?.alt || "") === altText;
+
+    return {
+      isSame: isSameRect && isSamePageIndex && isSameAltText,
+      isSameAltText,
+    };
+  }
+
+  /** @inheritdoc */
+  renderAnnotationElement(annotation) {
+    annotation.updateEdited({
+      rect: this.getRect(0, 0),
+    });
+
+    return null;
   }
 }
 
