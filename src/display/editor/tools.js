@@ -621,6 +621,8 @@ class AnnotationEditorUIManager {
 
   #viewer = null;
 
+  #updateModeCapability = null;
+
   static TRANSLATE_SMALL = 1; // page units.
 
   static TRANSLATE_BIG = 10; // page units.
@@ -817,6 +819,9 @@ class AnnotationEditorUIManager {
   }
 
   destroy() {
+    this.#updateModeCapability?.resolve();
+    this.#updateModeCapability = null;
+
     this.#abortController?.abort();
     this.#abortController = null;
     this._signal = null;
@@ -1344,7 +1349,7 @@ class AnnotationEditorUIManager {
    * Paste callback.
    * @param {ClipboardEvent} event
    */
-  paste(event) {
+  async paste(event) {
     event.preventDefault();
     const { clipboardData } = event;
     for (const item of clipboardData.items) {
@@ -1378,7 +1383,7 @@ class AnnotationEditorUIManager {
     try {
       const newEditors = [];
       for (const editor of data) {
-        const deserializedEditor = layer.deserialize(editor);
+        const deserializedEditor = await layer.deserialize(editor);
         if (!deserializedEditor) {
           return;
         }
@@ -1572,30 +1577,44 @@ class AnnotationEditorUIManager {
    * @param {boolean} [isFromKeyboard] - true if the mode change is due to a
    *   keyboard action.
    */
-  updateMode(mode, editId = null, isFromKeyboard = false) {
+  async updateMode(mode, editId = null, isFromKeyboard = false) {
     if (this.#mode === mode) {
       return;
     }
+
+    if (this.#updateModeCapability) {
+      await this.#updateModeCapability.promise;
+      if (!this.#updateModeCapability) {
+        // This ui manager has been destroyed.
+        return;
+      }
+    }
+
+    this.#updateModeCapability = Promise.withResolvers();
+
     this.#mode = mode;
     if (mode === AnnotationEditorType.NONE) {
       this.setEditingState(false);
       this.#disableAll();
+
+      this.#updateModeCapability.resolve();
       return;
     }
     this.setEditingState(true);
-    this.#enableAll();
+    await this.#enableAll();
     this.unselectAll();
     for (const layer of this.#allLayers.values()) {
       layer.updateMode(mode);
     }
-    if (!editId && isFromKeyboard) {
-      this.addNewEditorFromKeyboard();
+    if (!editId) {
+      if (isFromKeyboard) {
+        this.addNewEditorFromKeyboard();
+      }
+
+      this.#updateModeCapability.resolve();
       return;
     }
 
-    if (!editId) {
-      return;
-    }
     for (const editor of this.#allEditors.values()) {
       if (editor.annotationElementId === editId) {
         this.setSelected(editor);
@@ -1603,6 +1622,8 @@ class AnnotationEditorUIManager {
         break;
       }
     }
+
+    this.#updateModeCapability.resolve();
   }
 
   addNewEditorFromKeyboard() {
@@ -1702,12 +1723,14 @@ class AnnotationEditorUIManager {
   /**
    * Enable all the layers.
    */
-  #enableAll() {
+  async #enableAll() {
     if (!this.#isEnabled) {
       this.#isEnabled = true;
+      const promises = [];
       for (const layer of this.#allLayers.values()) {
-        layer.enable();
+        promises.push(layer.enable());
       }
+      await Promise.all(promises);
       for (const editor of this.#allEditors.values()) {
         editor.enable();
       }

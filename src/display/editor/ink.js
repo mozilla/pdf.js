@@ -1149,11 +1149,11 @@ class InkEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
-  static deserialize(data, parent, uiManager) {
+  static async deserialize(data, parent, uiManager) {
     if (data instanceof InkAnnotationElement) {
       return null;
     }
-    const editor = super.deserialize(data, parent, uiManager);
+    const editor = await super.deserialize(data, parent, uiManager);
 
     editor.thickness = data.thickness;
     editor.color = Util.makeHexColor(...data.color);
