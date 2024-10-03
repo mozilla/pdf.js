@@ -227,7 +227,7 @@ class PDFViewer {
 
   #mlManager = null;
 
-  #onPageRenderedCallback = null;
+  #switchAnnotationEditorModeAC = null;
 
   #switchAnnotationEditorModeTimeoutId = null;
 
@@ -2280,10 +2280,9 @@ class PDFViewer {
   }
 
   #cleanupSwitchAnnotationEditorMode() {
-    if (this.#onPageRenderedCallback) {
-      this.eventBus._off("pagerendered", this.#onPageRenderedCallback);
-      this.#onPageRenderedCallback = null;
-    }
+    this.#switchAnnotationEditorModeAC?.abort();
+    this.#switchAnnotationEditorModeAC = null;
+
     if (this.#switchAnnotationEditorModeTimeoutId !== null) {
       clearTimeout(this.#switchAnnotationEditorModeTimeoutId);
       this.#switchAnnotationEditorModeTimeoutId = null;
@@ -2353,14 +2352,25 @@ class PDFViewer {
         // We're editing so we must switch to editing mode when the rendering is
         // done.
         this.#cleanupSwitchAnnotationEditorMode();
-        this.#onPageRenderedCallback = ({ pageNumber }) => {
-          idsToRefresh.delete(pageNumber);
-          if (idsToRefresh.size === 0) {
-            this.#switchAnnotationEditorModeTimeoutId = setTimeout(updater, 0);
-          }
-        };
-        const { signal } = this.#eventAbortController;
-        eventBus._on("pagerendered", this.#onPageRenderedCallback, { signal });
+        this.#switchAnnotationEditorModeAC = new AbortController();
+        const signal = AbortSignal.any([
+          this.#eventAbortController.signal,
+          this.#switchAnnotationEditorModeAC.signal,
+        ]);
+
+        eventBus._on(
+          "pagerendered",
+          ({ pageNumber }) => {
+            idsToRefresh.delete(pageNumber);
+            if (idsToRefresh.size === 0) {
+              this.#switchAnnotationEditorModeTimeoutId = setTimeout(
+                updater,
+                0
+              );
+            }
+          },
+          { signal }
+        );
         return;
       }
     }
