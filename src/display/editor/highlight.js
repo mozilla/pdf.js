@@ -779,7 +779,7 @@ class HighlightEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
-  static deserialize(data, parent, uiManager) {
+  static async deserialize(data, parent, uiManager) {
     let initialData = null;
     if (data instanceof HighlightAnnotationElement) {
       const {
@@ -832,7 +832,7 @@ class HighlightEditor extends AnnotationEditor {
     }
 
     const { color, quadPoints, inkLists, opacity } = data;
-    const editor = super.deserialize(data, parent, uiManager);
+    const editor = await super.deserialize(data, parent, uiManager);
 
     editor.color = Util.makeHexColor(...color);
     editor.#opacity = opacity || 1;
