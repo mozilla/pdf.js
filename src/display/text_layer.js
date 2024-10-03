@@ -16,7 +16,13 @@
 /** @typedef {import("./display_utils").PageViewport} PageViewport */
 /** @typedef {import("./api").TextContent} TextContent */
 
-import { AbortException, Util, warn } from "../shared/util.js";
+import {
+  AbortException,
+  FeatureTest,
+  shadow,
+  Util,
+  warn,
+} from "../shared/util.js";
 import { setLayerDimensions } from "./display_utils.js";
 
 /**
@@ -150,6 +156,24 @@ class TextLayer {
         },
       });
     }
+  }
+
+  static get fontFamilyMap() {
+    const { isWindows, isFirefox } = FeatureTest.platform;
+    return shadow(
+      this,
+      "fontFamilyMap",
+      new Map([
+        [
+          "sans-serif",
+          `${isWindows && isFirefox ? "Calibri, " : ""}sans-serif`,
+        ],
+        [
+          "monospace",
+          `${isWindows && isFirefox ? "Lucida Console, " : ""}monospace`,
+        ],
+      ])
+    );
   }
 
   /**
@@ -300,9 +324,12 @@ class TextLayer {
       angle += Math.PI / 2;
     }
 
-    const fontFamily =
+    let fontFamily =
       (this.#fontInspectorEnabled && style.fontSubstitution) ||
       style.fontFamily;
+
+    // Workaround for bug 1922063.
+    fontFamily = TextLayer.fontFamilyMap.get(fontFamily) || fontFamily;
     const fontHeight = Math.hypot(tx[2], tx[3]);
     const fontAscent =
       fontHeight * TextLayer.#getAscent(fontFamily, this.#lang);
