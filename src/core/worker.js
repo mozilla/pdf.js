@@ -522,7 +522,9 @@ class WorkerMessageHandler {
     });
 
     handler.on("GetFieldObjects", function (data) {
-      return pdfManager.ensureDoc("fieldObjects");
+      return pdfManager
+        .ensureDoc("fieldObjects")
+        .then(fieldObjects => fieldObjects?.allFields || null);
     });
 
     handler.on("HasJSActions", function (data) {
