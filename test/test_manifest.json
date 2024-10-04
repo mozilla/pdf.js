@@ -10667,5 +10667,22 @@
         "popupRef": "44R"
       }
     }
+  },
+  {
+    "id": "issue15096",
+    "file": "pdfs/issue15096.pdf",
+    "md5": "5c3515177acd6e146d177adac802277d",
+    "rounds": 1,
+    "type": "eq",
+    "save": true,
+    "annotations": true,
+    "annotationStorage": {
+      "62R": {
+        "value": true
+      },
+      "66R": {
+        "value": false
+      }
+    }
   }
 ]

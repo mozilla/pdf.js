@@ -112,6 +112,7 @@ class AnnotationFactory {
    * @params {Object} annotationGlobals
    * @param {Object} idFactory
    * @param {boolean} [collectFields]
+   * @param {Object} [orphanFields]
    * @param {Object} [pageRef]
    * @returns {Promise} A promise that is resolved with an {Annotation}
    *   instance.
@@ -122,6 +123,7 @@ class AnnotationFactory {
     annotationGlobals,
     idFactory,
     collectFields,
+    orphanFields,
     pageRef
   ) {
     const pageIndex = collectFields
@@ -134,6 +136,7 @@ class AnnotationFactory {
       annotationGlobals,
       idFactory,
       collectFields,
+      orphanFields,
       pageIndex,
       pageRef,
     ]);
@@ -148,6 +151,7 @@ class AnnotationFactory {
     annotationGlobals,
     idFactory,
     collectFields = false,
+    orphanFields = null,
     pageIndex = null,
     pageRef = null
   ) {
@@ -173,6 +177,7 @@ class AnnotationFactory {
       id,
       annotationGlobals,
       collectFields,
+      orphanFields,
       needAppearances:
         !collectFields && acroForm.get("NeedAppearances") === true,
       pageIndex,
@@ -623,7 +628,11 @@ function getTransformMatrix(rect, bbox, matrix) {
 
 class Annotation {
   constructor(params) {
-    const { dict, xref, annotationGlobals } = params;
+    const { dict, xref, annotationGlobals, ref, orphanFields } = params;
+    const parentRef = orphanFields?.get(ref);
+    if (parentRef) {
+      dict.set("Parent", parentRef);
+    }
 
     this.setTitle(dict.get("T"));
     this.setContents(dict.get("Contents"));
@@ -3170,6 +3179,11 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       } else if (this.parent instanceof Dict) {
         this.parent.set("V", name);
       }
+    }
+
+    if (!this.parent) {
+      // If there is no parent then we must set the value in the field.
+      dict.set("V", name);
     }
 
     dict.set("AS", name);
