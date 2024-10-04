@@ -239,7 +239,7 @@ pdfjs-find-reached-bottom = Reached end of document, continued from top
 #   $current (Number) - the index of the currently active find result
 #   $total (Number) - the total number of matches in the document
 pdfjs-find-match-count =
-    { NUMBER($total) ->
+    { $total ->
         [one] { $current } of { $total } match
        *[other] { $current } of { $total } matches
     }
@@ -247,7 +247,7 @@ pdfjs-find-match-count =
 # Variables:
 #   $limit (Number) - the maximum number of matches
 pdfjs-find-match-count-limit =
-    { NUMBER($limit) ->
+    { $limit ->
         [one] More than { $limit } match
        *[other] More than { $limit } matches
     }
