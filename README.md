@@ -1,14 +1,19 @@
 # Rational PDF.js mods [![Build Status](https://github.com/mozilla/pdf.js/workflows/CI/badge.svg?branch=master)](https://github.com/mozilla/pdf.js/actions?query=workflow%3ACI+branch%3Amaster)
 
 ## BUILD INSTRUCTIONS:
-1. Create the dist build
+1. Create the dist build (Note - commit your changes first or the version may not update)
 ```
 npm run dist
 ```
 
-2. Copy the tarball into the `angular-ng/vendor` folder
+2. Copy the tarball into the RRC project `angular-ng/vendor` folder
 
 ![img.png](copy-tarball.png)
+
+3. Update version number to match the tarball in RRC `package.json`
+
+![img.png](update_package_json.png)
+
 
 ## Standard PDFJS Readme
 <br/>
