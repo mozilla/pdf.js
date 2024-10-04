@@ -175,6 +175,13 @@ class TextHighlighter {
       return appendTextToDiv(divIdx, 0, begin.offset, className, bgColor);
     }
 
+    function styleSpan(span, backgroundColor) {
+      span.style.background = backgroundColor;
+      span.style.margin = "-1px";
+      span.style.padding = "1px";
+      span.style.borderRadius = "0";
+    }
+
     function appendTextToDiv(divIdx, fromOffset, toOffset, className, bgColor) {
       let div = textDivs[divIdx];
       if (div.nodeType === Node.TEXT_NODE) {
@@ -197,10 +204,7 @@ class TextHighlighter {
         }
 
         if (bgColor) {
-          span.style.background = bgColor;
-          span.style.margin = "-1px";
-          span.style.padding = "1px";
-          span.style.borderRadius = "4px";
+          styleSpan(span, bgColor);
         }
 
         span.append(node);
@@ -274,6 +278,9 @@ class TextHighlighter {
         );
         for (let n0 = begin.divIdx + 1, n1 = end.divIdx; n0 < n1; n0++) {
           textDivs[n0].className = "highlight middle" + highlightSuffix;
+          if (match.color) {
+            styleSpan(textDivs[n0]);
+          }
         }
         beginText(
           end,
