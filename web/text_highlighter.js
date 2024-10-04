@@ -320,6 +320,9 @@ class TextHighlighter {
       for (let n = begin, end = match.end.divIdx; n <= end; n++) {
         const div = textDivs[n];
         div.textContent = textContentItemsStr[n];
+        if (div.className.includes("middle")) {
+          div.style.background = "";
+        }
         div.className = "";
       }
       clearedUntilDivIdx = match.end.divIdx + 1;
