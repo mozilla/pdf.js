@@ -1139,8 +1139,6 @@ class PDFViewer {
 
     this.#hiddenCopyElement?.remove();
     this.#hiddenCopyElement = null;
-
-    this.#cleanupSwitchAnnotationEditorMode();
   }
 
   #ensurePageViewVisible() {
@@ -2323,9 +2321,13 @@ class PDFViewer {
       this.#mlManager?.loadModel("altText");
     }
 
-    const { eventBus } = this;
+    const { eventBus } = this,
+      eventSignal = this.#eventAbortController.signal;
     const updater = () => {
       this.#cleanupSwitchAnnotationEditorMode();
+      if (eventSignal.aborted) {
+        return;
+      }
       this.#annotationEditorMode = mode;
       this.#annotationEditorUIManager.updateMode(mode, editId, isFromKeyboard);
       eventBus.dispatch("annotationeditormodechanged", {
@@ -2354,7 +2356,7 @@ class PDFViewer {
         this.#cleanupSwitchAnnotationEditorMode();
         this.#switchAnnotationEditorModeAC = new AbortController();
         const signal = AbortSignal.any([
-          this.#eventAbortController.signal,
+          eventSignal,
           this.#switchAnnotationEditorModeAC.signal,
         ]);
 
