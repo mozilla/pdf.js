@@ -131,8 +131,10 @@ class ImageManager {
       if (typeof rawData === "string") {
         data.url = rawData;
         image = await fetchData(rawData, "blob");
-      } else {
+      } else if (rawData instanceof File) {
         image = data.file = rawData;
+      } else if (rawData instanceof Blob) {
+        image = rawData;
       }
 
       if (image.type === "image/svg+xml") {
@@ -183,6 +185,11 @@ class ImageManager {
     return this.#get(url, url);
   }
 
+  async getFromBlob(id, blobPromise) {
+    const blob = await blobPromise;
+    return this.#get(id, blob);
+  }
+
   async getFromId(id) {
     this.#cache ||= new Map();
     const data = this.#cache.get(id);
@@ -196,6 +203,11 @@ class ImageManager {
 
     if (data.file) {
       return this.getFromFile(data.file);
+    }
+    if (data.blobPromise) {
+      const { blobPromise } = data;
+      delete data.blobPromise;
+      return this.getFromBlob(data.id, blobPromise);
     }
     return this.getFromUrl(data.url);
   }
@@ -239,7 +251,16 @@ class ImageManager {
     if (data.refCounter !== 0) {
       return;
     }
-    data.bitmap.close?.();
+    const { bitmap } = data;
+    if (!data.url && !data.file) {
+      // The image has no way to be restored (ctrl+z) so we must fix that.
+      const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+      const ctx = canvas.getContext("bitmaprenderer");
+      ctx.transferFromImageBitmap(bitmap);
+      data.blobPromise = canvas.convertToBlob();
+    }
+
+    bitmap.close?.();
     data.bitmap = null;
   }
 
