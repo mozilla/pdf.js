@@ -200,6 +200,27 @@ class ImageManager {
     return this.getFromUrl(data.url);
   }
 
+  getFromCanvas(id, canvas) {
+    this.#cache ||= new Map();
+    let data = this.#cache.get(id);
+    if (data?.bitmap) {
+      data.refCounter += 1;
+      return data;
+    }
+    const offscreen = new OffscreenCanvas(canvas.width, canvas.height);
+    const ctx = offscreen.getContext("2d");
+    ctx.drawImage(canvas, 0, 0);
+    data = {
+      bitmap: offscreen.transferToImageBitmap(),
+      id: `image_${this.#baseId}_${this.#id++}`,
+      refCounter: 1,
+      isSvg: false,
+    };
+    this.#cache.set(id, data);
+    this.#cache.set(data.id, data);
+    return data;
+  }
+
   getSvgUrl(id) {
     const data = this.#cache.get(id);
     if (!data?.isSvg) {
@@ -218,6 +239,7 @@ class ImageManager {
     if (data.refCounter !== 0) {
       return;
     }
+    data.bitmap.close?.();
     data.bitmap = null;
   }
 
@@ -1619,7 +1641,8 @@ class AnnotationEditorUIManager {
       if (editor.annotationElementId === editId) {
         this.setSelected(editor);
         editor.enterInEditMode();
-        break;
+      } else {
+        editor.unselect();
       }
     }
 

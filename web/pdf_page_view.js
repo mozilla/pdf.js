@@ -1098,12 +1098,10 @@ class PDFPageView {
         showCanvas?.(true);
         await this.#finishRenderTask(renderTask);
 
-        if (this.textLayer || this.annotationLayer) {
-          this.structTreeLayer ||= new StructTreeLayerBuilder(
-            pdfPage,
-            viewport.rawDims
-          );
-        }
+        this.structTreeLayer ||= new StructTreeLayerBuilder(
+          pdfPage,
+          viewport.rawDims
+        );
 
         this.#renderTextLayer();
 
@@ -1126,6 +1124,7 @@ class PDFPageView {
           uiManager: annotationEditorUIManager,
           pdfPage,
           l10n,
+          structTreeLayer: this.structTreeLayer,
           accessibilityManager: this._accessibilityManager,
           annotationLayer: this.annotationLayer?.annotationLayer,
           textLayer: this.textLayer,

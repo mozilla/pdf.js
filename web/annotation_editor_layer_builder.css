@@ -82,7 +82,8 @@
   }
 }
 
-#viewerContainer.pdfPresentationMode:fullscreen {
+#viewerContainer.pdfPresentationMode:fullscreen,
+.annotationEditorLayer.disabled {
   .noAltTextBadge {
     display: none !important;
   }
