@@ -2299,7 +2299,7 @@ class WidgetAnnotation extends Annotation {
     }
 
     assert(typeof value === "string", "Expected `value` to be a string.");
-    value = value.trim();
+    value = value.trimEnd();
 
     if (this.data.combo) {
       // The value can be one of the exportValue or any other values.
@@ -2932,6 +2932,28 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     }
 
     return chunks;
+  }
+
+  async extractTextContent(evaluator, task, viewBox) {
+    await super.extractTextContent(evaluator, task, viewBox);
+    const text = this.data.textContent;
+    if (!text) {
+      return;
+    }
+
+    // The text extractor doesn't handle empty lines correctly, so if the
+    // content we get is more or less (modulo whitespaces) the same as the
+    // field value we just ignore it.
+    const allText = text.join("\n");
+    if (allText === this.data.fieldValue) {
+      return;
+    }
+    const regex = allText.replaceAll(/([.*+?^${}()|[\]\\])|(\s+)/g, (_m, p1) =>
+      p1 ? `\\${p1}` : "\\s+"
+    );
+    if (new RegExp(`^\\s*${regex}\\s*$`).test(this.data.fieldValue)) {
+      this.data.textContent = this.data.fieldValue.split("\n");
+    }
   }
 
   getFieldObject() {

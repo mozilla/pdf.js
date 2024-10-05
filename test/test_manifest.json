@@ -8477,13 +8477,13 @@
         "value": "Hello World"
       },
       "33R": {
-        "value": "Hello World\nDlrow Olleh\nHello World"
+        "value": "\nHello World\nDlrow Olleh\nHello World"
       },
       "36R": {
-        "value": "Hello World\nDlrow Olleh\nHello World"
+        "value": "\nHello World\nDlrow Olleh\nHello World"
       },
       "39R": {
-        "value": "Hello World\nDlrow Olleh\nHello World"
+        "value": "\nHello World\nDlrow Olleh\nHello World"
       }
     }
   },
@@ -10684,5 +10684,13 @@
         "value": false
       }
     }
+  },
+  {
+    "id": "issue18036",
+    "file": "pdfs/issue18036.pdf",
+    "md5": "940ad97fc1a6f8d288a213af80313c7e",
+    "rounds": 1,
+    "type": "eq",
+    "annotations": true
   }
 ]
