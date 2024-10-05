@@ -25,7 +25,7 @@
     "eslint-plugin-no-unsanitized": "^4.1.2",
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-sort-exports": "^0.9.1",
-    "eslint-plugin-unicorn": "^55.0.0",
+    "eslint-plugin-unicorn": "^56.0.0",
     "gulp": "^5.0.0",
     "gulp-cli": "^3.0.0",
     "gulp-postcss": "^10.0.0",
