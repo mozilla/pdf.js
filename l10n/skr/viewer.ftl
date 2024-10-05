@@ -471,6 +471,7 @@ pdfjs-editor-alt-text-settings-create-model-description = اُنہاں لوکا�
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
 pdfjs-editor-alt-text-settings-download-model-label = آلٹ عبارت اے آئی ماڈل ({ $totalSize } ایم بی)
+pdfjs-editor-alt-text-settings-ai-model-description = تہاݙی ڈیوائس تے مقامی طور تے چلدا ہے تاں جو تہاݙا ڈیٹا نجی رہوے۔ خودکار آلٹ عبارت کیتے ضروری ہے۔
 pdfjs-editor-alt-text-settings-delete-model-button = مٹاؤ
 pdfjs-editor-alt-text-settings-download-model-button = ڈاؤن لوڈ
 pdfjs-editor-alt-text-settings-downloading-model-button = ڈاؤن لوڈ تھیندا پئے …
