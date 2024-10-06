@@ -105,6 +105,14 @@ pdfjs-document-properties-button-label = Właściwości dokumentu…
 pdfjs-document-properties-file-name = Nazwa pliku:
 pdfjs-document-properties-file-size = Rozmiar pliku:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } KB ({ $b } B)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } B)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } B)
@@ -118,6 +126,9 @@ pdfjs-document-properties-subject = Temat:
 pdfjs-document-properties-keywords = Słowa kluczowe:
 pdfjs-document-properties-creation-date = Data utworzenia:
 pdfjs-document-properties-modification-date = Data modyfikacji:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -277,6 +288,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [Przypis: { $type }]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
