@@ -636,9 +636,18 @@ class FeatureTest {
     ) {
       return shadow(this, "platform", {
         isMac: navigator.platform.includes("Mac"),
+        isWindows: navigator.platform.includes("Win"),
+        isFirefox:
+          (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+          (typeof navigator?.userAgent === "string" &&
+            navigator.userAgent.includes("Firefox")),
       });
     }
-    return shadow(this, "platform", { isMac: false });
+    return shadow(this, "platform", {
+      isMac: false,
+      isWindows: false,
+      isFirefox: false,
+    });
   }
 
   static get isCSSRoundSupported() {
