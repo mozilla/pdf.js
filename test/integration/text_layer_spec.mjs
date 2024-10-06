@@ -43,11 +43,14 @@ describe("Text layer", () => {
     }
 
     function middleLeftPosition(rect) {
-      return { x: rect.x + 1, y: rect.y + rect.height / 2 };
+      return { x: rect.x + 1, y: rect.y + Math.floor(rect.height / 2) };
     }
 
     function belowEndPosition(rect) {
-      return { x: rect.x + rect.width, y: rect.y + rect.height * 1.5 };
+      return {
+        x: rect.x + rect.width,
+        y: rect.y + Math.floor(rect.height * 1.5),
+      };
     }
 
     beforeAll(() => {
