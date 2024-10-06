@@ -34,7 +34,6 @@ import {
 } from "pdfjs-lib";
 import {
   approximateFraction,
-  calcRound,
   DEFAULT_SCALE,
   floorToDivide,
   RenderingStates,
@@ -127,10 +126,6 @@ class PDFPageView {
   #loadingId = null;
 
   #previousRotation = null;
-
-  #scaleRoundX = 1;
-
-  #scaleRoundY = 1;
 
   #renderError = null;
 
@@ -1051,27 +1046,11 @@ class PDFPageView {
     const sfx = approximateFraction(outputScale.sx);
     const sfy = approximateFraction(outputScale.sy);
 
-    const canvasWidth = (canvas.width = floorToDivide(
-      calcRound(width * outputScale.sx),
-      sfx[0]
-    ));
-    const canvasHeight = (canvas.height = floorToDivide(
-      calcRound(height * outputScale.sy),
-      sfy[0]
-    ));
-    const pageWidth = floorToDivide(calcRound(width), sfx[1]);
-    const pageHeight = floorToDivide(calcRound(height), sfy[1]);
-    outputScale.sx = canvasWidth / pageWidth;
-    outputScale.sy = canvasHeight / pageHeight;
-
-    if (this.#scaleRoundX !== sfx[1]) {
-      div.style.setProperty("--scale-round-x", `${sfx[1]}px`);
-      this.#scaleRoundX = sfx[1];
-    }
-    if (this.#scaleRoundY !== sfy[1]) {
-      div.style.setProperty("--scale-round-y", `${sfy[1]}px`);
-      this.#scaleRoundY = sfy[1];
-    }
+    canvas.width = floorToDivide(width * outputScale.sx, sfx[0]);
+    canvas.height = floorToDivide(height * outputScale.sy, sfy[0]);
+    const { style } = canvas;
+    style.width = floorToDivide(width, sfx[1]) + "px";
+    style.height = floorToDivide(height, sfy[1]) + "px";
 
     // Add the viewport so it's known what it was originally drawn with.
     this.#viewportMap.set(canvas, viewport);

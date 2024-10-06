@@ -16,7 +16,6 @@
 import {
   backtrackBeforeAllVisibleElements,
   binarySearchFirstItem,
-  calcRound,
   getPageSizeInches,
   getVisibleElements,
   isPortraitOrientation,
@@ -626,19 +625,6 @@ describe("ui_utils", function () {
           backtrackBeforeAllVisibleElements(bsResult, pages, top2)
         ).toEqual(4);
       });
-    });
-  });
-
-  describe("calcRound", function () {
-    it("should handle different browsers/environments correctly", function () {
-      if (
-        typeof window !== "undefined" &&
-        window.navigator?.userAgent?.includes("Firefox")
-      ) {
-        expect(calcRound(1.6)).not.toEqual(1.6);
-      } else {
-        expect(calcRound(1.6)).toEqual(1.6);
-      }
     });
   });
 });

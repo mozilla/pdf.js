@@ -1103,12 +1103,8 @@ function setLayerDimensions(
 
     const w = `var(--scale-factor) * ${pageWidth}px`,
       h = `var(--scale-factor) * ${pageHeight}px`;
-    const widthStr = useRound
-        ? `round(down, ${w}, var(--scale-round-x, 1px))`
-        : `calc(${w})`,
-      heightStr = useRound
-        ? `round(down, ${h}, var(--scale-round-y, 1px))`
-        : `calc(${h})`;
+    const widthStr = useRound ? `round(${w}, 1px)` : `calc(${w})`,
+      heightStr = useRound ? `round(${h}, 1px)` : `calc(${h})`;
 
     if (!mustFlip || viewport.rotation % 180 === 0) {
       style.width = widthStr;

@@ -84,8 +84,6 @@
     canvas {
       margin: 0;
       display: block;
-      width: 100%;
-      height: 100%;
 
       &[hidden] {
         display: none;
@@ -104,9 +102,6 @@
 }
 
 .pdfViewer .page {
-  --scale-round-x: 1px;
-  --scale-round-y: 1px;
-
   direction: ltr;
   width: 816px;
   height: 1056px;
