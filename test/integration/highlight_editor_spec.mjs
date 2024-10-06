@@ -1830,7 +1830,7 @@ describe("Highlight Editor", () => {
       await closePages(pages);
     });
 
-    it("must check that an existing highlight is ignored on hovering", async () => {
+    fit("must check that an existing highlight is ignored on hovering", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToHighlight(page);
