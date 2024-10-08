@@ -176,10 +176,22 @@ class TextHighlighter {
     }
 
     function styleSpan(span, backgroundColor) {
-      span.style.background = backgroundColor;
+      span.style.background = backgroundColor; // backgroundColor is converted to rgb or rgba automatically
+      setAlpha(span); // Override alpha value to ensure we have appropriate opacity on highlights
       span.style.margin = "-1px";
       span.style.padding = "1px";
       span.style.borderRadius = "0";
+    }
+
+    function setAlpha(span, alpha = ".25") {
+      const backgroundElements = span.style.background
+        .split(",")
+        .slice(0, 3)
+        .map(element => {
+          element.replace(")", "").trim();
+        });
+      backgroundElements.push(".25");
+      span.style.background = backgroundElements.join(" ");
     }
 
     function appendTextToDiv(divIdx, fromOffset, toOffset, className, bgColor) {
