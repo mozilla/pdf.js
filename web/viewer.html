@@ -112,6 +112,9 @@ See https://github.com/adobe-type-tools/cmap-resources
               <button id="viewLayers" class="toolbarButton" type="button" title="Show Layers (double-click to reset all layers to the default state)" tabindex="0" data-l10n-id="pdfjs-layers-button" role="radio" aria-checked="false" aria-controls="layersView">
                  <span data-l10n-id="pdfjs-layers-button-label">Layers</span>
               </button>
+              <button id="viewBookmarks" class="toolbarButton" type="button" title="Show Bookmarks" tabindex="0" data-l10n-id="bookmarks" role="radio" aria-checked="false" aria-controls="bookmarksView">
+                <span data-l10n-id="bookmarks_label">Bookmarks</span>
+              </button>
             </div>
           </div>
 
@@ -133,6 +136,9 @@ See https://github.com/adobe-type-tools/cmap-resources
           <div id="attachmentsView" class="hidden">
           </div>
           <div id="layersView" class="hidden">
+          </div>
+          <div id="bookmarksView" class="hidden">
+            <ul id="bookmarksList" class="bookmarks"></ul>
           </div>
         </div>
         <div id="sidebarResizer"></div>
@@ -239,6 +245,12 @@ See https://github.com/adobe-type-tools/cmap-resources
                 </span>
               </div>
               <div id="toolbarViewerRight" class="toolbarHorizontalGroup">
+                <button id="bookmarkButton" class="toolbarButton" type="button" title="Add Bookmark" tabindex="0" data-l10n-id="bookmark">
+                  <span data-l10n-id="bookmark_label">Bookmark</span>
+                </button>
+                <button id="noteButton" class="toolbarButton" type="button" title="Add Note" tabindex="0" data-l10n-id="note">
+                  <span data-l10n-id="note_label">Note</span>
+                </button>
                 <div id="editorModeButtons" class="toolbarHorizontalGroup" role="radiogroup">
                   <div id="editorHighlight" class="toolbarButtonWithContainer">
                     <button id="editorHighlightButton" class="toolbarButton" type="button" disabled="disabled" title="Highlight" role="radio" aria-expanded="false" aria-haspopup="true" aria-controls="editorHighlightParamsToolbar" tabindex="0" data-l10n-id="pdfjs-editor-highlight-button">

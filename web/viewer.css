@@ -98,11 +98,13 @@
   --toolbarButton-zoomIn-icon: url(images/toolbarButton-zoomIn.svg);
   --toolbarButton-presentationMode-icon: url(images/toolbarButton-presentationMode.svg);
   --toolbarButton-print-icon: url(images/toolbarButton-print.svg);
+  --toolbarButton-bookmark-icon: url(images/toolbarButton-bookmark-icon.svg);
+  --toolbarButton-note-icon: url(images/toolbarButton-note.svg);
   /*#if GENERIC*/
   --toolbarButton-openFile-icon: url(images/toolbarButton-openFile.svg);
   /*#endif*/
   --toolbarButton-download-icon: url(images/toolbarButton-download.svg);
-  --toolbarButton-bookmark-icon: url(images/toolbarButton-bookmark.svg);
+  --toolbarButton-bookmark-icon: url(images/toolbarButton-bookmark-icon.svg);
   --toolbarButton-viewThumbnail-icon: url(images/toolbarButton-viewThumbnail.svg);
   --toolbarButton-viewOutline-icon: url(images/toolbarButton-viewOutline.svg);
   --toolbarButton-viewAttachments-icon: url(images/toolbarButton-viewAttachments.svg);
@@ -551,6 +553,89 @@ body {
 #zoomInButton::before {
   mask-image: var(--toolbarButton-zoomIn-icon);
 }
+
+/* Toolbar Button Icons */
+#sidebarToggleButton::before {
+  mask-image: var(--toolbarButton-sidebarToggle-icon);
+  transform: scaleX(var(--dir-factor));
+}
+
+#secondaryToolbarToggleButton::before {
+  mask-image: var(--toolbarButton-secondaryToolbarToggle-icon);
+  transform: scaleX(var(--dir-factor));
+}
+
+#previous::before {
+  mask-image: var(--toolbarButton-pageUp-icon);
+}
+
+#next::before {
+  mask-image: var(--toolbarButton-pageDown-icon);
+}
+
+#zoomOutButton::before {
+  mask-image: var(--toolbarButton-zoomOut-icon);
+}
+
+#zoomInButton::before {
+  mask-image: var(--toolbarButton-zoomIn-icon);
+}
+
+#presentationMode::before {
+  mask-image: var(--toolbarButton-presentationMode-icon);
+}
+
+#bookmarkButton::before {
+  mask-image: var(--toolbarButton-bookmark-icon);
+}
+
+#noteButton::before {
+  mask-image: var(--toolbarButton-note-icon);
+}
+
+#editorFreeTextButton::before {
+  mask-image: var(--toolbarButton-editorFreeText-icon);
+}
+
+#editorHighlightButton::before {
+  mask-image: var(--toolbarButton-editorHighlight-icon);
+}
+
+#editorInkButton::before {
+  mask-image: var(--toolbarButton-editorInk-icon);
+}
+
+#editorStampButton::before {
+  mask-image: var(--toolbarButton-editorStamp-icon);
+}
+
+:is(#printButton, #secondaryPrint)::before {
+  mask-image: var(--toolbarButton-print-icon);
+}
+
+/*#if GENERIC*/
+#secondaryOpenFile::before {
+  mask-image: var(--toolbarButton-openFile-icon);
+}
+/*#endif*/
+
+:is(#downloadButton, #secondaryDownload)::before {
+  mask-image: var(--toolbarButton-download-icon);
+}
+
+#viewBookmark::before {
+  mask-image: var(--toolbarButton-bookmark-icon);
+}
+
+#currentOutlineItem::before {
+  mask-image: var(--toolbarButton-currentOutlineItem-icon);
+  transform: scaleX(var(--dir-factor));
+}
+
+#viewFindButton::before {
+  mask-image: var(--toolbarButton-search-icon);
+}
+
 
 #presentationMode::before {
   mask-image: var(--toolbarButton-presentationMode-icon);
@@ -1080,6 +1165,32 @@ dialog :link {
       height: auto;
     }
   }
+}
+
+.note {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(255, 255, 0, 0.7);
+  padding: 5px;
+  border-radius: 4px;
+  z-index: 1000;
+}
+
+/* Styles for the bookmarks list */
+.bookmarks {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.bookmarks li {
+  padding: 5px;
+  cursor: pointer;
+}
+
+.bookmarks li:hover {
+  background-color: #eee;
 }
 
 .toolbarButtonWithContainer {

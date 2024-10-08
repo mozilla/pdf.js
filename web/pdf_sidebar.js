@@ -83,6 +83,8 @@ class PDFSidebar {
     this.active = SidebarView.THUMBS;
     this.isInitialViewSet = false;
     this.isInitialEventDispatched = false;
+    this.bookmarksButton = elements.bookmarksButton;
+    this.bookmarksView = elements.bookmarksView;
 
     /**
      * Callback used when the sidebar has been opened/closed, to ensure that
@@ -194,6 +196,9 @@ class PDFSidebar {
         if (this.layersButton.disabled) {
           return;
         }
+        break;
+      case SidebarView.BOOKMARKS:
+        this._showView(this.bookmarksButton, this.bookmarksView); // Add this case
         break;
       default:
         console.error(`PDFSidebar.switchView: "${view}" is not a valid view.`);

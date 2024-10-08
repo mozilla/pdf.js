@@ -68,6 +68,8 @@ function getViewerConfiguration() {
       editorStampParamsToolbar: document.getElementById(
         "editorStampParamsToolbar"
       ),
+      bookmarkButton: document.getElementById("bookmarkButton"),
+      noteButton: document.getElementById("noteButton"),
       download: document.getElementById("downloadButton"),
     },
     secondaryToolbar: {
@@ -118,6 +120,7 @@ function getViewerConfiguration() {
       outlineView: document.getElementById("outlineView"),
       attachmentsView: document.getElementById("attachmentsView"),
       layersView: document.getElementById("layersView"),
+      bookmarksView: document.getElementById("bookmarksView"),
       // View-specific options
       currentOutlineItemButton: document.getElementById("currentOutlineItem"),
     },

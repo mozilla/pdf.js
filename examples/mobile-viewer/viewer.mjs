@@ -223,6 +223,58 @@ const PDFViewerApplication = {
     console.error(`${message}\n\n${moreInfoText.join("\n")}`);
   },
 
+  displayBookmarks() {
+    const fileUrl = this.url || this.baseUrl;
+    const bookmarks = JSON.parse(localStorage.getItem("pdfjsBookmarks")) || {};
+    const bookmarksList = document.getElementById("bookmarksList");
+
+    // Clear existing bookmarks
+    bookmarksList.innerHTML = "";
+
+    if (bookmarks[fileUrl]) {
+      bookmarks[fileUrl].forEach(pageNumber => {
+        const li = document.createElement("li");
+        li.textContent = `Page ${pageNumber}`;
+        li.style.cursor = "pointer";
+        li.addEventListener("click", () => {
+          this.pdfViewer.currentPageNumber = pageNumber;
+        });
+        bookmarksList.append(li);
+      });
+    } else {
+      const li = document.createElement("li");
+      li.textContent = "No bookmarks.";
+      bookmarksList.append(li);
+    }
+  },
+
+  displayNotesForPage(pageNumber) {
+    const fileUrl = this.url || this.baseUrl;
+    const notes = JSON.parse(localStorage.getItem("pdfjsNotes")) || {};
+    const pageView = this.pdfViewer.getPageView(pageNumber - 1);
+
+    // Remove existing notes
+    const existingNotes = pageView.div.querySelectorAll(".note");
+    existingNotes.forEach(note => note.remove());
+
+    if (notes[fileUrl] && notes[fileUrl][pageNumber]) {
+      notes[fileUrl][pageNumber].forEach(noteContent => {
+        const noteDiv = document.createElement("div");
+        noteDiv.className = "note";
+        noteDiv.textContent = noteContent;
+        // Style the note as desired
+        noteDiv.style.position = "absolute";
+        noteDiv.style.top = "10px";
+        noteDiv.style.right = "10px";
+        noteDiv.style.backgroundColor = "rgba(255, 255, 0, 0.7)";
+        noteDiv.style.padding = "5px";
+        noteDiv.style.borderRadius = "4px";
+        noteDiv.style.zIndex = "1000";
+        pageView.div.append(noteDiv);
+      });
+    }
+  },
+
   progress: function pdfViewProgress(level) {
     const percent = Math.round(level * 100);
     // Updating the bar if value increases.

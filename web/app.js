@@ -198,6 +198,11 @@ const PDFViewerApplication = {
       await this._parseHashParams();
     }
 
+    this.eventBus.on("pagerendered", evt => {
+      const pageNumber = evt.pageNumber;
+      this.displayNotesForPage(pageNumber);
+    });
+
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
       let mode;
       switch (AppOptions.get("viewerCssTheme")) {
@@ -259,6 +264,105 @@ const PDFViewerApplication = {
 
     this._initializedCapability.settled = true;
     this._initializedCapability.resolve();
+  },
+
+  addBookmark() {
+    const pageNumber = this.pdfViewer.currentPageNumber;
+    const fileUrl = this.url || this.baseUrl;
+    const bookmarks = JSON.parse(localStorage.getItem("pdfjsBookmarks")) || {};
+
+    if (!bookmarks[fileUrl]) {
+      bookmarks[fileUrl] = [];
+    }
+
+    if (!bookmarks[fileUrl].includes(pageNumber)) {
+      bookmarks[fileUrl].push(pageNumber);
+      localStorage.setItem("pdfjsBookmarks", JSON.stringify(bookmarks));
+      // eslint-disable-next-line no-alert
+      alert(`Bookmark added for page ${pageNumber}.`);
+      // Optionally, update the bookmarks view in the sidebar
+      this.displayBookmarks();
+    } else {
+      // eslint-disable-next-line no-alert
+      alert(`Page ${pageNumber} is already bookmarked.`);
+    }
+  },
+
+  addNote() {
+    const pageNumber = this.pdfViewer.currentPageNumber;
+    // eslint-disable-next-line no-alert
+    const noteContent = prompt("Enter your note:");
+    if (noteContent) {
+      const fileUrl = this.url || this.baseUrl;
+      const notes = JSON.parse(localStorage.getItem("pdfjsNotes")) || {};
+
+      if (!notes[fileUrl]) {
+        notes[fileUrl] = {};
+      }
+
+      if (!notes[fileUrl][pageNumber]) {
+        notes[fileUrl][pageNumber] = [];
+      }
+
+      notes[fileUrl][pageNumber].push(noteContent);
+      localStorage.setItem("pdfjsNotes", JSON.stringify(notes));
+      // eslint-disable-next-line no-alert
+      alert(`Note added to page ${pageNumber}.`);
+      // Optionally, display the note on the page
+      this.displayNotesForPage(pageNumber);
+    }
+  },
+  
+  displayBookmarks() {
+    const fileUrl = this.url || this.baseUrl;
+    const bookmarks = JSON.parse(localStorage.getItem("pdfjsBookmarks")) || {};
+    const bookmarksList = document.getElementById("bookmarksList");
+
+    // Clear existing bookmarks
+    bookmarksList.innerHTML = "";
+
+    if (bookmarks[fileUrl]) {
+      bookmarks[fileUrl].forEach(pageNumber => {
+        const li = document.createElement("li");
+        li.textContent = `Page ${pageNumber}`;
+        li.style.cursor = "pointer";
+        li.addEventListener("click", () => {
+          this.pdfViewer.currentPageNumber = pageNumber;
+        });
+        bookmarksList.append(li);
+      });
+    } else {
+      const li = document.createElement("li");
+      li.textContent = "No bookmarks.";
+      bookmarksList.append(li);
+    }
+  },
+
+  displayNotesForPage(pageNumber) {
+    const fileUrl = this.url || this.baseUrl;
+    const notes = JSON.parse(localStorage.getItem("pdfjsNotes")) || {};
+    const pageView = this.pdfViewer.getPageView(pageNumber - 1);
+
+    // Remove existing notes
+    const existingNotes = pageView.div.querySelectorAll(".note");
+    existingNotes.forEach(note => note.remove());
+
+    if (notes[fileUrl] && notes[fileUrl][pageNumber]) {
+      notes[fileUrl][pageNumber].forEach(noteContent => {
+        const noteDiv = document.createElement("div");
+        noteDiv.className = "note";
+        noteDiv.textContent = noteContent;
+        // Style the note as desired
+        noteDiv.style.position = "absolute";
+        noteDiv.style.top = "10px";
+        noteDiv.style.right = "10px";
+        noteDiv.style.backgroundColor = "rgba(255, 255, 0, 0.7)";
+        noteDiv.style.padding = "5px";
+        noteDiv.style.borderRadius = "4px";
+        noteDiv.style.zIndex = "1000";
+        pageView.div.append(noteDiv);
+      });
+    }
   },
 
   /**
@@ -650,7 +754,14 @@ const PDFViewerApplication = {
         l10n,
       });
     }
-
+    if (appConfig.toolbar) {
+      // Toolbar initialization
+      this.toolbar = new Toolbar(
+        appConfig.toolbar,
+        eventBus,
+        AppOptions.get("toolbarDensity")
+      );
+    }
     if (appConfig.sidebar) {
       this.pdfSidebar = new PDFSidebar({
         elements: appConfig.sidebar,
@@ -676,6 +787,22 @@ const PDFViewerApplication = {
 
   async run(config) {
     await this.initialize(config);
+
+    const { bookmarkButton, noteButton } = this.appConfig.toolbar;
+
+    bookmarkButton.addEventListener("click", () => {
+      this.addBookmark();
+    });
+
+    noteButton.addEventListener("click", () => {
+      this.addNote();
+    });
+
+    const viewBookmarksButton = this.appConfig.sidebar.bookmarksButton;
+    viewBookmarksButton.addEventListener("click", () => {
+      this.pdfSidebar.switchView(SidebarView.BOOKMARKS);
+      this.displayBookmarks();
+    });
 
     const { appConfig, eventBus } = this;
     let file;
