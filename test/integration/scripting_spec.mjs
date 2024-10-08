@@ -38,6 +38,24 @@ async function waitForScripting(page) {
   );
 }
 
+async function typeAndWaitForSandbox(page, selector, value) {
+  /**
+   * Type the given value in a text field, indicated by the given selector on
+   * the given page, that triggers the sandbox after every character insertion.
+   *
+   * Text fields can either dispatch a sandbox event on e.g. focus loss or after
+   * every character insertion. The latter is problematic because Puppeteer can
+   * only insert the next character correctly if the sandbox is fully done
+   * processing the sandbox event that was issued for the previous character.
+   * This helper function fixes the issue by typing each character individually
+   * and waiting for the sandbox to finish before continuing with the next one.
+   */
+  for (const character of value) {
+    await page.type(selector, character);
+    await waitForSandboxTrip(page);
+  }
+}
+
 describe("Interaction", () => {
   async function actAndWaitForInput(page, selector, action, clear = true) {
     await page.waitForSelector(selector, {
@@ -92,7 +110,7 @@ describe("Interaction", () => {
           );
           expect(visibility).withContext(`In ${browserName}`).toEqual("hidden");
 
-          await page.type(getSelector("416R"), "3.14159", { delay: 200 });
+          await page.type(getSelector("416R"), "3.14159");
           await page.click(getSelector("419R"));
 
           await page.waitForFunction(
@@ -130,7 +148,7 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page]) => {
           await waitForScripting(page);
 
-          await page.type(getSelector("416R"), "3.14159", { delay: 200 });
+          await page.type(getSelector("416R"), "3.14159");
           await page.click(getSelector("419R"));
 
           const valueFnStr = `${getQuerySelector("416R")}.value !== "3.14159"`;
@@ -150,7 +168,7 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page]) => {
           await waitForScripting(page);
 
-          await page.type(getSelector("448R"), "61803", { delay: 200 });
+          await page.type(getSelector("448R"), "61803");
           await page.click(getSelector("419R"));
 
           const valueOneFnStr = `${getQuerySelector("448R")}.value !== "61803"`;
@@ -172,7 +190,7 @@ describe("Interaction", () => {
           // Clear the textfield
           await clearInput(page, getSelector("448R"));
 
-          await page.type(getSelector("448R"), "1.61803", { delay: 200 });
+          await page.type(getSelector("448R"), "1.61803");
           await page.click(getSelector("419R"));
 
           const valueThreeFnStr = `${getQuerySelector(
@@ -193,7 +211,7 @@ describe("Interaction", () => {
 
           const prevSum = await page.$eval(getSelector("427R"), el => el.value);
 
-          await page.type(getSelector("422R"), "2.7182818", { delay: 200 });
+          await page.type(getSelector("422R"), "2.7182818");
           await page.keyboard.press("Tab");
 
           await page.waitForFunction(
@@ -221,7 +239,7 @@ describe("Interaction", () => {
           let sum = await page.$eval(getSelector("471R"), el => el.value);
           expect(sum).withContext(`In ${browserName}`).toEqual("4,24");
 
-          await page.type(getSelector("436R"), "0.69314", { delay: 200 });
+          await page.type(getSelector("436R"), "0.69314");
           await page.keyboard.press("Escape");
 
           const text = await page.$eval(getSelector("436R"), el => el.value);
@@ -244,7 +262,7 @@ describe("Interaction", () => {
 
           const prevSum = await page.$eval(getSelector("427R"), el => el.value);
 
-          await page.type(getSelector("419R"), "0.577215", { delay: 200 });
+          await page.type(getSelector("419R"), "0.577215");
           await page.keyboard.press("Enter");
           const text = await page.$eval(getSelector("419R"), el => el.value);
           expect(text).toEqual("0.577215");
@@ -268,7 +286,7 @@ describe("Interaction", () => {
           await page.click("[data-annotation-id='449R']");
 
           // this field has no actions but it must be cleared on reset
-          await page.type(getSelector("405R"), "employee", { delay: 200 });
+          await page.type(getSelector("405R"), "employee");
 
           let checked = await page.$eval(getSelector("449R"), el => el.checked);
           expect(checked).toEqual(true);
@@ -686,10 +704,7 @@ describe("Interaction", () => {
             await clearInput(page, getSelector("39R"));
             await page.type(
               getSelector("39R"),
-              `${num},Insert${num},Tresni${num}`,
-              {
-                delay: 10,
-              }
+              `${num},Insert${num},Tresni${num}`
             );
 
             // Click on AddItem button.
@@ -779,9 +794,7 @@ describe("Interaction", () => {
             ["Choice1", "38R"],
           ]) {
             await clearInput(page, getSelector("34R"));
-            await page.type(getSelector("34R"), `${name}`, {
-              delay: 10,
-            });
+            await page.type(getSelector("34R"), `${name}`);
 
             for (const [id, propName, storedName, expected, storedExpected] of [
               [
@@ -859,9 +872,7 @@ describe("Interaction", () => {
           ]) {
             const prev = await page.$eval(getSelector("171R"), el => el.value);
 
-            await page.type(getSelector(id), val.toString(), {
-              delay: 200,
-            });
+            await typeAndWaitForSandbox(page, getSelector(id), val.toString());
             await page.keyboard.press("Tab");
 
             await page.waitForFunction(
@@ -1056,7 +1067,7 @@ describe("Interaction", () => {
         await clearInput(page, getSelector("30R"));
 
         await page.focus(getSelector("29R"));
-        await page.type(getSelector("29R"), "12A", { delay: 200 });
+        await typeAndWaitForSandbox(page, getSelector("29R"), "12A");
         await page.waitForFunction(
           `${getQuerySelector("29R")}.value !== "12A"`
         );
@@ -1065,7 +1076,7 @@ describe("Interaction", () => {
         expect(text).withContext(`In ${browserName}`).toEqual("12");
 
         await page.focus(getSelector("29R"));
-        await page.type(getSelector("29R"), "34", { delay: 200 });
+        await typeAndWaitForSandbox(page, getSelector("29R"), "34");
         await page.click("[data-annotation-id='30R']");
 
         await page.waitForFunction(
@@ -1076,7 +1087,7 @@ describe("Interaction", () => {
         expect(text).withContext(`In ${browserName}`).toEqual("");
 
         await page.focus(getSelector("29R"));
-        await page.type(getSelector("29R"), "12345", { delay: 200 });
+        await typeAndWaitForSandbox(page, getSelector("29R"), "12345");
         await page.click("[data-annotation-id='30R']");
 
         text = await page.$eval(getSelector(`29R`), el => el.value);
@@ -1111,7 +1122,7 @@ describe("Interaction", () => {
         await clearInput(page, getSelector("30R"));
 
         await page.focus(getSelector("30R"));
-        await page.type(getSelector("30R"), "(123) 456A", { delay: 200 });
+        await typeAndWaitForSandbox(page, getSelector("30R"), "(123) 456A");
         await page.waitForFunction(
           `${getQuerySelector("30R")}.value !== "(123) 456A"`
         );
@@ -1120,7 +1131,7 @@ describe("Interaction", () => {
         expect(text).withContext(`In ${browserName}`).toEqual("(123) 456");
 
         await page.focus(getSelector("30R"));
-        await page.type(getSelector("30R"), "-789", { delay: 200 });
+        await typeAndWaitForSandbox(page, getSelector("30R"), "-789");
         await page.click("[data-annotation-id='29R']");
 
         await page.waitForFunction(
@@ -1131,7 +1142,7 @@ describe("Interaction", () => {
         expect(text).withContext(`In ${browserName}`).toEqual("");
 
         await page.focus(getSelector("30R"));
-        await page.type(getSelector("30R"), "(123) 456-7890", { delay: 200 });
+        await typeAndWaitForSandbox(page, getSelector("30R"), "(123) 456-7890");
         await page.click("[data-annotation-id='29R']");
 
         text = await page.$eval(getSelector("30R"), el => el.value);
@@ -1166,7 +1177,7 @@ describe("Interaction", () => {
         await clearInput(page, getSelector("30R"));
 
         await page.focus(getSelector("30R"));
-        await page.type(getSelector("30R"), "123A", { delay: 200 });
+        await typeAndWaitForSandbox(page, getSelector("30R"), "123A");
         await page.waitForFunction(
           `${getQuerySelector("30R")}.value !== "123A"`
         );
@@ -1175,7 +1186,7 @@ describe("Interaction", () => {
         expect(text).withContext(`In ${browserName}`).toEqual("123");
 
         await page.focus(getSelector("30R"));
-        await page.type(getSelector("30R"), "-456", { delay: 200 });
+        await typeAndWaitForSandbox(page, getSelector("30R"), "-456");
         await page.click("[data-annotation-id='29R']");
 
         await page.waitForFunction(
@@ -1186,7 +1197,7 @@ describe("Interaction", () => {
         expect(text).withContext(`In ${browserName}`).toEqual("");
 
         await page.focus(getSelector("30R"));
-        await page.type(getSelector("30R"), "123-4567", { delay: 200 });
+        await typeAndWaitForSandbox(page, getSelector("30R"), "123-4567");
         await page.click("[data-annotation-id='29R']");
 
         text = await page.$eval(getSelector("30R"), el => el.value);
@@ -1216,7 +1227,7 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page]) => {
           await waitForScripting(page);
 
-          await page.type(getSelector("27R"), "Hello", { delay: 200 });
+          await typeAndWaitForSandbox(page, getSelector("27R"), "Hello");
           await page.waitForFunction(
             `${getQuerySelector("27R")}.value !== "Hello"`
           );
@@ -1224,7 +1235,7 @@ describe("Interaction", () => {
           let text = await page.$eval(getSelector("27R"), el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("HELLO");
 
-          await page.type(getSelector("27R"), " world", { delay: 200 });
+          await typeAndWaitForSandbox(page, getSelector("27R"), " world");
           await page.waitForFunction(
             `${getQuerySelector("27R")}.value !== "HELLO world"`
           );
@@ -1242,7 +1253,7 @@ describe("Interaction", () => {
           text = await page.$eval(getSelector("27R"), el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("HELLO WOR");
 
-          await page.type(getSelector("27R"), "12.dL", { delay: 200 });
+          await typeAndWaitForSandbox(page, getSelector("27R"), "12.dL");
 
           await page.waitForFunction(
             `${getQuerySelector("27R")}.value !== "HELLO WOR"`
@@ -1251,7 +1262,7 @@ describe("Interaction", () => {
           text = await page.$eval(getSelector("27R"), el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("HELLO WORDL");
 
-          await page.type(getSelector("27R"), " ", { delay: 200 });
+          await typeAndWaitForSandbox(page, getSelector("27R"), " ");
 
           await kbDeleteLastWord(page);
 
@@ -1285,7 +1296,7 @@ describe("Interaction", () => {
             el.setSelectionRange(0, 0)
           );
 
-          await page.type(getSelector("28R"), "Hello", { delay: 200 });
+          await page.type(getSelector("28R"), "Hello");
           await page.waitForFunction(
             `${getQuerySelector("28R")}.value !== "123"`
           );
@@ -1331,7 +1342,7 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page]) => {
           await waitForScripting(page);
 
-          await page.type(getSelector("29R"), "Hello World", { delay: 200 });
+          await page.type(getSelector("29R"), "Hello World");
           await page.click(getSelector("27R"));
 
           await page.waitForFunction(
@@ -1502,10 +1513,10 @@ describe("Interaction", () => {
           await waitForScripting(page);
 
           await clearInput(page, getSelector("39R"));
-          await page.type(getSelector("39R"), "123", { delay: 10 });
+          await typeAndWaitForSandbox(page, getSelector("39R"), "123");
 
           await clearInput(page, getSelector("42R"));
-          await page.type(getSelector("42R"), "456", { delay: 10 });
+          await typeAndWaitForSandbox(page, getSelector("42R"), "456");
 
           await page.click(getSelector("45R"));
 
@@ -1537,7 +1548,7 @@ describe("Interaction", () => {
           await waitForScripting(page);
 
           // The default charLimit is 0, which indicates unlimited text length.
-          await page.type(getSelector("7R"), "abcdefghij", { delay: 10 });
+          await page.type(getSelector("7R"), "abcdefghij");
           await page.waitForFunction(
             `${getQuerySelector("7R")}.value === "abcdefghij"`
           );
@@ -1548,7 +1559,7 @@ describe("Interaction", () => {
           await page.waitForFunction(`${getQuerySelector("7R")}.value === "a"`);
 
           await clearInput(page, getSelector("7R"));
-          await page.type(getSelector("7R"), "xyz", { delay: 10 });
+          await page.type(getSelector("7R"), "xyz");
           await page.waitForFunction(`${getQuerySelector("7R")}.value === "x"`);
 
           // Increase the charLimit to 2.
@@ -1556,7 +1567,7 @@ describe("Interaction", () => {
           await waitForSandboxTrip(page);
 
           await clearInput(page, getSelector("7R"));
-          await page.type(getSelector("7R"), "xyz", { delay: 10 });
+          await page.type(getSelector("7R"), "xyz");
           await page.waitForFunction(
             `${getQuerySelector("7R")}.value === "xy"`
           );
@@ -1581,13 +1592,9 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page]) => {
           await waitForScripting(page);
 
-          await page.type(getSelector("30R"), "123", {
-            delay: 10,
-          });
+          await typeAndWaitForSandbox(page, getSelector("30R"), "123");
           await page.click(getSelector("31R"));
-          await page.type(getSelector("31R"), "456", {
-            delay: 10,
-          });
+          await page.type(getSelector("31R"), "456");
           await page.click(getSelector("26R"));
           await page.click(getSelector("27R"));
           await page.waitForFunction(`${getQuerySelector("26R")}.value !== ""`);
@@ -1615,17 +1622,13 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page]) => {
           await waitForScripting(page);
 
-          await page.type(getSelector("27R"), "abc", {
-            delay: 10,
-          });
+          await page.type(getSelector("27R"), "abc");
           await page.keyboard.press("Enter");
           await page.waitForFunction(`${getQuerySelector("28R")}.value !== ""`);
           let value = await page.$eval(getSelector("28R"), el => el.value);
           expect(value).withContext(`In ${browserName}`).toEqual("abc");
 
-          await page.type(getSelector("27R"), "def", {
-            delay: 10,
-          });
+          await page.type(getSelector("27R"), "def");
 
           await page.keyboard.press("Enter");
           await page.waitForFunction(
@@ -1724,7 +1727,7 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page]) => {
           await waitForScripting(page);
 
-          await page.type(getSelector("30R"), "abc", { delay: 200 });
+          await typeAndWaitForSandbox(page, getSelector("30R"), "abc");
           await page.waitForFunction(
             `${getQuerySelector("30R")}.value !== "abc"`
           );
@@ -1810,7 +1813,7 @@ describe("Interaction", () => {
           await waitForScripting(page);
 
           await page.click(getSelector("25R"));
-          await page.type(getSelector("25R"), "00000000123", { delay: 10 });
+          await page.type(getSelector("25R"), "00000000123");
 
           let text = await page.$eval(getSelector("25R"), el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("00000000123");
@@ -1941,7 +1944,7 @@ describe("Interaction", () => {
           expect(text).withContext(`In ${browserName}`).toEqual("");
 
           await page.click(getSelector("26R"));
-          await page.type(getSelector("26R"), "abcde", { delay: 10 });
+          await page.type(getSelector("26R"), "abcde");
           await page.click(getSelector("23R"));
           await clearInput(page, getSelector("26R"));
           await page.click(getSelector("23R"));
@@ -2155,11 +2158,11 @@ describe("Interaction", () => {
           await waitForScripting(page);
 
           await page.click(getSelector("55R"));
-          await page.type(getSelector("55R"), "Hello", { delay: 10 });
+          await page.type(getSelector("55R"), "Hello");
           await page.click(getSelector("56R"));
 
           await page.click(getSelector("55R"));
-          await page.type(getSelector("55R"), " World", { delay: 10 });
+          await page.type(getSelector("55R"), " World");
 
           await otherPages[i].bringToFront();
           // eslint-disable-next-line no-restricted-syntax
@@ -2314,7 +2317,7 @@ describe("Interaction", () => {
           await waitForScripting(page);
 
           await page.click(getSelector("24R"));
-          await page.type(getSelector("24R"), "01234", { delay: 10 });
+          await typeAndWaitForSandbox(page, getSelector("24R"), "01234");
           await page.keyboard.press("Tab");
           await waitForSandboxTrip(page);
 
