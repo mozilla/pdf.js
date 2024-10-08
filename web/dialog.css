@@ -270,29 +270,17 @@
     }
 
     .messageBar {
-      --message-bar-warning-icon: url(images/messageBar_warning.svg);
-      --closing-button-icon: url(images/messageBar_closingButton.svg);
-
       --message-bar-bg-color: #ffebcd;
       --message-bar-fg-color: #15141a;
       --message-bar-border-color: rgb(0 0 0 / 0.08);
+      --message-bar-icon: url(images/messageBar_warning.svg);
       --message-bar-icon-color: #cd411e;
-      --message-bar-close-button-border-radius: 4px;
-      --message-bar-close-button-border: none;
-      --message-bar-close-button-color: var(--text-primary-color);
-      --message-bar-close-button-hover-bg-color: rgb(21 20 26 / 0.14);
-      --message-bar-close-button-active-bg-color: rgb(21 20 26 / 0.21);
-      --message-bar-close-button-focus-bg-color: rgb(21 20 26 / 0.07);
-      --message-bar-close-button-color-hover: var(--text-primary-color);
 
       @media (prefers-color-scheme: dark) {
         --message-bar-bg-color: #5a3100;
         --message-bar-fg-color: #fbfbfe;
         --message-bar-border-color: rgb(255 255 255 / 0.08);
         --message-bar-icon-color: #e49c49;
-        --message-bar-close-button-hover-bg-color: rgb(251 251 254 / 0.14);
-        --message-bar-close-button-active-bg-color: rgb(251 251 254 / 0.21);
-        --message-bar-close-button-focus-bg-color: rgb(251 251 254 / 0.07);
       }
 
       @media screen and (forced-colors: active) {
@@ -300,43 +288,14 @@
         --message-bar-fg-color: CanvasText;
         --message-bar-border-color: CanvasText;
         --message-bar-icon-color: CanvasText;
-        --message-bar-close-button-color: ButtonText;
-        --message-bar-close-button-border: 1px solid ButtonText;
-        --message-bar-close-button-hover-bg-color: ButtonText;
-        --message-bar-close-button-active-bg-color: ButtonText;
-        --message-bar-close-button-focus-bg-color: ButtonText;
-        --message-bar-close-button-color-hover: HighlightText;
       }
 
-      display: flex;
-      position: relative;
-      padding: 12px 8px 12px 0;
-      flex-direction: column;
-      justify-content: center;
-      align-items: flex-start;
-      gap: 8px;
       align-self: stretch;
 
-      border-radius: 4px;
-      border: 1px solid var(--message-bar-border-color);
-      background: var(--message-bar-bg-color);
-      color: var(--message-bar-fg-color);
-
       > div {
-        display: flex;
-        padding-inline-start: 16px;
-        align-items: flex-start;
-        gap: 8px;
-        align-self: stretch;
-
-        &::before {
-          content: "";
-          display: inline-block;
-          width: 16px;
-          height: 16px;
-          mask-image: var(--message-bar-warning-icon);
-          mask-size: cover;
-          background-color: var(--message-bar-icon-color);
+        &::before,
+        > div {
+          margin-block: 4px;
         }
 
         > div {
@@ -354,50 +313,6 @@
           .description {
             font-size: 13px;
           }
-        }
-      }
-
-      .closeButton {
-        position: absolute;
-        width: 32px;
-        height: 32px;
-        inset-inline-end: 8px;
-        inset-block-start: 8px;
-        background: none;
-        border-radius: var(--message-bar-close-button-border-radius);
-        border: var(--message-bar-close-button-border);
-
-        &::before {
-          content: "";
-          display: inline-block;
-          width: 16px;
-          height: 16px;
-          mask-image: var(--closing-button-icon);
-          mask-size: cover;
-          background-color: var(--message-bar-close-button-color);
-        }
-
-        &:is(:hover, :active, :focus)::before {
-          background-color: var(--message-bar-close-button-color-hover);
-        }
-
-        &:hover {
-          background-color: var(--message-bar-close-button-hover-bg-color);
-        }
-
-        &:active {
-          background-color: var(--message-bar-close-button-active-bg-color);
-        }
-
-        &:focus {
-          background-color: var(--message-bar-close-button-focus-bg-color);
-        }
-
-        > span {
-          display: inline-block;
-          width: 0;
-          height: 0;
-          overflow: hidden;
         }
       }
     }
