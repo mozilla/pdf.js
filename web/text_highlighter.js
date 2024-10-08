@@ -187,9 +187,7 @@ class TextHighlighter {
       const backgroundElements = span.style.background
         .split(",")
         .slice(0, 3)
-        .map(element => {
-          element.replace(")", "").trim();
-        });
+        .map(element => element.replace(")", "").trim());
       backgroundElements.push(".25");
       span.style.background = backgroundElements.join(" ");
     }
