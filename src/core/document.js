@@ -1871,49 +1871,52 @@ class PDFDocument {
   }
 
   get fieldObjects() {
-    if (!this.formInfo.hasFields) {
-      return shadow(this, "fieldObjects", Promise.resolve(null));
-    }
+    const promise = this.pdfManager
+      .ensureDoc("formInfo")
+      .then(async formInfo => {
+        if (!formInfo.hasFields) {
+          return null;
+        }
 
-    const promise = Promise.all([
-      this.pdfManager.ensureDoc("annotationGlobals"),
-      this.pdfManager.ensureCatalog("acroForm"),
-    ]).then(async ([annotationGlobals, acroForm]) => {
-      if (!annotationGlobals) {
-        return null;
-      }
+        const [annotationGlobals, acroForm] = await Promise.all([
+          this.pdfManager.ensureDoc("annotationGlobals"),
+          this.pdfManager.ensureCatalog("acroForm"),
+        ]);
+        if (!annotationGlobals) {
+          return null;
+        }
 
-      const visitedRefs = new RefSet();
-      const allFields = Object.create(null);
-      const fieldPromises = new Map();
-      const orphanFields = new RefSetCache();
-      for (const fieldRef of await acroForm.getAsync("Fields")) {
-        await this.#collectFieldObjects(
-          "",
-          null,
-          fieldRef,
-          fieldPromises,
-          annotationGlobals,
-          visitedRefs,
-          orphanFields
-        );
-      }
+        const visitedRefs = new RefSet();
+        const allFields = Object.create(null);
+        const fieldPromises = new Map();
+        const orphanFields = new RefSetCache();
+        for (const fieldRef of await acroForm.getAsync("Fields")) {
+          await this.#collectFieldObjects(
+            "",
+            null,
+            fieldRef,
+            fieldPromises,
+            annotationGlobals,
+            visitedRefs,
+            orphanFields
+          );
+        }
 
-      const allPromises = [];
-      for (const [name, promises] of fieldPromises) {
-        allPromises.push(
-          Promise.all(promises).then(fields => {
-            fields = fields.filter(field => !!field);
-            if (fields.length > 0) {
-              allFields[name] = fields;
-            }
-          })
-        );
-      }
+        const allPromises = [];
+        for (const [name, promises] of fieldPromises) {
+          allPromises.push(
+            Promise.all(promises).then(fields => {
+              fields = fields.filter(field => !!field);
+              if (fields.length > 0) {
+                allFields[name] = fields;
+              }
+            })
+          );
+        }
 
-      await Promise.all(allPromises);
-      return { allFields, orphanFields };
-    });
+        await Promise.all(allPromises);
+        return { allFields, orphanFields };
+      });
 
     return shadow(this, "fieldObjects", promise);
   }
