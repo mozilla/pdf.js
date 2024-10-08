@@ -673,22 +673,29 @@ class PDFViewer {
 
     // Handle the window/tab becoming inactive *after* rendering has started;
     // fixes (another part of) bug 1746213.
-    const hiddenCapability = Promise.withResolvers();
-    function onVisibilityChange() {
-      if (document.visibilityState === "hidden") {
-        hiddenCapability.resolve();
+    const hiddenCapability = Promise.withResolvers(),
+      ac = new AbortController();
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+        if (document.visibilityState === "hidden") {
+          hiddenCapability.resolve();
+        }
+      },
+      {
+        signal:
+          (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+          typeof AbortSignal.any === "function"
+            ? AbortSignal.any([signal, ac.signal])
+            : signal,
       }
-    }
-    document.addEventListener("visibilitychange", onVisibilityChange, {
-      signal,
-    });
+    );
 
     await Promise.race([
       this._onePageRenderedCapability.promise,
       hiddenCapability.promise,
     ]);
-    // Ensure that the "visibilitychange" listener is removed immediately.
-    document.removeEventListener("visibilitychange", onVisibilityChange);
+    ac.abort(); // Remove the "visibilitychange" listener immediately.
   }
 
   async getAllText() {
