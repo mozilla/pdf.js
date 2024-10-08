@@ -188,8 +188,8 @@ class TextHighlighter {
         .split(",")
         .slice(0, 3)
         .map(element => element.replace(")", "").trim());
-      backgroundElements.push(".25");
-      span.style.background = backgroundElements.join(" ");
+      backgroundElements.push(".25)");
+      span.style.background = backgroundElements.join(", ");
     }
 
     function appendTextToDiv(divIdx, fromOffset, toOffset, className, bgColor) {
