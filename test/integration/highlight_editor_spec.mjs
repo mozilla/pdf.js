@@ -1785,6 +1785,10 @@ describe("Highlight Editor", () => {
           await page.keyboard.press("Escape");
           await page.waitForSelector(`${editorSelector}:not(.selectedEditor)`);
 
+          const clickHandle = await waitForPointerUp(page);
+          y = rect.y - rect.height;
+          await page.mouse.move(x, y);
+
           const counterHandle = await page.evaluateHandle(sel => {
             const el = document.querySelector(sel);
             const counter = { count: 0 };
@@ -1798,19 +1802,22 @@ describe("Highlight Editor", () => {
             return counter;
           }, editorSelector);
 
-          const clickHandle = await waitForPointerUp(page);
-          y = rect.y - rect.height;
-          await page.mouse.move(x, y);
           await page.mouse.down();
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] .annotationEditorLayer.drawing`
+          );
           for (
             const endY = rect.y + 2 * rect.height;
             y <= endY;
             y += rect.height / 10
           ) {
-            await page.mouse.move(x, y);
+            await page.mouse.move(x, Math.round(y));
           }
           await page.mouse.up();
           await awaitPromise(clickHandle);
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] .annotationEditorLayer:not(.drawing)`
+          );
 
           const { count } = await counterHandle.jsonValue();
           expect(count).withContext(`In ${browserName}`).toEqual(0);
@@ -1841,13 +1848,17 @@ describe("Highlight Editor", () => {
             "ternative compilation technique for dynamically-typed languages"
           );
           const editorSelector = getEditorSelector(0);
-          const x = rect.x + rect.width / 2;
-          let y = rect.y + rect.height / 2;
+          const x = Math.round(rect.x + rect.width / 2);
+          let y = Math.round(rect.y + rect.height / 2);
           await page.mouse.click(x, y, { count: 3, delay: 100 });
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
           await page.keyboard.press("Escape");
           await page.waitForSelector(`${editorSelector}:not(.selectedEditor)`);
+
+          const clickHandle = await waitForPointerUp(page);
+          y = rect.y - 3 * rect.height;
+          await page.mouse.move(x, y);
 
           const counterHandle = await page.evaluateHandle(sel => {
             const el = document.querySelector(sel);
@@ -1862,19 +1873,22 @@ describe("Highlight Editor", () => {
             return counter;
           }, editorSelector);
 
-          const clickHandle = await waitForPointerUp(page);
-          y = rect.y - 3 * rect.height;
-          await page.mouse.move(x, y);
           await page.mouse.down();
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] .textLayer.selecting`
+          );
           for (
             const endY = rect.y + 3 * rect.height;
             y <= endY;
             y += rect.height / 10
           ) {
-            await page.mouse.move(x, y);
+            await page.mouse.move(x, Math.round(y));
           }
           await page.mouse.up();
           await awaitPromise(clickHandle);
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] .textLayer:not(.selecting)`
+          );
 
           const { count } = await counterHandle.jsonValue();
           expect(count).withContext(`In ${browserName}`).toEqual(0);
