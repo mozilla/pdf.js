@@ -1109,6 +1109,10 @@ class AnnotationEditor {
     this.#selectOnPointerEvent(event);
   }
 
+  get isSelected() {
+    return this._uiManager.isSelected(this);
+  }
+
   #selectOnPointerEvent(event) {
     const { isMac } = FeatureTest.platform;
     if (
@@ -1123,7 +1127,7 @@ class AnnotationEditor {
   }
 
   #setUpDragSession(event) {
-    const isSelected = this._uiManager.isSelected(this);
+    const { isSelected } = this;
     this._uiManager.setUpDragSession();
 
     const ac = new AbortController();
