@@ -161,8 +161,17 @@ class FlateStream extends DecodeStream {
     try {
       const { readable, writable } = new DecompressionStream("deflate");
       const writer = writable.getWriter();
-      writer.write(bytes);
-      writer.close();
+      await writer.ready;
+
+      // We can't await writer.write() because it'll block until the reader
+      // starts which happens few lines below.
+      writer
+        .write(bytes)
+        .then(async () => {
+          await writer.ready;
+          await writer.close();
+        })
+        .catch(() => {});
 
       const chunks = [];
       let totalLength = 0;
