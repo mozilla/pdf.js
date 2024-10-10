@@ -18,10 +18,6 @@ import { KeyboardManager } from "./tools.js";
 import { noContextMenu } from "../display_utils.js";
 
 class ColorPicker {
-  #boundKeyDown = this.#keyDown.bind(this);
-
-  #boundPointerDown = this.#pointerDown.bind(this);
-
   #button = null;
 
   #buttonSwatch = null;
@@ -37,6 +33,8 @@ class ColorPicker {
   #editor = null;
 
   #eventBus;
+
+  #openDropdownAC = null;
 
   #uiManager = null;
 
@@ -101,7 +99,7 @@ class ColorPicker {
     button.setAttribute("aria-haspopup", true);
     const signal = this.#uiManager._signal;
     button.addEventListener("click", this.#openDropdown.bind(this), { signal });
-    button.addEventListener("keydown", this.#boundKeyDown, { signal });
+    button.addEventListener("keydown", this.#keyDown.bind(this), { signal });
     const swatch = (this.#buttonSwatch = document.createElement("span"));
     swatch.className = "swatch";
     swatch.setAttribute("aria-hidden", true);
@@ -145,7 +143,7 @@ class ColorPicker {
       div.append(button);
     }
 
-    div.addEventListener("keydown", this.#boundKeyDown, { signal });
+    div.addEventListener("keydown", this.#keyDown.bind(this), { signal });
 
     return div;
   }
@@ -225,9 +223,14 @@ class ColorPicker {
       return;
     }
     this.#dropdownWasFromKeyboard = event.detail === 0;
-    window.addEventListener("pointerdown", this.#boundPointerDown, {
-      signal: this.#uiManager._signal,
-    });
+
+    if (!this.#openDropdownAC) {
+      this.#openDropdownAC = new AbortController();
+
+      window.addEventListener("pointerdown", this.#pointerDown.bind(this), {
+        signal: this.#uiManager.combinedSignal(this.#openDropdownAC),
+      });
+    }
     if (this.#dropdown) {
       this.#dropdown.classList.remove("hidden");
       return;
@@ -245,7 +248,8 @@ class ColorPicker {
 
   hideDropdown() {
     this.#dropdown?.classList.add("hidden");
-    window.removeEventListener("pointerdown", this.#boundPointerDown);
+    this.#openDropdownAC?.abort();
+    this.#openDropdownAC = null;
   }
 
   get #isDropdownVisible() {
