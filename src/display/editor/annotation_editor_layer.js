@@ -735,14 +735,6 @@ class AnnotationEditorLayer {
   }
 
   /**
-   * Check if the editor is selected.
-   * @param {AnnotationEditor} editor
-   */
-  isSelected(editor) {
-    return this.#uiManager.isSelected(editor);
-  }
-
-  /**
    * Unselect an editor.
    * @param {AnnotationEditor} editor
    */

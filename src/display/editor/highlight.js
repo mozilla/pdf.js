@@ -596,11 +596,15 @@ class HighlightEditor extends AnnotationEditor {
   }
 
   pointerover() {
-    this.parent.drawLayer.addClass(this.#outlineId, "hovered");
+    if (!this.isSelected) {
+      this.parent.drawLayer.addClass(this.#outlineId, "hovered");
+    }
   }
 
   pointerleave() {
-    this.parent.drawLayer.removeClass(this.#outlineId, "hovered");
+    if (!this.isSelected) {
+      this.parent.drawLayer.removeClass(this.#outlineId, "hovered");
+    }
   }
 
   #keydown(event) {
