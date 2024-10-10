@@ -687,6 +687,13 @@ function runTests(testsName, { bot = false, xfaOnly = false } = {}) {
           args.push("--xfaOnly");
         }
         args.push("--manifestFile=" + PDF_TEST);
+        collectArgs(
+          {
+            names: ["-t", "--testfilter"],
+            hasValue: true,
+          },
+          args
+        );
         break;
       case "unit":
         args.push("--unitTest");
@@ -724,6 +731,28 @@ function runTests(testsName, { bot = false, xfaOnly = false } = {}) {
   });
 }
 
+function collectArgs(options, args) {
+  if (!Array.isArray(options)) {
+    options = [options];
+  }
+  for (let i = 0, ii = process.argv.length; i < ii; i++) {
+    const arg = process.argv[i];
+    const option = options.find(opt => opt.names.includes(arg));
+    if (!option) {
+      continue;
+    }
+    if (!option.hasValue) {
+      args.push(arg);
+      continue;
+    }
+    const next = process.argv[i + 1];
+    if (next && !next.startsWith("-")) {
+      args.push(arg, next);
+      i += 1;
+    }
+  }
+}
+
 function makeRef(done, bot) {
   console.log();
   console.log("### Creating reference images");
@@ -748,6 +777,13 @@ function makeRef(done, bot) {
   if (process.argv.includes("--headless")) {
     args.push("--headless");
   }
+  collectArgs(
+    {
+      names: ["-t", "--testfilter"],
+      hasValue: true,
+    },
+    args
+  );
 
   const testProcess = startNode(args, { cwd: TEST_DIR, stdio: "inherit" });
   testProcess.on("close", function (code) {
