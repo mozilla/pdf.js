@@ -71,8 +71,14 @@ async function writeStream(stream, buffer, transform) {
     try {
       const cs = new CompressionStream("deflate");
       const writer = cs.writable.getWriter();
-      writer.write(bytes);
-      writer.close();
+      await writer.ready;
+      writer
+        .write(bytes)
+        .then(async () => {
+          await writer.ready;
+          await writer.close();
+        })
+        .catch(() => {});
 
       // Response::text doesn't return the correct data.
       const buf = await new Response(cs.readable).arrayBuffer();
