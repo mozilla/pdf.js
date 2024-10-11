@@ -1,0 +1,9 @@
+services:
+  pdfjs:
+    build: .
+    container_name: pdfjs_container
+    ports:
+      - "8888:5003"
+    volumes:
+      - ./:/app
+    command: bash -c "npm i && gulp server"
