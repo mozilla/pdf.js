@@ -935,9 +935,9 @@ function deprecated(details) {
   console.log("Deprecated API usage: " + details);
 }
 
-let pdfDateStringRegex;
-
 class PDFDateString {
+  static #regex;
+
   /**
    * Convert a PDF date string to a JavaScript `Date` object.
    *
@@ -960,7 +960,7 @@ class PDFDateString {
     }
 
     // Lazily initialize the regular expression.
-    pdfDateStringRegex ||= new RegExp(
+    this.#regex ||= new RegExp(
       "^D:" + // Prefix (required)
         "(\\d{4})" + // Year (required)
         "(\\d{2})?" + // Month (optional)
@@ -978,7 +978,7 @@ class PDFDateString {
     // Optional fields that don't satisfy the requirements from the regular
     // expression (such as incorrect digit counts or numbers that are out of
     // range) will fall back the defaults from the specification.
-    const matches = pdfDateStringRegex.exec(input);
+    const matches = this.#regex.exec(input);
     if (!matches) {
       return null;
     }
