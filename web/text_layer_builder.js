@@ -299,7 +299,7 @@ class TextLayerBuilder {
           anchor = anchor.parentNode;
         }
 
-        const parentTextLayer = anchor.parentElement.closest(".textLayer");
+        const parentTextLayer = anchor.parentElement?.closest(".textLayer");
         const endDiv = this.#textLayers.get(parentTextLayer);
         if (endDiv) {
           endDiv.style.width = parentTextLayer.style.width;
