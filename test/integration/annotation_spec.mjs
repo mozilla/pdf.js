@@ -624,4 +624,34 @@ describe("ResetForm action", () => {
       });
     });
   });
+
+  describe("Annotation with empty popup and aria", () => {
+    describe("issue14438.pdf", () => {
+      let pages;
+
+      beforeAll(async () => {
+        pages = await loadAndWait(
+          "highlights.pdf",
+          "[data-annotation-id='693R']"
+        );
+      });
+
+      afterAll(async () => {
+        await closePages(pages);
+      });
+
+      it("must check that the highlight annotation has no popup and no aria-haspopup attribute", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            await page.waitForFunction(
+              // No aria-haspopup attribute,
+              `document.querySelector("[data-annotation-id='693R']").ariaHasPopup === null` +
+                // and no popup.
+                `&& document.querySelector("[data-annotation-id='694R']") === null`
+            );
+          })
+        );
+      });
+    });
+  });
 });
