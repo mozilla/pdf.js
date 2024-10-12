@@ -285,10 +285,6 @@ class AnnotationElement {
     // use of the z-index.
     style.zIndex = this.parent.zIndex++;
 
-    if (data.popupRef) {
-      container.setAttribute("aria-haspopup", "dialog");
-    }
-
     if (data.alternativeText) {
       container.title = data.alternativeText;
     }
@@ -624,8 +620,7 @@ class AnnotationElement {
    * @memberof AnnotationElement
    */
   _createPopup() {
-    const { container, data } = this;
-    container.setAttribute("aria-haspopup", "dialog");
+    const { data } = this;
 
     const popup = (this.#popupElement = new PopupAnnotationElement({
       data: {
@@ -2091,6 +2086,7 @@ class PopupAnnotationElement extends AnnotationElement {
     const elementIds = [];
     for (const element of this.elements) {
       element.popup = popup;
+      element.container.ariaHasPopup = "dialog";
       elementIds.push(element.data.id);
       element.addHighlightArea();
     }
@@ -2853,13 +2849,11 @@ class InkAnnotationElement extends AnnotationElement {
       polyline.setAttribute("stroke", "transparent");
       polyline.setAttribute("fill", "transparent");
 
-      // Create the popup ourselves so that we can bind it to the polyline
-      // instead of to the entire container (which is the default).
-      if (!popupRef && this.hasPopupData) {
-        this._createPopup();
-      }
-
       svg.append(polyline);
+    }
+
+    if (!popupRef && this.hasPopupData) {
+      this._createPopup();
     }
 
     this.container.append(svg);
