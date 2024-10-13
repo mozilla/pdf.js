@@ -10692,5 +10692,13 @@
     "rounds": 1,
     "type": "eq",
     "annotations": true
+  },
+  {
+    "id": "issue18894",
+    "file": "pdfs/issue18894.pdf",
+    "md5": "5cd744bf8c0800e93c22ed92d1c162f4",
+    "rounds": 1,
+    "type": "eq",
+    "talos": false
   }
 ]
