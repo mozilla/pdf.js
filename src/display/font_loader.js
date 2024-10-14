@@ -19,6 +19,7 @@ import {
   isNodeJS,
   shadow,
   string32,
+  toBase64Util,
   unreachable,
   warn,
 } from "../shared/util.js";
@@ -399,7 +400,7 @@ class FontFaceObject {
       return null;
     }
     // Add the @font-face rule to the document.
-    const url = `url(data:${this.mimetype};base64,${this.data.toBase64()});`;
+    const url = `url(data:${this.mimetype};base64,${toBase64Util(this.data)});`;
     let rule;
     if (!this.cssFontInfo) {
       rule = `@font-face {font-family:"${this.loadedName}";src:${url}}`;
