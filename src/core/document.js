@@ -26,6 +26,7 @@ import {
   stringToBytes,
   stringToPDFString,
   stringToUTF8String,
+  toHexHelper,
   unreachable,
   Util,
   warn,
@@ -1572,8 +1573,8 @@ class PDFDocument {
     }
 
     return shadow(this, "fingerprints", [
-      hashOriginal.toHex(),
-      hashModified?.toHex() ?? null,
+      toHexHelper(hashOriginal),
+      hashModified ? toHexHelper(hashModified) : null,
     ]);
   }
 
