@@ -705,7 +705,7 @@ class PDFImage {
       isOffscreenCanvasSupported &&
       ImageResizer.needsToBeResized(drawWidth, drawHeight);
 
-    if (this.colorSpace.name === "DeviceRGBA") {
+    if (!this.smask && !this.mask && this.colorSpace.name === "DeviceRGBA") {
       imgData.kind = ImageKind.RGBA_32BPP;
       const imgArray = (imgData.data = await this.getImageBytes(
         originalHeight * originalWidth * 4,

@@ -15,6 +15,7 @@
 
 import {
   assert,
+  FeatureTest,
   FormatError,
   info,
   shadow,
@@ -56,6 +57,61 @@ function resizeRgbImage(src, dest, w1, h1, w2, h2, alpha01) {
       dest[newIndex++] = src[oldIndex++];
       dest[newIndex++] = src[oldIndex++];
       newIndex += alpha01;
+    }
+  }
+}
+
+function resizeRgbaImage(src, dest, w1, h1, w2, h2, alpha01) {
+  const xRatio = w1 / w2;
+  const yRatio = h1 / h2;
+  let newIndex = 0;
+  const xScaled = new Uint16Array(w2);
+
+  if (alpha01 === 1) {
+    for (let i = 0; i < w2; i++) {
+      xScaled[i] = Math.floor(i * xRatio);
+    }
+    const src32 = new Uint32Array(src.buffer);
+    const dest32 = new Uint32Array(dest.buffer);
+    const rgbMask = FeatureTest.isLittleEndian ? 0x00ffffff : 0xffffff00;
+    for (let i = 0; i < h2; i++) {
+      const buf = src32.subarray(Math.floor(i * yRatio) * w1);
+      for (let j = 0; j < w2; j++) {
+        dest32[newIndex++] |= buf[xScaled[j]] & rgbMask;
+      }
+    }
+  } else {
+    const COMPONENTS = 4;
+    const w1Scanline = w1 * COMPONENTS;
+    for (let i = 0; i < w2; i++) {
+      xScaled[i] = Math.floor(i * xRatio) * COMPONENTS;
+    }
+    for (let i = 0; i < h2; i++) {
+      const buf = src.subarray(Math.floor(i * yRatio) * w1Scanline);
+      for (let j = 0; j < w2; j++) {
+        const oldIndex = xScaled[j];
+        dest[newIndex++] = buf[oldIndex];
+        dest[newIndex++] = buf[oldIndex + 1];
+        dest[newIndex++] = buf[oldIndex + 2];
+      }
+    }
+  }
+}
+
+function copyRgbaImage(src, dest, alpha01) {
+  if (alpha01 === 1) {
+    const src32 = new Uint32Array(src.buffer);
+    const dest32 = new Uint32Array(dest.buffer);
+    const rgbMask = FeatureTest.isLittleEndian ? 0x00ffffff : 0xffffff00;
+    for (let i = 0, ii = src32.length; i < ii; i++) {
+      dest32[i] |= src32[i] & rgbMask;
+    }
+  } else {
+    let j = 0;
+    for (let i = 0, ii = src.length; i < ii; i += 4) {
+      dest[j++] = src[i];
+      dest[j++] = src[i + 1];
+      dest[j++] = src[i + 2];
     }
   }
 }
@@ -805,6 +861,38 @@ class DeviceRgbaCS extends ColorSpace {
 
   isPassthrough(bits) {
     return bits === 8;
+  }
+
+  fillRgb(
+    dest,
+    originalWidth,
+    originalHeight,
+    width,
+    height,
+    actualHeight,
+    bpc,
+    comps,
+    alpha01
+  ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      assert(
+        dest instanceof Uint8ClampedArray,
+        'DeviceRgbaCS.fillRgb: Unsupported "dest" type.'
+      );
+    }
+    if (originalHeight !== height || originalWidth !== width) {
+      resizeRgbaImage(
+        comps,
+        dest,
+        originalWidth,
+        originalHeight,
+        width,
+        height,
+        alpha01
+      );
+    } else {
+      copyRgbaImage(comps, dest, alpha01);
+    }
   }
 }
 

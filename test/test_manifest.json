@@ -10700,5 +10700,14 @@
     "rounds": 1,
     "type": "eq",
     "talos": false
+  },
+  {
+    "id": "issue18896",
+    "file": "pdfs/issue18896.pdf",
+    "md5": "4acb4df0f38c976dce5e841e6de1f875",
+    "rounds": 1,
+    "type": "eq",
+    "link": true,
+    "talos": false
   }
 ]
