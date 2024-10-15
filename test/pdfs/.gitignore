@@ -2,6 +2,7 @@
 *.error
 
 !boundingBox_invalid.pdf
+!pdkids.pdf
 !tracemonkey.pdf
 !TrueType_without_cmap.pdf
 !franz.pdf
