@@ -1870,7 +1870,8 @@ const PDFViewerApplication = {
     if (this._eventBusAbortController) {
       return;
     }
-    this._eventBusAbortController = new AbortController();
+    const ac = (this._eventBusAbortController = new AbortController());
+    const opts = { signal: ac.signal };
 
     const {
       eventBus,
@@ -1878,109 +1879,114 @@ const PDFViewerApplication = {
       pdfDocumentProperties,
       pdfViewer,
       preferences,
-      _eventBusAbortController: { signal },
     } = this;
 
-    eventBus._on("resize", onResize.bind(this), { signal });
-    eventBus._on("hashchange", onHashchange.bind(this), { signal });
-    eventBus._on("beforeprint", this.beforePrint.bind(this), { signal });
-    eventBus._on("afterprint", this.afterPrint.bind(this), { signal });
-    eventBus._on("pagerender", onPageRender.bind(this), { signal });
-    eventBus._on("pagerendered", onPageRendered.bind(this), { signal });
-    eventBus._on("updateviewarea", onUpdateViewarea.bind(this), { signal });
-    eventBus._on("pagechanging", onPageChanging.bind(this), { signal });
-    eventBus._on("scalechanging", onScaleChanging.bind(this), { signal });
-    eventBus._on("rotationchanging", onRotationChanging.bind(this), { signal });
-    eventBus._on("sidebarviewchanged", onSidebarViewChanged.bind(this), {
-      signal,
-    });
-    eventBus._on("pagemode", onPageMode.bind(this), { signal });
-    eventBus._on("namedaction", onNamedAction.bind(this), { signal });
+    eventBus._on("resize", onResize.bind(this), opts);
+    eventBus._on("hashchange", onHashchange.bind(this), opts);
+    eventBus._on("beforeprint", this.beforePrint.bind(this), opts);
+    eventBus._on("afterprint", this.afterPrint.bind(this), opts);
+    eventBus._on("pagerender", onPageRender.bind(this), opts);
+    eventBus._on("pagerendered", onPageRendered.bind(this), opts);
+    eventBus._on("updateviewarea", onUpdateViewarea.bind(this), opts);
+    eventBus._on("pagechanging", onPageChanging.bind(this), opts);
+    eventBus._on("scalechanging", onScaleChanging.bind(this), opts);
+    eventBus._on("rotationchanging", onRotationChanging.bind(this), opts);
+    eventBus._on("sidebarviewchanged", onSidebarViewChanged.bind(this), opts);
+    eventBus._on("pagemode", onPageMode.bind(this), opts);
+    eventBus._on("namedaction", onNamedAction.bind(this), opts);
     eventBus._on(
       "presentationmodechanged",
       evt => (pdfViewer.presentationModeState = evt.state),
-      { signal }
+      opts
     );
-    eventBus._on("presentationmode", this.requestPresentationMode.bind(this), {
-      signal,
-    });
+    eventBus._on(
+      "presentationmode",
+      this.requestPresentationMode.bind(this),
+      opts
+    );
     eventBus._on(
       "switchannotationeditormode",
       evt => (pdfViewer.annotationEditorMode = evt),
-      { signal }
+      opts
     );
-    eventBus._on("print", this.triggerPrinting.bind(this), { signal });
-    eventBus._on("download", this.downloadOrSave.bind(this), { signal });
-    eventBus._on("firstpage", () => (this.page = 1), { signal });
-    eventBus._on("lastpage", () => (this.page = this.pagesCount), { signal });
-    eventBus._on("nextpage", () => pdfViewer.nextPage(), { signal });
-    eventBus._on("previouspage", () => pdfViewer.previousPage(), { signal });
-    eventBus._on("zoomin", this.zoomIn.bind(this), { signal });
-    eventBus._on("zoomout", this.zoomOut.bind(this), { signal });
-    eventBus._on("zoomreset", this.zoomReset.bind(this), { signal });
-    eventBus._on("pagenumberchanged", onPageNumberChanged.bind(this), {
-      signal,
-    });
+    eventBus._on("print", this.triggerPrinting.bind(this), opts);
+    eventBus._on("download", this.downloadOrSave.bind(this), opts);
+    eventBus._on("firstpage", () => (this.page = 1), opts);
+    eventBus._on("lastpage", () => (this.page = this.pagesCount), opts);
+    eventBus._on("nextpage", () => pdfViewer.nextPage(), opts);
+    eventBus._on("previouspage", () => pdfViewer.previousPage(), opts);
+    eventBus._on("zoomin", this.zoomIn.bind(this), opts);
+    eventBus._on("zoomout", this.zoomOut.bind(this), opts);
+    eventBus._on("zoomreset", this.zoomReset.bind(this), opts);
+    eventBus._on("pagenumberchanged", onPageNumberChanged.bind(this), opts);
     eventBus._on(
       "scalechanged",
       evt => (pdfViewer.currentScaleValue = evt.value),
-      { signal }
+      opts
     );
-    eventBus._on("rotatecw", this.rotatePages.bind(this, 90), { signal });
-    eventBus._on("rotateccw", this.rotatePages.bind(this, -90), { signal });
+    eventBus._on("rotatecw", this.rotatePages.bind(this, 90), opts);
+    eventBus._on("rotateccw", this.rotatePages.bind(this, -90), opts);
     eventBus._on(
       "optionalcontentconfig",
       evt => (pdfViewer.optionalContentConfigPromise = evt.promise),
-      { signal }
+      opts
     );
-    eventBus._on("switchscrollmode", evt => (pdfViewer.scrollMode = evt.mode), {
-      signal,
-    });
+    eventBus._on(
+      "switchscrollmode",
+      evt => (pdfViewer.scrollMode = evt.mode),
+      opts
+    );
     eventBus._on(
       "scrollmodechanged",
       onViewerModesChanged.bind(this, "scrollMode"),
-      { signal }
+      opts
     );
-    eventBus._on("switchspreadmode", evt => (pdfViewer.spreadMode = evt.mode), {
-      signal,
-    });
+    eventBus._on(
+      "switchspreadmode",
+      evt => (pdfViewer.spreadMode = evt.mode),
+      opts
+    );
     eventBus._on(
       "spreadmodechanged",
       onViewerModesChanged.bind(this, "spreadMode"),
-      { signal }
+      opts
     );
-    eventBus._on("imagealttextsettings", onImageAltTextSettings.bind(this), {
-      signal,
-    });
-    eventBus._on("documentproperties", () => pdfDocumentProperties?.open(), {
-      signal,
-    });
-    eventBus._on("findfromurlhash", onFindFromUrlHash.bind(this), { signal });
+    eventBus._on(
+      "imagealttextsettings",
+      onImageAltTextSettings.bind(this),
+      opts
+    );
+    eventBus._on(
+      "documentproperties",
+      () => pdfDocumentProperties?.open(),
+      opts
+    );
+    eventBus._on("findfromurlhash", onFindFromUrlHash.bind(this), opts);
     eventBus._on(
       "updatefindmatchescount",
       onUpdateFindMatchesCount.bind(this),
-      { signal }
+      opts
     );
     eventBus._on(
       "updatefindcontrolstate",
       onUpdateFindControlState.bind(this),
-      { signal }
+      opts
     );
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      eventBus._on("fileinputchange", onFileInputChange.bind(this), { signal });
-      eventBus._on("openfile", onOpenFile.bind(this), { signal });
+      eventBus._on("fileinputchange", onFileInputChange.bind(this), opts);
+      eventBus._on("openfile", onOpenFile.bind(this), opts);
     }
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       eventBus._on(
         "annotationeditorstateschanged",
         evt => externalServices.updateEditorStates(evt),
-        { signal }
+        opts
       );
       eventBus._on(
         "reporttelemetry",
         evt => externalServices.reportTelemetry(evt.details),
-        { signal }
+        opts
       );
     }
     if (
@@ -1990,7 +1996,7 @@ const PDFViewerApplication = {
       eventBus._on(
         "setpreference",
         evt => preferences.set(evt.name, evt.value),
-        { signal }
+        opts
       );
     }
   },
