@@ -485,19 +485,15 @@ class Catalog {
       if (!Array.isArray(groupsData)) {
         return shadow(this, "optionalContentConfig", null);
       }
-      const groups = [];
       const groupRefCache = new RefSetCache();
       // Ensure all the optional content groups are valid.
       for (const groupRef of groupsData) {
         if (!(groupRef instanceof Ref) || groupRefCache.has(groupRef)) {
           continue;
         }
-        const group = this.#readOptionalContentGroup(groupRef);
-        groups.push(group);
-        groupRefCache.put(groupRef, group);
+        groupRefCache.put(groupRef, this.#readOptionalContentGroup(groupRef));
       }
       config = this.#readOptionalContentConfig(defaultConfig, groupRefCache);
-      config.groups = groups;
     } catch (ex) {
       if (ex instanceof MissingDataException) {
         throw ex;
@@ -649,7 +645,6 @@ class Catalog {
         if (!Array.isArray(rbGroup) || !rbGroup.length) {
           continue;
         }
-
         const parsedRbGroup = new Set();
 
         for (const ref of rbGroup) {
@@ -688,7 +683,7 @@ class Catalog {
       on: parseOnOff(config.get("ON")),
       off: parseOnOff(config.get("OFF")),
       order: parseOrder(config.get("Order")),
-      groups: null,
+      groups: [...groupRefCache],
     };
   }
 
