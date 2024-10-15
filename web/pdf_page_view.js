@@ -484,6 +484,17 @@ class PDFPageView extends BasePDFPageView {
     }
   }
 
+  // The detail view re-renders checkbox/radio appearances at a higher
+  // resolution into the shared `annotationCanvasMap`; move them into the
+  // annotation layer so they replace the lower-resolution ones. This only
+  // consumes pending canvases (no re-render), and is a no-op until their
+  // elements exist, so it's safe to call while the layer is still rendering.
+  _refreshAnnotationLayer() {
+    if (this._annotationCanvasMap?.size) {
+      this.annotationLayer?.refreshCanvases();
+    }
+  }
+
   async #renderAnnotationEditorLayer() {
     let error = null;
     try {

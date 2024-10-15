@@ -1776,7 +1776,7 @@ describe("annotation", function () {
       expect(opList.argsArray[0]).toEqual([
         "271R",
         [0, 0, 32, 10],
-        [32, 0, 0, 10, 0, 0],
+        [1, 0, 0, 1, 0, 0],
         [1, 0, 0, 1, 0, 0],
         false,
       ]);
@@ -2607,6 +2607,44 @@ describe("annotation", function () {
       expect(opList.argsArray[3][0][0].unicode).toEqual("4");
     });
 
+    it("should synthesize a checked appearance for checkboxes without an /AP", async function () {
+      buttonWidgetDict.set("V", Name.get("Checked"));
+      buttonWidgetDict.set("Rect", [0, 0, 20, 20]);
+      // Note: no /AP entry, so a default appearance must be synthesized.
+
+      const buttonWidgetRef = Ref.get(124, 0);
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+      const task = new WorkerTask("test checkbox without /AP");
+      const checkboxEvaluator = partialEvaluator.clone({ ignoreErrors: true });
+      const annotation = await AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+
+      expect(annotation.data.checkBox).toEqual(true);
+      expect(annotation.data.exportValue).toEqual("Checked");
+
+      const { opList } = await annotation.getOperatorList(
+        checkboxEvaluator,
+        task,
+        RenderingIntentFlag.DISPLAY | RenderingIntentFlag.ANNOTATIONS_FORMS,
+        new Map()
+      );
+
+      // A checkmark is drawn on its own dedicated "checked" canvas.
+      expect(opList.fnArray[0]).toEqual(OPS.beginAnnotation);
+      expect(opList.fnArray.at(-1)).toEqual(OPS.endAnnotation);
+      expect(opList.fnArray).toContain(OPS.showText);
+      const [id, , , , isUsingOwnCanvas, canvasName] = opList.argsArray[0];
+      expect(id).toEqual("124R");
+      expect(isUsingOwnCanvas).toEqual(true);
+      expect(canvasName).toEqual("checked");
+    });
+
     it("should render checkboxes for printing", async function () {
       const appearanceStatesDict = new Dict();
       const normalAppearanceDict = new Dict();
@@ -2685,7 +2723,7 @@ describe("annotation", function () {
       expect(opList2.argsArray[0]).toEqual([
         "124R",
         [0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0],
+        [1, 0, 0, 1, 0, 0],
         [1, 0, 0, 1, 0, 0],
         false,
       ]);
@@ -3084,7 +3122,7 @@ describe("annotation", function () {
       expect(opList2.argsArray[0]).toEqual([
         "124R",
         [0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0],
+        [1, 0, 0, 1, 0, 0],
         [1, 0, 0, 1, 0, 0],
         false,
       ]);
@@ -3147,7 +3185,7 @@ describe("annotation", function () {
       expect(opList.argsArray[0]).toEqual([
         "124R",
         [0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0],
+        [1, 0, 0, 1, 0, 0],
         [1, 0, 0, 1, 0, 0],
         false,
       ]);

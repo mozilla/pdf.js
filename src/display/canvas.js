@@ -3630,7 +3630,15 @@ class CanvasGraphics {
     }
   }
 
-  beginAnnotation(opIdx, id, rect, transform, matrix, hasOwnCanvas) {
+  beginAnnotation(
+    opIdx,
+    id,
+    rect,
+    transform,
+    matrix,
+    hasOwnCanvas,
+    canvasName
+  ) {
     // The annotations are drawn just after the page content.
     // The page content drawing can potentially have set a transform,
     // a clipping path, whatever...
@@ -3673,7 +3681,26 @@ class CanvasGraphics {
           canvasHeight
         );
         const { canvas, context } = this.annotationCanvas;
-        this.annotationCanvasMap.set(id, canvas);
+        if (canvasName) {
+          let canvases = this.annotationCanvasMap.get(id);
+          if (!canvases) {
+            canvases = [];
+            this.annotationCanvasMap.set(id, canvases);
+          }
+          canvas.setAttribute("data-canvas-name", canvasName);
+          // Replace any same-named canvas from a previous render so stale
+          // low-resolution canvases don't pile up across zooms.
+          const index = canvases.findIndex(
+            c => c.getAttribute("data-canvas-name") === canvasName
+          );
+          if (index === -1) {
+            canvases.push(canvas);
+          } else {
+            canvases[index] = canvas;
+          }
+        } else {
+          this.annotationCanvasMap.set(id, canvas);
+        }
         this.annotationCanvas.savedCtx = this.ctx;
         this.ctx = context;
         this.ctx.save();

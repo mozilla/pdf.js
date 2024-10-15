@@ -17,6 +17,7 @@
   color-scheme: only light;
 
   --annotation-unfocused-field-background: url("data:image/svg+xml;charset=UTF-8,<svg width='1px' height='1px' xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' style='fill:rgba(0, 54, 255, 0.13);'/></svg>");
+  --annotation-unfocused-field-filter: url("data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='pdfjsFillableField' x='0%' y='0%' width='100%' height='100%' color-interpolation-filters='sRGB'><feFlood flood-color='rgb(0,54,255)' flood-opacity='0.13' result='f'/><feComposite in='f' in2='SourceGraphic' operator='over'/></filter></svg>#pdfjsFillableField");
   --input-focus-border-color: Highlight;
   --input-focus-outline: 1px solid Canvas;
   --input-unfocused-border-color: transparent;
@@ -208,10 +209,6 @@
     padding: 0;
   }
 
-  .buttonWidgetAnnotation.radioButton input {
-    border-radius: 50%;
-  }
-
   .textWidgetAnnotation textarea {
     resize: none;
   }
@@ -259,36 +256,34 @@
     outline: var(--input-focus-outline);
   }
 
-  .buttonWidgetAnnotation.checkBox input:checked::before,
-  .buttonWidgetAnnotation.checkBox input:checked::after,
-  .buttonWidgetAnnotation.radioButton input:checked::before {
-    background-color: CanvasText;
-    content: "";
-    display: block;
-    position: absolute;
-  }
+  .buttonWidgetAnnotation:is(.checkBox, .radioButton) {
+    [data-canvas-name] {
+      filter: var(--annotation-unfocused-field-filter);
+    }
 
-  .buttonWidgetAnnotation.checkBox input:checked::before,
-  .buttonWidgetAnnotation.checkBox input:checked::after {
-    height: 80%;
-    left: 45%;
-    width: 1px;
-  }
+    &:focus-within [data-canvas-name] {
+      filter: none;
+    }
 
-  .buttonWidgetAnnotation.checkBox input:checked::before {
-    transform: rotate(45deg);
-  }
+    [data-canvas-name="checked"] {
+      &:has(~ input:checked) {
+        display: block;
+      }
 
-  .buttonWidgetAnnotation.checkBox input:checked::after {
-    transform: rotate(-45deg);
-  }
+      &:has(~ input:not(:checked)) {
+        display: none;
+      }
+    }
 
-  .buttonWidgetAnnotation.radioButton input:checked::before {
-    border-radius: 50%;
-    height: 50%;
-    left: 25%;
-    top: 25%;
-    width: 50%;
+    [data-canvas-name="unchecked"] {
+      &:has(~ input:checked) {
+        display: none;
+      }
+
+      &:has(~ input:not(:checked)) {
+        display: block;
+      }
+    }
   }
 
   .textWidgetAnnotation input.comb {
@@ -315,6 +310,17 @@
 
   .buttonWidgetAnnotation:is(.checkBox, .radioButton) input {
     appearance: none;
+  }
+
+  .buttonWidgetAnnotation:is(.checkBox, .radioButton):has(
+      [data-canvas-name="checked"]
+    )
+    input:checked,
+  .buttonWidgetAnnotation:is(.checkBox, .radioButton):has(
+      [data-canvas-name="unchecked"]
+    )
+    input:not(:checked) {
+    background-image: none;
   }
 
   .fileAttachmentAnnotation .popupTriggerArea {

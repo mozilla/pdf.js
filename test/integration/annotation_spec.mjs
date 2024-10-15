@@ -122,12 +122,12 @@ describe("Checkbox annotation", () => {
           for (const selector of selectors) {
             await page.click(selector);
             await page.waitForFunction(
-              `document.querySelector('${selector} > :first-child').checked`
+              `document.querySelector('${selector} input').checked`
             );
 
             for (const otherSelector of selectors) {
               const checked = await page.$eval(
-                `${otherSelector} > :first-child`,
+                `${otherSelector} input`,
                 el => el.checked
               );
               expect(checked)
@@ -157,7 +157,7 @@ describe("Checkbox annotation", () => {
           const selector = getAnnotationSelector("7R");
           await page.click(selector);
           await page.waitForFunction(
-            `document.querySelector('${selector} > :first-child').checked`
+            `document.querySelector('${selector} input').checked`
           );
           expect(true).withContext(`In ${browserName}`).toEqual(true);
         })
@@ -185,7 +185,7 @@ describe("Checkbox annotation", () => {
           for (const selector of selectors) {
             await page.click(selector);
             await page.waitForFunction(
-              `document.querySelector('${selector} > :first-child').checked`
+              `document.querySelector('${selector} input').checked`
             );
           }
         })
