@@ -94,6 +94,8 @@ class PDFFetchStream {
 
 /** @implements {IPDFStreamReader} */
 class PDFFetchStreamReader {
+  #responseHeaders = null;
+
   constructor(stream) {
     this._stream = stream;
     this._reader = null;
@@ -121,13 +123,13 @@ class PDFFetchStreamReader {
       createFetchOptions(headers, this._withCredentials, this._abortController)
     )
       .then(response => {
+        const responseHeaders = (this.#responseHeaders = response.headers);
+
         if (!validateResponseStatus(response.status)) {
           throw createResponseStatusError(response.status, url);
         }
         this._reader = response.body.getReader();
         this._headersCapability.resolve();
-
-        const responseHeaders = response.headers;
 
         const { allowRangeRequests, suggestedLength } =
           validateRangeRequestCapabilities({
@@ -156,6 +158,10 @@ class PDFFetchStreamReader {
 
   get headersReady() {
     return this._headersCapability.promise;
+  }
+
+  get responseHeaders() {
+    return this.#responseHeaders;
   }
 
   get filename() {
