@@ -68,6 +68,10 @@ class BaseStream {
     return false;
   }
 
+  async getTransferableImage() {
+    return null;
+  }
+
   peekByte() {
     const peekedByte = this.getByte();
     if (peekedByte !== -1) {
