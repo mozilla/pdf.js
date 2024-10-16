@@ -88,6 +88,7 @@ async function writeSVG(svgElement, ctx) {
       setTimeout(resolve, 10);
     });
   }
+
   return loadImage(svg_xml, ctx);
 }
 
@@ -144,21 +145,40 @@ async function inlineImages(node, silentErrors = false) {
 async function convertCanvasesToImages(annotationCanvasMap, outputScale) {
   const results = new Map();
   const promises = [];
+  const canvasToImage = (canvas, key) => {
+    const { promise, resolve } = Promise.withResolvers();
+    promises.push(promise);
+    canvas.toBlob(blob => {
+      const image = document.createElement("img");
+      image.classList.add("wasCanvas");
+      image.onload = function () {
+        image.style.width = Math.floor(image.width / outputScale) + "px";
+        resolve();
+      };
+      const canvasName = canvas.getAttribute("data-canvas-name");
+      if (canvasName) {
+        image.setAttribute("data-canvas-name", canvasName);
+        let images = results.get(key);
+        if (!images) {
+          images = [];
+          results.set(key, images);
+        }
+        images.push(image);
+      } else {
+        results.set(key, image);
+      }
+      image.src = URL.createObjectURL(blob);
+    });
+  };
+
   for (const [key, canvas] of annotationCanvasMap) {
-    promises.push(
-      new Promise(resolve => {
-        canvas.toBlob(blob => {
-          const image = document.createElement("img");
-          image.classList.add("wasCanvas");
-          image.onload = function () {
-            image.style.width = Math.floor(image.width / outputScale) + "px";
-            resolve();
-          };
-          results.set(key, image);
-          image.src = URL.createObjectURL(blob);
-        });
-      })
-    );
+    if (Array.isArray(canvas)) {
+      for (const canvasItem of canvas) {
+        canvasToImage(canvasItem, key);
+      }
+    } else {
+      canvasToImage(canvas, key);
+    }
   }
   await Promise.all(promises);
   return results;

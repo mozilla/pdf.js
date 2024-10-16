@@ -10725,5 +10725,15 @@
     "type": "eq",
     "link": true,
     "talos": false
+  },
+  {
+    "id": "bug1802506",
+    "file": "pdfs/bug1802506.pdf",
+    "md5": "ed56da1780b8480262c7329c4419fbb5",
+    "rounds": 1,
+    "type": "eq",
+    "annotations": true,
+    "forms": true,
+    "talos": false
   }
 ]

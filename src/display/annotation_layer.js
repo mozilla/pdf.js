@@ -311,9 +311,6 @@ class AnnotationElement {
       if (horizontalRadius > 0 || verticalRadius > 0) {
         const radius = `calc(${horizontalRadius}px * var(--scale-factor)) / calc(${verticalRadius}px * var(--scale-factor))`;
         style.borderRadius = radius;
-      } else if (this instanceof RadioButtonWidgetAnnotationElement) {
-        const radius = `calc(${width}px * var(--scale-factor)) / calc(${height}px * var(--scale-factor))`;
-        style.borderRadius = radius;
       }
 
       switch (data.borderStyle.style) {
@@ -3240,17 +3237,39 @@ class AnnotationLayer {
       if (!element) {
         continue;
       }
-
-      canvas.className = "annotationContent";
+      if (Array.isArray(canvas)) {
+        for (const cvs of canvas) {
+          cvs.className = "annotationContent";
+          cvs.ariaHidden = true;
+        }
+      } else {
+        canvas.className = "annotationContent";
+        canvas.ariaHidden = true;
+      }
+      const toRemove = [];
+      for (const child of element.children) {
+        if (child.nodeName === "CANVAS") {
+          toRemove.push(child);
+        }
+      }
+      for (const child of toRemove) {
+        child.remove();
+      }
+      const firstCanvas = Array.isArray(canvas) ? canvas[0] : canvas;
       const { firstChild } = element;
       if (!firstChild) {
-        element.append(canvas);
-      } else if (firstChild.nodeName === "CANVAS") {
-        firstChild.replaceWith(canvas);
+        element.append(firstCanvas);
       } else if (!firstChild.classList.contains("annotationContent")) {
-        firstChild.before(canvas);
+        firstChild.before(firstCanvas);
       } else {
-        firstChild.after(canvas);
+        firstChild.after(firstCanvas);
+      }
+      if (Array.isArray(canvas)) {
+        let lastCanvas = firstCanvas;
+        for (let i = 1, ii = canvas.length; i < ii; i++) {
+          lastCanvas.after(canvas[i]);
+          lastCanvas = canvas[i];
+        }
       }
     }
     this.#annotationCanvasMap.clear();

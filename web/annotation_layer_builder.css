@@ -186,10 +186,6 @@
     padding: 0;
   }
 
-  .buttonWidgetAnnotation.radioButton input {
-    border-radius: 50%;
-  }
-
   .textWidgetAnnotation textarea {
     resize: none;
   }
@@ -237,36 +233,26 @@
     outline: var(--input-focus-outline);
   }
 
-  .buttonWidgetAnnotation.checkBox input:checked::before,
-  .buttonWidgetAnnotation.checkBox input:checked::after,
-  .buttonWidgetAnnotation.radioButton input:checked::before {
-    background-color: CanvasText;
-    content: "";
-    display: block;
-    position: absolute;
-  }
+  .buttonWidgetAnnotation:is(.checkBox, .radioButton) {
+    canvas[data-canvas-name="checked"] {
+      &:has(~ input:checked) {
+        display: block;
+      }
 
-  .buttonWidgetAnnotation.checkBox input:checked::before,
-  .buttonWidgetAnnotation.checkBox input:checked::after {
-    height: 80%;
-    left: 45%;
-    width: 1px;
-  }
+      &:has(~ input:not(:checked)) {
+        display: none;
+      }
+    }
 
-  .buttonWidgetAnnotation.checkBox input:checked::before {
-    transform: rotate(45deg);
-  }
+    canvas[data-canvas-name="unchecked"] {
+      &:has(~ input:checked) {
+        display: none;
+      }
 
-  .buttonWidgetAnnotation.checkBox input:checked::after {
-    transform: rotate(-45deg);
-  }
-
-  .buttonWidgetAnnotation.radioButton input:checked::before {
-    border-radius: 50%;
-    height: 50%;
-    left: 25%;
-    top: 25%;
-    width: 50%;
+      &:has(~ input:not(:checked)) {
+        display: block;
+      }
+    }
   }
 
   .textWidgetAnnotation input.comb {
