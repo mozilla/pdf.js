@@ -123,6 +123,10 @@ class PDFNodeStreamFsFullReader {
     return this._headersCapability.promise;
   }
 
+  get responseHeaders() {
+    return null;
+  }
+
   get filename() {
     return this._filename;
   }

@@ -211,6 +211,10 @@ class PDFDataTransportStreamReader {
     return this._headersReady;
   }
 
+  get responseHeaders() {
+    return null;
+  }
+
   get filename() {
     return this._filename;
   }

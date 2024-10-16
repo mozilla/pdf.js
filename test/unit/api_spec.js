@@ -163,6 +163,9 @@ describe("api", function () {
       // Ensure that the Fetch API was used to load the PDF document.
       expect(pdfDocument.getNetworkStreamName()).toEqual("PDFFetchStream");
 
+      const responseHeaders = await loadingTask.getResponseHeaders();
+      expect([...responseHeaders.keys()].length).toBeGreaterThan(0);
+
       await loadingTask.destroy();
     });
 
@@ -235,15 +238,18 @@ describe("api", function () {
         progressReportedCapability.resolve(data);
       };
 
-      const data = await Promise.all([
+      const [pdfDocument, progress] = await Promise.all([
         loadingTask.promise,
         progressReportedCapability.promise,
       ]);
-      expect(data[0] instanceof PDFDocumentProxy).toEqual(true);
-      expect(data[1].loaded / data[1].total).toEqual(1);
+      expect(pdfDocument instanceof PDFDocumentProxy).toEqual(true);
+      expect(progress.loaded / progress.total).toEqual(1);
 
       // Check that the TypedArray was transferred.
       expect(typedArrayPdf.length).toEqual(0);
+
+      const responseHeaders = await loadingTask.getResponseHeaders();
+      expect(responseHeaders).toBeNull();
 
       await loadingTask.destroy();
     });
@@ -309,6 +315,13 @@ describe("api", function () {
         expect(false).toEqual(true);
       } catch (reason) {
         expect(reason instanceof MissingPDFException).toEqual(true);
+      }
+
+      const responseHeaders = await loadingTask.getResponseHeaders();
+      if (isNodeJS) {
+        expect(responseHeaders).toBeNull();
+      } else {
+        expect([...responseHeaders.keys()].length).toBeGreaterThan(0);
       }
 
       await loadingTask.destroy();
