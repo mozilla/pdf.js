@@ -18,4 +18,13 @@ export default {
       },
     ],
   },
+  ignore: [
+    "build/**",
+    "docs/**",
+    "node_modules/**",
+    "web/locale/**",
+    "*~/**",
+    "test/**",
+    "src/**",
+  ],
 };
