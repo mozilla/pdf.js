@@ -686,6 +686,20 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
       </div>  <!-- dialogContainer -->
 
+      <div id="editorUndoBar" class="messageBar" hidden>
+        <div>
+          <div>
+            <span id="editorUndoBarMessage" class="description" data-l10n-id="pdfjs-editor-undo-bar-message" data-l10n-args='{ "type": "Annotation" }'>[Annotation] removed</span>
+          </div>
+          <button id="editorUndoBarUndoButton" class="undoButton" type="button" tabindex="0" title="Undo" data-l10n-id="pdfjs-editor-undo-bar-undo-button">
+            <span data-l10n-id="pdfjs-editor-undo-bar-undo-button-label">Undo</span>
+          </button>
+          <button id="editorUndoBarCloseButton" class="closeButton" type="button" tabindex="0" title="Close" data-l10n-id="pdfjs-editor-undo-bar-close-button">
+            <span data-l10n-id="pdfjs-editor-undo-bar-close-button-label">Close</span>
+          </button>
+        </div>
+      </div> <!-- editorUndoBar -->
+
     </div> <!-- outerContainer -->
     <div id="printContainer"></div>
   </body>
