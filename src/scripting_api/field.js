@@ -587,6 +587,12 @@ class RadioButtonField extends Field {
     this._value = data.value || "";
   }
 
+  get _siblings() {
+    return this._radioIds.filter(id => id !== this._id);
+  }
+
+  set _siblings(_) {}
+
   get value() {
     return this._value;
   }
