@@ -634,19 +634,22 @@ class FeatureTest {
       (typeof navigator !== "undefined" &&
         typeof navigator?.platform === "string")
     ) {
+      const isFirefox =
+        (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+        (typeof navigator?.userAgent === "string" &&
+          navigator.userAgent.includes("Firefox"));
       return shadow(this, "platform", {
+        isChrome: !isFirefox && !!window.chrome,
         isMac: navigator.platform.includes("Mac"),
         isWindows: navigator.platform.includes("Win"),
-        isFirefox:
-          (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
-          (typeof navigator?.userAgent === "string" &&
-            navigator.userAgent.includes("Firefox")),
+        isFirefox,
       });
     }
     return shadow(this, "platform", {
       isMac: false,
       isWindows: false,
       isFirefox: false,
+      isChrome: !!window.chrome,
     });
   }
 
