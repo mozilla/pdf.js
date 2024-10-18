@@ -1982,7 +1982,7 @@ class PDFPageProxy {
 }
 
 class LoopbackPort {
-  #listeners = new Set();
+  #listeners = new Map();
 
   #deferred = Promise.resolve();
 
@@ -1992,21 +1992,39 @@ class LoopbackPort {
     };
 
     this.#deferred.then(() => {
-      for (const listener of this.#listeners) {
+      for (const [listener] of this.#listeners) {
         listener.call(this, event);
       }
     });
   }
 
-  addEventListener(name, listener) {
-    this.#listeners.add(listener);
+  addEventListener(name, listener, options = null) {
+    let rmAbort = null;
+    if (options?.signal instanceof AbortSignal) {
+      const { signal } = options;
+      if (signal.aborted) {
+        warn("LoopbackPort - cannot use an `aborted` signal.");
+        return;
+      }
+      const onAbort = () => this.removeEventListener(name, listener);
+      rmAbort = () => signal.removeEventListener("abort", onAbort);
+
+      signal.addEventListener("abort", onAbort);
+    }
+    this.#listeners.set(listener, rmAbort);
   }
 
   removeEventListener(name, listener) {
+    const rmAbort = this.#listeners.get(listener);
+    rmAbort?.();
+
     this.#listeners.delete(listener);
   }
 
   terminate() {
+    for (const [, rmAbort] of this.#listeners) {
+      rmAbort?.();
+    }
     this.#listeners.clear();
   }
 }
