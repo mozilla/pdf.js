@@ -409,6 +409,9 @@ class AnnotationEditorLayer {
         // Do nothing on right click.
         return;
       }
+
+      this.#uiManager._eventBus.dispatch("annotationstart", { source: this });
+
       this.#uiManager.showAllEditors(
         "highlight",
         true,

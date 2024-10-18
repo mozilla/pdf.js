@@ -694,6 +694,7 @@ class InkEditor extends AnnotationEditor {
       });
     }
 
+    this._uiManager._eventBus.dispatch("annotationstart", { source: this });
     this.#startDrawing(event.offsetX, event.offsetY);
   }
 
