@@ -32,6 +32,8 @@ const MAX_ERROR = 128;
 // should be a way faster to create the bitmap.
 
 class ImageResizer {
+  static #isChrome = false;
+
   constructor(imgData, isMask) {
     this._imgData = imgData;
     this._isMask = isMask;
@@ -88,6 +90,21 @@ class ImageResizer {
     );
   }
 
+  static get canUseImageDecoder() {
+    // TODO: remove the isChrome, once Chrome doesn't crash anymore with
+    // issue6741.pdf.
+    // https://issues.chromium.org/issues/374807001.
+    return shadow(
+      this,
+      "canUseImageDecoder",
+      // eslint-disable-next-line no-undef
+      this.#isChrome || typeof ImageDecoder === "undefined"
+        ? Promise.resolve(false)
+        : // eslint-disable-next-line no-undef
+          ImageDecoder.isTypeSupported("image/bmp")
+    );
+  }
+
   static get MAX_AREA() {
     this._hasMaxArea = true;
     return shadow(
@@ -114,6 +131,11 @@ class ImageResizer {
       // Divide by 4 to have the value in pixels.
       this.MAX_AREA = area >> 2;
     }
+  }
+
+  static setOptions({ maxArea = -1, isChrome = false }) {
+    this.setMaxArea(maxArea);
+    this.#isChrome = isChrome;
   }
 
   static _areGoodDims(width, height) {
@@ -160,10 +182,24 @@ class ImageResizer {
 
   async _createImage() {
     const data = this._encodeBMP();
-    const blob = new Blob([data.buffer], {
-      type: "image/bmp",
-    });
-    const bitmapPromise = createImageBitmap(blob);
+    let decoder, imagePromise;
+
+    if (await ImageResizer.canUseImageDecoder) {
+      // eslint-disable-next-line no-undef
+      decoder = new ImageDecoder({
+        data,
+        type: "image/bmp",
+        preferAnimation: false,
+        transfer: [data.buffer],
+      });
+      imagePromise = decoder.decode();
+    } else {
+      imagePromise = createImageBitmap(
+        new Blob([data.buffer], {
+          type: "image/bmp",
+        })
+      );
+    }
 
     const { MAX_AREA, MAX_DIM } = ImageResizer;
     const { _imgData: imgData } = this;
@@ -188,7 +224,13 @@ class ImageResizer {
 
     let newWidth = width;
     let newHeight = height;
-    let bitmap = await bitmapPromise;
+    let bitmap;
+    if (decoder) {
+      ({ image: bitmap } = await imagePromise);
+      decoder.close();
+    } else {
+      bitmap = await imagePromise;
+    }
 
     for (const step of steps) {
       const prevWidth = newWidth;
