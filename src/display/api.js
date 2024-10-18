@@ -642,6 +642,26 @@ class PDFDocumentLoadingTask {
       this._worker = null;
     }
   }
+
+  /**
+   * @returns {Promise<Headers | null>}
+   */
+  async getResponseHeaders() {
+    if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
+      throw new Error("Not implemented: getResponseHeaders");
+    }
+    try {
+      await this.promise;
+    } catch {}
+
+    if (this.destroyed) {
+      throw new Error("LoadingTask destroyed.");
+    }
+    if (!this._transport) {
+      throw new Error("WorkerTransport unset.");
+    }
+    return this._transport._responseHeaders;
+  }
 }
 
 /**
@@ -2427,6 +2447,23 @@ class WorkerTransport {
 
     this.setupMessageHandler();
 
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+      // NOTE: This getter should *not* be invoked until after
+      // the `IPDFStreamReader.headersReady`-promise has settled.
+      Object.defineProperty(this, "_responseHeaders", {
+        get() {
+          if (!networkStream) {
+            return null;
+          }
+          assert(this._fullReader, "No `IPDFStreamReader`-instance available.");
+
+          const headers = this._fullReader.responseHeaders;
+          // Always create a copy of the *internal* response headers.
+          return headers ? new Headers(headers) : null;
+        },
+      });
+    }
+
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       // For testing purposes.
       Object.defineProperty(this, "getNetworkStreamName", {
@@ -2635,12 +2672,16 @@ class WorkerTransport {
     });
 
     messageHandler.on("ReaderHeadersReady", data => {
-      const headersCapability = Promise.withResolvers();
+      const { promise, resolve, reject } = Promise.withResolvers();
       const fullReader = this._fullReader;
+
       fullReader.headersReady.then(() => {
+        const { isStreamingSupported, isRangeSupported, contentLength } =
+          fullReader;
+
         // If stream or range are disabled, it's our only way to report
         // loading progress.
-        if (!fullReader.isStreamingSupported || !fullReader.isRangeSupported) {
+        if (!isStreamingSupported || !isRangeSupported) {
           if (this._lastProgress) {
             loadingTask.onProgress?.(this._lastProgress);
           }
@@ -2652,14 +2693,10 @@ class WorkerTransport {
           };
         }
 
-        headersCapability.resolve({
-          isStreamingSupported: fullReader.isStreamingSupported,
-          isRangeSupported: fullReader.isRangeSupported,
-          contentLength: fullReader.contentLength,
-        });
-      }, headersCapability.reject);
+        resolve({ isStreamingSupported, isRangeSupported, contentLength });
+      }, reject);
 
-      return headersCapability.promise;
+      return promise;
     });
 
     messageHandler.on("GetRangeReader", (data, sink) => {

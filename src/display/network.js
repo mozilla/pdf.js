@@ -238,6 +238,8 @@ class PDFNetworkStream {
 
 /** @implements {IPDFStreamReader} */
 class PDFNetworkStreamFullRequestReader {
+  #responseHeaders = null;
+
   constructor(manager, source) {
     this._manager = manager;
 
@@ -273,7 +275,7 @@ class PDFNetworkStreamFullRequestReader {
     const fullRequestXhrId = this._fullRequestId;
     const fullRequestXhr = this._manager.getRequestXhr(fullRequestXhrId);
 
-    const responseHeaders = new Headers(
+    const responseHeaders = (this.#responseHeaders = new Headers(
       fullRequestXhr
         .getAllResponseHeaders()
         .trim()
@@ -282,7 +284,7 @@ class PDFNetworkStreamFullRequestReader {
           const [key, ...val] = x.split(": ");
           return [key, val.join(": ")];
         })
-    );
+    ));
 
     const { allowRangeRequests, suggestedLength } =
       validateRangeRequestCapabilities({
@@ -365,6 +367,10 @@ class PDFNetworkStreamFullRequestReader {
 
   get headersReady() {
     return this._headersCapability.promise;
+  }
+
+  get responseHeaders() {
+    return this.#responseHeaders;
   }
 
   async read() {
