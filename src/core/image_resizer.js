@@ -32,6 +32,8 @@ const MAX_ERROR = 128;
 // should be a way faster to create the bitmap.
 
 class ImageResizer {
+  static #isChrome = false;
+
   constructor(imgData, isMask) {
     this._imgData = imgData;
     this._isMask = isMask;
@@ -116,6 +118,11 @@ class ImageResizer {
     }
   }
 
+  static setOptions({ maxArea = -1, isChrome = false }) {
+    this.setMaxArea(maxArea);
+    this.#isChrome = isChrome;
+  }
+
   static _areGoodDims(width, height) {
     try {
       // This code is working in either Firefox or Chrome.
@@ -160,10 +167,33 @@ class ImageResizer {
 
   async _createImage() {
     const data = this._encodeBMP();
-    const blob = new Blob([data.buffer], {
-      type: "image/bmp",
-    });
-    const bitmapPromise = createImageBitmap(blob);
+
+    let decoder, imagePromise;
+
+    // TODO: remove the isChrome, once Chrome isn't crashing anymore with
+    // isssue6741.pdf.
+    if (
+      (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+      (!ImageResizer.#isChrome &&
+        // eslint-disable-next-line no-undef
+        typeof ImageDecoder !== "undefined" &&
+        // eslint-disable-next-line no-undef
+        (await ImageDecoder.isTypeSupported("image/bmp")))
+    ) {
+      // eslint-disable-next-line no-undef
+      decoder = new ImageDecoder({
+        data,
+        type: "image/bmp",
+        preferAnimation: false,
+        transfer: [data.buffer],
+      });
+      imagePromise = decoder.decode();
+    } else {
+      const blob = new Blob([data.buffer], {
+        type: "image/bmp",
+      });
+      imagePromise = createImageBitmap(blob);
+    }
 
     const { MAX_AREA, MAX_DIM } = ImageResizer;
     const { _imgData: imgData } = this;
@@ -188,7 +218,16 @@ class ImageResizer {
 
     let newWidth = width;
     let newHeight = height;
-    let bitmap = await bitmapPromise;
+    let bitmap;
+    if (
+      (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+      decoder
+    ) {
+      ({ image: bitmap } = await imagePromise);
+      decoder.close();
+    } else {
+      bitmap = await imagePromise;
+    }
 
     for (const step of steps) {
       const prevWidth = newWidth;
