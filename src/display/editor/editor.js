@@ -209,7 +209,7 @@ class AnnotationEditor {
    * Initialize the l10n stuff for this type of editor.
    * @param {Object} l10n
    */
-  static initialize(l10n, _uiManager, options) {
+  static initialize(l10n, _uiManager) {
     AnnotationEditor._l10nResizer ||= Object.freeze({
       topLeft: "pdfjs-editor-resizer-top-left",
       topMiddle: "pdfjs-editor-resizer-top-middle",
@@ -236,11 +236,6 @@ class AnnotationEditor {
       ].map(str => [str, l10n.get.bind(l10n, str)]),
     ]);
 
-    if (options?.strings) {
-      for (const str of options.strings) {
-        AnnotationEditor._l10nPromise.set(str, l10n.get(str));
-      }
-    }
     if (AnnotationEditor._borderLineWidth !== -1) {
       return;
     }
