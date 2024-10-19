@@ -39,17 +39,23 @@ describe("Text layer", () => {
     }
 
     function middlePosition(rect) {
-      return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+      return {
+        x: Math.round(rect.x + rect.width / 2),
+        y: Math.round(rect.y + rect.height / 2),
+      };
     }
 
     function middleLeftPosition(rect) {
-      return { x: rect.x + 1, y: rect.y + Math.floor(rect.height / 2) };
+      return {
+        x: Math.round(rect.x + 1),
+        y: Math.round(rect.y + rect.height / 2),
+      };
     }
 
     function belowEndPosition(rect) {
       return {
-        x: rect.x + rect.width,
-        y: rect.y + Math.floor(rect.height * 1.5),
+        x: Math.round(rect.x + rect.width),
+        y: Math.round(rect.y + rect.height * 1.5),
       };
     }
 
