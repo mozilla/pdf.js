@@ -23,6 +23,12 @@ const CSS_CLASS_GRAB = "grab-to-pan-grab";
  */
 
 class GrabToPan {
+  #activateAC = null;
+
+  #mouseDownAC = null;
+
+  #scrollAC = null;
+
   /**
    * Construct a GrabToPan instance for a given HTML element.
    * @param {GrabToPanOptions} options
@@ -30,15 +36,6 @@ class GrabToPan {
   constructor({ element }) {
     this.element = element;
     this.document = element.ownerDocument;
-
-    // Bind the contexts to ensure that `this` always points to
-    // the GrabToPan instance.
-    this.activate = this.activate.bind(this);
-    this.deactivate = this.deactivate.bind(this);
-    this.toggle = this.toggle.bind(this);
-    this._onMouseDown = this.#onMouseDown.bind(this);
-    this._onMouseMove = this.#onMouseMove.bind(this);
-    this._endPan = this.#endPan.bind(this);
 
     // This overlay will be inserted in the document when the mouse moves during
     // a grab operation, to ensure that the cursor has the desired appearance.
@@ -50,9 +47,13 @@ class GrabToPan {
    * Bind a mousedown event to the element to enable grab-detection.
    */
   activate() {
-    if (!this.active) {
-      this.active = true;
-      this.element.addEventListener("mousedown", this._onMouseDown, true);
+    if (!this.#activateAC) {
+      this.#activateAC = new AbortController();
+
+      this.element.addEventListener("mousedown", this.#onMouseDown.bind(this), {
+        capture: true,
+        signal: this.#activateAC.signal,
+      });
       this.element.classList.add(CSS_CLASS_GRAB);
     }
   }
@@ -61,16 +62,17 @@ class GrabToPan {
    * Removes all events. Any pending pan session is immediately stopped.
    */
   deactivate() {
-    if (this.active) {
-      this.active = false;
-      this.element.removeEventListener("mousedown", this._onMouseDown, true);
-      this._endPan();
+    if (this.#activateAC) {
+      this.#activateAC.abort();
+      this.#activateAC = null;
+
+      this.#endPan();
       this.element.classList.remove(CSS_CLASS_GRAB);
     }
   }
 
   toggle() {
-    if (this.active) {
+    if (this.#activateAC) {
       this.deactivate();
     } else {
       this.activate();
@@ -109,12 +111,26 @@ class GrabToPan {
     this.scrollTopStart = this.element.scrollTop;
     this.clientXStart = event.clientX;
     this.clientYStart = event.clientY;
-    this.document.addEventListener("mousemove", this._onMouseMove, true);
-    this.document.addEventListener("mouseup", this._endPan, true);
+
+    this.#mouseDownAC = new AbortController();
+    const boundEndPan = this.#endPan.bind(this),
+      mouseOpts = { capture: true, signal: this.#mouseDownAC.signal };
+
+    this.document.addEventListener(
+      "mousemove",
+      this.#onMouseMove.bind(this),
+      mouseOpts
+    );
+    this.document.addEventListener("mouseup", boundEndPan, mouseOpts);
     // When a scroll event occurs before a mousemove, assume that the user
     // dragged a scrollbar (necessary for Opera Presto, Safari and IE)
     // (not needed for Chrome/Firefox)
-    this.element.addEventListener("scroll", this._endPan, true);
+    this.#scrollAC = new AbortController();
+
+    this.element.addEventListener("scroll", boundEndPan, {
+      capture: true,
+      signal: this.#scrollAC.signal,
+    });
     event.preventDefault();
     event.stopPropagation();
 
@@ -125,10 +141,12 @@ class GrabToPan {
   }
 
   #onMouseMove(event) {
-    this.element.removeEventListener("scroll", this._endPan, true);
+    this.#scrollAC?.abort();
+    this.#scrollAC = null;
+
     if (!(event.buttons & 1)) {
       // The left mouse button is released.
-      this._endPan();
+      this.#endPan();
       return;
     }
     const xDiff = event.clientX - this.clientXStart;
@@ -145,9 +163,10 @@ class GrabToPan {
   }
 
   #endPan() {
-    this.element.removeEventListener("scroll", this._endPan, true);
-    this.document.removeEventListener("mousemove", this._onMouseMove, true);
-    this.document.removeEventListener("mouseup", this._endPan, true);
+    this.#mouseDownAC?.abort();
+    this.#mouseDownAC = null;
+    this.#scrollAC?.abort();
+    this.#scrollAC = null;
     // Note: ChildNode.remove doesn't throw if the parentNode is undefined.
     this.overlay.remove();
   }
