@@ -83,7 +83,11 @@ if (isNodeJS) {
           applyPath2DToCanvasRenderingContext &&
           Path2D
         ) {
-          applyPath2DToCanvasRenderingContext(CanvasRenderingContext2D);
+          try {
+            applyPath2DToCanvasRenderingContext(CanvasRenderingContext2D);
+          } catch (ex) {
+            warn(`applyPath2DToCanvasRenderingContext: "${ex}".`);
+          }
           globalThis.Path2D = Path2D;
         } else {
           warn("Cannot polyfill `Path2D`, rendering may be broken.");
