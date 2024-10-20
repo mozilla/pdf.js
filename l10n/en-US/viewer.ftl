@@ -348,9 +348,9 @@ pdfjs-editor-free-highlight-thickness-input = Thickness
 pdfjs-editor-free-highlight-thickness-title =
     .title = Change thickness when highlighting items other than text
 
-pdfjs-free-text =
+pdfjs-free-text2 =
     .aria-label = Text Editor
-pdfjs-free-text-default-content = Start typing…
+    .default-content = Start typing…
 pdfjs-ink =
     .aria-label = Draw Editor
 pdfjs-ink-canvas =
