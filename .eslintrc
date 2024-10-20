@@ -8,7 +8,7 @@
     "import",
     "json",
     "no-unsanitized",
-    "sort-exports",
+    "perfectionist",
     "unicorn",
   ],
 
@@ -45,9 +45,8 @@
     }],
     "no-unsanitized/method": "error",
     "no-unsanitized/property": "error",
-    "sort-exports/sort-exports": ["error", {
-      "ignoreCase": true,
-    }],
+    "perfectionist/sort-exports": "error",
+    "perfectionist/sort-named-exports": "error",
     "unicorn/no-abusive-eslint-disable": "error",
     "unicorn/no-array-push-push": "error",
     "unicorn/no-instanceof-array": "error",
