@@ -16,7 +16,6 @@
     "canvas": "^3.0.0-rc2",
     "core-js": "^3.38.1",
     "eslint": "^8.57.1",
-    "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-jasmine": "^4.2.2",
     "eslint-plugin-json": "^3.1.0",
