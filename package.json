@@ -13,7 +13,7 @@
     "autoprefixer": "^10.4.20",
     "babel-loader": "^9.2.1",
     "caniuse-lite": "^1.0.30001667",
-    "canvas": "^2.11.2",
+    "canvas": "^3.0.0-rc2",
     "core-js": "^3.38.1",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
