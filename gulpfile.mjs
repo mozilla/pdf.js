@@ -2244,7 +2244,7 @@ function packageJson() {
     bugs: DIST_BUGS_URL,
     license: DIST_LICENSE,
     optionalDependencies: {
-      canvas: "^2.11.2",
+      canvas: "^3.0.0-rc2",
       path2d: "^0.2.1",
     },
     browser: {
