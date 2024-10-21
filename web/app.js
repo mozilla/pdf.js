@@ -1045,6 +1045,7 @@ const PDFViewerApplication = {
     const loadingTask = getDocument({
       ...apiParams,
       ...args,
+      isChrome: FeatureTest.platform.isChrome,
     });
     this.pdfLoadingTask = loadingTask;
 
