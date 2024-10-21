@@ -550,6 +550,8 @@ class FreeTextEditor extends AnnotationEditor {
       return this.div;
     }
 
+    this._uiManager._editorUndoBar?.hide();
+
     let baseX, baseY;
     if (this.width) {
       baseX = this.x;
