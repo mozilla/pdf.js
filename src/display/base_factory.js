@@ -127,22 +127,27 @@ class BaseCMapReaderFactory {
       throw new Error("CMap name must be specified.");
     }
     const url = this.baseUrl + name + (this.isCompressed ? ".bcmap" : "");
-    const compressionType = this.isCompressed
-      ? CMapCompressionType.BINARY
-      : CMapCompressionType.NONE;
 
-    return this._fetchData(url, compressionType).catch(reason => {
-      throw new Error(
-        `Unable to load ${this.isCompressed ? "binary " : ""}CMap at: ${url}`
-      );
-    });
+    return this._fetch(url)
+      .then(cMapData => ({
+        cMapData,
+        compressionType: this.isCompressed
+          ? CMapCompressionType.BINARY
+          : CMapCompressionType.NONE,
+      }))
+      .catch(reason => {
+        throw new Error(
+          `Unable to load ${this.isCompressed ? "binary " : ""}CMap at: ${url}`
+        );
+      });
   }
 
   /**
    * @ignore
+   * @returns {Promise<Uint8Array>}
    */
-  _fetchData(url, compressionType) {
-    unreachable("Abstract method `_fetchData` called.");
+  async _fetch(url) {
+    unreachable("Abstract method `_fetch` called.");
   }
 }
 
@@ -168,16 +173,17 @@ class BaseStandardFontDataFactory {
     }
     const url = `${this.baseUrl}${filename}`;
 
-    return this._fetchData(url).catch(reason => {
+    return this._fetch(url).catch(reason => {
       throw new Error(`Unable to load font data at: ${url}`);
     });
   }
 
   /**
    * @ignore
+   * @returns {Promise<Uint8Array>}
    */
-  _fetchData(url) {
-    unreachable("Abstract method `_fetchData` called.");
+  async _fetch(url) {
+    unreachable("Abstract method `_fetch` called.");
   }
 }
 

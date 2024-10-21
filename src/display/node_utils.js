@@ -113,10 +113,11 @@ class NodePackages {
   }
 }
 
-const fetchData = function (url) {
+async function fetchData(url) {
   const fs = NodePackages.get("fs");
-  return fs.promises.readFile(url).then(data => new Uint8Array(data));
-};
+  const data = await fs.promises.readFile(url);
+  return new Uint8Array(data);
+}
 
 class NodeFilterFactory extends BaseFilterFactory {}
 
@@ -134,8 +135,8 @@ class NodeCMapReaderFactory extends BaseCMapReaderFactory {
   /**
    * @ignore
    */
-  _fetchData(url, compressionType) {
-    return fetchData(url).then(data => ({ cMapData: data, compressionType }));
+  async _fetch(url) {
+    return fetchData(url);
   }
 }
 
@@ -143,12 +144,13 @@ class NodeStandardFontDataFactory extends BaseStandardFontDataFactory {
   /**
    * @ignore
    */
-  _fetchData(url) {
+  async _fetch(url) {
     return fetchData(url);
   }
 }
 
 export {
+  fetchData,
   NodeCanvasFactory,
   NodeCMapReaderFactory,
   NodeFilterFactory,
