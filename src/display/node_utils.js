@@ -150,6 +150,7 @@ class NodeStandardFontDataFactory extends BaseStandardFontDataFactory {
 }
 
 export {
+  fetchData,
   NodeCanvasFactory,
   NodeCMapReaderFactory,
   NodeFilterFactory,
