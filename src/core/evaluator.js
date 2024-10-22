@@ -63,7 +63,6 @@ import {
   LocalTilingPatternCache,
   RegionalImageCache,
 } from "./image_utils.js";
-import { NullStream, Stream } from "./stream.js";
 import { BaseStream } from "./base_stream.js";
 import { bidi } from "./bidi.js";
 import { ColorSpace } from "./colorspace.js";
@@ -77,6 +76,7 @@ import { ImageResizer } from "./image_resizer.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
+import { Stream } from "./stream.js";
 
 const DefaultPartialEvaluatorOptions = Object.freeze({
   maxImageSize: -1,
@@ -4425,27 +4425,25 @@ class PartialEvaluator {
     let fontFile, subtype, length1, length2, length3;
     try {
       fontFile = descriptor.get("FontFile", "FontFile2", "FontFile3");
+
+      if (fontFile) {
+        if (!(fontFile instanceof BaseStream)) {
+          throw new FormatError("FontFile should be a stream");
+        } else if (fontFile.isEmpty) {
+          throw new FormatError("FontFile is empty");
+        }
+      }
     } catch (ex) {
       if (!this.options.ignoreErrors) {
         throw ex;
       }
       warn(`translateFont - fetching "${fontName.name}" font file: "${ex}".`);
-      fontFile = new NullStream();
+      fontFile = null;
     }
     let isInternalFont = false;
     let glyphScaleFactors = null;
     let systemFontInfo = null;
     if (fontFile) {
-      if (!(fontFile instanceof BaseStream)) {
-        const msg = `Font file should be a Stream in "${fontName.name}".`;
-
-        if (!this.options.ignoreErrors) {
-          throw new FormatError(msg);
-        }
-        warn(msg);
-        fontFile = new NullStream();
-      }
-
       if (fontFile.dict) {
         const subtypeEntry = fontFile.dict.get("Subtype");
         if (subtypeEntry instanceof Name) {
