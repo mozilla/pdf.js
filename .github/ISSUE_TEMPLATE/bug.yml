@@ -6,6 +6,7 @@ body:
     attributes:
       label: Attach (recommended) or Link to PDF file
       description: Without this information the issue may be closed without comment
+      placeholder: Please place only the PDF file in this field
     validations:
       required: true
 
