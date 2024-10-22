@@ -569,6 +569,8 @@ class HighlightEditor extends AnnotationEditor {
       return this.div;
     }
 
+    this._uiManager._editorUndoBar?.hide();
+
     const div = super.render();
     if (this.#text) {
       div.setAttribute("aria-label", this.#text);

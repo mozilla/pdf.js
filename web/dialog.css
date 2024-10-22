@@ -291,7 +291,8 @@
       }
 
       > div {
-        &::before, > div {
+        &::before,
+        > div {
           margin-block: 4px;
         }
 
