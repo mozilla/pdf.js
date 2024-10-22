@@ -564,17 +564,14 @@ class DOMCMapReaderFactory extends BaseCMapReaderFactory {
   /**
    * @ignore
    */
-  _fetchData(url, compressionType) {
-    return fetchData(
+  async _fetch(url) {
+    const data = await fetchData(
       url,
       /* type = */ this.isCompressed ? "arraybuffer" : "text"
-    ).then(data => ({
-      cMapData:
-        data instanceof ArrayBuffer
-          ? new Uint8Array(data)
-          : stringToBytes(data),
-      compressionType,
-    }));
+    );
+    return data instanceof ArrayBuffer
+      ? new Uint8Array(data)
+      : stringToBytes(data);
   }
 }
 
@@ -582,10 +579,9 @@ class DOMStandardFontDataFactory extends BaseStandardFontDataFactory {
   /**
    * @ignore
    */
-  _fetchData(url) {
-    return fetchData(url, /* type = */ "arraybuffer").then(
-      data => new Uint8Array(data)
-    );
+  async _fetch(url) {
+    const data = await fetchData(url, /* type = */ "arraybuffer");
+    return new Uint8Array(data);
   }
 }
 
