@@ -676,6 +676,7 @@ class DrawingEditor extends AnnotationEditor {
       signal,
     });
     parent.toggleDrawing();
+    uiManager._editorUndoBar?.hide();
 
     if (this._currentDraw) {
       parent.drawLayer.updateProperties(
