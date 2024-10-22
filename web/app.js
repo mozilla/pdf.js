@@ -69,6 +69,7 @@ import { AltTextManager } from "web-alt_text_manager";
 import { AnnotationEditorParams } from "web-annotation_editor_params";
 import { CaretBrowsingMode } from "./caret_browsing.js";
 import { DownloadManager } from "web-download_manager";
+import { EditorUndoBar } from "./editor_undo_bar.js";
 import { OverlayManager } from "./overlay_manager.js";
 import { PasswordPrompt } from "./password_prompt.js";
 import { PDFAttachmentViewer } from "web-pdf_attachment_viewer";
@@ -192,6 +193,7 @@ const PDFViewerApplication = {
   _isCtrlKeyDown: false,
   _caretBrowsing: null,
   _isScrolling: false,
+  editorUndoBar: null,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -461,6 +463,10 @@ const PDFViewerApplication = {
         : null;
     }
 
+    if (appConfig.editorUndoBar) {
+      this.editorUndoBar = new EditorUndoBar(appConfig.editorUndoBar, eventBus);
+    }
+
     const enableHWA = AppOptions.get("enableHWA");
     const pdfViewer = new PDFViewer({
       container,
@@ -470,6 +476,7 @@ const PDFViewerApplication = {
       linkService: pdfLinkService,
       downloadManager,
       altTextManager,
+      editorUndoBar: this.editorUndoBar,
       findController,
       scriptingManager:
         AppOptions.get("enableScripting") && pdfScriptingManager,
@@ -2732,7 +2739,7 @@ function onTouchEnd(evt) {
   this._isPinching = false;
 }
 
-function onClick(evt) {
+function closeSecondaryToolbar(evt) {
   if (!this.secondaryToolbar?.isOpen) {
     return;
   }
@@ -2749,6 +2756,20 @@ function onClick(evt) {
   }
 }
 
+function closeEditorUndoBar(evt) {
+  if (!this.editorUndoBar?.isOpen) {
+    return;
+  }
+  if (this.appConfig.secondaryToolbar?.toolbar.contains(evt.target)) {
+    this.editorUndoBar.hide();
+  }
+}
+
+function onClick(evt) {
+  closeSecondaryToolbar.call(this, evt);
+  closeEditorUndoBar.call(this, evt);
+}
+
 function onKeyUp(evt) {
   // evt.ctrlKey is false hence we use evt.key.
   if (evt.key === "Control") {
@@ -2758,6 +2779,20 @@ function onKeyUp(evt) {
 
 function onKeyDown(evt) {
   this._isCtrlKeyDown = evt.key === "Control";
+
+  if (
+    this.editorUndoBar?.isOpen &&
+    evt.keyCode !== 9 &&
+    evt.keyCode !== 16 &&
+    !(
+      (evt.keyCode === 13 || evt.keyCode === 32) &&
+      getActiveOrFocusedElement() === this.appConfig.editorUndoBar.undoButton
+    )
+  ) {
+    // Hide undo bar on keypress except for Shift, Tab, Shift+Tab.
+    // Also avoid hiding if the undo button is triggered.
+    this.editorUndoBar.hide();
+  }
 
   if (this.overlayManager.active) {
     return;

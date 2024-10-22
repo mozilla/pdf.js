@@ -125,3 +125,97 @@
     }
   }
 }
+
+#editorUndoBar {
+  --text-primary-color: #15141a;
+
+  --message-bar-icon: url(images/secondaryToolbarButton-documentProperties.svg);
+  --message-bar-icon-color: #0060df;
+  --message-bar-bg-color: #deeafc;
+  --message-bar-fg-color: var(--text-primary-color);
+  --message-bar-border-color: rgb(0 0 0 / 0.08);
+
+  --undo-button-bg-color: rgb(21 20 26 / 0.07);
+  --undo-button-bg-color-hover: rgb(21 20 26 / 0.14);
+  --undo-button-bg-color-active: rgb(21 20 26 / 0.21);
+
+  --undo-button-fg-color: var(--message-bar-fg-color);
+  --undo-button-fg-color-hover: var(--undo-button-fg-color);
+  --undo-button-fg-color-active: var(--undo-button-fg-color);
+
+  --focus-ring-color: #0060df;
+  --focus-ring-outline: 2px solid var(--focus-ring-color);
+
+  @media (prefers-color-scheme: dark) {
+    --text-primary-color: #fbfbfe;
+
+    --message-bar-icon-color: #73a7f3;
+    --message-bar-bg-color: #003070;
+    --message-bar-border-color: rgb(255 255 255 / 0.08);
+
+    --undo-button-bg-color: rgb(255 255 255 / 0.08);
+    --undo-button-bg-color-hover: rgb(255 255 255 / 0.14);
+    --undo-button-bg-color-active: rgb(255 255 255 / 0.21);
+  }
+
+  @media screen and (forced-colors: active) {
+    --text-primary-color: CanvasText;
+
+    --message-bar-icon-color: CanvasText;
+    --message-bar-bg-color: Canvas;
+    --message-bar-border-color: CanvasText;
+
+    --undo-button-bg-color: ButtonText;
+    --undo-button-bg-color-hover: SelectedItem;
+    --undo-button-bg-color-active: SelectedItem;
+
+    --undo-button-fg-color: ButtonFace;
+    --undo-button-fg-color-hover: SelectedItemText;
+    --undo-button-fg-color-active: SelectedItemText;
+
+    --focus-ring-color: CanvasText;
+  }
+
+  position: fixed;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+
+  padding-block: 8px;
+  padding-inline: 16px 8px;
+
+  font: menu;
+  font-size: 15px;
+
+  cursor: default;
+
+  button {
+    cursor: pointer;
+  }
+
+  #editorUndoBarUndoButton {
+    border-radius: 4px;
+    font-weight: 590;
+    line-height: 19.5px;
+    color: var(--undo-button-fg-color);
+    border: none;
+    padding: 4px 16px;
+    margin-inline-start: 8px;
+    height: 32px;
+
+    background-color: var(--undo-button-bg-color);
+
+    &:hover {
+      background-color: var(--undo-button-bg-color-hover);
+    }
+
+    &:active {
+      background-color: var(--undo-button-bg-color-active);
+    }
+  }
+
+  > div {
+    align-items: center;
+  }
+}
