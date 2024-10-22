@@ -4436,6 +4436,16 @@ class PartialEvaluator {
     let glyphScaleFactors = null;
     let systemFontInfo = null;
     if (fontFile) {
+      if (!(fontFile instanceof BaseStream)) {
+        const msg = `Font file should be a Stream in "${fontName.name}".`;
+
+        if (!this.options.ignoreErrors) {
+          throw new FormatError(msg);
+        }
+        warn(msg);
+        fontFile = new NullStream();
+      }
+
       if (fontFile.dict) {
         const subtypeEntry = fontFile.dict.get("Subtype");
         if (subtypeEntry instanceof Name) {
