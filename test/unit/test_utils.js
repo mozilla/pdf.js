@@ -16,6 +16,8 @@
 import { assert, isNodeJS } from "../../src/shared/util.js";
 import { NullStream, StringStream } from "../../src/core/stream.js";
 import { Page, PDFDocument } from "../../src/core/document.js";
+import { fetchData as fetchDataDOM } from "../../src/display/display_utils.js";
+import { fetchData as fetchDataNode } from "../../src/display/node_utils.js";
 import { Ref } from "../../src/core/primitives.js";
 
 let fs, http;
@@ -33,26 +35,15 @@ const STANDARD_FONT_DATA_URL = isNodeJS
   ? "./external/standard_fonts/"
   : "../../external/standard_fonts/";
 
-class DOMFileReaderFactory {
+class DefaultFileReaderFactory {
   static async fetch(params) {
-    const response = await fetch(params.path);
-    if (!response.ok) {
-      throw new Error(response.statusText);
+    if (isNodeJS) {
+      return fetchDataNode(params.path);
     }
-    return new Uint8Array(await response.arrayBuffer());
-  }
-}
-
-class NodeFileReaderFactory {
-  static async fetch(params) {
-    const data = await fs.promises.readFile(params.path);
+    const data = await fetchDataDOM(params.path, /* type = */ "arraybuffer");
     return new Uint8Array(data);
   }
 }
-
-const DefaultFileReaderFactory = isNodeJS
-  ? NodeFileReaderFactory
-  : DOMFileReaderFactory;
 
 function buildGetDocumentParams(filename, options) {
   const params = Object.create(null);
