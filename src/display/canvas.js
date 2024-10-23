@@ -1059,8 +1059,10 @@ class CanvasGraphics {
     // Vertical or horizontal scaling shall not be more than 2 to not lose the
     // pixels during drawImage operation, painting on the temporary canvas(es)
     // that are twice smaller in size.
-    const width = img.width;
-    const height = img.height;
+
+    // displayWidth and displayHeight are used for VideoFrame.
+    const width = img.width ?? img.displayWidth;
+    const height = img.height ?? img.displayHeight;
     let widthScale = Math.max(
       Math.hypot(inverseTransform[0], inverseTransform[1]),
       1
