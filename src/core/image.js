@@ -752,6 +752,10 @@ class PDFImage {
         drawWidth === originalWidth &&
         drawHeight === originalHeight
       ) {
+        const image = await this.#getImage(originalWidth, originalHeight);
+        if (image) {
+          return image;
+        }
         const data = await this.getImageBytes(originalHeight * rowBytes, {});
         if (isOffscreenCanvasSupported) {
           if (mustBeResized) {
@@ -810,6 +814,10 @@ class PDFImage {
           }
 
           if (isHandled) {
+            const image = await this.#getImage(drawWidth, drawHeight);
+            if (image) {
+              return image;
+            }
             const rgba = await this.getImageBytes(imageLength, {
               drawWidth,
               drawHeight,
@@ -1004,6 +1012,20 @@ class PDFImage {
     ctx.putImageData(imgData, 0, 0);
     const bitmap = canvas.transferToImageBitmap();
 
+    return {
+      data: null,
+      width,
+      height,
+      bitmap,
+      interpolate: this.interpolate,
+    };
+  }
+
+  async #getImage(width, height) {
+    const bitmap = await this.image.getTransferableImage();
+    if (!bitmap) {
+      return null;
+    }
     return {
       data: null,
       width,
