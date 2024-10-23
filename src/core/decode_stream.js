@@ -73,7 +73,7 @@ class DecodeStream extends BaseStream {
     return this.buffer[this.pos++];
   }
 
-  getBytes(length) {
+  getBytes(length, decoderOptions = null) {
     const pos = this.pos;
     let end;
 
@@ -82,7 +82,7 @@ class DecodeStream extends BaseStream {
       end = pos + length;
 
       while (!this.eof && this.bufferLength < end) {
-        this.readBlock();
+        this.readBlock(decoderOptions);
       }
       const bufEnd = this.bufferLength;
       if (end > bufEnd) {
@@ -90,13 +90,21 @@ class DecodeStream extends BaseStream {
       }
     } else {
       while (!this.eof) {
-        this.readBlock();
+        this.readBlock(decoderOptions);
       }
       end = this.bufferLength;
     }
 
     this.pos = end;
     return this.buffer.subarray(pos, end);
+  }
+
+  async getImageData(length, decoderOptions = null) {
+    if (!this.canAsyncDecodeImageFromBuffer) {
+      return this.getBytes(length, decoderOptions);
+    }
+    const data = await this.stream.asyncGetBytes();
+    return this.decodeImage(data, decoderOptions);
   }
 
   reset() {

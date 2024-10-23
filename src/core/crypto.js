@@ -693,7 +693,10 @@ class NullCipher {
 
 class AESBaseCipher {
   constructor() {
-    if (this.constructor === AESBaseCipher) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === AESBaseCipher
+    ) {
       unreachable("Cannot initialize AESBaseCipher.");
     }
 

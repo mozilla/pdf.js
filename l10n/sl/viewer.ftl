@@ -51,12 +51,6 @@ pdfjs-download-button-label = Prenesi
 pdfjs-bookmark-button =
     .title = Trenutna stran (prikaži URL, ki vodi do trenutne strani)
 pdfjs-bookmark-button-label = Na trenutno stran
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = Odpri v programu
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = Odpri v programu
 
 ##  Secondary toolbar and context menu
 
@@ -111,6 +105,14 @@ pdfjs-document-properties-button-label = Lastnosti dokumenta …
 pdfjs-document-properties-file-name = Ime datoteke:
 pdfjs-document-properties-file-size = Velikost datoteke:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } KB ({ $b } bajtov)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bajtov)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bajtov)
@@ -124,6 +126,9 @@ pdfjs-document-properties-subject = Tema:
 pdfjs-document-properties-keywords = Ključne besede:
 pdfjs-document-properties-creation-date = Datum nastanka:
 pdfjs-document-properties-modification-date = Datum spremembe:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -285,6 +290,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [Opomba vrste { $type }]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -305,6 +313,27 @@ pdfjs-editor-ink-button-label = Riši
 pdfjs-editor-stamp-button =
     .title = Dodajanje ali urejanje slik
 pdfjs-editor-stamp-button-label = Dodajanje ali urejanje slik
+pdfjs-editor-highlight-button =
+    .title = Označevalnik
+pdfjs-editor-highlight-button-label = Označevalnik
+pdfjs-highlight-floating-button1 =
+    .title = Označi
+    .aria-label = Označi
+pdfjs-highlight-floating-button-label = Označi
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = Odstrani risbo
+pdfjs-editor-remove-freetext-button =
+    .title = Odstrani besedilo
+pdfjs-editor-remove-stamp-button =
+    .title = Odstrani sliko
+pdfjs-editor-remove-highlight-button =
+    .title = Odstrani označbo
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Barva
 pdfjs-editor-free-text-size-input = Velikost
@@ -314,6 +343,10 @@ pdfjs-editor-ink-opacity-input = Neprosojnost
 pdfjs-editor-stamp-add-image-button =
     .title = Dodaj sliko
 pdfjs-editor-stamp-add-image-button-label = Dodaj sliko
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Debelina
+pdfjs-editor-free-highlight-thickness-title =
+    .title = Spremeni debelino pri označevanju nebesedilnih elementov
 pdfjs-free-text =
     .aria-label = Urejevalnik besedila
 pdfjs-free-text-default-content = Začnite tipkati …
@@ -351,3 +384,102 @@ pdfjs-editor-resizer-label-bottom-right = Spodnji desni kot – spremeni velikos
 pdfjs-editor-resizer-label-bottom-middle = Spodaj na sredini – spremeni velikost
 pdfjs-editor-resizer-label-bottom-left = Spodnji levi kot – spremeni velikost
 pdfjs-editor-resizer-label-middle-left = Levo na sredini – spremeni velikost
+pdfjs-editor-resizer-top-left =
+    .aria-label = Zgornji levi kot – spremeni velikost
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Zgoraj na sredini – spremeni velikost
+pdfjs-editor-resizer-top-right =
+    .aria-label = Zgornji desni kot – spremeni velikost
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Desno na sredini – spremeni velikost
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Spodnji desni kot – spremeni velikost
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Spodaj na sredini – spremeni velikost
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Spodnji levi kot – spremeni velikost
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Levo na sredini – spremeni velikost
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = Barva označbe
+pdfjs-editor-colorpicker-button =
+    .title = Spremeni barvo
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = Izbira barve
+pdfjs-editor-colorpicker-yellow =
+    .title = Rumena
+pdfjs-editor-colorpicker-green =
+    .title = Zelena
+pdfjs-editor-colorpicker-blue =
+    .title = Modra
+pdfjs-editor-colorpicker-pink =
+    .title = Roza
+pdfjs-editor-colorpicker-red =
+    .title = Rdeča
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Prikaži vse
+pdfjs-editor-highlight-show-all-button =
+    .title = Prikaži vse
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+# Modal header positioned above a text box where users can edit the alt text.
+pdfjs-editor-new-alt-text-dialog-edit-label = Uredi nadomestno besedilo (opis slike)
+# Modal header positioned above a text box where users can add the alt text.
+pdfjs-editor-new-alt-text-dialog-add-label = Dodaj nadomestno besedilo (opis slike)
+pdfjs-editor-new-alt-text-textarea =
+    .placeholder = Tukaj napišite svoj opis …
+# This text refers to the alt text box above this description. It offers a definition of alt text.
+pdfjs-editor-new-alt-text-description = Kratek opis za ljudi, ki ne morejo videti slike, ali za primer, ko se slika ne naloži.
+# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
+pdfjs-editor-new-alt-text-disclaimer1 = To nadomestno besedilo je bilo ustvarjeno samodejno in je lahko netočno.
+pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Več o tem
+pdfjs-editor-new-alt-text-create-automatically-button-label = Samodejno ustvari nadomestno besedilo
+pdfjs-editor-new-alt-text-not-now-button = Ne zdaj
+pdfjs-editor-new-alt-text-error-title = Nadomestnega besedila ni bilo mogoče samodejno ustvariti
+pdfjs-editor-new-alt-text-error-description = Sestavite svoje nadomestno besedilo ali poskusite znova pozneje.
+pdfjs-editor-new-alt-text-error-close-button = Zapri
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+#   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
+#   $percent (Number) - the percentage of the downloaded size.
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = Prenašanje modela UI za nadomestno besedilo ({ $downloadedSize } od { $totalSize } MB)
+    .aria-valuetext = Prenašanje modela UI za nadomestno besedilo ({ $downloadedSize } od { $totalSize } MB)
+# This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button-label = Nadomestno besedilo dodano
+# This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button-label = Nadomestno besedilo manjka
+# This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button-label = Oceni nadomestno besedilo
+# "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
+# Variables:
+#   $generatedAltText (String) - the generated alt-text.
+pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer = Samodejno ustvarjeno: { $generatedAltText }
+
+## Image alt-text settings
+
+pdfjs-image-alt-text-settings-button =
+    .title = Nastavitve nadomestnega besedila slike
+pdfjs-image-alt-text-settings-button-label = Nastavitve nadomestnega besedila slike
+pdfjs-editor-alt-text-settings-dialog-label = Nastavitve nadomestnega besedila slike
+pdfjs-editor-alt-text-settings-automatic-title = Samodejno nadomestno besedilo
+pdfjs-editor-alt-text-settings-create-model-button-label = Samodejno ustvari nadomestno besedilo
+pdfjs-editor-alt-text-settings-create-model-description = Predlaga opise za pomoč ljudem, ki ne morejo videti slike, ali za primer, ko se slika ne naloži.
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+pdfjs-editor-alt-text-settings-download-model-label = Model UI za nadomestno besedilo ({ $totalSize } MB)
+pdfjs-editor-alt-text-settings-ai-model-description = Izvaja se lokalno na vaši napravi, tako da vaši podatki ostajajo zasebni. Zahtevano za samodejno nadomestno besedilo.
+pdfjs-editor-alt-text-settings-delete-model-button = Izbriši
+pdfjs-editor-alt-text-settings-download-model-button = Prenesi
+pdfjs-editor-alt-text-settings-downloading-model-button = Prenašanje ...
+pdfjs-editor-alt-text-settings-editor-title = Urejevalnik nadomestnega besedila
+pdfjs-editor-alt-text-settings-show-dialog-button-label = Ob dodajanju slike takoj prikaži urejevalnik nadomestnega besedila
+pdfjs-editor-alt-text-settings-show-dialog-description = Pomaga vam zagotoviti, da imajo vse vaše slike nadomestno besedilo.
+pdfjs-editor-alt-text-settings-close-button = Zapri

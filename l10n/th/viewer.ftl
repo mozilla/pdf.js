@@ -51,12 +51,6 @@ pdfjs-download-button-label = ดาวน์โหลด
 pdfjs-bookmark-button =
     .title = หน้าปัจจุบัน (ดู URL จากหน้าปัจจุบัน)
 pdfjs-bookmark-button-label = หน้าปัจจุบัน
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = เปิดในแอป
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = เปิดในแอป
 
 ##  Secondary toolbar and context menu
 
@@ -111,6 +105,14 @@ pdfjs-document-properties-button-label = คุณสมบัติเอกส
 pdfjs-document-properties-file-name = ชื่อไฟล์:
 pdfjs-document-properties-file-size = ขนาดไฟล์:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } KB ({ $b } ไบต์)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } ไบต์)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } ไบต์)
@@ -124,6 +126,9 @@ pdfjs-document-properties-subject = ชื่อเรื่อง:
 pdfjs-document-properties-keywords = คำสำคัญ:
 pdfjs-document-properties-creation-date = วันที่สร้าง:
 pdfjs-document-properties-modification-date = วันที่แก้ไข:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -273,6 +278,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [คำอธิบายประกอบ { $type }]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -293,6 +301,27 @@ pdfjs-editor-ink-button-label = รูปวาด
 pdfjs-editor-stamp-button =
     .title = เพิ่มหรือแก้ไขภาพ
 pdfjs-editor-stamp-button-label = เพิ่มหรือแก้ไขภาพ
+pdfjs-editor-highlight-button =
+    .title = เน้น
+pdfjs-editor-highlight-button-label = เน้น
+pdfjs-highlight-floating-button1 =
+    .title = เน้นสี
+    .aria-label = เน้นสี
+pdfjs-highlight-floating-button-label = เน้นสี
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = เอาภาพวาดออก
+pdfjs-editor-remove-freetext-button =
+    .title = เอาข้อความออก
+pdfjs-editor-remove-stamp-button =
+    .title = เอาภาพออก
+pdfjs-editor-remove-highlight-button =
+    .title = เอาการเน้นสีออก
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = สี
 pdfjs-editor-free-text-size-input = ขนาด
@@ -302,6 +331,10 @@ pdfjs-editor-ink-opacity-input = ความทึบ
 pdfjs-editor-stamp-add-image-button =
     .title = เพิ่มภาพ
 pdfjs-editor-stamp-add-image-button-label = เพิ่มภาพ
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = ความหนา
+pdfjs-editor-free-highlight-thickness-title =
+    .title = เปลี่ยนความหนาเมื่อเน้นรายการอื่นๆ ที่ไม่ใช่ข้อความ
 pdfjs-free-text =
     .aria-label = ตัวแก้ไขข้อความ
 pdfjs-free-text-default-content = เริ่มพิมพ์…
@@ -339,3 +372,102 @@ pdfjs-editor-resizer-label-bottom-right = มุมขวาล่าง — ป
 pdfjs-editor-resizer-label-bottom-middle = ตรงกลางด้านล่าง — ปรับขนาด
 pdfjs-editor-resizer-label-bottom-left = มุมซ้ายล่าง — ปรับขนาด
 pdfjs-editor-resizer-label-middle-left = ตรงกลางด้านซ้าย — ปรับขนาด
+pdfjs-editor-resizer-top-left =
+    .aria-label = มุมซ้ายบน — ปรับขนาด
+pdfjs-editor-resizer-top-middle =
+    .aria-label = ตรงกลางด้านบน — ปรับขนาด
+pdfjs-editor-resizer-top-right =
+    .aria-label = มุมขวาบน — ปรับขนาด
+pdfjs-editor-resizer-middle-right =
+    .aria-label = ตรงกลางด้านขวา — ปรับขนาด
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = มุมขวาล่าง — ปรับขนาด
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = ตรงกลางด้านล่าง — ปรับขนาด
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = มุมซ้ายล่าง — ปรับขนาด
+pdfjs-editor-resizer-middle-left =
+    .aria-label = ตรงกลางด้านซ้าย — ปรับขนาด
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = สีเน้น
+pdfjs-editor-colorpicker-button =
+    .title = เปลี่ยนสี
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = ทางเลือกสี
+pdfjs-editor-colorpicker-yellow =
+    .title = เหลือง
+pdfjs-editor-colorpicker-green =
+    .title = เขียว
+pdfjs-editor-colorpicker-blue =
+    .title = น้ำเงิน
+pdfjs-editor-colorpicker-pink =
+    .title = ชมพู
+pdfjs-editor-colorpicker-red =
+    .title = แดง
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = แสดงทั้งหมด
+pdfjs-editor-highlight-show-all-button =
+    .title = แสดงทั้งหมด
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+# Modal header positioned above a text box where users can edit the alt text.
+pdfjs-editor-new-alt-text-dialog-edit-label = แก้ไขข้อความทดแทน (คำอธิบายภาพ)
+# Modal header positioned above a text box where users can add the alt text.
+pdfjs-editor-new-alt-text-dialog-add-label = เพิ่มข้อความทดแทน (คำอธิบายภาพ)
+pdfjs-editor-new-alt-text-textarea =
+    .placeholder = เขียนคำอธิบายของคุณที่นี่…
+# This text refers to the alt text box above this description. It offers a definition of alt text.
+pdfjs-editor-new-alt-text-description = คำอธิบายสั้นๆ สำหรับผู้ที่ไม่สามารถมองเห็นภาพหรือเมื่อภาพไม่โหลด
+# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
+pdfjs-editor-new-alt-text-disclaimer1 = ข้อความทดแทนนี้ถูกสร้างขึ้นโดยอัตโนมัติและอาจไม่ถูกต้อง
+pdfjs-editor-new-alt-text-disclaimer-learn-more-url = เรียนรู้เพิ่มเติม
+pdfjs-editor-new-alt-text-create-automatically-button-label = สร้างข้อความทดแทนโดยอัตโนมัติ
+pdfjs-editor-new-alt-text-not-now-button = ไม่ใช่ตอนนี้
+pdfjs-editor-new-alt-text-error-title = ไม่สามารถสร้างข้อความทดแทนโดยอัตโนมัติได้
+pdfjs-editor-new-alt-text-error-description = กรุณาเขียนข้อความทดแทนด้วยตัวเองหรือลองใหม่อีกครั้งในภายหลัง
+pdfjs-editor-new-alt-text-error-close-button = ปิด
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+#   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
+#   $percent (Number) - the percentage of the downloaded size.
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = กำลังดาวน์โหลดโมเดล AI สำหรับข้อความทดแทน ({ $downloadedSize } จาก { $totalSize } MB)
+    .aria-valuetext = กำลังดาวน์โหลดโมเดล AI สำหรับข้อความทดแทน ({ $downloadedSize } จาก { $totalSize } MB)
+# This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button-label = เพิ่มข้อความทดแทนแล้ว
+# This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button-label = ขาดข้อความทดแทน
+# This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button-label = ตรวจสอบข้อความทดแทน
+# "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
+# Variables:
+#   $generatedAltText (String) - the generated alt-text.
+pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer = สร้างขึ้นโดยอัตโนมัติ: { $generatedAltText }
+
+## Image alt-text settings
+
+pdfjs-image-alt-text-settings-button =
+    .title = ตั้งค่าข้อความทดแทนภาพ
+pdfjs-image-alt-text-settings-button-label = ตั้งค่าข้อความทดแทนภาพ
+pdfjs-editor-alt-text-settings-dialog-label = ตั้งค่าข้อความทดแทนภาพ
+pdfjs-editor-alt-text-settings-automatic-title = การทดแทนด้วยข้อความอัตโนมัติ
+pdfjs-editor-alt-text-settings-create-model-button-label = สร้างข้อความทดแทนอัตโนมัติ
+pdfjs-editor-alt-text-settings-create-model-description = แนะนำคำอธิบายเพื่อช่วยเหลือผู้ที่ไม่สามารถมองเห็นภาพหรือเมื่อภาพไม่โหลด
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+pdfjs-editor-alt-text-settings-download-model-label = โมเดล AI สำหรับข้อความทดแทน ({ $totalSize } MB)
+pdfjs-editor-alt-text-settings-ai-model-description = ทำงานในเครื่องของคุณเพื่อให้ข้อมูลของคุณเป็นส่วนตัว จำเป็นสำหรับข้อความทดแทนอัตโนมัติ
+pdfjs-editor-alt-text-settings-delete-model-button = ลบ
+pdfjs-editor-alt-text-settings-download-model-button = ดาวน์โหลด
+pdfjs-editor-alt-text-settings-downloading-model-button = กำลังดาวน์โหลด…
+pdfjs-editor-alt-text-settings-editor-title = ตัวแก้ไขข้อความทดแทน
+pdfjs-editor-alt-text-settings-show-dialog-button-label = แสดงตัวแก้ไขข้อความทดแทนทันทีเมื่อเพิ่มภาพ
+pdfjs-editor-alt-text-settings-show-dialog-description = ช่วยให้คุณแน่ใจว่าภาพทั้งหมดของคุณมีข้อความทดแทน
+pdfjs-editor-alt-text-settings-close-button = ปิด

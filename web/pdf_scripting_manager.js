@@ -16,7 +16,7 @@
 /** @typedef {import("./event_utils").EventBus} EventBus */
 
 import { apiPageLayoutToViewerModes, RenderingStates } from "./ui_utils.js";
-import { PromiseCapability, shadow } from "pdfjs-lib";
+import { shadow } from "pdfjs-lib";
 
 /**
  * @typedef {Object} PDFScriptingManagerOptions
@@ -36,6 +36,8 @@ class PDFScriptingManager {
   #destroyCapability = null;
 
   #docProperties = null;
+
+  #eventAbortController = null;
 
   #eventBus = null;
 
@@ -58,6 +60,19 @@ class PDFScriptingManager {
     this.#eventBus = eventBus;
     this.#externalServices = externalServices;
     this.#docProperties = docProperties;
+
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
+      Object.defineProperty(this, "sandboxTrip", {
+        value: () =>
+          setTimeout(
+            () =>
+              this.#scripting?.dispatchEventInSandbox({
+                name: "sandboxtripbegin",
+              }),
+            0
+          ),
+      });
+    }
   }
 
   setViewer(pdfViewer) {
@@ -95,46 +110,66 @@ class PDFScriptingManager {
       await this.#destroyScripting();
       return;
     }
+    const eventBus = this.#eventBus;
 
-    this._internalEvents.set("updatefromsandbox", event => {
-      if (event?.source === window) {
-        this.#updateFromSandbox(event.detail);
-      }
-    });
-    this._internalEvents.set("dispatcheventinsandbox", event => {
-      this.#scripting?.dispatchEventInSandbox(event.detail);
-    });
+    this.#eventAbortController = new AbortController();
+    const { signal } = this.#eventAbortController;
 
-    this._internalEvents.set("pagechanging", ({ pageNumber, previous }) => {
-      if (pageNumber === previous) {
-        return; // The current page didn't change.
-      }
-      this.#dispatchPageClose(previous);
-      this.#dispatchPageOpen(pageNumber);
-    });
-    this._internalEvents.set("pagerendered", ({ pageNumber }) => {
-      if (!this._pageOpenPending.has(pageNumber)) {
-        return; // No pending "PageOpen" event for the newly rendered page.
-      }
-      if (pageNumber !== this.#pdfViewer.currentPageNumber) {
-        return; // The newly rendered page is no longer the current one.
-      }
-      this.#dispatchPageOpen(pageNumber);
-    });
-    this._internalEvents.set("pagesdestroy", async () => {
-      await this.#dispatchPageClose(this.#pdfViewer.currentPageNumber);
+    eventBus._on(
+      "updatefromsandbox",
+      event => {
+        if (event?.source === window) {
+          this.#updateFromSandbox(event.detail);
+        }
+      },
+      { signal }
+    );
+    eventBus._on(
+      "dispatcheventinsandbox",
+      event => {
+        this.#scripting?.dispatchEventInSandbox(event.detail);
+      },
+      { signal }
+    );
 
-      await this.#scripting?.dispatchEventInSandbox({
-        id: "doc",
-        name: "WillClose",
-      });
+    eventBus._on(
+      "pagechanging",
+      ({ pageNumber, previous }) => {
+        if (pageNumber === previous) {
+          return; // The current page didn't change.
+        }
+        this.#dispatchPageClose(previous);
+        this.#dispatchPageOpen(pageNumber);
+      },
+      { signal }
+    );
+    eventBus._on(
+      "pagerendered",
+      ({ pageNumber }) => {
+        if (!this._pageOpenPending.has(pageNumber)) {
+          return; // No pending "PageOpen" event for the newly rendered page.
+        }
+        if (pageNumber !== this.#pdfViewer.currentPageNumber) {
+          return; // The newly rendered page is no longer the current one.
+        }
+        this.#dispatchPageOpen(pageNumber);
+      },
+      { signal }
+    );
+    eventBus._on(
+      "pagesdestroy",
+      async () => {
+        await this.#dispatchPageClose(this.#pdfViewer.currentPageNumber);
 
-      this.#closeCapability?.resolve();
-    });
+        await this.#scripting?.dispatchEventInSandbox({
+          id: "doc",
+          name: "WillClose",
+        });
 
-    for (const [name, listener] of this._internalEvents) {
-      this.#eventBus._on(name, listener);
-    }
+        this.#closeCapability?.resolve();
+      },
+      { signal }
+    );
 
     try {
       const docProperties = await this.#docProperties(pdfDocument);
@@ -155,7 +190,7 @@ class PDFScriptingManager {
         },
       });
 
-      this.#eventBus.dispatch("sandboxcreated", { source: this });
+      eventBus.dispatch("sandboxcreated", { source: this });
     } catch (error) {
       console.error(`setDocument: "${error.message}".`);
 
@@ -199,7 +234,7 @@ class PDFScriptingManager {
       return;
     }
     await this.#willPrintCapability?.promise;
-    this.#willPrintCapability = new PromiseCapability();
+    this.#willPrintCapability = Promise.withResolvers();
     try {
       await this.#scripting.dispatchEventInSandbox({
         id: "doc",
@@ -232,13 +267,6 @@ class PDFScriptingManager {
   /**
    * @private
    */
-  get _internalEvents() {
-    return shadow(this, "_internalEvents", new Map());
-  }
-
-  /**
-   * @private
-   */
   get _pageOpenPending() {
     return shadow(this, "_pageOpenPending", new Set());
   }
@@ -258,6 +286,17 @@ class PDFScriptingManager {
 
     const { id, siblings, command, value } = detail;
     if (!id) {
+      if (
+        typeof PDFJSDev !== "undefined" &&
+        PDFJSDev.test("TESTING") &&
+        command === "sandboxTripEnd"
+      ) {
+        window.setTimeout(() => {
+          window.dispatchEvent(new CustomEvent("sandboxtripend"));
+        }, 0);
+        return;
+      }
+
       switch (command) {
         case "clear":
           console.clear();
@@ -344,7 +383,7 @@ class PDFScriptingManager {
       visitedPages = this._visitedPages;
 
     if (initialize) {
-      this.#closeCapability = new PromiseCapability();
+      this.#closeCapability = Promise.withResolvers();
     }
     if (!this.#closeCapability) {
       return; // Scripting isn't fully initialized yet.
@@ -406,7 +445,7 @@ class PDFScriptingManager {
   }
 
   #initScripting() {
-    this.#destroyCapability = new PromiseCapability();
+    this.#destroyCapability = Promise.withResolvers();
 
     if (this.#scripting) {
       throw new Error("#initScripting: Scripting already exists.");
@@ -442,10 +481,8 @@ class PDFScriptingManager {
     this.#willPrintCapability?.reject(new Error("Scripting destroyed."));
     this.#willPrintCapability = null;
 
-    for (const [name, listener] of this._internalEvents) {
-      this.#eventBus._off(name, listener);
-    }
-    this._internalEvents.clear();
+    this.#eventAbortController?.abort();
+    this.#eventAbortController = null;
 
     this._pageOpenPending.clear();
     this._visitedPages.clear();

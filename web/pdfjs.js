@@ -13,15 +13,6 @@
  * limitations under the License.
  */
 
-// Ensure that the viewer waits for the library to complete loading,
-// to avoid breaking e.g. the standalone viewer components (see issue 17228).
-if (
-  (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-  !globalThis.pdfjsLib
-) {
-  await globalThis.pdfjsLibPromise;
-}
-
 const {
   AbortException,
   AnnotationEditorLayer,
@@ -51,20 +42,18 @@ const {
   noContextMenu,
   normalizeUnicode,
   OPS,
-  Outliner,
+  OutputScale,
   PasswordResponses,
   PDFDataRangeTransport,
   PDFDateString,
   PDFWorker,
   PermissionFlag,
   PixelsPerInch,
-  PromiseCapability,
   RenderingCancelledException,
-  renderTextLayer,
   setLayerDimensions,
   shadow,
+  TextLayer,
   UnexpectedResponseException,
-  updateTextLayer,
   Util,
   VerbosityLevel,
   version,
@@ -100,20 +89,18 @@ export {
   noContextMenu,
   normalizeUnicode,
   OPS,
-  Outliner,
+  OutputScale,
   PasswordResponses,
   PDFDataRangeTransport,
   PDFDateString,
   PDFWorker,
   PermissionFlag,
   PixelsPerInch,
-  PromiseCapability,
   RenderingCancelledException,
-  renderTextLayer,
   setLayerDimensions,
   shadow,
+  TextLayer,
   UnexpectedResponseException,
-  updateTextLayer,
   Util,
   VerbosityLevel,
   version,

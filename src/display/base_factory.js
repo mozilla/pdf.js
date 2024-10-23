@@ -17,7 +17,10 @@ import { CMapCompressionType, unreachable } from "../shared/util.js";
 
 class BaseFilterFactory {
   constructor() {
-    if (this.constructor === BaseFilterFactory) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BaseFilterFactory
+    ) {
       unreachable("Cannot initialize BaseFilterFactory.");
     }
   }
@@ -30,7 +33,15 @@ class BaseFilterFactory {
     return "none";
   }
 
-  addHighlightHCMFilter(fgColor, bgColor, newFgColor, newBgColor) {
+  addAlphaFilter(map) {
+    return "none";
+  }
+
+  addLuminosityFilter(map) {
+    return "none";
+  }
+
+  addHighlightHCMFilter(filterName, fgColor, bgColor, newFgColor, newBgColor) {
     return "none";
   }
 
@@ -38,10 +49,16 @@ class BaseFilterFactory {
 }
 
 class BaseCanvasFactory {
-  constructor() {
-    if (this.constructor === BaseCanvasFactory) {
+  #enableHWA = false;
+
+  constructor({ enableHWA = false }) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BaseCanvasFactory
+    ) {
       unreachable("Cannot initialize BaseCanvasFactory.");
     }
+    this.#enableHWA = enableHWA;
   }
 
   create(width, height) {
@@ -51,7 +68,9 @@ class BaseCanvasFactory {
     const canvas = this._createCanvas(width, height);
     return {
       canvas,
-      context: canvas.getContext("2d"),
+      context: canvas.getContext("2d", {
+        willReadFrequently: !this.#enableHWA,
+      }),
     };
   }
 
@@ -88,7 +107,10 @@ class BaseCanvasFactory {
 
 class BaseCMapReaderFactory {
   constructor({ baseUrl = null, isCompressed = true }) {
-    if (this.constructor === BaseCMapReaderFactory) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BaseCMapReaderFactory
+    ) {
       unreachable("Cannot initialize BaseCMapReaderFactory.");
     }
     this.baseUrl = baseUrl;
@@ -98,36 +120,43 @@ class BaseCMapReaderFactory {
   async fetch({ name }) {
     if (!this.baseUrl) {
       throw new Error(
-        'The CMap "baseUrl" parameter must be specified, ensure that ' +
-          'the "cMapUrl" and "cMapPacked" API parameters are provided.'
+        "Ensure that the `cMapUrl` and `cMapPacked` API parameters are provided."
       );
     }
     if (!name) {
       throw new Error("CMap name must be specified.");
     }
     const url = this.baseUrl + name + (this.isCompressed ? ".bcmap" : "");
-    const compressionType = this.isCompressed
-      ? CMapCompressionType.BINARY
-      : CMapCompressionType.NONE;
 
-    return this._fetchData(url, compressionType).catch(reason => {
-      throw new Error(
-        `Unable to load ${this.isCompressed ? "binary " : ""}CMap at: ${url}`
-      );
-    });
+    return this._fetch(url)
+      .then(cMapData => ({
+        cMapData,
+        compressionType: this.isCompressed
+          ? CMapCompressionType.BINARY
+          : CMapCompressionType.NONE,
+      }))
+      .catch(reason => {
+        throw new Error(
+          `Unable to load ${this.isCompressed ? "binary " : ""}CMap at: ${url}`
+        );
+      });
   }
 
   /**
    * @ignore
+   * @returns {Promise<Uint8Array>}
    */
-  _fetchData(url, compressionType) {
-    unreachable("Abstract method `_fetchData` called.");
+  async _fetch(url) {
+    unreachable("Abstract method `_fetch` called.");
   }
 }
 
 class BaseStandardFontDataFactory {
   constructor({ baseUrl = null }) {
-    if (this.constructor === BaseStandardFontDataFactory) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BaseStandardFontDataFactory
+    ) {
       unreachable("Cannot initialize BaseStandardFontDataFactory.");
     }
     this.baseUrl = baseUrl;
@@ -136,8 +165,7 @@ class BaseStandardFontDataFactory {
   async fetch({ filename }) {
     if (!this.baseUrl) {
       throw new Error(
-        'The standard font "baseUrl" parameter must be specified, ensure that ' +
-          'the "standardFontDataUrl" API parameter is provided.'
+        "Ensure that the `standardFontDataUrl` API parameter is provided."
       );
     }
     if (!filename) {
@@ -145,22 +173,26 @@ class BaseStandardFontDataFactory {
     }
     const url = `${this.baseUrl}${filename}`;
 
-    return this._fetchData(url).catch(reason => {
+    return this._fetch(url).catch(reason => {
       throw new Error(`Unable to load font data at: ${url}`);
     });
   }
 
   /**
    * @ignore
+   * @returns {Promise<Uint8Array>}
    */
-  _fetchData(url) {
-    unreachable("Abstract method `_fetchData` called.");
+  async _fetch(url) {
+    unreachable("Abstract method `_fetch` called.");
   }
 }
 
 class BaseSVGFactory {
   constructor() {
-    if (this.constructor === BaseSVGFactory) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BaseSVGFactory
+    ) {
       unreachable("Cannot initialize BaseSVGFactory.");
     }
   }

@@ -201,11 +201,12 @@ describe("parser", function () {
     });
 
     describe("getHexString", function () {
-      it("should not throw exception on bad input", function () {
-        // '7 0 2 15 5 2 2 2 4 3 2 4' should be parsed as '70 21 55 22 24 32'.
+      it("should handle an odd number of digits", function () {
+        // '7 0 2 15 5 2 2 2 4 3 2 4' should be parsed as
+        // '70 21 55 22 24 32 40'.
         const input = new StringStream("<7 0 2 15 5 2 2 2 4 3 2 4>");
         const lexer = new Lexer(input);
-        expect(lexer.getHexString()).toEqual('p!U"$2');
+        expect(lexer.getHexString()).toEqual('p!U"$2@');
       });
     });
 

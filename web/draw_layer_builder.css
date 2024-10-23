@@ -18,19 +18,22 @@
     transform: none;
 
     &[data-main-rotation="90"] {
-      use:not(.clip) {
+      mask,
+      use:not(.clip, .mask) {
         transform: matrix(0, 1, -1, 0, 1, 0);
       }
     }
 
     &[data-main-rotation="180"] {
-      use:not(.clip) {
+      mask,
+      use:not(.clip, .mask) {
         transform: matrix(-1, 0, 0, -1, 1, 1);
       }
     }
 
     &[data-main-rotation="270"] {
-      use:not(.clip) {
+      mask,
+      use:not(.clip, .mask) {
         transform: matrix(0, -1, 1, 0, 0, 1);
       }
     }
@@ -44,7 +47,10 @@
 
       position: absolute;
       mix-blend-mode: var(--blend-mode);
-      fill-rule: evenodd;
+
+      &:not(.free) {
+        fill-rule: evenodd;
+      }
     }
 
     &.highlightOutline {
@@ -53,22 +59,52 @@
       fill-rule: evenodd;
       fill: none;
 
-      &.hovered {
-        stroke: var(--hover-outline-color);
-        stroke-width: var(--outline-width);
-      }
-
-      &.selected {
-        .mainOutline {
-          stroke: var(--outline-around-color);
-          stroke-width: calc(
-            var(--outline-width) + 2 * var(--outline-around-width)
-          );
+      &:not(.free) {
+        &.hovered:not(.selected) {
+          stroke: var(--hover-outline-color);
+          stroke-width: var(--outline-width);
         }
 
-        .secondaryOutline {
-          stroke: var(--outline-color);
-          stroke-width: var(--outline-width);
+        &.selected {
+          .mainOutline {
+            stroke: var(--outline-around-color);
+            stroke-width: calc(
+              var(--outline-width) + 2 * var(--outline-around-width)
+            );
+          }
+
+          .secondaryOutline {
+            stroke: var(--outline-color);
+            stroke-width: var(--outline-width);
+          }
+        }
+      }
+
+      &.free {
+        /*
+          When drawing the outline we use a mask in order to remove the parts
+          that are inside the shape. Unfortunately, this removes the part of the
+          outline that is inside the shape. To "fix" this we increase the width
+          to have what we want to be visible outside the shape.
+          This is not a perfect solution, but it works well enough.
+        */
+        &.hovered:not(.selected) {
+          stroke: var(--hover-outline-color);
+          stroke-width: calc(2 * var(--outline-width));
+        }
+
+        &.selected {
+          .mainOutline {
+            stroke: var(--outline-around-color);
+            stroke-width: calc(
+              2 * (var(--outline-width) + var(--outline-around-width))
+            );
+          }
+
+          .secondaryOutline {
+            stroke: var(--outline-color);
+            stroke-width: calc(2 * var(--outline-width));
+          }
         }
       }
     }

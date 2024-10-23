@@ -21,47 +21,51 @@ import { spawn } from "child_process";
 
 let ttxTaskId = Date.now();
 
-function runTtx(fontPath, registerOnCancel, callback) {
-  const ttx = spawn("ttx", [fontPath], { stdio: "ignore" });
-  let ttxRunError;
-  registerOnCancel(function (reason) {
-    ttxRunError = reason;
-    callback(reason);
-    ttx.kill();
-  });
-  ttx.on("error", function (errorTtx) {
-    ttxRunError = errorTtx;
-    callback(
-      "Unable to execute `ttx`; make sure the `fonttools` dependency is installed"
-    );
-  });
-  ttx.on("close", function (code) {
-    if (ttxRunError) {
-      return;
-    }
-    callback();
+function runTtx(fontPath) {
+  return new Promise((resolve, reject) => {
+    const ttx = spawn("ttx", [fontPath], { stdio: "ignore" });
+    ttx.on("error", () => {
+      reject(
+        new Error(
+          "Unable to execute `ttx`; make sure the `fonttools` dependency is installed"
+        )
+      );
+    });
+    ttx.on("close", () => {
+      resolve();
+    });
   });
 }
 
-function translateFont(content, registerOnCancel, callback) {
+async function translateFont(content) {
   const buffer = Buffer.from(content, "base64");
   const taskId = (ttxTaskId++).toString();
   const fontPath = path.join(os.tmpdir(), `pdfjs-font-test-${taskId}.otf`);
   const resultPath = path.join(os.tmpdir(), `pdfjs-font-test-${taskId}.ttx`);
 
+  // Write the font data to a temporary file on disk (because TTX only accepts
+  // files as input).
   fs.writeFileSync(fontPath, buffer);
-  runTtx(fontPath, registerOnCancel, function (err) {
-    fs.unlinkSync(fontPath);
-    if (err) {
-      console.error(err);
-      callback(err);
-    } else if (!fs.existsSync(resultPath)) {
-      callback("Output was not generated");
-    } else {
-      callback(null, fs.readFileSync(resultPath));
-      fs.unlinkSync(resultPath);
-    }
-  });
+
+  // Run TTX on the temporary font file.
+  let ttxError;
+  try {
+    await runTtx(fontPath);
+  } catch (error) {
+    ttxError = error;
+  }
+
+  // Remove the temporary font/result files and report on the outcome.
+  fs.unlinkSync(fontPath);
+  if (ttxError) {
+    throw ttxError;
+  }
+  if (!fs.existsSync(resultPath)) {
+    throw new Error("TTX did not generate output");
+  }
+  const xml = fs.readFileSync(resultPath);
+  fs.unlinkSync(resultPath);
+  return xml;
 }
 
 export { translateFont };

@@ -51,12 +51,6 @@ pdfjs-download-button-label = Discargar
 pdfjs-bookmark-button =
     .title = Pagina actual (vide le URL del pagina actual)
 pdfjs-bookmark-button-label = Pagina actual
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = Aperir in app
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = Aperir in app
 
 ##  Secondary toolbar and context menu
 
@@ -67,8 +61,8 @@ pdfjs-first-page-button =
     .title = Ir al prime pagina
 pdfjs-first-page-button-label = Ir al prime pagina
 pdfjs-last-page-button =
-    .title = Ir al prime pagina
-pdfjs-last-page-button-label = Ir al prime pagina
+    .title = Ir al ultime pagina
+pdfjs-last-page-button-label = Ir al ultime pagina
 pdfjs-page-rotate-cw-button =
     .title = Rotar in senso horari
 pdfjs-page-rotate-cw-button-label = Rotar in senso horari
@@ -111,6 +105,14 @@ pdfjs-document-properties-button-label = Proprietates del documento…
 pdfjs-document-properties-file-name = Nomine del file:
 pdfjs-document-properties-file-size = Dimension de file:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } KB ({ $b } bytes)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bytes)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bytes)
@@ -124,6 +126,9 @@ pdfjs-document-properties-subject = Subjecto:
 pdfjs-document-properties-keywords = Parolas clave:
 pdfjs-document-properties-creation-date = Data de creation:
 pdfjs-document-properties-modification-date = Data de modification:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -281,6 +286,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [{ $type } Annotation]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -301,8 +309,27 @@ pdfjs-editor-ink-button-label = Designar
 pdfjs-editor-stamp-button =
     .title = Adder o rediger imagines
 pdfjs-editor-stamp-button-label = Adder o rediger imagines
-pdfjs-editor-remove-button =
-    .title = Remover
+pdfjs-editor-highlight-button =
+    .title = Evidentia
+pdfjs-editor-highlight-button-label = Evidentia
+pdfjs-highlight-floating-button1 =
+    .title = Evidentiar
+    .aria-label = Evidentiar
+pdfjs-highlight-floating-button-label = Evidentiar
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = Remover le designo
+pdfjs-editor-remove-freetext-button =
+    .title = Remover texto
+pdfjs-editor-remove-stamp-button =
+    .title = Remover imagine
+pdfjs-editor-remove-highlight-button =
+    .title = Remover evidentia
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Color
 pdfjs-editor-free-text-size-input = Dimension
@@ -312,6 +339,10 @@ pdfjs-editor-ink-opacity-input = Opacitate
 pdfjs-editor-stamp-add-image-button =
     .title = Adder imagine
 pdfjs-editor-stamp-add-image-button-label = Adder imagine
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Spissor
+pdfjs-editor-free-highlight-thickness-title =
+    .title = Cambiar spissor evidentiante elementos differente de texto
 pdfjs-free-text =
     .aria-label = Editor de texto
 pdfjs-free-text-default-content = Comenciar a scriber…
@@ -349,3 +380,102 @@ pdfjs-editor-resizer-label-bottom-right = Angulo inferior dextre — redimension
 pdfjs-editor-resizer-label-bottom-middle = Medio inferior — redimensionar
 pdfjs-editor-resizer-label-bottom-left = Angulo inferior sinistre — redimensionar
 pdfjs-editor-resizer-label-middle-left = Medio sinistre — redimensionar
+pdfjs-editor-resizer-top-left =
+    .aria-label = Angulo superior sinistre — redimensionar
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Medio superior — redimensionar
+pdfjs-editor-resizer-top-right =
+    .aria-label = Angulo superior dextre — redimensionar
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Medio dextre — redimensionar
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Angulo inferior dextre — redimensionar
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Medio inferior — redimensionar
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Angulo inferior sinistre — redimensionar
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Medio sinistre — redimensionar
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = Color pro evidentiar
+pdfjs-editor-colorpicker-button =
+    .title = Cambiar color
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = Electiones del color
+pdfjs-editor-colorpicker-yellow =
+    .title = Jalne
+pdfjs-editor-colorpicker-green =
+    .title = Verde
+pdfjs-editor-colorpicker-blue =
+    .title = Blau
+pdfjs-editor-colorpicker-pink =
+    .title = Rosate
+pdfjs-editor-colorpicker-red =
+    .title = Rubie
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Monstrar toto
+pdfjs-editor-highlight-show-all-button =
+    .title = Monstrar toto
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+# Modal header positioned above a text box where users can edit the alt text.
+pdfjs-editor-new-alt-text-dialog-edit-label = Rediger texto alternative (description del imagine)
+# Modal header positioned above a text box where users can add the alt text.
+pdfjs-editor-new-alt-text-dialog-add-label = Adder texto alternative (description del imagine)
+pdfjs-editor-new-alt-text-textarea =
+    .placeholder = Scribe tu description ci…
+# This text refers to the alt text box above this description. It offers a definition of alt text.
+pdfjs-editor-new-alt-text-description = Breve description pro personas qui non pote vider le imagine o quando le imagine non se carga.
+# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
+pdfjs-editor-new-alt-text-disclaimer1 = Iste texto alternative ha essite create automaticamente e pote esser inexacte.
+pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Pro saper plus
+pdfjs-editor-new-alt-text-create-automatically-button-label = Crear texto alternative automaticamente
+pdfjs-editor-new-alt-text-not-now-button = Non ora
+pdfjs-editor-new-alt-text-error-title = Impossibile crear texto alternative automaticamente
+pdfjs-editor-new-alt-text-error-description = Scribe tu proprie texto alternative o retenta plus tarde.
+pdfjs-editor-new-alt-text-error-close-button = Clauder
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+#   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
+#   $percent (Number) - the percentage of the downloaded size.
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = Discargante modello de intelligentia artificial  del texto alternative ({ $downloadedSize } de { $totalSize } MB)
+    .aria-valuetext = Discargante modello de intelligentia artificial  del texto alternative ({ $downloadedSize } de { $totalSize } MB)
+# This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button-label = Texto alternative addite
+# This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button-label = Texto alternative mancante
+# This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button-label = Revider texto alternative
+# "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
+# Variables:
+#   $generatedAltText (String) - the generated alt-text.
+pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer = Automaticamente create: { $generatedAltText }
+
+## Image alt-text settings
+
+pdfjs-image-alt-text-settings-button =
+    .title = Parametros del texto alternative del imagine
+pdfjs-image-alt-text-settings-button-label = Parametros del texto alternative del imagine
+pdfjs-editor-alt-text-settings-dialog-label = Parametros del texto alternative del imagine
+pdfjs-editor-alt-text-settings-automatic-title = Texto alternative automatic
+pdfjs-editor-alt-text-settings-create-model-button-label = Crear texto alternative automaticamente
+pdfjs-editor-alt-text-settings-create-model-description = Suggere descriptiones pro adjutar le personas qui non pote vider le imagine o quando le imagine non carga.
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+pdfjs-editor-alt-text-settings-download-model-label = Modello de intelligentia artificial del texto alternative ({ $totalSize } MB)
+pdfjs-editor-alt-text-settings-ai-model-description = Flue localmente sur tu apparato assi tu datos remane private. Necessari pro texto alternative automatic.
+pdfjs-editor-alt-text-settings-delete-model-button = Deler
+pdfjs-editor-alt-text-settings-download-model-button = Discargar
+pdfjs-editor-alt-text-settings-downloading-model-button = Discargante…
+pdfjs-editor-alt-text-settings-editor-title = Rediger texto alternative
+pdfjs-editor-alt-text-settings-show-dialog-button-label = Monstrar le redactor de texto alternative a pena on adde un imagine
+pdfjs-editor-alt-text-settings-show-dialog-description = Te adjuta a verifica que tote tu imagines ha un texto alternative.
+pdfjs-editor-alt-text-settings-close-button = Clauder

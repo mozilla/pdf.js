@@ -37,7 +37,10 @@ function parseDocBaseUrl(url) {
 
 class BasePdfManager {
   constructor(args) {
-    if (this.constructor === BasePdfManager) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BasePdfManager
+    ) {
       unreachable("Cannot initialize BasePdfManager.");
     }
     this._docBaseUrl = parseDocBaseUrl(args.docBaseUrl);
@@ -49,7 +52,7 @@ class BasePdfManager {
     // the worker-thread code.
     args.evaluatorOptions.isOffscreenCanvasSupported &&=
       FeatureTest.isOffscreenCanvasSupported;
-    this.evaluatorOptions = args.evaluatorOptions;
+    this.evaluatorOptions = Object.freeze(args.evaluatorOptions);
   }
 
   get docId() {

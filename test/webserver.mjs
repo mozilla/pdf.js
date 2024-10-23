@@ -13,13 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
+
+// PLEASE NOTE: This code is intended for development purposes only and
+//              should NOT be used in production environments.
 
 import fs from "fs";
+import fsPromises from "fs/promises";
 import http from "http";
 import path from "path";
+import { pathToFileURL } from "url";
 
-var mimeTypes = {
+const MIME_TYPES = {
   ".css": "text/css",
   ".html": "text/html",
   ".js": "application/javascript",
@@ -35,319 +39,314 @@ var mimeTypes = {
   ".bcmap": "application/octet-stream",
   ".ftl": "text/plain",
 };
+const DEFAULT_MIME_TYPE = "application/octet-stream";
 
-var defaultMimeType = "application/octet-stream";
+class WebServer {
+  constructor({ root, host, port, cacheExpirationTime }) {
+    const cwdURL = pathToFileURL(process.cwd()) + "/";
+    this.rootURL = new URL(`${root || "."}/`, cwdURL);
+    this.host = host || "localhost";
+    this.port = port || 0;
+    this.server = null;
+    this.verbose = false;
+    this.cacheExpirationTime = cacheExpirationTime || 0;
+    this.disableRangeRequests = false;
+    this.hooks = {
+      GET: [crossOriginHandler],
+      POST: [],
+    };
+  }
 
-function WebServer() {
-  this.root = ".";
-  this.host = "localhost";
-  this.port = 0;
-  this.server = null;
-  this.verbose = false;
-  this.cacheExpirationTime = 0;
-  this.disableRangeRequests = false;
-  this.hooks = {
-    GET: [crossOriginHandler],
-    POST: [],
-  };
-}
-WebServer.prototype = {
   start(callback) {
-    this._ensureNonZeroPort();
-    this.server = http.createServer(this._handler.bind(this));
+    this.#ensureNonZeroPort();
+    this.server = http.createServer(this.#handler.bind(this));
     this.server.listen(this.port, this.host, callback);
-    console.log(
-      "Server running at http://" + this.host + ":" + this.port + "/"
-    );
-  },
+    console.log(`Server running at http://${this.host}:${this.port}/`);
+  }
+
   stop(callback) {
     this.server.close(callback);
     this.server = null;
-  },
-  _ensureNonZeroPort() {
+  }
+
+  #ensureNonZeroPort() {
     if (!this.port) {
       // If port is 0, a random port will be chosen instead. Do not set a host
-      // name to make sure that the port is synchronously set by .listen().
-      var server = http.createServer().listen(0);
-      var address = server.address();
-      // .address().port being available synchronously is merely an
-      // implementation detail. So we are defensive here and fall back to some
+      // name to make sure that the port is synchronously set by `.listen()`.
+      const server = http.createServer().listen(0);
+      const address = server.address();
+      // `.address().port` being available synchronously is merely an
+      // implementation detail, so we are defensive here and fall back to a
       // fixed port when the address is not available yet.
       this.port = address ? address.port : 8000;
       server.close();
     }
-  },
-  _handler(req, res) {
-    var url = req.url.replaceAll("//", "/");
-    var urlParts = /([^?]*)((?:\?(.*))?)/.exec(url);
-    try {
-      // Guard against directory traversal attacks such as
-      // `/../../../../../../../etc/passwd`, which let you make GET requests
-      // for files outside of `this.root`.
-      var pathPart = path.normalize(decodeURI(urlParts[1]));
-      // path.normalize returns a path on the basis of the current platform.
-      // Windows paths cause issues in statFile and serverDirectoryIndex.
-      // Converting to unix path would avoid platform checks in said functions.
-      pathPart = pathPart.replaceAll("\\", "/");
-    } catch {
-      // If the URI cannot be decoded, a `URIError` is thrown. This happens for
-      // malformed URIs such as `http://localhost:8888/%s%s` and should be
-      // handled as a bad request.
-      res.writeHead(400);
-      res.end("Bad request", "utf8");
-      return;
-    }
-    var queryPart = urlParts[3];
-    var verbose = this.verbose;
+  }
 
-    var methodHooks = this.hooks[req.method];
+  async #handler(request, response) {
+    // URLs are normalized and automatically disallow directory traversal
+    // attacks. For example, http://HOST:PORT/../../../../../../../etc/passwd
+    // is equivalent to http://HOST:PORT/etc/passwd.
+    const url = new URL(`http://${this.host}:${this.port}${request.url}`);
+
+    // Validate the request method and execute method hooks.
+    const methodHooks = this.hooks[request.method];
     if (!methodHooks) {
-      res.writeHead(405);
-      res.end("Unsupported request method", "utf8");
+      response.writeHead(405);
+      response.end("Unsupported request method", "utf8");
       return;
     }
-    var handled = methodHooks.some(function (hook) {
-      return hook(req, res);
-    });
+    const handled = methodHooks.some(hook => hook(url, request, response));
     if (handled) {
       return;
     }
 
-    if (pathPart === "/favicon.ico") {
-      fs.realpath(
-        path.join(this.root, "test/resources/favicon.ico"),
-        checkFile
+    // Check the request and serve the file/folder contents.
+    if (url.pathname === "/favicon.ico") {
+      url.pathname = "/test/resources/favicon.ico";
+    }
+    await this.#checkRequest(request, response, url);
+  }
+
+  async #checkRequest(request, response, url) {
+    const localURL = new URL(`.${url.pathname}`, this.rootURL);
+
+    // Check if the file/folder exists.
+    try {
+      await fsPromises.realpath(localURL);
+    } catch (e) {
+      if (e instanceof URIError) {
+        // If the URI cannot be decoded, a `URIError` is thrown. This happens
+        // for malformed URIs such as `http://localhost:8888/%s%s` and should be
+        // handled as a bad request.
+        response.writeHead(400);
+        response.end("Bad request", "utf8");
+        return;
+      }
+
+      response.writeHead(404);
+      response.end();
+      if (this.verbose) {
+        console.error(`${url}: not found`);
+      }
+      return;
+    }
+
+    // Get the properties of the file/folder.
+    let stats;
+    try {
+      stats = await fsPromises.stat(localURL);
+    } catch {
+      response.writeHead(500);
+      response.end();
+      return;
+    }
+    const fileSize = stats.size;
+    const isDir = stats.isDirectory();
+
+    // If a folder is requested, serve the directory listing.
+    if (isDir && !/\/$/.test(url.pathname)) {
+      response.setHeader("Location", `${url.pathname}/${url.search}`);
+      response.writeHead(301);
+      response.end("Redirected", "utf8");
+      return;
+    }
+    if (isDir) {
+      await this.#serveDirectoryIndex(response, url, localURL);
+      return;
+    }
+
+    // If a file is requested with range requests, serve it accordingly.
+    const { range } = request.headers;
+    if (range && !this.disableRangeRequests) {
+      const rangesMatches = /^bytes=(\d+)-(\d+)?/.exec(range);
+      if (!rangesMatches) {
+        response.writeHead(501);
+        response.end("Bad range", "utf8");
+        if (this.verbose) {
+          console.error(`${url}: bad range: ${range}`);
+        }
+        return;
+      }
+
+      const start = +rangesMatches[1];
+      const end = +rangesMatches[2];
+      if (this.verbose) {
+        console.log(`${url}: range ${start}-${end}`);
+      }
+      this.#serveFileRange(
+        response,
+        localURL,
+        fileSize,
+        start,
+        isNaN(end) ? fileSize : end + 1
       );
       return;
     }
 
-    var disableRangeRequests = this.disableRangeRequests;
-    var cacheExpirationTime = this.cacheExpirationTime;
+    // Otherwise, serve the file normally.
+    if (this.verbose) {
+      console.log(url);
+    }
+    this.#serveFile(response, localURL, fileSize);
+  }
 
-    var filePath;
-    fs.realpath(path.join(this.root, pathPart), checkFile);
+  async #serveDirectoryIndex(response, url, localUrl) {
+    response.setHeader("Content-Type", "text/html");
+    response.writeHead(200);
 
-    function checkFile(err, file) {
-      if (err) {
-        res.writeHead(404);
-        res.end();
-        if (verbose) {
-          console.error(url + ": not found");
-        }
-        return;
-      }
-      filePath = file;
-      fs.stat(filePath, statFile);
+    if (url.searchParams.has("frame")) {
+      response.end(
+        `<html>
+          <frameset cols=*,200>
+            <frame name=pdf>
+            <frame src="${url.pathname}?side">
+          </frameset>
+        </html>`,
+        "utf8"
+      );
+      return;
     }
 
-    var fileSize;
-
-    function statFile(err, stats) {
-      if (err) {
-        res.writeHead(500);
-        res.end();
-        return;
-      }
-
-      fileSize = stats.size;
-      var isDir = stats.isDirectory();
-      if (isDir && !/\/$/.test(pathPart)) {
-        res.setHeader("Location", pathPart + "/" + urlParts[2]);
-        res.writeHead(301);
-        res.end("Redirected", "utf8");
-        return;
-      }
-      if (isDir) {
-        serveDirectoryIndex(filePath);
-        return;
-      }
-
-      var range = req.headers.range;
-      if (range && !disableRangeRequests) {
-        var rangesMatches = /^bytes=(\d+)-(\d+)?/.exec(range);
-        if (!rangesMatches) {
-          res.writeHead(501);
-          res.end("Bad range", "utf8");
-          if (verbose) {
-            console.error(url + ': bad range: "' + range + '"');
-          }
-          return;
-        }
-        var start = +rangesMatches[1];
-        var end = +rangesMatches[2];
-        if (verbose) {
-          console.log(url + ": range " + start + " - " + end);
-        }
-        serveRequestedFileRange(
-          filePath,
-          start,
-          isNaN(end) ? fileSize : end + 1
-        );
-        return;
-      }
-      if (verbose) {
-        console.log(url);
-      }
-      serveRequestedFile(filePath);
+    let files;
+    try {
+      files = await fsPromises.readdir(localUrl);
+    } catch {
+      response.end();
+      return;
     }
 
-    function escapeHTML(untrusted) {
+    response.write(
+      `<html>
+         <head>
+           <meta charset="utf-8">
+         </head>
+         <body>
+           <h1>Index of ${url.pathname}</h1>`
+    );
+    if (url.pathname !== "/") {
+      response.write('<a href="..">..</a><br>');
+    }
+
+    const all = url.searchParams.has("all");
+    const escapeHTML = untrusted =>
       // Escape untrusted input so that it can safely be used in a HTML response
       // in HTML and in HTML attributes.
-      return untrusted
+      untrusted
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#39;");
-    }
 
-    function serveDirectoryIndex(dir) {
-      res.setHeader("Content-Type", "text/html");
-      res.writeHead(200);
+    for (const file of files) {
+      let stat;
+      const item = url.pathname + file;
+      let href = "";
+      let label = "";
+      let extraAttributes = "";
 
-      if (queryPart === "frame") {
-        res.end(
-          "<html><frameset cols=*,200><frame name=pdf>" +
-            '<frame src="' +
-            encodeURI(pathPart) +
-            '?side"></frameset></html>',
-          "utf8"
+      try {
+        stat = fs.statSync(new URL(file, localUrl));
+      } catch (ex) {
+        href = encodeURI(item);
+        label = `${file} (${ex})`;
+        extraAttributes = ' style="color:red"';
+      }
+
+      if (stat) {
+        if (stat.isDirectory()) {
+          href = encodeURI(item);
+          label = file;
+        } else if (path.extname(file).toLowerCase() === ".pdf") {
+          href = `/web/viewer.html?file=${encodeURIComponent(item)}`;
+          label = file;
+          extraAttributes = ' target="pdf"';
+        } else if (all) {
+          href = encodeURI(item);
+          label = file;
+        }
+      }
+
+      if (label) {
+        response.write(
+          `<a href="${escapeHTML(href)}"${extraAttributes}>${escapeHTML(label)}</a><br>`
         );
-        return;
       }
-      var all = queryPart === "all";
-      fs.readdir(dir, function (err, files) {
-        if (err) {
-          res.end();
-          return;
-        }
-        res.write(
-          '<html><head><meta charset="utf-8"></head><body>' +
-            "<h1>PDFs of " +
-            pathPart +
-            "</h1>\n"
-        );
-        if (pathPart !== "/") {
-          res.write('<a href="..">..</a><br>\n');
-        }
-        files.forEach(function (file) {
-          var stat;
-          var item = pathPart + file;
-          var href = "";
-          var label = "";
-          var extraAttributes = "";
-          try {
-            stat = fs.statSync(path.join(dir, file));
-          } catch (e) {
-            href = encodeURI(item);
-            label = file + " (" + e + ")";
-            extraAttributes = ' style="color:red"';
-          }
-          if (stat) {
-            if (stat.isDirectory()) {
-              href = encodeURI(item);
-              label = file;
-            } else if (path.extname(file).toLowerCase() === ".pdf") {
-              href = "/web/viewer.html?file=" + encodeURIComponent(item);
-              label = file;
-              extraAttributes = ' target="pdf"';
-            } else if (all) {
-              href = encodeURI(item);
-              label = file;
-            }
-          }
-          if (label) {
-            res.write(
-              '<a href="' +
-                escapeHTML(href) +
-                '"' +
-                extraAttributes +
-                ">" +
-                escapeHTML(label) +
-                "</a><br>\n"
-            );
-          }
-        });
-        if (files.length === 0) {
-          res.write("<p>no files found</p>\n");
-        }
-        if (!all && queryPart !== "side") {
-          res.write(
-            "<hr><p>(only PDF files are shown, " +
-              '<a href="?all">show all</a>)</p>\n'
-          );
-        }
-        res.end("</body></html>");
-      });
     }
 
-    function serveRequestedFile(reqFilePath) {
-      var stream = fs.createReadStream(reqFilePath, { flags: "rs" });
-
-      stream.on("error", function (error) {
-        res.writeHead(500);
-        res.end();
-      });
-
-      var ext = path.extname(reqFilePath).toLowerCase();
-      var contentType = mimeTypes[ext] || defaultMimeType;
-
-      if (!disableRangeRequests) {
-        res.setHeader("Accept-Ranges", "bytes");
-      }
-      res.setHeader("Content-Type", contentType);
-      res.setHeader("Content-Length", fileSize);
-      if (cacheExpirationTime > 0) {
-        var expireTime = new Date();
-        expireTime.setSeconds(expireTime.getSeconds() + cacheExpirationTime);
-        res.setHeader("Expires", expireTime.toUTCString());
-      }
-      res.writeHead(200);
-
-      stream.pipe(res);
+    if (files.length === 0) {
+      response.write("<p>No files found</p>");
     }
-
-    function serveRequestedFileRange(reqFilePath, start, end) {
-      var stream = fs.createReadStream(reqFilePath, {
-        flags: "rs",
-        start,
-        end: end - 1,
-      });
-
-      stream.on("error", function (error) {
-        res.writeHead(500);
-        res.end();
-      });
-
-      var ext = path.extname(reqFilePath).toLowerCase();
-      var contentType = mimeTypes[ext] || defaultMimeType;
-
-      res.setHeader("Accept-Ranges", "bytes");
-      res.setHeader("Content-Type", contentType);
-      res.setHeader("Content-Length", end - start);
-      res.setHeader(
-        "Content-Range",
-        "bytes " + start + "-" + (end - 1) + "/" + fileSize
+    if (!all && !url.searchParams.has("side")) {
+      response.write(
+        '<hr><p>(only PDF files are shown, <a href="?all">show all</a>)</p>'
       );
-      res.writeHead(206);
-
-      stream.pipe(res);
     }
-  },
-};
+    response.end("</body></html>");
+  }
+
+  #serveFile(response, fileURL, fileSize) {
+    const stream = fs.createReadStream(fileURL, { flags: "rs" });
+    stream.on("error", error => {
+      response.writeHead(500);
+      response.end();
+    });
+
+    if (!this.disableRangeRequests) {
+      response.setHeader("Accept-Ranges", "bytes");
+    }
+    response.setHeader("Content-Type", this.#getContentType(fileURL));
+    response.setHeader("Content-Length", fileSize);
+    if (this.cacheExpirationTime > 0) {
+      const expireTime = new Date();
+      expireTime.setSeconds(expireTime.getSeconds() + this.cacheExpirationTime);
+      response.setHeader("Expires", expireTime.toUTCString());
+    }
+    response.writeHead(200);
+    stream.pipe(response);
+  }
+
+  #serveFileRange(response, fileURL, fileSize, start, end) {
+    const stream = fs.createReadStream(fileURL, {
+      flags: "rs",
+      start,
+      end: end - 1,
+    });
+    stream.on("error", error => {
+      response.writeHead(500);
+      response.end();
+    });
+
+    response.setHeader("Accept-Ranges", "bytes");
+    response.setHeader("Content-Type", this.#getContentType(fileURL));
+    response.setHeader("Content-Length", end - start);
+    response.setHeader(
+      "Content-Range",
+      `bytes ${start}-${end - 1}/${fileSize}`
+    );
+    response.writeHead(206);
+    stream.pipe(response);
+  }
+
+  #getContentType(fileURL) {
+    const extension = path.extname(fileURL.pathname).toLowerCase();
+    return MIME_TYPES[extension] || DEFAULT_MIME_TYPE;
+  }
+}
 
 // This supports the "Cross-origin" test in test/unit/api_spec.js
 // It is here instead of test.js so that when the test will still complete as
 // expected if the user does "gulp server" and then visits
 // http://localhost:8888/test/unit/unit_test.html?spec=Cross-origin
-function crossOriginHandler(req, res) {
-  if (req.url === "/test/pdfs/basicapi.pdf?cors=withCredentials") {
-    res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-  }
-  if (req.url === "/test/pdfs/basicapi.pdf?cors=withoutCredentials") {
-    res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
+function crossOriginHandler(url, request, response) {
+  if (url.pathname === "/test/pdfs/basicapi.pdf") {
+    if (url.searchParams.get("cors") === "withCredentials") {
+      response.setHeader("Access-Control-Allow-Origin", request.headers.origin);
+      response.setHeader("Access-Control-Allow-Credentials", "true");
+    } else if (url.searchParams.get("cors") === "withoutCredentials") {
+      response.setHeader("Access-Control-Allow-Origin", request.headers.origin);
+    }
   }
 }
 

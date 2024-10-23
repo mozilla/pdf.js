@@ -7,9 +7,8 @@
   "plugins": [
     "import",
     "json",
-    "mozilla",
     "no-unsanitized",
-    "sort-exports",
+    "perfectionist",
     "unicorn",
   ],
 
@@ -44,13 +43,10 @@
     "import/no-unresolved": ["error", {
       "ignore": ["display", "pdfjs", "pdfjs-lib", "pdfjs-web", "web", "fluent-bundle", "fluent-dom"],
     }],
-    "mozilla/avoid-removeChild": "error",
-    "mozilla/use-includes-instead-of-indexOf": "error",
     "no-unsanitized/method": "error",
     "no-unsanitized/property": "error",
-    "sort-exports/sort-exports": ["error", {
-      "ignoreCase": true,
-    }],
+    "perfectionist/sort-exports": "error",
+    "perfectionist/sort-named-exports": "error",
     "unicorn/no-abusive-eslint-disable": "error",
     "unicorn/no-array-push-push": "error",
     "unicorn/no-instanceof-array": "error",
@@ -70,6 +66,7 @@
     "unicorn/prefer-date-now": "error",
     "unicorn/prefer-dom-node-append": "error",
     "unicorn/prefer-dom-node-remove": "error",
+    "unicorn/prefer-includes": "error",
     "unicorn/prefer-logical-operator-over-ternary": "error",
     "unicorn/prefer-modern-dom-apis": "error",
     "unicorn/prefer-modern-math-apis": "error",
@@ -79,6 +76,7 @@
     "unicorn/prefer-string-replace-all": "error",
     "unicorn/prefer-string-starts-ends-with": "error",
     "unicorn/prefer-ternary": ["error", "only-single-line"],
+    "unicorn/throw-new-error": "error",
 
     // Possible errors
     "for-direction": "error",
@@ -142,9 +140,10 @@
     "no-lone-blocks": "error",
     "no-lonely-if": "error",
     "no-multi-str": "error",
-    "no-new-func": "error",
-    "no-new-wrappers": "error",
     "no-new": "error",
+    "no-new-func": "error",
+    "no-new-symbol": "error",
+    "no-new-wrappers": "error",
     "no-octal-escape": "error",
     "no-octal": "error",
     "no-redeclare": "error",
@@ -242,9 +241,9 @@
     }],
 
     // ECMAScript 6
+    "arrow-body-style": ["error", "as-needed"],
     "constructor-super": "error",
     "no-class-assign": "error",
-    "no-confusing-arrow": "error",
     "no-const-assign": "error",
     "no-dupe-class-members": "error",
     "no-duplicate-imports": "error",
@@ -257,6 +256,7 @@
       "avoidQuotes": true,
     }],
     "prefer-const": "error",
+    "require-yield": "error",
     "sort-imports": ["error", {
       "ignoreCase": true,
     }],

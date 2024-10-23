@@ -13,8 +13,14 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./event_utils.js").EventBus} EventBus */
+// eslint-disable-next-line max-len
+/** @typedef {import("./download_manager.js").DownloadManager} DownloadManager */
+/** @typedef {import("./interfaces.js").IPDFLinkService} IPDFLinkService */
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/api.js").PDFDocumentProxy} PDFDocumentProxy */
+
 import { BaseTreeViewer } from "./base_tree_viewer.js";
-import { PromiseCapability } from "pdfjs-lib";
 import { SidebarView } from "./ui_utils.js";
 
 /**
@@ -28,7 +34,7 @@ import { SidebarView } from "./ui_utils.js";
 /**
  * @typedef {Object} PDFOutlineViewerRenderParameters
  * @property {Array|null} outline - An array of outline objects.
- * @property {PDFDocument} pdfDocument - A {PDFDocument} instance.
+ * @property {PDFDocumentProxy} pdfDocument - A {PDFDocument} instance.
  */
 
 class PDFOutlineViewer extends BaseTreeViewer {
@@ -54,14 +60,9 @@ class PDFOutlineViewer extends BaseTreeViewer {
 
       // If the capability is still pending, see the `_dispatchEvent`-method,
       // we know that the `currentOutlineItem`-button can be enabled here.
-      if (
-        this._currentOutlineItemCapability &&
-        !this._currentOutlineItemCapability.settled
-      ) {
-        this._currentOutlineItemCapability.resolve(
-          /* enabled = */ this._isPagesLoaded
-        );
-      }
+      this._currentOutlineItemCapability?.resolve(
+        /* enabled = */ this._isPagesLoaded
+      );
     });
     this.eventBus._on("sidebarviewchanged", evt => {
       this._sidebarView = evt.view;
@@ -76,20 +77,15 @@ class PDFOutlineViewer extends BaseTreeViewer {
     this._currentPageNumber = 1;
     this._isPagesLoaded = null;
 
-    if (
-      this._currentOutlineItemCapability &&
-      !this._currentOutlineItemCapability.settled
-    ) {
-      this._currentOutlineItemCapability.resolve(/* enabled = */ false);
-    }
+    this._currentOutlineItemCapability?.resolve(/* enabled = */ false);
     this._currentOutlineItemCapability = null;
   }
 
   /**
-   * @private
+   * @protected
    */
   _dispatchEvent(outlineCount) {
-    this._currentOutlineItemCapability = new PromiseCapability();
+    this._currentOutlineItemCapability = Promise.withResolvers();
     if (
       outlineCount === 0 ||
       this._pdfDocument?.loadingParams.disableAutoFetch
@@ -109,7 +105,7 @@ class PDFOutlineViewer extends BaseTreeViewer {
   }
 
   /**
-   * @private
+   * @protected
    */
   _bindLink(
     element,
@@ -173,7 +169,7 @@ class PDFOutlineViewer extends BaseTreeViewer {
   }
 
   /**
-   * @private
+   * @protected
    */
   _addToggleButton(div, { count, items }) {
     let hidden = false;
@@ -307,7 +303,7 @@ class PDFOutlineViewer extends BaseTreeViewer {
     if (this._pageNumberToDestHashCapability) {
       return this._pageNumberToDestHashCapability.promise;
     }
-    this._pageNumberToDestHashCapability = new PromiseCapability();
+    this._pageNumberToDestHashCapability = Promise.withResolvers();
 
     const pageNumberToDestHash = new Map(),
       pageNumberNesting = new Map();
@@ -329,21 +325,10 @@ class PDFOutlineViewer extends BaseTreeViewer {
         if (Array.isArray(explicitDest)) {
           const [destRef] = explicitDest;
 
-          if (typeof destRef === "object" && destRef !== null) {
-            pageNumber = this.linkService._cachedPageNumber(destRef);
-
-            if (!pageNumber) {
-              try {
-                pageNumber = (await pdfDocument.getPageIndex(destRef)) + 1;
-
-                if (pdfDocument !== this._pdfDocument) {
-                  return null; // The document was closed while the data resolved.
-                }
-                this.linkService.cachePageRef(pageNumber, destRef);
-              } catch {
-                // Invalid page reference, ignore it and continue parsing.
-              }
-            }
+          if (destRef && typeof destRef === "object") {
+            // The page reference must be available, since the current method
+            // won't be invoked until all pages have been loaded.
+            pageNumber = pdfDocument.cachedPageNumber(destRef);
           } else if (Number.isInteger(destRef)) {
             pageNumber = destRef + 1;
           }

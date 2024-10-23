@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./event_utils.js").EventBus} EventBus */
+/** @typedef {import("./pdf_viewer.js").PDFViewer} PDFViewer */
+
 import {
   normalizeWheelEventDelta,
   PresentationModeState,
@@ -45,6 +48,10 @@ class PDFPresentationMode {
   #state = PresentationModeState.UNKNOWN;
 
   #args = null;
+
+  #fullscreenChangeAbortController = null;
+
+  #windowAbortController = null;
 
   /**
    * @param {PDFPresentationModeOptions} options
@@ -188,7 +195,7 @@ class PDFPresentationMode {
     // Text selection is disabled in Presentation Mode, thus it's not possible
     // for the user to deselect text that is selected (e.g. with "Select all")
     // when entering Presentation Mode, hence we remove any active selection.
-    window.getSelection().removeAllRanges();
+    document.getSelection().empty();
   }
 
   #exit() {
@@ -343,59 +350,62 @@ class PDFPresentationMode {
   }
 
   #addWindowListeners() {
-    this.showControlsBind = this.#showControls.bind(this);
-    this.mouseDownBind = this.#mouseDown.bind(this);
-    this.mouseWheelBind = this.#mouseWheel.bind(this);
-    this.resetMouseScrollStateBind = this.#resetMouseScrollState.bind(this);
-    this.contextMenuBind = this.#contextMenu.bind(this);
-    this.touchSwipeBind = this.#touchSwipe.bind(this);
+    if (this.#windowAbortController) {
+      return;
+    }
+    this.#windowAbortController = new AbortController();
+    const { signal } = this.#windowAbortController;
 
-    window.addEventListener("mousemove", this.showControlsBind);
-    window.addEventListener("mousedown", this.mouseDownBind);
-    window.addEventListener("wheel", this.mouseWheelBind, { passive: false });
-    window.addEventListener("keydown", this.resetMouseScrollStateBind);
-    window.addEventListener("contextmenu", this.contextMenuBind);
-    window.addEventListener("touchstart", this.touchSwipeBind);
-    window.addEventListener("touchmove", this.touchSwipeBind);
-    window.addEventListener("touchend", this.touchSwipeBind);
+    const touchSwipeBind = this.#touchSwipe.bind(this);
+
+    window.addEventListener("mousemove", this.#showControls.bind(this), {
+      signal,
+    });
+    window.addEventListener("mousedown", this.#mouseDown.bind(this), {
+      signal,
+    });
+    window.addEventListener("wheel", this.#mouseWheel.bind(this), {
+      passive: false,
+      signal,
+    });
+    window.addEventListener("keydown", this.#resetMouseScrollState.bind(this), {
+      signal,
+    });
+    window.addEventListener("contextmenu", this.#contextMenu.bind(this), {
+      signal,
+    });
+    window.addEventListener("touchstart", touchSwipeBind, { signal });
+    window.addEventListener("touchmove", touchSwipeBind, { signal });
+    window.addEventListener("touchend", touchSwipeBind, { signal });
   }
 
   #removeWindowListeners() {
-    window.removeEventListener("mousemove", this.showControlsBind);
-    window.removeEventListener("mousedown", this.mouseDownBind);
-    window.removeEventListener("wheel", this.mouseWheelBind, {
-      passive: false,
-    });
-    window.removeEventListener("keydown", this.resetMouseScrollStateBind);
-    window.removeEventListener("contextmenu", this.contextMenuBind);
-    window.removeEventListener("touchstart", this.touchSwipeBind);
-    window.removeEventListener("touchmove", this.touchSwipeBind);
-    window.removeEventListener("touchend", this.touchSwipeBind);
-
-    delete this.showControlsBind;
-    delete this.mouseDownBind;
-    delete this.mouseWheelBind;
-    delete this.resetMouseScrollStateBind;
-    delete this.contextMenuBind;
-    delete this.touchSwipeBind;
-  }
-
-  #fullscreenChange() {
-    if (/* isFullscreen = */ document.fullscreenElement) {
-      this.#enter();
-    } else {
-      this.#exit();
-    }
+    this.#windowAbortController?.abort();
+    this.#windowAbortController = null;
   }
 
   #addFullscreenChangeListeners() {
-    this.fullscreenChangeBind = this.#fullscreenChange.bind(this);
-    window.addEventListener("fullscreenchange", this.fullscreenChangeBind);
+    if (this.#fullscreenChangeAbortController) {
+      return;
+    }
+    this.#fullscreenChangeAbortController = new AbortController();
+
+    window.addEventListener(
+      "fullscreenchange",
+      () => {
+        if (/* isFullscreen = */ document.fullscreenElement) {
+          this.#enter();
+        } else {
+          this.#exit();
+        }
+      },
+      { signal: this.#fullscreenChangeAbortController.signal }
+    );
   }
 
   #removeFullscreenChangeListeners() {
-    window.removeEventListener("fullscreenchange", this.fullscreenChangeBind);
-    delete this.fullscreenChangeBind;
+    this.#fullscreenChangeAbortController?.abort();
+    this.#fullscreenChangeAbortController = null;
   }
 }
 

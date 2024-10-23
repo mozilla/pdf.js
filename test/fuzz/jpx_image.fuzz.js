@@ -1,4 +1,5 @@
 import {
+  JpxError,
   JpxImage,
   setVerbosityLevel,
   VerbosityLevel,
@@ -7,9 +8,12 @@ import {
 // Avoid unnecessary console "spam", by ignoring `info`/`warn` calls.
 setVerbosityLevel(VerbosityLevel.ERRORS);
 
-const ignored = ["Cannot read properties", "JPX error"];
+const ignored = ["Cannot read properties"];
 
 function ignoredError(error) {
+  if (error instanceof JpxError) {
+    return true;
+  }
   return ignored.some(message => error.message.includes(message));
 }
 
@@ -18,7 +22,7 @@ function ignoredError(error) {
  */
 function fuzz(data) {
   try {
-    new JpxImage().parse(new Uint8Array(data));
+    JpxImage.decode(new Uint8Array(data));
   } catch (error) {
     if (error.message && !ignoredError(error)) {
       throw error;

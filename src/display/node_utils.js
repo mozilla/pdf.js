@@ -27,60 +27,97 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   );
 }
 
-let fs, canvas, path2d_polyfill;
 if (isNodeJS) {
-  // Native packages.
-  fs = await __non_webpack_import__("fs");
-  // Optional, third-party, packages.
-  try {
-    canvas = await __non_webpack_import__("canvas");
-  } catch {}
-  try {
-    path2d_polyfill = await __non_webpack_import__("path2d-polyfill");
-  } catch {}
-}
+  // eslint-disable-next-line no-var
+  var packageCapability = Promise.withResolvers();
+  // eslint-disable-next-line no-var
+  var packageMap = null;
 
-if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("SKIP_BABEL")) {
-  (function checkDOMMatrix() {
-    if (globalThis.DOMMatrix || !isNodeJS) {
-      return;
+  const loadPackages = async () => {
+    // Native packages.
+    const fs = await __non_webpack_import__("fs"),
+      http = await __non_webpack_import__("http"),
+      https = await __non_webpack_import__("https"),
+      url = await __non_webpack_import__("url");
+
+    // Optional, third-party, packages.
+    let canvas, path2d;
+    if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("SKIP_BABEL")) {
+      try {
+        canvas = await __non_webpack_import__("canvas");
+      } catch {}
+      try {
+        path2d = await __non_webpack_import__("path2d");
+      } catch {}
     }
-    const DOMMatrix = canvas?.DOMMatrix;
 
-    if (DOMMatrix) {
-      globalThis.DOMMatrix = DOMMatrix;
-    } else {
-      warn("Cannot polyfill `DOMMatrix`, rendering may be broken.");
-    }
-  })();
+    return new Map(Object.entries({ fs, http, https, url, canvas, path2d }));
+  };
 
-  (function checkPath2D() {
-    if (globalThis.Path2D || !isNodeJS) {
-      return;
-    }
-    const CanvasRenderingContext2D = canvas?.CanvasRenderingContext2D;
-    const polyfillPath2D = path2d_polyfill?.polyfillPath2D;
+  loadPackages().then(
+    map => {
+      packageMap = map;
+      packageCapability.resolve();
 
-    if (CanvasRenderingContext2D && polyfillPath2D) {
-      globalThis.CanvasRenderingContext2D = CanvasRenderingContext2D;
-      polyfillPath2D(globalThis);
-    } else {
-      warn("Cannot polyfill `Path2D`, rendering may be broken.");
-    }
-  })();
-}
-
-const fetchData = function (url) {
-  return new Promise((resolve, reject) => {
-    fs.readFile(url, (error, data) => {
-      if (error || !data) {
-        reject(new Error(error));
+      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("SKIP_BABEL")) {
         return;
       }
-      resolve(new Uint8Array(data));
-    });
-  });
-};
+      if (!globalThis.DOMMatrix) {
+        const DOMMatrix = map.get("canvas")?.DOMMatrix;
+
+        if (DOMMatrix) {
+          globalThis.DOMMatrix = DOMMatrix;
+        } else {
+          warn("Cannot polyfill `DOMMatrix`, rendering may be broken.");
+        }
+      }
+      if (!globalThis.Path2D) {
+        const CanvasRenderingContext2D =
+          map.get("canvas")?.CanvasRenderingContext2D;
+        const applyPath2DToCanvasRenderingContext =
+          map.get("path2d")?.applyPath2DToCanvasRenderingContext;
+        const Path2D = map.get("path2d")?.Path2D;
+
+        if (
+          CanvasRenderingContext2D &&
+          applyPath2DToCanvasRenderingContext &&
+          Path2D
+        ) {
+          try {
+            applyPath2DToCanvasRenderingContext(CanvasRenderingContext2D);
+          } catch (ex) {
+            warn(`applyPath2DToCanvasRenderingContext: "${ex}".`);
+          }
+          globalThis.Path2D = Path2D;
+        } else {
+          warn("Cannot polyfill `Path2D`, rendering may be broken.");
+        }
+      }
+    },
+    reason => {
+      warn(`loadPackages: ${reason}`);
+
+      packageMap = new Map();
+      packageCapability.resolve();
+    }
+  );
+}
+
+class NodePackages {
+  static get promise() {
+    return packageCapability.promise;
+  }
+
+  static get(name) {
+    return packageMap?.get(name);
+  }
+}
+
+async function fetchData(url) {
+  const fs = NodePackages.get("fs");
+  const data = await fs.promises.readFile(url);
+  return new Uint8Array(data);
+}
 
 class NodeFilterFactory extends BaseFilterFactory {}
 
@@ -89,6 +126,7 @@ class NodeCanvasFactory extends BaseCanvasFactory {
    * @ignore
    */
   _createCanvas(width, height) {
+    const canvas = NodePackages.get("canvas");
     return canvas.createCanvas(width, height);
   }
 }
@@ -97,10 +135,8 @@ class NodeCMapReaderFactory extends BaseCMapReaderFactory {
   /**
    * @ignore
    */
-  _fetchData(url, compressionType) {
-    return fetchData(url).then(data => {
-      return { cMapData: data, compressionType };
-    });
+  async _fetch(url) {
+    return fetchData(url);
   }
 }
 
@@ -108,14 +144,16 @@ class NodeStandardFontDataFactory extends BaseStandardFontDataFactory {
   /**
    * @ignore
    */
-  _fetchData(url) {
+  async _fetch(url) {
     return fetchData(url);
   }
 }
 
 export {
+  fetchData,
   NodeCanvasFactory,
   NodeCMapReaderFactory,
   NodeFilterFactory,
+  NodePackages,
   NodeStandardFontDataFactory,
 };

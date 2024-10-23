@@ -19,11 +19,14 @@ import {
   unreachable,
   warn,
 } from "../shared/util.js";
-import { RefSetCache } from "./primitives.js";
+import { RefSet, RefSetCache } from "./primitives.js";
 
 class BaseLocalCache {
   constructor(options) {
-    if (this.constructor === BaseLocalCache) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BaseLocalCache
+    ) {
       unreachable("Cannot initialize BaseLocalCache.");
     }
     this._onlyRefs = options?.onlyRefs === true;
@@ -178,6 +181,8 @@ class GlobalImageCache {
 
   static MAX_BYTE_SIZE = 5 * MAX_IMAGE_SIZE_TO_CACHE;
 
+  #decodeFailedSet = new RefSet();
+
   constructor() {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
@@ -189,7 +194,7 @@ class GlobalImageCache {
     this._imageCache = new RefSetCache();
   }
 
-  get _byteSize() {
+  get #byteSize() {
     let byteSize = 0;
     for (const imageData of this._imageCache) {
       byteSize += imageData.byteSize;
@@ -197,11 +202,11 @@ class GlobalImageCache {
     return byteSize;
   }
 
-  get _cacheLimitReached() {
+  get #cacheLimitReached() {
     if (this._imageCache.size < GlobalImageCache.MIN_IMAGES_TO_CACHE) {
       return false;
     }
-    if (this._byteSize < GlobalImageCache.MAX_BYTE_SIZE) {
+    if (this.#byteSize < GlobalImageCache.MAX_BYTE_SIZE) {
       return false;
     }
     return true;
@@ -218,10 +223,18 @@ class GlobalImageCache {
     if (pageIndexSet.size < GlobalImageCache.NUM_PAGES_THRESHOLD) {
       return false;
     }
-    if (!this._imageCache.has(ref) && this._cacheLimitReached) {
+    if (!this._imageCache.has(ref) && this.#cacheLimitReached) {
       return false;
     }
     return true;
+  }
+
+  addDecodeFailed(ref) {
+    this.#decodeFailedSet.put(ref);
+  }
+
+  hasDecodeFailed(ref) {
+    return this.#decodeFailedSet.has(ref);
   }
 
   /**
@@ -265,7 +278,7 @@ class GlobalImageCache {
     if (this._imageCache.has(ref)) {
       return;
     }
-    if (this._cacheLimitReached) {
+    if (this.#cacheLimitReached) {
       warn("GlobalImageCache.setData - cache limit reached.");
       return;
     }
@@ -274,6 +287,7 @@ class GlobalImageCache {
 
   clear(onlyData = false) {
     if (!onlyData) {
+      this.#decodeFailedSet.clear();
       this._refCache.clear();
     }
     this._imageCache.clear();

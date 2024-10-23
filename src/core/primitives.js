@@ -270,6 +270,10 @@ class Dict {
     }
     return dict;
   }
+
+  delete(key) {
+    delete this._map[key];
+  }
 }
 
 class Ref {
@@ -377,6 +381,12 @@ class RefSetCache {
 
   clear() {
     this._map.clear();
+  }
+
+  *items() {
+    for (const [ref, value] of this._map) {
+      yield [Ref.fromString(ref), value];
+    }
   }
 }
 

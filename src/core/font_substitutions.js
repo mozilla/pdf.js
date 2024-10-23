@@ -15,6 +15,7 @@
 
 import { normalizeFontName } from "./fonts_utils.js";
 import { validateFontName } from "./core_utils.js";
+import { warn } from "../shared/util.js";
 
 const NORMAL = {
   style: "normal",
@@ -48,6 +49,8 @@ const substitutionMap = new Map([
         "Thorndale",
         "TeX Gyre Termes",
         "FreeSerif",
+        "Linux Libertine O",
+        "Libertinus Serif",
         "DejaVu Serif",
         "Bitstream Vera Serif",
         "Ubuntu",
@@ -148,6 +151,8 @@ const substitutionMap = new Map([
         "Cumberland",
         "TeX Gyre Cursor",
         "FreeMono",
+        "Linux Libertine Mono O",
+        "Libertinus Mono",
       ],
       style: NORMAL,
       ultimate: "monospace",
@@ -323,6 +328,48 @@ function getStyleToAppend(style) {
   return "";
 }
 
+function getFamilyName(str) {
+  // See https://gitlab.freedesktop.org/fontconfig/fontconfig/-/blob/14d466b30a8ab4a9d789977ed94f2c30e7209267/src/fcname.c#L137.
+  const keywords = new Set([
+    "thin",
+    "extralight",
+    "ultralight",
+    "demilight",
+    "semilight",
+    "light",
+    "book",
+    "regular",
+    "normal",
+    "medium",
+    "demibold",
+    "semibold",
+    "bold",
+    "extrabold",
+    "ultrabold",
+    "black",
+    "heavy",
+    "extrablack",
+    "ultrablack",
+    "roman",
+    "italic",
+    "oblique",
+    "ultracondensed",
+    "extracondensed",
+    "condensed",
+    "semicondensed",
+    "normal",
+    "semiexpanded",
+    "expanded",
+    "extraexpanded",
+    "ultraexpanded",
+    "bolditalic",
+  ]);
+  return str
+    .split(/[- ,+]+/g)
+    .filter(tok => !keywords.has(tok.toLowerCase()))
+    .join(" ");
+}
+
 /**
  * Generate font description.
  * @param {Object} param0, font substitution description.
@@ -410,6 +457,7 @@ function generateFont(
  * @param {String} baseFontName The font name to be substituted.
  * @param {String|undefined} standardFontName The standard font name to use
  *   if the base font is not available.
+ * @param {String} type The font type.
  * @returns an Object with the CSS, the loaded name, the src and the style.
  */
 function getFontSubstitution(
@@ -417,10 +465,19 @@ function getFontSubstitution(
   idFactory,
   localFontPath,
   baseFontName,
-  standardFontName
+  standardFontName,
+  type
 ) {
   if (baseFontName.startsWith("InvalidPDFjsFont_")) {
     return null;
+  }
+
+  if (
+    (type === "TrueType" || type === "Type1") &&
+    /^[A-Z]{6}\+/.test(baseFontName)
+  ) {
+    // When the font is a subset, we need to remove the prefix (see 9.6.4).
+    baseFontName = baseFontName.slice(7);
   }
 
   // It's possible to have a font name with spaces, commas or dashes, hence we
@@ -457,6 +514,7 @@ function getFontSubstitution(
   const loadedName = `${idFactory.getDocId()}_s${idFactory.createFontId()}`;
   if (!substitution) {
     if (!validateFontName(baseFontName)) {
+      warn(`Cannot substitute the font because of its name: ${baseFontName}`);
       systemFontCache.set(key, null);
       // If the baseFontName is not valid we don't want to use it.
       return null;
@@ -470,7 +528,7 @@ function getFontSubstitution(
       (italic && ITALIC) ||
       NORMAL;
     substitutionInfo = {
-      css: loadedName,
+      css: `"${getFamilyName(baseFontName)}",${loadedName}`,
       guessFallback: true,
       loadedName,
       baseFontName,
@@ -492,7 +550,7 @@ function getFontSubstitution(
   const fallback = guessFallback ? "" : `,${ultimate}`;
 
   substitutionInfo = {
-    css: `${loadedName}${fallback}`,
+    css: `"${getFamilyName(baseFontName)}",${loadedName}${fallback}`,
     guessFallback,
     loadedName,
     baseFontName,

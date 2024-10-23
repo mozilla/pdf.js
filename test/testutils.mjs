@@ -16,16 +16,6 @@
 
 import fs from "fs";
 import path from "path";
-import rimraf from "rimraf";
-
-const rimrafSync = rimraf.sync;
-
-function removeDirSync(dir) {
-  fs.readdirSync(dir); // Will throw if dir is not a directory
-  rimrafSync(dir, {
-    disableGlob: true,
-  });
-}
 
 function copySubtreeSync(src, dest) {
   const files = fs.readdirSync(src);
@@ -63,4 +53,4 @@ function ensureDirSync(dir) {
   }
 }
 
-export { copySubtreeSync, ensureDirSync, removeDirSync };
+export { copySubtreeSync, ensureDirSync };

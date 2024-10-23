@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "ES2022",
     "allowJs": true,
     "declaration": true,
     "strict": true,
@@ -16,11 +16,8 @@
       "display-node_utils": ["./src/display/node_utils"],
       "fluent-bundle": ["./node_modules/@fluent/bundle/esm/index.js"],
       "fluent-dom": ["./node_modules/@fluent/dom/esm/index.js"],
-      "web-l10n_utils": ["./web/l10n_utils"]
+      "web-null_l10n": ["./web/genericl10n"]
     }
   },
-  "files": [
-    "src/pdf.js",
-    "web/pdf_viewer.component.js"
-  ]
+  "files": ["src/pdf.js", "web/pdf_viewer.component.js"]
 }

@@ -13,13 +13,15 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./event_utils.js").EventBus} EventBus */
+
 import { AnnotationEditorType, ColorPicker, noContextMenu } from "pdfjs-lib";
 import {
   DEFAULT_SCALE,
   DEFAULT_SCALE_VALUE,
   MAX_SCALE,
   MIN_SCALE,
-  toggleCheckedBtn,
+  toggleExpandedBtn,
 } from "./ui_utils.js";
 
 /**
@@ -36,21 +38,27 @@ import {
  * @property {HTMLButtonElement} next - Button to go to the next page.
  * @property {HTMLButtonElement} zoomIn - Button to zoom in the pages.
  * @property {HTMLButtonElement} zoomOut - Button to zoom out the pages.
- * @property {HTMLButtonElement} viewFind - Button to open find bar.
  * @property {HTMLButtonElement} editorFreeTextButton - Button to switch to
  *   FreeText editing.
  * @property {HTMLButtonElement} download - Button to download the document.
  */
 
 class Toolbar {
+  #opts;
+
   /**
    * @param {ToolbarOptions} options
    * @param {EventBus} eventBus
+   * @param {number} toolbarDensity - The toolbar density value.
+   *   The possible values are:
+   *    - 0 (default) - The regular toolbar size.
+   *    - 1 (compact) - The small toolbar size.
+   *    - 2 (touch) - The large toolbar size.
    */
-  constructor(options, eventBus) {
-    this.toolbar = options.container;
+  constructor(options, eventBus, toolbarDensity = 0) {
+    this.#opts = options;
     this.eventBus = eventBus;
-    this.buttons = [
+    const buttons = [
       { element: options.previous, eventName: "previouspage" },
       { element: options.next, eventName: "nextpage" },
       { element: options.zoomIn, eventName: "zoomin" },
@@ -104,37 +112,31 @@ class Toolbar {
               : AnnotationEditorType.STAMP;
           },
         },
+        telemetry: {
+          type: "editing",
+          data: { action: "pdfjs.image.icon_click" },
+        },
       },
     ];
-    this.items = {
-      numPages: options.numPages,
-      pageNumber: options.pageNumber,
-      scaleSelect: options.scaleSelect,
-      customScaleOption: options.customScaleOption,
-      previous: options.previous,
-      next: options.next,
-      zoomIn: options.zoomIn,
-      zoomOut: options.zoomOut,
-    };
 
     // Bind the event listeners for click and various other actions.
-    this.#bindListeners(options);
+    this.#bindListeners(buttons);
 
-    if (options.editorHighlightColorPicker) {
-      this.eventBus._on(
-        "annotationeditoruimanager",
-        ({ uiManager }) => {
-          this.#setAnnotationEditorUIManager(
-            uiManager,
-            options.editorHighlightColorPicker
-          );
-        },
-        // Once the color picker has been added, we don't want to add it again.
-        { once: true }
-      );
-    }
-
+    this.#updateToolbarDensity({ value: toolbarDensity });
     this.reset();
+  }
+
+  #updateToolbarDensity({ value }) {
+    let name = "normal";
+    switch (value) {
+      case 1:
+        name = "compact";
+        break;
+      case 2:
+        name = "touch";
+        break;
+    }
+    document.documentElement.setAttribute("data-toolbar-density", name);
   }
 
   #setAnnotationEditorUIManager(uiManager, parentContainer) {
@@ -172,22 +174,34 @@ class Toolbar {
     this.updateLoadingIndicatorState();
 
     // Reset the Editor buttons too, since they're document specific.
-    this.eventBus.dispatch("toolbarreset", { source: this });
+    this.#editorModeChanged({ mode: AnnotationEditorType.DISABLE });
   }
 
-  #bindListeners(options) {
-    const { pageNumber, scaleSelect } = this.items;
+  #bindListeners(buttons) {
+    const { eventBus } = this;
+    const {
+      editorHighlightColorPicker,
+      editorHighlightButton,
+      pageNumber,
+      scaleSelect,
+    } = this.#opts;
     const self = this;
 
     // The buttons within the toolbar.
-    for (const { element, eventName, eventDetails } of this.buttons) {
+    for (const { element, eventName, eventDetails, telemetry } of buttons) {
       element.addEventListener("click", evt => {
         if (eventName !== null) {
-          this.eventBus.dispatch(eventName, {
+          eventBus.dispatch(eventName, {
             source: this,
             ...eventDetails,
             // evt.detail is the number of clicks.
             isFromKeyboard: evt.detail === 0,
+          });
+        }
+        if (telemetry) {
+          eventBus.dispatch("reporttelemetry", {
+            source: this,
+            details: telemetry,
           });
         }
       });
@@ -197,7 +211,7 @@ class Toolbar {
       this.select();
     });
     pageNumber.addEventListener("change", function () {
-      self.eventBus.dispatch("pagenumberchanged", {
+      eventBus.dispatch("pagenumberchanged", {
         source: self,
         value: this.value,
       });
@@ -207,15 +221,14 @@ class Toolbar {
       if (this.value === "custom") {
         return;
       }
-      self.eventBus.dispatch("scalechanged", {
+      eventBus.dispatch("scalechanged", {
         source: self,
         value: this.value,
       });
     });
     // Here we depend on browsers dispatching the "click" event *after* the
     // "change" event, when the <select>-element changes.
-    scaleSelect.addEventListener("click", function (evt) {
-      const target = evt.target;
+    scaleSelect.addEventListener("click", function ({ target }) {
       // Remove focus when an <option>-element was *clicked*, to improve the UX
       // for mouse users (fixes bug 1300525 and issue 4923).
       if (
@@ -228,95 +241,114 @@ class Toolbar {
     // Suppress context menus for some controls.
     scaleSelect.oncontextmenu = noContextMenu;
 
-    this.#bindEditorToolsListener(options);
-  }
-
-  #bindEditorToolsListener({
-    editorFreeTextButton,
-    editorFreeTextParamsToolbar,
-    editorHighlightButton,
-    editorHighlightParamsToolbar,
-    editorInkButton,
-    editorInkParamsToolbar,
-    editorStampButton,
-    editorStampParamsToolbar,
-  }) {
-    const editorModeChanged = ({ mode }) => {
-      toggleCheckedBtn(
-        editorFreeTextButton,
-        mode === AnnotationEditorType.FREETEXT,
-        editorFreeTextParamsToolbar
-      );
-      toggleCheckedBtn(
-        editorHighlightButton,
-        mode === AnnotationEditorType.HIGHLIGHT,
-        editorHighlightParamsToolbar
-      );
-      toggleCheckedBtn(
-        editorInkButton,
-        mode === AnnotationEditorType.INK,
-        editorInkParamsToolbar
-      );
-      toggleCheckedBtn(
-        editorStampButton,
-        mode === AnnotationEditorType.STAMP,
-        editorStampParamsToolbar
-      );
-
-      const isDisable = mode === AnnotationEditorType.DISABLE;
-      editorFreeTextButton.disabled = isDisable;
-      editorHighlightButton.disabled = isDisable;
-      editorInkButton.disabled = isDisable;
-      editorStampButton.disabled = isDisable;
-    };
-    this.eventBus._on("annotationeditormodechanged", editorModeChanged);
-
-    this.eventBus._on("toolbarreset", evt => {
-      if (evt.source === this) {
-        editorModeChanged({ mode: AnnotationEditorType.DISABLE });
+    eventBus._on(
+      "annotationeditormodechanged",
+      this.#editorModeChanged.bind(this)
+    );
+    eventBus._on("showannotationeditorui", ({ mode }) => {
+      switch (mode) {
+        case AnnotationEditorType.HIGHLIGHT:
+          editorHighlightButton.click();
+          break;
       }
     });
+    eventBus._on("toolbardensity", this.#updateToolbarDensity.bind(this));
+
+    if (editorHighlightColorPicker) {
+      eventBus._on(
+        "annotationeditoruimanager",
+        ({ uiManager }) => {
+          this.#setAnnotationEditorUIManager(
+            uiManager,
+            editorHighlightColorPicker
+          );
+        },
+        // Once the color picker has been added, we don't want to add it again.
+        { once: true }
+      );
+    }
+  }
+
+  #editorModeChanged({ mode }) {
+    const {
+      editorFreeTextButton,
+      editorFreeTextParamsToolbar,
+      editorHighlightButton,
+      editorHighlightParamsToolbar,
+      editorInkButton,
+      editorInkParamsToolbar,
+      editorStampButton,
+      editorStampParamsToolbar,
+    } = this.#opts;
+
+    toggleExpandedBtn(
+      editorFreeTextButton,
+      mode === AnnotationEditorType.FREETEXT,
+      editorFreeTextParamsToolbar
+    );
+    toggleExpandedBtn(
+      editorHighlightButton,
+      mode === AnnotationEditorType.HIGHLIGHT,
+      editorHighlightParamsToolbar
+    );
+    toggleExpandedBtn(
+      editorInkButton,
+      mode === AnnotationEditorType.INK,
+      editorInkParamsToolbar
+    );
+    toggleExpandedBtn(
+      editorStampButton,
+      mode === AnnotationEditorType.STAMP,
+      editorStampParamsToolbar
+    );
+
+    const isDisable = mode === AnnotationEditorType.DISABLE;
+    editorFreeTextButton.disabled = isDisable;
+    editorHighlightButton.disabled = isDisable;
+    editorInkButton.disabled = isDisable;
+    editorStampButton.disabled = isDisable;
   }
 
   #updateUIState(resetNumPages = false) {
-    const { pageNumber, pagesCount, pageScaleValue, pageScale, items } = this;
+    const { pageNumber, pagesCount, pageScaleValue, pageScale } = this;
+    const opts = this.#opts;
 
     if (resetNumPages) {
       if (this.hasPageLabels) {
-        items.pageNumber.type = "text";
+        opts.pageNumber.type = "text";
 
-        items.numPages.setAttribute("data-l10n-id", "pdfjs-page-of-pages");
+        opts.numPages.setAttribute("data-l10n-id", "pdfjs-page-of-pages");
       } else {
-        items.pageNumber.type = "number";
+        opts.pageNumber.type = "number";
 
-        items.numPages.setAttribute("data-l10n-id", "pdfjs-of-pages");
-        items.numPages.setAttribute(
+        opts.numPages.setAttribute("data-l10n-id", "pdfjs-of-pages");
+        opts.numPages.setAttribute(
           "data-l10n-args",
           JSON.stringify({ pagesCount })
         );
       }
-      items.pageNumber.max = pagesCount;
+      opts.pageNumber.max = pagesCount;
     }
 
     if (this.hasPageLabels) {
-      items.pageNumber.value = this.pageLabel;
+      opts.pageNumber.value = this.pageLabel;
 
-      items.numPages.setAttribute(
+      opts.numPages.setAttribute(
         "data-l10n-args",
         JSON.stringify({ pageNumber, pagesCount })
       );
     } else {
-      items.pageNumber.value = pageNumber;
+      opts.pageNumber.value = pageNumber;
     }
 
-    items.previous.disabled = pageNumber <= 1;
-    items.next.disabled = pageNumber >= pagesCount;
+    opts.previous.disabled = pageNumber <= 1;
+    opts.next.disabled = pageNumber >= pagesCount;
 
-    items.zoomOut.disabled = pageScale <= MIN_SCALE;
-    items.zoomIn.disabled = pageScale >= MAX_SCALE;
+    opts.zoomOut.disabled = pageScale <= MIN_SCALE;
+    opts.zoomIn.disabled = pageScale >= MAX_SCALE;
 
     let predefinedValueFound = false;
-    for (const option of items.scaleSelect.options) {
+    for (const option of opts.scaleSelect.options) {
       if (option.value !== pageScaleValue) {
         option.selected = false;
         continue;
@@ -325,8 +357,8 @@ class Toolbar {
       predefinedValueFound = true;
     }
     if (!predefinedValueFound) {
-      items.customScaleOption.selected = true;
-      items.customScaleOption.setAttribute(
+      opts.customScaleOption.selected = true;
+      opts.customScaleOption.setAttribute(
         "data-l10n-args",
         JSON.stringify({
           scale: Math.round(pageScale * 10000) / 100,
@@ -336,8 +368,7 @@ class Toolbar {
   }
 
   updateLoadingIndicatorState(loading = false) {
-    const { pageNumber } = this.items;
-
+    const { pageNumber } = this.#opts;
     pageNumber.classList.toggle("loading", loading);
   }
 }

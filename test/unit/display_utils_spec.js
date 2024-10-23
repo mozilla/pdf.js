@@ -28,7 +28,7 @@ describe("display_utils", function () {
     let canvasFactory;
 
     beforeAll(function () {
-      canvasFactory = new DOMCanvasFactory();
+      canvasFactory = new DOMCanvasFactory({});
     });
 
     afterAll(function () {
@@ -188,13 +188,6 @@ describe("display_utils", function () {
     it("should get the filename from a URL with query parameters", function () {
       const url = "https://server.org/filename.pdf?foo=bar";
       expect(getFilenameFromUrl(url)).toEqual("filename.pdf");
-    });
-
-    it("should get the filename from a relative URL, keeping the anchor", function () {
-      const url = "../../part1#part2.pdf";
-      expect(getFilenameFromUrl(url, /* onlyStripPath = */ true)).toEqual(
-        "part1#part2.pdf"
-      );
     });
   });
 

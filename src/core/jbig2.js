@@ -20,7 +20,7 @@ import { CCITTFaxDecoder } from "./ccitt.js";
 
 class Jbig2Error extends BaseException {
   constructor(msg) {
-    super(`JBIG2 error: ${msg}`, "Jbig2Error");
+    super(msg, "Jbig2Error");
   }
 }
 
@@ -865,6 +865,20 @@ function decodeTextRegion(
           decodingContext
         );
       }
+
+      let increment = 0;
+      if (!transposed) {
+        if (referenceCorner > 1) {
+          currentS += symbolWidth - 1;
+        } else {
+          increment = symbolWidth - 1;
+        }
+      } else if (!(referenceCorner & 1)) {
+        currentS += symbolHeight - 1;
+      } else {
+        increment = symbolHeight - 1;
+      }
+
       const offsetT = t - (referenceCorner & 1 ? 0 : symbolHeight - 1);
       const offsetS = currentS - (referenceCorner & 2 ? symbolWidth - 1 : 0);
       let s2, t2, symbolRow;
@@ -896,7 +910,6 @@ function decodeTextRegion(
               );
           }
         }
-        currentS += symbolHeight - 1;
       } else {
         for (t2 = 0; t2 < symbolHeight; t2++) {
           row = bitmap[offsetT + t2];
@@ -921,7 +934,6 @@ function decodeTextRegion(
               );
           }
         }
-        currentS += symbolWidth - 1;
       }
       i++;
       const deltaS = huffman
@@ -930,7 +942,7 @@ function decodeTextRegion(
       if (deltaS === null) {
         break; // OOB
       }
-      currentS += deltaS + dsOffset;
+      currentS += increment + deltaS + dsOffset;
     } while (true);
   }
   return bitmap;
@@ -2581,4 +2593,4 @@ class Jbig2Image {
   }
 }
 
-export { Jbig2Image };
+export { Jbig2Error, Jbig2Image };

@@ -14,10 +14,9 @@
  */
 /* globals chrome */
 
-import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
 import { AppOptions } from "./app_options.js";
+import { BaseExternalServices } from "./external_services.js";
 import { BasePreferences } from "./preferences.js";
-import { DownloadManager } from "./download_manager.js";
 import { GenericL10n } from "./genericl10n.js";
 import { GenericScripting } from "./generic_scripting.js";
 
@@ -32,20 +31,27 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) {
   // is rewritten as soon as possible.
   const queryString = document.location.search.slice(1);
   const m = /(^|&)file=([^&]*)/.exec(queryString);
-  const defaultUrl = m ? decodeURIComponent(m[2]) : "";
+  let defaultUrl = m ? decodeURIComponent(m[2]) : "";
+  if (!defaultUrl && queryString.startsWith("DNR:")) {
+    // Redirected via DNR, see registerPdfRedirectRule in pdfHandler.js.
+    defaultUrl = queryString.slice(4);
+  }
 
   // Example: chrome-extension://.../http://example.com/file.pdf
   const humanReadableUrl = "/" + defaultUrl + location.hash;
   history.replaceState(history.state, "", humanReadableUrl);
-  if (top === window) {
-    chrome.runtime.sendMessage("showPageAction");
-  }
 
   AppOptions.set("defaultUrl", defaultUrl);
+})();
+
+let viewerApp = { initialized: false };
+function initCom(app) {
+  viewerApp = app;
+
   // Ensure that PDFViewerApplication.initialBookmark reflects the current hash,
   // in case the URL rewrite above results in a different hash.
-  PDFViewerApplication.initialBookmark = location.hash.slice(1);
-})();
+  viewerApp.initialBookmark = location.hash.slice(1);
+}
 
 const ChromeCom = {
   /**
@@ -77,10 +83,9 @@ const ChromeCom = {
    * Resolves a PDF file path and attempts to detects length.
    *
    * @param {string} file - Absolute URL of PDF file.
-   * @param {OverlayManager} overlayManager - Manager for the viewer overlays.
    * @param {Function} callback - A callback with resolved URL and file length.
    */
-  resolvePDFFile(file, overlayManager, callback) {
+  resolvePDFFile(file, callback) {
     // Expand drive:-URLs to filesystem URLs (Chrome OS)
     file = file.replace(
       /^drive:/i,
@@ -104,21 +109,18 @@ const ChromeCom = {
         // Even without this check, the file load in frames is still blocked,
         // but this may change in the future (https://crbug.com/550151).
         if (origin && !/^file:|^chrome-extension:/.test(origin)) {
-          PDFViewerApplication._documentError(
-            "Blocked " +
-              origin +
-              " from loading " +
-              file +
-              ". Refused to load a local file in a non-local page " +
-              "for security reasons."
-          );
+          viewerApp._documentError(null, {
+            message:
+              `Blocked ${origin} from loading ${file}. Refused to load ` +
+              "a local file in a non-local page for security reasons.",
+          });
           return;
         }
         isAllowedFileSchemeAccess(function (isAllowedAccess) {
           if (isAllowedAccess) {
             callback(file);
           } else {
-            requestAccessToLocalFile(file, overlayManager, callback);
+            requestAccessToLocalFile(file, viewerApp.overlayManager, callback);
           }
         });
       });
@@ -251,24 +253,7 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
   });
 }
 
-if (window === top) {
-  // Chrome closes all extension tabs (crbug.com/511670) when the extension
-  // reloads. To counter this, the tab URL and history state is saved to
-  // localStorage and restored by extension-router.js.
-  // Unfortunately, the window and tab index are not restored. And if it was
-  // the only tab in an incognito window, then the tab is not restored either.
-  addEventListener("unload", function () {
-    // If the runtime is still available, the unload is most likely a normal
-    // tab closure. Otherwise it is most likely an extension reload.
-    if (!isRuntimeAvailable()) {
-      localStorage.setItem(
-        "unload-" + Date.now() + "-" + document.hidden + "-" + location.href,
-        JSON.stringify(history.state)
-      );
-    }
-  });
-}
-
+let dnrRequestId;
 // This port is used for several purposes:
 // 1. When disconnected, the background page knows that the frame has unload.
 // 2. When the referrer was saved in history.state.chromecomState, it is sent
@@ -283,6 +268,7 @@ let port;
 // 3. Background -> page: Send latest referer and save to history.
 // 4. Page: Invoke callback.
 function setReferer(url, callback) {
+  dnrRequestId ??= crypto.getRandomValues(new Uint32Array(1))[0] % 0x80000000;
   if (!port) {
     // The background page will accept the port, and keep adding the Referer
     // request header to requests to |url| until the port is disconnected.
@@ -292,6 +278,7 @@ function setReferer(url, callback) {
   port.onMessage.addListener(onMessage);
   // Initiate the information exchange.
   port.postMessage({
+    dnrRequestId,
     referer: window.history.state?.chromecomState,
     requestUrl: url,
   });
@@ -326,7 +313,7 @@ function setReferer(url, callback) {
 // chrome.storage.local to chrome.storage.sync when needed.
 const storageArea = chrome.storage.sync || chrome.storage.local;
 
-class ChromePreferences extends BasePreferences {
+class Preferences extends BasePreferences {
   async _writeToStorage(prefObj) {
     return new Promise(resolve => {
       if (prefObj === this.defaults) {
@@ -415,34 +402,33 @@ class ChromePreferences extends BasePreferences {
   }
 }
 
-class ChromeExternalServices extends DefaultExternalServices {
-  static initPassiveLoading(callbacks) {
-    // defaultUrl is set in viewer.js
+class ExternalServices extends BaseExternalServices {
+  initPassiveLoading() {
     ChromeCom.resolvePDFFile(
       AppOptions.get("defaultUrl"),
-      PDFViewerApplication.overlayManager,
       function (url, length, originalUrl) {
-        callbacks.onOpenWithURL(url, length, originalUrl);
+        viewerApp.open({ url, length, originalUrl });
       }
     );
   }
 
-  static createDownloadManager() {
-    return new DownloadManager();
-  }
-
-  static createPreferences() {
-    return new ChromePreferences();
-  }
-
-  static async createL10n() {
+  async createL10n() {
     return new GenericL10n(navigator.language);
   }
 
-  static createScripting() {
+  createScripting() {
     return new GenericScripting(AppOptions.get("sandboxBundleSrc"));
   }
 }
-PDFViewerApplication.externalServices = ChromeExternalServices;
 
-export { ChromeCom };
+class MLManager {
+  isEnabledFor(_name) {
+    return false;
+  }
+
+  async guess() {
+    return null;
+  }
+}
+
+export { ExternalServices, initCom, MLManager, Preferences };

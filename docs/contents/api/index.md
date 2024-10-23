@@ -1,8 +1,11 @@
 ---
 title: API
-template: layout.jade
+layout: layout.njk
+slug: api
 ---
 
 # API
 
-We're currently working on <a href="draft/index.html">better API docs</a>, but the API is well documented in [api.js](https://github.com/mozilla/pdf.js/blob/master/src/display/api.js).
+The generated API documentation, from the inline comments in [api.js](https://github.com/mozilla/pdf.js/blob/master/src/display/api.js), is available below.
+
+<iframe src="draft/index.html" title="PDF.js API documentation"></iframe>

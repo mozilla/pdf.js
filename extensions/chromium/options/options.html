@@ -19,23 +19,28 @@ limitations under the License.
 <meta charset="utf-8">
 <title>PDF.js viewer options</title>
 <style>
-/* TODO: Remove as much custom CSS as possible - crbug.com/446511 */
 body {
   min-width: 400px; /* a page at the settings page is at least 400px wide */
   margin: 14px 17px; /* already added by default in Chrome 40.0.2212.0 */
 }
 .settings-row {
-  margin: 0.65em 0;
+  margin: 1em 0;
+}
+.checkbox label {
+  display: inline-flex;
+  align-items: center;
+}
+.checkbox label input {
+  flex-shrink: 0;
 }
 </style>
 </head>
 <body>
 <div id="settings-boxes"></div>
-<button id="reset-button">Restore default settings</button>
+<button id="reset-button" type="button">Restore default settings</button>
 
 <template id="checkbox-template">
-<!-- Chromium's style: //src/extensions/renderer/resources/extension.css -->
-<div class="checkbox">
+<div class="settings-row checkbox">
   <label>
     <input type="checkbox">
     <span></span>

@@ -51,12 +51,6 @@ pdfjs-download-button-label = 下载
 pdfjs-bookmark-button =
     .title = 当前页面（在当前页面查看 URL）
 pdfjs-bookmark-button-label = 当前页面
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = 在应用中打开
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = 在应用中打开
 
 ##  Secondary toolbar and context menu
 
@@ -111,6 +105,14 @@ pdfjs-document-properties-button-label = 文档属性…
 pdfjs-document-properties-file-name = 文件名:
 pdfjs-document-properties-file-size = 文件大小:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } KB（{ $b } 字节）
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB（{ $b } 字节）
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } 字节)
@@ -124,6 +126,9 @@ pdfjs-document-properties-subject = 主题:
 pdfjs-document-properties-keywords = 关键词:
 pdfjs-document-properties-creation-date = 创建日期:
 pdfjs-document-properties-modification-date = 修改日期:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -273,6 +278,9 @@ pdfjs-annotation-date-string = { $date }，{ $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [{ $type } 注释]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -293,6 +301,27 @@ pdfjs-editor-ink-button-label = 绘图
 pdfjs-editor-stamp-button =
     .title = 添加或编辑图像
 pdfjs-editor-stamp-button-label = 添加或编辑图像
+pdfjs-editor-highlight-button =
+    .title = 高亮
+pdfjs-editor-highlight-button-label = 高亮
+pdfjs-highlight-floating-button1 =
+    .title = 高亮
+    .aria-label = 高亮
+pdfjs-highlight-floating-button-label = 高亮
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = 移除绘图
+pdfjs-editor-remove-freetext-button =
+    .title = 移除文本
+pdfjs-editor-remove-stamp-button =
+    .title = 移除图像
+pdfjs-editor-remove-highlight-button =
+    .title = 移除高亮
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = 颜色
 pdfjs-editor-free-text-size-input = 字号
@@ -302,6 +331,10 @@ pdfjs-editor-ink-opacity-input = 不透明度
 pdfjs-editor-stamp-add-image-button =
     .title = 添加图像
 pdfjs-editor-stamp-add-image-button-label = 添加图像
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = 粗细
+pdfjs-editor-free-highlight-thickness-title =
+    .title = 更改高亮粗细（用于文本以外项目）
 pdfjs-free-text =
     .aria-label = 文本编辑器
 pdfjs-free-text-default-content = 开始输入…
@@ -339,3 +372,102 @@ pdfjs-editor-resizer-label-bottom-right = 调整尺寸 - 右下角
 pdfjs-editor-resizer-label-bottom-middle = 调整大小 - 底部中间
 pdfjs-editor-resizer-label-bottom-left = 调整尺寸 - 左下角
 pdfjs-editor-resizer-label-middle-left = 调整尺寸 - 左侧中间
+pdfjs-editor-resizer-top-left =
+    .aria-label = 调整尺寸 - 左上角
+pdfjs-editor-resizer-top-middle =
+    .aria-label = 调整尺寸 - 顶部中间
+pdfjs-editor-resizer-top-right =
+    .aria-label = 调整尺寸 - 右上角
+pdfjs-editor-resizer-middle-right =
+    .aria-label = 调整尺寸 - 右侧中间
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = 调整尺寸 - 右下角
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = 调整大小 - 底部中间
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = 调整尺寸 - 左下角
+pdfjs-editor-resizer-middle-left =
+    .aria-label = 调整尺寸 - 左侧中间
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = 高亮色
+pdfjs-editor-colorpicker-button =
+    .title = 更改颜色
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = 颜色选择
+pdfjs-editor-colorpicker-yellow =
+    .title = 黄色
+pdfjs-editor-colorpicker-green =
+    .title = 绿色
+pdfjs-editor-colorpicker-blue =
+    .title = 蓝色
+pdfjs-editor-colorpicker-pink =
+    .title = 粉色
+pdfjs-editor-colorpicker-red =
+    .title = 红色
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = 显示全部
+pdfjs-editor-highlight-show-all-button =
+    .title = 显示全部
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+# Modal header positioned above a text box where users can edit the alt text.
+pdfjs-editor-new-alt-text-dialog-edit-label = 编辑替换文字（图像描述）
+# Modal header positioned above a text box where users can add the alt text.
+pdfjs-editor-new-alt-text-dialog-add-label = 添加替换文字（图像描述）
+pdfjs-editor-new-alt-text-textarea =
+    .placeholder = 请在此处撰写描述…
+# This text refers to the alt text box above this description. It offers a definition of alt text.
+pdfjs-editor-new-alt-text-description = 向无法看到或加载图像的用户提供的简短描述。
+# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
+pdfjs-editor-new-alt-text-disclaimer1 = 此段替换文字为自动创建，有可能不准确。
+pdfjs-editor-new-alt-text-disclaimer-learn-more-url = 详细了解
+pdfjs-editor-new-alt-text-create-automatically-button-label = 自动创建替换文字
+pdfjs-editor-new-alt-text-not-now-button = 暂时不要
+pdfjs-editor-new-alt-text-error-title = 无法自动创建替换文字
+pdfjs-editor-new-alt-text-error-description = 请自行撰写替换文字，或稍后再试。
+pdfjs-editor-new-alt-text-error-close-button = 关闭
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+#   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
+#   $percent (Number) - the percentage of the downloaded size.
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = 正在下载提供替换文字的 AI 模型（{ $downloadedSize }/{ $totalSize } MB）
+    .aria-valuetext = 正在下载提供替换文字的 AI 模型（{ $downloadedSize }/{ $totalSize } MB）
+# This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button-label = 已添加替换文字
+# This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button-label = 缺少替换文字
+# This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button-label = 检查替换文字
+# "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
+# Variables:
+#   $generatedAltText (String) - the generated alt-text.
+pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer = [自动创建] { $generatedAltText }
+
+## Image alt-text settings
+
+pdfjs-image-alt-text-settings-button =
+    .title = 图像替换文字设置
+pdfjs-image-alt-text-settings-button-label = 图像替换文字设置
+pdfjs-editor-alt-text-settings-dialog-label = 图像替换文字设置
+pdfjs-editor-alt-text-settings-automatic-title = 自动创建替换文字
+pdfjs-editor-alt-text-settings-create-model-button-label = 自动创建替换文字
+pdfjs-editor-alt-text-settings-create-model-description = 向无法看到或加载图像的用户提供描述。
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+pdfjs-editor-alt-text-settings-download-model-label = 提供替换文字的 AI 模型（{ $totalSize } MB）
+pdfjs-editor-alt-text-settings-ai-model-description = 在您的设备本地运行，可使数据保持私密。自动创建替换文字需要使用此模型。
+pdfjs-editor-alt-text-settings-delete-model-button = 删除
+pdfjs-editor-alt-text-settings-download-model-button = 下载
+pdfjs-editor-alt-text-settings-downloading-model-button = 正在下载…
+pdfjs-editor-alt-text-settings-editor-title = 替换文字编辑器
+pdfjs-editor-alt-text-settings-show-dialog-button-label = 添加图像后立即显示替换文字编辑器
+pdfjs-editor-alt-text-settings-show-dialog-description = 帮助确保所有图像均拥有替换文字。
+pdfjs-editor-alt-text-settings-close-button = 关闭

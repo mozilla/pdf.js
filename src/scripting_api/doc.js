@@ -96,10 +96,11 @@ class Doc extends PDFObject {
     this._zoom = data.zoom || 100;
     this._actions = createActionsMap(data.actions);
     this._globalEval = data.globalEval;
-    this._pageActions = new Map();
+    this._pageActions = null;
     this._userActivation = false;
     this._disablePrinting = false;
     this._disableSaving = false;
+    this._otherPageActions = null;
   }
 
   _initActions() {
@@ -155,16 +156,19 @@ class Doc extends PDFObject {
 
   _dispatchPageEvent(name, actions, pageNumber) {
     if (name === "PageOpen") {
+      this._pageActions ||= new Map();
       if (!this._pageActions.has(pageNumber)) {
         this._pageActions.set(pageNumber, createActionsMap(actions));
       }
       this._pageNum = pageNumber - 1;
     }
 
-    actions = this._pageActions.get(pageNumber)?.get(name);
-    if (actions) {
-      for (const action of actions) {
-        this._globalEval(action);
+    for (const acts of [this._pageActions, this._otherPageActions]) {
+      actions = acts?.get(pageNumber)?.get(name);
+      if (actions) {
+        for (const action of actions) {
+          this._globalEval(action);
+        }
       }
     }
   }
@@ -182,6 +186,34 @@ class Doc extends PDFObject {
     this._fields.set(name, field);
     this._fieldNames.push(name);
     this._numFields++;
+
+    // Fields on a page can have PageOpen/PageClose actions.
+    const po = field.obj._actions.get("PageOpen");
+    const pc = field.obj._actions.get("PageClose");
+    if (po || pc) {
+      this._otherPageActions ||= new Map();
+      let actions = this._otherPageActions.get(field.obj._page + 1);
+      if (!actions) {
+        actions = new Map();
+        this._otherPageActions.set(field.obj._page + 1, actions);
+      }
+      if (po) {
+        let poActions = actions.get("PageOpen");
+        if (!poActions) {
+          poActions = [];
+          actions.set("PageOpen", poActions);
+        }
+        poActions.push(...po);
+      }
+      if (pc) {
+        let pcActions = actions.get("PageClose");
+        if (!pcActions) {
+          pcActions = [];
+          actions.set("PageClose", pcActions);
+        }
+        pcActions.push(...pc);
+      }
+    }
   }
 
   _getDate(date) {
