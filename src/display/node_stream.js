@@ -96,6 +96,8 @@ class PDFNodeStream {
 }
 
 class BaseFullReader {
+  _responseHeaders = null;
+
   constructor(stream) {
     this._url = stream.url;
     this._done = false;
@@ -122,6 +124,10 @@ class BaseFullReader {
 
   get headersReady() {
     return this._headersCapability.promise;
+  }
+
+  get responseHeaders() {
+    return this._responseHeaders;
   }
 
   get filename() {
@@ -305,7 +311,9 @@ class PDFNodeStreamFullReader extends BaseFullReader {
       this._headersCapability.resolve();
       this._setReadableStream(response);
 
-      const responseHeaders = new Headers(this._readableStream.headers);
+      const responseHeaders = (this._responseHeaders = new Headers(
+        this._readableStream.headers
+      ));
 
       const { allowRangeRequests, suggestedLength } =
         validateRangeRequestCapabilities({
