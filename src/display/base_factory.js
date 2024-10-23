@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { CMapCompressionType, unreachable } from "../shared/util.js";
+import { unreachable } from "../shared/util.js";
 
 class BaseFilterFactory {
   constructor() {
@@ -129,12 +129,7 @@ class BaseCMapReaderFactory {
     const url = this.baseUrl + name + (this.isCompressed ? ".bcmap" : "");
 
     return this._fetch(url)
-      .then(cMapData => ({
-        cMapData,
-        compressionType: this.isCompressed
-          ? CMapCompressionType.BINARY
-          : CMapCompressionType.NONE,
-      }))
+      .then(cMapData => ({ cMapData, isCompressed: this.isCompressed }))
       .catch(reason => {
         throw new Error(
           `Unable to load ${this.isCompressed ? "binary " : ""}CMap at: ${url}`
