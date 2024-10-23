@@ -97,6 +97,19 @@ or to build it from source. We supply pre-built versions for usage with NPM and 
 the `pdfjs-dist` name. For more information and examples please refer to the
 [wiki page](https://github.com/mozilla/pdf.js/wiki/Setup-pdf.js-in-a-website) on this subject.
 
+## Using PDF.js in docker
++ Remove package `"@jazzer.js/core"` from `package.json`.
++ In `gulpfile.mjs` add the line `server.host='0.0.0.0'` here:
+
+    ```js
+    const { WebServer } = await import("./test/webserver.mjs");
+    const server = new WebServer({ port });
+    server.host = '0.0.0.0';
+    server.start();
+    ```
++ Start the docker container with `mutagen-compose up pdfjs`
++ Access server at `http://localhost:8888/web/viewer.html`
+
 ## Including via a CDN
 
 PDF.js is hosted on several free CDNs:
@@ -125,7 +138,7 @@ The API documentation can be found at:
 
 + https://mozilla.github.io/pdf.js/api/
 
-## Question
+## Questions
 
 Check out our FAQs and get answers to common questions:
 
