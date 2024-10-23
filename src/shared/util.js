@@ -1102,6 +1102,35 @@ const FontRenderOps = {
   TRANSLATE: 8,
 };
 
+// TODO: Remove this once `Uint8Array.prototype.toHex` is generally supported.
+function toHexHelper(arr) {
+  if (Uint8Array.prototype.toHex) {
+    return arr.toHex();
+  }
+  const buf = [];
+  for (const num of arr) {
+    buf.push(num.toString(16).padStart(2, "0"));
+  }
+  return buf.join("");
+}
+
+// TODO: Remove this once `Uint8Array.prototype.toBase64` is generally
+//       supported.
+function toBase64Helper(arr) {
+  if (Uint8Array.prototype.toBase64) {
+    return arr.toBase64();
+  }
+  return btoa(bytesToString(arr));
+}
+
+// TODO: Remove this once `Uint8Array.fromBase64` is generally supported.
+function fromBase64Helper(str) {
+  if (Uint8Array.fromBase64) {
+    return Uint8Array.fromBase64(str);
+  }
+  return stringToBytes(atob(str));
+}
+
 export {
   AbortException,
   AnnotationActionEventType,
@@ -1126,6 +1155,7 @@ export {
   FONT_IDENTITY_MATRIX,
   FontRenderOps,
   FormatError,
+  fromBase64Helper,
   getModificationDate,
   getUuid,
   getVerbosityLevel,
@@ -1155,6 +1185,8 @@ export {
   stringToPDFString,
   stringToUTF8String,
   TextRenderingMode,
+  toBase64Helper,
+  toHexHelper,
   UnexpectedResponseException,
   UnknownErrorException,
   unreachable,
