@@ -1176,7 +1176,7 @@ class PDFFindController {
     }
 
     if (this.#state.wordsToSearch !== "query") {
-      const matchIndex = this._offset.matchIdx === 0 && !this.state.jumpToFirstHighlight ? -1 : 0;
+      const matchIndex = this._offset.matchIdx === 0 && !this.#state.jumpToFirstHighlight ? -1 : this._offset.matchIdx;
       this.#termHighlightingMatchIndex = matchIndex;
       return;
     }
