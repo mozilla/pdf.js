@@ -1149,7 +1149,7 @@ class PDFFindController {
   }
 
   #updateMatch(found = false) {
-    if (this.#state.jumpToFirstHighlight || this.#state.type !== 'find') {
+    if (this.#state.jumpToFirstHighlight || this.#state.type !== "find") {
       let state = FindState.NOT_FOUND;
       const wrapped = this._offset.wrapped;
       this._offset.wrapped = false;
@@ -1176,7 +1176,8 @@ class PDFFindController {
     }
 
     if (this.#state.wordsToSearch !== "query") {
-      this.#termHighlightingMatchIndex = this._offset.matchIdx;
+      const matchIndex = this._offset.matchIdx === 0 && !this.state.jumpToFirstHighlight ? -1 : 0;
+      this.#termHighlightingMatchIndex = matchIndex;
       return;
     }
 
