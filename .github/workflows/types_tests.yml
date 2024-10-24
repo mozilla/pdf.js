@@ -28,4 +28,4 @@ jobs:
         run: npm ci
 
       - name: Run types tests
-        run: npx gulp typestest
+        run: npx gulp types

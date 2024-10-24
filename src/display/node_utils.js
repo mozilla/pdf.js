@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals process */
 
 import {
   BaseCanvasFactory,
@@ -27,94 +28,55 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   );
 }
 
-if (isNodeJS) {
-  // eslint-disable-next-line no-var
-  var packageCapability = Promise.withResolvers();
-  // eslint-disable-next-line no-var
-  var packageMap = null;
+if (
+  typeof PDFJSDev !== "undefined" &&
+  !PDFJSDev.test("SKIP_BABEL") &&
+  isNodeJS
+) {
+  let canvas, path2d;
+  try {
+    const require = process
+      .getBuiltinModule("module")
+      .createRequire(import.meta.url);
 
-  const loadPackages = async () => {
-    // Native packages.
-    const fs = await __non_webpack_import__("fs"),
-      http = await __non_webpack_import__("http"),
-      https = await __non_webpack_import__("https"),
-      url = await __non_webpack_import__("url");
+    canvas = require("canvas");
+    path2d = require("path2d");
+  } catch {}
 
-    // Optional, third-party, packages.
-    let canvas, path2d;
-    if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("SKIP_BABEL")) {
-      try {
-        canvas = await __non_webpack_import__("canvas");
-      } catch {}
-      try {
-        path2d = await __non_webpack_import__("path2d");
-      } catch {}
+  if (!globalThis.DOMMatrix) {
+    const DOMMatrix = canvas?.DOMMatrix;
+
+    if (DOMMatrix) {
+      globalThis.DOMMatrix = DOMMatrix;
+    } else {
+      warn("Cannot polyfill `DOMMatrix`, rendering may be broken.");
     }
-
-    return new Map(Object.entries({ fs, http, https, url, canvas, path2d }));
-  };
-
-  loadPackages().then(
-    map => {
-      packageMap = map;
-      packageCapability.resolve();
-
-      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("SKIP_BABEL")) {
-        return;
-      }
-      if (!globalThis.DOMMatrix) {
-        const DOMMatrix = map.get("canvas")?.DOMMatrix;
-
-        if (DOMMatrix) {
-          globalThis.DOMMatrix = DOMMatrix;
-        } else {
-          warn("Cannot polyfill `DOMMatrix`, rendering may be broken.");
-        }
-      }
-      if (!globalThis.Path2D) {
-        const CanvasRenderingContext2D =
-          map.get("canvas")?.CanvasRenderingContext2D;
-        const applyPath2DToCanvasRenderingContext =
-          map.get("path2d")?.applyPath2DToCanvasRenderingContext;
-        const Path2D = map.get("path2d")?.Path2D;
-
-        if (
-          CanvasRenderingContext2D &&
-          applyPath2DToCanvasRenderingContext &&
-          Path2D
-        ) {
-          try {
-            applyPath2DToCanvasRenderingContext(CanvasRenderingContext2D);
-          } catch (ex) {
-            warn(`applyPath2DToCanvasRenderingContext: "${ex}".`);
-          }
-          globalThis.Path2D = Path2D;
-        } else {
-          warn("Cannot polyfill `Path2D`, rendering may be broken.");
-        }
-      }
-    },
-    reason => {
-      warn(`loadPackages: ${reason}`);
-
-      packageMap = new Map();
-      packageCapability.resolve();
-    }
-  );
-}
-
-class NodePackages {
-  static get promise() {
-    return packageCapability.promise;
   }
+  if (!globalThis.Path2D) {
+    const CanvasRenderingContext2D = canvas?.CanvasRenderingContext2D;
+    const applyPath2DToCanvasRenderingContext =
+      path2d?.applyPath2DToCanvasRenderingContext;
+    const Path2D = path2d?.Path2D;
 
-  static get(name) {
-    return packageMap?.get(name);
+    if (
+      CanvasRenderingContext2D &&
+      applyPath2DToCanvasRenderingContext &&
+      Path2D
+    ) {
+      try {
+        applyPath2DToCanvasRenderingContext(CanvasRenderingContext2D);
+      } catch (ex) {
+        warn(`applyPath2DToCanvasRenderingContext: "${ex}".`);
+      }
+      globalThis.Path2D = Path2D;
+    } else {
+      warn("Cannot polyfill `Path2D`, rendering may be broken.");
+    }
   }
 }
 
 async function fetchData(url) {
-  const fs = NodePackages.get("fs");
+  const fs = process.getBuiltinModule("fs");
   const data = await fs.promises.readFile(url);
   return new Uint8Array(data);
 }
@@ -126,7 +88,10 @@ class NodeCanvasFactory extends BaseCanvasFactory {
    * @ignore
    */
   _createCanvas(width, height) {
-    const canvas = NodePackages.get("canvas");
+    const require = process
+      .getBuiltinModule("module")
+      .createRequire(import.meta.url);
+    const canvas = require("canvas");
     return canvas.createCanvas(width, height);
   }
 }
@@ -154,6 +119,5 @@ export {
   NodeCanvasFactory,
   NodeCMapReaderFactory,
   NodeFilterFactory,
-  NodePackages,
   NodeStandardFontDataFactory,
 };
