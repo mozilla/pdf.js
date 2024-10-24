@@ -240,11 +240,6 @@ const VerbosityLevel = {
   INFOS: 5,
 };
 
-const CMapCompressionType = {
-  NONE: 0,
-  BINARY: 1,
-};
-
 // All the possible operations for an operator list.
 const OPS = {
   // Intentionally start from 1 so it is easy to spot bad operators that will be
@@ -1119,7 +1114,6 @@ export {
   BaseException,
   BASELINE_FACTOR,
   bytesToString,
-  CMapCompressionType,
   createValidAbsoluteUrl,
   DocumentActionEventType,
   FeatureTest,
