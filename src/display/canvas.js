@@ -1059,8 +1059,10 @@ class CanvasGraphics {
     // Vertical or horizontal scaling shall not be more than 2 to not lose the
     // pixels during drawImage operation, painting on the temporary canvas(es)
     // that are twice smaller in size.
-    const width = img.width;
-    const height = img.height;
+
+    // displayWidth and displayHeight are used for VideoFrame.
+    const width = img.width ?? img.displayWidth;
+    const height = img.height ?? img.displayHeight;
     let widthScale = Math.max(
       Math.hypot(inverseTransform[0], inverseTransform[1]),
       1
@@ -1496,6 +1498,7 @@ class CanvasGraphics {
     let maskY = layerOffsetY - maskOffsetY;
 
     if (backdrop) {
+      const backdropRGB = Util.makeHexColor(...backdrop);
       if (
         maskX < 0 ||
         maskY < 0 ||
@@ -1509,16 +1512,14 @@ class CanvasGraphics {
         );
         const ctx = canvas.context;
         ctx.drawImage(maskCanvas, -maskX, -maskY);
-        if (backdrop.some(c => c !== 0)) {
-          ctx.globalCompositeOperation = "destination-atop";
-          ctx.fillStyle = Util.makeHexColor(...backdrop);
-          ctx.fillRect(0, 0, width, height);
-          ctx.globalCompositeOperation = "source-over";
-        }
+        ctx.globalCompositeOperation = "destination-atop";
+        ctx.fillStyle = backdropRGB;
+        ctx.fillRect(0, 0, width, height);
+        ctx.globalCompositeOperation = "source-over";
 
         maskCanvas = canvas.canvas;
         maskX = maskY = 0;
-      } else if (backdrop.some(c => c !== 0)) {
+      } else {
         maskCtx.save();
         maskCtx.globalAlpha = 1;
         maskCtx.setTransform(1, 0, 0, 1, 0, 0);
@@ -1526,7 +1527,7 @@ class CanvasGraphics {
         clip.rect(maskX, maskY, width, height);
         maskCtx.clip(clip);
         maskCtx.globalCompositeOperation = "destination-atop";
-        maskCtx.fillStyle = Util.makeHexColor(...backdrop);
+        maskCtx.fillStyle = backdropRGB;
         maskCtx.fillRect(maskX, maskY, width, height);
         maskCtx.restore();
       }

@@ -348,6 +348,7 @@ pdfjs-editor-free-highlight-thickness-input = Thickness
 pdfjs-editor-free-highlight-thickness-title =
     .title = Change thickness when highlighting items other than text
 
+# .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Text Editor
     .default-content = Start typing…

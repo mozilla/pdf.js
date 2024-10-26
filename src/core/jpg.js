@@ -744,55 +744,109 @@ function findNextFileMarker(data, currentPos, startPos = currentPos) {
   };
 }
 
+function prepareComponents(frame) {
+  const mcusPerLine = Math.ceil(frame.samplesPerLine / 8 / frame.maxH);
+  const mcusPerColumn = Math.ceil(frame.scanLines / 8 / frame.maxV);
+  for (const component of frame.components) {
+    const blocksPerLine = Math.ceil(
+      (Math.ceil(frame.samplesPerLine / 8) * component.h) / frame.maxH
+    );
+    const blocksPerColumn = Math.ceil(
+      (Math.ceil(frame.scanLines / 8) * component.v) / frame.maxV
+    );
+    const blocksPerLineForMcu = mcusPerLine * component.h;
+    const blocksPerColumnForMcu = mcusPerColumn * component.v;
+
+    const blocksBufferSize =
+      64 * blocksPerColumnForMcu * (blocksPerLineForMcu + 1);
+    component.blockData = new Int16Array(blocksBufferSize);
+    component.blocksPerLine = blocksPerLine;
+    component.blocksPerColumn = blocksPerColumn;
+  }
+  frame.mcusPerLine = mcusPerLine;
+  frame.mcusPerColumn = mcusPerColumn;
+}
+
+function readDataBlock(data, offset) {
+  const length = readUint16(data, offset);
+  offset += 2;
+  let endOffset = offset + length - 2;
+
+  const fileMarker = findNextFileMarker(data, endOffset, offset);
+  if (fileMarker?.invalid) {
+    warn(
+      "readDataBlock - incorrect length, current marker is: " +
+        fileMarker.invalid
+    );
+    endOffset = fileMarker.offset;
+  }
+
+  const array = data.subarray(offset, endOffset);
+  offset += array.length;
+  return { appData: array, newOffset: offset };
+}
+
+function skipData(data, offset) {
+  const length = readUint16(data, offset);
+  offset += 2;
+  const endOffset = offset + length - 2;
+
+  const fileMarker = findNextFileMarker(data, endOffset, offset);
+  if (fileMarker?.invalid) {
+    return fileMarker.offset;
+  }
+  return endOffset;
+}
+
 class JpegImage {
   constructor({ decodeTransform = null, colorTransform = -1 } = {}) {
     this._decodeTransform = decodeTransform;
     this._colorTransform = colorTransform;
   }
 
-  parse(data, { dnlScanLines = null } = {}) {
-    function readDataBlock() {
-      const length = readUint16(data, offset);
+  static canUseImageDecoder(data, colorTransform = -1) {
+    let offset = 0;
+    let numComponents = null;
+    let fileMarker = readUint16(data, offset);
+    offset += 2;
+    if (fileMarker !== /* SOI (Start of Image) = */ 0xffd8) {
+      throw new JpegError("SOI not found");
+    }
+    fileMarker = readUint16(data, offset);
+    offset += 2;
+
+    markerLoop: while (fileMarker !== /* EOI (End of Image) = */ 0xffd9) {
+      switch (fileMarker) {
+        case 0xffc0: // SOF0 (Start of Frame, Baseline DCT)
+        case 0xffc1: // SOF1 (Start of Frame, Extended DCT)
+        case 0xffc2: // SOF2 (Start of Frame, Progressive DCT)
+          // Skip marker length.
+          // Skip precision.
+          // Skip scanLines.
+          // Skip samplesPerLine.
+          numComponents = data[offset + (2 + 1 + 2 + 2)];
+          break markerLoop;
+        case 0xffff: // Fill bytes
+          if (data[offset] !== 0xff) {
+            // Avoid skipping a valid marker.
+            offset--;
+          }
+          break;
+      }
+      offset = skipData(data, offset);
+      fileMarker = readUint16(data, offset);
       offset += 2;
-      let endOffset = offset + length - 2;
-
-      const fileMarker = findNextFileMarker(data, endOffset, offset);
-      if (fileMarker?.invalid) {
-        warn(
-          "readDataBlock - incorrect length, current marker is: " +
-            fileMarker.invalid
-        );
-        endOffset = fileMarker.offset;
-      }
-
-      const array = data.subarray(offset, endOffset);
-      offset += array.length;
-      return array;
     }
-
-    function prepareComponents(frame) {
-      const mcusPerLine = Math.ceil(frame.samplesPerLine / 8 / frame.maxH);
-      const mcusPerColumn = Math.ceil(frame.scanLines / 8 / frame.maxV);
-      for (const component of frame.components) {
-        const blocksPerLine = Math.ceil(
-          (Math.ceil(frame.samplesPerLine / 8) * component.h) / frame.maxH
-        );
-        const blocksPerColumn = Math.ceil(
-          (Math.ceil(frame.scanLines / 8) * component.v) / frame.maxV
-        );
-        const blocksPerLineForMcu = mcusPerLine * component.h;
-        const blocksPerColumnForMcu = mcusPerColumn * component.v;
-
-        const blocksBufferSize =
-          64 * blocksPerColumnForMcu * (blocksPerLineForMcu + 1);
-        component.blockData = new Int16Array(blocksBufferSize);
-        component.blocksPerLine = blocksPerLine;
-        component.blocksPerColumn = blocksPerColumn;
-      }
-      frame.mcusPerLine = mcusPerLine;
-      frame.mcusPerColumn = mcusPerColumn;
+    if (numComponents === 4) {
+      return false;
     }
+    if (numComponents === 3 && colorTransform === 0) {
+      return false;
+    }
+    return true;
+  }
 
+  parse(data, { dnlScanLines = null } = {}) {
     let offset = 0;
     let jfif = null;
     let adobe = null;
@@ -830,7 +884,8 @@ class JpegImage {
         case 0xffee: // APP14
         case 0xffef: // APP15
         case 0xfffe: // COM (Comment)
-          const appData = readDataBlock();
+          const { appData, newOffset } = readDataBlock(data, offset);
+          offset = newOffset;
 
           if (fileMarker === 0xffe0) {
             // 'JFIF\x00'
