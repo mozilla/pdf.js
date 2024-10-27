@@ -32,13 +32,15 @@ const MAX_ERROR = 128;
 // should be a way faster to create the bitmap.
 
 class ImageResizer {
+  static #goodSquareLength = MIN_IMAGE_DIM;
+
   constructor(imgData, isMask) {
     this._imgData = imgData;
     this._isMask = isMask;
   }
 
   static needsToBeResized(width, height) {
-    if (width <= this._goodSquareLength && height <= this._goodSquareLength) {
+    if (width <= this.#goodSquareLength && height <= this.#goodSquareLength) {
       return false;
     }
 
@@ -52,14 +54,14 @@ class ImageResizer {
       return area > this.MAX_AREA;
     }
 
-    if (area < this._goodSquareLength ** 2) {
+    if (area < this.#goodSquareLength ** 2) {
       return false;
     }
 
     // We try as much as possible to avoid to compute the max area.
     if (this._areGoodDims(width, height)) {
-      this._goodSquareLength = Math.max(
-        this._goodSquareLength,
+      this.#goodSquareLength = Math.max(
+        this.#goodSquareLength,
         Math.floor(Math.sqrt(width * height))
       );
       return false;
@@ -69,13 +71,13 @@ class ImageResizer {
     // some large canvas, so in the Firefox case this value (and MAX_DIM) can be
     // infered from prefs (MAX_AREA = gfx.max-alloc-size / 4, 4 is because of
     // RGBA).
-    this._goodSquareLength = this._guessMax(
-      this._goodSquareLength,
+    this.#goodSquareLength = this._guessMax(
+      this.#goodSquareLength,
       MAX_DIM,
       MAX_ERROR,
       0
     );
-    const maxArea = (this.MAX_AREA = this._goodSquareLength ** 2);
+    const maxArea = (this.MAX_AREA = this.#goodSquareLength ** 2);
 
     return area > maxArea;
   }
@@ -93,12 +95,7 @@ class ImageResizer {
     return shadow(
       this,
       "MAX_AREA",
-      this._guessMax(
-        ImageResizer._goodSquareLength,
-        this.MAX_DIM,
-        MAX_ERROR,
-        0
-      ) ** 2
+      this._guessMax(this.#goodSquareLength, this.MAX_DIM, MAX_ERROR, 0) ** 2
     );
   }
 
@@ -392,7 +389,5 @@ class ImageResizer {
     return bmpData;
   }
 }
-
-ImageResizer._goodSquareLength = MIN_IMAGE_DIM;
 
 export { ImageResizer };
