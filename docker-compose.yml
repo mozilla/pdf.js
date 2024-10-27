@@ -1,0 +1,10 @@
+services:
+  pdfjs:
+    build: .
+    container_name: pdfjs_container
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/app
+      - /app/node_modules # This prevents the local node_modules from overwriting the container's node_modules
+    command: bash -c "gulp server"
