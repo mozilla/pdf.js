@@ -17,7 +17,6 @@
 import {
   AbortException,
   assert,
-  CMapCompressionType,
   FONT_IDENTITY_MATRIX,
   FormatError,
   IDENTITY_MATRIX,
@@ -392,17 +391,15 @@ class PartialEvaluator {
       }
       data = {
         cMapData: new Uint8Array(await response.arrayBuffer()),
-        compressionType: CMapCompressionType.BINARY,
+        isCompressed: true,
       };
     } else {
       // Get the data on the main-thread instead.
       data = await this.handler.sendWithPromise("FetchBuiltInCMap", { name });
     }
+    // Cache the CMap data, to avoid fetching it repeatedly.
+    this.builtInCMapCache.set(name, data);
 
-    if (data.compressionType !== CMapCompressionType.NONE) {
-      // Given the size of uncompressed CMaps, only cache compressed ones.
-      this.builtInCMapCache.set(name, data);
-    }
     return data;
   }
 
