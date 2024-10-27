@@ -4,4 +4,7 @@ services:
     container_name: pdfjs_container
     ports:
       - "8888:8888"
+    volumes:
+      - .:/app
+      - /app/node_modules
     command: bash -c "gulp server"

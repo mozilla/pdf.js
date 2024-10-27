@@ -22,4 +22,4 @@ RUN npm install
 USER app
 
 EXPOSE 8888
-CMD ["gulp", "server"]
+CMD ["gulp", "server", "--watch"]
