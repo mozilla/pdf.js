@@ -1,0 +1,73 @@
+name: Deploy Website to AWS
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - master
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm install -g gulp-cli
+
+      - name: Build the website
+        run: gulp web
+
+      - name: Configure AWS credentials (Development)
+        if: github.event_name == 'pull_request'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Deploy to Development Bucket
+        if: github.event_name == 'pull_request'
+        run: |
+          aws s3 sync build/gh-pages/ s3://${{ vars.AWS_BUCKET_NAME }}/${{ github.event.pull_request.head.sha }}/ --acl public-read
+
+      - name: Comment deployment URL on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = `https://${{ vars.AWS_BUCKET_NAME }}.s3.us-east-1.amazonaws.com/${{ github.event.pull_request.head.sha }}/web/viewer.html?file=${{ vars.TEST_PDF }}`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `Preview your deployment: [View Here](${url})`
+            });
+
+      - name: Configure AWS credentials (Production)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTION_ROLE_ARN }}
+          aws-region: us-east-1
+          role-session-name: GitHubActionsSession
+
+      - name: Deploy to Production Bucket
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: |
+          aws s3 sync build/gh-pages/ ${{ secrets.AWS_PRODUCTION_BUCKET_CDN }}/pdfjs/ --acl public-read
