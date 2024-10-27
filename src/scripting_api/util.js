@@ -16,6 +16,8 @@
 import { PDFObject } from "./pdf_object.js";
 
 class Util extends PDFObject {
+  #dateActionsCache = null;
+
   constructor(data) {
     super(data);
 
@@ -338,7 +340,98 @@ class Util extends PDFObject {
     return buf.join("");
   }
 
+  #tryToGuessDate(cFormat, cDate) {
+    // We use the format to know the order of day, month, year, ...
+
+    let actions = (this.#dateActionsCache ||= new Map()).get(cFormat);
+    if (!actions) {
+      actions = [];
+      this.#dateActionsCache.set(cFormat, actions);
+      cFormat.replaceAll(
+        /(d+)|(m+)|(y+)|(H+)|(M+)|(s+)/g,
+        function (match, d, m, y, H, M, s) {
+          if (d) {
+            actions.push((n, date) => {
+              if (n >= 1 && n <= 31) {
+                date.setDate(n);
+                return true;
+              }
+              return false;
+            });
+          } else if (m) {
+            actions.push((n, date) => {
+              if (n >= 1 && n <= 12) {
+                date.setMonth(n - 1);
+                return true;
+              }
+              return false;
+            });
+          } else if (y) {
+            actions.push((n, date) => {
+              if (n < 50) {
+                n += 2000;
+              } else if (n < 100) {
+                n += 1900;
+              }
+              date.setYear(n);
+              return true;
+            });
+          } else if (H) {
+            actions.push((n, date) => {
+              if (n >= 0 && n <= 23) {
+                date.setHours(n);
+                return true;
+              }
+              return false;
+            });
+          } else if (M) {
+            actions.push((n, date) => {
+              if (n >= 0 && n <= 59) {
+                date.setMinutes(n);
+                return true;
+              }
+              return false;
+            });
+          } else if (s) {
+            actions.push((n, date) => {
+              if (n >= 0 && n <= 59) {
+                date.setSeconds(n);
+                return true;
+              }
+              return false;
+            });
+          }
+          return "";
+        }
+      );
+    }
+
+    const number = /\d+/g;
+    let i = 0;
+    let array;
+    const date = new Date(0);
+    while ((array = number.exec(cDate)) !== null) {
+      if (i < actions.length) {
+        if (!actions[i++](parseInt(array[0]), date)) {
+          return null;
+        }
+      } else {
+        break;
+      }
+    }
+
+    if (i === 0) {
+      return null;
+    }
+
+    return date;
+  }
+
   scand(cFormat, cDate) {
+    return this._scand(cFormat, cDate);
+  }
+
+  _scand(cFormat, cDate, strict = false) {
     if (typeof cDate !== "string") {
       return new Date(cDate);
     }
@@ -508,7 +601,7 @@ class Util extends PDFObject {
 
     const matches = new RegExp(`^${re}$`, "g").exec(cDate);
     if (!matches || matches.length !== actions.length + 1) {
-      return null;
+      return strict ? null : this.#tryToGuessDate(cFormat, cDate);
     }
 
     const data = {
