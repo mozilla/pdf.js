@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { FeatureTest, ImageKind, shadow } from "../shared/util.js";
+import { FeatureTest, ImageKind, shadow, warn } from "../shared/util.js";
 
 const MIN_IMAGE_DIM = 2048;
 
@@ -34,9 +34,26 @@ const MAX_ERROR = 128;
 class ImageResizer {
   static #goodSquareLength = MIN_IMAGE_DIM;
 
+  static #isChrome = false;
+
   constructor(imgData, isMask) {
     this._imgData = imgData;
     this._isMask = isMask;
+  }
+
+  static get canUseImageDecoder() {
+    // TODO: remove the isChrome, once Chrome doesn't crash anymore with
+    // issue6741.pdf.
+    // https://issues.chromium.org/issues/374807001.
+    return shadow(
+      this,
+      "canUseImageDecoder",
+      // eslint-disable-next-line no-undef
+      this.#isChrome || typeof ImageDecoder === "undefined"
+        ? Promise.resolve(false)
+        : // eslint-disable-next-line no-undef
+          ImageDecoder.isTypeSupported("image/bmp")
+    );
   }
 
   static needsToBeResized(width, height) {
@@ -113,6 +130,14 @@ class ImageResizer {
     }
   }
 
+  static setOptions(opts) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      throw new Error("Not implemented: setOptions");
+    }
+    this.setMaxArea(opts.maxArea ?? -1);
+    this.#isChrome = opts.isChrome ?? false;
+  }
+
   static _areGoodDims(width, height) {
     try {
       // This code is working in either Firefox or Chrome.
@@ -157,10 +182,38 @@ class ImageResizer {
 
   async _createImage() {
     const data = this._encodeBMP();
-    const blob = new Blob([data.buffer], {
-      type: "image/bmp",
-    });
-    const bitmapPromise = createImageBitmap(blob);
+    let decoder, imagePromise;
+
+    if (await ImageResizer.canUseImageDecoder) {
+      // eslint-disable-next-line no-undef
+      decoder = new ImageDecoder({
+        data,
+        type: "image/bmp",
+        preferAnimation: false,
+        transfer: [data.buffer],
+      });
+      imagePromise = decoder
+        .decode()
+        .catch(reason => {
+          warn(`BMP image decoding failed: ${reason}`);
+          // It's a bit unfortunate to create the BMP twice but we shouldn't be
+          // here in the first place.
+          return createImageBitmap(
+            new Blob([this._encodeBMP().buffer], {
+              type: "image/bmp",
+            })
+          );
+        })
+        .finally(() => {
+          decoder.close();
+        });
+    } else {
+      imagePromise = createImageBitmap(
+        new Blob([data.buffer], {
+          type: "image/bmp",
+        })
+      );
+    }
 
     const { MAX_AREA, MAX_DIM } = ImageResizer;
     const { _imgData: imgData } = this;
@@ -185,7 +238,8 @@ class ImageResizer {
 
     let newWidth = width;
     let newHeight = height;
-    let bitmap = await bitmapPromise;
+    const result = await imagePromise;
+    let bitmap = result.image || result;
 
     for (const step of steps) {
       const prevWidth = newWidth;
@@ -210,6 +264,9 @@ class ImageResizer {
         newWidth,
         newHeight
       );
+
+      // Release the resources associated with the bitmap.
+      bitmap.close();
       bitmap = canvas.transferToImageBitmap();
     }
 

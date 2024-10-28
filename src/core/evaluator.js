@@ -83,6 +83,7 @@ const DefaultPartialEvaluatorOptions = Object.freeze({
   ignoreErrors: false,
   isEvalSupported: true,
   isOffscreenCanvasSupported: false,
+  isChrome: false,
   canvasMaxAreaInBytes: -1,
   fontExtraProperties: false,
   useSystemFonts: true,
@@ -232,7 +233,14 @@ class PartialEvaluator {
 
     this._regionalImageCache = new RegionalImageCache();
     this._fetchBuiltInCMapBound = this.fetchBuiltInCMap.bind(this);
-    ImageResizer.setMaxArea(this.options.canvasMaxAreaInBytes);
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      ImageResizer.setMaxArea(this.options.canvasMaxAreaInBytes);
+    } else {
+      ImageResizer.setOptions({
+        isChrome: this.options.isChrome,
+        maxArea: this.options.canvasMaxAreaInBytes,
+      });
+    }
   }
 
   /**
