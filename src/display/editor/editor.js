@@ -88,7 +88,7 @@ class AnnotationEditor {
 
   _focusEventsAllowed = true;
 
-  static _l10nPromise = null;
+  static _l10n = null;
 
   static _l10nResizer = null;
 
@@ -210,6 +210,8 @@ class AnnotationEditor {
    * @param {Object} l10n
    */
   static initialize(l10n, _uiManager) {
+    AnnotationEditor._l10n ??= l10n;
+
     AnnotationEditor._l10nResizer ||= Object.freeze({
       topLeft: "pdfjs-editor-resizer-top-left",
       topMiddle: "pdfjs-editor-resizer-top-middle",
@@ -220,21 +222,6 @@ class AnnotationEditor {
       bottomLeft: "pdfjs-editor-resizer-bottom-left",
       middleLeft: "pdfjs-editor-resizer-middle-left",
     });
-
-    AnnotationEditor._l10nPromise ||= new Map([
-      ...[
-        "pdfjs-editor-alt-text-button-label",
-        "pdfjs-editor-alt-text-edit-button-label",
-        "pdfjs-editor-alt-text-decorative-tooltip",
-        "pdfjs-editor-new-alt-text-added-button-label",
-        "pdfjs-editor-new-alt-text-missing-button-label",
-        "pdfjs-editor-new-alt-text-to-review-button-label",
-      ].map(str => [str, l10n.get(str)]),
-      ...[
-        // Strings that need l10n-arguments.
-        "pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer",
-      ].map(str => [str, l10n.get.bind(l10n, str)]),
-    ]);
 
     if (AnnotationEditor._borderLineWidth !== -1) {
       return;
@@ -1003,7 +990,7 @@ class AnnotationEditor {
     if (this.#altText) {
       return;
     }
-    AltText.initialize(AnnotationEditor._l10nPromise);
+    AltText.initialize(AnnotationEditor._l10n);
     this.#altText = new AltText(this);
     if (this.#accessibilityData) {
       this.#altText.data = this.#accessibilityData;
