@@ -94,6 +94,14 @@ const copyImage = async (page, imagePath, number) => {
   await waitForImage(page, getEditorSelector(number));
 };
 
+async function waitForTranslation(page) {
+  return page.evaluate(async () => {
+    await new Promise(resolve => {
+      window.requestAnimationFrame(resolve);
+    });
+  });
+}
+
 const switchToStamp = switchToEditor.bind(null, "Stamp");
 
 describe("Stamp Editor", () => {
@@ -987,6 +995,7 @@ describe("Stamp Editor", () => {
         const buttonSelector = `${editorSelector} button.altText.new`;
         await page.waitForSelector(buttonSelector, { visible: true });
 
+        await waitForTranslation(page);
         // Check the text in the button.
         let text = await page.evaluate(
           sel => document.querySelector(sel).textContent,
@@ -1036,6 +1045,7 @@ describe("Stamp Editor", () => {
         await waitForSelectedEditor(page, editorSelector);
         await page.waitForSelector(buttonSelector, { visible: true });
 
+        await waitForTranslation(page);
         // Check the text in the button.
         text = await page.evaluate(
           sel => document.querySelector(sel).textContent,
@@ -1078,6 +1088,7 @@ describe("Stamp Editor", () => {
         await page.click("#newAltTextSave");
         await page.waitForSelector("#newAltTextDialog", { visible: false });
 
+        await waitForTranslation(page);
         // Check the text in the button.
         text = await page.evaluate(
           sel => document.querySelector(sel).firstChild.textContent,
