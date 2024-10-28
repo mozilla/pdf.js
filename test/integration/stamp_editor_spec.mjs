@@ -337,13 +337,14 @@ describe("Stamp Editor", () => {
         expect(tooltipText).toEqual("Hello World");
 
         // Now we change the alt-text and check that the tooltip is updated.
+        const longString = "a".repeat(512);
         await page.click(buttonSelector);
         await page.waitForSelector("#altTextDialog", { visible: true });
         await page.evaluate(sel => {
           document.querySelector(`${sel}`).value = "";
         }, textareaSelector);
         await page.click(textareaSelector);
-        await page.type(textareaSelector, "Dlrow Olleh");
+        await page.type(textareaSelector, longString);
         await page.click(saveButtonSelector);
         await page.waitForSelector(`${buttonSelector}.done`);
         await page.hover(buttonSelector);
@@ -352,7 +353,14 @@ describe("Stamp Editor", () => {
           sel => document.querySelector(`${sel}`).innerText,
           tooltipSelector
         );
-        expect(tooltipText).toEqual("Dlrow Olleh");
+        expect(tooltipText).toEqual(longString);
+        const dims = await page.evaluate(sel => {
+          const { width, height } = document
+            .querySelector(`${sel}`)
+            .getBoundingClientRect();
+          return { width, height };
+        }, tooltipSelector);
+        expect(dims.width / dims.height).toBeLessThan(2);
 
         // Now we just check that cancel didn't change anything.
         await page.click(buttonSelector);
@@ -371,8 +379,8 @@ describe("Stamp Editor", () => {
           sel => document.querySelector(`${sel}`).innerText,
           tooltipSelector
         );
-        // The tooltip should still be "Dlrow Olleh".
-        expect(tooltipText).toEqual("Dlrow Olleh");
+        // The tooltip should still be longString.
+        expect(tooltipText).toEqual(longString);
 
         // Now we switch to decorative.
         await page.click(buttonSelector);
@@ -402,7 +410,7 @@ describe("Stamp Editor", () => {
           sel => document.querySelector(`${sel}`).innerText,
           tooltipSelector
         );
-        expect(tooltipText).toEqual("Dlrow Olleh");
+        expect(tooltipText).toEqual(longString);
 
         // Now we remove the alt-text and check that the tooltip is removed.
         await page.click(buttonSelector);
