@@ -243,6 +243,12 @@ describe("Scripting", function () {
 
         value = await myeval(`util.scand(2, "4/15/07 3:14:15 am").toString()`);
         expect(new Date(value)).toEqual(date);
+
+        value = await myeval(`util.scand("mmddyyyy", "07/15/2007").toString()`);
+        expect(new Date(value)).toEqual(new Date("07/15/2007"));
+
+        value = await myeval(`util.scand("mmddyyyy", "07a15b2007").toString()`);
+        expect(new Date(value)).toEqual(new Date("07/15/2007"));
       });
     });
 
