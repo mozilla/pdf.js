@@ -25,7 +25,7 @@ const {
   TextLayer,
   XfaLayer,
 } = pdfjsLib;
-const { Outliner } = pdfjsTestingUtils;
+const { HighlightOutliner } = pdfjsTestingUtils;
 const { GenericL10n, parseQueryString, SimpleLinkService } = pdfjsViewer;
 
 const WAITING_TIME = 100; // ms
@@ -370,19 +370,19 @@ class Rasterize {
       }
       // We set the borderWidth to 0.001 to slighly increase the size of the
       // boxes so that they can be merged together.
-      const outliner = new Outliner(boxes, /* borderWidth = */ 0.001);
+      const outliner = new HighlightOutliner(boxes, /* borderWidth = */ 0.001);
       // We set the borderWidth to 0.0025 in order to have an outline which is
       // slightly bigger than the highlight itself.
       // We must add an inner margin to avoid to have a partial outline.
-      const outlinerForOutline = new Outliner(
+      const outlinerForOutline = new HighlightOutliner(
         boxes,
         /* borderWidth = */ 0.0025,
         /* innerMargin = */ 0.001
       );
       const drawLayer = new DrawLayer({ pageIndex: 0 });
       drawLayer.setParent(div);
-      drawLayer.highlight(outliner.getOutlines(), "orange", 0.4);
-      drawLayer.highlightOutline(outlinerForOutline.getOutlines());
+      drawLayer.draw(outliner.getOutlines(), "orange", 0.4);
+      drawLayer.drawOutline(outlinerForOutline.getOutlines());
 
       svg.append(foreignObject);
 
