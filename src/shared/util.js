@@ -1102,11 +1102,7 @@ function toHexUtil(arr) {
   if (Uint8Array.prototype.toHex) {
     return arr.toHex();
   }
-  const buf = [];
-  for (const num of arr) {
-    buf.push(num.toString(16).padStart(2, "0"));
-  }
-  return buf.join("");
+  return Array.from(arr, num => hexNumbers[num]).join("");
 }
 
 // TODO: Remove this once `Uint8Array.prototype.toBase64` is generally
