@@ -132,6 +132,8 @@ class DecodeStream extends BaseStream {
 
 class StreamsSequenceStream extends DecodeStream {
   constructor(streams, onError = null) {
+    streams = streams.filter(s => s instanceof BaseStream);
+
     let maybeLength = 0;
     for (const stream of streams) {
       maybeLength +=
