@@ -86,13 +86,11 @@ class DrawLayer {
     return clipPathId;
   }
 
-  highlight(outlines, color, opacity, isPathUpdatable = false) {
+  draw(outlines, color, opacity, isPathUpdatable = false) {
     const id = this.#id++;
     const root = this.#createSVG(outlines.box);
-    root.classList.add("highlight");
-    if (outlines.free) {
-      root.classList.add("free");
-    }
+    root.classList.add(...outlines.classNamesForDrawing);
+
     const defs = DrawLayer._svgFactory.createElement("defs");
     root.append(defs);
     const path = DrawLayer._svgFactory.createElement("path");
@@ -119,14 +117,14 @@ class DrawLayer {
     return { id, clipPathId: `url(#${clipPathId})` };
   }
 
-  highlightOutline(outlines) {
+  drawOutline(outlines) {
     // We cannot draw the outline directly in the SVG for highlights because
     // it composes with its parent with mix-blend-mode: multiply.
     // But the outline has a different mix-blend-mode, so we need to draw it in
     // its own SVG.
     const id = this.#id++;
     const root = this.#createSVG(outlines.box);
-    root.classList.add("highlightOutline");
+    root.classList.add(...outlines.classNamesForOutlining);
     const defs = DrawLayer._svgFactory.createElement("defs");
     root.append(defs);
     const path = DrawLayer._svgFactory.createElement("path");
@@ -137,8 +135,7 @@ class DrawLayer {
     path.setAttribute("vector-effect", "non-scaling-stroke");
 
     let maskId;
-    if (outlines.free) {
-      root.classList.add("free");
+    if (outlines.mustRemoveSelfIntersections) {
       const mask = DrawLayer._svgFactory.createElement("mask");
       defs.append(mask);
       maskId = `mask_p${this.pageIndex}_${id}`;
@@ -188,11 +185,6 @@ class DrawLayer {
     path.setAttribute("d", line.toSVGPath());
   }
 
-  removeFreeHighlight(id) {
-    this.remove(id);
-    this.#toUpdate.delete(id);
-  }
-
   updatePath(id, line) {
     this.#toUpdate.get(id).setAttribute("d", line.toSVGPath());
   }
@@ -230,6 +222,7 @@ class DrawLayer {
   }
 
   remove(id) {
+    this.#toUpdate.delete(id);
     if (this.#parent === null) {
       return;
     }
@@ -243,6 +236,7 @@ class DrawLayer {
       root.remove();
     }
     this.#mapping.clear();
+    this.#toUpdate.clear();
   }
 }
 

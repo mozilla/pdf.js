@@ -69,7 +69,7 @@ import { AnnotationLayer } from "./display/annotation_layer.js";
 import { ColorPicker } from "./display/editor/color_picker.js";
 import { DrawLayer } from "./display/draw_layer.js";
 import { GlobalWorkerOptions } from "./display/worker_options.js";
-import { Outliner } from "./display/editor/outliner.js";
+import { HighlightOutliner } from "./display/editor/drawers/highlight.js";
 import { TextLayer } from "./display/text_layer.js";
 import { XfaLayer } from "./display/xfa_layer.js";
 
@@ -82,7 +82,7 @@ const pdfjsBuild =
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
   globalThis.pdfjsTestingUtils = {
-    Outliner,
+    HighlightOutliner,
   };
 }
 
