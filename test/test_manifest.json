@@ -2058,6 +2058,15 @@
     "type": "eq"
   },
   {
+    "id": "issue18973",
+    "file": "pdfs/issue18973.pdf",
+    "md5": "b9bbd312269862bf39bb2a31023a9d02",
+    "link": true,
+    "rounds": 1,
+    "firstPage": 45,
+    "type": "eq"
+  },
+  {
     "id": "issue9262",
     "file": "pdfs/issue9262_reduced.pdf",
     "md5": "5347ce2d7b3866625c22e115fd90e0de",
