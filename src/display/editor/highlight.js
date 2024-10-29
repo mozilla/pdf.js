@@ -20,7 +20,10 @@ import {
   Util,
 } from "../../shared/util.js";
 import { bindEvents, KeyboardManager } from "./tools.js";
-import { FreeOutliner, Outliner } from "./outliner.js";
+import {
+  FreeHighlightOutliner,
+  HighlightOutliner,
+} from "./drawers/highlight.js";
 import {
   HighlightAnnotationElement,
   InkAnnotationElement,
@@ -149,7 +152,10 @@ class HighlightEditor extends AnnotationEditor {
   }
 
   #createOutlines() {
-    const outliner = new Outliner(this.#boxes, /* borderWidth = */ 0.001);
+    const outliner = new HighlightOutliner(
+      this.#boxes,
+      /* borderWidth = */ 0.001
+    );
     this.#highlightOutlines = outliner.getOutlines();
     ({
       x: this.x,
@@ -158,7 +164,7 @@ class HighlightEditor extends AnnotationEditor {
       height: this.height,
     } = this.#highlightOutlines.box);
 
-    const outlinerForOutline = new Outliner(
+    const outlinerForOutline = new HighlightOutliner(
       this.#boxes,
       /* borderWidth = */ 0.0025,
       /* innerMargin = */ 0.001,
@@ -190,9 +196,7 @@ class HighlightEditor extends AnnotationEditor {
       // We need to redraw the highlight because we change the coordinates to be
       // in the box coordinate system.
       this.parent.drawLayer.finalizeLine(highlightId, highlightOutlines);
-      this.#outlineId = this.parent.drawLayer.highlightOutline(
-        this.#focusOutlines
-      );
+      this.#outlineId = this.parent.drawLayer.drawOutline(this.#focusOutlines);
     } else if (this.parent) {
       const angle = this.parent.viewport.rotation;
       this.parent.drawLayer.updateLine(this.#id, highlightOutlines);
@@ -498,13 +502,12 @@ class HighlightEditor extends AnnotationEditor {
     if (this.#id !== null) {
       return;
     }
-    ({ id: this.#id, clipPathId: this.#clipPathId } =
-      parent.drawLayer.highlight(
-        this.#highlightOutlines,
-        this.color,
-        this.#opacity
-      ));
-    this.#outlineId = parent.drawLayer.highlightOutline(this.#focusOutlines);
+    ({ id: this.#id, clipPathId: this.#clipPathId } = parent.drawLayer.draw(
+      this.#highlightOutlines,
+      this.color,
+      this.#opacity
+    ));
+    this.#outlineId = parent.drawLayer.drawOutline(this.#focusOutlines);
     if (this.#highlightDiv) {
       this.#highlightDiv.style.clipPath = this.#clipPathId;
     }
@@ -742,7 +745,7 @@ class HighlightEditor extends AnnotationEditor {
       this.#highlightMove.bind(this, parent),
       { signal }
     );
-    this._freeHighlight = new FreeOutliner(
+    this._freeHighlight = new FreeHighlightOutliner(
       { x, y },
       [layerX, layerY, parentWidth, parentHeight],
       parent.scale,
@@ -751,7 +754,7 @@ class HighlightEditor extends AnnotationEditor {
       /* innerMargin = */ 0.001
     );
     ({ id: this._freeHighlightId, clipPathId: this._freeHighlightClipId } =
-      parent.drawLayer.highlight(
+      parent.drawLayer.draw(
         this._freeHighlight,
         this._defaultColor,
         this._defaultOpacity,
@@ -775,7 +778,7 @@ class HighlightEditor extends AnnotationEditor {
         methodOfCreation: "main_toolbar",
       });
     } else {
-      parent.drawLayer.removeFreeHighlight(this._freeHighlightId);
+      parent.drawLayer.remove(this._freeHighlightId);
     }
     this._freeHighlightId = -1;
     this._freeHighlight = null;
@@ -869,7 +872,7 @@ class HighlightEditor extends AnnotationEditor {
         x: points[0] - pageX,
         y: pageHeight - (points[1] - pageY),
       };
-      const outliner = new FreeOutliner(
+      const outliner = new FreeHighlightOutliner(
         point,
         [0, 0, pageWidth, pageHeight],
         1,
@@ -882,7 +885,7 @@ class HighlightEditor extends AnnotationEditor {
         point.y = pageHeight - (points[i + 1] - pageY);
         outliner.add(point);
       }
-      const { id, clipPathId } = parent.drawLayer.highlight(
+      const { id, clipPathId } = parent.drawLayer.draw(
         outliner,
         editor.color,
         editor._defaultOpacity,
