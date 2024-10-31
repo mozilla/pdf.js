@@ -1090,10 +1090,11 @@ class PDFFindController {
     const offset = this._offset;
     const numMatches = this.#getMatchCount(matches, highlights);
     const previous = this.#state.findPrevious;
+    const firstMatchIdx = this.#state.jumpToFirstHighlight ? 0 : -1;
 
     if (numMatches) {
       // There were matches for the page, so initialize `matchIdx`.
-      offset.matchIdx = previous ? numMatches - 1 : 0;
+      offset.matchIdx = previous ? numMatches - 1 : firstMatchIdx;
       this.#updateMatch(/* found = */ true);
       return true;
     }
