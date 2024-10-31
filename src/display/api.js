@@ -2916,29 +2916,31 @@ class WorkerTransport {
       });
     });
 
-    messageHandler.on("FetchBuiltInCMap", data => {
+    messageHandler.on("FetchBuiltInCMap", async data => {
+      if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+        throw new Error("Not implemented: FetchBuiltInCMap");
+      }
       if (this.destroyed) {
-        return Promise.reject(new Error("Worker was destroyed."));
+        throw new Error("Worker was destroyed.");
       }
       if (!this.cMapReaderFactory) {
-        return Promise.reject(
-          new Error(
-            "CMapReaderFactory not initialized, see the `useWorkerFetch` parameter."
-          )
+        throw new Error(
+          "CMapReaderFactory not initialized, see the `useWorkerFetch` parameter."
         );
       }
       return this.cMapReaderFactory.fetch(data);
     });
 
-    messageHandler.on("FetchStandardFontData", data => {
+    messageHandler.on("FetchStandardFontData", async data => {
+      if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+        throw new Error("Not implemented: FetchStandardFontData");
+      }
       if (this.destroyed) {
-        return Promise.reject(new Error("Worker was destroyed."));
+        throw new Error("Worker was destroyed.");
       }
       if (!this.standardFontDataFactory) {
-        return Promise.reject(
-          new Error(
-            "StandardFontDataFactory not initialized, see the `useWorkerFetch` parameter."
-          )
+        throw new Error(
+          "StandardFontDataFactory not initialized, see the `useWorkerFetch` parameter."
         );
       }
       return this.standardFontDataFactory.fetch(data);
