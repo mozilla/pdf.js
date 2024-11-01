@@ -112,8 +112,14 @@ class StructTreeLayerBuilder {
   }
 
   async getAriaAttributes(annotationId) {
-    await this.render();
-    return this.#elementAttributes.get(annotationId);
+    try {
+      await this.render();
+      return this.#elementAttributes.get(annotationId);
+    } catch {
+      // If the structTree cannot be fetched, parsed, and/or rendered,
+      // ensure that e.g. the AnnotationLayer won't break completely.
+    }
+    return null;
   }
 
   hide() {
