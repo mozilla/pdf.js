@@ -10,6 +10,10 @@
     "moduleResolution": "node",
     "paths": {
       "pdfjs-lib": ["./src/pdf"],
+      "display-cmap_reader_factory": ["./src/display/cmap_reader_factory"],
+      "display-standard_fontdata_factory": [
+        "./src/display/standard_fontdata_factory"
+      ],
       "display-fetch_stream": ["./src/display/fetch_stream"],
       "display-network": ["./src/display/network"],
       "display-node_stream": ["./src/display/node_stream"],
