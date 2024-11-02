@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-import { bytesToString, isNodeJS } from "../../src/shared/util.js";
 import {
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
   isValidFetchUrl,
   PDFDateString,
 } from "../../src/display/display_utils.js";
+import { bytesToString } from "../../src/shared/util.js";
 
 describe("display_utils", function () {
   describe("getFilenameFromUrl", function () {
@@ -168,9 +168,6 @@ describe("display_utils", function () {
     });
 
     it('gets PDF filename from query string appended to "blob:" URL', function () {
-      if (isNodeJS) {
-        pending("Blob in not supported in Node.js.");
-      }
       const typedArray = new Uint8Array([1, 2, 3, 4, 5]);
       const blobUrl = URL.createObjectURL(
         new Blob([typedArray], { type: "application/pdf" })
