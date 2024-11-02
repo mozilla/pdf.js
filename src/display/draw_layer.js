@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { DOMSVGFactory } from "./display_utils.js";
+import { DOMSVGFactory } from "./svg_factory.js";
 import { shadow } from "../shared/util.js";
 
 /**

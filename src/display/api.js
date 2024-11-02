@@ -45,10 +45,6 @@ import {
 } from "./annotation_storage.js";
 import {
   deprecated,
-  DOMCanvasFactory,
-  DOMCMapReaderFactory,
-  DOMFilterFactory,
-  DOMStandardFontDataFactory,
   isDataScheme,
   isValidFetchUrl,
   PageViewport,
@@ -64,6 +60,10 @@ import {
   NodeStandardFontDataFactory,
 } from "display-node_utils";
 import { CanvasGraphics } from "./canvas.js";
+import { DOMCanvasFactory } from "./canvas_factory.js";
+import { DOMCMapReaderFactory } from "display-cmap_reader_factory";
+import { DOMFilterFactory } from "./filter_factory.js";
+import { DOMStandardFontDataFactory } from "display-standard_fontdata_factory";
 import { GlobalWorkerOptions } from "./worker_options.js";
 import { MessageHandler } from "../shared/message_handler.js";
 import { Metadata } from "./metadata.js";
