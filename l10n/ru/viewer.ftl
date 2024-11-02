@@ -345,6 +345,10 @@ pdfjs-editor-stamp-add-image-button-label = Добавить изображен�
 pdfjs-editor-free-highlight-thickness-input = Толщина
 pdfjs-editor-free-highlight-thickness-title =
     .title = Изменить толщину при выделении элементов, кроме текста
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Текстовый редактор
+    .default-content = Начните ввод...
 pdfjs-free-text =
     .aria-label = Текстовый редактор
 pdfjs-free-text-default-content = Начните вводить…
