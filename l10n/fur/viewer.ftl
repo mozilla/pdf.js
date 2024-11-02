@@ -343,6 +343,10 @@ pdfjs-editor-stamp-add-image-button-label = Zonte imagjin
 pdfjs-editor-free-highlight-thickness-input = Spessôr
 pdfjs-editor-free-highlight-thickness-title =
     .title = Modifiche il spessôr de selezion pai elements che no son testuâi
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Editôr di test
+    .default-content = Scomence a scrivi…
 pdfjs-free-text =
     .aria-label = Editôr di test
 pdfjs-free-text-default-content = Scomence a scrivi…

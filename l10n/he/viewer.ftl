@@ -343,6 +343,10 @@ pdfjs-editor-stamp-add-image-button-label = הוספת תמונה
 pdfjs-editor-free-highlight-thickness-input = עובי
 pdfjs-editor-free-highlight-thickness-title =
     .title = שינוי עובי בעת הדגשת פריטים שאינם טקסט
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = עורך טקסט
+    .default-content = נא להתחיל להקליד…
 pdfjs-free-text =
     .aria-label = עורך טקסט
 pdfjs-free-text-default-content = להתחיל להקליד…

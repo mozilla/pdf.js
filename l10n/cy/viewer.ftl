@@ -351,6 +351,10 @@ pdfjs-editor-stamp-add-image-button-label = Ychwanegu delwedd
 pdfjs-editor-free-highlight-thickness-input = Trwch
 pdfjs-editor-free-highlight-thickness-title =
     .title = Newid trwch wrth amlygu eitemau heblaw testun
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Golygydd Testun
+    .default-content = Cychwyn teipio…
 pdfjs-free-text =
     .aria-label = Golygydd Testun
 pdfjs-free-text-default-content = Cychwyn teipio…

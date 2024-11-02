@@ -335,6 +335,10 @@ pdfjs-editor-stamp-add-image-button-label = 新增圖片
 pdfjs-editor-free-highlight-thickness-input = 線條粗細
 pdfjs-editor-free-highlight-thickness-title =
     .title = 更改強調文字以外的項目時的線條粗細
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = 文字編輯器
+    .default-content = 請打字…
 pdfjs-free-text =
     .aria-label = 文本編輯器
 pdfjs-free-text-default-content = 在此打字…

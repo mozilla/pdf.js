@@ -335,6 +335,10 @@ pdfjs-editor-stamp-add-image-button-label = Thêm hình ảnh
 pdfjs-editor-free-highlight-thickness-input = Độ dày
 pdfjs-editor-free-highlight-thickness-title =
     .title = Thay đổi độ dày khi đánh dấu các mục không phải là văn bản
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Trình chỉnh sửa văn bản
+    .default-content = Bắt đầu nhập…
 pdfjs-free-text =
     .aria-label = Trình sửa văn bản
 pdfjs-free-text-default-content = Bắt đầu nhập…
