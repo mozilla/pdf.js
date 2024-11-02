@@ -41,7 +41,6 @@ import {
   version,
 } from "../../src/display/api.js";
 import {
-  DOMSVGFactory,
   fetchData,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
@@ -59,6 +58,7 @@ import { AnnotationEditorLayer } from "../../src/display/editor/annotation_edito
 import { AnnotationEditorUIManager } from "../../src/display/editor/tools.js";
 import { AnnotationLayer } from "../../src/display/annotation_layer.js";
 import { ColorPicker } from "../../src/display/editor/color_picker.js";
+import { DOMSVGFactory } from "../../src/display/svg_factory.js";
 import { DrawLayer } from "../../src/display/draw_layer.js";
 import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
 import { TextLayer } from "../../src/display/text_layer.js";
