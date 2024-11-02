@@ -1149,6 +1149,7 @@ export {
   getModificationDate,
   getUuid,
   getVerbosityLevel,
+  hexNumbers,
   IDENTITY_MATRIX,
   ImageKind,
   info,
