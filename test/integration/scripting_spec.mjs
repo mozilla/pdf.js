@@ -1229,59 +1229,43 @@ describe("Interaction", () => {
 
           await typeAndWaitForSandbox(page, getSelector("27R"), "Hello");
           await page.waitForFunction(
-            `${getQuerySelector("27R")}.value !== "Hello"`
+            `${getQuerySelector("27R")}.value === "HELLO"`
           );
-
-          let text = await page.$eval(getSelector("27R"), el => el.value);
-          expect(text).withContext(`In ${browserName}`).toEqual("HELLO");
 
           await typeAndWaitForSandbox(page, getSelector("27R"), " world");
           await page.waitForFunction(
-            `${getQuerySelector("27R")}.value !== "HELLO world"`
+            `${getQuerySelector("27R")}.value === "HELLO WORLD"`
           );
 
-          text = await page.$eval(getSelector("27R"), el => el.value);
-          expect(text).withContext(`In ${browserName}`).toEqual("HELLO WORLD");
-
           await page.keyboard.press("Backspace");
+          await waitForSandboxTrip(page);
           await page.keyboard.press("Backspace");
-
+          await waitForSandboxTrip(page);
           await page.waitForFunction(
-            `${getQuerySelector("27R")}.value !== "HELLO WORLD"`
+            `${getQuerySelector("27R")}.value === "HELLO WOR"`
           );
-
-          text = await page.$eval(getSelector("27R"), el => el.value);
-          expect(text).withContext(`In ${browserName}`).toEqual("HELLO WOR");
 
           await typeAndWaitForSandbox(page, getSelector("27R"), "12.dL");
-
           await page.waitForFunction(
-            `${getQuerySelector("27R")}.value !== "HELLO WOR"`
+            `${getQuerySelector("27R")}.value === "HELLO WORDL"`
           );
-
-          text = await page.$eval(getSelector("27R"), el => el.value);
-          expect(text).withContext(`In ${browserName}`).toEqual("HELLO WORDL");
 
           await typeAndWaitForSandbox(page, getSelector("27R"), " ");
-
           await kbDeleteLastWord(page);
-
+          await waitForSandboxTrip(page);
           await page.waitForFunction(
-            `${getQuerySelector("27R")}.value !== "HELLO WORDL "`
+            `${getQuerySelector("27R")}.value === "HELLO "`
           );
-
-          text = await page.$eval(getSelector("27R"), el => el.value);
-          expect(text).withContext(`In ${browserName}`).toEqual("HELLO ");
 
           await page.$eval(getSelector("27R"), el => {
             // Select LL
             el.selectionStart = 2;
             el.selectionEnd = 4;
           });
-
-          await page.keyboard.press("a");
-          text = await page.$eval(getSelector("27R"), el => el.value);
-          expect(text).withContext(`In ${browserName}`).toEqual("HEAO ");
+          await typeAndWaitForSandbox(page, getSelector("27R"), "a");
+          await page.waitForFunction(
+            `${getQuerySelector("27R")}.value === "HEAO "`
+          );
         })
       );
     });
