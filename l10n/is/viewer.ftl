@@ -343,6 +343,10 @@ pdfjs-editor-stamp-add-image-button-label = Bæta við mynd
 pdfjs-editor-free-highlight-thickness-input = Þykkt
 pdfjs-editor-free-highlight-thickness-title =
     .title = Breyta þykkt við áherslulitun annarra atriða en texta
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Textaritill
+    .default-content = Byrjaðu að skrifa…
 pdfjs-free-text =
     .aria-label = Textaritill
 pdfjs-free-text-default-content = Byrjaðu að skrifa…

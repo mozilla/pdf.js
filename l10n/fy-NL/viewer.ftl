@@ -343,6 +343,10 @@ pdfjs-editor-stamp-add-image-button-label = Ofbylding tafoegje
 pdfjs-editor-free-highlight-thickness-input = Tsjokte
 pdfjs-editor-free-highlight-thickness-title =
     .title = Tsjokte wizigje by aksintuearring fan oare items as tekst
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Tekstbewurker
+    .default-content = Start mei typen…
 pdfjs-free-text =
     .aria-label = Tekstbewurker
 pdfjs-free-text-default-content = Begjin mei typen…

@@ -339,6 +339,10 @@ pdfjs-editor-stamp-add-image-button-label = Ajouter une image
 pdfjs-editor-free-highlight-thickness-input = Épaisseur
 pdfjs-editor-free-highlight-thickness-title =
     .title = Modifier l’épaisseur pour le surlignage d’éléments non textuels
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Éditeur de texte
+    .default-content = Commencez à écrire…
 pdfjs-free-text =
     .aria-label = Éditeur de texte
 pdfjs-free-text-default-content = Commencer à écrire…
