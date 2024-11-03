@@ -343,6 +343,10 @@ pdfjs-editor-stamp-add-image-button-label = Adder imagine
 pdfjs-editor-free-highlight-thickness-input = Spissor
 pdfjs-editor-free-highlight-thickness-title =
     .title = Cambiar spissor evidentiante elementos differente de texto
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Editor de texto
+    .default-content = Initiar a inserer…
 pdfjs-free-text =
     .aria-label = Editor de texto
 pdfjs-free-text-default-content = Comenciar a scriber…

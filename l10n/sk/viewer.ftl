@@ -347,6 +347,10 @@ pdfjs-editor-stamp-add-image-button-label = Pridať obrázok
 pdfjs-editor-free-highlight-thickness-input = Hrúbka
 pdfjs-editor-free-highlight-thickness-title =
     .title = Zmeňte hrúbku pre zvýrazňovanie iných položiek ako textu
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Textový editor
+    .default-content = Začnite písať…
 pdfjs-free-text =
     .aria-label = Textový editor
 pdfjs-free-text-default-content = Začnite písať…

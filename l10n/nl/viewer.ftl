@@ -343,6 +343,10 @@ pdfjs-editor-stamp-add-image-button-label = Afbeelding toevoegen
 pdfjs-editor-free-highlight-thickness-input = Dikte
 pdfjs-editor-free-highlight-thickness-title =
     .title = Dikte wijzigen bij accentuering van andere items dan tekst
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Tekstbewerker
+    .default-content = Start met typen…
 pdfjs-free-text =
     .aria-label = Tekstbewerker
 pdfjs-free-text-default-content = Begin met typen…

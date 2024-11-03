@@ -335,6 +335,10 @@ pdfjs-editor-stamp-add-image-button-label = 添加图像
 pdfjs-editor-free-highlight-thickness-input = 粗细
 pdfjs-editor-free-highlight-thickness-title =
     .title = 更改高亮粗细（用于文本以外项目）
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = 文本编辑器
+    .default-content = 在此键入…
 pdfjs-free-text =
     .aria-label = 文本编辑器
 pdfjs-free-text-default-content = 开始输入…

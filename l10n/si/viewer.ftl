@@ -230,6 +230,9 @@ pdfjs-editor-free-text-button-label = පෙළ
 pdfjs-editor-ink-button =
     .title = අඳින්න
 pdfjs-editor-ink-button-label = අඳින්න
+pdfjs-editor-stamp-button =
+    .title = රූප සංස්කරණය හෝ එක් කරන්න
+pdfjs-editor-stamp-button-label = රූප සංස්කරණය හෝ එක් කරන්න
 
 ## Remove button for the various kind of editor.
 
@@ -247,6 +250,7 @@ pdfjs-free-text-default-content = ලිවීීම අරඹන්න…
 
 ## Alt-text dialog
 
+pdfjs-editor-alt-text-mark-decorative-description = මෙය දාර හෝ දිය සලකුණු වැනි අලංකාර රූප සඳහා භාවිතා වේ.
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
