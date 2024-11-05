@@ -623,7 +623,7 @@ describe("api", function () {
         expect(false).toEqual(true);
       } catch (reason) {
         expect(reason instanceof InvalidPDFException).toEqual(true);
-        expect(reason.message).toEqual("Invalid PDF structure.");
+        expect(reason.message).toEqual("Invalid Root reference.");
       }
 
       await loadingTask.destroy();

@@ -680,6 +680,31 @@ class XRef {
     if (this.topDict) {
       return this.topDict;
     }
+
+    // When no trailer dictionary candidate exists, try picking the first
+    // dictionary that contains a /Root entry (fixes issue18986.pdf).
+    if (!trailerDicts.length) {
+      for (const [num, entry] of this.entries.entries()) {
+        if (!entry) {
+          continue;
+        }
+        const ref = Ref.get(num, entry.gen);
+        let obj;
+
+        try {
+          obj = this.fetch(ref);
+        } catch {
+          continue;
+        }
+        if (obj instanceof BaseStream) {
+          obj = obj.dict;
+        }
+        if (obj instanceof Dict && obj.has("Root")) {
+          return obj;
+        }
+      }
+    }
+
     // nothing helps
     throw new InvalidPDFException("Invalid PDF structure.");
   }
