@@ -273,15 +273,17 @@ class PDFNetworkStreamFullRequestReader {
     const fullRequestXhrId = this._fullRequestId;
     const fullRequestXhr = this._manager.getRequestXhr(fullRequestXhrId);
 
+    const rawResponseHeaders = fullRequestXhr.getAllResponseHeaders();
     const responseHeaders = new Headers(
-      fullRequestXhr
-        .getAllResponseHeaders()
-        .trim()
-        .split(/[\r\n]+/)
-        .map(x => {
-          const [key, ...val] = x.split(": ");
-          return [key, val.join(": ")];
-        })
+      rawResponseHeaders
+        ? rawResponseHeaders
+            .trim()
+            .split(/[\r\n]+/)
+            .map(x => {
+              const [key, ...val] = x.split(": ");
+              return [key, val.join(": ")];
+            })
+        : []
     );
 
     const { allowRangeRequests, suggestedLength } =
