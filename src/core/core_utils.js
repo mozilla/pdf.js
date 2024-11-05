@@ -166,14 +166,13 @@ function toRomanNumerals(number, lowerCase = false) {
     "The number should be a positive integer."
   );
   const romanBuf = [];
-  let pos;
   // Thousands
   while (number >= 1000) {
     number -= 1000;
     romanBuf.push("M");
   }
   // Hundreds
-  pos = (number / 100) | 0;
+  let pos = (number / 100) | 0;
   number %= 100;
   romanBuf.push(ROMAN_NUMBER_MAP[pos]);
   // Tens
@@ -191,10 +190,7 @@ function toRomanNumerals(number, lowerCase = false) {
 // native function in the sense that it returns the ceiling value and that it
 // returns 0 instead of `Infinity`/`NaN` for `x` values smaller than/equal to 0.
 function log2(x) {
-  if (x <= 0) {
-    return 0;
-  }
-  return Math.ceil(Math.log2(x));
+  return x > 0 ? Math.ceil(Math.log2(x)) : 0;
 }
 
 function readInt8(data, offset) {
@@ -573,13 +569,10 @@ function recoverJsURL(str) {
 
   const jsUrl = regex.exec(str);
   if (jsUrl?.[2]) {
-    const url = jsUrl[2];
-    let newWindow = false;
-
-    if (jsUrl[3] === "true" && jsUrl[1] === "app.launchURL") {
-      newWindow = true;
-    }
-    return { url, newWindow };
+    return {
+      url: jsUrl[2],
+      newWindow: jsUrl[1] === "app.launchURL" && jsUrl[3] === "true",
+    };
   }
 
   return null;
