@@ -4728,6 +4728,13 @@
     "type": "eq"
   },
   {
+    "id": "issue18986",
+    "file": "pdfs/issue18986.pdf",
+    "md5": "e147084fabd9677366f6ae3586dd311b",
+    "rounds": 1,
+    "type": "load"
+  },
+  {
     "id": "issue6652",
     "file": "pdfs/issue6652.pdf",
     "md5": "1c8e2953f84623bc773eb720c87a9331",
