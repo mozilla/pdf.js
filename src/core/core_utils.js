@@ -165,25 +165,13 @@ function toRomanNumerals(number, lowerCase = false) {
     Number.isInteger(number) && number > 0,
     "The number should be a positive integer."
   );
-  const romanBuf = [];
-  // Thousands
-  while (number >= 1000) {
-    number -= 1000;
-    romanBuf.push("M");
-  }
-  // Hundreds
-  let pos = (number / 100) | 0;
-  number %= 100;
-  romanBuf.push(ROMAN_NUMBER_MAP[pos]);
-  // Tens
-  pos = (number / 10) | 0;
-  number %= 10;
-  romanBuf.push(ROMAN_NUMBER_MAP[10 + pos]);
-  // Ones
-  romanBuf.push(ROMAN_NUMBER_MAP[20 + number]); // eslint-disable-line unicorn/no-array-push-push
 
-  const romanStr = romanBuf.join("");
-  return lowerCase ? romanStr.toLowerCase() : romanStr;
+  const roman =
+    "M".repeat((number / 1000) | 0) +
+    ROMAN_NUMBER_MAP[((number % 1000) / 100) | 0] +
+    ROMAN_NUMBER_MAP[10 + (((number % 100) / 10) | 0)] +
+    ROMAN_NUMBER_MAP[20 + (number % 10)];
+  return lowerCase ? roman.toLowerCase() : roman;
 }
 
 // Calculate the base 2 logarithm of the number `x`. This differs from the
