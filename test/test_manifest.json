@@ -10757,5 +10757,15 @@
     "md5": "73e8cd32bd063e42fcc4b270c78549b1",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "bug1928458",
+    "file": "pdfs/bug1928458.pdf",
+    "md5": "f116e876ab8c4733a9fd9c802bbd5f39",
+    "rounds": 1,
+    "firstPage": 1,
+    "lastPage": 1,
+    "link": true,
+    "type": "eq"
   }
 ]

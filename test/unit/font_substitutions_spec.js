@@ -416,4 +416,29 @@ describe("getFontSubstitution", function () {
       /^"ArialBlack",g_d(\d+)_sf(\d+),sans-serif$/
     );
   });
+
+  it("should substitute ArialMT with Arial", () => {
+    const fontName = "ArialMT";
+    const fontSubstitution = getFontSubstitution(
+      new Map(),
+      idFactory,
+      localFontPath,
+      fontName,
+      undefined,
+      "TrueType"
+    );
+    console.log(fontSubstitution);
+    expect(fontSubstitution).toEqual(
+      jasmine.objectContaining({
+        guessFallback: true,
+        baseFontName: "Arial",
+        src: "local(Arial)",
+        style: {
+          style: "normal",
+          weight: "normal",
+        },
+      })
+    );
+    expect(fontSubstitution.css).toMatch(/^"Arial",g_d(\d+)_sf(\d+)$/);
+  });
 });

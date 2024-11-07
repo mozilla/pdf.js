@@ -307,7 +307,12 @@ const substitutionMap = new Map([
   ],
 ]);
 
-const fontAliases = new Map([["Arial-Black", "ArialBlack"]]);
+const fontAliases = new Map([
+  ["Arial-Black", "ArialBlack"],
+  // Some fonts can have a bad postscript name ! (see bug 1928458) and it's very
+  // unlikely that we want to find a font called ArialMT which is not Arial.
+  ["ArialMT", "Arial"],
+]);
 
 function getStyleToAppend(style) {
   switch (style) {
@@ -395,7 +400,12 @@ function generateFont(
   if (local) {
     const extra = append ? ` ${append}` : "";
     for (const name of local) {
-      src.push(`local(${name}${extra})`);
+      const localFont = `local(${name}${extra})`;
+      if (src[0] !== localFont) {
+        // The first local(...) is for the font we've in the pdf: no need to
+        // duplicate it.
+        src.push(localFont);
+      }
     }
   }
   if (alias) {
