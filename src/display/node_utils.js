@@ -31,50 +31,29 @@ if (
   !PDFJSDev.test("SKIP_BABEL") &&
   isNodeJS
 ) {
-  let canvas, path2d;
+  let canvas;
   try {
     const require = process
       .getBuiltinModule("module")
       .createRequire(import.meta.url);
 
     try {
-      canvas = require("canvas");
+      canvas = require("@napi-rs/canvas");
     } catch (ex) {
-      warn(`Cannot load "canvas" package: "${ex}".`);
-    }
-    try {
-      path2d = require("path2d");
-    } catch (ex) {
-      warn(`Cannot load "path2d" package: "${ex}".`);
+      warn(`Cannot load "@napi-rs/canvas" package: "${ex}".`);
     }
   } catch {}
 
   if (!globalThis.DOMMatrix) {
-    const DOMMatrix = canvas?.DOMMatrix;
-
-    if (DOMMatrix) {
-      globalThis.DOMMatrix = DOMMatrix;
+    if (canvas?.DOMMatrix) {
+      globalThis.DOMMatrix = canvas.DOMMatrix;
     } else {
       warn("Cannot polyfill `DOMMatrix`, rendering may be broken.");
     }
   }
   if (!globalThis.Path2D) {
-    const CanvasRenderingContext2D = canvas?.CanvasRenderingContext2D;
-    const applyPath2DToCanvasRenderingContext =
-      path2d?.applyPath2DToCanvasRenderingContext;
-    const Path2D = path2d?.Path2D;
-
-    if (
-      CanvasRenderingContext2D &&
-      applyPath2DToCanvasRenderingContext &&
-      Path2D
-    ) {
-      try {
-        applyPath2DToCanvasRenderingContext(CanvasRenderingContext2D);
-      } catch (ex) {
-        warn(`applyPath2DToCanvasRenderingContext: "${ex}".`);
-      }
-      globalThis.Path2D = Path2D;
+    if (canvas?.Path2D) {
+      globalThis.Path2D = canvas.Path2D;
     } else {
       warn("Cannot polyfill `Path2D`, rendering may be broken.");
     }
@@ -97,7 +76,7 @@ class NodeCanvasFactory extends BaseCanvasFactory {
     const require = process
       .getBuiltinModule("module")
       .createRequire(import.meta.url);
-    const canvas = require("canvas");
+    const canvas = require("@napi-rs/canvas");
     return canvas.createCanvas(width, height);
   }
 }

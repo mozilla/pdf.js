@@ -57,7 +57,7 @@ try {
   const renderTask = page.render(renderContext);
   await renderTask.promise;
   // Convert the canvas to an image buffer.
-  const image = canvasAndContext.canvas.toBuffer();
+  const image = canvasAndContext.canvas.toBuffer("image/png");
   fs.writeFile("output.png", image, function (error) {
     if (error) {
       console.error("Error: " + error);

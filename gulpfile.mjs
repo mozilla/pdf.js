@@ -2256,8 +2256,7 @@ function packageJson() {
     bugs: DIST_BUGS_URL,
     license: DIST_LICENSE,
     optionalDependencies: {
-      canvas: "^3.0.0-rc2",
-      path2d: "^0.2.1",
+      "@napi-rs/canvas": "^0.1.60",
     },
     browser: {
       canvas: false,
