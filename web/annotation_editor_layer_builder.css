@@ -309,6 +309,10 @@
       gap: 0;
       height: 100%;
 
+      button {
+        padding: 0;
+      }
+
       .divider {
         width: 0;
         height: calc(
