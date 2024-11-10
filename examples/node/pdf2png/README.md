@@ -9,9 +9,7 @@ Install the dependencies and build the PDF.js library:
     $ npm install
     $ gulp dist-install
 
-Install the Node canvas library and run the example to convert the first page of a
-PDF file to a PNG image:
+Run the example to convert the first page of a PDF file to a PNG image:
 
-    $ npm install canvas
     $ cd examples/node/pdf2png
-    $ node pdf2png.js
+    $ node pdf2png.mjs
