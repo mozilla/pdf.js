@@ -74,7 +74,6 @@ import { writeObject } from "./writer.js";
 import { XFAFactory } from "./xfa/factory.js";
 import { XRef } from "./xref.js";
 
-const DEFAULT_USER_UNIT = 1.0;
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
 class Page {
@@ -195,11 +194,12 @@ class Page {
   }
 
   get userUnit() {
-    let obj = this.pageDict.get("UserUnit");
-    if (typeof obj !== "number" || obj <= 0) {
-      obj = DEFAULT_USER_UNIT;
-    }
-    return shadow(this, "userUnit", obj);
+    const obj = this.pageDict.get("UserUnit");
+    return shadow(
+      this,
+      "userUnit",
+      typeof obj === "number" && obj > 0 ? obj : 1.0
+    );
   }
 
   get view() {
