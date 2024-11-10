@@ -1455,7 +1455,16 @@ gulp.task(
     function createChromium() {
       console.log();
       console.log("### Building Chromium extension");
-      const defines = { ...DEFINES, CHROME: true, SKIP_BABEL: false };
+      const defines = {
+        ...DEFINES,
+        CHROME: true,
+        SKIP_BABEL: false,
+        FILE_ACCESS_LABELS: JSON.parse(
+          fs
+            .readFileSync("web/chrome-i18n-allow-access-to-file-urls.json")
+            .toString()
+        ),
+      };
 
       const CHROME_BUILD_DIR = BUILD_DIR + "/chromium/",
         CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + "/content/";
@@ -1650,7 +1659,12 @@ gulp.task(
       await parseDefaultPreferences("lib/");
     },
     function createLib() {
-      const defines = { ...DEFINES, GENERIC: true, LIB: true };
+      const defines = {
+        ...DEFINES,
+        GENERIC: true,
+        LIB: true,
+        FILE_ACCESS_LABELS: {},
+      };
 
       return ordered([
         buildLib(defines, "build/lib/"),
@@ -1685,6 +1699,7 @@ gulp.task(
         GENERIC: true,
         LIB: true,
         SKIP_BABEL: false,
+        FILE_ACCESS_LABELS: {},
       };
 
       return ordered([

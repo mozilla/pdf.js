@@ -195,9 +195,8 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
     // Use Chrome's definition of UI language instead of PDF.js's #lang=...,
     // because the shown string should match the UI at chrome://extensions.
     // These strings are from chrome/app/resources/generated_resources_*.xtb.
-    const i18nFileAccessLabel = PDFJSDev.json(
-      "$ROOT/web/chrome-i18n-allow-access-to-file-urls.json"
-    )[chrome.i18n.getUILanguage?.()];
+    const i18nFileAccessLabel =
+      PDFJSDev.eval("FILE_ACCESS_LABELS")[chrome.i18n.getUILanguage?.()];
 
     if (i18nFileAccessLabel) {
       document.getElementById("chrome-file-access-label").textContent =
