@@ -996,6 +996,7 @@ dialog :link {
   font: message-box;
   flex: none;
   position: relative;
+  padding: 0;
 
   > span {
     display: inline-block;
