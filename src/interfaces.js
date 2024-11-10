@@ -30,6 +30,10 @@ class IPDFStream {
 
   /**
    * Gets a reader for the range of the PDF data.
+   *
+   * NOTE: Currently this method is only expected to be invoked *after*
+   * the `IPDFStreamReader.prototype.headersReady` promise has resolved.
+   *
    * @param {number} begin - the start offset of the data.
    * @param {number} end - the end offset of the data.
    * @returns {IPDFStreamRangeReader}
