@@ -34,7 +34,7 @@ import {
   getNewAnnotationsMap,
   XRefParseException,
 } from "./core_utils.js";
-import { Dict, isDict, Ref } from "./primitives.js";
+import { Dict, isDict, Ref, RefSetCache } from "./primitives.js";
 import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager.js";
 import { AnnotationFactory } from "./annotation.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
@@ -540,6 +540,7 @@ class WorkerMessageHandler {
           pdfManager.ensureDoc("linearization"),
           pdfManager.ensureCatalog("structTreeRoot"),
         ];
+        const changes = new RefSetCache();
         const promises = [];
 
         const newAnnotationsByPage = !isPureXfa
@@ -590,7 +591,13 @@ class WorkerMessageHandler {
               pdfManager.getPage(pageIndex).then(page => {
                 const task = new WorkerTask(`Save (editor): page ${pageIndex}`);
                 return page
-                  .saveNewAnnotations(handler, task, annotations, imagePromises)
+                  .saveNewAnnotations(
+                    handler,
+                    task,
+                    annotations,
+                    imagePromises,
+                    changes
+                  )
                   .finally(function () {
                     finishWorkerTask(task);
                   });
@@ -600,26 +607,24 @@ class WorkerMessageHandler {
           if (structTreeRoot === null) {
             // No structTreeRoot exists, so we need to create one.
             promises.push(
-              Promise.all(newAnnotationPromises).then(async newRefs => {
+              Promise.all(newAnnotationPromises).then(async () => {
                 await StructTreeRoot.createStructureTree({
                   newAnnotationsByPage,
                   xref,
                   catalogRef,
                   pdfManager,
-                  newRefs,
+                  changes,
                 });
-                return newRefs;
               })
             );
           } else if (structTreeRoot) {
             promises.push(
-              Promise.all(newAnnotationPromises).then(async newRefs => {
+              Promise.all(newAnnotationPromises).then(async () => {
                 await structTreeRoot.updateStructureTree({
                   newAnnotationsByPage,
                   pdfManager,
-                  newRefs,
+                  changes,
                 });
-                return newRefs;
               })
             );
           }
@@ -633,7 +638,7 @@ class WorkerMessageHandler {
               pdfManager.getPage(pageIndex).then(function (page) {
                 const task = new WorkerTask(`Save: page ${pageIndex}`);
                 return page
-                  .save(handler, task, annotationStorage)
+                  .save(handler, task, annotationStorage, changes)
                   .finally(function () {
                     finishWorkerTask(task);
                   });
@@ -643,26 +648,21 @@ class WorkerMessageHandler {
         }
         const refs = await Promise.all(promises);
 
-        let newRefs = [];
         let xfaData = null;
         if (isPureXfa) {
           xfaData = refs[0];
           if (!xfaData) {
             return stream.bytes;
           }
-        } else {
-          newRefs = refs.flat(2);
-
-          if (newRefs.length === 0) {
-            // No new refs so just return the initial bytes
-            return stream.bytes;
-          }
+        } else if (changes.size === 0) {
+          // No new refs so just return the initial bytes
+          return stream.bytes;
         }
 
         const needAppearances =
           acroFormRef &&
           acroForm instanceof Dict &&
-          newRefs.some(ref => ref.needAppearances);
+          changes.values().some(ref => ref.needAppearances);
 
         const xfa = (acroForm instanceof Dict && acroForm.get("XFA")) || null;
         let xfaDatasetsRef = null;
@@ -712,7 +712,7 @@ class WorkerMessageHandler {
         return incrementalUpdate({
           originalData: stream.bytes,
           xrefInfo: newXrefInfo,
-          newRefs,
+          changes,
           xref,
           hasXfa: !!xfa,
           xfaDatasetsRef,
