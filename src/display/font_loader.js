@@ -498,6 +498,9 @@ class FontFaceObject {
           break;
       }
     }
+    // From https://learn.microsoft.com/en-us/typography/opentype/spec/cff2#paths
+    // All contours must be closed with a lineto operation.
+    commands.push(ctx => ctx.closePath());
 
     return (this.compiledGlyphs[character] = function glyphDrawer(ctx, size) {
       commands[0](ctx);
