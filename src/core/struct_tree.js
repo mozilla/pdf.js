@@ -17,7 +17,6 @@ import { AnnotationPrefix, stringToPDFString, warn } from "../shared/util.js";
 import { Dict, isName, Name, Ref, RefSetCache } from "./primitives.js";
 import { lookupNormalRect, stringToAsciiOrUTF16BE } from "./core_utils.js";
 import { NumberTree } from "./name_number_tree.js";
-import { writeObject } from "./writer.js";
 
 const MAX_DEPTH = 40;
 
@@ -117,7 +116,7 @@ class StructTreeRoot {
     xref,
     catalogRef,
     pdfManager,
-    newRefs,
+    changes,
   }) {
     const root = pdfManager.catalog.cloneDict();
     const cache = new RefSetCache();
@@ -146,18 +145,17 @@ class StructTreeRoot {
       nums,
       xref,
       pdfManager,
-      newRefs,
+      changes,
       cache,
     });
     structTreeRoot.set("ParentTreeNextKey", nextKey);
 
     cache.put(parentTreeRef, parentTree);
 
-    const buffer = [];
     for (const [ref, obj] of cache.items()) {
-      buffer.length = 0;
-      await writeObject(ref, obj, buffer, xref);
-      newRefs.push({ ref, data: buffer.join("") });
+      changes.put(ref, {
+        data: obj,
+      });
     }
   }
 
@@ -235,7 +233,7 @@ class StructTreeRoot {
     return true;
   }
 
-  async updateStructureTree({ newAnnotationsByPage, pdfManager, newRefs }) {
+  async updateStructureTree({ newAnnotationsByPage, pdfManager, changes }) {
     const xref = this.dict.xref;
     const structTreeRoot = this.dict.clone();
     const structTreeRootRef = this.ref;
@@ -273,7 +271,7 @@ class StructTreeRoot {
       nums,
       xref,
       pdfManager,
-      newRefs,
+      changes,
       cache,
     });
 
@@ -288,11 +286,10 @@ class StructTreeRoot {
       cache.put(numsRef, nums);
     }
 
-    const buffer = [];
     for (const [ref, obj] of cache.items()) {
-      buffer.length = 0;
-      await writeObject(ref, obj, buffer, xref);
-      newRefs.push({ ref, data: buffer.join("") });
+      changes.put(ref, {
+        data: obj,
+      });
     }
   }
 
@@ -304,13 +301,12 @@ class StructTreeRoot {
     nums,
     xref,
     pdfManager,
-    newRefs,
+    changes,
     cache,
   }) {
     const objr = Name.get("OBJR");
     let nextKey = -1;
     let structTreePageObjs;
-    const buffer = [];
 
     for (const [pageIndex, elements] of newAnnotationsByPage) {
       const page = await pdfManager.getPage(pageIndex);
@@ -350,9 +346,9 @@ class StructTreeRoot {
             // We update the existing tag.
             const tagDict = xref.fetch(objRef).clone();
             StructTreeRoot.#writeProperties(tagDict, accessibilityData);
-            buffer.length = 0;
-            await writeObject(objRef, tagDict, buffer, xref);
-            newRefs.push({ ref: objRef, data: buffer.join("") });
+            changes.put(objRef, {
+              data: tagDict,
+            });
             continue;
           }
         }

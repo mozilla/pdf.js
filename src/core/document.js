@@ -70,7 +70,6 @@ import { OperatorList } from "./operator_list.js";
 import { PartialEvaluator } from "./evaluator.js";
 import { StreamsSequenceStream } from "./decode_stream.js";
 import { StructTreePage } from "./struct_tree.js";
-import { writeObject } from "./writer.js";
 import { XFAFactory } from "./xfa/factory.js";
 import { XRef } from "./xref.js";
 
@@ -314,7 +313,7 @@ class Page {
     await Promise.all(promises);
   }
 
-  async saveNewAnnotations(handler, task, annotations, imagePromises) {
+  async saveNewAnnotations(handler, task, annotations, imagePromises, changes) {
     if (this.xfaFactory) {
       throw new Error("XFA: Cannot save new annotations.");
     }
@@ -348,7 +347,8 @@ class Page {
       partialEvaluator,
       task,
       annotations,
-      imagePromises
+      imagePromises,
+      changes
     );
 
     for (const { ref } of newData.annotations) {
@@ -358,27 +358,20 @@ class Page {
       }
     }
 
-    const savedDict = pageDict.get("Annots");
-    pageDict.set("Annots", annotationsArray);
-    const buffer = [];
-    await writeObject(this.ref, pageDict, buffer, this.xref);
-    if (savedDict) {
-      pageDict.set("Annots", savedDict);
-    }
+    const dict = pageDict.clone();
+    dict.set("Annots", annotationsArray);
+    changes.put(this.ref, {
+      data: dict,
+    });
 
-    const objects = newData.dependencies;
-    objects.push(
-      { ref: this.ref, data: buffer.join("") },
-      ...newData.annotations
-    );
     for (const deletedRef of deletedAnnotations) {
-      objects.push({ ref: deletedRef, data: null });
+      changes.put(deletedRef, {
+        data: null,
+      });
     }
-
-    return objects;
   }
 
-  save(handler, task, annotationStorage) {
+  save(handler, task, annotationStorage, changes) {
     const partialEvaluator = new PartialEvaluator({
       xref: this.xref,
       handler,
@@ -395,11 +388,11 @@ class Page {
     // Fetch the page's annotations and save the content
     // in case of interactive form fields.
     return this._parsedAnnotations.then(function (annotations) {
-      const newRefsPromises = [];
+      const promises = [];
       for (const annotation of annotations) {
-        newRefsPromises.push(
+        promises.push(
           annotation
-            .save(partialEvaluator, task, annotationStorage)
+            .save(partialEvaluator, task, annotationStorage, changes)
             .catch(function (reason) {
               warn(
                 "save - ignoring annotation data during " +
@@ -410,9 +403,7 @@ class Page {
         );
       }
 
-      return Promise.all(newRefsPromises).then(function (newRefs) {
-        return newRefs.filter(newRef => !!newRef);
-      });
+      return Promise.all(promises);
     });
   }
 

@@ -383,6 +383,10 @@ class RefSetCache {
     this._map.clear();
   }
 
+  *values() {
+    yield* this._map.values();
+  }
+
   *items() {
     for (const [ref, value] of this._map) {
       yield [Ref.fromString(ref), value];
