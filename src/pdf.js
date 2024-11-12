@@ -24,9 +24,11 @@
 
 import {
   AbortException,
+  AnnotationBorderStyleType,
   AnnotationEditorParamsType,
   AnnotationEditorType,
   AnnotationMode,
+  AnnotationType,
   createValidAbsoluteUrl,
   FeatureTest,
   ImageKind,
@@ -90,12 +92,14 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING || GENERIC")) {
 
 export {
   AbortException,
+  AnnotationBorderStyleType,
   AnnotationEditorLayer,
   AnnotationEditorParamsType,
   AnnotationEditorType,
   AnnotationEditorUIManager,
   AnnotationLayer,
   AnnotationMode,
+  AnnotationType,
   build,
   ColorPicker,
   createValidAbsoluteUrl,
