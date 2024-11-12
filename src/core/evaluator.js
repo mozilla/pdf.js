@@ -381,6 +381,16 @@ class PartialEvaluator {
     return false;
   }
 
+  async #fetchData(url) {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch file "${url}" with "${response.statusText}".`
+      );
+    }
+    return new Uint8Array(await response.arrayBuffer());
+  }
+
   async fetchBuiltInCMap(name) {
     const cachedData = this.builtInCMapCache.get(name);
     if (cachedData) {
@@ -390,17 +400,10 @@ class PartialEvaluator {
 
     if (this.options.cMapUrl !== null) {
       // Only compressed CMaps are (currently) supported here.
-      const url = `${this.options.cMapUrl}${name}.bcmap`;
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(
-          `fetchBuiltInCMap: failed to fetch file "${url}" with "${response.statusText}".`
-        );
-      }
-      data = {
-        cMapData: new Uint8Array(await response.arrayBuffer()),
-        isCompressed: true,
-      };
+      const cMapData = await this.#fetchData(
+        `${this.options.cMapUrl}${name}.bcmap`
+      );
+      data = { cMapData, isCompressed: true };
     } else {
       // Get the data on the main-thread instead.
       data = await this.handler.sendWithPromise("FetchBuiltInCMap", { name });
@@ -431,30 +434,19 @@ class PartialEvaluator {
       filename = standardFontNameToFileName[name];
     let data;
 
-    if (this.options.standardFontDataUrl !== null) {
-      const url = `${this.options.standardFontDataUrl}${filename}`;
-      const response = await fetch(url);
-      if (!response.ok) {
-        warn(
-          `fetchStandardFontData: failed to fetch file "${url}" with "${response.statusText}".`
+    try {
+      if (this.options.standardFontDataUrl !== null) {
+        data = await this.#fetchData(
+          `${this.options.standardFontDataUrl}${filename}`
         );
       } else {
-        data = new Uint8Array(await response.arrayBuffer());
-      }
-    } else {
-      // Get the data on the main-thread instead.
-      try {
+        // Get the data on the main-thread instead.
         data = await this.handler.sendWithPromise("FetchStandardFontData", {
           filename,
         });
-      } catch (e) {
-        warn(
-          `fetchStandardFontData: failed to fetch file "${filename}" with "${e}".`
-        );
       }
-    }
-
-    if (!data) {
+    } catch (ex) {
+      warn(ex);
       return null;
     }
     // Cache the "raw" standard font data, to avoid fetching it repeatedly
