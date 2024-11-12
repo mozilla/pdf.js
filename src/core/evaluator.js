@@ -72,6 +72,7 @@ import { getGlyphsUnicode } from "./glyphlist.js";
 import { getMetrics } from "./metrics.js";
 import { getUnicodeForGlyph } from "./unicode.js";
 import { ImageResizer } from "./image_resizer.js";
+import { JpegStream } from "./jpeg_stream.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
@@ -83,6 +84,7 @@ const DefaultPartialEvaluatorOptions = Object.freeze({
   ignoreErrors: false,
   isEvalSupported: true,
   isOffscreenCanvasSupported: false,
+  isImageDecoderSupported: false,
   isChrome: false,
   canvasMaxAreaInBytes: -1,
   fontExtraProperties: false,
@@ -233,14 +235,9 @@ class PartialEvaluator {
 
     this._regionalImageCache = new RegionalImageCache();
     this._fetchBuiltInCMapBound = this.fetchBuiltInCMap.bind(this);
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      ImageResizer.setMaxArea(this.options.canvasMaxAreaInBytes);
-    } else {
-      ImageResizer.setOptions({
-        isChrome: this.options.isChrome,
-        maxArea: this.options.canvasMaxAreaInBytes,
-      });
-    }
+
+    ImageResizer.setOptions(this.options);
+    JpegStream.setOptions(this.options);
   }
 
   /**

@@ -177,6 +177,10 @@ const DefaultStandardFontDataFactory =
  *   `OffscreenCanvas` in the worker. Primarily used to improve performance of
  *   image conversion/rendering.
  *   The default value is `true` in web environments and `false` in Node.js.
+ * @property {boolean} [isImageDecoderSupported] - Determines if we can use
+ *   `ImageDecoder` in the worker. Primarily used to improve performance of
+ *   image conversion/rendering.
+ *   The default value is `true` in web environments and `false` in Node.js.
  * @property {boolean} [isChrome] - Determines if we can use bmp ImageDecoder.
  *   NOTE: Temporary option until [https://issues.chromium.org/issues/374807001]
  *   is fixed.
@@ -283,6 +287,10 @@ function getDocument(src = {}) {
   const isOffscreenCanvasSupported =
     typeof src.isOffscreenCanvasSupported === "boolean"
       ? src.isOffscreenCanvasSupported
+      : !isNodeJS;
+  const isImageDecoderSupported =
+    typeof src.isImageDecoderSupported === "boolean"
+      ? src.isImageDecoderSupported
       : !isNodeJS;
   const isChrome =
     typeof src.isChrome === "boolean"
@@ -395,6 +403,7 @@ function getDocument(src = {}) {
       ignoreErrors,
       isEvalSupported,
       isOffscreenCanvasSupported,
+      isImageDecoderSupported,
       isChrome,
       canvasMaxAreaInBytes,
       fontExtraProperties,
