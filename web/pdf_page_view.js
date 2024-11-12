@@ -31,6 +31,7 @@ import {
   RenderingCancelledException,
   setLayerDimensions,
   shadow,
+  Util,
 } from "pdfjs-lib";
 import {
   approximateFraction,
@@ -51,6 +52,7 @@ import { TextAccessibilityManager } from "./text_accessibility.js";
 import { TextHighlighter } from "./text_highlighter.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
+import { normalizedTextContent, getOriginalIndex } from "./pdf_find_controller.js";
 
 /**
  * @typedef {Object} PDFPageViewOptions
@@ -145,6 +147,8 @@ class PDFPageView {
   };
 
   #viewportMap = new WeakMap();
+
+  #linkAnnotations = [];
 
   #layers = [null, null, null, null];
 
@@ -398,7 +402,8 @@ class PDFPageView {
       await this.annotationLayer.render(
         this.viewport,
         { structTreeLayer: this.structTreeLayer },
-        "display"
+        "display",
+        this.#linkAnnotations
       );
     } catch (ex) {
       console.error(`#renderAnnotationLayer: "${ex}".`);
@@ -1103,9 +1108,11 @@ class PDFPageView {
           viewport.rawDims
         );
 
-        this.#renderTextLayer();
+        const textLayerP = this.#renderTextLayer();
 
         if (this.annotationLayer) {
+          await textLayerP;
+          await this.#processLinks();
           await this.#renderAnnotationLayer();
         }
 
@@ -1196,6 +1203,79 @@ class PDFPageView {
     return directDrawing && initialOptionalContent && regularAnnotations
       ? this.canvas
       : null;
+  }
+
+  #addLinkAnnotation(url, index, length) {
+    // TODO refactor out the logic for a single match from this function
+    const convertedMatch = this._textHighlighter._convertMatches([index], [length])[0];
+
+    const range = new Range();
+    range.setStart(
+      this._textHighlighter.textDivs[convertedMatch.begin.divIdx].firstChild,
+      convertedMatch.begin.offset
+    );
+    range.setEnd(
+      this._textHighlighter.textDivs[convertedMatch.end.divIdx].firstChild,
+      convertedMatch.end.offset
+    );
+
+    const pageBox = this.textLayer.div.getBoundingClientRect();
+    for (const linkBox of range.getClientRects()) {
+      if (linkBox.width === 0 || linkBox.height === 0) continue;
+
+      const bottomLeft = this.getPagePoint(
+        linkBox.left - pageBox.left,
+        linkBox.top - pageBox.top
+      );
+      const topRight = this.getPagePoint(
+        linkBox.left - pageBox.left + linkBox.width,
+        linkBox.top - pageBox.top + linkBox.height
+      );
+
+      const rect = Util.normalizeRect([
+        bottomLeft[0],
+        bottomLeft[1],
+        topRight[0],
+        topRight[1],
+      ]);
+
+      return {
+        unsafeUrl: url,
+        url,
+        rect,
+        // NOTE boilerplate-y
+        annotationType: 2,
+        annotationFlags: 4,
+        subtype: "Link",
+        noHTML: false,
+        isEditable: false,
+        hasApperance: false,
+        modificationDate: null,
+        structParent: 2,
+        rotation: 0,
+        // NOTE everything from here on is arbitrary
+        borderStyle: {
+          width: 2,
+          rawWidth: 2,
+          style: 1,
+          dashArray: [3],
+          horizontalCornerRadius: 0,
+          verticalCornerRadius: 0
+        },
+      };
+    }
+  }
+
+  #processLinks() {
+    return this.pdfPage.getTextContent().then(content => {
+      const [text, diffs] = normalizedTextContent(content);
+      const urlRegex = /\b(?:https?:\/\/|mailto:|www.)(?:[[\S--\[]--\p{P}]|\/|[\p{P}--\[]+[[\S--\[]--\p{P}])+/gmv;
+      const matches = text.matchAll(urlRegex);
+      this.#linkAnnotations = Array.from(matches, match => {
+        const [index, length] = getOriginalIndex(diffs, match.index, match[0].length);
+        return this.#addLinkAnnotation(match[0], index, length);
+      });
+    });
   }
 }
 
