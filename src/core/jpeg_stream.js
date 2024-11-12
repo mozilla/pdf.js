@@ -36,11 +36,9 @@ class JpegStream extends DecodeStream {
     return shadow(
       this,
       "canUseImageDecoder",
-      // eslint-disable-next-line no-undef
       typeof ImageDecoder === "undefined"
         ? Promise.resolve(false)
-        : // eslint-disable-next-line no-undef
-          ImageDecoder.isTypeSupported("image/jpeg")
+        : ImageDecoder.isTypeSupported("image/jpeg")
     );
   }
 
@@ -163,7 +161,6 @@ class JpegStream extends DecodeStream {
       if (!JpegImage.canUseImageDecoder(data, jpegOptions.colorTransform)) {
         return null;
       }
-      // eslint-disable-next-line no-undef
       decoder = new ImageDecoder({
         data,
         type: "image/jpeg",
