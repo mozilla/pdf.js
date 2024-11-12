@@ -97,7 +97,7 @@ class AnnotationLayerBuilder {
    * @returns {Promise<void>} A promise that is resolved when rendering of the
    *   annotations is complete.
    */
-  async render(viewport, options, intent = "display") {
+  async render(viewport, options, intent = "display", linkAnnotations) {
     if (this.div) {
       if (this._cancelled || !this.annotationLayer) {
         return;
@@ -118,6 +118,8 @@ class AnnotationLayerBuilder {
     if (this._cancelled) {
       return;
     }
+
+    annotations.push(...linkAnnotations);
 
     // Create an annotation layer div and render the annotations
     // if there is at least one annotation.
