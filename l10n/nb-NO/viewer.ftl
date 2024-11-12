@@ -343,6 +343,10 @@ pdfjs-editor-stamp-add-image-button-label = Legg til bilde
 pdfjs-editor-free-highlight-thickness-input = Tykkelse
 pdfjs-editor-free-highlight-thickness-title =
     .title = Endre tykkelse når du markerer andre elementer enn tekst
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Tekstredigering
+    .default-content = Begynn å skrive…
 pdfjs-free-text =
     .aria-label = Tekstredigering
 pdfjs-free-text-default-content = Begynn å skrive…

@@ -343,6 +343,10 @@ pdfjs-editor-stamp-add-image-button-label = Resim ekle
 pdfjs-editor-free-highlight-thickness-input = Kalınlık
 pdfjs-editor-free-highlight-thickness-title =
     .title = Metin dışındaki öğeleri vurgularken kalınlığı değiştir
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Metin düzenleyicisi
+    .default-content = Yazmaya başlayın…
 pdfjs-free-text =
     .aria-label = Metin düzenleyicisi
 pdfjs-free-text-default-content = Yazmaya başlayın…

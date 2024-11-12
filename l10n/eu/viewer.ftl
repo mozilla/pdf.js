@@ -343,6 +343,10 @@ pdfjs-editor-stamp-add-image-button-label = Gehitu irudia
 pdfjs-editor-free-highlight-thickness-input = Loditasuna
 pdfjs-editor-free-highlight-thickness-title =
     .title = Aldatu loditasuna testua ez beste elementuak nabarmentzean
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Testu-editorea
+    .default-content = Hasi idazten…
 pdfjs-free-text =
     .aria-label = Testu-editorea
 pdfjs-free-text-default-content = Hasi idazten…
