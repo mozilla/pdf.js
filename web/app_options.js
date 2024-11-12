@@ -195,6 +195,11 @@ const defaultOptions = {
     value: true,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE + OptionKind.EVENT_DISPATCH,
   },
+  enableAutoLinking: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   enableGuessAltText: {
     /** @type {boolean} */
     value: true,

@@ -128,6 +128,8 @@ function isValidAnnotationEditorMode(mode) {
  *   rendering. The default value is `false`.
  * @property {boolean} [supportsPinchToZoom] - Enable zooming on pinch gesture.
  *   The default value is `true`.
+ * @property {boolean} [enableAutoLinking] - Enable creation of hyperlinks from
+ *   text that look like URLs. The default value is `false`.
  */
 
 class PDFPageViewBuffer {
@@ -228,6 +230,8 @@ class PDFViewer {
 
   #enableNewAltTextWhenAddingImage = false;
 
+  #enableAutoLinking = false;
+
   #eventAbortController = null;
 
   #mlManager = null;
@@ -321,6 +325,7 @@ class PDFViewer {
     this.#mlManager = options.mlManager || null;
     this.#enableHWA = options.enableHWA || false;
     this.#supportsPinchToZoom = options.supportsPinchToZoom !== false;
+    this.#enableAutoLinking = options.enableAutoLinking || false;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (
@@ -990,6 +995,7 @@ class PDFViewer {
             l10n: this.l10n,
             layerProperties: this._layerProperties,
             enableHWA: this.#enableHWA,
+            enableAutoLinking: this.#enableAutoLinking,
           });
           this._pages.push(pageView);
         }

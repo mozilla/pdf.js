@@ -15,12 +15,14 @@
 
 const {
   AbortException,
+  AnnotationBorderStyleType,
   AnnotationEditorLayer,
   AnnotationEditorParamsType,
   AnnotationEditorType,
   AnnotationEditorUIManager,
   AnnotationLayer,
   AnnotationMode,
+  AnnotationType,
   build,
   ColorPicker,
   createValidAbsoluteUrl,
@@ -63,12 +65,14 @@ const {
 
 export {
   AbortException,
+  AnnotationBorderStyleType,
   AnnotationEditorLayer,
   AnnotationEditorParamsType,
   AnnotationEditorType,
   AnnotationEditorUIManager,
   AnnotationLayer,
   AnnotationMode,
+  AnnotationType,
   build,
   ColorPicker,
   createValidAbsoluteUrl,
