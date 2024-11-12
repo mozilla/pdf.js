@@ -23,9 +23,9 @@ import {
   parseXFAPath,
 } from "./core_utils.js";
 import { SimpleDOMNode, SimpleXMLParser } from "./xml_parser.js";
+import { Stream, StringStream } from "./stream.js";
 import { BaseStream } from "./base_stream.js";
 import { calculateMD5 } from "./crypto.js";
-import { Stream } from "./stream.js";
 
 async function writeObject(ref, obj, buffer, { encrypt = null }) {
   const transform = encrypt?.createCipherTransform(ref.num, ref.gen);
@@ -192,10 +192,10 @@ function computeMD5(filesize, xrefInfo) {
   return bytesToString(calculateMD5(array));
 }
 
-function writeXFADataForAcroform(str, newRefs) {
+function writeXFADataForAcroform(str, changes) {
   const xml = new SimpleXMLParser({ hasAttributes: true }).parseFromString(str);
 
-  for (const { xfa } of newRefs) {
+  for (const { xfa } of changes) {
     if (!xfa) {
       continue;
     }
@@ -230,7 +230,7 @@ async function updateAcroform({
   hasXfaDatasetsEntry,
   xfaDatasetsRef,
   needAppearances,
-  newRefs,
+  changes,
 }) {
   if (hasXfa && !hasXfaDatasetsEntry && !xfaDatasetsRef) {
     warn("XFA - Cannot save it");
@@ -257,33 +257,23 @@ async function updateAcroform({
     dict.set("NeedAppearances", true);
   }
 
-  const buffer = [];
-  await writeObject(acroFormRef, dict, buffer, xref);
-
-  newRefs.push({ ref: acroFormRef, data: buffer.join("") });
+  changes.put(acroFormRef, {
+    data: dict,
+  });
 }
 
-function updateXFA({ xfaData, xfaDatasetsRef, newRefs, xref }) {
+function updateXFA({ xfaData, xfaDatasetsRef, changes, xref }) {
   if (xfaData === null) {
     const datasets = xref.fetchIfRef(xfaDatasetsRef);
-    xfaData = writeXFADataForAcroform(datasets.getString(), newRefs);
+    xfaData = writeXFADataForAcroform(datasets.getString(), changes);
   }
+  const xfaDataStream = new StringStream(xfaData);
+  xfaDataStream.dict = new Dict(xref);
+  xfaDataStream.dict.set("Type", Name.get("EmbeddedFile"));
 
-  const encrypt = xref.encrypt;
-  if (encrypt) {
-    const transform = encrypt.createCipherTransform(
-      xfaDatasetsRef.num,
-      xfaDatasetsRef.gen
-    );
-    xfaData = transform.encryptString(xfaData);
-  }
-  const data =
-    `${xfaDatasetsRef.num} ${xfaDatasetsRef.gen} obj\n` +
-    `<< /Type /EmbeddedFile /Length ${xfaData.length}>>\nstream\n` +
-    xfaData +
-    "\nendstream\nendobj\n";
-
-  newRefs.push({ ref: xfaDatasetsRef, data });
+  changes.put(xfaDatasetsRef, {
+    data: xfaDataStream,
+  });
 }
 
 async function getXRefTable(xrefInfo, baseOffset, newRefs, newXref, buffer) {
@@ -383,12 +373,12 @@ function computeIDs(baseOffset, xrefInfo, newXref) {
   }
 }
 
-function getTrailerDict(xrefInfo, newRefs, useXrefStream) {
+function getTrailerDict(xrefInfo, changes, useXrefStream) {
   const newXref = new Dict(null);
   newXref.set("Prev", xrefInfo.startXRef);
   const refForXrefTable = xrefInfo.newRef;
   if (useXrefStream) {
-    newRefs.push({ ref: refForXrefTable, data: "" });
+    changes.put(refForXrefTable, { data: "" });
     newXref.set("Size", refForXrefTable.num + 1);
     newXref.set("Type", Name.get("XRef"));
   } else {
@@ -406,10 +396,24 @@ function getTrailerDict(xrefInfo, newRefs, useXrefStream) {
   return newXref;
 }
 
+async function writeChanges(changes, xref, buffer = []) {
+  const newRefs = [];
+  for (const [ref, { data }] of changes.items()) {
+    if (data === null || typeof data === "string") {
+      newRefs.push({ ref, data });
+      continue;
+    }
+    await writeObject(ref, data, buffer, xref);
+    newRefs.push({ ref, data: buffer.join("") });
+    buffer.length = 0;
+  }
+  return newRefs.sort((a, b) => /* compare the refs */ a.ref.num - b.ref.num);
+}
+
 async function incrementalUpdate({
   originalData,
   xrefInfo,
-  newRefs,
+  changes,
   xref = null,
   hasXfa = false,
   xfaDatasetsRef = null,
@@ -428,19 +432,21 @@ async function incrementalUpdate({
     hasXfaDatasetsEntry,
     xfaDatasetsRef,
     needAppearances,
-    newRefs,
+    changes,
   });
 
   if (hasXfa) {
     updateXFA({
       xfaData,
       xfaDatasetsRef,
-      newRefs,
+      changes,
       xref,
     });
   }
 
+  const newXref = getTrailerDict(xrefInfo, changes, useXrefStream);
   const buffer = [];
+  const newRefs = await writeChanges(changes, xref, buffer);
   let baseOffset = originalData.length;
   const lastByte = originalData.at(-1);
   if (lastByte !== /* \n */ 0x0a && lastByte !== /* \r */ 0x0d) {
@@ -449,10 +455,6 @@ async function incrementalUpdate({
     baseOffset += 1;
   }
 
-  const newXref = getTrailerDict(xrefInfo, newRefs, useXrefStream);
-  newRefs = newRefs.sort(
-    (a, b) => /* compare the refs */ a.ref.num - b.ref.num
-  );
   for (const { data } of newRefs) {
     if (data !== null) {
       buffer.push(data);
@@ -482,4 +484,4 @@ async function incrementalUpdate({
   return array;
 }
 
-export { incrementalUpdate, writeDict, writeObject };
+export { incrementalUpdate, writeChanges, writeDict, writeObject };

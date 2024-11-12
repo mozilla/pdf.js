@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { Dict, Name, Ref } from "../../src/core/primitives.js";
+import { Dict, Name, Ref, RefSetCache } from "../../src/core/primitives.js";
 import { incrementalUpdate, writeDict } from "../../src/core/writer.js";
 import { bytesToString } from "../../src/shared/util.js";
 import { StringStream } from "../../src/core/stream.js";
@@ -22,10 +22,9 @@ describe("Writer", function () {
   describe("Incremental update", function () {
     it("should update a file with new objects", async function () {
       const originalData = new Uint8Array();
-      const newRefs = [
-        { ref: Ref.get(123, 0x2d), data: "abc\n" },
-        { ref: Ref.get(456, 0x4e), data: "defg\n" },
-      ];
+      const changes = new RefSetCache();
+      changes.put(Ref.get(123, 0x2d), { data: "abc\n" });
+      changes.put(Ref.get(456, 0x4e), { data: "defg\n" });
       const xrefInfo = {
         newRef: Ref.get(789, 0),
         startXRef: 314,
@@ -40,7 +39,8 @@ describe("Writer", function () {
       let data = await incrementalUpdate({
         originalData,
         xrefInfo,
-        newRefs,
+        changes,
+        xref: {},
         useXrefStream: true,
       });
       data = bytesToString(data);
@@ -65,7 +65,8 @@ describe("Writer", function () {
       data = await incrementalUpdate({
         originalData,
         xrefInfo,
-        newRefs,
+        changes,
+        xref: {},
         useXrefStream: false,
       });
       data = bytesToString(data);
@@ -91,7 +92,8 @@ describe("Writer", function () {
 
     it("should update a file, missing the /ID-entry, with new objects", async function () {
       const originalData = new Uint8Array();
-      const newRefs = [{ ref: Ref.get(123, 0x2d), data: "abc\n" }];
+      const changes = new RefSetCache();
+      changes.put(Ref.get(123, 0x2d), { data: "abc\n" });
       const xrefInfo = {
         newRef: Ref.get(789, 0),
         startXRef: 314,
@@ -106,7 +108,8 @@ describe("Writer", function () {
       let data = await incrementalUpdate({
         originalData,
         xrefInfo,
-        newRefs,
+        changes,
+        xref: {},
         useXrefStream: true,
       });
       data = bytesToString(data);
@@ -185,7 +188,7 @@ describe("Writer", function () {
   describe("XFA", function () {
     it("should update AcroForm when no datasets in XFA array", async function () {
       const originalData = new Uint8Array();
-      const newRefs = [];
+      const changes = new RefSetCache();
 
       const acroForm = new Dict(null);
       acroForm.set("XFA", [
@@ -212,7 +215,7 @@ describe("Writer", function () {
       let data = await incrementalUpdate({
         originalData,
         xrefInfo,
-        newRefs,
+        changes,
         hasXfa: true,
         xfaDatasetsRef,
         hasXfaDatasetsEntry: false,
@@ -230,8 +233,7 @@ describe("Writer", function () {
         "<< /XFA [(preamble) 123 0 R (datasets) 101112 0 R (postamble) 456 0 R]>>\n" +
         "endobj\n" +
         "101112 0 obj\n" +
-        "<< /Type /EmbeddedFile /Length 20>>\n" +
-        "stream\n" +
+        "<< /Type /EmbeddedFile /Length 20>> stream\n" +
         "<hello>world</hello>\n" +
         "endstream\n" +
         "endobj\n" +
@@ -250,10 +252,9 @@ describe("Writer", function () {
 
   it("should update a file with a deleted object", async function () {
     const originalData = new Uint8Array();
-    const newRefs = [
-      { ref: Ref.get(123, 0x2d), data: null },
-      { ref: Ref.get(456, 0x4e), data: "abc\n" },
-    ];
+    const changes = new RefSetCache();
+    changes.put(Ref.get(123, 0x2d), { data: null });
+    changes.put(Ref.get(456, 0x4e), { data: "abc\n" });
     const xrefInfo = {
       newRef: Ref.get(789, 0),
       startXRef: 314,
@@ -268,7 +269,8 @@ describe("Writer", function () {
     let data = await incrementalUpdate({
       originalData,
       xrefInfo,
-      newRefs,
+      changes,
+      xref: {},
       useXrefStream: true,
     });
     data = bytesToString(data);
@@ -292,7 +294,8 @@ describe("Writer", function () {
     data = await incrementalUpdate({
       originalData,
       xrefInfo,
-      newRefs,
+      changes,
+      xref: {},
       useXrefStream: false,
     });
     data = bytesToString(data);
