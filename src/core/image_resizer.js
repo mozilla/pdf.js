@@ -34,7 +34,7 @@ const MAX_ERROR = 128;
 class ImageResizer {
   static #goodSquareLength = MIN_IMAGE_DIM;
 
-  static #isChrome = false;
+  static #isImageDecoderSupported = FeatureTest.isImageDecoderSupported;
 
   constructor(imgData, isMask) {
     this._imgData = imgData;
@@ -42,15 +42,12 @@ class ImageResizer {
   }
 
   static get canUseImageDecoder() {
-    // TODO: remove the isChrome, once Chrome doesn't crash anymore with
-    // issue6741.pdf.
-    // https://issues.chromium.org/issues/374807001.
     return shadow(
       this,
       "canUseImageDecoder",
-      this.#isChrome || typeof ImageDecoder === "undefined"
-        ? Promise.resolve(false)
-        : ImageDecoder.isTypeSupported("image/bmp")
+      this.#isImageDecoderSupported
+        ? ImageDecoder.isTypeSupported("image/bmp")
+        : Promise.resolve(false)
     );
   }
 
@@ -121,19 +118,19 @@ class ImageResizer {
     }
   }
 
-  static setMaxArea(area) {
+  static setOptions({
+    canvasMaxAreaInBytes = -1,
+    isChrome = false,
+    isImageDecoderSupported = false,
+  }) {
     if (!this._hasMaxArea) {
       // Divide by 4 to have the value in pixels.
-      this.MAX_AREA = area >> 2;
+      this.MAX_AREA = canvasMaxAreaInBytes >> 2;
     }
-  }
-
-  static setOptions(opts) {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      throw new Error("Not implemented: setOptions");
-    }
-    this.setMaxArea(opts.maxArea ?? -1);
-    this.#isChrome = opts.isChrome ?? false;
+    // TODO: remove the isChrome, once Chrome doesn't crash anymore with
+    // issue6741.pdf.
+    // https://issues.chromium.org/issues/374807001.
+    this.#isImageDecoderSupported = isImageDecoderSupported && !isChrome;
   }
 
   static _areGoodDims(width, height) {
