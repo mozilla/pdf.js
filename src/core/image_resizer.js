@@ -48,11 +48,9 @@ class ImageResizer {
     return shadow(
       this,
       "canUseImageDecoder",
-      // eslint-disable-next-line no-undef
       this.#isChrome || typeof ImageDecoder === "undefined"
         ? Promise.resolve(false)
-        : // eslint-disable-next-line no-undef
-          ImageDecoder.isTypeSupported("image/bmp")
+        : ImageDecoder.isTypeSupported("image/bmp")
     );
   }
 
@@ -185,7 +183,6 @@ class ImageResizer {
     let decoder, imagePromise;
 
     if (await ImageResizer.canUseImageDecoder) {
-      // eslint-disable-next-line no-undef
       decoder = new ImageDecoder({
         data,
         type: "image/bmp",
