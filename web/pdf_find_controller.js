@@ -1171,4 +1171,4 @@ class PDFFindController {
   }
 }
 
-export { FindState, PDFFindController };
+export { FindState, getOriginalIndex, normalize, PDFFindController };
