@@ -16,7 +16,7 @@
     "babel-loader": "^9.2.1",
     "caniuse-lite": "^1.0.30001680",
     "core-js": "^3.39.0",
-    "eslint": "^8.57.1",
+    "eslint": "^9.14.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-jasmine": "^4.2.2",
     "eslint-plugin-json": "^4.0.1",
