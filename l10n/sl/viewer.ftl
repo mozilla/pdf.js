@@ -347,6 +347,10 @@ pdfjs-editor-stamp-add-image-button-label = Dodaj sliko
 pdfjs-editor-free-highlight-thickness-input = Debelina
 pdfjs-editor-free-highlight-thickness-title =
     .title = Spremeni debelino pri označevanju nebesedilnih elementov
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Urejevalnik besedila
+    .default-content = Začnite tipkati …
 pdfjs-free-text =
     .aria-label = Urejevalnik besedila
 pdfjs-free-text-default-content = Začnite tipkati …

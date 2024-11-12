@@ -343,6 +343,10 @@ pdfjs-editor-stamp-add-image-button-label = Lisää kuva
 pdfjs-editor-free-highlight-thickness-input = Paksuus
 pdfjs-editor-free-highlight-thickness-title =
     .title = Muuta paksuutta korostaessasi muita kohteita kuin tekstiä
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Tekstimuokkain
+    .default-content = Aloita kirjoittaminen…
 pdfjs-free-text =
     .aria-label = Tekstimuokkain
 pdfjs-free-text-default-content = Aloita kirjoittaminen…

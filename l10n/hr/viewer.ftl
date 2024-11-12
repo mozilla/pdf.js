@@ -119,12 +119,15 @@ pdfjs-document-properties-keywords = Ključne riječi:
 pdfjs-document-properties-creation-date = Datum stvaranja:
 pdfjs-document-properties-modification-date = Datum promjene:
 # Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
+# Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
 pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Stvaratelj:
 pdfjs-document-properties-producer = PDF stvaratelj:
-pdfjs-document-properties-version = PDF inačica:
+pdfjs-document-properties-version = PDF verzija:
 pdfjs-document-properties-page-count = Broj stranica:
 pdfjs-document-properties-page-size = Dimenzije stranice:
 pdfjs-document-properties-page-size-unit-inches = in
@@ -277,6 +280,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [{ $type } Bilješka]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -421,6 +427,18 @@ pdfjs-editor-new-alt-text-disclaimer1 = Ovaj je alternativni tekst stvoren autom
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Saznaj više
 pdfjs-editor-new-alt-text-create-automatically-button-label = Automatski stvori alternativni tekst
 pdfjs-editor-new-alt-text-error-title = Nije bilo moguće automatski izraditi alternativni tekst
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+#   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
+#   $percent (Number) - the percentage of the downloaded size.
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = Preuzimanje alternativnog teksta UI modela ({ $downloadedSize } od { $totalSize } MB)
+    .aria-valuetext = Preuzimanje alternativnog teksta UI modela ({ $downloadedSize } od { $totalSize } MB)
+# This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button-label = Alternativni tekst je dodan
+# This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button-label = Nedostaje alternativni tekst
+# This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button-label = Pregledaj alternativni tekst
 # "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
 # Variables:
 #   $generatedAltText (String) - the generated alt-text.
@@ -434,6 +452,10 @@ pdfjs-image-alt-text-settings-button-label = Postavke alternativnog teksta slike
 pdfjs-editor-alt-text-settings-dialog-label = Postavke alternativnog teksta slike
 pdfjs-editor-alt-text-settings-automatic-title = Automatski alternativni tekst
 pdfjs-editor-alt-text-settings-create-model-button-label = Stvori alternativni tekst automatski
+pdfjs-editor-alt-text-settings-create-model-description = Predlaže opise koji pomažu osobama koji ne mogu vidjeti sliku ili kada se slika ne učita.
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+pdfjs-editor-alt-text-settings-download-model-label = Alternativni tekst UI modela ({ $totalSize } MB)
 pdfjs-editor-alt-text-settings-ai-model-description = Radi lokalno na tvom uređaju kako bi tvoji podaci ostali privatni. Potrebno za automatski alternativni tekst.
 pdfjs-editor-alt-text-settings-delete-model-button = Izbriši
 pdfjs-editor-alt-text-settings-download-model-button = Preuzmi
