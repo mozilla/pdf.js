@@ -334,6 +334,10 @@ pdfjs-editor-stamp-add-image-button-label = Shtoni figurë
 pdfjs-editor-free-highlight-thickness-input = Trashësi
 pdfjs-editor-free-highlight-thickness-title =
     .title = Ndryshoni trashësinë kur theksoni objekte tjetër nga tekst
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Përpunues Tekstesh
+    .default-content = Filloni të shtypni…
 pdfjs-free-text =
     .aria-label = Përpunues Tekstesh
 pdfjs-free-text-default-content = Filloni të shtypni…

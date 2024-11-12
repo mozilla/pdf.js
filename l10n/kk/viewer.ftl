@@ -343,6 +343,10 @@ pdfjs-editor-stamp-add-image-button-label = Суретті қосу
 pdfjs-editor-free-highlight-thickness-input = Қалыңдығы
 pdfjs-editor-free-highlight-thickness-title =
     .title = Мәтіннен басқа элементтерді ерекшелеу кезінде қалыңдықты өзгерту
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Мәтін түзеткіші
+    .default-content = Теріп бастаңыз…
 pdfjs-free-text =
     .aria-label = Мәтін түзеткіші
 pdfjs-free-text-default-content = Теруді бастау…
