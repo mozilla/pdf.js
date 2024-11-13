@@ -623,6 +623,14 @@ class FeatureTest {
     );
   }
 
+  static get isImageDecoderSupported() {
+    return shadow(
+      this,
+      "isImageDecoderSupported",
+      typeof ImageDecoder !== "undefined"
+    );
+  }
+
   static get platform() {
     if (
       (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||

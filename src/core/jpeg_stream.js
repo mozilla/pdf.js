@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { shadow, warn } from "../shared/util.js";
+import { FeatureTest, shadow, warn } from "../shared/util.js";
 import { DecodeStream } from "./decode_stream.js";
 import { Dict } from "./primitives.js";
 import { JpegImage } from "./jpg.js";
@@ -23,6 +23,8 @@ import { JpegImage } from "./jpg.js";
  * like all the other DecodeStreams.
  */
 class JpegStream extends DecodeStream {
+  static #isImageDecoderSupported = FeatureTest.isImageDecoderSupported;
+
   constructor(stream, maybeLength, params) {
     super(maybeLength);
 
@@ -36,10 +38,14 @@ class JpegStream extends DecodeStream {
     return shadow(
       this,
       "canUseImageDecoder",
-      typeof ImageDecoder === "undefined"
-        ? Promise.resolve(false)
-        : ImageDecoder.isTypeSupported("image/jpeg")
+      this.#isImageDecoderSupported
+        ? ImageDecoder.isTypeSupported("image/jpeg")
+        : Promise.resolve(false)
     );
+  }
+
+  static setOptions({ isImageDecoderSupported = false }) {
+    this.#isImageDecoderSupported = isImageDecoderSupported;
   }
 
   get bytes() {
