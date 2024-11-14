@@ -85,7 +85,6 @@ const DefaultPartialEvaluatorOptions = Object.freeze({
   isEvalSupported: true,
   isOffscreenCanvasSupported: false,
   isImageDecoderSupported: false,
-  isChrome: false,
   canvasMaxAreaInBytes: -1,
   fontExtraProperties: false,
   useSystemFonts: true,
