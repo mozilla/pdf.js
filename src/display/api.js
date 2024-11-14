@@ -61,6 +61,7 @@ import {
   NodeWasmFactory,
 } from "display-node_utils";
 import { CanvasGraphics } from "./canvas.js";
+import { CanvasRecorder } from "./canvas_recorder.js";
 import { DOMCanvasFactory } from "./canvas_factory.js";
 import { DOMCMapReaderFactory } from "display-cmap_reader_factory";
 import { DOMFilterFactory } from "./filter_factory.js";
@@ -1461,8 +1462,21 @@ class PDFPageProxy {
       this._pumpOperatorList(intentArgs);
     }
 
+    const recordingContext =
+      this._pdfBug &&
+      globalThis.StepperManager?.enabled &&
+      !this._recordedGroups
+        ? new CanvasRecorder(canvasContext)
+        : null;
+
     const complete = error => {
       intentState.renderTasks.delete(internalRenderTask);
+
+      if (recordingContext) {
+        this._recordedGroups =
+          CanvasRecorder.getFinishedGroups(recordingContext);
+        internalRenderTask.stepper.setOperatorGroups(this._recordedGroups);
+      }
 
       // Attempt to reduce memory usage during *printing*, by always running
       // cleanup immediately once rendering has finished.
@@ -1496,7 +1510,7 @@ class PDFPageProxy {
       callback: complete,
       // Only include the required properties, and *not* the entire object.
       params: {
-        canvasContext,
+        canvasContext: recordingContext ?? canvasContext,
         viewport,
         transform,
         background,
