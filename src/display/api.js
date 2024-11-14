@@ -1465,13 +1465,17 @@ class PDFPageProxy {
       this._pumpOperatorList(intentArgs);
     }
 
-    const shouldRecordOperations = !this.recordedGroups && recordOperations;
+    const shouldRecordOperations =
+      !this.recordedGroups &&
+      (recordOperations ||
+        (this._pdfBug && globalThis.StepperManager?.enabled));
 
     const complete = error => {
       intentState.renderTasks.delete(internalRenderTask);
 
       if (shouldRecordOperations) {
         this.recordedGroups = internalRenderTask.gfx.dependencyTracker.take();
+        internalRenderTask.stepper?.setOperatorGroups(this.recordedGroups);
       }
 
       // Attempt to reduce memory usage during *printing*, by always running
