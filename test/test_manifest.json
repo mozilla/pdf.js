@@ -46,6 +46,32 @@
     "type": "eq"
   },
   {
+    "id": "tracemonkey-partial",
+    "file": "pdfs/tracemonkey.pdf",
+    "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
+    "id": "tracemonkey-partial-2",
+    "file": "pdfs/tracemonkey.pdf",
+    "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.5,
+      "maxX": 0.75,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "tracemonkey-renderTaskOnContinue",
     "file": "pdfs/tracemonkey.pdf",
     "md5": "9a192d8b1a7dc652a19835f6f08098bd",
@@ -61,6 +87,19 @@
     "type": "eq"
   },
   {
+    "id": "issue17147-partial",
+    "file": "pdfs/issue17147.pdf",
+    "md5": "47012ba13ee819ec0af278c9d943f010",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "issue13130",
     "file": "pdfs/issue13130.pdf",
     "md5": "318518299132fe3b52252ca43a69a23e",
@@ -71,6 +110,22 @@
     "type": "eq"
   },
   {
+    "id": "issue13130-partial",
+    "file": "pdfs/issue13130.pdf",
+    "md5": "318518299132fe3b52252ca43a69a23e",
+    "rounds": 1,
+    "link": true,
+    "firstPage": 2,
+    "lastPage": 2,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "issue16395",
     "file": "pdfs/issue16395.pdf",
     "md5": "a5de985711ec27cd2a2ed97d5f1c536c",
@@ -79,6 +134,22 @@
     "firstPage": 3,
     "lastPage": 3,
     "type": "eq"
+  },
+  {
+    "id": "issue16395-partial",
+    "file": "pdfs/issue16395.pdf",
+    "md5": "a5de985711ec27cd2a2ed97d5f1c536c",
+    "rounds": 1,
+    "link": true,
+    "firstPage": 3,
+    "lastPage": 3,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
   },
   {
     "id": "issue16432",
@@ -97,6 +168,21 @@
     "link": true,
     "lastPage": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue16464-partial",
+    "file": "pdfs/issue16464.pdf",
+    "md5": "2bd97ff909e2185605788daa70de38ee",
+    "rounds": 1,
+    "link": true,
+    "lastPage": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
   },
   {
     "id": "tracemonkey-fbf",
@@ -190,6 +276,22 @@
     "firstPage": 2,
     "lastPage": 2,
     "type": "eq"
+  },
+  {
+    "id": "issue11532-partial",
+    "file": "pdfs/issue11532.pdf",
+    "md5": "9216481d259ae2b8d747236e745cbc80",
+    "rounds": 1,
+    "link": true,
+    "firstPage": 2,
+    "lastPage": 2,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
   },
   {
     "id": "issue14256",
@@ -321,6 +423,23 @@
     "annotations": true
   },
   {
+    "id": "issue13915-partial",
+    "file": "pdfs/issue13915.pdf",
+    "md5": "fef3108733bbf80ea8551feedb427b1c",
+    "rounds": 1,
+    "firstPage": 51,
+    "lastPage": 51,
+    "link": true,
+    "type": "eq",
+    "annotations": true,
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "issue15516",
     "file": "pdfs/issue15516_reduced.pdf",
     "md5": "a30be78c73d13aa6ff890834ce69adc1",
@@ -366,6 +485,20 @@
     "type": "eq"
   },
   {
+    "id": "bug911034-partial",
+    "file": "pdfs/bug911034.pdf",
+    "md5": "54ee432a4e16b26b242fbf549cdad177",
+    "rounds": 1,
+    "link": false,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "bug920426",
     "file": "pdfs/bug920426.pdf",
     "md5": "2fd118b44513afb22509c3584388cc29",
@@ -396,6 +529,22 @@
     "type": "eq"
   },
   {
+    "id": "bug1734802-partial",
+    "file": "pdfs/bug1734802.pdf",
+    "md5": "a23ad8af95ffca3876e110a5f4dec9bc",
+    "rounds": 1,
+    "link": true,
+    "lastPage": 3,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "knownPartialMismatch": true
+  },
+  {
     "id": "bug1753983",
     "file": "pdfs/bug1753983.pdf",
     "md5": "432be86262e5071176c49713ce458031",
@@ -410,6 +559,20 @@
     "rounds": 1,
     "link": true,
     "type": "eq"
+  },
+  {
+    "id": "issue15604-partial",
+    "file": "pdfs/issue15604.pdf",
+    "md5": "505040e5634434ae97118a4c39bf27e5",
+    "rounds": 1,
+    "link": true,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
   },
   {
     "id": "bug921760",
@@ -497,6 +660,23 @@
     "type": "eq"
   },
   {
+    "id": "bug1443140-partial",
+    "file": "pdfs/bug1443140.pdf",
+    "md5": "8f9347b0d5620537850b24b8385b0982",
+    "rounds": 1,
+    "link": true,
+    "firstPage": 4,
+    "lastPage": 4,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "knownPartialMismatch": true
+  },
+  {
     "id": "bug1473809",
     "file": "pdfs/bug1473809.pdf",
     "md5": "4b1ca51cf8cad58a1ce0618667341c76",
@@ -568,6 +748,40 @@
     "lastPage": 100,
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "intelisa-partial",
+    "file": "pdfs/intelisa.pdf",
+    "md5": "24643ebe348a568cfe6a532055c71493",
+    "link": true,
+    "firstPage": 22,
+    "lastPage": 22,
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "knownPartialMismatch": "Two one-bit differences at the bottom edge of page 22"
+  },
+  {
+    "id": "intelisa-84-partial",
+    "file": "pdfs/intelisa.pdf",
+    "md5": "24643ebe348a568cfe6a532055c71493",
+    "link": true,
+    "firstPage": 84,
+    "lastPage": 84,
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "knownPartialMismatch": "Gives slightly different results in Firefox when running in headless mode"
   },
   {
     "id": "issue2128",
@@ -836,6 +1050,20 @@
     "type": "eq"
   },
   {
+    "id": "wnv_chinese-pdf-partial",
+    "file": "pdfs/wnv_chinese.pdf",
+    "md5": "db682638e68391125e8982d3c984841e",
+    "link": true,
+    "rounds": 1,
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "type": "eq"
+  },
+  {
     "id": "i9-pdf",
     "file": "pdfs/i9.pdf",
     "md5": "ba7cd54fdff083bb389295bc0415f6c5",
@@ -849,6 +1077,19 @@
     "md5": "f4c3e91c181b510929ade67c1e34c5c5",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue12798_page1_reduced-partial",
+    "file": "pdfs/issue12798_page1_reduced.pdf",
+    "md5": "f4c3e91c181b510929ade67c1e34c5c5",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
   },
   {
     "id": "issue15557",
@@ -1002,6 +1243,21 @@
     "type": "eq"
   },
   {
+    "id": "artofwar-partial",
+    "file": "pdfs/artofwar.pdf",
+    "md5": "7bdd51c327b74f1f7abdd90eedb2f912",
+    "link": true,
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "knownPartialMismatch": "TODO: I cannot figure out what the mismatch is. 'Circle differences' circles something, but then with the 'big pixels' view there are no differences."
+  },
+  {
     "id": "issue3371",
     "file": "pdfs/issue3371.pdf",
     "password": "ELXRTQWS",
@@ -1082,6 +1338,21 @@
     "type": "eq"
   },
   {
+    "id": "wdsg_fitc-partial",
+    "file": "pdfs/wdsg_fitc.pdf",
+    "md5": "5bb1c2b83705d4cdfc43197ee74f07f9",
+    "link": true,
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "knownPartialMismatch": "Two one-bit differences at the bottom edge of page 11"
+  },
+  {
     "id": "issue6769_no_matrix",
     "file": "pdfs/issue6769_no_matrix.pdf",
     "md5": "f88806137fb4592975052ff3508d7b1e",
@@ -1095,6 +1366,21 @@
     "link": true,
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "unix01-partial",
+    "file": "pdfs/unix01.pdf",
+    "md5": "2742999f0bf9b9c035dbb0736096e220",
+    "link": true,
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "knownPartialMismatch": "A one-bit difference at the bottom edge of page 29"
   },
   {
     "id": "issue4909",
@@ -1144,6 +1430,20 @@
     "link": true,
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "fit11-talk-partial",
+    "file": "pdfs/fit11-talk.pdf",
+    "md5": "eb7b224107205db4fea9f7df0185f77d",
+    "link": true,
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
   },
   {
     "id": "fips197",
@@ -1242,6 +1542,22 @@
     "rounds": 1,
     "lastPage": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue8078-partial",
+    "file": "pdfs/issue8078.pdf",
+    "md5": "8b7d74bc24b4157393e4e88a511c05f1",
+    "link": true,
+    "rounds": 1,
+    "lastPage": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "knownPartialMismatch": "Gives slightly different results in Firefox when running in headless mode"
   },
   {
     "id": "bug1811668",
@@ -1370,6 +1686,19 @@
     "md5": "e68c315d6349530180dd90f93027147e",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue13561_reduced-partial",
+    "file": "pdfs/issue13561_reduced.pdf",
+    "md5": "e68c315d6349530180dd90f93027147e",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
   },
   {
     "id": "issue5202",
@@ -1992,6 +2321,20 @@
     "type": "eq"
   },
   {
+    "id": "issue9458-partial",
+    "file": "pdfs/issue9458.pdf",
+    "md5": "ee54358d8b2fdc75dc8da5220cf8e8da",
+    "rounds": 1,
+    "link": false,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "issue5501",
     "file": "pdfs/issue5501.pdf",
     "md5": "55a60699728fc92f491a2d7d490474e4",
@@ -2177,6 +2520,20 @@
     "about": "Optional marked content."
   },
   {
+    "id": "issue269_1-partial",
+    "file": "pdfs/issue269_1.pdf",
+    "md5": "ab932f697b4d2e2bf700de15a8efea9c",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Optional marked content.",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "issue269_2",
     "file": "pdfs/issue269_2.pdf",
     "md5": "0f553510850ee17c87fbab3fac564165",
@@ -2225,6 +2582,21 @@
     "type": "eq"
   },
   {
+    "id": "issue10491-partial",
+    "file": "pdfs/issue10491.pdf",
+    "md5": "0759ec46739b13bb0b66170a18d33d4f",
+    "rounds": 1,
+    "link": true,
+    "firstPage": 13,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "issue10542",
     "file": "pdfs/issue10542_reduced.pdf",
     "md5": "92406cb903be6c7a63221ba61fcb8eaf",
@@ -2268,6 +2640,21 @@
     "link": true,
     "lastPage": 1,
     "type": "eq"
+  },
+  {
+    "id": "pr8808-partial",
+    "file": "pdfs/pr8808.pdf",
+    "md5": "bdac6051a98fd8dcfc5344b05fed06f4",
+    "rounds": 1,
+    "link": true,
+    "lastPage": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
   },
   {
     "id": "issue5599",
@@ -2436,6 +2823,21 @@
     "type": "eq"
   },
   {
+    "id": "issue15942-partial",
+    "file": "pdfs/issue15942.pdf",
+    "md5": "d690e16e6a3a8486ebf7289a9c43ba39",
+    "rounds": 1,
+    "link": true,
+    "lastPage": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "bug1046314",
     "file": "pdfs/bug1046314.pdf",
     "md5": "fc658439f44cd2dd27c8bee7e7a8344e",
@@ -2490,6 +2892,20 @@
     "md5": "c534f74866ba8ada56010d19b57231ec",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue12295-partial",
+    "file": "pdfs/issue12295.pdf",
+    "md5": "c534f74866ba8ada56010d19b57231ec",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "knownPartialMismatch": true
   },
   {
     "id": "bug1245391-text",
@@ -2588,6 +3004,19 @@
     "type": "eq"
   },
   {
+    "id": "issue14953-partial",
+    "file": "pdfs/issue14953.pdf",
+    "md5": "dd7d6cb92e58d75a0eb8c0476a3bc64a",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "issue14990",
     "file": "pdfs/issue14990.pdf",
     "md5": "0fb397e1506acc4ab8e68c18212a1362",
@@ -2596,6 +3025,22 @@
     "firstPage": 25,
     "lastPage": 25,
     "type": "eq"
+  },
+  {
+    "id": "issue14990-partial",
+    "file": "pdfs/issue14990.pdf",
+    "md5": "0fb397e1506acc4ab8e68c18212a1362",
+    "link": true,
+    "rounds": 1,
+    "firstPage": 25,
+    "lastPage": 25,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
   },
   {
     "id": "extgstate-text",
@@ -2795,6 +3240,20 @@
     "type": "eq"
   },
   {
+    "id": "bug1365930-partial",
+    "file": "pdfs/bug1365930.pdf",
+    "md5": "0db06efce060d82da16a79e8bd762a1c",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "knownPartialMismatch": true
+  },
+  {
     "id": "bug1337429",
     "file": "pdfs/bug1337429.pdf",
     "md5": "4e6e4dfdab884e9465bdce657b590028",
@@ -2852,12 +3311,41 @@
     "type": "eq"
   },
   {
+    "id": "bug810214-partial",
+    "file": "pdfs/bug810214.pdf",
+    "md5": "2b7243178f5dd5fd3edc7b6649e4bdf3",
+    "link": true,
+    "rounds": 1,
+    "lastPage": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "Type3WordSpacing",
     "file": "pdfs/Type3WordSpacing.pdf",
     "md5": "8c75440e5b95cf521d186f862b404516",
     "link": false,
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "Type3WordSpacing-partial",
+    "file": "pdfs/Type3WordSpacing.pdf",
+    "md5": "8c75440e5b95cf521d186f862b404516",
+    "link": false,
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
   },
   {
     "id": "issue19954",
@@ -2928,6 +3416,22 @@
     "lastPage": 2,
     "type": "eq",
     "about": "Type3 fonts with pattern resources; both pages need to be tested, otherwise the bug won't manifest."
+  },
+  {
+    "id": "issue16127-partial",
+    "file": "pdfs/issue16127.pdf",
+    "md5": "42714567a818876f51ef960df21600f5",
+    "link": true,
+    "rounds": 1,
+    "firstPage": 1,
+    "lastPage": 2,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
   },
   {
     "id": "doc_actions",
@@ -3313,6 +3817,21 @@
     "type": "eq"
   },
   {
+    "id": "tutorial-partial",
+    "file": "pdfs/tutorial.pdf",
+    "md5": "6e122f618c27f3aa9a689423e3be6b8d",
+    "link": true,
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "knownPartialMismatch": "Text antialiasing is rendered differently, but only in headless firefox (used in the bots)"
+  },
+  {
     "id": "geothermal.pdf",
     "file": "pdfs/geothermal.pdf",
     "md5": "ecffc0ce38ffdf1e90dc952f186e9a91",
@@ -3419,6 +3938,20 @@
     "md5": "b1bbd72ca6522ae1502aa26320f81994",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue1905-partial",
+    "file": "pdfs/issue1905.pdf",
+    "md5": "b1bbd72ca6522ae1502aa26320f81994",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "knownPartialMismatch": true
   },
   {
     "id": "issue918",
@@ -3589,6 +4122,20 @@
     "rounds": 1,
     "link": false,
     "type": "eq"
+  },
+  {
+    "id": "issue5804-partial",
+    "file": "pdfs/issue5804.pdf",
+    "md5": "442f27939edb6aaf173ceff38d69bb14",
+    "rounds": 1,
+    "link": false,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
   },
   {
     "id": "issue7446",
@@ -4323,6 +4870,7 @@
     "type": "eq"
   },
   {
+    "TODO": "Very slow when recording",
     "id": "issue12810",
     "file": "pdfs/issue12810.pdf",
     "md5": "585e19781308603dd706f941b1ace774",
@@ -4521,6 +5069,23 @@
     "type": "eq",
     "optionalContent": {
       "37R": false
+    }
+  },
+  {
+    "id": "issue15719-partial",
+    "file": "pdfs/issue15719.pdf",
+    "md5": "4a58dbe725897e787a93e26abc621191",
+    "link": true,
+    "rounds": 1,
+    "type": "eq",
+    "optionalContent": {
+      "37R": false
+    },
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
     }
   },
   {
@@ -4845,6 +5410,19 @@
     "type": "eq"
   },
   {
+    "id": "issue7891_bc0-partial",
+    "file": "pdfs/issue7891_bc0.pdf",
+    "md5": "744a22244a4e4708b7f1691eec155fc8",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "issue14821",
     "file": "pdfs/issue14821.pdf",
     "md5": "ae77afb0f98c62e6b7fe7f912c84a75c",
@@ -4984,6 +5562,20 @@
     "rounds": 1,
     "link": true,
     "type": "eq"
+  },
+  {
+    "id": "issue4244-partial",
+    "file": "pdfs/issue4244.pdf",
+    "md5": "26845274a32a537182ced1fd693a38b2",
+    "rounds": 1,
+    "link": true,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
   },
   {
     "id": "issue14462",
@@ -5237,6 +5829,21 @@
     "type": "eq"
   },
   {
+    "id": "issue1466-partial",
+    "file": "pdfs/issue1466.pdf",
+    "md5": "8a8877432e5bb10cfd50d60488d947bb",
+    "rounds": 1,
+    "link": true,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "knownPartialMismatch": "Slightly different (not visible) partial pixel color at the edge of the image"
+  },
+  {
     "id": "bug1064894",
     "file": "pdfs/bug1064894.pdf",
     "md5": "22971b6a24912bca9c773379c10ef18a",
@@ -5337,6 +5944,22 @@
     "firstPage": 6,
     "lastPage": 6,
     "type": "eq"
+  },
+  {
+    "id": "issue6117-partial",
+    "file": "pdfs/issue6117.pdf",
+    "md5": "691f5f8268e07f3831e8293258a68da7",
+    "rounds": 1,
+    "link": true,
+    "firstPage": 6,
+    "lastPage": 6,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
   },
   {
     "id": "issue6238",
@@ -5719,6 +6342,22 @@
     "type": "eq"
   },
   {
+    "id": "bug1898802-partial",
+    "file": "pdfs/bug1898802.pdf",
+    "md5": "65c3af306253faa8967982812aff523e",
+    "rounds": 1,
+    "link": true,
+    "lastPage": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "knownPartialMismatch": "Slightly different (not visible) single pixel color at the edge of the image"
+  },
+  {
     "id": "issue4890",
     "file": "pdfs/issue4890.pdf",
     "md5": "1666feb4cd26318c2bdbea6a175dce87",
@@ -5970,6 +6609,19 @@
     "type": "eq"
   },
   {
+    "id": "pattern_text_embedded_font-partial",
+    "file": "pdfs/pattern_text_embedded_font.pdf",
+    "md5": "763b1b9efaecb2b5aefea71c39233f56",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "issue6113",
     "file": "pdfs/issue6113.pdf",
     "md5": "365fa2d369c51ee3ff195dae907b6e25",
@@ -6048,6 +6700,20 @@
     "rounds": 1,
     "type": "eq",
     "about": "Rotated transparency group with blend mode."
+  },
+  {
+    "id": "transparency_group-partial",
+    "file": "pdfs/transparency_group.pdf",
+    "md5": "10391f76434128e5da70cff5fc485ff0",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Rotated transparency group with blend mode.",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
   },
   {
     "id": "issue6010_1",
@@ -6343,6 +7009,20 @@
     "about": "CFF font that is drawn with clipping."
   },
   {
+    "id": "issue3584-partial",
+    "file": "pdfs/issue3584.pdf",
+    "md5": "7a00646865a840eefc76f05c588b60ce",
+    "rounds": 1,
+    "type": "eq",
+    "about": "CFF font that is drawn with clipping.",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "prefilled_f1040",
     "file": "pdfs/prefilled_f1040.pdf",
     "md5": "2335da66fb7c2c3b84971597f27785e2",
@@ -6529,6 +7209,23 @@
     "lastPage": 1,
     "link": true,
     "type": "eq"
+  },
+  {
+    "id": "bug887152-partial",
+    "file": "pdfs/bug887152.pdf",
+    "md5": "783a3e7b1de2cf40a47ffe1f36a41d4f",
+    "rounds": 1,
+    "lastPage": 1,
+    "link": true,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "TODO": "There are a ton of one-bit differences in pixel colors",
+    "knownPartialMismatch": true
   },
   {
     "id": "issue11473",
@@ -7372,6 +8069,21 @@
     "type": "eq"
   },
   {
+    "id": "issue4926-partial",
+    "file": "pdfs/issue4926.pdf",
+    "md5": "ed881c8ea2f9bc4be94ecb7f2b2c149b",
+    "rounds": 1,
+    "link": true,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "knownPartialMismatch": "Half pixel rendering at the edge of the image"
+  },
+  {
     "id": "issue16454",
     "file": "pdfs/issue16454.pdf",
     "md5": "82fe0c54a96667472ce999be7a789199",
@@ -8186,6 +8898,22 @@
     "type": "eq"
   },
   {
+    "id": "bug1749563-partial",
+    "file": "pdfs/bug1749563.pdf",
+    "md5": "11294f6071a8dcc25b0e18953cee68fa",
+    "rounds": 1,
+    "link": true,
+    "firstPage": 1,
+    "lastPage": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "issue9186",
     "file": "pdfs/issue9186.pdf",
     "md5": "d151857bb724ab9a291704a45a0b5d7f",
@@ -8302,6 +9030,21 @@
     "link": true,
     "lastPage": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue12306-partial",
+    "file": "pdfs/issue12306.pdf",
+    "md5": "7fd05ba56791238b5a60adc6cc0e7a22",
+    "rounds": 1,
+    "link": true,
+    "lastPage": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
   },
   {
     "id": "issue3351.1",
@@ -8789,6 +9532,20 @@
     "type": "eq"
   },
   {
+    "id": "bug1791583-partial",
+    "file": "pdfs/bug1791583.pdf",
+    "md5": "1ff6badc865c9a5e9a0dc0b7131ffe28",
+    "link": true,
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "bug1795263",
     "file": "pdfs/bug1795263.pdf",
     "md5": "af708acbb22c6c9d268240dcf4a39809",
@@ -8959,6 +9716,19 @@
     "md5": "1dc519c06f1dc6f6e594f168080dcde9",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "freetext_no_appearance-partial",
+    "file": "pdfs/freetext_no_appearance.pdf",
+    "md5": "1dc519c06f1dc6f6e594f168080dcde9",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
   },
   {
     "id": "freetext_print_no_appearance",
@@ -9176,6 +9946,20 @@
     "rounds": 1,
     "link": true,
     "type": "eq"
+  },
+  {
+    "id": "issue16114-partial",
+    "file": "pdfs/issue16114.pdf",
+    "md5": "c04827ea33692e0f94a5e51716d9aa2e",
+    "rounds": 1,
+    "link": true,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
   },
   {
     "id": "issue16114-disable-isOffscreenCanvasSupported",
@@ -10472,6 +11256,22 @@
     "rounds": 1,
     "link": true,
     "type": "eq"
+  },
+  {
+    "id": "issue17779-partial",
+    "file": "pdfs/issue17779.pdf",
+    "md5": "764b72e8e56e22662b321b308254fd2b",
+    "talos": false,
+    "rounds": 1,
+    "link": true,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "knownPartialMismatch": "One-bit difference in two pixels at the edge"
   },
   {
     "id": "issue14724",

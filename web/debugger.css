@@ -112,3 +112,34 @@
   background-color: rgb(255 255 255 / 0.6);
   color: rgb(0 0 0);
 }
+
+.pdfBugGroupsLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+
+  > * {
+    position: absolute;
+    outline-color: red;
+    outline-width: 2px;
+
+    --hover-outline-style: solid !important;
+    --hover-background-color: rgb(255 0 0 / 0.2);
+
+    &:hover {
+      outline-style: var(--hover-outline-style);
+      background-color: var(--hover-background-color);
+      cursor: pointer;
+    }
+
+    .showDebugBoxes & {
+      outline-style: dashed;
+    }
+  }
+}
+
+.showDebugBoxes {
+  .pdfBugGroupsLayer {
+    pointer-events: all;
+  }
+}
