@@ -166,7 +166,7 @@ class ImageManager {
       }
       data.refCounter = 1;
     } catch (e) {
-      console.error(e);
+      warn(e);
       data = null;
     }
     this.#cache.set(key, data);
