@@ -309,9 +309,11 @@ async function waitForEvent({
 
   const success = await awaitPromise(handle);
   if (success === null) {
-    console.log(`waitForEvent: ${eventName} didn't trigger within the timeout`);
+    console.warn(
+      `waitForEvent: ${eventName} didn't trigger within the timeout`
+    );
   } else if (!success) {
-    console.log(`waitForEvent: ${eventName} triggered, but validation failed`);
+    console.warn(`waitForEvent: ${eventName} triggered, but validation failed`);
   }
 }
 

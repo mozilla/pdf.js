@@ -363,6 +363,7 @@ function getVerbosityLevel() {
 // end users.
 function info(msg) {
   if (verbosity >= VerbosityLevel.INFOS) {
+    // eslint-disable-next-line no-console
     console.log(`Info: ${msg}`);
   }
 }
@@ -370,6 +371,7 @@ function info(msg) {
 // Non-fatal warnings.
 function warn(msg) {
   if (verbosity >= VerbosityLevel.WARNINGS) {
+    // eslint-disable-next-line no-console
     console.log(`Warning: ${msg}`);
   }
 }
