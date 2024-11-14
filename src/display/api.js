@@ -60,6 +60,7 @@ import {
   NodeStandardFontDataFactory,
   NodeWasmFactory,
 } from "display-node_utils";
+import { CanvasDependencyTracker } from "./canvas_dependency_tracker.js";
 import { CanvasGraphics } from "./canvas.js";
 import { DOMCanvasFactory } from "./canvas_factory.js";
 import { DOMCMapReaderFactory } from "display-cmap_reader_factory";
@@ -1292,6 +1293,7 @@ class PDFPageProxy {
 
     this._intentStates = new Map();
     this.destroyed = false;
+    this.recordedGroups = null;
   }
 
   /**
@@ -1415,6 +1417,8 @@ class PDFPageProxy {
     pageColors = null,
     printAnnotationStorage = null,
     isEditing = false,
+    recordOperations = false,
+    filteredOperationIndexes = null,
   }) {
     this._stats?.time("Overall");
 
@@ -1461,8 +1465,14 @@ class PDFPageProxy {
       this._pumpOperatorList(intentArgs);
     }
 
+    const shouldRecordOperations = !this.recordedGroups && recordOperations;
+
     const complete = error => {
       intentState.renderTasks.delete(internalRenderTask);
+
+      if (shouldRecordOperations) {
+        this.recordedGroups = internalRenderTask.gfx.dependencyTracker.take();
+      }
 
       // Attempt to reduce memory usage during *printing*, by always running
       // cleanup immediately once rendering has finished.
@@ -1497,6 +1507,9 @@ class PDFPageProxy {
       // Only include the required properties, and *not* the entire object.
       params: {
         canvasContext,
+        dependencyTracker: shouldRecordOperations
+          ? new CanvasDependencyTracker(canvasContext)
+          : null,
         viewport,
         transform,
         background,
@@ -1511,6 +1524,7 @@ class PDFPageProxy {
       useRequestAnimationFrame: !intentPrint,
       pdfBug: this._pdfBug,
       pageColors,
+      filteredOperationIndexes,
     });
 
     (intentState.renderTasks ||= new Set()).add(internalRenderTask);
@@ -3104,6 +3118,7 @@ class InternalRenderTask {
     useRequestAnimationFrame = false,
     pdfBug = false,
     pageColors = null,
+    filteredOperationIndexes = null,
   }) {
     this.callback = callback;
     this.params = params;
@@ -3132,6 +3147,9 @@ class InternalRenderTask {
     this._scheduleNextBound = this._scheduleNext.bind(this);
     this._nextBound = this._next.bind(this);
     this._canvas = params.canvasContext.canvas;
+    this._dependencyTracker = params.dependencyTracker;
+
+    this._filteredOperationIndexes = filteredOperationIndexes;
   }
 
   get completed() {
@@ -3161,7 +3179,13 @@ class InternalRenderTask {
       this.stepper.init(this.operatorList);
       this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
     }
-    const { canvasContext, viewport, transform, background } = this.params;
+    const {
+      canvasContext,
+      viewport,
+      transform,
+      background,
+      dependencyTracker,
+    } = this.params;
 
     this.gfx = new CanvasGraphics(
       canvasContext,
@@ -3171,7 +3195,8 @@ class InternalRenderTask {
       this.filterFactory,
       { optionalContentConfig },
       this.annotationCanvasMap,
-      this.pageColors
+      this.pageColors,
+      dependencyTracker
     );
     this.gfx.beginDrawing({
       transform,
@@ -3247,7 +3272,8 @@ class InternalRenderTask {
       this.operatorList,
       this.operatorListIdx,
       this._continueBound,
-      this.stepper
+      this.stepper,
+      this._filteredOperationIndexes
     );
     if (this.operatorListIdx === this.operatorList.argsArray.length) {
       this.running = false;
