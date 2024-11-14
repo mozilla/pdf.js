@@ -181,9 +181,17 @@ const DefaultStandardFontDataFactory =
  *   `ImageDecoder` in the worker. Primarily used to improve performance of
  *   image conversion/rendering.
  *   The default value is `true` in web environments and `false` in Node.js.
- * @property {boolean} [isChrome] - Determines if we can use bmp ImageDecoder.
- *   NOTE: Temporary option until [https://issues.chromium.org/issues/374807001]
- *   is fixed.
+ *
+ *   NOTE: Also temporarily disabled in Chromium browsers, until we no longer
+ *   support the affected browser versions, because of various bugs:
+ *
+ *    - Crashes when using the BMP decoder with huge images, e.g. issue6741.pdf;
+ *      see https://issues.chromium.org/issues/374807001
+ *
+ *    - Broken images when using the JPEG decoder with images that have custom
+ *      colour profiles, e.g. GitHub discussion 19030;
+ *      see https://issues.chromium.org/issues/378869810
+ *
  * @property {number} [canvasMaxAreaInBytes] - The integer value is used to
  *   know when an image must be resized (uses `OffscreenCanvas` in the worker).
  *   If it's -1 then a possibly slow algorithm is used to guess the max value.
@@ -289,16 +297,15 @@ function getDocument(src = {}) {
       ? src.isOffscreenCanvasSupported
       : !isNodeJS;
   const isImageDecoderSupported =
+    // eslint-disable-next-line no-nested-ternary
     typeof src.isImageDecoderSupported === "boolean"
       ? src.isImageDecoderSupported
-      : !isNodeJS;
-  const isChrome =
-    typeof src.isChrome === "boolean"
-      ? src.isChrome
-      : (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
-        !FeatureTest.platform.isFirefox &&
-        typeof window !== "undefined" &&
-        !!window?.chrome;
+      : // eslint-disable-next-line no-nested-ternary
+        typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")
+        ? true
+        : typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")
+          ? false
+          : !isNodeJS && (FeatureTest.platform.isFirefox || !globalThis.chrome);
   const canvasMaxAreaInBytes = Number.isInteger(src.canvasMaxAreaInBytes)
     ? src.canvasMaxAreaInBytes
     : -1;
@@ -404,7 +411,6 @@ function getDocument(src = {}) {
       isEvalSupported,
       isOffscreenCanvasSupported,
       isImageDecoderSupported,
-      isChrome,
       canvasMaxAreaInBytes,
       fontExtraProperties,
       useSystemFonts,
