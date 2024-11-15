@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import {
   AbortException,
@@ -1887,7 +1886,7 @@ class PartialEvaluator {
             );
             return;
           case OPS.setFont:
-            var fontSize = args[1];
+            const fontSize = args[1];
             // eagerly collect all fonts
             next(
               self
@@ -1913,7 +1912,7 @@ class PartialEvaluator {
             parsingText = false;
             break;
           case OPS.endInlineImage:
-            var cacheKey = args[0].cacheKey;
+            const cacheKey = args[0].cacheKey;
             if (cacheKey) {
               const localImage = localImageCache.getByName(cacheKey);
               if (localImage) {
@@ -1946,8 +1945,8 @@ class PartialEvaluator {
               self.ensureStateFont(stateManager.state);
               continue;
             }
-            var combinedGlyphs = [];
-            var state = stateManager.state;
+            const combinedGlyphs = [],
+              state = stateManager.state;
             for (const arrItem of args[0]) {
               if (typeof arrItem === "string") {
                 combinedGlyphs.push(...self.handleText(arrItem, state));
@@ -3079,6 +3078,8 @@ class PartialEvaluator {
 
       const operation = {};
       let stop,
+        name,
+        isValidName,
         args = [];
       while (!(stop = timeSlotManager.check())) {
         // The arguments parsed by read() are not used beyond this loop, so
@@ -3098,7 +3099,7 @@ class PartialEvaluator {
         switch (fn | 0) {
           case OPS.setFont:
             // Optimization to ignore multiple identical Tf commands.
-            var fontNameArg = args[0].name,
+            const fontNameArg = args[0].name,
               fontSizeArg = args[1];
             if (
               textState.font &&
@@ -3239,12 +3240,10 @@ class PartialEvaluator {
             break;
           case OPS.paintXObject:
             flushTextContentItem();
-            if (!xobjs) {
-              xobjs = resources.get("XObject") || Dict.empty;
-            }
+            xobjs ??= resources.get("XObject") || Dict.empty;
 
-            var isValidName = args[0] instanceof Name;
-            var name = args[0].name;
+            isValidName = args[0] instanceof Name;
+            name = args[0].name;
 
             if (isValidName && emptyXObjectCache.getByName(name)) {
               break;
