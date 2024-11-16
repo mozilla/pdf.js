@@ -203,14 +203,14 @@ class Dict {
     return this._map.has(key);
   }
 
-  forEach(callback) {
+  *[Symbol.iterator]() {
     for (const [key, value] of this._map) {
-      callback(
+      yield [
         key,
         value instanceof Ref && this.xref
           ? this.xref.fetch(value, this.suppressEncryption)
-          : value
-      );
+          : value,
+      ];
     }
   }
 
