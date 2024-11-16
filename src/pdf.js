@@ -80,7 +80,7 @@ const pdfjsVersion =
 const pdfjsBuild =
   typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_BUILD") : void 0;
 
-if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
+if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING || GENERIC")) {
   globalThis.pdfjsTestingUtils = {
     HighlightOutliner,
   };
