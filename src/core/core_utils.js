@@ -146,6 +146,36 @@ function getInheritableProperty({
   return values;
 }
 
+/**
+ * Get the parent dictionary to update when a property is set.
+ *
+ * @param {Dict} dict - Dictionary from where to start the traversal.
+ * @param {Ref} ref - The reference to the dictionary.
+ * @param {XRef} xref - The `XRef` instance.
+ */
+function getParentToUpdate(dict, ref, xref) {
+  const visited = new RefSet();
+  const firstDict = dict;
+  const result = { dict: null, ref: null };
+
+  while (dict instanceof Dict && !visited.has(ref)) {
+    visited.put(ref);
+    if (dict.has("T")) {
+      break;
+    }
+    ref = dict.getRaw("Parent");
+    if (!(ref instanceof Ref)) {
+      return result;
+    }
+    dict = xref.fetch(ref);
+  }
+  if (dict instanceof Dict && dict !== firstDict) {
+    result.dict = dict;
+    result.ref = ref;
+  }
+  return result;
+}
+
 // prettier-ignore
 const ROMAN_NUMBER_MAP = [
   "", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM",
@@ -672,6 +702,7 @@ export {
   getInheritableProperty,
   getLookupTableFactory,
   getNewAnnotationsMap,
+  getParentToUpdate,
   getRotationMatrix,
   getSizeInBytes,
   isAscii,
