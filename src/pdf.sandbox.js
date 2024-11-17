@@ -84,6 +84,7 @@ class Sandbox {
         [buf, this._alertOnError]
       );
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error);
     } finally {
       if (buf) {

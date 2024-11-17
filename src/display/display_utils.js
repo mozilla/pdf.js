@@ -413,6 +413,7 @@ function noContextMenu(e) {
 
 // Deprecated API function -- display regardless of the `verbosity` setting.
 function deprecated(details) {
+  // eslint-disable-next-line no-console
   console.log("Deprecated API usage: " + details);
 }
 
