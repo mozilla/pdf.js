@@ -42,6 +42,7 @@ import {
   collectActions,
   escapeString,
   getInheritableProperty,
+  getParentToUpdate,
   getRotationMatrix,
   isNumberArray,
   lookupMatrix,
@@ -2108,6 +2109,24 @@ class WidgetAnnotation extends Annotation {
 
   amendSavedDict(annotationStorage, dict) {}
 
+  setValue(dict, value, xref, changes) {
+    const { dict: parentDict, ref: parentRef } = getParentToUpdate(
+      dict,
+      this.ref,
+      xref
+    );
+    if (!parentDict) {
+      dict.set("V", value);
+    } else if (!changes.has(parentRef)) {
+      const newParentDict = parentDict.clone();
+      newParentDict.set("V", value);
+      changes.put(parentRef, { data: newParentDict });
+      return newParentDict;
+    }
+
+    return null;
+  }
+
   async save(evaluator, task, annotationStorage, changes) {
     const storageEntry = annotationStorage?.get(this.data.id);
     const flags = this._buildFlags(storageEntry?.noView, storageEntry?.noPrint);
@@ -2191,13 +2210,15 @@ class WidgetAnnotation extends Annotation {
       value,
     };
 
-    dict.set(
-      "V",
+    const newParentDict = this.setValue(
+      dict,
       Array.isArray(value)
         ? value.map(stringToAsciiOrUTF16BE)
-        : stringToAsciiOrUTF16BE(value)
+        : stringToAsciiOrUTF16BE(value),
+      xref,
+      changes
     );
-    this.amendSavedDict(annotationStorage, dict);
+    this.amendSavedDict(annotationStorage, newParentDict || dict);
 
     const maybeMK = this._getMKDict(rotation);
     if (maybeMK) {
@@ -3111,7 +3132,8 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     };
 
     const name = Name.get(value ? this.data.exportValue : "Off");
-    dict.set("V", name);
+    this.setValue(dict, name, evaluator.xref, changes);
+
     dict.set("AS", name);
     dict.set("M", `D:${getModificationDate()}`);
     if (flags !== undefined) {
@@ -3170,24 +3192,8 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     };
 
     const name = Name.get(value ? this.data.buttonValue : "Off");
-
     if (value) {
-      if (this.parent instanceof Ref) {
-        const parent = evaluator.xref.fetch(this.parent).clone();
-        parent.set("V", name);
-        changes.put(this.parent, {
-          data: parent,
-          xfa: null,
-          needAppearances: false,
-        });
-      } else if (this.parent instanceof Dict) {
-        this.parent.set("V", name);
-      }
-    }
-
-    if (!this.parent) {
-      // If there is no parent then we must set the value in the field.
-      dict.set("V", name);
+      this.setValue(dict, name, evaluator.xref, changes);
     }
 
     dict.set("AS", name);
