@@ -35,6 +35,7 @@ export default [
       "external/builder/fixtures_babel/",
       "external/quickjs/",
       "external/openjpeg/",
+      "test/stats/results/",
       "test/tmp/",
       "test/pdfs/",
       "web/locale/",

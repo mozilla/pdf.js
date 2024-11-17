@@ -720,12 +720,12 @@ class Catalog {
         }
       }
     } else if (obj instanceof Dict) {
-      obj.forEach(function (key, value) {
+      for (const [key, value] of obj) {
         const dest = fetchDest(value);
         if (dest) {
           dests[key] = dest;
         }
-      });
+      }
     }
     return shadow(this, "destinations", dests);
   }
