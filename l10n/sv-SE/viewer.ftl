@@ -357,8 +357,9 @@ pdfjs-ink-canvas =
 
 ## Alt-text dialog
 
-# Alternative text (alt text) helps when people can't see the image.
 pdfjs-editor-alt-text-button-label = Alternativ text
+pdfjs-editor-alt-text-edit-button =
+    .aria-label = Redigera alternativ text
 pdfjs-editor-alt-text-edit-button-label = Redigera alternativ text
 pdfjs-editor-alt-text-dialog-label = Välj ett alternativ
 pdfjs-editor-alt-text-dialog-description = Alt text (alternativ text) hjälper till när människor inte kan se bilden eller när den inte laddas.
@@ -372,6 +373,9 @@ pdfjs-editor-alt-text-decorative-tooltip = Märkt som dekorativ
 # .placeholder: This is a placeholder for the alt text input area
 pdfjs-editor-alt-text-textarea =
     .placeholder = Till exempel, "En ung man sätter sig vid ett bord för att äta en måltid"
+# Alternative text (alt text) helps when people can't see the image.
+pdfjs-editor-alt-text-button =
+    .aria-label = Alternativ text
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
@@ -453,10 +457,16 @@ pdfjs-editor-new-alt-text-error-close-button = Stäng
 pdfjs-editor-new-alt-text-ai-model-downloading-progress = Hämtar AI-modell med alternativ text ({ $downloadedSize } av { $totalSize } MB)
     .aria-valuetext = Hämtar AI-modell med alternativ text ({ $downloadedSize } av { $totalSize } MB)
 # This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button =
+    .aria-label = Alternativ text tillagd
 pdfjs-editor-new-alt-text-added-button-label = Alternativ text tillagd
 # This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button =
+    .aria-label = Saknar alternativ text
 pdfjs-editor-new-alt-text-missing-button-label = Saknar alternativ text
 # This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button =
+    .aria-label = Granska alternativ text
 pdfjs-editor-new-alt-text-to-review-button-label = Granska alternativ text
 # "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
 # Variables:
