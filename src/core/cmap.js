@@ -662,7 +662,7 @@ async function extendCMap(cMap, fetchBuiltInCMap, useCMap) {
   // any previously defined entries.
   cMap.useCMap.forEach(function (key, value) {
     if (!cMap.contains(key)) {
-      cMap.mapOne(key, cMap.useCMap.lookup(key));
+      cMap.mapOne(key, value);
     }
   });
 
