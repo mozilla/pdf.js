@@ -857,9 +857,9 @@ class HighlightEditor extends AnnotationEditor {
       for (let i = 0; i < quadPoints.length; i += 8) {
         boxes.push({
           x: (quadPoints[i] - pageX) / pageWidth,
-          y: 1 - (quadPoints[i + 1] - pageY) / pageHeight,
+          y: 1 - (quadPoints[i + 5] - pageY) / pageHeight,
           width: (quadPoints[i + 2] - quadPoints[i]) / pageWidth,
-          height: (quadPoints[i + 1] - quadPoints[i + 5]) / pageHeight,
+          height: (quadPoints[i + 5] - quadPoints[i + 1]) / pageHeight,
         });
       }
       editor.#createOutlines();
