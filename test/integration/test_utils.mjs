@@ -435,6 +435,26 @@ async function getSerialized(page, filter = undefined) {
   return filter ? values.map(filter) : values;
 }
 
+async function getSerializedFromSerialized(page, serializedData) {
+  return page.evaluate(async data => {
+    const pageIndex = data.pageIndex;
+    const layer =
+      window.PDFViewerApplication.pdfViewer.getPageView(pageIndex)
+        .annotationEditorLayer.annotationEditorLayer;
+    // deserialize to get back the editor
+    const editor = await layer.deserialize(data);
+    layer.add(editor);
+    const value = editor.serialize();
+    // get serialized data from deserialized editor
+    for (const [k, v] of Object.entries(value)) {
+      if (ArrayBuffer.isView(v)) {
+        value[k] = Array.from(v);
+      }
+    }
+    return value;
+  }, serializedData);
+}
+
 async function getFirstSerialized(page, filter = undefined) {
   return (await getSerialized(page, filter))[0];
 }
@@ -785,6 +805,7 @@ export {
   getSelectedEditors,
   getSelector,
   getSerialized,
+  getSerializedFromSerialized,
   getSpanRectFromText,
   hover,
   isVisible,

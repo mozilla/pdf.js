@@ -21,6 +21,7 @@ import {
   getFirstSerialized,
   getRect,
   getSerialized,
+  getSerializedFromSerialized,
   getSpanRectFromText,
   kbBigMoveLeft,
   kbBigMoveUp,
@@ -335,6 +336,22 @@ describe("Highlight Editor", () => {
           expect(serialized.outlines[0].length)
             .withContext(`In ${browserName}`)
             .toEqual(8);
+
+          // Check deserialized
+          const serializedAfter = await getSerializedFromSerialized(
+            page,
+            serialized
+          );
+
+          expect(serializedAfter.quadPoints)
+            .withContext(`In ${browserName}`)
+            .toEqual(serialized.quadPoints);
+          expect(serializedAfter.outlines)
+            .withContext(`In ${browserName}`)
+            .toEqual(serialized.outlines);
+          expect(serializedAfter.rect)
+            .withContext(`In ${browserName}`)
+            .toEqual(serialized.rect);
         })
       );
     });
