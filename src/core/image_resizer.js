@@ -120,17 +120,13 @@ class ImageResizer {
 
   static setOptions({
     canvasMaxAreaInBytes = -1,
-    isChrome = false,
     isImageDecoderSupported = false,
   }) {
     if (!this._hasMaxArea) {
       // Divide by 4 to have the value in pixels.
       this.MAX_AREA = canvasMaxAreaInBytes >> 2;
     }
-    // TODO: remove the isChrome, once Chrome doesn't crash anymore with
-    // issue6741.pdf.
-    // https://issues.chromium.org/issues/374807001.
-    this.#isImageDecoderSupported = isImageDecoderSupported && !isChrome;
+    this.#isImageDecoderSupported = isImageDecoderSupported;
   }
 
   static _areGoodDims(width, height) {
