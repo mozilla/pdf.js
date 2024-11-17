@@ -357,8 +357,9 @@ pdfjs-ink-canvas =
 
 ## Alt-text dialog
 
-# Alternative text (alt text) helps when people can't see the image.
 pdfjs-editor-alt-text-button-label = Alternatif metin
+pdfjs-editor-alt-text-edit-button =
+    .aria-label = Alternatif metni düzenle
 pdfjs-editor-alt-text-edit-button-label = Alternatif metni düzenle
 pdfjs-editor-alt-text-dialog-label = Bir seçenek seçin
 pdfjs-editor-alt-text-dialog-description = Alternatif metin, insanlar resmi göremediğinde veya resim yüklenmediğinde işe yarar.
@@ -372,6 +373,9 @@ pdfjs-editor-alt-text-decorative-tooltip = Dekoratif olarak işaretlendi
 # .placeholder: This is a placeholder for the alt text input area
 pdfjs-editor-alt-text-textarea =
     .placeholder = Örneğin, “Genç bir adam yemek yemek için masaya oturuyor”
+# Alternative text (alt text) helps when people can't see the image.
+pdfjs-editor-alt-text-button =
+    .aria-label = Alternatif metin
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
@@ -453,10 +457,16 @@ pdfjs-editor-new-alt-text-error-close-button = Kapat
 pdfjs-editor-new-alt-text-ai-model-downloading-progress = Alt metin yapay zekâ modeli indiriliyor ({ $downloadedSize } / { $totalSize } MB)
     .aria-valuetext = Alt metin yapay zekâ modeli indiriliyor ({ $downloadedSize } / { $totalSize } MB)
 # This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button =
+    .aria-label = Alternatif metin eklendi
 pdfjs-editor-new-alt-text-added-button-label = Alt metin eklendi
 # This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button =
+    .aria-label = Alternatif metin eksik
 pdfjs-editor-new-alt-text-missing-button-label = Alt metin eksik
 # This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button =
+    .aria-label = Alternatif metni incele
 pdfjs-editor-new-alt-text-to-review-button-label = Alt metni incele
 # "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
 # Variables:

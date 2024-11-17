@@ -357,8 +357,9 @@ pdfjs-ink-canvas =
 
 ## Alt-text dialog
 
-# Alternative text (alt text) helps when people can't see the image.
 pdfjs-editor-alt-text-button-label = Alt-varatexti
+pdfjs-editor-alt-text-edit-button =
+    .aria-label = Breyta alt-myndatexta
 pdfjs-editor-alt-text-edit-button-label = Breyta alt-varatexta
 pdfjs-editor-alt-text-dialog-label = Veldu valkost
 pdfjs-editor-alt-text-dialog-description = Alt-varatexti (auka-myndatexti) hjálpar þegar fólk getur ekki séð myndina eða þegar hún hleðst ekki inn.
@@ -372,6 +373,9 @@ pdfjs-editor-alt-text-decorative-tooltip = Merkt sem skraut
 # .placeholder: This is a placeholder for the alt text input area
 pdfjs-editor-alt-text-textarea =
     .placeholder = Til dæmis: „Ungur maður sest við borð til að snæða máltíð“
+# Alternative text (alt text) helps when people can't see the image.
+pdfjs-editor-alt-text-button =
+    .aria-label = Alt-myndatexti
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
@@ -453,10 +457,16 @@ pdfjs-editor-new-alt-text-error-close-button = Loka
 pdfjs-editor-new-alt-text-ai-model-downloading-progress = Sækir gervigreindarlíkan með alt-myndatextum ({ $downloadedSize } af { $totalSize } MB)
     .aria-valuetext = Sækir gervigreindarlíkan með alt-myndatextum ({ $downloadedSize } af { $totalSize } MB)
 # This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button =
+    .aria-label = Alt-myndatexta bætt við
 pdfjs-editor-new-alt-text-added-button-label = Alt-myndatexta bætt við
 # This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button =
+    .aria-label = Vantar alt-myndatexta
 pdfjs-editor-new-alt-text-missing-button-label = Vantar alt-myndatexta
 # This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button =
+    .aria-label = Yfirfara alt-myndatexta
 pdfjs-editor-new-alt-text-to-review-button-label = Yfirfara myndatexta
 # "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
 # Variables:
