@@ -343,6 +343,10 @@ pdfjs-editor-stamp-add-image-button-label = Grafik hinzufügen
 pdfjs-editor-free-highlight-thickness-input = Linienstärke
 pdfjs-editor-free-highlight-thickness-title =
     .title = Linienstärke beim Hervorheben anderer Elemente als Text ändern
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Texteditor
+    .default-content = Schreiben beginnen…
 pdfjs-free-text =
     .aria-label = Texteditor
 pdfjs-free-text-default-content = Schreiben beginnen…
@@ -353,8 +357,9 @@ pdfjs-ink-canvas =
 
 ## Alt-text dialog
 
-# Alternative text (alt text) helps when people can't see the image.
 pdfjs-editor-alt-text-button-label = Alternativ-Text
+pdfjs-editor-alt-text-edit-button =
+    .aria-label = Alternativ-Text bearbeiten
 pdfjs-editor-alt-text-edit-button-label = Alternativ-Text bearbeiten
 pdfjs-editor-alt-text-dialog-label = Option wählen
 pdfjs-editor-alt-text-dialog-description = Alt-Text (Alternativtext) hilft, wenn Personen die Grafik nicht sehen können oder wenn sie nicht geladen wird.
@@ -368,6 +373,9 @@ pdfjs-editor-alt-text-decorative-tooltip = Als dekorativ markiert
 # .placeholder: This is a placeholder for the alt text input area
 pdfjs-editor-alt-text-textarea =
     .placeholder = Zum Beispiel: "Ein junger Mann setzt sich an einen Tisch, um zu essen."
+# Alternative text (alt text) helps when people can't see the image.
+pdfjs-editor-alt-text-button =
+    .aria-label = Alternativ-Text
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
@@ -449,10 +457,16 @@ pdfjs-editor-new-alt-text-error-close-button = Schließen
 pdfjs-editor-new-alt-text-ai-model-downloading-progress = Alternativ-Text-KI-Modell wird heruntergeladen ({ $downloadedSize } von { $totalSize } MB)
     .aria-valuetext = Alternativ-Text-KI-Modell wird heruntergeladen ({ $downloadedSize } von { $totalSize } MB)
 # This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button =
+    .aria-label = Alternativ-Text hinzugefügt
 pdfjs-editor-new-alt-text-added-button-label = Alternativ-Text hinzugefügt
 # This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button =
+    .aria-label = Fehlender Alternativ-Text
 pdfjs-editor-new-alt-text-missing-button-label = Fehlender Alternativ-Text
 # This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button =
+    .aria-label = Alternativ-Text überprüfen
 pdfjs-editor-new-alt-text-to-review-button-label = Alternativ-Text überprüfen
 # "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
 # Variables:

@@ -357,8 +357,9 @@ pdfjs-ink-canvas =
 
 ## Alt-text dialog
 
-# Alternative text (alt text) helps when people can't see the image.
 pdfjs-editor-alt-text-button-label = Балама мәтін
+pdfjs-editor-alt-text-edit-button =
+    .aria-label = Балама мәтінді өңдеу
 pdfjs-editor-alt-text-edit-button-label = Балама мәтінді өңдеу
 pdfjs-editor-alt-text-dialog-label = Опцияны таңдау
 pdfjs-editor-alt-text-dialog-description = Балама мәтін адамдар суретті көре алмағанда немесе ол жүктелмегенде көмектеседі.
@@ -372,6 +373,9 @@ pdfjs-editor-alt-text-decorative-tooltip = Декоративті деп бел�
 # .placeholder: This is a placeholder for the alt text input area
 pdfjs-editor-alt-text-textarea =
     .placeholder = Мысалы, "Жас жігіт тамақ ішу үшін үстел басына отырады"
+# Alternative text (alt text) helps when people can't see the image.
+pdfjs-editor-alt-text-button =
+    .aria-label = Балама мәтін
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
@@ -453,10 +457,16 @@ pdfjs-editor-new-alt-text-error-close-button = Жабу
 pdfjs-editor-new-alt-text-ai-model-downloading-progress = Балама мәтін үшін ЖИ моделі жүктеп алынуда ({ $downloadedSize }/{ $totalSize } МБ)
     .aria-valuetext = Балама мәтін үшін ЖИ моделі жүктеп алынуда ({ $downloadedSize }/{ $totalSize } МБ)
 # This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button =
+    .aria-label = Балама мәтін қосылды
 pdfjs-editor-new-alt-text-added-button-label = Балама мәтін қосылды
 # This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button =
+    .aria-label = Балама мәтін жоқ
 pdfjs-editor-new-alt-text-missing-button-label = Балама мәтін жоқ
 # This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button =
+    .aria-label = Балама мәтінге пікір қалдыру
 pdfjs-editor-new-alt-text-to-review-button-label = Балама мәтінге пікір қалдыру
 # "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
 # Variables:
