@@ -423,17 +423,18 @@ class DOMFilterFactory extends BaseFilterFactory {
   }
 
   destroy(keepHCM = false) {
-    if (keepHCM && this.#hcmCache.size !== 0) {
+    if (keepHCM && this.#_hcmCache?.size) {
       return;
     }
-    if (this.#_defs) {
-      this.#_defs.parentNode.parentNode.remove();
-      this.#_defs = null;
-    }
-    if (this.#_cache) {
-      this.#_cache.clear();
-      this.#_cache = null;
-    }
+    this.#_defs?.parentNode.parentNode.remove();
+    this.#_defs = null;
+
+    this.#_cache?.clear();
+    this.#_cache = null;
+
+    this.#_hcmCache?.clear();
+    this.#_hcmCache = null;
+
     this.#id = 0;
   }
 
