@@ -2145,6 +2145,81 @@ describe("annotation", function () {
       );
     });
 
+    it("should save the text in two fields with the same name", async function () {
+      const textWidget1Ref = Ref.get(123, 0);
+      const textWidget2Ref = Ref.get(124, 0);
+
+      const parentRef = Ref.get(125, 0);
+      textWidgetDict.set("Parent", parentRef);
+      const parentDict = new Dict();
+      parentDict.set("Kids", [textWidget1Ref, textWidget2Ref]);
+      parentDict.set("T", "foo");
+      const textWidget2Dict = textWidgetDict.clone();
+
+      const xref = new XRefMock([
+        { ref: textWidget1Ref, data: textWidgetDict },
+        { ref: textWidget2Ref, data: textWidget2Dict },
+        { ref: parentRef, data: parentDict },
+        helvRefObj,
+      ]);
+      partialEvaluator.xref = xref;
+      const task = new WorkerTask("test save");
+
+      const annotation1 = await AnnotationFactory.create(
+        xref,
+        textWidget1Ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      const annotation2 = await AnnotationFactory.create(
+        xref,
+        textWidget2Ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      const annotationStorage = new Map();
+      annotationStorage.set(annotation1.data.id, { value: "hello world" });
+      annotationStorage.set(annotation2.data.id, { value: "hello world" });
+      const changes = new RefSetCache();
+
+      await annotation1.save(
+        partialEvaluator,
+        task,
+        annotationStorage,
+        changes
+      );
+      await annotation2.save(
+        partialEvaluator,
+        task,
+        annotationStorage,
+        changes
+      );
+      const data = await writeChanges(changes, xref);
+      expect(data.length).toEqual(5);
+      const [, , data1, data2, parentData] = data;
+      expect(data1.ref).toEqual(textWidget1Ref);
+      expect(data2.ref).toEqual(textWidget2Ref);
+      expect(parentData.ref).toEqual(parentRef);
+
+      data1.data = data1.data.replace(/\(D:\d+\)/, "(date)");
+      data2.data = data2.data.replace(/\(D:\d+\)/, "(date)");
+      expect(data1.data).toEqual(
+        "123 0 obj\n" +
+          "<< /Type /Annot /Subtype /Widget /FT /Tx /DA (/Helv 5 Tf) /DR " +
+          "<< /Font << /Helv 314 0 R>>>> /Rect [0 0 32 10] " +
+          "/Parent 125 0 R /AP << /N 4 0 R>> /M (date)>>\nendobj\n"
+      );
+      expect(data2.data).toEqual(
+        "124 0 obj\n" +
+          "<< /Type /Annot /Subtype /Widget /FT /Tx /DA (/Helv 5 Tf) /DR " +
+          "<< /Font << /Helv 314 0 R>>>> /Rect [0 0 32 10] " +
+          "/Parent 125 0 R /AP << /N 5 0 R>> /M (date)>>\nendobj\n"
+      );
+      expect(parentData.data).toEqual(
+        "125 0 obj\n<< /Kids [123 0 R 124 0 R] /T (foo) /V (hello world)>>\nendobj\n"
+      );
+    });
+
     it("should save rotated text", async function () {
       const textWidgetRef = Ref.get(123, 0);
       const xref = new XRefMock([
@@ -3080,6 +3155,7 @@ describe("annotation", function () {
       const parentDict = new Dict();
       parentDict.set("V", Name.get("Off"));
       parentDict.set("Kids", [buttonWidgetRef]);
+      parentDict.set("T", "RadioGroup");
       buttonWidgetDict.set("Parent", parentRef);
 
       const xref = new XRefMock([
@@ -3116,7 +3192,7 @@ describe("annotation", function () {
       );
       expect(parentData.ref).toEqual(Ref.get(456, 0));
       expect(parentData.data).toEqual(
-        "456 0 obj\n<< /V /Checked /Kids [123 0 R]>>\nendobj\n"
+        "456 0 obj\n<< /V /Checked /Kids [123 0 R] /T (RadioGroup)>>\nendobj\n"
       );
 
       annotationStorage.set(annotation.data.id, { value: false });
@@ -3142,6 +3218,7 @@ describe("annotation", function () {
 
       const parentDict = new Dict();
       parentDict.set("Kids", [buttonWidgetRef]);
+      parentDict.set("T", "RadioGroup");
       buttonWidgetDict.set("Parent", parentRef);
 
       const xref = new XRefMock([
@@ -3178,7 +3255,7 @@ describe("annotation", function () {
       );
       expect(parentData.ref).toEqual(Ref.get(456, 0));
       expect(parentData.data).toEqual(
-        "456 0 obj\n<< /Kids [123 0 R] /V /Checked>>\nendobj\n"
+        "456 0 obj\n<< /Kids [123 0 R] /T (RadioGroup) /V /Checked>>\nendobj\n"
       );
     });
 
