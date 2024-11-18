@@ -77,7 +77,7 @@ export default [
         __non_webpack_import__: "readonly",
       },
 
-      ecmaVersion: 2022,
+      ecmaVersion: 2025,
       sourceType: "module",
     },
 

@@ -382,6 +382,7 @@ function createWebpackConfig(
     module: {
       rules: [
         {
+          test: /\.[mc]?js$/,
           loader: "babel-loader",
           exclude: babelExcludeRegExp,
           options: {

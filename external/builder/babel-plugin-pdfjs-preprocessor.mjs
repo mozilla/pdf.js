@@ -1,10 +1,7 @@
 import { types as t, transformSync } from "@babel/core";
-import fs from "fs";
-import { join as joinPaths } from "path";
 import vm from "vm";
 
 const PDFJS_PREPROCESSOR_NAME = "PDFJSDev";
-const ROOT_PREFIX = "$ROOT/";
 
 function isPDFJSPreprocessor(obj) {
   return obj.type === "Identifier" && obj.name === PDFJS_PREPROCESSOR_NAME;
@@ -40,18 +37,6 @@ function handlePreprocessorAction(ctx, actionName, args, path) {
           return result;
         }
         break;
-      case "json":
-        if (!t.isStringLiteral(arg)) {
-          throw new Error("Path to JSON is not provided");
-        }
-        let jsonPath = arg.value;
-        if (jsonPath.startsWith(ROOT_PREFIX)) {
-          jsonPath = joinPaths(
-            ctx.rootPath,
-            jsonPath.substring(ROOT_PREFIX.length)
-          );
-        }
-        return JSON.parse(fs.readFileSync(jsonPath, "utf8"));
     }
     throw new Error("Unsupported action");
   } catch (e) {
