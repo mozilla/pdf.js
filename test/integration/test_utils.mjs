@@ -327,9 +327,18 @@ async function waitForStorageEntries(page, nEntries) {
 
 async function waitForSerialized(page, nEntries) {
   return page.waitForFunction(
-    n =>
-      (window.PDFViewerApplication.pdfDocument.annotationStorage.serializable
-        .map?.size ?? 0) === n,
+    n => {
+      try {
+        return (
+          (window.PDFViewerApplication.pdfDocument.annotationStorage
+            .serializable.map?.size ?? 0) === n
+        );
+      } catch {
+        // When serializing a stamp annotation with a SVG, the transfer
+        // can fail because of the SVG, so we just retry.
+        return false;
+      }
+    },
     {},
     nEntries
   );
