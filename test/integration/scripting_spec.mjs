@@ -1266,6 +1266,13 @@ describe("Interaction", () => {
           await page.waitForFunction(
             `${getQuerySelector("27R")}.value === "HEAO "`
           );
+
+          // The typing actions in the first textbox caused sandbox events to be
+          // queued. We don't close the document between tests, so we have to
+          // flush them here, by clicking the second textbox, so they don't leak
+          // through to the following test.
+          await page.click(getSelector("28R"));
+          await waitForSandboxTrip(page);
         })
       );
     });
@@ -1276,30 +1283,19 @@ describe("Interaction", () => {
           await waitForScripting(page);
 
           await page.click(getSelector("28R"));
-          await page.$eval(getSelector("28R"), el =>
-            el.setSelectionRange(0, 0)
-          );
-
+          await page.keyboard.press("Home");
           await page.type(getSelector("28R"), "Hello");
           await page.waitForFunction(
-            `${getQuerySelector("28R")}.value !== "123"`
+            `${getQuerySelector("28R")}.value === "Hello123"`
           );
 
-          let text = await page.$eval(getSelector("28R"), el => el.value);
-          expect(text).withContext(`In ${browserName}`).toEqual("Hello123");
-
-          // The action will trigger a calculateNow which itself
-          // will trigger a resetForm (inducing a calculateNow) and a
-          // calculateNow.
+          // The action triggers a `calculateNow` which in turn triggers a
+          // `resetForm (inducing a `calculateNow`) and a `calculateNow`.
+          // Without infinite loop prevention the field would be empty.
           await page.click("[data-annotation-id='31R']");
-
           await page.waitForFunction(
-            `${getQuerySelector("28R")}.value !== "Hello123"`
+            `${getQuerySelector("28R")}.value === "123"`
           );
-
-          // Without preventing against infinite loop the field is empty.
-          text = await page.$eval(getSelector("28R"), el => el.value);
-          expect(text).withContext(`In ${browserName}`).toEqual("123");
         })
       );
     });
