@@ -115,6 +115,7 @@ export default [
       "unicorn/no-instanceof-array": "error",
       "unicorn/no-invalid-remove-event-listener": "error",
       "unicorn/no-new-buffer": "error",
+      "unicorn/no-single-promise-in-promise-methods": "error",
       "unicorn/no-typeof-undefined": ["error", { checkGlobalVariables: false }],
       "unicorn/no-useless-promise-resolve-reject": "error",
       "unicorn/no-useless-spread": "error",
