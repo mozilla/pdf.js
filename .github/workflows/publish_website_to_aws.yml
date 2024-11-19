@@ -41,17 +41,22 @@ jobs:
           aws-region: us-east-1
           role-session-name: GitHubActionsSession
 
+      - name: Set Deployment Variables
+        run: |
+          echo "DATETIME=$(date +%Y%m%d%H%M%S)" >> $GITHUB_ENV
+          echo "SHORT_HASH=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+
       - name: Deploy to Development Bucket
         if: github.event_name == 'pull_request'
         run: |
-          aws s3 sync build/gh-pages/ s3://${{ vars.AWS_BUCKET_NAME }}/pdfjs/${{ github.sha }}/ --acl public-read
+          aws s3 sync build/gh-pages/ s3://${{ vars.AWS_BUCKET_NAME }}/pdfjs/${{ env.DATETIME }}-${{ env.SHORT_HASH }}/ --acl public-read
 
       - name: Comment deployment URL on PR
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
-            const url = `https://${{ vars.AWS_BUCKET_NAME }}.s3.us-east-1.amazonaws.com/pdfjs/${{ github.sha }}/web/viewer.html?file=${{ vars.TEST_PDF }}`;
+            const url = `https://${{ vars.AWS_BUCKET_NAME }}.s3.us-east-1.amazonaws.com/pdfjs/${process.env.DATETIME}-${process.env.SHORT_HASH}/web/viewer.html?file=${{ vars.TEST_PDF }}`;
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -70,4 +75,4 @@ jobs:
       - name: Deploy to Production Bucket
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: |
-          aws s3 sync build/gh-pages/ ${{ secrets.AWS_PRODUCTION_BUCKET_CDN }}/pdfjs/${{ github.sha }}/ --acl public-read
+          aws s3 sync build/gh-pages/ ${{ secrets.AWS_PRODUCTION_BUCKET_CDN }}/pdfjs/${{ env.DATETIME }}-${{ env.SHORT_HASH }}/ --acl public-read
