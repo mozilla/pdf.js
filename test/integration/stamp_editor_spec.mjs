@@ -195,14 +195,14 @@ describe("Stamp Editor", () => {
           );
           const editorSelector = getEditorSelector(0);
           await waitForImage(page, editorSelector);
-
           await waitForSerialized(page, 1);
+
           await page.waitForSelector(`${editorSelector} button.delete`);
           await page.click(`${editorSelector} button.delete`);
-
           await waitForSerialized(page, 0);
 
           await kbUndo(page);
+          await waitForImage(page, editorSelector);
           await waitForSerialized(page, 1);
 
           await waitForSelectedEditor(page, editorSelector);
@@ -654,8 +654,8 @@ describe("Stamp Editor", () => {
         await waitForSerialized(page, 0);
 
         await kbUndo(page);
+        await waitForImage(page, selector);
         await waitForSerialized(page, 1);
-        await page.waitForSelector(`${selector} canvas`);
       }
     });
   });
@@ -739,8 +739,8 @@ describe("Stamp Editor", () => {
         }
 
         await kbUndo(page);
+        await waitForImage(page, selector);
         await waitForSerialized(page, 1);
-        await page.waitForSelector(`${selector} canvas`);
       }
     });
   });
