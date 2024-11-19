@@ -44,19 +44,19 @@ jobs:
       - name: Deploy to Development Bucket
         if: github.event_name == 'pull_request'
         run: |
-          aws s3 sync build/gh-pages/ s3://${{ vars.AWS_BUCKET_NAME }}/pdfjs/ --acl public-read
+          aws s3 sync build/gh-pages/ s3://${{ vars.AWS_BUCKET_NAME }}/pdfjs/${{ github.sha }}/ --acl public-read
 
       - name: Comment deployment URL on PR
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
-            const url = `https://${{ vars.AWS_BUCKET_NAME }}.s3.us-east-1.amazonaws.com/pdfjs/web/viewer.html?file=${{ vars.TEST_PDF }}`;
+            const url = `https://${{ vars.AWS_BUCKET_NAME }}.s3.us-east-1.amazonaws.com/pdfjs/${{ github.sha }}/web/viewer.html?file=${{ vars.TEST_PDF }}`;
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `Preview your deployment: [View Here](${url})`
+              body: `${url}`
             });
 
       - name: Configure AWS credentials (Production)
@@ -70,4 +70,4 @@ jobs:
       - name: Deploy to Production Bucket
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: |
-          aws s3 sync build/gh-pages/ ${{ secrets.AWS_PRODUCTION_BUCKET_CDN }}/pdfjs/ --acl public-read
+          aws s3 sync build/gh-pages/ ${{ secrets.AWS_PRODUCTION_BUCKET_CDN }}/pdfjs/${{ github.sha }}/ --acl public-read
