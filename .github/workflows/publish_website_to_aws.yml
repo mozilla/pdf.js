@@ -44,7 +44,7 @@ jobs:
       - name: Set Deployment Variables
         run: |
           echo "DATETIME=$(date +%Y%m%d%H%M%S)" >> $GITHUB_ENV
-          echo "SHORT_HASH=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+          echo "SHORT_HASH=$(git rev-parse --short "$GITHUB_SHA")" >> $GITHUB_ENV
 
       - name: Deploy to Development Bucket
         if: github.event_name == 'pull_request'
