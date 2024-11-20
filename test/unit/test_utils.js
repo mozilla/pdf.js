@@ -51,6 +51,22 @@ function buildGetDocumentParams(filename, options) {
   return params;
 }
 
+function getCrossOriginHostname(hostname) {
+  if (hostname === "localhost") {
+    // Note: This does not work if localhost is listening on IPv6 only.
+    // As a work-around, visit the IPv6 version at:
+    // http://[::1]:8888/test/unit/unit_test.html?spec=Cross-origin
+    return "127.0.0.1";
+  }
+
+  if (hostname === "127.0.0.1" || hostname === "[::1]") {
+    return "localhost";
+  }
+
+  // FQDN are cross-origin and browsers usually resolve them to the same server.
+  return hostname.endsWith(".") ? hostname.slice(0, -1) : hostname + ".";
+}
+
 class XRefMock {
   constructor(array) {
     this._map = Object.create(null);
@@ -216,6 +232,7 @@ export {
   CMAP_URL,
   createIdFactory,
   DefaultFileReaderFactory,
+  getCrossOriginHostname,
   STANDARD_FONT_DATA_URL,
   TEST_PDFS_PATH,
   TestPdfsServer,
