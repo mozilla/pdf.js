@@ -32,6 +32,7 @@ import {
   buildGetDocumentParams,
   CMAP_URL,
   DefaultFileReaderFactory,
+  getCrossOriginHostname,
   TEST_PDFS_PATH,
   TestPdfsServer,
 } from "./test_utils.js";
@@ -2977,17 +2978,14 @@ describe("api", function () {
       let loadingTask;
       function _checkCanLoad(expectSuccess, filename, options) {
         if (isNodeJS) {
+          // We can simulate cross-origin requests, but since Node.js does not
+          // enforce the Same Origin Policy, requests are expected to be allowed
+          // independently of withCredentials.
           pending("Cannot simulate cross-origin requests in Node.js");
         }
         const params = buildGetDocumentParams(filename, options);
         const url = new URL(params.url);
-        if (url.hostname === "localhost") {
-          url.hostname = "127.0.0.1";
-        } else if (params.url.hostname === "127.0.0.1") {
-          url.hostname = "localhost";
-        } else {
-          pending("Can only run cross-origin test on localhost!");
-        }
+        url.hostname = getCrossOriginHostname(url.hostname);
         params.url = url.href;
         loadingTask = getDocument(params);
         return loadingTask.promise

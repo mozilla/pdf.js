@@ -15,6 +15,7 @@
 
 import { AbortException } from "../../src/shared/util.js";
 import { PDFFetchStream } from "../../src/display/fetch_stream.js";
+import { testCrossOriginRedirects } from "./common_pdfstream_tests.js";
 import { TestPdfsServer } from "./test_utils.js";
 
 describe("fetch_stream", function () {
@@ -115,5 +116,34 @@ describe("fetch_stream", function () {
     expect(fullReaderCancelled).toEqual(true);
     expect(result1.value).toEqual(rangeSize);
     expect(result2.value).toEqual(tailSize);
+  });
+
+  describe("Redirects", function () {
+    it("redirects allowed if all responses are same-origin", async function () {
+      await testCrossOriginRedirects({
+        PDFStreamClass: PDFFetchStream,
+        redirectIfRange: false,
+        async testRangeReader(rangeReader) {
+          await expectAsync(rangeReader.read()).toBeResolved();
+        },
+      });
+    });
+
+    it("redirects blocked if any response is cross-origin", async function () {
+      await testCrossOriginRedirects({
+        PDFStreamClass: PDFFetchStream,
+        redirectIfRange: true,
+        async testRangeReader(rangeReader) {
+          // When read (sync), error should be reported.
+          await expectAsync(rangeReader.read()).toBeRejectedWithError(
+            /^Expected range response-origin "http:.*" to match "http:.*"\.$/
+          );
+          // When read again (async), error should be consistent.
+          await expectAsync(rangeReader.read()).toBeRejectedWithError(
+            /^Expected range response-origin "http:.*" to match "http:.*"\.$/
+          );
+        },
+      });
+    });
   });
 });

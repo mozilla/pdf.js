@@ -52,7 +52,7 @@ class WebServer {
     this.cacheExpirationTime = cacheExpirationTime || 0;
     this.disableRangeRequests = false;
     this.hooks = {
-      GET: [crossOriginHandler],
+      GET: [crossOriginHandler, redirectHandler],
       POST: [],
     };
   }
@@ -308,6 +308,11 @@ class WebServer {
   }
 
   #serveFileRange(response, fileURL, fileSize, start, end) {
+    if (end > fileSize || start > end) {
+      response.writeHead(416);
+      response.end();
+      return;
+    }
     const stream = fs.createReadStream(fileURL, {
       flags: "rs",
       start,
@@ -336,18 +341,65 @@ class WebServer {
 }
 
 // This supports the "Cross-origin" test in test/unit/api_spec.js
-// It is here instead of test.js so that when the test will still complete as
+// and "Redirects" in test/unit/network_spec.js and
+// test/unit/fetch_stream_spec.js via test/unit/common_pdfstream_tests.js.
+// It is here instead of test.mjs so that when the test will still complete as
 // expected if the user does "gulp server" and then visits
 // http://localhost:8888/test/unit/unit_test.html?spec=Cross-origin
 function crossOriginHandler(url, request, response) {
   if (url.pathname === "/test/pdfs/basicapi.pdf") {
-    if (url.searchParams.get("cors") === "withCredentials") {
-      response.setHeader("Access-Control-Allow-Origin", request.headers.origin);
-      response.setHeader("Access-Control-Allow-Credentials", "true");
-    } else if (url.searchParams.get("cors") === "withoutCredentials") {
-      response.setHeader("Access-Control-Allow-Origin", request.headers.origin);
+    if (!url.searchParams.has("cors") || !request.headers.origin) {
+      return;
     }
+    response.setHeader("Access-Control-Allow-Origin", request.headers.origin);
+    if (url.searchParams.get("cors") === "withCredentials") {
+      response.setHeader("Access-Control-Allow-Credentials", "true");
+    } // withoutCredentials does not include Access-Control-Allow-Credentials.
+    response.setHeader(
+      "Access-Control-Expose-Headers",
+      "Accept-Ranges,Content-Range"
+    );
+    response.setHeader("Vary", "Origin");
   }
+}
+
+// This supports the "Redirects" test in test/unit/network_spec.js and
+// test/unit/fetch_stream_spec.js via test/unit/common_pdfstream_tests.js.
+// It is here instead of test.mjs so that when the test will still complete as
+// expected if the user does "gulp server" and then visits
+// http://localhost:8888/test/unit/unit_test.html?spec=Redirects
+function redirectHandler(url, request, response) {
+  const redirectToHost = url.searchParams.get("redirectToHost");
+  if (redirectToHost) {
+    // Chrome may serve byte range requests directly from the cache, potentially
+    // from a full request or a different range, without involving the server.
+    // To prevent this from happening, make sure that the response is never
+    // cached, so that Range requests are never served from the browser cache.
+    response.setHeader("Cache-Control", "no-store,max-age=0");
+
+    if (url.searchParams.get("redirectIfRange") && !request.headers.range) {
+      return false;
+    }
+    try {
+      const newURL = new URL(url);
+      newURL.hostname = redirectToHost;
+      // Delete test-only query parameters to avoid infinite redirects.
+      newURL.searchParams.delete("redirectToHost");
+      newURL.searchParams.delete("redirectIfRange");
+      if (newURL.hostname !== redirectToHost) {
+        throw new Error(`Invalid hostname: ${redirectToHost}`);
+      }
+      response.setHeader("Location", newURL.href);
+    } catch {
+      response.writeHead(500);
+      response.end();
+      return true;
+    }
+    response.writeHead(302);
+    response.end();
+    return true;
+  }
+  return false;
 }
 
 export { WebServer };
