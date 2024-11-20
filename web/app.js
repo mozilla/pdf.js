@@ -2001,6 +2001,20 @@ const PDFViewerApplication = {
         opts
       );
     }
+    window.addEventListener("message", event => {
+      const origins = [
+        /^http:\/\/localhost:5000.*/,
+        /^https:\/\/.*\.herokuapp\.com$/,
+        /^https:\/\/.*\.sharinpix\.com$/,
+      ];
+      const originAllowed = origins.some(origin => origin.test(event.origin));
+      if (originAllowed && event.data.type === "image-download") {
+        const printButton = document.getElementById("printButton");
+        const secondaryPrintButton = document.getElementById("secondaryPrint");
+        printButton?.classList.remove("hidden");
+        secondaryPrintButton?.classList.remove("hidden");
+      }
+    });
   },
 
   bindWindowEvents() {
