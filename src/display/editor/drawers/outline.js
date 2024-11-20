@@ -16,6 +16,8 @@
 import { unreachable } from "../../../shared/util.js";
 
 class Outline {
+  static PRECISION = 1e-4;
+
   /**
    * @returns {string} The SVG path of the outline.
    */
@@ -51,6 +53,49 @@ class Outline {
       dest[i + 1] = ty + src[i] * sy;
     }
     return dest;
+  }
+
+  static _translate(src, tx, ty, dest) {
+    dest ||= new Float32Array(src.length);
+    for (let i = 0, ii = src.length; i < ii; i += 2) {
+      dest[i] = tx + src[i];
+      dest[i + 1] = ty + src[i + 1];
+    }
+    return dest;
+  }
+
+  static svgRound(x) {
+    // 0.1234 will be 1234 and this way we economize 2 bytes per number.
+    // Of course, it makes sense only when the viewBox is [0 0 10000 10000].
+    // And it helps to avoid bugs like:
+    //  https://bugzilla.mozilla.org/show_bug.cgi?id=1929340
+    return Math.round(x * 10000);
+  }
+
+  static _normalizePoint(x, y, parentWidth, parentHeight, rotation) {
+    switch (rotation) {
+      case 90:
+        return [1 - y / parentWidth, x / parentHeight];
+      case 180:
+        return [1 - x / parentWidth, 1 - y / parentHeight];
+      case 270:
+        return [y / parentWidth, 1 - x / parentHeight];
+      default:
+        return [x / parentWidth, y / parentHeight];
+    }
+  }
+
+  static _normalizePagePoint(x, y, rotation) {
+    switch (rotation) {
+      case 90:
+        return [1 - y, x];
+      case 180:
+        return [1 - x, 1 - y];
+      case 270:
+        return [y, 1 - x];
+      default:
+        return [x, y];
+    }
   }
 }
 

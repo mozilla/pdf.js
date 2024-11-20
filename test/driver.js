@@ -649,7 +649,7 @@ class Driver {
 
         if (task.annotationStorage) {
           for (const annotation of Object.values(task.annotationStorage)) {
-            const { bitmapName, quadPoints } = annotation;
+            const { bitmapName, quadPoints, paths, outlines } = annotation;
             if (bitmapName) {
               promise = promise.then(async doc => {
                 const response = await fetch(
@@ -686,6 +686,36 @@ class Driver {
               // Just to ensure that the quadPoints are always a Float32Array
               // like IRL (in order to avoid bugs like bug 1907958).
               annotation.quadPoints = new Float32Array(quadPoints);
+            }
+            if (paths) {
+              for (let i = 0, ii = paths.lines.length; i < ii; i++) {
+                paths.lines[i] = Float32Array.from(
+                  paths.lines[i],
+                  x => x ?? NaN
+                );
+              }
+              for (let i = 0, ii = paths.points.length; i < ii; i++) {
+                paths.points[i] = Float32Array.from(
+                  paths.points[i],
+                  x => x ?? NaN
+                );
+              }
+            }
+            if (outlines) {
+              if (Array.isArray(outlines)) {
+                for (let i = 0, ii = outlines.length; i < ii; i++) {
+                  outlines[i] = Float32Array.from(outlines[i], x => x ?? NaN);
+                }
+              } else {
+                outlines.outline = Float32Array.from(
+                  outlines.outline,
+                  x => x ?? NaN
+                );
+                outlines.points = Float32Array.from(
+                  outlines.points,
+                  x => x ?? NaN
+                );
+              }
             }
           }
         }

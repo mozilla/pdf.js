@@ -117,7 +117,7 @@ describe("Ink Editor", () => {
 
           await commit(page);
 
-          const rectBefore = await getRect(page, ".inkEditor canvas");
+          const rectBefore = await getRect(page, ".canvasWrapper .draw");
 
           for (let i = 0; i < 30; i++) {
             await kbUndo(page);
@@ -126,7 +126,7 @@ describe("Ink Editor", () => {
             await waitForStorageEntries(page, 1);
           }
 
-          const rectAfter = await getRect(page, ".inkEditor canvas");
+          const rectAfter = await getRect(page, ".canvasWrapper .draw");
 
           expect(Math.round(rectBefore.x))
             .withContext(`In ${browserName}`)
@@ -449,6 +449,120 @@ describe("Ink Editor", () => {
           await commit(page);
 
           await page.waitForSelector(getEditorSelector(0));
+        })
+      );
+    });
+  });
+
+  describe("Drawing must unselect all", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that when we start to draw then the editors are unselected", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToInk(page);
+          const rect = await getRect(page, ".annotationEditorLayer");
+
+          let xStart = rect.x + 10;
+          const yStart = rect.y + 10;
+          for (let i = 0; i < 2; i++) {
+            const clickHandle = await waitForPointerUp(page);
+            await page.mouse.move(xStart, yStart);
+            await page.mouse.down();
+            if (i === 1) {
+              expect(await getSelectedEditors(page))
+                .withContext(`In ${browserName}`)
+                .toEqual([]);
+            }
+            await page.mouse.move(xStart + 50, yStart + 50);
+            await page.mouse.up();
+            await awaitPromise(clickHandle);
+            await commit(page);
+            xStart += 70;
+          }
+        })
+      );
+    });
+  });
+
+  describe("Selected editor must be updated even if the page has been destroyed", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the color has been changed", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToInk(page);
+
+          const rect = await getRect(page, ".annotationEditorLayer");
+
+          const x = rect.x + 20;
+          const y = rect.y + 20;
+          const clickHandle = await waitForPointerUp(page);
+          await page.mouse.move(x, y);
+          await page.mouse.down();
+          await page.mouse.move(x + 50, y + 50);
+          await page.mouse.up();
+          await awaitPromise(clickHandle);
+
+          await commit(page);
+
+          const drawSelector = `.page[data-page-number = "1"] .canvasWrapper .draw`;
+          await page.waitForSelector(drawSelector, { visible: true });
+          let color = await page.evaluate(sel => {
+            const el = document.querySelector(sel);
+            return el.getAttribute("stroke");
+          }, drawSelector);
+          expect(color).toEqual("#000000");
+
+          const oneToFourteen = Array.from(new Array(13).keys(), n => n + 2);
+          for (const pageNumber of oneToFourteen) {
+            await scrollIntoView(
+              page,
+              `.page[data-page-number = "${pageNumber}"]`
+            );
+          }
+
+          const red = "#ff0000";
+          page.evaluate(value => {
+            window.PDFViewerApplication.eventBus.dispatch(
+              "switchannotationeditorparams",
+              {
+                source: null,
+                type: window.pdfjsLib.AnnotationEditorParamsType.INK_COLOR,
+                value,
+              }
+            );
+          }, red);
+
+          const fourteenToOne = Array.from(new Array(13).keys(), n => 13 - n);
+          for (const pageNumber of fourteenToOne) {
+            await scrollIntoView(
+              page,
+              `.page[data-page-number = "${pageNumber}"]`
+            );
+          }
+          await page.waitForSelector(drawSelector, { visible: true });
+          color = await page.evaluate(sel => {
+            const el = document.querySelector(sel);
+            return el.getAttribute("stroke");
+          }, drawSelector);
+          expect(color).toEqual(red);
         })
       );
     });
