@@ -17,24 +17,27 @@
   svg {
     transform: none;
 
-    &[data-main-rotation="90"] {
-      mask,
-      use:not(.clip, .mask) {
-        transform: matrix(0, 1, -1, 0, 1, 0);
+    &.highlight,
+    &.highlightOutline {
+      &[data-main-rotation="90"] {
+        mask,
+        use:not(.clip, .mask) {
+          transform: matrix(0, 1, -1, 0, 1, 0);
+        }
       }
-    }
 
-    &[data-main-rotation="180"] {
-      mask,
-      use:not(.clip, .mask) {
-        transform: matrix(-1, 0, 0, -1, 1, 1);
+      &[data-main-rotation="180"] {
+        mask,
+        use:not(.clip, .mask) {
+          transform: matrix(-1, 0, 0, -1, 1, 1);
+        }
       }
-    }
 
-    &[data-main-rotation="270"] {
-      mask,
-      use:not(.clip, .mask) {
-        transform: matrix(0, -1, 1, 0, 0, 1);
+      &[data-main-rotation="270"] {
+        mask,
+        use:not(.clip, .mask) {
+          transform: matrix(0, -1, 1, 0, 0, 1);
+        }
       }
     }
 
