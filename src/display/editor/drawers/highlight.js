@@ -19,6 +19,8 @@ import { Outline } from "./outline.js";
 class HighlightOutliner {
   #box;
 
+  #lastPoint;
+
   #verticalEdges = [];
 
   #intervals = [];
@@ -77,13 +79,13 @@ class HighlightOutliner {
       edge[2] = (y2 - shiftedMinY) / bboxHeight;
     }
 
-    this.#box = {
-      x: shiftedMinX,
-      y: shiftedMinY,
-      width: bboxWidth,
-      height: bboxHeight,
-      lastPoint,
-    };
+    this.#box = new Float32Array([
+      shiftedMinX,
+      shiftedMinY,
+      bboxWidth,
+      bboxHeight,
+    ]);
+    this.#lastPoint = lastPoint;
   }
 
   getOutlines() {
@@ -173,7 +175,7 @@ class HighlightOutliner {
       }
       outline.push(lastPointX, lastPointY);
     }
-    return new HighlightOutline(outlines, this.#box);
+    return new HighlightOutline(outlines, this.#box, this.#lastPoint);
   }
 
   #binarySearch(y) {
@@ -267,10 +269,11 @@ class HighlightOutline extends Outline {
 
   #outlines;
 
-  constructor(outlines, box) {
+  constructor(outlines, box, lastPoint) {
     super();
     this.#outlines = outlines;
     this.#box = box;
+    this.lastPoint = lastPoint;
   }
 
   toSVGPath() {
@@ -319,10 +322,6 @@ class HighlightOutline extends Outline {
     return this.#box;
   }
 
-  get classNamesForDrawing() {
-    return ["highlight"];
-  }
-
   get classNamesForOutlining() {
     return ["highlightOutline"];
   }
@@ -339,21 +338,9 @@ class FreeHighlightOutliner extends FreeDrawOutliner {
       isLTR
     );
   }
-
-  get classNamesForDrawing() {
-    return ["highlight", "free"];
-  }
 }
 
 class FreeHighlightOutline extends FreeDrawOutline {
-  get classNamesForDrawing() {
-    return ["highlight", "free"];
-  }
-
-  get classNamesForOutlining() {
-    return ["highlightOutline", "free"];
-  }
-
   newOutliner(point, box, scaleFactor, thickness, isLTR, innerMargin = 0) {
     return new FreeHighlightOutliner(
       point,

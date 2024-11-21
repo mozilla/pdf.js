@@ -157,12 +157,7 @@ class HighlightEditor extends AnnotationEditor {
       /* borderWidth = */ 0.001
     );
     this.#highlightOutlines = outliner.getOutlines();
-    ({
-      x: this.x,
-      y: this.y,
-      width: this.width,
-      height: this.height,
-    } = this.#highlightOutlines.box);
+    [this.x, this.y, this.width, this.height] = this.#highlightOutlines.box;
 
     const outlinerForOutline = new HighlightOutliner(
       this.#boxes,
@@ -173,7 +168,7 @@ class HighlightEditor extends AnnotationEditor {
     this.#focusOutlines = outlinerForOutline.getOutlines();
 
     // The last point is in the pages coordinate system.
-    const { lastPoint } = this.#focusOutlines.box;
+    const { lastPoint } = this.#focusOutlines;
     this.#lastPoint = [
       (lastPoint[0] - this.x) / this.width,
       (lastPoint[1] - this.y) / this.height,
@@ -195,26 +190,44 @@ class HighlightEditor extends AnnotationEditor {
       this.#clipPathId = clipPathId;
       // We need to redraw the highlight because we change the coordinates to be
       // in the box coordinate system.
-      this.parent.drawLayer.finalizeLine(highlightId, highlightOutlines);
-      this.#outlineId = this.parent.drawLayer.drawOutline(this.#focusOutlines);
+      this.parent.drawLayer.finalizeDraw(highlightId, {
+        bbox: highlightOutlines.box,
+        path: {
+          d: highlightOutlines.toSVGPath(),
+        },
+      });
+      this.#outlineId = this.parent.drawLayer.drawOutline(
+        {
+          rootClass: {
+            highlightOutline: true,
+            free: true,
+          },
+          bbox: this.#focusOutlines.box,
+          path: {
+            d: this.#focusOutlines.toSVGPath(),
+          },
+        },
+        /* mustRemoveSelfIntersections = */ true
+      );
     } else if (this.parent) {
       const angle = this.parent.viewport.rotation;
-      this.parent.drawLayer.updateLine(this.#id, highlightOutlines);
-      this.parent.drawLayer.updateBox(
-        this.#id,
-        HighlightEditor.#rotateBbox(
+      this.parent.drawLayer.updateProperties(this.#id, {
+        bbox: HighlightEditor.#rotateBbox(
           this.#highlightOutlines.box,
           (angle - this.rotation + 360) % 360
-        )
-      );
-
-      this.parent.drawLayer.updateLine(this.#outlineId, this.#focusOutlines);
-      this.parent.drawLayer.updateBox(
-        this.#outlineId,
-        HighlightEditor.#rotateBbox(this.#focusOutlines.box, angle)
-      );
+        ),
+        path: {
+          d: highlightOutlines.toSVGPath(),
+        },
+      });
+      this.parent.drawLayer.updateProperties(this.#outlineId, {
+        bbox: HighlightEditor.#rotateBbox(this.#focusOutlines.box, angle),
+        path: {
+          d: this.#focusOutlines.toSVGPath(),
+        },
+      });
     }
-    const { x, y, width, height } = highlightOutlines.box;
+    const [x, y, width, height] = highlightOutlines.box;
     switch (this.rotation) {
       case 0:
         this.x = x;
@@ -246,7 +259,7 @@ class HighlightEditor extends AnnotationEditor {
       }
     }
 
-    const { lastPoint } = this.#focusOutlines.box;
+    const { lastPoint } = this.#focusOutlines;
     this.#lastPoint = [(lastPoint[0] - x) / width, (lastPoint[1] - y) / height];
   }
 
@@ -324,10 +337,14 @@ class HighlightEditor extends AnnotationEditor {
   #updateColor(color) {
     const setColorAndOpacity = (col, opa) => {
       this.color = col;
-      this.parent?.drawLayer.changeColor(this.#id, col);
-      this.#colorPicker?.updateColor(col);
       this.#opacity = opa;
-      this.parent?.drawLayer.changeOpacity(this.#id, opa);
+      this.parent?.drawLayer.updateProperties(this.#id, {
+        root: {
+          fill: col,
+          "fill-opacity": opa,
+        },
+      });
+      this.#colorPicker?.updateColor(col);
     };
     const savedColor = this.color;
     const savedOpacity = this.#opacity;
@@ -503,46 +520,53 @@ class HighlightEditor extends AnnotationEditor {
       return;
     }
     ({ id: this.#id, clipPathId: this.#clipPathId } = parent.drawLayer.draw(
-      this.#highlightOutlines,
-      this.color,
-      this.#opacity
+      {
+        bbox: this.#highlightOutlines.box,
+        root: {
+          viewBox: "0 0 1 1",
+          fill: this.color,
+          "fill-opacity": this.#opacity,
+        },
+        rootClass: {
+          highlight: true,
+          free: this.#isFreeHighlight,
+        },
+        path: {
+          d: this.#highlightOutlines.toSVGPath(),
+        },
+      },
+      /* isPathUpdatable = */ false,
+      /* hasClip = */ true
     ));
-    this.#outlineId = parent.drawLayer.drawOutline(this.#focusOutlines);
+    this.#outlineId = parent.drawLayer.drawOutline(
+      {
+        rootClass: {
+          highlightOutline: true,
+          free: this.#isFreeHighlight,
+        },
+        bbox: this.#focusOutlines.box,
+        path: {
+          d: this.#focusOutlines.toSVGPath(),
+        },
+      },
+      /* mustRemoveSelfIntersections = */ this.#isFreeHighlight
+    );
+
     if (this.#highlightDiv) {
       this.#highlightDiv.style.clipPath = this.#clipPathId;
     }
   }
 
-  static #rotateBbox({ x, y, width, height }, angle) {
+  static #rotateBbox([x, y, width, height], angle) {
     switch (angle) {
       case 90:
-        return {
-          x: 1 - y - height,
-          y: x,
-          width: height,
-          height: width,
-        };
+        return [1 - y - height, x, height, width];
       case 180:
-        return {
-          x: 1 - x - width,
-          y: 1 - y - height,
-          width,
-          height,
-        };
+        return [1 - x - width, 1 - y - height, width, height];
       case 270:
-        return {
-          x: y,
-          y: 1 - x - width,
-          width: height,
-          height: width,
-        };
+        return [y, 1 - x - width, height, width];
     }
-    return {
-      x,
-      y,
-      width,
-      height,
-    };
+    return [x, y, width, height];
   }
 
   /** @inheritdoc */
@@ -555,15 +579,23 @@ class HighlightEditor extends AnnotationEditor {
       box = HighlightEditor.#rotateBbox(this.#highlightOutlines.box, angle);
     } else {
       // An highlight annotation is always drawn horizontally.
-      box = HighlightEditor.#rotateBbox(this, angle);
+      box = HighlightEditor.#rotateBbox(
+        [this.x, this.y, this.width, this.height],
+        angle
+      );
     }
-    drawLayer.rotate(this.#id, angle);
-    drawLayer.rotate(this.#outlineId, angle);
-    drawLayer.updateBox(this.#id, box);
-    drawLayer.updateBox(
-      this.#outlineId,
-      HighlightEditor.#rotateBbox(this.#focusOutlines.box, angle)
-    );
+    drawLayer.updateProperties(this.#id, {
+      bbox: box,
+      root: {
+        "data-main-rotation": angle,
+      },
+    });
+    drawLayer.updateProperties(this.#outlineId, {
+      bbox: HighlightEditor.#rotateBbox(this.#focusOutlines.box, angle),
+      root: {
+        "data-main-rotation": angle,
+      },
+    });
   }
 
   /** @inheritdoc */
@@ -600,13 +632,21 @@ class HighlightEditor extends AnnotationEditor {
 
   pointerover() {
     if (!this.isSelected) {
-      this.parent.drawLayer.addClass(this.#outlineId, "hovered");
+      this.parent?.drawLayer.updateProperties(this.#outlineId, {
+        rootClass: {
+          hovered: true,
+        },
+      });
     }
   }
 
   pointerleave() {
     if (!this.isSelected) {
-      this.parent.drawLayer.removeClass(this.#outlineId, "hovered");
+      this.parent?.drawLayer.updateProperties(this.#outlineId, {
+        rootClass: {
+          hovered: false,
+        },
+      });
     }
   }
 
@@ -646,8 +686,12 @@ class HighlightEditor extends AnnotationEditor {
     if (!this.#outlineId) {
       return;
     }
-    this.parent?.drawLayer.removeClass(this.#outlineId, "hovered");
-    this.parent?.drawLayer.addClass(this.#outlineId, "selected");
+    this.parent?.drawLayer.updateProperties(this.#outlineId, {
+      rootClass: {
+        hovered: false,
+        selected: true,
+      },
+    });
   }
 
   /** @inheritdoc */
@@ -656,7 +700,11 @@ class HighlightEditor extends AnnotationEditor {
     if (!this.#outlineId) {
       return;
     }
-    this.parent?.drawLayer.removeClass(this.#outlineId, "selected");
+    this.parent?.drawLayer.updateProperties(this.#outlineId, {
+      rootClass: {
+        selected: false,
+      },
+    });
     if (!this.#isFreeHighlight) {
       this.#setCaret(/* start = */ false);
     }
@@ -671,8 +719,16 @@ class HighlightEditor extends AnnotationEditor {
   show(visible = this._isVisible) {
     super.show(visible);
     if (this.parent) {
-      this.parent.drawLayer.show(this.#id, visible);
-      this.parent.drawLayer.show(this.#outlineId, visible);
+      this.parent.drawLayer.updateProperties(this.#id, {
+        rootClass: {
+          hidden: !visible,
+        },
+      });
+      this.parent.drawLayer.updateProperties(this.#outlineId, {
+        rootClass: {
+          hidden: !visible,
+        },
+      });
     }
   }
 
@@ -755,17 +811,34 @@ class HighlightEditor extends AnnotationEditor {
     );
     ({ id: this._freeHighlightId, clipPathId: this._freeHighlightClipId } =
       parent.drawLayer.draw(
-        this._freeHighlight,
-        this._defaultColor,
-        this._defaultOpacity,
-        /* isPathUpdatable = */ true
+        {
+          bbox: [0, 0, 1, 1],
+          root: {
+            viewBox: "0 0 1 1",
+            fill: this._defaultColor,
+            "fill-opacity": this._defaultOpacity,
+          },
+          rootClass: {
+            highlight: true,
+            free: true,
+          },
+          path: {
+            d: this._freeHighlight.toSVGPath(),
+          },
+        },
+        /* isPathUpdatable = */ true,
+        /* hasClip = */ true
       ));
   }
 
   static #highlightMove(parent, event) {
     if (this._freeHighlight.add(event)) {
       // Redraw only if the point has been added.
-      parent.drawLayer.updatePath(this._freeHighlightId, this._freeHighlight);
+      parent.drawLayer.updateProperties(this._freeHighlightId, {
+        path: {
+          d: this._freeHighlight.toSVGPath(),
+        },
+      });
     }
   }
 
@@ -886,10 +959,23 @@ class HighlightEditor extends AnnotationEditor {
         outliner.add(point);
       }
       const { id, clipPathId } = parent.drawLayer.draw(
-        outliner,
-        editor.color,
-        editor._defaultOpacity,
-        /* isPathUpdatable = */ true
+        {
+          bbox: [0, 0, 1, 1],
+          root: {
+            viewBox: "0 0 1 1",
+            fill: editor.color,
+            "fill-opacity": editor._defaultOpacity,
+          },
+          rootClass: {
+            highlight: true,
+            free: true,
+          },
+          path: {
+            d: outliner.toSVGPath(),
+          },
+        },
+        /* isPathUpdatable = */ true,
+        /* hasClip = */ true
       );
       editor.#createFreeOutlines({
         highlightOutlines: outliner.getOutlines(),

@@ -35,20 +35,22 @@ class Outline {
     unreachable("Abstract method `serialize` must be implemented.");
   }
 
-  // eslint-disable-next-line getter-return
-  get classNamesForDrawing() {
-    unreachable("Abstract getter `classNamesForDrawing` must be implemented.");
+  static _rescale(src, tx, ty, sx, sy, dest) {
+    dest ||= new Float32Array(src.length);
+    for (let i = 0, ii = src.length; i < ii; i += 2) {
+      dest[i] = tx + src[i] * sx;
+      dest[i + 1] = ty + src[i + 1] * sy;
+    }
+    return dest;
   }
 
-  // eslint-disable-next-line getter-return
-  get classNamesForOutlining() {
-    unreachable(
-      "Abstract getter `classNamesForOutlining` must be implemented."
-    );
-  }
-
-  get mustRemoveSelfIntersections() {
-    return false;
+  static _rescaleAndSwap(src, tx, ty, sx, sy, dest) {
+    dest ||= new Float32Array(src.length);
+    for (let i = 0, ii = src.length; i < ii; i += 2) {
+      dest[i] = tx + src[i + 1] * sx;
+      dest[i + 1] = ty + src[i] * sy;
+    }
+    return dest;
   }
 }
 

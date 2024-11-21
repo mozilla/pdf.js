@@ -55,7 +55,7 @@ class DrawLayer {
     return shadow(this, "_svgFactory", new DOMSVGFactory());
   }
 
-  static #setBox(element, { x = 0, y = 0, width = 1, height = 1 } = {}) {
+  static #setBox(element, [x, y, width, height]) {
     const { style } = element;
     style.top = `${100 * y}%`;
     style.left = `${100 * x}%`;
@@ -63,11 +63,10 @@ class DrawLayer {
     style.height = `${100 * height}%`;
   }
 
-  #createSVG(box) {
+  #createSVG() {
     const svg = DrawLayer._svgFactory.create(1, 1, /* skipDimensions = */ true);
     this.#parent.append(svg);
     svg.setAttribute("aria-hidden", true);
-    DrawLayer.#setBox(svg, box);
 
     return svg;
   }
@@ -86,10 +85,19 @@ class DrawLayer {
     return clipPathId;
   }
 
-  draw(outlines, color, opacity, isPathUpdatable = false) {
+  #updateProperties(element, properties) {
+    for (const [key, value] of Object.entries(properties)) {
+      if (value === null) {
+        element.removeAttribute(key);
+      } else {
+        element.setAttribute(key, value);
+      }
+    }
+  }
+
+  draw(properties, isPathUpdatable = false, hasClip = false) {
     const id = this.#id++;
-    const root = this.#createSVG(outlines.box);
-    root.classList.add(...outlines.classNamesForDrawing);
+    const root = this.#createSVG();
 
     const defs = DrawLayer._svgFactory.createElement("defs");
     root.append(defs);
@@ -97,45 +105,42 @@ class DrawLayer {
     defs.append(path);
     const pathId = `path_p${this.pageIndex}_${id}`;
     path.setAttribute("id", pathId);
-    path.setAttribute("d", outlines.toSVGPath());
+    path.setAttribute("vector-effect", "non-scaling-stroke");
 
     if (isPathUpdatable) {
       this.#toUpdate.set(id, path);
     }
 
     // Create the clipping path for the editor div.
-    const clipPathId = this.#createClipPath(defs, pathId);
+    const clipPathId = hasClip ? this.#createClipPath(defs, pathId) : null;
 
     const use = DrawLayer._svgFactory.createElement("use");
     root.append(use);
-    root.setAttribute("fill", color);
-    root.setAttribute("fill-opacity", opacity);
     use.setAttribute("href", `#${pathId}`);
+    this.updateProperties(root, properties);
 
     this.#mapping.set(id, root);
 
     return { id, clipPathId: `url(#${clipPathId})` };
   }
 
-  drawOutline(outlines) {
+  drawOutline(properties, mustRemoveSelfIntersections) {
     // We cannot draw the outline directly in the SVG for highlights because
     // it composes with its parent with mix-blend-mode: multiply.
     // But the outline has a different mix-blend-mode, so we need to draw it in
     // its own SVG.
     const id = this.#id++;
-    const root = this.#createSVG(outlines.box);
-    root.classList.add(...outlines.classNamesForOutlining);
+    const root = this.#createSVG();
     const defs = DrawLayer._svgFactory.createElement("defs");
     root.append(defs);
     const path = DrawLayer._svgFactory.createElement("path");
     defs.append(path);
     const pathId = `path_p${this.pageIndex}_${id}`;
     path.setAttribute("id", pathId);
-    path.setAttribute("d", outlines.toSVGPath());
     path.setAttribute("vector-effect", "non-scaling-stroke");
 
     let maskId;
-    if (outlines.mustRemoveSelfIntersections) {
+    if (mustRemoveSelfIntersections) {
       const mask = DrawLayer._svgFactory.createElement("mask");
       defs.append(mask);
       maskId = `mask_p${this.pageIndex}_${id}`;
@@ -166,59 +171,40 @@ class DrawLayer {
     use1.classList.add("mainOutline");
     use2.classList.add("secondaryOutline");
 
+    this.updateProperties(root, properties);
+
     this.#mapping.set(id, root);
 
     return id;
   }
 
-  finalizeLine(id, line) {
-    const path = this.#toUpdate.get(id);
+  finalizeDraw(id, properties) {
     this.#toUpdate.delete(id);
-    this.updateBox(id, line.box);
-    path.setAttribute("d", line.toSVGPath());
+    this.updateProperties(id, properties);
   }
 
-  updateLine(id, line) {
-    const root = this.#mapping.get(id);
-    const defs = root.firstChild;
-    const path = defs.firstChild;
-    path.setAttribute("d", line.toSVGPath());
-  }
-
-  updatePath(id, line) {
-    this.#toUpdate.get(id).setAttribute("d", line.toSVGPath());
-  }
-
-  updateBox(id, box) {
-    DrawLayer.#setBox(this.#mapping.get(id), box);
-  }
-
-  show(id, visible) {
-    this.#mapping.get(id).classList.toggle("hidden", !visible);
-  }
-
-  rotate(id, angle) {
-    this.#mapping.get(id).setAttribute("data-main-rotation", angle);
-  }
-
-  changeColor(id, color) {
-    this.#mapping.get(id).setAttribute("fill", color);
-  }
-
-  changeOpacity(id, opacity) {
-    this.#mapping.get(id).setAttribute("fill-opacity", opacity);
-  }
-
-  addClass(id, className) {
-    this.#mapping.get(id).classList.add(className);
-  }
-
-  removeClass(id, className) {
-    this.#mapping.get(id).classList.remove(className);
-  }
-
-  getSVGRoot(id) {
-    return this.#mapping.get(id);
+  updateProperties(elementOrId, { root, bbox, rootClass, path }) {
+    const element =
+      typeof elementOrId === "number"
+        ? this.#mapping.get(elementOrId)
+        : elementOrId;
+    if (root) {
+      this.#updateProperties(element, root);
+    }
+    if (bbox) {
+      DrawLayer.#setBox(element, bbox);
+    }
+    if (rootClass) {
+      const { classList } = element;
+      for (const [className, value] of Object.entries(rootClass)) {
+        classList.toggle(className, value);
+      }
+    }
+    if (path) {
+      const defs = element.firstChild;
+      const pathElement = defs.firstChild;
+      this.#updateProperties(pathElement, path);
+    }
   }
 
   remove(id) {
