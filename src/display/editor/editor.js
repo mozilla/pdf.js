@@ -52,6 +52,8 @@ class AnnotationEditor {
 
   #resizersDiv = null;
 
+  #lastPointerCoords = null;
+
   #savedDimensions = null;
 
   #focusAC = null;
@@ -736,6 +738,7 @@ class AnnotationEditor {
 
     const savedDraggable = this._isDraggable;
     this._isDraggable = false;
+    this.#lastPointerCoords = [event.screenX, event.screenY];
 
     const ac = new AbortController();
     const signal = this._uiManager.combinedSignal(ac);
@@ -745,6 +748,14 @@ class AnnotationEditor {
       "pointermove",
       this.#resizerPointermove.bind(this, name),
       { passive: true, capture: true, signal }
+    );
+    window.addEventListener(
+      "touchmove",
+      e => {
+        // Prevent the page from scrolling.
+        e.preventDefault();
+      },
+      { passive: false, signal }
     );
     window.addEventListener("contextmenu", noContextMenu, { signal });
     const savedX = this.x;
@@ -886,10 +897,23 @@ class AnnotationEditor {
     let ratioX = 1;
     let ratioY = 1;
 
-    let [deltaX, deltaY] = this.screenToPageTranslation(
-      event.movementX,
-      event.movementY
-    );
+    let deltaX, deltaY;
+
+    if (!event.fromKeyboard) {
+      // We can't use event.movementX/Y because they're not reliable:
+      //  https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/movementX
+      // (it was buggy on a laptop with a touch screen).
+      const { screenX, screenY } = event;
+      const [lastScreenX, lastScreenY] = this.#lastPointerCoords;
+      [deltaX, deltaY] = this.screenToPageTranslation(
+        screenX - lastScreenX,
+        screenY - lastScreenY
+      );
+      this.#lastPointerCoords[0] = screenX;
+      this.#lastPointerCoords[1] = screenY;
+    } else {
+      ({ deltaX, deltaY } = event);
+    }
     [deltaX, deltaY] = invTransf(deltaX / parentWidth, deltaY / parentHeight);
 
     if (isDiagonal) {
@@ -1559,8 +1583,9 @@ class AnnotationEditor {
       return;
     }
     this.#resizerPointermove(this.#focusedResizerName, {
-      movementX: x,
-      movementY: y,
+      deltaX: x,
+      deltaY: y,
+      fromKeyboard: true,
     });
   }
 
