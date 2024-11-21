@@ -10766,5 +10766,14 @@
     "rounds": 1,
     "type": "eq",
     "link": true
+  },
+  {
+    "id": "issue19083",
+    "file": "pdfs/issue19083.pdf",
+    "md5": "2e2aa6c1904c1e6a89a5a6ec95d5ce7e",
+    "rounds": 1,
+    "forms": true,
+    "talos": false,
+    "type": "eq"
   }
 ]
