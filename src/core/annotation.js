@@ -3511,6 +3511,18 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
       }
     }
 
+    // It's a workaround for the issue #19083.
+    // Normally a choice widget is a mix of a text field and a listbox,
+    // So in the case where the V entry isn't an option we should just set it
+    // as the text field value.
+    if (this.data.options.length === 0 && this.data.fieldValue.length > 0) {
+      // If there are no options, then the field value is the only option.
+      this.data.options = this.data.fieldValue.map(value => ({
+        exportValue: value,
+        displayValue: value,
+      }));
+    }
+
     // Process field flags for the display layer.
     this.data.combo = this.hasFieldFlag(AnnotationFieldFlag.COMBO);
     this.data.multiSelect = this.hasFieldFlag(AnnotationFieldFlag.MULTISELECT);
