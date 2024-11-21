@@ -709,6 +709,7 @@ const PDFViewerApplication = {
         });
       });
 
+      /*
       // Enable dragging-and-dropping a new PDF file onto the viewerContainer.
       appConfig.mainContainer.addEventListener("dragover", function (evt) {
         for (const item of evt.dataTransfer.items) {
@@ -732,6 +733,7 @@ const PDFViewerApplication = {
           fileInput: evt.dataTransfer,
         });
       });
+      */
     }
 
     if (!AppOptions.get("supportsDocumentFonts")) {
