@@ -1134,6 +1134,14 @@ class AnnotationEditor {
         capture: true,
         signal,
       });
+      window.addEventListener(
+        "touchmove",
+        e => {
+          // Prevent the page from scrolling.
+          e.preventDefault();
+        },
+        { passive: false, signal }
+      );
     }
 
     const pointerUpCallback = () => {
