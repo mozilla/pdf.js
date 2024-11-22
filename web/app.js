@@ -2856,6 +2856,7 @@ function onKeyDown(evt) {
     }
   }
 
+  /*
   if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC || CHROME")) {
     // CTRL or META without shift
     if (cmd === 1 || cmd === 8) {
@@ -2895,6 +2896,7 @@ function onKeyDown(evt) {
         break;
     }
   }
+  */
 
   if (handled) {
     if (ensureViewerFocused && !isViewerInPresentationMode) {
@@ -3073,9 +3075,11 @@ function onKeyDown(evt) {
         this.moveCaret(/* isUp = */ false, /* select = */ true);
         handled = true;
         break;
+      /*
       case 82: // 'r'
         this.rotatePages(-90);
         break;
+      */
     }
   }
 
