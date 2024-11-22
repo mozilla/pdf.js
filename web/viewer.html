@@ -96,20 +96,20 @@ See https://github.com/adobe-type-tools/cmap-resources
   <body tabindex="0">
     <div id="outerContainer">
 
-      <div id="sidebarContainer">
+      <div id="sidebarContainer" class="hidden">
         <div id="toolbarSidebar" class="toolbarHorizontalGroup">
           <div id="toolbarSidebarLeft">
-            <div id="sidebarViewButtons" class="toolbarHorizontalGroup toggled" role="radiogroup">
-              <button id="viewThumbnail" class="toolbarButton toggled" type="button" title="Show Thumbnails" tabindex="0" data-l10n-id="pdfjs-thumbs-button" role="radio" aria-checked="true" aria-controls="thumbnailView">
+            <div id="sidebarViewButtons" class="toolbarHorizontalGroup toggled hidden" role="radiogroup">
+              <button id="viewThumbnail" class="toolbarButton toggled hidden" type="button" title="Show Thumbnails" tabindex="0" data-l10n-id="pdfjs-thumbs-button" role="radio" aria-checked="true" aria-controls="thumbnailView">
                  <span data-l10n-id="pdfjs-thumbs-button-label">Thumbnails</span>
               </button>
-              <button id="viewOutline" class="toolbarButton" type="button" title="Show Document Outline (double-click to expand/collapse all items)" tabindex="0" data-l10n-id="pdfjs-document-outline-button" role="radio" aria-checked="false" aria-controls="outlineView">
+              <button id="viewOutline" class="toolbarButton hidden" type="button" title="Show Document Outline (double-click to expand/collapse all items)" tabindex="0" data-l10n-id="pdfjs-document-outline-button" role="radio" aria-checked="false" aria-controls="outlineView">
                  <span data-l10n-id="pdfjs-document-outline-button-label">Document Outline</span>
               </button>
-              <button id="viewAttachments" class="toolbarButton" type="button" title="Show Attachments" tabindex="0" data-l10n-id="pdfjs-attachments-button" role="radio" aria-checked="false" aria-controls="attachmentsView">
+              <button id="viewAttachments" class="toolbarButton hidden" type="button" title="Show Attachments" tabindex="0" data-l10n-id="pdfjs-attachments-button" role="radio" aria-checked="false" aria-controls="attachmentsView">
                  <span data-l10n-id="pdfjs-attachments-button-label">Attachments</span>
               </button>
-              <button id="viewLayers" class="toolbarButton" type="button" title="Show Layers (double-click to reset all layers to the default state)" tabindex="0" data-l10n-id="pdfjs-layers-button" role="radio" aria-checked="false" aria-controls="layersView">
+              <button id="viewLayers" class="toolbarButton hidden" type="button" title="Show Layers (double-click to reset all layers to the default state)" tabindex="0" data-l10n-id="pdfjs-layers-button" role="radio" aria-checked="false" aria-controls="layersView">
                  <span data-l10n-id="pdfjs-layers-button-label">Layers</span>
               </button>
             </div>
@@ -143,10 +143,10 @@ See https://github.com/adobe-type-tools/cmap-resources
           <div id="toolbarContainer">
             <div id="toolbarViewer" class="toolbarHorizontalGroup">
               <div id="toolbarViewerLeft" class="toolbarHorizontalGroup">
-                <button id="sidebarToggleButton" class="toolbarButton" type="button" title="Toggle Sidebar" tabindex="0" data-l10n-id="pdfjs-toggle-sidebar-button" aria-expanded="false" aria-haspopup="true" aria-controls="sidebarContainer">
+                <button id="sidebarToggleButton" class="toolbarButton hidden" type="button" title="Toggle Sidebar" tabindex="0" data-l10n-id="pdfjs-toggle-sidebar-button" aria-expanded="false" aria-haspopup="true" aria-controls="sidebarContainer">
                   <span data-l10n-id="pdfjs-toggle-sidebar-button-label">Toggle Sidebar</span>
                 </button>
-                <div class="toolbarButtonSpacer"></div>
+                <!-- <div class="toolbarButtonSpacer"></div> -->
                 <div class="toolbarButtonWithContainer">
                   <button id="viewFindButton" class="toolbarButton" type="button" title="Find in Document" tabindex="0" data-l10n-id="pdfjs-findbar-button" aria-expanded="false" aria-controls="findbar">
                     <span data-l10n-id="pdfjs-findbar-button-label">Find</span>
@@ -329,7 +329,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                   </button>
                 </div>
 
-                <div class="verticalToolbarSeparator hiddenMediumView hidden"></div>
+                <div class="verticalToolbarSeparator hiddenMediumView"></div>
 
                 <div id="secondaryToolbarToggle" class="toolbarButtonWithContainer">
                   <button id="secondaryToolbarToggleButton" class="toolbarButton" type="button" title="Tools" tabindex="0" data-l10n-id="pdfjs-tools-button" aria-expanded="false" aria-haspopup="true" aria-controls="secondaryToolbar">
@@ -344,11 +344,11 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
 
                       <div class="visibleMediumView">
-                        <button id="secondaryPrint" class="toolbarButton labeled" type="button" title="Print" tabindex="0" data-l10n-id="pdfjs-print-button">
+                        <button id="secondaryPrint" class="toolbarButton labeled hidden" type="button" title="Print" tabindex="0" data-l10n-id="pdfjs-print-button">
                           <span data-l10n-id="pdfjs-print-button-label">Print</span>
                         </button>
 
-                        <button id="secondaryDownload" class="toolbarButton labeled" type="button" title="Save" tabindex="0" data-l10n-id="pdfjs-save-button">
+                        <button id="secondaryDownload" class="toolbarButton labeled hidden" type="button" title="Save" tabindex="0" data-l10n-id="pdfjs-save-button">
                           <span data-l10n-id="pdfjs-save-button-label">Save</span>
                         </button>
 
@@ -361,15 +361,15 @@ See https://github.com/adobe-type-tools/cmap-resources
                       <div class="horizontalToolbarSeparator hidden"></div>
 <!--#endif-->
 
-                      <button id="presentationMode" class="toolbarButton labeled" type="button" title="Switch to Presentation Mode" tabindex="0" data-l10n-id="pdfjs-presentation-mode-button">
+                      <button id="presentationMode" class="toolbarButton labeled hidden" type="button" title="Switch to Presentation Mode" tabindex="0" data-l10n-id="pdfjs-presentation-mode-button">
                         <span data-l10n-id="pdfjs-presentation-mode-button-label">Presentation Mode</span>
                       </button>
 
-                      <a href="#" id="viewBookmark" class="toolbarButton labeled" title="Current Page (View URL from Current Page)" tabindex="0" data-l10n-id="pdfjs-bookmark-button">
+                      <a href="#" id="viewBookmark" class="toolbarButton labeled hidden" title="Current Page (View URL from Current Page)" tabindex="0" data-l10n-id="pdfjs-bookmark-button">
                         <span data-l10n-id="pdfjs-bookmark-button-label">Current Page</span>
                       </a>
 
-                      <div id="viewBookmarkSeparator" class="horizontalToolbarSeparator"></div>
+                      <div id="viewBookmarkSeparator" class="horizontalToolbarSeparator hidden"></div>
 
                       <button id="firstPage" class="toolbarButton labeled" type="button" title="Go to First Page" tabindex="0" data-l10n-id="pdfjs-first-page-button">
                         <span data-l10n-id="pdfjs-first-page-button-label">Go to First Page</span>
@@ -380,17 +380,17 @@ See https://github.com/adobe-type-tools/cmap-resources
 
                       <div class="horizontalToolbarSeparator"></div>
 
-                      <button id="pageRotateCw" class="toolbarButton labeled" type="button" title="Rotate Clockwise" tabindex="0" data-l10n-id="pdfjs-page-rotate-cw-button">
+                      <button id="pageRotateCw" class="toolbarButton labeled hidden" type="button" title="Rotate Clockwise" tabindex="0" data-l10n-id="pdfjs-page-rotate-cw-button">
                         <span data-l10n-id="pdfjs-page-rotate-cw-button-label">Rotate Clockwise</span>
                       </button>
-                      <button id="pageRotateCcw" class="toolbarButton labeled" type="button" title="Rotate Counterclockwise" tabindex="0" data-l10n-id="pdfjs-page-rotate-ccw-button">
+                      <button id="pageRotateCcw" class="toolbarButton labeled hidden" type="button" title="Rotate Counterclockwise" tabindex="0" data-l10n-id="pdfjs-page-rotate-ccw-button">
                         <span data-l10n-id="pdfjs-page-rotate-ccw-button-label">Rotate Counterclockwise</span>
                       </button>
 
-                      <div class="horizontalToolbarSeparator"></div>
+                      <div class="horizontalToolbarSeparator hidden"></div>
 
                       <div id="cursorToolButtons" role="radiogroup">
-                        <button id="cursorSelectTool" class="toolbarButton labeled toggled" type="button" title="Enable Text Selection Tool" tabindex="0" data-l10n-id="pdfjs-cursor-text-select-tool-button" role="radio" aria-checked="true">
+                        <button id="cursorSelectTool" class="toolbarButton labeled toggled hidden" type="button" title="Enable Text Selection Tool" tabindex="0" data-l10n-id="pdfjs-cursor-text-select-tool-button" role="radio" aria-checked="true">
                           <span data-l10n-id="pdfjs-cursor-text-select-tool-button-label">Text Selection Tool</span>
                         </button>
                         <button id="cursorHandTool" class="toolbarButton labeled" type="button" title="Enable Hand Tool" tabindex="0" data-l10n-id="pdfjs-cursor-hand-tool-button" role="radio" aria-checked="false">
@@ -401,7 +401,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                       <div class="horizontalToolbarSeparator"></div>
 
                       <div id="scrollModeButtons" role="radiogroup">
-                        <button id="scrollPage" class="toolbarButton labeled" type="button" title="Use Page Scrolling" tabindex="0" data-l10n-id="pdfjs-scroll-page-button" role="radio" aria-checked="false">
+                        <button id="scrollPage" class="toolbarButton labeled hidden" type="button" title="Use Page Scrolling" tabindex="0" data-l10n-id="pdfjs-scroll-page-button" role="radio" aria-checked="false">
                           <span data-l10n-id="pdfjs-scroll-page-button-label">Page Scrolling</span>
                         </button>
                         <button id="scrollVertical" class="toolbarButton labeled toggled" type="button" title="Use Vertical Scrolling" tabindex="0" data-l10n-id="pdfjs-scroll-vertical-button" role="radio" aria-checked="true">
@@ -410,7 +410,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                         <button id="scrollHorizontal" class="toolbarButton labeled" type="button" title="Use Horizontal Scrolling" tabindex="0" data-l10n-id="pdfjs-scroll-horizontal-button" role="radio" aria-checked="false">
                           <span data-l10n-id="pdfjs-scroll-horizontal-button-label">Horizontal Scrolling</span>
                         </button>
-                        <button id="scrollWrapped" class="toolbarButton labeled" type="button" title="Use Wrapped Scrolling" tabindex="0" data-l10n-id="pdfjs-scroll-wrapped-button" role="radio" aria-checked="false">
+                        <button id="scrollWrapped" class="toolbarButton labeled hidden" type="button" title="Use Wrapped Scrolling" tabindex="0" data-l10n-id="pdfjs-scroll-wrapped-button" role="radio" aria-checked="false">
                           <span data-l10n-id="pdfjs-scroll-wrapped-button-label">Wrapped Scrolling</span>
                         </button>
                       </div>
