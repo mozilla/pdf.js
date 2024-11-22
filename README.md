@@ -111,6 +111,17 @@ the `pdfjs-dist` name. For more information and examples please refer to the
 + Start the docker container with `mutagen-compose up pdfjs`
 + Access server at `http://localhost:8888/web/viewer.html`
 
+## Lint
++ To fix lint errors, run the following commands:
+
+``` bash
+mutagen-compose run pdfjs bash
+```
+
+``` bash
+npx gulp lint --fix
+```
+
 ## Including via a CDN
 
 PDF.js is hosted on several free CDNs:
