@@ -14,6 +14,8 @@
  */
 
 import { FeatureTest, ImageKind, shadow, warn } from "../shared/util.js";
+import { convertToRGBA } from "../shared/image_utils.js";
+import { MAX_INT_32 } from "./core_utils.js";
 
 const MIN_IMAGE_DIM = 2048;
 
@@ -172,6 +174,18 @@ class ImageResizer {
   }
 
   async _createImage() {
+    const { _imgData: imgData } = this;
+    const { width, height } = imgData;
+
+    if (width * height * 4 > MAX_INT_32) {
+      // The resulting RGBA image is too large.
+      // We just rescale the data.
+      const result = this.#rescaleImageData();
+      if (result) {
+        return result;
+      }
+    }
+
     const data = this._encodeBMP();
     let decoder, imagePromise;
 
@@ -206,8 +220,6 @@ class ImageResizer {
     }
 
     const { MAX_AREA, MAX_DIM } = ImageResizer;
-    const { _imgData: imgData } = this;
-    const { width, height } = imgData;
     const minFactor = Math.max(
       width / MAX_DIM,
       height / MAX_DIM,
@@ -262,6 +274,91 @@ class ImageResizer {
 
     imgData.data = null;
     imgData.bitmap = bitmap;
+    imgData.width = newWidth;
+    imgData.height = newHeight;
+
+    return imgData;
+  }
+
+  #rescaleImageData() {
+    const { _imgData: imgData } = this;
+    const { data, width, height, kind } = imgData;
+    const rgbaSize = width * height * 4;
+    // K is such as width * height * 4 / 2 ** K <= 2 ** 31 - 1
+    const K = Math.ceil(Math.log2(rgbaSize / MAX_INT_32));
+    const newWidth = width >> K;
+    const newHeight = height >> K;
+    let rgbaData;
+    let maxHeight = height;
+
+    // We try to allocate the buffer with the maximum size but it can fail.
+    try {
+      rgbaData = new Uint8Array(rgbaSize);
+    } catch {
+      // n is such as 2 ** n - 1 > width * height * 4
+      let n = Math.floor(Math.log2(rgbaSize + 1));
+
+      while (true) {
+        try {
+          rgbaData = new Uint8Array(2 ** n - 1);
+          break;
+        } catch {
+          n -= 1;
+        }
+      }
+
+      maxHeight = Math.floor((2 ** n - 1) / (width * 4));
+      const newSize = width * maxHeight * 4;
+      if (newSize < rgbaData.length) {
+        rgbaData = new Uint8Array(newSize);
+      }
+    }
+
+    const src32 = new Uint32Array(rgbaData.buffer);
+    const dest32 = new Uint32Array(newWidth * newHeight);
+
+    let srcPos = 0;
+    let newIndex = 0;
+    const step = Math.ceil(height / maxHeight);
+    const remainder = height % maxHeight === 0 ? height : height % maxHeight;
+    for (let k = 0; k < step; k++) {
+      const h = k < step - 1 ? maxHeight : remainder;
+      ({ srcPos } = convertToRGBA({
+        kind,
+        src: data,
+        dest: src32,
+        width,
+        height: h,
+        inverseDecode: this._isMask,
+        srcPos,
+      }));
+
+      for (let i = 0, ii = h >> K; i < ii; i++) {
+        const buf = src32.subarray((i << K) * width);
+        for (let j = 0; j < newWidth; j++) {
+          dest32[newIndex++] = buf[j << K];
+        }
+      }
+    }
+
+    if (ImageResizer.needsToBeResized(newWidth, newHeight)) {
+      imgData.data = dest32;
+      imgData.width = newWidth;
+      imgData.height = newHeight;
+      imgData.kind = ImageKind.RGBA_32BPP;
+
+      return null;
+    }
+
+    const canvas = new OffscreenCanvas(newWidth, newHeight);
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    ctx.putImageData(
+      new ImageData(new Uint8ClampedArray(dest32.buffer), newWidth, newHeight),
+      0,
+      0
+    );
+    imgData.data = null;
+    imgData.bitmap = canvas.transferToImageBitmap();
     imgData.width = newWidth;
     imgData.height = newHeight;
 

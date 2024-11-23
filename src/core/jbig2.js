@@ -14,7 +14,14 @@
  */
 
 import { BaseException, shadow } from "../shared/util.js";
-import { log2, readInt8, readUint16, readUint32 } from "./core_utils.js";
+import {
+  log2,
+  MAX_INT_32,
+  MIN_INT_32,
+  readInt8,
+  readUint16,
+  readUint32,
+} from "./core_utils.js";
 import { ArithmeticDecoder } from "./arithmetic_decoder.js";
 import { CCITTFaxDecoder } from "./ccitt.js";
 
@@ -51,9 +58,6 @@ class DecodingContext {
     return shadow(this, "contextCache", cache);
   }
 }
-
-const MAX_INT_32 = 2 ** 31 - 1;
-const MIN_INT_32 = -(2 ** 31);
 
 // Annex A. Arithmetic Integer Decoding Procedure
 // A.2 Procedure for decoding values
