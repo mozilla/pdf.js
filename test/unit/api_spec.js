@@ -31,9 +31,9 @@ import {
 import {
   buildGetDocumentParams,
   CMAP_URL,
-  createTemporaryNodeServer,
   DefaultFileReaderFactory,
   TEST_PDFS_PATH,
+  TestPdfsServer,
 } from "./test_utils.js";
 import {
   DefaultCanvasFactory,
@@ -67,27 +67,17 @@ describe("api", function () {
     buildGetDocumentParams(tracemonkeyFileName);
 
   let CanvasFactory;
-  let tempServer = null;
 
-  beforeAll(function () {
+  beforeAll(async function () {
     CanvasFactory = new DefaultCanvasFactory({});
 
-    if (isNodeJS) {
-      tempServer = createTemporaryNodeServer();
-    }
+    await TestPdfsServer.ensureStarted();
   });
 
-  afterAll(function () {
+  afterAll(async function () {
     CanvasFactory = null;
 
-    if (isNodeJS) {
-      // Close the server from accepting new connections after all test
-      // finishes.
-      const { server } = tempServer;
-      server.close();
-
-      tempServer = null;
-    }
+    await TestPdfsServer.ensureStopped();
   });
 
   function waitSome(callback) {
@@ -148,9 +138,7 @@ describe("api", function () {
     });
 
     it("creates pdf doc from URL-object", async function () {
-      const urlObj = isNodeJS
-        ? new URL(`http://127.0.0.1:${tempServer.port}/${basicApiFileName}`)
-        : new URL(TEST_PDFS_PATH + basicApiFileName, window.location);
+      const urlObj = TestPdfsServer.resolveURL(basicApiFileName);
 
       const loadingTask = getDocument(urlObj);
       expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
