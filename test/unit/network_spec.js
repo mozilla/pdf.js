@@ -31,7 +31,7 @@ describe("network", function () {
     const fullReader = stream.getFullReader();
 
     let isStreamingSupported, isRangeSupported;
-    const promise = fullReader.headersReady.then(function () {
+    await fullReader.headersReady.then(function () {
       isStreamingSupported = fullReader.isStreamingSupported;
       isRangeSupported = fullReader.isRangeSupported;
     });
@@ -49,7 +49,7 @@ describe("network", function () {
       });
     };
 
-    await Promise.all([read(), promise]);
+    await read();
 
     expect(len).toEqual(pdf1Length);
     expect(count).toEqual(1);
@@ -72,7 +72,7 @@ describe("network", function () {
     const fullReader = stream.getFullReader();
 
     let isStreamingSupported, isRangeSupported, fullReaderCancelled;
-    const promise = fullReader.headersReady.then(function () {
+    await fullReader.headersReady.then(function () {
       isStreamingSupported = fullReader.isStreamingSupported;
       isRangeSupported = fullReader.isRangeSupported;
       // we shall be able to close the full reader without issues
@@ -107,7 +107,6 @@ describe("network", function () {
     await Promise.all([
       read(range1Reader, result1),
       read(range2Reader, result2),
-      promise,
     ]);
 
     expect(result1.value).toEqual(rangeSize);

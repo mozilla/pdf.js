@@ -36,6 +36,16 @@ function createHeaders(isHttp, httpHeaders) {
   return headers;
 }
 
+function getResponseOrigin(url) {
+  try {
+    return new URL(url).origin;
+  } catch {
+    // `new URL()` will throw on incorrect data.
+  }
+  // Notably, null is distinct from "null" string (e.g. from file:-URLs).
+  return null;
+}
+
 function validateRangeRequestCapabilities({
   responseHeaders,
   isHttp,
@@ -116,6 +126,7 @@ export {
   createHeaders,
   createResponseStatusError,
   extractFilenameFromHeader,
+  getResponseOrigin,
   validateRangeRequestCapabilities,
   validateResponseStatus,
 };

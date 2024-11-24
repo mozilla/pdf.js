@@ -18,6 +18,7 @@ import {
   createHeaders,
   createResponseStatusError,
   extractFilenameFromHeader,
+  getResponseOrigin,
   validateRangeRequestCapabilities,
 } from "./network_utils.js";
 
@@ -39,6 +40,8 @@ function getArrayBuffer(xhr) {
 }
 
 class NetworkManager {
+  _responseOrigin = null;
+
   constructor({ url, httpHeaders, withCredentials }) {
     this.url = url;
     this.isHttp = /^https?:/i.test(url);
@@ -273,6 +276,10 @@ class PDFNetworkStreamFullRequestReader {
     const fullRequestXhrId = this._fullRequestId;
     const fullRequestXhr = this._manager.getRequestXhr(fullRequestXhrId);
 
+    this._manager._responseOrigin = getResponseOrigin(
+      fullRequestXhr.responseURL
+    );
+
     const rawResponseHeaders = fullRequestXhr.getAllResponseHeaders();
     const responseHeaders = new Headers(
       rawResponseHeaders
@@ -370,6 +377,8 @@ class PDFNetworkStreamFullRequestReader {
   }
 
   async read() {
+    await this._headersCapability.promise;
+
     if (this._storedError) {
       throw this._storedError;
     }
@@ -405,6 +414,7 @@ class PDFNetworkStreamRangeRequestReader {
     this._manager = manager;
 
     const args = {
+      onHeadersReceived: this._onHeadersReceived.bind(this),
       onDone: this._onDone.bind(this),
       onError: this._onError.bind(this),
       onProgress: this._onProgress.bind(this),
@@ -418,6 +428,19 @@ class PDFNetworkStreamRangeRequestReader {
 
     this.onProgress = null;
     this.onClosed = null;
+  }
+
+  _onHeadersReceived() {
+    const responseOrigin = getResponseOrigin(
+      this._manager.getRequestXhr(this._requestId)?.responseURL
+    );
+
+    if (responseOrigin !== this._manager._responseOrigin) {
+      this._storedError = new Error(
+        `Expected range response-origin "${responseOrigin}" to match "${this._manager._responseOrigin}".`
+      );
+      this._onError(0);
+    }
   }
 
   _close() {
@@ -441,7 +464,7 @@ class PDFNetworkStreamRangeRequestReader {
   }
 
   _onError(status) {
-    this._storedError = createResponseStatusError(status, this._url);
+    this._storedError ??= createResponseStatusError(status, this._url);
     for (const requestCapability of this._requests) {
       requestCapability.reject(this._storedError);
     }

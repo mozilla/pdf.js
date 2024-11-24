@@ -54,7 +54,7 @@ describe("fetch_stream", function () {
     const fullReader = stream.getFullReader();
 
     let isStreamingSupported, isRangeSupported;
-    const promise = fullReader.headersReady.then(function () {
+    await fullReader.headersReady.then(function () {
       isStreamingSupported = fullReader.isStreamingSupported;
       isRangeSupported = fullReader.isRangeSupported;
     });
@@ -71,7 +71,7 @@ describe("fetch_stream", function () {
       });
     };
 
-    await Promise.all([read(), promise]);
+    await read();
 
     expect(len).toEqual(pdfLength);
     expect(isStreamingSupported).toEqual(true);
@@ -90,7 +90,7 @@ describe("fetch_stream", function () {
     const fullReader = stream.getFullReader();
 
     let isStreamingSupported, isRangeSupported, fullReaderCancelled;
-    const promise = fullReader.headersReady.then(function () {
+    await fullReader.headersReady.then(function () {
       isStreamingSupported = fullReader.isStreamingSupported;
       isRangeSupported = fullReader.isRangeSupported;
       // We shall be able to close full reader without any issue.
@@ -121,7 +121,6 @@ describe("fetch_stream", function () {
     await Promise.all([
       read(rangeReader1, result1),
       read(rangeReader2, result2),
-      promise,
     ]);
 
     expect(isStreamingSupported).toEqual(true);
