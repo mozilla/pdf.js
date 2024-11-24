@@ -335,6 +335,10 @@ pdfjs-editor-stamp-add-image-button-label = เพิ่มภาพ
 pdfjs-editor-free-highlight-thickness-input = ความหนา
 pdfjs-editor-free-highlight-thickness-title =
     .title = เปลี่ยนความหนาเมื่อเน้นรายการอื่นๆ ที่ไม่ใช่ข้อความ
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = ตัวแก้ไขข้อความ
+    .default-content = เริ่มพิมพ์ได้เลย…
 pdfjs-free-text =
     .aria-label = ตัวแก้ไขข้อความ
 pdfjs-free-text-default-content = เริ่มพิมพ์…
@@ -345,8 +349,9 @@ pdfjs-ink-canvas =
 
 ## Alt-text dialog
 
-# Alternative text (alt text) helps when people can't see the image.
 pdfjs-editor-alt-text-button-label = ข้อความทดแทน
+pdfjs-editor-alt-text-edit-button =
+    .aria-label = แก้ไขข้อความทดแทน
 pdfjs-editor-alt-text-edit-button-label = แก้ไขข้อความทดแทน
 pdfjs-editor-alt-text-dialog-label = เลือกตัวเลือก
 pdfjs-editor-alt-text-dialog-description = ข้อความทดแทนสามารถช่วยเหลือได้เมื่อผู้ใช้มองไม่เห็นภาพ หรือภาพไม่โหลด
@@ -360,6 +365,9 @@ pdfjs-editor-alt-text-decorative-tooltip = ทำเครื่องหมา�
 # .placeholder: This is a placeholder for the alt text input area
 pdfjs-editor-alt-text-textarea =
     .placeholder = ตัวอย่างเช่น “ชายหนุ่มคนหนึ่งนั่งลงที่โต๊ะเพื่อรับประทานอาหารมื้อหนึ่ง”
+# Alternative text (alt text) helps when people can't see the image.
+pdfjs-editor-alt-text-button =
+    .aria-label = ข้อความทดแทน
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
@@ -441,10 +449,16 @@ pdfjs-editor-new-alt-text-error-close-button = ปิด
 pdfjs-editor-new-alt-text-ai-model-downloading-progress = กำลังดาวน์โหลดโมเดล AI สำหรับข้อความทดแทน ({ $downloadedSize } จาก { $totalSize } MB)
     .aria-valuetext = กำลังดาวน์โหลดโมเดล AI สำหรับข้อความทดแทน ({ $downloadedSize } จาก { $totalSize } MB)
 # This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button =
+    .aria-label = เพิ่มข้อความทดแทนแล้ว
 pdfjs-editor-new-alt-text-added-button-label = เพิ่มข้อความทดแทนแล้ว
 # This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button =
+    .aria-label = ขาดข้อความทดแทน
 pdfjs-editor-new-alt-text-missing-button-label = ขาดข้อความทดแทน
 # This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button =
+    .aria-label = ตรวจสอบข้อความทดแทน
 pdfjs-editor-new-alt-text-to-review-button-label = ตรวจสอบข้อความทดแทน
 # "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
 # Variables:
