@@ -361,8 +361,9 @@ pdfjs-ink-canvas =
 
 ## Alt-text dialog
 
-# Alternative text (alt text) helps when people can't see the image.
 pdfjs-editor-alt-text-button-label = Nadomestno besedilo
+pdfjs-editor-alt-text-edit-button =
+    .aria-label = Uredi nadomestno besedilo
 pdfjs-editor-alt-text-edit-button-label = Uredi nadomestno besedilo
 pdfjs-editor-alt-text-dialog-label = Izberite možnost
 pdfjs-editor-alt-text-dialog-description = Nadomestno besedilo se prikaže tistim, ki ne vidijo slike, ali če se ta ne naloži.
@@ -376,6 +377,9 @@ pdfjs-editor-alt-text-decorative-tooltip = Označeno kot okrasno
 # .placeholder: This is a placeholder for the alt text input area
 pdfjs-editor-alt-text-textarea =
     .placeholder = Na primer: "Mladenič sedi za mizo pri jedi"
+# Alternative text (alt text) helps when people can't see the image.
+pdfjs-editor-alt-text-button =
+    .aria-label = Nadomestno besedilo
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
@@ -457,10 +461,16 @@ pdfjs-editor-new-alt-text-error-close-button = Zapri
 pdfjs-editor-new-alt-text-ai-model-downloading-progress = Prenašanje modela UI za nadomestno besedilo ({ $downloadedSize } od { $totalSize } MB)
     .aria-valuetext = Prenašanje modela UI za nadomestno besedilo ({ $downloadedSize } od { $totalSize } MB)
 # This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button =
+    .aria-label = Nadomestno besedilo dodano
 pdfjs-editor-new-alt-text-added-button-label = Nadomestno besedilo dodano
 # This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button =
+    .aria-label = Nadomestno besedilo manjka
 pdfjs-editor-new-alt-text-missing-button-label = Nadomestno besedilo manjka
 # This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button =
+    .aria-label = Oceni nadomestno besedilo
 pdfjs-editor-new-alt-text-to-review-button-label = Oceni nadomestno besedilo
 # "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
 # Variables:
