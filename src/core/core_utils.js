@@ -27,6 +27,8 @@ import { Dict, isName, Ref, RefSet } from "./primitives.js";
 import { BaseStream } from "./base_stream.js";
 
 const PDF_VERSION_REGEXP = /^[1-9]\.\d$/;
+const MAX_INT_32 = 2 ** 31 - 1;
+const MIN_INT_32 = -(2 ** 31);
 
 function getLookupTableFactory(initializer) {
   let lookup;
@@ -713,6 +715,8 @@ export {
   lookupMatrix,
   lookupNormalRect,
   lookupRect,
+  MAX_INT_32,
+  MIN_INT_32,
   MissingDataException,
   numberToString,
   ParserEOFException,
