@@ -1492,4 +1492,42 @@ describe("Stamp Editor", () => {
       );
     });
   });
+
+  describe("Drag a stamp annotation and click on a touchscreen", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the annotation isn't unselected when an other finger taps on the screen", async () => {
+      // Run sequentially to avoid clipboard issues.
+      for (const [browserName, page] of pages) {
+        if (browserName === "chrome") {
+          // TODO: remove this check when puppeteer supports multiple touch
+          // events (it works in v23.9.1).
+          return;
+        }
+        await switchToStamp(page);
+
+        await copyImage(page, "../images/firefox_logo.png", 0);
+        const editorSelector = getEditorSelector(0);
+        const stampRect = await getRect(page, editorSelector);
+
+        await page.touchscreen.tap(stampRect.x + 10, stampRect.y + 10);
+        await waitForSelectedEditor(page, editorSelector);
+
+        await page.touchscreen.touchStart(stampRect.x + 10, stampRect.y + 10);
+        await page.touchscreen.touchMove(stampRect.x + 20, stampRect.y + 20);
+        await page.touchscreen.tap(stampRect.x - 10, stampRect.y - 10);
+        await page.touchscreen.touchEnd();
+
+        await waitForSelectedEditor(page, editorSelector);
+      }
+    });
+  });
 });
