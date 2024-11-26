@@ -697,7 +697,12 @@ describe("Highlight Editor", () => {
             await page.keyboard.press("ArrowRight");
           }
           await page.keyboard.press("ArrowDown");
-          await page.keyboard.press("ArrowDown");
+          // Here and elsewhere, we add a small delay between press and release
+          // to make sure that a keyup event for Shift is triggered after
+          // selectionchange (it's why adding the delay on the last before
+          // releasing shift is enough).
+          // It works with a value of 10ms, but we use 100ms to be sure.
+          await page.keyboard.press("ArrowDown", { delay: 100 });
           await page.keyboard.up("Shift");
 
           await page.waitForSelector(sel);
@@ -1066,7 +1071,7 @@ describe("Highlight Editor", () => {
             15
           );
           await page.keyboard.down("Shift");
-          await page.keyboard.press("ArrowDown");
+          await page.keyboard.press("ArrowDown", { delay: 100 });
           await page.keyboard.up("Shift");
 
           await page.waitForSelector(getEditorSelector(0));
@@ -1715,7 +1720,7 @@ describe("Highlight Editor", () => {
           );
           await page.keyboard.down("Shift");
           for (let i = 0; i < 3; i++) {
-            await page.keyboard.press("ArrowDown");
+            await page.keyboard.press("ArrowDown", { delay: 100 });
           }
           await page.keyboard.up("Shift");
 
@@ -1730,7 +1735,7 @@ describe("Highlight Editor", () => {
           );
           await page.keyboard.down("Shift");
           for (let i = 0; i < 3; i++) {
-            await page.keyboard.press("ArrowDown");
+            await page.keyboard.press("ArrowDown", { delay: 100 });
           }
           await page.keyboard.up("Shift");
           await page.waitForSelector(getEditorSelector(1));
