@@ -376,12 +376,12 @@ class InkEditor extends AnnotationEditor {
 
     this.canvas.addEventListener(
       "pointerleave",
-      this.canvasPointerLeave.bind(this),
+      this.canvasPointerleave.bind(this),
       { signal }
     );
     this.canvas.addEventListener(
       "pointermove",
-      this.canvasPointerMove.bind(this),
+      this.canvasPointermove.bind(this),
       { signal }
     );
     this.canvas.addEventListener("pointerup", this.canvasPointerup.bind(this), {
@@ -659,7 +659,7 @@ class InkEditor extends AnnotationEditor {
   }
 
   /**
-   * Track a new pointer
+   * Track a new pointer.
    * @param {PointerEvent} event
    */
   #addPointer(event) {
@@ -671,7 +671,7 @@ class InkEditor extends AnnotationEditor {
   }
 
   /**
-   * Remove a pointer
+   * Remove a pointer.
    * @param {PointerEvent} event
    */
   #removePointer(event) {
@@ -679,7 +679,7 @@ class InkEditor extends AnnotationEditor {
   }
 
   /**
-   * Check if we're in a multi-touch scenario
+   * Check if we're in a multi-touch scenario.
    * @returns {boolean}
    */
   #isMultiTouch() {
@@ -690,15 +690,15 @@ class InkEditor extends AnnotationEditor {
   }
 
   /**
-   * onpointerup callback for the canvas we're drawing on.
-   * removes the pointer from the active pointers list
+   * Handles onpointerup callback for the canvas we're drawing on.
+   * Removes the pointer from the active pointers list
    * and releases the pointer capture.
    * @param {PointerEvent} event
    */
   canvasPointerUp(event) {
     this.#removePointer(event);
 
-    // If we were drawing, complete the drawing
+    // If we were drawing, complete the drawing.
     if (this.#drawingAC && !this.#isMultiTouch()) {
       event.preventDefault();
       this.#endDrawing(event);
@@ -716,7 +716,7 @@ class InkEditor extends AnnotationEditor {
 
     this.canvas.addEventListener(
       "pointerdown",
-      this.canvasPointerDown.bind(this),
+      this.canvasPointerdown.bind(this),
       { signal }
     );
 
@@ -734,7 +734,7 @@ class InkEditor extends AnnotationEditor {
    * onpointerdown callback for the canvas we're drawing on.
    * @param {PointerEvent} event
    */
-  canvasPointerDown(event) {
+  canvasPointerdown(event) {
     if (event.button !== 0 || !this.isInEditMode() || this.#disableEditing) {
       return;
     }
@@ -744,8 +744,8 @@ class InkEditor extends AnnotationEditor {
     this.canvas.setPointerCapture(event.pointerId);
 
     if (this.#isMultiTouch()) {
-      // Release pointer capture to allow native behavior
-      // We could implement scroll and zoom with two fingers here
+      // Release pointer capture to allow native behavior.
+      // We could implement scroll and zoom with two fingers here.
       this.canvas.releasePointerCapture(event.pointerId);
       return;
     }
@@ -769,8 +769,8 @@ class InkEditor extends AnnotationEditor {
    * onpointermove callback for the canvas we're drawing on.
    * @param {PointerEvent} event
    */
-  canvasPointerMove(event) {
-    // Update pointer position
+  canvasPointermove(event) {
+    // Update pointer position.
     if (this.#activePointers.has(event.pointerId)) {
       this.#activePointers.set(event.pointerId, {
         x: event.offsetX,
@@ -779,7 +779,7 @@ class InkEditor extends AnnotationEditor {
       });
     }
 
-    // If multi-touch, stop any drawing and allow scrolling
+    // If multi-touch, stop any drawing and allow scrolling.
     if (this.#isMultiTouch()) {
       if (this.#drawingAC) {
         this.#drawingAC.abort();
@@ -808,7 +808,7 @@ class InkEditor extends AnnotationEditor {
    * onpointerleave callback for the canvas we're drawing on.
    * @param {PointerEvent} event
    */
-  canvasPointerLeave(event) {
+  canvasPointerleave(event) {
     if (!event.relatedTarget || !this.canvas.contains(event.relatedTarget)) {
       this.#removePointer(event);
     }
