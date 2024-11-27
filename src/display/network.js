@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { assert, stringToBytes } from "../shared/util.js";
+import { assert, stringToBytes, warn } from "../shared/util.js";
 import {
   createHeaders,
   createResponseStatusError,
@@ -161,10 +161,15 @@ class NetworkManager {
     if (xhrStatus === PARTIAL_CONTENT_RESPONSE) {
       const rangeHeader = xhr.getResponseHeader("Content-Range");
       const matches = /bytes (\d+)-(\d+)\/(\d+)/.exec(rangeHeader);
-      pendingRequest.onDone({
-        begin: parseInt(matches[1], 10),
-        chunk,
-      });
+      if (matches) {
+        pendingRequest.onDone({
+          begin: parseInt(matches[1], 10),
+          chunk,
+        });
+      } else {
+        warn(`Missing or invalid "Content-Range" header.`);
+        pendingRequest.onError?.(0);
+      }
     } else if (chunk) {
       pendingRequest.onDone({
         begin: 0,
