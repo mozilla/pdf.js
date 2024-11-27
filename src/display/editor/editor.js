@@ -23,9 +23,9 @@ import {
   KeyboardManager,
 } from "./tools.js";
 import { FeatureTest, shadow, unreachable } from "../../shared/util.js";
+import { noContextMenu, stopEvent } from "../display_utils.js";
 import { AltText } from "./alt_text.js";
 import { EditorToolbar } from "./toolbar.js";
-import { noContextMenu } from "../display_utils.js";
 
 /**
  * @typedef {Object} AnnotationEditorParameters
@@ -47,6 +47,10 @@ class AnnotationEditor {
   #altText = null;
 
   #disabled = false;
+
+  #dragPointerId = null;
+
+  #dragPointerType = "";
 
   #keepAspectRatio = false;
 
@@ -751,10 +755,7 @@ class AnnotationEditor {
     );
     window.addEventListener(
       "touchmove",
-      e => {
-        // Prevent the page from scrolling.
-        e.preventDefault();
-      },
+      stopEvent /* Prevent the page from scrolling */,
       { passive: false, signal }
     );
     window.addEventListener("contextmenu", noContextMenu, { signal });
@@ -1138,46 +1139,67 @@ class AnnotationEditor {
 
     const ac = new AbortController();
     const signal = this._uiManager.combinedSignal(ac);
+    const opts = { capture: true, passive: false, signal };
+    const cancelDrag = e => {
+      ac.abort();
+
+      this.#dragPointerId = null;
+      this.#hasBeenClicked = false;
+      if (!this._uiManager.endDragSession()) {
+        this.#selectOnPointerEvent(e);
+      }
+    };
 
     if (isSelected) {
-      this.div.classList.add("moving");
       this.#prevDragX = event.clientX;
       this.#prevDragY = event.clientY;
-      const pointerMoveCallback = e => {
-        const { clientX: x, clientY: y } = e;
-        const [tx, ty] = this.screenToPageTranslation(
-          x - this.#prevDragX,
-          y - this.#prevDragY
-        );
-        this.#prevDragX = x;
-        this.#prevDragY = y;
-        this._uiManager.dragSelectedEditors(tx, ty);
-      };
-      window.addEventListener("pointermove", pointerMoveCallback, {
-        passive: true,
-        capture: true,
-        signal,
-      });
+      this.#dragPointerId = event.pointerId;
+      this.#dragPointerType = event.pointerType;
+      window.addEventListener(
+        "pointermove",
+        e => {
+          const { clientX: x, clientY: y, pointerId } = e;
+          if (pointerId !== this.#dragPointerId) {
+            stopEvent(e);
+            return;
+          }
+          const [tx, ty] = this.screenToPageTranslation(
+            x - this.#prevDragX,
+            y - this.#prevDragY
+          );
+          this.#prevDragX = x;
+          this.#prevDragY = y;
+          this._uiManager.dragSelectedEditors(tx, ty);
+        },
+        opts
+      );
       window.addEventListener(
         "touchmove",
+        stopEvent /* Prevent the page from scrolling */,
+        opts
+      );
+      window.addEventListener(
+        "pointerdown",
+        // If the user drags with one finger and then clicks with another.
         e => {
-          // Prevent the page from scrolling.
-          e.preventDefault();
+          if (e.isPrimary && e.pointerType === this.#dragPointerType) {
+            // We cannot have two primaries at the same time.
+            // It's possible to be in this state with Firefox and Gnome when
+            // trying to drag with three fingers (see bug 1933716).
+            cancelDrag(e);
+          }
+          stopEvent(e);
         },
-        { passive: false, signal }
+        opts
       );
     }
 
-    const pointerUpCallback = () => {
-      ac.abort();
-      if (isSelected) {
-        this.div.classList.remove("moving");
+    const pointerUpCallback = e => {
+      if (!this.#dragPointerId || this.#dragPointerId === e.pointerId) {
+        cancelDrag(e);
+        return;
       }
-
-      this.#hasBeenClicked = false;
-      if (!this._uiManager.endDragSession()) {
-        this.#selectOnPointerEvent(event);
-      }
+      stopEvent(e);
     };
     window.addEventListener("pointerup", pointerUpCallback, { signal });
     // If the user is using alt+tab during the dragging session, the pointerup
