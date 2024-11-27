@@ -609,13 +609,6 @@ class Driver {
         return;
       }
 
-      if (task.noChrome && window?.chrome) {
-        this._log(`Skipping file "${task.file}" (because on Chrome)\n`);
-        this.currentTask++;
-        this._nextTask();
-        return;
-      }
-
       this._log('Loading file "' + task.file + '"\n');
 
       try {
