@@ -28,9 +28,9 @@ import {
   HighlightAnnotationElement,
   InkAnnotationElement,
 } from "../annotation_layer.js";
+import { noContextMenu, stopEvent } from "../display_utils.js";
 import { AnnotationEditor } from "./editor.js";
 import { ColorPicker } from "./color_picker.js";
-import { noContextMenu } from "../display_utils.js";
 
 /**
  * Basic draw editor in order to generate an Highlight annotation.
@@ -778,22 +778,21 @@ class HighlightEditor extends AnnotationEditor {
     const ac = new AbortController();
     const signal = parent.combinedSignal(ac);
 
-    const pointerDown = e => {
-      // Avoid to have undesired clicks during the drawing.
-      e.preventDefault();
-      e.stopPropagation();
-    };
     const pointerUpCallback = e => {
       ac.abort();
       this.#endHighlight(parent, e);
     };
     window.addEventListener("blur", pointerUpCallback, { signal });
     window.addEventListener("pointerup", pointerUpCallback, { signal });
-    window.addEventListener("pointerdown", pointerDown, {
-      capture: true,
-      passive: false,
-      signal,
-    });
+    window.addEventListener(
+      "pointerdown",
+      stopEvent /* Avoid to have undesired clicks during the drawing. */,
+      {
+        capture: true,
+        passive: false,
+        signal,
+      }
+    );
     window.addEventListener("contextmenu", noContextMenu, { signal });
 
     textLayer.addEventListener(
