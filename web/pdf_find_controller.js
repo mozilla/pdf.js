@@ -282,8 +282,7 @@ function normalize(text) {
 
       if (p5) {
         // Compound word with a line break after the hyphen.
-        positions.push([i - shift + 3, 1 + shift]);
-        shift += 1;
+        // Since the \n isn't in the original text, o = 3 and n = 3.
         shiftOrigin += 1;
         eol += 1;
         return p5.replace("\n", "");
