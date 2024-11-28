@@ -17,6 +17,10 @@
   svg {
     transform: none;
 
+    &.moving {
+      z-index: 100000;
+    }
+
     &.highlight,
     &.highlightOutline {
       &[data-main-rotation="90"] {
@@ -38,6 +42,23 @@
         use:not(.clip, .mask) {
           transform: matrix(0, -1, 1, 0, 0, 1);
         }
+      }
+    }
+
+    &.draw {
+      position: absolute;
+      mix-blend-mode: normal;
+
+      &[data-draw-rotation="90"] {
+        transform: rotate(90deg);
+      }
+
+      &[data-draw-rotation="180"] {
+        transform: rotate(180deg);
+      }
+
+      &[data-draw-rotation="270"] {
+        transform: rotate(270deg);
       }
     }
 
