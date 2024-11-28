@@ -35,6 +35,7 @@ import {
   PermissionFlag,
   PixelsPerInch,
   shadow,
+  stopEvent,
   version,
 } from "pdfjs-lib";
 import {
@@ -748,8 +749,7 @@ class PDFViewer {
         this.#getAllTextInProgress ||
         textLayerMode === TextLayerMode.ENABLE_PERMISSIONS
       ) {
-        event.preventDefault();
-        event.stopPropagation();
+        stopEvent(event);
         return;
       }
       this.#getAllTextInProgress = true;
@@ -786,8 +786,7 @@ class PDFViewer {
           classList.remove("copyAll");
         });
 
-      event.preventDefault();
-      event.stopPropagation();
+      stopEvent(event);
     }
   }
 

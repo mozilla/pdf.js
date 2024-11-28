@@ -53,6 +53,7 @@ import {
   MissingPDFException,
   PDFWorker,
   shadow,
+  stopEvent,
   UnexpectedResponseException,
   version,
 } from "pdfjs-lib";
@@ -715,8 +716,7 @@ const PDFViewerApplication = {
           if (item.type === "application/pdf") {
             evt.dataTransfer.dropEffect =
               evt.dataTransfer.effectAllowed === "copy" ? "copy" : "move";
-            evt.preventDefault();
-            evt.stopPropagation();
+            stopEvent(evt);
             return;
           }
         }
@@ -725,8 +725,7 @@ const PDFViewerApplication = {
         if (evt.dataTransfer.files?.[0].type !== "application/pdf") {
           return;
         }
-        evt.preventDefault();
-        evt.stopPropagation();
+        stopEvent(evt);
         eventBus.dispatch("fileinputchange", {
           source: this,
           fileInput: evt.dataTransfer,
