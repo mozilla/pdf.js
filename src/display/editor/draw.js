@@ -69,11 +69,21 @@ class DrawingEditor extends AnnotationEditor {
 
   static _currentDrawId = -1;
 
-  static _currentDraw = null;
-
-  static _currentDrawingOptions = null;
-
   static _currentParent = null;
+
+  static #currentDraw = null;
+
+  static #currentDrawingAC = null;
+
+  static #currentDrawingOptions = null;
+
+  static #currentPointerId = NaN;
+
+  static #currentPointerType = null;
+
+  static #currentPointerIds = null;
+
+  static #currentMoveTimestamp = NaN;
 
   static _INNER_MARGIN = 3;
 
@@ -168,7 +178,7 @@ class DrawingEditor extends AnnotationEditor {
       this._defaultDrawingOptions.updateProperty(propertyName, value);
     }
     if (this._currentParent) {
-      this._currentDraw.updateProperty(propertyName, value);
+      DrawingEditor.#currentDraw.updateProperty(propertyName, value);
       this._currentParent.drawLayer.updateProperties(
         this._currentDrawId,
         this._defaultDrawingOptions.toSVGProperties()
@@ -639,32 +649,81 @@ class DrawingEditor extends AnnotationEditor {
     unreachable("Not implemented");
   }
 
-  static startDrawing(
-    parent,
-    uiManager,
-    _isLTR,
-    { target, offsetX: x, offsetY: y }
-  ) {
+  static startDrawing(parent, uiManager, _isLTR, event) {
+    // The _currentPointerType is set when the user starts an empty drawing
+    // session. If, in the same drawing session, the user starts using a
+    // different type of pointer (e.g. a pen and then a finger), we just return.
+    //
+    // The _currentPointerId  and _currentPointerIds are used to keep track of
+    // the pointers with a same type (e.g. two fingers). If the user starts to
+    // draw with a finger and then uses a second finger, we just stop the
+    // current drawing and let the user zoom the document.
+
+    const { target, offsetX: x, offsetY: y, pointerId, pointerType } = event;
+    if (
+      DrawingEditor.#currentPointerType &&
+      DrawingEditor.#currentPointerType !== pointerType
+    ) {
+      return;
+    }
+
     const {
       viewport: { rotation },
     } = parent;
     const { width: parentWidth, height: parentHeight } =
       target.getBoundingClientRect();
-    const ac = new AbortController();
+
+    const ac = (DrawingEditor.#currentDrawingAC = new AbortController());
     const signal = parent.combinedSignal(ac);
+
+    DrawingEditor.#currentPointerId ||= pointerId;
+    DrawingEditor.#currentPointerType ??= pointerType;
 
     window.addEventListener(
       "pointerup",
       e => {
-        ac.abort();
-        parent.toggleDrawing(true);
-        this._endDraw(e);
+        if (DrawingEditor.#currentPointerId === e.pointerId) {
+          this._endDraw(e);
+        } else {
+          DrawingEditor.#currentPointerIds?.delete(e.pointerId);
+        }
+      },
+      { signal }
+    );
+    window.addEventListener(
+      "pointercancel",
+      e => {
+        if (DrawingEditor.#currentPointerId === e.pointerId) {
+          this._currentParent.endDrawingSession();
+        } else {
+          DrawingEditor.#currentPointerIds?.delete(e.pointerId);
+        }
       },
       { signal }
     );
     window.addEventListener(
       "pointerdown",
-      stopEvent /* Avoid to have undesired clicks during drawing. */,
+      e => {
+        if (DrawingEditor.#currentPointerType !== e.pointerType) {
+          // For example, we started with a pen and the user
+          // is now using a finger.
+          return;
+        }
+
+        // For example, the user is using a second finger.
+        (DrawingEditor.#currentPointerIds ||= new Set()).add(e.pointerId);
+
+        // The first finger created a first point and a second finger just
+        // started, so we stop the drawing and remove this only point.
+        if (DrawingEditor.#currentDraw.isCancellable()) {
+          DrawingEditor.#currentDraw.removeLastElement();
+          if (DrawingEditor.#currentDraw.isEmpty()) {
+            this._currentParent.endDrawingSession(/* isAborted = */ true);
+          } else {
+            this._endDraw(null);
+          }
+        }
+      },
       {
         capture: true,
         passive: false,
@@ -675,54 +734,114 @@ class DrawingEditor extends AnnotationEditor {
     target.addEventListener("pointermove", this._drawMove.bind(this), {
       signal,
     });
+    target.addEventListener(
+      "touchmove",
+      e => {
+        if (e.timeStamp === DrawingEditor.#currentMoveTimestamp) {
+          // This move event is used to draw so we don't want to scroll.
+          stopEvent(e);
+        }
+      },
+      { signal }
+    );
     parent.toggleDrawing();
     uiManager._editorUndoBar?.hide();
 
-    if (this._currentDraw) {
+    if (DrawingEditor.#currentDraw) {
       parent.drawLayer.updateProperties(
         this._currentDrawId,
-        this._currentDraw.startNew(x, y, parentWidth, parentHeight, rotation)
+        DrawingEditor.#currentDraw.startNew(
+          x,
+          y,
+          parentWidth,
+          parentHeight,
+          rotation
+        )
       );
       return;
     }
 
     uiManager.updateUIForDefaultProperties(this);
 
-    this._currentDraw = this.createDrawerInstance(
+    DrawingEditor.#currentDraw = this.createDrawerInstance(
       x,
       y,
       parentWidth,
       parentHeight,
       rotation
     );
-    this._currentDrawingOptions = this.getDefaultDrawingOptions();
+    DrawingEditor.#currentDrawingOptions = this.getDefaultDrawingOptions();
     this._currentParent = parent;
 
     ({ id: this._currentDrawId } = parent.drawLayer.draw(
       this._mergeSVGProperties(
-        this._currentDrawingOptions.toSVGProperties(),
-        this._currentDraw.defaultSVGProperties
+        DrawingEditor.#currentDrawingOptions.toSVGProperties(),
+        DrawingEditor.#currentDraw.defaultSVGProperties
       ),
       /* isPathUpdatable = */ true,
       /* hasClip = */ false
     ));
   }
 
-  static _drawMove({ offsetX, offsetY }) {
+  static _drawMove(event) {
+    DrawingEditor.#currentMoveTimestamp = -1;
+    if (!DrawingEditor.#currentDraw) {
+      return;
+    }
+    const { offsetX, offsetY, pointerId } = event;
+
+    if (DrawingEditor.#currentPointerId !== pointerId) {
+      return;
+    }
+    if (DrawingEditor.#currentPointerIds?.size >= 1) {
+      // The user is using multiple fingers and the first one is moving.
+      this._endDraw(event);
+      return;
+    }
     this._currentParent.drawLayer.updateProperties(
       this._currentDrawId,
-      this._currentDraw.add(offsetX, offsetY)
+      DrawingEditor.#currentDraw.add(offsetX, offsetY)
     );
+    // We track the timestamp to know if the touchmove event is used to draw.
+    DrawingEditor.#currentMoveTimestamp = event.timeStamp;
+    stopEvent(event);
   }
 
-  static _endDraw({ offsetX, offsetY }) {
+  static _cleanup(all) {
+    if (all) {
+      this._currentDrawId = -1;
+      this._currentParent = null;
+      DrawingEditor.#currentDraw = null;
+      DrawingEditor.#currentDrawingOptions = null;
+      DrawingEditor.#currentPointerType = null;
+      DrawingEditor.#currentMoveTimestamp = NaN;
+    }
+
+    if (DrawingEditor.#currentDrawingAC) {
+      DrawingEditor.#currentDrawingAC.abort();
+      DrawingEditor.#currentDrawingAC = null;
+      DrawingEditor.#currentPointerId = NaN;
+      DrawingEditor.#currentPointerIds = null;
+    }
+  }
+
+  static _endDraw(event) {
     const parent = this._currentParent;
-    parent.drawLayer.updateProperties(
-      this._currentDrawId,
-      this._currentDraw.end(offsetX, offsetY)
-    );
+    if (!parent) {
+      return;
+    }
+
+    parent.toggleDrawing(true);
+    this._cleanup(false);
+
+    if (event) {
+      parent.drawLayer.updateProperties(
+        this._currentDrawId,
+        DrawingEditor.#currentDraw.end(event.offsetX, event.offsetY)
+      );
+    }
     if (this.supportMultipleDrawings) {
-      const draw = this._currentDraw;
+      const draw = DrawingEditor.#currentDraw;
       const drawId = this._currentDrawId;
       const lastElement = draw.getLastElement();
       parent.addCommands({
@@ -753,7 +872,7 @@ class DrawingEditor extends AnnotationEditor {
     parent.toggleDrawing(true);
     parent.cleanUndoStack(AnnotationEditorParamsType.DRAW_STEP);
 
-    if (!this._currentDraw.isEmpty()) {
+    if (!DrawingEditor.#currentDraw.isEmpty()) {
       const {
         pageDimensions: [pageWidth, pageHeight],
         scale,
@@ -764,30 +883,23 @@ class DrawingEditor extends AnnotationEditor {
         false,
         {
           drawId: this._currentDrawId,
-          drawOutlines: this._currentDraw.getOutlines(
+          drawOutlines: DrawingEditor.#currentDraw.getOutlines(
             pageWidth * scale,
             pageHeight * scale,
             scale,
             this._INNER_MARGIN
           ),
-          drawingOptions: this._currentDrawingOptions,
+          drawingOptions: DrawingEditor.#currentDrawingOptions,
           mustBeCommitted: !isAborted,
         }
       );
-      this._cleanup();
+      this._cleanup(true);
       return editor;
     }
 
     parent.drawLayer.remove(this._currentDrawId);
-    this._cleanup();
+    this._cleanup(true);
     return null;
-  }
-
-  static _cleanup() {
-    this._currentDrawId = -1;
-    this._currentDraw = null;
-    this._currentDrawingOptions = null;
-    this._currentParent = null;
   }
 
   /**
