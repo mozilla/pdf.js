@@ -4448,21 +4448,54 @@ describe("annotation", function () {
             thickness: 1,
             opacity: 1,
             color: [0, 0, 0],
-            paths: [
-              {
-                bezier: [
-                  10, 11, 12, 13, 14, 15, 16, 17, 22, 23, 24, 25, 26, 27,
+            paths: {
+              lines: [
+                [
+                  NaN,
+                  NaN,
+                  NaN,
+                  NaN,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15,
+                  16,
+                  17,
+                  22,
+                  23,
+                  24,
+                  25,
+                  26,
+                  27,
                 ],
-                points: [1, 2, 3, 4, 5, 6, 7, 8],
-              },
-              {
-                bezier: [
-                  910, 911, 912, 913, 914, 915, 916, 917, 922, 923, 924, 925,
-                  926, 927,
+                [
+                  NaN,
+                  NaN,
+                  NaN,
+                  NaN,
+                  910,
+                  911,
+                  912,
+                  913,
+                  914,
+                  915,
+                  916,
+                  917,
+                  922,
+                  923,
+                  924,
+                  925,
+                  926,
+                  927,
                 ],
-                points: [91, 92, 93, 94, 95, 96, 97, 98],
-              },
-            ],
+              ],
+              points: [
+                [1, 2, 3, 4, 5, 6, 7, 8],
+                [91, 92, 93, 94, 95, 96, 97, 98],
+              ],
+            },
           },
         ],
         null,
@@ -4482,13 +4515,12 @@ describe("annotation", function () {
       const appearance = data[1].data;
       expect(appearance).toEqual(
         "2 0 obj\n" +
-          "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [12 34 56 78] /Length 129>> stream\n" +
+          "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [12 34 56 78] /Length 127>> stream\n" +
           "1 w 1 J 1 j\n" +
           "0 G\n" +
           "10 11 m\n" +
           "12 13 14 15 16 17 c\n" +
           "22 23 24 25 26 27 c\n" +
-          "S\n" +
           "910 911 m\n" +
           "912 913 914 915 916 917 c\n" +
           "922 923 924 925 926 927 c\n" +
@@ -4513,21 +4545,54 @@ describe("annotation", function () {
             thickness: 1,
             opacity: 0.12,
             color: [0, 0, 0],
-            paths: [
-              {
-                bezier: [
-                  10, 11, 12, 13, 14, 15, 16, 17, 22, 23, 24, 25, 26, 27,
+            paths: {
+              lines: [
+                [
+                  NaN,
+                  NaN,
+                  NaN,
+                  NaN,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15,
+                  16,
+                  17,
+                  22,
+                  23,
+                  24,
+                  25,
+                  26,
+                  27,
                 ],
-                points: [1, 2, 3, 4, 5, 6, 7, 8],
-              },
-              {
-                bezier: [
-                  910, 911, 912, 913, 914, 915, 916, 917, 922, 923, 924, 925,
-                  926, 927,
+                [
+                  NaN,
+                  NaN,
+                  NaN,
+                  NaN,
+                  910,
+                  911,
+                  912,
+                  913,
+                  914,
+                  915,
+                  916,
+                  917,
+                  922,
+                  923,
+                  924,
+                  925,
+                  926,
+                  927,
                 ],
-                points: [91, 92, 93, 94, 95, 96, 97, 98],
-              },
-            ],
+              ],
+              points: [
+                [1, 2, 3, 4, 5, 6, 7, 8],
+                [91, 92, 93, 94, 95, 96, 97, 98],
+              ],
+            },
           },
         ],
         null,
@@ -4547,7 +4612,7 @@ describe("annotation", function () {
       const appearance = data[1].data;
       expect(appearance).toEqual(
         "2 0 obj\n" +
-          "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [12 34 56 78] /Length 136 /Resources " +
+          "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [12 34 56 78] /Length 134 /Resources " +
           "<< /ExtGState << /R0 << /CA 0.12 /Type /ExtGState>>>>>>>> stream\n" +
           "1 w 1 J 1 j\n" +
           "0 G\n" +
@@ -4555,7 +4620,6 @@ describe("annotation", function () {
           "10 11 m\n" +
           "12 13 14 15 16 17 c\n" +
           "22 23 24 25 26 27 c\n" +
-          "S\n" +
           "910 911 m\n" +
           "912 913 914 915 916 917 c\n" +
           "922 923 924 925 926 927 c\n" +
@@ -4581,13 +4645,10 @@ describe("annotation", function () {
               thickness: 3,
               opacity: 1,
               color: [0, 255, 0],
-              paths: [
-                {
-                  bezier: [1, 2, 3, 4, 5, 6, 7, 8],
-                  // Useless in the printing case.
-                  points: [1, 2, 3, 4, 5, 6, 7, 8],
-                },
-              ],
+              paths: {
+                lines: [[NaN, NaN, NaN, NaN, 1, 2, 3, 4, 5, 6, 7, 8]],
+                points: [[1, 2, 3, 4, 5, 6, 7, 8]],
+              },
             },
           ]
         )

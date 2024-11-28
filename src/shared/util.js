@@ -94,6 +94,7 @@ const AnnotationEditorParamsType = {
   HIGHLIGHT_THICKNESS: 33,
   HIGHLIGHT_FREE: 34,
   HIGHLIGHT_SHOW_ALL: 35,
+  DRAW_STEP: 41,
 };
 
 // Permission flags from Table 22, Section 7.6.3.2 of the PDF specification.

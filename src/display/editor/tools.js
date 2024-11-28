@@ -411,6 +411,21 @@ class CommandManager {
     return this.#position < this.#commands.length - 1;
   }
 
+  cleanType(type) {
+    if (this.#position === -1) {
+      return;
+    }
+    for (let i = this.#position; i >= 0; i--) {
+      if (this.#commands[i].type !== type) {
+        this.#commands.splice(i + 1, this.#position - i);
+        this.#position = i;
+        return;
+      }
+    }
+    this.#commands.length = 0;
+    this.#position = -1;
+  }
+
   destroy() {
     this.#commands = null;
   }
@@ -1034,6 +1049,7 @@ class AnnotationEditorUIManager {
     for (const editor of this.#editorsToRescale) {
       editor.onScaleChanging();
     }
+    this.currentLayer?.onScaleChanging();
   }
 
   onRotationChanging({ pagesRotation }) {
@@ -1931,6 +1947,10 @@ class AnnotationEditorUIManager {
     }
   }
 
+  updateUIForDefaultProperties(editorType) {
+    this.#dispatchUpdateUI(editorType.defaultPropertiesToUpdate);
+  }
+
   /**
    * Add or remove an editor the current selection.
    * @param {AnnotationEditor} editor
@@ -1957,6 +1977,7 @@ class AnnotationEditorUIManager {
    * @param {AnnotationEditor} editor
    */
   setSelected(editor) {
+    this.currentLayer?.commitOrRemove();
     for (const ed of this.#selectedEditors) {
       if (ed !== editor) {
         ed.unselect();
@@ -2042,6 +2063,10 @@ class AnnotationEditorUIManager {
       hasSomethingToRedo: false,
       isEmpty: this.#isEmpty(),
     });
+  }
+
+  cleanUndoStack(type) {
+    this.#commandManager.cleanType(type);
   }
 
   #isEmpty() {
@@ -2132,6 +2157,10 @@ class AnnotationEditorUIManager {
         // mustn't return here.
         return;
       }
+    }
+
+    if (this.currentLayer?.commitOrRemove()) {
+      return;
     }
 
     if (!this.hasSelection) {

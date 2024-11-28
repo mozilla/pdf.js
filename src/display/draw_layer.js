@@ -183,11 +183,18 @@ class DrawLayer {
     this.updateProperties(id, properties);
   }
 
-  updateProperties(elementOrId, { root, bbox, rootClass, path }) {
+  updateProperties(elementOrId, properties) {
+    if (!properties) {
+      return;
+    }
+    const { root, bbox, rootClass, path } = properties;
     const element =
       typeof elementOrId === "number"
         ? this.#mapping.get(elementOrId)
         : elementOrId;
+    if (!element) {
+      return;
+    }
     if (root) {
       this.#updateProperties(element, root);
     }
@@ -205,6 +212,19 @@ class DrawLayer {
       const pathElement = defs.firstChild;
       this.#updateProperties(pathElement, path);
     }
+  }
+
+  updateParent(id, layer) {
+    if (layer === this) {
+      return;
+    }
+    const root = this.#mapping.get(id);
+    if (!root) {
+      return;
+    }
+    layer.#parent.append(root);
+    this.#mapping.delete(id);
+    layer.#mapping.set(id, root);
   }
 
   remove(id) {

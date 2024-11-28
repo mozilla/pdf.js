@@ -4466,7 +4466,7 @@ class InkAnnotation extends MarkupAnnotation {
     ink.set("Subtype", Name.get("Ink"));
     ink.set("CreationDate", `D:${getModificationDate()}`);
     ink.set("Rect", rect);
-    ink.set("InkList", outlines?.points || paths.map(p => p.points));
+    ink.set("InkList", outlines?.points || paths.points);
     ink.set("F", 4);
     ink.set("Rotate", rotation);
 
@@ -4523,28 +4523,29 @@ class InkAnnotation extends MarkupAnnotation {
       appearanceBuffer.push("/R0 gs");
     }
 
-    const buffer = [];
-    for (const { bezier } of paths) {
-      buffer.length = 0;
-      buffer.push(
-        `${numberToString(bezier[0])} ${numberToString(bezier[1])} m`
-      );
-      if (bezier.length === 2) {
-        buffer.push(
-          `${numberToString(bezier[0])} ${numberToString(bezier[1])} l S`
-        );
-      } else {
-        for (let i = 2, ii = bezier.length; i < ii; i += 6) {
-          const curve = bezier
-            .slice(i, i + 6)
-            .map(numberToString)
-            .join(" ");
-          buffer.push(`${curve} c`);
+    for (const outline of paths.lines) {
+      for (let i = 0, ii = outline.length; i < ii; i += 6) {
+        if (isNaN(outline[i])) {
+          appearanceBuffer.push(
+            `${numberToString(outline[i + 4])} ${numberToString(
+              outline[i + 5]
+            )} m`
+          );
+        } else {
+          const [c1x, c1y, c2x, c2y, x, y] = outline.slice(i, i + 6);
+          appearanceBuffer.push(
+            [c1x, c1y, c2x, c2y, x, y].map(numberToString).join(" ") + " c"
+          );
         }
-        buffer.push("S");
       }
-      appearanceBuffer.push(buffer.join("\n"));
+      if (outline.length === 6) {
+        appearanceBuffer.push(
+          `${numberToString(outline[4])} ${numberToString(outline[5])} l`
+        );
+      }
     }
+    appearanceBuffer.push("S");
+
     const appearance = appearanceBuffer.join("\n");
 
     const appearanceStreamDict = new Dict(xref);
@@ -4587,18 +4588,17 @@ class InkAnnotation extends MarkupAnnotation {
       `${numberToString(outline[4])} ${numberToString(outline[5])} m`
     );
     for (let i = 6, ii = outline.length; i < ii; i += 6) {
-      if (isNaN(outline[i]) || outline[i] === null) {
+      if (isNaN(outline[i])) {
         appearanceBuffer.push(
           `${numberToString(outline[i + 4])} ${numberToString(
             outline[i + 5]
           )} l`
         );
       } else {
-        const curve = outline
-          .slice(i, i + 6)
-          .map(numberToString)
-          .join(" ");
-        appearanceBuffer.push(`${curve} c`);
+        const [c1x, c1y, c2x, c2y, x, y] = outline.slice(i, i + 6);
+        appearanceBuffer.push(
+          [c1x, c1y, c2x, c2y, x, y].map(numberToString).join(" ") + " c"
+        );
       }
     }
     appearanceBuffer.push("h f");
