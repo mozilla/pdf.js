@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { noContextMenu } from "../display_utils.js";
+import { noContextMenu, stopEvent } from "../display_utils.js";
 
 class EditorToolbar {
   #toolbar = null;
@@ -81,14 +81,12 @@ class EditorToolbar {
 
   #focusIn(e) {
     this.#editor._focusEventsAllowed = false;
-    e.preventDefault();
-    e.stopPropagation();
+    stopEvent(e);
   }
 
   #focusOut(e) {
     this.#editor._focusEventsAllowed = true;
-    e.preventDefault();
-    e.stopPropagation();
+    stopEvent(e);
   }
 
   #addListenersToElement(element) {

@@ -32,6 +32,7 @@ import {
   getColorValues,
   getRGB,
   PixelsPerInch,
+  stopEvent,
 } from "../display_utils.js";
 import { HighlightToolbar } from "./toolbar.js";
 
@@ -501,8 +502,7 @@ class KeyboardManager {
     // For example, ctrl+s in a FreeText must be handled by the viewer, hence
     // the event must bubble.
     if (!bubbles) {
-      event.stopPropagation();
-      event.preventDefault();
+      stopEvent(event);
     }
   }
 }
