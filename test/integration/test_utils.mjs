@@ -773,6 +773,14 @@ async function switchToEditor(name, page, disable = false) {
   await awaitPromise(modeChangedHandle);
 }
 
+function waitForNoElement(page, selector) {
+  return page.waitForFunction(
+    sel => !document.querySelector(sel),
+    {},
+    selector
+  );
+}
+
 export {
   applyFunctionToEditor,
   awaitPromise,
@@ -826,6 +834,7 @@ export {
   waitForAnnotationModeChanged,
   waitForEntryInStorage,
   waitForEvent,
+  waitForNoElement,
   waitForPageRendered,
   waitForSandboxTrip,
   waitForSelectedEditor,
