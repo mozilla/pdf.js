@@ -749,15 +749,14 @@ class HighlightEditor extends AnnotationEditor {
     let i = 0;
     for (const { x, y, width, height } of boxes) {
       const sx = x * pageWidth + pageX;
-      const sy = (1 - y - height) * pageHeight + pageY;
-      // The specifications say that the rectangle should start from the bottom
-      // left corner and go counter-clockwise.
-      // But when opening the file in Adobe Acrobat it appears that this isn't
-      // correct hence the 4th and 6th numbers are just swapped.
+      const sy = (1 - y) * pageHeight + pageY;
+      // Serializes the rectangle in the Adobe Acrobat format.
+      // The rectangle's coordinates (b = bottom, t = top, L = left, R = right)
+      // are ordered as follows: tL, tR, bL, bR (bL origin).
       quadPoints[i] = quadPoints[i + 4] = sx;
       quadPoints[i + 1] = quadPoints[i + 3] = sy;
       quadPoints[i + 2] = quadPoints[i + 6] = sx + width * pageWidth;
-      quadPoints[i + 5] = quadPoints[i + 7] = sy + height * pageHeight;
+      quadPoints[i + 5] = quadPoints[i + 7] = sy - height * pageHeight;
       i += 8;
     }
     return quadPoints;

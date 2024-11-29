@@ -1277,7 +1277,8 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(getEditorSelector(0));
           await waitForSerialized(page, 1);
           const quadPoints = await getFirstSerialized(page, e => e.quadPoints);
-          const expected = [263, 674, 346, 674, 263, 696, 346, 696];
+          // Expected quadPoints tL, tR, bL, bR with bL coordinate.
+          const expected = [263, 696, 346, 696, 263, 674, 346, 674];
           expect(quadPoints.every((x, i) => Math.abs(x - expected[i]) <= 5))
             .withContext(`In ${browserName}`)
             .toBeTrue();
@@ -1312,7 +1313,8 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(getEditorSelector(0));
           await waitForSerialized(page, 1);
           const quadPoints = await getFirstSerialized(page, e => e.quadPoints);
-          const expected = [148, 624, 176, 624, 148, 637, 176, 637];
+          // Expected quadPoints tL, tR, bL, bR with bL coordinate.
+          const expected = [148, 637, 176, 637, 148, 624, 176, 624];
           expect(quadPoints.every((x, i) => Math.abs(x - expected[i]) <= 5))
             .withContext(`In ${browserName} (got ${quadPoints})`)
             .toBeTrue();
