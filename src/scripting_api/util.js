@@ -349,53 +349,53 @@ class Util extends PDFObject {
       this.#dateActionsCache.set(cFormat, actions);
       cFormat.replaceAll(
         /(d+)|(m+)|(y+)|(H+)|(M+)|(s+)/g,
-        function (match, d, m, y, H, M, s) {
+        function (_match, d, m, y, H, M, s) {
           if (d) {
-            actions.push((n, date) => {
+            actions.push((n, data) => {
               if (n >= 1 && n <= 31) {
-                date.setDate(n);
+                data.day = n;
                 return true;
               }
               return false;
             });
           } else if (m) {
-            actions.push((n, date) => {
+            actions.push((n, data) => {
               if (n >= 1 && n <= 12) {
-                date.setMonth(n - 1);
+                data.month = n - 1;
                 return true;
               }
               return false;
             });
           } else if (y) {
-            actions.push((n, date) => {
+            actions.push((n, data) => {
               if (n < 50) {
                 n += 2000;
               } else if (n < 100) {
                 n += 1900;
               }
-              date.setYear(n);
+              data.year = n;
               return true;
             });
           } else if (H) {
-            actions.push((n, date) => {
+            actions.push((n, data) => {
               if (n >= 0 && n <= 23) {
-                date.setHours(n);
+                data.hours = n;
                 return true;
               }
               return false;
             });
           } else if (M) {
-            actions.push((n, date) => {
+            actions.push((n, data) => {
               if (n >= 0 && n <= 59) {
-                date.setMinutes(n);
+                data.minutes = n;
                 return true;
               }
               return false;
             });
           } else if (s) {
-            actions.push((n, date) => {
+            actions.push((n, data) => {
               if (n >= 0 && n <= 59) {
-                date.setSeconds(n);
+                data.seconds = n;
                 return true;
               }
               return false;
@@ -409,10 +409,17 @@ class Util extends PDFObject {
     const number = /\d+/g;
     let i = 0;
     let array;
-    const date = new Date(0);
+    const data = {
+      year: new Date().getFullYear(),
+      month: 0,
+      day: 1,
+      hours: 12,
+      minutes: 0,
+      seconds: 0,
+    };
     while ((array = number.exec(cDate)) !== null) {
       if (i < actions.length) {
-        if (!actions[i++](parseInt(array[0]), date)) {
+        if (!actions[i++](parseInt(array[0]), data)) {
           return null;
         }
       } else {
@@ -424,7 +431,14 @@ class Util extends PDFObject {
       return null;
     }
 
-    return date;
+    return new Date(
+      data.year,
+      data.month,
+      data.day,
+      data.hours,
+      data.minutes,
+      data.seconds
+    );
   }
 
   scand(cFormat, cDate) {
@@ -605,10 +619,10 @@ class Util extends PDFObject {
     }
 
     const data = {
-      year: 2000,
+      year: new Date().getFullYear(),
       month: 0,
       day: 1,
-      hours: 0,
+      hours: 12,
       minutes: 0,
       seconds: 0,
       am: null,
