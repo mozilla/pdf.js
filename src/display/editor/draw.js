@@ -739,13 +739,13 @@ class DrawingEditor extends AnnotationEditor {
       return;
     }
 
-    this.endDrawing();
+    this.endDrawing(/* isAborted = */ false);
   }
 
-  static endDrawing() {
+  static endDrawing(isAborted) {
     const parent = this._currentParent;
     if (!parent) {
-      return;
+      return null;
     }
     parent.toggleDrawing(true);
     parent.cleanUndoStack(AnnotationEditorParamsType.DRAW_STEP);
@@ -756,20 +756,31 @@ class DrawingEditor extends AnnotationEditor {
         scale,
       } = parent;
 
-      parent.createAndAddNewEditor({ offsetX: 0, offsetY: 0 }, false, {
-        drawId: this._currentDrawId,
-        drawOutlines: this._currentDraw.getOutlines(
-          pageWidth * scale,
-          pageHeight * scale,
-          scale,
-          this._INNER_MARGIN
-        ),
-        drawingOptions: this._currentDrawingOptions,
-        mustBeCommitted: true,
-      });
-    } else {
-      parent.drawLayer.remove(this._currentDrawId);
+      const editor = parent.createAndAddNewEditor(
+        { offsetX: 0, offsetY: 0 },
+        false,
+        {
+          drawId: this._currentDrawId,
+          drawOutlines: this._currentDraw.getOutlines(
+            pageWidth * scale,
+            pageHeight * scale,
+            scale,
+            this._INNER_MARGIN
+          ),
+          drawingOptions: this._currentDrawingOptions,
+          mustBeCommitted: !isAborted,
+        }
+      );
+      this._cleanup();
+      return editor;
     }
+
+    parent.drawLayer.remove(this._currentDrawId);
+    this._cleanup();
+    return null;
+  }
+
+  static _cleanup() {
     this._currentDrawId = -1;
     this._currentDraw = null;
     this._currentDrawingOptions = null;

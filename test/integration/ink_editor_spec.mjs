@@ -26,6 +26,7 @@ import {
   loadAndWait,
   scrollIntoView,
   switchToEditor,
+  waitForNoElement,
   waitForSerialized,
   waitForStorageEntries,
 } from "./test_utils.mjs";
@@ -563,6 +564,50 @@ describe("Ink Editor", () => {
             return el.getAttribute("stroke");
           }, drawSelector);
           expect(color).toEqual(red);
+        })
+      );
+    });
+  });
+
+  describe("Can delete the drawing in progress and undo the deletion", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the color has been changed", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToInk(page);
+
+          const rect = await getRect(page, ".annotationEditorLayer");
+
+          const x = rect.x + 20;
+          const y = rect.y + 20;
+          const clickHandle = await waitForPointerUp(page);
+          await page.mouse.move(x, y);
+          await page.mouse.down();
+          await page.mouse.move(x + 50, y + 50);
+          await page.mouse.up();
+          await awaitPromise(clickHandle);
+
+          const drawSelector = `.canvasWrapper svg.draw path[d]:not([d=""])`;
+          await page.waitForSelector(drawSelector);
+
+          await page.keyboard.press("Backspace");
+
+          const editorSelector = getEditorSelector(0);
+          await waitForNoElement(page, drawSelector);
+          await waitForNoElement(page, editorSelector);
+
+          await kbUndo(page);
+          await page.waitForSelector(editorSelector, { visible: true });
+          await page.waitForSelector(drawSelector);
         })
       );
     });
