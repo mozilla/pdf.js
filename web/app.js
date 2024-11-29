@@ -2003,7 +2003,7 @@ const PDFViewerApplication = {
     }
     window.addEventListener("message", event => {
       const origins = [
-        /^http:\/\/localhost:5000.*/,
+        /^http:\/\/localhost:(5000|4200).*$/,
         /^https:\/\/.*\.herokuapp\.com$/,
         /^https:\/\/.*\.sharinpix\.com$/,
       ];
