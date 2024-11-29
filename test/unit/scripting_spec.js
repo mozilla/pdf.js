@@ -245,10 +245,10 @@ describe("Scripting", function () {
         expect(new Date(value)).toEqual(date);
 
         value = await myeval(`util.scand("mmddyyyy", "07/15/2007").toString()`);
-        expect(new Date(value)).toEqual(new Date("07/15/2007"));
+        expect(new Date(value)).toEqual(new Date("07/15/2007 12:00:00"));
 
         value = await myeval(`util.scand("mmddyyyy", "07a15b2007").toString()`);
-        expect(new Date(value)).toEqual(new Date("07/15/2007"));
+        expect(new Date(value)).toEqual(new Date("07/15/2007 12:00:00"));
       });
     });
 
@@ -630,8 +630,9 @@ describe("Scripting", function () {
           );
         };
 
-        await check("05", "dd", "2000/01/05");
-        await check("12", "mm", "2000/12/01");
+        const year = new Date().getFullYear();
+        await check("05", "dd", `${year}/01/05`);
+        await check("12", "mm", `${year}/12/01`);
         await check("2022", "yyyy", "2022/01/01");
         await check("a1$9bbbb21", "dd/mm/yyyy", "2021/09/01");
         await check("1/2/2024", "dd/mm/yyyy", "2024/02/01");
