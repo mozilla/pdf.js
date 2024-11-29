@@ -2008,7 +2008,7 @@ const PDFViewerApplication = {
         /^https:\/\/.*\.sharinpix\.com$/,
       ];
       const originAllowed = origins.some(origin => origin.test(event.origin));
-      if (originAllowed && event.data.type === "image-download") {
+      if (originAllowed && event.data.type === "enable-pdf-download") {
         const printButton = document.getElementById("printButton");
         const secondaryPrintButton = document.getElementById("secondaryPrint");
         printButton?.classList.remove("hidden");
