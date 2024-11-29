@@ -2522,4 +2522,42 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("Date creation must be timezone consistent", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("bug1934157.pdf", "[data-annotation-id='24R']");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that date entered by the user is consistent", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          if (browserName === "firefox") {
+            // Skip the test for Firefox as it doesn't support the timezone
+            // feature yet with BiDi.
+            // See https://github.com/puppeteer/puppeteer/issues/13344.
+            // TODO: Remove this check once the issue is fixed.
+            return;
+          }
+
+          await waitForScripting(page);
+
+          await page.emulateTimezone("Pacific/Honolulu");
+
+          const expectedDate = "02/01/2000";
+          await page.type(getSelector("24R"), expectedDate);
+          await page.click(getSelector("25R"));
+          await waitForSandboxTrip(page);
+
+          const date = await page.$eval(getSelector("24R"), el => el.value);
+          expect(date).withContext(`In ${browserName}`).toEqual(expectedDate);
+        })
+      );
+    });
+  });
 });
