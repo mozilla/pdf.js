@@ -2088,11 +2088,16 @@ class AnnotationEditorUIManager {
    */
   delete() {
     this.commitOrRemove();
-    if (!this.hasSelection) {
+    const drawingEditor = this.currentLayer?.endDrawingSession(
+      /* isAborted = */ true
+    );
+    if (!this.hasSelection && !drawingEditor) {
       return;
     }
 
-    const editors = [...this.#selectedEditors];
+    const editors = drawingEditor
+      ? [drawingEditor]
+      : [...this.#selectedEditors];
     const cmd = () => {
       for (const editor of editors) {
         editor.remove();

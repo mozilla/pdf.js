@@ -820,14 +820,14 @@ class AnnotationEditorLayer {
     this.#currentEditorType.startDrawing(this, this.#uiManager, false, event);
   }
 
-  endDrawingSession() {
+  endDrawingSession(isAborted = false) {
     if (!this.#drawingAC) {
-      return;
+      return null;
     }
     this.#drawingAC.abort();
     this.#drawingAC = null;
     this.#uiManager.disableUserSelect(false);
-    this.#currentEditorType.endDrawing();
+    return this.#currentEditorType.endDrawing(isAborted);
   }
 
   /**
