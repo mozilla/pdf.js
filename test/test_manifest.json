@@ -10829,8 +10829,7 @@
     "rounds": 1,
     "type": "eq",
     "link": true,
-    "talos": false,
-    "noChrome": true
+    "talos": false
   },
   {
     "id": "issue18956",
