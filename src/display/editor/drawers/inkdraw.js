@@ -108,14 +108,7 @@ class InkDrawOutliner {
     }
 
     this.#last.set([x1, y1, x2, y2, x, y], 0);
-    this.#line.push(
-      (x1 + 5 * x2) / 6,
-      (y1 + 5 * y2) / 6,
-      (5 * x2 + x) / 6,
-      (5 * y2 + y) / 6,
-      (x2 + x) / 2,
-      (y2 + y) / 2
-    );
+    this.#line.push(...Outline.createBezierPoints(x1, y1, x2, y2, x, y));
 
     return {
       path: {
@@ -483,6 +476,51 @@ class InkDrawOutline extends Outline {
         sx = -1 / pageHeight;
         sy = -1 / pageWidth;
         break;
+    }
+
+    if (!lines) {
+      lines = [];
+      for (const point of points) {
+        const len = point.length;
+        if (len === 2) {
+          lines.push(
+            new Float32Array([NaN, NaN, NaN, NaN, point[0], point[1]])
+          );
+          continue;
+        }
+        if (len === 4) {
+          lines.push(
+            new Float32Array([
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              point[0],
+              point[1],
+              NaN,
+              NaN,
+              NaN,
+              NaN,
+              point[2],
+              point[3],
+            ])
+          );
+          continue;
+        }
+        const line = new Float32Array(3 * (len - 2));
+        lines.push(line);
+        let [x1, y1, x2, y2] = point.subarray(0, 4);
+        line.set([NaN, NaN, NaN, NaN, x1, y1], 0);
+        for (let i = 4; i < len; i += 2) {
+          const x = point[i];
+          const y = point[i + 1];
+          line.set(
+            Outline.createBezierPoints(x1, y1, x2, y2, x, y),
+            (i - 2) * 3
+          );
+          [x1, y1, x2, y2] = [x2, y2, x, y];
+        }
+      }
     }
 
     for (let i = 0, ii = lines.length; i < ii; i++) {

@@ -66,7 +66,7 @@ class AnnotationEditor {
 
   #hasBeenClicked = false;
 
-  #initialPosition = null;
+  #initialRect = null;
 
   #isEditing = false;
 
@@ -468,13 +468,13 @@ class AnnotationEditor {
    * @param {number} y - y-translation in page coordinates.
    */
   translateInPage(x, y) {
-    this.#initialPosition ||= [this.x, this.y];
+    this.#initialRect ||= [this.x, this.y, this.width, this.height];
     this.#translate(this.pageDimensions, x, y);
     this.div.scrollIntoView({ block: "nearest" });
   }
 
   drag(tx, ty) {
-    this.#initialPosition ||= [this.x, this.y];
+    this.#initialRect ||= [this.x, this.y, this.width, this.height];
     const {
       div,
       parentDimensions: [parentWidth, parentHeight],
@@ -530,9 +530,16 @@ class AnnotationEditor {
 
   get _hasBeenMoved() {
     return (
-      !!this.#initialPosition &&
-      (this.#initialPosition[0] !== this.x ||
-        this.#initialPosition[1] !== this.y)
+      !!this.#initialRect &&
+      (this.#initialRect[0] !== this.x || this.#initialRect[1] !== this.y)
+    );
+  }
+
+  get _hasBeenResized() {
+    return (
+      !!this.#initialRect &&
+      (this.#initialRect[2] !== this.width ||
+        this.#initialRect[3] !== this.height)
     );
   }
 
@@ -989,6 +996,7 @@ class AnnotationEditor {
     const newX = oppositeX - transfOppositePoint[0];
     const newY = oppositeY - transfOppositePoint[1];
 
+    this.#initialRect ||= [this.x, this.y, this.width, this.height];
     this.width = newWidth;
     this.height = newHeight;
     this.x = newX;
