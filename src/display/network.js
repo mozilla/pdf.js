@@ -85,11 +85,10 @@ class NetworkManager {
     }
     xhr.responseType = "arraybuffer";
 
-    if (args.onError) {
-      xhr.onerror = function (evt) {
-        args.onError(xhr.status);
-      };
-    }
+    assert(args.onError, "Expected `onError` callback to be provided.");
+    xhr.onerror = () => {
+      args.onError(xhr.status);
+    };
     xhr.onreadystatechange = this.onStateChange.bind(this, xhrId);
     xhr.onprogress = this.onProgress.bind(this, xhrId);
 
@@ -137,7 +136,7 @@ class NetworkManager {
 
     // Success status == 0 can be on ftp, file and other protocols.
     if (xhr.status === 0 && this.isHttp) {
-      pendingRequest.onError?.(xhr.status);
+      pendingRequest.onError(xhr.status);
       return;
     }
     const xhrStatus = xhr.status || OK_RESPONSE;
@@ -153,7 +152,7 @@ class NetworkManager {
       !ok_response_on_range_request &&
       xhrStatus !== pendingRequest.expectedStatus
     ) {
-      pendingRequest.onError?.(xhr.status);
+      pendingRequest.onError(xhr.status);
       return;
     }
 
@@ -168,7 +167,7 @@ class NetworkManager {
         });
       } else {
         warn(`Missing or invalid "Content-Range" header.`);
-        pendingRequest.onError?.(0);
+        pendingRequest.onError(0);
       }
     } else if (chunk) {
       pendingRequest.onDone({
@@ -176,7 +175,7 @@ class NetworkManager {
         chunk,
       });
     } else {
-      pendingRequest.onError?.(xhr.status);
+      pendingRequest.onError(xhr.status);
     }
   }
 
