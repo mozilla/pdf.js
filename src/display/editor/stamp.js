@@ -921,19 +921,19 @@ class StampEditor extends AnnotationEditor {
 
   #hasElementChanged(serialized) {
     const {
-      rect,
       pageIndex,
       accessibilityData: { altText },
     } = this._initialData;
 
-    const isSameRect = serialized.rect.every(
-      (x, i) => Math.abs(x - rect[i]) < 1
-    );
     const isSamePageIndex = serialized.pageIndex === pageIndex;
     const isSameAltText = (serialized.accessibilityData?.alt || "") === altText;
 
     return {
-      isSame: isSameRect && isSamePageIndex && isSameAltText,
+      isSame:
+        !this._hasBeenMoved &&
+        !this._hasBeenResized &&
+        isSamePageIndex &&
+        isSameAltText,
       isSameAltText,
     };
   }

@@ -10872,5 +10872,334 @@
     "talos": false,
     "type": "eq",
     "link": true
+  },
+  {
+    "id": "inks_basic-editor-save-print",
+    "file": "pdfs/inks_basic.pdf",
+    "md5": "2615610de59b4849993dcc2614ebb266",
+    "rounds": 1,
+    "lastPage": 1,
+    "type": "eq",
+    "save": true,
+    "print": true,
+    "annotationStorage": {
+      "pdfjs_internal_editor_0": {
+        "annotationType": 15,
+        "color": [241, 17, 41],
+        "opacity": 1,
+        "thickness": 20,
+        "paths": {
+          "lines": [
+            [
+              null,
+              null,
+              null,
+              null,
+              114,
+              691.5,
+              null,
+              null,
+              null,
+              null,
+              159.75,
+              631.5
+            ]
+          ],
+          "points": [[114, 691.5, 159.75, 631.5]]
+        },
+        "pageIndex": 0,
+        "rect": [
+          104.0000076523194, 621.5000049701105, 169.7500193485847,
+          701.5000020036331
+        ],
+        "rotation": 0,
+        "structTreeParentId": null,
+        "id": "16R"
+      },
+      "pdfjs_internal_editor_1": {
+        "id": "17R",
+        "deleted": true,
+        "pageIndex": 0,
+        "popupRef": ""
+      },
+      "pdfjs_internal_editor_2": {
+        "annotationType": 15,
+        "color": [0, 0, 0],
+        "opacity": 1,
+        "thickness": 3,
+        "paths": {
+          "lines": [
+            [
+              null,
+              null,
+              null,
+              null,
+              475.0961608886719,
+              647.4615478515625,
+              null,
+              null,
+              null,
+              null,
+              520.8461303710938,
+              587.4615478515625
+            ]
+          ],
+          "points": [
+            [
+              475.0961608886719, 647.4615478515625, 520.8461303710938,
+              587.4615478515625
+            ]
+          ]
+        },
+        "pageIndex": 0,
+        "rect": [
+          473.59618278650134, 585.9615278473268, 522.3461772570244,
+          648.9615135559669
+        ],
+        "rotation": 0,
+        "structTreeParentId": null,
+        "id": "18R"
+      },
+      "pdfjs_internal_editor_3": {
+        "annotationType": 15,
+        "color": [250, 23, 28],
+        "opacity": 0.55,
+        "thickness": 3,
+        "paths": {
+          "lines": [
+            [
+              null,
+              null,
+              null,
+              null,
+              79.04861450195312,
+              532.353759765625,
+              null,
+              null,
+              null,
+              null,
+              198.18736267089844,
+              378.6045837402344
+            ]
+          ],
+          "points": [
+            [
+              79.04861450195312, 532.353759765625, 198.18736267089844,
+              378.6045837402344
+            ]
+          ]
+        },
+        "pageIndex": 0,
+        "rect": [
+          77.54861622361037, 377.10462435392236, 199.6873893210521,
+          533.8537948498359
+        ],
+        "rotation": 0,
+        "structTreeParentId": null,
+        "id": "19R"
+      },
+      "pdfjs_internal_editor_4": {
+        "annotationType": 15,
+        "color": [70, 108, 241],
+        "opacity": 0.7,
+        "thickness": 20,
+        "paths": {
+          "lines": [
+            [
+              null,
+              null,
+              null,
+              null,
+              273.6300048828125,
+              535.47998046875,
+              null,
+              null,
+              null,
+              null,
+              319.3800048828125,
+              475.4800109863281
+            ]
+          ],
+          "points": [
+            [
+              273.6300048828125, 535.47998046875, 319.3800048828125,
+              475.4800109863281
+            ]
+          ]
+        },
+        "pageIndex": 0,
+        "rect": [
+          263.629992209948, 465.48002000955444, 329.38000390621335,
+          545.4799757370582
+        ],
+        "rotation": 0,
+        "structTreeParentId": null,
+        "id": "20R"
+      }
+    }
+  },
+  {
+    "id": "inks_basic-editor-print",
+    "file": "pdfs/inks_basic.pdf",
+    "md5": "2615610de59b4849993dcc2614ebb266",
+    "rounds": 1,
+    "lastPage": 1,
+    "type": "eq",
+    "print": true,
+    "annotationStorage": {
+      "pdfjs_internal_editor_0": {
+        "annotationType": 15,
+        "color": [241, 17, 41],
+        "opacity": 1,
+        "thickness": 20,
+        "paths": {
+          "lines": [
+            [
+              null,
+              null,
+              null,
+              null,
+              114,
+              691.5,
+              null,
+              null,
+              null,
+              null,
+              159.75,
+              631.5
+            ]
+          ],
+          "points": [[114, 691.5, 159.75, 631.5]]
+        },
+        "pageIndex": 0,
+        "rect": [
+          104.0000076523194, 621.5000049701105, 169.7500193485847,
+          701.5000020036331
+        ],
+        "rotation": 0,
+        "structTreeParentId": null,
+        "id": "16R"
+      },
+      "pdfjs_internal_editor_1": {
+        "id": "17R",
+        "deleted": true,
+        "pageIndex": 0,
+        "popupRef": ""
+      },
+      "pdfjs_internal_editor_2": {
+        "annotationType": 15,
+        "color": [0, 0, 0],
+        "opacity": 1,
+        "thickness": 3,
+        "paths": {
+          "lines": [
+            [
+              null,
+              null,
+              null,
+              null,
+              475.0961608886719,
+              647.4615478515625,
+              null,
+              null,
+              null,
+              null,
+              520.8461303710938,
+              587.4615478515625
+            ]
+          ],
+          "points": [
+            [
+              475.0961608886719, 647.4615478515625, 520.8461303710938,
+              587.4615478515625
+            ]
+          ]
+        },
+        "pageIndex": 0,
+        "rect": [
+          473.59618278650134, 585.9615278473268, 522.3461772570244,
+          648.9615135559669
+        ],
+        "rotation": 0,
+        "structTreeParentId": null,
+        "id": "18R"
+      },
+      "pdfjs_internal_editor_3": {
+        "annotationType": 15,
+        "color": [250, 23, 28],
+        "opacity": 0.55,
+        "thickness": 3,
+        "paths": {
+          "lines": [
+            [
+              null,
+              null,
+              null,
+              null,
+              79.04861450195312,
+              532.353759765625,
+              null,
+              null,
+              null,
+              null,
+              198.18736267089844,
+              378.6045837402344
+            ]
+          ],
+          "points": [
+            [
+              79.04861450195312, 532.353759765625, 198.18736267089844,
+              378.6045837402344
+            ]
+          ]
+        },
+        "pageIndex": 0,
+        "rect": [
+          77.54861622361037, 377.10462435392236, 199.6873893210521,
+          533.8537948498359
+        ],
+        "rotation": 0,
+        "structTreeParentId": null,
+        "id": "19R"
+      },
+      "pdfjs_internal_editor_4": {
+        "annotationType": 15,
+        "color": [70, 108, 241],
+        "opacity": 0.7,
+        "thickness": 20,
+        "paths": {
+          "lines": [
+            [
+              null,
+              null,
+              null,
+              null,
+              273.6300048828125,
+              535.47998046875,
+              null,
+              null,
+              null,
+              null,
+              319.3800048828125,
+              475.4800109863281
+            ]
+          ],
+          "points": [
+            [
+              273.6300048828125, 535.47998046875, 319.3800048828125,
+              475.4800109863281
+            ]
+          ]
+        },
+        "pageIndex": 0,
+        "rect": [
+          263.629992209948, 465.48002000955444, 329.38000390621335,
+          545.4799757370582
+        ],
+        "rotation": 0,
+        "structTreeParentId": null,
+        "id": "20R"
+      }
+    }
   }
 ]
