@@ -334,13 +334,13 @@ pdfjs-editor-remove-highlight-button =
 pdfjs-editor-free-text-color-input = Farge
 pdfjs-editor-free-text-size-input = Storleik
 pdfjs-editor-ink-color-input = Farge
-pdfjs-editor-ink-thickness-input = Tjukkleik
+pdfjs-editor-ink-thickness-input = Tjukn
 pdfjs-editor-ink-opacity-input = Ugjennomskinleg
 pdfjs-editor-stamp-add-image-button =
     .title = Legg til bilde
 pdfjs-editor-stamp-add-image-button-label = Legg til bilde
 # This refers to the thickness of the line used for free highlighting (not bound to text)
-pdfjs-editor-free-highlight-thickness-input = Tjukkleik
+pdfjs-editor-free-highlight-thickness-input = Tjukn
 pdfjs-editor-free-highlight-thickness-title =
     .title = Endre tjukn når du markerer andre element enn tekst
 # .default-content is used as a placeholder in an empty text editor.
@@ -357,7 +357,6 @@ pdfjs-ink-canvas =
 
 ## Alt-text dialog
 
-# Alternative text (alt text) helps when people can't see the image.
 pdfjs-editor-alt-text-button-label = Alt-tekst
 pdfjs-editor-alt-text-edit-button-label = Rediger alt-tekst tekst
 pdfjs-editor-alt-text-dialog-label = Vel eit alternativ
@@ -452,11 +451,8 @@ pdfjs-editor-new-alt-text-error-close-button = Lat att
 #   $percent (Number) - the percentage of the downloaded size.
 pdfjs-editor-new-alt-text-ai-model-downloading-progress = Lastar ned AI-modell med alternativ tekst ({ $downloadedSize } av { $totalSize } MB)
     .aria-valuetext = Lastar ned AI-modell med alternativ tekst ({ $downloadedSize } av { $totalSize } MB)
-# This is a button that users can click to edit the alt text they have already added.
 pdfjs-editor-new-alt-text-added-button-label = Alternativ tekst lagt til
-# This is a button that users can click to open the alt text editor and add alt text when it is not present.
 pdfjs-editor-new-alt-text-missing-button-label = Manglande alternativ tekst
-# This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
 pdfjs-editor-new-alt-text-to-review-button-label = Vurder alternativ tekst
 # "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
 # Variables:

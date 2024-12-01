@@ -182,7 +182,7 @@ pdfjs-find-highlight-checkbox = සියල්ල උද්දීපනය
 pdfjs-find-entire-word-checkbox-label = සමස්ත වචන
 pdfjs-find-reached-top = ලේඛනයේ මුදුනට ළඟා විය, පහළ සිට ඉහළට
 pdfjs-find-reached-bottom = ලේඛනයේ අවසානයට ළඟා විය, ඉහළ සිට පහළට
-pdfjs-find-not-found = වැකිකඩ හමු නොවිණි
+pdfjs-find-not-found = වැකිකඩ හමු නොවුණි
 
 ## Predefined zoom values
 
