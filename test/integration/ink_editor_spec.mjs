@@ -17,9 +17,14 @@ import {
   awaitPromise,
   closePages,
   createPromise,
+  dragAndDropAnnotation,
+  getAnnotationSelector,
+  getEditors,
   getEditorSelector,
   getRect,
   getSelectedEditors,
+  getSerialized,
+  isCanvasWhite,
   kbRedo,
   kbSelectAll,
   kbUndo,
@@ -27,8 +32,10 @@ import {
   scrollIntoView,
   switchToEditor,
   waitForNoElement,
+  waitForSelectedEditor,
   waitForSerialized,
   waitForStorageEntries,
+  waitForTimeout,
 } from "./test_utils.mjs";
 
 const waitForPointerUp = page =>
@@ -580,7 +587,7 @@ describe("Ink Editor", () => {
       await closePages(pages);
     });
 
-    it("must check that the color has been changed", async () => {
+    it("must check that the deletion has been undid", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToInk(page);
@@ -665,6 +672,159 @@ describe("Ink Editor", () => {
           });
 
           expect(ids).withContext(`In ${browserName}`).toEqual([]);
+        })
+      );
+    });
+  });
+
+  describe("Ink (update existing)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("inks.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must update an existing annotation", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const annotationsRect = await page.evaluate(() => {
+            let xm = Infinity,
+              xM = -Infinity,
+              ym = Infinity,
+              yM = -Infinity;
+            for (const el of document.querySelectorAll(
+              "section.inkAnnotation"
+            )) {
+              const { x, y, width, height } = el.getBoundingClientRect();
+              xm = Math.min(xm, x);
+              xM = Math.max(xM, x + width);
+              ym = Math.min(ym, y);
+              yM = Math.max(yM, y + height);
+            }
+            return { x: xm, y: ym, width: xM - xm, height: yM - ym };
+          });
+
+          await switchToInk(page);
+
+          // The page has been re-rendered but with no ink annotations.
+          let isWhite = await isCanvasWhite(page, 1, annotationsRect);
+          expect(isWhite).withContext(`In ${browserName}`).toBeTrue();
+
+          let editorIds = await getEditors(page, "ink");
+          expect(editorIds.length).withContext(`In ${browserName}`).toEqual(15);
+
+          const pdfjsA = getEditorSelector(0);
+          const editorRect = await getRect(page, pdfjsA);
+          await page.mouse.click(
+            editorRect.x + editorRect.width / 2,
+            editorRect.y + editorRect.height / 2
+          );
+          await waitForSelectedEditor(page, pdfjsA);
+
+          const red = "#ff0000";
+          page.evaluate(value => {
+            window.PDFViewerApplication.eventBus.dispatch(
+              "switchannotationeditorparams",
+              {
+                source: null,
+                type: window.pdfjsLib.AnnotationEditorParamsType.INK_COLOR,
+                value,
+              }
+            );
+          }, red);
+
+          const serialized = await getSerialized(page);
+          expect(serialized.length).withContext(`In ${browserName}`).toEqual(1);
+          expect(serialized[0].color).toEqual([255, 0, 0]);
+
+          // Disable editing mode.
+          await switchToInk(page, /* disable = */ true);
+
+          // We want to check that the editor is displayed but not the original
+          // canvas.
+          editorIds = await getEditors(page, "ink");
+          expect(editorIds.length).withContext(`In ${browserName}`).toEqual(1);
+
+          isWhite = await isCanvasWhite(page, 1, editorRect);
+          expect(isWhite).withContext(`In ${browserName}`).toBeTrue();
+
+          // Check we've now a svg with a red stroke.
+          await page.waitForSelector("svg[stroke = '#ff0000']", {
+            visible: true,
+          });
+
+          // Re-enable editing mode.
+          await switchToInk(page);
+          await page.focus(".annotationEditorLayer");
+
+          await kbUndo(page);
+          await waitForSerialized(page, 0);
+
+          editorIds = await getEditors(page, "ink");
+          expect(editorIds.length).withContext(`In ${browserName}`).toEqual(15);
+
+          // Undo again.
+          await kbUndo(page);
+          // Nothing should happen, it's why we can't wait for something
+          // specific!
+          // eslint-disable-next-line no-restricted-syntax
+          await waitForTimeout(200);
+
+          // We check that the editor hasn't been removed.
+          editorIds = await getEditors(page, "ink");
+          expect(editorIds.length).withContext(`In ${browserName}`).toEqual(15);
+        })
+      );
+    });
+  });
+
+  describe("Ink (move existing)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("inks.pdf", getAnnotationSelector("277R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must move an annotation", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click(getAnnotationSelector("277R"), { count: 2 });
+          const edgeB = getEditorSelector(10);
+          await waitForSelectedEditor(page, edgeB);
+
+          const editorIds = await getEditors(page, "ink");
+          expect(editorIds.length).withContext(`In ${browserName}`).toEqual(15);
+
+          // All the current annotations should be serialized as null objects
+          // because they haven't been edited yet.
+          const serialized = await getSerialized(page);
+          expect(serialized).withContext(`In ${browserName}`).toEqual([]);
+
+          const editorRect = await page.$eval(edgeB, el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+
+          // Select the annotation we want to move.
+          await page.mouse.click(editorRect.x + 2, editorRect.y + 2);
+          await waitForSelectedEditor(page, edgeB);
+
+          await dragAndDropAnnotation(
+            page,
+            editorRect.x + editorRect.width / 2,
+            editorRect.y + editorRect.height / 2,
+            100,
+            100
+          );
+          await waitForSerialized(page, 1);
         })
       );
     });

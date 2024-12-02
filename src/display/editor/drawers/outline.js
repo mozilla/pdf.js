@@ -97,6 +97,17 @@ class Outline {
         return [x, y];
     }
   }
+
+  static createBezierPoints(x1, y1, x2, y2, x3, y3) {
+    return [
+      (x1 + 5 * x2) / 6,
+      (y1 + 5 * y2) / 6,
+      (5 * x2 + x3) / 6,
+      (5 * y2 + y3) / 6,
+      (x2 + x3) / 2,
+      (y2 + y3) / 2,
+    ];
+  }
 }
 
 export { Outline };
