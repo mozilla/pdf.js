@@ -344,7 +344,9 @@ class DrawingEditor extends AnnotationEditor {
       this.#mustBeCommitted = false;
       this.commit();
       this.parent.setSelected(this);
-      this.div.focus();
+      if (this.isOnScreen) {
+        this.div.focus();
+      }
     }
   }
 
