@@ -16,6 +16,7 @@
 import {
   closePages,
   getQuerySelector,
+  getRect,
   getSelector,
   loadAndWait,
 } from "./test_utils.mjs";
@@ -649,6 +650,40 @@ describe("ResetForm action", () => {
                 // and no popup.
                 `&& document.querySelector("[data-annotation-id='694R']") === null`
             );
+          })
+        );
+      });
+    });
+  });
+
+  describe("Rotated annotation and its clickable area", () => {
+    describe("issue14438.pdf", () => {
+      let pages;
+
+      beforeAll(async () => {
+        pages = await loadAndWait(
+          "rotated_ink.pdf",
+          "[data-annotation-id='18R']"
+        );
+      });
+
+      afterAll(async () => {
+        await closePages(pages);
+      });
+
+      it("must check that the clickable area has been rotated", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const rect = await getRect(page, "[data-annotation-id='18R']");
+            const promisePopup = page.waitForSelector(
+              "[data-annotation-id='19R']",
+              { visible: true }
+            );
+            await page.mouse.move(
+              rect.x + rect.width * 0.1,
+              rect.y + rect.height * 0.9
+            );
+            await promisePopup;
           })
         );
       });
