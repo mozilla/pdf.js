@@ -51,6 +51,22 @@ function buildGetDocumentParams(filename, options) {
   return params;
 }
 
+function getCrossOriginHostname(hostname) {
+  if (hostname === "localhost") {
+    // Note: This does not work if localhost is listening on IPv6 only.
+    // As a work-around, visit the IPv6 version at:
+    // http://[::1]:8888/test/unit/unit_test.html?spec=Cross-origin
+    return "127.0.0.1";
+  }
+
+  if (hostname === "127.0.0.1" || hostname === "[::1]") {
+    return "localhost";
+  }
+
+  // FQDN are cross-origin and browsers usually resolve them to the same server.
+  return hostname.endsWith(".") ? hostname.slice(0, -1) : hostname + ".";
+}
+
 class XRefMock {
   constructor(array) {
     this._map = Object.create(null);
@@ -122,73 +138,103 @@ function createIdFactory(pageIndex) {
   return page._localIdFactory;
 }
 
-function createTemporaryNodeServer() {
-  assert(isNodeJS, "Should only be used in Node.js environments.");
+// Some tests rely on special behavior from webserver.mjs. When loaded in the
+// browser, the page is already served from WebServer. When running from
+// Node.js, that is not the case. This helper starts the WebServer if needed,
+// and offers a mechanism to resolve the URL in a uniform way.
+class TestPdfsServer {
+  static #webServer;
 
-  const fs = process.getBuiltinModule("fs"),
-    http = process.getBuiltinModule("http");
-  function isAcceptablePath(requestUrl) {
-    try {
-      // Reject unnormalized paths, to protect against path traversal attacks.
-      const url = new URL(requestUrl, "https://localhost/");
-      return url.pathname === requestUrl;
-    } catch {
-      return false;
+  static #startCount = 0;
+
+  static #startPromise;
+
+  static async ensureStarted() {
+    if (this.#startCount++) {
+      // Already started before. E.g. from another beforeAll call.
+      return this.#startPromise;
     }
-  }
-  // Create http server to serve pdf data for tests.
-  const server = http
-    .createServer((request, response) => {
-      if (!isAcceptablePath(request.url)) {
-        response.writeHead(400);
-        response.end("Invalid path");
-        return;
-      }
-      const filePath = process.cwd() + "/test/pdfs" + request.url;
-      fs.promises.lstat(filePath).then(
-        stat => {
-          if (!request.headers.range) {
-            const contentLength = stat.size;
-            const stream = fs.createReadStream(filePath);
-            response.writeHead(200, {
-              "Content-Type": "application/pdf",
-              "Content-Length": contentLength,
-              "Accept-Ranges": "bytes",
-            });
-            stream.pipe(response);
-          } else {
-            const [start, end] = request.headers.range
-              .split("=")[1]
-              .split("-")
-              .map(x => Number(x));
-            const stream = fs.createReadStream(filePath, { start, end });
-            response.writeHead(206, {
-              "Content-Type": "application/pdf",
-            });
-            stream.pipe(response);
-          }
-        },
-        error => {
-          response.writeHead(404);
-          response.end(`File ${request.url} not found!`);
-        }
-      );
-    })
-    .listen(0); /* Listen on a random free port */
+    if (!isNodeJS) {
+      // In web browsers, tests are presumably served by webserver.mjs.
+      return undefined;
+    }
 
-  return {
-    server,
-    port: server.address().port,
-  };
+    this.#startPromise = this.#startServer().finally(() => {
+      this.#startPromise = null;
+    });
+    return this.#startPromise;
+  }
+
+  static async #startServer() {
+    // WebServer from webserver.mjs is imported dynamically instead of
+    // statically because we do not need it when running from the browser.
+    let WebServer;
+    if (import.meta.url.endsWith("/lib-legacy/test/unit/test_utils.js")) {
+      // When "gulp unittestcli" is used to run tests, the tests are run from
+      // pdf.js/build/lib-legacy/test/ instead of directly from pdf.js/test/.
+      // eslint-disable-next-line import/no-unresolved
+      ({ WebServer } = await import("../../../../test/webserver.mjs"));
+    } else {
+      ({ WebServer } = await import("../webserver.mjs"));
+    }
+    this.#webServer = new WebServer({
+      host: "127.0.0.1",
+      root: TEST_PDFS_PATH,
+    });
+    await new Promise(resolve => {
+      this.#webServer.start(resolve);
+    });
+  }
+
+  static async ensureStopped() {
+    assert(this.#startCount > 0, "ensureStarted() should be called first");
+    assert(!this.#startPromise, "ensureStarted() should have resolved");
+    if (--this.#startCount) {
+      // Keep server alive as long as there is an ensureStarted() that was not
+      // followed by an ensureStopped() call.
+      // This could happen if ensureStarted() was called again before
+      // ensureStopped() was called from afterAll().
+      return;
+    }
+    if (!isNodeJS) {
+      // Web browsers cannot stop the server.
+      return;
+    }
+
+    await new Promise(resolve => {
+      this.#webServer.stop(resolve);
+      this.#webServer = null;
+    });
+  }
+
+  /**
+   * @param {string} path - path to file within test/unit/pdf/ (TEST_PDFS_PATH).
+   * @returns {URL}
+   */
+  static resolveURL(path) {
+    assert(this.#startCount > 0, "ensureStarted() should be called first");
+    assert(!this.#startPromise, "ensureStarted() should have resolved");
+
+    if (isNodeJS) {
+      // Note: TestPdfsServer.ensureStarted() should be called first.
+      return new URL(path, `http://127.0.0.1:${this.#webServer.port}/`);
+    }
+    // When "gulp server" is used, our URL looks like
+    // http://localhost:8888/test/unit/unit_test.html
+    // The PDFs are served from:
+    // http://localhost:8888/test/pdfs/
+    return new URL(TEST_PDFS_PATH + path, window.location);
+  }
 }
 
 export {
   buildGetDocumentParams,
   CMAP_URL,
   createIdFactory,
-  createTemporaryNodeServer,
   DefaultFileReaderFactory,
+  getCrossOriginHostname,
   STANDARD_FONT_DATA_URL,
   TEST_PDFS_PATH,
+  TestPdfsServer,
   XRefMock,
 };

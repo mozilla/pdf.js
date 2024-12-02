@@ -31,9 +31,10 @@ import {
 import {
   buildGetDocumentParams,
   CMAP_URL,
-  createTemporaryNodeServer,
   DefaultFileReaderFactory,
+  getCrossOriginHostname,
   TEST_PDFS_PATH,
+  TestPdfsServer,
 } from "./test_utils.js";
 import {
   DefaultCanvasFactory,
@@ -67,27 +68,17 @@ describe("api", function () {
     buildGetDocumentParams(tracemonkeyFileName);
 
   let CanvasFactory;
-  let tempServer = null;
 
-  beforeAll(function () {
+  beforeAll(async function () {
     CanvasFactory = new DefaultCanvasFactory({});
 
-    if (isNodeJS) {
-      tempServer = createTemporaryNodeServer();
-    }
+    await TestPdfsServer.ensureStarted();
   });
 
-  afterAll(function () {
+  afterAll(async function () {
     CanvasFactory = null;
 
-    if (isNodeJS) {
-      // Close the server from accepting new connections after all test
-      // finishes.
-      const { server } = tempServer;
-      server.close();
-
-      tempServer = null;
-    }
+    await TestPdfsServer.ensureStopped();
   });
 
   function waitSome(callback) {
@@ -148,9 +139,7 @@ describe("api", function () {
     });
 
     it("creates pdf doc from URL-object", async function () {
-      const urlObj = isNodeJS
-        ? new URL(`http://127.0.0.1:${tempServer.port}/${basicApiFileName}`)
-        : new URL(TEST_PDFS_PATH + basicApiFileName, window.location);
+      const urlObj = TestPdfsServer.resolveURL(basicApiFileName);
 
       const loadingTask = getDocument(urlObj);
       expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
@@ -2989,17 +2978,14 @@ describe("api", function () {
       let loadingTask;
       function _checkCanLoad(expectSuccess, filename, options) {
         if (isNodeJS) {
+          // We can simulate cross-origin requests, but since Node.js does not
+          // enforce the Same Origin Policy, requests are expected to be allowed
+          // independently of withCredentials.
           pending("Cannot simulate cross-origin requests in Node.js");
         }
         const params = buildGetDocumentParams(filename, options);
         const url = new URL(params.url);
-        if (url.hostname === "localhost") {
-          url.hostname = "127.0.0.1";
-        } else if (params.url.hostname === "127.0.0.1") {
-          url.hostname = "localhost";
-        } else {
-          pending("Can only run cross-origin test on localhost!");
-        }
+        url.hostname = getCrossOriginHostname(url.hostname);
         params.url = url.href;
         loadingTask = getDocument(params);
         return loadingTask.promise

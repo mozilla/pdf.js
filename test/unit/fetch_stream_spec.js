@@ -13,35 +13,23 @@
  * limitations under the License.
  */
 
-import { AbortException, isNodeJS } from "../../src/shared/util.js";
-import { createTemporaryNodeServer } from "./test_utils.js";
+import { AbortException } from "../../src/shared/util.js";
 import { PDFFetchStream } from "../../src/display/fetch_stream.js";
+import { testCrossOriginRedirects } from "./common_pdfstream_tests.js";
+import { TestPdfsServer } from "./test_utils.js";
 
 describe("fetch_stream", function () {
-  let tempServer = null;
-
   function getPdfUrl() {
-    return isNodeJS
-      ? `http://127.0.0.1:${tempServer.port}/tracemonkey.pdf`
-      : new URL("../pdfs/tracemonkey.pdf", window.location).href;
+    return TestPdfsServer.resolveURL("tracemonkey.pdf").href;
   }
   const pdfLength = 1016315;
 
-  beforeAll(function () {
-    if (isNodeJS) {
-      tempServer = createTemporaryNodeServer();
-    }
+  beforeAll(async function () {
+    await TestPdfsServer.ensureStarted();
   });
 
-  afterAll(function () {
-    if (isNodeJS) {
-      // Close the server from accepting new connections after all test
-      // finishes.
-      const { server } = tempServer;
-      server.close();
-
-      tempServer = null;
-    }
+  afterAll(async function () {
+    await TestPdfsServer.ensureStopped();
   });
 
   it("read with streaming", async function () {
@@ -128,5 +116,34 @@ describe("fetch_stream", function () {
     expect(fullReaderCancelled).toEqual(true);
     expect(result1.value).toEqual(rangeSize);
     expect(result2.value).toEqual(tailSize);
+  });
+
+  describe("Redirects", function () {
+    it("redirects allowed if all responses are same-origin", async function () {
+      await testCrossOriginRedirects({
+        PDFStreamClass: PDFFetchStream,
+        redirectIfRange: false,
+        async testRangeReader(rangeReader) {
+          await expectAsync(rangeReader.read()).toBeResolved();
+        },
+      });
+    });
+
+    it("redirects blocked if any response is cross-origin", async function () {
+      await testCrossOriginRedirects({
+        PDFStreamClass: PDFFetchStream,
+        redirectIfRange: true,
+        async testRangeReader(rangeReader) {
+          // When read (sync), error should be reported.
+          await expectAsync(rangeReader.read()).toBeRejectedWithError(
+            /^Expected range response-origin "http:.*" to match "http:.*"\.$/
+          );
+          // When read again (async), error should be consistent.
+          await expectAsync(rangeReader.read()).toBeRejectedWithError(
+            /^Expected range response-origin "http:.*" to match "http:.*"\.$/
+          );
+        },
+      });
+    });
   });
 });
