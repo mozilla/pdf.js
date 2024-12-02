@@ -401,7 +401,7 @@ class PDFPageView {
         "display"
       );
     } catch (ex) {
-      console.error(`#renderAnnotationLayer: "${ex}".`);
+      console.error("#renderAnnotationLayer:", ex);
       error = ex;
     } finally {
       this.#dispatchLayerRendered("annotationlayerrendered", error);
@@ -413,7 +413,7 @@ class PDFPageView {
     try {
       await this.annotationEditorLayer.render(this.viewport, "display");
     } catch (ex) {
-      console.error(`#renderAnnotationEditorLayer: "${ex}".`);
+      console.error("#renderAnnotationEditorLayer:", ex);
       error = ex;
     } finally {
       this.#dispatchLayerRendered("annotationeditorlayerrendered", error);
@@ -424,7 +424,7 @@ class PDFPageView {
     try {
       await this.drawLayer.render("display");
     } catch (ex) {
-      console.error(`#renderDrawLayer: "${ex}".`);
+      console.error("#renderDrawLayer:", ex);
     }
   }
 
@@ -440,7 +440,7 @@ class PDFPageView {
         this.#buildXfaTextContentItems(result.textDivs);
       }
     } catch (ex) {
-      console.error(`#renderXfaLayer: "${ex}".`);
+      console.error("#renderXfaLayer:", ex);
       error = ex;
     } finally {
       if (this.xfaLayer?.div) {
@@ -465,7 +465,7 @@ class PDFPageView {
       if (ex instanceof AbortException) {
         return;
       }
-      console.error(`#renderTextLayer: "${ex}".`);
+      console.error("#renderTextLayer:", ex);
       error = ex;
     }
     this.#dispatchLayerRendered("textlayerrendered", error);

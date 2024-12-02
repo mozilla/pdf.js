@@ -201,7 +201,7 @@ class PDFRenderingQueue {
             if (reason instanceof RenderingCancelledException) {
               return;
             }
-            console.error(`renderView: "${reason}"`);
+            console.error("renderView:", reason);
           });
         break;
     }

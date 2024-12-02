@@ -248,7 +248,7 @@ function webViewerLoad() {
     } catch (ex) {
       // The viewer could be in e.g. a cross-origin <iframe> element,
       // fallback to dispatching the event at the current `document`.
-      console.error(`webviewerloaded: ${ex}`);
+      console.error("webviewerloaded:", ex);
       document.dispatchEvent(event);
     }
   }

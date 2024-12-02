@@ -202,7 +202,7 @@ const PDFViewerApplication = {
     try {
       await this.preferences.initializedPromise;
     } catch (ex) {
-      console.error(`initialize: "${ex.message}".`);
+      console.error("initialize:", ex);
     }
     if (AppOptions.get("pdfBugEnabled")) {
       await this._parseHashParams();
@@ -306,7 +306,7 @@ const PDFViewerApplication = {
           await __non_webpack_import__(PDFWorker.workerSrc);
         }
       } catch (ex) {
-        console.error(`_parseHashParams: "${ex.message}".`);
+        console.error("_parseHashParams:", ex);
       }
     }
     if (params.has("textlayer")) {
@@ -322,7 +322,7 @@ const PDFViewerApplication = {
             await loadPDFBug();
             this._PDFBug.loadCSS();
           } catch (ex) {
-            console.error(`_parseHashParams: "${ex.message}".`);
+            console.error("_parseHashParams:", ex);
           }
           break;
       }
@@ -335,7 +335,7 @@ const PDFViewerApplication = {
         await loadPDFBug();
         this._PDFBug.init(mainContainer, enabled);
       } catch (ex) {
-        console.error(`_parseHashParams: "${ex.message}".`);
+        console.error("_parseHashParams:", ex);
       }
     }
     // It is not possible to change locale for the (various) extension builds.
@@ -1121,7 +1121,7 @@ const PDFViewerApplication = {
       this.downloadManager.download(data, this._downloadUrl, this._docFilename);
     } catch (reason) {
       // When the PDF document isn't ready, fallback to a "regular" download.
-      console.error(`Error when saving the document: ${reason.message}`);
+      console.error(`Error when saving the document:`, reason);
       await this.download();
     } finally {
       await this.pdfScriptingManager.dispatchDidSave();
