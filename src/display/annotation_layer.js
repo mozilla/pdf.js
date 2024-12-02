@@ -2815,37 +2815,48 @@ class InkAnnotationElement extends AnnotationElement {
     // Create an invisible polyline with the same points that acts as the
     // trigger for the popup.
     const {
-      data: { rect, inkLists, borderStyle, popupRef },
+      data: { rect, rotation, inkLists, borderStyle, popupRef },
     } = this;
-    const { width, height } = getRectDims(rect);
+    let { width, height } = getRectDims(rect);
+    let transform;
+
+    // PDF coordinates are calculated from a bottom left origin, so
+    // transform the polyline coordinates to a top left origin for the
+    // SVG element.
+    switch (rotation) {
+      case 90:
+        transform = `rotate(90) translate(${-rect[0]},${rect[3] - height}) scale(1,-1)`;
+        [width, height] = [height, width];
+        break;
+      case 180:
+        transform = `rotate(180) translate(${-rect[0] - width},${rect[3] - height}) scale(1,-1)`;
+        break;
+      case 270:
+        transform = `rotate(270) translate(${-rect[0] - width},${rect[3]}) scale(1,-1)`;
+        [width, height] = [height, width];
+        break;
+      default:
+        transform = `translate(${-rect[0]},${rect[3]}) scale(1,-1)`;
+        break;
+    }
+
     const svg = this.svgFactory.create(
       width,
       height,
       /* skipDimensions = */ true
     );
+    const basePolyline = this.svgFactory.createElement(this.svgElementName);
+    // Ensure that the 'stroke-width' is always non-zero, since otherwise it
+    // won't be possible to open/close the popup (note e.g. issue 11122).
+    basePolyline.setAttribute("stroke-width", borderStyle.width || 1);
+    basePolyline.setAttribute("stroke", "transparent");
+    basePolyline.setAttribute("fill", "transparent");
+    basePolyline.setAttribute("transform", transform);
 
-    for (const inkList of inkLists) {
-      // Convert the ink list to a single points string that the SVG
-      // polyline element expects ("x1,y1 x2,y2 ..."). PDF coordinates are
-      // calculated from a bottom left origin, so transform the polyline
-      // coordinates to a top left origin for the SVG element.
-      let points = [];
-      for (let i = 0, ii = inkList.length; i < ii; i += 2) {
-        const x = inkList[i] - rect[0];
-        const y = rect[3] - inkList[i + 1];
-        points.push(`${x},${y}`);
-      }
-      points = points.join(" ");
-
-      const polyline = this.svgFactory.createElement(this.svgElementName);
+    for (let i = 0, ii = inkLists.length; i < ii; i++) {
+      const polyline = i < ii - 1 ? basePolyline.cloneNode() : basePolyline;
       this.#polylines.push(polyline);
-      polyline.setAttribute("points", points);
-      // Ensure that the 'stroke-width' is always non-zero, since otherwise it
-      // won't be possible to open/close the popup (note e.g. issue 11122).
-      polyline.setAttribute("stroke-width", borderStyle.width || 1);
-      polyline.setAttribute("stroke", "transparent");
-      polyline.setAttribute("fill", "transparent");
-
+      polyline.setAttribute("points", inkLists[i].join(","));
       svg.append(polyline);
     }
 
