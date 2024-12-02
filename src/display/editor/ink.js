@@ -138,11 +138,44 @@ class InkEditor extends DrawingEditor {
 
   /** @inheritdoc */
   static async deserialize(data, parent, uiManager) {
+    let initialData = null;
     if (data instanceof InkAnnotationElement) {
-      return null;
+      const {
+        data: {
+          inkLists,
+          rect,
+          rotation,
+          id,
+          color,
+          opacity,
+          borderStyle: { rawWidth: thickness },
+          popupRef,
+        },
+        parent: {
+          page: { pageNumber },
+        },
+      } = data;
+      initialData = data = {
+        annotationType: AnnotationEditorType.INK,
+        color: Array.from(color),
+        thickness,
+        opacity,
+        paths: { points: inkLists },
+        boxes: null,
+        pageIndex: pageNumber - 1,
+        rect: rect.slice(0),
+        rotation,
+        id,
+        deleted: false,
+        popupRef,
+      };
     }
 
-    return super.deserialize(data, parent, uiManager);
+    const editor = await super.deserialize(data, parent, uiManager);
+    editor.annotationElementId = data.id || null;
+    editor._initialData = initialData;
+
+    return editor;
   }
 
   /** @inheritdoc */
@@ -214,8 +247,40 @@ class InkEditor extends DrawingEditor {
       structTreeParentId: this._structTreeParentId,
     };
 
+    if (isForCopying) {
+      return serialized;
+    }
+
+    if (this.annotationElementId && !this.#hasElementChanged(serialized)) {
+      return null;
+    }
+
     serialized.id = this.annotationElementId;
     return serialized;
+  }
+
+  #hasElementChanged(serialized) {
+    const { color, thickness, opacity, pageIndex } = this._initialData;
+    return (
+      this._hasBeenMoved ||
+      this._hasBeenResized ||
+      serialized.color.some((c, i) => c !== color[i]) ||
+      serialized.thickness !== thickness ||
+      serialized.opacity !== opacity ||
+      serialized.pageIndex !== pageIndex
+    );
+  }
+
+  /** @inheritdoc */
+  renderAnnotationElement(annotation) {
+    const { points, rect } = this.serializeDraw(/* isForCopying = */ false);
+    annotation.updateEdited({
+      rect,
+      thickness: this._drawingOptions["stroke-width"],
+      points,
+    });
+
+    return null;
   }
 }
 

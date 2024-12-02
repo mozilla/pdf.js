@@ -781,6 +781,28 @@ function waitForNoElement(page, selector) {
   );
 }
 
+function isCanvasWhite(page, pageNumber, rectangle) {
+  return page.evaluate(
+    (rect, pageN) => {
+      const canvas = document.querySelector(
+        `.page[data-page-number = "${pageN}"] .canvasWrapper canvas`
+      );
+      const canvasRect = canvas.getBoundingClientRect();
+      const ctx = canvas.getContext("2d");
+      rect ||= canvasRect;
+      const { data } = ctx.getImageData(
+        rect.x - canvasRect.x,
+        rect.y - canvasRect.y,
+        rect.width,
+        rect.height
+      );
+      return new Uint32Array(data.buffer).every(x => x === 0xffffffff);
+    },
+    rectangle,
+    pageNumber
+  );
+}
+
 export {
   applyFunctionToEditor,
   awaitPromise,
@@ -806,6 +828,7 @@ export {
   getSerialized,
   getSpanRectFromText,
   hover,
+  isCanvasWhite,
   isVisible,
   kbBigMoveDown,
   kbBigMoveLeft,
