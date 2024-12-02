@@ -612,4 +612,61 @@ describe("Ink Editor", () => {
       );
     });
   });
+
+  describe("Annotation mustn't take focus if it isn't visible", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the focus isn't taken", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToInk(page);
+
+          const rect = await getRect(page, ".annotationEditorLayer");
+
+          const x = rect.x + 20;
+          const y = rect.y + 20;
+          const clickHandle = await waitForPointerUp(page);
+          await page.mouse.move(x, y);
+          await page.mouse.down();
+          await page.mouse.move(x + 50, y + 50);
+          await page.mouse.up();
+          await awaitPromise(clickHandle);
+
+          await page.evaluate(() => {
+            window.focusedIds = [];
+            window.focusCallback = e => {
+              window.focusedIds.push(e.target.id);
+            };
+            window.addEventListener("focusin", window.focusCallback);
+          });
+
+          const oneToFourteen = Array.from(new Array(13).keys(), n => n + 2);
+          for (const pageNumber of oneToFourteen) {
+            await scrollIntoView(
+              page,
+              `.page[data-page-number = "${pageNumber}"]`
+            );
+          }
+
+          const ids = await page.evaluate(() => {
+            const { focusedIds, focusCallback } = window;
+            window.removeEventListener("focusin", focusCallback);
+            delete window.focusCallback;
+            delete window.focusedIds;
+            return focusedIds;
+          });
+
+          expect(ids).withContext(`In ${browserName}`).toEqual([]);
+        })
+      );
+    });
+  });
 });
