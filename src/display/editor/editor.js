@@ -1402,6 +1402,12 @@ class AnnotationEditor {
     return this.div && !this.isAttachedToDOM;
   }
 
+  get isOnScreen() {
+    const { top, left, bottom, right } = this.getClientDimensions();
+    const { innerHeight, innerWidth } = window;
+    return left < innerWidth && right > 0 && top < innerHeight && bottom > 0;
+  }
+
   #addFocusListeners() {
     if (this.#focusAC || !this.div) {
       return;
