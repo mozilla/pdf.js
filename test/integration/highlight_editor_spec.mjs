@@ -26,6 +26,7 @@ import {
   kbBigMoveUp,
   kbFocusNext,
   kbFocusPrevious,
+  kbSave,
   kbSelectAll,
   kbUndo,
   loadAndWait,
@@ -37,6 +38,11 @@ import {
   waitForSelectedEditor,
   waitForSerialized,
 } from "./test_utils.mjs";
+import { fileURLToPath } from "url";
+import fs from "fs";
+import path from "path";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const selectAll = async page => {
   await kbSelectAll(page);
@@ -2161,6 +2167,448 @@ describe("Highlight Editor", () => {
           });
 
           expect(usedColor).withContext(`In ${browserName}`).toEqual("#AB0000");
+        })
+      );
+    });
+  });
+
+  describe("Undo deletion popup has the expected behaviour", () => {
+    let pages;
+    const editorSelector = getEditorSelector(0);
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        {
+          highlightEditorColors:
+            "yellow=#FFFF00,green=#00FF00,blue=#0000FF,pink=#FF00FF,red=#FF0000",
+        }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that deleting a highlight can be undone using the undo button", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(editorSelector);
+          await waitForSerialized(page, 1);
+
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
+          await waitForSerialized(page, 0);
+          await page.waitForSelector("#editorUndoBar:not([hidden])");
+
+          await page.click("#editorUndoBarUndoButton");
+          await waitForSerialized(page, 1);
+          await page.waitForSelector(editorSelector);
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] svg.highlight[fill = "#FFFF00"]`
+          );
+        })
+      );
+    });
+
+    it("must check that the popup disappears when the undo button is clicked", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(editorSelector);
+          await waitForSerialized(page, 1);
+
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
+          await waitForSerialized(page, 0);
+          await page.waitForSelector("#editorUndoBar:not([hidden])");
+
+          await page.click("#editorUndoBarUndoButton");
+          await page.waitForSelector("#editorUndoBar", { hidden: true });
+        })
+      );
+    });
+
+    it("must check that the popup disappears when the close button is clicked", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(editorSelector);
+          await waitForSerialized(page, 1);
+
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
+          await waitForSerialized(page, 0);
+          await page.waitForSelector("#editorUndoBar:not([hidden])");
+
+          await page.waitForSelector("#editorUndoBarCloseButton");
+          await page.click("#editorUndoBarCloseButton");
+          await page.waitForSelector("#editorUndoBar", { hidden: true });
+        })
+      );
+    });
+
+    it("must check that the popup disappears when a new annotation is created", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(editorSelector);
+          await waitForSerialized(page, 1);
+
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
+          await waitForSerialized(page, 0);
+          await page.waitForSelector("#editorUndoBar:not([hidden])");
+
+          const newRect = await getSpanRectFromText(page, 1, "Introduction");
+          const newX = newRect.x + newRect.width / 2;
+          const newY = newRect.y + newRect.height / 2;
+          await page.mouse.click(newX, newY, { count: 2, delay: 100 });
+
+          await page.waitForSelector(getEditorSelector(1));
+          await page.waitForSelector("#editorUndoBar", { hidden: true });
+        })
+      );
+    });
+
+    it("must check that the popup disappears when the print dialog is opened", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(editorSelector);
+          await waitForSerialized(page, 1);
+
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
+          await waitForSerialized(page, 0);
+          await page.waitForSelector("#editorUndoBar:not([hidden])");
+
+          await page.evaluate(() => window.print());
+          await page.waitForSelector("#editorUndoBar", { hidden: true });
+        })
+      );
+    });
+
+    it("must check that the popup disappears when the user clicks on the print button", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(editorSelector);
+          await waitForSerialized(page, 1);
+
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
+          await waitForSerialized(page, 0);
+          await page.waitForSelector("#editorUndoBar:not([hidden])");
+
+          await page.click("#printButton");
+          await page.waitForSelector("#editorUndoBar", { hidden: true });
+        })
+      );
+    });
+
+    it("must check that the popup disappears when the save dialog is opened", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(editorSelector);
+          await waitForSerialized(page, 1);
+
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
+          await waitForSerialized(page, 0);
+          await page.waitForSelector("#editorUndoBar:not([hidden])");
+
+          await kbSave(page);
+          await page.waitForSelector("#editorUndoBar", { hidden: true });
+        })
+      );
+    });
+
+    it("must check that the popup disappears when an option from the secondaryToolbar is used", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(editorSelector);
+          await waitForSerialized(page, 1);
+
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
+          await waitForSerialized(page, 0);
+          await page.waitForSelector("#editorUndoBar:not([hidden])");
+
+          await page.click("#secondaryToolbarToggleButton");
+          await page.click("#lastPage");
+          await page.waitForSelector("#editorUndoBar", { hidden: true });
+        })
+      );
+    });
+
+    it("must check that the popup disappears when highlight mode is disabled", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(editorSelector);
+          await waitForSerialized(page, 1);
+
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
+          await waitForSerialized(page, 0);
+          await page.waitForSelector("#editorUndoBar:not([hidden])");
+
+          await switchToHighlight(page, /* disable */ true);
+          await page.waitForSelector("#editorUndoBar", { hidden: true });
+        })
+      );
+    });
+
+    it("must check that the popup disappears when a PDF is drag-and-dropped", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(editorSelector);
+          await waitForSerialized(page, 1);
+
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
+          await waitForSerialized(page, 0);
+          await page.waitForSelector("#editorUndoBar:not([hidden])");
+          const pdfPath = path.join(__dirname, "../pdfs/basicapi.pdf");
+          const pdfData = fs.readFileSync(pdfPath).toString("base64");
+          const dataTransfer = await page.evaluateHandle(data => {
+            const transfer = new DataTransfer();
+            const view = Uint8Array.from(atob(data), code =>
+              code.charCodeAt(0)
+            );
+            const file = new File([view], "basicapi.pdf", {
+              type: "application/pdf",
+            });
+            transfer.items.add(file);
+            return transfer;
+          }, pdfData);
+
+          const dropSelector = "#viewer";
+          await page.evaluate(
+            (transfer, selector) => {
+              const dropTarget = document.querySelector(selector);
+              const event = new DragEvent("dragstart", {
+                dataTransfer: transfer,
+              });
+              dropTarget.dispatchEvent(event);
+            },
+            dataTransfer,
+            dropSelector
+          );
+
+          await page.evaluate(
+            (transfer, selector) => {
+              const dropTarget = document.querySelector(selector);
+              const event = new DragEvent("drop", {
+                dataTransfer: transfer,
+                bubbles: true,
+              });
+              dropTarget.dispatchEvent(event);
+            },
+            dataTransfer,
+            dropSelector
+          );
+          await page.waitForSelector("#editorUndoBar", { hidden: true });
+        })
+      );
+    });
+
+    it("must check that the undo deletion popup displays the correct message", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(editorSelector);
+          await waitForSerialized(page, 1);
+
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
+          await waitForSerialized(page, 0);
+
+          await page.waitForFunction(() => {
+            const messageElement = document.querySelector(
+              "#editorUndoBarMessage"
+            );
+            return messageElement && messageElement.textContent.trim() !== "";
+          });
+
+          const message = await page.waitForSelector("#editorUndoBarMessage");
+          const messageText = await page.evaluate(
+            el => el.textContent,
+            message
+          );
+          expect(messageText).toContain("Highlight removed");
+        })
+      );
+    });
+
+    it("must display correct message for multiple highlights", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          let rect = await getSpanRectFromText(page, 1, "Abstract");
+          let x = rect.x + rect.width / 2;
+          let y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(editorSelector);
+
+          rect = await getSpanRectFromText(page, 1, "Languages");
+          x = rect.x + rect.width / 2;
+          y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(getEditorSelector(1));
+
+          await selectAll(page);
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
+          await waitForSerialized(page, 0);
+
+          await page.waitForFunction(() => {
+            const messageElement = document.querySelector(
+              "#editorUndoBarMessage"
+            );
+            return messageElement && messageElement.textContent.trim() !== "";
+          });
+
+          const message = await page.waitForSelector("#editorUndoBarMessage");
+          const messageText = await page.evaluate(
+            el => el.textContent,
+            message
+          );
+
+          // Cleans the message text by removing all non-ASCII characters.
+          // It eliminates any invisible characters such as directional marks
+          // that interfere with string comparisons
+          const cleanMessage = messageText.replaceAll(/\P{ASCII}/gu, "");
+          expect(cleanMessage).toContain(`2 annotations removed`);
+        })
+      );
+    });
+
+    it("must work properly when selecting undo by keyboard", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(editorSelector);
+          await waitForSerialized(page, 1);
+
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
+          await waitForSerialized(page, 0);
+          await page.waitForSelector("#editorUndoBar:not([hidden])");
+
+          await page.focus("#editorUndoBarUndoButton"); // we have to simulate focus like this to avoid the wait
+          await page.keyboard.press("Enter");
+          await waitForSerialized(page, 1);
+          await page.waitForSelector(editorSelector);
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] svg.highlight[fill = "#FFFF00"]`
+          );
+
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
+          await waitForSerialized(page, 0);
+          await page.waitForSelector("#editorUndoBar:not([hidden])");
+
+          await page.focus("#editorUndoBarUndoButton"); // we have to simulate focus like this to avoid the wait
+          await page.keyboard.press(" ");
+          await waitForSerialized(page, 1);
+          await page.waitForSelector(editorSelector);
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] svg.highlight[fill = "#FFFF00"]`
+          );
+        })
+      );
+    });
+
+    it("must dismiss itself when user presses space/enter key and undo key isn't focused", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(editorSelector);
+          await waitForSerialized(page, 1);
+
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
+          await waitForSerialized(page, 0);
+          await page.waitForSelector("#editorUndoBar:not([hidden])");
+
+          await page.focus("#editorUndoBar");
+          await page.keyboard.press("Enter");
+          await page.waitForSelector("#editorUndoBar", { hidden: true });
         })
       );
     });

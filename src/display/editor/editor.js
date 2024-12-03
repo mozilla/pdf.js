@@ -1142,6 +1142,8 @@ class AnnotationEditor {
 
     bindEvents(this, this.div, ["pointerdown"]);
 
+    this._uiManager._editorUndoBar?.hide();
+
     return this.div;
   }
 

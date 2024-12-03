@@ -620,6 +620,8 @@ class AnnotationEditorUIManager {
 
   #editorsToRescale = new Set();
 
+  _editorUndoBar = null;
+
   #enableHighlightFloatingButton = false;
 
   #enableUpdatedAddImage = false;
@@ -829,7 +831,8 @@ class AnnotationEditorUIManager {
     enableHighlightFloatingButton,
     enableUpdatedAddImage,
     enableNewAltTextWhenAddingImage,
-    mlManager
+    mlManager,
+    editorUndoBar
   ) {
     const signal = (this._signal = this.#abortController.signal);
     this.#container = container;
@@ -864,6 +867,7 @@ class AnnotationEditorUIManager {
       rotation: 0,
     };
     this.isShiftKeyDown = false;
+    this._editorUndoBar = editorUndoBar || null;
 
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
       Object.defineProperty(this, "reset", {
@@ -904,6 +908,7 @@ class AnnotationEditorUIManager {
       clearTimeout(this.#translationTimeoutId);
       this.#translationTimeoutId = null;
     }
+    this._editorUndoBar?.destroy();
   }
 
   combinedSignal(ac) {
@@ -1656,6 +1661,8 @@ class AnnotationEditorUIManager {
       this.setEditingState(false);
       this.#disableAll();
 
+      this._editorUndoBar?.hide();
+
       this.#updateModeCapability.resolve();
       return;
     }
@@ -2038,6 +2045,7 @@ class AnnotationEditorUIManager {
       hasSomethingToRedo: true,
       isEmpty: this.#isEmpty(),
     });
+    this._editorUndoBar?.hide();
   }
 
   /**
@@ -2099,6 +2107,10 @@ class AnnotationEditorUIManager {
       ? [drawingEditor]
       : [...this.#selectedEditors];
     const cmd = () => {
+      this._editorUndoBar?.show(
+        undo,
+        editors.length === 1 ? editors[0].editorType : editors.length
+      );
       for (const editor of editors) {
         editor.remove();
       }

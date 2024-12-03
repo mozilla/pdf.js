@@ -1530,4 +1530,98 @@ describe("Stamp Editor", () => {
       }
     });
   });
+
+  describe("Undo deletion popup has the expected behaviour", () => {
+    let pages;
+    const editorSelector = getEditorSelector(0);
+
+    beforeEach(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that deleting an image can be undone using the undo button", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToStamp(page);
+          const selector = editorSelector;
+
+          await copyImage(page, "../images/firefox_logo.png", 0);
+          await page.waitForSelector(selector);
+          await waitForSerialized(page, 1);
+
+          await page.waitForSelector(`${selector} button.delete`);
+          await page.click(`${selector} button.delete`);
+          await waitForSerialized(page, 0);
+
+          await page.waitForSelector("#editorUndoBar:not([hidden])");
+
+          await page.click("#editorUndoBarUndoButton");
+          await waitForSerialized(page, 1);
+          await page.waitForSelector(editorSelector);
+          await page.waitForSelector(`${selector} canvas`);
+        })
+      );
+    });
+
+    it("must check that the undo deletion popup displays the correct message", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToStamp(page);
+          const selector = editorSelector;
+
+          await copyImage(page, "../images/firefox_logo.png", 0);
+          await page.waitForSelector(selector);
+          await waitForSerialized(page, 1);
+
+          await page.waitForSelector(`${selector} button.delete`);
+          await page.click(`${selector} button.delete`);
+          await waitForSerialized(page, 0);
+
+          await page.waitForFunction(() => {
+            const messageElement = document.querySelector(
+              "#editorUndoBarMessage"
+            );
+            return messageElement && messageElement.textContent.trim() !== "";
+          });
+          const message = await page.waitForSelector("#editorUndoBarMessage");
+          const messageText = await page.evaluate(
+            el => el.textContent,
+            message
+          );
+          expect(messageText).toContain("Image removed");
+        })
+      );
+    });
+
+    it("must check that the popup disappears when a new image is inserted", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToStamp(page);
+          const selector = editorSelector;
+
+          await copyImage(page, "../images/firefox_logo.png", 0);
+          await page.waitForSelector(selector);
+          await waitForSerialized(page, 1);
+
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
+          await waitForSerialized(page, 0);
+
+          await page.waitForSelector("#editorUndoBar:not([hidden])");
+          await page.click("#editorStampAddImage");
+          const newInput = await page.$("#stampEditorFileInput");
+          await newInput.uploadFile(
+            `${path.join(__dirname, "../images/firefox_logo.png")}`
+          );
+          await waitForImage(page, getEditorSelector(1));
+          await waitForSerialized(page, 1);
+          await page.waitForSelector("#editorUndoBar", { hidden: true });
+        })
+      );
+    });
+  });
 });
