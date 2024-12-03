@@ -132,7 +132,7 @@ class FakeMLManager {
   guess({ request: { data } }) {
     return new Promise(resolve => {
       setTimeout(() => {
-        resolve(data ? { output: "Fake alt text" } : { error: true });
+        resolve(data ? { output: "Fake alt text." } : { error: true });
       }, 3000);
     });
   }
