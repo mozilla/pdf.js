@@ -897,6 +897,9 @@ describe("Stamp Editor", () => {
             eventBus.on("annotationeditoruimanager", ({ uiManager }) => {
               window.uiManager = uiManager;
             });
+            eventBus.on("reporttelemetry", ({ details }) => {
+              (window.telemetry ||= []).push(structuredClone(details));
+            });
           },
         },
         {
@@ -917,6 +920,7 @@ describe("Stamp Editor", () => {
         }
         await page.evaluate(() => {
           window.uiManager.reset();
+          window.telemetry = [];
         });
         // Disable editing mode.
         await switchToStamp(page, /* disable */ true);
@@ -953,7 +957,7 @@ describe("Stamp Editor", () => {
         // Check that AI guessed the correct alt text.
         await page.waitForFunction(
           `document.getElementById("newAltTextDescriptionTextarea").value ===
-            "Fake alt text"`
+            "Fake alt text."`
         );
 
         // Check that the dialog has the correct title: "Edit..."
@@ -1180,6 +1184,82 @@ describe("Stamp Editor", () => {
 
         // Check we haven't the disclaimer.
         await page.waitForSelector("#newAltTextDisclaimer[hidden]");
+      }
+    });
+
+    it("must check that the data in telemetry are correct", async () => {
+      // Run sequentially to avoid clipboard issues.
+      for (const [browserName, page] of pages) {
+        await page.evaluate(() => {
+          window.PDFViewerApplication.mlManager.enableAltTextModelDownload = true;
+        });
+        await switchToStamp(page);
+
+        // Add an image.
+        await copyImage(page, "../images/firefox_logo.png", 0);
+        const editorSelector = getEditorSelector(0);
+        await page.waitForSelector(editorSelector);
+        await waitForSerialized(page, 1);
+
+        // Wait for the dialog to be visible.
+        await page.waitForSelector("#newAltTextDialog", { visible: true });
+
+        // Check that AI guessed the correct alt text.
+        await page.waitForFunction(
+          `document.getElementById("newAltTextDescriptionTextarea").value ===
+                    "Fake alt text."`
+        );
+        // Clear the input and check that the title changes to "Add..."
+        await clearInput(
+          page,
+          "#newAltTextDescriptionTextarea",
+          /* waitForInputEvent = */ true
+        );
+        // Save the empty text.
+        await page.click("#newAltTextSave");
+        await page.waitForSelector("#newAltTextDialog", { visible: false });
+
+        // Get the telemetry data and clean.
+        let telemetry = await page.evaluate(() => {
+          const tel = window.telemetry;
+          window.telemetry = [];
+          return tel;
+        });
+        let saveTelemetry = telemetry.find(
+          details => details.data.action === "pdfjs.image.alt_text.user_edit"
+        );
+        expect(saveTelemetry.data.data)
+          .withContext(`In ${browserName}`)
+          .toEqual({
+            total_words: 3,
+            words_removed: 3,
+            words_added: 0,
+          });
+
+        // Click on the Review button.
+        const buttonSelector = `${editorSelector} button.altText.new`;
+        await page.waitForSelector(buttonSelector, { visible: true });
+        await page.click(buttonSelector);
+        await page.waitForSelector("#newAltTextDialog", { visible: true });
+
+        // Add a new alt text and check that the title changes to "Edit..."
+        await page.type("#newAltTextDescriptionTextarea", "Fake text alt foo.");
+
+        // Save the empty text.
+        await page.click("#newAltTextSave");
+        await page.waitForSelector("#newAltTextDialog", { visible: false });
+
+        telemetry = await page.evaluate(() => window.telemetry);
+        saveTelemetry = telemetry.find(
+          details => details.data.action === "pdfjs.image.alt_text.user_edit"
+        );
+        expect(saveTelemetry.data.data)
+          .withContext(`In ${browserName}`)
+          .toEqual({
+            total_words: 3,
+            words_removed: 0,
+            words_added: 1,
+          });
       }
     });
   });
