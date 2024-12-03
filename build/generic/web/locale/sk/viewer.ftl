@@ -51,12 +51,6 @@ pdfjs-download-button-label = Stiahnuť
 pdfjs-bookmark-button =
     .title = Aktuálna stránka (zobraziť adresu URL z aktuálnej stránky)
 pdfjs-bookmark-button-label = Aktuálna stránka
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = Otvoriť v aplikácii
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = Otvoriť v aplikácii
 
 ##  Secondary toolbar and context menu
 
@@ -111,6 +105,14 @@ pdfjs-document-properties-button-label = Vlastnosti dokumentu…
 pdfjs-document-properties-file-name = Názov súboru:
 pdfjs-document-properties-file-size = Veľkosť súboru:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } kB ({ $b } bajtov)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bajtov)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } kB ({ $size_b } bajtov)
@@ -125,10 +127,13 @@ pdfjs-document-properties-keywords = Kľúčové slová:
 pdfjs-document-properties-creation-date = Dátum vytvorenia:
 pdfjs-document-properties-modification-date = Dátum úpravy:
 # Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
+# Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
 pdfjs-document-properties-date-string = { $date }, { $time }
-pdfjs-document-properties-creator = Vytvoril:
+pdfjs-document-properties-creator = Aplikácia:
 pdfjs-document-properties-producer = Tvorca PDF:
 pdfjs-document-properties-version = Verzia PDF:
 pdfjs-document-properties-page-count = Počet strán:
@@ -156,7 +161,7 @@ pdfjs-document-properties-page-size-dimension-name-string = { $width } × { $hei
 
 # The linearization status of the document; usually called "Fast Web View" in
 # English locales of Adobe software.
-pdfjs-document-properties-linearized = Rýchle Web View:
+pdfjs-document-properties-linearized = Rýchle zobrazovanie z webu:
 pdfjs-document-properties-linearized-yes = Áno
 pdfjs-document-properties-linearized-no = Nie
 pdfjs-document-properties-close-button = Zavrieť
@@ -285,6 +290,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [Anotácia typu { $type }]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -300,13 +308,18 @@ pdfjs-editor-free-text-button =
     .title = Text
 pdfjs-editor-free-text-button-label = Text
 pdfjs-editor-ink-button =
-    .title = Kreslenie
+    .title = Kresliť
 pdfjs-editor-ink-button-label = Kresliť
 pdfjs-editor-stamp-button =
     .title = Pridať alebo upraviť obrázky
 pdfjs-editor-stamp-button-label = Pridať alebo upraviť obrázky
-pdfjs-editor-remove-button =
-    .title = Odstrániť
+pdfjs-editor-highlight-button =
+    .title = Zvýrazniť
+pdfjs-editor-highlight-button-label = Zvýrazniť
+pdfjs-highlight-floating-button1 =
+    .title = Zvýrazniť
+    .aria-label = Zvýrazniť
+pdfjs-highlight-floating-button-label = Zvýrazniť
 
 ## Remove button for the various kind of editor.
 
@@ -330,6 +343,14 @@ pdfjs-editor-ink-opacity-input = Priehľadnosť
 pdfjs-editor-stamp-add-image-button =
     .title = Pridať obrázok
 pdfjs-editor-stamp-add-image-button-label = Pridať obrázok
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Hrúbka
+pdfjs-editor-free-highlight-thickness-title =
+    .title = Zmeňte hrúbku pre zvýrazňovanie iných položiek ako textu
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Textový editor
+    .default-content = Začnite písať…
 pdfjs-free-text =
     .aria-label = Textový editor
 pdfjs-free-text-default-content = Začnite písať…
@@ -340,8 +361,9 @@ pdfjs-ink-canvas =
 
 ## Alt-text dialog
 
-# Alternative text (alt text) helps when people can't see the image.
 pdfjs-editor-alt-text-button-label = Alternatívny text
+pdfjs-editor-alt-text-edit-button =
+    .aria-label = Upraviť alternatívny text
 pdfjs-editor-alt-text-edit-button-label = Upraviť alternatívny text
 pdfjs-editor-alt-text-dialog-label = Vyberte možnosť
 pdfjs-editor-alt-text-dialog-description = Alternatívny text (alt text) pomáha, keď ľudia obrázok nevidia alebo sa nenačítava.
@@ -355,6 +377,9 @@ pdfjs-editor-alt-text-decorative-tooltip = Označený ako dekoratívny
 # .placeholder: This is a placeholder for the alt text input area
 pdfjs-editor-alt-text-textarea =
     .placeholder = Napríklad: „Mladý muž si sadá za stôl, aby sa najedol“
+# Alternative text (alt text) helps when people can't see the image.
+pdfjs-editor-alt-text-button =
+    .aria-label = Alternatívny text
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
@@ -367,6 +392,22 @@ pdfjs-editor-resizer-label-bottom-right = Pravý dolný roh – zmena veľkosti
 pdfjs-editor-resizer-label-bottom-middle = Stred dole – zmena veľkosti
 pdfjs-editor-resizer-label-bottom-left = Ľavý dolný roh – zmena veľkosti
 pdfjs-editor-resizer-label-middle-left = Vľavo uprostred – zmena veľkosti
+pdfjs-editor-resizer-top-left =
+    .aria-label = Ľavý horný roh – zmena veľkosti
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Horný stred – zmena veľkosti
+pdfjs-editor-resizer-top-right =
+    .aria-label = Pravý horný roh – zmena veľkosti
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Vpravo uprostred – zmena veľkosti
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Pravý dolný roh – zmena veľkosti
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Stred dole – zmena veľkosti
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Ľavý dolný roh – zmena veľkosti
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Vľavo uprostred – zmena veľkosti
 
 ## Color picker
 
@@ -386,3 +427,73 @@ pdfjs-editor-colorpicker-pink =
     .title = Ružová
 pdfjs-editor-colorpicker-red =
     .title = Červená
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Zobraziť všetko
+pdfjs-editor-highlight-show-all-button =
+    .title = Zobraziť všetko
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+# Modal header positioned above a text box where users can edit the alt text.
+pdfjs-editor-new-alt-text-dialog-edit-label = Upraviť alternatívny text (popis obrázka)
+# Modal header positioned above a text box where users can add the alt text.
+pdfjs-editor-new-alt-text-dialog-add-label = Pridať alternatívny text (popis obrázka)
+pdfjs-editor-new-alt-text-textarea =
+    .placeholder = Sem napíšte svoj popis…
+# This text refers to the alt text box above this description. It offers a definition of alt text.
+pdfjs-editor-new-alt-text-description = Krátky popis pre ľudí, ktorí nevidia obrázok alebo ak sa obrázok nenačíta.
+# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
+pdfjs-editor-new-alt-text-disclaimer1 = Tento alternatívny text bol vytvorený automaticky a môže byť nepresný.
+pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Ďalšie informácie
+pdfjs-editor-new-alt-text-create-automatically-button-label = Automaticky vytvoriť alternatívny text
+pdfjs-editor-new-alt-text-not-now-button = Teraz nie
+pdfjs-editor-new-alt-text-error-title = Alternatívny text sa nepodarilo vytvoriť automaticky
+pdfjs-editor-new-alt-text-error-description = Napíšte svoj vlastný alternatívny text alebo to skúste znova neskôr.
+pdfjs-editor-new-alt-text-error-close-button = Zavrieť
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+#   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
+#   $percent (Number) - the percentage of the downloaded size.
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = Sťahuje sa model AI pre alternatívne texty ({ $downloadedSize } z { $totalSize } MB)
+    .aria-valuetext = Sťahuje sa model AI pre alternatívne texty ({ $downloadedSize } z { $totalSize } MB)
+# This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button =
+    .aria-label = Alternatívny text bol pridaný
+pdfjs-editor-new-alt-text-added-button-label = Alternatívny text bol pridaný
+# This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button =
+    .aria-label = Chýbajúci alternatívny text
+pdfjs-editor-new-alt-text-missing-button-label = Chýbajúci alternatívny text
+# This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button =
+    .aria-label = Skontrolovať alternatívny text
+pdfjs-editor-new-alt-text-to-review-button-label = Skontrolovať alternatívny text
+# "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
+# Variables:
+#   $generatedAltText (String) - the generated alt-text.
+pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer = Vytvorené automaticky: { $generatedAltText }
+
+## Image alt-text settings
+
+pdfjs-image-alt-text-settings-button =
+    .title = Nastavenia alternatívneho textu obrázka
+pdfjs-image-alt-text-settings-button-label = Nastavenia alternatívneho textu obrázka
+pdfjs-editor-alt-text-settings-dialog-label = Nastavenia alternatívneho textu obrázka
+pdfjs-editor-alt-text-settings-automatic-title = Automatický alternatívny text
+pdfjs-editor-alt-text-settings-create-model-button-label = Automaticky vytvoriť alternatívny text
+pdfjs-editor-alt-text-settings-create-model-description = Navrhuje popisy, ktoré pomôžu ľuďom, ktorým sa obrázok nezobrazuje alebo ak sa obrázok nenačíta.
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+pdfjs-editor-alt-text-settings-download-model-label = Model AI pre alternatívne texty ({ $totalSize } MB)
+pdfjs-editor-alt-text-settings-ai-model-description = Beží lokálne na vašom zariadení, takže vaše dáta zostanú súkromné. Vyžaduje sa pre automatický alternatívny text.
+pdfjs-editor-alt-text-settings-delete-model-button = Odstrániť
+pdfjs-editor-alt-text-settings-download-model-button = Stiahnuť
+pdfjs-editor-alt-text-settings-downloading-model-button = Sťahuje sa…
+pdfjs-editor-alt-text-settings-editor-title = Editor alternatívneho textu
+pdfjs-editor-alt-text-settings-show-dialog-button-label = Pri pridávaní obrázka ihneď zobraziť editor alternatívneho textu
+pdfjs-editor-alt-text-settings-show-dialog-description = Pomáha vám zabezpečiť, aby všetky vaše obrázky mali alternatívny text.
+pdfjs-editor-alt-text-settings-close-button = Zavrieť

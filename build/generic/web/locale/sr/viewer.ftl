@@ -45,12 +45,6 @@ pdfjs-save-button-label = Сачувај
 pdfjs-bookmark-button =
     .title = Тренутна страница (погледајте URL са тренутне странице)
 pdfjs-bookmark-button-label = Тренутна страница
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = Отвори у апликацији
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = Отвори у апликацији
 
 ##  Secondary toolbar and context menu
 
@@ -168,10 +162,10 @@ pdfjs-printing-not-ready = Упозорење: PDF није у потпунос�
 ## Tooltips and alt text for side panel toolbar buttons
 
 pdfjs-toggle-sidebar-button =
-    .title = Прикажи додатну палету
+    .title = Прикажи/сакриј бочни панел
 pdfjs-toggle-sidebar-notification-button =
-    .title = Прикажи/сакриј бочну траку (документ садржи контуру/прилоге/слојеве)
-pdfjs-toggle-sidebar-button-label = Прикажи додатну палету
+    .title = Прикажи/сакриј бочни панел (документ садржи контуру/прилоге/слојеве)
+pdfjs-toggle-sidebar-button-label = Прикажи/сакриј бочни панел
 pdfjs-document-outline-button =
     .title = Прикажи структуру документа (двоструким кликом проширујете/скупљате све ставке)
 pdfjs-document-outline-button-label = Контура документа
@@ -277,6 +271,12 @@ pdfjs-editor-free-text-button-label = Текст
 pdfjs-editor-ink-button =
     .title = Цртај
 pdfjs-editor-ink-button-label = Цртај
+
+## Remove button for the various kind of editor.
+
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Боја
 pdfjs-editor-free-text-size-input = Величина
@@ -296,4 +296,18 @@ pdfjs-ink-canvas =
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
+
+
+## Color picker
+
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+
+## Image alt-text settings
 

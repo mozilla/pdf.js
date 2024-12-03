@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * JavaScript code in this page
  *
- * Copyright 2023 Mozilla Foundation
+ * Copyright 2024 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,11 +45,10 @@
 var __webpack_exports__ = {};
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   AppOptions: () => (/* binding */ AppOptions),
-/* harmony export */   OptionKind: () => (/* binding */ OptionKind),
-/* harmony export */   compatibilityParams: () => (/* binding */ compatibilityParams)
+/* harmony export */   OptionKind: () => (/* binding */ OptionKind)
 /* harmony export */ });
-const compatibilityParams = Object.create(null);
 {
+  var compatParams = new Map();
   if (typeof navigator === "undefined") {
     globalThis.navigator = Object.create(null);
   }
@@ -58,9 +57,14 @@ const compatibilityParams = Object.create(null);
   const maxTouchPoints = navigator.maxTouchPoints || 1;
   const isAndroid = /Android/.test(userAgent);
   const isIOS = /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent) || platform === "MacIntel" && maxTouchPoints > 1;
-  (function checkCanvasSizeLimitation() {
+  (function () {
     if (isIOS || isAndroid) {
-      compatibilityParams.maxCanvasPixels = 5242880;
+      compatParams.set("maxCanvasPixels", 5242880);
+    }
+  })();
+  (function () {
+    if (isAndroid) {
+      compatParams.set("useSystemFonts", false);
     }
   })();
 }
@@ -69,14 +73,40 @@ const OptionKind = {
   VIEWER: 0x02,
   API: 0x04,
   WORKER: 0x08,
+  EVENT_DISPATCH: 0x10,
   PREFERENCE: 0x80
 };
+const Type = {
+  BOOLEAN: 0x01,
+  NUMBER: 0x02,
+  OBJECT: 0x04,
+  STRING: 0x08,
+  UNDEFINED: 0x10
+};
 const defaultOptions = {
+  allowedGlobalEvents: {
+    value: null,
+    kind: OptionKind.BROWSER
+  },
   canvasMaxAreaInBytes: {
     value: -1,
     kind: OptionKind.BROWSER + OptionKind.API
   },
   isInAutomation: {
+    value: false,
+    kind: OptionKind.BROWSER
+  },
+  localeProperties: {
+    value: {
+      lang: navigator.language || "en-US"
+    },
+    kind: OptionKind.BROWSER
+  },
+  nimbusDataStr: {
+    value: "",
+    kind: OptionKind.BROWSER
+  },
+  supportsCaretBrowsingMode: {
     value: false,
     kind: OptionKind.BROWSER
   },
@@ -100,6 +130,14 @@ const defaultOptions = {
     value: true,
     kind: OptionKind.BROWSER
   },
+  toolbarDensity: {
+    value: 0,
+    kind: OptionKind.BROWSER + OptionKind.EVENT_DISPATCH
+  },
+  altTextLearnMoreUrl: {
+    value: "",
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE
+  },
   annotationEditorMode: {
     value: 0,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
@@ -111,6 +149,10 @@ const defaultOptions = {
   cursorToolOnLoad: {
     value: 0,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
+  },
+  debuggerSrc: {
+    value: "./debugger.mjs",
+    kind: OptionKind.VIEWER
   },
   defaultZoomDelay: {
     value: 400,
@@ -128,8 +170,24 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
-  enableHighlightEditor: {
+  enableAltText: {
     value: false,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE
+  },
+  enableAltTextModelDownload: {
+    value: true,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE + OptionKind.EVENT_DISPATCH
+  },
+  enableGuessAltText: {
+    value: true,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE + OptionKind.EVENT_DISPATCH
+  },
+  enableHighlightFloatingButton: {
+    value: false,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE
+  },
+  enableNewAltTextWhenAddingImage: {
+    value: true,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
   enablePermissions: {
@@ -142,6 +200,10 @@ const defaultOptions = {
   },
   enableScripting: {
     value: true,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE
+  },
+  enableUpdatedAddImage: {
+    value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
   externalLinkRel: {
@@ -169,7 +231,7 @@ const defaultOptions = {
     kind: OptionKind.VIEWER
   },
   maxCanvasPixels: {
-    value: 16777216,
+    value: 2 ** 25,
     kind: OptionKind.VIEWER
   },
   forcePageColors: {
@@ -240,6 +302,10 @@ const defaultOptions = {
     value: "",
     kind: OptionKind.API
   },
+  enableHWA: {
+    value: true,
+    kind: OptionKind.API + OptionKind.VIEWER + OptionKind.PREFERENCE
+  },
   enableXfa: {
     value: true,
     kind: OptionKind.API + OptionKind.PREFERENCE
@@ -268,6 +334,11 @@ const defaultOptions = {
     value: "../web/standard_fonts/",
     kind: OptionKind.API
   },
+  useSystemFonts: {
+    value: undefined,
+    kind: OptionKind.API,
+    type: Type.BOOLEAN + Type.UNDEFINED
+  },
   verbosity: {
     value: 1,
     kind: OptionKind.API
@@ -294,81 +365,124 @@ const defaultOptions = {
     value: 0,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   };
+  defaultOptions.enableFakeMLManager = {
+    value: true,
+    kind: OptionKind.VIEWER
+  };
 }
 {
   defaultOptions.disablePreferences = {
     value: false,
     kind: OptionKind.VIEWER
   };
-  defaultOptions.locale = {
-    value: navigator.language || "en-US",
-    kind: OptionKind.VIEWER
-  };
 }
-const userOptions = Object.create(null);
+{
+  for (const name in defaultOptions) {
+    const {
+      value,
+      kind,
+      type
+    } = defaultOptions[name];
+    if (kind & OptionKind.PREFERENCE) {
+      if (kind === OptionKind.PREFERENCE) {
+        throw new Error(`Cannot use only "PREFERENCE" kind: ${name}`);
+      }
+      if (kind & OptionKind.BROWSER) {
+        throw new Error(`Cannot mix "PREFERENCE" and "BROWSER" kind: ${name}`);
+      }
+      if (type !== undefined) {
+        throw new Error(`Cannot have \`type\`-field for "PREFERENCE" kind: ${name}`);
+      }
+      if (typeof compatParams === "object" && compatParams.has(name)) {
+        throw new Error(`Should not have compatibility-value for "PREFERENCE" kind: ${name}`);
+      }
+      if (typeof value !== "boolean" && typeof value !== "string" && !Number.isInteger(value)) {
+        throw new Error(`Invalid value for "PREFERENCE" kind: ${name}`);
+      }
+    } else if (kind & OptionKind.BROWSER) {
+      if (type !== undefined) {
+        throw new Error(`Cannot have \`type\`-field for "BROWSER" kind: ${name}`);
+      }
+      if (typeof compatParams === "object" && compatParams.has(name)) {
+        throw new Error(`Should not have compatibility-value for "BROWSER" kind: ${name}`);
+      }
+      if (value === undefined) {
+        throw new Error(`Invalid value for "BROWSER" kind: ${name}`);
+      }
+    }
+  }
+}
 class AppOptions {
-  constructor() {
-    throw new Error("Cannot initialize AppOptions.");
+  static eventBus;
+  static #opts = new Map();
+  static {
+    for (const name in defaultOptions) {
+      this.#opts.set(name, defaultOptions[name].value);
+    }
+    for (const [name, value] of compatParams) {
+      this.#opts.set(name, value);
+    }
+    this._hasInvokedSet = false;
+    this._checkDisablePreferences = () => {
+      if (this.get("disablePreferences")) {
+        return true;
+      }
+      if (this._hasInvokedSet) {
+        console.warn("The Preferences may override manually set AppOptions; " + 'please use the "disablePreferences"-option to prevent that.');
+      }
+      return false;
+    };
   }
   static get(name) {
-    const userOption = userOptions[name];
-    if (userOption !== undefined) {
-      return userOption;
-    }
-    const defaultOption = defaultOptions[name];
-    if (defaultOption !== undefined) {
-      return compatibilityParams[name] ?? defaultOption.value;
-    }
-    return undefined;
+    return this.#opts.get(name);
   }
-  static getAll(kind = null) {
+  static getAll(kind = null, defaultOnly = false) {
     const options = Object.create(null);
     for (const name in defaultOptions) {
-      const defaultOption = defaultOptions[name];
-      if (kind) {
-        if (!(kind & defaultOption.kind)) {
-          continue;
-        }
-        if (kind === OptionKind.PREFERENCE) {
-          if (defaultOption.kind & OptionKind.BROWSER) {
-            throw new Error(`Invalid kind for preference: ${name}`);
-          }
-          const value = defaultOption.value,
-            valueType = typeof value;
-          if (valueType === "boolean" || valueType === "string" || valueType === "number" && Number.isInteger(value)) {
-            options[name] = value;
-            continue;
-          }
-          throw new Error(`Invalid type for preference: ${name}`);
-        }
+      const defaultOpt = defaultOptions[name];
+      if (kind && !(kind & defaultOpt.kind)) {
+        continue;
       }
-      const userOption = userOptions[name];
-      options[name] = userOption !== undefined ? userOption : compatibilityParams[name] ?? defaultOption.value;
+      options[name] = !defaultOnly ? this.#opts.get(name) : defaultOpt.value;
     }
     return options;
   }
   static set(name, value) {
-    userOptions[name] = value;
+    this.setAll({
+      [name]: value
+    });
   }
-  static setAll(options, init = false) {
-    if (init) {
-      if (this.get("disablePreferences")) {
-        return;
-      }
-      if (Object.keys(userOptions).length) {
-        console.warn("setAll: The Preferences may override manually set AppOptions; " + 'please use the "disablePreferences"-option in order to prevent that.');
-      }
-    }
+  static setAll(options, prefs = false) {
+    this._hasInvokedSet ||= true;
+    let events;
     for (const name in options) {
-      userOptions[name] = options[name];
+      const defaultOpt = defaultOptions[name],
+        userOpt = options[name];
+      if (!defaultOpt || !(typeof userOpt === typeof defaultOpt.value || Type[(typeof userOpt).toUpperCase()] & defaultOpt.type)) {
+        continue;
+      }
+      const {
+        kind
+      } = defaultOpt;
+      if (prefs && !(kind & OptionKind.BROWSER || kind & OptionKind.PREFERENCE)) {
+        continue;
+      }
+      if (this.eventBus && kind & OptionKind.EVENT_DISPATCH) {
+        (events ||= new Map()).set(name, userOpt);
+      }
+      this.#opts.set(name, userOpt);
     }
-  }
-  static remove(name) {
-    delete userOptions[name];
+    if (events) {
+      for (const [name, value] of events) {
+        this.eventBus.dispatch(name.toLowerCase(), {
+          source: this,
+          value
+        });
+      }
+    }
   }
 }
 
 var __webpack_exports__AppOptions = __webpack_exports__.AppOptions;
 var __webpack_exports__OptionKind = __webpack_exports__.OptionKind;
-var __webpack_exports__compatibilityParams = __webpack_exports__.compatibilityParams;
-export { __webpack_exports__AppOptions as AppOptions, __webpack_exports__OptionKind as OptionKind, __webpack_exports__compatibilityParams as compatibilityParams };
+export { __webpack_exports__AppOptions as AppOptions, __webpack_exports__OptionKind as OptionKind };

@@ -45,12 +45,6 @@ pdfjs-download-button =
 # Length of the translation matters since we are in a mobile context, with limited screen estate.
 pdfjs-download-button-label = බාගන්න
 pdfjs-bookmark-button-label = පවතින පිටුව
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = යෙදුමෙහි අරින්න
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = යෙදුමෙහි අරින්න
 
 ##  Secondary toolbar and context menu
 
@@ -188,7 +182,7 @@ pdfjs-find-highlight-checkbox = සියල්ල උද්දීපනය
 pdfjs-find-entire-word-checkbox-label = සමස්ත වචන
 pdfjs-find-reached-top = ලේඛනයේ මුදුනට ළඟා විය, පහළ සිට ඉහළට
 pdfjs-find-reached-bottom = ලේඛනයේ අවසානයට ළඟා විය, ඉහළ සිට පහළට
-pdfjs-find-not-found = වැකිකඩ හමු නොවිණි
+pdfjs-find-not-found = වැකිකඩ හමු නොවුණි
 
 ## Predefined zoom values
 
@@ -236,6 +230,15 @@ pdfjs-editor-free-text-button-label = පෙළ
 pdfjs-editor-ink-button =
     .title = අඳින්න
 pdfjs-editor-ink-button-label = අඳින්න
+pdfjs-editor-stamp-button =
+    .title = රූප සංස්කරණය හෝ එක් කරන්න
+pdfjs-editor-stamp-button-label = රූප සංස්කරණය හෝ එක් කරන්න
+
+## Remove button for the various kind of editor.
+
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = වර්ණය
 pdfjs-editor-free-text-size-input = තරම
@@ -247,7 +250,22 @@ pdfjs-free-text-default-content = ලිවීීම අරඹන්න…
 
 ## Alt-text dialog
 
+pdfjs-editor-alt-text-mark-decorative-description = මෙය දාර හෝ දිය සලකුණු වැනි අලංකාර රූප සඳහා භාවිතා වේ.
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
+
+
+## Color picker
+
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+
+## Image alt-text settings
 
