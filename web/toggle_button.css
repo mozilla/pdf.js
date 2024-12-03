@@ -1,0 +1,222 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+.toggle-button {
+  --button-background-color: #f0f0f4;
+  --button-background-color-hover: #e0e0e6;
+  --button-background-color-active: #cfcfd8;
+  --color-accent-primary: #0060df;
+  --color-accent-primary-hover: #0250bb;
+  --color-accent-primary-active: #054096;
+  --border-interactive-color: #8f8f9d;
+  --border-radius-circle: 9999px;
+  --border-width: 1px;
+  --size-item-small: 16px;
+  --size-item-large: 32px;
+  --color-canvas: white;
+
+  @media (prefers-color-scheme: dark) {
+    --button-background-color: color-mix(in srgb, currentColor 7%, transparent);
+    --button-background-color-hover: color-mix(
+      in srgb,
+      currentColor 14%,
+      transparent
+    );
+    --button-background-color-active: color-mix(
+      in srgb,
+      currentColor 21%,
+      transparent
+    );
+    --color-accent-primary: #0df;
+    --color-accent-primary-hover: #80ebff;
+    --color-accent-primary-active: #aaf2ff;
+    --border-interactive-color: #bfbfc9;
+    --color-canvas: #1c1b22;
+  }
+
+  @media (forced-colors: active) {
+    --color-accent-primary: ButtonText;
+    --color-accent-primary-hover: SelectedItem;
+    --color-accent-primary-active: SelectedItem;
+    --border-interactive-color: ButtonText;
+    --button-background-color: ButtonFace;
+    --border-interactive-color-hover: SelectedItem;
+    --border-interactive-color-active: SelectedItem;
+    --border-interactive-color-disabled: GrayText;
+    --color-canvas: ButtonText;
+  }
+
+  /* 
+    The original file is located at:
+    https://hg.mozilla.org/mozilla-central/file/aded201f11ec90b8e11c59d1e399960785771fbd/toolkit/content/widgets/moz-toggle/moz-toggle.css
+
+    The original file is licensed under the Mozilla Public License, v. 2.0.
+    This file is a modified version of the original file.
+
+    In order to have a better reading of the code, the .toggle-button selector
+    has been removed from the original file and we put everything under a single
+    .toggle-button selector.
+    
+    TODO: check from times to times if the original file has been updated (and 
+    in such a case don't forget to change the revision in the above link).
+  */
+
+  --toggle-background-color: var(--button-background-color);
+  --toggle-background-color-hover: var(--button-background-color-hover);
+  --toggle-background-color-active: var(--button-background-color-active);
+  --toggle-background-color-pressed: var(--color-accent-primary);
+  --toggle-background-color-pressed-hover: var(--color-accent-primary-hover);
+  --toggle-background-color-pressed-active: var(--color-accent-primary-active);
+  --toggle-border-color: var(--border-interactive-color);
+  --toggle-border-color-hover: var(--toggle-border-color);
+  --toggle-border-color-active: var(--toggle-border-color);
+  --toggle-border-radius: var(--border-radius-circle);
+  --toggle-border-width: var(--border-width);
+  --toggle-height: var(--size-item-small);
+  --toggle-width: var(--size-item-large);
+  --toggle-dot-background-color: var(--toggle-border-color);
+  --toggle-dot-background-color-hover: var(--toggle-dot-background-color);
+  --toggle-dot-background-color-active: var(--toggle-dot-background-color);
+  --toggle-dot-background-color-on-pressed: var(--color-canvas);
+  --toggle-dot-margin: 1px;
+  --toggle-dot-height: calc(
+    var(--toggle-height) - 2 * var(--toggle-dot-margin) - 2 *
+      var(--toggle-border-width)
+  );
+  --toggle-dot-width: var(--toggle-dot-height);
+  --toggle-dot-transform-x: calc(
+    var(--toggle-width) - 4 * var(--toggle-dot-margin) - var(--toggle-dot-width)
+  );
+
+  appearance: none;
+  padding: 0;
+  margin: 0;
+  border: var(--toggle-border-width) solid var(--toggle-border-color);
+  height: var(--toggle-height);
+  width: var(--toggle-width);
+  border-radius: var(--toggle-border-radius);
+  background: var(--toggle-background-color);
+  box-sizing: border-box;
+  flex-shrink: 0;
+
+  &:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+  }
+
+  &:enabled:hover {
+    background: var(--toggle-background-color-hover);
+    border-color: var(--toggle-border-color);
+  }
+
+  &:enabled:active {
+    background: var(--toggle-background-color-active);
+    border-color: var(--toggle-border-color);
+  }
+
+  &[aria-pressed="true"] {
+    background: var(--toggle-background-color-pressed);
+    border-color: transparent;
+  }
+
+  &[aria-pressed="true"]:enabled:hover {
+    background: var(--toggle-background-color-pressed-hover);
+    border-color: transparent;
+  }
+
+  &[aria-pressed="true"]:enabled:active {
+    background: var(--toggle-background-color-pressed-active);
+    border-color: transparent;
+  }
+
+  &::before {
+    display: block;
+    content: "";
+    background-color: var(--toggle-dot-background-color);
+    height: var(--toggle-dot-height);
+    width: var(--toggle-dot-width);
+    margin: var(--toggle-dot-margin);
+    border-radius: var(--toggle-border-radius);
+    translate: 0;
+  }
+
+  &[aria-pressed="true"]::before {
+    translate: var(--toggle-dot-transform-x);
+    background-color: var(--toggle-dot-background-color-on-pressed);
+  }
+
+  &[aria-pressed="true"]:enabled:hover::before,
+  &[aria-pressed="true"]:enabled:active::before {
+    background-color: var(--toggle-dot-background-color-on-pressed);
+  }
+
+  /*#if MOZCENTRAL*/
+  /*&[aria-pressed="true"]:-moz-locale-dir(rtl)::before,*/
+  /*#endif*/
+  &[aria-pressed="true"]:dir(rtl)::before {
+    translate: calc(-1 * var(--toggle-dot-transform-x));
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    &::before {
+      transition: translate 100ms;
+    }
+  }
+
+  @media (prefers-contrast) {
+    &:enabled:hover {
+      border-color: var(--toggle-border-color-hover);
+    }
+
+    &:enabled:active {
+      border-color: var(--toggle-border-color-active);
+    }
+
+    &[aria-pressed="true"]:enabled {
+      border-color: var(--toggle-border-color);
+      position: relative;
+    }
+
+    &[aria-pressed="true"]:enabled:hover,
+    &[aria-pressed="true"]:enabled:hover:active {
+      border-color: var(--toggle-border-color-hover);
+    }
+
+    &[aria-pressed="true"]:enabled:active {
+      background-color: var(--toggle-dot-background-color-active);
+      border-color: var(--toggle-dot-background-color-hover);
+    }
+
+    &:hover::before,
+    &:active::before {
+      background-color: var(--toggle-dot-background-color-hover);
+    }
+  }
+
+  @media (forced-colors) {
+    --toggle-dot-background-color: var(--color-accent-primary);
+    --toggle-dot-background-color-hover: var(--color-accent-primary-hover);
+    --toggle-dot-background-color-active: var(--color-accent-primary-active);
+    --toggle-dot-background-color-on-pressed: var(--button-background-color);
+    --toggle-background-color-disabled: var(--button-background-color-disabled);
+    --toggle-border-color-hover: var(--border-interactive-color-hover);
+    --toggle-border-color-active: var(--border-interactive-color-active);
+    --toggle-border-color-disabled: var(--border-interactive-color-disabled);
+
+    &[aria-pressed="true"]:enabled::after {
+      border: 1px solid var(--button-background-color);
+      content: "";
+      position: absolute;
+      height: var(--toggle-height);
+      width: var(--toggle-width);
+      display: block;
+      border-radius: var(--toggle-border-radius);
+      inset: -2px;
+    }
+
+    &[aria-pressed="true"]:enabled:active::after {
+      border-color: var(--toggle-border-color-active);
+    }
+  }
+}

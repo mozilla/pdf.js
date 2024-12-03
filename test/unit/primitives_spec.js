@@ -221,17 +221,12 @@ describe("primitives", function () {
       expect(values[2]).toEqual(testFontFile);
     });
 
-    it("should callback for each stored key", function () {
-      const callbackSpy = jasmine.createSpy("spy on callback in dictionary");
-
-      dictWithManyKeys.forEach(callbackSpy);
-
-      expect(callbackSpy).toHaveBeenCalled();
-      const callbackSpyCalls = callbackSpy.calls;
-      expect(callbackSpyCalls.argsFor(0)).toEqual(["FontFile", testFontFile]);
-      expect(callbackSpyCalls.argsFor(1)).toEqual(["FontFile2", testFontFile2]);
-      expect(callbackSpyCalls.argsFor(2)).toEqual(["FontFile3", testFontFile3]);
-      expect(callbackSpyCalls.count()).toEqual(3);
+    it("should iterate through each stored key", function () {
+      expect([...dictWithManyKeys]).toEqual([
+        ["FontFile", testFontFile],
+        ["FontFile2", testFontFile2],
+        ["FontFile3", testFontFile3],
+      ]);
     });
 
     it("should handle keys pointing to indirect objects, both sync and async", async function () {
@@ -497,6 +492,15 @@ describe("primitives", function () {
       cache.put(ref1, obj1);
       cache.put(ref2, obj2);
       expect([...cache]).toEqual([obj1, obj2]);
+    });
+
+    it("should support iteration over key-value pairs", function () {
+      cache.put(ref1, obj1);
+      cache.put(ref2, obj2);
+      expect([...cache.items()]).toEqual([
+        [ref1, obj1],
+        [ref2, obj2],
+      ]);
     });
   });
 

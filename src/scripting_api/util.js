@@ -16,6 +16,8 @@
 import { PDFObject } from "./pdf_object.js";
 
 class Util extends PDFObject {
+  #dateActionsCache = null;
+
   constructor(data) {
     super(data);
 
@@ -153,7 +155,12 @@ class Util extends PDFObject {
               ? Math.abs(arg - intPart).toFixed(nPrecision)
               : Math.abs(arg - intPart).toString();
           if (decPart.length > 2) {
-            decPart = `${decimalSep}${decPart.substring(2)}`;
+            if (/^1\.0+$/.test(decPart)) {
+              intPart += Math.sign(arg);
+              decPart = `${decimalSep}${decPart.split(".")[1]}`;
+            } else {
+              decPart = `${decimalSep}${decPart.substring(2)}`;
+            }
           } else {
             if (decPart === "1") {
               intPart += Math.sign(arg);
@@ -212,66 +219,26 @@ class Util extends PDFObject {
     }
 
     const handlers = {
-      mmmm: data => {
-        return this._months[data.month];
-      },
-      mmm: data => {
-        return this._months[data.month].substring(0, 3);
-      },
-      mm: data => {
-        return (data.month + 1).toString().padStart(2, "0");
-      },
-      m: data => {
-        return (data.month + 1).toString();
-      },
-      dddd: data => {
-        return this._days[data.dayOfWeek];
-      },
-      ddd: data => {
-        return this._days[data.dayOfWeek].substring(0, 3);
-      },
-      dd: data => {
-        return data.day.toString().padStart(2, "0");
-      },
-      d: data => {
-        return data.day.toString();
-      },
-      yyyy: data => {
-        return data.year.toString();
-      },
-      yy: data => {
-        return (data.year % 100).toString().padStart(2, "0");
-      },
-      HH: data => {
-        return data.hours.toString().padStart(2, "0");
-      },
-      H: data => {
-        return data.hours.toString();
-      },
-      hh: data => {
-        return (1 + ((data.hours + 11) % 12)).toString().padStart(2, "0");
-      },
-      h: data => {
-        return (1 + ((data.hours + 11) % 12)).toString();
-      },
-      MM: data => {
-        return data.minutes.toString().padStart(2, "0");
-      },
-      M: data => {
-        return data.minutes.toString();
-      },
-      ss: data => {
-        return data.seconds.toString().padStart(2, "0");
-      },
-      s: data => {
-        return data.seconds.toString();
-      },
-      tt: data => {
-        return data.hours < 12 ? "am" : "pm";
-      },
-      t: data => {
-        return data.hours < 12 ? "a" : "p";
-      },
+      mmmm: data => this._months[data.month],
+      mmm: data => this._months[data.month].substring(0, 3),
+      mm: data => (data.month + 1).toString().padStart(2, "0"),
+      m: data => (data.month + 1).toString(),
+      dddd: data => this._days[data.dayOfWeek],
+      ddd: data => this._days[data.dayOfWeek].substring(0, 3),
+      dd: data => data.day.toString().padStart(2, "0"),
+      d: data => data.day.toString(),
+      yyyy: data => data.year.toString(),
+      yy: data => (data.year % 100).toString().padStart(2, "0"),
+      HH: data => data.hours.toString().padStart(2, "0"),
+      H: data => data.hours.toString(),
+      hh: data => (1 + ((data.hours + 11) % 12)).toString().padStart(2, "0"),
+      h: data => (1 + ((data.hours + 11) % 12)).toString(),
+      MM: data => data.minutes.toString().padStart(2, "0"),
+      M: data => data.minutes.toString(),
+      ss: data => data.seconds.toString().padStart(2, "0"),
+      s: data => data.seconds.toString(),
+      tt: data => (data.hours < 12 ? "am" : "pm"),
+      t: data => (data.hours < 12 ? "a" : "p"),
     };
 
     const data = {
@@ -373,7 +340,112 @@ class Util extends PDFObject {
     return buf.join("");
   }
 
+  #tryToGuessDate(cFormat, cDate) {
+    // We use the format to know the order of day, month, year, ...
+
+    let actions = (this.#dateActionsCache ||= new Map()).get(cFormat);
+    if (!actions) {
+      actions = [];
+      this.#dateActionsCache.set(cFormat, actions);
+      cFormat.replaceAll(
+        /(d+)|(m+)|(y+)|(H+)|(M+)|(s+)/g,
+        function (_match, d, m, y, H, M, s) {
+          if (d) {
+            actions.push((n, data) => {
+              if (n >= 1 && n <= 31) {
+                data.day = n;
+                return true;
+              }
+              return false;
+            });
+          } else if (m) {
+            actions.push((n, data) => {
+              if (n >= 1 && n <= 12) {
+                data.month = n - 1;
+                return true;
+              }
+              return false;
+            });
+          } else if (y) {
+            actions.push((n, data) => {
+              if (n < 50) {
+                n += 2000;
+              } else if (n < 100) {
+                n += 1900;
+              }
+              data.year = n;
+              return true;
+            });
+          } else if (H) {
+            actions.push((n, data) => {
+              if (n >= 0 && n <= 23) {
+                data.hours = n;
+                return true;
+              }
+              return false;
+            });
+          } else if (M) {
+            actions.push((n, data) => {
+              if (n >= 0 && n <= 59) {
+                data.minutes = n;
+                return true;
+              }
+              return false;
+            });
+          } else if (s) {
+            actions.push((n, data) => {
+              if (n >= 0 && n <= 59) {
+                data.seconds = n;
+                return true;
+              }
+              return false;
+            });
+          }
+          return "";
+        }
+      );
+    }
+
+    const number = /\d+/g;
+    let i = 0;
+    let array;
+    const data = {
+      year: new Date().getFullYear(),
+      month: 0,
+      day: 1,
+      hours: 12,
+      minutes: 0,
+      seconds: 0,
+    };
+    while ((array = number.exec(cDate)) !== null) {
+      if (i < actions.length) {
+        if (!actions[i++](parseInt(array[0]), data)) {
+          return null;
+        }
+      } else {
+        break;
+      }
+    }
+
+    if (i === 0) {
+      return null;
+    }
+
+    return new Date(
+      data.year,
+      data.month,
+      data.day,
+      data.hours,
+      data.minutes,
+      data.seconds
+    );
+  }
+
   scand(cFormat, cDate) {
+    return this._scand(cFormat, cDate);
+  }
+
+  _scand(cFormat, cDate, strict = false) {
     if (typeof cDate !== "string") {
       return new Date(cDate);
     }
@@ -543,14 +615,14 @@ class Util extends PDFObject {
 
     const matches = new RegExp(`^${re}$`, "g").exec(cDate);
     if (!matches || matches.length !== actions.length + 1) {
-      return null;
+      return strict ? null : this.#tryToGuessDate(cFormat, cDate);
     }
 
     const data = {
-      year: 2000,
+      year: new Date().getFullYear(),
       month: 0,
       day: 1,
-      hours: 0,
+      hours: 12,
       minutes: 0,
       seconds: 0,
       am: null,

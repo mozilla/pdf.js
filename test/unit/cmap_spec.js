@@ -222,8 +222,7 @@ describe("cmap", function () {
     } catch (reason) {
       expect(reason instanceof Error).toEqual(true);
       expect(reason.message).toEqual(
-        'The CMap "baseUrl" parameter must be specified, ensure that ' +
-          'the "cMapUrl" and "cMapPacked" API parameters are provided.'
+        "Ensure that the `cMapUrl` and `cMapPacked` API parameters are provided."
       );
     }
   });

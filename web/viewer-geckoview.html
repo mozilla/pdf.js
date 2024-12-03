@@ -42,6 +42,12 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
 
 <!--#if !MOZCENTRAL-->
+    <script>
+      if (typeof PDFJSDev === "undefined") {
+        window.isGECKOVIEW = true;
+      }
+    </script>
+
     <script type="importmap">
       {
         "imports": {
@@ -53,6 +59,8 @@ See https://github.com/adobe-type-tools/cmap-resources
           "fluent-dom": "../node_modules/@fluent/dom/esm/index.js",
           "cached-iterable": "../node_modules/cached-iterable/src/index.mjs",
 
+          "display-cmap_reader_factory": "../src/display/cmap_reader_factory.js",
+          "display-standard_fontdata_factory": "../src/display/standard_fontdata_factory.js",
           "display-fetch_stream": "../src/display/fetch_stream.js",
           "display-network": "../src/display/network.js",
           "display-node_stream": "../src/display/stubs.js",
@@ -60,8 +68,10 @@ See https://github.com/adobe-type-tools/cmap-resources
 
           "web-alt_text_manager": "./stubs-geckoview.js",
           "web-annotation_editor_params": "./stubs-geckoview.js",
-          "web-com": "./genericcom.js",
-          "web-l10n_utils": "./l10n_utils.js",
+          "web-download_manager": "./download_manager.js",
+          "web-external_services": "./genericcom.js",
+          "web-new_alt_text_manager": "./stubs-geckoview.js",
+          "web-null_l10n": "./genericl10n.js",
           "web-pdf_attachment_viewer": "./stubs-geckoview.js",
           "web-pdf_cursor_tools": "./stubs-geckoview.js",
           "web-pdf_document_properties": "./stubs-geckoview.js",
@@ -71,6 +81,7 @@ See https://github.com/adobe-type-tools/cmap-resources
           "web-pdf_presentation_mode": "./stubs-geckoview.js",
           "web-pdf_sidebar": "./stubs-geckoview.js",
           "web-pdf_thumbnail_viewer": "./stubs-geckoview.js",
+          "web-preferences": "./genericcom.js",
           "web-print_service": "./pdf_print_service.js",
           "web-secondary_toolbar": "./stubs-geckoview.js",
           "web-toolbar": "./toolbar-geckoview.js"
@@ -84,17 +95,14 @@ See https://github.com/adobe-type-tools/cmap-resources
 
   </head>
 
-  <body tabindex="1">
+  <body tabindex="0">
     <div id="outerContainer">
 
       <div id="mainContainer">
 
         <div id="floatingToolbar">
-          <button id="download" class="toolbarButton" title="Download" tabindex="31" data-l10n-id="pdfjs-download-button">
+          <button id="download" class="toolbarButton" type="button" title="Download" tabindex="0" data-l10n-id="pdfjs-download-button">
             <span data-l10n-id="pdfjs-download-button-label">Download</span>
-          </button>
-          <button id="openInApp" class="toolbarButton" title="Open in app" tabindex="32" data-l10n-id="pdfjs-open-in-app-button">
-            <span data-l10n-id="pdfjs-open-in-app-button-label">Open in app</span>
           </button>
         </div>
 
@@ -112,18 +120,13 @@ See https://github.com/adobe-type-tools/cmap-resources
             <input type="password" id="password" class="toolbarField">
           </div>
           <div class="buttonRow">
-            <button id="passwordCancel" class="dialogButton"><span data-l10n-id="pdfjs-password-cancel-button">Cancel</span></button>
-            <button id="passwordSubmit" class="dialogButton"><span data-l10n-id="pdfjs-password-ok-button">OK</span></button>
+            <button id="passwordCancel" class="dialogButton" type="button"><span data-l10n-id="pdfjs-password-cancel-button">Cancel</span></button>
+            <button id="passwordSubmit" class="dialogButton" type="button"><span data-l10n-id="pdfjs-password-ok-button">OK</span></button>
           </div>
         </dialog>
       </div>  <!-- dialogContainer -->
 
     </div> <!-- outerContainer -->
     <div id="printContainer"></div>
-
-<!--#if !MOZCENTRAL-->
-    <input type="file" id="fileInput" class="hidden">
-<!--#endif-->
-
   </body>
 </html>

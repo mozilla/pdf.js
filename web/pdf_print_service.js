@@ -13,13 +13,21 @@
  * limitations under the License.
  */
 
-import { AnnotationMode, PixelsPerInch } from "pdfjs-lib";
-import { PDFPrintServiceFactory, PDFViewerApplication } from "./app.js";
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces.js").IPDFPrintServiceFactory} IPDFPrintServiceFactory */
+
+import {
+  AnnotationMode,
+  PixelsPerInch,
+  RenderingCancelledException,
+  shadow,
+} from "pdfjs-lib";
 import { getXfaHtmlForPrinting } from "./print_utils.js";
 
 let activeService = null;
 let dialog = null;
 let overlayManager = null;
+let viewerApp = { initialized: false };
 
 // Renders the page to the canvas of the given print service, and returns
 // the suggested dimensions of the output page.
@@ -58,25 +66,32 @@ function renderPage(
       optionalContentConfigPromise,
       printAnnotationStorage,
     };
-    return pdfPage.render(renderContext).promise;
+    const renderTask = pdfPage.render(renderContext);
+
+    return renderTask.promise.catch(reason => {
+      if (!(reason instanceof RenderingCancelledException)) {
+        console.error(reason);
+      }
+      throw reason;
+    });
   });
 }
 
 class PDFPrintService {
-  constructor(
+  constructor({
     pdfDocument,
     pagesOverview,
     printContainer,
     printResolution,
-    optionalContentConfigPromise = null,
-    printAnnotationStoragePromise = null
-  ) {
+    printAnnotationStoragePromise = null,
+  }) {
     this.pdfDocument = pdfDocument;
     this.pagesOverview = pagesOverview;
     this.printContainer = printContainer;
     this._printResolution = printResolution || 150;
-    this._optionalContentConfigPromise =
-      optionalContentConfigPromise || pdfDocument.getOptionalContentConfig();
+    this._optionalContentConfigPromise = pdfDocument.getOptionalContentConfig({
+      intent: "print",
+    });
     this._printAnnotationStoragePromise =
       printAnnotationStoragePromise || Promise.resolve();
     this.currentPage = -1;
@@ -175,24 +190,27 @@ class PDFPrintService {
   useRenderedPage() {
     this.throwIfInactive();
     const img = document.createElement("img");
-    const scratchCanvas = this.scratchCanvas;
-    if ("toBlob" in scratchCanvas) {
-      scratchCanvas.toBlob(function (blob) {
-        img.src = URL.createObjectURL(blob);
-      });
-    } else {
-      img.src = scratchCanvas.toDataURL();
-    }
+    this.scratchCanvas.toBlob(blob => {
+      img.src = URL.createObjectURL(blob);
+    });
 
     const wrapper = document.createElement("div");
     wrapper.className = "printedPage";
     wrapper.append(img);
     this.printContainer.append(wrapper);
 
-    return new Promise(function (resolve, reject) {
-      img.onload = resolve;
-      img.onerror = reject;
-    });
+    const { promise, resolve, reject } = Promise.withResolvers();
+    img.onload = resolve;
+    img.onerror = reject;
+
+    promise
+      .catch(() => {
+        // Avoid "Uncaught promise" messages in the console.
+      })
+      .then(() => {
+        URL.revokeObjectURL(img.src);
+      });
+    return promise;
   }
 
   performPrint() {
@@ -338,7 +356,7 @@ function ensureOverlay() {
     );
   }
   if (!overlayPromise) {
-    overlayManager = PDFViewerApplication.overlayManager;
+    overlayManager = viewerApp.overlayManager;
     if (!overlayManager) {
       throw new Error("The overlay manager has not yet been initialized.");
     }
@@ -355,30 +373,24 @@ function ensureOverlay() {
   return overlayPromise;
 }
 
-PDFPrintServiceFactory.instance = {
-  supportsPrinting: true,
+/**
+ * @implements {IPDFPrintServiceFactory}
+ */
+class PDFPrintServiceFactory {
+  static initGlobals(app) {
+    viewerApp = app;
+  }
 
-  createPrintService(
-    pdfDocument,
-    pagesOverview,
-    printContainer,
-    printResolution,
-    optionalContentConfigPromise,
-    printAnnotationStoragePromise
-  ) {
+  static get supportsPrinting() {
+    return shadow(this, "supportsPrinting", true);
+  }
+
+  static createPrintService(params) {
     if (activeService) {
       throw new Error("The print service is created and active.");
     }
-    activeService = new PDFPrintService(
-      pdfDocument,
-      pagesOverview,
-      printContainer,
-      printResolution,
-      optionalContentConfigPromise,
-      printAnnotationStoragePromise
-    );
-    return activeService;
-  },
-};
+    return (activeService = new PDFPrintService(params));
+  }
+}
 
-export { PDFPrintService };
+export { PDFPrintServiceFactory };

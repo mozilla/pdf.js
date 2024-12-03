@@ -26,14 +26,11 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Install Gulp
-        run: npm install -g gulp-cli
-
-      - name: Install other dependencies
-        run: npm install
+      - name: Install dependencies
+        run: npm ci
 
       - name: Build the website
-        run: gulp web
+        run: npx gulp web
 
       - name: Archive the website
         shell: sh

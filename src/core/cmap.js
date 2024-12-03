@@ -13,13 +13,8 @@
  * limitations under the License.
  */
 
-import {
-  CMapCompressionType,
-  FormatError,
-  unreachable,
-  warn,
-} from "../shared/util.js";
 import { Cmd, EOF, isCmd, Name } from "./primitives.js";
+import { FormatError, unreachable, warn } from "../shared/util.js";
 import { BaseStream } from "./base_stream.js";
 import { BinaryCMapReader } from "./binary_cmap.js";
 import { Lexer } from "./parser.js";
@@ -667,7 +662,7 @@ async function extendCMap(cMap, fetchBuiltInCMap, useCMap) {
   // any previously defined entries.
   cMap.useCMap.forEach(function (key, value) {
     if (!cMap.contains(key)) {
-      cMap.mapOne(key, cMap.useCMap.lookup(key));
+      cMap.mapOne(key, value);
     }
   });
 
@@ -687,19 +682,16 @@ async function createBuiltInCMap(name, fetchBuiltInCMap) {
     throw new Error("Built-in CMap parameters are not provided.");
   }
 
-  const { cMapData, compressionType } = await fetchBuiltInCMap(name);
+  const { cMapData, isCompressed } = await fetchBuiltInCMap(name);
   const cMap = new CMap(true);
 
-  if (compressionType === CMapCompressionType.BINARY) {
-    return new BinaryCMapReader().process(cMapData, cMap, useCMap => {
-      return extendCMap(cMap, fetchBuiltInCMap, useCMap);
-    });
+  if (isCompressed) {
+    return new BinaryCMapReader().process(cMapData, cMap, useCMap =>
+      extendCMap(cMap, fetchBuiltInCMap, useCMap)
+    );
   }
-  if (compressionType === CMapCompressionType.NONE) {
-    const lexer = new Lexer(new Stream(cMapData));
-    return parseCMap(cMap, lexer, fetchBuiltInCMap, null);
-  }
-  throw new Error(`Invalid CMap "compressionType" value: ${compressionType}`);
+  const lexer = new Lexer(new Stream(cMapData));
+  return parseCMap(cMap, lexer, fetchBuiltInCMap, null);
 }
 
 class CMapFactory {

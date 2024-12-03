@@ -14,7 +14,7 @@
  */
 
 import { arrayBuffersToBytes, MissingDataException } from "./core_utils.js";
-import { assert, PromiseCapability } from "../shared/util.js";
+import { assert } from "../shared/util.js";
 import { Stream } from "./stream.js";
 
 class ChunkedStream extends Stream {
@@ -273,7 +273,7 @@ class ChunkedStreamManager {
     this.progressiveDataLength = 0;
     this.aborted = false;
 
-    this._loadedStreamCapability = new PromiseCapability();
+    this._loadedStreamCapability = Promise.withResolvers();
   }
 
   sendRequest(begin, end) {
@@ -347,7 +347,7 @@ class ChunkedStreamManager {
       return Promise.resolve();
     }
 
-    const capability = new PromiseCapability();
+    const capability = Promise.withResolvers();
     this._promisesByRequest.set(requestId, capability);
 
     const chunksToRequest = [];

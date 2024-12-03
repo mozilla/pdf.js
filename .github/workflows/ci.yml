@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [18, lts/*, latest]
+        node-version: [20, 22, 23]
 
     steps:
       - name: Checkout repository
@@ -24,14 +24,11 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Install Gulp
-        run: npm install -g gulp-cli
-
-      - name: Install other dependencies
-        run: npm install
+      - name: Install dependencies
+        run: npm ci
 
       - name: Run external tests
-        run: gulp externaltest
+        run: npx gulp externaltest
 
       - name: Run CLI unit tests
-        run: gulp unittestcli
+        run: npx gulp unittestcli

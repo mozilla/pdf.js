@@ -30,8 +30,6 @@ import { AnnotationLayerBuilder } from "../../web/annotation_layer_builder.js";
 import { DownloadManager } from "../../web/download_manager.js";
 import { EventBus } from "../../web/event_utils.js";
 import { GenericL10n } from "../../web/genericl10n.js";
-import { L10n } from "../../web/l10n.js";
-import { NullL10n } from "../../web/l10n_utils.js";
 import { PDFHistory } from "../../web/pdf_history.js";
 import { PDFPageView } from "../../web/pdf_page_view.js";
 import { PDFScriptingManager } from "../../web/pdf_scripting_manager.component.js";
@@ -54,7 +52,6 @@ describe("pdfviewer_api", function () {
       FindState,
       GenericL10n,
       LinkTarget,
-      NullL10n,
       parseQueryString,
       PDFFindController,
       PDFHistory,
@@ -72,15 +69,5 @@ describe("pdfviewer_api", function () {
       TextLayerBuilder,
       XfaLayerBuilder,
     });
-  });
-
-  it("checks that `NullL10n` implements all methods", function () {
-    const methods = Object.getOwnPropertyNames(NullL10n).sort();
-
-    const baseMethods = Object.getOwnPropertyNames(L10n.prototype)
-      .filter(m => m !== "constructor" && !m.startsWith("_"))
-      .sort();
-
-    expect(methods).toEqual(baseMethods);
   });
 });

@@ -23,8 +23,8 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./pdf_rendering_queue").PDFRenderingQueue} PDFRenderingQueue */
 
-import { OutputScale, RenderingStates } from "./ui_utils.js";
-import { RenderingCancelledException } from "pdfjs-lib";
+import { OutputScale, RenderingCancelledException } from "pdfjs-lib";
+import { RenderingStates } from "./ui_utils.js";
 
 const DRAW_UPSCALE_FACTOR = 2; // See comment in `PDFThumbnailView.draw` below.
 const MAX_NUM_SCALING_STEPS = 3;
@@ -44,6 +44,8 @@ const THUMBNAIL_WIDTH = 98; // px
  * @property {Object} [pageColors] - Overwrites background and foreground colors
  *   with user defined ones in order to improve readability in high contrast
  *   mode.
+ * @property {boolean} [enableHWA] - Enables hardware acceleration for
+ *   rendering. The default value is `false`.
  */
 
 class TempImageFactory {
@@ -55,7 +57,7 @@ class TempImageFactory {
     tempCanvas.height = height;
 
     // Since this is a temporary canvas, we need to fill it with a white
-    // background ourselves. `_getPageDrawContext` uses CSS rules for this.
+    // background ourselves. `#getPageDrawContext` uses CSS rules for this.
     const ctx = tempCanvas.getContext("2d", { alpha: false });
     ctx.save();
     ctx.fillStyle = "rgb(255, 255, 255)";
@@ -92,6 +94,7 @@ class PDFThumbnailView {
     linkService,
     renderingQueue,
     pageColors,
+    enableHWA,
   }) {
     this.id = id;
     this.renderingId = "thumbnail" + id;
@@ -103,6 +106,7 @@ class PDFThumbnailView {
     this.pdfPageRotate = defaultViewport.rotation;
     this._optionalContentConfigPromise = optionalContentConfigPromise || null;
     this.pageColors = pageColors || null;
+    this.enableHWA = enableHWA || false;
 
     this.eventBus = eventBus;
     this.linkService = linkService;
@@ -196,14 +200,14 @@ class PDFThumbnailView {
     this.resume = null;
   }
 
-  /**
-   * @private
-   */
-  _getPageDrawContext(upscaleFactor = 1) {
+  #getPageDrawContext(upscaleFactor = 1, enableHWA = this.enableHWA) {
     // Keep the no-thumbnail outline visible, i.e. `data-loaded === false`,
     // until rendering/image conversion is complete, to avoid display issues.
     const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d", { alpha: false });
+    const ctx = canvas.getContext("2d", {
+      alpha: false,
+      willReadFrequently: !enableHWA,
+    });
     const outputScale = new OutputScale();
 
     canvas.width = (upscaleFactor * this.canvasWidth * outputScale.sx) | 0;
@@ -216,14 +220,11 @@ class PDFThumbnailView {
     return { ctx, canvas, transform };
   }
 
-  /**
-   * @private
-   */
-  _convertCanvasToImage(canvas) {
+  #convertCanvasToImage(canvas) {
     if (this.renderingState !== RenderingStates.FINISHED) {
-      throw new Error("_convertCanvasToImage: Rendering has not finished.");
+      throw new Error("#convertCanvasToImage: Rendering has not finished.");
     }
-    const reducedCanvas = this._reduceImage(canvas);
+    const reducedCanvas = this.#reduceImage(canvas);
 
     const image = document.createElement("img");
     image.className = "thumbnailImage";
@@ -253,7 +254,7 @@ class PDFThumbnailView {
       return;
     }
     this.renderingState = RenderingStates.FINISHED;
-    this._convertCanvasToImage(canvas);
+    this.#convertCanvasToImage(canvas);
 
     if (error) {
       throw error;
@@ -280,7 +281,7 @@ class PDFThumbnailView {
     // NOTE: To primarily avoid increasing memory usage too much, but also to
     //   reduce downsizing overhead, we purposely limit the up-scaling factor.
     const { ctx, canvas, transform } =
-      this._getPageDrawContext(DRAW_UPSCALE_FACTOR);
+      this.#getPageDrawContext(DRAW_UPSCALE_FACTOR);
     const drawViewport = this.viewport.clone({
       scale: DRAW_UPSCALE_FACTOR * this.scale,
     });
@@ -342,14 +343,11 @@ class PDFThumbnailView {
       return;
     }
     this.renderingState = RenderingStates.FINISHED;
-    this._convertCanvasToImage(canvas);
+    this.#convertCanvasToImage(canvas);
   }
 
-  /**
-   * @private
-   */
-  _reduceImage(img) {
-    const { ctx, canvas } = this._getPageDrawContext();
+  #reduceImage(img) {
+    const { ctx, canvas } = this.#getPageDrawContext(1, true);
 
     if (img.width <= 2 * canvas.width) {
       ctx.drawImage(

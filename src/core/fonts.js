@@ -26,6 +26,7 @@ import {
 import { CFFCompiler, CFFParser } from "./cff_parser.js";
 import {
   FontFlags,
+  getVerticalPresentationForm,
   MacStandardGlyphOrdering,
   normalizeFontName,
   recoverGlyphName,
@@ -484,8 +485,7 @@ function adjustMapping(charCodeToGlyphId, hasGlyph, newGlyphZeroId, toUnicode) {
   const isInPrivateArea = code =>
     (PRIVATE_USE_AREAS[0][0] <= code && code <= PRIVATE_USE_AREAS[0][1]) ||
     (PRIVATE_USE_AREAS[1][0] <= code && code <= PRIVATE_USE_AREAS[1][1]);
-  for (let originalCharCode in charCodeToGlyphId) {
-    originalCharCode |= 0;
+  for (const originalCharCode in charCodeToGlyphId) {
     let glyphId = charCodeToGlyphId[originalCharCode];
     // For missing glyphs don't create the mappings so the glyph isn't
     // drawn.
@@ -799,7 +799,9 @@ function createOS2Table(properties, charstrings, override) {
   const bbox = properties.bbox || [0, 0, 0, 0];
   const unitsPerEm =
     override.unitsPerEm ||
-    1 / (properties.fontMatrix || FONT_IDENTITY_MATRIX)[0];
+    (properties.fontMatrix
+      ? 1 / Math.max(...properties.fontMatrix.slice(0, 4).map(Math.abs))
+      : 1000);
 
   // if the font units differ to the PDF glyph space units
   // then scale up the values
@@ -968,7 +970,7 @@ class Font {
     // Fallback to checking the font name, in order to improve text-selection,
     // since the /Flags-entry is often wrong (fixes issue13845.pdf).
     if (!isSerifFont && !properties.isSimulatedFlags) {
-      const baseName = name.replaceAll(/[,_]/g, "-").split("-")[0],
+      const baseName = name.replaceAll(/[,_]/g, "-").split("-", 1)[0],
         serifFonts = getSerifFonts();
       for (const namePart of baseName.split("+")) {
         if (serifFonts[namePart]) {
@@ -1242,7 +1244,7 @@ class Font {
         getDingbatsGlyphsUnicode(),
         this.differences
       );
-    } else if (isStandardFont) {
+    } else if (isStandardFont || isMappedToStandardFont) {
       const map = buildToFontChar(
         this.defaultEncoding,
         getGlyphsUnicode(),
@@ -1286,7 +1288,7 @@ class Font {
     }
 
     amendFallbackToUnicode(properties);
-    this.loadedName = fontName.split("-")[0];
+    this.loadedName = fontName.split("-", 1)[0];
   }
 
   checkAndRepair(name, font, properties) {
@@ -2093,9 +2095,7 @@ class Font {
           endOffset: 0,
         });
       }
-      locaEntries.sort((a, b) => {
-        return a.offset - b.offset;
-      });
+      locaEntries.sort((a, b) => a.offset - b.offset);
       // Now the offsets are sorted, calculate the end offset of each glyph.
       // The last loca entry's endOffset is not calculated since it's the end
       // of the data and will be stored on the previous entry's endOffset.
@@ -2103,9 +2103,7 @@ class Font {
         locaEntries[i].endOffset = locaEntries[i + 1].offset;
       }
       // Re-sort so glyphs aren't out of order.
-      locaEntries.sort((a, b) => {
-        return a.index - b.index;
-      });
+      locaEntries.sort((a, b) => a.index - b.index);
       // Calculate the endOffset of the "first" glyph correctly when there are
       // *multiple* empty ones at the start of the data (fixes issue14618.pdf).
       for (i = 0; i < numGlyphs; i++) {
@@ -2119,6 +2117,14 @@ class Font {
         }
         locaEntries[i].endOffset = nextOffset;
         break;
+      }
+
+      // If the last offset is 0 in the loca table then we can't compute the
+      // endOffset for the last glyph. So in such a case we set the endOffset
+      // to the end of the data (fixes issue #17671).
+      const last = locaEntries.at(-2);
+      if (last.offset !== 0 && last.endOffset === 0) {
+        last.endOffset = oldGlyfDataLength;
       }
 
       const missingGlyphs = Object.create(null);
@@ -2381,7 +2387,7 @@ class Font {
           } else {
             for (j = 0; j < n; j++) {
               b = data[i++];
-              stack.push((b << 8) | data[i++]);
+              stack.push(signedInt16(b, data[i++]));
             }
           }
         } else if (op === 0x2b && !tooComplexToFollowFunctions) {
@@ -2830,7 +2836,7 @@ class Font {
       data: createPostTable(properties),
     };
 
-    const charCodeToGlyphId = [];
+    const charCodeToGlyphId = Object.create(null);
 
     // Helper function to try to skip mapping of empty glyphs.
     function hasGlyph(glyphId) {
@@ -2951,10 +2957,7 @@ class Font {
         // Always prefer the BaseEncoding/Differences arrays, when they exist
         // (fixes issue13433.pdf).
         forcePostTable = true;
-      } else {
-        // When there is only a (1, 0) cmap table, the char code is a single
-        // byte and it is used directly as the char code.
-
+      } else if (cmapPlatformId === 3 && cmapEncodingId === 0) {
         // When a (3, 0) cmap table is present, it is used instead but the
         // spec has special rules for char codes in the range of 0xF000 to
         // 0xF0FF and it says the (3, 0) table should map the values from
@@ -2965,14 +2968,16 @@ class Font {
         // cmap.
         for (const mapping of cmapMappings) {
           let charCode = mapping.charCode;
-          if (
-            cmapPlatformId === 3 &&
-            charCode >= 0xf000 &&
-            charCode <= 0xf0ff
-          ) {
+          if (charCode >= 0xf000 && charCode <= 0xf0ff) {
             charCode &= 0xff;
           }
           charCodeToGlyphId[charCode] = mapping.glyphId;
+        }
+      } else {
+        // When there is only a (1, 0) cmap table, the char code is a single
+        // byte and it is used directly as the char code.
+        for (const mapping of cmapMappings) {
+          charCodeToGlyphId[mapping.charCode] = mapping.glyphId;
         }
       }
 
@@ -3194,7 +3199,9 @@ class Font {
       properties.seacMap = seacMap;
     }
 
-    const unitsPerEm = 1 / (properties.fontMatrix || FONT_IDENTITY_MATRIX)[0];
+    const unitsPerEm = properties.fontMatrix
+      ? 1 / Math.max(...properties.fontMatrix.slice(0, 4).map(Math.abs))
+      : 1000;
 
     const builder = new OpenTypeFileBuilder("\x4F\x54\x54\x4F");
     // PostScript Font Program
@@ -3286,7 +3293,10 @@ class Font {
     return builder.toArray();
   }
 
-  get spaceWidth() {
+  /**
+   * @private
+   */
+  get _spaceWidth() {
     // trying to estimate space character width
     const possibleSpaceReplacements = ["space", "minus", "one", "i", "I"];
     let width;
@@ -3321,7 +3331,7 @@ class Font {
         break; // the non-zero width found
       }
     }
-    return shadow(this, "spaceWidth", width || this.defaultWidth);
+    return shadow(this, "_spaceWidth", width || this.defaultWidth);
   }
 
   /**
@@ -3369,6 +3379,13 @@ class Font {
         // .notdef glyphs should be invisible in non-embedded Type1 fonts, so
         // replace them with spaces.
         fontCharCode = 0x20;
+
+        if (glyphName === "") {
+          // Ensure that other relevant glyph properties are also updated
+          // (fixes issue18059.pdf).
+          width ||= this._spaceWidth;
+          unicode = String.fromCharCode(fontCharCode);
+        }
       }
       fontCharCode = mapSpecialUnicodeValues(fontCharCode);
     }
@@ -3395,6 +3412,13 @@ class Font {
         fontChar = String.fromCodePoint(fontCharCode);
       } else {
         warn(`charToGlyph - invalid fontCharCode: ${fontCharCode}`);
+      }
+    }
+
+    if (this.missingFile && this.vertical && fontChar.length === 1) {
+      const vertical = getVerticalPresentationForm()[fontChar.charCodeAt(0)];
+      if (vertical) {
+        fontChar = unicode = String.fromCharCode(vertical);
       }
     }
 

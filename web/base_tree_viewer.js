@@ -20,7 +20,10 @@ const TREEITEM_SELECTED_CLASS = "selected";
 
 class BaseTreeViewer {
   constructor(options) {
-    if (this.constructor === BaseTreeViewer) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BaseTreeViewer
+    ) {
       throw new Error("Cannot initialize BaseTreeViewer.");
     }
     this.container = options.container;
@@ -43,14 +46,14 @@ class BaseTreeViewer {
   }
 
   /**
-   * @private
+   * @protected
    */
   _dispatchEvent(count) {
     throw new Error("Not implemented: _dispatchEvent");
   }
 
   /**
-   * @private
+   * @protected
    */
   _bindLink(element, params) {
     throw new Error("Not implemented: _bindLink");
@@ -71,7 +74,9 @@ class BaseTreeViewer {
   /**
    * Prepend a button before a tree item which allows the user to collapse or
    * expand all tree items at that level; see `_toggleTreeItem`.
-   * @private
+   * @param {HTMLDivElement} div
+   * @param {boolean|object} [hidden]
+   * @protected
    */
   _addToggleButton(div, hidden = false) {
     const toggler = document.createElement("div");

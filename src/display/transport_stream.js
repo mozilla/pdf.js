@@ -18,26 +18,21 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("../interfaces").IPDFStreamRangeReader} IPDFStreamRangeReader */
 
-import { assert, PromiseCapability } from "../shared/util.js";
+import { assert } from "../shared/util.js";
 import { isPdfFile } from "./display_utils.js";
 
 /** @implements {IPDFStream} */
 class PDFDataTransportStream {
   constructor(
-    {
-      length,
-      initialData,
-      progressiveDone = false,
-      contentDispositionFilename = null,
-      disableRange = false,
-      disableStream = false,
-    },
-    pdfDataRangeTransport
+    pdfDataRangeTransport,
+    { disableRange = false, disableStream = false }
   ) {
     assert(
       pdfDataRangeTransport,
       'PDFDataTransportStream - missing required "pdfDataRangeTransport" argument.'
     );
+    const { length, initialData, progressiveDone, contentDispositionFilename } =
+      pdfDataRangeTransport;
 
     this._queuedChunks = [];
     this._progressiveDone = progressiveDone;
@@ -62,23 +57,23 @@ class PDFDataTransportStream {
     this._fullRequestReader = null;
     this._rangeReaders = [];
 
-    this._pdfDataRangeTransport.addRangeListener((begin, chunk) => {
+    pdfDataRangeTransport.addRangeListener((begin, chunk) => {
       this._onReceiveData({ begin, chunk });
     });
 
-    this._pdfDataRangeTransport.addProgressListener((loaded, total) => {
+    pdfDataRangeTransport.addProgressListener((loaded, total) => {
       this._onProgress({ loaded, total });
     });
 
-    this._pdfDataRangeTransport.addProgressiveReadListener(chunk => {
+    pdfDataRangeTransport.addProgressiveReadListener(chunk => {
       this._onReceiveData({ chunk });
     });
 
-    this._pdfDataRangeTransport.addProgressiveDoneListener(() => {
+    pdfDataRangeTransport.addProgressiveDoneListener(() => {
       this._onProgressiveDone();
     });
 
-    this._pdfDataRangeTransport.transportReady();
+    pdfDataRangeTransport.transportReady();
   }
 
   _onReceiveData({ begin, chunk }) {
@@ -240,7 +235,7 @@ class PDFDataTransportStreamReader {
     if (this._done) {
       return { value: undefined, done: true };
     }
-    const requestCapability = new PromiseCapability();
+    const requestCapability = Promise.withResolvers();
     this._requests.push(requestCapability);
     return requestCapability.promise;
   }
@@ -305,7 +300,7 @@ class PDFDataTransportStreamRangeReader {
     if (this._done) {
       return { value: undefined, done: true };
     }
-    const requestCapability = new PromiseCapability();
+    const requestCapability = Promise.withResolvers();
     this._requests.push(requestCapability);
     return requestCapability.promise;
   }

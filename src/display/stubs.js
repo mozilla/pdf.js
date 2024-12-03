@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+const DOMCMapReaderFactory = null;
+const DOMStandardFontDataFactory = null;
 const NodeCanvasFactory = null;
 const NodeCMapReaderFactory = null;
 const NodeFilterFactory = null;
@@ -22,6 +24,8 @@ const PDFNetworkStream = null;
 const PDFNodeStream = null;
 
 export {
+  DOMCMapReaderFactory,
+  DOMStandardFontDataFactory,
   NodeCanvasFactory,
   NodeCMapReaderFactory,
   NodeFilterFactory,

@@ -15,8 +15,8 @@
 
 import { AnnotationPrefix, stringToPDFString, warn } from "../shared/util.js";
 import { Dict, isName, Name, Ref, RefSetCache } from "./primitives.js";
+import { lookupNormalRect, stringToAsciiOrUTF16BE } from "./core_utils.js";
 import { NumberTree } from "./name_number_tree.js";
-import { writeObject } from "./writer.js";
 
 const MAX_DEPTH = 40;
 
@@ -62,12 +62,11 @@ class StructTreeRoot {
     if (!(roleMapDict instanceof Dict)) {
       return;
     }
-    roleMapDict.forEach((key, value) => {
-      if (!(value instanceof Name)) {
-        return;
+    for (const [key, value] of roleMapDict) {
+      if (value instanceof Name) {
+        this.roleMap.set(key, value.name);
       }
-      this.roleMap.set(key, value.name);
-    });
+    }
   }
 
   static async canCreateStructureTree({
@@ -116,15 +115,14 @@ class StructTreeRoot {
     xref,
     catalogRef,
     pdfManager,
-    newRefs,
+    changes,
   }) {
     const root = pdfManager.catalog.cloneDict();
+    const cache = new RefSetCache();
+    cache.put(catalogRef, root);
+
     const structTreeRootRef = xref.getNewTemporaryRef();
     root.set("StructTreeRoot", structTreeRootRef);
-
-    const buffer = [];
-    await writeObject(catalogRef, root, buffer, xref);
-    newRefs.push({ ref: catalogRef, data: buffer.join("") });
 
     const structTreeRoot = new Dict(xref);
     structTreeRoot.set("Type", Name.get("StructTreeRoot"));
@@ -132,6 +130,7 @@ class StructTreeRoot {
     structTreeRoot.set("ParentTree", parentTreeRef);
     const kids = [];
     structTreeRoot.set("K", kids);
+    cache.put(structTreeRootRef, structTreeRoot);
 
     const parentTree = new Dict(xref);
     const nums = [];
@@ -140,22 +139,23 @@ class StructTreeRoot {
     const nextKey = await this.#writeKids({
       newAnnotationsByPage,
       structTreeRootRef,
+      structTreeRoot: null,
       kids,
       nums,
       xref,
       pdfManager,
-      newRefs,
-      buffer,
+      changes,
+      cache,
     });
     structTreeRoot.set("ParentTreeNextKey", nextKey);
 
-    buffer.length = 0;
-    await writeObject(parentTreeRef, parentTree, buffer, xref);
-    newRefs.push({ ref: parentTreeRef, data: buffer.join("") });
+    cache.put(parentTreeRef, parentTree);
 
-    buffer.length = 0;
-    await writeObject(structTreeRootRef, structTreeRoot, buffer, xref);
-    newRefs.push({ ref: structTreeRootRef, data: buffer.join("") });
+    for (const [ref, obj] of cache.items()) {
+      changes.put(ref, {
+        data: obj,
+      });
+    }
   }
 
   async canUpdateStructTree({ pdfManager, xref, newAnnotationsByPage }) {
@@ -208,8 +208,12 @@ class StructTreeRoot {
 
       for (const element of elements) {
         if (element.accessibilityData?.type) {
-          // Each tag must have a structure type.
-          element.parentTreeId = nextKey++;
+          // structParent can be undefined and in this case the positivity check
+          // will fail (it's why the expression isn't equivalent to a `.<.`).
+          if (!(element.accessibilityData.structParent >= 0)) {
+            // Each tag must have a structure type.
+            element.parentTreeId = nextKey++;
+          }
           hasNothingToUpdate = false;
         }
       }
@@ -228,10 +232,12 @@ class StructTreeRoot {
     return true;
   }
 
-  async updateStructureTree({ newAnnotationsByPage, pdfManager, newRefs }) {
+  async updateStructureTree({ newAnnotationsByPage, pdfManager, changes }) {
     const xref = this.dict.xref;
     const structTreeRoot = this.dict.clone();
     const structTreeRootRef = this.ref;
+    const cache = new RefSetCache();
+    cache.put(structTreeRootRef, structTreeRoot);
 
     let parentTreeRef = structTreeRoot.getRaw("ParentTree");
     let parentTree;
@@ -243,6 +249,7 @@ class StructTreeRoot {
       structTreeRoot.set("ParentTree", parentTreeRef);
     }
     parentTree = parentTree.clone();
+    cache.put(parentTreeRef, parentTree);
 
     let nums = parentTree.getRaw("Nums");
     let numsRef = null;
@@ -255,64 +262,54 @@ class StructTreeRoot {
       parentTree.set("Nums", nums);
     }
 
-    let kids = structTreeRoot.getRaw("K");
-    let kidsRef = null;
-    if (kids instanceof Ref) {
-      kidsRef = kids;
-      kids = xref.fetch(kidsRef);
-    } else {
-      kidsRef = xref.getNewTemporaryRef();
-      structTreeRoot.set("K", kidsRef);
-    }
-    kids = Array.isArray(kids) ? kids.slice() : [kids];
-
-    const buffer = [];
-    const newNextkey = await StructTreeRoot.#writeKids({
+    const newNextKey = await StructTreeRoot.#writeKids({
       newAnnotationsByPage,
       structTreeRootRef,
-      kids,
+      structTreeRoot: this,
+      kids: null,
       nums,
       xref,
       pdfManager,
-      newRefs,
-      buffer,
+      changes,
+      cache,
     });
-    structTreeRoot.set("ParentTreeNextKey", newNextkey);
 
-    buffer.length = 0;
-    await writeObject(kidsRef, kids, buffer, xref);
-    newRefs.push({ ref: kidsRef, data: buffer.join("") });
-
-    if (numsRef) {
-      buffer.length = 0;
-      await writeObject(numsRef, nums, buffer, xref);
-      newRefs.push({ ref: numsRef, data: buffer.join("") });
+    if (newNextKey === -1) {
+      // No new tags were added.
+      return;
     }
 
-    buffer.length = 0;
-    await writeObject(parentTreeRef, parentTree, buffer, xref);
-    newRefs.push({ ref: parentTreeRef, data: buffer.join("") });
+    structTreeRoot.set("ParentTreeNextKey", newNextKey);
 
-    buffer.length = 0;
-    await writeObject(structTreeRootRef, structTreeRoot, buffer, xref);
-    newRefs.push({ ref: structTreeRootRef, data: buffer.join("") });
+    if (numsRef) {
+      cache.put(numsRef, nums);
+    }
+
+    for (const [ref, obj] of cache.items()) {
+      changes.put(ref, {
+        data: obj,
+      });
+    }
   }
 
   static async #writeKids({
     newAnnotationsByPage,
     structTreeRootRef,
+    structTreeRoot,
     kids,
     nums,
     xref,
     pdfManager,
-    newRefs,
-    buffer,
+    changes,
+    cache,
   }) {
     const objr = Name.get("OBJR");
-    let nextKey = -Infinity;
+    let nextKey = -1;
+    let structTreePageObjs;
 
     for (const [pageIndex, elements] of newAnnotationsByPage) {
-      const { ref: pageRef } = await pdfManager.getPage(pageIndex);
+      const page = await pdfManager.getPage(pageIndex);
+      const { ref: pageRef } = page;
       const isPageRef = pageRef instanceof Ref;
       for (const {
         accessibilityData,
@@ -323,45 +320,53 @@ class StructTreeRoot {
         if (!accessibilityData?.type) {
           continue;
         }
-        const { type, title, lang, alt, expanded, actualText } =
-          accessibilityData;
+
+        // We've some accessibility data, so we need to create a new tag or
+        // update an existing one.
+        const { structParent } = accessibilityData;
+
+        if (
+          structTreeRoot &&
+          Number.isInteger(structParent) &&
+          structParent >= 0
+        ) {
+          let objs = (structTreePageObjs ||= new Map()).get(pageIndex);
+          if (objs === undefined) {
+            // We need to collect the objects for the page.
+            const structTreePage = new StructTreePage(
+              structTreeRoot,
+              page.pageDict
+            );
+            objs = structTreePage.collectObjects(pageRef);
+            structTreePageObjs.set(pageIndex, objs);
+          }
+          const objRef = objs?.get(structParent);
+          if (objRef) {
+            // We update the existing tag.
+            const tagDict = xref.fetch(objRef).clone();
+            StructTreeRoot.#writeProperties(tagDict, accessibilityData);
+            changes.put(objRef, {
+              data: tagDict,
+            });
+            continue;
+          }
+        }
         nextKey = Math.max(nextKey, parentTreeId);
 
         const tagRef = xref.getNewTemporaryRef();
         const tagDict = new Dict(xref);
 
-        // The structure type is required.
-        tagDict.set("S", Name.get(type));
+        StructTreeRoot.#writeProperties(tagDict, accessibilityData);
 
-        if (title) {
-          tagDict.set("T", title);
-        }
-        if (lang) {
-          tagDict.set("Lang", lang);
-        }
-        if (alt) {
-          tagDict.set("Alt", alt);
-        }
-        if (expanded) {
-          tagDict.set("E", expanded);
-        }
-        if (actualText) {
-          tagDict.set("ActualText", actualText);
-        }
-
-        if (structTreeParent) {
-          await this.#updateParentTag({
-            structTreeParent,
-            tagDict,
-            newTagRef: tagRef,
-            fallbackRef: structTreeRootRef,
-            xref,
-            newRefs,
-            buffer,
-          });
-        } else {
-          tagDict.set("P", structTreeRootRef);
-        }
+        await this.#updateParentTag({
+          structTreeParent,
+          tagDict,
+          newTagRef: tagRef,
+          structTreeRootRef,
+          fallbackKids: kids,
+          xref,
+          cache,
+        });
 
         const objDict = new Dict(xref);
         tagDict.set("K", objDict);
@@ -372,23 +377,48 @@ class StructTreeRoot {
         }
         objDict.set("Obj", ref);
 
-        buffer.length = 0;
-        await writeObject(tagRef, tagDict, buffer, xref);
-        newRefs.push({ ref: tagRef, data: buffer.join("") });
-
+        cache.put(tagRef, tagDict);
         nums.push(parentTreeId, tagRef);
-        kids.push(tagRef);
       }
     }
     return nextKey + 1;
   }
 
+  static #writeProperties(
+    tagDict,
+    { type, title, lang, alt, expanded, actualText }
+  ) {
+    // The structure type is required.
+    tagDict.set("S", Name.get(type));
+
+    if (title) {
+      tagDict.set("T", stringToAsciiOrUTF16BE(title));
+    }
+    if (lang) {
+      tagDict.set("Lang", stringToAsciiOrUTF16BE(lang));
+    }
+    if (alt) {
+      tagDict.set("Alt", stringToAsciiOrUTF16BE(alt));
+    }
+    if (expanded) {
+      tagDict.set("E", stringToAsciiOrUTF16BE(expanded));
+    }
+    if (actualText) {
+      tagDict.set("ActualText", stringToAsciiOrUTF16BE(actualText));
+    }
+  }
+
   static #collectParents({ elements, xref, pageDict, numberTree }) {
-    const idToElement = new Map();
+    const idToElements = new Map();
     for (const element of elements) {
       if (element.structTreeParentId) {
         const id = parseInt(element.structTreeParentId.split("_mc")[1], 10);
-        idToElement.set(id, element);
+        let elems = idToElements.get(id);
+        if (!elems) {
+          elems = [];
+          idToElements.set(id, elems);
+        }
+        elems.push(element);
       }
     }
 
@@ -400,13 +430,16 @@ class StructTreeRoot {
     const parentArray = numberTree.get(id);
 
     const updateElement = (kid, pageKid, kidRef) => {
-      const element = idToElement.get(kid);
-      if (element) {
+      const elems = idToElements.get(kid);
+      if (elems) {
         const parentRef = pageKid.getRaw("P");
         const parentDict = xref.fetchIfRef(parentRef);
         if (parentRef instanceof Ref && parentDict instanceof Dict) {
           // It should always the case, but we check just in case.
-          element.structTreeParent = { ref: kidRef, dict: pageKid };
+          const params = { ref: kidRef, dict: pageKid };
+          for (const element of elems) {
+            element.structTreeParent = params;
+          }
         }
         return true;
       }
@@ -431,67 +464,73 @@ class StructTreeRoot {
         if (Number.isInteger(kid) && updateElement(kid, pageKid, kidRef)) {
           break;
         }
+        if (!(kid instanceof Dict)) {
+          continue;
+        }
+        if (!isName(kid.get("Type"), "MCR")) {
+          break;
+        }
+        const mcid = kid.get("MCID");
+        if (Number.isInteger(mcid) && updateElement(mcid, pageKid, kidRef)) {
+          break;
+        }
       }
     }
   }
 
   static async #updateParentTag({
-    structTreeParent: { ref, dict },
+    structTreeParent,
     tagDict,
     newTagRef,
-    fallbackRef,
+    structTreeRootRef,
+    fallbackKids,
     xref,
-    newRefs,
-    buffer,
+    cache,
   }) {
-    // We get the parent of the tag.
-    const parentRef = dict.getRaw("P");
-    let parentDict = xref.fetchIfRef(parentRef);
+    let ref = null;
+    let parentRef;
+    if (structTreeParent) {
+      ({ ref } = structTreeParent);
+
+      // We get the parent of the tag.
+      parentRef = structTreeParent.dict.getRaw("P") || structTreeRootRef;
+    } else {
+      parentRef = structTreeRootRef;
+    }
 
     tagDict.set("P", parentRef);
 
     // We get the kids in order to insert a new tag at the right position.
-    let saveParentDict = false;
-    let parentKids;
-    let parentKidsRef = parentDict.getRaw("K");
-    if (!(parentKidsRef instanceof Ref)) {
-      parentKids = parentKidsRef;
-      parentKidsRef = xref.getNewTemporaryRef();
-      parentDict = parentDict.clone();
-      parentDict.set("K", parentKidsRef);
-      saveParentDict = true;
-    } else {
-      parentKids = xref.fetch(parentKidsRef);
-    }
-
-    if (Array.isArray(parentKids)) {
-      const index = parentKids.indexOf(ref);
-      if (index >= 0) {
-        parentKids = parentKids.slice();
-        parentKids.splice(index + 1, 0, newTagRef);
-      } else {
-        warn("Cannot update the struct tree: parent kid not found.");
-        tagDict.set("P", fallbackRef);
-        return;
-      }
-    } else if (parentKids instanceof Dict) {
-      parentKids = [parentKidsRef, newTagRef];
-      parentKidsRef = xref.getNewTemporaryRef();
-      parentDict.set("K", parentKidsRef);
-      saveParentDict = true;
-    }
-
-    buffer.length = 0;
-    await writeObject(parentKidsRef, parentKids, buffer, xref);
-    newRefs.push({ ref: parentKidsRef, data: buffer.join("") });
-
-    if (!saveParentDict) {
+    const parentDict = xref.fetchIfRef(parentRef);
+    if (!parentDict) {
+      fallbackKids.push(newTagRef);
       return;
     }
 
-    buffer.length = 0;
-    await writeObject(parentRef, parentDict, buffer, xref);
-    newRefs.push({ ref: parentRef, data: buffer.join("") });
+    let cachedParentDict = cache.get(parentRef);
+    if (!cachedParentDict) {
+      cachedParentDict = parentDict.clone();
+      cache.put(parentRef, cachedParentDict);
+    }
+    const parentKidsRaw = cachedParentDict.getRaw("K");
+    let cachedParentKids =
+      parentKidsRaw instanceof Ref ? cache.get(parentKidsRaw) : null;
+    if (!cachedParentKids) {
+      cachedParentKids = xref.fetchIfRef(parentKidsRaw);
+      cachedParentKids = Array.isArray(cachedParentKids)
+        ? cachedParentKids.slice()
+        : [parentKidsRaw];
+      const parentKidsRef = xref.getNewTemporaryRef();
+      cachedParentDict.set("K", parentKidsRef);
+      cache.put(parentKidsRef, cachedParentKids);
+    }
+
+    const index = cachedParentKids.indexOf(ref);
+    cachedParentKids.splice(
+      index >= 0 ? index + 1 : cachedParentKids.length,
+      0,
+      newTagRef
+    );
   }
 }
 
@@ -627,8 +666,40 @@ class StructTreePage {
     this.nodes = [];
   }
 
+  /**
+   * Collect all the objects (i.e. tag) that are part of the page and return a
+   * map of the structure element id to the object reference.
+   * @param {Ref} pageRef
+   * @returns {Map<number, Ref>}
+   */
+  collectObjects(pageRef) {
+    if (!this.root || !this.rootDict || !(pageRef instanceof Ref)) {
+      return null;
+    }
+
+    const parentTree = this.rootDict.get("ParentTree");
+    if (!parentTree) {
+      return null;
+    }
+    const ids = this.root.structParentIds?.get(pageRef);
+    if (!ids) {
+      return null;
+    }
+
+    const map = new Map();
+    const numberTree = new NumberTree(parentTree, this.rootDict.xref);
+
+    for (const [elemId] of ids) {
+      const obj = numberTree.getRaw(elemId);
+      if (obj instanceof Ref) {
+        map.set(elemId, obj);
+      }
+    }
+    return map;
+  }
+
   parse(pageRef) {
-    if (!this.root || !this.rootDict) {
+    if (!this.root || !this.rootDict || !(pageRef instanceof Ref)) {
       return;
     }
 
@@ -637,8 +708,7 @@ class StructTreePage {
       return;
     }
     const id = this.pageDict.get("StructParents");
-    const ids =
-      pageRef instanceof Ref && this.root.structParentIds?.get(pageRef);
+    const ids = this.root.structParentIds?.get(pageRef);
     if (!Number.isInteger(id) && !ids) {
       return;
     }
@@ -680,6 +750,9 @@ class StructTreePage {
   addNode(dict, map, level = 0) {
     if (level > MAX_DEPTH) {
       warn("StructTree MAX_DEPTH reached.");
+      return null;
+    }
+    if (!(dict instanceof Dict)) {
       return null;
     }
 
@@ -759,10 +832,38 @@ class StructTreePage {
       obj.role = node.role;
       obj.children = [];
       parent.children.push(obj);
-      const alt = node.dict.get("Alt");
+      let alt = node.dict.get("Alt");
+      if (typeof alt !== "string") {
+        alt = node.dict.get("ActualText");
+      }
       if (typeof alt === "string") {
         obj.alt = stringToPDFString(alt);
       }
+
+      const a = node.dict.get("A");
+      if (a instanceof Dict) {
+        const bbox = lookupNormalRect(a.getArray("BBox"), null);
+        if (bbox) {
+          obj.bbox = bbox;
+        } else {
+          const width = a.get("Width");
+          const height = a.get("Height");
+          if (
+            typeof width === "number" &&
+            width > 0 &&
+            typeof height === "number" &&
+            height > 0
+          ) {
+            obj.bbox = [0, 0, width, height];
+          }
+        }
+        // TODO: If the bbox is not available, we should try to get it from
+        // the content stream.
+        // For example when rendering on the canvas the commands between the
+        // beginning and the end of the marked-content sequence, we can
+        // compute the overall bbox.
+      }
+
       const lang = node.dict.get("Lang");
       if (typeof lang === "string") {
         obj.lang = stringToPDFString(lang);

@@ -16,11 +16,13 @@
 import { noContextMenu } from "../display_utils.js";
 
 class AltText {
-  #altText = "";
+  #altText = null;
 
   #altTextDecorative = false;
 
   #altTextButton = null;
+
+  #altTextButtonLabel = null;
 
   #altTextTooltip = null;
 
@@ -28,44 +30,96 @@ class AltText {
 
   #altTextWasFromKeyBoard = false;
 
+  #badge = null;
+
   #editor = null;
 
-  static _l10nPromise = null;
+  #guessedText = null;
+
+  #textWithDisclaimer = null;
+
+  #useNewAltTextFlow = false;
+
+  static #l10nNewButton = null;
+
+  static _l10n = null;
 
   constructor(editor) {
     this.#editor = editor;
+    this.#useNewAltTextFlow = editor._uiManager.useNewAltTextFlow;
+
+    AltText.#l10nNewButton ||= Object.freeze({
+      added: "pdfjs-editor-new-alt-text-added-button",
+      "added-label": "pdfjs-editor-new-alt-text-added-button-label",
+      missing: "pdfjs-editor-new-alt-text-missing-button",
+      "missing-label": "pdfjs-editor-new-alt-text-missing-button-label",
+      review: "pdfjs-editor-new-alt-text-to-review-button",
+      "review-label": "pdfjs-editor-new-alt-text-to-review-button-label",
+    });
   }
 
-  static initialize(l10nPromise) {
-    AltText._l10nPromise ||= l10nPromise;
+  static initialize(l10n) {
+    AltText._l10n ??= l10n;
   }
 
   async render() {
     const altText = (this.#altTextButton = document.createElement("button"));
     altText.className = "altText";
-    const msg = await AltText._l10nPromise.get(
-      "pdfjs-editor-alt-text-button-label"
-    );
-    altText.textContent = msg;
-    altText.setAttribute("aria-label", msg);
     altText.tabIndex = "0";
-    altText.addEventListener("contextmenu", noContextMenu);
-    altText.addEventListener("pointerdown", event => event.stopPropagation());
+
+    const label = (this.#altTextButtonLabel = document.createElement("span"));
+    altText.append(label);
+
+    if (this.#useNewAltTextFlow) {
+      altText.classList.add("new");
+      altText.setAttribute("data-l10n-id", AltText.#l10nNewButton.missing);
+      label.setAttribute(
+        "data-l10n-id",
+        AltText.#l10nNewButton["missing-label"]
+      );
+    } else {
+      altText.setAttribute("data-l10n-id", "pdfjs-editor-alt-text-button");
+      label.setAttribute("data-l10n-id", "pdfjs-editor-alt-text-button-label");
+    }
+
+    const signal = this.#editor._uiManager._signal;
+    altText.addEventListener("contextmenu", noContextMenu, { signal });
+    altText.addEventListener("pointerdown", event => event.stopPropagation(), {
+      signal,
+    });
 
     const onClick = event => {
       event.preventDefault();
       this.#editor._uiManager.editAltText(this.#editor);
-    };
-    altText.addEventListener("click", onClick, { capture: true });
-    altText.addEventListener("keydown", event => {
-      if (event.target === altText && event.key === "Enter") {
-        this.#altTextWasFromKeyBoard = true;
-        onClick(event);
+      if (this.#useNewAltTextFlow) {
+        this.#editor._reportTelemetry({
+          action: "pdfjs.image.alt_text.image_status_label_clicked",
+          data: { label: this.#label },
+        });
       }
-    });
+    };
+    altText.addEventListener("click", onClick, { capture: true, signal });
+    altText.addEventListener(
+      "keydown",
+      event => {
+        if (event.target === altText && event.key === "Enter") {
+          this.#altTextWasFromKeyBoard = true;
+          onClick(event);
+        }
+      },
+      { signal }
+    );
     await this.#setState();
 
     return altText;
+  }
+
+  get #label() {
+    return (
+      (this.#altText && "added") ||
+      (this.#altText === null && this.guessedText && "review") ||
+      "missing"
+    );
   }
 
   finish() {
@@ -74,6 +128,64 @@ class AltText {
     }
     this.#altTextButton.focus({ focusVisible: this.#altTextWasFromKeyBoard });
     this.#altTextWasFromKeyBoard = false;
+  }
+
+  isEmpty() {
+    if (this.#useNewAltTextFlow) {
+      return this.#altText === null;
+    }
+    return !this.#altText && !this.#altTextDecorative;
+  }
+
+  hasData() {
+    if (this.#useNewAltTextFlow) {
+      return this.#altText !== null || !!this.#guessedText;
+    }
+    return this.isEmpty();
+  }
+
+  get guessedText() {
+    return this.#guessedText;
+  }
+
+  async setGuessedText(guessedText) {
+    if (this.#altText !== null) {
+      // The user provided their own alt text, so we don't want to overwrite it.
+      return;
+    }
+    this.#guessedText = guessedText;
+    this.#textWithDisclaimer = await AltText._l10n.get(
+      "pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer",
+      { generatedAltText: guessedText }
+    );
+    this.#setState();
+  }
+
+  toggleAltTextBadge(visibility = false) {
+    if (!this.#useNewAltTextFlow || this.#altText) {
+      this.#badge?.remove();
+      this.#badge = null;
+      return;
+    }
+    if (!this.#badge) {
+      const badge = (this.#badge = document.createElement("div"));
+      badge.className = "noAltTextBadge";
+      this.#editor.div.append(badge);
+    }
+    this.#badge.classList.toggle("hidden", !visibility);
+  }
+
+  serialize(isForCopying) {
+    let altText = this.#altText;
+    if (!isForCopying && this.#guessedText === altText) {
+      altText = this.#textWithDisclaimer;
+    }
+    return {
+      altText,
+      decorative: this.#altTextDecorative,
+      guessedText: this.#guessedText,
+      textWithDisclaimer: this.#textWithDisclaimer,
+    };
   }
 
   get data() {
@@ -86,12 +198,24 @@ class AltText {
   /**
    * Set the alt text data.
    */
-  set data({ altText, decorative }) {
+  set data({
+    altText,
+    decorative,
+    guessedText,
+    textWithDisclaimer,
+    cancel = false,
+  }) {
+    if (guessedText) {
+      this.#guessedText = guessedText;
+      this.#textWithDisclaimer = textWithDisclaimer;
+    }
     if (this.#altText === altText && this.#altTextDecorative === decorative) {
       return;
     }
-    this.#altText = altText;
-    this.#altTextDecorative = decorative;
+    if (!cancel) {
+      this.#altText = altText;
+      this.#altTextDecorative = decorative;
+    }
     this.#setState();
   }
 
@@ -106,10 +230,20 @@ class AltText {
     this.#altTextButton.disabled = !enabled;
   }
 
+  shown() {
+    this.#editor._reportTelemetry({
+      action: "pdfjs.image.alt_text.image_status_label_displayed",
+      data: { label: this.#label },
+    });
+  }
+
   destroy() {
     this.#altTextButton?.remove();
     this.#altTextButton = null;
+    this.#altTextButtonLabel = null;
     this.#altTextTooltip = null;
+    this.#badge?.remove();
+    this.#badge = null;
   }
 
   async #setState() {
@@ -117,56 +251,80 @@ class AltText {
     if (!button) {
       return;
     }
-    if (!this.#altText && !this.#altTextDecorative) {
-      button.classList.remove("done");
-      this.#altTextTooltip?.remove();
-      return;
-    }
-    button.classList.add("done");
 
-    AltText._l10nPromise
-      .get("pdfjs-editor-alt-text-edit-button-label")
-      .then(msg => {
-        button.setAttribute("aria-label", msg);
-      });
+    if (this.#useNewAltTextFlow) {
+      button.classList.toggle("done", !!this.#altText);
+      button.setAttribute("data-l10n-id", AltText.#l10nNewButton[this.#label]);
+
+      this.#altTextButtonLabel?.setAttribute(
+        "data-l10n-id",
+        AltText.#l10nNewButton[`${this.#label}-label`]
+      );
+      if (!this.#altText) {
+        this.#altTextTooltip?.remove();
+        return;
+      }
+    } else {
+      if (!this.#altText && !this.#altTextDecorative) {
+        button.classList.remove("done");
+        this.#altTextTooltip?.remove();
+        return;
+      }
+      button.classList.add("done");
+      button.setAttribute("data-l10n-id", "pdfjs-editor-alt-text-edit-button");
+    }
+
     let tooltip = this.#altTextTooltip;
     if (!tooltip) {
       this.#altTextTooltip = tooltip = document.createElement("span");
       tooltip.className = "tooltip";
       tooltip.setAttribute("role", "tooltip");
-      const id = (tooltip.id = `alt-text-tooltip-${this.#editor.id}`);
-      button.setAttribute("aria-describedby", id);
+      tooltip.id = `alt-text-tooltip-${this.#editor.id}`;
 
       const DELAY_TO_SHOW_TOOLTIP = 100;
-      button.addEventListener("mouseenter", () => {
-        this.#altTextTooltipTimeout = setTimeout(() => {
-          this.#altTextTooltipTimeout = null;
-          this.#altTextTooltip.classList.add("show");
-          this.#editor._uiManager._eventBus.dispatch("reporttelemetry", {
-            source: this,
-            details: {
-              type: "editing",
-              subtype: this.#editor.editorType,
-              data: {
-                action: "alt_text_tooltip",
-              },
-            },
-          });
-        }, DELAY_TO_SHOW_TOOLTIP);
-      });
-      button.addEventListener("mouseleave", () => {
-        if (this.#altTextTooltipTimeout) {
+      const signal = this.#editor._uiManager._signal;
+      signal.addEventListener(
+        "abort",
+        () => {
           clearTimeout(this.#altTextTooltipTimeout);
           this.#altTextTooltipTimeout = null;
-        }
-        this.#altTextTooltip?.classList.remove("show");
-      });
+        },
+        { once: true }
+      );
+      button.addEventListener(
+        "mouseenter",
+        () => {
+          this.#altTextTooltipTimeout = setTimeout(() => {
+            this.#altTextTooltipTimeout = null;
+            this.#altTextTooltip.classList.add("show");
+            this.#editor._reportTelemetry({
+              action: "alt_text_tooltip",
+            });
+          }, DELAY_TO_SHOW_TOOLTIP);
+        },
+        { signal }
+      );
+      button.addEventListener(
+        "mouseleave",
+        () => {
+          if (this.#altTextTooltipTimeout) {
+            clearTimeout(this.#altTextTooltipTimeout);
+            this.#altTextTooltipTimeout = null;
+          }
+          this.#altTextTooltip?.classList.remove("show");
+        },
+        { signal }
+      );
     }
-    tooltip.innerText = this.#altTextDecorative
-      ? await AltText._l10nPromise.get(
-          "pdfjs-editor-alt-text-decorative-tooltip"
-        )
-      : this.#altText;
+    if (this.#altTextDecorative) {
+      tooltip.setAttribute(
+        "data-l10n-id",
+        "pdfjs-editor-alt-text-decorative-tooltip"
+      );
+    } else {
+      tooltip.removeAttribute("data-l10n-id");
+      tooltip.textContent = this.#altText;
+    }
 
     if (!tooltip.parentNode) {
       button.append(tooltip);

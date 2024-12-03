@@ -14,6 +14,7 @@
  */
 
 import {
+  createHeaders,
   createResponseStatusError,
   extractFilenameFromHeader,
   validateRangeRequestCapabilities,
@@ -25,6 +26,44 @@ import {
 } from "../../src/shared/util.js";
 
 describe("network_utils", function () {
+  describe("createHeaders", function () {
+    it("returns empty `Headers` for invalid input", function () {
+      const headersArr = [
+        createHeaders(
+          /* isHttp = */ false,
+          /* httpHeaders = */ { "Content-Length": 100 }
+        ),
+        createHeaders(/* isHttp = */ true, /* httpHeaders = */ undefined),
+        createHeaders(/* isHttp = */ true, /* httpHeaders = */ null),
+        createHeaders(/* isHttp = */ true, /* httpHeaders = */ "abc"),
+        createHeaders(/* isHttp = */ true, /* httpHeaders = */ 123),
+      ];
+      const emptyObj = Object.create(null);
+
+      for (const headers of headersArr) {
+        expect(Object.fromEntries(headers)).toEqual(emptyObj);
+      }
+    });
+
+    it("returns populated `Headers` for valid input", function () {
+      const headers = createHeaders(
+        /* isHttp = */ true,
+        /* httpHeaders = */ {
+          "Content-Length": 100,
+          "Accept-Ranges": "bytes",
+          "Dummy-null": null,
+          "Dummy-undefined": undefined,
+        }
+      );
+
+      expect(Object.fromEntries(headers)).toEqual({
+        "content-length": "100",
+        "accept-ranges": "bytes",
+        "dummy-null": "null",
+      });
+    });
+  });
+
   describe("validateRangeRequestCapabilities", function () {
     it("rejects invalid rangeChunkSize", function () {
       expect(function () {
@@ -45,12 +84,9 @@ describe("network_utils", function () {
         validateRangeRequestCapabilities({
           disableRange: true,
           isHttp: true,
-          getResponseHeader: headerName => {
-            if (headerName === "Content-Length") {
-              return 8;
-            }
-            throw new Error(`Unexpected headerName: ${headerName}`);
-          },
+          responseHeaders: new Headers({
+            "Content-Length": 8,
+          }),
           rangeChunkSize: 64,
         })
       ).toEqual({
@@ -62,12 +98,9 @@ describe("network_utils", function () {
         validateRangeRequestCapabilities({
           disableRange: false,
           isHttp: false,
-          getResponseHeader: headerName => {
-            if (headerName === "Content-Length") {
-              return 8;
-            }
-            throw new Error(`Unexpected headerName: ${headerName}`);
-          },
+          responseHeaders: new Headers({
+            "Content-Length": 8,
+          }),
           rangeChunkSize: 64,
         })
       ).toEqual({
@@ -81,14 +114,10 @@ describe("network_utils", function () {
         validateRangeRequestCapabilities({
           disableRange: false,
           isHttp: true,
-          getResponseHeader: headerName => {
-            if (headerName === "Accept-Ranges") {
-              return "none";
-            } else if (headerName === "Content-Length") {
-              return 8;
-            }
-            throw new Error(`Unexpected headerName: ${headerName}`);
-          },
+          responseHeaders: new Headers({
+            "Accept-Ranges": "none",
+            "Content-Length": 8,
+          }),
           rangeChunkSize: 64,
         })
       ).toEqual({
@@ -102,16 +131,11 @@ describe("network_utils", function () {
         validateRangeRequestCapabilities({
           disableRange: false,
           isHttp: true,
-          getResponseHeader: headerName => {
-            if (headerName === "Accept-Ranges") {
-              return "bytes";
-            } else if (headerName === "Content-Encoding") {
-              return "gzip";
-            } else if (headerName === "Content-Length") {
-              return 8;
-            }
-            throw new Error(`Unexpected headerName: ${headerName}`);
-          },
+          responseHeaders: new Headers({
+            "Accept-Ranges": "bytes",
+            "Content-Encoding": "gzip",
+            "Content-Length": 8,
+          }),
           rangeChunkSize: 64,
         })
       ).toEqual({
@@ -125,16 +149,10 @@ describe("network_utils", function () {
         validateRangeRequestCapabilities({
           disableRange: false,
           isHttp: true,
-          getResponseHeader: headerName => {
-            if (headerName === "Accept-Ranges") {
-              return "bytes";
-            } else if (headerName === "Content-Encoding") {
-              return null;
-            } else if (headerName === "Content-Length") {
-              return "eight";
-            }
-            throw new Error(`Unexpected headerName: ${headerName}`);
-          },
+          responseHeaders: new Headers({
+            "Accept-Ranges": "bytes",
+            "Content-Length": "eight",
+          }),
           rangeChunkSize: 64,
         })
       ).toEqual({
@@ -148,16 +166,10 @@ describe("network_utils", function () {
         validateRangeRequestCapabilities({
           disableRange: false,
           isHttp: true,
-          getResponseHeader: headerName => {
-            if (headerName === "Accept-Ranges") {
-              return "bytes";
-            } else if (headerName === "Content-Encoding") {
-              return null;
-            } else if (headerName === "Content-Length") {
-              return 8;
-            }
-            throw new Error(`Unexpected headerName: ${headerName}`);
-          },
+          responseHeaders: new Headers({
+            "Accept-Ranges": "bytes",
+            "Content-Length": 8,
+          }),
           rangeChunkSize: 64,
         })
       ).toEqual({
@@ -171,16 +183,10 @@ describe("network_utils", function () {
         validateRangeRequestCapabilities({
           disableRange: false,
           isHttp: true,
-          getResponseHeader: headerName => {
-            if (headerName === "Accept-Ranges") {
-              return "bytes";
-            } else if (headerName === "Content-Encoding") {
-              return null;
-            } else if (headerName === "Content-Length") {
-              return 8192;
-            }
-            throw new Error(`Unexpected headerName: ${headerName}`);
-          },
+          responseHeaders: new Headers({
+            "Accept-Ranges": "bytes",
+            "Content-Length": 8192,
+          }),
           rangeChunkSize: 64,
         })
       ).toEqual({
@@ -193,194 +199,173 @@ describe("network_utils", function () {
   describe("extractFilenameFromHeader", function () {
     it("returns null when content disposition header is blank", function () {
       expect(
-        extractFilenameFromHeader(headerName => {
-          if (headerName === "Content-Disposition") {
-            return null;
-          }
-          throw new Error(`Unexpected headerName: ${headerName}`);
-        })
+        extractFilenameFromHeader(
+          new Headers({
+            // Empty headers.
+          })
+        )
       ).toBeNull();
 
       expect(
-        extractFilenameFromHeader(headerName => {
-          if (headerName === "Content-Disposition") {
-            return undefined;
-          }
-          throw new Error(`Unexpected headerName: ${headerName}`);
-        })
-      ).toBeNull();
-
-      expect(
-        extractFilenameFromHeader(headerName => {
-          if (headerName === "Content-Disposition") {
-            return "";
-          }
-          throw new Error(`Unexpected headerName: ${headerName}`);
-        })
+        extractFilenameFromHeader(
+          new Headers({
+            "Content-Disposition": "",
+          })
+        )
       ).toBeNull();
     });
 
     it("gets the filename from the response header", function () {
       expect(
-        extractFilenameFromHeader(headerName => {
-          if (headerName === "Content-Disposition") {
-            return "inline";
-          }
-          throw new Error(`Unexpected headerName: ${headerName}`);
-        })
+        extractFilenameFromHeader(
+          new Headers({
+            "Content-Disposition": "inline",
+          })
+        )
       ).toBeNull();
 
       expect(
-        extractFilenameFromHeader(headerName => {
-          if (headerName === "Content-Disposition") {
-            return "attachment";
-          }
-          throw new Error(`Unexpected headerName: ${headerName}`);
-        })
+        extractFilenameFromHeader(
+          new Headers({
+            "Content-Disposition": "attachment",
+          })
+        )
       ).toBeNull();
 
       expect(
-        extractFilenameFromHeader(headerName => {
-          if (headerName === "Content-Disposition") {
-            return 'attachment; filename="filename.pdf"';
-          }
-          throw new Error(`Unexpected headerName: ${headerName}`);
-        })
+        extractFilenameFromHeader(
+          new Headers({
+            "Content-Disposition": 'attachment; filename="filename.pdf"',
+          })
+        )
       ).toEqual("filename.pdf");
 
       expect(
-        extractFilenameFromHeader(headerName => {
-          if (headerName === "Content-Disposition") {
-            return 'attachment; filename="filename.pdf and spaces.pdf"';
-          }
-          throw new Error(`Unexpected headerName: ${headerName}`);
-        })
+        extractFilenameFromHeader(
+          new Headers({
+            "Content-Disposition":
+              'attachment; filename="filename.pdf and spaces.pdf"',
+          })
+        )
       ).toEqual("filename.pdf and spaces.pdf");
 
       expect(
-        extractFilenameFromHeader(headerName => {
-          if (headerName === "Content-Disposition") {
-            return 'attachment; filename="tl;dr.pdf"';
-          }
-          throw new Error(`Unexpected headerName: ${headerName}`);
-        })
+        extractFilenameFromHeader(
+          new Headers({
+            "Content-Disposition": 'attachment; filename="tl;dr.pdf"',
+          })
+        )
       ).toEqual("tl;dr.pdf");
 
       expect(
-        extractFilenameFromHeader(headerName => {
-          if (headerName === "Content-Disposition") {
-            return "attachment; filename=filename.pdf";
-          }
-          throw new Error(`Unexpected headerName: ${headerName}`);
-        })
+        extractFilenameFromHeader(
+          new Headers({
+            "Content-Disposition": "attachment; filename=filename.pdf",
+          })
+        )
       ).toEqual("filename.pdf");
 
       expect(
-        extractFilenameFromHeader(headerName => {
-          if (headerName === "Content-Disposition") {
-            return "attachment; filename=filename.pdf someotherparam";
-          }
-          throw new Error(`Unexpected headerName: ${headerName}`);
-        })
+        extractFilenameFromHeader(
+          new Headers({
+            "Content-Disposition":
+              "attachment; filename=filename.pdf someotherparam",
+          })
+        )
       ).toEqual("filename.pdf");
 
       expect(
-        extractFilenameFromHeader(headerName => {
-          if (headerName === "Content-Disposition") {
-            return 'attachment; filename="%e4%b8%ad%e6%96%87.pdf"';
-          }
-          throw new Error(`Unexpected headerName: ${headerName}`);
-        })
+        extractFilenameFromHeader(
+          new Headers({
+            "Content-Disposition":
+              'attachment; filename="%e4%b8%ad%e6%96%87.pdf"',
+          })
+        )
       ).toEqual("中文.pdf");
 
       expect(
-        extractFilenameFromHeader(headerName => {
-          if (headerName === "Content-Disposition") {
-            return 'attachment; filename="100%.pdf"';
-          }
-          throw new Error(`Unexpected headerName: ${headerName}`);
-        })
+        extractFilenameFromHeader(
+          new Headers({
+            "Content-Disposition": 'attachment; filename="100%.pdf"',
+          })
+        )
       ).toEqual("100%.pdf");
     });
 
     it("gets the filename from the response header (RFC 6266)", function () {
       expect(
-        extractFilenameFromHeader(headerName => {
-          if (headerName === "Content-Disposition") {
-            return "attachment; filename*=filename.pdf";
-          }
-          throw new Error(`Unexpected headerName: ${headerName}`);
-        })
+        extractFilenameFromHeader(
+          new Headers({
+            "Content-Disposition": "attachment; filename*=filename.pdf",
+          })
+        )
       ).toEqual("filename.pdf");
 
       expect(
-        extractFilenameFromHeader(headerName => {
-          if (headerName === "Content-Disposition") {
-            return "attachment; filename*=''filename.pdf";
-          }
-          throw new Error(`Unexpected headerName: ${headerName}`);
-        })
+        extractFilenameFromHeader(
+          new Headers({
+            "Content-Disposition": "attachment; filename*=''filename.pdf",
+          })
+        )
       ).toEqual("filename.pdf");
 
       expect(
-        extractFilenameFromHeader(headerName => {
-          if (headerName === "Content-Disposition") {
-            return "attachment; filename*=utf-8''filename.pdf";
-          }
-          throw new Error(`Unexpected headerName: ${headerName}`);
-        })
+        extractFilenameFromHeader(
+          new Headers({
+            "Content-Disposition": "attachment; filename*=utf-8''filename.pdf",
+          })
+        )
       ).toEqual("filename.pdf");
 
       expect(
-        extractFilenameFromHeader(headerName => {
-          if (headerName === "Content-Disposition") {
-            return "attachment; filename=no.pdf; filename*=utf-8''filename.pdf";
-          }
-          throw new Error(`Unexpected headerName: ${headerName}`);
-        })
+        extractFilenameFromHeader(
+          new Headers({
+            "Content-Disposition":
+              "attachment; filename=no.pdf; filename*=utf-8''filename.pdf",
+          })
+        )
       ).toEqual("filename.pdf");
 
       expect(
-        extractFilenameFromHeader(headerName => {
-          if (headerName === "Content-Disposition") {
-            return "attachment; filename*=utf-8''filename.pdf; filename=no.pdf";
-          }
-          throw new Error(`Unexpected headerName: ${headerName}`);
-        })
+        extractFilenameFromHeader(
+          new Headers({
+            "Content-Disposition":
+              "attachment; filename*=utf-8''filename.pdf; filename=no.pdf",
+          })
+        )
       ).toEqual("filename.pdf");
     });
 
     it("gets the filename from the response header (RFC 2231)", function () {
       // Tests continuations (RFC 2231 section 3, via RFC 5987 section 3.1).
       expect(
-        extractFilenameFromHeader(headerName => {
-          if (headerName === "Content-Disposition") {
-            return "attachment; filename*0=filename; filename*1=.pdf";
-          }
-          throw new Error(`Unexpected headerName: ${headerName}`);
-        })
+        extractFilenameFromHeader(
+          new Headers({
+            "Content-Disposition":
+              "attachment; filename*0=filename; filename*1=.pdf",
+          })
+        )
       ).toEqual("filename.pdf");
     });
 
     it("only extracts filename with pdf extension", function () {
       expect(
-        extractFilenameFromHeader(headerName => {
-          if (headerName === "Content-Disposition") {
-            return 'attachment; filename="filename.png"';
-          }
-          throw new Error(`Unexpected headerName: ${headerName}`);
-        })
+        extractFilenameFromHeader(
+          new Headers({
+            "Content-Disposition": 'attachment; filename="filename.png"',
+          })
+        )
       ).toBeNull();
     });
 
     it("extension validation is case insensitive", function () {
       expect(
-        extractFilenameFromHeader(headerName => {
-          if (headerName === "Content-Disposition") {
-            return 'form-data; name="fieldName"; filename="file.PdF"';
-          }
-          throw new Error(`Unexpected headerName: ${headerName}`);
-        })
+        extractFilenameFromHeader(
+          new Headers({
+            "Content-Disposition":
+              'form-data; name="fieldName"; filename="file.PdF"',
+          })
+        )
       ).toEqual("file.PdF");
     });
   });

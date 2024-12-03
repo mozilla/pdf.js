@@ -13,33 +13,39 @@
  * limitations under the License.
  */
 
+import { FeatureTest, shadow, warn } from "../shared/util.js";
 import { DecodeStream } from "./decode_stream.js";
 import { Dict } from "./primitives.js";
 import { JpegImage } from "./jpg.js";
-import { shadow } from "../shared/util.js";
 
 /**
  * For JPEG's we use a library to decode these images and the stream behaves
  * like all the other DecodeStreams.
  */
 class JpegStream extends DecodeStream {
+  static #isImageDecoderSupported = FeatureTest.isImageDecoderSupported;
+
   constructor(stream, maybeLength, params) {
-    // Some images may contain 'junk' before the SOI (start-of-image) marker.
-    // Note: this seems to mainly affect inline images.
-    let ch;
-    while ((ch = stream.getByte()) !== -1) {
-      // Find the first byte of the SOI marker (0xFFD8).
-      if (ch === 0xff) {
-        stream.skip(-1); // Reset the stream position to the SOI.
-        break;
-      }
-    }
     super(maybeLength);
 
     this.stream = stream;
     this.dict = stream.dict;
     this.maybeLength = maybeLength;
     this.params = params;
+  }
+
+  static get canUseImageDecoder() {
+    return shadow(
+      this,
+      "canUseImageDecoder",
+      this.#isImageDecoderSupported
+        ? ImageDecoder.isTypeSupported("image/jpeg")
+        : Promise.resolve(false)
+    );
+  }
+
+  static setOptions({ isImageDecoderSupported = false }) {
+    this.#isImageDecoderSupported = isImageDecoderSupported;
   }
 
   get bytes() {
@@ -53,9 +59,10 @@ class JpegStream extends DecodeStream {
   }
 
   readBlock() {
-    if (this.eof) {
-      return;
-    }
+    this.decodeImage();
+  }
+
+  get jpegOptions() {
     const jpegOptions = {
       decodeTransform: undefined,
       colorTransform: undefined,
@@ -87,9 +94,35 @@ class JpegStream extends DecodeStream {
         jpegOptions.colorTransform = colorTransform;
       }
     }
-    const jpegImage = new JpegImage(jpegOptions);
+    return shadow(this, "jpegOptions", jpegOptions);
+  }
 
-    jpegImage.parse(this.bytes);
+  #skipUselessBytes(data) {
+    // Some images may contain 'junk' before the SOI (start-of-image) marker.
+    // Note: this seems to mainly affect inline images.
+    for (let i = 0, ii = data.length - 1; i < ii; i++) {
+      if (data[i] === 0xff && data[i + 1] === 0xd8) {
+        if (i > 0) {
+          data = data.subarray(i);
+        }
+        break;
+      }
+    }
+    return data;
+  }
+
+  decodeImage(bytes) {
+    if (this.eof) {
+      return this.buffer;
+    }
+    bytes = this.#skipUselessBytes(bytes || this.bytes);
+
+    // TODO: if an image has a mask we need to combine the data.
+    // So ideally get a VideoFrame from getTransferableImage and then use
+    // copyTo.
+
+    const jpegImage = new JpegImage(this.jpegOptions);
+    jpegImage.parse(bytes);
     const data = jpegImage.getData({
       width: this.drawWidth,
       height: this.drawHeight,
@@ -100,6 +133,53 @@ class JpegStream extends DecodeStream {
     this.buffer = data;
     this.bufferLength = data.length;
     this.eof = true;
+
+    return this.buffer;
+  }
+
+  get canAsyncDecodeImageFromBuffer() {
+    return this.stream.isAsync;
+  }
+
+  async getTransferableImage() {
+    if (!(await JpegStream.canUseImageDecoder)) {
+      return null;
+    }
+    const jpegOptions = this.jpegOptions;
+    if (jpegOptions.decodeTransform) {
+      // TODO: We could decode the image thanks to ImageDecoder and then
+      // get the pixels with copyTo and apply the decodeTransform.
+      return null;
+    }
+    let decoder;
+    try {
+      // TODO: If the stream is Flate & DCT we could try to just pipe the
+      // the DecompressionStream into the ImageDecoder: it'll avoid the
+      // intermediate ArrayBuffer.
+      const bytes =
+        (this.canAsyncDecodeImageFromBuffer &&
+          (await this.stream.asyncGetBytes())) ||
+        this.bytes;
+      if (!bytes) {
+        return null;
+      }
+      const data = this.#skipUselessBytes(bytes);
+      if (!JpegImage.canUseImageDecoder(data, jpegOptions.colorTransform)) {
+        return null;
+      }
+      decoder = new ImageDecoder({
+        data,
+        type: "image/jpeg",
+        preferAnimation: false,
+      });
+
+      return (await decoder.decode()).image;
+    } catch (reason) {
+      warn(`getTransferableImage - failed: "${reason}".`);
+      return null;
+    } finally {
+      decoder?.close();
+    }
   }
 }
 

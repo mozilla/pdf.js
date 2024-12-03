@@ -84,7 +84,7 @@ function preprocess(inFilename, outFilename, defines) {
           out.push(line);
         };
   function evaluateCondition(code) {
-    if (!code || !code.trim()) {
+    if (!code?.trim()) {
       throw new Error("No JavaScript expression given at " + loc());
     }
     try {
