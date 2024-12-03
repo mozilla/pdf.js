@@ -14,7 +14,7 @@ rendering PDFs.
  - Update the `validateFileURL` method in `app.js` and replace code with `return true`.
  - Run `gulp generic` to generate build files first.
  - Then create a new `viewer_with_hidden_buttons.html` file in the `build/generic/web` folder from the `viewer.html` file generated in the build (used for pdf previews in some areas of CE.).
- - Add `style="display: none !important;"` to the button elements related to Open, Print, Save and Presentation on the pdf toolbars.
+ - Add `style="display: none !important;"` to the button elements related to buttons on the pdf toolbars that you don't need.
  - Push files to repo.
 
 ## Contributing
