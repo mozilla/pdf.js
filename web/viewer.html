@@ -42,6 +42,7 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--<link rel="localization" href="toolkit/pdfviewer/viewer.ftl"/>-->
 <!--#else-->
     <link rel="stylesheet" href="viewer.css">
+    <link rel="stylesheet" href="note.css">
 <!--#endif-->
 
 <!--#if MOZCENTRAL-->
@@ -50,7 +51,7 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--<script src="viewer.mjs" type="module"></script>-->
 <!--#elif /* Development mode. */-->
     <link rel="resource" type="application/l10n" href="locale/locale.json">
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
     <script type="importmap">
       {
         "imports": {
@@ -690,5 +691,11 @@ See https://github.com/adobe-type-tools/cmap-resources
 
     </div> <!-- outerContainer -->
     <div id="printContainer"></div>
+    <div id="quickBall"></div>
+  <div id="noteWindow" class="hidden">
+    <textarea id="noteInput" placeholder="Type your note here..." spellcheck=""></textarea>
+    <button id="saveNote">Save Note</button>
+    <button id="exportToPdf">Export Notes to PDF</button>
+  </div>
   </body>
 </html>
