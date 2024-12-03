@@ -14,17 +14,36 @@
  */
 
 import {
+  BaseException,
   bytesToString,
   createValidAbsoluteUrl,
   getModificationDate,
-  isArrayBuffer,
-  PromiseCapability,
+  getUuid,
   string32,
   stringToBytes,
   stringToPDFString,
 } from "../../src/shared/util.js";
 
 describe("util", function () {
+  describe("BaseException", function () {
+    it("can initialize exception classes derived from BaseException", function () {
+      class DerivedException extends BaseException {
+        constructor(message) {
+          super(message, "DerivedException");
+          this.foo = "bar";
+        }
+      }
+
+      const exception = new DerivedException("Something went wrong");
+      expect(exception instanceof DerivedException).toEqual(true);
+      expect(exception instanceof BaseException).toEqual(true);
+      expect(exception.message).toEqual("Something went wrong");
+      expect(exception.name).toEqual("DerivedException");
+      expect(exception.foo).toEqual("bar");
+      expect(exception.stack).toContain("BaseExceptionClosure");
+    });
+  });
+
   describe("bytesToString", function () {
     it("handles non-array arguments", function () {
       expect(function () {
@@ -50,20 +69,6 @@ describe("util", function () {
       const string = "a".repeat(length);
 
       expect(bytesToString(bytes)).toEqual(string);
-    });
-  });
-
-  describe("isArrayBuffer", function () {
-    it("handles array buffer values", function () {
-      expect(isArrayBuffer(new ArrayBuffer(0))).toEqual(true);
-      expect(isArrayBuffer(new Uint8Array(0))).toEqual(true);
-    });
-
-    it("handles non-array buffer values", function () {
-      expect(isArrayBuffer("true")).toEqual(false);
-      expect(isArrayBuffer(1)).toEqual(false);
-      expect(isArrayBuffer(null)).toEqual(false);
-      expect(isArrayBuffer(undefined)).toEqual(false);
     });
   });
 
@@ -238,41 +243,18 @@ describe("util", function () {
     });
   });
 
-  describe("PromiseCapability", function () {
-    it("should resolve with correct data", async function () {
-      const promiseCapability = new PromiseCapability();
-      expect(promiseCapability.settled).toEqual(false);
-
-      promiseCapability.resolve({ test: "abc" });
-
-      const data = await promiseCapability.promise;
-      expect(promiseCapability.settled).toEqual(true);
-      expect(data).toEqual({ test: "abc" });
-    });
-
-    it("should reject with correct reason", async function () {
-      const promiseCapability = new PromiseCapability();
-      expect(promiseCapability.settled).toEqual(false);
-
-      promiseCapability.reject(new Error("reason"));
-
-      try {
-        await promiseCapability.promise;
-
-        // Shouldn't get here.
-        expect(false).toEqual(true);
-      } catch (reason) {
-        expect(promiseCapability.settled).toEqual(true);
-        expect(reason instanceof Error).toEqual(true);
-        expect(reason.message).toEqual("reason");
-      }
-    });
-  });
-
   describe("getModificationDate", function () {
     it("should get a correctly formatted date", function () {
       const date = new Date(Date.UTC(3141, 5, 9, 2, 6, 53));
       expect(getModificationDate(date)).toEqual("31410609020653");
+    });
+  });
+
+  describe("getUuid", function () {
+    it("should get uuid string", function () {
+      const uuid = getUuid();
+      expect(typeof uuid).toEqual("string");
+      expect(uuid.length).toBeGreaterThanOrEqual(32);
     });
   });
 });

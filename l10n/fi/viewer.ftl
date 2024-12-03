@@ -51,12 +51,6 @@ pdfjs-download-button-label = Lataa
 pdfjs-bookmark-button =
     .title = Nykyinen sivu (Näytä URL-osoite nykyiseltä sivulta)
 pdfjs-bookmark-button-label = Nykyinen sivu
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = Avaa sovelluksessa
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = Avaa sovelluksessa
 
 ##  Secondary toolbar and context menu
 
@@ -111,6 +105,14 @@ pdfjs-document-properties-button-label = Dokumentin ominaisuudet…
 pdfjs-document-properties-file-name = Tiedoston nimi:
 pdfjs-document-properties-file-size = Tiedoston koko:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } kt ({ $b } tavua)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } Mt ({ $b } tavua)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } kt ({ $size_b } tavua)
@@ -124,6 +126,9 @@ pdfjs-document-properties-subject = Aihe:
 pdfjs-document-properties-keywords = Avainsanat:
 pdfjs-document-properties-creation-date = Luomispäivämäärä:
 pdfjs-document-properties-modification-date = Muokkauspäivämäärä:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -281,6 +286,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [{ $type }-merkintä]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -301,8 +309,13 @@ pdfjs-editor-ink-button-label = Piirros
 pdfjs-editor-stamp-button =
     .title = Lisää tai muokkaa kuvia
 pdfjs-editor-stamp-button-label = Lisää tai muokkaa kuvia
-pdfjs-editor-remove-button =
-    .title = Poista
+pdfjs-editor-highlight-button =
+    .title = Korostus
+pdfjs-editor-highlight-button-label = Korostus
+pdfjs-highlight-floating-button1 =
+    .title = Korostus
+    .aria-label = Korostus
+pdfjs-highlight-floating-button-label = Korostus
 
 ## Remove button for the various kind of editor.
 
@@ -326,6 +339,14 @@ pdfjs-editor-ink-opacity-input = Peittävyys
 pdfjs-editor-stamp-add-image-button =
     .title = Lisää kuva
 pdfjs-editor-stamp-add-image-button-label = Lisää kuva
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Paksuus
+pdfjs-editor-free-highlight-thickness-title =
+    .title = Muuta paksuutta korostaessasi muita kohteita kuin tekstiä
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Tekstimuokkain
+    .default-content = Aloita kirjoittaminen…
 pdfjs-free-text =
     .aria-label = Tekstimuokkain
 pdfjs-free-text-default-content = Aloita kirjoittaminen…
@@ -336,8 +357,9 @@ pdfjs-ink-canvas =
 
 ## Alt-text dialog
 
-# Alternative text (alt text) helps when people can't see the image.
 pdfjs-editor-alt-text-button-label = Vaihtoehtoinen teksti
+pdfjs-editor-alt-text-edit-button =
+    .aria-label = Muokkaa vaihtoehtoista tekstiä
 pdfjs-editor-alt-text-edit-button-label = Muokkaa vaihtoehtoista tekstiä
 pdfjs-editor-alt-text-dialog-label = Valitse vaihtoehto
 pdfjs-editor-alt-text-dialog-description = Vaihtoehtoinen teksti ("alt-teksti") auttaa ihmisiä, jotka eivät näe kuvaa tai kun kuva ei lataudu.
@@ -351,6 +373,9 @@ pdfjs-editor-alt-text-decorative-tooltip = Merkitty koristeelliseksi
 # .placeholder: This is a placeholder for the alt text input area
 pdfjs-editor-alt-text-textarea =
     .placeholder = Esimerkiksi "Nuori mies istuu pöytään syömään aterian"
+# Alternative text (alt text) helps when people can't see the image.
+pdfjs-editor-alt-text-button =
+    .aria-label = Vaihtoehtoinen teksti
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
@@ -363,6 +388,22 @@ pdfjs-editor-resizer-label-bottom-right = Oikea alakulma - muuta kokoa
 pdfjs-editor-resizer-label-bottom-middle = Alhaalla keskellä - muuta kokoa
 pdfjs-editor-resizer-label-bottom-left = Vasen alakulma - muuta kokoa
 pdfjs-editor-resizer-label-middle-left = Keskellä vasemmalla - muuta kokoa
+pdfjs-editor-resizer-top-left =
+    .aria-label = Vasen yläkulma - muuta kokoa
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Ylhäällä keskellä - muuta kokoa
+pdfjs-editor-resizer-top-right =
+    .aria-label = Oikea yläkulma - muuta kokoa
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Keskellä oikealla - muuta kokoa
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Oikea alakulma - muuta kokoa
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Alhaalla keskellä - muuta kokoa
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Vasen alakulma - muuta kokoa
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Keskellä vasemmalla - muuta kokoa
 
 ## Color picker
 
@@ -382,3 +423,73 @@ pdfjs-editor-colorpicker-pink =
     .title = Pinkki
 pdfjs-editor-colorpicker-red =
     .title = Punainen
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Näytä kaikki
+pdfjs-editor-highlight-show-all-button =
+    .title = Näytä kaikki
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+# Modal header positioned above a text box where users can edit the alt text.
+pdfjs-editor-new-alt-text-dialog-edit-label = Muokkaa vaihtoehtoista tekstiä (kuvan kuvaus)
+# Modal header positioned above a text box where users can add the alt text.
+pdfjs-editor-new-alt-text-dialog-add-label = Lisää vaihtoehtoinen teksti (kuvan kuvaus)
+pdfjs-editor-new-alt-text-textarea =
+    .placeholder = Kirjoita kuvaus tähän…
+# This text refers to the alt text box above this description. It offers a definition of alt text.
+pdfjs-editor-new-alt-text-description = Lyhyt kuvaus ihmisille, jotka eivät näe kuvaa tai kun kuva ei lataudu.
+# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
+pdfjs-editor-new-alt-text-disclaimer1 = Tämä vaihtoehtoinen teksti luotiin automaattisesti, ja se voi olla epätarkka.
+pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Lue lisää
+pdfjs-editor-new-alt-text-create-automatically-button-label = Luo vaihtoehtoinen teksti automaattisesti
+pdfjs-editor-new-alt-text-not-now-button = Ei nyt
+pdfjs-editor-new-alt-text-error-title = Vaihtoehtotekstiä ei voitu luoda automaattisesti
+pdfjs-editor-new-alt-text-error-description = Kirjoita oma vaihtoehtoinen teksti tai yritä myöhemmin uudelleen.
+pdfjs-editor-new-alt-text-error-close-button = Sulje
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+#   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
+#   $percent (Number) - the percentage of the downloaded size.
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = Ladataan vaihtoehtoisen tekstin tekoälymallia ({ $downloadedSize } / { $totalSize } Mt)
+    .aria-valuetext = Ladataan vaihtoehtoisen tekstin tekoälymallia ({ $downloadedSize } / { $totalSize } Mt)
+# This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button =
+    .aria-label = Vaihtoehtoinen teksti lisätty
+pdfjs-editor-new-alt-text-added-button-label = Vaihtoehtoinen teksti lisätty
+# This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button =
+    .aria-label = Vaihtoehtoinen teksti puuttuu
+pdfjs-editor-new-alt-text-missing-button-label = Vaihtoehtoinen teksti puuttuu
+# This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button =
+    .aria-label = Tarkista vaihtoehtoinen teksti
+pdfjs-editor-new-alt-text-to-review-button-label = Tarkista vaihtoehtoinen teksti
+# "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
+# Variables:
+#   $generatedAltText (String) - the generated alt-text.
+pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer = Luotu automaattisesti: { $generatedAltText }
+
+## Image alt-text settings
+
+pdfjs-image-alt-text-settings-button =
+    .title = Kuvan vaihtoehtoisen tekstin asetukset
+pdfjs-image-alt-text-settings-button-label = Kuvan vaihtoehtoisen tekstin asetukset
+pdfjs-editor-alt-text-settings-dialog-label = Kuvan vaihtoehtoisen tekstin asetukset
+pdfjs-editor-alt-text-settings-automatic-title = Automaattinen vaihtoehtoinen teksti
+pdfjs-editor-alt-text-settings-create-model-button-label = Luo vaihtoehtoinen teksti automaattisesti
+pdfjs-editor-alt-text-settings-create-model-description = Ehdottaa kuvauksia, jotka auttavat ihmisiä, jotka eivät näe kuvaa tai kun kuva ei lataudu.
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+pdfjs-editor-alt-text-settings-download-model-label = Vaihtoehtoisen tekstin tekoälymalli ({ $totalSize } Mt)
+pdfjs-editor-alt-text-settings-ai-model-description = Toimii paikallisesti laitteellasi, joten tietosi pysyvät yksityisinä. Vaadittu automaattiselle vaihtoehtoiselle tekstille.
+pdfjs-editor-alt-text-settings-delete-model-button = Poista
+pdfjs-editor-alt-text-settings-download-model-button = Lataa
+pdfjs-editor-alt-text-settings-downloading-model-button = Ladataan…
+pdfjs-editor-alt-text-settings-editor-title = Vaihtoehtoisen tekstin muokkain
+pdfjs-editor-alt-text-settings-show-dialog-button-label = Näytä vaihtoehtoisen tekstin muokkain heti, kun lisäät kuvan
+pdfjs-editor-alt-text-settings-show-dialog-description = Auttaa varmistamaan, että kaikissa kuvissasi on vaihtoehtoinen teksti.
+pdfjs-editor-alt-text-settings-close-button = Sulje

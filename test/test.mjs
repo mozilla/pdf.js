@@ -15,39 +15,19 @@
  */
 /* eslint-disable no-var */
 
-import { copySubtreeSync, ensureDirSync, removeDirSync } from "./testutils.mjs";
+import { copySubtreeSync, ensureDirSync } from "./testutils.mjs";
 import {
   downloadManifestFiles,
   verifyManifestFiles,
 } from "./downloadutils.mjs";
-import dns from "dns";
 import fs from "fs";
 import os from "os";
 import path from "path";
 import puppeteer from "puppeteer";
 import readline from "readline";
-import rimraf from "rimraf";
 import { translateFont } from "./font/ttxdriver.mjs";
-import url from "url";
 import { WebServer } from "./webserver.mjs";
 import yargs from "yargs";
-
-const rimrafSync = rimraf.sync;
-
-// Chrome uses host `127.0.0.1` in the browser's websocket endpoint URL while
-// Firefox uses `localhost`, which before Node.js 17 also resolved to the IPv4
-// address `127.0.0.1` by Node.js' DNS resolver. However, this behavior changed
-// in Node.js 17 where the default is to prefer an IPv6 address if one is
-// offered (which varies based on the OS and/or how the `localhost` hostname
-// resolution is configured), so it can now also resolve to `::1`. This causes
-// Firefox to not start anymore since it doesn't bind on the `::1` interface.
-// To avoid this, we switch Node.js' DNS resolver back to preferring IPv4
-// since we connect to a local browser anyway. Only do this for Node.js versions
-// that actually have this API since it got introduced in Node.js 14.18.0 and
-// it's not relevant for older versions anyway.
-if (dns.setDefaultResultOrder !== undefined) {
-  dns.setDefaultResultOrder("ipv4first");
-}
 
 function parseOptions() {
   const parsedArgs = yargs(process.argv)
@@ -87,6 +67,11 @@ function parseOptions() {
     .option("noChrome", {
       default: false,
       describe: "Skip Chrome when running tests.",
+      type: "boolean",
+    })
+    .option("noFirefox", {
+      default: false,
+      describe: "Skip Firefox when running tests.",
       type: "boolean",
     })
     .option("noDownload", {
@@ -176,7 +161,7 @@ function parseOptions() {
       );
     })
     .check(argv => {
-      if (argv.testfilter && argv.testfilter.length > 0 && argv.xfaOnly) {
+      if (argv.testfilter?.length > 0 && argv.xfaOnly) {
         throw new Error("--testfilter and --xfaOnly cannot be used together.");
       }
       return true;
@@ -229,7 +214,7 @@ function updateRefImages() {
     console.log("  Updating ref/ ... ");
     copySubtreeSync(refsTmpDir, refsDir);
     if (removeTmp) {
-      removeDirSync(refsTmpDir);
+      fs.rmSync(refsTmpDir, { recursive: true, force: true });
     }
     console.log("done");
   }
@@ -340,7 +325,7 @@ async function startRefTest(masterMode, showRefImages) {
       fs.unlinkSync(eqLog);
     }
     if (fs.existsSync(testResultDir)) {
-      removeDirSync(testResultDir);
+      fs.rmSync(testResultDir, { recursive: true, force: true });
     }
 
     startTime = Date.now();
@@ -374,7 +359,7 @@ async function startRefTest(masterMode, showRefImages) {
   function checkRefsTmp() {
     if (masterMode && fs.existsSync(refsTmpDir)) {
       if (options.noPrompts) {
-        removeDirSync(refsTmpDir);
+        fs.rmSync(refsTmpDir, { recursive: true, force: true });
         setup();
         return;
       }
@@ -386,7 +371,7 @@ async function startRefTest(masterMode, showRefImages) {
         "SHOULD THIS SCRIPT REMOVE tmp/? THINK CAREFULLY [yn] ",
         function (answer) {
           if (answer.toLowerCase() === "y") {
-            removeDirSync(refsTmpDir);
+            fs.rmSync(refsTmpDir, { recursive: true, force: true });
           }
           setup();
           reader.close();
@@ -689,8 +674,7 @@ function checkRefTestResults(browser, id, results) {
   });
 }
 
-function refTestPostHandler(req, res) {
-  var parsedUrl = url.parse(req.url, true);
+function refTestPostHandler(parsedUrl, req, res) {
   var pathname = parsedUrl.pathname;
   if (
     pathname !== "/tellMeToQuit" &&
@@ -710,7 +694,7 @@ function refTestPostHandler(req, res) {
 
     var session;
     if (pathname === "/tellMeToQuit") {
-      session = getSession(parsedUrl.query.browser);
+      session = getSession(parsedUrl.searchParams.get("browser"));
       monitorBrowserTimeout(session, null);
       closeSession(session.name);
       return;
@@ -840,8 +824,7 @@ async function startIntegrationTest() {
   await Promise.all(sessions.map(session => closeSession(session.name)));
 }
 
-function unitTestPostHandler(req, res) {
-  var parsedUrl = url.parse(req.url);
+function unitTestPostHandler(parsedUrl, req, res) {
   var pathname = parsedUrl.pathname;
   if (
     pathname !== "/tellMeToQuit" &&
@@ -856,24 +839,14 @@ function unitTestPostHandler(req, res) {
   req.on("data", function (data) {
     body += data;
   });
-  req.on("end", function () {
+  req.on("end", async function () {
     if (pathname === "/ttx") {
-      var onCancel = null,
-        ttxTimeout = 10000;
-      var timeoutId = setTimeout(function () {
-        onCancel?.("TTX timeout");
-      }, ttxTimeout);
-      translateFont(
-        body,
-        function (fn) {
-          onCancel = fn;
-        },
-        function (err, xml) {
-          clearTimeout(timeoutId);
-          res.writeHead(200, { "Content-Type": "text/xml" });
-          res.end(err ? "<error>" + err + "</error>" : xml);
-        }
-      );
+      res.writeHead(200, { "Content-Type": "text/xml" });
+      try {
+        res.end(await translateFont(body));
+      } catch (error) {
+        res.end(`<error>${error}</error>`);
+      }
       return;
     }
 
@@ -904,16 +877,20 @@ function unitTestPostHandler(req, res) {
   return true;
 }
 
-async function startBrowser({ browserName, headless, startUrl }) {
+async function startBrowser({
+  browserName,
+  headless = options.headless,
+  startUrl,
+  extraPrefsFirefox = {},
+}) {
   const options = {
-    product: browserName,
-    protocol: "cdp",
-    // Note that using `headless: true` gives a deprecation warning; see
-    // https://github.com/puppeteer/puppeteer#default-runtime-settings.
-    headless: headless === true ? "new" : false,
+    browser: browserName,
+    protocol: "webDriverBiDi",
+    headless,
+    dumpio: true,
     defaultViewport: null,
     ignoreDefaultArgs: ["--disable-extensions"],
-    // The timeout for individual protocol (CDP) calls should always be lower
+    // The timeout for individual protocol (BiDi) calls should always be lower
     // than the Jasmine timeout. This way protocol errors are always raised in
     // the context of the tests that actually triggered them and don't leak
     // through to other tests (causing unrelated failures or tracebacks). The
@@ -929,6 +906,10 @@ async function startBrowser({ browserName, headless, startUrl }) {
   const printFile = path.join(tempDir, "print.pdf");
 
   if (browserName === "chrome") {
+    // Run tests with the CDP protocol for Chrome only given that the Linux bot
+    // crashes with timeouts or OOM if WebDriver BiDi is used (issue #17961).
+    options.protocol = "cdp";
+
     // avoid crash
     options.args = ["--no-sandbox", "--disable-setuid-sandbox"];
     // silent printing in a pdf
@@ -936,11 +917,9 @@ async function startBrowser({ browserName, headless, startUrl }) {
   }
 
   if (browserName === "firefox") {
-    // Run tests with the WebDriver BiDi protocol enabled only for Firefox for
-    // now given that for Chrome further fixes are needed first.
-    options.protocol = "webDriverBiDi";
-
     options.extraPrefsFirefox = {
+      // Disable system addon updates.
+      "extensions.systemAddon.update.enabled": false,
       // avoid to have a prompt when leaving a page with a form
       "dom.disable_beforeunload": true,
       // Disable dialog when saving a pdf
@@ -967,6 +946,13 @@ async function startBrowser({ browserName, headless, startUrl }) {
       "layout.css.round.enabled": true,
       // This allow to copy some data in the clipboard.
       "dom.events.asyncClipboard.clipboardItem": true,
+      // It's helpful to see where the caret is.
+      "accessibility.browsewithcaret": true,
+      // Disable the newtabpage stuff.
+      "browser.newtabpage.enabled": false,
+      // Disable network connections to Contile.
+      "browser.topsites.contile.enabled": false,
+      ...extraPrefsFirefox,
     };
   }
 
@@ -987,9 +973,13 @@ async function startBrowsers({ baseUrl, initializeSession }) {
   // prevent the disk from filling up over time.
   await puppeteer.trimCache();
 
-  const browserNames = options.noChrome ? ["firefox"] : ["firefox", "chrome"];
-
-  sessions = [];
+  const browserNames = ["firefox", "chrome"];
+  if (options.noChrome) {
+    browserNames.splice(1, 1);
+  }
+  if (options.noFirefox) {
+    browserNames.splice(0, 1);
+  }
   for (const browserName of browserNames) {
     // The session must be pushed first and augmented with the browser once
     // it's initialized. The reason for this is that browser initialization
@@ -1020,7 +1010,7 @@ async function startBrowsers({ baseUrl, initializeSession }) {
       startUrl = baseUrl + queryParameters;
     }
 
-    await startBrowser({ browserName, headless: options.headless, startUrl })
+    await startBrowser({ browserName, startUrl })
       .then(function (browser) {
         session.browser = browser;
         initializeSession(session);
@@ -1033,11 +1023,12 @@ async function startBrowsers({ baseUrl, initializeSession }) {
 }
 
 function startServer() {
-  server = new WebServer();
-  server.host = host;
-  server.port = options.port;
-  server.root = "..";
-  server.cacheExpirationTime = 3600;
+  server = new WebServer({
+    root: "..",
+    host,
+    port: options.port,
+    cacheExpirationTime: 3600,
+  });
   server.start();
 }
 
@@ -1063,7 +1054,7 @@ async function closeSession(browser) {
     });
     if (allClosed) {
       if (tempDir) {
-        rimrafSync(tempDir);
+        fs.rmSync(tempDir, { recursive: true, force: true });
       }
       onAllSessionsClosed?.();
     }
@@ -1095,25 +1086,33 @@ async function main() {
     stats = [];
   }
 
-  if (options.downloadOnly) {
-    await ensurePDFsDownloaded();
-  } else if (options.unitTest) {
-    // Allows linked PDF files in unit-tests as well.
-    await ensurePDFsDownloaded();
-    startUnitTest("/test/unit/unit_test.html", "unit");
-  } else if (options.fontTest) {
-    startUnitTest("/test/font/font_test.html", "font");
-  } else if (options.integration) {
-    // Allows linked PDF files in integration-tests as well.
-    await ensurePDFsDownloaded();
-    startIntegrationTest();
-  } else {
-    startRefTest(options.masterMode, options.reftest);
+  try {
+    if (options.downloadOnly) {
+      await ensurePDFsDownloaded();
+    } else if (options.unitTest) {
+      // Allows linked PDF files in unit-tests as well.
+      await ensurePDFsDownloaded();
+      await startUnitTest("/test/unit/unit_test.html", "unit");
+    } else if (options.fontTest) {
+      await startUnitTest("/test/font/font_test.html", "font");
+    } else if (options.integration) {
+      // Allows linked PDF files in integration-tests as well.
+      await ensurePDFsDownloaded();
+      await startIntegrationTest();
+    } else {
+      await startRefTest(options.masterMode, options.reftest);
+    }
+  } catch (e) {
+    // Close the browsers if uncaught exceptions occur, otherwise the spawned
+    // processes can become orphaned and keep running after `test.mjs` exits
+    // because the teardown logic of the tests did not get a chance to run.
+    console.error(e);
+    await Promise.all(sessions.map(session => closeSession(session.name)));
   }
 }
 
 var server;
-var sessions;
+var sessions = [];
 var onAllSessionsClosed;
 var host = "127.0.0.1";
 var options = parseOptions();
@@ -1121,3 +1120,5 @@ var stats;
 var tempDir = null;
 
 main();
+
+export { startBrowser };

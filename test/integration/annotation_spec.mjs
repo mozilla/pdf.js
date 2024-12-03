@@ -16,6 +16,7 @@
 import {
   closePages,
   getQuerySelector,
+  getRect,
   getSelector,
   loadAndWait,
 } from "./test_utils.mjs";
@@ -53,6 +54,29 @@ describe("Annotation highlight", () => {
             el => el.hidden
           );
           expect(hidden).withContext(`In ${browserName}`).toEqual(false);
+        })
+      );
+    });
+  });
+
+  describe("Check that widget annotations are in front of highlight ones", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("bug1883609.pdf", "[data-annotation-id='23R']");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must click on widget annotations", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          for (const i of [23, 22, 14]) {
+            await page.click(`[data-annotation-id='${i}R']`);
+            await page.waitForSelector(`#pdfjs_internal_id_${i}R:focus`);
+          }
         })
       );
     });
@@ -140,9 +164,6 @@ describe("Checkbox annotation", () => {
           );
           for (const selector of selectors) {
             await page.click(selector);
-            page.waitForTimeout(10);
-          }
-          for (const selector of selectors) {
             await page.waitForFunction(
               `document.querySelector("${selector} > :first-child").checked`
             );
@@ -199,7 +220,9 @@ describe("Text widget", () => {
         pages.map(async ([browserName, page]) => {
           await page.type(getSelector("22R"), "a");
           await page.keyboard.press("Tab");
-          await page.waitForTimeout(10);
+          await page.waitForFunction(
+            `${getQuerySelector("22R")}.value !== "Hello world"`
+          );
 
           const text = await page.$eval(getSelector("22R"), el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("aHello World");
@@ -485,12 +508,10 @@ describe("ResetForm action", () => {
               `document.querySelector("[data-annotation-id='25R']").hidden === false`
             );
             await page.click("#editorFreeText");
-            await page.waitForTimeout(10);
             await page.waitForFunction(
               `document.querySelector("[data-annotation-id='25R']").hidden === true`
             );
             await page.click("#editorFreeText");
-            await page.waitForTimeout(10);
             await page.waitForFunction(
               `document.querySelector("[data-annotation-id='25R']").hidden === false`
             );
@@ -553,7 +574,9 @@ describe("ResetForm action", () => {
             expect(hidden).withContext(`In ${browserName}`).toEqual(true);
             await page.focus("[data-annotation-id='20R']");
             await page.keyboard.press("Enter");
-            await page.waitForTimeout(10);
+            await page.waitForFunction(
+              `document.querySelector("[data-annotation-id='21R']").hidden !== true`
+            );
             hidden = await page.$eval(
               "[data-annotation-id='21R']",
               el => el.hidden
@@ -561,7 +584,9 @@ describe("ResetForm action", () => {
             expect(hidden).withContext(`In ${browserName}`).toEqual(false);
 
             await page.keyboard.press("Enter");
-            await page.waitForTimeout(10);
+            await page.waitForFunction(
+              `document.querySelector("[data-annotation-id='21R']").hidden !== false`
+            );
             hidden = await page.$eval(
               "[data-annotation-id='21R']",
               el => el.hidden
@@ -569,7 +594,9 @@ describe("ResetForm action", () => {
             expect(hidden).withContext(`In ${browserName}`).toEqual(true);
 
             await page.keyboard.press("Enter");
-            await page.waitForTimeout(10);
+            await page.waitForFunction(
+              `document.querySelector("[data-annotation-id='21R']").hidden !== true`
+            );
             hidden = await page.$eval(
               "[data-annotation-id='21R']",
               el => el.hidden
@@ -577,12 +604,78 @@ describe("ResetForm action", () => {
             expect(hidden).withContext(`In ${browserName}`).toEqual(false);
 
             await page.keyboard.press("Escape");
-            await page.waitForTimeout(10);
+            await page.waitForFunction(
+              `document.querySelector("[data-annotation-id='21R']").hidden !== false`
+            );
             hidden = await page.$eval(
               "[data-annotation-id='21R']",
               el => el.hidden
             );
             expect(hidden).withContext(`In ${browserName}`).toEqual(true);
+          })
+        );
+      });
+    });
+  });
+
+  describe("Annotation with empty popup and aria", () => {
+    describe("issue14438.pdf", () => {
+      let pages;
+
+      beforeAll(async () => {
+        pages = await loadAndWait(
+          "highlights.pdf",
+          "[data-annotation-id='693R']"
+        );
+      });
+
+      afterAll(async () => {
+        await closePages(pages);
+      });
+
+      it("must check that the highlight annotation has no popup and no aria-haspopup attribute", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            await page.waitForFunction(
+              // No aria-haspopup attribute,
+              `document.querySelector("[data-annotation-id='693R']").ariaHasPopup === null` +
+                // and no popup.
+                `&& document.querySelector("[data-annotation-id='694R']") === null`
+            );
+          })
+        );
+      });
+    });
+  });
+
+  describe("Rotated annotation and its clickable area", () => {
+    describe("issue14438.pdf", () => {
+      let pages;
+
+      beforeAll(async () => {
+        pages = await loadAndWait(
+          "rotated_ink.pdf",
+          "[data-annotation-id='18R']"
+        );
+      });
+
+      afterAll(async () => {
+        await closePages(pages);
+      });
+
+      it("must check that the clickable area has been rotated", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const rect = await getRect(page, "[data-annotation-id='18R']");
+            const promisePopup = page.waitForSelector(
+              "[data-annotation-id='19R']",
+              { visible: true }
+            );
+            await page.mouse.move(
+              rect.x + rect.width * 0.1,
+              rect.y + rect.height * 0.9
+            );
+            await promisePopup;
           })
         );
       });

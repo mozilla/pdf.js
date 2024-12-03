@@ -32,5 +32,5 @@ it before running the font tests:
 python3 -m venv venv
 source venv/bin/activate
 pip install fonttools
-gulp fonttest
+npx gulp fonttest
 ```

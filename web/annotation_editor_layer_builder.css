@@ -14,6 +14,7 @@
  */
 
 @import url(draw_layer_builder.css);
+@import url(toggle_button.css);
 
 :root {
   --outline-width: 2px;
@@ -38,19 +39,62 @@
       var(--outline-around-width)
   );
   --editorFreeText-editing-cursor: text;
-  /*#if COMPONENTS*/
-  --editorInk-editing-cursor: pointer;
-  /*#else*/
   --editorInk-editing-cursor: url(images/cursor-editorInk.svg) 0 16, pointer;
-  /*#endif*/
+  --editorHighlight-editing-cursor: url(images/cursor-editorTextHighlight.svg)
+      24 24,
+    text;
+  --editorFreeHighlight-editing-cursor: url(images/cursor-editorFreeHighlight.svg)
+      1 18,
+    pointer;
+
+  --new-alt-text-warning-image: url(images/altText_warning.svg);
+}
+
+/* The following class is used to hide an element but keep it available to
+ * for screen readers. */
+.visuallyHidden {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 0;
+}
+
+.textLayer {
+  &.highlighting {
+    cursor: var(--editorFreeHighlight-editing-cursor);
+
+    &:not(.free) span {
+      cursor: var(--editorHighlight-editing-cursor);
+
+      &[role="img"] {
+        cursor: var(--editorFreeHighlight-editing-cursor);
+      }
+    }
+
+    &.free span {
+      cursor: var(--editorFreeHighlight-editing-cursor);
+    }
+  }
+}
+
+#viewerContainer.pdfPresentationMode:fullscreen,
+.annotationEditorLayer.disabled {
+  .noAltTextBadge {
+    display: none !important;
+  }
 }
 
 @media (min-resolution: 1.1dppx) {
   :root {
-    /*#if !COMPONENTS*/
     --editorFreeText-editing-cursor: url(images/cursor-editorFreeText.svg) 0 16,
       text;
-    /*#endif*/
   }
 }
 
@@ -83,7 +127,14 @@
   font-size: calc(100px * var(--scale-factor));
   transform-origin: 0 0;
   cursor: auto;
-  z-index: 4;
+
+  .selectedEditor {
+    z-index: 100000 !important;
+  }
+
+  &.drawing * {
+    pointer-events: none !important;
+  }
 }
 
 .annotationEditorLayer.waiting {
@@ -105,6 +156,11 @@
 
 .annotationEditorLayer.inkEditing {
   cursor: var(--editorInk-editing-cursor);
+  touch-action: none;
+}
+
+.annotationEditorLayer .draw {
+  box-sizing: border-box;
 }
 
 .annotationEditorLayer :is(.freeTextEditor, .inkEditor, .stampEditor) {
@@ -165,10 +221,12 @@
 }
 
 .annotationEditorLayer
-  :is(.freeTextEditor, .inkEditor, .stampEditor, .highlightEditor) {
+  :is(.freeTextEditor, .inkEditor, .stampEditor, .highlightEditor),
+.textLayer {
   .editToolbar {
     --editor-toolbar-delete-image: url(images/editor-toolbar-delete.svg);
     --editor-toolbar-bg-color: #f0f0f4;
+    --editor-toolbar-highlight-image: url(images/toolbarButton-editorHighlight.svg);
     --editor-toolbar-fg-color: #2e2e56;
     --editor-toolbar-border-color: #8f8f9d;
     --editor-toolbar-hover-border-color: var(--editor-toolbar-border-color);
@@ -180,12 +238,18 @@
     --editor-toolbar-vert-offset: 6px;
     --editor-toolbar-height: 28px;
     --editor-toolbar-padding: 2px;
+    --alt-text-done-color: #2ac3a2;
+    --alt-text-warning-color: #0090ed;
+    --alt-text-hover-done-color: var(--alt-text-done-color);
+    --alt-text-hover-warning-color: var(--alt-text-warning-color);
 
     @media (prefers-color-scheme: dark) {
       --editor-toolbar-bg-color: #2b2a33;
       --editor-toolbar-fg-color: #fbfbfe;
       --editor-toolbar-hover-bg-color: #52525e;
       --editor-toolbar-focus-outline-color: #0df;
+      --alt-text-done-color: #54ffbd;
+      --alt-text-warning-color: #80ebff;
     }
 
     @media screen and (forced-colors: active) {
@@ -199,6 +263,10 @@
         var(--editor-toolbar-hover-border-color);
       --editor-toolbar-focus-outline-color: ButtonBorder;
       --editor-toolbar-shadow: none;
+      --alt-text-done-color: var(--editor-toolbar-fg-color);
+      --alt-text-warning-color: var(--editor-toolbar-fg-color);
+      --alt-text-hover-done-color: var(--editor-toolbar-hover-fg-color);
+      --alt-text-hover-warning-color: var(--editor-toolbar-hover-fg-color);
     }
 
     display: flex;
@@ -244,14 +312,38 @@
       gap: 0;
       height: 100%;
 
+      button {
+        padding: 0;
+      }
+
       .divider {
-        width: 1px;
+        width: 0;
         height: calc(
           2 * var(--editor-toolbar-padding) + var(--editor-toolbar-height)
         );
-        background-color: var(--editor-toolbar-border-color);
+        border-left: 1px solid var(--editor-toolbar-border-color);
+        border-right: none;
         display: inline-block;
         margin-inline: 2px;
+      }
+
+      .highlightButton {
+        width: var(--editor-toolbar-height);
+
+        &::before {
+          content: "";
+          mask-image: var(--editor-toolbar-highlight-image);
+          mask-repeat: no-repeat;
+          mask-position: center;
+          display: inline-block;
+          background-color: var(--editor-toolbar-fg-color);
+          width: 100%;
+          height: 100%;
+        }
+
+        &:hover::before {
+          background-color: var(--editor-toolbar-hover-fg-color);
+        }
       }
 
       .delete {
@@ -339,8 +431,34 @@
           mask-image: var(--alt-text-done-image);
         }
 
+        &.new {
+          &::before {
+            width: 16px;
+            height: 16px;
+            mask-image: var(--new-alt-text-warning-image);
+            background-color: var(--alt-text-warning-color);
+            mask-size: cover;
+          }
+
+          &:hover::before {
+            background-color: var(--alt-text-hover-warning-color);
+          }
+
+          &.done {
+            &::before {
+              mask-image: var(--alt-text-done-image);
+              background-color: var(--alt-text-done-color);
+            }
+
+            &:hover::before {
+              background-color: var(--alt-text-hover-done-color);
+            }
+          }
+        }
+
         .tooltip {
           display: none;
+          word-wrap: anywhere;
 
           &.show {
             --alt-text-tooltip-bg: #f0f0f4;
@@ -449,11 +567,59 @@
 .annotationEditorLayer .stampEditor {
   width: auto;
   height: auto;
-}
 
-.annotationEditorLayer .stampEditor canvas {
-  width: 100%;
-  height: 100%;
+  canvas {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    top: 0;
+    left: 0;
+  }
+
+  .noAltTextBadge {
+    --no-alt-text-badge-border-color: #f0f0f4;
+    --no-alt-text-badge-bg-color: #cfcfd8;
+    --no-alt-text-badge-fg-color: #5b5b66;
+
+    @media (prefers-color-scheme: dark) {
+      --no-alt-text-badge-border-color: #52525e;
+      --no-alt-text-badge-bg-color: #fbfbfe;
+      --no-alt-text-badge-fg-color: #15141a;
+    }
+
+    @media screen and (forced-colors: active) {
+      --no-alt-text-badge-border-color: ButtonText;
+      --no-alt-text-badge-bg-color: ButtonFace;
+      --no-alt-text-badge-fg-color: ButtonText;
+    }
+
+    position: absolute;
+    inset-inline-end: 5px;
+    inset-block-end: 5px;
+    display: inline-flex;
+    width: 32px;
+    height: 32px;
+    padding: 3px;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+    z-index: 1;
+
+    border-radius: 2px;
+    border: 1px solid var(--no-alt-text-badge-border-color);
+    background: var(--no-alt-text-badge-bg-color);
+
+    &::before {
+      content: "";
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      mask-image: var(--new-alt-text-warning-image);
+      mask-size: cover;
+      background-color: var(--no-alt-text-badge-fg-color);
+    }
+  }
 }
 
 .annotationEditorLayer {
@@ -638,104 +804,13 @@
   }
 }
 
-#altTextDialog {
-  --dialog-bg-color: white;
-  --dialog-border-color: white;
-  --dialog-shadow: 0 2px 14px 0 rgb(58 57 68 / 0.2);
-  --text-primary-color: #15141a;
-  --text-secondary-color: #5b5b66;
-  --hover-filter: brightness(0.9);
-  --focus-ring-color: #0060df;
-  --focus-ring-outline: 2px solid var(--focus-ring-color);
-
-  --textarea-border-color: #8f8f9d;
-  --textarea-bg-color: white;
-  --textarea-fg-color: var(--text-secondary-color);
-
-  --radio-bg-color: #f0f0f4;
-  --radio-checked-bg-color: #fbfbfe;
-  --radio-border-color: #8f8f9d;
-  --radio-checked-border-color: #0060df;
-
-  --button-cancel-bg-color: #f0f0f4;
-  --button-cancel-fg-color: var(--text-primary-color);
-  --button-cancel-border-color: var(--button-cancel-bg-color);
-  --button-cancel-hover-bg-color: var(--button-cancel-bg-color);
-  --button-cancel-hover-fg-color: var(--button-cancel-fg-color);
-  --button-cancel-hover-border-color: var(--button-cancel-hover-bg-color);
-
-  --button-save-bg-color: #0060df;
-  --button-save-fg-color: #fbfbfe;
-  --button-save-hover-bg-color: var(--button-save-bg-color);
-  --button-save-hover-fg-color: var(--button-save-fg-color);
-  --button-save-hover-border-color: var(--button-save-hover-bg-color);
-
-  @media (prefers-color-scheme: dark) {
-    --dialog-bg-color: #1c1b22;
-    --dialog-border-color: #1c1b22;
-    --dialog-shadow: 0 2px 14px 0 #15141a;
-    --text-primary-color: #fbfbfe;
-    --text-secondary-color: #cfcfd8;
-    --focus-ring-color: #0df;
-    --hover-filter: brightness(1.4);
-
-    --textarea-bg-color: #42414d;
-
-    --radio-bg-color: #2b2a33;
-    --radio-checked-bg-color: #15141a;
-    --radio-checked-border-color: #0df;
-
-    --button-cancel-bg-color: #2b2a33;
-    --button-save-bg-color: #0df;
-    --button-save-fg-color: #15141a;
-  }
-
-  @media screen and (forced-colors: active) {
-    --dialog-bg-color: Canvas;
-    --dialog-border-color: CanvasText;
-    --dialog-shadow: none;
-    --text-primary-color: CanvasText;
-    --text-secondary-color: CanvasText;
-    --hover-filter: none;
-    --focus-ring-color: ButtonBorder;
-
-    --textarea-border-color: ButtonBorder;
-    --textarea-bg-color: Field;
-    --textarea-fg-color: ButtonText;
-
-    --radio-bg-color: ButtonFace;
-    --radio-checked-bg-color: ButtonFace;
-    --radio-border-color: ButtonText;
-    --radio-checked-border-color: ButtonText;
-
-    --button-cancel-bg-color: ButtonFace;
-    --button-cancel-fg-color: ButtonText;
-    --button-cancel-border-color: ButtonText;
-    --button-cancel-hover-bg-color: AccentColor;
-    --button-cancel-hover-fg-color: AccentColorText;
-
-    --button-save-bg-color: ButtonText;
-    --button-save-fg-color: ButtonFace;
-    --button-save-hover-bg-color: AccentColor;
-    --button-save-hover-fg-color: AccentColorText;
-  }
-
-  font: message-box;
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 150%;
-  border-radius: 4px;
-  padding: 12px 16px;
-  border: 1px solid var(--dialog-border-color);
-  background: var(--dialog-bg-color);
-  color: var(--text-primary-color);
-  box-shadow: var(--dialog-shadow);
-
+.dialog.altText {
   &::backdrop {
     /* This is needed to avoid to darken the image the user want to describe. */
     mask: url(#alttext-manager-mask);
   }
 
+  /* See alt_text_manager.js */
   &.positioned {
     margin: 0;
   }
@@ -747,58 +822,6 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
-
-    & *:focus-visible {
-      outline: var(--focus-ring-outline);
-      outline-offset: 2px;
-    }
-
-    & .radio {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 4px;
-
-      & .radioButton {
-        display: flex;
-        gap: 8px;
-        align-self: stretch;
-        align-items: center;
-
-        & input {
-          appearance: none;
-          box-sizing: border-box;
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          background-color: var(--radio-bg-color);
-          border: 1px solid var(--radio-border-color);
-
-          &:hover {
-            filter: var(--hover-filter);
-          }
-
-          &:checked {
-            background-color: var(--radio-checked-bg-color);
-            border: 4px solid var(--radio-checked-border-color);
-          }
-        }
-      }
-
-      & .radioLabel {
-        display: flex;
-        padding-inline-start: 24px;
-        align-items: flex-start;
-        gap: 10px;
-        align-self: stretch;
-
-        & span {
-          flex: 1 0 0;
-          font-size: 11px;
-          color: var(--text-secondary-color);
-        }
-      }
-    }
 
     & #overallDescription {
       display: flex;
@@ -829,27 +852,8 @@
         padding-inline: 24px 10px;
 
         textarea {
-          font: inherit;
           width: 100%;
           min-height: 75px;
-          padding: 8px;
-          resize: none;
-          margin: 0;
-          box-sizing: border-box;
-          border-radius: 4px;
-          border: 1px solid var(--textarea-border-color);
-          background: var(--textarea-bg-color);
-          color: var(--textarea-fg-color);
-
-          &:focus {
-            outline-offset: 0;
-            border-color: transparent;
-          }
-
-          &:disabled {
-            pointer-events: none;
-            opacity: 0.4;
-          }
         }
       }
     }
@@ -860,44 +864,189 @@
       align-items: flex-start;
       gap: 8px;
       align-self: stretch;
+    }
+  }
+}
 
-      button {
-        border-radius: 4px;
-        border: 1px solid;
-        font: menu;
-        font-weight: 600;
-        padding: 4px 16px;
-        width: auto;
-        height: 32px;
+.dialog.newAltText {
+  --new-alt-text-ai-disclaimer-icon: url(images/altText_disclaimer.svg);
+  --new-alt-text-spinner-icon: url(images/altText_spinner.svg);
+  --preview-image-bg-color: #f0f0f4;
+  --preview-image-border: none;
 
-        &:hover {
-          cursor: pointer;
-          filter: var(--hover-filter);
-        }
+  @media (prefers-color-scheme: dark) {
+    --preview-image-bg-color: #2b2a33;
+  }
 
-        &#altTextCancel {
-          color: var(--button-cancel-fg-color);
-          background-color: var(--button-cancel-bg-color);
-          border-color: var(--button-cancel-border-color);
+  @media screen and (forced-colors: active) {
+    --preview-image-bg-color: ButtonFace;
+    --preview-image-border: 1px solid ButtonText;
+  }
 
-          &:hover {
-            color: var(--button-cancel-hover-fg-color);
-            background-color: var(--button-cancel-hover-bg-color);
-            border-color: var(--button-cancel-hover-border-color);
+  width: 80%;
+  max-width: 570px;
+  min-width: 300px;
+  padding: 0;
+
+  &.noAi {
+    #newAltTextDisclaimer,
+    #newAltTextCreateAutomatically {
+      display: none !important;
+    }
+  }
+
+  &.aiInstalling {
+    #newAltTextCreateAutomatically {
+      display: none !important;
+    }
+    #newAltTextDownloadModel {
+      display: flex !important;
+    }
+  }
+
+  &.error {
+    #newAltTextNotNow {
+      display: none !important;
+    }
+
+    #newAltTextCancel {
+      display: inline-block !important;
+    }
+  }
+
+  &:not(.error) #newAltTextError {
+    display: none !important;
+  }
+
+  #newAltTextContainer {
+    display: flex;
+    width: auto;
+    padding: 16px;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-start;
+    gap: 12px;
+    flex: 0 1 auto;
+    line-height: normal;
+
+    #mainContent {
+      display: flex;
+      justify-content: flex-end;
+      align-items: flex-start;
+      gap: 12px;
+      align-self: stretch;
+      flex: 1 1 auto;
+
+      #descriptionAndSettings {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        flex: 1 0 0;
+        align-self: stretch;
+      }
+
+      #descriptionInstruction {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        align-self: stretch;
+        flex: 1 1 auto;
+
+        #newAltTextDescriptionContainer {
+          width: 100%;
+          height: 70px;
+          position: relative;
+
+          textarea {
+            width: 100%;
+            height: 100%;
+            padding: 8px;
+
+            &::placeholder {
+              color: var(--text-secondary-color);
+            }
+          }
+
+          .altTextSpinner {
+            display: none;
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            inset-inline-start: 8px;
+            inset-block-start: 8px;
+            mask-size: cover;
+            background-color: var(--text-secondary-color);
+            pointer-events: none;
+          }
+
+          &.loading {
+            textarea::placeholder {
+              color: transparent;
+            }
+
+            .altTextSpinner {
+              display: inline-block;
+              mask-image: var(--new-alt-text-spinner-icon);
+            }
           }
         }
 
-        &#altTextSave {
-          color: var(--button-save-hover-fg-color);
-          background-color: var(--button-save-hover-bg-color);
-          border-color: var(--button-save-hover-border-color);
-          opacity: 1;
+        #newAltTextDescription {
+          font-size: 11px;
+        }
 
-          &:hover {
-            color: var(--button-save-hover-fg-color);
-            background-color: var(--button-save-hover-bg-color);
-            border-color: var(--button-save-hover-border-color);
+        #newAltTextDisclaimer {
+          display: flex;
+          flex-direction: row;
+          align-items: flex-start;
+          gap: 4px;
+          font-size: 11px;
+
+          &::before {
+            content: "";
+            display: inline-block;
+            width: 17px;
+            height: 16px;
+            mask-image: var(--new-alt-text-ai-disclaimer-icon);
+            mask-size: cover;
+            background-color: var(--text-secondary-color);
+            flex: 1 0 auto;
           }
+        }
+      }
+
+      #newAltTextDownloadModel {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        align-self: stretch;
+
+        &::before {
+          content: "";
+          display: inline-block;
+          width: 16px;
+          height: 16px;
+          mask-image: var(--new-alt-text-spinner-icon);
+          mask-size: cover;
+          background-color: var(--text-secondary-color);
+        }
+      }
+
+      #newAltTextImagePreview {
+        width: 180px;
+        aspect-ratio: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex: 0 0 auto;
+        background-color: var(--preview-image-bg-color);
+        border: var(--preview-image-border);
+
+        > canvas {
+          max-width: 100%;
+          max-height: 100%;
         }
       }
     }
@@ -938,25 +1087,25 @@
 
 .annotationEditorLayer {
   &[data-main-rotation="0"] {
-    .highlightEditor > .editToolbar {
+    .highlightEditor:not(.free) > .editToolbar {
       rotate: 0deg;
     }
   }
 
   &[data-main-rotation="90"] {
-    .highlightEditor > .editToolbar {
+    .highlightEditor:not(.free) > .editToolbar {
       rotate: 270deg;
     }
   }
 
   &[data-main-rotation="180"] {
-    .highlightEditor > .editToolbar {
+    .highlightEditor:not(.free) > .editToolbar {
       rotate: 180deg;
     }
   }
 
   &[data-main-rotation="270"] {
-    .highlightEditor > .editToolbar {
+    .highlightEditor:not(.free) > .editToolbar {
       rotate: 90deg;
     }
   }
@@ -965,14 +1114,17 @@
     position: absolute;
     background: transparent;
     z-index: 1;
-    transform-origin: 0 0;
     cursor: auto;
     max-width: 100%;
     max-height: 100%;
     border: none;
     outline: none;
     pointer-events: none;
-    transform: none;
+    transform-origin: 0 0;
+
+    &:not(.free) {
+      transform: none;
+    }
 
     .internal {
       position: absolute;
@@ -1025,6 +1177,10 @@
 
           &:has(.dropdown:not(.hidden)) {
             background-color: var(--editor-toolbar-hover-bg-color);
+
+            &::after {
+              scale: -1;
+            }
           }
 
           .dropdown {
@@ -1080,22 +1236,14 @@
 }
 
 #highlightParamsToolbarContainer {
-  height: auto;
+  gap: 16px;
   padding-inline: 10px;
-  padding-block: 10px 16px;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+  padding-block-end: 12px;
 
   .colorPicker {
     display: flex;
     flex-direction: column;
     gap: 8px;
-
-    #highlightColorPickerLabel {
-      width: fit-content;
-      inset-inline-start: 0;
-    }
 
     .dropdown {
       display: flex;
@@ -1114,6 +1262,7 @@
         align-items: center;
         background: none;
         flex: 0 0 auto;
+        padding: 0;
 
         .swatch {
           width: 24px;
@@ -1132,6 +1281,150 @@
           outline: 2px solid var(--hover-outline-color);
         }
       }
+    }
+  }
+
+  #editorHighlightThickness {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    align-self: stretch;
+
+    .editorParamsLabel {
+      height: auto;
+      align-self: stretch;
+    }
+
+    .thicknessPicker {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      align-self: stretch;
+
+      --example-color: #bfbfc9;
+
+      @media (prefers-color-scheme: dark) {
+        --example-color: #80808e;
+      }
+
+      @media screen and (forced-colors: active) {
+        --example-color: CanvasText;
+      }
+
+      :is(& > .editorParamsSlider[disabled]) {
+        opacity: 0.4;
+      }
+
+      &::before,
+      &::after {
+        content: "";
+        width: 8px;
+        aspect-ratio: 1;
+        display: block;
+        border-radius: 100%;
+        background-color: var(--example-color);
+      }
+      &::after {
+        width: 24px;
+      }
+
+      .editorParamsSlider {
+        width: unset;
+        height: 14px;
+      }
+    }
+  }
+
+  #editorHighlightVisibility {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    align-self: stretch;
+
+    .divider {
+      --divider-color: #d7d7db;
+
+      @media (prefers-color-scheme: dark) {
+        --divider-color: #8f8f9d;
+      }
+
+      @media screen and (forced-colors: active) {
+        --divider-color: CanvasText;
+      }
+
+      margin-block: 4px;
+      width: 100%;
+      height: 1px;
+      background-color: var(--divider-color);
+    }
+
+    .toggler {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      align-self: stretch;
+    }
+  }
+}
+
+#altTextSettingsDialog {
+  padding: 16px;
+
+  #altTextSettingsContainer {
+    display: flex;
+    width: 573px;
+    flex-direction: column;
+    gap: 16px;
+
+    .mainContainer {
+      gap: 16px;
+    }
+
+    .description {
+      color: var(--text-secondary-color);
+    }
+
+    #aiModelSettings {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      button {
+        width: fit-content;
+      }
+
+      &.download {
+        #deleteModelButton {
+          display: none;
+        }
+      }
+
+      &:not(.download) {
+        #downloadModelButton {
+          display: none;
+        }
+      }
+    }
+
+    #automaticAltText,
+    #altTextEditor {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #createModelDescription,
+    #aiModelSettings,
+    #showAltTextDialogDescription {
+      padding-inline-start: 40px;
+    }
+
+    #automaticSettings {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
   }
 }

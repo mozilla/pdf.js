@@ -23,7 +23,10 @@ import { FormatError, unreachable, warn } from "../shared/util.js";
  */
 class NameOrNumberTree {
   constructor(root, xref, type) {
-    if (this.constructor === NameOrNumberTree) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === NameOrNumberTree
+    ) {
       unreachable("Cannot initialize NameOrNumberTree.");
     }
     this.root = root;
@@ -71,7 +74,7 @@ class NameOrNumberTree {
     return map;
   }
 
-  get(key) {
+  getRaw(key) {
     if (!this.root) {
       return null;
     }
@@ -132,11 +135,15 @@ class NameOrNumberTree {
         } else if (key > currentKey) {
           l = m + 2;
         } else {
-          return xref.fetchIfRef(entries[m + 1]);
+          return entries[m + 1];
         }
       }
     }
     return null;
+  }
+
+  get(key) {
+    return this.xref.fetchIfRef(this.getRaw(key));
   }
 }
 

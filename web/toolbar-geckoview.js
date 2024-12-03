@@ -38,11 +38,6 @@ class Toolbar {
         eventName: "download",
         nimbusName: "download-button",
       },
-      {
-        element: options.openInApp,
-        eventName: "openinexternalapp",
-        nimbusName: "open-in-app-button",
-      },
     ];
 
     if (nimbusData) {

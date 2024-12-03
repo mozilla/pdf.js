@@ -15,6 +15,7 @@
 
 import {
   assert,
+  FeatureTest,
   FormatError,
   info,
   shadow,
@@ -60,9 +61,67 @@ function resizeRgbImage(src, dest, w1, h1, w2, h2, alpha01) {
   }
 }
 
+function resizeRgbaImage(src, dest, w1, h1, w2, h2, alpha01) {
+  const xRatio = w1 / w2;
+  const yRatio = h1 / h2;
+  let newIndex = 0;
+  const xScaled = new Uint16Array(w2);
+
+  if (alpha01 === 1) {
+    for (let i = 0; i < w2; i++) {
+      xScaled[i] = Math.floor(i * xRatio);
+    }
+    const src32 = new Uint32Array(src.buffer);
+    const dest32 = new Uint32Array(dest.buffer);
+    const rgbMask = FeatureTest.isLittleEndian ? 0x00ffffff : 0xffffff00;
+    for (let i = 0; i < h2; i++) {
+      const buf = src32.subarray(Math.floor(i * yRatio) * w1);
+      for (let j = 0; j < w2; j++) {
+        dest32[newIndex++] |= buf[xScaled[j]] & rgbMask;
+      }
+    }
+  } else {
+    const COMPONENTS = 4;
+    const w1Scanline = w1 * COMPONENTS;
+    for (let i = 0; i < w2; i++) {
+      xScaled[i] = Math.floor(i * xRatio) * COMPONENTS;
+    }
+    for (let i = 0; i < h2; i++) {
+      const buf = src.subarray(Math.floor(i * yRatio) * w1Scanline);
+      for (let j = 0; j < w2; j++) {
+        const oldIndex = xScaled[j];
+        dest[newIndex++] = buf[oldIndex];
+        dest[newIndex++] = buf[oldIndex + 1];
+        dest[newIndex++] = buf[oldIndex + 2];
+      }
+    }
+  }
+}
+
+function copyRgbaImage(src, dest, alpha01) {
+  if (alpha01 === 1) {
+    const src32 = new Uint32Array(src.buffer);
+    const dest32 = new Uint32Array(dest.buffer);
+    const rgbMask = FeatureTest.isLittleEndian ? 0x00ffffff : 0xffffff00;
+    for (let i = 0, ii = src32.length; i < ii; i++) {
+      dest32[i] |= src32[i] & rgbMask;
+    }
+  } else {
+    let j = 0;
+    for (let i = 0, ii = src.length; i < ii; i += 4) {
+      dest[j++] = src[i];
+      dest[j++] = src[i + 1];
+      dest[j++] = src[i + 2];
+    }
+  }
+}
+
 class ColorSpace {
   constructor(name, numComps) {
-    if (this.constructor === ColorSpace) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === ColorSpace
+    ) {
       unreachable("Cannot initialize ColorSpace.");
     }
     this.name = name;
@@ -370,6 +429,8 @@ class ColorSpace {
         case "RGB":
         case "DeviceRGB":
           return this.singletons.rgb;
+        case "DeviceRGBA":
+          return this.singletons.rgba;
         case "CMYK":
         case "DeviceCMYK":
           return this.singletons.cmyk;
@@ -394,7 +455,9 @@ class ColorSpace {
               }
             }
           }
-          throw new FormatError(`Unrecognized ColorSpace: ${cs.name}`);
+          // Fallback to the default gray color space.
+          warn(`Unrecognized ColorSpace: ${cs.name}`);
+          return this.singletons.gray;
       }
     }
     if (Array.isArray(cs)) {
@@ -455,7 +518,7 @@ class ColorSpace {
         case "I":
         case "Indexed":
           baseCS = this._parse(cs[1], xref, resources, pdfFunctionFactory);
-          const hiVal = xref.fetchIfRef(cs[2]) + 1;
+          const hiVal = Math.max(0, Math.min(xref.fetchIfRef(cs[2]), 255));
           const lookup = xref.fetchIfRef(cs[3]);
           return new IndexedCS(baseCS, hiVal, lookup);
         case "Separation":
@@ -472,10 +535,14 @@ class ColorSpace {
           const range = params.getArray("Range");
           return new LabCS(whitePoint, blackPoint, range);
         default:
-          throw new FormatError(`Unimplemented ColorSpace object: ${mode}`);
+          // Fallback to the default gray color space.
+          warn(`Unimplemented ColorSpace object: ${mode}`);
+          return this.singletons.gray;
       }
     }
-    throw new FormatError(`Unrecognized ColorSpace object: ${cs}`);
+    // Fallback to the default gray color space.
+    warn(`Unrecognized ColorSpace object: ${cs}`);
+    return this.singletons.gray;
   }
 
   /**
@@ -510,6 +577,9 @@ class ColorSpace {
       },
       get rgb() {
         return shadow(this, "rgb", new DeviceRgbCS());
+      },
+      get rgba() {
+        return shadow(this, "rgba", new DeviceRgbaCS());
       },
       get cmyk() {
         return shadow(this, "cmyk", new DeviceCmykCS());
@@ -616,9 +686,8 @@ class IndexedCS extends ColorSpace {
   constructor(base, highVal, lookup) {
     super("Indexed", 1);
     this.base = base;
-    this.highVal = highVal;
 
-    const length = base.numComps * highVal;
+    const length = base.numComps * (highVal + 1);
     this.lookup = new Uint8Array(length);
 
     if (lookup instanceof BaseStream) {
@@ -775,6 +844,55 @@ class DeviceRgbCS extends ColorSpace {
 
   isPassthrough(bits) {
     return bits === 8;
+  }
+}
+
+/**
+ * The default color is `new Float32Array([0, 0, 0, 1])`.
+ */
+class DeviceRgbaCS extends ColorSpace {
+  constructor() {
+    super("DeviceRGBA", 4);
+  }
+
+  getOutputLength(inputLength, _alpha01) {
+    return inputLength * 4;
+  }
+
+  isPassthrough(bits) {
+    return bits === 8;
+  }
+
+  fillRgb(
+    dest,
+    originalWidth,
+    originalHeight,
+    width,
+    height,
+    actualHeight,
+    bpc,
+    comps,
+    alpha01
+  ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      assert(
+        dest instanceof Uint8ClampedArray,
+        'DeviceRgbaCS.fillRgb: Unsupported "dest" type.'
+      );
+    }
+    if (originalHeight !== height || originalWidth !== width) {
+      resizeRgbaImage(
+        comps,
+        dest,
+        originalWidth,
+        originalHeight,
+        width,
+        height,
+        alpha01
+      );
+    } else {
+      copyRgbaImage(comps, dest, alpha01);
+    }
   }
 }
 

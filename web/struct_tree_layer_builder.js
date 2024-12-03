@@ -74,19 +74,52 @@ const PDF_ROLE_TO_HTML_ROLE = {
 const HEADING_PATTERN = /^H(\d+)$/;
 
 class StructTreeLayerBuilder {
-  #treeDom = undefined;
+  #promise;
 
-  get renderingDone() {
-    return this.#treeDom !== undefined;
+  #treeDom = null;
+
+  #treePromise;
+
+  #elementAttributes = new Map();
+
+  #rawDims;
+
+  #elementsToAddToTextLayer = null;
+
+  constructor(pdfPage, rawDims) {
+    this.#promise = pdfPage.getStructTree();
+    this.#rawDims = rawDims;
   }
 
-  render(structTree) {
-    if (this.#treeDom !== undefined) {
-      return this.#treeDom;
+  async render() {
+    if (this.#treePromise) {
+      return this.#treePromise;
     }
-    const treeDom = this.#walk(structTree);
-    treeDom?.classList.add("structTree");
-    return (this.#treeDom = treeDom);
+    const { promise, resolve, reject } = Promise.withResolvers();
+    this.#treePromise = promise;
+
+    try {
+      this.#treeDom = this.#walk(await this.#promise);
+    } catch (ex) {
+      reject(ex);
+    }
+    this.#promise = null;
+
+    this.#treeDom?.classList.add("structTree");
+    resolve(this.#treeDom);
+
+    return promise;
+  }
+
+  async getAriaAttributes(annotationId) {
+    try {
+      await this.render();
+      return this.#elementAttributes.get(annotationId);
+    } catch {
+      // If the structTree cannot be fetched, parsed, and/or rendered,
+      // ensure that e.g. the AnnotationLayer won't break completely.
+    }
+    return null;
   }
 
   hide() {
@@ -104,7 +137,24 @@ class StructTreeLayerBuilder {
   #setAttributes(structElement, htmlElement) {
     const { alt, id, lang } = structElement;
     if (alt !== undefined) {
-      htmlElement.setAttribute("aria-label", removeNullCharacters(alt));
+      // Don't add the label in the struct tree layer but on the annotation
+      // in the annotation layer.
+      let added = false;
+      const label = removeNullCharacters(alt);
+      for (const child of structElement.children) {
+        if (child.type === "annotation") {
+          let attrs = this.#elementAttributes.get(child.id);
+          if (!attrs) {
+            attrs = new Map();
+            this.#elementAttributes.set(child.id, attrs);
+          }
+          attrs.set("aria-label", label);
+          added = true;
+        }
+      }
+      if (!added) {
+        htmlElement.setAttribute("aria-label", label);
+      }
     }
     if (id !== undefined) {
       htmlElement.setAttribute("aria-owns", id);
@@ -115,6 +165,50 @@ class StructTreeLayerBuilder {
         removeNullCharacters(lang, /* replaceInvisible = */ true)
       );
     }
+  }
+
+  #addImageInTextLayer(node, element) {
+    const { alt, bbox, children } = node;
+    const child = children?.[0];
+    if (!this.#rawDims || !alt || !bbox || child?.type !== "content") {
+      return false;
+    }
+
+    const { id } = child;
+    if (!id) {
+      return false;
+    }
+
+    // We cannot add the created element to the text layer immediately, as the
+    // text layer might not be ready yet. Instead, we store the element and add
+    // it later in `addElementsToTextLayer`.
+
+    element.setAttribute("aria-owns", id);
+    const img = document.createElement("span");
+    (this.#elementsToAddToTextLayer ||= new Map()).set(id, img);
+    img.setAttribute("role", "img");
+    img.setAttribute("aria-label", removeNullCharacters(alt));
+
+    const { pageHeight, pageX, pageY } = this.#rawDims;
+    const calc = "calc(var(--scale-factor)*";
+    const { style } = img;
+    style.width = `${calc}${bbox[2] - bbox[0]}px)`;
+    style.height = `${calc}${bbox[3] - bbox[1]}px)`;
+    style.left = `${calc}${bbox[0] - pageX}px)`;
+    style.top = `${calc}${pageHeight - bbox[3] + pageY}px)`;
+
+    return true;
+  }
+
+  addElementsToTextLayer() {
+    if (!this.#elementsToAddToTextLayer) {
+      return;
+    }
+    for (const [id, img] of this.#elementsToAddToTextLayer) {
+      document.getElementById(id)?.append(img);
+    }
+    this.#elementsToAddToTextLayer.clear();
+    this.#elementsToAddToTextLayer = null;
   }
 
   #walk(node) {
@@ -131,6 +225,9 @@ class StructTreeLayerBuilder {
         element.setAttribute("aria-level", match[1]);
       } else if (PDF_ROLE_TO_HTML_ROLE[role]) {
         element.setAttribute("role", PDF_ROLE_TO_HTML_ROLE[role]);
+      }
+      if (role === "Figure" && this.#addImageInTextLayer(node, element)) {
+        return element;
       }
     }
 

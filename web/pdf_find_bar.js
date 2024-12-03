@@ -25,9 +25,11 @@ const MATCHES_COUNT_LIMIT = 1000;
  * is done by PDFFindController.
  */
 class PDFFindBar {
+  #mainContainer;
+
   #resizeObserver = new ResizeObserver(this.#resizeObserverCallback.bind(this));
 
-  constructor(options, eventBus) {
+  constructor(options, mainContainer, eventBus) {
     this.opened = false;
 
     this.bar = options.bar;
@@ -42,6 +44,7 @@ class PDFFindBar {
     this.findPreviousButton = options.findPreviousButton;
     this.findNextButton = options.findNextButton;
     this.eventBus = eventBus;
+    this.#mainContainer = mainContainer;
 
     // Add event listeners to the DOM elements.
     this.toggleButton.addEventListener("click", () => {
@@ -123,7 +126,9 @@ class PDFFindBar {
         status = "notFound";
         break;
       case FindState.WRAPPED:
-        findMsgId = `pdfjs-find-reached-${previous ? "top" : "bottom"}`;
+        findMsgId = previous
+          ? "pdfjs-find-reached-top"
+          : "pdfjs-find-reached-bottom";
         break;
     }
     findField.setAttribute("data-status", status);
@@ -148,7 +153,9 @@ class PDFFindBar {
 
       findResultsCount.setAttribute(
         "data-l10n-id",
-        `pdfjs-find-match-count${total > limit ? "-limit" : ""}`
+        total > limit
+          ? "pdfjs-find-match-count-limit"
+          : "pdfjs-find-match-count"
       );
       findResultsCount.setAttribute(
         "data-l10n-args",
@@ -166,7 +173,7 @@ class PDFFindBar {
       //  - The width of the viewer itself changes.
       //  - The width of the findbar changes, by toggling the visibility
       //    (or localization) of find count/status messages.
-      this.#resizeObserver.observe(this.bar.parentNode);
+      this.#resizeObserver.observe(this.#mainContainer);
       this.#resizeObserver.observe(this.bar);
 
       this.opened = true;
@@ -196,7 +203,7 @@ class PDFFindBar {
     }
   }
 
-  #resizeObserverCallback(entries) {
+  #resizeObserverCallback() {
     const { bar } = this;
     // The find bar has an absolute position and thus the browser extends
     // its width to the maximum possible width once the find bar does not fit

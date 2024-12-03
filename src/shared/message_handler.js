@@ -18,7 +18,6 @@ import {
   assert,
   MissingPDFException,
   PasswordException,
-  PromiseCapability,
   UnexpectedResponseException,
   UnknownErrorException,
   unreachable,
@@ -70,6 +69,8 @@ function wrapReason(reason) {
 }
 
 class MessageHandler {
+  #messageAC = new AbortController();
+
   constructor(sourceName, targetName, comObj) {
     this.sourceName = sourceName;
     this.targetName = targetName;
@@ -81,71 +82,74 @@ class MessageHandler {
     this.callbackCapabilities = Object.create(null);
     this.actionHandler = Object.create(null);
 
-    this._onComObjOnMessage = event => {
-      const data = event.data;
-      if (data.targetName !== this.sourceName) {
-        return;
-      }
-      if (data.stream) {
-        this.#processStreamMessage(data);
-        return;
-      }
-      if (data.callback) {
-        const callbackId = data.callbackId;
-        const capability = this.callbackCapabilities[callbackId];
-        if (!capability) {
-          throw new Error(`Cannot resolve callback ${callbackId}`);
-        }
-        delete this.callbackCapabilities[callbackId];
+    comObj.addEventListener("message", this.#onMessage.bind(this), {
+      signal: this.#messageAC.signal,
+    });
+  }
 
-        if (data.callback === CallbackKind.DATA) {
-          capability.resolve(data.data);
-        } else if (data.callback === CallbackKind.ERROR) {
-          capability.reject(wrapReason(data.reason));
-        } else {
-          throw new Error("Unexpected callback case");
-        }
-        return;
+  #onMessage({ data }) {
+    if (data.targetName !== this.sourceName) {
+      return;
+    }
+    if (data.stream) {
+      this.#processStreamMessage(data);
+      return;
+    }
+    if (data.callback) {
+      const callbackId = data.callbackId;
+      const capability = this.callbackCapabilities[callbackId];
+      if (!capability) {
+        throw new Error(`Cannot resolve callback ${callbackId}`);
       }
-      const action = this.actionHandler[data.action];
-      if (!action) {
-        throw new Error(`Unknown action from worker: ${data.action}`);
-      }
-      if (data.callbackId) {
-        const cbSourceName = this.sourceName;
-        const cbTargetName = data.sourceName;
+      delete this.callbackCapabilities[callbackId];
 
-        new Promise(function (resolve) {
-          resolve(action(data.data));
-        }).then(
-          function (result) {
-            comObj.postMessage({
-              sourceName: cbSourceName,
-              targetName: cbTargetName,
-              callback: CallbackKind.DATA,
-              callbackId: data.callbackId,
-              data: result,
-            });
-          },
-          function (reason) {
-            comObj.postMessage({
-              sourceName: cbSourceName,
-              targetName: cbTargetName,
-              callback: CallbackKind.ERROR,
-              callbackId: data.callbackId,
-              reason: wrapReason(reason),
-            });
-          }
-        );
-        return;
+      if (data.callback === CallbackKind.DATA) {
+        capability.resolve(data.data);
+      } else if (data.callback === CallbackKind.ERROR) {
+        capability.reject(wrapReason(data.reason));
+      } else {
+        throw new Error("Unexpected callback case");
       }
-      if (data.streamId) {
-        this.#createStreamSink(data);
-        return;
-      }
-      action(data.data);
-    };
-    comObj.addEventListener("message", this._onComObjOnMessage);
+      return;
+    }
+    const action = this.actionHandler[data.action];
+    if (!action) {
+      throw new Error(`Unknown action from worker: ${data.action}`);
+    }
+    if (data.callbackId) {
+      const sourceName = this.sourceName,
+        targetName = data.sourceName,
+        comObj = this.comObj;
+
+      new Promise(function (resolve) {
+        resolve(action(data.data));
+      }).then(
+        function (result) {
+          comObj.postMessage({
+            sourceName,
+            targetName,
+            callback: CallbackKind.DATA,
+            callbackId: data.callbackId,
+            data: result,
+          });
+        },
+        function (reason) {
+          comObj.postMessage({
+            sourceName,
+            targetName,
+            callback: CallbackKind.ERROR,
+            callbackId: data.callbackId,
+            reason: wrapReason(reason),
+          });
+        }
+      );
+      return;
+    }
+    if (data.streamId) {
+      this.#createStreamSink(data);
+      return;
+    }
+    action(data.data);
   }
 
   on(actionName, handler) {
@@ -190,7 +194,7 @@ class MessageHandler {
    */
   sendWithPromise(actionName, data, transfers) {
     const callbackId = this.callbackId++;
-    const capability = new PromiseCapability();
+    const capability = Promise.withResolvers();
     this.callbackCapabilities[callbackId] = capability;
     try {
       this.comObj.postMessage(
@@ -228,7 +232,7 @@ class MessageHandler {
     return new ReadableStream(
       {
         start: controller => {
-          const startCapability = new PromiseCapability();
+          const startCapability = Promise.withResolvers();
           this.streamControllers[streamId] = {
             controller,
             startCall: startCapability,
@@ -252,7 +256,7 @@ class MessageHandler {
         },
 
         pull: controller => {
-          const pullCapability = new PromiseCapability();
+          const pullCapability = Promise.withResolvers();
           this.streamControllers[streamId].pullCall = pullCapability;
           comObj.postMessage({
             sourceName,
@@ -268,7 +272,7 @@ class MessageHandler {
 
         cancel: reason => {
           assert(reason instanceof Error, "cancel must have a valid reason");
-          const cancelCapability = new PromiseCapability();
+          const cancelCapability = Promise.withResolvers();
           this.streamControllers[streamId].cancelCall = cancelCapability;
           this.streamControllers[streamId].isClosed = true;
           comObj.postMessage({
@@ -305,7 +309,7 @@ class MessageHandler {
         // so when it changes from positive to negative,
         // set ready as unresolved promise.
         if (lastDesiredSize > 0 && this.desiredSize <= 0) {
-          this.sinkCapability = new PromiseCapability();
+          this.sinkCapability = Promise.withResolvers();
           this.ready = this.sinkCapability.promise;
         }
         comObj.postMessage(
@@ -349,7 +353,7 @@ class MessageHandler {
         });
       },
 
-      sinkCapability: new PromiseCapability(),
+      sinkCapability: Promise.withResolvers(),
       onPull: null,
       onCancel: null,
       isCancelled: false,
@@ -528,7 +532,8 @@ class MessageHandler {
   }
 
   destroy() {
-    this.comObj.removeEventListener("message", this._onComObjOnMessage);
+    this.#messageAC?.abort();
+    this.#messageAC = null;
   }
 }
 

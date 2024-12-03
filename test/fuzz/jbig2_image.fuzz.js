@@ -1,4 +1,5 @@
 import {
+  Jbig2Error,
   Jbig2Image,
   setVerbosityLevel,
   VerbosityLevel,
@@ -7,9 +8,12 @@ import {
 // Avoid unnecessary console "spam", by ignoring `info`/`warn` calls.
 setVerbosityLevel(VerbosityLevel.ERRORS);
 
-const ignored = ["Cannot read properties", "JBIG2 error"];
+const ignored = ["Cannot read properties"];
 
 function ignoredError(error) {
+  if (error instanceof Jbig2Error) {
+    return true;
+  }
   return ignored.some(message => error.message.includes(message));
 }
 

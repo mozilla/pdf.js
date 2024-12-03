@@ -15,6 +15,8 @@
 
 import { AbortException } from "../../src/shared/util.js";
 import { PDFNetworkStream } from "../../src/display/network.js";
+import { testCrossOriginRedirects } from "./common_pdfstream_tests.js";
+import { TestPdfsServer } from "./test_utils.js";
 
 describe("network", function () {
   const pdf1 = new URL("../pdfs/tracemonkey.pdf", window.location).href;
@@ -31,7 +33,7 @@ describe("network", function () {
     const fullReader = stream.getFullReader();
 
     let isStreamingSupported, isRangeSupported;
-    const promise = fullReader.headersReady.then(function () {
+    await fullReader.headersReady.then(function () {
       isStreamingSupported = fullReader.isStreamingSupported;
       isRangeSupported = fullReader.isRangeSupported;
     });
@@ -49,7 +51,7 @@ describe("network", function () {
       });
     };
 
-    await Promise.all([read(), promise]);
+    await read();
 
     expect(len).toEqual(pdf1Length);
     expect(count).toEqual(1);
@@ -72,7 +74,7 @@ describe("network", function () {
     const fullReader = stream.getFullReader();
 
     let isStreamingSupported, isRangeSupported, fullReaderCancelled;
-    const promise = fullReader.headersReady.then(function () {
+    await fullReader.headersReady.then(function () {
       isStreamingSupported = fullReader.isStreamingSupported;
       isRangeSupported = fullReader.isRangeSupported;
       // we shall be able to close the full reader without issues
@@ -107,7 +109,6 @@ describe("network", function () {
     await Promise.all([
       read(range1Reader, result1),
       read(range2Reader, result2),
-      promise,
     ]);
 
     expect(result1.value).toEqual(rangeSize);
@@ -115,5 +116,42 @@ describe("network", function () {
     expect(isStreamingSupported).toEqual(false);
     expect(isRangeSupported).toEqual(true);
     expect(fullReaderCancelled).toEqual(true);
+  });
+
+  describe("Redirects", function () {
+    beforeAll(async function () {
+      await TestPdfsServer.ensureStarted();
+    });
+
+    afterAll(async function () {
+      await TestPdfsServer.ensureStopped();
+    });
+
+    it("redirects allowed if all responses are same-origin", async function () {
+      await testCrossOriginRedirects({
+        PDFStreamClass: PDFNetworkStream,
+        redirectIfRange: false,
+        async testRangeReader(rangeReader) {
+          await expectAsync(rangeReader.read()).toBeResolved();
+        },
+      });
+    });
+
+    it("redirects blocked if any response is cross-origin", async function () {
+      await testCrossOriginRedirects({
+        PDFStreamClass: PDFNetworkStream,
+        redirectIfRange: true,
+        async testRangeReader(rangeReader) {
+          // When read (sync), error should be reported.
+          await expectAsync(rangeReader.read()).toBeRejectedWithError(
+            /^Expected range response-origin "http:.*" to match "http:.*"\.$/
+          );
+          // When read again (async), error should be consistent.
+          await expectAsync(rangeReader.read()).toBeRejectedWithError(
+            /^Expected range response-origin "http:.*" to match "http:.*"\.$/
+          );
+        },
+      });
+    });
   });
 });

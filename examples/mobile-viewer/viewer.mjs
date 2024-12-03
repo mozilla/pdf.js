@@ -272,7 +272,7 @@ const PDFViewerApplication = {
     });
     this.pdfLinkService = linkService;
 
-    this.l10n = pdfjsViewer.NullL10n;
+    this.l10n = new pdfjsViewer.GenericL10n();
 
     const container = document.getElementById("viewerContainer");
     const pdfViewer = new pdfjsViewer.PDFViewer({

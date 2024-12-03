@@ -1,0 +1,81 @@
+name: Bug Report
+description: Report a bug in PDF.js
+title: "[Bug]: "
+body:
+  - type: textarea
+    attributes:
+      label: Attach (recommended) or Link to PDF file
+      description: Without this information the issue may be closed without comment
+      placeholder: Please place only the PDF file in this field
+    validations:
+      required: true
+
+  - type: markdown
+    attributes: { value: "---" }
+
+  - type: input
+    attributes:
+      label: Web browser and its version
+      description: Please ensure that it's supported, refer to [the FAQ](https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions#faq-support)
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Operating system and its version
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: PDF.js version
+      description: Please find official releases [here](https://github.com/mozilla/pdf.js/releases)
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Is the bug present in the latest PDF.js version?
+      description: Please check the [online demo](https://github.com/mozilla/pdf.js#online-demo)
+      options: ["Yes", "No"]
+      default: 0
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Is a browser extension
+      options: ["Yes", "No"]
+      default: 1
+    validations:
+      required: true
+
+  - type: markdown
+    attributes: { value: "---" }
+
+  - type: textarea
+    attributes:
+      label: Steps to reproduce the problem
+      placeholder: "1.\n2."
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: What is the expected behavior?
+      description: Also add a screenshot
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: What went wrong?
+      description: Also add a screenshot
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Link to a viewer
+      description: Needed if hosted on a site other than mozilla.github.io/pdf.js or as Firefox/Chrome extension
+
+  - type: textarea
+    attributes:
+      label: Additional context
+      description: Do you have anything to add that doesn't fit in the issue template?

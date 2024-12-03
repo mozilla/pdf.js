@@ -13,162 +13,15 @@
  * limitations under the License.
  */
 
-import { bytesToString, isNodeJS } from "../../src/shared/util.js";
 import {
-  DOMCanvasFactory,
-  DOMSVGFactory,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
   isValidFetchUrl,
   PDFDateString,
 } from "../../src/display/display_utils.js";
+import { toBase64Util } from "../../src/shared/util.js";
 
 describe("display_utils", function () {
-  describe("DOMCanvasFactory", function () {
-    let canvasFactory;
-
-    beforeAll(function () {
-      canvasFactory = new DOMCanvasFactory();
-    });
-
-    afterAll(function () {
-      canvasFactory = null;
-    });
-
-    it("`create` should throw an error if the dimensions are invalid", function () {
-      // Invalid width.
-      expect(function () {
-        return canvasFactory.create(-1, 1);
-      }).toThrow(new Error("Invalid canvas size"));
-
-      // Invalid height.
-      expect(function () {
-        return canvasFactory.create(1, -1);
-      }).toThrow(new Error("Invalid canvas size"));
-    });
-
-    it("`create` should return a canvas if the dimensions are valid", function () {
-      if (isNodeJS) {
-        pending("Document is not supported in Node.js.");
-      }
-
-      const { canvas, context } = canvasFactory.create(20, 40);
-      expect(canvas instanceof HTMLCanvasElement).toBe(true);
-      expect(context instanceof CanvasRenderingContext2D).toBe(true);
-      expect(canvas.width).toBe(20);
-      expect(canvas.height).toBe(40);
-    });
-
-    it("`reset` should throw an error if no canvas is provided", function () {
-      const canvasAndContext = { canvas: null, context: null };
-
-      expect(function () {
-        return canvasFactory.reset(canvasAndContext, 20, 40);
-      }).toThrow(new Error("Canvas is not specified"));
-    });
-
-    it("`reset` should throw an error if the dimensions are invalid", function () {
-      const canvasAndContext = { canvas: "foo", context: "bar" };
-
-      // Invalid width.
-      expect(function () {
-        return canvasFactory.reset(canvasAndContext, -1, 1);
-      }).toThrow(new Error("Invalid canvas size"));
-
-      // Invalid height.
-      expect(function () {
-        return canvasFactory.reset(canvasAndContext, 1, -1);
-      }).toThrow(new Error("Invalid canvas size"));
-    });
-
-    it("`reset` should alter the canvas/context if the dimensions are valid", function () {
-      if (isNodeJS) {
-        pending("Document is not supported in Node.js.");
-      }
-
-      const canvasAndContext = canvasFactory.create(20, 40);
-      canvasFactory.reset(canvasAndContext, 60, 80);
-
-      const { canvas, context } = canvasAndContext;
-      expect(canvas instanceof HTMLCanvasElement).toBe(true);
-      expect(context instanceof CanvasRenderingContext2D).toBe(true);
-      expect(canvas.width).toBe(60);
-      expect(canvas.height).toBe(80);
-    });
-
-    it("`destroy` should throw an error if no canvas is provided", function () {
-      expect(function () {
-        return canvasFactory.destroy({});
-      }).toThrow(new Error("Canvas is not specified"));
-    });
-
-    it("`destroy` should clear the canvas/context", function () {
-      if (isNodeJS) {
-        pending("Document is not supported in Node.js.");
-      }
-
-      const canvasAndContext = canvasFactory.create(20, 40);
-      canvasFactory.destroy(canvasAndContext);
-
-      const { canvas, context } = canvasAndContext;
-      expect(canvas).toBe(null);
-      expect(context).toBe(null);
-    });
-  });
-
-  describe("DOMSVGFactory", function () {
-    let svgFactory;
-
-    beforeAll(function () {
-      svgFactory = new DOMSVGFactory();
-    });
-
-    afterAll(function () {
-      svgFactory = null;
-    });
-
-    it("`create` should throw an error if the dimensions are invalid", function () {
-      // Invalid width.
-      expect(function () {
-        return svgFactory.create(-1, 0);
-      }).toThrow(new Error("Invalid SVG dimensions"));
-
-      // Invalid height.
-      expect(function () {
-        return svgFactory.create(0, -1);
-      }).toThrow(new Error("Invalid SVG dimensions"));
-    });
-
-    it("`create` should return an SVG element if the dimensions are valid", function () {
-      if (isNodeJS) {
-        pending("Document is not supported in Node.js.");
-      }
-
-      const svg = svgFactory.create(20, 40);
-      expect(svg instanceof SVGSVGElement).toBe(true);
-      expect(svg.getAttribute("version")).toBe("1.1");
-      expect(svg.getAttribute("width")).toBe("20px");
-      expect(svg.getAttribute("height")).toBe("40px");
-      expect(svg.getAttribute("preserveAspectRatio")).toBe("none");
-      expect(svg.getAttribute("viewBox")).toBe("0 0 20 40");
-    });
-
-    it("`createElement` should throw an error if the type is not a string", function () {
-      expect(function () {
-        return svgFactory.createElement(true);
-      }).toThrow(new Error("Invalid SVG element type"));
-    });
-
-    it("`createElement` should return an SVG element if the type is valid", function () {
-      if (isNodeJS) {
-        pending("Document is not supported in Node.js.");
-      }
-
-      const svg = svgFactory.createElement("svg:rect");
-      expect(svg instanceof SVGRectElement).toBe(true);
-    });
-  });
-
   describe("getFilenameFromUrl", function () {
     it("should get the filename from an absolute URL", function () {
       const url = "https://server.org/filename.pdf";
@@ -188,13 +41,6 @@ describe("display_utils", function () {
     it("should get the filename from a URL with query parameters", function () {
       const url = "https://server.org/filename.pdf?foo=bar";
       expect(getFilenameFromUrl(url)).toEqual("filename.pdf");
-    });
-
-    it("should get the filename from a relative URL, keeping the anchor", function () {
-      const url = "../../part1#part2.pdf";
-      expect(getFilenameFromUrl(url, /* onlyStripPath = */ true)).toEqual(
-        "part1#part2.pdf"
-      );
     });
   });
 
@@ -322,9 +168,6 @@ describe("display_utils", function () {
     });
 
     it('gets PDF filename from query string appended to "blob:" URL', function () {
-      if (isNodeJS) {
-        pending("Blob in not supported in Node.js.");
-      }
       const typedArray = new Uint8Array([1, 2, 3, 4, 5]);
       const blobUrl = URL.createObjectURL(
         new Blob([typedArray], { type: "application/pdf" })
@@ -336,9 +179,8 @@ describe("display_utils", function () {
     });
 
     it('gets fallback filename from query string appended to "data:" URL', function () {
-      const typedArray = new Uint8Array([1, 2, 3, 4, 5]),
-        str = bytesToString(typedArray);
-      const dataUrl = `data:application/pdf;base64,${btoa(str)}`;
+      const typedArray = new Uint8Array([1, 2, 3, 4, 5]);
+      const dataUrl = `data:application/pdf;base64,${toBase64Util(typedArray)}`;
       // Sanity check to ensure that a "data:" URL was returned.
       expect(dataUrl.startsWith("data:")).toEqual(true);
 

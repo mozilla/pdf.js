@@ -84,6 +84,7 @@ class Sandbox {
         [buf, this._alertOnError]
       );
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error);
     } finally {
       if (buf) {
@@ -141,9 +142,7 @@ class Sandbox {
 }
 
 function QuickJSSandbox() {
-  return ModuleLoader().then(module => {
-    return new Sandbox(window, module);
-  });
+  return ModuleLoader().then(module => new Sandbox(window, module));
 }
 
 export { QuickJSSandbox };

@@ -51,12 +51,6 @@ pdfjs-download-button-label = Telecargar
 pdfjs-bookmark-button =
     .title = Pagina actuala (mostrar l’adreça de la pagina actuala)
 pdfjs-bookmark-button-label = Pagina actuala
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = Dobrir amb l’aplicacion
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = Dobrir amb l’aplicacion
 
 ##  Secondary toolbar and context menu
 
@@ -286,6 +280,27 @@ pdfjs-editor-ink-button-label = Dessenhar
 pdfjs-editor-stamp-button =
     .title = Apondre o modificar d’imatges
 pdfjs-editor-stamp-button-label = Apondre o modificar d’imatges
+pdfjs-editor-highlight-button =
+    .title = Subrelinhar
+pdfjs-editor-highlight-button-label = Subrelinhar
+pdfjs-highlight-floating-button1 =
+    .title = Subrelinhar
+    .aria-label = Subrelinhar
+pdfjs-highlight-floating-button-label = Subrelinhar
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = Levar lo dessenh
+pdfjs-editor-remove-freetext-button =
+    .title = Suprimir lo tèxte
+pdfjs-editor-remove-stamp-button =
+    .title = Suprimir l’imatge
+pdfjs-editor-remove-highlight-button =
+    .title = Levar lo suslinhatge
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Color
 pdfjs-editor-free-text-size-input = Talha
@@ -295,6 +310,8 @@ pdfjs-editor-ink-opacity-input = Opacitat
 pdfjs-editor-stamp-add-image-button =
     .title = Apondre imatge
 pdfjs-editor-stamp-add-image-button-label = Apondre imatge
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Espessor
 pdfjs-free-text =
     .aria-label = Editor de tèxte
 pdfjs-free-text-default-content = Començatz d’escriure…
@@ -316,3 +333,29 @@ pdfjs-editor-alt-text-save-button = Enregistrar
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = Color de suslinhatge
+pdfjs-editor-colorpicker-button =
+    .title = Cambiar de color
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = Causida de colors
+pdfjs-editor-colorpicker-yellow =
+    .title = Jaune
+pdfjs-editor-colorpicker-green =
+    .title = Verd
+pdfjs-editor-colorpicker-blue =
+    .title = Blau
+pdfjs-editor-colorpicker-pink =
+    .title = Ròse
+pdfjs-editor-colorpicker-red =
+    .title = Roge
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = O afichar tot
+pdfjs-editor-highlight-show-all-button =
+    .title = O afichar tot

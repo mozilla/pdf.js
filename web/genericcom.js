@@ -13,10 +13,9 @@
  * limitations under the License.
  */
 
-import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
 import { AppOptions } from "./app_options.js";
+import { BaseExternalServices } from "./external_services.js";
 import { BasePreferences } from "./preferences.js";
-import { DownloadManager } from "./download_manager.js";
 import { GenericL10n } from "./genericl10n.js";
 import { GenericScripting } from "./generic_scripting.js";
 
@@ -26,9 +25,9 @@ if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
   );
 }
 
-const GenericCom = {};
+function initCom(app) {}
 
-class GenericPreferences extends BasePreferences {
+class Preferences extends BasePreferences {
   async _writeToStorage(prefObj) {
     localStorage.setItem("pdfjs.preferences", JSON.stringify(prefObj));
   }
@@ -38,23 +37,109 @@ class GenericPreferences extends BasePreferences {
   }
 }
 
-class GenericExternalServices extends DefaultExternalServices {
-  static createDownloadManager() {
-    return new DownloadManager();
+class ExternalServices extends BaseExternalServices {
+  async createL10n() {
+    return new GenericL10n(AppOptions.get("localeProperties")?.lang);
   }
 
-  static createPreferences() {
-    return new GenericPreferences();
-  }
-
-  static async createL10n() {
-    return new GenericL10n(AppOptions.get("locale"));
-  }
-
-  static createScripting() {
+  createScripting() {
     return new GenericScripting(AppOptions.get("sandboxBundleSrc"));
   }
 }
-PDFViewerApplication.externalServices = GenericExternalServices;
 
-export { GenericCom };
+class MLManager {
+  async isEnabledFor(_name) {
+    return false;
+  }
+
+  async deleteModel(_service) {
+    return null;
+  }
+
+  isReady(_name) {
+    return false;
+  }
+
+  guess(_data) {}
+
+  toggleService(_name, _enabled) {}
+
+  static getFakeMLManager(options) {
+    return new FakeMLManager(options);
+  }
+}
+
+class FakeMLManager {
+  eventBus = null;
+
+  hasProgress = false;
+
+  constructor({ enableGuessAltText, enableAltTextModelDownload }) {
+    this.enableGuessAltText = enableGuessAltText;
+    this.enableAltTextModelDownload = enableAltTextModelDownload;
+  }
+
+  setEventBus(eventBus, abortSignal) {
+    this.eventBus = eventBus;
+  }
+
+  async isEnabledFor(_name) {
+    return this.enableGuessAltText;
+  }
+
+  async deleteModel(_name) {
+    this.enableAltTextModelDownload = false;
+    return null;
+  }
+
+  async loadModel(_name) {}
+
+  async downloadModel(_name) {
+    // Simulate downloading the model but with progress.
+    // The progress can be seen in the new alt-text dialog.
+    this.hasProgress = true;
+
+    const { promise, resolve } = Promise.withResolvers();
+    const total = 1e8;
+    const end = 1.5 * total;
+    const increment = 5e6;
+    let loaded = 0;
+    const id = setInterval(() => {
+      loaded += increment;
+      if (loaded <= end) {
+        this.eventBus.dispatch("loadaiengineprogress", {
+          source: this,
+          detail: {
+            total,
+            totalLoaded: loaded,
+            finished: loaded + increment >= end,
+          },
+        });
+        return;
+      }
+      clearInterval(id);
+      this.hasProgress = false;
+      this.enableAltTextModelDownload = true;
+      resolve(true);
+    }, 900);
+    return promise;
+  }
+
+  isReady(_name) {
+    return this.enableAltTextModelDownload;
+  }
+
+  guess({ request: { data } }) {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve(data ? { output: "Fake alt text" } : { error: true });
+      }, 3000);
+    });
+  }
+
+  toggleService(_name, enabled) {
+    this.enableGuessAltText = enabled;
+  }
+}
+
+export { ExternalServices, initCom, MLManager, Preferences };

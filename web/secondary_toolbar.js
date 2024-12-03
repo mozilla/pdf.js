@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./event_utils.js").EventBus} EventBus */
+
 import {
   CursorTool,
   ScrollMode,
@@ -47,6 +49,8 @@ import { PagesCountLimit } from "./pdf_viewer.js";
  *   select tool.
  * @property {HTMLButtonElement} cursorHandToolButton - Button to enable the
  *   hand tool.
+ * @property {HTMLButtonElement} imageAltTextSettingsButton - Button for opening
+ *   the image alt-text settings dialog.
  * @property {HTMLButtonElement} documentPropertiesButton - Button for opening
  *   the document properties dialog.
  */
@@ -136,6 +140,11 @@ class SecondaryToolbar {
         close: true,
       },
       {
+        element: options.imageAltTextSettingsButton,
+        eventName: "imagealttextsettings",
+        close: true,
+      },
+      {
         element: options.documentPropertiesButton,
         eventName: "documentproperties",
         close: true,
@@ -182,6 +191,7 @@ class SecondaryToolbar {
     this.#updateUIState();
 
     // Reset the Scroll/Spread buttons too, since they're document specific.
+    this.eventBus.dispatch("switchcursortool", { source: this, reset: true });
     this.#scrollModeChanged({ mode: ScrollMode.VERTICAL });
     this.#spreadModeChanged({ mode: SpreadMode.NONE });
   }
@@ -230,11 +240,14 @@ class SecondaryToolbar {
     eventBus._on("spreadmodechanged", this.#spreadModeChanged.bind(this));
   }
 
-  #cursorToolChanged({ tool }) {
+  #cursorToolChanged({ tool, disabled }) {
     const { cursorSelectToolButton, cursorHandToolButton } = this.#opts;
 
     toggleCheckedBtn(cursorSelectToolButton, tool === CursorTool.SELECT);
     toggleCheckedBtn(cursorHandToolButton, tool === CursorTool.HAND);
+
+    cursorSelectToolButton.disabled = disabled;
+    cursorHandToolButton.disabled = disabled;
   }
 
   #scrollModeChanged({ mode }) {

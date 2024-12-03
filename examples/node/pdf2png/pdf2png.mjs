@@ -13,40 +13,8 @@
  * limitations under the License.
  */
 
-import { strict as assert } from "assert";
-import Canvas from "canvas";
 import fs from "fs";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
-
-class NodeCanvasFactory {
-  create(width, height) {
-    assert(width > 0 && height > 0, "Invalid canvas size");
-    const canvas = Canvas.createCanvas(width, height);
-    const context = canvas.getContext("2d");
-    return {
-      canvas,
-      context,
-    };
-  }
-
-  reset(canvasAndContext, width, height) {
-    assert(canvasAndContext.canvas, "Canvas is not specified");
-    assert(width > 0 && height > 0, "Invalid canvas size");
-    canvasAndContext.canvas.width = width;
-    canvasAndContext.canvas.height = height;
-  }
-
-  destroy(canvasAndContext) {
-    assert(canvasAndContext.canvas, "Canvas is not specified");
-
-    // Zeroing the width and height cause Firefox to release graphics
-    // resources immediately, which can greatly reduce memory consumption.
-    canvasAndContext.canvas.width = 0;
-    canvasAndContext.canvas.height = 0;
-    canvasAndContext.canvas = null;
-    canvasAndContext.context = null;
-  }
-}
 
 // Some PDFs need external cmaps.
 const CMAP_URL = "../../../node_modules/pdfjs-dist/cmaps/";
@@ -55,8 +23,6 @@ const CMAP_PACKED = true;
 // Where the standard fonts are located.
 const STANDARD_FONT_DATA_URL =
   "../../../node_modules/pdfjs-dist/standard_fonts/";
-
-const canvasFactory = new NodeCanvasFactory();
 
 // Loading file from file system into typed array.
 const pdfPath =
@@ -69,7 +35,6 @@ const loadingTask = getDocument({
   cMapUrl: CMAP_URL,
   cMapPacked: CMAP_PACKED,
   standardFontDataUrl: STANDARD_FONT_DATA_URL,
-  canvasFactory,
 });
 
 try {
@@ -78,6 +43,7 @@ try {
   // Get the first page.
   const page = await pdfDocument.getPage(1);
   // Render the page on a Node canvas with 100% scale.
+  const canvasFactory = pdfDocument.canvasFactory;
   const viewport = page.getViewport({ scale: 1.0 });
   const canvasAndContext = canvasFactory.create(
     viewport.width,
@@ -91,7 +57,7 @@ try {
   const renderTask = page.render(renderContext);
   await renderTask.promise;
   // Convert the canvas to an image buffer.
-  const image = canvasAndContext.canvas.toBuffer();
+  const image = canvasAndContext.canvas.toBuffer("image/png");
   fs.writeFile("output.png", image, function (error) {
     if (error) {
       console.error("Error: " + error);

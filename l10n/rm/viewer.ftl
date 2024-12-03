@@ -51,12 +51,6 @@ pdfjs-download-button-label = Telechargiar
 pdfjs-bookmark-button =
     .title = Pagina actuala (mussar l'URL da la pagina actuala)
 pdfjs-bookmark-button-label = Pagina actuala
-# Used in Firefox for Android.
-pdfjs-open-in-app-button =
-    .title = Avrir en ina app
-# Used in Firefox for Android.
-# Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-open-in-app-button-label = Avrir en ina app
 
 ##  Secondary toolbar and context menu
 
@@ -111,6 +105,14 @@ pdfjs-document-properties-button-label = Caracteristicas dal document…
 pdfjs-document-properties-file-name = Num da la datoteca:
 pdfjs-document-properties-file-size = Grondezza da la datoteca:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } KB ({ $b } bytes)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bytes)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bytes)
@@ -124,6 +126,9 @@ pdfjs-document-properties-subject = Tema:
 pdfjs-document-properties-keywords = Chavazzins:
 pdfjs-document-properties-creation-date = Data da creaziun:
 pdfjs-document-properties-modification-date = Data da modificaziun:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -281,6 +286,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [Annotaziun da { $type }]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -301,8 +309,13 @@ pdfjs-editor-ink-button-label = Dissegnar
 pdfjs-editor-stamp-button =
     .title = Agiuntar u modifitgar maletgs
 pdfjs-editor-stamp-button-label = Agiuntar u modifitgar maletgs
-pdfjs-editor-remove-button =
-    .title = Allontanar
+pdfjs-editor-highlight-button =
+    .title = Marcar
+pdfjs-editor-highlight-button-label = Marcar
+pdfjs-highlight-floating-button1 =
+    .title = Marcar
+    .aria-label = Marcar
+pdfjs-highlight-floating-button-label = Marcar
 
 ## Remove button for the various kind of editor.
 
@@ -326,6 +339,14 @@ pdfjs-editor-ink-opacity-input = Opacitad
 pdfjs-editor-stamp-add-image-button =
     .title = Agiuntar in maletg
 pdfjs-editor-stamp-add-image-button-label = Agiuntar in maletg
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Grossezza
+pdfjs-editor-free-highlight-thickness-title =
+    .title = Midar la grossezza cun relevar elements betg textuals
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Editur da text
+    .default-content = Cumenza a tippar…
 pdfjs-free-text =
     .aria-label = Editur da text
 pdfjs-free-text-default-content = Cumenzar a tippar…
@@ -336,8 +357,9 @@ pdfjs-ink-canvas =
 
 ## Alt-text dialog
 
-# Alternative text (alt text) helps when people can't see the image.
 pdfjs-editor-alt-text-button-label = Text alternativ
+pdfjs-editor-alt-text-edit-button =
+    .aria-label = Modifitgar il text alternativ
 pdfjs-editor-alt-text-edit-button-label = Modifitgar il text alternativ
 pdfjs-editor-alt-text-dialog-label = Tscherner ina opziun
 pdfjs-editor-alt-text-dialog-description = Il text alternativ (alt text) gida en cas che persunas na vesan betg il maletg u sch'i na reussescha betg d'al chargiar.
@@ -351,6 +373,9 @@ pdfjs-editor-alt-text-decorative-tooltip = Marcà sco decorativ
 # .placeholder: This is a placeholder for the alt text input area
 pdfjs-editor-alt-text-textarea =
     .placeholder = Per exempel: «In um giuven sesa a maisa per mangiar in past»
+# Alternative text (alt text) helps when people can't see the image.
+pdfjs-editor-alt-text-button =
+    .aria-label = Text alternativ
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
@@ -363,6 +388,22 @@ pdfjs-editor-resizer-label-bottom-right = Chantun sut a dretga — redimensiunar
 pdfjs-editor-resizer-label-bottom-middle = Sutvart amez — redimensiunar
 pdfjs-editor-resizer-label-bottom-left = Chantun sut a sanestra — redimensiunar
 pdfjs-editor-resizer-label-middle-left = Vart sanestra amez — redimensiunar
+pdfjs-editor-resizer-top-left =
+    .aria-label = Chantun sura a sanestra — redimensiunar
+pdfjs-editor-resizer-top-middle =
+    .aria-label = Sura amez — redimensiunar
+pdfjs-editor-resizer-top-right =
+    .aria-label = Chantun sura a dretga — redimensiunar
+pdfjs-editor-resizer-middle-right =
+    .aria-label = Da vart dretga amez — redimensiunar
+pdfjs-editor-resizer-bottom-right =
+    .aria-label = Chantun sut a dretga — redimensiunar
+pdfjs-editor-resizer-bottom-middle =
+    .aria-label = Sutvart amez — redimensiunar
+pdfjs-editor-resizer-bottom-left =
+    .aria-label = Chantun sut a sanestra — redimensiunar
+pdfjs-editor-resizer-middle-left =
+    .aria-label = Vart sanestra amez — redimensiunar
 
 ## Color picker
 
@@ -382,3 +423,73 @@ pdfjs-editor-colorpicker-pink =
     .title = Rosa
 pdfjs-editor-colorpicker-red =
     .title = Cotschen
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Mussar tut
+pdfjs-editor-highlight-show-all-button =
+    .title = Mussar tut
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+# Modal header positioned above a text box where users can edit the alt text.
+pdfjs-editor-new-alt-text-dialog-edit-label = Modifitgar il text alternativ (descripziun dal maletg)
+# Modal header positioned above a text box where users can add the alt text.
+pdfjs-editor-new-alt-text-dialog-add-label = Agiuntar in text alternativ (descripziun dal maletg)
+pdfjs-editor-new-alt-text-textarea =
+    .placeholder = Scriva qua tia descripziun…
+# This text refers to the alt text box above this description. It offers a definition of alt text.
+pdfjs-editor-new-alt-text-description = Curta descripziun per persunas che na vesan betg il maletg u per cass en ils quals il maletg na vegn betg chargià.
+# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
+pdfjs-editor-new-alt-text-disclaimer1 = Quest text alternativ è vegnì creà automaticamain ed è eventualmain nunprecis.
+pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Ulteriuras infurmaziuns
+pdfjs-editor-new-alt-text-create-automatically-button-label = Crear automaticamain il text alternativ
+pdfjs-editor-new-alt-text-not-now-button = Betg ussa
+pdfjs-editor-new-alt-text-error-title = I n’è betg reussì da crear automaticamain il text alternativ
+pdfjs-editor-new-alt-text-error-description = Scriva per plaschair tes agen text alternativ u emprova pli tard anc ina giada.
+pdfjs-editor-new-alt-text-error-close-button = Serrar
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+#   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
+#   $percent (Number) - the percentage of the downloaded size.
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = Telechargiar il model IA da text alternativ ({ $downloadedSize } da { $totalSize } MB)
+    .aria-valuetext = Telechargiar il model IA da text alternativ ({ $downloadedSize } da { $totalSize } MB)
+# This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button =
+    .aria-label = Agiuntà text alternativ
+pdfjs-editor-new-alt-text-added-button-label = Text alternativ agiuntà
+# This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button =
+    .aria-label = Text alternativ manca
+pdfjs-editor-new-alt-text-missing-button-label = Text alternativ manca
+# This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button =
+    .aria-label = Repassar il text alternativ
+pdfjs-editor-new-alt-text-to-review-button-label = Repassar il text alternativ
+# "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
+# Variables:
+#   $generatedAltText (String) - the generated alt-text.
+pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer = Creà automaticamain: { $generatedAltText }
+
+## Image alt-text settings
+
+pdfjs-image-alt-text-settings-button =
+    .title = Parameters dal text alternativ da maletgs
+pdfjs-image-alt-text-settings-button-label = Parameters dal text alternativ da maletgs
+pdfjs-editor-alt-text-settings-dialog-label = Parameters dal text alternativ da maletgs
+pdfjs-editor-alt-text-settings-automatic-title = Text alternativ automatic
+pdfjs-editor-alt-text-settings-create-model-button-label = Crear automaticamain text alternativ
+pdfjs-editor-alt-text-settings-create-model-description = Propona descripziuns per gidar a persunas che na vesan betg il maletg u per cass en ils quals il maletg na vegn betg chargià.
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+pdfjs-editor-alt-text-settings-download-model-label = Model IA da text alternativ ({ $totalSize } MB)
+pdfjs-editor-alt-text-settings-ai-model-description = Vegn exequì localmain sin tes apparat per che tias datas restian privatas. Necessari per text alternativ automatic.
+pdfjs-editor-alt-text-settings-delete-model-button = Stizzar
+pdfjs-editor-alt-text-settings-download-model-button = Telechargiar
+pdfjs-editor-alt-text-settings-downloading-model-button = Telechargiar…
+pdfjs-editor-alt-text-settings-editor-title = Editur per text alternativ
+pdfjs-editor-alt-text-settings-show-dialog-button-label = Mussar l’editur per text alternativ directamain cun agiuntar in maletg
+pdfjs-editor-alt-text-settings-show-dialog-description = Ta gida a garantir che tut tes maletgs hajan in text alternativ.
+pdfjs-editor-alt-text-settings-close-button = Serrar

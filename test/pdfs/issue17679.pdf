@@ -1,0 +1,73 @@
+%PDF-1.4
+%¿÷¢þ
+1 0 obj
+<< /OCProperties 3 0 R /Pages 4 0 R /Type /Catalog >>
+endobj
+2 0 obj
+<< /Author (Haik Lorenz) /CreationDate (D:20240131090542+01'00') /Creator (Notepad) /ModDate (D:20240131090542+01'00') /Producer (Notepad) >>
+endobj
+3 0 obj
+<< /D 5 0 R /OCGs [ 6 0 R 7 0 R ] >>
+endobj
+4 0 obj
+<< /Count 1 /Kids [ 8 0 R ] /Type /Pages >>
+endobj
+5 0 obj
+<< /Order [ 6 0 R 7 0 R ] >>
+endobj
+6 0 obj
+<< /Name (green) /Type /OCG >>
+endobj
+7 0 obj
+<< /Name (red) /Type /OCG >>
+endobj
+8 0 obj
+<< /Count 1 /Kids [ 9 0 R ] /Parent 4 0 R /Type /Pages >>
+endobj
+9 0 obj
+<< /Contents [ 10 0 R 11 0 R ] /MediaBox [ 0 0 100 100 ] /Parent 8 0 R /Resources << /ExtGState << /BBGS 12 0 R >> /ProcSet [ /PDF ] /XObject << /BBL 13 0 R /BBL1 14 0 R >> >> /Type /Page >>
+endobj
+10 0 obj
+<< /BBType /Melted /Length 46 >>
+stream
+q 1 0 0 1 0 0 cm q 1 0 0 1 0 0 cm /BBL Do Q Q endstream
+endobj
+11 0 obj
+<< /BBType /Melted /Length 56 >>
+stream
+q /BBGS gs 1 0 0 1 0 0 cm q 1 0 0 1 0 0 cm /BBL1 Do Q Q endstream
+endobj
+12 0 obj
+<< /BM /Darken /Type /ExtGState >>
+endobj
+13 0 obj
+<< /BBox [ 0 0 100 100 ] /FormType 1 /Matrix [ 1 0 0 1 0 0 ] /OC 6 0 R /Resources << /ProcSet [ /PDF /Text /ImageC ] >> /Subtype /Form /Type /XObject /Length 60 >>
+stream
+q0 1 0 RG0 1 0 rg0 0 m55 0 l55 100 l0 100 l0 0 lfQendstream
+endobj
+14 0 obj
+<< /BBox [ 0 0 2979 1684 ] /FormType 1 /Group << /S /Transparency >> /Matrix [ 1 0 0 1 0 0 ] /OC 7 0 R /Resources << /ProcSet [ /PDF /Text /ImageC ] >> /Subtype /Form /Type /XObject /Length 231 >>
+stream
+q1 0.6 0 RG1 0.6 0 rg45 0 m100 0 l100 10 l45 10 l45 0 lf/OC /oc1 BDC1 0.3 0 RG1 0.3 0 rg45 10 m100 10 l100 50 l45 50 l45 10 lfEMC/OC /oc7 BDC1 0 0 RG1 0 0 rg45 50 m100 50 l100 100 l45 100 l45 50 lfEMCQendstream
+endobj
+xref
+0 15
+0000000000 65535 f 
+0000000015 00000 n 
+0000000084 00000 n 
+0000000241 00000 n 
+0000000293 00000 n 
+0000000352 00000 n 
+0000000396 00000 n 
+0000000442 00000 n 
+0000000486 00000 n 
+0000000559 00000 n 
+0000000765 00000 n 
+0000000877 00000 n 
+0000000999 00000 n 
+0000001050 00000 n 
+0000001307 00000 n 
+trailer << /Info 2 0 R /Root 1 0 R /Size 15 /ID [<4a98efbce201625d6366fd6b63e1ee86><12e9607655dd86f67f55a66ae8b94a12>] >>
+startxref
+1768
+%%EOF

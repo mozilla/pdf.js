@@ -106,12 +106,6 @@ class IPDFLinkService {
    * @param {Object} action
    */
   executeSetOCGState(action) {}
-
-  /**
-   * @param {number} pageNum - page number.
-   * @param {Object} pageRef - reference to the page.
-   */
-  cachePageRef(pageNum, pageRef) {}
 }
 
 /**
@@ -144,13 +138,6 @@ class IRenderableView {
  */
 class IDownloadManager {
   /**
-   * @param {string} url
-   * @param {string} filename
-   * @param {Object} [options]
-   */
-  downloadUrl(url, filename, options) {}
-
-  /**
    * @param {Uint8Array} data
    * @param {string} filename
    * @param {string} [contentType]
@@ -166,12 +153,11 @@ class IDownloadManager {
   openOrDownloadData(data, filename, dest = null) {}
 
   /**
-   * @param {Blob} blob
+   * @param {Uint8Array} data
    * @param {string} url
    * @param {string} filename
-   * @param {Object} [options]
    */
-  download(blob, url, filename, options) {}
+  download(data, url, filename) {}
 }
 
 /**
@@ -217,4 +203,25 @@ class IL10n {
   resume() {}
 }
 
-export { IDownloadManager, IL10n, IPDFLinkService, IRenderableView };
+/**
+ * @interface
+ */
+class IPDFPrintServiceFactory {
+  static initGlobals() {}
+
+  static get supportsPrinting() {
+    return false;
+  }
+
+  static createPrintService() {
+    throw new Error("Not implemented: createPrintService");
+  }
+}
+
+export {
+  IDownloadManager,
+  IL10n,
+  IPDFLinkService,
+  IPDFPrintServiceFactory,
+  IRenderableView,
+};
