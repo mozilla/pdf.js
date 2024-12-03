@@ -273,3 +273,95 @@ export {
   AppOptions as PDFViewerApplicationOptions,
   PDFViewerApplication,
 };
+
+
+    // Select Elements
+const quickBall = document.getElementById('quickBall');
+const noteWindow = document.getElementById('noteWindow');
+const noteInput = document.getElementById('noteInput');
+const saveNote = document.getElementById('saveNote');
+const exportToPdfButton = document.getElementById('exportToPdf');
+
+// Toggle Note Window and Load Existing Notes
+quickBall.addEventListener('click', () => {
+  noteWindow.classList.toggle('hidden');
+  
+  // Load existing notes into the textarea when opening the note window
+  const notes = JSON.parse(localStorage.getItem('notes')) || [];
+  noteInput.value = notes.join('\n'); // Display all notes in the textarea
+});
+
+// Save Note to LocalStorage
+saveNote.addEventListener('click', () => {
+  const note = noteInput.value.trim();
+  if (note) {
+    const notes = JSON.parse(localStorage.getItem('notes')) || [];
+    notes.push(note);
+    localStorage.setItem('notes', JSON.stringify(notes));
+    
+    // Append the new note to the textarea
+    noteInput.value = notes.join('\n'); // Show all notes in the textarea
+    
+    alert('Note saved!');
+    noteWindow.classList.add('hidden'); // Hide the note window
+  } else {
+    alert('Please enter a note.');
+  }
+});
+
+// Export Notes to PDF
+exportToPdfButton.addEventListener('click', () => {
+  const notes = JSON.parse(localStorage.getItem('notes')) || [];
+  
+  if (notes.length === 0) {
+    alert('No notes to export!');
+    return;
+  }
+
+  // Create a new jsPDF instance
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  // Add notes to the PDF
+  doc.setFontSize(16);
+  doc.text("Exported Notes", 10, 10);
+
+  doc.setFontSize(12);
+  let yOffset = 20; // Starting vertical position
+
+  notes.forEach((note, index) => {
+    doc.text(`${index + 1}. ${note}`, 10, yOffset);
+    yOffset += 10; // Increment position for the next note
+    if (yOffset > 280) { // Check if space is exhausted on the page
+      doc.addPage(); // Add a new page if necessary
+      yOffset = 20;
+    }
+  });
+
+  // Save the PDF
+  doc.save('notes.pdf');
+
+  // Clear the notes from local storage and textarea after exporting
+  localStorage.removeItem('notes');
+  noteInput.value = ''; // Clear the textarea
+  alert('Notes exported and history cleared!');
+});
+
+// Make Quick Ball Draggable
+quickBall.addEventListener('mousedown', (e) => {
+  const offsetX = e.clientX - quickBall.getBoundingClientRect().left;
+  const offsetY = e.clientY - quickBall.getBoundingClientRect().top;
+
+  function moveAt(event) {
+    quickBall.style.left = event.clientX - offsetX + 'px';
+    quickBall.style.top = event.clientY - offsetY + 'px';
+  }
+
+  function stopDrag() {
+    document.removeEventListener('mousemove', moveAt);
+    document.removeEventListener('mouseup', stopDrag);
+  }
+
+  document.addEventListener('mousemove', moveAt);
+  document.addEventListener('mouseup', stopDrag);
+});
