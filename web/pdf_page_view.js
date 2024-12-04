@@ -1239,14 +1239,15 @@ class PDFPageView {
         modificationDate: null,
         structParent: 2,
         rotation: 0,
-        // NOTE everything from here on is arbitrary
+        // This is just the default for AnnotationBorderStyle. At some point we
+        // should switch to something better like `new LinkAnnotation` here.
         borderStyle: {
-          width: 2,
-          rawWidth: 2,
-          style: 1,
+          width: 1,
+          rawWidth: 1,
+          style: 1, // SOLID
           dashArray: [3],
           horizontalCornerRadius: 0,
-          verticalCornerRadius: 0
+          verticalCornerRadius: 0,
         },
       };
     }
