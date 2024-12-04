@@ -208,10 +208,12 @@
 
     &:hover {
       background-color: var(--undo-button-bg-color-hover);
+      color: var(--undo-button-fg-color-hover);
     }
 
     &:active {
       background-color: var(--undo-button-bg-color-active);
+      color: var(--undo-button-fg-color-active);
     }
   }
 
