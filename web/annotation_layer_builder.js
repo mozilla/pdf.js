@@ -119,7 +119,12 @@ class AnnotationLayerBuilder {
       return;
     }
 
-    annotations.push(...linkAnnotations);
+    if (annotations.length === 0) {
+      // Because we could end up creating duplicate annotations, avoid injecting
+      // any if there are already annotations in the layer. In the future, this
+      // should be something smarter so we could avoid overlaps.
+      annotations.push(...linkAnnotations);
+    }
 
     // Create an annotation layer div and render the annotations
     // if there is at least one annotation.
