@@ -31,6 +31,7 @@ import {
   loadAndWait,
   scrollIntoView,
   switchToEditor,
+  waitForAnnotationModeChanged,
   waitForNoElement,
   waitForSelectedEditor,
   waitForSerialized,
@@ -796,7 +797,14 @@ describe("Ink Editor", () => {
     it("must move an annotation", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click(getAnnotationSelector("277R"), { count: 2 });
+          const modeChangedHandle = await waitForAnnotationModeChanged(page);
+          const inkRect = await getRect(page, getAnnotationSelector("277R"));
+          await page.mouse.click(
+            inkRect.x + inkRect.width / 2,
+            inkRect.y + inkRect.height / 2,
+            { count: 2 }
+          );
+          await awaitPromise(modeChangedHandle);
           const edgeB = getEditorSelector(10);
           await waitForSelectedEditor(page, edgeB);
 
@@ -808,10 +816,7 @@ describe("Ink Editor", () => {
           const serialized = await getSerialized(page);
           expect(serialized).withContext(`In ${browserName}`).toEqual([]);
 
-          const editorRect = await page.$eval(edgeB, el => {
-            const { x, y, width, height } = el.getBoundingClientRect();
-            return { x, y, width, height };
-          });
+          const editorRect = await getRect(page, edgeB);
 
           // Select the annotation we want to move.
           await page.mouse.click(editorRect.x + 2, editorRect.y + 2);

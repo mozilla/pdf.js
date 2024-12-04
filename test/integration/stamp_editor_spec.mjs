@@ -40,6 +40,7 @@ import {
   serializeBitmapDimensions,
   switchToEditor,
   waitForAnnotationEditorLayer,
+  waitForAnnotationModeChanged,
   waitForEntryInStorage,
   waitForSelectedEditor,
   waitForSerialized,
@@ -1437,7 +1438,9 @@ describe("Stamp Editor", () => {
     it("must move an annotation", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
+          const modeChangedHandle = await waitForAnnotationModeChanged(page);
           await page.click(getAnnotationSelector("25R"), { count: 2 });
+          await awaitPromise(modeChangedHandle);
           await waitForSelectedEditor(page, getEditorSelector(0));
 
           const editorIds = await getEditors(page, "stamp");
@@ -1484,7 +1487,9 @@ describe("Stamp Editor", () => {
     it("must update an existing alt-text", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
+          const modeChangedHandle = await waitForAnnotationModeChanged(page);
           await page.click(getAnnotationSelector("58R"), { count: 2 });
+          await awaitPromise(modeChangedHandle);
           await waitForSelectedEditor(page, getEditorSelector(4));
 
           const editorIds = await getEditors(page, "stamp");
@@ -1541,7 +1546,9 @@ describe("Stamp Editor", () => {
     it("must check that the annotation is correctly restored", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
+          const modeChangedHandle = await waitForAnnotationModeChanged(page);
           await page.click(getAnnotationSelector("37R"), { count: 2 });
+          await awaitPromise(modeChangedHandle);
           const editorSelector = getEditorSelector(2);
           await waitForSelectedEditor(page, editorSelector);
 
