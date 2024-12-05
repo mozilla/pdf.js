@@ -804,7 +804,7 @@ class AnnotationEditorLayer {
       return;
     }
 
-    this.#uiManager.unselectAll();
+    this.#uiManager.setCurrentDrawingSession(this);
     this.#drawingAC = new AbortController();
     const signal = this.#uiManager.combinedSignal(this.#drawingAC);
     this.div.addEventListener(
@@ -816,7 +816,6 @@ class AnnotationEditorLayer {
       },
       { signal }
     );
-    this.#uiManager.disableUserSelect(true);
     this.#currentEditorType.startDrawing(this, this.#uiManager, false, event);
   }
 
@@ -824,9 +823,9 @@ class AnnotationEditorLayer {
     if (!this.#drawingAC) {
       return null;
     }
+    this.#uiManager.setCurrentDrawingSession(null);
     this.#drawingAC.abort();
     this.#drawingAC = null;
-    this.#uiManager.disableUserSelect(false);
     return this.#currentEditorType.endDrawing(isAborted);
   }
 

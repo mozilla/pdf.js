@@ -960,4 +960,66 @@ describe("Ink Editor", () => {
       );
     });
   });
+
+  describe("Ink must update its stroke width when not the current active layer", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the stroke width has been updated after zooming", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToInk(page);
+
+          const rect = await getRect(page, ".annotationEditorLayer");
+
+          const x = rect.x + 20;
+          const y = rect.y + 20;
+          const clickHandle = await waitForPointerUp(page);
+          await page.mouse.move(x, y);
+          await page.mouse.down();
+          await page.mouse.move(x + 50, y + 50);
+          await page.mouse.up();
+          await awaitPromise(clickHandle);
+
+          const svgSelector = ".canvasWrapper svg.draw";
+          const strokeWidth = await page.$eval(svgSelector, el =>
+            parseFloat(el.getAttribute("stroke-width"))
+          );
+
+          await scrollIntoView(page, `.page[data-page-number = "2"]`);
+
+          const rectPageTwo = await getRect(
+            page,
+            `.page[data-page-number = "2"] .annotationEditorLayer`
+          );
+          const originX = rectPageTwo.x + rectPageTwo.width / 2;
+          const originY = rectPageTwo.y + rectPageTwo.height / 2;
+          await page.evaluate(
+            origin => {
+              window.PDFViewerApplication.pdfViewer.increaseScale({
+                scaleFactor: 1.5,
+                origin,
+              });
+            },
+            [originX, originY]
+          );
+
+          const newStrokeWidth = await page.$eval(svgSelector, el =>
+            parseFloat(el.getAttribute("stroke-width"))
+          );
+
+          expect(newStrokeWidth)
+            .withContext(`In ${browserName}`)
+            .not.toEqual(strokeWidth);
+        })
+      );
+    });
+  });
 });

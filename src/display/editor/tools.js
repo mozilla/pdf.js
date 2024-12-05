@@ -610,6 +610,8 @@ class AnnotationEditorUIManager {
 
   #copyPasteAC = null;
 
+  #currentDrawingSession = null;
+
   #currentPageIndex = 0;
 
   #deletedAnnotationsElementIds = new Set();
@@ -972,6 +974,20 @@ class AnnotationEditorUIManager {
     );
   }
 
+  /**
+   * Set the current drawing session.
+   * @param {AnnotationEditorLayer} layer
+   */
+  setCurrentDrawingSession(layer) {
+    if (layer) {
+      this.unselectAll();
+      this.disableUserSelect(true);
+    } else {
+      this.disableUserSelect(false);
+    }
+    this.#currentDrawingSession = layer;
+  }
+
   setMainHighlightColorPicker(colorPicker) {
     this.#mainHighlightColorPicker = colorPicker;
   }
@@ -1054,7 +1070,7 @@ class AnnotationEditorUIManager {
     for (const editor of this.#editorsToRescale) {
       editor.onScaleChanging();
     }
-    this.currentLayer?.onScaleChanging();
+    this.#currentDrawingSession?.onScaleChanging();
   }
 
   onRotationChanging({ pagesRotation }) {
@@ -1984,7 +2000,7 @@ class AnnotationEditorUIManager {
    * @param {AnnotationEditor} editor
    */
   setSelected(editor) {
-    this.currentLayer?.commitOrRemove();
+    this.#currentDrawingSession?.commitOrRemove();
     for (const ed of this.#selectedEditors) {
       if (ed !== editor) {
         ed.unselect();
@@ -2176,7 +2192,7 @@ class AnnotationEditorUIManager {
       }
     }
 
-    if (this.currentLayer?.commitOrRemove()) {
+    if (this.#currentDrawingSession?.commitOrRemove()) {
       return;
     }
 
