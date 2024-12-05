@@ -52,6 +52,81 @@ import { TextHighlighter } from "./text_highlighter.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
+class Recorder {
+  constructor(kind) {
+    this.kind = kind;
+    this.accumulatedTime = 0;
+    this.startTime = 0;
+    this.currentStartTime = 0;
+    this.running = false;
+  }
+
+  start() {
+    if (this.running) {
+      console.warn(`Start ${this.kind} recorder while running`);
+      return;
+    }
+
+    console.log(`Start rendering ${this.kind}`);
+    this.currentStartTime = this.startTime = performance.now();
+    this.accumulatedTime = 0;
+    this.running = true;
+  }
+
+  pause() {
+    if (!this.running) {
+      console.warn(`Pause ${this.kind} recorder while not running`);
+      return;
+    }
+
+    console.log(`Pause rendering ${this.kind}`);
+    this.accumulatedTime += performance.now() - this.currentStartTime;
+    this.running = false;
+  }
+
+  resume() {
+    if (this.running) {
+      console.warn(`Resume ${this.kind} recorder while running`);
+      return;
+    }
+
+    console.log(`Resume rendering ${this.kind}`);
+    this.currentStartTime = performance.now();
+    this.running = true;
+  }
+
+  finish() {
+    if (!this.running) {
+      console.warn(`Finish ${this.kind} recorder while not running`);
+      return;
+    }
+
+    this.accumulatedTime += performance.now() - this.currentStartTime;
+    const totalTime = performance.now() - this.startTime;
+    this.running = false;
+
+    console.log(
+      `Finish renderig ${this.kind} (self: ${this.accumulatedTime}ms, total: ${totalTime}ms)`
+    );
+  }
+
+  cancel() {
+    if (this.running) {
+      this.accumulatedTime += performance.now() - this.currentStartTime;
+      this.running = false;
+    }
+
+    const totalTime = performance.now() - this.startTime;
+
+    console.log(
+      `Cancel renderig ${this.kind} (self: ${this.accumulatedTime}ms, total: ${totalTime}ms)`
+    );
+  }
+}
+
+const detailRecorder = new Recorder("foreground");
+const backgroundRecorder = new Recorder("background");
+
 /**
  * @typedef {Object} PDFPageViewOptions
  * @property {HTMLDivElement} [container] - The viewer element.
@@ -240,8 +315,10 @@ class PDFPageViewBase {
   #renderContinueCallback = cont => {
     this.#showCanvas?.(false);
     if (this.renderingQueue && !this.renderingQueue.isHighestPriority(this)) {
+      this.recorder.pause();
       this.renderingState = RenderingStates.PAUSED;
       this.resume = () => {
+        this.recorder.resume();
         this.renderingState = RenderingStates.RUNNING;
         cont();
       };
@@ -306,6 +383,12 @@ class PDFPageViewBase {
   }
 
   cancelRendering({ cancelExtraDelay = 0 } = {}) {
+    if (
+      this.renderingState !== RenderingStates.INITIAL &&
+      this.renderingState !== RenderingStates.FINISHED
+    ) {
+      this.recorder.cancel();
+    }
     if (this.renderTask) {
       this.renderTask.cancel(cancelExtraDelay);
       this.renderTask = null;
@@ -318,6 +401,8 @@ class PDFPageViewBase {
  * @implements {IRenderableView}
  */
 class PDFPageView extends PDFPageViewBase {
+  recorder = backgroundRecorder;
+
   #annotationMode = AnnotationMode.ENABLE_FORMS;
 
   #canvasWrapper = null;
@@ -1020,6 +1105,8 @@ class PDFPageView extends PDFPageViewBase {
   }
 
   async draw() {
+    this.recorder.start();
+
     if (this.renderingState !== RenderingStates.INITIAL) {
       console.error("Must be in new state before drawing");
       this.reset(); // Ensure that we reset all state to prevent issues.
@@ -1121,6 +1208,15 @@ class PDFPageView extends PDFPageViewBase {
       } else {
         this.#hasRestrictedScaling = false;
       }
+      console.log({
+        hasRestrictedScaling: this.#hasRestrictedScaling,
+        maxCanvasPixels: this.maxCanvasPixels.toLocaleString(),
+        pixelsInViewport: Math.round(pixelsInViewport).toLocaleString(),
+        outputScaleSx: outputScale.sx,
+        outputScaleSy: outputScale.sy,
+        maxScale,
+        ratio: window.devicePixelRatio,
+      });
     }
     const sfx = approximateFraction(outputScale.sx);
     const sfy = approximateFraction(outputScale.sy);
@@ -1165,6 +1261,8 @@ class PDFPageView extends PDFPageViewBase {
       renderContext,
       prevCanvas,
       renderTask => {
+        this.recorder.finish();
+
         // Ensure that the thumbnails won't become partially (or fully) blank,
         // for documents that contain interactive form elements.
         this.#useThumbnailCanvas.regularAnnotations =
@@ -1281,6 +1379,8 @@ class PDFPageView extends PDFPageViewBase {
  * @implements {IRenderableView}
  */
 class PDFPageDetailView extends PDFPageViewBase {
+  recorder = detailRecorder;
+
   constructor({ pageView }) {
     super(pageView);
 
@@ -1414,6 +1514,8 @@ class PDFPageDetailView extends PDFPageViewBase {
   }
 
   async draw() {
+    this.recorder.start();
+
     const initialRenderingState = this.renderingState;
     if (initialRenderingState !== RenderingStates.INITIAL) {
       console.error("Must be in new state before drawing");
@@ -1481,6 +1583,8 @@ class PDFPageDetailView extends PDFPageViewBase {
       },
       prevCanvas,
       () => {
+        this.recorder.finish();
+
         this.eventBus.dispatch("pagerendered", {
           source: this,
           pageNumber: this.id,
