@@ -380,6 +380,11 @@ function createWebpackConfig(
     },
     devtool: enableSourceMaps ? "source-map" : undefined,
     module: {
+      parser: {
+        javascript: {
+          importMeta: false,
+        },
+      },
       rules: [
         {
           test: /\.[mc]?js$/,
