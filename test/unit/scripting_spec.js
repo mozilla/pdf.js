@@ -607,6 +607,52 @@ describe("Scripting", function () {
       value = await myeval(`app.platform = "hello"`);
       expect(value).toEqual("app.platform is read-only");
     });
+
+    it("shouldn't display an alert", async () => {
+      const refId = getId();
+      const data = {
+        objects: {
+          field: [
+            {
+              id: refId,
+              value: "",
+              actions: {
+                Validate: [`app.alert(event.value);`],
+              },
+              type: "text",
+              name: "MyField",
+            },
+          ],
+        },
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        calculationOrder: [],
+        dispatchEventName: "_dispatchMe",
+      };
+
+      sandbox.createSandbox(data);
+      await sandbox.dispatchEventInSandbox({
+        id: refId,
+        value: "hello",
+        name: "Keystroke",
+        willCommit: true,
+      });
+      expect(send_queue.has("alert")).toEqual(true);
+      expect(send_queue.get("alert")).toEqual({
+        command: "alert",
+        value: "hello",
+      });
+      send_queue.delete(refId);
+      send_queue.delete("alert");
+
+      await sandbox.dispatchEventInSandbox({
+        id: refId,
+        value: "",
+        name: "Keystroke",
+        willCommit: true,
+      });
+      expect(send_queue.has("alert")).toEqual(false);
+      send_queue.delete(refId);
+    });
   });
 
   describe("AForm", function () {
