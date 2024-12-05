@@ -447,6 +447,9 @@ class App extends PDFObject {
       cMsg = cMsg.cMsg;
     }
     cMsg = (cMsg || "").toString();
+    if (!cMsg) {
+      return 0;
+    }
     nType =
       typeof nType !== "number" || isNaN(nType) || nType < 0 || nType > 3
         ? 0
