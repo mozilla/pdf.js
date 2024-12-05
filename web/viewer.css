@@ -634,14 +634,14 @@ body {
 .toggleButton {
   display: inline;
 
-  &:is(:hover, :has(> input:focus-visible)) {
-    color: var(--toggled-btn-color);
-    background-color: var(--button-hover-color);
-  }
-
   &:has(> input:checked) {
     color: var(--toggled-btn-color);
     background-color: var(--toggled-btn-bg-color);
+  }
+
+  &:is(:hover, :has(> input:focus-visible)) {
+    color: var(--toggled-btn-color);
+    background-color: var(--button-hover-color);
   }
 
   & > input {
