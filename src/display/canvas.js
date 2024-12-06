@@ -1885,15 +1885,19 @@ class CanvasGraphics {
       return;
     }
 
-    ctx.save();
-    ctx.beginPath();
-    for (const path of paths) {
-      ctx.setTransform(...path.transform);
-      ctx.translate(path.x, path.y);
-      path.addToPath(ctx, path.fontSize);
+    const newPath = new Path2D();
+    const invTransf = ctx.getTransform().invertSelf();
+    for (const { transform, x, y, fontSize, path } of paths) {
+      newPath.addPath(
+        path,
+        new DOMMatrix(transform)
+          .preMultiplySelf(invTransf)
+          .translate(x, y)
+          .scale(fontSize, -fontSize)
+      );
     }
-    ctx.restore();
-    ctx.clip();
+
+    ctx.clip(newPath);
     ctx.beginPath();
     delete this.pendingTextPaths;
   }
@@ -2002,6 +2006,15 @@ class CanvasGraphics {
     this.moveText(0, this.current.leading);
   }
 
+  #getScaledPath(path, currentTransform, transform) {
+    const newPath = new Path2D();
+    newPath.addPath(
+      path,
+      new DOMMatrix(transform).invertSelf().multiplySelf(currentTransform)
+    );
+    return newPath;
+  }
+
   paintChar(character, x, y, patternFillTransform, patternStrokeTransform) {
     const ctx = this.ctx;
     const current = this.current;
@@ -2016,38 +2029,48 @@ class CanvasGraphics {
     const patternFill = current.patternFill && !font.missingFile;
     const patternStroke = current.patternStroke && !font.missingFile;
 
-    let addToPath;
+    let path;
     if (
       font.disableFontFace ||
       isAddToPathSet ||
       patternFill ||
       patternStroke
     ) {
-      addToPath = font.getPathGenerator(this.commonObjs, character);
+      path = font.getPathGenerator(this.commonObjs, character);
     }
 
     if (font.disableFontFace || patternFill || patternStroke) {
       ctx.save();
       ctx.translate(x, y);
-      ctx.beginPath();
-      addToPath(ctx, fontSize);
+      ctx.scale(fontSize, -fontSize);
       if (
         fillStrokeMode === TextRenderingMode.FILL ||
         fillStrokeMode === TextRenderingMode.FILL_STROKE
       ) {
         if (patternFillTransform) {
+          const currentTransform = ctx.getTransform();
           ctx.setTransform(...patternFillTransform);
+          ctx.fill(
+            this.#getScaledPath(path, currentTransform, patternFillTransform)
+          );
+        } else {
+          ctx.fill(path);
         }
-        ctx.fill();
       }
       if (
         fillStrokeMode === TextRenderingMode.STROKE ||
         fillStrokeMode === TextRenderingMode.FILL_STROKE
       ) {
         if (patternStrokeTransform) {
+          const currentTransform = ctx.getTransform();
           ctx.setTransform(...patternStrokeTransform);
+          ctx.stroke(
+            this.#getScaledPath(path, currentTransform, patternStrokeTransform)
+          );
+        } else {
+          ctx.lineWidth /= fontSize;
+          ctx.stroke(path);
         }
-        ctx.stroke();
       }
       ctx.restore();
     } else {
@@ -2072,7 +2095,7 @@ class CanvasGraphics {
         x,
         y,
         fontSize,
-        addToPath,
+        path,
       });
     }
   }
