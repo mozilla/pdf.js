@@ -587,7 +587,7 @@ class CanvasExtraState {
 }
 
 function putBinaryImageData(ctx, imgData) {
-  if (imgData instanceof ImageData) {
+  if (!isNodeJS && imgData instanceof ImageData) {
     ctx.putImageData(imgData, 0, 0);
     return;
   }
