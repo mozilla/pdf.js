@@ -276,9 +276,20 @@ describe("PDF viewer", () => {
       beforeEach(async () => {
         await Promise.all(
           pages.map(async ([browserName, page]) => {
-            await page.evaluate(() => {
-              window.PDFViewerApplication.pdfViewer.currentScale = 0.5;
-            });
+            const handle = await waitForPageRendered(page);
+            if (
+              await page.evaluate(() => {
+                if (
+                  window.PDFViewerApplication.pdfViewer.currentScale !== 0.5
+                ) {
+                  window.PDFViewerApplication.pdfViewer.currentScale = 0.5;
+                  return true;
+                }
+                return false;
+              })
+            ) {
+              await awaitPromise(handle);
+            }
           })
         );
       });
@@ -317,12 +328,14 @@ describe("PDF viewer", () => {
             const originalCanvasSize = await getCanvasSize(page);
             const factor = 2;
 
+            const handle = await waitForPageRendered(page);
             await page.evaluate(scaleFactor => {
               window.PDFViewerApplication.pdfViewer.increaseScale({
                 drawingDelay: 0,
                 scaleFactor,
               });
             }, factor);
+            await awaitPromise(handle);
 
             const canvasSize = await getCanvasSize(page);
 
@@ -343,12 +356,14 @@ describe("PDF viewer", () => {
             const originalCanvasSize = await getCanvasSize(page);
             const factor = 4;
 
+            const handle = await waitForPageRendered(page);
             await page.evaluate(scaleFactor => {
               window.PDFViewerApplication.pdfViewer.increaseScale({
                 drawingDelay: 0,
                 scaleFactor,
               });
             }, factor);
+            await awaitPromise(handle);
 
             const canvasSize = await getCanvasSize(page);
 
