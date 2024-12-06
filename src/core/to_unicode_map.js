@@ -28,7 +28,7 @@ class ToUnicodeMap {
 
   forEach(callback) {
     for (const charCode in this._map) {
-      callback(charCode, this._map[charCode].charCodeAt(0));
+      callback(charCode, this._map[charCode].codePointAt(0));
     }
   }
 
