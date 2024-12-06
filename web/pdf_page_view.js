@@ -52,6 +52,10 @@ import { TextHighlighter } from "./text_highlighter.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
+// TODO: Should we make this an app option, or just always
+// enable the feature?
+const ENABLE_ZOOM_DETAIL = true;
+
 /**
  * @typedef {Object} PDFPageViewOptions
  * @property {HTMLDivElement} [container] - The viewer element.
@@ -104,19 +108,207 @@ const DEFAULT_LAYER_PROPERTIES =
 
 const LAYERS_ORDER = new Map([
   ["canvasWrapper", 0],
-  ["textLayer", 1],
-  ["annotationLayer", 2],
-  ["annotationEditorLayer", 3],
-  ["xfaLayer", 3],
+  ["detailLayer", 1],
+  ["textLayer", 2],
+  ["annotationLayer", 3],
+  ["annotationEditorLayer", 4],
+  ["xfaLayer", 4],
 ]);
+
+class PDFPageViewBase {
+  #enableHWA = false;
+
+  #loadingId = null;
+
+  #renderError = null;
+
+  #renderingState = RenderingStates.INITIAL;
+
+  #showCanvas = null;
+
+  canvas = null;
+
+  /** @type {null | HTMLDivElement} */
+  div = null;
+
+  eventBus = null;
+
+  id = null;
+
+  pageColors = null;
+
+  renderingQueue = null;
+
+  renderTask = null;
+
+  resume = null;
+
+  constructor(options) {
+    this.#enableHWA =
+      #enableHWA in options ? options.#enableHWA : options.enableHWA || false;
+    this.eventBus = options.eventBus;
+    this.id = options.id;
+    this.pageColors = options.pageColors || null;
+    this.renderingQueue = options.renderingQueue;
+  }
+
+  get renderingState() {
+    return this.#renderingState;
+  }
+
+  set renderingState(state) {
+    if (state === this.#renderingState) {
+      return;
+    }
+    this.#renderingState = state;
+
+    if (this.#loadingId) {
+      clearTimeout(this.#loadingId);
+      this.#loadingId = null;
+    }
+
+    switch (state) {
+      case RenderingStates.PAUSED:
+        this.div.classList.remove("loading");
+        break;
+      case RenderingStates.RUNNING:
+        this.div.classList.add("loadingIcon");
+        this.#loadingId = setTimeout(() => {
+          // Adding the loading class is slightly postponed in order to not have
+          // it with loadingIcon.
+          // If we don't do that the visibility of the background is changed but
+          // the transition isn't triggered.
+          this.div.classList.add("loading");
+          this.#loadingId = null;
+        }, 0);
+        break;
+      case RenderingStates.INITIAL:
+      case RenderingStates.FINISHED:
+        this.div.classList.remove("loadingIcon", "loading");
+        break;
+    }
+  }
+
+  get _renderError() {
+    return this.#renderError;
+  }
+
+  _createCanvas(hideUntilComplete = false) {
+    const canvas = document.createElement("canvas");
+    canvas.setAttribute("role", "presentation");
+    this.canvas = canvas;
+
+    // Keep the canvas hidden until the first draw callback, or until drawing
+    // is complete when `!this.renderingQueue`, to prevent black flickering.
+    canvas.hidden = true;
+
+    const hasHCM = this.pageColors?.background && this.pageColors?.foreground;
+    // In HCM, a final filter is applied on the canvas which means that
+    // before it's applied we've normal colors. Consequently, to avoid to have
+    // a final flash we just display it once all the drawing is done.
+    hideUntilComplete ||= hasHCM;
+    this.#showCanvas = isLastShow => {
+      if (!hideUntilComplete || isLastShow) {
+        canvas.hidden = false;
+        this.#showCanvas = null; // Only call this function once
+      }
+    };
+
+    const ctx = canvas.getContext("2d", {
+      alpha: false,
+      willReadFrequently: !this.#enableHWA,
+    });
+
+    return { canvas, ctx };
+  }
+
+  #renderContinueCallback = cont => {
+    this.#showCanvas?.(false);
+    if (this.renderingQueue && !this.renderingQueue.isHighestPriority(this)) {
+      this.renderingState = RenderingStates.PAUSED;
+      this.resume = () => {
+        this.renderingState = RenderingStates.RUNNING;
+        cont();
+      };
+      return;
+    }
+    cont();
+  };
+
+  async _drawCanvas(options, onFinish) {
+    const renderTask = (this.renderTask = this.pdfPage.render(options));
+    renderTask.onContinue = this.#renderContinueCallback;
+
+    try {
+      await renderTask.promise;
+      this.#showCanvas?.(true);
+      this.#finishRenderTask(renderTask, null, onFinish);
+    } catch (error) {
+      // When zooming with a `drawingDelay` set, avoid temporarily showing
+      // a black canvas if rendering was cancelled before the `onContinue`-
+      // callback had been invoked at least once.
+      if (!(error instanceof RenderingCancelledException)) {
+        this.#showCanvas?.(true);
+      }
+      this.#finishRenderTask(renderTask, error, onFinish);
+    }
+  }
+
+  async #finishRenderTask(renderTask, error, onFinish) {
+    // The renderTask may have been replaced by a new one, so only remove
+    // the reference to the renderTask if it matches the one that is
+    // triggering this callback.
+    if (renderTask === this.renderTask) {
+      this.renderTask = null;
+    }
+
+    if (error instanceof RenderingCancelledException) {
+      this.#renderError = null;
+      return;
+    }
+    this.#renderError = error;
+
+    this.renderingState = RenderingStates.FINISHED;
+
+    onFinish(renderTask);
+
+    this.eventBus.dispatch("pagerendered", {
+      source: this,
+      pageNumber: this.id,
+      cssTransform: false,
+      timestamp: performance.now(),
+      error: this.#renderError,
+    });
+
+    if (error) {
+      throw error;
+    }
+  }
+
+  cancelRendering({ cancelExtraDelay = 0 } = {}) {
+    if (this.renderTask) {
+      this.renderTask.cancel(cancelExtraDelay);
+      this.renderTask = null;
+    }
+    this.resume = null;
+  }
+}
+
+/**
+ * @typedef {Object} PDFPageViewUpdateParameters
+ * @property {number} [scale] The new scale, if specified.
+ * @property {number} [rotation] The new rotation, if specified.
+ * @property {Promise<OptionalContentConfig>} [optionalContentConfigPromise]
+ *   A promise that is resolved with an {@link OptionalContentConfig}
+ *   instance. The default value is `null`.
+ * @property {number} [drawingDelay]
+ */
 
 /**
  * @implements {IRenderableView}
  */
-class PDFPageView {
+class PDFPageView extends PDFPageViewBase {
   #annotationMode = AnnotationMode.ENABLE_FORMS;
-
-  #enableHWA = false;
 
   #hasRestrictedScaling = false;
 
@@ -124,17 +316,11 @@ class PDFPageView {
 
   #layerProperties = null;
 
-  #loadingId = null;
-
   #previousRotation = null;
 
   #scaleRoundX = 1;
 
   #scaleRoundY = 1;
-
-  #renderError = null;
-
-  #renderingState = RenderingStates.INITIAL;
 
   #textLayerMode = TextLayerMode.ENABLE;
 
@@ -146,16 +332,17 @@ class PDFPageView {
 
   #viewportMap = new WeakMap();
 
-  #layers = [null, null, null, null];
+  #layers = [null, null, null, null, null];
 
   /**
    * @param {PDFPageViewOptions} options
    */
   constructor(options) {
+    super(options);
+
     const container = options.container;
     const defaultViewport = options.defaultViewport;
 
-    this.id = options.id;
     this.renderingId = "page" + this.id;
     this.#layerProperties = options.layerProperties || DEFAULT_LAYER_PROPERTIES;
 
@@ -173,18 +360,12 @@ class PDFPageView {
     this.imageResourcesPath = options.imageResourcesPath || "";
     this.maxCanvasPixels =
       options.maxCanvasPixels ?? AppOptions.get("maxCanvasPixels");
-    this.pageColors = options.pageColors || null;
-    this.#enableHWA = options.enableHWA || false;
 
-    this.eventBus = options.eventBus;
-    this.renderingQueue = options.renderingQueue;
     this.l10n = options.l10n;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       this.l10n ||= new GenericL10n();
     }
 
-    this.renderTask = null;
-    this.resume = null;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       this._isStandalone = !this.renderingQueue?.hasViewer();
       this._container = container;
@@ -199,6 +380,8 @@ class PDFPageView {
     this.xfaLayer = null;
     this.structTreeLayer = null;
     this.drawLayer = null;
+
+    this.detailView = null;
 
     const div = document.createElement("div");
     div.className = "page";
@@ -251,7 +434,7 @@ class PDFPageView {
     }
   }
 
-  #addLayer(div, name) {
+  _addLayer(div, name) {
     const pos = LAYERS_ORDER.get(name);
     const oldDiv = this.#layers[pos];
     this.#layers[pos] = div;
@@ -269,41 +452,8 @@ class PDFPageView {
     this.div.prepend(div);
   }
 
-  get renderingState() {
-    return this.#renderingState;
-  }
-
-  set renderingState(state) {
-    if (state === this.#renderingState) {
-      return;
-    }
-    this.#renderingState = state;
-
-    if (this.#loadingId) {
-      clearTimeout(this.#loadingId);
-      this.#loadingId = null;
-    }
-
-    switch (state) {
-      case RenderingStates.PAUSED:
-        this.div.classList.remove("loading");
-        break;
-      case RenderingStates.RUNNING:
-        this.div.classList.add("loadingIcon");
-        this.#loadingId = setTimeout(() => {
-          // Adding the loading class is slightly postponed in order to not have
-          // it with loadingIcon.
-          // If we don't do that the visibility of the background is changed but
-          // the transition isn't triggered.
-          this.div.classList.add("loading");
-          this.#loadingId = null;
-        }, 0);
-        break;
-      case RenderingStates.INITIAL:
-      case RenderingStates.FINISHED:
-        this.div.classList.remove("loadingIcon", "loading");
-        break;
-    }
+  _forgetLayer(name) {
+    this.#layers[LAYERS_ORDER.get(name)] = null;
   }
 
   #setDimensions() {
@@ -446,7 +596,7 @@ class PDFPageView {
       if (this.xfaLayer?.div) {
         // Pause translation when inserting the xfaLayer in the DOM.
         this.l10n.pause();
-        this.#addLayer(this.xfaLayer.div, "xfaLayer");
+        this._addLayer(this.xfaLayer.div, "xfaLayer");
         this.l10n.resume();
       }
       this.#dispatchLayerRendered("xfalayerrendered", error);
@@ -597,7 +747,7 @@ class PDFPageView {
         // resources immediately, which can greatly reduce memory consumption.
         this.canvas.width = 0;
         this.canvas.height = 0;
-        delete this.canvas;
+        this.canvas = null;
       }
       this._resetZoomLayer();
     }
@@ -617,15 +767,15 @@ class PDFPageView {
     });
   }
 
-  /**
-   * @typedef {Object} PDFPageViewUpdateParameters
-   * @property {number} [scale] The new scale, if specified.
-   * @property {number} [rotation] The new rotation, if specified.
-   * @property {Promise<OptionalContentConfig>} [optionalContentConfigPromise]
-   *   A promise that is resolved with an {@link OptionalContentConfig}
-   *   instance. The default value is `null`.
-   * @property {number} [drawingDelay]
-   */
+  updateVisibleArea(visibleArea) {
+    if (this.#hasRestrictedScaling && this.maxCanvasPixels > 0 && visibleArea) {
+      this.detailView ??= new PDFPageDetailView({ pageView: this });
+      this.detailView.update({ visibleArea });
+    } else if (this.detailView) {
+      this.detailView.reset();
+      this.detailView = null;
+    }
+  }
 
   /**
    * Update e.g. the scale and/or rotation of the page.
@@ -680,7 +830,7 @@ class PDFPageView {
           this.maxCanvasPixels === 0
         ) {
           onlyCssZoom = true;
-        } else if (this.maxCanvasPixels > 0) {
+        } else if (!ENABLE_ZOOM_DETAIL && this.maxCanvasPixels > 0) {
           const { width, height } = this.viewport;
           const { sx, sy } = this.outputScale;
           onlyCssZoom =
@@ -728,12 +878,15 @@ class PDFPageView {
           // rendering is done, hence don't dispatch it here as well.
           return;
         }
+
+        this.detailView?.update({ underlyingViewUpdated: true });
+
         this.eventBus.dispatch("pagerendered", {
           source: this,
           pageNumber: this.id,
           cssTransform: true,
           timestamp: performance.now(),
-          error: this.#renderError,
+          error: this._renderError,
         });
         return;
       }
@@ -752,6 +905,8 @@ class PDFPageView {
       keepXfaLayer: true,
       keepTextLayer: true,
     });
+
+    this.detailView?.update({ underlyingViewUpdated: true });
   }
 
   /**
@@ -765,11 +920,7 @@ class PDFPageView {
     keepTextLayer = false,
     cancelExtraDelay = 0,
   } = {}) {
-    if (this.renderTask) {
-      this.renderTask.cancel(cancelExtraDelay);
-      this.renderTask = null;
-    }
-    this.resume = null;
+    super.cancelRendering({ cancelExtraDelay });
 
     if (this.textLayer && (!keepTextLayer || !this.textLayer.div)) {
       this.textLayer.cancel();
@@ -877,40 +1028,6 @@ class PDFPageView {
     return this.viewport.convertToPdfPoint(x, y);
   }
 
-  async #finishRenderTask(renderTask, error = null) {
-    // The renderTask may have been replaced by a new one, so only remove
-    // the reference to the renderTask if it matches the one that is
-    // triggering this callback.
-    if (renderTask === this.renderTask) {
-      this.renderTask = null;
-    }
-
-    if (error instanceof RenderingCancelledException) {
-      this.#renderError = null;
-      return;
-    }
-    this.#renderError = error;
-
-    this.renderingState = RenderingStates.FINISHED;
-    this._resetZoomLayer(/* removeFromDOM = */ true);
-
-    // Ensure that the thumbnails won't become partially (or fully) blank,
-    // for documents that contain interactive form elements.
-    this.#useThumbnailCanvas.regularAnnotations = !renderTask.separateAnnots;
-
-    this.eventBus.dispatch("pagerendered", {
-      source: this,
-      pageNumber: this.id,
-      cssTransform: false,
-      timestamp: performance.now(),
-      error: this.#renderError,
-    });
-
-    if (error) {
-      throw error;
-    }
-  }
-
   async draw() {
     if (this.renderingState !== RenderingStates.INITIAL) {
       console.error("Must be in new state before drawing");
@@ -929,7 +1046,7 @@ class PDFPageView {
     // overflow will be hidden in Firefox.
     const canvasWrapper = document.createElement("div");
     canvasWrapper.classList.add("canvasWrapper");
-    this.#addLayer(canvasWrapper, "canvasWrapper");
+    this._addLayer(canvasWrapper, "canvasWrapper");
 
     if (
       !this.textLayer &&
@@ -947,7 +1064,7 @@ class PDFPageView {
         onAppend: textLayerDiv => {
           // Pause translation when inserting the textLayer in the DOM.
           this.l10n.pause();
-          this.#addLayer(textLayerDiv, "textLayer");
+          this._addLayer(textLayerDiv, "textLayer");
           this.l10n.resume();
         },
       });
@@ -982,49 +1099,16 @@ class PDFPageView {
         accessibilityManager: this._accessibilityManager,
         annotationEditorUIManager,
         onAppend: annotationLayerDiv => {
-          this.#addLayer(annotationLayerDiv, "annotationLayer");
+          this._addLayer(annotationLayerDiv, "annotationLayer");
         },
       });
     }
 
-    const renderContinueCallback = cont => {
-      showCanvas?.(false);
-      if (this.renderingQueue && !this.renderingQueue.isHighestPriority(this)) {
-        this.renderingState = RenderingStates.PAUSED;
-        this.resume = () => {
-          this.renderingState = RenderingStates.RUNNING;
-          cont();
-        };
-        return;
-      }
-      cont();
-    };
-
     const { width, height } = viewport;
-    const canvas = document.createElement("canvas");
-    canvas.setAttribute("role", "presentation");
 
-    // Keep the canvas hidden until the first draw callback, or until drawing
-    // is complete when `!this.renderingQueue`, to prevent black flickering.
-    canvas.hidden = true;
-    const hasHCM = !!(pageColors?.background && pageColors?.foreground);
-
-    let showCanvas = isLastShow => {
-      // In HCM, a final filter is applied on the canvas which means that
-      // before it's applied we've normal colors. Consequently, to avoid to have
-      // a final flash we just display it once all the drawing is done.
-      if (!hasHCM || isLastShow) {
-        canvas.hidden = false;
-        showCanvas = null; // Only invoke the function once.
-      }
-    };
+    const { canvas, ctx } = this._createCanvas();
     canvasWrapper.append(canvas);
-    this.canvas = canvas;
 
-    const ctx = canvas.getContext("2d", {
-      alpha: false,
-      willReadFrequently: !this.#enableHWA,
-    });
     const outputScale = (this.outputScale = new OutputScale());
 
     if (
@@ -1090,14 +1174,14 @@ class PDFPageView {
       pageColors,
       isEditing: this.#isEditing,
     };
-    const renderTask = (this.renderTask = pdfPage.render(renderContext));
-    renderTask.onContinue = renderContinueCallback;
+    const resultPromise = this._drawCanvas(renderContext, renderTask => {
+      this._resetZoomLayer(/* removeFromDOM = */ true);
 
-    const resultPromise = renderTask.promise.then(
+      // Ensure that the thumbnails won't become partially (or fully) blank,
+      // for documents that contain interactive form elements.
+      this.#useThumbnailCanvas.regularAnnotations = !renderTask.separateAnnots;
+    }).then(
       async () => {
-        showCanvas?.(true);
-        await this.#finishRenderTask(renderTask);
-
         this.structTreeLayer ||= new StructTreeLayerBuilder(
           pdfPage,
           viewport.rawDims
@@ -1130,19 +1214,14 @@ class PDFPageView {
           textLayer: this.textLayer,
           drawLayer: this.drawLayer.getDrawLayer(),
           onAppend: annotationEditorLayerDiv => {
-            this.#addLayer(annotationEditorLayerDiv, "annotationEditorLayer");
+            this._addLayer(annotationEditorLayerDiv, "annotationEditorLayer");
           },
         });
         this.#renderAnnotationEditorLayer();
       },
-      error => {
-        // When zooming with a `drawingDelay` set, avoid temporarily showing
-        // a black canvas if rendering was cancelled before the `onContinue`-
-        // callback had been invoked at least once.
-        if (!(error instanceof RenderingCancelledException)) {
-          showCanvas?.(true);
-        }
-        return this.#finishRenderTask(renderTask, error);
+      // TODO: To minimize diff due to autoformatting. Remove before merging.
+      e => {
+        throw e;
       }
     );
 
@@ -1199,4 +1278,204 @@ class PDFPageView {
   }
 }
 
-export { PDFPageView };
+/**
+ * @implements {IRenderableView}
+ */
+class PDFPageDetailView extends PDFPageViewBase {
+  constructor({ pageView }) {
+    super(pageView);
+
+    this.pageView = pageView;
+    this.renderingId = "detail" + this.id;
+
+    this.detailArea = null;
+
+    this.div = pageView.div;
+  }
+
+  setPdfPage(pdfPage) {
+    this.pageView.setPdfPage(pdfPage);
+  }
+
+  get pdfPage() {
+    return this.pageView.pdfPage;
+  }
+
+  reset() {
+    this.cancelRendering();
+    this.renderingState = RenderingStates.INITIAL;
+    this.canvas?.remove();
+    this.canvas = null;
+  }
+
+  #covers(visibleArea) {
+    if (!this.detailArea) {
+      return false;
+    }
+
+    const { minX, minY, width, height } = this.detailArea;
+    return (
+      visibleArea.minX > minX &&
+      visibleArea.minY > minY &&
+      visibleArea.maxX < minX + width &&
+      visibleArea.maxY < minY + height
+    );
+  }
+
+  update({ visibleArea = null, underlyingViewUpdated = false } = {}) {
+    if (underlyingViewUpdated) {
+      this.cancelRendering();
+      this.renderingState = RenderingStates.INITIAL;
+      return;
+    }
+
+    if (this.#covers(visibleArea)) {
+      return;
+    }
+
+    const { viewport, maxCanvasPixels } = this.pageView;
+
+    const visibleWidth = visibleArea.maxX - visibleArea.minX;
+    const visibleHeight = visibleArea.maxY - visibleArea.minY;
+
+    // "overflowScale" represents which percentage of the width and of the
+    // height the detail area extends outside of the visible area. We want to
+    // draw a larger area so that we don't have to constantly re-draw while
+    // scrolling. The detail area's dimensions thus become
+    // visibleLength * (2 * overflowScale + 1).
+    // We default to adding a whole height/length of detail area on each side,
+    // but we can reduce it to make sure that we stay within the maxCanvasPixels
+    // limit.
+    const visiblePixels =
+      visibleWidth * visibleHeight * (window.devicePixelRatio || 1) ** 2;
+    const maxDetailToVisibleLinearRatio = Math.sqrt(
+      maxCanvasPixels / visiblePixels
+    );
+    const maxOverflowScale = (maxDetailToVisibleLinearRatio - 1) / 2;
+    let overflowScale = Math.min(1, maxOverflowScale);
+    if (overflowScale < 0) {
+      overflowScale = 0;
+      // In this case, we render a detail view that is exactly as big as the
+      // visible area, but we ignore the .maxCanvasPixels limit.
+      // TODO: We should probably instead give up and not render the detail view
+      // in this case. It's quite rate to hit it though, because usually
+      // .maxCanvasPixels will at least have enough pixels to cover the visible
+      // screen.
+    }
+
+    const overflowWidth = visibleWidth * overflowScale;
+    const overflowHeight = visibleHeight * overflowScale;
+
+    const minX = Math.max(0, visibleArea.minX - overflowWidth);
+    const maxX = Math.min(viewport.width, visibleArea.maxX + overflowWidth);
+    const minY = Math.max(0, visibleArea.minY - overflowHeight);
+    const maxY = Math.min(viewport.height, visibleArea.maxY + overflowHeight);
+    const width = maxX - minX;
+    const height = maxY - minY;
+
+    this.detailArea = { minX, minY, width, height };
+
+    if (!this.scrollLayer && this.canvas && !this.canvas.hidden) {
+      this.scrollLayer = this.canvas.parentNode;
+      // "forget" the detailLayer, so that when rendering a new detailLayer
+      // it doesn't replace the old one.
+      // The old one, which becomes the .scrollLayer, will instead be removed
+      // once the new canvas finished rendering.
+      this.pageView._forgetLayer("detailLayer");
+      this.canvas = null;
+    }
+
+    this.reset();
+  }
+
+  async draw() {
+    const initialRenderingState = this.renderingState;
+    if (initialRenderingState !== RenderingStates.INITIAL) {
+      console.error("Must be in new state before drawing");
+      this.reset(); // Ensure that we reset all state to prevent issues.
+    }
+    const { div, pdfPage, viewport } = this.pageView;
+
+    if (!pdfPage) {
+      this.renderingState = RenderingStates.FINISHED;
+      throw new Error("pdfPage is not loaded");
+    }
+
+    this.renderingState = RenderingStates.RUNNING;
+
+    const { canvas, ctx } = this._createCanvas(
+      // If there is already the lower resolution canvas behind,
+      // we don't show the new one until when it's fully ready.
+      this.pageView.renderingState === RenderingStates.FINISHED
+    );
+    const { width, height } = viewport;
+
+    const area = this.detailArea;
+
+    const { devicePixelRatio = 1 } = window;
+    const transform =
+      devicePixelRatio !== 1
+        ? [
+            devicePixelRatio,
+            0,
+            0,
+            devicePixelRatio,
+            -area.minX * devicePixelRatio,
+            -area.minY * devicePixelRatio,
+          ]
+        : null;
+
+    canvas.width = area.width * devicePixelRatio;
+    canvas.height = area.height * devicePixelRatio;
+    canvas.style.position = "absolute";
+    canvas.style.display = "block";
+    canvas.style.width = `${(area.width * 100) / width}%`;
+    canvas.style.height = `${(area.height * 100) / height}%`;
+    canvas.style.top = `${(area.minY * 100) / height}%`;
+    canvas.style.left = `${(area.minX * 100) / width}%`;
+
+    // Wrap the canvas so that if it has a CSS transform for high DPI the
+    // overflow will be hidden in Firefox.
+    const canvasWrapper = document.createElement("div");
+    canvasWrapper.classList.add("canvasWrapper", "detailLayer");
+    this.pageView._addLayer(canvasWrapper, "detailLayer");
+    canvasWrapper.append(canvas);
+
+    const renderingPromise = this._drawCanvas(
+      {
+        canvasContext: ctx,
+        transform,
+        viewport,
+        pageColors: this.pageColors,
+      },
+      () => {
+        if (!this.scrollLayer) {
+          return;
+        }
+
+        const scrollLayerCanvas = this.scrollLayer.firstChild;
+        // Zeroing the width and height causes Firefox to release graphics
+        // resources immediately, which can greatly reduce memory consumption.
+        scrollLayerCanvas.width = 0;
+        scrollLayerCanvas.height = 0;
+
+        this.scrollLayer.remove();
+        this.scrollLayer = null;
+      }
+    );
+
+    div.setAttribute("data-loaded", true);
+
+    this.eventBus.dispatch("pagerender", {
+      source: this,
+      pageNumber: this.id,
+    });
+
+    return renderingPromise;
+  }
+}
+
+/**
+ * @implements {IRenderableView}
+ */
+export { PDFPageDetailView, PDFPageView };
