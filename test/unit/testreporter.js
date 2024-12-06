@@ -18,7 +18,7 @@ const TestReporter = function (browser) {
           resolve();
         })
         .catch(reason => {
-          console.warn(`TestReporter - send failed (${action}): ${reason}`);
+          console.warn(`TestReporter - send failed (${action}):`, reason);
           resolve();
 
           send(action, json);

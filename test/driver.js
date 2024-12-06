@@ -1192,7 +1192,7 @@ class Driver {
         resolve();
       })
       .catch(reason => {
-        console.warn(`Driver._send failed (${url}): ${reason}`);
+        console.warn(`Driver._send failed (${url}):`, reason);
 
         this.inFlightRequests--;
         resolve();
