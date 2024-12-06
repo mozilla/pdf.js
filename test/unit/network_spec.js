@@ -13,7 +13,10 @@
  * limitations under the License.
  */
 
-import { AbortException } from "../../src/shared/util.js";
+import {
+  AbortException,
+  UnexpectedResponseException,
+} from "../../src/shared/util.js";
 import { PDFNetworkStream } from "../../src/display/network.js";
 import { testCrossOriginRedirects } from "./common_pdfstream_tests.js";
 import { TestPdfsServer } from "./test_utils.js";
@@ -116,6 +119,44 @@ describe("network", function () {
     expect(isStreamingSupported).toEqual(false);
     expect(isRangeSupported).toEqual(true);
     expect(fullReaderCancelled).toEqual(true);
+  });
+
+  it(`handle reading ranges with missing/invalid "Content-Range" header`, async function () {
+    async function readRanges(mode) {
+      const rangeSize = 32768;
+      const stream = new PDFNetworkStream({
+        url: `${pdf1}?test-network-break-ranges=${mode}`,
+        length: pdf1Length,
+        rangeChunkSize: rangeSize,
+        disableStream: true,
+        disableRange: false,
+      });
+
+      const fullReader = stream.getFullReader();
+
+      await fullReader.headersReady;
+      // Ensure that range requests are supported.
+      expect(fullReader.isRangeSupported).toEqual(true);
+      // We shall be able to close the full reader without issues.
+      fullReader.cancel(new AbortException("Don't need fullReader."));
+
+      const rangeReader = stream.getRangeReader(
+        pdf1Length - rangeSize,
+        pdf1Length
+      );
+
+      try {
+        await rangeReader.read();
+
+        // Shouldn't get here.
+        expect(false).toEqual(true);
+      } catch (ex) {
+        expect(ex instanceof UnexpectedResponseException).toEqual(true);
+        expect(ex.status).toEqual(0);
+      }
+    }
+
+    await Promise.all([readRanges("missing"), readRanges("invalid")]);
   });
 
   describe("Redirects", function () {
