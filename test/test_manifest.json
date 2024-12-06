@@ -11201,5 +11201,12 @@
         "id": "20R"
       }
     }
+  },
+  {
+    "id": "issue19182",
+    "file": "pdfs/issue19182.pdf",
+    "md5": "497370ab55cbb9c60bb0ea4b5d9e4d08",
+    "rounds": 1,
+    "type": "eq"
   }
 ]
