@@ -493,3 +493,23 @@ pdfjs-editor-alt-text-settings-editor-title = Ritill fyrir alt-myndatexta
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Sýna alt-myndatextaritil strax þegar mynd er bætt við
 pdfjs-editor-alt-text-settings-show-dialog-description = Hjálpar þér að tryggja að allar myndirnar þínar séu með alt-myndatexta.
 pdfjs-editor-alt-text-settings-close-button = Loka
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-message-highlight = Áherslulitun fjarlægð
+pdfjs-editor-undo-bar-message-freetext = Texti fjarlægður
+pdfjs-editor-undo-bar-message-ink = Teikning fjarlægð
+pdfjs-editor-undo-bar-message-stamp = Mynd fjarlægð
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple =
+    { $count ->
+        [one] { $count } glósa fjarlægð
+       *[other] { $count } glósur fjarlægðar
+    }
+pdfjs-editor-undo-bar-undo-button =
+    .title = Afturkalla
+pdfjs-editor-undo-bar-undo-button-label = Afturkalla
+pdfjs-editor-undo-bar-close-button =
+    .title = Loka
+pdfjs-editor-undo-bar-close-button-label = Loka

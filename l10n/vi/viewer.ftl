@@ -485,3 +485,19 @@ pdfjs-editor-alt-text-settings-editor-title = Trình soạn thảo văn bản th
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Hiển thị ngay trình soạn thảo văn bản thay thế khi thêm hình ảnh
 pdfjs-editor-alt-text-settings-show-dialog-description = Giúp bạn đảm bảo tất cả hình ảnh của bạn đều có văn bản thay thế.
 pdfjs-editor-alt-text-settings-close-button = Đóng
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-message-highlight = Đã xóa đánh dấu
+pdfjs-editor-undo-bar-message-freetext = Đã xóa văn bản
+pdfjs-editor-undo-bar-message-ink = Đã xóa bản vẽ
+pdfjs-editor-undo-bar-message-stamp = Đã xóa hình ảnh
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple = { $count } chú thích đã bị xóa
+pdfjs-editor-undo-bar-undo-button =
+    .title = Hoàn tác
+pdfjs-editor-undo-bar-undo-button-label = Hoàn tác
+pdfjs-editor-undo-bar-close-button =
+    .title = Đóng
+pdfjs-editor-undo-bar-close-button-label = Đóng
