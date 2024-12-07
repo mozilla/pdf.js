@@ -77,7 +77,7 @@ if (
 }
 
 export {
+  PDFViewerApplication,
   AppConstants as PDFViewerApplicationConstants,
   AppOptions as PDFViewerApplicationOptions,
-  PDFViewerApplication,
 };
