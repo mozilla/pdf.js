@@ -26,43 +26,45 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   );
 }
 
-if (
-  typeof PDFJSDev !== "undefined" &&
-  !PDFJSDev.test("SKIP_BABEL") &&
-  isNodeJS
-) {
-  let canvas;
-  try {
-    const require = process
-      .getBuiltinModule("module")
-      .createRequire(import.meta.url);
-
+if (isNodeJS) {
+  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("SKIP_BABEL")) {
+    warn("Please use the `legacy` build in Node.js environments.");
+  } else {
+    let canvas;
     try {
-      canvas = require("@napi-rs/canvas");
-    } catch (ex) {
-      warn(`Cannot load "@napi-rs/canvas" package: "${ex}".`);
-    }
-  } catch {}
+      const require = process
+        .getBuiltinModule("module")
+        .createRequire(import.meta.url);
 
-  if (!globalThis.DOMMatrix) {
-    if (canvas?.DOMMatrix) {
-      globalThis.DOMMatrix = canvas.DOMMatrix;
-    } else {
-      warn("Cannot polyfill `DOMMatrix`, rendering may be broken.");
+      try {
+        canvas = require("@napi-rs/canvas");
+      } catch (ex) {
+        warn(`Cannot load "@napi-rs/canvas" package: "${ex}".`);
+      }
+    } catch (ex) {
+      warn(`Cannot access the \`require\` function: "${ex}".`);
     }
-  }
-  if (!globalThis.ImageData) {
-    if (canvas?.ImageData) {
-      globalThis.ImageData = canvas.ImageData;
-    } else {
-      warn("Cannot polyfill `ImageData`, rendering may be broken.");
+
+    if (!globalThis.DOMMatrix) {
+      if (canvas?.DOMMatrix) {
+        globalThis.DOMMatrix = canvas.DOMMatrix;
+      } else {
+        warn("Cannot polyfill `DOMMatrix`, rendering may be broken.");
+      }
     }
-  }
-  if (!globalThis.Path2D) {
-    if (canvas?.Path2D) {
-      globalThis.Path2D = canvas.Path2D;
-    } else {
-      warn("Cannot polyfill `Path2D`, rendering may be broken.");
+    if (!globalThis.ImageData) {
+      if (canvas?.ImageData) {
+        globalThis.ImageData = canvas.ImageData;
+      } else {
+        warn("Cannot polyfill `ImageData`, rendering may be broken.");
+      }
+    }
+    if (!globalThis.Path2D) {
+      if (canvas?.Path2D) {
+        globalThis.Path2D = canvas.Path2D;
+      } else {
+        warn("Cannot polyfill `Path2D`, rendering may be broken.");
+      }
     }
   }
 }
