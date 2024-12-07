@@ -42,6 +42,12 @@ pdfjs-print-button-label = Cetak
 pdfjs-save-button =
     .title = Simpan
 pdfjs-save-button-label = Simpan
+# Used in Firefox for Android as a tooltip for the download button (“download” is a verb).
+pdfjs-download-button =
+    .title = Unduh
+# Used in Firefox for Android as a label for the download button (“download” is a verb).
+# Length of the translation matters since we are in a mobile context, with limited screen estate.
+pdfjs-download-button-label = Unduh
 pdfjs-bookmark-button =
     .title = Laman Saat Ini (Lihat URL dari Laman Sekarang)
 pdfjs-bookmark-button-label = Laman Saat Ini
@@ -99,6 +105,14 @@ pdfjs-document-properties-button-label = Properti Dokumen…
 pdfjs-document-properties-file-name = Nama berkas:
 pdfjs-document-properties-file-size = Ukuran berkas:
 # Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } KB ({ $b } byte)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } byte)
+# Variables:
 #   $size_kb (Number) - the PDF file size in kilobytes
 #   $size_b (Number) - the PDF file size in bytes
 pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } byte)
@@ -112,6 +126,9 @@ pdfjs-document-properties-subject = Subjek:
 pdfjs-document-properties-keywords = Kata Kunci:
 pdfjs-document-properties-creation-date = Tanggal Dibuat:
 pdfjs-document-properties-modification-date = Tanggal Dimodifikasi:
+# Variables:
+#   $dateObj (Date) - the creation/modification date and time of the PDF file
+pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 # Variables:
 #   $date (Date) - the creation/modification date of the PDF file
 #   $time (Time) - the creation/modification time of the PDF file
@@ -214,6 +231,13 @@ pdfjs-find-match-diacritics-checkbox-label = Pencocokan Diakritik
 pdfjs-find-entire-word-checkbox-label = Seluruh teks
 pdfjs-find-reached-top = Sampai di awal dokumen, dilanjutkan dari bawah
 pdfjs-find-reached-bottom = Sampai di akhir dokumen, dilanjutkan dari atas
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count = { $current } dari { $total } yang cocok
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit = Lebih dari { $limit } kecocokan
 pdfjs-find-not-found = Frasa tidak ditemukan
 
 ## Predefined zoom values
@@ -254,6 +278,9 @@ pdfjs-annotation-date-string = { $date }, { $time }
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
     .alt = [Anotasi { $type }]
+# Variables:
+#   $dateObj (Date) - the modification date and time of the annotation
+pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Password
 
@@ -271,12 +298,47 @@ pdfjs-editor-free-text-button-label = Teks
 pdfjs-editor-ink-button =
     .title = Gambar
 pdfjs-editor-ink-button-label = Gambar
+pdfjs-editor-stamp-button =
+    .title = Tambah atau edit gambar
+pdfjs-editor-stamp-button-label = Tambah atau edit gambar
+pdfjs-editor-highlight-button =
+    .title = Sorot
+pdfjs-editor-highlight-button-label = Sorot
+pdfjs-highlight-floating-button1 =
+    .title = Sorot
+    .aria-label = Sorot
+pdfjs-highlight-floating-button-label = Sorot
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = Hapus gambar
+pdfjs-editor-remove-freetext-button =
+    .title = Hapus teks
+pdfjs-editor-remove-stamp-button =
+    .title = Hapus gambar
+pdfjs-editor-remove-highlight-button =
+    .title = Hapus sorotan
+
+##
+
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Warna
 pdfjs-editor-free-text-size-input = Ukuran
 pdfjs-editor-ink-color-input = Warna
 pdfjs-editor-ink-thickness-input = Ketebalan
 pdfjs-editor-ink-opacity-input = Opasitas
+pdfjs-editor-stamp-add-image-button =
+    .title = Tambahkan gambar
+pdfjs-editor-stamp-add-image-button-label = Tambahkan gambar
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Ketebalan
+pdfjs-editor-free-highlight-thickness-title =
+    .title = Ubah ketebalan saat menyorot item selain teks
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Editor Teks
+    .default-content = Mulai mengetik…
 pdfjs-free-text =
     .aria-label = Editor Teks
 pdfjs-free-text-default-content = Mulai mengetik…
@@ -287,7 +349,26 @@ pdfjs-ink-canvas =
 
 ## Alt-text dialog
 
+pdfjs-editor-alt-text-button-label = Teks alternatif
+pdfjs-editor-alt-text-edit-button =
+    .aria-label = Edit teks alternatif
+pdfjs-editor-alt-text-edit-button-label = Edit teks alternatif
+pdfjs-editor-alt-text-dialog-label = Pilih opsi
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
+
+
+## Color picker
+
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+
+## Image alt-text settings
 
