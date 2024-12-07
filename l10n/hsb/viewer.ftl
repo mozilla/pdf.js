@@ -497,3 +497,25 @@ pdfjs-editor-alt-text-settings-editor-title = Editor za alternatiwny tekst
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Editor alternatiwneho teksta hnydom pokazać, hdyž so wobraz přidawa
 pdfjs-editor-alt-text-settings-show-dialog-description = Pomha, wam wšěm swojim wobrazam alternatiwny tekst přidać.
 pdfjs-editor-alt-text-settings-close-button = Začinić
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-message-highlight = Wotstronjene wuzběhnyć
+pdfjs-editor-undo-bar-message-freetext = Tekst je so wotstronił
+pdfjs-editor-undo-bar-message-ink = Rysowanka je so wotstroniła
+pdfjs-editor-undo-bar-message-stamp = Wobraz je so wotstronił
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple =
+    { $count ->
+        [one] { $count } přispomnjenka je so wotstroniła
+        [two] { $count } přispomnjence stej so wotstroniłoj
+        [few] { $count } přispomnjenki su so wotstronili
+       *[other] { $count } přispomnjenkow je so wotstroniło
+    }
+pdfjs-editor-undo-bar-undo-button =
+    .title = Cofnyć
+pdfjs-editor-undo-bar-undo-button-label = Cofnyć
+pdfjs-editor-undo-bar-close-button =
+    .title = Začinić
+pdfjs-editor-undo-bar-close-button-label = Začinić

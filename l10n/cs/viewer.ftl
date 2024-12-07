@@ -497,3 +497,12 @@ pdfjs-editor-alt-text-settings-editor-title = Editor alternativního textu
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Při přidávání obrázku hned zobrazit editor alternativního textu
 pdfjs-editor-alt-text-settings-show-dialog-description = Pomůže vám zajistit, aby všechny vaše obrázky obsahovaly alternativní text.
 pdfjs-editor-alt-text-settings-close-button = Zavřít
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-undo-button =
+    .title = Zpět
+pdfjs-editor-undo-bar-undo-button-label = Zpět
+pdfjs-editor-undo-bar-close-button =
+    .title = Zavřít
+pdfjs-editor-undo-bar-close-button-label = Zavřít

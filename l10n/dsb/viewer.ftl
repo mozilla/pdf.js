@@ -497,3 +497,25 @@ pdfjs-editor-alt-text-settings-editor-title = Editor za alternatiwny tekst
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Editor alternatiwnego teksta ned pokazaś, gaž se wobraz pśidawa
 pdfjs-editor-alt-text-settings-show-dialog-description = Pomaga, wam wšym swójim wobrazam alternatiwny tekst pśidaś.
 pdfjs-editor-alt-text-settings-close-button = Zacyniś
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-message-highlight = Wótwónoźone wuzwignuś
+pdfjs-editor-undo-bar-message-freetext = Tekst jo se wótwónoźeł
+pdfjs-editor-undo-bar-message-ink = Kreslanka jo se wótwónoźeła
+pdfjs-editor-undo-bar-message-stamp = Wobraz jo se wótwónoźeł
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple =
+    { $count ->
+        [one] { $count } pśipisk jo se wótwónoźeł
+        [two] { $count } pśipiska stej se wótwónoźełej
+        [few] { $count } pśipiski su se wótwónoźeli
+       *[other] { $count } pśipiskow jo se wótwónoźeło
+    }
+pdfjs-editor-undo-bar-undo-button =
+    .title = Anulěrowaś
+pdfjs-editor-undo-bar-undo-button-label = Anulěrowaś
+pdfjs-editor-undo-bar-close-button =
+    .title = Zacyniś
+pdfjs-editor-undo-bar-close-button-label = Zacyniś
