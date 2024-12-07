@@ -103,6 +103,8 @@ export default [
             "web",
             "fluent-bundle",
             "fluent-dom",
+            // See https://github.com/firebase/firebase-admin-node/discussions/1359.
+            "eslint-plugin-perfectionist",
           ],
         },
       ],
