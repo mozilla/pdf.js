@@ -1060,38 +1060,26 @@ describe("Interaction", () => {
     it("must check input for US zip format", async () => {
       // Run the tests sequentially to avoid any focus issues between the two
       // browsers when an alert is displayed.
-      for (const [browserName, page] of pages) {
+      for (const [, page] of pages) {
         await waitForScripting(page);
-
-        await clearInput(page, getSelector("29R"));
-        await clearInput(page, getSelector("30R"));
 
         await page.focus(getSelector("29R"));
         await typeAndWaitForSandbox(page, getSelector("29R"), "12A");
-        await page.waitForFunction(
-          `${getQuerySelector("29R")}.value !== "12A"`
-        );
-
-        let text = await page.$eval(getSelector(`29R`), el => el.value);
-        expect(text).withContext(`In ${browserName}`).toEqual("12");
+        await page.waitForFunction(`${getQuerySelector("29R")}.value === "12"`);
 
         await page.focus(getSelector("29R"));
         await typeAndWaitForSandbox(page, getSelector("29R"), "34");
         await page.click("[data-annotation-id='30R']");
-
-        await page.waitForFunction(
-          `${getQuerySelector("29R")}.value !== "1234"`
-        );
-
-        text = await page.$eval(getSelector(`29R`), el => el.value);
-        expect(text).withContext(`In ${browserName}`).toEqual("");
+        await waitForSandboxTrip(page);
+        await page.waitForFunction(`${getQuerySelector("29R")}.value === ""`);
 
         await page.focus(getSelector("29R"));
         await typeAndWaitForSandbox(page, getSelector("29R"), "12345");
         await page.click("[data-annotation-id='30R']");
-
-        text = await page.$eval(getSelector(`29R`), el => el.value);
-        expect(text).withContext(`In ${browserName}`).toEqual("12345");
+        await waitForSandboxTrip(page);
+        await page.waitForFunction(
+          `${getQuerySelector("29R")}.value === "12345"`
+        );
       }
     });
   });
@@ -1115,38 +1103,28 @@ describe("Interaction", () => {
     it("must check input for US phone number (long) format", async () => {
       // Run the tests sequentially to avoid any focus issues between the two
       // browsers when an alert is displayed.
-      for (const [browserName, page] of pages) {
+      for (const [, page] of pages) {
         await waitForScripting(page);
-
-        await clearInput(page, getSelector("29R"));
-        await clearInput(page, getSelector("30R"));
 
         await page.focus(getSelector("30R"));
         await typeAndWaitForSandbox(page, getSelector("30R"), "(123) 456A");
         await page.waitForFunction(
-          `${getQuerySelector("30R")}.value !== "(123) 456A"`
+          `${getQuerySelector("30R")}.value === "(123) 456"`
         );
-
-        let text = await page.$eval(getSelector(`30R`), el => el.value);
-        expect(text).withContext(`In ${browserName}`).toEqual("(123) 456");
 
         await page.focus(getSelector("30R"));
         await typeAndWaitForSandbox(page, getSelector("30R"), "-789");
         await page.click("[data-annotation-id='29R']");
-
-        await page.waitForFunction(
-          `${getQuerySelector("30R")}.value !== "(123) 456-789"`
-        );
-
-        text = await page.$eval(getSelector(`30R`), el => el.value);
-        expect(text).withContext(`In ${browserName}`).toEqual("");
+        await waitForSandboxTrip(page);
+        await page.waitForFunction(`${getQuerySelector("30R")}.value === ""`);
 
         await page.focus(getSelector("30R"));
         await typeAndWaitForSandbox(page, getSelector("30R"), "(123) 456-7890");
         await page.click("[data-annotation-id='29R']");
-
-        text = await page.$eval(getSelector("30R"), el => el.value);
-        expect(text).withContext(`In ${browserName}`).toEqual("(123) 456-7890");
+        await waitForSandboxTrip(page);
+        await page.waitForFunction(
+          `${getQuerySelector("30R")}.value === "(123) 456-7890"`
+        );
       }
     });
   });
@@ -1170,38 +1148,28 @@ describe("Interaction", () => {
     it("must check input for US phone number (short) format", async () => {
       // Run the tests sequentially to avoid any focus issues between the two
       // browsers when an alert is displayed.
-      for (const [browserName, page] of pages) {
+      for (const [, page] of pages) {
         await waitForScripting(page);
-
-        await clearInput(page, getSelector("29R"));
-        await clearInput(page, getSelector("30R"));
 
         await page.focus(getSelector("30R"));
         await typeAndWaitForSandbox(page, getSelector("30R"), "123A");
         await page.waitForFunction(
-          `${getQuerySelector("30R")}.value !== "123A"`
+          `${getQuerySelector("30R")}.value === "123"`
         );
-
-        let text = await page.$eval(getSelector(`30R`), el => el.value);
-        expect(text).withContext(`In ${browserName}`).toEqual("123");
 
         await page.focus(getSelector("30R"));
         await typeAndWaitForSandbox(page, getSelector("30R"), "-456");
         await page.click("[data-annotation-id='29R']");
-
-        await page.waitForFunction(
-          `${getQuerySelector("30R")}.value !== "123-456"`
-        );
-
-        text = await page.$eval(getSelector("30R"), el => el.value);
-        expect(text).withContext(`In ${browserName}`).toEqual("");
+        await waitForSandboxTrip(page);
+        await page.waitForFunction(`${getQuerySelector("30R")}.value === ""`);
 
         await page.focus(getSelector("30R"));
         await typeAndWaitForSandbox(page, getSelector("30R"), "123-4567");
         await page.click("[data-annotation-id='29R']");
-
-        text = await page.$eval(getSelector("30R"), el => el.value);
-        expect(text).withContext(`In ${browserName}`).toEqual("123-4567");
+        await waitForSandboxTrip(page);
+        await page.waitForFunction(
+          `${getQuerySelector("30R")}.value === "123-4567"`
+        );
       }
     });
   });
