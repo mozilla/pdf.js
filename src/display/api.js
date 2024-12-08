@@ -1408,6 +1408,7 @@ class PDFPageProxy {
   } = {}) {
     return new PageViewport({
       viewBox: this.view,
+      userUnit: this.userUnit,
       scale,
       rotation,
       offsetX,

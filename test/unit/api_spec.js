@@ -3081,8 +3081,19 @@ describe("api", function () {
       expect(page.ref).toEqual({ num: 15, gen: 0 });
     });
 
-    it("gets userUnit", function () {
+    it("gets default userUnit", function () {
       expect(page.userUnit).toEqual(1.0);
+    });
+
+    it("gets non-default userUnit", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue19176.pdf"));
+
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+
+      expect(pdfPage.userUnit).toEqual(72);
+
+      await loadingTask.destroy();
     });
 
     it("gets view", function () {
@@ -3116,11 +3127,32 @@ describe("api", function () {
       expect(viewport instanceof PageViewport).toEqual(true);
 
       expect(viewport.viewBox).toEqual(page.view);
+      expect(viewport.userUnit).toEqual(page.userUnit);
       expect(viewport.scale).toEqual(1.5);
       expect(viewport.rotation).toEqual(90);
       expect(viewport.transform).toEqual([0, 1.5, 1.5, 0, 0, 0]);
       expect(viewport.width).toEqual(1262.835);
       expect(viewport.height).toEqual(892.92);
+    });
+
+    it("gets viewport with non-default userUnit", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue19176.pdf"));
+
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+
+      const viewport = pdfPage.getViewport({ scale: 1 });
+      expect(viewport instanceof PageViewport).toEqual(true);
+
+      expect(viewport.viewBox).toEqual(pdfPage.view);
+      expect(viewport.userUnit).toEqual(pdfPage.userUnit);
+      expect(viewport.scale).toEqual(1);
+      expect(viewport.rotation).toEqual(0);
+      expect(viewport.transform).toEqual([72, 0, 0, -72, 0, 792]);
+      expect(viewport.width).toEqual(612);
+      expect(viewport.height).toEqual(792);
+
+      await loadingTask.destroy();
     });
 
     it('gets viewport with "offsetX/offsetY" arguments', function () {
