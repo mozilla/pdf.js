@@ -83,6 +83,7 @@ async function fetchData(url, type = "text") {
  * @typedef {Object} PageViewportParameters
  * @property {Array<number>} viewBox - The xMin, yMin, xMax and
  *   yMax coordinates.
+ * @property {number} userUnit - The size of units.
  * @property {number} scale - The scale of the viewport.
  * @property {number} rotation - The rotation, in degrees, of the viewport.
  * @property {number} [offsetX] - The horizontal, i.e. x-axis, offset. The
@@ -116,6 +117,7 @@ class PageViewport {
    */
   constructor({
     viewBox,
+    userUnit,
     scale,
     rotation,
     offsetX = 0,
@@ -123,10 +125,13 @@ class PageViewport {
     dontFlip = false,
   }) {
     this.viewBox = viewBox;
+    this.userUnit = userUnit;
     this.scale = scale;
     this.rotation = rotation;
     this.offsetX = offsetX;
     this.offsetY = offsetY;
+
+    scale *= userUnit; // Take the userUnit into account.
 
     // creating transform to convert pdf coordinate system to the normal
     // canvas like coordinates taking in account scale and rotation
@@ -208,12 +213,14 @@ class PageViewport {
    * @type {Object}
    */
   get rawDims() {
-    const { viewBox } = this;
+    const { userUnit, viewBox } = this;
+    const dims = viewBox.map(x => x * userUnit);
+
     return shadow(this, "rawDims", {
-      pageWidth: viewBox[2] - viewBox[0],
-      pageHeight: viewBox[3] - viewBox[1],
-      pageX: viewBox[0],
-      pageY: viewBox[1],
+      pageWidth: dims[2] - dims[0],
+      pageHeight: dims[3] - dims[1],
+      pageX: dims[0],
+      pageY: dims[1],
     });
   }
 
@@ -231,6 +238,7 @@ class PageViewport {
   } = {}) {
     return new PageViewport({
       viewBox: this.viewBox.slice(),
+      userUnit: this.userUnit,
       scale,
       rotation,
       offsetX,
@@ -514,6 +522,7 @@ function getXfaPageViewport(xfaPage, { scale = 1, rotation = 0 }) {
 
   return new PageViewport({
     viewBox,
+    userUnit: 1,
     scale,
     rotation,
   });
