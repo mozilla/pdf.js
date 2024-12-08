@@ -479,11 +479,33 @@ class AnnotationEditorLayer {
 
     this.attach(editor);
     editor.parent?.detach(editor);
+    this.resetRotation(editor);
     editor.setParent(this);
     if (editor.div && editor.isAttachedToDOM) {
       editor.div.remove();
       this.div.append(editor.div);
     }
+  }
+
+  /**
+   * When a page is rotated, the editor must be rotated as well
+   * to maintain the same orientation.
+   * @param {AnnotationEditor} editor
+   */
+  resetRotation(editor) {
+    if (this.viewport.rotation === editor.parent.viewport.rotation) {
+      return;
+    }
+    const rotationOfThisPage = this.viewport.rotation;
+    const currentRotation =
+      360 - Number(this.div.getAttribute("data-main-rotation"));
+
+    const pageRotation =
+      (360 + rotationOfThisPage - editor._uiManager.viewParameters.rotation) %
+      360;
+    editor.pageRotation = pageRotation;
+    editor.rotation = rotationOfThisPage;
+    editor.div.setAttribute("data-editor-rotation", currentRotation);
   }
 
   /**
