@@ -1087,18 +1087,6 @@ function getUuid() {
 
 const AnnotationPrefix = "pdfjs_internal_id_";
 
-const FontRenderOps = {
-  BEZIER_CURVE_TO: 0,
-  MOVE_TO: 1,
-  LINE_TO: 2,
-  QUADRATIC_CURVE_TO: 3,
-  RESTORE: 4,
-  SAVE: 5,
-  SCALE: 6,
-  TRANSFORM: 7,
-  TRANSLATE: 8,
-};
-
 // TODO: Remove this once `Uint8Array.prototype.toHex` is generally available.
 function toHexUtil(arr) {
   if (Uint8Array.prototype.toHex) {
@@ -1158,7 +1146,6 @@ export {
   DocumentActionEventType,
   FeatureTest,
   FONT_IDENTITY_MATRIX,
-  FontRenderOps,
   FormatError,
   fromBase64Util,
   getModificationDate,
