@@ -624,6 +624,7 @@ class Driver {
         }
         const isOffscreenCanvasSupported =
           task.isOffscreenCanvasSupported === false ? false : undefined;
+        const disableFontFace = task.disableFontFace === true;
 
         const loadingTask = getDocument({
           url: new URL(task.file, window.location),
@@ -637,6 +638,7 @@ class Driver {
           enableXfa: task.enableXfa,
           isOffscreenCanvasSupported,
           styleElement: xfaStyleElement,
+          disableFontFace,
         });
         let promise = loadingTask.promise;
 

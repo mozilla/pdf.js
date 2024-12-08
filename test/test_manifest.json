@@ -11208,5 +11208,13 @@
     "md5": "497370ab55cbb9c60bb0ea4b5d9e4d08",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "tracemonkey-disableFontFace-eq",
+    "file": "pdfs/tracemonkey.pdf",
+    "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+    "rounds": 1,
+    "disableFontFace": true,
+    "type": "eq"
   }
 ]
