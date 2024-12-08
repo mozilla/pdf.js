@@ -1278,6 +1278,11 @@ class AnnotationEditor {
     this.#moveInDOMTimeout = setTimeout(() => {
       this.#moveInDOMTimeout = null;
       this.parent?.moveEditorInDOM(this);
+      if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
+        this._uiManager._eventBus.dispatch("editormovedindom", {
+          source: this,
+        });
+      }
     }, 0);
   }
 
