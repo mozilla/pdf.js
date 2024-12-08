@@ -483,6 +483,7 @@ class CanvasExtraState {
     // Default fore and background colors
     this.fillColor = "#000000";
     this.strokeColor = "#000000";
+    this.tilingPatternRectangle = null;
     this.patternFill = false;
     this.patternStroke = false;
     // Note: fill alpha applies to all non-stroking operations
@@ -498,6 +499,7 @@ class CanvasExtraState {
   clone() {
     const clone = Object.create(this);
     clone.clipBox = this.clipBox.slice();
+    clone.tilingPatternRectangle = this.tilingPatternRectangle?.slice();
     return clone;
   }
 
@@ -1612,8 +1614,7 @@ class CanvasGraphics {
 
   // Path
   constructPath(ops, args, minMax) {
-    const ctx = this.ctx;
-    const current = this.current;
+    const { ctx, current } = this;
     let x = current.x,
       y = current.y;
     let startX, startY;
@@ -1651,6 +1652,13 @@ class CanvasGraphics {
           if (!isScalingMatrix) {
             current.updateRectMinMax(currentTransform, [x, y, xw, yh]);
           }
+          const dims = current.tilingPatternDims;
+          if (dims && isNaN(dims[0]) && x === 0 && y === 0) {
+            dims[0] = width;
+            dims[1] = height;
+          } else {
+            current.tilingPatternDims = null;
+          }
           ctx.closePath();
           break;
         case OPS.moveTo:
@@ -1660,6 +1668,7 @@ class CanvasGraphics {
           if (!isScalingMatrix) {
             current.updatePathMinMax(currentTransform, x, y);
           }
+          current.tilingPatternDims = null;
           break;
         case OPS.lineTo:
           x = args[j++];
@@ -1668,6 +1677,7 @@ class CanvasGraphics {
           if (!isScalingMatrix) {
             current.updatePathMinMax(currentTransform, x, y);
           }
+          current.tilingPatternDims = null;
           break;
         case OPS.curveTo:
           startX = x;
@@ -1695,6 +1705,7 @@ class CanvasGraphics {
             minMaxForBezier
           );
           j += 6;
+          current.tilingPatternDims = null;
           break;
         case OPS.curveTo2:
           startX = x;
@@ -1722,6 +1733,7 @@ class CanvasGraphics {
           x = args[j + 2];
           y = args[j + 3];
           j += 4;
+          current.tilingPatternDims = null;
           break;
         case OPS.curveTo3:
           startX = x;
@@ -1742,6 +1754,7 @@ class CanvasGraphics {
             minMaxForBezier
           );
           j += 4;
+          current.tilingPatternDims = null;
           break;
         case OPS.closePath:
           ctx.closePath();
@@ -1798,8 +1811,22 @@ class CanvasGraphics {
     const fillColor = this.current.fillColor;
     const isPatternFill = this.current.patternFill;
     let needRestore = false;
+    const intersect = this.current.getClippedPathBoundingBox();
 
     if (isPatternFill) {
+      const dims = this.current.tilingPatternDims;
+      if (dims && fillColor.canSkipPatternCanvas(dims)) {
+        // A rectangle with its origin at (0, 0) is filled with a tiling
+        // pattern. If the dimensions of the rectangle are smaller than the
+        // tile's ones we can directly draw the tile without having to use
+        // a pattern.
+        fillColor.drawPattern(this);
+        if (consumePath) {
+          this.consumePath(intersect);
+        }
+        this.current.tilingPatternDims = null;
+        return;
+      }
       ctx.save();
       ctx.fillStyle = fillColor.getPattern(
         ctx,
@@ -1810,7 +1837,6 @@ class CanvasGraphics {
       needRestore = true;
     }
 
-    const intersect = this.current.getClippedPathBoundingBox();
     if (this.contentVisible && intersect !== null) {
       if (this.pendingEOFill) {
         ctx.fill("evenodd");
@@ -2413,8 +2439,11 @@ class CanvasGraphics {
   }
 
   setFillColorN() {
-    this.current.fillColor = this.getColorN_Pattern(arguments);
+    const pattern = (this.current.fillColor =
+      this.getColorN_Pattern(arguments));
     this.current.patternFill = true;
+    this.current.tilingPatternDims =
+      pattern instanceof TilingPattern ? [NaN, NaN] : null;
   }
 
   setStrokeRGBColor(r, g, b) {

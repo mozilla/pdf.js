@@ -674,6 +674,17 @@ class Util {
     return `#${hexNumbers[r]}${hexNumbers[g]}${hexNumbers[b]}`;
   }
 
+  static isIdentityMatrix(m) {
+    return (
+      Math.abs(m[0] - 1) <= 1e-6 &&
+      Math.abs(m[1]) <= 1e-6 &&
+      Math.abs(m[2]) <= 1e-6 &&
+      Math.abs(m[3] - 1) <= 1e-6 &&
+      Math.abs(m[4]) <= 1e-6 &&
+      Math.abs(m[5]) <= 1e-6
+    );
+  }
+
   // Apply a scaling matrix to some min/max values.
   // If a scaling factor is negative then min and max must be
   // swapped.
