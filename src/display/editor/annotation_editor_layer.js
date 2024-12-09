@@ -76,6 +76,8 @@ class AnnotationEditorLayer {
 
   #drawingAC = null;
 
+  #focusedElement = null;
+
   #textLayer = null;
 
   #textSelectionAC = null;
@@ -811,12 +813,29 @@ class AnnotationEditorLayer {
       "blur",
       ({ relatedTarget }) => {
         if (relatedTarget && !this.div.contains(relatedTarget)) {
+          this.#focusedElement = null;
           this.commitOrRemove();
         }
       },
       { signal }
     );
     this.#currentEditorType.startDrawing(this, this.#uiManager, false, event);
+  }
+
+  pause(on) {
+    if (on) {
+      const { activeElement } = document;
+      if (this.div.contains(activeElement)) {
+        this.#focusedElement = activeElement;
+      }
+      return;
+    }
+    if (this.#focusedElement) {
+      setTimeout(() => {
+        this.#focusedElement?.focus();
+        this.#focusedElement = null;
+      }, 0);
+    }
   }
 
   endDrawingSession(isAborted = false) {
@@ -826,6 +845,7 @@ class AnnotationEditorLayer {
     this.#uiManager.setCurrentDrawingSession(null);
     this.#drawingAC.abort();
     this.#drawingAC = null;
+    this.#focusedElement = null;
     return this.#currentEditorType.endDrawing(isAborted);
   }
 
