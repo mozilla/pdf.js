@@ -120,6 +120,8 @@ class PDFPageView {
 
   #enableHWA = false;
 
+  #enableAutolinking = false;
+
   #hasRestrictedScaling = false;
 
   #isEditing = false;
@@ -179,6 +181,7 @@ class PDFPageView {
       options.maxCanvasPixels ?? AppOptions.get("maxCanvasPixels");
     this.pageColors = options.pageColors || null;
     this.#enableHWA = options.enableHWA || false;
+    this.#enableAutolinking = options.enableAutolinking || false;
 
     this.eventBus = options.eventBus;
     this.renderingQueue = options.renderingQueue;
@@ -1112,7 +1115,9 @@ class PDFPageView {
 
         if (this.annotationLayer) {
           await textLayerP;
-          await this.#processLinks();
+          if (this.#enableAutolinking) {
+            await this.#processLinks();
+          }
           await this.#renderAnnotationLayer();
         }
 

@@ -500,6 +500,7 @@ const PDFViewerApplication = {
       mlManager: this.mlManager,
       abortSignal: this._globalAbortController.signal,
       enableHWA,
+      enableAutolinking: AppOptions.get("enableAutolinking"),
     });
     this.pdfViewer = pdfViewer;
 
