@@ -2735,6 +2735,13 @@
     "about": "TrueType font with (0, 1) cmap."
   },
   {
+    "id": "issue19176",
+    "file": "pdfs/issue19176.pdf",
+    "md5": "c307418412a72997671518fa978439e0",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "issue4801",
     "file": "pdfs/issue4801.pdf",
     "md5": "7f32764717447a8b5c8eac08c9ab8380",
