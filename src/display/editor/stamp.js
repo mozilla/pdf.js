@@ -40,8 +40,6 @@ class StampEditor extends AnnotationEditor {
 
   #canvas = null;
 
-  #observer = null;
-
   #resizeTimeoutId = null;
 
   #isSvg = false;
@@ -305,8 +303,6 @@ class StampEditor extends AnnotationEditor {
       this._uiManager.imageManager.deleteId(this.#bitmapId);
       this.#canvas?.remove();
       this.#canvas = null;
-      this.#observer?.disconnect();
-      this.#observer = null;
       if (this.#resizeTimeoutId) {
         clearTimeout(this.#resizeTimeoutId);
         this.#resizeTimeoutId = null;
@@ -398,7 +394,32 @@ class StampEditor extends AnnotationEditor {
       );
     }
 
+    this._uiManager.addShouldRescale(this);
+
     return this.div;
+  }
+
+  /** @inheritdoc */
+  _onResized() {
+    // We used a CSS-zoom during the resizing, but now it's resized we can
+    // rescale correctly the bitmap to fit the new dimensions.
+    this.onScaleChanging();
+  }
+
+  onScaleChanging() {
+    if (!this.parent) {
+      return;
+    }
+    if (this.#resizeTimeoutId !== null) {
+      clearTimeout(this.#resizeTimeoutId);
+    }
+    // The user's zooming the page, there is no need to redraw the bitmap at
+    // each step, hence we wait a bit before redrawing it.
+    const TIME_TO_WAIT = 200;
+    this.#resizeTimeoutId = setTimeout(() => {
+      this.#resizeTimeoutId = null;
+      this.#drawBitmap();
+    }, TIME_TO_WAIT);
   }
 
   #createCanvas() {
@@ -433,6 +454,15 @@ class StampEditor extends AnnotationEditor {
     canvas.setAttribute("role", "img");
     this.addContainer(canvas);
 
+    this.width = width / pageWidth;
+    this.height = height / pageHeight;
+    if (this._initialOptions?.isCentered) {
+      this.center();
+    } else {
+      this.fixAndSetPosition();
+    }
+    this._initialOptions = null;
+
     if (
       !this._uiManager.useNewAltTextWhenAddingImage ||
       !this._uiManager.useNewAltTextFlow ||
@@ -440,8 +470,7 @@ class StampEditor extends AnnotationEditor {
     ) {
       div.hidden = false;
     }
-    this.#drawBitmap(width, height);
-    this.#createObserver();
+    this.#drawBitmap();
     if (!this.#hasBeenAddedInUndoStack) {
       this.parent.addUndoableEditor(this);
       this.#hasBeenAddedInUndoStack = true;
@@ -584,37 +613,6 @@ class StampEditor extends AnnotationEditor {
     return { canvas, width, height, imageData };
   }
 
-  /**
-   * When the dimensions of the div change the inner canvas must
-   * renew its dimensions, hence it must redraw its own contents.
-   * @param {number} width - the new width of the div
-   * @param {number} height - the new height of the div
-   * @returns
-   */
-  #setDimensions(width, height) {
-    const [parentWidth, parentHeight] = this.parentDimensions;
-    this.width = width / parentWidth;
-    this.height = height / parentHeight;
-    if (this._initialOptions?.isCentered) {
-      this.center();
-    } else {
-      this.fixAndSetPosition();
-    }
-    this._initialOptions = null;
-    if (this.#resizeTimeoutId !== null) {
-      clearTimeout(this.#resizeTimeoutId);
-    }
-    // When the user is resizing the editor we just use CSS to scale the image
-    // to avoid redrawing it too often.
-    // And once the user stops resizing the editor we redraw the image in
-    // rescaling it correctly (see this.#scaleBitmap).
-    const TIME_TO_WAIT = 200;
-    this.#resizeTimeoutId = setTimeout(() => {
-      this.#resizeTimeoutId = null;
-      this.#drawBitmap(width, height);
-    }, TIME_TO_WAIT);
-  }
-
   #scaleBitmap(width, height) {
     const { width: bitmapWidth, height: bitmapHeight } = this.#bitmap;
 
@@ -660,18 +658,21 @@ class StampEditor extends AnnotationEditor {
     return bitmap;
   }
 
-  #drawBitmap(width, height) {
+  #drawBitmap() {
+    const [parentWidth, parentHeight] = this.parentDimensions;
+    const { width, height } = this;
     const outputScale = new OutputScale();
-    const scaledWidth = Math.ceil(width * outputScale.sx);
-    const scaledHeight = Math.ceil(height * outputScale.sy);
-
+    const scaledWidth = Math.ceil(width * parentWidth * outputScale.sx);
+    const scaledHeight = Math.ceil(height * parentHeight * outputScale.sy);
     const canvas = this.#canvas;
+
     if (
       !canvas ||
       (canvas.width === scaledWidth && canvas.height === scaledHeight)
     ) {
       return;
     }
+
     canvas.width = scaledWidth;
     canvas.height = scaledHeight;
 
@@ -744,32 +745,6 @@ class StampEditor extends AnnotationEditor {
     }
 
     return structuredClone(this.#bitmap);
-  }
-
-  /**
-   * Create the resize observer.
-   */
-  #createObserver() {
-    if (!this._uiManager._signal) {
-      // This method is called after the canvas has been created but the canvas
-      // creation is async, so it's possible that the viewer has been closed.
-      return;
-    }
-    this.#observer = new ResizeObserver(entries => {
-      const rect = entries[0].contentRect;
-      if (rect.width && rect.height) {
-        this.#setDimensions(rect.width, rect.height);
-      }
-    });
-    this.#observer.observe(this.div);
-    this._uiManager._signal.addEventListener(
-      "abort",
-      () => {
-        this.#observer?.disconnect();
-        this.#observer = null;
-      },
-      { once: true }
-    );
   }
 
   /** @inheritdoc */
