@@ -1234,15 +1234,7 @@ class PDFPageView {
         unsafeUrl: url,
         url,
         rect,
-        // NOTE boilerplate-y
         annotationType: 2,
-        annotationFlags: 4,
-        subtype: "Link",
-        noHTML: false,
-        isEditable: false,
-        hasApperance: false,
-        modificationDate: null,
-        structParent: 2,
         rotation: 0,
         // This is just the default for AnnotationBorderStyle. At some point we
         // should switch to something better like `new LinkAnnotation` here.
