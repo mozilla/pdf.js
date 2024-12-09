@@ -140,6 +140,7 @@ class AnnotationEditorLayerBuilder {
     if (!this.div) {
       return;
     }
+    this.annotationEditorLayer.pause(/* on */ true);
     this.div.hidden = true;
   }
 
@@ -148,6 +149,7 @@ class AnnotationEditorLayerBuilder {
       return;
     }
     this.div.hidden = false;
+    this.annotationEditorLayer.pause(/* on */ false);
   }
 }
 
