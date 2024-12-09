@@ -136,6 +136,8 @@ class PDFPageView {
 
   #scaleRoundY = 1;
 
+  #structTreeDOM = null;
+
   #renderError = null;
 
   #renderingState = RenderingStates.INITIAL;
@@ -482,11 +484,12 @@ class PDFPageView {
    * aria-owns to work.
    */
   async #renderStructTreeLayer() {
-    if (!this.textLayer) {
+    if (!this.textLayer || this.#structTreeDOM) {
       return;
     }
 
-    const treeDom = await this.structTreeLayer?.render();
+    const treeDom = (this.#structTreeDOM =
+      await this.structTreeLayer?.render());
     if (treeDom) {
       this.l10n.pause();
       this.structTreeLayer?.addElementsToTextLayer();
@@ -563,23 +566,9 @@ class PDFPageView {
     }
     div.removeAttribute("data-loaded");
 
-    if (annotationLayerNode) {
-      // Hide the annotation layer until all elements are resized
-      // so they are not displayed on the already resized page.
-      this.annotationLayer.hide();
-    }
-    if (annotationEditorLayerNode) {
-      this.annotationEditorLayer.hide();
-    }
-    if (xfaLayerNode) {
-      // Hide the XFA layer until all elements are resized
-      // so they are not displayed on the already resized page.
-      this.xfaLayer.hide();
-    }
     if (textLayerNode) {
       this.textLayer.hide();
     }
-    this.structTreeLayer?.hide();
 
     if (!keepCanvasWrapper && this.#canvasWrapper) {
       this.#canvasWrapper = null;
@@ -761,6 +750,8 @@ class PDFPageView {
     }
     if (this.structTreeLayer && !this.textLayer) {
       this.structTreeLayer = null;
+      this.#structTreeDOM?.remove();
+      this.#structTreeDOM = null;
     }
     if (
       this.annotationEditorLayer &&
@@ -984,7 +975,9 @@ class PDFPageView {
         // Don't add the canvas until the first draw callback, or until
         // drawing is complete when `!this.renderingQueue`, to prevent black
         // flickering.
+        this.l10n.pause();
         canvasWrapper.append(canvas);
+        this.l10n.resume();
         showCanvas = null;
         return;
       }
@@ -992,7 +985,13 @@ class PDFPageView {
         return;
       }
 
+      this.l10n.pause();
       if (prevCanvas) {
+        if (this.#structTreeDOM) {
+          // Add the struct tree now in order to minimize the number of reflows.
+          canvas.append(this.#structTreeDOM);
+          this.structTreeLayer.show();
+        }
         prevCanvas.replaceWith(canvas);
         prevCanvas.width = prevCanvas.height = 0;
       } else {
@@ -1001,6 +1000,7 @@ class PDFPageView {
         // have a final flash we just display it once all the drawing is done.
         canvasWrapper.append(canvas);
       }
+      this.l10n.resume();
 
       showCanvas = null;
     };
