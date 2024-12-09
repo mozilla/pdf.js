@@ -975,6 +975,10 @@ class PDFPageView {
 
     const hasHCM = !!(pageColors?.background && pageColors?.foreground);
     const prevCanvas = this.canvas;
+
+    // In HCM, a final filter is applied on the canvas which means that
+    // before it's applied we've normal colors. Consequently, to avoid to
+    // have a final flash we just display it once all the drawing is done.
     const updateOnFirstShow = !prevCanvas && !hasHCM;
     this.canvas = canvas;
     this.#originalViewport = viewport;
@@ -984,7 +988,13 @@ class PDFPageView {
         // Don't add the canvas until the first draw callback, or until
         // drawing is complete when `!this.renderingQueue`, to prevent black
         // flickering.
-        canvasWrapper.append(canvas);
+        // In whatever case, the canvas must be the first child.
+        const { firstChild } = canvasWrapper;
+        if (firstChild) {
+          firstChild.before(canvas);
+        } else {
+          canvasWrapper.append(canvas);
+        }
         showCanvas = null;
         return;
       }
@@ -996,10 +1006,12 @@ class PDFPageView {
         prevCanvas.replaceWith(canvas);
         prevCanvas.width = prevCanvas.height = 0;
       } else {
-        // In HCM, a final filter is applied on the canvas which means that
-        // before it's applied we've normal colors. Consequently, to avoid to
-        // have a final flash we just display it once all the drawing is done.
-        canvasWrapper.append(canvas);
+        const { firstChild } = canvasWrapper;
+        if (firstChild) {
+          firstChild.before(canvas);
+        } else {
+          canvasWrapper.append(canvas);
+        }
       }
 
       showCanvas = null;
