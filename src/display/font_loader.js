@@ -359,13 +359,17 @@ class FontLoader {
 }
 
 class FontFaceObject {
-  constructor(translatedData, { disableFontFace = false, inspectFont = null }) {
+  constructor(
+    translatedData,
+    { disableFontFace = false, fontExtraProperties = false, inspectFont = null }
+  ) {
     this.compiledGlyphs = Object.create(null);
     // importing translated data
     for (const i in translatedData) {
       this[i] = translatedData[i];
     }
     this.disableFontFace = disableFontFace === true;
+    this.fontExtraProperties = fontExtraProperties === true;
     this._inspectFont = inspectFont;
   }
 
@@ -420,13 +424,20 @@ class FontFaceObject {
       return this.compiledGlyphs[character];
     }
 
+    const objId = this.loadedName + "_path_" + character;
     let cmds;
     try {
-      cmds = objs.get(this.loadedName + "_path_" + character);
+      cmds = objs.get(objId);
     } catch (ex) {
       warn(`getPathGenerator - ignoring character: "${ex}".`);
     }
-    return (this.compiledGlyphs[character] = new Path2D(cmds || ""));
+    const path = new Path2D(cmds || "");
+
+    if (!this.fontExtraProperties) {
+      // Remove the raw path-string, since we don't need it anymore.
+      objs.delete(objId);
+    }
+    return (this.compiledGlyphs[character] = path);
   }
 }
 
