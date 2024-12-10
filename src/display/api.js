@@ -291,7 +291,7 @@ function getDocument(src = {}) {
     Number.isInteger(src.maxImageSize) && src.maxImageSize > -1
       ? src.maxImageSize
       : -1;
-  const isEvalSupported = src.isEvalSupported !== false;
+  const isEvalSupported = false; // src.isEvalSupported !== false;
   const isOffscreenCanvasSupported =
     typeof src.isOffscreenCanvasSupported === "boolean"
       ? src.isOffscreenCanvasSupported
