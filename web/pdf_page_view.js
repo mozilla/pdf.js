@@ -989,12 +989,7 @@ class PDFPageView {
         // drawing is complete when `!this.renderingQueue`, to prevent black
         // flickering.
         // In whatever case, the canvas must be the first child.
-        const { firstChild } = canvasWrapper;
-        if (firstChild) {
-          firstChild.before(canvas);
-        } else {
-          canvasWrapper.append(canvas);
-        }
+        canvasWrapper.prepend(canvas);
         showCanvas = null;
         return;
       }
@@ -1006,12 +1001,7 @@ class PDFPageView {
         prevCanvas.replaceWith(canvas);
         prevCanvas.width = prevCanvas.height = 0;
       } else {
-        const { firstChild } = canvasWrapper;
-        if (firstChild) {
-          firstChild.before(canvas);
-        } else {
-          canvasWrapper.append(canvas);
-        }
+        canvasWrapper.prepend(canvas);
       }
 
       showCanvas = null;
