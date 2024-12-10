@@ -16,11 +16,12 @@
 import {
   applyFunctionToEditor,
   awaitPromise,
+  cleanupEditing,
   clearInput,
   closePages,
   copy,
   copyToClipboard,
-  dragAndDropAnnotation,
+  dragAndDrop,
   getAnnotationSelector,
   getEditorDimensions,
   getEditors,
@@ -120,13 +121,7 @@ describe("Stamp Editor", () => {
     });
 
     afterEach(async () => {
-      for (const [, page] of pages) {
-        await page.evaluate(() => {
-          window.uiManager.reset();
-        });
-        // Disable editing mode.
-        await switchToStamp(page, /* disable */ true);
-      }
+      await cleanupEditing(pages, switchToStamp);
     });
 
     afterAll(async () => {
@@ -216,11 +211,21 @@ describe("Stamp Editor", () => {
     let pages;
 
     beforeAll(async () => {
-      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer", 50);
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer", 50, {
+        eventBusSetup: eventBus => {
+          eventBus.on("annotationeditoruimanager", ({ uiManager }) => {
+            window.uiManager = uiManager;
+          });
+        },
+      });
     });
 
     afterAll(async () => {
       await closePages(pages);
+    });
+
+    afterEach(async () => {
+      await cleanupEditing(pages, switchToStamp);
     });
 
     it("must check that an added image stay within the page", async () => {
@@ -239,14 +244,13 @@ describe("Stamp Editor", () => {
             await input.uploadFile(
               `${path.join(__dirname, "../images/firefox_logo.png")}`
             );
-            await waitForImage(page, getEditorSelector(i));
-            await page.waitForSelector(`${getEditorSelector(i)} .altText`);
+            const editorSelector = getEditorSelector(i);
+            await waitForImage(page, editorSelector);
+            await page.waitForSelector(`${editorSelector} .altText`);
 
             for (let j = 0; j < 4; j++) {
               await page.keyboard.press("Escape");
-              await page.waitForSelector(
-                `${getEditorSelector(i)} .resizers.hidden`
-              );
+              await page.waitForSelector(`${editorSelector} .resizers.hidden`);
 
               const handle = await waitForAnnotationEditorLayer(page);
               await page.evaluate(() => {
@@ -255,10 +259,10 @@ describe("Stamp Editor", () => {
               await awaitPromise(handle);
 
               await page.focus(".stampEditor");
-              await waitForSelectedEditor(page, getEditorSelector(i));
+              await waitForSelectedEditor(page, editorSelector);
 
               await page.waitForSelector(
-                `${getEditorSelector(i)} .resizers:not(.hidden)`
+                `${editorSelector} .resizers:not(.hidden)`
               );
 
               const stampRect = await getRect(page, ".stampEditor");
@@ -282,6 +286,44 @@ describe("Stamp Editor", () => {
             });
             await awaitPromise(handle);
           }
+        })
+      );
+    });
+
+    it("must check that the opposite corner doesn't move", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToStamp(page);
+
+          await page.click("#editorStampAddImage");
+          const input = await page.$("#stampEditorFileInput");
+          await input.uploadFile(
+            `${path.join(__dirname, "../images/firefox_logo.png")}`
+          );
+          const editorSelector = getEditorSelector(0);
+          await waitForImage(page, editorSelector);
+          await page.waitForSelector(`${editorSelector} .resizer.topLeft`);
+          const baseRect = await getRect(page, editorSelector);
+          const bRX = baseRect.x + baseRect.width;
+          const bRY = baseRect.y + baseRect.height;
+
+          await dragAndDrop(page, `${editorSelector} .resizer.topLeft`, [
+            [-10, -10],
+            [20, 20],
+            [-10, -10],
+            [20, 20],
+          ]);
+
+          const newRect = await getRect(page, editorSelector);
+          const newBRX = newRect.x + newRect.width;
+          const newBRY = newRect.y + newRect.height;
+
+          expect(Math.abs(bRX - newBRX) <= 1)
+            .withContext(`In ${browserName}`)
+            .toBeTrue();
+          expect(Math.abs(bRY - newBRY) <= 1)
+            .withContext(`In ${browserName}`)
+            .toBeTrue();
         })
       );
     });
@@ -1441,7 +1483,8 @@ describe("Stamp Editor", () => {
           const modeChangedHandle = await waitForAnnotationModeChanged(page);
           await page.click(getAnnotationSelector("25R"), { count: 2 });
           await awaitPromise(modeChangedHandle);
-          await waitForSelectedEditor(page, getEditorSelector(0));
+          const editorSelector = getEditorSelector(0);
+          await waitForSelectedEditor(page, editorSelector);
 
           const editorIds = await getEditors(page, "stamp");
           expect(editorIds.length).withContext(`In ${browserName}`).toEqual(5);
@@ -1451,22 +1494,13 @@ describe("Stamp Editor", () => {
           const serialized = await getSerialized(page);
           expect(serialized).withContext(`In ${browserName}`).toEqual([]);
 
-          const editorRect = await page.$eval(getEditorSelector(0), el => {
-            const { x, y, width, height } = el.getBoundingClientRect();
-            return { x, y, width, height };
-          });
+          const editorRect = await getRect(page, editorSelector);
 
           // Select the annotation we want to move.
           await page.mouse.click(editorRect.x + 2, editorRect.y + 2);
-          await waitForSelectedEditor(page, getEditorSelector(0));
+          await waitForSelectedEditor(page, editorSelector);
 
-          await dragAndDropAnnotation(
-            page,
-            editorRect.x + editorRect.width / 2,
-            editorRect.y + editorRect.height / 2,
-            100,
-            100
-          );
+          await dragAndDrop(page, editorSelector, [[100, 100]]);
           await waitForSerialized(page, 1);
         })
       );

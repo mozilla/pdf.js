@@ -17,7 +17,7 @@ import {
   awaitPromise,
   closePages,
   createPromise,
-  dragAndDropAnnotation,
+  dragAndDrop,
   getAnnotationSelector,
   getEditors,
   getEditorSelector,
@@ -822,13 +822,7 @@ describe("Ink Editor", () => {
           await page.mouse.click(editorRect.x + 2, editorRect.y + 2);
           await waitForSelectedEditor(page, edgeB);
 
-          await dragAndDropAnnotation(
-            page,
-            editorRect.x + editorRect.width / 2,
-            editorRect.y + editorRect.height / 2,
-            100,
-            100
-          );
+          await dragAndDrop(page, edgeB, [[100, 100]]);
           await waitForSerialized(page, 1);
         })
       );

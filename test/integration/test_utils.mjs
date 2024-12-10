@@ -522,10 +522,15 @@ async function serializeBitmapDimensions(page) {
   });
 }
 
-async function dragAndDropAnnotation(page, startX, startY, tX, tY) {
+async function dragAndDrop(page, selector, translations) {
+  const rect = await getRect(page, selector);
+  const startX = rect.x + rect.width / 2;
+  const startY = rect.y + rect.height / 2;
   await page.mouse.move(startX, startY);
   await page.mouse.down();
-  await page.mouse.move(startX + tX, startY + tY);
+  for (const [tX, tY] of translations) {
+    await page.mouse.move(startX + tX, startY + tY);
+  }
   await page.mouse.up();
   await page.waitForSelector("#viewer:not(.noUserSelect)");
 }
@@ -809,16 +814,27 @@ function isCanvasWhite(page, pageNumber, rectangle) {
   );
 }
 
+async function cleanupEditing(pages, switcher) {
+  for (const [, page] of pages) {
+    await page.evaluate(() => {
+      window.uiManager.reset();
+    });
+    // Disable editing mode.
+    await switcher(page, /* disable */ true);
+  }
+}
+
 export {
   applyFunctionToEditor,
   awaitPromise,
+  cleanupEditing,
   clearInput,
   closePages,
   closeSinglePage,
   copy,
   copyToClipboard,
   createPromise,
-  dragAndDropAnnotation,
+  dragAndDrop,
   firstPageOnTop,
   getAnnotationSelector,
   getAnnotationStorage,

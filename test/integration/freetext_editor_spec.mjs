@@ -19,7 +19,7 @@ import {
   copy,
   copyToClipboard,
   createPromise,
-  dragAndDropAnnotation,
+  dragAndDrop,
   firstPageOnTop,
   getEditors,
   getEditorSelector,
@@ -954,19 +954,14 @@ describe("FreeText Editor", () => {
           const serialized = await getSerialized(page);
           expect(serialized).withContext(`In ${browserName}`).toEqual([]);
 
-          const editorRect = await getRect(page, getEditorSelector(0));
+          const editorSelector = getEditorSelector(0);
+          const editorRect = await getRect(page, editorSelector);
 
           // Select the annotation we want to move.
           await page.mouse.click(editorRect.x + 2, editorRect.y + 2);
-          await waitForSelectedEditor(page, getEditorSelector(0));
+          await waitForSelectedEditor(page, editorSelector);
 
-          await dragAndDropAnnotation(
-            page,
-            editorRect.x + editorRect.width / 2,
-            editorRect.y + editorRect.height / 2,
-            100,
-            100
-          );
+          await dragAndDrop(page, editorSelector, [[100, 100]]);
           await waitForSerialized(page, 1);
         })
       );
@@ -2335,29 +2330,29 @@ describe("FreeText Editor", () => {
           const allPositions = [];
 
           for (let i = 0; i < 10; i++) {
+            const editorSelector = getEditorSelector(i);
             await page.mouse.click(rect.x + 10 + 30 * i, rect.y + 100 + 5 * i);
-            await page.waitForSelector(getEditorSelector(i), {
+            await page.waitForSelector(editorSelector, {
               visible: true,
             });
             await page.type(
-              `${getEditorSelector(i)} .internal`,
+              `${editorSelector} .internal`,
               String.fromCharCode(65 + i)
             );
 
             // Commit.
             await page.keyboard.press("Escape");
-            await page.waitForSelector(
-              `${getEditorSelector(i)} .overlay.enabled`
-            );
+            await page.waitForSelector(`${editorSelector} .overlay.enabled`);
 
-            allPositions.push(await getRect(page, getEditorSelector(i)));
+            allPositions.push(await getRect(page, editorSelector));
           }
 
           await selectAll(page);
-          await dragAndDropAnnotation(page, rect.x + 161, rect.y + 126, 39, 74);
+          await dragAndDrop(page, getEditorSelector(4), [[39, 74]]);
 
           for (let i = 0; i < 10; i++) {
-            const pos = await getRect(page, getEditorSelector(i));
+            const editorSelector = getEditorSelector(i);
+            const pos = await getRect(page, editorSelector);
             const oldPos = allPositions[i];
             expect(Math.abs(Math.round(pos.x - oldPos.x) - 39))
               .withContext(`In ${browserName}`)
