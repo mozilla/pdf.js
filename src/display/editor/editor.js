@@ -267,6 +267,42 @@ class AnnotationEditor {
   }
 
   /**
+   * Rotate a point about 0.5 0.5 origin
+   * @param {number} x
+   * @param {number} y
+   * @param {number} angle
+   * @returns {any} The rotated point
+   */
+  static rotatePointByMidPoint(x, y, angle) {
+    const originX = 0.5;
+    const originY = 0.5;
+    // Translate the point to the origin (originX, originY)
+    const translatedX = x - originX;
+    const translatedY = y - originY;
+    let rotatedX, rotatedY;
+
+    // Perform the rotation based on the given angle
+    switch (angle) {
+      case 90:
+        rotatedX = -translatedY;
+        rotatedY = translatedX;
+        break;
+      case 270:
+        rotatedX = translatedY;
+        rotatedY = -translatedX;
+        break;
+      default:
+        throw new Error("Invalid angle. Valid angles are 90 and 270 degrees.");
+    }
+
+    // Translate the point back
+    const finalX = rotatedX + originX;
+    const finalY = rotatedY + originY;
+
+    return { x: finalX, y: finalY };
+  }
+
+  /**
    * Extract the data from the clipboard item and delegate the creation of the
    * editor to the parent.
    * @param {DataTransferItem} item
@@ -481,6 +517,9 @@ class AnnotationEditor {
     } = this;
     this.x += tx / parentWidth;
     this.y += ty / parentHeight;
+
+    const oldRotation = this.rotation;
+
     if (this.parent && (this.x < 0 || this.x > 1 || this.y < 0 || this.y > 1)) {
       // It's possible to not have a parent: for example, when the user is
       // dragging all the selected editors but this one on a page which has been
@@ -488,12 +527,43 @@ class AnnotationEditor {
       // It's why we need to check for it. In such a situation, it isn't really
       // a problem to not find a new parent: it's something which is related to
       // what the user is seeing, hence it depends on how pages are layed out.
-
-      // The element will be outside of its parent so change the parent.
       const { x, y } = this.div.getBoundingClientRect();
       if (this.parent.findNewParent(this, x, y)) {
-        this.x -= Math.floor(this.x);
-        this.y -= Math.floor(this.y);
+        const newRotation = this.rotation;
+        if (oldRotation !== newRotation) {
+          const {
+            x: layerX,
+            y: layerY,
+            width,
+            height,
+          } = this.parent.div.getBoundingClientRect();
+          this.x = (x - layerX) / width;
+          this.y = (y - layerY) / height;
+
+          if (newRotation === 90) {
+            const points = AnnotationEditor.rotatePointByMidPoint(
+              this.x,
+              this.y,
+              270
+            );
+            this.x = points.x;
+            this.y = points.y;
+          } else if (newRotation === 270) {
+            const points = AnnotationEditor.rotatePointByMidPoint(
+              this.x,
+              this.y,
+              90
+            );
+            this.x = points.x;
+            this.y = points.y;
+          } else if (newRotation === 180) {
+            this.x = 1 - this.x;
+            this.y = 1 - this.y;
+          }
+        } else {
+          this.x -= Math.floor(this.x);
+          this.y -= Math.floor(this.y);
+        }
       }
     }
 
