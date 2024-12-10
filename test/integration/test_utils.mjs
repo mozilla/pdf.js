@@ -563,6 +563,14 @@ function waitForPageRendered(page) {
   });
 }
 
+function waitForEditorMovedInDOM(page) {
+  return createPromise(page, resolve => {
+    window.PDFViewerApplication.eventBus.on("editormovedindom", resolve, {
+      once: true,
+    });
+  });
+}
+
 async function scrollIntoView(page, selector) {
   const handle = await page.evaluateHandle(
     sel => [
@@ -878,6 +886,7 @@ export {
   waitAndClick,
   waitForAnnotationEditorLayer,
   waitForAnnotationModeChanged,
+  waitForEditorMovedInDOM,
   waitForEntryInStorage,
   waitForEvent,
   waitForNoElement,
