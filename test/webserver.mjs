@@ -189,7 +189,7 @@ class WebServer {
     if (this.verbose) {
       console.log(url);
     }
-    this.#serveFile(response, localURL, fileSize);
+    this.#serveFile(response, localURL, url.searchParams, fileSize);
   }
 
   async #serveDirectoryIndex(response, url, localUrl) {
@@ -287,7 +287,7 @@ class WebServer {
     response.end("</body></html>");
   }
 
-  #serveFile(response, fileURL, fileSize) {
+  #serveFile(response, fileURL, searchParams, fileSize) {
     const stream = fs.createReadStream(fileURL, { flags: "rs" });
     stream.on("error", error => {
       response.writeHead(500);
@@ -303,6 +303,12 @@ class WebServer {
       const expireTime = new Date();
       expireTime.setSeconds(expireTime.getSeconds() + this.cacheExpirationTime);
       response.setHeader("Expires", expireTime.toUTCString());
+    }
+
+    // Support test in `test/unit/network_spec.js`.
+    if (searchParams.has("test-network-break-ranges")) {
+      // Refer to the comment in `redirectHandler` below.
+      response.setHeader("Cache-Control", "no-store,max-age=0");
     }
     response.writeHead(200);
     stream.pipe(response);
