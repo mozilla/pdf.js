@@ -26,6 +26,7 @@
 import {
   AbortException,
   AnnotationMode,
+  createValidAbsoluteUrl,
   OutputScale,
   PixelsPerInch,
   RenderingCancelledException,
@@ -41,6 +42,10 @@ import {
   RenderingStates,
   TextLayerMode,
 } from "./ui_utils.js";
+import {
+  getOriginalIndex,
+  normalizedTextContent,
+} from "./pdf_find_controller.js";
 import { AnnotationEditorLayerBuilder } from "./annotation_editor_layer_builder.js";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
 import { AppOptions } from "./app_options.js";
@@ -52,7 +57,6 @@ import { TextAccessibilityManager } from "./text_accessibility.js";
 import { TextHighlighter } from "./text_highlighter.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
-import { normalizedTextContent, getOriginalIndex } from "./pdf_find_controller.js";
 
 /**
  * @typedef {Object} PDFPageViewOptions
@@ -1196,9 +1200,12 @@ class PDFPageView {
       : null;
   }
 
-  #addLinkAnnotation(url, index, length) {
+  #addLinkAnnotations(url, index, length) {
     // TODO refactor out the logic for a single match from this function
-    const convertedMatch = this._textHighlighter._convertMatches([index], [length])[0];
+    const convertedMatch = this._textHighlighter._convertMatches(
+      [index],
+      [length]
+    )[0];
 
     const range = new Range();
     range.setStart(
@@ -1211,8 +1218,11 @@ class PDFPageView {
     );
 
     const pageBox = this.textLayer.div.getBoundingClientRect();
+    const linkAnnotations = [];
     for (const linkBox of range.getClientRects()) {
-      if (linkBox.width === 0 || linkBox.height === 0) continue;
+      if (linkBox.width === 0 || linkBox.height === 0) {
+        continue;
+      }
 
       const bottomLeft = this.getPagePoint(
         linkBox.left - pageBox.left,
@@ -1230,7 +1240,7 @@ class PDFPageView {
         topRight[1],
       ]);
 
-      return {
+      linkAnnotations.push({
         unsafeUrl: url,
         url,
         rect,
@@ -1246,19 +1256,31 @@ class PDFPageView {
           horizontalCornerRadius: 0,
           verticalCornerRadius: 0,
         },
-      };
+      });
     }
+    return linkAnnotations;
   }
 
   #processLinks() {
     return this.pdfPage.getTextContent().then(content => {
       const [text, diffs] = normalizedTextContent(content);
-      const urlRegex = /\b(?:https?:\/\/|mailto:|www.)(?:[[\S--\[]--\p{P}]|\/|[\p{P}--\[]+[[\S--\[]--\p{P}])+/gmv;
+      const urlRegex =
+        /\b(?:https?:\/\/|mailto:|www.)(?:[[\S--\[]--\p{P}]|\/|[\p{P}--\[]+[[\S--\[]--\p{P}])+/gmv;
       const matches = text.matchAll(urlRegex);
       this.#linkAnnotations = Array.from(matches, match => {
-        const [index, length] = getOriginalIndex(diffs, match.index, match[0].length);
-        return this.#addLinkAnnotation(match[0], index, length);
-      });
+        const url = createValidAbsoluteUrl(match[0]);
+        if (url) {
+          const [index, length] = getOriginalIndex(
+            diffs,
+            match.index,
+            match[0].length
+          );
+          return this.#addLinkAnnotations(url.href, index, length);
+        }
+        return url;
+      })
+        .filter(annotation => annotation !== null)
+        .flat();
     });
   }
 }
