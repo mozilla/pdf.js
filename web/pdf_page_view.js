@@ -26,13 +26,11 @@
 import {
   AbortException,
   AnnotationMode,
-  createValidAbsoluteUrl,
   OutputScale,
   PixelsPerInch,
   RenderingCancelledException,
   setLayerDimensions,
   shadow,
-  Util,
 } from "pdfjs-lib";
 import {
   approximateFraction,
@@ -42,13 +40,10 @@ import {
   RenderingStates,
   TextLayerMode,
 } from "./ui_utils.js";
-import {
-  getOriginalIndex,
-  normalizedTextContent,
-} from "./pdf_find_controller.js";
 import { AnnotationEditorLayerBuilder } from "./annotation_editor_layer_builder.js";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
 import { AppOptions } from "./app_options.js";
+import { Autolinker } from "./autolinker.js";
 import { DrawLayerBuilder } from "./draw_layer_builder.js";
 import { GenericL10n } from "web-null_l10n";
 import { SimpleLinkService } from "./pdf_link_service.js";
@@ -1103,7 +1098,7 @@ class PDFPageView {
         if (this.annotationLayer) {
           await textLayerP;
           if (this.#enableAutolinking) {
-            await this.#processLinks();
+            this.#linkAnnotations = await Autolinker.processLinks(this);
           }
           await this.#renderAnnotationLayer();
         }
@@ -1198,90 +1193,6 @@ class PDFPageView {
     return directDrawing && initialOptionalContent && regularAnnotations
       ? this.canvas
       : null;
-  }
-
-  #addLinkAnnotations(url, index, length) {
-    // TODO refactor out the logic for a single match from this function
-    const convertedMatch = this._textHighlighter._convertMatches(
-      [index],
-      [length]
-    )[0];
-
-    const range = new Range();
-    range.setStart(
-      this._textHighlighter.textDivs[convertedMatch.begin.divIdx].firstChild,
-      convertedMatch.begin.offset
-    );
-    range.setEnd(
-      this._textHighlighter.textDivs[convertedMatch.end.divIdx].firstChild,
-      convertedMatch.end.offset
-    );
-
-    const pageBox = this.textLayer.div.getBoundingClientRect();
-    const linkAnnotations = [];
-    for (const linkBox of range.getClientRects()) {
-      if (linkBox.width === 0 || linkBox.height === 0) {
-        continue;
-      }
-
-      const bottomLeft = this.getPagePoint(
-        linkBox.left - pageBox.left,
-        linkBox.top - pageBox.top
-      );
-      const topRight = this.getPagePoint(
-        linkBox.left - pageBox.left + linkBox.width,
-        linkBox.top - pageBox.top + linkBox.height
-      );
-
-      const rect = Util.normalizeRect([
-        bottomLeft[0],
-        bottomLeft[1],
-        topRight[0],
-        topRight[1],
-      ]);
-
-      linkAnnotations.push({
-        unsafeUrl: url,
-        url,
-        rect,
-        annotationType: 2,
-        rotation: 0,
-        // This is just the default for AnnotationBorderStyle. At some point we
-        // should switch to something better like `new LinkAnnotation` here.
-        borderStyle: {
-          width: 1,
-          rawWidth: 1,
-          style: 1, // SOLID
-          dashArray: [3],
-          horizontalCornerRadius: 0,
-          verticalCornerRadius: 0,
-        },
-      });
-    }
-    return linkAnnotations;
-  }
-
-  #processLinks() {
-    return this.pdfPage.getTextContent().then(content => {
-      const [text, diffs] = normalizedTextContent(content);
-      const urlRegex =
-        /\b(?:https?:\/\/|mailto:|www.)(?:[[\S--\[]--\p{P}]|\/|[\p{P}--\[]+[[\S--\[]--\p{P}])+/gmv;
-      const matches = text.matchAll(urlRegex);
-      this.#linkAnnotations = Array.from(matches, match => {
-        const url = createValidAbsoluteUrl(match[0]);
-        if (url) {
-          const [index, length] = getOriginalIndex(
-            diffs,
-            match.index,
-            match[0].length
-          );
-          return this.#addLinkAnnotations(url.href, index, length);
-        }
-        return url;
-      })
-        .filter(annotation => annotation !== null)
-        .flat();
-    });
   }
 }
 
