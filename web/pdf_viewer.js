@@ -226,6 +226,8 @@ class PDFViewer {
 
   #enableNewAltTextWhenAddingImage = false;
 
+  #enableAutolinking = false;
+
   #eventAbortController = null;
 
   #mlManager = null;
@@ -316,6 +318,7 @@ class PDFViewer {
     this.pageColors = options.pageColors || null;
     this.#mlManager = options.mlManager || null;
     this.#enableHWA = options.enableHWA || false;
+    this.#enableAutolinking = options.enableAutolinking || false;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (
@@ -984,6 +987,7 @@ class PDFViewer {
             l10n: this.l10n,
             layerProperties: this._layerProperties,
             enableHWA: this.#enableHWA,
+            enableAutolinking: this.#enableAutolinking,
           });
           this._pages.push(pageView);
         }

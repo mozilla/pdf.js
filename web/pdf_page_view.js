@@ -43,6 +43,7 @@ import {
 import { AnnotationEditorLayerBuilder } from "./annotation_editor_layer_builder.js";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
 import { AppOptions } from "./app_options.js";
+import { Autolinker } from "./autolinker.js";
 import { DrawLayerBuilder } from "./draw_layer_builder.js";
 import { GenericL10n } from "web-null_l10n";
 import { SimpleLinkService } from "./pdf_link_service.js";
@@ -120,6 +121,8 @@ class PDFPageView {
 
   #enableHWA = false;
 
+  #enableAutolinking = false;
+
   #hasRestrictedScaling = false;
 
   #isEditing = false;
@@ -147,6 +150,8 @@ class PDFPageView {
     initialOptionalContent: true,
     regularAnnotations: true,
   };
+
+  #linkAnnotations = [];
 
   #layers = [null, null, null, null];
 
@@ -177,6 +182,7 @@ class PDFPageView {
       options.maxCanvasPixels ?? AppOptions.get("maxCanvasPixels");
     this.pageColors = options.pageColors || null;
     this.#enableHWA = options.enableHWA || false;
+    this.#enableAutolinking = options.enableAutolinking || false;
 
     this.eventBus = options.eventBus;
     this.renderingQueue = options.renderingQueue;
@@ -399,7 +405,8 @@ class PDFPageView {
       await this.annotationLayer.render(
         this.viewport,
         { structTreeLayer: this.structTreeLayer },
-        "display"
+        "display",
+        this.#linkAnnotations
       );
     } catch (ex) {
       console.error("#renderAnnotationLayer:", ex);
@@ -456,15 +463,16 @@ class PDFPageView {
 
   async #renderTextLayer() {
     if (!this.textLayer) {
-      return;
+      return [];
     }
 
     let error = null;
+    let textContent;
     try {
-      await this.textLayer.render(this.viewport);
+      textContent = await this.textLayer.render(this.viewport);
     } catch (ex) {
       if (ex instanceof AbortException) {
-        return;
+        return [];
       }
       console.error("#renderTextLayer:", ex);
       error = ex;
@@ -472,6 +480,7 @@ class PDFPageView {
     this.#dispatchLayerRendered("textlayerrendered", error);
 
     this.#renderStructTreeLayer();
+    return textContent;
   }
 
   /**
@@ -1086,9 +1095,14 @@ class PDFPageView {
           viewport.rawDims
         );
 
-        this.#renderTextLayer();
+        const textLayerP = this.#renderTextLayer();
 
         if (this.annotationLayer) {
+          await textLayerP;
+          if (this.#enableAutolinking) {
+            const textContent = await textLayerP;
+            this.#linkAnnotations = Autolinker.processLinks(this, textContent);
+          }
           await this.#renderAnnotationLayer();
         }
 
