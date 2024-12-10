@@ -156,7 +156,6 @@
 
 .annotationEditorLayer.inkEditing {
   cursor: var(--editorInk-editing-cursor);
-  touch-action: none;
 }
 
 .annotationEditorLayer .draw {

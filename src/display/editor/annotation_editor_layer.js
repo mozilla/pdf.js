@@ -422,9 +422,9 @@ class AnnotationEditorLayer {
     this.div.addEventListener("pointerdown", this.pointerdown.bind(this), {
       signal,
     });
-    this.div.addEventListener("pointerup", this.pointerup.bind(this), {
-      signal,
-    });
+    const pointerup = this.pointerup.bind(this);
+    this.div.addEventListener("pointerup", pointerup, { signal });
+    this.div.addEventListener("pointercancel", pointerup, { signal });
   }
 
   disableClick() {

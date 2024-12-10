@@ -74,6 +74,12 @@ class InkDrawOutliner {
     return !this.#lines || this.#lines.length === 0;
   }
 
+  isCancellable() {
+    // The user a second finger after drawing 5 points: it's small enough
+    // to not be a real drawing.
+    return this.#points.length <= 10;
+  }
+
   add(x, y) {
     // The point is in canvas coordinates which means that there is no rotation.
     // It's the same as parent coordinates.
