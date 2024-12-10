@@ -2280,18 +2280,18 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   };
 }
 
-function onPageRender({ pageNumber }) {
+function onPageRender({ pageNumber, source }) {
   // If the page is (the most) visible when it starts rendering,
   // ensure that the page number input loading indicator is displayed.
-  if (pageNumber === this.page) {
+  if (pageNumber === this.page && !source.detailView) {
     this.toolbar?.updateLoadingIndicatorState(true);
   }
 }
 
-function onPageRendered({ pageNumber, error }) {
+function onPageRendered({ pageNumber, source, error }) {
   // If the page is still visible when it has finished rendering,
   // ensure that the page number input loading indicator is hidden.
-  if (pageNumber === this.page) {
+  if (pageNumber === this.page && !source.detailView) {
     this.toolbar?.updateLoadingIndicatorState(false);
   }
 
