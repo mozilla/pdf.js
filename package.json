@@ -45,7 +45,7 @@
     "postcss-discard-comments": "^7.0.3",
     "postcss-nesting": "^13.0.1",
     "prettier": "^3.4.2",
-    "puppeteer": "^23.10.2",
+    "puppeteer": "^23.10.3",
     "stylelint": "^16.11.0",
     "stylelint-prettier": "^5.0.2",
     "svglint": "^3.1.0",
