@@ -463,15 +463,16 @@ class PDFPageView {
 
   async #renderTextLayer() {
     if (!this.textLayer) {
-      return;
+      return [];
     }
 
     let error = null;
+    let textContent;
     try {
-      await this.textLayer.render(this.viewport);
+      textContent = await this.textLayer.render(this.viewport);
     } catch (ex) {
       if (ex instanceof AbortException) {
-        return;
+        return [];
       }
       console.error("#renderTextLayer:", ex);
       error = ex;
@@ -479,6 +480,7 @@ class PDFPageView {
     this.#dispatchLayerRendered("textlayerrendered", error);
 
     this.#renderStructTreeLayer();
+    return textContent;
   }
 
   /**
@@ -1098,7 +1100,8 @@ class PDFPageView {
         if (this.annotationLayer) {
           await textLayerP;
           if (this.#enableAutolinking) {
-            this.#linkAnnotations = await Autolinker.processLinks(this);
+            const textContent = await textLayerP;
+            this.#linkAnnotations = Autolinker.processLinks(this, textContent);
           }
           await this.#renderAnnotationLayer();
         }

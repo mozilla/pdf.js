@@ -1,8 +1,5 @@
 import { createValidAbsoluteUrl, Util } from "../src/shared/util.js";
-import {
-  getOriginalIndex,
-  normalizedTextContent,
-} from "./pdf_find_controller.js";
+import { getOriginalIndex, normalize } from "./pdf_find_controller.js";
 
 class Autolinker {
   static #urlRegex =
@@ -71,25 +68,23 @@ class Autolinker {
     return linkAnnotations;
   }
 
-  static processLinks(pdfPageView) {
-    return pdfPageView.pdfPage.getTextContent().then(content => {
-      const [text, diffs] = normalizedTextContent(content);
-      const matches = text.matchAll(Autolinker.#urlRegex);
-      return Array.from(matches, match => {
-        const url = createValidAbsoluteUrl(match[0]);
-        if (url) {
-          const [index, length] = getOriginalIndex(
-            diffs,
-            match.index,
-            match[0].length
-          );
-          return this.#addLinkAnnotations(url.href, index, length, pdfPageView);
-        }
-        return url;
-      })
-        .filter(annotation => annotation !== null)
-        .flat();
-    });
+  static processLinks(pdfPageView, textContent) {
+    const [text, diffs] = normalize(textContent.join(""));
+    const matches = text.matchAll(Autolinker.#urlRegex);
+    return Array.from(matches, match => {
+      const url = createValidAbsoluteUrl(match[0]);
+      if (url) {
+        const [index, length] = getOriginalIndex(
+          diffs,
+          match.index,
+          match[0].length
+        );
+        return this.#addLinkAnnotations(url.href, index, length, pdfPageView);
+      }
+      return url;
+    })
+      .filter(annotation => annotation !== null)
+      .flat();
   }
 }
 

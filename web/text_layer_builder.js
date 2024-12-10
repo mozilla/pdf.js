@@ -72,6 +72,7 @@ class TextLayerBuilder {
    * Renders the text layer.
    * @param {PageViewport} viewport
    * @param {Object} [textContentParams]
+   * @returns {Array<string>}
    */
   async render(viewport, textContentParams = null) {
     if (this.#renderingDone && this.#textLayer) {
@@ -80,7 +81,7 @@ class TextLayerBuilder {
         onBefore: this.hide.bind(this),
       });
       this.show();
-      return;
+      return [];
     }
 
     this.cancel();
@@ -112,6 +113,7 @@ class TextLayerBuilder {
     this.#onAppend?.(this.div);
     this.highlighter?.enable();
     this.accessibilityManager?.enable();
+    return textContentItemsStr;
   }
 
   hide() {

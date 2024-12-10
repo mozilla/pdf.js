@@ -384,19 +384,6 @@ function getOriginalIndex(diffs, pos, len) {
   return [oldStart, oldLen];
 }
 
-function normalizedTextContent(textContent) {
-  const strBuf = [];
-
-  for (const textItem of textContent.items) {
-    strBuf.push(textItem.str);
-    if (textItem.hasEOL) {
-      strBuf.push("\n");
-    }
-  }
-
-  return normalize(strBuf.join(""));
-}
-
 /**
  * @typedef {Object} PDFFindControllerOptions
  * @property {IPDFLinkService} linkService - The navigation/linking service.
@@ -892,12 +879,21 @@ class PDFFindController {
           .then(pdfPage => pdfPage.getTextContent(textOptions))
           .then(
             textContent => {
+              const strBuf = [];
+
+              for (const textItem of textContent.items) {
+                strBuf.push(textItem.str);
+                if (textItem.hasEOL) {
+                  strBuf.push("\n");
+                }
+              }
+
               // Store the normalized page content (text items) as one string.
               [
                 this._pageContents[i],
                 this._pageDiffs[i],
                 this._hasDiacritics[i],
-              ] = normalizedTextContent(textContent);
+              ] = normalize(strBuf.join(""));
               resolve();
             },
             reason => {
@@ -1175,9 +1171,4 @@ class PDFFindController {
   }
 }
 
-export {
-  FindState,
-  getOriginalIndex,
-  normalizedTextContent,
-  PDFFindController,
-};
+export { FindState, getOriginalIndex, normalize, PDFFindController };
