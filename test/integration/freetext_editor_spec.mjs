@@ -47,6 +47,7 @@ import {
   switchToEditor,
   waitForAnnotationEditorLayer,
   waitForAnnotationModeChanged,
+  waitForEditorMovedInDOM,
   waitForSelectedEditor,
   waitForSerialized,
   waitForStorageEntries,
@@ -87,6 +88,17 @@ const waitForPositionChange = (page, selector, xy) =>
     selector,
     xy
   );
+
+const moveEditor = async (page, selector, n, pressKey) => {
+  let xy = await getXY(page, selector);
+  for (let i = 0; i < n; i++) {
+    const handle = await waitForEditorMovedInDOM(page);
+    await pressKey();
+    await awaitPromise(handle);
+    await waitForPositionChange(page, selector, xy);
+    xy = await getXY(page, selector);
+  }
+};
 
 const cancelFocusIn = async (page, selector) => {
   page.evaluate(sel => {
@@ -1963,12 +1975,9 @@ describe("FreeText Editor", () => {
 
           const [pageX, pageY] = await getFirstSerialized(page, x => x.rect);
 
-          let xy = await getXY(page, selectorEditor);
-          for (let i = 0; i < 20; i++) {
-            await page.keyboard.press("ArrowRight");
-            await waitForPositionChange(page, selectorEditor, xy);
-            xy = await getXY(page, selectorEditor);
-          }
+          await moveEditor(page, selectorEditor, 20, () =>
+            page.keyboard.press("ArrowRight")
+          );
 
           let [newX, newY] = await getFirstSerialized(page, x => x.rect);
           expect(Math.round(newX))
@@ -1978,11 +1987,9 @@ describe("FreeText Editor", () => {
             .withContext(`In ${browserName}`)
             .toEqual(Math.round(pageY));
 
-          for (let i = 0; i < 20; i++) {
-            await page.keyboard.press("ArrowDown");
-            await waitForPositionChange(page, selectorEditor, xy);
-            xy = await getXY(page, selectorEditor);
-          }
+          await moveEditor(page, selectorEditor, 20, () =>
+            page.keyboard.press("ArrowDown")
+          );
 
           [newX, newY] = await getFirstSerialized(page, x => x.rect);
           expect(Math.round(newX))
@@ -1992,11 +1999,7 @@ describe("FreeText Editor", () => {
             .withContext(`In ${browserName}`)
             .toEqual(Math.round(pageY - 20));
 
-          for (let i = 0; i < 2; i++) {
-            await kbBigMoveLeft(page);
-            await waitForPositionChange(page, selectorEditor, xy);
-            xy = await getXY(page, selectorEditor);
-          }
+          await moveEditor(page, selectorEditor, 2, () => kbBigMoveLeft(page));
 
           [newX, newY] = await getFirstSerialized(page, x => x.rect);
           expect(Math.round(newX))
@@ -2006,11 +2009,7 @@ describe("FreeText Editor", () => {
             .withContext(`In ${browserName}`)
             .toEqual(Math.round(pageY - 20));
 
-          for (let i = 0; i < 2; i++) {
-            await kbBigMoveUp(page);
-            await waitForPositionChange(page, selectorEditor, xy);
-            xy = await getXY(page, selectorEditor);
-          }
+          await moveEditor(page, selectorEditor, 2, () => kbBigMoveUp(page));
 
           [newX, newY] = await getFirstSerialized(page, x => x.rect);
           expect(Math.round(newX))
@@ -2036,12 +2035,9 @@ describe("FreeText Editor", () => {
           const pageWidth = page2X - page1X;
 
           const selectorEditor = getEditorSelector(0);
-          let xy = await getXY(page, selectorEditor);
-          for (let i = 0; i < 5; i++) {
-            await page.keyboard.press("ArrowRight");
-            await waitForPositionChange(page, selectorEditor, xy);
-            xy = await getXY(page, selectorEditor);
-          }
+          await moveEditor(page, selectorEditor, 5, () =>
+            page.keyboard.press("ArrowRight")
+          );
 
           const [new1X, , new2X] = await getFirstSerialized(page, x => x.rect);
           const newWidth = new2X - new1X;
@@ -2088,42 +2084,21 @@ describe("FreeText Editor", () => {
             visible: true,
           });
 
-          let xy = await getXY(page, selectorEditor);
-          for (let i = 0; i < 20; i++) {
-            await page.keyboard.press("ArrowRight");
-            await waitForPositionChange(page, selectorEditor, xy);
-            xy = await getXY(page, selectorEditor);
-          }
+          await moveEditor(page, selectorEditor, 20, () =>
+            page.keyboard.press("ArrowRight")
+          );
 
-          for (let i = 0; i < 2; i++) {
-            await kbBigMoveDown(page);
-            await waitForPositionChange(page, selectorEditor, xy);
-            xy = await getXY(page, selectorEditor);
-          }
+          await moveEditor(page, selectorEditor, 2, () => kbBigMoveDown(page));
 
-          for (let i = 0; i < 20; i++) {
-            await page.keyboard.press("ArrowLeft");
-            await waitForPositionChange(page, selectorEditor, xy);
-            xy = await getXY(page, selectorEditor);
-          }
+          await moveEditor(page, selectorEditor, 20, () =>
+            page.keyboard.press("ArrowLeft")
+          );
 
-          for (let i = 0; i < 2; i++) {
-            await kbBigMoveUp(page);
-            await waitForPositionChange(page, selectorEditor, xy);
-            xy = await getXY(page, selectorEditor);
-          }
+          await moveEditor(page, selectorEditor, 2, () => kbBigMoveUp(page));
 
-          for (let i = 0; i < 2; i++) {
-            await kbBigMoveRight(page);
-            await waitForPositionChange(page, selectorEditor, xy);
-            xy = await getXY(page, selectorEditor);
-          }
+          await moveEditor(page, selectorEditor, 2, () => kbBigMoveRight(page));
 
-          for (let i = 0; i < 2; i++) {
-            await kbBigMoveLeft(page);
-            await waitForPositionChange(page, selectorEditor, xy);
-            xy = await getXY(page, selectorEditor);
-          }
+          await moveEditor(page, selectorEditor, 2, () => kbBigMoveLeft(page));
 
           await page.type(`${selectorEditor} .internal`, data);
           await page.keyboard.press("Escape");
@@ -2287,11 +2262,8 @@ describe("FreeText Editor", () => {
 
           const { y: y0, height } = await getRect(page, getEditorSelector(0));
           const selectorEditor = getEditorSelector(1);
-          let xy = await getXY(page, selectorEditor);
           while ((await getRect(page, selectorEditor)).y > y0 - height) {
-            await kbBigMoveUp(page);
-            await waitForPositionChange(page, selectorEditor, xy);
-            xy = await getXY(page, selectorEditor);
+            await moveEditor(page, selectorEditor, 1, () => kbBigMoveUp(page));
           }
 
           // The editor must be moved in the DOM and potentially the focus
@@ -2727,12 +2699,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
 
-          let xy = await getXY(page, selectorEditor);
-          for (let i = 0; i < 5; i++) {
-            await kbBigMoveUp(page);
-            await waitForPositionChange(page, selectorEditor, xy);
-            xy = await getXY(page, selectorEditor);
-          }
+          await moveEditor(page, selectorEditor, 5, () => kbBigMoveUp(page));
 
           const data = "Hello PDF.js World !!";
           await page.type(`${selectorEditor} .internal`, data);
@@ -2757,12 +2724,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
 
-          xy = await getXY(page, selectorEditor);
-          for (let i = 0; i < 5; i++) {
-            await kbBigMoveDown(page);
-            await waitForPositionChange(page, selectorEditor, xy);
-            xy = await getXY(page, selectorEditor);
-          }
+          await moveEditor(page, selectorEditor, 5, () => kbBigMoveDown(page));
 
           await page.type(`${selectorEditor} .internal`, data);
 
@@ -2792,12 +2754,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
 
-          let xy = await getXY(page, selectorEditor);
-          for (let i = 0; i < 10; i++) {
-            await kbBigMoveLeft(page);
-            await waitForPositionChange(page, selectorEditor, xy);
-            xy = await getXY(page, selectorEditor);
-          }
+          await moveEditor(page, selectorEditor, 10, () => kbBigMoveLeft(page));
 
           const data = "Hello PDF.js World !!";
           await page.type(`${selectorEditor} .internal`, data);
@@ -2822,12 +2779,9 @@ describe("FreeText Editor", () => {
             visible: true,
           });
 
-          xy = await getXY(page, selectorEditor);
-          for (let i = 0; i < 10; i++) {
-            await kbBigMoveRight(page);
-            await waitForPositionChange(page, selectorEditor, xy);
-            xy = await getXY(page, selectorEditor);
-          }
+          await moveEditor(page, selectorEditor, 10, () =>
+            kbBigMoveRight(page)
+          );
 
           await page.type(`${selectorEditor} .internal`, data);
 
