@@ -439,11 +439,13 @@ class HighlightEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
-  onceAdded() {
+  onceAdded(focus) {
     if (!this.annotationElementId) {
       this.parent.addUndoableEditor(this);
     }
-    this.div.focus();
+    if (focus) {
+      this.div.focus();
+    }
   }
 
   /** @inheritdoc */
