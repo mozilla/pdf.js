@@ -90,7 +90,7 @@ class BasePDFPageView {
     }
   }
 
-  _createCanvas(onShow) {
+  _createCanvas(onShow, hideUntilComplete = false) {
     const { pageColors } = this;
     const hasHCM = !!(pageColors?.background && pageColors?.foreground);
     const prevCanvas = this.canvas;
@@ -98,7 +98,7 @@ class BasePDFPageView {
     // In HCM, a final filter is applied on the canvas which means that
     // before it's applied we've normal colors. Consequently, to avoid to
     // have a final flash we just display it once all the drawing is done.
-    const updateOnFirstShow = !prevCanvas && !hasHCM;
+    const updateOnFirstShow = !prevCanvas && !hasHCM && !hideUntilComplete;
 
     const canvas = (this.canvas = document.createElement("canvas"));
 
@@ -154,39 +154,37 @@ class BasePDFPageView {
     this.canvas = null;
   }
 
-  async _drawCanvas(options, prevCanvas, onFinish) {
+  async _drawCanvas(options, onCancel, onFinish) {
     const renderTask = (this.renderTask = this.pdfPage.render(options));
     renderTask.onContinue = this.#renderContinueCallback;
+    renderTask.onError = error => {
+      if (error instanceof RenderingCancelledException) {
+        onCancel();
+        this.#renderError = null;
+      }
+    };
 
+    let error = null;
     try {
       await renderTask.promise;
       this.#showCanvas?.(true);
-      this.#finishRenderTask(renderTask, null, onFinish);
-    } catch (error) {
+    } catch (e) {
+      error = e;
       // When zooming with a `drawingDelay` set, avoid temporarily showing
       // a black canvas if rendering was cancelled before the `onContinue`-
       // callback had been invoked at least once.
-      if (!(error instanceof RenderingCancelledException)) {
-        this.#showCanvas?.(true);
-      } else {
-        prevCanvas?.remove();
-        this._resetCanvas();
+      if (error instanceof RenderingCancelledException) {
+        return;
       }
-      this.#finishRenderTask(renderTask, error, onFinish);
-    }
-  }
 
-  async #finishRenderTask(renderTask, error, onFinish) {
-    // The renderTask may have been replaced by a new one, so only remove
-    // the reference to the renderTask if it matches the one that is
-    // triggering this callback.
-    if (renderTask === this.renderTask) {
-      this.renderTask = null;
-    }
-
-    if (error instanceof RenderingCancelledException) {
-      this.#renderError = null;
-      return;
+      this.#showCanvas?.(true);
+    } finally {
+      // The renderTask may have been replaced by a new one, so only remove
+      // the reference to the renderTask if it matches the one that is
+      // triggering this callback.
+      if (renderTask === this.renderTask) {
+        this.renderTask = null;
+      }
     }
     this.#renderError = error;
 
@@ -214,11 +212,12 @@ class BasePDFPageView {
     });
   }
 
-  dispatchPageRendered(cssTransform) {
+  dispatchPageRendered(cssTransform, isDetailView) {
     this.eventBus.dispatch("pagerendered", {
       source: this,
       pageNumber: this.id,
       cssTransform,
+      isDetailView,
       timestamp: performance.now(),
       error: this.#renderError,
     });
