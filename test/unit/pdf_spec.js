@@ -63,6 +63,7 @@ import { DOMSVGFactory } from "../../src/display/svg_factory.js";
 import { DrawLayer } from "../../src/display/draw_layer.js";
 import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
 import { TextLayer } from "../../src/display/text_layer.js";
+import { TouchManager } from "../../src/display/touch_manager.js";
 import { XfaLayer } from "../../src/display/xfa_layer.js";
 
 const expectedAPI = Object.freeze({
@@ -105,6 +106,7 @@ const expectedAPI = Object.freeze({
   shadow,
   stopEvent,
   TextLayer,
+  TouchManager,
   UnexpectedResponseException,
   Util,
   VerbosityLevel,
