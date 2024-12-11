@@ -345,7 +345,7 @@ class DrawingEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
-  onceAdded() {
+  onceAdded(focus) {
     if (!this.annotationElementId) {
       this.parent.addUndoableEditor(this);
     }
@@ -354,7 +354,7 @@ class DrawingEditor extends AnnotationEditor {
       this.#mustBeCommitted = false;
       this.commit();
       this.parent.setSelected(this);
-      if (this.isOnScreen) {
+      if (focus && this.isOnScreen) {
         this.div.focus();
       }
     }

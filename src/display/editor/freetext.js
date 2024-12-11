@@ -363,13 +363,15 @@ class FreeTextEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
-  onceAdded() {
+  onceAdded(focus) {
     if (this.width) {
       // The editor was created in using ctrl+c.
       return;
     }
     this.enableEditMode();
-    this.editorDiv.focus();
+    if (focus) {
+      this.editorDiv.focus();
+    }
     if (this._initialOptions?.isCentered) {
       this.center();
     }

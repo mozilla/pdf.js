@@ -37,6 +37,7 @@ import {
   waitForAnnotationModeChanged,
   waitForSelectedEditor,
   waitForSerialized,
+  waitForTimeout,
 } from "./test_utils.mjs";
 import { fileURLToPath } from "url";
 import fs from "fs";
@@ -2609,6 +2610,61 @@ describe("Highlight Editor", () => {
           await page.focus("#editorUndoBar");
           await page.keyboard.press("Enter");
           await page.waitForSelector("#editorUndoBar", { hidden: true });
+        })
+      );
+    });
+  });
+
+  describe("Highlight mustn't trigger a scroll when edited", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue18911.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that there is no scroll because of focus", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const page4Selector = ".page[data-page-number = '4']";
+          const page5Selector = ".page[data-page-number = '5']";
+          await scrollIntoView(page, page4Selector);
+          await page.waitForSelector(`${page5Selector} .annotationEditorLayer`);
+
+          // When moving to page 4, the highlight editor mustn't be focused (it
+          // was causing a scroll to page 5).
+          // So here we're waiting a bit and checking that the page is still 4.
+          // eslint-disable-next-line no-restricted-syntax
+          await waitForTimeout(100);
+
+          // Get the length of the intersection between two ranges.
+          const inter = ([a, b], [c, d]) =>
+            d < a || b < c ? 0 : Math.min(b, d) - Math.max(a, c);
+
+          const page4Rect = await getRect(page, page4Selector);
+          const page5Rect = await getRect(page, page5Selector);
+          const viewportRect = await getRect(page, "#viewerContainer");
+          const viewportRange = [
+            viewportRect.y,
+            viewportRect.y + viewportRect.height,
+          ];
+
+          const interPage4 = inter(
+            [page4Rect.y, page4Rect.y + page4Rect.height],
+            viewportRange
+          );
+          const interPage5 = inter(
+            [page5Rect.y, page5Rect.y + page5Rect.height],
+            viewportRange
+          );
+          expect(interPage4)
+            .withContext(`In ${browserName}`)
+            .toBeGreaterThan(0.5 * interPage5);
         })
       );
     });

@@ -1367,8 +1367,9 @@ class AnnotationEditor {
 
   /**
    * Executed once this editor has been rendered.
+   * @param {boolean} focus - true if the editor should be focused.
    */
-  onceAdded() {}
+  onceAdded(focus) {}
 
   /**
    * Check if the editor contains something.
