@@ -37,6 +37,7 @@ import {
   UnknownErrorException,
   unreachable,
   warn,
+  setCustomLogger,
 } from "../shared/util.js";
 import {
   AnnotationStorage,
@@ -137,6 +138,7 @@ const DefaultStandardFontDataFactory =
  *   parsing the PDF data.
  * @property {number} [verbosity] - Controls the logging level; the constants
  *   from {@link VerbosityLevel} should be used.
+ * @property {Function} [logger] - Optional external logger
  * @property {string} [docBaseUrl] - The base URL of the document, used when
  *   attempting to recover valid absolute URLs for annotations, and outline
  *   items, that (incorrectly) only specify relative URLs.
@@ -270,6 +272,7 @@ function getDocument(src = {}) {
       : DEFAULT_RANGE_CHUNK_SIZE;
   let worker = src.worker instanceof PDFWorker ? src.worker : null;
   const verbosity = src.verbosity;
+  const logger = src.logger;
   // Ignore "data:"-URLs, since they can't be used to recover valid absolute
   // URLs anyway. We want to avoid sending them to the worker-thread, since
   // they contain the *entire* PDF document and can thus be arbitrarily long.
@@ -3543,6 +3546,7 @@ export {
   DefaultFilterFactory,
   DefaultStandardFontDataFactory,
   getDocument,
+  setCustomLogger,
   LoopbackPort,
   PDFDataRangeTransport,
   PDFDocumentLoadingTask,

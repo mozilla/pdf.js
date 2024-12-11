@@ -359,11 +359,19 @@ function getVerbosityLevel() {
   return verbosity;
 }
 
+let customLogger = null;
+
+function setCustomLogger(logger) {
+  customLogger = logger;
+}
+
 // A notice for devs. These are good for things that are helpful to devs, such
 // as warning that Workers were disabled, which is important to devs but not
 // end users.
 function info(msg) {
-  if (verbosity >= VerbosityLevel.INFOS) {
+  if (customLogger) {
+    customLogger({ type: "info", verbosity, message: msg });
+  } else if (verbosity >= VerbosityLevel.INFOS) {
     // eslint-disable-next-line no-console
     console.log(`Info: ${msg}`);
   }
@@ -371,7 +379,9 @@ function info(msg) {
 
 // Non-fatal warnings.
 function warn(msg) {
-  if (verbosity >= VerbosityLevel.WARNINGS) {
+  if (customLogger) {
+    customLogger({ type: "warn", verbosity, message: msg });
+  } else if (verbosity >= VerbosityLevel.WARNINGS) {
     // eslint-disable-next-line no-console
     console.log(`Warning: ${msg}`);
   }
@@ -1187,4 +1197,5 @@ export {
   Util,
   VerbosityLevel,
   warn,
+  setCustomLogger,
 };
