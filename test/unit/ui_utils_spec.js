@@ -279,12 +279,11 @@ describe("ui_utils", function () {
           viewTop < scrollBottom &&
           viewBottom > scrollTop
         ) {
-          const hiddenHeight =
-            Math.max(0, scrollTop - viewTop) +
-            Math.max(0, viewBottom - scrollBottom);
-          const hiddenWidth =
-            Math.max(0, scrollLeft - viewLeft) +
-            Math.max(0, viewRight - scrollRight);
+          const minY = Math.max(0, scrollTop - viewTop);
+          const minX = Math.max(0, scrollLeft - viewLeft);
+
+          const hiddenHeight = minY + Math.max(0, viewBottom - scrollBottom);
+          const hiddenWidth = minX + Math.max(0, viewRight - scrollRight);
 
           const fractionHeight =
             (div.clientHeight - hiddenHeight) / div.clientHeight;
@@ -292,12 +291,23 @@ describe("ui_utils", function () {
             (div.clientWidth - hiddenWidth) / div.clientWidth;
           const percent = (fractionHeight * fractionWidth * 100) | 0;
 
+          let visibleArea = null;
+          if (percent < 100) {
+            visibleArea = {
+              minX,
+              minY,
+              maxX: Math.min(viewRight, scrollRight) - viewLeft,
+              maxY: Math.min(viewBottom, scrollBottom) - viewTop,
+            };
+          }
+
           views.push({
             id: view.id,
             x: viewLeft,
             y: viewTop,
             view,
             percent,
+            visibleArea,
             widthPercent: (fractionWidth * 100) | 0,
           });
           ids.add(view.id);
