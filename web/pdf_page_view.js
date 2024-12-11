@@ -46,6 +46,7 @@ import { Autolinker } from "./autolinker.js";
 import { BasePDFPageView } from "./base_pdf_page_view.js";
 import { DrawLayerBuilder } from "./draw_layer_builder.js";
 import { GenericL10n } from "web-null_l10n";
+import { PDFPageDetailView } from "./pdf_page_detail_view.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
 import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
 import { TextAccessibilityManager } from "./text_accessibility.js";
@@ -77,6 +78,12 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
  * @property {number} [maxCanvasPixels] - The maximum supported canvas size in
  *   total pixels, i.e. width * height. Use `-1` for no limit, or `0` for
  *   CSS-only zooming. The default value is 4096 * 8192 (32 mega-pixels).
+ * @property {boolean} [enableDetailCanvas] - When enabled, if the rendered
+ *   pages would need a canvas that is larger than `maxCanvasPixels`, it will
+ *   draw a second canvas on top of the CSS-zoomed one, that only renders the
+ *   part of the page that is close to the viewport. The default value is
+ *   `true`.
+
  * @property {Object} [pageColors] - Overwrites background and foreground colors
  *   with user defined ones in order to improve readability in high contrast
  *   mode.
@@ -129,6 +136,8 @@ class PDFPageView extends BasePDFPageView {
 
   #layerProperties = null;
 
+  #needsRestrictedScaling = false;
+
   #originalViewport = null;
 
   #previousRotation = null;
@@ -173,6 +182,7 @@ class PDFPageView extends BasePDFPageView {
     this.#annotationMode =
       options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
     this.imageResourcesPath = options.imageResourcesPath || "";
+    this.enableDetailCanvas = options.enableDetailCanvas ?? true;
     this.maxCanvasPixels =
       options.maxCanvasPixels ?? AppOptions.get("maxCanvasPixels");
     this.#enableAutoLinking = options.enableAutoLinking || false;
@@ -195,6 +205,8 @@ class PDFPageView extends BasePDFPageView {
     this.xfaLayer = null;
     this.structTreeLayer = null;
     this.drawLayer = null;
+
+    this.detailView = null;
 
     const div = document.createElement("div");
     div.className = "page";
@@ -519,6 +531,7 @@ class PDFPageView extends BasePDFPageView {
     keepXfaLayer = false,
     keepTextLayer = false,
     keepCanvasWrapper = false,
+    preserveDetailViewState = false,
   } = {}) {
     this.cancelRendering({
       keepAnnotationLayer,
@@ -578,6 +591,17 @@ class PDFPageView extends BasePDFPageView {
       this.#canvasWrapper = null;
       this._resetCanvas();
     }
+
+    if (!preserveDetailViewState) {
+      this.detailView?.reset({ keepCanvas: keepCanvasWrapper });
+
+      // If we are keeping the canvas around we must also keep the `detailView`
+      // object, so that next time we need a detail view we'll update the
+      // existing canvas rather than creating a new one.
+      if (!keepCanvasWrapper) {
+        this.detailView = null;
+      }
+    }
   }
 
   toggleEditingMode(isEditing) {
@@ -596,6 +620,22 @@ class PDFPageView extends BasePDFPageView {
       keepTextLayer: true,
       keepCanvasWrapper: true,
     });
+  }
+
+  updateVisibleArea(visibleArea) {
+    if (this.enableDetailCanvas) {
+      if (
+        this.#needsRestrictedScaling &&
+        this.maxCanvasPixels > 0 &&
+        visibleArea
+      ) {
+        this.detailView ??= new PDFPageDetailView({ pageView: this });
+        this.detailView.update({ visibleArea });
+      } else if (this.detailView) {
+        this.detailView.reset();
+        this.detailView = null;
+      }
+    }
   }
 
   /**
@@ -653,22 +693,11 @@ class PDFPageView extends BasePDFPageView {
       this._container?.style.setProperty("--scale-factor", this.viewport.scale);
     }
 
+    this.#computeScale();
+
     if (this.canvas) {
-      let onlyCssZoom = false;
-      if (this.#hasRestrictedScaling) {
-        if (
-          (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-          this.maxCanvasPixels === 0
-        ) {
-          onlyCssZoom = true;
-        } else if (this.maxCanvasPixels > 0) {
-          const { width, height } = this.viewport;
-          const { sx, sy } = this.outputScale;
-          onlyCssZoom =
-            ((Math.floor(width) * sx) | 0) * ((Math.floor(height) * sy) | 0) >
-            this.maxCanvasPixels;
-        }
-      }
+      const onlyCssZoom =
+        this.#hasRestrictedScaling && this.#needsRestrictedScaling;
       const postponeDrawing = drawingDelay >= 0 && drawingDelay < 1000;
 
       if (postponeDrawing || onlyCssZoom) {
@@ -705,7 +734,12 @@ class PDFPageView extends BasePDFPageView {
         // The "pagerendered"-event will be dispatched once the actual
         // rendering is done, hence don't dispatch it here as well.
         if (!postponeDrawing) {
-          this.dispatchPageRendered(true);
+          this.detailView?.update({ underlyingViewUpdated: true });
+
+          this.dispatchPageRendered(
+            /* cssTransform */ true,
+            /* isDetailView */ false
+          );
         }
         return;
       }
@@ -717,7 +751,38 @@ class PDFPageView extends BasePDFPageView {
       keepXfaLayer: true,
       keepTextLayer: true,
       keepCanvasWrapper: true,
+      // It will be reset by the .update call below
+      preserveDetailViewState: true,
     });
+
+    this.detailView?.update({ underlyingViewUpdated: true });
+  }
+
+  #computeScale() {
+    const { width, height } = this.viewport;
+    const outputScale = (this.outputScale = new OutputScale());
+
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      this.maxCanvasPixels === 0
+    ) {
+      const invScale = 1 / this.scale;
+      // Use a scale that makes the canvas have the originally intended size
+      // of the page.
+      outputScale.sx *= invScale;
+      outputScale.sy *= invScale;
+      this.#needsRestrictedScaling = true;
+    } else if (this.maxCanvasPixels > 0) {
+      const pixelsInViewport = width * height;
+      const maxScale = Math.sqrt(this.maxCanvasPixels / pixelsInViewport);
+      if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
+        outputScale.sx = maxScale;
+        outputScale.sy = maxScale;
+        this.#needsRestrictedScaling = true;
+      } else {
+        this.#needsRestrictedScaling = false;
+      }
+    }
   }
 
   /**
@@ -830,12 +895,37 @@ class PDFPageView extends BasePDFPageView {
     return this.viewport.convertToPdfPoint(x, y);
   }
 
+  // Wrap the canvas so that if it has a CSS transform for high DPI the
+  // overflow will be hidden in Firefox.
+  _ensureCanvasWrapper() {
+    let canvasWrapper = this.#canvasWrapper;
+    if (!canvasWrapper) {
+      canvasWrapper = this.#canvasWrapper = document.createElement("div");
+      canvasWrapper.classList.add("canvasWrapper");
+      this.#addLayer(canvasWrapper, "canvasWrapper");
+    }
+    return canvasWrapper;
+  }
+
+  _getRenderingContext(canvasContext, transform) {
+    return {
+      canvasContext,
+      transform,
+      viewport: this.viewport,
+      annotationMode: this.#annotationMode,
+      optionalContentConfigPromise: this._optionalContentConfigPromise,
+      annotationCanvasMap: this._annotationCanvasMap,
+      pageColors: this.pageColors,
+      isEditing: this.#isEditing,
+    };
+  }
+
   async draw() {
     if (this.renderingState !== RenderingStates.INITIAL) {
       console.error("Must be in new state before drawing");
       this.reset(); // Ensure that we reset all state to prevent issues.
     }
-    const { div, l10n, pageColors, pdfPage, viewport } = this;
+    const { div, l10n, pdfPage, viewport } = this;
 
     if (!pdfPage) {
       this.renderingState = RenderingStates.FINISHED;
@@ -844,14 +934,7 @@ class PDFPageView extends BasePDFPageView {
 
     this.renderingState = RenderingStates.RUNNING;
 
-    // Wrap the canvas so that if it has a CSS transform for high DPI the
-    // overflow will be hidden in Firefox.
-    let canvasWrapper = this.#canvasWrapper;
-    if (!canvasWrapper) {
-      canvasWrapper = this.#canvasWrapper = document.createElement("div");
-      canvasWrapper.classList.add("canvasWrapper");
-      this.#addLayer(canvasWrapper, "canvasWrapper");
-    }
+    const canvasWrapper = this._ensureCanvasWrapper();
 
     if (
       !this.textLayer &&
@@ -918,29 +1001,12 @@ class PDFPageView extends BasePDFPageView {
     });
     canvas.setAttribute("role", "presentation");
 
-    const outputScale = (this.outputScale = new OutputScale());
-
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      this.maxCanvasPixels === 0
-    ) {
-      const invScale = 1 / this.scale;
-      // Use a scale that makes the canvas have the originally intended size
-      // of the page.
-      outputScale.sx *= invScale;
-      outputScale.sy *= invScale;
-      this.#hasRestrictedScaling = true;
-    } else if (this.maxCanvasPixels > 0) {
-      const pixelsInViewport = width * height;
-      const maxScale = Math.sqrt(this.maxCanvasPixels / pixelsInViewport);
-      if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
-        outputScale.sx = maxScale;
-        outputScale.sy = maxScale;
-        this.#hasRestrictedScaling = true;
-      } else {
-        this.#hasRestrictedScaling = false;
-      }
+    if (!this.outputScale) {
+      this.#computeScale();
     }
+    const { outputScale } = this;
+    this.#hasRestrictedScaling = this.#needsRestrictedScaling;
+
     const sfx = approximateFraction(outputScale.sx);
     const sfy = approximateFraction(outputScale.sy);
 
@@ -970,26 +1036,22 @@ class PDFPageView extends BasePDFPageView {
     const transform = outputScale.scaled
       ? [outputScale.sx, 0, 0, outputScale.sy, 0, 0]
       : null;
-    const renderContext = {
-      canvasContext: ctx,
-      transform,
-      viewport,
-      annotationMode: this.#annotationMode,
-      optionalContentConfigPromise: this._optionalContentConfigPromise,
-      annotationCanvasMap: this._annotationCanvasMap,
-      pageColors,
-      isEditing: this.#isEditing,
-    };
     const resultPromise = this._drawCanvas(
-      renderContext,
-      prevCanvas,
+      this._getRenderingContext(ctx, transform),
+      () => {
+        prevCanvas?.remove();
+        this._resetCanvas();
+      },
       renderTask => {
         // Ensure that the thumbnails won't become partially (or fully) blank,
         // for documents that contain interactive form elements.
         this.#useThumbnailCanvas.regularAnnotations =
           !renderTask.separateAnnots;
 
-        this.dispatchPageRendered(false);
+        this.dispatchPageRendered(
+          /* cssTransform */ false,
+          /* isDetailView */ false
+        );
       }
     ).then(async () => {
       this.structTreeLayer ||= new StructTreeLayerBuilder(

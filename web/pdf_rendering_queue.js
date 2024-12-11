@@ -110,7 +110,8 @@ class PDFRenderingQueue {
      *
      * Priority:
      * 1. visible pages
-     * 2. if last scrolled down, the page after the visible pages, or
+     * 2. zoomed-in partial views of visible pages
+     * 3. if last scrolled down, the page after the visible pages, or
      *    if last scrolled up, the page before the visible pages
      */
     const visibleViews = visible.views,
@@ -125,6 +126,14 @@ class PDFRenderingQueue {
         return view;
       }
     }
+
+    for (let i = 0; i < numVisible; i++) {
+      const { detailView } = visibleViews[i].view;
+      if (detailView && !this.isViewFinished(detailView)) {
+        return detailView;
+      }
+    }
+
     const firstId = visible.first.id,
       lastId = visible.last.id;
 

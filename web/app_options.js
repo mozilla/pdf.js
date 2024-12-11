@@ -200,6 +200,11 @@ const defaultOptions = {
     value: typeof PDFJSDev === "undefined" || PDFJSDev.test("MOZCENTRAL"),
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  enableDetailCanvas: {
+    /** @type {boolean} */
+    value: true,
+    kind: OptionKind.VIEWER,
+  },
   enableGuessAltText: {
     /** @type {boolean} */
     value: true,

@@ -17,10 +17,14 @@ import os from "os";
 
 const isMac = os.platform() === "darwin";
 
-function loadAndWait(filename, selector, zoom, setups, options) {
+function loadAndWait(filename, selector, zoom, setups, options, viewport) {
   return Promise.all(
     global.integrationSessions.map(async session => {
       const page = await session.browser.newPage();
+
+      if (viewport) {
+        await page.setViewport(viewport);
+      }
 
       // In order to avoid errors because of checks which depend on
       // a locale.
@@ -566,8 +570,12 @@ function waitForAnnotationModeChanged(page) {
 
 function waitForPageRendered(page) {
   return createPromise(page, resolve => {
-    window.PDFViewerApplication.eventBus.on("pagerendered", resolve, {
-      once: true,
+    const { eventBus } = window.PDFViewerApplication;
+    eventBus.on("pagerendered", function handler(e) {
+      if (!e.isDetailView) {
+        resolve();
+        eventBus.off("pagerendered", handler);
+      }
     });
   });
 }
