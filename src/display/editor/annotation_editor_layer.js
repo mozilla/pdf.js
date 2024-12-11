@@ -74,6 +74,8 @@ class AnnotationEditorLayer {
 
   #isDisabling = false;
 
+  #isEnabling = false;
+
   #drawingAC = null;
 
   #focusedElement = null;
@@ -229,6 +231,7 @@ class AnnotationEditorLayer {
    * editor creation.
    */
   async enable() {
+    this.#isEnabling = true;
     this.div.tabIndex = 0;
     this.togglePointerEvents(true);
     const annotationElementIds = new Set();
@@ -242,6 +245,7 @@ class AnnotationEditorLayer {
     }
 
     if (!this.#annotationLayer) {
+      this.#isEnabling = false;
       return;
     }
 
@@ -262,6 +266,7 @@ class AnnotationEditorLayer {
       this.addOrRebuild(editor);
       editor.enableEditing();
     }
+    this.#isEnabling = false;
   }
 
   /**
@@ -508,7 +513,7 @@ class AnnotationEditorLayer {
 
     // The editor will be correctly moved into the DOM (see fixAndSetPosition).
     editor.fixAndSetPosition();
-    editor.onceAdded();
+    editor.onceAdded(/* focus = */ !this.#isEnabling);
     this.#uiManager.addToAnnotationStorage(editor);
     editor._reportTelemetry(editor.telemetryInitialData);
   }
