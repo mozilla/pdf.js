@@ -138,7 +138,6 @@ const DefaultStandardFontDataFactory =
  *   parsing the PDF data.
  * @property {number} [verbosity] - Controls the logging level; the constants
  *   from {@link VerbosityLevel} should be used.
- * @property {Function} [logger] - Optional external logger
  * @property {string} [docBaseUrl] - The base URL of the document, used when
  *   attempting to recover valid absolute URLs for annotations, and outline
  *   items, that (incorrectly) only specify relative URLs.

@@ -361,6 +361,9 @@ function getVerbosityLevel() {
 
 let customLogger = null;
 
+/**
+ * @param {Function} logger
+ */
 function setCustomLogger(logger) {
   customLogger = logger;
 }
