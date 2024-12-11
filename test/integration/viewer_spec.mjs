@@ -454,4 +454,346 @@ describe("PDF viewer", () => {
       );
     });
   });
+
+  describe("Detail view on zoom", () => {
+    function setupPages(zoom, maxCanvasPixels, width, height) {
+      const { resolve, reject, promise } = Promise.withResolvers();
+
+      let pages;
+
+      beforeAll(async () => {
+        const pagesP = loadAndWait(
+          "colors.pdf",
+          null,
+          zoom,
+          {
+            // TODO: Why is this needed?
+            earlySetup: () => {
+              window.devicePixelRatio = 2;
+            },
+          },
+          { maxCanvasPixels },
+          { height, width, devicePixelRatio: 2 }
+        );
+        pagesP.then(resolve, reject);
+        pages = await pagesP;
+      });
+
+      afterAll(async () => {
+        await closePages(pages);
+      });
+
+      return promise;
+    }
+
+    function extractCanvases(pageNumber) {
+      const toHex = ([r, g, b]) =>
+        `#` +
+        r.toString(16).padStart(2, "0") +
+        g.toString(16).padStart(2, "0") +
+        b.toString(16).padStart(2, "0");
+
+      const pageOne = document.querySelector(
+        `.page[data-page-number='${pageNumber}']`
+      );
+      return Array.from(pageOne.querySelectorAll("canvas"), canvas => {
+        const { width, height } = canvas;
+        const ctx = canvas.getContext("2d");
+        const topLeft = ctx.getImageData(2, 2, 1, 1).data;
+        const bottomRight = ctx.getImageData(width - 3, height - 3, 1, 1).data;
+        return {
+          size: width * height,
+          topLeft: toHex(topLeft),
+          bottomRight: toHex(bottomRight),
+        };
+      });
+    }
+
+    function waitForDetailRendered(page) {
+      return createPromise(page, resolve => {
+        const controller = new AbortController();
+        window.PDFViewerApplication.eventBus.on(
+          "pagerendered",
+          ({ source }) => {
+            if (source.constructor.name === "PDFPageDetailView") {
+              resolve();
+              controller.abort();
+            }
+          },
+          { signal: controller.signal }
+        );
+      });
+    }
+
+    describe("when zooming in past max canvas size", () => {
+      const maxCanvasPixels = 4e6;
+      const pagesP = setupPages("100%", maxCanvasPixels, 800, 600);
+
+      it("must render the detail view", async () => {
+        await Promise.all(
+          (await pagesP).map(async ([browserName, page]) => {
+            await page.waitForSelector(
+              ".page[data-page-number='1'] .textLayer"
+            );
+
+            const before = await page.evaluate(extractCanvases, 1);
+
+            expect(before.length)
+              .withContext(`In ${browserName}, before`)
+              .toBe(1);
+            expect(before[0].size)
+              .withContext(`In ${browserName}, before`)
+              .toBeLessThan(maxCanvasPixels);
+            expect(before[0])
+              .withContext(`In ${browserName}, before`)
+              .toEqual(
+                jasmine.objectContaining({
+                  topLeft: "#85200c", // dark berry
+                  bottomRight: "#b6d7a8", // light green
+                })
+              );
+
+            const factor = 3;
+            // Check that we are going to trigger CSS zoom.
+            expect(before[0].size * factor ** 2).toBeGreaterThan(
+              maxCanvasPixels
+            );
+
+            const handle = await waitForDetailRendered(page);
+            await page.evaluate(scaleFactor => {
+              window.PDFViewerApplication.pdfViewer.updateScale({
+                drawingDelay: 0,
+                scaleFactor,
+              });
+            }, factor);
+            await awaitPromise(handle);
+
+            const after = await page.evaluate(extractCanvases, 1);
+
+            expect(after.length)
+              .withContext(`In ${browserName}, after`)
+              .toBe(2);
+            expect(after[0].size)
+              .withContext(`In ${browserName}, after (first)`)
+              .toBeLessThan(4e6);
+            expect(after[0])
+              .withContext(`In ${browserName}, after (first)`)
+              .toEqual(
+                jasmine.objectContaining({
+                  topLeft: "#85200c", // dark berry
+                  bottomRight: "#b6d7a8", // light green
+                })
+              );
+            expect(after[1].size)
+              .withContext(`In ${browserName}, after (second)`)
+              .toBeLessThan(4e6);
+            expect(after[1])
+              .withContext(`In ${browserName}, after (second)`)
+              .toEqual(
+                jasmine.objectContaining({
+                  topLeft: "#85200c", // dark berry
+                  bottomRight: "#ff0000", // bright red
+                })
+              );
+          })
+        );
+      });
+    });
+
+    describe("when starting already zoomed in past max canvas size", () => {
+      const maxCanvasPixels = 4e6;
+      const pagesP = setupPages("300%", maxCanvasPixels, 800, 600);
+
+      it("must render the detail view", async () => {
+        await Promise.all(
+          (await pagesP).map(async ([browserName, page]) => {
+            await page.waitForSelector(
+              ".page[data-page-number='1'] .textLayer"
+            );
+
+            const canvases = await page.evaluate(extractCanvases, 1);
+
+            expect(canvases.length).withContext(`In ${browserName}`).toBe(2);
+            expect(canvases[0].size)
+              .withContext(`In ${browserName} (first)`)
+              .toBeLessThan(4e6);
+            expect(canvases[0])
+              .withContext(`In ${browserName} (first)`)
+              .toEqual(
+                jasmine.objectContaining({
+                  topLeft: "#85200c", // dark berry
+                  bottomRight: "#b6d7a8", // light green
+                })
+              );
+            expect(canvases[1].size)
+              .withContext(`In ${browserName} (second)`)
+              .toBeLessThan(4e6);
+            expect(canvases[1])
+              .withContext(`In ${browserName} (second)`)
+              .toEqual(
+                jasmine.objectContaining({
+                  topLeft: "#85200c", // dark berry
+                  bottomRight: "#ff0000", // bright red
+                })
+              );
+          })
+        );
+      });
+    });
+
+    describe("when scrolling", () => {
+      const maxCanvasPixels = 4e6;
+      const pagesP = setupPages("300%", maxCanvasPixels, 800, 600);
+
+      it("must update the detail view", async () => {
+        await Promise.all(
+          (await pagesP).map(async ([browserName, page]) => {
+            await page.waitForSelector(
+              ".page[data-page-number='1'] canvas:nth-child(2)"
+            );
+
+            const handle = await waitForDetailRendered(page);
+            await page.evaluate(() => {
+              const container = document.getElementById("viewerContainer");
+              container.scrollTop += 1500;
+              container.scrollLeft += 1000;
+            });
+            await awaitPromise(handle);
+
+            const canvases = await page.evaluate(extractCanvases, 1);
+
+            expect(canvases.length).withContext(`In ${browserName}`).toBe(2);
+            expect(canvases[1].size)
+              .withContext(`In ${browserName}`)
+              .toBeLessThan(4e6);
+            expect(canvases[1])
+              .withContext(`In ${browserName}`)
+              .toEqual(
+                jasmine.objectContaining({
+                  topLeft: "#ff9900", // bright orange
+                  bottomRight: "#ffe599", // light yellow
+                })
+              );
+          })
+        );
+      });
+    });
+
+    describe("when scrolling little enough that the existing detail covers the new viewport", () => {
+      const pagesP = setupPages("300%", 4e6, 800, 600);
+
+      it("must not re-create the detail canvas", async () => {
+        await Promise.all(
+          (await pagesP).map(async ([browserName, page]) => {
+            const detailCanvasSelector =
+              ".page[data-page-number='1'] canvas:nth-child(2)";
+
+            await page.waitForSelector(detailCanvasSelector);
+
+            const detailCanvasHandle = await page.$(detailCanvasSelector);
+
+            let rendered = false;
+            const handle = await waitForDetailRendered(page);
+            await page.evaluate(() => {
+              const container = document.getElementById("viewerContainer");
+              container.scrollTop += 10;
+              container.scrollLeft += 10;
+            });
+            awaitPromise(handle)
+              .then(() => {
+                rendered = true;
+              })
+              .catch(() => {});
+
+            // Give some time to the page to re-render. If it re-renders it's
+            // a but, but without waiting we would never catch it.
+            await new Promise(resolve => {
+              setTimeout(resolve, 100);
+            });
+
+            const isSame = await page.evaluate(
+              (prev, selector) => prev === document.querySelector(selector),
+              detailCanvasHandle,
+              detailCanvasSelector
+            );
+
+            expect(isSame).withContext(`In ${browserName}`).toBe(true);
+            expect(rendered).withContext(`In ${browserName}`).toBe(false);
+          })
+        );
+      });
+    });
+
+    describe("when scrolling to have two visible pages", () => {
+      const pagesP = setupPages("300%", 4e6, 800, 600);
+
+      it("must update the detail view", async () => {
+        await Promise.all(
+          (await pagesP).map(async ([browserName, page]) => {
+            await page.waitForSelector(
+              ".page[data-page-number='1'] canvas:nth-child(2)"
+            );
+
+            const handle = await createPromise(page, resolve => {
+              // wait for two 'pagerendered' events for detail views
+              let second = false;
+              const { eventBus } = window.PDFViewerApplication;
+              eventBus.on("pagerendered", function onPageRendered({ source }) {
+                if (source.constructor.name !== "PDFPageDetailView") {
+                  return;
+                }
+                if (!second) {
+                  second = true;
+                  return;
+                }
+                eventBus.off("pagerendered", onPageRendered);
+                resolve();
+              });
+            });
+            await page.evaluate(() => {
+              const container = document.getElementById("viewerContainer");
+              container.scrollLeft += 500;
+              container.scrollTop += 3000;
+            });
+            await awaitPromise(handle);
+
+            const [canvases1, canvases2] = await Promise.all([
+              page.evaluate(extractCanvases, 1),
+              page.evaluate(extractCanvases, 2),
+            ]);
+
+            expect(canvases1.length)
+              .withContext(`In ${browserName}, first page`)
+              .toBe(2);
+            expect(canvases1[1].size)
+              .withContext(`In ${browserName}, first page`)
+              .toBeLessThan(4e6);
+            expect(canvases1[1])
+              .withContext(`In ${browserName}, first page`)
+              .toEqual(
+                jasmine.objectContaining({
+                  topLeft: "#38761d", // dark green
+                  bottomRight: "#b6d7a8", // light green
+                })
+              );
+
+            expect(canvases2.length)
+              .withContext(`In ${browserName}, second page`)
+              .toBe(2);
+            expect(canvases2[1].size)
+              .withContext(`In ${browserName}, second page`)
+              .toBeLessThan(4e6);
+            expect(canvases2[1])
+              .withContext(`In ${browserName}, second page`)
+              .toEqual(
+                jasmine.objectContaining({
+                  topLeft: "#134f5c", // dark cyan
+                  bottomRight: "#a2c4c9", // light cyan
+                })
+              );
+          })
+        );
+      });
+    });
+  });
 });
