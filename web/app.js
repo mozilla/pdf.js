@@ -492,6 +492,7 @@ const PDFViewerApplication = {
       mlManager: this.mlManager,
       abortSignal: this._globalAbortController.signal,
       enableHWA,
+      supportsPinchToZoom: this.supportsPinchToZoom,
     });
     this.pdfViewer = pdfViewer;
 
