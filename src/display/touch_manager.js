@@ -14,6 +14,7 @@
  */
 
 import { shadow } from "../shared/util.js";
+import { stopEvent } from "./display_utils.js";
 
 class TouchManager {
   #container;
@@ -23,6 +24,8 @@ class TouchManager {
   #isPinchingStopped = null;
 
   #isPinchingDisabled;
+
+  #onPinchStart;
 
   #onPinching;
 
@@ -40,6 +43,7 @@ class TouchManager {
     container,
     isPinchingDisabled = null,
     isPinchingStopped = null,
+    onPinchStart = null,
     onPinching = null,
     onPinchEnd = null,
     signal,
@@ -47,6 +51,7 @@ class TouchManager {
     this.#container = container;
     this.#isPinchingStopped = isPinchingStopped;
     this.#isPinchingDisabled = isPinchingDisabled;
+    this.#onPinchStart = onPinchStart;
     this.#onPinching = onPinching;
     this.#onPinchEnd = onPinchEnd;
     this.#touchManagerAC = new AbortController();
@@ -93,9 +98,10 @@ class TouchManager {
         this.#onTouchEnd.bind(this),
         opt
       );
+      this.#onPinchStart?.();
     }
 
-    evt.preventDefault();
+    stopEvent(evt);
 
     if (evt.touches.length !== 2 || this.#isPinchingStopped?.()) {
       this.#touchInfo = null;
@@ -169,18 +175,15 @@ class TouchManager {
   #onTouchEnd(evt) {
     this.#touchMoveAC.abort();
     this.#touchMoveAC = null;
+    this.#onPinchEnd?.();
 
     if (!this.#touchInfo) {
       return;
     }
 
-    if (this.#isPinching) {
-      this.#onPinchEnd?.();
-      this.#isPinching = false;
-    }
-
     evt.preventDefault();
     this.#touchInfo = null;
+    this.#isPinching = false;
   }
 
   destroy() {

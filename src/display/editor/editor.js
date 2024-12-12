@@ -26,6 +26,7 @@ import { FeatureTest, shadow, unreachable } from "../../shared/util.js";
 import { noContextMenu, stopEvent } from "../display_utils.js";
 import { AltText } from "./alt_text.js";
 import { EditorToolbar } from "./toolbar.js";
+import { TouchManager } from "../touch_manager.js";
 
 /**
  * @typedef {Object} AnnotationEditorParameters
@@ -81,6 +82,8 @@ class AnnotationEditor {
   #prevDragY = 0;
 
   #telemetryTimeouts = null;
+
+  #touchManager = null;
 
   _editToolbar = null;
 
@@ -864,6 +867,13 @@ class AnnotationEditor {
     });
   }
 
+  static _round(x) {
+    // 10000 because we multiply by 100 and use toFixed(2) in fixAndSetPosition.
+    // Without rounding, the positions of the corners other than the top left
+    // one can be slightly wrong.
+    return Math.round(x * 10000) / 10000;
+  }
+
   #resizerPointermove(name, event) {
     const [parentWidth, parentHeight] = this.parentDimensions;
     const savedX = this.x;
@@ -873,10 +883,6 @@ class AnnotationEditor {
     const minWidth = AnnotationEditor.MIN_SIZE / parentWidth;
     const minHeight = AnnotationEditor.MIN_SIZE / parentHeight;
 
-    // 10000 because we multiply by 100 and use toFixed(2) in fixAndSetPosition.
-    // Without rounding, the positions of the corners other than the top left
-    // one can be slightly wrong.
-    const round = x => Math.round(x * 10000) / 10000;
     const rotationMatrix = this.#getRotationMatrix(this.rotation);
     const transf = (x, y) => [
       rotationMatrix[0] * x + rotationMatrix[2] * y,
@@ -936,8 +942,8 @@ class AnnotationEditor {
     const point = getPoint(savedWidth, savedHeight);
     const oppositePoint = getOpposite(savedWidth, savedHeight);
     let transfOppositePoint = transf(...oppositePoint);
-    const oppositeX = round(savedX + transfOppositePoint[0]);
-    const oppositeY = round(savedY + transfOppositePoint[1]);
+    const oppositeX = AnnotationEditor._round(savedX + transfOppositePoint[0]);
+    const oppositeY = AnnotationEditor._round(savedY + transfOppositePoint[1]);
     let ratioX = 1;
     let ratioY = 1;
 
@@ -990,8 +996,8 @@ class AnnotationEditor {
         ) / savedHeight;
     }
 
-    const newWidth = round(savedWidth * ratioX);
-    const newHeight = round(savedHeight * ratioY);
+    const newWidth = AnnotationEditor._round(savedWidth * ratioX);
+    const newHeight = AnnotationEditor._round(savedHeight * ratioY);
     transfOppositePoint = transf(...getOpposite(newWidth, newHeight));
     const newX = oppositeX - transfOppositePoint[0];
     const newY = oppositeY - transfOppositePoint[1];
@@ -1142,9 +1148,90 @@ class AnnotationEditor {
 
     bindEvents(this, this.div, ["pointerdown"]);
 
+    if (this.isResizable && this._uiManager._supportsPinchToZoom) {
+      this.#touchManager ||= new TouchManager({
+        container: this.div,
+        isPinchingDisabled: () => !this.isSelected,
+        onPinchStart: this.#touchPinchStartCallback.bind(this),
+        onPinching: this.#touchPinchCallback.bind(this),
+        onPinchEnd: this.#touchPinchEndCallback.bind(this),
+        signal: this._uiManager._signal,
+      });
+    }
+
     this._uiManager._editorUndoBar?.hide();
 
     return this.div;
+  }
+
+  #touchPinchStartCallback() {
+    this.#savedDimensions = {
+      savedX: this.x,
+      savedY: this.y,
+      savedWidth: this.width,
+      savedHeight: this.height,
+    };
+    this.#altText?.toggle(false);
+    this.parent.togglePointerEvents(false);
+  }
+
+  #touchPinchCallback(_origin, prevDistance, distance) {
+    // Slightly slow down the zooming because the editor could be small and the
+    // user could have difficulties to rescale it as they want.
+    const slowDownFactor = 0.7;
+    let factor =
+      slowDownFactor * (distance / prevDistance) + 1 - slowDownFactor;
+    if (factor === 1) {
+      return;
+    }
+
+    const rotationMatrix = this.#getRotationMatrix(this.rotation);
+    const transf = (x, y) => [
+      rotationMatrix[0] * x + rotationMatrix[2] * y,
+      rotationMatrix[1] * x + rotationMatrix[3] * y,
+    ];
+
+    // The center of the editor is the fixed point.
+    const [parentWidth, parentHeight] = this.parentDimensions;
+    const savedX = this.x;
+    const savedY = this.y;
+    const savedWidth = this.width;
+    const savedHeight = this.height;
+
+    const minWidth = AnnotationEditor.MIN_SIZE / parentWidth;
+    const minHeight = AnnotationEditor.MIN_SIZE / parentHeight;
+    factor = Math.max(
+      Math.min(factor, 1 / savedWidth, 1 / savedHeight),
+      minWidth / savedWidth,
+      minHeight / savedHeight
+    );
+    const newWidth = AnnotationEditor._round(savedWidth * factor);
+    const newHeight = AnnotationEditor._round(savedHeight * factor);
+    if (newWidth === savedWidth && newHeight === savedHeight) {
+      return;
+    }
+
+    this.#initialRect ||= [savedX, savedY, savedWidth, savedHeight];
+    const transfCenterPoint = transf(savedWidth / 2, savedHeight / 2);
+    const centerX = AnnotationEditor._round(savedX + transfCenterPoint[0]);
+    const centerY = AnnotationEditor._round(savedY + transfCenterPoint[1]);
+    const newTransfCenterPoint = transf(newWidth / 2, newHeight / 2);
+
+    this.x = centerX - newTransfCenterPoint[0];
+    this.y = centerY - newTransfCenterPoint[1];
+    this.width = newWidth;
+    this.height = newHeight;
+
+    this.setDims(parentWidth * newWidth, parentHeight * newHeight);
+    this.fixAndSetPosition();
+
+    this._onResizing();
+  }
+
+  #touchPinchEndCallback() {
+    this.#altText?.toggle(true);
+    this.parent.togglePointerEvents(true);
+    this.#addResizeToUndoStack();
   }
 
   /**
@@ -1158,7 +1245,6 @@ class AnnotationEditor {
       event.preventDefault();
       return;
     }
-
     this.#hasBeenClicked = true;
 
     if (this._isDraggable) {
@@ -1189,6 +1275,7 @@ class AnnotationEditor {
   #setUpDragSession(event) {
     const { isSelected } = this;
     this._uiManager.setUpDragSession();
+    let hasDraggingStarted = false;
 
     const ac = new AbortController();
     const signal = this._uiManager.combinedSignal(ac);
@@ -1201,6 +1288,9 @@ class AnnotationEditor {
       if (!this._uiManager.endDragSession()) {
         this.#selectOnPointerEvent(e);
       }
+      if (hasDraggingStarted) {
+        this._onStopDragging();
+      }
     };
 
     if (isSelected) {
@@ -1211,6 +1301,10 @@ class AnnotationEditor {
       window.addEventListener(
         "pointermove",
         e => {
+          if (!hasDraggingStarted) {
+            hasDraggingStarted = true;
+            this._onStartDragging();
+          }
           const { clientX: x, clientY: y, pointerId } = e;
           if (pointerId !== this.#dragPointerId) {
             stopEvent(e);
@@ -1235,11 +1329,14 @@ class AnnotationEditor {
         "pointerdown",
         // If the user drags with one finger and then clicks with another.
         e => {
-          if (e.isPrimary && e.pointerType === this.#dragPointerType) {
+          if (e.pointerType === this.#dragPointerType) {
+            // We've a pinch to zoom session.
             // We cannot have two primaries at the same time.
             // It's possible to be in this state with Firefox and Gnome when
             // trying to drag with three fingers (see bug 1933716).
-            cancelDrag(e);
+            if (this.#touchManager || e.isPrimary) {
+              cancelDrag(e);
+            }
           }
           stopEvent(e);
         },
@@ -1247,12 +1344,9 @@ class AnnotationEditor {
       );
     }
 
-    this._onStartDragging();
-
     const pointerUpCallback = e => {
       if (!this.#dragPointerId || this.#dragPointerId === e.pointerId) {
         cancelDrag(e);
-        this._onStopDragging();
         return;
       }
       stopEvent(e);
@@ -1557,6 +1651,8 @@ class AnnotationEditor {
       this.#telemetryTimeouts = null;
     }
     this.parent = null;
+    this.#touchManager?.destroy();
+    this.#touchManager = null;
   }
 
   /**

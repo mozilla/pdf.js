@@ -834,7 +834,8 @@ class AnnotationEditorUIManager {
     enableUpdatedAddImage,
     enableNewAltTextWhenAddingImage,
     mlManager,
-    editorUndoBar
+    editorUndoBar,
+    supportsPinchToZoom
   ) {
     const signal = (this._signal = this.#abortController.signal);
     this.#container = container;
@@ -870,6 +871,7 @@ class AnnotationEditorUIManager {
     };
     this.isShiftKeyDown = false;
     this._editorUndoBar = editorUndoBar || null;
+    this._supportsPinchToZoom = supportsPinchToZoom !== false;
 
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
       Object.defineProperty(this, "reset", {
