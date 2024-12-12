@@ -531,11 +531,7 @@ const PDFViewerApplication = {
     }
 
     if (appConfig.annotationEditorParams) {
-      if (
-        ((typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
-          typeof AbortSignal.any === "function") &&
-        annotationEditorMode !== AnnotationEditorType.DISABLE
-      ) {
+      if (annotationEditorMode !== AnnotationEditorType.DISABLE) {
         this.annotationEditorParams = new AnnotationEditorParams(
           appConfig.annotationEditorParams,
           eventBus
@@ -2046,7 +2042,7 @@ const PDFViewerApplication = {
 
     this._touchManager = new TouchManager({
       container: window,
-      isPinchingDisabled: () => this.pdfViewer.isInPresentationMode,
+      isPinchingDisabled: () => pdfViewer.isInPresentationMode,
       isPinchingStopped: () => this.overlayManager?.active,
       onPinching: this.touchPinchCallback.bind(this),
       onPinchEnd: this.touchPinchEndCallback.bind(this),

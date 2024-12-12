@@ -1125,6 +1125,70 @@ if (
   };
 }
 
+if (
+  typeof PDFJSDev !== "undefined" &&
+  !PDFJSDev.test("SKIP_BABEL") &&
+  typeof AbortSignal.any !== "function"
+) {
+  /**
+   * This polyfill is based on https://gist.github.com/CNSeniorious000/9fc1a72e45358dd7c9e2f16e5d26df5c
+   * which has no licensing information available.
+   *
+   * The following changes have been made:
+   *  - Removal of commented out code.
+   *  - Removal of test-only `count` variable and related code/logging.
+   *  - Renaming of variable in `clear` function, to avoid variable shadowing.
+   */
+  const registry = new FinalizationRegistry(callback => void callback());
+
+  AbortSignal.any = function polyfillAbortSignalAny(signals) {
+    const controller = new AbortController();
+    for (const signal of signals) {
+      if (signal.aborted) {
+        controller.abort(signal.reason);
+        return controller.signal;
+      }
+    }
+    const controllerRef = new WeakRef(controller);
+    /** @type {[WeakRef<AbortSignal>, (() => void)][]} */
+    const eventListenerPairs = [];
+    let followingCount = signals.length;
+
+    signals.forEach(signal => {
+      const signalRef = new WeakRef(signal);
+      function abort() {
+        controllerRef.deref()?.abort(signalRef.deref()?.reason);
+      }
+      signal.addEventListener("abort", abort);
+      eventListenerPairs.push([signalRef, abort]);
+      registry.register(signal, () => !--followingCount && clear(), signal);
+    });
+    function clear() {
+      eventListenerPairs.forEach(([signalRef, abort]) => {
+        const signal = signalRef.deref();
+        if (signal) {
+          signal.removeEventListener("abort", abort);
+          registry.unregister(signal);
+        }
+        const cntlr = controllerRef.deref();
+        if (cntlr) {
+          registry.unregister(cntlr.signal);
+          delete cntlr.signal.__controller;
+        }
+      });
+    }
+
+    const { signal } = controller;
+
+    registry.register(signal, clear, signal);
+    signal.addEventListener("abort", clear);
+
+    signal.__controller = controller;
+
+    return signal;
+  };
+}
+
 export {
   AbortException,
   AnnotationActionEventType,
