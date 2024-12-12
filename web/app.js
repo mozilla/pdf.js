@@ -54,6 +54,7 @@ import {
   PDFWorker,
   shadow,
   stopEvent,
+  TouchManager,
   UnexpectedResponseException,
   version,
 } from "pdfjs-lib";
@@ -93,14 +94,6 @@ import { Toolbar } from "web-toolbar";
 import { ViewHistory } from "./view_history.js";
 
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
-
-// The 35 is coming from:
-//  https://searchfox.org/mozilla-central/source/gfx/layers/apz/src/GestureEventListener.cpp#36
-//
-// The properties TouchEvent::screenX/Y are in screen CSS pixels:
-//  https://developer.mozilla.org/en-US/docs/Web/API/Touch/screenX#examples
-// MIN_TOUCH_DISTANCE_TO_PINCH is in CSS pixels.
-const MIN_TOUCH_DISTANCE_TO_PINCH = 35 / (window.devicePixelRatio || 1);
 
 const ViewOnLoad = {
   UNKNOWN: -1,
@@ -182,14 +175,13 @@ const PDFViewerApplication = {
   _saveInProgress: false,
   _wheelUnusedTicks: 0,
   _wheelUnusedFactor: 1,
+  _touchManager: null,
   _touchUnusedTicks: 0,
   _touchUnusedFactor: 1,
   _PDFBug: null,
   _hasAnnotationEditors: false,
   _title: document.title,
   _printAnnotationStoragePromise: null,
-  _touchInfo: null,
-  _isPinching: false,
   _isCtrlKeyDown: false,
   _caretBrowsing: null,
   _isScrolling: false,
@@ -823,6 +815,29 @@ const PDFViewerApplication = {
       return;
     }
     this.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
+  },
+
+  touchPinchCallback(origin, prevDistance, distance) {
+    if (this.supportsPinchToZoom) {
+      const newScaleFactor = this._accumulateFactor(
+        this.pdfViewer.currentScale,
+        distance / prevDistance,
+        "_touchUnusedFactor"
+      );
+      this.updateZoom(null, newScaleFactor, origin);
+    } else {
+      const PIXELS_PER_LINE_SCALE = 30;
+      const ticks = this._accumulateTicks(
+        (distance - prevDistance) / PIXELS_PER_LINE_SCALE,
+        "_touchUnusedTicks"
+      );
+      this.updateZoom(ticks, null, origin);
+    }
+  },
+
+  touchPinchEndCallback() {
+    this._touchUnusedTicks = 0;
+    this._touchUnusedFactor = 1;
   },
 
   get pagesCount() {
@@ -2029,6 +2044,15 @@ const PDFViewerApplication = {
       _windowAbortController: { signal },
     } = this;
 
+    this._touchManager = new TouchManager({
+      container: window,
+      isPinchingDisabled: () => this.pdfViewer.isInPresentationMode,
+      isPinchingStopped: () => this.overlayManager?.active,
+      onPinching: this.touchPinchCallback.bind(this),
+      onPinchEnd: this.touchPinchEndCallback.bind(this),
+      signal,
+    });
+
     function addWindowResolutionChange(evt = null) {
       if (evt) {
         pdfViewer.refresh();
@@ -2044,18 +2068,6 @@ const PDFViewerApplication = {
     addWindowResolutionChange();
 
     window.addEventListener("wheel", onWheel.bind(this), {
-      passive: false,
-      signal,
-    });
-    window.addEventListener("touchstart", onTouchStart.bind(this), {
-      passive: false,
-      signal,
-    });
-    window.addEventListener("touchmove", onTouchMove.bind(this), {
-      passive: false,
-      signal,
-    });
-    window.addEventListener("touchend", onTouchEnd.bind(this), {
       passive: false,
       signal,
     });
@@ -2157,6 +2169,7 @@ const PDFViewerApplication = {
   unbindWindowEvents() {
     this._windowAbortController?.abort();
     this._windowAbortController = null;
+    this._touchManager = null;
   },
 
   /**
@@ -2636,107 +2649,6 @@ function onWheel(evt) {
       this.updateZoom(ticks, null, origin);
     }
   }
-}
-
-function onTouchStart(evt) {
-  if (this.pdfViewer.isInPresentationMode || evt.touches.length < 2) {
-    return;
-  }
-  evt.preventDefault();
-
-  if (evt.touches.length !== 2 || this.overlayManager.active) {
-    this._touchInfo = null;
-    return;
-  }
-
-  let [touch0, touch1] = evt.touches;
-  if (touch0.identifier > touch1.identifier) {
-    [touch0, touch1] = [touch1, touch0];
-  }
-  this._touchInfo = {
-    touch0X: touch0.screenX,
-    touch0Y: touch0.screenY,
-    touch1X: touch1.screenX,
-    touch1Y: touch1.screenY,
-  };
-}
-
-function onTouchMove(evt) {
-  if (!this._touchInfo || evt.touches.length !== 2) {
-    return;
-  }
-
-  const { pdfViewer, _touchInfo, supportsPinchToZoom } = this;
-  let [touch0, touch1] = evt.touches;
-  if (touch0.identifier > touch1.identifier) {
-    [touch0, touch1] = [touch1, touch0];
-  }
-  const { screenX: screen0X, screenY: screen0Y } = touch0;
-  const { screenX: screen1X, screenY: screen1Y } = touch1;
-  const {
-    touch0X: pTouch0X,
-    touch0Y: pTouch0Y,
-    touch1X: pTouch1X,
-    touch1Y: pTouch1Y,
-  } = _touchInfo;
-
-  const prevGapX = pTouch1X - pTouch0X;
-  const prevGapY = pTouch1Y - pTouch0Y;
-  const currGapX = screen1X - screen0X;
-  const currGapY = screen1Y - screen0Y;
-
-  const distance = Math.hypot(currGapX, currGapY) || 1;
-  const pDistance = Math.hypot(prevGapX, prevGapY) || 1;
-  if (
-    !this._isPinching &&
-    Math.abs(pDistance - distance) <= MIN_TOUCH_DISTANCE_TO_PINCH
-  ) {
-    return;
-  }
-
-  _touchInfo.touch0X = screen0X;
-  _touchInfo.touch0Y = screen0Y;
-  _touchInfo.touch1X = screen1X;
-  _touchInfo.touch1Y = screen1Y;
-
-  evt.preventDefault();
-
-  if (!this._isPinching) {
-    // Start pinching.
-    this._isPinching = true;
-
-    // We return here else the first pinch is a bit too much
-    return;
-  }
-
-  const origin = [(screen0X + screen1X) / 2, (screen0Y + screen1Y) / 2];
-  if (supportsPinchToZoom) {
-    const newScaleFactor = this._accumulateFactor(
-      pdfViewer.currentScale,
-      distance / pDistance,
-      "_touchUnusedFactor"
-    );
-    this.updateZoom(null, newScaleFactor, origin);
-  } else {
-    const PIXELS_PER_LINE_SCALE = 30;
-    const ticks = this._accumulateTicks(
-      (distance - pDistance) / PIXELS_PER_LINE_SCALE,
-      "_touchUnusedTicks"
-    );
-    this.updateZoom(ticks, null, origin);
-  }
-}
-
-function onTouchEnd(evt) {
-  if (!this._touchInfo) {
-    return;
-  }
-
-  evt.preventDefault();
-  this._touchInfo = null;
-  this._touchUnusedTicks = 0;
-  this._touchUnusedFactor = 1;
-  this._isPinching = false;
 }
 
 function closeSecondaryToolbar(evt) {
