@@ -288,7 +288,8 @@ class PDFNetworkStreamFullRequestReader {
     const responseHeaders = new Headers(
       rawResponseHeaders
         ? rawResponseHeaders
-            .trim()
+            .trimStart()
+            .replace(/[^\S ]+$/, "") // Not `trimEnd`, to keep regular spaces.
             .split(/[\r\n]+/)
             .map(x => {
               const [key, ...val] = x.split(": ");
