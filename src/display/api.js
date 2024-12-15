@@ -43,15 +43,14 @@ import {
   PrintAnnotationStorage,
   SerializableEmpty,
 } from "./annotation_storage.js";
+import { FontFaceObject, FontLoader } from "./font_loader.js";
 import {
-  deprecated,
   isDataScheme,
   isValidFetchUrl,
   PageViewport,
   RenderingCancelledException,
   StatTimer,
 } from "./display_utils.js";
-import { FontFaceObject, FontLoader } from "./font_loader.js";
 import {
   NodeCanvasFactory,
   NodeCMapReaderFactory,
@@ -338,19 +337,6 @@ function getDocument(src = {}) {
           standardFontDataUrl &&
           isValidFetchUrl(cMapUrl, document.baseURI) &&
           isValidFetchUrl(standardFontDataUrl, document.baseURI));
-
-  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-    if (src.canvasFactory) {
-      deprecated(
-        "`canvasFactory`-instance option, please use `CanvasFactory` instead."
-      );
-    }
-    if (src.filterFactory) {
-      deprecated(
-        "`filterFactory`-instance option, please use `FilterFactory` instead."
-      );
-    }
-  }
 
   // Parameters only intended for development/testing purposes.
   const styleElement =
