@@ -2045,14 +2045,19 @@ const PDFViewerApplication = {
       _windowAbortController: { signal },
     } = this;
 
-    this._touchManager = new TouchManager({
-      container: window,
-      isPinchingDisabled: () => this.pdfViewer.isInPresentationMode,
-      isPinchingStopped: () => this.overlayManager?.active,
-      onPinching: this.touchPinchCallback.bind(this),
-      onPinchEnd: this.touchPinchEndCallback.bind(this),
-      signal,
-    });
+    if (
+      (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+      typeof AbortSignal.any === "function"
+    ) {
+      this._touchManager = new TouchManager({
+        container: window,
+        isPinchingDisabled: () => pdfViewer.isInPresentationMode,
+        isPinchingStopped: () => this.overlayManager?.active,
+        onPinching: this.touchPinchCallback.bind(this),
+        onPinchEnd: this.touchPinchEndCallback.bind(this),
+        signal,
+      });
+    }
 
     function addWindowResolutionChange(evt = null) {
       if (evt) {
