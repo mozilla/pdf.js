@@ -66,10 +66,12 @@ class FontLoader {
   }
 
   clear() {
-    for (const nativeFontFace of this.nativeFontFaces) {
-      this._document.fonts.delete(nativeFontFace);
+    const fontFacesToRemove = new Set(this.nativeFontFaces);
+    for (const font of fontFacesToRemove) {
+      if (!this._document.fonts.has(font)) {
+        this.nativeFontFaces.delete(font);
+      }
     }
-    this.nativeFontFaces.clear();
     this.#systemFonts.clear();
 
     if (this.styleElement) {
