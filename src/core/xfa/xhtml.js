@@ -94,7 +94,8 @@ const StyleMapping = new Map([
   [
     "font-size",
     (value, original) => {
-      value = original.fontSize = getMeasurement(value);
+      // The font size must be positive.
+      value = original.fontSize = Math.abs(getMeasurement(value));
       return measureToString(0.99 * value);
     },
   ],
