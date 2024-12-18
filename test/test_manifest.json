@@ -11223,5 +11223,14 @@
     "rounds": 1,
     "disableFontFace": true,
     "type": "eq"
+  },
+  {
+    "id": "issue19234",
+    "file": "pdfs/issue19234.pdf",
+    "md5": "2b57e3c43fa0ae4a606c13df007c202f",
+    "rounds": 1,
+    "link": true,
+    "disableFontFace": true,
+    "type": "eq"
   }
 ]
