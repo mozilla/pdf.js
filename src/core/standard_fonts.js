@@ -77,6 +77,7 @@ const getStdFontMap = getLookupTableFactory(function (t) {
   t.CourierNewPSMT = "Courier";
   t["Helvetica-BoldItalic"] = "Helvetica-BoldOblique";
   t["Helvetica-Italic"] = "Helvetica-Oblique";
+  t["HelveticaLTStd-Bold"] = "Helvetica-Bold";
   t["Symbol-Bold"] = "Symbol";
   t["Symbol-BoldItalic"] = "Symbol";
   t["Symbol-Italic"] = "Symbol";
