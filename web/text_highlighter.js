@@ -193,8 +193,15 @@ class TextHighlighter {
         span.className = `${className} appended`;
         span.append(node);
         div.append(span);
-        return className.includes("selected") ? span.offsetLeft : 0;
+
+        if (className.includes("selected")) {
+          const { left } = span.getClientRects()[0];
+          const parentLeft = div.getBoundingClientRect().left;
+          return left - parentLeft;
+        }
+        return 0;
       }
+
       div.append(node);
       return 0;
     }

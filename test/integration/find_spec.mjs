@@ -126,4 +126,31 @@ describe("find bar", () => {
       );
     });
   });
+
+  describe("issue19207.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue19207.pdf", ".textLayer", 200);
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must scroll to the search result text", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          // Search for "40"
+          await page.click("#viewFindButton");
+          await page.waitForSelector("#viewFindButton", { hidden: false });
+          await page.type("#findInput", "40");
+
+          const highlight = await page.waitForSelector(".textLayer .highlight");
+
+          expect(await highlight.isIntersectingViewport()).toBeTrue();
+        })
+      );
+    });
+  });
 });
