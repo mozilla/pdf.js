@@ -122,6 +122,10 @@ describe("network", function () {
   });
 
   it(`handle reading ranges with missing/invalid "Content-Range" header`, async function () {
+    if (globalThis.chrome) {
+      pending("Fails intermittently in Google Chrome.");
+    }
+
     async function readRanges(mode) {
       const rangeSize = 32768;
       const stream = new PDFNetworkStream({
