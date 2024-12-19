@@ -495,3 +495,24 @@ pdfjs-editor-alt-text-settings-editor-title = Edytor tekstu alternatywnego
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Wyświetlanie edytora tekstu alternatywnego od razu po dodaniu obrazu
 pdfjs-editor-alt-text-settings-show-dialog-description = Pomaga upewnić się, że wszystkie obrazy mają tekst alternatywny.
 pdfjs-editor-alt-text-settings-close-button = Zamknij
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-message-highlight = Usunięto wyróżnienie
+pdfjs-editor-undo-bar-message-freetext = Usunięto tekst
+pdfjs-editor-undo-bar-message-ink = Usunięto rysunek
+pdfjs-editor-undo-bar-message-stamp = Usunięto obraz
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple =
+    { $count ->
+        [one] Usunięto przypis
+        [few] Usunięto { $count } przypisy
+       *[many] Usunięto { $count } przypisów
+    }
+pdfjs-editor-undo-bar-undo-button =
+    .title = Cofnij
+pdfjs-editor-undo-bar-undo-button-label = Cofnij
+pdfjs-editor-undo-bar-close-button =
+    .title = Zamknij
+pdfjs-editor-undo-bar-close-button-label = Zamknij

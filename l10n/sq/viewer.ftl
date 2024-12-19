@@ -484,3 +484,23 @@ pdfjs-editor-alt-text-settings-editor-title = Përpunues teksti alternativ
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Shfaq menjëherë përpunues teksti alternativ, kur shtohet një figurë
 pdfjs-editor-alt-text-settings-show-dialog-description = Ju ndihmon të siguroheni se krejt figurat tuaja kanë tekst alternativ.
 pdfjs-editor-alt-text-settings-close-button = Mbylle
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-message-highlight = U hoq theksimi
+pdfjs-editor-undo-bar-message-freetext = U hoq tekst
+pdfjs-editor-undo-bar-message-ink = U hoq vizatim
+pdfjs-editor-undo-bar-message-stamp = U hoq figurë
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple =
+    { $count ->
+        [one] U hoq { $count } shënim
+       *[other] U hoqën { $count } shënime
+    }
+pdfjs-editor-undo-bar-undo-button =
+    .title = Zhbëje
+pdfjs-editor-undo-bar-undo-button-label = Zhbëje
+pdfjs-editor-undo-bar-close-button =
+    .title = Mbylle
+pdfjs-editor-undo-bar-close-button-label = Mbylle

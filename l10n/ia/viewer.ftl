@@ -493,3 +493,23 @@ pdfjs-editor-alt-text-settings-editor-title = Rediger texto alternative
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Monstrar le redactor de texto alternative a pena on adde un imagine
 pdfjs-editor-alt-text-settings-show-dialog-description = Te adjuta a verifica que tote tu imagines ha un texto alternative.
 pdfjs-editor-alt-text-settings-close-button = Clauder
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-message-highlight = Evidentiation removite
+pdfjs-editor-undo-bar-message-freetext = Texto removite
+pdfjs-editor-undo-bar-message-ink = Designo removite
+pdfjs-editor-undo-bar-message-stamp = Imagine removite
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple =
+    { $count ->
+        [one] { $count } annotation removite
+       *[other] { $count } annotationes removite
+    }
+pdfjs-editor-undo-bar-undo-button =
+    .title = Disfacer
+pdfjs-editor-undo-bar-undo-button-label = Disfacer
+pdfjs-editor-undo-bar-close-button =
+    .title = Clauder
+pdfjs-editor-undo-bar-close-button-label = Clauder

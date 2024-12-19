@@ -493,3 +493,23 @@ pdfjs-editor-alt-text-settings-editor-title = Vaihtoehtoisen tekstin muokkain
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Näytä vaihtoehtoisen tekstin muokkain heti, kun lisäät kuvan
 pdfjs-editor-alt-text-settings-show-dialog-description = Auttaa varmistamaan, että kaikissa kuvissasi on vaihtoehtoinen teksti.
 pdfjs-editor-alt-text-settings-close-button = Sulje
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-message-highlight = Korostus poistettu
+pdfjs-editor-undo-bar-message-freetext = Teksti poistettu
+pdfjs-editor-undo-bar-message-ink = Piirustus poistettu
+pdfjs-editor-undo-bar-message-stamp = Kuva poistettu
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple =
+    { $count ->
+        [one] { $count } merkintä poistettu
+       *[other] { $count } merkintää poistettu
+    }
+pdfjs-editor-undo-bar-undo-button =
+    .title = Kumoa
+pdfjs-editor-undo-bar-undo-button-label = Kumoa
+pdfjs-editor-undo-bar-close-button =
+    .title = Sulje
+pdfjs-editor-undo-bar-close-button-label = Sulje
