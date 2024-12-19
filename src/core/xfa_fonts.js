@@ -64,17 +64,30 @@ import {
   SegoeuiRegularFactors,
   SegoeuiRegularMetrics,
 } from "./segoeui_factors.js";
+import {
+  TimesNewRomanBoldFactors,
+  TimesNewRomanBoldItalicFactors,
+  TimesNewRomanBoldItalicMetrics,
+  TimesNewRomanBoldMetrics,
+  TimesNewRomanItalicFactors,
+  TimesNewRomanItalicMetrics,
+  TimesNewRomanRegularFactors,
+  TimesNewRomanRegularMetrics,
+} from "./timesnewroman_factors.js";
 import { getLookupTableFactory } from "./core_utils.js";
 import { normalizeFontName } from "./fonts_utils.js";
 
 const getXFAFontMap = getLookupTableFactory(function (t) {
-  t["MyriadPro-Regular"] = t["PdfJS-Fallback-Regular"] = {
-    name: "LiberationSans-Regular",
-    factors: MyriadProRegularFactors,
-    baseWidths: LiberationSansRegularWidths,
-    baseMapping: LiberationSansRegularMapping,
-    metrics: MyriadProRegularMetrics,
-  };
+  t["MyriadPro-Regular"] =
+    t.MyriadPro =
+    t["PdfJS-Fallback-Regular"] =
+      {
+        name: "LiberationSans-Regular",
+        factors: MyriadProRegularFactors,
+        baseWidths: LiberationSansRegularWidths,
+        baseMapping: LiberationSansRegularMapping,
+        metrics: MyriadProRegularMetrics,
+      };
   t["MyriadPro-Bold"] = t["PdfJS-Fallback-Bold"] = {
     name: "LiberationSans-Bold",
     factors: MyriadProBoldFactors,
@@ -125,7 +138,7 @@ const getXFAFontMap = getLookupTableFactory(function (t) {
     baseWidths: LiberationSansBoldItalicWidths,
     baseMapping: LiberationSansBoldItalicMapping,
   };
-  t["Calibri-Regular"] = {
+  t["Calibri-Regular"] = t.Calibri = {
     name: "LiberationSans-Regular",
     factors: CalibriRegularFactors,
     baseWidths: LiberationSansRegularWidths,
@@ -153,7 +166,7 @@ const getXFAFontMap = getLookupTableFactory(function (t) {
     baseMapping: LiberationSansBoldItalicMapping,
     metrics: CalibriBoldItalicMetrics,
   };
-  t["Segoeui-Regular"] = {
+  t["Segoeui-Regular"] = t.Segoeui = {
     name: "LiberationSans-Regular",
     factors: SegoeuiRegularFactors,
     baseWidths: LiberationSansRegularWidths,
@@ -180,6 +193,34 @@ const getXFAFontMap = getLookupTableFactory(function (t) {
     baseWidths: LiberationSansBoldItalicWidths,
     baseMapping: LiberationSansBoldItalicMapping,
     metrics: SegoeuiBoldItalicMetrics,
+  };
+  t["TimesNewRoman-Regular"] = t["TimesNewRomanPSMT-Regular"] = {
+    name: "LiberationSans-Regular",
+    factors: TimesNewRomanRegularFactors,
+    baseWidths: LiberationSansRegularWidths,
+    baseMapping: LiberationSansRegularMapping,
+    metrics: TimesNewRomanRegularMetrics,
+  };
+  t["TimesNewRoman-Bold"] = t["TimesNewRomanPSMT-Bold"] = {
+    name: "LiberationSans-Bold",
+    factors: TimesNewRomanBoldFactors,
+    baseWidths: LiberationSansBoldWidths,
+    baseMapping: LiberationSansBoldMapping,
+    metrics: TimesNewRomanBoldMetrics,
+  };
+  t["TimesNewRoman-Italic"] = t["TimesNewRomanPSMT-Italic"] = {
+    name: "LiberationSans-Italic",
+    factors: TimesNewRomanItalicFactors,
+    baseWidths: LiberationSansItalicWidths,
+    baseMapping: LiberationSansItalicMapping,
+    metrics: TimesNewRomanItalicMetrics,
+  };
+  t["TimesNewRoman-BoldItalic"] = t["TimesNewRomanPSMT-BoldItalic"] = {
+    name: "LiberationSans-BoldItalic",
+    factors: TimesNewRomanBoldItalicFactors,
+    baseWidths: LiberationSansBoldItalicWidths,
+    baseMapping: LiberationSansBoldItalicMapping,
+    metrics: TimesNewRomanBoldItalicMetrics,
   };
   t["Helvetica-Regular"] = t.Helvetica = {
     name: "LiberationSans-Regular",

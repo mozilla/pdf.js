@@ -1275,7 +1275,12 @@ class PDFDocument {
         return pdfFonts.at(-1);
       },
       set font(font) {
-        pdfFonts.push(font);
+        if (font && !font.missingFile) {
+          // If font file is missing we must use a
+          // font substitution or a fallback, so the
+          // font is not pushed in pdfFonts.
+          pdfFonts.push(font);
+        }
       },
       clone() {
         return this;
