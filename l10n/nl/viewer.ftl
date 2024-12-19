@@ -493,3 +493,23 @@ pdfjs-editor-alt-text-settings-editor-title = Alternatieve-tekstbewerker
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Alternatieve-tekstbewerker meteen tonen bij toevoegen van een afbeelding
 pdfjs-editor-alt-text-settings-show-dialog-description = Helpt u ervoor te zorgen dat al uw afbeeldingen alternatieve tekst hebben.
 pdfjs-editor-alt-text-settings-close-button = Sluiten
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-message-highlight = Markering verwijderd
+pdfjs-editor-undo-bar-message-freetext = Tekst verwijderd
+pdfjs-editor-undo-bar-message-ink = Tekening verwijderd
+pdfjs-editor-undo-bar-message-stamp = Afbeelding verwijderd
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple =
+    { $count ->
+        [one] { $count } annotatie verwijderd
+       *[other] { $count } annotaties verwijderd
+    }
+pdfjs-editor-undo-bar-undo-button =
+    .title = Ongedaan maken
+pdfjs-editor-undo-bar-undo-button-label = Ongedaan maken
+pdfjs-editor-undo-bar-close-button =
+    .title = Sluiten
+pdfjs-editor-undo-bar-close-button-label = Sluiten

@@ -495,3 +495,24 @@ pdfjs-editor-alt-text-settings-editor-title = Рэдактар тэксту дл
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Адразу паказваць рэдактар тэксту для атрыбута alt пры даданні выявы
 pdfjs-editor-alt-text-settings-show-dialog-description = Дапамагае пераканацца, што ўсе вашы выявы маюць альтэрнатыўны тэкст.
 pdfjs-editor-alt-text-settings-close-button = Закрыць
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-message-highlight = Падсвятленне выдалена
+pdfjs-editor-undo-bar-message-freetext = Тэкст выдалены
+pdfjs-editor-undo-bar-message-ink = Малюнак выдалены
+pdfjs-editor-undo-bar-message-stamp = Відарыс выдалены
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple =
+    { $count ->
+        [one] { $count } анатацыя выдалена
+        [few] { $count } анатацыі выдалена
+       *[many] { $count } анатацый выдалена
+    }
+pdfjs-editor-undo-bar-undo-button =
+    .title = Адмяніць
+pdfjs-editor-undo-bar-undo-button-label = Адмяніць
+pdfjs-editor-undo-bar-close-button =
+    .title = Закрыць
+pdfjs-editor-undo-bar-close-button-label = Закрыць

@@ -493,3 +493,23 @@ pdfjs-editor-alt-text-settings-editor-title = Alternative-tekstbewurker
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Alternative-tekstbewurker daliks toane by tafoegjen fan in ôfbylding
 pdfjs-editor-alt-text-settings-show-dialog-description = Helpt jo derfoar te soargjen dat al jo ôfbyldingen alternative tekst hawwe.
 pdfjs-editor-alt-text-settings-close-button = Slute
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-message-highlight = Markearring fuortsmiten
+pdfjs-editor-undo-bar-message-freetext = Tekst fuortsmiten
+pdfjs-editor-undo-bar-message-ink = Tekening fuortsmiten
+pdfjs-editor-undo-bar-message-stamp = Ofbylding fuortsmiten
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple =
+    { $count ->
+        [one] { $count } annotaasje fuortsmiten
+       *[other] { $count } annotaasjes fuortsmiten
+    }
+pdfjs-editor-undo-bar-undo-button =
+    .title = Ungedien meitsje
+pdfjs-editor-undo-bar-undo-button-label = Ungedien meitsje
+pdfjs-editor-undo-bar-close-button =
+    .title = Slute
+pdfjs-editor-undo-bar-close-button-label = Slute

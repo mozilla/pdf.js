@@ -353,7 +353,6 @@ pdfjs-ink-canvas =
 
 ## Alt-text dialog
 
-# Alternative text (alt text) helps when people can't see the image.
 pdfjs-editor-alt-text-button-label = Alt متن
 pdfjs-editor-alt-text-edit-button-label = alt متن وِچ ترمیم کرو
 pdfjs-editor-alt-text-dialog-label = ہِک اختیار چُݨو
@@ -368,6 +367,9 @@ pdfjs-editor-alt-text-decorative-tooltip = آرائشی دے طور تے نشا�
 # .placeholder: This is a placeholder for the alt text input area
 pdfjs-editor-alt-text-textarea =
     .placeholder = مثال دے طور تے، "ہِک جؤان کھاݨاں کھاوݨ کِیتے میز اُتّے ٻیٹھا ہِے"
+# Alternative text (alt text) helps when people can't see the image.
+pdfjs-editor-alt-text-button =
+    .aria-label = Alt متن
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
@@ -449,10 +451,16 @@ pdfjs-editor-new-alt-text-error-close-button = بند کرو
 pdfjs-editor-new-alt-text-ai-model-downloading-progress = آلٹ عبارت اے آئی ماڈل({ $totalSize }ایم بی دے { $downloadedSize }) ڈاؤن لوڈ تھیندا پئے
     .aria-valuetext = آلٹ عبارت اے آئی ماڈل({ $totalSize }ایم بی دے { $downloadedSize }) ڈاؤن لوڈ تھیندا پئے
 # This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button =
+    .aria-label = آلٹ عبارت شامل تھی ڳئی
 pdfjs-editor-new-alt-text-added-button-label = آلٹ عبارت شامل تھی ڳئی
 # This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button =
+    .aria-label = متبادل عبارت غائب ہے
 pdfjs-editor-new-alt-text-missing-button-label = متبادل عبارت غائب ہے
 # This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button =
+    .aria-label = alt متن تے نظرثانی کرو
 pdfjs-editor-new-alt-text-to-review-button-label = alt متن تے نظرثانی کرو
 # "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
 # Variables:
@@ -479,3 +487,12 @@ pdfjs-editor-alt-text-settings-editor-title = متبادل ٹیکسٹ ایڈیٹ
 pdfjs-editor-alt-text-settings-show-dialog-button-label = تصویر شامل کرݨ ویلے فوری طور تے آلٹ ٹیکسٹ ایڈیٹر ݙکھاؤ
 pdfjs-editor-alt-text-settings-show-dialog-description = ایہ تہاکوں یقینی بݨاوݨ وچ مدد کریندے جو تہاݙیاں ساریاں تصویراں وچ آلٹ عبارت ہے۔
 pdfjs-editor-alt-text-settings-close-button = بند کرو
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-undo-button =
+    .title = کیتا اݨ کیتا
+pdfjs-editor-undo-bar-undo-button-label = کیتا اݨ کیتا
+pdfjs-editor-undo-bar-close-button =
+    .title = بند کرو
+pdfjs-editor-undo-bar-close-button-label = بند کرو
