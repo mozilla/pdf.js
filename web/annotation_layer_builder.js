@@ -25,7 +25,7 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/editor/tools.js").AnnotationEditorUIManager} AnnotationEditorUIManager */
 
-import { AnnotationLayer } from "pdfjs-lib";
+import { AnnotationLayer, Util } from "pdfjs-lib";
 import { PresentationModeState } from "./ui_utils.js";
 
 /**
@@ -97,7 +97,7 @@ class AnnotationLayerBuilder {
    * @returns {Promise<void>} A promise that is resolved when rendering of the
    *   annotations is complete.
    */
-  async render(viewport, options, intent = "display") {
+  async render(viewport, options, intent = "display", linkAnnotations) {
     if (this.div) {
       if (this._cancelled || !this.annotationLayer) {
         return;
@@ -118,6 +118,20 @@ class AnnotationLayerBuilder {
     if (this._cancelled) {
       return;
     }
+
+    const uniqueLinks = linkAnnotations.filter(link => {
+      for (const annotation of annotations) {
+        if (
+          annotation.subtype === "Link" &&
+          annotation.url === link.url &&
+          Util.intersect(annotation.rect, link.rect) !== null
+        ) {
+          return false;
+        }
+      }
+      return true;
+    });
+    annotations.push(...uniqueLinks);
 
     // Create an annotation layer div and render the annotations
     // if there is at least one annotation.

@@ -236,6 +236,12 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  enableAutolinking: {
+    // TODO: remove it when unnecessary.
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER,
+  },
   externalLinkRel: {
     /** @type {string} */
     value: "noopener noreferrer nofollow",
