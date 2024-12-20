@@ -493,3 +493,23 @@ pdfjs-editor-alt-text-settings-editor-title = Alt metin düzenleyicisi
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Resim eklerken alt metin düzenleyicisini hemen göster
 pdfjs-editor-alt-text-settings-show-dialog-description = Tüm resimlerinizin alt metne sahip olduğundan emin olmanızı sağlar.
 pdfjs-editor-alt-text-settings-close-button = Kapat
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-message-highlight = Vurgulama silindi
+pdfjs-editor-undo-bar-message-freetext = Metin silindi
+pdfjs-editor-undo-bar-message-ink = Çizim silindi
+pdfjs-editor-undo-bar-message-stamp = Görsel silindi
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple =
+    { $count ->
+        [one] { $count } ek açıklama silindi
+       *[other] { $count } ek açıklama silindi
+    }
+pdfjs-editor-undo-bar-undo-button =
+    .title = Geri al
+pdfjs-editor-undo-bar-undo-button-label = Geri al
+pdfjs-editor-undo-bar-close-button =
+    .title = Kapat
+pdfjs-editor-undo-bar-close-button-label = Kapat

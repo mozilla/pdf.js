@@ -493,3 +493,23 @@ pdfjs-editor-alt-text-settings-editor-title = Editur per text alternativ
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Mussar l’editur per text alternativ directamain cun agiuntar in maletg
 pdfjs-editor-alt-text-settings-show-dialog-description = Ta gida a garantir che tut tes maletgs hajan in text alternativ.
 pdfjs-editor-alt-text-settings-close-button = Serrar
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-message-highlight = Allontanà la marcaziun
+pdfjs-editor-undo-bar-message-freetext = Allontanà il text
+pdfjs-editor-undo-bar-message-ink = Allontanà il dissegn
+pdfjs-editor-undo-bar-message-stamp = Allontanà il maletg
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple =
+    { $count ->
+        [one] { $count } annotaziun allontanada
+       *[other] { $count } annotaziuns allontanadas
+    }
+pdfjs-editor-undo-bar-undo-button =
+    .title = Revocar
+pdfjs-editor-undo-bar-undo-button-label = Revocar
+pdfjs-editor-undo-bar-close-button =
+    .title = Serrar
+pdfjs-editor-undo-bar-close-button-label = Serrar

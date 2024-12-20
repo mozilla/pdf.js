@@ -452,7 +452,7 @@ pdfjs-editor-new-alt-text-textarea =
 pdfjs-editor-new-alt-text-description = Disgrifiad byr ar gyfer pobl sydd ddim yn gallu gweld y ddelwedd neu pan nad yw'r ddelwedd yn llwytho.
 # This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
 pdfjs-editor-new-alt-text-disclaimer1 = Cafodd y testun amgen hwn ei greu'n awtomatig a gall fod yn anghywir.
-pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Dysgu rhagor
+pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Rhagor
 pdfjs-editor-new-alt-text-create-automatically-button-label = Creu testun amgen yn awtomatig
 pdfjs-editor-new-alt-text-not-now-button = Nid nawr
 pdfjs-editor-new-alt-text-error-title = Methu â chreu testun amgen yn awtomatig
@@ -501,3 +501,27 @@ pdfjs-editor-alt-text-settings-editor-title = Golygydd testun amgen
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Dangoswch y golygydd testun amgen yn syth wrth ychwanegu delwedd
 pdfjs-editor-alt-text-settings-show-dialog-description = Yn eich helpu i wneud yn siŵr bod gan eich holl ddelweddau destun amgen.
 pdfjs-editor-alt-text-settings-close-button = Cau
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-message-highlight = Tynnwyd yr amlygu
+pdfjs-editor-undo-bar-message-freetext = Tynnwyd y testun
+pdfjs-editor-undo-bar-message-ink = Tynnwyd y lluniad
+pdfjs-editor-undo-bar-message-stamp = Tynnwyd y ddelwedd
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple =
+    { $count ->
+        [zero] { $count } anodiad wedi'u tynnu
+        [one] { $count } anodiad wedi'i dynnu
+        [two] { $count } anodiad wedi'u tynnu
+        [few] { $count } anodiad wedi'u tynnu
+        [many] { $count } anodiad wedi'u tynnu
+       *[other] { $count } anodiad wedi'u tynnu
+    }
+pdfjs-editor-undo-bar-undo-button =
+    .title = Dadwneud
+pdfjs-editor-undo-bar-undo-button-label = Dadwneud
+pdfjs-editor-undo-bar-close-button =
+    .title = Cau
+pdfjs-editor-undo-bar-close-button-label = Cau

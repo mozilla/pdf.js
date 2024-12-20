@@ -493,3 +493,23 @@ pdfjs-editor-alt-text-settings-editor-title = Redigering af alternativ tekst
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Vis redigering af alternativ tekst med det samme, når et billede tilføjes
 pdfjs-editor-alt-text-settings-show-dialog-description = Hjælper dig med at sikre, at alle dine billeder har alternativ tekst.
 pdfjs-editor-alt-text-settings-close-button = Luk
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-message-highlight = Fremhævning fjernet
+pdfjs-editor-undo-bar-message-freetext = Tekst fjernet
+pdfjs-editor-undo-bar-message-ink = Tegning fjernet
+pdfjs-editor-undo-bar-message-stamp = Billede fjernet
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple =
+    { $count ->
+        [one] { $count } kommentar fjernet
+       *[other] { $count } kommentarer fjernet
+    }
+pdfjs-editor-undo-bar-undo-button =
+    .title = Fortryd
+pdfjs-editor-undo-bar-undo-button-label = Fortryd
+pdfjs-editor-undo-bar-close-button =
+    .title = Luk
+pdfjs-editor-undo-bar-close-button-label = Luk
