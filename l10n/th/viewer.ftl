@@ -485,3 +485,19 @@ pdfjs-editor-alt-text-settings-editor-title = ตัวแก้ไขข้อ�
 pdfjs-editor-alt-text-settings-show-dialog-button-label = แสดงตัวแก้ไขข้อความทดแทนทันทีเมื่อเพิ่มภาพ
 pdfjs-editor-alt-text-settings-show-dialog-description = ช่วยให้คุณแน่ใจว่าภาพทั้งหมดของคุณมีข้อความทดแทน
 pdfjs-editor-alt-text-settings-close-button = ปิด
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-message-highlight = เอาการเน้นสีออกแล้ว
+pdfjs-editor-undo-bar-message-freetext = เอาข้อความออกแล้ว
+pdfjs-editor-undo-bar-message-ink = เอาภาพวาดออกแล้ว
+pdfjs-editor-undo-bar-message-stamp = เอาภาพออกแล้ว
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple = เอาคำอธิบายประกอบ { $count } รายการออกแล้ว
+pdfjs-editor-undo-bar-undo-button =
+    .title = เลิกทำ
+pdfjs-editor-undo-bar-undo-button-label = เลิกทำ
+pdfjs-editor-undo-bar-close-button =
+    .title = ปิด
+pdfjs-editor-undo-bar-close-button-label = ปิด

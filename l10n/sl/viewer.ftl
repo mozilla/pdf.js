@@ -497,3 +497,25 @@ pdfjs-editor-alt-text-settings-editor-title = Urejevalnik nadomestnega besedila
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Ob dodajanju slike takoj prikaži urejevalnik nadomestnega besedila
 pdfjs-editor-alt-text-settings-show-dialog-description = Pomaga vam zagotoviti, da imajo vse vaše slike nadomestno besedilo.
 pdfjs-editor-alt-text-settings-close-button = Zapri
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-message-highlight = Označba odstranjena
+pdfjs-editor-undo-bar-message-freetext = Besedilo odstranjeno
+pdfjs-editor-undo-bar-message-ink = Risba odstranjena
+pdfjs-editor-undo-bar-message-stamp = Slika odstranjena
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple =
+    { $count ->
+        [one] { $count } označba odstranjena
+        [two] { $count } označbi odstranjeni
+        [few] { $count } označbe odstranjene
+       *[other] { $count } označb odstranjenih
+    }
+pdfjs-editor-undo-bar-undo-button =
+    .title = Razveljavi
+pdfjs-editor-undo-bar-undo-button-label = Razveljavi
+pdfjs-editor-undo-bar-close-button =
+    .title = Zapri
+pdfjs-editor-undo-bar-close-button-label = Zapri

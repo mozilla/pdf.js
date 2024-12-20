@@ -476,3 +476,23 @@ pdfjs-editor-alt-text-settings-download-model-button = Боргирӣ карда
 pdfjs-editor-alt-text-settings-downloading-model-button = Дар ҳоли боргирӣ…
 pdfjs-editor-alt-text-settings-editor-title = Муҳаррири матни иловагӣ
 pdfjs-editor-alt-text-settings-close-button = Пӯшидан
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-message-highlight = Ҷудосозӣ тоза карда шуд
+pdfjs-editor-undo-bar-message-freetext = Матн тоза карда шуд
+pdfjs-editor-undo-bar-message-ink = Расм тоза карда шуд
+pdfjs-editor-undo-bar-message-stamp = Тасвир тоза карда шуд
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple =
+    { $count ->
+        [one] { $count } ҳошиянависӣ тоза карда шуд
+       *[other] { $count } ҳошиянависӣ тоза карда шуданд
+    }
+pdfjs-editor-undo-bar-undo-button =
+    .title = Бекор кардан
+pdfjs-editor-undo-bar-undo-button-label = Бекор кардан
+pdfjs-editor-undo-bar-close-button =
+    .title = Пӯшидан
+pdfjs-editor-undo-bar-close-button-label = Пӯшидан

@@ -489,3 +489,23 @@ pdfjs-editor-alt-text-settings-editor-title = Éditeur de texte alternatif
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Afficher l’éditeur de texte alternatif immédiatement lors de l’ajout d’une image
 pdfjs-editor-alt-text-settings-show-dialog-description = Vous aide à vous assurer que toutes vos images ont du texte alternatif.
 pdfjs-editor-alt-text-settings-close-button = Fermer
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-message-highlight = Surlignage supprimé
+pdfjs-editor-undo-bar-message-freetext = Texte supprimé
+pdfjs-editor-undo-bar-message-ink = Dessin supprimé
+pdfjs-editor-undo-bar-message-stamp = Image supprimée
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple =
+    { $count ->
+        [one] { $count } annotation supprimée
+       *[other] { $count } annotations supprimées
+    }
+pdfjs-editor-undo-bar-undo-button =
+    .title = Annuler
+pdfjs-editor-undo-bar-undo-button-label = Annuler
+pdfjs-editor-undo-bar-close-button =
+    .title = Fermer
+pdfjs-editor-undo-bar-close-button-label = Fermer
