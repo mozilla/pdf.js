@@ -177,6 +177,7 @@ class WorkerMessageHandler {
       if (isPureXfa) {
         const task = new WorkerTask("loadXfaFonts");
         startWorkerTask(task);
+
         await Promise.all([
           pdfManager
             .loadXfaFonts(handler, task)
@@ -590,6 +591,8 @@ class WorkerMessageHandler {
             newAnnotationPromises.push(
               pdfManager.getPage(pageIndex).then(page => {
                 const task = new WorkerTask(`Save (editor): page ${pageIndex}`);
+                startWorkerTask(task);
+
                 return page
                   .saveNewAnnotations(
                     handler,
@@ -637,6 +640,8 @@ class WorkerMessageHandler {
             promises.push(
               pdfManager.getPage(pageIndex).then(function (page) {
                 const task = new WorkerTask(`Save: page ${pageIndex}`);
+                startWorkerTask(task);
+
                 return page
                   .save(handler, task, annotationStorage, changes)
                   .finally(function () {
