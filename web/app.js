@@ -493,6 +493,7 @@ const PDFViewerApplication = {
       abortSignal: this._globalAbortController.signal,
       enableHWA,
       supportsPinchToZoom: this.supportsPinchToZoom,
+      enableAutolinking: AppOptions.get("enableAutolinking"),
     });
     this.pdfViewer = pdfViewer;
 
