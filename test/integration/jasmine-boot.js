@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+/* eslint-disable no-console */
+
 import Jasmine from "jasmine";
 
 async function runTests(results) {
