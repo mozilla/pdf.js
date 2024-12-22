@@ -40,7 +40,7 @@
 
 "use strict";
 
-import { TestReporter } from "../unit/testreporter.js";
+import { TestReporter } from "../reporter.js";
 
 async function initializePDFJS(callback) {
   await Promise.all(

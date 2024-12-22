@@ -42,7 +42,7 @@
 
 import { GlobalWorkerOptions } from "pdfjs/display/worker_options.js";
 import { isNodeJS } from "../../src/shared/util.js";
-import { TestReporter } from "./testreporter.js";
+import { TestReporter } from "../reporter.js";
 
 async function initializePDFJS(callback) {
   await Promise.all(
