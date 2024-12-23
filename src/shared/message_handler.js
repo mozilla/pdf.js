@@ -16,6 +16,7 @@
 import {
   AbortException,
   assert,
+  InvalidPDFException,
   MissingPDFException,
   PasswordException,
   UnexpectedResponseException,
@@ -24,13 +25,11 @@ import {
 } from "./util.js";
 
 const CallbackKind = {
-  UNKNOWN: 0,
   DATA: 1,
   ERROR: 2,
 };
 
 const StreamKind = {
-  UNKNOWN: 0,
   CANCEL: 1,
   CANCEL_COMPLETE: 2,
   CLOSE: 3,
@@ -43,31 +42,25 @@ const StreamKind = {
 
 function onFn() {}
 
-function wrapReason(reason) {
-  if (
-    !(
-      reason instanceof Error ||
-      (typeof reason === "object" && reason !== null)
-    )
-  ) {
-    unreachable(
-      'wrapReason: Expected "reason" to be a (possibly cloned) Error.'
-    );
+function wrapReason(ex) {
+  if (!(ex instanceof Error || (typeof ex === "object" && ex !== null))) {
+    unreachable("wrapReason: Expected a (possibly cloned) Error.");
   }
-  switch (reason.name) {
+  switch (ex.name) {
     case "AbortException":
-      return new AbortException(reason.message);
+      return new AbortException(ex.message);
+    case "InvalidPDFException":
+      return new InvalidPDFException(ex.message);
     case "MissingPDFException":
-      return new MissingPDFException(reason.message);
+      return new MissingPDFException(ex.message);
     case "PasswordException":
-      return new PasswordException(reason.message, reason.code);
+      return new PasswordException(ex.message, ex.code);
     case "UnexpectedResponseException":
-      return new UnexpectedResponseException(reason.message, reason.status);
+      return new UnexpectedResponseException(ex.message, ex.status);
     case "UnknownErrorException":
-      return new UnknownErrorException(reason.message, reason.details);
-    default:
-      return new UnknownErrorException(reason.message, reason.toString());
+      return new UnknownErrorException(ex.message, ex.details);
   }
+  return new UnknownErrorException(ex.message, ex.toString());
 }
 
 class MessageHandler {
@@ -149,7 +142,7 @@ class MessageHandler {
       this.#createStreamSink(data);
       return;
     }
-    action(data.data);
+    action(data.reason ? wrapReason(data.reason) : data.data);
   }
 
   on(actionName, handler) {
@@ -173,12 +166,15 @@ class MessageHandler {
    * @param {Array} [transfers] - List of transfers/ArrayBuffers.
    */
   send(actionName, data, transfers) {
+    const isErr = data instanceof Error;
+
     this.comObj.postMessage(
       {
         sourceName: this.sourceName,
         targetName: this.targetName,
         action: actionName,
-        data,
+        data: isErr ? null : data,
+        reason: isErr ? wrapReason(data) : null,
       },
       transfers
     );
