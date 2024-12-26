@@ -310,18 +310,15 @@ class XRef {
     if (!("streamState" in this)) {
       // Stores state of the stream as we process it so we can resume
       // from middle of stream in case of missing data error
-      const streamParameters = stream.dict;
-      const byteWidths = streamParameters.get("W");
-      let range = streamParameters.get("Index");
-      if (!range) {
-        range = [0, streamParameters.get("Size")];
-      }
+      const { dict, pos } = stream;
+      const byteWidths = dict.get("W");
+      const range = dict.get("Index") || [0, dict.get("Size")];
 
       this.streamState = {
         entryRanges: range,
         byteWidths,
         entryNum: 0,
-        streamPos: stream.pos,
+        streamPos: pos,
       };
     }
     this.readXRefStream(stream);

@@ -36,7 +36,7 @@ class DecryptStream extends DecodeStream {
       chunk = this.str.getBytes(chunkSize);
       this.initialized = true;
     }
-    if (!chunk || chunk.length === 0) {
+    if (!chunk?.length) {
       this.eof = true;
       return;
     }
