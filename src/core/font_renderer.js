@@ -14,6 +14,7 @@
  */
 
 import {
+  assert,
   bytesToString,
   FONT_IDENTITY_MATRIX,
   FormatError,
@@ -23,6 +24,7 @@ import {
 } from "../shared/util.js";
 import { CFFParser } from "./cff_parser.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
+import { isNumberArray } from "./core_utils.js";
 import { StandardEncoding } from "./encodings.js";
 import { Stream } from "./stream.js";
 
@@ -834,6 +836,7 @@ class CompiledFont {
         warn("Invalid fd index for glyph index.");
       }
     }
+    assert(isNumberArray(fontMatrix, 6), "Expected a valid fontMatrix.");
 
     const cmds = new Commands();
     cmds.transform(fontMatrix.slice());
