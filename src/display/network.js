@@ -16,7 +16,7 @@
 import { assert, stringToBytes, warn } from "../shared/util.js";
 import {
   createHeaders,
-  createResponseStatusError,
+  createResponseError,
   extractFilenameFromHeader,
   getResponseOrigin,
   validateRangeRequestCapabilities,
@@ -329,7 +329,7 @@ class PDFNetworkStreamFullRequestReader {
   }
 
   _onError(status) {
-    this._storedError = createResponseStatusError(status, this._url);
+    this._storedError = createResponseError(status, this._url);
     this._headersCapability.reject(this._storedError);
     for (const requestCapability of this._requests) {
       requestCapability.reject(this._storedError);
@@ -454,7 +454,7 @@ class PDFNetworkStreamRangeRequestReader {
   }
 
   _onError(status) {
-    this._storedError ??= createResponseStatusError(status, this._url);
+    this._storedError ??= createResponseError(status, this._url);
     for (const requestCapability of this._requests) {
       requestCapability.reject(this._storedError);
     }
