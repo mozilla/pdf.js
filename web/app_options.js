@@ -442,6 +442,7 @@ const defaultOptions = {
           : "../web/wasm/",
     kind: OptionKind.API,
   },
+
   workerPort: {
     /** @type {Object} */
     value: null,
