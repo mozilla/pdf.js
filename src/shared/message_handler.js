@@ -17,9 +17,8 @@ import {
   AbortException,
   assert,
   InvalidPDFException,
-  MissingPDFException,
   PasswordException,
-  UnexpectedResponseException,
+  ResponseException,
   UnknownErrorException,
   unreachable,
 } from "./util.js";
@@ -46,9 +45,8 @@ function wrapReason(ex) {
   if (
     ex instanceof AbortException ||
     ex instanceof InvalidPDFException ||
-    ex instanceof MissingPDFException ||
     ex instanceof PasswordException ||
-    ex instanceof UnexpectedResponseException ||
+    ex instanceof ResponseException ||
     ex instanceof UnknownErrorException
   ) {
     // Avoid re-creating the exception when its type is already correct.
@@ -65,12 +63,10 @@ function wrapReason(ex) {
       return new AbortException(ex.message);
     case "InvalidPDFException":
       return new InvalidPDFException(ex.message);
-    case "MissingPDFException":
-      return new MissingPDFException(ex.message);
     case "PasswordException":
       return new PasswordException(ex.message, ex.code);
-    case "UnexpectedResponseException":
-      return new UnexpectedResponseException(ex.message, ex.status);
+    case "ResponseException":
+      return new ResponseException(ex.message, ex.status, ex.missing);
     case "UnknownErrorException":
       return new UnknownErrorException(ex.message, ex.details);
   }
