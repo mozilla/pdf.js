@@ -466,7 +466,7 @@ const blackTable3 = [
  */
 class CCITTFaxDecoder {
   constructor(source, options = {}) {
-    if (!source || typeof source.next !== "function") {
+    if (typeof source?.next !== "function") {
       throw new Error('CCITTFaxDecoder - invalid "source" parameter.');
     }
     this.source = source;
