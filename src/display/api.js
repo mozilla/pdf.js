@@ -24,17 +24,12 @@ import {
   FeatureTest,
   getVerbosityLevel,
   info,
-  InvalidPDFException,
   isNodeJS,
   MAX_IMAGE_SIZE_TO_CACHE,
-  MissingPDFException,
-  PasswordException,
   RenderingIntentFlag,
   setVerbosityLevel,
   shadow,
   stringToBytes,
-  UnexpectedResponseException,
-  UnknownErrorException,
   unreachable,
   warn,
 } from "../shared/util.js";
@@ -51,6 +46,7 @@ import {
   RenderingCancelledException,
   StatTimer,
 } from "./display_utils.js";
+import { MessageHandler, wrapReason } from "../shared/message_handler.js";
 import {
   NodeCanvasFactory,
   NodeCMapReaderFactory,
@@ -63,7 +59,6 @@ import { DOMCMapReaderFactory } from "display-cmap_reader_factory";
 import { DOMFilterFactory } from "./filter_factory.js";
 import { DOMStandardFontDataFactory } from "display-standard_fontdata_factory";
 import { GlobalWorkerOptions } from "./worker_options.js";
-import { MessageHandler } from "../shared/message_handler.js";
 import { Metadata } from "./metadata.js";
 import { OptionalContentConfig } from "./optional_content_config.js";
 import { PDFDataTransportStream } from "./transport_stream.js";
@@ -2731,34 +2726,18 @@ class WorkerTransport {
       loadingTask._capability.resolve(new PDFDocumentProxy(pdfInfo, this));
     });
 
-    messageHandler.on("DocException", function (ex) {
-      let reason;
-      switch (ex.name) {
-        case "PasswordException":
-          reason = new PasswordException(ex.message, ex.code);
-          break;
-        case "InvalidPDFException":
-          reason = new InvalidPDFException(ex.message);
-          break;
-        case "MissingPDFException":
-          reason = new MissingPDFException(ex.message);
-          break;
-        case "UnexpectedResponseException":
-          reason = new UnexpectedResponseException(ex.message, ex.status);
-          break;
-        case "UnknownErrorException":
-          reason = new UnknownErrorException(ex.message, ex.details);
-          break;
-        default:
-          unreachable("DocException - expected a valid Error.");
-      }
-      loadingTask._capability.reject(reason);
+    messageHandler.on("DocException", ex => {
+      loadingTask._capability.reject(wrapReason(ex));
     });
 
-    messageHandler.on("PasswordRequest", exception => {
+    messageHandler.on("PasswordRequest", ex => {
       this.#passwordCapability = Promise.withResolvers();
 
-      if (loadingTask.onPassword) {
+      try {
+        if (!loadingTask.onPassword) {
+          throw wrapReason(ex);
+        }
+
         const updatePassword = password => {
           if (password instanceof Error) {
             this.#passwordCapability.reject(password);
@@ -2766,15 +2745,9 @@ class WorkerTransport {
             this.#passwordCapability.resolve({ password });
           }
         };
-        try {
-          loadingTask.onPassword(updatePassword, exception.code);
-        } catch (ex) {
-          this.#passwordCapability.reject(ex);
-        }
-      } else {
-        this.#passwordCapability.reject(
-          new PasswordException(exception.message, exception.code)
-        );
+        loadingTask.onPassword(updatePassword, ex.code);
+      } catch (err) {
+        this.#passwordCapability.reject(err);
       }
       return this.#passwordCapability.promise;
     });
