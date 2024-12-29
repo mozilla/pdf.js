@@ -818,7 +818,7 @@ class CompiledFont {
   }
 
   compileGlyph(code, glyphId) {
-    if (!code || code.length === 0 || code[0] === 14) {
+    if (!code?.length || code[0] === 14) {
       return NOOP;
     }
 

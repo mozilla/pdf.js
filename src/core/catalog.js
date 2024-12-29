@@ -567,10 +567,7 @@ class Catalog {
       const onParsed = [];
       if (Array.isArray(refs)) {
         for (const value of refs) {
-          if (!(value instanceof Ref)) {
-            continue;
-          }
-          if (groupRefCache.has(value)) {
+          if (value instanceof Ref && groupRefCache.has(value)) {
             onParsed.push(value.toString());
           }
         }
@@ -629,7 +626,7 @@ class Catalog {
         return null;
       }
       const nestedOrder = parseOrder(value.slice(1), nestedLevels);
-      if (!nestedOrder || !nestedOrder.length) {
+      if (!nestedOrder?.length) {
         return null;
       }
       return { name: stringToPDFString(nestedName), order: nestedOrder };
