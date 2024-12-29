@@ -18,14 +18,10 @@ import {
   assert,
   getVerbosityLevel,
   info,
-  InvalidPDFException,
   isNodeJS,
-  MissingPDFException,
   PasswordException,
   setVerbosityLevel,
   stringToPDFString,
-  UnexpectedResponseException,
-  UnknownErrorException,
   VerbosityLevel,
   warn,
 } from "../shared/util.js";
@@ -36,10 +32,10 @@ import {
 } from "./core_utils.js";
 import { Dict, isDict, Ref, RefSetCache } from "./primitives.js";
 import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager.js";
+import { MessageHandler, wrapReason } from "../shared/message_handler.js";
 import { AnnotationFactory } from "./annotation.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
 import { incrementalUpdate } from "./writer.js";
-import { MessageHandler } from "../shared/message_handler.js";
 import { PDFWorkerStream } from "./worker_stream.js";
 import { StructTreeRoot } from "./struct_tree.js";
 
@@ -347,18 +343,9 @@ class WorkerMessageHandler {
               finishWorkerTask(task);
               handler.send("DocException", ex);
             });
-        } else if (
-          ex instanceof InvalidPDFException ||
-          ex instanceof MissingPDFException ||
-          ex instanceof UnexpectedResponseException ||
-          ex instanceof UnknownErrorException
-        ) {
-          handler.send("DocException", ex);
         } else {
-          handler.send(
-            "DocException",
-            new UnknownErrorException(ex.message, ex.toString())
-          );
+          // Ensure that we always fallback to `UnknownErrorException`.
+          handler.send("DocException", wrapReason(ex));
         }
       }
 
