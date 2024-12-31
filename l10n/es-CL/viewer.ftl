@@ -292,7 +292,7 @@ pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", tim
 
 ## Password
 
-pdfjs-password-label = Ingrese la contraseña para abrir este archivo PDF.
+pdfjs-password-label = Ingresa la contraseña para abrir este archivo PDF.
 pdfjs-password-invalid = Contraseña inválida. Por favor, vuelve a intentarlo.
 pdfjs-password-ok-button = Aceptar
 pdfjs-password-cancel-button = Cancelar

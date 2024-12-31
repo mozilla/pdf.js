@@ -493,3 +493,23 @@ pdfjs-editor-alt-text-settings-editor-title = Testu alternatiboaren editorea
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Erakutsi testu alternatiboa irudi bat gehitzean berehala
 pdfjs-editor-alt-text-settings-show-dialog-description = Zure irudiek testu alternatiboa duela ziurtatzen laguntzen dizu.
 pdfjs-editor-alt-text-settings-close-button = Itxi
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-message-highlight = Nabarmentzea kenduta
+pdfjs-editor-undo-bar-message-freetext = Testua kenduta
+pdfjs-editor-undo-bar-message-ink = Marrazkia kenduta
+pdfjs-editor-undo-bar-message-stamp = Irudia kenduta
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple =
+    { $count ->
+        [one] Esku-ohar bat kenduta
+       *[other] { $count } esku-ohar kenduta
+    }
+pdfjs-editor-undo-bar-undo-button =
+    .title = Desegin
+pdfjs-editor-undo-bar-undo-button-label = Desegin
+pdfjs-editor-undo-bar-close-button =
+    .title = Itxi
+pdfjs-editor-undo-bar-close-button-label = Itxi
