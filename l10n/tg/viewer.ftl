@@ -440,12 +440,22 @@ pdfjs-editor-new-alt-text-dialog-edit-label = Таҳрир кардани мат
 pdfjs-editor-new-alt-text-dialog-add-label = Илова кардани матни иловагӣ (тафсири тасвир)
 pdfjs-editor-new-alt-text-textarea =
     .placeholder = Тафсири худро дар ин ҷо нависед…
+# This text refers to the alt text box above this description. It offers a definition of alt text.
+pdfjs-editor-new-alt-text-description = Тавсифи мухтасар барои одамоне, ки аксҳоро дида наметавонанд ё вақте ки аксҳо кушода намешаванд.
+# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
+pdfjs-editor-new-alt-text-disclaimer1 = Ин матни ивазкунанда ба таври худкор сохта шудааст ва шояд нодуруст бошад.
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Маълумоти бештар
 pdfjs-editor-new-alt-text-create-automatically-button-label = Ба таври худкор эҷод кардани матни иловагӣ
 pdfjs-editor-new-alt-text-not-now-button = Ҳоло не
 pdfjs-editor-new-alt-text-error-title = Матни иловагӣ ба таври худкор эҷод карда нашуд
 pdfjs-editor-new-alt-text-error-description = Лутфан, матни иловагии худро ворид кунед ё баъдтар аз нав кӯшиш кунед.
 pdfjs-editor-new-alt-text-error-close-button = Пӯшидан
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+#   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
+#   $percent (Number) - the percentage of the downloaded size.
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = Боргирии модели зеҳни сунъӣ (AI) барои матни ивазкунанда ({ $downloadedSize } аз { $totalSize } МБ)
+    .aria-valuetext = Боргирии модели зеҳни сунъӣ (AI) барои матни ивазкунанда ({ $downloadedSize } аз { $totalSize } МБ)
 # This is a button that users can click to edit the alt text they have already added.
 pdfjs-editor-new-alt-text-added-button =
     .aria-label = Матни иловагӣ илова карда шуд
@@ -471,10 +481,17 @@ pdfjs-image-alt-text-settings-button-label = Танзимоти матни ил�
 pdfjs-editor-alt-text-settings-dialog-label = Танзимоти матни иловагии тасвир
 pdfjs-editor-alt-text-settings-automatic-title = Матни иловагии худкор
 pdfjs-editor-alt-text-settings-create-model-button-label = Ба таври худкор эҷод кардани матни иловагӣ
+pdfjs-editor-alt-text-settings-create-model-description = Ин имкон барои расонидани кумак ба одамоне, ки аксҳоро дида наметавонанд ё вақте ки аксҳо кушода намешаванд, тавсифи аксҳоро пешниҳод мекунад.
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+pdfjs-editor-alt-text-settings-download-model-label = Модели зеҳни сунъӣ «AI» барои матни ивазкунанда ({ $totalSize } МБ)
+pdfjs-editor-alt-text-settings-ai-model-description = Дар дастгоҳи шумо ба таври маҳаллӣ кор мекунад, бинобар ин махфияти маълумоти шахсии шумо нигоҳ дошта мешавад. Барои матни ивазкунандаи худкор лозим аст.
 pdfjs-editor-alt-text-settings-delete-model-button = Нест кардан
 pdfjs-editor-alt-text-settings-download-model-button = Боргирӣ кардан
 pdfjs-editor-alt-text-settings-downloading-model-button = Дар ҳоли боргирӣ…
 pdfjs-editor-alt-text-settings-editor-title = Муҳаррири матни иловагӣ
+pdfjs-editor-alt-text-settings-show-dialog-button-label = Дарҳол нишон додани муҳаррири матни ивазкунанда ҳангоми иловакунии тасвир
+pdfjs-editor-alt-text-settings-show-dialog-description = Ба шумо кумак мекунад, ки боварӣ ҳосил кунед, ки ҳамаи тасвирҳои шумо дорои матни ивазкунанда мебошанд.
 pdfjs-editor-alt-text-settings-close-button = Пӯшидан
 
 ## "Annotations removed" bar
