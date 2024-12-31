@@ -53,14 +53,7 @@ class NetworkManager {
   }
 
   requestRange(begin, end, listeners) {
-    const args = {
-      begin,
-      end,
-    };
-    for (const prop in listeners) {
-      args[prop] = listeners[prop];
-    }
-    return this.request(args);
+    return this.request({ begin, end, ...listeners });
   }
 
   requestFull(listeners) {
