@@ -496,6 +496,17 @@ pdfjs-editor-alt-text-settings-close-button = Жабу
 
 ## "Annotations removed" bar
 
+pdfjs-editor-undo-bar-message-highlight = Ерекшелеу өшірілді
+pdfjs-editor-undo-bar-message-freetext = Мәтін өшірілді
+pdfjs-editor-undo-bar-message-ink = Сызба өшірілді
+pdfjs-editor-undo-bar-message-stamp = Сурет өшірілді
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple =
+    { $count ->
+        [one] { $count } анимация өшірілді
+       *[other] { $count } анимация өшірілді
+    }
 pdfjs-editor-undo-bar-undo-button =
     .title = Болдырмау
 pdfjs-editor-undo-bar-undo-button-label = Болдырмау
