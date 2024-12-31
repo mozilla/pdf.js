@@ -52,21 +52,6 @@ class NetworkManager {
     this.pendingRequests = Object.create(null);
   }
 
-  requestRange(begin, end, listeners) {
-    const args = {
-      begin,
-      end,
-    };
-    for (const prop in listeners) {
-      args[prop] = listeners[prop];
-    }
-    return this.request(args);
-  }
-
-  requestFull(listeners) {
-    return this.request(listeners);
-  }
-
   request(args) {
     const xhr = new XMLHttpRequest();
     const xhrId = this.currXhrId++;
@@ -248,14 +233,13 @@ class PDFNetworkStreamFullRequestReader {
   constructor(manager, source) {
     this._manager = manager;
 
-    const args = {
+    this._url = source.url;
+    this._fullRequestId = manager.request({
       onHeadersReceived: this._onHeadersReceived.bind(this),
       onDone: this._onDone.bind(this),
       onError: this._onError.bind(this),
       onProgress: this._onProgress.bind(this),
-    };
-    this._url = source.url;
-    this._fullRequestId = manager.requestFull(args);
+    });
     this._headersCapability = Promise.withResolvers();
     this._disableRange = source.disableRange || false;
     this._contentLength = source.length; // Optional
@@ -418,14 +402,15 @@ class PDFNetworkStreamRangeRequestReader {
   constructor(manager, begin, end) {
     this._manager = manager;
 
-    const args = {
+    this._url = manager.url;
+    this._requestId = manager.request({
+      begin,
+      end,
       onHeadersReceived: this._onHeadersReceived.bind(this),
       onDone: this._onDone.bind(this),
       onError: this._onError.bind(this),
       onProgress: this._onProgress.bind(this),
-    };
-    this._url = manager.url;
-    this._requestId = manager.requestRange(begin, end, args);
+    });
     this._requests = [];
     this._queuedChunk = null;
     this._done = false;
