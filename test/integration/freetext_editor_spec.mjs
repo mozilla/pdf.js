@@ -25,7 +25,6 @@ import {
   getEditorSelector,
   getFirstSerialized,
   getRect,
-  getSelectedEditors,
   getSerialized,
   hover,
   isCanvasWhite,
@@ -371,7 +370,7 @@ describe("FreeText Editor", () => {
             `${getEditorSelector(8)} .overlay.enabled`
           );
 
-          expect(await getSelectedEditors(page))
+          expect(await getEditors(page, "selected"))
             .withContext(`In ${browserName}`)
             .toEqual([8]);
 
@@ -387,7 +386,7 @@ describe("FreeText Editor", () => {
 
           await waitForSelectedEditor(page, getEditorSelector(8));
 
-          expect(await getSelectedEditors(page))
+          expect(await getEditors(page, "selected"))
             .withContext(`In ${browserName}`)
             .toEqual([8]);
 
@@ -574,7 +573,7 @@ describe("FreeText Editor", () => {
 
         await selectAll(page);
 
-        expect(await getSelectedEditors(page))
+        expect(await getEditors(page, "selected"))
           .withContext(`In ${browserName}`)
           .toEqual([0, 1, 2, 3]);
 
@@ -583,14 +582,14 @@ describe("FreeText Editor", () => {
         await page.mouse.click(editorCenters[1].x, editorCenters[1].y);
         await waitForUnselectedEditor(page, getEditorSelector(1));
 
-        expect(await getSelectedEditors(page))
+        expect(await getEditors(page, "selected"))
           .withContext(`In ${browserName}`)
           .toEqual([0, 2, 3]);
 
         await page.mouse.click(editorCenters[2].x, editorCenters[2].y);
         await waitForUnselectedEditor(page, getEditorSelector(2));
 
-        expect(await getSelectedEditors(page))
+        expect(await getEditors(page, "selected"))
           .withContext(`In ${browserName}`)
           .toEqual([0, 3]);
 
@@ -598,7 +597,7 @@ describe("FreeText Editor", () => {
         await kbModifierUp(page);
         await waitForSelectedEditor(page, getEditorSelector(1));
 
-        expect(await getSelectedEditors(page))
+        expect(await getEditors(page, "selected"))
           .withContext(`In ${browserName}`)
           .toEqual([0, 1, 3]);
 
@@ -609,20 +608,20 @@ describe("FreeText Editor", () => {
         });
 
         // 0,1,3 are unselected and new pasted editors are selected.
-        expect(await getSelectedEditors(page))
+        expect(await getEditors(page, "selected"))
           .withContext(`In ${browserName}`)
           .toEqual([4, 5, 6]);
 
         // No ctrl here, hence all are unselected and 2 is selected.
         await page.mouse.click(editorCenters[2].x, editorCenters[2].y);
         await waitForSelectedEditor(page, getEditorSelector(2));
-        expect(await getSelectedEditors(page))
+        expect(await getEditors(page, "selected"))
           .withContext(`In ${browserName}`)
           .toEqual([2]);
 
         await page.mouse.click(editorCenters[1].x, editorCenters[1].y);
         await waitForSelectedEditor(page, getEditorSelector(1));
-        expect(await getSelectedEditors(page))
+        expect(await getEditors(page, "selected"))
           .withContext(`In ${browserName}`)
           .toEqual([1]);
 
@@ -630,7 +629,7 @@ describe("FreeText Editor", () => {
 
         await page.mouse.click(editorCenters[3].x, editorCenters[3].y);
         await waitForSelectedEditor(page, getEditorSelector(3));
-        expect(await getSelectedEditors(page))
+        expect(await getEditors(page, "selected"))
           .withContext(`In ${browserName}`)
           .toEqual([1, 3]);
 
@@ -646,7 +645,7 @@ describe("FreeText Editor", () => {
 
         await selectAll(page);
 
-        expect(await getSelectedEditors(page))
+        expect(await getEditors(page, "selected"))
           .withContext(`In ${browserName}`)
           .toEqual([0, 2, 4, 5, 6]);
 
@@ -658,14 +657,14 @@ describe("FreeText Editor", () => {
         await page.waitForSelector(getEditorSelector(7), {
           visible: true,
         });
-        expect(await getSelectedEditors(page))
+        expect(await getEditors(page, "selected"))
           .withContext(`In ${browserName}`)
           .toEqual([7]);
 
         // Set the focus to 2 and check that only 2 is selected.
         await page.mouse.click(editorCenters[2].x, editorCenters[2].y);
         await waitForSelectedEditor(page, getEditorSelector(2));
-        expect(await getSelectedEditors(page))
+        expect(await getEditors(page, "selected"))
           .withContext(`In ${browserName}`)
           .toEqual([2]);
 
@@ -677,7 +676,7 @@ describe("FreeText Editor", () => {
         await page.waitForSelector(getEditorSelector(8), {
           visible: true,
         });
-        expect(await getSelectedEditors(page))
+        expect(await getEditors(page, "selected"))
           .withContext(`In ${browserName}`)
           .toEqual([8]);
         // Dismiss it.
@@ -692,7 +691,7 @@ describe("FreeText Editor", () => {
 
         // Check that all the editors are correctly selected (and the focus
         // didn't move to the body when the empty editor was removed).
-        expect(await getSelectedEditors(page))
+        expect(await getEditors(page, "selected"))
           .withContext(`In ${browserName}`)
           .toEqual([0, 2, 4, 5, 6]);
       }
