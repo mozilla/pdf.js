@@ -195,6 +195,11 @@ const defaultOptions = {
     value: true,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE + OptionKind.EVENT_DISPATCH,
   },
+  enableDetailCanvas: {
+    /** @type {boolean} */
+    value: true,
+    kind: OptionKind.VIEWER,
+  },
   enableGuessAltText: {
     /** @type {boolean} */
     value: true,
