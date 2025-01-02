@@ -923,8 +923,7 @@ class Catalog {
     }
     let prefs = null;
 
-    for (const key of obj.getKeys()) {
-      const value = obj.get(key);
+    for (const [key, value] of obj) {
       let prefValue;
 
       switch (key) {

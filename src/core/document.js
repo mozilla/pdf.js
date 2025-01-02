@@ -1472,9 +1472,7 @@ class PDFDocument {
       return shadow(this, "documentInfo", docInfo);
     }
 
-    for (const key of infoDict.getKeys()) {
-      const value = infoDict.get(key);
-
+    for (const [key, value] of infoDict) {
       switch (key) {
         case "Title":
         case "Author":
