@@ -70,6 +70,11 @@ const clearAll = async page => {
   await waitForStorageEntries(page, 0);
 };
 
+const commit = async page => {
+  await page.keyboard.press("Escape");
+  await page.waitForSelector(".freeTextEditor.selectedEditor .overlay.enabled");
+};
+
 const switchToFreeText = switchToEditor.bind(null, "FreeText");
 
 const getXY = async (page, selector) => {
@@ -138,17 +143,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${getEditorSelector(0)} .internal`, data);
-
-          const editorRect = await getRect(page, getEditorSelector(0));
-
-          // Commit.
-          await page.mouse.click(
-            editorRect.x,
-            editorRect.y + 2 * editorRect.height
-          );
-          await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay.enabled`
-          );
+          await commit(page);
 
           await waitForSelectedEditor(page, getEditorSelector(0));
           await waitForStorageEntries(page, 1);
@@ -163,12 +158,7 @@ describe("FreeText Editor", () => {
           await page.waitForSelector(
             `${getEditorSelector(0)} .overlay:not(.enabled)`
           );
-
-          // Commit.
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay.enabled`
-          );
+          await commit(page);
 
           content = await page.$eval(getEditorSelector(0), el =>
             el.innerText.trimEnd()
@@ -251,17 +241,10 @@ describe("FreeText Editor", () => {
           visible: true,
         });
         await page.type(`${getEditorSelector(3)} .internal`, data);
-
-        const editorRect = await getRect(page, getEditorSelector(3));
-
-        // Commit.
-        await page.mouse.click(
-          editorRect.x,
-          editorRect.y + 2 * editorRect.height
-        );
-        await page.waitForSelector(`${getEditorSelector(3)} .overlay.enabled`);
+        await commit(page);
 
         // And select it again.
+        const editorRect = await getRect(page, getEditorSelector(3));
         await page.mouse.click(
           editorRect.x + editorRect.width / 2,
           editorRect.y + editorRect.height / 2
@@ -328,12 +311,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${getEditorSelector(7)} .internal`, data);
-
-          // Commit.
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(7)} .overlay.enabled`
-          );
+          await commit(page);
 
           const ariaOwns = await page.$eval(".textLayer", el => {
             const span = el.querySelector(`span[pdfjs="true"]`);
@@ -361,14 +339,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${getEditorSelector(8)} .internal`, data);
-
-          const editorRect = await getRect(page, getEditorSelector(8));
-
-          // Commit.
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(8)} .overlay.enabled`
-          );
+          await commit(page);
 
           expect(await getEditors(page, "selected"))
             .withContext(`In ${browserName}`)
@@ -379,6 +350,7 @@ describe("FreeText Editor", () => {
             () => !document.querySelector(".selectedEditor")
           );
 
+          const editorRect = await getRect(page, getEditorSelector(8));
           await page.mouse.click(
             editorRect.x + editorRect.width / 2,
             editorRect.y + editorRect.height / 2
@@ -422,18 +394,11 @@ describe("FreeText Editor", () => {
 
         for (let i = 0; i < 5; i++) {
           await page.type(`${editorSelector} .internal`, "A");
-
-          const editorRect = await getRect(page, editorSelector);
-
-          // Commit.
-          await page.mouse.click(
-            editorRect.x + 1.5 * editorRect.width,
-            editorRect.y
-          );
-          await page.waitForSelector(`${editorSelector} .overlay.enabled`);
+          await commit(page);
 
           if (i < 4) {
             // And select it again.
+            const editorRect = await getRect(page, editorSelector);
             await page.mouse.click(
               editorRect.x + editorRect.width / 2,
               editorRect.y + editorRect.height / 2,
@@ -502,7 +467,7 @@ describe("FreeText Editor", () => {
         expect(text).withContext(`In ${browserName}`).toEqual("A");
 
         // Add a new A.
-        let editorRect = await getRect(page, editorSelector);
+        const editorRect = await getRect(page, editorSelector);
         await page.mouse.click(
           editorRect.x + editorRect.width / 2,
           editorRect.y + editorRect.height / 2,
@@ -510,15 +475,7 @@ describe("FreeText Editor", () => {
         );
         await page.waitForSelector(`${editorSelector} .overlay:not(.enabled)`);
         await page.type(`${editorSelector} .internal`, "A");
-
-        editorRect = await getRect(page, editorSelector);
-
-        // Commit.
-        await page.mouse.click(
-          editorRect.x + 1.5 * editorRect.width,
-          editorRect.y
-        );
-        await page.waitForSelector(`${editorSelector} .overlay.enabled`);
+        await commit(page);
 
         text = await getText();
         expect(text).withContext(`In ${browserName}`).toEqual("AA");
@@ -553,6 +510,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${getEditorSelector(i)} .internal`, data);
+          await commit(page);
 
           const editorRect = await getRect(page, getEditorSelector(i));
           lastX = editorRect.x + editorRect.width + 10;
@@ -560,15 +518,6 @@ describe("FreeText Editor", () => {
             x: editorRect.x + editorRect.width / 2,
             y: editorRect.y + editorRect.height / 2,
           });
-
-          // Commit.
-          await page.mouse.click(
-            editorRect.x + 1.5 * editorRect.width,
-            editorRect.y
-          );
-          await page.waitForSelector(
-            `${getEditorSelector(i)} .overlay.enabled`
-          );
         }
 
         await selectAll(page);
@@ -739,12 +688,7 @@ describe("FreeText Editor", () => {
               visible: true,
             });
             await page.type(`${getEditorSelector(currentId)} .internal`, data);
-
-            // Commit.
-            await page.keyboard.press("Escape");
-            await page.waitForSelector(
-              `${getEditorSelector(currentId)} .overlay.enabled`
-            );
+            await commit(page);
 
             await waitForSelectedEditor(page, getEditorSelector(currentId));
             await waitForStorageEntries(page, currentId + 1);
@@ -878,12 +822,7 @@ describe("FreeText Editor", () => {
               visible: true,
             });
             await page.type(`${getEditorSelector(currentId)} .internal`, data);
-
-            // Commit.
-            await page.keyboard.press("Escape");
-            await page.waitForSelector(
-              `${getEditorSelector(currentId)} .overlay.enabled`
-            );
+            await commit(page);
 
             const promise = await waitForAnnotationEditorLayer(page);
             await page.evaluate(() => {
@@ -1025,15 +964,7 @@ describe("FreeText Editor", () => {
             `${getEditorSelector(0)} .internal`,
             " and edited in Firefox"
           );
-
-          // Commit.
-          await page.mouse.click(
-            editorRect.x,
-            editorRect.y + 2 * editorRect.height
-          );
-          await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay.enabled`
-          );
+          await commit(page);
 
           const serialized = await getSerialized(page);
           expect(serialized.length).withContext(`In ${browserName}`).toEqual(1);
@@ -1140,10 +1071,7 @@ describe("FreeText Editor", () => {
             `${editorSelector} .internal`,
             " and edited in Firefox"
           );
-
-          // Commit.
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(`${editorSelector} .overlay.enabled`);
+          await commit(page);
 
           // Disable editing mode.
           await switchToFreeText(page, /* disable = */ true);
@@ -1435,17 +1363,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${getEditorSelector(0)} .internal`, data);
-
-          const editorRect = await getRect(page, getEditorSelector(0));
-
-          // Commit.
-          await page.mouse.click(
-            editorRect.x,
-            editorRect.y + 2 * editorRect.height
-          );
-          await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay.enabled`
-          );
+          await commit(page);
 
           // Make Chrome happy.
           await page.waitForFunction(() => {
@@ -1556,12 +1474,7 @@ describe("FreeText Editor", () => {
               visible: true,
             });
             await page.type(`${getEditorSelector(currentId)} .internal`, data);
-
-            // Commit.
-            await page.keyboard.press("Escape");
-            await page.waitForSelector(
-              `${getEditorSelector(currentId)} .overlay.enabled`
-            );
+            await commit(page);
 
             currentId += 1;
           }
@@ -1905,17 +1818,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${getEditorSelector(0)} .internal`, data);
-
-          const editorRect = await getRect(page, getEditorSelector(0));
-
-          // Commit.
-          await page.mouse.click(
-            editorRect.x,
-            editorRect.y + 2 * editorRect.height
-          );
-          await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay.enabled`
-          );
+          await commit(page);
 
           await page.focus("#editorFreeTextColor");
           await kbUndo(page);
@@ -1962,15 +1865,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${selectorEditor} .internal`, data);
-
-          const editorRect = await getRect(page, selectorEditor);
-
-          // Commit.
-          await page.mouse.click(
-            editorRect.x,
-            editorRect.y + 2 * editorRect.height
-          );
-          await page.waitForSelector(`${selectorEditor} .overlay.enabled`);
+          await commit(page);
 
           const [pageX, pageY] = await getFirstSerialized(page, x => x.rect);
 
@@ -2064,15 +1959,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${selectorEditor} .internal`, data);
-
-          const editorRect = await getRect(page, selectorEditor);
-
-          // Commit.
-          await page.mouse.click(
-            editorRect.x,
-            editorRect.y + 2 * editorRect.height
-          );
-          await page.waitForSelector(`${selectorEditor} .overlay.enabled`);
+          await commit(page);
 
           const [pageX, pageY] = await getFirstSerialized(page, x => x.rect);
 
@@ -2100,8 +1987,7 @@ describe("FreeText Editor", () => {
           await moveEditor(page, selectorEditor, 2, () => kbBigMoveLeft(page));
 
           await page.type(`${selectorEditor} .internal`, data);
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(`${selectorEditor} .overlay.enabled`);
+          await commit(page);
 
           const [newX, newY] = await getFirstSerialized(page, x => x.rect);
           expect(Math.round(newX))
@@ -2151,12 +2037,8 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${getEditorSelector(0)} .internal`, data);
-          // Commit.
           await cancelFocusIn(page, getEditorSelector(0));
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay.enabled`
-          );
+          await commit(page);
 
           const oneToFourteen = Array.from(new Array(14).keys(), x => x + 1);
 
@@ -2209,16 +2091,10 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${getEditorSelector(0)} .internal`, "A");
-
-          // Commit.
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay.enabled`
-          );
-
-          rect = await getRect(page, getEditorSelector(0));
+          await commit(page);
 
           // Create a new editor.
+          rect = await getRect(page, getEditorSelector(0));
           await page.mouse.click(
             rect.x + 5 * rect.width,
             rect.y + 5 * rect.height
@@ -2227,16 +2103,10 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${getEditorSelector(1)} .internal`, "B");
-
-          // Commit.
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(1)} .overlay.enabled`
-          );
+          await commit(page);
 
           // Select the second editor.
           rect = await getRect(page, getEditorSelector(1));
-
           await page.mouse.click(
             rect.x + 0.5 * rect.width,
             rect.y + 0.5 * rect.height
@@ -2310,10 +2180,7 @@ describe("FreeText Editor", () => {
               `${editorSelector} .internal`,
               String.fromCharCode(65 + i)
             );
-
-            // Commit.
-            await page.keyboard.press("Escape");
-            await page.waitForSelector(`${editorSelector} .overlay.enabled`);
+            await commit(page);
 
             allPositions.push(await getRect(page, editorSelector));
           }
@@ -2372,13 +2239,8 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${getEditorSelector(0)} .internal`, data);
-
-          // Commit.
           await cancelFocusIn(page, getEditorSelector(0));
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay.enabled`
-          );
+          await commit(page);
 
           await page.evaluate(() => {
             window.editingEvents = [];
@@ -2431,11 +2293,8 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${selectorEditor} .internal`, "Hello");
-
-          // Commit.
           await cancelFocusIn(page, selectorEditor);
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(`${selectorEditor} .overlay.enabled`);
+          await commit(page);
 
           // Unselect.
           await page.keyboard.press("Escape");
@@ -2464,11 +2323,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${getEditorSelector(1)} .internal`, "World");
-
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay.enabled`
-          );
+          await commit(page);
 
           for (let i = 0; i < 13; i++) {
             await page.keyboard.press("P");
@@ -2526,11 +2381,8 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${selectorEditor} .internal`, "Hello");
-
-          // Commit.
           await cancelFocusIn(page, selectorEditor);
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(`${selectorEditor} .overlay.enabled`);
+          await commit(page);
 
           // Unselect.
           await page.keyboard.press("Escape");
@@ -2614,12 +2466,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${getEditorSelector(0)} .internal`, "Hello Wolrd");
-
-          // Commit.
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay.enabled`
-          );
+          await commit(page);
 
           await waitForStorageEntries(page, 1);
 
@@ -2655,10 +2502,8 @@ describe("FreeText Editor", () => {
           });
           const internalEditorSelector = `${getEditorSelector(0)} .internal`;
           await page.type(internalEditorSelector, data);
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay.enabled`
-          );
+          await commit(page);
+
           await page.click(getEditorSelector(0), { count: 2 });
           await page.waitForSelector(
             `${getEditorSelector(0)} .overlay:not(.enabled)`
@@ -2702,10 +2547,7 @@ describe("FreeText Editor", () => {
 
           const data = "Hello PDF.js World !!";
           await page.type(`${selectorEditor} .internal`, data);
-
-          // Commit.
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(`${selectorEditor} .overlay.enabled`);
+          await commit(page);
 
           let content = await page.$eval(selectorEditor, el =>
             el.innerText.trimEnd()
@@ -2726,10 +2568,7 @@ describe("FreeText Editor", () => {
           await moveEditor(page, selectorEditor, 5, () => kbBigMoveDown(page));
 
           await page.type(`${selectorEditor} .internal`, data);
-
-          // Commit.
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(`${selectorEditor} .overlay.enabled`);
+          await commit(page);
 
           // Unselect.
           await page.keyboard.press("Escape");
@@ -2757,10 +2596,7 @@ describe("FreeText Editor", () => {
 
           const data = "Hello PDF.js World !!";
           await page.type(`${selectorEditor} .internal`, data);
-
-          // Commit.
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(`${selectorEditor} .overlay.enabled`);
+          await commit(page);
 
           // Unselect.
           await page.keyboard.press("Escape");
@@ -2783,10 +2619,7 @@ describe("FreeText Editor", () => {
           );
 
           await page.type(`${selectorEditor} .internal`, data);
-
-          // Commit.
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(`${selectorEditor} .overlay.enabled`);
+          await commit(page);
 
           // Unselect.
           await page.keyboard.press("Escape");
@@ -2826,12 +2659,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${getEditorSelector(0)} .internal`, data);
-
-          // Commit.
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay.enabled`
-          );
+          await commit(page);
 
           let handle = await createPromise(page, resolve => {
             document.addEventListener("selectionchange", resolve, {
@@ -2887,12 +2715,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${getEditorSelector(0)} .internal`, data);
-
-          // Commit.
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay.enabled`
-          );
+          await commit(page);
 
           // Delete it in using the button.
           await page.click(`${getEditorSelector(0)} button.delete`);
@@ -2942,10 +2765,7 @@ describe("FreeText Editor", () => {
               visible: true,
             });
             await page.type(`${editorSelector} .internal`, data);
-
-            // Commit.
-            await page.keyboard.press("Escape");
-            await page.waitForSelector(`${editorSelector} .overlay.enabled`);
+            await commit(page);
           }
 
           // Select the editor created previously.
@@ -3066,12 +2886,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${getEditorSelector(0)} .internal`, data);
-
-          // Commit.
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay.enabled`
-          );
+          await commit(page);
 
           await waitForSerialized(page, 1);
           const serialized = (await getSerialized(page))[0];
@@ -3107,12 +2922,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${getEditorSelector(0)} .internal`, data);
-
-          // Commit.
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay.enabled`
-          );
+          await commit(page);
 
           await page.evaluate(() => {
             window.PDFViewerApplication.eventBus.dispatch(
@@ -3215,12 +3025,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${getEditorSelector(0)} .internal`, data);
-
-          // Commit.
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay.enabled`
-          );
+          await commit(page);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${getEditorSelector(0)} button.delete`);
@@ -3272,12 +3077,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${getEditorSelector(0)} .internal`, data);
-
-          // Commit.
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay.enabled`
-          );
+          await commit(page);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${getEditorSelector(0)} button.delete`);
@@ -3325,11 +3125,7 @@ describe("FreeText Editor", () => {
           visible: true,
         });
         await page.type(`${editorSelector} .internal`, data);
-        const editorRect = await getRect(page, editorSelector);
-
-        // Commit.
-        await page.keyboard.press("Escape");
-        await page.waitForSelector(`${editorSelector} .overlay.enabled`);
+        await commit(page);
 
         const waitForTextChange = (previous, edSelector) =>
           page.waitForFunction(
@@ -3341,6 +3137,7 @@ describe("FreeText Editor", () => {
         const getText = edSelector =>
           page.$eval(`${edSelector} .internal`, el => el.innerText.trimEnd());
 
+        const editorRect = await getRect(page, editorSelector);
         await page.mouse.click(
           editorRect.x + editorRect.width / 2,
           editorRect.y + editorRect.height / 2,
@@ -3414,9 +3211,7 @@ describe("FreeText Editor", () => {
         const html = await getHTML();
         expect(html).withContext(`In ${browserName}`).toEqual(prevHTML);
 
-        // Commit.
-        await page.keyboard.press("Escape");
-        await page.waitForSelector(`${editorSelector} .overlay.enabled`);
+        await commit(page);
 
         editorSelector = getEditorSelector(1);
         await page.mouse.click(rect.x + 200, rect.y + 200);
@@ -3606,10 +3401,7 @@ describe("FreeText Editor", () => {
             await page.keyboard.press("Enter");
             await page.keyboard.up("Shift");
           }
-
-          // Commit.
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(`${editorSelector} .overlay.enabled`);
+          await commit(page);
           await waitForSerialized(page, 1);
 
           const serialized = await getSerialized(page, x => x.value);
@@ -3643,10 +3435,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${editorSelector} .internal`, data);
-
-          // Commit.
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(`${editorSelector} .overlay.enabled`);
+          await commit(page);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
@@ -3673,10 +3462,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${editorSelector} .internal`, data);
-
-          // Commit.
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(`${editorSelector} .overlay.enabled`);
+          await commit(page);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
@@ -3711,9 +3497,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${editorSelector} .internal`, data);
-
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(`${editorSelector} .overlay.enabled`);
+          await commit(page);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
@@ -3728,11 +3512,7 @@ describe("FreeText Editor", () => {
             visible: true,
           });
           await page.type(`${getEditorSelector(1)} .internal`, newData);
-
-          await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(1)} .overlay.enabled`
-          );
+          await commit(page);
           await waitForSerialized(page, 1);
           await page.waitForSelector("#editorUndoBar", { hidden: true });
         })
