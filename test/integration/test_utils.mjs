@@ -229,18 +229,6 @@ function getAnnotationSelector(id) {
   return `[data-annotation-id="${id}"]`;
 }
 
-function getSelectedEditors(page) {
-  return page.evaluate(() => {
-    const elements = document.querySelectorAll(".selectedEditor");
-    const results = [];
-    for (const { id } of elements) {
-      results.push(parseInt(id.split("_").at(-1)));
-    }
-    results.sort();
-    return results;
-  });
-}
-
 async function getSpanRectFromText(page, pageNumber, text) {
   await page.waitForSelector(
     `.page[data-page-number="${pageNumber}"] > .textLayer .endOfContent`
@@ -479,8 +467,9 @@ function getEditors(page, kind) {
     const elements = document.querySelectorAll(`.${aKind}Editor`);
     const results = [];
     for (const { id } of elements) {
-      results.push(id);
+      results.push(parseInt(id.split("_").at(-1)));
     }
+    results.sort();
     return results;
   }, kind);
 }
@@ -853,7 +842,6 @@ export {
   getFirstSerialized,
   getQuerySelector,
   getRect,
-  getSelectedEditors,
   getSelector,
   getSerialized,
   getSpanRectFromText,
