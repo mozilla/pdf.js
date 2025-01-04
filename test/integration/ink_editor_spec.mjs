@@ -22,7 +22,6 @@ import {
   getEditors,
   getEditorSelector,
   getRect,
-  getSelectedEditors,
   getSerialized,
   isCanvasWhite,
   kbRedo,
@@ -101,7 +100,7 @@ describe("Ink Editor", () => {
           await kbUndo(page);
           await waitForStorageEntries(page, 3);
 
-          expect(await getSelectedEditors(page))
+          expect(await getEditors(page, "selected"))
             .withContext(`In ${browserName}`)
             .toEqual([]);
         })
@@ -180,7 +179,7 @@ describe("Ink Editor", () => {
 
           await selectAll(page);
 
-          expect(await getSelectedEditors(page))
+          expect(await getEditors(page, "selected"))
             .withContext(`In ${browserName}`)
             .toEqual([0]);
         })
@@ -487,7 +486,7 @@ describe("Ink Editor", () => {
             await page.mouse.move(xStart, yStart);
             await page.mouse.down();
             if (i === 1) {
-              expect(await getSelectedEditors(page))
+              expect(await getEditors(page, "selected"))
                 .withContext(`In ${browserName}`)
                 .toEqual([]);
             }
