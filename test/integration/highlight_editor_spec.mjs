@@ -38,6 +38,7 @@ import {
   waitForSelectedEditor,
   waitForSerialized,
   waitForTimeout,
+  waitForUnselectedEditor,
 } from "./test_utils.mjs";
 import { fileURLToPath } from "url";
 import fs from "fs";
@@ -1044,9 +1045,7 @@ describe("Highlight Editor", () => {
           await page.mouse.click(x, y, { count: 2, delay: 100 });
           await page.waitForSelector(`${getEditorSelector(0)}`);
           await page.keyboard.press("Escape");
-          await page.waitForSelector(
-            `${getEditorSelector(0)}:not(.selectedEditor)`
-          );
+          await waitForUnselectedEditor(page, getEditorSelector(0));
 
           await setCaretAt(
             page,
@@ -1797,7 +1796,7 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
           await page.keyboard.press("Escape");
-          await page.waitForSelector(`${editorSelector}:not(.selectedEditor)`);
+          await waitForUnselectedEditor(page, editorSelector);
 
           const clickHandle = await waitForPointerUp(page);
           y = rect.y - rect.height;
@@ -1868,7 +1867,7 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
           await page.keyboard.press("Escape");
-          await page.waitForSelector(`${editorSelector}:not(.selectedEditor)`);
+          await waitForUnselectedEditor(page, editorSelector);
 
           const clickHandle = await waitForPointerUp(page);
           y = rect.y - 3 * rect.height;
