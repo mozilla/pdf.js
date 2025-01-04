@@ -20,6 +20,7 @@ import {
   info,
   InvalidPDFException,
   isArrayEqual,
+  objectSize,
   PageActionEventType,
   RenderingIntentFlag,
   shadow,
@@ -1775,6 +1776,13 @@ class PDFDocument {
     if (!(field instanceof Dict)) {
       return;
     }
+    let subtype = await field.getAsync("Subtype");
+    subtype = subtype instanceof Name ? subtype.name : null;
+    // Skip unrelated annotation types (see issue 19281).
+    switch (subtype) {
+      case "Link":
+        return;
+    }
     if (field.has("T")) {
       const partName = stringToPDFString(await field.getAsync("T"));
       name = name === "" ? partName : `${name}.${partName}`;
@@ -1890,9 +1898,12 @@ class PDFDocument {
             })
           );
         }
-
         await Promise.all(allPromises);
-        return { allFields, orphanFields };
+
+        return {
+          allFields: objectSize(allFields) > 0 ? allFields : null,
+          orphanFields,
+        };
       });
 
     return shadow(this, "fieldObjects", promise);
@@ -1915,7 +1926,7 @@ class PDFDocument {
     if (catalogJsActions) {
       return true;
     }
-    if (fieldObjects) {
+    if (fieldObjects?.allFields) {
       return Object.values(fieldObjects.allFields).some(fieldObject =>
         fieldObject.some(object => object.actions !== null)
       );

@@ -1713,6 +1713,20 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("gets fieldObjects and skipping LinkAnnotations", async function () {
+      if (isNodeJS) {
+        pending("Linked test-cases are not supported in Node.js.");
+      }
+
+      const loadingTask = getDocument(buildGetDocumentParams("issue19281.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const fieldObjects = await pdfDoc.getFieldObjects();
+
+      expect(fieldObjects).toEqual(null);
+
+      await loadingTask.destroy();
+    });
+
     it("gets non-existent calculationOrder", async function () {
       const calculationOrder = await pdfDocument.getCalculationOrderIds();
       expect(calculationOrder).toEqual(null);
