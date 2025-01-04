@@ -1133,8 +1133,7 @@ class PartialEvaluator {
     // This array holds the converted/processed state data.
     const gStateObj = [];
     let promise = Promise.resolve();
-    for (const key of gState.getKeys()) {
-      const value = gState.get(key);
+    for (const [key, value] of gState) {
       switch (key) {
         case "Type":
           break;
