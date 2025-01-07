@@ -17,7 +17,6 @@
   --color-accent-primary: #0060df;
   --color-accent-primary-hover: #0250bb;
   --color-accent-primary-active: #054096;
-  --border-interactive-color: #8f8f9d;
   --border-radius-circle: 9999px;
   --border-width: 1px;
   --size-item-small: 16px;
@@ -32,7 +31,6 @@
     --color-accent-primary: #0df;
     --color-accent-primary-hover: #80ebff;
     --color-accent-primary-active: #aaf2ff;
-    --border-interactive-color: #bfbfc9;
     --color-canvas: #1c1b22;
     --border-color-interactive: #f9f9fa;
   }
@@ -41,11 +39,7 @@
     --color-accent-primary: ButtonText;
     --color-accent-primary-hover: SelectedItem;
     --color-accent-primary-active: SelectedItem;
-    --border-interactive-color: ButtonText;
     --button-background-color: ButtonFace;
-    --border-interactive-color-hover: SelectedItem;
-    --border-interactive-color-active: SelectedItem;
-    --border-interactive-color-disabled: GrayText;
     --border-color-interactive: ButtonText;
     --border-color-interactive-hover: SelectedItem;
     --border-color-interactive-active: ButtonText;
