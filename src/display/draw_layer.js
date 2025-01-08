@@ -24,11 +24,11 @@ import { shadow } from "../shared/util.js";
 class DrawLayer {
   #parent = null;
 
-  #id = 0;
-
   #mapping = new Map();
 
   #toUpdate = new Map();
+
+  static #id = 0;
 
   constructor({ pageIndex }) {
     this.pageIndex = pageIndex;
@@ -96,7 +96,7 @@ class DrawLayer {
   }
 
   draw(properties, isPathUpdatable = false, hasClip = false) {
-    const id = this.#id++;
+    const id = DrawLayer.#id++;
     const root = this.#createSVG();
 
     const defs = DrawLayer._svgFactory.createElement("defs");
@@ -129,7 +129,7 @@ class DrawLayer {
     // it composes with its parent with mix-blend-mode: multiply.
     // But the outline has a different mix-blend-mode, so we need to draw it in
     // its own SVG.
-    const id = this.#id++;
+    const id = DrawLayer.#id++;
     const root = this.#createSVG();
     const defs = DrawLayer._svgFactory.createElement("defs");
     root.append(defs);
