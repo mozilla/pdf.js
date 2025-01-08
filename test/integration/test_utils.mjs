@@ -511,14 +511,14 @@ async function serializeBitmapDimensions(page) {
   });
 }
 
-async function dragAndDrop(page, selector, translations) {
+async function dragAndDrop(page, selector, translations, steps = 1) {
   const rect = await getRect(page, selector);
   const startX = rect.x + rect.width / 2;
   const startY = rect.y + rect.height / 2;
   await page.mouse.move(startX, startY);
   await page.mouse.down();
   for (const [tX, tY] of translations) {
-    await page.mouse.move(startX + tX, startY + tY);
+    await page.mouse.move(startX + tX, startY + tY, { steps });
   }
   await page.mouse.up();
   await page.waitForSelector("#viewer:not(.noUserSelect)");

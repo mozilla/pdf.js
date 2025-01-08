@@ -1015,4 +1015,73 @@ describe("Ink Editor", () => {
       );
     });
   });
+
+  describe("Draw annotations on several page, move one of them and delete it", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        10
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the first annotation is correctly associated with its SVG", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToInk(page);
+
+          for (let i = 0; i < 2; i++) {
+            const pageSelector = `.page[data-page-number = "${i + 1}"]`;
+            const rect = await getRect(
+              page,
+              `${pageSelector} .annotationEditorLayer`
+            );
+            const xStart = rect.x + 10;
+            const yStart = rect.y + 10;
+            const clickHandle = await waitForPointerUp(page);
+            await page.mouse.move(xStart, yStart);
+            await page.mouse.down();
+            await page.mouse.move(xStart + 10, yStart + 10);
+            await page.mouse.up();
+            await awaitPromise(clickHandle);
+            await commit(page);
+          }
+
+          const pageOneSelector = `.page[data-page-number = "1"]`;
+          const initialRect = await getRect(page, `${pageOneSelector} svg`);
+
+          let editorSelector = getEditorSelector(1);
+          await waitForSelectedEditor(page, editorSelector);
+          await dragAndDrop(page, editorSelector, [[0, -30]], /* steps = */ 10);
+          await waitForSerialized(page, 2);
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
+          await waitForSerialized(page, 1);
+          await page.click("#editorUndoBarUndoButton");
+          await page.waitForSelector("#editorUndoBar", { hidden: true });
+
+          editorSelector = getEditorSelector(0);
+          const editorRect = await getRect(page, editorSelector);
+          await page.mouse.click(
+            editorRect.x + editorRect.width / 2,
+            editorRect.y + editorRect.height / 2
+          );
+          await waitForSelectedEditor(page, editorSelector);
+
+          await dragAndDrop(page, editorSelector, [[30, 30]], /* steps = */ 10);
+          const finalRect = await getRect(page, `${pageOneSelector} svg`);
+
+          expect(initialRect)
+            .withContext(`In ${browserName}`)
+            .not.toEqual(finalRect);
+        })
+      );
+    });
+  });
 });
