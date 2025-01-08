@@ -313,8 +313,8 @@ class MeshShadingPattern extends BaseShadingPattern {
     this._colors = IR[3];
     this._figures = IR[4];
     this._bounds = IR[5];
-    this._bbox = IR[7];
-    this._background = IR[8];
+    this._bbox = IR[6];
+    this._background = IR[7];
     this.matrix = null;
   }
 
