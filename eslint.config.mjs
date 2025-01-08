@@ -353,15 +353,6 @@ export default [
     },
   },
   {
-    files: jsFiles("test/fuzz"),
-    rules: {
-      "import/no-unresolved": [
-        "error",
-        { ignore: [".*/build/image_decoders/.*"] },
-      ],
-    },
-  },
-  {
     files: jsFiles("test/unit"),
     rules: {
       "import/no-unresolved": ["error", { ignore: ["pdfjs/"] }],

@@ -7,7 +7,6 @@
     "@babel/runtime": "^7.26.0",
     "@fluent/bundle": "^0.18.0",
     "@fluent/dom": "^0.10.0",
-    "@jazzer.js/core": "^2.1.0",
     "@metalsmith/layouts": "^2.7.0",
     "@metalsmith/markdown": "^1.10.0",
     "@napi-rs/canvas": "^0.1.65",
