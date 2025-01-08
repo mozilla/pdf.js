@@ -10079,6 +10079,13 @@
     "type": "eq"
   },
   {
+    "id": "issue18816",
+    "file": "pdfs/issue18816.pdf",
+    "md5": "45f863f5b227f700ffea1210e4f80403",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "issue17794",
     "file": "pdfs/issue17794.pdf",
     "md5": "a66b5b938cb44ae241cad845cc3b5d2d",
