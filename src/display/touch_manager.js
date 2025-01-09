@@ -31,6 +31,8 @@ class TouchManager {
 
   #onPinchEnd;
 
+  #pointerDownAC = null;
+
   #signal;
 
   #touchInfo = null;
@@ -78,7 +80,41 @@ class TouchManager {
   }
 
   #onTouchStart(evt) {
-    if (this.#isPinchingDisabled?.() || evt.touches.length < 2) {
+    if (this.#isPinchingDisabled?.()) {
+      return;
+    }
+
+    if (evt.touches.length === 1) {
+      if (this.#pointerDownAC) {
+        return;
+      }
+      const pointerDownAC = (this.#pointerDownAC = new AbortController());
+      const signal = AbortSignal.any([this.#signal, pointerDownAC.signal]);
+      const container = this.#container;
+
+      // We want to have the events at the capture phase to make sure we can
+      // cancel them.
+      const opts = { capture: true, signal, passive: false };
+      const cancelPointerDown = e => {
+        if (e.pointerType === "touch") {
+          this.#pointerDownAC?.abort();
+          this.#pointerDownAC = null;
+        }
+      };
+      container.addEventListener(
+        "pointerdown",
+        e => {
+          if (e.pointerType === "touch") {
+            // This is the second finger so we don't want it select something
+            // or whatever.
+            stopEvent(e);
+            cancelPointerDown(e);
+          }
+        },
+        opts
+      );
+      container.addEventListener("pointerup", cancelPointerDown, opts);
+      container.addEventListener("pointercancel", cancelPointerDown, opts);
       return;
     }
 
@@ -86,18 +122,22 @@ class TouchManager {
       this.#touchMoveAC = new AbortController();
       const signal = AbortSignal.any([this.#signal, this.#touchMoveAC.signal]);
       const container = this.#container;
-      const opt = { signal, passive: false };
+
+      const opt = { signal, capture: false, passive: false };
       container.addEventListener(
         "touchmove",
         this.#onTouchMove.bind(this),
         opt
       );
-      container.addEventListener("touchend", this.#onTouchEnd.bind(this), opt);
-      container.addEventListener(
-        "touchcancel",
-        this.#onTouchEnd.bind(this),
-        opt
-      );
+      const onTouchEnd = this.#onTouchEnd.bind(this);
+      container.addEventListener("touchend", onTouchEnd, opt);
+      container.addEventListener("touchcancel", onTouchEnd, opt);
+
+      opt.capture = true;
+      container.addEventListener("pointerdown", stopEvent, opt);
+      container.addEventListener("pointermove", stopEvent, opt);
+      container.addEventListener("pointercancel", stopEvent, opt);
+      container.addEventListener("pointerup", stopEvent, opt);
       this.#onPinchStart?.();
     }
 
@@ -124,6 +164,8 @@ class TouchManager {
     if (!this.#touchInfo || evt.touches.length !== 2) {
       return;
     }
+
+    stopEvent(evt);
 
     let [touch0, touch1] = evt.touches;
     if (touch0.identifier > touch1.identifier) {
@@ -158,8 +200,6 @@ class TouchManager {
     touchInfo.touch1X = screen1X;
     touchInfo.touch1Y = screen1Y;
 
-    evt.preventDefault();
-
     if (!this.#isPinching) {
       // Start pinching.
       this.#isPinching = true;
@@ -173,6 +213,9 @@ class TouchManager {
   }
 
   #onTouchEnd(evt) {
+    if (evt.touches.length >= 2) {
+      return;
+    }
     this.#touchMoveAC.abort();
     this.#touchMoveAC = null;
     this.#onPinchEnd?.();
@@ -180,8 +223,7 @@ class TouchManager {
     if (!this.#touchInfo) {
       return;
     }
-
-    evt.preventDefault();
+    stopEvent(evt);
     this.#touchInfo = null;
     this.#isPinching = false;
   }
@@ -189,6 +231,8 @@ class TouchManager {
   destroy() {
     this.#touchManagerAC?.abort();
     this.#touchManagerAC = null;
+    this.#pointerDownAC?.abort();
+    this.#pointerDownAC = null;
   }
 }
 
