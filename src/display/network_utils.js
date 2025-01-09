@@ -16,6 +16,7 @@
 import {
   assert,
   MissingPDFException,
+  PasswordException,
   UnexpectedResponseException,
 } from "../shared/util.js";
 import { getFilenameFromContentDispositionHeader } from "./content_disposition.js";
@@ -86,6 +87,8 @@ function extractFilenameFromHeader(getResponseHeader) {
 function createResponseStatusError(status, url) {
   if (status === 404 || (status === 0 && url.startsWith("file:"))) {
     return new MissingPDFException('Missing PDF "' + url + '".');
+  } else if (status === 403) {
+    return new PasswordException("Document is password protected", "");
   }
   return new UnexpectedResponseException(
     `Unexpected server response (${status}) while retrieving PDF "${url}".`,
