@@ -30,6 +30,7 @@ import { AnnotationEditor } from "./editor.js";
 import { FreeTextEditor } from "./freetext.js";
 import { HighlightEditor } from "./highlight.js";
 import { InkEditor } from "./ink.js";
+import { RectEditor } from "./rect.js";
 import { setLayerDimensions } from "../display_utils.js";
 import { StampEditor } from "./stamp.js";
 
@@ -89,10 +90,9 @@ class AnnotationEditorLayer {
   static _initialized = false;
 
   static #editorTypes = new Map(
-    [FreeTextEditor, InkEditor, StampEditor, HighlightEditor].map(type => [
-      type._editorType,
-      type,
-    ])
+    [FreeTextEditor, InkEditor, RectEditor, StampEditor, HighlightEditor].map(
+      type => [type._editorType, type]
+    )
   );
 
   /**
@@ -164,6 +164,11 @@ class AnnotationEditorLayer {
         this.disableClick();
         return;
       case AnnotationEditorType.INK:
+        this.disableTextSelection();
+        this.togglePointerEvents(true);
+        this.enableClick();
+        break;
+      case AnnotationEditorType.RECT:
         this.disableTextSelection();
         this.togglePointerEvents(true);
         this.enableClick();
@@ -745,6 +750,11 @@ class AnnotationEditorLayer {
       return;
     }
     this.#hadPointerDown = false;
+
+    if (this.#uiManager.getMode() === AnnotationEditorType.RECT) {
+      this.commitOrRemove();
+      return;
+    }
 
     if (
       this.#currentEditorType?.isDrawer &&

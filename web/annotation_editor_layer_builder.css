@@ -162,7 +162,7 @@
   box-sizing: border-box;
 }
 
-.annotationEditorLayer :is(.freeTextEditor, .inkEditor, .stampEditor) {
+.annotationEditorLayer :is(.freeTextEditor, .inkEditor, .stampEditor, .rectEditor) {
   position: absolute;
   background: transparent;
   z-index: 1;
@@ -220,7 +220,7 @@
 }
 
 .annotationEditorLayer
-  :is(.freeTextEditor, .inkEditor, .stampEditor, .highlightEditor),
+  :is(.freeTextEditor, .inkEditor, .stampEditor, .highlightEditor, .rectEditor),
 .textLayer {
   .editToolbar {
     --editor-toolbar-delete-image: url(images/editor-toolbar-delete.svg);
@@ -563,6 +563,23 @@
   touch-action: none;
 }
 
+.annotationEditorLayer .rectEditor {
+  width: 100%;
+  height: 100%;
+}
+
+.annotationEditorLayer .rectEditor.editing {
+  cursor: inherit;
+}
+
+.annotationEditorLayer .rectEditor .rectEditorCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
 .annotationEditorLayer .stampEditor {
   width: auto;
   height: auto;
@@ -622,7 +639,7 @@
 }
 
 .annotationEditorLayer {
-  :is(.freeTextEditor, .inkEditor, .stampEditor) {
+  :is(.freeTextEditor, .inkEditor, .stampEditor, .rectEditor) {
     & > .resizers {
       position: absolute;
       inset: 0;

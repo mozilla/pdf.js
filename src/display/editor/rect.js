@@ -1,0 +1,287 @@
+/* Copyright 2022 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import {
+  AnnotationEditorParamsType,
+  AnnotationEditorType,
+  shadow,
+  Util,
+} from "../../shared/util.js";
+import { DrawingEditor, DrawingOptions } from "./draw.js";
+import { RectDrawOutline, RectDrawOutliner } from "./drawers/rectdraw.js";
+import { AnnotationEditor } from "./editor.js";
+import { RectAnnotationElement } from "../annotation_layer.js";
+
+class RectDrawingOptions extends DrawingOptions {
+  #viewParameters;
+
+  constructor(viewerParameters) {
+    super();
+    this.#viewParameters = viewerParameters;
+
+    super.updateProperties({
+      fill: "none",
+      stroke: AnnotationEditor._defaultLineColor,
+      "stroke-opacity": 1,
+      "stroke-width": 1,
+      "stroke-linecap": "round",
+      "stroke-linejoin": "round",
+      "stroke-miterlimit": 10,
+    });
+  }
+
+  updateSVGProperty(name, value) {
+    if (name === "stroke-width") {
+      value ??= this["stroke-width"];
+      value *= this.#viewParameters.realScale;
+    }
+    super.updateSVGProperty(name, value);
+  }
+
+  clone() {
+    const clone = new RectDrawingOptions(this.#viewParameters);
+    clone.updateAll(this);
+    return clone;
+  }
+}
+
+/**
+ * Basic draw editor in order to generate an Ink annotation.
+ */
+class RectEditor extends DrawingEditor {
+  static _type = "rect";
+
+  static _editorType = AnnotationEditorType.RECT;
+
+  static _defaultDrawingOptions = null;
+
+  constructor(params) {
+    super({ ...params, name: "rectEditor" });
+    this._willKeepAspectRatio = false;
+  }
+
+  /** @inheritdoc */
+  static initialize(l10n, uiManager) {
+    AnnotationEditor.initialize(l10n, uiManager);
+    this._defaultDrawingOptions = new RectDrawingOptions(
+      uiManager.viewParameters
+    );
+  }
+
+  /** @inheritdoc */
+  static getDefaultDrawingOptions(options) {
+    const clone = this._defaultDrawingOptions.clone();
+    clone.updateProperties(options);
+    return clone;
+  }
+
+  /** @inheritdoc */
+  static get supportMultipleDrawings() {
+    return true;
+  }
+
+  /** @inheritdoc */
+  static get typesMap() {
+    return shadow(
+      this,
+      "typesMap",
+      new Map([
+        [AnnotationEditorParamsType.RECT_THICKNESS, "stroke-width"],
+        [AnnotationEditorParamsType.RECT_COLOR, "stroke"],
+        [AnnotationEditorParamsType.RECT_OPACITY, "stroke-opacity"],
+      ])
+    );
+  }
+
+  /** @inheritdoc */
+  static createDrawerInstance(x, y, parentWidth, parentHeight, rotation) {
+    return new RectDrawOutliner(
+      x,
+      y,
+      parentWidth,
+      parentHeight,
+      rotation,
+      this._defaultDrawingOptions["stroke-width"]
+    );
+  }
+
+  /** @inheritdoc */
+  static deserializeDraw(
+    pageX,
+    pageY,
+    pageWidth,
+    pageHeight,
+    innerMargin,
+    data
+  ) {
+    return RectDrawOutline.deserialize(
+      pageX,
+      pageY,
+      pageWidth,
+      pageHeight,
+      innerMargin,
+      data
+    );
+  }
+
+  /** @inheritdoc */
+  static async deserialize(data, parent, uiManager) {
+    let initialData = null;
+    if (data instanceof RectAnnotationElement) {
+      const {
+        data: {
+          inkLists,
+          rect,
+          rotation,
+          id,
+          color,
+          opacity,
+          borderStyle: { rawWidth: thickness },
+          popupRef,
+        },
+        parent: {
+          page: { pageNumber },
+        },
+      } = data;
+      initialData = data = {
+        annotationType: AnnotationEditorType.RECT,
+        color: Array.from(color),
+        thickness,
+        opacity,
+        paths: { points: inkLists },
+        boxes: null,
+        pageIndex: pageNumber - 1,
+        rect: rect.slice(0),
+        rotation,
+        id,
+        deleted: false,
+        popupRef,
+      };
+    }
+
+    const editor = await super.deserialize(data, parent, uiManager);
+    editor.annotationElementId = data.id || null;
+    editor._initialData = initialData;
+
+    return editor;
+  }
+
+  /** @inheritdoc */
+  onScaleChanging() {
+    if (!this.parent) {
+      return;
+    }
+    super.onScaleChanging();
+    const { _drawId, _drawingOptions, parent } = this;
+    _drawingOptions.updateSVGProperty("stroke-width");
+    parent.drawLayer.updateProperties(
+      _drawId,
+      _drawingOptions.toSVGProperties()
+    );
+  }
+
+  static onScaleChangingWhenDrawing() {
+    const parent = this._currentParent;
+    if (!parent) {
+      return;
+    }
+    super.onScaleChangingWhenDrawing();
+    this._defaultDrawingOptions.updateSVGProperty("stroke-width");
+    parent.drawLayer.updateProperties(
+      this._currentDrawId,
+      this._defaultDrawingOptions.toSVGProperties()
+    );
+  }
+
+  /** @inheritdoc */
+  createDrawingOptions({ color, thickness, opacity }) {
+    this._drawingOptions = RectEditor.getDefaultDrawingOptions({
+      stroke: Util.makeHexColor(...color),
+      "stroke-width": thickness,
+      "stroke-opacity": opacity,
+    });
+  }
+
+  /** @inheritdoc */
+  serialize(isForCopying = false) {
+    if (this.isEmpty()) {
+      return null;
+    }
+
+    if (this.deleted) {
+      return this.serializeDeleted();
+    }
+
+    const { lines, points, rect } = this.serializeDraw(isForCopying);
+    const {
+      _drawingOptions: {
+        stroke,
+        "stroke-opacity": opacity,
+        "stroke-width": thickness,
+      },
+    } = this;
+    const serialized = {
+      annotationType: AnnotationEditorType.RECT,
+      color: AnnotationEditor._colorManager.convert(stroke),
+      opacity,
+      thickness,
+      paths: {
+        lines,
+        points,
+      },
+      pageIndex: this.pageIndex,
+      rect,
+      rotation: this.rotation,
+      structTreeParentId: this._structTreeParentId,
+    };
+
+    if (isForCopying) {
+      return serialized;
+    }
+
+    if (this.annotationElementId && !this.#hasElementChanged(serialized)) {
+      return null;
+    }
+
+    serialized.id = this.annotationElementId;
+    return serialized;
+  }
+
+  #hasElementChanged(serialized) {
+    const { color, thickness, opacity, pageIndex } = this._initialData;
+    return (
+      this._hasBeenMoved ||
+      this._hasBeenResized ||
+      serialized.color.some((c, i) => c !== color[i]) ||
+      serialized.thickness !== thickness ||
+      serialized.opacity !== opacity ||
+      serialized.pageIndex !== pageIndex
+    );
+  }
+
+  /** @inheritdoc */
+  renderAnnotationElement(annotation) {
+    const { points, rect } = this.serializeDraw(/* isForCopying = */ false);
+    annotation.updateEdited({
+      rect,
+      thickness: this._drawingOptions["stroke-width"],
+      points,
+    });
+
+    return null;
+  }
+}
+
+export { RectEditor };

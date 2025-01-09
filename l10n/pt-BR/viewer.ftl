@@ -305,7 +305,10 @@ pdfjs-editor-free-text-button =
 pdfjs-editor-free-text-button-label = Texto
 pdfjs-editor-ink-button =
     .title = Desenho
+pdfjs-editor-rect-button =
+    .title = Retângulo
 pdfjs-editor-ink-button-label = Desenho
+pdfjs-editor-rect-button-label = Retângulo
 pdfjs-editor-stamp-button =
     .title = Adicionar ou editar imagens
 pdfjs-editor-stamp-button-label = Adicionar ou editar imagens
@@ -321,6 +324,8 @@ pdfjs-highlight-floating-button-label = Destaque
 
 pdfjs-editor-remove-ink-button =
     .title = Remover desenho
+pdfjs-editor-remove-rect-button =
+    .title = Remover retângulo
 pdfjs-editor-remove-freetext-button =
     .title = Remover texto
 pdfjs-editor-remove-stamp-button =
@@ -334,8 +339,11 @@ pdfjs-editor-remove-highlight-button =
 pdfjs-editor-free-text-color-input = Cor
 pdfjs-editor-free-text-size-input = Tamanho
 pdfjs-editor-ink-color-input = Cor
+pdfjs-editor-rect-color-input = Cor
 pdfjs-editor-ink-thickness-input = Espessura
+pdfjs-editor-rect-thickness-input = Espessura
 pdfjs-editor-ink-opacity-input = Opacidade
+pdfjs-editor-rect-opacity-input = Opacidade
 pdfjs-editor-stamp-add-image-button =
     .title = Adicionar imagem
 pdfjs-editor-stamp-add-image-button-label = Adicionar imagem
@@ -354,6 +362,10 @@ pdfjs-ink =
     .aria-label = Editor de desenho
 pdfjs-ink-canvas =
     .aria-label = Imagem criada pelo usuário
+pdfjs-rect =
+    .aria-label = Editor de Retângulo
+pdfjs-rect-canvas =
+    .aria-label = Retângulo criada pelo usuário
 
 ## Alt-text dialog
 
@@ -499,6 +511,7 @@ pdfjs-editor-alt-text-settings-close-button = Fechar
 pdfjs-editor-undo-bar-message-highlight = Destaque removido
 pdfjs-editor-undo-bar-message-freetext = Texto removido
 pdfjs-editor-undo-bar-message-ink = Desenho removido
+pdfjs-editor-undo-bar-message-rect = Retângulo removido
 pdfjs-editor-undo-bar-message-stamp = Imagem removida
 # Variables:
 #   $count (Number) - the number of removed annotations.

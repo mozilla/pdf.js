@@ -39,6 +39,7 @@ class EditorUndoBar {
     freetext: "pdfjs-editor-undo-bar-message-freetext",
     stamp: "pdfjs-editor-undo-bar-message-stamp",
     ink: "pdfjs-editor-undo-bar-message-ink",
+    rect: "pdfjs-editor-undo-bar-message-rect",
     _multiple: "pdfjs-editor-undo-bar-message-multiple",
   });
 

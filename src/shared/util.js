@@ -76,6 +76,7 @@ const AnnotationEditorType = {
   NONE: 0,
   FREETEXT: 3,
   HIGHLIGHT: 9,
+  RECT: 30,
   STAMP: 13,
   INK: 15,
 };
@@ -89,6 +90,9 @@ const AnnotationEditorParamsType = {
   INK_COLOR: 21,
   INK_THICKNESS: 22,
   INK_OPACITY: 23,
+  RECT_COLOR: 51,
+  RECT_THICKNESS: 52,
+  RECT_OPACITY: 53,
   HIGHLIGHT_COLOR: 31,
   HIGHLIGHT_DEFAULT_COLOR: 32,
   HIGHLIGHT_THICKNESS: 33,
@@ -155,6 +159,7 @@ const AnnotationType = {
   WATERMARK: 24,
   THREED: 25,
   REDACT: 26,
+  RECT: 30,
 };
 
 const AnnotationReplyType = {

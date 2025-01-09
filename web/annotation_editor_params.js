@@ -48,6 +48,9 @@ class AnnotationEditorParams {
     editorInkColor,
     editorInkThickness,
     editorInkOpacity,
+    editorRectColor,
+    editorRectThickness,
+    editorRectOpacity,
     editorStampAddImage,
     editorFreeHighlightThickness,
     editorHighlightShowAll,
@@ -73,6 +76,15 @@ class AnnotationEditorParams {
     });
     editorInkOpacity.addEventListener("input", function () {
       dispatchEvent("INK_OPACITY", this.valueAsNumber);
+    });
+    editorRectColor.addEventListener("input", function () {
+      dispatchEvent("RECT_COLOR", this.value);
+    });
+    editorRectThickness.addEventListener("input", function () {
+      dispatchEvent("RECT_THICKNESS", this.valueAsNumber);
+    });
+    editorRectOpacity.addEventListener("input", function () {
+      dispatchEvent("RECT_OPACITY", this.valueAsNumber);
     });
     editorStampAddImage.addEventListener("click", () => {
       this.eventBus.dispatch("reporttelemetry", {
@@ -110,6 +122,15 @@ class AnnotationEditorParams {
             break;
           case AnnotationEditorParamsType.INK_OPACITY:
             editorInkOpacity.value = value;
+            break;
+          case AnnotationEditorParamsType.RECT_COLOR:
+            editorRectColor.value = value;
+            break;
+          case AnnotationEditorParamsType.RECT_THICKNESS:
+            editorRectThickness.value = value;
+            break;
+          case AnnotationEditorParamsType.RECT_OPACITY:
+            editorRectOpacity.value = value;
             break;
           case AnnotationEditorParamsType.HIGHLIGHT_THICKNESS:
             editorFreeHighlightThickness.value = value;

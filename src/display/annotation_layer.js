@@ -129,6 +129,9 @@ class AnnotationElementFactory {
       case AnnotationType.INK:
         return new InkAnnotationElement(parameters);
 
+      case AnnotationType.RECT:
+        return new RectAnnotationElement(parameters);
+
       case AnnotationType.POLYGON:
         return new PolygonAnnotationElement(parameters);
 
@@ -2920,6 +2923,135 @@ class InkAnnotationElement extends AnnotationElement {
   }
 }
 
+class RectAnnotationElement extends AnnotationElement {
+  #polylinesGroupElement = null;
+
+  #polylines = [];
+
+  constructor(parameters) {
+    super(parameters, { isRenderable: true, ignoreBorder: true });
+
+    this.containerClassName = "inkAnnotation";
+
+    // Use the polyline SVG element since it allows us to use coordinates
+    // directly and to draw both straight lines and curves.
+    this.svgElementName = "svg:polyline";
+
+    this.annotationEditorType =
+      this.data.it === "InkHighlight"
+        ? AnnotationEditorType.HIGHLIGHT
+        : AnnotationEditorType.INK;
+  }
+
+  #getTransform(rotation, rect) {
+    // PDF coordinates are calculated from a bottom left origin, so
+    // transform the polyline coordinates to a top left origin for the
+    // SVG element.
+    switch (rotation) {
+      case 90:
+        return {
+          transform: `rotate(90) translate(${-rect[0]},${rect[1]}) scale(1,-1)`,
+          width: rect[3] - rect[1],
+          height: rect[2] - rect[0],
+        };
+      case 180:
+        return {
+          transform: `rotate(180) translate(${-rect[2]},${rect[1]}) scale(1,-1)`,
+          width: rect[2] - rect[0],
+          height: rect[3] - rect[1],
+        };
+      case 270:
+        return {
+          transform: `rotate(270) translate(${-rect[2]},${rect[3]}) scale(1,-1)`,
+          width: rect[3] - rect[1],
+          height: rect[2] - rect[0],
+        };
+      default:
+        return {
+          transform: `translate(${-rect[0]},${rect[3]}) scale(1,-1)`,
+          width: rect[2] - rect[0],
+          height: rect[3] - rect[1],
+        };
+    }
+  }
+
+  render() {
+    this.container.classList.add(this.containerClassName);
+
+    // Create an invisible polyline with the same points that acts as the
+    // trigger for the popup.
+    const {
+      data: { rect, rotation, inkLists, borderStyle, popupRef },
+    } = this;
+    const { transform, width, height } = this.#getTransform(rotation, rect);
+
+    const svg = this.svgFactory.create(
+      width,
+      height,
+      /* skipDimensions = */ true
+    );
+    const g = (this.#polylinesGroupElement =
+      this.svgFactory.createElement("svg:g"));
+    svg.append(g);
+    // Ensure that the 'stroke-width' is always non-zero, since otherwise it
+    // won't be possible to open/close the popup (note e.g. issue 11122).
+    g.setAttribute("stroke-width", borderStyle.width || 1);
+    g.setAttribute("stroke-linecap", "round");
+    g.setAttribute("stroke-linejoin", "round");
+    g.setAttribute("stroke-miterlimit", 10);
+    g.setAttribute("stroke", "transparent");
+    g.setAttribute("fill", "transparent");
+    g.setAttribute("transform", transform);
+
+    for (let i = 0, ii = inkLists.length; i < ii; i++) {
+      const polyline = this.svgFactory.createElement(this.svgElementName);
+      this.#polylines.push(polyline);
+      polyline.setAttribute("points", inkLists[i].join(","));
+      g.append(polyline);
+    }
+
+    if (!popupRef && this.hasPopupData) {
+      this._createPopup();
+    }
+
+    this.container.append(svg);
+    this._editOnDoubleClick();
+
+    return this.container;
+  }
+
+  updateEdited(params) {
+    super.updateEdited(params);
+    const { thickness, points, rect } = params;
+    const g = this.#polylinesGroupElement;
+    if (thickness >= 0) {
+      g.setAttribute("stroke-width", thickness || 1);
+    }
+    if (points) {
+      for (let i = 0, ii = this.#polylines.length; i < ii; i++) {
+        this.#polylines[i].setAttribute("points", points[i].join(","));
+      }
+    }
+    if (rect) {
+      const { transform, width, height } = this.#getTransform(
+        this.data.rotation,
+        rect
+      );
+      const root = g.parentElement;
+      root.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      g.setAttribute("transform", transform);
+    }
+  }
+
+  getElementsToTriggerPopup() {
+    return this.#polylines;
+  }
+
+  addHighlightArea() {
+    this.container.classList.add("highlightArea");
+  }
+}
+
 class HighlightAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     super(parameters, {
@@ -3319,5 +3451,6 @@ export {
   FreeTextAnnotationElement,
   HighlightAnnotationElement,
   InkAnnotationElement,
+  RectAnnotationElement,
   StampAnnotationElement,
 };

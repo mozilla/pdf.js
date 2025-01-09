@@ -239,6 +239,9 @@ class AnnotationFactory {
       case "Ink":
         return new InkAnnotation(parameters);
 
+      case "Rect":
+        return new RectAnnotation(parameters);
+
       case "Highlight":
         return new HighlightAnnotation(parameters);
 
@@ -383,6 +386,11 @@ class AnnotationFactory {
         case AnnotationEditorType.INK:
           promises.push(
             InkAnnotation.createNewAnnotation(xref, annotation, changes)
+          );
+          break;
+        case AnnotationEditorType.RECT:
+          promises.push(
+            RectAnnotation.createNewAnnotation(xref, annotation, changes)
           );
           break;
         case AnnotationEditorType.STAMP:
@@ -4640,6 +4648,131 @@ class InkAnnotation extends MarkupAnnotation {
     ap.dict = appearanceStreamDict;
 
     return ap;
+  }
+}
+
+class RectAnnotation extends MarkupAnnotation {
+  constructor(params) {
+    super(params);
+
+    this.data.hasOwnCanvas = this.data.noRotate;
+    this.data.noHTML = false;
+
+    const { dict, xref } = params;
+    this.data.annotationType = AnnotationType.INK;
+    this.data.inkLists = [];
+    this.data.isEditable = !this.data.noHTML;
+    // We want to be able to add mouse listeners to the annotation.
+    this.data.noHTML = false;
+    this.data.opacity = dict.get("CA") || 1;
+
+    const rawInkLists = dict.getArray("InkList");
+    if (!Array.isArray(rawInkLists)) {
+      return;
+    }
+    for (let i = 0, ii = rawInkLists.length; i < ii; ++i) {
+      // The raw ink lists array contains arrays of numbers representing
+      // the alternating horizontal and vertical coordinates, respectively,
+      // of each vertex. Convert this to an array of objects with x and y
+      // coordinates.
+      if (!Array.isArray(rawInkLists[i])) {
+        continue;
+      }
+      const inkList = new Float32Array(rawInkLists[i].length);
+      this.data.inkLists.push(inkList);
+      for (let j = 0, jj = rawInkLists[i].length; j < jj; j += 2) {
+        const x = xref.fetchIfRef(rawInkLists[i][j]),
+          y = xref.fetchIfRef(rawInkLists[i][j + 1]);
+        if (typeof x === "number" && typeof y === "number") {
+          inkList[j] = x;
+          inkList[j + 1] = y;
+        }
+      }
+    }
+
+    if (!this.appearance) {
+      // The default stroke color is black.
+      const strokeColor = this.color ? getPdfColorArray(this.color) : [0, 0, 0];
+      const strokeAlpha = dict.get("CA");
+
+      const borderWidth = this.borderStyle.width || 1,
+        borderAdjust = 2 * borderWidth;
+
+      // If the /Rect-entry is empty/wrong, create a fallback rectangle so that
+      // we get similar rendering/highlighting behaviour as in Adobe Reader.
+      const bbox = [Infinity, Infinity, -Infinity, -Infinity];
+      for (const inkList of this.data.inkLists) {
+        for (let i = 0, ii = inkList.length; i < ii; i += 2) {
+          bbox[0] = Math.min(bbox[0], inkList[i] - borderAdjust);
+          bbox[1] = Math.min(bbox[1], inkList[i + 1] - borderAdjust);
+          bbox[2] = Math.max(bbox[2], inkList[i] + borderAdjust);
+          bbox[3] = Math.max(bbox[3], inkList[i + 1] + borderAdjust);
+        }
+      }
+      if (!Util.intersect(this.rectangle, bbox)) {
+        this.rectangle = bbox;
+      }
+
+      this._setDefaultAppearance({
+        xref,
+        extra: `${borderWidth} w`,
+        strokeColor,
+        strokeAlpha,
+        pointsCallback: (buffer, points) => {
+          // According to the specification, see "12.5.6.13 Ink Annotations":
+          //   When drawn, the points shall be connected by straight lines or
+          //   curves in an implementation-dependent way.
+          // In order to simplify things, we utilize straight lines for now.
+          for (const inkList of this.data.inkLists) {
+            for (let i = 0, ii = inkList.length; i < ii; i += 2) {
+              buffer.push(
+                `${inkList[i]} ${inkList[i + 1]} ${i === 0 ? "m" : "l"}`
+              );
+            }
+            buffer.push("S");
+          }
+          return [points[0], points[2], points[7], points[3]];
+        },
+      });
+    }
+  }
+
+  static createNewDict(annotation, xref, { apRef, ap }) {
+    const { color, opacity, rect, rotation, thickness } = annotation;
+    const ink = new Dict(xref);
+    ink.set("Type", Name.get("Annot"));
+    ink.set("Subtype", Name.get("Square"));
+    ink.set("CreationDate", `D:${getModificationDate()}`);
+    ink.set("Rect", rect);
+    ink.set("F", 4);
+    ink.set("Rotate", rotation);
+
+    // Line thickness.
+
+    // Color.
+    ink.set(
+      "C",
+      Array.from(color, c => c / 255)
+    );
+
+    ink.set("Border", [0, 0, thickness]);
+    ink.set(
+      "BC",
+      Array.from(color, c => c / 255)
+    );
+
+    // Opacity.
+    ink.set("CA", opacity);
+
+    return ink;
+  }
+
+  static async createNewAppearanceStream(annotation, xref, params) {
+    return null;
+  }
+
+  static async createNewAppearanceStreamForHighlight(annotation, xref, params) {
+    return null;
   }
 }
 
