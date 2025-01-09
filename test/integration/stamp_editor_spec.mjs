@@ -1745,4 +1745,73 @@ describe("Stamp Editor", () => {
       );
     });
   });
+
+  describe("Switch to edit mode a pdf with an existing stamp annotation on an invisible and rendered page", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue19239.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must move on the second page", async () => {
+      await Promise.all(
+        pages.map(async ([, page]) => {
+          const pageOneSelector = `.page[data-page-number = "1"]`;
+          const pageTwoSelector = `.page[data-page-number = "2"]`;
+          await scrollIntoView(page, pageTwoSelector);
+          await page.waitForSelector(pageOneSelector, {
+            visible: false,
+          });
+
+          await switchToStamp(page);
+          await scrollIntoView(page, pageOneSelector);
+          await page.waitForSelector(
+            `${pageOneSelector} .annotationEditorLayer canvas`,
+            { visible: true }
+          );
+        })
+      );
+    });
+  });
+
+  describe("Switch to edit mode a pdf with an existing stamp annotation on an invisible and unrendered page", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue19239.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must move on the last page", async () => {
+      await Promise.all(
+        pages.map(async ([, page]) => {
+          const twoToFourteen = Array.from(new Array(13).keys(), n => n + 2);
+          for (const pageNumber of twoToFourteen) {
+            const pageSelector = `.page[data-page-number = "${pageNumber}"]`;
+            await scrollIntoView(page, pageSelector);
+          }
+
+          await switchToStamp(page);
+
+          const thirteenToOne = Array.from(new Array(13).keys(), n => 13 - n);
+          for (const pageNumber of thirteenToOne) {
+            const pageSelector = `.page[data-page-number = "${pageNumber}"]`;
+            await scrollIntoView(page, pageSelector);
+          }
+
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] .annotationEditorLayer canvas`,
+            { visible: true }
+          );
+        })
+      );
+    });
+  });
 });

@@ -40,6 +40,8 @@ class StampEditor extends AnnotationEditor {
 
   #canvas = null;
 
+  #missingCanvas = false;
+
   #resizeTimeoutId = null;
 
   #isSvg = false;
@@ -352,7 +354,8 @@ class StampEditor extends AnnotationEditor {
       this.#bitmap ||
       this.#bitmapUrl ||
       this.#bitmapFile ||
-      this.#bitmapId
+      this.#bitmapId ||
+      this.#missingCanvas
     );
   }
 
@@ -379,10 +382,12 @@ class StampEditor extends AnnotationEditor {
 
     this.addAltTextButton();
 
-    if (this.#bitmap) {
-      this.#createCanvas();
-    } else {
-      this.#getBitmap();
+    if (!this.#missingCanvas) {
+      if (this.#bitmap) {
+        this.#createCanvas();
+      } else {
+        this.#getBitmap();
+      }
     }
 
     if (this.width && !this.annotationElementId) {
@@ -399,6 +404,22 @@ class StampEditor extends AnnotationEditor {
     this._uiManager.addShouldRescale(this);
 
     return this.div;
+  }
+
+  setCanvas(annotationElementId, canvas) {
+    const { id: bitmapId, bitmap } = this._uiManager.imageManager.getFromCanvas(
+      annotationElementId,
+      canvas
+    );
+    canvas.remove();
+    if (bitmapId && this._uiManager.imageManager.isValidId(bitmapId)) {
+      this.#bitmapId = bitmapId;
+      if (bitmap) {
+        this.#bitmap = bitmap;
+      }
+      this.#missingCanvas = false;
+      this.#createCanvas();
+    }
   }
 
   /** @inheritdoc */
@@ -752,6 +773,7 @@ class StampEditor extends AnnotationEditor {
   /** @inheritdoc */
   static async deserialize(data, parent, uiManager) {
     let initialData = null;
+    let missingCanvas = false;
     if (data instanceof StampAnnotationElement) {
       const {
         data: { rect, rotation, id, structParent, popupRef },
@@ -759,13 +781,20 @@ class StampEditor extends AnnotationEditor {
         parent: {
           page: { pageNumber },
         },
+        canvas,
       } = data;
-      const canvas = container.querySelector("canvas");
-      const imageData = uiManager.imageManager.getFromCanvas(
-        container.id,
-        canvas
-      );
-      canvas.remove();
+      let bitmapId, bitmap;
+      if (canvas) {
+        delete data.canvas;
+        ({ id: bitmapId, bitmap } = uiManager.imageManager.getFromCanvas(
+          container.id,
+          canvas
+        ));
+        canvas.remove();
+      } else {
+        missingCanvas = true;
+        data._hasNoCanvas = true;
+      }
 
       // When switching to edit mode, we wait for the structure tree to be
       // ready (see pdf_viewer.js), so it's fine to use getAriaAttributesSync.
@@ -776,8 +805,8 @@ class StampEditor extends AnnotationEditor {
 
       initialData = data = {
         annotationType: AnnotationEditorType.STAMP,
-        bitmapId: imageData.id,
-        bitmap: imageData.bitmap,
+        bitmapId,
+        bitmap,
         pageIndex: pageNumber - 1,
         rect: rect.slice(0),
         rotation,
@@ -795,7 +824,10 @@ class StampEditor extends AnnotationEditor {
     const editor = await super.deserialize(data, parent, uiManager);
     const { rect, bitmap, bitmapUrl, bitmapId, isSvg, accessibilityData } =
       data;
-    if (bitmapId && uiManager.imageManager.isValidId(bitmapId)) {
+    if (missingCanvas) {
+      uiManager.addMissingCanvas(data.id, editor);
+      editor.#missingCanvas = true;
+    } else if (bitmapId && uiManager.imageManager.isValidId(bitmapId)) {
       editor.#bitmapId = bitmapId;
       if (bitmap) {
         editor.#bitmap = bitmap;
