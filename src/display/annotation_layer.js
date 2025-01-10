@@ -198,6 +198,13 @@ class AnnotationElement {
   }
 
   get _isEditable() {
+    if (
+      typeof PDFJSDev === "undefined"
+        ? window.isGECKOVIEW
+        : PDFJSDev.test("GECKOVIEW")
+    ) {
+      return false;
+    }
     return this.data.isEditable;
   }
 
