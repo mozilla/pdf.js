@@ -3301,6 +3301,22 @@ class AnnotationLayer {
       } else {
         firstChild.after(canvas);
       }
+
+      const editableAnnotation = this.#editableAnnotations.get(id);
+      if (!editableAnnotation) {
+        continue;
+      }
+      if (editableAnnotation._hasNoCanvas) {
+        // The canvas wasn't available when the annotation was created.
+        this._annotationEditorUIManager?.setMissingCanvas(
+          id,
+          element.id,
+          canvas
+        );
+        editableAnnotation._hasNoCanvas = false;
+      } else {
+        editableAnnotation.canvas = canvas;
+      }
     }
     this.#annotationCanvasMap.clear();
   }
