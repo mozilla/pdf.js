@@ -34,8 +34,6 @@ class RectDrawOutliner {
 
   #lastSVGPath = "";
 
-  #lastIndex = 0;
-
   #outlines = new RectDrawOutline();
 
   #parentWidth;
@@ -74,7 +72,7 @@ class RectDrawOutliner {
   }
 
   isEmpty() {
-    return !this.#lines || this.#lines.length === 0;
+    return !this.#points || this.#points.length < 4;
   }
 
   isCancellable() {
@@ -166,7 +164,6 @@ class RectDrawOutliner {
     }
     this.#lines.push({ line, points: this.#points });
     this.#last.set(line, 0);
-    this.#lastIndex = 0;
     this.toSVGPath();
 
     return null;
@@ -184,7 +181,6 @@ class RectDrawOutliner {
     this.#lines.push(element);
     this.#line = element.line;
     this.#points = element.points;
-    this.#lastIndex = 0;
     return {
       path: {
         d: this.toSVGPath(),
@@ -202,7 +198,6 @@ class RectDrawOutliner {
       const { line, points } = this.#lines[i];
       this.#line = line;
       this.#points = points;
-      this.#lastIndex = 0;
       this.toSVGPath();
     }
 
