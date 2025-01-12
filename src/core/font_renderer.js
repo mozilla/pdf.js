@@ -22,34 +22,21 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
+import {
+  isNumberArray,
+  readInt8,
+  readUint16,
+  readUint32,
+} from "./core_utils.js";
 import { CFFParser } from "./cff_parser.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
-import { isNumberArray } from "./core_utils.js";
 import { StandardEncoding } from "./encodings.js";
 import { Stream } from "./stream.js";
 
 // TODO: use DataView and its methods.
 
-function getUint32(data, offset) {
-  return (
-    ((data[offset] << 24) |
-      (data[offset + 1] << 16) |
-      (data[offset + 2] << 8) |
-      data[offset + 3]) >>>
-    0
-  );
-}
-
-function getUint16(data, offset) {
-  return (data[offset] << 8) | data[offset + 1];
-}
-
 function getInt16(data, offset) {
   return ((data[offset] << 24) | (data[offset + 1] << 16)) >> 16;
-}
-
-function getInt8(data, offset) {
-  return (data[offset] << 24) >> 24;
 }
 
 function getFloat214(data, offset) {
@@ -69,48 +56,48 @@ function getSubroutineBias(subrs) {
 
 function parseCmap(data, start, end) {
   const offset =
-    getUint16(data, start + 2) === 1
-      ? getUint32(data, start + 8)
-      : getUint32(data, start + 16);
-  const format = getUint16(data, start + offset);
+    readUint16(data, start + 2) === 1
+      ? readUint32(data, start + 8)
+      : readUint32(data, start + 16);
+  const format = readUint16(data, start + offset);
   let ranges, p, i;
   if (format === 4) {
-    getUint16(data, start + offset + 2); // length
-    const segCount = getUint16(data, start + offset + 6) >> 1;
+    readUint16(data, start + offset + 2); // length
+    const segCount = readUint16(data, start + offset + 6) >> 1;
     p = start + offset + 14;
     ranges = [];
     for (i = 0; i < segCount; i++, p += 2) {
-      ranges[i] = { end: getUint16(data, p) };
+      ranges[i] = { end: readUint16(data, p) };
     }
     p += 2;
     for (i = 0; i < segCount; i++, p += 2) {
-      ranges[i].start = getUint16(data, p);
+      ranges[i].start = readUint16(data, p);
     }
     for (i = 0; i < segCount; i++, p += 2) {
-      ranges[i].idDelta = getUint16(data, p);
+      ranges[i].idDelta = readUint16(data, p);
     }
     for (i = 0; i < segCount; i++, p += 2) {
-      let idOffset = getUint16(data, p);
+      let idOffset = readUint16(data, p);
       if (idOffset === 0) {
         continue;
       }
       ranges[i].ids = [];
       for (let j = 0, jj = ranges[i].end - ranges[i].start + 1; j < jj; j++) {
-        ranges[i].ids[j] = getUint16(data, p + idOffset);
+        ranges[i].ids[j] = readUint16(data, p + idOffset);
         idOffset += 2;
       }
     }
     return ranges;
   } else if (format === 12) {
-    const groups = getUint32(data, start + offset + 12);
+    const groups = readUint32(data, start + offset + 12);
     p = start + offset + 16;
     ranges = [];
     for (i = 0; i < groups; i++) {
-      start = getUint32(data, p);
+      start = readUint32(data, p);
       ranges.push({
         start,
-        end: getUint32(data, p + 4),
-        idDelta: getUint32(data, p + 8) - start,
+        end: readUint32(data, p + 4),
+        idDelta: readUint32(data, p + 8) - start,
       });
       p += 12;
     }
@@ -141,10 +128,10 @@ function parseGlyfTable(glyf, loca, isGlyphLocationsLong) {
   let itemSize, itemDecode;
   if (isGlyphLocationsLong) {
     itemSize = 4;
-    itemDecode = getUint32;
+    itemDecode = readUint32;
   } else {
     itemSize = 2;
-    itemDecode = (data, offset) => 2 * getUint16(data, offset);
+    itemDecode = (data, offset) => 2 * readUint16(data, offset);
   }
   const glyphs = [];
   let startOffset = itemDecode(loca, 0);
@@ -201,8 +188,8 @@ function compileGlyf(code, cmds, font) {
   if (numberOfContours < 0) {
     // composite glyph
     do {
-      flags = getUint16(code, i);
-      const glyphIndex = getUint16(code, i + 2);
+      flags = readUint16(code, i);
+      const glyphIndex = readUint16(code, i + 2);
       i += 4;
       let arg1, arg2;
       if (flags & 0x01) {
@@ -210,13 +197,13 @@ function compileGlyf(code, cmds, font) {
           arg1 = getInt16(code, i);
           arg2 = getInt16(code, i + 2);
         } else {
-          arg1 = getUint16(code, i);
-          arg2 = getUint16(code, i + 2);
+          arg1 = readUint16(code, i);
+          arg2 = readUint16(code, i + 2);
         }
         i += 4;
       } else if (flags & 0x02) {
-        arg1 = getInt8(code, i++);
-        arg2 = getInt8(code, i++);
+        arg1 = readInt8(code, i++);
+        arg2 = readInt8(code, i++);
       } else {
         arg1 = code[i++];
         arg2 = code[i++];
@@ -266,10 +253,10 @@ function compileGlyf(code, cmds, font) {
     const endPtsOfContours = [];
     let j, jj;
     for (j = 0; j < numberOfContours; j++) {
-      endPtsOfContours.push(getUint16(code, i));
+      endPtsOfContours.push(readUint16(code, i));
       i += 2;
     }
-    const instructionLength = getUint16(code, i);
+    const instructionLength = readUint16(code, i);
     i += 2 + instructionLength; // skipping the instructions
     const numberOfPoints = endPtsOfContours.at(-1) + 1;
     const points = [];
@@ -899,11 +886,11 @@ class FontRendererFactory {
   static create(font, seacAnalysisEnabled) {
     const data = new Uint8Array(font.data);
     let cmap, glyf, loca, cff, indexToLocFormat, unitsPerEm;
-    const numTables = getUint16(data, 4);
+    const numTables = readUint16(data, 4);
     for (let i = 0, p = 12; i < numTables; i++, p += 16) {
       const tag = bytesToString(data.subarray(p, p + 4));
-      const offset = getUint32(data, p + 8);
-      const length = getUint32(data, p + 12);
+      const offset = readUint32(data, p + 8);
+      const length = readUint32(data, p + 12);
       switch (tag) {
         case "cmap":
           cmap = parseCmap(data, offset, offset + length);
@@ -915,8 +902,8 @@ class FontRendererFactory {
           loca = data.subarray(offset, offset + length);
           break;
         case "head":
-          unitsPerEm = getUint16(data, offset + 18);
-          indexToLocFormat = getUint16(data, offset + 50);
+          unitsPerEm = readUint16(data, offset + 18);
+          indexToLocFormat = readUint16(data, offset + 50);
           break;
         case "CFF ":
           cff = parseCff(data, offset, offset + length, seacAnalysisEnabled);
