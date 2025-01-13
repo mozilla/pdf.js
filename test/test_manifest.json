@@ -11254,5 +11254,15 @@
     "rounds": 1,
     "link": true,
     "type": "other"
+  },
+  {
+    "id": "issue19319",
+    "file": "pdfs/issue19319.pdf",
+    "md5": "8612d3f0cf2dd067ea4aec9c8bf98763",
+    "rounds": 1,
+    "link": true,
+    "firstPage": 2,
+    "lastPage": 2,
+    "type": "eq"
   }
 ]
