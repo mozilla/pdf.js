@@ -1760,17 +1760,22 @@ class Font {
       mappings.sort(function (a, b) {
         return a.charCode - b.charCode;
       });
-      for (let i = 1; i < mappings.length; i++) {
-        if (mappings[i - 1].charCode === mappings[i].charCode) {
-          mappings.splice(i, 1);
-          i--;
+      const finalMappings = [],
+        seenCharCodes = new Set();
+      for (const map of mappings) {
+        const { charCode } = map;
+
+        if (seenCharCodes.has(charCode)) {
+          continue;
         }
+        seenCharCodes.add(charCode);
+        finalMappings.push(map);
       }
 
       return {
         platformId: potentialTable.platformId,
         encodingId: potentialTable.encodingId,
-        mappings,
+        mappings: finalMappings,
         hasShortCmap,
       };
     }
