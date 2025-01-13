@@ -1814,4 +1814,35 @@ describe("Stamp Editor", () => {
       );
     });
   });
+
+  describe("Switch to edit mode by double clicking on an existing stamp annotation", () => {
+    const annotationSelector = getAnnotationSelector("999R");
+
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue19239.pdf", annotationSelector);
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must switch to edit mode", async () => {
+      await Promise.all(
+        pages.map(async ([, page]) => {
+          await page.waitForSelector(annotationSelector);
+          await scrollIntoView(page, annotationSelector);
+
+          await page.click(annotationSelector, { count: 2 });
+
+          await page.waitForFunction(() =>
+            document
+              .querySelector(".annotationEditorLayer")
+              .classList.contains("stampEditing")
+          );
+        })
+      );
+    });
+  });
 });
