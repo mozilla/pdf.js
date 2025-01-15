@@ -24,20 +24,97 @@ class JpxError extends BaseException {
 }
 
 class JpxImage {
-  static #module = null;
+  static #buffer = null;
 
-  static decode(data, decoderOptions) {
-    decoderOptions ||= {};
-    this.#module ||= OpenJPEG({ warn });
-    const imageData = this.#module.decode(data, decoderOptions);
-    if (typeof imageData === "string") {
-      throw new JpxError(imageData);
+  static #handler = null;
+
+  static #instantiationFailed = false;
+
+  static #modulePromise = null;
+
+  static #wasmUrl = null;
+
+  static setOptions({ handler, wasmUrl }) {
+    if (!this.#buffer) {
+      this.#wasmUrl = wasmUrl || null;
+      if (wasmUrl === null) {
+        this.#handler = handler;
+      }
     }
-    return imageData;
+  }
+
+  static async #instantiateWasm(imports, successCallback) {
+    try {
+      if (!this.#buffer) {
+        if (this.#wasmUrl !== null) {
+          const response = await fetch(`${this.#wasmUrl}openjpeg.wasm`);
+          this.#buffer = await response.arrayBuffer();
+        } else {
+          this.#buffer = await this.#handler.sendWithPromise("FetchWasm", {
+            filename: "openjpeg.wasm",
+          });
+        }
+      }
+      const results = await WebAssembly.instantiate(this.#buffer, imports);
+      return successCallback(results.instance);
+    } catch (e) {
+      this.#instantiationFailed = true;
+      warn(`Cannot load openjpeg.wasm: "${e}".`);
+      return false;
+    } finally {
+      this.#handler = null;
+      this.#wasmUrl = null;
+    }
+  }
+
+  static async decode(
+    bytes,
+    { numComponents = 4, isIndexedColormap = false, smaskInData = false } = {}
+  ) {
+    if (this.#instantiationFailed) {
+      throw new JpxError("OpenJPEG failed to instantiate.");
+    }
+
+    this.#modulePromise ||= OpenJPEG({
+      warn,
+      instantiateWasm: this.#instantiateWasm.bind(this),
+    });
+
+    const module = await this.#modulePromise;
+    let ptr;
+
+    try {
+      const size = bytes.length;
+      ptr = module._malloc(size);
+      module.HEAPU8.set(bytes, ptr);
+      const ret = module._jp2_decode(
+        ptr,
+        size,
+        numComponents > 0 ? numComponents : 0,
+        !!isIndexedColormap,
+        !!smaskInData
+      );
+      if (ret) {
+        const { errorMessages } = module;
+        if (errorMessages) {
+          delete module.errorMessages;
+          throw new JpxError(errorMessages);
+        }
+        throw new JpxError("Unknown error");
+      }
+      const { imageData } = module;
+      module.imageData = null;
+
+      return imageData;
+    } finally {
+      if (ptr) {
+        module._free(ptr);
+      }
+    }
   }
 
   static cleanup() {
-    this.#module = null;
+    this.#modulePromise = null;
   }
 
   static parseImageProperties(stream) {

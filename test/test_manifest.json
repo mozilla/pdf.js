@@ -6372,6 +6372,14 @@
     "type": "eq"
   },
   {
+    "id": "issue19326_main_thread_fetch",
+    "file": "pdfs/issue19326.pdf",
+    "md5": "b4d937017daf439a6318501428e0c6ba",
+    "rounds": 1,
+    "type": "eq",
+    "useWorkerFetch": false
+  },
+  {
     "id": "bug1140761",
     "file": "pdfs/bug1140761.pdf",
     "md5": "b74eced7634d4f248dc6265f8225d432",

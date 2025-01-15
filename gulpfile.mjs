@@ -192,6 +192,7 @@ function createWebpackAlias(defines) {
   const libraryAlias = {
     "display-cmap_reader_factory": "src/display/stubs.js",
     "display-standard_fontdata_factory": "src/display/stubs.js",
+    "display-wasm_factory": "src/display/stubs.js",
     "display-fetch_stream": "src/display/stubs.js",
     "display-network": "src/display/stubs.js",
     "display-node_stream": "src/display/stubs.js",
@@ -224,6 +225,7 @@ function createWebpackAlias(defines) {
       "src/display/cmap_reader_factory.js";
     libraryAlias["display-standard_fontdata_factory"] =
       "src/display/standard_fontdata_factory.js";
+    libraryAlias["display-wasm_factory"] = "src/display/wasm_factory.js";
     libraryAlias["display-fetch_stream"] = "src/display/fetch_stream.js";
     libraryAlias["display-network"] = "src/display/network.js";
 
@@ -240,6 +242,7 @@ function createWebpackAlias(defines) {
       "src/display/cmap_reader_factory.js";
     libraryAlias["display-standard_fontdata_factory"] =
       "src/display/standard_fontdata_factory.js";
+    libraryAlias["display-wasm_factory"] = "src/display/wasm_factory.js";
     libraryAlias["display-fetch_stream"] = "src/display/fetch_stream.js";
     libraryAlias["display-network"] = "src/display/network.js";
     libraryAlias["display-node_stream"] = "src/display/node_stream.js";
@@ -644,6 +647,13 @@ function createStandardFontBundle() {
       encoding: false,
     }
   );
+}
+
+function createWasmBundle() {
+  return gulp.src(["external/openjpeg/openjpeg.wasm"], {
+    base: "external/openjpeg",
+    encoding: false,
+  });
 }
 
 function checkFile(filePath) {
@@ -1068,6 +1078,7 @@ function buildGeneric(defines, dir) {
       .pipe(gulp.dest(dir + "web")),
     createCMapBundle().pipe(gulp.dest(dir + "web/cmaps")),
     createStandardFontBundle().pipe(gulp.dest(dir + "web/standard_fonts")),
+    createWasmBundle().pipe(gulp.dest(dir + "web/wasm")),
 
     preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
     preprocessCSS("web/viewer.css", defines)
@@ -1398,6 +1409,7 @@ gulp.task(
         createStandardFontBundle().pipe(
           gulp.dest(MOZCENTRAL_CONTENT_DIR + "web/standard_fonts")
         ),
+        createWasmBundle().pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web/wasm")),
 
         preprocessHTML("web/viewer.html", defines).pipe(
           gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")
@@ -1500,6 +1512,9 @@ gulp.task(
         createStandardFontBundle().pipe(
           gulp.dest(CHROME_BUILD_CONTENT_DIR + "web/standard_fonts")
         ),
+        createWasmBundle().pipe(
+          gulp.dest(CHROME_BUILD_CONTENT_DIR + "web/wasm")
+        ),
 
         preprocessHTML("web/viewer.html", defines).pipe(
           gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")
@@ -1586,6 +1601,7 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
       "pdfjs-lib": "../pdf.js",
       "display-cmap_reader_factory": "./cmap_reader_factory.js",
       "display-standard_fontdata_factory": "./standard_fontdata_factory.js",
+      "display-wasm_factory": "./wasm_factory.js",
       "display-fetch_stream": "./fetch_stream.js",
       "display-network": "./network.js",
       "display-node_stream": "./node_stream.js",

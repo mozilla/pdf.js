@@ -14,6 +14,7 @@
       "display-standard_fontdata_factory": [
         "./src/display/standard_fontdata_factory"
       ],
+      "display-wasm_factory": ["./src/display/wasm_factory"],
       "display-fetch_stream": ["./src/display/fetch_stream"],
       "display-network": ["./src/display/network"],
       "display-node_stream": ["./src/display/node_stream"],

@@ -64,6 +64,10 @@ class BaseStream {
     return false;
   }
 
+  get isAsyncDecoder() {
+    return false;
+  }
+
   get canAsyncDecodeImageFromBuffer() {
     return false;
   }

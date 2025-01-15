@@ -14,10 +14,12 @@
  */
 
 const DOMCMapReaderFactory = null;
+const DOMWasmFactory = null;
 const DOMStandardFontDataFactory = null;
 const NodeCanvasFactory = null;
 const NodeCMapReaderFactory = null;
 const NodeFilterFactory = null;
+const NodeWasmFactory = null;
 const NodeStandardFontDataFactory = null;
 const PDFFetchStream = null;
 const PDFNetworkStream = null;
@@ -26,10 +28,12 @@ const PDFNodeStream = null;
 export {
   DOMCMapReaderFactory,
   DOMStandardFontDataFactory,
+  DOMWasmFactory,
   NodeCanvasFactory,
   NodeCMapReaderFactory,
   NodeFilterFactory,
   NodeStandardFontDataFactory,
+  NodeWasmFactory,
   PDFFetchStream,
   PDFNetworkStream,
   PDFNodeStream,

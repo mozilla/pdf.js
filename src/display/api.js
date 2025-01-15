@@ -52,12 +52,14 @@ import {
   NodeCMapReaderFactory,
   NodeFilterFactory,
   NodeStandardFontDataFactory,
+  NodeWasmFactory,
 } from "display-node_utils";
 import { CanvasGraphics } from "./canvas.js";
 import { DOMCanvasFactory } from "./canvas_factory.js";
 import { DOMCMapReaderFactory } from "display-cmap_reader_factory";
 import { DOMFilterFactory } from "./filter_factory.js";
 import { DOMStandardFontDataFactory } from "display-standard_fontdata_factory";
+import { DOMWasmFactory } from "display-wasm_factory";
 import { GlobalWorkerOptions } from "./worker_options.js";
 import { Metadata } from "./metadata.js";
 import { OptionalContentConfig } from "./optional_content_config.js";
@@ -88,6 +90,10 @@ const DefaultStandardFontDataFactory =
   typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
     ? NodeStandardFontDataFactory
     : DOMStandardFontDataFactory;
+const DefaultWasmFactory =
+  typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
+    ? NodeWasmFactory
+    : DOMWasmFactory;
 
 /**
  * @typedef { Int8Array | Uint8Array | Uint8ClampedArray |
@@ -153,6 +159,12 @@ const DefaultStandardFontDataFactory =
  *   when reading the standard font files. Providing a custom factory is useful
  *   for environments without Fetch API or `XMLHttpRequest` support, such as
  *   Node.js. The default value is {DOMStandardFontDataFactory}.
+ * @property {string} [wasmUrl] - The URL where the wasm files are located.
+ *   Include the trailing slash.
+ * @property {Object} [WasmFactory] - The factory that will be used
+ *   when reading the wasm files. Providing a custom factory is useful
+ *   for environments without Fetch API or `XMLHttpRequest` support, such as
+ *   Node.js. The default value is {DOMWasmFactory}.
  * @property {boolean} [useWorkerFetch] - Enable using the Fetch API in the
  *   worker-thread when reading CMap and standard font files. When `true`,
  *   the `CMapReaderFactory` and `StandardFontDataFactory` options are ignored.
@@ -280,6 +292,8 @@ function getDocument(src = {}) {
       : null;
   const StandardFontDataFactory =
     src.StandardFontDataFactory || DefaultStandardFontDataFactory;
+  const wasmUrl = typeof src.wasmUrl === "string" ? src.wasmUrl : null;
+  const WasmFactory = src.WasmFactory || DefaultWasmFactory;
   const ignoreErrors = src.stopAtErrors !== true;
   const maxImageSize =
     Number.isInteger(src.maxImageSize) && src.maxImageSize > -1
@@ -328,10 +342,13 @@ function getDocument(src = {}) {
       : (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
         (CMapReaderFactory === DOMCMapReaderFactory &&
           StandardFontDataFactory === DOMStandardFontDataFactory &&
+          WasmFactory === DOMWasmFactory &&
           cMapUrl &&
           standardFontDataUrl &&
+          wasmUrl &&
           isValidFetchUrl(cMapUrl, document.baseURI) &&
-          isValidFetchUrl(standardFontDataUrl, document.baseURI));
+          isValidFetchUrl(standardFontDataUrl, document.baseURI) &&
+          isValidFetchUrl(wasmUrl, document.baseURI));
 
   // Parameters only intended for development/testing purposes.
   const styleElement =
@@ -357,6 +374,11 @@ function getDocument(src = {}) {
       useWorkerFetch
         ? null
         : new StandardFontDataFactory({ baseUrl: standardFontDataUrl }),
+    wasmFactory:
+      (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+      useWorkerFetch
+        ? null
+        : new WasmFactory({ baseUrl: wasmUrl }),
   };
 
   if (!worker) {
@@ -397,6 +419,7 @@ function getDocument(src = {}) {
       useSystemFonts,
       cMapUrl: useWorkerFetch ? cMapUrl : null,
       standardFontDataUrl: useWorkerFetch ? standardFontDataUrl : null,
+      wasmUrl: useWorkerFetch ? wasmUrl : null,
     },
   };
   const transportParams = {
@@ -2423,6 +2446,7 @@ class WorkerTransport {
     this.filterFactory = factory.filterFactory;
     this.cMapReaderFactory = factory.cMapReaderFactory;
     this.standardFontDataFactory = factory.standardFontDataFactory;
+    this.wasmFactory = factory.wasmFactory;
 
     this.destroyed = false;
     this.destroyCapability = null;
@@ -2917,6 +2941,21 @@ class WorkerTransport {
         );
       }
       return this.standardFontDataFactory.fetch(data);
+    });
+
+    messageHandler.on("FetchWasm", async data => {
+      if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+        throw new Error("Not implemented: FetchWasm");
+      }
+      if (this.destroyed) {
+        throw new Error("Worker was destroyed.");
+      }
+      if (!this.wasmFactory) {
+        throw new Error(
+          "WasmFactory not initialized, see the `useWorkerFetch` parameter."
+        );
+      }
+      return this.wasmFactory.fetch(data);
     });
   }
 
@@ -3501,6 +3540,7 @@ export {
   DefaultCMapReaderFactory,
   DefaultFilterFactory,
   DefaultStandardFontDataFactory,
+  DefaultWasmFactory,
   getDocument,
   LoopbackPort,
   PDFDataRangeTransport,
