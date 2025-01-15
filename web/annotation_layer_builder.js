@@ -25,7 +25,7 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/editor/tools.js").AnnotationEditorUIManager} AnnotationEditorUIManager */
 
-import { AnnotationLayer } from "pdfjs-lib";
+import { AnnotationLayer, Util } from "pdfjs-lib";
 import { PresentationModeState } from "./ui_utils.js";
 
 /**
@@ -97,7 +97,7 @@ class AnnotationLayerBuilder {
    * @returns {Promise<void>} A promise that is resolved when rendering of the
    *   annotations is complete.
    */
-  async render(viewport, options, intent = "display") {
+  async render(viewport, options, intent = "display", linkAnnotations) {
     if (this.div) {
       if (this._cancelled || !this.annotationLayer) {
         return;
@@ -118,6 +118,24 @@ class AnnotationLayerBuilder {
     if (this._cancelled) {
       return;
     }
+
+    const uniqueLinks = linkAnnotations.filter(link => {
+      for (const annotation of annotations) {
+        const area = rect =>
+          Math.abs(rect[2] - rect[0]) * Math.abs(rect[3] - rect[1]);
+        const intersect = Util.intersect(annotation.rect, link.rect); // Find the intersection between the annotation and the link.
+        if (
+          annotation.subtype === "Link" &&
+          annotation.url === link.url &&
+          intersect !== null &&
+          area(intersect) / area(link.rect) > 0.5 // If the overlap is more than 50%.
+        ) {
+          return false;
+        }
+      }
+      return true;
+    });
+    annotations.push(...uniqueLinks);
 
     // Create an annotation layer div and render the annotations
     // if there is at least one annotation.

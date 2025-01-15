@@ -28,6 +28,7 @@ async function runTests(results) {
     spec_files: [
       "accessibility_spec.mjs",
       "annotation_spec.mjs",
+      "autolinker_spec.mjs",
       "caret_browsing_spec.mjs",
       "copy_paste_spec.mjs",
       "find_spec.mjs",
