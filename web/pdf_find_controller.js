@@ -117,10 +117,12 @@ function normalize(text) {
     }
   }
 
+  const hasSyllables = syllablePositions.length > 0;
+
   let normalizationRegex;
-  if (syllablePositions.length === 0 && noSyllablesRegExp) {
+  if (!hasSyllables && noSyllablesRegExp) {
     normalizationRegex = noSyllablesRegExp;
-  } else if (syllablePositions.length > 0 && withSyllablesRegExp) {
+  } else if (hasSyllables && withSyllablesRegExp) {
     normalizationRegex = withSyllablesRegExp;
   } else {
     // Compile the regular expression for text normalization once.
@@ -131,22 +133,33 @@ function normalize(text) {
     // 30A0-30FF: Katakana
     const CJK = "(?:\\p{Ideographic}|[\u3040-\u30FF])";
     const HKDiacritics = "(?:\u3099|\u309A)";
-    const CompoundWord = "\\p{Ll}-\\n\\p{Lu}";
-    const regexp = `([${replace}])|([${toNormalizeWithNFKC}])|(${HKDiacritics}\\n)|(\\p{M}+(?:-\\n)?)|(${CompoundWord})|(\\S-\\n)|(${CJK}\\n)|(\\n)`;
+    const BrokenWord = `\\p{Ll}-\\n(?=\\p{Ll})|\\p{Lu}-\\n(?=\\p{L})`;
 
-    if (syllablePositions.length === 0) {
-      // Most of the syllables belong to Hangul so there are no need
-      // to search for them in a non-Hangul document.
-      // We use the \0 in order to have the same number of groups.
-      normalizationRegex = noSyllablesRegExp = new RegExp(
-        regexp + "|(\\u0000)",
-        "gum"
-      );
+    const regexps = [
+      /* p1 */ `[${replace}]`,
+      /* p2 */ `[${toNormalizeWithNFKC}]`,
+      /* p3 */ `${HKDiacritics}\\n`,
+      /* p4 */ "\\p{M}+(?:-\\n)?",
+      /* p5 */ `${BrokenWord}`,
+      /* p6 */ "\\S-\\n",
+      /* p7 */ `${CJK}\\n`,
+      /* p8 */ "\\n",
+      /* p9 */ hasSyllables
+        ? FIRST_CHAR_SYLLABLES_REG_EXP
+        : // Most of the syllables belong to Hangul so there are no need
+          // to search for them in a non-Hangul document.
+          // We use the \0 in order to have the same number of groups.
+          "\\u0000",
+    ];
+    normalizationRegex = new RegExp(
+      regexps.map(r => `(${r})`).join("|"),
+      "gum"
+    );
+
+    if (hasSyllables) {
+      withSyllablesRegExp = normalizationRegex;
     } else {
-      normalizationRegex = withSyllablesRegExp = new RegExp(
-        regexp + `|(${FIRST_CHAR_SYLLABLES_REG_EXP})`,
-        "gum"
-      );
+      noSyllablesRegExp = normalizationRegex;
     }
   }
 
@@ -281,26 +294,27 @@ function normalize(text) {
       }
 
       if (p5) {
-        // Compound word with a line break after the hyphen.
-        // Since the \n isn't in the original text, o = 3 and n = 3.
-        shiftOrigin += 1;
-        eol += 1;
-        return p5.replace("\n", "");
-      }
-
-      if (p6) {
-        // "X-\n" is removed because an hyphen at the end of a line
-        // with not a space before is likely here to mark a break
-        // in a word.
+        // In "X-\ny", "-\n" is removed because an hyphen at the end of a line
+        // between two letters is likely here to mark a break in a word.
         // If X is encoded with UTF-32 then it can have a length greater than 1.
         // The \n isn't in the original text so here y = i, n = X.len - 2 and
         // o = X.len - 1.
-        const len = p6.length - 2;
+        const len = p5.length - 2;
         positions.push(i - shift + len, 1 + shift);
         shift += 1;
         shiftOrigin += 1;
         eol += 1;
-        return p6.slice(0, -2);
+        return p5.slice(0, -2);
+      }
+
+      if (p6) {
+        // A - following a non-space character that is not detected as the
+        // hyphen breaking a word in two lines needs to be preserved. It could
+        // be, for example, in a compound word or in a date.
+        // Only remove the newline.
+        shiftOrigin += 1;
+        eol += 1;
+        return p6.slice(0, -1);
       }
 
       if (p7) {
@@ -324,7 +338,7 @@ function normalize(text) {
         return " ";
       }
 
-      // p8
+      // p9
       if (i + eol === syllablePositions[syllableIndex]?.[1]) {
         // A syllable (1 char) is replaced with several chars (n) so
         // newCharsLen = n - 1.
