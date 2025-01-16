@@ -28,6 +28,8 @@ const STANDARD_FONT_DATA_URL = isNodeJS
   ? "./external/standard_fonts/"
   : "../../external/standard_fonts/";
 
+const WASM_URL = isNodeJS ? "./external/openjpeg/" : "../../external/openjpeg/";
+
 class DefaultFileReaderFactory {
   static async fetch(params) {
     if (isNodeJS) {
@@ -44,6 +46,7 @@ function buildGetDocumentParams(filename, options) {
     ? TEST_PDFS_PATH + filename
     : new URL(TEST_PDFS_PATH + filename, window.location).href;
   params.standardFontDataUrl = STANDARD_FONT_DATA_URL;
+  params.wasmUrl = WASM_URL;
 
   for (const option in options) {
     params[option] = options[option];

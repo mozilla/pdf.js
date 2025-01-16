@@ -72,6 +72,7 @@ import { getMetrics } from "./metrics.js";
 import { getUnicodeForGlyph } from "./unicode.js";
 import { ImageResizer } from "./image_resizer.js";
 import { JpegStream } from "./jpeg_stream.js";
+import { JpxImage } from "./jpx.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
@@ -89,6 +90,7 @@ const DefaultPartialEvaluatorOptions = Object.freeze({
   useSystemFonts: true,
   cMapUrl: null,
   standardFontDataUrl: null,
+  wasmUrl: null,
 });
 
 const PatternType = {
@@ -236,6 +238,10 @@ class PartialEvaluator {
 
     ImageResizer.setOptions(this.options);
     JpegStream.setOptions(this.options);
+    JpxImage.setOptions({
+      wasmUrl: this.options.wasmUrl,
+      handler,
+    });
   }
 
   /**
