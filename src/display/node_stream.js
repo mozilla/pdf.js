@@ -14,7 +14,8 @@
  */
 /* globals process */
 
-import { AbortException, assert, MissingPDFException } from "../shared/util.js";
+import { AbortException, assert } from "../shared/util.js";
+import { createResponseError } from "./network_utils.js";
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
@@ -111,7 +112,7 @@ class PDFNodeStreamFsFullReader {
       },
       error => {
         if (error.code === "ENOENT") {
-          error = new MissingPDFException(`Missing PDF "${this._url}".`);
+          error = createResponseError(/* status = */ 0, this._url.href);
         }
         this._storedError = error;
         this._headersCapability.reject(error);
