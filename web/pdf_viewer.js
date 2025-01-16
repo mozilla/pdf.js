@@ -241,6 +241,8 @@ class PDFViewer {
 
   #mlManager = null;
 
+  #scrollTimeoutId = null;
+
   #switchAnnotationEditorModeAC = null;
 
   #switchAnnotationEditorModeTimeoutId = null;
@@ -1241,6 +1243,15 @@ class PDFViewer {
     if (this.pagesCount === 0) {
       return;
     }
+
+    if (this.#scrollTimeoutId) {
+      clearTimeout(this.#scrollTimeoutId);
+    }
+    this.#scrollTimeoutId = setTimeout(() => {
+      this.#scrollTimeoutId = null;
+      this.update();
+    }, 100);
+
     this.update();
   }
 
@@ -1851,11 +1862,21 @@ class PDFViewer {
       this._spreadMode !== SpreadMode.NONE &&
       this._scrollMode !== ScrollMode.HORIZONTAL;
 
+    // If we are scrolling and the rendering of a detail view was just
+    // cancelled, it's because the user is scrolling too quickly and so
+    // we constantly need to re-render a different area.
+    // Don't attempt to re-render it: this will be done once the user
+    // stops scrolling.
+    const ignoreDetailViews =
+      this.#scrollTimeoutId !== null &&
+      visiblePages.views.some(page => page.detailView?.renderingCancelled);
+
     const pageView = this.renderingQueue.getHighestPriority(
       visiblePages,
       this._pages,
       scrollAhead,
-      preRenderExtra
+      preRenderExtra,
+      ignoreDetailViews
     );
 
     if (pageView) {
@@ -2448,6 +2469,10 @@ class PDFViewer {
     if (this.#scaleTimeoutId !== null) {
       clearTimeout(this.#scaleTimeoutId);
       this.#scaleTimeoutId = null;
+    }
+    if (this.#scrollTimeoutId !== null) {
+      clearTimeout(this.#scrollTimeoutId);
+      this.#scrollTimeoutId = null;
     }
     if (!noUpdate) {
       this.update();
