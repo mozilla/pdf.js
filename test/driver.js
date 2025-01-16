@@ -31,6 +31,7 @@ const { GenericL10n, parseQueryString, SimpleLinkService } = pdfjsViewer;
 const WAITING_TIME = 100; // ms
 const CMAP_URL = "/build/generic/web/cmaps/";
 const STANDARD_FONT_DATA_URL = "/build/generic/web/standard_fonts/";
+const WASM_URL = "/build/generic/web/wasm/";
 const IMAGE_RESOURCES_PATH = "/web/images/";
 const VIEWER_CSS = "../build/components/pdf_viewer.css";
 const VIEWER_LOCALE = "en-US";
@@ -631,6 +632,7 @@ class Driver {
           password: task.password,
           cMapUrl: CMAP_URL,
           standardFontDataUrl: STANDARD_FONT_DATA_URL,
+          wasmUrl: WASM_URL,
           disableAutoFetch: !task.enableAutoFetch,
           pdfBug: true,
           useSystemFonts: task.useSystemFonts,
