@@ -292,7 +292,9 @@ class PDFThumbnailViewer {
     const thumbView = this.renderingQueue.getHighestPriority(
       visibleThumbs,
       this._thumbnails,
-      scrollAhead
+      scrollAhead,
+      /* preRenderExtra */ false,
+      /* ignoreDetailViews */ true
     );
     if (thumbView) {
       this.#ensurePdfPageLoaded(thumbView).then(() => {

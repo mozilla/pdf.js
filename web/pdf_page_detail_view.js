@@ -24,6 +24,14 @@ import { RenderingStates } from "./ui_utils.js";
 class PDFPageDetailView extends BasePDFPageView {
   #detailArea = null;
 
+  /**
+   * @type {boolean} True when the last rendering attempt of the view was
+   *                 cancelled due to a `.reset()` call. This will happen when
+   *                 the visible area changes so much during the rendering that
+   *                 we need to cancel the rendering and start over.
+   */
+  renderingCancelled = false;
+
   constructor({ pageView }) {
     super(pageView);
 
@@ -41,9 +49,23 @@ class PDFPageDetailView extends BasePDFPageView {
     return this.pageView.pdfPage;
   }
 
+  get renderingState() {
+    return super.renderingState;
+  }
+
+  set renderingState(value) {
+    this.renderingCancelled = false;
+    super.renderingState = value;
+  }
+
   reset({ keepCanvas = false } = {}) {
+    const renderingCancelled =
+      this.renderingCancelled ||
+      this.renderingState === RenderingStates.RUNNING ||
+      this.renderingState === RenderingStates.PAUSED;
     this.cancelRendering();
     this.renderingState = RenderingStates.INITIAL;
+    this.renderingCancelled = renderingCancelled;
 
     if (!keepCanvas) {
       this._resetCanvas();
