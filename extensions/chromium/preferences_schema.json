@@ -71,6 +71,10 @@
       "type": "string",
       "default": ""
     },
+    "enableSignatureEditor": {
+      "type": "boolean",
+      "default": false
+    },
     "enableUpdatedAddImage": {
       "type": "boolean",
       "default": false
