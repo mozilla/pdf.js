@@ -952,6 +952,8 @@ async function startBrowser({
       "browser.newtabpage.enabled": false,
       // Disable network connections to Contile.
       "browser.topsites.contile.enabled": false,
+      // Disable logging for remote settings.
+      "services.settings.loglevel": "off",
       ...extraPrefsFirefox,
     };
   }
