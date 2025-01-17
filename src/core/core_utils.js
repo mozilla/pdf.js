@@ -103,6 +103,16 @@ function arrayBuffersToBytes(arr) {
   return data;
 }
 
+async function fetchBinaryData(url) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch file "${url}" with "${response.statusText}".`
+    );
+  }
+  return new Uint8Array(await response.arrayBuffer());
+}
+
 /**
  * Get the value of an inheritable property.
  *
@@ -701,6 +711,7 @@ export {
   encodeToXmlString,
   escapePDFName,
   escapeString,
+  fetchBinaryData,
   getInheritableProperty,
   getLookupTableFactory,
   getNewAnnotationsMap,

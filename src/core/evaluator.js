@@ -33,6 +33,12 @@ import { CMapFactory, IdentityCMap } from "./cmap.js";
 import { Cmd, Dict, EOF, isName, Name, Ref, RefSet } from "./primitives.js";
 import { ErrorFont, Font } from "./fonts.js";
 import {
+  fetchBinaryData,
+  isNumberArray,
+  lookupMatrix,
+  lookupNormalRect,
+} from "./core_utils.js";
+import {
   getEncoding,
   MacRomanEncoding,
   StandardEncoding,
@@ -51,7 +57,6 @@ import {
 import { getTilingPatternIR, Pattern } from "./pattern.js";
 import { getXfaFontDict, getXfaFontName } from "./xfa_fonts.js";
 import { IdentityToUnicodeMap, ToUnicodeMap } from "./to_unicode_map.js";
-import { isNumberArray, lookupMatrix, lookupNormalRect } from "./core_utils.js";
 import { isPDFFunction, PDFFunctionFactory } from "./function.js";
 import { Lexer, Parser } from "./parser.js";
 import {
@@ -382,16 +387,6 @@ class PartialEvaluator {
     return false;
   }
 
-  async #fetchData(url) {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch file "${url}" with "${response.statusText}".`
-      );
-    }
-    return new Uint8Array(await response.arrayBuffer());
-  }
-
   async fetchBuiltInCMap(name) {
     const cachedData = this.builtInCMapCache.get(name);
     if (cachedData) {
@@ -401,7 +396,7 @@ class PartialEvaluator {
 
     if (this.options.cMapUrl !== null) {
       // Only compressed CMaps are (currently) supported here.
-      const cMapData = await this.#fetchData(
+      const cMapData = await fetchBinaryData(
         `${this.options.cMapUrl}${name}.bcmap`
       );
       data = { cMapData, isCompressed: true };
@@ -437,7 +432,7 @@ class PartialEvaluator {
 
     try {
       if (this.options.standardFontDataUrl !== null) {
-        data = await this.#fetchData(
+        data = await fetchBinaryData(
           `${this.options.standardFontDataUrl}${filename}`
         );
       } else {
