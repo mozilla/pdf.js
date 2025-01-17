@@ -650,10 +650,12 @@ function createStandardFontBundle() {
 }
 
 function createWasmBundle() {
-  return gulp.src(["external/openjpeg/openjpeg.wasm"], {
-    base: "external/openjpeg",
-    encoding: false,
-  });
+  return ordered([
+    gulp.src(["external/openjpeg/*.wasm"], {
+      base: "external/openjpeg",
+      encoding: false,
+    }),
+  ]);
 }
 
 function checkFile(filePath) {
@@ -2077,6 +2079,15 @@ gulp.task(
   )
 );
 
+gulp.task("dev-wasm", function () {
+  const VIEWER_WASM_OUTPUT = "web/wasm/";
+
+  fs.rmSync(VIEWER_WASM_OUTPUT, { recursive: true, force: true });
+  fs.mkdirSync(VIEWER_WASM_OUTPUT, { recursive: true });
+
+  return createWasmBundle().pipe(gulp.dest(VIEWER_WASM_OUTPUT));
+});
+
 gulp.task(
   "dev-sandbox",
   gulp.series(
@@ -2110,6 +2121,13 @@ gulp.task(
         "l10n/**/*.ftl",
         { ignoreInitial: false },
         gulp.series("locale")
+      );
+    },
+    function watchWasm() {
+      gulp.watch(
+        "external/openjpeg/*",
+        { ignoreInitial: false },
+        gulp.series("dev-wasm")
       );
     },
     function watchDevSandbox() {

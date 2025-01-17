@@ -434,12 +434,9 @@ const defaultOptions = {
   wasmUrl: {
     /** @type {string} */
     value:
-      // eslint-disable-next-line no-nested-ternary
-      typeof PDFJSDev === "undefined"
-        ? "../external/openjpeg/"
-        : PDFJSDev.test("MOZCENTRAL")
-          ? "resource://pdf.js/web/wasm/"
-          : "../web/wasm/",
+      typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")
+        ? "resource://pdf.js/web/wasm/"
+        : "../web/wasm/",
     kind: OptionKind.API,
   },
 
