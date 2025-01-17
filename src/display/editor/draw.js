@@ -91,6 +91,10 @@ class DrawingEditor extends AnnotationEditor {
     super(params);
     this.#mustBeCommitted = params.mustBeCommitted || false;
 
+    this._addOutlines(params);
+  }
+
+  _addOutlines(params) {
     if (params.drawOutlines) {
       this.#createDrawOutlines(params);
       this.#addToDrawLayer();
