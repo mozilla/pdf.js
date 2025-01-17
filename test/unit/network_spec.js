@@ -13,10 +13,7 @@
  * limitations under the License.
  */
 
-import {
-  AbortException,
-  UnexpectedResponseException,
-} from "../../src/shared/util.js";
+import { AbortException, ResponseException } from "../../src/shared/util.js";
 import { PDFNetworkStream } from "../../src/display/network.js";
 import { testCrossOriginRedirects } from "./common_pdfstream_tests.js";
 import { TestPdfsServer } from "./test_utils.js";
@@ -155,8 +152,9 @@ describe("network", function () {
         // Shouldn't get here.
         expect(false).toEqual(true);
       } catch (ex) {
-        expect(ex instanceof UnexpectedResponseException).toEqual(true);
+        expect(ex instanceof ResponseException).toEqual(true);
         expect(ex.status).toEqual(0);
+        expect(ex.missing).toEqual(false);
       }
     }
 

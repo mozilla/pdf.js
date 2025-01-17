@@ -1104,6 +1104,40 @@ describe("pdf_find_controller", function () {
     });
   });
 
+  it("performs a search with a dash between two digits", async () => {
+    const { eventBus, pdfFindController } = await initPdfFindController();
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: "2008-02",
+      },
+      matchesPerPage: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+      selectedMatch: {
+        pageIndex: 13,
+        matchIndex: 0,
+      },
+      pageMatches: [[], [], [], [], [], [], [], [], [], [], [], [], [], [314]],
+      pageMatchesLength: [
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [7],
+      ],
+    });
+  });
+
   describe("custom matcher", () => {
     it("calls to the matcher with the right arguments", async () => {
       const QUERY = "Foo  bar";

@@ -33,6 +33,12 @@ import { CMapFactory, IdentityCMap } from "./cmap.js";
 import { Cmd, Dict, EOF, isName, Name, Ref, RefSet } from "./primitives.js";
 import { ErrorFont, Font } from "./fonts.js";
 import {
+  fetchBinaryData,
+  isNumberArray,
+  lookupMatrix,
+  lookupNormalRect,
+} from "./core_utils.js";
+import {
   getEncoding,
   MacRomanEncoding,
   StandardEncoding,
@@ -51,7 +57,6 @@ import {
 import { getTilingPatternIR, Pattern } from "./pattern.js";
 import { getXfaFontDict, getXfaFontName } from "./xfa_fonts.js";
 import { IdentityToUnicodeMap, ToUnicodeMap } from "./to_unicode_map.js";
-import { isNumberArray, lookupMatrix, lookupNormalRect } from "./core_utils.js";
 import { isPDFFunction, PDFFunctionFactory } from "./function.js";
 import { Lexer, Parser } from "./parser.js";
 import {
@@ -72,6 +77,7 @@ import { getMetrics } from "./metrics.js";
 import { getUnicodeForGlyph } from "./unicode.js";
 import { ImageResizer } from "./image_resizer.js";
 import { JpegStream } from "./jpeg_stream.js";
+import { JpxImage } from "./jpx.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
@@ -89,6 +95,7 @@ const DefaultPartialEvaluatorOptions = Object.freeze({
   useSystemFonts: true,
   cMapUrl: null,
   standardFontDataUrl: null,
+  wasmUrl: null,
 });
 
 const PatternType = {
@@ -236,6 +243,10 @@ class PartialEvaluator {
 
     ImageResizer.setOptions(this.options);
     JpegStream.setOptions(this.options);
+    JpxImage.setOptions({
+      wasmUrl: this.options.wasmUrl,
+      handler,
+    });
   }
 
   /**
@@ -376,16 +387,6 @@ class PartialEvaluator {
     return false;
   }
 
-  async #fetchData(url) {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch file "${url}" with "${response.statusText}".`
-      );
-    }
-    return new Uint8Array(await response.arrayBuffer());
-  }
-
   async fetchBuiltInCMap(name) {
     const cachedData = this.builtInCMapCache.get(name);
     if (cachedData) {
@@ -395,7 +396,7 @@ class PartialEvaluator {
 
     if (this.options.cMapUrl !== null) {
       // Only compressed CMaps are (currently) supported here.
-      const cMapData = await this.#fetchData(
+      const cMapData = await fetchBinaryData(
         `${this.options.cMapUrl}${name}.bcmap`
       );
       data = { cMapData, isCompressed: true };
@@ -431,7 +432,7 @@ class PartialEvaluator {
 
     try {
       if (this.options.standardFontDataUrl !== null) {
-        data = await this.#fetchData(
+        data = await fetchBinaryData(
           `${this.options.standardFontDataUrl}${filename}`
         );
       } else {
