@@ -45,6 +45,7 @@ import {
   scrollIntoView,
   selectEditor,
   switchToEditor,
+  unselectEditor,
   waitForAnnotationEditorLayer,
   waitForAnnotationModeChanged,
   waitForEditorMovedInDOM,
@@ -2225,8 +2226,7 @@ describe("FreeText Editor", () => {
           await commit(page);
 
           // Unselect.
-          await page.keyboard.press("Escape");
-          await waitForUnselectedEditor(page, editorSelector);
+          await unselectEditor(page, editorSelector);
 
           // Select the editor created previously.
           await selectEditor(page, editorSelector);
@@ -2300,8 +2300,7 @@ describe("FreeText Editor", () => {
           await commit(page);
 
           // Unselect.
-          await page.keyboard.press("Escape");
-          await waitForUnselectedEditor(page, editorSelector);
+          await unselectEditor(page, editorSelector);
 
           // Select the editor created previously.
           await selectEditor(page, editorSelector);
@@ -2481,8 +2480,7 @@ describe("FreeText Editor", () => {
           await commit(page);
 
           // Unselect.
-          await page.keyboard.press("Escape");
-          await waitForUnselectedEditor(page, editorSelector);
+          await unselectEditor(page, editorSelector);
 
           content = await page.$eval(getEditorSelector(1), el =>
             el.innerText.trimEnd()
@@ -2509,8 +2507,7 @@ describe("FreeText Editor", () => {
           await commit(page);
 
           // Unselect.
-          await page.keyboard.press("Escape");
-          await waitForUnselectedEditor(page, editorSelector);
+          await unselectEditor(page, editorSelector);
 
           let content = await page.$eval(getEditorSelector(2), el =>
             el.innerText.trimEnd()
@@ -2532,8 +2529,7 @@ describe("FreeText Editor", () => {
           await commit(page);
 
           // Unselect.
-          await page.keyboard.press("Escape");
-          await waitForUnselectedEditor(page, editorSelector);
+          await unselectEditor(page, editorSelector);
 
           content = await page.$eval(editorSelector, el =>
             el.innerText.trimEnd()

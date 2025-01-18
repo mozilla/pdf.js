@@ -361,6 +361,11 @@ async function waitForSelectedEditor(page, selector) {
   return page.waitForSelector(`${selector}.selectedEditor`);
 }
 
+async function unselectEditor(page, selector) {
+  await page.keyboard.press("Escape");
+  await waitForUnselectedEditor(page, selector);
+}
+
 async function waitForUnselectedEditor(page, selector) {
   return page.waitForSelector(`${selector}:not(.selectedEditor)`);
 }
@@ -882,6 +887,7 @@ export {
   serializeBitmapDimensions,
   setCaretAt,
   switchToEditor,
+  unselectEditor,
   waitAndClick,
   waitForAnnotationEditorLayer,
   waitForAnnotationModeChanged,
