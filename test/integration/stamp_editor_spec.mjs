@@ -41,6 +41,7 @@ import {
   selectEditor,
   serializeBitmapDimensions,
   switchToEditor,
+  unselectEditor,
   waitForAnnotationEditorLayer,
   waitForAnnotationModeChanged,
   waitForEntryInStorage,
@@ -48,7 +49,6 @@ import {
   waitForSerialized,
   waitForStorageEntries,
   waitForTimeout,
-  waitForUnselectedEditor,
 } from "./test_utils.mjs";
 import { fileURLToPath } from "url";
 import fs from "fs";
@@ -1056,8 +1056,7 @@ describe("Stamp Editor", () => {
           .toEqual("Review alt text");
 
         // Unselect and select the editor and check that the badge is visible.
-        await page.keyboard.press("Escape");
-        await waitForUnselectedEditor(page, editorSelector);
+        await unselectEditor(page, editorSelector);
         await page.waitForSelector(".editToolbar", { visible: false });
         await page.waitForSelector(".noAltTextBadge", { visible: true });
 
@@ -1106,8 +1105,7 @@ describe("Stamp Editor", () => {
           .toEqual("Missing alt text");
 
         // Unselect and select the editor and check that the badge is visible.
-        await page.keyboard.press("Escape");
-        await waitForUnselectedEditor(page, editorSelector);
+        await unselectEditor(page, editorSelector);
         await page.waitForSelector(".editToolbar", { visible: false });
         await page.waitForSelector(".noAltTextBadge", { visible: true });
         await page.evaluate(() => {
