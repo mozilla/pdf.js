@@ -409,10 +409,54 @@ class FreeTextEditor extends AnnotationEditor {
         // text and one for the br element).
         continue;
       }
-      buffer.push(FreeTextEditor.#getNodeContent(child));
+      if (child.nodeType === Node.TEXT_NODE && child.textContent.trim()) {
+        const visualLines = this.#detectVisualLineBreaks(child);
+        buffer.push(...visualLines);
+      } else {
+        buffer.push(FreeTextEditor.#getNodeContent(child));
+      }
+
       prevChild = child;
     }
     return buffer.join("\n");
+  }
+
+  /**
+   * Detects line breaks within a text node.
+   * Algorithm is based on this gist:
+   * https://gist.github.com/bennadel/033e0158f47bff9e066016f99567ebba
+   * @param {Text} textNode
+   * @returns {Array<string>}
+   */
+  #detectVisualLineBreaks(textNode) {
+    const range = document.createRange();
+    const lines = [];
+    let lineCharacters = [];
+
+    const text = textNode.textContent.trim().replaceAll(/\s+/g, " ");
+
+    if (!text) {
+      return [];
+    }
+
+    for (let i = 0; i < text.length; i++) {
+      range.setStart(textNode, 0);
+      range.setEnd(textNode, i + 1);
+
+      const lineIndex = range.getClientRects().length - 1;
+
+      if (!lines[lineIndex]) {
+        lines.push((lineCharacters = []));
+      }
+
+      lineCharacters.push(text.charAt(i));
+    }
+
+    range.detach();
+
+    return lines
+      .map(characters => characters.join("").trim())
+      .filter(line => line.length > 0);
   }
 
   #setEditorDimensions() {
@@ -642,6 +686,9 @@ class FreeTextEditor extends AnnotationEditor {
       this.div.setAttribute("annotation-id", this.annotationElementId);
     }
 
+    const [, pageHeight] = this.pageDimensions;
+    this.setMaxWidth(this.div, this.rotation, pageHeight);
+
     return this.div;
   }
 
@@ -865,6 +912,32 @@ class FreeTextEditor extends AnnotationEditor {
       serialized.color.some((c, i) => c !== color[i]) ||
       serialized.pageIndex !== pageIndex
     );
+  }
+
+  setMaxWidth(div, rotation, pageHeight) {
+    const style = div.style;
+    const leftPercent = parseFloat(style.left) || 0;
+    const topPercent = parseFloat(style.top) || 0;
+    const fontSize = `calc(${this.#fontSize}px * var(--total-scale-factor))`;
+
+    switch (rotation) {
+      case 0: {
+        style.maxWidth = `calc(100% - ${leftPercent}% - ${fontSize})`;
+        break;
+      }
+      case 90: {
+        style.maxWidth = `calc(var(--total-scale-factor) * ${pageHeight}px * ${topPercent} / 100 - ${fontSize})`;
+        break;
+      }
+      case 180: {
+        style.maxWidth = `calc(${leftPercent}% - ${fontSize})`;
+        break;
+      }
+      case 270: {
+        style.maxWidth = `calc(var(--total-scale-factor) * ${pageHeight}px * (100 - ${topPercent}) / 100 - ${fontSize})`;
+        break;
+      }
+    }
   }
 
   /** @inheritdoc */
