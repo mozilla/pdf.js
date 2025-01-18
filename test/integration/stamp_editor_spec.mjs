@@ -38,6 +38,7 @@ import {
   paste,
   pasteFromClipboard,
   scrollIntoView,
+  selectEditor,
   serializeBitmapDimensions,
   switchToEditor,
   waitForAnnotationEditorLayer,
@@ -524,9 +525,7 @@ describe("Stamp Editor", () => {
         await copyImage(page, "../images/firefox_logo.png", 0);
 
         const editorSelector = getEditorSelector(0);
-
-        await page.click(editorSelector);
-        await waitForSelectedEditor(page, editorSelector);
+        await selectEditor(page, editorSelector);
 
         await page.waitForSelector(
           `${editorSelector} .resizer.topLeft[tabindex="-1"]`
@@ -1494,11 +1493,8 @@ describe("Stamp Editor", () => {
           const serialized = await getSerialized(page);
           expect(serialized).withContext(`In ${browserName}`).toEqual([]);
 
-          const editorRect = await getRect(page, editorSelector);
-
           // Select the annotation we want to move.
-          await page.mouse.click(editorRect.x + 2, editorRect.y + 2);
-          await waitForSelectedEditor(page, editorSelector);
+          await selectEditor(page, editorSelector);
 
           await dragAndDrop(page, editorSelector, [[100, 100]]);
           await waitForSerialized(page, 1);

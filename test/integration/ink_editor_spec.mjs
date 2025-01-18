@@ -29,6 +29,7 @@ import {
   kbUndo,
   loadAndWait,
   scrollIntoView,
+  selectEditor,
   switchToEditor,
   waitForAnnotationModeChanged,
   waitForNoElement,
@@ -719,11 +720,7 @@ describe("Ink Editor", () => {
 
           const pdfjsA = getEditorSelector(0);
           const editorRect = await getRect(page, pdfjsA);
-          await page.mouse.click(
-            editorRect.x + editorRect.width / 2,
-            editorRect.y + editorRect.height / 2
-          );
-          await waitForSelectedEditor(page, pdfjsA);
+          await selectEditor(page, pdfjsA);
 
           const red = "#ff0000";
           page.evaluate(value => {
@@ -815,11 +812,8 @@ describe("Ink Editor", () => {
           const serialized = await getSerialized(page);
           expect(serialized).withContext(`In ${browserName}`).toEqual([]);
 
-          const editorRect = await getRect(page, edgeB);
-
           // Select the annotation we want to move.
-          await page.mouse.click(editorRect.x + 2, editorRect.y + 2);
-          await waitForSelectedEditor(page, edgeB);
+          await selectEditor(page, edgeB);
 
           await dragAndDrop(page, edgeB, [[100, 100]]);
           await waitForSerialized(page, 1);
@@ -1067,12 +1061,7 @@ describe("Ink Editor", () => {
           await page.waitForSelector("#editorUndoBar", { hidden: true });
 
           editorSelector = getEditorSelector(0);
-          const editorRect = await getRect(page, editorSelector);
-          await page.mouse.click(
-            editorRect.x + editorRect.width / 2,
-            editorRect.y + editorRect.height / 2
-          );
-          await waitForSelectedEditor(page, editorSelector);
+          await selectEditor(page, editorSelector);
 
           await dragAndDrop(page, editorSelector, [[30, 30]], /* steps = */ 10);
           const finalRect = await getRect(page, `${pageOneSelector} svg`);
