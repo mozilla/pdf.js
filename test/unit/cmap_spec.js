@@ -14,8 +14,7 @@
  */
 
 import { CMap, CMapFactory, IdentityCMap } from "../../src/core/cmap.js";
-import { CMAP_URL } from "./test_utils.js";
-import { DefaultCMapReaderFactory } from "../../src/display/api.js";
+import { CMAP_URL, DefaultCMapReaderFactory } from "./test_utils.js";
 import { Name } from "../../src/core/primitives.js";
 import { StringStream } from "../../src/core/stream.js";
 
