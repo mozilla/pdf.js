@@ -347,6 +347,16 @@ async function applyFunctionToEditor(page, editorId, func) {
   );
 }
 
+async function selectEditor(page, selector, count = 1) {
+  const editorRect = await getRect(page, selector);
+  await page.mouse.click(
+    editorRect.x + editorRect.width / 2,
+    editorRect.y + editorRect.height / 2,
+    { count }
+  );
+  await waitForSelectedEditor(page, selector);
+}
+
 async function waitForSelectedEditor(page, selector) {
   return page.waitForSelector(`${selector}.selectedEditor`);
 }
@@ -868,6 +878,7 @@ export {
   paste,
   pasteFromClipboard,
   scrollIntoView,
+  selectEditor,
   serializeBitmapDimensions,
   setCaretAt,
   switchToEditor,
