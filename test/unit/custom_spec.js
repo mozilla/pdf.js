@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { DefaultCanvasFactory, getDocument } from "../../src/display/api.js";
 import { buildGetDocumentParams } from "./test_utils.js";
+import { getDocument } from "../../src/display/api.js";
 
 function getTopLeftPixel(canvasContext) {
   const imgData = canvasContext.getImageData(0, 0, 1, 1);
@@ -30,28 +30,24 @@ describe("custom canvas rendering", function () {
   const transparentGetDocumentParams =
     buildGetDocumentParams("transparent.pdf");
 
-  let CanvasFactory;
-  let loadingTask;
-  let page;
+  let loadingTask, doc, page;
 
   beforeAll(async function () {
-    CanvasFactory = new DefaultCanvasFactory({});
-
     loadingTask = getDocument(transparentGetDocumentParams);
-    const doc = await loadingTask.promise;
-    const data = await doc.getPage(1);
-    page = data;
+    doc = await loadingTask.promise;
+    page = await doc.getPage(1);
   });
 
   afterAll(async function () {
-    CanvasFactory = null;
+    doc = null;
     page = null;
     await loadingTask.destroy();
   });
 
   it("renders to canvas with a default white background", async function () {
     const viewport = page.getViewport({ scale: 1 });
-    const canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
+    const { canvasFactory } = doc;
+    const canvasAndCtx = canvasFactory.create(viewport.width, viewport.height);
 
     const renderTask = page.render({
       canvasContext: canvasAndCtx.context,
@@ -65,12 +61,13 @@ describe("custom canvas rendering", function () {
       b: 255,
       a: 255,
     });
-    CanvasFactory.destroy(canvasAndCtx);
+    canvasFactory.destroy(canvasAndCtx);
   });
 
   it("renders to canvas with a custom background", async function () {
     const viewport = page.getViewport({ scale: 1 });
-    const canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
+    const { canvasFactory } = doc;
+    const canvasAndCtx = canvasFactory.create(viewport.width, viewport.height);
 
     const renderTask = page.render({
       canvasContext: canvasAndCtx.context,
@@ -85,7 +82,7 @@ describe("custom canvas rendering", function () {
       b: 0,
       a: 255,
     });
-    CanvasFactory.destroy(canvasAndCtx);
+    canvasFactory.destroy(canvasAndCtx);
   });
 });
 
@@ -137,17 +134,15 @@ describe("custom ownerDocument", function () {
         getElementsByTagName: () => [{ append: () => {} }],
       },
     };
-    const CanvasFactory = new DefaultCanvasFactory({ ownerDocument });
 
     return {
       elements,
       ownerDocument,
-      CanvasFactory,
     };
   }
 
   it("should use given document for loading fonts (with Font Loading API)", async function () {
-    const { ownerDocument, elements, CanvasFactory } = getMocks();
+    const { ownerDocument, elements } = getMocks();
     const getDocumentParams = buildGetDocumentParams(
       "TrueType_without_cmap.pdf",
       {
@@ -161,7 +156,8 @@ describe("custom ownerDocument", function () {
     const page = await doc.getPage(1);
 
     const viewport = page.getViewport({ scale: 1 });
-    const canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
+    const { canvasFactory } = doc;
+    const canvasAndCtx = canvasFactory.create(viewport.width, viewport.height);
 
     await page.render({
       canvasContext: canvasAndCtx.context,
@@ -174,12 +170,12 @@ describe("custom ownerDocument", function () {
     expect(Array.from(ownerDocument.fonts).find(checkFont)).toBeTruthy();
 
     await loadingTask.destroy();
-    CanvasFactory.destroy(canvasAndCtx);
+    canvasFactory.destroy(canvasAndCtx);
     expect(ownerDocument.fonts.size).toBe(0);
   });
 
   it("should use given document for loading fonts (with CSS rules)", async function () {
-    const { ownerDocument, elements, CanvasFactory } = getMocks();
+    const { ownerDocument, elements } = getMocks();
     ownerDocument.fonts = null;
     const getDocumentParams = buildGetDocumentParams(
       "TrueType_without_cmap.pdf",
@@ -194,7 +190,8 @@ describe("custom ownerDocument", function () {
     const page = await doc.getPage(1);
 
     const viewport = page.getViewport({ scale: 1 });
-    const canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
+    const { canvasFactory } = doc;
+    const canvasAndCtx = canvasFactory.create(viewport.width, viewport.height);
 
     await page.render({
       canvasContext: canvasAndCtx.context,
@@ -206,7 +203,7 @@ describe("custom ownerDocument", function () {
     expect(style.sheet.cssRules.find(checkFontFaceRule)).toBeTruthy();
 
     await loadingTask.destroy();
-    CanvasFactory.destroy(canvasAndCtx);
+    canvasFactory.destroy(canvasAndCtx);
     expect(style.remove.called).toBe(true);
   });
 });
