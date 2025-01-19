@@ -86,7 +86,7 @@ const waitForImage = async (page, selector) => {
   await page.waitForSelector(`${selector} .altText`);
 };
 
-const copyImage = async (page, imagePath, number) => {
+const copyImage = async (page, imagePath, selector) => {
   const data = fs
     .readFileSync(path.join(__dirname, imagePath))
     .toString("base64");
@@ -94,7 +94,7 @@ const copyImage = async (page, imagePath, number) => {
   await copyToClipboard(page, { "image/png": `data:image/png;base64,${data}` });
   await pasteFromClipboard(page);
 
-  await waitForImage(page, getEditorSelector(number));
+  await waitForImage(page, selector);
 };
 
 async function waitForTranslation(page) {
@@ -139,9 +139,10 @@ describe("Stamp Editor", () => {
           await input.uploadFile(
             `${path.join(__dirname, "../images/firefox_logo.png")}`
           );
-          await waitForImage(page, getEditorSelector(0));
+          const editorSelector = getEditorSelector(0);
+          await waitForImage(page, editorSelector);
 
-          const { width } = await getEditorDimensions(page, 0);
+          const { width } = await getEditorDimensions(page, editorSelector);
 
           // The image is bigger than the page, so it has been scaled down to
           // 75% of the page width.
@@ -163,9 +164,10 @@ describe("Stamp Editor", () => {
           await input.uploadFile(
             `${path.join(__dirname, "../images/firefox_logo.svg")}`
           );
-          await waitForImage(page, getEditorSelector(0));
+          const editorSelector = getEditorSelector(0);
+          await waitForImage(page, editorSelector);
 
-          const { width } = await getEditorDimensions(page, 0);
+          const { width } = await getEditorDimensions(page, editorSelector);
 
           expect(Math.round(parseFloat(width))).toEqual(40);
 
@@ -346,10 +348,11 @@ describe("Stamp Editor", () => {
       for (const [browserName, page] of pages) {
         await switchToStamp(page);
 
-        await copyImage(page, "../images/firefox_logo.png", 0);
+        const editorSelector = getEditorSelector(0);
+        await copyImage(page, "../images/firefox_logo.png", editorSelector);
 
         // Wait for the alt-text button to be visible.
-        const buttonSelector = `${getEditorSelector(0)} button.altText`;
+        const buttonSelector = `${editorSelector} button.altText`;
         await page.waitForSelector(buttonSelector);
 
         // Click on the alt-text button.
@@ -369,7 +372,7 @@ describe("Stamp Editor", () => {
 
         // Check that the canvas has an aria-describedby attribute.
         await page.waitForSelector(
-          `${getEditorSelector(0)} canvas[aria-describedby]`
+          `${editorSelector} canvas[aria-describedby]`
         );
 
         // Wait for the alt-text button to have the correct icon.
@@ -522,9 +525,9 @@ describe("Stamp Editor", () => {
       for (const [browserName, page] of pages) {
         await switchToStamp(page);
 
-        await copyImage(page, "../images/firefox_logo.png", 0);
-
         const editorSelector = getEditorSelector(0);
+        await copyImage(page, "../images/firefox_logo.png", editorSelector);
+
         await selectEditor(page, editorSelector);
 
         await page.waitForSelector(
@@ -656,7 +659,8 @@ describe("Stamp Editor", () => {
         await page1.bringToFront();
         await switchToStamp(page1);
 
-        await copyImage(page1, "../images/firefox_logo.png", 0);
+        const editorSelector = getEditorSelector(0);
+        await copyImage(page1, "../images/firefox_logo.png", editorSelector);
         await copy(page1);
 
         const [, page2] = pages2[i];
@@ -665,7 +669,7 @@ describe("Stamp Editor", () => {
 
         await paste(page2);
 
-        await waitForImage(page2, getEditorSelector(0));
+        await waitForImage(page2, editorSelector);
       }
     });
   });
@@ -685,18 +689,18 @@ describe("Stamp Editor", () => {
       // Run sequentially to avoid clipboard issues.
       for (const [, page] of pages) {
         await switchToStamp(page);
-        const selector = getEditorSelector(0);
 
-        await copyImage(page, "../images/firefox_logo.png", 0);
-        await page.waitForSelector(selector);
+        const editorSelector = getEditorSelector(0);
+        await copyImage(page, "../images/firefox_logo.png", editorSelector);
+        await page.waitForSelector(editorSelector);
         await waitForSerialized(page, 1);
 
-        await page.waitForSelector(`${selector} button.delete`);
-        await page.click(`${selector} button.delete`);
+        await page.waitForSelector(`${editorSelector} button.delete`);
+        await page.click(`${editorSelector} button.delete`);
         await waitForSerialized(page, 0);
 
         await kbUndo(page);
-        await waitForImage(page, selector);
+        await waitForImage(page, editorSelector);
         await waitForSerialized(page, 1);
       }
     });
@@ -717,14 +721,14 @@ describe("Stamp Editor", () => {
       // Run sequentially to avoid clipboard issues.
       for (const [, page] of pages) {
         await switchToStamp(page);
-        const selector = getEditorSelector(0);
 
-        await copyImage(page, "../images/firefox_logo.png", 0);
-        await page.waitForSelector(selector);
+        const editorSelector = getEditorSelector(0);
+        await copyImage(page, "../images/firefox_logo.png", editorSelector);
+        await page.waitForSelector(editorSelector);
         await waitForSerialized(page, 1);
 
-        await page.waitForSelector(`${selector} button.delete`);
-        await page.click(`${selector} button.delete`);
+        await page.waitForSelector(`${editorSelector} button.delete`);
+        await page.click(`${editorSelector} button.delete`);
         await waitForSerialized(page, 0);
 
         const twoToFourteen = Array.from(new Array(13).keys(), n => n + 2);
@@ -742,7 +746,7 @@ describe("Stamp Editor", () => {
           await scrollIntoView(page, pageSelector);
         }
 
-        await page.waitForSelector(`${selector} canvas`);
+        await page.waitForSelector(`${editorSelector} canvas`);
       }
     });
   });
@@ -762,14 +766,14 @@ describe("Stamp Editor", () => {
       // Run sequentially to avoid clipboard issues.
       for (const [, page] of pages) {
         await switchToStamp(page);
-        const selector = getEditorSelector(0);
 
-        await copyImage(page, "../images/firefox_logo.png", 0);
-        await page.waitForSelector(selector);
+        const editorSelector = getEditorSelector(0);
+        await copyImage(page, "../images/firefox_logo.png", editorSelector);
+        await page.waitForSelector(editorSelector);
         await waitForSerialized(page, 1);
 
-        await page.waitForSelector(`${selector} button.delete`);
-        await page.click(`${selector} button.delete`);
+        await page.waitForSelector(`${editorSelector} button.delete`);
+        await page.click(`${editorSelector} button.delete`);
         await waitForSerialized(page, 0);
 
         const twoToOne = Array.from(new Array(13).keys(), n => n + 2).concat(
@@ -781,7 +785,7 @@ describe("Stamp Editor", () => {
         }
 
         await kbUndo(page);
-        await waitForImage(page, selector);
+        await waitForImage(page, editorSelector);
         await waitForSerialized(page, 1);
       }
     });
@@ -803,8 +807,9 @@ describe("Stamp Editor", () => {
       for (const [, page] of pages) {
         await switchToStamp(page);
 
-        await copyImage(page, "../images/firefox_logo.png", 0);
-        await page.waitForSelector(getEditorSelector(0));
+        const editorSelector = getEditorSelector(0);
+        await copyImage(page, "../images/firefox_logo.png", editorSelector);
+        await page.waitForSelector(editorSelector);
         await waitForSerialized(page, 1);
 
         const serializedRect = await getFirstSerialized(page, x => x.rect);
@@ -824,11 +829,8 @@ describe("Stamp Editor", () => {
           (x, y) => x !== y
         );
 
-        const canvasRect = await getRect(
-          page,
-          `${getEditorSelector(0)} canvas`
-        );
-        const stampRect = await getRect(page, getEditorSelector(0));
+        const canvasRect = await getRect(page, `${editorSelector} canvas`);
+        const stampRect = await getRect(page, editorSelector);
 
         expect(
           ["x", "y", "width", "height"].every(
@@ -863,15 +865,13 @@ describe("Stamp Editor", () => {
       for (const [, page] of pages) {
         await switchToStamp(page);
 
-        await copyImage(page, "../images/firefox_logo.png", 0);
-        await page.waitForSelector(getEditorSelector(0));
+        const editorSelector = getEditorSelector(0);
+        await copyImage(page, "../images/firefox_logo.png", editorSelector);
+        await page.waitForSelector(editorSelector);
         await waitForSerialized(page, 1);
 
-        const canvasRect = await getRect(
-          page,
-          `${getEditorSelector(0)} canvas`
-        );
-        const stampRect = await getRect(page, getEditorSelector(0));
+        const canvasRect = await getRect(page, `${editorSelector} canvas`);
+        const stampRect = await getRect(page, editorSelector);
 
         expect(
           ["x", "y", "width", "height"].every(
@@ -898,8 +898,9 @@ describe("Stamp Editor", () => {
       for (const [browserName, page] of pages) {
         await switchToStamp(page);
 
-        await copyImage(page, "../images/firefox_logo.png", 0);
-        await page.waitForSelector(getEditorSelector(0));
+        const editorSelector = getEditorSelector(0);
+        await copyImage(page, "../images/firefox_logo.png", editorSelector);
+        await page.waitForSelector(editorSelector);
         await waitForSerialized(page, 1);
         await applyFunctionToEditor(page, "pdfjs_internal_editor_0", editor => {
           editor.altTextData = {
@@ -907,7 +908,7 @@ describe("Stamp Editor", () => {
             decorative: false,
           };
         });
-        await page.waitForSelector(`${getEditorSelector(0)} .altText.done`);
+        await page.waitForSelector(`${editorSelector} .altText.done`);
 
         await copy(page);
         await paste(page);
@@ -979,8 +980,8 @@ describe("Stamp Editor", () => {
         await switchToStamp(page);
 
         // Add an image.
-        await copyImage(page, "../images/firefox_logo.png", 0);
         const editorSelector = getEditorSelector(0);
+        await copyImage(page, "../images/firefox_logo.png", editorSelector);
         await page.waitForSelector(editorSelector);
         await waitForSerialized(page, 1);
 
@@ -1173,8 +1174,8 @@ describe("Stamp Editor", () => {
         await switchToStamp(page);
 
         // Add an image.
-        await copyImage(page, "../images/firefox_logo.png", 0);
         const editorSelector = getEditorSelector(0);
+        await copyImage(page, "../images/firefox_logo.png", editorSelector);
         await page.waitForSelector(editorSelector);
         await waitForSerialized(page, 1);
 
@@ -1214,8 +1215,8 @@ describe("Stamp Editor", () => {
         await switchToStamp(page);
 
         // Add an image.
-        await copyImage(page, "../images/firefox_logo.png", 0);
         const editorSelector = getEditorSelector(0);
+        await copyImage(page, "../images/firefox_logo.png", editorSelector);
         await page.waitForSelector(editorSelector);
         await waitForSerialized(page, 1);
 
@@ -1236,8 +1237,8 @@ describe("Stamp Editor", () => {
         await switchToStamp(page);
 
         // Add an image.
-        await copyImage(page, "../images/firefox_logo.png", 0);
         const editorSelector = getEditorSelector(0);
+        await copyImage(page, "../images/firefox_logo.png", editorSelector);
         await page.waitForSelector(editorSelector);
         await waitForSerialized(page, 1);
 
@@ -1354,8 +1355,8 @@ describe("Stamp Editor", () => {
         await switchToStamp(page);
 
         // Add an image.
-        await copyImage(page, "../images/firefox_logo.png", 0);
         const editorSelector = getEditorSelector(0);
+        await copyImage(page, "../images/firefox_logo.png", editorSelector);
         await page.waitForSelector(editorSelector);
         await waitForSerialized(page, 1);
 
@@ -1390,7 +1391,7 @@ describe("Stamp Editor", () => {
       for (const [, page] of pages) {
         await switchToStamp(page);
 
-        await copyImage(page, "../images/firefox_logo.png", 0);
+        await copyImage(page, "../images/firefox_logo.png", editorSelector);
         await page.waitForSelector(editorSelector);
         await waitForSerialized(page, 1);
       }
@@ -1431,13 +1432,11 @@ describe("Stamp Editor", () => {
 
     it("must check that a stamp editor isn't on top of the secondary toolbar", async () => {
       // Run sequentially to avoid clipboard issues.
-      const editorSelector = getEditorSelector(0);
-
       for (const [, page] of pages) {
         await switchToStamp(page);
 
-        await copyImage(page, "../images/red.png", 0);
-
+        const editorSelector = getEditorSelector(0);
+        await copyImage(page, "../images/red.png", editorSelector);
         await page.waitForSelector(editorSelector);
         await waitForSerialized(page, 1);
       }
@@ -1518,12 +1517,13 @@ describe("Stamp Editor", () => {
           const modeChangedHandle = await waitForAnnotationModeChanged(page);
           await page.click(getAnnotationSelector("58R"), { count: 2 });
           await awaitPromise(modeChangedHandle);
-          await waitForSelectedEditor(page, getEditorSelector(4));
+          const editorSelector = getEditorSelector(4);
+          await waitForSelectedEditor(page, editorSelector);
 
           const editorIds = await getEditors(page, "stamp");
           expect(editorIds.length).withContext(`In ${browserName}`).toEqual(5);
 
-          await page.click(`${getEditorSelector(4)} button.altText`);
+          await page.click(`${editorSelector} button.altText`);
           await page.waitForSelector("#altTextDialog", { visible: true });
 
           const textareaSelector = "#altTextDialog textarea";
@@ -1624,8 +1624,8 @@ describe("Stamp Editor", () => {
       for (const [, page] of pages) {
         await switchToStamp(page);
 
-        await copyImage(page, "../images/firefox_logo.png", 0);
         const editorSelector = getEditorSelector(0);
+        await copyImage(page, "../images/firefox_logo.png", editorSelector);
         const stampRect = await getRect(page, editorSelector);
 
         await page.touchscreen.tap(stampRect.x + 10, stampRect.y + 10);
@@ -1643,7 +1643,6 @@ describe("Stamp Editor", () => {
 
   describe("Undo deletion popup has the expected behaviour", () => {
     let pages;
-    const editorSelector = getEditorSelector(0);
 
     beforeEach(async () => {
       pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
@@ -1657,14 +1656,14 @@ describe("Stamp Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToStamp(page);
-          const selector = editorSelector;
 
-          await copyImage(page, "../images/firefox_logo.png", 0);
-          await page.waitForSelector(selector);
+          const editorSelector = getEditorSelector(0);
+          await copyImage(page, "../images/firefox_logo.png", editorSelector);
+          await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
-          await page.waitForSelector(`${selector} button.delete`);
-          await page.click(`${selector} button.delete`);
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
 
           await page.waitForSelector("#editorUndoBar:not([hidden])");
@@ -1672,7 +1671,7 @@ describe("Stamp Editor", () => {
           await page.click("#editorUndoBarUndoButton");
           await waitForSerialized(page, 1);
           await page.waitForSelector(editorSelector);
-          await page.waitForSelector(`${selector} canvas`);
+          await page.waitForSelector(`${editorSelector} canvas`);
         })
       );
     });
@@ -1681,14 +1680,14 @@ describe("Stamp Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToStamp(page);
-          const selector = editorSelector;
 
-          await copyImage(page, "../images/firefox_logo.png", 0);
-          await page.waitForSelector(selector);
+          const editorSelector = getEditorSelector(0);
+          await copyImage(page, "../images/firefox_logo.png", editorSelector);
+          await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
-          await page.waitForSelector(`${selector} button.delete`);
-          await page.click(`${selector} button.delete`);
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
 
           await page.waitForFunction(() => {
@@ -1711,10 +1710,10 @@ describe("Stamp Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToStamp(page);
-          const selector = editorSelector;
 
-          await copyImage(page, "../images/firefox_logo.png", 0);
-          await page.waitForSelector(selector);
+          const editorSelector = getEditorSelector(0);
+          await copyImage(page, "../images/firefox_logo.png", editorSelector);
+          await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
