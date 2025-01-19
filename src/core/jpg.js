@@ -15,6 +15,7 @@
 
 import { assert, BaseException, warn } from "../shared/util.js";
 import { grayToRGBA } from "../shared/image_utils.js";
+import { readEXIFData } from "../../external/exif-js/exif.js";
 import { readUint16 } from "./core_utils.js";
 
 class JpegError extends BaseException {
@@ -804,6 +805,16 @@ class JpegImage {
     this._colorTransform = colorTransform;
   }
 
+  static #getEXIF(data) {
+    try {
+      const dv = new DataView(data.buffer, data.byteOffset, data.byteLength);
+      return readEXIFData(dv);
+    } catch (ex) {
+      warn(`#getEXIF - EXIF parsing failed: "${ex}".`);
+    }
+    return null;
+  }
+
   static canUseImageDecoder(data, colorTransform = -1) {
     let offset = 0;
     let numComponents = null;
@@ -817,6 +828,32 @@ class JpegImage {
 
     markerLoop: while (fileMarker !== /* EOI (End of Image) = */ 0xffd9) {
       switch (fileMarker) {
+        case 0xffe1: // APP1 - Exif
+          const { appData, newOffset } = readDataBlock(data, offset);
+          offset = newOffset;
+
+          // 'Exif\x00\x00'
+          if (
+            appData[0] === 0x45 &&
+            appData[1] === 0x78 &&
+            appData[2] === 0x69 &&
+            appData[3] === 0x66 &&
+            appData[4] === 0 &&
+            appData[5] === 0
+          ) {
+            const exif = this.#getEXIF(appData);
+
+            if (exif) {
+              // Skip images with non-default orientation
+              // (fixes bug1942064.pdf).
+              if (exif.Orientation !== undefined && exif.Orientation !== 1) {
+                return false;
+              }
+            }
+          }
+          fileMarker = readUint16(data, offset);
+          offset += 2;
+          continue;
         case 0xffc0: // SOF0 (Start of Frame, Baseline DCT)
         case 0xffc1: // SOF1 (Start of Frame, Extended DCT)
         case 0xffc2: // SOF2 (Start of Frame, Progressive DCT)

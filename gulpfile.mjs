@@ -1646,6 +1646,7 @@ function buildLib(defines, dir) {
       encoding: false,
     }),
     gulp.src("test/unit/*.js", { base: ".", encoding: false }),
+    gulp.src("external/exif-js/*.js", { base: "exif-js/", encoding: false }),
     gulp.src("external/openjpeg/*.js", { base: "openjpeg/", encoding: false }),
   ]);
 
