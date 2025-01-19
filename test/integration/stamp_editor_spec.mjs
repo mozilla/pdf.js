@@ -1621,12 +1621,7 @@ describe("Stamp Editor", () => {
 
     it("must check that the annotation isn't unselected when an other finger taps on the screen", async () => {
       // Run sequentially to avoid clipboard issues.
-      for (const [browserName, page] of pages) {
-        if (browserName === "chrome") {
-          // TODO: remove this check when puppeteer supports multiple touch
-          // events (it works in v23.9.1).
-          return;
-        }
+      for (const [, page] of pages) {
         await switchToStamp(page);
 
         await copyImage(page, "../images/firefox_logo.png", 0);
