@@ -305,16 +305,17 @@ describe("Ink Editor", () => {
           await awaitPromise(clickHandle);
           await commit(page);
 
-          await page.waitForSelector(getEditorSelector(0));
+          const editorSelector = getEditorSelector(0);
+          await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
-          await page.waitForSelector(`${getEditorSelector(0)} button.delete`);
-          await page.click(`${getEditorSelector(0)} button.delete`);
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
 
           await kbUndo(page);
           await waitForSerialized(page, 1);
-          await page.waitForSelector(getEditorSelector(0));
+          await page.waitForSelector(editorSelector);
         })
       );
     });
@@ -348,11 +349,12 @@ describe("Ink Editor", () => {
           await awaitPromise(clickHandle);
           await commit(page);
 
-          await page.waitForSelector(getEditorSelector(0));
+          const editorSelector = getEditorSelector(0);
+          await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
-          await page.waitForSelector(`${getEditorSelector(0)} button.delete`);
-          await page.click(`${getEditorSelector(0)} button.delete`);
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
 
           const twoToFourteen = Array.from(new Array(13).keys(), n => n + 2);
@@ -370,7 +372,7 @@ describe("Ink Editor", () => {
             await scrollIntoView(page, pageSelector);
           }
 
-          await page.waitForSelector(getEditorSelector(0));
+          await page.waitForSelector(editorSelector);
         })
       );
     });
@@ -404,11 +406,12 @@ describe("Ink Editor", () => {
           await awaitPromise(clickHandle);
           await commit(page);
 
-          await page.waitForSelector(getEditorSelector(0));
+          const editorSelector = getEditorSelector(0);
+          await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
-          await page.waitForSelector(`${getEditorSelector(0)} button.delete`);
-          await page.click(`${getEditorSelector(0)} button.delete`);
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
 
           const twoToOne = Array.from(new Array(13).keys(), n => n + 2).concat(
@@ -421,7 +424,7 @@ describe("Ink Editor", () => {
 
           await kbUndo(page);
           await waitForSerialized(page, 1);
-          await page.waitForSelector(getEditorSelector(0));
+          await page.waitForSelector(editorSelector);
         })
       );
     });
@@ -941,7 +944,6 @@ describe("Ink Editor", () => {
 
           await page.waitForSelector(getEditorSelector(1));
           await waitForSerialized(page, 1);
-          await page.waitForSelector(getEditorSelector(1));
           await page.waitForSelector("#editorUndoBar", { hidden: true });
         })
       );
