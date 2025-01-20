@@ -489,17 +489,16 @@ function getEditors(page, kind) {
   }, kind);
 }
 
-function getEditorDimensions(page, id) {
-  return page.evaluate(n => {
-    const element = document.getElementById(`pdfjs_internal_editor_${n}`);
-    const { style } = element;
+function getEditorDimensions(page, selector) {
+  return page.evaluate(sel => {
+    const { style } = document.querySelector(sel);
     return {
       left: style.left,
       top: style.top,
       width: style.width,
       height: style.height,
     };
-  }, id);
+  }, selector);
 }
 
 async function serializeBitmapDimensions(page) {
