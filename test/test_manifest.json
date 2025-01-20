@@ -8998,6 +8998,13 @@
     "type": "other"
   },
   {
+    "id": "bug1942064",
+    "file": "pdfs/bug1942064.pdf",
+    "md5": "d50b5ebb8cab1211609d16faa54ec47d",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "issue16221-text",
     "file": "pdfs/issue16221.pdf",
     "md5": "62d93c9b3aa4ba3af5446504632e78a5",

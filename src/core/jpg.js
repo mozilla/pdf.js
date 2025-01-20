@@ -817,6 +817,29 @@ class JpegImage {
 
     markerLoop: while (fileMarker !== /* EOI (End of Image) = */ 0xffd9) {
       switch (fileMarker) {
+        case 0xffe1: // APP1 - Exif
+          // TODO: Remove this once https://github.com/w3c/webcodecs/issues/870
+          //       is fixed.
+          const { appData, newOffset } = readDataBlock(data, offset);
+          offset = newOffset;
+
+          // 'Exif\x00\x00'
+          if (
+            appData[0] === 0x45 &&
+            appData[1] === 0x78 &&
+            appData[2] === 0x69 &&
+            appData[3] === 0x66 &&
+            appData[4] === 0 &&
+            appData[5] === 0
+          ) {
+            // Replace the entire EXIF-block with dummy data, to ensure that a
+            // non-default EXIF orientation won't cause the image to be rotated
+            // when using `ImageDecoder` (fixes bug1942064.pdf).
+            appData.fill(0x00, 6);
+          }
+          fileMarker = readUint16(data, offset);
+          offset += 2;
+          continue;
         case 0xffc0: // SOF0 (Start of Frame, Baseline DCT)
         case 0xffc1: // SOF1 (Start of Frame, Extended DCT)
         case 0xffc2: // SOF2 (Start of Frame, Progressive DCT)
