@@ -20,6 +20,11 @@ import { DrawLayer } from "pdfjs-lib";
  * @property {number} pageIndex
  */
 
+/**
+ * @typedef {Object} DrawLayerBuilderRenderOptions
+ * @property {string} [intent] - The default value is "display".
+ */
+
 class DrawLayerBuilder {
   #drawLayer = null;
 
@@ -31,9 +36,10 @@ class DrawLayerBuilder {
   }
 
   /**
-   * @param {string} intent (default value is 'display')
+   * @param {DrawLayerBuilderRenderOptions} options
+   * @returns {Promise<void>}
    */
-  async render(intent = "display") {
+  async render({ intent = "display" }) {
     if (intent !== "display" || this.#drawLayer || this._cancelled) {
       return;
     }

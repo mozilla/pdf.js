@@ -29,7 +29,14 @@ import { removeNullCharacters } from "./ui_utils.js";
  * @property {TextHighlighter} [highlighter] - Optional object that will handle
  *   highlighting text from the find controller.
  * @property {TextAccessibilityManager} [accessibilityManager]
+ * @property {boolean} [enablePermissions]
  * @property {function} [onAppend]
+ */
+
+/**
+ * @typedef {Object} TextLayerBuilderRenderOptions
+ * @property {PageViewport} viewport
+ * @property {Object} [textContentParams]
  */
 
 /**
@@ -50,6 +57,9 @@ class TextLayerBuilder {
 
   static #selectionChangeAbortController = null;
 
+  /**
+   * @param {TextLayerBuilderOptions} options
+   */
   constructor({
     pdfPage,
     highlighter = null,
@@ -70,10 +80,10 @@ class TextLayerBuilder {
 
   /**
    * Renders the text layer.
-   * @param {PageViewport} viewport
-   * @param {Object} [textContentParams]
+   * @param {TextLayerBuilderRenderOptions} options
+   * @returns {Promise<void>}
    */
-  async render(viewport, textContentParams = null) {
+  async render({ viewport, textContentParams = null }) {
     if (this.#renderingDone && this.#textLayer) {
       this.#textLayer.update({
         viewport,
