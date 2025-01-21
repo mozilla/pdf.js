@@ -29,6 +29,7 @@ import {
   kbUndo,
   loadAndWait,
   scrollIntoView,
+  selectEditor,
   switchToEditor,
   waitForAnnotationModeChanged,
   waitForNoElement,
@@ -304,16 +305,17 @@ describe("Ink Editor", () => {
           await awaitPromise(clickHandle);
           await commit(page);
 
-          await page.waitForSelector(getEditorSelector(0));
+          const editorSelector = getEditorSelector(0);
+          await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
-          await page.waitForSelector(`${getEditorSelector(0)} button.delete`);
-          await page.click(`${getEditorSelector(0)} button.delete`);
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
 
           await kbUndo(page);
           await waitForSerialized(page, 1);
-          await page.waitForSelector(getEditorSelector(0));
+          await page.waitForSelector(editorSelector);
         })
       );
     });
@@ -347,11 +349,12 @@ describe("Ink Editor", () => {
           await awaitPromise(clickHandle);
           await commit(page);
 
-          await page.waitForSelector(getEditorSelector(0));
+          const editorSelector = getEditorSelector(0);
+          await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
-          await page.waitForSelector(`${getEditorSelector(0)} button.delete`);
-          await page.click(`${getEditorSelector(0)} button.delete`);
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
 
           const twoToFourteen = Array.from(new Array(13).keys(), n => n + 2);
@@ -369,7 +372,7 @@ describe("Ink Editor", () => {
             await scrollIntoView(page, pageSelector);
           }
 
-          await page.waitForSelector(getEditorSelector(0));
+          await page.waitForSelector(editorSelector);
         })
       );
     });
@@ -403,11 +406,12 @@ describe("Ink Editor", () => {
           await awaitPromise(clickHandle);
           await commit(page);
 
-          await page.waitForSelector(getEditorSelector(0));
+          const editorSelector = getEditorSelector(0);
+          await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
-          await page.waitForSelector(`${getEditorSelector(0)} button.delete`);
-          await page.click(`${getEditorSelector(0)} button.delete`);
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
 
           const twoToOne = Array.from(new Array(13).keys(), n => n + 2).concat(
@@ -420,7 +424,7 @@ describe("Ink Editor", () => {
 
           await kbUndo(page);
           await waitForSerialized(page, 1);
-          await page.waitForSelector(getEditorSelector(0));
+          await page.waitForSelector(editorSelector);
         })
       );
     });
@@ -719,11 +723,7 @@ describe("Ink Editor", () => {
 
           const pdfjsA = getEditorSelector(0);
           const editorRect = await getRect(page, pdfjsA);
-          await page.mouse.click(
-            editorRect.x + editorRect.width / 2,
-            editorRect.y + editorRect.height / 2
-          );
-          await waitForSelectedEditor(page, pdfjsA);
+          await selectEditor(page, pdfjsA);
 
           const red = "#ff0000";
           page.evaluate(value => {
@@ -815,11 +815,8 @@ describe("Ink Editor", () => {
           const serialized = await getSerialized(page);
           expect(serialized).withContext(`In ${browserName}`).toEqual([]);
 
-          const editorRect = await getRect(page, edgeB);
-
           // Select the annotation we want to move.
-          await page.mouse.click(editorRect.x + 2, editorRect.y + 2);
-          await waitForSelectedEditor(page, edgeB);
+          await selectEditor(page, edgeB);
 
           await dragAndDrop(page, edgeB, [[100, 100]]);
           await waitForSerialized(page, 1);
@@ -947,7 +944,6 @@ describe("Ink Editor", () => {
 
           await page.waitForSelector(getEditorSelector(1));
           await waitForSerialized(page, 1);
-          await page.waitForSelector(getEditorSelector(1));
           await page.waitForSelector("#editorUndoBar", { hidden: true });
         })
       );
@@ -1067,12 +1063,7 @@ describe("Ink Editor", () => {
           await page.waitForSelector("#editorUndoBar", { hidden: true });
 
           editorSelector = getEditorSelector(0);
-          const editorRect = await getRect(page, editorSelector);
-          await page.mouse.click(
-            editorRect.x + editorRect.width / 2,
-            editorRect.y + editorRect.height / 2
-          );
-          await waitForSelectedEditor(page, editorSelector);
+          await selectEditor(page, editorSelector);
 
           await dragAndDrop(page, editorSelector, [[30, 30]], /* steps = */ 10);
           const finalRect = await getRect(page, `${pageOneSelector} svg`);

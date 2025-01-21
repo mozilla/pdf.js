@@ -2043,12 +2043,13 @@ class CanvasGraphics {
       ctx.save();
       ctx.translate(x, y);
       ctx.scale(fontSize, -fontSize);
+      let currentTransform;
       if (
         fillStrokeMode === TextRenderingMode.FILL ||
         fillStrokeMode === TextRenderingMode.FILL_STROKE
       ) {
         if (patternFillTransform) {
-          const currentTransform = ctx.getTransform();
+          currentTransform = ctx.getTransform();
           ctx.setTransform(...patternFillTransform);
           ctx.fill(
             this.#getScaledPath(path, currentTransform, patternFillTransform)
@@ -2062,8 +2063,22 @@ class CanvasGraphics {
         fillStrokeMode === TextRenderingMode.FILL_STROKE
       ) {
         if (patternStrokeTransform) {
-          const currentTransform = ctx.getTransform();
+          currentTransform ||= ctx.getTransform();
           ctx.setTransform(...patternStrokeTransform);
+          const { a, b, c, d } = currentTransform;
+          const invPatternTransform = Util.inverseTransform(
+            patternStrokeTransform
+          );
+          const transf = Util.transform(
+            [a, b, c, d, 0, 0],
+            invPatternTransform
+          );
+          const [sx, sy] = Util.singularValueDecompose2dScale(transf);
+
+          // Cancel the pattern scaling of the line width.
+          // If sx and sy are different, unfortunately we can't do anything and
+          // we'll have a rendering bug.
+          ctx.lineWidth *= Math.max(sx, sy) / fontSize;
           ctx.stroke(
             this.#getScaledPath(path, currentTransform, patternStrokeTransform)
           );

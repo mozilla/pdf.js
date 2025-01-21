@@ -29,8 +29,6 @@ class JpxImage {
 
   static #handler = null;
 
-  static #instantiationFailed = false;
-
   static #modulePromise = null;
 
   static #wasmUrl = null;
@@ -58,10 +56,6 @@ class JpxImage {
       }
       const results = await WebAssembly.instantiate(this.#buffer, imports);
       return successCallback(results.instance);
-    } catch (e) {
-      this.#instantiationFailed = true;
-      warn(`Cannot load ${filename}: "${e}".`);
-      return false;
     } finally {
       this.#handler = null;
       this.#wasmUrl = null;
@@ -72,10 +66,6 @@ class JpxImage {
     bytes,
     { numComponents = 4, isIndexedColormap = false, smaskInData = false } = {}
   ) {
-    if (this.#instantiationFailed) {
-      throw new JpxError("OpenJPEG failed to instantiate.");
-    }
-
     this.#modulePromise ||= OpenJPEG({
       warn,
       instantiateWasm: this.#instantiateWasm.bind(this),

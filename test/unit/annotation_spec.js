@@ -34,13 +34,11 @@ import {
 import {
   CMAP_URL,
   createIdFactory,
+  DefaultCMapReaderFactory,
+  DefaultStandardFontDataFactory,
   STANDARD_FONT_DATA_URL,
   XRefMock,
 } from "./test_utils.js";
-import {
-  DefaultCMapReaderFactory,
-  DefaultStandardFontDataFactory,
-} from "../../src/display/api.js";
 import { Dict, Name, Ref, RefSetCache } from "../../src/core/primitives.js";
 import { Lexer, Parser } from "../../src/core/parser.js";
 import { FlateStream } from "../../src/core/flate_stream.js";

@@ -170,6 +170,11 @@ function lookupCmap(ranges, unicode) {
 
 function compileGlyf(code, cmds, font) {
   function moveTo(x, y) {
+    if (firstPoint) {
+      // Close the current subpath in adding a straight line to the first point.
+      cmds.add("L", firstPoint);
+    }
+    firstPoint = [x, y];
     cmds.add("M", [x, y]);
   }
   function lineTo(x, y) {
@@ -182,6 +187,7 @@ function compileGlyf(code, cmds, font) {
   let i = 0;
   const numberOfContours = getInt16(code, i);
   let flags;
+  let firstPoint = null;
   let x = 0,
     y = 0;
   i += 10;
@@ -350,6 +356,11 @@ function compileGlyf(code, cmds, font) {
 
 function compileCharString(charStringCode, cmds, font, glyphId) {
   function moveTo(x, y) {
+    if (firstPoint) {
+      // Close the current subpath in adding a straight line to the first point.
+      cmds.add("L", firstPoint);
+    }
+    firstPoint = [x, y];
     cmds.add("M", [x, y]);
   }
   function lineTo(x, y) {
@@ -363,6 +374,7 @@ function compileCharString(charStringCode, cmds, font, glyphId) {
   let x = 0,
     y = 0;
   let stems = 0;
+  let firstPoint = null;
 
   function parse(code) {
     let i = 0;

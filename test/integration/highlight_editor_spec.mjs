@@ -33,12 +33,12 @@ import {
   scrollIntoView,
   setCaretAt,
   switchToEditor,
+  unselectEditor,
   waitAndClick,
   waitForAnnotationModeChanged,
   waitForSelectedEditor,
   waitForSerialized,
   waitForTimeout,
-  waitForUnselectedEditor,
 } from "./test_utils.mjs";
 import { fileURLToPath } from "url";
 import fs from "fs";
@@ -1044,8 +1044,7 @@ describe("Highlight Editor", () => {
           const y = rect.y + rect.height / 2;
           await page.mouse.click(x, y, { count: 2, delay: 100 });
           await page.waitForSelector(`${getEditorSelector(0)}`);
-          await page.keyboard.press("Escape");
-          await waitForUnselectedEditor(page, getEditorSelector(0));
+          await unselectEditor(page, getEditorSelector(0));
 
           await setCaretAt(
             page,
@@ -1795,8 +1794,7 @@ describe("Highlight Editor", () => {
           await page.mouse.click(x, y, { count: 2, delay: 100 });
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
-          await page.keyboard.press("Escape");
-          await waitForUnselectedEditor(page, editorSelector);
+          await unselectEditor(page, editorSelector);
 
           const clickHandle = await waitForPointerUp(page);
           y = rect.y - rect.height;
@@ -1866,8 +1864,7 @@ describe("Highlight Editor", () => {
           await page.mouse.click(x, y, { count: 3, delay: 100 });
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
-          await page.keyboard.press("Escape");
-          await waitForUnselectedEditor(page, editorSelector);
+          await unselectEditor(page, editorSelector);
 
           const clickHandle = await waitForPointerUp(page);
           y = rect.y - 3 * rect.height;

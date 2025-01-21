@@ -74,27 +74,6 @@ const DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 const RENDERING_CANCELLED_TIMEOUT = 100; // ms
 const DELAYED_CLEANUP_TIMEOUT = 5000; // ms
 
-const DefaultCanvasFactory =
-  typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
-    ? NodeCanvasFactory
-    : DOMCanvasFactory;
-const DefaultCMapReaderFactory =
-  typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
-    ? NodeCMapReaderFactory
-    : DOMCMapReaderFactory;
-const DefaultFilterFactory =
-  typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
-    ? NodeFilterFactory
-    : DOMFilterFactory;
-const DefaultStandardFontDataFactory =
-  typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
-    ? NodeStandardFontDataFactory
-    : DOMStandardFontDataFactory;
-const DefaultWasmFactory =
-  typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
-    ? NodeWasmFactory
-    : DOMWasmFactory;
-
 /**
  * @typedef { Int8Array | Uint8Array | Uint8ClampedArray |
  *            Int16Array | Uint16Array |
@@ -145,9 +124,8 @@ const DefaultWasmFactory =
  * @property {boolean} [cMapPacked] - Specifies if the Adobe CMaps are binary
  *   packed or not. The default value is `true`.
  * @property {Object} [CMapReaderFactory] - The factory that will be used when
- *   reading built-in CMap files. Providing a custom factory is useful for
- *   environments without Fetch API or `XMLHttpRequest` support, such as
- *   Node.js. The default value is {DOMCMapReaderFactory}.
+ *   reading built-in CMap files.
+ *   The default value is {DOMCMapReaderFactory}.
  * @property {boolean} [useSystemFonts] - When `true`, fonts that aren't
  *   embedded in the PDF document will fallback to a system font.
  *   The default value is `true` in web environments and `false` in Node.js;
@@ -156,18 +134,17 @@ const DefaultWasmFactory =
  * @property {string} [standardFontDataUrl] - The URL where the standard font
  *   files are located. Include the trailing slash.
  * @property {Object} [StandardFontDataFactory] - The factory that will be used
- *   when reading the standard font files. Providing a custom factory is useful
- *   for environments without Fetch API or `XMLHttpRequest` support, such as
- *   Node.js. The default value is {DOMStandardFontDataFactory}.
+ *   when reading the standard font files.
+ *   The default value is {DOMStandardFontDataFactory}.
  * @property {string} [wasmUrl] - The URL where the wasm files are located.
  *   Include the trailing slash.
  * @property {Object} [WasmFactory] - The factory that will be used
- *   when reading the wasm files. Providing a custom factory is useful
- *   for environments without Fetch API or `XMLHttpRequest` support, such as
- *   Node.js. The default value is {DOMWasmFactory}.
+ *   when reading the wasm files.
+ *   The default value is {DOMWasmFactory}.
  * @property {boolean} [useWorkerFetch] - Enable using the Fetch API in the
  *   worker-thread when reading CMap and standard font files. When `true`,
- *   the `CMapReaderFactory` and `StandardFontDataFactory` options are ignored.
+ *   the `CMapReaderFactory`, `StandardFontDataFactory`, and `WasmFactory`
+ *   options are ignored.
  *   The default value is `true` in web environments and `false` in Node.js.
  * @property {boolean} [stopAtErrors] - Reject certain promises, e.g.
  *   `getOperatorList`, `getTextContent`, and `RenderTask`, when the associated
@@ -285,15 +262,26 @@ function getDocument(src = {}) {
       : null;
   const cMapUrl = typeof src.cMapUrl === "string" ? src.cMapUrl : null;
   const cMapPacked = src.cMapPacked !== false;
-  const CMapReaderFactory = src.CMapReaderFactory || DefaultCMapReaderFactory;
+  const CMapReaderFactory =
+    src.CMapReaderFactory ||
+    (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
+      ? NodeCMapReaderFactory
+      : DOMCMapReaderFactory);
   const standardFontDataUrl =
     typeof src.standardFontDataUrl === "string"
       ? src.standardFontDataUrl
       : null;
   const StandardFontDataFactory =
-    src.StandardFontDataFactory || DefaultStandardFontDataFactory;
+    src.StandardFontDataFactory ||
+    (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
+      ? NodeStandardFontDataFactory
+      : DOMStandardFontDataFactory);
   const wasmUrl = typeof src.wasmUrl === "string" ? src.wasmUrl : null;
-  const WasmFactory = src.WasmFactory || DefaultWasmFactory;
+  const WasmFactory =
+    src.WasmFactory ||
+    (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
+      ? NodeWasmFactory
+      : DOMWasmFactory);
   const ignoreErrors = src.stopAtErrors !== true;
   const maxImageSize =
     Number.isInteger(src.maxImageSize) && src.maxImageSize > -1
@@ -326,8 +314,16 @@ function getDocument(src = {}) {
   const disableStream = src.disableStream === true;
   const disableAutoFetch = src.disableAutoFetch === true;
   const pdfBug = src.pdfBug === true;
-  const CanvasFactory = src.CanvasFactory || DefaultCanvasFactory;
-  const FilterFactory = src.FilterFactory || DefaultFilterFactory;
+  const CanvasFactory =
+    src.CanvasFactory ||
+    (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
+      ? NodeCanvasFactory
+      : DOMCanvasFactory);
+  const FilterFactory =
+    src.FilterFactory ||
+    (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
+      ? NodeFilterFactory
+      : DOMFilterFactory);
   const enableHWA = src.enableHWA === true;
 
   // Parameters whose default values depend on other parameters.
@@ -3536,11 +3532,6 @@ const build =
 
 export {
   build,
-  DefaultCanvasFactory,
-  DefaultCMapReaderFactory,
-  DefaultFilterFactory,
-  DefaultStandardFontDataFactory,
-  DefaultWasmFactory,
   getDocument,
   LoopbackPort,
   PDFDataRangeTransport,
