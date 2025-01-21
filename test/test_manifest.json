@@ -11286,5 +11286,12 @@
     "firstPage": 2,
     "lastPage": 2,
     "type": "eq"
+  },
+  {
+    "id": "issue19360",
+    "file": "pdfs/issue19360.pdf",
+    "md5": "b2de376f7e96fa2b6afc00dac016c40a",
+    "rounds": 1,
+    "type": "eq"
   }
 ]
