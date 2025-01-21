@@ -162,7 +162,8 @@
   box-sizing: border-box;
 }
 
-.annotationEditorLayer :is(.freeTextEditor, .inkEditor, .stampEditor, .rectEditor) {
+.annotationEditorLayer
+  :is(.freeTextEditor, .inkEditor, .stampEditor, .rectEditor) {
   position: absolute;
   background: transparent;
   z-index: 1;
