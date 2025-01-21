@@ -658,7 +658,6 @@ class DrawingEditor extends AnnotationEditor {
     // the pointers with a same type (e.g. two fingers). If the user starts to
     // draw with a finger and then uses a second finger, we just stop the
     // current drawing and let the user zoom the document.
-    console.log(' startDrawing ')
 
     const { target, offsetX: x, offsetY: y, pointerId, pointerType } = event;
     if (
