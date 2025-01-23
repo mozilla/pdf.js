@@ -52,8 +52,10 @@ class AnnotationEditorParams {
     editorFreeHighlightThickness,
     editorHighlightShowAll,
   }) {
+    const { eventBus } = this;
+
     const dispatchEvent = (typeStr, value) => {
-      this.eventBus.dispatch("switchannotationeditorparams", {
+      eventBus.dispatch("switchannotationeditorparams", {
         source: this,
         type: AnnotationEditorParamsType[typeStr],
         value,
@@ -75,7 +77,7 @@ class AnnotationEditorParams {
       dispatchEvent("INK_OPACITY", this.valueAsNumber);
     });
     editorStampAddImage.addEventListener("click", () => {
-      this.eventBus.dispatch("reporttelemetry", {
+      eventBus.dispatch("reporttelemetry", {
         source: this,
         details: {
           type: "editing",
@@ -93,7 +95,7 @@ class AnnotationEditorParams {
       dispatchEvent("HIGHLIGHT_SHOW_ALL", !checked);
     });
 
-    this.eventBus._on("annotationeditorparamschanged", evt => {
+    eventBus._on("annotationeditorparamschanged", evt => {
       for (const [type, value] of evt.details) {
         switch (type) {
           case AnnotationEditorParamsType.FREETEXT_SIZE:
@@ -110,6 +112,12 @@ class AnnotationEditorParams {
             break;
           case AnnotationEditorParamsType.INK_OPACITY:
             editorInkOpacity.value = value;
+            break;
+          case AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR:
+            eventBus.dispatch("mainhighlightcolorpickerupdatecolor", {
+              source: this,
+              value,
+            });
             break;
           case AnnotationEditorParamsType.HIGHLIGHT_THICKNESS:
             editorFreeHighlightThickness.value = value;
