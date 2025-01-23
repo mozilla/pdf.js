@@ -1075,4 +1075,54 @@ describe("Ink Editor", () => {
       );
     });
   });
+
+  describe("Page position should remain unchanged after drawing", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the page position remains the same after drawing", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const pageInitialPosition = await getRect(
+            page,
+            ".page[data-page-number='1']"
+          );
+
+          await switchToInk(page);
+
+          const editorLayerRect = await getRect(page, ".annotationEditorLayer");
+          const drawStartX = editorLayerRect.x + 100;
+          const drawStartY = editorLayerRect.y + 100;
+
+          const clickHandle = await waitForPointerUp(page);
+          await page.mouse.move(drawStartX, drawStartY);
+          await page.mouse.down();
+          await page.mouse.move(drawStartX + 50, drawStartY + 50);
+          await page.mouse.up();
+          await awaitPromise(clickHandle);
+          await commit(page);
+
+          const pageFinalPosition = await getRect(
+            page,
+            ".page[data-page-number='1']"
+          );
+
+          expect(pageInitialPosition.x)
+            .withContext(`In ${browserName}`)
+            .toEqual(pageFinalPosition.x);
+
+          expect(pageInitialPosition.y)
+            .withContext(`In ${browserName}`)
+            .toEqual(pageFinalPosition.y);
+        })
+      );
+    });
+  });
 });

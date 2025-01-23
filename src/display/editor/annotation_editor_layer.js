@@ -805,7 +805,9 @@ class AnnotationEditorLayer {
   }
 
   startDrawingSession(event) {
-    this.div.focus();
+    this.div.focus({
+      preventScroll: true,
+    });
     if (this.#drawingAC) {
       this.#currentEditorType.startDrawing(this, this.#uiManager, false, event);
       return;
