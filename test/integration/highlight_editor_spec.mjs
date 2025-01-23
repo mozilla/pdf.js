@@ -1481,23 +1481,33 @@ describe("Highlight Editor", () => {
     it("must check that clicking on the highlight floating button triggers an highlight", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          const rect = await getSpanRectFromText(page, 1, "Abstract");
-          const x = rect.x + rect.width / 2;
-          const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          async function floatingHighlight(text, editorId) {
+            const rect = await getSpanRectFromText(page, 1, text);
+            const x = rect.x + rect.width / 2;
+            const y = rect.y + rect.height / 2;
+            await page.mouse.click(x, y, { count: 2, delay: 100 });
 
-          await page.waitForSelector(".textLayer .highlightButton");
-          await page.click(".textLayer .highlightButton");
+            await page.waitForSelector(".textLayer .highlightButton");
+            await page.click(".textLayer .highlightButton");
 
-          await page.waitForSelector(getEditorSelector(0));
-          const usedColor = await page.evaluate(() => {
-            const highlight = document.querySelector(
-              `.page[data-page-number = "1"] .canvasWrapper > svg.highlight`
-            );
-            return highlight.getAttribute("fill");
-          });
+            await page.waitForSelector(getEditorSelector(editorId));
+            const usedColor = await page.evaluate(() => {
+              const highlight = document.querySelector(
+                `.page[data-page-number = "1"] .canvasWrapper > svg.highlight`
+              );
+              return highlight.getAttribute("fill");
+            });
 
-          expect(usedColor).withContext(`In ${browserName}`).toEqual("#AB0000");
+            expect(usedColor)
+              .withContext(`In ${browserName}`)
+              .toEqual("#AB0000");
+          }
+
+          await floatingHighlight("Abstract", 0);
+
+          // Disable editing mode, and highlight another string (issue 19369).
+          await switchToHighlight(page, /* disable */ true);
+          await floatingHighlight("Introduction", 1);
         })
       );
     });
