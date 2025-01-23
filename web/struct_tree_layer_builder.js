@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+/** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
+
 import { removeNullCharacters } from "./ui_utils.js";
 
 const PDF_ROLE_TO_HTML_ROLE = {
@@ -73,6 +75,12 @@ const PDF_ROLE_TO_HTML_ROLE = {
 
 const HEADING_PATTERN = /^H(\d+)$/;
 
+/**
+ * @typedef {Object} StructTreeLayerBuilderOptions
+ * @property {PDFPageProxy} pdfPage
+ * @property {Object} rawDims
+ */
+
 class StructTreeLayerBuilder {
   #promise;
 
@@ -86,11 +94,17 @@ class StructTreeLayerBuilder {
 
   #elementsToAddToTextLayer = null;
 
+  /**
+   * @param {StructTreeLayerBuilderOptions} options
+   */
   constructor(pdfPage, rawDims) {
     this.#promise = pdfPage.getStructTree();
     this.#rawDims = rawDims;
   }
 
+  /**
+   * @returns {Promise<void>}
+   */
   async render() {
     if (this.#treePromise) {
       return this.#treePromise;

@@ -396,11 +396,11 @@ class PDFPageView {
   async #renderAnnotationLayer() {
     let error = null;
     try {
-      await this.annotationLayer.render(
-        this.viewport,
-        { structTreeLayer: this.structTreeLayer },
-        "display"
-      );
+      await this.annotationLayer.render({
+        viewport: this.viewport,
+        intent: "display",
+        structTreeLayer: this.structTreeLayer,
+      });
     } catch (ex) {
       console.error("#renderAnnotationLayer:", ex);
       error = ex;
@@ -412,7 +412,10 @@ class PDFPageView {
   async #renderAnnotationEditorLayer() {
     let error = null;
     try {
-      await this.annotationEditorLayer.render(this.viewport, "display");
+      await this.annotationEditorLayer.render({
+        viewport: this.viewport,
+        intent: "display",
+      });
     } catch (ex) {
       console.error("#renderAnnotationEditorLayer:", ex);
       error = ex;
@@ -423,7 +426,9 @@ class PDFPageView {
 
   async #renderDrawLayer() {
     try {
-      await this.drawLayer.render("display");
+      await this.drawLayer.render({
+        intent: "display",
+      });
     } catch (ex) {
       console.error("#renderDrawLayer:", ex);
     }
@@ -432,7 +437,10 @@ class PDFPageView {
   async #renderXfaLayer() {
     let error = null;
     try {
-      const result = await this.xfaLayer.render(this.viewport, "display");
+      const result = await this.xfaLayer.render({
+        viewport: this.viewport,
+        intent: "display",
+      });
       if (result?.textDivs && this._textHighlighter) {
         // Given that the following method fetches the text asynchronously we
         // can invoke it *before* appending the xfaLayer to the DOM (below),
@@ -461,7 +469,9 @@ class PDFPageView {
 
     let error = null;
     try {
-      await this.textLayer.render(this.viewport);
+      await this.textLayer.render({
+        viewport: this.viewport,
+      });
     } catch (ex) {
       if (ex instanceof AbortException) {
         return;
