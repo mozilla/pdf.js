@@ -834,7 +834,7 @@ class DrawingEditor extends AnnotationEditor {
     parent.toggleDrawing(true);
     this._cleanup(false);
 
-    if (event) {
+    if (event?.target === parent.div) {
       parent.drawLayer.updateProperties(
         this._currentDrawId,
         DrawingEditor.#currentDraw.end(event.offsetX, event.offsetY)
