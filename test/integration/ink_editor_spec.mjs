@@ -1076,3 +1076,60 @@ describe("Ink Editor", () => {
     });
   });
 });
+
+describe("The pen-drawn shape must maintain correct curvature regardless of the page it is drawn on or whether the curve's endpoint lies within or beyond the page boundaries", () => {
+  let pages;
+
+  beforeAll(async () => {
+    pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+  });
+
+  afterAll(async () => {
+    await closePages(pages);
+  });
+
+  const getCurveOnPage = async ({ pageNumber = 1, page }) => {
+    const clickHandle = await waitForPointerUp(page);
+    const pageSelector = `.page[data-page-number = "${pageNumber}"]`;
+    await scrollIntoView(page, pageSelector);
+    await page.waitForSelector(pageSelector);
+    const rect = await getRect(page, `${pageSelector} .annotationEditorLayer`);
+    const x = rect.x + 100;
+    const y = rect.y + 200;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    // Create a reference curve on first page.
+    await page.mouse.move(x - 100, y);
+    if (page !== 1) {
+      // Add a move to create a curve that extends beyond the page boundary.
+      await page.mouse.move(x - 200, y);
+    }
+    await page.mouse.up();
+    await awaitPromise(clickHandle);
+    const d = await page.$eval(
+      `${pageSelector} .canvasWrapper svg.draw path[d]:not([d=""])`,
+      el => el.getAttribute("d")
+    );
+    return d;
+  };
+
+  it("must retain correct curvature regardless of the page or the curve's endpoint location", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        await switchToInk(page);
+
+        // Creating a reference curve on the first page with end
+        // within the page boundaries.
+        const d1 = await getCurveOnPage({ pageNumber: 1, page });
+
+        // Creating a curve on the second page with end
+        // beyond the page boundaries.
+        const d2 = await getCurveOnPage({ pageNumber: 2, page });
+
+        // Expect that the endpoint beyond the boundaries is ignored,
+        // ensuring both curves have the same shape on both pages.
+        expect(d1).withContext(`In ${browserName}`).toEqual(d2);
+      })
+    );
+  });
+});
