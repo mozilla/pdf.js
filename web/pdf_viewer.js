@@ -2339,11 +2339,22 @@ class PDFViewer {
       this.#mlManager?.loadModel("altText");
     }
 
-    const { eventBus } = this;
-    const updater = () => {
+    const { eventBus, pdfDocument } = this;
+    const updater = async () => {
       this.#cleanupSwitchAnnotationEditorMode();
       this.#annotationEditorMode = mode;
-      this.#annotationEditorUIManager.updateMode(mode, editId, isFromKeyboard);
+      await this.#annotationEditorUIManager.updateMode(
+        mode,
+        editId,
+        isFromKeyboard
+      );
+      if (
+        mode !== this.#annotationEditorMode ||
+        pdfDocument !== this.pdfDocument
+      ) {
+        // Since `updateMode` is async, the active mode could have changed.
+        return;
+      }
       eventBus.dispatch("annotationeditormodechanged", {
         source: this,
         mode,
