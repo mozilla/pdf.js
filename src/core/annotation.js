@@ -4179,6 +4179,28 @@ class SquareAnnotation extends MarkupAnnotation {
     this.data.hasOwnCanvas = this.data.noRotate;
     this.data.noHTML = false;
 
+    this.data.vertices = [
+      this.rectangle[0],
+      this.rectangle[1],
+      this.rectangle[2],
+      this.rectangle[1],
+      this.rectangle[2],
+      this.rectangle[3],
+      this.rectangle[0],
+      this.rectangle[3],
+    ];
+    if (dict.has("RD")) {
+      const rectDifference = dict.getArray("RD");
+      this.data.vertices[0] += rectDifference[0];
+      this.data.vertices[1] += rectDifference[1];
+      this.data.vertices[2] -= rectDifference[2];
+      this.data.vertices[3] += rectDifference[1];
+      this.data.vertices[4] -= rectDifference[2];
+      this.data.vertices[5] -= rectDifference[3];
+      this.data.vertices[6] += rectDifference[0];
+      this.data.vertices[7] -= rectDifference[3];
+    }
+
     if (!this.appearance) {
       // The default stroke color is black.
       const strokeColor = this.color ? getPdfColorArray(this.color) : [0, 0, 0];
