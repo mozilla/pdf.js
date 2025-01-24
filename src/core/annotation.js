@@ -970,6 +970,37 @@ class Annotation {
   }
 
   /**
+   * Set the line ending; should only be used with FreeText annotations.
+   * @param {Name} lineEnding - The line ending name.
+   */
+  setLineEnding(lineEnding) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      throw new Error("Not implemented: setLineEnding");
+    }
+
+    this.lineEnding = "None"; // The default value.
+
+    if (lineEnding instanceof Name) {
+      switch (lineEnding.name) {
+        case "None":
+          return;
+        case "Square":
+        case "Circle":
+        case "Diamond":
+        case "OpenArrow":
+        case "ClosedArrow":
+        case "Butt":
+        case "ROpenArrow":
+        case "RClosedArrow":
+        case "Slash":
+          this.lineEnding = lineEnding.name;
+          return;
+      }
+    }
+    warn(`Ignoring invalid lineEnding: ${lineEnding}`);
+  }
+
+  /**
    * Set the line endings; should only be used with specific annotation types.
    * @param {Array} lineEndings - The line endings array.
    */
@@ -3882,10 +3913,15 @@ class FreeTextAnnotation extends MarkupAnnotation {
     // We want to be able to add mouse listeners to the annotation.
     this.data.noHTML = false;
 
-    const { evaluatorOptions, xref } = params;
+    const { evaluatorOptions, xref, dict } = params;
     this.data.annotationType = AnnotationType.FREETEXT;
     this.setDefaultAppearance(params);
     this._hasAppearance = !!this.appearance;
+
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+      this.setLineEnding(dict.getArray("LE"));
+      this.data.lineEnding = this.lineEnding;
+    }
 
     if (this._hasAppearance) {
       const { fontColor, fontSize } = parseAppearanceStream(
