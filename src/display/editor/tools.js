@@ -1716,10 +1716,6 @@ class AnnotationEditorUIManager {
     this.#updateModeCapability.resolve();
   }
 
-  isInEditingMode() {
-    return this.#mode !== AnnotationEditorType.NONE;
-  }
-
   addNewEditorFromKeyboard() {
     if (this.currentLayer.canCreateNewEmptyEditor()) {
       this.currentLayer.addNewEditor();
