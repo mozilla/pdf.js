@@ -1952,20 +1952,25 @@ function createBaseline(done) {
 
 gulp.task(
   "unittestcli",
-  gulp.series(setTestEnv, "lib-legacy", function runUnitTestCli(done) {
-    const options = [
-      "node_modules/jasmine/bin/jasmine",
-      "JASMINE_CONFIG_PATH=test/unit/clitests.json",
-    ];
-    const jasmineProcess = startNode(options, { stdio: "inherit" });
-    jasmineProcess.on("close", function (code) {
-      if (code !== 0) {
-        done(new Error("Unit tests failed."));
-        return;
-      }
-      done();
-    });
-  })
+  gulp.series(
+    setTestEnv,
+    "generic-legacy",
+    "lib-legacy",
+    function runUnitTestCli(done) {
+      const options = [
+        "node_modules/jasmine/bin/jasmine",
+        "JASMINE_CONFIG_PATH=test/unit/clitests.json",
+      ];
+      const jasmineProcess = startNode(options, { stdio: "inherit" });
+      jasmineProcess.on("close", function (code) {
+        if (code !== 0) {
+          done(new Error("Unit tests failed."));
+          return;
+        }
+        done();
+      });
+    }
+  )
 );
 
 gulp.task("lint", function (done) {
