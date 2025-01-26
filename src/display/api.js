@@ -25,7 +25,6 @@ import {
   getVerbosityLevel,
   info,
   isNodeJS,
-  MAX_IMAGE_SIZE_TO_CACHE,
   RenderingIntentFlag,
   setVerbosityLevel,
   shadow,
@@ -72,7 +71,6 @@ import { XfaText } from "./xfa_text.js";
 
 const DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 const RENDERING_CANCELLED_TIMEOUT = 100; // ms
-const DELAYED_CLEANUP_TIMEOUT = 5000; // ms
 
 /**
  * @typedef { Int8Array | Uint8Array | Uint8ClampedArray |
@@ -1339,8 +1337,6 @@ class PDFDocumentProxy {
  * Proxy to a `PDFPage` in the worker thread.
  */
 class PDFPageProxy {
-  #delayedCleanupTimeout = null;
-
   #pendingCleanup = false;
 
   constructor(pageIndex, pageInfo, transport, pdfBug = false) {
@@ -1353,7 +1349,6 @@ class PDFPageProxy {
     this.commonObjs = transport.commonObjs;
     this.objs = new PDFObjects();
 
-    this._maybeCleanupAfterRender = false;
     this._intentStates = new Map();
     this.destroyed = false;
   }
@@ -1490,10 +1485,8 @@ class PDFPageProxy {
     );
     const { renderingIntent, cacheKey } = intentArgs;
     // If there was a pending destroy, cancel it so no cleanup happens during
-    // this call to render...
+    // this call to render.
     this.#pendingCleanup = false;
-    // ... and ensure that a delayed cleanup is always aborted.
-    this.#abortDelayedCleanup();
 
     optionalContentConfigPromise ||=
       this._transport.getOptionalContentConfig(renderingIntent);
@@ -1532,10 +1525,10 @@ class PDFPageProxy {
 
       // Attempt to reduce memory usage during *printing*, by always running
       // cleanup immediately once rendering has finished.
-      if (this._maybeCleanupAfterRender || intentPrint) {
+      if (intentPrint) {
         this.#pendingCleanup = true;
       }
-      this.#tryCleanup(/* delayed = */ !intentPrint);
+      this.#tryCleanup();
 
       if (error) {
         internalRenderTask.capability.reject(error);
@@ -1769,7 +1762,6 @@ class PDFPageProxy {
     }
     this.objs.clear();
     this.#pendingCleanup = false;
-    this.#abortDelayedCleanup();
 
     return Promise.all(waitOn);
   }
@@ -1783,7 +1775,7 @@ class PDFPageProxy {
    */
   cleanup(resetStats = false) {
     this.#pendingCleanup = true;
-    const success = this.#tryCleanup(/* delayed = */ false);
+    const success = this.#tryCleanup();
 
     if (resetStats && success) {
       this._stats &&= new StatTimer();
@@ -1793,23 +1785,10 @@ class PDFPageProxy {
 
   /**
    * Attempts to clean up if rendering is in a state where that's possible.
-   * @param {boolean} [delayed] - Delay the cleanup, to e.g. improve zooming
-   *   performance in documents with large images.
-   *   The default value is `false`.
    * @returns {boolean} Indicates if clean-up was successfully run.
    */
-  #tryCleanup(delayed = false) {
-    this.#abortDelayedCleanup();
-
+  #tryCleanup() {
     if (!this.#pendingCleanup || this.destroyed) {
-      return false;
-    }
-    if (delayed) {
-      this.#delayedCleanupTimeout = setTimeout(() => {
-        this.#delayedCleanupTimeout = null;
-        this.#tryCleanup(/* delayed = */ false);
-      }, DELAYED_CLEANUP_TIMEOUT);
-
       return false;
     }
     for (const { renderTasks, operatorList } of this._intentStates.values()) {
@@ -1821,13 +1800,6 @@ class PDFPageProxy {
     this.objs.clear();
     this.#pendingCleanup = false;
     return true;
-  }
-
-  #abortDelayedCleanup() {
-    if (this.#delayedCleanupTimeout) {
-      clearTimeout(this.#delayedCleanupTimeout);
-      this.#delayedCleanupTimeout = null;
-    }
   }
 
   /**
@@ -1863,7 +1835,7 @@ class PDFPageProxy {
     }
 
     if (operatorListChunk.lastChunk) {
-      this.#tryCleanup(/* delayed = */ true);
+      this.#tryCleanup();
     }
   }
 
@@ -1926,7 +1898,7 @@ class PDFPageProxy {
             for (const internalRenderTask of intentState.renderTasks) {
               internalRenderTask.operatorListChanged();
             }
-            this.#tryCleanup(/* delayed = */ true);
+            this.#tryCleanup();
           }
 
           if (intentState.displayReadyCapability) {
@@ -2884,13 +2856,6 @@ class WorkerTransport {
 
       switch (type) {
         case "Image":
-          pageProxy.objs.resolve(id, imageData);
-
-          // Heuristic that will allow us not to store large data.
-          if (imageData?.dataLen > MAX_IMAGE_SIZE_TO_CACHE) {
-            pageProxy._maybeCleanupAfterRender = true;
-          }
-          break;
         case "Pattern":
           pageProxy.objs.resolve(id, imageData);
           break;
