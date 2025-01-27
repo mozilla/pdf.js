@@ -3884,8 +3884,12 @@ class FreeTextAnnotation extends MarkupAnnotation {
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
       if (dict.has("CL")) {
         this.setLineEnding(dict.getArray("LE"));
-        this.data.calloutLine = dict.getArray("CL");
         this.data.lineEnding = this.lineEnding;
+
+        const calloutLine = dict.getArray("CL");
+        if (isNumberArray(calloutLine)) {
+          this.data.calloutLine = calloutLine;
+        }
       }
     }
 
