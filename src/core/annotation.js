@@ -45,6 +45,7 @@ import {
   getParentToUpdate,
   getRotationMatrix,
   isNumberArray,
+  lookupLineEnding,
   lookupMatrix,
   lookupNormalRect,
   lookupRect,
@@ -978,26 +979,7 @@ class Annotation {
       throw new Error("Not implemented: setLineEnding");
     }
 
-    this.lineEnding = "None"; // The default value.
-
-    if (lineEnding instanceof Name) {
-      switch (lineEnding.name) {
-        case "None":
-          return;
-        case "Square":
-        case "Circle":
-        case "Diamond":
-        case "OpenArrow":
-        case "ClosedArrow":
-        case "Butt":
-        case "ROpenArrow":
-        case "RClosedArrow":
-        case "Slash":
-          this.lineEnding = lineEnding.name;
-          return;
-      }
-    }
-    warn(`Ignoring invalid lineEnding: ${lineEnding}`);
+    this.lineEnding = lookupLineEnding(lineEnding, "None");
   }
 
   /**
@@ -1012,26 +994,7 @@ class Annotation {
 
     if (Array.isArray(lineEndings) && lineEndings.length === 2) {
       for (let i = 0; i < 2; i++) {
-        const obj = lineEndings[i];
-
-        if (obj instanceof Name) {
-          switch (obj.name) {
-            case "None":
-              continue;
-            case "Square":
-            case "Circle":
-            case "Diamond":
-            case "OpenArrow":
-            case "ClosedArrow":
-            case "Butt":
-            case "ROpenArrow":
-            case "RClosedArrow":
-            case "Slash":
-              this.lineEndings[i] = obj.name;
-              continue;
-          }
-        }
-        warn(`Ignoring invalid lineEnding: ${obj}`);
+        this.lineEndings[i] = lookupLineEnding(lineEndings[i], "None");
       }
     }
   }
@@ -3922,7 +3885,6 @@ class FreeTextAnnotation extends MarkupAnnotation {
       if (dict.has("CL")) {
         this.setLineEnding(dict.getArray("LE"));
         this.data.calloutLine = dict.getArray("CL");
-        this.data.rectDifference = dict.getArray("RD");
         this.data.lineEnding = this.lineEnding;
       }
     }

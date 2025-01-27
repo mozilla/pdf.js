@@ -23,7 +23,7 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
-import { Dict, isName, Ref, RefSet } from "./primitives.js";
+import { Dict, isName, Name, Ref, RefSet } from "./primitives.js";
 import { BaseStream } from "./base_stream.js";
 
 const PDF_VERSION_REGEXP = /^[1-9]\.\d$/;
@@ -298,6 +298,27 @@ function lookupRect(arr, fallback) {
 // Returns the normalized rectangle, or the fallback value if it's invalid.
 function lookupNormalRect(arr, fallback) {
   return isNumberArray(arr, 4) ? Util.normalizeRect(arr) : fallback;
+}
+
+// Returns the line ending style, or the fallback value if it's invalid.
+function lookupLineEnding(value, fallback) {
+  if (value instanceof Name) {
+    switch (value.name) {
+      case "None":
+      case "Square":
+      case "Circle":
+      case "Diamond":
+      case "OpenArrow":
+      case "ClosedArrow":
+      case "Butt":
+      case "ROpenArrow":
+      case "RClosedArrow":
+      case "Slash":
+        return value.name;
+    }
+  }
+
+  return fallback;
 }
 
 /**
@@ -723,6 +744,7 @@ export {
   isNumberArray,
   isWhiteSpace,
   log2,
+  lookupLineEnding,
   lookupMatrix,
   lookupNormalRect,
   lookupRect,
