@@ -15,6 +15,7 @@
 
 import {
   AnnotationActionEventType,
+  AnnotationBorderEffectType,
   AnnotationBorderStyleType,
   AnnotationEditorType,
   AnnotationFieldFlag,
@@ -1084,6 +1085,19 @@ class Annotation {
       // See also https://github.com/mozilla/pdf.js/issues/6179.
       this.borderStyle.setWidth(0);
     }
+    if (borderStyle.has("BE")) {
+      const dict = borderStyle.get("BE");
+      if (dict instanceof Dict) {
+        const effect = dict.get("S");
+        if (effect instanceof Name) {
+          this.borderStyle.setEffect(effect);
+          const intensity = dict.get("I");
+          if (typeof intensity === "number") {
+            this.borderStyle.setEffectIntensity(intensity);
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -1506,6 +1520,41 @@ class AnnotationBorderStyle {
       default:
         break;
     }
+  }
+
+  /**
+   * Set the border effect.
+   *
+   * @public
+   * @memberof AnnotationBorderStyle
+   * @param {Name} effect - The annotation effect.
+   * @see {@link shared/util.js}
+   */
+  setEffect(effect) {
+    if (!(effect instanceof Name)) {
+      return;
+    }
+    switch (effect.name) {
+      case "C":
+        this.effect = AnnotationBorderEffectType.CLOUD;
+        break;
+      default:
+        break;
+    }
+  }
+
+  /**
+   * Set the effect intensity.
+   *
+   * @public
+   * @memberof AnnotationBorderStyle
+   * @param {number} intensity - The intensity of the effect.
+   */
+  setEffectIntensity(intensity) {
+    if (typeof intensity !== "number" || !Number.isInteger(intensity)) {
+      return;
+    }
+    this.effectIntensity = intensity;
   }
 
   /**
