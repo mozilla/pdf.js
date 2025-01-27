@@ -3882,12 +3882,12 @@ class FreeTextAnnotation extends MarkupAnnotation {
     this._hasAppearance = !!this.appearance;
 
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-      if (dict.has("CL")) {
-        this.setLineEnding(dict.getArray("LE"));
+      if (this.data.it === "FreeTextCallout") {
+        this.setLineEnding(dict.get("LE"));
         this.data.lineEnding = this.lineEnding;
 
         const calloutLine = dict.getArray("CL");
-        if (isNumberArray(calloutLine)) {
+        if (isNumberArray(calloutLine, 4) || isNumberArray(calloutLine, 6)) {
           this.data.calloutLine = calloutLine;
         }
       }
@@ -3940,8 +3940,17 @@ class FreeTextAnnotation extends MarkupAnnotation {
   }
 
   static createNewDict(annotation, xref, { apRef, ap }) {
-    const { color, fontSize, oldAnnotation, rect, rotation, user, value } =
-      annotation;
+    const {
+      calloutLine,
+      color,
+      fontSize,
+      lineEnding,
+      oldAnnotation,
+      rect,
+      rotation,
+      user,
+      value,
+    } = annotation;
     const freetext = oldAnnotation || new Dict(xref);
     freetext.set("Type", Name.get("Annot"));
     freetext.set("Subtype", Name.get("FreeText"));
@@ -3960,6 +3969,15 @@ class FreeTextAnnotation extends MarkupAnnotation {
     freetext.set("F", 4);
     freetext.set("Border", [0, 0, 0]);
     freetext.set("Rotate", rotation);
+
+    if (calloutLine) {
+      freetext.set("IT", Name.get("FreeTextCallout"));
+
+      freetext.set("CL", calloutLine);
+      if (lineEnding) {
+        freetext.set("LE", Name.get(lineEnding));
+      }
+    }
 
     if (user) {
       freetext.set("T", stringToAsciiOrUTF16BE(user));
