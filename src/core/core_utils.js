@@ -280,7 +280,7 @@ function isNumberArray(arr, len) {
   // BigInt64Array/BigUint64Array types (their elements aren't "number").
   return (
     ArrayBuffer.isView(arr) &&
-    (arr.length === 0 || typeof arr[0] === "number") &&
+    !(arr instanceof BigInt64Array || arr instanceof BigUint64Array) &&
     (len === null || arr.length === len)
   );
 }
