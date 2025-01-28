@@ -227,6 +227,10 @@ function readInt8(data, offset) {
   return (data[offset] << 24) >> 24;
 }
 
+function readInt16(data, offset) {
+  return ((data[offset] << 24) | (data[offset + 1] << 16)) >> 16;
+}
+
 function readUint16(data, offset) {
   return (data[offset] << 8) | data[offset + 1];
 }
@@ -733,6 +737,7 @@ export {
   ParserEOFException,
   parseXFAPath,
   PDF_VERSION_REGEXP,
+  readInt16,
   readInt8,
   readUint16,
   readUint32,
