@@ -1252,6 +1252,14 @@
     "about": "XObject with BBox array containing indirect object."
   },
   {
+    "id": "issue19389",
+    "file": "pdfs/issue19389.pdf",
+    "md5": "419357cd829b067347c64b9ae838af4a",
+    "rounds": 1,
+    "type": "eq",
+    "forms": true
+  },
+  {
     "id": "issue7115",
     "file": "pdfs/issue7115.pdf",
     "md5": "63c78e25a0433dd5a01ddff6ec720f29",
