@@ -28,6 +28,7 @@ import {
   ISOAdobeCharset,
 } from "./charsets.js";
 import { ExpertEncoding, StandardEncoding } from "./encodings.js";
+import { readInt16 } from "./core_utils.js";
 
 // Maximum subroutine call depth of type 2 charstrings. Matches OTS.
 const MAX_SUBR_NESTING = 10;
@@ -359,8 +360,8 @@ class CFFParser {
       if (value === 30) {
         return parseFloatOperand();
       } else if (value === 28) {
-        value = dict[pos++];
-        value = ((value << 24) | (dict[pos++] << 16)) >> 16;
+        value = readInt16(dict, pos);
+        pos += 2;
         return value;
       } else if (value === 29) {
         value = dict[pos++];
@@ -510,7 +511,7 @@ class CFFParser {
         }
       } else if (value === 28) {
         // number (16 bit)
-        stack[stackSize] = ((data[j] << 24) | (data[j + 1] << 16)) >> 16;
+        stack[stackSize] = readInt16(data, j);
         j += 2;
         stackSize++;
       } else if (value === 14) {
