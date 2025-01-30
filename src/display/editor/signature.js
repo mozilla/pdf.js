@@ -17,7 +17,7 @@ import { AnnotationEditorType, shadow } from "../../shared/util.js";
 import { DrawingEditor, DrawingOptions } from "./draw.js";
 import { AnnotationEditor } from "./editor.js";
 import { SignatureExtractor } from "./drawers/signaturedraw.js";
-import { StampEditor } from "./stamp.js";
+import { SupportedImageMimeTypes } from "../display_utils.js";
 
 class SignatureOptions extends DrawingOptions {
   #viewParameters;
@@ -106,7 +106,7 @@ class SignatureEditor extends DrawingEditor {
   async #extractSignature() {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = StampEditor.supportedTypesStr;
+    input.accept = SupportedImageMimeTypes.join(",");
     const signal = this._uiManager._signal;
     const { promise, resolve } = Promise.withResolvers();
 
