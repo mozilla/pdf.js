@@ -89,6 +89,7 @@
   --toolbarButton-editorHighlight-icon: url(images/toolbarButton-editorHighlight.svg);
   --toolbarButton-editorInk-icon: url(images/toolbarButton-editorInk.svg);
   --toolbarButton-editorStamp-icon: url(images/toolbarButton-editorStamp.svg);
+  --toolbarButton-editorSignature-icon: url(images/toolbarButton-editorSignature.svg);
   --toolbarButton-menuArrow-icon: url(images/toolbarButton-menuArrow.svg);
   --toolbarButton-sidebarToggle-icon: url(images/toolbarButton-sidebarToggle.svg);
   --toolbarButton-secondaryToolbarToggle-icon: url(images/toolbarButton-secondaryToolbarToggle.svg);
@@ -570,6 +571,10 @@ body {
 
 #editorStampButton::before {
   mask-image: var(--toolbarButton-editorStamp-icon);
+}
+
+#editorSignatureButton::before {
+  mask-image: var(--toolbarButton-editorSignature-icon);
 }
 
 #printButton::before {
@@ -1119,7 +1124,7 @@ dialog :link {
     z-index: 30000;
     cursor: default;
 
-    #editorStampAddImage::before {
+    :is(#editorStampAddImage, #editorSignatureAddSignature)::before {
       mask-image: var(--editorParams-stampAddImage-icon);
     }
 
