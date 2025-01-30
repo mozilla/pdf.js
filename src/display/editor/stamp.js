@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
+import { AnnotationEditorType, AnnotationPrefix } from "../../shared/util.js";
 import {
-  AnnotationEditorType,
-  AnnotationPrefix,
-  shadow,
-} from "../../shared/util.js";
-import { OutputScale, PixelsPerInch } from "../display_utils.js";
+  OutputScale,
+  PixelsPerInch,
+  SupportedImageMimeTypes,
+} from "../display_utils.js";
 import { AnnotationEditor } from "./editor.js";
 import { StampAnnotationElement } from "../annotation_layer.js";
 
@@ -63,34 +63,9 @@ class StampEditor extends AnnotationEditor {
     AnnotationEditor.initialize(l10n, uiManager);
   }
 
-  static get supportedTypes() {
-    // See https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types
-    // to know which types are supported by the browser.
-    const types = [
-      "apng",
-      "avif",
-      "bmp",
-      "gif",
-      "jpeg",
-      "png",
-      "svg+xml",
-      "webp",
-      "x-icon",
-    ];
-    return shadow(
-      this,
-      "supportedTypes",
-      types.map(type => `image/${type}`)
-    );
-  }
-
-  static get supportedTypesStr() {
-    return shadow(this, "supportedTypesStr", this.supportedTypes.join(","));
-  }
-
   /** @inheritdoc */
   static isHandlingMimeForPasting(mime) {
-    return this.supportedTypes.includes(mime);
+    return SupportedImageMimeTypes.includes(mime);
   }
 
   /** @inheritdoc */
@@ -258,7 +233,7 @@ class StampEditor extends AnnotationEditor {
       document.body.append(input);
     }
     input.type = "file";
-    input.accept = StampEditor.supportedTypesStr;
+    input.accept = SupportedImageMimeTypes.join(",");
     const signal = this._uiManager._signal;
     this.#bitmapPromise = new Promise(resolve => {
       input.addEventListener(
