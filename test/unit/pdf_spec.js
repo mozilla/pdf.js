@@ -52,6 +52,7 @@ import {
   RenderingCancelledException,
   setLayerDimensions,
   stopEvent,
+  SupportedImageMimeTypes,
 } from "../../src/display/display_utils.js";
 import { AnnotationEditorLayer } from "../../src/display/editor/annotation_editor_layer.js";
 import { AnnotationEditorUIManager } from "../../src/display/editor/tools.js";
@@ -103,6 +104,7 @@ const expectedAPI = Object.freeze({
   setLayerDimensions,
   shadow,
   stopEvent,
+  SupportedImageMimeTypes,
   TextLayer,
   TouchManager,
   Util,

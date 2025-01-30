@@ -650,6 +650,20 @@ class OutputScale {
   }
 }
 
+// See https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types
+// to know which types are supported by the browser.
+const SupportedImageMimeTypes = [
+  "image/apng",
+  "image/avif",
+  "image/bmp",
+  "image/gif",
+  "image/jpeg",
+  "image/png",
+  "image/svg+xml",
+  "image/webp",
+  "image/x-icon",
+];
+
 export {
   deprecated,
   fetchData,
@@ -672,5 +686,6 @@ export {
   setLayerDimensions,
   StatTimer,
   stopEvent,
+  SupportedImageMimeTypes,
   SVG_NS,
 };
