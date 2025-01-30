@@ -2774,8 +2774,8 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     this.data.multiLine = this.hasFieldFlag(AnnotationFieldFlag.MULTILINE);
     this.data.comb =
       this.hasFieldFlag(AnnotationFieldFlag.COMB) &&
-      !this.hasFieldFlag(AnnotationFieldFlag.MULTILINE) &&
-      !this.hasFieldFlag(AnnotationFieldFlag.PASSWORD) &&
+      !this.data.multiLine &&
+      !this.data.password &&
       !this.hasFieldFlag(AnnotationFieldFlag.FILESELECT) &&
       this.data.maxLen !== 0;
     this.data.doNotScroll = this.hasFieldFlag(AnnotationFieldFlag.DONOTSCROLL);
@@ -2986,13 +2986,12 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     this.checkedAppearance = null;
     this.uncheckedAppearance = null;
 
-    this.data.checkBox =
-      !this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
-      !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
-    this.data.radioButton =
-      this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
-      !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
-    this.data.pushButton = this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
+    const isRadio = this.hasFieldFlag(AnnotationFieldFlag.RADIO),
+      isPushButton = this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
+
+    this.data.checkBox = !isRadio && !isPushButton;
+    this.data.radioButton = isRadio && !isPushButton;
+    this.data.pushButton = isPushButton;
     this.data.isTooltipOnly = false;
 
     if (this.data.checkBox) {
