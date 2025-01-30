@@ -20,6 +20,9 @@ import {
   warn,
 } from "../shared/util.js";
 import { ChunkedStreamManager } from "./chunked_stream.js";
+import { ImageResizer } from "./image_resizer.js";
+import { JpegStream } from "./jpeg_stream.js";
+import { JpxImage } from "./jpx.js";
 import { MissingDataException } from "./core_utils.js";
 import { PDFDocument } from "./document.js";
 import { Stream } from "./stream.js";
@@ -36,25 +39,41 @@ function parseDocBaseUrl(url) {
 }
 
 class BasePdfManager {
-  constructor(args) {
+  constructor({
+    // source,
+    // disableAutoFetch,
+    docBaseUrl,
+    docId,
+    enableXfa,
+    evaluatorOptions,
+    handler,
+    // length,
+    password,
+    // rangeChunkSize,
+  }) {
     if (
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       this.constructor === BasePdfManager
     ) {
       unreachable("Cannot initialize BasePdfManager.");
     }
-    this._docBaseUrl = parseDocBaseUrl(args.docBaseUrl);
-    this._docId = args.docId;
-    this._password = args.password;
-    this.enableXfa = args.enableXfa;
+    this._docBaseUrl = parseDocBaseUrl(docBaseUrl);
+    this._docId = docId;
+    this._password = password;
+    this.enableXfa = enableXfa;
 
     // Check `OffscreenCanvas` and `ImageDecoder` support once,
     // rather than repeatedly throughout the worker-thread code.
-    args.evaluatorOptions.isOffscreenCanvasSupported &&=
+    evaluatorOptions.isOffscreenCanvasSupported &&=
       FeatureTest.isOffscreenCanvasSupported;
-    args.evaluatorOptions.isImageDecoderSupported &&=
+    evaluatorOptions.isImageDecoderSupported &&=
       FeatureTest.isImageDecoderSupported;
-    this.evaluatorOptions = Object.freeze(args.evaluatorOptions);
+    this.evaluatorOptions = Object.freeze(evaluatorOptions);
+
+    // Initially image-options once per document.
+    ImageResizer.setOptions(evaluatorOptions);
+    JpegStream.setOptions(evaluatorOptions);
+    JpxImage.setOptions({ ...evaluatorOptions, handler });
   }
 
   get docId() {
