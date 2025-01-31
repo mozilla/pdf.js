@@ -14,6 +14,7 @@
  */
 
 import { ContourDrawOutline } from "./contour.js";
+import { InkDrawOutline } from "./inkdraw.js";
 import { Outline } from "./outline.js";
 
 /**
@@ -343,6 +344,14 @@ class SignatureExtractor {
     return [out, histogram];
   }
 
+  static #getHistogram(buf) {
+    const histogram = new Uint32Array(256);
+    for (const g of buf) {
+      histogram[g]++;
+    }
+    return histogram;
+  }
+
   static #toUint8(buf) {
     // We have a RGBA buffer, containing a grayscale image.
     // We want to convert it into a basic G buffer.
@@ -479,9 +488,85 @@ class SignatureExtractor {
     return [uint8Buf, newWidth, newHeight];
   }
 
+  static extractContoursFromText(
+    text,
+    { fontFamily, fontStyle, fontWeight },
+    pageWidth,
+    pageHeight,
+    rotation,
+    innerMargin
+  ) {
+    let canvas = new OffscreenCanvas(1, 1);
+    let ctx = canvas.getContext("2d", { alpha: false });
+    const fontSize = 200;
+    const font =
+      (ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`);
+    const {
+      actualBoundingBoxLeft,
+      actualBoundingBoxRight,
+      actualBoundingBoxAscent,
+      actualBoundingBoxDescent,
+      fontBoundingBoxAscent,
+      fontBoundingBoxDescent,
+      width,
+    } = ctx.measureText(text);
+
+    // We rescale the canvas to make "sure" the text fits.
+    const SCALE = 1.5;
+    const canvasWidth = Math.ceil(
+      Math.max(
+        Math.abs(actualBoundingBoxLeft) + Math.abs(actualBoundingBoxRight) || 0,
+        width
+      ) * SCALE
+    );
+    const canvasHeight = Math.ceil(
+      Math.max(
+        Math.abs(actualBoundingBoxAscent) +
+          Math.abs(actualBoundingBoxDescent) || fontSize,
+        Math.abs(fontBoundingBoxAscent) + Math.abs(fontBoundingBoxDescent) ||
+          fontSize
+      ) * SCALE
+    );
+    canvas = new OffscreenCanvas(canvasWidth, canvasHeight);
+    ctx = canvas.getContext("2d", { alpha: true, willReadFrequently: true });
+    ctx.font = font;
+    ctx.filter = "grayscale(1)";
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+    ctx.fillStyle = "black";
+    ctx.fillText(
+      text,
+      (canvasWidth * (SCALE - 1)) / 2,
+      (canvasHeight * (3 - SCALE)) / 2
+    );
+
+    const uint8Buf = this.#toUint8(
+      ctx.getImageData(0, 0, canvasWidth, canvasHeight).data
+    );
+    const histogram = this.#getHistogram(uint8Buf);
+    const threshold = this.#guessThreshold(histogram);
+
+    const contourList = this.#findContours(
+      uint8Buf,
+      canvasWidth,
+      canvasHeight,
+      threshold
+    );
+
+    return this.processDrawnLines({
+      lines: { curves: contourList, width: canvasWidth, height: canvasHeight },
+      pageWidth,
+      pageHeight,
+      rotation,
+      innerMargin,
+      mustSmooth: true,
+      areContours: true,
+    });
+  }
+
   static process(bitmap, pageWidth, pageHeight, rotation, innerMargin) {
     const [uint8Buf, width, height] = this.#getGrayPixels(bitmap);
-    const [uint8Filtered, histogram] = this.#bilateralFilter(
+    const [buffer, histogram] = this.#bilateralFilter(
       uint8Buf,
       width,
       height,
@@ -491,32 +576,55 @@ class SignatureExtractor {
     );
 
     const threshold = this.#guessThreshold(histogram);
-    const contourList = this.#findContours(
-      uint8Filtered,
-      width,
-      height,
-      threshold
-    );
-    const linesAndPoints = [];
+    const contourList = this.#findContours(buffer, width, height, threshold);
 
+    return this.processDrawnLines({
+      lines: { curves: contourList, width, height },
+      pageWidth,
+      pageHeight,
+      rotation,
+      innerMargin,
+      mustSmooth: true,
+      areContours: true,
+    });
+  }
+
+  static processDrawnLines({
+    lines,
+    pageWidth,
+    pageHeight,
+    rotation,
+    innerMargin,
+    mustSmooth,
+    areContours,
+  }) {
     if (rotation % 180 !== 0) {
       [pageWidth, pageHeight] = [pageHeight, pageWidth];
     }
 
-    // The points need to be converted into page coordinates.
-    const ratio = 0.5 * Math.min(pageWidth / width, pageHeight / height);
+    const { curves, thickness, width, height } = lines;
+    const linesAndPoints = [];
+    const ratio = Math.min(pageWidth / width, pageHeight / height);
     const xScale = ratio / pageWidth;
     const yScale = ratio / pageHeight;
 
-    for (const { points } of contourList) {
-      const reducedPoints = this.#douglasPeucker(points);
+    for (const { points } of curves) {
+      const reducedPoints = mustSmooth ? this.#douglasPeucker(points) : points;
       if (!reducedPoints) {
         continue;
       }
 
       const len = reducedPoints.length;
       const newPoints = new Float32Array(len);
-      const line = new Float32Array(3 * (len - 2));
+      const line = new Float32Array(3 * (len === 2 ? 2 : len - 2));
+      linesAndPoints.push({ line, points: newPoints });
+
+      if (len === 2) {
+        newPoints[0] = reducedPoints[0] * xScale;
+        newPoints[1] = reducedPoints[1] * yScale;
+        line.set([NaN, NaN, NaN, NaN, newPoints[0], newPoints[1]], 0);
+        continue;
+      }
 
       let [x1, y1, x2, y2] = reducedPoints;
       x1 *= xScale;
@@ -532,17 +640,23 @@ class SignatureExtractor {
         line.set(Outline.createBezierPoints(x1, y1, x2, y2, x, y), (i - 2) * 3);
         [x1, y1, x2, y2] = [x2, y2, x, y];
       }
-
-      linesAndPoints.push({ line, points: newPoints });
     }
-    const outline = new ContourDrawOutline();
+
+    if (linesAndPoints.length === 0) {
+      return null;
+    }
+
+    const outline = areContours
+      ? new ContourDrawOutline()
+      : new InkDrawOutline();
+
     outline.build(
       linesAndPoints,
       pageWidth,
       pageHeight,
       1,
       rotation,
-      0,
+      areContours ? 0 : thickness,
       innerMargin
     );
 

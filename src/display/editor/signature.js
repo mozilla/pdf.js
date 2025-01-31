@@ -131,21 +131,29 @@ class SignatureEditor extends DrawingEditor {
     input.click();
 
     const bitmap = await promise;
-    if (!bitmap?.bitmap) {
-      this.remove();
-      return;
-    }
     const {
       rawDims: { pageWidth, pageHeight },
       rotation,
     } = this.parent.viewport;
-    const drawOutlines = SignatureExtractor.process(
-      bitmap.bitmap,
-      pageWidth,
-      pageHeight,
-      rotation,
-      SignatureEditor._INNER_MARGIN
-    );
+    let drawOutlines;
+    if (bitmap?.bitmap) {
+      drawOutlines = SignatureExtractor.process(
+        bitmap.bitmap,
+        pageWidth,
+        pageHeight,
+        rotation,
+        SignatureEditor._INNER_MARGIN
+      );
+    } else {
+      drawOutlines = SignatureExtractor.extractContoursFromText(
+        "Hello PDF.js' World !!",
+        { fontStyle: "italic", fontWeight: "400", fontFamily: "cursive" },
+        pageWidth,
+        pageHeight,
+        rotation,
+        SignatureEditor._INNER_MARGIN
+      );
+    }
     this._addOutlines({
       drawOutlines,
       drawingOptions: SignatureEditor.getDefaultDrawingOptions(),

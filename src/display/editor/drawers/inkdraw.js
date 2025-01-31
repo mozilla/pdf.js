@@ -344,7 +344,7 @@ class InkDrawOutline extends Outline {
         buffer.push("Z");
         continue;
       }
-      if (line.length === 12) {
+      if (line.length === 12 && isNaN(line[6])) {
         buffer.push(
           `L${Outline.svgRound(line[10])} ${Outline.svgRound(line[11])}`
         );
