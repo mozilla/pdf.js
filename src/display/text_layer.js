@@ -46,7 +46,6 @@ import { setLayerDimensions } from "./display_utils.js";
 
 const MAX_TEXT_DIVS_TO_RENDER = 100000;
 const DEFAULT_FONT_SIZE = 30;
-const DEFAULT_FONT_ASCENT = 0.8;
 
 class TextLayer {
   #capability = Promise.withResolvers();
@@ -332,7 +331,7 @@ class TextLayer {
     fontFamily = TextLayer.fontFamilyMap.get(fontFamily) || fontFamily;
     const fontHeight = Math.hypot(tx[2], tx[3]);
     const fontAscent =
-      fontHeight * TextLayer.#getAscent(fontFamily, this.#lang);
+      fontHeight * TextLayer.#getAscent(fontFamily, style, this.#lang);
 
     let left, top;
     if (angle === 0) {
@@ -523,7 +522,7 @@ class TextLayer {
     div.remove();
   }
 
-  static #getAscent(fontFamily, lang) {
+  static #getAscent(fontFamily, style, lang) {
     const cachedAscent = this.#ascentCache.get(fontFamily);
     if (cachedAscent) {
       return cachedAscent;
@@ -534,55 +533,31 @@ class TextLayer {
     this.#ensureCtxFont(ctx, DEFAULT_FONT_SIZE, fontFamily);
     const metrics = ctx.measureText("");
 
-    // Both properties aren't available by default in Firefox.
-    let ascent = metrics.fontBoundingBoxAscent;
-    let descent = Math.abs(metrics.fontBoundingBoxDescent);
-    if (ascent) {
-      const ratio = ascent / (ascent + descent);
-      this.#ascentCache.set(fontFamily, ratio);
-
-      ctx.canvas.width = ctx.canvas.height = 0;
-      return ratio;
-    }
-
-    // Try basic heuristic to guess ascent/descent.
-    // Draw a g with baseline at 0,0 and then get the line
-    // number where a pixel has non-null red component (starting
-    // from bottom).
-    ctx.strokeStyle = "red";
-    ctx.clearRect(0, 0, DEFAULT_FONT_SIZE, DEFAULT_FONT_SIZE);
-    ctx.strokeText("g", 0, 0);
-    let pixels = ctx.getImageData(
-      0,
-      0,
-      DEFAULT_FONT_SIZE,
-      DEFAULT_FONT_SIZE
-    ).data;
-    descent = 0;
-    for (let i = pixels.length - 1 - 3; i >= 0; i -= 4) {
-      if (pixels[i] > 0) {
-        descent = Math.ceil(i / 4 / DEFAULT_FONT_SIZE);
-        break;
-      }
-    }
-
-    // Draw an A with baseline at 0,DEFAULT_FONT_SIZE and then get the line
-    // number where a pixel has non-null red component (starting
-    // from top).
-    ctx.clearRect(0, 0, DEFAULT_FONT_SIZE, DEFAULT_FONT_SIZE);
-    ctx.strokeText("A", 0, DEFAULT_FONT_SIZE);
-    pixels = ctx.getImageData(0, 0, DEFAULT_FONT_SIZE, DEFAULT_FONT_SIZE).data;
-    ascent = 0;
-    for (let i = 0, ii = pixels.length; i < ii; i += 4) {
-      if (pixels[i] > 0) {
-        ascent = DEFAULT_FONT_SIZE - Math.floor(i / 4 / DEFAULT_FONT_SIZE);
-        break;
-      }
-    }
+    const ascent = metrics.fontBoundingBoxAscent;
+    const descent = Math.abs(metrics.fontBoundingBoxDescent);
 
     ctx.canvas.width = ctx.canvas.height = 0;
+    let ratio = 0.8; // DEFAULT_FONT_ASCENT
 
-    const ratio = ascent ? ascent / (ascent + descent) : DEFAULT_FONT_ASCENT;
+    if (ascent) {
+      ratio = ascent / (ascent + descent);
+    } else {
+      if (
+        (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+        FeatureTest.platform.isFirefox
+      ) {
+        warn(
+          "Enable the `dom.textMetrics.fontBoundingBox.enabled` preference " +
+            "in `about:config` to improve TextLayer rendering."
+        );
+      }
+      if (style.ascent) {
+        ratio = style.ascent;
+      } else if (style.descent) {
+        ratio = 1 + style.descent;
+      }
+    }
+
     this.#ascentCache.set(fontFamily, ratio);
     return ratio;
   }
