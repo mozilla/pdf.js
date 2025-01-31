@@ -1153,7 +1153,7 @@ class Annotation {
     const isUsingOwnCanvas = !!(
       hasOwnCanvas && intent & RenderingIntentFlag.DISPLAY
     );
-    if (isUsingOwnCanvas && (rect[0] === rect[2] || rect[1] === rect[3])) {
+    if (isUsingOwnCanvas && (this.width === 0 || this.height === 0)) {
       // Empty annotation, don't draw anything.
       this.data.hasOwnCanvas = false;
       return {
@@ -1410,6 +1410,14 @@ class Annotation {
       }
     }
     return fieldName.join(".");
+  }
+
+  get width() {
+    return this.data.rect[2] - this.data.rect[0];
+  }
+
+  get height() {
+    return this.data.rect[3] - this.data.rect[1];
   }
 }
 
@@ -1960,14 +1968,9 @@ class WidgetAnnotation extends Annotation {
       rotation = this.rotation;
     }
 
-    if (rotation === 0) {
-      return IDENTITY_MATRIX;
-    }
-
-    const width = this.data.rect[2] - this.data.rect[0];
-    const height = this.data.rect[3] - this.data.rect[1];
-
-    return getRotationMatrix(rotation, width, height);
+    return rotation === 0
+      ? IDENTITY_MATRIX
+      : getRotationMatrix(rotation, this.width, this.height);
   }
 
   getBorderAndBackgroundAppearances(annotationStorage) {
@@ -1979,12 +1982,10 @@ class WidgetAnnotation extends Annotation {
     if (!this.backgroundColor && !this.borderColor) {
       return "";
     }
-    const width = this.data.rect[2] - this.data.rect[0];
-    const height = this.data.rect[3] - this.data.rect[1];
     const rect =
       rotation === 0 || rotation === 180
-        ? `0 0 ${width} ${height} re`
-        : `0 0 ${height} ${width} re`;
+        ? `0 0 ${this.width} ${this.height} re`
+        : `0 0 ${this.height} ${this.width} re`;
 
     let str = "";
     if (this.backgroundColor) {
@@ -2048,12 +2049,7 @@ class WidgetAnnotation extends Annotation {
     );
 
     const matrix = [1, 0, 0, 1, 0, 0];
-    const bbox = [
-      0,
-      0,
-      this.data.rect[2] - this.data.rect[0],
-      this.data.rect[3] - this.data.rect[1],
-    ];
+    const bbox = [0, 0, this.width, this.height];
     const transform = getTransformMatrix(this.data.rect, bbox, matrix);
 
     let optionalContent;
@@ -2238,12 +2234,7 @@ class WidgetAnnotation extends Annotation {
       const appearanceDict = (appearanceStream.dict = new Dict(xref));
       appearanceDict.set("Subtype", Name.get("Form"));
       appearanceDict.set("Resources", resources);
-      appearanceDict.set("BBox", [
-        0,
-        0,
-        this.data.rect[2] - this.data.rect[0],
-        this.data.rect[3] - this.data.rect[1],
-      ]);
+      appearanceDict.set("BBox", [0, 0, this.width, this.height]);
 
       const rotationMatrix = this.getRotationMatrix(annotationStorage);
       if (rotationMatrix !== IDENTITY_MATRIX) {
@@ -2343,8 +2334,7 @@ class WidgetAnnotation extends Annotation {
 
     const defaultPadding = 1;
     const defaultHPadding = 2;
-    let totalHeight = this.data.rect[3] - this.data.rect[1];
-    let totalWidth = this.data.rect[2] - this.data.rect[0];
+    let { width: totalWidth, height: totalHeight } = this;
 
     if (rotation === 90 || rotation === 270) {
       [totalWidth, totalHeight] = [totalHeight, totalWidth];
@@ -3210,8 +3200,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
   }
 
   _getDefaultCheckedAppearance(params, type) {
-    const width = this.data.rect[2] - this.data.rect[0];
-    const height = this.data.rect[3] - this.data.rect[1];
+    const { width, height } = this;
     const bbox = [0, 0, width, height];
 
     // Ratio used to have a mark slightly smaller than the bbox.
@@ -3596,8 +3585,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
 
     const defaultPadding = 1;
     const defaultHPadding = 2;
-    let totalHeight = this.data.rect[3] - this.data.rect[1];
-    let totalWidth = this.data.rect[2] - this.data.rect[0];
+    let { width: totalWidth, height: totalHeight } = this;
 
     if (rotation === 90 || rotation === 270) {
       [totalWidth, totalHeight] = [totalHeight, totalWidth];
@@ -3809,10 +3797,7 @@ class PopupAnnotation extends Annotation {
     // version.
     this.data.noHTML = false;
 
-    if (
-      this.data.rect[0] === this.data.rect[2] ||
-      this.data.rect[1] === this.data.rect[3]
-    ) {
+    if (this.width === 0 || this.height === 0) {
       this.data.rect = null;
     }
 
