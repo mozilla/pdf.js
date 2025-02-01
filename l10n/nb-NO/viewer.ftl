@@ -493,3 +493,12 @@ pdfjs-editor-alt-text-settings-editor-title = Alternativ tekst-redigerer
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Vis alternativ tekst-redigerer direkte når du legger til et bilde
 pdfjs-editor-alt-text-settings-show-dialog-description = Hjelper deg å sørge for at alle bildene dine har alternativ tekst.
 pdfjs-editor-alt-text-settings-close-button = Lukk
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-undo-button =
+    .title = Angre
+pdfjs-editor-undo-bar-undo-button-label = Angre
+pdfjs-editor-undo-bar-close-button =
+    .title = Lukk
+pdfjs-editor-undo-bar-close-button-label = Lukk

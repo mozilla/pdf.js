@@ -265,3 +265,6 @@ pdfjs-editor-free-text-color-input = रंग
 
 ## Image alt-text settings
 
+
+## "Annotations removed" bar
+

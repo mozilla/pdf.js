@@ -79,9 +79,32 @@ pdfjs-password-cancel-button = Nkuvi-ka
 ## Editing
 
 
+## Remove button for the various kind of editor.
+
+
+##
+
+
 ## Alt-text dialog
 
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
+
+
+## Color picker
+
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+
+## Image alt-text settings
+
+
+## "Annotations removed" bar
 
