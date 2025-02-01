@@ -323,3 +323,6 @@ pdfjs-ink-canvas =
 
 ## Image alt-text settings
 
+
+## "Annotations removed" bar
+
