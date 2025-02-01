@@ -47,13 +47,6 @@ const DEFAULT_TAB_INDEX = 1000;
 const DEFAULT_FONT_SIZE = 9;
 const GetElementsByNameSet = new WeakSet();
 
-function getRectDims(rect) {
-  return {
-    width: rect[2] - rect[0],
-    height: rect[3] - rect[1],
-  };
-}
-
 /**
  * @typedef {Object} AnnotationElementParameters
  * @property {Object} data
@@ -243,12 +236,11 @@ class AnnotationElement {
       },
     } = this;
     currentRect?.splice(0, 4, ...rect);
-    const { width, height } = getRectDims(rect);
     style.left = `${(100 * (rect[0] - pageX)) / pageWidth}%`;
     style.top = `${(100 * (pageHeight - rect[3] + pageY)) / pageHeight}%`;
     if (rotation === 0) {
-      style.width = `${(100 * width) / pageWidth}%`;
-      style.height = `${(100 * height) / pageHeight}%`;
+      style.width = `${(100 * /* width = */ (rect[2] - rect[0])) / pageWidth}%`;
+      style.height = `${(100 * /* height = */ (rect[3] - rect[1])) / pageHeight}%`;
     } else {
       this.setRotation(rotation);
     }
@@ -297,8 +289,7 @@ class AnnotationElement {
       }
       return container;
     }
-
-    const { width, height } = getRectDims(data.rect);
+    const { width, height } = this;
 
     if (!ignoreBorder && data.borderStyle.width > 0) {
       style.borderWidth = `${data.borderStyle.width}px`;
@@ -381,19 +372,13 @@ class AnnotationElement {
       return;
     }
     const { pageWidth, pageHeight } = this.parent.viewport.rawDims;
-    const { width, height } = getRectDims(this.data.rect);
+    let { width, height } = this;
 
-    let elementWidth, elementHeight;
-    if (angle % 180 === 0) {
-      elementWidth = (100 * width) / pageWidth;
-      elementHeight = (100 * height) / pageHeight;
-    } else {
-      elementWidth = (100 * height) / pageWidth;
-      elementHeight = (100 * width) / pageHeight;
+    if (angle % 180 !== 0) {
+      [width, height] = [height, width];
     }
-
-    container.style.width = `${elementWidth}%`;
-    container.style.height = `${elementHeight}%`;
+    container.style.width = `${(100 * width) / pageWidth}%`;
+    container.style.height = `${(100 * height) / pageHeight}%`;
 
     container.setAttribute("data-main-rotation", (360 - angle) % 360);
   }
@@ -747,6 +732,14 @@ class AnnotationElement {
         editId,
       });
     });
+  }
+
+  get width() {
+    return this.data.rect[2] - this.data.rect[0];
+  }
+
+  get height() {
+    return this.data.rect[3] - this.data.rect[1];
   }
 }
 
@@ -2537,8 +2530,7 @@ class LineAnnotationElement extends AnnotationElement {
     // Create an invisible line with the same starting and ending coordinates
     // that acts as the trigger for the popup. Only the line itself should
     // trigger the popup, not the entire container.
-    const data = this.data;
-    const { width, height } = getRectDims(data.rect);
+    const { data, width, height } = this;
     const svg = this.svgFactory.create(
       width,
       height,
@@ -2592,8 +2584,7 @@ class SquareAnnotationElement extends AnnotationElement {
     // Create an invisible square with the same rectangle that acts as the
     // trigger for the popup. Only the square itself should trigger the
     // popup, not the entire container.
-    const data = this.data;
-    const { width, height } = getRectDims(data.rect);
+    const { data, width, height } = this;
     const svg = this.svgFactory.create(
       width,
       height,
@@ -2649,8 +2640,7 @@ class CircleAnnotationElement extends AnnotationElement {
     // Create an invisible circle with the same ellipse that acts as the
     // trigger for the popup. Only the circle itself should trigger the
     // popup, not the entire container.
-    const data = this.data;
-    const { width, height } = getRectDims(data.rect);
+    const { data, width, height } = this;
     const svg = this.svgFactory.create(
       width,
       height,
@@ -2712,11 +2702,12 @@ class PolylineAnnotationElement extends AnnotationElement {
     // popup, not the entire container.
     const {
       data: { rect, vertices, borderStyle, popupRef },
+      width,
+      height,
     } = this;
     if (!vertices) {
       return this.container;
     }
-    const { width, height } = getRectDims(rect);
     const svg = this.svgFactory.create(
       width,
       height,
@@ -3221,8 +3212,7 @@ class AnnotationLayer {
       }
       const isPopupAnnotation = data.annotationType === AnnotationType.POPUP;
       if (!isPopupAnnotation) {
-        const { width, height } = getRectDims(data.rect);
-        if (width <= 0 || height <= 0) {
+        if (data.rect[2] === data.rect[0] || data.rect[3] === data.rect[1]) {
           continue; // Ignore empty annotations.
         }
       } else {
