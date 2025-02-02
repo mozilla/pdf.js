@@ -338,3 +338,6 @@ pdfjs-editor-alt-text-settings-delete-model-button = Dilemel
 pdfjs-editor-alt-text-settings-download-model-button = Pellgargañ
 pdfjs-editor-alt-text-settings-downloading-model-button = O pellgargañ…
 pdfjs-editor-alt-text-settings-close-button = Serriñ
+
+## "Annotations removed" bar
+

@@ -353,7 +353,6 @@ pdfjs-ink-canvas =
 
 ## Alt-text dialog
 
-# Alternative text (alt text) helps when people can't see the image.
 pdfjs-editor-alt-text-button-label = Aḍris amaskal
 pdfjs-editor-alt-text-edit-button-label = Ẓreg aḍris amaskal
 pdfjs-editor-alt-text-dialog-label = Fren taxtirt
@@ -436,3 +435,6 @@ pdfjs-editor-alt-text-settings-delete-model-button = Kkes
 pdfjs-editor-alt-text-settings-download-model-button = Sader
 pdfjs-editor-alt-text-settings-downloading-model-button = Asader…
 pdfjs-editor-alt-text-settings-close-button = Mdel
+
+## "Annotations removed" bar
+
