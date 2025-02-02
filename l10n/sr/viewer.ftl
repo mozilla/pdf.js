@@ -419,3 +419,6 @@ pdfjs-editor-new-alt-text-not-now-button = Не сада
 
 ## Image alt-text settings
 
+
+## "Annotations removed" bar
+
