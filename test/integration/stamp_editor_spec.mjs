@@ -1751,9 +1751,7 @@ describe("Stamp Editor", () => {
           const pageOneSelector = `.page[data-page-number = "1"]`;
           const pageTwoSelector = `.page[data-page-number = "2"]`;
           await scrollIntoView(page, pageTwoSelector);
-          await page.waitForSelector(pageOneSelector, {
-            visible: false,
-          });
+          await page.waitForSelector(pageOneSelector, { visible: false });
 
           await switchToStamp(page);
           await scrollIntoView(page, pageOneSelector);
