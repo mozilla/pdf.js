@@ -138,19 +138,19 @@ describe("FreeText Editor", () => {
           await switchToFreeText(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
-
+          const editorSelector = getEditorSelector(0);
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(editorSelector, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(0)} .internal`, data);
+          await page.type(`${editorSelector} .internal`, data);
           await commit(page);
 
-          await waitForSelectedEditor(page, getEditorSelector(0));
+          await waitForSelectedEditor(page, editorSelector);
           await waitForStorageEntries(page, 1);
 
-          let content = await page.$eval(getEditorSelector(0), el =>
+          let content = await page.$eval(editorSelector, el =>
             el.innerText.trimEnd()
           );
           expect(content).withContext(`In ${browserName}`).toEqual(data);
@@ -158,11 +158,11 @@ describe("FreeText Editor", () => {
           // Edit again.
           await page.keyboard.press("Enter");
           await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay:not(.enabled)`
+            `${editorSelector} .overlay:not(.enabled)`
           );
           await commit(page);
 
-          content = await page.$eval(getEditorSelector(0), el =>
+          content = await page.$eval(editorSelector, el =>
             el.innerText.trimEnd()
           );
           expect(content).withContext(`In ${browserName}`).toEqual(data);
@@ -173,19 +173,21 @@ describe("FreeText Editor", () => {
     it("must copy/paste", async () => {
       // Run sequentially to avoid clipboard issues.
       for (const [browserName, page] of pages) {
-        await selectEditor(page, getEditorSelector(0));
+        const firstEditorSelector = getEditorSelector(0);
+        await selectEditor(page, firstEditorSelector);
         await copy(page);
         await paste(page);
-        await page.waitForSelector(getEditorSelector(1), {
+        const secondEditorSelector = getEditorSelector(1);
+        await page.waitForSelector(secondEditorSelector, {
           visible: true,
         });
         await waitForStorageEntries(page, 2);
 
-        const content = await page.$eval(getEditorSelector(0), el =>
+        const content = await page.$eval(firstEditorSelector, el =>
           el.innerText.trimEnd().replaceAll("\xa0", " ")
         );
 
-        let pastedContent = await page.$eval(getEditorSelector(1), el =>
+        let pastedContent = await page.$eval(secondEditorSelector, el =>
           el.innerText.trimEnd().replaceAll("\xa0", " ")
         );
 
@@ -193,12 +195,13 @@ describe("FreeText Editor", () => {
 
         await copy(page);
         await paste(page);
-        await page.waitForSelector(getEditorSelector(2), {
+        const thirdEditorSelector = getEditorSelector(2);
+        await page.waitForSelector(thirdEditorSelector, {
           visible: true,
         });
         await waitForStorageEntries(page, 3);
 
-        pastedContent = await page.$eval(getEditorSelector(2), el =>
+        pastedContent = await page.$eval(thirdEditorSelector, el =>
           el.innerText.trimEnd().replaceAll("\xa0", " ")
         );
         expect(pastedContent).withContext(`In ${browserName}`).toEqual(content);
@@ -228,19 +231,20 @@ describe("FreeText Editor", () => {
       // Run sequentially to avoid clipboard issues.
       for (const [, page] of pages) {
         const rect = await getRect(page, ".annotationEditorLayer");
-
+        let editorSelector = getEditorSelector(3);
         const data = "Hello PDF.js World !!";
         await page.mouse.click(rect.x + 100, rect.y + 100);
-        await page.waitForSelector(getEditorSelector(3), {
+        await page.waitForSelector(editorSelector, {
           visible: true,
         });
-        await page.type(`${getEditorSelector(3)} .internal`, data);
+        await page.type(`${editorSelector} .internal`, data);
         await commit(page);
 
-        await selectEditor(page, getEditorSelector(3));
+        await selectEditor(page, editorSelector);
         await copy(page);
         await paste(page);
-        await page.waitForSelector(getEditorSelector(4), {
+        editorSelector = getEditorSelector(4);
+        await page.waitForSelector(editorSelector, {
           visible: true,
         });
 
@@ -248,7 +252,7 @@ describe("FreeText Editor", () => {
         await page.waitForFunction(
           sel => !document.querySelector(sel),
           {},
-          getEditorSelector(4)
+          editorSelector
         );
 
         for (let i = 0; i < 2; i++) {
@@ -289,15 +293,16 @@ describe("FreeText Editor", () => {
 
           expect(oldAriaOwns).withContext(`In ${browserName}`).toEqual(null);
 
+          const editorSelector = getEditorSelector(7);
           const data = "Hello PDF.js World !!";
           await page.mouse.click(
             stacksRect.x + stacksRect.width + 1,
             stacksRect.y + stacksRect.height / 2
           );
-          await page.waitForSelector(getEditorSelector(7), {
+          await page.waitForSelector(editorSelector, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(7)} .internal`, data);
+          await page.type(`${editorSelector} .internal`, data);
           await commit(page);
 
           const ariaOwns = await page.$eval(".textLayer", el => {
@@ -320,12 +325,13 @@ describe("FreeText Editor", () => {
 
           await clearAll(page);
 
+          const editorSelector = getEditorSelector(8);
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
-          await page.waitForSelector(getEditorSelector(8), {
+          await page.waitForSelector(editorSelector, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(8)} .internal`, data);
+          await page.type(`${editorSelector} .internal`, data);
           await commit(page);
 
           expect(await getEditors(page, "selected"))
@@ -337,7 +343,7 @@ describe("FreeText Editor", () => {
             () => !document.querySelector(".selectedEditor")
           );
 
-          await selectEditor(page, getEditorSelector(8));
+          await selectEditor(page, editorSelector);
           expect(await getEditors(page, "selected"))
             .withContext(`In ${browserName}`)
             .toEqual([8]);
@@ -469,15 +475,16 @@ describe("FreeText Editor", () => {
         const editorCenters = [];
         let lastX = rect.x + rect.width / 10;
         for (let i = 0; i < 4; i++) {
+          const editorSelector = getEditorSelector(i);
           const data = `FreeText ${i}`;
           await page.mouse.click(lastX, rect.y + rect.height / 10);
-          await page.waitForSelector(getEditorSelector(i), {
+          await page.waitForSelector(editorSelector, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(i)} .internal`, data);
+          await page.type(`${editorSelector} .internal`, data);
           await commit(page);
 
-          const editorRect = await getRect(page, getEditorSelector(i));
+          const editorRect = await getRect(page, editorSelector);
           lastX = editorRect.x + editorRect.width + 10;
           editorCenters.push({
             x: editorRect.x + editorRect.width / 2,
@@ -645,20 +652,20 @@ describe("FreeText Editor", () => {
             }
 
             const rect = await getRect(page, annotationLayerSelector);
-
+            const editorSelector = getEditorSelector(currentId);
             const data = `Hello PDF.js World !! on page ${pageNumber}`;
             expected.push(data);
             await page.mouse.click(rect.x + 100, rect.y + 100);
-            await page.waitForSelector(getEditorSelector(currentId), {
+            await page.waitForSelector(editorSelector, {
               visible: true,
             });
-            await page.type(`${getEditorSelector(currentId)} .internal`, data);
+            await page.type(`${editorSelector} .internal`, data);
             await commit(page);
 
-            await waitForSelectedEditor(page, getEditorSelector(currentId));
+            await waitForSelectedEditor(page, editorSelector);
             await waitForStorageEntries(page, currentId + 1);
 
-            const content = await page.$eval(getEditorSelector(currentId), el =>
+            const content = await page.$eval(editorSelector, el =>
               el.innerText.trimEnd()
             );
             expect(content).withContext(`In ${browserName}`).toEqual(data);
@@ -778,15 +785,15 @@ describe("FreeText Editor", () => {
           for (let step = 0; step < 3; step++) {
             await firstPageOnTop(page);
             const rect = await getRect(page, ".annotationEditorLayer");
-
+            const editorSelector = getEditorSelector(currentId);
             const data = `Hello ${step}`;
             const x = Math.max(rect.x + 0.1 * rect.width, 10);
             const y = Math.max(rect.y + 0.1 * rect.height, 10);
             await page.mouse.click(x, y);
-            await page.waitForSelector(getEditorSelector(currentId), {
+            await page.waitForSelector(editorSelector, {
               visible: true,
             });
-            await page.type(`${getEditorSelector(currentId)} .internal`, data);
+            await page.type(`${editorSelector} .internal`, data);
             await commit(page);
 
             const promise = await waitForAnnotationEditorLayer(page);
@@ -903,19 +910,20 @@ describe("FreeText Editor", () => {
           let editorIds = await getEditors(page, "freeText");
           expect(editorIds.length).withContext(`In ${browserName}`).toEqual(6);
 
-          const editorRect = await getRect(page, getEditorSelector(0));
-          await selectEditor(page, getEditorSelector(0), /* count = */ 2);
+          const editorSelector = getEditorSelector(0);
+          const editorRect = await getRect(page, editorSelector);
+          await selectEditor(page, editorSelector, /* count = */ 2);
           await kbGoToEnd(page);
           await page.waitForFunction(
             sel =>
               document.getSelection().anchorOffset ===
               document.querySelector(sel).innerText.length,
             {},
-            `${getEditorSelector(0)} .internal`
+            `${editorSelector} .internal`
           );
 
           await page.type(
-            `${getEditorSelector(0)} .internal`,
+            `${editorSelector} .internal`,
             " and edited in Firefox"
           );
           await commit(page);
@@ -1079,12 +1087,13 @@ describe("FreeText Editor", () => {
           let editorIds = await getEditors(page, "freeText");
           expect(editorIds.length).withContext(`In ${browserName}`).toEqual(6);
 
-          await selectEditor(page, getEditorSelector(3));
+          const editorSelector = getEditorSelector(3);
+          await selectEditor(page, editorSelector);
           await page.keyboard.press("Backspace");
           await page.waitForFunction(
             sel => !document.querySelector(sel),
             {},
-            getEditorSelector(3)
+            editorSelector
           );
 
           const serialized = await getSerialized(page);
@@ -1290,13 +1299,13 @@ describe("FreeText Editor", () => {
           await switchToFreeText(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
-
+          const editorSelector = getEditorSelector(0);
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(editorSelector, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(0)} .internal`, data);
+          await page.type(`${editorSelector} .internal`, data);
           await commit(page);
 
           // Make Chrome happy.
@@ -1401,13 +1410,13 @@ describe("FreeText Editor", () => {
             }
 
             const rect = await getRect(page, annotationLayerSelector);
-
+            const editorSelector = getEditorSelector(currentId);
             const data = `Hello PDF.js World !! on page ${pageNumber}`;
             await page.mouse.click(rect.x + 100, rect.y + 100);
-            await page.waitForSelector(getEditorSelector(currentId), {
+            await page.waitForSelector(editorSelector, {
               visible: true,
             });
-            await page.type(`${getEditorSelector(currentId)} .internal`, data);
+            await page.type(`${editorSelector} .internal`, data);
             await commit(page);
 
             currentId += 1;
@@ -1745,13 +1754,13 @@ describe("FreeText Editor", () => {
           await switchToFreeText(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
-
+          const editorSelector = getEditorSelector(0);
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(editorSelector, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(0)} .internal`, data);
+          await page.type(`${editorSelector} .internal`, data);
           await commit(page);
 
           await page.focus("#editorFreeTextColor");
@@ -1760,14 +1769,14 @@ describe("FreeText Editor", () => {
           await page.waitForFunction(
             sel => !document.querySelector(sel),
             {},
-            getEditorSelector(0)
+            editorSelector
           );
 
           await kbRedo(page);
           await page.waitForFunction(
             sel => !!document.querySelector(sel),
             {},
-            getEditorSelector(0)
+            editorSelector
           );
         })
       );
@@ -1964,14 +1973,14 @@ describe("FreeText Editor", () => {
           await switchToFreeText(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
-
+          const editorSelector = getEditorSelector(0);
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(editorSelector, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(0)} .internal`, data);
-          await cancelFocusIn(page, getEditorSelector(0));
+          await page.type(`${editorSelector} .internal`, data);
+          await cancelFocusIn(page, editorSelector);
           await commit(page);
 
           const oneToFourteen = Array.from(new Array(14).keys(), x => x + 1);
@@ -2020,58 +2029,60 @@ describe("FreeText Editor", () => {
 
           let rect = await getRect(page, ".annotationEditorLayer");
 
+          const firstEditorSelector = getEditorSelector(0);
           await page.mouse.click(rect.x + 100, rect.y + 100);
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(firstEditorSelector, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(0)} .internal`, "A");
+          await page.type(`${firstEditorSelector} .internal`, "A");
           await commit(page);
 
           // Create a new editor.
-          rect = await getRect(page, getEditorSelector(0));
+          rect = await getRect(page, firstEditorSelector);
+          const secondEditorSelector = getEditorSelector(1);
           await page.mouse.click(
             rect.x + 5 * rect.width,
             rect.y + 5 * rect.height
           );
-          await page.waitForSelector(getEditorSelector(1), {
+          await page.waitForSelector(secondEditorSelector, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(1)} .internal`, "B");
+          await page.type(`${secondEditorSelector} .internal`, "B");
           await commit(page);
 
           // Select the second editor.
-          await selectEditor(page, getEditorSelector(1));
+          await selectEditor(page, secondEditorSelector);
 
-          const pos = n =>
+          const pos = selector =>
             page.evaluate(sel => {
               const editor = document.querySelector(sel);
               return Array.prototype.indexOf.call(
                 editor.parentNode.childNodes,
                 editor
               );
-            }, getEditorSelector(n));
+            }, selector);
 
-          expect(await pos(0))
+          expect(await pos(firstEditorSelector))
             .withContext(`In ${browserName}`)
             .toEqual(0);
-          expect(await pos(1))
+          expect(await pos(secondEditorSelector))
             .withContext(`In ${browserName}`)
             .toEqual(1);
 
-          const { y: y0, height } = await getRect(page, getEditorSelector(0));
-          const editorSelector = getEditorSelector(1);
+          const { y: y0, height } = await getRect(page, firstEditorSelector);
+          const editorSelector = secondEditorSelector;
           while ((await getRect(page, editorSelector)).y > y0 - height) {
             await moveEditor(page, editorSelector, 1, () => kbBigMoveUp(page));
           }
 
           // The editor must be moved in the DOM and potentially the focus
           // will be lost, hence there's a callback will get back the focus.
-          await page.waitForSelector(`${getEditorSelector(1)}:focus`);
+          await page.waitForSelector(`${secondEditorSelector}:focus`);
 
-          expect(await pos(0))
+          expect(await pos(firstEditorSelector))
             .withContext(`In ${browserName}`)
             .toEqual(1);
-          expect(await pos(1))
+          expect(await pos(secondEditorSelector))
             .withContext(`In ${browserName}`)
             .toEqual(0);
         })
@@ -2161,14 +2172,14 @@ describe("FreeText Editor", () => {
           await switchToFreeText(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
-
+          const editorSelector = getEditorSelector(0);
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(editorSelector, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(0)} .internal`, data);
-          await cancelFocusIn(page, getEditorSelector(0));
+          await page.type(`${editorSelector} .internal`, data);
+          await cancelFocusIn(page, editorSelector);
           await commit(page);
 
           await page.evaluate(() => {
@@ -2216,20 +2227,20 @@ describe("FreeText Editor", () => {
 
           const page1Selector = `.page[data-page-number = "1"] > .annotationEditorLayer.freetextEditing`;
           let rect = await getRect(page, page1Selector);
-          const editorSelector = getEditorSelector(0);
+          const firstEditorSelector = getEditorSelector(0);
           await page.mouse.click(rect.x + 10, rect.y + 10);
-          await page.waitForSelector(editorSelector, {
+          await page.waitForSelector(firstEditorSelector, {
             visible: true,
           });
-          await page.type(`${editorSelector} .internal`, "Hello");
-          await cancelFocusIn(page, editorSelector);
+          await page.type(`${firstEditorSelector} .internal`, "Hello");
+          await cancelFocusIn(page, firstEditorSelector);
           await commit(page);
 
           // Unselect.
-          await unselectEditor(page, editorSelector);
+          await unselectEditor(page, firstEditorSelector);
 
           // Select the editor created previously.
-          await selectEditor(page, editorSelector);
+          await selectEditor(page, firstEditorSelector);
 
           // Go to the last page.
           await scrollIntoView(page, `.page[data-page-number = "14"]`);
@@ -2241,11 +2252,12 @@ describe("FreeText Editor", () => {
           });
 
           rect = await getRect(page, page14Selector);
+          const secondEditorSelector = getEditorSelector(1);
           await page.mouse.click(rect.x + 10, rect.y + 10);
-          await page.waitForSelector(getEditorSelector(1), {
+          await page.waitForSelector(secondEditorSelector, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(1)} .internal`, "World");
+          await page.type(`${secondEditorSelector} .internal`, "World");
           await commit(page);
 
           for (let i = 0; i < 13; i++) {
@@ -2259,11 +2271,11 @@ describe("FreeText Editor", () => {
             });
           }
 
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(firstEditorSelector, {
             visible: true,
           });
-          await selectEditor(page, getEditorSelector(0));
-          const content = await page.$eval(getEditorSelector(0), el =>
+          await selectEditor(page, firstEditorSelector);
+          const content = await page.$eval(firstEditorSelector, el =>
             el.innerText.trimEnd()
           );
           expect(content).withContext(`In ${browserName}`).toEqual("Hello");
@@ -2330,7 +2342,7 @@ describe("FreeText Editor", () => {
           await kbUndo(page);
           await waitForSerialized(page, 1);
 
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(editorSelector, {
             visible: true,
           });
         })
@@ -2355,6 +2367,7 @@ describe("FreeText Editor", () => {
           await switchToFreeText(page);
 
           const parentId = "p3R_mc8";
+          const editorSelector = getEditorSelector(0);
           const rect = await page.evaluate(id => {
             const parent = document.getElementById(id);
             let span = null;
@@ -2371,10 +2384,10 @@ describe("FreeText Editor", () => {
             rect.x + rect.width + 5,
             rect.y + rect.height / 2
           );
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(editorSelector, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(0)} .internal`, "Hello Wolrd");
+          await page.type(`${editorSelector} .internal`, "Hello Wolrd");
           await commit(page);
 
           await waitForStorageEntries(page, 1);
@@ -2403,19 +2416,19 @@ describe("FreeText Editor", () => {
           await switchToFreeText(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
-
+          const editorSelector = getEditorSelector(0);
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(editorSelector, {
             visible: true,
           });
-          const internalEditorSelector = `${getEditorSelector(0)} .internal`;
+          const internalEditorSelector = `${editorSelector} .internal`;
           await page.type(internalEditorSelector, data);
           await commit(page);
 
-          await page.click(getEditorSelector(0), { count: 2 });
+          await page.click(editorSelector, { count: 2 });
           await page.waitForSelector(
-            `${getEditorSelector(0)} .overlay:not(.enabled)`
+            `${editorSelector} .overlay:not(.enabled)`
           );
           await page.click(internalEditorSelector, {
             count: 3,
@@ -2482,7 +2495,7 @@ describe("FreeText Editor", () => {
           // Unselect.
           await unselectEditor(page, editorSelector);
 
-          content = await page.$eval(getEditorSelector(1), el =>
+          content = await page.$eval(editorSelector, el =>
             el.innerText.trimEnd()
           );
 
@@ -2509,7 +2522,7 @@ describe("FreeText Editor", () => {
           // Unselect.
           await unselectEditor(page, editorSelector);
 
-          let content = await page.$eval(getEditorSelector(2), el =>
+          let content = await page.$eval(editorSelector, el =>
             el.innerText.trimEnd()
           );
 
@@ -2558,13 +2571,13 @@ describe("FreeText Editor", () => {
           await switchToFreeText(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
-
+          const editorSelector = getEditorSelector(0);
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(editorSelector, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(0)} .internal`, data);
+          await page.type(`${editorSelector} .internal`, data);
           await commit(page);
 
           let handle = await createPromise(page, resolve => {
@@ -2588,7 +2601,7 @@ describe("FreeText Editor", () => {
           );
           expect(content).withContext(`In ${browserName}`).toEqual("");
 
-          content = await page.$eval(getEditorSelector(0), el =>
+          content = await page.$eval(editorSelector, el =>
             el.innerText.trimEnd()
           );
           expect(content).withContext(`In ${browserName}`).toEqual(data);
@@ -2614,21 +2627,21 @@ describe("FreeText Editor", () => {
           await switchToFreeText(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
-
+          const editorSelector = getEditorSelector(0);
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(editorSelector, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(0)} .internal`, data);
+          await page.type(`${editorSelector} .internal`, data);
           await commit(page);
 
           // Delete it in using the button.
-          await page.click(`${getEditorSelector(0)} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
           await page.waitForFunction(
             sel => !document.querySelector(sel),
             {},
-            getEditorSelector(0)
+            editorSelector
           );
           await waitForStorageEntries(page, 0);
 
@@ -2636,7 +2649,7 @@ describe("FreeText Editor", () => {
           await kbUndo(page);
           await waitForSerialized(page, 1);
 
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(editorSelector, {
             visible: true,
           });
         })
@@ -2675,17 +2688,18 @@ describe("FreeText Editor", () => {
           }
 
           // Select the editor created previously.
-          await selectEditor(page, getEditorSelector(0));
+          const editorSelector = getEditorSelector(0);
+          await selectEditor(page, editorSelector);
 
           await selectAll(page);
 
           // Delete it in using the button.
-          await page.focus(`${getEditorSelector(0)} button.delete`);
+          await page.focus(`${editorSelector} button.delete`);
           await page.keyboard.press("Enter");
           await page.waitForFunction(
             sel => !document.querySelector(sel),
             {},
-            getEditorSelector(0)
+            editorSelector
           );
           await waitForStorageEntries(page, 0);
 
@@ -2693,7 +2707,7 @@ describe("FreeText Editor", () => {
           await kbUndo(page);
           await waitForSerialized(page, 2);
 
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(editorSelector, {
             visible: true,
           });
 
@@ -2720,8 +2734,10 @@ describe("FreeText Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToFreeText(page);
-          await page.click(getEditorSelector(0), { count: 2 });
-          await page.type(`${getEditorSelector(0)} .internal`, "C");
+
+          const editorSelector = getEditorSelector(0);
+          await page.click(editorSelector, { count: 2 });
+          await page.type(`${editorSelector} .internal`, "C");
 
           await switchToFreeText(page, /* disable = */ true);
 
@@ -2749,8 +2765,10 @@ describe("FreeText Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToFreeText(page);
-          await page.click(getEditorSelector(0), { count: 2 });
-          await page.type(`${getEditorSelector(0)} .internal`, "Z");
+
+          const editorSelector = getEditorSelector(0);
+          await page.click(editorSelector, { count: 2 });
+          await page.type(`${editorSelector} .internal`, "Z");
 
           await switchToFreeText(page, /* disable = */ true);
 
@@ -2780,13 +2798,13 @@ describe("FreeText Editor", () => {
           await switchToFreeText(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
-
+          const editorSelector = getEditorSelector(0);
           const data = "Hello\nPDF.js\nWorld\n!!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(editorSelector, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(0)} .internal`, data);
+          await page.type(`${editorSelector} .internal`, data);
           await commit(page);
 
           await waitForSerialized(page, 1);
@@ -2816,13 +2834,13 @@ describe("FreeText Editor", () => {
           await switchToFreeText(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
-
+          const editorSelector = getEditorSelector(0);
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(editorSelector, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(0)} .internal`, data);
+          await page.type(`${editorSelector} .internal`, data);
           await commit(page);
 
           await page.evaluate(() => {
@@ -2919,18 +2937,18 @@ describe("FreeText Editor", () => {
           await switchToFreeText(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
-
+          const editorSelector = getEditorSelector(0);
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(editorSelector, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(0)} .internal`, data);
+          await page.type(`${editorSelector} .internal`, data);
           await commit(page);
           await waitForSerialized(page, 1);
 
-          await page.waitForSelector(`${getEditorSelector(0)} button.delete`);
-          await page.click(`${getEditorSelector(0)} button.delete`);
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
 
           const twoToFourteen = Array.from(new Array(13).keys(), n => n + 2);
@@ -2948,7 +2966,7 @@ describe("FreeText Editor", () => {
             await scrollIntoView(page, pageSelector);
           }
 
-          await page.waitForSelector(getEditorSelector(0));
+          await page.waitForSelector(editorSelector);
         })
       );
     });
@@ -2971,18 +2989,18 @@ describe("FreeText Editor", () => {
           await switchToFreeText(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
-
+          const editorSelector = getEditorSelector(0);
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
-          await page.waitForSelector(getEditorSelector(0), {
+          await page.waitForSelector(editorSelector, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(0)} .internal`, data);
+          await page.type(`${editorSelector} .internal`, data);
           await commit(page);
           await waitForSerialized(page, 1);
 
-          await page.waitForSelector(`${getEditorSelector(0)} button.delete`);
-          await page.click(`${getEditorSelector(0)} button.delete`);
+          await page.waitForSelector(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
 
           const twoToOne = Array.from(new Array(13).keys(), n => n + 2).concat(
@@ -2995,7 +3013,7 @@ describe("FreeText Editor", () => {
 
           await kbUndo(page);
           await waitForSerialized(page, 1);
-          await page.waitForSelector(getEditorSelector(0));
+          await page.waitForSelector(editorSelector);
         })
       );
     });
@@ -3393,12 +3411,13 @@ describe("FreeText Editor", () => {
 
           await page.waitForSelector("#editorUndoBar:not([hidden])");
           rect = await getRect(page, ".annotationEditorLayer");
+          const secondEditorSelector = getEditorSelector(1);
           const newData = "This is a new text box!";
           await page.mouse.click(rect.x + 150, rect.y + 150);
-          await page.waitForSelector(getEditorSelector(1), {
+          await page.waitForSelector(secondEditorSelector, {
             visible: true,
           });
-          await page.type(`${getEditorSelector(1)} .internal`, newData);
+          await page.type(`${secondEditorSelector} .internal`, newData);
           await commit(page);
           await waitForSerialized(page, 1);
           await page.waitForSelector("#editorUndoBar", { hidden: true });
