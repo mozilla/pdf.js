@@ -105,9 +105,7 @@ describe("Highlight Editor", () => {
 
           await page.waitForSelector(
             `.page[data-page-number = "1"] svg.highlight`,
-            {
-              visible: true,
-            }
+            { visible: true }
           );
         })
       );
