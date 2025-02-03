@@ -217,6 +217,7 @@ function createWebpackAlias(defines) {
     "web-preferences": "",
     "web-print_service": "",
     "web-secondary_toolbar": "web/secondary_toolbar.js",
+    "web-signature_manager": "web/signature_manager.js",
     "web-toolbar": "web/toolbar.js",
   };
 

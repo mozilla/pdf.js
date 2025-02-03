@@ -15,6 +15,7 @@
 
 @import url(draw_layer_builder.css);
 @import url(toggle_button.css);
+@import url(signature_manager.css);
 
 :root {
   --outline-width: 2px;

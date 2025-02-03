@@ -250,6 +250,8 @@ class PDFViewer {
 
   #scaleTimeoutId = null;
 
+  #signatureManager = null;
+
   #supportsPinchToZoom = true;
 
   #textLayerMode = TextLayerMode.ENABLE;
@@ -287,6 +289,7 @@ class PDFViewer {
     this.downloadManager = options.downloadManager || null;
     this.findController = options.findController || null;
     this.#altTextManager = options.altTextManager || null;
+    this.#signatureManager = options.signatureManager || null;
     this.#editorUndoBar = options.editorUndoBar || null;
 
     if (this.findController) {
@@ -908,6 +911,7 @@ class PDFViewer {
               this.container,
               viewer,
               this.#altTextManager,
+              this.#signatureManager,
               eventBus,
               pdfDocument,
               pageColors,
