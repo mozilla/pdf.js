@@ -20,12 +20,13 @@ import {
 import { exec, execSync, spawn, spawnSync } from "child_process";
 import autoprefixer from "autoprefixer";
 import babel from "@babel/core";
+import chokidar from "chokidar";
 import crypto from "crypto";
-import { fileURLToPath } from "url";
 import fs from "fs";
 import gulp from "gulp";
 import hljs from "highlight.js";
 import layouts from "@metalsmith/layouts";
+import lodash from "lodash"; // Destructure the required function
 import markdown from "@metalsmith/markdown";
 import Metalsmith from "metalsmith";
 import ordered from "ordered-read-streams";
@@ -45,6 +46,9 @@ import Vinyl from "vinyl";
 import webpack2 from "webpack";
 import webpackStream from "webpack-stream";
 import zip from "gulp-zip";
+// eslint-disable-next-line sort-imports
+import { fileURLToPath } from "url"; // Import the default export
+const { debounce } = lodash;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -102,6 +106,27 @@ const BABEL_PRESET_ENV_OPTS = Object.freeze({
   shippedProposals: true,
   useBuiltIns: "usage",
 });
+
+// Task to rebuild the scripts
+function rebuildScripts(done) {
+  console.log("Rebuilding scripts...");
+  exec("npx gulp generic", (err, stdout, stderr) => {
+    if (err) {
+      console.error(`Error: ${stderr}`);
+    } else {
+      console.log(stdout);
+    }
+    done(); // Always call done() to ensure the watcher continues
+  });
+}
+
+// Debounced version of rebuildScripts
+const debouncedRebuildScripts = debounce(rebuildScripts, 500); // 500ms debounce
+
+// Task to watch for changes in the source files
+chokidar
+  .watch("src/**/*.js", { ignoreInitial: true })
+  .on("all", debouncedRebuildScripts);
 
 const DEFINES = Object.freeze({
   SKIP_BABEL: true,
@@ -2539,3 +2564,10 @@ gulp.task("externaltest", function (done) {
   });
   done();
 });
+
+// Export the watch task
+function watchFiles() {
+  gulp.watch("src/**/*.js", rebuildScripts);
+}
+
+export const watch = gulp.series(rebuildScripts, watchFiles);
