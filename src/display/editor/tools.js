@@ -664,6 +664,8 @@ class AnnotationEditorUIManager {
 
   #selectedTextNode = null;
 
+  #signatureManager = null;
+
   #pageColors = null;
 
   #showAllStates = null;
@@ -828,6 +830,7 @@ class AnnotationEditorUIManager {
     container,
     viewer,
     altTextManager,
+    signatureManager,
     eventBus,
     pdfDocument,
     pageColors,
@@ -843,6 +846,7 @@ class AnnotationEditorUIManager {
     this.#container = container;
     this.#viewer = viewer;
     this.#altTextManager = altTextManager;
+    this.#signatureManager = signatureManager;
     this._eventBus = eventBus;
     eventBus._on("editingaction", this.onEditingAction.bind(this), { signal });
     eventBus._on("pagechanging", this.onPageChanging.bind(this), { signal });
@@ -905,6 +909,7 @@ class AnnotationEditorUIManager {
     this.#selectedEditors.clear();
     this.#commandManager.destroy();
     this.#altTextManager?.destroy();
+    this.#signatureManager?.destroy();
     this.#highlightToolbar?.hide();
     this.#highlightToolbar = null;
     this.#mainHighlightColorPicker?.destroy();
@@ -1001,6 +1006,10 @@ class AnnotationEditorUIManager {
 
   editAltText(editor, firstTime = false) {
     this.#altTextManager?.editAltText(this, editor, firstTime);
+  }
+
+  getSignature(editor) {
+    this.#signatureManager?.getSignature({ uiManager: this, editor });
   }
 
   switchToMode(mode, callback) {

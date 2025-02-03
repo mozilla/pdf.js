@@ -25,11 +25,9 @@ import { AnnotationEditor } from "./editor.js";
 import { InkAnnotationElement } from "../annotation_layer.js";
 
 class InkDrawingOptions extends DrawingOptions {
-  #viewParameters;
-
   constructor(viewerParameters) {
     super();
-    this.#viewParameters = viewerParameters;
+    this._viewParameters = viewerParameters;
 
     super.updateProperties({
       fill: "none",
@@ -45,13 +43,13 @@ class InkDrawingOptions extends DrawingOptions {
   updateSVGProperty(name, value) {
     if (name === "stroke-width") {
       value ??= this["stroke-width"];
-      value *= this.#viewParameters.realScale;
+      value *= this._viewParameters.realScale;
     }
     super.updateSVGProperty(name, value);
   }
 
   clone() {
-    const clone = new InkDrawingOptions(this.#viewParameters);
+    const clone = new InkDrawingOptions(this._viewParameters);
     clone.updateAll(this);
     return clone;
   }
@@ -284,4 +282,4 @@ class InkEditor extends DrawingEditor {
   }
 }
 
-export { InkEditor };
+export { InkDrawingOptions, InkEditor };
