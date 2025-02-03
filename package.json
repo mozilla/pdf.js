@@ -14,7 +14,6 @@
     "autoprefixer": "^10.4.20",
     "babel-loader": "^9.2.1",
     "caniuse-lite": "^1.0.30001692",
-    "chokidar": "^4.0.3",
     "core-js": "^3.40.0",
     "eslint": "^9.18.0",
     "eslint-plugin-import": "^2.31.0",
