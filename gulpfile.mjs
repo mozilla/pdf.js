@@ -2356,6 +2356,12 @@ gulp.task(
           })
           .pipe(gulp.dest(DIST_DIR)),
         gulp
+          .src(GENERIC_DIR + "web/wasm/**/*", {
+            base: GENERIC_DIR + "web",
+            encoding: false,
+          })
+          .pipe(gulp.dest(DIST_DIR)),
+        gulp
           .src(
             [
               GENERIC_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.mjs",
