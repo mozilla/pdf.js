@@ -258,23 +258,20 @@ function getDocument(src = {}) {
     typeof src.docBaseUrl === "string" && !isDataScheme(src.docBaseUrl)
       ? src.docBaseUrl
       : null;
-  const cMapUrl = typeof src.cMapUrl === "string" ? src.cMapUrl : null;
+  const cMapUrl = getFactoryUrlProp(src.cMapUrl);
   const cMapPacked = src.cMapPacked !== false;
   const CMapReaderFactory =
     src.CMapReaderFactory ||
     (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
       ? NodeCMapReaderFactory
       : DOMCMapReaderFactory);
-  const standardFontDataUrl =
-    typeof src.standardFontDataUrl === "string"
-      ? src.standardFontDataUrl
-      : null;
+  const standardFontDataUrl = getFactoryUrlProp(src.standardFontDataUrl);
   const StandardFontDataFactory =
     src.StandardFontDataFactory ||
     (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
       ? NodeStandardFontDataFactory
       : DOMStandardFontDataFactory);
-  const wasmUrl = typeof src.wasmUrl === "string" ? src.wasmUrl : null;
+  const wasmUrl = getFactoryUrlProp(src.wasmUrl);
   const WasmFactory =
     src.WasmFactory ||
     (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
@@ -578,6 +575,16 @@ function getDataProp(val) {
     "Invalid PDF binary data: either TypedArray, " +
       "string, or array-like object is expected in the data property."
   );
+}
+
+function getFactoryUrlProp(val) {
+  if (typeof val !== "string") {
+    return null;
+  }
+  if (val.endsWith("/")) {
+    return val;
+  }
+  throw new Error(`Invalid factory url: "${val}" must include trailing slash.`);
 }
 
 function isRefProxy(ref) {
