@@ -639,8 +639,7 @@ function createStandardFontBundle() {
     [
       "external/standard_fonts/*.pfb",
       "external/standard_fonts/*.ttf",
-      "external/standard_fonts/LICENSE_FOXIT",
-      "external/standard_fonts/LICENSE_LIBERATION",
+      "external/standard_fonts/LICENSE_*",
     ],
     {
       base: "external/standard_fonts",
@@ -651,7 +650,7 @@ function createStandardFontBundle() {
 
 function createWasmBundle() {
   return ordered([
-    gulp.src(["external/openjpeg/*.wasm"], {
+    gulp.src(["external/openjpeg/*.wasm", "external/openjpeg/LICENSE_*"], {
       base: "external/openjpeg",
       encoding: false,
     }),
@@ -2351,6 +2350,12 @@ gulp.task(
           .pipe(gulp.dest(DIST_DIR)),
         gulp
           .src(GENERIC_DIR + "web/standard_fonts/**/*", {
+            base: GENERIC_DIR + "web",
+            encoding: false,
+          })
+          .pipe(gulp.dest(DIST_DIR)),
+        gulp
+          .src(GENERIC_DIR + "web/wasm/**/*", {
             base: GENERIC_DIR + "web",
             encoding: false,
           })
