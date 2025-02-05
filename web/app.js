@@ -460,13 +460,15 @@ const PDFViewerApplication = {
       this.editorUndoBar = new EditorUndoBar(appConfig.editorUndoBar, eventBus);
     }
 
-    const signatureManager = appConfig.addSignatureDialog
-      ? new SignatureManager(
-          appConfig.addSignatureDialog,
-          this.overlayManager,
-          this.l10n
-        )
-      : null;
+    const signatureManager =
+      AppOptions.get("enableSignatureEditor") && appConfig.addSignatureDialog
+        ? new SignatureManager(
+            appConfig.addSignatureDialog,
+            this.overlayManager,
+            this.l10n,
+            externalServices.createSignatureStorage()
+          )
+        : null;
 
     const enableHWA = AppOptions.get("enableHWA");
     const pdfViewer = new PDFViewer({

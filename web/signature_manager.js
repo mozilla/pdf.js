@@ -16,6 +16,7 @@
 import {
   DOMSVGFactory,
   noContextMenu,
+  SignatureExtractor,
   stopEvent,
   SupportedImageMimeTypes,
 } from "pdfjs-lib";
@@ -81,6 +82,8 @@ class SignatureManager {
 
   #overlayManager;
 
+  #signatureStorage;
+
   #uiManager = null;
 
   static #l10nDescription = null;
@@ -111,7 +114,8 @@ class SignatureManager {
       saveContainer,
     },
     overlayManager,
-    l10n
+    l10n,
+    signatureStorage
   ) {
     this.#addButton = addButton;
     this.#clearButton = clearButton;
@@ -131,6 +135,7 @@ class SignatureManager {
     this.#saveContainer = saveContainer;
     this.#typeInput = typeInput;
     this.#l10n = l10n;
+    this.#signatureStorage = signatureStorage;
 
     SignatureManager.#l10nDescription ||= Object.freeze({
       signature: "pdfjs-editor-add-signature-description-default-when-drawing",
@@ -564,7 +569,7 @@ class SignatureManager {
       return;
     }
 
-    const outline = (this.#extractedSignatureData =
+    const { outline } = (this.#extractedSignatureData =
       this.#currentEditor.getFromImage(data.bitmap));
 
     if (!outline) {
@@ -617,6 +622,10 @@ class SignatureManager {
     this.#currentEditor = editor;
     this.#uiManager.removeEditListeners();
 
+    const isStorageFull = await this.#signatureStorage.isFull();
+    this.#saveContainer.classList.toggle("fullStorage", isStorageFull);
+    this.#saveCheckbox.checked = !isStorageFull;
+
     await this.#overlayManager.open(this.#dialog);
 
     const tabType = this.#tabButtons.get("type");
@@ -653,7 +662,7 @@ class SignatureManager {
     this.#tabsToAltText = null;
   }
 
-  #add() {
+  async #add() {
     let data;
     switch (this.#currentTab) {
       case "type":
@@ -667,12 +676,28 @@ class SignatureManager {
         break;
     }
     this.#currentEditor.addSignature(
-      data,
+      data.outline,
       /* heightInPage */ 40,
       this.#description.value
     );
     if (this.#saveCheckbox.checked) {
-      // TODO
+      const description = this.#description.value;
+      const { newCurves, areContours, thickness, width, height } = data;
+      const signatureData = await SignatureExtractor.compressSignature({
+        outlines: newCurves,
+        areContours,
+        thickness,
+        width,
+        height,
+      });
+      const uuid = (this.#currentEditor._signatureUUID =
+        await this.#signatureStorage.create({
+          description,
+          signatureData,
+        }));
+      if (!uuid) {
+        console.warn("SignatureManager.add: cannot save the signature.");
+      }
     }
     this.#finish();
   }

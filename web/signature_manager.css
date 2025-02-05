@@ -570,14 +570,23 @@
             user-select: none;
           }
 
-          #addSignatureSaveWarning {
+          &:not(.fullStorage) #addSignatureSaveWarning {
+            display: none;
+          }
+
+          &.fullStorage #addSignatureSaveWarning {
+            display: block;
+            opacity: 1;
             color: var(--save-warning-color);
             font-size: 11px;
           }
 
-          &[disabled] {
+          &:is([disabled], .fullStorage) {
             pointer-events: none;
-            opacity: 0.4;
+
+            > :not(#addSignatureSaveWarning) {
+              opacity: 0.4;
+            }
           }
         }
       }
