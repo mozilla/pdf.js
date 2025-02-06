@@ -16,15 +16,13 @@
 import { AnnotationEditorType, shadow } from "../../shared/util.js";
 import { DrawingEditor, DrawingOptions } from "./draw.js";
 import { AnnotationEditor } from "./editor.js";
+import { ContourDrawOutline } from "./drawers/contour.js";
+import { InkDrawingOptions } from "./ink.js";
 import { SignatureExtractor } from "./drawers/signaturedraw.js";
-import { SupportedImageMimeTypes } from "../display_utils.js";
 
 class SignatureOptions extends DrawingOptions {
-  #viewParameters;
-
-  constructor(viewerParameters) {
+  constructor() {
     super();
-    this.#viewParameters = viewerParameters;
 
     super.updateProperties({
       fill: "black",
@@ -33,7 +31,24 @@ class SignatureOptions extends DrawingOptions {
   }
 
   clone() {
-    const clone = new SignatureOptions(this.#viewParameters);
+    const clone = new SignatureOptions();
+    clone.updateAll(this);
+    return clone;
+  }
+}
+
+class DrawnSignatureOptions extends InkDrawingOptions {
+  constructor(viewerParameters) {
+    super(viewerParameters);
+
+    super.updateProperties({
+      stroke: "black",
+      "stroke-width": 1,
+    });
+  }
+
+  clone() {
+    const clone = new DrawnSignatureOptions(this._viewParameters);
     clone.updateAll(this);
     return clone;
   }
@@ -44,6 +59,8 @@ class SignatureOptions extends DrawingOptions {
  * a signature drawing.
  */
 class SignatureEditor extends DrawingEditor {
+  #isExtracted = false;
+
   static _type = "signature";
 
   static _editorType = AnnotationEditorType.SIGNATURE;
@@ -52,13 +69,15 @@ class SignatureEditor extends DrawingEditor {
 
   constructor(params) {
     super({ ...params, mustBeCommitted: true, name: "signatureEditor" });
-    this._willKeepAspectRatio = false;
+    this._willKeepAspectRatio = true;
   }
 
   /** @inheritdoc */
   static initialize(l10n, uiManager) {
     AnnotationEditor.initialize(l10n, uiManager);
-    this._defaultDrawingOptions = new SignatureOptions(
+
+    this._defaultDrawingOptions = new SignatureOptions();
+    this._defaultDrawnSignatureOptions = new DrawnSignatureOptions(
       uiManager.viewParameters
     );
   }
@@ -89,6 +108,14 @@ class SignatureEditor extends DrawingEditor {
   }
 
   /** @inheritdoc */
+  onScaleChanging() {
+    if (this._drawId === null) {
+      return;
+    }
+    super.onScaleChanging();
+  }
+
+  /** @inheritdoc */
   render() {
     if (this.div) {
       return this.div;
@@ -98,69 +125,90 @@ class SignatureEditor extends DrawingEditor {
     this.div.hidden = true;
     this.div.setAttribute("role", "figure");
 
-    this.#extractSignature();
+    this._uiManager.getSignature(this);
 
     return this.div;
   }
 
-  async #extractSignature() {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = SupportedImageMimeTypes.join(",");
-    const signal = this._uiManager._signal;
-    const { promise, resolve } = Promise.withResolvers();
+  addSignature(outline, heightInPage) {
+    const { x: savedX, y: savedY } = this;
+    this.#isExtracted = outline instanceof ContourDrawOutline;
+    let drawingOptions;
+    if (this.#isExtracted) {
+      drawingOptions = SignatureEditor.getDefaultDrawingOptions();
+    } else {
+      drawingOptions = SignatureEditor._defaultDrawnSignatureOptions.clone();
+      drawingOptions.updateProperties({ "stroke-width": outline.thickness });
+    }
+    this._addOutlines({
+      drawOutlines: outline,
+      drawingOptions,
+    });
+    const [parentWidth, parentHeight] = this.parentDimensions;
+    const [, pageHeight] = this.pageDimensions;
+    let newHeight = heightInPage / pageHeight;
+    // Ensure the signature doesn't exceed the page height.
+    // If the signature is too big, we scale it down to 50% of the page height.
+    newHeight = newHeight >= 1 ? 0.5 : newHeight;
 
-    input.addEventListener(
-      "change",
-      async () => {
-        if (!input.files || input.files.length === 0) {
-          resolve();
-        } else {
-          this._uiManager.enableWaiting(true);
-          const data = await this._uiManager.imageManager.getFromFile(
-            input.files[0]
-          );
-          this._uiManager.enableWaiting(false);
-          resolve(data);
-        }
-        resolve();
-      },
-      { signal }
-    );
-    input.addEventListener("cancel", resolve, { signal });
-    input.click();
+    this.width *= newHeight / this.height;
+    this.height = newHeight;
+    this.setDims(parentWidth * this.width, parentHeight * this.height);
+    this.x = savedX;
+    this.y = savedY;
+    this.center();
 
-    const bitmap = await promise;
+    this._onResized();
+    this.onScaleChanging();
+    this.rotate();
+    this._uiManager.addToAnnotationStorage(this);
+
+    this.div.hidden = false;
+  }
+
+  getFromImage(bitmap) {
     const {
       rawDims: { pageWidth, pageHeight },
       rotation,
     } = this.parent.viewport;
-    let drawOutlines;
-    if (bitmap?.bitmap) {
-      drawOutlines = SignatureExtractor.process(
-        bitmap.bitmap,
-        pageWidth,
-        pageHeight,
-        rotation,
-        SignatureEditor._INNER_MARGIN
-      );
-    } else {
-      drawOutlines = SignatureExtractor.extractContoursFromText(
-        "Hello PDF.js' World !!",
-        { fontStyle: "italic", fontWeight: "400", fontFamily: "cursive" },
-        pageWidth,
-        pageHeight,
-        rotation,
-        SignatureEditor._INNER_MARGIN
-      );
-    }
-    this._addOutlines({
-      drawOutlines,
-      drawingOptions: SignatureEditor.getDefaultDrawingOptions(),
+    return SignatureExtractor.process(
+      bitmap,
+      pageWidth,
+      pageHeight,
+      rotation,
+      SignatureEditor._INNER_MARGIN
+    );
+  }
+
+  getFromText(text, fontInfo) {
+    const {
+      rawDims: { pageWidth, pageHeight },
+      rotation,
+    } = this.parent.viewport;
+    return SignatureExtractor.extractContoursFromText(
+      text,
+      fontInfo,
+      pageWidth,
+      pageHeight,
+      rotation,
+      SignatureEditor._INNER_MARGIN
+    );
+  }
+
+  getDrawnSignature(curves) {
+    const {
+      rawDims: { pageWidth, pageHeight },
+      rotation,
+    } = this.parent.viewport;
+    return SignatureExtractor.processDrawnLines({
+      lines: curves,
+      pageWidth,
+      pageHeight,
+      rotation,
+      innerMargin: SignatureEditor._INNER_MARGIN,
+      mustSmooth: false,
+      areContours: false,
     });
-    this.onScaleChanging();
-    this.rotate();
-    this.div.hidden = false;
   }
 }
 

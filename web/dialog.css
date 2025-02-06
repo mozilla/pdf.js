@@ -49,6 +49,9 @@
   --button-primary-hover-fg-color: var(--button-primary-fg-color);
   --button-primary-hover-border-color: var(--button-primary-hover-bg-color);
 
+  --button-disabled-bg-color: color-mix(in srgb, currentcolor, transparent 60%);
+  --button-disabled-fg-color: var(--button-disabled-bg-color);
+
   @media (prefers-color-scheme: dark) {
     --dialog-bg-color: #1c1b22;
     --dialog-border-color: #1c1b22;
@@ -103,6 +106,9 @@
     --button-primary-fg-color: ButtonFace;
     --button-primary-hover-bg-color: AccentColor;
     --button-primary-hover-fg-color: AccentColorText;
+
+    --button-disabled-bg-color: GrayText;
+    --button-disabled-fg-color: ButtonFace;
   }
 
   font: message-box;
@@ -213,6 +219,10 @@
         filter: var(--hover-filter);
       }
 
+      > span {
+        color: inherit;
+      }
+
       &.secondaryButton {
         color: var(--button-secondary-fg-color);
         background-color: var(--button-secondary-bg-color);
@@ -236,6 +246,13 @@
           background-color: var(--button-primary-hover-bg-color);
           border-color: var(--button-primary-hover-border-color);
         }
+      }
+
+      &:disabled {
+        color: var(--button-disabled-fg-color) !important;
+        background-color: var(--button-disabled-bg-color);
+        border-color: var(--button-disabled-bg-color);
+        pointer-events: none;
       }
     }
 

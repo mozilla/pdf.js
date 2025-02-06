@@ -27,6 +27,7 @@ const PDFPresentationMode = null;
 const PDFSidebar = null;
 const PDFThumbnailViewer = null;
 const SecondaryToolbar = null;
+const SignatureManager = null;
 
 export {
   AltTextManager,
@@ -43,4 +44,5 @@ export {
   PDFSidebar,
   PDFThumbnailViewer,
   SecondaryToolbar,
+  SignatureManager,
 };
