@@ -15,14 +15,33 @@
 
 /** @typedef {import("./interfaces").IL10n} IL10n */
 
+import { FeatureTest, fetchData } from "pdfjs-lib";
 import { FluentBundle, FluentResource } from "fluent-bundle";
 import { DOMLocalization } from "fluent-dom";
-import { fetchData } from "pdfjs-lib";
 import { L10n } from "./l10n.js";
+
+function PLATFORM() {
+  const { isAndroid, isLinux, isMac, isWindows } = FeatureTest.platform;
+  if (isLinux) {
+    return "linux";
+  }
+  if (isWindows) {
+    return "windows";
+  }
+  if (isMac) {
+    return "macos";
+  }
+  if (isAndroid) {
+    return "android";
+  }
+  return "other";
+}
 
 function createBundle(lang, text) {
   const resource = new FluentResource(text);
-  const bundle = new FluentBundle(lang);
+  const bundle = new FluentBundle(lang, {
+    functions: { PLATFORM },
+  });
   const errors = bundle.addResource(resource);
   if (errors.length) {
     console.error("L10n errors", errors);
