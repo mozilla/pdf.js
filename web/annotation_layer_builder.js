@@ -27,7 +27,12 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/editor/tools.js").AnnotationEditorUIManager} AnnotationEditorUIManager */
 
-import { AnnotationLayer } from "pdfjs-lib";
+import {
+  AnnotationLayer,
+  AnnotationType,
+  setLayerDimensions,
+  Util,
+} from "pdfjs-lib";
 import { PresentationModeState } from "./ui_utils.js";
 
 /**
@@ -56,7 +61,18 @@ import { PresentationModeState } from "./ui_utils.js";
  * @property {StructTreeLayerBuilder} [structTreeLayer]
  */
 
+/**
+ * @typedef {Object} InjectLinkAnnotationsOptions
+ * @property {Array<Object>} inferredLinks
+ * @property {PageViewport} viewport
+ * @property {StructTreeLayerBuilder} [structTreeLayer]
+ */
+
 class AnnotationLayerBuilder {
+  #annotations = null;
+
+  #externalHide = false;
+
   #onAppend = null;
 
   #eventAbortController = null;
@@ -133,19 +149,13 @@ class AnnotationLayerBuilder {
     this.#onAppend?.(div);
 
     if (annotations.length === 0) {
-      this.hide();
+      this.#annotations = annotations;
+
+      this.hide(/* internal = */ true);
       return;
     }
 
-    this.annotationLayer = new AnnotationLayer({
-      div,
-      accessibilityManager: this._accessibilityManager,
-      annotationCanvasMap: this._annotationCanvasMap,
-      annotationEditorUIManager: this._annotationEditorUIManager,
-      page: this.pdfPage,
-      viewport: viewport.clone({ dontFlip: true }),
-      structTreeLayer,
-    });
+    this.#initAnnotationLayer(viewport, structTreeLayer);
 
     await this.annotationLayer.render({
       annotations,
@@ -158,6 +168,8 @@ class AnnotationLayerBuilder {
       hasJSActions,
       fieldObjects,
     });
+
+    this.#annotations = annotations;
 
     // Ensure that interactive form elements in the annotationLayer are
     // disabled while PresentationMode is active (see issue 12232).
@@ -177,6 +189,18 @@ class AnnotationLayerBuilder {
     }
   }
 
+  #initAnnotationLayer(viewport, structTreeLayer) {
+    this.annotationLayer = new AnnotationLayer({
+      div: this.div,
+      accessibilityManager: this._accessibilityManager,
+      annotationCanvasMap: this._annotationCanvasMap,
+      annotationEditorUIManager: this._annotationEditorUIManager,
+      page: this.pdfPage,
+      viewport: viewport.clone({ dontFlip: true }),
+      structTreeLayer,
+    });
+  }
+
   cancel() {
     this._cancelled = true;
 
@@ -184,7 +208,8 @@ class AnnotationLayerBuilder {
     this.#eventAbortController = null;
   }
 
-  hide() {
+  hide(internal = false) {
+    this.#externalHide = !internal;
     if (!this.div) {
       return;
     }
@@ -193,6 +218,45 @@ class AnnotationLayerBuilder {
 
   hasEditableAnnotations() {
     return !!this.annotationLayer?.hasEditableAnnotations();
+  }
+
+  /**
+   * @param {InjectLinkAnnotationsOptions} options
+   * @returns {Promise<void>} A promise that is resolved when the inferred links
+   *   are added to the annotation layer.
+   */
+  async injectLinkAnnotations({
+    inferredLinks,
+    viewport,
+    structTreeLayer = null,
+  }) {
+    if (this.#annotations === null) {
+      throw new Error(
+        "`render` method must be called before `injectLinkAnnotations`."
+      );
+    }
+    if (this._cancelled) {
+      return;
+    }
+
+    const newLinks = this.#annotations.length
+      ? this.#checkInferredLinks(inferredLinks)
+      : inferredLinks;
+
+    if (!newLinks.length) {
+      return;
+    }
+
+    if (!this.annotationLayer) {
+      this.#initAnnotationLayer(viewport, structTreeLayer);
+      setLayerDimensions(this.div, viewport);
+    }
+
+    await this.annotationLayer.addLinkAnnotations(newLinks, this.linkService);
+    // Don't show the annotation layer if it was explicitly hidden previously.
+    if (!this.#externalHide) {
+      this.div.hidden = false;
+    }
   }
 
   #updatePresentationModeState(state) {
@@ -216,6 +280,75 @@ class AnnotationLayerBuilder {
       }
       section.inert = disableFormElements;
     }
+  }
+
+  #checkInferredLinks(inferredLinks) {
+    function annotationRects(annot) {
+      if (!annot.quadPoints) {
+        return [annot.rect];
+      }
+      const rects = [];
+      for (let i = 2, ii = annot.quadPoints.length; i < ii; i += 8) {
+        const trX = annot.quadPoints[i];
+        const trY = annot.quadPoints[i + 1];
+        const blX = annot.quadPoints[i + 2];
+        const blY = annot.quadPoints[i + 3];
+        rects.push([blX, blY, trX, trY]);
+      }
+      return rects;
+    }
+
+    function intersectAnnotations(annot1, annot2) {
+      const intersections = [];
+      const annot1Rects = annotationRects(annot1);
+      const annot2Rects = annotationRects(annot2);
+      for (const rect1 of annot1Rects) {
+        for (const rect2 of annot2Rects) {
+          const intersection = Util.intersect(rect1, rect2);
+          if (intersection) {
+            intersections.push(intersection);
+          }
+        }
+      }
+      return intersections;
+    }
+
+    function areaRects(rects) {
+      let totalArea = 0;
+      for (const rect of rects) {
+        totalArea += Math.abs((rect[2] - rect[0]) * (rect[3] - rect[1]));
+      }
+      return totalArea;
+    }
+
+    return inferredLinks.filter(link => {
+      let linkAreaRects;
+
+      for (const annotation of this.#annotations) {
+        if (
+          annotation.annotationType !== AnnotationType.LINK ||
+          annotation.url !== link.url
+        ) {
+          continue;
+        }
+        // TODO: Add a test case to verify that we can find the intersection
+        //       between two annotations with quadPoints properly.
+        const intersections = intersectAnnotations(annotation, link);
+
+        if (intersections.length === 0) {
+          continue;
+        }
+        linkAreaRects ??= areaRects(annotationRects(link));
+
+        if (
+          areaRects(intersections) / linkAreaRects >
+          0.5 /* If the overlap is more than 50%. */
+        ) {
+          return false;
+        }
+      }
+      return true;
+    });
   }
 }
 

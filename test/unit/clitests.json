@@ -8,6 +8,7 @@
     "annotation_storage_spec.js",
     "api_spec.js",
     "app_options_spec.js",
+    "autolinker_spec.js",
     "bidi_spec.js",
     "canvas_factory_spec.js",
     "cff_parser_spec.js",

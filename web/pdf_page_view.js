@@ -43,6 +43,7 @@ import {
 import { AnnotationEditorLayerBuilder } from "./annotation_editor_layer_builder.js";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
 import { AppOptions } from "./app_options.js";
+import { Autolinker } from "./autolinker.js";
 import { DrawLayerBuilder } from "./draw_layer_builder.js";
 import { GenericL10n } from "web-null_l10n";
 import { SimpleLinkService } from "./pdf_link_service.js";
@@ -84,6 +85,8 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
  *   the necessary layer-properties.
  * @property {boolean} [enableHWA] - Enables hardware acceleration for
  *   rendering. The default value is `false`.
+ * @property {boolean} [enableAutoLinking] - Enable creation of hyperlinks from
+ *   text that look like URLs. The default value is `false`.
  */
 
 const DEFAULT_LAYER_PROPERTIES =
@@ -119,6 +122,8 @@ class PDFPageView {
   #canvasWrapper = null;
 
   #enableHWA = false;
+
+  #enableAutoLinking = false;
 
   #hasRestrictedScaling = false;
 
@@ -177,6 +182,7 @@ class PDFPageView {
       options.maxCanvasPixels ?? AppOptions.get("maxCanvasPixels");
     this.pageColors = options.pageColors || null;
     this.#enableHWA = options.enableHWA || false;
+    this.#enableAutoLinking = options.enableAutoLinking || false;
 
     this.eventBus = options.eventBus;
     this.renderingQueue = options.renderingQueue;
@@ -1100,10 +1106,19 @@ class PDFPageView {
           viewport.rawDims
         );
 
-        this.#renderTextLayer();
+        const textLayerPromise = this.#renderTextLayer();
 
         if (this.annotationLayer) {
           await this.#renderAnnotationLayer();
+
+          if (this.#enableAutoLinking) {
+            await textLayerPromise;
+            this.annotationLayer.injectLinkAnnotations({
+              inferredLinks: Autolinker.processLinks(this),
+              viewport: this.viewport,
+              structTreeLayer: this.structTreeLayer,
+            });
+          }
         }
 
         const { annotationEditorUIManager } = this.#layerProperties;
