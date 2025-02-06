@@ -244,6 +244,18 @@ See https://github.com/adobe-type-tools/cmap-resources
               </div>
               <div id="toolbarViewerRight" class="toolbarHorizontalGroup">
                 <div id="editorModeButtons" class="toolbarHorizontalGroup" role="radiogroup">
+                  <div id="editorSignature" class="toolbarButtonWithContainer" hidden="true">
+                    <button id="editorSignatureButton" class="toolbarButton" type="button" disabled="disabled" title="Add or edit signatures" role="radio" aria-expanded="false" aria-haspopup="true" aria-controls="editorSignatureParamsToolbar" tabindex="0">
+                      <span>Add or edit signatures</span>
+                    </button>
+                    <div class="editorParamsToolbar hidden doorHangerRight menu" id="editorSignatureParamsToolbar">
+                      <div class="menuContainer">
+                        <button id="editorSignatureAddSignature" class="toolbarButton labeled" type="button" title="Add signature" tabindex="0">
+                          <span class="editorParamsLabel">Add signature</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                   <div id="editorHighlight" class="toolbarButtonWithContainer">
                     <button id="editorHighlightButton" class="toolbarButton" type="button" disabled="disabled" title="Highlight" role="radio" aria-expanded="false" aria-haspopup="true" aria-controls="editorHighlightParamsToolbar" tabindex="0" data-l10n-id="pdfjs-editor-highlight-button">
                       <span data-l10n-id="pdfjs-editor-highlight-button-label">Highlight</span>
@@ -315,18 +327,6 @@ See https://github.com/adobe-type-tools/cmap-resources
                       <div class="menuContainer">
                         <button id="editorStampAddImage" class="toolbarButton labeled" type="button" title="Add image" tabindex="0" data-l10n-id="pdfjs-editor-stamp-add-image-button">
                           <span class="editorParamsLabel" data-l10n-id="pdfjs-editor-stamp-add-image-button-label">Add image</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  <div id="editorSignature" class="toolbarButtonWithContainer" hidden="true">
-                    <button id="editorSignatureButton" class="toolbarButton" type="button" disabled="disabled" title="Add or edit signatures" role="radio" aria-expanded="false" aria-haspopup="true" aria-controls="editorSignatureParamsToolbar" tabindex="0">
-                      <span>Add or edit signatures</span>
-                    </button>
-                    <div class="editorParamsToolbar hidden doorHangerRight menu" id="editorSignatureParamsToolbar">
-                      <div class="menuContainer">
-                        <button id="editorSignatureAddSignature" class="toolbarButton labeled" type="button" title="Add signature" tabindex="0">
-                          <span class="editorParamsLabel">Add signature</span>
                         </button>
                       </div>
                     </div>
