@@ -3239,6 +3239,33 @@ class AnnotationLayer {
   }
 
   /**
+   * Add link annotations to the annotation layer.
+   *
+   * @param {Array<Object>} annotations
+   * @param {IPDFLinkService} linkService
+   * @memberof AnnotationLayer
+   */
+  async addLinkAnnotations(annotations, linkService) {
+    const elementParams = {
+      data: null,
+      layer: this.div,
+      linkService,
+      svgFactory: new DOMSVGFactory(),
+      parent: this,
+    };
+    for (const data of annotations) {
+      elementParams.data = data;
+      const element = AnnotationElementFactory.create(elementParams);
+
+      if (!element.isRenderable) {
+        continue;
+      }
+      const rendered = element.render();
+      await this.#appendElement(rendered, data.id);
+    }
+  }
+
+  /**
    * Update the annotation elements on existing annotation layer.
    *
    * @param {AnnotationLayerParameters} viewport

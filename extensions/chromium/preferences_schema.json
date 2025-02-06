@@ -224,6 +224,11 @@
       "description": "The color is a string as defined in CSS. Its goal is to help improve readability in high contrast mode",
       "type": "string",
       "default": "CanvasText"
+    },
+    "enableAutoLinking": {
+      "description": "Enable creation of hyperlinks from text that look like URLs.",
+      "type": "boolean",
+      "default": false
     }
   }
 }
