@@ -58,7 +58,7 @@
     #f0f0f4,
     transparent 40%
   );
-  --save-warning-color: --var(--secondary-color);
+  --save-warning-color: var(--secondary-color);
   --thickness-bg: var(--dialog-bg-color);
   --thickness-label-color: var(--primary-color);
   --thickness-slider-color: var(--primary-color);
