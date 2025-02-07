@@ -18,6 +18,7 @@ import { DrawingEditor, DrawingOptions } from "./draw.js";
 import { AnnotationEditor } from "./editor.js";
 import { ContourDrawOutline } from "./drawers/contour.js";
 import { InkDrawingOptions } from "./ink.js";
+import { InkDrawOutline } from "./drawers/inkdraw.js";
 import { SignatureExtractor } from "./drawers/signaturedraw.js";
 
 class SignatureOptions extends DrawingOptions {
@@ -70,6 +71,7 @@ class SignatureEditor extends DrawingEditor {
   constructor(params) {
     super({ ...params, mustBeCommitted: true, name: "signatureEditor" });
     this._willKeepAspectRatio = true;
+    this._description = "";
   }
 
   /** @inheritdoc */
@@ -122,17 +124,20 @@ class SignatureEditor extends DrawingEditor {
     }
 
     super.render();
-    this.div.hidden = true;
     this.div.setAttribute("role", "figure");
 
-    this._uiManager.getSignature(this);
+    if (this._drawId === null) {
+      this.div.hidden = true;
+      this._uiManager.getSignature(this);
+    }
 
     return this.div;
   }
 
-  addSignature(outline, heightInPage) {
+  addSignature(outline, heightInPage, description) {
     const { x: savedX, y: savedY } = this;
     this.#isExtracted = outline instanceof ContourDrawOutline;
+    this._description = description;
     let drawingOptions;
     if (this.#isExtracted) {
       drawingOptions = SignatureEditor.getDefaultDrawingOptions();
@@ -209,6 +214,87 @@ class SignatureEditor extends DrawingEditor {
       mustSmooth: false,
       areContours: false,
     });
+  }
+
+  /** @inheritdoc */
+  createDrawingOptions({ areContours, thickness }) {
+    if (areContours) {
+      this._drawingOptions = SignatureEditor.getDefaultDrawingOptions();
+    } else {
+      this._drawingOptions =
+        SignatureEditor._defaultDrawnSignatureOptions.clone();
+      this._drawingOptions.updateProperties({ "stroke-width": thickness });
+    }
+  }
+
+  /** @inheritdoc */
+  serialize(isForCopying = false) {
+    if (this.isEmpty()) {
+      return null;
+    }
+
+    const { lines, points, rect } = this.serializeDraw(isForCopying);
+    const {
+      _drawingOptions: { "stroke-width": thickness },
+    } = this;
+    const serialized = {
+      annotationType: AnnotationEditorType.SIGNATURE,
+      isSignature: true,
+      areContours: this.#isExtracted,
+      color: [0, 0, 0],
+      thickness: this.#isExtracted ? 0 : thickness,
+      pageIndex: this.pageIndex,
+      rect,
+      rotation: this.rotation,
+      structTreeParentId: this._structTreeParentId,
+    };
+    if (isForCopying) {
+      serialized.paths = { lines, points };
+    } else {
+      serialized.lines = lines;
+    }
+    if (this._description) {
+      serialized.accessibilityData = { type: "Figure", alt: this._description };
+    }
+    return serialized;
+  }
+
+  /** @inheritdoc */
+  static deserializeDraw(
+    pageX,
+    pageY,
+    pageWidth,
+    pageHeight,
+    innerMargin,
+    data
+  ) {
+    if (data.areContours) {
+      return ContourDrawOutline.deserialize(
+        pageX,
+        pageY,
+        pageWidth,
+        pageHeight,
+        innerMargin,
+        data
+      );
+    }
+
+    return InkDrawOutline.deserialize(
+      pageX,
+      pageY,
+      pageWidth,
+      pageHeight,
+      innerMargin,
+      data
+    );
+  }
+
+  /** @inheritdoc */
+  static async deserialize(data, parent, uiManager) {
+    const editor = await super.deserialize(data, parent, uiManager);
+    editor.#isExtracted = data.areContours;
+    editor._description = data.accessibilityData?.alt || "";
+    return editor;
   }
 }
 
