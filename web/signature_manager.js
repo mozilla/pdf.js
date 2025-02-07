@@ -666,7 +666,11 @@ class SignatureManager {
         data = this.#extractedSignatureData;
         break;
     }
-    this.#currentEditor.addSignature(data, /* heightInPage */ 40);
+    this.#currentEditor.addSignature(
+      data,
+      /* heightInPage */ 40,
+      this.#description.value
+    );
     if (this.#saveCheckbox.checked) {
       // TODO
     }
