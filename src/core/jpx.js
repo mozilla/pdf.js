@@ -49,9 +49,10 @@ class JpxImage {
         if (this.#wasmUrl !== null) {
           this.#buffer = await fetchBinaryData(`${this.#wasmUrl}${filename}`);
         } else {
-          this.#buffer = await this.#handler.sendWithPromise("FetchWasm", {
-            filename,
-          });
+          this.#buffer = await this.#handler.sendWithPromise(
+            "FetchBinaryData",
+            { type: "wasmFactory", filename }
+          );
         }
       }
       const results = await WebAssembly.instantiate(this.#buffer, imports);
