@@ -4477,10 +4477,7 @@ class InkAnnotation extends MarkupAnnotation {
     bs.set("W", thickness);
 
     // Color.
-    ink.set(
-      "C",
-      Array.from(color, c => c / 255)
-    );
+    ink.set("C", getPdfColorArray(color));
 
     // Opacity.
     ink.set("CA", opacity);
@@ -4694,10 +4691,7 @@ class HighlightAnnotation extends MarkupAnnotation {
     highlight.set("QuadPoints", quadPoints);
 
     // Color.
-    highlight.set(
-      "C",
-      Array.from(color, c => c / 255)
-    );
+    highlight.set("C", getPdfColorArray(color));
 
     // Opacity.
     highlight.set("CA", opacity);
