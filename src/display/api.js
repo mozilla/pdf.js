@@ -2881,49 +2881,21 @@ class WorkerTransport {
       });
     });
 
-    messageHandler.on("FetchBuiltInCMap", async data => {
+    messageHandler.on("FetchBinaryData", async data => {
       if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-        throw new Error("Not implemented: FetchBuiltInCMap");
+        throw new Error("Not implemented: FetchBinaryData");
       }
       if (this.destroyed) {
         throw new Error("Worker was destroyed.");
       }
-      if (!this.cMapReaderFactory) {
-        throw new Error(
-          "CMapReaderFactory not initialized, see the `useWorkerFetch` parameter."
-        );
-      }
-      return this.cMapReaderFactory.fetch(data);
-    });
+      const factory = this[data.type];
 
-    messageHandler.on("FetchStandardFontData", async data => {
-      if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-        throw new Error("Not implemented: FetchStandardFontData");
-      }
-      if (this.destroyed) {
-        throw new Error("Worker was destroyed.");
-      }
-      if (!this.standardFontDataFactory) {
+      if (!factory) {
         throw new Error(
-          "StandardFontDataFactory not initialized, see the `useWorkerFetch` parameter."
+          `${data.type} not initialized, see the \`useWorkerFetch\` parameter.`
         );
       }
-      return this.standardFontDataFactory.fetch(data);
-    });
-
-    messageHandler.on("FetchWasm", async data => {
-      if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-        throw new Error("Not implemented: FetchWasm");
-      }
-      if (this.destroyed) {
-        throw new Error("Worker was destroyed.");
-      }
-      if (!this.wasmFactory) {
-        throw new Error(
-          "WasmFactory not initialized, see the `useWorkerFetch` parameter."
-        );
-      }
-      return this.wasmFactory.fetch(data);
+      return factory.fetch(data);
     });
   }
 
