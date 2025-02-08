@@ -82,7 +82,7 @@ describe("autolinker", function () {
           linkIds.forEach(id =>
             expect(id)
               .withContext(`In ${browserName}`)
-              .not.toContain("added_link_")
+              .not.toContain("inferred_link_")
           );
         })
       );
