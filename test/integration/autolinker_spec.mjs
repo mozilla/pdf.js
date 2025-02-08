@@ -88,4 +88,37 @@ describe("autolinker", function () {
       );
     });
   });
+
+  describe("pr19449.pdf", function () {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("pr19449.pdf", ".annotationLayer", null, null, {
+        docBaseUrl: "http://example.com",
+        enableAutoLinking: true,
+      });
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must not add links that overlap even if the URLs are different", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const linkIds = await page.$$eval(
+            ".annotationLayer > .linkAnnotation > a",
+            annotations =>
+              annotations.map(a => a.getAttribute("data-element-id"))
+          );
+          expect(linkIds.length).withContext(`In ${browserName}`).toEqual(1);
+          linkIds.forEach(id =>
+            expect(id)
+              .withContext(`In ${browserName}`)
+              .not.toContain("inferred_link_")
+          );
+        })
+      );
+    });
+  });
 });
