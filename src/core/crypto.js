@@ -1397,13 +1397,7 @@ class CipherTransform {
 
       // Generate an initialization vector
       const iv = new Uint8Array(16);
-      if (typeof crypto !== "undefined") {
-        crypto.getRandomValues(iv);
-      } else {
-        for (let i = 0; i < 16; i++) {
-          iv[i] = Math.floor(256 * Math.random());
-        }
-      }
+      crypto.getRandomValues(iv);
 
       let data = stringToBytes(s);
       data = cipher.encrypt(data, iv);
