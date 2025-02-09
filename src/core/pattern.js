@@ -340,24 +340,19 @@ class MeshStreamReader {
   }
 
   readBits(n) {
-    let buffer = this.buffer;
-    let bufferLength = this.bufferLength;
+    const { stream } = this;
+    let { buffer, bufferLength } = this;
+
     if (n === 32) {
       if (bufferLength === 0) {
-        return (
-          ((this.stream.getByte() << 24) |
-            (this.stream.getByte() << 16) |
-            (this.stream.getByte() << 8) |
-            this.stream.getByte()) >>>
-          0
-        );
+        return stream.getInt32() >>> 0;
       }
       buffer =
         (buffer << 24) |
-        (this.stream.getByte() << 16) |
-        (this.stream.getByte() << 8) |
-        this.stream.getByte();
-      const nextByte = this.stream.getByte();
+        (stream.getByte() << 16) |
+        (stream.getByte() << 8) |
+        stream.getByte();
+      const nextByte = stream.getByte();
       this.buffer = nextByte & ((1 << bufferLength) - 1);
       return (
         ((buffer << (8 - bufferLength)) |
@@ -366,10 +361,10 @@ class MeshStreamReader {
       );
     }
     if (n === 8 && bufferLength === 0) {
-      return this.stream.getByte();
+      return stream.getByte();
     }
     while (bufferLength < n) {
-      buffer = (buffer << 8) | this.stream.getByte();
+      buffer = (buffer << 8) | stream.getByte();
       bufferLength += 8;
     }
     bufferLength -= n;
