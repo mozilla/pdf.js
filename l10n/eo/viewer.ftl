@@ -513,3 +513,18 @@ pdfjs-editor-undo-bar-undo-button-label = Malfari
 pdfjs-editor-undo-bar-close-button =
     .title = Fermi
 pdfjs-editor-undo-bar-close-button-label = Fermi
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

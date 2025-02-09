@@ -513,3 +513,18 @@ pdfjs-editor-undo-bar-undo-button-label = Fortryd
 pdfjs-editor-undo-bar-close-button =
     .title = Luk
 pdfjs-editor-undo-bar-close-button-label = Luk
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

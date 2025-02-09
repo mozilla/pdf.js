@@ -327,6 +327,8 @@ pdfjs-editor-remove-stamp-button =
     .title = Eliminar imagen
 pdfjs-editor-remove-highlight-button =
     .title = Eliminar resaltado
+pdfjs-editor-remove-signature-button =
+    .title = Eliminar firma
 
 ##
 
@@ -500,6 +502,7 @@ pdfjs-editor-undo-bar-message-highlight = Resaltado eliminado
 pdfjs-editor-undo-bar-message-freetext = Texto eliminado
 pdfjs-editor-undo-bar-message-ink = Dibujo eliminado
 pdfjs-editor-undo-bar-message-stamp = Imagen eliminado
+pdfjs-editor-undo-bar-message-signature = Firma eliminada
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -513,3 +516,56 @@ pdfjs-editor-undo-bar-undo-button-label = Deshacer
 pdfjs-editor-undo-bar-close-button =
     .title = Cerrar
 pdfjs-editor-undo-bar-close-button-label = Cerrar
+
+## Add a signature dialog
+
+pdfjs-editor-add-signature-dialog-title = Agregar una firma
+
+## Tab names
+
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = Tipear
+    .title = Tipear
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = Dibujar
+    .title = Dibujar
+pdfjs-editor-add-signature-image-button = Imagen
+    .title = Imagen
+
+## Tab panels
+
+pdfjs-editor-add-signature-type-input =
+    .aria-label = Escribir la firma
+    .placeholder = Escribir la firma
+pdfjs-editor-add-signature-draw-placeholder = Dibujar la firma
+pdfjs-editor-add-signature-draw-thickness-range-label = Grosor
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Grosor del dibujo: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = Arrastrar un archivo acá para subirlo
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] O seleccionar archivos de imágenes
+       *[other] O seleccionar archivos de imágenes
+    }
+
+## Controls
+
+pdfjs-editor-add-signature-description-label = Descripción (texto alternativo)
+pdfjs-editor-add-signature-description-input =
+    .title = Descripción (texto alternativo)
+pdfjs-editor-add-signature-description-default-when-drawing = Firma
+pdfjs-editor-add-signature-clear-button-label = Borrar firma
+pdfjs-editor-add-signature-clear-button =
+    .title = Borrar firma
+pdfjs-editor-add-signature-save-checkbox = Guardar firma
+pdfjs-editor-add-signature-save-warning-message = Se alcanzó el límite de 5 firmas guardadas. Elimine una para guardar más.
+pdfjs-editor-add-signature-image-upload-error-title = No se pudo subir la imagen
+pdfjs-editor-add-signature-image-upload-error-description = Verifique la conexión de red o pruebe con otra imagen.
+pdfjs-editor-add-signature-error-close-button = Cerrar
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = Cancelar
+pdfjs-editor-add-signature-add-button = Agregar

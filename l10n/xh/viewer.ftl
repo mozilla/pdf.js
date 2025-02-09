@@ -233,3 +233,18 @@ pdfjs-web-fonts-disabled = Iifonti zewebhu ziqhwalelisiwe: ayikwazi ukusebenzisa
 
 ## "Annotations removed" bar
 
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

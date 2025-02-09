@@ -327,6 +327,8 @@ pdfjs-editor-remove-stamp-button =
     .title = Ta bort bild
 pdfjs-editor-remove-highlight-button =
     .title = Ta bort markering
+pdfjs-editor-remove-signature-button =
+    .title = Ta bort signatur
 
 ##
 
@@ -500,6 +502,7 @@ pdfjs-editor-undo-bar-message-highlight = Markering borttagen
 pdfjs-editor-undo-bar-message-freetext = Text borttagen
 pdfjs-editor-undo-bar-message-ink = Ritning borttagen
 pdfjs-editor-undo-bar-message-stamp = Bild borttagen
+pdfjs-editor-undo-bar-message-signature = Signatur borttagen
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -513,3 +516,57 @@ pdfjs-editor-undo-bar-undo-button-label = Ångra
 pdfjs-editor-undo-bar-close-button =
     .title = Stäng
 pdfjs-editor-undo-bar-close-button-label = Stäng
+
+## Add a signature dialog
+
+pdfjs-editor-add-signature-dialog-label = Denna modal tillåter användaren att skapa en signatur för att lägga till i ett PDF-dokument. Användaren kan redigera namnet (som också fungerar som alternativ text) och eventuellt spara signaturen för upprepad användning.
+pdfjs-editor-add-signature-dialog-title = Lägg till en signatur
+
+## Tab names
+
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = Typ
+    .title = Typ
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = Rita
+    .title = Rita
+pdfjs-editor-add-signature-image-button = Bild
+    .title = Bild
+
+## Tab panels
+
+pdfjs-editor-add-signature-type-input =
+    .aria-label = Skriv din signatur
+    .placeholder = Skriv din signatur
+pdfjs-editor-add-signature-draw-placeholder = Rita din signatur
+pdfjs-editor-add-signature-draw-thickness-range-label = Tjocklek
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Ritningstjocklek: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = Dra en fil hit för att ladda upp
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] Eller välj bildfiler
+       *[other] Eller bläddra bland bildfiler
+    }
+
+## Controls
+
+pdfjs-editor-add-signature-description-label = Beskrivning (alternativ text)
+pdfjs-editor-add-signature-description-input =
+    .title = Beskrivning (alternativ text)
+pdfjs-editor-add-signature-description-default-when-drawing = Signatur
+pdfjs-editor-add-signature-clear-button-label = Rensa signatur
+pdfjs-editor-add-signature-clear-button =
+    .title = Rensa signatur
+pdfjs-editor-add-signature-save-checkbox = Spara signatur
+pdfjs-editor-add-signature-save-warning-message = Du har nått gränsen på 5 sparade signaturer. Ta bort en för att spara fler.
+pdfjs-editor-add-signature-image-upload-error-title = Det gick inte att ladda upp bilden
+pdfjs-editor-add-signature-image-upload-error-description = Kontrollera din nätverksanslutning eller försök med en annan bild.
+pdfjs-editor-add-signature-error-close-button = Stäng
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = Avbryt
+pdfjs-editor-add-signature-add-button = Lägg till

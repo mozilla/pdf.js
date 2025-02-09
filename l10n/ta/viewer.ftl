@@ -244,3 +244,18 @@ pdfjs-web-fonts-disabled = வலை எழுத்துருக்கள் 
 
 ## "Annotations removed" bar
 
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

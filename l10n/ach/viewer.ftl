@@ -246,3 +246,18 @@ pdfjs-web-fonts-disabled = Kijuko dit pa coc me kakube woko: pe romo tic ki dit 
 
 ## "Annotations removed" bar
 
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

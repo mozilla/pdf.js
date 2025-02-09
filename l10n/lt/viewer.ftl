@@ -289,3 +289,18 @@ pdfjs-web-fonts-disabled = Saityno šriftai išjungti – PDF faile esančių š
 
 ## "Annotations removed" bar
 
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

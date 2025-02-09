@@ -331,6 +331,8 @@ pdfjs-editor-remove-stamp-button =
     .title = Wobraz wótwónoźeś
 pdfjs-editor-remove-highlight-button =
     .title = Wuzwignjenje wótpóraś
+pdfjs-editor-remove-signature-button =
+    .title = Signaturu wótwónoźeś
 
 ##
 
@@ -504,6 +506,7 @@ pdfjs-editor-undo-bar-message-highlight = Wótwónoźone wuzwignuś
 pdfjs-editor-undo-bar-message-freetext = Tekst jo se wótwónoźeł
 pdfjs-editor-undo-bar-message-ink = Kreslanka jo se wótwónoźeła
 pdfjs-editor-undo-bar-message-stamp = Wobraz jo se wótwónoźeł
+pdfjs-editor-undo-bar-message-signature = Signatura jo se wótwónoźeła
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -519,3 +522,55 @@ pdfjs-editor-undo-bar-undo-button-label = Anulěrowaś
 pdfjs-editor-undo-bar-close-button =
     .title = Zacyniś
 pdfjs-editor-undo-bar-close-button-label = Zacyniś
+
+## Add a signature dialog
+
+pdfjs-editor-add-signature-dialog-title = Signaturu pśidaś
+
+## Tab names
+
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = Typ
+    .title = Typ
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = Kresliś
+    .title = Kresliś
+pdfjs-editor-add-signature-image-button = Wobraz
+    .title = Wobraz
+
+## Tab panels
+
+pdfjs-editor-add-signature-type-input =
+    .aria-label = Zapódajśo swóju signaturu
+    .placeholder = Zapódajśo swóju signaturu
+pdfjs-editor-add-signature-draw-placeholder = Kresliśo swóju signaturu
+pdfjs-editor-add-signature-draw-thickness-range-label = Tłustosć
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Tłustosć kreslanki: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = Śěgniśo dataju sem, aby ju nagrał
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] Abo wubjeŕśo wobrazowe dataje
+       *[other] Abo pśepytajśo wobrazowe dataje
+    }
+
+## Controls
+
+pdfjs-editor-add-signature-description-label = Wopisanje (alternatiwny tekst)
+pdfjs-editor-add-signature-description-input =
+    .title = Wopisanje (alternatiwny tekst)
+pdfjs-editor-add-signature-description-default-when-drawing = Signatura
+pdfjs-editor-add-signature-clear-button-label = Signaturu lašowaś
+pdfjs-editor-add-signature-clear-button =
+    .title = Signaturu lašowaś
+pdfjs-editor-add-signature-save-checkbox = Signaturu składowaś
+pdfjs-editor-add-signature-image-upload-error-title = Wobraz njedajo se nagraś
+pdfjs-editor-add-signature-image-upload-error-description = Pśeglědajśo swój seśowy zwisk abo wopytajśo drugi wobraz.
+pdfjs-editor-add-signature-error-close-button = Zacyniś
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = Pśetergnuś
+pdfjs-editor-add-signature-add-button = Pśidaś

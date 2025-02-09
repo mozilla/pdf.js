@@ -269,3 +269,18 @@ pdfjs-web-fonts-disabled = ویب فانٹ نا اہل ہیں: شامل PDF فا
 
 ## "Annotations removed" bar
 
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+
