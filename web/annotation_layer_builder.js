@@ -327,7 +327,7 @@ class AnnotationLayerBuilder {
       for (const annotation of this.#annotations) {
         if (
           annotation.annotationType !== AnnotationType.LINK ||
-          annotation.url !== link.url
+          !annotation.url
         ) {
           continue;
         }
