@@ -227,3 +227,18 @@ pdfjs-web-fonts-disabled = Interneti šigirawey kay: ši hin ka goy nda PDF šig
 
 ## "Annotations removed" bar
 
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

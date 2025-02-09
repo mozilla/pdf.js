@@ -244,3 +244,18 @@ pdfjs-web-fonts-disabled = បាន​បិទ​ពុម្ពអក្ស�
 
 ## "Annotations removed" bar
 
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

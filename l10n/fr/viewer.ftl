@@ -509,3 +509,18 @@ pdfjs-editor-undo-bar-undo-button-label = Annuler
 pdfjs-editor-undo-bar-close-button =
     .title = Fermer
 pdfjs-editor-undo-bar-close-button-label = Fermer
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

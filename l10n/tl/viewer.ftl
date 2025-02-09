@@ -278,3 +278,18 @@ pdfjs-web-fonts-disabled = Naka-disable ang mga Web font: hindi kayang gamitin a
 
 ## "Annotations removed" bar
 
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

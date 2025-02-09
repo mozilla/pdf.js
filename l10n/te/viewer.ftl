@@ -260,3 +260,18 @@ pdfjs-editor-ink-opacity-input = అకిరణ్యత
 
 ## "Annotations removed" bar
 
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

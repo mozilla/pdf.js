@@ -293,7 +293,7 @@ pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", tim
 ## Password
 
 pdfjs-password-label = Inserire la password per aprire questo file PDF.
-pdfjs-password-invalid = Password non corretta. Riprovare.
+pdfjs-password-invalid = Password non corretta. Riprova.
 pdfjs-password-ok-button = OK
 pdfjs-password-cancel-button = Annulla
 pdfjs-web-fonts-disabled = I web font risultano disattivati: impossibile utilizzare i caratteri incorporati nel PDF.
@@ -327,6 +327,8 @@ pdfjs-editor-remove-stamp-button =
     .title = Rimuovi immagine
 pdfjs-editor-remove-highlight-button =
     .title = Rimuovi evidenziazione
+pdfjs-editor-remove-signature-button =
+    .title = Rimuovi firma
 
 ##
 
@@ -500,6 +502,7 @@ pdfjs-editor-undo-bar-message-highlight = Evidenziazione rimossa
 pdfjs-editor-undo-bar-message-freetext = Testo rimosso
 pdfjs-editor-undo-bar-message-ink = Disegno rimosso
 pdfjs-editor-undo-bar-message-stamp = Immagine rimossa
+pdfjs-editor-undo-bar-message-signature = Firma rimossa
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -513,3 +516,58 @@ pdfjs-editor-undo-bar-undo-button-label = Annulla
 pdfjs-editor-undo-bar-close-button =
     .title = Chiudi
 pdfjs-editor-undo-bar-close-button-label = Chiudi
+
+## Add a signature dialog
+
+pdfjs-editor-add-signature-dialog-label = Questa finestra consente all’utente di creare una firma da aggiungere a un documento PDF. L’utente può modificare il nome (che verrà utilizzato anche come testo alternativo) e, se lo desidera, salvare la firma per riutilizzarla in futuro.
+pdfjs-editor-add-signature-dialog-title = Aggiungi una firma
+
+## Tab names
+
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = Scrivi
+    .title = Scrivi
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = Disegna
+    .title = Disegna
+pdfjs-editor-add-signature-image-button = Immagine
+    .title = Immagine
+
+## Tab panels
+
+pdfjs-editor-add-signature-type-input =
+    .aria-label = Digita la tua firma
+    .placeholder = Digita la tua firma
+pdfjs-editor-add-signature-draw-placeholder = Disegna la tua firma
+pdfjs-editor-add-signature-draw-thickness-range-label = Spessore
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Spessore del tratto: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = Trascina un file qui per caricarlo
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] Oppure scegli un file immagine
+       *[other] Oppure sfoglia i file immagine
+    }
+
+## Controls
+
+pdfjs-editor-add-signature-description-label = Descrizione (testo alternativo)
+pdfjs-editor-add-signature-description-input =
+    .title = Descrizione (testo alternativo)
+pdfjs-editor-add-signature-description-default-when-drawing = Firma
+pdfjs-editor-add-signature-clear-button-label = Cancella firma
+pdfjs-editor-add-signature-clear-button =
+    .title = Cancella firma
+pdfjs-editor-add-signature-save-checkbox = Salva firma
+pdfjs-editor-add-signature-save-warning-message = Hai raggiunto il limite di 5 firme salvate. Rimuovine una per salvarne altre.
+pdfjs-editor-add-signature-image-upload-error-title = Impossibile caricare l’immagine
+pdfjs-editor-add-signature-image-upload-error-description = Controlla la connessione di rete o prova con un’altra immagine.
+pdfjs-editor-add-signature-error-close-button = Chiudi
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = Annulla
+pdfjs-editor-add-signature-add-button = Aggiungi
+

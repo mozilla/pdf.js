@@ -289,3 +289,18 @@ pdfjs-web-fonts-disabled = Վեբ-տառատեսակները անջատուած 
 
 ## "Annotations removed" bar
 
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

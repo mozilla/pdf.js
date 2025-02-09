@@ -327,6 +327,8 @@ pdfjs-editor-remove-stamp-button =
     .title = Kendu irudia
 pdfjs-editor-remove-highlight-button =
     .title = Kendu nabarmentzea
+pdfjs-editor-remove-signature-button =
+    .title = Kendu sinadura
 
 ##
 
@@ -500,6 +502,7 @@ pdfjs-editor-undo-bar-message-highlight = Nabarmentzea kenduta
 pdfjs-editor-undo-bar-message-freetext = Testua kenduta
 pdfjs-editor-undo-bar-message-ink = Marrazkia kenduta
 pdfjs-editor-undo-bar-message-stamp = Irudia kenduta
+pdfjs-editor-undo-bar-message-signature = Sinadura kenduta
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -513,3 +516,61 @@ pdfjs-editor-undo-bar-undo-button-label = Desegin
 pdfjs-editor-undo-bar-close-button =
     .title = Itxi
 pdfjs-editor-undo-bar-close-button-label = Itxi
+
+## Add a signature dialog
+
+pdfjs-editor-add-signature-dialog-label =
+    Leiho modal honek PDF dokumentu batera gehitzeko sinadurak
+    sortzea ahalbidetzen dio erabiltzaileari. Erabiltzaileak izena edita
+    dezake (testu alternatibo modura ere erabiltzen dena) eta sinadura
+    gordetzeko aukera du gehiagotan erabili ahal izateko.
+pdfjs-editor-add-signature-dialog-title = Gehitu sinadura
+
+## Tab names
+
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = Mota
+    .title = Mota
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = Marraztu
+    .title = Marraztu
+pdfjs-editor-add-signature-image-button = Irudia
+    .title = Irudia
+
+## Tab panels
+
+pdfjs-editor-add-signature-type-input =
+    .aria-label = Idatzi zure sinadura
+    .placeholder = Idatzi zure sinadura
+pdfjs-editor-add-signature-draw-placeholder = Marraztu zure sinadura
+pdfjs-editor-add-signature-draw-thickness-range-label = Loditasuna
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Marrazteko loditasuna: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = Igotzeko, jaregin fitxategia hemen
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] Edo aukeratu irudi-fitxategiak
+       *[other] Edo arakatu irudi-fitxategiak
+    }
+
+## Controls
+
+pdfjs-editor-add-signature-description-label = Azalpena (testu alternatiboa)
+pdfjs-editor-add-signature-description-input =
+    .title = Azalpena (testu alternatiboa)
+pdfjs-editor-add-signature-description-default-when-drawing = Sinadura
+pdfjs-editor-add-signature-clear-button-label = Garbitu sinadura
+pdfjs-editor-add-signature-clear-button =
+    .title = Garbitu sinadura
+pdfjs-editor-add-signature-save-checkbox = Gorde sinadura
+pdfjs-editor-add-signature-save-warning-message = Gordetako sinadura kopuruaren mugara heldu zara (5). Gehiago gorde ahal izateko, ken ezazu bat.
+pdfjs-editor-add-signature-image-upload-error-title = Ezin da irudia igo
+pdfjs-editor-add-signature-image-upload-error-description = Egiaztatu zure sareko konexioa edo saiatu beste irudi batekin.
+pdfjs-editor-add-signature-error-close-button = Itxi
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = Utzi
+pdfjs-editor-add-signature-add-button = Gehitu

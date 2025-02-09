@@ -268,3 +268,18 @@ pdfjs-web-fonts-disabled = ওয়েব ফন্ট নিষ্ক্রিয়
 
 ## "Annotations removed" bar
 
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

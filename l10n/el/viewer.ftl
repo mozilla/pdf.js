@@ -327,6 +327,8 @@ pdfjs-editor-remove-stamp-button =
     .title = Αφαίρεση εικόνας
 pdfjs-editor-remove-highlight-button =
     .title = Αφαίρεση επισήμανσης
+pdfjs-editor-remove-signature-button =
+    .title = Αφαίρεση υπογραφής
 
 ##
 
@@ -454,8 +456,8 @@ pdfjs-editor-new-alt-text-error-close-button = Κλείσιμο
 #   $totalSize (Number) - the total size (in MB) of the AI model.
 #   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
 #   $percent (Number) - the percentage of the downloaded size.
-pdfjs-editor-new-alt-text-ai-model-downloading-progress = Λήψη μοντέλου AI εναλλακτικού κειμένου ({ $downloadedSize } από { $totalSize } MB)
-    .aria-valuetext = Λήψη μοντέλου AI εναλλακτικού κειμένου ({ $downloadedSize } από { $totalSize } MB)
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = Λήψη μοντέλου ΤΝ εναλλακτικού κειμένου ({ $downloadedSize } από { $totalSize } MB)
+    .aria-valuetext = Λήψη μοντέλου ΤΝ εναλλακτικού κειμένου ({ $downloadedSize } από { $totalSize } MB)
 # This is a button that users can click to edit the alt text they have already added.
 pdfjs-editor-new-alt-text-added-button =
     .aria-label = Προστέθηκε εναλλακτικό κείμενο
@@ -484,7 +486,7 @@ pdfjs-editor-alt-text-settings-create-model-button-label = Αυτόματη δη
 pdfjs-editor-alt-text-settings-create-model-description = Προτείνει περιγραφές για άτομα που δεν μπορούν να δουν την εικόνα ή όταν η εικόνα δεν φορτώνεται.
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Μοντέλο AI εναλλακτικού κειμένου ({ $totalSize } MB)
+pdfjs-editor-alt-text-settings-download-model-label = Μοντέλο ΤΝ εναλλακτικού κειμένου ({ $totalSize } MB)
 pdfjs-editor-alt-text-settings-ai-model-description = Εκτελείται τοπικά στη συσκευή σας, ώστε τα δεδομένα σας να παραμένουν ιδιωτικά. Απαιτείται για τη δημιουργία του αυτόματου εναλλακτικού κειμένου.
 pdfjs-editor-alt-text-settings-delete-model-button = Διαγραφή
 pdfjs-editor-alt-text-settings-download-model-button = Λήψη
@@ -500,6 +502,7 @@ pdfjs-editor-undo-bar-message-highlight = Η επισήμανση αφαιρέθ
 pdfjs-editor-undo-bar-message-freetext = Το κείμενο αφαιρέθηκε
 pdfjs-editor-undo-bar-message-ink = Το σχέδιο αφαιρέθηκε
 pdfjs-editor-undo-bar-message-stamp = Η εικόνα αφαιρέθηκε
+pdfjs-editor-undo-bar-message-signature = Η υπογραφή αφαιρέθηκε
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -513,3 +516,53 @@ pdfjs-editor-undo-bar-undo-button-label = Αναίρεση
 pdfjs-editor-undo-bar-close-button =
     .title = Κλείσιμο
 pdfjs-editor-undo-bar-close-button-label = Κλείσιμο
+
+## Add a signature dialog
+
+pdfjs-editor-add-signature-dialog-title = Προσθήκη υπογραφής
+
+## Tab names
+
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = Πληκτρολόγηση
+    .title = Πληκτρολόγηση
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = Σχέδιο
+    .title = Σχέδιο
+pdfjs-editor-add-signature-image-button = Εικόνα
+    .title = Εικόνα
+
+## Tab panels
+
+pdfjs-editor-add-signature-type-input =
+    .aria-label = Πληκτρολογήστε την υπογραφή σας
+    .placeholder = Πληκτρολογήστε την υπογραφή σας
+pdfjs-editor-add-signature-draw-placeholder = Σχεδιάστε την υπογραφή σας
+pdfjs-editor-add-signature-draw-thickness-range-label = Πάχος
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Πάχος σχεδίου: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = Σύρετε ένα αρχείο εδώ για μεταφόρτωση
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] Ή επιλέξτε αρχεία εικόνας
+       *[other] Ή περιηγηθείτε σε αρχεία εικόνας
+    }
+
+## Controls
+
+pdfjs-editor-add-signature-description-label = Περιγραφή (εναλλακτικό κείμενο)
+pdfjs-editor-add-signature-description-input =
+    .title = Περιγραφή (εναλλακτικό κείμενο)
+pdfjs-editor-add-signature-description-default-when-drawing = Υπογραφή
+pdfjs-editor-add-signature-clear-button-label = Απαλοιφή υπογραφής
+pdfjs-editor-add-signature-clear-button =
+    .title = Απαλοιφή υπογραφής
+pdfjs-editor-add-signature-save-checkbox = Αποθήκευση υπογραφής
+pdfjs-editor-add-signature-error-close-button = Κλείσιμο
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = Ακύρωση
+pdfjs-editor-add-signature-add-button = Προσθήκη

@@ -327,6 +327,8 @@ pdfjs-editor-remove-stamp-button =
     .title = Remover imagine
 pdfjs-editor-remove-highlight-button =
     .title = Remover evidentia
+pdfjs-editor-remove-signature-button =
+    .title = Remover signatura
 
 ##
 
@@ -500,6 +502,7 @@ pdfjs-editor-undo-bar-message-highlight = Evidentiation removite
 pdfjs-editor-undo-bar-message-freetext = Texto removite
 pdfjs-editor-undo-bar-message-ink = Designo removite
 pdfjs-editor-undo-bar-message-stamp = Imagine removite
+pdfjs-editor-undo-bar-message-signature = Signatura removite
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -513,3 +516,57 @@ pdfjs-editor-undo-bar-undo-button-label = Disfacer
 pdfjs-editor-undo-bar-close-button =
     .title = Clauder
 pdfjs-editor-undo-bar-close-button-label = Clauder
+
+## Add a signature dialog
+
+pdfjs-editor-add-signature-dialog-label = Iste formulario permitte al usator crear un firma a adder a un documento PDF. Le usator pote modificar le nomine (le qual tamben servi de texto alternative) e, si desirate, salvar le firma pro uso repetite.
+pdfjs-editor-add-signature-dialog-title = Adder un signatura
+
+## Tab names
+
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = Typar
+    .title = Typar
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = Designar
+    .title = Designar
+pdfjs-editor-add-signature-image-button = Imagine
+    .title = Imagine
+
+## Tab panels
+
+pdfjs-editor-add-signature-type-input =
+    .aria-label = Insere tu firma
+    .placeholder = Insere tu firma
+pdfjs-editor-add-signature-draw-placeholder = Designa tu firma
+pdfjs-editor-add-signature-draw-thickness-range-label = Spissor
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Spissor de designo: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = Trahe un file hic pro incargar lo
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] O elige files de imagine
+       *[other] O folietta files de imagine
+    }
+
+## Controls
+
+pdfjs-editor-add-signature-description-label = Description (texto alternative)
+pdfjs-editor-add-signature-description-input =
+    .title = Description (texto alternative)
+pdfjs-editor-add-signature-description-default-when-drawing = Signatura
+pdfjs-editor-add-signature-clear-button-label = Rader signatura
+pdfjs-editor-add-signature-clear-button =
+    .title = Rader signatura
+pdfjs-editor-add-signature-save-checkbox = Salvar signatura
+pdfjs-editor-add-signature-save-warning-message = Tu ha attingite le limite de 5 firmas salvate. Remove un pro salvar un altere.
+pdfjs-editor-add-signature-image-upload-error-title = Non poteva incargar le imagine
+pdfjs-editor-add-signature-image-upload-error-description = Verifica tu connexion al rete o tenta un altere imagine.
+pdfjs-editor-add-signature-error-close-button = Clauder
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = Cancellar
+pdfjs-editor-add-signature-add-button = Adder

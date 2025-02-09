@@ -516,3 +516,21 @@ pdfjs-editor-undo-bar-undo-button-label = Адмяніць
 pdfjs-editor-undo-bar-close-button =
     .title = Закрыць
 pdfjs-editor-undo-bar-close-button-label = Закрыць
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+pdfjs-editor-add-signature-error-close-button = Закрыць
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = Скасаваць
+pdfjs-editor-add-signature-add-button = Дадаць

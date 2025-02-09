@@ -327,6 +327,8 @@ pdfjs-editor-remove-stamp-button =
     .title = הסרת תמונה
 pdfjs-editor-remove-highlight-button =
     .title = הסרת סימון
+pdfjs-editor-remove-signature-button =
+    .title = הסרת חתימה
 
 ##
 
@@ -500,6 +502,7 @@ pdfjs-editor-undo-bar-message-highlight = הסימון הוסר
 pdfjs-editor-undo-bar-message-freetext = הטקסט הוסר
 pdfjs-editor-undo-bar-message-ink = הציור הוסר
 pdfjs-editor-undo-bar-message-stamp = התמונה הוסרה
+pdfjs-editor-undo-bar-message-signature = החתימה הוסרה
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -513,3 +516,52 @@ pdfjs-editor-undo-bar-undo-button-label = ביטול פעלה
 pdfjs-editor-undo-bar-close-button =
     .title = סגירה
 pdfjs-editor-undo-bar-close-button-label = סגירה
+
+## Add a signature dialog
+
+pdfjs-editor-add-signature-dialog-label = מודל זה מאפשר למשתמש ליצור חתימה להוספה למסמך PDF. המשתמש יכול לערוך את השם (שמשמש גם כטקסט האלטרנטיבי), ובאופן אופציונלי לשמור את החתימה לשימוש חוזר.
+pdfjs-editor-add-signature-dialog-title = הוספת חתימה
+
+## Tab names
+
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = הקלדה
+    .title = הקלדה
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = ציור
+    .title = ציור
+pdfjs-editor-add-signature-image-button = תמונה
+    .title = תמונה
+
+## Tab panels
+
+pdfjs-editor-add-signature-type-input =
+    .aria-label = נא להקליד את החתימה שלך
+    .placeholder = נא להקליד את החתימה שלך
+pdfjs-editor-add-signature-draw-placeholder = נא לצייר את החתימה שלך
+pdfjs-editor-add-signature-draw-thickness-range-label = עובי
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = עובי הציור: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = יש לגרור לכאן קובץ להעלאה
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] או לבחור בקובצי תמונה
+       *[other] או לעיין בקובצי תמונה
+    }
+
+## Controls
+
+pdfjs-editor-add-signature-clear-button =
+    .title = ניקוי חתימה
+pdfjs-editor-add-signature-save-checkbox = שמירת החתימה
+pdfjs-editor-add-signature-save-warning-message = הגעת למגבלה של 5 חתימות שמורות. יש להסיר אחד כדי לשמור עוד.
+pdfjs-editor-add-signature-image-upload-error-title = לא ניתן להעלות את התמונה
+pdfjs-editor-add-signature-image-upload-error-description = נא לבדוק את החיבור שלך לרשת או לנסות תמונה אחרת.
+pdfjs-editor-add-signature-error-close-button = סגירה
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = ביטול
+pdfjs-editor-add-signature-add-button = הוספה

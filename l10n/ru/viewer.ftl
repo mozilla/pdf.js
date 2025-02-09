@@ -329,6 +329,8 @@ pdfjs-editor-remove-stamp-button =
     .title = Удалить изображение
 pdfjs-editor-remove-highlight-button =
     .title = Удалить выделение
+pdfjs-editor-remove-signature-button =
+    .title = Удалить подпись
 
 ##
 
@@ -502,6 +504,7 @@ pdfjs-editor-undo-bar-message-highlight = Выделение удалено
 pdfjs-editor-undo-bar-message-freetext = Текст удалён
 pdfjs-editor-undo-bar-message-ink = Рисунок удалён
 pdfjs-editor-undo-bar-message-stamp = Изображение удалено
+pdfjs-editor-undo-bar-message-signature = Подпись удалена
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -516,3 +519,57 @@ pdfjs-editor-undo-bar-undo-button-label = Отменить
 pdfjs-editor-undo-bar-close-button =
     .title = Закрыть
 pdfjs-editor-undo-bar-close-button-label = Закрыть
+
+## Add a signature dialog
+
+pdfjs-editor-add-signature-dialog-label = Это окно позволяет пользователю создать подпись для добавления в PDF-документ. Пользователь может отредактировать имя (которое также используется в качестве альтернативного текста) и, по желанию, сохранить подпись для повторного использования.
+pdfjs-editor-add-signature-dialog-title = Добавить подпись
+
+## Tab names
+
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = Ввод
+    .title = Ввод
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = Рисовать
+    .title = Рисовать
+pdfjs-editor-add-signature-image-button = Изображение
+    .title = Изображение
+
+## Tab panels
+
+pdfjs-editor-add-signature-type-input =
+    .aria-label = Введите свою подпись
+    .placeholder = Введите свою подпись
+pdfjs-editor-add-signature-draw-placeholder = Нарисуйте свою подпись
+pdfjs-editor-add-signature-draw-thickness-range-label = Толщина
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Толщина рисунка: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = Перетащите сюда файл для загрузки
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] Или просмотрите файлы изображений
+       *[other] Или просмотрите файлы изображений
+    }
+
+## Controls
+
+pdfjs-editor-add-signature-description-label = Описание (альтернативный текст)
+pdfjs-editor-add-signature-description-input =
+    .title = Описание (альтернативный текст)
+pdfjs-editor-add-signature-description-default-when-drawing = Подпись
+pdfjs-editor-add-signature-clear-button-label = Удалить подпись
+pdfjs-editor-add-signature-clear-button =
+    .title = Удалить подпись
+pdfjs-editor-add-signature-save-checkbox = Сохранить подпись
+pdfjs-editor-add-signature-save-warning-message = Вы достигли лимита в 5 сохранённых подписей. Удалите одну, чтобы сохранить другие.
+pdfjs-editor-add-signature-image-upload-error-title = Не удалось загрузить изображение
+pdfjs-editor-add-signature-image-upload-error-description = Проверьте подключение к сети или попробуйте другое изображение.
+pdfjs-editor-add-signature-error-close-button = Закрыть
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = Отмена
+pdfjs-editor-add-signature-add-button = Добавить

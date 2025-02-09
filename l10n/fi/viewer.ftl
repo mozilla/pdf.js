@@ -513,3 +513,18 @@ pdfjs-editor-undo-bar-undo-button-label = Kumoa
 pdfjs-editor-undo-bar-close-button =
     .title = Sulje
 pdfjs-editor-undo-bar-close-button-label = Sulje
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+
