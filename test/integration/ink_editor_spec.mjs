@@ -113,6 +113,8 @@ describe("Ink Editor", () => {
         pages.map(async ([browserName, page]) => {
           await clearAll(page);
 
+          await switchToInk(page);
+
           const rect = await getRect(page, ".annotationEditorLayer");
 
           const xStart = rect.x + 300;
