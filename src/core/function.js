@@ -252,12 +252,9 @@ class PDFFunction {
       // Building the cube vertices: its part and sample index
       // http://rjwagner49.com/Mathematics/Interpolation.pdf
       const cubeVertices = 1 << inputSize;
-      const cubeN = new Float64Array(cubeVertices);
+      const cubeN = new Float64Array(cubeVertices).fill(1);
       const cubeVertex = new Uint32Array(cubeVertices);
       let i, j;
-      for (j = 0; j < cubeVertices; j++) {
-        cubeN[j] = 1;
-      }
 
       let k = outputSize,
         pos = 1;

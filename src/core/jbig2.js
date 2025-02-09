@@ -805,9 +805,7 @@ function decodeTextRegion(
   for (i = 0; i < height; i++) {
     row = new Uint8Array(width);
     if (defaultPixelValue) {
-      for (let j = 0; j < width; j++) {
-        row[j] = defaultPixelValue;
-      }
+      row.fill(defaultPixelValue);
     }
     bitmap.push(row);
   }
@@ -1041,9 +1039,7 @@ function decodeHalftoneRegion(
   for (i = 0; i < regionHeight; i++) {
     row = new Uint8Array(regionWidth);
     if (defaultPixelValue) {
-      for (j = 0; j < regionWidth; j++) {
-        row[j] = defaultPixelValue;
-      }
+      row.fill(defaultPixelValue);
     }
     regionBitmap.push(row);
   }
