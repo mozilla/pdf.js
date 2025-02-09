@@ -871,7 +871,7 @@ a:focus > .thumbnail > .thumbnailImage,
   display: none;
 
   #sidebarContainer:has(#outlineView:not(.hidden)) & {
-    display: inline flex;
+    display: inline-flex;
   }
 }
 
@@ -1349,7 +1349,7 @@ dialog :link {
     gap: 4px;
 
     &:has(> :is(#findResultsCount, #findMsg):not(:empty)) {
-      display: inline flex;
+      display: inline-flex;
     }
 
     #findResultsCount {
@@ -1480,7 +1480,7 @@ dialog :link {
   cursor: default;
   box-sizing: border-box;
 
-  display: inline flex;
+  display: inline-flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -1492,7 +1492,7 @@ dialog :link {
 
 .toolbarHorizontalGroup {
   height: 100%;
-  display: inline flex;
+  display: inline-flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
@@ -1501,7 +1501,7 @@ dialog :link {
 }
 
 .dropdownToolbarButton {
-  display: inline flex;
+  display: inline-flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
