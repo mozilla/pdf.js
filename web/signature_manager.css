@@ -260,7 +260,8 @@
             color: var(--signature-color);
             background-color: transparent;
 
-            font-family: "Brush script", "Apple Chancery", "Segoe script",
+            font-family:
+              "Brush script", "Apple Chancery", "Segoe script",
               "Freestyle Script", "Palace Script MT", "Brush Script MT", TK,
               cursive, serif;
             font-size: 44px;
