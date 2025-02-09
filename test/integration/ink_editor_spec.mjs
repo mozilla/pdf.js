@@ -68,11 +68,11 @@ describe("Ink Editor", () => {
   describe("Basic operations", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("aboutstacks.pdf", ".annotationEditorLayer");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -111,7 +111,7 @@ describe("Ink Editor", () => {
     it("must draw, undo/redo and check that the editor don't move", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await clearAll(page);
+          await switchToInk(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
 
@@ -152,11 +152,11 @@ describe("Ink Editor", () => {
   describe("with a rotated pdf", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("issue16278.pdf", ".annotationEditorLayer");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -191,11 +191,11 @@ describe("Ink Editor", () => {
   describe("Invisible layers must be disabled", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -246,11 +246,11 @@ describe("Ink Editor", () => {
   describe("Ink editor must be committed when blurred", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -280,11 +280,11 @@ describe("Ink Editor", () => {
   describe("Undo a draw", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -324,11 +324,11 @@ describe("Ink Editor", () => {
   describe("Delete a draw and undo it on another page", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -381,11 +381,11 @@ describe("Ink Editor", () => {
   describe("Delete a draw, scroll and undo it", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -433,11 +433,11 @@ describe("Ink Editor", () => {
   describe("Draw several times in the same editor", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -469,11 +469,11 @@ describe("Ink Editor", () => {
   describe("Drawing must unselect all", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -508,11 +508,11 @@ describe("Ink Editor", () => {
   describe("Selected editor must be updated even if the page has been destroyed", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -583,11 +583,11 @@ describe("Ink Editor", () => {
   describe("Can delete the drawing in progress and undo the deletion", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -627,11 +627,11 @@ describe("Ink Editor", () => {
   describe("Annotation mustn't take focus if it isn't visible", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -684,11 +684,11 @@ describe("Ink Editor", () => {
   describe("Ink (update existing)", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("inks.pdf", ".annotationEditorLayer");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -785,11 +785,11 @@ describe("Ink Editor", () => {
   describe("Ink (move existing)", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("inks.pdf", getAnnotationSelector("277R"));
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -953,11 +953,11 @@ describe("Ink Editor", () => {
   describe("Ink must update its stroke width when not the current active layer", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -1015,7 +1015,7 @@ describe("Ink Editor", () => {
   describe("Draw annotations on several page, move one of them and delete it", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait(
         "tracemonkey.pdf",
         ".annotationEditorLayer",
@@ -1023,7 +1023,7 @@ describe("Ink Editor", () => {
       );
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -1079,11 +1079,11 @@ describe("Ink Editor", () => {
   describe("Page position should remain unchanged after drawing", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -1130,11 +1130,11 @@ describe("Ink Editor", () => {
 describe("The pen-drawn shape must maintain correct curvature regardless of the page it is drawn on or whether the curve's endpoint lies within or beyond the page boundaries", () => {
   let pages;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await closePages(pages);
   });
 
