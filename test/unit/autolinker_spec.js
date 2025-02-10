@@ -87,6 +87,9 @@ describe("autolinker", function () {
         "CAP.cap@Gmail.Com", // Keep the original case.
         "mailto:CAP.cap@Gmail.Com",
       ],
+      ["partl@mail.boku.ac.at", "mailto:partl@mail.boku.ac.at"],
+      ["Irene.Hyna@bmwf.ac.at", "mailto:Irene.Hyna@bmwf.ac.at"],
+      ["<hi@foo.bar.baz>", "mailto:hi@foo.bar.baz"],
     ]);
   });
 
@@ -140,6 +143,7 @@ describe("autolinker", function () {
         "http//[00:00:00:00:00:00", // Invalid IPv6 address.
         "http//[]", // Empty IPv6 address.
         "abc.example.com", // URL without scheme.
+        "JD?M$0QP)lKn06l1apKDC@\\qJ4B!!(5m+j.7F790m", // Not a valid email.
       ].join("\n")
     );
     expect(matches.length).toEqual(0);
