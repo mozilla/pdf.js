@@ -1112,12 +1112,17 @@ class PDFPageView {
           await this.#renderAnnotationLayer();
 
           if (this.#enableAutoLinking) {
-            await textLayerPromise;
-            this.annotationLayer?.injectLinkAnnotations({
-              inferredLinks: Autolinker.processLinks(this),
-              viewport: this.viewport,
-              structTreeLayer: this.structTreeLayer,
-            });
+            try {
+              await textLayerPromise;
+
+              this.annotationLayer?.injectLinkAnnotations({
+                inferredLinks: Autolinker.processLinks(this),
+                viewport: this.viewport,
+                structTreeLayer: this.structTreeLayer,
+              });
+            } catch (ex) {
+              console.error("enableAutoLinking:", ex);
+            }
           }
         }
 
