@@ -234,3 +234,18 @@ pdfjs-web-fonts-disabled = Tá clófhoirne Gréasáin díchumasaithe: ní féidi
 
 ## "Annotations removed" bar
 
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

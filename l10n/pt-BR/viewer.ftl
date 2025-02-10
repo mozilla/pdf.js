@@ -327,6 +327,8 @@ pdfjs-editor-remove-stamp-button =
     .title = Remover imagem
 pdfjs-editor-remove-highlight-button =
     .title = Remover destaque
+pdfjs-editor-remove-signature-button =
+    .title = Remover assinatura
 
 ##
 
@@ -439,7 +441,7 @@ pdfjs-editor-new-alt-text-dialog-edit-label = Editar texto alternativo (descriç
 # Modal header positioned above a text box where users can add the alt text.
 pdfjs-editor-new-alt-text-dialog-add-label = Adicionar texto alternativo (descrição da imagem)
 pdfjs-editor-new-alt-text-textarea =
-    .placeholder = Escreva sua descrição aqui…
+    .placeholder = Você pode escrever uma descrição aqui…
 # This text refers to the alt text box above this description. It offers a definition of alt text.
 pdfjs-editor-new-alt-text-description = Descrição curta para pessoas que não conseguem ver a imagem ou quando a imagem não é carregada.
 # This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
@@ -462,8 +464,8 @@ pdfjs-editor-new-alt-text-added-button =
 pdfjs-editor-new-alt-text-added-button-label = Texto alternativo adicionado
 # This is a button that users can click to open the alt text editor and add alt text when it is not present.
 pdfjs-editor-new-alt-text-missing-button =
-    .aria-label = Falta texto alternativo
-pdfjs-editor-new-alt-text-missing-button-label = Falta texto alternativo
+    .aria-label = Sem texto alternativo
+pdfjs-editor-new-alt-text-missing-button-label = Sem texto alternativo
 # This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
 pdfjs-editor-new-alt-text-to-review-button =
     .aria-label = Revisar texto alternativo
@@ -500,6 +502,7 @@ pdfjs-editor-undo-bar-message-highlight = Destaque removido
 pdfjs-editor-undo-bar-message-freetext = Texto removido
 pdfjs-editor-undo-bar-message-ink = Desenho removido
 pdfjs-editor-undo-bar-message-stamp = Imagem removida
+pdfjs-editor-undo-bar-message-signature = Assinatura removida
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -513,3 +516,56 @@ pdfjs-editor-undo-bar-undo-button-label = Desfazer
 pdfjs-editor-undo-bar-close-button =
     .title = Fechar
 pdfjs-editor-undo-bar-close-button-label = Fechar
+
+## Add a signature dialog
+
+pdfjs-editor-add-signature-dialog-title = Adicionar uma assinatura
+
+## Tab names
+
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = Tipo
+    .title = Tipo
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = Desenhar
+    .title = Desenhar
+pdfjs-editor-add-signature-image-button = Imagem
+    .title = Imagem
+
+## Tab panels
+
+pdfjs-editor-add-signature-type-input =
+    .aria-label = Digite sua assinatura
+    .placeholder = Digite sua assinatura
+pdfjs-editor-add-signature-draw-placeholder = Desenhe sua assinatura
+pdfjs-editor-add-signature-draw-thickness-range-label = Espessura
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Espessura do desenho: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = Arraste um arquivo aqui para enviar
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] Ou escolha arquivos de imagem
+       *[other] Ou escolha arquivos de imagem
+    }
+
+## Controls
+
+pdfjs-editor-add-signature-description-label = Descrição (texto alternativo)
+pdfjs-editor-add-signature-description-input =
+    .title = Descrição (texto alternativo)
+pdfjs-editor-add-signature-description-default-when-drawing = Assinatura
+pdfjs-editor-add-signature-clear-button-label = Limpar assinatura
+pdfjs-editor-add-signature-clear-button =
+    .title = Limpar assinatura
+pdfjs-editor-add-signature-save-checkbox = Salvar assinatura
+pdfjs-editor-add-signature-save-warning-message = Você atingiu o limite de 5 assinaturas salvas. Remova uma para salvar mais.
+pdfjs-editor-add-signature-image-upload-error-title = Não foi possível enviar a imagem
+pdfjs-editor-add-signature-image-upload-error-description = Verifique sua conexão de rede ou tente outra imagem.
+pdfjs-editor-add-signature-error-close-button = Fechar
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = Cancelar
+pdfjs-editor-add-signature-add-button = Adicionar

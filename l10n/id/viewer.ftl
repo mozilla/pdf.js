@@ -501,3 +501,18 @@ pdfjs-editor-undo-bar-undo-button-label = Urungkan
 pdfjs-editor-undo-bar-close-button =
     .title = Tutup
 pdfjs-editor-undo-bar-close-button-label = Tutup
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

@@ -519,3 +519,18 @@ pdfjs-editor-undo-bar-undo-button-label = Razveljavi
 pdfjs-editor-undo-bar-close-button =
     .title = Zapri
 pdfjs-editor-undo-bar-close-button-label = Zapri
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

@@ -278,3 +278,18 @@ pdfjs-web-fonts-disabled = Web Şriftlər söndürülüb: yerləşdirilmiş PDF 
 
 ## "Annotations removed" bar
 
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

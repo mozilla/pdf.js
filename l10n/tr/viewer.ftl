@@ -513,3 +513,18 @@ pdfjs-editor-undo-bar-undo-button-label = Geri al
 pdfjs-editor-undo-bar-close-button =
     .title = Kapat
 pdfjs-editor-undo-bar-close-button-label = Kapat
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

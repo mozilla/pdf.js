@@ -513,3 +513,18 @@ pdfjs-editor-undo-bar-undo-button-label = Mboguevi
 pdfjs-editor-undo-bar-close-button =
     .title = Mboty
 pdfjs-editor-undo-bar-close-button-label = Mboty
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

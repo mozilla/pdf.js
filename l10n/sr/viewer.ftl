@@ -422,3 +422,18 @@ pdfjs-editor-new-alt-text-not-now-button = Не сада
 
 ## "Annotations removed" bar
 
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

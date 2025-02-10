@@ -349,3 +349,18 @@ pdfjs-editor-alt-text-settings-close-button = بستن
 
 ## "Annotations removed" bar
 
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

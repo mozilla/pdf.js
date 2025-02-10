@@ -327,6 +327,8 @@ pdfjs-editor-remove-stamp-button =
     .title = Kép eltávolítása
 pdfjs-editor-remove-highlight-button =
     .title = Kiemelés eltávolítása
+pdfjs-editor-remove-signature-button =
+    .title = Aláírás eltávolítása
 
 ##
 
@@ -500,6 +502,7 @@ pdfjs-editor-undo-bar-message-highlight = Kiemelés eltávolítva
 pdfjs-editor-undo-bar-message-freetext = Szöveg eltávolítva
 pdfjs-editor-undo-bar-message-ink = Rajz eltávolítva
 pdfjs-editor-undo-bar-message-stamp = Kép eltávolítva
+pdfjs-editor-undo-bar-message-signature = Aláírás eltávolítva
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -513,3 +516,56 @@ pdfjs-editor-undo-bar-undo-button-label = Visszavonás
 pdfjs-editor-undo-bar-close-button =
     .title = Bezárás
 pdfjs-editor-undo-bar-close-button-label = Bezárás
+
+## Add a signature dialog
+
+pdfjs-editor-add-signature-dialog-title = Aláírás hozzáadása
+
+## Tab names
+
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = Beírás
+    .title = Beírás
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = Rajzolás
+    .title = Rajzolás
+pdfjs-editor-add-signature-image-button = Kép
+    .title = Kép
+
+## Tab panels
+
+pdfjs-editor-add-signature-type-input =
+    .aria-label = Írja be az aláírását
+    .placeholder = Írja be az aláírását
+pdfjs-editor-add-signature-draw-placeholder = Rajzolja le az aláírását
+pdfjs-editor-add-signature-draw-thickness-range-label = Vastagság
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Rajzolási vastagság: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = Húzzon ide egy fájlt a feltöltéshez
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] Vagy tallózzon a képfájlok között
+       *[other] Vagy tallózzon a képfájlok között
+    }
+
+## Controls
+
+pdfjs-editor-add-signature-description-label = Leírás (alternatív szöveg)
+pdfjs-editor-add-signature-description-input =
+    .title = Leírás (alternatív szöveg)
+pdfjs-editor-add-signature-description-default-when-drawing = Aláírás
+pdfjs-editor-add-signature-clear-button-label = Aláírás törlése
+pdfjs-editor-add-signature-clear-button =
+    .title = Aláírás törlése
+pdfjs-editor-add-signature-save-checkbox = Aláírás mentése
+pdfjs-editor-add-signature-save-warning-message = Elérte a mentett aláírások 5 darabos korlátját. A mentéshez távolítson el egyet.
+pdfjs-editor-add-signature-image-upload-error-title = A kép nem tölthető fel
+pdfjs-editor-add-signature-image-upload-error-description = Ellenőrizze a hálózati kapcsolatot, vagy próbálkozzon egy másik képpel.
+pdfjs-editor-add-signature-error-close-button = Bezárás
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = Mégse
+pdfjs-editor-add-signature-add-button = Hozzáadás

@@ -108,3 +108,18 @@ pdfjs-password-cancel-button = Nkuvi-ka
 
 ## "Annotations removed" bar
 
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+
