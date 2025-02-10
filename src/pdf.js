@@ -30,6 +30,7 @@ import {
   AnnotationType,
   createValidAbsoluteUrl,
   FeatureTest,
+  getUuid,
   ImageKind,
   InvalidPDFException,
   normalizeUnicode,
@@ -72,6 +73,7 @@ import { DOMSVGFactory } from "./display/svg_factory.js";
 import { DrawLayer } from "./display/draw_layer.js";
 import { GlobalWorkerOptions } from "./display/worker_options.js";
 import { HighlightOutliner } from "./display/editor/drawers/highlight.js";
+import { SignatureExtractor } from "./display/editor/drawers/signaturedraw.js";
 import { TextLayer } from "./display/text_layer.js";
 import { TouchManager } from "./display/touch_manager.js";
 import { XfaLayer } from "./display/xfa_layer.js";
@@ -108,6 +110,7 @@ export {
   getDocument,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
+  getUuid,
   getXfaPageViewport,
   GlobalWorkerOptions,
   ImageKind,
@@ -128,6 +131,7 @@ export {
   ResponseException,
   setLayerDimensions,
   shadow,
+  SignatureExtractor,
   stopEvent,
   SupportedImageMimeTypes,
   TextLayer,

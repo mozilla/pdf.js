@@ -13,9 +13,13 @@
  * limitations under the License.
  */
 
+import { fromBase64Util, toBase64Util, warn } from "../../../shared/util.js";
 import { ContourDrawOutline } from "./contour.js";
 import { InkDrawOutline } from "./inkdraw.js";
 import { Outline } from "./outline.js";
+
+const BASE_HEADER_LENGTH = 8;
+const POINTS_PROPERTIES_NUMBER = 3;
 
 /**
  * Basic text editor in order to create a Signature annotation.
@@ -607,12 +611,14 @@ class SignatureExtractor {
     const ratio = Math.min(pageWidth / width, pageHeight / height);
     const xScale = ratio / pageWidth;
     const yScale = ratio / pageHeight;
+    const newCurves = [];
 
     for (const { points } of curves) {
       const reducedPoints = mustSmooth ? this.#douglasPeucker(points) : points;
       if (!reducedPoints) {
         continue;
       }
+      newCurves.push(reducedPoints);
 
       const len = reducedPoints.length;
       const newPoints = new Float32Array(len);
@@ -660,7 +666,185 @@ class SignatureExtractor {
       innerMargin
     );
 
-    return outline;
+    return { outline, newCurves, areContours, thickness, width, height };
+  }
+
+  static async compressSignature({
+    outlines,
+    areContours,
+    thickness,
+    width,
+    height,
+  }) {
+    // We create a single array containing all the outlines.
+    // The format is the following:
+    // - 4 bytes: data length.
+    // - 4 bytes: version.
+    // - 4 bytes: width.
+    // - 4 bytes: height.
+    // - 4 bytes: 0 if it's a contour, 1 if it's an ink.
+    // - 4 bytes: thickness.
+    // - 4 bytes: number of drawings.
+    // - 4 bytes: size of the buffer containing the diff of the coordinates.
+    // - 4 bytes: number of points in the first drawing.
+    // - 4 bytes: x coordinate of the first point.
+    // - 4 bytes: y coordinate of the first point.
+    // - 4 bytes: number of points in the second drawing.
+    // - 4 bytes: x coordinate of the first point.
+    // - 4 bytes: y coordinate of the first point.
+    // - ...
+    // - The buffer containing the diff of the coordinates.
+
+    // The coordinates are supposed to be positive integers.
+
+    // We also compute the min and max difference between two points.
+    // This will help us to determine the type of the buffer (Int8, Int16 or
+    // Int32) in order to minimize the amount of data we have.
+    let minDiff = Infinity;
+    let maxDiff = -Infinity;
+    let outlinesLength = 0;
+    for (const points of outlines) {
+      outlinesLength += points.length;
+      for (let i = 2, ii = points.length; i < ii; i++) {
+        const dx = points[i] - points[i - 2];
+        minDiff = Math.min(minDiff, dx);
+        maxDiff = Math.max(maxDiff, dx);
+      }
+    }
+
+    let bufferType;
+    if (minDiff >= -128 && maxDiff <= 127) {
+      bufferType = Int8Array;
+    } else if (minDiff >= -32768 && maxDiff <= 32767) {
+      bufferType = Int16Array;
+    } else {
+      bufferType = Int32Array;
+    }
+
+    const len = outlines.length;
+    const headerLength = BASE_HEADER_LENGTH + POINTS_PROPERTIES_NUMBER * len;
+    const header = new Uint32Array(headerLength);
+
+    let offset = 0;
+    header[offset++] =
+      headerLength * Uint32Array.BYTES_PER_ELEMENT +
+      (outlinesLength - 2 * len) * bufferType.BYTES_PER_ELEMENT;
+    header[offset++] = 0; // Version.
+    header[offset++] = width;
+    header[offset++] = height;
+    header[offset++] = areContours ? 0 : 1;
+    header[offset++] = Math.max(0, Math.floor(thickness ?? 0));
+    header[offset++] = len;
+    header[offset++] = bufferType.BYTES_PER_ELEMENT;
+    for (const points of outlines) {
+      header[offset++] = points.length - 2;
+      header[offset++] = points[0];
+      header[offset++] = points[1];
+    }
+
+    const cs = new CompressionStream("deflate-raw");
+    const writer = cs.writable.getWriter();
+    await writer.ready;
+
+    writer.write(header);
+    const BufferCtor = bufferType.prototype.constructor;
+    for (const points of outlines) {
+      const diffs = new BufferCtor(points.length - 2);
+      for (let i = 2, ii = points.length; i < ii; i++) {
+        diffs[i - 2] = points[i] - points[i - 2];
+      }
+      writer.write(diffs);
+    }
+
+    writer.close();
+
+    const buf = await new Response(cs.readable).arrayBuffer();
+    const bytes = new Uint8Array(buf);
+
+    return toBase64Util(bytes);
+  }
+
+  static async decompressSignature(signatureData) {
+    try {
+      const bytes = fromBase64Util(signatureData);
+      const { readable, writable } = new DecompressionStream("deflate-raw");
+      const writer = writable.getWriter();
+      await writer.ready;
+
+      // We can't await writer.write() because it'll block until the reader
+      // starts which happens few lines below.
+      writer
+        .write(bytes)
+        .then(async () => {
+          await writer.ready;
+          await writer.close();
+        })
+        .catch(() => {});
+
+      let data = null;
+      let offset = 0;
+      for await (const chunk of readable) {
+        data ||= new Uint8Array(new Uint32Array(chunk.buffer)[0]);
+        data.set(chunk, offset);
+        offset += chunk.length;
+      }
+
+      // We take a bit too much data for the header but it's fine.
+      const header = new Uint32Array(data.buffer, 0, data.length >> 2);
+      const version = header[1];
+      if (version !== 0) {
+        throw new Error(`Invalid version: ${version}`);
+      }
+      const width = header[2];
+      const height = header[3];
+      const areContours = header[4] === 0;
+      const thickness = header[5];
+      const numberOfDrawings = header[6];
+      const bufferType = header[7];
+      const outlines = [];
+      const diffsOffset =
+        (BASE_HEADER_LENGTH + POINTS_PROPERTIES_NUMBER * numberOfDrawings) *
+        Uint32Array.BYTES_PER_ELEMENT;
+      let diffs;
+
+      switch (bufferType) {
+        case Int8Array.BYTES_PER_ELEMENT:
+          diffs = new Int8Array(data.buffer, diffsOffset);
+          break;
+        case Int16Array.BYTES_PER_ELEMENT:
+          diffs = new Int16Array(data.buffer, diffsOffset);
+          break;
+        case Int32Array.BYTES_PER_ELEMENT:
+          diffs = new Int32Array(data.buffer, diffsOffset);
+          break;
+      }
+
+      offset = 0;
+      for (let i = 0; i < numberOfDrawings; i++) {
+        const len = header[POINTS_PROPERTIES_NUMBER * i + BASE_HEADER_LENGTH];
+        const points = new Float32Array(len + 2);
+        outlines.push(points);
+
+        for (let j = 0; j < POINTS_PROPERTIES_NUMBER - 1; j++) {
+          points[j] =
+            header[POINTS_PROPERTIES_NUMBER * i + BASE_HEADER_LENGTH + j + 1];
+        }
+        for (let j = 0; j < len; j++) {
+          points[j + 2] = points[j] + diffs[offset++];
+        }
+      }
+
+      return {
+        areContours,
+        thickness,
+        outlines,
+        width,
+        height,
+      };
+    } catch (e) {
+      warn(`decompressSignature: ${e}`);
+      return null;
+    }
   }
 }
 

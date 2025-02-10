@@ -72,6 +72,7 @@ class SignatureEditor extends DrawingEditor {
     super({ ...params, mustBeCommitted: true, name: "signatureEditor" });
     this._willKeepAspectRatio = true;
     this._description = "";
+    this._signatureUUID = null;
   }
 
   /** @inheritdoc */
