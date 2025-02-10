@@ -438,3 +438,18 @@ pdfjs-editor-alt-text-settings-close-button = Mdel
 
 ## "Annotations removed" bar
 
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

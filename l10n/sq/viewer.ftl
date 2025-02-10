@@ -504,3 +504,18 @@ pdfjs-editor-undo-bar-undo-button-label = Zhbëje
 pdfjs-editor-undo-bar-close-button =
     .title = Mbylle
 pdfjs-editor-undo-bar-close-button-label = Mbylle
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

@@ -319,6 +319,8 @@ pdfjs-editor-remove-stamp-button =
     .title = 移除圖片
 pdfjs-editor-remove-highlight-button =
     .title = 移除強調範圍
+pdfjs-editor-remove-signature-button =
+    .title = 移除簽章
 
 ##
 
@@ -492,6 +494,7 @@ pdfjs-editor-undo-bar-message-highlight = 已移除強調
 pdfjs-editor-undo-bar-message-freetext = 已移除文字
 pdfjs-editor-undo-bar-message-ink = 已移除繪圖
 pdfjs-editor-undo-bar-message-stamp = 已移除圖片
+pdfjs-editor-undo-bar-message-signature = 已移除簽章
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple = 已移除 { $count } 筆註解
@@ -501,3 +504,57 @@ pdfjs-editor-undo-bar-undo-button-label = 還原
 pdfjs-editor-undo-bar-close-button =
     .title = 關閉
 pdfjs-editor-undo-bar-close-button-label = 關閉
+
+## Add a signature dialog
+
+pdfjs-editor-add-signature-dialog-label = 此對話框讓使用者能夠建立簽章以加入 PDF 文件。使用者可以編輯他們的姓名（同時也是替代文字），並選擇性儲存簽章，以供未來重複使用。
+pdfjs-editor-add-signature-dialog-title = 加入簽章
+
+## Tab names
+
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = 打字
+    .title = 打字
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = 手繪
+    .title = 手繪
+pdfjs-editor-add-signature-image-button = 圖片
+    .title = 圖片
+
+## Tab panels
+
+pdfjs-editor-add-signature-type-input =
+    .aria-label = 輸入簽章
+    .placeholder = 輸入簽章
+pdfjs-editor-add-signature-draw-placeholder = 手繪簽章
+pdfjs-editor-add-signature-draw-thickness-range-label = 線條粗細
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = 繪製時的線條粗細：{ $thickness }
+pdfjs-editor-add-signature-image-placeholder = 將檔案拖曳到此處即可上傳
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] 或選擇圖片檔案
+       *[other] 或瀏覽圖片檔案
+    }
+
+## Controls
+
+pdfjs-editor-add-signature-description-label = 描述（替代文字）
+pdfjs-editor-add-signature-description-input =
+    .title = 描述（替代文字）
+pdfjs-editor-add-signature-description-default-when-drawing = 簽章
+pdfjs-editor-add-signature-clear-button-label = 清除簽章
+pdfjs-editor-add-signature-clear-button =
+    .title = 清除簽章
+pdfjs-editor-add-signature-save-checkbox = 儲存簽章
+pdfjs-editor-add-signature-save-warning-message = 您已經儲存 5 式簽章，請移除任一式才能再新增。
+pdfjs-editor-add-signature-image-upload-error-title = 無法上傳圖片
+pdfjs-editor-add-signature-image-upload-error-description = 請檢查您的網路連線，或改用其他圖片。
+pdfjs-editor-add-signature-error-close-button = 關閉
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = 取消
+pdfjs-editor-add-signature-add-button = 新增

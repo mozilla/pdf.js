@@ -280,3 +280,18 @@ pdfjs-editor-highlight-show-all-button =
 
 ## "Annotations removed" bar
 
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

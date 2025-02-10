@@ -95,3 +95,18 @@ pdfjs-password-cancel-button = Sfai
 
 ## "Annotations removed" bar
 
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

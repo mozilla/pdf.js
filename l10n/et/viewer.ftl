@@ -289,3 +289,18 @@ pdfjs-web-fonts-disabled = Veebifondid on keelatud: PDFiga kaasatud fonte pole v
 
 ## "Annotations removed" bar
 
+
+## Add a signature dialog
+
+
+## Tab names
+
+
+## Tab panels
+
+
+## Controls
+
+
+## Dialog buttons
+

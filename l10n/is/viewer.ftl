@@ -327,6 +327,8 @@ pdfjs-editor-remove-stamp-button =
     .title = Fjarlægja mynd
 pdfjs-editor-remove-highlight-button =
     .title = Fjarlægja áherslulit
+pdfjs-editor-remove-signature-button =
+    .title = Fjarlægja undirskrift
 
 ##
 
@@ -500,6 +502,7 @@ pdfjs-editor-undo-bar-message-highlight = Áherslulitun fjarlægð
 pdfjs-editor-undo-bar-message-freetext = Texti fjarlægður
 pdfjs-editor-undo-bar-message-ink = Teikning fjarlægð
 pdfjs-editor-undo-bar-message-stamp = Mynd fjarlægð
+pdfjs-editor-undo-bar-message-signature = Undirskrift fjarlægð
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -513,3 +516,57 @@ pdfjs-editor-undo-bar-undo-button-label = Afturkalla
 pdfjs-editor-undo-bar-close-button =
     .title = Loka
 pdfjs-editor-undo-bar-close-button-label = Loka
+
+## Add a signature dialog
+
+pdfjs-editor-add-signature-dialog-label = Þessi gluggi gerir notandanum kleift að búa til undirskrift til að bæta við PDF-skjal. Notandinn getur breytt nafninu (sem einnig þjónar sem alt-texti), og valið að vista undirskriftina til endurtekinnar notkunar.
+pdfjs-editor-add-signature-dialog-title = Bæta við undirskrift
+
+## Tab names
+
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = Tegund
+    .title = Tegund
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = Teikna
+    .title = Teikna
+pdfjs-editor-add-signature-image-button = Mynd
+    .title = Mynd
+
+## Tab panels
+
+pdfjs-editor-add-signature-type-input =
+    .aria-label = Skrifaðu inn undirskriftina þína
+    .placeholder = Skrifaðu inn undirskriftina þína
+pdfjs-editor-add-signature-draw-placeholder = Teiknaðu undirskriftina þína
+pdfjs-editor-add-signature-draw-thickness-range-label = Þykkt
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Sverleiki teikningar: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = Dragðu skrá hingað til að senda inn
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] Eða skoðaðu myndskrár
+       *[other] Eða skoðaðu myndskrár
+    }
+
+## Controls
+
+pdfjs-editor-add-signature-description-label = Lýsing (alt-hjálpartexti)
+pdfjs-editor-add-signature-description-input =
+    .title = Lýsing (alt-hjálpartexti)
+pdfjs-editor-add-signature-description-default-when-drawing = Undirskrift
+pdfjs-editor-add-signature-clear-button-label = Hreinsa undirskrift
+pdfjs-editor-add-signature-clear-button =
+    .title = Hreinsa undirskrift
+pdfjs-editor-add-signature-save-checkbox = Vista undirskrift
+pdfjs-editor-add-signature-save-warning-message = Þú hefur náð hámarki 5 vistaðra undirskrifta. Fjarlægðu eina til að geta vistað fleiri.
+pdfjs-editor-add-signature-image-upload-error-title = Ekki tókst að senda inn mynd
+pdfjs-editor-add-signature-image-upload-error-description = Athugaðu nettenginguna þína eða prófaðu aðra mynd.
+pdfjs-editor-add-signature-error-close-button = Loka
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = Hætta við
+pdfjs-editor-add-signature-add-button = Bæta við

@@ -41,12 +41,10 @@
   );
   --editorFreeText-editing-cursor: text;
   --editorInk-editing-cursor: url(images/cursor-editorInk.svg) 0 16, pointer;
-  --editorHighlight-editing-cursor: url(images/cursor-editorTextHighlight.svg)
-      24 24,
-    text;
-  --editorFreeHighlight-editing-cursor: url(images/cursor-editorFreeHighlight.svg)
-      1 18,
-    pointer;
+  --editorHighlight-editing-cursor:
+    url(images/cursor-editorTextHighlight.svg) 24 24, text;
+  --editorFreeHighlight-editing-cursor:
+    url(images/cursor-editorFreeHighlight.svg) 1 18, pointer;
 
   --new-alt-text-warning-image: url(images/altText_warning.svg);
 }
@@ -94,8 +92,8 @@
 
 @media (min-resolution: 1.1dppx) {
   :root {
-    --editorFreeText-editing-cursor: url(images/cursor-editorFreeText.svg) 0 16,
-      text;
+    --editorFreeText-editing-cursor:
+      url(images/cursor-editorFreeText.svg) 0 16, text;
   }
 }
 
