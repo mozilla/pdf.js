@@ -15,7 +15,6 @@
 
 const {
   AbortException,
-  AnnotationBorderStyleType,
   AnnotationEditorLayer,
   AnnotationEditorParamsType,
   AnnotationEditorType,
@@ -65,7 +64,6 @@ const {
 
 export {
   AbortException,
-  AnnotationBorderStyleType,
   AnnotationEditorLayer,
   AnnotationEditorParamsType,
   AnnotationEditorType,

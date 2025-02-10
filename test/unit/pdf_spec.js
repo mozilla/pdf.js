@@ -15,7 +15,6 @@
 
 import {
   AbortException,
-  AnnotationBorderStyleType,
   AnnotationEditorParamsType,
   AnnotationEditorType,
   AnnotationMode,
@@ -69,7 +68,6 @@ import { XfaLayer } from "../../src/display/xfa_layer.js";
 
 const expectedAPI = Object.freeze({
   AbortException,
-  AnnotationBorderStyleType,
   AnnotationEditorLayer,
   AnnotationEditorParamsType,
   AnnotationEditorType,
