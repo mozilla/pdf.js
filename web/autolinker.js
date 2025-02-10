@@ -13,12 +13,7 @@
  * limitations under the License.
  */
 
-import {
-  AnnotationBorderStyleType,
-  AnnotationType,
-  createValidAbsoluteUrl,
-  Util,
-} from "pdfjs-lib";
+import { AnnotationType, createValidAbsoluteUrl, Util } from "pdfjs-lib";
 import { getOriginalIndex, normalize } from "./pdf_find_controller.js";
 
 function DOMRectToPDF({ width, height, left, top }, pdfPageView) {
@@ -89,15 +84,9 @@ function createLinkAnnotation({ url, index, length }, pdfPageView, id) {
     annotationType: AnnotationType.LINK,
     rotation: 0,
     ...calculateLinkPosition(range, pdfPageView),
-    // This is just the default for AnnotationBorderStyle.
-    borderStyle: {
-      width: 1,
-      rawWidth: 1,
-      style: AnnotationBorderStyleType.SOLID,
-      dashArray: [3],
-      horizontalCornerRadius: 0,
-      verticalCornerRadius: 0,
-    },
+    // Populated in the annotationLayer to avoid unnecessary object creation,
+    // since most inferred links overlap existing LinkAnnotations:
+    borderStyle: null,
   };
 }
 
