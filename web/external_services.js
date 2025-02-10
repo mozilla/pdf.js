@@ -44,6 +44,10 @@ class BaseExternalServices {
     throw new Error("Not implemented: createScripting");
   }
 
+  createSignatureStorage() {
+    throw new Error("Not implemented: createSignatureStorage");
+  }
+
   updateEditorStates(data) {
     throw new Error("Not implemented: updateEditorStates");
   }

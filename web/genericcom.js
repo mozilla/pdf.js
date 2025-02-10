@@ -18,6 +18,7 @@ import { BaseExternalServices } from "./external_services.js";
 import { BasePreferences } from "./preferences.js";
 import { GenericL10n } from "./genericl10n.js";
 import { GenericScripting } from "./generic_scripting.js";
+import { SignatureStorage } from "./generic_signature_storage.js";
 
 if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
   throw new Error(
@@ -44,6 +45,10 @@ class ExternalServices extends BaseExternalServices {
 
   createScripting() {
     return new GenericScripting(AppOptions.get("sandboxBundleSrc"));
+  }
+
+  createSignatureStorage() {
+    return new SignatureStorage();
   }
 }
 

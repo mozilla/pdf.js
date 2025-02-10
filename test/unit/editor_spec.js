@@ -14,6 +14,7 @@
  */
 
 import { CommandManager } from "../../src/display/editor/tools.js";
+import { SignatureExtractor } from "../../src/display/editor/drawers/signaturedraw.js";
 
 describe("editor", function () {
   describe("Command Manager", function () {
@@ -89,5 +90,52 @@ describe("editor", function () {
     expect(x).toEqual(6);
     manager.add({ ...makeDoUndo(5), mustExec: true });
     expect(x).toEqual(11);
+  });
+
+  it("should check signature compression/decompression", async () => {
+    let gen = n => new Float32Array(crypto.getRandomValues(new Uint16Array(n)));
+    let outlines = [102, 28, 254, 4536, 10, 14532, 512].map(gen);
+    const signature = {
+      outlines,
+      areContours: false,
+      thickness: 1,
+      width: 123,
+      height: 456,
+    };
+    let compressed = await SignatureExtractor.compressSignature(signature);
+    let decompressed = await SignatureExtractor.decompressSignature(compressed);
+    expect(decompressed).toEqual(signature);
+
+    signature.thickness = 2;
+    compressed = await SignatureExtractor.compressSignature(signature);
+    decompressed = await SignatureExtractor.decompressSignature(compressed);
+    expect(decompressed).toEqual(signature);
+
+    signature.areContours = true;
+    compressed = await SignatureExtractor.compressSignature(signature);
+    decompressed = await SignatureExtractor.decompressSignature(compressed);
+    expect(decompressed).toEqual(signature);
+
+    // Numbers are small enough to be compressed with Uint8Array.
+    gen = n =>
+      new Float32Array(
+        crypto.getRandomValues(new Uint8Array(n)).map(x => x / 10)
+      );
+    outlines = [100, 200, 300, 10, 80].map(gen);
+    signature.outlines = outlines;
+    compressed = await SignatureExtractor.compressSignature(signature);
+    decompressed = await SignatureExtractor.decompressSignature(compressed);
+    expect(decompressed).toEqual(signature);
+
+    // Numbers are large enough to be compressed with Uint16Array.
+    gen = n =>
+      new Float32Array(
+        crypto.getRandomValues(new Uint16Array(n)).map(x => x / 10)
+      );
+    outlines = [100, 200, 300, 10, 80].map(gen);
+    signature.outlines = outlines;
+    compressed = await SignatureExtractor.compressSignature(signature);
+    decompressed = await SignatureExtractor.decompressSignature(compressed);
+    expect(decompressed).toEqual(signature);
   });
 });

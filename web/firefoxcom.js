@@ -495,6 +495,72 @@ class MLManager {
   }
 }
 
+class SignatureStorage {
+  #signatures = null;
+
+  #handleSignature(data) {
+    return FirefoxCom.requestAsync("handleSignature", data);
+  }
+
+  async getAll() {
+    if (!this.#signatures) {
+      this.#signatures = Object.create(null);
+      const data = await this.#handleSignature({ action: "get" });
+      if (data) {
+        for (const { uuid, description, signatureData } of data) {
+          this.#signatures[uuid] = { description, signatureData };
+        }
+      }
+    }
+    return this.#signatures;
+  }
+
+  async isFull() {
+    // We want to store at most 5 signatures.
+    return Object.keys(await this.getAll()).length === 5;
+  }
+
+  async create(data) {
+    if (await this.isFull()) {
+      return null;
+    }
+    const uuid = await this.#handleSignature({
+      action: "create",
+      ...data,
+    });
+    if (!uuid) {
+      return null;
+    }
+    this.#signatures[uuid] = data;
+    return uuid;
+  }
+
+  async delete(uuid) {
+    const signatures = await this.getAll();
+    if (!signatures[uuid]) {
+      return false;
+    }
+    if (await this.#handleSignature({ action: "delete", uuid })) {
+      delete signatures[uuid];
+      return true;
+    }
+    return false;
+  }
+
+  async update(uuid, data) {
+    const signatures = await this.getAll();
+    const oldData = signatures[uuid];
+    if (!oldData) {
+      return false;
+    }
+    if (await this.#handleSignature({ action: "update", uuid, ...data })) {
+      Object.assign(oldData, data);
+      return true;
+    }
+    return false;
+  }
+}
+
 class ExternalServices extends BaseExternalServices {
   updateFindControlState(data) {
     FirefoxCom.request("updateFindControlState", data);
@@ -579,6 +645,10 @@ class ExternalServices extends BaseExternalServices {
 
   createScripting() {
     return FirefoxScripting;
+  }
+
+  createSignatureStorage() {
+    return new SignatureStorage();
   }
 
   dispatchGlobalEvent(event) {
