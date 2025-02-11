@@ -209,7 +209,7 @@ class FreeTextEditor extends AnnotationEditor {
    */
   #updateFontSize(fontSize) {
     const setFontsize = size => {
-      this.editorDiv.style.fontSize = `calc(${size}px * var(--scale-factor))`;
+      this.editorDiv.style.fontSize = `calc(${size}px * var(--total-scale-factor))`;
       this.translate(0, -(size - this.#fontSize) * this.parentScale);
       this.#fontSize = size;
       this.#setEditorDimensions();
@@ -570,7 +570,7 @@ class FreeTextEditor extends AnnotationEditor {
     this.editorDiv.contentEditable = true;
 
     const { style } = this.editorDiv;
-    style.fontSize = `calc(${this.#fontSize}px * var(--scale-factor))`;
+    style.fontSize = `calc(${this.#fontSize}px * var(--total-scale-factor))`;
     style.color = this.#color;
 
     this.div.append(this.editorDiv);
@@ -878,7 +878,7 @@ class FreeTextEditor extends AnnotationEditor {
       return content;
     }
     const { style } = content;
-    style.fontSize = `calc(${this.#fontSize}px * var(--scale-factor))`;
+    style.fontSize = `calc(${this.#fontSize}px * var(--total-scale-factor))`;
     style.color = this.#color;
 
     content.replaceChildren();

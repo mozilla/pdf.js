@@ -50,7 +50,7 @@
     }
 
     .popupAnnotation .popup {
-      outline: calc(1.5px * var(--scale-factor)) solid CanvasText !important;
+      outline: calc(1.5px * var(--total-scale-factor)) solid CanvasText !important;
       background-color: ButtonFace !important;
       color: ButtonText !important;
     }
@@ -67,7 +67,7 @@
     }
 
     .popupAnnotation.focused .popup {
-      outline: calc(3px * var(--scale-factor)) solid Highlight !important;
+      outline: calc(3px * var(--total-scale-factor)) solid Highlight !important;
     }
   }
 
@@ -169,7 +169,7 @@
     background-image: var(--annotation-unfocused-field-background);
     border: 2px solid var(--input-unfocused-border-color);
     box-sizing: border-box;
-    font: calc(9px * var(--scale-factor)) sans-serif;
+    font: calc(9px * var(--total-scale-factor)) sans-serif;
     height: 100%;
     margin: 0;
     vertical-align: top;
@@ -296,7 +296,7 @@
 
   .popupAnnotation {
     position: absolute;
-    font-size: calc(9px * var(--scale-factor));
+    font-size: calc(9px * var(--total-scale-factor));
     pointer-events: none;
     width: max-content;
     max-width: 45%;
@@ -305,11 +305,11 @@
 
   .popup {
     background-color: rgb(255 255 153);
-    box-shadow: 0 calc(2px * var(--scale-factor))
-      calc(5px * var(--scale-factor)) rgb(136 136 136);
-    border-radius: calc(2px * var(--scale-factor));
+    box-shadow: 0 calc(2px * var(--total-scale-factor))
+      calc(5px * var(--total-scale-factor)) rgb(136 136 136);
+    border-radius: calc(2px * var(--total-scale-factor));
     outline: 1.5px solid rgb(255 255 74);
-    padding: calc(6px * var(--scale-factor));
+    padding: calc(6px * var(--total-scale-factor));
     cursor: pointer;
     font: message-box;
     white-space: normal;
@@ -323,7 +323,7 @@
   }
 
   .popup * {
-    font-size: calc(9px * var(--scale-factor));
+    font-size: calc(9px * var(--total-scale-factor));
   }
 
   .popup > .header {
@@ -336,19 +336,19 @@
 
   .popup > .header .popupDate {
     display: inline-block;
-    margin-left: calc(5px * var(--scale-factor));
+    margin-left: calc(5px * var(--total-scale-factor));
     width: fit-content;
   }
 
   .popupContent {
     border-top: 1px solid rgb(51 51 51);
-    margin-top: calc(2px * var(--scale-factor));
-    padding-top: calc(2px * var(--scale-factor));
+    margin-top: calc(2px * var(--total-scale-factor));
+    padding-top: calc(2px * var(--total-scale-factor));
   }
 
   .richText > * {
     white-space: pre-wrap;
-    font-size: calc(9px * var(--scale-factor));
+    font-size: calc(9px * var(--total-scale-factor));
   }
 
   .popupTriggerArea {

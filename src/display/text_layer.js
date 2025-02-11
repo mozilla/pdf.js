@@ -342,7 +342,7 @@ class TextLayer {
       top = tx[5] - fontAscent * Math.cos(angle);
     }
 
-    const scaleFactorStr = "calc(var(--scale-factor)*";
+    const scaleFactorStr = "calc(var(--total-scale-factor) *";
     const divStyle = textDiv.style;
     // Setting the style properties individually, rather than all at once,
     // should be OK since the `textDiv` isn't appended to the document yet.

@@ -147,6 +147,8 @@ class PDFPageView {
 
   #textLayerMode = TextLayerMode.ENABLE;
 
+  #userUnit = 1;
+
   #useThumbnailCanvas = {
     directDrawing: true,
     initialOptionalContent: true,
@@ -314,7 +316,16 @@ class PDFPageView {
   }
 
   #setDimensions() {
-    const { viewport } = this;
+    const { div, viewport } = this;
+
+    if (viewport.userUnit !== this.#userUnit) {
+      if (viewport.userUnit !== 1) {
+        div.style.setProperty("--user-unit", viewport.userUnit);
+      } else {
+        div.style.removeProperty("--user-unit");
+      }
+      this.#userUnit = viewport.userUnit;
+    }
     if (this.pdfPage) {
       if (this.#previousRotation === viewport.rotation) {
         return;
@@ -323,7 +334,7 @@ class PDFPageView {
     }
 
     setLayerDimensions(
-      this.div,
+      div,
       viewport,
       /* mustFlip = */ true,
       /* mustRotate = */ false
