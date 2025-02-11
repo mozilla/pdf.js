@@ -63,6 +63,7 @@ class WebServer {
     this.server = http.createServer(this.#handler.bind(this));
     this.server.listen(this.port, this.host, callback);
     console.log(`Server running at http://${this.host}:${this.port}/`);
+    console.log(`debug viewer at http://${this.host}:${this.port}/web/viewer.html#pdfbug=all`);
   }
 
   stop(callback) {
