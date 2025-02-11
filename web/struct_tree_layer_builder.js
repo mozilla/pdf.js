@@ -204,7 +204,7 @@ class StructTreeLayerBuilder {
     img.setAttribute("aria-label", removeNullCharacters(alt));
 
     const { pageHeight, pageX, pageY } = this.#rawDims;
-    const calc = "calc(var(--scale-factor)*";
+    const calc = "calc(var(--total-scale-factor) *";
     const { style } = img;
     style.width = `${calc}${bbox[2] - bbox[0]}px)`;
     style.height = `${calc}${bbox[3] - bbox[1]}px)`;

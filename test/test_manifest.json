@@ -2750,6 +2750,21 @@
     "type": "eq"
   },
   {
+    "id": "bug1947248-text",
+    "file": "pdfs/bug1947248_text.pdf",
+    "md5": "491f1df75b77d2762ff96ce51f5e019b",
+    "rounds": 1,
+    "type": "text"
+  },
+  {
+    "id": "bug1947248-forms",
+    "file": "pdfs/bug1947248_forms.pdf",
+    "md5": "456c974d7d4351719f36ef10e603d29c",
+    "rounds": 1,
+    "type": "eq",
+    "forms": true
+  },
+  {
     "id": "issue4801",
     "file": "pdfs/issue4801.pdf",
     "md5": "7f32764717447a8b5c8eac08c9ab8380",
