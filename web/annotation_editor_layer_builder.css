@@ -123,7 +123,7 @@
   background: transparent;
   position: absolute;
   inset: 0;
-  font-size: calc(100px * var(--scale-factor));
+  font-size: calc(100px * var(--total-scale-factor));
   transform-origin: 0 0;
   cursor: auto;
 
@@ -512,7 +512,7 @@
 }
 
 .annotationEditorLayer .freeTextEditor {
-  padding: calc(var(--freetext-padding) * var(--scale-factor));
+  padding: calc(var(--freetext-padding) * var(--total-scale-factor));
   width: auto;
   height: auto;
   touch-action: none;

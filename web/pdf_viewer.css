@@ -100,6 +100,8 @@
 }
 
 .pdfViewer .page {
+  --user-unit: 1;
+  --total-scale-factor: calc(var(--scale-factor) * var(--user-unit));
   --scale-round-x: 1px;
   --scale-round-y: 1px;
 
