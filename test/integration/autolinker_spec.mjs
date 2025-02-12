@@ -13,7 +13,15 @@
  * limitations under the License.
  */
 
-import { closePages, loadAndWait } from "./test_utils.mjs";
+import { closePages, createPromise, loadAndWait } from "./test_utils.mjs";
+
+function waitForLinkAnnotations(page) {
+  return createPromise(page, resolve => {
+    window.PDFViewerApplication.eventBus.on("linkannotationsadded", resolve, {
+      once: true,
+    });
+  });
+}
 
 describe("autolinker", function () {
   describe("bug1019475_2.pdf", function () {
@@ -38,6 +46,7 @@ describe("autolinker", function () {
     it("must appropriately add link annotations when relevant", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
+          await waitForLinkAnnotations(page);
           const url = await page.$$eval(
             ".annotationLayer > .linkAnnotation > a",
             annotations => annotations.map(a => a.href)
@@ -73,6 +82,7 @@ describe("autolinker", function () {
     it("must not add links when unnecessary", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
+          await waitForLinkAnnotations(page);
           const linkIds = await page.$$eval(
             ".annotationLayer > .linkAnnotation > a",
             annotations =>
@@ -106,6 +116,7 @@ describe("autolinker", function () {
     it("must not add links that overlap even if the URLs are different", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
+          await waitForLinkAnnotations(page);
           const linkIds = await page.$$eval(
             ".annotationLayer > .linkAnnotation > a",
             annotations =>
@@ -117,6 +128,52 @@ describe("autolinker", function () {
               .withContext(`In ${browserName}`)
               .not.toContain("inferred_link_")
           );
+        })
+      );
+    });
+  });
+
+  describe("PR 19470", function () {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "bug1019475_2.pdf",
+        ".annotationLayer",
+        null,
+        null,
+        {
+          enableAutoLinking: true,
+        }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must not repeatedly add link annotations redundantly", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForLinkAnnotations(page);
+          let url = await page.$$eval(
+            ".annotationLayer > .linkAnnotation > a",
+            annotations => annotations.map(a => a.href)
+          );
+          expect(url.length).withContext(`In ${browserName}`).toEqual(1);
+
+          await page.evaluate(() =>
+            window.PDFViewerApplication.pdfViewer.updateScale({
+              drawingDelay: -1,
+              scaleFactor: 2,
+            })
+          );
+          await waitForLinkAnnotations(page);
+          url = await page.$$eval(
+            ".annotationLayer > .linkAnnotation > a",
+            annotations => annotations.map(a => a.href)
+          );
+          expect(url.length).withContext(`In ${browserName}`).toEqual(1);
         })
       );
     });
