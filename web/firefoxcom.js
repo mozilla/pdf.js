@@ -504,11 +504,11 @@ class SignatureStorage {
 
   async getAll() {
     if (!this.#signatures) {
-      this.#signatures = Object.create(null);
+      this.#signatures = new Map();
       const data = await this.#handleSignature({ action: "get" });
       if (data) {
         for (const { uuid, description, signatureData } of data) {
-          this.#signatures[uuid] = { description, signatureData };
+          this.#signatures.set(uuid, { description, signatureData });
         }
       }
     }
@@ -517,7 +517,7 @@ class SignatureStorage {
 
   async isFull() {
     // We want to store at most 5 signatures.
-    return Object.keys(await this.getAll()).length === 5;
+    return (await this.getAll()).size === 5;
   }
 
   async create(data) {
@@ -531,17 +531,17 @@ class SignatureStorage {
     if (!uuid) {
       return null;
     }
-    this.#signatures[uuid] = data;
+    this.#signatures.set(uuid, data);
     return uuid;
   }
 
   async delete(uuid) {
     const signatures = await this.getAll();
-    if (!signatures[uuid]) {
+    if (!signatures.has(uuid)) {
       return false;
     }
     if (await this.#handleSignature({ action: "delete", uuid })) {
-      delete signatures[uuid];
+      signatures.delete(uuid);
       return true;
     }
     return false;
@@ -549,7 +549,7 @@ class SignatureStorage {
 
   async update(uuid, data) {
     const signatures = await this.getAll();
-    const oldData = signatures[uuid];
+    const oldData = signatures.get(uuid);
     if (!oldData) {
       return false;
     }

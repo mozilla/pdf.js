@@ -26,7 +26,7 @@ class SignatureOptions extends DrawingOptions {
     super();
 
     super.updateProperties({
-      fill: "black",
+      fill: "CanvasText",
       "stroke-width": 0,
     });
   }
@@ -43,7 +43,7 @@ class DrawnSignatureOptions extends InkDrawingOptions {
     super(viewerParameters);
 
     super.updateProperties({
-      stroke: "black",
+      stroke: "CanvasText",
       "stroke-width": 1,
     });
   }
@@ -62,6 +62,12 @@ class DrawnSignatureOptions extends InkDrawingOptions {
 class SignatureEditor extends DrawingEditor {
   #isExtracted = false;
 
+  #signatureData = null;
+
+  #description = null;
+
+  #signatureUUID = null;
+
   static _type = "signature";
 
   static _editorType = AnnotationEditorType.SIGNATURE;
@@ -71,8 +77,7 @@ class SignatureEditor extends DrawingEditor {
   constructor(params) {
     super({ ...params, mustBeCommitted: true, name: "signatureEditor" });
     this._willKeepAspectRatio = true;
-    this._description = "";
-    this._signatureUUID = null;
+    this.#signatureData = params.signatureData || null;
   }
 
   /** @inheritdoc */
@@ -128,17 +133,52 @@ class SignatureEditor extends DrawingEditor {
     this.div.setAttribute("role", "figure");
 
     if (this._drawId === null) {
-      this.div.hidden = true;
-      this._uiManager.getSignature(this);
+      if (this.#signatureData) {
+        const {
+          lines,
+          mustSmooth,
+          areContours,
+          description,
+          uuid,
+          heightInPage,
+        } = this.#signatureData;
+        const {
+          rawDims: { pageWidth, pageHeight },
+          rotation,
+        } = this.parent.viewport;
+        const outline = SignatureExtractor.processDrawnLines({
+          lines,
+          pageWidth,
+          pageHeight,
+          rotation,
+          innerMargin: SignatureEditor._INNER_MARGIN,
+          mustSmooth,
+          areContours,
+        });
+        this.#signatureData = null;
+        this.#signatureUUID = uuid;
+        this.addSignature(outline.outline, heightInPage, description);
+      } else {
+        this.div.hidden = true;
+        this._uiManager.getSignature(this);
+      }
     }
 
     return this.div;
   }
 
+  setUuid(uuid) {
+    this.#signatureUUID = uuid;
+  }
+
+  setDescription(description) {
+    this.#description = description;
+  }
+
   addSignature(outline, heightInPage, description) {
     const { x: savedX, y: savedY } = this;
     this.#isExtracted = outline instanceof ContourDrawOutline;
-    this._description = description;
+    this.#description = description;
     let drawingOptions;
     if (this.#isExtracted) {
       drawingOptions = SignatureEditor.getDefaultDrawingOptions();
@@ -251,11 +291,12 @@ class SignatureEditor extends DrawingEditor {
     };
     if (isForCopying) {
       serialized.paths = { lines, points };
+      serialized.uuid = this.#signatureUUID;
     } else {
       serialized.lines = lines;
     }
-    if (this._description) {
-      serialized.accessibilityData = { type: "Figure", alt: this._description };
+    if (this.#description) {
+      serialized.accessibilityData = { type: "Figure", alt: this.#description };
     }
     return serialized;
   }
@@ -294,7 +335,8 @@ class SignatureEditor extends DrawingEditor {
   static async deserialize(data, parent, uiManager) {
     const editor = await super.deserialize(data, parent, uiManager);
     editor.#isExtracted = data.areContours;
-    editor._description = data.accessibilityData?.alt || "";
+    editor.#description = data.accessibilityData?.alt || "";
+    editor.#signatureUUID = data.uuid;
     return editor;
   }
 }

@@ -698,8 +698,12 @@ class AnnotationEditorLayer {
   /**
    * Create and add a new editor.
    */
-  addNewEditor() {
-    this.createAndAddNewEditor(this.#getCenterPoint(), /* isCentered = */ true);
+  addNewEditor(data = {}) {
+    this.createAndAddNewEditor(
+      this.#getCenterPoint(),
+      /* isCentered = */ true,
+      data
+    );
   }
 
   /**

@@ -933,9 +933,7 @@ class PDFViewer {
               uiManager: this.#annotationEditorUIManager,
             });
             if (mode !== AnnotationEditorType.NONE) {
-              if (mode === AnnotationEditorType.STAMP) {
-                this.#mlManager?.loadModel("altText");
-              }
+              this.#preloadEditingData(mode);
               this.#annotationEditorUIManager.updateMode(mode);
             }
           } else {
@@ -2315,6 +2313,18 @@ class PDFViewer {
     }
   }
 
+  #preloadEditingData(mode) {
+    switch (mode) {
+      case AnnotationEditorType.STAMP:
+        this.#mlManager?.loadModel("altText");
+        break;
+      case AnnotationEditorType.SIGNATURE:
+        // Start to load the signature data.
+        this.#signatureManager?.loadSignatures();
+        break;
+    }
+  }
+
   get annotationEditorMode() {
     return this.#annotationEditorUIManager
       ? this.#annotationEditorMode
@@ -2345,9 +2355,7 @@ class PDFViewer {
     if (!this.pdfDocument) {
       return;
     }
-    if (mode === AnnotationEditorType.STAMP) {
-      this.#mlManager?.loadModel("altText");
-    }
+    this.#preloadEditingData(mode);
 
     const { eventBus, pdfDocument } = this;
     const updater = async () => {

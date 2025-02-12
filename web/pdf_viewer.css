@@ -27,14 +27,19 @@
   --page-border: 9px solid transparent;
   --spreadHorizontalWrapped-margin-LR: -3.5px;
   --loading-icon-delay: 400ms;
-}
+  --focus-ring-color: #0060df;
+  --focus-ring-outline: 2px solid var(--focus-ring-color);
 
-@media screen and (forced-colors: active) {
-  :root {
+  @media (prefers-color-scheme: dark) {
+    --focus-ring-color: #0df;
+  }
+
+  @media screen and (forced-colors: active) {
     --pdfViewer-padding-bottom: 9px;
     --page-margin: 8px auto -1px;
     --page-border: 1px solid CanvasText;
     --spreadHorizontalWrapped-margin-LR: 3.5px;
+    --focus-ring-color: CanvasText;
   }
 }
 
