@@ -245,13 +245,13 @@ See https://github.com/adobe-type-tools/cmap-resources
               <div id="toolbarViewerRight" class="toolbarHorizontalGroup">
                 <div id="editorModeButtons" class="toolbarHorizontalGroup" role="radiogroup">
                   <div id="editorSignature" class="toolbarButtonWithContainer" hidden="true">
-                    <button id="editorSignatureButton" class="toolbarButton" type="button" disabled="disabled" title="Add or edit signatures" role="radio" aria-expanded="false" aria-haspopup="true" aria-controls="editorSignatureParamsToolbar" tabindex="0">
-                      <span>Add or edit signatures</span>
+                    <button id="editorSignatureButton" class="toolbarButton" type="button" disabled="disabled" title="Add signature" role="radio" aria-expanded="false" aria-haspopup="true" aria-controls="editorSignatureParamsToolbar" tabindex="0" data-l10n-id="pdfjs-editor-signature-button">
+                      <span data-l10n-id="pdfjs-editor-signature-button-label">Add signature</span>
                     </button>
                     <div class="editorParamsToolbar hidden doorHangerRight menu" id="editorSignatureParamsToolbar">
-                      <div class="menuContainer">
-                        <button id="editorSignatureAddSignature" class="toolbarButton labeled" type="button" title="Add signature" tabindex="0">
-                          <span class="editorParamsLabel">Add signature</span>
+                      <div id="addSignatureDoorHanger" class="menuContainer">
+                        <button id="editorSignatureAddSignature" class="toolbarButton labeled" type="button" title="Add new signature" tabindex="0" data-l10n-id="pdfjs-editor-signature-add-signature-button">
+                          <span data-l10n-id="pdfjs-editor-signature-add-signature-button-label" class="editorParamsLabel">Add new signature</span>
                         </button>
                       </div>
                     </div>

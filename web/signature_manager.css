@@ -13,6 +13,39 @@
  * limitations under the License.
  */
 
+:root {
+  --clear-signature-button-icon: url(images/editor-toolbar-delete.svg);
+  --signature-bg: #f9f9fb;
+  --signature-hover-bg: #f0f0f4;
+  --button-signature-bg: transparent;
+  --button-signature-color: var(--main-color);
+  --button-signature-active-bg: #cfcfd8;
+  --button-signature-active-border: none;
+  --button-signature-active-color: var(--button-signature-color);
+  --button-signature-border: none;
+  --button-signature-hover-bg: #e0e0e6;
+  --button-signature-hover-color: var(--button-signature-color);
+
+  @media (prefers-color-scheme: dark) {
+    --signature-bg: #2b2a33;
+    --signature-hover-bg: var(--signature-bg);
+    --button-signature-active-bg: #5b5b66;
+    --button-signature-hover-bg: #52525e;
+  }
+
+  @media screen and (forced-colors: active) {
+    --signature-bg: HighlightText;
+    --signature-hover-bg: var(--signature-bg);
+    --button-signature-bg: HighlightText;
+    --button-signature-color: ButtonText;
+    --button-signature-active-bg: ButtonText;
+    --button-signature-active-color: HighlightText;
+    --button-signature-border: 1px solid ButtonText;
+    --button-signature-hover-bg: Highlight;
+    --button-signature-hover-color: HighlightText;
+  }
+}
+
 #addSignatureDialog {
   --border-color: #8f8f9d;
   --primary-color: var(--text-primary-color);
@@ -31,8 +64,8 @@
   --tab-bg-hover: var(--bg-hover);
   --tab-text-color: var(--primary-color);
   --tab-text-active-color: var(--tab-top-line-active-color);
+  --tab-text-active-hover-color: var(--tab-text-hover-color);
   --tab-text-hover-color: var(--tab-text-color);
-  --signature-bg: #f9f9fb;
   --signature-placeholder-color: var(--secondary-color);
   --signature-draw-placeholder-color: var(--primary-color);
   --signature-color: var(--primary-color);
@@ -43,7 +76,6 @@
   --clear-signature-button-border-style: solid;
   --clear-signature-button-border-color: transparent;
   --clear-signature-button-border-disabled-color: transparent;
-  --clear-signature-button-icon: url(images/editor-toolbar-delete.svg);
   --clear-signature-button-color: var(--primary-color);
   --clear-signature-button-hover-color: var(--clear-signature-button-color);
   --clear-signature-button-active-color: var(--clear-signature-button-color);
@@ -72,7 +104,6 @@
     --secondary-color: #cfcfd8;
     --tab-top-line-active-color: #0df;
     --tab-top-line-inactive-color: #8f8f9d;
-    --signature-bg: #2b2a33;
     --clear-signature-button-bg-active: #5b5b66;
     --clear-signature-button-bg-focus: #2b2a33;
     --clear-signature-button-bg-disabled: color-mix(
@@ -99,8 +130,8 @@
     --tab-bg-active-hover-color: SelectedItem;
     --tab-text-color: ButtonText;
     --tab-text-active-color: HighlightText;
+    --tab-text-active-hover-color: HighlightText;
     --tab-text-hover-color: SelectedItem;
-    --signature-bg: var(--bg);
     --signature-color: ButtonText;
     --clear-signature-button-border-width: 1px;
     --clear-signature-button-border-style: solid;
@@ -214,7 +245,7 @@
           &:hover {
             border-block-start-color: var(--tab-top-line-active-hover-color);
             background-color: var(--tab-bg-active-hover-color);
-            color: var(--tab-text-hover-color);
+            color: var(--tab-text-active-hover-color);
           }
         }
       }
@@ -589,6 +620,141 @@
               opacity: 0.4;
             }
           }
+        }
+      }
+    }
+  }
+}
+
+#editorSignatureParamsToolbar {
+  padding: 10px;
+
+  #addSignatureDoorHanger {
+    gap: 8px;
+    overflow-y: unset;
+
+    .toolbarAddSignatureButtonContainer {
+      height: 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      align-self: stretch;
+      gap: 8px;
+
+      button {
+        border: var(--button-signature-border);
+        border-radius: 4px;
+        background-color: var(--button-signature-bg);
+        color: var(--button-signature-color);
+
+        &:hover {
+          background-color: var(--button-signature-hover-bg);
+        }
+
+        &:active {
+          border: var(--button-signature-active-border);
+          background-color: var(--button-signature-active-bg);
+          color: var(--button-signature-active-color);
+
+          &::before {
+            background-color: var(--button-signature-active-color);
+          }
+        }
+
+        &:focus-visible {
+          outline: var(--focus-ring-outline);
+
+          &::before {
+            background-color: var(--button-signature-color);
+          }
+        }
+      }
+
+      .deleteButton {
+        &::before {
+          mask-image: var(--clear-signature-button-icon);
+        }
+      }
+
+      .toolbarAddSignatureButton {
+        width: auto;
+        height: 100%;
+        min-height: var(--menuitem-height);
+        aspect-ratio: unset;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        outline: none;
+        border-radius: 4px;
+        box-sizing: border-box;
+        font: message-box;
+        position: relative;
+        flex: 1 1 auto;
+        padding: 0;
+        gap: 8px;
+        text-align: start;
+        white-space: normal;
+        cursor: default;
+        overflow: hidden;
+
+        > svg {
+          display: inline-block;
+          height: 100%;
+          aspect-ratio: 1;
+          background-color: var(--signature-bg);
+          flex: none;
+          padding: 4px;
+          box-sizing: border-box;
+          border: none;
+          border-radius: 4px;
+
+          > path {
+            stroke: var(--button-signature-color);
+            stroke-width: 1px;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-miterlimit: 10;
+            vector-effect: non-scaling-stroke;
+            fill: none;
+          }
+
+          &.contours > path {
+            fill: var(--button-signature-color);
+            stroke-width: 0.5px;
+          }
+        }
+
+        &:is(:hover, :active) > svg {
+          border-radius: 4px 0 0 4px;
+          background-color: var(--signature-hover-bg);
+        }
+
+        &:hover {
+          > span {
+            color: var(--button-signature-hover-color);
+          }
+        }
+
+        &:active {
+          background-color: var(--button-signature-active-bg);
+        }
+
+        &:is([disabled="disabled"], [disabled]) {
+          opacity: 0.5;
+          pointer-events: none;
+        }
+
+        > span {
+          height: auto;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          flex: 1 1 auto;
+          font: menu;
+          font-size: 13px;
+          font-style: normal;
+          font-weight: 400;
+          line-height: normal;
+          overflow: hidden;
         }
       }
     }
