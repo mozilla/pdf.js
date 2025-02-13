@@ -229,9 +229,6 @@ function getViewerConfiguration() {
       imagePicker: document.getElementById("addSignatureFilePicker"),
       imagePickerLink: document.getElementById("addSignatureImageBrowse"),
       description: document.getElementById("addSignatureDescription"),
-      clearDescription: document.getElementById(
-        "addSignatureDescriptionClearButton"
-      ),
       clearButton: document.getElementById("clearSignatureButton"),
       saveContainer: document.getElementById("addSignatureSaveContainer"),
       saveCheckbox: document.getElementById("addSignatureSaveCheckbox"),
@@ -239,6 +236,13 @@ function getViewerConfiguration() {
       errorCloseButton: document.getElementById("addSignatureErrorCloseButton"),
       cancelButton: document.getElementById("addSignatureCancelButton"),
       addButton: document.getElementById("addSignatureAddButton"),
+    },
+    editSignatureDialog: {
+      dialog: document.getElementById("editSignatureDescriptionDialog"),
+      description: document.getElementById("editSignatureDescription"),
+      editSignatureView: document.getElementById("editSignatureView"),
+      cancelButton: document.getElementById("editSignatureCancelButton"),
+      updateButton: document.getElementById("editSignatureUpdateButton"),
     },
     annotationEditorParams: {
       editorFreeTextFontSize: document.getElementById("editorFreeTextFontSize"),

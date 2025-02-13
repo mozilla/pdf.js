@@ -46,9 +46,80 @@
   }
 }
 
-#addSignatureDialog {
-  --border-color: #8f8f9d;
+.signatureDialog {
   --primary-color: var(--text-primary-color);
+  --description-input-color: var(--primary-color);
+  --border-color: #8f8f9d;
+
+  @media screen and (forced-colors: active) {
+    --primary-color: ButtonText;
+    --border-color: ButtonText;
+  }
+
+  width: 570px;
+  max-width: 100%;
+  min-width: 300px;
+  padding: 16px 0;
+
+  .mainContainer {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+
+    span:not([role="sectionhead"]) {
+      font-size: 13px;
+      font-style: normal;
+      font-weight: 400;
+      line-height: normal;
+    }
+
+    .title {
+      margin-inline-start: 16px;
+    }
+  }
+
+  .inputWithClearButton {
+    --button-dimension: 24px;
+
+    --closing-button-icon: url(images/messageBar_closingButton.svg);
+    --closing-button-color: var(--primary-color);
+
+    width: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    > input {
+      width: 100%;
+      height: 32px;
+      padding-inline: 8px calc(4px + var(--button-dimension));
+      box-sizing: border-box;
+      background-color: transparent;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      color: var(--description-input-color);
+    }
+
+    .clearInputButton {
+      position: absolute;
+      inset-block-start: 4px;
+      inset-inline-end: 4px;
+      display: inline-block;
+      width: var(--button-dimension);
+      height: var(--button-dimension);
+      background-color: var(--closing-button-color);
+      mask-size: cover;
+      mask-image: var(--closing-button-icon);
+      padding: 0;
+      border: 0;
+    }
+  }
+}
+
+#addSignatureDialog {
   --secondary-color: var(--text-secondary-color);
   --bg-hover: #e0e0e6;
   --tab-top-line-active-color: #0060df;
@@ -69,9 +140,6 @@
   --signature-placeholder-color: var(--secondary-color);
   --signature-draw-placeholder-color: var(--primary-color);
   --signature-color: var(--primary-color);
-  --closing-button-icon: url(images/messageBar_closingButton.svg);
-  --closing-button-color: var(--primary-color);
-  --description-input-color: var(--primary-color);
   --clear-signature-button-border-width: 0;
   --clear-signature-button-border-style: solid;
   --clear-signature-button-border-color: transparent;
@@ -114,11 +182,9 @@
   }
 
   @media screen and (forced-colors: active) {
-    --primary-color: ButtonText;
     --secondary-color: ButtonText;
     --bg: HighlightText;
     --bg-hover: var(--bg);
-    --border-color: ButtonText;
     --tab-top-line-active-color: ButtonText;
     --tab-top-line-active-hover-color: HighlightText;
     --tab-top-line-hover-color: SelectedItem;
@@ -152,11 +218,6 @@
     --thickness-slider-color: ButtonText;
   }
 
-  width: 570px;
-  max-width: 100%;
-  min-width: 300px;
-  padding: 16px 0;
-
   #addSignatureDialogLabel {
     overflow: hidden;
     position: absolute;
@@ -174,26 +235,7 @@
     height: 100%;
   }
 
-  span {
-    font: menu;
-    font-size: 13px;
-    font-style: normal;
-    font-weight: 400;
-    line-height: normal;
-  }
-
   .mainContainer {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-
-    .title {
-      margin-inline-start: 16px;
-      font-weight: 590;
-    }
-
     [role="tablist"] {
       width: 100%;
       display: flex;
@@ -465,43 +507,6 @@
             gap: 4px;
             flex: 1 0 0;
 
-            > #inputWithClearButton {
-              --button-dimension: 24px;
-
-              width: 100%;
-              position: relative;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-
-              > input {
-                width: 100%;
-                height: 32px;
-                padding: 8px 4px 8px 8px;
-                padding-block: 8px;
-                padding-inline: 8px calc(4px + var(--button-dimension));
-                box-sizing: border-box;
-                background-color: transparent;
-                border-radius: 4px;
-                border: 1px solid var(--border-color);
-                color: var(--description-input-color);
-              }
-
-              #addSignatureDescriptionClearButton {
-                position: absolute;
-                inset-block-start: 4px;
-                inset-inline-end: 4px;
-                display: inline-block;
-                width: var(--button-dimension);
-                height: var(--button-dimension);
-                background-color: var(--closing-button-color);
-                mask-size: cover;
-                mask-image: var(--closing-button-icon);
-                padding: 0;
-                border: 0;
-              }
-            }
-
             > label {
               width: auto;
             }
@@ -626,6 +631,56 @@
   }
 }
 
+#editSignatureDescriptionDialog {
+  .mainContainer {
+    padding-inline: 16px;
+    box-sizing: border-box;
+
+    .title {
+      margin-inline-start: 0;
+    }
+
+    #editSignatureDescriptionAndView {
+      width: auto;
+      display: flex;
+      justify-content: flex-end;
+      align-items: flex-start;
+      gap: 12px;
+      align-self: stretch;
+
+      #editSignatureDescriptionContainer {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        flex: 1 1 auto;
+      }
+
+      > svg {
+        width: 210px;
+        height: 180px;
+        padding: 8px;
+        background-color: var(--signature-bg);
+
+        > path {
+          stroke: var(--button-signature-color);
+          stroke-width: 1px;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-miterlimit: 10;
+          vector-effect: non-scaling-stroke;
+          fill: none;
+
+          &.contours {
+            fill: var(--button-signature-color);
+            stroke-width: 0.5px;
+          }
+        }
+      }
+    }
+  }
+}
+
 #editorSignatureParamsToolbar {
   padding: 10px;
 
@@ -716,11 +771,11 @@
             stroke-miterlimit: 10;
             vector-effect: non-scaling-stroke;
             fill: none;
-          }
 
-          &.contours > path {
-            fill: var(--button-signature-color);
-            stroke-width: 0.5px;
+            &.contours {
+              fill: var(--button-signature-color);
+              stroke-width: 0.5px;
+            }
           }
         }
 
@@ -758,5 +813,14 @@
         }
       }
     }
+  }
+}
+
+.editDescription.altText {
+  --alt-text-add-image: url(images/editor-toolbar-edit.svg) !important;
+
+  &::before {
+    width: 16px !important;
+    height: 16px !important;
   }
 }
