@@ -89,8 +89,14 @@ class GenericL10n extends L10n {
       }
       langs.push(defaultLang);
     }
-    for (const lang of langs) {
-      const bundle = await this.#createBundle(lang, baseURL, paths);
+    // Trigger fetching of bundles in parallel, to reduce overall load time.
+    const bundles = langs.map(lang => [
+      lang,
+      this.#createBundle(lang, baseURL, paths),
+    ]);
+
+    for (const [lang, bundlePromise] of bundles) {
+      const bundle = await bundlePromise;
       if (bundle) {
         yield bundle;
       } else if (lang === "en-us") {
