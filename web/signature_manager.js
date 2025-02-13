@@ -14,12 +14,16 @@
  */
 
 import {
+  AnnotationEditorParamsType,
   DOMSVGFactory,
   noContextMenu,
   SignatureExtractor,
   stopEvent,
   SupportedImageMimeTypes,
 } from "pdfjs-lib";
+
+// Default height of the added signature in page coordinates.
+const DEFAULT_HEIGHT_IN_PAGE = 40;
 
 class SignatureManager {
   #addButton;
@@ -70,6 +74,10 @@ class SignatureManager {
 
   #tabButtons;
 
+  #addSignatureToolbarButton;
+
+  #loadSignaturesPromise = null;
+
   #typeInput;
 
   #currentTab = null;
@@ -77,6 +85,8 @@ class SignatureManager {
   #currentTabAC = null;
 
   #hasDescriptionChanged = false;
+
+  #eventBus;
 
   #l10n;
 
@@ -113,9 +123,11 @@ class SignatureManager {
       saveCheckbox,
       saveContainer,
     },
+    addSignatureToolbarButton,
     overlayManager,
     l10n,
-    signatureStorage
+    signatureStorage,
+    eventBus
   ) {
     this.#addButton = addButton;
     this.#clearButton = clearButton;
@@ -133,9 +145,11 @@ class SignatureManager {
     this.#overlayManager = overlayManager;
     this.#saveCheckbox = saveCheckbox;
     this.#saveContainer = saveContainer;
+    this.#addSignatureToolbarButton = addSignatureToolbarButton;
     this.#typeInput = typeInput;
     this.#l10n = l10n;
     this.#signatureStorage = signatureStorage;
+    this.#eventBus = eventBus;
 
     SignatureManager.#l10nDescription ||= Object.freeze({
       signature: "pdfjs-editor-add-signature-description-default-when-drawing",
@@ -360,7 +374,7 @@ class SignatureManager {
         this.#drawCurves = {
           width: drawWidth,
           height: drawHeight,
-          thickness: this.#drawThickness.value,
+          thickness: parseInt(this.#drawThickness.value),
           curves: [],
         };
         this.#disableButtons(true);
@@ -610,8 +624,145 @@ class SignatureManager {
     );
   }
 
+  #addToolbarButton(signatureData, uuid, description) {
+    const { curves, areContours, thickness, width, height } = signatureData;
+    const maxDim = Math.max(width, height);
+    const outlineData = SignatureExtractor.processDrawnLines({
+      lines: {
+        curves,
+        thickness,
+        width,
+        height,
+      },
+      pageWidth: maxDim,
+      pageHeight: maxDim,
+      rotation: 0,
+      innerMargin: 0,
+      mustSmooth: false,
+      areContours,
+    });
+    if (!outlineData) {
+      return;
+    }
+
+    const { outline } = outlineData;
+    const svgFactory = new DOMSVGFactory();
+
+    const div = document.createElement("div");
+    const button = document.createElement("button");
+    button.addEventListener("click", () => {
+      this.#eventBus.dispatch("switchannotationeditorparams", {
+        source: this,
+        type: AnnotationEditorParamsType.CREATE,
+        value: {
+          signatureData: {
+            lines: {
+              curves,
+              thickness,
+              width,
+              height,
+            },
+            mustSmooth: false,
+            areContours,
+            description,
+            uuid,
+            heightInPage: DEFAULT_HEIGHT_IN_PAGE,
+          },
+        },
+      });
+    });
+    div.append(button);
+    div.classList.add("toolbarAddSignatureButtonContainer");
+
+    const svg = svgFactory.create(1, 1, true);
+    button.append(svg);
+
+    const span = document.createElement("span");
+    button.append(span);
+
+    button.classList.add("toolbarAddSignatureButton");
+    button.type = "button";
+    button.title = span.textContent = description;
+    button.tabIndex = 0;
+
+    const path = svgFactory.createElement("path");
+    svg.append(path);
+    svg.setAttribute("viewBox", outline.viewBox);
+    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    if (areContours) {
+      svg.classList.add("contours");
+    }
+    path.setAttribute("d", outline.toSVGPath());
+
+    const deleteButton = document.createElement("button");
+    div.append(deleteButton);
+    deleteButton.classList.add("toolbarButton", "deleteButton");
+    deleteButton.setAttribute(
+      "data-l10n-id",
+      "pdfjs-editor-delete-signature-button"
+    );
+    deleteButton.type = "button";
+    deleteButton.tabIndex = 0;
+    deleteButton.addEventListener("click", async () => {
+      if (await this.#signatureStorage.delete(uuid)) {
+        div.remove();
+      }
+    });
+    const deleteSpan = document.createElement("span");
+    deleteButton.append(deleteSpan);
+    deleteSpan.setAttribute(
+      "data-l10n-id",
+      "pdfjs-editor-delete-signature-button-label"
+    );
+
+    this.#addSignatureToolbarButton.before(div);
+  }
+
   getSignature(params) {
     return this.open(params);
+  }
+
+  async loadSignatures() {
+    if (
+      !this.#addSignatureToolbarButton ||
+      this.#addSignatureToolbarButton.previousElementSibling ||
+      !this.#signatureStorage
+    ) {
+      return;
+    }
+
+    if (!this.#loadSignaturesPromise) {
+      // The first call of loadSignatures() starts loading the signatures.
+      // The second one will wait until the signatures are loaded in the DOM.
+      this.#loadSignaturesPromise = this.#signatureStorage
+        .getAll()
+        .then(async signatures => [
+          signatures,
+          await Promise.all(
+            Array.from(
+              signatures
+                .values()
+                .map(({ signatureData }) =>
+                  SignatureExtractor.decompressSignature(signatureData)
+                )
+            )
+          ),
+        ]);
+      return;
+    }
+    const [signatures, signaturesData] = await this.#loadSignaturesPromise;
+    this.#loadSignaturesPromise = null;
+
+    let i = 0;
+    for (const [uuid, { description }] of signatures) {
+      const data = signaturesData[i++];
+      if (!data) {
+        continue;
+      }
+      data.curves = data.outlines.map(points => ({ points }));
+      delete data.outlines;
+      this.#addToolbarButton(data, uuid, description);
+    }
   }
 
   async open({ uiManager, editor }) {
@@ -677,9 +828,10 @@ class SignatureManager {
     }
     this.#currentEditor.addSignature(
       data.outline,
-      /* heightInPage */ 40,
+      DEFAULT_HEIGHT_IN_PAGE,
       this.#description.value
     );
+    let uuid = null;
     if (this.#saveCheckbox.checked) {
       const description = this.#description.value;
       const { newCurves, areContours, thickness, width, height } = data;
@@ -690,15 +842,27 @@ class SignatureManager {
         width,
         height,
       });
-      const uuid = (this.#currentEditor._signatureUUID =
-        await this.#signatureStorage.create({
-          description,
-          signatureData,
-        }));
-      if (!uuid) {
+      uuid = await this.#signatureStorage.create({
+        description,
+        signatureData,
+      });
+      if (uuid) {
+        this.#addToolbarButton(
+          {
+            curves: newCurves.map(points => ({ points })),
+            areContours,
+            thickness,
+            width,
+            height,
+          },
+          uuid,
+          description
+        );
+      } else {
         console.warn("SignatureManager.add: cannot save the signature.");
       }
     }
+    this.#currentEditor.setUuid(uuid);
     this.#finish();
   }
 

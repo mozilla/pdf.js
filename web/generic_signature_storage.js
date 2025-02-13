@@ -23,19 +23,28 @@ class SignatureStorage {
   #signatures = null;
 
   #save() {
-    localStorage.setItem("pdfjs.signature", JSON.stringify(this.#signatures));
+    localStorage.setItem(
+      "pdfjs.signature",
+      JSON.stringify(Object.fromEntries(this.#signatures.entries()))
+    );
   }
 
   async getAll() {
     if (!this.#signatures) {
+      this.#signatures = new Map();
       const data = localStorage.getItem("pdfjs.signature");
-      this.#signatures = data ? JSON.parse(data) : Object.create(null);
+      if (data) {
+        for (const [key, value] of Object.entries(JSON.parse(data))) {
+          this.#signatures.set(key, value);
+        }
+      }
     }
     return this.#signatures;
   }
 
   async isFull() {
-    return Object.keys(await this.getAll()).length === 5;
+    // Only allow 5 signatures to be saved.
+    return (await this.getAll()).size === 5;
   }
 
   async create(data) {
@@ -43,7 +52,7 @@ class SignatureStorage {
       return null;
     }
     const uuid = getUuid();
-    this.#signatures[uuid] = data;
+    this.#signatures.set(uuid, data);
     this.#save();
 
     return uuid;
@@ -51,10 +60,10 @@ class SignatureStorage {
 
   async delete(uuid) {
     const signatures = await this.getAll();
-    if (!signatures[uuid]) {
+    if (!signatures.has(uuid)) {
       return false;
     }
-    delete signatures[uuid];
+    signatures.delete(uuid);
     this.#save();
 
     return true;
@@ -62,7 +71,7 @@ class SignatureStorage {
 
   async update(uuid, data) {
     const signatures = await this.getAll();
-    const oldData = signatures[uuid];
+    const oldData = signatures.get(uuid);
     if (!oldData) {
       return false;
     }

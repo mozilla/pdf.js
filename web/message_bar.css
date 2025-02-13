@@ -143,9 +143,6 @@
   --undo-button-fg-color-hover: var(--undo-button-fg-color);
   --undo-button-fg-color-active: var(--undo-button-fg-color);
 
-  --focus-ring-color: #0060df;
-  --focus-ring-outline: 2px solid var(--focus-ring-color);
-
   @media (prefers-color-scheme: dark) {
     --text-primary-color: #fbfbfe;
 
@@ -172,8 +169,6 @@
     --undo-button-fg-color: ButtonFace;
     --undo-button-fg-color-hover: SelectedItemText;
     --undo-button-fg-color-active: SelectedItemText;
-
-    --focus-ring-color: CanvasText;
   }
 
   position: fixed;

@@ -1698,6 +1698,9 @@ class AnnotationEditorUIManager {
       this.#updateModeCapability.resolve();
       return;
     }
+    if (mode === AnnotationEditorType.SIGNATURE) {
+      await this.#signatureManager?.loadSignatures();
+    }
     this.setEditingState(true);
     await this.#enableAll();
     this.unselectAll();
@@ -1758,7 +1761,7 @@ class AnnotationEditorUIManager {
 
     switch (type) {
       case AnnotationEditorParamsType.CREATE:
-        this.currentLayer.addNewEditor();
+        this.currentLayer.addNewEditor(value);
         return;
       case AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR:
         this.#mainHighlightColorPicker?.updateColor(value);

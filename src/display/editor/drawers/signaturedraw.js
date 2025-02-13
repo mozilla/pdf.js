@@ -784,7 +784,7 @@ class SignatureExtractor {
       let data = null;
       let offset = 0;
       for await (const chunk of readable) {
-        data ||= new Uint8Array(new Uint32Array(chunk.buffer)[0]);
+        data ||= new Uint8Array(new Uint32Array(chunk.buffer, 0, 4)[0]);
         data.set(chunk, offset);
         offset += chunk.length;
       }
