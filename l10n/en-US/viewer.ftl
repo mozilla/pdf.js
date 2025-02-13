@@ -597,3 +597,15 @@ pdfjs-editor-add-signature-add-button = Add
 pdfjs-editor-delete-signature-button =
     .title = Remove signature
 pdfjs-editor-delete-signature-button-label = Remove signature
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = Edit description
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = Edit description
+
+## Dialog buttons
+
+pdfjs-editor-edit-signature-update-button = Update

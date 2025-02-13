@@ -606,7 +606,8 @@ class SignatureExtractor {
       [pageWidth, pageHeight] = [pageHeight, pageWidth];
     }
 
-    const { curves, thickness, width, height } = lines;
+    const { curves, width, height } = lines;
+    const thickness = lines.thickness ?? 0;
     const linesAndPoints = [];
     const ratio = Math.min(pageWidth / width, pageHeight / height);
     const xScale = ratio / pageWidth;

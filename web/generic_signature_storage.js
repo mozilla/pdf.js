@@ -15,24 +15,50 @@
 
 import { getUuid } from "pdfjs-lib";
 
+const KEY_STORAGE = "pdfjs.signature";
+
 class SignatureStorage {
   // TODO: Encrypt the data in using a password and add a UI for entering it.
   // We could use the Web Crypto API for this (see https://bradyjoslin.com/blog/encryption-webcrypto/
   // for an example).
 
+  #eventBus;
+
   #signatures = null;
+
+  #signal = null;
+
+  constructor(eventBus, signal) {
+    this.#eventBus = eventBus;
+    this.#signal = signal;
+  }
 
   #save() {
     localStorage.setItem(
-      "pdfjs.signature",
+      KEY_STORAGE,
       JSON.stringify(Object.fromEntries(this.#signatures.entries()))
     );
   }
 
   async getAll() {
+    if (this.#signal) {
+      window.addEventListener(
+        "storage",
+        ({ key }) => {
+          if (key === KEY_STORAGE) {
+            this.#signatures = null;
+            this.#eventBus?.dispatch("storedsignatureschanged", {
+              source: this,
+            });
+          }
+        },
+        { signal: this.#signal }
+      );
+      this.#signal = null;
+    }
     if (!this.#signatures) {
       this.#signatures = new Map();
-      const data = localStorage.getItem("pdfjs.signature");
+      const data = localStorage.getItem(KEY_STORAGE);
       if (data) {
         for (const [key, value] of Object.entries(JSON.parse(data))) {
           this.#signatures.set(key, value);
@@ -64,18 +90,6 @@ class SignatureStorage {
       return false;
     }
     signatures.delete(uuid);
-    this.#save();
-
-    return true;
-  }
-
-  async update(uuid, data) {
-    const signatures = await this.getAll();
-    const oldData = signatures.get(uuid);
-    if (!oldData) {
-      return false;
-    }
-    Object.assign(oldData, data);
     this.#save();
 
     return true;

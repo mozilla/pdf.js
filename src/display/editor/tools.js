@@ -1012,6 +1012,10 @@ class AnnotationEditorUIManager {
     this.#signatureManager?.getSignature({ uiManager: this, editor });
   }
 
+  get signatureManager() {
+    return this.#signatureManager;
+  }
+
   switchToMode(mode, callback) {
     // Switching to a mode can be asynchronous.
     this._eventBus.on("annotationeditormodechanged", callback, {
