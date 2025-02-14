@@ -1261,6 +1261,19 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("gets destinations, from /Names (NameTree) respectively /Dests dictionary", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue19474.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const destinations = await pdfDoc.getDestinations();
+      expect(destinations).toEqual({
+        A: [{ num: 1, gen: 0 }, { name: "Fit" }],
+        B: [{ num: 4, gen: 0 }, { name: "Fit" }],
+        C: [{ num: 5, gen: 0 }, { name: "Fit" }],
+      });
+
+      await loadingTask.destroy();
+    });
+
     it("gets a destination, from /Names (NameTree) dictionary", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("issue6204.pdf"));
       const pdfDoc = await loadingTask.promise;
@@ -1316,6 +1329,22 @@ describe("api", function () {
         728.504,
         null,
       ]);
+
+      await loadingTask.destroy();
+    });
+
+    it("gets a destination, from /Names (NameTree) respectively /Dests dictionary", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue19474.pdf"));
+      const pdfDoc = await loadingTask.promise;
+
+      const destA = await pdfDoc.getDestination("A");
+      expect(destA).toEqual([{ num: 1, gen: 0 }, { name: "Fit" }]);
+
+      const destB = await pdfDoc.getDestination("B");
+      expect(destB).toEqual([{ num: 4, gen: 0 }, { name: "Fit" }]);
+
+      const destC = await pdfDoc.getDestination("C");
+      expect(destC).toEqual([{ num: 5, gen: 0 }, { name: "Fit" }]);
 
       await loadingTask.destroy();
     });
