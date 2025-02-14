@@ -707,20 +707,23 @@ class Catalog {
   }
 
   get destinations() {
-    const obj = this._readDests(),
+    const rawDests = this.#readDests(),
       dests = Object.create(null);
-    if (obj instanceof NameTree) {
-      for (const [key, value] of obj.getAll()) {
-        const dest = fetchDest(value);
-        if (dest) {
-          dests[stringToPDFString(key)] = dest;
+    for (const obj of rawDests) {
+      if (obj instanceof NameTree) {
+        for (const [key, value] of obj.getAll()) {
+          const dest = fetchDest(value);
+          if (dest) {
+            dests[stringToPDFString(key)] = dest;
+          }
         }
-      }
-    } else if (obj instanceof Dict) {
-      for (const [key, value] of obj) {
-        const dest = fetchDest(value);
-        if (dest) {
-          dests[key] = dest;
+      } else if (obj instanceof Dict) {
+        for (const [key, value] of obj) {
+          const dest = fetchDest(value);
+          if (dest) {
+            // Always let the NameTree take precedence.
+            dests[key] ||= dest;
+          }
         }
       }
     }
@@ -728,40 +731,39 @@ class Catalog {
   }
 
   getDestination(id) {
-    const obj = this._readDests();
-    if (obj instanceof NameTree) {
-      const dest = fetchDest(obj.get(id));
-      if (dest) {
-        return dest;
+    const rawDests = this.#readDests();
+    for (const obj of rawDests) {
+      if (obj instanceof NameTree || obj instanceof Dict) {
+        const dest = fetchDest(obj.get(id));
+        if (dest) {
+          return dest;
+        }
       }
+    }
+
+    if (rawDests[0] instanceof NameTree) {
       // Fallback to checking the *entire* NameTree, in an attempt to handle
       // corrupt PDF documents with out-of-order NameTrees (fixes issue 10272).
-      const allDest = this.destinations[id];
-      if (allDest) {
-        warn(`Found "${id}" at an incorrect position in the NameTree.`);
-        return allDest;
-      }
-    } else if (obj instanceof Dict) {
-      const dest = fetchDest(obj.get(id));
+      const dest = this.destinations[id];
       if (dest) {
+        warn(`Found "${id}" at an incorrect position in the NameTree.`);
         return dest;
       }
     }
     return null;
   }
 
-  /**
-   * @private
-   */
-  _readDests() {
+  #readDests() {
     const obj = this._catDict.get("Names");
+    const rawDests = [];
     if (obj?.has("Dests")) {
-      return new NameTree(obj.getRaw("Dests"), this.xref);
-    } else if (this._catDict.has("Dests")) {
-      // Simple destination dictionary.
-      return this._catDict.get("Dests");
+      rawDests.push(new NameTree(obj.getRaw("Dests"), this.xref));
     }
-    return undefined;
+    if (this._catDict.has("Dests")) {
+      // Simple destination dictionary.
+      rawDests.push(this._catDict.get("Dests"));
+    }
+    return rawDests;
   }
 
   get pageLabels() {
