@@ -201,7 +201,7 @@
       }
     }
 
-    button:not(:is(.toggle-button, .closeButton)) {
+    button:not(:is(.toggle-button, .closeButton, .clearInputButton)) {
       border-radius: 4px;
       border: 1px solid;
       font: menu;

@@ -92,6 +92,8 @@ class SignatureManager {
 
   #overlayManager;
 
+  #editDescriptionDialog;
+
   #signatureStorage;
 
   #uiManager = null;
@@ -114,7 +116,6 @@ class SignatureManager {
       imagePicker,
       imagePickerLink,
       description,
-      clearDescription,
       clearButton,
       cancelButton,
       addButton,
@@ -123,6 +124,7 @@ class SignatureManager {
       saveCheckbox,
       saveContainer,
     },
+    editSignatureElements,
     addSignatureToolbarButton,
     overlayManager,
     l10n,
@@ -131,8 +133,8 @@ class SignatureManager {
   ) {
     this.#addButton = addButton;
     this.#clearButton = clearButton;
-    this.#clearDescription = clearDescription;
-    this.#description = description;
+    this.#clearDescription = description.lastElementChild;
+    this.#description = description.firstElementChild;
     this.#dialog = dialog;
     this.#drawSVG = drawSVG;
     this.#drawPlaceholder = drawPlaceholder;
@@ -150,6 +152,10 @@ class SignatureManager {
     this.#l10n = l10n;
     this.#signatureStorage = signatureStorage;
     this.#eventBus = eventBus;
+    this.#editDescriptionDialog = new EditDescriptionDialog(
+      editSignatureElements,
+      overlayManager
+    );
 
     SignatureManager.#l10nDescription ||= Object.freeze({
       signature: "pdfjs-editor-add-signature-description-default-when-drawing",
@@ -177,15 +183,15 @@ class SignatureManager {
     description.addEventListener(
       "input",
       () => {
-        clearDescription.disabled = description.value === "";
+        this.#clearDescription.disabled = description.value === "";
       },
       { passive: true }
     );
-    clearDescription.addEventListener(
+    this.#clearDescription.addEventListener(
       "click",
       () => {
         this.#description.value = "";
-        clearDescription.disabled = true;
+        this.#clearDescription.disabled = true;
       },
       { passive: true }
     );
@@ -199,6 +205,8 @@ class SignatureManager {
 
     this.#initTabButtons(typeButton, drawButton, imageButton, panels);
     imagePicker.accept = SupportedImageMimeTypes.join(",");
+
+    eventBus._on("storedsignatureschanged", this.#signaturesChanged.bind(this));
 
     overlayManager.register(dialog);
   }
@@ -650,6 +658,7 @@ class SignatureManager {
 
     const div = document.createElement("div");
     const button = document.createElement("button");
+
     button.addEventListener("click", () => {
       this.#eventBus.dispatch("switchannotationeditorparams", {
         source: this,
@@ -690,7 +699,7 @@ class SignatureManager {
     svg.setAttribute("viewBox", outline.viewBox);
     svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
     if (areContours) {
-      svg.classList.add("contours");
+      path.classList.add("contours");
     }
     path.setAttribute("d", outline.toSVGPath());
 
@@ -718,14 +727,23 @@ class SignatureManager {
     this.#addSignatureToolbarButton.before(div);
   }
 
+  async #signaturesChanged() {
+    const parent = this.#addSignatureToolbarButton.parentElement;
+    while (parent.firstElementChild !== this.#addSignatureToolbarButton) {
+      parent.firstElementChild.remove();
+    }
+    this.#loadSignaturesPromise = null;
+    await this.loadSignatures(/* reload = */ true);
+  }
+
   getSignature(params) {
     return this.open(params);
   }
 
-  async loadSignatures() {
+  async loadSignatures(reload = false) {
     if (
       !this.#addSignatureToolbarButton ||
-      this.#addSignatureToolbarButton.previousElementSibling ||
+      (!reload && this.#addSignatureToolbarButton.previousElementSibling) ||
       !this.#signatureStorage
     ) {
       return;
@@ -744,7 +762,9 @@ class SignatureManager {
             )
           ),
         ]);
-      return;
+      if (!reload) {
+        return;
+      }
     }
     const [signatures, signaturesData] = await this.#loadSignaturesPromise;
     this.#loadSignaturesPromise = null;
@@ -759,6 +779,27 @@ class SignatureManager {
       delete data.outlines;
       this.#addToolbarButton(data, uuid, description);
     }
+  }
+
+  async renderEditButton(editor) {
+    const button = document.createElement("button");
+    button.classList.add("altText", "editDescription");
+    button.tabIndex = 0;
+    button.title = editor.description;
+    const span = document.createElement("span");
+    button.append(span);
+    span.setAttribute(
+      "data-l10n-id",
+      "pdfjs-editor-add-signature-edit-button-label"
+    );
+    button.addEventListener(
+      "click",
+      () => {
+        this.#editDescriptionDialog.open(editor);
+      },
+      { passive: true }
+    );
+    return button;
   }
 
   async open({ uiManager, editor }) {
@@ -822,11 +863,6 @@ class SignatureManager {
         data = this.#extractedSignatureData;
         break;
     }
-    this.#currentEditor.addSignature(
-      data.outline,
-      DEFAULT_HEIGHT_IN_PAGE,
-      this.#description.value
-    );
     let uuid = null;
     if (this.#saveCheckbox.checked) {
       const description = this.#description.value;
@@ -858,13 +894,115 @@ class SignatureManager {
         console.warn("SignatureManager.add: cannot save the signature.");
       }
     }
-    this.#currentEditor.setUuid(uuid);
+    this.#currentEditor.addSignature(
+      data,
+      DEFAULT_HEIGHT_IN_PAGE,
+      this.#description.value,
+      uuid
+    );
+
     this.#finish();
   }
 
   destroy() {
     this.#uiManager = null;
     this.#finish();
+  }
+}
+
+class EditDescriptionDialog {
+  #currentEditor;
+
+  #previousDescription;
+
+  #description;
+
+  #dialog;
+
+  #overlayManager;
+
+  #signatureSVG;
+
+  #uiManager;
+
+  constructor(
+    { dialog, description, cancelButton, updateButton, editSignatureView },
+    overlayManager
+  ) {
+    const descriptionInput = (this.#description =
+      description.firstElementChild);
+    this.#signatureSVG = editSignatureView;
+    this.#dialog = dialog;
+    this.#overlayManager = overlayManager;
+
+    dialog.addEventListener("close", this.#close.bind(this));
+    dialog.addEventListener("contextmenu", e => {
+      if (e.target !== this.#description) {
+        e.preventDefault();
+      }
+    });
+    cancelButton.addEventListener("click", this.#finish.bind(this));
+    updateButton.addEventListener("click", this.#update.bind(this));
+
+    const clearDescription = description.lastElementChild;
+    clearDescription.addEventListener("click", () => {
+      descriptionInput.value = "";
+      clearDescription.disabled = true;
+    });
+    descriptionInput.addEventListener(
+      "input",
+      () => {
+        const { value } = descriptionInput;
+        clearDescription.disabled = value === "";
+        updateButton.disabled = value === this.#previousDescription;
+        editSignatureView.setAttribute("aria-label", value);
+      },
+      { passive: true }
+    );
+
+    overlayManager.register(dialog);
+  }
+
+  async open(editor) {
+    this.#uiManager = editor._uiManager;
+    this.#currentEditor = editor;
+    this.#previousDescription = this.#description.value = editor.description;
+    this.#description.dispatchEvent(new Event("input"));
+    this.#uiManager.removeEditListeners();
+    const { areContours, outline } = editor.getSignaturePreview();
+    const svgFactory = new DOMSVGFactory();
+    const path = svgFactory.createElement("path");
+    this.#signatureSVG.append(path);
+    this.#signatureSVG.setAttribute("viewBox", outline.viewBox);
+    path.setAttribute("d", outline.toSVGPath());
+    if (areContours) {
+      path.classList.add("contours");
+    }
+
+    await this.#overlayManager.open(this.#dialog);
+  }
+
+  async #update() {
+    const description = this.#description.value;
+    if (this.#previousDescription === description) {
+      this.#finish();
+      return;
+    }
+    this.#currentEditor.description = description;
+    this.#finish();
+  }
+
+  #finish() {
+    if (this.#overlayManager.active === this.#dialog) {
+      this.#overlayManager.close(this.#dialog);
+    }
+  }
+
+  #close() {
+    this.#uiManager?.addEditListeners();
+    this.#uiManager = null;
+    this.#currentEditor = null;
+    this.#signatureSVG.firstElementChild.remove();
   }
 }
 

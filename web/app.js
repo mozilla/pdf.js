@@ -465,11 +465,15 @@ const PDFViewerApplication = {
       AppOptions.get("enableSignatureEditor") && appConfig.addSignatureDialog
         ? new SignatureManager(
             appConfig.addSignatureDialog,
+            appConfig.editSignatureDialog,
             appConfig.annotationEditorParams?.editorSignatureAddSignature ||
               null,
             this.overlayManager,
             l10n,
-            externalServices.createSignatureStorage(),
+            externalServices.createSignatureStorage(
+              eventBus,
+              this._globalAbortController.signal
+            ),
             eventBus
           )
         : null;

@@ -684,13 +684,13 @@ See https://github.com/adobe-type-tools/cmap-resources
           </div>
         </dialog>
 
-        <dialog class="dialog" id="addSignatureDialog" aria-labelledby="addSignatureDialogLabel">
+        <dialog class="dialog signatureDialog" id="addSignatureDialog" aria-labelledby="addSignatureDialogLabel">
           <span id="addSignatureDialogLabel" data-l10n-id="pdfjs-editor-add-signature-dialog-label">
             This modal allows the user to create a signature to add to a PDF document. The user can edit the name (which also serves as the alt text), and optionally save the signature for repeated use.
           </span>
           <div id="addSignatureContainer" class="mainContainer">
             <div class="title">
-              <span id="addSignatureTitle" role="sectionhead" data-l10n-id="pdfjs-editor-add-signature-dialog-title"  tabindex="0" class="title">Add a signature</span>
+              <span role="sectionhead" data-l10n-id="pdfjs-editor-add-signature-dialog-title" tabindex="0">Add a signature</span>
             </div>
             <div role="tablist" id="addSignatureOptions">
               <button id="addSignatureTypeButton" type="button" role="tab" aria-selected="true" aria-controls="addSignatureTypeContainer" data-l10n-id="pdfjs-editor-add-signature-type-button" tabindex="0">
@@ -731,9 +731,9 @@ See https://github.com/adobe-type-tools/cmap-resources
                 <div id="horizontalContainer">
                   <div id="addSignatureDescriptionContainer">
                     <label for="addSignatureDescription" data-l10n-id="pdfjs-editor-add-signature-description-label">Description (alt text)</span></label>
-                    <span id="inputWithClearButton">
-                      <input type="text" id="addSignatureDescription" data-l10n-id="pdfjs-editor-add-signature-description-input" data-l10n-args='{ "default": "", "useDefault": true }' tabindex="0"></input>
-                      <button id="addSignatureDescriptionClearButton" type="button" tabindex="0" aria-hidden="true"></button>
+                    <span id="addSignatureDescription" class="inputWithClearButton">
+                      <input type="text" data-l10n-id="pdfjs-editor-add-signature-description-input" tabindex="0"></input>
+                      <button class="clearInputButton" type="button" tabindex="0" aria-hidden="true"></button>
                     </span>
                   </div>
                   <button id="clearSignatureButton" type="button" data-l10n-id="pdfjs-editor-add-signature-clear-button" tabindex="0"><span data-l10n-id="pdfjs-editor-add-signature-clear-button-label">Clear signature</span></button>
@@ -754,13 +754,35 @@ See https://github.com/adobe-type-tools/cmap-resources
                   <button id="addSignatureErrorCloseButton" class="closeButton" type="button" tabindex="0" title="Close"><span data-l10n-id="pdfjs-editor-add-signature-error-close-button">Close</span></button>
                 </div>
               </div>
-              <div id="buttons" class="dialogButtonsGroup">
+              <div class="dialogButtonsGroup">
                 <button id="addSignatureCancelButton" type="button" class="secondaryButton" tabindex="0"><span data-l10n-id="pdfjs-editor-add-signature-cancel-button">Cancel</span></button>
                 <button id="addSignatureAddButton" type="button" class="primaryButton" disabled tabindex="0"><span data-l10n-id="pdfjs-editor-add-signature-add-button">Add</span></button>
               </div>
             </div>
           </div>
        </dialog>
+
+       <dialog class="dialog signatureDialog" id="editSignatureDescriptionDialog" aria-labelledby="editSignatureDescriptionTitle">
+        <div id="editSignatureDescriptionContainer" class="mainContainer">
+          <div class="title">
+            <span id="editSignatureDescriptionTitle" role="sectionhead" data-l10n-id="pdfjs-editor-edit-signature-dialog-title" tabindex="0">Edit description</span>
+          </div>
+          <div id="editSignatureDescriptionAndView">
+            <div id="editSignatureDescriptionContainer">
+              <label for="editSignatureDescription" data-l10n-id="pdfjs-editor-add-signature-description-label">Description (alt text)</span></label>
+              <span id="editSignatureDescription" class="inputWithClearButton">
+                <input type="text" data-l10n-id="pdfjs-editor-add-signature-description-input" tabindex="0"></input>
+                <button class="clearInputButton" type="button" tabindex="0" aria-hidden="true"></button>
+              </span>
+            </div>
+            <svg id="editSignatureView" xmlns="http://www.w3.org/2000/svg"></svg>
+          </div>
+          <div class="dialogButtonsGroup">
+            <button id="editSignatureCancelButton" type="button" class="secondaryButton" tabindex="0"><span data-l10n-id="pdfjs-editor-add-signature-cancel-button">Cancel</span></button>
+            <button id="editSignatureUpdateButton" type="button" class="primaryButton" disabled tabindex="0"><span data-l10n-id="pdfjs-editor-edit-signature-update-button">Update</span></button>
+          </div>
+        </div>
+      </dialog>
 
 <!--#if !MOZCENTRAL-->
         <dialog id="printServiceDialog" style="min-width: 200px;">

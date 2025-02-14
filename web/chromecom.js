@@ -422,8 +422,8 @@ class ExternalServices extends BaseExternalServices {
     return new GenericScripting(AppOptions.get("sandboxBundleSrc"));
   }
 
-  createSignatureStorage() {
-    return new SignatureStorage();
+  createSignatureStorage(eventBus, signal) {
+    return new SignatureStorage(eventBus, signal);
   }
 }
 

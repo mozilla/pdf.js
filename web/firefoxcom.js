@@ -496,13 +496,33 @@ class MLManager {
 }
 
 class SignatureStorage {
+  #eventBus = null;
+
   #signatures = null;
+
+  #signal = null;
+
+  constructor(eventBus, signal) {
+    this.#eventBus = eventBus;
+    this.#signal = signal;
+  }
 
   #handleSignature(data) {
     return FirefoxCom.requestAsync("handleSignature", data);
   }
 
   async getAll() {
+    if (this.#signal) {
+      window.addEventListener(
+        "storedSignaturesChanged",
+        () => {
+          this.#signatures = null;
+          this.#eventBus?.dispatch("storedsignatureschanged", { source: this });
+        },
+        { signal: this.#signal }
+      );
+      this.#signal = null;
+    }
     if (!this.#signatures) {
       this.#signatures = new Map();
       const data = await this.#handleSignature({ action: "get" });
@@ -542,19 +562,6 @@ class SignatureStorage {
     }
     if (await this.#handleSignature({ action: "delete", uuid })) {
       signatures.delete(uuid);
-      return true;
-    }
-    return false;
-  }
-
-  async update(uuid, data) {
-    const signatures = await this.getAll();
-    const oldData = signatures.get(uuid);
-    if (!oldData) {
-      return false;
-    }
-    if (await this.#handleSignature({ action: "update", uuid, ...data })) {
-      Object.assign(oldData, data);
       return true;
     }
     return false;
@@ -647,8 +654,8 @@ class ExternalServices extends BaseExternalServices {
     return FirefoxScripting;
   }
 
-  createSignatureStorage() {
-    return new SignatureStorage();
+  createSignatureStorage(eventBus, signal) {
+    return new SignatureStorage(eventBus, signal);
   }
 
   dispatchGlobalEvent(event) {
