@@ -89,9 +89,7 @@ class PasswordPrompt {
   }
 
   async close() {
-    if (this.overlayManager.active === this.dialog) {
-      this.overlayManager.close(this.dialog);
-    }
+    this.overlayManager.closeIfActive(this.dialog);
   }
 
   #verify() {
