@@ -245,9 +245,7 @@ class AltTextManager {
   }
 
   #finish() {
-    if (this.#overlayManager.active === this.#dialog) {
-      this.#overlayManager.close(this.#dialog);
-    }
+    this.#overlayManager.closeIfActive(this.#dialog);
   }
 
   #close() {
