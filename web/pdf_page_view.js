@@ -536,6 +536,28 @@ class PDFPageView {
     this._textHighlighter.enable();
   }
 
+  async #injectLinkAnnotations(textLayerPromise) {
+    let error = null;
+    try {
+      await textLayerPromise;
+
+      if (!this.annotationLayer) {
+        return; // Rendering was cancelled while the textLayerPromise resolved.
+      }
+      await this.annotationLayer.injectLinkAnnotations({
+        inferredLinks: Autolinker.processLinks(this),
+        viewport: this.viewport,
+        structTreeLayer: this.structTreeLayer,
+      });
+    } catch (ex) {
+      console.error("#injectLinkAnnotations:", ex);
+      error = ex;
+    }
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      this.#dispatchLayerRendered("linkannotationsadded", error);
+    }
+  }
+
   #resetCanvas() {
     const { canvas } = this;
     if (!canvas) {
@@ -1122,18 +1144,8 @@ class PDFPageView {
         if (this.annotationLayer) {
           await this.#renderAnnotationLayer();
 
-          if (this.#enableAutoLinking) {
-            try {
-              await textLayerPromise;
-
-              this.annotationLayer?.injectLinkAnnotations({
-                inferredLinks: Autolinker.processLinks(this),
-                viewport: this.viewport,
-                structTreeLayer: this.structTreeLayer,
-              });
-            } catch (ex) {
-              console.error("enableAutoLinking:", ex);
-            }
+          if (this.#enableAutoLinking && this.annotationLayer) {
+            await this.#injectLinkAnnotations(textLayerPromise);
           }
         }
 
