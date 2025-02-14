@@ -739,12 +739,8 @@ class SignatureManager {
         .then(async signatures => [
           signatures,
           await Promise.all(
-            Array.from(
-              signatures
-                .values()
-                .map(({ signatureData }) =>
-                  SignatureExtractor.decompressSignature(signatureData)
-                )
+            Array.from(signatures.values(), ({ signatureData }) =>
+              SignatureExtractor.decompressSignature(signatureData)
             )
           ),
         ]);
