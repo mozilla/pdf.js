@@ -78,9 +78,9 @@ class FileSpec {
     const item = pickPlatformItem(this.root);
     if (item && typeof item === "string") {
       filename = stringToPDFString(item)
-        .replaceAll("\\\\", "\\")
         .replaceAll("\\/", "/")
-        .replaceAll("\\", "/");
+        .replaceAll("\\", "/")
+        .replaceAll("\\\\", "\\");
     }
     return shadow(this, "filename", filename || "unnamed");
   }
