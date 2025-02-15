@@ -402,13 +402,9 @@ function isValidFetchUrl(url, baseUrl) {
   if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
     throw new Error("Not implemented: isValidFetchUrl");
   }
-  try {
-    const { protocol } = baseUrl ? new URL(url, baseUrl) : new URL(url);
-    // The Fetch API only supports the http/https protocols, and not file/ftp.
-    return protocol === "http:" || protocol === "https:";
-  } catch {
-    return false; // `new URL()` will throw on incorrect data.
-  }
+  const res = baseUrl ? URL.parse(url, baseUrl) : URL.parse(url);
+  // The Fetch API only supports the http/https protocols, and not file/ftp.
+  return res?.protocol === "http:" || res?.protocol === "https:";
 }
 
 /**
