@@ -248,8 +248,12 @@ class Parser {
           }
           // Check that the "EI" sequence isn't part of the image data, since
           // that would cause the image to be truncated (fixes issue11124.pdf).
+          //
+          // Check more than the `followingBytes` to be able to find operators
+          // with multiple arguments, e.g. transform (cm) with decimal arguments
+          // (fixes issue19494.pdf).
           const tmpLexer = new Lexer(
-            new Stream(followingBytes.slice()),
+            new Stream(stream.peekBytes(5 * n)),
             knownCommands
           );
           // Reduce the number of (potential) warning messages.
