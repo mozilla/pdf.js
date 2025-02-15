@@ -523,17 +523,19 @@ function getUrlProp(val) {
   if (val instanceof URL) {
     return val.href;
   }
-  try {
-    // The full path is required in the 'url' field.
-    return new URL(val, window.location).href;
-  } catch {
+  if (typeof val === "string") {
     if (
       typeof PDFJSDev !== "undefined" &&
       PDFJSDev.test("GENERIC") &&
-      isNodeJS &&
-      typeof val === "string"
+      isNodeJS
     ) {
       return val; // Use the url as-is in Node.js environments.
+    }
+
+    // The full path is required in the 'url' field.
+    const url = URL.parse(val, window.location);
+    if (url) {
+      return url.href;
     }
   }
   throw new Error(
@@ -2080,14 +2082,9 @@ class PDFWorker {
       // Check if URLs have the same origin. For non-HTTP based URLs, returns
       // false.
       this._isSameOrigin = (baseUrl, otherUrl) => {
-        let base;
-        try {
-          base = new URL(baseUrl);
-          if (!base.origin || base.origin === "null") {
-            return false; // non-HTTP url
-          }
-        } catch {
-          return false;
+        const base = URL.parse(baseUrl);
+        if (!base?.origin || base.origin === "null") {
+          return false; // non-HTTP url
         }
         const other = new URL(otherUrl, base);
         return base.origin === other.origin;
@@ -2200,7 +2197,7 @@ class PDFWorker {
       if (
         typeof PDFJSDev !== "undefined" &&
         PDFJSDev.test("GENERIC") &&
-        !PDFWorker._isSameOrigin(window.location.href, workerSrc)
+        !PDFWorker._isSameOrigin(window.location, workerSrc)
       ) {
         workerSrc = PDFWorker._createCDNWrapper(
           new URL(workerSrc, window.location).href
