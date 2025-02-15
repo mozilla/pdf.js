@@ -5618,6 +5618,15 @@
     "type": "eq"
   },
   {
+    "id": "issue19494",
+    "file": "pdfs/issue19494.pdf",
+    "md5": "2ec2ccbe6aa7e622ef981ca5ca443d55",
+    "link": true,
+    "rounds": 1,
+    "type": "eq",
+    "lastPage": 1
+  },
+  {
     "id": "issue11768",
     "file": "pdfs/issue11768_reduced.pdf",
     "md5": "0cafde97d78bb6883531a325a996a5ef",
