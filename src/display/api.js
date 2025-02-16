@@ -331,7 +331,8 @@ function getDocument(src = {}) {
     typeof src.useWorkerFetch === "boolean"
       ? src.useWorkerFetch
       : (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
-        (CMapReaderFactory === DOMCMapReaderFactory &&
+        !!(
+          CMapReaderFactory === DOMCMapReaderFactory &&
           StandardFontDataFactory === DOMStandardFontDataFactory &&
           WasmFactory === DOMWasmFactory &&
           cMapUrl &&
@@ -339,7 +340,8 @@ function getDocument(src = {}) {
           wasmUrl &&
           isValidFetchUrl(cMapUrl, document.baseURI) &&
           isValidFetchUrl(standardFontDataUrl, document.baseURI) &&
-          isValidFetchUrl(wasmUrl, document.baseURI));
+          isValidFetchUrl(wasmUrl, document.baseURI)
+        );
 
   // Parameters only intended for development/testing purposes.
   const styleElement =
