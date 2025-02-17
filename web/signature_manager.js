@@ -946,6 +946,7 @@ class EditDescriptionDialog {
     clearDescription.addEventListener("click", () => {
       descriptionInput.value = "";
       clearDescription.disabled = true;
+      updateButton.disabled = this.#previousDescription === "";
     });
     descriptionInput.addEventListener(
       "input",
