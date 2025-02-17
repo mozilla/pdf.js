@@ -2528,4 +2528,33 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("Skip throwing actions (issue 19505)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue19505.pdf", "[data-annotation-id='24R']");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that date entered are in the input", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForScripting(page);
+
+          const fieldSelector = getSelector("24R");
+          for (const c of "Hello World") {
+            await page.type(fieldSelector, c);
+            await waitForSandboxTrip(page);
+          }
+
+          const value = await page.$eval(fieldSelector, el => el.value);
+          expect(value).withContext(`In ${browserName}`).toEqual("Hello World");
+        })
+      );
+    });
+  });
 });
