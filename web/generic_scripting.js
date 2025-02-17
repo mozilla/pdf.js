@@ -18,19 +18,13 @@ import { getPdfFilenameFromUrl } from "pdfjs-lib";
 async function docProperties(pdfDocument) {
   const url = "",
     baseUrl = url.split("#", 1)[0];
-  // eslint-disable-next-line prefer-const
-  let { info, metadata, contentDispositionFilename, contentLength } =
+  const { info, metadata, contentDispositionFilename, contentLength } =
     await pdfDocument.getMetadata();
-
-  if (!contentLength) {
-    const { length } = await pdfDocument.getDownloadInfo();
-    contentLength = length;
-  }
 
   return {
     ...info,
     baseURL: baseUrl,
-    filesize: contentLength,
+    filesize: contentLength || (await pdfDocument.getDownloadInfo()).length,
     filename: contentDispositionFilename || getPdfFilenameFromUrl(url),
     metadata: metadata?.getRaw(),
     authors: metadata?.get("dc:creator"),
