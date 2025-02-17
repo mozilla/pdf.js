@@ -886,9 +886,8 @@ class PDFFindController {
       const { promise, resolve } = Promise.withResolvers();
       this._extractTextPromises[i] = promise;
 
-      // eslint-disable-next-line arrow-body-style
-      deferred = deferred.then(() => {
-        return this._pdfDocument
+      deferred = deferred.then(() =>
+        this._pdfDocument
           .getPage(i + 1)
           .then(pdfPage => pdfPage.getTextContent(textOptions))
           .then(
@@ -921,8 +920,8 @@ class PDFFindController {
               this._hasDiacritics[i] = false;
               resolve();
             }
-          );
-      });
+          )
+      );
     }
   }
 
