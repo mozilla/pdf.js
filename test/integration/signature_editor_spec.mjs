@@ -16,6 +16,7 @@
 import {
   closePages,
   getEditorSelector,
+  getRect,
   loadAndWait,
   switchToEditor,
   waitForTimeout,
@@ -203,6 +204,48 @@ describe("Signature Editor", () => {
           await page.waitForSelector(
             `.altText.editDescription[title="Hello PDF.js World"]`
           );
+        })
+      );
+    });
+  });
+
+  describe("Bug 1948741", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the editor isn't too large", async () => {
+      await Promise.all(
+        pages.map(async ([_, page]) => {
+          await switchToSignature(page);
+          await page.click("#editorSignatureAddSignature");
+
+          await page.waitForSelector("#addSignatureDialog", {
+            visible: true,
+          });
+          await page.type(
+            "#addSignatureTypeInput",
+            "[18:50:03] asset pdf.scripting.mjs 105 KiB [emitted] [javascript module] (name: main)"
+          );
+          await page.waitForSelector(`${addButtonSelector}:not(:disabled)`);
+          await page.click("#addSignatureAddButton");
+
+          const editorSelector = getEditorSelector(0);
+          await page.waitForSelector(editorSelector, { visible: true });
+          await page.waitForSelector(
+            `.canvasWrapper > svg use[href="#path_p1_0"]`,
+            { visible: true }
+          );
+
+          const { width } = await getRect(page, editorSelector);
+          const { width: pageWidth } = await getRect(page, ".page");
+          expect(width).toBeLessThanOrEqual(pageWidth);
         })
       );
     });
