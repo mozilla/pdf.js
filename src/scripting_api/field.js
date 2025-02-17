@@ -16,6 +16,7 @@
 import { createActionsMap, FieldType, getFieldType } from "./common.js";
 import { Color } from "./color.js";
 import { PDFObject } from "./pdf_object.js";
+import { serializeError } from "./app_utils.js";
 
 class Field extends PDFObject {
   constructor(data) {
@@ -552,14 +553,15 @@ class Field extends PDFObject {
     }
 
     const actions = this._actions.get(eventName);
-    try {
-      for (const action of actions) {
+    for (const action of actions) {
+      try {
         // Action evaluation must happen in the global scope
         this._globalEval(action);
+      } catch (error) {
+        const serializedError = serializeError(error);
+        serializedError.value = `Error when executing "${eventName}" for field "${this._id}"\n${serializedError.value}`;
+        this._send(serializedError);
       }
-    } catch (error) {
-      event.rc = false;
-      throw error;
     }
 
     return true;
