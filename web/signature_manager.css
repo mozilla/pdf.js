@@ -686,7 +686,6 @@
 
   #addSignatureDoorHanger {
     gap: 8px;
-    overflow-y: unset;
 
     .toolbarAddSignatureButtonContainer {
       height: 32px;
