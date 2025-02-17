@@ -248,6 +248,11 @@ class SignatureEditor extends DrawingEditor {
     newHeight = newHeight >= 1 ? 0.5 : newHeight;
 
     this.width *= newHeight / this.height;
+    if (this.width >= 1) {
+      newHeight *= 0.9 / this.width;
+      this.width = 0.9;
+    }
+
     this.height = newHeight;
     this.setDims(parentWidth * this.width, parentHeight * this.height);
     this.x = savedX;
