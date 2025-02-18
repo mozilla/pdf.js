@@ -199,6 +199,12 @@ async function waitAndClick(page, selector, clickOptions = {}) {
   await page.click(selector, clickOptions);
 }
 
+function waitForPointerUp(page) {
+  return createPromise(page, resolve => {
+    window.addEventListener("pointerup", resolve, { once: true });
+  });
+}
+
 function getSelector(id) {
   return `[data-element-id="${id}"]`;
 }
@@ -895,6 +901,7 @@ export {
   waitForEvent,
   waitForNoElement,
   waitForPageRendered,
+  waitForPointerUp,
   waitForSandboxTrip,
   waitForSelectedEditor,
   waitForSerialized,
