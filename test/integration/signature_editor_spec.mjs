@@ -14,13 +14,20 @@
  */
 
 import {
+  awaitPromise,
   closePages,
   getEditorSelector,
   getRect,
   loadAndWait,
   switchToEditor,
+  waitForPointerUp,
   waitForTimeout,
 } from "./test_utils.mjs";
+
+import { fileURLToPath } from "url";
+import path from "path";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const switchToSignature = switchToEditor.bind(null, "Signature");
 
@@ -203,6 +210,122 @@ describe("Signature Editor", () => {
           // Check the tooltip.
           await page.waitForSelector(
             `.altText.editDescription[title="Hello PDF.js World"]`
+          );
+        })
+      );
+    });
+
+    it("must check drawing with the mouse", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToSignature(page);
+          await page.click("#editorSignatureAddSignature");
+
+          await page.waitForSelector("#addSignatureDialog", {
+            visible: true,
+          });
+
+          await page.click("#addSignatureDrawButton");
+          const drawSelector = "#addSignatureDraw";
+          await page.waitForSelector(drawSelector, { visible: true });
+
+          let description = await page.$eval(
+            descriptionInputSelector,
+            el => el.value
+          );
+          expect(description).withContext(browserName).toEqual("");
+          await page.waitForSelector(`${addButtonSelector}:disabled`);
+
+          const { x, y, width, height } = await getRect(page, drawSelector);
+          const clickHandle = await waitForPointerUp(page);
+          await page.mouse.move(x + 0.1 * width, y + 0.1 * height);
+          await page.mouse.down();
+          await page.mouse.move(x + 0.3 * width, y + 0.3 * height);
+          await page.mouse.up();
+          await awaitPromise(clickHandle);
+          await page.waitForSelector(`${addButtonSelector}:not(:disabled)`);
+
+          // The save button should be enabled now.
+          await page.waitForSelector(
+            "#addSignatureSaveContainer:not([disabled])"
+          );
+          await page.waitForSelector("#addSignatureSaveCheckbox[checked=true]");
+
+          // The description has been filled in automatically.
+          await page.waitForFunction(
+            `document.querySelector("${descriptionInputSelector}").value !== ""`
+          );
+          description = await page.$eval(
+            descriptionInputSelector,
+            el => el.value
+          );
+          expect(description).withContext(browserName).toEqual("Signature");
+
+          await page.click("#addSignatureAddButton");
+          await page.waitForSelector("#addSignatureDialog", {
+            visible: false,
+          });
+
+          await page.waitForSelector(
+            ".canvasWrapper > svg use[href='#path_p1_0']"
+          );
+        })
+      );
+    });
+
+    it("must check adding an image", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToSignature(page);
+          await page.click("#editorSignatureAddSignature");
+
+          await page.waitForSelector("#addSignatureDialog", {
+            visible: true,
+          });
+
+          await page.click("#addSignatureImageButton");
+          await page.waitForSelector("#addSignatureImagePlaceholder", {
+            visible: true,
+          });
+
+          let description = await page.$eval(
+            descriptionInputSelector,
+            el => el.value
+          );
+          expect(description).withContext(browserName).toEqual("");
+          await page.waitForSelector(`${addButtonSelector}:disabled`);
+
+          const input = await page.$("#addSignatureFilePicker");
+          await input.uploadFile(
+            `${path.join(__dirname, "../images/firefox_logo.png")}`
+          );
+          await page.waitForSelector(`#addSignatureImage > path:not([d=""])`);
+
+          // The save button should be enabled now.
+          await page.waitForSelector(
+            "#addSignatureSaveContainer:not([disabled])"
+          );
+          await page.waitForSelector("#addSignatureSaveCheckbox[checked=true]");
+
+          // The description has been filled in automatically.
+          await page.waitForFunction(
+            `document.querySelector("${descriptionInputSelector}").value !== ""`
+          );
+          description = await page.$eval(
+            descriptionInputSelector,
+            el => el.value
+          );
+          expect(description)
+            .withContext(browserName)
+            .toEqual("firefox_logo.png");
+
+          await page.click("#addSignatureAddButton");
+          await page.waitForSelector("#addSignatureDialog", {
+            visible: false,
+          });
+
+          await page.waitForSelector(
+            ".canvasWrapper > svg use[href='#path_p1_0']"
           );
         })
       );
