@@ -106,33 +106,33 @@ async function inlineImages(node, silentErrors = false) {
           }
           return response.blob();
         })
-        // eslint-disable-next-line arrow-body-style
-        .then(blob => {
-          return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-              resolve(reader.result);
-            };
-            reader.onerror = reject;
+        .then(
+          blob =>
+            new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => {
+                resolve(reader.result);
+              };
+              reader.onerror = reject;
 
-            reader.readAsDataURL(blob);
-          });
-        })
-        // eslint-disable-next-line arrow-body-style
-        .then(dataUrl => {
-          return new Promise((resolve, reject) => {
-            image.onload = resolve;
-            image.onerror = evt => {
-              if (silentErrors) {
-                resolve();
-                return;
-              }
-              reject(evt);
-            };
+              reader.readAsDataURL(blob);
+            })
+        )
+        .then(
+          dataUrl =>
+            new Promise((resolve, reject) => {
+              image.onload = resolve;
+              image.onerror = evt => {
+                if (silentErrors) {
+                  resolve();
+                  return;
+                }
+                reject(evt);
+              };
 
-            image.src = dataUrl;
-          });
-        })
+              image.src = dataUrl;
+            })
+        )
         .catch(reason => {
           throw new Error(`Error inlining image (${url}): ${reason}`);
         })
