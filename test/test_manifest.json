@@ -5627,6 +5627,14 @@
     "lastPage": 1
   },
   {
+    "id": "issue19510",
+    "file": "pdfs/issue19510.pdf",
+    "md5": "3ff133f633cea3e2f13f08f8c3414cc6",
+    "link": true,
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "issue11768",
     "file": "pdfs/issue11768_reduced.pdf",
     "md5": "0cafde97d78bb6883531a325a996a5ef",
