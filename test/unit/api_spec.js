@@ -4110,34 +4110,28 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
           })
         );
 
-        // eslint-disable-next-line arrow-body-style
-        const result1 = loadingTask1.promise.then(pdfDoc => {
-          // eslint-disable-next-line arrow-body-style
-          return pdfDoc.getPage(1).then(pdfPage => {
-            return pdfPage.getOperatorList().then(opList => {
-              expect(opList.fnArray.length).toBeGreaterThan(100);
-              expect(opList.argsArray.length).toBeGreaterThan(100);
-              expect(opList.lastChunk).toEqual(true);
-              expect(opList.separateAnnots).toEqual(null);
+        const result1 = loadingTask1.promise.then(async pdfDoc => {
+          const pdfPage = await pdfDoc.getPage(1);
+          const opList = await pdfPage.getOperatorList();
 
-              return loadingTask1.destroy();
-            });
-          });
+          expect(opList.fnArray.length).toBeGreaterThan(100);
+          expect(opList.argsArray.length).toBeGreaterThan(100);
+          expect(opList.lastChunk).toEqual(true);
+          expect(opList.separateAnnots).toEqual(null);
+
+          await loadingTask1.destroy();
         });
 
-        // eslint-disable-next-line arrow-body-style
-        const result2 = loadingTask2.promise.then(pdfDoc => {
-          // eslint-disable-next-line arrow-body-style
-          return pdfDoc.getPage(1).then(pdfPage => {
-            return pdfPage.getOperatorList().then(opList => {
-              expect(opList.fnArray.length).toEqual(0);
-              expect(opList.argsArray.length).toEqual(0);
-              expect(opList.lastChunk).toEqual(true);
-              expect(opList.separateAnnots).toEqual(null);
+        const result2 = loadingTask2.promise.then(async pdfDoc => {
+          const pdfPage = await pdfDoc.getPage(1);
+          const opList = await pdfPage.getOperatorList();
 
-              return loadingTask2.destroy();
-            });
-          });
+          expect(opList.fnArray.length).toEqual(0);
+          expect(opList.argsArray.length).toEqual(0);
+          expect(opList.lastChunk).toEqual(true);
+          expect(opList.separateAnnots).toEqual(null);
+
+          await loadingTask2.destroy();
         });
 
         await Promise.all([result1, result2]);
