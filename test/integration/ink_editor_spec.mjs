@@ -16,7 +16,6 @@
 import {
   awaitPromise,
   closePages,
-  createPromise,
   dragAndDrop,
   getAnnotationSelector,
   getEditors,
@@ -33,16 +32,12 @@ import {
   switchToEditor,
   waitForAnnotationModeChanged,
   waitForNoElement,
+  waitForPointerUp,
   waitForSelectedEditor,
   waitForSerialized,
   waitForStorageEntries,
   waitForTimeout,
 } from "./test_utils.mjs";
-
-const waitForPointerUp = page =>
-  createPromise(page, resolve => {
-    window.addEventListener("pointerup", resolve, { once: true });
-  });
 
 const selectAll = async page => {
   await kbSelectAll(page);
