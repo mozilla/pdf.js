@@ -842,7 +842,6 @@ class XRef {
 
     if (xrefEntry === null) {
       // The referenced entry can be free.
-      this._cacheMap.set(num, xrefEntry);
       return xrefEntry;
     }
     // Prevent circular references, in corrupt PDF documents, from hanging the
