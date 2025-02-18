@@ -621,9 +621,9 @@ class AnnotationEditorLayer {
    * @param {number} mode
    * @param {Object} params
    */
-  pasteEditor(mode, params) {
+  async pasteEditor(mode, params) {
     this.#uiManager.updateToolbar(mode);
-    this.#uiManager.updateMode(mode);
+    await this.#uiManager.updateMode(mode);
 
     const { offsetX, offsetY } = this.#getCenterPoint();
     const id = this.getNextId();
