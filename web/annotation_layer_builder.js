@@ -77,6 +77,8 @@ class AnnotationLayerBuilder {
 
   #eventAbortController = null;
 
+  #linksInjected = false;
+
   /**
    * @param {AnnotationLayerBuilderOptions} options
    */
@@ -235,9 +237,10 @@ class AnnotationLayerBuilder {
         "`render` method must be called before `injectLinkAnnotations`."
       );
     }
-    if (this._cancelled) {
+    if (this._cancelled || this.#linksInjected) {
       return;
     }
+    this.#linksInjected = true;
 
     const newLinks = this.#annotations.length
       ? this.#checkInferredLinks(inferredLinks)
