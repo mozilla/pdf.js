@@ -1132,6 +1132,11 @@ dialog :link {
       line-height: 150%;
       width: fit-content;
       inset-inline-start: 0;
+      color: var(--main-color);
+    }
+
+    button:is(:hover, :focus-visible) .editorParamsLabel {
+      color: var(--doorhanger-hover-color);
     }
 
     .editorParamsToolbarContainer {
