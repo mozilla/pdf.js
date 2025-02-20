@@ -163,9 +163,22 @@ class JpegStream extends DecodeStream {
       if (!bytes) {
         return null;
       }
-      const data = this.#skipUselessBytes(bytes);
-      if (!JpegImage.canUseImageDecoder(data, jpegOptions.colorTransform)) {
+      let data = this.#skipUselessBytes(bytes);
+      const useImageDecoder = JpegImage.canUseImageDecoder(
+        data,
+        jpegOptions.colorTransform
+      );
+      if (!useImageDecoder) {
         return null;
+      }
+      if (useImageDecoder.exifStart) {
+        // Replace the entire EXIF-block with dummy data, to ensure that a
+        // non-default EXIF orientation won't cause the image to be rotated
+        // when using `ImageDecoder` (fixes bug1942064.pdf).
+        //
+        // Copy the data first, to avoid modifying the original PDF document.
+        data = data.slice();
+        data.fill(0x00, useImageDecoder.exifStart, useImageDecoder.exifEnd);
       }
       decoder = new ImageDecoder({
         data,
