@@ -2235,6 +2235,29 @@ describe("api", function () {
       expect(data.length).toEqual(basicApiFileLength);
     });
 
+    it("gets data from PDF document with JPEG image containing EXIF-data (bug 1942064)", async function () {
+      const typedArrayPdf = await DefaultFileReaderFactory.fetch({
+        path: TEST_PDFS_PATH + "bug1942064.pdf",
+      });
+
+      // Sanity check to make sure that we fetched the entire PDF file.
+      expect(typedArrayPdf instanceof Uint8Array).toEqual(true);
+      expect(typedArrayPdf.length).toEqual(10719);
+
+      const loadingTask = getDocument(typedArrayPdf.slice());
+      const pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      // Trigger parsing of the JPEG image.
+      await page.getOperatorList();
+
+      const data = await pdfDoc.getData();
+      expect(data instanceof Uint8Array).toEqual(true);
+      // Ensure that the EXIF-block wasn't modified.
+      expect(typedArrayPdf).toEqual(data);
+
+      await loadingTask.destroy();
+    });
+
     it("gets download info", async function () {
       const downloadInfo = await pdfDocument.getDownloadInfo();
       expect(downloadInfo).toEqual({ length: basicApiFileLength });
