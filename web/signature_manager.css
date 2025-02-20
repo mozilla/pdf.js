@@ -682,10 +682,11 @@
 }
 
 #editorSignatureParamsToolbar {
-  padding: 10px;
+  padding: 8px;
 
   #addSignatureDoorHanger {
     gap: 8px;
+    padding: 2px;
 
     .toolbarAddSignatureButtonContainer {
       height: 32px;
