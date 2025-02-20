@@ -373,4 +373,52 @@ describe("Signature Editor", () => {
       );
     });
   });
+
+  describe("Bug 1949201", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the error panel is correctly removed", async () => {
+      await Promise.all(
+        pages.map(async ([_, page]) => {
+          await switchToSignature(page);
+          await page.click("#editorSignatureAddSignature");
+
+          await page.waitForSelector("#addSignatureDialog", {
+            visible: true,
+          });
+          await page.click("#addSignatureImageButton");
+          await page.waitForSelector("#addSignatureImagePlaceholder", {
+            visible: true,
+          });
+          const input = await page.$("#addSignatureFilePicker");
+          await input.uploadFile(
+            `${path.join(__dirname, "./signature_editor_spec.mjs")}`
+          );
+          await page.waitForSelector("#addSignatureError", { visible: true });
+          await page.click("#addSignatureErrorCloseButton");
+          await page.waitForSelector("#addSignatureError", { visible: false });
+
+          await input.uploadFile(
+            `${path.join(__dirname, "./stamp_editor_spec.mjs")}`
+          );
+          await page.waitForSelector("#addSignatureError", { visible: true });
+
+          await page.click("#addSignatureTypeButton");
+          await page.waitForSelector(
+            "#addSignatureTypeButton[aria-selected=true]"
+          );
+          await page.waitForSelector("#addSignatureError", { visible: false });
+          await page.click("#addSignatureCancelButton");
+        })
+      );
+    });
+  });
 });
