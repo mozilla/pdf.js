@@ -1130,7 +1130,6 @@ dialog :link {
       font-style: normal;
       font-weight: 400;
       line-height: 150%;
-      color: var(--main-color);
       width: fit-content;
       inset-inline-start: 0;
     }
