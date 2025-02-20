@@ -289,6 +289,7 @@ class SignatureManager {
       this.#currentTab = name;
     }
 
+    this.#errorBar.hidden = true;
     const reset = !name;
     if (reset) {
       this.#resetCommon();
