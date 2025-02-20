@@ -782,8 +782,11 @@ function readDataBlock(data, offset) {
   }
 
   const array = data.subarray(offset, endOffset);
-  offset += array.length;
-  return { appData: array, newOffset: offset };
+  return {
+    appData: array,
+    oldOffset: offset,
+    newOffset: offset + array.length,
+  };
 }
 
 function skipData(data, offset) {
@@ -805,6 +808,7 @@ class JpegImage {
   }
 
   static canUseImageDecoder(data, colorTransform = -1) {
+    let exifOffsets = null;
     let offset = 0;
     let numComponents = null;
     let fileMarker = readUint16(data, offset);
@@ -820,7 +824,7 @@ class JpegImage {
         case 0xffe1: // APP1 - Exif
           // TODO: Remove this once https://github.com/w3c/webcodecs/issues/870
           //       is fixed.
-          const { appData, newOffset } = readDataBlock(data, offset);
+          const { appData, oldOffset, newOffset } = readDataBlock(data, offset);
           offset = newOffset;
 
           // 'Exif\x00\x00'
@@ -832,10 +836,12 @@ class JpegImage {
             appData[4] === 0 &&
             appData[5] === 0
           ) {
-            // Replace the entire EXIF-block with dummy data, to ensure that a
-            // non-default EXIF orientation won't cause the image to be rotated
-            // when using `ImageDecoder` (fixes bug1942064.pdf).
-            appData.fill(0x00, 6);
+            if (exifOffsets) {
+              throw new JpegError("Duplicate EXIF-blocks found.");
+            }
+            // Don't do the EXIF-block replacement here, see `JpegStream`,
+            // since that can modify the original PDF document.
+            exifOffsets = { exifStart: oldOffset + 6, exifEnd: newOffset };
           }
           fileMarker = readUint16(data, offset);
           offset += 2;
@@ -861,12 +867,12 @@ class JpegImage {
       offset += 2;
     }
     if (numComponents === 4) {
-      return false;
+      return null;
     }
     if (numComponents === 3 && colorTransform === 0) {
-      return false;
+      return null;
     }
-    return true;
+    return exifOffsets || {};
   }
 
   parse(data, { dnlScanLines = null } = {}) {
