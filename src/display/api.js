@@ -3232,16 +3232,26 @@ class PDFObjects {
 class RenderTask {
   #internalRenderTask = null;
 
+  /**
+   * Callback for incremental rendering -- a function that will be called
+   * each time the rendering is paused.  To continue rendering call the
+   * function that is the first argument to the callback.
+   * @type {function}
+   */
+  onContinue = null;
+
+  /**
+   * A function that will be synchronously called when the rendering tasks
+   * finishes with an error (either because of an actual error, or because the
+   * rendering is cancelled).
+   *
+   * @type {function}
+   * @param {Error} error
+   */
+  onError = null;
+
   constructor(internalRenderTask) {
     this.#internalRenderTask = internalRenderTask;
-
-    /**
-     * Callback for incremental rendering -- a function that will be called
-     * each time the rendering is paused.  To continue rendering call the
-     * function that is the first argument to the callback.
-     * @type {function}
-     */
-    this.onContinue = null;
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       // For testing purposes.
@@ -3399,13 +3409,13 @@ class InternalRenderTask {
     }
     InternalRenderTask.#canvasInUse.delete(this._canvas);
 
-    this.callback(
-      error ||
-        new RenderingCancelledException(
-          `Rendering cancelled, page ${this._pageIndex + 1}`,
-          extraDelay
-        )
+    error ||= new RenderingCancelledException(
+      `Rendering cancelled, page ${this._pageIndex + 1}`,
+      extraDelay
     );
+    this.callback(error);
+
+    this.task.onError?.(error);
   }
 
   operatorListChanged() {

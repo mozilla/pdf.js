@@ -118,6 +118,11 @@ function isValidAnnotationEditorMode(mode) {
  * @property {number} [maxCanvasPixels] - The maximum supported canvas size in
  *   total pixels, i.e. width * height. Use `-1` for no limit, or `0` for
  *   CSS-only zooming. The default value is 4096 * 8192 (32 mega-pixels).
+ * @property {boolean} [enableDetailCanvas] - When enabled, if the rendered
+ *   pages would need a canvas that is larger than `maxCanvasPixels`, it will
+ *   draw a second canvas on top of the CSS-zoomed one, that only renders the
+ *   part of the page that is close to the viewport. The default value is
+ *   `true`.
  * @property {IL10n} [l10n] - Localization service.
  * @property {boolean} [enablePermissions] - Enables PDF document permissions,
  *   when they exist. The default value is `false`.
@@ -236,6 +241,8 @@ class PDFViewer {
 
   #mlManager = null;
 
+  #scrollTimeoutId = null;
+
   #switchAnnotationEditorModeAC = null;
 
   #switchAnnotationEditorModeTimeoutId = null;
@@ -319,6 +326,7 @@ class PDFViewer {
       this.removePageBorders = options.removePageBorders || false;
     }
     this.maxCanvasPixels = options.maxCanvasPixels;
+    this.enableDetailCanvas = options.enableDetailCanvas ?? true;
     this.l10n = options.l10n;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       this.l10n ||= new GenericL10n();
@@ -873,7 +881,7 @@ class PDFViewer {
     eventBus._on("pagerender", onBeforeDraw, { signal });
 
     const onAfterDraw = evt => {
-      if (evt.cssTransform) {
+      if (evt.cssTransform || evt.isDetailView) {
         return;
       }
       this._onePageRenderedCapability.resolve({ timestamp: evt.timestamp });
@@ -993,6 +1001,7 @@ class PDFViewer {
             annotationMode,
             imageResourcesPath: this.imageResourcesPath,
             maxCanvasPixels: this.maxCanvasPixels,
+            enableDetailCanvas: this.enableDetailCanvas,
             pageColors,
             l10n: this.l10n,
             layerProperties: this._layerProperties,
@@ -1234,6 +1243,15 @@ class PDFViewer {
     if (this.pagesCount === 0) {
       return;
     }
+
+    if (this.#scrollTimeoutId) {
+      clearTimeout(this.#scrollTimeoutId);
+    }
+    this.#scrollTimeoutId = setTimeout(() => {
+      this.#scrollTimeoutId = null;
+      this.update();
+    }, 100);
+
     this.update();
   }
 
@@ -1672,6 +1690,15 @@ class PDFViewer {
     const newCacheSize = Math.max(DEFAULT_CACHE_SIZE, 2 * numVisiblePages + 1);
     this.#buffer.resize(newCacheSize, visible.ids);
 
+    for (const { view, visibleArea } of visiblePages) {
+      view.updateVisibleArea(visibleArea);
+    }
+    for (const view of this.#buffer) {
+      if (!visible.ids.has(view.id)) {
+        view.updateVisibleArea(null);
+      }
+    }
+
     this.renderingQueue.renderHighestPriority(visible);
 
     const isSimpleLayout =
@@ -1835,11 +1862,21 @@ class PDFViewer {
       this._spreadMode !== SpreadMode.NONE &&
       this._scrollMode !== ScrollMode.HORIZONTAL;
 
+    // If we are scrolling and the rendering of a detail view was just
+    // cancelled, it's because the user is scrolling too quickly and so
+    // we constantly need to re-render a different area.
+    // Don't attempt to re-render it: this will be done once the user
+    // stops scrolling.
+    const ignoreDetailViews =
+      this.#scrollTimeoutId !== null &&
+      visiblePages.views.some(page => page.detailView?.renderingCancelled);
+
     const pageView = this.renderingQueue.getHighestPriority(
       visiblePages,
       this._pages,
       scrollAhead,
-      preRenderExtra
+      preRenderExtra,
+      ignoreDetailViews
     );
 
     if (pageView) {
@@ -2432,6 +2469,10 @@ class PDFViewer {
     if (this.#scaleTimeoutId !== null) {
       clearTimeout(this.#scaleTimeoutId);
       this.#scaleTimeoutId = null;
+    }
+    if (this.#scrollTimeoutId !== null) {
+      clearTimeout(this.#scrollTimeoutId);
+      this.#scrollTimeoutId = null;
     }
     if (!noUpdate) {
       this.update();
