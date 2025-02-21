@@ -16,9 +16,11 @@
 import {
   awaitPromise,
   closePages,
+  copy,
   getEditorSelector,
   getRect,
   loadAndWait,
+  paste,
   switchToEditor,
   waitForPointerUp,
   waitForTimeout,
@@ -327,6 +329,60 @@ describe("Signature Editor", () => {
           await page.waitForSelector(
             ".canvasWrapper > svg use[href='#path_p1_0']"
           );
+        })
+      );
+    });
+
+    it("must check copy and paste", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToSignature(page);
+          await page.click("#editorSignatureAddSignature");
+
+          await page.waitForSelector("#addSignatureDialog", {
+            visible: true,
+          });
+          await page.type("#addSignatureTypeInput", "Hello");
+          await page.waitForSelector(`${addButtonSelector}:not(:disabled)`);
+          await page.click("#addSignatureAddButton");
+
+          const editorSelector = getEditorSelector(0);
+          await page.waitForSelector(editorSelector, { visible: true });
+          await page.waitForSelector(
+            `.canvasWrapper > svg use[href="#path_p1_0"]`,
+            { visible: true }
+          );
+          const originalPath = await page.$eval("#path_p1_0", el =>
+            el.getAttribute("d")
+          );
+          const originalDescription = await page.$eval(
+            `${editorSelector} .altText.editDescription`,
+            el => el.title
+          );
+
+          await copy(page);
+          await paste(page);
+
+          const pastedEditorSelector = getEditorSelector(1);
+          await page.waitForSelector(pastedEditorSelector, { visible: true });
+          await page.waitForSelector(
+            `.canvasWrapper > svg use[href="#path_p1_1"]`,
+            { visible: true }
+          );
+          const pastedPath = await page.$eval("#path_p1_1", el =>
+            el.getAttribute("d")
+          );
+          const pastedDescription = await page.$eval(
+            `${pastedEditorSelector} .altText.editDescription`,
+            el => el.title
+          );
+
+          expect(pastedPath)
+            .withContext(`In ${browserName}`)
+            .toEqual(originalPath);
+          expect(pastedDescription)
+            .withContext(`In ${browserName}`)
+            .toEqual(originalDescription);
         })
       );
     });
