@@ -33,13 +33,8 @@ function createHeaders(isHttp, httpHeaders) {
 }
 
 function getResponseOrigin(url) {
-  try {
-    return new URL(url).origin;
-  } catch {
-    // `new URL()` will throw on incorrect data.
-  }
   // Notably, null is distinct from "null" string (e.g. from file:-URLs).
-  return null;
+  return URL.parse(url)?.origin ?? null;
 }
 
 function validateRangeRequestCapabilities({
