@@ -552,7 +552,7 @@ class InkDrawOutline extends Outline {
       });
     }
 
-    const outlines = new InkDrawOutline();
+    const outlines = new this.prototype.constructor();
     outlines.build(
       newLines,
       pageWidth,
