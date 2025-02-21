@@ -31,24 +31,26 @@ class JpxImage {
 
   static #modulePromise = null;
 
-  static #hasJSFallback = false;
+  static #useWasm = true;
+
+  static #useWorkerFetch = true;
 
   static #wasmUrl = null;
 
-  static setOptions({ handler, wasmUrl }) {
-    if (this.#buffer || this.#hasJSFallback || this.#modulePromise) {
+  static setOptions({ handler, useWasm, useWorkerFetch, wasmUrl }) {
+    if (this.#buffer || this.#modulePromise) {
       return;
     }
-    this.#wasmUrl = wasmUrl || null;
-    if (wasmUrl === null) {
+    this.#useWasm = useWasm;
+    this.#useWorkerFetch = useWorkerFetch;
+    this.#wasmUrl = wasmUrl;
+
+    if (!useWorkerFetch) {
       this.#handler = handler;
     }
   }
 
   static async #getJsModule(fallbackCallback) {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
-      this.#wasmUrl ??= "/build/generic/web/wasm/";
-    }
     const path =
       typeof PDFJSDev === "undefined"
         ? `../${this.#wasmUrl}openjpeg_nowasm_fallback.js`
@@ -63,8 +65,6 @@ class JpxImage {
     } catch (e) {
       warn(`JpxImage#getJsModule: ${e}`);
     }
-
-    this.#hasJSFallback = true;
     fallbackCallback(instance);
   }
 
@@ -72,7 +72,7 @@ class JpxImage {
     const filename = "openjpeg.wasm";
     try {
       if (!this.#buffer) {
-        if (this.#wasmUrl !== null) {
+        if (this.#useWorkerFetch) {
           this.#buffer = await fetchBinaryData(`${this.#wasmUrl}${filename}`);
         } else {
           this.#buffer = await this.#handler.sendWithPromise(
@@ -100,7 +100,7 @@ class JpxImage {
     if (!this.#modulePromise) {
       const { promise, resolve } = Promise.withResolvers();
       const promises = [promise];
-      if (this.#hasJSFallback) {
+      if (!this.#useWasm) {
         this.#getJsModule(resolve);
       } else {
         promises.push(
