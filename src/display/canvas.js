@@ -2362,7 +2362,7 @@ class CanvasGraphics {
 
     ctx.save();
     ctx.transform(...current.textMatrix);
-    ctx.translate(current.x, current.y);
+    ctx.translate(current.x, current.y + current.textRise);
 
     ctx.scale(textHScale, fontDirection);
 
