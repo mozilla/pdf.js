@@ -507,6 +507,7 @@ const PDFViewerApplication = {
       imageResourcesPath: AppOptions.get("imageResourcesPath"),
       enablePrintAutoRotate: AppOptions.get("enablePrintAutoRotate"),
       maxCanvasPixels: AppOptions.get("maxCanvasPixels"),
+      enableDetailCanvas: AppOptions.get("enableDetailCanvas"),
       enablePermissions: AppOptions.get("enablePermissions"),
       pageColors,
       mlManager: this.mlManager,
@@ -2331,7 +2332,7 @@ function onPageRender({ pageNumber }) {
   }
 }
 
-function onPageRendered({ pageNumber, error }) {
+function onPageRendered({ pageNumber, isDetailView, error }) {
   // If the page is still visible when it has finished rendering,
   // ensure that the page number input loading indicator is hidden.
   if (pageNumber === this.page) {
@@ -2339,7 +2340,7 @@ function onPageRendered({ pageNumber, error }) {
   }
 
   // Use the rendered page to set the corresponding thumbnail image.
-  if (this.pdfSidebar?.visibleView === SidebarView.THUMBS) {
+  if (!isDetailView && this.pdfSidebar?.visibleView === SidebarView.THUMBS) {
     const pageView = this.pdfViewer.getPageView(/* index = */ pageNumber - 1);
     const thumbnailView = this.pdfThumbnailViewer?.getThumbnail(
       /* index = */ pageNumber - 1

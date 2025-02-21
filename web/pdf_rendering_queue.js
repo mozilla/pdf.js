@@ -102,15 +102,23 @@ class PDFRenderingQueue {
    * @param {Array} views
    * @param {boolean} scrolledDown
    * @param {boolean} [preRenderExtra]
+   * @param {boolean} [ignoreDetailViews]
    */
-  getHighestPriority(visible, views, scrolledDown, preRenderExtra = false) {
+  getHighestPriority(
+    visible,
+    views,
+    scrolledDown,
+    preRenderExtra = false,
+    ignoreDetailViews = false
+  ) {
     /**
      * The state has changed. Figure out which page has the highest priority to
      * render next (if any).
      *
      * Priority:
      * 1. visible pages
-     * 2. if last scrolled down, the page after the visible pages, or
+     * 2. zoomed-in partial views of visible pages, unless `ignoreDetailViews`
+     * 3. if last scrolled down, the page after the visible pages, or
      *    if last scrolled up, the page before the visible pages
      */
     const visibleViews = visible.views,
@@ -125,6 +133,16 @@ class PDFRenderingQueue {
         return view;
       }
     }
+
+    if (!ignoreDetailViews) {
+      for (let i = 0; i < numVisible; i++) {
+        const { detailView } = visibleViews[i].view;
+        if (detailView && !this.isViewFinished(detailView)) {
+          return detailView;
+        }
+      }
+    }
+
     const firstId = visible.first.id,
       lastId = visible.last.id;
 
