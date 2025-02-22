@@ -348,13 +348,7 @@ describe("Signature Editor", () => {
 
           const editorSelector = getEditorSelector(0);
           await page.waitForSelector(editorSelector, { visible: true });
-          await page.waitForSelector(
-            `.canvasWrapper > svg use[href="#path_p1_0"]`,
-            { visible: true }
-          );
-          const originalPath = await page.$eval("#path_p1_0", el =>
-            el.getAttribute("d")
-          );
+          const originalRect = await getRect(page, editorSelector);
           const originalDescription = await page.$eval(
             `${editorSelector} .altText.editDescription`,
             el => el.title
@@ -365,21 +359,15 @@ describe("Signature Editor", () => {
 
           const pastedEditorSelector = getEditorSelector(1);
           await page.waitForSelector(pastedEditorSelector, { visible: true });
-          await page.waitForSelector(
-            `.canvasWrapper > svg use[href="#path_p1_1"]`,
-            { visible: true }
-          );
-          const pastedPath = await page.$eval("#path_p1_1", el =>
-            el.getAttribute("d")
-          );
+          const pastedRect = await getRect(page, pastedEditorSelector);
           const pastedDescription = await page.$eval(
             `${pastedEditorSelector} .altText.editDescription`,
             el => el.title
           );
 
-          expect(pastedPath)
+          expect(pastedRect)
             .withContext(`In ${browserName}`)
-            .toEqual(originalPath);
+            .not.toEqual(originalRect);
           expect(pastedDescription)
             .withContext(`In ${browserName}`)
             .toEqual(originalDescription);

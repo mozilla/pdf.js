@@ -346,7 +346,7 @@ class StampEditor extends AnnotationEditor {
     }
 
     let baseX, baseY;
-    if (this.width) {
+    if (this._isCopy) {
       baseX = this.x;
       baseY = this.y;
     }
@@ -365,15 +365,8 @@ class StampEditor extends AnnotationEditor {
       }
     }
 
-    if (this.width && !this.annotationElementId) {
-      // This editor was created in using copy (ctrl+c).
-      const [parentWidth, parentHeight] = this.parentDimensions;
-      this.setAt(
-        baseX * parentWidth,
-        baseY * parentHeight,
-        this.width * parentWidth,
-        this.height * parentHeight
-      );
+    if (this._isCopy) {
+      this._moveAfterPaste(baseX, baseY);
     }
 
     this._uiManager.addShouldRescale(this);
@@ -854,6 +847,7 @@ class StampEditor extends AnnotationEditor {
       // hence we serialize the bitmap to a data url.
       serialized.bitmapUrl = this.#serializeBitmap(/* toUrl = */ true);
       serialized.accessibilityData = this.serializeAltText(true);
+      serialized.isCopy = true;
       return serialized;
     }
 
