@@ -90,6 +90,8 @@ const DefaultPartialEvaluatorOptions = Object.freeze({
   canvasMaxAreaInBytes: -1,
   fontExtraProperties: false,
   useSystemFonts: true,
+  useWasm: true,
+  useWorkerFetch: true,
   cMapUrl: null,
   standardFontDataUrl: null,
   wasmUrl: null,
@@ -384,7 +386,7 @@ class PartialEvaluator {
     }
     let data;
 
-    if (this.options.cMapUrl !== null) {
+    if (this.options.useWorkerFetch) {
       // Only compressed CMaps are (currently) supported here.
       data = {
         cMapData: await fetchBinaryData(`${this.options.cMapUrl}${name}.bcmap`),
@@ -424,7 +426,7 @@ class PartialEvaluator {
     let data;
 
     try {
-      if (this.options.standardFontDataUrl !== null) {
+      if (this.options.useWorkerFetch) {
         data = await fetchBinaryData(
           `${this.options.standardFontDataUrl}${filename}`
         );

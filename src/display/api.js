@@ -144,6 +144,9 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  *   the `CMapReaderFactory`, `StandardFontDataFactory`, and `WasmFactory`
  *   options are ignored.
  *   The default value is `true` in web environments and `false` in Node.js.
+ * @property {boolean} [useWasm] - Attempt to use WebAssembly in order to
+ *    improve e.g. image decoding performance.
+ *    The default value is `true`.
  * @property {boolean} [stopAtErrors] - Reject certain promises, e.g.
  *   `getOperatorList`, `getTextContent`, and `RenderTask`, when the associated
  *   PDF data cannot be successfully parsed, instead of attempting to recover
@@ -320,6 +323,7 @@ function getDocument(src = {}) {
       ? NodeFilterFactory
       : DOMFilterFactory);
   const enableHWA = src.enableHWA === true;
+  const useWasm = src.useWasm !== false;
 
   // Parameters whose default values depend on other parameters.
   const length = rangeTransport ? rangeTransport.length : (src.length ?? NaN);
@@ -410,9 +414,11 @@ function getDocument(src = {}) {
       canvasMaxAreaInBytes,
       fontExtraProperties,
       useSystemFonts,
-      cMapUrl: useWorkerFetch ? cMapUrl : null,
-      standardFontDataUrl: useWorkerFetch ? standardFontDataUrl : null,
-      wasmUrl: useWorkerFetch ? wasmUrl : null,
+      useWasm,
+      useWorkerFetch,
+      cMapUrl,
+      standardFontDataUrl,
+      wasmUrl,
     },
   };
   const transportParams = {
