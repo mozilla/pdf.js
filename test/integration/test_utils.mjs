@@ -849,6 +849,34 @@ async function cleanupEditing(pages, switcher) {
   }
 }
 
+async function getXY(page, selector) {
+  const rect = await getRect(page, selector);
+  return `${rect.x}::${rect.y}`;
+}
+
+function waitForPositionChange(page, selector, xy) {
+  return page.waitForFunction(
+    (sel, currentXY) => {
+      const bbox = document.querySelector(sel).getBoundingClientRect();
+      return `${bbox.x}::${bbox.y}` !== currentXY;
+    },
+    {},
+    selector,
+    xy
+  );
+}
+
+async function moveEditor(page, selector, n, pressKey) {
+  let xy = await getXY(page, selector);
+  for (let i = 0; i < n; i++) {
+    const handle = await waitForEditorMovedInDOM(page);
+    await pressKey();
+    await awaitPromise(handle);
+    await waitForPositionChange(page, selector, xy);
+    xy = await getXY(page, selector);
+  }
+}
+
 export {
   applyFunctionToEditor,
   awaitPromise,
@@ -893,6 +921,7 @@ export {
   kbUndo,
   loadAndWait,
   mockClipboard,
+  moveEditor,
   paste,
   pasteFromClipboard,
   scrollIntoView,

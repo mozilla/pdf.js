@@ -40,6 +40,7 @@ import {
   kbSelectAll,
   kbUndo,
   loadAndWait,
+  moveEditor,
   paste,
   pasteFromClipboard,
   scrollIntoView,
@@ -48,7 +49,6 @@ import {
   unselectEditor,
   waitForAnnotationEditorLayer,
   waitForAnnotationModeChanged,
-  waitForEditorMovedInDOM,
   waitForSelectedEditor,
   waitForSerialized,
   waitForStorageEntries,
@@ -78,33 +78,6 @@ const commit = async page => {
 };
 
 const switchToFreeText = switchToEditor.bind(null, "FreeText");
-
-const getXY = async (page, selector) => {
-  const rect = await getRect(page, selector);
-  return `${rect.x}::${rect.y}`;
-};
-
-const waitForPositionChange = (page, selector, xy) =>
-  page.waitForFunction(
-    (sel, currentXY) => {
-      const bbox = document.querySelector(sel).getBoundingClientRect();
-      return `${bbox.x}::${bbox.y}` !== currentXY;
-    },
-    {},
-    selector,
-    xy
-  );
-
-const moveEditor = async (page, selector, n, pressKey) => {
-  let xy = await getXY(page, selector);
-  for (let i = 0; i < n; i++) {
-    const handle = await waitForEditorMovedInDOM(page);
-    await pressKey();
-    await awaitPromise(handle);
-    await waitForPositionChange(page, selector, xy);
-    xy = await getXY(page, selector);
-  }
-};
 
 const cancelFocusIn = async (page, selector) => {
   page.evaluate(sel => {
