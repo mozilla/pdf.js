@@ -638,7 +638,7 @@ class Driver {
           password: task.password,
           cMapUrl: CMAP_URL,
           standardFontDataUrl: STANDARD_FONT_DATA_URL,
-          wasmUrl: WASM_URL,
+          wasmUrl: task.noWasm ? null : WASM_URL,
           disableAutoFetch: !task.enableAutoFetch,
           pdfBug: true,
           useSystemFonts: task.useSystemFonts,

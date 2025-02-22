@@ -651,10 +651,17 @@ function createStandardFontBundle() {
 
 function createWasmBundle() {
   return ordered([
-    gulp.src(["external/openjpeg/*.wasm", "external/openjpeg/LICENSE_*"], {
-      base: "external/openjpeg",
-      encoding: false,
-    }),
+    gulp.src(
+      [
+        "external/openjpeg/*.wasm",
+        "external/openjpeg/openjpeg_nowasm_fallback.js",
+        "external/openjpeg/LICENSE_*",
+      ],
+      {
+        base: "external/openjpeg",
+        encoding: false,
+      }
+    ),
   ]);
 }
 
