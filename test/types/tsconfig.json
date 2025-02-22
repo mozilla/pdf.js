@@ -10,7 +10,7 @@
     "module": "ESNext",
     "baseUrl": "./",
     "strict": true,
-    "types": ["node"],
+    "types": [],
     "lib": ["ESNext", "DOM"],
     "paths": {
       "pdfjs-dist": ["../../build/typestest"],
