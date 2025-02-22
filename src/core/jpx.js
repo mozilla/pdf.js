@@ -38,9 +38,6 @@ class JpxImage {
   static #wasmUrl = null;
 
   static setOptions({ handler, useWasm, useWorkerFetch, wasmUrl }) {
-    if (this.#buffer || this.#modulePromise) {
-      return;
-    }
     this.#useWasm = useWasm;
     this.#useWorkerFetch = useWorkerFetch;
     this.#wasmUrl = wasmUrl;

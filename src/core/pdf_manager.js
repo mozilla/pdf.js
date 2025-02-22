@@ -70,7 +70,7 @@ class BasePdfManager {
       FeatureTest.isImageDecoderSupported;
     this.evaluatorOptions = Object.freeze(evaluatorOptions);
 
-    // Initially image-options once per document.
+    // Initialize image-options once per document.
     ImageResizer.setOptions(evaluatorOptions);
     JpegStream.setOptions(evaluatorOptions);
     JpxImage.setOptions({ ...evaluatorOptions, handler });
