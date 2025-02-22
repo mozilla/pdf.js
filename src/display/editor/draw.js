@@ -280,9 +280,9 @@ class DrawingEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
-  _onTranslating(x, y) {
+  _onTranslating(_x, _y) {
     this.parent?.drawLayer.updateProperties(this._drawId, {
-      bbox: this.#rotateBox(x, y),
+      bbox: this.#rotateBox(),
     });
   }
 
