@@ -39,6 +39,7 @@ export default [
       "test/tmp/",
       "test/pdfs/",
       "web/locale/",
+      "web/wasm/",
       "**/*~/",
     ],
   },
