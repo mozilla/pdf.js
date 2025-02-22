@@ -553,7 +553,7 @@ class FreeTextEditor extends AnnotationEditor {
     }
 
     let baseX, baseY;
-    if (this.width) {
+    if (this._isCopy || this.annotationElementId) {
       baseX = this.x;
       baseY = this.y;
     }
@@ -581,7 +581,7 @@ class FreeTextEditor extends AnnotationEditor {
 
     bindEvents(this, this.div, ["dblclick", "keydown"]);
 
-    if (this.width) {
+    if (this._isCopy || this.annotationElementId) {
       // This editor was created in using copy (ctrl+c).
       const [parentWidth, parentHeight] = this.parentDimensions;
       if (this.annotationElementId) {
@@ -627,12 +627,7 @@ class FreeTextEditor extends AnnotationEditor {
         }
         this.setAt(posX * parentWidth, posY * parentHeight, tx, ty);
       } else {
-        this.setAt(
-          baseX * parentWidth,
-          baseY * parentHeight,
-          this.width * parentWidth,
-          this.height * parentHeight
-        );
+        this._moveAfterPaste(baseX, baseY);
       }
 
       this.#setContent();
@@ -847,6 +842,7 @@ class FreeTextEditor extends AnnotationEditor {
     if (isForCopying) {
       // Don't add the id when copying because the pasted editor mustn't be
       // linked to an existing annotation.
+      serialized.isCopy = true;
       return serialized;
     }
 

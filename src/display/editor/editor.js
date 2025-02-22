@@ -85,6 +85,8 @@ class AnnotationEditor {
 
   #touchManager = null;
 
+  _isCopy = false;
+
   _editToolbar = null;
 
   _initialOptions = Object.create(null);
@@ -440,6 +442,17 @@ class AnnotationEditor {
     this.y = (y + ty) / height;
 
     this.fixAndSetPosition();
+  }
+
+  _moveAfterPaste(baseX, baseY) {
+    const [parentWidth, parentHeight] = this.parentDimensions;
+    this.setAt(
+      baseX * parentWidth,
+      baseY * parentHeight,
+      this.width * parentWidth,
+      this.height * parentHeight
+    );
+    this._onTranslated();
   }
 
   #translate([width, height], x, y) {
@@ -1597,6 +1610,7 @@ class AnnotationEditor {
     });
     editor.rotation = data.rotation;
     editor.#accessibilityData = data.accessibilityData;
+    editor._isCopy = data.isCopy || false;
 
     const [pageWidth, pageHeight] = editor.pageDimensions;
     const [x, y, width, height] = editor.getRectInCurrentCoords(
