@@ -476,6 +476,10 @@ class AnnotationEditor {
     this.div.scrollIntoView({ block: "nearest" });
   }
 
+  translationDone() {
+    this._onTranslated(this.x, this.y);
+  }
+
   drag(tx, ty) {
     this.#initialRect ||= [this.x, this.y, this.width, this.height];
     const {
