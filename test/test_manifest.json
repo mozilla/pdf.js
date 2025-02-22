@@ -6422,9 +6422,9 @@
     "id": "issue19326_nowasm",
     "file": "pdfs/issue19326.pdf",
     "md5": "b4d937017daf439a6318501428e0c6ba",
-    "noWasm": true,
     "rounds": 1,
-    "type": "eq"
+    "type": "eq",
+    "useWasm": false
   },
   {
     "id": "issue19326_main_thread_fetch",
