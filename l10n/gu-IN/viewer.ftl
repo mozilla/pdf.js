@@ -283,3 +283,12 @@ pdfjs-web-fonts-disabled = વેબ ફોન્ટ નિષ્ક્રિય
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

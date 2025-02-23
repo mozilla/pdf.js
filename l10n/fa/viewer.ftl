@@ -364,3 +364,12 @@ pdfjs-editor-alt-text-settings-close-button = بستن
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

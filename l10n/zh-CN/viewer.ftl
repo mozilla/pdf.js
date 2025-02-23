@@ -308,6 +308,9 @@ pdfjs-highlight-floating-button1 =
     .title = 高亮
     .aria-label = 高亮
 pdfjs-highlight-floating-button-label = 高亮
+pdfjs-editor-signature-button =
+    .title = 添加签名
+pdfjs-editor-signature-button-label = 添加签名
 
 ## Remove button for the various kind of editor.
 
@@ -319,6 +322,8 @@ pdfjs-editor-remove-stamp-button =
     .title = 移除图像
 pdfjs-editor-remove-highlight-button =
     .title = 移除高亮
+pdfjs-editor-remove-signature-button =
+    .title = 移除签名
 
 ##
 
@@ -335,6 +340,9 @@ pdfjs-editor-stamp-add-image-button-label = 添加图像
 pdfjs-editor-free-highlight-thickness-input = 粗细
 pdfjs-editor-free-highlight-thickness-title =
     .title = 更改高亮粗细（用于文本以外项目）
+pdfjs-editor-signature-add-signature-button =
+    .title = 添加新签名
+pdfjs-editor-signature-add-signature-button-label = 添加新签名
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = 文本编辑器
@@ -492,6 +500,7 @@ pdfjs-editor-undo-bar-message-highlight = 已移除高亮
 pdfjs-editor-undo-bar-message-freetext = 已移除文本
 pdfjs-editor-undo-bar-message-ink = 已移除绘图
 pdfjs-editor-undo-bar-message-stamp = 已移除图像
+pdfjs-editor-undo-bar-message-signature = 签名已移除
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple = 已移除 { $count } 条注释
@@ -504,15 +513,69 @@ pdfjs-editor-undo-bar-close-button-label = 关闭
 
 ## Add a signature dialog
 
+pdfjs-editor-add-signature-dialog-label = 用户可通过此模态对话框创建要添加到 PDF 文档中的签名、编辑其名称（同时用作替换文字），并可保存签名以便重复使用。
+pdfjs-editor-add-signature-dialog-title = 添加签名
 
 ## Tab names
 
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = 键入
+    .title = 键入
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = 绘制
+    .title = 绘制
+pdfjs-editor-add-signature-image-button = 图像
+    .title = 图像
 
 ## Tab panels
 
+pdfjs-editor-add-signature-type-input =
+    .aria-label = 键入签名
+    .placeholder = 键入签名
+pdfjs-editor-add-signature-draw-placeholder = 绘制签名
+pdfjs-editor-add-signature-draw-thickness-range-label = 粗细
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = 笔画粗细：{ $thickness }
+pdfjs-editor-add-signature-image-placeholder = 拖放文件到此处以上传
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] 或选取图像文件
+       *[other] 或浏览图像文件
+    }
 
 ## Controls
 
+pdfjs-editor-add-signature-description-label = 描述（替换文字）
+pdfjs-editor-add-signature-description-input =
+    .title = 描述（替换文字）
+pdfjs-editor-add-signature-description-default-when-drawing = 签名
+pdfjs-editor-add-signature-clear-button-label = 清除签名
+pdfjs-editor-add-signature-clear-button =
+    .title = 清除签名
+pdfjs-editor-add-signature-save-checkbox = 保存签名
+pdfjs-editor-add-signature-save-warning-message = 最多可保存 5 个签名，请移除一个以继续保存。
+pdfjs-editor-add-signature-image-upload-error-title = 无法上传图像
+pdfjs-editor-add-signature-image-upload-error-description = 请检查网络连接，或尝试上传其他图像。
+pdfjs-editor-add-signature-error-close-button = 关闭
 
 ## Dialog buttons
 
+pdfjs-editor-add-signature-cancel-button = 取消
+pdfjs-editor-add-signature-add-button = 添加
+pdfjs-editor-edit-signature-update-button = 更新
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button =
+    .title = 移除签名
+pdfjs-editor-delete-signature-button-label = 移除签名
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = 编辑说明
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = 编辑说明

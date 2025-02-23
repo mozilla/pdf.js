@@ -308,6 +308,9 @@ pdfjs-highlight-floating-button1 =
     .title = 強調
     .aria-label = 強調
 pdfjs-highlight-floating-button-label = 強調
+pdfjs-editor-signature-button =
+    .title = 加入簽名
+pdfjs-editor-signature-button-label = 加入簽名
 
 ## Remove button for the various kind of editor.
 
@@ -337,6 +340,9 @@ pdfjs-editor-stamp-add-image-button-label = 新增圖片
 pdfjs-editor-free-highlight-thickness-input = 線條粗細
 pdfjs-editor-free-highlight-thickness-title =
     .title = 更改強調文字以外的項目時的線條粗細
+pdfjs-editor-signature-add-signature-button =
+    .title = 新增簽名
+pdfjs-editor-signature-add-signature-button-label = 新增簽章
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = 文字編輯器
@@ -558,3 +564,18 @@ pdfjs-editor-add-signature-error-close-button = 關閉
 
 pdfjs-editor-add-signature-cancel-button = 取消
 pdfjs-editor-add-signature-add-button = 新增
+pdfjs-editor-edit-signature-update-button = 更新
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button =
+    .title = 移除簽章
+pdfjs-editor-delete-signature-button-label = 移除簽章
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = 編輯描述
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = 編輯描述

@@ -249,3 +249,12 @@ pdfjs-web-fonts-disabled = Tá clófhoirne Gréasáin díchumasaithe: ní féidi
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

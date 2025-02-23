@@ -283,3 +283,12 @@ pdfjs-editor-free-text-color-input = रंग
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

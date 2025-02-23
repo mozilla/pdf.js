@@ -127,7 +127,7 @@ export default [
       "unicorn/no-abusive-eslint-disable": "error",
       "unicorn/no-array-push-push": "error",
       "unicorn/no-console-spaces": "error",
-      "unicorn/no-instanceof-array": "error",
+      "unicorn/no-instanceof-builtins": "error",
       "unicorn/no-invalid-remove-event-listener": "error",
       "unicorn/no-new-buffer": "error",
       "unicorn/no-single-promise-in-promise-methods": "error",

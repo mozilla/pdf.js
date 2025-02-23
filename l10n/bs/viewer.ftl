@@ -259,3 +259,12 @@ pdfjs-web-fonts-disabled = Web fontovi su onemogućeni: nemoguće koristiti uba�
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

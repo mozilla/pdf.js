@@ -316,6 +316,9 @@ pdfjs-highlight-floating-button1 =
     .title = Kiemelés
     .aria-label = Kiemelés
 pdfjs-highlight-floating-button-label = Kiemelés
+pdfjs-editor-signature-button =
+    .title = Aláírás hozzáadása
+pdfjs-editor-signature-button-label = Aláírás hozzáadása
 
 ## Remove button for the various kind of editor.
 
@@ -345,6 +348,9 @@ pdfjs-editor-stamp-add-image-button-label = Kép hozzáadása
 pdfjs-editor-free-highlight-thickness-input = Vastagság
 pdfjs-editor-free-highlight-thickness-title =
     .title = Vastagság módosítása, ha nem szöveges elemeket emel ki
+pdfjs-editor-signature-add-signature-button =
+    .title = Új aláírás hozzáadása
+pdfjs-editor-signature-add-signature-button-label = Új aláírás hozzáadása
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Szövegszerkesztő
@@ -519,6 +525,7 @@ pdfjs-editor-undo-bar-close-button-label = Bezárás
 
 ## Add a signature dialog
 
+pdfjs-editor-add-signature-dialog-label = Ez a mód lehetővé teszi a felhasználónak, hogy aláírást hozzon létre, és ezt egy PDF dokumentumhoz adja. A felhasználó szerkesztheti a nevet (ez egyben alternatív szövegként is szolgál), és ismételt felhasználás céljából tetszés szerint mentheti az aláírást.
 pdfjs-editor-add-signature-dialog-title = Aláírás hozzáadása
 
 ## Tab names
@@ -569,3 +576,18 @@ pdfjs-editor-add-signature-error-close-button = Bezárás
 
 pdfjs-editor-add-signature-cancel-button = Mégse
 pdfjs-editor-add-signature-add-button = Hozzáadás
+pdfjs-editor-edit-signature-update-button = Frissítés
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button =
+    .title = Aláírás eltávolítása
+pdfjs-editor-delete-signature-button-label = Aláírás eltávolítása
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = Leírás szerkesztése
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = Leírás szerkesztése

@@ -324,6 +324,9 @@ pdfjs-highlight-floating-button1 =
     .title = Amlygu
     .aria-label = Amlygu
 pdfjs-highlight-floating-button-label = Amlygu
+pdfjs-editor-signature-button =
+    .title = Ychwanegu llofnod
+pdfjs-editor-signature-button-label = Ychwanegu llofnod
 
 ## Remove button for the various kind of editor.
 
@@ -335,6 +338,8 @@ pdfjs-editor-remove-stamp-button =
     .title = Dileu delwedd
 pdfjs-editor-remove-highlight-button =
     .title = Tynnu amlygiad
+pdfjs-editor-remove-signature-button =
+    .title = Dileu llofnod
 
 ##
 
@@ -351,6 +356,9 @@ pdfjs-editor-stamp-add-image-button-label = Ychwanegu delwedd
 pdfjs-editor-free-highlight-thickness-input = Trwch
 pdfjs-editor-free-highlight-thickness-title =
     .title = Newid trwch wrth amlygu eitemau heblaw testun
+pdfjs-editor-signature-add-signature-button =
+    .title = Ychwanegu llofnod newydd
+pdfjs-editor-signature-add-signature-button-label = Ychwanegu llofnod newydd
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Golygydd Testun
@@ -508,6 +516,7 @@ pdfjs-editor-undo-bar-message-highlight = Tynnwyd yr amlygu
 pdfjs-editor-undo-bar-message-freetext = Tynnwyd y testun
 pdfjs-editor-undo-bar-message-ink = Tynnwyd y lluniad
 pdfjs-editor-undo-bar-message-stamp = Tynnwyd y ddelwedd
+pdfjs-editor-undo-bar-message-signature = Llofnod wedi'i dynnu
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -528,15 +537,69 @@ pdfjs-editor-undo-bar-close-button-label = Cau
 
 ## Add a signature dialog
 
+pdfjs-editor-add-signature-dialog-label = Mae'r modd hwn yn caniatáu i'r defnyddiwr greu llofnod i'w ychwanegu at ddogfen PDF. Gall y defnyddiwr olygu'r enw (sydd hefyd yn gweithredu fel y testun amgen), ac yn ddewisol cadw'r llofnod i'w ddefnyddio dro ar ôl tro.
+pdfjs-editor-add-signature-dialog-title = Ychwanegu llofnod
 
 ## Tab names
 
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = Math
+    .title = Math
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = Lluniadu
+    .title = Lluniadu
+pdfjs-editor-add-signature-image-button = Delwedd
+    .title = Delwedd
 
 ## Tab panels
 
+pdfjs-editor-add-signature-type-input =
+    .aria-label = Teipiwch eich llofnod
+    .placeholder = Teipiwch eich llofnod
+pdfjs-editor-add-signature-draw-placeholder = Lluniwch eich llofnod
+pdfjs-editor-add-signature-draw-thickness-range-label = Trwch
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Trwch y llinell: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = Llusgwch ffeil yma i'w llwytho
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] Neu ddewis ffeiliau delwedd
+       *[other] Neu bori ffeiliau delwedd
+    }
 
 ## Controls
 
+pdfjs-editor-add-signature-description-label = Disgrifiad (testun amgen)
+pdfjs-editor-add-signature-description-input =
+    .title = Disgrifiad (testun amgen)
+pdfjs-editor-add-signature-description-default-when-drawing = Llofnod
+pdfjs-editor-add-signature-clear-button-label = Diddymu llofnod
+pdfjs-editor-add-signature-clear-button =
+    .title = Diddymu llofnod
+pdfjs-editor-add-signature-save-checkbox = Cadw llofnod
+pdfjs-editor-add-signature-save-warning-message = Rydych chi wedi cyrraedd y terfyn o 5 llofnod sydd wedi'u cadw. Tynnwch un i gadw rhagor
+pdfjs-editor-add-signature-image-upload-error-title = Methu llwytho'r ddelwedd.
+pdfjs-editor-add-signature-image-upload-error-description = Gwiriwch eich cysylltiad rhwydwaith neu rhowch gynnig ar ddelwedd arall.
+pdfjs-editor-add-signature-error-close-button = Cau
 
 ## Dialog buttons
 
+pdfjs-editor-add-signature-cancel-button = Diddymu
+pdfjs-editor-add-signature-add-button = Ychwanegu
+pdfjs-editor-edit-signature-update-button = Diweddaru
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button =
+    .title = Dileu llofnod
+pdfjs-editor-delete-signature-button-label = Dileu llofnod
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = Golygu disgrifiad
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = Golygu disgrifiad

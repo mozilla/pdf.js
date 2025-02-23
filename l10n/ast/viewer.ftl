@@ -237,3 +237,12 @@ pdfjs-password-cancel-button = Encaboxar
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

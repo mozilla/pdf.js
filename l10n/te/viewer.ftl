@@ -275,3 +275,12 @@ pdfjs-editor-ink-opacity-input = అకిరణ్యత
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

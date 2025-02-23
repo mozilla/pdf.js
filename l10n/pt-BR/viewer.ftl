@@ -316,6 +316,9 @@ pdfjs-highlight-floating-button1 =
     .title = Destaque
     .aria-label = Destaque
 pdfjs-highlight-floating-button-label = Destaque
+pdfjs-editor-signature-button =
+    .title = Adicionar assinatura
+pdfjs-editor-signature-button-label = Adicionar assinatura
 
 ## Remove button for the various kind of editor.
 
@@ -345,6 +348,9 @@ pdfjs-editor-stamp-add-image-button-label = Adicionar imagem
 pdfjs-editor-free-highlight-thickness-input = Espessura
 pdfjs-editor-free-highlight-thickness-title =
     .title = Mudar espessura ao destacar itens que não são texto
+pdfjs-editor-signature-add-signature-button =
+    .title = Adicionar nova assinatura
+pdfjs-editor-signature-add-signature-button-label = Adicionar nova assinatura
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Editor de texto
@@ -519,13 +525,14 @@ pdfjs-editor-undo-bar-close-button-label = Fechar
 
 ## Add a signature dialog
 
+pdfjs-editor-add-signature-dialog-label = Esta janela permite ao usuário criar uma assinatura para adicionar a um documento PDF. O usuário pode editar o nome (que também serve como texto alternativo) e, opcionalmente, salvar a assinatura usar novamente.
 pdfjs-editor-add-signature-dialog-title = Adicionar uma assinatura
 
 ## Tab names
 
 # Type is a verb (you can type your name as signature)
-pdfjs-editor-add-signature-type-button = Tipo
-    .title = Tipo
+pdfjs-editor-add-signature-type-button = Digitar
+    .title = Digitar
 # Draw is a verb (you can draw your signature)
 pdfjs-editor-add-signature-draw-button = Desenhar
     .title = Desenhar
@@ -569,3 +576,18 @@ pdfjs-editor-add-signature-error-close-button = Fechar
 
 pdfjs-editor-add-signature-cancel-button = Cancelar
 pdfjs-editor-add-signature-add-button = Adicionar
+pdfjs-editor-edit-signature-update-button = Atualizar
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button =
+    .title = Remover assinatura
+pdfjs-editor-delete-signature-button-label = Remover assinatura
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = Mudar descrição
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = Mudar descrição

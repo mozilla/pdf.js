@@ -295,3 +295,12 @@ pdfjs-editor-highlight-show-all-button =
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

@@ -574,3 +574,12 @@ pdfjs-editor-add-signature-error-close-button = Itxi
 
 pdfjs-editor-add-signature-cancel-button = Utzi
 pdfjs-editor-add-signature-add-button = Gehitu
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

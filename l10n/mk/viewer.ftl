@@ -251,3 +251,12 @@ pdfjs-web-fonts-disabled = Интернет фонтовите се оневоз
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

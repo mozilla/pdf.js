@@ -242,3 +242,12 @@ pdfjs-web-fonts-disabled = Interneti šigirawey kay: ši hin ka goy nda PDF šig
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+
