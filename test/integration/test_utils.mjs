@@ -901,6 +901,7 @@ export {
   getSelector,
   getSerialized,
   getSpanRectFromText,
+  getXY,
   hover,
   isCanvasWhite,
   isVisible,
