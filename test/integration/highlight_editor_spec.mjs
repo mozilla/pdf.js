@@ -16,7 +16,6 @@
 import {
   awaitPromise,
   closePages,
-  createPromise,
   getEditorSelector,
   getFirstSerialized,
   getRect,
@@ -37,6 +36,7 @@ import {
   unselectEditor,
   waitAndClick,
   waitForAnnotationModeChanged,
+  waitForPointerUp,
   waitForSelectedEditor,
   waitForSerialized,
   waitForTimeout,
@@ -53,11 +53,6 @@ const selectAll = async page => {
     () => !document.querySelector(".highlightEditor:not(.selectedEditor)")
   );
 };
-
-const waitForPointerUp = page =>
-  createPromise(page, resolve => {
-    window.addEventListener("pointerup", resolve, { once: true });
-  });
 
 const switchToHighlight = switchToEditor.bind(null, "Highlight");
 
