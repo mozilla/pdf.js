@@ -32,13 +32,13 @@ import {
   isVisible,
   kbBigMoveDown,
   kbBigMoveRight,
-  kbSelectAll,
   kbUndo,
   loadAndWait,
   paste,
   pasteFromClipboard,
   scrollIntoView,
   selectEditor,
+  selectEditors,
   serializeBitmapDimensions,
   switchToEditor,
   unselectEditor,
@@ -57,12 +57,7 @@ import { PNG } from "pngjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const selectAll = async page => {
-  await kbSelectAll(page);
-  await page.waitForFunction(
-    () => !document.querySelector(".stampEditor:not(.selectedEditor)")
-  );
-};
+const selectAll = selectEditors.bind(null, "stamp");
 
 const clearAll = async page => {
   await selectAll(page);

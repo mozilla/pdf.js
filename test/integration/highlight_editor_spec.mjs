@@ -27,10 +27,10 @@ import {
   kbFocusNext,
   kbFocusPrevious,
   kbSave,
-  kbSelectAll,
   kbUndo,
   loadAndWait,
   scrollIntoView,
+  selectEditors,
   setCaretAt,
   switchToEditor,
   unselectEditor,
@@ -47,12 +47,7 @@ import path from "path";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const selectAll = async page => {
-  await kbSelectAll(page);
-  await page.waitForFunction(
-    () => !document.querySelector(".highlightEditor:not(.selectedEditor)")
-  );
-};
+const selectAll = selectEditors.bind(null, "highlight");
 
 const switchToHighlight = switchToEditor.bind(null, "Highlight");
 
