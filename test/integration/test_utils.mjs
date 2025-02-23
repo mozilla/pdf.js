@@ -933,7 +933,6 @@ export {
   waitAndClick,
   waitForAnnotationEditorLayer,
   waitForAnnotationModeChanged,
-  waitForEditorMovedInDOM,
   waitForEntryInStorage,
   waitForEvent,
   waitForNoElement,
