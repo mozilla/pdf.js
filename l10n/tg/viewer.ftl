@@ -316,6 +316,9 @@ pdfjs-highlight-floating-button1 =
     .title = Ҷудокунӣ
     .aria-label = Ҷудокунӣ
 pdfjs-highlight-floating-button-label = Ҷудокунӣ
+pdfjs-editor-signature-button =
+    .title = Илова кардани имзо
+pdfjs-editor-signature-button-label = Илова кардани имзо
 
 ## Remove button for the various kind of editor.
 
@@ -345,6 +348,9 @@ pdfjs-editor-stamp-add-image-button-label = Илова кардани тасви
 pdfjs-editor-free-highlight-thickness-input = Ғафсӣ
 pdfjs-editor-free-highlight-thickness-title =
     .title = Иваз кардани ғафсӣ ҳангоми ҷудокунии унсурҳо ба ғайр аз матн
+pdfjs-editor-signature-add-signature-button =
+    .title = Илова кардани имзои нав
+pdfjs-editor-signature-add-signature-button-label = Илова кардани имзои нав
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Муҳаррири матн
@@ -519,6 +525,7 @@ pdfjs-editor-undo-bar-close-button-label = Пӯшидан
 
 ## Add a signature dialog
 
+pdfjs-editor-add-signature-dialog-label = Ин равзанаи зоҳирӣ ба корбар имкон медиҳад, ки тавонад имзоеро эҷод карда, ба ҳуҷҷати «PDF» илова намояд. Корбар метавонад номро таҳрир кунад (ном, инчунин, ҳамчун матни иловагӣ хизмат мекунад), ва ихтиёран имзоро барои истифодаи такрорӣ нигоҳ медорад.
 pdfjs-editor-add-signature-dialog-title = Илова кардани имзо
 
 ## Tab names
@@ -560,6 +567,7 @@ pdfjs-editor-add-signature-clear-button-label = Пок кардани имзо
 pdfjs-editor-add-signature-clear-button =
     .title = Пок кардани имзо
 pdfjs-editor-add-signature-save-checkbox = Нигоҳ доштани имзо
+pdfjs-editor-add-signature-save-warning-message = Шумо ба ҳадди 5 имзои нигоҳдошташуда расидед. Барои нигоҳ доштани имзои нав, яке аз имзоҳои нигоҳдошташударо тоза намоед.
 pdfjs-editor-add-signature-image-upload-error-title = Тасвир бор карда нашуд
 pdfjs-editor-add-signature-image-upload-error-description = Пайвастшавии шабакаи худро санҷед ё тасвири дигареро кӯшиш кунед.
 pdfjs-editor-add-signature-error-close-button = Пӯшидан
@@ -568,3 +576,18 @@ pdfjs-editor-add-signature-error-close-button = Пӯшидан
 
 pdfjs-editor-add-signature-cancel-button = Бекор кардан
 pdfjs-editor-add-signature-add-button = Илова кардан
+pdfjs-editor-edit-signature-update-button = Навсозӣ кардан
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button =
+    .title = Тоза кардани имзо
+pdfjs-editor-delete-signature-button-label = Тоза кардани имзо
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = Таҳрир кардани тавсиф
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = Таҳрир кардани тавсиф

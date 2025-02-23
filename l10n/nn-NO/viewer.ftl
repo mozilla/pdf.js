@@ -514,9 +514,24 @@ pdfjs-editor-undo-bar-close-button-label = Lat att
 
 ## Tab panels
 
+pdfjs-editor-add-signature-draw-thickness-range-label = Tjukn
 
 ## Controls
 
+pdfjs-editor-add-signature-image-upload-error-title = Klarte ikkje å oppdatere bilde
+pdfjs-editor-add-signature-error-close-button = Lat att
 
 ## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = Avbryt
+pdfjs-editor-add-signature-add-button = Legg til
+pdfjs-editor-edit-signature-update-button = Oppdater
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
 

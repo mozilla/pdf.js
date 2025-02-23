@@ -316,6 +316,9 @@ pdfjs-highlight-floating-button1 =
     .title = Highlight
     .aria-label = Highlight
 pdfjs-highlight-floating-button-label = Highlight
+pdfjs-editor-signature-button =
+    .title = Add signature
+pdfjs-editor-signature-button-label = Add signature
 
 ## Remove button for the various kind of editor.
 
@@ -327,6 +330,8 @@ pdfjs-editor-remove-stamp-button =
     .title = Remove image
 pdfjs-editor-remove-highlight-button =
     .title = Remove highlight
+pdfjs-editor-remove-signature-button =
+    .title = Remove signature
 
 ##
 
@@ -343,6 +348,9 @@ pdfjs-editor-stamp-add-image-button-label = Add image
 pdfjs-editor-free-highlight-thickness-input = Thickness
 pdfjs-editor-free-highlight-thickness-title =
     .title = Change thickness when highlighting items other than text
+pdfjs-editor-signature-add-signature-button =
+    .title = Add new signature
+pdfjs-editor-signature-add-signature-button-label = Add new signature
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Text Editor
@@ -500,6 +508,7 @@ pdfjs-editor-undo-bar-message-highlight = Highlight removed
 pdfjs-editor-undo-bar-message-freetext = Text removed
 pdfjs-editor-undo-bar-message-ink = Drawing removed
 pdfjs-editor-undo-bar-message-stamp = Image removed
+pdfjs-editor-undo-bar-message-signature = Signature removed
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -516,15 +525,69 @@ pdfjs-editor-undo-bar-close-button-label = Close
 
 ## Add a signature dialog
 
+pdfjs-editor-add-signature-dialog-label = This modal allows the user to create a signature to add to a PDF document. The user can edit the name (which also serves as the alt text), and optionally save the signature for repeated use.
+pdfjs-editor-add-signature-dialog-title = Add a signature
 
 ## Tab names
 
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = Type
+    .title = Type
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = Draw
+    .title = Draw
+pdfjs-editor-add-signature-image-button = Image
+    .title = Image
 
 ## Tab panels
 
+pdfjs-editor-add-signature-type-input =
+    .aria-label = Type your signature
+    .placeholder = Type your signature
+pdfjs-editor-add-signature-draw-placeholder = Draw your signature
+pdfjs-editor-add-signature-draw-thickness-range-label = Thickness
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Drawing thickness: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = Drag a file here to upload
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] Or choose image files
+       *[other] Or browse image files
+    }
 
 ## Controls
 
+pdfjs-editor-add-signature-description-label = Description (alt text)
+pdfjs-editor-add-signature-description-input =
+    .title = Description (alt text)
+pdfjs-editor-add-signature-description-default-when-drawing = Signature
+pdfjs-editor-add-signature-clear-button-label = Clear signature
+pdfjs-editor-add-signature-clear-button =
+    .title = Clear signature
+pdfjs-editor-add-signature-save-checkbox = Save signature
+pdfjs-editor-add-signature-save-warning-message = You’ve reached the limit of 5 saved signatures. Remove one to save more.
+pdfjs-editor-add-signature-image-upload-error-title = Couldn’t upload image
+pdfjs-editor-add-signature-image-upload-error-description = Check your network connection or try another image.
+pdfjs-editor-add-signature-error-close-button = Close
 
 ## Dialog buttons
 
+pdfjs-editor-add-signature-cancel-button = Cancel
+pdfjs-editor-add-signature-add-button = Add
+pdfjs-editor-edit-signature-update-button = Update
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button =
+    .title = Remove signature
+pdfjs-editor-delete-signature-button-label = Remove signature
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = Edit description
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = Edit description

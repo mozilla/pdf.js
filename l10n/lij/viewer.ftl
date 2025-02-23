@@ -283,3 +283,12 @@ pdfjs-web-fonts-disabled = I font do web en dizativæ: inposcibile adeuviâ i ca
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

@@ -316,6 +316,9 @@ pdfjs-highlight-floating-button1 =
     .title = Destacar
     .aria-label = Destacar
 pdfjs-highlight-floating-button-label = Destacar
+pdfjs-editor-signature-button =
+    .title = Añadir firma
+pdfjs-editor-signature-button-label = Añadir firma
 
 ## Remove button for the various kind of editor.
 
@@ -345,6 +348,9 @@ pdfjs-editor-stamp-add-image-button-label = Añadir imagen
 pdfjs-editor-free-highlight-thickness-input = Grosor
 pdfjs-editor-free-highlight-thickness-title =
     .title = Cambia el grosor al resaltar elementos que no sean texto
+pdfjs-editor-signature-add-signature-button =
+    .title = Añadir nueva firma
+pdfjs-editor-signature-add-signature-button-label = Añadir nueva firma
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Editor de texto
@@ -570,3 +576,18 @@ pdfjs-editor-add-signature-error-close-button = Cerrar
 
 pdfjs-editor-add-signature-cancel-button = Cancelar
 pdfjs-editor-add-signature-add-button = Añadir
+pdfjs-editor-edit-signature-update-button = Actualizar
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button =
+    .title = Eliminar firma
+pdfjs-editor-delete-signature-button-label = Eliminar firma
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = Editar descripción
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = Editar descripción

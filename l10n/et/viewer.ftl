@@ -304,3 +304,12 @@ pdfjs-web-fonts-disabled = Veebifondid on keelatud: PDFiga kaasatud fonte pole v
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

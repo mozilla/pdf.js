@@ -356,3 +356,12 @@ pdfjs-editor-alt-text-settings-close-button = Serriñ
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

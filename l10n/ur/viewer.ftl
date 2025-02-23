@@ -284,3 +284,12 @@ pdfjs-web-fonts-disabled = ویب فانٹ نا اہل ہیں: شامل PDF فا
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

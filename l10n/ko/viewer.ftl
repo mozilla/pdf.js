@@ -308,6 +308,9 @@ pdfjs-highlight-floating-button1 =
     .title = 강조 표시
     .aria-label = 강조 표시
 pdfjs-highlight-floating-button-label = 강조 표시
+pdfjs-editor-signature-button =
+    .title = 서명 추가
+pdfjs-editor-signature-button-label = 서명 추가
 
 ## Remove button for the various kind of editor.
 
@@ -337,6 +340,9 @@ pdfjs-editor-stamp-add-image-button-label = 이미지 추가
 pdfjs-editor-free-highlight-thickness-input = 두께
 pdfjs-editor-free-highlight-thickness-title =
     .title = 텍스트 이외의 항목을 강조 표시할 때 두께 변경
+pdfjs-editor-signature-add-signature-button =
+    .title = 새 서명 추가
+pdfjs-editor-signature-add-signature-button-label = 새 서명 추가
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = 텍스트 편집기
@@ -558,3 +564,18 @@ pdfjs-editor-add-signature-error-close-button = 닫기
 
 pdfjs-editor-add-signature-cancel-button = 취소
 pdfjs-editor-add-signature-add-button = 추가
+pdfjs-editor-edit-signature-update-button = 업데이트
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button =
+    .title = 서명 제거
+pdfjs-editor-delete-signature-button-label = 서명 제거
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = 설명 편집
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = 설명 편집

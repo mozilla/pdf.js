@@ -123,3 +123,12 @@ pdfjs-password-cancel-button = Nkuvi-ka
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

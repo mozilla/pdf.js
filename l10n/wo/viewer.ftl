@@ -163,3 +163,12 @@ pdfjs-password-cancel-button = Neenal
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

@@ -433,3 +433,12 @@ pdfjs-editor-new-alt-text-not-now-button = Не сега
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

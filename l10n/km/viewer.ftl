@@ -259,3 +259,12 @@ pdfjs-web-fonts-disabled = បាន​បិទ​ពុម្ពអក្ស�
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

@@ -287,3 +287,12 @@ pdfjs-web-fonts-disabled = Fonturile web sunt dezactivate: nu se pot folosi font
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

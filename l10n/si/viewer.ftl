@@ -287,3 +287,12 @@ pdfjs-editor-alt-text-mark-decorative-description = මෙය දාර හෝ �
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+
