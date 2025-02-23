@@ -293,3 +293,12 @@ pdfjs-web-fonts-disabled = Web Şriftlər söndürülüb: yerləşdirilmiş PDF 
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

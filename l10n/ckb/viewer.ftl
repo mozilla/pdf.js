@@ -278,3 +278,12 @@ pdfjs-web-fonts-disabled = جۆرەپیتی وێب ناچالاکە: نەتوا�
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

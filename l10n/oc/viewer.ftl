@@ -422,3 +422,12 @@ pdfjs-editor-undo-bar-close-button-label = Tampar
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

@@ -320,6 +320,9 @@ pdfjs-highlight-floating-button1 =
     .title = Wuzběhnjenje
     .aria-label = Wuzběhnjenje
 pdfjs-highlight-floating-button-label = Wuzběhnjenje
+pdfjs-editor-signature-button =
+    .title = Signaturu přidać
+pdfjs-editor-signature-button-label = Signaturu přidać
 
 ## Remove button for the various kind of editor.
 
@@ -349,6 +352,9 @@ pdfjs-editor-stamp-add-image-button-label = Wobraz přidać
 pdfjs-editor-free-highlight-thickness-input = Tołstosć
 pdfjs-editor-free-highlight-thickness-title =
     .title = Tołstosć změnić, hdyž so zapiski wuzběhuja, kotrež tekst njejsu
+pdfjs-editor-signature-add-signature-button =
+    .title = Nowu signaturu přidać
+pdfjs-editor-signature-add-signature-button-label = Nowu signaturu přidać
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Tekstowy editor
@@ -525,6 +531,7 @@ pdfjs-editor-undo-bar-close-button-label = Začinić
 
 ## Add a signature dialog
 
+pdfjs-editor-add-signature-dialog-label = Tutón modalny dialog wužiwarjej zmóžnja, signaturu wutworić, zo by PDF-dokument přidał. Wužiwar móže mjeno wobdźěłać (kotrež tež jako alternatiwny tekst słuži) a po přeću signaturu za wospjetne wužiwanje składować.
 pdfjs-editor-add-signature-dialog-title = Signaturu přidać
 
 ## Tab names
@@ -575,3 +582,18 @@ pdfjs-editor-add-signature-error-close-button = Začinić
 
 pdfjs-editor-add-signature-cancel-button = Přetorhnyć
 pdfjs-editor-add-signature-add-button = Přidać
+pdfjs-editor-edit-signature-update-button = Aktualizować
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button =
+    .title = Signaturu wotstronić
+pdfjs-editor-delete-signature-button-label = Signaturu wotstronić
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = Wopisanje wobdźěłać
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = Wopisanje wobdźěłać

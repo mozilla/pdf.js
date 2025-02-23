@@ -316,6 +316,9 @@ pdfjs-highlight-floating-button1 =
     .title = Fremhæv
     .aria-label = Fremhæv
 pdfjs-highlight-floating-button-label = Fremhæv
+pdfjs-editor-signature-button =
+    .title = Tilføj underskrift
+pdfjs-editor-signature-button-label = Tilføj underskrift
 
 ## Remove button for the various kind of editor.
 
@@ -327,6 +330,8 @@ pdfjs-editor-remove-stamp-button =
     .title = Fjern billede
 pdfjs-editor-remove-highlight-button =
     .title = Fjern fremhævning
+pdfjs-editor-remove-signature-button =
+    .title = Fjern underskrift
 
 ##
 
@@ -343,6 +348,9 @@ pdfjs-editor-stamp-add-image-button-label = Tilføj billede
 pdfjs-editor-free-highlight-thickness-input = Tykkelse
 pdfjs-editor-free-highlight-thickness-title =
     .title = Ændr tykkelse, når andre elementer end tekst fremhæves
+pdfjs-editor-signature-add-signature-button =
+    .title = Tilføj ny underskrift
+pdfjs-editor-signature-add-signature-button-label = Tilføj ny underskrift
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Teksteditor
@@ -500,6 +508,7 @@ pdfjs-editor-undo-bar-message-highlight = Fremhævning fjernet
 pdfjs-editor-undo-bar-message-freetext = Tekst fjernet
 pdfjs-editor-undo-bar-message-ink = Tegning fjernet
 pdfjs-editor-undo-bar-message-stamp = Billede fjernet
+pdfjs-editor-undo-bar-message-signature = Underskrift fjernet
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -516,15 +525,69 @@ pdfjs-editor-undo-bar-close-button-label = Luk
 
 ## Add a signature dialog
 
+pdfjs-editor-add-signature-dialog-label = Modal-vinduet gør det muligt for brugeren at oprette en underskrift, som kan føjes til PDF-dokumenter. Brugeren kan redigere navnet (der også fungerer som alternativ tekst) og eventuelt gemme signaturen, så den kan bruges igen.
+pdfjs-editor-add-signature-dialog-title = Tilføj en underskrift
 
 ## Tab names
 
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = Indtast
+    .title = Indtast
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = Tegn
+    .title = Tegn
+pdfjs-editor-add-signature-image-button = Billede
+    .title = Billede
 
 ## Tab panels
 
+pdfjs-editor-add-signature-type-input =
+    .aria-label = Indtast din underskrift
+    .placeholder = Indtast din underskrift
+pdfjs-editor-add-signature-draw-placeholder = Tegn din underskrift
+pdfjs-editor-add-signature-draw-thickness-range-label = Tykkelse
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Linjetykkelse: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = Træk en fil herhen for at uploade den
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] Eller vælg billedfiler
+       *[other] Eller vælg billedfiler
+    }
 
 ## Controls
 
+pdfjs-editor-add-signature-description-label = Beskrivelse (alternativ tekst)
+pdfjs-editor-add-signature-description-input =
+    .title = Beskrivelse (alternativ tekst)
+pdfjs-editor-add-signature-description-default-when-drawing = Underskrift
+pdfjs-editor-add-signature-clear-button-label = Ryd underskrift
+pdfjs-editor-add-signature-clear-button =
+    .title = Ryd underskrift
+pdfjs-editor-add-signature-save-checkbox = Gem underskrift
+pdfjs-editor-add-signature-save-warning-message = Du har nået grænsen på 5 gemte underskrifter. Fjern en for at tilføje en ny.
+pdfjs-editor-add-signature-image-upload-error-title = Kunne ikke uploade billede
+pdfjs-editor-add-signature-image-upload-error-description = Kontroller din netværksforbindelse eller prøv med et andet billede.
+pdfjs-editor-add-signature-error-close-button = Luk
 
 ## Dialog buttons
 
+pdfjs-editor-add-signature-cancel-button = Annuller
+pdfjs-editor-add-signature-add-button = Tilføj
+pdfjs-editor-edit-signature-update-button = Opdater
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button =
+    .title = Fjern underskrift
+pdfjs-editor-delete-signature-button-label = Fjern underskrift
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = Rediger beskrivelse
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = Rediger beskrivelse

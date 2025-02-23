@@ -319,6 +319,8 @@ pdfjs-editor-remove-stamp-button =
     .title = 画像を削除します
 pdfjs-editor-remove-highlight-button =
     .title = 強調を削除します
+pdfjs-editor-remove-signature-button =
+    .title = 署名を削除します
 
 ##
 
@@ -492,6 +494,7 @@ pdfjs-editor-undo-bar-message-highlight = 強調表示が削除されました
 pdfjs-editor-undo-bar-message-freetext = フリーテキスト注釈が削除されました
 pdfjs-editor-undo-bar-message-ink = インク注釈が削除されました
 pdfjs-editor-undo-bar-message-stamp = 画像が削除されました
+pdfjs-editor-undo-bar-message-signature = 署名が削除されました
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple = { $count } 個の注釈が削除されました
@@ -501,3 +504,57 @@ pdfjs-editor-undo-bar-undo-button-label = 元に戻す
 pdfjs-editor-undo-bar-close-button =
     .title = 閉じる
 pdfjs-editor-undo-bar-close-button-label = 閉じる
+
+## Add a signature dialog
+
+pdfjs-editor-add-signature-dialog-label = このダイアログではユーザーが署名を作成して PDF 文書に追加できます。
+pdfjs-editor-add-signature-dialog-title = 署名を追加
+
+## Tab names
+
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = タイプ
+    .title = キーボード入力します
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = 手書き
+    .title = 手書き入力します
+pdfjs-editor-add-signature-image-button = 画像
+    .title = 画像を指定します
+
+## Tab panels
+
+pdfjs-editor-add-signature-type-input =
+    .aria-label = 署名をキーボード入力
+    .placeholder = 署名をキーボード入力
+pdfjs-editor-add-signature-draw-placeholder = 署名を手書き入力
+pdfjs-editor-add-signature-draw-thickness-range-label = 線の太さ
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = 線の太さ: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = ファイルをここにドラッグしてアップロード
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] または画像ファイルを選択
+       *[other] または画像ファイルを参照
+    }
+
+## Controls
+
+pdfjs-editor-add-signature-description-label = 説明 (代替テキスト)
+pdfjs-editor-add-signature-description-input =
+    .title = 説明 (代替テキスト) を追加します
+pdfjs-editor-add-signature-description-default-when-drawing = 署名
+pdfjs-editor-add-signature-clear-button-label = 署名を消去
+pdfjs-editor-add-signature-clear-button =
+    .title = 署名を消去します
+pdfjs-editor-add-signature-save-checkbox = 署名を保存
+pdfjs-editor-add-signature-save-warning-message = 保存された署名が上限の 5 個に達しました。さらに保存するにはいずれかを削除してください。
+pdfjs-editor-add-signature-image-upload-error-title = 画像をアップロードできません
+pdfjs-editor-add-signature-image-upload-error-description = ネットワーク接続を確認するか別の画像を試してください。
+pdfjs-editor-add-signature-error-close-button = 閉じる
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = キャンセル
+pdfjs-editor-add-signature-add-button = 追加

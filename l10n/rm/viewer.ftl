@@ -327,6 +327,8 @@ pdfjs-editor-remove-stamp-button =
     .title = Allontanar la grafica
 pdfjs-editor-remove-highlight-button =
     .title = Allontanar l'emfasa
+pdfjs-editor-remove-signature-button =
+    .title = Allontanar la signatura
 
 ##
 
@@ -500,6 +502,7 @@ pdfjs-editor-undo-bar-message-highlight = Allontanà la marcaziun
 pdfjs-editor-undo-bar-message-freetext = Allontanà il text
 pdfjs-editor-undo-bar-message-ink = Allontanà il dissegn
 pdfjs-editor-undo-bar-message-stamp = Allontanà il maletg
+pdfjs-editor-undo-bar-message-signature = Allontanà la signatura
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -516,15 +519,39 @@ pdfjs-editor-undo-bar-close-button-label = Serrar
 
 ## Add a signature dialog
 
+pdfjs-editor-add-signature-dialog-label = Questa fanestra permetta a l’utilisader da crear ina signatura per l’agiuntar ad in document PDF. L’utilisader po modifitgar il num (che serva era sco text alternativ) e memorisar opziunalmain la signatura per l’utilisar anc ina giada en l’avegnir.
+pdfjs-editor-add-signature-dialog-title = Agiuntar ina signatura
 
 ## Tab names
 
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = Tippar
+    .title = Tippar
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = Dissegnar
+    .title = Dissegnar
+pdfjs-editor-add-signature-image-button = Maletg
+    .title = Maletg
 
 ## Tab panels
 
+pdfjs-editor-add-signature-type-input =
+    .aria-label = Tippa tia signatura
+    .placeholder = Tippa tia signatura
+pdfjs-editor-add-signature-draw-placeholder = Dissegna tia signatura
+pdfjs-editor-add-signature-draw-thickness-range-label = Grossezza
 
 ## Controls
 
 
 ## Dialog buttons
+
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
 

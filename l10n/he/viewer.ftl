@@ -316,6 +316,9 @@ pdfjs-highlight-floating-button1 =
     .title = סימון
     .aria-label = סימון
 pdfjs-highlight-floating-button-label = סימון
+pdfjs-editor-signature-button =
+    .title = הוספת חתימה
+pdfjs-editor-signature-button-label = הוספת חתימה
 
 ## Remove button for the various kind of editor.
 
@@ -345,6 +348,9 @@ pdfjs-editor-stamp-add-image-button-label = הוספת תמונה
 pdfjs-editor-free-highlight-thickness-input = עובי
 pdfjs-editor-free-highlight-thickness-title =
     .title = שינוי עובי בעת סימון פריטים שאינם טקסט
+pdfjs-editor-signature-add-signature-button =
+    .title = הוספת חתימה חדשה
+pdfjs-editor-signature-add-signature-button-label = הוספת חתימה חדשה
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = עורך טקסט
@@ -553,6 +559,11 @@ pdfjs-editor-add-signature-image-browse-link =
 
 ## Controls
 
+pdfjs-editor-add-signature-description-label = תיאור (טקסט חלופי)
+pdfjs-editor-add-signature-description-input =
+    .title = תיאור (טקסט חלופי)
+pdfjs-editor-add-signature-description-default-when-drawing = חתימה
+pdfjs-editor-add-signature-clear-button-label = ניקוי חתימה
 pdfjs-editor-add-signature-clear-button =
     .title = ניקוי חתימה
 pdfjs-editor-add-signature-save-checkbox = שמירת החתימה
@@ -565,3 +576,18 @@ pdfjs-editor-add-signature-error-close-button = סגירה
 
 pdfjs-editor-add-signature-cancel-button = ביטול
 pdfjs-editor-add-signature-add-button = הוספה
+pdfjs-editor-edit-signature-update-button = עדכון
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button =
+    .title = הסרת חתימה
+pdfjs-editor-delete-signature-button-label = הסרת חתימה
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = עריכת תיאור
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = עריכת תיאור

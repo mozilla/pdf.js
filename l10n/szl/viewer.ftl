@@ -293,3 +293,12 @@ pdfjs-web-fonts-disabled = Necowe fōnty sōm zastawiōne: niy idzie użyć wklu
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+
