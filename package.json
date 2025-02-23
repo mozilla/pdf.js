@@ -23,7 +23,7 @@
     "eslint-plugin-perfectionist": "^4.9.0",
     "eslint-plugin-prettier": "^5.2.3",
     "eslint-plugin-unicorn": "^57.0.0",
-    "globals": "^15.14.0",
+    "globals": "^16.0.0",
     "gulp": "^5.0.0",
     "gulp-cli": "^3.0.0",
     "gulp-postcss": "^10.0.0",
