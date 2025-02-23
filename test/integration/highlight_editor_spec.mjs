@@ -22,6 +22,7 @@ import {
   getRect,
   getSerialized,
   getSpanRectFromText,
+  getXY,
   kbBigMoveLeft,
   kbBigMoveUp,
   kbFocusNext,
@@ -59,11 +60,6 @@ const waitForPointerUp = page =>
   });
 
 const switchToHighlight = switchToEditor.bind(null, "Highlight");
-
-const getXY = async (page, selector) => {
-  const rect = await getRect(page, selector);
-  return `${rect.x}::${rect.y}`;
-};
 
 describe("Highlight Editor", () => {
   describe("Editor must be removed without exception", () => {
