@@ -809,6 +809,19 @@ async function switchToEditor(name, page, disable = false) {
   await awaitPromise(modeChangedHandle);
 }
 
+async function selectEditors(name, page) {
+  await kbSelectAll(page);
+  await page.waitForFunction(
+    () => !document.querySelector(`.${name}Editor:not(.selectedEditor)`)
+  );
+}
+
+async function clearEditors(name, page) {
+  await selectEditors(name, page);
+  await page.keyboard.press("Backspace");
+  await waitForStorageEntries(page, 0);
+}
+
 function waitForNoElement(page, selector) {
   return page.waitForFunction(
     sel => !document.querySelector(sel),
@@ -881,6 +894,7 @@ export {
   applyFunctionToEditor,
   awaitPromise,
   cleanupEditing,
+  clearEditors,
   clearInput,
   closePages,
   closeSinglePage,
@@ -901,6 +915,7 @@ export {
   getSelector,
   getSerialized,
   getSpanRectFromText,
+  getXY,
   hover,
   isCanvasWhite,
   isVisible,
@@ -926,6 +941,7 @@ export {
   pasteFromClipboard,
   scrollIntoView,
   selectEditor,
+  selectEditors,
   serializeBitmapDimensions,
   setCaretAt,
   switchToEditor,
@@ -933,7 +949,6 @@ export {
   waitAndClick,
   waitForAnnotationEditorLayer,
   waitForAnnotationModeChanged,
-  waitForEditorMovedInDOM,
   waitForEntryInStorage,
   waitForEvent,
   waitForNoElement,
