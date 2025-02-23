@@ -809,6 +809,13 @@ async function switchToEditor(name, page, disable = false) {
   await awaitPromise(modeChangedHandle);
 }
 
+async function selectEditors(name, page) {
+  await kbSelectAll(page);
+  await page.waitForFunction(
+    () => !document.querySelector(`.${name}Editor:not(.selectedEditor)`)
+  );
+}
+
 function waitForNoElement(page, selector) {
   return page.waitForFunction(
     sel => !document.querySelector(sel),
@@ -927,6 +934,7 @@ export {
   pasteFromClipboard,
   scrollIntoView,
   selectEditor,
+  selectEditors,
   serializeBitmapDimensions,
   setCaretAt,
   switchToEditor,
