@@ -816,6 +816,12 @@ async function selectEditors(name, page) {
   );
 }
 
+async function clearEditors(name, page) {
+  await selectEditors(name, page);
+  await page.keyboard.press("Backspace");
+  await waitForStorageEntries(page, 0);
+}
+
 function waitForNoElement(page, selector) {
   return page.waitForFunction(
     sel => !document.querySelector(sel),
@@ -888,6 +894,7 @@ export {
   applyFunctionToEditor,
   awaitPromise,
   cleanupEditing,
+  clearEditors,
   clearInput,
   closePages,
   closeSinglePage,
