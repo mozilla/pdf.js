@@ -316,6 +316,9 @@ pdfjs-highlight-floating-button1 =
     .title = Markera
     .aria-label = Markera
 pdfjs-highlight-floating-button-label = Markera
+pdfjs-editor-signature-button =
+    .title = Lägg till signatur
+pdfjs-editor-signature-button-label = Lägg till signatur
 
 ## Remove button for the various kind of editor.
 
@@ -345,6 +348,9 @@ pdfjs-editor-stamp-add-image-button-label = Lägg till bild
 pdfjs-editor-free-highlight-thickness-input = Tjocklek
 pdfjs-editor-free-highlight-thickness-title =
     .title = Ändra tjocklek när du markerar andra objekt än text
+pdfjs-editor-signature-add-signature-button =
+    .title = Lägg till ny signatur
+pdfjs-editor-signature-add-signature-button-label = Lägg till ny signatur
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Textredigerare
@@ -570,3 +576,18 @@ pdfjs-editor-add-signature-error-close-button = Stäng
 
 pdfjs-editor-add-signature-cancel-button = Avbryt
 pdfjs-editor-add-signature-add-button = Lägg till
+pdfjs-editor-edit-signature-update-button = Uppdatera
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button =
+    .title = Ta bort signatur
+pdfjs-editor-delete-signature-button-label = Ta bort signatur
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = Redigera beskrivning
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = Redigera beskrivning

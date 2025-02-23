@@ -275,3 +275,12 @@ pdfjs-web-fonts-disabled = वेब टंक असमर्थीत आह�
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

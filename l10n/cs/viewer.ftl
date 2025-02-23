@@ -320,6 +320,9 @@ pdfjs-highlight-floating-button1 =
     .title = Zvýraznit
     .aria-label = Zvýraznit
 pdfjs-highlight-floating-button-label = Zvýraznit
+pdfjs-editor-signature-button =
+    .title = Přidat podpis
+pdfjs-editor-signature-button-label = Přidat podpis
 
 ## Remove button for the various kind of editor.
 
@@ -331,6 +334,8 @@ pdfjs-editor-remove-stamp-button =
     .title = Odebrat obrázek
 pdfjs-editor-remove-highlight-button =
     .title = Odebrat zvýraznění
+pdfjs-editor-remove-signature-button =
+    .title = Odebrat podpis
 
 ##
 
@@ -347,6 +352,9 @@ pdfjs-editor-stamp-add-image-button-label = Přidat obrázek
 pdfjs-editor-free-highlight-thickness-input = Tloušťka
 pdfjs-editor-free-highlight-thickness-title =
     .title = Změna tloušťky při zvýrazňování jiných položek než textu
+pdfjs-editor-signature-add-signature-button =
+    .title = Přidat nový podpis
+pdfjs-editor-signature-add-signature-button-label = Přidat nový podpis
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Textový editor
@@ -504,6 +512,7 @@ pdfjs-editor-undo-bar-message-highlight = Zvýraznění odebráno
 pdfjs-editor-undo-bar-message-freetext = Text odstraněn
 pdfjs-editor-undo-bar-message-ink = Kresba odstraněna
 pdfjs-editor-undo-bar-message-stamp = Obrázek odebrán
+pdfjs-editor-undo-bar-message-signature = Podpis odebrán
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -522,15 +531,69 @@ pdfjs-editor-undo-bar-close-button-label = Zavřít
 
 ## Add a signature dialog
 
+pdfjs-editor-add-signature-dialog-label = Tento způsob umožňuje uživateli vytvořit podpis, který se přidá do dokumentu PDF. Uživatel může upravit jméno (které slouží zároveň jako alternativní text) a podpis uložit pro pozdější použití.
+pdfjs-editor-add-signature-dialog-title = Přidat podpis
 
 ## Tab names
 
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = Typ
+    .title = Typ
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = Kreslit
+    .title = Kreslit
+pdfjs-editor-add-signature-image-button = Obrázek
+    .title = Obrázek
 
 ## Tab panels
 
+pdfjs-editor-add-signature-type-input =
+    .aria-label = Zadejte svůj podpis
+    .placeholder = Zadejte svůj podpis
+pdfjs-editor-add-signature-draw-placeholder = Nakreslete svůj podpis
+pdfjs-editor-add-signature-draw-thickness-range-label = Tloušťka
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Tloušťka kresby: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = Pro nahrání přetáhněte soubor sem
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] Nebo vyberte soubory s obrázky
+       *[other] Nebo vyberte soubory s obrázky
+    }
 
 ## Controls
 
+pdfjs-editor-add-signature-description-label = Popis (alternativní text)
+pdfjs-editor-add-signature-description-input =
+    .title = Popis (alternativní text)
+pdfjs-editor-add-signature-description-default-when-drawing = Podpis
+pdfjs-editor-add-signature-clear-button-label = Vymazání podpisu
+pdfjs-editor-add-signature-clear-button =
+    .title = Vymazání podpisu
+pdfjs-editor-add-signature-save-checkbox = Uložit podpis
+pdfjs-editor-add-signature-save-warning-message = Dosáhli jste limitu 5 uložených podpisů. Odstraňte jeden a uložte další.
+pdfjs-editor-add-signature-image-upload-error-title = Obrázek se nepodařilo nahrát
+pdfjs-editor-add-signature-image-upload-error-description = Zkontrolujte připojení k síti nebo zkuste jiný obrázek.
+pdfjs-editor-add-signature-error-close-button = Zavřít
 
 ## Dialog buttons
 
+pdfjs-editor-add-signature-cancel-button = Zrušit
+pdfjs-editor-add-signature-add-button = Přidat
+pdfjs-editor-edit-signature-update-button = Aktualizovat
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button =
+    .title = Odebrat podpis
+pdfjs-editor-delete-signature-button-label = Odebrat podpis
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = Upravit popis
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = Upravit popis

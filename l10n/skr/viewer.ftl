@@ -511,3 +511,12 @@ pdfjs-editor-undo-bar-close-button-label = بند کرو
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

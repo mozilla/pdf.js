@@ -316,6 +316,9 @@ pdfjs-highlight-floating-button1 =
     .title = ਹਾਈਲਾਈਟ
     .aria-label = ਹਾਈਲਾਈਟ
 pdfjs-highlight-floating-button-label = ਹਾਈਲਾਈਟ
+pdfjs-editor-signature-button =
+    .title = ਦਸਤਖ਼ਤ ਜੋੜੋ
+pdfjs-editor-signature-button-label = ਦਸਤਖ਼ਤ ਜੋੜੋ
 
 ## Remove button for the various kind of editor.
 
@@ -327,6 +330,8 @@ pdfjs-editor-remove-stamp-button =
     .title = ਚਿੱਤਰ ਨੂੰ ਹਟਾਓ
 pdfjs-editor-remove-highlight-button =
     .title = ਹਾਈਲਾਈਟ ਨੂੰ ਹਟਾਓ
+pdfjs-editor-remove-signature-button =
+    .title = ਦਸਤਖ਼ਤ ਨੂੰ ਹਟਾਓ
 
 ##
 
@@ -343,6 +348,9 @@ pdfjs-editor-stamp-add-image-button-label = ਚਿੱਤਰ ਜੋੜੋ
 pdfjs-editor-free-highlight-thickness-input = ਮੋਟਾਈ
 pdfjs-editor-free-highlight-thickness-title =
     .title = ਚੀਜ਼ਾਂ ਨੂੰ ਹੋਰ ਲਿਖਤਾਂ ਤੋਂ ਉਘਾੜਨ ਸਮੇਂ ਮੋਟਾਈ ਨੂੰ ਬਦਲੋ
+pdfjs-editor-signature-add-signature-button =
+    .title = ਨਵੇਂ ਦਸਤਖ਼ਤ ਨੂੰ ਜੋੜੋ
+pdfjs-editor-signature-add-signature-button-label = ਨਵੇਂ ਦਸਤਖ਼ਤ ਨੂੰ ਜੋੜੋ
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = ਲਿਖਤ ਐਡੀਟਰ
@@ -500,6 +508,7 @@ pdfjs-editor-undo-bar-message-highlight = ਹਾਈਲਾਈਟ ਨੂੰ ਹਟ
 pdfjs-editor-undo-bar-message-freetext = ਲਿਖਤ ਨੂੰ ਹਟਾਇਆ ਗਿਆ
 pdfjs-editor-undo-bar-message-ink = ਡਰਾਇੰਗ ਨੂੰ ਹਟਾਇਆ ਗਿਆ
 pdfjs-editor-undo-bar-message-stamp = ਚਿੱਤਰ ਨੂੰ ਹਟਾਇਆ ਗਿਆ
+pdfjs-editor-undo-bar-message-signature = ਦਸਤਖ਼ਤ ਨੂੰ ਹਟਾਇਆ
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -516,15 +525,69 @@ pdfjs-editor-undo-bar-close-button-label = ਬੰਦ ਕਰੋ
 
 ## Add a signature dialog
 
+pdfjs-editor-add-signature-dialog-label = ਇਹ ਮਾਡਲ ਵਰਤੋਂਕਾਰ ਨੂੰ PDF ਦਸਤਾਵੇਜ਼ ਵਿੱਚ ਜੋੜਨ ਲਈ ਦਸਤਖ਼ਤ ਬਣਾਉਣ ਦਿੰਦਾ ਹੈ। ਵਰਤੋਂਕਾਰ ਨਾਂ ਨੂੰ ਸੋਧ ਸਕਦਾ ਹੈ (ਜੋ ਕਿ ਬਦਲਵੀਂ ਲਿਖਤ ਵਜੋਂ ਕੰਮ ਕਰੇਗਾ) ਅਤੇ ਦੁਬਾਰਾ ਵਰਤੋਂ ਕਰਨ ਲਈ ਦਸਤਖ਼ਤਾਂ ਨੂੰ ਸੰਭਾਲ ਵੀ ਸਕਦਾ ਹੈ।
+pdfjs-editor-add-signature-dialog-title = ਦਸਤਖ਼ਤ ਨੂੰ ਜੋੜੋ
 
 ## Tab names
 
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = ਕਿਸਮ
+    .title = ਕਿਸਮ
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = ਵਾਹੋ
+    .title = ਵਾਹੋ
+pdfjs-editor-add-signature-image-button = ਚਿੱਤਰ
+    .title = ਚਿੱਤਰ
 
 ## Tab panels
 
+pdfjs-editor-add-signature-type-input =
+    .aria-label = ਆਪਣੇ ਦਸਤਖ਼ਤ ਨੂੰ ਟਾਈਪ ਕਰੋ
+    .placeholder = ਆਪਣੇ ਦਸਤਖ਼ਤ ਨੂੰ ਟਾਈਪ ਕਰੋ
+pdfjs-editor-add-signature-draw-placeholder = ਆਪਣੇ ਦਸਤਖ਼ਤ ਨੂੰ ਵਾਹੋ
+pdfjs-editor-add-signature-draw-thickness-range-label = ਮੋਟਾਈ
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = ਵਹਾਉਣ ਲਈ ਚੌੜਾਈ: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = ਅੱਪਲੋਡ ਕਰਨ ਲਈ ਫ਼ਾਇਲ ਨੂੰ ਇੱਥੇ ਖਿੱਚੋ
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] ਜਾਂ ਚਿੱਤਰ ਫ਼ਾਇਲਾਂ ਨੂੰ ਚੁਣੋ
+       *[other] ਜਾਂ ਚਿੱਤਰ ਫ਼ਾਇਲਾਂ ਦੀ ਝਲਕ ਵੇਖੋ
+    }
 
 ## Controls
 
+pdfjs-editor-add-signature-description-label = ਵਰਣਨ (ਬਦਲਵੀਂ ਲਿਖਤ)
+pdfjs-editor-add-signature-description-input =
+    .title = ਵਰਣਨ (ਬਦਲਵੀਂ ਲਿਖਤ)
+pdfjs-editor-add-signature-description-default-when-drawing = ਦਸਤਖ਼ਤ
+pdfjs-editor-add-signature-clear-button-label = ਦਸਤਖ਼ਤ ਨੂੰ ਮਿਟਾਓ
+pdfjs-editor-add-signature-clear-button =
+    .title = ਦਸਤਖ਼ਤ ਨੂੰ ਮਿਟਾਓ
+pdfjs-editor-add-signature-save-checkbox = ਦਸਤਖ਼ਤ ਨੂੰ ਸੰਭਾਲੋ
+pdfjs-editor-add-signature-save-warning-message = ਤੁਸੀਂ ਵੱਧ ਤੋਂ ਵੱਧ 5 ਸੰਭਾਲੇ ਦਸਤਖ਼ਤਾਂ ਦੀ ਹੱਦ ਤੱਕ ਅੱਪੜੇ। ਹੋਰ ਸੰਭਾਲਣ ਲਈ ਇੱਕ ਨੂੰ ਹਟਾਓ।
+pdfjs-editor-add-signature-image-upload-error-title = ਚਿੱਤਰ ਨੂੰ ਅੱਪਲੋਡ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ
+pdfjs-editor-add-signature-image-upload-error-description = ਆਪਣੇ ਕਨੈਕਸ਼ਨ ਦੀ ਜਾਂਚ ਕਰੋ ਜਾਂ ਹੋਰ ਚਿੱਤਰ ਨੂੰ ਅਜ਼ਮਾਓ।
+pdfjs-editor-add-signature-error-close-button = ਬੰਦ ਕਰੋ
 
 ## Dialog buttons
 
+pdfjs-editor-add-signature-cancel-button = ਰੱਦ ਕਰੋ
+pdfjs-editor-add-signature-add-button = ਜੋੜੋ
+pdfjs-editor-edit-signature-update-button = ਅੱਪਡੇਟ
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button =
+    .title = ਦਸਤਖ਼ਤ ਨੂੰ ਹਟਾਓ
+pdfjs-editor-delete-signature-button-label = ਦਸਤਖ਼ਤ ਨੂੰ ਹਟਾਓ
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = ਵਰਣਨ ਨੂੰ ਸੋਧੋ
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = ਵਰਣਨ ਨੂੰ ਸੋਧੋ

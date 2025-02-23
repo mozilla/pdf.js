@@ -307,6 +307,9 @@ pdfjs-highlight-floating-button1 =
     .title = Theksim
     .aria-label = Theksim
 pdfjs-highlight-floating-button-label = Theksim
+pdfjs-editor-signature-button =
+    .title = Shtoni nënshkrim
+pdfjs-editor-signature-button-label = Shtoni nënshkrim
 
 ## Remove button for the various kind of editor.
 
@@ -318,6 +321,8 @@ pdfjs-editor-remove-stamp-button =
     .title = Hiq figurë
 pdfjs-editor-remove-highlight-button =
     .title = Hiqe theksimin
+pdfjs-editor-remove-signature-button =
+    .title = Hiqe nënshkrimin
 
 ##
 
@@ -334,6 +339,9 @@ pdfjs-editor-stamp-add-image-button-label = Shtoni figurë
 pdfjs-editor-free-highlight-thickness-input = Trashësi
 pdfjs-editor-free-highlight-thickness-title =
     .title = Ndryshoni trashësinë kur theksoni objekte tjetër nga tekst
+pdfjs-editor-signature-add-signature-button =
+    .title = Shtoni nënshkrim të ri
+pdfjs-editor-signature-add-signature-button-label = Shtoni nënshkrim të ri
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Përpunues Tekstesh
@@ -491,6 +499,7 @@ pdfjs-editor-undo-bar-message-highlight = U hoq theksimi
 pdfjs-editor-undo-bar-message-freetext = U hoq tekst
 pdfjs-editor-undo-bar-message-ink = U hoq vizatim
 pdfjs-editor-undo-bar-message-stamp = U hoq figurë
+pdfjs-editor-undo-bar-message-signature = Nënshkrimi u hoq
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -507,15 +516,69 @@ pdfjs-editor-undo-bar-close-button-label = Mbylle
 
 ## Add a signature dialog
 
+pdfjs-editor-add-signature-dialog-label = Kjo dritare modale i lejon përdoruesit të krijojë një nënshkrim për ta shtuar te një dokument PDF. Përdoruesi mund të përpunojë emrin (i cili shërben edhe si tekst alternativ) dhe, nëse do, ta ruajë nënshkrimin, për ta përdorur prapë.
+pdfjs-editor-add-signature-dialog-title = Shtoni një nënshkrim
 
 ## Tab names
 
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = Lloj
+    .title = Lloj
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = Vizatoni
+    .title = Vizatoni
+pdfjs-editor-add-signature-image-button = Figurë
+    .title = Figurë
 
 ## Tab panels
 
+pdfjs-editor-add-signature-type-input =
+    .aria-label = Shtypni nënshkrimin tuaj
+    .placeholder = Shtypni nënshkrimin tuaj
+pdfjs-editor-add-signature-draw-placeholder = Vizatoni nënshkrimin tuaj
+pdfjs-editor-add-signature-draw-thickness-range-label = Trashësi
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Trashësi vizatimi: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = Tërhiqni këtu një kartelë për ngarkim
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] Ose zgjidhni kartelë figure
+       *[other] Ose zgjidhni kartelë figure
+    }
 
 ## Controls
 
+pdfjs-editor-add-signature-description-label = Përshkrim (tekst alternativ)
+pdfjs-editor-add-signature-description-input =
+    .title = Përshkrim (tekst alternativ)
+pdfjs-editor-add-signature-description-default-when-drawing = Nënshkrim
+pdfjs-editor-add-signature-clear-button-label = Spastroje nënshkrimin
+pdfjs-editor-add-signature-clear-button =
+    .title = Spastroje nënshkrimin
+pdfjs-editor-add-signature-save-checkbox = Ruaje nënshkrimin
+pdfjs-editor-add-signature-save-warning-message = Keni mbërritur në kufirin e 5 nënshkrimeve të ruajtura. Që të ruani tjetër, hiqni një.
+pdfjs-editor-add-signature-image-upload-error-title = S’u ngarkua dot figurë
+pdfjs-editor-add-signature-image-upload-error-description = Kontrolloni lidhjen tuaj në rrjet, ose provoni figurë tjetër.
+pdfjs-editor-add-signature-error-close-button = Mbylle
 
 ## Dialog buttons
 
+pdfjs-editor-add-signature-cancel-button = Anuloje
+pdfjs-editor-add-signature-add-button = Shtoje
+pdfjs-editor-edit-signature-update-button = Përditësoje
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button =
+    .title = Hiqe nënshkrimin
+pdfjs-editor-delete-signature-button-label = Hiqe nënshkrimin
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = Përpunoni përshkrimin
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = Përpunoni përshkrimin

@@ -283,3 +283,12 @@ pdfjs-web-fonts-disabled = Fon web dinyahdayakan: tidak dapat menggunakan fon te
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

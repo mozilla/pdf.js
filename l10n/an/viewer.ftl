@@ -293,3 +293,12 @@ pdfjs-web-fonts-disabled = As fuents web son desactivadas: no se puet incrustar 
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

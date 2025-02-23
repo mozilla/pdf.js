@@ -283,3 +283,12 @@ pdfjs-web-fonts-disabled = ওয়েব ফন্ট নিষ্ক্রিয়
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

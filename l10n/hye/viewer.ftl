@@ -304,3 +304,12 @@ pdfjs-web-fonts-disabled = Վեբ-տառատեսակները անջատուած 
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

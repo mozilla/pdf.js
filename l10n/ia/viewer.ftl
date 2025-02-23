@@ -316,6 +316,9 @@ pdfjs-highlight-floating-button1 =
     .title = Evidentiar
     .aria-label = Evidentiar
 pdfjs-highlight-floating-button-label = Evidentiar
+pdfjs-editor-signature-button =
+    .title = Adder signatura
+pdfjs-editor-signature-button-label = Adder signatura
 
 ## Remove button for the various kind of editor.
 
@@ -345,6 +348,9 @@ pdfjs-editor-stamp-add-image-button-label = Adder imagine
 pdfjs-editor-free-highlight-thickness-input = Spissor
 pdfjs-editor-free-highlight-thickness-title =
     .title = Cambiar spissor evidentiante elementos differente de texto
+pdfjs-editor-signature-add-signature-button =
+    .title = Adder nove signatura
+pdfjs-editor-signature-add-signature-button-label = Adder nove signatura
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Editor de texto
@@ -570,3 +576,18 @@ pdfjs-editor-add-signature-error-close-button = Clauder
 
 pdfjs-editor-add-signature-cancel-button = Cancellar
 pdfjs-editor-add-signature-add-button = Adder
+pdfjs-editor-edit-signature-update-button = Actualisar
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button =
+    .title = Remover signatura
+pdfjs-editor-delete-signature-button-label = Remover signatura
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = Rediger description
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = Rediger description

@@ -293,3 +293,12 @@ pdfjs-web-fonts-disabled = Naka-disable ang mga Web font: hindi kayang gamitin a
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+

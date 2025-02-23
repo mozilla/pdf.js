@@ -400,3 +400,12 @@ pdfjs-editor-resizer-middle-left =
 
 ## Dialog buttons
 
+
+## Main menu for adding/removing signatures
+
+
+## Editor toolbar
+
+
+## Edit signature description dialog
+
