@@ -1431,6 +1431,7 @@ gulp.task(
           .pipe(
             postcss([
               discardCommentsCSS(),
+              postcssDarkThemeClass(),
               autoprefixer(MOZCENTRAL_AUTOPREFIXER_CONFIG),
             ])
           )
@@ -1441,6 +1442,7 @@ gulp.task(
           .pipe(
             postcss([
               discardCommentsCSS(),
+              postcssDarkThemeClass(),
               autoprefixer(MOZCENTRAL_AUTOPREFIXER_CONFIG),
             ])
           )
