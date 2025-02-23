@@ -15,6 +15,7 @@
 
 import {
   awaitPromise,
+  clearEditors,
   closePages,
   dragAndDrop,
   getAnnotationSelector,
@@ -24,12 +25,12 @@ import {
   getSerialized,
   isCanvasWhite,
   kbRedo,
-  kbSelectAll,
   kbUndo,
   loadAndWait,
   moveEditor,
   scrollIntoView,
   selectEditor,
+  selectEditors,
   switchToEditor,
   waitForAnnotationModeChanged,
   waitForNoElement,
@@ -40,18 +41,9 @@ import {
   waitForTimeout,
 } from "./test_utils.mjs";
 
-const selectAll = async page => {
-  await kbSelectAll(page);
-  await page.waitForFunction(
-    () => !document.querySelector(".inkEditor.disabled:not(.selectedEditor)")
-  );
-};
+const selectAll = selectEditors.bind(null, "ink");
 
-const clearAll = async page => {
-  await selectAll(page);
-  await page.keyboard.press("Backspace");
-  await waitForStorageEntries(page, 0);
-};
+const clearAll = clearEditors.bind(null, "ink");
 
 const commit = async page => {
   await page.keyboard.press("Escape");

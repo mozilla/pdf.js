@@ -16,26 +16,27 @@
 import {
   awaitPromise,
   closePages,
-  createPromise,
   getEditorSelector,
   getFirstSerialized,
   getRect,
   getSerialized,
   getSpanRectFromText,
+  getXY,
   kbBigMoveLeft,
   kbBigMoveUp,
   kbFocusNext,
   kbFocusPrevious,
   kbSave,
-  kbSelectAll,
   kbUndo,
   loadAndWait,
   scrollIntoView,
+  selectEditors,
   setCaretAt,
   switchToEditor,
   unselectEditor,
   waitAndClick,
   waitForAnnotationModeChanged,
+  waitForPointerUp,
   waitForSelectedEditor,
   waitForSerialized,
   waitForTimeout,
@@ -46,24 +47,9 @@ import path from "path";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const selectAll = async page => {
-  await kbSelectAll(page);
-  await page.waitForFunction(
-    () => !document.querySelector(".highlightEditor:not(.selectedEditor)")
-  );
-};
-
-const waitForPointerUp = page =>
-  createPromise(page, resolve => {
-    window.addEventListener("pointerup", resolve, { once: true });
-  });
+const selectAll = selectEditors.bind(null, "highlight");
 
 const switchToHighlight = switchToEditor.bind(null, "Highlight");
-
-const getXY = async (page, selector) => {
-  const rect = await getRect(page, selector);
-  return `${rect.x}::${rect.y}`;
-};
 
 describe("Highlight Editor", () => {
   describe("Editor must be removed without exception", () => {

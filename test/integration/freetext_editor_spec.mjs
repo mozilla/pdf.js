@@ -15,6 +15,7 @@
 
 import {
   awaitPromise,
+  clearEditors,
   closePages,
   copy,
   copyToClipboard,
@@ -37,7 +38,6 @@ import {
   kbModifierDown,
   kbModifierUp,
   kbRedo,
-  kbSelectAll,
   kbUndo,
   loadAndWait,
   moveEditor,
@@ -45,6 +45,7 @@ import {
   pasteFromClipboard,
   scrollIntoView,
   selectEditor,
+  selectEditors,
   switchToEditor,
   unselectEditor,
   waitForAnnotationEditorLayer,
@@ -57,20 +58,9 @@ import {
 } from "./test_utils.mjs";
 import { PNG } from "pngjs";
 
-const selectAll = async page => {
-  await kbSelectAll(page);
-  await page.waitForFunction(
-    () => !document.querySelector(".freeTextEditor:not(.selectedEditor)")
-  );
-};
+const selectAll = selectEditors.bind(null, "freeText");
 
-const clearAll = async page => {
-  await selectAll(page);
-  await page.keyboard.down("Control");
-  await page.keyboard.press("Backspace");
-  await page.keyboard.up("Control");
-  await waitForStorageEntries(page, 0);
-};
+const clearAll = clearEditors.bind(null, "freeText");
 
 const commit = async page => {
   await page.keyboard.press("Escape");
