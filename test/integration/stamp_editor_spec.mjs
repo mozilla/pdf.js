@@ -17,6 +17,7 @@ import {
   applyFunctionToEditor,
   awaitPromise,
   cleanupEditing,
+  clearEditors,
   clearInput,
   closePages,
   copy,
@@ -38,7 +39,6 @@ import {
   pasteFromClipboard,
   scrollIntoView,
   selectEditor,
-  selectEditors,
   serializeBitmapDimensions,
   switchToEditor,
   unselectEditor,
@@ -47,7 +47,6 @@ import {
   waitForEntryInStorage,
   waitForSelectedEditor,
   waitForSerialized,
-  waitForStorageEntries,
   waitForTimeout,
 } from "./test_utils.mjs";
 import { fileURLToPath } from "url";
@@ -57,13 +56,7 @@ import { PNG } from "pngjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const selectAll = selectEditors.bind(null, "stamp");
-
-const clearAll = async page => {
-  await selectAll(page);
-  await page.keyboard.press("Backspace");
-  await waitForStorageEntries(page, 0);
-};
+const clearAll = clearEditors.bind(null, "stamp");
 
 const waitForImage = async (page, selector) => {
   await page.waitForSelector(`${selector} canvas`);

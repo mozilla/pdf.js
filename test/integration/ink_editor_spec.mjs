@@ -15,6 +15,7 @@
 
 import {
   awaitPromise,
+  clearEditors,
   closePages,
   dragAndDrop,
   getAnnotationSelector,
@@ -42,11 +43,7 @@ import {
 
 const selectAll = selectEditors.bind(null, "ink");
 
-const clearAll = async page => {
-  await selectAll(page);
-  await page.keyboard.press("Backspace");
-  await waitForStorageEntries(page, 0);
-};
+const clearAll = clearEditors.bind(null, "ink");
 
 const commit = async page => {
   await page.keyboard.press("Escape");

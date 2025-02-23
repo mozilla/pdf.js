@@ -15,6 +15,7 @@
 
 import {
   awaitPromise,
+  clearEditors,
   closePages,
   copy,
   copyToClipboard,
@@ -59,13 +60,7 @@ import { PNG } from "pngjs";
 
 const selectAll = selectEditors.bind(null, "freeText");
 
-const clearAll = async page => {
-  await selectAll(page);
-  await page.keyboard.down("Control");
-  await page.keyboard.press("Backspace");
-  await page.keyboard.up("Control");
-  await waitForStorageEntries(page, 0);
-};
+const clearAll = clearEditors.bind(null, "freeText");
 
 const commit = async page => {
   await page.keyboard.press("Escape");
