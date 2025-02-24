@@ -82,7 +82,6 @@ const EXPORT_DATA_PROPERTIES = [
   "black",
   "bold",
   "charProcOperatorList",
-  "composite",
   "cssFontInfo",
   "data",
   "defaultVMetrics",
@@ -98,22 +97,23 @@ const EXPORT_DATA_PROPERTIES = [
   "missingFile",
   "name",
   "remeasure",
-  "subtype",
   "systemFontInfo",
-  "type",
   "vertical",
 ];
 
 const EXPORT_DATA_EXTRA_PROPERTIES = [
   "cMap",
+  "composite",
   "defaultEncoding",
   "differences",
   "isMonospace",
   "isSerifFont",
   "isSymbolicFont",
   "seacMap",
+  "subtype",
   "toFontChar",
   "toUnicode",
+  "type",
   "vmetrics",
   "widths",
 ];
