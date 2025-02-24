@@ -80,12 +80,16 @@ class FontLoader {
     }
   }
 
-  async loadSystemFont({ systemFontInfo: info, _inspectFont }) {
+  async loadSystemFont({
+    systemFontInfo: info,
+    disableFontFace,
+    _inspectFont,
+  }) {
     if (!info || this.#systemFonts.has(info.loadedName)) {
       return;
     }
     assert(
-      !this.disableFontFace,
+      !disableFontFace,
       "loadSystemFont shouldn't be called when `disableFontFace` is set."
     );
 
