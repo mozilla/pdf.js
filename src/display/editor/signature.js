@@ -112,6 +112,22 @@ class SignatureEditor extends DrawingEditor {
   }
 
   /** @inheritdoc */
+  get telemetryFinalData() {
+    return {
+      type: "signature",
+      hasDescription: !!this.#description,
+    };
+  }
+
+  static computeTelemetryFinalData(data) {
+    const hasDescriptionStats = data.get("hasDescription");
+    return {
+      hasAltText: hasDescriptionStats.get(true) ?? 0,
+      hasNoAltText: hasDescriptionStats.get(false) ?? 0,
+    };
+  }
+
+  /** @inheritdoc */
   get isResizable() {
     return true;
   }
@@ -278,6 +294,14 @@ class SignatureEditor extends DrawingEditor {
     this.rotate();
     this._uiManager.addToAnnotationStorage(this);
     this.setUuid(uuid);
+
+    this._reportTelemetry({
+      action: "pdfjs.signature.inserted",
+      data: {
+        hasBeenSaved: !!uuid,
+        hasDescription: !!description,
+      },
+    });
 
     this.div.hidden = false;
   }
