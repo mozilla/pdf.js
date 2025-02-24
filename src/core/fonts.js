@@ -88,7 +88,9 @@ const EXPORT_DATA_PROPERTIES = [
   "defaultVMetrics",
   "defaultWidth",
   "descent",
+  "disableFontFace",
   "fallbackName",
+  "fontExtraProperties",
   "fontMatrix",
   "isInvalidPDFjsFont",
   "isType3Font",
@@ -970,11 +972,12 @@ function createNameTable(name, proto) {
  * decoding logics whatever type it is (assuming the font type is supported).
  */
 class Font {
-  constructor(name, file, properties) {
+  constructor(name, file, properties, evaluatorOptions) {
     this.name = name;
     this.psName = null;
     this.mimetype = null;
-    this.disableFontFace = false;
+    this.disableFontFace = evaluatorOptions.disableFontFace;
+    this.fontExtraProperties = evaluatorOptions.fontExtraProperties;
 
     this.loadedName = properties.loadedName;
     this.isType3Font = properties.isType3Font;
@@ -1141,18 +1144,17 @@ class Font {
     return shadow(this, "renderer", renderer);
   }
 
-  exportData(extraProperties = false) {
-    const exportDataProperties = extraProperties
+  exportData() {
+    const exportDataProps = this.fontExtraProperties
       ? [...EXPORT_DATA_PROPERTIES, ...EXPORT_DATA_EXTRA_PROPERTIES]
       : EXPORT_DATA_PROPERTIES;
 
     const data = Object.create(null);
-    let property, value;
-    for (property of exportDataProperties) {
-      value = this[property];
+    for (const prop of exportDataProps) {
+      const value = this[prop];
       // Ignore properties that haven't been explicitly set.
       if (value !== undefined) {
-        data[property] = value;
+        data[prop] = value;
       }
     }
     return data;
@@ -3602,7 +3604,7 @@ class ErrorFont {
     return [chars];
   }
 
-  exportData(extraProperties = false) {
+  exportData() {
     return { error: this.error };
   }
 }

@@ -1065,7 +1065,6 @@ class PartialEvaluator {
           loadedName: "g_font_error",
           font: new ErrorFont(`Type3 font load error: ${reason}`),
           dict: translated.font,
-          evaluatorOptions: this.options,
         });
       }
     }
@@ -1086,8 +1085,7 @@ class PartialEvaluator {
       if (
         isAddToPathSet ||
         state.fillColorSpace.name === "Pattern" ||
-        font.disableFontFace ||
-        this.options.disableFontFace
+        font.disableFontFace
       ) {
         PartialEvaluator.buildFontPaths(
           font,
@@ -1238,7 +1236,6 @@ class PartialEvaluator {
         loadedName: "g_font_error",
         font: new ErrorFont(`Font "${fontName}" is not available.`),
         dict: font,
-        evaluatorOptions: this.options,
       });
 
     let fontRef;
@@ -1365,7 +1362,6 @@ class PartialEvaluator {
             loadedName: font.loadedName,
             font: translatedFont,
             dict: font,
-            evaluatorOptions: this.options,
           })
         );
       })
@@ -1380,7 +1376,6 @@ class PartialEvaluator {
               reason instanceof Error ? reason.message : reason
             ),
             dict: font,
-            evaluatorOptions: this.options,
           })
         );
       });
@@ -4367,7 +4362,7 @@ class PartialEvaluator {
             newProperties
           );
         }
-        return new Font(baseFontName, file, newProperties);
+        return new Font(baseFontName, file, newProperties, this.options);
       }
     }
 
@@ -4559,7 +4554,7 @@ class PartialEvaluator {
     const newProperties = await this.extractDataStructures(dict, properties);
     this.extractWidths(dict, descriptor, newProperties);
 
-    return new Font(fontName.name, fontFile, newProperties);
+    return new Font(fontName.name, fontFile, newProperties, this.options);
   }
 
   static buildFontPaths(font, glyphs, handler, evaluatorOptions) {
@@ -4607,11 +4602,10 @@ class PartialEvaluator {
 }
 
 class TranslatedFont {
-  constructor({ loadedName, font, dict, evaluatorOptions }) {
+  constructor({ loadedName, font, dict }) {
     this.loadedName = loadedName;
     this.font = font;
     this.dict = dict;
-    this._evaluatorOptions = evaluatorOptions || DefaultPartialEvaluatorOptions;
     this.type3Loaded = null;
     this.type3Dependencies = font.isType3Font ? new Set() : null;
     this.sent = false;
@@ -4626,11 +4620,11 @@ class TranslatedFont {
     handler.send("commonobj", [
       this.loadedName,
       "Font",
-      this.font.exportData(this._evaluatorOptions.fontExtraProperties),
+      this.font.exportData(),
     ]);
   }
 
-  fallback(handler) {
+  fallback(handler, evaluatorOptions) {
     if (!this.font.data) {
       return;
     }
@@ -4646,7 +4640,7 @@ class TranslatedFont {
       this.font,
       /* glyphs = */ this.font.glyphCacheValues,
       handler,
-      this._evaluatorOptions
+      evaluatorOptions
     );
   }
 

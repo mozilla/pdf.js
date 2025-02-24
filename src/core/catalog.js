@@ -1169,17 +1169,6 @@ class Catalog {
     return shadow(this, "jsActions", actions);
   }
 
-  async fontFallback(id, handler) {
-    const translatedFonts = await Promise.all(this.fontCache);
-
-    for (const translatedFont of translatedFonts) {
-      if (translatedFont.loadedName === id) {
-        translatedFont.fallback(handler);
-        return;
-      }
-    }
-  }
-
   async cleanup(manuallyTriggered = false) {
     clearGlobalCaches();
     this.globalImageCache.clear(/* onlyData = */ manuallyTriggered);
