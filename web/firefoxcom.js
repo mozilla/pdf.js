@@ -537,7 +537,11 @@ class SignatureStorage {
 
   async isFull() {
     // We want to store at most 5 signatures.
-    return (await this.getAll()).size === 5;
+    return (await this.size()) === 5;
+  }
+
+  async size() {
+    return (await this.getAll()).size;
   }
 
   async create(data) {
