@@ -246,6 +246,7 @@ class InkEditor extends DrawingEditor {
     };
 
     if (isForCopying) {
+      serialized.isCopy = true;
       return serialized;
     }
 

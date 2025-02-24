@@ -130,6 +130,15 @@ class SignatureEditor extends DrawingEditor {
       return this.div;
     }
 
+    let baseX, baseY;
+    const { _isCopy } = this;
+    if (_isCopy) {
+      // No need to adjust the position when rendering in DrawingEditor.
+      this._isCopy = false;
+      baseX = this.x;
+      baseY = this.y;
+    }
+
     super.render();
     this.div.setAttribute("role", "figure");
 
@@ -161,6 +170,11 @@ class SignatureEditor extends DrawingEditor {
         this.div.hidden = true;
         this._uiManager.getSignature(this);
       }
+    }
+
+    if (_isCopy) {
+      this._isCopy = true;
+      this._moveAfterPaste(baseX, baseY);
     }
 
     return this.div;
@@ -348,6 +362,7 @@ class SignatureEditor extends DrawingEditor {
     if (isForCopying) {
       serialized.paths = { lines, points };
       serialized.uuid = this.#signatureUUID;
+      serialized.isCopy = true;
     } else {
       serialized.lines = lines;
     }
