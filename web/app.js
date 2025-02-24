@@ -202,7 +202,7 @@ const PDFViewerApplication = {
       await this._parseHashParams();
     }
 
-    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+    if (typeof PDFJSDev === "undefined") {
       let mode;
       switch (AppOptions.get("viewerCssTheme")) {
         case 1:

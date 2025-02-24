@@ -446,6 +446,11 @@ const defaultOptions = {
     value: 1,
     kind: OptionKind.API,
   },
+  viewerCssTheme: {
+    /** @type {number} */
+    value: typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME") ? 2 : 0,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   wasmUrl: {
     /** @type {string} */
     value:
@@ -454,7 +459,6 @@ const defaultOptions = {
         : "../web/wasm/",
     kind: OptionKind.API,
   },
-
   workerPort: {
     /** @type {Object} */
     value: null,
@@ -488,11 +492,6 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
         ? "../build/dev-sandbox/pdf.sandbox.mjs"
         : "../build/pdf.sandbox.mjs",
     kind: OptionKind.VIEWER,
-  };
-  defaultOptions.viewerCssTheme = {
-    /** @type {number} */
-    value: typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME") ? 2 : 0,
-    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   };
   defaultOptions.enableFakeMLManager = {
     /** @type {boolean} */
