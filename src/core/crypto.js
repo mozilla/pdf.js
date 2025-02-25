@@ -1787,7 +1787,14 @@ class CipherTransformFactory {
       );
     }
 
-    this.encryptionKey = encryptionKey;
+    if (algorithm === 4 && encryptionKey.length < 16) {
+      // Extend key to 16 byte minimum (undocumented),
+      // fixes issue19484_1.pdf and issue19484_2.pdf.
+      this.encryptionKey = new Uint8Array(16);
+      this.encryptionKey.set(encryptionKey);
+    } else {
+      this.encryptionKey = encryptionKey;
+    }
 
     if (algorithm >= 4) {
       const cf = dict.get("CF");
