@@ -1173,6 +1173,7 @@ class PDFViewer {
     this.#hiddenCopyElement?.remove();
     this.#hiddenCopyElement = null;
 
+    this.#cleanupTimeouts();
     this.#cleanupSwitchAnnotationEditorMode();
   }
 
@@ -2340,6 +2341,17 @@ class PDFViewer {
     ]);
   }
 
+  #cleanupTimeouts() {
+    if (this.#scaleTimeoutId !== null) {
+      clearTimeout(this.#scaleTimeoutId);
+      this.#scaleTimeoutId = null;
+    }
+    if (this.#scrollTimeoutId !== null) {
+      clearTimeout(this.#scrollTimeoutId);
+      this.#scrollTimeoutId = null;
+    }
+  }
+
   #cleanupSwitchAnnotationEditorMode() {
     this.#switchAnnotationEditorModeAC?.abort();
     this.#switchAnnotationEditorModeAC = null;
@@ -2466,14 +2478,8 @@ class PDFViewer {
     for (const pageView of this._pages) {
       pageView.update(updateArgs);
     }
-    if (this.#scaleTimeoutId !== null) {
-      clearTimeout(this.#scaleTimeoutId);
-      this.#scaleTimeoutId = null;
-    }
-    if (this.#scrollTimeoutId !== null) {
-      clearTimeout(this.#scrollTimeoutId);
-      this.#scrollTimeoutId = null;
-    }
+    this.#cleanupTimeouts();
+
     if (!noUpdate) {
       this.update();
     }
