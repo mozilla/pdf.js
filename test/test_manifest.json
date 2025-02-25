@@ -3630,6 +3630,14 @@
     "type": "text"
   },
   {
+    "id": "issue19484_1",
+    "file": "pdfs/issue19484_1.pdf",
+    "md5": "4e9e78a84226dbdddbd735388ccc2dcd",
+    "rounds": 1,
+    "link": false,
+    "type": "eq"
+  },
+  {
     "id": "issue5644",
     "file": "pdfs/issue5644.pdf",
     "md5": "6f9313c5043b3ecb0ab2df321d3e1847",
@@ -5041,6 +5049,14 @@
     "file": "pdfs/issue9278.pdf",
     "md5": "9819c3a5715c1a46ea5a6740f9ead3da",
     "rounds": 1,
+    "type": "eq"
+  },
+  {
+    "id": "issue19484_2",
+    "file": "pdfs/issue19484_2.pdf",
+    "md5": "cd3050eda9fa18a7e6a78c702f9890bb",
+    "rounds": 1,
+    "link": false,
     "type": "eq"
   },
   {
