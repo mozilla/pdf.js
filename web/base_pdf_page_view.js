@@ -169,16 +169,18 @@ class BasePDFPageView {
       await renderTask.promise;
       this.#showCanvas?.(true);
     } catch (e) {
-      error = e;
       // When zooming with a `drawingDelay` set, avoid temporarily showing
       // a black canvas if rendering was cancelled before the `onContinue`-
       // callback had been invoked at least once.
-      if (error instanceof RenderingCancelledException) {
+      if (e instanceof RenderingCancelledException) {
         return;
       }
+      error = e;
 
       this.#showCanvas?.(true);
     } finally {
+      this.#renderError = error;
+
       // The renderTask may have been replaced by a new one, so only remove
       // the reference to the renderTask if it matches the one that is
       // triggering this callback.
@@ -186,8 +188,6 @@ class BasePDFPageView {
         this.renderTask = null;
       }
     }
-    this.#renderError = error;
-
     this.renderingState = RenderingStates.FINISHED;
 
     onFinish(renderTask);
