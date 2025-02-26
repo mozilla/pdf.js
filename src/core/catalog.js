@@ -49,7 +49,7 @@ import { GlobalColorSpaceCache, GlobalImageCache } from "./image_utils.js";
 import { NameTree, NumberTree } from "./name_number_tree.js";
 import { BaseStream } from "./base_stream.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
-import { ColorSpace } from "./colorspace.js";
+import { ColorSpaceUtils } from "./colorspace_utils.js";
 import { FileSpec } from "./file_spec.js";
 import { MetadataParser } from "./metadata_parser.js";
 import { StructTreeRoot } from "./struct_tree.js";
@@ -357,7 +357,7 @@ class Catalog {
         isNumberArray(color, 3) &&
         (color[0] !== 0 || color[1] !== 0 || color[2] !== 0)
       ) {
-        rgbColor = ColorSpace.singletons.rgb.getRgb(color, 0);
+        rgbColor = ColorSpaceUtils.singletons.rgb.getRgb(color, 0);
       }
 
       const outlineItem = {

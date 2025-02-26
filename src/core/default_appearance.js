@@ -28,7 +28,7 @@ import {
   shadow,
   warn,
 } from "../shared/util.js";
-import { ColorSpace } from "./colorspace.js";
+import { ColorSpaceUtils } from "./colorspace_utils.js";
 import { EvaluatorPreprocessor } from "./evaluator.js";
 import { LocalColorSpaceCache } from "./image_utils.js";
 import { PDFFunctionFactory } from "./function.js";
@@ -73,13 +73,28 @@ class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
             }
             break;
           case OPS.setFillRGBColor:
-            ColorSpace.singletons.rgb.getRgbItem(args, 0, result.fontColor, 0);
+            ColorSpaceUtils.singletons.rgb.getRgbItem(
+              args,
+              0,
+              result.fontColor,
+              0
+            );
             break;
           case OPS.setFillGray:
-            ColorSpace.singletons.gray.getRgbItem(args, 0, result.fontColor, 0);
+            ColorSpaceUtils.singletons.gray.getRgbItem(
+              args,
+              0,
+              result.fontColor,
+              0
+            );
             break;
           case OPS.setFillCMYKColor:
-            ColorSpace.singletons.cmyk.getRgbItem(args, 0, result.fontColor, 0);
+            ColorSpaceUtils.singletons.cmyk.getRgbItem(
+              args,
+              0,
+              result.fontColor,
+              0
+            );
             break;
         }
       }
@@ -117,7 +132,7 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
       fontSize: 0,
       fontName: "",
       fontColor: /* black = */ new Uint8ClampedArray(3),
-      fillColorSpace: ColorSpace.singletons.gray,
+      fillColorSpace: ColorSpaceUtils.singletons.gray,
     };
     let breakLoop = false;
     const stack = [];
@@ -157,7 +172,7 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
             }
             break;
           case OPS.setFillColorSpace:
-            result.fillColorSpace = ColorSpace.parse({
+            result.fillColorSpace = ColorSpaceUtils.parse({
               cs: args[0],
               xref: this.xref,
               resources: this.resources,
@@ -171,13 +186,28 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
             cs.getRgbItem(args, 0, result.fontColor, 0);
             break;
           case OPS.setFillRGBColor:
-            ColorSpace.singletons.rgb.getRgbItem(args, 0, result.fontColor, 0);
+            ColorSpaceUtils.singletons.rgb.getRgbItem(
+              args,
+              0,
+              result.fontColor,
+              0
+            );
             break;
           case OPS.setFillGray:
-            ColorSpace.singletons.gray.getRgbItem(args, 0, result.fontColor, 0);
+            ColorSpaceUtils.singletons.gray.getRgbItem(
+              args,
+              0,
+              result.fontColor,
+              0
+            );
             break;
           case OPS.setFillCMYKColor:
-            ColorSpace.singletons.cmyk.getRgbItem(args, 0, result.fontColor, 0);
+            ColorSpaceUtils.singletons.cmyk.getRgbItem(
+              args,
+              0,
+              result.fontColor,
+              0
+            );
             break;
           case OPS.showText:
           case OPS.showSpacedText:
