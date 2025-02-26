@@ -68,7 +68,7 @@ import {
 } from "./image_utils.js";
 import { BaseStream } from "./base_stream.js";
 import { bidi } from "./bidi.js";
-import { ColorSpace } from "./colorspace.js";
+import { ColorSpaceUtils } from "./colorspace_utils.js";
 import { DecodeStream } from "./decode_stream.js";
 import { FontFlags } from "./fonts_utils.js";
 import { getFontSubstitution } from "./font_substitutions.js";
@@ -489,7 +489,7 @@ class PartialEvaluator {
         if (group.has("CS")) {
           const cs = group.getRaw("CS");
 
-          const cachedColorSpace = ColorSpace.getCached(
+          const cachedColorSpace = ColorSpaceUtils.getCached(
             cs,
             this.xref,
             localColorSpaceCache
@@ -507,7 +507,7 @@ class PartialEvaluator {
       }
 
       if (smask?.backdrop) {
-        colorSpace ||= ColorSpace.singletons.rgb;
+        colorSpace ||= ColorSpaceUtils.singletons.rgb;
         smask.backdrop = colorSpace.getRgb(smask.backdrop, 0);
       }
 
@@ -1458,7 +1458,7 @@ class PartialEvaluator {
   }
 
   parseColorSpace({ cs, resources, localColorSpaceCache }) {
-    return ColorSpace.parseAsync({
+    return ColorSpaceUtils.parseAsync({
       cs,
       xref: this.xref,
       resources,
@@ -1974,7 +1974,7 @@ class PartialEvaluator {
             break;
 
           case OPS.setFillColorSpace: {
-            const cachedColorSpace = ColorSpace.getCached(
+            const cachedColorSpace = ColorSpaceUtils.getCached(
               args[0],
               xref,
               localColorSpaceCache
@@ -1993,13 +1993,13 @@ class PartialEvaluator {
                 })
                 .then(function (colorSpace) {
                   stateManager.state.fillColorSpace =
-                    colorSpace || ColorSpace.singletons.gray;
+                    colorSpace || ColorSpaceUtils.singletons.gray;
                 })
             );
             return;
           }
           case OPS.setStrokeColorSpace: {
-            const cachedColorSpace = ColorSpace.getCached(
+            const cachedColorSpace = ColorSpaceUtils.getCached(
               args[0],
               xref,
               localColorSpaceCache
@@ -2018,7 +2018,7 @@ class PartialEvaluator {
                 })
                 .then(function (colorSpace) {
                   stateManager.state.strokeColorSpace =
-                    colorSpace || ColorSpace.singletons.gray;
+                    colorSpace || ColorSpaceUtils.singletons.gray;
                 })
             );
             return;
@@ -2034,38 +2034,41 @@ class PartialEvaluator {
             fn = OPS.setStrokeRGBColor;
             break;
           case OPS.setFillGray:
-            stateManager.state.fillColorSpace = ColorSpace.singletons.gray;
-            args = ColorSpace.singletons.gray.getRgb(args, 0);
+            stateManager.state.fillColorSpace = ColorSpaceUtils.singletons.gray;
+            args = ColorSpaceUtils.singletons.gray.getRgb(args, 0);
             fn = OPS.setFillRGBColor;
             break;
           case OPS.setStrokeGray:
-            stateManager.state.strokeColorSpace = ColorSpace.singletons.gray;
-            args = ColorSpace.singletons.gray.getRgb(args, 0);
+            stateManager.state.strokeColorSpace =
+              ColorSpaceUtils.singletons.gray;
+            args = ColorSpaceUtils.singletons.gray.getRgb(args, 0);
             fn = OPS.setStrokeRGBColor;
             break;
           case OPS.setFillCMYKColor:
-            stateManager.state.fillColorSpace = ColorSpace.singletons.cmyk;
-            args = ColorSpace.singletons.cmyk.getRgb(args, 0);
+            stateManager.state.fillColorSpace = ColorSpaceUtils.singletons.cmyk;
+            args = ColorSpaceUtils.singletons.cmyk.getRgb(args, 0);
             fn = OPS.setFillRGBColor;
             break;
           case OPS.setStrokeCMYKColor:
-            stateManager.state.strokeColorSpace = ColorSpace.singletons.cmyk;
-            args = ColorSpace.singletons.cmyk.getRgb(args, 0);
+            stateManager.state.strokeColorSpace =
+              ColorSpaceUtils.singletons.cmyk;
+            args = ColorSpaceUtils.singletons.cmyk.getRgb(args, 0);
             fn = OPS.setStrokeRGBColor;
             break;
           case OPS.setFillRGBColor:
-            stateManager.state.fillColorSpace = ColorSpace.singletons.rgb;
-            args = ColorSpace.singletons.rgb.getRgb(args, 0);
+            stateManager.state.fillColorSpace = ColorSpaceUtils.singletons.rgb;
+            args = ColorSpaceUtils.singletons.rgb.getRgb(args, 0);
             break;
           case OPS.setStrokeRGBColor:
-            stateManager.state.strokeColorSpace = ColorSpace.singletons.rgb;
-            args = ColorSpace.singletons.rgb.getRgb(args, 0);
+            stateManager.state.strokeColorSpace =
+              ColorSpaceUtils.singletons.rgb;
+            args = ColorSpaceUtils.singletons.rgb.getRgb(args, 0);
             break;
           case OPS.setFillColorN:
             cs = stateManager.state.patternFillColorSpace;
             if (!cs) {
               if (isNumberArray(args, null)) {
-                args = ColorSpace.singletons.gray.getRgb(args, 0);
+                args = ColorSpaceUtils.singletons.gray.getRgb(args, 0);
                 fn = OPS.setFillRGBColor;
                 break;
               }
@@ -2097,7 +2100,7 @@ class PartialEvaluator {
             cs = stateManager.state.patternStrokeColorSpace;
             if (!cs) {
               if (isNumberArray(args, null)) {
-                args = ColorSpace.singletons.gray.getRgb(args, 0);
+                args = ColorSpaceUtils.singletons.gray.getRgb(args, 0);
                 fn = OPS.setStrokeRGBColor;
                 break;
               }
@@ -4888,8 +4891,8 @@ class EvalState {
     this.ctm = new Float32Array(IDENTITY_MATRIX);
     this.font = null;
     this.textRenderingMode = TextRenderingMode.FILL;
-    this._fillColorSpace = ColorSpace.singletons.gray;
-    this._strokeColorSpace = ColorSpace.singletons.gray;
+    this._fillColorSpace = ColorSpaceUtils.singletons.gray;
+    this._strokeColorSpace = ColorSpaceUtils.singletons.gray;
     this.patternFillColorSpace = null;
     this.patternStrokeColorSpace = null;
   }
