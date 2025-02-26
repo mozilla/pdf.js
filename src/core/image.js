@@ -26,6 +26,7 @@ import {
 } from "../shared/image_utils.js";
 import { BaseStream } from "./base_stream.js";
 import { ColorSpace } from "./colorspace.js";
+import { ColorSpaceUtils } from "./colorspace_utils.js";
 import { DecodeStream } from "./decode_stream.js";
 import { ImageResizer } from "./image_resizer.js";
 import { JpegStream } from "./jpeg_stream.js";
@@ -210,7 +211,7 @@ class PDFImage {
         colorSpace = Name.get("DeviceRGBA");
       }
 
-      this.colorSpace = ColorSpace.parse({
+      this.colorSpace = ColorSpaceUtils.parse({
         cs: colorSpace,
         xref,
         resources: isInline ? res : null,
