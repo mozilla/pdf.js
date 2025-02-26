@@ -1177,9 +1177,7 @@ class Catalog {
     this.pageDictCache.clear();
     this.nonBlendModesSet.clear();
 
-    const translatedFonts = await Promise.all(this.fontCache);
-
-    for (const { dict } of translatedFonts) {
+    for (const { dict } of await Promise.all(this.fontCache)) {
       delete dict.cacheKey;
     }
     this.fontCache.clear();
