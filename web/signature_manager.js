@@ -177,6 +177,7 @@ class SignatureManager {
       "click",
       () => {
         this.#reportTelemetry({
+          type: "signature",
           action: "pdfjs.signature.clear",
           data: {
             type: this.#currentTab,
@@ -738,6 +739,7 @@ class SignatureManager {
       if (await this.#signatureStorage.delete(uuid)) {
         div.remove();
         this.#reportTelemetry({
+          type: "signature",
           action: "pdfjs.signature.delete_saved",
           data: {
             savedCount: await this.#signatureStorage.size(),
@@ -924,6 +926,7 @@ class SignatureManager {
 
     const altText = this.#tabsToAltText.get(type);
     this.#reportTelemetry({
+      type: "signature",
       action: "pdfjs.signature.created",
       data: {
         type,
