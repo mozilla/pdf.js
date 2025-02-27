@@ -380,7 +380,8 @@ const PDFViewerApplication = {
    * @private
    */
   async _initializeViewerComponents() {
-    const { appConfig, externalServices, l10n } = this;
+    const { appConfig, externalServices, l10n, mlManager } = this;
+    const abortSignal = this._globalAbortController.signal;
 
     const eventBus =
       typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")
@@ -391,7 +392,7 @@ const PDFViewerApplication = {
           )
         : new EventBus();
     this.eventBus = AppOptions.eventBus = eventBus;
-    this.mlManager?.setEventBus(eventBus, this._globalAbortController.signal);
+    mlManager?.setEventBus(eventBus, abortSignal);
 
     this.overlayManager = new OverlayManager();
 
@@ -470,10 +471,7 @@ const PDFViewerApplication = {
               null,
             this.overlayManager,
             l10n,
-            externalServices.createSignatureStorage(
-              eventBus,
-              this._globalAbortController.signal
-            ),
+            externalServices.createSignatureStorage(eventBus, abortSignal),
             eventBus
           )
         : null;
@@ -510,8 +508,8 @@ const PDFViewerApplication = {
       enableDetailCanvas: AppOptions.get("enableDetailCanvas"),
       enablePermissions: AppOptions.get("enablePermissions"),
       pageColors,
-      mlManager: this.mlManager,
-      abortSignal: this._globalAbortController.signal,
+      mlManager,
+      abortSignal,
       enableHWA,
       supportsPinchToZoom: this.supportsPinchToZoom,
       enableAutoLinking: AppOptions.get("enableAutoLinking"),
@@ -529,7 +527,7 @@ const PDFViewerApplication = {
         renderingQueue: pdfRenderingQueue,
         linkService: pdfLinkService,
         pageColors,
-        abortSignal: this._globalAbortController.signal,
+        abortSignal,
         enableHWA,
       });
       pdfRenderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
@@ -574,15 +572,12 @@ const PDFViewerApplication = {
       }
     }
 
-    if (
-      this.mlManager &&
-      appConfig.secondaryToolbar?.imageAltTextSettingsButton
-    ) {
+    if (mlManager && appConfig.secondaryToolbar?.imageAltTextSettingsButton) {
       this.imageAltTextSettings = new ImageAltTextSettings(
         appConfig.altTextSettingsDialog,
         this.overlayManager,
         eventBus,
-        this.mlManager
+        mlManager
       );
     }
 
