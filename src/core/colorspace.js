@@ -371,7 +371,14 @@ class ColorSpace {
     resources = null,
     pdfFunctionFactory,
     localColorSpaceCache,
+    checkCache = false,
   }) {
+    if (checkCache) {
+      const cachedColorSpace = this.getCached(cs, xref, localColorSpaceCache);
+      if (cachedColorSpace) {
+        return cachedColorSpace;
+      }
+    }
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
         !this.getCached(cs, xref, localColorSpaceCache),

@@ -91,6 +91,8 @@ function resizeImageMask(src, bpc, w1, h1, w2, h2) {
 }
 
 class PDFImage {
+  _initResolvers = Promise.withResolvers();
+
   constructor({
     xref,
     res,
@@ -180,7 +182,11 @@ class PDFImage {
     }
     this.bpc = bitsPerComponent;
 
-    if (!this.imageMask) {
+    const { promise, resolve, reject } = Promise.withResolvers();
+
+    if (this.imageMask) {
+      resolve(); // No colorSpace needed.
+    } else {
       let colorSpace = dict.getRaw("CS") || dict.getRaw("ColorSpace");
       const hasColorSpace = !!colorSpace;
       if (!hasColorSpace) {
@@ -209,82 +215,93 @@ class PDFImage {
         colorSpace = Name.get("DeviceRGBA");
       }
 
-      this.colorSpace = ColorSpace.parse({
+      ColorSpace.parseAsync({
         cs: colorSpace,
         xref,
         resources: isInline ? res : null,
         pdfFunctionFactory,
         localColorSpaceCache,
-      });
-      this.numComps = this.colorSpace.numComps;
+        checkCache: true,
+      })
+        .then(cs => {
+          this.colorSpace = cs;
+          this.numComps = cs.numComps;
 
-      if (this.jpxDecoderOptions) {
-        this.jpxDecoderOptions.numComponents = hasColorSpace
-          ? this.numComps
-          : 0;
-        // If the jpx image has a color space then it musn't be used in order to
-        // be able to use the color space that comes from the pdf.
-        this.jpxDecoderOptions.isIndexedColormap =
-          this.colorSpace.name === "Indexed";
-      }
+          if (this.jpxDecoderOptions) {
+            this.jpxDecoderOptions.numComponents = hasColorSpace
+              ? this.numComps
+              : 0;
+            // If the jpx image has a color space then it musn't be used in
+            // order to be able to use the color space that comes from the pdf.
+            this.jpxDecoderOptions.isIndexedColormap = cs.name === "Indexed";
+          }
+          resolve();
+        })
+        .catch(reject);
     }
 
-    this.decode = dict.getArray("D", "Decode");
-    this.needsDecode = false;
-    if (
-      this.decode &&
-      ((this.colorSpace &&
-        !this.colorSpace.isDefaultDecode(this.decode, bitsPerComponent)) ||
-        (isMask &&
-          !ColorSpace.isDefaultDecode(this.decode, /* numComps = */ 1)))
-    ) {
-      this.needsDecode = true;
-      // Do some preprocessing to avoid more math.
-      const max = (1 << bitsPerComponent) - 1;
-      this.decodeCoefficients = [];
-      this.decodeAddends = [];
-      const isIndexed = this.colorSpace?.name === "Indexed";
-      for (let i = 0, j = 0; i < this.decode.length; i += 2, ++j) {
-        const dmin = this.decode[i];
-        const dmax = this.decode[i + 1];
-        this.decodeCoefficients[j] = isIndexed
-          ? (dmax - dmin) / max
-          : dmax - dmin;
-        this.decodeAddends[j] = isIndexed ? dmin : max * dmin;
-      }
-    }
+    // Wait for the colorSpace to be available before finishing parsing.
+    promise
+      .then(() => {
+        this.decode = dict.getArray("D", "Decode");
+        this.needsDecode = false;
+        if (
+          this.decode &&
+          ((this.colorSpace &&
+            !this.colorSpace.isDefaultDecode(this.decode, bitsPerComponent)) ||
+            (isMask &&
+              !ColorSpace.isDefaultDecode(this.decode, /* numComps = */ 1)))
+        ) {
+          this.needsDecode = true;
+          // Do some preprocessing to avoid more math.
+          const max = (1 << bitsPerComponent) - 1;
+          this.decodeCoefficients = [];
+          this.decodeAddends = [];
+          const isIndexed = this.colorSpace?.name === "Indexed";
+          for (let i = 0, j = 0; i < this.decode.length; i += 2, ++j) {
+            const dmin = this.decode[i];
+            const dmax = this.decode[i + 1];
+            this.decodeCoefficients[j] = isIndexed
+              ? (dmax - dmin) / max
+              : dmax - dmin;
+            this.decodeAddends[j] = isIndexed ? dmin : max * dmin;
+          }
+        }
 
-    if (smask) {
-      this.smask = new PDFImage({
-        xref,
-        res,
-        image: smask,
-        isInline,
-        pdfFunctionFactory,
-        localColorSpaceCache,
-      });
-    } else if (mask) {
-      if (mask instanceof BaseStream) {
-        const maskDict = mask.dict,
-          imageMask = maskDict.get("IM", "ImageMask");
-        if (!imageMask) {
-          warn("Ignoring /Mask in image without /ImageMask.");
-        } else {
-          this.mask = new PDFImage({
+        if (smask) {
+          this.smask = new PDFImage({
             xref,
             res,
-            image: mask,
+            image: smask,
             isInline,
-            isMask: true,
             pdfFunctionFactory,
             localColorSpaceCache,
           });
+        } else if (mask) {
+          if (mask instanceof BaseStream) {
+            const maskDict = mask.dict,
+              imageMask = maskDict.get("IM", "ImageMask");
+            if (!imageMask) {
+              warn("Ignoring /Mask in image without /ImageMask.");
+            } else {
+              this.mask = new PDFImage({
+                xref,
+                res,
+                image: mask,
+                isInline,
+                isMask: true,
+                pdfFunctionFactory,
+                localColorSpaceCache,
+              });
+            }
+          } else {
+            // Color key mask (just an array).
+            this.mask = mask;
+          }
         }
-      } else {
-        // Color key mask (just an array).
-        this.mask = mask;
-      }
-    }
+        this._initResolvers.resolve();
+      })
+      .catch(this._initResolvers.reject);
   }
 
   /**
@@ -685,6 +702,11 @@ class PDFImage {
   }
 
   async createImageData(forceRGBA = false, isOffscreenCanvasSupported = false) {
+    const initPromises = [this, this.smask, this.mask]
+      .filter(img => img instanceof PDFImage)
+      .map(img => img._initResolvers.promise);
+    await Promise.all(initPromises);
+
     const drawWidth = this.drawWidth;
     const drawHeight = this.drawHeight;
     const imgData = {
