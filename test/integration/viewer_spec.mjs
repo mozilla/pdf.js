@@ -328,7 +328,7 @@ describe("PDF viewer", () => {
             const originalCanvasSize = await getCanvasSize(page);
             const factor = 2;
 
-            const handle = await waitForPageRendered(page);
+            const handle = await waitForPageRendered(page, 1);
             await page.evaluate(scaleFactor => {
               window.PDFViewerApplication.pdfViewer.increaseScale({
                 drawingDelay: 0,
@@ -356,7 +356,7 @@ describe("PDF viewer", () => {
             const originalCanvasSize = await getCanvasSize(page);
             const factor = 4;
 
-            const handle = await waitForPageRendered(page);
+            const handle = await waitForPageRendered(page, 1);
             await page.evaluate(scaleFactor => {
               window.PDFViewerApplication.pdfViewer.increaseScale({
                 drawingDelay: 0,
