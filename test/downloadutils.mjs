@@ -42,6 +42,7 @@ function downloadFile(file, url, redirects = 0) {
       .get(url, async function (response) {
         if ([301, 302, 307, 308].includes(response.statusCode)) {
           if (redirects > 10) {
+            response.resume();
             reject(new Error("Too many redirects"));
             return;
           }
@@ -50,12 +51,14 @@ function downloadFile(file, url, redirects = 0) {
             await downloadFile(file, redirectTo, ++redirects);
             resolve();
           } catch (ex) {
+            response.resume();
             reject(ex);
           }
           return;
         }
 
         if (response.statusCode !== 200) {
+          response.resume();
           reject(new Error(`HTTP ${response.statusCode}`));
           return;
         }
@@ -87,8 +90,8 @@ async function downloadManifestFiles(manifest) {
       await downloadFile(file, url);
     } catch (ex) {
       console.error(`Error during downloading of ${url}:`, ex);
-      fs.writeFileSync(file, ""); // making it empty file
-      fs.writeFileSync(`${file}.error`, ex);
+      await fs.promises.writeFile(file, "") // making it an empty file
+      await fs.promises.writeFile(`${file}.error`, ex.toString());
     }
   }
 }
