@@ -97,11 +97,12 @@ function parseDefaultAppearance(str) {
 }
 
 class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
-  constructor(stream, evaluatorOptions, xref) {
+  constructor(stream, evaluatorOptions, xref, globalColorSpaceCache) {
     super(stream);
     this.stream = stream;
     this.evaluatorOptions = evaluatorOptions;
     this.xref = xref;
+    this.globalColorSpaceCache = globalColorSpaceCache;
 
     this.resources = stream.dict?.get("Resources");
   }
@@ -161,6 +162,7 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
               xref: this.xref,
               resources: this.resources,
               pdfFunctionFactory: this._pdfFunctionFactory,
+              globalColorSpaceCache: this.globalColorSpaceCache,
               localColorSpaceCache: this._localColorSpaceCache,
             });
             break;
@@ -210,8 +212,18 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
 
 // Parse appearance stream to extract font and color information.
 // It returns the font properties used to render the first text object.
-function parseAppearanceStream(stream, evaluatorOptions, xref) {
-  return new AppearanceStreamEvaluator(stream, evaluatorOptions, xref).parse();
+function parseAppearanceStream(
+  stream,
+  evaluatorOptions,
+  xref,
+  globalColorSpaceCache
+) {
+  return new AppearanceStreamEvaluator(
+    stream,
+    evaluatorOptions,
+    xref,
+    globalColorSpaceCache
+  ).parse();
 }
 
 function getPdfColor(color, isFill) {

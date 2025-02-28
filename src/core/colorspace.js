@@ -306,18 +306,21 @@ class ColorSpace {
     return shadow(this, "usesZeroToOneRange", true);
   }
 
-  /**
-   * @private
-   */
-  static _cache(cacheKey, xref, localColorSpaceCache, parsedColorSpace) {
-    if (!localColorSpaceCache) {
+  static #cache(
+    cacheKey,
+    xref,
+    globalColorSpaceCache,
+    localColorSpaceCache,
+    parsedColorSpace
+  ) {
+    if (!globalColorSpaceCache || !localColorSpaceCache) {
       throw new Error(
-        'ColorSpace._cache - expected "localColorSpaceCache" argument.'
+        'ColorSpace.#cache - expected "globalColorSpaceCache"/"localColorSpaceCache" argument.'
       );
     }
     if (!parsedColorSpace) {
       throw new Error(
-        'ColorSpace._cache - expected "parsedColorSpace" argument.'
+        'ColorSpace.#cache - expected "parsedColorSpace" argument.'
       );
     }
     let csName, csRef;
@@ -332,16 +335,30 @@ class ColorSpace {
     }
     if (csName || csRef) {
       localColorSpaceCache.set(csName, csRef, parsedColorSpace);
+
+      if (csRef) {
+        globalColorSpaceCache.set(/* name = */ null, csRef, parsedColorSpace);
+      }
     }
   }
 
-  static getCached(cacheKey, xref, localColorSpaceCache) {
-    if (!localColorSpaceCache) {
+  static getCached(
+    cacheKey,
+    xref,
+    globalColorSpaceCache,
+    localColorSpaceCache
+  ) {
+    if (!globalColorSpaceCache || !localColorSpaceCache) {
       throw new Error(
-        'ColorSpace.getCached - expected "localColorSpaceCache" argument.'
+        'ColorSpace.getCached - expected "globalColorSpaceCache"/"localColorSpaceCache" argument.'
       );
     }
     if (cacheKey instanceof Ref) {
+      const globalColorSpace = globalColorSpaceCache.getByRef(cacheKey);
+      if (globalColorSpace) {
+        return globalColorSpace;
+      }
+
       const localColorSpace = localColorSpaceCache.getByRef(cacheKey);
       if (localColorSpace) {
         return localColorSpace;
@@ -370,16 +387,17 @@ class ColorSpace {
     xref,
     resources = null,
     pdfFunctionFactory,
+    globalColorSpaceCache,
     localColorSpaceCache,
   }) {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
-        !this.getCached(cs, xref, localColorSpaceCache),
+        !this.getCached(cs, xref, globalColorSpaceCache, localColorSpaceCache),
         "Expected `ColorSpace.getCached` to have been manually checked " +
           "before calling `ColorSpace.parseAsync`."
       );
     }
-    const parsedColorSpace = this._parse(
+    const parsedColorSpace = this.#parse(
       cs,
       xref,
       resources,
@@ -387,7 +405,13 @@ class ColorSpace {
     );
 
     // Attempt to cache the parsed ColorSpace, by name and/or reference.
-    this._cache(cs, xref, localColorSpaceCache, parsedColorSpace);
+    this.#cache(
+      cs,
+      xref,
+      globalColorSpaceCache,
+      localColorSpaceCache,
+      parsedColorSpace
+    );
 
     return parsedColorSpace;
   }
@@ -397,13 +421,19 @@ class ColorSpace {
     xref,
     resources = null,
     pdfFunctionFactory,
+    globalColorSpaceCache,
     localColorSpaceCache,
   }) {
-    const cachedColorSpace = this.getCached(cs, xref, localColorSpaceCache);
+    const cachedColorSpace = this.getCached(
+      cs,
+      xref,
+      globalColorSpaceCache,
+      localColorSpaceCache
+    );
     if (cachedColorSpace) {
       return cachedColorSpace;
     }
-    const parsedColorSpace = this._parse(
+    const parsedColorSpace = this.#parse(
       cs,
       xref,
       resources,
@@ -411,15 +441,18 @@ class ColorSpace {
     );
 
     // Attempt to cache the parsed ColorSpace, by name and/or reference.
-    this._cache(cs, xref, localColorSpaceCache, parsedColorSpace);
+    this.#cache(
+      cs,
+      xref,
+      globalColorSpaceCache,
+      localColorSpaceCache,
+      parsedColorSpace
+    );
 
     return parsedColorSpace;
   }
 
-  /**
-   * @private
-   */
-  static _parse(cs, xref, resources = null, pdfFunctionFactory) {
+  static #parse(cs, xref, resources = null, pdfFunctionFactory) {
     cs = xref.fetchIfRef(cs);
     if (cs instanceof Name) {
       switch (cs.name) {
@@ -443,7 +476,7 @@ class ColorSpace {
               const resourcesCS = colorSpaces.get(cs.name);
               if (resourcesCS) {
                 if (resourcesCS instanceof Name) {
-                  return this._parse(
+                  return this.#parse(
                     resourcesCS,
                     xref,
                     resources,
@@ -493,7 +526,7 @@ class ColorSpace {
           numComps = dict.get("N");
           const alt = dict.get("Alternate");
           if (alt) {
-            const altCS = this._parse(alt, xref, resources, pdfFunctionFactory);
+            const altCS = this.#parse(alt, xref, resources, pdfFunctionFactory);
             // Ensure that the number of components are correct,
             // and also (indirectly) that it is not a PatternCS.
             if (altCS.numComps === numComps) {
@@ -512,12 +545,12 @@ class ColorSpace {
         case "Pattern":
           baseCS = cs[1] || null;
           if (baseCS) {
-            baseCS = this._parse(baseCS, xref, resources, pdfFunctionFactory);
+            baseCS = this.#parse(baseCS, xref, resources, pdfFunctionFactory);
           }
           return new PatternCS(baseCS);
         case "I":
         case "Indexed":
-          baseCS = this._parse(cs[1], xref, resources, pdfFunctionFactory);
+          baseCS = this.#parse(cs[1], xref, resources, pdfFunctionFactory);
           const hiVal = Math.max(0, Math.min(xref.fetchIfRef(cs[2]), 255));
           const lookup = xref.fetchIfRef(cs[3]);
           return new IndexedCS(baseCS, hiVal, lookup);
@@ -525,7 +558,7 @@ class ColorSpace {
         case "DeviceN":
           const name = xref.fetchIfRef(cs[1]);
           numComps = Array.isArray(name) ? name.length : 1;
-          baseCS = this._parse(cs[2], xref, resources, pdfFunctionFactory);
+          baseCS = this.#parse(cs[2], xref, resources, pdfFunctionFactory);
           const tintFn = pdfFunctionFactory.create(cs[3]);
           return new AlternateCS(numComps, baseCS, tintFn);
         case "Lab":

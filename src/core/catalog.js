@@ -44,12 +44,12 @@ import {
   RefSet,
   RefSetCache,
 } from "./primitives.js";
+import { GlobalColorSpaceCache, GlobalImageCache } from "./image_utils.js";
 import { NameTree, NumberTree } from "./name_number_tree.js";
 import { BaseStream } from "./base_stream.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
 import { ColorSpace } from "./colorspace.js";
 import { FileSpec } from "./file_spec.js";
-import { GlobalImageCache } from "./image_utils.js";
 import { MetadataParser } from "./metadata_parser.js";
 import { StructTreeRoot } from "./struct_tree.js";
 
@@ -140,6 +140,7 @@ class Catalog {
     this.fontCache = new RefSetCache();
     this.builtInCMapCache = new Map();
     this.standardFontDataCache = new Map();
+    this.globalColorSpaceCache = new GlobalColorSpaceCache();
     this.globalImageCache = new GlobalImageCache();
     this.pageKidsCountCache = new RefSetCache();
     this.pageIndexCache = new RefSetCache();
@@ -1171,6 +1172,7 @@ class Catalog {
 
   async cleanup(manuallyTriggered = false) {
     clearGlobalCaches();
+    this.globalColorSpaceCache.clear();
     this.globalImageCache.clear(/* onlyData = */ manuallyTriggered);
     this.pageKidsCountCache.clear();
     this.pageIndexCache.clear();
