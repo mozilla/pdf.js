@@ -69,13 +69,55 @@ function calculateLinkPosition(range, pdfPageView) {
   return { quadPoints, rect };
 }
 
+/**
+ * Given a DOM node `container` and an index into its text contents `offset`,
+ * returns a pair consisting of text node that the `offset` actually points
+ * to, together with the offset relative to that text node.
+ * When the offset points at the boundary between two node, the result will
+ * point to the first text node in depth-first traversal order.
+ *
+ * For example, given this DOM:
+ * <p>abc<span>def</span>ghi</p>
+ *
+ * textPosition(p, 0) -> [#text "abc", 0] (before `a`)
+ * textPosition(p, 2) -> [#text "abc", 2] (between `b` and `c`)
+ * textPosition(p, 3) -> [#text "abc", 3] (after `c`)
+ * textPosition(p, 5) -> [#text "def", 2] (between `e` and `f`)
+ * textPosition(p, 6) -> [#text "def", 3] (after `f`)
+ */
+function textPosition(container, offset) {
+  let currentContainer = container;
+  do {
+    if (currentContainer.nodeType === Node.TEXT_NODE) {
+      const currentLength = currentContainer.textContent.length;
+      if (offset <= currentLength) {
+        return [currentContainer, offset];
+      }
+      offset -= currentLength;
+    } else if (currentContainer.firstChild) {
+      currentContainer = currentContainer.firstChild;
+      continue;
+    }
+
+    while (!currentContainer.nextSibling && currentContainer !== container) {
+      currentContainer = currentContainer.parentNode;
+    }
+    if (currentContainer !== container) {
+      currentContainer = currentContainer.nextSibling;
+    }
+  } while (currentContainer !== container);
+  throw new Error("Offset is bigger than container's contents length.");
+}
+
 function createLinkAnnotation({ url, index, length }, pdfPageView, id) {
   const highlighter = pdfPageView._textHighlighter;
   const [{ begin, end }] = highlighter._convertMatches([index], [length]);
 
   const range = new Range();
-  range.setStart(highlighter.textDivs[begin.divIdx].firstChild, begin.offset);
-  range.setEnd(highlighter.textDivs[end.divIdx].firstChild, end.offset);
+  range.setStart(
+    ...textPosition(highlighter.textDivs[begin.divIdx], begin.offset)
+  );
+  range.setEnd(...textPosition(highlighter.textDivs[end.divIdx], end.offset));
 
   return {
     id: `inferred_link_${id}`,

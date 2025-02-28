@@ -13,7 +13,12 @@
  * limitations under the License.
  */
 
-import { closePages, createPromise, loadAndWait } from "./test_utils.mjs";
+import {
+  awaitPromise,
+  closePages,
+  createPromise,
+  loadAndWait,
+} from "./test_utils.mjs";
 
 function waitForLinkAnnotations(page) {
   return createPromise(page, resolve => {
@@ -174,6 +179,51 @@ describe("autolinker", function () {
             annotations => annotations.map(a => a.href)
           );
           expect(url.length).withContext(`In ${browserName}`).toEqual(1);
+        })
+      );
+    });
+  });
+
+  describe("when a detected link overlaps with a search result", function () {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "issue3115r.pdf",
+        ".annotationLayer",
+        null,
+        null,
+        { enableAutoLinking: true }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("should work", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await awaitPromise(await waitForLinkAnnotations(page));
+
+          const linkAnnotationsPromise = await waitForLinkAnnotations(page);
+
+          // Search for "rich.edu"
+          await page.click("#viewFindButton");
+          await page.waitForSelector("#viewFindButton", { hidden: false });
+          await page.type("#findInput", "rich.edu");
+          await page.waitForSelector(".textLayer .highlight");
+
+          await awaitPromise(linkAnnotationsPromise);
+
+          const urls = await page.$$eval(
+            ".page[data-page-number='36'] > .annotationLayer > .linkAnnotation > a",
+            annotations => annotations.map(a => a.href)
+          );
+
+          expect(urls)
+            .withContext(`In ${browserName}`)
+            .toContain(jasmine.stringContaining("rich.edu"));
         })
       );
     });
