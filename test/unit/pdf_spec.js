@@ -36,6 +36,7 @@ import {
 import {
   build,
   getDocument,
+  isValidExplicitDest,
   PDFDataRangeTransport,
   PDFWorker,
   version,
@@ -94,6 +95,7 @@ const expectedAPI = Object.freeze({
   InvalidPDFException,
   isDataScheme,
   isPdfFile,
+  isValidExplicitDest,
   noContextMenu,
   normalizeUnicode,
   OPS,
