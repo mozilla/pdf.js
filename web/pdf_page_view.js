@@ -1064,7 +1064,7 @@ class PDFPageView extends BasePDFPageView {
       if (this.annotationLayer) {
         await this.#renderAnnotationLayer();
 
-        if (this.#enableAutoLinking && this.annotationLayer) {
+        if (this.#enableAutoLinking && this.annotationLayer && this.textLayer) {
           await this.#injectLinkAnnotations(textLayerPromise);
         }
       }
