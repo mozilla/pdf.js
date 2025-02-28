@@ -90,8 +90,8 @@ async function downloadManifestFiles(manifest) {
       await downloadFile(file, url);
     } catch (ex) {
       console.error(`Error during downloading of ${url}:`, ex);
-      await fs.promises.writeFile(file, "") // making it an empty file
-      await fs.promises.writeFile(`${file}.error`, ex.toString());
+      fs.writeFileSync(file, ""); // making it empty file
+      fs.writeFileSync(`${file}.error`, ex);
     }
   }
 }
