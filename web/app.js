@@ -202,39 +202,40 @@ const PDFViewerApplication = {
       await this._parseHashParams();
     }
 
-    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-      let mode;
-      switch (AppOptions.get("viewerCssTheme")) {
-        case 1:
-          mode = "is-light";
-          break;
-        case 2:
-          mode = "is-dark";
-          break;
+    let mode;
+    switch (AppOptions.get("viewerCssTheme")) {
+      case 1:
+        mode = "is-light";
+        break;
+      case 2:
+        mode = "is-dark";
+        break;
+    }
+    if (mode) {
+      document.documentElement.classList.add(mode);
+    }
+
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      if (AppOptions.get("enableFakeMLManager")) {
+        this.mlManager =
+          MLManager.getFakeMLManager?.({
+            enableGuessAltText: AppOptions.get("enableGuessAltText"),
+            enableAltTextModelDownload: AppOptions.get(
+              "enableAltTextModelDownload"
+            ),
+          }) || null;
       }
-      if (mode) {
-        document.documentElement.classList.add(mode);
+    } else if (PDFJSDev.test("MOZCENTRAL")) {
+      if (AppOptions.get("enableAltText")) {
+        // We want to load the image-to-text AI engine as soon as possible.
+        this.mlManager = new MLManager({
+          enableGuessAltText: AppOptions.get("enableGuessAltText"),
+          enableAltTextModelDownload: AppOptions.get(
+            "enableAltTextModelDownload"
+          ),
+          altTextLearnMoreUrl: AppOptions.get("altTextLearnMoreUrl"),
+        });
       }
-      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
-        if (AppOptions.get("enableFakeMLManager")) {
-          this.mlManager =
-            MLManager.getFakeMLManager?.({
-              enableGuessAltText: AppOptions.get("enableGuessAltText"),
-              enableAltTextModelDownload: AppOptions.get(
-                "enableAltTextModelDownload"
-              ),
-            }) || null;
-        }
-      }
-    } else if (AppOptions.get("enableAltText")) {
-      // We want to load the image-to-text AI engine as soon as possible.
-      this.mlManager = new MLManager({
-        enableGuessAltText: AppOptions.get("enableGuessAltText"),
-        enableAltTextModelDownload: AppOptions.get(
-          "enableAltTextModelDownload"
-        ),
-        altTextLearnMoreUrl: AppOptions.get("altTextLearnMoreUrl"),
-      });
     }
 
     // Ensure that the `L10n`-instance has been initialized before creating
