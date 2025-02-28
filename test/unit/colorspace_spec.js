@@ -14,9 +14,12 @@
  */
 
 import { Dict, Name, Ref } from "../../src/core/primitives.js";
+import {
+  GlobalColorSpaceCache,
+  LocalColorSpaceCache,
+} from "../../src/core/image_utils.js";
 import { Stream, StringStream } from "../../src/core/stream.js";
 import { ColorSpace } from "../../src/core/colorspace.js";
-import { LocalColorSpaceCache } from "../../src/core/image_utils.js";
 import { PDFFunctionFactory } from "../../src/core/function.js";
 import { XRefMock } from "./test_utils.js";
 
@@ -50,7 +53,7 @@ describe("colorspace", function () {
   });
 
   describe("ColorSpace caching", function () {
-    let localColorSpaceCache = null;
+    let localColorSpaceCache;
 
     beforeAll(function () {
       localColorSpaceCache = new LocalColorSpaceCache();
@@ -180,6 +183,16 @@ describe("colorspace", function () {
   });
 
   describe("DeviceGrayCS", function () {
+    let globalColorSpaceCache;
+
+    beforeAll(function () {
+      globalColorSpaceCache = new GlobalColorSpaceCache();
+    });
+
+    afterAll(function () {
+      globalColorSpaceCache = null;
+    });
+
     it("should handle the case when cs is a Name object", function () {
       const cs = Name.get("DeviceGray");
       const xref = new XRefMock([
@@ -198,6 +211,7 @@ describe("colorspace", function () {
         xref,
         resources,
         pdfFunctionFactory,
+        globalColorSpaceCache,
         localColorSpaceCache: new LocalColorSpaceCache(),
       });
 
@@ -249,6 +263,7 @@ describe("colorspace", function () {
         xref,
         resources,
         pdfFunctionFactory,
+        globalColorSpaceCache,
         localColorSpaceCache: new LocalColorSpaceCache(),
       });
 
@@ -278,6 +293,16 @@ describe("colorspace", function () {
   });
 
   describe("DeviceRgbCS", function () {
+    let globalColorSpaceCache;
+
+    beforeAll(function () {
+      globalColorSpaceCache = new GlobalColorSpaceCache();
+    });
+
+    afterAll(function () {
+      globalColorSpaceCache = null;
+    });
+
     it("should handle the case when cs is a Name object", function () {
       const cs = Name.get("DeviceRGB");
       const xref = new XRefMock([
@@ -296,6 +321,7 @@ describe("colorspace", function () {
         xref,
         resources,
         pdfFunctionFactory,
+        globalColorSpaceCache,
         localColorSpaceCache: new LocalColorSpaceCache(),
       });
 
@@ -353,6 +379,7 @@ describe("colorspace", function () {
         xref,
         resources,
         pdfFunctionFactory,
+        globalColorSpaceCache,
         localColorSpaceCache: new LocalColorSpaceCache(),
       });
 
@@ -388,6 +415,16 @@ describe("colorspace", function () {
   });
 
   describe("DeviceCmykCS", function () {
+    let globalColorSpaceCache;
+
+    beforeAll(function () {
+      globalColorSpaceCache = new GlobalColorSpaceCache();
+    });
+
+    afterAll(function () {
+      globalColorSpaceCache = null;
+    });
+
     it("should handle the case when cs is a Name object", function () {
       const cs = Name.get("DeviceCMYK");
       const xref = new XRefMock([
@@ -406,6 +443,7 @@ describe("colorspace", function () {
         xref,
         resources,
         pdfFunctionFactory,
+        globalColorSpaceCache,
         localColorSpaceCache: new LocalColorSpaceCache(),
       });
 
@@ -463,6 +501,7 @@ describe("colorspace", function () {
         xref,
         resources,
         pdfFunctionFactory,
+        globalColorSpaceCache,
         localColorSpaceCache: new LocalColorSpaceCache(),
       });
 
@@ -498,6 +537,16 @@ describe("colorspace", function () {
   });
 
   describe("CalGrayCS", function () {
+    let globalColorSpaceCache;
+
+    beforeAll(function () {
+      globalColorSpaceCache = new GlobalColorSpaceCache();
+    });
+
+    afterAll(function () {
+      globalColorSpaceCache = null;
+    });
+
     it("should handle the case when cs is an array", function () {
       const params = new Dict();
       params.set("WhitePoint", [1, 1, 1]);
@@ -521,6 +570,7 @@ describe("colorspace", function () {
         xref,
         resources,
         pdfFunctionFactory,
+        globalColorSpaceCache,
         localColorSpaceCache: new LocalColorSpaceCache(),
       });
 
@@ -557,6 +607,16 @@ describe("colorspace", function () {
   });
 
   describe("CalRGBCS", function () {
+    let globalColorSpaceCache;
+
+    beforeAll(function () {
+      globalColorSpaceCache = new GlobalColorSpaceCache();
+    });
+
+    afterAll(function () {
+      globalColorSpaceCache = null;
+    });
+
     it("should handle the case when cs is an array", function () {
       const params = new Dict();
       params.set("WhitePoint", [1, 1, 1]);
@@ -581,6 +641,7 @@ describe("colorspace", function () {
         xref,
         resources,
         pdfFunctionFactory,
+        globalColorSpaceCache,
         localColorSpaceCache: new LocalColorSpaceCache(),
       });
 
@@ -616,6 +677,16 @@ describe("colorspace", function () {
   });
 
   describe("LabCS", function () {
+    let globalColorSpaceCache;
+
+    beforeAll(function () {
+      globalColorSpaceCache = new GlobalColorSpaceCache();
+    });
+
+    afterAll(function () {
+      globalColorSpaceCache = null;
+    });
+
     it("should handle the case when cs is an array", function () {
       const params = new Dict();
       params.set("WhitePoint", [1, 1, 1]);
@@ -639,6 +710,7 @@ describe("colorspace", function () {
         xref,
         resources,
         pdfFunctionFactory,
+        globalColorSpaceCache,
         localColorSpaceCache: new LocalColorSpaceCache(),
       });
 
@@ -675,6 +747,16 @@ describe("colorspace", function () {
   });
 
   describe("IndexedCS", function () {
+    let globalColorSpaceCache;
+
+    beforeAll(function () {
+      globalColorSpaceCache = new GlobalColorSpaceCache();
+    });
+
+    afterAll(function () {
+      globalColorSpaceCache = null;
+    });
+
     it("should handle the case when cs is an array", function () {
       // prettier-ignore
       const lookup = new Stream(
@@ -701,6 +783,7 @@ describe("colorspace", function () {
         xref,
         resources,
         pdfFunctionFactory,
+        globalColorSpaceCache,
         localColorSpaceCache: new LocalColorSpaceCache(),
       });
 
@@ -730,6 +813,16 @@ describe("colorspace", function () {
   });
 
   describe("AlternateCS", function () {
+    let globalColorSpaceCache;
+
+    beforeAll(function () {
+      globalColorSpaceCache = new GlobalColorSpaceCache();
+    });
+
+    afterAll(function () {
+      globalColorSpaceCache = null;
+    });
+
     it("should handle the case when cs is an array", function () {
       const fnDict = new Dict();
       fnDict.set("FunctionType", 4);
@@ -769,6 +862,7 @@ describe("colorspace", function () {
         xref,
         resources,
         pdfFunctionFactory,
+        globalColorSpaceCache,
         localColorSpaceCache: new LocalColorSpaceCache(),
       });
 

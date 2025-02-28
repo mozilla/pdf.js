@@ -169,6 +169,26 @@ class RegionalImageCache extends BaseLocalCache {
   }
 }
 
+class GlobalColorSpaceCache extends BaseLocalCache {
+  constructor(options) {
+    super({ onlyRefs: true });
+  }
+
+  set(name = null, ref, data) {
+    if (!ref) {
+      throw new Error('GlobalColorSpaceCache.set - expected "ref" argument.');
+    }
+    if (this._imageCache.has(ref)) {
+      return;
+    }
+    this._imageCache.put(ref, data);
+  }
+
+  clear() {
+    this._imageCache.clear();
+  }
+}
+
 class GlobalImageCache {
   static NUM_PAGES_THRESHOLD = 2;
 
@@ -290,6 +310,7 @@ class GlobalImageCache {
 }
 
 export {
+  GlobalColorSpaceCache,
   GlobalImageCache,
   LocalColorSpaceCache,
   LocalFunctionCache,
