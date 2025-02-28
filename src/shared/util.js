@@ -1080,6 +1080,54 @@ function getUuid() {
 
 const AnnotationPrefix = "pdfjs_internal_id_";
 
+function _isValidExplicitDest(validRef, validName, dest) {
+  if (!Array.isArray(dest) || dest.length < 2) {
+    return false;
+  }
+  const [page, zoom, ...args] = dest;
+  if (!validRef(page) && !Number.isInteger(page)) {
+    return false;
+  }
+  if (!validName(zoom)) {
+    return false;
+  }
+  const argsLen = args.length;
+  let allowNull = true;
+  switch (zoom.name) {
+    case "XYZ":
+      if (argsLen < 2 || argsLen > 3) {
+        return false;
+      }
+      break;
+    case "Fit":
+    case "FitB":
+      return argsLen === 0;
+    case "FitH":
+    case "FitBH":
+    case "FitV":
+    case "FitBV":
+      if (argsLen > 1) {
+        return false;
+      }
+      break;
+    case "FitR":
+      if (argsLen !== 4) {
+        return false;
+      }
+      allowNull = false;
+      break;
+    default:
+      return false;
+  }
+  for (const arg of args) {
+    if (typeof arg === "number" || (allowNull && arg === null)) {
+      continue;
+    }
+    return false;
+  }
+  return true;
+}
+
 // TODO: Remove this once `Uint8Array.prototype.toHex` is generally available.
 function toHexUtil(arr) {
   if (Uint8Array.prototype.toHex) {
@@ -1119,6 +1167,7 @@ if (
 }
 
 export {
+  _isValidExplicitDest,
   AbortException,
   AnnotationActionEventType,
   AnnotationBorderStyleType,
