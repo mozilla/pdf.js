@@ -221,6 +221,7 @@ class PartialEvaluator {
     fontCache,
     builtInCMapCache,
     standardFontDataCache,
+    globalColorSpaceCache,
     globalImageCache,
     systemFontCache,
     options = null,
@@ -232,6 +233,7 @@ class PartialEvaluator {
     this.fontCache = fontCache;
     this.builtInCMapCache = builtInCMapCache;
     this.standardFontDataCache = standardFontDataCache;
+    this.globalColorSpaceCache = globalColorSpaceCache;
     this.globalImageCache = globalImageCache;
     this.systemFontCache = systemFontCache;
     this.options = options || DefaultPartialEvaluatorOptions;
@@ -492,6 +494,7 @@ class PartialEvaluator {
           const cachedColorSpace = ColorSpace.getCached(
             cs,
             this.xref,
+            this.globalColorSpaceCache,
             localColorSpaceCache
           );
           if (cachedColorSpace) {
@@ -737,6 +740,7 @@ class PartialEvaluator {
           image,
           isInline,
           pdfFunctionFactory: this._pdfFunctionFactory,
+          globalColorSpaceCache: this.globalColorSpaceCache,
           localColorSpaceCache,
         });
         // We force the use of RGBA_32BPP images here, because we can't handle
@@ -839,6 +843,7 @@ class PartialEvaluator {
       image,
       isInline,
       pdfFunctionFactory: this._pdfFunctionFactory,
+      globalColorSpaceCache: this.globalColorSpaceCache,
       localColorSpaceCache,
     })
       .then(async imageObj => {
@@ -1463,6 +1468,7 @@ class PartialEvaluator {
       xref: this.xref,
       resources,
       pdfFunctionFactory: this._pdfFunctionFactory,
+      globalColorSpaceCache: this.globalColorSpaceCache,
       localColorSpaceCache,
     }).catch(reason => {
       if (reason instanceof AbortException) {
@@ -1496,6 +1502,7 @@ class PartialEvaluator {
         this.xref,
         resources,
         this._pdfFunctionFactory,
+        this.globalColorSpaceCache,
         localColorSpaceCache
       );
       patternIR = shadingFill.getIR();
@@ -1977,6 +1984,7 @@ class PartialEvaluator {
             const cachedColorSpace = ColorSpace.getCached(
               args[0],
               xref,
+              self.globalColorSpaceCache,
               localColorSpaceCache
             );
             if (cachedColorSpace) {
@@ -2002,6 +2010,7 @@ class PartialEvaluator {
             const cachedColorSpace = ColorSpace.getCached(
               args[0],
               xref,
+              self.globalColorSpaceCache,
               localColorSpaceCache
             );
             if (cachedColorSpace) {
