@@ -45,6 +45,7 @@ import {
   getParentToUpdate,
   getRotationMatrix,
   isNumberArray,
+  lookupLineEnding,
   lookupMatrix,
   lookupNormalRect,
   lookupRect,
@@ -984,6 +985,18 @@ class Annotation {
   }
 
   /**
+   * Set the line ending; should only be used with FreeText annotations.
+   * @param {Name} lineEnding - The line ending name.
+   */
+  setLineEnding(lineEnding) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      throw new Error("Not implemented: setLineEnding");
+    }
+
+    this.lineEnding = lookupLineEnding(lineEnding, "None");
+  }
+
+  /**
    * Set the line endings; should only be used with specific annotation types.
    * @param {Array} lineEndings - The line endings array.
    */
@@ -995,26 +1008,7 @@ class Annotation {
 
     if (Array.isArray(lineEndings) && lineEndings.length === 2) {
       for (let i = 0; i < 2; i++) {
-        const obj = lineEndings[i];
-
-        if (obj instanceof Name) {
-          switch (obj.name) {
-            case "None":
-              continue;
-            case "Square":
-            case "Circle":
-            case "Diamond":
-            case "OpenArrow":
-            case "ClosedArrow":
-            case "Butt":
-            case "ROpenArrow":
-            case "RClosedArrow":
-            case "Slash":
-              this.lineEndings[i] = obj.name;
-              continue;
-          }
-        }
-        warn(`Ignoring invalid lineEnding: ${obj}`);
+        this.lineEndings[i] = lookupLineEnding(lineEndings[i], "None");
       }
     }
   }
@@ -3880,10 +3874,22 @@ class FreeTextAnnotation extends MarkupAnnotation {
     // We want to be able to add mouse listeners to the annotation.
     this.data.noHTML = false;
 
-    const { evaluatorOptions, xref } = params;
+    const { evaluatorOptions, xref, dict } = params;
     this.data.annotationType = AnnotationType.FREETEXT;
     this.setDefaultAppearance(params);
     this._hasAppearance = !!this.appearance;
+
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+      if (this.data.it === "FreeTextCallout") {
+        this.setLineEnding(dict.get("LE"));
+        this.data.lineEnding = this.lineEnding;
+
+        const calloutLine = dict.getArray("CL");
+        if (isNumberArray(calloutLine, 4) || isNumberArray(calloutLine, 6)) {
+          this.data.calloutLine = calloutLine;
+        }
+      }
+    }
 
     if (this._hasAppearance) {
       const { fontColor, fontSize } = parseAppearanceStream(
@@ -3932,8 +3938,17 @@ class FreeTextAnnotation extends MarkupAnnotation {
   }
 
   static createNewDict(annotation, xref, { apRef, ap }) {
-    const { color, fontSize, oldAnnotation, rect, rotation, user, value } =
-      annotation;
+    const {
+      calloutLine,
+      color,
+      fontSize,
+      lineEnding,
+      oldAnnotation,
+      rect,
+      rotation,
+      user,
+      value,
+    } = annotation;
     const freetext = oldAnnotation || new Dict(xref);
     freetext.set("Type", Name.get("Annot"));
     freetext.set("Subtype", Name.get("FreeText"));
@@ -3952,6 +3967,15 @@ class FreeTextAnnotation extends MarkupAnnotation {
     freetext.set("F", 4);
     freetext.set("Border", [0, 0, 0]);
     freetext.set("Rotate", rotation);
+
+    if (calloutLine) {
+      freetext.set("IT", Name.get("FreeTextCallout"));
+
+      freetext.set("CL", calloutLine);
+      if (lineEnding) {
+        freetext.set("LE", Name.get(lineEnding));
+      }
+    }
 
     if (user) {
       freetext.set("T", stringToAsciiOrUTF16BE(user));
