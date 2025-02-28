@@ -53,6 +53,12 @@ class ExternalServices extends BaseExternalServices {
 }
 
 class MLManager {
+  static {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      this.getFakeMLManager = options => new FakeMLManager(options);
+    }
+  }
+
   async isEnabledFor(_name) {
     return false;
   }
@@ -68,83 +74,82 @@ class MLManager {
   guess(_data) {}
 
   toggleService(_name, _enabled) {}
-
-  static getFakeMLManager(options) {
-    return new FakeMLManager(options);
-  }
 }
 
-class FakeMLManager {
-  eventBus = null;
+if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+  // eslint-disable-next-line no-var
+  var FakeMLManager = class {
+    eventBus = null;
 
-  hasProgress = false;
+    hasProgress = false;
 
-  constructor({ enableGuessAltText, enableAltTextModelDownload }) {
-    this.enableGuessAltText = enableGuessAltText;
-    this.enableAltTextModelDownload = enableAltTextModelDownload;
-  }
+    constructor({ enableGuessAltText, enableAltTextModelDownload }) {
+      this.enableGuessAltText = enableGuessAltText;
+      this.enableAltTextModelDownload = enableAltTextModelDownload;
+    }
 
-  setEventBus(eventBus, abortSignal) {
-    this.eventBus = eventBus;
-  }
+    setEventBus(eventBus, abortSignal) {
+      this.eventBus = eventBus;
+    }
 
-  async isEnabledFor(_name) {
-    return this.enableGuessAltText;
-  }
+    async isEnabledFor(_name) {
+      return this.enableGuessAltText;
+    }
 
-  async deleteModel(_name) {
-    this.enableAltTextModelDownload = false;
-    return null;
-  }
+    async deleteModel(_name) {
+      this.enableAltTextModelDownload = false;
+      return null;
+    }
 
-  async loadModel(_name) {}
+    async loadModel(_name) {}
 
-  async downloadModel(_name) {
-    // Simulate downloading the model but with progress.
-    // The progress can be seen in the new alt-text dialog.
-    this.hasProgress = true;
+    async downloadModel(_name) {
+      // Simulate downloading the model but with progress.
+      // The progress can be seen in the new alt-text dialog.
+      this.hasProgress = true;
 
-    const { promise, resolve } = Promise.withResolvers();
-    const total = 1e8;
-    const end = 1.5 * total;
-    const increment = 5e6;
-    let loaded = 0;
-    const id = setInterval(() => {
-      loaded += increment;
-      if (loaded <= end) {
-        this.eventBus.dispatch("loadaiengineprogress", {
-          source: this,
-          detail: {
-            total,
-            totalLoaded: loaded,
-            finished: loaded + increment >= end,
-          },
-        });
-        return;
-      }
-      clearInterval(id);
-      this.hasProgress = false;
-      this.enableAltTextModelDownload = true;
-      resolve(true);
-    }, 900);
-    return promise;
-  }
+      const { promise, resolve } = Promise.withResolvers();
+      const total = 1e8;
+      const end = 1.5 * total;
+      const increment = 5e6;
+      let loaded = 0;
+      const id = setInterval(() => {
+        loaded += increment;
+        if (loaded <= end) {
+          this.eventBus.dispatch("loadaiengineprogress", {
+            source: this,
+            detail: {
+              total,
+              totalLoaded: loaded,
+              finished: loaded + increment >= end,
+            },
+          });
+          return;
+        }
+        clearInterval(id);
+        this.hasProgress = false;
+        this.enableAltTextModelDownload = true;
+        resolve(true);
+      }, 900);
+      return promise;
+    }
 
-  isReady(_name) {
-    return this.enableAltTextModelDownload;
-  }
+    isReady(_name) {
+      return this.enableAltTextModelDownload;
+    }
 
-  guess({ request: { data } }) {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve(data ? { output: "Fake alt text." } : { error: true });
-      }, 3000);
-    });
-  }
+    guess({ request: { data } }) {
+      return new Promise(resolve => {
+        setTimeout(() => {
+          resolve(data ? { output: "Fake alt text." } : { error: true });
+        }, 3000);
+      });
+    }
 
-  toggleService(_name, enabled) {
-    this.enableGuessAltText = enabled;
-  }
+    toggleService(_name, enabled) {
+      this.enableGuessAltText = enabled;
+    }
+  };
 }
 
 export { ExternalServices, initCom, MLManager, Preferences };
