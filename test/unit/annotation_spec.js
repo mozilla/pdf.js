@@ -4257,6 +4257,40 @@ describe("annotation", function () {
       );
     });
 
+    it("should create a new FreeTextCallout annotation", async () => {
+      const xref = (partialEvaluator.xref = new XRefMock());
+      const task = new WorkerTask("test FreeText creation");
+      const changes = new RefSetCache();
+      await AnnotationFactory.saveNewAnnotations(
+        partialEvaluator,
+        task,
+        [
+          {
+            annotationType: AnnotationEditorType.FREETEXT,
+            rect: [12, 34, 56, 78],
+            rotation: 0,
+            fontSize: 10,
+            color: [0, 0, 0],
+            calloutLine: [0, 0, 10, 56, 12, 56],
+            lineEnding: "OpenArrow",
+            value: "Hello PDF.js World!",
+          },
+        ],
+        null,
+        changes
+      );
+      const data = await writeChanges(changes, xref);
+
+      const base = data[1].data.replace(/\(D:\d+\)/, "(date)");
+      expect(base).toEqual(
+        "2 0 obj\n" +
+          "<< /Type /Annot /Subtype /FreeText /CreationDate (date) " +
+          "/Rect [12 34 56 78] /DA (/Helv 10 Tf 0 g) /Contents (Hello PDF.js World!) " +
+          "/F 4 /Border [0 0 0] /Rotate 0 /IT /FreeTextCallout /CL [0 0 10 56 12 56] /LE /OpenArrow /AP << /N 3 0 R>>>>\n" +
+          "endobj\n"
+      );
+    });
+
     it("should render an added FreeText annotation for printing", async function () {
       partialEvaluator.xref = new XRefMock();
       const task = new WorkerTask("test FreeText printing");
@@ -4383,6 +4417,38 @@ describe("annotation", function () {
         "Hello PDF.js",
         "World !",
       ]);
+    });
+
+    it("should parse callout line from a FreeTextCallout annotation", async function () {
+      partialEvaluator.xref = new XRefMock();
+      const task = new WorkerTask("test FreeTextCallout line parsing");
+      const freetextAnnotation = (
+        await AnnotationFactory.printNewAnnotations(
+          annotationGlobalsMock,
+          partialEvaluator,
+          task,
+          [
+            {
+              annotationType: AnnotationEditorType.FREETEXT,
+              rect: [12, 34, 56, 78],
+              rotation: 0,
+              fontSize: 10,
+              color: [0, 0, 0],
+              calloutLine: [0, 0, 10, 56, 12, 56],
+              lineEnding: "OpenArrow",
+              value: "Hello PDF.js\nWorld !",
+            },
+          ]
+        )
+      )[0];
+
+      expect(freetextAnnotation.data.it).toEqual("FreeTextCallout");
+
+      expect(freetextAnnotation.data.calloutLine).toEqual([
+        0, 0, 10, 56, 12, 56,
+      ]);
+
+      expect(freetextAnnotation.data.lineEnding).toEqual("OpenArrow");
     });
   });
 
