@@ -52,6 +52,7 @@ class Pattern {
     xref,
     res,
     pdfFunctionFactory,
+    globalColorSpaceCache,
     localColorSpaceCache
   ) {
     const dict = shading instanceof BaseStream ? shading.dict : shading;
@@ -66,6 +67,7 @@ class Pattern {
             xref,
             res,
             pdfFunctionFactory,
+            globalColorSpaceCache,
             localColorSpaceCache
           );
         case ShadingType.FREE_FORM_MESH:
@@ -77,6 +79,7 @@ class Pattern {
             xref,
             res,
             pdfFunctionFactory,
+            globalColorSpaceCache,
             localColorSpaceCache
           );
         default:
@@ -114,7 +117,14 @@ class BaseShading {
 // Radial and axial shading have very similar implementations
 // If needed, the implementations can be broken into two classes.
 class RadialAxialShading extends BaseShading {
-  constructor(dict, xref, resources, pdfFunctionFactory, localColorSpaceCache) {
+  constructor(
+    dict,
+    xref,
+    resources,
+    pdfFunctionFactory,
+    globalColorSpaceCache,
+    localColorSpaceCache
+  ) {
     super();
     this.shadingType = dict.get("ShadingType");
     let coordsLen = 0;
@@ -132,6 +142,7 @@ class RadialAxialShading extends BaseShading {
       xref,
       resources,
       pdfFunctionFactory,
+      globalColorSpaceCache,
       localColorSpaceCache,
     });
     this.bbox = lookupNormalRect(dict.getArray("BBox"), null);
@@ -452,6 +463,7 @@ class MeshShading extends BaseShading {
     xref,
     resources,
     pdfFunctionFactory,
+    globalColorSpaceCache,
     localColorSpaceCache
   ) {
     super();
@@ -466,6 +478,7 @@ class MeshShading extends BaseShading {
       xref,
       resources,
       pdfFunctionFactory,
+      globalColorSpaceCache,
       localColorSpaceCache,
     });
     this.background = dict.has("Background")
