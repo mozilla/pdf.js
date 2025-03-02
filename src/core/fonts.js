@@ -576,9 +576,7 @@ function getRanges(glyphs, toUnicodeExtraMap, numGlyphs) {
   if (codes.length === 0) {
     codes.push({ fontCharCode: 0, glyphId: 0 });
   }
-  codes.sort(function fontGetRangesSort(a, b) {
-    return a.fontCharCode - b.fontCharCode;
-  });
+  codes.sort((a, b) => a.fontCharCode - b.fontCharCode);
 
   // Split the sorted codes into ranges.
   const ranges = [];
@@ -1777,9 +1775,7 @@ class Font {
       }
 
       // removing duplicate entries
-      mappings.sort(function (a, b) {
-        return a.charCode - b.charCode;
-      });
+      mappings.sort((a, b) => a.charCode - b.charCode);
       const finalMappings = [],
         seenCharCodes = new Set();
       for (const map of mappings) {

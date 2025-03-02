@@ -374,9 +374,7 @@ function decodeBitmap(
   // Sorting is non-standard, and it is not required. But sorting increases
   // the number of template bits that can be reused from the previous
   // contextLabel in the main loop.
-  template.sort(function (a, b) {
-    return a.y - b.y || a.x - b.x;
-  });
+  template.sort((a, b) => a.y - b.y || a.x - b.x);
 
   const templateLength = template.length;
   const templateX = new Int8Array(templateLength);

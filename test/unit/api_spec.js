@@ -4869,9 +4869,9 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       // Issue 6205 reported an issue with font rendering, so clear the loaded
       // fonts so that we can see whether loading PDFs in parallel does not
       // cause any issues with the rendered fonts.
-      const destroyPromises = loadingTasks.map(function (loadingTask) {
-        return loadingTask.destroy();
-      });
+      const destroyPromises = loadingTasks.map(loadingTask =>
+        loadingTask.destroy()
+      );
       await Promise.all(destroyPromises);
     });
 
