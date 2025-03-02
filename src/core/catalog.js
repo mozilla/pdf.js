@@ -1475,9 +1475,7 @@ class Catalog {
           if (!found) {
             throw new FormatError("Kid reference not found in parent's kids.");
           }
-          return Promise.all(kidPromises).then(function () {
-            return [total, parentRef];
-          });
+          return Promise.all(kidPromises).then(() => [total, parentRef]);
         });
     }
 
