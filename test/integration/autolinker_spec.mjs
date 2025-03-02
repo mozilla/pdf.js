@@ -13,10 +13,46 @@
  * limitations under the License.
  */
 
-import { closePages, createPromise, loadAndWait } from "./test_utils.mjs";
+import {
+  awaitPromise,
+  closePages,
+  createPromise,
+  loadAndWait,
+} from "./test_utils.mjs";
 
-function waitForLinkAnnotations(page) {
+function waitForLinkAnnotations(page, pageNumber) {
+  return page.evaluateHandle(
+    number => [
+      new Promise(resolve => {
+        const { eventBus } = window.PDFViewerApplication;
+        eventBus.on("linkannotationsadded", function listener(e) {
+          if (number === undefined || e.pageNumber === number) {
+            resolve();
+            eventBus.off("linkannotationsadded", listener);
+          }
+        });
+      }),
+    ],
+    pageNumber
+  );
+}
+
+function recordInitialLinkAnnotationsEvent(eventBus) {
+  globalThis.initialLinkAnnotationsEventFired = false;
+  eventBus.on(
+    "linkannotationsadded",
+    () => {
+      globalThis.initialLinkAnnotationsEventFired = true;
+    },
+    { once: true }
+  );
+}
+function waitForInitialLinkAnnotations(page) {
   return createPromise(page, resolve => {
+    if (globalThis.initialLinkAnnotationsEventFired) {
+      resolve();
+      return;
+    }
     window.PDFViewerApplication.eventBus.on("linkannotationsadded", resolve, {
       once: true,
     });
@@ -174,6 +210,51 @@ describe("autolinker", function () {
             annotations => annotations.map(a => a.href)
           );
           expect(url.length).withContext(`In ${browserName}`).toEqual(1);
+        })
+      );
+    });
+  });
+
+  describe("when highlighting search results", function () {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "issue3115r.pdf",
+        ".annotationLayer",
+        null,
+        { eventBusSetup: recordInitialLinkAnnotationsEvent },
+        { enableAutoLinking: true }
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must find links that overlap with search results", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await awaitPromise(await waitForInitialLinkAnnotations(page));
+
+          const linkAnnotationsPromise = await waitForLinkAnnotations(page, 36);
+
+          // Search for "rich.edu"
+          await page.click("#viewFindButton");
+          await page.waitForSelector("#viewFindButton", { hidden: false });
+          await page.type("#findInput", "rich.edu");
+          await page.waitForSelector(".textLayer .highlight");
+
+          await awaitPromise(linkAnnotationsPromise);
+
+          const urls = await page.$$eval(
+            ".page[data-page-number='36'] > .annotationLayer > .linkAnnotation > a",
+            annotations => annotations.map(a => a.href)
+          );
+
+          expect(urls)
+            .withContext(`In ${browserName}`)
+            .toContain(jasmine.stringContaining("rich.edu"));
         })
       );
     });
