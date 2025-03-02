@@ -546,9 +546,7 @@ class Page {
           resources: this.resources,
           operatorList: opList,
         })
-        .then(function () {
-          return opList;
-        });
+        .then(() => opList);
     });
 
     // Fetch the page's annotations and add their operator lists to the

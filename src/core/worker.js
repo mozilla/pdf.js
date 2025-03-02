@@ -450,9 +450,9 @@ class WorkerMessageHandler {
     });
 
     handler.on("GetPageJSActions", function ({ pageIndex }) {
-      return pdfManager.getPage(pageIndex).then(function (page) {
-        return pdfManager.ensure(page, "jsActions");
-      });
+      return pdfManager
+        .getPage(pageIndex)
+        .then(page => pdfManager.ensure(page, "jsActions"));
     });
 
     handler.on("GetOutline", function (data) {
@@ -479,9 +479,7 @@ class WorkerMessageHandler {
     });
 
     handler.on("GetData", function (data) {
-      return pdfManager.requestLoadedStream().then(function (stream) {
-        return stream.bytes;
-      });
+      return pdfManager.requestLoadedStream().then(stream => stream.bytes);
     });
 
     handler.on("GetAnnotations", function ({ pageIndex, intent }) {
@@ -812,9 +810,9 @@ class WorkerMessageHandler {
     });
 
     handler.on("GetStructTree", function (data) {
-      return pdfManager.getPage(data.pageIndex).then(function (page) {
-        return pdfManager.ensure(page, "getStructTree");
-      });
+      return pdfManager
+        .getPage(data.pageIndex)
+        .then(page => pdfManager.ensure(page, "getStructTree"));
     });
 
     handler.on("FontFallback", function (data) {
@@ -872,9 +870,9 @@ class WorkerMessageHandler {
         return pdfManager.ensureDoc("startXRef");
       });
       handler.on("GetAnnotArray", function (data) {
-        return pdfManager.getPage(data.pageIndex).then(function (page) {
-          return page.annotations.map(a => a.toString());
-        });
+        return pdfManager
+          .getPage(data.pageIndex)
+          .then(page => page.annotations.map(a => a.toString()));
       });
     }
 
