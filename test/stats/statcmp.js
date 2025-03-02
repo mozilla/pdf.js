@@ -64,9 +64,7 @@ function flatten(stats) {
   });
   // Use only overall results if not grouped by 'stat'
   if (!options.groupBy.includes("stat")) {
-    rows = rows.filter(function (s) {
-      return s.stat === "Overall";
-    });
+    rows = rows.filter(s => s.stat === "Overall");
   }
   return rows;
 }
@@ -129,9 +127,7 @@ function stat(baseline, current) {
   }
   const rows = [];
   // collect rows and measure column widths
-  const width = labels.map(function (s) {
-    return s.length;
-  });
+  const width = labels.map(s => s.length);
   rows.push(labels);
   for (const key of keys) {
     const baselineMean = mean(baselineGroup[key]);
@@ -162,9 +158,7 @@ function stat(baseline, current) {
   }
 
   // add horizontal line
-  const hline = width.map(function (w) {
-    return new Array(w + 1).join("-");
-  });
+  const hline = width.map(w => new Array(w + 1).join("-"));
   rows.splice(1, 0, hline);
 
   // print output

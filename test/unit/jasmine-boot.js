@@ -100,10 +100,7 @@ async function initializePDFJS(callback) {
       "pdfjs-test/unit/xfa_serialize_data_spec.js",
       "pdfjs-test/unit/xfa_tohtml_spec.js",
       "pdfjs-test/unit/xml_spec.js",
-    ].map(function (moduleName) {
-      // eslint-disable-next-line no-unsanitized/method
-      return import(moduleName);
-    })
+    ].map(moduleName => import(moduleName)) // eslint-disable-line no-unsanitized/method
   );
 
   if (isNodeJS) {
