@@ -48,11 +48,9 @@ class RunLengthStream extends DecodeStream {
       }
     } else {
       n = 257 - n;
-      const b = repeatHeader[1];
       buffer = this.ensureBuffer(bufferLength + n + 1);
-      for (let i = 0; i < n; i++) {
-        buffer[bufferLength++] = b;
-      }
+      buffer.fill(repeatHeader[1], bufferLength, bufferLength + n);
+      bufferLength += n;
     }
     this.bufferLength = bufferLength;
   }
