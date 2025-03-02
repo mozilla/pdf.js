@@ -414,9 +414,7 @@ class ChunkedStreamManager {
       }
     }
 
-    chunksToRequest.sort(function (a, b) {
-      return a - b;
-    });
+    chunksToRequest.sort((a, b) => a - b);
     return this._requestChunks(chunksToRequest);
   }
 

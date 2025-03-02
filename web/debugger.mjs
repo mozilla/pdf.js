@@ -398,9 +398,7 @@ class Stepper {
   }
 
   getNextBreakPoint() {
-    this.breakPoints.sort(function (a, b) {
-      return a - b;
-    });
+    this.breakPoints.sort((a, b) => a - b);
     for (const breakPoint of this.breakPoints) {
       if (breakPoint > this.currentIdx) {
         return breakPoint;
@@ -487,9 +485,7 @@ const Stats = (function Stats() {
       statsDiv.textContent = stat.toString();
       wrapper.append(title, statsDiv);
       stats.push({ pageNumber, div: wrapper });
-      stats.sort(function (a, b) {
-        return a.pageNumber - b.pageNumber;
-      });
+      stats.sort((a, b) => a.pageNumber - b.pageNumber);
       clear(this.panel);
       for (const entry of stats) {
         this.panel.append(entry.div);
