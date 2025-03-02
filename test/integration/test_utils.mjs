@@ -568,16 +568,24 @@ function waitForAnnotationModeChanged(page) {
   });
 }
 
-function waitForPageRendered(page) {
-  return createPromise(page, resolve => {
-    const { eventBus } = window.PDFViewerApplication;
-    eventBus.on("pagerendered", function handler(e) {
-      if (!e.isDetailView) {
-        resolve();
-        eventBus.off("pagerendered", handler);
-      }
-    });
-  });
+function waitForPageRendered(page, pageNumber) {
+  return page.evaluateHandle(
+    number => [
+      new Promise(resolve => {
+        const { eventBus } = window.PDFViewerApplication;
+        eventBus.on("pagerendered", function handler(e) {
+          if (
+            !e.isDetailView &&
+            (number === undefined || e.pageNumber === number)
+          ) {
+            resolve();
+            eventBus.off("pagerendered", handler);
+          }
+        });
+      }),
+    ],
+    pageNumber
+  );
 }
 
 function waitForEditorMovedInDOM(page) {
