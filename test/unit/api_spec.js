@@ -192,9 +192,9 @@ describe("api", function () {
       expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
       // This can be somewhat random -- we cannot guarantee perfect
       // 'Terminate' message to the worker before/after setting up pdfManager.
-      const destroyed = loadingTask._worker.promise.then(function () {
-        return loadingTask.destroy();
-      });
+      const destroyed = loadingTask._worker.promise.then(() =>
+        loadingTask.destroy()
+      );
 
       await destroyed;
       expect(true).toEqual(true);
@@ -861,9 +861,9 @@ describe("api", function () {
         expect(!!worker).toEqual(true);
       });
 
-      const destroyPromise = loadingTask.promise.then(function () {
-        return loadingTask.destroy();
-      });
+      const destroyPromise = loadingTask.promise.then(() =>
+        loadingTask.destroy()
+      );
       await destroyPromise;
 
       const destroyedWorker = loadingTask._worker;
@@ -890,9 +890,9 @@ describe("api", function () {
         expect(messageHandlerPort === worker.port).toEqual(true);
       });
 
-      const destroyPromise = loadingTask.promise.then(function () {
-        return loadingTask.destroy();
-      });
+      const destroyPromise = loadingTask.promise.then(() =>
+        loadingTask.destroy()
+      );
       await destroyPromise;
 
       expect(worker.destroyed).toEqual(false);
@@ -1141,8 +1141,8 @@ describe("api", function () {
         buildGetDocumentParams("Pages-tree-refs.pdf")
       );
 
-      const page1 = loadingTask.promise.then(function (pdfDoc) {
-        return pdfDoc.getPage(1).then(
+      const page1 = loadingTask.promise.then(pdfDoc =>
+        pdfDoc.getPage(1).then(
           function (pdfPage) {
             expect(pdfPage instanceof PDFPageProxy).toEqual(true);
             expect(pdfPage.ref).toEqual({ num: 6, gen: 0 });
@@ -1150,11 +1150,11 @@ describe("api", function () {
           function (reason) {
             throw new Error("shall not fail for valid page");
           }
-        );
-      });
+        )
+      );
 
-      const page2 = loadingTask.promise.then(function (pdfDoc) {
-        return pdfDoc.getPage(2).then(
+      const page2 = loadingTask.promise.then(pdfDoc =>
+        pdfDoc.getPage(2).then(
           function (pdfPage) {
             throw new Error("shall fail for invalid page");
           },
@@ -1164,8 +1164,8 @@ describe("api", function () {
               "Pages tree contains circular reference."
             );
           }
-        );
-      });
+        )
+      );
 
       await Promise.all([page1, page2]);
       await loadingTask.destroy();
@@ -1396,29 +1396,29 @@ describe("api", function () {
     it("gets page labels", async function () {
       // PageLabels with Roman/Arabic numerals.
       const loadingTask0 = getDocument(buildGetDocumentParams("bug793632.pdf"));
-      const promise0 = loadingTask0.promise.then(function (pdfDoc) {
-        return pdfDoc.getPageLabels();
-      });
+      const promise0 = loadingTask0.promise.then(pdfDoc =>
+        pdfDoc.getPageLabels()
+      );
 
       // PageLabels with only a label prefix.
       const loadingTask1 = getDocument(buildGetDocumentParams("issue1453.pdf"));
-      const promise1 = loadingTask1.promise.then(function (pdfDoc) {
-        return pdfDoc.getPageLabels();
-      });
+      const promise1 = loadingTask1.promise.then(pdfDoc =>
+        pdfDoc.getPageLabels()
+      );
 
       // PageLabels identical to standard page numbering.
       const loadingTask2 = getDocument(buildGetDocumentParams("rotation.pdf"));
-      const promise2 = loadingTask2.promise.then(function (pdfDoc) {
-        return pdfDoc.getPageLabels();
-      });
+      const promise2 = loadingTask2.promise.then(pdfDoc =>
+        pdfDoc.getPageLabels()
+      );
 
       // PageLabels with bad "Prefix" entries.
       const loadingTask3 = getDocument(
         buildGetDocumentParams("bad-PageLabels.pdf")
       );
-      const promise3 = loadingTask3.promise.then(function (pdfDoc) {
-        return pdfDoc.getPageLabels();
-      });
+      const promise3 = loadingTask3.promise.then(pdfDoc =>
+        pdfDoc.getPageLabels()
+      );
 
       const pageLabels = await Promise.all([
         promise0,
@@ -1512,9 +1512,7 @@ describe("api", function () {
       );
 
       const promise1 = loadingTask1.promise
-        .then(function (pdfDoc) {
-          return pdfDoc.getOpenAction();
-        })
+        .then(pdfDoc => pdfDoc.getOpenAction())
         .then(function (openAction) {
           expect(openAction.dest).toBeUndefined();
           expect(openAction.action).toEqual("Print");
@@ -1522,9 +1520,7 @@ describe("api", function () {
           return loadingTask1.destroy();
         });
       const promise2 = loadingTask2.promise
-        .then(function (pdfDoc) {
-          return pdfDoc.getOpenAction();
-        })
+        .then(pdfDoc => pdfDoc.getOpenAction())
         .then(function (openAction) {
           expect(openAction.dest).toBeUndefined();
           expect(openAction.action).toEqual("Print");
@@ -2064,25 +2060,25 @@ describe("api", function () {
       const loadingTask0 = getDocument(
         buildGetDocumentParams("issue9972-1.pdf")
       );
-      const promise0 = loadingTask0.promise.then(function (pdfDoc) {
-        return pdfDoc.getPermissions();
-      });
+      const promise0 = loadingTask0.promise.then(pdfDoc =>
+        pdfDoc.getPermissions()
+      );
 
       // Printing not allowed.
       const loadingTask1 = getDocument(
         buildGetDocumentParams("issue9972-2.pdf")
       );
-      const promise1 = loadingTask1.promise.then(function (pdfDoc) {
-        return pdfDoc.getPermissions();
-      });
+      const promise1 = loadingTask1.promise.then(pdfDoc =>
+        pdfDoc.getPermissions()
+      );
 
       // Copying not allowed.
       const loadingTask2 = getDocument(
         buildGetDocumentParams("issue9972-3.pdf")
       );
-      const promise2 = loadingTask2.promise.then(function (pdfDoc) {
-        return pdfDoc.getPermissions();
-      });
+      const promise2 = loadingTask2.promise.then(pdfDoc =>
+        pdfDoc.getPermissions()
+      );
 
       const totalPermissionCount = Object.keys(PermissionFlag).length;
       const permissions = await Promise.all([promise0, promise1, promise2]);
@@ -3050,9 +3046,7 @@ describe("api", function () {
         params.url = url.href;
         loadingTask = getDocument(params);
         return loadingTask.promise
-          .then(function (pdf) {
-            return pdf.destroy();
-          })
+          .then(pdf => pdf.destroy())
           .then(
             function () {
               expect(expectSuccess).toEqual(true);
@@ -3293,10 +3287,9 @@ describe("api", function () {
       const filename = "bug766086.pdf";
 
       const defaultLoadingTask = getDocument(buildGetDocumentParams(filename));
-      const defaultPromise = defaultLoadingTask.promise.then(function (pdfDoc) {
-        return pdfDoc.getPage(1).then(function (pdfPage) {
-          return pdfPage.getAnnotations();
-        });
+      const defaultPromise = defaultLoadingTask.promise.then(async pdfDoc => {
+        const pdfPage = await pdfDoc.getPage(1);
+        return pdfPage.getAnnotations();
       });
 
       const docBaseUrlLoadingTask = getDocument(
@@ -3305,10 +3298,9 @@ describe("api", function () {
         })
       );
       const docBaseUrlPromise = docBaseUrlLoadingTask.promise.then(
-        function (pdfDoc) {
-          return pdfDoc.getPage(1).then(function (pdfPage) {
-            return pdfPage.getAnnotations();
-          });
+        async pdfDoc => {
+          const pdfPage = await pdfDoc.getPage(1);
+          return pdfPage.getAnnotations();
         }
       );
 
@@ -3318,10 +3310,9 @@ describe("api", function () {
         })
       );
       const invalidDocBaseUrlPromise =
-        invalidDocBaseUrlLoadingTask.promise.then(function (pdfDoc) {
-          return pdfDoc.getPage(1).then(function (pdfPage) {
-            return pdfPage.getAnnotations();
-          });
+        invalidDocBaseUrlLoadingTask.promise.then(async pdfDoc => {
+          const pdfPage = await pdfDoc.getPage(1);
+          return pdfPage.getAnnotations();
         });
 
       const [
