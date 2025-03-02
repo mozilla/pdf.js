@@ -45,6 +45,7 @@ import {
 import {
   build,
   getDocument,
+  isValidExplicitDest,
   PDFDataRangeTransport,
   PDFWorker,
   version,
@@ -117,6 +118,7 @@ export {
   InvalidPDFException,
   isDataScheme,
   isPdfFile,
+  isValidExplicitDest,
   noContextMenu,
   normalizeUnicode,
   OPS,
