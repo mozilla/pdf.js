@@ -18,6 +18,7 @@
  */
 
 import {
+  _isValidExplicitDest,
   AbortException,
   AnnotationMode,
   assert,
@@ -595,15 +596,20 @@ function getFactoryUrlProp(val) {
   throw new Error(`Invalid factory url: "${val}" must include trailing slash.`);
 }
 
-function isRefProxy(ref) {
-  return (
-    typeof ref === "object" &&
-    Number.isInteger(ref?.num) &&
-    ref.num >= 0 &&
-    Number.isInteger(ref?.gen) &&
-    ref.gen >= 0
-  );
-}
+const isRefProxy = v =>
+  typeof v === "object" &&
+  Number.isInteger(v?.num) &&
+  v.num >= 0 &&
+  Number.isInteger(v?.gen) &&
+  v.gen >= 0;
+
+const isNameProxy = v => typeof v === "object" && typeof v?.name === "string";
+
+const isValidExplicitDest = _isValidExplicitDest.bind(
+  null,
+  /* validRef = */ isRefProxy,
+  /* validName = */ isNameProxy
+);
 
 /**
  * @typedef {Object} OnProgressParameters
@@ -3485,6 +3491,7 @@ const build =
 export {
   build,
   getDocument,
+  isValidExplicitDest,
   LoopbackPort,
   PDFDataRangeTransport,
   PDFDocumentLoadingTask,

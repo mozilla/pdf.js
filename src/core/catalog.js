@@ -14,15 +14,7 @@
  */
 
 import {
-  collectActions,
-  isNumberArray,
-  MissingDataException,
-  PDF_VERSION_REGEXP,
-  recoverJsURL,
-  toRomanNumerals,
-  XRefEntryException,
-} from "./core_utils.js";
-import {
+  _isValidExplicitDest,
   createValidAbsoluteUrl,
   DocumentActionEventType,
   FormatError,
@@ -34,6 +26,15 @@ import {
   stringToUTF8String,
   warn,
 } from "../shared/util.js";
+import {
+  collectActions,
+  isNumberArray,
+  MissingDataException,
+  PDF_VERSION_REGEXP,
+  recoverJsURL,
+  toRomanNumerals,
+  XRefEntryException,
+} from "./core_utils.js";
 import {
   Dict,
   isDict,
@@ -53,52 +54,13 @@ import { FileSpec } from "./file_spec.js";
 import { MetadataParser } from "./metadata_parser.js";
 import { StructTreeRoot } from "./struct_tree.js";
 
-function isValidExplicitDest(dest) {
-  if (!Array.isArray(dest) || dest.length < 2) {
-    return false;
-  }
-  const [page, zoom, ...args] = dest;
-  if (!(page instanceof Ref) && !Number.isInteger(page)) {
-    return false;
-  }
-  if (!(zoom instanceof Name)) {
-    return false;
-  }
-  const argsLen = args.length;
-  let allowNull = true;
-  switch (zoom.name) {
-    case "XYZ":
-      if (argsLen < 2 || argsLen > 3) {
-        return false;
-      }
-      break;
-    case "Fit":
-    case "FitB":
-      return argsLen === 0;
-    case "FitH":
-    case "FitBH":
-    case "FitV":
-    case "FitBV":
-      if (argsLen > 1) {
-        return false;
-      }
-      break;
-    case "FitR":
-      if (argsLen !== 4) {
-        return false;
-      }
-      allowNull = false;
-      break;
-    default:
-      return false;
-  }
-  for (const arg of args) {
-    if (!(typeof arg === "number" || (allowNull && arg === null))) {
-      return false;
-    }
-  }
-  return true;
-}
+const isRef = v => v instanceof Ref;
+
+const isValidExplicitDest = _isValidExplicitDest.bind(
+  null,
+  /* validRef = */ isRef,
+  /* validName = */ isName
+);
 
 function fetchDest(dest) {
   if (dest instanceof Dict) {
