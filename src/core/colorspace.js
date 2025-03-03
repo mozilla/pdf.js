@@ -308,10 +308,8 @@ class ColorSpace {
 
   static #cache(
     cacheKey,
-    xref,
-    globalColorSpaceCache,
-    localColorSpaceCache,
-    parsedCS
+    parsedCS,
+    { xref, globalColorSpaceCache, localColorSpaceCache }
   ) {
     if (!globalColorSpaceCache || !localColorSpaceCache) {
       throw new Error(
@@ -389,16 +387,18 @@ class ColorSpace {
           "before calling `ColorSpace.parseAsync`."
       );
     }
-    const parsedCS = this.#parse(cs, xref, resources, pdfFunctionFactory);
 
-    // Attempt to cache the parsed ColorSpace, by name and/or reference.
-    this.#cache(
-      cs,
+    const options = {
       xref,
+      resources,
+      pdfFunctionFactory,
       globalColorSpaceCache,
       localColorSpaceCache,
-      parsedCS
-    );
+    };
+    const parsedCS = this.#parse(cs, options);
+
+    // Attempt to cache the parsed ColorSpace, by name and/or reference.
+    this.#cache(cs, parsedCS, options);
 
     return parsedCS;
   }
@@ -420,21 +420,49 @@ class ColorSpace {
     if (cachedCS) {
       return cachedCS;
     }
-    const parsedCS = this.#parse(cs, xref, resources, pdfFunctionFactory);
 
-    // Attempt to cache the parsed ColorSpace, by name and/or reference.
-    this.#cache(
-      cs,
+    const options = {
       xref,
+      resources,
+      pdfFunctionFactory,
       globalColorSpaceCache,
       localColorSpaceCache,
-      parsedCS
-    );
+    };
+    const parsedCS = this.#parse(cs, options);
+
+    // Attempt to cache the parsed ColorSpace, by name and/or reference.
+    this.#cache(cs, parsedCS, options);
 
     return parsedCS;
   }
 
-  static #parse(cs, xref, resources = null, pdfFunctionFactory) {
+  /**
+   * NOTE: This method should *only* be invoked from `this.#parse`,
+   *       when parsing "sub" ColorSpaces.
+   */
+  static #subParse(cs, options) {
+    const { globalColorSpaceCache } = options;
+
+    let csRef;
+    if (cs instanceof Ref) {
+      const cachedCS = globalColorSpaceCache.getByRef(cs);
+      if (cachedCS) {
+        return cachedCS;
+      }
+      csRef = cs;
+    }
+    const parsedCS = this.#parse(cs, options);
+
+    // Only cache the parsed ColorSpace globally, by reference.
+    if (csRef) {
+      globalColorSpaceCache.set(/* name = */ null, csRef, parsedCS);
+    }
+    return parsedCS;
+  }
+
+  static #parse(cs, options) {
+    const { xref, resources, pdfFunctionFactory } = options;
+
     cs = xref.fetchIfRef(cs);
     if (cs instanceof Name) {
       switch (cs.name) {
@@ -458,12 +486,7 @@ class ColorSpace {
               const resourcesCS = colorSpaces.get(cs.name);
               if (resourcesCS) {
                 if (resourcesCS instanceof Name) {
-                  return this.#parse(
-                    resourcesCS,
-                    xref,
-                    resources,
-                    pdfFunctionFactory
-                  );
+                  return this.#parse(resourcesCS, options);
                 }
                 cs = resourcesCS;
                 break;
@@ -506,9 +529,9 @@ class ColorSpace {
           const stream = xref.fetchIfRef(cs[1]);
           const dict = stream.dict;
           numComps = dict.get("N");
-          const alt = dict.get("Alternate");
-          if (alt) {
-            const altCS = this.#parse(alt, xref, resources, pdfFunctionFactory);
+          const altRaw = dict.getRaw("Alternate");
+          if (altRaw) {
+            const altCS = this.#subParse(altRaw, options);
             // Ensure that the number of components are correct,
             // and also (indirectly) that it is not a PatternCS.
             if (altCS.numComps === numComps) {
@@ -527,12 +550,12 @@ class ColorSpace {
         case "Pattern":
           baseCS = cs[1] || null;
           if (baseCS) {
-            baseCS = this.#parse(baseCS, xref, resources, pdfFunctionFactory);
+            baseCS = this.#subParse(baseCS, options);
           }
           return new PatternCS(baseCS);
         case "I":
         case "Indexed":
-          baseCS = this.#parse(cs[1], xref, resources, pdfFunctionFactory);
+          baseCS = this.#subParse(cs[1], options);
           const hiVal = Math.max(0, Math.min(xref.fetchIfRef(cs[2]), 255));
           const lookup = xref.fetchIfRef(cs[3]);
           return new IndexedCS(baseCS, hiVal, lookup);
@@ -540,7 +563,7 @@ class ColorSpace {
         case "DeviceN":
           const name = xref.fetchIfRef(cs[1]);
           numComps = Array.isArray(name) ? name.length : 1;
-          baseCS = this.#parse(cs[2], xref, resources, pdfFunctionFactory);
+          baseCS = this.#subParse(cs[2], options);
           const tintFn = pdfFunctionFactory.create(cs[3]);
           return new AlternateCS(numComps, baseCS, tintFn);
         case "Lab":
