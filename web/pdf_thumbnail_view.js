@@ -24,6 +24,7 @@
 /** @typedef {import("./pdf_rendering_queue").PDFRenderingQueue} PDFRenderingQueue */
 
 import { OutputScale, RenderingCancelledException } from "pdfjs-lib";
+import { AppOptions } from "./app_options.js";
 import { RenderingStates } from "./ui_utils.js";
 
 const DRAW_UPSCALE_FACTOR = 2; // See comment in `PDFThumbnailView.draw` below.
@@ -41,6 +42,9 @@ const THUMBNAIL_WIDTH = 98; // px
  *   The default value is `null`.
  * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
+ * @property {number} [maxCanvasDim] - The maximum supported canvas dimension,
+ *   in either width or height. Use `-1` for no limit.
+ *   The default value is 32767.
  * @property {Object} [pageColors] - Overwrites background and foreground colors
  *   with user defined ones in order to improve readability in high contrast
  *   mode.
@@ -93,6 +97,7 @@ class PDFThumbnailView {
     optionalContentConfigPromise,
     linkService,
     renderingQueue,
+    maxCanvasDim,
     pageColors,
     enableHWA,
   }) {
@@ -105,6 +110,7 @@ class PDFThumbnailView {
     this.viewport = defaultViewport;
     this.pdfPageRotate = defaultViewport.rotation;
     this._optionalContentConfigPromise = optionalContentConfigPromise || null;
+    this.maxCanvasDim = maxCanvasDim || AppOptions.get("maxCanvasDim");
     this.pageColors = pageColors || null;
     this.enableHWA = enableHWA || false;
 
@@ -363,9 +369,24 @@ class PDFThumbnailView {
       );
       return canvas;
     }
+    const { maxCanvasDim } = this;
+
     // drawImage does an awful job of rescaling the image, doing it gradually.
     let reducedWidth = canvas.width << MAX_NUM_SCALING_STEPS;
     let reducedHeight = canvas.height << MAX_NUM_SCALING_STEPS;
+
+    if (maxCanvasDim !== -1) {
+      const maxWidthScale = maxCanvasDim / reducedWidth,
+        maxHeightScale = maxCanvasDim / reducedHeight;
+
+      if (maxWidthScale < 1) {
+        reducedWidth = maxCanvasDim;
+        reducedHeight = (reducedHeight * maxWidthScale) | 0;
+      } else if (maxHeightScale < 1) {
+        reducedWidth = (reducedWidth * maxHeightScale) | 0;
+        reducedHeight = maxCanvasDim;
+      }
+    }
     const [reducedImage, reducedImageCtx] = TempImageFactory.getCanvas(
       reducedWidth,
       reducedHeight
