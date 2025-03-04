@@ -96,6 +96,11 @@ const defaultOptions = {
         : null,
     kind: OptionKind.BROWSER,
   },
+  maxCanvasDim: {
+    /** @type {number} */
+    value: 32767,
+    kind: OptionKind.BROWSER + OptionKind.VIEWER,
+  },
   nimbusDataStr: {
     /** @type {string} */
     value: "",
