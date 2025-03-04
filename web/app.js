@@ -477,7 +477,8 @@ const PDFViewerApplication = {
           )
         : null;
 
-    const enableHWA = AppOptions.get("enableHWA");
+    const enableHWA = AppOptions.get("enableHWA"),
+      maxCanvasDim = AppOptions.get("maxCanvasDim");
     const pdfViewer = new PDFViewer({
       container,
       viewer,
@@ -506,6 +507,7 @@ const PDFViewerApplication = {
       imageResourcesPath: AppOptions.get("imageResourcesPath"),
       enablePrintAutoRotate: AppOptions.get("enablePrintAutoRotate"),
       maxCanvasPixels: AppOptions.get("maxCanvasPixels"),
+      maxCanvasDim,
       enableDetailCanvas: AppOptions.get("enableDetailCanvas"),
       enablePermissions: AppOptions.get("enablePermissions"),
       pageColors,
@@ -527,6 +529,7 @@ const PDFViewerApplication = {
         eventBus,
         renderingQueue: pdfRenderingQueue,
         linkService: pdfLinkService,
+        maxCanvasDim,
         pageColors,
         abortSignal,
         enableHWA,

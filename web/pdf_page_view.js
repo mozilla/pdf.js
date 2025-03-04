@@ -78,12 +78,14 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
  * @property {number} [maxCanvasPixels] - The maximum supported canvas size in
  *   total pixels, i.e. width * height. Use `-1` for no limit, or `0` for
  *   CSS-only zooming. The default value is 4096 * 8192 (32 mega-pixels).
+ * @property {number} [maxCanvasDim] - The maximum supported canvas dimension,
+ *   in either width or height. Use `-1` for no limit.
+ *   The default value is 32767.
  * @property {boolean} [enableDetailCanvas] - When enabled, if the rendered
- *   pages would need a canvas that is larger than `maxCanvasPixels`, it will
- *   draw a second canvas on top of the CSS-zoomed one, that only renders the
- *   part of the page that is close to the viewport. The default value is
- *   `true`.
-
+ *   pages would need a canvas that is larger than `maxCanvasPixels` or
+ *   `maxCanvasDim`, it will draw a second canvas on top of the CSS-zoomed one,
+ *   that only renders the part of the page that is close to the viewport.
+ *   The default value is `true`.
  * @property {Object} [pageColors] - Overwrites background and foreground colors
  *   with user defined ones in order to improve readability in high contrast
  *   mode.
@@ -185,6 +187,7 @@ class PDFPageView extends BasePDFPageView {
     this.enableDetailCanvas = options.enableDetailCanvas ?? true;
     this.maxCanvasPixels =
       options.maxCanvasPixels ?? AppOptions.get("maxCanvasPixels");
+    this.maxCanvasDim = options.maxCanvasDim || AppOptions.get("maxCanvasDim");
     this.#enableAutoLinking = options.enableAutoLinking || false;
 
     this.l10n = options.l10n;
@@ -772,9 +775,21 @@ class PDFPageView extends BasePDFPageView {
       outputScale.sx *= invScale;
       outputScale.sy *= invScale;
       this.#needsRestrictedScaling = true;
-    } else if (this.maxCanvasPixels > 0) {
-      const pixelsInViewport = width * height;
-      const maxScale = Math.sqrt(this.maxCanvasPixels / pixelsInViewport);
+    } else if (this.maxCanvasPixels > 0 || this.maxCanvasDim !== -1) {
+      let maxAreaScale = Infinity,
+        maxWidthScale = Infinity,
+        maxHeightScale = Infinity;
+
+      if (this.maxCanvasPixels > 0) {
+        const pixelsInViewport = width * height;
+        maxAreaScale = Math.sqrt(this.maxCanvasPixels / pixelsInViewport);
+      }
+      if (this.maxCanvasDim !== -1) {
+        maxWidthScale = this.maxCanvasDim / width;
+        maxHeightScale = this.maxCanvasDim / height;
+      }
+      const maxScale = Math.min(maxAreaScale, maxWidthScale, maxHeightScale);
+
       if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
         outputScale.sx = maxScale;
         outputScale.sy = maxScale;
