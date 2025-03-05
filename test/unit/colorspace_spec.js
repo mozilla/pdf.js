@@ -20,6 +20,7 @@ import {
 } from "../../src/core/image_utils.js";
 import { Stream, StringStream } from "../../src/core/stream.js";
 import { ColorSpace } from "../../src/core/colorspace.js";
+import { ColorSpaceUtils } from "../../src/core/colorspace_utils.js";
 import { PDFFunctionFactory } from "../../src/core/function.js";
 import { XRefMock } from "./test_utils.js";
 
@@ -71,7 +72,7 @@ describe("colorspace", function () {
         xref,
       });
 
-      const colorSpace1 = ColorSpace.parse({
+      const colorSpace1 = ColorSpaceUtils.parse({
         cs: Name.get("Pattern"),
         xref,
         resources: null,
@@ -81,7 +82,7 @@ describe("colorspace", function () {
       });
       expect(colorSpace1.name).toEqual("Pattern");
 
-      const colorSpace2 = ColorSpace.parse({
+      const colorSpace2 = ColorSpaceUtils.parse({
         cs: Name.get("Pattern"),
         xref,
         resources: null,
@@ -91,7 +92,7 @@ describe("colorspace", function () {
       });
       expect(colorSpace2.name).toEqual("Pattern");
 
-      const colorSpaceNonCached = ColorSpace.parse({
+      const colorSpaceNonCached = ColorSpaceUtils.parse({
         cs: Name.get("Pattern"),
         xref,
         resources: null,
@@ -101,7 +102,7 @@ describe("colorspace", function () {
       });
       expect(colorSpaceNonCached.name).toEqual("Pattern");
 
-      const colorSpaceOther = ColorSpace.parse({
+      const colorSpaceOther = ColorSpaceUtils.parse({
         cs: Name.get("RGB"),
         xref,
         resources: null,
@@ -144,7 +145,7 @@ describe("colorspace", function () {
         xref,
       });
 
-      const colorSpace1 = ColorSpace.parse({
+      const colorSpace1 = ColorSpaceUtils.parse({
         cs: Ref.get(50, 0),
         xref,
         resources: null,
@@ -154,7 +155,7 @@ describe("colorspace", function () {
       });
       expect(colorSpace1.name).toEqual("CalGray");
 
-      const colorSpace2 = ColorSpace.parse({
+      const colorSpace2 = ColorSpaceUtils.parse({
         cs: Ref.get(50, 0),
         xref,
         resources: null,
@@ -164,7 +165,7 @@ describe("colorspace", function () {
       });
       expect(colorSpace2.name).toEqual("CalGray");
 
-      const colorSpaceNonCached = ColorSpace.parse({
+      const colorSpaceNonCached = ColorSpaceUtils.parse({
         cs: Ref.get(50, 0),
         xref,
         resources: null,
@@ -174,7 +175,7 @@ describe("colorspace", function () {
       });
       expect(colorSpaceNonCached.name).toEqual("CalGray");
 
-      const colorSpaceOther = ColorSpace.parse({
+      const colorSpaceOther = ColorSpaceUtils.parse({
         cs: Ref.get(100, 0),
         xref,
         resources: null,
@@ -216,7 +217,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse({
+      const colorSpace = ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
@@ -268,7 +269,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse({
+      const colorSpace = ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
@@ -326,7 +327,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse({
+      const colorSpace = ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
@@ -384,7 +385,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse({
+      const colorSpace = ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
@@ -448,7 +449,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse({
+      const colorSpace = ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
@@ -506,7 +507,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse({
+      const colorSpace = ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
@@ -575,7 +576,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse({
+      const colorSpace = ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
@@ -646,7 +647,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse({
+      const colorSpace = ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
@@ -715,7 +716,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse({
+      const colorSpace = ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
@@ -788,7 +789,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse({
+      const colorSpace = ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
@@ -867,7 +868,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse({
+      const colorSpace = ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
