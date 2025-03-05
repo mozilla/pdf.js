@@ -320,6 +320,9 @@ pdfjs-highlight-floating-button1 =
     .title = Zvýrazniť
     .aria-label = Zvýrazniť
 pdfjs-highlight-floating-button-label = Zvýrazniť
+pdfjs-editor-signature-button =
+    .title = Pridať podpis
+pdfjs-editor-signature-button-label = Pridať podpis
 
 ## Remove button for the various kind of editor.
 
@@ -349,6 +352,9 @@ pdfjs-editor-stamp-add-image-button-label = Pridať obrázok
 pdfjs-editor-free-highlight-thickness-input = Hrúbka
 pdfjs-editor-free-highlight-thickness-title =
     .title = Zmeňte hrúbku pre zvýrazňovanie iných položiek ako textu
+pdfjs-editor-signature-add-signature-button =
+    .title = Pridať nový podpis
+pdfjs-editor-signature-add-signature-button-label = Pridať nový podpis
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Textový editor
@@ -576,12 +582,18 @@ pdfjs-editor-add-signature-error-close-button = Zavrieť
 
 pdfjs-editor-add-signature-cancel-button = Zrušiť
 pdfjs-editor-add-signature-add-button = Pridať
+pdfjs-editor-edit-signature-update-button = Aktualizovať
 
 ## Main menu for adding/removing signatures
 
+pdfjs-editor-delete-signature-button =
+    .title = Odstrániť podpis
+pdfjs-editor-delete-signature-button-label = Odstrániť podpis
 
 ## Editor toolbar
 
+pdfjs-editor-add-signature-edit-button-label = Upraviť popis
 
 ## Edit signature description dialog
 
+pdfjs-editor-edit-signature-dialog-title = Upraviť popis
