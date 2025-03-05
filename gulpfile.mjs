@@ -387,6 +387,7 @@ function createWebpackConfig(
       parser: {
         javascript: {
           importMeta: false,
+          url: false,
         },
       },
       rules: [
