@@ -316,6 +316,9 @@ pdfjs-highlight-floating-button1 =
     .title = Marcar
     .aria-label = Marcar
 pdfjs-highlight-floating-button-label = Marcar
+pdfjs-editor-signature-button =
+    .title = Agiuntar ina signatura
+pdfjs-editor-signature-button-label = Agiuntar ina signatura
 
 ## Remove button for the various kind of editor.
 
@@ -345,6 +348,9 @@ pdfjs-editor-stamp-add-image-button-label = Agiuntar in maletg
 pdfjs-editor-free-highlight-thickness-input = Grossezza
 pdfjs-editor-free-highlight-thickness-title =
     .title = Midar la grossezza cun relevar elements betg textuals
+pdfjs-editor-signature-add-signature-button =
+    .title = Agiuntar ina nova signatura
+pdfjs-editor-signature-add-signature-button-label = Agiuntar ina nova signatura
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Editur da text
@@ -540,18 +546,48 @@ pdfjs-editor-add-signature-type-input =
     .placeholder = Tippa tia signatura
 pdfjs-editor-add-signature-draw-placeholder = Dissegna tia signatura
 pdfjs-editor-add-signature-draw-thickness-range-label = Grossezza
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Grossezza dal stritg: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = Trair na qua ina datoteca per la transferir
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] U tscherner datotecas da maletg
+       *[other] U tscherner datotecas da maletg
+    }
 
 ## Controls
 
+pdfjs-editor-add-signature-description-label = Descripziun (text alternativ)
+pdfjs-editor-add-signature-description-input =
+    .title = Descripziun (text alternativ)
+pdfjs-editor-add-signature-description-default-when-drawing = Signatura
+pdfjs-editor-add-signature-clear-button-label = Stizzar la signatura
+pdfjs-editor-add-signature-clear-button =
+    .title = Stizzar la signatura
+pdfjs-editor-add-signature-save-checkbox = Memorisar la signatura
+pdfjs-editor-add-signature-save-warning-message = Ti has cuntanschì il dumber maximal da 5 signaturas memorisadas. Allontanar ina per memorisar in’autra.
+pdfjs-editor-add-signature-image-upload-error-title = Impussibel da transferir il maletg
+pdfjs-editor-add-signature-image-upload-error-description = Controllescha tia connexiun cun la rait u emprova cun in’auter maletg.
+pdfjs-editor-add-signature-error-close-button = Serrar
 
 ## Dialog buttons
 
+pdfjs-editor-add-signature-cancel-button = Interrumper
+pdfjs-editor-add-signature-add-button = Agiuntar
+pdfjs-editor-edit-signature-update-button = Actualisar
 
 ## Main menu for adding/removing signatures
 
+pdfjs-editor-delete-signature-button =
+    .title = Allontanar la signatura
+pdfjs-editor-delete-signature-button-label = Allontanar la signatura
 
 ## Editor toolbar
 
+pdfjs-editor-add-signature-edit-button-label = Modifitgar la descripziun
 
 ## Edit signature description dialog
 
+pdfjs-editor-edit-signature-dialog-title = Modifitgar la descripziun

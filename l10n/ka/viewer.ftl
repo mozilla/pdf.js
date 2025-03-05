@@ -316,6 +316,9 @@ pdfjs-highlight-floating-button1 =
     .title = მონიშვნა
     .aria-label = მონიშვნა
 pdfjs-highlight-floating-button-label = მონიშვნა
+pdfjs-editor-signature-button =
+    .title = ხელმოწერის დამატება
+pdfjs-editor-signature-button-label = ხელმოწერის დამატება
 
 ## Remove button for the various kind of editor.
 
@@ -345,6 +348,9 @@ pdfjs-editor-stamp-add-image-button-label = სურათის დამა�
 pdfjs-editor-free-highlight-thickness-input = სისქე
 pdfjs-editor-free-highlight-thickness-title =
     .title = სისქის შეცვლა წარწერის გარდა სხვა ნაწილების მონიშვნისას
+pdfjs-editor-signature-add-signature-button =
+    .title = ახალი ხელმოწერის დამატება
+pdfjs-editor-signature-add-signature-button-label = ახალი ხელმოწერის დამატება
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = ნაწერის ჩასწორება
@@ -570,12 +576,18 @@ pdfjs-editor-add-signature-error-close-button = დახურვა
 
 pdfjs-editor-add-signature-cancel-button = გაუქმება
 pdfjs-editor-add-signature-add-button = დამატება
+pdfjs-editor-edit-signature-update-button = განახლება
 
 ## Main menu for adding/removing signatures
 
+pdfjs-editor-delete-signature-button =
+    .title = ხელმოწერის მოცილება
+pdfjs-editor-delete-signature-button-label = ხელმოწერის მოცილება
 
 ## Editor toolbar
 
+pdfjs-editor-add-signature-edit-button-label = აღწერილობის ჩასწორება
 
 ## Edit signature description dialog
 
+pdfjs-editor-edit-signature-dialog-title = აღწერილობის ჩასწორება

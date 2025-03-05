@@ -308,6 +308,9 @@ pdfjs-highlight-floating-button1 =
     .title = เน้นสี
     .aria-label = เน้นสี
 pdfjs-highlight-floating-button-label = เน้นสี
+pdfjs-editor-signature-button =
+    .title = เพิ่มลายเซ็น
+pdfjs-editor-signature-button-label = เพิ่มลายเซ็น
 
 ## Remove button for the various kind of editor.
 
@@ -337,6 +340,9 @@ pdfjs-editor-stamp-add-image-button-label = เพิ่มภาพ
 pdfjs-editor-free-highlight-thickness-input = ความหนา
 pdfjs-editor-free-highlight-thickness-title =
     .title = เปลี่ยนความหนาเมื่อเน้นรายการอื่นๆ ที่ไม่ใช่ข้อความ
+pdfjs-editor-signature-add-signature-button =
+    .title = เพิ่มลายเซ็นใหม่
+pdfjs-editor-signature-add-signature-button-label = เพิ่มลายเซ็นใหม่
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = ตัวแก้ไขข้อความ
@@ -558,12 +564,18 @@ pdfjs-editor-add-signature-error-close-button = ปิด
 
 pdfjs-editor-add-signature-cancel-button = ยกเลิก
 pdfjs-editor-add-signature-add-button = เพิ่ม
+pdfjs-editor-edit-signature-update-button = อัปเดต
 
 ## Main menu for adding/removing signatures
 
+pdfjs-editor-delete-signature-button =
+    .title = เอาลายเซ็นออก
+pdfjs-editor-delete-signature-button-label = เอาลายเซ็นออก
 
 ## Editor toolbar
 
+pdfjs-editor-add-signature-edit-button-label = แก้ไขคำอธิบาย
 
 ## Edit signature description dialog
 
+pdfjs-editor-edit-signature-dialog-title = แก้ไขคำอธิบาย
