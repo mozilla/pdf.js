@@ -552,15 +552,15 @@ function getRgbColor(color, defaultColor = new Uint8ClampedArray(3)) {
       return null;
 
     case 1: // Convert grayscale to RGB
-      ColorSpaceUtils.singletons.gray.getRgbItem(color, 0, rgbColor, 0);
+      ColorSpaceUtils.gray.getRgbItem(color, 0, rgbColor, 0);
       return rgbColor;
 
     case 3: // Convert RGB percentages to RGB
-      ColorSpaceUtils.singletons.rgb.getRgbItem(color, 0, rgbColor, 0);
+      ColorSpaceUtils.rgb.getRgbItem(color, 0, rgbColor, 0);
       return rgbColor;
 
     case 4: // Convert CMYK to RGB
-      ColorSpaceUtils.singletons.cmyk.getRgbItem(color, 0, rgbColor, 0);
+      ColorSpaceUtils.cmyk.getRgbItem(color, 0, rgbColor, 0);
       return rgbColor;
 
     default:
