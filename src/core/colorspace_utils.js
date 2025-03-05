@@ -25,112 +25,12 @@ import {
   LabCS,
   PatternCS,
 } from "./colorspace.js";
-import { assert, shadow, warn } from "../shared/util.js";
 import { Dict, Name, Ref } from "./primitives.js";
+import { shadow, unreachable, warn } from "../shared/util.js";
 import { IccColorSpace } from "./icc_colorspace.js";
 import { MissingDataException } from "./core_utils.js";
 
 class ColorSpaceUtils {
-  /**
-   * @private
-   */
-  static #cache(
-    cacheKey,
-    parsedCS,
-    { xref, globalColorSpaceCache, localColorSpaceCache }
-  ) {
-    if (!globalColorSpaceCache || !localColorSpaceCache) {
-      throw new Error(
-        'ColorSpace.#cache - expected "globalColorSpaceCache"/"localColorSpaceCache" argument.'
-      );
-    }
-    if (!parsedCS) {
-      throw new Error('ColorSpace.#cache - expected "parsedCS" argument.');
-    }
-    let csName, csRef;
-    if (cacheKey instanceof Ref) {
-      csRef = cacheKey;
-
-      // If parsing succeeded, we know that this call cannot throw.
-      cacheKey = xref.fetch(cacheKey);
-    }
-    if (cacheKey instanceof Name) {
-      csName = cacheKey.name;
-    }
-    if (csName || csRef) {
-      localColorSpaceCache.set(csName, csRef, parsedCS);
-
-      if (csRef) {
-        globalColorSpaceCache.set(/* name = */ null, csRef, parsedCS);
-      }
-    }
-  }
-
-  static getCached(
-    cacheKey,
-    xref,
-    globalColorSpaceCache,
-    localColorSpaceCache
-  ) {
-    if (!globalColorSpaceCache || !localColorSpaceCache) {
-      throw new Error(
-        'ColorSpace.getCached - expected "globalColorSpaceCache"/"localColorSpaceCache" argument.'
-      );
-    }
-    if (cacheKey instanceof Ref) {
-      const cachedCS =
-        globalColorSpaceCache.getByRef(cacheKey) ||
-        localColorSpaceCache.getByRef(cacheKey);
-      if (cachedCS) {
-        return cachedCS;
-      }
-
-      try {
-        cacheKey = xref.fetch(cacheKey);
-      } catch (ex) {
-        if (ex instanceof MissingDataException) {
-          throw ex;
-        }
-        // Any errors should be handled during parsing, rather than here.
-      }
-    }
-    if (cacheKey instanceof Name) {
-      return localColorSpaceCache.getByName(cacheKey.name) || null;
-    }
-    return null;
-  }
-
-  static async parseAsync({
-    cs,
-    xref,
-    resources = null,
-    pdfFunctionFactory,
-    globalColorSpaceCache,
-    localColorSpaceCache,
-  }) {
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
-      assert(
-        !this.getCached(cs, xref, globalColorSpaceCache, localColorSpaceCache),
-        "Expected `ColorSpace.getCached` to have been manually checked " +
-          "before calling `ColorSpace.parseAsync`."
-      );
-    }
-
-    const options = {
-      xref,
-      resources,
-      pdfFunctionFactory,
-      globalColorSpaceCache,
-      localColorSpaceCache,
-    };
-    const parsedCS = this.#parse(cs, options);
-
-    // Attempt to cache the parsed ColorSpace, by name and/or reference.
-    this.#cache(cs, parsedCS, options);
-
-    return parsedCS;
-  }
-
   static parse({
     cs,
     xref,
@@ -138,17 +38,16 @@ class ColorSpaceUtils {
     pdfFunctionFactory,
     globalColorSpaceCache,
     localColorSpaceCache,
+    asyncIfNotCached = false,
   }) {
-    const cachedCS = this.getCached(
-      cs,
-      xref,
-      globalColorSpaceCache,
-      localColorSpaceCache
-    );
-    if (cachedCS) {
-      return cachedCS;
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      (!globalColorSpaceCache || !localColorSpaceCache)
+    ) {
+      unreachable(
+        'ColorSpaceUtils.parse - expected "globalColorSpaceCache"/"localColorSpaceCache" argument.'
+      );
     }
-
     const options = {
       xref,
       resources,
@@ -156,12 +55,47 @@ class ColorSpaceUtils {
       globalColorSpaceCache,
       localColorSpaceCache,
     };
-    const parsedCS = this.#parse(cs, options);
+    let csName, csRef, parsedCS;
+
+    // Check if the ColorSpace is cached first, to avoid re-parsing it.
+    if (cs instanceof Ref) {
+      csRef = cs;
+
+      const cachedCS =
+        globalColorSpaceCache.getByRef(csRef) ||
+        localColorSpaceCache.getByRef(csRef);
+      if (cachedCS) {
+        return cachedCS;
+      }
+      cs = xref.fetch(cs);
+    }
+    if (cs instanceof Name) {
+      csName = cs.name;
+
+      const cachedCS = localColorSpaceCache.getByName(csName);
+      if (cachedCS) {
+        return cachedCS;
+      }
+    }
+
+    try {
+      parsedCS = this.#parse(cs, options);
+    } catch (ex) {
+      if (asyncIfNotCached && !(ex instanceof MissingDataException)) {
+        return Promise.reject(ex);
+      }
+      throw ex;
+    }
 
     // Attempt to cache the parsed ColorSpace, by name and/or reference.
-    this.#cache(cs, parsedCS, options);
+    if (csName || csRef) {
+      localColorSpaceCache.set(csName, csRef, parsedCS);
 
-    return parsedCS;
+      if (csRef) {
+        globalColorSpaceCache.set(/* name = */ null, csRef, parsedCS);
+      }
+    }
+    return asyncIfNotCached ? Promise.resolve(parsedCS) : parsedCS;
   }
 
   /**
@@ -170,14 +104,16 @@ class ColorSpaceUtils {
    */
   static #subParse(cs, options) {
     const { globalColorSpaceCache } = options;
-
     let csRef;
+
+    // Check if the ColorSpace is cached first, to avoid re-parsing it.
     if (cs instanceof Ref) {
-      const cachedCS = globalColorSpaceCache.getByRef(cs);
+      csRef = cs;
+
+      const cachedCS = globalColorSpaceCache.getByRef(csRef);
       if (cachedCS) {
         return cachedCS;
       }
-      csRef = cs;
     }
     const parsedCS = this.#parse(cs, options);
 
@@ -189,7 +125,8 @@ class ColorSpaceUtils {
   }
 
   static #parse(cs, options) {
-    const { xref, resources, pdfFunctionFactory } = options;
+    const { xref, resources, pdfFunctionFactory, globalColorSpaceCache } =
+      options;
 
     cs = xref.fetchIfRef(cs);
     if (cs instanceof Name) {
@@ -254,7 +191,6 @@ class ColorSpaceUtils {
           const matrix = params.getArray("Matrix");
           return new CalRGBCS(whitePoint, blackPoint, gamma, matrix);
         case "ICCBased":
-          const { globalColorSpaceCache } = options;
           const isRef = cs[1] instanceof Ref;
           if (isRef) {
             const cachedCS = globalColorSpaceCache.getByRef(cs[1]);
