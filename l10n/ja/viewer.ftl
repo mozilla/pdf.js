@@ -308,6 +308,9 @@ pdfjs-highlight-floating-button1 =
     .title = 強調
     .aria-label = 強調します
 pdfjs-highlight-floating-button-label = 強調
+pdfjs-editor-signature-button =
+    .title = 署名を追加します
+pdfjs-editor-signature-button-label = 署名を追加
 
 ## Remove button for the various kind of editor.
 
@@ -337,6 +340,9 @@ pdfjs-editor-stamp-add-image-button-label = 画像を追加
 pdfjs-editor-free-highlight-thickness-input = 太さ
 pdfjs-editor-free-highlight-thickness-title =
     .title = テキスト以外のアイテムを強調する時の太さを変更します
+pdfjs-editor-signature-add-signature-button =
+    .title = 新しい署名を追加します
+pdfjs-editor-signature-add-signature-button-label = 新しい署名を追加
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = フリーテキスト注釈エディター
@@ -558,3 +564,18 @@ pdfjs-editor-add-signature-error-close-button = 閉じる
 
 pdfjs-editor-add-signature-cancel-button = キャンセル
 pdfjs-editor-add-signature-add-button = 追加
+pdfjs-editor-edit-signature-update-button = 更新
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button =
+    .title = 署名を削除します
+pdfjs-editor-delete-signature-button-label = 署名を削除
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = 説明を編集
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = 説明の編集
