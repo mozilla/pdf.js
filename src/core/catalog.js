@@ -357,7 +357,7 @@ class Catalog {
         isNumberArray(color, 3) &&
         (color[0] !== 0 || color[1] !== 0 || color[2] !== 0)
       ) {
-        rgbColor = ColorSpaceUtils.singletons.rgb.getRgb(color, 0);
+        rgbColor = ColorSpaceUtils.rgb.getRgb(color, 0);
       }
 
       const outlineItem = {

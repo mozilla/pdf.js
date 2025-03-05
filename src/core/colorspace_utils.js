@@ -133,15 +133,15 @@ class ColorSpaceUtils {
       switch (cs.name) {
         case "G":
         case "DeviceGray":
-          return this.singletons.gray;
+          return this.gray;
         case "RGB":
         case "DeviceRGB":
-          return this.singletons.rgb;
+          return this.rgb;
         case "DeviceRGBA":
-          return this.singletons.rgba;
+          return this.rgba;
         case "CMYK":
         case "DeviceCMYK":
-          return this.singletons.cmyk;
+          return this.cmyk;
         case "Pattern":
           return new PatternCS(/* baseCS = */ null);
         default:
@@ -160,7 +160,7 @@ class ColorSpaceUtils {
           }
           // Fallback to the default gray color space.
           warn(`Unrecognized ColorSpace: ${cs.name}`);
-          return this.singletons.gray;
+          return this.gray;
       }
     }
     if (Array.isArray(cs)) {
@@ -170,13 +170,13 @@ class ColorSpaceUtils {
       switch (mode) {
         case "G":
         case "DeviceGray":
-          return this.singletons.gray;
+          return this.gray;
         case "RGB":
         case "DeviceRGB":
-          return this.singletons.rgb;
+          return this.rgb;
         case "CMYK":
         case "DeviceCMYK":
-          return this.singletons.cmyk;
+          return this.cmyk;
         case "CalGray":
           params = xref.fetchIfRef(cs[1]);
           whitePoint = params.getArray("WhitePoint");
@@ -229,11 +229,11 @@ class ColorSpaceUtils {
             warn("ICCBased color space: Ignoring incorrect /Alternate entry.");
           }
           if (numComps === 1) {
-            return this.singletons.gray;
+            return this.gray;
           } else if (numComps === 3) {
-            return this.singletons.rgb;
+            return this.rgb;
           } else if (numComps === 4) {
-            return this.singletons.cmyk;
+            return this.cmyk;
           }
           break;
         case "Pattern":
@@ -264,29 +264,28 @@ class ColorSpaceUtils {
         default:
           // Fallback to the default gray color space.
           warn(`Unimplemented ColorSpace object: ${mode}`);
-          return this.singletons.gray;
+          return this.gray;
       }
     }
     // Fallback to the default gray color space.
     warn(`Unrecognized ColorSpace object: ${cs}`);
-    return this.singletons.gray;
+    return this.gray;
   }
 
-  static get singletons() {
-    return shadow(this, "singletons", {
-      get gray() {
-        return shadow(this, "gray", new DeviceGrayCS());
-      },
-      get rgb() {
-        return shadow(this, "rgb", new DeviceRgbCS());
-      },
-      get rgba() {
-        return shadow(this, "rgba", new DeviceRgbaCS());
-      },
-      get cmyk() {
-        return shadow(this, "cmyk", new DeviceCmykCS());
-      },
-    });
+  static get gray() {
+    return shadow(this, "gray", new DeviceGrayCS());
+  }
+
+  static get rgb() {
+    return shadow(this, "rgb", new DeviceRgbCS());
+  }
+
+  static get rgba() {
+    return shadow(this, "rgba", new DeviceRgbaCS());
+  }
+
+  static get cmyk() {
+    return shadow(this, "cmyk", new DeviceCmykCS());
   }
 }
 

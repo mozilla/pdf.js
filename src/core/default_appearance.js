@@ -73,28 +73,13 @@ class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
             }
             break;
           case OPS.setFillRGBColor:
-            ColorSpaceUtils.singletons.rgb.getRgbItem(
-              args,
-              0,
-              result.fontColor,
-              0
-            );
+            ColorSpaceUtils.rgb.getRgbItem(args, 0, result.fontColor, 0);
             break;
           case OPS.setFillGray:
-            ColorSpaceUtils.singletons.gray.getRgbItem(
-              args,
-              0,
-              result.fontColor,
-              0
-            );
+            ColorSpaceUtils.gray.getRgbItem(args, 0, result.fontColor, 0);
             break;
           case OPS.setFillCMYKColor:
-            ColorSpaceUtils.singletons.cmyk.getRgbItem(
-              args,
-              0,
-              result.fontColor,
-              0
-            );
+            ColorSpaceUtils.cmyk.getRgbItem(args, 0, result.fontColor, 0);
             break;
         }
       }
@@ -132,7 +117,7 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
       fontSize: 0,
       fontName: "",
       fontColor: /* black = */ new Uint8ClampedArray(3),
-      fillColorSpace: ColorSpaceUtils.singletons.gray,
+      fillColorSpace: ColorSpaceUtils.gray,
     };
     let breakLoop = false;
     const stack = [];
@@ -186,28 +171,13 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
             cs.getRgbItem(args, 0, result.fontColor, 0);
             break;
           case OPS.setFillRGBColor:
-            ColorSpaceUtils.singletons.rgb.getRgbItem(
-              args,
-              0,
-              result.fontColor,
-              0
-            );
+            ColorSpaceUtils.rgb.getRgbItem(args, 0, result.fontColor, 0);
             break;
           case OPS.setFillGray:
-            ColorSpaceUtils.singletons.gray.getRgbItem(
-              args,
-              0,
-              result.fontColor,
-              0
-            );
+            ColorSpaceUtils.gray.getRgbItem(args, 0, result.fontColor, 0);
             break;
           case OPS.setFillCMYKColor:
-            ColorSpaceUtils.singletons.cmyk.getRgbItem(
-              args,
-              0,
-              result.fontColor,
-              0
-            );
+            ColorSpaceUtils.cmyk.getRgbItem(args, 0, result.fontColor, 0);
             break;
           case OPS.showText:
           case OPS.showSpacedText:
