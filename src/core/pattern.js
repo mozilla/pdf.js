@@ -30,7 +30,7 @@ import {
   MissingDataException,
 } from "./core_utils.js";
 import { BaseStream } from "./base_stream.js";
-import { ColorSpace } from "./colorspace.js";
+import { ColorSpaceUtils } from "./colorspace_utils.js";
 
 const ShadingType = {
   FUNCTION_BASED: 1,
@@ -137,7 +137,7 @@ class RadialAxialShading extends BaseShading {
     if (!isNumberArray(this.coordsArr, coordsLen)) {
       throw new FormatError("RadialAxialShading: Invalid /Coords array.");
     }
-    const cs = ColorSpace.parse({
+    const cs = ColorSpaceUtils.parse({
       cs: dict.getRaw("CS") || dict.getRaw("ColorSpace"),
       xref,
       resources,
@@ -473,7 +473,7 @@ class MeshShading extends BaseShading {
     const dict = stream.dict;
     this.shadingType = dict.get("ShadingType");
     this.bbox = lookupNormalRect(dict.getArray("BBox"), null);
-    const cs = ColorSpace.parse({
+    const cs = ColorSpaceUtils.parse({
       cs: dict.getRaw("CS") || dict.getRaw("ColorSpace"),
       xref,
       resources,

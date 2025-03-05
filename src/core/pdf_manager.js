@@ -20,6 +20,7 @@ import {
   warn,
 } from "../shared/util.js";
 import { ChunkedStreamManager } from "./chunked_stream.js";
+import { IccColorSpace } from "./icc_colorspace.js";
 import { ImageResizer } from "./image_resizer.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { JpxImage } from "./jpx.js";
@@ -73,7 +74,10 @@ class BasePdfManager {
     // Initialize image-options once per document.
     ImageResizer.setOptions(evaluatorOptions);
     JpegStream.setOptions(evaluatorOptions);
-    JpxImage.setOptions({ ...evaluatorOptions, handler });
+
+    const options = { ...evaluatorOptions, handler };
+    JpxImage.setOptions(options);
+    IccColorSpace.setOptions(options);
   }
 
   get docId() {
