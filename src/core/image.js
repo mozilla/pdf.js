@@ -140,11 +140,26 @@ class PDFImage {
       );
       width = image.width;
       height = image.height;
-    }
-    if (width < 1 || height < 1) {
-      throw new FormatError(
-        `Invalid image width: ${width} or height: ${height}`
-      );
+    } else {
+      const validWidth = typeof width === "number" && width > 0,
+        validHeight = typeof height === "number" && height > 0;
+
+      if (!validWidth || !validHeight) {
+        if (!image.fallbackDims) {
+          throw new FormatError(
+            `Invalid image width: ${width} or height: ${height}`
+          );
+        }
+        warn(
+          "PDFImage - using the Width/Height of the parent image, for SMask/Mask data."
+        );
+        if (!validWidth) {
+          width = image.fallbackDims.width;
+        }
+        if (!validHeight) {
+          height = image.fallbackDims.height;
+        }
+      }
     }
     this.width = width;
     this.height = height;
@@ -244,6 +259,10 @@ class PDFImage {
     }
 
     if (smask) {
+      // Provide fallback width/height values for corrupt SMask images
+      // (see issue19611.pdf).
+      smask.fallbackDims ??= { width, height };
+
       this.smask = new PDFImage({
         xref,
         res,
@@ -260,6 +279,10 @@ class PDFImage {
         if (!imageMask) {
           warn("Ignoring /Mask in image without /ImageMask.");
         } else {
+          // Provide fallback width/height values for corrupt Mask images
+          // (see issue19611.pdf).
+          mask.fallbackDims ??= { width, height };
+
           this.mask = new PDFImage({
             xref,
             res,
