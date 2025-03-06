@@ -23,7 +23,7 @@ import {
   getEditorSelector,
   getRect,
   getSerialized,
-  isCanvasWhite,
+  isCanvasMonochrome,
   kbRedo,
   kbUndo,
   loadAndWait,
@@ -747,7 +747,12 @@ describe("Ink Editor", () => {
           await switchToInk(page);
 
           // The page has been re-rendered but with no ink annotations.
-          let isWhite = await isCanvasWhite(page, 1, annotationsRect);
+          let isWhite = await isCanvasMonochrome(
+            page,
+            1,
+            annotationsRect,
+            0xffffffff
+          );
           expect(isWhite).withContext(`In ${browserName}`).toBeTrue();
 
           let editorIds = await getEditors(page, "ink");
@@ -781,7 +786,7 @@ describe("Ink Editor", () => {
           editorIds = await getEditors(page, "ink");
           expect(editorIds.length).withContext(`In ${browserName}`).toEqual(1);
 
-          isWhite = await isCanvasWhite(page, 1, editorRect);
+          isWhite = await isCanvasMonochrome(page, 1, editorRect, 0xffffffff);
           expect(isWhite).withContext(`In ${browserName}`).toBeTrue();
 
           // Check we've now a svg with a red stroke.

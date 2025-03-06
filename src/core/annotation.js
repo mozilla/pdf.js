@@ -4920,7 +4920,7 @@ class StampAnnotation extends MarkupAnnotation {
   mustBeViewedWhenEditing(isEditing, modifiedIds = null) {
     if (isEditing) {
       if (!this.data.isEditable) {
-        return false;
+        return true;
       }
       // When we're editing, we want to ensure that the stamp annotation is
       // drawn on a canvas in order to use it in the annotation editor layer.
