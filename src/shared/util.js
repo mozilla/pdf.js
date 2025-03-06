@@ -93,6 +93,7 @@ const AnnotationEditorParamsType = {
   HIGHLIGHT_THICKNESS: 33,
   HIGHLIGHT_FREE: 34,
   HIGHLIGHT_SHOW_ALL: 35,
+  HIGHLIGHT_TYPE: 36,
   DRAW_STEP: 41,
 };
 
