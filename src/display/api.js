@@ -125,6 +125,8 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  * @property {Object} [CMapReaderFactory] - The factory that will be used when
  *   reading built-in CMap files.
  *   The default value is {DOMCMapReaderFactory}.
+ * @property {string} [iccUrl] - The URL where the predefined ICC profiles are
+ *   located. Include the trailing slash.
  * @property {boolean} [useSystemFonts] - When `true`, fonts that aren't
  *   embedded in the PDF document will fallback to a system font.
  *   The default value is `true` in web environments and `false` in Node.js;
@@ -269,6 +271,7 @@ function getDocument(src = {}) {
     (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
       ? NodeCMapReaderFactory
       : DOMCMapReaderFactory);
+  const iccUrl = getFactoryUrlProp(src.iccUrl);
   const standardFontDataUrl = getFactoryUrlProp(src.standardFontDataUrl);
   const StandardFontDataFactory =
     src.StandardFontDataFactory ||
@@ -418,6 +421,7 @@ function getDocument(src = {}) {
       useWasm,
       useWorkerFetch,
       cMapUrl,
+      iccUrl,
       standardFontDataUrl,
       wasmUrl,
     },
