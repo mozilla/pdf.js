@@ -48,6 +48,7 @@ import { StampEditor } from "./stamp.js";
  * @property {HTMLDivElement} [textLayer]
  * @property {DrawLayer} drawLayer
  * @property {PageViewport} viewport
+ * @property {Object} [eventBus]
  */
 
 /**
@@ -87,6 +88,8 @@ class AnnotationEditorLayer {
 
   #uiManager;
 
+  #eventBus = null;
+
   static _initialized = false;
 
   static #editorTypes = new Map(
@@ -113,6 +116,7 @@ class AnnotationEditorLayer {
     textLayer,
     viewport,
     l10n,
+    eventBus,
   }) {
     const editorTypes = [...AnnotationEditorLayer.#editorTypes.values()];
     if (!AnnotationEditorLayer._initialized) {
@@ -134,6 +138,7 @@ class AnnotationEditorLayer {
     this._structTree = structTreeLayer;
 
     this.#uiManager.addLayer(this);
+    this.#eventBus = eventBus;
   }
 
   get isEmpty() {
@@ -450,6 +455,16 @@ class AnnotationEditorLayer {
     ) {
       this.#uiManager.removeDeletedAnnotationElement(editor);
     }
+
+    if (this.#eventBus) {
+      this.#eventBus.dispatch("pdfjs.annotation.editors_changed", {
+        editors: this.#editors,
+      });
+
+      this.#eventBus.dispatch("pdfjs.annotation.editor_attach", {
+        editor,
+      });
+    }
   }
 
   detach(editor) {
@@ -458,6 +473,16 @@ class AnnotationEditorLayer {
 
     if (!this.#isDisabling && editor.annotationElementId) {
       this.#uiManager.addDeletedAnnotationElement(editor);
+    }
+
+    if (this.#eventBus) {
+      this.#eventBus.dispatch("pdfjs.annotation.editors_changed", {
+        editors: this.#editors,
+      });
+
+      this.#eventBus.dispatch("pdfjs.annotation.editor_detach", {
+        editor,
+      });
     }
   }
 
