@@ -26,7 +26,7 @@ import {
   PatternCS,
 } from "./colorspace.js";
 import { Dict, Name, Ref } from "./primitives.js";
-import { shadow, unreachable, warn } from "../shared/util.js";
+import { MathClamp, shadow, unreachable, warn } from "../shared/util.js";
 import { IccColorSpace } from "./icc_colorspace.js";
 import { MissingDataException } from "./core_utils.js";
 
@@ -245,7 +245,7 @@ class ColorSpaceUtils {
         case "I":
         case "Indexed":
           baseCS = this.#subParse(cs[1], options);
-          const hiVal = Math.max(0, Math.min(xref.fetchIfRef(cs[2]), 255));
+          const hiVal = MathClamp(xref.fetchIfRef(cs[2]), 0, 255);
           const lookup = xref.fetchIfRef(cs[3]);
           return new IndexedCS(baseCS, hiVal, lookup);
         case "Separation":
