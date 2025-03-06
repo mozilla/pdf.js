@@ -2286,8 +2286,9 @@ gulp.task(
 function packageJson() {
   const VERSION = getVersionJSON().version;
 
-  const DIST_NAME = "pdfjs-dist";
-  const DIST_DESCRIPTION = "Generic build of Mozilla's PDF.js library.";
+  const NPM_SCOPE = process.env.npm_config_scope;
+  const DIST_NAME = `${NPM_SCOPE}/pdfjs-dist`;
+  const DIST_DESCRIPTION = `Generic build of Mozilla's PDF.js library. (forked by ${NPM_SCOPE})`;
   const DIST_KEYWORDS = ["Mozilla", "pdf", "pdf.js"];
   const DIST_HOMEPAGE = "https://mozilla.github.io/pdf.js/";
   const DIST_BUGS_URL = "https://github.com/mozilla/pdf.js/issues";
@@ -2322,6 +2323,11 @@ function packageJson() {
       node: ">=20",
     },
     scripts: {},
+    publishConfig: {
+      access: "public",
+      registry: "https://registry.npmjs.org/",
+      scope: NPM_SCOPE,
+    },
   };
 
   return createStringSource(

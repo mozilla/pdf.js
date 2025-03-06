@@ -1,6 +1,10 @@
 {
   "name": "pdf.js",
   "type": "module",
+  "scripts": {
+    "dev": "gulp server",
+    "build": "gulp dist"
+  },
   "devDependencies": {
     "@babel/core": "^7.26.9",
     "@babel/preset-env": "^7.26.9",
