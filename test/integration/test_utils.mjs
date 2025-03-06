@@ -838,9 +838,9 @@ function waitForNoElement(page, selector) {
   );
 }
 
-function isCanvasWhite(page, pageNumber, rectangle) {
+function isCanvasMonochrome(page, pageNumber, rectangle, color) {
   return page.evaluate(
-    (rect, pageN) => {
+    (rect, pageN, col) => {
       const canvas = document.querySelector(
         `.page[data-page-number = "${pageN}"] .canvasWrapper canvas`
       );
@@ -853,10 +853,11 @@ function isCanvasWhite(page, pageNumber, rectangle) {
         rect.width,
         rect.height
       );
-      return new Uint32Array(data.buffer).every(x => x === 0xffffffff);
+      return new Uint32Array(data.buffer).every(x => x === col);
     },
     rectangle,
-    pageNumber
+    pageNumber,
+    color
   );
 }
 
@@ -925,7 +926,7 @@ export {
   getSpanRectFromText,
   getXY,
   hover,
-  isCanvasWhite,
+  isCanvasMonochrome,
   isVisible,
   kbBigMoveDown,
   kbBigMoveLeft,
