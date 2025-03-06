@@ -488,7 +488,7 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
     value:
       typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")
         ? ""
-        : "compressed.tracemonkey-pldi-09.pdf",
+        : "contract-of-sale-2-4-jansson-road-rhyll-vic-3923-v2.pdf",
     kind: OptionKind.VIEWER,
   };
   defaultOptions.sandboxBundleSrc = {
