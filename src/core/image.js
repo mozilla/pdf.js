@@ -18,6 +18,7 @@ import {
   FeatureTest,
   FormatError,
   ImageKind,
+  MathClamp,
   warn,
 } from "../shared/util.js";
 import {
@@ -32,21 +33,6 @@ import { ImageResizer } from "./image_resizer.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { JpxImage } from "./jpx.js";
 import { Name } from "./primitives.js";
-
-/**
- * Decode and clamp a value. The formula is different from the spec because we
- * don't decode to float range [0,1], we decode it in the [0,max] range.
- */
-function decodeAndClamp(value, addend, coefficient, max) {
-  value = addend + value * coefficient;
-  // Clamp the value to the range
-  if (value < 0) {
-    value = 0;
-  } else if (value > max) {
-    value = max;
-  }
-  return value;
-}
 
 /**
  * Resizes an image mask with 1 component.
@@ -487,10 +473,11 @@ class PDFImage {
     let index = 0;
     for (i = 0, ii = this.width * this.height; i < ii; i++) {
       for (let j = 0; j < numComps; j++) {
-        buffer[index] = decodeAndClamp(
-          buffer[index],
-          decodeAddends[j],
-          decodeCoefficients[j],
+        // Decode and clamp. The formula is different from the spec because we
+        // don't decode to float range [0,1], we decode it in the [0,max] range.
+        buffer[index] = MathClamp(
+          decodeAddends[j] + buffer[index] * decodeCoefficients[j],
+          0,
           max
         );
         index++;

@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import { MathClamp } from "pdfjs-lib";
+
 const DEFAULT_SCALE_VALUE = "auto";
 const DEFAULT_SCALE = 1.0;
 const DEFAULT_SCALE_DELTA = 1.1;
@@ -676,10 +678,6 @@ const docStyle =
     ? null
     : document.documentElement.style;
 
-function clamp(v, min, max) {
-  return Math.min(Math.max(v, min), max);
-}
-
 class ProgressBar {
   #classList = null;
 
@@ -701,7 +699,7 @@ class ProgressBar {
   }
 
   set percent(val) {
-    this.#percent = clamp(val, 0, 100);
+    this.#percent = MathClamp(val, 0, 100);
 
     if (isNaN(val)) {
       this.#classList.add("indeterminate");

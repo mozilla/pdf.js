@@ -18,6 +18,7 @@ import {
   FeatureTest,
   FormatError,
   info,
+  MathClamp,
   shadow,
   unreachable,
   warn,
@@ -946,7 +947,7 @@ class CalRGBCS extends ColorSpace {
   #sRGBTransferFunction(color) {
     // See http://en.wikipedia.org/wiki/SRGB.
     if (color <= 0.0031308) {
-      return this.#adjustToRange(0, 1, 12.92 * color);
+      return MathClamp(12.92 * color, 0, 1);
     }
     // Optimization:
     // If color is close enough to 1, skip calling the following transform
@@ -957,11 +958,7 @@ class CalRGBCS extends ColorSpace {
     if (color >= 0.99554525) {
       return 1;
     }
-    return this.#adjustToRange(0, 1, (1 + 0.055) * color ** (1 / 2.4) - 0.055);
-  }
-
-  #adjustToRange(min, max, value) {
-    return Math.max(min, Math.min(max, value));
+    return MathClamp((1 + 0.055) * color ** (1 / 2.4) - 0.055, 0, 1);
   }
 
   #decodeL(L) {
@@ -1057,9 +1054,9 @@ class CalRGBCS extends ColorSpace {
   #toRgb(src, srcOffset, dest, destOffset, scale) {
     // A, B and C represent a red, green and blue components of a calibrated
     // rgb space.
-    const A = this.#adjustToRange(0, 1, src[srcOffset] * scale);
-    const B = this.#adjustToRange(0, 1, src[srcOffset + 1] * scale);
-    const C = this.#adjustToRange(0, 1, src[srcOffset + 2] * scale);
+    const A = MathClamp(src[srcOffset] * scale, 0, 1);
+    const B = MathClamp(src[srcOffset + 1] * scale, 0, 1);
+    const C = MathClamp(src[srcOffset + 2] * scale, 0, 1);
 
     // A <---> AGR in the spec
     // B <---> BGG in the spec

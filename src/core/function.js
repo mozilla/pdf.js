@@ -18,6 +18,7 @@ import {
   FeatureTest,
   FormatError,
   info,
+  MathClamp,
   shadow,
   unreachable,
 } from "../shared/util.js";
@@ -263,10 +264,7 @@ class PDFFunction {
         // x_i' = min(max(x_i, Domain_2i), Domain_2i+1)
         const domain_2i = domain[i][0];
         const domain_2i_1 = domain[i][1];
-        const xi = Math.min(
-          Math.max(src[srcOffset + i], domain_2i),
-          domain_2i_1
-        );
+        const xi = MathClamp(src[srcOffset + i], domain_2i, domain_2i_1);
 
         // e_i = Interpolate(x_i', Domain_2i, Domain_2i+1,
         //                   Encode_2i, Encode_2i+1)
@@ -280,7 +278,7 @@ class PDFFunction {
 
         // e_i' = min(max(e_i, 0), Size_i - 1)
         const size_i = size[i];
-        e = Math.min(Math.max(e, 0), size_i - 1);
+        e = MathClamp(e, 0, size_i - 1);
 
         // Adjusting the cube: N and vertex sample index
         const e0 = e < size_i - 1 ? Math.floor(e) : e - 1; // e1 = e0 + 1;
@@ -314,7 +312,7 @@ class PDFFunction {
         rj = interpolate(rj, 0, 1, decode[j][0], decode[j][1]);
 
         // y_j = min(max(r_j, range_2j), range_2j+1)
-        dest[destOffset + j] = Math.min(Math.max(rj, range[j][0]), range[j][1]);
+        dest[destOffset + j] = MathClamp(rj, range[j][0], range[j][1]);
       }
     };
   }
@@ -361,17 +359,8 @@ class PDFFunction {
     const tmpBuf = new Float32Array(1);
 
     return function constructStichedFn(src, srcOffset, dest, destOffset) {
-      const clip = function constructStichedFromIRClip(v, min, max) {
-        if (v > max) {
-          v = max;
-        } else if (v < min) {
-          v = min;
-        }
-        return v;
-      };
-
-      // clip to domain
-      const v = clip(src[srcOffset], domain[0], domain[1]);
+      // Clamp to domain.
+      const v = MathClamp(src[srcOffset], domain[0], domain[1]);
       // calculate which bound the value is in
       const length = bounds.length;
       let i;
