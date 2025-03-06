@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { shadow } from "../../shared/util.js";
+import { MathClamp, shadow } from "../../shared/util.js";
 
 const dimConverters = {
   pt: x => x,
@@ -143,7 +143,7 @@ function getColor(data, def = [0, 0, 0]) {
   const color = data
     .trim()
     .split(/\s*,\s*/)
-    .map(c => Math.min(Math.max(0, parseInt(c.trim(), 10)), 255))
+    .map(c => MathClamp(parseInt(c.trim(), 10), 0, 255))
     .map(c => (isNaN(c) ? 0 : c));
 
   if (color.length < 3) {
