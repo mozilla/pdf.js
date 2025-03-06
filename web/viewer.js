@@ -257,6 +257,7 @@ function getViewerConfiguration() {
       editorFreeHighlightThickness: document.getElementById(
         "editorFreeHighlightThickness"
       ),
+      editorHighlightType: document.getElementById("editorHighlightType"),
       editorHighlightShowAll: document.getElementById("editorHighlightShowAll"),
     },
     printContainer: document.getElementById("printContainer"),
@@ -265,6 +266,11 @@ function getViewerConfiguration() {
       message: document.getElementById("editorUndoBarMessage"),
       undoButton: document.getElementById("editorUndoBarUndoButton"),
       closeButton: document.getElementById("editorUndoBarCloseButton"),
+    },
+    annotationNavigator: {
+      container: document.getElementById("annotationNavigator"),
+      list: document.getElementById("annotationNavigatorContent"),
+      filter: document.getElementById("annotationNavigatorFilter"),
     },
   };
 }

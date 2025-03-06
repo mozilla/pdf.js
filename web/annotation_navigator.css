@@ -1,0 +1,62 @@
+#annotationNavigator {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  margin: 0;
+  background-color: white;
+  border-left: 1px solid rgb(0 0 0 / 0.25);
+  width: 320px;
+  height: 100vh;
+  overflow: auto;
+  box-sizing: border-box;
+
+  & > header {
+    position: sticky;
+    top: 0;
+    padding: 10px 20px;
+    background-color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+    font-weight: 600;
+  }
+}
+
+#annotationNavigatorContent {
+  font-size: 14px;
+  padding: 0 20px;
+  list-style: none;
+}
+
+.annotationNavigatorItem {
+  position: relative;
+  margin: 16px 0;
+  border-bottom: 1px solid #ddd;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  & > h4 {
+    margin: 16px 0;
+  }
+
+  & > p {
+    margin: 10px 0;
+  }
+
+  & > button {
+    position: absolute;
+    right: 0;
+    top: 0;
+  }
+}
+
+@media print {
+  body[data-pdfjsprinting] #annotationNavigator {
+    display: none;
+  }
+}

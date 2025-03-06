@@ -67,6 +67,7 @@ import {
 import { LinkTarget, PDFLinkService } from "./pdf_link_service.js";
 import { AltTextManager } from "web-alt_text_manager";
 import { AnnotationEditorParams } from "web-annotation_editor_params";
+import { AnnotationNavigator } from "./annotation_navigator.js";
 import { CaretBrowsingMode } from "./caret_browsing.js";
 import { DownloadManager } from "web-download_manager";
 import { EditorUndoBar } from "./editor_undo_bar.js";
@@ -706,6 +707,14 @@ const PDFViewerApplication = {
           pdfViewer.currentPageNumber
         );
       };
+    }
+
+    if (appConfig.annotationNavigator) {
+      this.annotationNavigator = new AnnotationNavigator(
+        appConfig.annotationNavigator,
+        eventBus,
+        l10n
+      );
     }
   },
 

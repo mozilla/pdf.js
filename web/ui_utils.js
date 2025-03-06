@@ -73,6 +73,12 @@ const CursorTool = {
   ZOOM: 2,
 };
 
+const HighLightType = {
+  GENERIC: 0,
+  SIGNATURE_AREA: 1,
+  FORM_CONTROL: 2,
+};
+
 // Used by `PDFViewerApplication`, and by the API unit-tests.
 const AutoPrintRegExp = /\bprint\s*\(/;
 
@@ -886,6 +892,7 @@ export {
   getActiveOrFocusedElement,
   getPageSizeInches,
   getVisibleElements,
+  HighLightType,
   isPortraitOrientation,
   isValidRotation,
   isValidScrollMode,

@@ -13,1747 +13,1765 @@
  * limitations under the License.
  */
 
-@import url(pdf_viewer.css);
-
-:root {
-  --dir-factor: 1;
-  /*#if !MOZCENTRAL*/
-  --inline-start: left;
-  --inline-end: right;
-  /*#endif*/
-
-  --sidebar-width: 200px;
-  --sidebar-transition-duration: 200ms;
-  --sidebar-transition-timing-function: ease;
-
-  --toolbar-height: 32px;
-  --toolbar-horizontal-padding: 1px;
-  --toolbar-vertical-padding: 2px;
-  --icon-size: 16px;
-
-  --toolbar-icon-opacity: 0.7;
-  --doorhanger-icon-opacity: 0.9;
-  --doorhanger-height: 8px;
-
-  --main-color: rgb(12 12 13);
-  --body-bg-color: rgb(212 212 215);
-  --progressBar-color: rgb(10 132 255);
-  --progressBar-bg-color: rgb(221 221 222);
-  --progressBar-blend-color: rgb(116 177 239);
-  --scrollbar-color: auto;
-  --scrollbar-bg-color: auto;
-  --toolbar-icon-bg-color: rgb(0 0 0);
-  --toolbar-icon-hover-bg-color: rgb(0 0 0);
-
-  --sidebar-narrow-bg-color: rgb(212 212 215 / 0.9);
-  --sidebar-toolbar-bg-color: rgb(245 246 247);
-  --toolbar-bg-color: rgb(249 249 250);
-  --toolbar-border-color: rgb(184 184 184);
-  --toolbar-box-shadow: 0 1px 0 var(--toolbar-border-color);
-  --toolbar-border-bottom: none;
-  --toolbarSidebar-box-shadow:
-    inset calc(-1px * var(--dir-factor)) 0 0 rgb(0 0 0 / 0.25),
-    0 1px 0 rgb(0 0 0 / 0.15), 0 0 1px rgb(0 0 0 / 0.1);
-  --toolbarSidebar-border-bottom: none;
-  --button-hover-color: color-mix(in srgb, currentColor 17%, transparent);
-  --toggled-btn-color: rgb(0 0 0);
-  --toggled-btn-bg-color: rgb(0 0 0 / 0.3);
-  --toggled-hover-active-btn-color: rgb(0 0 0 / 0.4);
-  --toggled-hover-btn-outline: none;
-  --dropdown-btn-bg-color: rgb(215 215 219);
-  --dropdown-btn-border: none;
-  --separator-color: rgb(0 0 0 / 0.3);
-  --field-color: rgb(6 6 6);
-  --field-bg-color: rgb(255 255 255);
-  --field-border-color: rgb(187 187 188);
-  --treeitem-color: rgb(0 0 0 / 0.8);
-  --treeitem-bg-color: rgb(0 0 0 / 0.15);
-  --treeitem-hover-color: rgb(0 0 0 / 0.9);
-  --treeitem-selected-color: rgb(0 0 0 / 0.9);
-  --treeitem-selected-bg-color: rgb(0 0 0 / 0.25);
-  --thumbnail-hover-color: rgb(0 0 0 / 0.1);
-  --thumbnail-selected-color: rgb(0 0 0 / 0.2);
-  --doorhanger-bg-color: rgb(255 255 255);
-  --doorhanger-border-color: rgb(12 12 13 / 0.2);
-  --doorhanger-hover-color: rgb(12 12 13);
-  --doorhanger-separator-color: rgb(222 222 222);
-  --dialog-button-border: none;
-  --dialog-button-bg-color: rgb(12 12 13 / 0.1);
-  --dialog-button-hover-bg-color: rgb(12 12 13 / 0.3);
-
-  --loading-icon: url(images/loading.svg);
-  --treeitem-expanded-icon: url(images/treeitem-expanded.svg);
-  --treeitem-collapsed-icon: url(images/treeitem-collapsed.svg);
-  --toolbarButton-editorFreeText-icon: url(images/toolbarButton-editorFreeText.svg);
-  --toolbarButton-editorHighlight-icon: url(images/toolbarButton-editorHighlight.svg);
-  --toolbarButton-editorInk-icon: url(images/toolbarButton-editorInk.svg);
-  --toolbarButton-editorStamp-icon: url(images/toolbarButton-editorStamp.svg);
-  --toolbarButton-editorSignature-icon: url(images/toolbarButton-editorSignature.svg);
-  --toolbarButton-menuArrow-icon: url(images/toolbarButton-menuArrow.svg);
-  --toolbarButton-sidebarToggle-icon: url(images/toolbarButton-sidebarToggle.svg);
-  --toolbarButton-secondaryToolbarToggle-icon: url(images/toolbarButton-secondaryToolbarToggle.svg);
-  --toolbarButton-pageUp-icon: url(images/toolbarButton-pageUp.svg);
-  --toolbarButton-pageDown-icon: url(images/toolbarButton-pageDown.svg);
-  --toolbarButton-zoomOut-icon: url(images/toolbarButton-zoomOut.svg);
-  --toolbarButton-zoomIn-icon: url(images/toolbarButton-zoomIn.svg);
-  --toolbarButton-presentationMode-icon: url(images/toolbarButton-presentationMode.svg);
-  --toolbarButton-print-icon: url(images/toolbarButton-print.svg);
-  /*#if GENERIC*/
-  --toolbarButton-openFile-icon: url(images/toolbarButton-openFile.svg);
-  /*#endif*/
-  --toolbarButton-download-icon: url(images/toolbarButton-download.svg);
-  --toolbarButton-bookmark-icon: url(images/toolbarButton-bookmark.svg);
-  --toolbarButton-viewThumbnail-icon: url(images/toolbarButton-viewThumbnail.svg);
-  --toolbarButton-viewOutline-icon: url(images/toolbarButton-viewOutline.svg);
-  --toolbarButton-viewAttachments-icon: url(images/toolbarButton-viewAttachments.svg);
-  --toolbarButton-viewLayers-icon: url(images/toolbarButton-viewLayers.svg);
-  --toolbarButton-currentOutlineItem-icon: url(images/toolbarButton-currentOutlineItem.svg);
-  --toolbarButton-search-icon: url(images/toolbarButton-search.svg);
-  --findbarButton-previous-icon: url(images/findbarButton-previous.svg);
-  --findbarButton-next-icon: url(images/findbarButton-next.svg);
-  --secondaryToolbarButton-firstPage-icon: url(images/secondaryToolbarButton-firstPage.svg);
-  --secondaryToolbarButton-lastPage-icon: url(images/secondaryToolbarButton-lastPage.svg);
-  --secondaryToolbarButton-rotateCcw-icon: url(images/secondaryToolbarButton-rotateCcw.svg);
-  --secondaryToolbarButton-rotateCw-icon: url(images/secondaryToolbarButton-rotateCw.svg);
-  --secondaryToolbarButton-selectTool-icon: url(images/secondaryToolbarButton-selectTool.svg);
-  --secondaryToolbarButton-handTool-icon: url(images/secondaryToolbarButton-handTool.svg);
-  --secondaryToolbarButton-scrollPage-icon: url(images/secondaryToolbarButton-scrollPage.svg);
-  --secondaryToolbarButton-scrollVertical-icon: url(images/secondaryToolbarButton-scrollVertical.svg);
-  --secondaryToolbarButton-scrollHorizontal-icon: url(images/secondaryToolbarButton-scrollHorizontal.svg);
-  --secondaryToolbarButton-scrollWrapped-icon: url(images/secondaryToolbarButton-scrollWrapped.svg);
-  --secondaryToolbarButton-spreadNone-icon: url(images/secondaryToolbarButton-spreadNone.svg);
-  --secondaryToolbarButton-spreadOdd-icon: url(images/secondaryToolbarButton-spreadOdd.svg);
-  --secondaryToolbarButton-spreadEven-icon: url(images/secondaryToolbarButton-spreadEven.svg);
-  --secondaryToolbarButton-imageAltTextSettings-icon: var(
-    --toolbarButton-editorStamp-icon
-  );
-  --secondaryToolbarButton-documentProperties-icon: url(images/secondaryToolbarButton-documentProperties.svg);
-  --editorParams-stampAddImage-icon: url(images/toolbarButton-zoomIn.svg);
-}
-
-:root:dir(rtl) {
-  --dir-factor: -1;
-  /*#if !MOZCENTRAL*/
-  --inline-start: right;
-  --inline-end: left;
-  /*#endif*/
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --main-color: rgb(249 249 250);
-    --body-bg-color: rgb(42 42 46);
-    --progressBar-color: rgb(0 96 223);
-    --progressBar-bg-color: rgb(40 40 43);
-    --progressBar-blend-color: rgb(20 68 133);
-    --scrollbar-color: rgb(121 121 123);
-    --scrollbar-bg-color: rgb(35 35 39);
-    --toolbar-icon-bg-color: rgb(255 255 255);
-    --toolbar-icon-hover-bg-color: rgb(255 255 255);
-
-    --sidebar-narrow-bg-color: rgb(42 42 46 / 0.9);
-    --sidebar-toolbar-bg-color: rgb(50 50 52);
-    --toolbar-bg-color: rgb(56 56 61);
-    --toolbar-border-color: rgb(12 12 13);
-    --toggled-btn-color: rgb(255 255 255);
-    --toggled-btn-bg-color: rgb(0 0 0 / 0.3);
-    --toggled-hover-active-btn-color: rgb(0 0 0 / 0.4);
-    --dropdown-btn-bg-color: rgb(74 74 79);
-    --separator-color: rgb(0 0 0 / 0.3);
-    --field-color: rgb(250 250 250);
-    --field-bg-color: rgb(64 64 68);
-    --field-border-color: rgb(115 115 115);
-    --treeitem-color: rgb(255 255 255 / 0.8);
-    --treeitem-bg-color: rgb(255 255 255 / 0.15);
-    --treeitem-hover-color: rgb(255 255 255 / 0.9);
-    --treeitem-selected-color: rgb(255 255 255 / 0.9);
-    --treeitem-selected-bg-color: rgb(255 255 255 / 0.25);
-    --thumbnail-hover-color: rgb(255 255 255 / 0.1);
-    --thumbnail-selected-color: rgb(255 255 255 / 0.2);
-    --doorhanger-bg-color: #42414d;
-    --doorhanger-border-color: rgb(39 39 43);
-    --doorhanger-hover-color: rgb(249 249 250);
-    --doorhanger-separator-color: rgb(92 92 97);
-    --dialog-button-bg-color: rgb(92 92 97);
-    --dialog-button-hover-bg-color: rgb(115 115 115);
-  }
-}
-
-@media screen and (forced-colors: active) {
-  :root {
-    --button-hover-color: Highlight;
-    --toolbar-icon-opacity: 1;
-    --toolbar-icon-bg-color: ButtonText;
-    --toolbar-icon-hover-bg-color: ButtonFace;
-    --toggled-hover-active-btn-color: ButtonText;
-    --toggled-hover-btn-outline: 2px solid ButtonBorder;
-    --toolbar-border-color: CanvasText;
-    --toolbar-border-bottom: 1px solid var(--toolbar-border-color);
-    --toolbar-box-shadow: none;
-    --toggled-btn-color: HighlightText;
-    --toggled-btn-bg-color: LinkText;
-    --doorhanger-hover-color: ButtonFace;
-    --doorhanger-border-color-whcm: 1px solid ButtonText;
-    --doorhanger-triangle-opacity-whcm: 0;
-    --dialog-button-border: 1px solid Highlight;
-    --dialog-button-hover-bg-color: Highlight;
-    --dialog-button-hover-color: ButtonFace;
-    --dropdown-btn-border: 1px solid ButtonText;
-    --field-border-color: ButtonText;
-    --main-color: CanvasText;
-    --separator-color: GrayText;
-    --doorhanger-separator-color: GrayText;
-    --toolbarSidebar-box-shadow: none;
-    --toolbarSidebar-border-bottom: 1px solid var(--toolbar-border-color);
-  }
-}
-
-@media screen and (prefers-reduced-motion: reduce) {
-  :root {
-    --sidebar-transition-duration: 0;
-  }
-}
-
-@keyframes progressIndeterminate {
-  0% {
-    transform: translateX(calc(-142px * var(--dir-factor)));
-  }
-
-  100% {
-    transform: translateX(0);
-  }
-}
-
-html {
-  &[data-toolbar-density="compact"] {
-    --toolbar-height: 30px;
-  }
-  &[data-toolbar-density="touch"] {
-    --toolbar-height: 44px;
-  }
-}
-
-html,
-body {
-  height: 100%;
-  width: 100%;
-}
-
-body {
-  margin: 0;
-  background-color: var(--body-bg-color);
-  scrollbar-color: var(--scrollbar-color) var(--scrollbar-bg-color);
-
-  &.wait::before {
-    content: "";
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    z-index: 100000;
-    cursor: wait;
-  }
-}
-
-.hidden,
-[hidden] {
-  display: none !important;
-}
-
-#viewerContainer.pdfPresentationMode:fullscreen {
-  top: 0;
-  background-color: rgb(0 0 0);
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  cursor: none;
-  user-select: none;
-}
-
-.pdfPresentationMode:fullscreen section:not([data-internal-link]) {
-  pointer-events: none;
-}
-
-.pdfPresentationMode:fullscreen .textLayer span {
-  cursor: none;
-}
-
-.pdfPresentationMode.pdfPresentationModeControls > *,
-.pdfPresentationMode.pdfPresentationModeControls .textLayer span {
-  cursor: default;
-}
-
-#outerContainer {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  margin: 0;
-}
-
-#sidebarContainer {
-  position: absolute;
-  inset-block: var(--toolbar-height) 0;
-  inset-inline-start: calc(-1 * var(--sidebar-width));
-  width: var(--sidebar-width);
-  visibility: hidden;
-  z-index: 1;
-  font: message-box;
-  border-top: 1px solid transparent;
-  border-inline-end: var(--doorhanger-border-color-whcm);
-  transition-property: inset-inline-start;
-  transition-duration: var(--sidebar-transition-duration);
-  transition-timing-function: var(--sidebar-transition-timing-function);
-}
-
-#outerContainer:is(.sidebarMoving, .sidebarOpen) #sidebarContainer {
-  visibility: visible;
-}
-
-#outerContainer.sidebarOpen #sidebarContainer {
-  inset-inline-start: 0;
-}
-
-#mainContainer {
-  position: absolute;
-  inset: 0;
-  min-width: 350px;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-#sidebarContent {
-  inset-block: var(--toolbar-height) 0;
-  inset-inline-start: 0;
-  overflow: auto;
-  position: absolute;
-  width: 100%;
-  box-shadow: inset calc(-1px * var(--dir-factor)) 0 0 rgb(0 0 0 / 0.25);
-}
-
-#viewerContainer {
-  overflow: auto;
-  position: absolute;
-  inset: var(--toolbar-height) 0 0;
-  outline: none;
-  z-index: 0;
-}
-
-#viewerContainer:not(.pdfPresentationMode) {
-  transition-duration: var(--sidebar-transition-duration);
-  transition-timing-function: var(--sidebar-transition-timing-function);
-}
-
-#outerContainer.sidebarOpen #viewerContainer:not(.pdfPresentationMode) {
-  inset-inline-start: var(--sidebar-width);
-  transition-property: inset-inline-start;
-}
-
-#sidebarContainer :is(input, button, select) {
-  font: message-box;
-}
-
-.toolbar {
-  z-index: 2;
-}
-
-#toolbarSidebar {
-  width: 100%;
-  height: var(--toolbar-height);
-  background-color: var(--sidebar-toolbar-bg-color);
-  box-shadow: var(--toolbarSidebar-box-shadow);
-  border-bottom: var(--toolbarSidebar-border-bottom);
-  padding: var(--toolbar-vertical-padding) var(--toolbar-horizontal-padding);
-  justify-content: space-between;
-
-  #toolbarSidebarLeft {
-    width: auto;
-    height: 100%;
-
-    #viewThumbnail::before {
-      mask-image: var(--toolbarButton-viewThumbnail-icon);
-    }
-
-    #viewOutline::before {
-      mask-image: var(--toolbarButton-viewOutline-icon);
-      transform: scaleX(var(--dir-factor));
-    }
-
-    #viewAttachments::before {
-      mask-image: var(--toolbarButton-viewAttachments-icon);
-    }
-
-    #viewLayers::before {
-      mask-image: var(--toolbarButton-viewLayers-icon);
-    }
-  }
-
-  #toolbarSidebarRight {
-    width: auto;
-    height: 100%;
-    padding-inline-end: 2px;
-  }
-}
-
-#sidebarResizer {
-  position: absolute;
-  inset-block: 0;
-  inset-inline-end: -6px;
-  width: 6px;
-  z-index: 200;
-  cursor: ew-resize;
-}
-
-#outerContainer.sidebarOpen #loadingBar {
-  inset-inline-start: var(--sidebar-width);
-}
-
-#outerContainer.sidebarResizing
-  :is(#sidebarContainer, #viewerContainer, #loadingBar) {
-  /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
-  transition-duration: 0s;
-}
-
-.doorHanger,
-.doorHangerRight {
-  border-radius: 2px;
-  box-shadow:
-    0 1px 5px var(--doorhanger-border-color),
-    0 0 0 1px var(--doorhanger-border-color);
-  border: var(--doorhanger-border-color-whcm);
-  background-color: var(--doorhanger-bg-color);
-  inset-block-start: calc(100% + var(--doorhanger-height) - 2px);
-
-  &::after,
-  &::before {
-    bottom: 100%;
-    border-style: solid;
-    border-color: transparent;
-    content: "";
-    height: 0;
-    width: 0;
-    position: absolute;
-    pointer-events: none;
-    opacity: var(--doorhanger-triangle-opacity-whcm);
-  }
-
-  &::before {
-    border-width: calc(var(--doorhanger-height) + 2px);
-    border-bottom-color: var(--doorhanger-border-color);
-  }
-
-  &::after {
-    border-width: var(--doorhanger-height);
-  }
-}
-
-.doorHangerRight {
-  inset-inline-end: calc(50% - var(--doorhanger-height) - 1px);
-
-  &::before {
-    inset-inline-end: -1px;
-  }
-
-  &::after {
-    border-bottom-color: var(--doorhanger-bg-color);
-    inset-inline-end: 1px;
-  }
-}
-
-.doorHanger {
-  inset-inline-start: calc(50% - var(--doorhanger-height) - 1px);
-
-  &::before {
-    inset-inline-start: -1px;
-  }
-
-  &::after {
-    border-bottom-color: var(--toolbar-bg-color);
-    inset-inline-start: 1px;
-  }
-}
-
-.dialogButton {
-  border: none;
-  background: none;
-  width: 28px;
-  height: 28px;
-  outline: none;
-}
-
-.dialogButton:is(:hover, :focus-visible) {
-  background-color: var(--dialog-button-hover-bg-color);
-}
-
-.dialogButton:is(:hover, :focus-visible) > span {
-  color: var(--dialog-button-hover-color);
-}
-
-.splitToolbarButtonSeparator {
-  float: var(--inline-start);
-  width: 0;
-  height: 62%;
-  border-left: 1px solid var(--separator-color);
-  border-right: none;
-}
-
-.dialogButton {
-  min-width: 16px;
-  margin: 2px 1px;
-  padding: 2px 6px 0;
-  border: none;
-  border-radius: 2px;
-  color: var(--main-color);
-  font-size: 12px;
-  line-height: 14px;
-  user-select: none;
-  cursor: default;
-  box-sizing: border-box;
-}
-
-.treeItemToggler::before {
-  /* All matching images have a size of 16x16
-   * All relevant containers have a size of 28x28 */
-  position: absolute;
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-
-  content: "";
-  background-color: var(--toolbar-icon-bg-color);
-  mask-size: cover;
-}
-
-#sidebarToggleButton::before {
-  mask-image: var(--toolbarButton-sidebarToggle-icon);
-  transform: scaleX(var(--dir-factor));
-}
-
-#secondaryToolbarToggleButton::before {
-  mask-image: var(--toolbarButton-secondaryToolbarToggle-icon);
-  transform: scaleX(var(--dir-factor));
-}
-
-#previous::before {
-  mask-image: var(--toolbarButton-pageUp-icon);
-}
-
-#next::before {
-  mask-image: var(--toolbarButton-pageDown-icon);
-}
-
-#zoomOutButton::before {
-  mask-image: var(--toolbarButton-zoomOut-icon);
-}
-
-#zoomInButton::before {
-  mask-image: var(--toolbarButton-zoomIn-icon);
-}
-
-#presentationMode::before {
-  mask-image: var(--toolbarButton-presentationMode-icon);
-}
-
-#editorFreeTextButton::before {
-  mask-image: var(--toolbarButton-editorFreeText-icon);
-}
-
-#editorHighlightButton::before {
-  mask-image: var(--toolbarButton-editorHighlight-icon);
-}
-
-#editorInkButton::before {
-  mask-image: var(--toolbarButton-editorInk-icon);
-}
-
-#editorStampButton::before {
-  mask-image: var(--toolbarButton-editorStamp-icon);
-}
-
-#editorSignatureButton::before {
-  mask-image: var(--toolbarButton-editorSignature-icon);
-}
-
-#printButton::before {
-  mask-image: var(--toolbarButton-print-icon);
-}
-
-/*#if GENERIC*/
-#secondaryOpenFile::before {
-  mask-image: var(--toolbarButton-openFile-icon);
-}
-/*#endif*/
-
-#downloadButton::before {
-  mask-image: var(--toolbarButton-download-icon);
-}
-
-#viewBookmark::before {
-  mask-image: var(--toolbarButton-bookmark-icon);
-}
-
-#currentOutlineItem::before {
-  mask-image: var(--toolbarButton-currentOutlineItem-icon);
-  transform: scaleX(var(--dir-factor));
-}
-
-#viewFindButton::before {
-  mask-image: var(--toolbarButton-search-icon);
-}
-
-.pdfSidebarNotification::after {
-  position: absolute;
-  display: inline-block;
-  top: 2px;
-  inset-inline-end: 2px;
-  /* Create a filled circle, with a diameter of 9 pixels, using only CSS: */
-  content: "";
-  background-color: rgb(112 219 85);
-  height: 9px;
-  width: 9px;
-  border-radius: 50%;
-}
-
-.verticalToolbarSeparator {
-  display: block;
-  margin-inline: 2px;
-  width: 0;
-  height: 80%;
-  border-left: 1px solid var(--separator-color);
-  border-right: none;
-  box-sizing: border-box;
-}
-
-.horizontalToolbarSeparator {
-  display: block;
-  margin: 6px 0;
-  border-top: 1px solid var(--doorhanger-separator-color);
-  border-bottom: none;
-  height: 0;
-  width: 100%;
-}
-
-.toggleButton {
-  display: inline;
-
-  &:has(> input:checked) {
-    color: var(--toggled-btn-color);
-    background-color: var(--toggled-btn-bg-color);
-  }
-
-  &:is(:hover, :has(> input:focus-visible)) {
-    color: var(--toggled-btn-color);
-    background-color: var(--button-hover-color);
-  }
-
-  & > input {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-}
-
-.toolbarField {
-  padding: 4px 7px;
-  margin: 3px 0;
-  border-radius: 2px;
-  background-color: var(--field-bg-color);
-  background-clip: padding-box;
-  border: 1px solid var(--field-border-color);
-  box-shadow: none;
-  color: var(--field-color);
-  font-size: 12px;
-  line-height: 16px;
-  outline: none;
-
-  &:focus {
-    border-color: #0a84ff;
-  }
-}
-
-#pageNumber {
-  -moz-appearance: textfield; /* hides the spinner in moz */
-  text-align: end;
-  width: 40px;
-  background-size: 0 0;
-  transition-property: none;
-
-  /*#if !MOZCENTRAL*/
-  &::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-  }
-  /*#endif*/
-
-  .loadingInput:has(> &.loading)::after {
-    display: inline;
-    visibility: visible;
-
-    transition-property: visibility;
-    transition-delay: var(--loading-icon-delay);
-  }
-}
-
-.loadingInput {
-  position: relative;
-
-  &::after {
-    position: absolute;
-    visibility: hidden;
-    display: none;
-    width: var(--icon-size);
-    height: var(--icon-size);
-
-    content: "";
-    background-color: var(--toolbar-icon-bg-color);
-    mask-size: cover;
-    mask-image: var(--loading-icon);
-  }
-
-  &.start::after {
-    inset-inline-start: 4px;
-  }
-
-  &.end::after {
-    inset-inline-end: 4px;
-  }
-}
-
-#thumbnailView,
-#outlineView,
-#attachmentsView,
-#layersView {
-  position: absolute;
-  width: calc(100% - 8px);
-  inset-block: 0;
-  padding: 4px 4px 0;
-  overflow: auto;
-  user-select: none;
-}
-
-#thumbnailView {
-  width: calc(100% - 60px);
-  padding: 10px 30px 0;
-}
-
-#thumbnailView > a:is(:active, :focus) {
-  outline: 0;
-}
-
-.thumbnail {
-  /* Define these variables here, and not in :root, since the individual
-     thumbnails may have different sizes. */
-  --thumbnail-width: 0;
-  --thumbnail-height: 0;
-
-  float: var(--inline-start);
-  width: var(--thumbnail-width);
-  height: var(--thumbnail-height);
-  margin: 0 10px 5px;
-  padding: 1px;
-  border: 7px solid transparent;
-  border-radius: 2px;
-}
-
-#thumbnailView > a:last-of-type > .thumbnail {
-  margin-bottom: 10px;
-}
-
-a:focus > .thumbnail,
-.thumbnail:hover {
-  border-color: var(--thumbnail-hover-color);
-}
-
-.thumbnail.selected {
-  border-color: var(--thumbnail-selected-color) !important;
-}
-
-.thumbnailImage {
-  width: var(--thumbnail-width);
-  height: var(--thumbnail-height);
-  opacity: 0.9;
-}
-
-a:focus > .thumbnail > .thumbnailImage,
-.thumbnail:hover > .thumbnailImage {
-  opacity: 0.95;
-}
-
-.thumbnail.selected > .thumbnailImage {
-  opacity: 1 !important;
-}
-
-.thumbnail:not([data-loaded]) > .thumbnailImage {
-  width: calc(var(--thumbnail-width) - 2px);
-  height: calc(var(--thumbnail-height) - 2px);
-  border: 1px dashed rgb(132 132 132);
-}
-
-.treeWithDeepNesting > .treeItem,
-.treeItem > .treeItems {
-  margin-inline-start: 20px;
-}
-
-.treeItem > a {
-  text-decoration: none;
-  display: inline-block;
-  /* Subtract the right padding (left, in RTL mode) of the container: */
-  min-width: calc(100% - 4px);
-  height: auto;
-  margin-bottom: 1px;
-  padding: 2px 0 5px;
-  padding-inline-start: 4px;
-  border-radius: 2px;
-  color: var(--treeitem-color);
-  font-size: 13px;
-  line-height: 15px;
-  user-select: none;
-  white-space: normal;
-  cursor: pointer;
-}
-
-#layersView .treeItem > a * {
-  cursor: pointer;
-}
-
-#layersView .treeItem > a > label {
-  padding-inline-start: 4px;
-}
-
-#layersView .treeItem > a > label > input {
-  float: var(--inline-start);
-  margin-top: 1px;
-}
-
-.treeItemToggler {
-  position: relative;
-  float: var(--inline-start);
-  height: 0;
-  width: 0;
-  color: rgb(255 255 255 / 0.5);
-}
-
-.treeItemToggler::before {
-  inset-inline-end: 4px;
-  mask-image: var(--treeitem-expanded-icon);
-}
-
-.treeItemToggler.treeItemsHidden::before {
-  mask-image: var(--treeitem-collapsed-icon);
-  transform: scaleX(var(--dir-factor));
-}
-
-.treeItemToggler.treeItemsHidden ~ .treeItems {
-  display: none;
-}
-
-.treeItem.selected > a {
-  background-color: var(--treeitem-selected-bg-color);
-  color: var(--treeitem-selected-color);
-}
-
-.treeItemToggler:hover,
-.treeItemToggler:hover + a,
-.treeItemToggler:hover ~ .treeItems,
-.treeItem > a:hover {
-  background-color: var(--treeitem-bg-color);
-  background-clip: padding-box;
-  border-radius: 2px;
-  color: var(--treeitem-hover-color);
-}
-
-#outlineOptionsContainer {
-  display: none;
-
-  #sidebarContainer:has(#outlineView:not(.hidden)) & {
-    display: inline flex;
-  }
-}
-
-.dialogButton {
-  width: auto;
-  margin: 3px 4px 2px !important;
-  padding: 2px 11px;
-  color: var(--main-color);
-  background-color: var(--dialog-button-bg-color);
-  border: var(--dialog-button-border) !important;
-}
-
-dialog {
-  margin: auto;
-  padding: 15px;
-  border-spacing: 4px;
-  color: var(--main-color);
-  font: message-box;
-  font-size: 12px;
-  line-height: 14px;
-  background-color: var(--doorhanger-bg-color);
-  border: 1px solid rgb(0 0 0 / 0.5);
-  border-radius: 4px;
-  box-shadow: 0 1px 4px rgb(0 0 0 / 0.3);
-}
-
-dialog::backdrop {
-  background-color: rgb(0 0 0 / 0.2);
-}
-
-dialog > .row {
-  display: table-row;
-}
-
-dialog > .row > * {
-  display: table-cell;
-}
-
-dialog .toolbarField {
-  margin: 5px 0;
-}
-
-dialog .separator {
-  display: block;
-  margin: 4px 0;
-  height: 0;
-  width: 100%;
-  border-top: 1px solid var(--separator-color);
-  border-bottom: none;
-}
-
-dialog .buttonRow {
-  text-align: center;
-  vertical-align: middle;
-}
-
-dialog :link {
-  color: rgb(255 255 255);
-}
-
-#passwordDialog {
-  text-align: center;
-}
-
-#passwordDialog .toolbarField {
-  width: 200px;
-}
-
-#documentPropertiesDialog {
-  text-align: left;
-}
-
-#documentPropertiesDialog .row > * {
-  min-width: 100px;
-  text-align: start;
-}
-
-#documentPropertiesDialog .row > span {
-  width: 125px;
-  word-wrap: break-word;
-}
-
-#documentPropertiesDialog .row > p {
-  max-width: 225px;
-  word-wrap: break-word;
-}
-
-#documentPropertiesDialog .buttonRow {
-  margin-top: 10px;
-}
-
-.grab-to-pan-grab {
-  cursor: grab !important;
-}
-
-.grab-to-pan-grab
-  *:not(input):not(textarea):not(button):not(select):not(:link) {
-  cursor: inherit !important;
-}
-
-.grab-to-pan-grab:active,
-.grab-to-pan-grabbing {
-  cursor: grabbing !important;
-}
-
-.grab-to-pan-grabbing {
-  position: fixed;
-  background: rgb(0 0 0 / 0);
-  display: block;
-  inset: 0;
-  overflow: hidden;
-  z-index: 50000; /* should be higher than anything else in PDF.js! */
-}
-
-.toolbarButton {
-  height: 100%;
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  color: var(--main-color);
-  outline: none;
-  border-radius: 2px;
-  box-sizing: border-box;
-  font: message-box;
-  flex: none;
-  position: relative;
-  padding: 0;
-
-  > span {
-    display: inline-block;
-    width: 0;
-    height: 0;
-    overflow: hidden;
-  }
-
-  &::before {
-    opacity: var(--toolbar-icon-opacity);
-    display: inline-block;
-    width: var(--icon-size);
-    height: var(--icon-size);
-    content: "";
-    background-color: var(--toolbar-icon-bg-color);
-    mask-size: cover;
-    mask-position: center;
-  }
-
-  &.toggled {
-    background-color: var(--toggled-btn-bg-color);
-    color: var(--toggled-btn-color);
-
-    &::before {
-      background-color: var(--toggled-btn-color);
-    }
-
-    &:hover {
-      outline: var(--toggled-hover-btn-outline) !important;
-
-      &:active {
-        background-color: var(--toggled-hover-active-btn-color);
-      }
-    }
-  }
-
-  &:is(:hover, :focus-visible) {
-    background-color: var(--button-hover-color);
-
-    &::before {
-      background-color: var(--toolbar-icon-hover-bg-color);
-    }
-  }
-
-  &:is([disabled="disabled"], [disabled]) {
-    opacity: 0.5;
-    pointer-events: none;
-  }
-
-  &.labeled {
-    width: 100%;
-    min-height: var(--menuitem-height);
-    justify-content: flex-start;
-    gap: 8px;
-    padding-inline-start: 12px;
-    aspect-ratio: unset;
-    text-align: start;
-    white-space: normal;
-    cursor: default;
-
-    &:is(a) {
-      text-decoration: none;
-
-      &[href="#"] {
-        opacity: 0.5;
-        pointer-events: none;
-      }
-    }
-
-    &::before {
-      opacity: var(--doorhanger-icon-opacity);
-    }
-
-    &:is(:hover, :focus-visible) {
-      color: var(--doorhanger-hover-color);
-    }
-
-    > span {
-      display: inline-block;
-      width: max-content;
-      height: auto;
-    }
-  }
-}
-
-.toolbarButtonWithContainer {
-  height: 100%;
-  aspect-ratio: 1;
-  display: inline-block;
-  position: relative;
-  flex: none;
-
-  > .toolbarButton {
-    width: 100%;
-    height: 100%;
-  }
-
-  .menu {
-    padding-block: 5px;
-  }
-
-  .menuContainer {
-    width: 100%;
-    height: auto;
-    max-height: calc(
-      var(--viewer-container-height) - var(--toolbar-height) -
-        var(--doorhanger-height)
-    );
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-    overflow-y: auto;
-  }
-
-  .editorParamsToolbar {
-    height: auto;
-    width: 220px;
-    position: absolute;
-    z-index: 30000;
-    cursor: default;
-
-    :is(#editorStampAddImage, #editorSignatureAddSignature)::before {
-      mask-image: var(--editorParams-stampAddImage-icon);
-    }
-
-    .editorParamsLabel {
-      flex: none;
-      font: menu;
-      font-size: 13px;
-      font-style: normal;
-      font-weight: 400;
-      line-height: 150%;
-      width: fit-content;
-      inset-inline-start: 0;
-      color: var(--main-color);
-    }
-
-    button:is(:hover, :focus-visible) .editorParamsLabel {
-      color: var(--doorhanger-hover-color);
-    }
-
-    .editorParamsToolbarContainer {
-      width: 100%;
-      height: auto;
-      display: flex;
-      flex-direction: column;
-      box-sizing: border-box;
-      padding-inline: 10px;
-      padding-block: 10px;
-
-      > .editorParamsSetter {
-        min-height: 26px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-      }
-
-      .editorParamsColor {
-        width: 32px;
-        height: 32px;
-        flex: none;
-        padding: 0;
-      }
-
-      .editorParamsSlider {
-        background-color: transparent;
-        width: 90px;
-        flex: 0 1 0;
-        font: message-box;
-
-        &::-moz-range-progress {
-          background-color: black;
-        }
-
-        /*#if !MOZCENTRAL*/
-        &::-webkit-slider-runnable-track,
-        /*#endif*/
-        &::-moz-range-track {
-          background-color: black;
-        }
-
-        /*#if !MOZCENTRAL*/
-        &::-webkit-slider-thumb,
-        /*#endif*/
-        &::-moz-range-thumb {
-          background-color: white;
-        }
-      }
-    }
-  }
-}
-
-#secondaryToolbar {
-  height: auto;
-  width: 220px;
-  position: absolute;
-  z-index: 30000;
-  cursor: default;
-  min-height: 26px;
-  max-height: calc(var(--viewer-container-height) - 40px);
-
-  #secondaryToolbarButtonContainer {
-    /*#if GENERIC*/
-    #secondaryOpenFile::before {
-      mask-image: var(--toolbarButton-openFile-icon);
-    }
-    /*#endif*/
-
-    #secondaryPrint::before {
-      mask-image: var(--toolbarButton-print-icon);
-    }
-
-    #secondaryDownload::before {
-      mask-image: var(--toolbarButton-download-icon);
-    }
-
-    #presentationMode::before {
-      mask-image: var(--toolbarButton-presentationMode-icon);
-    }
-
-    #viewBookmark::before {
-      mask-image: var(--toolbarButton-bookmark-icon);
-    }
-
-    #firstPage::before {
-      mask-image: var(--secondaryToolbarButton-firstPage-icon);
-    }
-
-    #lastPage::before {
-      mask-image: var(--secondaryToolbarButton-lastPage-icon);
-    }
-
-    #pageRotateCcw::before {
-      mask-image: var(--secondaryToolbarButton-rotateCcw-icon);
-    }
-
-    #pageRotateCw::before {
-      mask-image: var(--secondaryToolbarButton-rotateCw-icon);
-    }
-
-    #cursorSelectTool::before {
-      mask-image: var(--secondaryToolbarButton-selectTool-icon);
-    }
-
-    #cursorHandTool::before {
-      mask-image: var(--secondaryToolbarButton-handTool-icon);
-    }
-
-    #scrollPage::before {
-      mask-image: var(--secondaryToolbarButton-scrollPage-icon);
-    }
-
-    #scrollVertical::before {
-      mask-image: var(--secondaryToolbarButton-scrollVertical-icon);
-    }
-
-    #scrollHorizontal::before {
-      mask-image: var(--secondaryToolbarButton-scrollHorizontal-icon);
-    }
-
-    #scrollWrapped::before {
-      mask-image: var(--secondaryToolbarButton-scrollWrapped-icon);
-    }
-
-    #spreadNone::before {
-      mask-image: var(--secondaryToolbarButton-spreadNone-icon);
-    }
-
-    #spreadOdd::before {
-      mask-image: var(--secondaryToolbarButton-spreadOdd-icon);
-    }
-
-    #spreadEven::before {
-      mask-image: var(--secondaryToolbarButton-spreadEven-icon);
-    }
-
-    #imageAltTextSettings::before {
-      mask-image: var(--secondaryToolbarButton-imageAltTextSettings-icon);
-    }
-
-    #documentProperties::before {
-      mask-image: var(--secondaryToolbarButton-documentProperties-icon);
-    }
-  }
-}
-
-#findbar {
-  --input-horizontal-padding: 4px;
-  --findbar-padding: 2px;
-
-  width: max-content;
-  max-width: 90vw;
-  min-height: var(--toolbar-height);
-  height: auto;
-  position: absolute;
-  z-index: 30000;
-  cursor: default;
-  padding: 0;
-  min-width: 300px;
-  background-color: var(--toolbar-bg-color);
-  box-sizing: border-box;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-
-  > * {
-    height: var(--toolbar-height);
-    padding: var(--findbar-padding);
-  }
-
-  #findInputContainer {
-    margin-inline-start: 2px;
-
-    #findPreviousButton::before {
-      mask-image: var(--findbarButton-previous-icon);
-    }
-
-    #findNextButton::before {
-      mask-image: var(--findbarButton-next-icon);
-    }
-
-    #findInput {
-      width: 200px;
-      padding: 5px var(--input-horizontal-padding);
-
-      /*#if !MOZCENTRAL*/
-      &::-webkit-input-placeholder {
-        color: rgb(191 191 191);
-      }
-      /*#endif*/
-      &::placeholder {
-        font-style: normal;
-      }
-
-      .loadingInput:has(> &[data-status="pending"])::after {
-        display: inline;
-        visibility: visible;
-        inset-inline-end: calc(var(--input-horizontal-padding) + 1px);
-      }
-
-      &[data-status="notFound"] {
-        background-color: rgb(255 102 102);
-      }
-    }
-  }
-
-  #findbarMessageContainer {
-    display: none;
-    gap: 4px;
-
-    &:has(> :is(#findResultsCount, #findMsg):not(:empty)) {
-      display: inline flex;
-    }
-
-    #findResultsCount {
-      background-color: rgb(217 217 217);
-      color: rgb(82 82 82);
-      padding-block: 4px;
-
-      &:empty {
-        display: none;
-      }
-    }
-
-    #findMsg {
-      &[data-status="notFound"] {
-        font-weight: bold;
-      }
-
-      &:empty {
-        display: none;
-      }
-    }
-  }
-
-  &.wrapContainers {
-    flex-direction: column;
-    align-items: flex-start;
-    height: max-content;
-
-    .toolbarLabel {
-      margin: 0 4px;
-    }
-
-    #findbarMessageContainer {
-      flex-wrap: wrap;
-      flex-flow: column nowrap;
-      align-items: flex-start;
-      height: max-content;
-
-      #findResultsCount {
-        height: calc(var(--toolbar-height) - 2 * var(--findbar-padding));
-      }
-
-      #findMsg {
-        min-height: var(--toolbar-height);
-      }
-    }
-  }
-}
-
-@page {
-  margin: 0;
-}
-
-#printContainer {
-  display: none;
-}
-
-@media print {
-  body {
-    background: rgb(0 0 0 / 0) none;
-  }
-
-  body[data-pdfjsprinting] #outerContainer {
-    display: none;
-  }
-
-  body[data-pdfjsprinting] #printContainer {
-    display: block;
-  }
-
-  #printContainer {
-    height: 100%;
-  }
-
-  /* wrapper around (scaled) print canvas elements */
-  #printContainer > .printedPage {
-    page-break-after: always;
-    page-break-inside: avoid;
-
-    /* The wrapper always cover the whole page. */
-    height: 100%;
-    width: 100%;
-
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  }
-
-  #printContainer > .xfaPrintedPage .xfaPage {
-    position: absolute;
-  }
-
-  #printContainer > .xfaPrintedPage {
-    page-break-after: always;
-    page-break-inside: avoid;
-    width: 100%;
-    height: 100%;
-    position: relative;
-  }
-
-  #printContainer > .printedPage :is(canvas, img) {
-    /* The intrinsic canvas / image size will make sure that we fit the page. */
-    max-width: 100%;
-    max-height: 100%;
-
-    direction: ltr;
-    display: block;
-  }
-}
-
-.visibleMediumView {
-  display: none !important;
-}
-
-.toolbarLabel {
-  width: max-content;
-  min-width: 16px;
-  height: 100%;
-  padding-inline: 4px;
-  margin: 2px;
-  border-radius: 2px;
-  color: var(--main-color);
-  font-size: 12px;
-  line-height: 14px;
-  text-align: left;
-  user-select: none;
-  cursor: default;
-  box-sizing: border-box;
-
-  display: inline flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
-  > label {
-    width: 100%;
-  }
-}
-
-.toolbarHorizontalGroup {
-  height: 100%;
-  display: inline flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1px;
-  box-sizing: border-box;
-}
-
-.dropdownToolbarButton {
-  display: inline flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-
-  width: fit-content;
-  min-width: 140px;
-  padding: 0;
-  background-color: var(--dropdown-btn-bg-color);
-  border: var(--dropdown-btn-border);
-  border-radius: 2px;
-  color: var(--main-color);
-  font-size: 12px;
-  line-height: 14px;
-  user-select: none;
-  cursor: default;
-  box-sizing: border-box;
-  outline: none;
-
-  &:hover {
-    background-color: var(--button-hover-color);
-  }
-
-  > select {
-    appearance: none;
-    width: inherit;
-    min-width: inherit;
-    height: 28px;
-    font: message-box;
-    font-size: 12px;
-    color: var(--main-color);
-    margin: 0;
-    padding-block: 1px 2px;
-    padding-inline: 6px 38px;
-    border: none;
-    outline: none;
-    background-color: var(--dropdown-btn-bg-color);
-
-    > option {
-      background: var(--doorhanger-bg-color);
-      color: var(--main-color);
-    }
-
-    &:is(:hover, :focus-visible) {
-      background-color: var(--button-hover-color);
-      color: var(--toggled-btn-color);
-    }
-  }
-
-  &::after {
-    /* All matching images have a size of 16x16
-     * All relevant containers have a size of 28x28 */
-    position: absolute;
-    display: inline;
-    width: var(--icon-size);
-    height: var(--icon-size);
-
-    content: "";
-    background-color: var(--toolbar-icon-bg-color);
-    mask-size: cover;
-
-    inset-inline-end: 4px;
-    pointer-events: none;
-    mask-image: var(--toolbarButton-menuArrow-icon);
-  }
-
-  &:is(:hover, :focus-visible, :active)::after {
-    background-color: var(--toolbar-icon-hover-bg-color);
-  }
-}
-
-#toolbarContainer {
-  --menuitem-height: calc(var(--toolbar-height) - 6px);
-
-  width: 100%;
-  height: var(--toolbar-height);
-  padding: var(--toolbar-vertical-padding) var(--toolbar-horizontal-padding);
-  position: relative;
-  box-sizing: border-box;
-  font: message-box;
-  background-color: var(--toolbar-bg-color);
-  box-shadow: var(--toolbar-box-shadow);
-  border-bottom: var(--toolbar-border-bottom);
-
-  #toolbarViewer {
-    width: 100%;
-    height: 100%;
-    justify-content: space-between;
-
-    > * {
-      flex: none;
-    }
-
-    input {
-      font: message-box;
-    }
-
-    .toolbarButtonSpacer {
-      width: 30px;
-      display: block;
-      height: 1px;
-    }
-
-    #toolbarViewerLeft #numPages.toolbarLabel {
-      padding-inline-start: 3px;
-      flex: none;
-    }
-  }
-
-  #loadingBar {
-    /* Define these variables here, and not in :root, to avoid reflowing the
-       entire viewer when updating progress (see issue 15958). */
-    --progressBar-percent: 0%;
-    --progressBar-end-offset: 0;
-
-    position: absolute;
-    top: var(--toolbar-height);
-    inset-inline: 0 var(--progressBar-end-offset);
-    height: 4px;
-    background-color: var(--progressBar-bg-color);
-    border-bottom: 1px solid var(--toolbar-border-color);
-    transition-property: inset-inline-start;
-    transition-duration: var(--sidebar-transition-duration);
-    transition-timing-function: var(--sidebar-transition-timing-function);
-
-    .progress {
-      position: absolute;
-      top: 0;
-      inset-inline-start: 0;
-      width: 100%;
-      transform: scaleX(var(--progressBar-percent));
-      transform-origin: calc(50% - 50% * var(--dir-factor)) 0;
-      height: 100%;
-      background-color: var(--progressBar-color);
-      overflow: hidden;
-      transition: transform 200ms;
-    }
-
-    &.indeterminate .progress {
-      transform: none;
-      background-color: var(--progressBar-bg-color);
-      transition: none;
-
-      .glimmer {
-        position: absolute;
-        top: 0;
-        inset-inline-start: 0;
-        height: 100%;
-        width: calc(100% + 150px);
-        background: repeating-linear-gradient(
-          135deg,
-          var(--progressBar-blend-color) 0,
-          var(--progressBar-bg-color) 5px,
-          var(--progressBar-bg-color) 45px,
-          var(--progressBar-color) 55px,
-          var(--progressBar-color) 95px,
-          var(--progressBar-blend-color) 100px
-        );
-        animation: progressIndeterminate 1s linear infinite;
-      }
-    }
-  }
-}
-
-#secondaryToolbar {
-  #firstPage::before {
-    mask-image: var(--secondaryToolbarButton-firstPage-icon);
-  }
-
-  #lastPage::before {
-    mask-image: var(--secondaryToolbarButton-lastPage-icon);
-  }
-
-  #pageRotateCcw::before {
-    mask-image: var(--secondaryToolbarButton-rotateCcw-icon);
-  }
-
-  #pageRotateCw::before {
-    mask-image: var(--secondaryToolbarButton-rotateCw-icon);
-  }
-
-  #cursorSelectTool::before {
-    mask-image: var(--secondaryToolbarButton-selectTool-icon);
-  }
-
-  #cursorHandTool::before {
-    mask-image: var(--secondaryToolbarButton-handTool-icon);
-  }
-
-  #scrollPage::before {
-    mask-image: var(--secondaryToolbarButton-scrollPage-icon);
-  }
-
-  #scrollVertical::before {
-    mask-image: var(--secondaryToolbarButton-scrollVertical-icon);
-  }
-
-  #scrollHorizontal::before {
-    mask-image: var(--secondaryToolbarButton-scrollHorizontal-icon);
-  }
-
-  #scrollWrapped::before {
-    mask-image: var(--secondaryToolbarButton-scrollWrapped-icon);
-  }
-
-  #spreadNone::before {
-    mask-image: var(--secondaryToolbarButton-spreadNone-icon);
-  }
-
-  #spreadOdd::before {
-    mask-image: var(--secondaryToolbarButton-spreadOdd-icon);
-  }
-
-  #spreadEven::before {
-    mask-image: var(--secondaryToolbarButton-spreadEven-icon);
-  }
-
-  #documentProperties::before {
-    mask-image: var(--secondaryToolbarButton-documentProperties-icon);
-  }
-}
-
-@media all and (max-width: 840px) {
-  #sidebarContainer {
-    background-color: var(--sidebar-narrow-bg-color);
-  }
-  #outerContainer.sidebarOpen #viewerContainer {
-    inset-inline-start: 0 !important;
-  }
-}
-
-@media all and (max-width: 750px) {
-  #outerContainer .hiddenMediumView {
-    display: none !important;
-  }
-  #outerContainer .visibleMediumView:not(.hidden, [hidden]) {
-    display: inline-block !important;
-  }
-}
-
-@media all and (max-width: 690px) {
-  .hiddenSmallView,
-  .hiddenSmallView * {
-    display: none !important;
-  }
-
-  #toolbarContainer #toolbarViewer .toolbarButtonSpacer {
-    width: 0;
-  }
-}
-
-@media all and (max-width: 560px) {
-  #scaleSelectContainer {
-    display: none;
-  }
-}
+ @import url(pdf_viewer.css);
+
+ :root {
+   --dir-factor: 1;
+   /*#if !MOZCENTRAL*/
+   --inline-start: left;
+   --inline-end: right;
+   /*#endif*/
+
+   --sidebar-width: 200px;
+   --sidebar-transition-duration: 200ms;
+   --sidebar-transition-timing-function: ease;
+
+   --toolbar-height: 32px;
+   --toolbar-horizontal-padding: 1px;
+   --toolbar-vertical-padding: 2px;
+   --icon-size: 16px;
+
+   --toolbar-icon-opacity: 0.7;
+   --doorhanger-icon-opacity: 0.9;
+   --doorhanger-height: 8px;
+
+   --main-color: rgb(12 12 13);
+   --body-bg-color: rgb(212 212 215);
+   --progressBar-color: rgb(10 132 255);
+   --progressBar-bg-color: rgb(221 221 222);
+   --progressBar-blend-color: rgb(116 177 239);
+   --scrollbar-color: auto;
+   --scrollbar-bg-color: auto;
+   --toolbar-icon-bg-color: rgb(0 0 0);
+   --toolbar-icon-hover-bg-color: rgb(0 0 0);
+
+   --sidebar-narrow-bg-color: rgb(212 212 215 / 0.9);
+   --sidebar-toolbar-bg-color: rgb(245 246 247);
+   --toolbar-bg-color: rgb(249 249 250);
+   --toolbar-border-color: rgb(184 184 184);
+   --toolbar-box-shadow: 0 1px 0 var(--toolbar-border-color);
+   --toolbar-border-bottom: none;
+   --toolbarSidebar-box-shadow:
+     inset calc(-1px * var(--dir-factor)) 0 0 rgb(0 0 0 / 0.25),
+     0 1px 0 rgb(0 0 0 / 0.15), 0 0 1px rgb(0 0 0 / 0.1);
+   --toolbarSidebar-border-bottom: none;
+   --button-hover-color: color-mix(in srgb, currentColor 17%, transparent);
+   --toggled-btn-color: rgb(0 0 0);
+   --toggled-btn-bg-color: rgb(0 0 0 / 0.3);
+   --toggled-hover-active-btn-color: rgb(0 0 0 / 0.4);
+   --toggled-hover-btn-outline: none;
+   --dropdown-btn-bg-color: rgb(215 215 219);
+   --dropdown-btn-border: none;
+   --separator-color: rgb(0 0 0 / 0.3);
+   --field-color: rgb(6 6 6);
+   --field-bg-color: rgb(255 255 255);
+   --field-border-color: rgb(187 187 188);
+   --treeitem-color: rgb(0 0 0 / 0.8);
+   --treeitem-bg-color: rgb(0 0 0 / 0.15);
+   --treeitem-hover-color: rgb(0 0 0 / 0.9);
+   --treeitem-selected-color: rgb(0 0 0 / 0.9);
+   --treeitem-selected-bg-color: rgb(0 0 0 / 0.25);
+   --thumbnail-hover-color: rgb(0 0 0 / 0.1);
+   --thumbnail-selected-color: rgb(0 0 0 / 0.2);
+   --doorhanger-bg-color: rgb(255 255 255);
+   --doorhanger-border-color: rgb(12 12 13 / 0.2);
+   --doorhanger-hover-color: rgb(12 12 13);
+   --doorhanger-separator-color: rgb(222 222 222);
+   --dialog-button-border: none;
+   --dialog-button-bg-color: rgb(12 12 13 / 0.1);
+   --dialog-button-hover-bg-color: rgb(12 12 13 / 0.3);
+
+   --loading-icon: url(images/loading.svg);
+   --treeitem-expanded-icon: url(images/treeitem-expanded.svg);
+   --treeitem-collapsed-icon: url(images/treeitem-collapsed.svg);
+   --toolbarButton-editorFreeText-icon: url(images/toolbarButton-editorFreeText.svg);
+   --toolbarButton-editorHighlight-icon: url(images/toolbarButton-editorHighlight.svg);
+   --toolbarButton-editorInk-icon: url(images/toolbarButton-editorInk.svg);
+   --toolbarButton-editorStamp-icon: url(images/toolbarButton-editorStamp.svg);
+   --toolbarButton-editorSignature-icon: url(images/toolbarButton-editorSignature.svg);
+   --toolbarButton-menuArrow-icon: url(images/toolbarButton-menuArrow.svg);
+   --toolbarButton-sidebarToggle-icon: url(images/toolbarButton-sidebarToggle.svg);
+   --toolbarButton-secondaryToolbarToggle-icon: url(images/toolbarButton-secondaryToolbarToggle.svg);
+   --toolbarButton-pageUp-icon: url(images/toolbarButton-pageUp.svg);
+   --toolbarButton-pageDown-icon: url(images/toolbarButton-pageDown.svg);
+   --toolbarButton-zoomOut-icon: url(images/toolbarButton-zoomOut.svg);
+   --toolbarButton-zoomIn-icon: url(images/toolbarButton-zoomIn.svg);
+   --toolbarButton-presentationMode-icon: url(images/toolbarButton-presentationMode.svg);
+   --toolbarButton-print-icon: url(images/toolbarButton-print.svg);
+   /*#if GENERIC*/
+   --toolbarButton-openFile-icon: url(images/toolbarButton-openFile.svg);
+   /*#endif*/
+   --toolbarButton-download-icon: url(images/toolbarButton-download.svg);
+   --toolbarButton-bookmark-icon: url(images/toolbarButton-bookmark.svg);
+   --toolbarButton-viewThumbnail-icon: url(images/toolbarButton-viewThumbnail.svg);
+   --toolbarButton-viewOutline-icon: url(images/toolbarButton-viewOutline.svg);
+   --toolbarButton-viewAttachments-icon: url(images/toolbarButton-viewAttachments.svg);
+   --toolbarButton-viewLayers-icon: url(images/toolbarButton-viewLayers.svg);
+   --toolbarButton-currentOutlineItem-icon: url(images/toolbarButton-currentOutlineItem.svg);
+   --toolbarButton-search-icon: url(images/toolbarButton-search.svg);
+   --findbarButton-previous-icon: url(images/findbarButton-previous.svg);
+   --findbarButton-next-icon: url(images/findbarButton-next.svg);
+   --secondaryToolbarButton-firstPage-icon: url(images/secondaryToolbarButton-firstPage.svg);
+   --secondaryToolbarButton-lastPage-icon: url(images/secondaryToolbarButton-lastPage.svg);
+   --secondaryToolbarButton-rotateCcw-icon: url(images/secondaryToolbarButton-rotateCcw.svg);
+   --secondaryToolbarButton-rotateCw-icon: url(images/secondaryToolbarButton-rotateCw.svg);
+   --secondaryToolbarButton-selectTool-icon: url(images/secondaryToolbarButton-selectTool.svg);
+   --secondaryToolbarButton-handTool-icon: url(images/secondaryToolbarButton-handTool.svg);
+   --secondaryToolbarButton-scrollPage-icon: url(images/secondaryToolbarButton-scrollPage.svg);
+   --secondaryToolbarButton-scrollVertical-icon: url(images/secondaryToolbarButton-scrollVertical.svg);
+   --secondaryToolbarButton-scrollHorizontal-icon: url(images/secondaryToolbarButton-scrollHorizontal.svg);
+   --secondaryToolbarButton-scrollWrapped-icon: url(images/secondaryToolbarButton-scrollWrapped.svg);
+   --secondaryToolbarButton-spreadNone-icon: url(images/secondaryToolbarButton-spreadNone.svg);
+   --secondaryToolbarButton-spreadOdd-icon: url(images/secondaryToolbarButton-spreadOdd.svg);
+   --secondaryToolbarButton-spreadEven-icon: url(images/secondaryToolbarButton-spreadEven.svg);
+   --secondaryToolbarButton-imageAltTextSettings-icon: var(
+     --toolbarButton-editorStamp-icon
+   );
+   --secondaryToolbarButton-documentProperties-icon: url(images/secondaryToolbarButton-documentProperties.svg);
+   --editorParams-stampAddImage-icon: url(images/toolbarButton-zoomIn.svg);
+ }
+
+ :root:dir(rtl) {
+   --dir-factor: -1;
+   /*#if !MOZCENTRAL*/
+   --inline-start: right;
+   --inline-end: left;
+   /*#endif*/
+ }
+
+ @media (prefers-color-scheme: dark) {
+   :root {
+     --main-color: rgb(249 249 250);
+     --body-bg-color: rgb(42 42 46);
+     --progressBar-color: rgb(0 96 223);
+     --progressBar-bg-color: rgb(40 40 43);
+     --progressBar-blend-color: rgb(20 68 133);
+     --scrollbar-color: rgb(121 121 123);
+     --scrollbar-bg-color: rgb(35 35 39);
+     --toolbar-icon-bg-color: rgb(255 255 255);
+     --toolbar-icon-hover-bg-color: rgb(255 255 255);
+
+     --sidebar-narrow-bg-color: rgb(42 42 46 / 0.9);
+     --sidebar-toolbar-bg-color: rgb(50 50 52);
+     --toolbar-bg-color: rgb(56 56 61);
+     --toolbar-border-color: rgb(12 12 13);
+     --toggled-btn-color: rgb(255 255 255);
+     --toggled-btn-bg-color: rgb(0 0 0 / 0.3);
+     --toggled-hover-active-btn-color: rgb(0 0 0 / 0.4);
+     --dropdown-btn-bg-color: rgb(74 74 79);
+     --separator-color: rgb(0 0 0 / 0.3);
+     --field-color: rgb(250 250 250);
+     --field-bg-color: rgb(64 64 68);
+     --field-border-color: rgb(115 115 115);
+     --treeitem-color: rgb(255 255 255 / 0.8);
+     --treeitem-bg-color: rgb(255 255 255 / 0.15);
+     --treeitem-hover-color: rgb(255 255 255 / 0.9);
+     --treeitem-selected-color: rgb(255 255 255 / 0.9);
+     --treeitem-selected-bg-color: rgb(255 255 255 / 0.25);
+     --thumbnail-hover-color: rgb(255 255 255 / 0.1);
+     --thumbnail-selected-color: rgb(255 255 255 / 0.2);
+     --doorhanger-bg-color: #42414d;
+     --doorhanger-border-color: rgb(39 39 43);
+     --doorhanger-hover-color: rgb(249 249 250);
+     --doorhanger-separator-color: rgb(92 92 97);
+     --dialog-button-bg-color: rgb(92 92 97);
+     --dialog-button-hover-bg-color: rgb(115 115 115);
+   }
+ }
+
+ @media screen and (forced-colors: active) {
+   :root {
+     --button-hover-color: Highlight;
+     --toolbar-icon-opacity: 1;
+     --toolbar-icon-bg-color: ButtonText;
+     --toolbar-icon-hover-bg-color: ButtonFace;
+     --toggled-hover-active-btn-color: ButtonText;
+     --toggled-hover-btn-outline: 2px solid ButtonBorder;
+     --toolbar-border-color: CanvasText;
+     --toolbar-border-bottom: 1px solid var(--toolbar-border-color);
+     --toolbar-box-shadow: none;
+     --toggled-btn-color: HighlightText;
+     --toggled-btn-bg-color: LinkText;
+     --doorhanger-hover-color: ButtonFace;
+     --doorhanger-border-color-whcm: 1px solid ButtonText;
+     --doorhanger-triangle-opacity-whcm: 0;
+     --dialog-button-border: 1px solid Highlight;
+     --dialog-button-hover-bg-color: Highlight;
+     --dialog-button-hover-color: ButtonFace;
+     --dropdown-btn-border: 1px solid ButtonText;
+     --field-border-color: ButtonText;
+     --main-color: CanvasText;
+     --separator-color: GrayText;
+     --doorhanger-separator-color: GrayText;
+     --toolbarSidebar-box-shadow: none;
+     --toolbarSidebar-border-bottom: 1px solid var(--toolbar-border-color);
+   }
+ }
+
+ @media screen and (prefers-reduced-motion: reduce) {
+   :root {
+     --sidebar-transition-duration: 0;
+   }
+ }
+
+ @keyframes progressIndeterminate {
+   0% {
+     transform: translateX(calc(-142px * var(--dir-factor)));
+   }
+
+   100% {
+     transform: translateX(0);
+   }
+ }
+
+ html {
+   &[data-toolbar-density="compact"] {
+     --toolbar-height: 30px;
+   }
+   &[data-toolbar-density="touch"] {
+     --toolbar-height: 44px;
+   }
+ }
+
+ html,
+ body {
+   height: 100%;
+   width: 100%;
+ }
+
+ body {
+   margin: 0;
+   background-color: var(--body-bg-color);
+   scrollbar-color: var(--scrollbar-color) var(--scrollbar-bg-color);
+
+   &.wait::before {
+     content: "";
+     position: fixed;
+     width: 100%;
+     height: 100%;
+     z-index: 100000;
+     cursor: wait;
+   }
+ }
+
+ .hidden,
+ [hidden] {
+   display: none !important;
+ }
+
+ #viewerContainer.pdfPresentationMode:fullscreen {
+   top: 0;
+   background-color: rgb(0 0 0);
+   width: 100%;
+   height: 100%;
+   overflow: hidden;
+   cursor: none;
+   user-select: none;
+ }
+
+ .pdfPresentationMode:fullscreen section:not([data-internal-link]) {
+   pointer-events: none;
+ }
+
+ .pdfPresentationMode:fullscreen .textLayer span {
+   cursor: none;
+ }
+
+ .pdfPresentationMode.pdfPresentationModeControls > *,
+ .pdfPresentationMode.pdfPresentationModeControls .textLayer span {
+   cursor: default;
+ }
+
+ #outerContainer {
+   width: calc(100vw - 320px);
+   height: 100%;
+   position: relative;
+   margin: 0;
+ }
+
+ #sidebarContainer {
+   position: absolute;
+   inset-block: var(--toolbar-height) 0;
+   inset-inline-start: calc(-1 * var(--sidebar-width));
+   width: var(--sidebar-width);
+   visibility: hidden;
+   z-index: 1;
+   font: message-box;
+   border-top: 1px solid transparent;
+   border-inline-end: var(--doorhanger-border-color-whcm);
+   transition-property: inset-inline-start;
+   transition-duration: var(--sidebar-transition-duration);
+   transition-timing-function: var(--sidebar-transition-timing-function);
+ }
+
+ #outerContainer:is(.sidebarMoving, .sidebarOpen) #sidebarContainer {
+   visibility: visible;
+ }
+
+ #outerContainer.sidebarOpen #sidebarContainer {
+   inset-inline-start: 0;
+ }
+
+ #mainContainer {
+   position: absolute;
+   inset: 0;
+   min-width: 350px;
+   margin: 0;
+   display: flex;
+   flex-direction: column;
+ }
+
+ #sidebarContent {
+   inset-block: var(--toolbar-height) 0;
+   inset-inline-start: 0;
+   overflow: auto;
+   position: absolute;
+   width: 100%;
+   box-shadow: inset calc(-1px * var(--dir-factor)) 0 0 rgb(0 0 0 / 0.25);
+ }
+
+ #viewerContainer {
+   overflow: auto;
+   position: absolute;
+   inset: var(--toolbar-height) 0 0;
+   outline: none;
+   z-index: 0;
+ }
+
+ #viewerContainer:not(.pdfPresentationMode) {
+   transition-duration: var(--sidebar-transition-duration);
+   transition-timing-function: var(--sidebar-transition-timing-function);
+ }
+
+ #outerContainer.sidebarOpen #viewerContainer:not(.pdfPresentationMode) {
+   inset-inline-start: var(--sidebar-width);
+   transition-property: inset-inline-start;
+ }
+
+ #sidebarContainer :is(input, button, select) {
+   font: message-box;
+ }
+
+ .toolbar {
+   z-index: 2;
+ }
+
+ #toolbarSidebar {
+   width: 100%;
+   height: var(--toolbar-height);
+   background-color: var(--sidebar-toolbar-bg-color);
+   box-shadow: var(--toolbarSidebar-box-shadow);
+   border-bottom: var(--toolbarSidebar-border-bottom);
+   padding: var(--toolbar-vertical-padding) var(--toolbar-horizontal-padding);
+   justify-content: space-between;
+
+   #toolbarSidebarLeft {
+     width: auto;
+     height: 100%;
+
+     #viewThumbnail::before {
+       mask-image: var(--toolbarButton-viewThumbnail-icon);
+     }
+
+     #viewOutline::before {
+       mask-image: var(--toolbarButton-viewOutline-icon);
+       transform: scaleX(var(--dir-factor));
+     }
+
+     #viewAttachments::before {
+       mask-image: var(--toolbarButton-viewAttachments-icon);
+     }
+
+     #viewLayers::before {
+       mask-image: var(--toolbarButton-viewLayers-icon);
+     }
+   }
+
+   #toolbarSidebarRight {
+     width: auto;
+     height: 100%;
+     padding-inline-end: 2px;
+   }
+ }
+
+ #sidebarResizer {
+   position: absolute;
+   inset-block: 0;
+   inset-inline-end: -6px;
+   width: 6px;
+   z-index: 200;
+   cursor: ew-resize;
+ }
+
+ #outerContainer.sidebarOpen #loadingBar {
+   inset-inline-start: var(--sidebar-width);
+ }
+
+ #outerContainer.sidebarResizing
+   :is(#sidebarContainer, #viewerContainer, #loadingBar) {
+   /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
+   transition-duration: 0s;
+ }
+
+ .doorHanger,
+ .doorHangerRight {
+   border-radius: 2px;
+   box-shadow:
+     0 1px 5px var(--doorhanger-border-color),
+     0 0 0 1px var(--doorhanger-border-color);
+   border: var(--doorhanger-border-color-whcm);
+   background-color: var(--doorhanger-bg-color);
+   inset-block-start: calc(100% + var(--doorhanger-height) - 2px);
+
+   &::after,
+   &::before {
+     bottom: 100%;
+     border-style: solid;
+     border-color: transparent;
+     content: "";
+     height: 0;
+     width: 0;
+     position: absolute;
+     pointer-events: none;
+     opacity: var(--doorhanger-triangle-opacity-whcm);
+   }
+
+   &::before {
+     border-width: calc(var(--doorhanger-height) + 2px);
+     border-bottom-color: var(--doorhanger-border-color);
+   }
+
+   &::after {
+     border-width: var(--doorhanger-height);
+   }
+ }
+
+ .doorHangerRight {
+   inset-inline-end: calc(50% - var(--doorhanger-height) - 1px);
+
+   &::before {
+     inset-inline-end: -1px;
+   }
+
+   &::after {
+     border-bottom-color: var(--doorhanger-bg-color);
+     inset-inline-end: 1px;
+   }
+ }
+
+ .doorHanger {
+   inset-inline-start: calc(50% - var(--doorhanger-height) - 1px);
+
+   &::before {
+     inset-inline-start: -1px;
+   }
+
+   &::after {
+     border-bottom-color: var(--toolbar-bg-color);
+     inset-inline-start: 1px;
+   }
+ }
+
+ .dialogButton {
+   border: none;
+   background: none;
+   width: 28px;
+   height: 28px;
+   outline: none;
+ }
+
+ .dialogButton:is(:hover, :focus-visible) {
+   background-color: var(--dialog-button-hover-bg-color);
+ }
+
+ .dialogButton:is(:hover, :focus-visible) > span {
+   color: var(--dialog-button-hover-color);
+ }
+
+ .splitToolbarButtonSeparator {
+   float: var(--inline-start);
+   width: 0;
+   height: 62%;
+   border-left: 1px solid var(--separator-color);
+   border-right: none;
+ }
+
+ .dialogButton {
+   min-width: 16px;
+   margin: 2px 1px;
+   padding: 2px 6px 0;
+   border: none;
+   border-radius: 2px;
+   color: var(--main-color);
+   font-size: 12px;
+   line-height: 14px;
+   user-select: none;
+   cursor: default;
+   box-sizing: border-box;
+ }
+
+ .treeItemToggler::before {
+   /* All matching images have a size of 16x16
+    * All relevant containers have a size of 28x28 */
+   position: absolute;
+   display: inline-block;
+   width: 16px;
+   height: 16px;
+
+   content: "";
+   background-color: var(--toolbar-icon-bg-color);
+   mask-size: cover;
+ }
+
+ #sidebarToggleButton::before {
+   mask-image: var(--toolbarButton-sidebarToggle-icon);
+   transform: scaleX(var(--dir-factor));
+ }
+
+ #secondaryToolbarToggleButton::before {
+   mask-image: var(--toolbarButton-secondaryToolbarToggle-icon);
+   transform: scaleX(var(--dir-factor));
+ }
+
+ #previous::before {
+   mask-image: var(--toolbarButton-pageUp-icon);
+ }
+
+ #next::before {
+   mask-image: var(--toolbarButton-pageDown-icon);
+ }
+
+ #zoomOutButton::before {
+   mask-image: var(--toolbarButton-zoomOut-icon);
+ }
+
+ #zoomInButton::before {
+   mask-image: var(--toolbarButton-zoomIn-icon);
+ }
+
+ #presentationMode::before {
+   mask-image: var(--toolbarButton-presentationMode-icon);
+ }
+
+ #editorFreeTextButton::before {
+   mask-image: var(--toolbarButton-editorFreeText-icon);
+ }
+
+ #editorHighlightButton::before {
+   mask-image: var(--toolbarButton-editorHighlight-icon);
+ }
+
+ #editorInkButton::before {
+   mask-image: var(--toolbarButton-editorInk-icon);
+ }
+
+ #editorStampButton::before {
+   mask-image: var(--toolbarButton-editorStamp-icon);
+ }
+
+ #editorSignatureButton::before {
+   mask-image: var(--toolbarButton-editorSignature-icon);
+ }
+
+ #printButton::before {
+   mask-image: var(--toolbarButton-print-icon);
+ }
+
+ /*#if GENERIC*/
+ #secondaryOpenFile::before {
+   mask-image: var(--toolbarButton-openFile-icon);
+ }
+ /*#endif*/
+
+ #downloadButton::before {
+   mask-image: var(--toolbarButton-download-icon);
+ }
+
+ #viewBookmark::before {
+   mask-image: var(--toolbarButton-bookmark-icon);
+ }
+
+ #currentOutlineItem::before {
+   mask-image: var(--toolbarButton-currentOutlineItem-icon);
+   transform: scaleX(var(--dir-factor));
+ }
+
+ #viewFindButton::before {
+   mask-image: var(--toolbarButton-search-icon);
+ }
+
+ .pdfSidebarNotification::after {
+   position: absolute;
+   display: inline-block;
+   top: 2px;
+   inset-inline-end: 2px;
+   /* Create a filled circle, with a diameter of 9 pixels, using only CSS: */
+   content: "";
+   background-color: rgb(112 219 85);
+   height: 9px;
+   width: 9px;
+   border-radius: 50%;
+ }
+
+ .verticalToolbarSeparator {
+   display: block;
+   margin-inline: 2px;
+   width: 0;
+   height: 80%;
+   border-left: 1px solid var(--separator-color);
+   border-right: none;
+   box-sizing: border-box;
+ }
+
+ .horizontalToolbarSeparator {
+   display: block;
+   margin: 6px 0;
+   border-top: 1px solid var(--doorhanger-separator-color);
+   border-bottom: none;
+   height: 0;
+   width: 100%;
+ }
+
+ .toggleButton {
+   display: inline;
+
+   &:has(> input:checked) {
+     color: var(--toggled-btn-color);
+     background-color: var(--toggled-btn-bg-color);
+   }
+
+   &:is(:hover, :has(> input:focus-visible)) {
+     color: var(--toggled-btn-color);
+     background-color: var(--button-hover-color);
+   }
+
+   & > input {
+     position: absolute;
+     top: 50%;
+     left: 50%;
+     opacity: 0;
+     width: 0;
+     height: 0;
+   }
+ }
+
+ .toolbarField {
+   padding: 4px 7px;
+   margin: 3px 0;
+   border-radius: 2px;
+   background-color: var(--field-bg-color);
+   background-clip: padding-box;
+   border: 1px solid var(--field-border-color);
+   box-shadow: none;
+   color: var(--field-color);
+   font-size: 12px;
+   line-height: 16px;
+   outline: none;
+
+   &:focus {
+     border-color: #0a84ff;
+   }
+ }
+
+ #pageNumber {
+   -moz-appearance: textfield; /* hides the spinner in moz */
+   text-align: end;
+   width: 40px;
+   background-size: 0 0;
+   transition-property: none;
+
+   /*#if !MOZCENTRAL*/
+   &::-webkit-inner-spin-button {
+     -webkit-appearance: none;
+   }
+   /*#endif*/
+
+   .loadingInput:has(> &.loading)::after {
+     display: inline;
+     visibility: visible;
+
+     transition-property: visibility;
+     transition-delay: var(--loading-icon-delay);
+   }
+ }
+
+ .loadingInput {
+   position: relative;
+
+   &::after {
+     position: absolute;
+     visibility: hidden;
+     display: none;
+     width: var(--icon-size);
+     height: var(--icon-size);
+
+     content: "";
+     background-color: var(--toolbar-icon-bg-color);
+     mask-size: cover;
+     mask-image: var(--loading-icon);
+   }
+
+   &.start::after {
+     inset-inline-start: 4px;
+   }
+
+   &.end::after {
+     inset-inline-end: 4px;
+   }
+ }
+
+ #thumbnailView,
+ #outlineView,
+ #attachmentsView,
+ #layersView {
+   position: absolute;
+   width: calc(100% - 8px);
+   inset-block: 0;
+   padding: 4px 4px 0;
+   overflow: auto;
+   user-select: none;
+ }
+
+ #thumbnailView {
+   width: calc(100% - 60px);
+   padding: 10px 30px 0;
+ }
+
+ #thumbnailView > a:is(:active, :focus) {
+   outline: 0;
+ }
+
+ .thumbnail {
+   /* Define these variables here, and not in :root, since the individual
+      thumbnails may have different sizes. */
+   --thumbnail-width: 0;
+   --thumbnail-height: 0;
+
+   float: var(--inline-start);
+   width: var(--thumbnail-width);
+   height: var(--thumbnail-height);
+   margin: 0 10px 5px;
+   padding: 1px;
+   border: 7px solid transparent;
+   border-radius: 2px;
+ }
+
+ #thumbnailView > a:last-of-type > .thumbnail {
+   margin-bottom: 10px;
+ }
+
+ a:focus > .thumbnail,
+ .thumbnail:hover {
+   border-color: var(--thumbnail-hover-color);
+ }
+
+ .thumbnail.selected {
+   border-color: var(--thumbnail-selected-color) !important;
+ }
+
+ .thumbnailImage {
+   width: var(--thumbnail-width);
+   height: var(--thumbnail-height);
+   opacity: 0.9;
+ }
+
+ a:focus > .thumbnail > .thumbnailImage,
+ .thumbnail:hover > .thumbnailImage {
+   opacity: 0.95;
+ }
+
+ .thumbnail.selected > .thumbnailImage {
+   opacity: 1 !important;
+ }
+
+ .thumbnail:not([data-loaded]) > .thumbnailImage {
+   width: calc(var(--thumbnail-width) - 2px);
+   height: calc(var(--thumbnail-height) - 2px);
+   border: 1px dashed rgb(132 132 132);
+ }
+
+ .treeWithDeepNesting > .treeItem,
+ .treeItem > .treeItems {
+   margin-inline-start: 20px;
+ }
+
+ .treeItem > a {
+   text-decoration: none;
+   display: inline-block;
+   /* Subtract the right padding (left, in RTL mode) of the container: */
+   min-width: calc(100% - 4px);
+   height: auto;
+   margin-bottom: 1px;
+   padding: 2px 0 5px;
+   padding-inline-start: 4px;
+   border-radius: 2px;
+   color: var(--treeitem-color);
+   font-size: 13px;
+   line-height: 15px;
+   user-select: none;
+   white-space: normal;
+   cursor: pointer;
+ }
+
+ #layersView .treeItem > a * {
+   cursor: pointer;
+ }
+
+ #layersView .treeItem > a > label {
+   padding-inline-start: 4px;
+ }
+
+ #layersView .treeItem > a > label > input {
+   float: var(--inline-start);
+   margin-top: 1px;
+ }
+
+ .treeItemToggler {
+   position: relative;
+   float: var(--inline-start);
+   height: 0;
+   width: 0;
+   color: rgb(255 255 255 / 0.5);
+ }
+
+ .treeItemToggler::before {
+   inset-inline-end: 4px;
+   mask-image: var(--treeitem-expanded-icon);
+ }
+
+ .treeItemToggler.treeItemsHidden::before {
+   mask-image: var(--treeitem-collapsed-icon);
+   transform: scaleX(var(--dir-factor));
+ }
+
+ .treeItemToggler.treeItemsHidden ~ .treeItems {
+   display: none;
+ }
+
+ .treeItem.selected > a {
+   background-color: var(--treeitem-selected-bg-color);
+   color: var(--treeitem-selected-color);
+ }
+
+ .treeItemToggler:hover,
+ .treeItemToggler:hover + a,
+ .treeItemToggler:hover ~ .treeItems,
+ .treeItem > a:hover {
+   background-color: var(--treeitem-bg-color);
+   background-clip: padding-box;
+   border-radius: 2px;
+   color: var(--treeitem-hover-color);
+ }
+
+ #outlineOptionsContainer {
+   display: none;
+
+   #sidebarContainer:has(#outlineView:not(.hidden)) & {
+     display: inline flex;
+   }
+ }
+
+ .dialogButton {
+   width: auto;
+   margin: 3px 4px 2px !important;
+   padding: 2px 11px;
+   color: var(--main-color);
+   background-color: var(--dialog-button-bg-color);
+   border: var(--dialog-button-border) !important;
+ }
+
+ dialog {
+   margin: auto;
+   padding: 15px;
+   border-spacing: 4px;
+   color: var(--main-color);
+   font: message-box;
+   font-size: 12px;
+   line-height: 14px;
+   background-color: var(--doorhanger-bg-color);
+   border: 1px solid rgb(0 0 0 / 0.5);
+   border-radius: 4px;
+   box-shadow: 0 1px 4px rgb(0 0 0 / 0.3);
+ }
+
+ dialog::backdrop {
+   background-color: rgb(0 0 0 / 0.2);
+ }
+
+ dialog > .row {
+   display: table-row;
+ }
+
+ dialog > .row > * {
+   display: table-cell;
+ }
+
+ dialog .toolbarField {
+   margin: 5px 0;
+ }
+
+ dialog .separator {
+   display: block;
+   margin: 4px 0;
+   height: 0;
+   width: 100%;
+   border-top: 1px solid var(--separator-color);
+   border-bottom: none;
+ }
+
+ dialog .buttonRow {
+   text-align: center;
+   vertical-align: middle;
+ }
+
+ dialog :link {
+   color: rgb(255 255 255);
+ }
+
+ #passwordDialog {
+   text-align: center;
+ }
+
+ #passwordDialog .toolbarField {
+   width: 200px;
+ }
+
+ #documentPropertiesDialog {
+   text-align: left;
+ }
+
+ #documentPropertiesDialog .row > * {
+   min-width: 100px;
+   text-align: start;
+ }
+
+ #documentPropertiesDialog .row > span {
+   width: 125px;
+   word-wrap: break-word;
+ }
+
+ #documentPropertiesDialog .row > p {
+   max-width: 225px;
+   word-wrap: break-word;
+ }
+
+ #documentPropertiesDialog .buttonRow {
+   margin-top: 10px;
+ }
+
+ .grab-to-pan-grab {
+   cursor: grab !important;
+ }
+
+ .grab-to-pan-grab
+   *:not(input):not(textarea):not(button):not(select):not(:link) {
+   cursor: inherit !important;
+ }
+
+ .grab-to-pan-grab:active,
+ .grab-to-pan-grabbing {
+   cursor: grabbing !important;
+ }
+
+ .grab-to-pan-grabbing {
+   position: fixed;
+   background: rgb(0 0 0 / 0);
+   display: block;
+   inset: 0;
+   overflow: hidden;
+   z-index: 50000; /* should be higher than anything else in PDF.js! */
+ }
+
+ .toolbarButton {
+   height: 100%;
+   aspect-ratio: 1;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   background: none;
+   border: none;
+   color: var(--main-color);
+   outline: none;
+   border-radius: 2px;
+   box-sizing: border-box;
+   font: message-box;
+   flex: none;
+   position: relative;
+   padding: 0;
+
+   > span {
+     display: inline-block;
+     width: 0;
+     height: 0;
+     overflow: hidden;
+   }
+
+   &::before {
+     opacity: var(--toolbar-icon-opacity);
+     display: inline-block;
+     width: var(--icon-size);
+     height: var(--icon-size);
+     content: "";
+     background-color: var(--toolbar-icon-bg-color);
+     mask-size: cover;
+     mask-position: center;
+   }
+
+   &.toggled {
+     background-color: var(--toggled-btn-bg-color);
+     color: var(--toggled-btn-color);
+
+     &::before {
+       background-color: var(--toggled-btn-color);
+     }
+
+     &:hover {
+       outline: var(--toggled-hover-btn-outline) !important;
+
+       &:active {
+         background-color: var(--toggled-hover-active-btn-color);
+       }
+     }
+   }
+
+   &:is(:hover, :focus-visible) {
+     background-color: var(--button-hover-color);
+
+     &::before {
+       background-color: var(--toolbar-icon-hover-bg-color);
+     }
+   }
+
+   &:is([disabled="disabled"], [disabled]) {
+     opacity: 0.5;
+     pointer-events: none;
+   }
+
+   &.labeled {
+     width: 100%;
+     min-height: var(--menuitem-height);
+     justify-content: flex-start;
+     gap: 8px;
+     padding-inline-start: 12px;
+     aspect-ratio: unset;
+     text-align: start;
+     white-space: normal;
+     cursor: default;
+
+     &:is(a) {
+       text-decoration: none;
+
+       &[href="#"] {
+         opacity: 0.5;
+         pointer-events: none;
+       }
+     }
+
+     &::before {
+       opacity: var(--doorhanger-icon-opacity);
+     }
+
+     &:is(:hover, :focus-visible) {
+       color: var(--doorhanger-hover-color);
+     }
+
+     > span {
+       display: inline-block;
+       width: max-content;
+       height: auto;
+     }
+   }
+ }
+
+ .toolbarButtonWithContainer {
+   height: 100%;
+   aspect-ratio: 1;
+   display: inline-block;
+   position: relative;
+   flex: none;
+
+   > .toolbarButton {
+     width: 100%;
+     height: 100%;
+   }
+
+   .menu {
+     padding-block: 5px;
+   }
+
+   .menuContainer {
+     width: 100%;
+     height: auto;
+     max-height: calc(
+       var(--viewer-container-height) - var(--toolbar-height) -
+         var(--doorhanger-height)
+     );
+     display: flex;
+     flex-direction: column;
+     box-sizing: border-box;
+     overflow-y: auto;
+   }
+
+   .editorParamsToolbar {
+     height: auto;
+     width: 220px;
+     position: absolute;
+     z-index: 30000;
+     cursor: default;
+
+     :is(#editorStampAddImage, #editorSignatureAddSignature)::before {
+       mask-image: var(--editorParams-stampAddImage-icon);
+     }
+
+     .editorParamsLabel {
+       flex: none;
+       font: menu;
+       font-size: 13px;
+       font-style: normal;
+       font-weight: 400;
+       line-height: 150%;
+       width: fit-content;
+       inset-inline-start: 0;
+       color: var(--main-color);
+     }
+
+     button:is(:hover, :focus-visible) .editorParamsLabel {
+       color: var(--doorhanger-hover-color);
+     }
+
+     .editorParamsToolbarContainer {
+       width: 100%;
+       height: auto;
+       display: flex;
+       flex-direction: column;
+       box-sizing: border-box;
+       padding-inline: 10px;
+       padding-block: 10px;
+
+       > .editorParamsSetter {
+         min-height: 26px;
+         display: flex;
+         align-items: center;
+         justify-content: space-between;
+       }
+
+       .editorParamsColor {
+         width: 32px;
+         height: 32px;
+         flex: none;
+         padding: 0;
+       }
+
+       .editorParamsSlider {
+         background-color: transparent;
+         width: 90px;
+         flex: 0 1 0;
+         font: message-box;
+
+         &::-moz-range-progress {
+           background-color: black;
+         }
+
+         /*#if !MOZCENTRAL*/
+         &::-webkit-slider-runnable-track,
+         /*#endif*/
+         &::-moz-range-track {
+           background-color: black;
+         }
+
+         /*#if !MOZCENTRAL*/
+         &::-webkit-slider-thumb,
+         /*#endif*/
+         &::-moz-range-thumb {
+           background-color: white;
+         }
+       }
+
+       .editorParamsSelect {
+         width: 100%;
+         height: 28px;
+         font: message-box;
+         font-size: 12px;
+         color: var(--main-color);
+         margin: 0;
+         padding-block: 1px 2px;
+         padding-inline: 6px 38px;
+         border: none;
+         outline: none;
+         background-color: var(--dropdown-btn-bg-color);
+         &:is(:hover, :focus-visible) {
+           background-color: var(--button-hover-color);
+           color: var(--toggled-btn-color);
+         }
+       }
+     }
+   }
+ }
+
+ #secondaryToolbar {
+   height: auto;
+   width: 220px;
+   position: absolute;
+   z-index: 30000;
+   cursor: default;
+   min-height: 26px;
+   max-height: calc(var(--viewer-container-height) - 40px);
+
+   #secondaryToolbarButtonContainer {
+     /*#if GENERIC*/
+     #secondaryOpenFile::before {
+       mask-image: var(--toolbarButton-openFile-icon);
+     }
+     /*#endif*/
+
+     #secondaryPrint::before {
+       mask-image: var(--toolbarButton-print-icon);
+     }
+
+     #secondaryDownload::before {
+       mask-image: var(--toolbarButton-download-icon);
+     }
+
+     #presentationMode::before {
+       mask-image: var(--toolbarButton-presentationMode-icon);
+     }
+
+     #viewBookmark::before {
+       mask-image: var(--toolbarButton-bookmark-icon);
+     }
+
+     #firstPage::before {
+       mask-image: var(--secondaryToolbarButton-firstPage-icon);
+     }
+
+     #lastPage::before {
+       mask-image: var(--secondaryToolbarButton-lastPage-icon);
+     }
+
+     #pageRotateCcw::before {
+       mask-image: var(--secondaryToolbarButton-rotateCcw-icon);
+     }
+
+     #pageRotateCw::before {
+       mask-image: var(--secondaryToolbarButton-rotateCw-icon);
+     }
+
+     #cursorSelectTool::before {
+       mask-image: var(--secondaryToolbarButton-selectTool-icon);
+     }
+
+     #cursorHandTool::before {
+       mask-image: var(--secondaryToolbarButton-handTool-icon);
+     }
+
+     #scrollPage::before {
+       mask-image: var(--secondaryToolbarButton-scrollPage-icon);
+     }
+
+     #scrollVertical::before {
+       mask-image: var(--secondaryToolbarButton-scrollVertical-icon);
+     }
+
+     #scrollHorizontal::before {
+       mask-image: var(--secondaryToolbarButton-scrollHorizontal-icon);
+     }
+
+     #scrollWrapped::before {
+       mask-image: var(--secondaryToolbarButton-scrollWrapped-icon);
+     }
+
+     #spreadNone::before {
+       mask-image: var(--secondaryToolbarButton-spreadNone-icon);
+     }
+
+     #spreadOdd::before {
+       mask-image: var(--secondaryToolbarButton-spreadOdd-icon);
+     }
+
+     #spreadEven::before {
+       mask-image: var(--secondaryToolbarButton-spreadEven-icon);
+     }
+
+     #imageAltTextSettings::before {
+       mask-image: var(--secondaryToolbarButton-imageAltTextSettings-icon);
+     }
+
+     #documentProperties::before {
+       mask-image: var(--secondaryToolbarButton-documentProperties-icon);
+     }
+   }
+ }
+
+ #findbar {
+   --input-horizontal-padding: 4px;
+   --findbar-padding: 2px;
+
+   width: max-content;
+   max-width: 90vw;
+   min-height: var(--toolbar-height);
+   height: auto;
+   position: absolute;
+   z-index: 30000;
+   cursor: default;
+   padding: 0;
+   min-width: 300px;
+   background-color: var(--toolbar-bg-color);
+   box-sizing: border-box;
+   flex-wrap: wrap;
+   justify-content: flex-start;
+
+   > * {
+     height: var(--toolbar-height);
+     padding: var(--findbar-padding);
+   }
+
+   #findInputContainer {
+     margin-inline-start: 2px;
+
+     #findPreviousButton::before {
+       mask-image: var(--findbarButton-previous-icon);
+     }
+
+     #findNextButton::before {
+       mask-image: var(--findbarButton-next-icon);
+     }
+
+     #findInput {
+       width: 200px;
+       padding: 5px var(--input-horizontal-padding);
+
+       /*#if !MOZCENTRAL*/
+       &::-webkit-input-placeholder {
+         color: rgb(191 191 191);
+       }
+       /*#endif*/
+       &::placeholder {
+         font-style: normal;
+       }
+
+       .loadingInput:has(> &[data-status="pending"])::after {
+         display: inline;
+         visibility: visible;
+         inset-inline-end: calc(var(--input-horizontal-padding) + 1px);
+       }
+
+       &[data-status="notFound"] {
+         background-color: rgb(255 102 102);
+       }
+     }
+   }
+
+   #findbarMessageContainer {
+     display: none;
+     gap: 4px;
+
+     &:has(> :is(#findResultsCount, #findMsg):not(:empty)) {
+       display: inline flex;
+     }
+
+     #findResultsCount {
+       background-color: rgb(217 217 217);
+       color: rgb(82 82 82);
+       padding-block: 4px;
+
+       &:empty {
+         display: none;
+       }
+     }
+
+     #findMsg {
+       &[data-status="notFound"] {
+         font-weight: bold;
+       }
+
+       &:empty {
+         display: none;
+       }
+     }
+   }
+
+   &.wrapContainers {
+     flex-direction: column;
+     align-items: flex-start;
+     height: max-content;
+
+     .toolbarLabel {
+       margin: 0 4px;
+     }
+
+     #findbarMessageContainer {
+       flex-wrap: wrap;
+       flex-flow: column nowrap;
+       align-items: flex-start;
+       height: max-content;
+
+       #findResultsCount {
+         height: calc(var(--toolbar-height) - 2 * var(--findbar-padding));
+       }
+
+       #findMsg {
+         min-height: var(--toolbar-height);
+       }
+     }
+   }
+ }
+
+ @page {
+   margin: 0;
+ }
+
+ #printContainer {
+   display: none;
+ }
+
+ @media print {
+   body {
+     background: rgb(0 0 0 / 0) none;
+   }
+
+   body[data-pdfjsprinting] #outerContainer {
+     display: none;
+   }
+
+   body[data-pdfjsprinting] #printContainer {
+     display: block;
+   }
+
+   #printContainer {
+     height: 100%;
+   }
+
+   /* wrapper around (scaled) print canvas elements */
+   #printContainer > .printedPage {
+     page-break-after: always;
+     page-break-inside: avoid;
+
+     /* The wrapper always cover the whole page. */
+     height: 100%;
+     width: 100%;
+
+     display: flex;
+     flex-direction: column;
+     justify-content: center;
+     align-items: center;
+   }
+
+   #printContainer > .xfaPrintedPage .xfaPage {
+     position: absolute;
+   }
+
+   #printContainer > .xfaPrintedPage {
+     page-break-after: always;
+     page-break-inside: avoid;
+     width: 100%;
+     height: 100%;
+     position: relative;
+   }
+
+   #printContainer > .printedPage :is(canvas, img) {
+     /* The intrinsic canvas / image size will make sure that we fit the page. */
+     max-width: 100%;
+     max-height: 100%;
+
+     direction: ltr;
+     display: block;
+   }
+ }
+
+ .visibleMediumView {
+   display: none !important;
+ }
+
+ .toolbarLabel {
+   width: max-content;
+   min-width: 16px;
+   height: 100%;
+   padding-inline: 4px;
+   margin: 2px;
+   border-radius: 2px;
+   color: var(--main-color);
+   font-size: 12px;
+   line-height: 14px;
+   text-align: left;
+   user-select: none;
+   cursor: default;
+   box-sizing: border-box;
+
+   display: inline flex;
+   flex-direction: column;
+   align-items: center;
+   justify-content: center;
+
+   > label {
+     width: 100%;
+   }
+ }
+
+ .toolbarHorizontalGroup {
+   height: 100%;
+   display: inline flex;
+   flex-direction: row;
+   align-items: center;
+   justify-content: space-between;
+   gap: 1px;
+   box-sizing: border-box;
+ }
+
+ .dropdownToolbarButton {
+   display: inline flex;
+   flex-direction: row;
+   align-items: center;
+   justify-content: center;
+   position: relative;
+
+   width: fit-content;
+   min-width: 140px;
+   padding: 0;
+   background-color: var(--dropdown-btn-bg-color);
+   border: var(--dropdown-btn-border);
+   border-radius: 2px;
+   color: var(--main-color);
+   font-size: 12px;
+   line-height: 14px;
+   user-select: none;
+   cursor: default;
+   box-sizing: border-box;
+   outline: none;
+
+   &:hover {
+     background-color: var(--button-hover-color);
+   }
+
+   > select {
+     appearance: none;
+     width: inherit;
+     min-width: inherit;
+     height: 28px;
+     font: message-box;
+     font-size: 12px;
+     color: var(--main-color);
+     margin: 0;
+     padding-block: 1px 2px;
+     padding-inline: 6px 38px;
+     border: none;
+     outline: none;
+     background-color: var(--dropdown-btn-bg-color);
+
+     > option {
+       background: var(--doorhanger-bg-color);
+       color: var(--main-color);
+     }
+
+     &:is(:hover, :focus-visible) {
+       background-color: var(--button-hover-color);
+       color: var(--toggled-btn-color);
+     }
+   }
+
+   &::after {
+     /* All matching images have a size of 16x16
+      * All relevant containers have a size of 28x28 */
+     position: absolute;
+     display: inline;
+     width: var(--icon-size);
+     height: var(--icon-size);
+
+     content: "";
+     background-color: var(--toolbar-icon-bg-color);
+     mask-size: cover;
+
+     inset-inline-end: 4px;
+     pointer-events: none;
+     mask-image: var(--toolbarButton-menuArrow-icon);
+   }
+
+   &:is(:hover, :focus-visible, :active)::after {
+     background-color: var(--toolbar-icon-hover-bg-color);
+   }
+ }
+
+ #toolbarContainer {
+   --menuitem-height: calc(var(--toolbar-height) - 6px);
+
+   width: 100%;
+   height: var(--toolbar-height);
+   padding: var(--toolbar-vertical-padding) var(--toolbar-horizontal-padding);
+   position: relative;
+   box-sizing: border-box;
+   font: message-box;
+   background-color: var(--toolbar-bg-color);
+   box-shadow: var(--toolbar-box-shadow);
+   border-bottom: var(--toolbar-border-bottom);
+
+   #toolbarViewer {
+     width: 100%;
+     height: 100%;
+     justify-content: space-between;
+
+     > * {
+       flex: none;
+     }
+
+     input {
+       font: message-box;
+     }
+
+     .toolbarButtonSpacer {
+       width: 30px;
+       display: block;
+       height: 1px;
+     }
+
+     #toolbarViewerLeft #numPages.toolbarLabel {
+       padding-inline-start: 3px;
+       flex: none;
+     }
+   }
+
+   #loadingBar {
+     /* Define these variables here, and not in :root, to avoid reflowing the
+        entire viewer when updating progress (see issue 15958). */
+     --progressBar-percent: 0%;
+     --progressBar-end-offset: 0;
+
+     position: absolute;
+     top: var(--toolbar-height);
+     inset-inline: 0 var(--progressBar-end-offset);
+     height: 4px;
+     background-color: var(--progressBar-bg-color);
+     border-bottom: 1px solid var(--toolbar-border-color);
+     transition-property: inset-inline-start;
+     transition-duration: var(--sidebar-transition-duration);
+     transition-timing-function: var(--sidebar-transition-timing-function);
+
+     .progress {
+       position: absolute;
+       top: 0;
+       inset-inline-start: 0;
+       width: 100%;
+       transform: scaleX(var(--progressBar-percent));
+       transform-origin: calc(50% - 50% * var(--dir-factor)) 0;
+       height: 100%;
+       background-color: var(--progressBar-color);
+       overflow: hidden;
+       transition: transform 200ms;
+     }
+
+     &.indeterminate .progress {
+       transform: none;
+       background-color: var(--progressBar-bg-color);
+       transition: none;
+
+       .glimmer {
+         position: absolute;
+         top: 0;
+         inset-inline-start: 0;
+         height: 100%;
+         width: calc(100% + 150px);
+         background: repeating-linear-gradient(
+           135deg,
+           var(--progressBar-blend-color) 0,
+           var(--progressBar-bg-color) 5px,
+           var(--progressBar-bg-color) 45px,
+           var(--progressBar-color) 55px,
+           var(--progressBar-color) 95px,
+           var(--progressBar-blend-color) 100px
+         );
+         animation: progressIndeterminate 1s linear infinite;
+       }
+     }
+   }
+ }
+
+ #secondaryToolbar {
+   #firstPage::before {
+     mask-image: var(--secondaryToolbarButton-firstPage-icon);
+   }
+
+   #lastPage::before {
+     mask-image: var(--secondaryToolbarButton-lastPage-icon);
+   }
+
+   #pageRotateCcw::before {
+     mask-image: var(--secondaryToolbarButton-rotateCcw-icon);
+   }
+
+   #pageRotateCw::before {
+     mask-image: var(--secondaryToolbarButton-rotateCw-icon);
+   }
+
+   #cursorSelectTool::before {
+     mask-image: var(--secondaryToolbarButton-selectTool-icon);
+   }
+
+   #cursorHandTool::before {
+     mask-image: var(--secondaryToolbarButton-handTool-icon);
+   }
+
+   #scrollPage::before {
+     mask-image: var(--secondaryToolbarButton-scrollPage-icon);
+   }
+
+   #scrollVertical::before {
+     mask-image: var(--secondaryToolbarButton-scrollVertical-icon);
+   }
+
+   #scrollHorizontal::before {
+     mask-image: var(--secondaryToolbarButton-scrollHorizontal-icon);
+   }
+
+   #scrollWrapped::before {
+     mask-image: var(--secondaryToolbarButton-scrollWrapped-icon);
+   }
+
+   #spreadNone::before {
+     mask-image: var(--secondaryToolbarButton-spreadNone-icon);
+   }
+
+   #spreadOdd::before {
+     mask-image: var(--secondaryToolbarButton-spreadOdd-icon);
+   }
+
+   #spreadEven::before {
+     mask-image: var(--secondaryToolbarButton-spreadEven-icon);
+   }
+
+   #documentProperties::before {
+     mask-image: var(--secondaryToolbarButton-documentProperties-icon);
+   }
+ }
+
+ @media all and (max-width: 840px) {
+   #sidebarContainer {
+     background-color: var(--sidebar-narrow-bg-color);
+   }
+   #outerContainer.sidebarOpen #viewerContainer {
+     inset-inline-start: 0 !important;
+   }
+ }
+
+ @media all and (max-width: 750px) {
+   #outerContainer .hiddenMediumView {
+     display: none !important;
+   }
+   #outerContainer .visibleMediumView:not(.hidden, [hidden]) {
+     display: inline-block !important;
+   }
+ }
+
+ @media all and (max-width: 690px) {
+   .hiddenSmallView,
+   .hiddenSmallView * {
+     display: none !important;
+   }
+
+   #toolbarContainer #toolbarViewer .toolbarButtonSpacer {
+     width: 0;
+   }
+ }
+
+ @media all and (max-width: 560px) {
+   #scaleSelectContainer {
+     display: none;
+   }
+ }

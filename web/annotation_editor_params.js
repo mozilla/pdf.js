@@ -26,6 +26,7 @@ import { AnnotationEditorParamsType } from "pdfjs-lib";
  * @property {HTMLInputElement} editorInkOpacity
  * @property {HTMLButtonElement} editorStampAddImage
  * @property {HTMLInputElement} editorFreeHighlightThickness
+ * @property {HTMLSelectElement} editorHighlightType
  * @property {HTMLButtonElement} editorHighlightShowAll
  * @property {HTMLButtonElement} editorSignatureAddSignature
  */
@@ -51,6 +52,7 @@ class AnnotationEditorParams {
     editorInkOpacity,
     editorStampAddImage,
     editorFreeHighlightThickness,
+    editorHighlightType,
     editorHighlightShowAll,
     editorSignatureAddSignature,
   }) {
@@ -90,6 +92,9 @@ class AnnotationEditorParams {
     });
     editorFreeHighlightThickness.addEventListener("input", function () {
       dispatchEvent("HIGHLIGHT_THICKNESS", this.valueAsNumber);
+    });
+    editorHighlightType.addEventListener("change", function () {
+      dispatchEvent("HIGHLIGHT_TYPE", this.value);
     });
     editorHighlightShowAll.addEventListener("click", function () {
       const checked = this.getAttribute("aria-pressed") === "true";

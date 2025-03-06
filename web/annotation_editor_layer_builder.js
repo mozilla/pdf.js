@@ -40,6 +40,7 @@ import { GenericL10n } from "web-null_l10n";
  * @property {TextLayer} [textLayer]
  * @property {DrawLayer} [drawLayer]
  * @property {function} [onAppend]
+ * @property {Object} [eventBus]
  */
 
 /**
@@ -61,6 +62,8 @@ class AnnotationEditorLayerBuilder {
 
   #uiManager;
 
+  #eventBus = null;
+
   /**
    * @param {AnnotationEditorLayerBuilderOptions} options
    */
@@ -80,6 +83,7 @@ class AnnotationEditorLayerBuilder {
     this.#drawLayer = options.drawLayer || null;
     this.#onAppend = options.onAppend || null;
     this.#structTreeLayer = options.structTreeLayer || null;
+    this.#eventBus = options.eventBus || null;
   }
 
   /**
@@ -120,6 +124,7 @@ class AnnotationEditorLayerBuilder {
       annotationLayer: this.#annotationLayer,
       textLayer: this.#textLayer,
       drawLayer: this.#drawLayer,
+      eventBus: this.#eventBus,
     });
 
     const parameters = {

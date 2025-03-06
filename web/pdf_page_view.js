@@ -1104,6 +1104,7 @@ class PDFPageView extends BasePDFPageView {
         annotationLayer: this.annotationLayer?.annotationLayer,
         textLayer: this.textLayer,
         drawLayer: this.drawLayer.getDrawLayer(),
+        eventBus: this.eventBus,
         onAppend: annotationEditorLayerDiv => {
           this.#addLayer(annotationEditorLayerDiv, "annotationEditorLayer");
         },
