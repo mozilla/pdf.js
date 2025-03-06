@@ -28,7 +28,7 @@ import {
   getRect,
   getSerialized,
   hover,
-  isCanvasWhite,
+  isCanvasMonochrome,
   kbBigMoveDown,
   kbBigMoveLeft,
   kbBigMoveRight,
@@ -837,7 +837,7 @@ describe("FreeText Editor", () => {
           await switchToFreeText(page);
 
           // The page has been re-rendered but with no freetext annotations.
-          let isWhite = await isCanvasWhite(page, 1);
+          let isWhite = await isCanvasMonochrome(page, 1, null, 0xffffffff);
           expect(isWhite).withContext(`In ${browserName}`).toBeTrue();
 
           let editorIds = await getEditors(page, "freeText");
@@ -880,7 +880,7 @@ describe("FreeText Editor", () => {
           editorIds = await getEditors(page, "freeText");
           expect(editorIds.length).withContext(`In ${browserName}`).toEqual(1);
 
-          isWhite = await isCanvasWhite(page, 1, editorRect);
+          isWhite = await isCanvasMonochrome(page, 1, editorRect, 0xffffffff);
           expect(isWhite).withContext(`In ${browserName}`).toBeTrue();
 
           // Check we've now a div containing the text.
