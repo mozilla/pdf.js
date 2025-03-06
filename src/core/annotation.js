@@ -4905,13 +4905,13 @@ class StrikeOutAnnotation extends MarkupAnnotation {
 }
 
 class StampAnnotation extends MarkupAnnotation {
-  #savedHasOwnCanvas;
+  #savedHasOwnCanvas = null;
 
   constructor(params) {
     super(params);
 
     this.data.annotationType = AnnotationType.STAMP;
-    this.#savedHasOwnCanvas = this.data.hasOwnCanvas = this.data.noRotate;
+    this.data.hasOwnCanvas = this.data.noRotate;
     this.data.isEditable = !this.data.noHTML;
     // We want to be able to add mouse listeners to the annotation.
     this.data.noHTML = false;
@@ -4924,11 +4924,14 @@ class StampAnnotation extends MarkupAnnotation {
       }
       // When we're editing, we want to ensure that the stamp annotation is
       // drawn on a canvas in order to use it in the annotation editor layer.
-      this.#savedHasOwnCanvas = this.data.hasOwnCanvas;
+      this.#savedHasOwnCanvas ??= this.data.hasOwnCanvas;
       this.data.hasOwnCanvas = true;
       return true;
     }
-    this.data.hasOwnCanvas = this.#savedHasOwnCanvas;
+    if (this.#savedHasOwnCanvas !== null) {
+      this.data.hasOwnCanvas = this.#savedHasOwnCanvas;
+      this.#savedHasOwnCanvas = null;
+    }
 
     return !modifiedIds?.has(this.data.id);
   }
