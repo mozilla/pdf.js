@@ -41,12 +41,12 @@ class IccColorSpace extends ColorSpace {
     qcms_drop_transformer(transformer);
   });
 
-  constructor(iccProfile, numComps) {
+  constructor(iccProfile, name, numComps) {
     if (!IccColorSpace.isUsable) {
       throw new Error("No ICC color space support");
     }
 
-    super("ICCBased", numComps);
+    super(name, numComps);
 
     let inType;
     switch (numComps) {
@@ -104,11 +104,13 @@ class IccColorSpace extends ColorSpace {
         src[i] *= scale;
       }
     }
+    QCMS._mustAddAlpha = alpha01 && dest.buffer === src.buffer;
     QCMS._destBuffer = dest.subarray(
       destOffset,
       destOffset + count * (3 + alpha01)
     );
     qcms_convert_array(this.#transformer, src);
+    QCMS._mustAddAlpha = false;
     QCMS._destBuffer = null;
   }
 
@@ -152,4 +154,21 @@ class IccColorSpace extends ColorSpace {
   }
 }
 
-export { IccColorSpace };
+class CmykICCBasedCS extends IccColorSpace {
+  static #iccUrl;
+
+  constructor() {
+    const filename = "CGATS001Compat-v2-micro.icc";
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", `${CmykICCBasedCS.#iccUrl}${filename}`, false);
+    xhr.responseType = "arraybuffer";
+    xhr.send(null);
+    super(new Uint8Array(xhr.response), "DeviceCMYK", 4);
+  }
+
+  static setOptions({ iccUrl }) {
+    this.#iccUrl = iccUrl;
+  }
+}
+
+export { CmykICCBasedCS, IccColorSpace };

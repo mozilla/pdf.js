@@ -16,6 +16,8 @@
 class QCMS {
   static _module = null;
 
+  static _mustAddAlpha = false;
+
   static _destBuffer = null;
 }
 
@@ -23,16 +25,25 @@ function copy_result(ptr, len) {
   // This function is called from the wasm module (it's an external
   // "C" function). Its goal is to copy the result from the wasm memory
   // to the destination buffer without any intermediate copies.
-  const { _module, _destBuffer } = QCMS;
+  const { _module, _mustAddAlpha, _destBuffer } = QCMS;
   const result = new Uint8Array(_module.memory.buffer, ptr, len);
   if (result.length === _destBuffer.length) {
     _destBuffer.set(result);
     return;
   }
-  for (let i = 0, j = 0, ii = result.length; i < ii; i += 3, j += 4) {
-    _destBuffer[j] = result[i];
-    _destBuffer[j + 1] = result[i + 1];
-    _destBuffer[j + 2] = result[i + 2];
+  if (_mustAddAlpha) {
+    for (let i = 0, j = 0, ii = result.length; i < ii; i += 3, j += 4) {
+      _destBuffer[j] = result[i];
+      _destBuffer[j + 1] = result[i + 1];
+      _destBuffer[j + 2] = result[i + 2];
+      _destBuffer[j + 3] = 255;
+    }
+  } else {
+    for (let i = 0, j = 0, ii = result.length; i < ii; i += 3, j += 4) {
+      _destBuffer[j] = result[i];
+      _destBuffer[j + 1] = result[i + 1];
+      _destBuffer[j + 2] = result[i + 2];
+    }
   }
 }
 

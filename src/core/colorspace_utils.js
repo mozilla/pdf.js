@@ -25,9 +25,9 @@ import {
   LabCS,
   PatternCS,
 } from "./colorspace.js";
+import { CmykICCBasedCS, IccColorSpace } from "./icc_colorspace.js";
 import { Dict, Name, Ref } from "./primitives.js";
 import { MathClamp, shadow, unreachable, warn } from "../shared/util.js";
-import { IccColorSpace } from "./icc_colorspace.js";
 import { MissingDataException } from "./core_utils.js";
 
 class ColorSpaceUtils {
@@ -205,7 +205,11 @@ class ColorSpaceUtils {
 
           if (IccColorSpace.isUsable) {
             try {
-              const iccCS = new IccColorSpace(stream.getBytes(), numComps);
+              const iccCS = new IccColorSpace(
+                stream.getBytes(),
+                "ICCBased",
+                numComps
+              );
               if (isRef) {
                 globalColorSpaceCache.set(/* name = */ null, cs[1], iccCS);
               }
@@ -285,6 +289,13 @@ class ColorSpaceUtils {
   }
 
   static get cmyk() {
+    if (IccColorSpace.isUsable) {
+      try {
+        return shadow(this, "cmyk", new CmykICCBasedCS());
+      } catch {
+        warn("CMYK fallback: DeviceCMYK");
+      }
+    }
     return shadow(this, "cmyk", new DeviceCmykCS());
   }
 }
