@@ -1868,14 +1868,18 @@ class PDFViewer {
       this._spreadMode !== SpreadMode.NONE &&
       this._scrollMode !== ScrollMode.HORIZONTAL;
 
-    // If we are scrolling and the rendering of a detail view was just
-    // cancelled, it's because the user is scrolling too quickly and so
-    // we constantly need to re-render a different area.
-    // Don't attempt to re-render it: this will be done once the user
-    // stops scrolling.
     const ignoreDetailViews =
-      this.#scrollTimeoutId !== null &&
-      visiblePages.views.some(page => page.detailView?.renderingCancelled);
+      // If we are zooming, do not re-render the detail views. Re-renders on
+      // zoom happen with a delay, and once the rendering happens it will also
+      // trigger rendering of the detail views.
+      this.#scaleTimeoutId !== null ||
+      // If we are scrolling and the rendering of a detail view was just
+      // cancelled, it's because the user is scrolling too quickly and so
+      // we constantly need to re-render a different area.
+      // Don't attempt to re-render it: this will be done once the user
+      // stops scrolling.
+      (this.#scrollTimeoutId !== null &&
+        visiblePages.views.some(page => page.detailView?.renderingCancelled));
 
     const pageView = this.renderingQueue.getHighestPriority(
       visiblePages,
