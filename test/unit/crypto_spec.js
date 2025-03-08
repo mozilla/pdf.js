@@ -17,12 +17,14 @@ import {
   AES128Cipher,
   AES256Cipher,
   ARCFourCipher,
-  calculateSHA384,
-  calculateSHA512,
   CipherTransformFactory,
   PDF17,
   PDF20,
 } from "../../src/core/crypto.js";
+import {
+  calculateSHA384,
+  calculateSHA512,
+} from "../../src/core/calculate_sha_other.js";
 import { Dict, Name } from "../../src/core/primitives.js";
 import {
   PasswordException,
