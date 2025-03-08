@@ -18,6 +18,7 @@ import {
   FormatError,
   IDENTITY_MATRIX,
   info,
+  MathClamp,
   unreachable,
   Util,
   warn,
@@ -843,17 +844,19 @@ class MeshShading extends BaseShading {
       ((figureMaxX - figureMinX) * MeshShading.TRIANGLE_DENSITY) /
         (this.bounds[2] - this.bounds[0])
     );
-    splitXBy = Math.max(
+    splitXBy = MathClamp(
+      splitXBy,
       MeshShading.MIN_SPLIT_PATCH_CHUNKS_AMOUNT,
-      Math.min(MeshShading.MAX_SPLIT_PATCH_CHUNKS_AMOUNT, splitXBy)
+      MeshShading.MAX_SPLIT_PATCH_CHUNKS_AMOUNT
     );
     let splitYBy = Math.ceil(
       ((figureMaxY - figureMinY) * MeshShading.TRIANGLE_DENSITY) /
         (this.bounds[3] - this.bounds[1])
     );
-    splitYBy = Math.max(
+    splitYBy = MathClamp(
+      splitYBy,
       MeshShading.MIN_SPLIT_PATCH_CHUNKS_AMOUNT,
-      Math.min(MeshShading.MAX_SPLIT_PATCH_CHUNKS_AMOUNT, splitYBy)
+      MeshShading.MAX_SPLIT_PATCH_CHUNKS_AMOUNT
     );
 
     const verticesPerRow = splitXBy + 1;

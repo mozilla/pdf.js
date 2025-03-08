@@ -21,6 +21,7 @@ import {
   $isSplittable,
   $isThereMoreWidth,
 } from "./symbol_utils.js";
+import { MathClamp } from "../../shared/util.js";
 import { measureToString } from "./html_utils.js";
 
 // Subform and ExclGroup have a layout so they share these functions.
@@ -141,7 +142,7 @@ function addHTML(node, html, bbox) {
       break;
     }
     case "table": {
-      extra.width = Math.min(availableSpace.width, Math.max(extra.width, w));
+      extra.width = MathClamp(w, extra.width, availableSpace.width);
       extra.height += h;
       extra.children.push(html);
       break;
@@ -150,7 +151,7 @@ function addHTML(node, html, bbox) {
       // Even if the subform can possibly take all the available width,
       // we must compute the final width as it is in order to be able
       // for example to center the subform within its parent.
-      extra.width = Math.min(availableSpace.width, Math.max(extra.width, w));
+      extra.width = MathClamp(w, extra.width, availableSpace.width);
       extra.height += h;
       extra.children.push(html);
       break;
