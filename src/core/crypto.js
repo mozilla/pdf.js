@@ -894,21 +894,17 @@ class CipherTransformFactory {
       hashData[i++] = CipherTransformFactory._defaultPasswordBytes[j++];
     }
     // as now the padded password in the hashData[0..i]
-    for (j = 0, n = ownerPassword.length; j < n; ++j) {
-      hashData[i++] = ownerPassword[j];
-    }
+    hashData.set(ownerPassword, i);
+    i += ownerPassword.length;
     hashData[i++] = flags & 0xff;
     hashData[i++] = (flags >> 8) & 0xff;
     hashData[i++] = (flags >> 16) & 0xff;
     hashData[i++] = (flags >>> 24) & 0xff;
-    for (j = 0, n = fileId.length; j < n; ++j) {
-      hashData[i++] = fileId[j];
-    }
+    hashData.set(fileId, i);
+    i += fileId.length;
     if (revision >= 4 && !encryptMetadata) {
-      hashData[i++] = 0xff;
-      hashData[i++] = 0xff;
-      hashData[i++] = 0xff;
-      hashData[i++] = 0xff;
+      hashData.fill(0xff, i, i + 4);
+      i += 4;
     }
     let hash = calculateMD5(hashData, 0, i);
     const keyLengthInBytes = keyLength >> 3;
@@ -921,12 +917,12 @@ class CipherTransformFactory {
     let cipher, checkData;
 
     if (revision >= 3) {
-      for (i = 0; i < 32; ++i) {
-        hashData[i] = CipherTransformFactory._defaultPasswordBytes[i];
-      }
-      for (j = 0, n = fileId.length; j < n; ++j) {
-        hashData[i++] = fileId[j];
-      }
+      i = 0;
+      hashData.set(CipherTransformFactory._defaultPasswordBytes, i);
+      i += 32;
+      hashData.set(fileId, i);
+      i += fileId.length;
+
       cipher = new ARCFourCipher(encryptionKey);
       checkData = cipher.encryptBlock(calculateMD5(hashData, 0, i));
       n = encryptionKey.length;
