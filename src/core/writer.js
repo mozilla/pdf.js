@@ -25,7 +25,7 @@ import {
 import { SimpleDOMNode, SimpleXMLParser } from "./xml_parser.js";
 import { Stream, StringStream } from "./stream.js";
 import { BaseStream } from "./base_stream.js";
-import { calculateMD5 } from "./crypto.js";
+import { calculateMD5 } from "./calculate_md5.js";
 
 async function writeObject(ref, obj, buffer, { encrypt = null }) {
   const transform = encrypt?.createCipherTransform(ref.num, ref.gen);
