@@ -19,6 +19,7 @@ import {
   isArrayEqual,
   PasswordException,
   PasswordResponses,
+  shadow,
   stringToBytes,
   unreachable,
   utf8StringToString,
@@ -329,12 +330,12 @@ class AESBaseCipher {
       state[15] = t;
       // MixColumns
       for (let j = 0; j < 16; j += 4) {
-        const s0 = state[j + 0];
+        const s0 = state[j];
         const s1 = state[j + 1];
         const s2 = state[j + 2];
         const s3 = state[j + 3];
         t = s0 ^ s1 ^ s2 ^ s3;
-        state[j + 0] ^= t ^ this._mixCol[s0 ^ s1];
+        state[j] ^= t ^ this._mixCol[s0 ^ s1];
         state[j + 1] ^= t ^ this._mixCol[s1 ^ s2];
         state[j + 2] ^= t ^ this._mixCol[s2 ^ s3];
         state[j + 3] ^= t ^ this._mixCol[s3 ^ s0];
@@ -675,7 +676,7 @@ class PDF17 {
 }
 
 class PDF20 {
-  _hash(password, input, userBytes) {
+  #hash(password, input, userBytes) {
     // This refers to Algorithm 2.B as defined in ISO 32000-2.
     let k = calculateSHA256(input, 0, input.length).subarray(0, 32);
     let e = [0];
@@ -722,7 +723,7 @@ class PDF20 {
     hashData.set(password, 0);
     hashData.set(ownerValidationSalt, password.length);
     hashData.set(userBytes, password.length + ownerValidationSalt.length);
-    const result = this._hash(password, hashData, userBytes);
+    const result = this.#hash(password, hashData, userBytes);
     return isArrayEqual(result, ownerPassword);
   }
 
@@ -730,7 +731,7 @@ class PDF20 {
     const hashData = new Uint8Array(password.length + 8);
     hashData.set(password, 0);
     hashData.set(userValidationSalt, password.length);
-    const result = this._hash(password, hashData, []);
+    const result = this.#hash(password, hashData, []);
     return isArrayEqual(result, userPassword);
   }
 
@@ -739,7 +740,7 @@ class PDF20 {
     hashData.set(password, 0);
     hashData.set(ownerKeySalt, password.length);
     hashData.set(userBytes, password.length + ownerKeySalt.length);
-    const key = this._hash(password, hashData, userBytes);
+    const key = this.#hash(password, hashData, userBytes);
     const cipher = new AES256Cipher(key);
     return cipher.decryptBlock(ownerEncryption, false, new Uint8Array(16));
   }
@@ -749,7 +750,7 @@ class PDF20 {
     hashData.set(password, 0);
     hashData.set(userKeySalt, password.length);
     // `key` is the decryption key for the UE string.
-    const key = this._hash(password, hashData, []);
+    const key = this.#hash(password, hashData, []);
     const cipher = new AES256Cipher(key);
     return cipher.decryptBlock(userEncryption, false, new Uint8Array(16));
   }
@@ -813,11 +814,17 @@ class CipherTransform {
 }
 
 class CipherTransformFactory {
-  static #defaultPasswordBytes = new Uint8Array([
-    0x28, 0xbf, 0x4e, 0x5e, 0x4e, 0x75, 0x8a, 0x41, 0x64, 0x00, 0x4e, 0x56,
-    0xff, 0xfa, 0x01, 0x08, 0x2e, 0x2e, 0x00, 0xb6, 0xd0, 0x68, 0x3e, 0x80,
-    0x2f, 0x0c, 0xa9, 0xfe, 0x64, 0x53, 0x69, 0x7a,
-  ]);
+  static get _defaultPasswordBytes() {
+    return shadow(
+      this,
+      "_defaultPasswordBytes",
+      new Uint8Array([
+        0x28, 0xbf, 0x4e, 0x5e, 0x4e, 0x75, 0x8a, 0x41, 0x64, 0x00, 0x4e, 0x56,
+        0xff, 0xfa, 0x01, 0x08, 0x2e, 0x2e, 0x00, 0xb6, 0xd0, 0x68, 0x3e, 0x80,
+        0x2f, 0x0c, 0xa9, 0xfe, 0x64, 0x53, 0x69, 0x7a,
+      ])
+    );
+  }
 
   #createEncryptionKey20(
     revision,
@@ -888,7 +895,7 @@ class CipherTransformFactory {
     }
     j = 0;
     while (i < 32) {
-      hashData[i++] = CipherTransformFactory.#defaultPasswordBytes[j++];
+      hashData[i++] = CipherTransformFactory._defaultPasswordBytes[j++];
     }
     // as now the padded password in the hashData[0..i]
     for (j = 0, n = ownerPassword.length; j < n; ++j) {
@@ -919,7 +926,7 @@ class CipherTransformFactory {
 
     if (revision >= 3) {
       for (i = 0; i < 32; ++i) {
-        hashData[i] = CipherTransformFactory.#defaultPasswordBytes[i];
+        hashData[i] = CipherTransformFactory._defaultPasswordBytes[i];
       }
       for (j = 0, n = fileId.length; j < n; ++j) {
         hashData[i++] = fileId[j];
@@ -943,7 +950,7 @@ class CipherTransformFactory {
     } else {
       cipher = new ARCFourCipher(encryptionKey);
       checkData = cipher.encryptBlock(
-        CipherTransformFactory.#defaultPasswordBytes
+        CipherTransformFactory._defaultPasswordBytes
       );
       for (j = 0, n = checkData.length; j < n; ++j) {
         if (userPassword[j] !== checkData[j]) {
@@ -963,7 +970,7 @@ class CipherTransformFactory {
     }
     let j = 0;
     while (i < 32) {
-      hashData[i++] = CipherTransformFactory.#defaultPasswordBytes[j++];
+      hashData[i++] = CipherTransformFactory._defaultPasswordBytes[j++];
     }
     let hash = calculateMD5(hashData, 0, i);
     const keyLengthInBytes = keyLength >> 3;
