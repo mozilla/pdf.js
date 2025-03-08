@@ -84,12 +84,10 @@ function calculateSHA256(data, offset, length) {
   }
   padded[i++] = 0x80;
   const n = paddedLength - 8;
-  while (i < n) {
-    padded[i++] = 0;
+  if (i < n) {
+    i = n;
   }
-  padded[i++] = 0;
-  padded[i++] = 0;
-  padded[i++] = 0;
+  i += 3;
   padded[i++] = (length >>> 29) & 0xff;
   padded[i++] = (length >> 21) & 0xff;
   padded[i++] = (length >> 13) & 0xff;

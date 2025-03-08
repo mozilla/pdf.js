@@ -64,17 +64,15 @@ function calculateMD5(data, offset, length) {
   }
   padded[i++] = 0x80;
   const n = paddedLength - 8;
-  while (i < n) {
-    padded[i++] = 0;
+  if (i < n) {
+    i = n;
   }
   padded[i++] = (length << 3) & 0xff;
   padded[i++] = (length >> 5) & 0xff;
   padded[i++] = (length >> 13) & 0xff;
   padded[i++] = (length >> 21) & 0xff;
   padded[i++] = (length >>> 29) & 0xff;
-  padded[i++] = 0;
-  padded[i++] = 0;
-  padded[i++] = 0;
+  i += 3;
   const w = new Int32Array(16);
   const { k, r } = PARAMS;
   for (i = 0; i < paddedLength; ) {
