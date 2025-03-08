@@ -31,11 +31,6 @@ class Word64 {
     this.low ^= word.low;
   }
 
-  or(word) {
-    this.high |= word.high;
-    this.low |= word.low;
-  }
-
   shiftRight(places) {
     if (places >= 32) {
       this.low = (this.high >>> (places - 32)) | 0;
@@ -43,16 +38,6 @@ class Word64 {
     } else {
       this.low = (this.low >>> places) | (this.high << (32 - places));
       this.high = (this.high >>> places) | 0;
-    }
-  }
-
-  shiftLeft(places) {
-    if (places >= 32) {
-      this.high = this.low << (places - 32);
-      this.low = 0;
-    } else {
-      this.high = (this.high << places) | (this.low >>> (32 - places));
-      this.low <<= places;
     }
   }
 
