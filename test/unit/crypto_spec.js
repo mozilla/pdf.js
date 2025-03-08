@@ -17,7 +17,6 @@ import {
   AES128Cipher,
   AES256Cipher,
   ARCFourCipher,
-  calculateSHA256,
   calculateSHA384,
   calculateSHA512,
   CipherTransformFactory,
@@ -31,6 +30,7 @@ import {
   stringToBytes,
 } from "../../src/shared/util.js";
 import { calculateMD5 } from "../../src/core/calculate_md5.js";
+import { calculateSHA256 } from "../../src/core/calculate_sha256.js";
 
 describe("crypto", function () {
   function hex2binary(s) {
