@@ -828,6 +828,47 @@ describe("api", function () {
 
       await loadingTask.destroy();
     });
+
+    it("gets data, on failure, from `PDFDocumentLoadingTask`-instance", async function () {
+      const typedArrayPdf = await DefaultFileReaderFactory.fetch({
+        path: TEST_PDFS_PATH + "issue6010_1.pdf",
+      });
+
+      // Sanity check to make sure that we fetched the entire PDF file.
+      expect(typedArrayPdf instanceof Uint8Array).toEqual(true);
+      expect(typedArrayPdf.length).toEqual(1116);
+
+      const loadingTask = getDocument(typedArrayPdf.slice());
+      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+
+      let passwordData = null;
+      // Attach the callback that is used to request a password;
+      // similarly to how the default viewer handles passwords.
+      loadingTask.onPassword = async (updatePassword, reason) => {
+        passwordData = await loadingTask.getData();
+
+        updatePassword(new Error("Should reject the loadingTask."));
+      };
+
+      try {
+        await loadingTask.promise;
+
+        // Shouldn't get here.
+        expect(false).toEqual(true);
+      } catch (ex) {
+        expect(ex instanceof PasswordException).toEqual(true);
+        expect(ex.code).toEqual(PasswordResponses.NEED_PASSWORD);
+      }
+
+      // Ensure that the raw PDF document can be fetched while
+      // an `onPassword` callback is delaying initialization...
+      expect(passwordData).toEqual(typedArrayPdf);
+      // ... and once an exception has stopped initialization.
+      const data = await loadingTask.getData();
+      expect(data).toEqual(typedArrayPdf);
+
+      await loadingTask.destroy();
+    });
   });
 
   describe("PDFWorker", function () {
