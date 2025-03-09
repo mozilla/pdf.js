@@ -179,7 +179,7 @@ class RadialAxialShading extends BaseShading {
     this.extendEnd = extendEnd;
 
     const fnObj = dict.getRaw("Function");
-    const fn = pdfFunctionFactory.createFromArray(fnObj);
+    const fn = pdfFunctionFactory.create(fnObj, /* parseArray = */ true);
 
     // Use lcm(1,2,3,4,5,6,7,8,10) = 840 (including 9 increases this to 2520)
     // to catch evenly spaced stops. oeis.org/A003418
@@ -487,7 +487,9 @@ class MeshShading extends BaseShading {
       : null;
 
     const fnObj = dict.getRaw("Function");
-    const fn = fnObj ? pdfFunctionFactory.createFromArray(fnObj) : null;
+    const fn = fnObj
+      ? pdfFunctionFactory.create(fnObj, /* parseArray = */ true)
+      : null;
 
     this.coords = [];
     this.colors = [];
