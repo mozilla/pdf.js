@@ -629,39 +629,48 @@ const isValidExplicitDest = _isValidExplicitDest.bind(
 class PDFDocumentLoadingTask {
   static #docId = 0;
 
-  constructor() {
-    this._capability = Promise.withResolvers();
-    this._transport = null;
-    this._worker = null;
+  /**
+   * @private
+   */
+  _capability = Promise.withResolvers();
 
-    /**
-     * Unique identifier for the document loading task.
-     * @type {string}
-     */
-    this.docId = `d${PDFDocumentLoadingTask.#docId++}`;
+  /**
+   * @private
+   */
+  _transport = null;
 
-    /**
-     * Whether the loading task is destroyed or not.
-     * @type {boolean}
-     */
-    this.destroyed = false;
+  /**
+   * @private
+   */
+  _worker = null;
 
-    /**
-     * Callback to request a password if a wrong or no password was provided.
-     * The callback receives two parameters: a function that should be called
-     * with the new password, and a reason (see {@link PasswordResponses}).
-     * @type {function}
-     */
-    this.onPassword = null;
+  /**
+   * Unique identifier for the document loading task.
+   * @type {string}
+   */
+  docId = `d${PDFDocumentLoadingTask.#docId++}`;
 
-    /**
-     * Callback to be able to monitor the loading progress of the PDF file
-     * (necessary to implement e.g. a loading bar).
-     * The callback receives an {@link OnProgressParameters} argument.
-     * @type {function}
-     */
-    this.onProgress = null;
-  }
+  /**
+   * Whether the loading task is destroyed or not.
+   * @type {boolean}
+   */
+  destroyed = false;
+
+  /**
+   * Callback to request a password if a wrong or no password was provided.
+   * The callback receives two parameters: a function that should be called
+   * with the new password, and a reason (see {@link PasswordResponses}).
+   * @type {function}
+   */
+  onPassword = null;
+
+  /**
+   * Callback to be able to monitor the loading progress of the PDF file
+   * (necessary to implement e.g. a loading bar).
+   * The callback receives an {@link OnProgressParameters} argument.
+   * @type {function}
+   */
+  onProgress = null;
 
   /**
    * Promise for document loading task completion.
@@ -698,6 +707,16 @@ class PDFDocumentLoadingTask {
 
     this._worker?.destroy();
     this._worker = null;
+  }
+
+  /**
+   * Attempt to fetch the raw data of the PDF document, when e.g.
+   *  - An exception was thrown during document initialization.
+   *  - An `onPassword` callback is delaying initialization.
+   * @returns {Promise<Uint8Array>}
+   */
+  async getData() {
+    return this._transport.getData();
   }
 }
 
