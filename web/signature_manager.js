@@ -322,12 +322,10 @@ class SignatureManager {
   }
 
   #disableButtons(value) {
-    this.#clearButton.disabled = this.#addButton.disabled = !value;
-    if (value) {
-      this.#saveContainer.removeAttribute("disabled");
-    } else {
-      this.#saveContainer.setAttribute("disabled", true);
-    }
+    this.#saveCheckbox.disabled =
+      this.#clearButton.disabled =
+      this.#addButton.disabled =
+        !value;
   }
 
   #initTypeTab(reset) {
