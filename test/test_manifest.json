@@ -11971,5 +11971,12 @@
     "rounds": 1,
     "link": true,
     "type": "eq"
+  },
+  {
+    "id": "issue19633",
+    "file": "pdfs/issue19633.pdf",
+    "md5": "9993aa298c0214a3d3ff5f90ce0d40bb",
+    "rounds": 1,
+    "type": "eq"
   }
 ]
