@@ -71,57 +71,66 @@ function initSandbox(params) {
   const appObjects = app._objects;
 
   if (data.objects) {
-    const annotations = [];
-
     for (const [name, objs] of Object.entries(data.objects)) {
-      annotations.length = 0;
-      let container = null;
+      // Separate annotations and container
+      const annotations = objs.filter(obj => obj.type !== "");
+      const container = objs.find(obj => obj.type === "");
 
-      for (const obj of objs) {
-        if (obj.type !== "") {
-          annotations.push(obj);
-        } else {
-          container = obj;
+      // Process each annotation (button, checkbox, etc.)
+      for (const obj of annotations) {
+        obj.send = send; // Assign the send function to each annotation
+        obj.globalEval = globalEval;
+        obj.doc = _document;
+        obj.fieldPath = name;
+        obj.appObjects = appObjects;
+
+        // Handle siblings (if any)
+        const otherFields = annotations.filter(x => x !== obj);
+        if (otherFields.length > 0) {
+          obj.siblings = otherFields.map(x => x.id);
         }
-      }
 
-      let obj = container;
-      if (annotations.length > 0) {
-        obj = annotations[0];
-        obj.send = send;
-      }
-
-      obj.globalEval = globalEval;
-      obj.doc = _document;
-      obj.fieldPath = name;
-      obj.appObjects = appObjects;
-
-      const otherFields = annotations.slice(1);
-
-      let field;
-      switch (obj.type) {
-        case "radiobutton": {
-          field = new RadioButtonField(otherFields, obj);
-          break;
+        // Create a Field instance based on the type
+        let field;
+        switch (obj.type) {
+          case "radiobutton":
+            field = new RadioButtonField(
+              otherFields.map(x => x.id),
+              obj
+            ); // Pass sibling IDs
+            break;
+          case "checkbox":
+            field = new CheckboxField(
+              otherFields.map(x => x.id),
+              obj
+            ); // Pass sibling IDs
+            break;
+          default:
+            field = new Field(obj);
         }
-        case "checkbox": {
-          field = new CheckboxField(otherFields, obj);
-          break;
-        }
-        default:
-          if (otherFields.length > 0) {
-            obj.siblings = otherFields.map(x => x.id);
-          }
-          field = new Field(obj);
+
+        // Wrap the field in a Proxy and add it to doc and appObjects
+        const wrapped = new Proxy(field, proxyHandler);
+        const _object = { obj: field, wrapped };
+        doc._addField(name, _object);
+        appObjects[obj.id] = _object;
       }
 
-      const wrapped = new Proxy(field, proxyHandler);
-      const _object = { obj: field, wrapped };
-      doc._addField(name, _object);
-      for (const object of objs) {
-        appObjects[object.id] = _object;
-      }
+      // Handle the container (if it exists)
       if (container) {
+        container.send = send;
+        container.globalEval = globalEval;
+        container.doc = _document;
+        container.fieldPath = name;
+        container.appObjects = appObjects;
+
+        // Create a Field instance for the container
+        const field = new Field(container);
+        const wrapped = new Proxy(field, proxyHandler);
+        const _object = { obj: field, wrapped };
+
+        // Add the container to doc and appObjects
+        doc._addField(name, _object);
         appObjects[container.id] = _object;
       }
     }
