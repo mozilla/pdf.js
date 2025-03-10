@@ -259,6 +259,7 @@ class SignatureEditor extends DrawingEditor {
     const { outline } = (this.#signatureData = data);
     this.#isExtracted = outline instanceof ContourDrawOutline;
     this.#description = description;
+    this.div.setAttribute("aria-label", description);
     let drawingOptions;
     if (this.#isExtracted) {
       drawingOptions = SignatureEditor.getDefaultDrawingOptions();
