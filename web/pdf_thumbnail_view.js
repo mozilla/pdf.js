@@ -215,9 +215,21 @@ class PDFThumbnailView {
       willReadFrequently: !enableHWA,
     });
     const outputScale = new OutputScale();
+    const width = upscaleFactor * this.canvasWidth,
+      height = upscaleFactor * this.canvasHeight;
 
-    canvas.width = (upscaleFactor * this.canvasWidth * outputScale.sx) | 0;
-    canvas.height = (upscaleFactor * this.canvasHeight * outputScale.sy) | 0;
+    if (this.maxCanvasDim !== -1) {
+      const maxScale = Math.min(
+        this.maxCanvasDim / width,
+        this.maxCanvasDim / height
+      );
+      if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
+        outputScale.sx = maxScale;
+        outputScale.sy = maxScale;
+      }
+    }
+    canvas.width = (width * outputScale.sx) | 0;
+    canvas.height = (height * outputScale.sy) | 0;
 
     const transform = outputScale.scaled
       ? [outputScale.sx, 0, 0, outputScale.sy, 0, 0]
