@@ -3914,6 +3914,14 @@
     "type": "eq"
   },
   {
+    "id": "issue19611",
+    "file": "pdfs/issue19611.pdf",
+    "md5": "169dc6df1c43dcb4659b2ddb6a4b39e4",
+    "rounds": 1,
+    "link": true,
+    "type": "eq"
+  },
+  {
     "id": "issue1127-text",
     "file": "pdfs/issue1127.pdf",
     "md5": "4fb2be5ffefeafda4ba977de2a1bb4d8",
