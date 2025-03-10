@@ -200,6 +200,10 @@ const StepperManager = (function StepperManagerClosure() {
     active: false,
     // Stepper specific functions.
     create(pageIndex) {
+      const pageContainer = document.querySelector(
+        `#viewer div[data-page-number="${pageIndex + 1}"]`
+      );
+
       const debug = document.createElement("div");
       debug.id = "stepper" + pageIndex;
       debug.hidden = true;
@@ -210,7 +214,12 @@ const StepperManager = (function StepperManagerClosure() {
       b.value = pageIndex;
       stepperChooser.append(b);
       const initBreakPoints = breakPoints[pageIndex] || [];
-      const stepper = new Stepper(debug, pageIndex, initBreakPoints);
+      const stepper = new Stepper(
+        debug,
+        pageIndex,
+        initBreakPoints,
+        pageContainer
+      );
       steppers.push(stepper);
       if (steppers.length === 1) {
         this.selectStepper(pageIndex, false);
@@ -277,7 +286,7 @@ class Stepper {
     return simpleObj;
   }
 
-  constructor(panel, pageIndex, initialBreakPoints) {
+  constructor(panel, pageIndex, initialBreakPoints, pageContainer) {
     this.panel = panel;
     this.breakPoint = 0;
     this.nextBreakPoint = null;
@@ -286,11 +295,20 @@ class Stepper {
     this.currentIdx = -1;
     this.operatorListIdx = 0;
     this.indentLevel = 0;
+    this.operatorGroups = null;
+    this.pageContainer = pageContainer;
   }
 
   init(operatorList) {
     const panel = this.panel;
     const content = this.#c("div", "c=continue, s=step");
+
+    const showBoxesToggle = this.#c("label", "Show bounding boxes");
+    const showBoxesCheckbox = this.#c("input");
+    showBoxesCheckbox.type = "checkbox";
+    showBoxesToggle.prepend(showBoxesCheckbox);
+    content.append(this.#c("br"), showBoxesToggle);
+
     const table = this.#c("table");
     content.append(table);
     table.cellSpacing = 0;
@@ -305,6 +323,22 @@ class Stepper {
     panel.append(content);
     this.table = table;
     this.updateOperatorList(operatorList);
+
+    const hoverStyle = this.#c("style");
+    this.hoverStyle = hoverStyle;
+    content.prepend(hoverStyle);
+    table.addEventListener("mouseover", this.#handleStepHover.bind(this));
+    table.addEventListener("mouseleave", e => {
+      hoverStyle.innerText = "";
+    });
+
+    showBoxesCheckbox.addEventListener("change", () => {
+      if (showBoxesCheckbox.checked) {
+        this.pageContainer.classList.add("showDebugBoxes");
+      } else {
+        this.pageContainer.classList.remove("showDebugBoxes");
+      }
+    });
   }
 
   updateOperatorList(operatorList) {
@@ -395,6 +429,112 @@ class Stepper {
     }
     this.operatorListIdx = operatorList.fnArray.length;
     this.table.append(chunk);
+  }
+
+  setOperatorGroups(groups) {
+    this.operatorGroups = groups;
+
+    let boxesContainer = this.pageContainer.querySelector(".pdfBugGroupsLayer");
+    if (!boxesContainer) {
+      boxesContainer = this.#c("div");
+      boxesContainer.classList.add("pdfBugGroupsLayer");
+      this.pageContainer.append(boxesContainer);
+
+      boxesContainer.addEventListener(
+        "click",
+        this.#handleDebugBoxClick.bind(this)
+      );
+      boxesContainer.addEventListener(
+        "mouseover",
+        this.#handleDebugBoxHover.bind(this)
+      );
+    }
+    boxesContainer.innerHTML = "";
+
+    for (let i = 0; i < groups.length; i++) {
+      const el = this.#c("div");
+      el.style.left = `${groups[i].minX * 100}%`;
+      el.style.top = `${groups[i].minY * 100}%`;
+      el.style.width = `${(groups[i].maxX - groups[i].minX) * 100}%`;
+      el.style.height = `${(groups[i].maxY - groups[i].minY) * 100}%`;
+      el.dataset.groupIdx = i;
+      boxesContainer.append(el);
+    }
+  }
+
+  #handleStepHover(e) {
+    const tr = e.target.closest("tr");
+    if (!tr || tr.dataset.idx === undefined) {
+      return;
+    }
+
+    const index = +tr.dataset.idx;
+
+    const closestGroupIndex =
+      this.operatorGroups?.findIndex(({ data }) => {
+        if ("idx" in data) {
+          return data.idx === index;
+        }
+        if ("startIdx" in data) {
+          return data.startIdx <= index && index <= data.endIdx;
+        }
+        return false;
+      }) ?? -1;
+    if (closestGroupIndex === -1) {
+      this.hoverStyle.innerText = "";
+      return;
+    }
+
+    this.#highlightStepsGroup(closestGroupIndex);
+  }
+
+  #handleDebugBoxHover(e) {
+    if (e.target.dataset.groupIdx === undefined) {
+      return;
+    }
+
+    const groupIdx = Number(e.target.dataset.groupIdx);
+    this.#highlightStepsGroup(groupIdx);
+  }
+
+  #handleDebugBoxClick(e) {
+    if (e.target.dataset.groupIdx === undefined) {
+      return;
+    }
+
+    const groupIdx = Number(e.target.dataset.groupIdx);
+    const group = this.operatorGroups[groupIdx];
+
+    const firstOp = "idx" in group.data ? group.data.idx : group.data.startIdx;
+
+    this.table.childNodes[firstOp].scrollIntoView();
+  }
+
+  #highlightStepsGroup(groupIndex) {
+    const group = this.operatorGroups[groupIndex];
+
+    let cssSelector;
+    if ("idx" in group.data) {
+      cssSelector = `tr[data-idx="${group.data.idx}"]`;
+    } else if ("startIdx" in group.data) {
+      cssSelector = `:nth-child(n+${group.data.startIdx + 1} of tr[data-idx]):nth-child(-n+${group.data.endIdx + 1} of tr[data-idx])`;
+    }
+
+    this.hoverStyle.innerText = `#${this.panel.id} ${cssSelector} { background-color: rgba(0, 0, 0, 0.1); }`;
+
+    if (group.dependencies.length > 0) {
+      const selector = group.dependencies
+        .map(idx => `#${this.panel.id} tr[data-idx="${idx}"]`)
+        .join(", ");
+      this.hoverStyle.innerText += `${selector} { background-color: rgba(0, 255, 255, 0.1); }`;
+    }
+
+    this.hoverStyle.innerText += `
+      #viewer [data-page-number="${this.pageIndex + 1}"] .pdfBugGroupsLayer :nth-child(${groupIndex + 1}) {
+        background-color: var(--hover-background-color);
+        outline-style: var(--hover-outline-style);
+      }
+    `;
   }
 
   getNextBreakPoint() {
