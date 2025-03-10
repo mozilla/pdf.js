@@ -108,7 +108,7 @@ const defaultOptions = {
   },
   supportsCaretBrowsingMode: {
     /** @type {boolean} */
-    value: false,
+    value: true,
     kind: OptionKind.BROWSER,
   },
   supportsDocumentFonts: {
