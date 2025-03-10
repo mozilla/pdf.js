@@ -595,12 +595,16 @@
 
         #addSignatureSaveContainer {
           display: grid;
-          grid-template-columns: max-content max-content;
+          grid-template-columns: max-content auto;
           gap: 4px;
           width: 100%;
 
           > input {
             margin: 0;
+
+            &:disabled + label {
+              opacity: 0.4;
+            }
           }
 
           > label {
@@ -616,14 +620,6 @@
             opacity: 1;
             color: var(--save-warning-color);
             font-size: 11px;
-          }
-
-          &:is([disabled], .fullStorage) {
-            pointer-events: none;
-
-            > :not(#addSignatureSaveWarning) {
-              opacity: 0.4;
-            }
           }
         }
       }
