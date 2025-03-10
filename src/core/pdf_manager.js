@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { CmykICCBasedCS, IccColorSpace } from "./icc_colorspace.js";
 import {
   createValidAbsoluteUrl,
   FeatureTest,
@@ -20,7 +21,6 @@ import {
   warn,
 } from "../shared/util.js";
 import { ChunkedStreamManager } from "./chunked_stream.js";
-import { IccColorSpace } from "./icc_colorspace.js";
 import { ImageResizer } from "./image_resizer.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { JpxImage } from "./jpx.js";
@@ -78,6 +78,7 @@ class BasePdfManager {
     const options = { ...evaluatorOptions, handler };
     JpxImage.setOptions(options);
     IccColorSpace.setOptions(options);
+    CmykICCBasedCS.setOptions(options);
   }
 
   get docId() {

@@ -406,6 +406,17 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.API,
   },
+  iccUrl: {
+    /** @type {string} */
+    value:
+      // eslint-disable-next-line no-nested-ternary
+      typeof PDFJSDev === "undefined"
+        ? "../external/iccs/"
+        : PDFJSDev.test("MOZCENTRAL")
+          ? "resource://pdf.js/web/iccs/"
+          : "../web/iccs/",
+    kind: OptionKind.API,
+  },
   isEvalSupported: {
     /** @type {boolean} */
     value: true,

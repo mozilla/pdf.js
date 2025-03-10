@@ -636,6 +636,13 @@ function createCMapBundle() {
   });
 }
 
+function createICCBundle() {
+  return gulp.src(["external/iccs/*.icc", "external/iccs/LICENSE"], {
+    base: "external/iccs",
+    encoding: false,
+  });
+}
+
 function createStandardFontBundle() {
   return gulp.src(
     [
@@ -1091,6 +1098,7 @@ function buildGeneric(defines, dir) {
       })
       .pipe(gulp.dest(dir + "web")),
     createCMapBundle().pipe(gulp.dest(dir + "web/cmaps")),
+    createICCBundle().pipe(gulp.dest(dir + "web/iccs")),
     createStandardFontBundle().pipe(gulp.dest(dir + "web/standard_fonts")),
     createWasmBundle().pipe(gulp.dest(dir + "web/wasm")),
 
@@ -1420,6 +1428,7 @@ gulp.task(
         createCMapBundle().pipe(
           gulp.dest(MOZCENTRAL_CONTENT_DIR + "web/cmaps")
         ),
+        createICCBundle().pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web/iccs")),
         createStandardFontBundle().pipe(
           gulp.dest(MOZCENTRAL_CONTENT_DIR + "web/standard_fonts")
         ),
@@ -1524,6 +1533,9 @@ gulp.task(
           .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")),
         createCMapBundle().pipe(
           gulp.dest(CHROME_BUILD_CONTENT_DIR + "web/cmaps")
+        ),
+        createICCBundle().pipe(
+          gulp.dest(CHROME_BUILD_CONTENT_DIR + "web/iccs")
         ),
         createStandardFontBundle().pipe(
           gulp.dest(CHROME_BUILD_CONTENT_DIR + "web/standard_fonts")
@@ -2360,6 +2372,12 @@ gulp.task(
           .pipe(gulp.dest(DIST_DIR)),
         gulp
           .src(GENERIC_DIR + "web/cmaps/**/*", {
+            base: GENERIC_DIR + "web",
+            encoding: false,
+          })
+          .pipe(gulp.dest(DIST_DIR)),
+        gulp
+          .src(GENERIC_DIR + "web/iccs/**/*", {
             base: GENERIC_DIR + "web",
             encoding: false,
           })
