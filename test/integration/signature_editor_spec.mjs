@@ -182,6 +182,11 @@ describe("Signature Editor", () => {
             `.altText.editDescription[title="Hello World"]`
           );
 
+          // Check the aria label.
+          await page.waitForSelector(
+            `${editorSelector}[aria-label="Hello World"]`
+          );
+
           // Edit the description.
           await page.click(`.altText.editDescription`);
 
