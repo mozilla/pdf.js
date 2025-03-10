@@ -775,28 +775,13 @@ class PDFPageView extends BasePDFPageView {
       outputScale.sx *= invScale;
       outputScale.sy *= invScale;
       this.#needsRestrictedScaling = true;
-    } else if (this.maxCanvasPixels > 0 || this.maxCanvasDim !== -1) {
-      let maxAreaScale = Infinity,
-        maxWidthScale = Infinity,
-        maxHeightScale = Infinity;
-
-      if (this.maxCanvasPixels > 0) {
-        const pixelsInViewport = width * height;
-        maxAreaScale = Math.sqrt(this.maxCanvasPixels / pixelsInViewport);
-      }
-      if (this.maxCanvasDim !== -1) {
-        maxWidthScale = this.maxCanvasDim / width;
-        maxHeightScale = this.maxCanvasDim / height;
-      }
-      const maxScale = Math.min(maxAreaScale, maxWidthScale, maxHeightScale);
-
-      if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
-        outputScale.sx = maxScale;
-        outputScale.sy = maxScale;
-        this.#needsRestrictedScaling = true;
-      } else {
-        this.#needsRestrictedScaling = false;
-      }
+    } else {
+      this.#needsRestrictedScaling = outputScale.limitCanvas(
+        width,
+        height,
+        this.maxCanvasPixels,
+        this.maxCanvasDim
+      );
     }
   }
 
