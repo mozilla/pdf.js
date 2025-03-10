@@ -4679,8 +4679,15 @@ class TranslatedFont {
             //   not execute any operators that set the colour (or other
             //   colour-related parameters) in the graphics state;
             //   any use of such operators shall be ignored."
-            if (operatorList.fnArray[0] === OPS.setCharWidthAndBounds) {
-              this.#removeType3ColorOperators(operatorList, fontBBoxSize);
+            switch (operatorList.fnArray[0]) {
+              case OPS.setCharWidthAndBounds:
+                this.#removeType3ColorOperators(operatorList, fontBBoxSize);
+                break;
+              case OPS.setCharWidth:
+                if (!fontBBoxSize) {
+                  this.#guessType3FontBBox(operatorList);
+                }
+                break;
             }
             charProcOperatorList[key] = operatorList.getIR();
 
@@ -4728,13 +4735,7 @@ class TranslatedFont {
       // Override the fontBBox when it's undefined/empty, or when it's at least
       // (approximately) one order of magnitude smaller than the charBBox
       // (fixes issue14999_reduced.pdf).
-      if (!this._bbox) {
-        this._bbox = [Infinity, Infinity, -Infinity, -Infinity];
-      }
-      this._bbox[0] = Math.min(this._bbox[0], charBBox[0]);
-      this._bbox[1] = Math.min(this._bbox[1], charBBox[1]);
-      this._bbox[2] = Math.max(this._bbox[2], charBBox[2]);
-      this._bbox[3] = Math.max(this._bbox[3], charBBox[3]);
+      this.#computeCharBBox(charBBox);
     }
 
     let i = 0,
@@ -4786,6 +4787,37 @@ class TranslatedFont {
       }
       i++;
     }
+  }
+
+  #guessType3FontBBox(operatorList) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      assert(
+        operatorList.fnArray[0] === OPS.setCharWidth,
+        "Type3 glyph shall start with the d0 operator."
+      );
+    }
+
+    let i = 1;
+    const ii = operatorList.length;
+    while (i < ii) {
+      switch (operatorList.fnArray[i]) {
+        case OPS.constructPath:
+          const minMax = operatorList.argsArray[i][2];
+          // Override the fontBBox when it's undefined/empty (fixes 19624.pdf).
+          this.#computeCharBBox(minMax);
+          break;
+      }
+      i++;
+    }
+  }
+
+  #computeCharBBox(bbox) {
+    this._bbox ||= [Infinity, Infinity, -Infinity, -Infinity];
+
+    this._bbox[0] = Math.min(this._bbox[0], bbox[0]);
+    this._bbox[1] = Math.min(this._bbox[1], bbox[1]);
+    this._bbox[2] = Math.max(this._bbox[2], bbox[2]);
+    this._bbox[3] = Math.max(this._bbox[3], bbox[3]);
   }
 }
 
