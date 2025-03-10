@@ -640,8 +640,38 @@ class OutputScale {
     return this.sx !== 1 || this.sy !== 1;
   }
 
+  /**
+   * @type {boolean} Returns `true` when scaling is symmetric,
+   *   `false` otherwise.
+   */
   get symmetric() {
     return this.sx === this.sy;
+  }
+
+  /**
+   * @returns {boolean} Returns `true` if scaling was limited,
+   *   `false` otherwise.
+   */
+  limitCanvas(width, height, maxPixels, maxDim) {
+    let maxAreaScale = Infinity,
+      maxWidthScale = Infinity,
+      maxHeightScale = Infinity;
+
+    if (maxPixels > 0) {
+      maxAreaScale = Math.sqrt(maxPixels / (width * height));
+    }
+    if (maxDim !== -1) {
+      maxWidthScale = maxDim / width;
+      maxHeightScale = maxDim / height;
+    }
+    const maxScale = Math.min(maxAreaScale, maxWidthScale, maxHeightScale);
+
+    if (this.sx > maxScale || this.sy > maxScale) {
+      this.sx = maxScale;
+      this.sy = maxScale;
+      return true;
+    }
+    return false;
   }
 }
 

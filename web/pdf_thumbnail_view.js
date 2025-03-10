@@ -42,6 +42,9 @@ const THUMBNAIL_WIDTH = 98; // px
  *   The default value is `null`.
  * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
+ * @property {number} [maxCanvasPixels] - The maximum supported canvas size in
+ *   total pixels, i.e. width * height. Use `-1` for no limit, or `0` for
+ *   CSS-only zooming. The default value is 4096 * 8192 (32 mega-pixels).
  * @property {number} [maxCanvasDim] - The maximum supported canvas dimension,
  *   in either width or height. Use `-1` for no limit.
  *   The default value is 32767.
@@ -97,6 +100,7 @@ class PDFThumbnailView {
     optionalContentConfigPromise,
     linkService,
     renderingQueue,
+    maxCanvasPixels,
     maxCanvasDim,
     pageColors,
     enableHWA,
@@ -110,6 +114,7 @@ class PDFThumbnailView {
     this.viewport = defaultViewport;
     this.pdfPageRotate = defaultViewport.rotation;
     this._optionalContentConfigPromise = optionalContentConfigPromise || null;
+    this.maxCanvasPixels = maxCanvasPixels ?? AppOptions.get("maxCanvasPixels");
     this.maxCanvasDim = maxCanvasDim || AppOptions.get("maxCanvasDim");
     this.pageColors = pageColors || null;
     this.enableHWA = enableHWA || false;
@@ -218,16 +223,12 @@ class PDFThumbnailView {
     const width = upscaleFactor * this.canvasWidth,
       height = upscaleFactor * this.canvasHeight;
 
-    if (this.maxCanvasDim !== -1) {
-      const maxScale = Math.min(
-        this.maxCanvasDim / width,
-        this.maxCanvasDim / height
-      );
-      if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
-        outputScale.sx = maxScale;
-        outputScale.sy = maxScale;
-      }
-    }
+    outputScale.limitCanvas(
+      width,
+      height,
+      this.maxCanvasPixels,
+      this.maxCanvasDim
+    );
     canvas.width = (width * outputScale.sx) | 0;
     canvas.height = (height * outputScale.sy) | 0;
 
@@ -364,6 +365,27 @@ class PDFThumbnailView {
     this.#convertCanvasToImage(canvas);
   }
 
+  #getReducedImageDims(canvas) {
+    let reducedWidth = canvas.width << MAX_NUM_SCALING_STEPS,
+      reducedHeight = canvas.height << MAX_NUM_SCALING_STEPS;
+
+    const outputScale = new OutputScale();
+    // Here we're not actually "rendering" to the canvas and the `OutputScale`
+    // is thus only used to limit the canvas size, hence the identity scale.
+    outputScale.sx = outputScale.sy = 1;
+
+    outputScale.limitCanvas(
+      reducedWidth,
+      reducedHeight,
+      this.maxCanvasPixels,
+      this.maxCanvasDim
+    );
+    reducedWidth = (reducedWidth * outputScale.sx) | 0;
+    reducedHeight = (reducedHeight * outputScale.sy) | 0;
+
+    return [reducedWidth, reducedHeight];
+  }
+
   #reduceImage(img) {
     const { ctx, canvas } = this.#getPageDrawContext(1, true);
 
@@ -381,24 +403,8 @@ class PDFThumbnailView {
       );
       return canvas;
     }
-    const { maxCanvasDim } = this;
-
     // drawImage does an awful job of rescaling the image, doing it gradually.
-    let reducedWidth = canvas.width << MAX_NUM_SCALING_STEPS;
-    let reducedHeight = canvas.height << MAX_NUM_SCALING_STEPS;
-
-    if (maxCanvasDim !== -1) {
-      const maxWidthScale = maxCanvasDim / reducedWidth,
-        maxHeightScale = maxCanvasDim / reducedHeight;
-
-      if (maxWidthScale < 1) {
-        reducedWidth = maxCanvasDim;
-        reducedHeight = (reducedHeight * maxWidthScale) | 0;
-      } else if (maxHeightScale < 1) {
-        reducedWidth = (reducedWidth * maxHeightScale) | 0;
-        reducedHeight = maxCanvasDim;
-      }
-    }
+    let [reducedWidth, reducedHeight] = this.#getReducedImageDims(canvas);
     const [reducedImage, reducedImageCtx] = TempImageFactory.getCanvas(
       reducedWidth,
       reducedHeight
