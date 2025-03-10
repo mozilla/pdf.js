@@ -85,7 +85,7 @@ describe("Signature Editor", () => {
           );
           await page.click("#addSignatureTypeInput");
           await page.waitForSelector(
-            "#addSignatureSaveContainer[disabled=true]"
+            "#addSignatureSaveContainer > input:disabled"
           );
           let description = await page.$eval(
             descriptionInputSelector,
@@ -99,7 +99,7 @@ describe("Signature Editor", () => {
 
           // The save button should be enabled now.
           await page.waitForSelector(
-            "#addSignatureSaveContainer:not([disabled])"
+            "#addSignatureSaveContainer > input:not(:disabled)"
           );
           await page.waitForSelector("#addSignatureSaveCheckbox[checked=true]");
 
@@ -126,7 +126,7 @@ describe("Signature Editor", () => {
           );
           // The save button should be disabled now.
           await page.waitForSelector(
-            "#addSignatureSaveContainer[disabled=true]"
+            "#addSignatureSaveContainer > input:disabled"
           );
           await page.waitForSelector(`${addButtonSelector}:disabled`);
 
@@ -249,7 +249,7 @@ describe("Signature Editor", () => {
 
           // The save button should be enabled now.
           await page.waitForSelector(
-            "#addSignatureSaveContainer:not([disabled])"
+            "#addSignatureSaveContainer > input:not(:disabled)"
           );
           await page.waitForSelector("#addSignatureSaveCheckbox[checked=true]");
 
@@ -305,7 +305,7 @@ describe("Signature Editor", () => {
 
           // The save button should be enabled now.
           await page.waitForSelector(
-            "#addSignatureSaveContainer:not([disabled])"
+            "#addSignatureSaveContainer > input:not(:disabled)"
           );
           await page.waitForSelector("#addSignatureSaveCheckbox[checked=true]");
 
