@@ -50,10 +50,14 @@
   --primary-color: var(--text-primary-color);
   --description-input-color: var(--primary-color);
   --border-color: #8f8f9d;
+  --open-link-fg: var(--link-fg-color);
+  --open-link-hover-fg: var(--link-hover-fg-color);
 
   @media screen and (forced-colors: active) {
     --primary-color: ButtonText;
     --border-color: ButtonText;
+    --open-link-fg: ButtonText;
+    --open-link-hover-fg: ButtonText;
   }
 
   width: 570px;
@@ -82,9 +86,7 @@
 
   .inputWithClearButton {
     --button-dimension: 24px;
-
-    --closing-button-icon: url(images/messageBar_closingButton.svg);
-    --closing-button-color: var(--primary-color);
+    --clear-button-icon: url(images/messageBar_closingButton.svg);
 
     width: 100%;
     position: relative;
@@ -97,10 +99,8 @@
       height: 32px;
       padding-inline: 8px calc(4px + var(--button-dimension));
       box-sizing: border-box;
-      background-color: transparent;
       border-radius: 4px;
       border: 1px solid var(--border-color);
-      color: var(--description-input-color);
     }
 
     .clearInputButton {
@@ -110,9 +110,9 @@
       display: inline-block;
       width: var(--button-dimension);
       height: var(--button-dimension);
-      background-color: var(--closing-button-color);
+      background-color: var(--input-text-fg-color);
       mask-size: cover;
-      mask-image: var(--closing-button-icon);
+      mask-image: var(--clear-button-icon);
       padding: 0;
       border: 0;
     }
@@ -465,9 +465,18 @@
             align-items: center;
             justify-content: center;
 
+            span {
+              color: var(--signature-placeholder-color);
+            }
+
             a {
+              color: var(--open-link-fg);
               text-decoration: underline;
               cursor: pointer;
+
+              &:hover {
+                color: var(--open-link-hover-fg);
+              }
             }
           }
 
