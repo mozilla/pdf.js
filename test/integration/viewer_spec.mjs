@@ -1096,4 +1096,68 @@ describe("PDF viewer", () => {
       });
     });
   });
+
+  describe("SecondaryToolbar", () => {
+    let pages;
+
+    function normalizeRotation(rotation) {
+      return ((rotation % 360) + 360) % 360;
+    }
+
+    function waitForRotationChanging(page, pagesRotation) {
+      return page.evaluateHandle(
+        rotation => [
+          new Promise(resolve => {
+            const { eventBus } = window.PDFViewerApplication;
+            eventBus.on("rotationchanging", function handler(e) {
+              if (rotation === undefined || e.pagesRotation === rotation) {
+                resolve();
+                eventBus.off("rotationchanging", handler);
+              }
+            });
+          }),
+        ],
+        normalizeRotation(pagesRotation)
+      );
+    }
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue18694.pdf", ".textLayer .endOfContent");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the SecondaryToolbar doesn't close between rotations", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#secondaryToolbarToggleButton");
+          await page.waitForSelector("#secondaryToolbar", { hidden: false });
+
+          for (let i = 1; i <= 4; i++) {
+            const secondaryToolbarIsOpen = await page.evaluate(
+              () => window.PDFViewerApplication.secondaryToolbar.isOpen
+            );
+            expect(secondaryToolbarIsOpen)
+              .withContext(`In ${browserName}`)
+              .toBeTrue();
+
+            const rotation = i * 90;
+            const handle = await waitForRotationChanging(page, rotation);
+
+            await page.click("#pageRotateCw");
+            await awaitPromise(handle);
+
+            const pagesRotation = await page.evaluate(
+              () => window.PDFViewerApplication.pdfViewer.pagesRotation
+            );
+            expect(pagesRotation)
+              .withContext(`In ${browserName}`)
+              .toBe(normalizeRotation(rotation));
+          }
+        })
+      );
+    });
+  });
 });
