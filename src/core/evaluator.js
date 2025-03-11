@@ -1122,6 +1122,12 @@ class PartialEvaluator {
         case "Type":
           break;
         case "LW":
+          if (typeof value !== "number") {
+            warn(`Invalid LW (line width): ${value}`);
+            break;
+          }
+          gStateObj.push([key, Math.abs(value)]);
+          break;
         case "LC":
         case "LJ":
         case "ML":
@@ -2212,6 +2218,18 @@ class PartialEvaluator {
               })
             );
             return;
+          case OPS.setLineWidth: {
+            // The thickness should be a non-negative number, as per spec.
+            // When the value is negative, Acrobat and Poppler take the absolute
+            // value while PDFium takes the max of 0 and the value.
+            const [thickness] = args;
+            if (typeof thickness !== "number") {
+              warn(`Invalid setLineWidth: ${thickness}`);
+              continue;
+            }
+            args[0] = Math.abs(thickness);
+            break;
+          }
           case OPS.moveTo:
           case OPS.lineTo:
           case OPS.curveTo:
