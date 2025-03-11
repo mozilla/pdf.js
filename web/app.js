@@ -2683,18 +2683,19 @@ function onWheel(evt) {
   }
 }
 
-function closeSecondaryToolbar(evt) {
+function closeSecondaryToolbar({ target }) {
   if (!this.secondaryToolbar?.isOpen) {
     return;
   }
-  const appConfig = this.appConfig;
+  const { toolbar, secondaryToolbar } = this.appConfig;
   if (
-    this.pdfViewer.containsElement(evt.target) ||
-    (appConfig.toolbar?.container.contains(evt.target) &&
+    this.pdfViewer.containsElement(target) ||
+    (toolbar?.container.contains(target) &&
+      !secondaryToolbar?.toolbar.contains(target) &&
       // TODO: change the `contains` for an equality check when the bug:
       //  https://bugzilla.mozilla.org/show_bug.cgi?id=1921984
       // is fixed.
-      !appConfig.secondaryToolbar?.toggleButton.contains(evt.target))
+      !secondaryToolbar?.toggleButton.contains(target))
   ) {
     this.secondaryToolbar.close();
   }
