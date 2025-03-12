@@ -529,8 +529,8 @@ pdfjs-editor-add-signature-dialog-title = Gehitu sinadura
 ## Tab names
 
 # Type is a verb (you can type your name as signature)
-pdfjs-editor-add-signature-type-button = Mota
-    .title = Mota
+pdfjs-editor-add-signature-type-button = Idatzi
+    .title = Idatzi
 # Draw is a verb (you can draw your signature)
 pdfjs-editor-add-signature-draw-button = Marraztu
     .title = Marraztu
