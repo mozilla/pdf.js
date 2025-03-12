@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { stopEvent } from "./display_utils.js";
+import { OutputScale, stopEvent } from "./display_utils.js";
 
 class TouchManager {
   #container;
@@ -75,7 +75,7 @@ class TouchManager {
     // The properties TouchEvent::screenX/Y are in screen CSS pixels:
     //  https://developer.mozilla.org/en-US/docs/Web/API/Touch/screenX#examples
     // MIN_TOUCH_DISTANCE_TO_PINCH is in CSS pixels.
-    return 35 / (window.devicePixelRatio || 1);
+    return 35 / OutputScale.pixelRatio;
   }
 
   #onTouchStart(evt) {
