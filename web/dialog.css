@@ -33,22 +33,31 @@
   --radio-border-color: #8f8f9d;
   --radio-checked-border-color: #0060df;
 
-  --button-secondary-bg-color: #f0f0f4;
+  --button-secondary-bg-color: rgb(21 20 26 / 0.07);
   --button-secondary-fg-color: var(--text-primary-color);
   --button-secondary-border-color: var(--button-secondary-bg-color);
-  --button-secondary-hover-bg-color: var(--button-secondary-bg-color);
+  --button-secondary-active-bg-color: rgb(21 20 26 / 0.21);
+  --button-secondary-active-fg-color: var(--button-secondary-fg-color);
+  --button-secondary-active-border-color: var(--button-secondary-bg-color);
+  --button-secondary-hover-bg-color: rgb(21 20 26 / 0.14);
   --button-secondary-hover-fg-color: var(--button-secondary-fg-color);
   --button-secondary-hover-border-color: var(--button-secondary-hover-bg-color);
 
   --button-primary-bg-color: #0060df;
   --button-primary-fg-color: #fbfbfe;
   --button-primary-border-color: var(--button-primary-bg-color);
-  --button-primary-hover-bg-color: var(--button-primary-bg-color);
+  --button-primary-active-bg-color: #054096;
+  --button-primary-active-fg-color: var(--button-primary-fg-color);
+  --button-primary-active-border-color: var(--button-primary-active-bg-color);
+  --button-primary-hover-bg-color: #0250bb;
   --button-primary-hover-fg-color: var(--button-primary-fg-color);
   --button-primary-hover-border-color: var(--button-primary-hover-bg-color);
 
   --button-disabled-bg-color: color-mix(in srgb, currentcolor, transparent 60%);
   --button-disabled-fg-color: var(--button-disabled-bg-color);
+
+  --input-text-bg-color: white;
+  --input-text-fg-color: var(--text-primary-color);
 
   @media (prefers-color-scheme: dark) {
     --dialog-bg-color: #1c1b22;
@@ -67,9 +76,15 @@
     --radio-checked-bg-color: #15141a;
     --radio-checked-border-color: #0df;
 
-    --button-secondary-bg-color: #2b2a33;
+    --button-secondary-bg-color: rgb(251 251 254 / 0.07);
+    --button-secondary-active-bg-color: rgb(251 251 254 / 0.21);
+    --button-secondary-hover-bg-color: rgb(251 251 254 / 0.14);
     --button-primary-bg-color: #0df;
     --button-primary-fg-color: #15141a;
+    --button-primary-active-bg-color: #aaf2ff;
+    --button-primary-hover-bg-color: #80ebff;
+
+    --input-text-bg-color: #42414d;
   }
 
   @media screen and (forced-colors: active) {
@@ -92,19 +107,31 @@
     --radio-border-color: ButtonText;
     --radio-checked-border-color: ButtonText;
 
-    --button-secondary-bg-color: ButtonFace;
+    --button-secondary-bg-color: HighlightText;
     --button-secondary-fg-color: ButtonText;
     --button-secondary-border-color: ButtonText;
-    --button-secondary-hover-bg-color: AccentColor;
-    --button-secondary-hover-fg-color: AccentColorText;
+    --button-secondary-active-bg-color: HighlightText;
+    --button-secondary-active-fg-color: SelectedItem;
+    --button-secondary-active-border-color: ButtonText;
+    --button-secondary-hover-bg-color: HighlightText;
+    --button-secondary-hover-fg-color: SelectedItem;
+    --button-secondary-hover-border-color: SelectedItem;
 
     --button-primary-bg-color: ButtonText;
-    --button-primary-fg-color: ButtonFace;
-    --button-primary-hover-bg-color: AccentColor;
-    --button-primary-hover-fg-color: AccentColorText;
+    --button-primary-fg-color: HighlightText;
+    --button-primary-border-color: ButtonText;
+    --button-primary-active-bg-color: SelectedItem;
+    --button-primary-active-fg-color: HighlightText;
+    --button-primary-active-border-color: ButtonText;
+    --button-primary-hover-bg-color: SelectedItem;
+    --button-primary-hover-fg-color: HighlightText;
+    --button-primary-hover-border-color: SelectedItem;
 
     --button-disabled-bg-color: GrayText;
     --button-disabled-fg-color: ButtonFace;
+
+    --input-text-bg-color: HighlightText;
+    --input-text-fg-color: FieldText;
   }
 
   font: message-box;
@@ -205,7 +232,8 @@
       border-radius: 4px;
       border: 1px solid;
       font: menu;
-      font-weight: 600;
+      font-weight: 590;
+      font-size: 13px;
       padding: 4px 16px;
       width: auto;
       height: 32px;
@@ -217,6 +245,7 @@
 
       > span {
         color: inherit;
+        font: inherit;
       }
 
       &.secondaryButton {
@@ -228,6 +257,12 @@
           color: var(--button-secondary-hover-fg-color);
           background-color: var(--button-secondary-hover-bg-color);
           border-color: var(--button-secondary-hover-border-color);
+        }
+
+        &:active {
+          color: var(--button-secondary-active-fg-color);
+          background-color: var(--button-secondary-active-bg-color);
+          border-color: var(--button-secondary-active-border-color);
         }
       }
 
@@ -241,6 +276,12 @@
           color: var(--button-primary-hover-fg-color);
           background-color: var(--button-primary-hover-bg-color);
           border-color: var(--button-primary-hover-border-color);
+        }
+
+        &:active {
+          color: var(--button-primary-active-fg-color);
+          background-color: var(--button-primary-active-bg-color);
+          border-color: var(--button-primary-active-border-color);
         }
       }
 
@@ -280,6 +321,11 @@
         pointer-events: none;
         opacity: 0.4;
       }
+    }
+
+    input[type="text"] {
+      background-color: var(--input-text-bg-color);
+      color: var(--input-text-fg-color);
     }
 
     .messageBar {
