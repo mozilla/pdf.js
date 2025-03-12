@@ -39,6 +39,9 @@ pdfjs-open-file-button-label = Բացել
 pdfjs-print-button =
     .title = Տպել
 pdfjs-print-button-label = Տպել
+pdfjs-save-button =
+    .title = Պահպանել
+pdfjs-save-button-label = Պահպանել
 # Used in Firefox for Android as a label for the download button (“download” is a verb).
 # Length of the translation matters since we are in a mobile context, with limited screen estate.
 pdfjs-download-button-label = Ներբեռնել
@@ -256,6 +259,7 @@ pdfjs-free-text-default-content = Սկսել մուտքագրումը…
 
 ## Alt-text dialog
 
+pdfjs-editor-alt-text-save-button = Պահպանել
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
