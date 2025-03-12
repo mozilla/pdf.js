@@ -50,6 +50,7 @@ import {
   InvalidPDFException,
   isDataScheme,
   isPdfFile,
+  OutputScale,
   PDFWorker,
   ResponseException,
   shadow,
@@ -2091,7 +2092,7 @@ const PDFViewerApplication = {
         pdfViewer.refresh();
       }
       const mediaQueryList = window.matchMedia(
-        `(resolution: ${window.devicePixelRatio || 1}dppx)`
+        `(resolution: ${OutputScale.pixelRatio}dppx)`
       );
       mediaQueryList.addEventListener("change", addWindowResolutionChange, {
         once: true,
