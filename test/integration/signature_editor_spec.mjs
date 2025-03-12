@@ -184,7 +184,7 @@ describe("Signature Editor", () => {
 
           // Check the aria label.
           await page.waitForSelector(
-            `${editorSelector}[aria-label="Hello World"]`
+            `${editorSelector}[aria-description="Hello World"]`
           );
 
           // Edit the description.
