@@ -14,6 +14,7 @@
  */
 
 import { BasePDFPageView } from "./base_pdf_page_view.js";
+import { OutputScale } from "pdfjs-lib";
 import { RenderingStates } from "./ui_utils.js";
 
 /** @typedef {import("./interfaces").IRenderableView} IRenderableView */
@@ -153,7 +154,7 @@ class PDFPageDetailView extends BasePDFPageView {
     // but we can reduce it to make sure that we stay within the maxCanvasPixels
     // limit.
     const visiblePixels =
-      visibleWidth * visibleHeight * (window.devicePixelRatio || 1) ** 2;
+      visibleWidth * visibleHeight * OutputScale.pixelRatio ** 2;
     const maxDetailToVisibleLinearRatio = Math.sqrt(
       maxCanvasPixels / visiblePixels
     );
@@ -228,18 +229,18 @@ class PDFPageDetailView extends BasePDFPageView {
 
     const area = this.#detailArea;
 
-    const { devicePixelRatio = 1 } = window;
+    const { pixelRatio } = OutputScale;
     const transform = [
-      devicePixelRatio,
+      pixelRatio,
       0,
       0,
-      devicePixelRatio,
-      -area.minX * devicePixelRatio,
-      -area.minY * devicePixelRatio,
+      pixelRatio,
+      -area.minX * pixelRatio,
+      -area.minY * pixelRatio,
     ];
 
-    canvas.width = area.width * devicePixelRatio;
-    canvas.height = area.height * devicePixelRatio;
+    canvas.width = area.width * pixelRatio;
+    canvas.height = area.height * pixelRatio;
     const { style } = canvas;
     style.width = `${(area.width * 100) / width}%`;
     style.height = `${(area.height * 100) / height}%`;

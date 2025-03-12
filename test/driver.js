@@ -20,6 +20,7 @@ const {
   DrawLayer,
   getDocument,
   GlobalWorkerOptions,
+  OutputScale,
   PixelsPerInch,
   shadow,
   TextLayer,
@@ -876,7 +877,7 @@ class Driver {
           page => {
             // Default to creating the test images at the devices pixel ratio,
             // unless the test explicitly specifies an output scale.
-            const outputScale = task.outputScale || window.devicePixelRatio;
+            const outputScale = task.outputScale || OutputScale.pixelRatio;
             let viewport = page.getViewport({
               scale: PixelsPerInch.PDF_TO_CSS_UNITS,
             });

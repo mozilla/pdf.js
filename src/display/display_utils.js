@@ -620,7 +620,7 @@ function setLayerDimensions(
  */
 class OutputScale {
   constructor() {
-    const pixelRatio = window.devicePixelRatio || 1;
+    const { pixelRatio } = OutputScale;
 
     /**
      * @type {number} Horizontal scale.
@@ -672,6 +672,10 @@ class OutputScale {
       return true;
     }
     return false;
+  }
+
+  static get pixelRatio() {
+    return globalThis.devicePixelRatio || 1;
   }
 }
 
