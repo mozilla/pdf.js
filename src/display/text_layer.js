@@ -23,7 +23,7 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
-import { setLayerDimensions } from "./display_utils.js";
+import { OutputScale, setLayerDimensions } from "./display_utils.js";
 
 /**
  * @typedef {Object} TextLayerParameters
@@ -115,7 +115,7 @@ class TextLayer {
     }
     this.#container = this.#rootContainer = container;
 
-    this.#scale = viewport.scale * (globalThis.devicePixelRatio || 1);
+    this.#scale = viewport.scale * OutputScale.pixelRatio;
     this.#rotation = viewport.rotation;
     this.#layoutTextParams = {
       div: null,
@@ -205,7 +205,7 @@ class TextLayer {
    * @returns {undefined}
    */
   update({ viewport, onBefore = null }) {
-    const scale = viewport.scale * (globalThis.devicePixelRatio || 1);
+    const scale = viewport.scale * OutputScale.pixelRatio;
     const rotation = viewport.rotation;
 
     if (rotation !== this.#rotation) {

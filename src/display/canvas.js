@@ -30,6 +30,7 @@ import {
 import {
   getCurrentTransform,
   getCurrentTransformInverse,
+  OutputScale,
   PixelsPerInch,
 } from "./display_utils.js";
 import {
@@ -811,7 +812,7 @@ function getImageSmoothingEnabled(transform, interpolate) {
   scale[0] = Math.fround(scale[0]);
   scale[1] = Math.fround(scale[1]);
   const actualScale = Math.fround(
-    (globalThis.devicePixelRatio || 1) * PixelsPerInch.PDF_TO_CSS_UNITS
+    OutputScale.pixelRatio * PixelsPerInch.PDF_TO_CSS_UNITS
   );
   return scale[0] <= actualScale && scale[1] <= actualScale;
 }
