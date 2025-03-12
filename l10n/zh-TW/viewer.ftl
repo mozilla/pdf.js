@@ -173,8 +173,8 @@ pdfjs-print-progress-message = 正在準備列印文件…
 #   $progress (Number) - percent value
 pdfjs-print-progress-percent = { $progress }%
 pdfjs-print-progress-close-button = 取消
-pdfjs-printing-not-supported = 警告: 此瀏覽器未完整支援列印功能。
-pdfjs-printing-not-ready = 警告: 此 PDF 未完成下載以供列印。
+pdfjs-printing-not-supported = 警告：此瀏覽器未完整支援列印功能。
+pdfjs-printing-not-ready = 警告：此 PDF 未完成下載以供列印。
 
 ## Tooltips and alt text for side panel toolbar buttons
 

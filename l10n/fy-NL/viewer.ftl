@@ -316,6 +316,9 @@ pdfjs-highlight-floating-button1 =
     .title = Markearje
     .aria-label = Markearje
 pdfjs-highlight-floating-button-label = Markearje
+pdfjs-editor-signature-button =
+    .title = Hantekening tafoegje
+pdfjs-editor-signature-button-label = Hantekening tafoegje
 
 ## Remove button for the various kind of editor.
 
@@ -345,6 +348,9 @@ pdfjs-editor-stamp-add-image-button-label = Ofbylding tafoegje
 pdfjs-editor-free-highlight-thickness-input = Tsjokte
 pdfjs-editor-free-highlight-thickness-title =
     .title = Tsjokte wizigje by aksintuearring fan oare items as tekst
+pdfjs-editor-signature-add-signature-button =
+    .title = Nije hantekening tafoegje
+pdfjs-editor-signature-add-signature-button-label = Nije hantekening tafoegje
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Tekstbewurker
@@ -570,12 +576,17 @@ pdfjs-editor-add-signature-error-close-button = Slute
 
 pdfjs-editor-add-signature-cancel-button = Annulearje
 pdfjs-editor-add-signature-add-button = Tafoegje
+pdfjs-editor-edit-signature-update-button = Bywurkje
 
 ## Main menu for adding/removing signatures
 
+pdfjs-editor-delete-signature-button =
+    .title = Hantekening fuortsmite
+pdfjs-editor-delete-signature-button-label = Hantekening fuortsmite
 
 ## Editor toolbar
 
+pdfjs-editor-add-signature-edit-button-label = Beskriuwing bewurkje
 
 ## Edit signature description dialog
 
