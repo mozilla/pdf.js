@@ -316,6 +316,9 @@ pdfjs-highlight-floating-button1 =
     .title = Evidenzie
     .aria-label = Evidenzie
 pdfjs-highlight-floating-button-label = Evidenzie
+pdfjs-editor-signature-button =
+    .title = Zonte firme
+pdfjs-editor-signature-button-label = Zonte firme
 
 ## Remove button for the various kind of editor.
 
@@ -345,6 +348,9 @@ pdfjs-editor-stamp-add-image-button-label = Zonte imagjin
 pdfjs-editor-free-highlight-thickness-input = Spessôr
 pdfjs-editor-free-highlight-thickness-title =
     .title = Modifiche il spessôr de selezion pai elements che no son testuâi
+pdfjs-editor-signature-add-signature-button =
+    .title = Zonte gnove firme
+pdfjs-editor-signature-add-signature-button-label = Zonte gnove firme
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Editôr di test
@@ -570,12 +576,18 @@ pdfjs-editor-add-signature-error-close-button = Siere
 
 pdfjs-editor-add-signature-cancel-button = Anule
 pdfjs-editor-add-signature-add-button = Zonte
+pdfjs-editor-edit-signature-update-button = Inzorne
 
 ## Main menu for adding/removing signatures
 
+pdfjs-editor-delete-signature-button =
+    .title = Gjave firme
+pdfjs-editor-delete-signature-button-label = Gjave firme
 
 ## Editor toolbar
 
+pdfjs-editor-add-signature-edit-button-label = Modifiche descrizion
 
 ## Edit signature description dialog
 
+pdfjs-editor-edit-signature-dialog-title = Modifiche descrizion

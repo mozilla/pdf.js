@@ -525,6 +525,7 @@ pdfjs-editor-undo-bar-close-button-label = Kapat
 
 ## Add a signature dialog
 
+pdfjs-editor-add-signature-dialog-label = Bu pencereden PDF belgesine eklemek üzere imza oluşturabilirsiniz. Adınızı düzenleyebilir (adınız alt metin olarak da kullanılır) ve isterseniz ileride tekrar kullanmak üzere imzayı kaydedebilirsiniz.
 pdfjs-editor-add-signature-dialog-title = İmza ekle
 
 ## Tab names
