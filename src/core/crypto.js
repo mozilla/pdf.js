@@ -632,13 +632,26 @@ class AES256Cipher extends AESBaseCipher {
   }
 }
 
-class PDF17 {
+class PDFBase {
+  constructor() {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === PDFBase
+    ) {
+      unreachable("Cannot initialize PDFBase.");
+    }
+  }
+
+  _hash(password, input, userBytes) {
+    unreachable("Abstract method `_hash` called");
+  }
+
   checkOwnerPassword(password, ownerValidationSalt, userBytes, ownerPassword) {
     const hashData = new Uint8Array(password.length + 56);
     hashData.set(password, 0);
     hashData.set(ownerValidationSalt, password.length);
     hashData.set(userBytes, password.length + ownerValidationSalt.length);
-    const result = calculateSHA256(hashData, 0, hashData.length);
+    const result = this._hash(password, hashData, userBytes);
     return isArrayEqual(result, ownerPassword);
   }
 
@@ -646,7 +659,7 @@ class PDF17 {
     const hashData = new Uint8Array(password.length + 8);
     hashData.set(password, 0);
     hashData.set(userValidationSalt, password.length);
-    const result = calculateSHA256(hashData, 0, hashData.length);
+    const result = this._hash(password, hashData, []);
     return isArrayEqual(result, userPassword);
   }
 
@@ -655,7 +668,7 @@ class PDF17 {
     hashData.set(password, 0);
     hashData.set(ownerKeySalt, password.length);
     hashData.set(userBytes, password.length + ownerKeySalt.length);
-    const key = calculateSHA256(hashData, 0, hashData.length);
+    const key = this._hash(password, hashData, userBytes);
     const cipher = new AES256Cipher(key);
     return cipher.decryptBlock(ownerEncryption, false, new Uint8Array(16));
   }
@@ -665,14 +678,20 @@ class PDF17 {
     hashData.set(password, 0);
     hashData.set(userKeySalt, password.length);
     // `key` is the decryption key for the UE string.
-    const key = calculateSHA256(hashData, 0, hashData.length);
+    const key = this._hash(password, hashData, []);
     const cipher = new AES256Cipher(key);
     return cipher.decryptBlock(userEncryption, false, new Uint8Array(16));
   }
 }
 
-class PDF20 {
-  #hash(password, input, userBytes) {
+class PDF17 extends PDFBase {
+  _hash(password, input, userBytes) {
+    return calculateSHA256(input, 0, input.length);
+  }
+}
+
+class PDF20 extends PDFBase {
+  _hash(password, input, userBytes) {
     // This refers to Algorithm 2.B as defined in ISO 32000-2.
     let k = calculateSHA256(input, 0, input.length).subarray(0, 32);
     let e = [0];
@@ -712,43 +731,6 @@ class PDF20 {
       i++;
     }
     return k.subarray(0, 32);
-  }
-
-  checkOwnerPassword(password, ownerValidationSalt, userBytes, ownerPassword) {
-    const hashData = new Uint8Array(password.length + 56);
-    hashData.set(password, 0);
-    hashData.set(ownerValidationSalt, password.length);
-    hashData.set(userBytes, password.length + ownerValidationSalt.length);
-    const result = this.#hash(password, hashData, userBytes);
-    return isArrayEqual(result, ownerPassword);
-  }
-
-  checkUserPassword(password, userValidationSalt, userPassword) {
-    const hashData = new Uint8Array(password.length + 8);
-    hashData.set(password, 0);
-    hashData.set(userValidationSalt, password.length);
-    const result = this.#hash(password, hashData, []);
-    return isArrayEqual(result, userPassword);
-  }
-
-  getOwnerKey(password, ownerKeySalt, userBytes, ownerEncryption) {
-    const hashData = new Uint8Array(password.length + 56);
-    hashData.set(password, 0);
-    hashData.set(ownerKeySalt, password.length);
-    hashData.set(userBytes, password.length + ownerKeySalt.length);
-    const key = this.#hash(password, hashData, userBytes);
-    const cipher = new AES256Cipher(key);
-    return cipher.decryptBlock(ownerEncryption, false, new Uint8Array(16));
-  }
-
-  getUserKey(password, userKeySalt, userEncryption) {
-    const hashData = new Uint8Array(password.length + 8);
-    hashData.set(password, 0);
-    hashData.set(userKeySalt, password.length);
-    // `key` is the decryption key for the UE string.
-    const key = this.#hash(password, hashData, []);
-    const cipher = new AES256Cipher(key);
-    return cipher.decryptBlock(userEncryption, false, new Uint8Array(16));
   }
 }
 
