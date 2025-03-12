@@ -1142,13 +1142,17 @@ class AnnotationEditor {
    * @returns {HTMLDivElement | null}
    */
   render() {
-    this.div = document.createElement("div");
-    this.div.setAttribute("data-editor-rotation", (360 - this.rotation) % 360);
-    this.div.className = this.name;
-    this.div.setAttribute("id", this.id);
-    this.div.tabIndex = this.#disabled ? -1 : 0;
+    const div = (this.div = document.createElement("div"));
+    div.setAttribute("data-editor-rotation", (360 - this.rotation) % 360);
+    div.className = this.name;
+    div.setAttribute("id", this.id);
+    div.tabIndex = this.#disabled ? -1 : 0;
+    div.setAttribute("role", "application");
+    if (this.defaultL10nId) {
+      div.setAttribute("data-l10n-id", this.defaultL10nId);
+    }
     if (!this._isVisible) {
-      this.div.classList.add("hidden");
+      div.classList.add("hidden");
     }
 
     this.setInForeground();
@@ -1156,23 +1160,22 @@ class AnnotationEditor {
 
     const [parentWidth, parentHeight] = this.parentDimensions;
     if (this.parentRotation % 180 !== 0) {
-      this.div.style.maxWidth = `${((100 * parentHeight) / parentWidth).toFixed(
+      div.style.maxWidth = `${((100 * parentHeight) / parentWidth).toFixed(
         2
       )}%`;
-      this.div.style.maxHeight = `${(
-        (100 * parentWidth) /
-        parentHeight
-      ).toFixed(2)}%`;
+      div.style.maxHeight = `${((100 * parentWidth) / parentHeight).toFixed(
+        2
+      )}%`;
     }
 
     const [tx, ty] = this.getInitialTranslation();
     this.translate(tx, ty);
 
-    bindEvents(this, this.div, ["pointerdown"]);
+    bindEvents(this, div, ["keydown", "pointerdown"]);
 
     if (this.isResizable && this._uiManager._supportsPinchToZoom) {
       this.#touchManager ||= new TouchManager({
-        container: this.div,
+        container: div,
         isPinchingDisabled: () => !this.isSelected,
         onPinchStart: this.#touchPinchStartCallback.bind(this),
         onPinching: this.#touchPinchCallback.bind(this),
@@ -1183,7 +1186,7 @@ class AnnotationEditor {
 
     this._uiManager._editorUndoBar?.hide();
 
-    return this.div;
+    return div;
   }
 
   #touchPinchStartCallback() {
@@ -1692,7 +1695,6 @@ class AnnotationEditor {
     if (this.isResizable) {
       this.#createResizers();
       this.#resizersDiv.classList.remove("hidden");
-      bindEvents(this, this.div, ["keydown"]);
     }
   }
 
@@ -1892,8 +1894,8 @@ class AnnotationEditor {
   /**
    * @returns {HTMLElement | null} the element requiring an alt text.
    */
-  getImageForAltText() {
-    return null;
+  getElementForAltText() {
+    return this.div;
   }
 
   /**

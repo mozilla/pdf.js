@@ -361,9 +361,7 @@ describe("Stamp Editor", () => {
         await page.click(saveButtonSelector);
 
         // Check that the canvas has an aria-describedby attribute.
-        await page.waitForSelector(
-          `${editorSelector} canvas[aria-describedby]`
-        );
+        await page.waitForSelector(`${editorSelector}[aria-describedby]`);
 
         // Wait for the alt-text button to have the correct icon.
         await page.waitForSelector(`${buttonSelector}.done`);
