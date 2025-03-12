@@ -933,9 +933,14 @@ class Lexer {
     if (ch < /* '0' = */ 0x30 || ch > /* '9' = */ 0x39) {
       const msg = `Invalid number: ${String.fromCharCode(ch)} (charCode ${ch})`;
 
-      if (isWhiteSpace(ch) || ch === /* EOF = */ -1) {
+      if (
+        isWhiteSpace(ch) ||
+        /* '(' = */ ch === 0x28 ||
+        /* '<' = */ ch === 0x3c ||
+        ch === /* EOF = */ -1
+      ) {
         // This is consistent with Adobe Reader (fixes issue9252.pdf,
-        // issue15604.pdf, bug1753983.pdf).
+        // issue15604.pdf, bug1753983.pdf, bug1953099.pdf).
         info(`Lexer.getNumber - "${msg}".`);
         return 0;
       }
