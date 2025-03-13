@@ -373,7 +373,7 @@ pdfjs-editor-signature-add-signature-button-label = Add new signature
 
 # Used on the button to use an already saved signature.
 # Variables:
-#   description (String) - a string describing/labeling the signature.
+#   $description (String) - a string describing/labeling the signature.
 pdfjs-editor-add-saved-signature-button =
     .title = Saved signature: { $description }
 

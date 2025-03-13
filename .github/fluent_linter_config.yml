@@ -25,3 +25,5 @@ CO01:
     exclusions:
         files: []
         messages: []
+VC:
+    disabled: false
