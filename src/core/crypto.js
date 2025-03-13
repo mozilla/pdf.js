@@ -916,23 +916,15 @@ class CipherTransformFactory {
         cipher = new ARCFourCipher(derivedKey);
         checkData = cipher.encryptBlock(checkData);
       }
-      for (j = 0, n = checkData.length; j < n; ++j) {
-        if (userPassword[j] !== checkData[j]) {
-          return null;
-        }
-      }
     } else {
       cipher = new ARCFourCipher(encryptionKey);
       checkData = cipher.encryptBlock(
         CipherTransformFactory._defaultPasswordBytes
       );
-      for (j = 0, n = checkData.length; j < n; ++j) {
-        if (userPassword[j] !== checkData[j]) {
-          return null;
-        }
-      }
     }
-    return encryptionKey;
+    return checkData.every((data, k) => userPassword[k] === data)
+      ? encryptionKey
+      : null;
   }
 
   #decodeUserPassword(password, ownerPassword, revision, keyLength) {
@@ -1133,12 +1125,13 @@ class CipherTransformFactory {
         perms
       );
     }
-    if (!encryptionKey && !password) {
-      throw new PasswordException(
-        "No password given",
-        PasswordResponses.NEED_PASSWORD
-      );
-    } else if (!encryptionKey && password) {
+    if (!encryptionKey) {
+      if (!password) {
+        throw new PasswordException(
+          "No password given",
+          PasswordResponses.NEED_PASSWORD
+        );
+      }
       // Attempting use the password as an owner password
       const decodedPassword = this.#decodeUserPassword(
         passwordBytes,
