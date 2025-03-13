@@ -916,23 +916,15 @@ class CipherTransformFactory {
         cipher = new ARCFourCipher(derivedKey);
         checkData = cipher.encryptBlock(checkData);
       }
-      for (j = 0, n = checkData.length; j < n; ++j) {
-        if (userPassword[j] !== checkData[j]) {
-          return null;
-        }
-      }
     } else {
       cipher = new ARCFourCipher(encryptionKey);
       checkData = cipher.encryptBlock(
         CipherTransformFactory._defaultPasswordBytes
       );
-      for (j = 0, n = checkData.length; j < n; ++j) {
-        if (userPassword[j] !== checkData[j]) {
-          return null;
-        }
-      }
     }
-    return encryptionKey;
+    return checkData.every((data, k) => userPassword[k] === data)
+      ? encryptionKey
+      : null;
   }
 
   #decodeUserPassword(password, ownerPassword, revision, keyLength) {
