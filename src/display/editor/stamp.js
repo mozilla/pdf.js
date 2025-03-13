@@ -56,6 +56,7 @@ class StampEditor extends AnnotationEditor {
     super({ ...params, name: "stampEditor" });
     this.#bitmapUrl = params.bitmapUrl;
     this.#bitmapFile = params.bitmapFile;
+    this.defaultL10nId = "pdfjs-editor-stamp-editor";
   }
 
   /** @inheritdoc */
@@ -353,7 +354,6 @@ class StampEditor extends AnnotationEditor {
 
     super.render();
     this.div.hidden = true;
-    this.div.setAttribute("role", "figure");
 
     this.addAltTextButton();
 
@@ -474,7 +474,7 @@ class StampEditor extends AnnotationEditor {
       action: "inserted_image",
     });
     if (this.#bitmapFileName) {
-      canvas.setAttribute("aria-label", this.#bitmapFileName);
+      this.div.setAttribute("aria-description", this.#bitmapFileName);
     }
   }
 
@@ -684,11 +684,6 @@ class StampEditor extends AnnotationEditor {
       scaledWidth,
       scaledHeight
     );
-  }
-
-  /** @inheritdoc */
-  getImageForAltText() {
-    return this.#canvas;
   }
 
   #serializeBitmap(toUrl) {

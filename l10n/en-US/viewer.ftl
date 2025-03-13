@@ -324,6 +324,19 @@ pdfjs-editor-signature-button =
     .title = Add signature
 pdfjs-editor-signature-button-label = Add signature
 
+## Default editor aria labels
+
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = Highlight editor
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = Drawing editor
+pdfjs-editor-signature-editor =
+    .aria-label = Signature editor
+pdfjs-editor-stamp-editor =
+    .aria-label = Image editor
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =
@@ -360,10 +373,6 @@ pdfjs-editor-signature-add-signature-button-label = Add new signature
 pdfjs-free-text2 =
     .aria-label = Text Editor
     .default-content = Start typing…
-pdfjs-ink =
-    .aria-label = Draw Editor
-pdfjs-ink-canvas =
-    .aria-label = User-created image
 
 ## Alt-text dialog
 
