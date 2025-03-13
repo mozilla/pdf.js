@@ -992,7 +992,7 @@
     "password": "ELXRTQWS",
     "md5": "db2fedbd36d6fa27d4e52f9bd2d96b8c",
     "rounds": 1,
-    "type": "load"
+    "type": "eq"
   },
   {
     "id": "issue5334",
@@ -5961,7 +5961,7 @@
     "md5": "b58adce5dbb08936ddb0d904f0da8716",
     "rounds": 1,
     "link": false,
-    "type": "load",
+    "type": "eq",
     "password": "abc"
   },
   {
@@ -5970,7 +5970,7 @@
     "md5": "73a8091d0ab2a47af5ca45047f04da99",
     "rounds": 1,
     "link": false,
-    "type": "load",
+    "type": "eq",
     "password": "\u00E6\u00F8\u00E5",
     "about": "The password (æøå) is UTF8 encoded."
   },
