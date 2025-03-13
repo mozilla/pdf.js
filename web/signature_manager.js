@@ -708,11 +708,17 @@ class SignatureManager {
     button.append(svg);
 
     const span = document.createElement("span");
+    span.ariaHidden = true;
     button.append(span);
 
     button.classList.add("toolbarAddSignatureButton");
     button.type = "button";
-    button.title = span.textContent = description;
+    span.textContent = description;
+    button.setAttribute(
+      "data-l10n-id",
+      "pdfjs-editor-add-saved-signature-button"
+    );
+    button.setAttribute("data-l10n-args", JSON.stringify({ description }));
     button.tabIndex = 0;
 
     const path = svgFactory.createElement("path");
@@ -729,7 +735,7 @@ class SignatureManager {
     deleteButton.classList.add("toolbarButton", "deleteButton");
     deleteButton.setAttribute(
       "data-l10n-id",
-      "pdfjs-editor-delete-signature-button"
+      "pdfjs-editor-delete-signature-button1"
     );
     deleteButton.type = "button";
     deleteButton.tabIndex = 0;
@@ -749,7 +755,7 @@ class SignatureManager {
     deleteButton.append(deleteSpan);
     deleteSpan.setAttribute(
       "data-l10n-id",
-      "pdfjs-editor-delete-signature-button-label"
+      "pdfjs-editor-delete-signature-button-label1"
     );
 
     this.#addSignatureToolbarButton.before(div);
