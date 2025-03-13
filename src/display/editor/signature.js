@@ -79,6 +79,7 @@ class SignatureEditor extends DrawingEditor {
     this._willKeepAspectRatio = true;
     this.#signatureData = params.signatureData || null;
     this.#description = null;
+    this.defaultL10nId = "pdfjs-editor-signature-editor";
   }
 
   /** @inheritdoc */
@@ -156,7 +157,6 @@ class SignatureEditor extends DrawingEditor {
     }
 
     super.render();
-    this.div.setAttribute("role", "figure");
 
     if (this._drawId === null) {
       if (this.#signatureData) {
@@ -259,7 +259,7 @@ class SignatureEditor extends DrawingEditor {
     const { outline } = (this.#signatureData = data);
     this.#isExtracted = outline instanceof ContourDrawOutline;
     this.#description = description;
-    this.div.setAttribute("aria-label", description);
+    this.div.setAttribute("aria-description", description);
     let drawingOptions;
     if (this.#isExtracted) {
       drawingOptions = SignatureEditor.getDefaultDrawingOptions();
