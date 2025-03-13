@@ -48,7 +48,6 @@
 
 .signatureDialog {
   --primary-color: var(--text-primary-color);
-  --description-input-color: var(--primary-color);
   --border-color: #8f8f9d;
   --open-link-fg: var(--link-fg-color);
   --open-link-hover-fg: var(--link-hover-fg-color);
