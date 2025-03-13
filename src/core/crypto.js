@@ -1125,12 +1125,13 @@ class CipherTransformFactory {
         perms
       );
     }
-    if (!encryptionKey && !password) {
-      throw new PasswordException(
-        "No password given",
-        PasswordResponses.NEED_PASSWORD
-      );
-    } else if (!encryptionKey && password) {
+    if (!encryptionKey) {
+      if (!password) {
+        throw new PasswordException(
+          "No password given",
+          PasswordResponses.NEED_PASSWORD
+        );
+      }
       // Attempting use the password as an owner password
       const decodedPassword = this.#decodeUserPassword(
         passwordBytes,
