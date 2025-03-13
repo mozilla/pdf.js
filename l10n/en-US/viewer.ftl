@@ -365,9 +365,17 @@ pdfjs-editor-stamp-add-image-button-label = Add image
 pdfjs-editor-free-highlight-thickness-input = Thickness
 pdfjs-editor-free-highlight-thickness-title =
     .title = Change thickness when highlighting items other than text
+pdfjs-editor-add-signature-container =
+    .aria-label = Signature controls and saved signatures
 pdfjs-editor-signature-add-signature-button =
     .title = Add new signature
 pdfjs-editor-signature-add-signature-button-label = Add new signature
+
+# Used on the button to use an already saved signature.
+# Variables:
+#   description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = Saved signature: { $description }
 
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
@@ -603,9 +611,9 @@ pdfjs-editor-add-signature-add-button = Add
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = Remove signature
-pdfjs-editor-delete-signature-button-label = Remove signature
+pdfjs-editor-delete-signature-button1 =
+    .title = Remove saved signature
+pdfjs-editor-delete-signature-button-label1 = Remove saved signature
 
 ## Editor toolbar
 
