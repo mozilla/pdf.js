@@ -395,10 +395,9 @@ class MeshStreamReader {
   }
 
   readCoordinate() {
-    const bitsPerCoordinate = this.context.bitsPerCoordinate;
+    const { bitsPerCoordinate, decode } = this.context;
     const xi = this.readBits(bitsPerCoordinate);
     const yi = this.readBits(bitsPerCoordinate);
-    const decode = this.context.decode;
     const scale =
       bitsPerCoordinate < 32
         ? 1 / ((1 << bitsPerCoordinate) - 1)
@@ -410,23 +409,20 @@ class MeshStreamReader {
   }
 
   readComponents() {
-    const numComps = this.context.numComps;
-    const bitsPerComponent = this.context.bitsPerComponent;
+    const { bitsPerComponent, colorFn, colorSpace, decode, numComps } =
+      this.context;
     const scale =
       bitsPerComponent < 32
         ? 1 / ((1 << bitsPerComponent) - 1)
         : 2.3283064365386963e-10; // 2 ^ -32
-    const decode = this.context.decode;
     const components = this.tmpCompsBuf;
     for (let i = 0, j = 4; i < numComps; i++, j += 2) {
       const ci = this.readBits(bitsPerComponent);
       components[i] = ci * scale * (decode[j + 1] - decode[j]) + decode[j];
     }
     const color = this.tmpCsCompsBuf;
-    if (this.context.colorFn) {
-      this.context.colorFn(components, 0, color, 0);
-    }
-    return this.context.colorSpace.getRgb(color, 0);
+    colorFn?.(components, 0, color, 0);
+    return colorSpace.getRgb(color, 0);
   }
 }
 
