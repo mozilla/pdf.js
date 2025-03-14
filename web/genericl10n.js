@@ -121,7 +121,10 @@ class GenericL10n extends L10n {
       const { href } = document.querySelector(`link[type="application/l10n"]`);
       const paths = await fetchData(href, /* type = */ "json");
 
-      return { baseURL: href.replace(/[^/]*$/, "") || "./", paths };
+      return {
+        baseURL: href.substring(0, href.lastIndexOf("/") + 1) || "./",
+        paths,
+      };
     } catch {}
     return { baseURL: "./", paths: Object.create(null) };
   }
