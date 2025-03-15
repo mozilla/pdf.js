@@ -12,7 +12,7 @@
     "@napi-rs/canvas": "^0.1.68",
     "@types/node": "^22.13.10",
     "autoprefixer": "^10.4.21",
-    "babel-loader": "^9.2.1",
+    "babel-loader": "^10.0.0",
     "caniuse-lite": "^1.0.30001704",
     "core-js": "^3.41.0",
     "eslint": "^9.22.0",
