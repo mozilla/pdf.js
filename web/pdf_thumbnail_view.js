@@ -31,6 +31,13 @@ const DRAW_UPSCALE_FACTOR = 2; // See comment in `PDFThumbnailView.draw` below.
 const MAX_NUM_SCALING_STEPS = 3;
 const THUMBNAIL_WIDTH = 98; // px
 
+function zeroCanvas(c) {
+  // Zeroing the width and height causes Firefox to release graphics
+  // resources immediately, which can greatly reduce memory consumption.
+  c.width = 0;
+  c.height = 0;
+}
+
 /**
  * @typedef {Object} PDFThumbnailViewOptions
  * @property {HTMLDivElement} container - The viewer element.
@@ -74,12 +81,8 @@ class TempImageFactory {
   }
 
   static destroyCanvas() {
-    const tempCanvas = this.#tempCanvas;
-    if (tempCanvas) {
-      // Zeroing the width and height causes Firefox to release graphics
-      // resources immediately, which can greatly reduce memory consumption.
-      tempCanvas.width = 0;
-      tempCanvas.height = 0;
+    if (this.#tempCanvas) {
+      zeroCanvas(this.#tempCanvas);
     }
     this.#tempCanvas = null;
   }
@@ -255,10 +258,7 @@ class PDFThumbnailView {
     this.div.setAttribute("data-loaded", true);
     this._placeholderImg.replaceWith(image);
 
-    // Zeroing the width and height causes Firefox to release graphics
-    // resources immediately, which can greatly reduce memory consumption.
-    reducedCanvas.width = 0;
-    reducedCanvas.height = 0;
+    zeroCanvas(reducedCanvas);
   }
 
   async #finishRenderTask(renderTask, canvas, error = null) {
@@ -331,10 +331,7 @@ class PDFThumbnailView {
       error => this.#finishRenderTask(renderTask, canvas, error)
     );
     resultPromise.finally(() => {
-      // Zeroing the width and height causes Firefox to release graphics
-      // resources immediately, which can greatly reduce memory consumption.
-      canvas.width = 0;
-      canvas.height = 0;
+      zeroCanvas(canvas);
 
       this.eventBus.dispatch("thumbnailrendered", {
         source: this,
