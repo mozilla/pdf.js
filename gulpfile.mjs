@@ -97,7 +97,7 @@ const AUTOPREFIXER_CONFIG = {
 const BABEL_TARGETS = ENV_TARGETS.join(", ");
 
 const BABEL_PRESET_ENV_OPTS = Object.freeze({
-  corejs: "3.40.0",
+  corejs: "3.41.0",
   exclude: ["web.structured-clone"],
   shippedProposals: true,
   useBuiltIns: "usage",
@@ -2266,6 +2266,8 @@ gulp.task("metalsmith", async function () {
       .use(
         layouts({
           directory: "docs/templates",
+          pattern: "**",
+          transform: "nunjucks",
         })
       )
       .use(relative())
