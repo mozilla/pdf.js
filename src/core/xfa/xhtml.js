@@ -191,10 +191,9 @@ function checkStyle(node) {
 
   // Remove any non-allowed keys.
   return node.style
-    .trim()
-    .split(/\s*;\s*/)
-    .filter(s => !!s)
-    .map(s => s.split(/\s*:\s*/, 2))
+    .split(";")
+    .filter(s => !!s.trim())
+    .map(s => s.split(":", 2).map(t => t.trim()))
     .filter(([key, value]) => {
       if (key === "font-family") {
         node[$globalData].usedTypefaces.add(value);

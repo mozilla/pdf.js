@@ -106,9 +106,8 @@ function getRatio(data) {
     return { num: 1, den: 1 };
   }
   const ratio = data
-    .trim()
-    .split(/\s*:\s*/)
-    .map(x => parseFloat(x))
+    .split(":", 2)
+    .map(x => parseFloat(x.trim()))
     .filter(x => !isNaN(x));
   if (ratio.length === 1) {
     ratio.push(1);
@@ -141,8 +140,7 @@ function getColor(data, def = [0, 0, 0]) {
     return { r, g, b };
   }
   const color = data
-    .trim()
-    .split(/\s*,\s*/)
+    .split(",", 3)
     .map(c => MathClamp(parseInt(c.trim(), 10), 0, 255))
     .map(c => (isNaN(c) ? 0 : c));
 
@@ -159,10 +157,8 @@ function getBBox(data) {
   if (!data) {
     return { x: def, y: def, width: def, height: def };
   }
-  const bbox = data
-    .trim()
-    .split(/\s*,\s*/)
-    .map(m => getMeasurement(m, "-1"));
+  const bbox = data.split(",", 4).map(m => getMeasurement(m.trim(), "-1"));
+
   if (bbox.length < 4 || bbox[2] < 0 || bbox[3] < 0) {
     return { x: def, y: def, width: def, height: def };
   }
