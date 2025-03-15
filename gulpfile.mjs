@@ -2266,6 +2266,8 @@ gulp.task("metalsmith", async function () {
       .use(
         layouts({
           directory: "docs/templates",
+          pattern: "**",
+          transform: "nunjucks",
         })
       )
       .use(relative())
