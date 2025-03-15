@@ -366,8 +366,8 @@ class PDFThumbnailView {
   }
 
   #getReducedImageDims(canvas) {
-    let reducedWidth = canvas.width << MAX_NUM_SCALING_STEPS,
-      reducedHeight = canvas.height << MAX_NUM_SCALING_STEPS;
+    const width = canvas.width << MAX_NUM_SCALING_STEPS,
+      height = canvas.height << MAX_NUM_SCALING_STEPS;
 
     const outputScale = new OutputScale();
     // Here we're not actually "rendering" to the canvas and the `OutputScale`
@@ -375,15 +375,12 @@ class PDFThumbnailView {
     outputScale.sx = outputScale.sy = 1;
 
     outputScale.limitCanvas(
-      reducedWidth,
-      reducedHeight,
+      width,
+      height,
       this.maxCanvasPixels,
       this.maxCanvasDim
     );
-    reducedWidth = (reducedWidth * outputScale.sx) | 0;
-    reducedHeight = (reducedHeight * outputScale.sy) | 0;
-
-    return [reducedWidth, reducedHeight];
+    return [(width * outputScale.sx) | 0, (height * outputScale.sy) | 0];
   }
 
   #reduceImage(img) {
