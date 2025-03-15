@@ -261,31 +261,12 @@ class PDFThumbnailView {
     zeroCanvas(reducedCanvas);
   }
 
-  async #finishRenderTask(renderTask, canvas, error = null) {
-    // The renderTask may have been replaced by a new one, so only remove
-    // the reference to the renderTask if it matches the one that is
-    // triggering this callback.
-    if (renderTask === this.renderTask) {
-      this.renderTask = null;
-    }
-
-    if (error instanceof RenderingCancelledException) {
-      return;
-    }
-    this.renderingState = RenderingStates.FINISHED;
-    this.#convertCanvasToImage(canvas);
-
-    if (error) {
-      throw error;
-    }
-  }
-
   async draw() {
     if (this.renderingState !== RenderingStates.INITIAL) {
       console.error("Must be in new state before drawing");
-      return undefined;
+      return;
     }
-    const { pdfPage } = this;
+    const { pageColors, pdfPage } = this;
 
     if (!pdfPage) {
       this.renderingState = RenderingStates.FINISHED;
@@ -321,26 +302,42 @@ class PDFThumbnailView {
       transform,
       viewport: drawViewport,
       optionalContentConfigPromise: this._optionalContentConfigPromise,
-      pageColors: this.pageColors,
+      pageColors,
     };
     const renderTask = (this.renderTask = pdfPage.render(renderContext));
     renderTask.onContinue = renderContinueCallback;
 
-    const resultPromise = renderTask.promise.then(
-      () => this.#finishRenderTask(renderTask, canvas),
-      error => this.#finishRenderTask(renderTask, canvas, error)
-    );
-    resultPromise.finally(() => {
-      zeroCanvas(canvas);
+    let error = null;
+    try {
+      await renderTask.promise;
+    } catch (e) {
+      if (e instanceof RenderingCancelledException) {
+        zeroCanvas(canvas);
+        return;
+      }
+      error = e;
+    } finally {
+      // The renderTask may have been replaced by a new one, so only remove
+      // the reference to the renderTask if it matches the one that is
+      // triggering this callback.
+      if (renderTask === this.renderTask) {
+        this.renderTask = null;
+      }
+    }
+    this.renderingState = RenderingStates.FINISHED;
 
-      this.eventBus.dispatch("thumbnailrendered", {
-        source: this,
-        pageNumber: this.id,
-        pdfPage: this.pdfPage,
-      });
+    this.#convertCanvasToImage(canvas);
+    zeroCanvas(canvas);
+
+    this.eventBus.dispatch("thumbnailrendered", {
+      source: this,
+      pageNumber: this.id,
+      pdfPage,
     });
 
-    return resultPromise;
+    if (error) {
+      throw error;
+    }
   }
 
   setImage(pageView) {
