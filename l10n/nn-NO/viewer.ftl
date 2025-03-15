@@ -532,6 +532,8 @@ pdfjs-editor-edit-signature-update-button = Oppdater
 
 ## Editor toolbar
 
+pdfjs-editor-add-signature-edit-button-label = Rediger skildring
 
 ## Edit signature description dialog
 
+pdfjs-editor-edit-signature-dialog-title = Rediger skildring
