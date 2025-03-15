@@ -1153,7 +1153,9 @@ const PDFViewerApplication = {
   async download() {
     let data;
     try {
-      data = await this.pdfDocument.getData();
+      data = await (this.pdfDocument
+        ? this.pdfDocument.getData()
+        : this.pdfLoadingTask.getData());
     } catch {
       // When the PDF document isn't ready, simply download using the URL.
     }
