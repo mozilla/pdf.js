@@ -468,6 +468,21 @@ class TilingPattern {
     this.baseTransform = baseTransform;
   }
 
+  canSkipPatternCanvas([width, height]) {
+    return (
+      width <= this.xstep + 1e-6 &&
+      height <= this.ystep + 1e-6 &&
+      Util.isIdentityMatrix(this.matrix)
+    );
+  }
+
+  drawPattern(owner) {
+    owner.save();
+    owner.ctx.clip();
+    owner.executeOperatorList(this.operatorList);
+    owner.restore();
+  }
+
   createPatternCanvas(owner) {
     const {
       bbox,
