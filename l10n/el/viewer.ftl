@@ -293,7 +293,7 @@ pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", tim
 ## Password
 
 pdfjs-password-label = Εισαγάγετε τον κωδικό πρόσβασης για να ανοίξετε αυτό το αρχείο PDF.
-pdfjs-password-invalid = Μη έγκυρος κωδικός πρόσβασης. Παρακαλώ δοκιμάστε ξανά.
+pdfjs-password-invalid = Μη έγκυρος κωδικός πρόσβασης. Δοκιμάστε ξανά.
 pdfjs-password-ok-button = OK
 pdfjs-password-cancel-button = Ακύρωση
 pdfjs-web-fonts-disabled = Οι γραμματοσειρές ιστού είναι ανενεργές: δεν είναι δυνατή η χρήση των ενσωματωμένων γραμματοσειρών PDF.
