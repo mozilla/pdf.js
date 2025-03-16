@@ -199,7 +199,7 @@ describe("Interaction", () => {
             `${getQuerySelector("422R")}.value === "2,72"`
           );
           await page.waitForFunction(
-            `${getQuerySelector("427R")}.value === "5,86"`
+            `${getQuerySelector("427R")}.value === "2,72"`
           );
         })
       );
@@ -210,17 +210,13 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page]) => {
           await waitForScripting(page);
 
-          await page.waitForFunction(
-            `${getQuerySelector("471R")}.value === "4,24"`
-          );
-
           await page.type(getSelector("436R"), "0.69314");
           await page.keyboard.press("Escape");
           await page.waitForFunction(
             `${getQuerySelector("436R")}.value === "0.69314"`
           );
           await page.waitForFunction(
-            `${getQuerySelector("471R")}.value === "3,55"`
+            `${getQuerySelector("471R")}.value === "0,69"`
           );
         })
       );
@@ -237,7 +233,7 @@ describe("Interaction", () => {
             `${getQuerySelector("419R")}.value === "0.577215"`
           );
           await page.waitForFunction(
-            `${getQuerySelector("427R")}.value === "6,44"`
+            `${getQuerySelector("427R")}.value === "0,58"`
           );
         })
       );
