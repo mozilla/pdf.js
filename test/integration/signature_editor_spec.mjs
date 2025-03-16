@@ -339,45 +339,44 @@ describe("Signature Editor", () => {
     });
 
     it("must check copy and paste", async () => {
-      await Promise.all(
-        pages.map(async ([browserName, page]) => {
-          await switchToSignature(page);
-          await page.click("#editorSignatureAddSignature");
+      // Run sequentially to avoid clipboard issues.
+      for (const [browserName, page] of pages) {
+        await switchToSignature(page);
+        await page.click("#editorSignatureAddSignature");
 
-          await page.waitForSelector("#addSignatureDialog", {
-            visible: true,
-          });
-          await page.type("#addSignatureTypeInput", "Hello");
-          await page.waitForSelector(`${addButtonSelector}:not(:disabled)`);
-          await page.click("#addSignatureAddButton");
+        await page.waitForSelector("#addSignatureDialog", {
+          visible: true,
+        });
+        await page.type("#addSignatureTypeInput", "Hello");
+        await page.waitForSelector(`${addButtonSelector}:not(:disabled)`);
+        await page.click("#addSignatureAddButton");
 
-          const editorSelector = getEditorSelector(0);
-          await page.waitForSelector(editorSelector, { visible: true });
-          const originalRect = await getRect(page, editorSelector);
-          const originalDescription = await page.$eval(
-            `${editorSelector} .altText.editDescription`,
-            el => el.title
-          );
+        const editorSelector = getEditorSelector(0);
+        await page.waitForSelector(editorSelector, { visible: true });
+        const originalRect = await getRect(page, editorSelector);
+        const originalDescription = await page.$eval(
+          `${editorSelector} .altText.editDescription`,
+          el => el.title
+        );
 
-          await copy(page);
-          await paste(page);
+        await copy(page);
+        await paste(page);
 
-          const pastedEditorSelector = getEditorSelector(1);
-          await page.waitForSelector(pastedEditorSelector, { visible: true });
-          const pastedRect = await getRect(page, pastedEditorSelector);
-          const pastedDescription = await page.$eval(
-            `${pastedEditorSelector} .altText.editDescription`,
-            el => el.title
-          );
+        const pastedEditorSelector = getEditorSelector(1);
+        await page.waitForSelector(pastedEditorSelector, { visible: true });
+        const pastedRect = await getRect(page, pastedEditorSelector);
+        const pastedDescription = await page.$eval(
+          `${pastedEditorSelector} .altText.editDescription`,
+          el => el.title
+        );
 
-          expect(pastedRect)
-            .withContext(`In ${browserName}`)
-            .not.toEqual(originalRect);
-          expect(pastedDescription)
-            .withContext(`In ${browserName}`)
-            .toEqual(originalDescription);
-        })
-      );
+        expect(pastedRect)
+          .withContext(`In ${browserName}`)
+          .not.toEqual(originalRect);
+        expect(pastedDescription)
+          .withContext(`In ${browserName}`)
+          .toEqual(originalDescription);
+      }
     });
   });
 
