@@ -130,11 +130,15 @@ class IccColorSpace extends ColorSpace {
   static get isUsable() {
     let isUsable = false;
     if (this.#useWasm) {
-      try {
-        this._module = QCMS._module = this.#load();
-        isUsable = !!this._module;
-      } catch (e) {
-        warn(`ICCBased color space: "${e}".`);
+      if (this.#wasmUrl) {
+        try {
+          this._module = QCMS._module = this.#load();
+          isUsable = !!this._module;
+        } catch (e) {
+          warn(`ICCBased color space: "${e}".`);
+        }
+      } else {
+        warn("No ICC color space support due to missing `wasmUrl` API option");
       }
     }
 
@@ -168,6 +172,19 @@ class CmykICCBasedCS extends IccColorSpace {
 
   static setOptions({ iccUrl }) {
     this.#iccUrl = iccUrl;
+  }
+
+  static get isUsable() {
+    let isUsable = false;
+    if (IccColorSpace.isUsable) {
+      if (this.#iccUrl) {
+        isUsable = true;
+      } else {
+        warn("No CMYK ICC profile support due to missing `iccUrl` API option");
+      }
+    }
+
+    return shadow(this, "isUsable", isUsable);
   }
 }
 

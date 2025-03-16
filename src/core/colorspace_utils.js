@@ -289,7 +289,7 @@ class ColorSpaceUtils {
   }
 
   static get cmyk() {
-    if (IccColorSpace.isUsable) {
+    if (CmykICCBasedCS.isUsable) {
       try {
         return shadow(this, "cmyk", new CmykICCBasedCS());
       } catch {
