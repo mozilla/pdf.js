@@ -150,15 +150,12 @@ describe("Interaction", () => {
 
           await page.type(getSelector("416R"), "3.14159");
           await page.click(getSelector("419R"));
-
-          const valueFnStr = `${getQuerySelector("416R")}.value !== "3.14159"`;
-          await page.waitForFunction(valueFnStr);
-
-          const text = await page.$eval(getSelector("416R"), el => el.value);
-          expect(text).withContext(`In ${browserName}`).toEqual("3,14");
-
-          const sum = await page.$eval(getSelector("427R"), el => el.value);
-          expect(sum).withContext(`In ${browserName}`).toEqual("3,14");
+          await page.waitForFunction(
+            `${getQuerySelector("416R")}.value === "3,14"`
+          );
+          await page.waitForFunction(
+            `${getQuerySelector("427R")}.value === "3,14"`
+          );
         })
       );
     });
@@ -170,36 +167,23 @@ describe("Interaction", () => {
 
           await page.type(getSelector("448R"), "61803");
           await page.click(getSelector("419R"));
-
-          const valueOneFnStr = `${getQuerySelector("448R")}.value !== "61803"`;
-          await page.waitForFunction(valueOneFnStr);
-
-          let text = await page.$eval(getSelector("448R"), el => el.value);
-          expect(text).withContext(`In ${browserName}`).toEqual("61.803,00");
+          await page.waitForFunction(
+            `${getQuerySelector("448R")}.value === "61.803,00"`
+          );
 
           await page.click(getSelector("448R"));
-
-          const valueTwoFnStr = `${getQuerySelector(
-            "448R"
-          )}.value !== "61.803,00"`;
-          await page.waitForFunction(valueTwoFnStr);
-
-          text = await page.$eval(getSelector("448R"), el => el.value);
-          expect(text).withContext(`In ${browserName}`).toEqual("61803");
+          await page.waitForFunction(
+            `${getQuerySelector("448R")}.value === "61803"`
+          );
 
           // Clear the textfield
           await clearInput(page, getSelector("448R"));
 
           await page.type(getSelector("448R"), "1.61803");
           await page.click(getSelector("419R"));
-
-          const valueThreeFnStr = `${getQuerySelector(
-            "448R"
-          )}.value !== "1.61803"`;
-          await page.waitForFunction(valueThreeFnStr);
-
-          text = await page.$eval(getSelector("448R"), el => el.value);
-          expect(text).withContext(`In ${browserName}`).toEqual("1,62");
+          await page.waitForFunction(
+            `${getQuerySelector("448R")}.value === "1,62"`
+          );
         })
       );
     });
@@ -209,24 +193,14 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page]) => {
           await waitForScripting(page);
 
-          const prevSum = await page.$eval(getSelector("427R"), el => el.value);
-
           await page.type(getSelector("422R"), "2.7182818");
           await page.keyboard.press("Tab");
-
           await page.waitForFunction(
-            `${getQuerySelector("422R")}.value !== "2.7182818"`
+            `${getQuerySelector("422R")}.value === "2,72"`
           );
-
-          const text = await page.$eval(getSelector("422R"), el => el.value);
-          expect(text).withContext(`In ${browserName}`).toEqual("2,72");
-
           await page.waitForFunction(
-            `${getQuerySelector("427R")}.value !== "${prevSum}"`
+            `${getQuerySelector("427R")}.value === "5,86"`
           );
-
-          const sum = await page.$eval(getSelector("427R"), el => el.value);
-          expect(sum).withContext(`In ${browserName}`).toEqual("5,86");
         })
       );
     });
@@ -236,21 +210,18 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page]) => {
           await waitForScripting(page);
 
-          let sum = await page.$eval(getSelector("471R"), el => el.value);
-          expect(sum).withContext(`In ${browserName}`).toEqual("4,24");
+          await page.waitForFunction(
+            `${getQuerySelector("471R")}.value === "4,24"`
+          );
 
           await page.type(getSelector("436R"), "0.69314");
           await page.keyboard.press("Escape");
-
-          const text = await page.$eval(getSelector("436R"), el => el.value);
-          expect(text).withContext(`In ${browserName}`).toEqual("0.69314");
-
           await page.waitForFunction(
-            `${getQuerySelector("471R")}.value !== "${sum}"`
+            `${getQuerySelector("436R")}.value === "0.69314"`
           );
-
-          sum = await page.$eval(getSelector("471R"), el => el.value);
-          expect(sum).withContext(`In ${browserName}`).toEqual("3,55");
+          await page.waitForFunction(
+            `${getQuerySelector("471R")}.value === "3,55"`
+          );
         })
       );
     });
@@ -260,19 +231,14 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page]) => {
           await waitForScripting(page);
 
-          const prevSum = await page.$eval(getSelector("427R"), el => el.value);
-
           await page.type(getSelector("419R"), "0.577215");
           await page.keyboard.press("Enter");
-          const text = await page.$eval(getSelector("419R"), el => el.value);
-          expect(text).toEqual("0.577215");
-
           await page.waitForFunction(
-            `${getQuerySelector("427R")}.value !== "${prevSum}"`
+            `${getQuerySelector("419R")}.value === "0.577215"`
           );
-
-          const sum = await page.$eval(getSelector("427R"), el => el.value);
-          expect(sum).toEqual("6,44");
+          await page.waitForFunction(
+            `${getQuerySelector("427R")}.value === "6,44"`
+          );
         })
       );
     });
