@@ -2961,6 +2961,15 @@
     "type": "eq"
   },
   {
+    "id": "cmykjpeg_nowasm",
+    "file": "pdfs/cmykjpeg.pdf",
+    "md5": "85d162b48ce98503a382d96f574f70a2",
+    "link": false,
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
     "id": "issue4402_reduced",
     "file": "pdfs/issue4402_reduced.pdf",
     "md5": "6cc7e61a581889eec3ed7402d87161c4",

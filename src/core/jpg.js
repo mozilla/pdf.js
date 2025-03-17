@@ -15,6 +15,7 @@
 
 import { assert, BaseException, warn } from "../shared/util.js";
 import { ColorSpaceUtils } from "./colorspace_utils.js";
+import { DeviceCmykCS } from "./colorspace.js";
 import { grayToRGBA } from "../shared/image_utils.js";
 import { readUint16 } from "./core_utils.js";
 
@@ -1349,6 +1350,13 @@ class JpegImage {
 
   _convertCmykToRgba(data) {
     ColorSpaceUtils.cmyk.getRgbBuffer(data, 0, data.length / 4, data, 0, 8, 1);
+
+    if (ColorSpaceUtils.cmyk instanceof DeviceCmykCS) {
+      // The alpha-component isn't updated by `DeviceCmykCS`, doing it manually.
+      for (let i = 3, ii = data.length; i < ii; i += 4) {
+        data[i] = 255;
+      }
+    }
     return data;
   }
 
