@@ -251,20 +251,20 @@ class Page {
   /**
    * @returns {Promise<BaseStream>}
    */
-  getContentStream() {
-    return this.pdfManager.ensure(this, "content").then(content => {
-      if (content instanceof BaseStream) {
-        return content;
-      }
-      if (Array.isArray(content)) {
-        return new StreamsSequenceStream(
-          content,
-          this._onSubStreamError.bind(this)
-        );
-      }
-      // Replace non-existent page content with empty content.
-      return new NullStream();
-    });
+  async getContentStream() {
+    const content = await this.pdfManager.ensure(this, "content");
+
+    if (content instanceof BaseStream) {
+      return content;
+    }
+    if (Array.isArray(content)) {
+      return new StreamsSequenceStream(
+        content,
+        this._onSubStreamError.bind(this)
+      );
+    }
+    // Replace non-existent page content with empty content.
+    return new NullStream();
   }
 
   get xfaData() {
@@ -375,7 +375,7 @@ class Page {
     }
   }
 
-  save(handler, task, annotationStorage, changes) {
+  async save(handler, task, annotationStorage, changes) {
     const partialEvaluator = new PartialEvaluator({
       xref: this.xref,
       handler,
@@ -392,37 +392,34 @@ class Page {
 
     // Fetch the page's annotations and save the content
     // in case of interactive form fields.
-    return this._parsedAnnotations.then(function (annotations) {
-      const promises = [];
-      for (const annotation of annotations) {
-        promises.push(
-          annotation
-            .save(partialEvaluator, task, annotationStorage, changes)
-            .catch(function (reason) {
-              warn(
-                "save - ignoring annotation data during " +
-                  `"${task.name}" task: "${reason}".`
-              );
-              return null;
-            })
-        );
-      }
+    const annotations = await this._parsedAnnotations;
 
-      return Promise.all(promises);
-    });
+    const promises = [];
+    for (const annotation of annotations) {
+      promises.push(
+        annotation
+          .save(partialEvaluator, task, annotationStorage, changes)
+          .catch(function (reason) {
+            warn(
+              "save - ignoring annotation data during " +
+                `"${task.name}" task: "${reason}".`
+            );
+            return null;
+          })
+      );
+    }
+    return Promise.all(promises);
   }
 
-  loadResources(keys) {
+  async loadResources(keys) {
     // TODO: add async `_getInheritableProperty` and remove this.
-    this.resourcesPromise ||= this.pdfManager.ensure(this, "resources");
+    await (this.resourcesPromise ??= this.pdfManager.ensure(this, "resources"));
 
-    return this.resourcesPromise.then(() => {
-      const objectLoader = new ObjectLoader(this.resources, keys, this.xref);
-      return objectLoader.load();
-    });
+    const objectLoader = new ObjectLoader(this.resources, keys, this.xref);
+    await objectLoader.load();
   }
 
-  getOperatorList({
+  async getOperatorList({
     handler,
     sink,
     task,
@@ -527,7 +524,7 @@ class Page {
     const pageListPromise = Promise.all([
       contentStreamPromise,
       resourcesPromise,
-    ]).then(([contentStream]) => {
+    ]).then(async ([contentStream]) => {
       const opList = new OperatorList(intent, sink);
 
       handler.send("StartRenderPage", {
@@ -539,109 +536,102 @@ class Page {
         cacheKey,
       });
 
-      return partialEvaluator
-        .getOperatorList({
-          stream: contentStream,
-          task,
-          resources: this.resources,
-          operatorList: opList,
-        })
-        .then(() => opList);
+      await partialEvaluator.getOperatorList({
+        stream: contentStream,
+        task,
+        resources: this.resources,
+        operatorList: opList,
+      });
+      return opList;
     });
 
     // Fetch the page's annotations and add their operator lists to the
     // page's operator list to render them.
-    return Promise.all([
+    // eslint-disable-next-line prefer-const
+    let [pageOpList, annotations, newAnnotations] = await Promise.all([
       pageListPromise,
       this._parsedAnnotations,
       newAnnotationsPromise,
-    ]).then(function ([pageOpList, annotations, newAnnotations]) {
-      if (newAnnotations) {
-        // Some annotations can already exist (if it has the refToReplace
-        // property). In this case, we replace the old annotation by the new
-        // one.
-        annotations = annotations.filter(
-          a => !(a.ref && deletedAnnotations.has(a.ref))
-        );
-        for (let i = 0, ii = newAnnotations.length; i < ii; i++) {
-          const newAnnotation = newAnnotations[i];
-          if (newAnnotation.refToReplace) {
-            const j = annotations.findIndex(
-              a => a.ref && isRefsEqual(a.ref, newAnnotation.refToReplace)
-            );
-            if (j >= 0) {
-              annotations.splice(j, 1, newAnnotation);
-              newAnnotations.splice(i--, 1);
-              ii--;
-            }
+    ]);
+
+    if (newAnnotations) {
+      // Some annotations can already exist (if it has the refToReplace
+      // property). In this case, we replace the old annotation by the new one.
+      annotations = annotations.filter(
+        a => !(a.ref && deletedAnnotations.has(a.ref))
+      );
+      for (let i = 0, ii = newAnnotations.length; i < ii; i++) {
+        const newAnnotation = newAnnotations[i];
+        if (newAnnotation.refToReplace) {
+          const j = annotations.findIndex(
+            a => a.ref && isRefsEqual(a.ref, newAnnotation.refToReplace)
+          );
+          if (j >= 0) {
+            annotations.splice(j, 1, newAnnotation);
+            newAnnotations.splice(i--, 1);
+            ii--;
           }
         }
-        annotations = annotations.concat(newAnnotations);
       }
+      annotations = annotations.concat(newAnnotations);
+    }
+    if (
+      annotations.length === 0 ||
+      intent & RenderingIntentFlag.ANNOTATIONS_DISABLE
+    ) {
+      pageOpList.flush(/* lastChunk = */ true);
+      return { length: pageOpList.totalLength };
+    }
+    const renderForms = !!(intent & RenderingIntentFlag.ANNOTATIONS_FORMS),
+      isEditing = !!(intent & RenderingIntentFlag.IS_EDITING),
+      intentAny = !!(intent & RenderingIntentFlag.ANY),
+      intentDisplay = !!(intent & RenderingIntentFlag.DISPLAY),
+      intentPrint = !!(intent & RenderingIntentFlag.PRINT);
+
+    // Collect the operator list promises for the annotations. Each promise
+    // is resolved with the complete operator list for a single annotation.
+    const opListPromises = [];
+    for (const annotation of annotations) {
       if (
-        annotations.length === 0 ||
-        intent & RenderingIntentFlag.ANNOTATIONS_DISABLE
+        intentAny ||
+        (intentDisplay &&
+          annotation.mustBeViewed(annotationStorage, renderForms) &&
+          annotation.mustBeViewedWhenEditing(isEditing, modifiedIds)) ||
+        (intentPrint && annotation.mustBePrinted(annotationStorage))
       ) {
-        pageOpList.flush(/* lastChunk = */ true);
-        return { length: pageOpList.totalLength };
-      }
-      const renderForms = !!(intent & RenderingIntentFlag.ANNOTATIONS_FORMS),
-        isEditing = !!(intent & RenderingIntentFlag.IS_EDITING),
-        intentAny = !!(intent & RenderingIntentFlag.ANY),
-        intentDisplay = !!(intent & RenderingIntentFlag.DISPLAY),
-        intentPrint = !!(intent & RenderingIntentFlag.PRINT);
-
-      // Collect the operator list promises for the annotations. Each promise
-      // is resolved with the complete operator list for a single annotation.
-      const opListPromises = [];
-      for (const annotation of annotations) {
-        if (
-          intentAny ||
-          (intentDisplay &&
-            annotation.mustBeViewed(annotationStorage, renderForms) &&
-            annotation.mustBeViewedWhenEditing(isEditing, modifiedIds)) ||
-          (intentPrint && annotation.mustBePrinted(annotationStorage))
-        ) {
-          opListPromises.push(
-            annotation
-              .getOperatorList(
-                partialEvaluator,
-                task,
-                intent,
-                annotationStorage
-              )
-              .catch(function (reason) {
-                warn(
-                  "getOperatorList - ignoring annotation data during " +
-                    `"${task.name}" task: "${reason}".`
-                );
-                return {
-                  opList: null,
-                  separateForm: false,
-                  separateCanvas: false,
-                };
-              })
-          );
-        }
-      }
-
-      return Promise.all(opListPromises).then(function (opLists) {
-        let form = false,
-          canvas = false;
-
-        for (const { opList, separateForm, separateCanvas } of opLists) {
-          pageOpList.addOpList(opList);
-
-          form ||= separateForm;
-          canvas ||= separateCanvas;
-        }
-        pageOpList.flush(
-          /* lastChunk = */ true,
-          /* separateAnnots = */ { form, canvas }
+        opListPromises.push(
+          annotation
+            .getOperatorList(partialEvaluator, task, intent, annotationStorage)
+            .catch(function (reason) {
+              warn(
+                "getOperatorList - ignoring annotation data during " +
+                  `"${task.name}" task: "${reason}".`
+              );
+              return {
+                opList: null,
+                separateForm: false,
+                separateCanvas: false,
+              };
+            })
         );
-        return { length: pageOpList.totalLength };
-      });
-    });
+      }
+    }
+
+    const opLists = await Promise.all(opListPromises);
+    let form = false,
+      canvas = false;
+
+    for (const { opList, separateForm, separateCanvas } of opLists) {
+      pageOpList.addOpList(opList);
+
+      form ||= separateForm;
+      canvas ||= separateCanvas;
+    }
+    pageOpList.flush(
+      /* lastChunk = */ true,
+      /* separateAnnots = */ { form, canvas }
+    );
+    return { length: pageOpList.totalLength };
   }
 
   async extractTextContent({
