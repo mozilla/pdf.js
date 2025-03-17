@@ -28,6 +28,17 @@ import { shadow, warn } from "../shared/util.js";
 import { ColorSpace } from "./colorspace.js";
 import { QCMS } from "../../external/qcms/qcms_utils.js";
 
+function fetchSync(url) {
+  // Parsing and using color spaces is still synchronous,
+  // so we must load the wasm module synchronously.
+  // TODO: Make the color space stuff asynchronous and use fetch.
+  const xhr = new XMLHttpRequest();
+  xhr.open("GET", url, false);
+  xhr.responseType = "arraybuffer";
+  xhr.send(null);
+  return xhr.response;
+}
+
 class IccColorSpace extends ColorSpace {
   #transformer;
 
@@ -132,7 +143,9 @@ class IccColorSpace extends ColorSpace {
     if (this.#useWasm) {
       if (this.#wasmUrl) {
         try {
-          this._module = QCMS._module = this.#load();
+          this._module = QCMS._module = initSync({
+            module: fetchSync(`${this.#wasmUrl}qcms_bg.wasm`),
+          });
           isUsable = !!this._module;
         } catch (e) {
           warn(`ICCBased color space: "${e}".`);
@@ -144,30 +157,16 @@ class IccColorSpace extends ColorSpace {
 
     return shadow(this, "isUsable", isUsable);
   }
-
-  static #load() {
-    // Parsing and using color spaces is still synchronous,
-    // so we must load the wasm module synchronously.
-    // TODO: Make the color space stuff asynchronous and use fetch.
-    const filename = "qcms_bg.wasm";
-    const xhr = new XMLHttpRequest();
-    xhr.open("GET", `${this.#wasmUrl}${filename}`, false);
-    xhr.responseType = "arraybuffer";
-    xhr.send(null);
-    return initSync({ module: xhr.response });
-  }
 }
 
 class CmykICCBasedCS extends IccColorSpace {
   static #iccUrl;
 
   constructor() {
-    const filename = "CGATS001Compat-v2-micro.icc";
-    const xhr = new XMLHttpRequest();
-    xhr.open("GET", `${CmykICCBasedCS.#iccUrl}${filename}`, false);
-    xhr.responseType = "arraybuffer";
-    xhr.send(null);
-    super(new Uint8Array(xhr.response), "DeviceCMYK", 4);
+    const iccProfile = new Uint8Array(
+      fetchSync(`${CmykICCBasedCS.#iccUrl}CGATS001Compat-v2-micro.icc`)
+    );
+    super(iccProfile, "DeviceCMYK", 4);
   }
 
   static setOptions({ iccUrl }) {
