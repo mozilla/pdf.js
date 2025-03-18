@@ -711,13 +711,7 @@ class PDFViewer {
           hiddenCapability.resolve();
         }
       },
-      {
-        signal:
-          (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
-          typeof AbortSignal.any === "function"
-            ? AbortSignal.any([signal, ac.signal])
-            : signal,
-      }
+      { signal: AbortSignal.any([signal, ac.signal]) }
     );
 
     await Promise.race([
@@ -914,11 +908,7 @@ class PDFViewer {
           viewer.before(element);
         }
 
-        if (
-          ((typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
-            typeof AbortSignal.any === "function") &&
-          annotationEditorMode !== AnnotationEditorType.DISABLE
-        ) {
+        if (annotationEditorMode !== AnnotationEditorType.DISABLE) {
           const mode = annotationEditorMode;
 
           if (pdfDocument.isPureXfa) {
