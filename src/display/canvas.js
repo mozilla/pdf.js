@@ -14,6 +14,7 @@
  */
 
 import {
+  DrawOPS,
   FeatureTest,
   FONT_IDENTITY_MATRIX,
   IDENTITY_MATRIX,
@@ -57,6 +58,10 @@ const EXECUTION_STEPS = 10;
 const MAX_SIZE_TO_COMPILE = 1000;
 
 const FULL_CHUNK_HEIGHT = 16;
+
+// Only used in rescaleAndStroke. The goal is to avoid
+// creating a new DOMMatrix object each time we need it.
+const SCALE_MATRIX = new DOMMatrix();
 
 /**
  * Overrides certain methods on a 2d ctx so that when they are called they
@@ -502,19 +507,6 @@ class CanvasExtraState {
     return clone;
   }
 
-  setCurrentPoint(x, y) {
-    this.x = x;
-    this.y = y;
-  }
-
-  updatePathMinMax(transform, x, y) {
-    [x, y] = Util.applyTransform([x, y], transform);
-    this.minX = Math.min(this.minX, x);
-    this.minY = Math.min(this.minY, y);
-    this.maxX = Math.max(this.maxX, x);
-    this.maxY = Math.max(this.maxY, y);
-  }
-
   updateRectMinMax(transform, rect) {
     const p1 = Util.applyTransform(rect, transform);
     const p2 = Util.applyTransform(rect.slice(2), transform);
@@ -525,22 +517,6 @@ class CanvasExtraState {
     this.minY = Math.min(this.minY, p1[1], p2[1], p3[1], p4[1]);
     this.maxX = Math.max(this.maxX, p1[0], p2[0], p3[0], p4[0]);
     this.maxY = Math.max(this.maxY, p1[1], p2[1], p3[1], p4[1]);
-  }
-
-  updateScalingPathMinMax(transform, minMax) {
-    Util.scaleMinMax(transform, minMax);
-    this.minX = Math.min(this.minX, minMax[0]);
-    this.minY = Math.min(this.minY, minMax[1]);
-    this.maxX = Math.max(this.maxX, minMax[2]);
-    this.maxY = Math.max(this.maxY, minMax[3]);
-  }
-
-  updateCurvePathMinMax(transform, x0, y0, x1, y1, x2, y2, x3, y3, minMax) {
-    const box = Util.bezierBoundingBox(x0, y0, x1, y1, x2, y2, x3, y3, minMax);
-    if (minMax) {
-      return;
-    }
-    this.updateRectMinMax(transform, box);
   }
 
   getPathBoundingBox(pathType = PathType.FILL, transform = null) {
@@ -1612,156 +1588,54 @@ class CanvasGraphics {
   }
 
   // Path
-  constructPath(ops, args, minMax) {
-    const ctx = this.ctx;
-    const current = this.current;
-    let x = current.x,
-      y = current.y;
-    let startX, startY;
-    const currentTransform = getCurrentTransform(ctx);
-
-    // Most of the time the current transform is a scaling matrix
-    // so we don't need to transform points before computing min/max:
-    // we can compute min/max first and then smartly "apply" the
-    // transform (see Util.scaleMinMax).
-    // For rectangle, moveTo and lineTo, min/max are computed in the
-    // worker (see evaluator.js).
-    const isScalingMatrix =
-      (currentTransform[0] === 0 && currentTransform[3] === 0) ||
-      (currentTransform[1] === 0 && currentTransform[2] === 0);
-    const minMaxForBezier = isScalingMatrix ? minMax.slice(0) : null;
-
-    for (let i = 0, j = 0, ii = ops.length; i < ii; i++) {
-      switch (ops[i] | 0) {
-        case OPS.rectangle:
-          x = args[j++];
-          y = args[j++];
-          const width = args[j++];
-          const height = args[j++];
-
-          const xw = x + width;
-          const yh = y + height;
-          ctx.moveTo(x, y);
-          if (width === 0 || height === 0) {
-            ctx.lineTo(xw, yh);
-          } else {
-            ctx.lineTo(xw, y);
-            ctx.lineTo(xw, yh);
-            ctx.lineTo(x, yh);
-          }
-          if (!isScalingMatrix) {
-            current.updateRectMinMax(currentTransform, [x, y, xw, yh]);
-          }
-          ctx.closePath();
-          break;
-        case OPS.moveTo:
-          x = args[j++];
-          y = args[j++];
-          ctx.moveTo(x, y);
-          if (!isScalingMatrix) {
-            current.updatePathMinMax(currentTransform, x, y);
-          }
-          break;
-        case OPS.lineTo:
-          x = args[j++];
-          y = args[j++];
-          ctx.lineTo(x, y);
-          if (!isScalingMatrix) {
-            current.updatePathMinMax(currentTransform, x, y);
-          }
-          break;
-        case OPS.curveTo:
-          startX = x;
-          startY = y;
-          x = args[j + 4];
-          y = args[j + 5];
-          ctx.bezierCurveTo(
-            args[j],
-            args[j + 1],
-            args[j + 2],
-            args[j + 3],
-            x,
-            y
-          );
-          current.updateCurvePathMinMax(
-            currentTransform,
-            startX,
-            startY,
-            args[j],
-            args[j + 1],
-            args[j + 2],
-            args[j + 3],
-            x,
-            y,
-            minMaxForBezier
-          );
-          j += 6;
-          break;
-        case OPS.curveTo2:
-          startX = x;
-          startY = y;
-          ctx.bezierCurveTo(
-            x,
-            y,
-            args[j],
-            args[j + 1],
-            args[j + 2],
-            args[j + 3]
-          );
-          current.updateCurvePathMinMax(
-            currentTransform,
-            startX,
-            startY,
-            x,
-            y,
-            args[j],
-            args[j + 1],
-            args[j + 2],
-            args[j + 3],
-            minMaxForBezier
-          );
-          x = args[j + 2];
-          y = args[j + 3];
-          j += 4;
-          break;
-        case OPS.curveTo3:
-          startX = x;
-          startY = y;
-          x = args[j + 2];
-          y = args[j + 3];
-          ctx.bezierCurveTo(args[j], args[j + 1], x, y, x, y);
-          current.updateCurvePathMinMax(
-            currentTransform,
-            startX,
-            startY,
-            args[j],
-            args[j + 1],
-            x,
-            y,
-            x,
-            y,
-            minMaxForBezier
-          );
-          j += 4;
-          break;
-        case OPS.closePath:
-          ctx.closePath();
-          break;
+  constructPath(op, data, minMax) {
+    let [path] = data;
+    if (!minMax) {
+      // The path is empty, so no need to update the current minMax.
+      path ||= data[0] = new Path2D();
+      this[op](path);
+      return;
+    }
+    if (!(path instanceof Path2D)) {
+      // Using a SVG string is slightly slower than using the following loop.
+      const path2d = (data[0] = new Path2D());
+      for (let i = 0, ii = path.length; i < ii; ) {
+        switch (path[i++]) {
+          case DrawOPS.moveTo:
+            path2d.moveTo(path[i++], path[i++]);
+            break;
+          case DrawOPS.lineTo:
+            path2d.lineTo(path[i++], path[i++]);
+            break;
+          case DrawOPS.curveTo:
+            path2d.bezierCurveTo(
+              path[i++],
+              path[i++],
+              path[i++],
+              path[i++],
+              path[i++],
+              path[i++]
+            );
+            break;
+          case DrawOPS.closePath:
+            path2d.closePath();
+            break;
+          default:
+            warn(`Unrecognized drawing path operator: ${path[i - 1]}`);
+            break;
+        }
       }
+      path = path2d;
     }
-
-    if (isScalingMatrix) {
-      current.updateScalingPathMinMax(currentTransform, minMaxForBezier);
-    }
-
-    current.setCurrentPoint(x, y);
+    this.current.updateRectMinMax(getCurrentTransform(this.ctx), minMax);
+    this[op](path);
   }
 
   closePath() {
     this.ctx.closePath();
   }
 
-  stroke(consumePath = true) {
+  stroke(path, consumePath = true) {
     const ctx = this.ctx;
     const strokeColor = this.current.strokeColor;
     // For stroke we want to temporarily change the global alpha to the
@@ -1769,6 +1643,9 @@ class CanvasGraphics {
     ctx.globalAlpha = this.current.strokeAlpha;
     if (this.contentVisible) {
       if (typeof strokeColor === "object" && strokeColor?.getPattern) {
+        const baseTransform = strokeColor.isModifyingCurrentTransform()
+          ? ctx.getTransform()
+          : null;
         ctx.save();
         ctx.strokeStyle = strokeColor.getPattern(
           ctx,
@@ -1776,31 +1653,41 @@ class CanvasGraphics {
           getCurrentTransformInverse(ctx),
           PathType.STROKE
         );
-        this.rescaleAndStroke(/* saveRestore */ false);
+        if (baseTransform) {
+          const newPath = new Path2D();
+          newPath.addPath(
+            path,
+            ctx.getTransform().invertSelf().multiplySelf(baseTransform)
+          );
+          path = newPath;
+        }
+        this.rescaleAndStroke(path, /* saveRestore */ false);
         ctx.restore();
       } else {
-        this.rescaleAndStroke(/* saveRestore */ true);
+        this.rescaleAndStroke(path, /* saveRestore */ true);
       }
     }
     if (consumePath) {
-      this.consumePath(this.current.getClippedPathBoundingBox());
+      this.consumePath(path, this.current.getClippedPathBoundingBox());
     }
     // Restore the global alpha to the fill alpha
     ctx.globalAlpha = this.current.fillAlpha;
   }
 
-  closeStroke() {
-    this.closePath();
-    this.stroke();
+  closeStroke(path) {
+    this.stroke(path);
   }
 
-  fill(consumePath = true) {
+  fill(path, consumePath = true) {
     const ctx = this.ctx;
     const fillColor = this.current.fillColor;
     const isPatternFill = this.current.patternFill;
     let needRestore = false;
 
     if (isPatternFill) {
+      const baseTransform = fillColor.isModifyingCurrentTransform()
+        ? ctx.getTransform()
+        : null;
       ctx.save();
       ctx.fillStyle = fillColor.getPattern(
         ctx,
@@ -1808,16 +1695,24 @@ class CanvasGraphics {
         getCurrentTransformInverse(ctx),
         PathType.FILL
       );
+      if (baseTransform) {
+        const newPath = new Path2D();
+        newPath.addPath(
+          path,
+          ctx.getTransform().invertSelf().multiplySelf(baseTransform)
+        );
+        path = newPath;
+      }
       needRestore = true;
     }
 
     const intersect = this.current.getClippedPathBoundingBox();
     if (this.contentVisible && intersect !== null) {
       if (this.pendingEOFill) {
-        ctx.fill("evenodd");
+        ctx.fill(path, "evenodd");
         this.pendingEOFill = false;
       } else {
-        ctx.fill();
+        ctx.fill(path);
       }
     }
 
@@ -1825,40 +1720,38 @@ class CanvasGraphics {
       ctx.restore();
     }
     if (consumePath) {
-      this.consumePath(intersect);
+      this.consumePath(path, intersect);
     }
   }
 
-  eoFill() {
+  eoFill(path) {
     this.pendingEOFill = true;
-    this.fill();
+    this.fill(path);
   }
 
-  fillStroke() {
-    this.fill(false);
-    this.stroke(false);
+  fillStroke(path) {
+    this.fill(path, false);
+    this.stroke(path, false);
 
-    this.consumePath();
+    this.consumePath(path);
   }
 
-  eoFillStroke() {
+  eoFillStroke(path) {
     this.pendingEOFill = true;
-    this.fillStroke();
+    this.fillStroke(path);
   }
 
-  closeFillStroke() {
-    this.closePath();
-    this.fillStroke();
+  closeFillStroke(path) {
+    this.fillStroke(path);
   }
 
-  closeEOFillStroke() {
+  closeEOFillStroke(path) {
     this.pendingEOFill = true;
-    this.closePath();
-    this.fillStroke();
+    this.fillStroke(path);
   }
 
-  endPath() {
-    this.consumePath();
+  endPath(path) {
+    this.consumePath(path);
   }
 
   // Clipping
@@ -3168,7 +3061,7 @@ class CanvasGraphics {
 
   // Helper functions
 
-  consumePath(clipBox) {
+  consumePath(path, clipBox) {
     const isEmpty = this.current.isEmptyClip();
     if (this.pendingClip) {
       this.current.updateClipFromPath();
@@ -3180,9 +3073,9 @@ class CanvasGraphics {
     if (this.pendingClip) {
       if (!isEmpty) {
         if (this.pendingClip === EO_CLIP) {
-          ctx.clip("evenodd");
+          ctx.clip(path, "evenodd");
         } else {
-          ctx.clip();
+          ctx.clip(path);
         }
       }
       this.pendingClip = null;
@@ -3267,15 +3160,16 @@ class CanvasGraphics {
 
   // Rescale before stroking in order to have a final lineWidth
   // with both thicknesses greater or equal to 1.
-  rescaleAndStroke(saveRestore) {
-    const { ctx } = this;
-    const { lineWidth } = this.current;
+  rescaleAndStroke(path, saveRestore) {
+    const {
+      ctx,
+      current: { lineWidth },
+    } = this;
     const [scaleX, scaleY] = this.getScaleForStroking();
 
-    ctx.lineWidth = lineWidth || 1;
-
-    if (scaleX === 1 && scaleY === 1) {
-      ctx.stroke();
+    if (scaleX === scaleY) {
+      ctx.lineWidth = (lineWidth || 1) * scaleX;
+      ctx.stroke(path);
       return;
     }
 
@@ -3285,6 +3179,10 @@ class CanvasGraphics {
     }
 
     ctx.scale(scaleX, scaleY);
+    SCALE_MATRIX.a = 1 / scaleX;
+    SCALE_MATRIX.d = 1 / scaleY;
+    const newPath = new Path2D();
+    newPath.addPath(path, SCALE_MATRIX);
 
     // How the dashed line is rendered depends on the current transform...
     // so we added a rescale to handle too thin lines and consequently
@@ -3299,7 +3197,8 @@ class CanvasGraphics {
       ctx.lineDashOffset /= scale;
     }
 
-    ctx.stroke();
+    ctx.lineWidth = lineWidth || 1;
+    ctx.stroke(newPath);
 
     if (saveRestore) {
       ctx.restore();

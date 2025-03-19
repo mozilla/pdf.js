@@ -703,6 +703,12 @@ class OperatorList {
             transfers.push(arg.data.buffer);
           }
           break;
+        case OPS.constructPath:
+          const [, [data], minMax] = argsArray[i];
+          if (data) {
+            transfers.push(data.buffer, minMax.buffer);
+          }
+          break;
       }
     }
     return transfers;

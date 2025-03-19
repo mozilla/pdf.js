@@ -11995,5 +11995,15 @@
     "md5": "9993aa298c0214a3d3ff5f90ce0d40bb",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "bug1946953",
+    "file": "pdfs/bug1946953.pdf",
+    "md5": "a71fb64e348b9c7161945e48e75c6681",
+    "rounds": 1,
+    "link": true,
+    "firstPage": 1,
+    "lastPage": 1,
+    "type": "eq"
   }
 ]
