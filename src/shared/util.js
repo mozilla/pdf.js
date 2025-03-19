@@ -341,6 +341,15 @@ const OPS = {
   setFillTransparent: 93,
 };
 
+// In order to have a switch statement that is fast (i.e. which use a jump
+// table), we need to have the OPS in a contiguous range.
+const DrawOPS = {
+  moveTo: 0,
+  lineTo: 1,
+  curveTo: 2,
+  closePath: 3,
+};
+
 const PasswordResponses = {
   NEED_PASSWORD: 1,
   INCORRECT_PASSWORD: 2,
@@ -665,57 +674,6 @@ const hexNumbers = Array.from(Array(256).keys(), n =>
 class Util {
   static makeHexColor(r, g, b) {
     return `#${hexNumbers[r]}${hexNumbers[g]}${hexNumbers[b]}`;
-  }
-
-  // Apply a scaling matrix to some min/max values.
-  // If a scaling factor is negative then min and max must be
-  // swapped.
-  static scaleMinMax(transform, minMax) {
-    let temp;
-    if (transform[0]) {
-      if (transform[0] < 0) {
-        temp = minMax[0];
-        minMax[0] = minMax[2];
-        minMax[2] = temp;
-      }
-      minMax[0] *= transform[0];
-      minMax[2] *= transform[0];
-
-      if (transform[3] < 0) {
-        temp = minMax[1];
-        minMax[1] = minMax[3];
-        minMax[3] = temp;
-      }
-      minMax[1] *= transform[3];
-      minMax[3] *= transform[3];
-    } else {
-      temp = minMax[0];
-      minMax[0] = minMax[1];
-      minMax[1] = temp;
-      temp = minMax[2];
-      minMax[2] = minMax[3];
-      minMax[3] = temp;
-
-      if (transform[1] < 0) {
-        temp = minMax[1];
-        minMax[1] = minMax[3];
-        minMax[3] = temp;
-      }
-      minMax[1] *= transform[1];
-      minMax[3] *= transform[1];
-
-      if (transform[2] < 0) {
-        temp = minMax[0];
-        minMax[0] = minMax[2];
-        minMax[2] = temp;
-      }
-      minMax[0] *= transform[2];
-      minMax[2] *= transform[2];
-    }
-    minMax[0] += transform[4];
-    minMax[1] += transform[5];
-    minMax[2] += transform[4];
-    minMax[3] += transform[5];
   }
 
   // Concatenates two transformation matrices together and returns the result.
@@ -1192,6 +1150,7 @@ export {
   bytesToString,
   createValidAbsoluteUrl,
   DocumentActionEventType,
+  DrawOPS,
   FeatureTest,
   FONT_IDENTITY_MATRIX,
   FormatError,
