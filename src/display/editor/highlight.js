@@ -984,6 +984,7 @@ class HighlightEditor extends AnnotationEditor {
         clipPathId,
       });
       editor.#addToDrawLayer();
+      editor.rotate(editor.parentRotation);
     }
 
     return editor;

@@ -2674,4 +2674,34 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Highlight must be rotated when existing in the pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue19424.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that there is no scroll because of focus", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.evaluate(() => {
+            window.PDFViewerApplication.rotatePages(90);
+          });
+          await page.waitForSelector(
+            ".annotationEditorLayer[data-main-rotation='90']"
+          );
+          await switchToHighlight(page);
+
+          await page.waitForSelector(
+            ".canvasWrapper svg[data-main-rotation='90']"
+          );
+        })
+      );
+    });
+  });
 });
