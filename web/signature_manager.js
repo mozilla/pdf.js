@@ -187,10 +187,10 @@ class SignatureManager {
       },
       { passive: true }
     );
-    description.addEventListener(
+    this.#description.addEventListener(
       "input",
       () => {
-        this.#clearDescription.disabled = description.value === "";
+        this.#clearDescription.disabled = this.#description.value === "";
       },
       { passive: true }
     );
