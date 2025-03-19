@@ -43,6 +43,10 @@ class BaseShadingPattern {
     }
   }
 
+  isModifyingCurrentTransform() {
+    return false;
+  }
+
   getPattern() {
     unreachable("Abstract method `getPattern` called.");
   }
@@ -388,6 +392,10 @@ class MeshShadingPattern extends BaseShadingPattern {
     };
   }
 
+  isModifyingCurrentTransform() {
+    return true;
+  }
+
   getPattern(ctx, owner, inverse, pathType) {
     applyBoundingBox(ctx, this._bbox);
     let scale;
@@ -702,6 +710,10 @@ class TilingPattern {
       default:
         throw new FormatError(`Unsupported paint type: ${paintType}`);
     }
+  }
+
+  isModifyingCurrentTransform() {
+    return false;
   }
 
   getPattern(ctx, owner, inverse, pathType) {
