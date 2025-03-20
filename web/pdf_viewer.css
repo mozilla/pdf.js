@@ -223,3 +223,42 @@
   margin: 0 auto;
   border: 2px solid transparent;
 }
+
+/* Dark mode */
+.darkMode .page {
+  filter: invert(90%) hue-rotate(180deg);
+}
+
+.darkMode .page img,
+.darkMode .page canvas {
+  filter: invert(100%) hue-rotate(180deg);
+}
+
+/* Sepia mode */
+.sepiaMode .page {
+  filter: sepia(90%);
+}
+
+/* Grayscale mode */
+.grayscaleMode .page {
+  filter: grayscale(100%);
+}
+
+/* Custom mode */
+.customMode .page {
+  filter: brightness(var(--brightness, 100%)) contrast(var(--contrast, 100%))
+    invert(var(--invert, 0%));
+}
+
+/* Add these styles for the color filter dropdown */
+.toolbarButton.colorFilter {
+  position: relative;
+}
+
+.toolbarButton.colorFilter .dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+  min-width: 120px;
+}

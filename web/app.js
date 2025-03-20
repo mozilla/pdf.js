@@ -265,6 +265,17 @@ const PDFViewerApplication = {
 
     this._initializedCapability.settled = true;
     this._initializedCapability.resolve();
+
+    // Set up event listeners for color filter changes
+    this.eventBus._on("colorfilterchanged", evt => {
+      console.log("Color filter changed:", evt.mode);
+      if (this.pdfViewer) {
+        this.pdfViewer.applyColorFilter({
+          mode: evt.mode,
+          custom: evt.custom,
+        });
+      }
+    });
   },
 
   /**
@@ -2269,6 +2280,36 @@ const PDFViewerApplication = {
    */
   get scriptingReady() {
     return this.pdfScriptingManager.ready;
+  },
+
+  init() {
+    // ... existing code ...
+
+    // Set up event listeners for color filter changes
+    this.eventBus.on("colorfilterchanged", evt => {
+      this.pdfViewer.applyColorFilter({
+        mode: evt.mode,
+        custom: evt.custom,
+      });
+
+      // Save preferences if needed
+      if (this.preferences) {
+        this.preferences.set("colorFilter", {
+          mode: evt.mode,
+          custom: evt.custom,
+        });
+      }
+    });
+
+    // Load saved color filter preferences
+    if (this.preferences) {
+      const savedFilter = this.preferences.get("colorFilter");
+      if (savedFilter) {
+        this.pdfViewer.applyColorFilter(savedFilter);
+      }
+    }
+
+    // ... existing code ...
   },
 };
 

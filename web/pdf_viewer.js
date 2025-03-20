@@ -2493,6 +2493,61 @@ class PDFViewer {
       this.update();
     }
   }
+
+  /**
+   * Apply color filters to the PDF content
+   * @param {Object} filterOptions - Options for color filtering
+   * @param {string} filterOptions.mode - 'dark', 'sepia', 'grayscale', etc.
+   * @param {Object} filterOptions.custom - Custom color adjustments
+   */
+  applyColorFilter(filterOptions = {}) {
+    const { mode } = filterOptions; // Remove custom from destructuring
+    console.log("Applying filter:", mode);
+
+    if (!this.viewer) {
+      console.error("Viewer element not found");
+      return;
+    }
+
+    console.log("Viewer element:", this.viewer);
+
+    // Remove any existing filter classes
+    this.viewer.classList.remove(
+      "darkMode",
+      "sepiaMode",
+      "grayscaleMode",
+      "customMode"
+    );
+
+    // Apply the selected filter
+    if (mode) {
+      console.log(`Adding ${mode}Mode class`);
+      this.viewer.classList.add(`${mode}Mode`);
+
+      // If mode is custom, apply custom filter settings
+      if (mode === "custom" && filterOptions.custom) {
+        this.applyCustomFilter(filterOptions.custom);
+      }
+    }
+
+    console.log("Classes after change:", this.viewer.className);
+
+    // Store the current filter settings
+    this.colorFilterSettings = filterOptions;
+  }
+
+  /**
+   * Apply custom color adjustments
+   * @param {Object} customSettings - Custom color settings
+   */
+  applyCustomFilter(customSettings = {}) {
+    const { brightness, contrast, invert } = customSettings;
+
+    // Apply custom filter using CSS variables
+    this.viewer.style.setProperty("--brightness", brightness || "100%");
+    this.viewer.style.setProperty("--contrast", contrast || "100%");
+    this.viewer.style.setProperty("--invert", invert || "0%");
+  }
 }
 
 export { PagesCountLimit, PDFPageViewBuffer, PDFViewer };

@@ -1757,3 +1757,12 @@ dialog :link {
     display: none;
   }
 }
+
+.pdfViewer.darkMode .page {
+  filter: invert(90%) hue-rotate(180deg) !important;
+}
+
+.pdfViewer.darkMode .page img,
+.pdfViewer.darkMode .page canvas {
+  filter: invert(100%) hue-rotate(180deg) !important;
+}

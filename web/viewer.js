@@ -316,3 +316,35 @@ export {
   AppConstants as PDFViewerApplicationConstants,
   AppOptions as PDFViewerApplicationOptions,
 };
+
+document.addEventListener("DOMContentLoaded", function () {
+  // Create a test button
+  const testButton = document.createElement("button");
+  testButton.textContent = "Test Dark Mode";
+  testButton.style.position = "fixed";
+  testButton.style.bottom = "20px";
+  testButton.style.right = "20px";
+  testButton.style.zIndex = "1000";
+  testButton.style.padding = "10px";
+
+  testButton.addEventListener("click", function () {
+    console.log("Testing dark mode directly");
+    if (window.PDFViewerApplication && window.PDFViewerApplication.pdfViewer) {
+      const viewer = window.PDFViewerApplication.pdfViewer.viewer;
+      console.log("Viewer element:", viewer);
+
+      // Toggle dark mode class
+      if (viewer.classList.contains("darkMode")) {
+        viewer.classList.remove("darkMode");
+        console.log("Removed darkMode class");
+      } else {
+        viewer.classList.add("darkMode");
+        console.log("Added darkMode class");
+      }
+    } else {
+      console.error("PDFViewerApplication not available");
+    }
+  });
+
+  document.body.appendChild(testButton);
+});

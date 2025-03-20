@@ -1,6 +1,10 @@
 {
   "name": "pdf.js",
   "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "start": "npx kill-port 8888 && gulp server"
+  },
   "devDependencies": {
     "@babel/core": "^7.26.10",
     "@babel/preset-env": "^7.26.9",
@@ -34,6 +38,7 @@
     "jasmine": "^5.6.0",
     "jsdoc": "^4.0.4",
     "jstransformer-nunjucks": "^1.2.0",
+    "kill-port": "^2.0.1",
     "metalsmith": "^2.6.3",
     "metalsmith-html-relative": "^2.0.6",
     "ordered-read-streams": "^2.0.0",
