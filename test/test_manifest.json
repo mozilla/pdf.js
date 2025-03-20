@@ -707,6 +707,13 @@
     "type": "load"
   },
   {
+    "id": "issue19695",
+    "file": "pdfs/issue19695.pdf",
+    "md5": "963474b8847afc9eeda4ff4635f7a523",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "openofficearabiccidtruetype-pdf",
     "file": "pdfs/arial_unicode_ab_cidfont.pdf",
     "md5": "35090fa7d29e7196ae3421812e554988",
