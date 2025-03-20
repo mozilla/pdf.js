@@ -168,26 +168,28 @@ function writeInt(number, size, offset, buffer) {
 }
 
 function writeString(string, offset, buffer) {
-  for (let i = 0, len = string.length; i < len; i++) {
+  const ii = string.length;
+  for (let i = 0; i < ii; i++) {
     buffer[offset + i] = string.charCodeAt(i) & 0xff;
   }
+  return offset + ii;
 }
 
 function computeMD5(filesize, xrefInfo) {
   const time = Math.floor(Date.now() / 1000);
   const filename = xrefInfo.filename || "";
-  const md5Buffer = [time.toString(), filename, filesize.toString()];
-  let md5BufferLen = md5Buffer.reduce((a, str) => a + str.length, 0);
-  for (const value of Object.values(xrefInfo.info)) {
-    md5Buffer.push(value);
-    md5BufferLen += value.length;
-  }
+  const md5Buffer = [
+    time.toString(),
+    filename,
+    filesize.toString(),
+    ...Object.values(xrefInfo.info),
+  ];
+  const md5BufferLen = md5Buffer.reduce((a, str) => a + str.length, 0);
 
   const array = new Uint8Array(md5BufferLen);
   let offset = 0;
   for (const str of md5Buffer) {
-    writeString(str, offset, array);
-    offset += str.length;
+    offset = writeString(str, offset, array);
   }
   return bytesToString(calculateMD5(array, 0, array.length));
 }
@@ -477,8 +479,7 @@ async function incrementalUpdate({
 
   // New data
   for (const str of buffer) {
-    writeString(str, offset, array);
-    offset += str.length;
+    offset = writeString(str, offset, array);
   }
 
   return array;
