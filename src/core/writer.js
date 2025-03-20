@@ -189,7 +189,7 @@ function computeMD5(filesize, xrefInfo) {
     writeString(str, offset, array);
     offset += str.length;
   }
-  return bytesToString(calculateMD5(array));
+  return bytesToString(calculateMD5(array, 0, array.length));
 }
 
 function writeXFADataForAcroform(str, changes) {
