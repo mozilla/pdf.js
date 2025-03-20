@@ -391,12 +391,11 @@ class Toolbar {
   }
 
   _initColorFilterControls() {
-    // Create color filter button
     const colorFilterButton = document.createElement("button");
     colorFilterButton.className = "toolbarButton colorFilter";
     colorFilterButton.title = "Color Filters";
     colorFilterButton.textContent = "Color Filters";
-    colorFilterButton.style.backgroundColor = "#eee"; // Make it visible
+    colorFilterButton.style.backgroundColor = "#eee";
     colorFilterButton.style.padding = "5px 10px";
     colorFilterButton.style.border = "1px solid #ccc";
     colorFilterButton.style.margin = "0 5px";
@@ -412,7 +411,6 @@ class Toolbar {
     dropdown.style.padding = "5px";
     dropdown.style.boxShadow = "0 2px 5px rgba(0,0,0,0.2)";
 
-    // Add filter options
     const options = [
       { id: "default", label: "Default" },
       { id: "dark", label: "Dark Mode" },
@@ -434,24 +432,20 @@ class Toolbar {
       item.addEventListener("click", () => {
         console.log(`Clicked ${option.label}`);
 
-        // Direct application for testing
         if (
           window.PDFViewerApplication &&
           window.PDFViewerApplication.pdfViewer
         ) {
           const viewer = window.PDFViewerApplication.pdfViewer.viewer;
 
-          // Remove all filter classes
           viewer.classList.remove("darkMode", "sepiaMode", "grayscaleMode");
 
-          // Add the selected filter class
           if (option.id !== "default") {
             viewer.classList.add(`${option.id}Mode`);
             console.log(`Added ${option.id}Mode class`);
           }
         }
 
-        // Also dispatch the event
         this.eventBus.dispatch("colorfilterchanged", {
           source: this,
           mode: option.id === "default" ? null : option.id,
@@ -463,16 +457,13 @@ class Toolbar {
       dropdown.append(item);
     });
 
-    // Toggle dropdown when button is clicked
     colorFilterButton.addEventListener("click", () => {
       dropdown.style.display =
         dropdown.style.display === "none" ? "block" : "none";
     });
 
-    // Append to toolbar
     colorFilterButton.append(dropdown);
 
-    // Try different methods to add to the toolbar
     const mainToolbar =
       document.getElementById("toolbarViewerLeft") ||
       document.querySelector(".toolbar") ||
@@ -483,7 +474,7 @@ class Toolbar {
       mainToolbar.append(colorFilterButton);
     } else {
       console.error("Could not find toolbar");
-      document.body.append(colorFilterButton); // Fallback
+      document.body.append(colorFilterButton);
     }
   }
 }

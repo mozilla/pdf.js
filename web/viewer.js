@@ -318,7 +318,6 @@ export {
 };
 
 document.addEventListener("DOMContentLoaded", function () {
-  // Create a test button
   const testButton = document.createElement("button");
   testButton.textContent = "Test Dark Mode";
   testButton.style.position = "fixed";
@@ -333,7 +332,6 @@ document.addEventListener("DOMContentLoaded", function () {
       const viewer = window.PDFViewerApplication.pdfViewer.viewer;
       console.log("Viewer element:", viewer);
 
-      // Toggle dark mode class
       if (viewer.classList.contains("darkMode")) {
         viewer.classList.remove("darkMode");
         console.log("Removed darkMode class");

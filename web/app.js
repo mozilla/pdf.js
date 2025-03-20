@@ -258,15 +258,12 @@ const PDFViewerApplication = {
     }
     await this._initializeViewerComponents();
 
-    // Bind the various event handlers *after* the viewer has been
-    // initialized, to prevent errors if an event arrives too soon.
     this.bindEvents();
     this.bindWindowEvents();
 
     this._initializedCapability.settled = true;
     this._initializedCapability.resolve();
 
-    // Set up event listeners for color filter changes
     this.eventBus._on("colorfilterchanged", evt => {
       console.log("Color filter changed:", evt.mode);
       if (this.pdfViewer) {
@@ -302,7 +299,6 @@ const PDFViewerApplication = {
       this._PDFBug = PDFBug;
     };
 
-    // Parameters that need to be handled manually.
     if (params.get("disableworker") === "true") {
       try {
         GlobalWorkerOptions.workerSrc ||= AppOptions.get("workerSrc");
@@ -345,7 +341,7 @@ const PDFViewerApplication = {
         console.error("_parseHashParams:", ex);
       }
     }
-    // It is not possible to change locale for the (various) extension builds.
+
     if (
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
       params.has("locale")
@@ -353,7 +349,6 @@ const PDFViewerApplication = {
       AppOptions.set("localeProperties", { lang: params.get("locale") });
     }
 
-    // Parameters that can be handled automatically.
     const opts = {
       disableAutoFetch: x => x === "true",
       disableFontFace: x => x === "true",
@@ -363,7 +358,6 @@ const PDFViewerApplication = {
       verbosity: x => x | 0,
     };
 
-    // Set some specific preferences for tests.
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
       Object.assign(opts, {
         docBaseUrl: x => x,

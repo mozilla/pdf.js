@@ -2501,7 +2501,7 @@ class PDFViewer {
    * @param {Object} filterOptions.custom - Custom color adjustments
    */
   applyColorFilter(filterOptions = {}) {
-    const { mode } = filterOptions; // Remove custom from destructuring
+    const { mode } = filterOptions;
     console.log("Applying filter:", mode);
 
     if (!this.viewer) {
@@ -2519,12 +2519,10 @@ class PDFViewer {
       "customMode"
     );
 
-    // Apply the selected filter
     if (mode) {
       console.log(`Adding ${mode}Mode class`);
       this.viewer.classList.add(`${mode}Mode`);
 
-      // If mode is custom, apply custom filter settings
       if (mode === "custom" && filterOptions.custom) {
         this.applyCustomFilter(filterOptions.custom);
       }
@@ -2532,7 +2530,6 @@ class PDFViewer {
 
     console.log("Classes after change:", this.viewer.className);
 
-    // Store the current filter settings
     this.colorFilterSettings = filterOptions;
   }
 
@@ -2543,7 +2540,6 @@ class PDFViewer {
   applyCustomFilter(customSettings = {}) {
     const { brightness, contrast, invert } = customSettings;
 
-    // Apply custom filter using CSS variables
     this.viewer.style.setProperty("--brightness", brightness || "100%");
     this.viewer.style.setProperty("--contrast", contrast || "100%");
     this.viewer.style.setProperty("--invert", invert || "0%");
