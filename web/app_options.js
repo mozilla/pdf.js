@@ -202,7 +202,7 @@ const defaultOptions = {
   },
   enableAutoLinking: {
     /** @type {boolean} */
-    value: typeof PDFJSDev === "undefined" || PDFJSDev.test("MOZCENTRAL"),
+    value: true,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   enableDetailCanvas: {
