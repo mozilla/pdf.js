@@ -91,12 +91,6 @@ function findUnequal(arr, start, value) {
   return j;
 }
 
-function setValues(arr, start, end, value) {
-  for (let j = start; j < end; ++j) {
-    arr[j] = value;
-  }
-}
-
 function reverseValues(arr, start, end) {
   for (let i = start, j = end - 1; i < j; ++i, --j) {
     const temp = arr[i];
@@ -323,7 +317,7 @@ function bidi(str, startLevel = -1, vertical = false) {
         after = "R";
       }
       if (before === after) {
-        setValues(types, i, end, before);
+        types.fill(before, i, end);
       }
       i = end - 1; // reset to end (-1 so next iteration is ok)
     }
