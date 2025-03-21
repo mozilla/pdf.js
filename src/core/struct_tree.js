@@ -596,6 +596,10 @@ class StructElementNode {
     let kidDict = null;
     if (kid instanceof Ref) {
       kidDict = this.dict.xref.fetch(kid);
+      // The kid can be a reference to a dictionary or a number (issue #19694).
+      if (!(kidDict instanceof Dict)) {
+        return this.parseKid(pageObjId, kidDict);
+      }
     } else if (kid instanceof Dict) {
       kidDict = kid;
     }
