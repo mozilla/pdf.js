@@ -234,6 +234,9 @@ pdfjs-web-fonts-disabled = جۆرەپیتی وێب ناچالاکە: نەتوا�
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

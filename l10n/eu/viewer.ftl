@@ -317,6 +317,9 @@ pdfjs-highlight-floating-button1 =
     .aria-label = Nabarmendu
 pdfjs-highlight-floating-button-label = Nabarmendu
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =

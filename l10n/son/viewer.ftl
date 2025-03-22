@@ -198,6 +198,9 @@ pdfjs-web-fonts-disabled = Interneti šigirawey kay: ši hin ka goy nda PDF šig
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

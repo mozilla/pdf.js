@@ -324,6 +324,19 @@ pdfjs-editor-signature-button =
     .title = Signaturu přidać
 pdfjs-editor-signature-button-label = Signaturu přidać
 
+## Default editor aria labels
+
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = Wuzběhowanski editor
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = Rysowanski editor
+pdfjs-editor-signature-editor =
+    .aria-label = Editor signaturow
+pdfjs-editor-stamp-editor =
+    .aria-label = Wobrazowy editor
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =
@@ -352,9 +365,16 @@ pdfjs-editor-stamp-add-image-button-label = Wobraz přidać
 pdfjs-editor-free-highlight-thickness-input = Tołstosć
 pdfjs-editor-free-highlight-thickness-title =
     .title = Tołstosć změnić, hdyž so zapiski wuzběhuja, kotrež tekst njejsu
+pdfjs-editor-add-signature-container =
+    .aria-label = Wodźenske elementy signaturow a składowane signatury
 pdfjs-editor-signature-add-signature-button =
     .title = Nowu signaturu přidać
 pdfjs-editor-signature-add-signature-button-label = Nowu signaturu přidać
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = Składowana signatura: { $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Tekstowy editor
@@ -589,6 +609,9 @@ pdfjs-editor-edit-signature-update-button = Aktualizować
 pdfjs-editor-delete-signature-button =
     .title = Signaturu wotstronić
 pdfjs-editor-delete-signature-button-label = Signaturu wotstronić
+pdfjs-editor-delete-signature-button1 =
+    .title = Składowanu signaturu wotstronić
+pdfjs-editor-delete-signature-button-label1 = Składowanu signaturu wotstronić
 
 ## Editor toolbar
 

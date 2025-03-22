@@ -288,6 +288,9 @@ pdfjs-highlight-floating-button1 =
     .aria-label = Означи
 pdfjs-highlight-floating-button-label = Означи
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =

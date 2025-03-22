@@ -119,6 +119,9 @@ pdfjs-password-cancel-button = Neenal
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

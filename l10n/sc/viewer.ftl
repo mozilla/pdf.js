@@ -268,6 +268,9 @@ pdfjs-highlight-floating-button1 =
     .aria-label = Evidèntzia
 pdfjs-highlight-floating-button-label = Evidèntzia
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =

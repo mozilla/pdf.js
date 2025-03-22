@@ -193,6 +193,9 @@ pdfjs-password-cancel-button = Encaboxar
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

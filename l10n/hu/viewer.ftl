@@ -320,6 +320,19 @@ pdfjs-editor-signature-button =
     .title = Aláírás hozzáadása
 pdfjs-editor-signature-button-label = Aláírás hozzáadása
 
+## Default editor aria labels
+
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = Kiemelésszerkesztő
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = Rajzszerkesztő
+pdfjs-editor-signature-editor =
+    .aria-label = Aláírás-szerkesztő
+pdfjs-editor-stamp-editor =
+    .aria-label = Képszerkesztő
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =
@@ -348,9 +361,16 @@ pdfjs-editor-stamp-add-image-button-label = Kép hozzáadása
 pdfjs-editor-free-highlight-thickness-input = Vastagság
 pdfjs-editor-free-highlight-thickness-title =
     .title = Vastagság módosítása, ha nem szöveges elemeket emel ki
+pdfjs-editor-add-signature-container =
+    .aria-label = Aláírás-vezérlők és mentett aláírások
 pdfjs-editor-signature-add-signature-button =
     .title = Új aláírás hozzáadása
 pdfjs-editor-signature-add-signature-button-label = Új aláírás hozzáadása
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = Mentett aláírás: { $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Szövegszerkesztő
@@ -583,6 +603,9 @@ pdfjs-editor-edit-signature-update-button = Frissítés
 pdfjs-editor-delete-signature-button =
     .title = Aláírás eltávolítása
 pdfjs-editor-delete-signature-button-label = Aláírás eltávolítása
+pdfjs-editor-delete-signature-button1 =
+    .title = Mentett aláírás eltávolítása
+pdfjs-editor-delete-signature-button-label1 = Mentett aláírás eltávolítása
 
 ## Editor toolbar
 

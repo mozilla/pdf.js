@@ -320,6 +320,19 @@ pdfjs-editor-signature-button =
     .title = Lisää allekirjoitus
 pdfjs-editor-signature-button-label = Lisää allekirjoitus
 
+## Default editor aria labels
+
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = Korostusmuokkain
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = Piirustusmuokkain
+pdfjs-editor-signature-editor =
+    .aria-label = Allekirjoitusmuokkain
+pdfjs-editor-stamp-editor =
+    .aria-label = Kuvamuokkain
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =
@@ -348,9 +361,16 @@ pdfjs-editor-stamp-add-image-button-label = Lisää kuva
 pdfjs-editor-free-highlight-thickness-input = Paksuus
 pdfjs-editor-free-highlight-thickness-title =
     .title = Muuta paksuutta korostaessasi muita kohteita kuin tekstiä
+pdfjs-editor-add-signature-container =
+    .aria-label = Allekirjoitussäätimet ja tallennetut allekirjoitukset
 pdfjs-editor-signature-add-signature-button =
     .title = Lisää uusi allekirjoitus
 pdfjs-editor-signature-add-signature-button-label = Lisää uusi allekirjoitus
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = Tallennettu allekirjoitus: { $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Tekstimuokkain
@@ -583,6 +603,9 @@ pdfjs-editor-edit-signature-update-button = Päivitä
 pdfjs-editor-delete-signature-button =
     .title = Poista allekirjoitus
 pdfjs-editor-delete-signature-button-label = Poista allekirjoitus
+pdfjs-editor-delete-signature-button1 =
+    .title = Poista tallennettu allekirjoitus
+pdfjs-editor-delete-signature-button-label1 = Poista tallennettu allekirjoitus
 
 ## Editor toolbar
 
