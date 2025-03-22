@@ -16,6 +16,7 @@
 import {
   AbortException,
   assert,
+  DrawOPS,
   FONT_IDENTITY_MATRIX,
   FormatError,
   IDENTITY_MATRIX,
@@ -925,7 +926,7 @@ class PartialEvaluator {
       smaskOptions,
       operatorList,
       task,
-      stateManager.state.clone(),
+      stateManager.state.clone({ newPath: true }),
       localColorSpaceCache
     );
   }
@@ -1383,80 +1384,112 @@ class PartialEvaluator {
     return promise;
   }
 
-  buildPath(operatorList, fn, args, parsingText = false) {
-    const lastIndex = operatorList.length - 1;
-    if (!args) {
-      args = [];
-    }
-    if (
-      lastIndex < 0 ||
-      operatorList.fnArray[lastIndex] !== OPS.constructPath
-    ) {
-      // Handle corrupt PDF documents that contains path operators inside of
-      // text objects, which may shift subsequent text, by enclosing the path
-      // operator in save/restore operators (fixes issue10542_reduced.pdf).
-      //
-      // Note that this will effectively disable the optimization in the
-      // `else` branch below, but given that this type of corruption is
-      // *extremely* rare that shouldn't really matter much in practice.
-      if (parsingText) {
-        warn(`Encountered path operator "${fn}" inside of a text object.`);
-        operatorList.addOp(OPS.save, null);
+  buildPath(fn, args, state) {
+    const { pathMinMax: minMax, pathBuffer } = state;
+    switch (fn | 0) {
+      case OPS.rectangle: {
+        const x = (state.currentPointX = args[0]);
+        const y = (state.currentPointY = args[1]);
+        const width = args[2];
+        const height = args[3];
+        const xw = x + width;
+        const yh = y + height;
+        if (width === 0 || height === 0) {
+          pathBuffer.push(
+            DrawOPS.moveTo,
+            x,
+            y,
+            DrawOPS.lineTo,
+            xw,
+            yh,
+            DrawOPS.closePath
+          );
+        } else {
+          pathBuffer.push(
+            DrawOPS.moveTo,
+            x,
+            y,
+            DrawOPS.lineTo,
+            xw,
+            y,
+            DrawOPS.lineTo,
+            xw,
+            yh,
+            DrawOPS.lineTo,
+            x,
+            yh,
+            DrawOPS.closePath
+          );
+        }
+        minMax[0] = Math.min(minMax[0], x, xw);
+        minMax[1] = Math.min(minMax[1], y, yh);
+        minMax[2] = Math.max(minMax[2], x, xw);
+        minMax[3] = Math.max(minMax[3], y, yh);
+        break;
       }
-
-      let minMax;
-      switch (fn) {
-        case OPS.rectangle:
-          const x = args[0] + args[2];
-          const y = args[1] + args[3];
-          minMax = [
-            Math.min(args[0], x),
-            Math.min(args[1], y),
-            Math.max(args[0], x),
-            Math.max(args[1], y),
-          ];
-          break;
-        case OPS.moveTo:
-        case OPS.lineTo:
-          minMax = [args[0], args[1], args[0], args[1]];
-          break;
-        default:
-          minMax = [Infinity, Infinity, -Infinity, -Infinity];
-          break;
+      case OPS.moveTo: {
+        const x = (state.currentPointX = args[0]);
+        const y = (state.currentPointY = args[1]);
+        pathBuffer.push(DrawOPS.moveTo, x, y);
+        minMax[0] = Math.min(minMax[0], x);
+        minMax[1] = Math.min(minMax[1], y);
+        minMax[2] = Math.max(minMax[2], x);
+        minMax[3] = Math.max(minMax[3], y);
+        break;
       }
-      operatorList.addOp(OPS.constructPath, [[fn], args, minMax]);
-
-      if (parsingText) {
-        operatorList.addOp(OPS.restore, null);
+      case OPS.lineTo: {
+        const x = (state.currentPointX = args[0]);
+        const y = (state.currentPointY = args[1]);
+        pathBuffer.push(DrawOPS.lineTo, x, y);
+        minMax[0] = Math.min(minMax[0], x);
+        minMax[1] = Math.min(minMax[1], y);
+        minMax[2] = Math.max(minMax[2], x);
+        minMax[3] = Math.max(minMax[3], y);
+        break;
       }
-    } else {
-      const opArgs = operatorList.argsArray[lastIndex];
-      opArgs[0].push(fn);
-      opArgs[1].push(...args);
-      const minMax = opArgs[2];
-
-      // Compute min/max in the worker instead of the main thread.
-      // If the current matrix (when drawing) is a scaling one
-      // then min/max can be easily computed in using those values.
-      // Only rectangle, lineTo and moveTo are handled here since
-      // Bezier stuff requires to have the starting point.
-      switch (fn) {
-        case OPS.rectangle:
-          const x = args[0] + args[2];
-          const y = args[1] + args[3];
-          minMax[0] = Math.min(minMax[0], args[0], x);
-          minMax[1] = Math.min(minMax[1], args[1], y);
-          minMax[2] = Math.max(minMax[2], args[0], x);
-          minMax[3] = Math.max(minMax[3], args[1], y);
-          break;
-        case OPS.moveTo:
-        case OPS.lineTo:
-          minMax[0] = Math.min(minMax[0], args[0]);
-          minMax[1] = Math.min(minMax[1], args[1]);
-          minMax[2] = Math.max(minMax[2], args[0]);
-          minMax[3] = Math.max(minMax[3], args[1]);
-          break;
+      case OPS.curveTo: {
+        const startX = state.currentPointX;
+        const startY = state.currentPointY;
+        const [x1, y1, x2, y2, x, y] = args;
+        state.currentPointX = x;
+        state.currentPointY = y;
+        pathBuffer.push(DrawOPS.curveTo, x1, y1, x2, y2, x, y);
+        Util.bezierBoundingBox(startX, startY, x1, y1, x2, y2, x, y, minMax);
+        break;
       }
+      case OPS.curveTo2: {
+        const startX = state.currentPointX;
+        const startY = state.currentPointY;
+        const [x1, y1, x, y] = args;
+        state.currentPointX = x;
+        state.currentPointY = y;
+        pathBuffer.push(DrawOPS.curveTo, startX, startY, x1, y1, x, y);
+        Util.bezierBoundingBox(
+          startX,
+          startY,
+          startX,
+          startY,
+          x1,
+          y1,
+          x,
+          y,
+          minMax
+        );
+        break;
+      }
+      case OPS.curveTo3: {
+        const startX = state.currentPointX;
+        const startY = state.currentPointY;
+        const [x1, y1, x, y] = args;
+        state.currentPointX = x;
+        state.currentPointY = y;
+        pathBuffer.push(DrawOPS.curveTo, x1, y1, x, y, x, y);
+        Util.bezierBoundingBox(startX, startY, x1, y1, x, y, x, y, minMax);
+        break;
+      }
+      case OPS.closePath:
+        pathBuffer.push(DrawOPS.closePath);
+        break;
     }
   }
 
@@ -1731,7 +1764,6 @@ class PartialEvaluator {
 
     const self = this;
     const xref = this.xref;
-    let parsingText = false;
     const localImageCache = new LocalImageCache();
     const localColorSpaceCache = new LocalColorSpaceCache();
     const localGStateCache = new LocalGStateCache();
@@ -1847,7 +1879,7 @@ class PartialEvaluator {
                       null,
                       operatorList,
                       task,
-                      stateManager.state.clone(),
+                      stateManager.state.clone({ newPath: true }),
                       localColorSpaceCache
                     )
                     .then(function () {
@@ -1909,12 +1941,6 @@ class PartialEvaluator {
                 })
             );
             return;
-          case OPS.beginText:
-            parsingText = true;
-            break;
-          case OPS.endText:
-            parsingText = false;
-            break;
           case OPS.endInlineImage:
             const cacheKey = args[0].cacheKey;
             if (cacheKey) {
@@ -2237,8 +2263,40 @@ class PartialEvaluator {
           case OPS.curveTo3:
           case OPS.closePath:
           case OPS.rectangle:
-            self.buildPath(operatorList, fn, args, parsingText);
+            self.buildPath(fn, args, stateManager.state);
             continue;
+          case OPS.stroke:
+          case OPS.closeStroke:
+          case OPS.fill:
+          case OPS.eoFill:
+          case OPS.fillStroke:
+          case OPS.eoFillStroke:
+          case OPS.closeFillStroke:
+          case OPS.closeEOFillStroke:
+          case OPS.endPath: {
+            const {
+              state: { pathBuffer, pathMinMax },
+            } = stateManager;
+            if (
+              fn === OPS.closeStroke ||
+              fn === OPS.closeFillStroke ||
+              fn === OPS.closeEOFillStroke
+            ) {
+              pathBuffer.push(DrawOPS.closePath);
+            }
+            if (pathBuffer.length === 0) {
+              operatorList.addOp(OPS.constructPath, [fn, [null], null]);
+            } else {
+              operatorList.addOp(OPS.constructPath, [
+                fn,
+                [new Float32Array(pathBuffer)],
+                pathMinMax.slice(),
+              ]);
+              pathBuffer.length = 0;
+              pathMinMax.set([Infinity, Infinity, -Infinity, -Infinity], 0);
+            }
+            continue;
+          }
           case OPS.markPoint:
           case OPS.markPointProps:
           case OPS.beginCompat:
@@ -4935,6 +4993,16 @@ class EvalState {
     this._fillColorSpace = this._strokeColorSpace = ColorSpaceUtils.gray;
     this.patternFillColorSpace = null;
     this.patternStrokeColorSpace = null;
+
+    // Path stuff.
+    this.currentPointX = this.currentPointY = 0;
+    this.pathMinMax = new Float32Array([
+      Infinity,
+      Infinity,
+      -Infinity,
+      -Infinity,
+    ]);
+    this.pathBuffer = [];
   }
 
   get fillColorSpace() {
@@ -4953,8 +5021,18 @@ class EvalState {
     this._strokeColorSpace = this.patternStrokeColorSpace = colorSpace;
   }
 
-  clone() {
-    return Object.create(this);
+  clone({ newPath = false } = {}) {
+    const clone = Object.create(this);
+    if (newPath) {
+      clone.pathBuffer = [];
+      clone.pathMinMax = new Float32Array([
+        Infinity,
+        Infinity,
+        -Infinity,
+        -Infinity,
+      ]);
+    }
+    return clone;
   }
 }
 
