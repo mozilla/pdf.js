@@ -328,6 +328,9 @@ pdfjs-editor-signature-button =
     .title = Ychwanegu llofnod
 pdfjs-editor-signature-button-label = Ychwanegu llofnod
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =

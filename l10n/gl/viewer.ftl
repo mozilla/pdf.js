@@ -296,6 +296,9 @@ pdfjs-editor-stamp-button =
     .title = Engadir ou editar imaxes
 pdfjs-editor-stamp-button-label = Engadir ou editar imaxes
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-freetext-button =

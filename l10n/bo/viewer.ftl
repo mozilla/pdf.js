@@ -239,6 +239,9 @@ pdfjs-web-fonts-disabled = Web fonts are disabled: unable to use embedded PDF fo
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

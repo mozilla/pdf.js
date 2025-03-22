@@ -319,6 +319,9 @@ pdfjs-highlight-floating-button1 =
     .aria-label = Istakni
 pdfjs-highlight-floating-button-label = Istakni
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =

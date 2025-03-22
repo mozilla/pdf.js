@@ -239,6 +239,9 @@ pdfjs-web-fonts-disabled = Fon web dinyahdayakan: tidak dapat menggunakan fon te
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

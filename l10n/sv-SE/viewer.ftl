@@ -320,6 +320,19 @@ pdfjs-editor-signature-button =
     .title = Lägg till signatur
 pdfjs-editor-signature-button-label = Lägg till signatur
 
+## Default editor aria labels
+
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = Markeringsredigerare
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = Ritredigerare
+pdfjs-editor-signature-editor =
+    .aria-label = Signaturredigerare
+pdfjs-editor-stamp-editor =
+    .aria-label = Bildredigerare
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =
@@ -348,9 +361,16 @@ pdfjs-editor-stamp-add-image-button-label = Lägg till bild
 pdfjs-editor-free-highlight-thickness-input = Tjocklek
 pdfjs-editor-free-highlight-thickness-title =
     .title = Ändra tjocklek när du markerar andra objekt än text
+pdfjs-editor-add-signature-container =
+    .aria-label = Signaturkontroller och sparade signaturer
 pdfjs-editor-signature-add-signature-button =
     .title = Lägg till ny signatur
 pdfjs-editor-signature-add-signature-button-label = Lägg till ny signatur
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = Sparad signatur: { $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Textredigerare
@@ -583,6 +603,9 @@ pdfjs-editor-edit-signature-update-button = Uppdatera
 pdfjs-editor-delete-signature-button =
     .title = Ta bort signatur
 pdfjs-editor-delete-signature-button-label = Ta bort signatur
+pdfjs-editor-delete-signature-button1 =
+    .title = Ta bort sparad signatur
+pdfjs-editor-delete-signature-button-label1 = Ta bort sparad signatur
 
 ## Editor toolbar
 

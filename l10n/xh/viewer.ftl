@@ -204,6 +204,9 @@ pdfjs-web-fonts-disabled = Iifonti zewebhu ziqhwalelisiwe: ayikwazi ukusebenzisa
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

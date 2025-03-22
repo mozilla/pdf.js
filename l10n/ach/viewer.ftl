@@ -217,6 +217,9 @@ pdfjs-web-fonts-disabled = Kijuko dit pa coc me kakube woko: pe romo tic ki dit 
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

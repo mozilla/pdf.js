@@ -243,6 +243,9 @@ pdfjs-web-fonts-disabled = Fonturile web sunt dezactivate: nu se pot folosi font
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 
