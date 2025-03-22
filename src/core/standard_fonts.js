@@ -906,6 +906,7 @@ const getSupplementalGlyphMapForCalibri = getLookupTableFactory(function (t) {
   t[896] = 91;
   t[897] = 93;
   t[923] = 64;
+  t[940] = 163;
   t[1004] = 48;
   t[1005] = 49;
   t[1006] = 50;
