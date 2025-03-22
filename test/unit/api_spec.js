@@ -17,6 +17,7 @@ import {
   AnnotationEditorType,
   AnnotationMode,
   AnnotationType,
+  DrawOPS,
   ImageKind,
   InvalidPDFException,
   isNodeJS,
@@ -794,17 +795,25 @@ describe("api", function () {
         OPS.setLineWidth,
         OPS.setStrokeRGBColor,
         OPS.constructPath,
-        OPS.closeStroke,
       ]);
       expect(opList.argsArray).toEqual([
         [0.5],
         new Uint8ClampedArray([255, 0, 0]),
         [
-          [OPS.moveTo, OPS.lineTo],
-          [0, 9.75, 0.5, 9.75],
-          [0, 9.75, 0.5, 9.75],
+          OPS.closeStroke,
+          [
+            new Float32Array([
+              DrawOPS.moveTo,
+              0,
+              9.75,
+              DrawOPS.lineTo,
+              0.5,
+              9.75,
+              DrawOPS.closePath,
+            ]),
+          ],
+          new Float32Array([0, 9.75, 0.5, 9.75]),
         ],
-        null,
       ]);
       expect(opList.lastChunk).toEqual(true);
 
@@ -4236,8 +4245,8 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const opListAnnotEnable = await pdfPage.getOperatorList({
         annotationMode: AnnotationMode.ENABLE,
       });
-      expect(opListAnnotEnable.fnArray.length).toBeGreaterThan(140);
-      expect(opListAnnotEnable.argsArray.length).toBeGreaterThan(140);
+      expect(opListAnnotEnable.fnArray.length).toBeGreaterThan(130);
+      expect(opListAnnotEnable.argsArray.length).toBeGreaterThan(130);
       expect(opListAnnotEnable.lastChunk).toEqual(true);
       expect(opListAnnotEnable.separateAnnots).toEqual({
         form: false,
@@ -4270,8 +4279,8 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const opListAnnotEnableStorage = await pdfPage.getOperatorList({
         annotationMode: AnnotationMode.ENABLE_STORAGE,
       });
-      expect(opListAnnotEnableStorage.fnArray.length).toBeGreaterThan(170);
-      expect(opListAnnotEnableStorage.argsArray.length).toBeGreaterThan(170);
+      expect(opListAnnotEnableStorage.fnArray.length).toBeGreaterThan(150);
+      expect(opListAnnotEnableStorage.argsArray.length).toBeGreaterThan(150);
       expect(opListAnnotEnableStorage.lastChunk).toEqual(true);
       expect(opListAnnotEnableStorage.separateAnnots).toEqual({
         form: false,
