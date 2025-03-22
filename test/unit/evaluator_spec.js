@@ -74,8 +74,8 @@ describe("evaluator", function () {
       );
       expect(!!result.fnArray && !!result.argsArray).toEqual(true);
       expect(result.fnArray.length).toEqual(1);
-      expect(result.fnArray[0]).toEqual(OPS.fill);
-      expect(result.argsArray[0]).toEqual(null);
+      expect(result.fnArray[0]).toEqual(OPS.constructPath);
+      expect(result.argsArray[0]).toEqual([OPS.fill, [null], null]);
     });
 
     it("should handle one operation", async function () {
@@ -130,9 +130,14 @@ describe("evaluator", function () {
       );
       expect(!!result.fnArray && !!result.argsArray).toEqual(true);
       expect(result.fnArray.length).toEqual(3);
-      expect(result.fnArray[0]).toEqual(OPS.fill);
-      expect(result.fnArray[1]).toEqual(OPS.fill);
-      expect(result.fnArray[2]).toEqual(OPS.fill);
+      expect(result.fnArray).toEqual([
+        OPS.constructPath,
+        OPS.constructPath,
+        OPS.constructPath,
+      ]);
+      expect(result.argsArray[0][0]).toEqual(OPS.fill);
+      expect(result.argsArray[1][0]).toEqual(OPS.fill);
+      expect(result.argsArray[2][0]).toEqual(OPS.fill);
     });
 
     it("should handle three glued operations #2", async function () {
@@ -145,10 +150,14 @@ describe("evaluator", function () {
         resources
       );
       expect(!!result.fnArray && !!result.argsArray).toEqual(true);
-      expect(result.fnArray.length).toEqual(3);
-      expect(result.fnArray[0]).toEqual(OPS.eoFillStroke);
-      expect(result.fnArray[1]).toEqual(OPS.fillStroke);
-      expect(result.fnArray[2]).toEqual(OPS.eoFill);
+      expect(result.fnArray).toEqual([
+        OPS.constructPath,
+        OPS.constructPath,
+        OPS.constructPath,
+      ]);
+      expect(result.argsArray[0][0]).toEqual(OPS.eoFillStroke);
+      expect(result.argsArray[1][0]).toEqual(OPS.fillStroke);
+      expect(result.argsArray[2][0]).toEqual(OPS.eoFill);
     });
 
     it("should handle glued operations and operands", async function () {
@@ -160,7 +169,7 @@ describe("evaluator", function () {
       );
       expect(!!result.fnArray && !!result.argsArray).toEqual(true);
       expect(result.fnArray.length).toEqual(2);
-      expect(result.fnArray[0]).toEqual(OPS.fill);
+      expect(result.fnArray[0]).toEqual(OPS.constructPath);
       expect(result.fnArray[1]).toEqual(OPS.setTextRise);
       expect(result.argsArray.length).toEqual(2);
       expect(result.argsArray[1].length).toEqual(1);
@@ -178,13 +187,13 @@ describe("evaluator", function () {
       expect(result.fnArray.length).toEqual(3);
       expect(result.fnArray[0]).toEqual(OPS.setFlatness);
       expect(result.fnArray[1]).toEqual(OPS.setRenderingIntent);
-      expect(result.fnArray[2]).toEqual(OPS.endPath);
+      expect(result.fnArray[2]).toEqual(OPS.constructPath);
       expect(result.argsArray.length).toEqual(3);
       expect(result.argsArray[0].length).toEqual(1);
       expect(result.argsArray[0][0]).toEqual(true);
       expect(result.argsArray[1].length).toEqual(1);
       expect(result.argsArray[1][0]).toEqual(false);
-      expect(result.argsArray[2]).toEqual(null);
+      expect(result.argsArray[2]).toEqual([OPS.endPath, [null], null]);
     });
   });
 
