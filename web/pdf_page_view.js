@@ -95,7 +95,7 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
  * @property {boolean} [enableHWA] - Enables hardware acceleration for
  *   rendering. The default value is `false`.
  * @property {boolean} [enableAutoLinking] - Enable creation of hyperlinks from
- *   text that look like URLs. The default value is `false`.
+ *   text that look like URLs. The default value is `true`.
  */
 
 const DEFAULT_LAYER_PROPERTIES =
@@ -130,7 +130,7 @@ class PDFPageView extends BasePDFPageView {
 
   #canvasWrapper = null;
 
-  #enableAutoLinking = false;
+  #enableAutoLinking = true;
 
   #hasRestrictedScaling = false;
 
@@ -188,7 +188,7 @@ class PDFPageView extends BasePDFPageView {
     this.maxCanvasPixels =
       options.maxCanvasPixels ?? AppOptions.get("maxCanvasPixels");
     this.maxCanvasDim = options.maxCanvasDim || AppOptions.get("maxCanvasDim");
-    this.#enableAutoLinking = options.enableAutoLinking || false;
+    this.#enableAutoLinking = options.enableAutoLinking !== false;
 
     this.l10n = options.l10n;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
