@@ -26,6 +26,10 @@ import { FullScreen } from "./fullscreen.js";
 import { PDFObject } from "./pdf_object.js";
 import { Thermometer } from "./thermometer.js";
 
+/**
+ * Class representing the App.
+ * @extends PDFObject
+ */
 class App extends PDFObject {
   constructor(data) {
     super(data);
@@ -52,18 +56,9 @@ class App extends PDFObject {
     );
 
     this._timeoutIds = new WeakMap();
-    if (typeof FinalizationRegistry !== "undefined") {
-      // About setTimeOut/setInterval return values (specs):
-      //   The return value of this method must be held in a
-      //   JavaScript variable.
-      //   Otherwise, the timeout object is subject to garbage-collection,
-      //   which would cause the clock to stop.
-      this._timeoutIdsRegistry = new FinalizationRegistry(
-        this._cleanTimeout.bind(this)
-      );
-    } else {
-      this._timeoutIdsRegistry = null;
-    }
+    this._timeoutIdsRegistry = typeof FinalizationRegistry !== "undefined"
+      ? new FinalizationRegistry(this._cleanTimeout.bind(this))
+      : null;
 
     this._timeoutCallbackIds = new Map();
     this._timeoutCallbackId = USERACTIVATION_CALLBACKID + 1;
@@ -71,25 +66,41 @@ class App extends PDFObject {
     this._externalCall = data.externalCall;
   }
 
-  // This function is called thanks to the proxy
-  // when we call app['random_string'] to dispatch the event.
+  /**
+   * Dispatches an event.
+   * @param {Object} pdfEvent - The PDF event.
+   */
   _dispatchEvent(pdfEvent) {
     this._eventDispatcher.dispatch(pdfEvent);
   }
 
+  /**
+   * Registers a timeout callback.
+   * @param {string} cExpr - The callback expression.
+   * @returns {number} The callback ID.
+   */
   _registerTimeoutCallback(cExpr) {
     const id = this._timeoutCallbackId++;
     this._timeoutCallbackIds.set(id, cExpr);
     return id;
   }
 
+  /**
+   * Unregisters a timeout callback.
+   * @param {number} id - The callback ID.
+   */
   _unregisterTimeoutCallback(id) {
     this._timeoutCallbackIds.delete(id);
   }
 
+  /**
+   * Evaluates a callback.
+   * @param {Object} param - The callback parameters.
+   * @param {number} param.callbackId - The callback ID.
+   * @param {boolean} param.interval - Whether the callback is an interval.
+   */
   _evalCallback({ callbackId, interval }) {
     if (callbackId === USERACTIVATION_CALLBACKID) {
-      // Special callback id for userActivation stuff.
       this._document.obj._userActivation = false;
       return;
     }
@@ -103,6 +114,12 @@ class App extends PDFObject {
     }
   }
 
+  /**
+   * Registers a timeout.
+   * @param {number} callbackId - The callback ID.
+   * @param {boolean} interval - Whether the timeout is an interval.
+   * @returns {Object} The timeout.
+   */
   _registerTimeout(callbackId, interval) {
     const timeout = Object.create(null);
     const id = { callbackId, interval };
@@ -111,6 +128,10 @@ class App extends PDFObject {
     return timeout;
   }
 
+  /**
+   * Unregisters a timeout.
+   * @param {Object} timeout - The timeout.
+   */
   _unregisterTimeout(timeout) {
     this._timeoutIdsRegistry?.unregister(timeout);
 
@@ -123,6 +144,12 @@ class App extends PDFObject {
     this._cleanTimeout(data);
   }
 
+  /**
+   * Cleans a timeout.
+   * @param {Object} param - The timeout parameters.
+   * @param {number} param.callbackId - The callback ID.
+   * @param {boolean} param.interval - Whether the timeout is an interval.
+   */
   _cleanTimeout({ callbackId, interval }) {
     this._unregisterTimeoutCallback(callbackId);
 
@@ -133,6 +160,11 @@ class App extends PDFObject {
     }
   }
 
+  /**
+   * Gets the platform.
+   * @param {string} platform - The platform string.
+   * @returns {string} The platform.
+   */
   static _getPlatform(platform) {
     if (typeof platform === "string") {
       platform = platform.toLowerCase();
@@ -145,43 +177,29 @@ class App extends PDFObject {
     return "UNIX";
   }
 
+  /**
+   * Gets the language.
+   * @param {string} language - The language string.
+   * @returns {string} The language.
+   */
   static _getLanguage(language) {
     const [main, sub] = language.toLowerCase().split(/[-_]/);
     switch (main) {
       case "zh":
-        if (sub === "cn" || sub === "sg") {
-          return "CHS";
-        }
-        return "CHT";
-      case "da":
-        return "DAN";
-      case "de":
-        return "DEU";
-      case "es":
-        return "ESP";
-      case "fr":
-        return "FRA";
-      case "it":
-        return "ITA";
-      case "ko":
-        return "KOR";
-      case "ja":
-        return "JPN";
-      case "nl":
-        return "NLD";
-      case "no":
-        return "NOR";
-      case "pt":
-        if (sub === "br") {
-          return "PTB";
-        }
-        return "ENU";
-      case "fi":
-        return "SUO";
-      case "SV":
-        return "SVE";
-      default:
-        return "ENU";
+        return sub === "cn" || sub === "sg" ? "CHS" : "CHT";
+      case "da": return "DAN";
+      case "de": return "DEU";
+      case "es": return "ESP";
+      case "fr": return "FRA";
+      case "it": return "ITA";
+      case "ko": return "KOR";
+      case "ja": return "JPN";
+      case "nl": return "NLD";
+      case "no": return "NOR";
+      case "pt": return sub === "br" ? "PTB" : "ENU";
+      case "fi": return "SUO";
+      case "sv": return "SVE";
+      default: return "ENU";
     }
   }
 
@@ -225,7 +243,6 @@ class App extends PDFObject {
   }
 
   set focusRect(val) {
-    /* TODO or not */
     this._focusRect = val;
   }
 
@@ -297,7 +314,6 @@ class App extends PDFObject {
 
   set openInPlace(val) {
     this._openInPlace = val;
-    /* TODO */
   }
 
   get platform() {
@@ -338,7 +354,6 @@ class App extends PDFObject {
 
   set runtimeHighlight(val) {
     this._runtimeHighlight = val;
-    /* TODO */
   }
 
   get runtimeHighlightColor() {
@@ -348,7 +363,6 @@ class App extends PDFObject {
   set runtimeHighlightColor(val) {
     if (Color._isValidColor(val)) {
       this._runtimeHighlightColor = val;
-      /* TODO */
     }
   }
 
@@ -372,7 +386,6 @@ class App extends PDFObject {
 
   set toolbar(val) {
     this._toolbar = val;
-    /* TODO */
   }
 
   get toolbarHorizontal() {
@@ -380,7 +393,6 @@ class App extends PDFObject {
   }
 
   set toolbarHorizontal(value) {
-    /* has been deprecated and it's now equivalent to toolbar */
     this.toolbar = value;
   }
 
@@ -389,7 +401,6 @@ class App extends PDFObject {
   }
 
   set toolbarVertical(value) {
-    /* has been deprecated and it's now equivalent to toolbar */
     this.toolbar = value;
   }
 
@@ -429,6 +440,16 @@ class App extends PDFObject {
     /* Not implemented */
   }
 
+  /**
+   * Displays an alert dialog.
+   * @param {string|Object} cMsg - The message or an object containing the message and type.
+   * @param {number} [nIcon=0] - The icon type.
+   * @param {number} [nType=0] - The dialog type.
+   * @param {string} [cTitle="PDF.js"] - The dialog title.
+   * @param {Object} [oDoc=null] - The document object.
+   * @param {Object} [oCheckbox=null] - The checkbox object.
+   * @returns {number} The response code.
+   */
   alert(
     cMsg,
     nIcon = 0,
@@ -442,7 +463,7 @@ class App extends PDFObject {
     }
     this._document.obj._userActivation = false;
 
-    if (cMsg && typeof cMsg === "object") {
+    if (typeof cMsg === "object") {
       nType = cMsg.nType;
       cMsg = cMsg.cMsg;
     }
@@ -450,10 +471,7 @@ class App extends PDFObject {
     if (!cMsg) {
       return 0;
     }
-    nType =
-      typeof nType !== "number" || isNaN(nType) || nType < 0 || nType > 3
-        ? 0
-        : nType;
+    nType = typeof nType !== "number" || isNaN(nType) || nType < 0 || nType > 3 ? 0 : nType;
     if (nType >= 2) {
       return this._externalCall("confirm", [cMsg]) ? 4 : 3;
     }
@@ -603,8 +621,17 @@ class App extends PDFObject {
     /* Not implemented */
   }
 
+  /**
+   * Prompts the user with a question.
+   * @param {string|Object} cQuestion - The question or an object containing the question and default answer.
+   * @param {string} [cTitle=""] - The dialog title.
+   * @param {string} [cDefault=""] - The default answer.
+   * @param {boolean} [bPassword=""] - Whether the input is a password.
+   * @param {string} [cLabel=""] - The label.
+   * @returns {string} The user's response.
+   */
   response(cQuestion, cTitle = "", cDefault = "", bPassword = "", cLabel = "") {
-    if (cQuestion && typeof cQuestion === "object") {
+    if (typeof cQuestion === "object") {
       cDefault = cQuestion.cDefault;
       cQuestion = cQuestion.cQuestion;
     }
@@ -613,8 +640,14 @@ class App extends PDFObject {
     return this._externalCall("prompt", [cQuestion, cDefault || ""]);
   }
 
+  /**
+   * Sets an interval callback.
+   * @param {string|Object} cExpr - The callback expression or an object containing the expression and interval.
+   * @param {number} [nMilliseconds=0] - The interval in milliseconds.
+   * @returns {Object} The interval object.
+   */
   setInterval(cExpr, nMilliseconds = 0) {
-    if (cExpr && typeof cExpr === "object") {
+    if (typeof cExpr === "object") {
       nMilliseconds = cExpr.nMilliseconds || 0;
       cExpr = cExpr.cExpr;
     }
@@ -623,17 +656,21 @@ class App extends PDFObject {
       throw new TypeError("First argument of app.setInterval must be a string");
     }
     if (typeof nMilliseconds !== "number") {
-      throw new TypeError(
-        "Second argument of app.setInterval must be a number"
-      );
+      throw new TypeError("Second argument of app.setInterval must be a number");
     }
     const callbackId = this._registerTimeoutCallback(cExpr);
     this._externalCall("setInterval", [callbackId, nMilliseconds]);
     return this._registerTimeout(callbackId, true);
   }
 
+  /**
+   * Sets a timeout callback.
+   * @param {string|Object} cExpr - The callback expression or an object containing the expression and timeout.
+   * @param {number} [nMilliseconds=0] - The timeout in milliseconds.
+   * @returns {Object} The timeout object.
+   */
   setTimeOut(cExpr, nMilliseconds = 0) {
-    if (cExpr && typeof cExpr === "object") {
+    if (typeof cExpr === "object") {
       nMilliseconds = cExpr.nMilliseconds || 0;
       cExpr = cExpr.cExpr;
     }
