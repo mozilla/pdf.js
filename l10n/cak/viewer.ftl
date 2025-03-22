@@ -270,6 +270,9 @@ pdfjs-editor-ink-button =
     .title = Tiwachib'ëx
 pdfjs-editor-ink-button-label = Tiwachib'ëx
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

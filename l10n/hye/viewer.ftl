@@ -260,6 +260,9 @@ pdfjs-web-fonts-disabled = Վեբ-տառատեսակները անջատուած 
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

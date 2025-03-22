@@ -179,6 +179,9 @@ pdfjs-web-fonts-disabled = Veb shriftlar oʻchirilgan: ichki PDF shriftlardan fo
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

@@ -324,6 +324,19 @@ pdfjs-editor-signature-button =
     .title = Přidat podpis
 pdfjs-editor-signature-button-label = Přidat podpis
 
+## Default editor aria labels
+
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = Editor zvýraznění
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = Editor kresby
+pdfjs-editor-signature-editor =
+    .aria-label = Editor podpisu
+pdfjs-editor-stamp-editor =
+    .aria-label = Editor obrázků
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =
@@ -352,9 +365,16 @@ pdfjs-editor-stamp-add-image-button-label = Přidat obrázek
 pdfjs-editor-free-highlight-thickness-input = Tloušťka
 pdfjs-editor-free-highlight-thickness-title =
     .title = Změna tloušťky při zvýrazňování jiných položek než textu
+pdfjs-editor-add-signature-container =
+    .aria-label = Ovládací prvky pro podpisy a uložené podpisy
 pdfjs-editor-signature-add-signature-button =
     .title = Přidat nový podpis
 pdfjs-editor-signature-add-signature-button-label = Přidat nový podpis
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = Uložený podpis: { $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Textový editor
@@ -589,6 +609,9 @@ pdfjs-editor-edit-signature-update-button = Aktualizovat
 pdfjs-editor-delete-signature-button =
     .title = Odebrat podpis
 pdfjs-editor-delete-signature-button-label = Odebrat podpis
+pdfjs-editor-delete-signature-button1 =
+    .title = Odebrat uložený podpis
+pdfjs-editor-delete-signature-button-label1 = Odebrat uložený podpis
 
 ## Editor toolbar
 

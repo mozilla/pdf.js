@@ -273,6 +273,9 @@ pdfjs-editor-stamp-button =
     .title = Ouzhpennañ pe aozañ skeudennoù
 pdfjs-editor-stamp-button-label = Ouzhpennañ pe aozañ skeudennoù
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

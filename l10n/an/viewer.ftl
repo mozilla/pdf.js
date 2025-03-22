@@ -249,6 +249,9 @@ pdfjs-web-fonts-disabled = As fuents web son desactivadas: no se puet incrustar 
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

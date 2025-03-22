@@ -234,6 +234,9 @@ pdfjs-editor-stamp-button =
     .title = රූප සංස්කරණය හෝ එක් කරන්න
 pdfjs-editor-stamp-button-label = රූප සංස්කරණය හෝ එක් කරන්න
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

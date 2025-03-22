@@ -308,6 +308,22 @@ pdfjs-highlight-floating-button1 =
     .title = Sorot
     .aria-label = Sorot
 pdfjs-highlight-floating-button-label = Sorot
+pdfjs-editor-signature-button =
+    .title = Tambahkan tanda tangan
+pdfjs-editor-signature-button-label = Tambahkan tanda tangan
+
+## Default editor aria labels
+
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = Editor sorot
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = Editor gambar
+pdfjs-editor-signature-editor =
+    .aria-label = Editor tanda tangan
+pdfjs-editor-stamp-editor =
+    .aria-label = Editor gambar
 
 ## Remove button for the various kind of editor.
 
@@ -319,6 +335,8 @@ pdfjs-editor-remove-stamp-button =
     .title = Hapus gambar
 pdfjs-editor-remove-highlight-button =
     .title = Hapus sorotan
+pdfjs-editor-remove-signature-button =
+    .title = Hapus tanda tangan
 
 ##
 
@@ -335,6 +353,16 @@ pdfjs-editor-stamp-add-image-button-label = Tambahkan gambar
 pdfjs-editor-free-highlight-thickness-input = Ketebalan
 pdfjs-editor-free-highlight-thickness-title =
     .title = Ubah ketebalan saat menyorot item selain teks
+pdfjs-editor-add-signature-container =
+    .aria-label = Kontrol tanda tangan dan tanda tangan tersimpan
+pdfjs-editor-signature-add-signature-button =
+    .title = Tambahkan tanda tangan baru
+pdfjs-editor-signature-add-signature-button-label = Tambahkan tanda tangan baru
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = Tanda tangan tersimpan: { $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Editor Teks
@@ -492,6 +520,7 @@ pdfjs-editor-undo-bar-message-highlight = Sorotan dihapus
 pdfjs-editor-undo-bar-message-freetext = Teks dihapus
 pdfjs-editor-undo-bar-message-ink = Gambar dihapus
 pdfjs-editor-undo-bar-message-stamp = Gambar dihapus
+pdfjs-editor-undo-bar-message-signature = Tanda tangan dihapus
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple = { $count } anotasi dihapus
@@ -504,15 +533,39 @@ pdfjs-editor-undo-bar-close-button-label = Tutup
 
 ## Add a signature dialog
 
+pdfjs-editor-add-signature-dialog-title = Tambahkan tanda tangan
 
 ## Tab names
 
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = Tipe
+    .title = Tipe
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = Gambarkan
+    .title = Gambarkan
+pdfjs-editor-add-signature-image-button = Gambar
+    .title = Gambar
 
 ## Tab panels
 
+pdfjs-editor-add-signature-type-input =
+    .aria-label = Ketik tanda tangan Anda
+    .placeholder = Ketik tanda tangan Anda
+pdfjs-editor-add-signature-draw-placeholder = Buat tanda tangan Anda
+pdfjs-editor-add-signature-draw-thickness-range-label = Ketebalan
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Ketebalan gambar: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = Seret berkas ke sini untuk mengunggah
 
 ## Controls
 
+pdfjs-editor-add-signature-description-default-when-drawing = Tanda tangan
+pdfjs-editor-add-signature-clear-button-label = Hapus tanda tangan
+pdfjs-editor-add-signature-clear-button =
+    .title = Hapus tanda tangan
+pdfjs-editor-add-signature-save-checkbox = Simpan tanda tangan
 
 ## Dialog buttons
 

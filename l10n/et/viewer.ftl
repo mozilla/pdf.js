@@ -260,6 +260,9 @@ pdfjs-web-fonts-disabled = Veebifondid on keelatud: PDFiga kaasatud fonte pole v
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

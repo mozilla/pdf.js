@@ -312,6 +312,9 @@ pdfjs-editor-signature-button =
     .title = เพิ่มลายเซ็น
 pdfjs-editor-signature-button-label = เพิ่มลายเซ็น
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =
