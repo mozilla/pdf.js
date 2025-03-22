@@ -392,12 +392,11 @@ class PDFFunction {
     // seen in our tests.
     const MAX_CACHE_SIZE = 2048 * 4;
     let cache_available = MAX_CACHE_SIZE;
-    const tmpBuf = new Float32Array(numInputs);
+    const input = new Float32Array(numInputs);
 
     return function constructPostScriptFn(src, srcOffset, dest, destOffset) {
       let i, value;
       let key = "";
-      const input = tmpBuf;
       for (i = 0; i < numInputs; i++) {
         value = src[srcOffset + i];
         input[i] = value;
