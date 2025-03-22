@@ -1705,11 +1705,11 @@ describe("FreeText Editor", () => {
   describe("Move editor with arrows", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -1779,6 +1779,16 @@ describe("FreeText Editor", () => {
     it("must check arrow doesn't move an editor when a slider is focused", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          const rect = await getRect(page, ".annotationEditorLayer");
+          const data = "Hello PDF.js World !!";
+          const editorSelector = getEditorSelector(0);
+          await page.mouse.click(rect.x + 200, rect.y + 200);
+          await page.waitForSelector(editorSelector, { visible: true });
+          await page.type(`${editorSelector} .internal`, data);
+          await commit(page);
+
           await selectAll(page);
           await page.focus("#editorFreeTextFontSize");
 
@@ -1788,7 +1798,6 @@ describe("FreeText Editor", () => {
           );
           const pageWidth = page2X - page1X;
 
-          const editorSelector = getEditorSelector(0);
           await moveEditor(page, editorSelector, 5, () =>
             page.keyboard.press("ArrowRight")
           );
@@ -1808,12 +1817,11 @@ describe("FreeText Editor", () => {
     it("must check the position of an empty freetext", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await clearAll(page);
+          await switchToFreeText(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
-
           const data = "Hello PDF.js World !!";
-          let editorSelector = getEditorSelector(1);
+          let editorSelector = getEditorSelector(0);
           await page.mouse.click(rect.x + 100, rect.y + 100);
           await page.waitForSelector(editorSelector, { visible: true });
           await page.type(`${editorSelector} .internal`, data);
@@ -1822,7 +1830,7 @@ describe("FreeText Editor", () => {
           const [pageX, pageY] = await getFirstSerialized(page, x => x.rect);
 
           await clearAll(page);
-          editorSelector = getEditorSelector(2);
+          editorSelector = getEditorSelector(1);
           await page.mouse.click(rect.x + 100, rect.y + 100);
           await page.waitForSelector(editorSelector, { visible: true });
 
