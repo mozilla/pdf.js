@@ -559,11 +559,7 @@ const PDFViewerApplication = {
     }
 
     if (appConfig.annotationEditorParams) {
-      if (
-        ((typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
-          typeof AbortSignal.any === "function") &&
-        annotationEditorMode !== AnnotationEditorType.DISABLE
-      ) {
+      if (annotationEditorMode !== AnnotationEditorType.DISABLE) {
         const editorSignatureButton = appConfig.toolbar?.editorSignatureButton;
         if (editorSignatureButton && AppOptions.get("enableSignatureEditor")) {
           editorSignatureButton.parentElement.hidden = false;
@@ -2075,19 +2071,14 @@ const PDFViewerApplication = {
       _windowAbortController: { signal },
     } = this;
 
-    if (
-      (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
-      typeof AbortSignal.any === "function"
-    ) {
-      this._touchManager = new TouchManager({
-        container: window,
-        isPinchingDisabled: () => pdfViewer.isInPresentationMode,
-        isPinchingStopped: () => this.overlayManager?.active,
-        onPinching: this.touchPinchCallback.bind(this),
-        onPinchEnd: this.touchPinchEndCallback.bind(this),
-        signal,
-      });
-    }
+    this._touchManager = new TouchManager({
+      container: window,
+      isPinchingDisabled: () => pdfViewer.isInPresentationMode,
+      isPinchingStopped: () => this.overlayManager?.active,
+      onPinching: this.touchPinchCallback.bind(this),
+      onPinchEnd: this.touchPinchEndCallback.bind(this),
+      signal,
+    });
 
     function addWindowResolutionChange(evt = null) {
       if (evt) {
