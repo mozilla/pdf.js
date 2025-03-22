@@ -320,6 +320,19 @@ pdfjs-editor-signature-button =
     .title = Tilføj underskrift
 pdfjs-editor-signature-button-label = Tilføj underskrift
 
+## Default editor aria labels
+
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = Redigering af fremhævning
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = Redigering af tegninger
+pdfjs-editor-signature-editor =
+    .aria-label = Redigering af underskrifter
+pdfjs-editor-stamp-editor =
+    .aria-label = Redigering af billeder
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =
@@ -351,6 +364,11 @@ pdfjs-editor-free-highlight-thickness-title =
 pdfjs-editor-signature-add-signature-button =
     .title = Tilføj ny underskrift
 pdfjs-editor-signature-add-signature-button-label = Tilføj ny underskrift
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = Gemt underskrift: { $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Teksteditor
@@ -583,6 +601,9 @@ pdfjs-editor-edit-signature-update-button = Opdater
 pdfjs-editor-delete-signature-button =
     .title = Fjern underskrift
 pdfjs-editor-delete-signature-button-label = Fjern underskrift
+pdfjs-editor-delete-signature-button1 =
+    .title = Fjern gemt underskrift
+pdfjs-editor-delete-signature-button-label1 = Fjern gemt underskrift
 
 ## Editor toolbar
 

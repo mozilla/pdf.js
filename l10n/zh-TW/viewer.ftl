@@ -309,8 +309,21 @@ pdfjs-highlight-floating-button1 =
     .aria-label = 強調
 pdfjs-highlight-floating-button-label = 強調
 pdfjs-editor-signature-button =
-    .title = 加入簽名
-pdfjs-editor-signature-button-label = 加入簽名
+    .title = 加入簽章
+pdfjs-editor-signature-button-label = 加入簽章
+
+## Default editor aria labels
+
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = 強調樣式編輯器
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = 繪圖編輯器
+pdfjs-editor-signature-editor =
+    .aria-label = 簽章編輯器
+pdfjs-editor-stamp-editor =
+    .aria-label = 圖片編輯器
 
 ## Remove button for the various kind of editor.
 
@@ -340,9 +353,16 @@ pdfjs-editor-stamp-add-image-button-label = 新增圖片
 pdfjs-editor-free-highlight-thickness-input = 線條粗細
 pdfjs-editor-free-highlight-thickness-title =
     .title = 更改強調文字以外的項目時的線條粗細
+pdfjs-editor-add-signature-container =
+    .aria-label = 簽章控制元件與儲存的簽章
 pdfjs-editor-signature-add-signature-button =
-    .title = 新增簽名
+    .title = 新增簽章
 pdfjs-editor-signature-add-signature-button-label = 新增簽章
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = 已儲存簽章：{ $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = 文字編輯器
@@ -571,6 +591,9 @@ pdfjs-editor-edit-signature-update-button = 更新
 pdfjs-editor-delete-signature-button =
     .title = 移除簽章
 pdfjs-editor-delete-signature-button-label = 移除簽章
+pdfjs-editor-delete-signature-button1 =
+    .title = 移除儲存的簽章
+pdfjs-editor-delete-signature-button-label1 = 移除儲存的簽章
 
 ## Editor toolbar
 

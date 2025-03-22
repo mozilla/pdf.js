@@ -225,6 +225,9 @@ pdfjs-web-fonts-disabled = వెబ్ ఫాంట్లు అచేతని
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

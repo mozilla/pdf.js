@@ -189,6 +189,9 @@ pdfjs-password-cancel-button = Duyichin'
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

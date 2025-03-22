@@ -215,6 +215,9 @@ pdfjs-web-fonts-disabled = បាន​បិទ​ពុម្ពអក្ស�
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

@@ -316,6 +316,19 @@ pdfjs-editor-signature-button =
     .title = Ajouter une signature
 pdfjs-editor-signature-button-label = Ajouter une signature
 
+## Default editor aria labels
+
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = Éditeur de surlignage
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = Éditeur de dessins
+pdfjs-editor-signature-editor =
+    .aria-label = Éditeur de signatures
+pdfjs-editor-stamp-editor =
+    .aria-label = Éditeur d’images
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =
@@ -344,9 +357,16 @@ pdfjs-editor-stamp-add-image-button-label = Ajouter une image
 pdfjs-editor-free-highlight-thickness-input = Épaisseur
 pdfjs-editor-free-highlight-thickness-title =
     .title = Modifier l’épaisseur pour le surlignage d’éléments non textuels
+pdfjs-editor-add-signature-container =
+    .aria-label = Contrôles de signature et signatures enregistrées
 pdfjs-editor-signature-add-signature-button =
     .title = Ajouter une nouvelle signature
 pdfjs-editor-signature-add-signature-button-label = Ajouter une nouvelle signature
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = Signature enregistrée : { $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Éditeur de texte
@@ -579,6 +599,9 @@ pdfjs-editor-edit-signature-update-button = Mettre à jour
 pdfjs-editor-delete-signature-button =
     .title = Supprimer la signature
 pdfjs-editor-delete-signature-button-label = Supprimer la signature
+pdfjs-editor-delete-signature-button1 =
+    .title = Supprimer la signature enregistrée
+pdfjs-editor-delete-signature-button-label1 = Supprimer la signature enregistrée
 
 ## Editor toolbar
 

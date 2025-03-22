@@ -272,6 +272,9 @@ pdfjs-editor-ink-button =
     .title = Dibuixa
 pdfjs-editor-ink-button-label = Dibuixa
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 
