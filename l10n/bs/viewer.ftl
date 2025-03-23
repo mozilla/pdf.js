@@ -215,6 +215,9 @@ pdfjs-web-fonts-disabled = Web fontovi su onemogućeni: nemoguće koristiti uba�
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

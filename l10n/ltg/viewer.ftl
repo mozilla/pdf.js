@@ -238,6 +238,9 @@ pdfjs-web-fonts-disabled = Šķārsteikla fonti nav aktivizāti: Navar īgult PD
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

@@ -239,6 +239,9 @@ pdfjs-web-fonts-disabled = ওয়েব ফন্ট নিষ্ক্রিয়
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

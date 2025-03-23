@@ -272,6 +272,9 @@ pdfjs-editor-ink-button =
     .title = Tarraing
 pdfjs-editor-ink-button-label = Tarraing
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 
