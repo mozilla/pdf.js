@@ -128,7 +128,7 @@ function testSearch({
       }
     }
 
-    const totalMatches = matchesPerPage.reduce((a, b) => a + b);
+    const totalMatches = Math.sumPrecise(matchesPerPage);
 
     if (updateFindControlState) {
       eventBus.on(
