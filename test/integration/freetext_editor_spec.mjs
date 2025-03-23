@@ -2340,20 +2340,19 @@ describe("FreeText Editor", () => {
   describe("Create editor with keyboard", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
-    it("must create an editor from the toolbar", async () => {
+    it("must create an editor, using Enter/Space keys, with focused toolbar button", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await page.focus("#editorFreeTextButton");
           await page.keyboard.press("Enter");
-
           let editorSelector = getEditorSelector(0);
           await page.waitForSelector(editorSelector, { visible: true });
 
@@ -2394,11 +2393,14 @@ describe("FreeText Editor", () => {
       );
     });
 
-    it("must create an editor with keyboard", async () => {
+    it("must create an editor, using Enter/Space keys, with focused page", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          await page.focus(".annotationEditorLayer");
           await page.keyboard.press("Enter");
-          let editorSelector = getEditorSelector(2);
+          let editorSelector = getEditorSelector(0);
           await page.waitForSelector(editorSelector, { visible: true });
 
           await moveEditor(page, editorSelector, 10, () => kbBigMoveLeft(page));
@@ -2417,7 +2419,7 @@ describe("FreeText Editor", () => {
           expect(content).withContext(`In ${browserName}`).toEqual(data);
 
           await page.keyboard.press(" ");
-          editorSelector = getEditorSelector(3);
+          editorSelector = getEditorSelector(1);
           await page.waitForSelector(editorSelector, { visible: true });
 
           await moveEditor(page, editorSelector, 10, () =>
