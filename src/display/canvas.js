@@ -1380,7 +1380,7 @@ class CanvasGraphics {
     this.suspendedCtx = this.ctx;
     this.ctx = scratchCanvas.context;
     const ctx = this.ctx;
-    ctx.setTransform(...getCurrentTransform(this.suspendedCtx));
+    ctx.setTransform(this.suspendedCtx.getTransform());
     copyCtxState(this.suspendedCtx, ctx);
     mirrorContextOperations(ctx, this.suspendedCtx);
 
@@ -2550,6 +2550,17 @@ class CanvasGraphics {
     // we have to translate the group ctx.
     groupCtx.translate(-offsetX, -offsetY);
     groupCtx.transform(...currentTransform);
+
+    // Apply the bbox to the group context.
+    let clip = new Path2D();
+    const [x0, y0, x1, y1] = group.bbox;
+    clip.rect(x0, y0, x1 - x0, y1 - y0);
+    if (group.matrix) {
+      const path = new Path2D();
+      path.addPath(clip, new DOMMatrix(group.matrix));
+      clip = path;
+    }
+    groupCtx.clip(clip);
 
     if (group.smask) {
       // Saving state and cached mask to be used in setGState.
