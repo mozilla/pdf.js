@@ -239,6 +239,9 @@ pdfjs-web-fonts-disabled = I font do web en dizativæ: inposcibile adeuviâ i ca
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

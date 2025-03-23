@@ -249,6 +249,9 @@ pdfjs-web-fonts-disabled = Naka-disable ang mga Web font: hindi kayang gamitin a
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

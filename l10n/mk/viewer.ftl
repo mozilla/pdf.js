@@ -207,6 +207,9 @@ pdfjs-web-fonts-disabled = Интернет фонтовите се оневоз
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

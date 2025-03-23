@@ -311,6 +311,9 @@ pdfjs-editor-signature-button =
     .title = Shtoni nënshkrim
 pdfjs-editor-signature-button-label = Shtoni nënshkrim
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =

@@ -272,6 +272,9 @@ pdfjs-editor-ink-button =
     .title = ແຕ້ມ
 pdfjs-editor-ink-button-label = ແຕ້ມ
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

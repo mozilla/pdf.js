@@ -210,6 +210,9 @@ pdfjs-web-fonts-disabled = वेब फन्टखौ लोरबां ख�
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

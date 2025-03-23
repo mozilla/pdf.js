@@ -205,6 +205,9 @@ pdfjs-web-fonts-disabled = Tá clófhoirne Gréasáin díchumasaithe: ní féidi
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

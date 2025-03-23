@@ -226,6 +226,9 @@ pdfjs-web-fonts-disabled = वेब फन्ट असक्षम छन्: 
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

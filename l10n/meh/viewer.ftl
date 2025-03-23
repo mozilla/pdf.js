@@ -79,6 +79,9 @@ pdfjs-password-cancel-button = Nkuvi-ka
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

@@ -279,6 +279,9 @@ pdfjs-highlight-floating-button1 =
     .aria-label = برجسته کردن
 pdfjs-highlight-floating-button-label = برجسته کردن
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

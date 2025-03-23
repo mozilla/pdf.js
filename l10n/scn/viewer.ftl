@@ -66,6 +66,9 @@ pdfjs-password-cancel-button = Sfai
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 

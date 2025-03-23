@@ -312,6 +312,19 @@ pdfjs-editor-signature-button =
     .title = 添加签名
 pdfjs-editor-signature-button-label = 添加签名
 
+## Default editor aria labels
+
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = 高亮编辑器
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = 绘图编辑器
+pdfjs-editor-signature-editor =
+    .aria-label = 签名编辑器
+pdfjs-editor-stamp-editor =
+    .aria-label = 图像编辑器
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =
@@ -340,9 +353,16 @@ pdfjs-editor-stamp-add-image-button-label = 添加图像
 pdfjs-editor-free-highlight-thickness-input = 粗细
 pdfjs-editor-free-highlight-thickness-title =
     .title = 更改高亮粗细（用于文本以外项目）
+pdfjs-editor-add-signature-container =
+    .aria-label = 签名管理和保存的签名
 pdfjs-editor-signature-add-signature-button =
     .title = 添加新签名
 pdfjs-editor-signature-add-signature-button-label = 添加新签名
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = 保存的签名：{ $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = 文本编辑器
@@ -571,11 +591,14 @@ pdfjs-editor-edit-signature-update-button = 更新
 pdfjs-editor-delete-signature-button =
     .title = 移除签名
 pdfjs-editor-delete-signature-button-label = 移除签名
+pdfjs-editor-delete-signature-button1 =
+    .title = 移除已保存的签名
+pdfjs-editor-delete-signature-button-label1 = 移除已保存的签名
 
 ## Editor toolbar
 
-pdfjs-editor-add-signature-edit-button-label = 编辑说明
+pdfjs-editor-add-signature-edit-button-label = 编辑描述
 
 ## Edit signature description dialog
 
-pdfjs-editor-edit-signature-dialog-title = 编辑说明
+pdfjs-editor-edit-signature-dialog-title = 编辑描述

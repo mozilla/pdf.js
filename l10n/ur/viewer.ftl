@@ -240,6 +240,9 @@ pdfjs-web-fonts-disabled = ویب فانٹ نا اہل ہیں: شامل PDF فا
 ## Editing
 
 
+## Default editor aria labels
+
+
 ## Remove button for the various kind of editor.
 
 
