@@ -720,7 +720,7 @@ class PDF20 extends PDFBase {
       // The number is e0 + 256 * e1 + 256^2 * e2... and 256 % 3 === 1, hence
       // the powers of 256 are === 1 modulo 3 and finally the number modulo 3
       // is equal to the remainder modulo 3 of the sum of the e_n.
-      const remainder = e.slice(0, 16).reduce((a, b) => a + b, 0) % 3;
+      const remainder = Math.sumPrecise(e.slice(0, 16)) % 3;
       if (remainder === 0) {
         k = calculateSHA256(e, 0, e.length);
       } else if (remainder === 1) {

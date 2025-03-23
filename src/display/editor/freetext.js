@@ -718,7 +718,7 @@ class FreeTextEditor extends AnnotationEditor {
 
     // Set the caret at the right position.
     const newRange = new Range();
-    let beforeLength = bufferBefore.reduce((acc, line) => acc + line.length, 0);
+    let beforeLength = Math.sumPrecise(bufferBefore.map(line => line.length));
     for (const { firstChild } of this.editorDiv.childNodes) {
       // Each child is either a div with a text node or a br element.
       if (firstChild.nodeType === Node.TEXT_NODE) {
