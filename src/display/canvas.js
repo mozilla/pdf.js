@@ -1545,39 +1545,35 @@ class CanvasGraphics {
       // Copy the temporary canvas state to the main(suspended) canvas to keep
       // it in sync.
       copyCtxState(this.ctx, this.suspendedCtx);
-      // Don't bother calling save on the temporary canvas since state is not
-      // saved there.
-      this.suspendedCtx.save();
-    } else {
-      this.ctx.save();
     }
+    this.ctx.save();
     const old = this.current;
     this.stateStack.push(old);
     this.current = old.clone();
   }
 
   restore() {
-    if (this.stateStack.length === 0 && this.inSMaskMode) {
-      this.endSMaskMode();
-    }
-    if (this.stateStack.length !== 0) {
-      this.current = this.stateStack.pop();
+    if (this.stateStack.length === 0) {
       if (this.inSMaskMode) {
-        // Graphics state is stored on the main(suspended) canvas. Restore its
-        // state then copy it over to the temporary canvas.
-        this.suspendedCtx.restore();
-        copyCtxState(this.suspendedCtx, this.ctx);
-      } else {
-        this.ctx.restore();
+        this.endSMaskMode();
       }
-      this.checkSMaskState();
-
-      // Ensure that the clipping path is reset (fixes issue6413.pdf).
-      this.pendingClip = null;
-
-      this._cachedScaleForStroking[0] = -1;
-      this._cachedGetSinglePixelWidth = null;
+      return;
     }
+
+    this.current = this.stateStack.pop();
+    this.ctx.restore();
+    if (this.inSMaskMode) {
+      // Graphics state is stored on the main(suspended) canvas. Restore its
+      // state then copy it over to the temporary canvas.
+      copyCtxState(this.suspendedCtx, this.ctx);
+    }
+    this.checkSMaskState();
+
+    // Ensure that the clipping path is reset (fixes issue6413.pdf).
+    this.pendingClip = null;
+
+    this._cachedScaleForStroking[0] = -1;
+    this._cachedGetSinglePixelWidth = null;
   }
 
   transform(a, b, c, d, e, f) {
