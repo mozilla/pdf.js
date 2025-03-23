@@ -81,11 +81,10 @@ class GlyfTable {
   }
 
   getSize() {
-    return this.glyphs.reduce((a, g) => {
-      const size = g.getSize();
+    return Math.sumPrecise(
       // Round to next multiple of 4 if needed.
-      return a + ((size + 3) & ~3);
-    }, 0);
+      this.glyphs.map(g => (g.getSize() + 3) & ~3)
+    );
   }
 
   write() {
@@ -169,7 +168,7 @@ class Glyph {
     }
     const size = this.simple
       ? this.simple.getSize()
-      : this.composites.reduce((a, c) => a + c.getSize(), 0);
+      : Math.sumPrecise(this.composites.map(c => c.getSize()));
     return this.header.getSize() + size;
   }
 

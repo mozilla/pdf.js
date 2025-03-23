@@ -184,7 +184,7 @@ function computeMD5(filesize, xrefInfo) {
     filesize.toString(),
     ...Object.values(xrefInfo.info),
   ];
-  const md5BufferLen = md5Buffer.reduce((a, str) => a + str.length, 0);
+  const md5BufferLen = Math.sumPrecise(md5Buffer.map(str => str.length));
 
   const array = new Uint8Array(md5BufferLen);
   let offset = 0;
@@ -352,7 +352,7 @@ async function getXRefStreamTable(
   newXref.set("W", sizes);
   computeIDs(baseOffset, xrefInfo, newXref);
 
-  const structSize = sizes.reduce((a, x) => a + x, 0);
+  const structSize = Math.sumPrecise(sizes);
   const data = new Uint8Array(structSize * xrefTableData.length);
   const stream = new Stream(data);
   stream.dict = newXref;
@@ -467,10 +467,8 @@ async function incrementalUpdate({
     ? getXRefStreamTable(xrefInfo, baseOffset, newRefs, newXref, buffer)
     : getXRefTable(xrefInfo, baseOffset, newRefs, newXref, buffer));
 
-  const totalLength = buffer.reduce(
-    (a, str) => a + str.length,
-    originalData.length
-  );
+  const totalLength =
+    originalData.length + Math.sumPrecise(buffer.map(str => str.length));
   const array = new Uint8Array(totalLength);
 
   // Original data
