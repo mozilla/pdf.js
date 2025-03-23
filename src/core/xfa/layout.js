@@ -183,9 +183,9 @@ function getAvailableSpace(node) {
       };
     case "rl-row":
     case "row":
-      const width = node[$extra].columnWidths
-        .slice(node[$extra].currentColumn)
-        .reduce((a, x) => a + x);
+      const width = Math.sumPrecise(
+        node[$extra].columnWidths.slice(node[$extra].currentColumn)
+      );
       return { width, height: availableSpace.height - marginH };
     case "table":
     case "tb":
