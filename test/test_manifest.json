@@ -12019,5 +12019,12 @@
     "md5": "f95d2cbdd904f5acf922e088cc3cb153",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue16742",
+    "file": "pdfs/issue16742.pdf",
+    "md5": "98b19e944339c01c10c503685eee3ad2",
+    "rounds": 1,
+    "type": "eq"
   }
 ]
