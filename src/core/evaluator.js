@@ -1421,30 +1421,21 @@ class PartialEvaluator {
             DrawOPS.closePath
           );
         }
-        minMax[0] = Math.min(minMax[0], x, xw);
-        minMax[1] = Math.min(minMax[1], y, yh);
-        minMax[2] = Math.max(minMax[2], x, xw);
-        minMax[3] = Math.max(minMax[3], y, yh);
+        Util.rectBoundingBox(x, y, xw, yh, minMax);
         break;
       }
       case OPS.moveTo: {
         const x = (state.currentPointX = args[0]);
         const y = (state.currentPointY = args[1]);
         pathBuffer.push(DrawOPS.moveTo, x, y);
-        minMax[0] = Math.min(minMax[0], x);
-        minMax[1] = Math.min(minMax[1], y);
-        minMax[2] = Math.max(minMax[2], x);
-        minMax[3] = Math.max(minMax[3], y);
+        Util.pointBoundingBox(x, y, minMax);
         break;
       }
       case OPS.lineTo: {
         const x = (state.currentPointX = args[0]);
         const y = (state.currentPointY = args[1]);
         pathBuffer.push(DrawOPS.lineTo, x, y);
-        minMax[0] = Math.min(minMax[0], x);
-        minMax[1] = Math.min(minMax[1], y);
-        minMax[2] = Math.max(minMax[2], x);
-        minMax[3] = Math.max(minMax[3], y);
+        Util.pointBoundingBox(x, y, minMax);
         break;
       }
       case OPS.curveTo: {
@@ -4812,7 +4803,8 @@ class TranslatedFont {
       // Override the fontBBox when it's undefined/empty, or when it's at least
       // (approximately) one order of magnitude smaller than the charBBox
       // (fixes issue14999_reduced.pdf).
-      this.#computeCharBBox(charBBox);
+      this._bbox ??= [Infinity, Infinity, -Infinity, -Infinity];
+      Util.rectBoundingBox(...charBBox, this._bbox);
     }
 
     let i = 0,
@@ -4881,20 +4873,12 @@ class TranslatedFont {
         case OPS.constructPath:
           const minMax = operatorList.argsArray[i][2];
           // Override the fontBBox when it's undefined/empty (fixes 19624.pdf).
-          this.#computeCharBBox(minMax);
+          this._bbox ??= [Infinity, Infinity, -Infinity, -Infinity];
+          Util.rectBoundingBox(...minMax, this._bbox);
           break;
       }
       i++;
     }
-  }
-
-  #computeCharBBox(bbox) {
-    this._bbox ||= [Infinity, Infinity, -Infinity, -Infinity];
-
-    this._bbox[0] = Math.min(this._bbox[0], bbox[0]);
-    this._bbox[1] = Math.min(this._bbox[1], bbox[1]);
-    this._bbox[2] = Math.max(this._bbox[2], bbox[2]);
-    this._bbox[3] = Math.max(this._bbox[3], bbox[3]);
   }
 }
 
