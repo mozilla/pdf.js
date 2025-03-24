@@ -1,0 +1,189 @@
+%PDF-1.7
+%€€€€
+
+1 0 obj
+<<
+  /Type /Catalog
+  /Pages 2 0 R
+>>
+endobj
+
+2 0 obj
+<<
+  /Type /Pages
+  /Count 1
+  /Kids [3 0 R]
+>>
+endobj
+
+6 0 obj
+<<
+  /Length 105
+  /Type /XObject
+  /Subtype /Form
+  /Resources <<
+    /ColorSpace <<
+      /srgb [/CalRGB <<
+        /WhitePoint [0.9505 1 1.0888]
+        /Gamma [2.2 2.2 2.2]
+        /Matrix [0.4124 0.2126 0.0193 0.3576 0.715 0.1192 0.1805 0.0722 0.9505]
+      >>]
+    >>
+    /ProcSet [/PDF /ImageC /ImageB]
+  >>
+  /Group <<
+    /Type /Group
+    /S /Transparency
+    /I true
+    /K false
+    /CS [/CalRGB <<
+      /WhitePoint [0.9505 1 1.0888]
+      /Gamma [2.2 2.2 2.2]
+      /Matrix [0.4124 0.2126 0.0193 0.3576 0.715 0.1192 0.1805 0.0722 0.9505]
+    >>]
+  >>
+  /BBox [-20 -20 80 220.00002]
+>>
+stream
+q
+q
+1 0 0 1 0 0 cm
+q
+1 0 0 1 0 0 cm
+/srgb CS
+/srgb cs
+1 1 1 scn
+0 0 m
+200 0 l
+200 200 l
+0 200 l
+h
+f
+Q
+Q
+Q
+endstream
+endobj
+
+7 0 obj
+<<
+  /Type /ExtGState
+  /SMask <<
+    /Type /Mask
+    /S /Luminosity
+    /G 6 0 R
+  >>
+>>
+endobj
+
+5 0 obj
+<<
+  /Length 174
+  /Type /XObject
+  /Subtype /Form
+  /Resources <<
+    /ColorSpace <<
+      /srgb [/CalRGB <<
+        /WhitePoint [0.9505 1 1.0888]
+        /Gamma [2.2 2.2 2.2]
+        /Matrix [0.4124 0.2126 0.0193 0.3576 0.715 0.1192 0.1805 0.0722 0.9505]
+      >>]
+    >>
+    /ProcSet [/PDF /ImageC /ImageB]
+    /ExtGState <<
+      /gs0 7 0 R
+    >>
+  >>
+  /BBox [0 0 200 200]
+  /Group <<
+    /Type /Group
+    /S /Transparency
+    /I true
+    /K false
+    /CS [/CalRGB <<
+      /WhitePoint [0.9505 1 1.0888]
+      /Gamma [2.2 2.2 2.2]
+      /Matrix [0.4124 0.2126 0.0193 0.3576 0.715 0.1192 0.1805 0.0722 0.9505]
+    >>]
+  >>
+>>
+stream
+q
+1 0 0 -1 0 200 cm
+q
+0.9848077 0.17364818 -0.17364818 0.9848077 0 0 cm
+/gs0 gs
+q
+1 0 0 1 0 0 cm
+/srgb CS
+/srgb cs
+0 0.5019608 0 scn
+0 0 m
+200 0 l
+200 200 l
+0 200 l
+h
+f
+Q
+Q
+Q
+endstream
+endobj
+
+4 0 obj
+<<
+  /Length 7
+>>
+stream
+/xo0 Do
+endstream
+endobj
+
+3 0 obj
+<<
+  /Type /Page
+  /Resources <<
+    /ColorSpace <<
+      /srgb [/CalRGB <<
+        /WhitePoint [0.9505 1 1.0888]
+        /Gamma [2.2 2.2 2.2]
+        /Matrix [0.4124 0.2126 0.0193 0.3576 0.715 0.1192 0.1805 0.0722 0.9505]
+      >>]
+    >>
+    /ProcSet [/PDF /ImageC /ImageB]
+    /XObject <<
+      /xo0 5 0 R
+    >>
+  >>
+  /MediaBox [0 0 200 200]
+  /Parent 2 0 R
+  /Contents 4 0 R
+>>
+endobj
+
+8 0 obj
+<<
+  /Producer (svg2pdf)
+>>
+endobj
+
+xref
+0 9
+0000000000 65535 f
+0000000016 00000 n
+0000000070 00000 n
+0000001875 00000 n
+0000001816 00000 n
+0000000977 00000 n
+0000000134 00000 n
+0000000871 00000 n
+0000002275 00000 n
+trailer
+<<
+  /Size 9
+  /Root 1 0 R
+  /Info 8 0 R
+>>
+startxref
+2319
+%%EOF
