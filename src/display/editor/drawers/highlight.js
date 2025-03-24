@@ -15,6 +15,7 @@
 
 import { FreeDrawOutline, FreeDrawOutliner } from "./freedraw.js";
 import { Outline } from "./outline.js";
+import { Util } from "../../../shared/util.js";
 
 class HighlightOutliner {
   #box;
@@ -38,10 +39,7 @@ class HighlightOutliner {
    *   the last point of the boxes.
    */
   constructor(boxes, borderWidth = 0, innerMargin = 0, isLTR = true) {
-    let minX = Infinity;
-    let maxX = -Infinity;
-    let minY = Infinity;
-    let maxY = -Infinity;
+    const minMax = [Infinity, Infinity, -Infinity, -Infinity];
 
     // We round the coordinates to slightly reduce the number of edges in the
     // final outlines.
@@ -58,16 +56,13 @@ class HighlightOutliner {
       const right = [x2, y1, y2, false];
       this.#verticalEdges.push(left, right);
 
-      minX = Math.min(minX, x1);
-      maxX = Math.max(maxX, x2);
-      minY = Math.min(minY, y1);
-      maxY = Math.max(maxY, y2);
+      Util.rectBoundingBox(x1, y1, x2, y2, minMax);
     }
 
-    const bboxWidth = maxX - minX + 2 * innerMargin;
-    const bboxHeight = maxY - minY + 2 * innerMargin;
-    const shiftedMinX = minX - innerMargin;
-    const shiftedMinY = minY - innerMargin;
+    const bboxWidth = minMax[2] - minMax[0] + 2 * innerMargin;
+    const bboxHeight = minMax[3] - minMax[1] + 2 * innerMargin;
+    const shiftedMinX = minMax[0] - innerMargin;
+    const shiftedMinY = minMax[1] - innerMargin;
     const lastEdge = this.#verticalEdges.at(isLTR ? -1 : -2);
     const lastPoint = [lastEdge[0], lastEdge[2]];
 

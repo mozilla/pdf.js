@@ -59,11 +59,7 @@ function calculateLinkPosition(range, pdfPageView) {
     quadPoints[i + 2] = quadPoints[i + 6] = normalized[2];
     quadPoints[i + 5] = quadPoints[i + 7] = normalized[1];
 
-    rect[0] = Math.min(rect[0], normalized[0]);
-    rect[1] = Math.min(rect[1], normalized[1]);
-    rect[2] = Math.max(rect[2], normalized[2]);
-    rect[3] = Math.max(rect[3], normalized[3]);
-
+    Util.rectBoundingBox(...normalized, rect);
     i += 8;
   }
   return { quadPoints, rect };

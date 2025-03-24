@@ -597,11 +597,7 @@ class InkDrawOutline extends Outline {
       if (line.length <= 12) {
         // We've only one or two points => no bezier curve.
         for (let i = 4, ii = line.length; i < ii; i += 6) {
-          const [x, y] = line.subarray(i, i + 2);
-          bbox[0] = Math.min(bbox[0], x);
-          bbox[1] = Math.min(bbox[1], y);
-          bbox[2] = Math.max(bbox[2], x);
-          bbox[3] = Math.max(bbox[3], y);
+          Util.pointBoundingBox(line[i], line[i + 1], bbox);
         }
         continue;
       }
