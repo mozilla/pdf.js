@@ -1664,7 +1664,13 @@ class CanvasGraphics {
       }
     }
     if (consumePath) {
-      this.consumePath(path, this.current.getClippedPathBoundingBox());
+      this.consumePath(
+        path,
+        this.current.getClippedPathBoundingBox(
+          PathType.STROKE,
+          getCurrentTransform(this.ctx)
+        )
+      );
     }
     // Restore the global alpha to the fill alpha
     ctx.globalAlpha = this.current.fillAlpha;
