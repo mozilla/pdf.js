@@ -1323,8 +1323,7 @@ class CanvasGraphics {
           this.current.strokeAlpha = value;
           break;
         case "ca":
-          this.current.fillAlpha = value;
-          this.ctx.globalAlpha = value;
+          this.ctx.globalAlpha = this.current.fillAlpha = value;
           break;
         case "BM":
           this.ctx.globalCompositeOperation = value;
@@ -1378,17 +1377,12 @@ class CanvasGraphics {
       drawnHeight
     );
     this.suspendedCtx = this.ctx;
-    this.ctx = scratchCanvas.context;
-    const ctx = this.ctx;
+    const ctx = (this.ctx = scratchCanvas.context);
     ctx.setTransform(this.suspendedCtx.getTransform());
     copyCtxState(this.suspendedCtx, ctx);
     mirrorContextOperations(ctx, this.suspendedCtx);
 
-    this.setGState([
-      ["BM", "source-over"],
-      ["ca", 1],
-      ["CA", 1],
-    ]);
+    this.setGState([["BM", "source-over"]]);
   }
 
   endSMaskMode() {
