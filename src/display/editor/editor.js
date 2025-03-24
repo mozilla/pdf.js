@@ -1006,15 +1006,14 @@ class AnnotationEditor {
       );
     } else if (isHorizontal) {
       ratioX =
-        Math.max(
-          minWidth,
-          Math.min(1, Math.abs(oppositePoint[0] - point[0] - deltaX))
-        ) / savedWidth;
+        MathClamp(Math.abs(oppositePoint[0] - point[0] - deltaX), minWidth, 1) /
+        savedWidth;
     } else {
       ratioY =
-        Math.max(
+        MathClamp(
+          Math.abs(oppositePoint[1] - point[1] - deltaY),
           minHeight,
-          Math.min(1, Math.abs(oppositePoint[1] - point[1] - deltaY))
+          1
         ) / savedHeight;
     }
 
