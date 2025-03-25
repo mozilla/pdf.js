@@ -551,10 +551,7 @@ class StructElementNode {
     const nameObj = this.dict.get("S");
     const name = nameObj instanceof Name ? nameObj.name : "";
     const { root } = this.tree;
-    if (root.roleMap.has(name)) {
-      return root.roleMap.get(name);
-    }
-    return name;
+    return root.roleMap.get(name) ?? name;
   }
 
   parseKids() {
