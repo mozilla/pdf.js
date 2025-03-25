@@ -228,7 +228,7 @@
     "enableAutoLinking": {
       "description": "Enable creation of hyperlinks from text that look like URLs.",
       "type": "boolean",
-      "default": false
+      "default": true
     }
   }
 }
