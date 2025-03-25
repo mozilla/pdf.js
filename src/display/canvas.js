@@ -63,6 +63,9 @@ const FULL_CHUNK_HEIGHT = 16;
 // creating a new DOMMatrix object each time we need it.
 const SCALE_MATRIX = new DOMMatrix();
 
+// Used to get some coordinates.
+const XY = new Float32Array(2);
+
 /**
  * Overrides certain methods on a 2d ctx so that when they are called they
  * will also call the same method on the destCtx. The methods that are
@@ -527,9 +530,9 @@ class CanvasExtraState {
       }
       // Stroked paths can be outside of the path bounding box by 1/2 the line
       // width.
-      const scale = Util.singularValueDecompose2dScale(transform);
-      const xStrokePad = (scale[0] * this.lineWidth) / 2;
-      const yStrokePad = (scale[1] * this.lineWidth) / 2;
+      Util.singularValueDecompose2dScale(transform, XY);
+      const xStrokePad = (XY[0] * this.lineWidth) / 2;
+      const yStrokePad = (XY[1] * this.lineWidth) / 2;
       box[0] -= xStrokePad;
       box[1] -= yStrokePad;
       box[2] += xStrokePad;
@@ -782,15 +785,14 @@ function getImageSmoothingEnabled(transform, interpolate) {
     return true;
   }
 
-  const scale = Util.singularValueDecompose2dScale(transform);
+  Util.singularValueDecompose2dScale(transform, XY);
   // Round to a 32bit float so that `<=` check below will pass for numbers that
   // are very close, but not exactly the same 64bit floats.
-  scale[0] = Math.fround(scale[0]);
-  scale[1] = Math.fround(scale[1]);
   const actualScale = Math.fround(
     OutputScale.pixelRatio * PixelsPerInch.PDF_TO_CSS_UNITS
   );
-  return scale[0] <= actualScale && scale[1] <= actualScale;
+  // `XY` is a Float32Array.
+  return XY[0] <= actualScale && XY[1] <= actualScale;
 }
 
 const LINE_CAP_STYLES = ["butt", "round", "square"];
@@ -1963,12 +1965,12 @@ class CanvasGraphics {
             [a, b, c, d, 0, 0],
             invPatternTransform
           );
-          const [sx, sy] = Util.singularValueDecompose2dScale(transf);
+          Util.singularValueDecompose2dScale(transf, XY);
 
           // Cancel the pattern scaling of the line width.
           // If sx and sy are different, unfortunately we can't do anything and
           // we'll have a rendering bug.
-          ctx.lineWidth *= Math.max(sx, sy) / fontSize;
+          ctx.lineWidth *= Math.max(XY[0], XY[1]) / fontSize;
           ctx.stroke(
             this.#getScaledPath(path, currentTransform, patternStrokeTransform)
           );
@@ -2648,9 +2650,7 @@ class CanvasGraphics {
         rect[2] = width;
         rect[3] = height;
 
-        const [scaleX, scaleY] = Util.singularValueDecompose2dScale(
-          getCurrentTransform(this.ctx)
-        );
+        Util.singularValueDecompose2dScale(getCurrentTransform(this.ctx), XY);
         const { viewportScale } = this;
         const canvasWidth = Math.ceil(
           width * this.outputScaleX * viewportScale
@@ -2668,7 +2668,7 @@ class CanvasGraphics {
         this.annotationCanvas.savedCtx = this.ctx;
         this.ctx = context;
         this.ctx.save();
-        this.ctx.setTransform(scaleX, 0, 0, -scaleY, 0, height * scaleY);
+        this.ctx.setTransform(XY[0], 0, 0, -XY[1], 0, height * XY[1]);
 
         resetCtxToDefault(this.ctx);
       } else {
