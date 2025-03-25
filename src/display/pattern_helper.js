@@ -401,13 +401,16 @@ class MeshShadingPattern extends BaseShadingPattern {
     let scale;
     if (pathType === PathType.SHADING) {
       scale = Util.singularValueDecompose2dScale(getCurrentTransform(ctx));
-    } else {
+    } else if (this.matrix) {
       // Obtain scale from matrix and current transformation matrix.
+      const [matrixScaleX, matrixScaleY] = Util.singularValueDecompose2dScale(
+        this.matrix
+      );
       scale = Util.singularValueDecompose2dScale(owner.baseTransform);
-      if (this.matrix) {
-        const matrixScale = Util.singularValueDecompose2dScale(this.matrix);
-        scale = [scale[0] * matrixScale[0], scale[1] * matrixScale[1]];
-      }
+      scale[0] *= matrixScaleX;
+      scale[1] *= matrixScaleY;
+    } else {
+      scale = Util.singularValueDecompose2dScale(owner.baseTransform);
     }
 
     // Rasterizing on the main thread since sending/queue large canvases
@@ -517,12 +520,14 @@ class TilingPattern {
     const height = y1 - y0;
 
     // Obtain scale from matrix and current transformation matrix.
-    const matrixScale = Util.singularValueDecompose2dScale(this.matrix);
+    const [matrixScaleX, matrixScaleY] = Util.singularValueDecompose2dScale(
+      this.matrix
+    );
     const curMatrixScale = Util.singularValueDecompose2dScale(
       this.baseTransform
     );
-    const combinedScaleX = matrixScale[0] * curMatrixScale[0];
-    const combinedScaleY = matrixScale[1] * curMatrixScale[1];
+    const combinedScaleX = matrixScaleX * curMatrixScale[0];
+    const combinedScaleY = matrixScaleY * curMatrixScale[1];
 
     let canvasWidth = width,
       canvasHeight = height,

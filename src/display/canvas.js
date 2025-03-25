@@ -785,11 +785,10 @@ function getImageSmoothingEnabled(transform, interpolate) {
   const scale = Util.singularValueDecompose2dScale(transform);
   // Round to a 32bit float so that `<=` check below will pass for numbers that
   // are very close, but not exactly the same 64bit floats.
-  scale[0] = Math.fround(scale[0]);
-  scale[1] = Math.fround(scale[1]);
   const actualScale = Math.fround(
     OutputScale.pixelRatio * PixelsPerInch.PDF_TO_CSS_UNITS
   );
+  // `scale` is a Float32Array.
   return scale[0] <= actualScale && scale[1] <= actualScale;
 }
 
