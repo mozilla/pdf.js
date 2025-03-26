@@ -93,9 +93,11 @@ describe("Signature Editor", () => {
           );
           expect(description).withContext(browserName).toEqual("");
           await page.waitForSelector(`${addButtonSelector}:disabled`);
+          await page.waitForSelector("#addSignatureDescInput:disabled");
 
           await page.type("#addSignatureTypeInput", "PDF.js");
           await page.waitForSelector(`${addButtonSelector}:not(:disabled)`);
+          await page.waitForSelector("#addSignatureDescInput:not(:disabled)");
 
           // The save button should be enabled now.
           await page.waitForSelector(

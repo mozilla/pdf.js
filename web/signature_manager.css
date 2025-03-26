@@ -521,6 +521,10 @@
             gap: 4px;
             flex: 1 0 0;
 
+            &:has(input:disabled) > label {
+              opacity: 0.4;
+            }
+
             > label {
               width: auto;
             }
