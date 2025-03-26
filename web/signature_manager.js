@@ -325,6 +325,7 @@ class SignatureManager {
     this.#saveCheckbox.disabled =
       this.#clearButton.disabled =
       this.#addButton.disabled =
+      this.#description.disabled =
         !value;
   }
 
