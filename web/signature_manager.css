@@ -132,6 +132,8 @@
   --tab-bg-active-color: var(--tab-bg);
   --tab-bg-active-hover-color: var(--bg-hover);
   --tab-bg-hover: var(--bg-hover);
+  --tab-panel-border: none;
+  --tab-panel-border-radius: 4px;
   --tab-text-color: var(--primary-color);
   --tab-text-active-color: var(--tab-top-line-active-color);
   --tab-text-active-hover-color: var(--tab-text-hover-color);
@@ -193,6 +195,8 @@
     --tab-bg: var(--bg);
     --tab-bg-active-color: SelectedItem;
     --tab-bg-active-hover-color: SelectedItem;
+    --tab-panel-border: 1px solid ButtonText;
+    --tab-panel-border-radius: 8px;
     --tab-text-color: ButtonText;
     --tab-text-active-color: HighlightText;
     --tab-text-active-hover-color: HighlightText;
@@ -308,7 +312,8 @@
         width: 100%;
         height: 220px;
         background-color: var(--signature-bg);
-        border-radius: 4px;
+        border: var(--tab-panel-border);
+        border-radius: var(--tab-panel-border-radius);
 
         > svg {
           position: absolute;
@@ -331,6 +336,7 @@
             text-align: center;
             color: var(--signature-color);
             background-color: transparent;
+            border-radius: var(--tab-panel-border-radius);
 
             font-family:
               "Brush script", "Apple Chancery", "Segoe script",
@@ -372,7 +378,7 @@
           }
 
           > svg {
-            stroke: var(--primary-color);
+            stroke: var(--signature-color);
             fill: none;
             stroke-opacity: 1;
             stroke-linecap: round;
@@ -448,7 +454,7 @@
           > svg {
             stroke: none;
             stroke-width: 0;
-            fill: var(--primary-color);
+            fill: var(--signature-color);
             fill-opacity: 1;
           }
 
