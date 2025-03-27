@@ -79,7 +79,7 @@ class SignatureEditor extends DrawingEditor {
     this._willKeepAspectRatio = true;
     this.#signatureData = params.signatureData || null;
     this.#description = null;
-    this.defaultL10nId = "pdfjs-editor-signature-editor";
+    this.defaultL10nId = "pdfjs-editor-signature-editor1";
   }
 
   /** @inheritdoc */
@@ -158,6 +158,13 @@ class SignatureEditor extends DrawingEditor {
 
     super.render();
 
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+      // TODO: remove this check once
+      //  https://github.com/projectfluent/fluent.js/pull/640
+      // is merged and released.
+      this.div.setAttribute("data-l10n-attrs", "aria-description");
+    }
+
     if (this._drawId === null) {
       if (this.#signatureData) {
         const {
@@ -183,6 +190,12 @@ class SignatureEditor extends DrawingEditor {
         });
         this.addSignature(outline, heightInPage, description, uuid);
       } else {
+        // Avoid Firefox crashing (with a local build) because the description
+        // parameter is missing.
+        this.div.setAttribute(
+          "data-l10n-args",
+          JSON.stringify({ description: "" })
+        );
         this.div.hidden = true;
         this._uiManager.getSignature(this);
       }
@@ -259,7 +272,7 @@ class SignatureEditor extends DrawingEditor {
     const { outline } = (this.#signatureData = data);
     this.#isExtracted = outline instanceof ContourDrawOutline;
     this.#description = description;
-    this.div.setAttribute("aria-description", description);
+    this.div.setAttribute("data-l10n-args", JSON.stringify({ description }));
     let drawingOptions;
     if (this.#isExtracted) {
       drawingOptions = SignatureEditor.getDefaultDrawingOptions();
