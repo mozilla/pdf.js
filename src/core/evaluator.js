@@ -3797,9 +3797,9 @@ class PartialEvaluator {
     ) {
       // Then:
       // a) Map the character code to a character identifier (CID) according
-      // to the font’s CMap.
+      // to the font's CMap.
       // b) Obtain the registry and ordering of the character collection used
-      // by the font’s CMap (for example, Adobe and Japan1) from its
+      // by the font's CMap (for example, Adobe and Japan1) from its
       // CIDSystemInfo dictionary.
       const { registry, ordering } = properties.cidSystemInfo;
       // c) Construct a second CMap name by concatenating the registry and
@@ -4604,6 +4604,40 @@ class PartialEvaluator {
     dict.set("Encoding", Name.get("WinAnsiEncoding"));
 
     return shadow(this, "fallbackFontDict", dict);
+  }
+
+  // Modify the shading pattern handling
+  // ... existing code ...
+
+  // For ShadingType 4 and 5 (Gouraud-shaded triangles)
+  _createGouraudShading(shading, resources, matrix, patternDict) {
+    // ... existing code that extracts shading parameters ...
+
+    // If we have a function, create a lookup texture for efficient evaluation
+    let functionLookup = null;
+    if (shading.getFn) {
+      const fn = shading.getFn();
+      const domain = fn.domain;
+      const range = fn.range;
+      functionLookup = this.functionFactory.createSampledLookupTexture(
+        fn,
+        domain,
+        range
+      );
+    }
+
+    return {
+      getIR() {
+        // ... existing code ...
+
+        return {
+          // ... existing properties ...
+          functionLookup,
+          // Add a flag to signal renderer to interpolate inputs
+          interpolateInputs: !!functionLookup,
+        };
+      },
+    };
   }
 }
 

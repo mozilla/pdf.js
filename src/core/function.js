@@ -76,6 +76,43 @@ class PDFFunctionFactory {
   get _localFunctionCache() {
     return shadow(this, "_localFunctionCache", new LocalFunctionCache());
   }
+
+  // Add evaluation for a range of values to support texture-based lookups
+  createSampledLookupTexture(fn, domain, range, samples = 256) {
+    // Create a lookup table for the function
+    const lookupTable = new Float32Array(samples * range.length);
+    const domainRange = domain[1] - domain[0];
+
+    for (let i = 0; i < samples; i++) {
+      const input = domain[0] + (i / (samples - 1)) * domainRange;
+      const output = fn.evaluate([input]);
+
+      for (let j = 0; j < range.length; j++) {
+        lookupTable[i * range.length + j] = output[j];
+      }
+    }
+
+    return {
+      lookup(t) {
+        // Normalize t to 0-1 range
+        const normalizedT = (t - domain[0]) / domainRange;
+        const index = Math.min(
+          Math.max(0, Math.floor(normalizedT * (samples - 1))),
+          samples - 2
+        );
+        const frac = normalizedT * (samples - 1) - index;
+
+        const result = new Array(range.length);
+        for (let j = 0; j < range.length; j++) {
+          const a = lookupTable[index * range.length + j];
+          const b = lookupTable[(index + 1) * range.length + j];
+          result[j] = a + frac * (b - a);
+        }
+
+        return result;
+      },
+    };
+  }
 }
 
 function toNumberArray(arr) {

@@ -3314,6 +3314,124 @@ class CanvasGraphics {
     }
     return true;
   }
+
+  _renderGouraudTriangles(shading) {
+    const vertices = shading.vertices;
+    const colors = shading.colors;
+    // Remove the unused coords declaration
+    // const coords = new Float32Array(vertices.length);
+
+    // Determine if we need to interpolate function inputs rather than colors
+    const interpolateInputs =
+      shading.interpolateInputs && shading.functionLookup;
+
+    // Set up triangles from vertices
+    const triangles = shading.triangles || vertices;
+
+    // Create canvas for rendering
+    const canvas = this.cachedCanvases.getCanvas(
+      "gouraud",
+      shading.width || this.ctx.canvas.width,
+      shading.height || this.ctx.canvas.height
+    );
+    const ctx = canvas.context;
+
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.canvas.width, canvas.canvas.height);
+
+    // For each triangle
+    for (let i = 0; i < triangles.length; i += 3) {
+      const v1 = triangles[i];
+      const v2 = triangles[i + 1];
+      const v3 = triangles[i + 2];
+
+      // Get color data for each vertex
+      const c1 = colors[i];
+      const c2 = colors[i + 1];
+      const c3 = colors[i + 2];
+
+      // Set up triangle path
+      ctx.beginPath();
+      ctx.moveTo(v1[0], v1[1]);
+      ctx.lineTo(v2[0], v2[1]);
+      ctx.lineTo(v3[0], v3[1]);
+      ctx.closePath();
+
+      // Calculate area for barycentric coordinates
+      const area =
+        Math.abs(
+          (v2[0] - v1[0]) * (v3[1] - v1[1]) - (v3[0] - v1[0]) * (v2[1] - v1[1])
+        ) / 2;
+
+      // Skip degenerate triangles
+      if (area === 0) {
+        continue;
+      }
+
+      // Get bounds of the triangle for pixel iteration
+      const minX = Math.min(v1[0], v2[0], v3[0]);
+      const minY = Math.min(v1[1], v2[1], v3[1]);
+      const maxX = Math.max(v1[0], v2[0], v3[0]);
+      const maxY = Math.max(v1[1], v2[1], v3[1]);
+
+      // Create image data for the region
+      const width = Math.ceil(maxX - minX);
+      const height = Math.ceil(maxY - minY);
+      const imageData = ctx.createImageData(width, height);
+      const data = imageData.data;
+
+      // For each pixel in the bounding box
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const px = minX + x + 0.5;
+          const py = minY + y + 0.5;
+
+          // Calculate barycentric coordinates
+          const b1 =
+            ((v2[1] - v3[1]) * (px - v3[0]) + (v3[0] - v2[0]) * (py - v3[1])) /
+            (2 * area);
+          const b2 =
+            ((v3[1] - v1[1]) * (px - v3[0]) + (v1[0] - v3[0]) * (py - v3[1])) /
+            (2 * area);
+          const b3 = 1 - b1 - b2;
+
+          // Skip pixels outside the triangle
+          if (b1 < 0 || b2 < 0 || b3 < 0) {
+            continue;
+          }
+
+          // Get color based on interpolation method
+          let color;
+          if (interpolateInputs) {
+            // When using a function, interpolate the function input
+            const t = c1 * b1 + c2 * b2 + c3 * b3;
+            // Evaluate the function at this point
+            color = shading.functionLookup.lookup(t);
+          } else {
+            // Regular color interpolation
+            color = [
+              c1[0] * b1 + c2[0] * b2 + c3[0] * b3,
+              c1[1] * b1 + c2[1] * b2 + c3[1] * b3,
+              c1[2] * b1 + c2[2] * b2 + c3[2] * b3,
+            ];
+          }
+
+          // Set pixel color
+          const index = (y * width + x) * 4;
+          data[index] = color[0] * 255;
+          data[index + 1] = color[1] * 255;
+          data[index + 2] = color[2] * 255;
+          data[index + 3] = 255; // Fully opaque
+        }
+      }
+
+      // Draw the rendered triangle
+      ctx.putImageData(imageData, minX, minY);
+    }
+
+    // Draw the final result to the main canvas
+    this.ctx.drawImage(canvas.canvas, 0, 0);
+  }
 }
 
 for (const op in OPS) {
