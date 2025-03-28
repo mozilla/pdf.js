@@ -1771,7 +1771,6 @@ class CanvasGraphics {
     const paths = this.pendingTextPaths;
     const ctx = this.ctx;
     if (paths === undefined) {
-      ctx.beginPath();
       return;
     }
 
@@ -1788,7 +1787,6 @@ class CanvasGraphics {
     }
 
     ctx.clip(newPath);
-    ctx.beginPath();
     delete this.pendingTextPaths;
   }
 
@@ -2297,8 +2295,9 @@ class CanvasGraphics {
   }
 
   setCharWidthAndBounds(xWidth, yWidth, llx, lly, urx, ury) {
-    this.ctx.rect(llx, lly, urx - llx, ury - lly);
-    this.ctx.clip();
+    const clip = new Path2D();
+    clip.rect(llx, lly, urx - llx, ury - lly);
+    this.ctx.clip(clip);
     this.endPath();
   }
 
@@ -2443,11 +2442,13 @@ class CanvasGraphics {
     this.baseTransform = getCurrentTransform(this.ctx);
 
     if (bbox) {
-      const width = bbox[2] - bbox[0];
-      const height = bbox[3] - bbox[1];
-      this.ctx.rect(bbox[0], bbox[1], width, height);
+      const [x0, y0, x1, y1] = bbox;
+      const width = x1 - x0;
+      const height = y1 - y0;
       this.current.updateRectMinMax(getCurrentTransform(this.ctx), bbox);
-      this.clip();
+      const clip = new Path2D();
+      clip.rect(x0, y0, width, height);
+      this.ctx.clip(clip);
       this.endPath();
     }
   }
@@ -2677,9 +2678,9 @@ class CanvasGraphics {
         // Consume a potential path before clipping.
         this.endPath();
 
-        this.ctx.rect(rect[0], rect[1], width, height);
-        this.ctx.clip();
-        this.ctx.beginPath();
+        const clip = new Path2D();
+        clip.rect(rect[0], rect[1], width, height);
+        this.ctx.clip(clip);
       }
     }
 
@@ -3088,7 +3089,6 @@ class CanvasGraphics {
       this.pendingClip = null;
     }
     this.current.startNewPathAndClipBox(this.current.clipBox);
-    ctx.beginPath();
   }
 
   getSinglePixelWidth() {
