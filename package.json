@@ -6,7 +6,7 @@
     "@babel/preset-env": "^7.26.9",
     "@babel/runtime": "^7.26.10",
     "@fluent/bundle": "^0.18.0",
-    "@fluent/dom": "^0.10.0",
+    "@fluent/dom": "^0.10.1",
     "@metalsmith/layouts": "^3.0.0",
     "@metalsmith/markdown": "^1.10.0",
     "@napi-rs/canvas": "^0.1.68",
