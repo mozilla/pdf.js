@@ -57,7 +57,7 @@ class JpxImage {
     try {
       const mod = await (typeof PDFJSDev === "undefined"
         ? import(path) // eslint-disable-line no-unsanitized/method
-        : __non_webpack_import__(path));
+        : __raw_import__(path));
       instance = mod.default();
     } catch (e) {
       warn(`JpxImage#getJsModule: ${e}`);
