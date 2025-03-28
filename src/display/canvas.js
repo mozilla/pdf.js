@@ -308,13 +308,13 @@ function compileType3Glyph(imgData) {
   ]);
 
   const width1 = width + 1;
-  let points = new Uint8Array(width1 * (height + 1));
+  const points = new Uint8Array(width1 * (height + 1));
   let i, j, j0;
 
   // decodes bit-packed mask data
   const lineSize = (width + 7) & ~7;
-  let data = new Uint8Array(lineSize * height),
-    pos = 0;
+  const data = new Uint8Array(lineSize * height);
+  let pos = 0;
   for (const elem of imgData.data) {
     let mask = 128;
     while (mask > 0) {
@@ -406,6 +406,11 @@ function compileType3Glyph(imgData) {
   const steps = new Int32Array([0, width1, -1, 0, -width1, 0, 0, 0, 1]);
   const path = new Path2D();
 
+  // the path shall be painted in [0..1]x[0..1] space
+  const { a, b, c, d, e, f } = new DOMMatrix()
+    .scaleSelf(1 / width, -1 / height)
+    .translateSelf(0, -height);
+
   for (i = 0; count && i <= height; i++) {
     let p = i * width1;
     const end = p + width;
@@ -415,7 +420,9 @@ function compileType3Glyph(imgData) {
     if (p === end) {
       continue;
     }
-    path.moveTo(p % width1, i);
+    let x = p % width1;
+    let y = i;
+    path.moveTo(a * x + c * y + e, b * x + d * y + f);
 
     const p0 = p;
     let type = points[p];
@@ -438,7 +445,9 @@ function compileType3Glyph(imgData) {
         // set new type for "future hit"
         points[p] &= (type >> 2) | (type << 2);
       }
-      path.lineTo(p % width1, (p / width1) | 0);
+      x = p % width1;
+      y = (p / width1) | 0;
+      path.lineTo(a * x + c * y + e, b * x + d * y + f);
 
       if (!points[p]) {
         --count;
@@ -447,21 +456,7 @@ function compileType3Glyph(imgData) {
     --i;
   }
 
-  // Immediately release the, potentially large, `Uint8Array`s after parsing.
-  data = null;
-  points = null;
-
-  const drawOutline = function (c) {
-    c.save();
-    // the path shall be painted in [0..1]x[0..1] space
-    c.scale(1 / width, -1 / height);
-    c.translate(0, -height);
-    c.fill(path);
-    c.beginPath();
-    c.restore();
-  };
-
-  return drawOutline;
+  return path;
 }
 
 class CanvasExtraState {
@@ -2720,7 +2715,7 @@ class CanvasGraphics {
       }
 
       if (glyph.compiled) {
-        glyph.compiled(ctx);
+        ctx.fill(glyph.compiled);
         return;
       }
     }
