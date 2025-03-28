@@ -308,13 +308,13 @@ function compileType3Glyph(imgData) {
   ]);
 
   const width1 = width + 1;
-  let points = new Uint8Array(width1 * (height + 1));
+  const points = new Uint8Array(width1 * (height + 1));
   let i, j, j0;
 
   // decodes bit-packed mask data
   const lineSize = (width + 7) & ~7;
-  let data = new Uint8Array(lineSize * height),
-    pos = 0;
+  const data = new Uint8Array(lineSize * height);
+  let pos = 0;
   for (const elem of imgData.data) {
     let mask = 128;
     while (mask > 0) {
@@ -456,18 +456,7 @@ function compileType3Glyph(imgData) {
     --i;
   }
 
-  // Immediately release the, potentially large, `Uint8Array`s after parsing.
-  data = null;
-  points = null;
-
-  const drawOutline = function (ctx) {
-    ctx.save();
-    ctx.fill(path);
-    ctx.beginPath();
-    ctx.restore();
-  };
-
-  return drawOutline;
+  return path;
 }
 
 class CanvasExtraState {
@@ -2726,7 +2715,7 @@ class CanvasGraphics {
       }
 
       if (glyph.compiled) {
-        glyph.compiled(ctx);
+        ctx.fill(glyph.compiled);
         return;
       }
     }
