@@ -158,13 +158,6 @@ class SignatureEditor extends DrawingEditor {
 
     super.render();
 
-    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-      // TODO: remove this check once
-      //  https://github.com/projectfluent/fluent.js/pull/640
-      // is merged and released.
-      this.div.setAttribute("data-l10n-attrs", "aria-description");
-    }
-
     if (this._drawId === null) {
       if (this.#signatureData) {
         const {
