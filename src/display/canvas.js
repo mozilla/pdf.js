@@ -2264,9 +2264,7 @@ class CanvasGraphics {
       const operatorList = font.charProcOperatorList[glyph.operatorListId];
       if (!operatorList) {
         warn(`Type3 character "${glyph.operatorListId}" is not available.`);
-        continue;
-      }
-      if (this.contentVisible) {
+      } else if (this.contentVisible) {
         this.processingType3 = glyph;
         this.save();
         ctx.scale(fontSize, fontSize);
