@@ -339,6 +339,7 @@ const OPS = {
   constructPath: 91,
   setStrokeTransparent: 92,
   setFillTransparent: 93,
+  rawFillPath: 94,
 };
 
 // In order to have a switch statement that is fast (i.e. which use a jump
