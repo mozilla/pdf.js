@@ -32,6 +32,7 @@ import {
 } from "../shared/util.js";
 import { CMapFactory, IdentityCMap } from "./cmap.js";
 import { Cmd, Dict, EOF, isName, Name, Ref, RefSet } from "./primitives.js";
+import { CompiledType3Glyph, FontFlags } from "./fonts_utils.js";
 import { ErrorFont, Font } from "./fonts.js";
 import {
   fetchBinaryData,
@@ -72,7 +73,6 @@ import { bidi } from "./bidi.js";
 import { ColorSpace } from "./colorspace.js";
 import { ColorSpaceUtils } from "./colorspace_utils.js";
 import { DecodeStream } from "./decode_stream.js";
-import { FontFlags } from "./fonts_utils.js";
 import { getFontSubstitution } from "./font_substitutions.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { getMetrics } from "./metrics.js";
@@ -180,14 +180,21 @@ function normalizeBlendMode(value, parsingArray = false) {
   return "source-over";
 }
 
-function addLocallyCachedImageOps(opList, data) {
-  if (data.objId) {
-    opList.addDependency(data.objId);
+function addLocallyCachedImageOps(
+  opList,
+  { objId, fn, args, optionalContent, hasMask }
+) {
+  if (objId) {
+    opList.addDependency(objId);
   }
-  opList.addImageOps(data.fn, data.args, data.optionalContent, data.hasMask);
 
-  if (data.fn === OPS.paintImageMaskXObject && data.args[0]?.count > 0) {
-    data.args[0].count++;
+  if (args instanceof CompiledType3Glyph) {
+    args = args.pathArgs;
+  }
+  opList.addImageOps(fn, args, optionalContent, hasMask);
+
+  if (fn === OPS.paintImageMaskXObject && args[0]?.count > 0) {
+    args[0].count++;
   }
 }
 
@@ -617,31 +624,45 @@ class PartialEvaluator {
           interpolate,
         });
 
-        imgData.cached = !!cacheKey;
-        args = [imgData];
+        const compiledGlyph = new CompiledType3Glyph(imgData);
+        const { pathArgs } = compiledGlyph;
 
+        if (pathArgs) {
+          operatorList.addImageOps(
+            OPS.constructPath,
+            pathArgs,
+            optionalContent
+          );
+
+          if (cacheKey) {
+            const cacheData = {
+              fn: OPS.constructPath,
+              args: compiledGlyph,
+              optionalContent,
+            };
+            localImageCache.set(cacheKey, imageRef, cacheData);
+
+            if (imageRef) {
+              this._regionalImageCache.set(
+                /* name = */ null,
+                imageRef,
+                cacheData
+              );
+            }
+          }
+          return;
+        }
+        warn("Cannot compile Type3 glyph.");
+
+        // If compilation failed, or was disabled, fallback to using an inline
+        // image mask. This case should be extremely rare, and the image masks
+        // used in Type3-fonts are usually fairly small, hence we don't bother
+        // caching the image mask in order to simplify the implementation.
         operatorList.addImageOps(
           OPS.paintImageMaskXObject,
-          args,
+          [imgData],
           optionalContent
         );
-
-        if (cacheKey) {
-          const cacheData = {
-            fn: OPS.paintImageMaskXObject,
-            args,
-            optionalContent,
-          };
-          localImageCache.set(cacheKey, imageRef, cacheData);
-
-          if (imageRef) {
-            this._regionalImageCache.set(
-              /* name = */ null,
-              imageRef,
-              cacheData
-            );
-          }
-        }
         return;
       }
 
