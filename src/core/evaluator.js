@@ -595,7 +595,7 @@ class PartialEvaluator {
     }
 
     const imageMask = dict.get("IM", "ImageMask") || false;
-    let imgData, args;
+    let imgData, fn, args;
     if (imageMask) {
       // This depends on a tmpCanvas being filled with the
       // current fillStyle, such that processing the pixel
@@ -618,20 +618,13 @@ class PartialEvaluator {
         });
 
         imgData.cached = !!cacheKey;
-        args = [imgData];
 
-        operatorList.addImageOps(
-          OPS.paintImageMaskXObject,
-          args,
-          optionalContent
-        );
+        fn = OPS.paintImageMaskXObject;
+        args = [imgData];
+        operatorList.addImageOps(fn, args, optionalContent);
 
         if (cacheKey) {
-          const cacheData = {
-            fn: OPS.paintImageMaskXObject,
-            args,
-            optionalContent,
-          };
+          const cacheData = { fn, args, optionalContent };
           localImageCache.set(cacheKey, imageRef, cacheData);
 
           if (imageRef) {
@@ -658,18 +651,12 @@ class PartialEvaluator {
       if (imgData.isSingleOpaquePixel) {
         // Handles special case of mainly LaTeX documents which use image
         // masks to draw lines with the current fill style.
-        operatorList.addImageOps(
-          OPS.paintSolidColorImageMask,
-          [],
-          optionalContent
-        );
+        fn = OPS.paintSolidColorImageMask;
+        args = [];
+        operatorList.addImageOps(fn, args, optionalContent);
 
         if (cacheKey) {
-          const cacheData = {
-            fn: OPS.paintSolidColorImageMask,
-            args: [],
-            optionalContent,
-          };
+          const cacheData = { fn, args, optionalContent };
           localImageCache.set(cacheKey, imageRef, cacheData);
 
           if (imageRef) {
@@ -691,6 +678,7 @@ class PartialEvaluator {
         : imgData.data.length;
       this._sendImgData(objId, imgData);
 
+      fn = OPS.paintImageMaskXObject;
       args = [
         {
           data: objId,
@@ -700,19 +688,10 @@ class PartialEvaluator {
           count: 1,
         },
       ];
-      operatorList.addImageOps(
-        OPS.paintImageMaskXObject,
-        args,
-        optionalContent
-      );
+      operatorList.addImageOps(fn, args, optionalContent);
 
       if (cacheKey) {
-        const cacheData = {
-          objId,
-          fn: OPS.paintImageMaskXObject,
-          args,
-          optionalContent,
-        };
+        const cacheData = { objId, fn, args, optionalContent };
         localImageCache.set(cacheKey, imageRef, cacheData);
 
         if (imageRef) {
@@ -782,19 +761,16 @@ class PartialEvaluator {
 
     // Ensure that the dependency is added before the image is decoded.
     operatorList.addDependency(objId);
+
+    fn = OPS.paintImageXObject;
     args = [objId, w, h];
-    operatorList.addImageOps(
-      OPS.paintImageXObject,
-      args,
-      optionalContent,
-      hasMask
-    );
+    operatorList.addImageOps(fn, args, optionalContent, hasMask);
 
     if (cacheGlobally) {
       if (this.globalImageCache.hasDecodeFailed(imageRef)) {
         this.globalImageCache.setData(imageRef, {
           objId,
-          fn: OPS.paintImageXObject,
+          fn,
           args,
           optionalContent,
           hasMask,
@@ -818,7 +794,7 @@ class PartialEvaluator {
         if (localLength) {
           this.globalImageCache.setData(imageRef, {
             objId,
-            fn: OPS.paintImageXObject,
+            fn,
             args,
             optionalContent,
             hasMask,
@@ -865,13 +841,7 @@ class PartialEvaluator {
       });
 
     if (cacheKey) {
-      const cacheData = {
-        objId,
-        fn: OPS.paintImageXObject,
-        args,
-        optionalContent,
-        hasMask,
-      };
+      const cacheData = { objId, fn, args, optionalContent, hasMask };
       localImageCache.set(cacheKey, imageRef, cacheData);
 
       if (imageRef) {
@@ -880,7 +850,7 @@ class PartialEvaluator {
         if (cacheGlobally) {
           this.globalImageCache.setData(imageRef, {
             objId,
-            fn: OPS.paintImageXObject,
+            fn,
             args,
             optionalContent,
             hasMask,
