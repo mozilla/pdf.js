@@ -2301,7 +2301,6 @@ class CanvasGraphics {
   getColorN_Pattern(IR) {
     let pattern;
     if (IR[0] === "TilingPattern") {
-      const color = IR[1];
       const baseTransform = this.baseTransform || getCurrentTransform(this.ctx);
       const canvasGraphicsFactory = {
         createCanvasGraphics: ctx =>
@@ -2319,7 +2318,6 @@ class CanvasGraphics {
       };
       pattern = new TilingPattern(
         IR,
-        color,
         this.ctx,
         canvasGraphicsFactory,
         baseTransform
