@@ -676,6 +676,57 @@ class Util {
     return `#${hexNumbers[r]}${hexNumbers[g]}${hexNumbers[b]}`;
   }
 
+  // Apply a scaling matrix to some min/max values.
+  // If a scaling factor is negative then min and max must be
+  // swapped.
+  static scaleMinMax(transform, minMax) {
+    let temp;
+    if (transform[0]) {
+      if (transform[0] < 0) {
+        temp = minMax[0];
+        minMax[0] = minMax[2];
+        minMax[2] = temp;
+      }
+      minMax[0] *= transform[0];
+      minMax[2] *= transform[0];
+
+      if (transform[3] < 0) {
+        temp = minMax[1];
+        minMax[1] = minMax[3];
+        minMax[3] = temp;
+      }
+      minMax[1] *= transform[3];
+      minMax[3] *= transform[3];
+    } else {
+      temp = minMax[0];
+      minMax[0] = minMax[1];
+      minMax[1] = temp;
+      temp = minMax[2];
+      minMax[2] = minMax[3];
+      minMax[3] = temp;
+
+      if (transform[1] < 0) {
+        temp = minMax[1];
+        minMax[1] = minMax[3];
+        minMax[3] = temp;
+      }
+      minMax[1] *= transform[1];
+      minMax[3] *= transform[1];
+
+      if (transform[2] < 0) {
+        temp = minMax[0];
+        minMax[0] = minMax[2];
+        minMax[2] = temp;
+      }
+      minMax[0] *= transform[2];
+      minMax[2] *= transform[2];
+    }
+    minMax[0] += transform[4];
+    minMax[1] += transform[5];
+    minMax[2] += transform[4];
+    minMax[3] += transform[5];
+  }
+
   // Concatenates two transformation matrices together and returns the result.
   static transform(m1, m2) {
     return [
@@ -693,6 +744,22 @@ class Util {
     const xt = p[0] * m[0] + p[1] * m[2] + m[4];
     const yt = p[0] * m[1] + p[1] * m[3] + m[5];
     return [xt, yt];
+  }
+
+  static applyTransformInPlace(p, m) {
+    const [p0, p1] = p;
+    p[0] = p0 * m[0] + p1 * m[2] + m[4];
+    p[1] = p0 * m[1] + p1 * m[3] + m[5];
+  }
+
+  // For 2d affine transforms
+  static applyTransformToBezierInPlace(p, [m0, m1, m2, m3, m4, m5]) {
+    for (let i = 0; i < 6; i += 2) {
+      const pI = p[i];
+      const pI1 = p[i + 1];
+      p[i] = pI * m0 + pI1 * m2 + m4;
+      p[i + 1] = pI * m1 + pI1 * m3 + m5;
+    }
   }
 
   static applyInverseTransform(p, m) {

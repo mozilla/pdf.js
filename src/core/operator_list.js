@@ -13,7 +13,14 @@
  * limitations under the License.
  */
 
-import { ImageKind, OPS, RenderingIntentFlag, warn } from "../shared/util.js";
+import {
+  DrawOPS,
+  ImageKind,
+  OPS,
+  RenderingIntentFlag,
+  Util,
+  warn,
+} from "../shared/util.js";
 
 function addState(parentState, pattern, checkFn, iterateFn, processFn) {
   let state = parentState;
@@ -467,6 +474,70 @@ addState(
     }
 
     return iEndText + 1;
+  }
+);
+
+// This replaces (save, transform, constructPath, restore)
+// sequences with |constructPath| operation.
+addState(
+  InitialState,
+  [OPS.save, OPS.transform, OPS.constructPath, OPS.restore],
+  context => {
+    const argsArray = context.argsArray;
+    const iFirstConstructPath = context.iCurr - 1;
+    const op = argsArray[iFirstConstructPath][0];
+
+    // When stroking the transform has to be applied to the line width too.
+    // So we can only optimize if the transform is an identity.
+    if (
+      op !== OPS.stroke &&
+      op !== OPS.closeStroke &&
+      op !== OPS.fillStroke &&
+      op !== OPS.eoFillStroke &&
+      op !== OPS.closeFillStroke &&
+      op !== OPS.closeEOFillStroke
+    ) {
+      return true;
+    }
+    const iFirstTransform = context.iCurr - 2;
+    const transform = argsArray[iFirstTransform];
+    return (
+      transform[0] === 1 &&
+      transform[1] === 0 &&
+      transform[2] === 0 &&
+      transform[3] === 1
+    );
+  },
+  () => false,
+  (context, i) => {
+    const { fnArray, argsArray } = context;
+    const curr = context.iCurr;
+    const iFirstSave = curr - 3;
+    const iFirstTransform = curr - 2;
+    const iFirstConstructPath = curr - 1;
+    const args = argsArray[iFirstConstructPath];
+    const transform = argsArray[iFirstTransform];
+    const [, [buffer], minMax] = args;
+
+    Util.scaleMinMax(transform, minMax);
+    for (let k = 0, kk = buffer.length; k < kk; ) {
+      switch (buffer[k++]) {
+        case DrawOPS.moveTo:
+        case DrawOPS.lineTo:
+          Util.applyTransformInPlace(buffer.subarray(k), transform);
+          k += 2;
+          break;
+        case DrawOPS.curveTo:
+          Util.applyTransformToBezierInPlace(buffer.subarray(k), transform);
+          k += 6;
+          break;
+      }
+    }
+    // Replace queue items.
+    fnArray.splice(iFirstSave, 4, OPS.constructPath);
+    argsArray.splice(iFirstSave, 4, args);
+
+    return iFirstSave + 1;
   }
 );
 
