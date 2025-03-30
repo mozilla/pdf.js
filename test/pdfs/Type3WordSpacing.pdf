@@ -1,0 +1,139 @@
+%PDF-1.7
+%‚„œ”
+
+1 0 obj
+<< /Type      /Catalog
+   /Pages     2 0 R
+>>
+endobj
+
+2 0 obj
+<< /Type    /Pages
+   /Kids    [ 3 0 R ]
+   /Count   1
+>>
+endobj
+
+3 0 obj
+<< /Type        /Page
+   /Parent      2 0 R
+   /MediaBox    [ 0 0 300 80 ]
+   /Contents    4 0 R
+   /Resources   << 
+      /Font << /FTyp3 5 0 R >> 
+   >>
+>>
+endobj
+
+4 0 obj
+<< 
+  /Length 715
+>>
+stream
+  0 0 1 rg          % Blue non-stroking (fill)
+  1 0 0 RG          % Red stroking
+
+  BT
+    /FTyp3 10 Tf    % Select Type 3 font
+    0 Tr            % Text render mode: 0=fill, 1=stroke, 2=fill then stroke 
+
+    0 10 TD
+    50 Tw           % Adjust this to: 0, 50, etc
+    ( ab ba abba) Tj
+
+    T*
+    40 Tw           % Adjust this to: 0, 50, etc
+    ( ab ba abba) Tj
+
+    T*
+    30 Tw           % Adjust this to: 0, 50, etc
+    ( ab ba abba) Tj
+
+    T*
+    20 Tw           % Adjust this to: 0, 50, etc
+    ( ab ba abba) Tj
+
+    T*
+    10 Tw           % Adjust this to: 0, 50, etc
+    ( ab ba abba) Tj
+
+    T*
+    0 Tw           % Adjust this to: 0, 50, etc
+    ( ab ba abba) Tj
+  ET
+endstream
+endobj
+
+5 0 obj
+<<  /Type           /Font
+    /Subtype        /Type3
+    /FontBBox       [ 0 0 750 750 ]
+    /FontMatrix     [ 0.001 0 0 0.001 0 0 ]
+    /CharProcs      7 0 R
+    /Encoding       6 0 R
+    /FirstChar      97 % "a"
+    /LastChar       98 % "b"
+    /Widths         [ 1000 1000 ]
+>>
+endobj
+
+6 0 obj
+<<  /Type           /Encoding
+    /Differences    [ 97 /square /triangle ]
+>>
+endobj
+
+7 0 obj
+<<  /square         8 0 R
+    /triangle       9 0 R
+>>
+endobj
+
+% Type 3 SQUARE glyph description = "a"
+8 0 obj
+<<
+  /Length 273
+>>
+stream
+1000 0 0 0 750 750 d1   % NO explicit colour 
+50 w                    % Explicitly set line width as depend on it for stroking
+[ 150 150 ] 0 d         % Explicitly set dashing as depend on it for stroking
+30 30 720 720 re S      % Stroke (only) with inherited colour  
+endstream
+endobj
+
+% Type 3 TRIANGLE glyph description  = "b"
+9 0 obj
+<< 
+  /Length 316
+>>
+stream
+1000 0 0 0 750 750 d1   % NO explicit colour
+20 w                    % Explicitly set line width as depend on it for stroking
+[ 100 100 ] 0 d         % Explicitly set dashing as depend on it for stroking
+ 20  20 m
+350 730 l
+730  20 l
+b*                      % Close then Fill then Stroke with inherited colours
+endstream
+endobj
+xref
+0 10
+0000000000 65535 f
+0000000019 00000 n
+0000000087 00000 n
+0000000168 00000 n
+0000000353 00000 n
+0000001130 00000 n
+0000001439 00000 n
+0000001539 00000 n
+0000001657 00000 n
+0000002035 00000 n
+trailer
+<<
+  /Root 1 0 R
+  /Size 10
+>>
+startxref
+2413
+%%EOF
