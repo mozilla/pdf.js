@@ -322,6 +322,16 @@ pdfjs-editor-signature-button-label = Илова кардани имзо
 
 ## Default editor aria labels
 
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = Муҳаррири ҷудокунӣ
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = Муҳаррири расмкашӣ
+pdfjs-editor-signature-editor =
+    .aria-label = Муҳаррири имзо
+pdfjs-editor-stamp-editor =
+    .aria-label = Муҳаррири тасвир
 
 ## Remove button for the various kind of editor.
 
@@ -351,9 +361,16 @@ pdfjs-editor-stamp-add-image-button-label = Илова кардани тасви
 pdfjs-editor-free-highlight-thickness-input = Ғафсӣ
 pdfjs-editor-free-highlight-thickness-title =
     .title = Иваз кардани ғафсӣ ҳангоми ҷудокунии унсурҳо ба ғайр аз матн
+pdfjs-editor-add-signature-container =
+    .aria-label = Идоракунии имзоҳо ва имзоҳои гузошташуда
 pdfjs-editor-signature-add-signature-button =
     .title = Илова кардани имзои нав
 pdfjs-editor-signature-add-signature-button-label = Илова кардани имзои нав
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = Имзои гузошташуда: { $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Муҳаррири матн
@@ -464,7 +481,6 @@ pdfjs-editor-new-alt-text-error-close-button = Пӯшидан
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
 #   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
-#   $percent (Number) - the percentage of the downloaded size.
 pdfjs-editor-new-alt-text-ai-model-downloading-progress = Боргирии модели зеҳни сунъӣ (AI) барои матни ивазкунанда ({ $downloadedSize } аз { $totalSize } МБ)
     .aria-valuetext = Боргирии модели зеҳни сунъӣ (AI) барои матни ивазкунанда ({ $downloadedSize } аз { $totalSize } МБ)
 # This is a button that users can click to edit the alt text they have already added.
@@ -586,6 +602,9 @@ pdfjs-editor-edit-signature-update-button = Навсозӣ кардан
 pdfjs-editor-delete-signature-button =
     .title = Тоза кардани имзо
 pdfjs-editor-delete-signature-button-label = Тоза кардани имзо
+pdfjs-editor-delete-signature-button1 =
+    .title = Тоза кардани имзои гузошташуда
+pdfjs-editor-delete-signature-button-label1 = Тоза кардани имзои гузошташуда
 
 ## Editor toolbar
 

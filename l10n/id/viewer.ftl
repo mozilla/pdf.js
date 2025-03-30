@@ -473,7 +473,6 @@ pdfjs-editor-new-alt-text-error-close-button = Tutup
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
 #   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
-#   $percent (Number) - the percentage of the downloaded size.
 pdfjs-editor-new-alt-text-ai-model-downloading-progress = Mengunduh model AI teks alternatif ({ $downloadedSize } dari { $totalSize } MB)
     .aria-valuetext = Mengunduh model AI teks alternatif ({ $downloadedSize } dari { $totalSize } MB)
 # This is a button that users can click to edit the alt text they have already added.
@@ -533,6 +532,7 @@ pdfjs-editor-undo-bar-close-button-label = Tutup
 
 ## Add a signature dialog
 
+pdfjs-editor-add-signature-dialog-label = Modal ini memungkinkan pengguna untuk membuat tanda tangan yang dapat ditambahkan ke dokumen PDF. Pengguna dapat mengedit nama (yang juga berfungsi sebagai teks alternatif), dan jika diinginkan, menyimpan tanda tangan untuk digunakan kembali.
 pdfjs-editor-add-signature-dialog-title = Tambahkan tanda tangan
 
 ## Tab names
@@ -558,23 +558,46 @@ pdfjs-editor-add-signature-draw-thickness-range-label = Ketebalan
 pdfjs-editor-add-signature-draw-thickness-range =
     .title = Ketebalan gambar: { $thickness }
 pdfjs-editor-add-signature-image-placeholder = Seret berkas ke sini untuk mengunggah
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] Atau pilih berkas gambar
+       *[other] Atau cari berkas gambar
+    }
 
 ## Controls
 
+pdfjs-editor-add-signature-description-label = Deskripsi (teks alternatif)
+pdfjs-editor-add-signature-description-input =
+    .title = Deskripsi (teks alternatif)
 pdfjs-editor-add-signature-description-default-when-drawing = Tanda tangan
 pdfjs-editor-add-signature-clear-button-label = Hapus tanda tangan
 pdfjs-editor-add-signature-clear-button =
     .title = Hapus tanda tangan
 pdfjs-editor-add-signature-save-checkbox = Simpan tanda tangan
+pdfjs-editor-add-signature-save-warning-message = Anda telah mencapai batas 5 tanda tangan tersimpan. Hapus untuk menyimpan lebih banyak.
+pdfjs-editor-add-signature-image-upload-error-title = Tidak dapat mengunggah gambar
+pdfjs-editor-add-signature-image-upload-error-description = Periksa sambungan jaringan Anda atau coba gambar lain.
+pdfjs-editor-add-signature-error-close-button = Tutup
 
 ## Dialog buttons
 
+pdfjs-editor-add-signature-cancel-button = Batal
+pdfjs-editor-add-signature-add-button = Tambah
+pdfjs-editor-edit-signature-update-button = Perbarui
 
 ## Main menu for adding/removing signatures
 
+pdfjs-editor-delete-signature-button =
+    .title = Hapus tanda tangan
+pdfjs-editor-delete-signature-button-label = Hapus tanda tangan
+pdfjs-editor-delete-signature-button1 =
+    .title = Hapus tanda tangan tersimpan
+pdfjs-editor-delete-signature-button-label1 = Hapus tanda tangan tersimpan
 
 ## Editor toolbar
 
+pdfjs-editor-add-signature-edit-button-label = Edit deskripsi
 
 ## Edit signature description dialog
 
+pdfjs-editor-edit-signature-dialog-title = Edit deskripsi
