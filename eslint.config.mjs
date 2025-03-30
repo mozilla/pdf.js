@@ -76,7 +76,7 @@ export default [
       globals: {
         ...globals.worker,
         PDFJSDev: "readonly",
-        __non_webpack_import__: "readonly",
+        __raw_import__: "readonly",
       },
 
       ecmaVersion: 2025,
