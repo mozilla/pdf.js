@@ -974,7 +974,7 @@ describe("PDF viewer", () => {
         },
       });
 
-      it("propely cleans up old canvases from the dom", async () => {
+      it("properly cleans up old canvases from the dom", async () => {
         await forEachPage(async (browserName, page) => {
           const waitForPageRenderedEvent = filter =>
             page.waitForFunction(
@@ -1039,7 +1039,7 @@ describe("PDF viewer", () => {
         },
       });
 
-      it("propely cleans up old canvases from the dom", async () => {
+      it("properly cleans up old canvases from the dom", async () => {
         await forEachPage(async (browserName, page) => {
           const waitForPageRenderedEvent = filter =>
             page.waitForFunction(
