@@ -324,6 +324,16 @@ pdfjs-editor-signature-button-label = Dodaj podpis
 
 ## Default editor aria labels
 
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = Edytor wyróżnienia
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = Edytor rysunku
+pdfjs-editor-signature-editor =
+    .aria-label = Edytor podpisu
+pdfjs-editor-stamp-editor =
+    .aria-label = Edytor obrazu
 
 ## Remove button for the various kind of editor.
 
@@ -353,9 +363,16 @@ pdfjs-editor-stamp-add-image-button-label = Dodaj obraz
 pdfjs-editor-free-highlight-thickness-input = Grubość
 pdfjs-editor-free-highlight-thickness-title =
     .title = Zmień grubość podczas wyróżniania elementów innych niż tekst
+pdfjs-editor-add-signature-container =
+    .aria-label = Sterowanie podpisami i zachowane podpisy
 pdfjs-editor-signature-add-signature-button =
     .title = Dodaj nowy podpis
 pdfjs-editor-signature-add-signature-button-label = Dodaj nowy podpis
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = Zachowany podpis: { $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Edytor tekstu
@@ -466,7 +483,6 @@ pdfjs-editor-new-alt-text-error-close-button = Zamknij
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
 #   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
-#   $percent (Number) - the percentage of the downloaded size.
 pdfjs-editor-new-alt-text-ai-model-downloading-progress = Pobieranie modelu SI tekstu alternatywnego ({ $downloadedSize } z { $totalSize } MB)
     .aria-valuetext = Pobieranie modelu SI tekstu alternatywnego ({ $downloadedSize } z { $totalSize } MB)
 # This is a button that users can click to edit the alt text they have already added.
@@ -589,6 +605,9 @@ pdfjs-editor-edit-signature-update-button = Aktualizuj
 pdfjs-editor-delete-signature-button =
     .title = Usuń podpis
 pdfjs-editor-delete-signature-button-label = Usuń podpis
+pdfjs-editor-delete-signature-button1 =
+    .title = Usuń zachowany podpis
+pdfjs-editor-delete-signature-button-label1 = Usuń zachowany podpis
 
 ## Editor toolbar
 
