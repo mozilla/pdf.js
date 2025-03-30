@@ -2844,6 +2844,14 @@
     "type": "eq"
   },
   {
+    "id": "Type3WordSpacing",
+    "file": "pdfs/Type3WordSpacing.pdf",
+    "md5": "8c75440e5b95cf521d186f862b404516",
+    "link": false,
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "issue13372",
     "file": "pdfs/issue13372.pdf",
     "md5": "0bc5329623fd554174c5e7653f904e28",
