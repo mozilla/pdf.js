@@ -361,6 +361,8 @@ pdfjs-editor-stamp-add-image-button-label = Tilføj billede
 pdfjs-editor-free-highlight-thickness-input = Tykkelse
 pdfjs-editor-free-highlight-thickness-title =
     .title = Ændr tykkelse, når andre elementer end tekst fremhæves
+pdfjs-editor-add-signature-container =
+    .aria-label = Indstillinger for underskrifter og gemte underskrifter
 pdfjs-editor-signature-add-signature-button =
     .title = Tilføj ny underskrift
 pdfjs-editor-signature-add-signature-button-label = Tilføj ny underskrift
@@ -479,7 +481,6 @@ pdfjs-editor-new-alt-text-error-close-button = Luk
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
 #   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
-#   $percent (Number) - the percentage of the downloaded size.
 pdfjs-editor-new-alt-text-ai-model-downloading-progress = Henter alternativ tekst AI-model ({ $downloadedSize } af { $totalSize } MB)
     .aria-valuetext = Henter alternativ tekst AI-model ({ $downloadedSize } af { $totalSize } MB)
 # This is a button that users can click to edit the alt text they have already added.
