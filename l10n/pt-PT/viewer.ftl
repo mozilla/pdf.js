@@ -322,6 +322,16 @@ pdfjs-editor-signature-button-label = Adicionar assinatura
 
 ## Default editor aria labels
 
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = Editor de realce
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = Editor de desenho
+pdfjs-editor-signature-editor =
+    .aria-label = Editor de assinatura
+pdfjs-editor-stamp-editor =
+    .aria-label = Editor de imagem
 
 ## Remove button for the various kind of editor.
 
@@ -351,9 +361,16 @@ pdfjs-editor-stamp-add-image-button-label = Adicionar imagem
 pdfjs-editor-free-highlight-thickness-input = Espessura
 pdfjs-editor-free-highlight-thickness-title =
     .title = Alterar espessura quando destacar itens que não sejam texto
+pdfjs-editor-add-signature-container =
+    .aria-label = Controlos de assinatura e assinaturas guardadas
 pdfjs-editor-signature-add-signature-button =
     .title = Adicionar nova assinatura
 pdfjs-editor-signature-add-signature-button-label = Adicionar nova assinatura
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = Assinatura guardada: { $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Editor de texto
@@ -464,7 +481,6 @@ pdfjs-editor-new-alt-text-error-close-button = Fechar
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
 #   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
-#   $percent (Number) - the percentage of the downloaded size.
 pdfjs-editor-new-alt-text-ai-model-downloading-progress = A transferir o modelo de IA de texto alternativo ({ $downloadedSize } de { $totalSize } MB)
     .aria-valuetext = A transferir o modelo de IA de texto alternativo ({ $downloadedSize } de { $totalSize } MB)
 # This is a button that users can click to edit the alt text they have already added.
@@ -586,6 +602,9 @@ pdfjs-editor-edit-signature-update-button = Atualizar
 pdfjs-editor-delete-signature-button =
     .title = Remover assinatura
 pdfjs-editor-delete-signature-button-label = Remover assinatura
+pdfjs-editor-delete-signature-button1 =
+    .title = Remover assinatura guardada
+pdfjs-editor-delete-signature-button-label1 = Remover assinatura guardada
 
 ## Editor toolbar
 

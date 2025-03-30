@@ -481,7 +481,6 @@ pdfjs-editor-new-alt-text-error-close-button = Κλείσιμο
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
 #   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
-#   $percent (Number) - the percentage of the downloaded size.
 pdfjs-editor-new-alt-text-ai-model-downloading-progress = Λήψη μοντέλου ΤΝ εναλλακτικού κειμένου ({ $downloadedSize } από { $totalSize } MB)
     .aria-valuetext = Λήψη μοντέλου ΤΝ εναλλακτικού κειμένου ({ $downloadedSize } από { $totalSize } MB)
 # This is a button that users can click to edit the alt text they have already added.
