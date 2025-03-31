@@ -742,7 +742,8 @@ class PartialEvaluator {
     // If there is no imageMask, create the PDFImage and a lot
     // of image processing can be done here.
     let objId = `img_${this.idFactory.createObjId()}`,
-      cacheGlobally = false;
+      cacheGlobally = false,
+      globalCacheData = null;
 
     if (this.parsingType3Font) {
       objId = `${this.idFactory.getDocId()}_type3_${objId}`;
@@ -767,15 +768,17 @@ class PartialEvaluator {
     operatorList.addImageOps(fn, args, optionalContent, hasMask);
 
     if (cacheGlobally) {
+      globalCacheData = {
+        objId,
+        fn,
+        args,
+        optionalContent,
+        hasMask,
+        byteSize: 0, // Temporary entry, to avoid `setData` returning early.
+      };
+
       if (this.globalImageCache.hasDecodeFailed(imageRef)) {
-        this.globalImageCache.setData(imageRef, {
-          objId,
-          fn,
-          args,
-          optionalContent,
-          hasMask,
-          byteSize: 0, // Data is `null`, since decoding failed previously.
-        });
+        this.globalImageCache.setData(imageRef, globalCacheData);
 
         this._sendImgData(objId, /* imgData = */ null, cacheGlobally);
         return;
@@ -792,14 +795,7 @@ class PartialEvaluator {
         ]);
 
         if (localLength) {
-          this.globalImageCache.setData(imageRef, {
-            objId,
-            fn,
-            args,
-            optionalContent,
-            hasMask,
-            byteSize: 0, // Temporary entry, to avoid `setData` returning early.
-          });
+          this.globalImageCache.setData(imageRef, globalCacheData);
           this.globalImageCache.addByteSize(imageRef, localLength);
           return;
         }
@@ -848,14 +844,8 @@ class PartialEvaluator {
         this._regionalImageCache.set(/* name = */ null, imageRef, cacheData);
 
         if (cacheGlobally) {
-          this.globalImageCache.setData(imageRef, {
-            objId,
-            fn,
-            args,
-            optionalContent,
-            hasMask,
-            byteSize: 0, // Temporary entry, note `addByteSize` above.
-          });
+          assert(globalCacheData, "The global cache-data must be available.");
+          this.globalImageCache.setData(imageRef, globalCacheData);
         }
       }
     }
