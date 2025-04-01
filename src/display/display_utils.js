@@ -287,7 +287,9 @@ class PageViewport {
    * @see {@link convertToViewportPoint}
    */
   convertToPdfPoint(x, y) {
-    return Util.applyInverseTransform([x, y], this.transform);
+    const p = [x, y];
+    Util.applyInverseTransform(p, this.transform);
+    return p;
   }
 }
 
