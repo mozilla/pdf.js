@@ -748,7 +748,7 @@ class Util {
   }
 
   // For 2d affine transforms
-  static applyTransformToBezierInPlace(p, [m0, m1, m2, m3, m4, m5]) {
+  static applyTransformToBezier(p, [m0, m1, m2, m3, m4, m5]) {
     for (let i = 0; i < 6; i += 2) {
       const pI = p[i];
       const pI1 = p[i + 1];
