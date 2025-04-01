@@ -524,7 +524,7 @@ addState(
       switch (buffer[k++]) {
         case DrawOPS.moveTo:
         case DrawOPS.lineTo:
-          Util.applyTransformInPlace(buffer.subarray(k), transform);
+          Util.applyTransform(buffer.subarray(k), transform);
           k += 2;
           break;
         case DrawOPS.curveTo:
