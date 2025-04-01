@@ -180,14 +180,17 @@ function normalizeBlendMode(value, parsingArray = false) {
   return "source-over";
 }
 
-function addLocallyCachedImageOps(opList, data) {
-  if (data.objId) {
-    opList.addDependency(data.objId);
+function addCachedImageOps(
+  opList,
+  { objId, fn, args, optionalContent, hasMask }
+) {
+  if (objId) {
+    opList.addDependency(objId);
   }
-  opList.addImageOps(data.fn, data.args, data.optionalContent, data.hasMask);
+  opList.addImageOps(fn, args, optionalContent, hasMask);
 
-  if (data.fn === OPS.paintImageMaskXObject && data.args[0]?.count > 0) {
-    data.args[0].count++;
+  if (fn === OPS.paintImageMaskXObject && args[0]?.count > 0) {
+    args[0].count++;
   }
 }
 
@@ -742,7 +745,8 @@ class PartialEvaluator {
     // If there is no imageMask, create the PDFImage and a lot
     // of image processing can be done here.
     let objId = `img_${this.idFactory.createObjId()}`,
-      cacheGlobally = false;
+      cacheGlobally = false,
+      globalCacheData = null;
 
     if (this.parsingType3Font) {
       objId = `${this.idFactory.getDocId()}_type3_${objId}`;
@@ -767,15 +771,17 @@ class PartialEvaluator {
     operatorList.addImageOps(fn, args, optionalContent, hasMask);
 
     if (cacheGlobally) {
+      globalCacheData = {
+        objId,
+        fn,
+        args,
+        optionalContent,
+        hasMask,
+        byteSize: 0, // Temporary entry, to avoid `setData` returning early.
+      };
+
       if (this.globalImageCache.hasDecodeFailed(imageRef)) {
-        this.globalImageCache.setData(imageRef, {
-          objId,
-          fn,
-          args,
-          optionalContent,
-          hasMask,
-          byteSize: 0, // Data is `null`, since decoding failed previously.
-        });
+        this.globalImageCache.setData(imageRef, globalCacheData);
 
         this._sendImgData(objId, /* imgData = */ null, cacheGlobally);
         return;
@@ -792,14 +798,7 @@ class PartialEvaluator {
         ]);
 
         if (localLength) {
-          this.globalImageCache.setData(imageRef, {
-            objId,
-            fn,
-            args,
-            optionalContent,
-            hasMask,
-            byteSize: 0, // Temporary entry, to avoid `setData` returning early.
-          });
+          this.globalImageCache.setData(imageRef, globalCacheData);
           this.globalImageCache.addByteSize(imageRef, localLength);
           return;
         }
@@ -848,14 +847,8 @@ class PartialEvaluator {
         this._regionalImageCache.set(/* name = */ null, imageRef, cacheData);
 
         if (cacheGlobally) {
-          this.globalImageCache.setData(imageRef, {
-            objId,
-            fn,
-            args,
-            optionalContent,
-            hasMask,
-            byteSize: 0, // Temporary entry, note `addByteSize` above.
-          });
+          assert(globalCacheData, "The global cache-data must be available.");
+          this.globalImageCache.setData(imageRef, globalCacheData);
         }
       }
     }
@@ -1779,7 +1772,7 @@ class PartialEvaluator {
             if (isValidName) {
               const localImage = localImageCache.getByName(name);
               if (localImage) {
-                addLocallyCachedImageOps(operatorList, localImage);
+                addCachedImageOps(operatorList, localImage);
                 args = null;
                 continue;
               }
@@ -1793,28 +1786,12 @@ class PartialEvaluator {
 
                 let xobj = xobjs.getRaw(name);
                 if (xobj instanceof Ref) {
-                  const localImage =
+                  const cachedImage =
                     localImageCache.getByRef(xobj) ||
-                    self._regionalImageCache.getByRef(xobj);
-                  if (localImage) {
-                    addLocallyCachedImageOps(operatorList, localImage);
-                    resolveXObject();
-                    return;
-                  }
-
-                  const globalImage = self.globalImageCache.getData(
-                    xobj,
-                    self.pageIndex
-                  );
-                  if (globalImage) {
-                    operatorList.addDependency(globalImage.objId);
-                    operatorList.addImageOps(
-                      globalImage.fn,
-                      globalImage.args,
-                      globalImage.optionalContent,
-                      globalImage.hasMask
-                    );
-
+                    self._regionalImageCache.getByRef(xobj) ||
+                    self.globalImageCache.getData(xobj, self.pageIndex);
+                  if (cachedImage) {
+                    addCachedImageOps(operatorList, cachedImage);
                     resolveXObject();
                     return;
                   }
@@ -1907,7 +1884,7 @@ class PartialEvaluator {
             if (cacheKey) {
               const localImage = localImageCache.getByName(cacheKey);
               if (localImage) {
-                addLocallyCachedImageOps(operatorList, localImage);
+                addCachedImageOps(operatorList, localImage);
                 args = null;
                 continue;
               }
