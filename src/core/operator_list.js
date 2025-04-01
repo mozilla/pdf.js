@@ -528,7 +528,7 @@ addState(
           k += 2;
           break;
         case DrawOPS.curveTo:
-          Util.applyTransformToBezierInPlace(buffer.subarray(k), transform);
+          Util.applyTransformToBezier(buffer.subarray(k), transform);
           k += 6;
           break;
       }
