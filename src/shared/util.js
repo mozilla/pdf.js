@@ -742,12 +742,6 @@ class Util {
 
   // For 2d affine transforms
   static applyTransform(p, m) {
-    const xt = p[0] * m[0] + p[1] * m[2] + m[4];
-    const yt = p[0] * m[1] + p[1] * m[3] + m[5];
-    return [xt, yt];
-  }
-
-  static applyTransformInPlace(p, m) {
     const [p0, p1] = p;
     p[0] = p0 * m[0] + p1 * m[2] + m[4];
     p[1] = p0 * m[1] + p1 * m[3] + m[5];
@@ -773,10 +767,14 @@ class Util {
   // Applies the transform to the rectangle and finds the minimum axially
   // aligned bounding box.
   static getAxialAlignedBoundingBox(r, m) {
-    const p1 = this.applyTransform(r, m);
-    const p2 = this.applyTransform(r.slice(2, 4), m);
-    const p3 = this.applyTransform([r[0], r[3]], m);
-    const p4 = this.applyTransform([r[2], r[1]], m);
+    const p1 = [r[0], r[1]];
+    Util.applyTransform(p1, m);
+    const p2 = [r[2], r[3]];
+    Util.applyTransform(p2, m);
+    const p3 = [r[0], r[3]];
+    Util.applyTransform(p3, m);
+    const p4 = [r[2], r[1]];
+    Util.applyTransform(p4, m);
     return [
       Math.min(p1[0], p2[0], p3[0], p4[0]),
       Math.min(p1[1], p2[1], p3[1], p4[1]),

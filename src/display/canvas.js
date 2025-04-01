@@ -340,10 +340,14 @@ class CanvasExtraState {
   }
 
   updateRectMinMax(transform, rect) {
-    const p1 = Util.applyTransform(rect, transform);
-    const p2 = Util.applyTransform(rect.slice(2), transform);
-    const p3 = Util.applyTransform([rect[0], rect[3]], transform);
-    const p4 = Util.applyTransform([rect[2], rect[1]], transform);
+    const p1 = [rect[0], rect[1]];
+    Util.applyTransform(p1, transform);
+    const p2 = [rect[2], rect[3]];
+    Util.applyTransform(p2, transform);
+    const p3 = [rect[0], rect[3]];
+    Util.applyTransform(p3, transform);
+    const p4 = [rect[2], rect[1]];
+    Util.applyTransform(p4, transform);
 
     this.minX = Math.min(this.minX, p1[0], p2[0], p3[0], p4[0]);
     this.minY = Math.min(this.minY, p1[1], p2[1], p3[1], p4[1]);
@@ -2111,8 +2115,9 @@ class CanvasGraphics {
         this.restore();
       }
 
-      const transformed = Util.applyTransform([glyph.width, 0], fontMatrix);
-      width = transformed[0] * fontSize + spacing;
+      const p = [glyph.width, 0];
+      Util.applyTransform(p, fontMatrix);
+      width = p[0] * fontSize + spacing;
 
       ctx.translate(width, 0);
       current.x += width * textHScale;
@@ -2588,8 +2593,9 @@ class CanvasGraphics {
         positions[i + 1],
       ]);
 
-      const [x, y] = Util.applyTransform([0, 0], trans);
-      ctx.drawImage(mask.canvas, x, y);
+      // Here we want to apply the transform at the origin,
+      // hence no additional computation is necessary.
+      ctx.drawImage(mask.canvas, trans[4], trans[5]);
     }
     ctx.restore();
     this.compose();
