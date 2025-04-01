@@ -339,20 +339,27 @@ class CanvasExtraState {
     return clone;
   }
 
-  updateRectMinMax(transform, rect) {
-    const p1 = [rect[0], rect[1]];
-    Util.applyTransform(p1, transform);
-    const p2 = [rect[2], rect[3]];
-    Util.applyTransform(p2, transform);
-    const p3 = [rect[0], rect[3]];
-    Util.applyTransform(p3, transform);
-    const p4 = [rect[2], rect[1]];
-    Util.applyTransform(p4, transform);
-
-    this.minX = Math.min(this.minX, p1[0], p2[0], p3[0], p4[0]);
-    this.minY = Math.min(this.minY, p1[1], p2[1], p3[1], p4[1]);
-    this.maxX = Math.max(this.maxX, p1[0], p2[0], p3[0], p4[0]);
-    this.maxY = Math.max(this.maxY, p1[1], p2[1], p3[1], p4[1]);
+  updateRectMinMax([m0, m1, m2, m3, m4, m5], [r0, r1, r2, r3]) {
+    const m0r0m4 = m0 * r0 + m4;
+    const m0r2m4 = m0 * r2 + m4;
+    const m1r0m5 = m1 * r0 + m5;
+    const m1r2m5 = m1 * r2 + m5;
+    const m2r1 = m2 * r1;
+    const m2r3 = m2 * r3;
+    const m3r1 = m3 * r1;
+    const m3r3 = m3 * r3;
+    const a0 = m0r0m4 + m2r1;
+    const a1 = m0r2m4 + m2r3;
+    const a2 = m0r0m4 + m2r3;
+    const a3 = m0r2m4 + m2r1;
+    const b0 = m1r0m5 + m3r1;
+    const b1 = m1r2m5 + m3r3;
+    const b2 = m1r0m5 + m3r3;
+    const b3 = m1r2m5 + m3r1;
+    this.minX = Math.min(this.minX, a0, a1, a2, a3);
+    this.maxX = Math.max(this.maxX, a0, a1, a2, a3);
+    this.minY = Math.min(this.minY, b0, b1, b2, b3);
+    this.maxY = Math.max(this.maxY, b0, b1, b2, b3);
   }
 
   getPathBoundingBox(pathType = PathType.FILL, transform = null) {
@@ -2275,7 +2282,7 @@ class CanvasGraphics {
     this.baseTransform = getCurrentTransform(this.ctx);
 
     if (bbox) {
-      this.current.updateRectMinMax(getCurrentTransform(this.ctx), bbox);
+      this.current.updateRectMinMax(this.baseTransform, bbox);
       const [x0, y0, x1, y1] = bbox;
       const clip = new Path2D();
       clip.rect(x0, y0, x1 - x0, y1 - y0);
