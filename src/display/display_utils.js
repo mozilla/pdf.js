@@ -658,11 +658,21 @@ class OutputScale {
    * @returns {boolean} Returns `true` if scaling was limited,
    *   `false` otherwise.
    */
-  limitCanvas(width, height, maxPixels, maxDim) {
+  limitCanvas(width, height, maxPixels, maxDim, capCanvasAreaFactor) {
     let maxAreaScale = Infinity,
       maxWidthScale = Infinity,
       maxHeightScale = Infinity;
 
+    if (capCanvasAreaFactor >= 0) {
+      const { innerWidth, innerHeight } = window;
+      maxPixels = Math.min(
+        maxPixels,
+        innerWidth *
+          innerHeight *
+          (1 + capCanvasAreaFactor / 100) *
+          OutputScale.pixelRatio ** 2
+      );
+    }
     if (maxPixels > 0) {
       maxAreaScale = Math.sqrt(maxPixels / (width * height));
     }

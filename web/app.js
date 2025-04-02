@@ -356,6 +356,7 @@ const PDFViewerApplication = {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
       Object.assign(opts, {
         docBaseUrl: x => x,
+        capCanvasAreaFactor: x => parseInt(x),
         enableAltText: x => x === "true",
         enableAutoLinking: x => x === "true",
         enableFakeMLManager: x => x === "true",
@@ -478,7 +479,8 @@ const PDFViewerApplication = {
 
     const enableHWA = AppOptions.get("enableHWA"),
       maxCanvasPixels = AppOptions.get("maxCanvasPixels"),
-      maxCanvasDim = AppOptions.get("maxCanvasDim");
+      maxCanvasDim = AppOptions.get("maxCanvasDim"),
+      capCanvasAreaFactor = AppOptions.get("capCanvasAreaFactor");
     const pdfViewer = (this.pdfViewer = new PDFViewer({
       container,
       viewer,
@@ -508,6 +510,7 @@ const PDFViewerApplication = {
       enablePrintAutoRotate: AppOptions.get("enablePrintAutoRotate"),
       maxCanvasPixels,
       maxCanvasDim,
+      capCanvasAreaFactor,
       enableDetailCanvas: AppOptions.get("enableDetailCanvas"),
       enablePermissions: AppOptions.get("enablePermissions"),
       pageColors,
