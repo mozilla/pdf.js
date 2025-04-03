@@ -516,7 +516,9 @@ class PartialEvaluator {
     // If it's a group, a new canvas will be created that is the size of the
     // bounding box and translated to the correct position so we don't need to
     // apply the bounding box to it.
-    const args = group ? [matrix, null] : [matrix, bbox];
+    const f32matrix = matrix && new Float32Array(matrix);
+    const f32bbox = (!group && bbox && new Float32Array(bbox)) || null;
+    const args = [f32matrix, f32bbox];
     operatorList.addOp(OPS.paintFormXObjectBegin, args);
 
     await this.getOperatorList({

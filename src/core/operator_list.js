@@ -780,6 +780,15 @@ class OperatorList {
             transfers.push(data.buffer, minMax.buffer);
           }
           break;
+        case OPS.paintFormXObjectBegin:
+          const [matrix, bbox] = argsArray[i];
+          if (matrix) {
+            transfers.push(matrix.buffer);
+          }
+          if (bbox) {
+            transfers.push(bbox.buffer);
+          }
+          break;
       }
     }
     return transfers;
