@@ -680,12 +680,11 @@ class TilingPattern {
     const bboxWidth = x1 - x0;
     const bboxHeight = y1 - y0;
     graphics.ctx.rect(x0, y0, bboxWidth, bboxHeight);
-    graphics.current.updateRectMinMax(getCurrentTransform(graphics.ctx), [
-      x0,
-      y0,
-      x1,
-      y1,
-    ]);
+    Util.axialAlignedBoundingBox(
+      [x0, y0, x1, y1],
+      getCurrentTransform(graphics.ctx),
+      graphics.current.minMax
+    );
     graphics.clip();
     graphics.endPath();
   }
