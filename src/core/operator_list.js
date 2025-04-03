@@ -768,18 +768,20 @@ class OperatorList {
       switch (fnArray[i]) {
         case OPS.paintInlineImageXObject:
         case OPS.paintInlineImageXObjectGroup:
-        case OPS.paintImageMaskXObject:
-          const arg = argsArray[i][0]; // First parameter in imgData.
-          if (arg.data?.buffer instanceof ArrayBuffer) {
-            transfers.push(arg.data.buffer);
+        case OPS.paintImageMaskXObject: {
+          const { bitmap, data } = argsArray[i][0]; // First parameter in imgData.
+          if (bitmap || data?.buffer) {
+            transfers.push(bitmap || data.buffer);
           }
           break;
-        case OPS.constructPath:
+        }
+        case OPS.constructPath: {
           const [, [data], minMax] = argsArray[i];
           if (data) {
             transfers.push(data.buffer, minMax.buffer);
           }
           break;
+        }
         case OPS.paintFormXObjectBegin:
           const [matrix, bbox] = argsArray[i];
           if (matrix) {
