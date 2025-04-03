@@ -726,8 +726,6 @@ class PartialEvaluator {
           /* forceRGBA = */ true,
           /* isOffscreenCanvasSupported = */ false
         );
-        operatorList.isOffscreenCanvasSupported =
-          this.options.isOffscreenCanvasSupported;
         operatorList.addImageOps(
           OPS.paintInlineImageXObject,
           [imgData],
