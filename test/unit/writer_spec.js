@@ -42,7 +42,7 @@ describe("Writer", function () {
         infoRef: null,
         encryptRef: null,
         filename: "foo.pdf",
-        info: {},
+        infoMap: new Map(),
       };
 
       let data = await incrementalUpdate({
@@ -111,7 +111,7 @@ describe("Writer", function () {
         infoRef: null,
         encryptRef: null,
         filename: "foo.pdf",
-        info: {},
+        infoMap: new Map(),
       };
 
       let data = await incrementalUpdate({
@@ -218,7 +218,7 @@ describe("Writer", function () {
         infoRef: null,
         encryptRef: null,
         filename: "foo.pdf",
-        info: {},
+        infoMap: new Map(),
       };
 
       let data = await incrementalUpdate({
@@ -272,7 +272,7 @@ describe("Writer", function () {
       infoRef: null,
       encryptRef: null,
       filename: "foo.pdf",
-      info: {},
+      infoMap: new Map(),
     };
 
     let data = await incrementalUpdate({

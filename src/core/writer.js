@@ -182,7 +182,7 @@ function computeMD5(filesize, xrefInfo) {
     time.toString(),
     filename,
     filesize.toString(),
-    ...Object.values(xrefInfo.info),
+    ...xrefInfo.infoMap.values(),
   ];
   const md5BufferLen = Math.sumPrecise(md5Buffer.map(str => str.length));
 
