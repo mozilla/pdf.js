@@ -742,13 +742,20 @@ class Util {
 
   // For 2d affine transforms
   static applyTransform(p, m) {
-    const [p0, p1] = p;
+    const p0 = p[0];
+    const p1 = p[1];
     p[0] = p0 * m[0] + p1 * m[2] + m[4];
     p[1] = p0 * m[1] + p1 * m[3] + m[5];
   }
 
   // For 2d affine transforms
-  static applyTransformToBezier(p, [m0, m1, m2, m3, m4, m5]) {
+  static applyTransformToBezier(p, transform) {
+    const m0 = transform[0];
+    const m1 = transform[1];
+    const m2 = transform[2];
+    const m3 = transform[3];
+    const m4 = transform[4];
+    const m5 = transform[5];
     for (let i = 0; i < 6; i += 2) {
       const pI = p[i];
       const pI1 = p[i + 1];
@@ -758,7 +765,8 @@ class Util {
   }
 
   static applyInverseTransform(p, m) {
-    const [p0, p1] = p;
+    const p0 = p[0];
+    const p1 = p[1];
     const d = m[0] * m[3] - m[1] * m[2];
     p[0] = (p0 * m[3] - p1 * m[2] + m[2] * m[5] - m[4] * m[3]) / d;
     p[1] = (-p0 * m[1] + p1 * m[0] + m[4] * m[1] - m[5] * m[0]) / d;
@@ -766,21 +774,47 @@ class Util {
 
   // Applies the transform to the rectangle and finds the minimum axially
   // aligned bounding box.
-  static getAxialAlignedBoundingBox(r, m) {
-    const p1 = [r[0], r[1]];
-    Util.applyTransform(p1, m);
-    const p2 = [r[2], r[3]];
-    Util.applyTransform(p2, m);
-    const p3 = [r[0], r[3]];
-    Util.applyTransform(p3, m);
-    const p4 = [r[2], r[1]];
-    Util.applyTransform(p4, m);
-    return [
-      Math.min(p1[0], p2[0], p3[0], p4[0]),
-      Math.min(p1[1], p2[1], p3[1], p4[1]),
-      Math.max(p1[0], p2[0], p3[0], p4[0]),
-      Math.max(p1[1], p2[1], p3[1], p4[1]),
-    ];
+  static axialAlignedBoundingBox(rect, transform, output) {
+    const m0 = transform[0];
+    const m1 = transform[1];
+    const m2 = transform[2];
+    const m3 = transform[3];
+    const m4 = transform[4];
+    const m5 = transform[5];
+    const r0 = rect[0];
+    const r1 = rect[1];
+    const r2 = rect[2];
+    const r3 = rect[3];
+
+    let a0 = m0 * r0 + m4;
+    let a2 = a0;
+    let a1 = m0 * r2 + m4;
+    let a3 = a1;
+    let b0 = m3 * r1 + m5;
+    let b2 = b0;
+    let b1 = m3 * r3 + m5;
+    let b3 = b1;
+
+    if (m1 !== 0 || m2 !== 0) {
+      // Non-scaling matrix: shouldn't be frequent.
+      const m1r0 = m1 * r0;
+      const m1r2 = m1 * r2;
+      const m2r1 = m2 * r1;
+      const m2r3 = m2 * r3;
+      a0 += m2r1;
+      a3 += m2r1;
+      a1 += m2r3;
+      a2 += m2r3;
+      b0 += m1r0;
+      b3 += m1r0;
+      b1 += m1r2;
+      b2 += m1r2;
+    }
+
+    output[0] = Math.min(output[0], a0, a1, a2, a3);
+    output[1] = Math.min(output[1], b0, b1, b2, b3);
+    output[2] = Math.max(output[2], a0, a1, a2, a3);
+    output[3] = Math.max(output[3], b0, b1, b2, b3);
   }
 
   static inverseTransform(m) {
@@ -798,7 +832,11 @@ class Util {
   // This calculation uses Singular Value Decomposition.
   // The SVD can be represented with formula A = USV. We are interested in the
   // matrix S here because it represents the scale values.
-  static singularValueDecompose2dScale([m0, m1, m2, m3], output) {
+  static singularValueDecompose2dScale(matrix, output) {
+    const m0 = matrix[0];
+    const m1 = matrix[1];
+    const m2 = matrix[2];
+    const m3 = matrix[3];
     // Multiply matrix m with its transpose.
     const a = m0 ** 2 + m1 ** 2;
     const b = m0 * m2 + m1 * m3;
