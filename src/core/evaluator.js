@@ -72,7 +72,6 @@ import { BaseStream } from "./base_stream.js";
 import { bidi } from "./bidi.js";
 import { ColorSpace } from "./colorspace.js";
 import { ColorSpaceUtils } from "./colorspace_utils.js";
-import { DecodeStream } from "./decode_stream.js";
 import { getFontSubstitution } from "./font_substitutions.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { getMetrics } from "./metrics.js";
@@ -571,7 +570,10 @@ class PartialEvaluator {
     localImageCache,
     localColorSpaceCache,
   }) {
-    const dict = image.dict;
+    const { maxImageSize, ignoreErrors, isOffscreenCanvasSupported } =
+      this.options;
+
+    const { dict } = image;
     const imageRef = dict.objId;
     const w = dict.get("W", "Width");
     const h = dict.get("H", "Height");
@@ -580,15 +582,14 @@ class PartialEvaluator {
       warn("Image dimensions are missing, or not numbers.");
       return;
     }
-    const maxImageSize = this.options.maxImageSize;
     if (maxImageSize !== -1 && w * h > maxImageSize) {
       const msg = "Image exceeded maximum allowed size and was removed.";
 
-      if (this.options.ignoreErrors) {
-        warn(msg);
-        return;
+      if (!ignoreErrors) {
+        throw new Error(msg);
       }
-      throw new Error(msg);
+      warn(msg);
+      return;
     }
 
     let optionalContent;
@@ -607,52 +608,10 @@ class PartialEvaluator {
       // data can't be done here. Instead of creating a
       // complete PDFImage, only read the information needed
       // for later.
-      const interpolate = dict.get("I", "Interpolate");
-      const bitStrideLength = (w + 7) >> 3;
-      const imgArray = image.getBytes(bitStrideLength * h);
-      const decode = dict.getArray("D", "Decode");
-
-      if (this.parsingType3Font) {
-        // NOTE: Compared to other image resources we don't bother caching
-        // Type3-glyph image masks, since we've not come across any cases
-        // where that actually helps.
-        // In Type3-glyphs image masks are "always" inline resources,
-        // they're usually fairly small and aren't being re-used either.
-
-        imgData = PDFImage.createRawMask({
-          imgArray,
-          width: w,
-          height: h,
-          imageIsFromDecodeStream: image instanceof DecodeStream,
-          inverseDecode: decode?.[0] > 0,
-          interpolate,
-        });
-        args = compileType3Glyph(imgData);
-
-        if (args) {
-          operatorList.addImageOps(OPS.constructPath, args, optionalContent);
-          return;
-        }
-        warn("Cannot compile Type3 glyph.");
-
-        // If compilation failed, or was disabled, fallback to using an inline
-        // image mask; this case should be extremely rare.
-        operatorList.addImageOps(
-          OPS.paintImageMaskXObject,
-          [imgData],
-          optionalContent
-        );
-        return;
-      }
-
       imgData = await PDFImage.createMask({
-        imgArray,
-        width: w,
-        height: h,
-        imageIsFromDecodeStream: image instanceof DecodeStream,
-        inverseDecode: decode?.[0] > 0,
-        interpolate,
-        isOffscreenCanvasSupported: this.options.isOffscreenCanvasSupported,
+        image,
+        isOffscreenCanvasSupported:
+          isOffscreenCanvasSupported && !this.parsingType3Font,
       });
 
       if (imgData.isSingleOpaquePixel) {
@@ -674,6 +633,36 @@ class PartialEvaluator {
             );
           }
         }
+        return;
+      }
+
+      if (this.parsingType3Font) {
+        // NOTE: Compared to other image resources we don't bother caching
+        // Type3-glyph image masks, since we've not come across any cases
+        // where that actually helps.
+        // In Type3-glyphs image masks are "always" inline resources,
+        // they're usually fairly small and aren't being re-used either.
+        if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+          assert(
+            imgData.data instanceof Uint8Array,
+            "Type3 glyph image mask must be a TypedArray."
+          );
+        }
+        args = compileType3Glyph(imgData);
+
+        if (args) {
+          operatorList.addImageOps(OPS.constructPath, args, optionalContent);
+          return;
+        }
+        warn("Cannot compile Type3 glyph.");
+
+        // If compilation failed, or was disabled, fallback to using an inline
+        // image mask; this case should be extremely rare.
+        operatorList.addImageOps(
+          OPS.paintImageMaskXObject,
+          [imgData],
+          optionalContent
+        );
         return;
       }
 
@@ -736,7 +725,7 @@ class PartialEvaluator {
       } catch (reason) {
         const msg = `Unable to decode inline image: "${reason}".`;
 
-        if (!this.options.ignoreErrors) {
+        if (!ignoreErrors) {
           throw new Error(msg);
         }
         warn(msg);
@@ -819,8 +808,7 @@ class PartialEvaluator {
       .then(async imageObj => {
         imgData = await imageObj.createImageData(
           /* forceRGBA = */ false,
-          /* isOffscreenCanvasSupported = */ this.options
-            .isOffscreenCanvasSupported
+          isOffscreenCanvasSupported
         );
         imgData.dataLen = imgData.bitmap
           ? imgData.width * imgData.height * 4

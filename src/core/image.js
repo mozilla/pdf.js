@@ -348,58 +348,18 @@ class PDFImage {
     });
   }
 
-  static createRawMask({
-    imgArray,
-    width,
-    height,
-    imageIsFromDecodeStream,
-    inverseDecode,
-    interpolate,
-  }) {
-    // |imgArray| might not contain full data for every pixel of the mask, so
-    // we need to distinguish between |computedLength| and |actualLength|.
-    // In particular, if inverseDecode is true, then the array we return must
-    // have a length of |computedLength|.
+  static async createMask({ image, isOffscreenCanvasSupported = false }) {
+    const { dict } = image;
+    const width = dict.get("W", "Width");
+    const height = dict.get("H", "Height");
+
+    const interpolate = dict.get("I", "Interpolate");
+    const decode = dict.getArray("D", "Decode");
+    const inverseDecode = decode?.[0] > 0;
 
     const computedLength = ((width + 7) >> 3) * height;
-    const actualLength = imgArray.byteLength;
-    const haveFullData = computedLength === actualLength;
-    let data, i;
+    const imgArray = image.getBytes(computedLength);
 
-    if (imageIsFromDecodeStream && (!inverseDecode || haveFullData)) {
-      // imgArray came from a DecodeStream and its data is in an appropriate
-      // form, so we can just transfer it.
-      data = imgArray;
-    } else if (!inverseDecode) {
-      data = new Uint8Array(imgArray);
-    } else {
-      data = new Uint8Array(computedLength);
-      data.set(imgArray);
-      data.fill(0xff, actualLength);
-    }
-
-    // If necessary, invert the original mask data (but not any extra we might
-    // have added above). It's safe to modify the array -- whether it's the
-    // original or a copy, we're about to transfer it anyway, so nothing else
-    // in this thread can be relying on its contents.
-    if (inverseDecode) {
-      for (i = 0; i < actualLength; i++) {
-        data[i] ^= 0xff;
-      }
-    }
-
-    return { data, width, height, interpolate };
-  }
-
-  static async createMask({
-    imgArray,
-    width,
-    height,
-    imageIsFromDecodeStream,
-    inverseDecode,
-    interpolate,
-    isOffscreenCanvasSupported = false,
-  }) {
     const isSingleOpaquePixel =
       width === 1 &&
       height === 1 &&
@@ -452,17 +412,40 @@ class PDFImage {
         bitmap,
       };
     }
-
-    // Get the data almost as they're and they'll be decoded
+    // Fallback to get the data almost as they're and they'll be decoded
     // just before being drawn.
-    return this.createRawMask({
-      imgArray,
-      width,
-      height,
-      inverseDecode,
-      imageIsFromDecodeStream,
-      interpolate,
-    });
+
+    // |imgArray| might not contain full data for every pixel of the mask, so
+    // we need to distinguish between |computedLength| and |actualLength|.
+    // In particular, if inverseDecode is true, then the array we return must
+    // have a length of |computedLength|.
+    const actualLength = imgArray.byteLength;
+    const haveFullData = computedLength === actualLength;
+    let data;
+
+    if (image instanceof DecodeStream && (!inverseDecode || haveFullData)) {
+      // imgArray came from a DecodeStream and its data is in an appropriate
+      // form, so we can just transfer it.
+      data = imgArray;
+    } else if (!inverseDecode) {
+      data = new Uint8Array(imgArray);
+    } else {
+      data = new Uint8Array(computedLength);
+      data.set(imgArray);
+      data.fill(0xff, actualLength);
+    }
+
+    // If necessary, invert the original mask data (but not any extra we might
+    // have added above). It's safe to modify the array -- whether it's the
+    // original or a copy, we're about to transfer it anyway, so nothing else
+    // in this thread can be relying on its contents.
+    if (inverseDecode) {
+      for (let i = 0; i < actualLength; i++) {
+        data[i] ^= 0xff;
+      }
+    }
+
+    return { data, width, height, interpolate };
   }
 
   get drawWidth() {
