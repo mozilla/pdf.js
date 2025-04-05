@@ -787,6 +787,9 @@ class OperatorList {
             transfers.push(bbox.buffer);
           }
           break;
+        case OPS.setTextMatrix:
+          transfers.push(argsArray[i][0].buffer);
+          break;
       }
     }
     return transfers;

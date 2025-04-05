@@ -2237,6 +2237,9 @@ class PartialEvaluator {
             }
             continue;
           }
+          case OPS.setTextMatrix:
+            operatorList.addOp(fn, [new Float32Array(args)]);
+            continue;
           case OPS.markPoint:
           case OPS.markPointProps:
           case OPS.beginCompat:
