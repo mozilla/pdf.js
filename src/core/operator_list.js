@@ -567,15 +567,10 @@ class QueueOptimizer extends NullOptimizer {
       iCurr: 0,
       fnArray: queue.fnArray,
       argsArray: queue.argsArray,
-      isOffscreenCanvasSupported: false,
+      isOffscreenCanvasSupported: OperatorList.isOffscreenCanvasSupported,
     };
     this.match = null;
     this.lastProcessed = 0;
-  }
-
-  // eslint-disable-next-line accessor-pairs
-  set isOffscreenCanvasSupported(value) {
-    this.context.isOffscreenCanvasSupported = value;
   }
 
   _optimize() {
@@ -656,6 +651,8 @@ class OperatorList {
   // Close to chunk size.
   static CHUNK_SIZE_ABOUT = this.CHUNK_SIZE - 5;
 
+  static isOffscreenCanvasSupported = false;
+
   constructor(intent = 0, streamSink) {
     this._streamSink = streamSink;
     this.fnArray = [];
@@ -670,9 +667,8 @@ class OperatorList {
     this._resolved = streamSink ? null : Promise.resolve();
   }
 
-  // eslint-disable-next-line accessor-pairs
-  set isOffscreenCanvasSupported(value) {
-    this.optimizer.isOffscreenCanvasSupported = value;
+  static setOptions({ isOffscreenCanvasSupported }) {
+    this.isOffscreenCanvasSupported = isOffscreenCanvasSupported;
   }
 
   get length() {
