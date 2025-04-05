@@ -124,47 +124,47 @@ function mirrorContextOperations(ctx, destCtx) {
     delete ctx._removeMirroring;
   };
 
-  ctx.save = function ctxSave() {
+  ctx.save = function () {
     destCtx.save();
     this.__originalSave();
   };
 
-  ctx.restore = function ctxRestore() {
+  ctx.restore = function () {
     destCtx.restore();
     this.__originalRestore();
   };
 
-  ctx.translate = function ctxTranslate(x, y) {
+  ctx.translate = function (x, y) {
     destCtx.translate(x, y);
     this.__originalTranslate(x, y);
   };
 
-  ctx.scale = function ctxScale(x, y) {
+  ctx.scale = function (x, y) {
     destCtx.scale(x, y);
     this.__originalScale(x, y);
   };
 
-  ctx.transform = function ctxTransform(a, b, c, d, e, f) {
+  ctx.transform = function (a, b, c, d, e, f) {
     destCtx.transform(a, b, c, d, e, f);
     this.__originalTransform(a, b, c, d, e, f);
   };
 
-  ctx.setTransform = function ctxSetTransform(a, b, c, d, e, f) {
+  ctx.setTransform = function (a, b, c, d, e, f) {
     destCtx.setTransform(a, b, c, d, e, f);
     this.__originalSetTransform(a, b, c, d, e, f);
   };
 
-  ctx.resetTransform = function ctxResetTransform() {
+  ctx.resetTransform = function () {
     destCtx.resetTransform();
     this.__originalResetTransform();
   };
 
-  ctx.rotate = function ctxRotate(angle) {
+  ctx.rotate = function (angle) {
     destCtx.rotate(angle);
     this.__originalRotate(angle);
   };
 
-  ctx.clip = function ctxRotate(rule) {
+  ctx.clip = function (rule) {
     destCtx.clip(rule);
     this.__originalClip(rule);
   };
@@ -304,39 +304,63 @@ function drawImageAtIntegerCoords(
 }
 
 class CanvasExtraState {
-  constructor(width, height) {
-    // Are soft masks and alpha values shapes or opacities?
-    this.alphaIsShape = false;
-    this.fontSize = 0;
-    this.fontSizeScale = 1;
-    this.textMatrix = IDENTITY_MATRIX;
-    this.textMatrixScale = 1;
-    this.fontMatrix = FONT_IDENTITY_MATRIX;
-    this.leading = 0;
-    // Current point (in user coordinates)
-    this.x = 0;
-    this.y = 0;
-    // Start of text line (in text coordinates)
-    this.lineX = 0;
-    this.lineY = 0;
-    // Character and word spacing
-    this.charSpacing = 0;
-    this.wordSpacing = 0;
-    this.textHScale = 1;
-    this.textRenderingMode = TextRenderingMode.FILL;
-    this.textRise = 0;
-    // Default fore and background colors
-    this.fillColor = "#000000";
-    this.strokeColor = "#000000";
-    this.patternFill = false;
-    this.patternStroke = false;
-    // Note: fill alpha applies to all non-stroking operations
-    this.fillAlpha = 1;
-    this.strokeAlpha = 1;
-    this.lineWidth = 1;
-    this.activeSMask = null;
-    this.transferMaps = "none";
+  // Are soft masks and alpha values shapes or opacities?
+  alphaIsShape = false;
 
+  fontSize = 0;
+
+  fontSizeScale = 1;
+
+  textMatrix = IDENTITY_MATRIX;
+
+  textMatrixScale = 1;
+
+  fontMatrix = FONT_IDENTITY_MATRIX;
+
+  leading = 0;
+
+  // Current point (in user coordinates)
+  x = 0;
+
+  y = 0;
+
+  // Start of text line (in text coordinates)
+  lineX = 0;
+
+  lineY = 0;
+
+  // Character and word spacing
+  charSpacing = 0;
+
+  wordSpacing = 0;
+
+  textHScale = 1;
+
+  textRenderingMode = TextRenderingMode.FILL;
+
+  textRise = 0;
+
+  // Default fore and background colors
+  fillColor = "#000000";
+
+  strokeColor = "#000000";
+
+  patternFill = false;
+
+  patternStroke = false;
+
+  // Note: fill alpha applies to all non-stroking operations
+  fillAlpha = 1;
+
+  strokeAlpha = 1;
+
+  lineWidth = 1;
+
+  activeSMask = null;
+
+  transferMaps = "none";
+
+  constructor(width, height) {
     this.clipBox = new Float32Array([0, 0, width, height]);
     this.minMax = MIN_MAX_INIT.slice();
   }
