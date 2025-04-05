@@ -121,6 +121,9 @@ function isValidAnnotationEditorMode(mode) {
  * @property {number} [maxCanvasDim] - The maximum supported canvas dimension,
  *   in either width or height. Use `-1` for no limit.
  *   The default value is 32767.
+ * @property {number} [capCanvasAreaFactor] - Cap the canvas area to the
+ *   viewport increased by the value in percent. Use `-1` for no capping.
+ *   The default value is 100%.
  * @property {boolean} [enableDetailCanvas] - When enabled, if the rendered
  *   pages would need a canvas that is larger than `maxCanvasPixels` or
  *   `maxCanvasDim`, it will draw a second canvas on top of the CSS-zoomed one,
@@ -330,6 +333,7 @@ class PDFViewer {
     }
     this.maxCanvasPixels = options.maxCanvasPixels;
     this.maxCanvasDim = options.maxCanvasDim;
+    this.capCanvasAreaFactor = options.capCanvasAreaFactor;
     this.enableDetailCanvas = options.enableDetailCanvas ?? true;
     this.l10n = options.l10n;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
@@ -996,6 +1000,7 @@ class PDFViewer {
             imageResourcesPath: this.imageResourcesPath,
             maxCanvasPixels: this.maxCanvasPixels,
             maxCanvasDim: this.maxCanvasDim,
+            capCanvasAreaFactor: this.capCanvasAreaFactor,
             enableDetailCanvas: this.enableDetailCanvas,
             pageColors,
             l10n: this.l10n,
