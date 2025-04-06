@@ -15,7 +15,6 @@
 
 import {
   info,
-  objectFromMap,
   RenderingIntentFlag,
   unreachable,
   warn,
@@ -301,10 +300,6 @@ class OptionalContentConfig {
     return [...this.#groups.keys()];
   }
 
-  getGroups() {
-    return this.#groups.size > 0 ? objectFromMap(this.#groups) : null;
-  }
-
   getGroup(id) {
     return this.#groups.get(id) || null;
   }
@@ -319,6 +314,10 @@ class OptionalContentConfig {
       hash.update(`${id}:${group.visible}`);
     }
     return (this.#cachedGetHash = hash.hexdigest());
+  }
+
+  [Symbol.iterator]() {
+    return this.#groups.entries();
   }
 }
 

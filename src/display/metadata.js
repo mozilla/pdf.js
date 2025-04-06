@@ -13,15 +13,13 @@
  * limitations under the License.
  */
 
-import { objectFromMap } from "../shared/util.js";
-
 class Metadata {
-  #metadataMap;
+  #map;
 
   #data;
 
   constructor({ parsedData, rawData }) {
-    this.#metadataMap = parsedData;
+    this.#map = parsedData;
     this.#data = rawData;
   }
 
@@ -30,15 +28,11 @@ class Metadata {
   }
 
   get(name) {
-    return this.#metadataMap.get(name) ?? null;
+    return this.#map.get(name) ?? null;
   }
 
-  getAll() {
-    return objectFromMap(this.#metadataMap);
-  }
-
-  has(name) {
-    return this.#metadataMap.has(name);
+  [Symbol.iterator]() {
+    return this.#map.entries();
   }
 }
 

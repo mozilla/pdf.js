@@ -578,16 +578,6 @@ function objectSize(obj) {
   return Object.keys(obj).length;
 }
 
-// Ensure that the returned Object has a `null` prototype; hence why
-// `Object.fromEntries(...)` is not used.
-function objectFromMap(map) {
-  const obj = Object.create(null);
-  for (const [key, value] of map) {
-    obj[key] = value;
-  }
-  return obj;
-}
-
 // Checks the endianness of the platform.
 function isLittleEndian() {
   const buffer8 = new Uint8Array(4);
@@ -1313,7 +1303,6 @@ export {
   LINE_FACTOR,
   MathClamp,
   normalizeUnicode,
-  objectFromMap,
   objectSize,
   OPS,
   PageActionEventType,
