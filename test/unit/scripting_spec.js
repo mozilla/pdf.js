@@ -1394,6 +1394,116 @@ describe("Scripting", function () {
           formattedValue: null,
         });
       });
+
+      it("should compute the max of several fields", async () => {
+        const refIds = [0, 1, 2, 3, 4].map(_ => getId());
+        const data = {
+          objects: {
+            field1: [
+              {
+                id: refIds[0],
+                value: "",
+                actions: {},
+                type: "text",
+              },
+            ],
+            field2: [
+              {
+                id: refIds[1],
+                value: "",
+                actions: {},
+                type: "text",
+              },
+            ],
+            field3: [
+              {
+                id: refIds[2],
+                value: "",
+                actions: {},
+                type: "text",
+              },
+            ],
+            field4: [
+              {
+                id: refIds[3],
+                value: "",
+                actions: {
+                  Calculate: [
+                    `AFSimple_Calculate("MAX", ["field1", "field2", "field3", "unknown"]);`,
+                  ],
+                },
+                type: "text",
+              },
+            ],
+            field5: [
+              {
+                id: refIds[4],
+                value: "",
+                actions: {
+                  Calculate: [
+                    `AFSimple_Calculate("MAX", "field1, field2, field3, unknown");`,
+                  ],
+                },
+                type: "text",
+              },
+            ],
+          },
+          appInfo: { language: "en-US", platform: "Linux x86_64" },
+          calculationOrder: [refIds[3], refIds[4]],
+          dispatchEventName: "_dispatchMe",
+        };
+
+        sandbox.createSandbox(data);
+        await sandbox.dispatchEventInSandbox({
+          id: refIds[0],
+          value: "1",
+          name: "Keystroke",
+          willCommit: true,
+        });
+        expect(send_queue.has(refIds[3])).toEqual(true);
+        expect(send_queue.get(refIds[3])).toEqual({
+          id: refIds[3],
+          siblings: null,
+          value: 1,
+          formattedValue: null,
+        });
+
+        await sandbox.dispatchEventInSandbox({
+          id: refIds[1],
+          value: "2",
+          name: "Keystroke",
+          willCommit: true,
+        });
+        expect(send_queue.has(refIds[3])).toEqual(true);
+        expect(send_queue.get(refIds[3])).toEqual({
+          id: refIds[3],
+          siblings: null,
+          value: 2,
+          formattedValue: null,
+        });
+
+        await sandbox.dispatchEventInSandbox({
+          id: refIds[2],
+          value: "3",
+          name: "Keystroke",
+          willCommit: true,
+        });
+        expect(send_queue.has(refIds[3])).toEqual(true);
+        expect(send_queue.get(refIds[3])).toEqual({
+          id: refIds[3],
+          siblings: null,
+          value: 3,
+          formattedValue: null,
+        });
+
+        expect(send_queue.has(refIds[4])).toEqual(true);
+        expect(send_queue.get(refIds[4])).toEqual({
+          id: refIds[4],
+          siblings: null,
+          value: 3,
+          formattedValue: null,
+        });
+      });
     });
 
     describe("AFSpecial_KeystrokeEx", function () {
