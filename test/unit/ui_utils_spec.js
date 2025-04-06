@@ -234,9 +234,8 @@ describe("ui_utils", function () {
       let lineTop = 0,
         id = 0;
       for (const line of lines) {
-        const lineHeight = line.reduce(function (maxHeight, pair) {
-          return Math.max(maxHeight, pair[1]);
-        }, 0);
+        const heights = line.map(pair => pair[1]);
+        const lineHeight = Math.max(...heights);
         let offsetLeft = -BORDER_WIDTH;
         for (const [clientWidth, clientHeight] of line) {
           const offsetTop =
@@ -320,14 +319,12 @@ describe("ui_utils", function () {
     // test to the slower implementation above, for a range of scroll viewport
     // sizes and positions.
     function scrollOverDocument(pages, horizontal = false, rtl = false) {
-      const size = pages.reduce(function (max, { div }) {
-        return Math.max(
-          max,
-          horizontal
-            ? Math.abs(div.offsetLeft + div.clientLeft + div.clientWidth)
-            : div.offsetTop + div.clientTop + div.clientHeight
-        );
-      }, 0);
+      const sizes = pages.map(({ div }) =>
+        horizontal
+          ? Math.abs(div.offsetLeft + div.clientLeft + div.clientWidth)
+          : div.offsetTop + div.clientTop + div.clientHeight
+      );
+      const size = Math.max(...sizes);
       // The numbers (7 and 5) are mostly arbitrary, not magic: increase them to
       // make scrollOverDocument tests faster, decrease them to make the tests
       // more scrupulous, and keep them coprime to reduce the chance of missing
