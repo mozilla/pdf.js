@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { objectFromMap, shadow, unreachable } from "../shared/util.js";
+import { shadow, unreachable } from "../shared/util.js";
 import { AnnotationEditor } from "./editor/editor.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 
@@ -41,6 +41,17 @@ class AnnotationStorage {
     this.onSetModified = null;
     this.onResetModified = null;
     this.onAnnotationEditor = null;
+
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      // For testing purposes.
+      Object.defineProperty(this, "_setValues", {
+        value: obj => {
+          for (const [key, val] of Object.entries(obj)) {
+            this.setValue(key, val);
+          }
+        },
+      });
+    }
   }
 
   /**
@@ -126,22 +137,6 @@ class AnnotationStorage {
    */
   has(key) {
     return this.#storage.has(key);
-  }
-
-  /**
-   * @returns {Object | null}
-   */
-  getAll() {
-    return this.#storage.size > 0 ? objectFromMap(this.#storage) : null;
-  }
-
-  /**
-   * @param {Object} obj
-   */
-  setAll(obj) {
-    for (const [key, val] of Object.entries(obj)) {
-      this.setValue(key, val);
-    }
   }
 
   get size() {
@@ -277,6 +272,10 @@ class AnnotationStorage {
       ids: new Set(ids),
       hash: ids.join(","),
     });
+  }
+
+  [Symbol.iterator]() {
+    return this.#storage.entries();
   }
 }
 
