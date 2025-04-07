@@ -19,7 +19,6 @@ import {
   DrawOPS,
   FONT_IDENTITY_MATRIX,
   FormatError,
-  IDENTITY_MATRIX,
   info,
   isArrayEqual,
   normalizeUnicode,
@@ -36,6 +35,7 @@ import { compileType3Glyph, FontFlags } from "./fonts_utils.js";
 import { ErrorFont, Font } from "./fonts.js";
 import {
   fetchBinaryData,
+  IDENTITY_MATRIX,
   isNumberArray,
   lookupMatrix,
   lookupNormalRect,
