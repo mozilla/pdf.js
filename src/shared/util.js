@@ -25,7 +25,6 @@ const isNodeJS =
   !process.versions.nw &&
   !(process.versions.electron && process.type && process.type !== "browser");
 
-const IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
 // Represent the percentage of the height of a single-line field over
@@ -1303,7 +1302,6 @@ export {
   getUuid,
   getVerbosityLevel,
   hexNumbers,
-  IDENTITY_MATRIX,
   ImageKind,
   info,
   InvalidPDFException,
