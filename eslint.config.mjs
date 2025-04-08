@@ -127,6 +127,7 @@ export default [
       "perfectionist/sort-named-exports": "error",
       "unicorn/no-abusive-eslint-disable": "error",
       "unicorn/no-array-push-push": "error",
+      "unicorn/no-array-reduce": ["error", { allowSimpleOperations: true }],
       "unicorn/no-console-spaces": "error",
       "unicorn/no-instanceof-builtins": "error",
       "unicorn/no-invalid-remove-event-listener": "error",
