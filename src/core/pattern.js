@@ -16,7 +16,6 @@
 import {
   assert,
   FormatError,
-  IDENTITY_MATRIX,
   info,
   MathClamp,
   unreachable,
@@ -24,6 +23,7 @@ import {
   warn,
 } from "../shared/util.js";
 import {
+  IDENTITY_MATRIX,
   isBooleanArray,
   isNumberArray,
   lookupMatrix,
