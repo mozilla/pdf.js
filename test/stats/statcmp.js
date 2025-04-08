@@ -76,10 +76,7 @@ function pad(s, length, dir /* default: 'right' */) {
 }
 
 function mean(array) {
-  function add(a, b) {
-    return a + b;
-  }
-  return array.reduce(add, 0) / array.length;
+  return array.reduce((a, b) => a + b, 0) / array.length;
 }
 
 /* Comparator for row key sorting. */
