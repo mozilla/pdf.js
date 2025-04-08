@@ -738,7 +738,7 @@ class Driver {
                 await page.getAnnotations({ intent: "display" });
               }
             }
-            doc.annotationStorage.setAll(task.annotationStorage);
+            doc.annotationStorage._setValues(task.annotationStorage);
 
             const data = await doc.saveDocument();
             await loadingTask.destroy();
@@ -919,7 +919,7 @@ class Driver {
               pageColors = null;
 
             if (task.annotationStorage) {
-              task.pdfDoc.annotationStorage.setAll(task.annotationStorage);
+              task.pdfDoc.annotationStorage._setValues(task.annotationStorage);
             }
 
             let textLayerCanvas, annotationLayerCanvas, annotationLayerContext;
