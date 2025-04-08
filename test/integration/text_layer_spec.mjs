@@ -217,6 +217,104 @@ describe("Text layer", () => {
         });
       });
 
+      describe("doesn't jump when hovering on an empty area, with .markedContent", () => {
+        let pages;
+
+        beforeAll(async () => {
+          pages = await loadAndWait(
+            "chrome-text-selection-markedContent.pdf",
+            `.page[data-page-number = "1"] .endOfContent`
+          );
+        });
+        afterAll(async () => {
+          await closePages(pages);
+        });
+
+        it("in per-character selection mode", async () => {
+          await Promise.all(
+            pages.map(async ([browserName, page]) => {
+              const [positionStart, positionEnd] = await Promise.all([
+                getSpanRectFromText(
+                  page,
+                  1,
+                  "strengthen in the coming quarters as the railway projects under"
+                ).then(middlePosition),
+                getSpanRectFromText(
+                  page,
+                  1,
+                  "development enter the construction phase (estimated at around"
+                ).then(belowEndPosition),
+              ]);
+
+              await page.mouse.move(positionStart.x, positionStart.y);
+              await page.mouse.down();
+              await moveInSteps(page, positionStart, positionEnd, 20);
+              await page.mouse.up();
+
+              await expectAsync(page)
+                .withContext(`In ${browserName}`)
+                .toHaveRoughlySelected(
+                  "rs as the railway projects under\n" +
+                    "development enter the construction phase (estimated at "
+                );
+            })
+          );
+        });
+
+        it("in per-word selection mode", async () => {
+          await Promise.all(
+            pages.map(async ([browserName, page]) => {
+              const [positionStart, positionEnd] = await Promise.all([
+                getSpanRectFromText(
+                  page,
+                  1,
+                  "strengthen in the coming quarters as the railway projects under"
+                ).then(middlePosition),
+                getSpanRectFromText(
+                  page,
+                  1,
+                  "development enter the construction phase (estimated at around"
+                ).then(belowEndPosition),
+              ]);
+
+              if (browserName !== "firefox") {
+                await page.mouse.move(positionStart.x, positionStart.y);
+                await page.mouse.down({ clickCount: 1 });
+                await page.mouse.up({ clickCount: 1 });
+                await page.mouse.down({ clickCount: 2 });
+              } else {
+                // When running tests with Firefox we use WebDriver BiDi, for
+                // which puppeteer doesn't support emulating "double click and
+                // hold". We need to manually dispatch an action through the
+                // protocol.
+                // See https://github.com/puppeteer/puppeteer/issues/13745.
+                await page.mainFrame().browsingContext.performActions([
+                  {
+                    type: "pointer",
+                    id: "__puppeteer_mouse",
+                    actions: [
+                      { type: "pointerMove", ...positionStart },
+                      { type: "pointerDown", button: 0 },
+                      { type: "pointerUp", button: 0 },
+                      { type: "pointerDown", button: 0 },
+                    ],
+                  },
+                ]);
+              }
+              await moveInSteps(page, positionStart, positionEnd, 20);
+              await page.mouse.up();
+
+              await expectAsync(page)
+                .withContext(`In ${browserName}`)
+                .toHaveRoughlySelected(
+                  "quarters as the railway projects under\n" +
+                    "development enter the construction phase (estimated at around"
+                );
+            })
+          );
+        });
+      });
+
       describe("when selecting over a link", () => {
         let pages;
 
