@@ -306,6 +306,16 @@ export default [
           selector: "NewExpression[callee.name='Ref']",
           message: "Use `Ref.get()` rather than `new Ref()`.",
         },
+        {
+          selector: "ExportNamedDeclaration[declaration]",
+          message:
+            "Separate the declaration and the export statement, using `export { ... }`.",
+        },
+        {
+          selector: "ExportDefaultDeclaration:has(> :declaration)",
+          message:
+            "Separate the declaration and the export statement, using `export default <variable name>`.",
+        },
       ],
       "no-unneeded-ternary": "error",
       "operator-assignment": "error",
