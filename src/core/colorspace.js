@@ -429,6 +429,7 @@ class IndexedCS extends ColorSpace {
   constructor(base, highVal, lookup) {
     super("Indexed", 1);
     this.base = base;
+    this.highVal = highVal;
 
     const length = base.numComps * (highVal + 1);
     this.lookup = new Uint8Array(length);
@@ -452,9 +453,10 @@ class IndexedCS extends ColorSpace {
         'IndexedCS.getRgbItem: Unsupported "dest" type.'
       );
     }
-    const numComps = this.base.numComps;
-    const start = src[srcOffset] * numComps;
-    this.base.getRgbBuffer(this.lookup, start, 1, dest, destOffset, 8, 0);
+    const { base, highVal, lookup } = this;
+    const start =
+      MathClamp(Math.round(src[srcOffset]), 0, highVal) * base.numComps;
+    base.getRgbBuffer(lookup, start, 1, dest, destOffset, 8, 0);
   }
 
   getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
@@ -464,13 +466,13 @@ class IndexedCS extends ColorSpace {
         'IndexedCS.getRgbBuffer: Unsupported "dest" type.'
       );
     }
-    const base = this.base;
-    const numComps = base.numComps;
+    const { base, highVal, lookup } = this;
+    const { numComps } = base;
     const outputDelta = base.getOutputLength(numComps, alpha01);
-    const lookup = this.lookup;
 
     for (let i = 0; i < count; ++i) {
-      const lookupPos = src[srcOffset++] * numComps;
+      const lookupPos =
+        MathClamp(Math.round(src[srcOffset++]), 0, highVal) * numComps;
       base.getRgbBuffer(lookup, lookupPos, 1, dest, destOffset, 8, alpha01);
       destOffset += outputDelta;
     }

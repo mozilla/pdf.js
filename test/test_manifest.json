@@ -2852,6 +2852,14 @@
     "type": "eq"
   },
   {
+    "id": "IndexedCS_negative_and_high",
+    "file": "pdfs/IndexedCS_negative_and_high.pdf",
+    "md5": "3bbf5e6f1cf49acb075fabb0726b5fe4",
+    "link": false,
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "issue13372",
     "file": "pdfs/issue13372.pdf",
     "md5": "0bc5329623fd554174c5e7653f904e28",
