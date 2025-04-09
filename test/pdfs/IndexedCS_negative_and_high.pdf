@@ -1,0 +1,87 @@
+%PDF-1.7
+%‚„œ”
+
+1 0 obj
+<<
+  /Type   /Catalog
+  /Pages  2 0 R
+>>
+endobj
+
+2 0 obj
+<<
+  /Type   /Pages
+  /Kids   [ 3 0 R ]
+  /Count  1
+>>
+endobj
+
+3 0 obj
+<<
+  /Type     /Page
+  /Parent   2 0 R
+  /MediaBox [ 0 0 500 100 ]
+  /Contents 5 0 R
+  /Resources <<
+    /ColorSpace << /Cs1 4 0 R >>
+  >>
+>>
+endobj
+
+4 0 obj
+[
+  /Indexed /DeviceRGB
+  7                     % "hival"
+  < 008000 FF0000 00FF00 0000FF 00FFFF FF00FF FFFF00 F380FF > % indices 0-7 inclusive
+] 
+endobj
+
+5 0 obj
+<<
+  /Length 1037
+>>
+stream
+  % Reference 
+  0 0.5 0 rg       5  10  20 20 re f % 008000
+  0 0.5 0 rg      30  10  20 20 re f % 008000
+  1 0 0 rg        55  10  20 20 re f % FF0000
+  0 1 0 rg        80  10  20 20 re f % 00FF00
+  0 0 1 rg       105  10  20 20 re f % 0000FF
+  0 1 1 rg       130  10  20 20 re f % 00FFFF
+  1 0 1 rg       155  10  20 20 re f % FF00FF
+  1 1 0 rg       180  10  20 20 re f % FFFF00
+  0.95 0.5 1 rg  205  10  20 20 re f % F380FF
+  0.95 0.5 1 rg  230  10  20 20 re f % F380FF
+  0.95 0.5 1 rg  255  10  20 20 re f % F380FF
+
+  % Test patches
+  /Cs1 cs 
+-17   sc    5  50  20 20 re f % Below 0 --> snap to 0
+  0   sc   30  50  20 20 re f
+  1   sc   55  50  20 20 re f
+  2   sc   80  50  20 20 re f
+  3   sc  105  50  20 20 re f
+  4   sc  130  50  20 20 re f
+  5   sc  155  50  20 20 re f
+  6   sc  180  50  20 20 re f
+  7   sc  205  50  20 20 re f % Same as "Hival" = OK
+  6.5 sc  230  50  20 20 re f % Needs to round up --> snap to "hival"
+ 17   sc  255  50  20 20 re f % Clearly out of range! --> snap to "hival"
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f
+0000000019 00000 n
+0000000083 00000 n
+0000000162 00000 n
+0000000332 00000 n
+0000000503 00000 n
+trailer
+<<
+  /Root 1 0 R
+  /Size 6
+>>
+startxref
+1600
+%%EOF
