@@ -466,8 +466,8 @@ async function getFirstSerialized(page, filter = undefined) {
 function getAnnotationStorage(page) {
   return page.evaluate(() =>
     Object.fromEntries(
-      window.PDFViewerApplication.pdfDocument.annotationStorage.serializable.map?.entries() ||
-        []
+      window.PDFViewerApplication.pdfDocument.annotationStorage.serializable
+        .map || []
     )
   );
 }
