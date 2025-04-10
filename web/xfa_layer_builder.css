@@ -157,12 +157,12 @@
   max-height: 100%;
 }
 
-:is(.xfaRight) > :is(.xfaRadio, .xfaCheckbox) {
-  margin-right: 4px;
+.xfaRight > :is(.xfaRadio, .xfaCheckbox) {
+  margin-right: 2.5px;
 }
 
-:is(.xfaLeft) > :is(.xfaRadio, .xfaCheckbox) {
-  margin-left: 4px;
+.xfaLeft > :is(.xfaRadio, .xfaCheckbox) {
+  margin-left: 2.5px;
 }
 
 .xfaTop {
