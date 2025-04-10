@@ -36,7 +36,7 @@ class SignatureStorage {
   #save() {
     localStorage.setItem(
       KEY_STORAGE,
-      JSON.stringify(Object.fromEntries(this.#signatures.entries()))
+      JSON.stringify(Object.fromEntries(this.#signatures))
     );
   }
 
