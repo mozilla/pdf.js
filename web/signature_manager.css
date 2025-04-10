@@ -163,6 +163,7 @@
   --thickness-bg: var(--dialog-bg-color);
   --thickness-label-color: var(--primary-color);
   --thickness-slider-color: var(--primary-color);
+  --thickness-border: none;
   --draw-cursor: url(images/cursor-editorInk.svg) 0 16, pointer;
 
   @media (prefers-color-scheme: dark) {
@@ -219,6 +220,7 @@
     --thickness-bg: Canvas;
     --thickness-label-color: CanvasText;
     --thickness-slider-color: ButtonText;
+    --thickness-border: 1px solid var(--border-color);
   }
 
   #addSignatureDialogLabel {
@@ -410,11 +412,17 @@
               align-items: center;
               justify-content: center;
               gap: 8px;
-              padding: 6px 8px;
+              padding: 6px 8px 7px;
               margin: 0;
               background-color: var(--thickness-bg);
               border-radius: 4px 4px 0 0;
+              border-inline: var(--thickness-border);
+              border-top: var(--thickness-border);
               pointer-events: auto;
+
+              /* Move the div in order to cover to bottom border of the area. */
+              position: relative;
+              top: 1px;
 
               > label {
                 color: var(--thickness-label-color);
