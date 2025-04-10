@@ -1680,6 +1680,7 @@ class AnnotationEditorUIManager {
     }
 
     this.#updateModeCapability = Promise.withResolvers();
+    this.#currentDrawingSession?.commitOrRemove();
 
     this.#mode = mode;
     if (mode === AnnotationEditorType.NONE) {
