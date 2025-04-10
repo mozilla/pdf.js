@@ -391,7 +391,9 @@ describe("PDF viewer", () => {
       pages = await loadAndWait(
         "issue18694.pdf",
         ".textLayer .endOfContent",
-        "page-width"
+        "page-width",
+        null,
+        { capCanvasAreaFactor: -1 }
       );
     });
 
@@ -458,7 +460,12 @@ describe("PDF viewer", () => {
   describe("Detail view on zoom", () => {
     const BASE_MAX_CANVAS_PIXELS = 1e6;
 
-    function setupPages(zoom, devicePixelRatio, setups = {}) {
+    function setupPages(
+      zoom,
+      devicePixelRatio,
+      capCanvasAreaFactor,
+      setups = {}
+    ) {
       let pages;
 
       beforeAll(async () => {
@@ -475,7 +482,10 @@ describe("PDF viewer", () => {
             }`,
             ...setups,
           },
-          { maxCanvasPixels: BASE_MAX_CANVAS_PIXELS * devicePixelRatio ** 2 },
+          {
+            maxCanvasPixels: BASE_MAX_CANVAS_PIXELS * devicePixelRatio ** 2,
+            capCanvasAreaFactor,
+          },
           { height: 600, width: 800, devicePixelRatio }
         );
       });
@@ -502,6 +512,8 @@ describe("PDF viewer", () => {
         const bottomRight = ctx.getImageData(width - 3, height - 3, 1, 1).data;
         return {
           size: width * height,
+          width,
+          height,
           topLeft: globalThis.pdfjsLib.Util.makeHexColor(...topLeft),
           bottomRight: globalThis.pdfjsLib.Util.makeHexColor(...bottomRight),
         };
@@ -527,7 +539,7 @@ describe("PDF viewer", () => {
     for (const pixelRatio of [1, 2]) {
       describe(`with pixel ratio ${pixelRatio}`, () => {
         describe("setupPages()", () => {
-          const forEachPage = setupPages("100%", pixelRatio);
+          const forEachPage = setupPages("100%", pixelRatio, -1);
 
           it("sets the proper devicePixelRatio", async () => {
             await forEachPage(async (browserName, page) => {
@@ -542,8 +554,48 @@ describe("PDF viewer", () => {
           });
         });
 
+        describe("when zooming with a cap on the canvas dimensions", () => {
+          const forEachPage = setupPages("10%", pixelRatio, 0);
+
+          it("must render the detail view", async () => {
+            await forEachPage(async (browserName, page) => {
+              await page.waitForSelector(
+                ".page[data-page-number='1'] .textLayer"
+              );
+
+              const before = await page.evaluate(extractCanvases, 1);
+              expect(before.length)
+                .withContext(`In ${browserName}, before`)
+                .toBe(1);
+
+              const factor = 20;
+              const handle = await waitForDetailRendered(page);
+              await page.evaluate(scaleFactor => {
+                window.PDFViewerApplication.pdfViewer.updateScale({
+                  drawingDelay: 0,
+                  scaleFactor,
+                });
+              }, factor);
+              await awaitPromise(handle);
+
+              const after = await page.evaluate(extractCanvases, 1);
+
+              expect(after.length)
+                .withContext(`In ${browserName}, after`)
+                .toBe(2);
+              expect(after[0].width).withContext(`In ${browserName}`).toBe(424);
+              expect(after[0].height)
+                .withContext(`In ${browserName}`)
+                .toBe(600);
+              expect(after[1].width)
+                .withContext(`In ${browserName}`)
+                .toBeLessThan(800 * pixelRatio /* innerWidth - scrollbars */);
+            });
+          });
+        });
+
         describe("when zooming in past max canvas size", () => {
-          const forEachPage = setupPages("100%", pixelRatio);
+          const forEachPage = setupPages("100%", pixelRatio, -1);
 
           it("must render the detail view", async () => {
             await forEachPage(async (browserName, page) => {
@@ -615,7 +667,7 @@ describe("PDF viewer", () => {
         });
 
         describe("when starting already zoomed in past max canvas size", () => {
-          const forEachPage = setupPages("300%", pixelRatio);
+          const forEachPage = setupPages("300%", pixelRatio, -1);
 
           it("must render the detail view", async () => {
             await forEachPage(async (browserName, page) => {
@@ -653,7 +705,7 @@ describe("PDF viewer", () => {
         });
 
         describe("when scrolling", () => {
-          const forEachPage = setupPages("300%", pixelRatio);
+          const forEachPage = setupPages("300%", pixelRatio, -1);
 
           it("must update the detail view", async () => {
             await forEachPage(async (browserName, page) => {
@@ -688,7 +740,7 @@ describe("PDF viewer", () => {
         });
 
         describe("when scrolling little enough that the existing detail covers the new viewport", () => {
-          const forEachPage = setupPages("300%", pixelRatio);
+          const forEachPage = setupPages("300%", pixelRatio, -1);
 
           it("must not re-create the detail canvas", async () => {
             await forEachPage(async (browserName, page) => {
@@ -731,7 +783,7 @@ describe("PDF viewer", () => {
         });
 
         describe("when scrolling to have two visible pages", () => {
-          const forEachPage = setupPages("300%", pixelRatio);
+          const forEachPage = setupPages("300%", pixelRatio, -1);
 
           it("must update the detail view", async () => {
             await forEachPage(async (browserName, page) => {
@@ -804,7 +856,7 @@ describe("PDF viewer", () => {
         });
 
         describe("pagerendered event", () => {
-          const forEachPage = setupPages("100%", pixelRatio, {
+          const forEachPage = setupPages("100%", pixelRatio, -1, {
             eventBusSetup: eventBus => {
               globalThis.__pageRenderedEvents = [];
 
@@ -965,7 +1017,7 @@ describe("PDF viewer", () => {
     }
 
     describe("when immediately cancelled and re-rendered", () => {
-      const forEachPage = setupPages("100%", 1, {
+      const forEachPage = setupPages("100%", 1, -1, {
         eventBusSetup: eventBus => {
           globalThis.__pageRenderedEvents = [];
           eventBus.on("pagerendered", ({ pageNumber, isDetailView }) => {
@@ -1030,7 +1082,7 @@ describe("PDF viewer", () => {
     });
 
     describe("when cancelled and re-rendered after 1 microtick", () => {
-      const forEachPage = setupPages("100%", 1, {
+      const forEachPage = setupPages("100%", 1, -1, {
         eventBusSetup: eventBus => {
           globalThis.__pageRenderedEvents = [];
           eventBus.on("pagerendered", ({ pageNumber, isDetailView }) => {
