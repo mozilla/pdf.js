@@ -43,6 +43,7 @@ import {
 import { Dict, Name, Ref, RefSetCache } from "../../src/core/primitives.js";
 import { Lexer, Parser } from "../../src/core/parser.js";
 import { FlateStream } from "../../src/core/flate_stream.js";
+import { GlobalColorSpaceCache } from "../../src/core/image_utils.js";
 import { PartialEvaluator } from "../../src/core/evaluator.js";
 import { StringStream } from "../../src/core/stream.js";
 import { WorkerTask } from "../../src/core/worker.js";
@@ -136,6 +137,7 @@ describe("annotation", function () {
       fontCache: new RefSetCache(),
       builtInCMapCache,
       standardFontDataCache: new Map(),
+      globalColorSpaceCache: new GlobalColorSpaceCache(),
       systemFontCache: new Map(),
     });
   });

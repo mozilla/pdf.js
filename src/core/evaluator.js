@@ -1449,16 +1449,16 @@ class PartialEvaluator {
     });
   }
 
-  async _handleColorSpace(csPromise) {
+  async _handleColorSpace(csPromise, name = null) {
     try {
       return await csPromise;
     } catch (ex) {
       if (ex instanceof AbortException) {
-        return null;
+        return name ? ColorSpaceUtils[name] : null;
       }
       if (this.options.ignoreErrors) {
         warn(`_handleColorSpace - ignoring ColorSpace: "${ex}".`);
-        return null;
+        return name ? ColorSpaceUtils[name] : null;
       }
       throw ex;
     }
@@ -1951,9 +1951,8 @@ class PartialEvaluator {
             }
 
             next(
-              self._handleColorSpace(fillCS).then(colorSpace => {
-                stateManager.state.fillColorSpace =
-                  colorSpace || ColorSpaceUtils.gray;
+              self._handleColorSpace(fillCS, "gray").then(CS => {
+                stateManager.state.fillColorSpace = CS;
               })
             );
             return;
@@ -1970,9 +1969,8 @@ class PartialEvaluator {
             }
 
             next(
-              self._handleColorSpace(strokeCS).then(colorSpace => {
-                stateManager.state.strokeColorSpace =
-                  colorSpace || ColorSpaceUtils.gray;
+              self._handleColorSpace(strokeCS, "gray").then(CS => {
+                stateManager.state.strokeColorSpace = CS;
               })
             );
             return;
@@ -1987,41 +1985,164 @@ class PartialEvaluator {
             args = cs.getRgb(args, 0);
             fn = OPS.setStrokeRGBColor;
             break;
-          case OPS.setFillGray:
-            stateManager.state.fillColorSpace = ColorSpaceUtils.gray;
-            args = ColorSpaceUtils.gray.getRgb(args, 0);
-            fn = OPS.setFillRGBColor;
-            break;
-          case OPS.setStrokeGray:
-            stateManager.state.strokeColorSpace = ColorSpaceUtils.gray;
-            args = ColorSpaceUtils.gray.getRgb(args, 0);
-            fn = OPS.setStrokeRGBColor;
-            break;
-          case OPS.setFillCMYKColor:
-            stateManager.state.fillColorSpace = ColorSpaceUtils.cmyk;
-            args = ColorSpaceUtils.cmyk.getRgb(args, 0);
-            fn = OPS.setFillRGBColor;
-            break;
-          case OPS.setStrokeCMYKColor:
-            stateManager.state.strokeColorSpace = ColorSpaceUtils.cmyk;
-            args = ColorSpaceUtils.cmyk.getRgb(args, 0);
-            fn = OPS.setStrokeRGBColor;
-            break;
-          case OPS.setFillRGBColor:
-            stateManager.state.fillColorSpace = ColorSpaceUtils.rgb;
-            args = ColorSpaceUtils.rgb.getRgb(args, 0);
-            break;
-          case OPS.setStrokeRGBColor:
-            stateManager.state.strokeColorSpace = ColorSpaceUtils.rgb;
-            args = ColorSpaceUtils.rgb.getRgb(args, 0);
-            break;
+          case OPS.setFillGray: {
+            const fillCS = self._getColorSpace(
+              Name.get("DeviceGray"),
+              resources,
+              localColorSpaceCache
+            );
+            if (fillCS instanceof ColorSpace) {
+              stateManager.state.fillColorSpace = fillCS;
+
+              args = fillCS.getRgb(args, 0);
+              fn = OPS.setFillRGBColor;
+              break;
+            }
+
+            next(
+              self._handleColorSpace(fillCS, "gray").then(CS => {
+                stateManager.state.fillColorSpace = CS;
+
+                operatorList.addOp(OPS.setFillRGBColor, CS.getRgb(args, 0));
+              })
+            );
+            return;
+          }
+          case OPS.setStrokeGray: {
+            const strokeCS = self._getColorSpace(
+              Name.get("DeviceGray"),
+              resources,
+              localColorSpaceCache
+            );
+            if (strokeCS instanceof ColorSpace) {
+              stateManager.state.strokeColorSpace = strokeCS;
+
+              args = strokeCS.getRgb(args, 0);
+              fn = OPS.setStrokeRGBColor;
+              break;
+            }
+
+            next(
+              self._handleColorSpace(strokeCS, "gray").then(CS => {
+                stateManager.state.strokeColorSpace = CS;
+
+                operatorList.addOp(OPS.setStrokeRGBColor, CS.getRgb(args, 0));
+              })
+            );
+            return;
+          }
+          case OPS.setFillCMYKColor: {
+            const fillCS = self._getColorSpace(
+              Name.get("DeviceCMYK"),
+              resources,
+              localColorSpaceCache
+            );
+            if (fillCS instanceof ColorSpace) {
+              stateManager.state.fillColorSpace = fillCS;
+
+              args = fillCS.getRgb(args, 0);
+              fn = OPS.setFillRGBColor;
+              break;
+            }
+
+            next(
+              self._handleColorSpace(fillCS, "cmyk").then(CS => {
+                stateManager.state.fillColorSpace = CS;
+
+                operatorList.addOp(OPS.setFillRGBColor, CS.getRgb(args, 0));
+              })
+            );
+            return;
+          }
+          case OPS.setStrokeCMYKColor: {
+            const strokeCS = self._getColorSpace(
+              Name.get("DeviceCMYK"),
+              resources,
+              localColorSpaceCache
+            );
+            if (strokeCS instanceof ColorSpace) {
+              stateManager.state.strokeColorSpace = strokeCS;
+
+              args = strokeCS.getRgb(args, 0);
+              fn = OPS.setStrokeRGBColor;
+              break;
+            }
+
+            next(
+              self._handleColorSpace(strokeCS, "cmyk").then(CS => {
+                stateManager.state.strokeColorSpace = CS;
+
+                operatorList.addOp(OPS.setStrokeRGBColor, CS.getRgb(args, 0));
+              })
+            );
+            return;
+          }
+          case OPS.setFillRGBColor: {
+            const fillCS = self._getColorSpace(
+              Name.get("DeviceRGB"),
+              resources,
+              localColorSpaceCache
+            );
+            if (fillCS instanceof ColorSpace) {
+              stateManager.state.fillColorSpace = fillCS;
+
+              args = fillCS.getRgb(args, 0);
+              break;
+            }
+
+            next(
+              self._handleColorSpace(fillCS, "rgb").then(CS => {
+                stateManager.state.fillColorSpace = CS;
+
+                operatorList.addOp(OPS.setFillRGBColor, CS.getRgb(args, 0));
+              })
+            );
+            return;
+          }
+          case OPS.setStrokeRGBColor: {
+            const strokeCS = self._getColorSpace(
+              Name.get("DeviceRGB"),
+              resources,
+              localColorSpaceCache
+            );
+            if (strokeCS instanceof ColorSpace) {
+              stateManager.state.strokeColorSpace = strokeCS;
+
+              args = strokeCS.getRgb(args, 0);
+              fn = OPS.setStrokeRGBColor;
+              break;
+            }
+
+            next(
+              self._handleColorSpace(strokeCS, "rgb").then(CS => {
+                stateManager.state.strokeColorSpace = CS;
+
+                operatorList.addOp(OPS.setStrokeRGBColor, CS.getRgb(args, 0));
+              })
+            );
+            return;
+          }
           case OPS.setFillColorN:
             cs = stateManager.state.patternFillColorSpace;
             if (!cs) {
               if (isNumberArray(args, null)) {
-                args = ColorSpaceUtils.gray.getRgb(args, 0);
-                fn = OPS.setFillRGBColor;
-                break;
+                const fillCS = self._getColorSpace(
+                  Name.get("DeviceGray"),
+                  resources,
+                  localColorSpaceCache
+                );
+                if (fillCS instanceof ColorSpace) {
+                  args = fillCS.getRgb(args, 0);
+                  fn = OPS.setFillRGBColor;
+                  break;
+                }
+
+                next(
+                  self._handleColorSpace(fillCS, "gray").then(CS => {
+                    operatorList.addOp(OPS.setFillRGBColor, CS.getRgb(args, 0));
+                  })
+                );
+                return;
               }
               args = [];
               fn = OPS.setFillTransparent;
@@ -2051,9 +2172,26 @@ class PartialEvaluator {
             cs = stateManager.state.patternStrokeColorSpace;
             if (!cs) {
               if (isNumberArray(args, null)) {
-                args = ColorSpaceUtils.gray.getRgb(args, 0);
-                fn = OPS.setStrokeRGBColor;
-                break;
+                const strokeCS = self._getColorSpace(
+                  Name.get("DeviceGray"),
+                  resources,
+                  localColorSpaceCache
+                );
+                if (strokeCS instanceof ColorSpace) {
+                  args = strokeCS.getRgb(args, 0);
+                  fn = OPS.setStrokeRGBColor;
+                  break;
+                }
+
+                next(
+                  self._handleColorSpace(strokeCS, "gray").then(CS => {
+                    operatorList.addOp(
+                      OPS.setStrokeRGBColor,
+                      CS.getRgb(args, 0)
+                    );
+                  })
+                );
+                return;
               }
               args = [];
               fn = OPS.setStrokeTransparent;

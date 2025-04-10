@@ -1,0 +1,1024 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+	<<
+	/Pages 	2 0 R 
+	/Type 	/Catalog 
+>> 
+endobj
+2 0 obj
+	<<
+	/Kids 	[ 3 0 R  ] 
+	/Count 	1 
+	/Type 	/Pages 
+>> 
+endobj
+3 0 obj
+	<<
+	/MediaBox 	[ 0 0 595 842  ] 
+	/Parent 	2 0 R 
+	/Type 	/Page 
+	/Resources 			<<
+		/ExtGState 				<<
+			/GS8 	8 0 R 
+			/GS7 	7 0 R 
+		>> 
+		/Font 				<<
+			/F1 	5 0 R 
+			/FB 	17 0 R 
+		>> 
+		/ColorSpace 				<<
+			/DefaultRGB 	10 0 R 
+			/DefaultCMYK 	21 0 R 
+		>> 
+		/XObject 				<<
+			/scNone 	11 0 R 
+			/scNoDef 	12 0 R 
+			/rgNone 	14 0 R 
+			/scNoDefCMYK 	24 0 R 
+			/rgDef 	16 0 R 
+			/kNoDef 	27 0 R 
+			/scDef 	13 0 R 
+			/scDefCMYK 	25 0 R 
+			/rgNoDef 	15 0 R 
+			/scNoneCMYK 	23 0 R 
+			/kNone 	26 0 R 
+			/kDef 	28 0 R 
+		>> 
+	>> 
+	/Contents 	4 0 R 
+>> 
+endobj
+4 0 obj
+	<<
+	/Length 	2207 
+>> 
+stream
+0 G 0 g
+q
+  /FB 14 Tf
+  1 0 0 1 30 800 cm
+  BT
+    (INHERITANCE OF DEFAULT COLOUR SPACES INTO FORM XOBJECTS) Tj
+  ET
+Q
+
+q
+  /F1 11 Tf
+  1 0 0 1 30 740 cm
+  BT
+    (Base page) Tj
+  ET
+Q
+q
+  1 0 0 1 130 660 cm
+  0 0 100 100 re
+  s
+
+  /FB 11 Tf
+  q
+    BT
+      1 0 0 1 20 75 Tm
+      1 0 0 rg
+      (RED) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 20 50 Tm
+      0 1 0 rg
+      (GREEN) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 20 25 Tm
+      0 0 1 rg
+      (BLUE) Tj
+    ET
+  Q
+Q
+
+q
+  1 0 0 1 330 660 cm
+  0 0 100 100 re
+  s
+
+  /FB 11 Tf
+  q
+    BT
+      1 0 0 1 20 75 Tm
+      1 0 0 0 k
+      (CYAN) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 20 50 Tm
+      0 1 0 0 k
+      (MAGENTA) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 20 25 Tm
+      0 0 1 0 k
+      (YELLOW) Tj
+    ET
+  Q
+Q
+
+q
+  130 300 400 300 re
+  230 300 m 230 600 l
+  330 300 m 330 600 l
+  430 300 m 430 600 l
+  130 400 m 530 400 l 
+  130 500 m 530 500 l s
+Q
+q
+  /F1 11 Tf
+  BT
+    1 0 0 1 30 620 Tm
+    (Form Resources) Tj
+  ET
+  BT
+    1 0 0 1 140 620 Tm
+    (Form uses sc) Tj
+  ET
+  BT
+    1 0 0 1 240 620 Tm
+    (Form uses rg) Tj
+  ET
+  BT
+    1 0 0 1 340 620 Tm
+    (Form uses sc) Tj
+  ET
+  BT
+    1 0 0 1 440 620 Tm
+    (Form uses k) Tj
+  ET
+  BT
+    1 0 0 1 30 560 Tm
+    (None) Tj
+  ET
+  BT
+    1 0 0 1 30 460 Tm
+    (Yes) Tj
+    1 0 0 1 30 442 Tm
+    (NO Default space) Tj
+  ET
+  BT
+    1 0 0 1 30 360 Tm
+    (Yes) Tj
+    1 0 0 1 30 342 Tm
+    (with Default space) Tj
+  ET
+Q
+
+q
+  1 1 1 rg
+
+  q
+    1 0 0 1 130 500 cm
+    /scNone Do
+  Q
+  q
+    1 0 0 1 130 400 cm
+    /scNoDef Do
+  Q
+  q
+    1 0 0 1 130 300 cm
+    /scDef Do
+  Q
+  q
+    1 0 0 1 230 500 cm
+    /rgNone Do
+  Q
+  q
+    1 0 0 1 230 400 cm
+    /rgNoDef Do
+  Q
+  q
+    1 0 0 1 230 300 cm
+    /rgDef Do
+  Q
+Q
+
+q
+  0 0 0 1 k
+
+  q
+    1 0 0 1 330 500 cm
+    /scNoneCMYK Do
+  Q
+  q
+    1 0 0 1 330 400 cm
+    /scNoDefCMYK Do
+  Q
+  q
+    1 0 0 1 330 300 cm
+    /scDefCMYK Do
+  Q
+  q
+    1 0 0 1 430 500 cm
+    /kNone Do
+  Q
+  q
+    1 0 0 1 430 400 cm
+    /kNoDef Do
+  Q
+  q
+    1 0 0 1 430 300 cm
+    /kDef Do
+  Q
+Q
+
+endstream
+endobj
+5 0 obj
+	<<
+	/Subtype 	/TrueType 
+	/BaseFont 	/ArialMT 
+	/Name 	/F1 
+	/Widths 	20 0 R 
+	/FontDescriptor 	6 0 R 
+	/Encoding 	/WinAnsiEncoding 
+	/LastChar 	122 
+	/Type 	/Font 
+	/FirstChar 	32 
+>> 
+endobj
+6 0 obj
+	<<
+	/FontName 	/ArialMT 
+	/Ascent 	905 
+	/FontWeight 	400 
+	/ItalicAngle 	0 
+	/XHeight 	250 
+	/AvgWidth 	441 
+	/StemV 	44 
+	/FontBBox 	[ -665 -210 2000 728  ] 
+	/Type 	/FontDescriptor 
+	/Flags 	32 
+	/Descent 	-210 
+	/MaxWidth 	2665 
+	/CapHeight 	728 
+	/Leading 	33 
+>> 
+endobj
+7 0 obj
+	<<
+	/BM 	/Normal 
+	/ca 	1 
+	/Type 	/ExtGState 
+>> 
+endobj
+8 0 obj
+	<<
+	/BM 	/Normal 
+	/CA 	1 
+	/Type 	/ExtGState 
+>> 
+endobj
+9 0 obj
+	<<
+	/CreationDate 	<443A32303233303731363130313030382B303127303027> 
+	/Producer 	<476C6F62616C20477261706869637320736F667477617265204C7464> 
+	/Creator 	<476C6F62616C20477261706869637320736F667477617265204C7464> 
+	/Author 	<4D617274696E42> 
+	/ModDate 	<443A32303233303731363130313030382B303127303027> 
+>> 
+endobj
+10 0 obj
+[ /CalRGB 	<<
+	/WhitePoint 	[ 1.0 1.0 1.0  ] 
+	/Matrix 	[ 0 1 0 1 0 0 0 0 1  ] 
+>>  ] 
+endobj
+11 0 obj
+	<<
+	/FormType 	1 
+	/Type 	/XObject 
+	/BBox 	[ 0 0 101 101  ] 
+	/Length 	382 
+	/Subtype 	/Form 
+>> 
+stream
+q
+%  0 0 0 rg
+  
+q
+  0 0 0 sc
+  /F1 11 Tf
+  BT
+    1 0 0 1 85 85 Tm
+    (A) Tj
+  ET
+Q
+  
+  /FB 11 Tf
+  1 0 0 1 30 0 cm
+  q
+    BT
+      1 0 0 1 0 75 Tm
+      1 0 0 sc
+      (RED) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 50 Tm
+      0 1 0 sc
+      (GREEN) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 25 Tm
+      0 0 1 sc
+      (BLUE) Tj
+    ET
+  Q
+Q
+
+endstream
+endobj
+12 0 obj
+	<<
+	/Subtype 	/Form 
+	/FormType 	1 
+	/BBox 	[ 0 0 250 220  ] 
+	/Resources 			<<
+		/Font 				<<
+			/F1 	5 0 R 
+			/FB 	17 0 R 
+		>> 
+	>> 
+	/Length 	382 
+	/Type 	/XObject 
+>> 
+stream
+q
+%  0 0 0 rg
+  
+q
+  0 0 0 sc
+  /F1 11 Tf
+  BT
+    1 0 0 1 85 85 Tm
+    (B) Tj
+  ET
+Q
+  
+  /FB 11 Tf
+  1 0 0 1 30 0 cm
+  q
+    BT
+      1 0 0 1 0 75 Tm
+      1 0 0 sc
+      (RED) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 50 Tm
+      0 1 0 sc
+      (GREEN) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 25 Tm
+      0 0 1 sc
+      (BLUE) Tj
+    ET
+  Q
+Q
+
+endstream
+endobj
+13 0 obj
+	<<
+	/Subtype 	/Form 
+	/FormType 	1 
+	/BBox 	[ 0 0 250 220  ] 
+	/Resources 			<<
+		/Font 				<<
+			/F1 	5 0 R 
+			/FB 	17 0 R 
+		>> 
+		/ColorSpace 				<<
+			/DefaultRGB 	10 0 R 
+		>> 
+	>> 
+	/Length 	382 
+	/Type 	/XObject 
+>> 
+stream
+q
+%  0 0 0 rg
+  
+q
+  0 0 0 sc
+  /F1 11 Tf
+  BT
+    1 0 0 1 85 85 Tm
+    (C) Tj
+  ET
+Q
+  
+  /FB 11 Tf
+  1 0 0 1 30 0 cm
+  q
+    BT
+      1 0 0 1 0 75 Tm
+      1 0 0 sc
+      (RED) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 50 Tm
+      0 1 0 sc
+      (GREEN) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 25 Tm
+      0 0 1 sc
+      (BLUE) Tj
+    ET
+  Q
+Q
+
+endstream
+endobj
+14 0 obj
+	<<
+	/FormType 	1 
+	/Type 	/XObject 
+	/BBox 	[ 0 0 101 101  ] 
+	/Length 	368 
+	/Subtype 	/Form 
+>> 
+stream
+q
+0 0 0 rg
+  
+q
+  /F1 11 Tf
+  BT
+    1 0 0 1 85 85  Tm
+    (D) Tj
+  ET
+Q
+  
+  /FB 11 Tf
+  1 0 0 1 30 0 cm
+  q
+    BT
+      1 0 0 1 0 75 Tm
+      1 0 0 sc
+      (RED) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 50 Tm
+      0 1 0 sc
+      (GREEN) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 25 Tm
+      0 0 1 sc
+      (BLUE) Tj
+    ET
+  Q
+Q
+
+endstream
+endobj
+15 0 obj
+	<<
+	/Subtype 	/Form 
+	/FormType 	1 
+	/BBox 	[ 0 0 250 220  ] 
+	/Resources 			<<
+		/Font 				<<
+			/F1 	5 0 R 
+			/FB 	17 0 R 
+		>> 
+	>> 
+	/Length 	367 
+	/Type 	/XObject 
+>> 
+stream
+q
+0 0 0 rg
+  
+q
+  /F1 11 Tf
+  BT
+    1 0 0 1 85 85 Tm
+    (E) Tj
+  ET
+Q
+  
+  /FB 11 Tf
+  1 0 0 1 30 0 cm
+  q
+    BT
+      1 0 0 1 0 75 Tm
+      1 0 0 sc
+      (RED) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 50 Tm
+      0 1 0 sc
+      (GREEN) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 25 Tm
+      0 0 1 sc
+      (BLUE) Tj
+    ET
+  Q
+Q
+
+endstream
+endobj
+16 0 obj
+	<<
+	/Subtype 	/Form 
+	/FormType 	1 
+	/BBox 	[ 0 0 250 220  ] 
+	/Resources 			<<
+		/Font 				<<
+			/F1 	5 0 R 
+			/FB 	17 0 R 
+		>> 
+		/ColorSpace 				<<
+			/DefaultRGB 	10 0 R 
+		>> 
+	>> 
+	/Length 	365 
+	/Type 	/XObject 
+>> 
+stream
+q
+0 0 0 rg
+
+q
+  /F1 11 Tf
+  BT
+    1 0 0 1 85 85 Tm
+    (F) Tj
+  ET
+Q
+  
+  /FB 11 Tf
+  1 0 0 1 30 0 cm
+  q
+    BT
+      1 0 0 1 0 75 Tm
+      1 0 0 sc
+      (RED) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 50 Tm
+      0 1 0 sc
+      (GREEN) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 25 Tm
+      0 0 1 sc
+      (BLUE) Tj
+    ET
+  Q
+Q
+
+endstream
+endobj
+17 0 obj
+	<<
+	/LastChar 	125 
+	/Subtype 	/TrueType 
+	/Name 	/FB 
+	/Widths 	19 0 R 
+	/FontDescriptor 	18 0 R 
+	/Encoding 	/WinAnsiEncoding 
+	/Type 	/Font 
+	/BaseFont 	/Arial#2DBoldMT 
+	/FirstChar 	32 
+>> 
+endobj
+18 0 obj
+	<<
+	/Leading 	33 
+	/Ascent 	905 
+	/AvgWidth 	479 
+	/FontWeight 	700 
+	/ItalicAngle 	0 
+	/XHeight 	250 
+	/StemV 	47 
+	/FontBBox 	[ -628 -210 2000 728  ] 
+	/Flags 	32 
+	/Type 	/FontDescriptor 
+	/Descent 	-210 
+	/MaxWidth 	2628 
+	/FontName 	/Arial#2DBoldMT 
+	/CapHeight 	728 
+>> 
+endobj
+19 0 obj
+[ 278 333 0 0 0 0 0 0 333 333 0 0 278 0 278 278 556 556 556 556 556 556 556 556 556 556 333 333 584 0 584 611 0 722 722 722 722 667 611 778 722 278 556 722 611 833 722 778 667 778 722 667 611 722 667 944 667 667 611 333 278 333 0 0 0 556 611 556 611 556 333 611 611 278 278 556 278 889 611 611 611 611 389 556 333 611 556 778 556 556 500 389 0 389  ] 
+endobj
+20 0 obj
+[ 278 0 0 0 0 0 0 0 333 333 0 0 278 0 278 333 556 556 556 556 556 556 556 556 556 556 278 278 584 0 584 0 0 667 667 722 722 667 611 778 722 278 500 667 556 833 722 778 667 778 722 667 611 722 667 944 667 667 611 0 0 0 0 0 0 556 556 500 556 556 278 556 556 222 222 500 222 833 556 556 556 556 333 500 278 556 500 722 500 500 500 334 0 334  ] 
+endobj
+21 0 obj
+[ /DeviceN [ /Magenta /Cyan /Yellow /Black  ] /DeviceCMYK 22 0 R  ] 
+endobj
+22 0 obj
+	<<
+	/Domain 	[ 0.0 1.0 0.0 1.0 0.0 1.0 0.0 1.0  ] 
+	/Range 	[ 0.0 1.0 0.0 1.0 0.0 1.0 0.0 1.0  ] 
+	/FunctionType 	4 
+	/Length 	28 
+>> 
+stream
+{ 4 2 roll exch 4 2 roll }
+
+endstream
+endobj
+23 0 obj
+	<<
+	/Subtype 	/Form 
+	/BBox 	[ 0 0 101 101  ] 
+	/Length 	396 
+	/FormType 	1 
+	/Type 	/XObject 
+>> 
+stream
+q
+%  0 0 0 1 k
+  
+q
+  0 0 0 1 sc
+  /F1 11 Tf
+  BT
+    1 0 0 1 85 85 Tm
+    (G) Tj
+  ET
+Q
+  
+  /FB 11 Tf
+  1 0 0 1 30 0 cm
+  q
+    BT
+      1 0 0 1 0 75 Tm
+      1 0 0 0 sc
+      (CYAN) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 50 Tm
+      0 1 0 0 sc
+      (MAGENTA) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 25 Tm
+      0 0 1 0 sc
+      (YELLOW) Tj
+    ET
+  Q
+Q
+
+endstream
+endobj
+24 0 obj
+	<<
+	/FormType 	1 
+	/Resources 			<<
+		/Font 				<<
+			/F1 	5 0 R 
+			/FB 	17 0 R 
+		>> 
+	>> 
+	/BBox 	[ 0 0 101 101  ] 
+	/Subtype 	/Form 
+	/Type 	/XObject 
+	/Length 	396 
+>> 
+stream
+q
+%  0 0 0 1 k
+  
+q
+  0 0 0 1 sc
+  /F1 11 Tf
+  BT
+    1 0 0 1 85 85 Tm
+    (H) Tj
+  ET
+Q
+  
+  /FB 11 Tf
+  1 0 0 1 30 0 cm
+  q
+    BT
+      1 0 0 1 0 75 Tm
+      1 0 0 0 sc
+      (CYAN) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 50 Tm
+      0 1 0 0 sc
+      (MAGENTA) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 25 Tm
+      0 0 1 0 sc
+      (YELLOW) Tj
+    ET
+  Q
+Q
+
+endstream
+endobj
+25 0 obj
+	<<
+	/FormType 	1 
+	/Resources 			<<
+		/Font 				<<
+			/F1 	5 0 R 
+			/FB 	17 0 R 
+		>> 
+		/ColorSpace 				<<
+			/DefaultCMYK 	21 0 R 
+		>> 
+	>> 
+	/BBox 	[ 0 0 250 220  ] 
+	/Subtype 	/Form 
+	/Type 	/XObject 
+	/Length 	396 
+>> 
+stream
+q
+%  0 0 0 1 k
+  
+q
+  0 0 0 1 sc
+  /F1 11 Tf
+  BT
+    1 0 0 1 85 85 Tm
+    (I) Tj
+  ET
+Q
+  
+  /FB 11 Tf
+  1 0 0 1 30 0 cm
+  q
+    BT
+      1 0 0 1 0 75 Tm
+      1 0 0 0 sc
+      (CYAN) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 50 Tm
+      0 1 0 0 sc
+      (MAGENTA) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 25 Tm
+      0 0 1 0 sc
+      (YELLOW) Tj
+    ET
+  Q
+Q
+
+endstream
+endobj
+26 0 obj
+	<<
+	/Subtype 	/Form 
+	/BBox 	[ 0 0 101 101  ] 
+	/Length 	393 
+	/FormType 	1 
+	/Type 	/XObject 
+>> 
+stream
+q
+0 0 0 1 k
+  
+q
+  0 0 0 1 sc
+  /F1 11 Tf
+  BT
+    1 0 0 1 85 85 Tm
+    (J) Tj
+  ET
+Q
+  
+  /FB 11 Tf
+  1 0 0 1 30 0 cm
+  q
+    BT
+      1 0 0 1 0 75 Tm
+      1 0 0 0 sc
+      (CYAN) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 50 Tm
+      0 1 0 0 sc
+      (MAGENTA) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 25 Tm
+      0 0 1 0 sc
+      (YELLOW) Tj
+    ET
+  Q
+Q
+
+endstream
+endobj
+27 0 obj
+	<<
+	/FormType 	1 
+	/Resources 			<<
+		/Font 				<<
+			/F1 	5 0 R 
+			/FB 	17 0 R 
+		>> 
+	>> 
+	/BBox 	[ 0 0 101 101  ] 
+	/Subtype 	/Form 
+	/Type 	/XObject 
+	/Length 	393 
+>> 
+stream
+q
+0 0 0 1 k
+  
+q
+  0 0 0 1 sc
+  /F1 11 Tf
+  BT
+    1 0 0 1 85 85 Tm
+    (K) Tj
+  ET
+Q
+  
+  /FB 11 Tf
+  1 0 0 1 30 0 cm
+  q
+    BT
+      1 0 0 1 0 75 Tm
+      1 0 0 0 sc
+      (CYAN) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 50 Tm
+      0 1 0 0 sc
+      (MAGENTA) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 25 Tm
+      0 0 1 0 sc
+      (YELLOW) Tj
+    ET
+  Q
+Q
+
+endstream
+endobj
+28 0 obj
+	<<
+	/FormType 	1 
+	/Resources 			<<
+		/Font 				<<
+			/F1 	5 0 R 
+			/FB 	17 0 R 
+		>> 
+		/ColorSpace 				<<
+			/DefaultCMYK 	21 0 R 
+		>> 
+	>> 
+	/BBox 	[ 0 0 250 220  ] 
+	/Subtype 	/Form 
+	/Type 	/XObject 
+	/Length 	393 
+>> 
+stream
+q
+0 0 0 1 k
+  
+q
+  0 0 0 1 sc
+  /F1 11 Tf
+  BT
+    1 0 0 1 85 85 Tm
+    (L) Tj
+  ET
+Q
+  
+  /FB 11 Tf
+  1 0 0 1 30 0 cm
+  q
+    BT
+      1 0 0 1 0 75 Tm
+      1 0 0 0 sc
+      (CYAN) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 50 Tm
+      0 1 0 0 sc
+      (MAGENTA) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 25 Tm
+      0 0 1 0 sc
+      (YELLOW) Tj
+    ET
+  Q
+Q
+
+endstream
+endobj
+xref
+0 29
+0000000000 65535 f 
+0000000015 00000 n 
+0000000072 00000 n 
+0000000143 00000 n 
+0000000729 00000 n 
+0000002995 00000 n 
+0000003197 00000 n 
+0000003483 00000 n 
+0000003550 00000 n 
+0000003617 00000 n 
+0000003938 00000 n 
+0000004041 00000 n 
+0000004559 00000 n 
+0000005152 00000 n 
+0000005796 00000 n 
+0000006300 00000 n 
+0000006878 00000 n 
+0000007505 00000 n 
+0000007716 00000 n 
+0000008010 00000 n 
+0000008378 00000 n 
+0000008736 00000 n 
+0000008821 00000 n 
+0000009021 00000 n 
+0000009553 00000 n 
+0000010160 00000 n 
+0000010819 00000 n 
+0000011348 00000 n 
+0000011952 00000 n 
+trailer
+	<<
+	/Size 	29 
+	/Root 	1 0 R 
+	/Info 	9 0 R 
+	/ID 	[ <D201E2E8ABC6AF41AC7351B44EFEFD93> <D201E2E8ABC6AF41AC7351B44EFEFD93>  ] 
+>> 
+startxref
+12608
+%%EOF

@@ -119,7 +119,8 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
       fontColor: /* black = */ new Uint8ClampedArray(3),
       fillColorSpace: ColorSpaceUtils.gray,
     };
-    let breakLoop = false;
+    let breakLoop = false,
+      cs = null;
     const stack = [];
 
     try {
@@ -157,27 +158,29 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
             }
             break;
           case OPS.setFillColorSpace:
-            result.fillColorSpace = ColorSpaceUtils.parse({
-              cs: args[0],
-              xref: this.xref,
-              resources: this.resources,
-              pdfFunctionFactory: this._pdfFunctionFactory,
-              globalColorSpaceCache: this.globalColorSpaceCache,
-              localColorSpaceCache: this._localColorSpaceCache,
-            });
+            result.fillColorSpace = this.#parseColorSpace(args[0]);
             break;
           case OPS.setFillColor:
-            const cs = result.fillColorSpace;
+            cs = result.fillColorSpace;
             cs.getRgbItem(args, 0, result.fontColor, 0);
             break;
           case OPS.setFillRGBColor:
-            ColorSpaceUtils.rgb.getRgbItem(args, 0, result.fontColor, 0);
+            cs = result.fillColorSpace = this.#parseColorSpace(
+              Name.get("DeviceRGB")
+            );
+            cs.getRgbItem(args, 0, result.fontColor, 0);
             break;
           case OPS.setFillGray:
-            ColorSpaceUtils.gray.getRgbItem(args, 0, result.fontColor, 0);
+            cs = result.fillColorSpace = this.#parseColorSpace(
+              Name.get("DeviceGray")
+            );
+            cs.getRgbItem(args, 0, result.fontColor, 0);
             break;
           case OPS.setFillCMYKColor:
-            ColorSpaceUtils.cmyk.getRgbItem(args, 0, result.fontColor, 0);
+            cs = result.fillColorSpace = this.#parseColorSpace(
+              Name.get("DeviceCMYK")
+            );
+            cs.getRgbItem(args, 0, result.fontColor, 0);
             break;
           case OPS.showText:
           case OPS.showSpacedText:
@@ -207,6 +210,17 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
       isEvalSupported: this.evaluatorOptions.isEvalSupported,
     });
     return shadow(this, "_pdfFunctionFactory", pdfFunctionFactory);
+  }
+
+  #parseColorSpace(cs) {
+    return ColorSpaceUtils.parse({
+      cs,
+      xref: this.xref,
+      resources: this.resources,
+      pdfFunctionFactory: this._pdfFunctionFactory,
+      globalColorSpaceCache: this.globalColorSpaceCache,
+      localColorSpaceCache: this._localColorSpaceCache,
+    });
   }
 }
 

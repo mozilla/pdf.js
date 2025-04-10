@@ -2860,6 +2860,30 @@
     "type": "eq"
   },
   {
+    "id": "DefaultRGBColourSpaces",
+    "file": "pdfs/DefaultRGBColourSpaces.pdf",
+    "md5": "43549c004e6be3f64d9323c0b9d99638",
+    "link": false,
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
+    "id": "DefaultRGBColourSpaces-inherit",
+    "file": "pdfs/DefaultRGBColourSpaces-inherit.pdf",
+    "md5": "87a7d71c31e29e8b4bc60de80042847d",
+    "link": false,
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
+    "id": "DefaultColourSpaces-230802",
+    "file": "pdfs/DefaultColourSpaces-230802.pdf",
+    "md5": "8e0f4a0552d69d9f6bb55d7fd8f83f0a",
+    "link": false,
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "issue13372",
     "file": "pdfs/issue13372.pdf",
     "md5": "0bc5329623fd554174c5e7653f904e28",

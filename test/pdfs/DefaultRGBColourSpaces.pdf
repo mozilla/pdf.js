@@ -1,0 +1,402 @@
+%PDF-1.7
+%Î¼á¿¦
+
+1 0 obj
+<<
+  /Pages 2 0 R
+  /Type /Catalog
+>> 
+endobj
+
+2 0 obj
+<<
+  /Type /Pages
+  /Kids [ 3 0 R ]
+  /Count 1
+>> 
+endobj
+
+3 0 obj
+<<
+  /MediaBox [ 0 0 1500 220 ]
+  /Parent 2 0 R
+  /Type /Page
+  /Contents  10 0 R
+  /Resources <<
+    /XObject <<
+      /InheritFromPage     11 0 R
+      /LocalFormResources  12 0 R
+      /Uses_SC             13 0 R
+    >>
+    /Font << /F1 4 0 R >>
+    /ColorSpace << /DefaultRGB 5 0 R >>
+  >>
+>> 
+endobj
+
+4 0 obj % Standard 14 font 
+<<
+  /Type /Font
+  /Subtype /Type1
+  /BaseFont /Helvetica
+>>
+endobj
+
+5 0 obj % CalRGB --> G R B
+[ /CalRGB <<
+    /WhitePoint [ 1.0 1.0 1.0 ]
+    /Matrix     [ 0 1 0 
+                  1 0 0 
+                  0 0 1 ]
+  >>
+]
+endobj
+
+6 0 obj % CalRGB --> B G R
+[ /CalRGB <<
+    /WhitePoint [ 1.0 1.0 1.0 ]
+    /Matrix     [ 0 0 1 
+                  0 1 0 
+                  1 0 0 ]
+  >>
+]
+endobj
+
+7 0 obj % CalRGB --> R B G
+[ /CalRGB <<
+    /WhitePoint [ 1.0 1.0 1.0 ]
+    /Matrix     [ 1 0 0 
+                  0 0 1 
+                  0 1 0 ]
+  >>
+]
+endobj
+
+8 0 obj % CalRGB --> G B R 
+[ /CalRGB <<
+    /WhitePoint [ 1.0 1.0 1.0 ]
+    /Matrix     [ 0 1 0 
+                  0 0 1 
+                  1 0 0 ]
+  >>
+]
+endobj
+
+9 0 obj % CalRGB --> B G R 
+[ /CalRGB <<
+    /WhitePoint [ 1.0 1.0 1.0 ]
+    /Matrix     [ 0 0 1 
+                  0 1 0 
+                  1 0 0 ]
+  >>
+]
+endobj
+
+10 0 obj % Page content stream - all resources in page
+<<
+  /Length 1171
+>> 
+stream
+/F1 11 Tf
+q
+  1 0 0 1 30 0 cm
+  q
+    BT
+      1 0 0 1 0 138 Tm
+      0 G
+      (Base page; resources; using rg/RG) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 116 Tm
+      1 0 0 rg
+      1 0 0 RG
+      (RED) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 93 Tm
+      0 1 0 rg
+      0 1 0 RG
+      (GREEN) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 71 Tm
+      0 0 1 rg
+      0 0 1 RG
+      (BLUE) Tj
+    ET
+  Q
+Q
+
+q
+  1 0 0 1 30 0 cm
+  q
+    BT
+      1 0 0 1 250 138 Tm
+      0 G
+      (Base page; resources; using sc/SC) Tj
+    ET
+  Q
+  % Set color space to DeviceRGB via cs/CS operators and then use sc/SC operators
+  /DeviceRGB cs
+  /DeviceRGB CS
+  q
+    BT
+      1 0 0 1 250 116 Tm
+      1 0 0 sc
+      1 0 0 SC
+      (RED) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 250 93 Tm
+      0 1 0 sc
+      0 1 0 SC
+      (GREEN) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 250 71 Tm
+      0 0 1 sc
+      0 0 1 SC
+      (BLUE) Tj
+    ET
+  Q
+Q
+
+q
+  0 0 0 rg % Black using Device RGB operators
+  0 0 0 RG % Black using Device RGB operators
+  q
+    1 0 0 1 500 0 cm
+    /InheritFromPage Do
+  Q
+  q
+    1 0 0 1 750 0 cm
+    /LocalFormResources Do
+  Q
+  q
+    1 0 0 1 1250 0 cm
+    /Uses_SC Do
+  Q
+Q
+endstream
+endobj
+
+11 0 obj % InheritFromPage: all resources in this XObject; use rg/RG operators
+<<
+  /Type /XObject
+  /Subtype /Form
+  /FormType 1
+  /BBox [ 0 0 250 220 ]
+  /Resources << /Font << /F1 4 0 R >> /ColorSpace << /DefaultRGB 7 0 R >> >>
+  /Length 414
+>> 
+stream
+q
+  /F1 11 Tf
+  1 0 0 1 30 0 cm
+  q
+    BT
+      1 0 0 1 0 138 Tm
+      0 G
+      (Form; all resources local; rg/RG) Tj        
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 116 Tm
+      1 0 0 rg
+      1 0 0 RG
+      (RED) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 93 Tm
+      0 1 0 rg
+      0 1 0 RG
+      (GREEN) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 71 Tm
+      0 0 1 rg
+      0 0 1 RG
+      (BLUE) Tj
+    ET
+  Q
+Q  
+endstream
+endobj
+
+12 0 obj % LocalFormResources (all resources defined in this XObject)
+<<
+  /Type /XObject
+  /Subtype /Form
+  /FormType 1 
+  /BBox [ 0 0 500 220  ]
+  /Resources << 
+     /Font << /F1 4 0 R >> 
+     /ColorSpace << /DefaultRGB 8 0 R >> 
+  >>
+  /Length 898
+>> 
+stream
+q
+  /F1 11 Tf
+  1 0 0 1 30 0 cm
+  q
+    BT
+      1 0 0 1 0 138 Tm
+      0 G
+      (Form; with resources, using rg/RG) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 116 Tm
+      1 0 0 rg
+      1 0 0 RG
+      (RED) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 93 Tm
+      0 1 0 rg
+      0 1 0 RG
+      (GREEN) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 71 Tm
+      0 0 1 rg
+      0 0 1 RG
+      (BLUE) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 250 138 Tm
+      0 G
+      (Form; with resources, using sc/SC) Tj
+    ET
+  Q
+  % Set color space to DeviceRGB via cs/CS operators and then use sc/SC operators
+  /DeviceRGB cs
+  /DeviceRGB CS
+  q
+    BT
+      1 0 0 1 250 116 Tm
+      1 0 0 sc
+      1 0 0 SC
+      (RED) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 250 93 Tm
+      0 1 0 sc
+      0 1 0 SC
+      (GREEN) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 250 71 Tm
+      0 0 1 sc
+      0 0 1 SC
+      (BLUE) Tj
+    ET
+  Q
+Q
+endstream
+endobj
+
+13 0 obj % Uses_SC all resources in this Form XObject
+<<
+  /Type /XObject
+  /Subtype /Form
+  /FormType 1
+  /BBox [ 0 0 250 220 ]
+   /Resources << 
+    /Font << /F1 4 0 R >>
+    /ColorSpace << /DefaultRGB 9 0 R >>
+  >>
+  /Length 522
+>> 
+stream
+q
+  /F1 11 Tf
+  1 0 0 1 30 0 cm
+  q
+    BT
+      1 0 0 1 0 138 Tm
+      0 G
+      (Form; local resources; using sc/SC) Tj  
+    ET
+  Q
+  % Set color space to DeviceRGB via cs/CS operators and then use sc/SC operators
+  /DeviceRGB cs
+  /DeviceRGB CS
+  q
+    BT
+      1 0 0 1 0 116 Tm
+      1 0 0 sc
+      1 0 0 SC
+      (RED) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 93 Tm
+      0 1 0 sc
+      0 1 0 SC
+      (GREEN) Tj
+    ET
+  Q
+  q
+    BT
+      1 0 0 1 0 71 Tm
+      0 0 1 sc
+      0 0 1 SC
+      (BLUE) Tj
+    ET
+  Q
+Q
+endstream
+endobj
+xref
+0 14
+0000000000 65535 f 
+0000000022 00000 n 
+0000000077 00000 n 
+0000000144 00000 n 
+0000000458 00000 n 
+0000000555 00000 n 
+0000000718 00000 n 
+0000000881 00000 n 
+0000001044 00000 n 
+0000001208 00000 n 
+0000001372 00000 n 
+0000002645 00000 n 
+0000003333 00000 n 
+0000004513 00000 n 
+trailer
+<<
+  /Size 14
+  /Root 1 0 R
+>>
+startxref
+5295
+%%EOF
