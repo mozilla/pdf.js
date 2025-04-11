@@ -462,7 +462,8 @@ class PartialEvaluator {
     operatorList,
     task,
     initialState,
-    localColorSpaceCache
+    localColorSpaceCache,
+    seenRefs
   ) {
     const dict = xobj.dict;
     const matrix = lookupMatrix(dict.getArray("Matrix"), null);
@@ -526,6 +527,7 @@ class PartialEvaluator {
       resources: dict.get("Resources") || resources,
       operatorList,
       initialState,
+      prevRefs: seenRefs,
     });
     operatorList.addOp(OPS.paintFormXObjectEnd, []);
 
@@ -850,7 +852,8 @@ class PartialEvaluator {
     operatorList,
     task,
     stateManager,
-    localColorSpaceCache
+    localColorSpaceCache,
+    seenRefs
   ) {
     const smaskContent = smask.get("G");
     const smaskOptions = {
@@ -880,7 +883,8 @@ class PartialEvaluator {
       operatorList,
       task,
       stateManager.state.clone({ newPath: true }),
-      localColorSpaceCache
+      localColorSpaceCache,
+      seenRefs
     );
   }
 
@@ -1065,6 +1069,7 @@ class PartialEvaluator {
     stateManager,
     localGStateCache,
     localColorSpaceCache,
+    seenRefs,
   }) {
     const gStateRef = gState.objId;
     let isSimpleGState = true;
@@ -1127,7 +1132,8 @@ class PartialEvaluator {
                 operatorList,
                 task,
                 stateManager,
-                localColorSpaceCache
+                localColorSpaceCache,
+                seenRefs
               )
             );
             gStateObj.push([key, true]);
@@ -1696,7 +1702,19 @@ class PartialEvaluator {
     operatorList,
     initialState = null,
     fallbackFontDict = null,
+    prevRefs = null,
   }) {
+    const objId = stream.dict?.objId;
+    const seenRefs = new RefSet(prevRefs);
+
+    if (objId) {
+      if (prevRefs?.has(objId)) {
+        throw new Error(
+          `getOperatorList - ignoring circular reference: ${objId}`
+        );
+      }
+      seenRefs.put(objId);
+    }
     // Ensure that `resources`/`initialState` is correctly initialized,
     // even if the provided parameter is e.g. `null`.
     resources ||= Dict.empty;
@@ -1808,7 +1826,8 @@ class PartialEvaluator {
                       operatorList,
                       task,
                       stateManager.state.clone({ newPath: true }),
-                      localColorSpaceCache
+                      localColorSpaceCache,
+                      seenRefs
                     )
                     .then(function () {
                       stateManager.restore();
@@ -2158,6 +2177,7 @@ class PartialEvaluator {
                     stateManager,
                     localGStateCache,
                     localColorSpaceCache,
+                    seenRefs,
                   })
                   .then(resolveGState, rejectGState);
               }).catch(function (reason) {
@@ -2339,7 +2359,19 @@ class PartialEvaluator {
     markedContentData = null,
     disableNormalization = false,
     keepWhiteSpace = false,
+    prevRefs = null,
   }) {
+    const objId = stream.dict?.objId;
+    const seenRefs = new RefSet(prevRefs);
+
+    if (objId) {
+      if (prevRefs?.has(objId)) {
+        throw new Error(
+          `getTextContent - ignoring circular reference: ${objId}`
+        );
+      }
+      seenRefs.put(objId);
+    }
     // Ensure that `resources`/`stateManager` is correctly initialized,
     // even if the provided parameter is e.g. `null`.
     resources ||= Dict.empty;
@@ -3326,6 +3358,7 @@ class PartialEvaluator {
                     markedContentData,
                     disableNormalization,
                     keepWhiteSpace,
+                    prevRefs: seenRefs,
                   })
                   .then(function () {
                     if (!sinkWrapper.enqueueInvoked) {
