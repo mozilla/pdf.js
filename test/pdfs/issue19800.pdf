@@ -1,0 +1,90 @@
+%PDF-1.4
+1 0 obj
+<<
+ /Type /Catalog
+ /Outlines 2 0 R
+ /Pages 3 0 R
+>>
+endobj
+2 0 obj
+<<
+ /Type /Outlines
+ /Count 0
+>>
+endobj
+3 0 obj
+<<
+ /Type /Pages
+ /Kids [ 4 0 R ]
+ /Count 1
+>>
+endobj
+4 0 obj
+<<
+ /Type /Page
+ /Parent 3 0 R
+ /MediaBox [ 0 0 500 300 ]
+ /Contents 5 0 R
+ /Resources <<
+  /ProcSet [ /PDF /Text ]
+  /XObject << /X1 6 0 R >>
+ >>
+>>
+endobj
+5 0 obj
+<< /Length 24 >>
+stream
+1 0 0 1 25 25 cm /X1 Do
+endstream
+endobj
+6 0 obj
+<< /Subtype /Form
+   /BBox [0 0 1000 1000]
+   /Length 61
+   /Resources <<
+     /ProcSet [ /PDF /Text ]
+     /Font << /F1 7 0 R >>
+     /XObject << /X0 8 0 R >>
+   >>
+>>
+stream
+BT
+/F1 24 Tf
+(Hello world) Tj
+ET
+0.5 0 0 0.5 25 25 cm /X0 Do
+endstream
+endobj
+7 0 obj
+<<
+ /Type /Font
+ /Subtype /Type1
+ /Name /F1
+ /BaseFont /Helvetica
+ /Encoding /MacRomanEncoding
+>>
+endobj
+8 0 obj
+<< /Subtype /Form
+   /BBox [0 0 1000 1000]
+   /Length 61
+   /Resources <<
+     /ProcSet [ /PDF /Text ]
+     /Font << /F1 7 0 R >>
+     /XObject << /X1 6 0 R >>
+   >>
+>>
+stream
+BT
+/F1 24 Tf
+(Hello world) Tj
+ET
+0.5 0 0 0.5 25 25 cm /X1 Do
+endstream
+endobj
+trailer 
+<<
+ /Size 8
+ /Root 1 0 R
+>>
+%%EOF
