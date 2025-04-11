@@ -1108,9 +1108,10 @@ class Font {
           // Repair the TrueType file. It is can be damaged in the point of
           // view of the sanitizer
           data = this.checkAndRepair(name, file, properties);
-          if (this.isOpenType) {
-            adjustWidths(properties);
 
+          adjustWidths(properties);
+
+          if (this.isOpenType) {
             type = "OpenType";
           }
           break;
@@ -2644,8 +2645,6 @@ class Font {
         // No major tables: throwing everything at `CFFFont`.
         cffFile = new Stream(tables["CFF "].data);
         cff = new CFFFont(cffFile, properties);
-
-        adjustWidths(properties);
 
         return this.convert(name, cff, properties);
       }
