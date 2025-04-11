@@ -6898,6 +6898,20 @@
     "type": "eq"
   },
   {
+    "id": "issue19800-eq",
+    "file": "pdfs/issue19800.pdf",
+    "md5": "92825d3178196bdd01096c4081609efd",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
+    "id": "issue19800-text",
+    "file": "pdfs/issue19800.pdf",
+    "md5": "92825d3178196bdd01096c4081609efd",
+    "rounds": 1,
+    "type": "text"
+  },
+  {
     "id": "issue3438",
     "file": "pdfs/issue3438.pdf",
     "md5": "5aa3340b0920b65a377f697587668f89",
