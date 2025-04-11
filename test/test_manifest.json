@@ -3872,6 +3872,13 @@
     "about": "LinkAnnotation with a relative link, and a /Catalog Base-URI."
   },
   {
+    "id": "issue19802",
+    "file": "pdfs/issue19802.pdf",
+    "md5": "7a431fb7951ad605f676c80636bbe5d3",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "issue14824",
     "file": "pdfs/issue14824.pdf",
     "md5": "7b8d061ab0a342e3606a3b3ba1925d5b",
