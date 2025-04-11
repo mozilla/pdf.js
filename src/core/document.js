@@ -45,6 +45,8 @@ import {
   lookupNormalRect,
   MissingDataException,
   PDF_VERSION_REGEXP,
+  RESOURCES_KEYS_OPERATOR_LIST,
+  RESOURCES_KEYS_TEXT_CONTENT,
   validateCSSFont,
   XRefEntryException,
   XRefParseException,
@@ -419,6 +421,25 @@ class Page {
     await objectLoader.load();
   }
 
+  async #getMergedResources(streamDict, keys) {
+    // In rare cases /Resources are also found in the /Contents stream-dict,
+    // in addition to in the /Page dict, hence we need to prefer those when
+    // available (see issue18894.pdf).
+    const localResources = streamDict?.get("Resources");
+
+    if (!(localResources instanceof Dict)) {
+      return this.resources;
+    }
+    const objectLoader = new ObjectLoader(localResources, keys, this.xref);
+    await objectLoader.load();
+
+    return Dict.merge({
+      xref: this.xref,
+      dictArray: [localResources, this.resources],
+      mergeSubDicts: true,
+    });
+  }
+
   async getOperatorList({
     handler,
     sink,
@@ -429,15 +450,7 @@ class Page {
     modifiedIds = null,
   }) {
     const contentStreamPromise = this.getContentStream();
-    const resourcesPromise = this.loadResources([
-      "ColorSpace",
-      "ExtGState",
-      "Font",
-      "Pattern",
-      "Properties",
-      "Shading",
-      "XObject",
-    ]);
+    const resourcesPromise = this.loadResources(RESOURCES_KEYS_OPERATOR_LIST);
 
     const partialEvaluator = new PartialEvaluator({
       xref: this.xref,
@@ -525,11 +538,15 @@ class Page {
       contentStreamPromise,
       resourcesPromise,
     ]).then(async ([contentStream]) => {
+      const resources = await this.#getMergedResources(
+        contentStream.dict,
+        RESOURCES_KEYS_OPERATOR_LIST
+      );
       const opList = new OperatorList(intent, sink);
 
       handler.send("StartRenderPage", {
         transparency: partialEvaluator.hasBlendModes(
-          this.resources,
+          resources,
           this.nonBlendModesSet
         ),
         pageIndex: this.pageIndex,
@@ -539,7 +556,7 @@ class Page {
       await partialEvaluator.getOperatorList({
         stream: contentStream,
         task,
-        resources: this.resources,
+        resources,
         operatorList: opList,
       });
       return opList;
@@ -642,12 +659,7 @@ class Page {
     sink,
   }) {
     const contentStreamPromise = this.getContentStream();
-    const resourcesPromise = this.loadResources([
-      "ExtGState",
-      "Font",
-      "Properties",
-      "XObject",
-    ]);
+    const resourcesPromise = this.loadResources(RESOURCES_KEYS_TEXT_CONTENT);
     const langPromise = this.pdfManager.ensureCatalog("lang");
 
     const [contentStream, , lang] = await Promise.all([
@@ -655,6 +667,11 @@ class Page {
       resourcesPromise,
       langPromise,
     ]);
+    const resources = await this.#getMergedResources(
+      contentStream.dict,
+      RESOURCES_KEYS_TEXT_CONTENT
+    );
+
     const partialEvaluator = new PartialEvaluator({
       xref: this.xref,
       handler,
@@ -672,7 +689,7 @@ class Page {
     return partialEvaluator.getTextContent({
       stream: contentStream,
       task,
-      resources: this.resources,
+      resources,
       includeMarkedContent,
       disableNormalization,
       sink,
