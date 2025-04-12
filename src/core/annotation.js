@@ -3488,8 +3488,8 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
       // always make the field value an array with zero, one or multiple items.
       if (typeof this.data.fieldValue === "string") {
         this.data.fieldValue = [this.data.fieldValue];
-      } else if (!this.data.fieldValue) {
-        this.data.fieldValue = [];
+      } else {
+        this.data.fieldValue ||= [];
       }
     } else {
       // The specs say that we should have an indices array only with
