@@ -202,18 +202,15 @@ class App extends PDFObject {
   }
 
   get constants() {
-    if (!this._constants) {
-      this._constants = Object.freeze({
-        align: Object.freeze({
-          left: 0,
-          center: 1,
-          right: 2,
-          top: 3,
-          bottom: 4,
-        }),
-      });
-    }
-    return this._constants;
+    return (this._constants ??= Object.freeze({
+      align: Object.freeze({
+        left: 0,
+        center: 1,
+        right: 2,
+        top: 3,
+        bottom: 4,
+      }),
+    }));
   }
 
   set constants(_) {

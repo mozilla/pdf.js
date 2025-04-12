@@ -1532,9 +1532,7 @@ class PDFDocument {
             warn(`Bad value, for custom key "${key}", in Info: ${value}.`);
             continue;
           }
-          if (!docInfo.Custom) {
-            docInfo.Custom = Object.create(null);
-          }
+          docInfo.Custom ??= Object.create(null);
           docInfo.Custom[key] = customValue;
           continue;
       }
