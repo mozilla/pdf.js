@@ -91,9 +91,7 @@ class XFAParser extends XMLParserBase {
         }
       } else if (name.startsWith("xmlns:")) {
         const prefix = name.substring("xmlns:".length);
-        if (!prefixes) {
-          prefixes = [];
-        }
+        prefixes ??= [];
         prefixes.push({ prefix, value });
       } else {
         const i = name.indexOf(":");
@@ -102,10 +100,7 @@ class XFAParser extends XMLParserBase {
         } else {
           // Attributes can have their own namespace.
           // For example in data, we can have <foo xfa:dataNode="dataGroup"/>
-          let nsAttrs = attributeObj[$nsAttributes];
-          if (!nsAttrs) {
-            nsAttrs = attributeObj[$nsAttributes] = Object.create(null);
-          }
+          const nsAttrs = (attributeObj[$nsAttributes] ??= Object.create(null));
           const [ns, attrName] = [name.slice(0, i), name.slice(i + 1)];
           const attrs = (nsAttrs[ns] ||= Object.create(null));
           attrs[attrName] = value;

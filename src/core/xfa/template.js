@@ -2462,9 +2462,7 @@ class ExclGroup extends XFAObject {
 
     setAccess(this, attributes.class);
 
-    if (!this[$extra]) {
-      this[$extra] = Object.create(null);
-    }
+    this[$extra] ||= Object.create(null);
 
     Object.assign(this[$extra], {
       children,
@@ -2953,9 +2951,7 @@ class Field extends XFAObject {
       }
     }
 
-    if (!ui.attributes.style) {
-      ui.attributes.style = Object.create(null);
-    }
+    ui.attributes.style ||= Object.create(null);
 
     let aElement = null;
 
@@ -3048,9 +3044,7 @@ class Field extends XFAObject {
       caption.attributes.class[0] = "xfaCaptionForCheckButton";
     }
 
-    if (!ui.attributes.class) {
-      ui.attributes.class = [];
-    }
+    ui.attributes.class ||= [];
 
     ui.children.splice(0, 0, caption);
 
@@ -4067,11 +4061,9 @@ class PageArea extends XFAObject {
   }
 
   [$getNextPage]() {
-    if (!this[$extra]) {
-      this[$extra] = {
-        numberOfUse: 0,
-      };
-    }
+    this[$extra] ||= {
+      numberOfUse: 0,
+    };
 
     const parent = this[$getParent]();
     if (parent.relation === "orderedOccurrence") {
@@ -4090,11 +4082,9 @@ class PageArea extends XFAObject {
 
   [$toHTML]() {
     // TODO: incomplete.
-    if (!this[$extra]) {
-      this[$extra] = {
-        numberOfUse: 1,
-      };
-    }
+    this[$extra] ||= {
+      numberOfUse: 1,
+    };
 
     const children = [];
     this[$extra].children = children;
@@ -4186,13 +4176,11 @@ class PageSet extends XFAObject {
   }
 
   [$getNextPage]() {
-    if (!this[$extra]) {
-      this[$extra] = {
-        numberOfUse: 1,
-        pageIndex: -1,
-        pageSetIndex: -1,
-      };
-    }
+    this[$extra] ||= {
+      numberOfUse: 1,
+      pageIndex: -1,
+      pageSetIndex: -1,
+    };
 
     if (this.relation === "orderedOccurrence") {
       if (this[$extra].pageIndex + 1 < this.pageArea.children.length) {
@@ -5067,9 +5055,7 @@ class Subform extends XFAObject {
 
     setAccess(this, attributes.class);
 
-    if (!this[$extra]) {
-      this[$extra] = Object.create(null);
-    }
+    this[$extra] ||= Object.create(null);
 
     Object.assign(this[$extra], {
       children,
@@ -5495,9 +5481,7 @@ class Template extends XFAObject {
       }
     }
 
-    if (!pageArea) {
-      pageArea = pageAreas[0];
-    }
+    pageArea ||= pageAreas[0];
 
     pageArea[$extra] = {
       numberOfUse: 1,
