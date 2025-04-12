@@ -1117,24 +1117,26 @@ class PDFDocument {
   }
 
   get _xfaStreams() {
-    const acroForm = this.catalog.acroForm;
+    const { acroForm } = this.catalog;
     if (!acroForm) {
       return null;
     }
 
     const xfa = acroForm.get("XFA");
-    const entries = {
-      "xdp:xdp": "",
-      template: "",
-      datasets: "",
-      config: "",
-      connectionSet: "",
-      localeSet: "",
-      stylesheet: "",
-      "/xdp:xdp": "",
-    };
+    const entries = new Map(
+      [
+        "xdp:xdp",
+        "template",
+        "datasets",
+        "config",
+        "connectionSet",
+        "localeSet",
+        "stylesheet",
+        "/xdp:xdp",
+      ].map(e => [e, null])
+    );
     if (xfa instanceof BaseStream && !xfa.isEmpty) {
-      entries["xdp:xdp"] = xfa;
+      entries.set("xdp:xdp", xfa);
       return entries;
     }
 
@@ -1152,14 +1154,14 @@ class PDFDocument {
         name = xfa[i];
       }
 
-      if (!entries.hasOwnProperty(name)) {
+      if (!entries.has(name)) {
         continue;
       }
       const data = this.xref.fetchIfRef(xfa[i + 1]);
       if (!(data instanceof BaseStream) || data.isEmpty) {
         continue;
       }
-      entries[name] = data;
+      entries.set(name, data);
     }
     return entries;
   }
@@ -1170,7 +1172,7 @@ class PDFDocument {
       return shadow(this, "xfaDatasets", null);
     }
     for (const key of ["datasets", "xdp:xdp"]) {
-      const stream = streams[key];
+      const stream = streams.get(key);
       if (!stream) {
         continue;
       }
@@ -1192,7 +1194,7 @@ class PDFDocument {
       return null;
     }
     const data = Object.create(null);
-    for (const [key, stream] of Object.entries(streams)) {
+    for (const [key, stream] of streams) {
       if (!stream) {
         continue;
       }
