@@ -328,8 +328,11 @@ pdfjs-editor-highlight-editor =
 # “Drawing” is a noun, the string is used on the editor for drawings.
 pdfjs-editor-ink-editor =
     .aria-label = Ta’ãnga’apo moheñoiha
-pdfjs-editor-signature-editor =
-    .aria-label = Teraguapy moheñoiha
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor1 =
+    .aria-description = Teraguapy mbosako’iha: { $description }
 pdfjs-editor-stamp-editor =
     .aria-label = Ta’ãnga mbosako’iha
 
