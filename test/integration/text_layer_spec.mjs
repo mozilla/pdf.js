@@ -59,7 +59,7 @@ describe("Text layer", () => {
       };
     }
 
-    beforeAll(() => {
+    beforeEach(() => {
       jasmine.addAsyncMatchers({
         // Check that a page has a selection containing the given text, with
         // some tolerance for extra characters before/after.
@@ -111,13 +111,13 @@ describe("Text layer", () => {
       describe("doesn't jump when hovering on an empty area", () => {
         let pages;
 
-        beforeAll(async () => {
+        beforeEach(async () => {
           pages = await loadAndWait(
             "tracemonkey.pdf",
             `.page[data-page-number = "1"] .endOfContent`
           );
         });
-        afterAll(async () => {
+        afterEach(async () => {
           await closePages(pages);
         });
 
@@ -220,13 +220,13 @@ describe("Text layer", () => {
       describe("doesn't jump when hovering on an empty area, with .markedContent", () => {
         let pages;
 
-        beforeAll(async () => {
+        beforeEach(async () => {
           pages = await loadAndWait(
             "chrome-text-selection-markedContent.pdf",
             `.page[data-page-number = "1"] .endOfContent`
           );
         });
-        afterAll(async () => {
+        afterEach(async () => {
           await closePages(pages);
         });
 
@@ -318,22 +318,15 @@ describe("Text layer", () => {
       describe("when selecting over a link", () => {
         let pages;
 
-        beforeAll(async () => {
+        beforeEach(async () => {
           pages = await loadAndWait(
             "annotation-link-text-popup.pdf",
             `.page[data-page-number = "1"] .endOfContent`
           );
         });
-        afterAll(async () => {
+        afterEach(async () => {
           await closePages(pages);
         });
-        afterEach(() =>
-          Promise.all(
-            pages.map(([_, page]) =>
-              page.evaluate(() => window.getSelection().removeAllRanges())
-            )
-          )
-        );
 
         it("allows selecting within the link", async () => {
           await Promise.all(
@@ -451,7 +444,7 @@ describe("Text layer", () => {
       let browser;
       let page;
 
-      beforeAll(async () => {
+      beforeEach(async () => {
         // Chrome does not support simulating caret-based selection, so this
         // test only runs in Firefox.
         browser = await startBrowser({
@@ -472,7 +465,7 @@ describe("Text layer", () => {
           { timeout: 0 }
         );
       });
-      afterAll(async () => {
+      afterEach(async () => {
         await closeSinglePage(page);
         await browser.close();
       });
@@ -542,7 +535,7 @@ describe("Text layer", () => {
     let browser;
     let page;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       // Only testing in Firefox because, while Chrome has a setting similar to
       // font.minimum-size.x-western, it is not exposed through its API.
       browser = await startBrowser({
@@ -561,7 +554,7 @@ describe("Text layer", () => {
       );
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closeSinglePage(page);
       await browser.close();
     });
