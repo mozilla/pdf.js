@@ -29,6 +29,18 @@ const pdfjsVersion =
 const pdfjsBuild =
   typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_BUILD") : void 0;
 
+globalThis.pdfjsImageDecoders = {
+  getVerbosityLevel,
+  Jbig2Error,
+  Jbig2Image,
+  JpegError,
+  JpegImage,
+  JpxError,
+  JpxImage,
+  setVerbosityLevel,
+  VerbosityLevel,
+};
+
 export {
   getVerbosityLevel,
   Jbig2Error,

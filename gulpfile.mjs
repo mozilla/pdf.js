@@ -362,10 +362,6 @@ function createWebpackConfig(
                   // V8 chokes on very long sequences, work around that.
                   sequences: false,
                 },
-                mangle: {
-                  // Ensure that the `tweakWebpackOutput` function works.
-                  reserved: ["__webpack_exports__"],
-                },
                 keep_classnames: true,
                 keep_fnames: true,
                 module: isModule,
@@ -463,13 +459,6 @@ function checkChromePreferencesFile(chromePrefsPath, webPrefs) {
   return ret;
 }
 
-function tweakWebpackOutput(jsName) {
-  return replace(
-    /((?:\s|,)__webpack_exports__)(?:\s?)=(?:\s?)({};)/gm,
-    (match, p1, p2) => `${p1} = globalThis.${jsName} = ${p2}`
-  );
-}
-
 function createMainBundle(defines) {
   const mainFileConfig = createWebpackConfig(defines, {
     filename: defines.MINIFIED ? "pdf.min.mjs" : "pdf.mjs",
@@ -479,8 +468,7 @@ function createMainBundle(defines) {
   });
   return gulp
     .src("./src/pdf.js", { encoding: false })
-    .pipe(webpack2Stream(mainFileConfig))
-    .pipe(tweakWebpackOutput("pdfjsLib"));
+    .pipe(webpack2Stream(mainFileConfig));
 }
 
 function createScriptingBundle(defines, extraOptions = undefined) {
@@ -548,8 +536,7 @@ function createSandboxBundle(defines, extraOptions = undefined) {
 
   return gulp
     .src("./src/pdf.sandbox.js", { encoding: false })
-    .pipe(webpack2Stream(sandboxFileConfig))
-    .pipe(tweakWebpackOutput("pdfjsSandbox"));
+    .pipe(webpack2Stream(sandboxFileConfig));
 }
 
 function createWorkerBundle(defines) {
@@ -561,8 +548,7 @@ function createWorkerBundle(defines) {
   });
   return gulp
     .src("./src/pdf.worker.js", { encoding: false })
-    .pipe(webpack2Stream(workerFileConfig))
-    .pipe(tweakWebpackOutput("pdfjsWorker"));
+    .pipe(webpack2Stream(workerFileConfig));
 }
 
 function createWebBundle(defines, options) {
@@ -610,8 +596,7 @@ function createComponentsBundle(defines) {
   });
   return gulp
     .src("./web/pdf_viewer.component.js", { encoding: false })
-    .pipe(webpack2Stream(componentsFileConfig))
-    .pipe(tweakWebpackOutput("pdfjsViewer"));
+    .pipe(webpack2Stream(componentsFileConfig));
 }
 
 function createImageDecodersBundle(defines) {
@@ -625,8 +610,7 @@ function createImageDecodersBundle(defines) {
   });
   return gulp
     .src("./src/pdf.image_decoders.js", { encoding: false })
-    .pipe(webpack2Stream(componentsFileConfig))
-    .pipe(tweakWebpackOutput("pdfjsImageDecoders"));
+    .pipe(webpack2Stream(componentsFileConfig));
 }
 
 function createCMapBundle() {

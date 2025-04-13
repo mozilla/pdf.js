@@ -46,6 +46,31 @@ const pdfjsVersion =
 const pdfjsBuild =
   typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_BUILD") : void 0;
 
+globalThis.pdfjsViewer = {
+  AnnotationLayerBuilder,
+  DownloadManager,
+  EventBus,
+  FindState,
+  GenericL10n,
+  LinkTarget,
+  parseQueryString,
+  PDFFindController,
+  PDFHistory,
+  PDFLinkService,
+  PDFPageView,
+  PDFScriptingManager,
+  PDFSinglePageViewer,
+  PDFViewer,
+  ProgressBar,
+  RenderingStates,
+  ScrollMode,
+  SimpleLinkService,
+  SpreadMode,
+  StructTreeLayerBuilder,
+  TextLayerBuilder,
+  XfaLayerBuilder,
+};
+
 export {
   AnnotationLayerBuilder,
   DownloadManager,
