@@ -328,8 +328,6 @@ pdfjs-editor-highlight-editor =
 # “Drawing” is a noun, the string is used on the editor for drawings.
 pdfjs-editor-ink-editor =
     .aria-label = ਡਰਾਇੰਗ ਸੰਪਾਦਕ
-pdfjs-editor-signature-editor =
-    .aria-label = ਦਸਤਖ਼ਤ ਸੰਪਾਦਕ
 pdfjs-editor-stamp-editor =
     .aria-label = ਚਿੱਤਰ ਸੰਪਾਦਕ
 

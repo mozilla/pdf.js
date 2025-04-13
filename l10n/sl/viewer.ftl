@@ -332,8 +332,6 @@ pdfjs-editor-highlight-editor =
 # “Drawing” is a noun, the string is used on the editor for drawings.
 pdfjs-editor-ink-editor =
     .aria-label = Urejevalnik risb
-pdfjs-editor-signature-editor =
-    .aria-label = Urejevalnik podpisov
 pdfjs-editor-stamp-editor =
     .aria-label = Urejevalnik slik
 

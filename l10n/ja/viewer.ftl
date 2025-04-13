@@ -312,6 +312,22 @@ pdfjs-editor-signature-button =
     .title = 署名を追加します
 pdfjs-editor-signature-button-label = 署名を追加
 
+## Default editor aria labels
+
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = 強調エディター
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = 描画エディター
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor1 =
+    .aria-description = 署名エディター: { $description }
+pdfjs-editor-stamp-editor =
+    .aria-label = 画像エディター
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =
@@ -340,9 +356,16 @@ pdfjs-editor-stamp-add-image-button-label = 画像を追加
 pdfjs-editor-free-highlight-thickness-input = 太さ
 pdfjs-editor-free-highlight-thickness-title =
     .title = テキスト以外のアイテムを強調する時の太さを変更します
+pdfjs-editor-add-signature-container =
+    .aria-label = 署名コントロールと保存された署名
 pdfjs-editor-signature-add-signature-button =
     .title = 新しい署名を追加します
 pdfjs-editor-signature-add-signature-button-label = 新しい署名を追加
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = 保存された署名: { $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = フリーテキスト注釈エディター
@@ -453,7 +476,6 @@ pdfjs-editor-new-alt-text-error-close-button = 閉じる
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
 #   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
-#   $percent (Number) - the percentage of the downloaded size.
 pdfjs-editor-new-alt-text-ai-model-downloading-progress = 代替テキスト AI モデルをダウンロードしています ({ $downloadedSize } / { $totalSize } MB)
     .aria-valuetext = 代替テキスト AI モデルをダウンロードしています ({ $downloadedSize } / { $totalSize } MB)
 # This is a button that users can click to edit the alt text they have already added.
@@ -571,6 +593,9 @@ pdfjs-editor-edit-signature-update-button = 更新
 pdfjs-editor-delete-signature-button =
     .title = 署名を削除します
 pdfjs-editor-delete-signature-button-label = 署名を削除
+pdfjs-editor-delete-signature-button1 =
+    .title = 保存された署名を削除します
+pdfjs-editor-delete-signature-button-label1 = 保存された署名を削除
 
 ## Editor toolbar
 

@@ -325,8 +325,6 @@ pdfjs-editor-signature-button-label = Legg til signatur
 # “Highlight” is a noun, the string is used on the editor for highlights.
 pdfjs-editor-highlight-editor =
     .aria-label = Markeringsredigerar
-pdfjs-editor-signature-editor =
-    .aria-label = Signatur-redigerar
 pdfjs-editor-stamp-editor =
     .aria-label = Bildredigerar
 
