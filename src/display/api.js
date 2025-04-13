@@ -2136,6 +2136,13 @@ class PDFWorker {
         );
       };
     }
+
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      this._resetGlobalState = () => {
+        this.#isWorkerDisabled = false;
+        delete globalThis.pdfjsWorker;
+      };
+    }
   }
 
   constructor({

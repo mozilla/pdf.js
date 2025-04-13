@@ -22,4 +22,8 @@ const pdfjsVersion =
 const pdfjsBuild =
   typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_BUILD") : void 0;
 
+globalThis.pdfjsWorker = {
+  WorkerMessageHandler,
+};
+
 export { WorkerMessageHandler };

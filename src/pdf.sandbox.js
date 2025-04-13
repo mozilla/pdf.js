@@ -145,4 +145,8 @@ function QuickJSSandbox() {
   return ModuleLoader().then(module => new Sandbox(window, module));
 }
 
+globalThis.pdfjsSandbox = {
+  QuickJSSandbox,
+};
+
 export { QuickJSSandbox };

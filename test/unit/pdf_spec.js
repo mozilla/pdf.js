@@ -135,6 +135,10 @@ describe("pdfjs_api", function () {
     // The imported Object contains an (automatically) inserted Symbol,
     // hence we copy the data to allow using a simple comparison below.
     expect({ ...pdfjsAPI }).toEqual(expectedAPI);
+
+    expect(Object.keys(globalThis.pdfjsLib).sort()).toEqual(
+      Object.keys(expectedAPI).sort()
+    );
   });
 });
 
