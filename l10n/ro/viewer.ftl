@@ -146,7 +146,7 @@ pdfjs-print-progress-message = Se pregătește documentul pentru tipărire…
 # Variables:
 #   $progress (Number) - percent value
 pdfjs-print-progress-percent = { $progress }%
-pdfjs-print-progress-close-button = Renunță
+pdfjs-print-progress-close-button = Anulează
 pdfjs-printing-not-supported = Avertisment: Tipărirea nu este suportată în totalitate de acest browser.
 pdfjs-printing-not-ready = Avertisment: PDF-ul nu este încărcat complet pentru tipărire.
 
@@ -237,7 +237,7 @@ pdfjs-text-annotation-type =
 pdfjs-password-label = Introdu parola pentru a deschide acest fișier PDF.
 pdfjs-password-invalid = Parolă nevalidă. Te rugăm să încerci din nou.
 pdfjs-password-ok-button = OK
-pdfjs-password-cancel-button = Renunță
+pdfjs-password-cancel-button = Anulează
 pdfjs-web-fonts-disabled = Fonturile web sunt dezactivate: nu se pot folosi fonturile PDF încorporate.
 
 ## Editing
@@ -254,6 +254,7 @@ pdfjs-web-fonts-disabled = Fonturile web sunt dezactivate: nu se pot folosi font
 
 ## Alt-text dialog
 
+pdfjs-editor-alt-text-cancel-button = Anulează
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.

@@ -152,7 +152,7 @@ pdfjs-print-progress-message = Aparitzende s'imprenta de su documentu…
 # Variables:
 #   $progress (Number) - percent value
 pdfjs-print-progress-percent = { $progress }%
-pdfjs-print-progress-close-button = Cantzella
+pdfjs-print-progress-close-button = Annulla
 pdfjs-printing-not-supported = Atentzione: s'imprenta no est funtzionende de su totu in custu navigadore.
 pdfjs-printing-not-ready = Atentzione: su PDF no est istadu carrigadu de su totu pro s'imprenta.
 
@@ -246,7 +246,7 @@ pdfjs-annotation-date-string = { $date }, { $time }
 pdfjs-password-label = Inserta sa crae pro abèrrere custu archìviu PDF.
 pdfjs-password-invalid = Sa crae no est curreta. Torra a nche proare.
 pdfjs-password-ok-button = Andat bene
-pdfjs-password-cancel-button = Cantzella
+pdfjs-password-cancel-button = Annulla
 pdfjs-web-fonts-disabled = Is tipografias web sunt disativadas: is tipografias incrustadas a su PDF non podent èssere impreadas.
 
 ## Editing

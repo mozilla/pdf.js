@@ -320,8 +320,11 @@ pdfjs-editor-highlight-editor =
 # “Drawing” is a noun, the string is used on the editor for drawings.
 pdfjs-editor-ink-editor =
     .aria-label = 그리기 편집기
-pdfjs-editor-signature-editor =
-    .aria-label = 서명 편집기
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor1 =
+    .aria-description = 서명 편집기: { $description }
 pdfjs-editor-stamp-editor =
     .aria-label = 이미지 편집기
 
@@ -557,7 +560,7 @@ pdfjs-editor-add-signature-draw-thickness-range-label = 두께
 #   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
 pdfjs-editor-add-signature-draw-thickness-range =
     .title = 그리기 두께: { $thickness }
-pdfjs-editor-add-signature-image-placeholder = 업로드할 파일을 여기로 끌어서 놓기
+pdfjs-editor-add-signature-image-placeholder = 이미지 파일을 여기에 끌어서 놓으세요
 pdfjs-editor-add-signature-image-browse-link =
     { PLATFORM() ->
         [macos] 또는 이미지 파일 찾아보기
