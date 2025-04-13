@@ -1388,15 +1388,10 @@ describe("Stamp Editor", () => {
 
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          const debug = false;
-
           await page.click("#secondaryToolbarToggleButton");
           await page.waitForSelector("#secondaryToolbar", { visible: true });
           const secondary = await page.$("#secondaryToolbar");
-          const png = await secondary.screenshot({
-            type: "png",
-            path: debug ? `foo.png` : "",
-          });
+          const png = await secondary.screenshot({ type: "png" });
           const secondaryImage = PNG.sync.read(Buffer.from(png));
           const buffer = new Uint32Array(secondaryImage.data.buffer);
           expect(buffer.every(x => x === 0xff0000ff))
