@@ -28,7 +28,7 @@ describe("PDF viewer", () => {
   describe("Zoom origin", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait(
         "tracemonkey.pdf",
         ".textLayer .endOfContent",
@@ -38,7 +38,7 @@ describe("PDF viewer", () => {
       );
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -107,11 +107,11 @@ describe("PDF viewer", () => {
   describe("Zoom with the mouse wheel", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("empty.pdf", ".textLayer .endOfContent", 1000);
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -141,11 +141,11 @@ describe("PDF viewer", () => {
   describe("Zoom commands", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("tracemonkey.pdf", ".textLayer .endOfContent");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -191,7 +191,7 @@ describe("PDF viewer", () => {
     describe("forced (maxCanvasPixels: 0)", () => {
       let pages;
 
-      beforeAll(async () => {
+      beforeEach(async () => {
         pages = await loadAndWait(
           "tracemonkey.pdf",
           ".textLayer .endOfContent",
@@ -201,7 +201,7 @@ describe("PDF viewer", () => {
         );
       });
 
-      afterAll(async () => {
+      afterEach(async () => {
         await closePages(pages);
       });
 
@@ -257,7 +257,7 @@ describe("PDF viewer", () => {
 
       const MAX_CANVAS_PIXELS = new Map();
 
-      beforeAll(async () => {
+      beforeEach(async () => {
         pages = await loadAndWait(
           "tracemonkey.pdf",
           ".textLayer .endOfContent",
@@ -271,9 +271,7 @@ describe("PDF viewer", () => {
             return { maxCanvasPixels };
           }
         );
-      });
 
-      beforeEach(async () => {
         await Promise.all(
           pages.map(async ([browserName, page]) => {
             const handle = await waitForPageRendered(page);
@@ -294,7 +292,7 @@ describe("PDF viewer", () => {
         );
       });
 
-      afterAll(async () => {
+      afterEach(async () => {
         await closePages(pages);
       });
 
@@ -387,7 +385,7 @@ describe("PDF viewer", () => {
   describe("Canvas fits the page", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait(
         "issue18694.pdf",
         ".textLayer .endOfContent",
@@ -395,7 +393,7 @@ describe("PDF viewer", () => {
       );
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -461,7 +459,7 @@ describe("PDF viewer", () => {
     function setupPages(zoom, devicePixelRatio, setups = {}) {
       let pages;
 
-      beforeAll(async () => {
+      beforeEach(async () => {
         pages = await loadAndWait(
           "colors.pdf",
           null,
@@ -480,7 +478,7 @@ describe("PDF viewer", () => {
         );
       });
 
-      afterAll(async () => {
+      afterEach(async () => {
         await closePages(pages);
       });
 
@@ -1121,11 +1119,11 @@ describe("PDF viewer", () => {
       );
     }
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("issue18694.pdf", ".textLayer .endOfContent");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
