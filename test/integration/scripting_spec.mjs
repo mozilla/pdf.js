@@ -1197,13 +1197,6 @@ describe("Interaction", () => {
           await page.waitForFunction(
             `${getQuerySelector("27R")}.value === "HEAO "`
           );
-
-          // The typing actions in the first textbox caused sandbox events to be
-          // queued. We don't close the document between tests, so we have to
-          // flush them here, by clicking the second textbox, so they don't leak
-          // through to the following test.
-          await page.click(getSelector("28R"));
-          await waitForSandboxTrip(page);
         })
       );
     });
