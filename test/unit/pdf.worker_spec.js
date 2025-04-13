@@ -13,9 +13,20 @@
  * limitations under the License.
  */
 
+import { PDFWorker } from "../../src/display/api.js";
 import { WorkerMessageHandler } from "../../src/core/worker.js";
 
+const expectedAPI = Object.freeze({
+  WorkerMessageHandler,
+});
+
 describe("pdfworker_api", function () {
+  afterEach(function () {
+    // Avoid interfering with other unit-tests, since `globalThis.pdfjsWorker`
+    // being defined will impact loading and usage of the worker.
+    PDFWorker._resetGlobalState();
+  });
+
   it("checks that the *official* PDF.js-worker API exposes the expected functionality", async function () {
     // eslint-disable-next-line no-unsanitized/method
     const pdfworkerAPI = await import(
@@ -26,8 +37,10 @@ describe("pdfworker_api", function () {
 
     // The imported Object contains an (automatically) inserted Symbol,
     // hence we copy the data to allow using a simple comparison below.
-    expect({ ...pdfworkerAPI }).toEqual({
-      WorkerMessageHandler,
-    });
+    expect({ ...pdfworkerAPI }).toEqual(expectedAPI);
+
+    expect(Object.keys(globalThis.pdfjsWorker).sort()).toEqual(
+      Object.keys(expectedAPI).sort()
+    );
   });
 });
