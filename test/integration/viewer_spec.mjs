@@ -400,8 +400,6 @@ describe("PDF viewer", () => {
     it("must check that canvas perfectly fits the page whatever the zoom level is", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          const debug = false;
-
           // The pdf has a single page with a red background.
           // We set the viewer background to red, because when screenshoting
           // some part of the viewer background can be visible.
@@ -426,10 +424,7 @@ describe("PDF viewer", () => {
             await scrollIntoView(page, `.page[data-page-number="1"]`);
 
             const element = await page.$(`.page[data-page-number="1"]`);
-            const png = await element.screenshot({
-              type: "png",
-              path: debug ? `foo${i}.png` : "",
-            });
+            const png = await element.screenshot({ type: "png" });
             const pageImage = PNG.sync.read(Buffer.from(png));
             let buffer = new Uint32Array(pageImage.data.buffer);
 
