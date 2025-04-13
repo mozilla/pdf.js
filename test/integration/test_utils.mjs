@@ -137,13 +137,6 @@ function closePages(pages) {
   return Promise.all(pages.map(([_, page]) => closeSinglePage(page)));
 }
 
-function isVisible(page, selector) {
-  return page.evaluate(
-    sel => document.querySelector(sel)?.checkVisibility(),
-    selector
-  );
-}
-
 async function closeSinglePage(page) {
   // Avoid to keep something from a previous test.
   await page.evaluate(async () => {
@@ -861,16 +854,6 @@ function isCanvasMonochrome(page, pageNumber, rectangle, color) {
   );
 }
 
-async function cleanupEditing(pages, switcher) {
-  for (const [, page] of pages) {
-    await page.evaluate(() => {
-      window.uiManager.reset();
-    });
-    // Disable editing mode.
-    await switcher(page, /* disable */ true);
-  }
-}
-
 async function getXY(page, selector) {
   const rect = await getRect(page, selector);
   return `${rect.x}::${rect.y}`;
@@ -902,7 +885,6 @@ async function moveEditor(page, selector, n, pressKey) {
 export {
   applyFunctionToEditor,
   awaitPromise,
-  cleanupEditing,
   clearEditors,
   clearInput,
   closePages,
@@ -927,7 +909,6 @@ export {
   getXY,
   hover,
   isCanvasMonochrome,
-  isVisible,
   kbBigMoveDown,
   kbBigMoveLeft,
   kbBigMoveRight,

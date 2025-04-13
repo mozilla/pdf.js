@@ -38,11 +38,11 @@ describe("accessibility", () => {
   describe("structure tree", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("structure_simple.pdf", ".structTree");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -107,14 +107,14 @@ describe("accessibility", () => {
   describe("Annotation", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait(
         "tracemonkey_a11y.pdf",
         ".textLayer .endOfContent"
       );
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -147,11 +147,11 @@ describe("accessibility", () => {
   describe("Annotations order", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("fields_order.pdf", ".annotationLayer");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -180,11 +180,11 @@ describe("accessibility", () => {
   describe("Stamp annotation accessibility", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("tagged_stamp.pdf", ".annotationLayer");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -245,11 +245,11 @@ describe("accessibility", () => {
   describe("Figure in the content stream", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("bug1708040.pdf", ".textLayer");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
