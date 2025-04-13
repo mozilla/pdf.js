@@ -63,7 +63,7 @@ describe("autolinker", function () {
   describe("bug1019475_2.pdf", function () {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait(
         "bug1019475_2.pdf",
         ".annotationLayer",
@@ -75,7 +75,7 @@ describe("autolinker", function () {
       );
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -99,7 +99,7 @@ describe("autolinker", function () {
   describe("bug1019475_1.pdf", function () {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait(
         "bug1019475_1.pdf",
         ".annotationLayer",
@@ -111,7 +111,7 @@ describe("autolinker", function () {
       );
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -138,14 +138,14 @@ describe("autolinker", function () {
   describe("pr19449.pdf", function () {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("pr19449.pdf", ".annotationLayer", null, null, {
         docBaseUrl: "http://example.com",
         enableAutoLinking: true,
       });
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -172,7 +172,7 @@ describe("autolinker", function () {
   describe("PR 19470", function () {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait(
         "bug1019475_2.pdf",
         ".annotationLayer",
@@ -184,7 +184,7 @@ describe("autolinker", function () {
       );
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -218,7 +218,7 @@ describe("autolinker", function () {
   describe("when highlighting search results", function () {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait(
         "issue3115r.pdf",
         ".annotationLayer",
@@ -228,7 +228,7 @@ describe("autolinker", function () {
       );
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 

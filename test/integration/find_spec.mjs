@@ -28,11 +28,11 @@ describe("find bar", () => {
   describe("highlight all", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("find_all.pdf", ".textLayer", 100);
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -89,11 +89,11 @@ describe("find bar", () => {
   describe("highlight all (XFA)", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("xfa_imm5257e.pdf", ".xfaLayer");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -130,11 +130,11 @@ describe("find bar", () => {
   describe("issue19207.pdf", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("issue19207.pdf", ".textLayer", 200);
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 

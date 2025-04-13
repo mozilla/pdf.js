@@ -27,11 +27,11 @@ describe("Caret browsing", () => {
   describe("Selection", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("tracemonkey.pdf", ".textLayer .endOfContent");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
