@@ -23,7 +23,7 @@ async function runTests(results) {
   jasmine.jasmine.DEFAULT_TIMEOUT_INTERVAL = 30000;
 
   jasmine.loadConfig({
-    random: false,
+    random: true,
     spec_dir: "integration",
     spec_files: [
       "accessibility_spec.mjs",
