@@ -25,14 +25,14 @@ describe("Annotation highlight", () => {
   describe("annotation-highlight.pdf", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait(
         "annotation-highlight.pdf",
         "[data-annotation-id='19R']"
       );
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -62,11 +62,11 @@ describe("Annotation highlight", () => {
   describe("Check that widget annotations are in front of highlight ones", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("bug1883609.pdf", "[data-annotation-id='23R']");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -87,11 +87,11 @@ describe("Checkbox annotation", () => {
   describe("issue12706.pdf", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("issue12706.pdf", "[data-annotation-id='63R']");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -123,11 +123,11 @@ describe("Checkbox annotation", () => {
   describe("issue15597.pdf", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("issue15597.pdf", "[data-annotation-id='7R']");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -148,11 +148,11 @@ describe("Checkbox annotation", () => {
   describe("bug1847733.pdf", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("bug1847733.pdf", "[data-annotation-id='18R']");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -178,11 +178,11 @@ describe("Text widget", () => {
   describe("issue13271.pdf", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("issue13271.pdf", "[data-annotation-id='24R']");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -207,11 +207,11 @@ describe("Text widget", () => {
   describe("issue16473.pdf", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("issue16473.pdf", "[data-annotation-id='22R']");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -236,11 +236,11 @@ describe("Annotation and storage", () => {
   describe("issue14023.pdf", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("issue14023.pdf", "[data-annotation-id='64R']");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -337,11 +337,11 @@ describe("ResetForm action", () => {
   describe("resetform.pdf", () => {
     let pages;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       pages = await loadAndWait("resetform.pdf", "[data-annotation-id='63R']");
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await closePages(pages);
     });
 
@@ -462,14 +462,14 @@ describe("ResetForm action", () => {
     describe("issue14438.pdf", () => {
       let pages;
 
-      beforeAll(async () => {
+      beforeEach(async () => {
         pages = await loadAndWait(
           "issue14438.pdf",
           "[data-annotation-id='10R']"
         );
       });
 
-      afterAll(async () => {
+      afterEach(async () => {
         await closePages(pages);
       });
 
@@ -490,14 +490,14 @@ describe("ResetForm action", () => {
     describe("annotation-caret-ink.pdf", () => {
       let pages;
 
-      beforeAll(async () => {
+      beforeEach(async () => {
         pages = await loadAndWait(
           "annotation-caret-ink.pdf",
           "[data-annotation-id='25R']"
         );
       });
 
-      afterAll(async () => {
+      afterEach(async () => {
         await closePages(pages);
       });
 
@@ -525,14 +525,14 @@ describe("ResetForm action", () => {
     describe("bug1844583.pdf", () => {
       let pages;
 
-      beforeAll(async () => {
+      beforeEach(async () => {
         pages = await loadAndWait(
           "bug1844583.pdf",
           "[data-annotation-id='8R']"
         );
       });
 
-      afterAll(async () => {
+      afterEach(async () => {
         await closePages(pages);
       });
 
@@ -553,14 +553,14 @@ describe("ResetForm action", () => {
     describe("tagged_stamp.pdf", () => {
       let pages;
 
-      beforeAll(async () => {
+      beforeEach(async () => {
         pages = await loadAndWait(
           "tagged_stamp.pdf",
           "[data-annotation-id='20R']"
         );
       });
 
-      afterAll(async () => {
+      afterEach(async () => {
         await closePages(pages);
       });
 
@@ -622,14 +622,14 @@ describe("ResetForm action", () => {
     describe("issue14438.pdf", () => {
       let pages;
 
-      beforeAll(async () => {
+      beforeEach(async () => {
         pages = await loadAndWait(
           "highlights.pdf",
           "[data-annotation-id='693R']"
         );
       });
 
-      afterAll(async () => {
+      afterEach(async () => {
         await closePages(pages);
       });
 
@@ -652,14 +652,14 @@ describe("ResetForm action", () => {
     describe("issue14438.pdf", () => {
       let pages;
 
-      beforeAll(async () => {
+      beforeEach(async () => {
         pages = await loadAndWait(
           "rotated_ink.pdf",
           "[data-annotation-id='18R']"
         );
       });
 
-      afterAll(async () => {
+      afterEach(async () => {
         await closePages(pages);
       });
 
