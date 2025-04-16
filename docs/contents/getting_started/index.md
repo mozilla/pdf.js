@@ -60,6 +60,9 @@ Please refer to [this wiki page](https://github.com/mozilla/pdf.js/wiki/Frequent
     To get a local copy of the current code, clone it using git:
     <pre><code>$ git clone https://github.com/mozilla/pdf.js.git
 $ cd pdf.js
+$ npm install -g gulp-cli
+$ npm install   # <-- Add this line before running gulp
+$ gulp server
 </code></pre>
   </div>
 </div>
