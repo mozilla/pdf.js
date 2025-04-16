@@ -26,7 +26,7 @@ class SignatureOptions extends DrawingOptions {
     super();
 
     super.updateProperties({
-      fill: "CanvasText",
+      fill: AnnotationEditor._defaultLineColor,
       "stroke-width": 0,
     });
   }
@@ -43,7 +43,7 @@ class DrawnSignatureOptions extends InkDrawingOptions {
     super(viewerParameters);
 
     super.updateProperties({
-      stroke: "CanvasText",
+      stroke: AnnotationEditor._defaultLineColor,
       "stroke-width": 1,
     });
   }

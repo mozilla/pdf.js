@@ -471,4 +471,116 @@ describe("Signature Editor", () => {
       );
     });
   });
+
+  describe("viewerCssTheme (light)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "empty.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        { viewerCssTheme: "1" }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the signature has the correct color with the light theme", async () => {
+      await Promise.all(
+        pages.map(async ([_, page]) => {
+          const colorTheme = await page.evaluate(() => {
+            const html = document.querySelector("html");
+            const style = getComputedStyle(html);
+            return style.getPropertyValue("color-scheme");
+          });
+          expect(colorTheme).toEqual("light");
+
+          await switchToSignature(page);
+          await page.click("#editorSignatureAddSignature");
+
+          await page.waitForSelector("#addSignatureDialog", {
+            visible: true,
+          });
+          await page.type("#addSignatureTypeInput", "Should be black.");
+          await page.waitForSelector(`${addButtonSelector}:not(:disabled)`);
+          await page.click("#addSignatureAddButton");
+
+          const editorSelector = getEditorSelector(0);
+          await page.waitForSelector(editorSelector, { visible: true });
+          await page.waitForSelector(
+            `.canvasWrapper > svg use[href="#path_p1_0"]`,
+            { visible: true }
+          );
+
+          const color = await page.evaluate(() => {
+            const use = document.querySelector(
+              `.canvasWrapper > svg use[href="#path_p1_0"]`
+            );
+            return use.parentNode.getAttribute("fill");
+          });
+          expect(color).toEqual("#000000");
+        })
+      );
+    });
+  });
+
+  describe("viewerCssTheme (dark)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "empty.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        { viewerCssTheme: "2" }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the signature has the correct color with the dark theme", async () => {
+      await Promise.all(
+        pages.map(async ([_, page]) => {
+          const colorTheme = await page.evaluate(() => {
+            const html = document.querySelector("html");
+            const style = getComputedStyle(html);
+            return style.getPropertyValue("color-scheme");
+          });
+          expect(colorTheme).toEqual("dark");
+
+          await switchToSignature(page);
+          await page.click("#editorSignatureAddSignature");
+
+          await page.waitForSelector("#addSignatureDialog", {
+            visible: true,
+          });
+          await page.type("#addSignatureTypeInput", "Should be black.");
+          await page.waitForSelector(`${addButtonSelector}:not(:disabled)`);
+          await page.click("#addSignatureAddButton");
+
+          const editorSelector = getEditorSelector(0);
+          await page.waitForSelector(editorSelector, { visible: true });
+          await page.waitForSelector(
+            `.canvasWrapper > svg use[href="#path_p1_0"]`,
+            { visible: true }
+          );
+
+          const color = await page.evaluate(() => {
+            const use = document.querySelector(
+              `.canvasWrapper > svg use[href="#path_p1_0"]`
+            );
+            return use.parentNode.getAttribute("fill");
+          });
+          expect(color).toEqual("#000000");
+        })
+      );
+    });
+  });
 });
