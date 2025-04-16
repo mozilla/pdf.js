@@ -14,77 +14,62 @@
  */
 
 .dialog {
-  --dialog-bg-color: white;
-  --dialog-border-color: white;
-  --dialog-shadow: 0 2px 14px 0 rgb(58 57 68 / 0.2);
-  --text-primary-color: #15141a;
-  --text-secondary-color: #5b5b66;
+  --dialog-bg-color: light-dark(white, #1c1b22);
+  --dialog-border-color: light-dark(white, #1c1b22);
+  --dialog-shadow: 0 2px 14px 0 light-dark(rgb(58 57 68 / 0.2), #15141a);
+  --text-primary-color: light-dark(#15141a, #fbfbfe);
+  --text-secondary-color: light-dark(#5b5b66, #cfcfd8);
   --hover-filter: brightness(0.9);
-  --link-fg-color: #0060df;
-  --link-hover-fg-color: #0250bb;
-  --separator-color: #f0f0f4;
+  --link-fg-color: light-dark(#0060df, #0df);
+  --link-hover-fg-color: light-dark(#0250bb, #80ebff);
+  --separator-color: light-dark(#f0f0f4, #52525e);
 
   --textarea-border-color: #8f8f9d;
-  --textarea-bg-color: white;
+  --textarea-bg-color: light-dark(white, #42414d);
   --textarea-fg-color: var(--text-secondary-color);
 
-  --radio-bg-color: #f0f0f4;
-  --radio-checked-bg-color: #fbfbfe;
+  --radio-bg-color: light-dark(#f0f0f4, #2b2a33);
+  --radio-checked-bg-color: light-dark(#fbfbfe, #15141a);
   --radio-border-color: #8f8f9d;
-  --radio-checked-border-color: #0060df;
+  --radio-checked-border-color: light-dark(#0060df, #0df);
 
-  --button-secondary-bg-color: rgb(21 20 26 / 0.07);
+  --button-secondary-bg-color: light-dark(
+    rgb(21 20 26 / 0.07),
+    rgb(251 251 254 / 0.07)
+  );
   --button-secondary-fg-color: var(--text-primary-color);
   --button-secondary-border-color: var(--button-secondary-bg-color);
-  --button-secondary-active-bg-color: rgb(21 20 26 / 0.21);
+  --button-secondary-active-bg-color: light-dark(
+    rgb(21 20 26 / 0.21),
+    rgb(251 251 254 / 0.21)
+  );
   --button-secondary-active-fg-color: var(--button-secondary-fg-color);
   --button-secondary-active-border-color: var(--button-secondary-bg-color);
-  --button-secondary-hover-bg-color: rgb(21 20 26 / 0.14);
+  --button-secondary-hover-bg-color: light-dark(
+    rgb(21 20 26 / 0.14),
+    rgb(251 251 254 / 0.14)
+  );
   --button-secondary-hover-fg-color: var(--button-secondary-fg-color);
   --button-secondary-hover-border-color: var(--button-secondary-hover-bg-color);
 
-  --button-primary-bg-color: #0060df;
-  --button-primary-fg-color: #fbfbfe;
+  --button-primary-bg-color: light-dark(#0060df, #0df);
+  --button-primary-fg-color: light-dark(#fbfbfe, #15141a);
   --button-primary-border-color: var(--button-primary-bg-color);
-  --button-primary-active-bg-color: #054096;
+  --button-primary-active-bg-color: light-dark(#054096, #aaf2ff);
   --button-primary-active-fg-color: var(--button-primary-fg-color);
   --button-primary-active-border-color: var(--button-primary-active-bg-color);
-  --button-primary-hover-bg-color: #0250bb;
+  --button-primary-hover-bg-color: light-dark(#0250bb, #80ebff);
   --button-primary-hover-fg-color: var(--button-primary-fg-color);
   --button-primary-hover-border-color: var(--button-primary-hover-bg-color);
 
   --button-disabled-bg-color: color-mix(in srgb, currentcolor, transparent 60%);
   --button-disabled-fg-color: var(--button-disabled-bg-color);
 
-  --input-text-bg-color: white;
+  --input-text-bg-color: light-dark(white, #42414d);
   --input-text-fg-color: var(--text-primary-color);
 
   @media (prefers-color-scheme: dark) {
-    --dialog-bg-color: #1c1b22;
-    --dialog-border-color: #1c1b22;
-    --dialog-shadow: 0 2px 14px 0 #15141a;
-    --text-primary-color: #fbfbfe;
-    --text-secondary-color: #cfcfd8;
     --hover-filter: brightness(1.4);
-    --link-fg-color: #0df;
-    --link-hover-fg-color: #80ebff;
-    --separator-color: #52525e;
-
-    --textarea-bg-color: #42414d;
-
-    --radio-bg-color: #2b2a33;
-    --radio-checked-bg-color: #15141a;
-    --radio-checked-border-color: #0df;
-
-    --button-secondary-bg-color: rgb(251 251 254 / 0.07);
-    --button-secondary-active-bg-color: rgb(251 251 254 / 0.21);
-    --button-secondary-hover-bg-color: rgb(251 251 254 / 0.14);
-    --button-primary-bg-color: #0df;
-    --button-primary-fg-color: #15141a;
-    --button-primary-active-bg-color: #aaf2ff;
-    --button-primary-hover-bg-color: #80ebff;
-
-    --input-text-bg-color: #42414d;
   }
 
   @media screen and (forced-colors: active) {
@@ -329,18 +314,14 @@
     }
 
     .messageBar {
-      --message-bar-bg-color: #ffebcd;
-      --message-bar-fg-color: #15141a;
-      --message-bar-border-color: rgb(0 0 0 / 0.08);
+      --message-bar-bg-color: light-dark(#ffebcd, #5a3100);
+      --message-bar-fg-color: light-dark(#15141a, #fbfbfe);
+      --message-bar-border-color: light-dark(
+        rgb(0 0 0 / 0.08),
+        rgb(255 255 255 / 0.08)
+      );
       --message-bar-icon: url(images/messageBar_warning.svg);
-      --message-bar-icon-color: #cd411e;
-
-      @media (prefers-color-scheme: dark) {
-        --message-bar-bg-color: #5a3100;
-        --message-bar-fg-color: #fbfbfe;
-        --message-bar-border-color: rgb(255 255 255 / 0.08);
-        --message-bar-icon-color: #e49c49;
-      }
+      --message-bar-icon-color: light-dark(#cd411e, #e49c49);
 
       @media screen and (forced-colors: active) {
         --message-bar-bg-color: HighlightText;

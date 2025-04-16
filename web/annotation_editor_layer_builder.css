@@ -230,32 +230,23 @@
 .textLayer {
   .editToolbar {
     --editor-toolbar-delete-image: url(images/editor-toolbar-delete.svg);
-    --editor-toolbar-bg-color: #f0f0f4;
+    --editor-toolbar-bg-color: light-dark(#f0f0f4, #2b2a33);
     --editor-toolbar-highlight-image: url(images/toolbarButton-editorHighlight.svg);
-    --editor-toolbar-fg-color: #2e2e56;
+    --editor-toolbar-fg-color: light-dark(#2e2e56, #fbfbfe);
     --editor-toolbar-border-color: #8f8f9d;
     --editor-toolbar-hover-border-color: var(--editor-toolbar-border-color);
-    --editor-toolbar-hover-bg-color: #e0e0e6;
+    --editor-toolbar-hover-bg-color: light-dark(#e0e0e6, #52525e);
     --editor-toolbar-hover-fg-color: var(--editor-toolbar-fg-color);
     --editor-toolbar-hover-outline: none;
-    --editor-toolbar-focus-outline-color: #0060df;
+    --editor-toolbar-focus-outline-color: light-dark(#0060df, #0df);
     --editor-toolbar-shadow: 0 2px 6px 0 rgb(58 57 68 / 0.2);
     --editor-toolbar-vert-offset: 6px;
     --editor-toolbar-height: 28px;
     --editor-toolbar-padding: 2px;
-    --alt-text-done-color: #2ac3a2;
-    --alt-text-warning-color: #0090ed;
+    --alt-text-done-color: light-dark(#2ac3a2, #54ffbd);
+    --alt-text-warning-color: light-dark(#0090ed, #80ebff);
     --alt-text-hover-done-color: var(--alt-text-done-color);
     --alt-text-hover-warning-color: var(--alt-text-warning-color);
-
-    @media (prefers-color-scheme: dark) {
-      --editor-toolbar-bg-color: #2b2a33;
-      --editor-toolbar-fg-color: #fbfbfe;
-      --editor-toolbar-hover-bg-color: #52525e;
-      --editor-toolbar-focus-outline-color: #0df;
-      --alt-text-done-color: #54ffbd;
-      --alt-text-warning-color: #80ebff;
-    }
 
     @media screen and (forced-colors: active) {
       --editor-toolbar-bg-color: ButtonFace;
@@ -466,16 +457,11 @@
           word-wrap: anywhere;
 
           &.show {
-            --alt-text-tooltip-bg: #f0f0f4;
-            --alt-text-tooltip-fg: #15141a;
+            --alt-text-tooltip-bg: light-dark(#f0f0f4, #1c1b22);
+            --alt-text-tooltip-fg: light-dark(#15141a, #fbfbfe);
             --alt-text-tooltip-border: #8f8f9d;
-            --alt-text-tooltip-shadow: 0px 2px 6px 0px rgb(58 57 68 / 0.2);
-
-            @media (prefers-color-scheme: dark) {
-              --alt-text-tooltip-bg: #1c1b22;
-              --alt-text-tooltip-fg: #fbfbfe;
-              --alt-text-tooltip-shadow: 0px 2px 6px 0px #15141a;
-            }
+            --alt-text-tooltip-shadow: 0px 2px 6px 0px
+              light-dark(rgb(58 57 68 / 0.2), #15141a);
 
             @media screen and (forced-colors: active) {
               --alt-text-tooltip-bg: Canvas;
@@ -583,15 +569,9 @@
   }
 
   .noAltTextBadge {
-    --no-alt-text-badge-border-color: #f0f0f4;
-    --no-alt-text-badge-bg-color: #cfcfd8;
-    --no-alt-text-badge-fg-color: #5b5b66;
-
-    @media (prefers-color-scheme: dark) {
-      --no-alt-text-badge-border-color: #52525e;
-      --no-alt-text-badge-bg-color: #fbfbfe;
-      --no-alt-text-badge-fg-color: #15141a;
-    }
+    --no-alt-text-badge-border-color: light-dark(#f0f0f4, #52525e);
+    --no-alt-text-badge-bg-color: light-dark(#cfcfd8, #fbfbfe);
+    --no-alt-text-badge-fg-color: light-dark(#5b5b66, #15141a);
 
     @media screen and (forced-colors: active) {
       --no-alt-text-badge-border-color: ButtonText;
@@ -876,12 +856,8 @@
 .dialog.newAltText {
   --new-alt-text-ai-disclaimer-icon: url(images/altText_disclaimer.svg);
   --new-alt-text-spinner-icon: url(images/altText_spinner.svg);
-  --preview-image-bg-color: #f0f0f4;
+  --preview-image-bg-color: light-dark(#f0f0f4, #2b2a33);
   --preview-image-border: none;
-
-  @media (prefers-color-scheme: dark) {
-    --preview-image-bg-color: #2b2a33;
-  }
 
   @media screen and (forced-colors: active) {
     --preview-image-bg-color: ButtonFace;
@@ -1059,15 +1035,9 @@
 }
 
 .colorPicker {
-  --hover-outline-color: #0250bb;
-  --selected-outline-color: #0060df;
-  --swatch-border-color: #cfcfd8;
-
-  @media (prefers-color-scheme: dark) {
-    --hover-outline-color: #80ebff;
-    --selected-outline-color: #aaf2ff;
-    --swatch-border-color: #52525e;
-  }
+  --hover-outline-color: light-dark(#0250bb, #80ebff);
+  --selected-outline-color: light-dark(#0060df, #aaf2ff);
+  --swatch-border-color: light-dark(#cfcfd8, #52525e);
 
   @media screen and (forced-colors: active) {
     --hover-outline-color: Highlight;
@@ -1307,11 +1277,7 @@
       align-items: center;
       align-self: stretch;
 
-      --example-color: #bfbfc9;
-
-      @media (prefers-color-scheme: dark) {
-        --example-color: #80808e;
-      }
+      --example-color: light-dark(#bfbfc9, #80808e);
 
       @media screen and (forced-colors: active) {
         --example-color: CanvasText;
@@ -1349,11 +1315,7 @@
     align-self: stretch;
 
     .divider {
-      --divider-color: #d7d7db;
-
-      @media (prefers-color-scheme: dark) {
-        --divider-color: #8f8f9d;
-      }
+      --divider-color: light-dark(#d7d7db, #8f8f9d);
 
       @media screen and (forced-colors: active) {
         --divider-color: CanvasText;

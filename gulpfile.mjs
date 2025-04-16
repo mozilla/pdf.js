@@ -31,9 +31,9 @@ import Metalsmith from "metalsmith";
 import ordered from "ordered-read-streams";
 import path from "path";
 import postcss from "gulp-postcss";
-import postcssDarkThemeClass from "postcss-dark-theme-class";
 import postcssDirPseudoClass from "postcss-dir-pseudo-class";
 import postcssDiscardComments from "postcss-discard-comments";
+import postcssLightDarkFunction from "@csstools/postcss-light-dark-function";
 import postcssNesting from "postcss-nesting";
 import { preprocess } from "./external/builder/builder.mjs";
 import relative from "metalsmith-html-relative";
@@ -1093,7 +1093,7 @@ function buildGeneric(defines, dir) {
           postcssDirPseudoClass(),
           discardCommentsCSS(),
           postcssNesting(),
-          postcssDarkThemeClass(),
+          postcssLightDarkFunction({ preserve: true }),
           autoprefixer(AUTOPREFIXER_CONFIG),
         ])
       )
@@ -1183,6 +1183,7 @@ function buildComponents(defines, dir) {
           postcssDirPseudoClass(),
           discardCommentsCSS(),
           postcssNesting(),
+          postcssLightDarkFunction({ preserve: true }),
           autoprefixer(AUTOPREFIXER_CONFIG),
         ])
       )
@@ -1428,7 +1429,6 @@ gulp.task(
           .pipe(
             postcss([
               discardCommentsCSS(),
-              postcssDarkThemeClass(),
               autoprefixer(MOZCENTRAL_AUTOPREFIXER_CONFIG),
             ])
           )
@@ -1439,7 +1439,6 @@ gulp.task(
           .pipe(
             postcss([
               discardCommentsCSS(),
-              postcssDarkThemeClass(),
               autoprefixer(MOZCENTRAL_AUTOPREFIXER_CONFIG),
             ])
           )
@@ -1536,7 +1535,7 @@ gulp.task(
               postcssDirPseudoClass(),
               discardCommentsCSS(),
               postcssNesting(),
-              postcssDarkThemeClass(),
+              postcssLightDarkFunction({ preserve: true }),
               autoprefixer(AUTOPREFIXER_CONFIG),
             ])
           )

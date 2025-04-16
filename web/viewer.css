@@ -35,20 +35,23 @@
   --doorhanger-icon-opacity: 0.9;
   --doorhanger-height: 8px;
 
-  --main-color: rgb(12 12 13);
-  --body-bg-color: rgb(212 212 215);
-  --progressBar-color: rgb(10 132 255);
-  --progressBar-bg-color: rgb(221 221 222);
-  --progressBar-blend-color: rgb(116 177 239);
-  --scrollbar-color: auto;
-  --scrollbar-bg-color: auto;
-  --toolbar-icon-bg-color: rgb(0 0 0);
-  --toolbar-icon-hover-bg-color: rgb(0 0 0);
+  --main-color: light-dark(rgb(12 12 13), rgb(249 249 250));
+  --body-bg-color: light-dark(rgb(212 212 215), rgb(42 42 46));
+  --progressBar-color: light-dark(rgb(10 132 255), rgb(0 96 223));
+  --progressBar-bg-color: light-dark(rgb(221 221 222), rgb(40 40 43));
+  --progressBar-blend-color: light-dark(rgb(116 177 239), rgb(20 68 133));
+  --scrollbar-color: light-dark(auto, rgb(121 121 123));
+  --scrollbar-bg-color: light-dark(auto, rgb(35 35 39));
+  --toolbar-icon-bg-color: light-dark(rgb(0 0 0), rgb(255 255 255));
+  --toolbar-icon-hover-bg-color: light-dark(rgb(0 0 0), rgb(255 255 255));
 
-  --sidebar-narrow-bg-color: rgb(212 212 215 / 0.9);
-  --sidebar-toolbar-bg-color: rgb(245 246 247);
-  --toolbar-bg-color: rgb(249 249 250);
-  --toolbar-border-color: rgb(184 184 184);
+  --sidebar-narrow-bg-color: light-dark(
+    rgb(212 212 215 / 0.9),
+    rgb(42 42 46 / 0.9)
+  );
+  --sidebar-toolbar-bg-color: light-dark(rgb(245 246 247), rgb(50 50 52));
+  --toolbar-bg-color: light-dark(rgb(249 249 250), rgb(56 56 61));
+  --toolbar-border-color: light-dark(rgb(184 184 184), rgb(12 12 13));
   --toolbar-box-shadow: 0 1px 0 var(--toolbar-border-color);
   --toolbar-border-bottom: none;
   --toolbarSidebar-box-shadow:
@@ -56,30 +59,42 @@
     0 1px 0 rgb(0 0 0 / 0.15), 0 0 1px rgb(0 0 0 / 0.1);
   --toolbarSidebar-border-bottom: none;
   --button-hover-color: color-mix(in srgb, currentColor 17%, transparent);
-  --toggled-btn-color: rgb(0 0 0);
+  --toggled-btn-color: light-dark(rgb(0 0 0), rgb(255 255 255));
   --toggled-btn-bg-color: rgb(0 0 0 / 0.3);
   --toggled-hover-active-btn-color: rgb(0 0 0 / 0.4);
   --toggled-hover-btn-outline: none;
-  --dropdown-btn-bg-color: rgb(215 215 219);
+  --dropdown-btn-bg-color: light-dark(rgb(215 215 219), rgb(74 74 79));
   --dropdown-btn-border: none;
   --separator-color: rgb(0 0 0 / 0.3);
-  --field-color: rgb(6 6 6);
-  --field-bg-color: rgb(255 255 255);
-  --field-border-color: rgb(187 187 188);
-  --treeitem-color: rgb(0 0 0 / 0.8);
-  --treeitem-bg-color: rgb(0 0 0 / 0.15);
-  --treeitem-hover-color: rgb(0 0 0 / 0.9);
-  --treeitem-selected-color: rgb(0 0 0 / 0.9);
-  --treeitem-selected-bg-color: rgb(0 0 0 / 0.25);
-  --thumbnail-hover-color: rgb(0 0 0 / 0.1);
-  --thumbnail-selected-color: rgb(0 0 0 / 0.2);
-  --doorhanger-bg-color: rgb(255 255 255);
-  --doorhanger-border-color: rgb(12 12 13 / 0.2);
-  --doorhanger-hover-color: rgb(12 12 13);
-  --doorhanger-separator-color: rgb(222 222 222);
+  --field-color: light-dark(rgb(6 6 6), rgb(250 250 250));
+  --field-bg-color: light-dark(rgb(255 255 255), rgb(64 64 68));
+  --field-border-color: light-dark(rgb(187 187 188), rgb(115 115 115));
+  --treeitem-color: light-dark(rgb(0 0 0 / 0.8), rgb(255 255 255 / 0.8));
+  --treeitem-bg-color: light-dark(rgb(0 0 0 / 0.15), rgb(255 255 255 / 0.15));
+  --treeitem-hover-color: light-dark(rgb(0 0 0 / 0.9), rgb(255 255 255 / 0.9));
+  --treeitem-selected-color: light-dark(
+    rgb(0 0 0 / 0.9),
+    rgb(255 255 255 / 0.9)
+  );
+  --treeitem-selected-bg-color: light-dark(
+    rgb(0 0 0 / 0.25),
+    rgb(255 255 255 / 0.25)
+  );
+  --thumbnail-hover-color: light-dark(rgb(0 0 0 / 0.1), rgb(255 255 255 / 0.1));
+  --thumbnail-selected-color: light-dark(
+    rgb(0 0 0 / 0.2),
+    rgb(255 255 255 / 0.2)
+  );
+  --doorhanger-bg-color: light-dark(rgb(255 255 255), #42414d);
+  --doorhanger-border-color: light-dark(rgb(12 12 13 / 0.2), rgb(39 39 43));
+  --doorhanger-hover-color: light-dark(rgb(12 12 13), rgb(249 249 250));
+  --doorhanger-separator-color: light-dark(rgb(222 222 222), rgb(92 92 97));
   --dialog-button-border: none;
-  --dialog-button-bg-color: rgb(12 12 13 / 0.1);
-  --dialog-button-hover-bg-color: rgb(12 12 13 / 0.3);
+  --dialog-button-bg-color: light-dark(rgb(12 12 13 / 0.1), rgb(92 92 97));
+  --dialog-button-hover-bg-color: light-dark(
+    rgb(12 12 13 / 0.3),
+    rgb(115 115 115)
+  );
 
   --loading-icon: url(images/loading.svg);
   --treeitem-expanded-icon: url(images/treeitem-expanded.svg);
@@ -137,46 +152,6 @@
   --inline-start: right;
   --inline-end: left;
   /*#endif*/
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --main-color: rgb(249 249 250);
-    --body-bg-color: rgb(42 42 46);
-    --progressBar-color: rgb(0 96 223);
-    --progressBar-bg-color: rgb(40 40 43);
-    --progressBar-blend-color: rgb(20 68 133);
-    --scrollbar-color: rgb(121 121 123);
-    --scrollbar-bg-color: rgb(35 35 39);
-    --toolbar-icon-bg-color: rgb(255 255 255);
-    --toolbar-icon-hover-bg-color: rgb(255 255 255);
-
-    --sidebar-narrow-bg-color: rgb(42 42 46 / 0.9);
-    --sidebar-toolbar-bg-color: rgb(50 50 52);
-    --toolbar-bg-color: rgb(56 56 61);
-    --toolbar-border-color: rgb(12 12 13);
-    --toggled-btn-color: rgb(255 255 255);
-    --toggled-btn-bg-color: rgb(0 0 0 / 0.3);
-    --toggled-hover-active-btn-color: rgb(0 0 0 / 0.4);
-    --dropdown-btn-bg-color: rgb(74 74 79);
-    --separator-color: rgb(0 0 0 / 0.3);
-    --field-color: rgb(250 250 250);
-    --field-bg-color: rgb(64 64 68);
-    --field-border-color: rgb(115 115 115);
-    --treeitem-color: rgb(255 255 255 / 0.8);
-    --treeitem-bg-color: rgb(255 255 255 / 0.15);
-    --treeitem-hover-color: rgb(255 255 255 / 0.9);
-    --treeitem-selected-color: rgb(255 255 255 / 0.9);
-    --treeitem-selected-bg-color: rgb(255 255 255 / 0.25);
-    --thumbnail-hover-color: rgb(255 255 255 / 0.1);
-    --thumbnail-selected-color: rgb(255 255 255 / 0.2);
-    --doorhanger-bg-color: #42414d;
-    --doorhanger-border-color: rgb(39 39 43);
-    --doorhanger-hover-color: rgb(249 249 250);
-    --doorhanger-separator-color: rgb(92 92 97);
-    --dialog-button-bg-color: rgb(92 92 97);
-    --dialog-button-hover-bg-color: rgb(115 115 115);
-  }
 }
 
 @media screen and (forced-colors: active) {

@@ -14,26 +14,18 @@
     currentColor 21%,
     transparent
   );
-  --color-accent-primary: #0060df;
-  --color-accent-primary-hover: #0250bb;
-  --color-accent-primary-active: #054096;
+  --color-accent-primary: light-dark(#0060df, #0df);
+  --color-accent-primary-hover: light-dark(#0250bb, #80ebff);
+  --color-accent-primary-active: light-dark(#054096, #aaf2ff);
   --border-radius-circle: 9999px;
   --border-width: 1px;
   --size-item-small: 16px;
   --size-item-large: 32px;
-  --color-canvas: white;
+  --color-canvas: light-dark(white, #1c1b22);
   --background-color-canvas: var(--color-canvas);
-  --border-color-interactive: #8f8f9d;
+  --border-color-interactive: light-dark(#8f8f9d, #f9f9fa);
   --border-color-interactive-hover: var(--border-color-interactive);
   --border-color-interactive-active: var(--border-color-interactive);
-
-  @media (prefers-color-scheme: dark) {
-    --color-accent-primary: #0df;
-    --color-accent-primary-hover: #80ebff;
-    --color-accent-primary-active: #aaf2ff;
-    --color-canvas: #1c1b22;
-    --border-color-interactive: #f9f9fa;
-  }
 
   @media (forced-colors: active) {
     --color-accent-primary: ButtonText;
