@@ -297,6 +297,7 @@ class PDFViewer {
       }
     }
     this.#resizeObserver.observe(this.container);
+    this.#resizeObserver.observe(this.viewer);
 
     this.eventBus = options.eventBus;
     this.linkService = options.linkService || new SimpleLinkService();
@@ -2322,13 +2323,16 @@ class PDFViewer {
   }
 
   #resizeObserverCallback(entries) {
-    for (const entry of entries) {
-      if (entry.target === this.container) {
-        this.#updateContainerHeightCss(
-          Math.floor(entry.borderBoxSize[0].blockSize)
-        );
+    for (const { target, borderBoxSize } of entries) {
+      if (target === this.viewer) {
+        this.eventBus.dispatch("resize", {
+          source: window,
+        });
+        continue;
+      }
+      if (target === this.container) {
+        this.#updateContainerHeightCss(Math.floor(borderBoxSize[0].blockSize));
         this.#containerTopLeft = null;
-        break;
       }
     }
   }

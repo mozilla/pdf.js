@@ -2099,11 +2099,6 @@ const PDFViewerApplication = {
     window.addEventListener("keydown", onKeyDown.bind(this), { signal });
     window.addEventListener("keyup", onKeyUp.bind(this), { signal });
     window.addEventListener(
-      "resize",
-      () => eventBus.dispatch("resize", { source: window }),
-      { signal }
-    );
-    window.addEventListener(
       "hashchange",
       () => {
         eventBus.dispatch("hashchange", {
