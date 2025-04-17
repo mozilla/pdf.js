@@ -549,10 +549,6 @@ body {
   mask-image: var(--toolbarButton-zoomIn-icon);
 }
 
-#presentationMode::before {
-  mask-image: var(--toolbarButton-presentationMode-icon);
-}
-
 #editorFreeTextButton::before {
   mask-image: var(--toolbarButton-editorFreeText-icon);
 }
@@ -577,18 +573,8 @@ body {
   mask-image: var(--toolbarButton-print-icon);
 }
 
-/*#if GENERIC*/
-#secondaryOpenFile::before {
-  mask-image: var(--toolbarButton-openFile-icon);
-}
-/*#endif*/
-
 #downloadButton::before {
   mask-image: var(--toolbarButton-download-icon);
-}
-
-#viewBookmark::before {
-  mask-image: var(--toolbarButton-bookmark-icon);
 }
 
 #currentOutlineItem::before {
@@ -1662,64 +1648,6 @@ dialog :link {
         animation: progressIndeterminate 1s linear infinite;
       }
     }
-  }
-}
-
-#secondaryToolbar {
-  #firstPage::before {
-    mask-image: var(--secondaryToolbarButton-firstPage-icon);
-  }
-
-  #lastPage::before {
-    mask-image: var(--secondaryToolbarButton-lastPage-icon);
-  }
-
-  #pageRotateCcw::before {
-    mask-image: var(--secondaryToolbarButton-rotateCcw-icon);
-  }
-
-  #pageRotateCw::before {
-    mask-image: var(--secondaryToolbarButton-rotateCw-icon);
-  }
-
-  #cursorSelectTool::before {
-    mask-image: var(--secondaryToolbarButton-selectTool-icon);
-  }
-
-  #cursorHandTool::before {
-    mask-image: var(--secondaryToolbarButton-handTool-icon);
-  }
-
-  #scrollPage::before {
-    mask-image: var(--secondaryToolbarButton-scrollPage-icon);
-  }
-
-  #scrollVertical::before {
-    mask-image: var(--secondaryToolbarButton-scrollVertical-icon);
-  }
-
-  #scrollHorizontal::before {
-    mask-image: var(--secondaryToolbarButton-scrollHorizontal-icon);
-  }
-
-  #scrollWrapped::before {
-    mask-image: var(--secondaryToolbarButton-scrollWrapped-icon);
-  }
-
-  #spreadNone::before {
-    mask-image: var(--secondaryToolbarButton-spreadNone-icon);
-  }
-
-  #spreadOdd::before {
-    mask-image: var(--secondaryToolbarButton-spreadOdd-icon);
-  }
-
-  #spreadEven::before {
-    mask-image: var(--secondaryToolbarButton-spreadEven-icon);
-  }
-
-  #documentProperties::before {
-    mask-image: var(--secondaryToolbarButton-documentProperties-icon);
   }
 }
 
