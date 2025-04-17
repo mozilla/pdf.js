@@ -757,7 +757,10 @@ class StructTreePage {
 
     const parent = dict.get("P");
 
-    if (!parent || isName(parent.get("Type"), "StructTreeRoot")) {
+    if (
+      !(parent instanceof Dict) ||
+      isName(parent.get("Type"), "StructTreeRoot")
+    ) {
       if (!this.addTopLevelNode(dict, element)) {
         map.delete(dict);
       }
