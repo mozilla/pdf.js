@@ -707,10 +707,18 @@ class Page {
     // Ensure that the structTree will contain the page's annotations.
     await this._parsedAnnotations;
 
-    const structTree = await this.pdfManager.ensure(this, "_parseStructTree", [
-      structTreeRoot,
-    ]);
-    return this.pdfManager.ensure(structTree, "serializable");
+    try {
+      const structTree = await this.pdfManager.ensure(
+        this,
+        "_parseStructTree",
+        [structTreeRoot]
+      );
+      const data = await this.pdfManager.ensure(structTree, "serializable");
+      return data;
+    } catch (ex) {
+      warn(`getStructTree: "${ex}".`);
+      return null;
+    }
   }
 
   /**
