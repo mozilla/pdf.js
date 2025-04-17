@@ -524,11 +524,11 @@ addState(
       switch (buffer[k++]) {
         case DrawOPS.moveTo:
         case DrawOPS.lineTo:
-          Util.applyTransform(buffer.subarray(k), transform);
+          Util.applyTransform(buffer, transform, k);
           k += 2;
           break;
         case DrawOPS.curveTo:
-          Util.applyTransformToBezier(buffer.subarray(k), transform);
+          Util.applyTransformToBezier(buffer, transform, k);
           k += 6;
           break;
       }

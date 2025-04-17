@@ -730,15 +730,14 @@ class Util {
   }
 
   // For 2d affine transforms
-  static applyTransform(p, m) {
-    const p0 = p[0];
-    const p1 = p[1];
-    p[0] = p0 * m[0] + p1 * m[2] + m[4];
-    p[1] = p0 * m[1] + p1 * m[3] + m[5];
+  static applyTransform(p, m, pos = 0) {
+    const p0 = p[pos];
+    const p1 = p[pos + 1];
+    p[pos] = p0 * m[0] + p1 * m[2] + m[4];
+    p[pos + 1] = p0 * m[1] + p1 * m[3] + m[5];
   }
 
-  // For 2d affine transforms
-  static applyTransformToBezier(p, transform) {
+  static applyTransformToBezier(p, transform, pos = 0) {
     const m0 = transform[0];
     const m1 = transform[1];
     const m2 = transform[2];
@@ -746,10 +745,10 @@ class Util {
     const m4 = transform[4];
     const m5 = transform[5];
     for (let i = 0; i < 6; i += 2) {
-      const pI = p[i];
-      const pI1 = p[i + 1];
-      p[i] = pI * m0 + pI1 * m2 + m4;
-      p[i + 1] = pI * m1 + pI1 * m3 + m5;
+      const pI = p[pos + i];
+      const pI1 = p[pos + i + 1];
+      p[pos + i] = pI * m0 + pI1 * m2 + m4;
+      p[pos + i + 1] = pI * m1 + pI1 * m3 + m5;
     }
   }
 
