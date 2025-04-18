@@ -427,7 +427,7 @@ class Page {
     // available (see issue18894.pdf).
     const localResources = streamDict?.get("Resources");
 
-    if (!(localResources instanceof Dict)) {
+    if (!(localResources instanceof Dict && localResources.size)) {
       return this.resources;
     }
     const objectLoader = new ObjectLoader(localResources, keys, this.xref);
