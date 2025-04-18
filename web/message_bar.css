@@ -129,7 +129,7 @@
 #editorUndoBar {
   --text-primary-color: #15141a;
 
-  --message-bar-icon: url(images/secondaryToolbarButton-documentProperties.svg);
+  --message-bar-icon: url(images/messageBar_info.svg);
   --message-bar-icon-color: #0060df;
   --message-bar-bg-color: #deeafc;
   --message-bar-fg-color: var(--text-primary-color);
