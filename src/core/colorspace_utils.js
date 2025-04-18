@@ -79,7 +79,7 @@ class ColorSpaceUtils {
     }
 
     try {
-      parsedCS = this.#parse(cs, options);
+      parsedCS = this.#parse(cs, options, /* topLevel = */ true);
     } catch (ex) {
       if (asyncIfNotCached && !(ex instanceof MissingDataException)) {
         return Promise.reject(ex);
@@ -124,39 +124,92 @@ class ColorSpaceUtils {
     return parsedCS;
   }
 
-  static #parse(cs, options) {
-    const { xref, resources, pdfFunctionFactory, globalColorSpaceCache } =
-      options;
+  /**
+   * NOTE: This method should *only* be invoked from `this.#parse`,
+   *       when parsing "default" ColorSpaces (i.e. /DefaultGray, /DefaultRGB,
+   *       and /DefaultCMYK).
+   */
+  static #defaultParse(cs, options, deviceCS) {
+    const { globalColorSpaceCache } = options;
+    let csRef, parsedCS;
+
+    // Check if the ColorSpace is cached first, to avoid re-parsing it.
+    if (cs instanceof Ref) {
+      csRef = cs;
+
+      const cachedCS = globalColorSpaceCache.getByRef(csRef);
+      if (cachedCS) {
+        return cachedCS;
+      }
+    }
+    try {
+      parsedCS = this.#parse(cs, options);
+    } catch (ex) {
+      if (ex instanceof MissingDataException) {
+        throw ex;
+      }
+      warn(`Cannot parse default ColorSpace: "${ex}".`);
+      return deviceCS;
+    }
+
+    // The default ColorSpace must be compatible with the original one.
+    if (parsedCS.numComps !== deviceCS.numComps) {
+      warn(
+        "Incorrect number of components in default ColorSpace, " +
+          `expected "${deviceCS.numComps}" and got "${parsedCS.numComps}".`
+      );
+      return deviceCS;
+    }
+
+    // Only cache the parsed ColorSpace globally, by reference.
+    if (csRef) {
+      globalColorSpaceCache.set(/* name = */ null, csRef, parsedCS);
+    }
+    return parsedCS;
+  }
+
+  static #parse(cs, options, topLevel = false) {
+    const { xref, pdfFunctionFactory, globalColorSpaceCache } = options;
 
     cs = xref.fetchIfRef(cs);
     if (cs instanceof Name) {
       switch (cs.name) {
         case "G":
-        case "DeviceGray":
+        case "DeviceGray": {
+          const defaultCS = topLevel && this.#getResCS("DefaultGray", options);
+          if (defaultCS) {
+            return this.#defaultParse(defaultCS, options, this.gray);
+          }
           return this.gray;
+        }
         case "RGB":
-        case "DeviceRGB":
+        case "DeviceRGB": {
+          const defaultCS = topLevel && this.#getResCS("DefaultRGB", options);
+          if (defaultCS) {
+            return this.#defaultParse(defaultCS, options, this.rgb);
+          }
           return this.rgb;
+        }
         case "DeviceRGBA":
           return this.rgba;
         case "CMYK":
-        case "DeviceCMYK":
+        case "DeviceCMYK": {
+          const defaultCS = topLevel && this.#getResCS("DefaultCMYK", options);
+          if (defaultCS) {
+            return this.#subParse(defaultCS, options, this.cmyk);
+          }
           return this.cmyk;
+        }
         case "Pattern":
           return new PatternCS(/* baseCS = */ null);
         default:
-          if (resources instanceof Dict) {
-            const colorSpaces = resources.get("ColorSpace");
-            if (colorSpaces instanceof Dict) {
-              const resourcesCS = colorSpaces.get(cs.name);
-              if (resourcesCS) {
-                if (resourcesCS instanceof Name) {
-                  return this.#parse(resourcesCS, options);
-                }
-                cs = resourcesCS;
-                break;
-              }
+          const resourcesCS = xref.fetchIfRef(this.#getResCS(cs.name, options));
+          if (resourcesCS) {
+            if (resourcesCS instanceof Name) {
+              return this.#parse(resourcesCS, options);
             }
+            cs = resourcesCS;
+            break;
           }
           // Fallback to the default gray color space.
           warn(`Unrecognized ColorSpace: ${cs.name}`);
@@ -274,6 +327,16 @@ class ColorSpaceUtils {
     // Fallback to the default gray color space.
     warn(`Unrecognized ColorSpace object: ${cs}`);
     return this.gray;
+  }
+
+  static #getResCS(name, { resources }) {
+    if (resources instanceof Dict) {
+      const colorSpaces = resources.get("ColorSpace");
+      if (colorSpaces instanceof Dict) {
+        return colorSpaces.getRaw(name) ?? null;
+      }
+    }
+    return null;
   }
 
   static get gray() {
