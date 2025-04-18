@@ -21,18 +21,16 @@
 @import url(annotation_editor_layer_builder.css);
 
 :root {
+  color-scheme: light dark;
+
   --viewer-container-height: 0;
   --pdfViewer-padding-bottom: 0;
   --page-margin: 1px auto -8px;
   --page-border: 9px solid transparent;
   --spreadHorizontalWrapped-margin-LR: -3.5px;
   --loading-icon-delay: 400ms;
-  --focus-ring-color: #0060df;
+  --focus-ring-color: light-dark(#0060df, #0df);
   --focus-ring-outline: 2px solid var(--focus-ring-color);
-
-  @media (prefers-color-scheme: dark) {
-    --focus-ring-color: #0df;
-  }
 
   @media screen and (forced-colors: active) {
     --pdfViewer-padding-bottom: 9px;
