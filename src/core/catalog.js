@@ -682,7 +682,7 @@ class Catalog {
           const dest = fetchDest(value);
           if (dest) {
             // Always let the NameTree take precedence.
-            dests[key] ||= dest;
+            dests[stringToPDFString(key)] ||= dest;
           }
         }
       }
@@ -701,12 +701,12 @@ class Catalog {
       }
     }
 
-    if (rawDests[0] instanceof NameTree) {
-      // Fallback to checking the *entire* NameTree, in an attempt to handle
-      // corrupt PDF documents with out-of-order NameTrees (fixes issue 10272).
+    // Always fallback to checking all destinations, in order to support:
+    //  - PDF documents with out-of-order NameTrees (fixes issue 10272).
+    //  - Destination keys that use PDFDocEncoding (fixes issue 19835).
+    if (rawDests.length) {
       const dest = this.destinations[id];
       if (dest) {
-        warn(`Found "${id}" at an incorrect position in the NameTree.`);
         return dest;
       }
     }
