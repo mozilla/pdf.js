@@ -24,6 +24,14 @@
     "type": "other"
   },
   {
+    "id": "issue19835",
+    "file": "pdfs/issue19835.pdf",
+    "md5": "2940a2f8a41fae299b9a599b8364d05c",
+    "rounds": 1,
+    "link": true,
+    "type": "other"
+  },
+  {
     "id": "filled-background-range",
     "file": "pdfs/filled-background.pdf",
     "md5": "2e3120255d9c3e79b96d2543b12d2589",
