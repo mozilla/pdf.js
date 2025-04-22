@@ -19,6 +19,7 @@
 
 import { binarySearchFirstItem, scrollIntoView } from "./ui_utils.js";
 import { getCharacterType, getNormalizeWithNFKC } from "./pdf_find_utils.js";
+import Fuse from "fuse.js";
 import { promiseWithResolvers } from "../src/core/promise_with_resolvers.js";
 
 const FindState = {
@@ -500,7 +501,10 @@ class PDFFindController {
     if (this.#state === null || this.#shouldDirtyMatch(state)) {
       this._dirtyMatch = true;
     }
-    this.#state = state;
+    this.#state = {
+      ...state,
+      fuzzySearchEnabled: state.fuzzySearchEnabled ?? false,
+    };
     if (type !== "highlightallchange") {
       this.#updateUIState(FindState.PENDING);
     }
@@ -904,6 +908,35 @@ class PDFFindController {
     queries = queries.filter(_query => _query.query !== null);
 
     this.#calculateRegExpMatch(queries, entireWord, pageIndex, pageContent);
+
+    const hasMatches =
+      this.pageMatches[pageIndex]?.length > 0 ||
+      this.pageHighlights[pageIndex]?.length > 0;
+
+    if (!hasMatches && this.#state.fuzzySearchEnabled && query.length > 1) {
+      const words = pageContent.match(/\b\w+\b/g) || [];
+
+      const fuse = new Fuse(words, {
+        includeScore: true,
+        threshold: 0.4,
+      });
+
+      const results = fuse.search(query).slice(0, 5);
+
+      this.pageHighlights[pageIndex] = [];
+      this.pageHighlightsLength[pageIndex] = [];
+      this.pageHighlightsColors[pageIndex] = [];
+
+      for (const result of results) {
+        const word = result.item;
+        const index = pageContent.indexOf(word);
+        if (index !== -1) {
+          this.pageHighlights[pageIndex].push(index);
+          this.pageHighlightsLength[pageIndex].push(word.length);
+          this.pageHighlightsColors[pageIndex].push("orange"); // Fuzzy match color
+        }
+      }
+    }
 
     // When `highlightAll` is set, ensure that the matches on previously
     // rendered (and still active) pages are correctly highlighted.
