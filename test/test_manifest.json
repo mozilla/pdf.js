@@ -3887,6 +3887,20 @@
     "type": "eq"
   },
   {
+    "id": "issue19848-eq",
+    "file": "pdfs/issue19848.pdf",
+    "md5": "a6b05b61c883542e647b9a5a628e6422",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
+    "id": "issue19848-text",
+    "file": "pdfs/issue19848.pdf",
+    "md5": "a6b05b61c883542e647b9a5a628e6422",
+    "rounds": 1,
+    "type": "text"
+  },
+  {
     "id": "issue14824",
     "file": "pdfs/issue14824.pdf",
     "md5": "7b8d061ab0a342e3606a3b3ba1925d5b",
