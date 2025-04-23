@@ -88,9 +88,10 @@ class App extends PDFObject {
   }
 
   _evalCallback({ callbackId, interval }) {
+    const documentObj = this._document.obj;
     if (callbackId === USERACTIVATION_CALLBACKID) {
       // Special callback id for userActivation stuff.
-      this._document.obj._userActivation = false;
+      documentObj._userActivation = false;
       return;
     }
     const expr = this._timeoutCallbackIds.get(callbackId);
@@ -99,7 +100,12 @@ class App extends PDFObject {
     }
 
     if (expr) {
+      const saveUserActivation = documentObj._userActivation;
+      // A setTimeout/setInterval callback is executed so it can't be a user
+      // choice.
+      documentObj._userActivation = false;
       this._globalEval(expr);
+      documentObj._userActivation = saveUserActivation;
     }
   }
 
