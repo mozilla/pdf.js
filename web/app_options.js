@@ -299,6 +299,11 @@ const defaultOptions = {
     value: 2 ** 25,
     kind: OptionKind.VIEWER,
   },
+  minDurationToUpdateCanvas: {
+    /** @type {number} */
+    value: 500, // ms
+    kind: OptionKind.VIEWER,
+  },
   forcePageColors: {
     /** @type {boolean} */
     value: false,
