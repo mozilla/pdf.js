@@ -465,7 +465,7 @@ class PartialEvaluator {
     localColorSpaceCache,
     seenRefs
   ) {
-    const dict = xobj.dict;
+    const { dict } = xobj;
     const matrix = lookupMatrix(dict.getArray("Matrix"), null);
     const bbox = lookupNormalRect(dict.getArray("BBox"), null);
 
@@ -521,10 +521,12 @@ class PartialEvaluator {
     const args = [f32matrix, f32bbox];
     operatorList.addOp(OPS.paintFormXObjectBegin, args);
 
+    const localResources = dict.get("Resources");
+
     await this.getOperatorList({
       stream: xobj,
       task,
-      resources: dict.get("Resources") || resources,
+      resources: localResources instanceof Dict ? localResources : resources,
       operatorList,
       initialState,
       prevRefs: seenRefs,
@@ -3298,14 +3300,15 @@ class PartialEvaluator {
                 if (!(xobj instanceof BaseStream)) {
                   throw new FormatError("XObject should be a stream");
                 }
+                const { dict } = xobj;
 
-                const type = xobj.dict.get("Subtype");
+                const type = dict.get("Subtype");
                 if (!(type instanceof Name)) {
                   throw new FormatError("XObject should have a Name subtype");
                 }
 
                 if (type.name !== "Form") {
-                  emptyXObjectCache.set(name, xobj.dict.objId, true);
+                  emptyXObjectCache.set(name, dict.objId, true);
 
                   resolveXObject();
                   return;
@@ -3319,10 +3322,12 @@ class PartialEvaluator {
                 const currentState = stateManager.state.clone();
                 const xObjStateManager = new StateManager(currentState);
 
-                const matrix = lookupMatrix(xobj.dict.getArray("Matrix"), null);
+                const matrix = lookupMatrix(dict.getArray("Matrix"), null);
                 if (matrix) {
                   xObjStateManager.transform(matrix);
                 }
+
+                const localResources = dict.get("Resources");
 
                 // Enqueue the `textContent` chunk before parsing the /Form
                 // XObject.
@@ -3348,7 +3353,10 @@ class PartialEvaluator {
                   .getTextContent({
                     stream: xobj,
                     task,
-                    resources: xobj.dict.get("Resources") || resources,
+                    resources:
+                      localResources instanceof Dict
+                        ? localResources
+                        : resources,
                     stateManager: xObjStateManager,
                     includeMarkedContent,
                     sink: sinkWrapper,
@@ -3362,7 +3370,7 @@ class PartialEvaluator {
                   })
                   .then(function () {
                     if (!sinkWrapper.enqueueInvoked) {
-                      emptyXObjectCache.set(name, xobj.dict.objId, true);
+                      emptyXObjectCache.set(name, dict.objId, true);
                     }
                     resolveXObject();
                   }, rejectXObject);
