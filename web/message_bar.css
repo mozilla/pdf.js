@@ -19,15 +19,18 @@
   --message-bar-close-button-color-hover: var(--text-primary-color);
   --message-bar-close-button-border-radius: 4px;
   --message-bar-close-button-border: none;
-  --message-bar-close-button-hover-bg-color: rgb(21 20 26 / 0.14);
-  --message-bar-close-button-active-bg-color: rgb(21 20 26 / 0.21);
-  --message-bar-close-button-focus-bg-color: rgb(21 20 26 / 0.07);
-
-  @media (prefers-color-scheme: dark) {
-    --message-bar-close-button-hover-bg-color: rgb(251 251 254 / 0.14);
-    --message-bar-close-button-active-bg-color: rgb(251 251 254 / 0.21);
-    --message-bar-close-button-focus-bg-color: rgb(251 251 254 / 0.07);
-  }
+  --message-bar-close-button-hover-bg-color: light-dark(
+    rgb(21 20 26 / 0.14),
+    rgb(251 251 254 / 0.14)
+  );
+  --message-bar-close-button-active-bg-color: light-dark(
+    rgb(21 20 26 / 0.21),
+    rgb(251 251 254 / 0.21)
+  );
+  --message-bar-close-button-focus-bg-color: light-dark(
+    rgb(21 20 26 / 0.07),
+    rgb(251 251 254 / 0.07)
+  );
 
   @media screen and (forced-colors: active) {
     --message-bar-close-button-color: ButtonText;
@@ -127,37 +130,35 @@
 }
 
 #editorUndoBar {
-  --text-primary-color: #15141a;
+  --text-primary-color: light-dark(#15141a, #fbfbfe);
 
   --message-bar-icon: url(images/messageBar_info.svg);
-  --message-bar-icon-color: #0060df;
-  --message-bar-bg-color: #deeafc;
+  --message-bar-icon-color: light-dark(#0060df, #73a7f3);
+  --message-bar-bg-color: light-dark(#deeafc, #003070);
   --message-bar-fg-color: var(--text-primary-color);
-  --message-bar-border-color: rgb(0 0 0 / 0.08);
+  --message-bar-border-color: light-dark(
+    rgb(0 0 0 / 0.08),
+    rgb(255 255 255 / 0.08)
+  );
 
-  --undo-button-bg-color: rgb(21 20 26 / 0.07);
-  --undo-button-bg-color-hover: rgb(21 20 26 / 0.14);
-  --undo-button-bg-color-active: rgb(21 20 26 / 0.21);
+  --undo-button-bg-color: light-dark(
+    rgb(21 20 26 / 0.07),
+    rgb(255 255 255 / 0.08)
+  );
+  --undo-button-bg-color-hover: light-dark(
+    rgb(21 20 26 / 0.14),
+    rgb(255 255 255 / 0.14)
+  );
+  --undo-button-bg-color-active: light-dark(
+    rgb(21 20 26 / 0.21),
+    rgb(255 255 255 / 0.21)
+  );
 
-  --undo-button-border: 1px solid #0060df;
+  --undo-button-border: 1px solid light-dark(#0060df, #0df);
 
   --undo-button-fg-color: var(--message-bar-fg-color);
   --undo-button-fg-color-hover: var(--undo-button-fg-color);
   --undo-button-fg-color-active: var(--undo-button-fg-color);
-
-  @media (prefers-color-scheme: dark) {
-    --text-primary-color: #fbfbfe;
-
-    --message-bar-icon-color: #73a7f3;
-    --message-bar-bg-color: #003070;
-    --message-bar-border-color: rgb(255 255 255 / 0.08);
-
-    --undo-button-bg-color: rgb(255 255 255 / 0.08);
-    --undo-button-bg-color-hover: rgb(255 255 255 / 0.14);
-    --undo-button-bg-color-active: rgb(255 255 255 / 0.21);
-
-    --undo-button-border: 1px solid #0df;
-  }
 
   @media screen and (forced-colors: active) {
     --text-primary-color: CanvasText;
