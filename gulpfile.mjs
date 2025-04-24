@@ -2315,7 +2315,7 @@ function packageJson() {
       url: `git+${DIST_GIT_URL}`,
     },
     engines: {
-      node: ">=20.16.0",
+      node: ">=20.16.0 || >=22.3.0",
     },
     scripts: {},
   };
