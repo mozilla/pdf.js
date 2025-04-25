@@ -445,6 +445,28 @@ function createValidAbsoluteUrl(url, baseUrl = null, options = null) {
   return _isValidProtocol(absoluteUrl) ? absoluteUrl : null;
 }
 
+/**
+ * Remove, or replace, the hash property of the URL.
+ *
+ * @param {URL|string} url - The absolute, or relative, URL.
+ * @param {string} hash - The hash property (use an empty string to remove it).
+ * @param {boolean} [allowRel] - Allow relative URLs.
+ * @returns {string} The resulting URL string.
+ */
+function updateUrlHash(url, hash, allowRel = false) {
+  const res = URL.parse(url);
+  if (res) {
+    res.hash = hash;
+    return res.href;
+  }
+  // Support well-formed relative URLs, necessary for `web/app.js` in GENERIC
+  // builds, by optionally falling back to string parsing.
+  if (allowRel && createValidAbsoluteUrl(url, "http://example.com")) {
+    return url.split("#", 1)[0] + `${hash ? `#${hash}` : ""}`;
+  }
+  return "";
+}
+
 function shadow(obj, prop, value, nonSerializable = false) {
   if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
     assert(
@@ -1319,6 +1341,7 @@ export {
   toHexUtil,
   UnknownErrorException,
   unreachable,
+  updateUrlHash,
   utf8StringToString,
   Util,
   VerbosityLevel,

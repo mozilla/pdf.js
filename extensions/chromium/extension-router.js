@@ -46,6 +46,7 @@ limitations under the License.
     }
     var scheme = url.slice(0, schemeIndex).toLowerCase();
     if (schemes.includes(scheme)) {
+      // NOTE: We cannot use the `updateUrlHash` function in this context.
       url = url.split("#", 1)[0];
       if (url.charAt(schemeIndex) === ":") {
         url = encodeURIComponent(url);

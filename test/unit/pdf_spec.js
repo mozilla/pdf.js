@@ -31,6 +31,7 @@ import {
   PermissionFlag,
   ResponseException,
   shadow,
+  updateUrlHash,
   Util,
   VerbosityLevel,
 } from "../../src/shared/util.js";
@@ -117,6 +118,7 @@ const expectedAPI = Object.freeze({
   SupportedImageMimeTypes,
   TextLayer,
   TouchManager,
+  updateUrlHash,
   Util,
   VerbosityLevel,
   version,

@@ -14,7 +14,7 @@
  */
 
 import { getRGB, isDataScheme, SVG_NS } from "./display_utils.js";
-import { unreachable, Util, warn } from "../shared/util.js";
+import { unreachable, updateUrlHash, Util, warn } from "../shared/util.js";
 
 class BaseFilterFactory {
   constructor() {
@@ -143,7 +143,7 @@ class DOMFilterFactory extends BaseFilterFactory {
         if (isDataScheme(url)) {
           warn('#createUrl: ignore "data:"-URL for performance reasons.');
         } else {
-          this.#baseUrl = url.split("#", 1)[0];
+          this.#baseUrl = updateUrlHash(url, "");
         }
       }
     }
