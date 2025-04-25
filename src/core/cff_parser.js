@@ -1769,12 +1769,16 @@ class CFFCompiler {
     if (isCIDFont) {
       // In a CID font, the charset is a mapping of CIDs not SIDs so just
       // create an identity mapping.
+      // nLeft: Glyphs left in range (excluding first) (see the CFF specs).
+      // Having a wrong value for nLeft induces a print issue on MacOS (see
+      // https://bugzilla.mozilla.org/1961423).
+      const nLeft = numGlyphsLessNotDef - 1;
       out = new Uint8Array([
         2, // format
         0, // first CID upper byte
         0, // first CID lower byte
-        (numGlyphsLessNotDef >> 8) & 0xff,
-        numGlyphsLessNotDef & 0xff,
+        (nLeft >> 8) & 0xff,
+        nLeft & 0xff,
       ]);
     } else {
       const length = 1 + numGlyphsLessNotDef * 2;
