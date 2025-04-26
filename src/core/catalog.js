@@ -1607,6 +1607,9 @@ class Catalog {
           // NOTE: the destination is relative to the *remote* document.
           const remoteDest = fetchRemoteDest(action);
           if (remoteDest && typeof url === "string") {
+            // NOTE: We don't use the `updateUrlHash` function here, since
+            // the `createValidAbsoluteUrl` function (see below) already
+            // handles parsing and validation of the final URL.
             url = /* baseUrl = */ url.split("#", 1)[0] + "#" + remoteDest;
           }
           // The 'NewWindow' property, equal to `LinkTarget.BLANK`.

@@ -393,7 +393,13 @@ const defaultOptions = {
   },
   docBaseUrl: {
     /** @type {string} */
-    value: typeof PDFJSDev === "undefined" ? document.URL.split("#", 1)[0] : "",
+    value:
+      typeof PDFJSDev === "undefined"
+        ? // NOTE: We cannot use the `updateUrlHash` function here, because of
+          // the default preferences generation (see `gulpfile.mjs`).
+          // However, the following line is *only* used in development mode.
+          document.URL.split("#", 1)[0]
+        : "",
     kind: OptionKind.API,
   },
   enableHWA: {

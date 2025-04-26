@@ -40,6 +40,7 @@ import {
   PermissionFlag,
   ResponseException,
   shadow,
+  updateUrlHash,
   Util,
   VerbosityLevel,
 } from "./shared/util.js";
@@ -140,6 +141,7 @@ globalThis.pdfjsLib = {
   SupportedImageMimeTypes,
   TextLayer,
   TouchManager,
+  updateUrlHash,
   Util,
   VerbosityLevel,
   version,
@@ -193,6 +195,7 @@ export {
   SupportedImageMimeTypes,
   TextLayer,
   TouchManager,
+  updateUrlHash,
   Util,
   VerbosityLevel,
   version,

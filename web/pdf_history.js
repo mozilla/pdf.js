@@ -17,6 +17,7 @@
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 
 import { isValidRotation, parseQueryString } from "./ui_utils.js";
+import { updateUrlHash } from "pdfjs-lib";
 import { waitOnEventOrTimeout } from "./event_utils.js";
 
 // Heuristic value used when force-resetting `this._blockHashChange`.
@@ -383,10 +384,9 @@ class PDFHistory {
 
     let newUrl;
     if (this._updateUrl && destination?.hash) {
-      const baseUrl = document.location.href.split("#", 1)[0];
-      // Prevent errors in Firefox.
-      if (!baseUrl.startsWith("file://")) {
-        newUrl = `${baseUrl}#${destination.hash}`;
+      const { href, protocol } = document.location;
+      if (protocol !== "file:") {
+        newUrl = updateUrlHash(href, destination.hash);
       }
     }
     if (shouldReplace) {
