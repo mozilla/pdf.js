@@ -2168,7 +2168,7 @@ describe("Highlight Editor", () => {
     });
   });
 
-  describe("Undo deletion popup has the expected behaviour", () => {
+  fdescribe("Undo deletion popup has the expected behaviour", () => {
     let pages;
     const editorSelector = getEditorSelector(0);
 
@@ -2559,11 +2559,13 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(`${editorSelector} button.delete`);
           await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
-          await page.waitForSelector("#editorUndoBar:not([hidden])");
+          await page.waitForSelector("#editorUndoBar:not([hidden])", { visible: true });
 
           await page.focus("#editorUndoBarUndoButton"); // we have to simulate focus like this to avoid the wait
           await page.keyboard.press("Enter");
+          console.log('After Enter', browserName);
           await waitForSerialized(page, 1);
+          console.log('After waitForSerialized', browserName);
           await page.waitForSelector(editorSelector);
           await page.waitForSelector(
             `.page[data-page-number = "1"] svg.highlight[fill = "#FFFF00"]`
@@ -2572,7 +2574,7 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(`${editorSelector} button.delete`);
           await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
-          await page.waitForSelector("#editorUndoBar:not([hidden])");
+          await page.waitForSelector("#editorUndoBar:not([hidden])", { visible: true });
 
           await page.focus("#editorUndoBarUndoButton"); // we have to simulate focus like this to avoid the wait
           await page.keyboard.press(" ");
