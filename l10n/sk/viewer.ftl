@@ -608,9 +608,6 @@ pdfjs-editor-edit-signature-update-button = Aktualizovať
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = Odstrániť podpis
-pdfjs-editor-delete-signature-button-label = Odstrániť podpis
 pdfjs-editor-delete-signature-button1 =
     .title = Odstrániť uložený podpis
 pdfjs-editor-delete-signature-button-label1 = Odstrániť uložený podpis

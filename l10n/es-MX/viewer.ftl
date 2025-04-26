@@ -570,9 +570,6 @@ pdfjs-editor-add-signature-add-button = Agregar
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = Eliminar firma
-pdfjs-editor-delete-signature-button-label = Eliminar firma
 
 ## Editor toolbar
 

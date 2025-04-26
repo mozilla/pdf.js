@@ -602,9 +602,6 @@ pdfjs-editor-edit-signature-update-button = Frissítés
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = Aláírás eltávolítása
-pdfjs-editor-delete-signature-button-label = Aláírás eltávolítása
 pdfjs-editor-delete-signature-button1 =
     .title = Mentett aláírás eltávolítása
 pdfjs-editor-delete-signature-button-label1 = Mentett aláírás eltávolítása

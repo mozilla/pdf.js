@@ -602,9 +602,6 @@ pdfjs-editor-edit-signature-update-button = განახლება
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = ხელმოწერის მოცილება
-pdfjs-editor-delete-signature-button-label = ხელმოწერის მოცილება
 pdfjs-editor-delete-signature-button1 =
     .title = შენახული ხელმოწერის მოცილება
 pdfjs-editor-delete-signature-button-label1 = შენახული ხელმოწერის მოცილება

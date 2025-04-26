@@ -328,6 +328,11 @@ pdfjs-editor-highlight-editor =
 # “Drawing” is a noun, the string is used on the editor for drawings.
 pdfjs-editor-ink-editor =
     .aria-label = Redigering af tegninger
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor1 =
+    .aria-description = Redigering af signatur: { $description }
 pdfjs-editor-stamp-editor =
     .aria-label = Redigering af billeder
 
@@ -597,9 +602,6 @@ pdfjs-editor-edit-signature-update-button = Opdater
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = Fjern underskrift
-pdfjs-editor-delete-signature-button-label = Fjern underskrift
 pdfjs-editor-delete-signature-button1 =
     .title = Fjern gemt underskrift
 pdfjs-editor-delete-signature-button-label1 = Fjern gemt underskrift

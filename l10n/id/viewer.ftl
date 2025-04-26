@@ -590,9 +590,6 @@ pdfjs-editor-edit-signature-update-button = Perbarui
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = Hapus tanda tangan
-pdfjs-editor-delete-signature-button-label = Hapus tanda tangan
 pdfjs-editor-delete-signature-button1 =
     .title = Hapus tanda tangan tersimpan
 pdfjs-editor-delete-signature-button-label1 = Hapus tanda tangan tersimpan
