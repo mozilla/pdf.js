@@ -602,9 +602,6 @@ pdfjs-editor-edit-signature-update-button = Aggiorna
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = Rimuovi firma
-pdfjs-editor-delete-signature-button-label = Rimuovi firma
 pdfjs-editor-delete-signature-button1 =
     .title = Rimuovi firma salvata
 pdfjs-editor-delete-signature-button-label1 = Rimuovi firma salvata
@@ -616,4 +613,3 @@ pdfjs-editor-add-signature-edit-button-label = Modifica descrizione
 ## Edit signature description dialog
 
 pdfjs-editor-edit-signature-dialog-title = Modifica descrizione
-

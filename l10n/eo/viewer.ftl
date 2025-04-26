@@ -322,6 +322,19 @@ pdfjs-editor-signature-button-label = Aldoni subskribon
 
 ## Default editor aria labels
 
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = Redaktilo de elstaraĵo
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = Redaktilo de desegno
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor1 =
+    .aria-description = Redaktilo de subskribo: { $description }
+pdfjs-editor-stamp-editor =
+    .aria-label = Redaktilo de bildo
 
 ## Remove button for the various kind of editor.
 
@@ -351,9 +364,16 @@ pdfjs-editor-stamp-add-image-button-label = Aldoni bildon
 pdfjs-editor-free-highlight-thickness-input = Dikeco
 pdfjs-editor-free-highlight-thickness-title =
     .title = Ŝanĝi dikecon dum elstarigo de netekstaj elementoj
+pdfjs-editor-add-signature-container =
+    .aria-label = Kontrolado de subskriboj kaj konservitaj subskriboj
 pdfjs-editor-signature-add-signature-button =
     .title = Aldoni novan subskribon
 pdfjs-editor-signature-add-signature-button-label = Aldoni novan subskribon
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = Konservita subskribo: { $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Teksta redaktilo
@@ -582,9 +602,9 @@ pdfjs-editor-edit-signature-update-button = Ĝisdatigi
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = Forigi subskribon
-pdfjs-editor-delete-signature-button-label = Forigi subskribon
+pdfjs-editor-delete-signature-button1 =
+    .title = Forigi konservitan subskribon
+pdfjs-editor-delete-signature-button-label1 = Forigi konservitan subskribon
 
 ## Editor toolbar
 

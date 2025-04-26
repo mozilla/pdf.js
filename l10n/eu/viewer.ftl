@@ -316,9 +316,25 @@ pdfjs-highlight-floating-button1 =
     .title = Nabarmendu
     .aria-label = Nabarmendu
 pdfjs-highlight-floating-button-label = Nabarmendu
+pdfjs-editor-signature-button =
+    .title = Gehitu sinadura
+pdfjs-editor-signature-button-label = Gehitu sinadura
 
 ## Default editor aria labels
 
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = Nabarmendutakoen editorea
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = Marrazkien editorea
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor1 =
+    .aria-description = Sinaduren editorea: { $description }
+pdfjs-editor-stamp-editor =
+    .aria-label = Irudien editorea
 
 ## Remove button for the various kind of editor.
 
@@ -348,6 +364,16 @@ pdfjs-editor-stamp-add-image-button-label = Gehitu irudia
 pdfjs-editor-free-highlight-thickness-input = Loditasuna
 pdfjs-editor-free-highlight-thickness-title =
     .title = Aldatu loditasuna testua ez beste elementuak nabarmentzean
+pdfjs-editor-add-signature-container =
+    .aria-label = Sinaduren kontrolak eta gordetako sinadurak
+pdfjs-editor-signature-add-signature-button =
+    .title = Gehitu sinadura berria
+pdfjs-editor-signature-add-signature-button-label = Gehitu sinadura berria
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = Gordetako sinadura: { $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Testu-editorea
@@ -576,12 +602,18 @@ pdfjs-editor-add-signature-error-close-button = Itxi
 
 pdfjs-editor-add-signature-cancel-button = Utzi
 pdfjs-editor-add-signature-add-button = Gehitu
+pdfjs-editor-edit-signature-update-button = Eguneratu
 
 ## Main menu for adding/removing signatures
 
+pdfjs-editor-delete-signature-button1 =
+    .title = Kendu gordetako sinadura
+pdfjs-editor-delete-signature-button-label1 = Kendu gordetako sinadura
 
 ## Editor toolbar
 
+pdfjs-editor-add-signature-edit-button-label = Editatu azalpena
 
 ## Edit signature description dialog
 
+pdfjs-editor-edit-signature-dialog-title = Editatu azalpena

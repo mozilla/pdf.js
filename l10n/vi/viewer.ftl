@@ -590,9 +590,6 @@ pdfjs-editor-edit-signature-update-button = Cập nhật
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = Xoá chữ ký
-pdfjs-editor-delete-signature-button-label = Xoá chữ ký
 pdfjs-editor-delete-signature-button1 =
     .title = Xoá chữ ký đã lưu
 pdfjs-editor-delete-signature-button-label1 = Xoá chữ ký đã lưu

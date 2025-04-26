@@ -601,9 +601,6 @@ pdfjs-editor-edit-signature-update-button = Mbohekopyahu
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = Embogue teraguapy
-pdfjs-editor-delete-signature-button-label = Embogue teraguapy
 pdfjs-editor-delete-signature-button1 =
     .title = Embogue teraguapy ñongatupyre
 pdfjs-editor-delete-signature-button-label1 = Embogue teraguapy ñongatupyre
