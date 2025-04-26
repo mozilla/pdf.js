@@ -270,7 +270,12 @@ let port;
 // 3. Background -> page: Send latest referer and save to history.
 // 4. Page: Invoke callback.
 function setReferer(url, callback) {
-  dnrRequestId ??= crypto.getRandomValues(new Uint32Array(1))[0] % 0x80000000;
+  while (!dnrRequestId) {
+    const randomValue = crypto.getRandomValues(new Uint32Array(1))[0];
+    if (randomValue < 0x80000000) {
+      dnrRequestId = randomValue;
+    }
+  }
   if (!port) {
     // The background page will accept the port, and keep adding the Referer
     // request header to requests to |url| until the port is disconnected.
