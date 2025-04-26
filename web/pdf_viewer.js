@@ -32,6 +32,7 @@ import {
   AnnotationEditorType,
   AnnotationEditorUIManager,
   AnnotationMode,
+  MathClamp,
   PermissionFlag,
   PixelsPerInch,
   shadow,
@@ -2294,7 +2295,7 @@ class PDFViewer {
         newScale = round((newScale * delta).toFixed(2) * 10) / 10;
       } while (--steps > 0);
     }
-    newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+    newScale = MathClamp(newScale, MIN_SCALE, MAX_SCALE);
     this.#setScale(newScale, { noScroll: false, drawingDelay, origin });
   }
 
