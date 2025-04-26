@@ -328,6 +328,11 @@ pdfjs-editor-highlight-editor =
 # “Drawing” is a noun, the string is used on the editor for drawings.
 pdfjs-editor-ink-editor =
     .aria-label = ਡਰਾਇੰਗ ਸੰਪਾਦਕ
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor1 =
+    .aria-description = ਦਸਤਖ਼ਤ ਐਡੀਟਰ: { $description }
 pdfjs-editor-stamp-editor =
     .aria-label = ਚਿੱਤਰ ਸੰਪਾਦਕ
 
@@ -597,9 +602,6 @@ pdfjs-editor-edit-signature-update-button = ਅੱਪਡੇਟ
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = ਦਸਤਖ਼ਤ ਨੂੰ ਹਟਾਓ
-pdfjs-editor-delete-signature-button-label = ਦਸਤਖ਼ਤ ਨੂੰ ਹਟਾਓ
 pdfjs-editor-delete-signature-button1 =
     .title = ਸੰਭਾਲੇ ਹੋਏ ਦਸਤਖ਼ਤ ਨੂੰ ਹਟਾਓ
 pdfjs-editor-delete-signature-button-label1 = ਸੰਭਾਲੇ ਹੋਏ ਦਸਤਖ਼ਤ ਨੂੰ ਹਟਾਓ

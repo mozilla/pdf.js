@@ -602,9 +602,6 @@ pdfjs-editor-edit-signature-update-button = Навсозӣ кардан
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = Тоза кардани имзо
-pdfjs-editor-delete-signature-button-label = Тоза кардани имзо
 pdfjs-editor-delete-signature-button1 =
     .title = Тоза кардани имзои гузошташуда
 pdfjs-editor-delete-signature-button-label1 = Тоза кардани имзои гузошташуда

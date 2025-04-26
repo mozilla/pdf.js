@@ -608,9 +608,6 @@ pdfjs-editor-edit-signature-update-button = Aktualizować
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = Signaturu wotstronić
-pdfjs-editor-delete-signature-button-label = Signaturu wotstronić
 pdfjs-editor-delete-signature-button1 =
     .title = Składowanu signaturu wotstronić
 pdfjs-editor-delete-signature-button-label1 = Składowanu signaturu wotstronić

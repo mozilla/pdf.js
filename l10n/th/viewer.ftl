@@ -570,9 +570,6 @@ pdfjs-editor-edit-signature-update-button = อัปเดต
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = เอาลายเซ็นออก
-pdfjs-editor-delete-signature-button-label = เอาลายเซ็นออก
 
 ## Editor toolbar
 

@@ -572,9 +572,6 @@ pdfjs-editor-edit-signature-update-button = Жаңарту
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = Қолтаңбаны өшіру
-pdfjs-editor-delete-signature-button-label = Қолтаңбаны өшіру
 
 ## Editor toolbar
 
