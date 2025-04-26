@@ -3233,8 +3233,11 @@ describe("FreeText Editor", () => {
           await page.waitForSelector(`${editorSelector} button.delete`);
           await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
+          await page.waitForSelector("#editorUndoBar", { visible: true });
 
-          await page.waitForSelector("#editorUndoBar:not([hidden])");
+          await page.waitForSelector("#editorUndoBarUndoButton", {
+            visible: true,
+          });
           await page.click("#editorUndoBarUndoButton");
           await waitForSerialized(page, 1);
           await page.waitForSelector(editorSelector);
@@ -3292,7 +3295,7 @@ describe("FreeText Editor", () => {
           await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
 
-          await page.waitForSelector("#editorUndoBar:not([hidden])");
+          await page.waitForSelector("#editorUndoBar", { visible: true });
           rect = await getRect(page, ".annotationEditorLayer");
           const secondEditorSelector = getEditorSelector(1);
           const newData = "This is a new text box!";
