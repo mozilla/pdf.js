@@ -614,9 +614,6 @@ pdfjs-editor-edit-signature-update-button = Diweddaru
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = Dileu llofnod
-pdfjs-editor-delete-signature-button-label = Dileu llofnod
 pdfjs-editor-delete-signature-button1 =
     .title = Tynnu llofnod sydd wedi'i gadw
 pdfjs-editor-delete-signature-button-label1 = Tynnwch y llofnod sydd wedi'i gadw

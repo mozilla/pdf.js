@@ -590,9 +590,6 @@ pdfjs-editor-edit-signature-update-button = 업데이트
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = 서명 제거
-pdfjs-editor-delete-signature-button-label = 서명 제거
 pdfjs-editor-delete-signature-button1 =
     .title = 저장된 서명 제거
 pdfjs-editor-delete-signature-button-label1 = 저장된 서명 제거

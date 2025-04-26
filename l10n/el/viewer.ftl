@@ -602,9 +602,6 @@ pdfjs-editor-edit-signature-update-button = Ενημέρωση
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = Αφαίρεση υπογραφής
-pdfjs-editor-delete-signature-button-label = Αφαίρεση υπογραφής
 pdfjs-editor-delete-signature-button1 =
     .title = Αφαίρεση αποθηκευμένης υπογραφής
 pdfjs-editor-delete-signature-button-label1 = Αφαίρεση αποθηκευμένης υπογραφής

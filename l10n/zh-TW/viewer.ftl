@@ -590,9 +590,6 @@ pdfjs-editor-edit-signature-update-button = 更新
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = 移除簽章
-pdfjs-editor-delete-signature-button-label = 移除簽章
 pdfjs-editor-delete-signature-button1 =
     .title = 移除儲存的簽章
 pdfjs-editor-delete-signature-button-label1 = 移除儲存的簽章

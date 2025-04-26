@@ -602,9 +602,6 @@ pdfjs-editor-edit-signature-update-button = Inzorne
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = Gjave firme
-pdfjs-editor-delete-signature-button-label = Gjave firme
 pdfjs-editor-delete-signature-button1 =
     .title = Gjave firme salvade
 pdfjs-editor-delete-signature-button-label1 = Gjave firme salvade

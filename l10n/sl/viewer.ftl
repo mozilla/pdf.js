@@ -332,6 +332,11 @@ pdfjs-editor-highlight-editor =
 # “Drawing” is a noun, the string is used on the editor for drawings.
 pdfjs-editor-ink-editor =
     .aria-label = Urejevalnik risb
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor1 =
+    .aria-description = Urejevalnik podpisov: { $description }
 pdfjs-editor-stamp-editor =
     .aria-label = Urejevalnik slik
 
@@ -603,9 +608,6 @@ pdfjs-editor-edit-signature-update-button = Spremeni
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = Odstrani podpis
-pdfjs-editor-delete-signature-button-label = Odstrani podpis
 pdfjs-editor-delete-signature-button1 =
     .title = Odstrani shranjen podpis
 pdfjs-editor-delete-signature-button-label1 = Odstrani shranjen podpis

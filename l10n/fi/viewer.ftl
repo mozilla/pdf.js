@@ -602,9 +602,6 @@ pdfjs-editor-edit-signature-update-button = Päivitä
 
 ## Main menu for adding/removing signatures
 
-pdfjs-editor-delete-signature-button =
-    .title = Poista allekirjoitus
-pdfjs-editor-delete-signature-button-label = Poista allekirjoitus
 pdfjs-editor-delete-signature-button1 =
     .title = Poista tallennettu allekirjoitus
 pdfjs-editor-delete-signature-button-label1 = Poista tallennettu allekirjoitus
