@@ -14,6 +14,8 @@
  */
 
 .annotationLayer {
+  color-scheme: only light;
+
   --annotation-unfocused-field-background: url("data:image/svg+xml;charset=UTF-8,<svg width='1px' height='1px' xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' style='fill:rgba(0, 54, 255, 0.13);'/></svg>");
   --input-focus-border-color: Highlight;
   --input-focus-outline: 1px solid Canvas;
@@ -305,6 +307,7 @@
 
   .popup {
     background-color: rgb(255 255 153);
+    color: black;
     box-shadow: 0 calc(2px * var(--total-scale-factor))
       calc(5px * var(--total-scale-factor)) rgb(136 136 136);
     border-radius: calc(2px * var(--total-scale-factor));
