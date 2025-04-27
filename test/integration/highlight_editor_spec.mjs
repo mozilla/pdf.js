@@ -2204,8 +2204,11 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(`${editorSelector} button.delete`);
           await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
-          await page.waitForSelector("#editorUndoBar:not([hidden])");
+          await page.waitForSelector("#editorUndoBar", { visible: true });
 
+          await page.waitForSelector("#editorUndoBarUndoButton", {
+            visible: true,
+          });
           await page.click("#editorUndoBarUndoButton");
           await waitForSerialized(page, 1);
           await page.waitForSelector(editorSelector);
@@ -2231,8 +2234,11 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(`${editorSelector} button.delete`);
           await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
-          await page.waitForSelector("#editorUndoBar:not([hidden])");
+          await page.waitForSelector("#editorUndoBar", { visible: true });
 
+          await page.waitForSelector("#editorUndoBarUndoButton", {
+            visible: true,
+          });
           await page.click("#editorUndoBarUndoButton");
           await page.waitForSelector("#editorUndoBar", { hidden: true });
         })
@@ -2254,9 +2260,11 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(`${editorSelector} button.delete`);
           await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
-          await page.waitForSelector("#editorUndoBar:not([hidden])");
+          await page.waitForSelector("#editorUndoBar", { visible: true });
 
-          await page.waitForSelector("#editorUndoBarCloseButton");
+          await page.waitForSelector("#editorUndoBarCloseButton", {
+            visible: true,
+          });
           await page.click("#editorUndoBarCloseButton");
           await page.waitForSelector("#editorUndoBar", { hidden: true });
         })
@@ -2278,7 +2286,7 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(`${editorSelector} button.delete`);
           await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
-          await page.waitForSelector("#editorUndoBar:not([hidden])");
+          await page.waitForSelector("#editorUndoBar", { visible: true });
 
           const newRect = await getSpanRectFromText(page, 1, "Introduction");
           const newX = newRect.x + newRect.width / 2;
@@ -2306,7 +2314,7 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(`${editorSelector} button.delete`);
           await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
-          await page.waitForSelector("#editorUndoBar:not([hidden])");
+          await page.waitForSelector("#editorUndoBar", { visible: true });
 
           await page.evaluate(() => window.print());
           await page.waitForSelector("#editorUndoBar", { hidden: true });
@@ -2329,7 +2337,7 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(`${editorSelector} button.delete`);
           await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
-          await page.waitForSelector("#editorUndoBar:not([hidden])");
+          await page.waitForSelector("#editorUndoBar", { visible: true });
 
           await page.click("#printButton");
           await page.waitForSelector("#editorUndoBar", { hidden: true });
@@ -2352,7 +2360,7 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(`${editorSelector} button.delete`);
           await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
-          await page.waitForSelector("#editorUndoBar:not([hidden])");
+          await page.waitForSelector("#editorUndoBar", { visible: true });
 
           await kbSave(page);
           await page.waitForSelector("#editorUndoBar", { hidden: true });
@@ -2375,7 +2383,7 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(`${editorSelector} button.delete`);
           await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
-          await page.waitForSelector("#editorUndoBar:not([hidden])");
+          await page.waitForSelector("#editorUndoBar", { visible: true });
 
           await page.click("#secondaryToolbarToggleButton");
           await page.click("#lastPage");
@@ -2399,7 +2407,7 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(`${editorSelector} button.delete`);
           await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
-          await page.waitForSelector("#editorUndoBar:not([hidden])");
+          await page.waitForSelector("#editorUndoBar", { visible: true });
 
           await switchToHighlight(page, /* disable */ true);
           await page.waitForSelector("#editorUndoBar", { hidden: true });
@@ -2422,7 +2430,7 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(`${editorSelector} button.delete`);
           await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
-          await page.waitForSelector("#editorUndoBar:not([hidden])");
+          await page.waitForSelector("#editorUndoBar", { visible: true });
           const pdfPath = path.join(__dirname, "../pdfs/basicapi.pdf");
           const pdfData = fs.readFileSync(pdfPath).toString("base64");
           const dataTransfer = await page.evaluateHandle(data => {
@@ -2559,8 +2567,11 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(`${editorSelector} button.delete`);
           await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
-          await page.waitForSelector("#editorUndoBar:not([hidden])");
+          await page.waitForSelector("#editorUndoBar", { visible: true });
 
+          await page.waitForSelector("#editorUndoBarUndoButton", {
+            visible: true,
+          });
           await page.focus("#editorUndoBarUndoButton"); // we have to simulate focus like this to avoid the wait
           await page.keyboard.press("Enter");
           await waitForSerialized(page, 1);
@@ -2572,8 +2583,11 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(`${editorSelector} button.delete`);
           await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
-          await page.waitForSelector("#editorUndoBar:not([hidden])");
+          await page.waitForSelector("#editorUndoBar", { visible: true });
 
+          await page.waitForSelector("#editorUndoBarUndoButton", {
+            visible: true,
+          });
           await page.focus("#editorUndoBarUndoButton"); // we have to simulate focus like this to avoid the wait
           await page.keyboard.press(" ");
           await waitForSerialized(page, 1);
@@ -2600,7 +2614,7 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(`${editorSelector} button.delete`);
           await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
-          await page.waitForSelector("#editorUndoBar:not([hidden])");
+          await page.waitForSelector("#editorUndoBar", { visible: true });
 
           await page.focus("#editorUndoBar");
           await page.keyboard.press("Enter");
