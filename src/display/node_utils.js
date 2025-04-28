@@ -67,6 +67,13 @@ if (isNodeJS) {
         warn("Cannot polyfill `Path2D`, rendering may be broken.");
       }
     }
+    if (!globalThis.navigator?.language) {
+      globalThis.navigator = {
+        language: "en-US",
+        platform: "",
+        userAgent: "",
+      };
+    }
   }
 }
 
