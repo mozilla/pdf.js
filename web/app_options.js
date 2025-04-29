@@ -19,13 +19,16 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   if (
     typeof PDFJSDev !== "undefined" &&
     PDFJSDev.test("LIB") &&
-    typeof navigator === "undefined"
+    !globalThis.navigator?.language
   ) {
-    globalThis.navigator = Object.create(null);
+    globalThis.navigator = {
+      language: "en-US",
+      maxTouchPoints: 1,
+      platform: "",
+      userAgent: "",
+    };
   }
-  const userAgent = navigator.userAgent || "";
-  const platform = navigator.platform || "";
-  const maxTouchPoints = navigator.maxTouchPoints || 1;
+  const { maxTouchPoints, platform, userAgent } = navigator;
 
   const isAndroid = /Android/.test(userAgent);
   const isIOS =
