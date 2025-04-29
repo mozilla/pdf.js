@@ -2248,7 +2248,11 @@ class WidgetAnnotation extends Annotation {
       const appearanceDict = (appearanceStream.dict = new Dict(xref));
       appearanceDict.set("Subtype", Name.get("Form"));
       appearanceDict.set("Resources", resources);
-      appearanceDict.set("BBox", [0, 0, this.width, this.height]);
+      const bbox =
+        rotation % 180 === 0
+          ? [0, 0, this.width, this.height]
+          : [0, 0, this.height, this.width];
+      appearanceDict.set("BBox", bbox);
 
       const rotationMatrix = this.getRotationMatrix(annotationStorage);
       if (rotationMatrix !== IDENTITY_MATRIX) {
