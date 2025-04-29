@@ -632,6 +632,13 @@ function recoverJsURL(str) {
 }
 
 function numberToString(value) {
+  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+    assert(
+      typeof value === "number",
+      `numberToString - the value (${value}) should be a number.`
+    );
+  }
+
   if (Number.isInteger(value)) {
     return value.toString();
   }
