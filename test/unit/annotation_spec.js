@@ -2257,7 +2257,7 @@ describe("annotation", function () {
       );
       expect(newData.data).toEqual(
         "2 0 obj\n<< /Subtype /Form /Resources " +
-          "<< /Font << /Helv 314 0 R>>>> /BBox [0 0 32 10] /Matrix [0 1 -1 0 32 0] /Length 74>> stream\n" +
+          "<< /Font << /Helv 314 0 R>>>> /BBox [0 0 10 32] /Matrix [0 1 -1 0 32 0] /Length 74>> stream\n" +
           "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2 2.94 Td (hello world) Tj " +
           "ET Q EMC\nendstream\nendobj\n"
       );
@@ -3808,7 +3808,7 @@ describe("annotation", function () {
         [
           "2 0 obj",
           "<< /Subtype /Form /Resources << /Font << /Helv 314 0 R>>>> " +
-            "/BBox [0 0 32 10] /Matrix [0 -1 1 0 0 10] /Length 170>> stream",
+            "/BBox [0 0 10 32] /Matrix [0 -1 1 0 0 10] /Length 170>> stream",
           "/Tx BMC q",
           "1 1 10 32 re W n",
           "0.600006 0.756866 0.854904 rg",

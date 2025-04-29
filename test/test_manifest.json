@@ -12093,5 +12093,19 @@
     "md5": "98b19e944339c01c10c503685eee3ad2",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "bug1963407",
+    "file": "pdfs/bug1963407.pdf",
+    "md5": "49d3d2dd42014d978af6e6ad814e5e64",
+    "rounds": 1,
+    "type": "eq",
+    "save": true,
+    "print": true,
+    "annotationStorage": {
+      "24R": {
+        "value": "Hello World"
+      }
+    }
   }
 ]
