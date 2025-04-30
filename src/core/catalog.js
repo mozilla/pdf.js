@@ -691,6 +691,11 @@ class Catalog {
   }
 
   getDestination(id) {
+    // Avoid extra lookup/parsing when all destinations are already available.
+    if (this.hasOwnProperty("destinations")) {
+      return this.destinations[id] ?? null;
+    }
+
     const rawDests = this.#readDests();
     for (const obj of rawDests) {
       if (obj instanceof NameTree || obj instanceof Dict) {
