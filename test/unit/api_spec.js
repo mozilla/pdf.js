@@ -1421,6 +1421,28 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("gets a destination containing Unicode escape sequence (\x1b), from /Dests dictionary with keys using PDFDocEncoding", async function () {
+      if (isNodeJS) {
+        pending("Linked test-cases are not supported in Node.js.");
+      }
+      const loadingTask = getDocument(buildGetDocumentParams("issue19835.pdf"));
+      const pdfDoc = await loadingTask.promise;
+
+      const page3 = await pdfDoc.getPage(3);
+      const annots = await page3.getAnnotations();
+
+      const annot = annots.find(x => x.id === "55R");
+      // Sanity check to make sure that we found the "correct" annotation.
+      expect(annot.dest).toEqual(
+        "\u02d9\u0064\u002a\u0010\u000e\u0061\u00d6\u0002\u005b\u00b7\u201a\u0022\u00c5\u00da\u017e\u00bb\u00d5\u0062\u02dd\u00d1"
+      );
+
+      const dest = await pdfDoc.getDestination(annot.dest);
+      expect(dest).toEqual([28, { name: "XYZ" }, 34.0799999, 73.5199999, 0]);
+
+      await loadingTask.destroy();
+    });
+
     it("gets non-string destination", async function () {
       let numberPromise = pdfDocument.getDestination(4.3);
       let booleanPromise = pdfDocument.getDestination(true);
