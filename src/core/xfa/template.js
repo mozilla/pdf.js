@@ -1321,7 +1321,7 @@ class CheckButton extends XFAObject {
   [$toHTML](availableSpace) {
     // TODO: border, shape and mark.
 
-    const style = toStyle("margin");
+    const style = toStyle(this, "margin");
     const size = measureToString(this.size);
 
     style.width = style.height = size;
