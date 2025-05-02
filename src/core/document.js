@@ -1238,23 +1238,10 @@ class PDFDocument {
   }
 
   async loadXfaImages() {
-    const xfaImagesDict = await this.pdfManager.ensureCatalog("xfaImages");
-    if (!xfaImagesDict) {
+    const xfaImages = await this.pdfManager.ensureCatalog("xfaImages");
+    if (!xfaImages) {
       return;
     }
-
-    const keys = xfaImagesDict.getKeys();
-    const objectLoader = new ObjectLoader(xfaImagesDict, keys, this.xref);
-    await objectLoader.load();
-
-    const xfaImages = new Map();
-    for (const key of keys) {
-      const stream = xfaImagesDict.get(key);
-      if (stream instanceof BaseStream) {
-        xfaImages.set(key, stream.getBytes());
-      }
-    }
-
     this.xfaFactory.setImages(xfaImages);
   }
 
