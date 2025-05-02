@@ -1062,11 +1062,13 @@ class Catalog {
     if (obj instanceof Dict && obj.has("XFAImages")) {
       const nameTree = new NameTree(obj.getRaw("XFAImages"), this.xref);
       for (const [key, value] of nameTree.getAll()) {
-        xfaImages ??= new Dict(this.xref);
-        xfaImages.set(
-          stringToPDFString(key, /* keepEscapeSequence = */ true),
-          value
-        );
+        if (value instanceof BaseStream) {
+          xfaImages ??= new Map();
+          xfaImages.set(
+            stringToPDFString(key, /* keepEscapeSequence = */ true),
+            value.getBytes()
+          );
+        }
       }
     }
     return shadow(this, "xfaImages", xfaImages);
