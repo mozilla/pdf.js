@@ -1292,6 +1292,23 @@ class PDFDocument {
       },
     };
 
+    const parseFont = (fontName, fallbackFontDict, cssFontInfo) =>
+      partialEvaluator
+        .handleSetFont(
+          resources,
+          [Name.get(fontName), 1],
+          /* fontRef = */ null,
+          operatorList,
+          task,
+          initialState,
+          fallbackFontDict,
+          cssFontInfo
+        )
+        .catch(reason => {
+          warn(`loadXfaFonts: "${reason}".`);
+          return null;
+        });
+
     const promises = [];
     for (const [fontName, font] of fontRes) {
       const descriptor = font.get("FontDescriptor");
@@ -1313,21 +1330,7 @@ class PDFDocument {
         continue;
       }
       promises.push(
-        partialEvaluator
-          .handleSetFont(
-            resources,
-            [Name.get(fontName), 1],
-            /* fontRef = */ null,
-            operatorList,
-            task,
-            initialState,
-            /* fallbackFontDict = */ null,
-            /* cssFontInfo = */ cssFontInfo
-          )
-          .catch(function (reason) {
-            warn(`loadXfaFonts: "${reason}".`);
-            return null;
-          })
+        parseFont(fontName, /* fallbackFontDict = */ null, cssFontInfo)
       );
     }
 
@@ -1365,28 +1368,13 @@ class PDFDocument {
         { name: "BoldItalic", fontWeight: 700, italicAngle: 12 },
       ]) {
         const name = `${missing}-${fontInfo.name}`;
-        const dict = getXfaFontDict(name);
 
         promises.push(
-          partialEvaluator
-            .handleSetFont(
-              resources,
-              [Name.get(name), 1],
-              /* fontRef = */ null,
-              operatorList,
-              task,
-              initialState,
-              /* fallbackFontDict = */ dict,
-              /* cssFontInfo = */ {
-                fontFamily: missing,
-                fontWeight: fontInfo.fontWeight,
-                italicAngle: fontInfo.italicAngle,
-              }
-            )
-            .catch(function (reason) {
-              warn(`loadXfaFonts: "${reason}".`);
-              return null;
-            })
+          parseFont(name, getXfaFontDict(name), {
+            fontFamily: missing,
+            fontWeight: fontInfo.fontWeight,
+            italicAngle: fontInfo.italicAngle,
+          })
         );
       }
     }
