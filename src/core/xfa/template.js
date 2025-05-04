@@ -3412,8 +3412,7 @@ class Image extends StringObject {
       return HTMLResult.EMPTY;
     }
 
-    let buffer =
-      this[$globalData].images && this[$globalData].images.get(this.href);
+    let buffer = this[$globalData].images?.get(this.href);
     if (!buffer && (this.href || !this[$content])) {
       // In general, we don't get remote data and use what we have
       // in the pdf itself, so no picture for non null href.
