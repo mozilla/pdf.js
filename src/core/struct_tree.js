@@ -118,7 +118,7 @@ class StructTreeRoot {
     pdfManager,
     changes,
   }) {
-    const root = pdfManager.catalog.cloneDict();
+    const root = await pdfManager.ensureCatalog("cloneDict");
     const cache = new RefSetCache();
     cache.put(catalogRef, root);
 
