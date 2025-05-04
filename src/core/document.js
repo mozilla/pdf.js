@@ -1237,7 +1237,7 @@ class PDFDocument {
     return this.xfaFactory ? this.xfaFactory.getPages() : null;
   }
 
-  async loadXfaImages() {
+  async #loadXfaImages() {
     const xfaImages = await this.pdfManager.ensureCatalog("xfaImages");
     if (!xfaImages) {
       return;
@@ -1245,7 +1245,7 @@ class PDFDocument {
     this.xfaFactory.setImages(xfaImages);
   }
 
-  async loadXfaFonts(handler, task) {
+  async #loadXfaFonts(handler, task) {
     const acroForm = await this.pdfManager.ensureCatalog("acroForm");
     if (!acroForm) {
       return;
@@ -1264,18 +1264,19 @@ class PDFDocument {
 
     const options = Object.assign(
       Object.create(null),
-      this.pdfManager.evaluatorOptions
+      this.pdfManager.evaluatorOptions,
+      { useSystemFonts: false }
     );
-    options.useSystemFonts = false;
+    const { builtInCMapCache, fontCache, standardFontDataCache } = this.catalog;
 
     const partialEvaluator = new PartialEvaluator({
       xref: this.xref,
       handler,
       pageIndex: -1,
       idFactory: this._globalIdFactory,
-      fontCache: this.catalog.fontCache,
-      builtInCMapCache: this.catalog.builtInCMapCache,
-      standardFontDataCache: this.catalog.standardFontDataCache,
+      fontCache,
+      builtInCMapCache,
+      standardFontDataCache,
       options,
     });
     const operatorList = new OperatorList();
@@ -1381,6 +1382,15 @@ class PDFDocument {
 
     await Promise.all(promises);
     this.xfaFactory.appendFonts(pdfFonts, reallyMissingFonts);
+  }
+
+  loadXfaResources(handler, task) {
+    return Promise.all([
+      this.#loadXfaFonts(handler, task).catch(() => {
+        // Ignore errors, to allow the document to load.
+      }),
+      this.#loadXfaImages(),
+    ]);
   }
 
   serializeXfaData(annotationStorage) {
