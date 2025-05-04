@@ -43,7 +43,7 @@ class XFAFactory {
   }
 
   isValid() {
-    return this.root && this.form;
+    return !!(this.root && this.form);
   }
 
   /**

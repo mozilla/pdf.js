@@ -1237,7 +1237,7 @@ class PDFDocument {
     return this.xfaFactory ? this.xfaFactory.getPages() : null;
   }
 
-  async loadXfaImages() {
+  async #loadXfaImages() {
     const xfaImages = await this.pdfManager.ensureCatalog("xfaImages");
     if (!xfaImages) {
       return;
@@ -1245,7 +1245,7 @@ class PDFDocument {
     this.xfaFactory.setImages(xfaImages);
   }
 
-  async loadXfaFonts(handler, task) {
+  async #loadXfaFonts(handler, task) {
     const acroForm = await this.pdfManager.ensureCatalog("acroForm");
     if (!acroForm) {
       return;
@@ -1264,18 +1264,19 @@ class PDFDocument {
 
     const options = Object.assign(
       Object.create(null),
-      this.pdfManager.evaluatorOptions
+      this.pdfManager.evaluatorOptions,
+      { useSystemFonts: false }
     );
-    options.useSystemFonts = false;
+    const { builtInCMapCache, fontCache, standardFontDataCache } = this.catalog;
 
     const partialEvaluator = new PartialEvaluator({
       xref: this.xref,
       handler,
       pageIndex: -1,
       idFactory: this._globalIdFactory,
-      fontCache: this.catalog.fontCache,
-      builtInCMapCache: this.catalog.builtInCMapCache,
-      standardFontDataCache: this.catalog.standardFontDataCache,
+      fontCache,
+      builtInCMapCache,
+      standardFontDataCache,
       options,
     });
     const operatorList = new OperatorList();
@@ -1291,6 +1292,23 @@ class PDFDocument {
         return this;
       },
     };
+
+    const parseFont = (fontName, fallbackFontDict, cssFontInfo) =>
+      partialEvaluator
+        .handleSetFont(
+          resources,
+          [Name.get(fontName), 1],
+          /* fontRef = */ null,
+          operatorList,
+          task,
+          initialState,
+          fallbackFontDict,
+          cssFontInfo
+        )
+        .catch(reason => {
+          warn(`loadXfaFonts: "${reason}".`);
+          return null;
+        });
 
     const promises = [];
     for (const [fontName, font] of fontRes) {
@@ -1313,21 +1331,7 @@ class PDFDocument {
         continue;
       }
       promises.push(
-        partialEvaluator
-          .handleSetFont(
-            resources,
-            [Name.get(fontName), 1],
-            /* fontRef = */ null,
-            operatorList,
-            task,
-            initialState,
-            /* fallbackFontDict = */ null,
-            /* cssFontInfo = */ cssFontInfo
-          )
-          .catch(function (reason) {
-            warn(`loadXfaFonts: "${reason}".`);
-            return null;
-          })
+        parseFont(fontName, /* fallbackFontDict = */ null, cssFontInfo)
       );
     }
 
@@ -1365,34 +1369,28 @@ class PDFDocument {
         { name: "BoldItalic", fontWeight: 700, italicAngle: 12 },
       ]) {
         const name = `${missing}-${fontInfo.name}`;
-        const dict = getXfaFontDict(name);
 
         promises.push(
-          partialEvaluator
-            .handleSetFont(
-              resources,
-              [Name.get(name), 1],
-              /* fontRef = */ null,
-              operatorList,
-              task,
-              initialState,
-              /* fallbackFontDict = */ dict,
-              /* cssFontInfo = */ {
-                fontFamily: missing,
-                fontWeight: fontInfo.fontWeight,
-                italicAngle: fontInfo.italicAngle,
-              }
-            )
-            .catch(function (reason) {
-              warn(`loadXfaFonts: "${reason}".`);
-              return null;
-            })
+          parseFont(name, getXfaFontDict(name), {
+            fontFamily: missing,
+            fontWeight: fontInfo.fontWeight,
+            italicAngle: fontInfo.italicAngle,
+          })
         );
       }
     }
 
     await Promise.all(promises);
     this.xfaFactory.appendFonts(pdfFonts, reallyMissingFonts);
+  }
+
+  loadXfaResources(handler, task) {
+    return Promise.all([
+      this.#loadXfaFonts(handler, task).catch(() => {
+        // Ignore errors, to allow the document to load.
+      }),
+      this.#loadXfaImages(),
+    ]);
   }
 
   serializeXfaData(annotationStorage) {
