@@ -617,7 +617,9 @@ class WorkerMessageHandler {
         }
 
         if (isPureXfa) {
-          promises.push(pdfManager.serializeXfaData(annotationStorage));
+          promises.push(
+            pdfManager.ensureDoc("serializeXfaData", [annotationStorage])
+          );
         } else {
           for (let pageIndex = 0; pageIndex < numPages; pageIndex++) {
             promises.push(
