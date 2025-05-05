@@ -112,11 +112,22 @@ class PDFImage {
           bitsPerComponent: image.bitsPerComponent,
         } = JpxImage.parseImageProperties(image.stream));
         image.stream.reset();
+        const reducePower = ImageResizer.getReducePowerForJPX(
+          image.width,
+          image.height,
+          image.numComps
+        );
         this.jpxDecoderOptions = {
           numComponents: 0,
           isIndexedColormap: false,
           smaskInData: dict.has("SMaskInData"),
+          reducePower,
         };
+        if (reducePower) {
+          const factor = 2 ** reducePower;
+          image.width = Math.ceil(image.width / factor);
+          image.height = Math.ceil(image.height / factor);
+        }
         break;
       case "JBIG2Decode":
         image.bitsPerComponent = 1;

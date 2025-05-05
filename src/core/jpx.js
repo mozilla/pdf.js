@@ -92,7 +92,12 @@ class JpxImage {
 
   static async decode(
     bytes,
-    { numComponents = 4, isIndexedColormap = false, smaskInData = false } = {}
+    {
+      numComponents = 4,
+      isIndexedColormap = false,
+      smaskInData = false,
+      reducePower = 0,
+    } = {}
   ) {
     if (!this.#modulePromise) {
       const { promise, resolve } = Promise.withResolvers();
@@ -119,13 +124,14 @@ class JpxImage {
     try {
       const size = bytes.length;
       ptr = module._malloc(size);
-      module.HEAPU8.set(bytes, ptr);
+      module.writeArrayToMemory(bytes, ptr);
       const ret = module._jp2_decode(
         ptr,
         size,
         numComponents > 0 ? numComponents : 0,
         !!isIndexedColormap,
-        !!smaskInData
+        !!smaskInData,
+        reducePower
       );
       if (ret) {
         const { errorMessages } = module;
