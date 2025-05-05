@@ -3508,6 +3508,27 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("gets all annotations with `disableAutoFetch` set", async function () {
+      if (isNodeJS) {
+        pending("Linked test-cases are not supported in Node.js.");
+      }
+
+      const loadingTask = getDocument(
+        buildGetDocumentParams("pdf.pdf", {
+          disableRange: false,
+          disableStream: true,
+          disableAutoFetch: true,
+        })
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(5);
+      const annotations = await pdfPage.getAnnotations();
+
+      expect(annotations.length).toEqual(33);
+
+      await loadingTask.destroy();
+    });
+
     it("gets text content", async function () {
       const { items, styles, lang } = await page.getTextContent();
 

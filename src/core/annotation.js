@@ -74,40 +74,49 @@ import { OperatorList } from "./operator_list.js";
 import { XFAFactory } from "./xfa/factory.js";
 
 class AnnotationFactory {
-  static createGlobals(pdfManager) {
-    return Promise.all([
-      pdfManager.ensureCatalog("acroForm"),
-      pdfManager.ensureDoc("xfaDatasets"),
-      pdfManager.ensureCatalog("structTreeRoot"),
-      // Only necessary to prevent the `Catalog.baseUrl`-getter, used
-      // with some Annotations, from throwing and thus breaking parsing:
-      pdfManager.ensureCatalog("baseUrl"),
-      // Only necessary to prevent the `Catalog.attachments`-getter, used
-      // with "GoToE" actions, from throwing and thus breaking parsing:
-      pdfManager.ensureCatalog("attachments"),
-      pdfManager.ensureCatalog("globalColorSpaceCache"),
-    ]).then(
-      ([
+  static async createGlobals(pdfManager, xref) {
+    try {
+      const [
         acroForm,
         xfaDatasets,
         structTreeRoot,
         baseUrl,
         attachments,
         globalColorSpaceCache,
-      ]) => ({
+      ] = await Promise.all([
+        pdfManager.ensureCatalog("acroForm").then(async obj => {
+          if (obj instanceof Dict) {
+            // NOTE: The list of keys here MUST be kept in sync with
+            // the /AcroForm dictionary lookups used below in this file.
+            await ObjectLoader.load(obj, ["DA", "DR", "NeedAppearances"], xref);
+            return obj;
+          }
+          return Dict.empty;
+        }),
+        pdfManager.ensureDoc("xfaDatasets"),
+        pdfManager.ensureCatalog("structTreeRoot"),
+        // Only necessary to prevent the `Catalog.baseUrl`-getter, used
+        // with some Annotations, from throwing and thus breaking parsing:
+        pdfManager.ensureCatalog("baseUrl"),
+        // Only necessary to prevent the `Catalog.attachments`-getter, used
+        // with "GoToE" actions, from throwing and thus breaking parsing:
+        pdfManager.ensureCatalog("attachments"),
+        pdfManager.ensureCatalog("globalColorSpaceCache"),
+      ]);
+
+      return {
         pdfManager,
-        acroForm: acroForm instanceof Dict ? acroForm : Dict.empty,
+        acroForm,
         xfaDatasets,
         structTreeRoot,
         baseUrl,
         attachments,
         globalColorSpaceCache,
-      }),
-      reason => {
-        warn(`createGlobals: "${reason}".`);
-        return null;
-      }
-    );
+      };
+    } catch (ex) {
+      warn(`createGlobals: "${ex}".`);
+      return null;
+    }
   }
 
   /**
@@ -130,39 +139,14 @@ class AnnotationFactory {
     ref,
     annotationGlobals,
     idFactory,
-    collectFields,
-    orphanFields,
-    pageRef
+    collectFields = false,
+    orphanFields = null,
+    pageRef = null
   ) {
     const pageIndex = collectFields
       ? await this._getPageIndex(xref, ref, annotationGlobals.pdfManager)
       : null;
 
-    return annotationGlobals.pdfManager.ensure(this, "_create", [
-      xref,
-      ref,
-      annotationGlobals,
-      idFactory,
-      collectFields,
-      orphanFields,
-      pageIndex,
-      pageRef,
-    ]);
-  }
-
-  /**
-   * @private
-   */
-  static _create(
-    xref,
-    ref,
-    annotationGlobals,
-    idFactory,
-    collectFields = false,
-    orphanFields = null,
-    pageIndex = null,
-    pageRef = null
-  ) {
     const dict = xref.fetchIfRef(ref);
     if (!(dict instanceof Dict)) {
       return undefined;

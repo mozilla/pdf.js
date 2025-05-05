@@ -14,9 +14,9 @@
  */
 
 import { Dict, Ref, RefSet } from "./primitives.js";
+import { unreachable, warn } from "../shared/util.js";
 import { BaseStream } from "./base_stream.js";
 import { MissingDataException } from "./core_utils.js";
-import { warn } from "../shared/util.js";
 
 function mayHaveChildren(value) {
   return (
@@ -56,22 +56,29 @@ function addChildren(node, nodesToVisit) {
 class ObjectLoader {
   refSet = new RefSet();
 
-  constructor(dict, keys, xref) {
-    this.dict = dict;
+  constructor(obj, keys, xref) {
+    this.obj = obj;
     this.keys = keys;
     this.xref = xref;
   }
 
   async load() {
-    const { keys, dict } = this;
+    const { obj, keys } = this;
     // Setup the initial nodes to visit.
     const nodesToVisit = [];
-    for (const key of keys) {
-      const rawValue = dict.getRaw(key);
-      // Skip nodes that are guaranteed to be empty.
-      if (rawValue !== undefined) {
-        nodesToVisit.push(rawValue);
+
+    if (obj instanceof Dict) {
+      for (const key of keys) {
+        const rawValue = obj.getRaw(key);
+        // Skip nodes that are guaranteed to be empty.
+        if (rawValue !== undefined) {
+          nodesToVisit.push(rawValue);
+        }
       }
+    } else if (Array.isArray(obj)) {
+      nodesToVisit.push(...obj.filter(x => x !== undefined));
+    } else {
+      unreachable(`ObjectLoader.load - unexpected type: "${obj}".`);
     }
     await this.#walk(nodesToVisit);
 

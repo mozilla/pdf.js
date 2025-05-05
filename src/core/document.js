@@ -806,6 +806,8 @@ class Page {
         if (!annotationGlobals) {
           return [];
         }
+        // Ensure that all /Annots are loaded.
+        await ObjectLoader.load(annots, null, this.xref);
 
         const orphanFields = fieldObjects?.orphanFields;
         const annotationPromises = [];
@@ -1871,20 +1873,19 @@ class PDFDocument {
         if (!formInfo.hasFields) {
           return null;
         }
-
-        const [annotationGlobals, acroForm] = await Promise.all([
-          this.pdfManager.ensureDoc("annotationGlobals"),
-          this.pdfManager.ensureCatalog("acroForm"),
-        ]);
+        const annotationGlobals = await this.annotationGlobals;
         if (!annotationGlobals) {
           return null;
         }
+        const { acroForm } = annotationGlobals;
+        // Ensure that all /Fields are loaded.
+        await ObjectLoader.load(acroForm, ["Fields"], this.xref);
 
         const visitedRefs = new RefSet();
         const allFields = Object.create(null);
         const fieldPromises = new Map();
         const orphanFields = new RefSetCache();
-        for (const fieldRef of await acroForm.getAsync("Fields")) {
+        for (const fieldRef of acroForm.get("Fields")) {
           await this.#collectFieldObjects(
             "",
             null,
@@ -1962,7 +1963,7 @@ class PDFDocument {
     return shadow(
       this,
       "annotationGlobals",
-      AnnotationFactory.createGlobals(this.pdfManager)
+      AnnotationFactory.createGlobals(this.pdfManager, this.xref)
     );
   }
 }
