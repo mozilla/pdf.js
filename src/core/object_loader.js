@@ -54,7 +54,7 @@ function addChildren(node, nodesToVisit) {
  * entire PDF document object graph to be traversed.
  */
 class ObjectLoader {
-  refSet = null;
+  refSet = new RefSet();
 
   constructor(dict, keys, xref) {
     this.dict = dict;
@@ -63,13 +63,7 @@ class ObjectLoader {
   }
 
   async load() {
-    // Don't walk the graph if all the data is already loaded.
-    if (this.xref.stream.isDataLoaded) {
-      return;
-    }
-
     const { keys, dict } = this;
-    this.refSet = new RefSet();
     // Setup the initial nodes to visit.
     const nodesToVisit = [];
     for (const key of keys) {
@@ -143,6 +137,16 @@ class ObjectLoader {
       }
       await this.#walk(nodesToRevisit);
     }
+  }
+
+  static async load(obj, keys, xref) {
+    // Don't walk the graph if all the data is already loaded.
+    if (xref.stream.isDataLoaded) {
+      return;
+    }
+    // eslint-disable-next-line no-restricted-syntax
+    const objLoader = new ObjectLoader(obj, keys, xref);
+    await objLoader.load();
   }
 }
 
