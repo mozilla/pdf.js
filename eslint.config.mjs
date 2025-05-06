@@ -304,6 +304,11 @@ export default [
           message: "Use `Name.get()` rather than `new Name()`.",
         },
         {
+          selector: "NewExpression[callee.name='ObjectLoader']",
+          message:
+            "Use `ObjectLoader.load()` rather than `new ObjectLoader()`.",
+        },
+        {
           selector: "NewExpression[callee.name='Ref']",
           message: "Use `Ref.get()` rather than `new Ref()`.",
         },
