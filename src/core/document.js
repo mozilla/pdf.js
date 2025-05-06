@@ -417,8 +417,7 @@ class Page {
     // TODO: add async `_getInheritableProperty` and remove this.
     await (this.resourcesPromise ??= this.pdfManager.ensure(this, "resources"));
 
-    const objectLoader = new ObjectLoader(this.resources, keys, this.xref);
-    await objectLoader.load();
+    await ObjectLoader.load(this.resources, keys, this.xref);
   }
 
   async #getMergedResources(streamDict, keys) {
@@ -430,8 +429,7 @@ class Page {
     if (!(localResources instanceof Dict && localResources.size)) {
       return this.resources;
     }
-    const objectLoader = new ObjectLoader(localResources, keys, this.xref);
-    await objectLoader.load();
+    await ObjectLoader.load(localResources, keys, this.xref);
 
     return Dict.merge({
       xref: this.xref,
@@ -1254,8 +1252,7 @@ class PDFDocument {
     if (!(resources instanceof Dict)) {
       return;
     }
-    const objectLoader = new ObjectLoader(resources, ["Font"], this.xref);
-    await objectLoader.load();
+    await ObjectLoader.load(resources, ["Font"], this.xref);
 
     const fontRes = resources.get("Font");
     if (!(fontRes instanceof Dict)) {
