@@ -79,6 +79,8 @@ import { XRef } from "./xref.js";
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
 class Page {
+  #resourcesPromise = null;
+
   constructor({
     pdfManager,
     xref,
@@ -108,7 +110,6 @@ class Page {
     this.systemFontCache = systemFontCache;
     this.nonBlendModesSet = nonBlendModesSet;
     this.evaluatorOptions = pdfManager.evaluatorOptions;
-    this.resourcesPromise = null;
     this.xfaFactory = xfaFactory;
 
     const idCounters = {
@@ -400,7 +401,10 @@ class Page {
 
   async loadResources(keys) {
     // TODO: add async `#getInheritableProperty` and remove this.
-    await (this.resourcesPromise ??= this.pdfManager.ensure(this, "resources"));
+    await (this.#resourcesPromise ??= this.pdfManager.ensure(
+      this,
+      "resources"
+    ));
 
     await ObjectLoader.load(this.resources, keys, this.xref);
   }
@@ -876,6 +880,10 @@ function find(stream, signature, limit = 1024, backwards = false) {
  * The `PDFDocument` class holds all the (worker-thread) data of the PDF file.
  */
 class PDFDocument {
+  #pagePromises = new Map();
+
+  #version = null;
+
   constructor(pdfManager, stream) {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
@@ -892,8 +900,6 @@ class PDFDocument {
     this.pdfManager = pdfManager;
     this.stream = stream;
     this.xref = new XRef(stream, pdfManager);
-    this._pagePromises = new Map();
-    this._version = null;
 
     const idCounters = {
       font: 0,
@@ -1014,7 +1020,7 @@ class PDFDocument {
     }
 
     if (PDF_VERSION_REGEXP.test(version)) {
-      this._version = version;
+      this.#version = version;
     } else {
       warn(`Invalid PDF header version: ${version}`);
     }
@@ -1347,7 +1353,7 @@ class PDFDocument {
    * the catalog, if present, should overwrite the version from the header.
    */
   get version() {
-    return this.catalog.version || this._version;
+    return this.catalog.version || this.#version;
   }
 
   get formInfo() {
@@ -1554,7 +1560,7 @@ class PDFDocument {
   }
 
   getPage(pageIndex) {
-    const cachedPromise = this._pagePromises.get(pageIndex);
+    const cachedPromise = this.#pagePromises.get(pageIndex);
     if (cachedPromise) {
       return cachedPromise;
     }
@@ -1588,7 +1594,7 @@ class PDFDocument {
         })
     );
 
-    this._pagePromises.set(pageIndex, promise);
+    this.#pagePromises.set(pageIndex, promise);
     return promise;
   }
 
@@ -1603,7 +1609,7 @@ class PDFDocument {
         // Clear out the various caches to ensure that we haven't stored any
         // inconsistent and/or incorrect state, since that could easily break
         // subsequent `this.getPage` calls.
-        this._pagePromises.delete(0);
+        this.#pagePromises.delete(0);
         await this.cleanup();
 
         throw new XRefParseException();
@@ -1642,7 +1648,7 @@ class PDFDocument {
       // Clear out the various caches to ensure that we haven't stored any
       // inconsistent and/or incorrect state, since that could easily break
       // subsequent `this.getPage` calls.
-      this._pagePromises.delete(numPages - 1);
+      this.#pagePromises.delete(numPages - 1);
       await this.cleanup();
 
       if (reason instanceof XRefEntryException && !recoveryMode) {
@@ -1689,7 +1695,7 @@ class PDFDocument {
           );
         }
 
-        this._pagePromises.set(pageIndex, promise);
+        this.#pagePromises.set(pageIndex, promise);
       }
       catalog.setActualNumPages(pagesTree.size);
     }
