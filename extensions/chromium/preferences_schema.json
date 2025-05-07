@@ -172,6 +172,10 @@
       "enum": [-1, 0, 3, 15],
       "default": 0
     },
+    "capCanvasAreaFactor": {
+      "type": "integer",
+      "default": 200
+    },
     "enablePermissions": {
       "type": "boolean",
       "default": false
