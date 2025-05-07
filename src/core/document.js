@@ -141,10 +141,7 @@ class Page {
     });
   }
 
-  /**
-   * @private
-   */
-  _getInheritableProperty(key, getArray = false) {
+  #getInheritableProperty(key, getArray = false) {
     const value = getInheritableProperty({
       dict: this.pageDict,
       key,
@@ -168,7 +165,7 @@ class Page {
     // For robustness: The spec states that a \Resources entry has to be
     // present, but can be empty. Some documents still omit it; in this case
     // we return an empty dictionary.
-    const resources = this._getInheritableProperty("Resources");
+    const resources = this.#getInheritableProperty("Resources");
 
     return shadow(
       this,
@@ -177,12 +174,12 @@ class Page {
     );
   }
 
-  _getBoundingBox(name) {
+  #getBoundingBox(name) {
     if (this.xfaData) {
       return this.xfaData.bbox;
     }
     const box = lookupNormalRect(
-      this._getInheritableProperty(name, /* getArray = */ true),
+      this.#getInheritableProperty(name, /* getArray = */ true),
       null
     );
 
@@ -200,7 +197,7 @@ class Page {
     return shadow(
       this,
       "mediaBox",
-      this._getBoundingBox("MediaBox") || LETTER_SIZE_MEDIABOX
+      this.#getBoundingBox("MediaBox") || LETTER_SIZE_MEDIABOX
     );
   }
 
@@ -209,7 +206,7 @@ class Page {
     return shadow(
       this,
       "cropBox",
-      this._getBoundingBox("CropBox") || this.mediaBox
+      this.#getBoundingBox("CropBox") || this.mediaBox
     );
   }
 
@@ -240,7 +237,7 @@ class Page {
   }
 
   get rotate() {
-    let rotate = this._getInheritableProperty("Rotate") || 0;
+    let rotate = this.#getInheritableProperty("Rotate") || 0;
 
     // Normalize rotation so it's a multiple of 90 and between 0 and 270.
     if (rotate % 90 !== 0) {
@@ -255,10 +252,7 @@ class Page {
     return shadow(this, "rotate", rotate);
   }
 
-  /**
-   * @private
-   */
-  _onSubStreamError(reason, objId) {
+  #onSubStreamError(reason, objId) {
     if (this.evaluatorOptions.ignoreErrors) {
       warn(`getContentStream - ignoring sub-stream (${objId}): "${reason}".`);
       return;
@@ -278,7 +272,7 @@ class Page {
     if (Array.isArray(content)) {
       return new StreamsSequenceStream(
         content,
-        this._onSubStreamError.bind(this)
+        this.#onSubStreamError.bind(this)
       );
     }
     // Replace non-existent page content with empty content.
@@ -405,7 +399,7 @@ class Page {
   }
 
   async loadResources(keys) {
-    // TODO: add async `_getInheritableProperty` and remove this.
+    // TODO: add async `#getInheritableProperty` and remove this.
     await (this.resourcesPromise ??= this.pdfManager.ensure(this, "resources"));
 
     await ObjectLoader.load(this.resources, keys, this.xref);
@@ -742,7 +736,7 @@ class Page {
   }
 
   get annotations() {
-    const annots = this._getInheritableProperty("Annots");
+    const annots = this.#getInheritableProperty("Annots");
     return shadow(this, "annotations", Array.isArray(annots) ? annots : []);
   }
 
@@ -1045,10 +1039,7 @@ class PDFDocument {
     return shadow(this, "numPages", num);
   }
 
-  /**
-   * @private
-   */
-  _hasOnlyDocumentSignatures(fields, recursionDepth = 0) {
+  #hasOnlyDocumentSignatures(fields, recursionDepth = 0) {
     const RECURSION_LIMIT = 10;
 
     if (!Array.isArray(fields)) {
@@ -1061,10 +1052,10 @@ class PDFDocument {
       }
       if (field.has("Kids")) {
         if (++recursionDepth > RECURSION_LIMIT) {
-          warn("_hasOnlyDocumentSignatures: maximum recursion depth reached");
+          warn("#hasOnlyDocumentSignatures: maximum recursion depth reached");
           return false;
         }
-        return this._hasOnlyDocumentSignatures(
+        return this.#hasOnlyDocumentSignatures(
           field.get("Kids"),
           recursionDepth
         );
@@ -1393,7 +1384,7 @@ class PDFDocument {
       const sigFlags = acroForm.get("SigFlags");
       const hasSignatures = !!(sigFlags & 0x1);
       const hasOnlyDocumentSignatures =
-        hasSignatures && this._hasOnlyDocumentSignatures(fields);
+        hasSignatures && this.#hasOnlyDocumentSignatures(fields);
       formInfo.hasAcroForm = hasFields && !hasOnlyDocumentSignatures;
       formInfo.hasSignatures = hasSignatures;
     } catch (ex) {
@@ -1520,7 +1511,7 @@ class PDFDocument {
     ]);
   }
 
-  async _getLinearizationPage(pageIndex) {
+  async #getLinearizationPage(pageIndex) {
     const { catalog, linearization, xref } = this;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
@@ -1573,7 +1564,7 @@ class PDFDocument {
     if (xfaFactory) {
       promise = Promise.resolve([Dict.empty, null]);
     } else if (linearization?.pageFirst === pageIndex) {
-      promise = this._getLinearizationPage(pageIndex);
+      promise = this.#getLinearizationPage(pageIndex);
     } else {
       promise = catalog.getPageDict(pageIndex);
     }
