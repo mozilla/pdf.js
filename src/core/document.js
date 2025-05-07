@@ -1363,7 +1363,7 @@ class PDFDocument {
       hasXfa: false,
       hasSignatures: false,
     };
-    const acroForm = this.catalog.acroForm;
+    const { acroForm } = this.catalog;
     if (!acroForm) {
       return shadow(this, "formInfo", formInfo);
     }
@@ -1403,22 +1403,22 @@ class PDFDocument {
   }
 
   get documentInfo() {
+    const { catalog, formInfo, xref } = this;
+
     const docInfo = {
       PDFFormatVersion: this.version,
-      Language: this.catalog.lang,
-      EncryptFilterName: this.xref.encrypt
-        ? this.xref.encrypt.filterName
-        : null,
+      Language: catalog.lang,
+      EncryptFilterName: xref.encrypt?.filterName ?? null,
       IsLinearized: !!this.linearization,
-      IsAcroFormPresent: this.formInfo.hasAcroForm,
-      IsXFAPresent: this.formInfo.hasXfa,
-      IsCollectionPresent: !!this.catalog.collection,
-      IsSignaturesPresent: this.formInfo.hasSignatures,
+      IsAcroFormPresent: formInfo.hasAcroForm,
+      IsXFAPresent: formInfo.hasXfa,
+      IsCollectionPresent: !!catalog.collection,
+      IsSignaturesPresent: formInfo.hasSignatures,
     };
 
     let infoDict;
     try {
-      infoDict = this.xref.trailer.get("Info");
+      infoDict = xref.trailer.get("Info");
     } catch (err) {
       if (err instanceof MissingDataException) {
         throw err;
