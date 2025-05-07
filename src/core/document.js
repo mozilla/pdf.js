@@ -125,6 +125,22 @@ class Page {
     };
   }
 
+  #createPartialEvaluator(handler) {
+    return new PartialEvaluator({
+      xref: this.xref,
+      handler,
+      pageIndex: this.pageIndex,
+      idFactory: this._localIdFactory,
+      fontCache: this.fontCache,
+      builtInCMapCache: this.builtInCMapCache,
+      standardFontDataCache: this.standardFontDataCache,
+      globalColorSpaceCache: this.globalColorSpaceCache,
+      globalImageCache: this.globalImageCache,
+      systemFontCache: this.systemFontCache,
+      options: this.evaluatorOptions,
+    });
+  }
+
   /**
    * @private
    */
@@ -322,20 +338,7 @@ class Page {
     if (this.xfaFactory) {
       throw new Error("XFA: Cannot save new annotations.");
     }
-
-    const partialEvaluator = new PartialEvaluator({
-      xref: this.xref,
-      handler,
-      pageIndex: this.pageIndex,
-      idFactory: this._localIdFactory,
-      fontCache: this.fontCache,
-      builtInCMapCache: this.builtInCMapCache,
-      standardFontDataCache: this.standardFontDataCache,
-      globalColorSpaceCache: this.globalColorSpaceCache,
-      globalImageCache: this.globalImageCache,
-      systemFontCache: this.systemFontCache,
-      options: this.evaluatorOptions,
-    });
+    const partialEvaluator = this.#createPartialEvaluator(handler);
 
     const deletedAnnotations = new RefSetCache();
     const existingAnnotations = new RefSet();
@@ -378,19 +381,7 @@ class Page {
   }
 
   async save(handler, task, annotationStorage, changes) {
-    const partialEvaluator = new PartialEvaluator({
-      xref: this.xref,
-      handler,
-      pageIndex: this.pageIndex,
-      idFactory: this._localIdFactory,
-      fontCache: this.fontCache,
-      builtInCMapCache: this.builtInCMapCache,
-      standardFontDataCache: this.standardFontDataCache,
-      globalColorSpaceCache: this.globalColorSpaceCache,
-      globalImageCache: this.globalImageCache,
-      systemFontCache: this.systemFontCache,
-      options: this.evaluatorOptions,
-    });
+    const partialEvaluator = this.#createPartialEvaluator(handler);
 
     // Fetch the page's annotations and save the content
     // in case of interactive form fields.
@@ -450,19 +441,7 @@ class Page {
     const contentStreamPromise = this.getContentStream();
     const resourcesPromise = this.loadResources(RESOURCES_KEYS_OPERATOR_LIST);
 
-    const partialEvaluator = new PartialEvaluator({
-      xref: this.xref,
-      handler,
-      pageIndex: this.pageIndex,
-      idFactory: this._localIdFactory,
-      fontCache: this.fontCache,
-      builtInCMapCache: this.builtInCMapCache,
-      standardFontDataCache: this.standardFontDataCache,
-      globalColorSpaceCache: this.globalColorSpaceCache,
-      globalImageCache: this.globalImageCache,
-      systemFontCache: this.systemFontCache,
-      options: this.evaluatorOptions,
-    });
+    const partialEvaluator = this.#createPartialEvaluator(handler);
 
     const newAnnotsByPage = !this.xfaFactory
       ? getNewAnnotationsMap(annotationStorage)
@@ -670,19 +649,7 @@ class Page {
       RESOURCES_KEYS_TEXT_CONTENT
     );
 
-    const partialEvaluator = new PartialEvaluator({
-      xref: this.xref,
-      handler,
-      pageIndex: this.pageIndex,
-      idFactory: this._localIdFactory,
-      fontCache: this.fontCache,
-      builtInCMapCache: this.builtInCMapCache,
-      standardFontDataCache: this.standardFontDataCache,
-      globalColorSpaceCache: this.globalColorSpaceCache,
-      globalImageCache: this.globalImageCache,
-      systemFontCache: this.systemFontCache,
-      options: this.evaluatorOptions,
-    });
+    const partialEvaluator = this.#createPartialEvaluator(handler);
 
     return partialEvaluator.getTextContent({
       stream: contentStream,
@@ -751,19 +718,7 @@ class Page {
       }
 
       if (annotation.hasTextContent && isVisible) {
-        partialEvaluator ||= new PartialEvaluator({
-          xref: this.xref,
-          handler,
-          pageIndex: this.pageIndex,
-          idFactory: this._localIdFactory,
-          fontCache: this.fontCache,
-          builtInCMapCache: this.builtInCMapCache,
-          standardFontDataCache: this.standardFontDataCache,
-          globalColorSpaceCache: this.globalColorSpaceCache,
-          globalImageCache: this.globalImageCache,
-          systemFontCache: this.systemFontCache,
-          options: this.evaluatorOptions,
-        });
+        partialEvaluator ??= this.#createPartialEvaluator(handler);
 
         textContentPromises.push(
           annotation
