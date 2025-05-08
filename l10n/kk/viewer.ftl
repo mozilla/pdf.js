@@ -322,6 +322,8 @@ pdfjs-editor-signature-button-label = Қолтаңбаны қосу
 
 ## Default editor aria labels
 
+pdfjs-editor-stamp-editor =
+    .aria-label = Сурет редакторы
 
 ## Remove button for the various kind of editor.
 
@@ -351,6 +353,16 @@ pdfjs-editor-stamp-add-image-button-label = Суретті қосу
 pdfjs-editor-free-highlight-thickness-input = Қалыңдығы
 pdfjs-editor-free-highlight-thickness-title =
     .title = Мәтіннен басқа элементтерді ерекшелеу кезінде қалыңдықты өзгерту
+pdfjs-editor-add-signature-container =
+    .aria-label = Қолтаңбаларды басқару және сақталған қолтаңбалар
+pdfjs-editor-signature-add-signature-button =
+    .title = Жаңа қолтаңбаны қосу
+pdfjs-editor-signature-add-signature-button-label = Жаңа қолтаңбаны қосу
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = Сақталған қолтаңба: { $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Мәтін түзеткіші
@@ -507,6 +519,7 @@ pdfjs-editor-undo-bar-message-highlight = Ерекшелеу өшірілді
 pdfjs-editor-undo-bar-message-freetext = Мәтін өшірілді
 pdfjs-editor-undo-bar-message-ink = Сызба өшірілді
 pdfjs-editor-undo-bar-message-stamp = Сурет өшірілді
+pdfjs-editor-undo-bar-message-signature = Қолтаңба өшірілді
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =

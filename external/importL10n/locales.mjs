@@ -31,7 +31,7 @@ async function downloadLanguageCodes() {
   console.log("Downloading language codes...\n");
 
   const ALL_LOCALES =
-    "https://raw.githubusercontent.com/mozilla/gecko-dev/master/browser/locales/all-locales";
+    "https://raw.githubusercontent.com/mozilla-firefox/firefox/main/browser/locales/all-locales";
 
   const response = await fetch(ALL_LOCALES);
   if (!response.ok) {
