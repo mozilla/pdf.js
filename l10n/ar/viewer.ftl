@@ -324,9 +324,25 @@ pdfjs-highlight-floating-button1 =
     .title = أبرِز
     .aria-label = أبرِز
 pdfjs-highlight-floating-button-label = أبرِز
+pdfjs-editor-signature-button =
+    .title = أضِف توقيع
+pdfjs-editor-signature-button-label = أضِف توقيع
 
 ## Default editor aria labels
 
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = محرِّر الإبراز
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = محرِّر الرسم
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor1 =
+    .aria-description = محرِّر التوقيع: { $description }
+pdfjs-editor-stamp-editor =
+    .aria-label = محرِّر الصور
 
 ## Remove button for the various kind of editor.
 
@@ -356,6 +372,16 @@ pdfjs-editor-stamp-add-image-button-label = أضِف صورة
 pdfjs-editor-free-highlight-thickness-input = السماكة
 pdfjs-editor-free-highlight-thickness-title =
     .title = غيّر السُمك عند إبراز عناصر أُخرى غير النص
+pdfjs-editor-add-signature-container =
+    .aria-label = عناصر التحكم في التوقيع والتوقيعات المحفوظة
+pdfjs-editor-signature-add-signature-button =
+    .title = أضِف توقيع جديد
+pdfjs-editor-signature-add-signature-button-label = أضِف توقيع جديد
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = التوقيع المحفوظ: { $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = محرِّر النص
@@ -584,12 +610,18 @@ pdfjs-editor-add-signature-error-close-button = أغلق
 
 pdfjs-editor-add-signature-cancel-button = ألغِ
 pdfjs-editor-add-signature-add-button = أضِف
+pdfjs-editor-edit-signature-update-button = حدّث
 
 ## Main menu for adding/removing signatures
 
+pdfjs-editor-delete-signature-button1 =
+    .title = أزِل التوقيع المحفوظ
+pdfjs-editor-delete-signature-button-label1 = أزِل التوقيع المحفوظ
 
 ## Editor toolbar
 
+pdfjs-editor-add-signature-edit-button-label = عدّل الوصف
 
 ## Edit signature description dialog
 
+pdfjs-editor-edit-signature-dialog-title = عدّل الوصف
