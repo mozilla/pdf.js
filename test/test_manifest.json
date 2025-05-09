@@ -12114,5 +12114,14 @@
     "md5": "2abe67c8b34522feb6b85d252dde9d3e",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue19753",
+    "file": "pdfs/issue19753.pdf",
+    "md5": "6b1fe0af506860002a9411f5f0d6437f",
+    "rounds": 1,
+    "type": "eq",
+    "forms": true,
+    "link": true
   }
 ]
