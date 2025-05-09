@@ -168,6 +168,11 @@ const defaultOptions = {
     value: 2,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  capCanvasAreaFactor: {
+    /** @type {number} */
+    value: 200,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   cursorToolOnLoad: {
     /** @type {number} */
     value: 0,

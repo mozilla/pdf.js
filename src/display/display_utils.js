@@ -660,11 +660,18 @@ class OutputScale {
    * @returns {boolean} Returns `true` if scaling was limited,
    *   `false` otherwise.
    */
-  limitCanvas(width, height, maxPixels, maxDim) {
+  limitCanvas(width, height, maxPixels, maxDim, capAreaFactor = -1) {
     let maxAreaScale = Infinity,
       maxWidthScale = Infinity,
       maxHeightScale = Infinity;
 
+    if (capAreaFactor >= 0) {
+      const cappedWindowArea = OutputScale.getCappedWindowArea(capAreaFactor);
+      maxPixels =
+        maxPixels > 0
+          ? Math.min(maxPixels, cappedWindowArea)
+          : cappedWindowArea;
+    }
     if (maxPixels > 0) {
       maxAreaScale = Math.sqrt(maxPixels / (width * height));
     }
@@ -684,6 +691,23 @@ class OutputScale {
 
   static get pixelRatio() {
     return globalThis.devicePixelRatio || 1;
+  }
+
+  static getCappedWindowArea(capAreaFactor) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
+      return Math.ceil(
+        window.innerWidth *
+          window.innerHeight *
+          this.pixelRatio ** 2 *
+          (1 + capAreaFactor / 100)
+      );
+    }
+    return Math.ceil(
+      window.screen.availWidth *
+        window.screen.availHeight *
+        this.pixelRatio ** 2 *
+        (1 + capAreaFactor / 100)
+    );
   }
 }
 
