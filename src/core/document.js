@@ -1823,20 +1823,17 @@ class PDFDocument {
         if (!formInfo.hasFields) {
           return null;
         }
-
-        const [annotationGlobals, acroForm] = await Promise.all([
-          this.pdfManager.ensureDoc("annotationGlobals"),
-          this.pdfManager.ensureCatalog("acroForm"),
-        ]);
+        const annotationGlobals = await this.annotationGlobals;
         if (!annotationGlobals) {
           return null;
         }
+        const { acroForm } = annotationGlobals;
 
         const visitedRefs = new RefSet();
         const allFields = Object.create(null);
         const fieldPromises = new Map();
         const orphanFields = new RefSetCache();
-        for (const fieldRef of await acroForm.getAsync("Fields")) {
+        for (const fieldRef of acroForm.get("Fields")) {
           await this.#collectFieldObjects(
             "",
             null,
