@@ -665,13 +665,7 @@ class OutputScale {
       maxWidthScale = Infinity,
       maxHeightScale = Infinity;
 
-    if (capAreaFactor >= 0) {
-      const cappedWindowArea = OutputScale.getCappedWindowArea(capAreaFactor);
-      maxPixels =
-        maxPixels > 0
-          ? Math.min(maxPixels, cappedWindowArea)
-          : cappedWindowArea;
-    }
+    maxPixels = OutputScale.capPixels(maxPixels, capAreaFactor);
     if (maxPixels > 0) {
       maxAreaScale = Math.sqrt(maxPixels / (width * height));
     }
@@ -693,21 +687,18 @@ class OutputScale {
     return globalThis.devicePixelRatio || 1;
   }
 
-  static getCappedWindowArea(capAreaFactor) {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
-      return Math.ceil(
-        window.innerWidth *
-          window.innerHeight *
+  static capPixels(maxPixels, capAreaFactor) {
+    if (capAreaFactor >= 0) {
+      const winPixels = Math.ceil(
+        (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")
+          ? window.innerWidth * window.innerHeight
+          : window.screen.availWidth * window.screen.availHeight) *
           this.pixelRatio ** 2 *
           (1 + capAreaFactor / 100)
       );
+      return maxPixels > 0 ? Math.min(maxPixels, winPixels) : winPixels;
     }
-    return Math.ceil(
-      window.screen.availWidth *
-        window.screen.availHeight *
-        this.pixelRatio ** 2 *
-        (1 + capAreaFactor / 100)
-    );
+    return maxPixels;
   }
 }
 

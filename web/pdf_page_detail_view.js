@@ -140,18 +140,10 @@ class PDFPageDetailView extends BasePDFPageView {
       return;
     }
 
-    const { viewport, capCanvasAreaFactor } = this.pageView;
+    const { viewport, maxCanvasPixels, capCanvasAreaFactor } = this.pageView;
 
     const visibleWidth = visibleArea.maxX - visibleArea.minX;
     const visibleHeight = visibleArea.maxY - visibleArea.minY;
-    let { maxCanvasPixels } = this.pageView;
-
-    if (capCanvasAreaFactor >= 0) {
-      maxCanvasPixels = Math.min(
-        maxCanvasPixels,
-        OutputScale.getCappedWindowArea(capCanvasAreaFactor)
-      );
-    }
 
     // "overflowScale" represents which percentage of the width and of the
     // height the detail area extends outside of the visible area. We want to
@@ -164,7 +156,8 @@ class PDFPageDetailView extends BasePDFPageView {
     const visiblePixels =
       visibleWidth * visibleHeight * OutputScale.pixelRatio ** 2;
     const maxDetailToVisibleLinearRatio = Math.sqrt(
-      maxCanvasPixels / visiblePixels
+      OutputScale.capPixels(maxCanvasPixels, capCanvasAreaFactor) /
+        visiblePixels
     );
     const maxOverflowScale = (maxDetailToVisibleLinearRatio - 1) / 2;
     let overflowScale = Math.min(1, maxOverflowScale);
