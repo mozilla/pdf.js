@@ -145,6 +145,7 @@ export default [
       "unicorn/prefer-date-now": "error",
       "unicorn/prefer-dom-node-append": "error",
       "unicorn/prefer-dom-node-remove": "error",
+      "unicorn/prefer-import-meta-properties": "error",
       "unicorn/prefer-includes": "error",
       "unicorn/prefer-logical-operator-over-ternary": "error",
       "unicorn/prefer-modern-dom-apis": "error",
