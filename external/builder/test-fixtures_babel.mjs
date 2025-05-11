@@ -1,9 +1,8 @@
-import { fileURLToPath } from "url";
 import fs from "fs";
 import path from "path";
 import { preprocessPDFJSCode } from "./babel-plugin-pdfjs-preprocessor.mjs";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = import.meta.dirname;
 
 let errors = 0;
 
