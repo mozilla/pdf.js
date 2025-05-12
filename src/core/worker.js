@@ -82,6 +82,8 @@ class WorkerMessageHandler {
 
   static setup(handler, port) {
     let testMessageProcessed = false;
+    let rendererHandler = null;
+
     handler.on("test", data => {
       if (testMessageProcessed) {
         return; // we already processed 'test' message once
@@ -94,12 +96,19 @@ class WorkerMessageHandler {
 
     handler.on("configure", data => {
       setVerbosityLevel(data.verbosity);
+      rendererHandler = new MessageHandler(
+        "worker-channel",
+        "renderer-channel",
+        data.channelPort
+      );
     });
 
-    handler.on("GetDocRequest", data => this.createDocumentHandler(data, port));
+    handler.on("GetDocRequest", data =>
+      this.createDocumentHandler(data, port, rendererHandler)
+    );
   }
 
-  static createDocumentHandler(docParams, port) {
+  static createDocumentHandler(docParams, port, rendererHandler) {
     // This context is actually holds references on pdfManager and handler,
     // until the latter is destroyed.
     let pdfManager;
@@ -173,7 +182,11 @@ class WorkerMessageHandler {
         const task = new WorkerTask("loadXfaResources");
         startWorkerTask(task);
 
-        await pdfManager.ensureDoc("loadXfaResources", [handler, task]);
+        await pdfManager.ensureDoc("loadXfaResources", [
+          handler,
+          task,
+          rendererHandler,
+        ]);
         finishWorkerTask(task);
       }
 
@@ -725,6 +738,7 @@ class WorkerMessageHandler {
         page
           .getOperatorList({
             handler,
+            rendererHandler,
             sink,
             task,
             intent: data.intent,
@@ -808,8 +822,8 @@ class WorkerMessageHandler {
         .then(page => pdfManager.ensure(page, "getStructTree"));
     });
 
-    handler.on("FontFallback", function (data) {
-      return pdfManager.fontFallback(data.id, handler);
+    rendererHandler.on("FontFallback", function (data) {
+      return pdfManager.fontFallback(data.id, rendererHandler);
     });
 
     handler.on("Cleanup", function (data) {

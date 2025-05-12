@@ -156,7 +156,7 @@ class BasePDFPageView {
 
       if (prevCanvas) {
         prevCanvas.replaceWith(canvas);
-        prevCanvas.width = prevCanvas.height = 0;
+        this.pdfPage.resetCanvas();
       } else {
         onShow(canvas);
       }
@@ -184,7 +184,7 @@ class BasePDFPageView {
       return;
     }
     canvas.remove();
-    canvas.width = canvas.height = 0;
+    this.pdfPage.resetCanvas();
     this.canvas = null;
     this.#resetTempCanvas();
   }

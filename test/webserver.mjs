@@ -373,6 +373,8 @@ function crossOriginHandler(url, request, response) {
     );
     response.setHeader("Vary", "Origin");
   }
+  response.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  response.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
 }
 
 // This supports the "Redirects" test in test/unit/network_spec.js and
