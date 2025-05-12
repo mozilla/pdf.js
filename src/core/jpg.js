@@ -810,7 +810,7 @@ class JpegImage {
   }
 
   static canUseImageDecoder(data, colorTransform = -1) {
-    let exifOffsets = null;
+    const jpegInfo = Object.create(null);
     let offset = 0;
     let numComponents = null;
     let fileMarker = readUint16(data, offset);
@@ -838,12 +838,13 @@ class JpegImage {
             appData[4] === 0 &&
             appData[5] === 0
           ) {
-            if (exifOffsets) {
+            if (jpegInfo.exifStart) {
               throw new JpegError("Duplicate EXIF-blocks found.");
             }
             // Don't do the EXIF-block replacement here, see `JpegStream`,
             // since that can modify the original PDF document.
-            exifOffsets = { exifStart: oldOffset + 6, exifEnd: newOffset };
+            jpegInfo.exifStart = oldOffset + 6;
+            jpegInfo.exifEnd = newOffset;
           }
           fileMarker = readUint16(data, offset);
           offset += 2;
@@ -868,13 +869,13 @@ class JpegImage {
       fileMarker = readUint16(data, offset);
       offset += 2;
     }
-    if (numComponents === 4) {
-      return null;
-    }
     if (numComponents === 3 && colorTransform === 0) {
       return null;
     }
-    return exifOffsets || {};
+    if (numComponents === 4) {
+      jpegInfo.cmyk = true;
+    }
+    return jpegInfo;
   }
 
   parse(data, { dnlScanLines = null } = {}) {
