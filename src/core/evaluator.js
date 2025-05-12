@@ -222,6 +222,7 @@ class PartialEvaluator {
   constructor({
     xref,
     handler,
+    rendererHandler,
     pageIndex,
     idFactory,
     fontCache,
@@ -234,6 +235,7 @@ class PartialEvaluator {
   }) {
     this.xref = xref;
     this.handler = handler;
+    this.rendererHandler = rendererHandler;
     this.pageIndex = pageIndex;
     this.idFactory = idFactory;
     this.fontCache = fontCache;
@@ -553,13 +555,19 @@ class PartialEvaluator {
     const transfers = imgData ? [imgData.bitmap || imgData.data.buffer] : null;
 
     if (this.parsingType3Font || cacheGlobally) {
-      return this.handler.send(
+      this.handler.send("commonobj", [objId, "Image", imgData], transfers);
+      return this.rendererHandler.send(
         "commonobj",
         [objId, "Image", imgData],
         transfers
       );
     }
-    return this.handler.send(
+    this.handler.send(
+      "obj",
+      [objId, this.pageIndex, "Image", imgData],
+      transfers
+    );
+    return this.rendererHandler.send(
       "obj",
       [objId, this.pageIndex, "Image", imgData],
       transfers
@@ -787,11 +795,10 @@ class PartialEvaluator {
       // globally, check if the image is still cached locally on the main-thread
       // to avoid having to re-parse the image (since that can be slow).
       if (w * h > 250000 || hasMask) {
-        const localLength = await this.handler.sendWithPromise("commonobj", [
-          objId,
-          "CopyLocalImage",
-          { imageRef },
-        ]);
+        const localLength = await this.rendererHandler.sendWithPromise(
+          "commonobj",
+          [objId, "CopyLocalImage", { imageRef }]
+        );
 
         if (localLength) {
           this.globalImageCache.setData(imageRef, globalCacheData);
@@ -1021,6 +1028,7 @@ class PartialEvaluator {
 
     state.font = translated.font;
     translated.send(this.handler);
+    translated.send(this.rendererHandler);
     return translated.loadedName;
   }
 
@@ -1040,7 +1048,7 @@ class PartialEvaluator {
         PartialEvaluator.buildFontPaths(
           font,
           glyphs,
-          this.handler,
+          this.rendererHandler,
           this.options
         );
       }
@@ -1518,8 +1526,15 @@ class PartialEvaluator {
 
     if (this.parsingType3Font) {
       this.handler.send("commonobj", [id, "Pattern", patternIR]);
+      this.rendererHandler.send("commonobj", [id, "Pattern", patternIR]);
     } else {
       this.handler.send("obj", [id, this.pageIndex, "Pattern", patternIR]);
+      this.rendererHandler.send("obj", [
+        id,
+        this.pageIndex,
+        "Pattern",
+        patternIR,
+      ]);
     }
     return id;
   }
