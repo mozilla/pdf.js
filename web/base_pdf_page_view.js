@@ -48,6 +48,12 @@ class BasePDFPageView extends RenderableView {
 
   renderingQueue = null;
 
+  renderTask = null;
+
+  renderTaskID = null;
+
+  resume = null;
+
   constructor(options) {
     super();
     this.eventBus = options.eventBus;
@@ -159,7 +165,7 @@ class BasePDFPageView extends RenderableView {
 
       if (prevCanvas) {
         prevCanvas.replaceWith(canvas);
-        prevCanvas.width = prevCanvas.height = 0;
+        this.pdfPage.resetCanvas(this.renderTaskID);
       } else {
         onShow(canvas);
       }
@@ -187,7 +193,7 @@ class BasePDFPageView extends RenderableView {
       return;
     }
     canvas.remove();
-    canvas.width = canvas.height = 0;
+    this.pdfPage.resetCanvas(this.renderTaskID);
     this.canvas = null;
     this.#resetTempCanvas();
   }
@@ -208,6 +214,8 @@ class BasePDFPageView extends RenderableView {
         this.#renderError = null;
       }
     };
+
+    this.renderTaskID = renderTask.taskID;
 
     let error = null;
     try {

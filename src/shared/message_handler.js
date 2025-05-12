@@ -90,6 +90,7 @@ class MessageHandler {
     comObj.addEventListener("message", this.#onMessage.bind(this), {
       signal: this.#messageAC.signal,
     });
+    comObj.start?.();
   }
 
   #onMessage({ data }) {
