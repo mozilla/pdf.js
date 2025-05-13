@@ -362,6 +362,9 @@ function createWebpackConfig(
                   // V8 chokes on very long sequences, work around that.
                   sequences: false,
                 },
+                format: {
+                  comments: /@lic|webpackIgnore|@vite-ignore/i,
+                },
                 keep_classnames: true,
                 keep_fnames: true,
                 module: isModule,
