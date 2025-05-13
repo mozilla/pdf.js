@@ -436,14 +436,8 @@ class SignatureExtractor {
       const isteps = Math.floor(steps);
       steps = steps === isteps ? isteps - 1 : isteps;
       for (let i = 0; i < steps; i++) {
-        newWidth = prevWidth;
-        newHeight = prevHeight;
-        if (newWidth > maxDim) {
-          newWidth = Math.ceil(newWidth / 2);
-        }
-        if (newHeight > maxDim) {
-          newHeight = Math.ceil(newHeight / 2);
-        }
+        newWidth = Math.ceil(prevWidth / 2);
+        newHeight = Math.ceil(prevHeight / 2);
 
         const offscreen = new OffscreenCanvas(newWidth, newHeight);
         const ctx = offscreen.getContext("2d");
