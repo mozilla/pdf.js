@@ -339,6 +339,33 @@ function createWebpackConfig(
       new webpack2.BannerPlugin({ banner: licenseHeaderLibre, raw: true })
     );
   }
+  plugins.push({
+    /** @param {import('webpack').Compiler} compiler */
+    apply(compiler) {
+      const errors = [];
+
+      compiler.hooks.afterCompile.tap("VerifyImportMeta", compilation => {
+        for (const asset of compilation.getAssets()) {
+          if (asset.name.endsWith(".mjs")) {
+            const source = asset.source.source();
+            if (
+              typeof source === "string" &&
+              /new URL\([^,)]*,\s*import\.meta\.url/.test(source)
+            ) {
+              errors.push(
+                `Output module ${asset.name} uses new URL(..., import.meta.url)`
+              );
+            }
+          }
+        }
+      });
+      compiler.hooks.afterEmit.tap("VerifyImportMeta", compilation => {
+        // Emit the errors after emitting the files, so that it's possible to
+        // look at the contents of the invalid bundle.
+        compilation.errors.push(...errors);
+      });
+    },
+  });
 
   const alias = createWebpackAlias(bundleDefines);
   const experiments = isModule ? { outputModule: true } : undefined;
