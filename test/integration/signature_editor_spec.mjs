@@ -27,7 +27,9 @@ import {
 } from "./test_utils.mjs";
 
 import { fileURLToPath } from "url";
+import fs from "fs";
 import path from "path";
+import { PNG } from "pngjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -579,6 +581,92 @@ describe("Signature Editor", () => {
             return use.parentNode.getAttribute("fill");
           });
           expect(color).toEqual("#000000");
+        })
+      );
+    });
+  });
+
+  describe("Check the aspect ratio (bug 1962819)", () => {
+    let pages, contentWidth, contentHeight;
+
+    function getContentAspectRatio(png) {
+      const { width, height } = png;
+      const buffer = new Uint32Array(png.data.buffer);
+      let x0 = width;
+      let y0 = height;
+      let x1 = 0;
+      let y1 = 0;
+      for (let i = 0; i < height; i++) {
+        for (let j = 0; j < width; j++) {
+          if (buffer[width * i + j] !== 0) {
+            x0 = Math.min(x0, j);
+            y0 = Math.min(y0, i);
+            x1 = Math.max(x1, j);
+            y1 = Math.max(y1, i);
+          }
+        }
+      }
+
+      contentWidth = x1 - x0;
+      contentHeight = y1 - y0;
+    }
+
+    beforeAll(() => {
+      const data = fs.readFileSync(
+        path.join(__dirname, "../images/samplesignature.png")
+      );
+      const png = PNG.sync.read(data);
+      getContentAspectRatio(png);
+    });
+
+    beforeEach(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the signature has the correct aspect ratio", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToSignature(page);
+          await page.click("#editorSignatureAddSignature");
+
+          await page.waitForSelector("#addSignatureDialog", {
+            visible: true,
+          });
+
+          await page.click("#addSignatureImageButton");
+          await page.waitForSelector("#addSignatureImagePlaceholder", {
+            visible: true,
+          });
+          await page.waitForSelector(`${addButtonSelector}:disabled`);
+
+          const input = await page.$("#addSignatureFilePicker");
+          await input.uploadFile(
+            `${path.join(__dirname, "../images/samplesignature.png")}`
+          );
+          await page.waitForSelector(`#addSignatureImage > path:not([d=""])`);
+
+          // The save button should be enabled now.
+          await page.waitForSelector(
+            "#addSignatureSaveContainer > input:not(:disabled)"
+          );
+          await page.click("#addSignatureAddButton");
+          await page.waitForSelector("#addSignatureDialog", {
+            visible: false,
+          });
+          const { width, height } = await getRect(
+            page,
+            ".canvasWrapper > svg use[href='#path_p1_0']"
+          );
+
+          expect(Math.abs(contentWidth / width - contentHeight / height))
+            .withContext(
+              `In ${browserName} (${contentWidth}x${contentHeight} vs ${width}x${height})`
+            )
+            .toBeLessThan(0.25);
         })
       );
     });
