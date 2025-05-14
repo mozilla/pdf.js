@@ -2,17 +2,20 @@ function f1() {
   return;
   var i = 0;
 }
+f1();
 
 function f2() {
   return 1;
   var i = 0;
 }
+f2();
 
 function f3() {
   var i = 0;
   throw "test";
   var j = 0;
 }
+f3();
 
 function f4() {
   var i = 0;
@@ -22,6 +25,7 @@ function f4() {
   throw "test";
   var j = 0;
 }
+f4();
 
 var obj = {
   method1() { return; var i = 0; },
