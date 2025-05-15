@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { closePages, loadAndWait } from "./test_utils.mjs";
+import { closePages, FSI, loadAndWait, PDI } from "./test_utils.mjs";
 
 function fuzzyMatch(a, b, browserName, pixelFuzz = 3) {
   expect(a)
@@ -110,10 +110,6 @@ describe("find bar", () => {
           );
           const resultElement = await page.waitForSelector("#findResultsCount");
           const resultText = await resultElement.evaluate(el => el.textContent);
-          /** Unicode bidi isolation characters. */
-          const FSI = "\u2068";
-          const PDI = "\u2069";
-          // Fluent adds these markers to the result text.
           expect(resultText).toEqual(`${FSI}1${PDI} of ${FSI}1${PDI} match`);
           const selectedElement = await page.waitForSelector(
             ".highlight.selected"

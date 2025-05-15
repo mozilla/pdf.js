@@ -882,6 +882,10 @@ async function moveEditor(page, selector, n, pressKey) {
   }
 }
 
+// Unicode bidi isolation characters, Fluent adds these markers to the text.
+const FSI = "\u2068";
+const PDI = "\u2069";
+
 export {
   applyFunctionToEditor,
   awaitPromise,
@@ -894,6 +898,7 @@ export {
   createPromise,
   dragAndDrop,
   firstPageOnTop,
+  FSI,
   getAnnotationSelector,
   getAnnotationStorage,
   getComputedStyleSelector,
@@ -929,6 +934,7 @@ export {
   moveEditor,
   paste,
   pasteFromClipboard,
+  PDI,
   scrollIntoView,
   selectEditor,
   selectEditors,
