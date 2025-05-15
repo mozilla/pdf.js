@@ -502,7 +502,10 @@ const defaultOptions = {
 
   workerPort: {
     /** @type {Object} */
-    value: null,
+    value:
+      typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")
+        ? globalThis.pdfjsPreloadedWorker
+        : null,
     kind: OptionKind.WORKER,
   },
   workerSrc: {
