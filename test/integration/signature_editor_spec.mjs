@@ -17,10 +17,12 @@ import {
   awaitPromise,
   closePages,
   copy,
+  FSI,
   getEditorSelector,
   getRect,
   loadAndWait,
   paste,
+  PDI,
   switchToEditor,
   waitForPointerUp,
   waitForTimeout,
@@ -188,7 +190,7 @@ describe("Signature Editor", () => {
 
           // Check the aria description.
           await page.waitForSelector(
-            `${editorSelector}[aria-description="Signature editor: \u2068Hello World\u2069"]`
+            `${editorSelector}[aria-description="Signature editor: ${FSI}Hello World${PDI}"]`
           );
 
           // Edit the description.
