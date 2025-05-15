@@ -31,6 +31,7 @@ async function runTests(results) {
       "autolinker_spec.mjs",
       "caret_browsing_spec.mjs",
       "copy_paste_spec.mjs",
+      "document_properties_spec.mjs",
       "find_spec.mjs",
       "freetext_editor_spec.mjs",
       "highlight_editor_spec.mjs",
