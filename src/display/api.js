@@ -688,20 +688,16 @@ class PDFDocumentLoadingTask {
   async destroy() {
     this.destroyed = true;
 
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      await this._transport?.destroy();
-    } else {
-      try {
-        if (this._worker?.port) {
-          this._worker._pendingDestroy = true;
-        }
-        await this._transport?.destroy();
-      } catch (ex) {
-        if (this._worker?.port) {
-          delete this._worker._pendingDestroy;
-        }
-        throw ex;
+    try {
+      if (this._worker?.port) {
+        this._worker._pendingDestroy = true;
       }
+      await this._transport?.destroy();
+    } catch (ex) {
+      if (this._worker?.port) {
+        delete this._worker._pendingDestroy;
+      }
+      throw ex;
     }
     this._transport = null;
 
@@ -2101,7 +2097,7 @@ class PDFWorker {
 
   static #isWorkerDisabled = false;
 
-  static #workerPorts;
+  static #workerPorts = new WeakMap();
 
   static {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
@@ -2159,14 +2155,11 @@ class PDFWorker {
     this._webWorker = null;
     this._messageHandler = null;
 
-    if (
-      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
-      port
-    ) {
-      if (PDFWorker.#workerPorts?.has(port)) {
+    if (port) {
+      if (PDFWorker.#workerPorts.has(port)) {
         throw new Error("Cannot use more than one PDFWorker per port.");
       }
-      (PDFWorker.#workerPorts ||= new WeakMap()).set(port, this);
+      PDFWorker.#workerPorts.set(port, this);
       this._initializeFromPort(port);
       return;
     }
@@ -2206,9 +2199,6 @@ class PDFWorker {
   }
 
   _initializeFromPort(port) {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      throw new Error("Not implemented: _initializeFromPort");
-    }
     this._port = port;
     this._messageHandler = new MessageHandler("main", "worker", port);
     this._messageHandler.on("ready", function () {
@@ -2363,7 +2353,7 @@ class PDFWorker {
     this._webWorker?.terminate();
     this._webWorker = null;
 
-    PDFWorker.#workerPorts?.delete(this._port);
+    PDFWorker.#workerPorts.delete(this._port);
     this._port = null;
 
     this._messageHandler?.destroy();
@@ -2375,13 +2365,10 @@ class PDFWorker {
    * @returns {PDFWorker}
    */
   static fromPort(params) {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      throw new Error("Not implemented: fromPort");
-    }
     if (!params?.port) {
       throw new Error("PDFWorker.fromPort - invalid method signature.");
     }
-    const cachedPort = this.#workerPorts?.get(params.port);
+    const cachedPort = this.#workerPorts.get(params.port);
     if (cachedPort) {
       if (cachedPort._pendingDestroy) {
         throw new Error(
