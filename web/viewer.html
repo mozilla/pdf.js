@@ -3,64 +3,68 @@
 <head>
   <meta charset="UTF-8">
   <title>PDF Viewer</title>
-  <link rel="stylesheet" href="viewer.css">
-  <script src="../build/pdf.js"></script>
-  <script src="viewer.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <style>
-    html, body {
+    body {
       margin: 0;
       padding: 0;
-      overflow: auto;
+      font-family: sans-serif;
+      background-color: #f8f8f8;
+    }
+    .pdf-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    canvas {
+      margin-bottom: 20px;
+      background: white;
     }
   </style>
 </head>
 <body>
-
-  <!-- The PDF viewer UI -->
-  <div id="viewerContainer" class="viewerContainer">
-    <div id="viewer" class="pdfViewer"></div>
-  </div>
+  <div class="pdf-container" id="pdf-viewer"></div>
 
   <script>
-    // Set default PDF file (your uploaded file)
-    var DEFAULT_URL = 'circulaires/Metro Que Weekly Flyer 0 Valid 15-05-25 - 21-05-25.pdf';
+    const url = 'https://mrcntoine.github.io/circulaires/web/circulaires/Metro%20Que%20Weekly%20Flyer%200%20Valid%2015-05-25%20-%2021-05-25.pdf';
 
-    // Configure PDF.js
-    pdfjsLib.GlobalWorkerOptions.workerSrc = '../build/pdf.worker.js';
+    const container = document.getElementById('pdf-viewer');
 
-    var loadingTask = pdfjsLib.getDocument(DEFAULT_URL);
-    loadingTask.promise.then(function (pdf) {
-      const viewer = document.getElementById('viewer');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+    pdfjsLib.getDocument(url).promise.then(pdf => {
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        pdf.getPage(pageNum).then(function (page) {
+        pdf.getPage(pageNum).then(page => {
           const scale = 1.5;
-          const viewport = page.getViewport({ scale: scale });
+          const viewport = page.getViewport({ scale });
 
           const canvas = document.createElement('canvas');
           const context = canvas.getContext('2d');
           canvas.height = viewport.height;
           canvas.width = viewport.width;
 
+          container.appendChild(canvas);
+
           const renderContext = {
             canvasContext: context,
             viewport: viewport
           };
-          viewer.appendChild(canvas);
+
           page.render(renderContext);
         });
       }
     });
   </script>
 
-  <!-- Auto-height postMessage script -->
+  <!-- Auto-resize to content height -->
   <script>
     window.addEventListener('load', () => {
-      const resize = () => {
+      const sendHeight = () => {
         const height = document.documentElement.scrollHeight;
         window.parent.postMessage({ pdfHeight: height }, '*');
       };
-      resize();
-      setInterval(resize, 1000);
+      sendHeight();
+      setInterval(sendHeight, 1000); // continuously update in case height changes
     });
   </script>
 </body>
