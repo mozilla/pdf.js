@@ -8,17 +8,21 @@
     body {
       margin: 0;
       padding: 0;
-      font-family: sans-serif;
       background-color: #f8f8f8;
     }
     .pdf-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
     }
     canvas {
+      width: 100% !important;
+      height: auto !important;
+      display: block;
       margin-bottom: 20px;
       background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
   </style>
 </head>
@@ -27,7 +31,6 @@
 
   <script>
     const url = 'https://mrcntoine.github.io/circulaires/web/circulaires/Metro%20Que%20Weekly%20Flyer%200%20Valid%2015-05-25%20-%2021-05-25.pdf';
-
     const container = document.getElementById('pdf-viewer');
 
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
@@ -35,7 +38,7 @@
     pdfjsLib.getDocument(url).promise.then(pdf => {
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         pdf.getPage(pageNum).then(page => {
-          const scale = 1.5;
+          const scale = 1.0; // Adjust zoom level
           const viewport = page.getViewport({ scale });
 
           const canvas = document.createElement('canvas');
@@ -56,15 +59,15 @@
     });
   </script>
 
-  <!-- Auto-resize to content height -->
   <script>
+    // Resize iframe based on height
     window.addEventListener('load', () => {
       const sendHeight = () => {
         const height = document.documentElement.scrollHeight;
         window.parent.postMessage({ pdfHeight: height }, '*');
       };
       sendHeight();
-      setInterval(sendHeight, 1000); // continuously update in case height changes
+      setInterval(sendHeight, 1000);
     });
   </script>
 </body>
