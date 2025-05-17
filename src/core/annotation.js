@@ -3014,7 +3014,6 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
         evaluator,
         task,
         intent,
-        false, // we use normalAppearance to render the button
         annotationStorage
       );
     }
