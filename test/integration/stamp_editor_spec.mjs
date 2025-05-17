@@ -49,12 +49,11 @@ import {
   waitForSerialized,
   waitForTimeout,
 } from "./test_utils.mjs";
-import { fileURLToPath } from "url";
 import fs from "fs";
 import path from "path";
 import { PNG } from "pngjs";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = import.meta.dirname;
 
 const clearAll = clearEditors.bind(null, "stamp");
 

@@ -27,13 +27,11 @@ import {
   waitForPointerUp,
   waitForTimeout,
 } from "./test_utils.mjs";
-
-import { fileURLToPath } from "url";
 import fs from "fs";
 import path from "path";
 import { PNG } from "pngjs";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = import.meta.dirname;
 
 const switchToSignature = switchToEditor.bind(null, "Signature");
 
