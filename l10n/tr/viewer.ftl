@@ -603,7 +603,7 @@ pdfjs-editor-edit-signature-update-button = Güncelle
 ## Main menu for adding/removing signatures
 
 pdfjs-editor-delete-signature-button1 =
-    .title = Kayıtlı imza kaldırdı
+    .title = Kayıtlı imzayı kaldır
 pdfjs-editor-delete-signature-button-label1 = Kayıtlı imzayı kaldır
 
 ## Editor toolbar
