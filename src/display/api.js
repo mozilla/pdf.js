@@ -38,14 +38,15 @@ import {
   PrintAnnotationStorage,
   SerializableEmpty,
 } from "./annotation_storage.js";
-import { FontFaceObject, FontLoader } from "./font_loader.js";
 import {
+  deprecated,
   isDataScheme,
   isValidFetchUrl,
   PageViewport,
   RenderingCancelledException,
   StatTimer,
 } from "./display_utils.js";
+import { FontFaceObject, FontLoader } from "./font_loader.js";
 import { MessageHandler, wrapReason } from "../shared/message_handler.js";
 import {
   NodeCanvasFactory,
@@ -383,15 +384,12 @@ function getDocument(src = {}) {
   };
 
   if (!worker) {
-    const workerParams = {
-      verbosity,
-      port: GlobalWorkerOptions.workerPort,
-    };
     // Worker was not provided -- creating and owning our own. If message port
     // is specified in global worker options, using it.
-    worker = workerParams.port
-      ? PDFWorker.fromPort(workerParams)
-      : new PDFWorker(workerParams);
+    worker = PDFWorker.create({
+      verbosity,
+      port: GlobalWorkerOptions.workerPort,
+    });
     task._worker = worker;
   }
 
@@ -2131,6 +2129,16 @@ class PDFWorker {
           new Blob([wrapper], { type: "text/javascript" })
         );
       };
+
+      this.fromPort = params => {
+        deprecated(
+          "`PDFWorker.fromPort` - please use `PDFWorker.create` instead."
+        );
+        if (!params?.port) {
+          throw new Error("PDFWorker.fromPort - invalid method signature.");
+        }
+        return this.create(params);
+      };
     }
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
@@ -2364,15 +2372,12 @@ class PDFWorker {
    * @param {PDFWorkerParameters} params - The worker initialization parameters.
    * @returns {PDFWorker}
    */
-  static fromPort(params) {
-    if (!params?.port) {
-      throw new Error("PDFWorker.fromPort - invalid method signature.");
-    }
-    const cachedPort = this.#workerPorts.get(params.port);
+  static create(params) {
+    const cachedPort = this.#workerPorts.get(params?.port);
     if (cachedPort) {
       if (cachedPort._pendingDestroy) {
         throw new Error(
-          "PDFWorker.fromPort - the worker is being destroyed.\n" +
+          "PDFWorker.create - the worker is being destroyed.\n" +
             "Please remember to await `PDFDocumentLoadingTask.destroy()`-calls."
         );
       }
