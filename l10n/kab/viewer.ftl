@@ -476,17 +476,50 @@ pdfjs-editor-new-alt-text-create-automatically-button-label = Rnu aḍris niḍe
 pdfjs-editor-new-alt-text-not-now-button = Mačči tura
 pdfjs-editor-new-alt-text-error-title = D awezɣi timerna n uḍris niḍen s wudem awurman
 pdfjs-editor-new-alt-text-error-close-button = Mdel
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+#   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = Asader n tmudemt n IA n uḍris amlellay ({ $downloadedSize } n { $totalSize } MB)
+    .aria-valuetext = Asader n tmudemt n IA n uḍris amlellay ({ $downloadedSize } n { $totalSize } MB)
+# This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button =
+    .aria-label = Yettwarna weḍris amlellay
+pdfjs-editor-new-alt-text-added-button-label = Yettwarna weḍris amlellay
+# This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button =
+    .aria-label = Ixuṣ uḍris amlellay
+pdfjs-editor-new-alt-text-missing-button-label = Ixuṣ uḍris amlellay
+# This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button =
+    .aria-label = Senqed aḍris amlellay
+pdfjs-editor-new-alt-text-to-review-button-label = Senqed aḍris amlellay
+# "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
+# Variables:
+#   $generatedAltText (String) - the generated alt-text.
+pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer = Yettwarna s wudem awurman: { $generatedAltText }
 
 ## Image alt-text settings
 
+pdfjs-image-alt-text-settings-button =
+    .title = Iɣewwaṛen n weḍris amlellay n tugna
+pdfjs-image-alt-text-settings-button-label = Iɣewwaṛen n weḍris amlellay n tugna
+pdfjs-editor-alt-text-settings-dialog-label = Iɣewwaṛen n weḍris amlellay n tugna
+pdfjs-editor-alt-text-settings-automatic-title = Aḍris amlellay awurman
 pdfjs-editor-alt-text-settings-create-model-button-label = Rnu aḍris niḍen s wudem awurman
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+pdfjs-editor-alt-text-settings-download-model-label = Tamudemt n IA n uḍris amlellay ({ $totalSize } MB)
 pdfjs-editor-alt-text-settings-delete-model-button = Kkes
 pdfjs-editor-alt-text-settings-download-model-button = Sader
 pdfjs-editor-alt-text-settings-downloading-model-button = Asader…
+pdfjs-editor-alt-text-settings-editor-title = Amaẓrag n weḍris amlellay
+pdfjs-editor-alt-text-settings-show-dialog-button-label = Sken amaẓrag n uḍris amlellay akken kan ara ternuḍ tugna
+pdfjs-editor-alt-text-settings-show-dialog-description = Yettall ad tḍemneḍ tugniwin sɛant aḍris amlellay.
 pdfjs-editor-alt-text-settings-close-button = Mdel
 
 ## "Annotations removed" bar
 
+pdfjs-editor-undo-bar-message-highlight = Yettwakkes usebrureq
 pdfjs-editor-undo-bar-message-freetext = Aḍris yettwakkes
 pdfjs-editor-undo-bar-message-ink = Asuneɣ yettwakkes
 pdfjs-editor-undo-bar-message-stamp = Tugna tettwakkes
@@ -519,14 +552,26 @@ pdfjs-editor-add-signature-type-input =
     .aria-label = Zru azmul-ik
     .placeholder = Zru azmul-ik
 pdfjs-editor-add-signature-draw-placeholder = Suneɣ azmul-ik
+pdfjs-editor-add-signature-draw-thickness-range-label = Tuzert
+pdfjs-editor-add-signature-image-placeholder = Seḥnucceḍ afaylu da akken ad t-saliṭ
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] neɣ fren ifuyla n tugna
+       *[other] neɣ inig ifuyla n tugna
+    }
 
 ## Controls
 
+pdfjs-editor-add-signature-description-label = Aglam (aḍris amlellay)
+pdfjs-editor-add-signature-description-input =
+    .title = Aglam (aḍris amlellay)
 pdfjs-editor-add-signature-description-default-when-drawing = Azmul
 pdfjs-editor-add-signature-clear-button-label = Sfeḍ azmul
 pdfjs-editor-add-signature-clear-button =
     .title = Sfeḍ azmul
 pdfjs-editor-add-signature-save-checkbox = Sekles azmul
+pdfjs-editor-add-signature-image-upload-error-title = Ur izmir ara ad yessali tugna
+pdfjs-editor-add-signature-image-upload-error-description = Ssefqed tuqqna-inek⋅inem n uẓeṭṭa neɣ ɛreḍ tugna-nniḍen.
 pdfjs-editor-add-signature-error-close-button = Mdel
 
 ## Dialog buttons
@@ -537,6 +582,9 @@ pdfjs-editor-edit-signature-update-button = Leqqem
 
 ## Main menu for adding/removing signatures
 
+pdfjs-editor-delete-signature-button1 =
+    .title = Kkes azmul yettwakelsen
+pdfjs-editor-delete-signature-button-label1 = Kkes azmul yettwakelsen
 
 ## Editor toolbar
 
