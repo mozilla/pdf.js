@@ -42,9 +42,6 @@ import {
   waitForTimeout,
 } from "./test_utils.mjs";
 import fs from "fs";
-import path from "path";
-
-const __dirname = import.meta.dirname;
 
 const selectAll = selectEditors.bind(null, "highlight");
 
@@ -2430,8 +2427,9 @@ describe("Highlight Editor", () => {
           await page.click(`${editorSelector} button.delete`);
           await waitForSerialized(page, 0);
           await page.waitForSelector("#editorUndoBar", { visible: true });
-          const pdfPath = path.join(__dirname, "../pdfs/basicapi.pdf");
-          const pdfData = fs.readFileSync(pdfPath).toString("base64");
+          const pdfData = fs
+            .readFileSync(new URL("../pdfs/basicapi.pdf", import.meta.url))
+            .toString("base64");
           const dataTransfer = await page.evaluateHandle(data => {
             const transfer = new DataTransfer();
             const view = Uint8Array.from(atob(data), code =>

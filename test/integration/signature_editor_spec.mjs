@@ -28,10 +28,7 @@ import {
   waitForTimeout,
 } from "./test_utils.mjs";
 import fs from "fs";
-import path from "path";
 import { PNG } from "pngjs";
-
-const __dirname = import.meta.dirname;
 
 const switchToSignature = switchToEditor.bind(null, "Signature");
 
@@ -308,7 +305,7 @@ describe("Signature Editor", () => {
 
           const input = await page.$("#addSignatureFilePicker");
           await input.uploadFile(
-            `${path.join(__dirname, "../images/firefox_logo.png")}`
+            new URL("../images/firefox_logo.png", import.meta.url).href
           );
           await page.waitForSelector(`#addSignatureImage > path:not([d=""])`);
 
@@ -452,14 +449,14 @@ describe("Signature Editor", () => {
           });
           const input = await page.$("#addSignatureFilePicker");
           await input.uploadFile(
-            `${path.join(__dirname, "./signature_editor_spec.mjs")}`
+            new URL("./signature_editor_spec.mjs", import.meta.url).href
           );
           await page.waitForSelector("#addSignatureError", { visible: true });
           await page.click("#addSignatureErrorCloseButton");
           await page.waitForSelector("#addSignatureError", { visible: false });
 
           await input.uploadFile(
-            `${path.join(__dirname, "./stamp_editor_spec.mjs")}`
+            new URL("./stamp_editor_spec.mjs", import.meta.url).href
           );
           await page.waitForSelector("#addSignatureError", { visible: true });
 
@@ -613,7 +610,7 @@ describe("Signature Editor", () => {
 
     beforeAll(() => {
       const data = fs.readFileSync(
-        path.join(__dirname, "../images/samplesignature.png")
+        new URL("../images/samplesignature.png", import.meta.url)
       );
       const png = PNG.sync.read(data);
       getContentAspectRatio(png);
@@ -645,7 +642,7 @@ describe("Signature Editor", () => {
 
           const input = await page.$("#addSignatureFilePicker");
           await input.uploadFile(
-            `${path.join(__dirname, "../images/samplesignature.png")}`
+            new URL("../images/samplesignature.png", import.meta.url).href
           );
           await page.waitForSelector(`#addSignatureImage > path:not([d=""])`);
 

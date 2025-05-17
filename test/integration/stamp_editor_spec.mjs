@@ -50,10 +50,7 @@ import {
   waitForTimeout,
 } from "./test_utils.mjs";
 import fs from "fs";
-import path from "path";
 import { PNG } from "pngjs";
-
-const __dirname = import.meta.dirname;
 
 const clearAll = clearEditors.bind(null, "stamp");
 
@@ -75,7 +72,7 @@ const waitForImage = async (page, selector) => {
 
 const copyImage = async (page, imagePath, selector) => {
   const data = fs
-    .readFileSync(path.join(__dirname, imagePath))
+    .readFileSync(new URL(imagePath, import.meta.url))
     .toString("base64");
 
   await copyToClipboard(page, { "image/png": `data:image/png;base64,${data}` });
@@ -120,7 +117,7 @@ describe("Stamp Editor", () => {
 
           const input = await page.$("#stampEditorFileInput");
           await input.uploadFile(
-            `${path.join(__dirname, "../images/firefox_logo.png")}`
+            new URL("../images/firefox_logo.png", import.meta.url).href
           );
           const editorSelector = getEditorSelector(0);
           await waitForImage(page, editorSelector);
@@ -145,7 +142,7 @@ describe("Stamp Editor", () => {
           await page.click("#editorStampAddImage");
           const input = await page.$("#stampEditorFileInput");
           await input.uploadFile(
-            `${path.join(__dirname, "../images/firefox_logo.svg")}`
+            new URL("../images/firefox_logo.svg", import.meta.url).href
           );
           const editorSelector = getEditorSelector(0);
           await waitForImage(page, editorSelector);
@@ -173,7 +170,7 @@ describe("Stamp Editor", () => {
           await page.click("#editorStampAddImage");
           const input = await page.$("#stampEditorFileInput");
           await input.uploadFile(
-            `${path.join(__dirname, "../images/firefox_logo.svg")}`
+            new URL("../images/firefox_logo.svg", import.meta.url).href
           );
           const editorSelector = getEditorSelector(0);
           await waitForImage(page, editorSelector);
@@ -224,7 +221,7 @@ describe("Stamp Editor", () => {
             await page.click("#editorStampAddImage");
             const input = await page.$("#stampEditorFileInput");
             await input.uploadFile(
-              `${path.join(__dirname, "../images/firefox_logo.png")}`
+              new URL("../images/firefox_logo.png", import.meta.url).href
             );
             const editorSelector = getEditorSelector(i);
             await waitForImage(page, editorSelector);
@@ -280,7 +277,7 @@ describe("Stamp Editor", () => {
           await page.click("#editorStampAddImage");
           const input = await page.$("#stampEditorFileInput");
           await input.uploadFile(
-            `${path.join(__dirname, "../images/firefox_logo.png")}`
+            new URL("../images/firefox_logo.png", import.meta.url).href
           );
           const editorSelector = getEditorSelector(0);
           await waitForImage(page, editorSelector);
@@ -1665,7 +1662,7 @@ describe("Stamp Editor", () => {
           await page.click("#editorStampAddImage");
           const newInput = await page.$("#stampEditorFileInput");
           await newInput.uploadFile(
-            `${path.join(__dirname, "../images/firefox_logo.png")}`
+            new URL("../images/firefox_logo.png", import.meta.url).href
           );
           await waitForImage(page, getEditorSelector(1));
           await waitForSerialized(page, 1);
