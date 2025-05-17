@@ -1082,7 +1082,7 @@ describe("api", function () {
           getDocument(tracemonkeyGetDocumentParams);
         }).toThrow(
           new Error(
-            "PDFWorker.fromPort - the worker is being destroyed.\n" +
+            "PDFWorker.create - the worker is being destroyed.\n" +
               "Please remember to await `PDFDocumentLoadingTask.destroy()`-calls."
           )
         );
