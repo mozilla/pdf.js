@@ -41,11 +41,10 @@ import {
   waitForSerialized,
   waitForTimeout,
 } from "./test_utils.mjs";
-import { fileURLToPath } from "url";
 import fs from "fs";
 import path from "path";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = import.meta.dirname;
 
 const selectAll = selectEditors.bind(null, "highlight");
 
