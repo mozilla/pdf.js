@@ -669,7 +669,7 @@ describe("FreeText Editor", () => {
             }
           );
 
-          page.evaluate(() => {
+          await page.evaluate(() => {
             window.PDFViewerApplication.eventBus.dispatch(
               "switchannotationeditorparams",
               {
@@ -1290,7 +1290,7 @@ describe("FreeText Editor", () => {
             ".selectedEditor .internal"
           );
 
-          page.evaluate(() => {
+          await page.evaluate(() => {
             window.PDFViewerApplication.eventBus.dispatch(
               "switchannotationeditorparams",
               {
