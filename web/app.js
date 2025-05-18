@@ -298,11 +298,12 @@ const PDFViewerApplication = {
       try {
         GlobalWorkerOptions.workerSrc ||= AppOptions.get("workerSrc");
 
-        if (typeof PDFJSDev === "undefined") {
-          globalThis.pdfjsWorker = await import("pdfjs/pdf.worker.js");
-        } else {
-          await __raw_import__(PDFWorker.workerSrc);
-        }
+        typeof PDFJSDev === "undefined" // eslint-disable-line no-unused-expressions
+          ? await import("pdfjs/pdf.worker.js")
+          : await __raw_import__(PDFWorker.workerSrc);
+
+        // Ensure that the "fake" worker won't be ignored.
+        AppOptions.set("workerPort", null);
       } catch (ex) {
         console.error("_parseHashParams:", ex);
       }
