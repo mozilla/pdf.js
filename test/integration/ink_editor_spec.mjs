@@ -302,7 +302,7 @@ describe("Ink Editor", () => {
           await page.mouse.up();
           await awaitPromise(clickHandle);
 
-          page.mouse.click(rect.x - 10, rect.y + 10);
+          await page.mouse.click(rect.x - 10, rect.y + 10);
           await page.waitForSelector(`${getEditorSelector(0)}.disabled`);
         })
       );
@@ -583,7 +583,7 @@ describe("Ink Editor", () => {
           }
 
           const red = "#ff0000";
-          page.evaluate(value => {
+          await page.evaluate(value => {
             window.PDFViewerApplication.eventBus.dispatch(
               "switchannotationeditorparams",
               {
@@ -763,7 +763,7 @@ describe("Ink Editor", () => {
           await selectEditor(page, pdfjsA);
 
           const red = "#ff0000";
-          page.evaluate(value => {
+          await page.evaluate(value => {
             window.PDFViewerApplication.eventBus.dispatch(
               "switchannotationeditorparams",
               {
