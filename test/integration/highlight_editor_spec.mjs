@@ -626,7 +626,7 @@ describe("Highlight Editor", () => {
           const { width: prevWidth } = await getRect(page, editorSelector);
 
           value = 24;
-          page.evaluate(val => {
+          await page.evaluate(val => {
             window.PDFViewerApplication.eventBus.dispatch(
               "switchannotationeditorparams",
               {
@@ -763,7 +763,7 @@ describe("Highlight Editor", () => {
 
           const { width: prevWidth } = await getRect(page, editorSelector);
 
-          page.evaluate(val => {
+          await page.evaluate(val => {
             window.PDFViewerApplication.eventBus.dispatch(
               "switchannotationeditorparams",
               {
