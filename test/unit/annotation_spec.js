@@ -1783,7 +1783,7 @@ describe("annotation", function () {
         [1, 0, 0, 1, 0, 0],
         false,
       ]);
-      expect(opList.argsArray[1]).toEqual(new Uint8ClampedArray([26, 51, 76]));
+      expect(opList.argsArray[1]).toEqual(["#1a334c"]);
     });
 
     it("should render auto-sized text for printing", async function () {
@@ -2664,7 +2664,7 @@ describe("annotation", function () {
         [1, 0, 0, 1, 0, 0],
         false,
       ]);
-      expect(opList1.argsArray[1]).toEqual(new Uint8ClampedArray([26, 51, 76]));
+      expect(opList1.argsArray[1]).toEqual(["#1a334c"]);
 
       annotationStorage.set(annotation.data.id, { value: false });
 
@@ -2687,7 +2687,7 @@ describe("annotation", function () {
         [1, 0, 0, 1, 0, 0],
         false,
       ]);
-      expect(opList2.argsArray[1]).toEqual(new Uint8ClampedArray([76, 51, 26]));
+      expect(opList2.argsArray[1]).toEqual(["#4c331a"]);
     });
 
     it("should render checkboxes for printing twice", async function () {
@@ -2748,9 +2748,7 @@ describe("annotation", function () {
           [1, 0, 0, 1, 0, 0],
           false,
         ]);
-        expect(opList.argsArray[1]).toEqual(
-          new Uint8ClampedArray([26, 51, 76])
-        );
+        expect(opList.argsArray[1]).toEqual(["#1a334c"]);
       }
     });
 
@@ -2809,7 +2807,7 @@ describe("annotation", function () {
         [1, 0, 0, 1, 0, 0],
         false,
       ]);
-      expect(opList.argsArray[1]).toEqual(new Uint8ClampedArray([26, 51, 76]));
+      expect(opList.argsArray[1]).toEqual(["#1a334c"]);
     });
 
     it("should save checkboxes", async function () {
@@ -3052,7 +3050,7 @@ describe("annotation", function () {
         [1, 0, 0, 1, 0, 0],
         false,
       ]);
-      expect(opList1.argsArray[1]).toEqual(new Uint8ClampedArray([26, 51, 76]));
+      expect(opList1.argsArray[1]).toEqual(["#1a334c"]);
 
       annotationStorage.set(annotation.data.id, { value: false });
 
@@ -3075,7 +3073,7 @@ describe("annotation", function () {
         [1, 0, 0, 1, 0, 0],
         false,
       ]);
-      expect(opList2.argsArray[1]).toEqual(new Uint8ClampedArray([76, 51, 26]));
+      expect(opList2.argsArray[1]).toEqual(["#4c331a"]);
     });
 
     it("should render radio buttons for printing using normal appearance", async function () {
@@ -3134,7 +3132,7 @@ describe("annotation", function () {
         [1, 0, 0, 1, 0, 0],
         false,
       ]);
-      expect(opList.argsArray[1]).toEqual(new Uint8ClampedArray([76, 51, 26]));
+      expect(opList.argsArray[1]).toEqual(["#4c331a"]);
     });
 
     it("should save radio buttons", async function () {
@@ -4677,7 +4675,7 @@ describe("annotation", function () {
       // LineJoin.
       expect(opList.argsArray[3]).toEqual([1]);
       // Color.
-      expect(opList.argsArray[4]).toEqual(new Uint8ClampedArray([0, 255, 0]));
+      expect(opList.argsArray[4]).toEqual(["#00ff00"]);
       // Path.
       expect(opList.argsArray[5][0]).toEqual(OPS.stroke);
       expect(opList.argsArray[5][1]).toEqual([

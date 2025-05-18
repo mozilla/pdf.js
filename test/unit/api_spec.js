@@ -798,7 +798,7 @@ describe("api", function () {
       ]);
       expect(opList.argsArray).toEqual([
         [0.5],
-        new Uint8ClampedArray([255, 0, 0]),
+        ["#ff0000"],
         [
           OPS.closeStroke,
           [

@@ -198,19 +198,20 @@ class RadialAxialShading extends BaseShading {
 
     const color = new Float32Array(cs.numComps),
       ratio = new Float32Array(1);
-    let rgbColor;
 
     let iBase = 0;
     ratio[0] = t0;
     fn(ratio, 0, color, 0);
-    let rgbBase = cs.getRgb(color, 0);
-    const cssColorBase = Util.makeHexColor(rgbBase[0], rgbBase[1], rgbBase[2]);
-    colorStops.push([0, cssColorBase]);
+    const rgbBuffer = new Uint8ClampedArray(3);
+    cs.getRgb(color, 0, rgbBuffer);
+    let [rBase, gBase, bBase] = rgbBuffer;
+    colorStops.push([0, Util.makeHexColor(rBase, gBase, bBase)]);
 
     let iPrev = 1;
     ratio[0] = t0 + step;
     fn(ratio, 0, color, 0);
-    let rgbPrev = cs.getRgb(color, 0);
+    cs.getRgb(color, 0, rgbBuffer);
+    let [rPrev, gPrev, bPrev] = rgbBuffer;
 
     // Slopes are rise / run.
     // A max slope is from the least value the base component could have been
@@ -221,28 +222,29 @@ class RadialAxialShading extends BaseShading {
     // so the conservative deltas are +-1 (+-.5 for base and -+.5 for current).
 
     // The run is iPrev - iBase = 1, so omitted.
-    let maxSlopeR = rgbPrev[0] - rgbBase[0] + 1;
-    let maxSlopeG = rgbPrev[1] - rgbBase[1] + 1;
-    let maxSlopeB = rgbPrev[2] - rgbBase[2] + 1;
-    let minSlopeR = rgbPrev[0] - rgbBase[0] - 1;
-    let minSlopeG = rgbPrev[1] - rgbBase[1] - 1;
-    let minSlopeB = rgbPrev[2] - rgbBase[2] - 1;
+    let maxSlopeR = rPrev - rBase + 1;
+    let maxSlopeG = gPrev - gBase + 1;
+    let maxSlopeB = bPrev - bBase + 1;
+    let minSlopeR = rPrev - rBase - 1;
+    let minSlopeG = gPrev - gBase - 1;
+    let minSlopeB = bPrev - bBase - 1;
 
     for (let i = 2; i < NUMBER_OF_SAMPLES; i++) {
       ratio[0] = t0 + i * step;
       fn(ratio, 0, color, 0);
-      rgbColor = cs.getRgb(color, 0);
+      cs.getRgb(color, 0, rgbBuffer);
+      const [r, g, b] = rgbBuffer;
 
       // Keep going if the maximum minimum slope <= the minimum maximum slope.
       // Otherwise add a rgbPrev color stop and make it the new base.
 
       const run = i - iBase;
-      maxSlopeR = Math.min(maxSlopeR, (rgbColor[0] - rgbBase[0] + 1) / run);
-      maxSlopeG = Math.min(maxSlopeG, (rgbColor[1] - rgbBase[1] + 1) / run);
-      maxSlopeB = Math.min(maxSlopeB, (rgbColor[2] - rgbBase[2] + 1) / run);
-      minSlopeR = Math.max(minSlopeR, (rgbColor[0] - rgbBase[0] - 1) / run);
-      minSlopeG = Math.max(minSlopeG, (rgbColor[1] - rgbBase[1] - 1) / run);
-      minSlopeB = Math.max(minSlopeB, (rgbColor[2] - rgbBase[2] - 1) / run);
+      maxSlopeR = Math.min(maxSlopeR, (r - rBase + 1) / run);
+      maxSlopeG = Math.min(maxSlopeG, (g - gBase + 1) / run);
+      maxSlopeB = Math.min(maxSlopeB, (b - bBase + 1) / run);
+      minSlopeR = Math.max(minSlopeR, (r - rBase - 1) / run);
+      minSlopeG = Math.max(minSlopeG, (g - gBase - 1) / run);
+      minSlopeB = Math.max(minSlopeB, (b - bBase - 1) / run);
 
       const slopesExist =
         minSlopeR <= maxSlopeR &&
@@ -250,34 +252,36 @@ class RadialAxialShading extends BaseShading {
         minSlopeB <= maxSlopeB;
 
       if (!slopesExist) {
-        const cssColor = Util.makeHexColor(rgbPrev[0], rgbPrev[1], rgbPrev[2]);
+        const cssColor = Util.makeHexColor(rPrev, gPrev, bPrev);
         colorStops.push([iPrev / NUMBER_OF_SAMPLES, cssColor]);
 
         // TODO: When fn frequency is high (iPrev - iBase === 1 twice in a row),
         // send the color space and function to do the sampling display side.
 
         // The run is i - iPrev = 1, so omitted.
-        maxSlopeR = rgbColor[0] - rgbPrev[0] + 1;
-        maxSlopeG = rgbColor[1] - rgbPrev[1] + 1;
-        maxSlopeB = rgbColor[2] - rgbPrev[2] + 1;
-        minSlopeR = rgbColor[0] - rgbPrev[0] - 1;
-        minSlopeG = rgbColor[1] - rgbPrev[1] - 1;
-        minSlopeB = rgbColor[2] - rgbPrev[2] - 1;
+        maxSlopeR = r - rPrev + 1;
+        maxSlopeG = g - gPrev + 1;
+        maxSlopeB = b - bPrev + 1;
+        minSlopeR = r - rPrev - 1;
+        minSlopeG = g - gPrev - 1;
+        minSlopeB = b - bPrev - 1;
 
         iBase = iPrev;
-        rgbBase = rgbPrev;
+        rBase = rPrev;
+        gBase = gPrev;
+        bBase = bPrev;
       }
 
       iPrev = i;
-      rgbPrev = rgbColor;
+      rPrev = r;
+      gPrev = g;
+      bPrev = b;
     }
-    const cssColor = Util.makeHexColor(rgbPrev[0], rgbPrev[1], rgbPrev[2]);
-    colorStops.push([1, cssColor]);
+    colorStops.push([1, Util.makeHexColor(rPrev, gPrev, bPrev)]);
 
     let background = "transparent";
     if (dict.has("Background")) {
-      rgbColor = cs.getRgb(dict.get("Background"), 0);
-      background = Util.makeHexColor(rgbColor[0], rgbColor[1], rgbColor[2]);
+      background = cs.getRgbHex(dict.get("Background"), 0);
     }
 
     if (!extendStart) {
