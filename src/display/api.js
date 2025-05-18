@@ -462,32 +462,14 @@ function getDocument(src = {}) {
         if (!url) {
           throw new Error("getDocument - no `url` parameter provided.");
         }
-        let NetworkStream;
-
-        if (
-          typeof PDFJSDev !== "undefined" &&
-          PDFJSDev.test("GENERIC") &&
-          isNodeJS
-        ) {
-          if (isValidFetchUrl(url)) {
-            if (
-              typeof fetch === "undefined" ||
-              typeof Response === "undefined" ||
-              !("body" in Response.prototype)
-            ) {
-              throw new Error(
-                "getDocument - the Fetch API was disabled in Node.js, see `--no-experimental-fetch`."
-              );
-            }
-            NetworkStream = PDFFetchStream;
-          } else {
-            NetworkStream = PDFNodeStream;
-          }
-        } else {
-          NetworkStream = isValidFetchUrl(url)
-            ? PDFFetchStream
+        // eslint-disable-next-line no-nested-ternary
+        const NetworkStream = isValidFetchUrl(url)
+          ? PDFFetchStream
+          : typeof PDFJSDev !== "undefined" &&
+              PDFJSDev.test("GENERIC") &&
+              isNodeJS
+            ? PDFNodeStream
             : PDFNetworkStream;
-        }
 
         networkStream = new NetworkStream({
           url,
