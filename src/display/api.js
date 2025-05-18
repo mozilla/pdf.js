@@ -722,6 +722,16 @@ class PDFDocumentLoadingTask {
  * main-thread memory usage, however it will take ownership of the TypedArrays.
  */
 class PDFDataRangeTransport {
+  #capability = Promise.withResolvers();
+
+  #progressiveDoneListeners = [];
+
+  #progressiveReadListeners = [];
+
+  #progressListeners = [];
+
+  #rangeListeners = [];
+
   /**
    * @param {number} length
    * @param {Uint8Array|null} initialData
@@ -738,40 +748,34 @@ class PDFDataRangeTransport {
     this.initialData = initialData;
     this.progressiveDone = progressiveDone;
     this.contentDispositionFilename = contentDispositionFilename;
-
-    this._rangeListeners = [];
-    this._progressListeners = [];
-    this._progressiveReadListeners = [];
-    this._progressiveDoneListeners = [];
-    this._readyCapability = Promise.withResolvers();
   }
 
   /**
    * @param {function} listener
    */
   addRangeListener(listener) {
-    this._rangeListeners.push(listener);
+    this.#rangeListeners.push(listener);
   }
 
   /**
    * @param {function} listener
    */
   addProgressListener(listener) {
-    this._progressListeners.push(listener);
+    this.#progressListeners.push(listener);
   }
 
   /**
    * @param {function} listener
    */
   addProgressiveReadListener(listener) {
-    this._progressiveReadListeners.push(listener);
+    this.#progressiveReadListeners.push(listener);
   }
 
   /**
    * @param {function} listener
    */
   addProgressiveDoneListener(listener) {
-    this._progressiveDoneListeners.push(listener);
+    this.#progressiveDoneListeners.push(listener);
   }
 
   /**
@@ -779,7 +783,7 @@ class PDFDataRangeTransport {
    * @param {Uint8Array|null} chunk
    */
   onDataRange(begin, chunk) {
-    for (const listener of this._rangeListeners) {
+    for (const listener of this.#rangeListeners) {
       listener(begin, chunk);
     }
   }
@@ -789,8 +793,8 @@ class PDFDataRangeTransport {
    * @param {number|undefined} total
    */
   onDataProgress(loaded, total) {
-    this._readyCapability.promise.then(() => {
-      for (const listener of this._progressListeners) {
+    this.#capability.promise.then(() => {
+      for (const listener of this.#progressListeners) {
         listener(loaded, total);
       }
     });
@@ -800,23 +804,23 @@ class PDFDataRangeTransport {
    * @param {Uint8Array|null} chunk
    */
   onDataProgressiveRead(chunk) {
-    this._readyCapability.promise.then(() => {
-      for (const listener of this._progressiveReadListeners) {
+    this.#capability.promise.then(() => {
+      for (const listener of this.#progressiveReadListeners) {
         listener(chunk);
       }
     });
   }
 
   onDataProgressiveDone() {
-    this._readyCapability.promise.then(() => {
-      for (const listener of this._progressiveDoneListeners) {
+    this.#capability.promise.then(() => {
+      for (const listener of this.#progressiveDoneListeners) {
         listener();
       }
     });
   }
 
   transportReady() {
-    this._readyCapability.resolve();
+    this.#capability.resolve();
   }
 
   /**
