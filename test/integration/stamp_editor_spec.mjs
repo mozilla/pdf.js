@@ -631,6 +631,7 @@ describe("Stamp Editor", () => {
     });
 
     it("must check that the alt-text button is here when pasting in the second tab", async () => {
+      // Run sequentially to avoid clipboard issues.
       for (let i = 0; i < pages1.length; i++) {
         const [, page1] = pages1[i];
         await page1.bringToFront();
@@ -1592,86 +1593,80 @@ describe("Stamp Editor", () => {
     });
 
     it("must check that deleting an image can be undone using the undo button", async () => {
-      await Promise.all(
-        pages.map(async ([browserName, page]) => {
-          await switchToStamp(page);
+      // Run sequentially to avoid clipboard issues.
+      for (const [, page] of pages) {
+        await switchToStamp(page);
 
-          const editorSelector = getEditorSelector(0);
-          await copyImage(page, "../images/firefox_logo.png", editorSelector);
-          await page.waitForSelector(editorSelector);
-          await waitForSerialized(page, 1);
+        const editorSelector = getEditorSelector(0);
+        await copyImage(page, "../images/firefox_logo.png", editorSelector);
+        await page.waitForSelector(editorSelector);
+        await waitForSerialized(page, 1);
 
-          await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
-          await waitForSerialized(page, 0);
-          await page.waitForSelector("#editorUndoBar", { visible: true });
+        await page.waitForSelector(`${editorSelector} button.delete`);
+        await page.click(`${editorSelector} button.delete`);
+        await waitForSerialized(page, 0);
+        await page.waitForSelector("#editorUndoBar", { visible: true });
 
-          await page.waitForSelector("#editorUndoBarUndoButton", {
-            visible: true,
-          });
-          await page.click("#editorUndoBarUndoButton");
-          await waitForSerialized(page, 1);
-          await page.waitForSelector(editorSelector);
-          await page.waitForSelector(`${editorSelector} canvas`);
-        })
-      );
+        await page.waitForSelector("#editorUndoBarUndoButton", {
+          visible: true,
+        });
+        await page.click("#editorUndoBarUndoButton");
+        await waitForSerialized(page, 1);
+        await page.waitForSelector(editorSelector);
+        await page.waitForSelector(`${editorSelector} canvas`);
+      }
     });
 
     it("must check that the undo deletion popup displays the correct message", async () => {
-      await Promise.all(
-        pages.map(async ([browserName, page]) => {
-          await switchToStamp(page);
+      // Run sequentially to avoid clipboard issues.
+      for (const [, page] of pages) {
+        await switchToStamp(page);
 
-          const editorSelector = getEditorSelector(0);
-          await copyImage(page, "../images/firefox_logo.png", editorSelector);
-          await page.waitForSelector(editorSelector);
-          await waitForSerialized(page, 1);
+        const editorSelector = getEditorSelector(0);
+        await copyImage(page, "../images/firefox_logo.png", editorSelector);
+        await page.waitForSelector(editorSelector);
+        await waitForSerialized(page, 1);
 
-          await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
-          await waitForSerialized(page, 0);
+        await page.waitForSelector(`${editorSelector} button.delete`);
+        await page.click(`${editorSelector} button.delete`);
+        await waitForSerialized(page, 0);
 
-          await page.waitForFunction(() => {
-            const messageElement = document.querySelector(
-              "#editorUndoBarMessage"
-            );
-            return messageElement && messageElement.textContent.trim() !== "";
-          });
-          const message = await page.waitForSelector("#editorUndoBarMessage");
-          const messageText = await page.evaluate(
-            el => el.textContent,
-            message
+        await page.waitForFunction(() => {
+          const messageElement = document.querySelector(
+            "#editorUndoBarMessage"
           );
-          expect(messageText).toContain("Image removed");
-        })
-      );
+          return messageElement && messageElement.textContent.trim() !== "";
+        });
+        const message = await page.waitForSelector("#editorUndoBarMessage");
+        const messageText = await page.evaluate(el => el.textContent, message);
+        expect(messageText).toContain("Image removed");
+      }
     });
 
     it("must check that the popup disappears when a new image is inserted", async () => {
-      await Promise.all(
-        pages.map(async ([browserName, page]) => {
-          await switchToStamp(page);
+      // Run sequentially to avoid clipboard issues.
+      for (const [, page] of pages) {
+        await switchToStamp(page);
 
-          const editorSelector = getEditorSelector(0);
-          await copyImage(page, "../images/firefox_logo.png", editorSelector);
-          await page.waitForSelector(editorSelector);
-          await waitForSerialized(page, 1);
+        const editorSelector = getEditorSelector(0);
+        await copyImage(page, "../images/firefox_logo.png", editorSelector);
+        await page.waitForSelector(editorSelector);
+        await waitForSerialized(page, 1);
 
-          await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
-          await waitForSerialized(page, 0);
+        await page.waitForSelector(`${editorSelector} button.delete`);
+        await page.click(`${editorSelector} button.delete`);
+        await waitForSerialized(page, 0);
 
-          await page.waitForSelector("#editorUndoBar", { visible: true });
-          await page.click("#editorStampAddImage");
-          const newInput = await page.$("#stampEditorFileInput");
-          await newInput.uploadFile(
-            `${path.join(__dirname, "../images/firefox_logo.png")}`
-          );
-          await waitForImage(page, getEditorSelector(1));
-          await waitForSerialized(page, 1);
-          await page.waitForSelector("#editorUndoBar", { hidden: true });
-        })
-      );
+        await page.waitForSelector("#editorUndoBar", { visible: true });
+        await page.click("#editorStampAddImage");
+        const newInput = await page.$("#stampEditorFileInput");
+        await newInput.uploadFile(
+          `${path.join(__dirname, "../images/firefox_logo.png")}`
+        );
+        await waitForImage(page, getEditorSelector(1));
+        await waitForSerialized(page, 1);
+        await page.waitForSelector("#editorUndoBar", { hidden: true });
+      }
     });
   });
 
