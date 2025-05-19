@@ -1311,7 +1311,6 @@ class CanvasGraphics {
     let maskY = layerOffsetY - maskOffsetY;
 
     if (backdrop) {
-      const backdropRGB = Util.makeHexColor(...backdrop);
       if (
         maskX < 0 ||
         maskY < 0 ||
@@ -1326,7 +1325,7 @@ class CanvasGraphics {
         const ctx = canvas.context;
         ctx.drawImage(maskCanvas, -maskX, -maskY);
         ctx.globalCompositeOperation = "destination-atop";
-        ctx.fillStyle = backdropRGB;
+        ctx.fillStyle = backdrop;
         ctx.fillRect(0, 0, width, height);
         ctx.globalCompositeOperation = "source-over";
 
@@ -1340,7 +1339,7 @@ class CanvasGraphics {
         clip.rect(maskX, maskY, width, height);
         maskCtx.clip(clip);
         maskCtx.globalCompositeOperation = "destination-atop";
-        maskCtx.fillStyle = backdropRGB;
+        maskCtx.fillStyle = backdrop;
         maskCtx.fillRect(maskX, maskY, width, height);
         maskCtx.restore();
       }
@@ -2193,12 +2192,8 @@ class CanvasGraphics {
     this.current.patternFill = true;
   }
 
-  setStrokeRGBColor(r, g, b) {
-    this.ctx.strokeStyle = this.current.strokeColor = Util.makeHexColor(
-      r,
-      g,
-      b
-    );
+  setStrokeRGBColor(color) {
+    this.ctx.strokeStyle = this.current.strokeColor = color;
     this.current.patternStroke = false;
   }
 
@@ -2207,8 +2202,8 @@ class CanvasGraphics {
     this.current.patternStroke = false;
   }
 
-  setFillRGBColor(r, g, b) {
-    this.ctx.fillStyle = this.current.fillColor = Util.makeHexColor(r, g, b);
+  setFillRGBColor(color) {
+    this.ctx.fillStyle = this.current.fillColor = color;
     this.current.patternFill = false;
   }
 
