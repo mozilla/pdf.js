@@ -374,6 +374,14 @@ class Stepper {
         table.classList.add("showText");
         decArgs.append(table);
         table.append(charCodeRow, fontCharRow, unicodeRow);
+      } else if (fn === "constructPath") {
+        const [op, [path], minMax] = args;
+        decArgs = this.#c("td");
+        decArgs.append(JSON.stringify(this.#simplifyArgs(path)));
+        decArgs.append(this.#c("br"));
+        decArgs.append(`minMax: ${JSON.stringify(this.#simplifyArgs(minMax))}`);
+        decArgs.append(this.#c("br"));
+        decArgs.append(`→ ${opMap[op]}`);
       } else if (fn === "restore" && this.indentLevel > 0) {
         this.indentLevel--;
       }
