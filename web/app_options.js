@@ -504,7 +504,7 @@ const defaultOptions = {
     /** @type {Object} */
     value:
       typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")
-        ? globalThis.pdfjsPreloadedWorker
+        ? globalThis.pdfjsPreloadedWorker || null
         : null,
     kind: OptionKind.WORKER,
   },
