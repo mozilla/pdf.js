@@ -4313,12 +4313,9 @@ class PartialEvaluator {
 
     if (!descriptor) {
       if (isType3Font) {
-        const bbox = lookupNormalRect(dict.getArray("FontBBox"), [0, 0, 0, 0]);
         // FontDescriptor is only required for Type3 fonts when the document
-        // is a tagged pdf. Create a barbebones one to get by.
-        descriptor = new Dict(null);
-        descriptor.set("FontName", Name.get(type));
-        descriptor.set("FontBBox", bbox);
+        // is a tagged pdf.
+        descriptor = Dict.empty;
       } else {
         // Before PDF 1.5 if the font was one of the base 14 fonts, having a
         // FontDescriptor was not required.
@@ -4422,8 +4419,8 @@ class PartialEvaluator {
     const baseFontStr = baseFont?.name;
     if (isType3Font) {
       if (!fontNameStr) {
-        // The Type3 font has a /FontDescriptor, however it's incomplete, hence
-        // why we didn't create a barbebones one above (fixes issue19954.pdf).
+        // Since the /FontDescriptor is optional in Type3 fonts, ensure that we
+        // always have a "valid" /FontName (fixes issue19954.pdf).
         fontName = Name.get(type);
       }
     } else if (fontNameStr !== baseFontStr) {
@@ -4444,8 +4441,8 @@ class PartialEvaluator {
       ) {
         fontName = null;
       }
+      fontName ||= baseFont;
     }
-    fontName ||= baseFont;
 
     if (!(fontName instanceof Name)) {
       throw new FormatError("invalid font name");
@@ -4523,7 +4520,7 @@ class PartialEvaluator {
     );
     const bbox = lookupNormalRect(
       descriptor.getArray("FontBBox") || dict.getArray("FontBBox"),
-      undefined
+      isType3Font ? [0, 0, 0, 0] : undefined
     );
     let ascent = descriptor.get("Ascent");
     if (typeof ascent !== "number") {
@@ -4711,9 +4708,9 @@ class TranslatedFont {
     const fontResources = this.dict.get("Resources") || resources;
     const charProcOperatorList = Object.create(null);
 
-    const fontBBox = Util.normalizeRect(font.bbox || [0, 0, 0, 0]),
-      width = fontBBox[2] - fontBBox[0],
-      height = fontBBox[3] - fontBBox[1];
+    const [x0, y0, x1, y1] = font.bbox,
+      width = x1 - x0,
+      height = y1 - y0;
     const fontBBoxSize = Math.hypot(width, height);
 
     for (const key of charProcs.getKeys()) {
