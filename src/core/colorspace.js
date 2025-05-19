@@ -21,6 +21,7 @@ import {
   MathClamp,
   shadow,
   unreachable,
+  Util,
   warn,
 } from "../shared/util.js";
 import { BaseStream } from "./base_stream.js";
@@ -116,6 +117,8 @@ function copyRgbaImage(src, dest, alpha01) {
 }
 
 class ColorSpace {
+  static #rgbBuf = new Uint8ClampedArray(3);
+
   constructor(name, numComps) {
     if (
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
@@ -132,10 +135,14 @@ class ColorSpace {
    * located in the src array starting from the srcOffset. Returns the array
    * of the rgb components, each value ranging from [0,255].
    */
-  getRgb(src, srcOffset) {
-    const rgb = new Uint8ClampedArray(3);
-    this.getRgbItem(src, srcOffset, rgb, 0);
-    return rgb;
+  getRgb(src, srcOffset, output = new Uint8ClampedArray(3)) {
+    this.getRgbItem(src, srcOffset, output, 0);
+    return output;
+  }
+
+  getRgbHex(src, srcOffset) {
+    const buffer = this.getRgb(src, srcOffset, ColorSpace.#rgbBuf);
+    return Util.makeHexColor(buffer[0], buffer[1], buffer[2]);
   }
 
   /**
