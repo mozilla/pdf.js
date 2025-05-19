@@ -4420,7 +4420,13 @@ class PartialEvaluator {
 
     const fontNameStr = fontName?.name;
     const baseFontStr = baseFont?.name;
-    if (!isType3Font && fontNameStr !== baseFontStr) {
+    if (isType3Font) {
+      if (!fontNameStr) {
+        // The Type3 font has a /FontDescriptor, however it's incomplete, hence
+        // why we didn't create a barbebones one above (fixes issue19954.pdf).
+        fontName = Name.get(type);
+      }
+    } else if (fontNameStr !== baseFontStr) {
       info(
         `The FontDescriptor's FontName is "${fontNameStr}" but ` +
           `should be the same as the Font's BaseFont "${baseFontStr}".`
