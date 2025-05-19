@@ -1,5 +1,5 @@
 /* THIS FILE IS GENERATED - DO NOT EDIT */
-import { copy_result, copy_rgb } from './qcms_utils.js';
+import { copy_result, copy_rgb, make_cssRGB } from './qcms_utils.js';
 
 let wasm;
 
@@ -48,9 +48,10 @@ export function qcms_convert_array(transformer, src) {
  * This function is called directly from JavaScript.
  * @param {number} transformer
  * @param {number} src
+ * @param {boolean} css
  */
-export function qcms_convert_one(transformer, src) {
-    wasm.qcms_convert_one(transformer, src);
+export function qcms_convert_one(transformer, src, css) {
+    wasm.qcms_convert_one(transformer, src, css);
 }
 
 /**
@@ -61,9 +62,10 @@ export function qcms_convert_one(transformer, src) {
  * @param {number} src1
  * @param {number} src2
  * @param {number} src3
+ * @param {boolean} css
  */
-export function qcms_convert_three(transformer, src1, src2, src3) {
-    wasm.qcms_convert_three(transformer, src1, src2, src3);
+export function qcms_convert_three(transformer, src1, src2, src3, css) {
+    wasm.qcms_convert_three(transformer, src1, src2, src3, css);
 }
 
 /**
@@ -75,9 +77,10 @@ export function qcms_convert_three(transformer, src1, src2, src3) {
  * @param {number} src2
  * @param {number} src3
  * @param {number} src4
+ * @param {boolean} css
  */
-export function qcms_convert_four(transformer, src1, src2, src3, src4) {
-    wasm.qcms_convert_four(transformer, src1, src2, src3, src4);
+export function qcms_convert_four(transformer, src1, src2, src3, src4, css) {
+    wasm.qcms_convert_four(transformer, src1, src2, src3, src4, css);
 }
 
 /**
@@ -166,6 +169,9 @@ function __wbg_get_imports() {
     };
     imports.wbg.__wbg_copyrgb_d60ce17bb05d9b67 = function(arg0) {
         copy_rgb(arg0 >>> 0);
+    };
+    imports.wbg.__wbg_makecssRGB_893bf0cd9fdb302d = function(arg0) {
+        make_cssRGB(arg0 >>> 0);
     };
     imports.wbg.__wbindgen_init_externref_table = function() {
         const table = wasm.__wbindgen_export_0;
