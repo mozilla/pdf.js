@@ -665,7 +665,7 @@ class Catalog {
   }
 
   get numPages() {
-    return this.hasActualNumPages ? this.#actualNumPages : this._pagesCount;
+    return this.#actualNumPages ?? this._pagesCount;
   }
 
   get destinations() {
