@@ -85,38 +85,49 @@ function fetchRemoteDest(action) {
 }
 
 class Catalog {
+  #actualNumPages = null;
+
+  #catDict = null;
+
+  builtInCMapCache = new Map();
+
+  fontCache = new RefSetCache();
+
+  globalColorSpaceCache = new GlobalColorSpaceCache();
+
+  globalImageCache = new GlobalImageCache();
+
+  nonBlendModesSet = new RefSet();
+
+  pageDictCache = new RefSetCache();
+
+  pageIndexCache = new RefSetCache();
+
+  pageKidsCountCache = new RefSetCache();
+
+  standardFontDataCache = new Map();
+
+  systemFontCache = new Map();
+
   constructor(pdfManager, xref) {
     this.pdfManager = pdfManager;
     this.xref = xref;
 
-    this._catDict = xref.getCatalogObj();
-    if (!(this._catDict instanceof Dict)) {
+    this.#catDict = xref.getCatalogObj();
+    if (!(this.#catDict instanceof Dict)) {
       throw new FormatError("Catalog object is not a dictionary.");
     }
     // Given that `XRef.parse` will both fetch *and* validate the /Pages-entry,
     // the following call must always succeed here:
     this.toplevelPagesDict; // eslint-disable-line no-unused-expressions
-
-    this._actualNumPages = null;
-
-    this.fontCache = new RefSetCache();
-    this.builtInCMapCache = new Map();
-    this.standardFontDataCache = new Map();
-    this.globalColorSpaceCache = new GlobalColorSpaceCache();
-    this.globalImageCache = new GlobalImageCache();
-    this.pageKidsCountCache = new RefSetCache();
-    this.pageIndexCache = new RefSetCache();
-    this.pageDictCache = new RefSetCache();
-    this.nonBlendModesSet = new RefSet();
-    this.systemFontCache = new Map();
   }
 
   cloneDict() {
-    return this._catDict.clone();
+    return this.#catDict.clone();
   }
 
   get version() {
-    const version = this._catDict.get("Version");
+    const version = this.#catDict.get("Version");
     if (version instanceof Name) {
       if (PDF_VERSION_REGEXP.test(version.name)) {
         return shadow(this, "version", version.name);
@@ -127,7 +138,7 @@ class Catalog {
   }
 
   get lang() {
-    const lang = this._catDict.get("Lang");
+    const lang = this.#catDict.get("Lang");
     return shadow(
       this,
       "lang",
@@ -140,7 +151,7 @@ class Catalog {
    *   `false` for XFA Foreground documents.
    */
   get needsRendering() {
-    const needsRendering = this._catDict.get("NeedsRendering");
+    const needsRendering = this.#catDict.get("NeedsRendering");
     return shadow(
       this,
       "needsRendering",
@@ -151,7 +162,7 @@ class Catalog {
   get collection() {
     let collection = null;
     try {
-      const obj = this._catDict.get("Collection");
+      const obj = this.#catDict.get("Collection");
       if (obj instanceof Dict && obj.size > 0) {
         collection = obj;
       }
@@ -167,7 +178,7 @@ class Catalog {
   get acroForm() {
     let acroForm = null;
     try {
-      const obj = this._catDict.get("AcroForm");
+      const obj = this.#catDict.get("AcroForm");
       if (obj instanceof Dict && obj.size > 0) {
         acroForm = obj;
       }
@@ -181,12 +192,12 @@ class Catalog {
   }
 
   get acroFormRef() {
-    const value = this._catDict.getRaw("AcroForm");
+    const value = this.#catDict.getRaw("AcroForm");
     return shadow(this, "acroFormRef", value instanceof Ref ? value : null);
   }
 
   get metadata() {
-    const streamRef = this._catDict.getRaw("Metadata");
+    const streamRef = this.#catDict.getRaw("Metadata");
     if (!(streamRef instanceof Ref)) {
       return shadow(this, "metadata", null);
     }
@@ -225,7 +236,7 @@ class Catalog {
   get markInfo() {
     let markInfo = null;
     try {
-      markInfo = this._readMarkInfo();
+      markInfo = this.#readMarkInfo();
     } catch (ex) {
       if (ex instanceof MissingDataException) {
         throw ex;
@@ -235,11 +246,8 @@ class Catalog {
     return shadow(this, "markInfo", markInfo);
   }
 
-  /**
-   * @private
-   */
-  _readMarkInfo() {
-    const obj = this._catDict.get("MarkInfo");
+  #readMarkInfo() {
+    const obj = this.#catDict.get("MarkInfo");
     if (!(obj instanceof Dict)) {
       return null;
     }
@@ -273,7 +281,7 @@ class Catalog {
   }
 
   #readStructTreeRoot() {
-    const rawObj = this._catDict.getRaw("StructTreeRoot");
+    const rawObj = this.#catDict.getRaw("StructTreeRoot");
     const obj = this.xref.fetchIfRef(rawObj);
     if (!(obj instanceof Dict)) {
       return null;
@@ -285,7 +293,7 @@ class Catalog {
   }
 
   get toplevelPagesDict() {
-    const pagesObj = this._catDict.get("Pages");
+    const pagesObj = this.#catDict.get("Pages");
     if (!(pagesObj instanceof Dict)) {
       throw new FormatError("Invalid top-level pages dictionary.");
     }
@@ -295,7 +303,7 @@ class Catalog {
   get documentOutline() {
     let obj = null;
     try {
-      obj = this._readDocumentOutline();
+      obj = this.#readDocumentOutline();
     } catch (ex) {
       if (ex instanceof MissingDataException) {
         throw ex;
@@ -305,11 +313,8 @@ class Catalog {
     return shadow(this, "documentOutline", obj);
   }
 
-  /**
-   * @private
-   */
-  _readDocumentOutline() {
-    let obj = this._catDict.get("Outlines");
+  #readDocumentOutline() {
+    let obj = this.#catDict.get("Outlines");
     if (!(obj instanceof Dict)) {
       return null;
     }
@@ -391,7 +396,7 @@ class Catalog {
   get permissions() {
     let permissions = null;
     try {
-      permissions = this._readPermissions();
+      permissions = this.#readPermissions();
     } catch (ex) {
       if (ex instanceof MissingDataException) {
         throw ex;
@@ -401,10 +406,7 @@ class Catalog {
     return shadow(this, "permissions", permissions);
   }
 
-  /**
-   * @private
-   */
-  _readPermissions() {
+  #readPermissions() {
     const encrypt = this.xref.trailer.get("Encrypt");
     if (!(encrypt instanceof Dict)) {
       return null;
@@ -433,7 +435,7 @@ class Catalog {
   get optionalContentConfig() {
     let config = null;
     try {
-      const properties = this._catDict.get("OCProperties");
+      const properties = this.#catDict.get("OCProperties");
       if (!properties) {
         return shadow(this, "optionalContentConfig", null);
       }
@@ -645,11 +647,11 @@ class Catalog {
   }
 
   setActualNumPages(num = null) {
-    this._actualNumPages = num;
+    this.#actualNumPages = num;
   }
 
   get hasActualNumPages() {
-    return this._actualNumPages !== null;
+    return this.#actualNumPages !== null;
   }
 
   get _pagesCount() {
@@ -663,7 +665,7 @@ class Catalog {
   }
 
   get numPages() {
-    return this.hasActualNumPages ? this._actualNumPages : this._pagesCount;
+    return this.hasActualNumPages ? this.#actualNumPages : this._pagesCount;
   }
 
   get destinations() {
@@ -721,14 +723,14 @@ class Catalog {
   }
 
   #readDests() {
-    const obj = this._catDict.get("Names");
+    const obj = this.#catDict.get("Names");
     const rawDests = [];
     if (obj?.has("Dests")) {
       rawDests.push(new NameTree(obj.getRaw("Dests"), this.xref));
     }
-    if (this._catDict.has("Dests")) {
+    if (this.#catDict.has("Dests")) {
       // Simple destination dictionary.
-      rawDests.push(this._catDict.get("Dests"));
+      rawDests.push(this.#catDict.get("Dests"));
     }
     return rawDests;
   }
@@ -736,7 +738,7 @@ class Catalog {
   get pageLabels() {
     let obj = null;
     try {
-      obj = this._readPageLabels();
+      obj = this.#readPageLabels();
     } catch (ex) {
       if (ex instanceof MissingDataException) {
         throw ex;
@@ -746,11 +748,8 @@ class Catalog {
     return shadow(this, "pageLabels", obj);
   }
 
-  /**
-   * @private
-   */
-  _readPageLabels() {
-    const obj = this._catDict.getRaw("PageLabels");
+  #readPageLabels() {
+    const obj = this.#catDict.getRaw("PageLabels");
     if (!obj) {
       return null;
     }
@@ -847,7 +846,7 @@ class Catalog {
   }
 
   get pageLayout() {
-    const obj = this._catDict.get("PageLayout");
+    const obj = this.#catDict.get("PageLayout");
     // Purposely use a non-standard default value, rather than 'SinglePage', to
     // allow differentiating between `undefined` and /SinglePage since that does
     // affect the Scroll mode (continuous/non-continuous) used in Adobe Reader.
@@ -868,7 +867,7 @@ class Catalog {
   }
 
   get pageMode() {
-    const obj = this._catDict.get("PageMode");
+    const obj = this.#catDict.get("PageMode");
     let pageMode = "UseNone"; // Default value.
 
     if (obj instanceof Name) {
@@ -886,7 +885,7 @@ class Catalog {
   }
 
   get viewerPreferences() {
-    const obj = this._catDict.get("ViewerPreferences");
+    const obj = this.#catDict.get("ViewerPreferences");
     if (!(obj instanceof Dict)) {
       return shadow(this, "viewerPreferences", null);
     }
@@ -1012,7 +1011,7 @@ class Catalog {
   }
 
   get openAction() {
-    const obj = this._catDict.get("OpenAction");
+    const obj = this.#catDict.get("OpenAction");
     const openAction = Object.create(null);
 
     if (obj instanceof Dict) {
@@ -1040,7 +1039,7 @@ class Catalog {
   }
 
   get attachments() {
-    const obj = this._catDict.get("Names");
+    const obj = this.#catDict.get("Names");
     let attachments = null;
 
     if (obj instanceof Dict && obj.has("EmbeddedFiles")) {
@@ -1056,7 +1055,7 @@ class Catalog {
   }
 
   get xfaImages() {
-    const obj = this._catDict.get("Names");
+    const obj = this.#catDict.get("Names");
     let xfaImages = null;
 
     if (obj instanceof Dict && obj.has("XFAImages")) {
@@ -1074,8 +1073,8 @@ class Catalog {
     return shadow(this, "xfaImages", xfaImages);
   }
 
-  _collectJavaScript() {
-    const obj = this._catDict.get("Names");
+  #collectJavaScript() {
+    const obj = this.#catDict.get("Names");
     let javaScript = null;
 
     function appendIfJavaScriptDict(name, jsDict) {
@@ -1112,7 +1111,7 @@ class Catalog {
       }
     }
     // Append OpenAction "JavaScript" actions, if any, to the JavaScript map.
-    const openAction = this._catDict.get("OpenAction");
+    const openAction = this.#catDict.get("OpenAction");
     if (openAction) {
       appendIfJavaScriptDict("OpenAction", openAction);
     }
@@ -1121,10 +1120,10 @@ class Catalog {
   }
 
   get jsActions() {
-    const javaScript = this._collectJavaScript();
+    const javaScript = this.#collectJavaScript();
     let actions = collectActions(
       this.xref,
-      this._catDict,
+      this.#catDict,
       DocumentActionEventType
     );
 
@@ -1164,7 +1163,7 @@ class Catalog {
     const nodesToVisit = [this.toplevelPagesDict];
     const visitedNodes = new RefSet();
 
-    const pagesRef = this._catDict.getRaw("Pages");
+    const pagesRef = this.#catDict.getRaw("Pages");
     if (pagesRef instanceof Ref) {
       visitedNodes.put(pagesRef);
     }
@@ -1301,7 +1300,7 @@ class Catalog {
     const queue = [{ currentNode: this.toplevelPagesDict, posInKids: 0 }];
     const visitedNodes = new RefSet();
 
-    const pagesRef = this._catDict.getRaw("Pages");
+    const pagesRef = this.#catDict.getRaw("Pages");
     if (pagesRef instanceof Ref) {
       visitedNodes.put(pagesRef);
     }
@@ -1505,7 +1504,7 @@ class Catalog {
   }
 
   get baseUrl() {
-    const uri = this._catDict.get("URI");
+    const uri = this.#catDict.get("URI");
     if (uri instanceof Dict) {
       const base = uri.get("Base");
       if (typeof base === "string") {
