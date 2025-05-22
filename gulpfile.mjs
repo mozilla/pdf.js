@@ -490,8 +490,7 @@ function checkChromePreferencesFile(chromePrefsPath, webPrefs) {
 
 function createMainBundle(defines) {
   const mainFileConfig = createWebpackConfig(defines, {
-    filename:
-      defines.MINIFIED && !defines.MOZCENTRAL ? "pdf.min.mjs" : "pdf.mjs",
+    filename: defines.MINIFIED ? "pdf.min.mjs" : "pdf.mjs",
     library: {
       type: "module",
     },
@@ -571,10 +570,7 @@ function createSandboxBundle(defines, extraOptions = undefined) {
 
 function createWorkerBundle(defines) {
   const workerFileConfig = createWebpackConfig(defines, {
-    filename:
-      defines.MINIFIED && !defines.MOZCENTRAL
-        ? "pdf.worker.min.mjs"
-        : "pdf.worker.mjs",
+    filename: defines.MINIFIED ? "pdf.worker.min.mjs" : "pdf.worker.mjs",
     library: {
       type: "module",
     },
@@ -1391,7 +1387,7 @@ gulp.task(
   gulp.series(
     createBuildNumber,
     function scriptingMozcentral() {
-      const defines = { ...DEFINES, MOZCENTRAL: true, MINIFIED: true };
+      const defines = { ...DEFINES, MOZCENTRAL: true };
       return buildDefaultPreferences(defines, "mozcentral/");
     },
     async function prefsMozcentral() {
@@ -1400,7 +1396,7 @@ gulp.task(
     function createMozcentral() {
       console.log();
       console.log("### Building mozilla-central extension");
-      const defines = { ...DEFINES, MOZCENTRAL: true, MINIFIED: true };
+      const defines = { ...DEFINES, MOZCENTRAL: true };
       const gvDefines = { ...defines, GECKOVIEW: true };
 
       const MOZCENTRAL_DIR = BUILD_DIR + "mozcentral/",
