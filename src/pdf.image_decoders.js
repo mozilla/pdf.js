@@ -22,13 +22,6 @@ import { Jbig2Error, Jbig2Image } from "./core/jbig2.js";
 import { JpegError, JpegImage } from "./core/jpg.js";
 import { JpxError, JpxImage } from "./core/jpx.js";
 
-/* eslint-disable-next-line no-unused-vars */
-const pdfjsVersion =
-  typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_VERSION") : void 0;
-/* eslint-disable-next-line no-unused-vars */
-const pdfjsBuild =
-  typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_BUILD") : void 0;
-
 globalThis.pdfjsImageDecoders = {
   getVerbosityLevel,
   Jbig2Error,

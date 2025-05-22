@@ -18,13 +18,6 @@ import { AppOptions } from "./app_options.js";
 import { LinkTarget } from "./pdf_link_service.js";
 import { PDFViewerApplication } from "./app.js";
 
-/* eslint-disable-next-line no-unused-vars */
-const pdfjsVersion =
-  typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_VERSION") : void 0;
-/* eslint-disable-next-line no-unused-vars */
-const pdfjsBuild =
-  typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_BUILD") : void 0;
-
 const AppConstants =
   typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")
     ? { LinkTarget, RenderingStates, ScrollMode, SpreadMode }

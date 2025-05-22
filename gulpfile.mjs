@@ -302,6 +302,12 @@ function createWebpackConfig(
   const licenseHeaderLibre = fs
     .readFileSync("./src/license_header_libre.js")
     .toString();
+  const versionInfoHeader = [
+    "/**",
+    ` * pdfjsVersion = ${versionInfo.version}`,
+    ` * pdfjsBuild = ${versionInfo.commit}`,
+    " */",
+  ].join("\n");
   const enableSourceMaps =
     !bundleDefines.MOZCENTRAL &&
     !bundleDefines.CHROME &&
@@ -335,7 +341,10 @@ function createWebpackConfig(
   const plugins = [];
   if (!disableLicenseHeader) {
     plugins.push(
-      new webpack2.BannerPlugin({ banner: licenseHeaderLibre, raw: true })
+      new webpack2.BannerPlugin({
+        banner: licenseHeaderLibre + "\n" + versionInfoHeader,
+        raw: true,
+      })
     );
   }
   plugins.push({
@@ -389,7 +398,7 @@ function createWebpackConfig(
                   sequences: false,
                 },
                 format: {
-                  comments: /@lic|webpackIgnore|@vite-ignore/i,
+                  comments: /@lic|webpackIgnore|@vite-ignore|pdfjsVersion/i,
                 },
                 keep_classnames: true,
                 keep_fnames: true,
