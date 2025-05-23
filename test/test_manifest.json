@@ -4143,6 +4143,14 @@
     "type": "eq"
   },
   {
+    "id": "issue19971",
+    "file": "pdfs/issue19971.pdf",
+    "md5": "2eb897b3ef3342bfc5ad31886e7cd1fe",
+    "rounds": 1,
+    "lastPage": 1,
+    "type": "eq"
+  },
+  {
     "id": "issue8702-text",
     "file": "pdfs/issue8702.pdf",
     "md5": "59d501ed1518d78ef6ee442cf824b0f6",
