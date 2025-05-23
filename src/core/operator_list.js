@@ -519,18 +519,20 @@ addState(
     const transform = argsArray[iFirstTransform];
     const [, [buffer], minMax] = args;
 
-    Util.scaleMinMax(transform, minMax);
-    for (let k = 0, kk = buffer.length; k < kk; ) {
-      switch (buffer[k++]) {
-        case DrawOPS.moveTo:
-        case DrawOPS.lineTo:
-          Util.applyTransform(buffer, transform, k);
-          k += 2;
-          break;
-        case DrawOPS.curveTo:
-          Util.applyTransformToBezier(buffer, transform, k);
-          k += 6;
-          break;
+    if (minMax) {
+      Util.scaleMinMax(transform, minMax);
+      for (let k = 0, kk = buffer.length; k < kk; ) {
+        switch (buffer[k++]) {
+          case DrawOPS.moveTo:
+          case DrawOPS.lineTo:
+            Util.applyTransform(buffer, transform, k);
+            k += 2;
+            break;
+          case DrawOPS.curveTo:
+            Util.applyTransformToBezier(buffer, transform, k);
+            k += 6;
+            break;
+        }
       }
     }
     // Replace queue items.
