@@ -147,6 +147,11 @@
 
 .annotationEditorLayer.disabled {
   pointer-events: none;
+
+  &.highlightEditing
+    :is(.freeTextEditor, .inkEditor, .stampEditor, .signatureEditor) {
+    pointer-events: auto;
+  }
 }
 
 .annotationEditorLayer.freetextEditing {
