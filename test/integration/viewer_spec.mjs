@@ -42,23 +42,7 @@ describe("PDF viewer", () => {
       await closePages(pages);
     });
 
-    async function getTextAt(page, pageNumber, coordX, coordY) {
-      await page.waitForFunction(
-        pageNum =>
-          !document.querySelector(
-            `.page[data-page-number="${pageNum}"] > .textLayer`
-          ).hidden,
-        {},
-        pageNumber
-      );
-      return page.evaluate(
-        (x, y) => document.elementFromPoint(x, y)?.textContent,
-        coordX,
-        coordY
-      );
-    }
-
-    it("supports specifiying a custom origin", async () => {
+    it("supports specifying a custom origin", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           // We use this text span of page 2 because:
@@ -81,10 +65,9 @@ describe("PDF viewer", () => {
             },
             [originX, originY]
           );
-          const textAfterZoomIn = await getTextAt(page, 2, originX, originY);
-          expect(textAfterZoomIn)
-            .withContext(`In ${browserName}, zoom in`)
-            .toBe(text);
+          await page.waitForFunction(
+            `document.elementFromPoint(${originX}, ${originY})?.textContent === "${text}"`
+          );
 
           await page.evaluate(
             origin => {
@@ -95,10 +78,9 @@ describe("PDF viewer", () => {
             },
             [originX, originY]
           );
-          const textAfterZoomOut = await getTextAt(page, 2, originX, originY);
-          expect(textAfterZoomOut)
-            .withContext(`In ${browserName}, zoom out`)
-            .toBe(text);
+          await page.waitForFunction(
+            `document.elementFromPoint(${originX}, ${originY})?.textContent === "${text}"`
+          );
         })
       );
     });
