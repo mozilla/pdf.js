@@ -509,7 +509,8 @@
   border: none;
   inset: 0;
   overflow: visible;
-  white-space: nowrap;
+  white-space: pre-wrap;
+  word-wrap: break-word;
   font: 10px sans-serif;
   line-height: var(--freetext-line-height);
   user-select: none;
