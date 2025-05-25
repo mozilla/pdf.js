@@ -42,23 +42,40 @@ describe("PDF viewer", () => {
       await closePages(pages);
     });
 
-    async function getTextAt(page, pageNumber, coordX, coordY) {
-      await page.waitForFunction(
-        pageNum =>
-          !document.querySelector(
-            `.page[data-page-number="${pageNum}"] > .textLayer`
-          ).hidden,
-        {},
-        pageNumber
+    async function waitForTextAfterZoom(page, originX, originY, scale, text) {
+      const handlePromise = await createPromise(page, resolve => {
+        const callback = e => {
+          if (e.pageNumber === 2) {
+            window.PDFViewerApplication.eventBus.off(
+              "textlayerrendered",
+              callback
+            );
+            resolve();
+          }
+        };
+        window.PDFViewerApplication.eventBus.on("textlayerrendered", callback);
+      });
+
+      await page.evaluate(
+        (scaleFactor, origin) => {
+          window.PDFViewerApplication.pdfViewer.updateScale({
+            drawingDelay: 0,
+            scaleFactor,
+            origin,
+          });
+        },
+        scale,
+        [originX, originY]
       );
-      return page.evaluate(
-        (x, y) => document.elementFromPoint(x, y)?.textContent,
-        coordX,
-        coordY
+
+      await awaitPromise(handlePromise);
+
+      await page.waitForFunction(
+        `document.elementFromPoint(${originX}, ${originY})?.textContent === "${text}"`
       );
     }
 
-    it("supports specifiying a custom origin", async () => {
+    it("supports specifying a custom origin", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           // We use this text span of page 2 because:
@@ -72,33 +89,8 @@ describe("PDF viewer", () => {
           const originX = rect.x + rect.width / 2;
           const originY = rect.y + rect.height / 2;
 
-          await page.evaluate(
-            origin => {
-              window.PDFViewerApplication.pdfViewer.increaseScale({
-                scaleFactor: 2,
-                origin,
-              });
-            },
-            [originX, originY]
-          );
-          const textAfterZoomIn = await getTextAt(page, 2, originX, originY);
-          expect(textAfterZoomIn)
-            .withContext(`In ${browserName}, zoom in`)
-            .toBe(text);
-
-          await page.evaluate(
-            origin => {
-              window.PDFViewerApplication.pdfViewer.decreaseScale({
-                scaleFactor: 0.8,
-                origin,
-              });
-            },
-            [originX, originY]
-          );
-          const textAfterZoomOut = await getTextAt(page, 2, originX, originY);
-          expect(textAfterZoomOut)
-            .withContext(`In ${browserName}, zoom out`)
-            .toBe(text);
+          await waitForTextAfterZoom(page, originX, originY, 2, text);
+          await waitForTextAfterZoom(page, originX, originY, 0.8, text);
         })
       );
     });
