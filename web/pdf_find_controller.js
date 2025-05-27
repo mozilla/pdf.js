@@ -19,6 +19,7 @@
 
 import { binarySearchFirstItem, scrollIntoView } from "./ui_utils.js";
 import { getCharacterType, getNormalizeWithNFKC } from "./pdf_find_utils.js";
+import Fuse from "fuse.js";
 import { promiseWithResolvers } from "../src/core/promise_with_resolvers.js";
 
 const FindState = {
@@ -501,6 +502,7 @@ class PDFFindController {
       this._dirtyMatch = true;
     }
     this.#state = state;
+    this.#state.fuzzySearchEnabled = state.fuzzySearchEnabled ?? false;
     if (type !== "highlightallchange") {
       this.#updateUIState(FindState.PENDING);
     }
@@ -875,7 +877,7 @@ class PDFFindController {
       return; // Do nothing: the matches should be wiped out already.
     }
 
-    const { entireWord } = this.#state;
+    const { entireWord, fuzzySearchEnabled } = this.#state;
     const pageContent = this._pageContents[pageIndex];
     const hasDiacritics = this._hasDiacritics[pageIndex];
 
@@ -905,6 +907,105 @@ class PDFFindController {
 
     this.#calculateRegExpMatch(queries, entireWord, pageIndex, pageContent);
 
+    const hasMatches =
+      this._pageMatches[pageIndex]?.length > 0 ||
+      this.pageHighlights[pageIndex]?.length > 0;
+
+    if (!hasMatches && fuzzySearchEnabled && query.length > 1) {
+      this._pdfDocument
+        .getPage(pageIndex + 1)
+        .then(pdfPage => pdfPage.getTextContent({ disableNormalization: true }))
+        .then(textContent => {
+          const originalTextItems = textContent.items
+            .map(item => item.str)
+            .filter(originalTextItem => originalTextItem !== "");
+          const items = [];
+
+          originalTextItems.forEach((item, index) => {
+            if (
+              item.length === 1 ||
+              originalTextItems[index - 1]?.length === 1
+            ) {
+              if (items.length > 0) {
+                items[items.length - 1] = `${items.at(-1)}${item}`;
+              } else {
+                items.push(item);
+              }
+            } else {
+              items.push(item);
+            }
+          });
+
+          const cleanedQuery = query.replaceAll(/\.{3,}/g, "").trim();
+
+          const windowSize = 5;
+          const step = 1;
+          const slidingChunks = [];
+
+          for (let i = 0; i <= items.length - windowSize; i += step) {
+            const windowChunks = items.slice(i, i + windowSize);
+            slidingChunks.push({
+              text: windowChunks.join("\n"),
+              indices: [i, i + windowSize - 1],
+              items: windowChunks,
+            });
+          }
+
+          const fuse = new Fuse(slidingChunks, {
+            keys: ["text"],
+            includeScore: true,
+            threshold: 0.3,
+            ignoreLocation: true,
+            distance: 100,
+            minMatchCharLength: 3,
+          });
+
+          const fuzzyMatches = fuse.search(cleanedQuery);
+          const bestMatch = fuzzyMatches[0];
+          if (!bestMatch) {
+            return;
+          }
+
+          const bestWindowText = bestMatch.item.text;
+          const bestSubstring = this.#findBestSubstringMatch(
+            bestWindowText,
+            cleanedQuery
+          );
+          if (!bestSubstring) {
+            return;
+          }
+
+          const [normalizedSubstring] = normalize(bestSubstring);
+          const [normalizedPageContent] = normalize(pageContent);
+
+          const normalizedIndex =
+            normalizedPageContent.indexOf(normalizedSubstring);
+          if (normalizedIndex === -1) {
+            return;
+          }
+
+          const matchedText = [
+            pageContent.slice(
+              normalizedIndex,
+              normalizedIndex + bestSubstring.length
+            ),
+          ];
+
+          this.#calculateRegExpMatch(
+            matchedText.map(matchText => ({
+              query: this.#convertToRegExp(matchText, hasDiacritics),
+              color: "rgba(255, 165, 0, 0.3)",
+            })),
+            entireWord,
+            pageIndex,
+            pageContent
+          );
+
+          setTimeout(() => this.#updatePage(pageIndex), 50);
+          this._linkService.goToPage(pageIndex + 1);
+        });
+    }
+
     // When `highlightAll` is set, ensure that the matches on previously
     // rendered (and still active) pages are correctly highlighted.
     if (this.#state.highlightAll) {
@@ -929,6 +1030,81 @@ class PDFFindController {
       // the Java side provides only one object to update the counts.
       this.#updateUIResultsCount();
     }
+  }
+
+  #findBestSubstringMatch(text, query) {
+    if (!text || !query) {
+      return null;
+    }
+
+    const textWords = text.split(/\s+/);
+
+    let bestMatch = null;
+    let highestScore = 0;
+
+    const [normalizedQuery] = normalize(query);
+
+    for (let i = 0; i < textWords.length; i++) {
+      for (let j = i + 3; j <= textWords.length && j - i <= 40; j++) {
+        const phrase = textWords.slice(i, j).join(" ");
+        const [normalizedPhrase] = normalize(phrase);
+
+        const score =
+          normalizedQuery.length < 300
+            ? this.#similarityScore(normalizedPhrase, normalizedQuery)
+            : this.#tokenSetSimilarity(normalizedPhrase, normalizedQuery);
+
+        if (score > highestScore) {
+          highestScore = score;
+          bestMatch = phrase;
+        }
+      }
+    }
+
+    return highestScore > 0.3 ? bestMatch : null;
+  }
+
+  #similarityScore(a, b) {
+    const longer = a.length > b.length ? a : b;
+    const shorter = a.length > b.length ? b : a;
+    const longerLength = longer.length;
+    if (longerLength === 0) {
+      return 1.0;
+    }
+    const editDist = this.#levenshteinDistance(longer, shorter);
+    return (longerLength - editDist) / longerLength;
+  }
+
+  #levenshteinDistance(a, b) {
+    const matrix = Array.from({ length: b.length + 1 }, (_, i) =>
+      // eslint-disable-next-line no-shadow
+      Array.from({ length: a.length + 1 }, (_, j) =>
+        // eslint-disable-next-line no-nested-ternary
+        i === 0 ? j : j === 0 ? i : 0
+      )
+    );
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        if (b[i - 1] === a[j - 1]) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j] + 1
+          );
+        }
+      }
+    }
+    return matrix[b.length][a.length];
+  }
+
+  #tokenSetSimilarity(a, b) {
+    const setA = new Set(a.toLowerCase().split(/\s+/));
+    const setB = new Set(b.toLowerCase().split(/\s+/));
+    const intersection = [...setA].filter(x => setB.has(x));
+    const union = new Set([...setA, ...setB]);
+    return union.size === 0 ? 0 : intersection.length / union.size;
   }
 
   #extractText() {
