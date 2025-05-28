@@ -148,10 +148,10 @@ class AnnotationEditorLayer {
 
   /**
    * Update the toolbar if it's required to reflect the tool currently used.
-   * @param {number} mode
+   * @param {Object} options
    */
-  updateToolbar(mode) {
-    this.#uiManager.updateToolbar(mode);
+  updateToolbar(options) {
+    this.#uiManager.updateToolbar(options);
   }
 
   /**
@@ -618,12 +618,12 @@ class AnnotationEditorLayer {
 
   /**
    * Paste some content into a new editor.
-   * @param {number} mode
+   * @param {Object} options
    * @param {Object} params
    */
-  async pasteEditor(mode, params) {
-    this.#uiManager.updateToolbar(mode);
-    await this.#uiManager.updateMode(mode);
+  async pasteEditor(options, params) {
+    this.updateToolbar(options);
+    await this.#uiManager.updateMode(options.mode);
 
     const { offsetX, offsetY } = this.#getCenterPoint();
     const id = this.getNextId();
