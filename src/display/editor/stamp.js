@@ -71,9 +71,10 @@ class StampEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   static paste(item, parent) {
-    parent.pasteEditor(AnnotationEditorType.STAMP, {
-      bitmapFile: item.getAsFile(),
-    });
+    parent.pasteEditor(
+      { mode: AnnotationEditorType.STAMP },
+      { bitmapFile: item.getAsFile() }
+    );
   }
 
   /** @inheritdoc */
