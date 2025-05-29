@@ -37,7 +37,6 @@ import {
   PathType,
   TilingPattern,
 } from "./pattern_helper.js";
-import { CanvasRecorder } from "./canvas_recorder.js";
 import { convertBlackAndWhiteToRGBA } from "../shared/image_utils.js";
 
 // <canvas> contexts store most of the state we need natively.
@@ -716,14 +715,14 @@ class CanvasGraphics {
     filterFactory,
     { optionalContentConfig, markedContentStack = null },
     annotationCanvasMap,
-    pageColors
+    pageColors,
+    dependencyTracker
   ) {
     this.ctx = canvasCtx;
-    this.current = new (
-      canvasCtx instanceof CanvasRecorder
-        ? CanvasExtraStateDependenciesRecorder
-        : CanvasExtraState
-    )(this.ctx.canvas.width, this.ctx.canvas.height);
+    this.current = new CanvasExtraState(
+      this.ctx.canvas.width,
+      this.ctx.canvas.height
+    );
     this.stateStack = [];
     this.pendingClip = null;
     this.pendingEOFill = false;
@@ -757,10 +756,13 @@ class CanvasGraphics {
     this._cachedScaleForStroking = [-1, 0];
     this._cachedGetSinglePixelWidth = null;
     this._cachedBitmapsMap = new Map();
+
+    this.dependencyTracker = dependencyTracker;
   }
 
-  getObject(data, fallback = null) {
+  getObject(opIdx, data, fallback = null) {
     if (typeof data === "string") {
+      this.dependencyTracker?.recordNamedDependency(opIdx, data);
       return data.startsWith("g_")
         ? this.commonObjs.get(data)
         : this.objs.get(data);
@@ -852,7 +854,6 @@ class CanvasGraphics {
       fnArgs = argsArray[i] ?? null;
 
       if (fnId !== OPS.dependency) {
-        CanvasRecorder.setNextCommandsId(this.ctx, i);
         this.current.setNextCommandsId(i);
 
         if (fnArgs === null) {
@@ -860,13 +861,9 @@ class CanvasGraphics {
         } else {
           this[fnId](i, ...fnArgs);
         }
-
-        CanvasRecorder.addExtraDependencies(
-          this.ctx,
-          this.current.takeDependencies()
-        );
       } else {
         for (const depObjId of fnArgs) {
+          this.dependencyTracker?.recordNamedData(depObjId, i);
           const objsPool = depObjId.startsWith("g_") ? commonObjs : objs;
 
           // If the promise isn't resolved yet, add the continueCallback
@@ -1178,6 +1175,7 @@ class CanvasGraphics {
 
   // Graphics state
   setLineWidth(opIdx, width) {
+    this.dependencyTracker?.recordSimpleData("lineWidth", opIdx);
     if (width !== this.current.lineWidth) {
       this._cachedScaleForStroking[0] = -1;
     }
@@ -1186,18 +1184,22 @@ class CanvasGraphics {
   }
 
   setLineCap(opIdx, style) {
+    this.dependencyTracker?.recordSimpleData("lineCap", opIdx);
     this.ctx.lineCap = LINE_CAP_STYLES[style];
   }
 
   setLineJoin(opIdx, style) {
+    this.dependencyTracker?.recordSimpleData("lineJoin", opIdx);
     this.ctx.lineJoin = LINE_JOIN_STYLES[style];
   }
 
   setMiterLimit(opIdx, limit) {
+    this.dependencyTracker?.recordSimpleData("miterLimit", opIdx);
     this.ctx.miterLimit = limit;
   }
 
   setDash(opIdx, dashArray, dashPhase) {
+    this.dependencyTracker?.recordSimpleData("dash", opIdx);
     const ctx = this.ctx;
     if (ctx.setLineDash !== undefined) {
       ctx.setLineDash(dashArray);
@@ -1217,44 +1219,52 @@ class CanvasGraphics {
     for (const [key, value] of states) {
       switch (key) {
         case "LW":
-          this.setLineWidth(value);
+          this.setLineWidth(opIdx, value);
           break;
         case "LC":
-          this.setLineCap(value);
+          this.setLineCap(opIdx, value);
           break;
         case "LJ":
-          this.setLineJoin(value);
+          this.setLineJoin(opIdx, value);
           break;
         case "ML":
-          this.setMiterLimit(value);
+          this.setMiterLimit(opIdx, value);
           break;
         case "D":
-          this.setDash(value[0], value[1]);
+          this.setDash(opIdx, value[0], value[1]);
           break;
         case "RI":
-          this.setRenderingIntent(value);
+          this.setRenderingIntent(opIdx, value);
           break;
         case "FL":
-          this.setFlatness(value);
+          this.setFlatness(opIdx, value);
           break;
         case "Font":
-          this.setFont(value[0], value[1]);
+          this.setFont(opIdx, value[0], value[1]);
           break;
         case "CA":
+          this.dependencyTracker?.recordSimpleData("strokeAlpha", opIdx);
           this.current.strokeAlpha = value;
           break;
         case "ca":
+          this.dependencyTracker?.recordSimpleData("fillAlpha", opIdx);
           this.ctx.globalAlpha = this.current.fillAlpha = value;
           break;
         case "BM":
+          this.dependencyTracker?.recordSimpleData(
+            "globalCompositeOperation",
+            opIdx
+          );
           this.ctx.globalCompositeOperation = value;
           break;
         case "SMask":
+          // TODO: Track
           this.current.activeSMask = value ? this.tempSMask : null;
           this.tempSMask = null;
           this.checkSMaskState();
           break;
         case "TR":
+          // TODO: Track
           this.ctx.filter = this.current.transferMaps =
             this.filterFactory.addFilter(value);
           break;
@@ -1464,9 +1474,12 @@ class CanvasGraphics {
     const old = this.current;
     this.stateStack.push(old);
     this.current = old.clone();
+    this.dependencyTracker?.save(opIdx);
   }
 
   restore(opIdx) {
+    this.dependencyTracker?.restore(opIdx);
+
     if (this.stateStack.length === 0) {
       if (this.inSMaskMode) {
         this.endSMaskMode();
@@ -1491,6 +1504,7 @@ class CanvasGraphics {
   }
 
   transform(opIdx, a, b, c, d, e, f) {
+    this.dependencyTracker?.recordIncrementalData("transform", opIdx);
     this.ctx.transform(a, b, c, d, e, f);
 
     this._cachedScaleForStroking[0] = -1;
@@ -1499,11 +1513,16 @@ class CanvasGraphics {
 
   // Path
   constructPath(opIdx, op, data, minMax) {
-    CanvasRecorder.startGroupRecording(this.ctx, {
-      type: "path",
-      startIdx: opIdx,
-      endIdx: -1,
-    });
+    this.dependencyTracker?.resetBBox(opIdx);
+    this.dependencyTracker?.recordBBox(
+      opIdx,
+      this.ctx,
+      minMax[0],
+      minMax[2],
+      minMax[1],
+      minMax[3]
+    );
+    this.dependencyTracker?.recordDependencies(opIdx, ["transform"]);
 
     let [path] = data;
     if (!minMax) {
@@ -1590,6 +1609,18 @@ class CanvasGraphics {
       }
     }
 
+    this.dependencyTracker?.recordDependencies(opIdx, [
+      "path",
+      "transform",
+      "strokeColor",
+      "strokeAlpha",
+      "lineWidth",
+      "lineCap",
+      "lineJoin",
+      "miterLimit",
+      "dash",
+    ]);
+
     if (consumePath) {
       this.consumePath(
         opIdx,
@@ -1647,6 +1678,13 @@ class CanvasGraphics {
       }
     }
 
+    this.dependencyTracker?.recordDependencies(opIdx, [
+      "path",
+      "transform",
+      "fillColor",
+      "fillAlpha",
+    ]);
+
     if (needRestore) {
       ctx.restore();
     }
@@ -1682,19 +1720,29 @@ class CanvasGraphics {
   }
 
   endPath(opIdx, path) {
+    if (this.pendingClip) {
+      this.dependencyTracker?.recordDependencies(opIdx, ["clip"]);
+    }
     this.consumePath(opIdx, path);
   }
 
-  rawFillPath(path) {
+  rawFillPath(opIdx, path) {
     this.ctx.fill(path);
+    this.dependencyTracker?.recordDependencies(opIdx, [
+      "fillColor",
+      "fillAlpha",
+    ]);
+    this.dependencyTracker?.recordOperation(opIdx);
   }
 
   // Clipping
   clip(opIdx) {
+    this.dependencyTracker?.recordSimpleData("clip", opIdx);
     this.pendingClip = NORMAL_CLIP;
   }
 
   eoClip(opIdx) {
+    this.dependencyTracker?.recordSimpleData("clip", opIdx);
     this.pendingClip = EO_CLIP;
   }
 
@@ -1705,14 +1753,13 @@ class CanvasGraphics {
     this.current.x = this.current.lineX = 0;
     this.current.y = this.current.lineY = 0;
 
-    CanvasRecorder.startGroupRecording(this.ctx, {
-      type: "text",
-      startIdx: opIdx,
-      endIdx: -1,
-    });
+    this.dependencyTracker?.save(opIdx);
+    this.dependencyTracker?.recordIncrementalData("moveText", opIdx);
   }
 
   endText(opIdx) {
+    this.dependencyTracker?.restore(opIdx);
+
     const paths = this.pendingTextPaths;
     const ctx = this.ctx;
     if (paths !== undefined) {
@@ -1730,34 +1777,33 @@ class CanvasGraphics {
 
       ctx.clip(newPath);
     }
-    const groupData = CanvasRecorder.endGroupRecording(
-      this.ctx,
-      "text",
-      this.current.takeDependencies()
-    );
-    if (groupData) {
-      groupData.endIdx = opIdx;
-    }
     delete this.pendingTextPaths;
   }
 
   setCharSpacing(opIdx, spacing) {
+    this.dependencyTracker?.recordSimpleData("charSpacing", opIdx);
     this.current.charSpacing = spacing;
   }
 
   setWordSpacing(opIdx, spacing) {
+    this.dependencyTracker?.recordSimpleData("wordSpacing", opIdx);
     this.current.wordSpacing = spacing;
   }
 
   setHScale(opIdx, scale) {
+    this.dependencyTracker?.recordSimpleData("hScale", opIdx);
     this.current.textHScale = scale / 100;
   }
 
   setLeading(opIdx, leading) {
+    this.dependencyTracker?.recordSimpleData("leading", opIdx);
     this.current.leading = -leading;
   }
 
   setFont(opIdx, fontRefName, size) {
+    // TODO: Record font dependency
+    this.dependencyTracker?.recordSimpleData("font", opIdx);
+    this.dependencyTracker?.recordNamedDependency(opIdx, fontRefName);
     const fontObj = this.commonObjs.get(fontRefName);
     const current = this.current;
 
@@ -1816,24 +1862,29 @@ class CanvasGraphics {
   }
 
   setTextRenderingMode(opIdx, mode) {
+    this.dependencyTracker?.recordSimpleData("rextRenderingMode", opIdx);
     this.current.textRenderingMode = mode;
   }
 
   setTextRise(opIdx, rise) {
+    this.dependencyTracker?.recordSimpleData("textRise", opIdx);
     this.current.textRise = rise;
   }
 
   moveText(opIdx, x, y) {
+    this.dependencyTracker?.recordIncrementalData("moveText", opIdx);
     this.current.x = this.current.lineX += x;
     this.current.y = this.current.lineY += y;
   }
 
   setLeadingMoveText(opIdx, x, y) {
+    // TODO: Record
     this.setLeading(-y);
     this.moveText(x, y);
   }
 
   setTextMatrix(opIdx, matrix) {
+    this.dependencyTracker?.recordSimpleData("textMatrix", opIdx);
     const { current } = this;
     current.textMatrix = matrix;
     current.textMatrixScale = Math.hypot(matrix[0], matrix[1]);
@@ -1843,6 +1894,7 @@ class CanvasGraphics {
   }
 
   nextLine(opIdx) {
+    // TODO: Record
     this.moveText(0, this.current.leading);
   }
 
@@ -1888,6 +1940,7 @@ class CanvasGraphics {
         fillStrokeMode === TextRenderingMode.FILL ||
         fillStrokeMode === TextRenderingMode.FILL_STROKE
       ) {
+        // TODO: expandBBox
         if (patternFillTransform) {
           currentTransform = ctx.getTransform();
           ctx.setTransform(...patternFillTransform);
@@ -1919,6 +1972,7 @@ class CanvasGraphics {
           // If sx and sy are different, unfortunately we can't do anything and
           // we'll have a rendering bug.
           ctx.lineWidth *= Math.max(XY[0], XY[1]) / fontSize;
+          // TODO: expandBBox
           ctx.stroke(
             this.#getScaledPath(path, currentTransform, patternStrokeTransform)
           );
@@ -1933,12 +1987,14 @@ class CanvasGraphics {
         fillStrokeMode === TextRenderingMode.FILL ||
         fillStrokeMode === TextRenderingMode.FILL_STROKE
       ) {
+        // TODO: expandBBox
         ctx.fillText(character, x, y);
       }
       if (
         fillStrokeMode === TextRenderingMode.STROKE ||
         fillStrokeMode === TextRenderingMode.FILL_STROKE
       ) {
+        // TODO: expandBBox
         ctx.strokeText(character, x, y);
       }
     }
@@ -1977,14 +2033,27 @@ class CanvasGraphics {
   }
 
   showText(opIdx, glyphs) {
+    this.dependencyTracker?.recordDependencies(opIdx, [
+      "transform",
+      "moveText",
+      "textMatrix",
+      "font",
+      "fillColor",
+      // TODO: More
+    ]);
+    this.dependencyTracker?.resetBBox(opIdx);
+
     const current = this.current;
     const font = current.font;
     if (font.isType3Font) {
-      return this.showType3Text(glyphs);
+      this.showType3Text(glyphs);
+      this.dependencyTracker?.recordOperation(opIdx);
+      return undefined;
     }
 
     const fontSize = current.fontSize;
     if (fontSize === 0) {
+      this.dependencyTracker?.recordOperation(opIdx);
       return undefined;
     }
 
@@ -2073,11 +2142,22 @@ class CanvasGraphics {
         chars.push(glyph.unicode);
         width += glyph.width;
       }
-      ctx.fillText(chars.join(""), 0, 0);
+      const joinedChars = chars.join("");
+      const measure = ctx.measureText(joinedChars);
+      this.dependencyTracker?.recordBBox(
+        opIdx,
+        this.ctx,
+        0,
+        measure.width,
+        -measure.actualBoundingBoxAscent,
+        measure.actualBoundingBoxDescent
+      );
+      ctx.fillText(joinedChars, 0, 0);
       current.x += width * widthAdvanceScale * textHScale;
       ctx.restore();
       this.compose();
 
+      this.dependencyTracker?.recordOperation(opIdx);
       return undefined;
     }
 
@@ -2110,13 +2190,16 @@ class CanvasGraphics {
         scaledY = 0;
       }
 
+      let measure;
+
       if (font.remeasure && width > 0) {
+        measure = ctx.measureText(character);
+
         // Some standard fonts may not have the exact width: rescale per
         // character if measured width is greater than expected glyph width
         // and subpixel-aa is enabled, otherwise just center the glyph.
         const measuredWidth =
-          ((ctx.measureText(character).width * 1000) / fontSize) *
-          fontSizeScale;
+          ((measure.width * 1000) / fontSize) * fontSizeScale;
         if (width < measuredWidth && this.isFontSubpixelAAEnabled) {
           const characterScaleX = width / measuredWidth;
           restoreNeeded = true;
@@ -2134,6 +2217,15 @@ class CanvasGraphics {
       if (this.contentVisible && (glyph.isInFont || font.missingFile)) {
         if (simpleFillText && !accent) {
           // common case
+          measure ??= ctx.measureText(character);
+          this.dependencyTracker?.recordBBox(
+            opIdx,
+            this.ctx,
+            scaledX,
+            scaledX + measure.width,
+            scaledY - measure.actualBoundingBoxAscent,
+            scaledY + measure.actualBoundingBoxDescent
+          );
           ctx.fillText(character, scaledX, scaledY);
         } else {
           this.paintChar(
@@ -2176,6 +2268,7 @@ class CanvasGraphics {
     ctx.restore();
     this.compose();
 
+    this.dependencyTracker?.recordOperation(opIdx);
     return undefined;
   }
 
@@ -2248,6 +2341,7 @@ class CanvasGraphics {
   }
 
   setCharWidthAndBounds(opIdx, xWidth, yWidth, llx, lly, urx, ury) {
+    // TODO: Track dependencies
     const clip = new Path2D();
     clip.rect(llx, lly, urx - llx, ury - lly);
     this.ctx.clip(clip);
@@ -2255,7 +2349,7 @@ class CanvasGraphics {
   }
 
   // Color
-  getColorN_Pattern(IR) {
+  getColorN_Pattern(opIdx, IR) {
     let pattern;
     if (IR[0] === "TilingPattern") {
       const baseTransform = this.baseTransform || getCurrentTransform(this.ctx);
@@ -2280,47 +2374,53 @@ class CanvasGraphics {
         baseTransform
       );
     } else {
-      pattern = this._getPattern(IR[1], IR[2]);
+      pattern = this._getPattern(opIdx, IR[1], IR[2]);
     }
     return pattern;
   }
 
-  setStrokeColorN(opIdx) {
-    this.current.strokeColor = this.getColorN_Pattern(arguments);
+  setStrokeColorN(opIdx, ...args) {
+    this.dependencyTracker?.recordSimpleData("strokeColor", opIdx);
+    this.current.strokeColor = this.getColorN_Pattern(opIdx, args);
     this.current.patternStroke = true;
   }
 
-  setFillColorN(opIdx) {
-    this.current.fillColor = this.getColorN_Pattern(arguments);
+  setFillColorN(opIdx, ...args) {
+    this.dependencyTracker?.recordSimpleData("fillColor", opIdx);
+    this.current.fillColor = this.getColorN_Pattern(opIdx, args);
     this.current.patternFill = true;
   }
 
   setStrokeRGBColor(opIdx, color) {
+    this.dependencyTracker?.recordSimpleData("strokeColor", opIdx);
     this.ctx.strokeStyle = this.current.strokeColor = color;
     this.current.patternStroke = false;
   }
 
   setStrokeTransparent(opIdx) {
+    this.dependencyTracker?.recordSimpleData("strokeColor", opIdx);
     this.ctx.strokeStyle = this.current.strokeColor = "transparent";
     this.current.patternStroke = false;
   }
 
   setFillRGBColor(opIdx, color) {
+    this.dependencyTracker?.recordSimpleData("fillColor", opIdx);
     this.ctx.fillStyle = this.current.fillColor = color;
     this.current.patternFill = false;
   }
 
   setFillTransparent(opIdx) {
+    this.dependencyTracker?.recordSimpleData("fillColor", opIdx);
     this.ctx.fillStyle = this.current.fillColor = "transparent";
     this.current.patternFill = false;
   }
 
-  _getPattern(objId, matrix = null) {
+  _getPattern(opIdx, objId, matrix = null) {
     let pattern;
     if (this.cachedPatterns.has(objId)) {
       pattern = this.cachedPatterns.get(objId);
     } else {
-      pattern = getShadingPattern(this.getObject(objId));
+      pattern = getShadingPattern(this.getObject(opIdx, objId));
       this.cachedPatterns.set(objId, pattern);
     }
     if (matrix) {
@@ -2330,13 +2430,14 @@ class CanvasGraphics {
   }
 
   shadingFill(opIdx, objId) {
+    // TODO: track
     if (!this.contentVisible) {
       return;
     }
     const ctx = this.ctx;
 
     this.save(opIdx);
-    const pattern = this._getPattern(objId);
+    const pattern = this._getPattern(opIdx, objId);
     ctx.fillStyle = pattern.getPattern(
       ctx,
       this,
@@ -2627,7 +2728,7 @@ class CanvasGraphics {
         resetCtxToDefault(this.ctx);
 
         // Consume a potential path before clipping.
-        this.endPath();
+        this.endPath(opIdx);
 
         const clip = new Path2D();
         clip.rect(rect[0], rect[1], width, height);
@@ -2635,11 +2736,10 @@ class CanvasGraphics {
       }
     }
 
-    this.current = new (
-      this.ctx instanceof CanvasRecorder
-        ? CanvasExtraStateDependenciesRecorder
-        : CanvasExtraState
-    )(this.ctx.canvas.width, this.ctx.canvas.height);
+    this.current = new CanvasExtraState(
+      this.ctx.canvas.width,
+      this.ctx.canvas.height
+    );
 
     this.transform(opIdx, ...transform);
     this.transform(opIdx, ...matrix);
@@ -2661,7 +2761,7 @@ class CanvasGraphics {
       return;
     }
     const count = img.count;
-    img = this.getObject(img.data, img);
+    img = this.getObject(opIdx, img.data, img);
     img.count = count;
 
     const ctx = this.ctx;
@@ -2690,7 +2790,7 @@ class CanvasGraphics {
       return;
     }
 
-    img = this.getObject(img.data, img);
+    img = this.getObject(opIdx, img.data, img);
 
     const ctx = this.ctx;
     ctx.save();
@@ -2744,7 +2844,7 @@ class CanvasGraphics {
       const maskCtx = maskCanvas.context;
       maskCtx.save();
 
-      const img = this.getObject(data, image);
+      const img = this.getObject(opIdx, data, image);
       putBinaryImageMask(maskCtx, img);
 
       maskCtx.globalCompositeOperation = "source-in";
@@ -2782,30 +2882,24 @@ class CanvasGraphics {
   }
 
   paintImageXObject(opIdx, objId) {
+    debugger;
     if (!this.contentVisible) {
       return;
     }
-    const imgData = this.getObject(objId);
+    const imgData = this.getObject(opIdx, objId);
     if (!imgData) {
       warn("Dependent image isn't ready yet");
       return;
     }
 
-    CanvasRecorder.startGroupRecording(this.ctx, {
-      type: "image",
-      idx: opIdx,
-    });
-
     this.paintInlineImageXObject(opIdx, imgData);
-
-    CanvasRecorder.endGroupRecording(this.ctx, this.current.takeDependencies());
   }
 
   paintImageXObjectRepeat(opIdx, objId, scaleX, scaleY, positions) {
     if (!this.contentVisible) {
       return;
     }
-    const imgData = this.getObject(objId);
+    const imgData = this.getObject(opIdx, objId);
     if (!imgData) {
       warn("Dependent image isn't ready yet");
       return;
@@ -2904,6 +2998,11 @@ class CanvasGraphics {
       imgData.interpolate
     );
 
+    this.dependencyTracker?.resetBBox(opIdx);
+    this.dependencyTracker?.recordBBox(opIdx, ctx, 0, width, -height, 0);
+    this.dependencyTracker?.recordDependencies(opIdx, ["transform"]);
+    this.dependencyTracker?.recordOperation(opIdx);
+
     drawImageAtIntegerCoords(
       ctx,
       scaled.img,
@@ -2938,6 +3037,8 @@ class CanvasGraphics {
       imgToPaint = this.applyTransferMapsToCanvas(tmpCtx);
     }
 
+    this.dependencyTracker?.resetBBox(opIdx);
+
     for (const entry of map) {
       ctx.save();
       ctx.transform(...entry.transform);
@@ -2955,7 +3056,16 @@ class CanvasGraphics {
         1
       );
       ctx.restore();
+      this.dependencyTracker?.recordBBox(
+        opIdx,
+        this.ctx,
+        entry.x,
+        entry.x + entry.w,
+        -entry.h,
+        0
+      );
     }
+    this.dependencyTracker?.recordOperation(opIdx);
     this.compose();
   }
 
@@ -3033,25 +3143,7 @@ class CanvasGraphics {
       this.pendingClip = null;
     }
 
-    if (ctx instanceof CanvasRecorder) {
-      if (clipBox) {
-        ctx.currentGroup.minX = clipBox[0];
-        ctx.currentGroup.maxX = clipBox[2];
-        ctx.currentGroup.minY = clipBox[1];
-        ctx.currentGroup.maxY = clipBox[3];
-      } else {
-        // TODO: Actually calculate the bounding box.
-        ctx.currentGroup.minX = ctx.currentGroup.minY = 0;
-        ctx.currentGroup.maxX = ctx.currentGroup.maxY = Infinity;
-      }
-    }
-    const groupData = CanvasRecorder.endGroupRecording(
-      ctx,
-      this.current.takeDependencies()
-    );
-    if (groupData) {
-      groupData.endIdx = opIdx;
-    }
+    this.dependencyTracker?.recordOperation(opIdx);
 
     this.current.startNewPathAndClipBox(this.current.clipBox);
   }

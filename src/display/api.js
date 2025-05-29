@@ -61,7 +61,7 @@ import {
   NodeWasmFactory,
 } from "display-node_utils";
 import { CanvasGraphics } from "./canvas.js";
-import { CanvasRecorder } from "./canvas_recorder.js";
+import { CanvasDependencyTracker } from "./canvas_dependency_tracker.js";
 import { DOMCanvasFactory } from "./canvas_factory.js";
 import { DOMCMapReaderFactory } from "display-cmap_reader_factory";
 import { DOMFilterFactory } from "./filter_factory.js";
@@ -1462,19 +1462,16 @@ class PDFPageProxy {
       this._pumpOperatorList(intentArgs);
     }
 
-    const recordingContext =
+    const shouldRecordOperations =
       this._pdfBug &&
       globalThis.StepperManager?.enabled &&
-      !this._recordedGroups
-        ? new CanvasRecorder(canvasContext)
-        : null;
+      !this._recordedGroups;
 
     const complete = error => {
       intentState.renderTasks.delete(internalRenderTask);
 
-      if (recordingContext) {
-        this._recordedGroups =
-          CanvasRecorder.getFinishedGroups(recordingContext);
+      if (shouldRecordOperations) {
+        this._recordedGroups = internalRenderTask.gfx.dependencyTracker.take();
         internalRenderTask.stepper.setOperatorGroups(this._recordedGroups);
       }
 
@@ -1510,7 +1507,10 @@ class PDFPageProxy {
       callback: complete,
       // Only include the required properties, and *not* the entire object.
       params: {
-        canvasContext: recordingContext ?? canvasContext,
+        canvasContext: canvasContext,
+        dependencyTracker: shouldRecordOperations
+          ? new CanvasDependencyTracker(canvasContext)
+          : null,
         viewport,
         transform,
         background,
@@ -3146,6 +3146,7 @@ class InternalRenderTask {
     this._scheduleNextBound = this._scheduleNext.bind(this);
     this._nextBound = this._next.bind(this);
     this._canvas = params.canvasContext.canvas;
+    this._dependencyTracker = params.dependencyTracker;
   }
 
   get completed() {
@@ -3175,7 +3176,13 @@ class InternalRenderTask {
       this.stepper.init(this.operatorList);
       this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
     }
-    const { canvasContext, viewport, transform, background } = this.params;
+    const {
+      canvasContext,
+      viewport,
+      transform,
+      background,
+      dependencyTracker,
+    } = this.params;
 
     this.gfx = new CanvasGraphics(
       canvasContext,
@@ -3185,7 +3192,8 @@ class InternalRenderTask {
       this.filterFactory,
       { optionalContentConfig },
       this.annotationCanvasMap,
-      this.pageColors
+      this.pageColors,
+      dependencyTracker
     );
     this.gfx.beginDrawing({
       transform,
