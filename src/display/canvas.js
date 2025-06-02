@@ -418,65 +418,6 @@ class CanvasExtraState {
   setNextCommandsId() {}
 }
 
-class CanvasExtraStateDependenciesRecorder extends CanvasExtraState {
-  constructor(width, height) {
-    super(width, height, self => {
-      self._dependencies = new Set();
-      self._dependencyIds = Object.create(null);
-      self._storage = {};
-      self._nextCommandsIdRef = { value: -1 };
-    });
-  }
-
-  clone() {
-    const clone = super.clone();
-    clone._dependencyIds = Object.create(this._dependencyIds);
-    clone._storage = Object.create(this._storage);
-    return clone;
-  }
-
-  takeDependencies() {
-    if (this._dependencies.size === 0) {
-      return undefined;
-    }
-
-    const arr = Array.from(this._dependencies);
-    this._dependencies.clear();
-    return arr;
-  }
-
-  setNextCommandsId(id) {
-    this._nextCommandsIdRef.value = id;
-  }
-
-  static {
-    const trackedNames = [
-      "fillAlpha",
-      "strokeAlpha",
-      "lineWidth",
-      "activeSMask",
-      "transferMaps",
-    ];
-
-    for (const name of trackedNames) {
-      Object.defineProperty(this.prototype, name, {
-        enumerable: true,
-        get() {
-          const id = this._dependencyIds[name];
-          if (id !== undefined && id !== -1) {
-            this._dependencies.add(id);
-          }
-          return this._storage[name];
-        },
-        set(v) {
-          this._storage[name] = v;
-          this._dependencyIds[name] = this._nextCommandsIdRef.value;
-        },
-      });
-    }
-  }
-}
-
 function putBinaryImageData(ctx, imgData) {
   if (imgData instanceof ImageData) {
     ctx.putImageData(imgData, 0, 0);
@@ -821,7 +762,8 @@ class CanvasGraphics {
     operatorList,
     executionStartIdx,
     continueCallback,
-    stepper
+    stepper,
+    filteredOperationIndexes
   ) {
     const argsArray = operatorList.argsArray;
     const fnArray = operatorList.fnArray;
@@ -849,28 +791,30 @@ class CanvasGraphics {
         return i;
       }
 
-      fnId = fnArray[i];
-      // TODO: There is a `undefined` coming from somewhere.
-      fnArgs = argsArray[i] ?? null;
+      if (!filteredOperationIndexes || filteredOperationIndexes.has(i)) {
+        fnId = fnArray[i];
+        // TODO: There is a `undefined` coming from somewhere.
+        fnArgs = argsArray[i] ?? null;
 
-      if (fnId !== OPS.dependency) {
-        this.current.setNextCommandsId(i);
+        if (fnId !== OPS.dependency) {
+          this.current.setNextCommandsId(i);
 
-        if (fnArgs === null) {
-          this[fnId](i);
+          if (fnArgs === null) {
+            this[fnId](i);
+          } else {
+            this[fnId](i, ...fnArgs);
+          }
         } else {
-          this[fnId](i, ...fnArgs);
-        }
-      } else {
-        for (const depObjId of fnArgs) {
-          this.dependencyTracker?.recordNamedData(depObjId, i);
-          const objsPool = depObjId.startsWith("g_") ? commonObjs : objs;
+          for (const depObjId of fnArgs) {
+            this.dependencyTracker?.recordNamedData(depObjId, i);
+            const objsPool = depObjId.startsWith("g_") ? commonObjs : objs;
 
-          // If the promise isn't resolved yet, add the continueCallback
-          // to the promise and bail out.
-          if (!objsPool.has(depObjId)) {
-            objsPool.get(depObjId, continueCallback);
-            return i;
+            // If the promise isn't resolved yet, add the continueCallback
+            // to the promise and bail out.
+            if (!objsPool.has(depObjId)) {
+              objsPool.get(depObjId, continueCallback);
+              return i;
+            }
           }
         }
       }
@@ -2882,7 +2826,6 @@ class CanvasGraphics {
   }
 
   paintImageXObject(opIdx, objId) {
-    debugger;
     if (!this.contentVisible) {
       return;
     }

@@ -1,6 +1,7 @@
 /**
  * @typedef {"lineWidth" | "lineCap" | "lineJoin" | "miterLimit" | "dash" |
- * "strokeAlpha" | "fillColor" | "fillAlpha" | "globalCompositeOperation" | "path"} SimpleDependency
+ * "strokeAlpha" | "fillColor" | "fillAlpha" | "globalCompositeOperation" |
+ * "path"} SimpleDependency
  */
 
 /**
@@ -78,7 +79,6 @@ class CanvasDependencyTracker {
       maxX: -Infinity,
       maxY: -Infinity,
     };
-    //this.recordBBox(idx, minX, maxX, minY, maxY);
   }
 
   recordBBox(idx, ctx, minX, maxX, minY, maxY) {

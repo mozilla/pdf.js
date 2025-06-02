@@ -927,6 +927,7 @@ class PDFPageView extends BasePDFPageView {
       annotationCanvasMap: this._annotationCanvasMap,
       pageColors: this.pageColors,
       isEditing: this.#isEditing,
+      recordOperations: !this.recordOperations,
     };
   }
 

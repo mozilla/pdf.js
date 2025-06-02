@@ -60,8 +60,8 @@ import {
   NodeStandardFontDataFactory,
   NodeWasmFactory,
 } from "display-node_utils";
-import { CanvasGraphics } from "./canvas.js";
 import { CanvasDependencyTracker } from "./canvas_dependency_tracker.js";
+import { CanvasGraphics } from "./canvas.js";
 import { DOMCanvasFactory } from "./canvas_factory.js";
 import { DOMCMapReaderFactory } from "display-cmap_reader_factory";
 import { DOMFilterFactory } from "./filter_factory.js";
@@ -1293,6 +1293,7 @@ class PDFPageProxy {
 
     this._intentStates = new Map();
     this.destroyed = false;
+    this.recordedGroups = null;
   }
 
   /**
@@ -1416,6 +1417,8 @@ class PDFPageProxy {
     pageColors = null,
     printAnnotationStorage = null,
     isEditing = false,
+    recordOperations = false,
+    filteredOperationIndexes = null,
   }) {
     this._stats?.time("Overall");
 
@@ -1463,16 +1466,16 @@ class PDFPageProxy {
     }
 
     const shouldRecordOperations =
-      this._pdfBug &&
-      globalThis.StepperManager?.enabled &&
-      !this._recordedGroups;
+      !this.recordedGroups &&
+      (recordOperations ||
+        (this._pdfBug && globalThis.StepperManager?.enabled));
 
     const complete = error => {
       intentState.renderTasks.delete(internalRenderTask);
 
       if (shouldRecordOperations) {
-        this._recordedGroups = internalRenderTask.gfx.dependencyTracker.take();
-        internalRenderTask.stepper.setOperatorGroups(this._recordedGroups);
+        this.recordedGroups = internalRenderTask.gfx.dependencyTracker.take();
+        internalRenderTask.stepper?.setOperatorGroups(this.recordedGroups);
       }
 
       // Attempt to reduce memory usage during *printing*, by always running
@@ -1507,7 +1510,7 @@ class PDFPageProxy {
       callback: complete,
       // Only include the required properties, and *not* the entire object.
       params: {
-        canvasContext: canvasContext,
+        canvasContext,
         dependencyTracker: shouldRecordOperations
           ? new CanvasDependencyTracker(canvasContext)
           : null,
@@ -1525,6 +1528,7 @@ class PDFPageProxy {
       useRequestAnimationFrame: !intentPrint,
       pdfBug: this._pdfBug,
       pageColors,
+      filteredOperationIndexes,
     });
 
     (intentState.renderTasks ||= new Set()).add(internalRenderTask);
@@ -3118,6 +3122,7 @@ class InternalRenderTask {
     useRequestAnimationFrame = false,
     pdfBug = false,
     pageColors = null,
+    filteredOperationIndexes = null,
   }) {
     this.callback = callback;
     this.params = params;
@@ -3147,6 +3152,8 @@ class InternalRenderTask {
     this._nextBound = this._next.bind(this);
     this._canvas = params.canvasContext.canvas;
     this._dependencyTracker = params.dependencyTracker;
+
+    this._filteredOperationIndexes = filteredOperationIndexes;
   }
 
   get completed() {
@@ -3269,7 +3276,8 @@ class InternalRenderTask {
       this.operatorList,
       this.operatorListIdx,
       this._continueBound,
-      this.stepper
+      this.stepper,
+      this._filteredOperationIndexes
     );
     if (this.operatorListIdx === this.operatorList.argsArray.length) {
       this.running = false;
