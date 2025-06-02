@@ -1587,6 +1587,8 @@ const PDFViewerApplication = {
    * @private
    */
   async _initializeAutoPrint(pdfDocument, openActionPromise) {
+    return; // MuniCollab: disable auto trigger print
+
     const [openAction, jsActions] = await Promise.all([
       openActionPromise,
       this.pdfViewer.enableScripting ? null : pdfDocument.getJSActions(),
