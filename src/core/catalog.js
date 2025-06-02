@@ -1074,6 +1074,7 @@ class Catalog {
   }
 
   #collectJavaScript() {
+    return null; // MuniCollab disallow pdfjs to collect JS actions
     const obj = this.#catDict.get("Names");
     let javaScript = null;
 
