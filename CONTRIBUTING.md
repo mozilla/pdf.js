@@ -54,13 +54,22 @@ git checkout -b feature_custom-change
 git push -u origin feature_custom-change
 ```
 
-### 3. Open a PR into `master`
+### 3. Open a PR in the Forked Repo `master`
 
-Submit your pull request against the `master` branch.
+When opening a PR from your feature branch, make sure you're targeting the `master` branch on our forked repo.
 
-✅ **Please use “Squash and Merge”** to keep the commit history clean and linear.
+1. Go to https://github.com/municollab/pdf.js/pulls
+2. Click **"New pull request"**
+3. Use the dropdowns to select:
+   - **Base repo**: `municollab/pdf.js`
+   - **Base branch**: `master`
+   - **Compare**: your feature branch (e.g., `feature/my-change`)
 
-See [Tagging MuniCollab Releases Workflow](#tagging-municollab-releases-workflow)
+> ⚠️ If GitHub tries to open a PR against `mozilla/pdf.js` as the base repo, change the base repo **back to MuniCollab** using the dropdown. This ensures you are merging your work into the fork, not upstream.
+
+> 🧹 **Please use “Squash and Merge”** to keep the commit history clean and linear. 
+
+See [Tagging MuniCollab Releases Workflow](#tagging-municollab-releases-workflow) for recommended merging workflow.
 
 ---
 
@@ -95,6 +104,8 @@ git rebase upstream-master   # or `git merge upstream-master`
 ---
 
 ## 🏷 Tagging MuniCollab Releases Workflow (Maintainer)
+When ready to merge features into `master` (create a release), please use **“Squash and Merge”** to keep the commit history clean and linear. 
+
 After merging our changes into `master`, tag the release:
 
 ```bash
@@ -105,4 +116,4 @@ git push origin municollab-v1.1.0
 
 ---
 
-Let us know if you have questions about this workflow. Keeping a clear boundary between upstream and custom work helps us collaborate effectively while staying up to date with the latest improvements from Mozilla.
+Let us know if you have questions about this workflow. Keeping a clear boundary between upstream and custom work helps us customize and maintain our forked repo effectively while staying up to date with the latest improvements from Mozilla.
