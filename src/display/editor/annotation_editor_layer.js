@@ -460,6 +460,34 @@ class AnnotationEditorLayer {
       this.#uiManager.addDeletedAnnotationElement(editor);
     }
   }
+/** 
+ * MuniCollab 
+ * modified annotations live updates
+ */
+  save() {
+    console.log('sending annotations to parent...');
+    const annotationStorage =
+      window.PDFViewerApplication.pdfDocument.annotationStorage;
+    const annotationsMap = annotationStorage.serializable.map ?? [];
+    const annotations = [...annotationsMap].map(([key, value]) => ({
+      key,
+      value,
+    }));
+
+    loadedAnnotationsMap = annotations.map((annotation) => ({
+      annotation: annotation.value,
+      isLoaded: true,
+    }));
+
+    window.parent.postMessage(
+      {
+        type: 'pdfjs-annotations-viewer',
+        event: 'save-annotations',
+        annotations,
+      },
+      '*',
+    );
+  }
 
   /**
    * Remove an editor.
