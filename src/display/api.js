@@ -759,6 +759,9 @@ class PDFDocumentProxy {
         value: pageIndex => this._transport.getAnnotArray(pageIndex),
       });
     }
+
+    // @MuniCollab feat: pdfjs - replace timeouts with events 6e284be5c
+    window?.onPDFjsInitialized?.();
   }
 
   /**
