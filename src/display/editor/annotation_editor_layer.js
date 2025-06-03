@@ -194,9 +194,41 @@ class AnnotationEditorLayer {
     this.div.hidden = false;
   }
 
+  /** 
+   * @MuniCollab 
+   * PR #922 Project annotations editor and sidebar
+   * https://github.com/municollab/mc-server/pull/922
+   * Commit f6a499e wip: replace postMessage with custom events, fix disabling edit on scroll
+   */
+  customShowLayer() {
+    this.div.hidden = false;
+  }
+
   hasTextLayer(textLayer) {
     return textLayer === this.#textLayer?.div;
   }
+
+  /** 
+   * @MuniCollab 
+   * PR #922 Project annotations editor and sidebar
+   * https://github.com/municollab/mc-server/pull/922
+   * Commit 4bf1063 wip: saving annotations without defects
+   * ported over as-is (commented out), likely no longer applicable with latest upstream
+   */
+  // addInkEditor(properties = {}) {
+  //   console.log('AnnotationEditorLayer addInkEditor: ', properties)
+
+  //   const editor = this.createAndAddNewInkEditor({
+  //     offsetX: 0,
+  //     offsetY: 0,
+  //   }, false, properties)
+
+  //   console.log('AnnotationEditorLayer addInkEditor editor: ', editor)
+
+  //   editor.rebuild();
+
+  //   // editor.setInBackground();
+  // }
 
   /**
    * Set the editing state.
@@ -460,9 +492,12 @@ class AnnotationEditorLayer {
       this.#uiManager.addDeletedAnnotationElement(editor);
     }
   }
+
 /** 
- * MuniCollab 
- * modified annotations live updates
+ * @MuniCollab 
+ * PR #922 Project annotations editor and sidebar
+ * https://github.com/municollab/mc-server/pull/922
+ * Commit d7dc445 wip: modified annotations live updates
  */
   save() {
     console.log('sending annotations to parent...');
@@ -474,6 +509,8 @@ class AnnotationEditorLayer {
       value,
     }));
 
+    // @TODO TS ERROR - likely out of sync with latest upstream
+    // Could not find name 'loadedAnnotationsMap'. Did you mean 'annotationsMap'?
     loadedAnnotationsMap = annotations.map((annotation) => ({
       annotation: annotation.value,
       isLoaded: true,
@@ -530,6 +567,12 @@ class AnnotationEditorLayer {
    * @param {AnnotationEditor} editor
    */
   add(editor) {
+    // @MuniCollab
+    // PR #922 Project annotations editor and sidebar
+    // https://github.com/municollab/mc-server/pull/922
+    // Commit 9e320a2 wip: create new annotation with sidebar
+    console.log('adding editor')
+
     if (editor.parent === this && editor.isAttachedToDOM) {
       return;
     }
@@ -572,7 +615,14 @@ class AnnotationEditorLayer {
             },
             { once: true, signal: this.#uiManager._signal }
           );
-          activeElement.focus();
+          
+          // @MuniCollab
+          // PR #981 Markups and File Modal fine tuning 
+          // https://github.com/municollab/mc-server/pull/981
+          // Commit cc0332e fix: losing focus after clicking on newly created annotation
+          // FOCUS BELOW IS TRIGGERED AFTER THE ANNOTATION IS UNCLICKED, WE DONT NEED THAT
+          // activeElement.focus();
+
         } else {
           editor._focusEventsAllowed = true;
         }
