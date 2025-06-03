@@ -1070,7 +1070,7 @@ const PDFViewerApplication = {
       this.pdfDocument = null;
 
       this.pdfThumbnailViewer?.setDocument(null);
-      this.pdfViewer.setDocument(null);
+      await this.pdfViewer.setDocument(null);
       this.pdfLinkService.setDocument(null);
       this.pdfDocumentProperties?.setDocument(null);
     }
