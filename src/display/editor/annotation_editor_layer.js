@@ -615,7 +615,7 @@ class AnnotationEditorLayer {
             },
             { once: true, signal: this.#uiManager._signal }
           );
-          
+
           // @MuniCollab
           // PR #981 Markups and File Modal fine tuning 
           // https://github.com/municollab/mc-server/pull/981
@@ -689,6 +689,17 @@ class AnnotationEditorLayer {
     const editorType = this.#currentEditorType;
     return editorType ? new editorType.prototype.constructor(params) : null;
   }
+
+  /**
+   * @MuniCollab
+   * PR #922 Project annotations editor and sidebar
+   * https://github.com/municollab/mc-server/pull/922
+   * Commit 4bf1063 wip: saving annotations without defects
+   * ported over as-is (commented out)
+   */
+  // createNewInkEditor(params) {
+  //   return new InkEditor(params)
+  // }
 
   canCreateNewEmptyEditor() {
     return this.#currentEditorType?.canCreateNewEmptyEditor();
