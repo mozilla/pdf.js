@@ -612,9 +612,10 @@ class FreeTextEditor extends AnnotationEditor {
             [tx, ty] = [-ty, tx];
             break;
         }
-        this.setAt(posX * parentWidth, posY * parentHeight, tx, ty);
+        this.setAt(posX * parentWidth, posY * parentHeight, 0, 0);
       } else {
-        this._moveAfterPaste(baseX, baseY);
+        // this._moveAfterPaste(baseX, baseY);
+        this.setAt(baseX * parentWidth, baseY * parentHeight, 0, 0);
       }
 
       this.#setContent();
