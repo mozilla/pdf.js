@@ -46,6 +46,9 @@ import { TouchManager } from "../touch_manager.js";
  * Base class for editors.
  */
 class AnnotationEditor {
+
+  #uniqueId = '';
+
   #accessibilityData = null;
 
   #allResizerDivs = null;
@@ -159,6 +162,17 @@ class AnnotationEditor {
   }
 
   /**
+   * @MuniCollab
+   * PR https://github.com/municollab/mc-server/pull/922
+   * Commit 4bf1063 wip: saving annotations without defects
+   * All instances of this.unique are similarly intro'ed by MC customization.
+   * @type {number}
+   */
+  static generateUniqueId() {
+    return 'annotation_' + Math.random().toString(36).substr(2, 9);
+  }
+
+  /**
    * @param {AnnotationEditorParameters} parameters
    */
   constructor(parameters) {
@@ -168,6 +182,8 @@ class AnnotationEditor {
     ) {
       unreachable("Cannot initialize AnnotationEditor.");
     }
+
+    this.uniqueId = AnnotationEditor.generateUniqueId();
 
     this.parent = parameters.parent;
     this.id = parameters.id;
