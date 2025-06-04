@@ -186,6 +186,57 @@ class PDFPageDetailView extends BasePDFPageView {
     this.reset({ keepCanvas: true });
   }
 
+  _getRenderingContext(canvasContext, transform) {
+    const baseContext = this.pageView._getRenderingContext(
+      canvasContext,
+      transform
+    );
+    const recordedGroups = this.pdfPage.recordedGroups;
+
+    if (!recordedGroups) {
+      return { ...baseContext, recordOperations: false };
+    }
+
+    // TODO: There is probably a better data structure for this.
+    // The indexes are always checked in increasing order, so we can just try
+    // to build a pre-sorted array which should have faster lookups.
+    // Needs benchmarking.
+    let filteredIndexes = new Set();
+
+    const { viewport } = this.pageView;
+    const area = this.#detailArea;
+
+    const detailMinX = area.minX / viewport.width;
+    const detailMinY = area.minY / viewport.height;
+    const detailMaxX = (area.minX + area.width) / viewport.width;
+    const detailMaxY = (area.minY + area.height) / viewport.height;
+
+    for (let i = 0, ii = recordedGroups.length; i < ii; i++) {
+      const group = recordedGroups[i];
+      if (
+        group.minX <= detailMaxX &&
+        group.maxX >= detailMinX &&
+        group.minY <= detailMaxY &&
+        group.maxY >= detailMinY
+      ) {
+        filteredIndexes.add(group.data.idx);
+        group.dependencies.forEach(filteredIndexes.add, filteredIndexes);
+      }
+    }
+
+    // Sort the set for debugging
+    // TODO: Remove this
+    filteredIndexes = new Set(
+      Array.from(filteredIndexes).sort((a, b) => a - b)
+    );
+
+    return {
+      ...baseContext,
+      recordOperations: false,
+      filteredOperationIndexes: filteredIndexes,
+    };
+  }
+
   async draw() {
     // The PDFPageView might have already dropped this PDFPageDetailView. In
     // that case, simply do nothing.
@@ -249,7 +300,7 @@ class PDFPageDetailView extends BasePDFPageView {
     style.left = `${(area.minX * 100) / width}%`;
 
     const renderingPromise = this._drawCanvas(
-      this.pageView._getRenderingContext(ctx, transform),
+      this._getRenderingContext(ctx, transform),
       () => {
         // If the rendering is cancelled, keep the old canvas visible.
         this.canvas?.remove();
