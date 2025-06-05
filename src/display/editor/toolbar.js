@@ -28,6 +28,8 @@ class EditorToolbar {
 
   #signatureDescriptionButton = null;
 
+  #commentText = null;
+
   static #l10nRemove = null;
 
   constructor(editor) {
@@ -116,6 +118,7 @@ class EditorToolbar {
   show() {
     this.#toolbar.classList.remove("hidden");
     this.#altText?.shown();
+    this.#commentText?.shown();
   }
 
   #addDeleteButton() {
@@ -147,6 +150,13 @@ class EditorToolbar {
     this.#addListenersToElement(button);
     this.#buttons.prepend(button, this.#divider);
     this.#altText = altText;
+  }
+
+  async addCommentText(commentText) {
+    const button = await commentText.render();
+    this.#addListenersToElement(button);
+    this.#buttons.prepend(button, this.#divider);
+    this.#commentText = commentText;
   }
 
   addColorPicker(colorPicker) {

@@ -166,6 +166,12 @@ function getViewerConfiguration() {
       cancelButton: document.getElementById("altTextCancel"),
       saveButton: document.getElementById("altTextSave"),
     },
+    commentTextDialog: {
+      dialog: document.getElementById("commentTextDialog"),
+      textarea: document.getElementById("commentTextarea"),
+      cancelButton: document.getElementById("commentTextCancel"),
+      saveButton: document.getElementById("commentTextSave"),
+    },
     newAltTextDialog: {
       dialog: document.getElementById("newAltTextDialog"),
       title: document.getElementById("newAltTextTitle"),
@@ -265,28 +271,26 @@ function getViewerConfiguration() {
 function webViewerLoad() {
   const config = getViewerConfiguration();
 
-  if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
-    // Give custom implementations of the default viewer a simpler way to
-    // set various `AppOptions`, by dispatching an event once all viewer
-    // files are loaded but *before* the viewer initialization has run.
-    const event = new CustomEvent("webviewerloaded", {
-      bubbles: true,
-      cancelable: true,
-      detail: {
-        source: window,
-      },
-    });
-    try {
-      // Attempt to dispatch the event at the embedding `document`,
-      // in order to support cases where the viewer is embedded in
-      // a *dynamically* created <iframe> element.
-      parent.document.dispatchEvent(event);
-    } catch (ex) {
-      // The viewer could be in e.g. a cross-origin <iframe> element,
-      // fallback to dispatching the event at the current `document`.
-      console.error("webviewerloaded:", ex);
-      document.dispatchEvent(event);
-    }
+  // Give custom implementations of the default viewer a simpler way to
+  // set various `AppOptions`, by dispatching an event once all viewer
+  // files are loaded but *before* the viewer initialization has run.
+  const event = new CustomEvent("webviewerloaded", {
+    bubbles: true,
+    cancelable: true,
+    detail: {
+      source: window,
+    },
+  });
+  try {
+    // Attempt to dispatch the event at the embedding `document`,
+    // in order to support cases where the viewer is embedded in
+    // a *dynamically* created <iframe> element.
+    parent.document.dispatchEvent(event);
+  } catch (ex) {
+    // The viewer could be in e.g. a cross-origin <iframe> element,
+    // fallback to dispatching the event at the current `document`.
+    console.error("webviewerloaded:", ex);
+    document.dispatchEvent(event);
   }
   PDFViewerApplication.run(config);
 }

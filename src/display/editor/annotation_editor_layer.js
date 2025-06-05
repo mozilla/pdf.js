@@ -25,7 +25,11 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/struct_tree_layer_builder.js").StructTreeLayerBuilder} StructTreeLayerBuilder */
 
-import { AnnotationEditorType, FeatureTest } from "../../shared/util.js";
+import {
+  AnnotationEditorType,
+  FeatureTest,
+  getUuid,
+} from "../../shared/util.js";
 import { AnnotationEditor } from "./editor.js";
 import { FreeTextEditor } from "./freetext.js";
 import { HighlightEditor } from "./highlight.js";
@@ -322,6 +326,18 @@ class AnnotationEditorLayer {
           }
         }
         editable.show();
+      }
+      // Add annotations for newly created annotations not present in the
+      // annotation layer.
+      for (const editor of this.#editors.values()) {
+        const hasAnnotation = !!this.getEditableAnnotation(
+          editor.annotationElementId
+        );
+        if (hasAnnotation) {
+          continue;
+        }
+        const serialized = editor.serialize();
+        this.#annotationLayer.addNewHighlightAnnotation(serialized);
       }
     }
 
@@ -672,6 +688,10 @@ class AnnotationEditorLayer {
       isCentered,
       ...data,
     });
+    // Test to see what happens if we just put a fake ID....
+    // TODO Validate that this causes no errors elsewhere in PDF.js.
+    // (Consider asking on the Mozilla PDF.js Matrix chat.)
+    editor.annotationElementId = "Placeholder ID B" + getUuid();
     if (editor) {
       this.add(editor);
     }

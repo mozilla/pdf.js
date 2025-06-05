@@ -150,12 +150,17 @@ class AnnotationLayerBuilder {
     div.className = "annotationLayer";
     this.#onAppend?.(div);
 
-    if (annotations.length === 0) {
-      this.#annotations = annotations;
+    // For Stud.IP's use case, we want the annotation layer to always be
+    // rendered, because new annotations may be added to a PDF that has none,
+    // and we want their popups to be rendered in the annotation layer in the
+    // editor so the user can see how they will look after the PDF is baked.
+    // That's why this if statement is commented out.
+    // if (annotations.length === 0) {
+    //  this.#annotations = annotations;
 
-      this.hide(/* internal = */ true);
-      return;
-    }
+    // this.hide(/* internal = */ true);
+    // return;
+    // }
 
     this.#initAnnotationLayer(viewport, structTreeLayer);
 

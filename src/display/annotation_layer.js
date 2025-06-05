@@ -31,6 +31,7 @@ import {
   AnnotationPrefix,
   AnnotationType,
   FeatureTest,
+  getModificationDate,
   LINE_FACTOR,
   shadow,
   unreachable,
@@ -39,6 +40,7 @@ import {
 } from "../shared/util.js";
 import { PDFDateString, setLayerDimensions } from "./display_utils.js";
 import { AnnotationStorage } from "./annotation_storage.js";
+import { bidi } from "../core/bidi.js";
 import { ColorConverters } from "../shared/scripting_utils.js";
 import { DOMSVGFactory } from "./svg_factory.js";
 import { XfaLayer } from "./xfa_layer.js";
@@ -2263,16 +2265,11 @@ class PopupElement {
     const popupContent = {
       str: text,
       html: {
-        name: "div",
+        name: "p",
         attributes: {
           dir: "auto",
         },
-        children: [
-          {
-            name: "p",
-            children: popupLines,
-          },
-        ],
+        children: popupLines,
       },
     };
     const lineAttributes = {
@@ -2283,12 +2280,20 @@ class PopupElement {
           : "",
       },
     };
-    for (const line of text.split("\n")) {
+    const split = text.split("\n");
+    for (const [index, line] of split.entries()) {
       popupLines.push({
         name: "span",
         value: line,
         attributes: lineAttributes,
       });
+      if (index < split.length - 1) {
+        popupLines.push({
+          name: "br",
+          value: "",
+          attributes: lineAttributes,
+        });
+      }
     }
     return popupContent;
   }
@@ -2326,10 +2331,13 @@ class PopupElement {
     }
   }
 
-  updateEdited({ rect, popupContent }) {
+  updateEdited({ rect, popupContent, color }) {
     this.#updates ||= {
       contentsObj: this.#contentsObj,
       richText: this.#richText,
+      titleObj: this.#titleObj,
+      dateObj: this.#dateObj,
+      color: this.#color,
     };
     if (rect) {
       this.#position = null;
@@ -2337,6 +2345,17 @@ class PopupElement {
     if (popupContent) {
       this.#richText = this.#makePopupContent(popupContent);
       this.#contentsObj = null;
+      this.#titleObj = {
+        str: window.StudipUser,
+        dir:
+          window.StudipUser && bidi(window.StudipUser).dir === "rtl"
+            ? "rtl"
+            : "ltr",
+      };
+      this.#dateObj = new Date();
+    }
+    if (color) {
+      this.#color = color;
     }
     this.#popup?.remove();
     this.#popup = null;
@@ -2346,8 +2365,13 @@ class PopupElement {
     if (!this.#updates) {
       return;
     }
-    ({ contentsObj: this.#contentsObj, richText: this.#richText } =
-      this.#updates);
+    ({
+      contentsObj: this.#contentsObj,
+      richText: this.#richText,
+      titleObj: this.#titleObj,
+      dateObj: this.#dateObj,
+      color: this.#color,
+    } = this.#updates);
     this.#updates = null;
     this.#popup?.remove();
     this.#popup = null;
@@ -3107,6 +3131,10 @@ class AnnotationLayer {
 
   #structTreeLayer = null;
 
+  // Stud.IP modification: We hold onto a reference to linkService here so we
+  // can make use of it in 'addNewHighlightAnnotation'.
+  #linkService = null;
+
   constructor({
     div,
     accessibilityManager,
@@ -3163,6 +3191,71 @@ class AnnotationLayer {
   }
 
   /**
+   * @param data The serialized 'data' of a newly created highlight annotation
+   */
+  async addNewHighlightAnnotation(data) {
+    const layer = this.div;
+    if (!data.id) {
+      data.id = "Placeholder ID A";
+    }
+    // eslint-disable-next-line no-console
+    console.log("user", data.user, "comment", data.contents);
+    if (!data.titleObj) {
+      data.titleObj = {
+        str: data.user,
+        dir: data.user && bidi(data.user).dir === "rtl" ? "rtl" : "ltr",
+      };
+    }
+    if (!data.contentsObj) {
+      data.contentsObj = {
+        str: data.contents ?? "",
+        dir: data.contents && bidi(data.contents).dir === "rtl" ? "rtl" : "ltr",
+      };
+    }
+    data.modificationDate = `D:${getModificationDate()}`;
+    data.isEditable = true;
+    const elementParams = {
+      data,
+      layer,
+      linkService: this.#linkService,
+      downloadManager: null,
+      imageResourcesPath: "",
+      renderForms: false,
+      svgFactory: new DOMSVGFactory(),
+      annotationStorage:
+        window.PDFViewerApplication.pdfDocument.annotationStorage,
+      enableScripting: true,
+      hasJSActions: false,
+      fieldObjects: null,
+      parent: this,
+      elements: null,
+    };
+    const element = AnnotationElementFactory.create(elementParams);
+
+    if (!element.isRenderable) {
+      return;
+    }
+
+    if (element instanceof InkAnnotationElement) {
+      // Generate "inkLists" property. (kludge: this is normally present for ink
+      // annotations present in an actual PDF file. We have to generate it here
+      // for ink annotations that have just been created.)
+      element.data.inkLists = element.data.paths.map(p => p.points);
+    }
+
+    const rendered = element.render();
+    if (data.hidden) {
+      rendered.style.visibility = "hidden";
+    }
+    await this.#appendElement(rendered, data.id);
+
+    if (element._isEditable) {
+      this.#editableAnnotations.set(element.data.id, element);
+      this._annotationEditorUIManager?.renderAnnotationElement(element);
+    }
+  }
+
+  /**
    * Render a new annotation layer with all annotation elements.
    *
    * @param {AnnotationLayerParameters} params
@@ -3189,6 +3282,10 @@ class AnnotationLayer {
       parent: this,
       elements: null,
     };
+
+    if (!this.#linkService) {
+      this.#linkService = params.linkService;
+    }
 
     for (const data of annotations) {
       if (data.noHTML) {

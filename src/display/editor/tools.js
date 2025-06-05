@@ -591,6 +591,8 @@ class AnnotationEditorUIManager {
 
   #altTextManager = null;
 
+  #commentTextManager = null;
+
   #annotationStorage = null;
 
   #changedExistingAnnotations = null;
@@ -820,6 +822,7 @@ class AnnotationEditorUIManager {
     viewer,
     altTextManager,
     signatureManager,
+    commentTextManager,
     eventBus,
     pdfDocument,
     pageColors,
@@ -836,6 +839,7 @@ class AnnotationEditorUIManager {
     this.#viewer = viewer;
     this.#altTextManager = altTextManager;
     this.#signatureManager = signatureManager;
+    this.#commentTextManager = commentTextManager;
     this._eventBus = eventBus;
     eventBus._on("editingaction", this.onEditingAction.bind(this), { signal });
     eventBus._on("pagechanging", this.onPageChanging.bind(this), { signal });
@@ -899,6 +903,7 @@ class AnnotationEditorUIManager {
     this.#commandManager.destroy();
     this.#altTextManager?.destroy();
     this.#signatureManager?.destroy();
+    this.#commentTextManager?.destroy();
     this.#highlightToolbar?.hide();
     this.#highlightToolbar = null;
     this.#mainHighlightColorPicker?.destroy();
@@ -1003,6 +1008,10 @@ class AnnotationEditorUIManager {
 
   get signatureManager() {
     return this.#signatureManager;
+  }
+
+  editCommentText(editor, firstTime = false) {
+    this.#commentTextManager?.editCommentText(this, editor, firstTime);
   }
 
   switchToMode(mode, callback) {

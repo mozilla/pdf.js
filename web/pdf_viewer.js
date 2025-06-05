@@ -222,6 +222,8 @@ class PDFViewer {
 
   #altTextManager = null;
 
+  #commentTextManager = null;
+
   #annotationEditorHighlightColors = null;
 
   #annotationEditorMode = AnnotationEditorType.NONE;
@@ -313,6 +315,7 @@ class PDFViewer {
     this.#altTextManager = options.altTextManager || null;
     this.#signatureManager = options.signatureManager || null;
     this.#editorUndoBar = options.editorUndoBar || null;
+    this.#commentTextManager = options.commentTextManager || null;
 
     if (this.findController) {
       this.findController.onIsPageVisible = pageNumber =>
@@ -929,6 +932,7 @@ class PDFViewer {
               viewer,
               this.#altTextManager,
               this.#signatureManager,
+              this.#commentTextManager,
               eventBus,
               pdfDocument,
               pageColors,

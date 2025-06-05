@@ -241,8 +241,20 @@ See https://github.com/adobe-type-tools/cmap-resources
                     <option value="4" data-l10n-id="pdfjs-page-scale-percent" data-l10n-args='{ "scale": 400 }'></option>
                   </select>
                 </span>
+                <button id="pageRotateCwToolbar" class="toolbarButton hiddenSmallView" title="Rotate Clockwise" tabindex="0" data-l10n-id="pdfjs-page-rotate-cw-button"
+                        onclick="document.getElementById('pageRotateCw').click()">
+                  <span data-l10n-id="pdfjs-page-rotate-cw-button-label">Rotate Clockwise</span>
+                </button>
               </div>
               <div id="toolbarViewerRight" class="toolbarHorizontalGroup">
+                <button id="printButton" class="toolbarButton hiddenForStudip" type="button" title="Print" tabindex="0" data-l10n-id="pdfjs-print-button">
+                  <span data-l10n-id="pdfjs-print-button-label">Print</span>
+                </button>
+                <button id="cursorHandTool2" class="toolbarButton hiddenForStudip" title="Enable Hand Tool" tabindex="0" data-l10n-id="pdfjs-cursor-hand-tool-button" role="radio" aria-checked="false"
+                        onclick="onClickHandTool()">
+                  <span data-l10n-id="pdfjs-cursor-hand-tool-button-label">Hand Tool</span>
+                </button>
+                <div id="editorModeSeparator" class="verticalToolbarSeparator hiddenForStudip"></div>
                 <div id="editorModeButtons" class="toolbarHorizontalGroup" role="radiogroup">
                   <div id="editorSignature" class="toolbarButtonWithContainer" hidden="true">
                     <button id="editorSignatureButton" class="toolbarButton" type="button" tabindex="0" disabled="disabled" role="radio" aria-expanded="false" aria-haspopup="true" aria-controls="editorSignatureParamsToolbar" data-l10n-id="pdfjs-editor-signature-button">
@@ -333,10 +345,10 @@ See https://github.com/adobe-type-tools/cmap-resources
                   </div>
                 </div>
 
-                <div id="editorModeSeparator" class="verticalToolbarSeparator"></div>
+                <div id="editorModeSeparator" class="verticalToolbarSeparator hiddenForStudip"></div>
 
-                <div class="toolbarHorizontalGroup hiddenMediumView">
-                  <button id="printButton" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-print-button">
+                <div class="toolbarHorizontalGroup hiddenMediumView hiddenForStudip">
+                  <button id="printButton" class="toolbarButton hiddenForStudip" type="button" tabindex="0" data-l10n-id="pdfjs-print-button">
                     <span data-l10n-id="pdfjs-print-button-label"></span>
                   </button>
 
@@ -345,9 +357,9 @@ See https://github.com/adobe-type-tools/cmap-resources
                   </button>
                 </div>
 
-                <div class="verticalToolbarSeparator hiddenMediumView"></div>
+                <div class="verticalToolbarSeparator hiddenMediumView hiddenForStudip"></div>
 
-                <div id="secondaryToolbarToggle" class="toolbarButtonWithContainer">
+                <div id="secondaryToolbarToggle" class="toolbarButtonWithContainer hiddenForStudip">
                   <button id="secondaryToolbarToggleButton" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-tools-button" aria-expanded="false" aria-haspopup="true" aria-controls="secondaryToolbar">
                     <span data-l10n-id="pdfjs-tools-button-label"></span>
                   </button>
@@ -588,6 +600,23 @@ See https://github.com/adobe-type-tools/cmap-resources
             </div>
           </div>
         </dialog>
+        <dialog class="dialog commentText" id="commentTextDialog" aria-labelledby="commentDialogLabel" aria-describedby="commentDialogDescription">
+          <div id="commentTextContainer" class="mainContainer">
+            <div id="commentTextDescription">
+              <span id="commentDialogLabel" data-l10n-id="pdfjs-editor-comment-text-dialog-label" class="title">Comment</span>
+              <span id="commentDialogDescription" data-l10n-id="pdfjs-editor-comment-text-dialog-description">
+                Add a comment to the selected element.
+              </span>
+            </div>
+            <div class="commentArea">
+              <textarea id="commentTextarea" placeholder="Comment" aria-labelledby="commentDialogDescription" data-l10n-id="pdfjs-editor-comment-text-textarea" tabindex="0"></textarea>
+            </div>
+            <div id="buttons">
+              <button id="commentTextCancel" class="secondaryButton" type="button" tabindex="0"><span data-l10n-id="pdfjs-editor-comment-text-cancel-button">Cancel</span></button>
+              <button id="commentTextSave" class="primaryButton" type="button" tabindex="0"><span data-l10n-id="pdfjs-editor-comment-text-save-button">Save</span></button>
+            </div>
+          </div>
+        </dialog>
         <dialog class="dialog newAltText" id="newAltTextDialog" aria-labelledby="newAltTextTitle" aria-describedby="newAltTextDescription" tabindex="0">
           <div id="newAltTextContainer" class="mainContainer">
             <div class="title">
@@ -806,4 +835,37 @@ See https://github.com/adobe-type-tools/cmap-resources
     </div> <!-- outerContainer -->
     <div id="printContainer"></div>
   </body>
+
+  <script defer>
+    /**
+     * Handle the 'hand' tool for Stud.IP design.
+     * It works by simulating clicks on buttons that are normally found in the secondary
+     * toolbar of PDF.js, which is hidden in the Stud.IP PDF annotator UI.
+     */
+    let selectedCursorTool = 0;
+    window.addEventListener('load', () => {
+      window.PDFViewerApplicationOptions.set('annotationMode', 3);
+      window.PDFViewerApplication.eventBus.on('switchcursortool', evt => {
+        selectedCursorTool = evt.tool;
+        const customButton = document.getElementById('cursorHandTool2');
+        if (evt.tool === 1) {
+          customButton.classList.add('toggled');
+        } else {
+          customButton.classList.remove('toggled');
+        }
+      })
+    })
+
+    function onClickHandTool() {
+      const simulatedButtonId = selectedCursorTool === 0 ? 'cursorHandTool' : 'cursorSelectTool';
+      const simulatedButton = document.getElementById(simulatedButtonId);
+      simulatedButton.click();
+    }
+
+    // To be called by the containing window so we can access the Stud.IP
+    // user's formatted name and save it in the annotations they create.
+    function setStudipUser(name) {
+      window.StudipUser = name;
+    }
+  </script>
 </html>

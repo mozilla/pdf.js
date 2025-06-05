@@ -6,7 +6,7 @@
       "description": "The theme to use.\n0 = Use system theme.\n1 = Light theme.\n2 = Dark theme.",
       "type": "integer",
       "enum": [0, 1, 2],
-      "default": 2
+      "default": 1
     },
     "showPreviousViewOnLoad": {
       "description": "DEPRECATED. Set viewOnLoad to 1 to disable showing the last page/position on load.",

@@ -387,6 +387,17 @@ pdfjs-free-text2 =
     .aria-label = Text Editor
     .default-content = Start typing…
 
+## Comment dialog (Added for Stud.IP)
+pdfjs-editor-comment-text-button =
+    .aria-label = Comment
+pdfjs-editor-comment-text-button-label = Comment
+pdfjs-editor-comment-text-dialog-label = Add a comment
+pdfjs-editor-comment-text-dialog-description = A comment entered here will be displayed as a popup next to this annotation.
+pdfjs-editor-comment-text-textarea =
+    .placeholder = Comment
+pdfjs-editor-comment-text-cancel-button = Cancel
+pdfjs-editor-comment-text-save-button = Save
+
 ## Alt-text dialog
 
 # Alternative text (alt text) helps when people can't see the image.

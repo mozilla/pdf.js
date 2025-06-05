@@ -571,7 +571,7 @@ class FreeTextEditor extends AnnotationEditor {
     if (this._isCopy || this.annotationElementId) {
       // This editor was created in using copy (ctrl+c).
       const [parentWidth, parentHeight] = this.parentDimensions;
-      if (this.annotationElementId) {
+      if (this._initialData) {
         // This stuff is hard to test: if something is changed here, please
         // test with the following PDF file:
         //  - freetexts.pdf
@@ -824,6 +824,7 @@ class FreeTextEditor extends AnnotationEditor {
       rect,
       rotation: this.rotation,
       structTreeParentId: this._structTreeParentId,
+      user: window?.StudipUser ?? "Unknown user",
     };
 
     if (isForCopying) {
@@ -833,7 +834,9 @@ class FreeTextEditor extends AnnotationEditor {
       return serialized;
     }
 
-    if (this.annotationElementId && !this.#hasElementChanged(serialized)) {
+    // No need to serialize if the annotation is an unmodified one that was
+    // already present in the original PDF.
+    if (this._initialData && !this.#hasElementChanged(serialized)) {
       return null;
     }
 

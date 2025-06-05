@@ -244,6 +244,7 @@ class InkEditor extends DrawingEditor {
       rect,
       rotation: this.rotation,
       structTreeParentId: this._structTreeParentId,
+      user: window?.StudipUser || "Unknown user",
     };
 
     if (isForCopying) {

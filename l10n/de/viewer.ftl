@@ -386,6 +386,17 @@ pdfjs-ink =
 pdfjs-ink-canvas =
     .aria-label = Vom Benutzer erstelltes Bild
 
+## Comment dialog (Added for Stud.IP)
+pdfjs-editor-comment-text-button =
+    .aria-label = Kommentar
+pdfjs-editor-comment-text-button-label = Kommentar
+pdfjs-editor-comment-text-dialog-label = Kommentar hinzufügen
+pdfjs-editor-comment-text-dialog-description = Der eingegebene Kommentar wird in einem Popup neben der ausgewählten Annotation angezeigt.
+pdfjs-editor-comment-text-textarea =
+    .placeholder = Kommentar
+pdfjs-editor-comment-text-cancel-button = Abbrechen
+pdfjs-editor-comment-text-save-button = Speichern
+
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Alternativ-Text

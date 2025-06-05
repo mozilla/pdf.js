@@ -6,6 +6,8 @@ PDF.js is community-driven and supported by Mozilla. Our goal is to
 create a general-purpose, web standards-based platform for parsing and
 rendering PDFs.
 
+This is a build adjusted to the needs of the LMS Stud.IP.
+
 ## Contributing
 
 PDF.js is an open source project and always looking for more contributors. To
@@ -48,7 +50,7 @@ directory `build/chromium`.
 
 To get a local copy of the current code, clone it using git:
 
-    $ git clone https://github.com/mozilla/pdf.js.git
+    $ git clone https://github.com/thomashackl/pdf.js.git
     $ cd pdf.js
 
 Next, install Node.js via the [official package](https://nodejs.org) or via

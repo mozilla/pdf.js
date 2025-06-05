@@ -628,6 +628,7 @@ class HighlightEditor extends AnnotationEditor {
     this.setDims(this.width * parentWidth, this.height * parentHeight);
 
     bindEvents(this, this.#highlightDiv, ["pointerover", "pointerleave"]);
+    this.addCommentTextButton();
     this.enableEditing();
 
     return div;
@@ -864,7 +865,17 @@ class HighlightEditor extends AnnotationEditor {
     let initialData = null;
     if (data instanceof HighlightAnnotationElement) {
       const {
-        data: { quadPoints, rect, rotation, id, color, opacity, popupRef },
+        data: {
+          quadPoints,
+          rect,
+          rotation,
+          id,
+          color,
+          opacity,
+          popupRef,
+          titleObj,
+          contentsObj,
+        },
         parent: {
           page: { pageNumber },
         },
@@ -881,6 +892,8 @@ class HighlightEditor extends AnnotationEditor {
         id,
         deleted: false,
         popupRef,
+        titleObj,
+        contentsObj,
       };
     } else if (data instanceof InkAnnotationElement) {
       const {
@@ -892,6 +905,8 @@ class HighlightEditor extends AnnotationEditor {
           color,
           borderStyle: { rawWidth: thickness },
           popupRef,
+          titleObj,
+          contentsObj,
         },
         parent: {
           page: { pageNumber },
@@ -909,6 +924,8 @@ class HighlightEditor extends AnnotationEditor {
         id,
         deleted: false,
         popupRef,
+        titleObj,
+        contentsObj,
       };
     }
 
@@ -921,6 +938,7 @@ class HighlightEditor extends AnnotationEditor {
       editor.#thickness = data.thickness;
     }
     editor.annotationElementId = data.id || null;
+
     editor._initialData = initialData;
 
     const [pageWidth, pageHeight] = editor.pageDimensions;
@@ -1003,6 +1021,7 @@ class HighlightEditor extends AnnotationEditor {
 
     const rect = this.getRect(0, 0);
     const color = AnnotationEditor._colorManager.convert(this.color);
+    const commentText = this.serializeCommentText(false);
 
     const serialized = {
       annotationType: AnnotationEditorType.HIGHLIGHT,
@@ -1015,9 +1034,13 @@ class HighlightEditor extends AnnotationEditor {
       rect,
       rotation: this.#getRotation(),
       structTreeParentId: this._structTreeParentId,
+      user: window?.StudipUser || "Unknown user",
+      contents: commentText?.commentText,
     };
 
-    if (this.annotationElementId && !this.#hasElementChanged(serialized)) {
+    // No need to serialize if the annotation is an unmodified one that was
+    // already present in the original PDF.
+    if (this._initialData && !this.#hasElementChanged(serialized)) {
       return null;
     }
 
@@ -1026,14 +1049,23 @@ class HighlightEditor extends AnnotationEditor {
   }
 
   #hasElementChanged(serialized) {
-    const { color } = this._initialData;
-    return serialized.color.some((c, i) => c !== color[i]);
+    const {
+      color,
+      contentsObj: { str: contents },
+    } = this._initialData;
+    return (
+      serialized.color.some((c, i) => c !== color[i]) ||
+      serialized.contents !== contents
+    );
   }
 
   /** @inheritdoc */
   renderAnnotationElement(annotation) {
+    const commentText = this.serializeCommentText(false);
     annotation.updateEdited({
       rect: this.getRect(0, 0),
+      popupContent: commentText.commentText,
+      color: AnnotationEditor._colorManager.convert(this.color),
     });
 
     return null;

@@ -842,7 +842,6 @@ a:focus > .thumbnail > .thumbnailImage,
 }
 
 dialog {
-  margin: auto;
   padding: 15px;
   border-spacing: 4px;
   color: var(--main-color);
@@ -1624,6 +1623,14 @@ dialog :link {
       }
     }
   }
+}
+
+.hiddenForStudip {
+  display: none !important;
+}
+
+#commentTextarea {
+  width: 100%;
 }
 
 @media all and (max-width: 840px) {

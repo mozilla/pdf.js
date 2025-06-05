@@ -1,5 +1,5 @@
 {
-  "name": "pdf.js",
+  "name": "@studip/pdf.js",
   "type": "module",
   "devDependencies": {
     "@babel/core": "^7.27.1",
@@ -59,7 +59,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/mozilla/pdf.js.git"
+    "url": "git://github.com/thomashackl/pdf.js.git"
   },
   "engines": {
     "node": ">=20.16.0 || >=22.3.0"

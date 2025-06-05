@@ -3935,14 +3935,14 @@ class FreeTextAnnotation extends MarkupAnnotation {
     const freetext = oldAnnotation || new Dict(xref);
     freetext.set("Type", Name.get("Annot"));
     freetext.set("Subtype", Name.get("FreeText"));
-    if (oldAnnotation) {
-      freetext.set("M", `D:${getModificationDate()}`);
+    if (!oldAnnotation) {
+      freetext.set("CreationDate", `D:${getModificationDate()}`);
+    } else {
       // TODO: We should try to generate a new RC from the content we've.
       // For now we can just remove it to avoid any issues.
       freetext.delete("RC");
-    } else {
-      freetext.set("CreationDate", `D:${getModificationDate()}`);
     }
+    freetext.set("M", `D:${getModificationDate()}`);
     freetext.set("Rect", rect);
     const da = `/Helv ${fontSize} Tf ${getPdfColor(color, /* isFill */ true)}`;
     freetext.set("DA", da);
@@ -4467,11 +4467,13 @@ class InkAnnotation extends MarkupAnnotation {
       rotation,
       thickness,
       user,
+      contents
     } = annotation;
     const ink = oldAnnotation || new Dict(xref);
     ink.set("Type", Name.get("Annot"));
     ink.set("Subtype", Name.get("Ink"));
     ink.set(oldAnnotation ? "M" : "CreationDate", `D:${getModificationDate()}`);
+    ink.set("M", `D:${getModificationDate()}`);
     ink.set("Rect", rect);
     ink.set("InkList", outlines?.points || paths.points);
     ink.set("F", 4);
@@ -4499,6 +4501,16 @@ class InkAnnotation extends MarkupAnnotation {
 
     // Opacity.
     ink.set("CA", opacity);
+
+    if (user) {
+      ink.set("T", stringToAsciiOrUTF16BE(user));
+      // If 'Contents' is not set, there will be no popup generated to display
+      // the user who created the annotation, at least in PDF.js.
+      ink.set("Contents", stringToAsciiOrUTF16BE(" "));
+    }
+    if (contents) {
+      ink.set("Contents", stringToAsciiOrUTF16BE(contents));
+    }
 
     const n = new Dict(xref);
     ink.set("AP", n);
@@ -4692,21 +4704,29 @@ class HighlightAnnotation extends MarkupAnnotation {
   }
 
   static createNewDict(annotation, xref, { apRef, ap }) {
-    const { color, oldAnnotation, opacity, rect, rotation, user, quadPoints } =
-      annotation;
+    const {
+      color,
+      oldAnnotation,
+      opacity,
+      rect,
+      rotation,
+      user,
+      quadPoints,
+      contents,
+    } = annotation;
     const highlight = oldAnnotation || new Dict(xref);
     highlight.set("Type", Name.get("Annot"));
     highlight.set("Subtype", Name.get("Highlight"));
-    highlight.set(
-      oldAnnotation ? "M" : "CreationDate",
-      `D:${getModificationDate()}`
-    );
-    highlight.set("CreationDate", `D:${getModificationDate()}`);
+    if (!oldAnnotation) {
+      highlight.set("CreationDate", `D:${getModificationDate()}`);
+    }
+    highlight.set("M", `D:${getModificationDate()}`);
     highlight.set("Rect", rect);
     highlight.set("F", 4);
     highlight.set("Border", [0, 0, 0]);
     highlight.set("Rotate", rotation);
     highlight.set("QuadPoints", quadPoints);
+    highlight.set("Contents", stringToAsciiOrUTF16BE(contents));
 
     // Color.
     highlight.set("C", getPdfColorArray(color));

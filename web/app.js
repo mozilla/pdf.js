@@ -1637,14 +1637,7 @@ const PDFViewerApplication = {
     this._contentDispositionFilename ??= contentDispositionFilename;
     this._contentLength ??= contentLength; // See `getDownloadInfo`-call above.
 
-    // Provides some basic debug information
-    console.log(
-      `PDF ${pdfDocument.fingerprints[0]} [${info.PDFFormatVersion} ` +
-        `${(metadata?.get("pdf:producer") || info.Producer || "-").trim()} / ` +
-        `${(metadata?.get("xmp:creatortool") || info.Creator || "-").trim()}` +
-        `] (PDF.js: ${version || "?"} [${build || "?"}])`
-    );
-    const pdfTitle = this._docTitle;
+    const pdfTitle = info.Title;
 
     if (pdfTitle) {
       this.setTitle(
