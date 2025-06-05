@@ -1,5 +1,5 @@
 {
-  "name": "@studip/pdf.js",
+  "name": "@thomas.hackl/pdf.js",
   "type": "module",
   "devDependencies": {
     "@babel/core": "^7.27.1",
