@@ -1732,6 +1732,14 @@ class AnnotationEditor {
     editor.width = width / pageWidth;
     editor.height = height / pageHeight;
 
+    /**
+     * @MuniCollab
+     * Customization: Project annotations editor and sidebar
+     * Commit: 405cdc5 wip: recognizing existing/added/removed annotations
+     * PR: https://github.com/municollab/mc-server/pull/922
+     */
+    editor.uniqueId = data.uniqueId;
+
     return editor;
   }
 
@@ -1938,6 +1946,20 @@ class AnnotationEditor {
       return;
     }
     this.isSelected = true;
+
+    /**
+     * @MuniCollab
+     * Customization: Project annotations editor and sidebar #922
+     * Commit: 9b3f2d1 wip: poc annotations sidebar, remove and select
+     * PR: https://github.com/municollab/mc-server/pull/922
+     */
+    const customEvent = new CustomEvent('pdfjs-annotations-viewer-select', {
+      detail: {
+        uniqueId: this.uniqueId,
+        annotation: this.serialize()
+      }
+    });
+
     this.makeResizable();
     this.div?.classList.add("selectedEditor");
     if (!this._editToolbar) {
@@ -1949,10 +1971,28 @@ class AnnotationEditor {
           this._editToolbar?.show();
         }
       });
+
+      /**
+       * @MuniCollab
+       * Customization: Project annotations editor and sidebar #922
+       * Commit: 9b3f2d1 wip: poc annotations sidebar, remove and select
+       * PR: https://github.com/municollab/mc-server/pull/922
+       */
+      window.parent.dispatchEvent(customEvent);
+
       return;
     }
     this._editToolbar?.show();
     this.#altText?.toggleAltTextBadge(false);
+
+    /**
+     * @MuniCollab
+     * Customization: Project annotations editor and sidebar #922
+     * Commit: 9b3f2d1 wip: poc annotations sidebar, remove and select
+     * PR: https://github.com/municollab/mc-server/pull/922
+     */
+    window.parent.dispatchEvent(customEvent);
+
   }
 
   /**
@@ -1974,6 +2014,19 @@ class AnnotationEditor {
     }
     this._editToolbar?.hide();
     this.#altText?.toggleAltTextBadge(true);
+
+    /**
+     * @MuniCollab
+     * Customization: Project annotations editor and sidebar #922
+     * Commit: 9b3f2d1 wip: poc annotations sidebar, remove and select
+     * PR: https://github.com/municollab/mc-server/pull/922
+     */
+    const customEvent = new CustomEvent('pdfjs-annotations-viewer-unselect', {
+      detail: {
+        uniqueId: this.uniqueId
+      }
+    });
+    window.parent.dispatchEvent(customEvent);
   }
 
   /**
