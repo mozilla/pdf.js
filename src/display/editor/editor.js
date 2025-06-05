@@ -423,10 +423,26 @@ class AnnotationEditor {
     window.parent.dispatchEvent(customEvent);
 
     if (!this._focusEventsAllowed) {
+      /**
+       * @MuniCollab
+       * Customization: feat: few changes pdfjs
+       * Commit: 51c30e5
+       * PR: https://github.com/municollab/mc-server/pull/922
+       */
+      this.save();
+
       return;
     }
 
     if (!this.isAttachedToDOM) {
+      /**
+       * @MuniCollab
+       * Customization: feat: few changes pdfjs
+       * Commit: 51c30e5
+       * PR: https://github.com/municollab/mc-server/pull/922
+       */
+      this.save();
+
       return;
     }
 
@@ -436,6 +452,14 @@ class AnnotationEditor {
     // editor, then the editor isn't unactive.
     const target = event.relatedTarget;
     if (target?.closest(`#${this.id}`)) {
+      /**
+       * @MuniCollab
+       * Customization: feat: few changes pdfjs
+       * Commit: 51c30e5
+       * PR: https://github.com/municollab/mc-server/pull/922
+       */
+      this.save();
+
       return;
     }
 
@@ -443,6 +467,14 @@ class AnnotationEditor {
 
     if (!this.parent?.isMultipleSelection) {
       this.commitOrRemove();
+    } else {
+      /**
+       * @MuniCollab
+       * Customization: feat: few changes pdfjs
+       * Commit: 51c30e5
+       * PR: https://github.com/municollab/mc-server/pull/922
+       */
+      this.save();
     }
   }
 
@@ -451,6 +483,15 @@ class AnnotationEditor {
       this.remove();
     } else {
       this.commit();
+
+      /**
+       * @MuniCollab
+       * Customization: feat: few changes pdfjs
+       * Commit: 51c30e5
+       * PR: https://github.com/municollab/mc-server/pull/922
+       */
+      this.save();
+
     }
   }
 
