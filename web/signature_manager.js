@@ -820,7 +820,9 @@ class SignatureManager {
     const button = document.createElement("button");
     button.classList.add("altText", "editDescription");
     button.tabIndex = 0;
-    button.title = editor.description;
+    if (editor.description) {
+      button.title = editor.description;
+    }
     const span = document.createElement("span");
     button.append(span);
     span.setAttribute(
