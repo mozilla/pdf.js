@@ -1660,6 +1660,18 @@ class AnnotationEditorUIManager {
   }
 
   /**
+   * @MuniCollab
+   * Customization: Project annotations editor and sidebar #922
+   * Commit: f6a499e wip: replace postMessage with custom events, fix disabling edit on scroll
+   * PR: https://github.com/municollab/mc-server/pull/922
+   */
+  customShowLayers() {
+    for (const layer of this.#allLayers.values()) {
+      layer.customShowLayer?.();
+    }
+  }
+
+  /**
    * Change the editor mode (None, FreeText, Ink, ...)
    * @param {number} mode
    * @param {string|null} editId
@@ -1862,6 +1874,21 @@ class AnnotationEditorUIManager {
         editors.push(editor);
       }
     }
+    return editors;
+  }
+
+  /**
+   * @MuniCollab
+   * Customization: Project annotations editor and sidebar #922
+   * Commit: 5b63e42 wip: edit selected annotation
+   * PR: https://github.com/municollab/mc-server/pull/922
+   */
+  getAllEditors() {
+    const editors = [];
+    for (const editor of this.#allEditors.values()) {
+      editors.push(editor);
+    }
+
     return editors;
   }
 
