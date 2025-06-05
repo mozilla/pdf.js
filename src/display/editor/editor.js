@@ -461,6 +461,24 @@ class AnnotationEditor {
     this.addToAnnotationStorage();
   }
 
+  /**
+   * @MuniCollab
+   * Customization: wip: create new annotation with sidebar
+   * Commit: 9e320a2
+   * PR: https://github.com/municollab/mc-server/pull/922
+   */
+  save() {
+    console.log('sending annotations to parent...')
+    const customEvent = new CustomEvent('pdfjs-annotations-viewer-save-annotation', {
+      detail: {
+        uniqueId: this.uniqueId,
+        annotation: this.serialize()
+      }
+    });
+    window.parent.dispatchEvent(customEvent);
+  }
+
+
   addToAnnotationStorage() {
     this._uiManager.addToAnnotationStorage(this);
   }
