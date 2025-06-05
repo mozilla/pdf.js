@@ -767,6 +767,15 @@ class FreeTextEditor extends AnnotationEditor {
         parent: {
           page: { pageNumber },
         },
+
+        /**
+         * @MuniCollab
+         * Customization: Project annotations editor and sidebar
+         * Commit: 405cdc5 wip: recognizing existing/added/removed annotations
+         * PR: https://github.com/municollab/mc-server/pull/922
+         */
+        uniqueId,
+
       } = data;
       // textContent is supposed to be an array of strings containing each line
       // of text. However, it can be null or empty.
@@ -786,6 +795,14 @@ class FreeTextEditor extends AnnotationEditor {
         id,
         deleted: false,
         popupRef,
+
+        /**
+         * @MuniCollab
+         * Customization: Project annotations editor and sidebar
+         * Commit: 405cdc5 wip: recognizing existing/added/removed annotations
+         * PR: https://github.com/municollab/mc-server/pull/922
+         */
+        uniqueId,
       };
     }
     const editor = await super.deserialize(data, parent, uiManager);
@@ -794,6 +811,14 @@ class FreeTextEditor extends AnnotationEditor {
     editor.#content = FreeTextEditor.#deserializeContent(data.value);
     editor.annotationElementId = data.id || null;
     editor._initialData = initialData;
+
+    /**
+     * @MuniCollab
+     * Customization: Project annotations editor and sidebar
+     * Commit: 405cdc5 wip: recognizing existing/added/removed annotations
+     * PR: https://github.com/municollab/mc-server/pull/922
+     */
+    editor.uniqueId = data.uniqueId;
 
     return editor;
   }
@@ -825,6 +850,15 @@ class FreeTextEditor extends AnnotationEditor {
       rect,
       rotation: this.rotation,
       structTreeParentId: this._structTreeParentId,
+
+      /**
+       * @MuniCollab
+       * Customization: Project annotations editor and sidebar
+       * Commit: 405cdc5 wip: recognizing existing/added/removed annotations
+       * PR: https://github.com/municollab/mc-server/pull/922
+       */
+      uniqueId: this.uniqueId,
+
     };
 
     if (isForCopying) {
