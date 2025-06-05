@@ -128,8 +128,10 @@ class StampEditor extends AnnotationEditor {
       this._uiManager.useNewAltTextFlow &&
       this.#bitmap
     ) {
-      this._editToolbar.hide();
-      this._uiManager.editAltText(this, /* firstTime = */ true);
+      this.addEditToolbar().then(() => {
+        this._editToolbar.hide();
+        this._uiManager.editAltText(this, /* firstTime = */ true);
+      });
       return;
     }
 
@@ -337,6 +339,11 @@ class StampEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
+  get toolbarButtons() {
+    return [["altText", this.createAltText()]];
+  }
+
+  /** @inheritdoc */
   get isResizable() {
     return true;
   }
@@ -356,7 +363,7 @@ class StampEditor extends AnnotationEditor {
     super.render();
     this.div.hidden = true;
 
-    this.addAltTextButton();
+    this.createAltText();
 
     if (!this.#missingCanvas) {
       if (this.#bitmap) {

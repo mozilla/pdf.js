@@ -1050,6 +1050,14 @@ class AnnotationEditor {
   }
 
   /**
+   * Get the toolbar buttons for this editor.
+   * @returns {Array<Array<string|object>>|null}
+   */
+  get toolbarButtons() {
+    return null;
+  }
+
+  /**
    * Add a toolbar for this editor.
    * @returns {Promise<EditorToolbar|null>}
    */
@@ -1059,9 +1067,13 @@ class AnnotationEditor {
     }
     this._editToolbar = new EditorToolbar(this);
     this.div.append(this._editToolbar.render());
-    if (this.#altText) {
-      await this._editToolbar.addAltText(this.#altText);
+    const { toolbarButtons } = this;
+    if (toolbarButtons) {
+      for (const [name, tool] of toolbarButtons) {
+        await this._editToolbar.addButton(name, tool);
+      }
     }
+    this._editToolbar.addButton("delete");
 
     return this._editToolbar;
   }
@@ -1091,17 +1103,20 @@ class AnnotationEditor {
     return this.div.getBoundingClientRect();
   }
 
-  async addAltTextButton() {
-    if (this.#altText) {
-      return;
+  /**
+   * Create the alt text for this editor.
+   * @returns {object}
+   */
+  createAltText() {
+    if (!this.#altText) {
+      AltText.initialize(AnnotationEditor._l10n);
+      this.#altText = new AltText(this);
+      if (this.#accessibilityData) {
+        this.#altText.data = this.#accessibilityData;
+        this.#accessibilityData = null;
+      }
     }
-    AltText.initialize(AnnotationEditor._l10n);
-    this.#altText = new AltText(this);
-    if (this.#accessibilityData) {
-      this.#altText.data = this.#accessibilityData;
-      this.#accessibilityData = null;
-    }
-    await this.addEditToolbar();
+    return this.#altText;
   }
 
   get altTextData() {
