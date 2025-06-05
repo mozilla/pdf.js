@@ -407,6 +407,21 @@ class AnnotationEditor {
    * @param {FocusEvent} event
    */
   focusout(event) {
+
+    /**
+     * @MuniCollab
+     * Customization: fix: saving modified markup/annotation
+     * Commit: 456de43
+     * PR: https://github.com/municollab/mc-server/pull/1899
+     */
+    const customEvent = new CustomEvent('pdfjs-annotations-viewer-select', {
+      detail: {
+        uniqueId: this.uniqueId,
+        annotation: this.serialize()
+      }
+    });
+    window.parent.dispatchEvent(customEvent);
+
     if (!this._focusEventsAllowed) {
       return;
     }
