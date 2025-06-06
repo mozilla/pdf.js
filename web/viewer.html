@@ -807,3 +807,359 @@ See https://github.com/adobe-type-tools/cmap-resources
     <div id="printContainer"></div>
   </body>
 </html>
+
+<!-- @MuniCollab Customization -->
+<!-- /////////////////////////
+  The entire script block is our custom code
+  and creates the connection between our app
+  and PDF.js
+-->
+<script>
+  const CHECK_FOR_PENDING_ANNOTATION_SELECT_INTERVAL_MS = 125;
+
+  /**
+    Array that tracks which annotations are loaded in the pdf viewer
+    @type {{
+      annotation: any,
+      isLoaded: boolean,
+      shouldRemove?: boolean,
+      shouldModify?: boolean,
+    }[]} */
+  let annotationsState = [];
+  /**
+   * Element that should be selected, but is not yet loaded
+   * Setting this to a value will result into this being selected during next interval cycle
+   * @type {{ uniqueId: string, pageIndex: number } | null}
+   */
+  let pendingAnnotationSelect = null;
+
+
+  function getPDFjsComponents() {
+    const pdfViewerProxy = window.PDFViewerApplication
+    const pdfViewer = pdfViewerProxy.pdfViewer
+    const annotationEditorUIManager = pdfViewer?.annotationEditorUIManager
+    const annotationStorage = pdfViewerProxy.pdfDocument.annotationStorage
+
+    return {
+      pdfViewerProxy,
+      pdfViewer,
+      annotationEditorUIManager,
+      annotationStorage
+    }
+  }
+  // Sends serialized annotations (from annotationStorage) to parent window (our react app)
+  function sendAnnotationsToParent() {
+    const { annotationStorage } = getPDFjsComponents()
+    const annotationsMap = annotationStorage.serializable.map ?? []
+    const annotations = [...annotationsMap].map(([key, value]) => ({ key, value }));
+
+    annotationsState = annotations.map(annotation => ({
+      annotation: annotation.value,
+      isLoaded: true,
+    }))
+
+    const customEvent = new CustomEvent('pdfjs-annotations-viewer', {
+      detail: {
+        annotations
+      }
+    });
+
+    window.parent.dispatchEvent(customEvent);
+  }
+
+  // Loads annotations from loadedAnnotationsMap to pdf viewer
+  function syncAnnotationsWithState() {
+    const { annotationEditorUIManager, pdfViewer } = getPDFjsComponents()
+
+    if (!annotationEditorUIManager) {
+      return setTimeout(syncAnnotationsWithState, 1000);
+    }
+
+    // Add missing annotations
+    annotationsState.filter(({ isLoaded }) => !isLoaded).forEach(({ annotation }) => {
+      const pageIndex = annotation.pageIndex;
+      const page = pdfViewer.getPageView(pageIndex);
+      const annotationLayerBuilder = page?.annotationEditorLayer;
+
+      if (!annotationLayerBuilder) {
+        return;
+      }
+
+      const annotationEditorLayer = annotationLayerBuilder.annotationEditorLayer;
+      const editor = annotationEditorLayer.deserialize(annotation)
+
+      annotationEditorUIManager.addEditorToLayer(editor);
+      const loadedAnnotation = annotationsState.find(({ annotation: a }) => a === annotation);
+
+      if (loadedAnnotation) {
+        loadedAnnotation.isLoaded = true;
+      }
+    })
+
+
+    // Remove removed annotations
+    annotationsState.filter(({ shouldRemove }) => shouldRemove).forEach(({ annotation }) => {
+      const pageIndex = annotation.pageIndex;
+      const page = pdfViewer.getPageView(pageIndex);
+      const annotationLayerBuilder = page?.annotationEditorLayer;
+
+      if (!annotationLayerBuilder) {
+        return;
+      }
+      const annotationEditorLayer = annotationLayerBuilder.annotationEditorLayer;
+      const annotationStorage = window.PDFViewerApplication.pdfDocument.annotationStorage
+      const annotationsMap = annotationStorage.serializable.map ?? []
+      const annotations = [...annotationsMap].map(([key, value]) => ({ key, value }));
+
+      const key = annotations.find(({ value }) => value.uniqueId === annotation.uniqueId).key;
+      const editor = annotationEditorUIManager.getEditor(key)
+
+      annotationEditorLayer.remove(editor);
+      annotationsState.find(({ annotation: a }) => a === annotation).commitRemove = true;
+    })
+
+    annotationsState = annotationsState.filter(({ commitRemove }) => !commitRemove);
+
+    // Remove and add edited annotations 
+    annotationsState.filter(({ shouldModify }) => shouldModify).forEach(({ annotation }) => {
+      const pageIndex = annotation.pageIndex;
+      const page = pdfViewer.getPageView(pageIndex);
+      const annotationLayerBuilder = page?.annotationEditorLayer;
+
+      if (!annotationLayerBuilder) {
+        return;
+      }
+
+      const annotationEditorLayer = annotationLayerBuilder.annotationEditorLayer;
+      const annotationStorage = window.PDFViewerApplication.pdfDocument.annotationStorage
+      const annotationsMap = annotationStorage.serializable.map ?? []
+      const annotations = [...annotationsMap].map(([key, value]) => ({ key, value }));
+
+      const key = annotations.find(({ value }) => value.uniqueId === annotation.uniqueId).key;
+
+      annotationEditorLayer.remove(annotationEditorUIManager.getEditor(key));
+      const refreshedEditor = annotationEditorLayer.deserialize(annotation)
+
+      annotationEditorUIManager.addEditorToLayer(refreshedEditor);
+      const updatedAnnotation = annotationsState.find(({ annotation: a }) => a === annotation);
+
+      updatedAnnotation.isLoaded = true;
+      updatedAnnotation.shouldModify = false;
+    })
+
+    annotationEditorUIManager.customShowLayers()
+
+    const annotationsLoadedEvent = new CustomEvent('pdfjs-annotations-viewer-annotation-layer-loaded');
+
+    window.parent.dispatchEvent(annotationsLoadedEvent);
+  }
+
+  const handleAddedOrRemovedAnnotations = (event) => {
+    const serializedAnnotations = event.data.annotations ?? [];
+    const { annotationStorage } = getPDFjsComponents()
+
+    const annotationsMap = annotationStorage.serializable.map ?? []
+    const presentAnnotationUniqueIds = [...annotationsMap].map(([, value]) => (value.uniqueId));
+
+    const freshAnnotations = serializedAnnotations.map((annotation) => ({
+      annotation,
+      isLoaded: presentAnnotationUniqueIds.includes(annotation.uniqueId),
+      shouldRemove: false,
+      shouldModify: false,
+    }));
+
+    const freshAnnotationsUniqueIds = freshAnnotations.map(({ annotation }) => annotation.uniqueId);
+
+    const removedAnnotations = annotationsState.filter(({ annotation }) => !freshAnnotationsUniqueIds.includes(annotation.uniqueId)).map(({ annotation }) => ({
+      annotation,
+      isLoaded: presentAnnotationUniqueIds.includes(annotation.uniqueId),
+      shouldRemove: true,
+      shouldModify: false,
+    }));
+
+    annotationsState = [...freshAnnotations, ...removedAnnotations];
+
+    syncAnnotationsWithState()
+  }
+
+  // Compares annotations from parent to loadedAnnotationsMap and updates the `shouldModify` property
+  const handleModifiedAnnotations = (event) => {
+    const serializedAnnotations = event.data.annotations ?? [];
+
+    annotationsState = annotationsState.map(({ annotation, ...rest }) => {
+      const updatedAnnotation = serializedAnnotations.find((a) => a.uniqueId === annotation.uniqueId);
+
+      if (!updatedAnnotation) {
+        return { annotation, ...rest };
+      }
+
+      return {
+        annotation: updatedAnnotation,
+        ...rest,
+        shouldModify: true,
+      }
+    });
+
+    syncAnnotationsWithState()
+  }
+
+  const selectPendingAnnotation = () => {
+    const { annotationEditorUIManager } = getPDFjsComponents()
+
+    if (!pendingAnnotationSelect) {
+      return;
+    }
+
+    const editor = annotationEditorUIManager.getAllEditors().find(editor => editor.uniqueId === pendingAnnotationSelect.uniqueId);
+
+    if (editor) {
+      annotationEditorUIManager.unselectAll();
+      annotationEditorUIManager.updateMode(editor.mode);
+      annotationEditorUIManager.setSelected(editor);
+      pendingAnnotationSelect = null;
+    }
+  }
+
+  const handleSelectAnnotation = (event) => {
+    const uniqueId = event.data.uniqueId;
+    const pageIndex = event.data.pageIndex;
+
+    const { pdfViewerProxy, pdfViewer, annotationEditorUIManager } = getPDFjsComponents()
+
+    const pageElement = document.querySelector(`.page[data-page-number="${pageIndex + 1}"]`);
+
+    pendingAnnotationSelect = { uniqueId, pageIndex };
+
+    scrollIntoView(pageElement, {
+      time: 500,
+      cancellable: false,
+    })
+  }
+
+  const handleSwitchToInk = (event) => {
+    const { annotationEditorUIManager } = getPDFjsComponents()
+
+    annotationEditorUIManager.unselectAll();
+    document.querySelector('#editorInk').click();
+  }
+
+  const handleUnselectAnnotation = (event) => {
+    const { annotationEditorUIManager } = getPDFjsComponents()
+
+    annotationEditorUIManager.unselectAll();
+  }
+
+  const handleRemoveDraftAnnotation = (event) => {
+    const uniqueId = event.data.uniqueId;
+    const pageIndex = event.data.pageIndex;
+    const { pdfViewerProxy, pdfViewer, annotationEditorUIManager } = getPDFjsComponents()
+    const page = pdfViewerProxy.pdfViewer.getPageView(pageIndex);
+    const annotationLayerBuilder = page?.annotationEditorLayer;
+    const annotationEditorLayer = annotationLayerBuilder.annotationEditorLayer;
+
+    const editors = annotationEditorUIManager.getEditors(pageIndex)
+    const editor = editors.find(editor => editor.uniqueId === uniqueId);
+
+    if (editor) {
+      annotationEditorLayer.remove(editor);
+    }
+  }
+
+  window.addEventListener('message', (event) => {
+    if (event.data.type === 'pdfjs-annotations-app-modified') {
+      handleModifiedAnnotations(event);
+    }
+
+    // Add or remove annotations
+    if (event.data.type === 'pdfjs-annotations-app') {
+      handleAddedOrRemovedAnnotations(event)
+    }
+
+    // Select annotation
+    if (event.data.type === 'pdfjs-annotations-app-select') {
+      handleSelectAnnotation(event)
+    }
+
+    // Unselect annotation
+    if (event.data.type === 'pdfjs-annotations-app-unselect') {
+      handleUnselectAnnotation(event)
+    }
+
+    // Turn on create mode (ink)
+    if (event.data.type === 'pdfjs-annotations-app-create') {
+      handleSwitchToInk(event)
+    }
+
+    // Remove draft annotation (the annotation that was not saved)
+    if (event.data.type === 'pdfjs-annotations-app-remove-draft') {
+      handleRemoveDraftAnnotation(event)
+    }
+
+    // Display annotations sidebar button
+    if (event.data.type === 'pdfjs-annotations-app-sidebar-initialize') {
+      document.querySelector(
+        '#annotations-sidebar',
+      ).style.display = 'block';
+    }
+
+    // Enable ink and free text tools
+    if (event.data.type === 'pdfjs-annotations-app-can-modify') {
+      document.querySelector(
+        '#editorInk',
+      ).style.visibility = 'visible';
+      document.querySelector(
+        '#editorFreeText',
+      ).style.visibility = 'visible';
+    }
+
+    return;
+
+  });
+
+
+
+  // Annotation Sidebar button in pdfjs viewer sends an event to our react app to open the sidebar
+  document.querySelector('#annotations-sidebar').addEventListener('click', () => {
+    const showSidebarEvent = new CustomEvent('pdfjs-annotations-viewer-annotations-sidebar');
+
+    window.parent.dispatchEvent(showSidebarEvent);
+  });
+
+
+  let syncInterval = null;
+  let selectInterval = null;
+
+  // Listen to event
+  window.onPDFjsInitialized = () => {
+    window.onbeforeunload = null;
+
+    window.PDFViewerApplication.annotationEditorParams.eventBus.on('updateviewarea', syncAnnotationsWithState);
+
+    if (syncInterval) {
+      clearInterval(syncInterval);
+    }
+
+    if (selectInterval) {
+      clearInterval(selectInterval);
+    }
+
+    syncInterval = setInterval(() => {
+      syncAnnotationsWithState();
+    }, 250)
+
+
+    // remove the default beforeunload event listener (which stops the user from leaving the page)
+    window.addEventListener('beforeunload', event => event.stopImmediatePropagation());
+
+    selectInterval = setInterval(() => {
+      if (pendingAnnotationSelect) {
+        selectPendingAnnotation();
+      }
+    }, CHECK_FOR_PENDING_ANNOTATION_SELECT_INTERVAL_MS);
+
+    const pdfjsInitializedEvent = new CustomEvent('pdfjs-annotations-viewer-initialized');
+    window.parent.dispatchEvent(pdfjsInitializedEvent);
+  }
+
+
+</script>
