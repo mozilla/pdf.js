@@ -1908,7 +1908,16 @@ class WidgetAnnotation extends Annotation {
     }
 
     data.password = this.hasFieldFlag(AnnotationFieldFlag.PASSWORD);
-    data.readOnly = this.hasFieldFlag(AnnotationFieldFlag.READONLY);
+
+    /**
+     * @MuniCollab
+     * Customization: fix: pdfjs show readonly forms #1148
+     * PR: https://github.com/municollab/mc-server/pull/1148
+     * Commit: 4cc9818 fix: pdfjs show readonly forms
+     */
+    // data.readOnly = this.hasFieldFlag(AnnotationFieldFlag.READONLY);
+    data.readOnly = true;
+
     data.required = this.hasFieldFlag(AnnotationFieldFlag.REQUIRED);
     data.hidden =
       this._hasFlag(data.annotationFlags, AnnotationFlag.HIDDEN) ||
