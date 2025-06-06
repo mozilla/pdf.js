@@ -1587,7 +1587,14 @@ const PDFViewerApplication = {
    * @private
    */
   async _initializeAutoPrint(pdfDocument, openActionPromise) {
-    return; // MuniCollab: disable auto trigger print
+
+    /**
+     * @MuniCollab
+     * Customization: Disable auto trigger print
+     * Commit: d35f909 feat(pdfjs): disallow pdfjs to collect JS actions and disable auto trigger print
+     * PR https://github.com/municollab/mc-server/pull/1407
+     */
+    return;
 
     const [openAction, jsActions] = await Promise.all([
       openActionPromise,
