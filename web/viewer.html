@@ -20,7 +20,7 @@ Adobe CMap resources are covered by their own copyright but the same license:
 
 See https://github.com/adobe-type-tools/cmap-resources
 -->
-<html dir="ltr" mozdisallowselectionprint>
+<html dir="ltr" mozdisallowselectionprint class="is-light">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -37,6 +37,7 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#include viewer-snippet.html-->
 <!--#endif-->
 
+    <script src="../../scrollIntoView.min.js" type="module"></script>
 <!--#if MOZCENTRAL-->
 <!--<link rel="stylesheet" href="resource://pdf.js/web/viewer.css">-->
 <!--<link rel="localization" href="toolkit/pdfviewer/viewer.ftl"/>-->
@@ -282,7 +283,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                     </div>
                   </div>
                   <div id="editorFreeText" class="toolbarButtonWithContainer">
-                    <button id="editorFreeTextButton" class="toolbarButton" type="button" disabled="disabled" role="radio" aria-expanded="false" aria-haspopup="true" aria-controls="editorFreeTextParamsToolbar" tabindex="0" data-l10n-id="pdfjs-editor-free-text-button">
+                    <button id="editorFreeTextButton" class="toolbarButton" type="button" disabled="disabled" role="radio" aria-expanded="false" aria-haspopup="true" aria-controls="editorFreeTextParamsToolbar" tabindex="0" data-l10n-id="pdfjs-editor-free-text-button" style="visibility: hidden;">
                       <span data-l10n-id="pdfjs-editor-free-text-button-label"></span>
                     </button>
                     <div class="editorParamsToolbar hidden doorHangerRight" id="editorFreeTextParamsToolbar">
@@ -299,7 +300,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                     </div>
                   </div>
                   <div id="editorInk" class="toolbarButtonWithContainer">
-                    <button id="editorInkButton" class="toolbarButton" type="button" disabled="disabled" role="radio" aria-expanded="false" aria-haspopup="true" aria-controls="editorInkParamsToolbar" tabindex="0" data-l10n-id="pdfjs-editor-ink-button">
+                    <button id="editorInkButton" class="toolbarButton" type="button" disabled="disabled" role="radio" aria-expanded="false" aria-haspopup="true" aria-controls="editorInkParamsToolbar" tabindex="0" data-l10n-id="pdfjs-editor-ink-button" style="visibility: hidden;">
                       <span data-l10n-id="pdfjs-editor-ink-button-label"></span>
                     </button>
                     <div class="editorParamsToolbar hidden doorHangerRight" id="editorInkParamsToolbar">
@@ -320,10 +321,10 @@ See https://github.com/adobe-type-tools/cmap-resources
                     </div>
                   </div>
                   <div id="editorStamp" class="toolbarButtonWithContainer">
-                    <button id="editorStampButton" class="toolbarButton" type="button" disabled="disabled" role="radio" aria-expanded="false" aria-haspopup="true" aria-controls="editorStampParamsToolbar" tabindex="0" data-l10n-id="pdfjs-editor-stamp-button">
+                    <button id="editorStampButton" class="toolbarButton" type="button" disabled="disabled" role="radio" aria-expanded="false" aria-haspopup="true" aria-controls="editorStampParamsToolbar" tabindex="0" data-l10n-id="pdfjs-editor-stamp-button" style="visibility: hidden;">
                       <span data-l10n-id="pdfjs-editor-stamp-button-label"></span>
                     </button>
-                    <div class="editorParamsToolbar hidden doorHangerRight menu" id="editorStampParamsToolbar">
+                    <div class="editorParamsToolbar hidden doorHangerRight menu" id="editorStampParamsToolbar" style="visibility: hidden;">
                       <div class="menuContainer">
                         <button id="editorStampAddImage" class="toolbarButton labeled" type="button" tabindex="0" data-l10n-id="pdfjs-editor-stamp-add-image-button">
                           <span class="editorParamsLabel" data-l10n-id="pdfjs-editor-stamp-add-image-button-label"></span>
@@ -331,6 +332,9 @@ See https://github.com/adobe-type-tools/cmap-resources
                       </div>
                     </div>
                   </div>
+                  <button id="annotations-sidebar" style="display: none;">
+                    Document Markup
+                  </button>
                 </div>
 
                 <div id="editorModeSeparator" class="verticalToolbarSeparator"></div>
