@@ -2951,7 +2951,14 @@ function onKeyDown(evt) {
         }
       /* falls through */
       case 75: // 'k'
-      case 80: // 'p'
+
+      /**
+       * @MuniCollab
+       * Customization: feat: pdfjs disable letter and letter with shift hotkeys
+       * PR https://github.com/municollab/mc-server/pull/936
+       */
+      // case 80: // 'p'
+
         turnPage = -1;
         break;
       case 27: // esc key
@@ -2979,7 +2986,14 @@ function onKeyDown(evt) {
         turnPage = 1;
         break;
       case 13: // enter key
-      case 32: // spacebar
+
+      /**
+       * @MuniCollab
+       * Customization: feat: pdfjs disable letter and letter with shift hotkeys
+       * PR https://github.com/municollab/mc-server/pull/936
+       */
+      // case 32: // spacebar
+
         if (!isViewerInPresentationMode) {
           turnOnlyIfPageFit = true;
         }
@@ -2994,10 +3008,16 @@ function onKeyDown(evt) {
           turnOnlyIfPageFit = true;
         }
       /* falls through */
-      case 74: // 'j'
-      case 78: // 'n'
-        turnPage = 1;
-        break;
+
+      /**
+       * @MuniCollab
+       * Customization: feat: pdfjs disable letter and letter with shift hotkeys
+       * PR https://github.com/municollab/mc-server/pull/936
+       */
+      // case 74: // 'j'
+      // case 78: // 'n'
+      //   turnPage = 1;
+      //   break;
 
       case 36: // home
         if (isViewerInPresentationMode || this.page > 1) {
@@ -3014,16 +3034,21 @@ function onKeyDown(evt) {
         }
         break;
 
-      case 83: // 's'
-        this.pdfCursorTools?.switchTool(CursorTool.SELECT);
-        break;
-      case 72: // 'h'
-        this.pdfCursorTools?.switchTool(CursorTool.HAND);
-        break;
+      /**
+       * @MuniCollab
+       * Customization: feat: pdfjs disable letter and letter with shift hotkeys
+       * PR https://github.com/municollab/mc-server/pull/936
+       */
+      // case 83: // 's'
+      //   this.pdfCursorTools?.switchTool(CursorTool.SELECT);
+      //   break;
+      // case 72: // 'h'
+      //   this.pdfCursorTools?.switchTool(CursorTool.HAND);
+      //   break;
 
-      case 82: // 'r'
-        this.rotatePages(90);
-        break;
+      // case 82: // 'r'
+      //   this.rotatePages(90);
+      //   break;
 
       case 115: // F4
         this.pdfSidebar?.toggle();
@@ -3046,18 +3071,24 @@ function onKeyDown(evt) {
   // shift-key
   if (cmd === 4) {
     switch (evt.keyCode) {
-      case 13: // enter key
-      case 32: // spacebar
-        if (
-          !isViewerInPresentationMode &&
-          pdfViewer.currentScaleValue !== "page-fit"
-        ) {
-          break;
-        }
-        pdfViewer.previousPage();
 
-        handled = true;
-        break;
+      /**
+       * @MuniCollab
+       * Customization: feat: pdfjs disable letter and letter with shift hotkeys
+       * PR https://github.com/municollab/mc-server/pull/936
+       */
+      // case 13: // enter key
+      // case 32: // spacebar
+      //   if (
+      //     !isViewerInPresentationMode &&
+      //     pdfViewer.currentScaleValue !== "page-fit"
+      //   ) {
+      //     break;
+      //   }
+      //   pdfViewer.previousPage();
+
+      //   handled = true;
+      //   break;
 
       case 38: // up arrow
         this.moveCaret(/* isUp = */ true, /* select = */ true);
@@ -3067,9 +3098,15 @@ function onKeyDown(evt) {
         this.moveCaret(/* isUp = */ false, /* select = */ true);
         handled = true;
         break;
-      case 82: // 'r'
-        this.rotatePages(-90);
-        break;
+
+      /**
+       * @MuniCollab
+       * Customization: feat: pdfjs disable letter and letter with shift hotkeys
+       * PR https://github.com/municollab/mc-server/pull/936
+       */
+      // case 82: // 'r'
+      //   this.rotatePages(-90);
+      //   break;
     }
   }
 
