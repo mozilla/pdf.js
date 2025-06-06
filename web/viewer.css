@@ -15,6 +15,13 @@
 
 @import url(pdf_viewer.css);
 
+/* @MuniCollab Customizations
+ *
+ * All customizations are in municollab.css
+ * This must be the last import to apply expected overrides.
+ */
+@import url(municollab.css);
+
 :root {
   --dir-factor: 1;
   /*#if !MOZCENTRAL*/
