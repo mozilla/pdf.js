@@ -1074,7 +1074,15 @@ class Catalog {
   }
 
   #collectJavaScript() {
-    return null; // MuniCollab disallow pdfjs to collect JS actions
+
+  /**
+   * @MuniCollab
+   * Customization: Disallow PDF.js from collectng JS actions
+   * Commit: d35f909 feat(pdfjs): disallow pdfjs to collect JS actions and disable auto trigger print
+   * PR https://github.com/municollab/mc-server/pull/922
+   */
+    return null;
+
     const obj = this.#catDict.get("Names");
     let javaScript = null;
 
