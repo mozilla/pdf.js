@@ -479,7 +479,7 @@ describe("CFFCompiler", function () {
     expect(out).toEqual([
       2, // format
       0, // cid (high)
-      0, // cid (low)
+      1, // cid (low)
       0, // nLeft (high)
       numGlyphs - 2, // nLeft (low)
     ]);
