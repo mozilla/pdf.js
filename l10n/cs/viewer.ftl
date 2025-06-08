@@ -255,7 +255,7 @@ pdfjs-find-not-found = Hledaný text nenalezen
 ## Predefined zoom values
 
 pdfjs-page-scale-width = Podle šířky
-pdfjs-page-scale-fit = Podle výšky
+pdfjs-page-scale-fit = Podle stránky
 pdfjs-page-scale-auto = Automatická velikost
 pdfjs-page-scale-actual = Skutečná velikost
 # Variables:
