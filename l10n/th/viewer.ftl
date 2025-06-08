@@ -314,6 +314,19 @@ pdfjs-editor-signature-button-label = เพิ่มลายเซ็น
 
 ## Default editor aria labels
 
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = ตัวแก้ไขสีเน้น
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = ตัวแก้ไขรูปวาด
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor1 =
+    .aria-description = ตัวแก้ไขลายเซ็น: { $description }
+pdfjs-editor-stamp-editor =
+    .aria-label = ตัวแก้ไขภาพ
 
 ## Remove button for the various kind of editor.
 
@@ -343,9 +356,16 @@ pdfjs-editor-stamp-add-image-button-label = เพิ่มภาพ
 pdfjs-editor-free-highlight-thickness-input = ความหนา
 pdfjs-editor-free-highlight-thickness-title =
     .title = เปลี่ยนความหนาเมื่อเน้นรายการอื่นๆ ที่ไม่ใช่ข้อความ
+pdfjs-editor-add-signature-container =
+    .aria-label = ส่วนควบคุมลายเซ็นและลายเซ็นที่บันทึกไว้
 pdfjs-editor-signature-add-signature-button =
     .title = เพิ่มลายเซ็นใหม่
 pdfjs-editor-signature-add-signature-button-label = เพิ่มลายเซ็นใหม่
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = ลายเซ็นที่บันทึกไว้: { $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = ตัวแก้ไขข้อความ
@@ -570,6 +590,9 @@ pdfjs-editor-edit-signature-update-button = อัปเดต
 
 ## Main menu for adding/removing signatures
 
+pdfjs-editor-delete-signature-button1 =
+    .title = ลบลายเซ็นที่บันทึกไว้
+pdfjs-editor-delete-signature-button-label1 = ลบลายเซ็นที่บันทึกไว้
 
 ## Editor toolbar
 
