@@ -289,6 +289,7 @@ pdfjs-web-fonts-disabled = Veebifondid on keelatud: PDFiga kaasatud fonte pole v
 
 ## Image alt-text settings
 
+pdfjs-editor-alt-text-settings-delete-model-button = Kustuta
 
 ## "Annotations removed" bar
 
