@@ -14,6 +14,10 @@
  */
 
 import {
+  CanvasNestedDependencyTracker,
+  Dependencies,
+} from "./canvas_dependency_tracker.js";
+import {
   DrawOPS,
   FeatureTest,
   FONT_IDENTITY_MATRIX,
@@ -359,6 +363,8 @@ class CanvasExtraState {
 
   transferMaps = "none";
 
+  type3glyphBBox = null;
+
   constructor(width, height, preInit) {
     preInit?.(this);
 
@@ -412,10 +418,6 @@ class CanvasExtraState {
       this.getPathBoundingBox(pathType, transform)
     );
   }
-
-  takeDependencies() {}
-
-  setNextCommandsId() {}
 }
 
 function putBinaryImageData(ctx, imgData) {
@@ -797,8 +799,6 @@ class CanvasGraphics {
         fnArgs = argsArray[i] ?? null;
 
         if (fnId !== OPS.dependency) {
-          this.current.setNextCommandsId(i);
-
           if (fnArgs === null) {
             this[fnId](i);
           } else {
@@ -971,12 +971,16 @@ class CanvasGraphics {
     };
   }
 
-  _createMaskCanvas(img) {
+  _createMaskCanvas(opIdx, img) {
     const ctx = this.ctx;
     const { width, height } = img;
     const fillColor = this.current.fillColor;
     const isPatternFill = this.current.patternFill;
     const currentTransform = getCurrentTransform(ctx);
+    this.dependencyTracker?.recordDependencies(
+      opIdx,
+      Dependencies.transformAndFill
+    );
 
     let cache, cacheKey, scaled, maskCanvas;
     if ((img.bitmap || img.data) && img.count > 1) {
@@ -1457,22 +1461,6 @@ class CanvasGraphics {
 
   // Path
   constructPath(opIdx, op, data, minMax) {
-    this.dependencyTracker
-      ?.resetBBox(opIdx)
-      .recordDependencies(opIdx, ["transform"]);
-    if (minMax) {
-      this.dependencyTracker?.recordBBox(
-        opIdx,
-        this.ctx,
-        minMax[0],
-        minMax[2],
-        minMax[1],
-        minMax[3]
-      );
-    } else {
-      this.dependencyTracker?.recordFullPageBBox(opIdx);
-    }
-
     let [path] = data;
     if (!minMax) {
       // The path is empty, so no need to update the current minMax.
@@ -1480,6 +1468,23 @@ class CanvasGraphics {
       this[op](opIdx, path);
       return;
     }
+
+    if (this.dependencyTracker !== null) {
+      const outerExtraSize = op === OPS.stroke ? this.current.lineWidth / 2 : 0;
+      this.dependencyTracker
+        .resetBBox(opIdx)
+        .recordBBox(
+          opIdx,
+          this.ctx,
+          this.groupStack,
+          minMax[0] - outerExtraSize,
+          minMax[2] + outerExtraSize,
+          minMax[1] - outerExtraSize,
+          minMax[3] + outerExtraSize
+        )
+        .recordDependencies(opIdx, ["transform"]);
+    }
+
     if (!(path instanceof Path2D)) {
       // Using a SVG string is slightly slower than using the following loop.
       const path2d = (data[0] = new Path2D());
@@ -1558,17 +1563,7 @@ class CanvasGraphics {
       }
     }
 
-    this.dependencyTracker?.recordDependencies(opIdx, [
-      "path",
-      "transform",
-      "strokeColor",
-      "strokeAlpha",
-      "lineWidth",
-      "lineCap",
-      "lineJoin",
-      "miterLimit",
-      "dash",
-    ]);
+    this.dependencyTracker?.recordDependencies(opIdx, Dependencies.stroke);
 
     if (consumePath) {
       this.consumePath(
@@ -1627,12 +1622,7 @@ class CanvasGraphics {
       }
     }
 
-    this.dependencyTracker?.recordDependencies(opIdx, [
-      "path",
-      "transform",
-      "fillColor",
-      "fillAlpha",
-    ]);
+    this.dependencyTracker?.recordDependencies(opIdx, Dependencies.fill);
 
     if (needRestore) {
       ctx.restore();
@@ -1675,7 +1665,7 @@ class CanvasGraphics {
   rawFillPath(opIdx, path) {
     this.ctx.fill(path);
     this.dependencyTracker
-      ?.recordDependencies(opIdx, ["fillColor", "fillAlpha"])
+      ?.recordDependencies(opIdx, Dependencies.rawFillPath)
       .recordOperation(opIdx);
   }
 
@@ -1698,12 +1688,13 @@ class CanvasGraphics {
     this.current.y = this.current.lineY = 0;
 
     this.dependencyTracker
-      ?.save(opIdx)
-      .recordIncrementalData("moveText", opIdx);
+      ?.recordOpenMarker(opIdx)
+      .resetIncrementalData("sameLineText")
+      .resetIncrementalData("moveText", opIdx);
   }
 
   endText(opIdx) {
-    this.dependencyTracker?.restore(opIdx);
+    this.dependencyTracker?.recordCloseMarker(opIdx);
 
     const paths = this.pendingTextPaths;
     const ctx = this.ctx;
@@ -1749,7 +1740,6 @@ class CanvasGraphics {
   }
 
   setFont(opIdx, fontRefName, size) {
-    // TODO: Record font dependency
     this.dependencyTracker
       ?.recordSimpleData("font", opIdx)
       .recordNamedDependency(opIdx, fontRefName);
@@ -1811,7 +1801,7 @@ class CanvasGraphics {
   }
 
   setTextRenderingMode(opIdx, mode) {
-    this.dependencyTracker?.recordSimpleData("rextRenderingMode", opIdx);
+    this.dependencyTracker?.recordSimpleData("textRenderingMode", opIdx);
     this.current.textRenderingMode = mode;
   }
 
@@ -1821,15 +1811,16 @@ class CanvasGraphics {
   }
 
   moveText(opIdx, x, y) {
-    this.dependencyTracker?.recordIncrementalData("moveText", opIdx);
+    this.dependencyTracker
+      ?.resetIncrementalData("sameLineText")
+      .recordIncrementalData("moveText", opIdx);
     this.current.x = this.current.lineX += x;
     this.current.y = this.current.lineY += y;
   }
 
   setLeadingMoveText(opIdx, x, y) {
-    // TODO: Record
-    this.setLeading(-y);
-    this.moveText(x, y);
+    this.setLeading(opIdx, -y);
+    this.moveText(opIdx, x, y);
   }
 
   setTextMatrix(opIdx, matrix) {
@@ -1843,8 +1834,15 @@ class CanvasGraphics {
   }
 
   nextLine(opIdx) {
-    // TODO: Record
-    this.moveText(0, this.current.leading);
+    this.moveText(opIdx, 0, this.current.leading);
+
+    this.dependencyTracker?.recordIncrementalData(
+      "moveText",
+      // 'leading' affects 'nextLine' operations. Rather than dealing
+      // with transitive dependencies, just mark everything that depends on
+      // the 'moveText' operation as depending on the 'leading' value.
+      this.dependencyTracker.getSimpleIndex("leading") ?? opIdx
+    );
   }
 
   #getScaledPath(path, currentTransform, transform) {
@@ -1856,7 +1854,14 @@ class CanvasGraphics {
     return newPath;
   }
 
-  paintChar(character, x, y, patternFillTransform, patternStrokeTransform) {
+  paintChar(
+    opIdx,
+    character,
+    x,
+    y,
+    patternFillTransform,
+    patternStrokeTransform
+  ) {
     const ctx = this.ctx;
     const current = this.current;
     const font = current.font;
@@ -1937,14 +1942,40 @@ class CanvasGraphics {
         fillStrokeMode === TextRenderingMode.FILL ||
         fillStrokeMode === TextRenderingMode.FILL_STROKE
       ) {
-        // TODO: expandBBox
+        if (this.dependencyTracker) {
+          const measure = ctx.measureText(character);
+          this.dependencyTracker
+            .recordBBox(
+              opIdx,
+              this.ctx,
+              this.groupStack,
+              x - measure.actualBoundingBoxLeft,
+              x + measure.actualBoundingBoxRight,
+              y - measure.actualBoundingBoxAscent,
+              y + measure.actualBoundingBoxDescent
+            )
+            .recordDependencies(opIdx, Dependencies.fill);
+        }
         ctx.fillText(character, x, y);
       }
       if (
         fillStrokeMode === TextRenderingMode.STROKE ||
         fillStrokeMode === TextRenderingMode.FILL_STROKE
       ) {
-        // TODO: expandBBox
+        if (this.dependencyTracker) {
+          const measure = ctx.measureText(character);
+          this.dependencyTracker
+            .recordBBox(
+              opIdx,
+              this.ctx,
+              this.groupStack,
+              x - measure.actualBoundingBoxLeft,
+              x + measure.actualBoundingBoxRight,
+              y - measure.actualBoundingBoxAscent,
+              y + measure.actualBoundingBoxDescent
+            )
+            .recordDependencies(opIdx, Dependencies.stroke);
+        }
         ctx.strokeText(character, x, y);
       }
     }
@@ -1984,21 +2015,17 @@ class CanvasGraphics {
 
   showText(opIdx, glyphs) {
     this.dependencyTracker
-      ?.recordDependencies(opIdx, [
-        "transform",
-        "moveText",
-        "textMatrix",
-        "font",
-        "fillColor",
-        // TODO: More
-      ])
+      ?.recordDependencies(opIdx, Dependencies.showText)
+      .copyDependenciesFromIncrementalOperation(opIdx, "sameLineText")
       .resetBBox(opIdx);
 
     const current = this.current;
     const font = current.font;
     if (font.isType3Font) {
-      this.showType3Text(glyphs);
-      this.dependencyTracker?.recordOperation(opIdx);
+      this.showType3Text(opIdx, glyphs);
+      this.dependencyTracker
+        ?.recordOperation(opIdx)
+        .recordIncrementalData("sameLineText", opIdx);
       return undefined;
     }
 
@@ -2105,12 +2132,14 @@ class CanvasGraphics {
           .recordBBox(
             opIdx,
             this.ctx,
-            0,
-            measure.width,
+            this.groupStack,
+            -measure.actualBoundingBoxLeft,
+            measure.actualBoundingBoxRight,
             -measure.actualBoundingBoxAscent,
             measure.actualBoundingBoxDescent
           )
-          .recordOperation(opIdx);
+          .recordOperation(opIdx)
+          .recordIncrementalData("sameLineText", opIdx);
       }
       return undefined;
     }
@@ -2176,8 +2205,9 @@ class CanvasGraphics {
             this.dependencyTracker.recordBBox(
               opIdx,
               this.ctx,
-              scaledX,
-              scaledX + measure.width,
+              this.groupStack,
+              scaledX - measure.actualBoundingBoxLeft,
+              scaledX + measure.actualBoundingBoxRight,
               scaledY - measure.actualBoundingBoxAscent,
               scaledY + measure.actualBoundingBoxDescent
             );
@@ -2185,6 +2215,7 @@ class CanvasGraphics {
           ctx.fillText(character, scaledX, scaledY);
         } else {
           this.paintChar(
+            opIdx,
             character,
             scaledX,
             scaledY,
@@ -2197,6 +2228,7 @@ class CanvasGraphics {
             const scaledAccentY =
               scaledY - (fontSize * accent.offset.y) / fontSizeScale;
             this.paintChar(
+              opIdx,
               accent.fontChar,
               scaledAccentX,
               scaledAccentY,
@@ -2224,11 +2256,13 @@ class CanvasGraphics {
     ctx.restore();
     this.compose();
 
-    this.dependencyTracker?.recordOperation(opIdx);
+    this.dependencyTracker
+      ?.recordOperation(opIdx)
+      .recordIncrementalData("sameLineText", opIdx);
     return undefined;
   }
 
-  showType3Text(glyphs) {
+  showType3Text(opIdx, glyphs) {
     // Type3 fonts - each glyph is a "mini-PDF"
     const ctx = this.ctx;
     const current = this.current;
@@ -2259,6 +2293,11 @@ class CanvasGraphics {
 
     ctx.scale(textHScale, fontDirection);
 
+    // Type3 fonts have their own operator list. Avoid mixing it up with the
+    // dependency tracker of the main operator list.
+    const dependencyTracker = this.dependencyTracker;
+    this.dependencyTracker = null;
+
     for (i = 0; i < glyphsLength; ++i) {
       glyph = glyphs[i];
       if (typeof glyph === "number") {
@@ -2276,7 +2315,25 @@ class CanvasGraphics {
         this.save();
         ctx.scale(fontSize, fontSize);
         ctx.transform(...fontMatrix);
+
+        this.current.type3glyphBBox = null;
         this.executeOperatorList(operatorList);
+
+        if (this.current.type3glyphBBox) {
+          dependencyTracker?.recordBBox(
+            opIdx,
+            this.ctx,
+            this.groupStack,
+            this.current.type3glyphBBox[0],
+            this.current.type3glyphBBox[2],
+            this.current.type3glyphBBox[1],
+            this.current.type3glyphBBox[3]
+          );
+        } else {
+          // TODO: Actually get the char bbox
+          dependencyTracker?.recordFullPageBBox(opIdx);
+        }
+
         this.restore();
       }
 
@@ -2288,6 +2345,8 @@ class CanvasGraphics {
       current.x += width * textHScale;
     }
     ctx.restore();
+
+    this.dependencyTracker = dependencyTracker;
   }
 
   // Type3 fonts
@@ -2297,7 +2356,7 @@ class CanvasGraphics {
   }
 
   setCharWidthAndBounds(opIdx, xWidth, yWidth, llx, lly, urx, ury) {
-    // TODO: Track dependencies
+    this.current.type3glyphBBox = [llx, lly, urx, ury];
     const clip = new Path2D();
     clip.rect(llx, lly, urx - llx, ury - lly);
     this.ctx.clip(clip);
@@ -2320,7 +2379,12 @@ class CanvasGraphics {
             {
               optionalContentConfig: this.optionalContentConfig,
               markedContentStack: this.markedContentStack,
-            }
+            },
+            undefined,
+            undefined,
+            this.dependencyTracker
+              ? new CanvasNestedDependencyTracker(this.dependencyTracker, opIdx)
+              : null
           ),
       };
       pattern = new TilingPattern(
@@ -2422,7 +2486,7 @@ class CanvasGraphics {
       ?.resetBBox(opIdx)
       // TODO: Track proper bbox
       .recordFullPageBBox(opIdx)
-      .recordDependencies(opIdx, ["transform"])
+      .recordDependencies(opIdx, Dependencies.transform)
       .recordOperation(opIdx);
 
     this.compose(this.current.getClippedPathBoundingBox());
@@ -2594,6 +2658,11 @@ class CanvasGraphics {
     // except the blend mode, soft mask, and alpha constants.
     copyCtxState(currentCtx, groupCtx);
     this.ctx = groupCtx;
+    this.dependencyTracker?.inheritSimpleDataAsFutureForcedDependencies([
+      "fillAlpha",
+      "strokeAlpha",
+      "globalCompositeOperation",
+    ]);
     this.setGState(opIdx, [
       ["BM", "source-over"],
       ["ca", 1],
@@ -2722,12 +2791,13 @@ class CanvasGraphics {
     if (!this.contentVisible) {
       return;
     }
+
     const count = img.count;
     img = this.getObject(opIdx, img.data, img);
     img.count = count;
 
     const ctx = this.ctx;
-    const mask = this._createMaskCanvas(img);
+    const mask = this._createMaskCanvas(opIdx, img);
     const maskCanvas = mask.canvas;
 
     ctx.save();
@@ -2735,6 +2805,18 @@ class CanvasGraphics {
     // transform to draw to the identity.
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(maskCanvas, mask.offsetX, mask.offsetY);
+    this.dependencyTracker
+      ?.resetBBox(opIdx)
+      .recordBBox(
+        opIdx,
+        this.ctx,
+        this.groupStack,
+        mask.offsetX,
+        mask.offsetX + maskCanvas.width,
+        mask.offsetY,
+        mask.offsetY + maskCanvas.height
+      )
+      .recordOperation(opIdx);
     ctx.restore();
     this.compose();
   }
@@ -2752,13 +2834,16 @@ class CanvasGraphics {
       return;
     }
 
+    // TODO: Track proper bbox
+    this.dependencyTracker?.resetBBox(opIdx).recordFullPageBBox(opIdx);
+
     img = this.getObject(opIdx, img.data, img);
 
     const ctx = this.ctx;
     ctx.save();
     const currentTransform = getCurrentTransform(ctx);
     ctx.transform(scaleX, skewX, skewY, scaleY, 0, 0);
-    const mask = this._createMaskCanvas(img);
+    const mask = this._createMaskCanvas(opIdx, img);
 
     ctx.setTransform(
       1,
@@ -2768,6 +2853,7 @@ class CanvasGraphics {
       mask.offsetX - currentTransform[4],
       mask.offsetY - currentTransform[5]
     );
+    this.dependencyTracker?.resetBBox(opIdx);
     for (let i = 0, ii = positions.length; i < ii; i += 2) {
       const trans = Util.transform(currentTransform, [
         scaleX,
@@ -2781,9 +2867,20 @@ class CanvasGraphics {
       // Here we want to apply the transform at the origin,
       // hence no additional computation is necessary.
       ctx.drawImage(mask.canvas, trans[4], trans[5]);
+      this.dependencyTracker?.recordBBox(
+        opIdx,
+        this.ctx,
+        this.groupStack,
+        trans[4],
+        trans[4] + mask.canvas.width,
+        trans[5],
+        trans[5] + mask.canvas.height
+      );
     }
     ctx.restore();
     this.compose();
+
+    this.dependencyTracker?.recordOperation(opIdx);
   }
 
   paintImageMaskXObjectGroup(opIdx, images) {
@@ -2961,8 +3058,8 @@ class CanvasGraphics {
 
     this.dependencyTracker
       ?.resetBBox(opIdx)
-      .recordBBox(opIdx, ctx, 0, width, -height, 0)
-      .recordDependencies(opIdx, ["transform", "SMask"])
+      .recordBBox(opIdx, ctx, this.groupStack, 0, width, -height, 0)
+      .recordDependencies(opIdx, Dependencies.imageXObject)
       .recordOperation(opIdx);
 
     drawImageAtIntegerCoords(
@@ -3021,6 +3118,7 @@ class CanvasGraphics {
       this.dependencyTracker?.recordBBox(
         opIdx,
         this.ctx,
+        this.groupStack,
         entry.x,
         entry.x + entry.w,
         -entry.h,
@@ -3035,6 +3133,11 @@ class CanvasGraphics {
     if (!this.contentVisible) {
       return;
     }
+    this.dependencyTracker
+      ?.resetBBox(opIdx)
+      .recordBBox(opIdx, this.ctx, this.groupStack, 0, 1, 0, 1)
+      .recordDependencies(opIdx, Dependencies.fill)
+      .recordOperation(opIdx);
     this.ctx.fillRect(0, 0, 1, 1);
     this.compose();
   }
@@ -3050,12 +3153,14 @@ class CanvasGraphics {
   }
 
   beginMarkedContent(opIdx, tag) {
+    this.dependencyTracker?.beginMarkedContent(opIdx);
     this.markedContentStack.push({
       visible: true,
     });
   }
 
   beginMarkedContentProps(opIdx, tag, properties) {
+    this.dependencyTracker?.beginMarkedContent(opIdx);
     if (tag === "OC") {
       this.markedContentStack.push({
         visible: this.optionalContentConfig.isVisible(properties),
@@ -3069,6 +3174,7 @@ class CanvasGraphics {
   }
 
   endMarkedContent(opIdx) {
+    this.dependencyTracker?.endMarkedContent(opIdx);
     this.markedContentStack.pop();
     this.contentVisible = this.isContentVisible();
   }
