@@ -1828,9 +1828,8 @@ class CanvasGraphics {
   }
 
   setLeadingMoveText(opIdx, x, y) {
-    // TODO: Record
-    this.setLeading(-y);
-    this.moveText(x, y);
+    this.setLeading(opIdx, -y);
+    this.moveText(opIdx, x, y);
   }
 
   setTextMatrix(opIdx, matrix) {
@@ -1844,8 +1843,7 @@ class CanvasGraphics {
   }
 
   nextLine(opIdx) {
-    // TODO: Record
-    this.moveText(0, this.current.leading);
+    this.moveText(opIdx, 0, this.current.leading);
   }
 
   #getScaledPath(path, currentTransform, transform) {
@@ -1986,6 +1984,11 @@ class CanvasGraphics {
     this.dependencyTracker
       ?.recordDependencies(opIdx, [
         "transform",
+        "leading",
+        "charSpacing",
+        "wordSpacing",
+        "hScale",
+        "textRise",
         "moveText",
         "textMatrix",
         "font",

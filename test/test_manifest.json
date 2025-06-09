@@ -263,6 +263,22 @@
     "type": "eq"
   },
   {
+    "id": "issue11532-partial",
+    "file": "pdfs/issue11532.pdf",
+    "md5": "9216481d259ae2b8d747236e745cbc80",
+    "rounds": 1,
+    "link": true,
+    "firstPage": 2,
+    "lastPage": 2,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "issue14256",
     "file": "pdfs/issue14256.pdf",
     "md5": "15938b7562146dbea7ed8aa15b172fe6",
