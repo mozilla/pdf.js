@@ -9,10 +9,10 @@
 
   "overrides": [
     {
-      files: ["tsconfig.json"],
-      options: {
-        parser: "json",
-      },
-    },
+      "files": ["tsconfig.json"],
+      "options": {
+        "parser": "json"
+      }
+    }
   ]
 }
