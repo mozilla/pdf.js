@@ -24,6 +24,7 @@ import {
   apiPageLayoutToViewerModes,
   apiPageModeToSidebarView,
   AutoPrintRegExp,
+  // eslint-disable-next-line no-unused-vars
   CursorTool,
   DEFAULT_SCALE_VALUE,
   docStyle,
@@ -1587,15 +1588,16 @@ const PDFViewerApplication = {
    * @private
    */
   async _initializeAutoPrint(pdfDocument, openActionPromise) {
-
     /**
      * @MuniCollab
      * Customization: Disable auto trigger print
-     * Commit: d35f909 feat(pdfjs): disallow pdfjs to collect JS actions and disable auto trigger print
+     * Commit: d35f909 feat(pdfjs): disallow pdfjs to collect JS actions
+     * and disable auto trigger print
      * PR https://github.com/municollab/mc-server/pull/1407
      */
     return;
 
+    // eslint-disable-next-line no-unreachable
     const [openAction, jsActions] = await Promise.all([
       openActionPromise,
       this.pdfViewer.enableScripting ? null : pdfDocument.getJSActions(),
@@ -2954,13 +2956,13 @@ function onKeyDown(evt) {
         }
       /* falls through */
       case 75: // 'k'
-
-      /**
-       * @MuniCollab
-       * Customization: feat: pdfjs disable letter and letter with shift hotkeys
-       * PR https://github.com/municollab/mc-server/pull/936
-       */
-      // case 80: // 'p'
+        /**
+         * @MuniCollab
+         * Customization: feat: pdfjs disable letter
+         * and letter with shift hotkeys
+         * PR https://github.com/municollab/mc-server/pull/936
+         */
+        // case 80: // 'p'
 
         turnPage = -1;
         break;
@@ -2989,13 +2991,13 @@ function onKeyDown(evt) {
         turnPage = 1;
         break;
       case 13: // enter key
-
-      /**
-       * @MuniCollab
-       * Customization: feat: pdfjs disable letter and letter with shift hotkeys
-       * PR https://github.com/municollab/mc-server/pull/936
-       */
-      // case 32: // spacebar
+        /**
+         * @MuniCollab
+         * Customization: feat: pdfjs disable letter
+         * and letter with shift hotkeys
+         * PR https://github.com/municollab/mc-server/pull/936
+         */
+        // case 32: // spacebar
 
         if (!isViewerInPresentationMode) {
           turnOnlyIfPageFit = true;
@@ -3010,17 +3012,18 @@ function onKeyDown(evt) {
         if (pdfViewer.isHorizontalScrollbarEnabled) {
           turnOnlyIfPageFit = true;
         }
-      /* falls through */
+        /* falls through */
 
-      /**
-       * @MuniCollab
-       * Customization: feat: pdfjs disable letter and letter with shift hotkeys
-       * PR https://github.com/municollab/mc-server/pull/936
-       */
-      // case 74: // 'j'
-      // case 78: // 'n'
-      //   turnPage = 1;
-      //   break;
+        /**
+         * @MuniCollab
+         * Customization: feat: pdfjs disable letter
+         * and letter with shift hotkeys
+         * PR https://github.com/municollab/mc-server/pull/936
+         */
+        // case 74: // 'j'
+        // case 78: // 'n'
+        //   turnPage = 1;
+        break;
 
       case 36: // home
         if (isViewerInPresentationMode || this.page > 1) {
@@ -3074,7 +3077,6 @@ function onKeyDown(evt) {
   // shift-key
   if (cmd === 4) {
     switch (evt.keyCode) {
-
       /**
        * @MuniCollab
        * Customization: feat: pdfjs disable letter and letter with shift hotkeys
