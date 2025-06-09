@@ -271,7 +271,7 @@ function updateXFA({ xfaData, xfaDatasetsRef, changes, xref }) {
   }
   const xfaDataStream = new StringStream(xfaData);
   xfaDataStream.dict = new Dict(xref);
-  xfaDataStream.dict.set("Type", Name.get("EmbeddedFile"));
+  xfaDataStream.dict.setIfName("Type", "EmbeddedFile");
 
   changes.put(xfaDatasetsRef, {
     data: xfaDataStream,
@@ -382,7 +382,7 @@ function getTrailerDict(xrefInfo, changes, useXrefStream) {
   if (useXrefStream) {
     changes.put(refForXrefTable, { data: "" });
     newXref.set("Size", refForXrefTable.num + 1);
-    newXref.set("Type", Name.get("XRef"));
+    newXref.setIfName("Type", "XRef");
   } else {
     newXref.set("Size", refForXrefTable.num);
   }
