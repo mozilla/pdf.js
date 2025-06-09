@@ -398,16 +398,14 @@ class HighlightEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
-  async addEditToolbar() {
-    const toolbar = await super.addEditToolbar();
-    if (!toolbar) {
-      return null;
-    }
+  get toolbarTools() {
     if (this._uiManager.highlightColors) {
-      this.#colorPicker = new ColorPicker({ editor: this });
-      toolbar.addColorPicker(this.#colorPicker);
+      const colorPicker = (this.#colorPicker = new ColorPicker({
+        editor: this,
+      }));
+      return [["colorPicker", colorPicker]];
     }
-    return toolbar;
+    return super.toolbarTools;
   }
 
   /** @inheritdoc */
