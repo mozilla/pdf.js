@@ -1457,22 +1457,6 @@ class CanvasGraphics {
 
   // Path
   constructPath(opIdx, op, data, minMax) {
-    this.dependencyTracker
-      ?.resetBBox(opIdx)
-      .recordDependencies(opIdx, ["transform"]);
-    if (minMax) {
-      this.dependencyTracker?.recordBBox(
-        opIdx,
-        this.ctx,
-        minMax[0],
-        minMax[2],
-        minMax[1],
-        minMax[3]
-      );
-    } else {
-      this.dependencyTracker?.recordFullPageBBox(opIdx);
-    }
-
     let [path] = data;
     if (!minMax) {
       // The path is empty, so no need to update the current minMax.
@@ -1480,6 +1464,22 @@ class CanvasGraphics {
       this[op](opIdx, path);
       return;
     }
+
+    if (this.dependencyTracker !== null) {
+      const outerExtraSize = op === OPS.stroke ? this.current.lineWidth / 2 : 0;
+      this.dependencyTracker
+        .resetBBox(opIdx)
+        .recordBBox(
+          opIdx,
+          this.ctx,
+          minMax[0] - outerExtraSize,
+          minMax[2] + outerExtraSize,
+          minMax[1] - outerExtraSize,
+          minMax[3] + outerExtraSize
+        )
+        .recordDependencies(opIdx, ["transform"]);
+    }
+
     if (!(path instanceof Path2D)) {
       // Using a SVG string is slightly slower than using the following loop.
       const path2d = (data[0] = new Path2D());
