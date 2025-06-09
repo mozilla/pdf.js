@@ -971,12 +971,13 @@ class CanvasGraphics {
     };
   }
 
-  _createMaskCanvas(img) {
+  _createMaskCanvas(opIdx, img) {
     const ctx = this.ctx;
     const { width, height } = img;
     const fillColor = this.current.fillColor;
     const isPatternFill = this.current.patternFill;
     const currentTransform = getCurrentTransform(ctx);
+    this.dependencyTracker?.recordDependencies(opIdx, ["transform"]);
 
     let cache, cacheKey, scaled, maskCanvas;
     if ((img.bitmap || img.data) && img.count > 1) {
@@ -2718,12 +2719,16 @@ class CanvasGraphics {
     if (!this.contentVisible) {
       return;
     }
+
+    // TODO: Track proper bbox
+    this.dependencyTracker?.resetBBox(opIdx).recordFullPageBBox(opIdx);
+
     const count = img.count;
     img = this.getObject(opIdx, img.data, img);
     img.count = count;
 
     const ctx = this.ctx;
-    const mask = this._createMaskCanvas(img);
+    const mask = this._createMaskCanvas(opIdx, img);
     const maskCanvas = mask.canvas;
 
     ctx.save();
@@ -2733,6 +2738,8 @@ class CanvasGraphics {
     ctx.drawImage(maskCanvas, mask.offsetX, mask.offsetY);
     ctx.restore();
     this.compose();
+
+    this.dependencyTracker?.recordOperation(opIdx);
   }
 
   paintImageMaskXObjectRepeat(
@@ -2748,13 +2755,16 @@ class CanvasGraphics {
       return;
     }
 
+    // TODO: Track proper bbox
+    this.dependencyTracker?.resetBBox(opIdx).recordFullPageBBox(opIdx);
+
     img = this.getObject(opIdx, img.data, img);
 
     const ctx = this.ctx;
     ctx.save();
     const currentTransform = getCurrentTransform(ctx);
     ctx.transform(scaleX, skewX, skewY, scaleY, 0, 0);
-    const mask = this._createMaskCanvas(img);
+    const mask = this._createMaskCanvas(opIdx, img);
 
     ctx.setTransform(
       1,
@@ -2780,6 +2790,8 @@ class CanvasGraphics {
     }
     ctx.restore();
     this.compose();
+
+    this.dependencyTracker?.recordOperation(opIdx);
   }
 
   paintImageMaskXObjectGroup(opIdx, images) {

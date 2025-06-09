@@ -87,6 +87,19 @@
     "type": "eq"
   },
   {
+    "id": "issue17147-partial",
+    "file": "pdfs/issue17147.pdf",
+    "md5": "47012ba13ee819ec0af278c9d943f010",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "issue13130",
     "file": "pdfs/issue13130.pdf",
     "md5": "318518299132fe3b52252ca43a69a23e",
