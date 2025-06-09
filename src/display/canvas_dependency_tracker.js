@@ -110,8 +110,11 @@ class CanvasDependencyTracker {
     return this;
   }
 
-  recordBBox(idx, ctx, minX, maxX, minY, maxY) {
-    const matrix = ctx.getTransform();
+  recordBBox(idx, ctx, otherCtxs, minX, maxX, minY, maxY) {
+    let matrix = ctx.getTransform();
+    for (let i = otherCtxs.length - 1; i >= 0; i--) {
+      matrix = otherCtxs[i].getTransform().multiply(matrix);
+    }
 
     ({ x: minX, y: minY } = matrix.transformPoint(new DOMPoint(minX, minY)));
     ({ x: maxX, y: maxY } = matrix.transformPoint(new DOMPoint(maxX, maxY)));

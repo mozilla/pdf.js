@@ -1473,6 +1473,7 @@ class CanvasGraphics {
         .recordBBox(
           opIdx,
           this.ctx,
+          this.groupStack,
           minMax[0] - outerExtraSize,
           minMax[2] + outerExtraSize,
           minMax[1] - outerExtraSize,
@@ -1633,6 +1634,8 @@ class CanvasGraphics {
       "transform",
       "fillColor",
       "fillAlpha",
+      "globalCompositeOperation",
+      "SMask",
     ]);
 
     if (needRestore) {
@@ -2102,6 +2105,7 @@ class CanvasGraphics {
           .recordBBox(
             opIdx,
             this.ctx,
+            this.groupStack,
             0,
             measure.width,
             -measure.actualBoundingBoxAscent,
@@ -2173,6 +2177,7 @@ class CanvasGraphics {
             this.dependencyTracker.recordBBox(
               opIdx,
               this.ctx,
+              this.groupStack,
               scaledX,
               scaledX + measure.width,
               scaledY - measure.actualBoundingBoxAscent,
@@ -2969,8 +2974,14 @@ class CanvasGraphics {
 
     this.dependencyTracker
       ?.resetBBox(opIdx)
-      .recordBBox(opIdx, ctx, 0, width, -height, 0)
-      .recordDependencies(opIdx, ["transform", "SMask"])
+      .recordBBox(opIdx, ctx, this.groupStack, 0, width, -height, 0)
+      .recordDependencies(opIdx, [
+        "transform",
+        "SMask",
+        "fillAlpha",
+        "strokeAlpha",
+        "globalCompositeOperation",
+      ])
       .recordOperation(opIdx);
 
     drawImageAtIntegerCoords(
@@ -3029,6 +3040,7 @@ class CanvasGraphics {
       this.dependencyTracker?.recordBBox(
         opIdx,
         this.ctx,
+        this.groupStack,
         entry.x,
         entry.x + entry.w,
         -entry.h,

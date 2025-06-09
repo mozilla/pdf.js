@@ -1158,7 +1158,17 @@ class Driver {
                     task.stats = page.stats;
                   }
                   page.cleanup(/* resetStats = */ true);
-                  this._snapshot(task, false, baseline);
+                  this._snapshot(
+                    task,
+                    false,
+                    // Sometimes the optimized version does not match the
+                    // baseline. Tests marked as "knownPartialMismatch" have
+                    // been manually verified to be good enough (e.g. there is
+                    // one pixel of a very slightly different shade), so we
+                    // avoid compating them to the non-optimized version and
+                    // instead use the optimized version also for makeref.
+                    task.knownPartialMismatch ? null : baseline
+                  );
                   return;
                 }
 

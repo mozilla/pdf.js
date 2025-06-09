@@ -120,6 +120,23 @@
     "type": "eq"
   },
   {
+    "id": "issue16395-partial",
+    "file": "pdfs/issue16395.pdf",
+    "md5": "a5de985711ec27cd2a2ed97d5f1c536c",
+    "rounds": 1,
+    "link": true,
+    "firstPage": 3,
+    "lastPage": 3,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "knownPartialMismatch": true
+  },
+  {
     "id": "issue16432",
     "file": "pdfs/issue16432.pdf",
     "md5": "b67b0324c307d8af43d11b0edec88e3e",
