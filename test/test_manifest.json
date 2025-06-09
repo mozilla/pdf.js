@@ -155,6 +155,21 @@
     "type": "eq"
   },
   {
+    "id": "issue16464-partial",
+    "file": "pdfs/issue16464.pdf",
+    "md5": "2bd97ff909e2185605788daa70de38ee",
+    "rounds": 1,
+    "link": true,
+    "lastPage": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "tracemonkey-fbf",
     "file": "pdfs/tracemonkey.pdf",
     "md5": "9a192d8b1a7dc652a19835f6f08098bd",

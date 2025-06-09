@@ -1812,7 +1812,7 @@ class CanvasGraphics {
   }
 
   setTextRenderingMode(opIdx, mode) {
-    this.dependencyTracker?.recordSimpleData("rextRenderingMode", opIdx);
+    this.dependencyTracker?.recordSimpleData("textRenderingMode", opIdx);
     this.current.textRenderingMode = mode;
   }
 
@@ -1990,6 +1990,11 @@ class CanvasGraphics {
         "textMatrix",
         "font",
         "fillColor",
+        "textRenderingMode",
+        "SMask",
+        "fillAlpha",
+        "strokeAlpha",
+        "globalCompositeOperation",
         // TODO: More
       ])
       .resetBBox(opIdx);
