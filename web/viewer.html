@@ -1044,7 +1044,7 @@ See https://github.com/adobe-type-tools/cmap-resources
     const { annotationEditorUIManager } = getPDFjsComponents()
 
     annotationEditorUIManager.unselectAll();
-    document.querySelector('#editorInk').click();
+    document.querySelector('#editorInkButton').click();
   }
 
   const handleUnselectAnnotation = (event) => {
@@ -1109,7 +1109,7 @@ See https://github.com/adobe-type-tools/cmap-resources
     // Enable ink and free text tools
     if (event.data.type === 'pdfjs-annotations-app-can-modify') {
       document.querySelector(
-        '#editorInk',
+        '#editorInkButton',
       ).style.visibility = 'visible';
       document.querySelector(
         '#editorFreeText',
