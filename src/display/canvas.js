@@ -1822,7 +1822,9 @@ class CanvasGraphics {
   }
 
   moveText(opIdx, x, y) {
-    this.dependencyTracker?.recordIncrementalData("moveText", opIdx);
+    this.dependencyTracker
+      ?.resetIncrementalData("sameLineText")
+      .recordIncrementalData("moveText", opIdx);
     this.current.x = this.current.lineX += x;
     this.current.y = this.current.lineY += y;
   }
@@ -1998,6 +2000,7 @@ class CanvasGraphics {
         "fillAlpha",
         "strokeAlpha",
         "globalCompositeOperation",
+        "sameLineText",
         // TODO: More
       ])
       .resetBBox(opIdx);
@@ -2006,7 +2009,9 @@ class CanvasGraphics {
     const font = current.font;
     if (font.isType3Font) {
       this.showType3Text(glyphs);
-      this.dependencyTracker?.recordOperation(opIdx);
+      this.dependencyTracker
+        ?.recordOperation(opIdx)
+        .recordIncrementalData("sameLineText", opIdx);
       return undefined;
     }
 
@@ -2114,12 +2119,13 @@ class CanvasGraphics {
             opIdx,
             this.ctx,
             this.groupStack,
-            0,
-            measure.width,
+            -measure.actualBoundingBoxLeft,
+            measure.actualBoundingBoxRight,
             -measure.actualBoundingBoxAscent,
             measure.actualBoundingBoxDescent
           )
-          .recordOperation(opIdx);
+          .recordOperation(opIdx)
+          .recordIncrementalData("sameLineText", opIdx);
       }
       return undefined;
     }
@@ -2186,8 +2192,8 @@ class CanvasGraphics {
               opIdx,
               this.ctx,
               this.groupStack,
-              scaledX,
-              scaledX + measure.width,
+              scaledX - measure.actualBoundingBoxLeft,
+              scaledX + measure.actualBoundingBoxRight,
               scaledY - measure.actualBoundingBoxAscent,
               scaledY + measure.actualBoundingBoxDescent
             );
@@ -2234,7 +2240,9 @@ class CanvasGraphics {
     ctx.restore();
     this.compose();
 
-    this.dependencyTracker?.recordOperation(opIdx);
+    this.dependencyTracker
+      ?.recordOperation(opIdx)
+      .recordIncrementalData("sameLineText", opIdx);
     return undefined;
   }
 

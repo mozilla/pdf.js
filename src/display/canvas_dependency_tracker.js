@@ -7,7 +7,7 @@ const FORCED_DEPENDENCY_LABEL = "__forcedDependency";
  */
 
 /**
- * @typedef {"transform" | "moveText"} IncrementalDependency
+ * @typedef {"transform" | "moveText" | "sameLineText"} IncrementalDependency
  */
 
 /**
@@ -23,6 +23,7 @@ class CanvasDependencyTracker {
     __proto__: null,
     transform: [],
     moveText: [],
+    sameLineText: [],
     [FORCED_DEPENDENCY_LABEL]: [],
   };
 
@@ -53,6 +54,7 @@ class CanvasDependencyTracker {
       __proto__: this.#incremental,
       transform: { __proto__: this.#incremental.transform },
       moveText: { __proto__: this.#incremental.moveText },
+      sameLineText: { __proto__: this.#incremental.sameLineText },
       [FORCED_DEPENDENCY_LABEL]: {
         __proto__: this.#incremental[FORCED_DEPENDENCY_LABEL],
       },
@@ -85,6 +87,15 @@ class CanvasDependencyTracker {
    */
   recordIncrementalData(name, idx) {
     this.#incremental[name].push(idx);
+    return this;
+  }
+
+  /**
+   * @param {IncrementalDependency} name
+   * @param {number} idx
+   */
+  resetIncrementalData(name, idx) {
+    this.#incremental[name].length = 0;
     return this;
   }
 
