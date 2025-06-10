@@ -46,8 +46,7 @@ import { TouchManager } from "../touch_manager.js";
  * Base class for editors.
  */
 class AnnotationEditor {
-
-  #uniqueId = '';
+  #uniqueId = "";
 
   #accessibilityData = null;
 
@@ -169,7 +168,7 @@ class AnnotationEditor {
    * @type {number}
    */
   static generateUniqueId() {
-    return 'annotation_' + Math.random().toString(36).substr(2, 9);
+    return "annotation_" + Math.random().toString(36).substr(2, 9);
   }
 
   /**
@@ -407,18 +406,17 @@ class AnnotationEditor {
    * @param {FocusEvent} event
    */
   focusout(event) {
-
     /**
      * @MuniCollab
      * Customization: fix: saving modified markup/annotation
      * Commit: 456de43
      * PR: https://github.com/municollab/mc-server/pull/1899
      */
-    const customEvent = new CustomEvent('pdfjs-annotations-viewer-select', {
+    const customEvent = new CustomEvent("pdfjs-annotations-viewer-select", {
       detail: {
         uniqueId: this.uniqueId,
-        annotation: this.serialize()
-      }
+        annotation: this.serialize(),
+      },
     });
     window.parent.dispatchEvent(customEvent);
 
@@ -491,7 +489,6 @@ class AnnotationEditor {
        * PR: https://github.com/municollab/mc-server/pull/922
        */
       this.save();
-
     }
   }
 
@@ -509,16 +506,18 @@ class AnnotationEditor {
    * PR: https://github.com/municollab/mc-server/pull/922
    */
   save() {
-    console.log('sending annotations to parent...')
-    const customEvent = new CustomEvent('pdfjs-annotations-viewer-save-annotation', {
-      detail: {
-        uniqueId: this.uniqueId,
-        annotation: this.serialize()
+    console.log("sending annotations to parent...");
+    const customEvent = new CustomEvent(
+      "pdfjs-annotations-viewer-save-annotation",
+      {
+        detail: {
+          uniqueId: this.uniqueId,
+          annotation: this.serialize(),
+        },
       }
-    });
+    );
     window.parent.dispatchEvent(customEvent);
   }
-
 
   addToAnnotationStorage() {
     this._uiManager.addToAnnotationStorage(this);
@@ -1953,11 +1952,11 @@ class AnnotationEditor {
      * Commit: 9b3f2d1 wip: poc annotations sidebar, remove and select
      * PR: https://github.com/municollab/mc-server/pull/922
      */
-    const customEvent = new CustomEvent('pdfjs-annotations-viewer-select', {
+    const customEvent = new CustomEvent("pdfjs-annotations-viewer-select", {
       detail: {
         uniqueId: this.uniqueId,
-        annotation: this.serialize()
-      }
+        annotation: this.serialize(),
+      },
     });
 
     this.makeResizable();
@@ -1992,7 +1991,6 @@ class AnnotationEditor {
      * PR: https://github.com/municollab/mc-server/pull/922
      */
     window.parent.dispatchEvent(customEvent);
-
   }
 
   /**
@@ -2021,10 +2019,10 @@ class AnnotationEditor {
      * Commit: 9b3f2d1 wip: poc annotations sidebar, remove and select
      * PR: https://github.com/municollab/mc-server/pull/922
      */
-    const customEvent = new CustomEvent('pdfjs-annotations-viewer-unselect', {
+    const customEvent = new CustomEvent("pdfjs-annotations-viewer-unselect", {
       detail: {
-        uniqueId: this.uniqueId
-      }
+        uniqueId: this.uniqueId,
+      },
     });
     window.parent.dispatchEvent(customEvent);
   }
