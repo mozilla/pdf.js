@@ -745,6 +745,9 @@ class CanvasGraphics {
     this.ctx.transform(...viewport.transform);
     this.viewportScale = viewport.scale;
 
+    // Offset by half a pixel to prevent anti-aliasing artifacts between adjacent shapes
+    this.ctx.translate(0.5, 0.5);
+    
     this.baseTransform = getCurrentTransform(this.ctx);
   }
 
