@@ -2604,6 +2604,11 @@ class CanvasGraphics {
     // except the blend mode, soft mask, and alpha constants.
     copyCtxState(currentCtx, groupCtx);
     this.ctx = groupCtx;
+    this.dependencyTracker?.inheritSimpleDataAsFutureForcedDependencies([
+      "fillAlpha",
+      "strokeAlpha",
+      "globalCompositeOperation",
+    ]);
     this.setGState(opIdx, [
       ["BM", "source-over"],
       ["ca", 1],

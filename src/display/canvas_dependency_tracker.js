@@ -99,6 +99,17 @@ class CanvasDependencyTracker {
     return this;
   }
 
+  // All next operations, until the next .restore(), will depend on all
+  // the already recorded data with the given names.
+  inheritSimpleDataAsFutureForcedDependencies(names) {
+    for (let i = 0; i < names.length; i++) {
+      if (names[i] in this.#simple) {
+        this.recordFutureForcedDependency(names[i], this.#simple[names[i]]);
+      }
+    }
+    return this;
+  }
+
   resetBBox(idx) {
     this.#pendingBBoxIdx = idx;
     this.#pendingBBox = {
