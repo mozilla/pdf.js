@@ -7,13 +7,13 @@
  * Commit: 1def69e
  */
 button#annotations-sidebar {
-  background : #f0f0f4;
+  background: #f0f0f4;
   height: 28px;
   border: 1px solid #cccccc;
 }
 
 button#annotations-sidebar:hover {
-  background : #e0e0e6;
+  background: #e0e0e6;
 }
 
 /* Zooming on ipad PDFjs fix, tooltip placement top #1177
@@ -23,13 +23,12 @@ button#annotations-sidebar:hover {
  * Note this was intended as a fix for a webkit bug which may no longer exist upstream 
  */
 .pdfViewer .canvasWrapper {
-    /* See  `width: inherit` comment in `.pdfViewer .page canvas[zooming]` for the reason
+  /* See  `width: inherit` comment in `.pdfViewer .page canvas[zooming]` for the reason
     * we use `inherit` and not `100%`. */
   width: inherit;
 }
 
-.pdfViewer .page canvas[zooming]{
-
+.pdfViewer .page canvas[zooming] {
   /* WebKit has a bug when rendering canvases that have their width defined as
    * relative to their container, and their parent is resized. This causes a
    * "tearing" effect when zooming in PDFs past a certain threshold, which
@@ -50,7 +49,7 @@ button#annotations-sidebar:hover {
    */
   width: inherit;
 
-  height:100%;
+  height: 100%;
 }
 
 /* PDFjs viewer and annotations improvements #936
