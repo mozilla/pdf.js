@@ -36,6 +36,21 @@ describe("Annotation highlight", () => {
       await closePages(pages);
     });
 
+    it("must check the popup position in the DOM", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const areSiblings = await page.evaluate(() => {
+            const highlight = document.querySelector(
+              "[data-annotation-id='19R']"
+            );
+            const popup = document.querySelector("[data-annotation-id='21R']");
+            return highlight.nextElementSibling === popup;
+          });
+          expect(areSiblings).withContext(`In ${browserName}`).toEqual(true);
+        })
+      );
+    });
+
     it("must show a popup on mouseover", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
