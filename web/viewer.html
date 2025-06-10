@@ -839,10 +839,10 @@ See https://github.com/adobe-type-tools/cmap-resources
 
 
   function getPDFjsComponents() {
-    const pdfViewerProxy = window.PDFViewerApplication
-    const pdfViewer = pdfViewerProxy.pdfViewer
-    const annotationEditorUIManager = pdfViewer?.annotationEditorUIManager
-    const annotationStorage = pdfViewerProxy.pdfDocument.annotationStorage
+    const pdfViewerProxy = window.PDFViewerApplication;
+    const pdfViewer = pdfViewerProxy.pdfViewer;
+    const annotationEditorUIManager = pdfViewer?._layerProperties?.annotationEditorUIManager;
+    const annotationStorage = pdfViewerProxy.pdfDocument.annotationStorage;
 
     return {
       pdfViewerProxy,
