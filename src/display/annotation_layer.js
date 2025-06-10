@@ -2057,7 +2057,12 @@ class PopupAnnotationElement extends AnnotationElement {
   }
 
   render() {
-    this.container.classList.add("popupAnnotation");
+    const { container } = this;
+    container.classList.add("popupAnnotation");
+    container.role = "application";
+    container.setAttribute("data-l10n-id", "pdfjs-popup-annotation");
+    container.setAttribute("data-l10n-attrs", "aria-roledescription");
+    container.ariaDescription = this.data.contentsObj?.str || "";
 
     const popup = (this.popup = new PopupElement({
       container: this.container,
@@ -3142,7 +3147,7 @@ class AnnotationLayer {
     return this.#editableAnnotations.size > 0;
   }
 
-  async #appendElement(element, id) {
+  async #appendElement(element, id, popupElements) {
     const contentElement = element.firstChild || element;
     const annotationId = (contentElement.id = `${AnnotationPrefix}${id}`);
     const ariaAttributes =
@@ -3153,13 +3158,18 @@ class AnnotationLayer {
       }
     }
 
-    this.div.append(element);
-    this.#accessibilityManager?.moveElementInDOM(
-      this.div,
-      element,
-      contentElement,
-      /* isRemovable = */ false
-    );
+    if (popupElements) {
+      // Set the popup just after the first element associated with the popup.
+      popupElements[0].container.after(element);
+    } else {
+      this.div.append(element);
+      this.#accessibilityManager?.moveElementInDOM(
+        this.div,
+        element,
+        contentElement,
+        /* isRemovable = */ false
+      );
+    }
   }
 
   /**
@@ -3227,7 +3237,7 @@ class AnnotationLayer {
       if (data.hidden) {
         rendered.style.visibility = "hidden";
       }
-      await this.#appendElement(rendered, data.id);
+      await this.#appendElement(rendered, data.id, elementParams.elements);
 
       if (element._isEditable) {
         this.#editableAnnotations.set(element.data.id, element);
@@ -3263,7 +3273,7 @@ class AnnotationLayer {
         continue;
       }
       const rendered = element.render();
-      await this.#appendElement(rendered, data.id);
+      await this.#appendElement(rendered, data.id, null);
     }
   }
 
