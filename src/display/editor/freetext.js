@@ -50,7 +50,7 @@ class FreeTextEditor extends AnnotationEditor {
 
   static _defaultColor = null;
 
-  static _defaultFontSize = 10;
+  static _defaultFontSize = 40; // @MuniCollab default font-size
 
   static get _keyboardManager() {
     const proto = FreeTextEditor.prototype;
@@ -775,7 +775,6 @@ class FreeTextEditor extends AnnotationEditor {
          * PR: https://github.com/municollab/mc-server/pull/922
          */
         uniqueId,
-
       } = data;
       // textContent is supposed to be an array of strings containing each line
       // of text. However, it can be null or empty.
@@ -858,7 +857,6 @@ class FreeTextEditor extends AnnotationEditor {
        * PR: https://github.com/municollab/mc-server/pull/922
        */
       uniqueId: this.uniqueId,
-
     };
 
     if (isForCopying) {
