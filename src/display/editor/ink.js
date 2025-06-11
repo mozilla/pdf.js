@@ -31,9 +31,10 @@ class InkDrawingOptions extends DrawingOptions {
 
     super.updateProperties({
       fill: "none",
-      stroke: AnnotationEditor._defaultLineColor,
+      // stroke: AnnotationEditor._defaultLineColor,
+      stroke: "#1858d8", // @MuniCollab default color
       "stroke-opacity": 1,
-      "stroke-width": 1,
+      "stroke-width": 13, // @MuniCollab default thickness
       "stroke-linecap": "round",
       "stroke-linejoin": "round",
       "stroke-miterlimit": 10,
