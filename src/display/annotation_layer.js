@@ -2322,6 +2322,8 @@ class PopupElement {
     }
 
     if (event.key === "Enter" || (event.key === "Escape" && this.#pinned)) {
+      // eslint-disable-next-line no-console
+      console.log("keydown annotation layer", event);
       this.#toggle();
     }
   }

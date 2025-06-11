@@ -126,6 +126,22 @@ class HighlightEditor extends AnnotationEditor {
       this.#addToDrawLayer();
       this.rotate(this.rotation);
     }
+
+    if (this.isUserCreated) {
+      this.eventBus.dispatch("annotation-editor-event", {
+        source: this,
+        type: "annotationCreatedByUser",
+        page: this.pageIndex + 1,
+        editorType: this.constructor.name,
+      });
+    } else {
+      this.eventBus.dispatch("annotation-editor-event", {
+        source: this,
+        type: "annotationCreated",
+        page: this.pageIndex + 1,
+        editorType: this.constructor.name,
+      });
+    }
   }
 
   /** @inheritdoc */
@@ -407,6 +423,16 @@ class HighlightEditor extends AnnotationEditor {
       this.#colorPicker = new ColorPicker({ editor: this });
       toolbar.addColorPicker(this.#colorPicker);
     }
+    if (this.eventBus) {
+      this.eventBus.dispatch("annotation-editor-event", {
+        source: this,
+        type: "editToolbarAdded",
+        page: this.pageIndex + 1,
+        editorType: this.constructor.name,
+        value: toolbar,
+      });
+    }
+
     return toolbar;
   }
 
@@ -455,6 +481,14 @@ class HighlightEditor extends AnnotationEditor {
     this._reportTelemetry({
       action: "deleted",
     });
+
+    this.eventBus.dispatch("annotation-editor-event", {
+      source: this,
+      type: "highlightDeleted",
+      page: this.pageIndex + 1,
+      editorType: this.constructor.name,
+    });
+
     super.remove();
   }
 
@@ -689,6 +723,14 @@ class HighlightEditor extends AnnotationEditor {
     if (!this.#outlineId) {
       return;
     }
+
+    this.eventBus.dispatch("annotation-editor-event", {
+      source: this,
+      type: "highlightSelected",
+      page: this.pageIndex + 1,
+      editorType: this.constructor.name,
+    });
+
     this.parent?.drawLayer.updateProperties(this.#outlineId, {
       rootClass: {
         hovered: false,
@@ -861,6 +903,7 @@ class HighlightEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   static async deserialize(data, parent, uiManager) {
+    const isUserCreated = data.isUserCreated ?? false;
     let initialData = null;
     if (data instanceof HighlightAnnotationElement) {
       const {
@@ -913,7 +956,11 @@ class HighlightEditor extends AnnotationEditor {
     }
 
     const { color, quadPoints, inkLists, opacity } = data;
-    const editor = await super.deserialize(data, parent, uiManager);
+    const editor = await super.deserialize(
+      { ...data, isUserCreated },
+      parent,
+      uiManager
+    );
 
     editor.color = Util.makeHexColor(...color);
     editor.#opacity = opacity || 1;
@@ -1015,6 +1062,7 @@ class HighlightEditor extends AnnotationEditor {
       rect,
       rotation: this.#getRotation(),
       structTreeParentId: this._structTreeParentId,
+      uniqueId: this.uniqueId,
     };
 
     if (this.annotationElementId && !this.#hasElementChanged(serialized)) {

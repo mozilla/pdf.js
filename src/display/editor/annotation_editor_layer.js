@@ -113,6 +113,7 @@ class AnnotationEditorLayer {
     textLayer,
     viewport,
     l10n,
+    eventBus,
   }) {
     const editorTypes = [...AnnotationEditorLayer.#editorTypes.values()];
     if (!AnnotationEditorLayer._initialized) {
@@ -134,6 +135,7 @@ class AnnotationEditorLayer {
     this._structTree = structTreeLayer;
 
     this.#uiManager.addLayer(this);
+    this.eventBus = eventBus;
   }
 
   get isEmpty() {
@@ -671,6 +673,7 @@ class AnnotationEditorLayer {
       uiManager: this.#uiManager,
       isCentered,
       ...data,
+      eventBus: this.eventBus, // #2256 modified by ngx-extended-pdf-viewer
     });
     if (editor) {
       this.add(editor);

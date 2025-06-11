@@ -191,6 +191,7 @@ class AnnotationFactory {
       pageIndex,
       evaluatorOptions: pdfManager.evaluatorOptions,
       pageRef,
+      eventBus: pdfManager.eventBus, // modified by ngx-extended-pdf-viewer #2256
     };
 
     switch (subtype) {

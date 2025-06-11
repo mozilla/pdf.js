@@ -732,6 +732,7 @@ const PDFViewerApplication = {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       const fileInput = (this._openFileInput = document.createElement("input"));
       fileInput.id = "fileInput";
+      fileInput.className = "pdf-app-lib-input-identifier";
       fileInput.hidden = true;
       fileInput.type = "file";
       fileInput.value = null;
@@ -1616,11 +1617,12 @@ const PDFViewerApplication = {
     this._contentLength ??= contentLength; // See `getDownloadInfo`-call above.
 
     // Provides some basic debug information
-    console.log(
-      `PDF ${pdfDocument.fingerprints[0]} [${info.PDFFormatVersion} ` +
-        `${(info.Producer || "-").trim()} / ${(info.Creator || "-").trim()}] ` +
-        `(PDF.js: ${version || "?"} [${build || "?"}])`
-    );
+    // console.log(
+    //   `PDF ${pdfDocument.fingerprints[0]} [${info.PDFFormatVersion} ` +
+    // eslint-disable-next-line max-len
+    //     `${(info.Producer || "-").trim()} / ${(info.Creator || "-").trim()}] ` +
+    //     `(PDF.js: ${version || "?"} [${build || "?"}])`
+    // );
     let pdfTitle = info.Title;
 
     const metadataTitle = metadata?.get("dc:title");

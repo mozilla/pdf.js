@@ -316,6 +316,13 @@ class PDFThumbnailViewer {
     }
     return false;
   }
+
+  // #1415 modified by ngx-extended-pdf-viewer
+  stopRendering() {
+    // this.renderingQueue._stop();
+    this.#cancelRendering();
+  }
+  // #1415 end of modification by ngx-extended-pdf-viewer
 }
 
 export { PDFThumbnailViewer };

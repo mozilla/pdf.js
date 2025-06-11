@@ -2490,6 +2490,62 @@ class PDFViewer {
       this.update();
     }
   }
+
+  /**
+   * @type {AnnotationEditorUIManager} - return ui manager.
+   */
+  get uiManager() {
+    return this.#annotationEditorUIManager;
+  }
+
+  /**
+   * @type {boolean} - return true if ui manager is ready.
+   */
+  uIManagerIsReady() {
+    return !!this.#annotationEditorUIManager;
+  }
+
+  // #1783 modified by ngx-extended-pdf-viewer
+  getSerializedAnnotations() {
+    const rawAnnotations = this.pdfDocument.annotationStorage.getAll();
+    if (rawAnnotations) {
+      const annotations = Object.values(rawAnnotations);
+      return annotations.map(a => a.serialize());
+    }
+    return null;
+  }
+
+  addEditorAnnotation(data) {
+    if (!Array.isArray(data)) {
+      data = [data];
+    }
+
+    this.#annotationEditorUIManager.addSerializedEditor(
+      data,
+      true,
+      false,
+      false
+    );
+  }
+
+  removeEditorAnnotations(filter = () => true) {
+    this.#annotationEditorUIManager.removeEditors(filter);
+  }
+  // #1783 end of modification by ngx-extended-pdf-viewer
+
+  // #1415 modified by ngx-extended-pdf-viewer
+  destroyBookMode() {
+    if (this.pageFlip) {
+      this.pageFlip.destroy();
+      this.pageFlip = null;
+    }
+  }
+
+  stopRendering() {
+    // this.renderingQueue._stop();
+    this._cancelRendering();
+  }
+  // #1415 end of modification by ngx-extended-pdf-viewer
 }
 
 export { PagesCountLimit, PDFPageViewBuffer, PDFViewer };

@@ -167,6 +167,15 @@ class EventBus {
       }
     }
   }
+
+  destroy() {
+    // #2329 modified by ngx-extended-pdf-viewer
+    let eventName;
+    for (eventName in this.#listeners) {
+      this.#listeners[eventName].length = 0;
+    }
+    // #2329 end of modification by ngx-extended-pdf-viewer
+  }
 }
 
 /**
