@@ -258,7 +258,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                     </div>
                   </div>
                   <div id="editorHighlight" class="toolbarButtonWithContainer">
-                    <button id="editorHighlightButton" class="toolbarButton" type="button" disabled="disabled" role="radio" aria-expanded="false" aria-haspopup="true" aria-controls="editorHighlightParamsToolbar" tabindex="0" data-l10n-id="pdfjs-editor-highlight-button">
+                    <button id="editorHighlightButton" class="toolbarButton" type="button" disabled="disabled" role="radio" aria-expanded="false" aria-haspopup="true" aria-controls="editorHighlightParamsToolbar" tabindex="0" data-l10n-id="pdfjs-editor-highlight-button" style="visibility: hidden;">
                       <span data-l10n-id="pdfjs-editor-highlight-button-label"></span>
                     </button>
                     <div class="editorParamsToolbar hidden doorHangerRight" id="editorHighlightParamsToolbar">
@@ -1112,7 +1112,7 @@ See https://github.com/adobe-type-tools/cmap-resources
         '#editorInkButton',
       ).style.visibility = 'visible';
       document.querySelector(
-        '#editorFreeText',
+        '#editorFreeTextButton',
       ).style.visibility = 'visible';
     }
 
