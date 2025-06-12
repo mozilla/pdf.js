@@ -645,6 +645,23 @@
     "type": "eq"
   },
   {
+    "id": "bug1443140-partial",
+    "file": "pdfs/bug1443140.pdf",
+    "md5": "8f9347b0d5620537850b24b8385b0982",
+    "rounds": 1,
+    "link": true,
+    "firstPage": 4,
+    "lastPage": 4,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "knownPartialMismatch": true
+  },
+  {
     "id": "bug1473809",
     "file": "pdfs/bug1473809.pdf",
     "md5": "4b1ca51cf8cad58a1ce0618667341c76",
