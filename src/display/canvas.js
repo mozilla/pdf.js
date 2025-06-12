@@ -1703,6 +1703,7 @@ class CanvasGraphics {
 
     this.dependencyTracker
       ?.recordOpenMarker(opIdx)
+      .resetIncrementalData("sameLineText")
       .resetIncrementalData("moveText", opIdx);
   }
 
