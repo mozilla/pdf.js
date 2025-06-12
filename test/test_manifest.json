@@ -514,6 +514,22 @@
     "type": "eq"
   },
   {
+    "id": "bug1734802-partial",
+    "file": "pdfs/bug1734802.pdf",
+    "md5": "a23ad8af95ffca3876e110a5f4dec9bc",
+    "rounds": 1,
+    "link": true,
+    "lastPage": 3,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "knownPartialMismatch": true
+  },
+  {
     "id": "bug1753983",
     "file": "pdfs/bug1753983.pdf",
     "md5": "432be86262e5071176c49713ce458031",
