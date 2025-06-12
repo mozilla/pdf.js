@@ -29,7 +29,7 @@ class CanvasDependencyTracker {
 
   #namedDependencies = new Map();
 
-  #saves = [];
+  #pairsStack = [];
 
   #pendingBBox = null;
 
@@ -59,7 +59,7 @@ class CanvasDependencyTracker {
         __proto__: this.#incremental[FORCED_DEPENDENCY_LABEL],
       },
     };
-    this.#saves.push([opIdx, null]);
+    this.#pairsStack.push([opIdx, null]);
 
     return this;
   }
@@ -67,8 +67,21 @@ class CanvasDependencyTracker {
   restore(opIdx) {
     this.#simple = Object.getPrototypeOf(this.#simple);
     this.#incremental = Object.getPrototypeOf(this.#incremental);
-    this.#saves.pop()[1] = opIdx;
+    this.#pairsStack.pop()[1] = opIdx;
 
+    return this;
+  }
+
+  /**
+   * @param {number} idx
+   */
+  recordOpenMarker(idx) {
+    this.#pairsStack.push([idx, null]);
+    return this;
+  }
+
+  recordCloseMarker(idx) {
+    this.#pairsStack.pop()[1] = idx;
     return this;
   }
 
@@ -194,9 +207,9 @@ class CanvasDependencyTracker {
   recordOperation(idx) {
     this.recordDependencies(idx, [FORCED_DEPENDENCY_LABEL]);
     const dependencies = new Set(this.#pendingDependencies);
-    const saves = this.#saves.slice();
+    const pairs = this.#pairsStack.slice();
     const bbox = this.#pendingBBoxIdx === idx ? this.#pendingBBox : null;
-    this.#operations.set(idx, { bbox, saves, dependencies });
+    this.#operations.set(idx, { bbox, pairs, dependencies });
     this.#pendingBBox = null;
     this.#pendingBBoxIdx = null;
     this.#pendingDependencies.clear();
@@ -207,8 +220,8 @@ class CanvasDependencyTracker {
   take() {
     return Array.from(
       this.#operations,
-      ([idx, { bbox, saves, dependencies }]) => {
-        saves.forEach(save => save.forEach(dependencies.add, dependencies));
+      ([idx, { bbox, pairs, dependencies }]) => {
+        pairs.forEach(pair => pair.forEach(dependencies.add, dependencies));
         dependencies.delete(idx);
         return {
           minX: (bbox?.minX ?? 0) / this.#canvasWidth,

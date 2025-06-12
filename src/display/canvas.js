@@ -1702,12 +1702,12 @@ class CanvasGraphics {
     this.current.y = this.current.lineY = 0;
 
     this.dependencyTracker
-      ?.save(opIdx)
-      .recordIncrementalData("moveText", opIdx);
+      ?.recordOpenMarker(opIdx)
+      .resetIncrementalData("moveText", opIdx);
   }
 
   endText(opIdx) {
-    this.dependencyTracker?.restore(opIdx);
+    this.dependencyTracker?.recordCloseMarker(opIdx);
 
     const paths = this.pendingTextPaths;
     const ctx = this.ctx;

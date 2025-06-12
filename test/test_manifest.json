@@ -546,6 +546,20 @@
     "type": "eq"
   },
   {
+    "id": "issue15604-partial",
+    "file": "pdfs/issue15604.pdf",
+    "md5": "505040e5634434ae97118a4c39bf27e5",
+    "rounds": 1,
+    "link": true,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "bug921760",
     "file": "pdfs/bug921760.pdf",
     "md5": "1aa136d786a65b0d7cce7bdb3c58c6c3",
