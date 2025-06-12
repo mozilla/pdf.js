@@ -1761,8 +1761,6 @@ class AnnotationEditor {
    * @param {KeyboardEvent} event
    */
   keydown(event) {
-    // eslint-disable-next-line no-console
-    console.log(event.key);
     if (
       !this.isResizable ||
       event.target !== this.div ||
