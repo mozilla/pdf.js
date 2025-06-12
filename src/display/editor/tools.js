@@ -724,9 +724,9 @@ class AnnotationEditorUIManager {
         ],
         // [["ctrl+z", "mac+meta+z"],
         // proto.undo, { checker: textInputChecker }],
-        [
-          // On mac, depending of the OS version, the event.key is either "z" or
-          // "Z" when the user presses "meta+shift+z".
+        // [
+        // On mac, depending of the OS version, the event.key is either "z" or
+        // "Z" when the user presses "meta+shift+z".
         //   [
         //     "ctrl+y",
         //     "ctrl+shift+z",
