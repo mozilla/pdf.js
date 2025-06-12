@@ -1750,7 +1750,6 @@ class CanvasGraphics {
   }
 
   setFont(opIdx, fontRefName, size) {
-    // TODO: Record font dependency
     this.dependencyTracker
       ?.recordSimpleData("font", opIdx)
       .recordNamedDependency(opIdx, fontRefName);
@@ -2000,9 +1999,9 @@ class CanvasGraphics {
         "fillAlpha",
         "strokeAlpha",
         "globalCompositeOperation",
-        "sameLineText",
         // TODO: More
       ])
+      .copyDependenciesFromIncrementalOperation(opIdx, "sameLineText")
       .resetBBox(opIdx);
 
     const current = this.current;

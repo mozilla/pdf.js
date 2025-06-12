@@ -192,6 +192,19 @@ class CanvasDependencyTracker {
     return this;
   }
 
+  copyDependenciesFromIncrementalOperation(idx, name) {
+    for (let i = 0; i < this.#incremental[name].length; i++) {
+      const depIdx = this.#incremental[name][i];
+      this.#operations
+        .get(depIdx)
+        .dependencies.forEach(
+          this.#pendingDependencies.add,
+          this.#pendingDependencies.add(depIdx)
+        );
+    }
+    return this;
+  }
+
   recordNamedDependency(idx, name) {
     if (this.#namedDependencies.has(name)) {
       this.#pendingDependencies.add(this.#namedDependencies.get(name));
