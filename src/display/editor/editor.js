@@ -32,12 +32,14 @@ import { noContextMenu, stopEvent } from "../display_utils.js";
 import { AltText } from "./alt_text.js";
 import { EditorToolbar } from "./toolbar.js";
 import { TouchManager } from "../touch_manager.js";
+import { v4 as uuidV4 } from "uuid";
 
 /**
  * @typedef {Object} AnnotationEditorParameters
  * @property {AnnotationEditorUIManager} uiManager - the global manager
  * @property {AnnotationEditorLayer} parent - the layer containing this editor
  * @property {string} id - editor id
+ * @property {string} uniqueId - unique id
  * @property {number} x - x-coordinate
  * @property {number} y - y-coordinate
  */
@@ -46,6 +48,10 @@ import { TouchManager } from "../touch_manager.js";
  * Base class for editors.
  */
 class AnnotationEditor {
+  uniqueId = null;
+
+  isUserCreated = true;
+
   #accessibilityData = null;
 
   #allResizerDivs = null;
@@ -178,6 +184,9 @@ class AnnotationEditor {
     this._willKeepAspectRatio = false;
     this._initialOptions.isCentered = parameters.isCentered;
     this._structTreeParentId = null;
+    this.eventBus = parameters.eventBus; // #2256 modified by ngx-extended-pdf-viewer
+    this.isUserCreated = parameters.isUserCreated ?? true;
+    this.uniqueId = parameters.uniqueId ?? uuidV4();
 
     const {
       rotation,
@@ -1064,6 +1073,49 @@ class AnnotationEditor {
     return this._editToolbar;
   }
 
+  /**
+   * Return the toolbar
+   * @returns {Promise<EditorToolbar|null>}
+   */
+  async getToolBar() {
+    if (this._editToolbar) {
+      return this._editToolbar;
+    }
+    return null;
+  }
+
+  /**
+   * @param {string} id
+   * @returns {undefined}
+   */
+  async removeToolbarButton(id) {
+    if (this._editToolbar) {
+      this._editToolbar.removeButtons(id);
+    } else {
+      // eslint-disable-next-line no-console
+      console.log("not found");
+    }
+  }
+
+  /**
+   * Add a component to editor
+   * @param {HTMLElement} child
+   * @returns {undefined}
+   */
+  async awaitDivAndAddComponent(child) {
+    if (!child) {
+      return;
+    }
+    if (!this.div) {
+      // eslint-disable-next-line no-console
+      console.log("waiting div");
+      await wait();
+      this.awaitDivAndAddComponent();
+    }
+    // const child = document.createElement("div");
+    this.div.append(child);
+  }
+
   removeEditToolbar() {
     if (!this._editToolbar) {
       return;
@@ -1614,6 +1666,9 @@ class AnnotationEditor {
       parent,
       id: parent.getNextId(),
       uiManager,
+      eventBus: parent.eventBus,
+      isUserCreated: data.isUserCreated,
+      uniqueId: data.uniqueId,
     });
     editor.rotation = data.rotation;
     editor.#accessibilityData = data.accessibilityData;
@@ -2063,4 +2118,9 @@ class FakeEditor extends AnnotationEditor {
   }
 }
 
+function wait(time = 100) {
+  return new Promise(resolve => {
+    setTimeout(resolve, time);
+  });
+}
 export { AnnotationEditor };

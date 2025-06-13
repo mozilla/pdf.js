@@ -118,11 +118,29 @@ class EditorToolbar {
     this.#altText?.shown();
   }
 
+  addButton(button) {
+    this.#buttons.prepend(button, this.#divider);
+  }
+
+  removeButtons(id) {
+    const buttons = Array.from(this.#buttons.children);
+    for (let i = 0; i < buttons.length; i++) {
+      const button = buttons[i];
+      if (button.id === id) {
+        button.remove();
+        const potentialDivider = buttons[i + 1];
+        if (potentialDivider.classList.contains("divider")) {
+          potentialDivider.remove();
+        }
+      }
+    }
+  }
+
   #addDeleteButton() {
     const { editorType, _uiManager } = this.#editor;
 
     const button = document.createElement("button");
-    button.className = "delete";
+    button.className = "delete pdf-viewer-button";
     button.tabIndex = 0;
     button.setAttribute("data-l10n-id", EditorToolbar.#l10nRemove[editorType]);
     this.#addListenersToElement(button);

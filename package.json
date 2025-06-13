@@ -64,5 +64,9 @@
   "engines": {
     "node": ">=20.16.0 || >=22.3.0"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "dependencies": {
+    "pdfjs-dist": "file:build/dist",
+    "uuid": "^11.1.0"
+  }
 }

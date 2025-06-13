@@ -308,8 +308,9 @@
       gap: 0;
       height: 100%;
 
-      button {
+      button.pdf-viewer-button {
         padding: 0;
+        display: inline-flex;
       }
 
       .divider {

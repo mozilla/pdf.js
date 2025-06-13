@@ -419,6 +419,14 @@ class CommandManager {
   destroy() {
     this.#commands = null;
   }
+
+  // #1783 modified by ngx-extended-pdf-viewer
+  reset() {
+    this.#commands = [];
+    this.#position = -1;
+    this.#locked = false;
+  }
+  // #1783 end of modification by ngx-extended-pdf-viewer
 }
 
 /**
@@ -714,37 +722,38 @@ class AnnotationEditorUIManager {
           proto.selectAll,
           { checker: textInputChecker },
         ],
-        [["ctrl+z", "mac+meta+z"], proto.undo, { checker: textInputChecker }],
-        [
-          // On mac, depending of the OS version, the event.key is either "z" or
-          // "Z" when the user presses "meta+shift+z".
-          [
-            "ctrl+y",
-            "ctrl+shift+z",
-            "mac+meta+shift+z",
-            "ctrl+shift+Z",
-            "mac+meta+shift+Z",
-          ],
-          proto.redo,
-          { checker: textInputChecker },
-        ],
-        [
-          [
-            "Backspace",
-            "alt+Backspace",
-            "ctrl+Backspace",
-            "shift+Backspace",
-            "mac+Backspace",
-            "mac+alt+Backspace",
-            "mac+ctrl+Backspace",
-            "Delete",
-            "ctrl+Delete",
-            "shift+Delete",
-            "mac+Delete",
-          ],
-          proto.delete,
-          { checker: textInputChecker },
-        ],
+        // [["ctrl+z", "mac+meta+z"],
+        // proto.undo, { checker: textInputChecker }],
+        // [
+        // On mac, depending of the OS version, the event.key is either "z" or
+        // "Z" when the user presses "meta+shift+z".
+        //   [
+        //     "ctrl+y",
+        //     "ctrl+shift+z",
+        //     "mac+meta+shift+z",
+        //     "ctrl+shift+Z",
+        //     "mac+meta+shift+Z",
+        //   ],
+        //   proto.redo,
+        //   { checker: textInputChecker },
+        // ],
+        // [
+        //   [
+        //     "Backspace",
+        //     "alt+Backspace",
+        //     "ctrl+Backspace",
+        //     "shift+Backspace",
+        //     "mac+Backspace",
+        //     "mac+alt+Backspace",
+        //     "mac+ctrl+Backspace",
+        //     "Delete",
+        //     "ctrl+Delete",
+        //     "shift+Delete",
+        //     "mac+Delete",
+        //   ],
+        //   proto.delete,
+        //   { checker: textInputChecker },
+        // ],
         [
           ["Enter", "mac+Enter"],
           proto.addNewEditorFromKeyboard,
@@ -758,19 +767,19 @@ class AnnotationEditorUIManager {
               !self.isEnterHandled,
           },
         ],
-        [
-          [" ", "mac+ "],
-          proto.addNewEditorFromKeyboard,
-          {
-            // Those shortcuts can be used in the toolbar for some other actions
-            // like zooming, hence we need to check if the container has the
-            // focus.
-            checker: (self, { target: el }) =>
-              !(el instanceof HTMLButtonElement) &&
-              self.#container.contains(document.activeElement),
-          },
-        ],
-        [["Escape", "mac+Escape"], proto.unselectAll],
+        // [
+        //   ["mac+ "],
+        //   proto.addNewEditorFromKeyboard,
+        //   {
+        //  // Those shortcuts can be used in the toolbar for some other actions
+        //     // like zooming, hence we need to check if the container has the
+        //     // focus.
+        //     checker: (self, { target: el }) =>
+        //       !(el instanceof HTMLButtonElement) &&
+        //       self.#container.contains(document.activeElement),
+        //   },
+        // ],
+        // [["Escape", "mac+Escape"], proto.unselectAll],
         [
           ["ArrowLeft", "mac+ArrowLeft"],
           proto.translateSelectedEditors,
@@ -916,6 +925,10 @@ class AnnotationEditorUIManager {
 
   combinedSignal(ac) {
     return AbortSignal.any([this._signal, ac.signal]);
+  }
+
+  get allEditors() {
+    return this.#allEditors;
   }
 
   get mlManager() {
@@ -1450,13 +1463,27 @@ class AnnotationEditorUIManager {
       }
     }
 
-    let data = clipboardData.getData("application/pdfjs");
+    const data = clipboardData.getData("application/pdfjs");
+    await this.addSerializedEditor(data);
+  }
+
+  // #1783 end of modification by ngx-extended-pdf-viewer (extract a method)
+  async addSerializedEditor(
+    data,
+    activateEditorIfNecessary = false,
+    doNotMove = false,
+    ignorePageNumber = true
+  ) {
     if (!data) {
       return;
     }
 
     try {
-      data = JSON.parse(data);
+      // #1783 modified by ngx-extended-pdf-viewer
+      if (typeof data === "string") {
+        data = JSON.parse(data);
+      }
+      // #1783 end of modification by ngx-extended-pdf-viewer
     } catch (ex) {
       warn(`paste: "${ex.message}".`);
       return;
@@ -1466,16 +1493,35 @@ class AnnotationEditorUIManager {
       return;
     }
 
+    // #1783 modified by ngx-extended-pdf-viewer
+    const previousMode = this.#mode;
+    if (
+      activateEditorIfNecessary &&
+      previousMode === AnnotationEditorType.NONE
+    ) {
+      this.updateMode(AnnotationEditorType.FREETEXT);
+    }
+    // #1783 end of modification by ngx-extended-pdf-viewer
     this.unselectAll();
-    const layer = this.currentLayer;
 
     try {
       const newEditors = [];
       for (const editor of data) {
-        const deserializedEditor = await layer.deserialize(editor);
+        // #1783 modified by ngx-extended-pdf-viewer
+        const pageNumberMissing = editor.pageIndex === undefined;
+        const useCurrentPage = ignorePageNumber || pageNumberMissing;
+        const layer = useCurrentPage
+          ? this.currentLayer
+          : this.getLayer(editor.pageIndex);
+        // #1783 end of modification by ngx-extended-pdf-viewer
+        const deserializedEditor = await layer.deserialize({
+          ...editor,
+          isUserCreated: false,
+        });
         if (!deserializedEditor) {
           return;
         }
+        deserializedEditor.doNotMove = doNotMove;
         newEditors.push(deserializedEditor);
       }
 
@@ -1494,7 +1540,12 @@ class AnnotationEditorUIManager {
     } catch (ex) {
       warn(`paste: "${ex.message}".`);
     }
+    // #1783 modified by ngx-extended-pdf-viewer
+    if (activateEditorIfNecessary && previousMode !== this.#mode) {
+      this.updateMode(previousMode);
+    }
   }
+  // #1783 end of modification by ngx-extended-pdf-viewer
 
   /**
    * Keydown callback.
@@ -1778,6 +1829,15 @@ class AnnotationEditorUIManager {
 
     for (const editor of this.#selectedEditors) {
       editor.updateParams(type, value);
+      this._eventBus.dispatch("annotation-editor-event", {
+        source: editor,
+        type: "annotationUpdated",
+        page: this.page,
+        value: {
+          type,
+          value,
+        },
+      });
     }
 
     for (const editorType of this.#editorTypes) {

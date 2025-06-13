@@ -229,8 +229,12 @@ body {
   }
 }
 
-.hidden,
+.outerContainer .hidden,
 [hidden] {
+  display: none !important;
+}
+
+.dropdown.hidden {
   display: none !important;
 }
 
