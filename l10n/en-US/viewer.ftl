@@ -294,6 +294,10 @@ pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", tim
 pdfjs-text-annotation-type =
     .alt = [{ $type } Annotation]
 
+# Some annotations can have an associated popup containing a comment.
+pdfjs-popup-annotation =
+    .aria-roledescription = A popup displaying a comment
+
 ## Password
 
 pdfjs-password-label = Enter the password to open this PDF file.
