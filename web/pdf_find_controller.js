@@ -992,7 +992,7 @@ class PDFFindController {
     // If there's no query there's no point in searching.
     const query = this.#query;
     if (query.length === 0) {
-      this.#updateUIState(FindState.FOUND);
+      this.#updateUIState(FindState.NOT_FOUND);
       return;
     }
     // If we're waiting on a page, we return since we can't do anything else.
