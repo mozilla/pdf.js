@@ -604,10 +604,14 @@ class Driver {
         md5FileMap.set(task.md5, task.file);
       }
 
+      this._log(
+        `[${this.currentTask + 1}/${this.manifest.length}] ${task.id}:\n`
+      );
+
       // Support *linked* test-cases for the other suites, e.g. unit- and
       // integration-tests, without needing to run them as reference-tests.
       if (task.type === "other") {
-        this._log(`Skipping file "${task.file}"\n`);
+        this._log(`  Skipping file "${task.file}"\n`);
 
         if (!task.link) {
           this._nextPage(task, 'Expected "other" test-case to be linked.');
@@ -618,7 +622,7 @@ class Driver {
         return;
       }
 
-      this._log('Loading file "' + task.file + '"\n');
+      this._log(`  Loading file "${task.file}"\n`);
 
       try {
         let xfaStyleElement = null;
@@ -849,7 +853,7 @@ class Driver {
 
     if (task.pageNum > this._getLastPageNumber(task)) {
       if (++task.round < task.rounds) {
-        this._log(" Round " + (1 + task.round) + "\n");
+        this._log(`  Round ${1 + task.round}\n`);
         task.pageNum = task.firstPage || 1;
       } else {
         this.currentTask++;
@@ -860,7 +864,7 @@ class Driver {
 
     if (task.skipPages?.includes(task.pageNum)) {
       this._log(
-        " Skipping page " + task.pageNum + "/" + task.pdfDoc.numPages + "...\n"
+        `    Skipping page ${task.pageNum}/${task.pdfDoc.numPages}...\n`
       );
       task.pageNum++;
       this._nextPage(task);
@@ -870,7 +874,7 @@ class Driver {
     if (!failure) {
       try {
         this._log(
-          " Loading page " + task.pageNum + "/" + task.pdfDoc.numPages + "... "
+          `    Loading page ${task.pageNum}/${task.pdfDoc.numPages}... `
         );
         ctx = this.canvas.getContext("2d", { alpha: false });
         task.pdfDoc.getPage(task.pageNum).then(
