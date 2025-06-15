@@ -2897,8 +2897,7 @@ function onKeyDown(evt) {
     curElementTagName === "INPUT" ||
     curElementTagName === "TEXTAREA" ||
     curElementTagName === "SELECT" ||
-    (curElementTagName === "BUTTON" &&
-      (evt.keyCode === /* Enter = */ 13 || evt.keyCode === /* Space = */ 32)) ||
+    (curElementTagName === "BUTTON" && evt.keyCode === /* Space = */ 32) ||
     curElement?.isContentEditable
   ) {
     // Make sure that the secondary toolbar is closed when Escape is pressed.
@@ -2969,7 +2968,6 @@ function onKeyDown(evt) {
         }
         turnPage = 1;
         break;
-      case 13: // enter key
       case 32: // spacebar
         if (!isViewerInPresentationMode) {
           turnOnlyIfPageFit = true;
@@ -3037,7 +3035,6 @@ function onKeyDown(evt) {
   // shift-key
   if (cmd === 4) {
     switch (evt.keyCode) {
-      case 13: // enter key
       case 32: // spacebar
         if (
           !isViewerInPresentationMode &&
