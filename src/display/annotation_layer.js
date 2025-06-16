@@ -43,7 +43,6 @@ import { ColorConverters } from "../shared/scripting_utils.js";
 import { DOMSVGFactory } from "./svg_factory.js";
 import { XfaLayer } from "./xfa_layer.js";
 
-const DEFAULT_TAB_INDEX = 1000;
 const DEFAULT_FONT_SIZE = 9;
 const GetElementsByNameSet = new WeakSet();
 
@@ -263,7 +262,7 @@ class AnnotationElement {
     const container = document.createElement("section");
     container.setAttribute("data-annotation-id", data.id);
     if (!(this instanceof WidgetAnnotationElement)) {
-      container.tabIndex = DEFAULT_TAB_INDEX;
+      container.tabIndex = 0;
     }
     const { style } = container;
 
@@ -1293,7 +1292,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
 
       element.disabled = this.data.readOnly;
       element.name = this.data.fieldName;
-      element.tabIndex = DEFAULT_TAB_INDEX;
+      element.tabIndex = 0;
 
       this._setRequired(element, this.data.required);
 
@@ -1613,7 +1612,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
       element.setAttribute("checked", true);
     }
     element.setAttribute("exportValue", data.exportValue);
-    element.tabIndex = DEFAULT_TAB_INDEX;
+    element.tabIndex = 0;
 
     element.addEventListener("change", event => {
       const { name, checked } = event.target;
@@ -1713,7 +1712,7 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     if (value) {
       element.setAttribute("checked", true);
     }
-    element.tabIndex = DEFAULT_TAB_INDEX;
+    element.tabIndex = 0;
 
     element.addEventListener("change", event => {
       const { name, checked } = event.target;
@@ -1820,7 +1819,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     selectElement.disabled = this.data.readOnly;
     this._setRequired(selectElement, this.data.required);
     selectElement.name = this.data.fieldName;
-    selectElement.tabIndex = DEFAULT_TAB_INDEX;
+    selectElement.tabIndex = 0;
 
     let addAnEmptyEntry = this.data.combo && this.data.options.length > 0;
 
