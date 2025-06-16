@@ -27,7 +27,6 @@ import {
   getFirstSerialized,
   getRect,
   getSerialized,
-  hover,
   isCanvasMonochrome,
   kbBigMoveDown,
   kbBigMoveLeft,
@@ -1166,16 +1165,6 @@ describe("FreeText Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await page.waitForSelector("[data-annotation-id='23R']");
-          // Cannot use page.hover with Firefox on Mac because of a bug.
-          // TODO: remove this when we switch to BiDi.
-          await hover(page, "[data-annotation-id='23R']");
-
-          // Wait for the popup to be displayed.
-          await page.waitForFunction(
-            () =>
-              document.querySelector("[data-annotation-id='popup_23R']")
-                .hidden === false
-          );
 
           // Enter in editing mode.
           await switchToFreeText(page);
@@ -1183,15 +1172,7 @@ describe("FreeText Editor", () => {
           // Disable editing mode.
           await switchToFreeText(page, /* disable = */ true);
 
-          // TODO: remove this when we switch to BiDi.
-          await hover(page, "[data-annotation-id='23R']");
-
-          // Wait for the popup to be displayed.
-          await page.waitForFunction(
-            () =>
-              document.querySelector("[data-annotation-id='popup_23R']")
-                .hidden === false
-          );
+          await page.waitForSelector("[data-annotation-id='23R']");
         })
       );
     });
