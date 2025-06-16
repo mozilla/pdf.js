@@ -44,6 +44,8 @@ class BasePDFPageView {
 
   pageColors = null;
 
+  recordedGroups = null;
+
   renderingQueue = null;
 
   renderTask = null;
@@ -237,6 +239,7 @@ class BasePDFPageView {
       // triggering this callback.
       if (renderTask === this.renderTask) {
         this.renderTask = null;
+        this.recordedGroups ??= renderTask.recordedGroups;
       }
     }
     this.renderingState = RenderingStates.FINISHED;
