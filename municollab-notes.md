@@ -261,14 +261,173 @@ The system maintains an `annotationsState` array that tracks:
 
 ### Communication Architecture
 
-1. **Outbound (PDF.js → Parent)**:
+#### 1. Overview
 
-   - Uses `CustomEvent` with `window.parent.dispatchEvent()`
-   - One exception uses `window.parent.postMessage()`
+The communication between PDF.js and the parent application uses a hybrid approach combining CustomEvents and postMessage API for cross-frame communication.
 
-2. **Inbound (Parent → PDF.js)**:
-   - Uses `window.postMessage()`
-   - Handled by message event listener
+#### 2. Outbound Communication (PDF.js → Parent)
+
+**Primary Method: CustomEvent**
+
+- Most events use `CustomEvent` with `window.parent.dispatchEvent()`
+- Events are dispatched directly to the parent window's event system
+- Example:
+
+```javascript
+const customEvent = new CustomEvent("pdfjs-annotations-viewer-select", {
+  detail: {
+    uniqueId: this.uniqueId,
+    annotation: this.serialize(),
+  },
+});
+window.parent.dispatchEvent(customEvent);
+```
+
+**Secondary Method: postMessage**
+
+- Used in `AnnotationEditorLayer.save()` for bulk annotation saves
+- Example:
+
+```javascript
+window.parent.postMessage(
+  {
+    type: "pdfjs-annotations-viewer",
+    event: "save-annotations",
+    annotations,
+  },
+  "*"
+);
+```
+
+#### 3. Inbound Communication (Parent → PDF.js)
+
+**Method: postMessage**
+
+- All incoming messages use `window.postMessage()`
+- Single message event listener handles all message types
+- Message routing based on `event.data.type` property
+
+#### 4. Component Access Pattern
+
+The system uses a helper function to access PDF.js components:
+
+```javascript
+function getPDFjsComponents() {
+  const pdfViewerProxy = window.PDFViewerApplication;
+  const pdfViewer = pdfViewerProxy.pdfViewer;
+  const annotationEditorUIManager =
+    pdfViewer?._layerProperties?.annotationEditorUIManager;
+  const annotationStorage = pdfViewerProxy.pdfDocument.annotationStorage;
+
+  return {
+    pdfViewerProxy,
+    pdfViewer,
+    annotationEditorUIManager,
+    annotationStorage,
+  };
+}
+```
+
+#### 5. Event Flow Sequence
+
+**Annotation Creation Flow:**
+
+1. User creates annotation in PDF.js
+2. Editor dispatches `pdfjs-annotations-viewer-save-annotation`
+3. Parent receives event and updates its state
+4. Parent sends `pdfjs-annotations-app` message back
+5. PDF.js syncs annotation state
+
+**Annotation Selection Flow:**
+
+1. User selects annotation in parent app
+2. Parent sends `pdfjs-annotations-app-select` message
+3. PDF.js sets `pendingAnnotationSelect`
+4. Selection interval (125ms) checks for pending selections
+5. Once annotation is loaded, it's selected and `pendingAnnotationSelect` is cleared
+
+#### 6. Synchronization Mechanisms
+
+**Three-tier synchronization:**
+
+1. **Event-driven**: Immediate response to user actions
+2. **Interval-based**: 250ms sync cycle for state consistency
+3. **Pending operations**: 125ms cycle for deferred operations
+
+**State Reconciliation:**
+
+- `annotationsState` array maintains truth about annotation status
+- Each annotation tracked with flags: `isLoaded`, `shouldRemove`, `shouldModify`
+- Sync process handles additions, removals, and modifications
+
+#### 7. Security Considerations
+
+**Current Implementation:**
+
+- Uses wildcard origin (`'*'`) in postMessage calls
+- No origin validation in message event listener
+- Relies on message type checking for basic validation
+
+**Potential Improvements:**
+
+- Implement origin validation
+- Add message authentication
+- Validate message payloads against schemas
+
+#### 8. Error Handling
+
+**Timing-based Resilience:**
+
+- Deferred operations via `pendingAnnotationSelect`
+- Retry mechanism through interval-based checking
+- Graceful handling of missing components
+
+**Missing Error Handling:**
+
+- No explicit error events
+- No failure callbacks
+- Silent failures possible if components not ready
+
+#### 9. Performance Implications
+
+**Interval-based Operations:**
+
+- 250ms sync interval = 4 updates/second
+- 125ms selection interval = 8 checks/second
+- Continuous CPU usage even when idle
+
+**Memory Considerations:**
+
+- `annotationsState` array grows with annotations
+- No apparent cleanup mechanism for old states
+- Potential memory leaks with long sessions
+
+#### 10. Race Condition Management
+
+**Potential Race Conditions:**
+
+1. Multiple rapid selections before previous selection completes
+2. Annotation modifications during sync cycles
+3. Page navigation during annotation operations
+
+**Mitigation Strategies:**
+
+- Single `pendingAnnotationSelect` prevents multiple selections
+- State flags (`shouldModify`, `shouldRemove`) queue operations
+- Two-phase removal process prevents premature deletion
+
+#### 11. Browser Compatibility
+
+**APIs Used:**
+
+- `CustomEvent`: Supported in all modern browsers
+- `postMessage`: Universal support
+- `scrollIntoView`: May have behavior differences
+
+**Polyfills/Fallbacks:**
+
+- None implemented
+- Assumes modern browser environment
 
 ### Serialization Pattern
 
