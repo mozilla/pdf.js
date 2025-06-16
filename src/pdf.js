@@ -80,6 +80,7 @@ import { SignatureExtractor } from "./display/editor/drawers/signaturedraw.js";
 import { TextLayer } from "./display/text_layer.js";
 import { TouchManager } from "./display/touch_manager.js";
 import { XfaLayer } from "./display/xfa_layer.js";
+import { AnnotationEventType } from "./display/annotation_event_types.js";
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING || GENERIC")) {
   globalThis._pdfjsTestingUtils = {
@@ -93,6 +94,7 @@ globalThis.pdfjsLib = {
   AnnotationEditorParamsType,
   AnnotationEditorType,
   AnnotationEditorUIManager,
+  AnnotationEventType,
   AnnotationLayer,
   AnnotationMode,
   AnnotationType,
@@ -147,6 +149,7 @@ export {
   AnnotationEditorParamsType,
   AnnotationEditorType,
   AnnotationEditorUIManager,
+  AnnotationEventType,
   AnnotationLayer,
   AnnotationMode,
   AnnotationType,

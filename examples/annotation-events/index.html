@@ -1,0 +1,277 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>PDF.js Annotation Events Example</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+      header {
+        background-color: #f0f0f0;
+        padding: 10px;
+        border-bottom: 1px solid #ccc;
+      }
+      .container {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+      }
+      #viewerContainer {
+        flex: 1;
+        overflow: auto;
+      }
+      #annotationPanel {
+        width: 300px;
+        border-left: 1px solid #ccc;
+        padding: 10px;
+        overflow: auto;
+      }
+      #annotationList {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+      }
+      .annotation-item {
+        padding: 8px;
+        margin-bottom: 5px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .annotation-item:hover {
+        background-color: #f5f5f5;
+      }
+      .annotation-item.selected {
+        background-color: #e0f0ff;
+        border-color: #a0c0ff;
+      }
+      .annotation-controls {
+        margin-top: 10px;
+        padding: 10px;
+        border-top: 1px solid #ccc;
+      }
+      button {
+        padding: 5px 10px;
+        margin-right: 5px;
+        cursor: pointer;
+      }
+      #eventLog {
+        height: 150px;
+        overflow: auto;
+        border: 1px solid #ccc;
+        padding: 5px;
+        margin-top: 10px;
+        font-family: monospace;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>PDF.js Annotation Events Example</h1>
+      <div>
+        <button id="createInkBtn">Create Ink Annotation</button>
+        <button id="createTextBtn">Create Text Annotation</button>
+        <button id="toggleSidebarBtn">Toggle Sidebar</button>
+      </div>
+    </header>
+
+    <div class="container">
+      <div id="viewerContainer">
+        <iframe id="viewer" width="100%" height="100%"></iframe>
+      </div>
+
+      <div id="annotationPanel">
+        <h2>Annotations</h2>
+        <ul id="annotationList"></ul>
+
+        <div class="annotation-controls">
+          <h3>Event Log</h3>
+          <div id="eventLog"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="../../build/generic/build/pdf.js"></script>
+    <script>
+      // Configure PDF.js worker
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "../../build/generic/build/pdf.worker.js";
+
+      // Sample PDF URL - replace with your own PDF
+      const pdfUrl = "../../web/compressed.tracemonkey-pldi-09.pdf";
+
+      // State variables
+      let pdfDocument = null;
+      let annotations = [];
+      let selectedAnnotationId = null;
+
+      // DOM elements
+      const viewer = document.getElementById("viewer");
+      const annotationList = document.getElementById("annotationList");
+      const eventLog = document.getElementById("eventLog");
+      const createInkBtn = document.getElementById("createInkBtn");
+      const createTextBtn = document.getElementById("createTextBtn");
+      const toggleSidebarBtn = document.getElementById("toggleSidebarBtn");
+
+      // Initialize the viewer
+      function initViewer() {
+        // Set the viewer source to the PDF.js web viewer with our PDF
+        viewer.src = "../../web/viewer.html?file=" + encodeURIComponent(pdfUrl);
+
+        // Wait for the viewer to load
+        viewer.onload = function () {
+          // Get access to the PDF.js viewer application
+          const viewerWindow = viewer.contentWindow;
+          const PDFViewerApplication = viewerWindow.PDFViewerApplication;
+
+          // Wait for PDF.js to initialize
+          viewerWindow.addEventListener(
+            "pdfjs-annotations-viewer-initialized",
+            function () {
+              logEvent("PDF.js initialized");
+
+              // Get the PDF document
+              pdfDocument = PDFViewerApplication.pdfDocument;
+
+              // Set up event listeners using the new API
+              setupEventListeners(pdfDocument);
+            }
+          );
+        };
+      }
+
+      // Set up event listeners using the new API
+      function setupEventListeners(pdfDocument) {
+        const { annotationEventManager } = pdfDocument;
+
+        // Listen for annotation selection events
+        annotationEventManager.on(
+          pdfjsLib.AnnotationEventType.SELECTED,
+          data => {
+            logEvent(
+              `Annotation selected: ${data.id} on page ${data.pageIndex + 1}`
+            );
+            selectedAnnotationId = data.id;
+            updateAnnotationList();
+          }
+        );
+
+        // Listen for annotation unselection events
+        annotationEventManager.on(
+          pdfjsLib.AnnotationEventType.UNSELECTED,
+          data => {
+            logEvent(`Annotation unselected: ${data.id}`);
+            selectedAnnotationId = null;
+            updateAnnotationList();
+          }
+        );
+
+        // Listen for annotation creation events
+        annotationEventManager.on(
+          pdfjsLib.AnnotationEventType.CREATED,
+          data => {
+            logEvent(`Annotation created: ${data.id} of type ${data.type}`);
+            annotations.push({
+              id: data.id,
+              type: data.type,
+              pageIndex: data.pageIndex,
+              properties: data.properties,
+            });
+            updateAnnotationList();
+          }
+        );
+
+        // Listen for annotation modification events
+        annotationEventManager.on(
+          pdfjsLib.AnnotationEventType.MODIFIED,
+          data => {
+            logEvent(`Annotation modified: ${data.id}`);
+            const index = annotations.findIndex(a => a.id === data.id);
+            if (index !== -1) {
+              annotations[index].properties = data.properties;
+            }
+          }
+        );
+
+        // Listen for annotation removal events
+        annotationEventManager.on(
+          pdfjsLib.AnnotationEventType.REMOVED,
+          data => {
+            logEvent(`Annotation removed: ${data.id}`);
+            annotations = annotations.filter(a => a.id !== data.id);
+            updateAnnotationList();
+          }
+        );
+
+        // Set up button event handlers
+        createInkBtn.addEventListener("click", () => {
+          annotationEventManager.enableAnnotationCreation("ink");
+          logEvent("Enabled ink annotation creation mode");
+        });
+
+        createTextBtn.addEventListener("click", () => {
+          annotationEventManager.enableAnnotationCreation("freeText");
+          logEvent("Enabled text annotation creation mode");
+        });
+
+        toggleSidebarBtn.addEventListener("click", () => {
+          annotationEventManager.showAnnotationSidebar();
+          logEvent("Toggled annotation sidebar");
+        });
+
+        // Get initial annotations
+        annotationEventManager.getAnnotations().then(result => {
+          annotations = result;
+          updateAnnotationList();
+          logEvent(`Loaded ${annotations.length} annotations`);
+        });
+      }
+
+      // Update the annotation list in the sidebar
+      function updateAnnotationList() {
+        annotationList.innerHTML = "";
+
+        annotations.forEach(annotation => {
+          const item = document.createElement("li");
+          item.className = "annotation-item";
+          if (annotation.id === selectedAnnotationId) {
+            item.className += " selected";
+          }
+
+          item.textContent = `${annotation.type} on page ${annotation.pageIndex + 1}`;
+          item.dataset.id = annotation.id;
+          item.dataset.pageIndex = annotation.pageIndex;
+
+          item.addEventListener("click", () => {
+            if (pdfDocument) {
+              pdfDocument.annotationEventManager.selectAnnotation(
+                annotation.id,
+                annotation.pageIndex
+              );
+            }
+          });
+
+          annotationList.appendChild(item);
+        });
+      }
+
+      // Log events to the event log
+      function logEvent(message) {
+        const entry = document.createElement("div");
+        entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+        eventLog.appendChild(entry);
+        eventLog.scrollTop = eventLog.scrollHeight;
+      }
+
+      // Initialize the viewer when the page loads
+      window.addEventListener("load", initViewer);
+    </script>
+  </body>
+</html>

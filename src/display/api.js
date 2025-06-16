@@ -733,10 +733,14 @@ class PDFDataRangeTransport {
   abort() {}
 }
 
+import { AnnotationEventManager } from "./annotation_event_manager.js";
+
 /**
  * Proxy to a `PDFDocument` in the worker thread.
  */
 class PDFDocumentProxy {
+  #annotationEventManager = null;
+
   constructor(pdfInfo, transport) {
     this._pdfInfo = pdfInfo;
     this._transport = transport;
@@ -762,6 +766,19 @@ class PDFDocumentProxy {
 
     // @MuniCollab feat: pdfjs - replace timeouts with events 6e284be5c
     window?.onPDFjsInitialized?.();
+  }
+
+  /**
+   * @type {AnnotationEventManager} Manager for annotation events.
+   */
+  get annotationEventManager() {
+    if (!this.#annotationEventManager) {
+      this.#annotationEventManager = new AnnotationEventManager(
+        this,
+        this._transport
+      );
+    }
+    return this.#annotationEventManager;
   }
 
   /**
@@ -1380,6 +1397,32 @@ class PDFPageProxy {
    */
   get filterFactory() {
     return this._transport.filterFactory;
+  }
+
+  /**
+   * Create an annotation on this page.
+   * @param {string} type - The annotation type.
+   * @param {Object} properties - The annotation properties.
+   * @returns {Promise<string>} - The annotation ID.
+   */
+  createAnnotation(type, properties) {
+    return this._transport.annotationEventManager.createAnnotation(
+      type,
+      properties,
+      this._pageIndex
+    );
+  }
+
+  /**
+   * Select an annotation on this page.
+   * @param {string} id - The annotation ID.
+   * @returns {Promise<void>}
+   */
+  selectAnnotation(id) {
+    return this._transport.annotationEventManager.selectAnnotation(
+      id,
+      this._pageIndex
+    );
   }
 
   /**
