@@ -1220,4 +1220,28 @@ describe("PDF viewer", () => {
       );
     });
   });
+
+  describe("Filename with a hash sign", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("empty%23hash.pdf", ".textLayer .endOfContent");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must extract the filename correctly", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const filename = await page.evaluate(() => document.title);
+
+          expect(filename)
+            .withContext(`In ${browserName}`)
+            .toBe("empty#hash.pdf");
+        })
+      );
+    });
+  });
 });
