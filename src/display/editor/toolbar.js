@@ -163,6 +163,20 @@ class EditorToolbar {
     this.#buttons.prepend(button, this.#divider);
   }
 
+  async addButton(name, tool) {
+    switch (name) {
+      case "colorPicker":
+        this.addColorPicker(tool);
+        break;
+      case "altText":
+        await this.addAltText(tool);
+        break;
+      case "editSignature":
+        await this.addEditSignatureButton(tool);
+        break;
+    }
+  }
+
   updateEditSignatureButton(description) {
     if (this.#signatureDescriptionButton) {
       this.#signatureDescriptionButton.title = description;
