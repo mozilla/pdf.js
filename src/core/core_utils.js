@@ -684,7 +684,7 @@ function stringToAsciiOrUTF16BE(str) {
 }
 
 function isAscii(str) {
-  return /^[\x00-\x7F]*$/.test(str);
+  return !str || /^[\x00-\x7F]*$/.test(str);
 }
 
 function stringToUTF16HexString(str) {
