@@ -3309,4 +3309,52 @@ describe("FreeText Editor", () => {
       );
     });
   });
+
+  describe("Freetext and text alignment", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the alignment is correct", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          const rect = await getRect(page, ".annotationEditorLayer");
+          const editorSelector = getEditorSelector(0);
+
+          const data = "Hello PDF.js World !!";
+          await page.mouse.click(rect.x + 100, rect.y + 100);
+          await page.waitForSelector(editorSelector, { visible: true });
+          await page.type(`${editorSelector} .internal`, data);
+          await commit(page);
+          await waitForSerialized(page, 1);
+
+          let alignment = await page.$eval(
+            `${editorSelector} .internal`,
+            el => getComputedStyle(el).textAlign
+          );
+          expect(alignment).withContext(`In ${browserName}`).toEqual("start");
+
+          await page.click("#secondaryToolbarToggleButton");
+          await page.waitForSelector("#secondaryToolbar", { visible: true });
+          await page.click("#spreadOdd");
+          await page.waitForSelector("#secondaryToolbar", { visible: false });
+          await page.waitForSelector(".spread");
+
+          alignment = await page.$eval(
+            `${editorSelector} .internal`,
+            el => getComputedStyle(el).textAlign
+          );
+          expect(alignment).withContext(`In ${browserName}`).toEqual("start");
+        })
+      );
+    });
+  });
 });
