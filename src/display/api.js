@@ -2111,25 +2111,7 @@ class PDFWorker {
         );
       }
 
-      console.log("[PDF.js] Creating worker with src:", workerSrc);
-      console.log("[PDF.js] Browser:", navigator.userAgent);
-      console.log("[PDF.js] Testing module worker support...");
-      
-      let worker;
-      try {
-        worker = new Worker(workerSrc, { type: "module" });
-        console.log("[PDF.js] Worker created successfully:", worker);
-      } catch (error) {
-        console.error("[PDF.js] Failed to create module worker:", error);
-        console.log("[PDF.js] Attempting fallback to regular worker...");
-        try {
-          worker = new Worker(workerSrc);
-          console.log("[PDF.js] Regular worker created successfully:", worker);
-        } catch (fallbackError) {
-          console.error("[PDF.js] Failed to create regular worker:", fallbackError);
-          throw fallbackError;
-        }
-      }
+      const worker = new Worker(workerSrc, { type: "module" });
       
       const messageHandler = new MessageHandler("main", "worker", worker);
       const terminateEarly = () => {

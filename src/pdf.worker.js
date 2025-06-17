@@ -37,14 +37,8 @@ if (!URL.parse) {
 
 import { WorkerMessageHandler } from "./core/worker.js";
 
-console.log("[PDF.js Worker] Starting worker initialization");
-console.log("[PDF.js Worker] User agent:", navigator.userAgent);
-console.log("[PDF.js Worker] Worker global scope:", typeof globalThis);
-
 globalThis.pdfjsWorker = {
   WorkerMessageHandler,
 };
-
-console.log("[PDF.js Worker] Global pdfjsWorker object created:", globalThis.pdfjsWorker);
 
 export { WorkerMessageHandler };

@@ -67,14 +67,6 @@ class WorkerTask {
 
 class WorkerMessageHandler {
   static {
-    console.log("[PDF.js WorkerMessageHandler] Static block executing");
-    console.log("[PDF.js WorkerMessageHandler] Environment check:");
-    console.log("  - typeof window:", typeof window);
-    console.log("  - isNodeJS:", isNodeJS);
-    console.log("  - typeof self:", typeof self);
-    console.log("  - self.postMessage exists:", typeof self !== "undefined" && typeof self.postMessage === "function");
-    console.log("  - 'onmessage' in self:", typeof self !== "undefined" && "onmessage" in self);
-    
     // Worker thread (and not Node.js)?
     if (
       typeof window === "undefined" &&
@@ -84,10 +76,7 @@ class WorkerMessageHandler {
       typeof self.postMessage === "function" &&
       "onmessage" in self
     ) {
-      console.log("[PDF.js WorkerMessageHandler] Initializing from port (self)");
       this.initializeFromPort(self);
-    } else {
-      console.log("[PDF.js WorkerMessageHandler] NOT initializing from port - conditions not met");
     }
   }
 
@@ -884,18 +873,9 @@ class WorkerMessageHandler {
   }
 
   static initializeFromPort(port) {
-    console.log("[PDF.js WorkerMessageHandler] initializeFromPort called with port:", port);
-    try {
-      const handler = new MessageHandler("worker", "main", port);
-      console.log("[PDF.js WorkerMessageHandler] MessageHandler created:", handler);
-      this.setup(handler, port);
-      console.log("[PDF.js WorkerMessageHandler] Setup completed, sending 'ready' message");
-      handler.send("ready", null);
-      console.log("[PDF.js WorkerMessageHandler] 'ready' message sent successfully");
-    } catch (error) {
-      console.error("[PDF.js WorkerMessageHandler] Error in initializeFromPort:", error);
-      throw error;
-    }
+    const handler = new MessageHandler("worker", "main", port);
+    this.setup(handler, port);
+    handler.send("ready", null);
   }
 }
 

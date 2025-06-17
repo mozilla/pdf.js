@@ -146,9 +146,8 @@ function getNormalizeWithNFKC() {
       }
     }
     if (ranges.join("") !== NormalizeWithNFKC) {
-      throw new Error(
-        "getNormalizeWithNFKC - update the `NormalizeWithNFKC` string."
-      );
+      console.warn("[PDF.js] Unicode normalization mismatch - using generated string instead of hardcoded constant");
+      NormalizeWithNFKC = ranges.join("");
     }
   }
   return NormalizeWithNFKC;

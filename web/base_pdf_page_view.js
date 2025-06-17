@@ -135,9 +135,8 @@ class BasePDFPageView {
         }
 
         if (tempCanvas) {
-          const ctx = canvas.getContext("2d", {
-            alpha: false,
-          });
+          // Safari workaround: remove alpha: false which causes rendering issues
+          const ctx = canvas.getContext("2d");
           ctx.drawImage(tempCanvas, 0, 0);
           if (isLastShow) {
             this.#resetTempCanvas();
@@ -166,8 +165,8 @@ class BasePDFPageView {
       }
     };
 
+    // Safari workaround: remove alpha: false which causes rendering issues
     const ctx = canvas.getContext("2d", {
-      alpha: false,
       willReadFrequently: !this.#enableHWA,
     });
 
