@@ -3309,4 +3309,56 @@ describe("FreeText Editor", () => {
       );
     });
   });
+
+  describe("FreeText text wrapping", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must wrap long text into multiple lines", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          const rect = await getRect(page, ".annotationEditorLayer");
+          const editorSelector = getEditorSelector(0);
+
+          await page.mouse.click(rect.x + 100, rect.y + 100);
+          await page.waitForSelector(editorSelector, { visible: true });
+
+          const longText =
+            "This is a very long text string that should definitely need to wrap onto multiple lines of text so that it can be displayed properly within the FreeText annotation editor.";
+          await page.type(`${editorSelector} .internal`, longText);
+
+          const hasMultipleLines = await page.evaluate(selector => {
+            const el = document.querySelector(`${selector} .internal`);
+            const style = window.getComputedStyle(el);
+            const lineHeight = parseFloat(style.lineHeight);
+            const totalHeight = el.getBoundingClientRect().height;
+            return totalHeight > lineHeight;
+          }, editorSelector);
+
+          expect(hasMultipleLines).withContext(`In ${browserName}`).toBeTrue();
+
+          await commit(page);
+
+          const maintainsWrapping = await page.evaluate(selector => {
+            const el = document.querySelector(`${selector} .internal`);
+            const style = window.getComputedStyle(el);
+            const lineHeight = parseFloat(style.lineHeight);
+            const totalHeight = el.getBoundingClientRect().height;
+            return totalHeight > lineHeight * 1.5;
+          }, editorSelector);
+
+          expect(maintainsWrapping).withContext(`In ${browserName}`).toBeTrue();
+        })
+      );
+    });
+  });
 });
