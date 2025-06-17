@@ -1270,6 +1270,28 @@ if (
   };
 }
 
+// Safari compatibility polyfills for worker context
+if (!Promise.withResolvers) {
+  Promise.withResolvers = function() {
+    let resolve, reject;
+    const promise = new Promise((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    return { promise, resolve, reject };
+  };
+}
+
+if (!URL.parse) {
+  URL.parse = function(url, baseUrl) {
+    try {
+      return new URL(url, baseUrl);
+    } catch {
+      return null;
+    }
+  };
+}
+
 export {
   _isValidExplicitDest,
   AbortException,
