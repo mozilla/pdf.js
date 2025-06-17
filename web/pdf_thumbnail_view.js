@@ -214,14 +214,10 @@ class PDFThumbnailView {
     this.resume = null;
   }
 
-  #getPageDrawContext(upscaleFactor = 1, enableHWA = this.enableHWA) {
+  #getPageDrawContext(upscaleFactor = 1) {
     // Keep the no-thumbnail outline visible, i.e. `data-loaded === false`,
     // until rendering/image conversion is complete, to avoid display issues.
     const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d", {
-      alpha: false,
-      willReadFrequently: !enableHWA,
-    });
     const outputScale = new OutputScale();
     const width = upscaleFactor * this.canvasWidth,
       height = upscaleFactor * this.canvasHeight;
@@ -239,7 +235,7 @@ class PDFThumbnailView {
       ? [outputScale.sx, 0, 0, outputScale.sy, 0, 0]
       : null;
 
-    return { ctx, canvas, transform };
+    return { canvas, transform };
   }
 
   #convertCanvasToImage(canvas) {
@@ -280,8 +276,7 @@ class PDFThumbnailView {
     // the `draw` and `setImage` methods (fixes issue 8233).
     // NOTE: To primarily avoid increasing memory usage too much, but also to
     //   reduce downsizing overhead, we purposely limit the up-scaling factor.
-    const { ctx, canvas, transform } =
-      this.#getPageDrawContext(DRAW_UPSCALE_FACTOR);
+    const { canvas, transform } = this.#getPageDrawContext(DRAW_UPSCALE_FACTOR);
     const drawViewport = this.viewport.clone({
       scale: DRAW_UPSCALE_FACTOR * this.scale,
     });
@@ -298,7 +293,7 @@ class PDFThumbnailView {
     };
 
     const renderContext = {
-      canvasContext: ctx,
+      canvas,
       transform,
       viewport: drawViewport,
       optionalContentConfigPromise: this._optionalContentConfigPromise,
@@ -378,7 +373,11 @@ class PDFThumbnailView {
   }
 
   #reduceImage(img) {
-    const { ctx, canvas } = this.#getPageDrawContext(1, true);
+    const { canvas } = this.#getPageDrawContext(1);
+    const ctx = canvas.getContext("2d", {
+      alpha: false,
+      willReadFrequently: false,
+    });
 
     if (img.width <= 2 * canvas.width) {
       ctx.drawImage(
