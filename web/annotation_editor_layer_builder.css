@@ -517,6 +517,7 @@
   white-space: nowrap;
   font: 10px sans-serif;
   line-height: var(--freetext-line-height);
+  text-align: start;
   user-select: none;
 }
 
