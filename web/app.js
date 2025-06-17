@@ -104,6 +104,44 @@ const ViewOnLoad = {
   INITIAL: 1,
 };
 
+// Safari compatibility polyfills
+if (!Promise.withResolvers) {
+  Promise.withResolvers = function() {
+    let resolve, reject;
+    const promise = new Promise((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    return { promise, resolve, reject };
+  };
+}
+
+if (!AbortSignal.any) {
+  AbortSignal.any = function(signals) {
+    const controller = new AbortController();
+    for (const signal of signals) {
+      if (signal.aborted) {
+        controller.abort(signal.reason);
+        break;
+      }
+      signal.addEventListener('abort', () => {
+        controller.abort(signal.reason);
+      }, { once: true });
+    }
+    return controller.signal;
+  };
+}
+
+if (!URL.parse) {
+  URL.parse = function(url, baseUrl) {
+    try {
+      return new URL(url, baseUrl);
+    } catch {
+      return null;
+    }
+  };
+}
+
 const PDFViewerApplication = {
   initialBookmark: document.location.hash.substring(1),
   _initializedCapability: {

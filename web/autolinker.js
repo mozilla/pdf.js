@@ -134,9 +134,9 @@ class Autolinker {
   static #regex;
 
   static findLinks(text) {
-    // Regex can be tested and verified at https://regex101.com/r/rXoLiT/2.
+    // Simplified regex for Safari compatibility - removed set notation and 'v' flag
     this.#regex ??=
-      /\b(?:https?:\/\/|mailto:|www\.)(?:[\S--[\p{P}<>]]|\/|[\S--[\[\]]]+[\S--[\p{P}<>]])+|\b[\S--[@\p{Ps}\p{Pe}<>]]+@([\S--[\p{P}<>]]+(?:\.[\S--[\p{P}<>]]+)+)/gmv;
+      /\b(?:https?:\/\/|mailto:|www\.)[^\s<>]+|\b[^\s@<>]+@[^\s<>]+\.[^\s<>]+/gm;
 
     const [normalizedText, diffs] = normalize(text);
     const matches = normalizedText.matchAll(this.#regex);

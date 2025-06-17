@@ -13,10 +13,38 @@
  * limitations under the License.
  */
 
+// Safari compatibility polyfills for worker context
+if (!Promise.withResolvers) {
+  Promise.withResolvers = function() {
+    let resolve, reject;
+    const promise = new Promise((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    return { promise, resolve, reject };
+  };
+}
+
+if (!URL.parse) {
+  URL.parse = function(url, baseUrl) {
+    try {
+      return new URL(url, baseUrl);
+    } catch {
+      return null;
+    }
+  };
+}
+
 import { WorkerMessageHandler } from "./core/worker.js";
+
+console.log("[PDF.js Worker] Starting worker initialization");
+console.log("[PDF.js Worker] User agent:", navigator.userAgent);
+console.log("[PDF.js Worker] Worker global scope:", typeof globalThis);
 
 globalThis.pdfjsWorker = {
   WorkerMessageHandler,
 };
+
+console.log("[PDF.js Worker] Global pdfjsWorker object created:", globalThis.pdfjsWorker);
 
 export { WorkerMessageHandler };
