@@ -1,0 +1,150 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF.js Annotation Events Sandbox</title>
+    <link rel="stylesheet" href="viewer.css" />
+    <link rel="stylesheet" href="annotation-events-sandbox.css" />
+    <!-- Load PDF.js library as ES module -->
+    <!-- Load PDF.js library as ES module -->
+    <script type="module" src="annotation-events-sandbox.js"></script>
+  </head>
+  <body>
+    <header>
+      <div class="toolbar">
+        <div class="title">
+          <h1>PDF.js Annotation Events Sandbox</h1>
+        </div>
+        <div class="file-controls">
+          <label for="fileInput" class="button">Choose PDF</label>
+          <input
+            type="file"
+            id="fileInput"
+            accept=".pdf"
+            style="display: none"
+          />
+          <span id="fileName">No file selected</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="container">
+        <div class="viewer-container">
+          <div id="viewerContainer">
+            <div id="viewer" class="pdfViewer"></div>
+          </div>
+        </div>
+
+        <div class="sidebar">
+          <div class="panel-container">
+            <!-- Control Panel -->
+            <div class="panel" id="controlPanel">
+              <h2>Controls</h2>
+              <div class="panel-section">
+                <h3>Annotation Creation</h3>
+                <div class="button-group">
+                  <button id="createInkBtn" class="tool-button">Ink</button>
+                  <button id="createTextBtn" class="tool-button">Text</button>
+                  <button id="createHighlightBtn" class="tool-button">
+                    Highlight
+                  </button>
+                  <button id="disableCreationBtn" class="tool-button">
+                    Disable
+                  </button>
+                </div>
+              </div>
+
+              <div class="panel-section">
+                <h3>Send Events</h3>
+                <div class="form-group">
+                  <label for="eventType">Event Type:</label>
+                  <select id="eventType">
+                    <option value="select">Select Annotation</option>
+                    <option value="unselect">Unselect Annotation</option>
+                    <option value="modify">Modify Annotation</option>
+                    <option value="remove">Remove Annotation</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="annotationId">Annotation ID:</label>
+                  <select id="annotationId">
+                    <option value="">Select an annotation</option>
+                  </select>
+                </div>
+                <div class="form-group" id="pageIndexGroup">
+                  <label for="pageIndex">Page Index:</label>
+                  <input type="number" id="pageIndex" min="0" value="0" />
+                </div>
+                <div
+                  class="form-group"
+                  id="propertiesGroup"
+                  style="display: none"
+                >
+                  <label for="properties">Properties (JSON):</label>
+                  <textarea id="properties" rows="4">{}</textarea>
+                </div>
+                <button id="sendEventBtn" class="action-button">
+                  Send Event
+                </button>
+              </div>
+
+              <div class="panel-section">
+                <h3>UI Controls</h3>
+                <div class="button-group">
+                  <button id="showSidebarBtn" class="tool-button">
+                    Show Sidebar
+                  </button>
+                  <button id="hideSidebarBtn" class="tool-button">
+                    Hide Sidebar
+                  </button>
+                  <button id="clearLogBtn" class="tool-button">
+                    Clear Log
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Annotations List -->
+            <div class="panel" id="annotationsPanel">
+              <h2>Annotations</h2>
+              <div class="annotation-list-container">
+                <ul id="annotationList"></ul>
+              </div>
+            </div>
+
+            <!-- Event Log -->
+            <div class="panel" id="eventLogPanel">
+              <h2>Event Log</h2>
+              <div class="event-log-controls">
+                <label>
+                  <input type="checkbox" id="autoScroll" checked /> Auto-scroll
+                </label>
+                <select id="eventFilter">
+                  <option value="all">All Events</option>
+                  <option value="selected">Selection Events</option>
+                  <option value="created">Creation Events</option>
+                  <option value="modified">Modification Events</option>
+                  <option value="removed">Removal Events</option>
+                  <option value="ui">UI Events</option>
+                </select>
+              </div>
+              <div id="eventLog" class="event-log"></div>
+            </div>
+
+            <!-- Inspector Panel -->
+            <div class="panel" id="inspectorPanel">
+              <h2>Inspector</h2>
+              <div id="inspector" class="inspector">
+                <p class="no-selection">No annotation selected</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- No script tag needed here as it's loaded as a module above -->
+  </body>
+</html>

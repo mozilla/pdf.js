@@ -1,0 +1,307 @@
+/* Emergency styles for PDF.js Toolbar */
+/* These styles fix critical toolbar issues while preserving functionality */
+
+/* Fix toolbar containers without affecting functionality */
+#toolbarContainer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+#toolbarViewer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  position: relative;
+  min-height: 32px;
+  width: 100%;
+}
+
+#toolbarViewerLeft,
+#toolbarViewerMiddle,
+#toolbarViewerRight {
+  display: flex;
+  align-items: center;
+}
+
+/* Fix editor mode buttons to ensure they work correctly */
+#editorModeButtons {
+  display: flex;
+  align-items: center;
+}
+
+/* Fix separators */
+.verticalToolbarSeparator {
+  width: 1px;
+  height: 20px;
+  background-color: rgba(0, 0, 0, 0.5);
+  margin: 0 4px;
+  display: inline-block;
+}
+
+.splitToolbarButtonSeparator {
+  width: 1px;
+  background-color: rgba(0, 0, 0, 0.5);
+  margin: 0 2px;
+}
+
+/* Fix loading bar */
+#loadingBar {
+  position: relative;
+  width: 100%;
+  height: 4px;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+#loadingBar .progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 100%;
+  background-color: #0066cc;
+  transition: width 200ms;
+}
+
+#loadingBar .glimmer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 50px;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0.5),
+    rgba(255, 255, 255, 0)
+  );
+  animation: glimmer 1s infinite;
+}
+
+@keyframes glimmer {
+  from {
+    left: -50px;
+  }
+  to {
+    left: 100%;
+  }
+}
+
+/* Preserve icon visibility in toolbar buttons */
+.toolbarButton {
+  position: relative;
+  display: inline-block;
+  width: 32px;
+  height: 25px;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: rgba(0, 0, 0, 0.8);
+  font-size: 12px;
+  text-align: center;
+  cursor: pointer;
+  background-color: rgba(0, 0, 0, 0.1);
+  /* Add important margin to ensure proper spacing */
+  margin: 3px 2px !important;
+}
+
+/* Individual button icons */
+#previous::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-image: var(--toolbarButton-pageUp-icon);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+#next::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-image: var(--toolbarButton-pageDown-icon);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+#zoomOut::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-image: var(--toolbarButton-zoomOut-icon);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+#zoomIn::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-image: var(--toolbarButton-zoomIn-icon);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+#sidebarToggle::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-image: var(--toolbarButton-sidebarToggle-icon);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+#presentationMode::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-image: var(--toolbarButton-presentationMode-icon);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+#openFile::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-image: var(--toolbarButton-openFile-icon);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+#print::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-image: var(--toolbarButton-print-icon);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+#download::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-image: var(--toolbarButton-download-icon);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+#secondaryToolbarToggle::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-image: var(--toolbarButton-secondaryToolbarToggle-icon);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+#editorFreeText::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-image: var(--toolbarButton-editorFreeText-icon);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+#editorInk::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-image: var(--toolbarButton-editorInk-icon);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+#editorHighlight::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-image: var(--toolbarButton-editorHighlight-icon);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+#viewFind::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-image: var(--toolbarButton-search-icon);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* Button hover and focus states */
+.toolbarButton:hover,
+.toolbarButton:focus {
+  background-color: rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.05) inset,
+    0 0 1px rgba(0, 0, 0, 0.2) inset;
+}
+
+/* Hide button text and only show icons */
+.toolbarButton span {
+  font-size: 0;
+  opacity: 0;
+  position: absolute;
+}
+
+/* Active button state */
+.toolbarButton.active {
+  background-color: rgba(0, 0, 0, 0.2);
+  color: rgba(0, 0, 0, 0.9);
+}
+
+/* Fix for the ink parameters toolbar */
+#editorInkParamsToolbar {
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  margin: 5px 0;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#editorInkParamsToolbar.hidden {
+  display: none !important;
+}
+
+/* Ensure ink params toolbar is visible when needed */
+.editorParamsToolbar {
+  display: flex !important;
+}
+
+.editorParamsToolbar.hidden {
+  display: none !important;
+}

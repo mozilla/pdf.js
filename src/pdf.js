@@ -70,6 +70,8 @@ import {
 import { AnnotationEditorLayer } from "./display/editor/annotation_editor_layer.js";
 import { AnnotationEditorUIManager } from "./display/editor/tools.js";
 import { AnnotationLayer } from "./display/annotation_layer.js";
+import { AnnotationEventManager } from "./display/annotation_event_manager.js";
+import { AnnotationEventType } from "./display/annotation_event_types.js";
 import { ColorPicker } from "./display/editor/color_picker.js";
 import { DOMSVGFactory } from "./display/svg_factory.js";
 import { DrawLayer } from "./display/draw_layer.js";
@@ -80,7 +82,6 @@ import { SignatureExtractor } from "./display/editor/drawers/signaturedraw.js";
 import { TextLayer } from "./display/text_layer.js";
 import { TouchManager } from "./display/touch_manager.js";
 import { XfaLayer } from "./display/xfa_layer.js";
-import { AnnotationEventType } from "./display/annotation_event_types.js";
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING || GENERIC")) {
   globalThis._pdfjsTestingUtils = {
@@ -94,6 +95,7 @@ globalThis.pdfjsLib = {
   AnnotationEditorParamsType,
   AnnotationEditorType,
   AnnotationEditorUIManager,
+  AnnotationEventManager,
   AnnotationEventType,
   AnnotationLayer,
   AnnotationMode,
@@ -149,6 +151,7 @@ export {
   AnnotationEditorParamsType,
   AnnotationEditorType,
   AnnotationEditorUIManager,
+  AnnotationEventManager,
   AnnotationEventType,
   AnnotationLayer,
   AnnotationMode,

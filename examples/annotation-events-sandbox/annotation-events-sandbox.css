@@ -1,0 +1,600 @@
+/* PDF.js Annotation Events Sandbox CSS */
+
+/* Layout */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+header {
+  background-color: #0066cc;
+  color: white;
+  border-bottom: 1px solid #0052a3;
+  padding: 10px;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.title {
+  margin-right: 20px;
+}
+
+.file-controls {
+  display: flex;
+  align-items: center;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.viewer-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+#viewerContainer {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+.sidebar {
+  width: 300px;
+  min-width: 300px;
+  border-left: 1px solid #ddd;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+}
+
+.panel-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* Panels */
+.panel {
+  margin-bottom: 10px;
+  padding: 10px;
+  background-color: #fff;
+  border-bottom: 1px solid #ddd;
+}
+
+.panel h2 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 1.2em;
+}
+
+.panel-section {
+  margin-bottom: 15px;
+}
+
+.panel-section h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 1em;
+}
+
+/* Buttons and Controls */
+.button {
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.button:hover {
+  background-color: #0052a3;
+}
+
+.button-group {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.tool-button {
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.tool-button:hover {
+  background-color: #e0e0e0;
+}
+
+.tool-button.active {
+  background-color: #0066cc;
+  color: white;
+}
+
+.action-button {
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-top: 10px;
+}
+
+.action-button:hover {
+  background-color: #0052a3;
+}
+
+.small-button {
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  padding: 2px 5px;
+  cursor: pointer;
+  border-radius: 3px;
+  font-size: 0.8em;
+}
+
+.form-group {
+  margin-bottom: 10px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.form-group select,
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+/* Annotation List */
+.annotation-list-container {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  padding: 5px;
+}
+
+#annotationList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.annotation-item {
+  padding: 5px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+
+.annotation-item:hover {
+  background-color: #f5f5f5;
+}
+
+.annotation-item.selected {
+  background-color: #e6f2ff;
+}
+
+.annotation-type {
+  font-weight: bold;
+}
+
+.annotation-page {
+  font-size: 0.8em;
+  color: #666;
+}
+
+.annotation-id {
+  font-size: 0.8em;
+  color: #999;
+  word-break: break-all;
+}
+
+/* Event Log */
+.tab-container {
+  display: flex;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 10px;
+}
+
+.tab {
+  background-color: #f5f5f5;
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  color: #333;
+}
+
+.tab.active {
+  background-color: #fff;
+  border-bottom: 2px solid #0066cc;
+  color: #0066cc;
+}
+
+.event-log-tab {
+  display: none;
+}
+
+.event-log-tab.active {
+  display: block;
+}
+
+.event-log-controls {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 10px;
+  color: #333;
+}
+
+.event-log {
+  height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  padding: 5px;
+  font-family: monospace;
+  font-size: 0.9em;
+  background-color: #ffffff;
+  color: #000000;
+}
+
+.event-entry {
+  margin-bottom: 5px;
+  padding: 5px;
+  border-bottom: 1px solid #eee;
+  color: #000000;
+  background-color: #ffffff;
+}
+
+.event-time {
+  color: #666;
+  font-size: 0.8em;
+}
+
+.event-type {
+  font-weight: bold;
+  color: #0066cc;
+}
+
+.event-data-toggle {
+  color: #0066cc;
+  cursor: pointer;
+  font-size: 0.8em;
+  margin-top: 5px;
+}
+
+.event-data {
+  background-color: #f0f0f0;
+  padding: 5px;
+  margin-top: 5px;
+  border-radius: 3px;
+  white-space: pre-wrap;
+  color: #000000;
+}
+
+/* Inspector */
+.inspector {
+  border: 1px solid #ddd;
+  padding: 10px;
+  background-color: #ffffff;
+  font-family: monospace;
+  font-size: 0.9em;
+  max-height: 200px;
+  overflow-y: auto;
+  color: #000000;
+}
+
+.inspector-section {
+  margin-bottom: 10px;
+}
+
+.inspector-section h3 {
+  margin-top: 0;
+  margin-bottom: 5px;
+  font-size: 1em;
+  color: #0066cc;
+}
+
+.inspector-property {
+  margin-bottom: 3px;
+  color: #000000;
+}
+
+.property-name {
+  font-weight: bold;
+  color: #333333;
+}
+
+.inspector-json {
+  white-space: pre-wrap;
+  background-color: #f0f0f0;
+  padding: 5px;
+  border-radius: 3px;
+  color: #000000;
+}
+
+.no-selection {
+  color: #666;
+  font-style: italic;
+}
+
+/* Documentation */
+#explanation {
+  font-size: 0.9em;
+  line-height: 1.4;
+  color: #000000;
+}
+
+#explanation h3,
+#explanation h4 {
+  margin-top: 10px;
+  margin-bottom: 5px;
+  color: #0066cc;
+}
+
+#explanation p {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #000000;
+}
+
+#explanation ul {
+  margin-top: 5px;
+  padding-left: 20px;
+  color: #000000;
+}
+
+#explanation code {
+  background-color: #f0f0f0;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+  color: #0066cc;
+}
+
+.mapping-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.mapping-table th,
+.mapping-table td {
+  border: 1px solid #ddd;
+  padding: 5px;
+  text-align: left;
+  color: #000000;
+}
+
+.mapping-table th {
+  background-color: #f5f5f5;
+  color: #333333;
+}
+
+/* Specific category colors for events */
+.event-entry.selected {
+  border-left: 4px solid #4caf50;
+  background-color: #e8f5e9;
+}
+
+.event-entry.created {
+  border-left: 4px solid #2196f3;
+  background-color: #e3f2fd;
+}
+
+.event-entry.modified {
+  border-left: 4px solid #ff9800;
+  background-color: #fff3e0;
+}
+
+.event-entry.removed {
+  border-left: 4px solid #f44336;
+  background-color: #ffebee;
+}
+
+.event-entry.ui {
+  border-left: 4px solid #9c27b0;
+  background-color: #f3e5f5;
+}
+
+.event-entry.error {
+  border-left: 4px solid #f44336;
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+/* PDF Viewer styles */
+.pdfViewer {
+  --page-margin: 1px auto -8px;
+  --page-border: 9px solid transparent;
+  --spreadHorizontalWrapped-margin-LR: -3.5px;
+}
+
+.pdfViewer .page {
+  border-image: none;
+  border: 1px solid #ddd;
+  margin-bottom: 10px;
+}
+
+/* Annotation Editor Params Toolbar */
+.editorParamsToolbar {
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  margin: 5px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.editorParamsToolbar.hidden {
+  display: none;
+}
+
+.editorParamsSetter {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.editorParamsLabel {
+  font-size: 0.9em;
+  min-width: 70px;
+}
+
+#editorInkColor {
+  width: 40px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #ccc;
+}
+
+#editorInkThickness,
+#editorInkOpacity {
+  width: 100px;
+}
+
+#editorInkThicknessValue,
+#editorInkOpacityValue {
+  min-width: 30px;
+  text-align: center;
+  font-size: 0.9em;
+}
+
+/* PDF.js Toolbar Styles */
+/* Only use minimal styling to avoid interfering with PDF.js functionality */
+
+/* Remove heavy toolbar styling to allow PDF.js defaults to work */
+
+/* Remove individual button icon overrides */
+
+/* Loading bar - keep minimal styling */
+#loadingBar {
+  position: relative;
+  width: 100%;
+  height: 4px;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+#loadingBar .progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 100%;
+  background-color: #0066cc;
+  transition: width 200ms;
+}
+
+#loadingBar .glimmer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 50px;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0.5),
+    rgba(255, 255, 255, 0)
+  );
+  animation: glimmer 1s infinite;
+}
+
+@keyframes glimmer {
+  from {
+    left: -50px;
+  }
+  to {
+    left: 100%;
+  }
+}
+
+/* Force visibility of important elements */
+#controlPanel,
+#annotationsPanel,
+#eventLogPanel,
+#inspectorPanel {
+  display: block !important;
+  color: #000000;
+}
+
+/* Make sure panel backgrounds are white for better contrast */
+.panel {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+.panel h2 {
+  color: #0066cc !important;
+}
+
+.panel h3 {
+  color: #333333 !important;
+}
+
+/* Ensure form controls have good contrast */
+.form-group label {
+  color: #000000 !important;
+}
+
+/* Add general text contrast rule */
+body,
+button,
+input,
+select,
+textarea {
+  color: #000000;
+}
+
+/* Force high contrast on any pre-existing light text */
+.inspector *,
+.event-log *,
+#explanation * {
+  color: #000000 !important;
+}
+.inspector h3,
+.inspector-section h3,
+.event-type,
+#explanation h3,
+#explanation h4 {
+  color: #0066cc !important;
+}
+.inspector code,
+#explanation code {
+  color: #0066cc !important;
+}

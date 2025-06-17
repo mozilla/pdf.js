@@ -1,124 +1,109 @@
-# PDF.js Annotation Events API Example
+# PDF.js Annotation Events Example
 
-This example demonstrates how to use the new Annotation Events API in PDF.js. The API provides a standardized way to interact with PDF annotations, including creating, selecting, modifying, and removing annotations.
+This example demonstrates how to use the PDF.js annotation events API to create, modify, and interact with annotations in PDF documents. It shows both the official annotation events API and legacy custom events for comparison.
 
 ## Overview
 
-The example shows how to:
+The PDF.js annotation events system provides a standardized way to interact with annotations in PDF documents. This example includes:
 
-1. Initialize the PDF.js viewer with a PDF document
-2. Access the `annotationEventManager` from the `PDFDocumentProxy`
-3. Register event listeners for annotation events
-4. Perform operations on annotations using the API
-5. Display annotation information in a sidebar
+- A complete viewer with annotation tools
+- Real-time event logging
+- Support for ink, text, and highlight annotations
+- Customization of annotation parameters
+- Comparison between official API events and legacy custom events
 
-## Running the Example
+## How to Use
 
-1. Build PDF.js by running `gulp generic` in the project root
-2. Open `index.html` in a web browser
+1. Start your local PDF.js server (run `gulp server` from the project root)
+2. Navigate to `http://localhost:8888/examples/annotation-events/index.html`
+3. Use the "Choose PDF" button to load a PDF file, or use the default document
+4. Use the annotation tools in the toolbar to create annotations
+5. Watch the event log on the right to see annotation events as they occur
 
-## Key Components
+## Annotation Tools
 
-### Annotation Event Manager
+The example includes the following annotation tools:
 
-The `annotationEventManager` is accessed through the `PDFDocumentProxy`:
+- **Ink**: Draw freeform annotations with customizable color, thickness, and opacity
+- **Text**: Add text annotations to the document
+- **Highlight**: Highlight text in the document
+- **Disable**: Turn off annotation creation mode
 
-```javascript
-const { annotationEventManager } = pdfDocument;
-```
+## Event Types
 
-### Event Types
+The example logs the following types of events:
 
-The API provides a set of predefined event types through the `AnnotationEventType` enum:
+### Official API Events (AnnotationEventType)
 
-```javascript
-pdfjsLib.AnnotationEventType.SELECTED;
-pdfjsLib.AnnotationEventType.UNSELECTED;
-pdfjsLib.AnnotationEventType.CREATED;
-pdfjsLib.AnnotationEventType.MODIFIED;
-pdfjsLib.AnnotationEventType.REMOVED;
-// etc.
-```
+- `SELECTED`: Fired when an annotation is selected
+- `UNSELECTED`: Fired when an annotation is unselected
+- `CREATED`: Fired when a new annotation is created
+- `MODIFIED`: Fired when an annotation is modified
+- `REMOVED`: Fired when an annotation is removed
+- `LAYER_LOADED`: Fired when an annotation layer is loaded
+- `SIDEBAR_TOGGLED`: Fired when the annotation sidebar is toggled
+- `CREATION_MODE_CHANGED`: Fired when the annotation creation mode changes
 
-### Event Listening
+### Legacy Custom Events
 
-You can register event listeners using the `on` method:
+- `pdfjs-annotations-viewer-select`: Fired when an annotation is selected
+- `pdfjs-annotations-viewer-unselect`: Fired when an annotation is unselected
+- `pdfjs-annotations-viewer-save-annotation`: Fired when an annotation is saved
+- postMessage events with `type: "pdfjs-annotations-viewer"`: Fired for batch operations
 
-```javascript
-annotationEventManager.on(pdfjsLib.AnnotationEventType.SELECTED, data => {
-  console.log(`Annotation selected: ${data.id} on page ${data.pageIndex + 1}`);
-  // Handle the selection
-});
-```
+## Event Data Structure
 
-### Annotation Operations
+The event log shows the complete data structure for each event. Click on an event in the log to expand it and see the full details.
 
-The API provides methods for performing operations on annotations:
+### Official API Event Example (CREATED)
 
-```javascript
-// Select an annotation
-annotationEventManager.selectAnnotation(id, pageIndex);
-
-// Create an annotation
-annotationEventManager.createAnnotation(type, properties, pageIndex);
-
-// Modify an annotation
-annotationEventManager.modifyAnnotation(id, properties);
-
-// Remove an annotation
-annotationEventManager.removeAnnotation(id);
-```
-
-### UI Control
-
-The API also provides methods for controlling the annotation UI:
-
-```javascript
-// Enable annotation creation mode
-annotationEventManager.enableAnnotationCreation(type);
-
-// Disable annotation creation mode
-annotationEventManager.disableAnnotationCreation();
-
-// Show the annotation sidebar
-annotationEventManager.showAnnotationSidebar();
-
-// Hide the annotation sidebar
-annotationEventManager.hideAnnotationSidebar();
-```
-
-## Event Data
-
-Each event type provides specific data in the callback:
-
-### Selection Events
-
-```javascript
+```json
 {
-  id: string,         // The annotation ID
-  pageIndex: number,  // The page index (0-based)
-  timestamp: number   // When the event occurred
+  "id": "annotation_123456",
+  "type": "ink",
+  "pageIndex": 0,
+  "properties": {
+    "color": [0, 102, 204],
+    "thickness": 3,
+    "opacity": 1.0,
+    "paths": [...]
+  }
 }
 ```
 
-### Creation/Modification Events
+### Legacy Custom Event Example (pdfjs-annotations-viewer-select)
 
-```javascript
+```json
 {
-  id: string,         // The annotation ID
-  type: string,       // The annotation type
-  pageIndex: number,  // The page index (0-based)
-  properties: any,    // The annotation properties
-  timestamp: number   // When the event occurred
+  "detail": {
+    "uniqueId": "annotation_123456",
+    "annotation": {
+      "type": "ink",
+      "color": [0, 102, 204],
+      "opacity": 1.0,
+      "thickness": 3,
+      "paths": [...]
+    }
+  }
 }
 ```
 
-## Notes
+## Implementation Details
 
-- This example uses the existing custom events for backward compatibility
-- The API is designed to work alongside the existing annotation system
-- The example demonstrates both the event-driven approach and the method-based approach
+The example demonstrates several important implementation patterns:
 
-## Further Reading
+1. **Initialization**: How to initialize the annotation system with PDF.js
+2. **Event Listening**: How to register for annotation events
+3. **Mode Switching**: How to enable and disable annotation creation modes
+4. **Parameter Handling**: How to customize annotation properties
+5. **Cross-version Compatibility**: How to handle different PDF.js API patterns
 
-For more details on the Annotation Events API, see the [annotations-api.md](../../annotations-api.md) document.
+## Related Documentation
+
+- [PDF.js API Documentation](https://mozilla.github.io/pdf.js/api/)
+- [Annotation Events API Reference](../../src/display/annotation_events.d.ts)
+- [Annotation Events Sandbox](../annotation-events-sandbox/): A more comprehensive testing environment
+
+## Browser Compatibility
+
+This example works in all modern browsers that support PDF.js. For best results, use the latest versions of Chrome, Firefox, Edge, or Safari.

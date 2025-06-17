@@ -1,0 +1,601 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF.js Annotation Events Sandbox</title>
+    <link rel="stylesheet" href="../../web/viewer.css" />
+    <link rel="stylesheet" href="annotation-events-sandbox.css" />
+    <!-- Emergency styling fixes -->
+    <link rel="stylesheet" href="emergency-styles.css" />
+
+    <!-- Import pdfjs as ESM -->
+    <script type="module">
+      import * as pdfjsLib from "../../build/generic/build/pdf.mjs";
+      window.pdfjsLib = pdfjsLib;
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "../../build/generic/build/pdf.worker.mjs";
+
+      // Debug CSS loading with more detail
+      console.log(
+        "CSS files loaded:",
+        Array.from(document.styleSheets).map(sheet => ({
+          href: sheet.href,
+          rules: sheet.cssRules ? sheet.cssRules.length : "No access to rules",
+        }))
+      );
+
+      // Add inline CSS for debugging
+      document.head.insertAdjacentHTML(
+        "beforeend",
+        `
+        <style>
+          /* Force sidebar to be visible and styled */
+          .sidebar {
+            width: 300px !important;
+            min-width: 300px !important;
+            border-left: 1px solid #ddd !important;
+            overflow: auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            background-color: white !important;
+          }
+          
+          /* Force panel styles */
+          .panel {
+            margin-bottom: 10px !important;
+            padding: 10px !important;
+            background-color: #fff !important;
+            border-bottom: 1px solid #ddd !important;
+          }
+          
+          /* Make sure controls are visible */
+          #controlPanel, #annotationsPanel, #eventLogPanel, #inspectorPanel {
+            display: block !important;
+          }
+        </style>
+      `
+      );
+    </script>
+    <!-- Import viewer.css resources (icons, images) -->
+    <style>
+      /* Fix missing icon images by providing absolute paths */
+      :root {
+        --loading-icon: url(../../web/images/loading.svg);
+        --treeitem-expanded-icon: url(../../web/images/treeitem-expanded.svg);
+        --treeitem-collapsed-icon: url(../../web/images/treeitem-collapsed.svg);
+        --toolbarButton-editorFreeText-icon: url(../../web/images/toolbarButton-editorFreeText.svg);
+        --toolbarButton-editorHighlight-icon: url(../../web/images/toolbarButton-editorHighlight.svg);
+        --toolbarButton-editorInk-icon: url(../../web/images/toolbarButton-editorInk.svg);
+        --toolbarButton-editorStamp-icon: url(../../web/images/toolbarButton-editorStamp.svg);
+        --toolbarButton-editorSignature-icon: url(../../web/images/toolbarButton-editorSignature.svg);
+        --toolbarButton-menuArrow-icon: url(../../web/images/toolbarButton-menuArrow.svg);
+        --toolbarButton-sidebarToggle-icon: url(../../web/images/toolbarButton-sidebarToggle.svg);
+        --toolbarButton-secondaryToolbarToggle-icon: url(../../web/images/toolbarButton-secondaryToolbarToggle.svg);
+        --toolbarButton-pageUp-icon: url(../../web/images/toolbarButton-pageUp.svg);
+        --toolbarButton-pageDown-icon: url(../../web/images/toolbarButton-pageDown.svg);
+        --toolbarButton-zoomOut-icon: url(../../web/images/toolbarButton-zoomOut.svg);
+        --toolbarButton-zoomIn-icon: url(../../web/images/toolbarButton-zoomIn.svg);
+        --toolbarButton-presentationMode-icon: url(../../web/images/toolbarButton-presentationMode.svg);
+        --toolbarButton-print-icon: url(../../web/images/toolbarButton-print.svg);
+        --toolbarButton-openFile-icon: url(../../web/images/toolbarButton-openFile.svg);
+        --toolbarButton-download-icon: url(../../web/images/toolbarButton-download.svg);
+        --toolbarButton-bookmark-icon: url(../../web/images/toolbarButton-bookmark.svg);
+        --toolbarButton-viewThumbnail-icon: url(../../web/images/toolbarButton-viewThumbnail.svg);
+        --toolbarButton-viewOutline-icon: url(../../web/images/toolbarButton-viewOutline.svg);
+        --toolbarButton-viewAttachments-icon: url(../../web/images/toolbarButton-viewAttachments.svg);
+        --toolbarButton-viewLayers-icon: url(../../web/images/toolbarButton-viewLayers.svg);
+        --toolbarButton-currentOutlineItem-icon: url(../../web/images/toolbarButton-currentOutlineItem.svg);
+        --toolbarButton-search-icon: url(../../web/images/toolbarButton-search.svg);
+      }
+    </style>
+    <!-- Load our modular JS code -->
+    <script type="module" src="js/index.js"></script>
+  </head>
+  <body>
+    <header>
+      <div class="toolbar">
+        <div class="title">
+          <h1>PDF.js Annotation Events Sandbox</h1>
+        </div>
+        <div class="file-controls">
+          <label for="fileInput" class="button">Choose PDF</label>
+          <input
+            type="file"
+            id="fileInput"
+            accept=".pdf"
+            style="display: none"
+          />
+          <span id="fileName">No file selected</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="container">
+        <div class="viewer-container">
+          <!-- Standard PDF.js Toolbar -->
+          <div class="toolbar">
+            <div id="toolbarContainer">
+              <div id="toolbarViewer">
+                <div id="toolbarViewerLeft" class="toolbarViewerLeft">
+                  <button
+                    id="sidebarToggle"
+                    class="toolbarButton"
+                    type="button"
+                    title="Toggle Sidebar"
+                    tabindex="11"
+                  >
+                    <span>Toggle Sidebar</span>
+                  </button>
+                  <div class="toolbarButtonSpacer"></div>
+                  <button
+                    id="viewFind"
+                    class="toolbarButton"
+                    title="Find in Document"
+                    tabindex="12"
+                  >
+                    <span>Find</span>
+                  </button>
+                  <div class="splitToolbarButton hiddenSmallView">
+                    <button
+                      id="previous"
+                      class="toolbarButton"
+                      title="Previous Page"
+                      tabindex="13"
+                    >
+                      <span>Previous</span>
+                    </button>
+                    <div class="splitToolbarButtonSeparator"></div>
+                    <button
+                      id="next"
+                      class="toolbarButton"
+                      title="Next Page"
+                      tabindex="14"
+                    >
+                      <span>Next</span>
+                    </button>
+                  </div>
+                  <input
+                    type="number"
+                    id="pageNumber"
+                    class="toolbarField"
+                    title="Page"
+                    value="1"
+                    min="1"
+                    tabindex="15"
+                  />
+                  <span id="numPages" class="toolbarLabel"></span>
+                </div>
+                <div id="toolbarViewerRight">
+                  <button
+                    id="presentationMode"
+                    class="toolbarButton"
+                    title="Switch to Presentation Mode"
+                    tabindex="31"
+                  >
+                    <span>Presentation Mode</span>
+                  </button>
+
+                  <button
+                    id="openFile"
+                    class="toolbarButton"
+                    title="Open File"
+                    tabindex="32"
+                  >
+                    <span>Open</span>
+                  </button>
+
+                  <button
+                    id="print"
+                    class="toolbarButton"
+                    title="Print"
+                    tabindex="33"
+                  >
+                    <span>Print</span>
+                  </button>
+
+                  <button
+                    id="download"
+                    class="toolbarButton"
+                    title="Download"
+                    tabindex="34"
+                  >
+                    <span>Download</span>
+                  </button>
+
+                  <div class="verticalToolbarSeparator hiddenSmallView"></div>
+
+                  <div
+                    id="editorModeButtons"
+                    class="splitToolbarButton toggled"
+                    role="radiogroup"
+                  >
+                    <button
+                      id="editorNone"
+                      class="toolbarButton active"
+                      title="Disable Annotation Editing"
+                      role="radio"
+                      aria-checked="true"
+                      tabindex="36"
+                    >
+                      <span>None</span>
+                    </button>
+                    <div class="splitToolbarButtonSeparator"></div>
+                    <button
+                      id="editorFreeText"
+                      class="toolbarButton"
+                      title="Add FreeText Annotation"
+                      role="radio"
+                      aria-checked="false"
+                      tabindex="37"
+                    >
+                      <span>FreeText</span>
+                    </button>
+                    <div class="splitToolbarButtonSeparator"></div>
+                    <button
+                      id="editorInk"
+                      class="toolbarButton"
+                      title="Add Ink Annotation"
+                      role="radio"
+                      aria-checked="false"
+                      tabindex="38"
+                      style="background-color: #0066cc; color: white"
+                    >
+                      <span>Ink</span>
+                    </button>
+                    <div class="splitToolbarButtonSeparator"></div>
+                    <button
+                      id="editorHighlight"
+                      class="toolbarButton"
+                      title="Add Highlight Annotation"
+                      role="radio"
+                      aria-checked="false"
+                      tabindex="39"
+                    >
+                      <span>Highlight</span>
+                    </button>
+                  </div>
+
+                  <div class="verticalToolbarSeparator"></div>
+
+                  <button
+                    id="secondaryToolbarToggle"
+                    class="toolbarButton"
+                    title="Tools"
+                    tabindex="35"
+                  >
+                    <span>Tools</span>
+                  </button>
+                </div>
+                <div id="toolbarViewerMiddle">
+                  <div class="splitToolbarButton">
+                    <button
+                      id="zoomOut"
+                      class="toolbarButton"
+                      title="Zoom Out"
+                      tabindex="21"
+                    >
+                      <span>Zoom Out</span>
+                    </button>
+                    <div class="splitToolbarButtonSeparator"></div>
+                    <button
+                      id="zoomIn"
+                      class="toolbarButton"
+                      title="Zoom In"
+                      tabindex="22"
+                    >
+                      <span>Zoom In</span>
+                    </button>
+                  </div>
+                  <span id="scaleSelectContainer" class="dropdownToolbarButton">
+                    <select id="scaleSelect" title="Zoom" tabindex="23">
+                      <option
+                        id="pageAutoOption"
+                        title=""
+                        value="auto"
+                        selected="selected"
+                      >
+                        Automatic Zoom
+                      </option>
+                      <option
+                        id="pageActualOption"
+                        title=""
+                        value="page-actual"
+                      >
+                        Actual Size
+                      </option>
+                      <option id="pageFitOption" title="" value="page-fit">
+                        Page Fit
+                      </option>
+                      <option id="pageWidthOption" title="" value="page-width">
+                        Page Width
+                      </option>
+                      <option
+                        id="customScaleOption"
+                        title=""
+                        value="custom"
+                        hidden="true"
+                      ></option>
+                      <option title="" value="0.5">50%</option>
+                      <option title="" value="0.75">75%</option>
+                      <option title="" value="1">100%</option>
+                      <option title="" value="1.25">125%</option>
+                      <option title="" value="1.5">150%</option>
+                      <option title="" value="2">200%</option>
+                      <option title="" value="3">300%</option>
+                      <option title="" value="4">400%</option>
+                    </select>
+                  </span>
+                </div>
+              </div>
+              <div id="loadingBar">
+                <div class="progress">
+                  <div class="glimmer"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Add the ink parameters toolbar -->
+          <div id="editorInkParamsToolbar" class="editorParamsToolbar hidden">
+            <div class="editorParamsSetter">
+              <label for="editorInkColor" class="editorParamsLabel"
+                >Color:</label
+              >
+              <input type="color" id="editorInkColor" value="#000000" />
+            </div>
+            <div class="editorParamsSetter">
+              <label for="editorInkThickness" class="editorParamsLabel"
+                >Thickness:</label
+              >
+              <input
+                type="range"
+                id="editorInkThickness"
+                min="1"
+                max="20"
+                value="5"
+              />
+              <span id="editorInkThicknessValue">5</span>
+            </div>
+            <div class="editorParamsSetter">
+              <label for="editorInkOpacity" class="editorParamsLabel"
+                >Opacity:</label
+              >
+              <input
+                type="range"
+                id="editorInkOpacity"
+                min="10"
+                max="100"
+                value="100"
+              />
+              <span id="editorInkOpacityValue">100%</span>
+            </div>
+          </div>
+
+          <div id="viewerContainer">
+            <div id="viewer" class="pdfViewer"></div>
+          </div>
+        </div>
+
+        <div class="sidebar">
+          <div class="panel-container">
+            <!-- Control Panel -->
+            <div class="panel" id="controlPanel">
+              <h2>Controls</h2>
+              <div class="panel-section">
+                <h3>Annotation Creation</h3>
+                <div class="button-group">
+                  <button id="createInkBtn" class="tool-button">Ink</button>
+                  <button id="createTextBtn" class="tool-button">Text</button>
+                  <button id="createHighlightBtn" class="tool-button">
+                    Highlight
+                  </button>
+                  <button id="disableCreationBtn" class="tool-button">
+                    Disable
+                  </button>
+                </div>
+              </div>
+
+              <div class="panel-section">
+                <h3>Send Events</h3>
+                <div class="form-group">
+                  <label for="eventType">Event Type:</label>
+                  <select id="eventType">
+                    <option value="select">Select Annotation</option>
+                    <option value="unselect">Unselect Annotation</option>
+                    <option value="modify">Modify Annotation</option>
+                    <option value="remove">Remove Annotation</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="annotationId">Annotation ID:</label>
+                  <select id="annotationId">
+                    <option value="">Select an annotation</option>
+                  </select>
+                </div>
+                <div class="form-group" id="pageIndexGroup">
+                  <label for="pageIndex">Page Index:</label>
+                  <input type="number" id="pageIndex" min="0" value="0" />
+                </div>
+                <div
+                  class="form-group"
+                  id="propertiesGroup"
+                  style="display: none"
+                >
+                  <label for="properties">Properties (JSON):</label>
+                  <textarea id="properties" rows="4">{}</textarea>
+                </div>
+                <button id="sendEventBtn" class="action-button">
+                  Send Event
+                </button>
+              </div>
+
+              <div class="panel-section">
+                <h3>UI Controls</h3>
+                <div class="button-group">
+                  <button id="showSidebarBtn" class="tool-button">
+                    Show Sidebar
+                  </button>
+                  <button id="hideSidebarBtn" class="tool-button">
+                    Hide Sidebar
+                  </button>
+                  <button id="clearLogBtn" class="tool-button">
+                    Clear Log
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Annotations List -->
+            <div class="panel" id="annotationsPanel">
+              <h2>Annotations</h2>
+              <div class="annotation-list-container">
+                <ul id="annotationList"></ul>
+              </div>
+            </div>
+
+            <!-- Event Log Panel with Tabs -->
+            <div class="panel" id="eventLogPanel">
+              <h2>Event Logs</h2>
+              <div class="tab-container">
+                <button class="tab active" data-target="apiEvents">
+                  API Events
+                </button>
+                <button class="tab" data-target="legacyEvents">
+                  Legacy Events
+                </button>
+                <button class="tab" data-target="explanationTab">
+                  Documentation
+                </button>
+              </div>
+
+              <!-- API Events Tab -->
+              <div id="apiEvents" class="event-log-tab active">
+                <div class="event-log-controls">
+                  <label>
+                    <input type="checkbox" id="autoScrollApi" checked />
+                    Auto-scroll
+                  </label>
+                  <select id="apiEventFilter">
+                    <option value="all">All Events</option>
+                    <option value="selected">Selection Events</option>
+                    <option value="created">Creation Events</option>
+                    <option value="modified">Modification Events</option>
+                    <option value="removed">Removal Events</option>
+                    <option value="ui">UI Events</option>
+                  </select>
+                  <button id="clearApiLogBtn" class="small-button">
+                    Clear
+                  </button>
+                </div>
+                <div id="apiEventLog" class="event-log"></div>
+              </div>
+
+              <!-- Legacy Events Tab -->
+              <div id="legacyEvents" class="event-log-tab">
+                <div class="event-log-controls">
+                  <label>
+                    <input type="checkbox" id="autoScrollLegacy" checked />
+                    Auto-scroll
+                  </label>
+                  <select id="legacyEventFilter">
+                    <option value="all">All Events</option>
+                    <option value="select">Selection Events</option>
+                    <option value="save">Save Events</option>
+                    <option value="message">Message Events</option>
+                  </select>
+                  <button id="clearLegacyLogBtn" class="small-button">
+                    Clear
+                  </button>
+                </div>
+                <div id="legacyEventLog" class="event-log"></div>
+              </div>
+
+              <!-- Documentation Tab -->
+              <div id="explanationTab" class="event-log-tab">
+                <div id="explanation">
+                  <h3>Annotation Events Comparison</h3>
+                  <p>
+                    This example demonstrates both the official PDF.js
+                    Annotation Events API and the legacy custom events.
+                  </p>
+
+                  <h4>Official API Events</h4>
+                  <p>
+                    The official Annotation Events API provides a standardized
+                    way to interact with PDF annotations through the
+                    <code>annotationEventManager</code>:
+                  </p>
+                  <ul>
+                    <li>
+                      Accessed via
+                      <code>pdfDocument.annotationEventManager</code>
+                    </li>
+                    <li>
+                      Provides typed events with consistent data structures
+                    </li>
+                    <li>
+                      Includes methods for managing annotations programmatically
+                    </li>
+                  </ul>
+
+                  <h4>Legacy Custom Events</h4>
+                  <p>
+                    The legacy events use custom DOM events with the pattern
+                    <code>pdfjs-annotations-*</code>:
+                  </p>
+                  <ul>
+                    <li>
+                      Dispatched directly to the <code>document</code> object
+                    </li>
+                    <li>
+                      Data is passed through the <code>detail</code> property
+                    </li>
+                    <li>
+                      Some events use <code>postMessage</code> for communication
+                    </li>
+                  </ul>
+
+                  <h4>Event Mapping</h4>
+                  <table class="mapping-table">
+                    <tr>
+                      <th>Official API Event</th>
+                      <th>Legacy Custom Event</th>
+                    </tr>
+                    <tr>
+                      <td>annotationSelected</td>
+                      <td>pdfjs-annotations-viewer-select</td>
+                    </tr>
+                    <tr>
+                      <td>annotationUnselected</td>
+                      <td>pdfjs-annotations-viewer-unselect</td>
+                    </tr>
+                    <tr>
+                      <td>annotationsSaved</td>
+                      <td>pdfjs-annotations-viewer-save-annotation</td>
+                    </tr>
+                    <tr>
+                      <td>annotationBatchSaved</td>
+                      <td>pdfjs-annotations-viewer (postMessage)</td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Inspector Panel -->
+            <div class="panel" id="inspectorPanel">
+              <h2>Inspector</h2>
+              <div id="inspector" class="inspector">
+                <p class="no-selection">No annotation selected</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- No script tag needed here as it's loaded as a module above -->
+  </body>
+</html>

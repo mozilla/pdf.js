@@ -38,6 +38,7 @@ import { clearGlobalCaches } from "./cleanup_helper.js";
 import { incrementalUpdate } from "./writer.js";
 import { PDFWorkerStream } from "./worker_stream.js";
 import { StructTreeRoot } from "./struct_tree.js";
+import { WorkerAnnotationHandler } from "./worker_annotation_handler.js";
 
 class WorkerTask {
   constructor(name) {
@@ -97,6 +98,8 @@ class WorkerMessageHandler {
     });
 
     handler.on("GetDocRequest", data => this.createDocumentHandler(data, port));
+
+    // Annotation event handlers will be set up later by WorkerAnnotationHandler
   }
 
   static createDocumentHandler(docParams, port) {
@@ -314,6 +317,10 @@ class WorkerMessageHandler {
     function setupDoc(data) {
       function onSuccess(doc) {
         ensureNotTerminated();
+
+        // Initialize the annotation event handler
+        new WorkerAnnotationHandler(handler, pdfManager);
+
         handler.send("GetDoc", { pdfInfo: doc });
       }
 

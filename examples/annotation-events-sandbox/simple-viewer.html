@@ -1,0 +1,495 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF.js Annotation Events Sandbox (Simple Viewer)</title>
+    <script type="module">
+      import * as pdfjsLib from "../../build/generic/build/pdf.mjs";
+      window.pdfjsLib = pdfjsLib;
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "../../build/generic/build/pdf.worker.mjs";
+    </script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        height: 100vh;
+      }
+      #viewerContainer {
+        flex: 1;
+        overflow: auto;
+        padding: 10px;
+      }
+      #eventLog {
+        width: 400px;
+        background-color: #f5f5f5;
+        padding: 10px;
+        overflow: auto;
+        border-left: 1px solid #ccc;
+      }
+      #eventLog h2 {
+        margin-top: 0;
+      }
+      .event {
+        margin-bottom: 10px;
+        padding: 10px;
+        background-color: white;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      .event-type {
+        font-weight: bold;
+        color: #0066cc;
+      }
+      .event-time {
+        font-size: 0.8em;
+        color: #666;
+      }
+      .event-details {
+        margin-top: 5px;
+        font-family: monospace;
+        white-space: pre-wrap;
+        font-size: 0.9em;
+        background-color: #f9f9f9;
+        padding: 5px;
+        border-radius: 2px;
+        max-height: 200px;
+        overflow: auto;
+      }
+      #toolbar {
+        padding: 10px;
+        background-color: #f0f0f0;
+        border-bottom: 1px solid #ccc;
+      }
+      button {
+        padding: 5px 10px;
+        margin-right: 5px;
+        background-color: #0066cc;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #0055aa;
+      }
+      #canvasContainer {
+        position: relative;
+      }
+
+      /* Tabs for separating event types */
+      .tab-container {
+        display: flex;
+        background-color: #eaeaea;
+        border-bottom: 1px solid #ccc;
+      }
+      .tab {
+        padding: 8px 15px;
+        cursor: pointer;
+        border: none;
+        background: none;
+        flex: 1;
+        text-align: center;
+        border-bottom: 3px solid transparent;
+      }
+      .tab.active {
+        background-color: #fff;
+        font-weight: bold;
+        border-bottom: 3px solid #0066cc;
+      }
+      .event-log-tab {
+        display: none;
+        height: 100%;
+        overflow: hidden;
+      }
+      .event-log-tab.active {
+        display: block;
+      }
+      #apiEvents,
+      #legacyEvents {
+        height: calc(100% - 40px);
+        overflow-y: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="viewerContainer">
+      <div id="toolbar">
+        <button id="prevPage">Previous</button>
+        <button id="nextPage">Next</button>
+        <span id="pageInfo"></span>
+        <button id="toggleSidebar" style="margin-left: 20px">
+          Toggle Sidebar
+        </button>
+        <select id="annotationMode" style="margin-left: 10px">
+          <option value="none">No Annotations</option>
+          <option value="freeText">FreeText</option>
+          <option value="ink">Ink</option>
+          <option value="highlight">Highlight</option>
+        </select>
+      </div>
+      <div id="canvasContainer"></div>
+    </div>
+    <div id="eventLog">
+      <h2>Annotation Events</h2>
+      <div class="tab-container">
+        <button class="tab active" data-target="apiEvents">API Events</button>
+        <button class="tab" data-target="legacyEvents">Legacy Events</button>
+      </div>
+      <div id="apiEvents" class="event-log-tab active">
+        <button id="clearApiLog">Clear API Log</button>
+        <div id="apiEventsContainer"></div>
+      </div>
+      <div id="legacyEvents" class="event-log-tab">
+        <button id="clearLegacyLog">Clear Legacy Log</button>
+        <div id="legacyEventsContainer"></div>
+      </div>
+    </div>
+
+    <script>
+      // Initialize PDF.js once the document is fully loaded
+      document.addEventListener("DOMContentLoaded", () => {
+        // Make sure PDF.js is available
+        if (!window.pdfjsLib) {
+          console.error("PDF.js library not loaded");
+          return;
+        }
+
+        // Now we can use pdfjsLib
+        const pdfjsLib = window.pdfjsLib;
+
+        // PDF document loading
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+        let scale = 1.5;
+        let canvas = null;
+        let ctx = null;
+        let annotationEventManager = null;
+
+        // Initialize tabs
+        function initTabs() {
+          const tabs = document.querySelectorAll(".tab");
+          tabs.forEach(tab => {
+            tab.addEventListener("click", () => {
+              // Deactivate all tabs
+              tabs.forEach(t => t.classList.remove("active"));
+
+              // Activate clicked tab
+              tab.classList.add("active");
+
+              // Hide all content
+              document.querySelectorAll(".event-log-tab").forEach(content => {
+                content.classList.remove("active");
+              });
+
+              // Show corresponding content
+              const targetId = tab.getAttribute("data-target");
+              document.getElementById(targetId).classList.add("active");
+            });
+          });
+        }
+
+        // Load a PDF document
+        const loadPdf = async url => {
+          try {
+            // Load the PDF document
+            const loadingTask = pdfjsLib.getDocument(url);
+            pdfDoc = await loadingTask.promise;
+
+            // Get the annotation event manager
+            annotationEventManager = pdfDoc.annotationEventManager;
+
+            // Register event listeners
+            registerAnnotationEventListeners();
+
+            // Initial page rendering
+            document.getElementById("pageInfo").textContent =
+              `Page ${pageNum} of ${pdfDoc.numPages}`;
+            renderPage(pageNum);
+          } catch (error) {
+            console.error("Error loading PDF:", error);
+          }
+        };
+
+        // Render a specific page
+        const renderPage = async num => {
+          pageRendering = true;
+
+          // Get the page
+          const page = await pdfDoc.getPage(num);
+
+          // Create a canvas for the page
+          const viewport = page.getViewport({ scale });
+
+          // Remove previous canvas if it exists
+          const container = document.getElementById("canvasContainer");
+          if (canvas) {
+            container.removeChild(canvas);
+          }
+
+          // Create a new canvas
+          canvas = document.createElement("canvas");
+          container.appendChild(canvas);
+          ctx = canvas.getContext("2d");
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+
+          // Render the page
+          const renderContext = {
+            canvasContext: ctx,
+            viewport: viewport,
+          };
+
+          const renderTask = page.render(renderContext);
+
+          // Wait for rendering to finish
+          await renderTask.promise;
+          pageRendering = false;
+
+          // Check if there's a pending page
+          if (pageNumPending !== null) {
+            renderPage(pageNumPending);
+            pageNumPending = null;
+          }
+        };
+
+        // Go to previous page
+        const previousPage = () => {
+          if (pageNum <= 1) {
+            return;
+          }
+          pageNum--;
+          document.getElementById("pageInfo").textContent =
+            `Page ${pageNum} of ${pdfDoc.numPages}`;
+          queueRenderPage(pageNum);
+        };
+
+        // Go to next page
+        const nextPage = () => {
+          if (pageNum >= pdfDoc.numPages) {
+            return;
+          }
+          pageNum++;
+          document.getElementById("pageInfo").textContent =
+            `Page ${pageNum} of ${pdfDoc.numPages}`;
+          queueRenderPage(pageNum);
+        };
+
+        // Queue rendering of a page
+        const queueRenderPage = num => {
+          if (pageRendering) {
+            pageNumPending = num;
+          } else {
+            renderPage(num);
+          }
+        };
+
+        // Toggle annotation sidebar
+        const toggleSidebar = async () => {
+          try {
+            const sidebarVisible =
+              document.getElementById("toggleSidebar").textContent ===
+              "Hide Sidebar";
+
+            if (sidebarVisible) {
+              await annotationEventManager.hideAnnotationSidebar();
+              document.getElementById("toggleSidebar").textContent =
+                "Show Sidebar";
+            } else {
+              await annotationEventManager.showAnnotationSidebar();
+              document.getElementById("toggleSidebar").textContent =
+                "Hide Sidebar";
+            }
+          } catch (error) {
+            console.error("Error toggling sidebar:", error);
+          }
+        };
+
+        // Change annotation creation mode
+        const changeAnnotationMode = async mode => {
+          try {
+            if (mode === "none") {
+              await annotationEventManager.disableAnnotationCreation();
+            } else {
+              await annotationEventManager.enableAnnotationCreation(mode);
+            }
+          } catch (error) {
+            console.error("Error changing annotation mode:", error);
+          }
+        };
+
+        // Register annotation event listeners
+        const registerAnnotationEventListeners = () => {
+          // Official API event types
+          const eventTypes = [
+            "annotationInitialized",
+            "annotationLayerLoaded",
+            "annotationSelected",
+            "annotationUnselected",
+            "annotationCreated",
+            "annotationModified",
+            "annotationRemoved",
+            "annotationsSaved",
+            "annotationsLoaded",
+            "annotationSidebarToggled",
+            "annotationCreationModeChanged",
+          ];
+
+          for (const eventType of eventTypes) {
+            annotationEventManager.on(eventType, detail => {
+              logApiEvent(eventType, detail);
+            });
+          }
+
+          // Legacy custom events
+          document.addEventListener(
+            "pdfjs-annotations-viewer-select",
+            event => {
+              logLegacyEvent("pdfjs-annotations-viewer-select", event.detail);
+            }
+          );
+
+          document.addEventListener(
+            "pdfjs-annotations-viewer-unselect",
+            event => {
+              logLegacyEvent("pdfjs-annotations-viewer-unselect", event.detail);
+            }
+          );
+
+          document.addEventListener(
+            "pdfjs-annotations-viewer-save-annotation",
+            event => {
+              logLegacyEvent(
+                "pdfjs-annotations-viewer-save-annotation",
+                event.detail
+              );
+            }
+          );
+
+          // For postMessage events
+          window.addEventListener("message", event => {
+            if (event.data && event.data.type === "pdfjs-annotations-viewer") {
+              logLegacyEvent(
+                `pdfjs-annotations-viewer (${event.data.event})`,
+                event.data
+              );
+            }
+          });
+        };
+
+        // Log an API event to the API event log
+        const logApiEvent = (eventType, detail) => {
+          const eventsContainer = document.getElementById("apiEventsContainer");
+
+          // Create event element
+          const eventElement = document.createElement("div");
+          eventElement.className = "event";
+
+          // Create event type element
+          const eventTypeElement = document.createElement("div");
+          eventTypeElement.className = "event-type";
+          eventTypeElement.textContent = eventType;
+
+          // Create event time element
+          const eventTimeElement = document.createElement("div");
+          eventTimeElement.className = "event-time";
+          eventTimeElement.textContent = new Date().toLocaleTimeString();
+
+          // Create event details element
+          const eventDetailsElement = document.createElement("div");
+          eventDetailsElement.className = "event-details";
+          eventDetailsElement.textContent = JSON.stringify(detail, null, 2);
+
+          // Append elements
+          eventElement.appendChild(eventTypeElement);
+          eventElement.appendChild(eventTimeElement);
+          eventElement.appendChild(eventDetailsElement);
+
+          // Add to events container
+          eventsContainer.insertBefore(
+            eventElement,
+            eventsContainer.firstChild
+          );
+        };
+
+        // Log a legacy event to the legacy event log
+        const logLegacyEvent = (eventType, detail) => {
+          const eventsContainer = document.getElementById(
+            "legacyEventsContainer"
+          );
+
+          // Create event element
+          const eventElement = document.createElement("div");
+          eventElement.className = "event";
+
+          // Create event type element
+          const eventTypeElement = document.createElement("div");
+          eventTypeElement.className = "event-type";
+          eventTypeElement.textContent = eventType;
+
+          // Create event time element
+          const eventTimeElement = document.createElement("div");
+          eventTimeElement.className = "event-time";
+          eventTimeElement.textContent = new Date().toLocaleTimeString();
+
+          // Create event details element
+          const eventDetailsElement = document.createElement("div");
+          eventDetailsElement.className = "event-details";
+          eventDetailsElement.textContent = JSON.stringify(detail, null, 2);
+
+          // Append elements
+          eventElement.appendChild(eventTypeElement);
+          eventElement.appendChild(eventTimeElement);
+          eventElement.appendChild(eventDetailsElement);
+
+          // Add to events container
+          eventsContainer.insertBefore(
+            eventElement,
+            eventsContainer.firstChild
+          );
+        };
+
+        // Clear the API event log
+        const clearApiLog = () => {
+          document.getElementById("apiEventsContainer").innerHTML = "";
+        };
+
+        // Clear the legacy event log
+        const clearLegacyLog = () => {
+          document.getElementById("legacyEventsContainer").innerHTML = "";
+        };
+
+        // Event listeners
+        document
+          .getElementById("prevPage")
+          .addEventListener("click", previousPage);
+        document.getElementById("nextPage").addEventListener("click", nextPage);
+        document
+          .getElementById("toggleSidebar")
+          .addEventListener("click", toggleSidebar);
+        document
+          .getElementById("clearApiLog")
+          .addEventListener("click", clearApiLog);
+        document
+          .getElementById("clearLegacyLog")
+          .addEventListener("click", clearLegacyLog);
+        document
+          .getElementById("annotationMode")
+          .addEventListener("change", e => {
+            changeAnnotationMode(e.target.value);
+          });
+
+        // Initialize tabs
+        initTabs();
+
+        // Load a sample PDF
+        loadPdf("../../web/compressed.tracemonkey-pldi-09.pdf");
+      });
+    </script>
+  </body>
+</html>

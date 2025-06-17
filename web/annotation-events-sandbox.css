@@ -1,0 +1,395 @@
+/* PDF.js Annotation Events Sandbox Styles */
+
+:root {
+  --primary-color: #0074d9;
+  --secondary-color: #f0f0f0;
+  --border-color: #ddd;
+  --text-color: #333;
+  --panel-bg: #fff;
+  --panel-header-bg: #f5f5f5;
+  --success-color: #2ecc40;
+  --warning-color: #ff851b;
+  --error-color: #ff4136;
+  --info-color: #39cccc;
+  --selected-bg: #e0f0ff;
+  --hover-bg: #f5f5f5;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  color: var(--text-color);
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 0.5rem 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.file-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.button {
+  background-color: white;
+  color: var(--primary-color);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  display: inline-block;
+}
+
+.button:hover {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+main {
+  flex: 1;
+  overflow: hidden;
+}
+
+.container {
+  display: flex;
+  height: 100%;
+}
+
+.viewer-container {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+#viewerContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: auto;
+  background-color: #888;
+}
+
+.sidebar {
+  width: 350px;
+  border-left: 1px solid var(--border-color);
+  background-color: var(--panel-bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.panel {
+  border-bottom: 1px solid var(--border-color);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel h2 {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  background-color: var(--panel-header-bg);
+  font-size: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.panel-section {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.panel-section:last-child {
+  border-bottom: none;
+}
+
+.panel-section h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tool-button {
+  background-color: var(--secondary-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.tool-button:hover {
+  background-color: var(--hover-bg);
+}
+
+.tool-button.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.action-button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+
+.action-button:hover {
+  opacity: 0.9;
+}
+
+.form-group {
+  margin-bottom: 0.75rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.form-group select,
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.4rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  box-sizing: border-box;
+}
+
+.form-group textarea {
+  font-family: monospace;
+  resize: vertical;
+}
+
+/* Annotations List */
+.annotation-list-container {
+  overflow-y: auto;
+  flex: 1;
+}
+
+#annotationList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.annotation-item {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.annotation-item:hover {
+  background-color: var(--hover-bg);
+}
+
+.annotation-item.selected {
+  background-color: var(--selected-bg);
+}
+
+.annotation-item .annotation-type {
+  font-weight: bold;
+}
+
+.annotation-item .annotation-page {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.annotation-item .annotation-id {
+  color: #999;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  word-break: break-all;
+}
+
+/* Event Log */
+.event-log-controls {
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.85rem;
+}
+
+.event-log {
+  overflow-y: auto;
+  flex: 1;
+  padding: 0.5rem;
+  font-family: monospace;
+  font-size: 0.8rem;
+  background-color: #f9f9f9;
+}
+
+.event-entry {
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 4px;
+  border-left: 3px solid #ccc;
+}
+
+.event-entry.selected {
+  border-left-color: var(--primary-color);
+  background-color: rgba(0, 116, 217, 0.05);
+}
+
+.event-entry.created {
+  border-left-color: var(--success-color);
+  background-color: rgba(46, 204, 64, 0.05);
+}
+
+.event-entry.modified {
+  border-left-color: var(--warning-color);
+  background-color: rgba(255, 133, 27, 0.05);
+}
+
+.event-entry.removed {
+  border-left-color: var(--error-color);
+  background-color: rgba(255, 65, 54, 0.05);
+}
+
+.event-entry.ui {
+  border-left-color: var(--info-color);
+  background-color: rgba(57, 204, 204, 0.05);
+}
+
+.event-time {
+  color: #999;
+  font-size: 0.75rem;
+}
+
+.event-type {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+
+.event-data {
+  margin-top: 0.25rem;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.event-data-toggle {
+  cursor: pointer;
+  color: var(--primary-color);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  user-select: none;
+}
+
+/* Inspector Panel */
+.inspector {
+  padding: 1rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.inspector .no-selection {
+  color: #999;
+  font-style: italic;
+  text-align: center;
+}
+
+.inspector-section {
+  margin-bottom: 1rem;
+}
+
+.inspector-section h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.25rem;
+}
+
+.inspector-property {
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.inspector-property .property-name {
+  font-weight: bold;
+}
+
+.inspector-property .property-value {
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.inspector-json {
+  background-color: #f5f5f5;
+  padding: 0.5rem;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: 50%;
+    border-left: none;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .viewer-container {
+    height: 50%;
+  }
+}

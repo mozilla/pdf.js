@@ -5,7 +5,9 @@
     <title>PDF.js Annotation Events Example</title>
     <style>
       body {
-        font-family: Arial, sans-serif;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
         margin: 0;
         padding: 0;
         display: flex;
@@ -13,11 +15,61 @@
         height: 100vh;
       }
       header {
-        background-color: #f0f0f0;
-        padding: 10px;
-        border-bottom: 1px solid #ccc;
+        background-color: #2196f3;
+        color: white;
+        padding: 10px 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
       }
-      .container {
+      h1 {
+        margin: 0;
+        font-size: 24px;
+      }
+      .controls {
+        display: flex;
+        gap: 10px;
+        padding: 10px;
+        background-color: #f5f5f5;
+        border-bottom: 1px solid #ddd;
+      }
+      .tools {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      button {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 6px 12px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      button:hover {
+        background-color: #f0f0f0;
+      }
+      button.active {
+        background-color: #2196f3;
+        color: white;
+        border-color: #2196f3;
+      }
+      .ink-params {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-left: 15px;
+      }
+      .ink-params label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 14px;
+      }
+      .ink-params input {
+        vertical-align: middle;
+      }
+      .main-container {
         display: flex;
         flex: 1;
         overflow: hidden;
@@ -25,50 +77,95 @@
       #viewerContainer {
         flex: 1;
         overflow: auto;
+        background-color: #f8f9fa;
+        border-right: 1px solid #ddd;
       }
-      #annotationPanel {
+      #viewer {
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .page {
+        position: relative;
+        margin: 20px auto;
+        background-color: white;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        border-radius: 2px;
+      }
+      canvas {
+        display: block;
+        margin: 0 auto;
+      }
+      .annotationLayer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+      }
+      .annotationEditorLayer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+      }
+      .sidebar {
         width: 300px;
-        border-left: 1px solid #ccc;
-        padding: 10px;
         overflow: auto;
+        background-color: white;
+        display: flex;
+        flex-direction: column;
       }
-      #annotationList {
-        list-style-type: none;
-        padding: 0;
+      .sidebar-header {
+        padding: 10px;
+        background-color: #f5f5f5;
+        border-bottom: 1px solid #ddd;
+        font-weight: bold;
+      }
+      .event-list {
+        list-style: none;
         margin: 0;
+        padding: 0;
+        overflow-y: auto;
+        flex: 1;
       }
-      .annotation-item {
-        padding: 8px;
-        margin-bottom: 5px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
+      .event-item {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
         cursor: pointer;
       }
-      .annotation-item:hover {
+      .event-item:hover {
         background-color: #f5f5f5;
       }
-      .annotation-item.selected {
-        background-color: #e0f0ff;
-        border-color: #a0c0ff;
+      .event-item.api {
+        border-left: 4px solid #2196f3;
       }
-      .annotation-controls {
-        margin-top: 10px;
-        padding: 10px;
-        border-top: 1px solid #ccc;
+      .event-timestamp {
+        font-size: 12px;
+        color: #666;
       }
-      button {
-        padding: 5px 10px;
-        margin-right: 5px;
-        cursor: pointer;
+      .event-title {
+        font-weight: bold;
+        margin-bottom: 5px;
       }
-      #eventLog {
-        height: 150px;
-        overflow: auto;
-        border: 1px solid #ccc;
-        padding: 5px;
-        margin-top: 10px;
+      .event-details {
+        display: none;
+        margin-top: 8px;
+        padding: 8px;
+        background-color: #f9f9f9;
+        border-radius: 4px;
         font-family: monospace;
         font-size: 12px;
+        white-space: pre-wrap;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+      .event-item.expanded .event-details {
+        display: block;
+      }
+      .hidden {
+        display: none;
       }
     </style>
   </head>
@@ -76,202 +173,759 @@
     <header>
       <h1>PDF.js Annotation Events Example</h1>
       <div>
-        <button id="createInkBtn">Create Ink Annotation</button>
-        <button id="createTextBtn">Create Text Annotation</button>
-        <button id="toggleSidebarBtn">Toggle Sidebar</button>
+        <label for="pdf-file">Choose PDF:</label>
+        <input type="file" id="pdf-file" accept=".pdf" />
       </div>
     </header>
 
-    <div class="container">
-      <div id="viewerContainer">
-        <iframe id="viewer" width="100%" height="100%"></iframe>
+    <div class="controls">
+      <div class="tools">
+        <label>Annotation Tools:</label>
+        <button id="enableInkBtn" title="Ink annotation">Ink</button>
+        <button id="enableTextBtn" title="Text annotation">Text</button>
+        <button id="enableHighlightBtn" title="Highlight annotation">
+          Highlight
+        </button>
+        <button id="disableBtn" title="Disable annotation creation">
+          Disable
+        </button>
       </div>
 
-      <div id="annotationPanel">
-        <h2>Annotations</h2>
-        <ul id="annotationList"></ul>
-
-        <div class="annotation-controls">
-          <h3>Event Log</h3>
-          <div id="eventLog"></div>
-        </div>
+      <div id="inkParams" class="ink-params hidden">
+        <label>
+          Color:
+          <input type="color" id="inkColor" value="#0066cc" />
+        </label>
+        <label>
+          Thickness:
+          <input type="range" id="inkThickness" min="1" max="10" value="3" />
+          <span id="thicknessValue">3</span>
+        </label>
+        <label>
+          Opacity:
+          <input type="range" id="inkOpacity" min="10" max="100" value="100" />
+          <span id="opacityValue">100%</span>
+        </label>
       </div>
     </div>
 
-    <script src="../../build/generic/build/pdf.js"></script>
-    <script>
-      // Configure PDF.js worker
+    <div class="main-container">
+      <div id="viewerContainer">
+        <div id="viewer"></div>
+      </div>
+
+      <div class="sidebar">
+        <div class="sidebar-header">
+          Annotation Events
+          <button id="clearEventsBtn" style="float: right; padding: 2px 5px">
+            Clear
+          </button>
+        </div>
+        <ul id="eventList" class="event-list"></ul>
+      </div>
+    </div>
+
+    <script type="module">
+      // Import PDF.js
+      import * as pdfjsLib from "../../build/generic/build/pdf.mjs";
+
+      // Configure the worker
       pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "../../build/generic/build/pdf.worker.js";
-
-      // Sample PDF URL - replace with your own PDF
-      const pdfUrl = "../../web/compressed.tracemonkey-pldi-09.pdf";
-
-      // State variables
-      let pdfDocument = null;
-      let annotations = [];
-      let selectedAnnotationId = null;
+        "../../build/generic/build/pdf.worker.mjs";
 
       // DOM elements
       const viewer = document.getElementById("viewer");
-      const annotationList = document.getElementById("annotationList");
-      const eventLog = document.getElementById("eventLog");
-      const createInkBtn = document.getElementById("createInkBtn");
-      const createTextBtn = document.getElementById("createTextBtn");
-      const toggleSidebarBtn = document.getElementById("toggleSidebarBtn");
+      const pdfFileInput = document.getElementById("pdf-file");
+      const eventList = document.getElementById("eventList");
+      const clearEventsBtn = document.getElementById("clearEventsBtn");
+      const enableInkBtn = document.getElementById("enableInkBtn");
+      const enableTextBtn = document.getElementById("enableTextBtn");
+      const enableHighlightBtn = document.getElementById("enableHighlightBtn");
+      const disableBtn = document.getElementById("disableBtn");
+      const inkParams = document.getElementById("inkParams");
+      const inkColor = document.getElementById("inkColor");
+      const inkThickness = document.getElementById("inkThickness");
+      const thicknessValue = document.getElementById("thicknessValue");
+      const inkOpacity = document.getElementById("inkOpacity");
+      const opacityValue = document.getElementById("opacityValue");
 
-      // Initialize the viewer
-      function initViewer() {
-        // Set the viewer source to the PDF.js web viewer with our PDF
-        viewer.src = "../../web/viewer.html?file=" + encodeURIComponent(pdfUrl);
+      // State variables
+      let pdfDocument = null;
+      let currentActiveButton = null;
 
-        // Wait for the viewer to load
-        viewer.onload = function () {
-          // Get access to the PDF.js viewer application
-          const viewerWindow = viewer.contentWindow;
-          const PDFViewerApplication = viewerWindow.PDFViewerApplication;
+      // Initialize the application
+      function init() {
+        // Listen for PDF file selection
+        pdfFileInput.addEventListener("change", loadPDF);
 
-          // Wait for PDF.js to initialize
-          viewerWindow.addEventListener(
-            "pdfjs-annotations-viewer-initialized",
-            function () {
-              logEvent("PDF.js initialized");
+        // Setup annotation tool buttons
+        enableInkBtn.addEventListener("click", () =>
+          enableAnnotationCreation("ink")
+        );
+        enableTextBtn.addEventListener("click", () =>
+          enableAnnotationCreation("freeText")
+        );
+        enableHighlightBtn.addEventListener("click", () =>
+          enableAnnotationCreation("highlight")
+        );
+        disableBtn.addEventListener("click", disableAnnotationCreation);
 
-              // Get the PDF document
-              pdfDocument = PDFViewerApplication.pdfDocument;
+        // Setup ink parameter controls
+        inkColor.addEventListener("input", updateInkParams);
+        inkThickness.addEventListener("input", () => {
+          thicknessValue.textContent = inkThickness.value;
+          updateInkParams();
+        });
+        inkOpacity.addEventListener("input", () => {
+          opacityValue.textContent = `${inkOpacity.value}%`;
+          updateInkParams();
+        });
 
-              // Set up event listeners using the new API
-              setupEventListeners(pdfDocument);
+        // Setup event list
+        clearEventsBtn.addEventListener("click", clearEvents);
+
+        // Load a default PDF
+        fetch("../../web/compressed.tracemonkey-pldi-09.pdf")
+          .then(response => response.arrayBuffer())
+          .then(data => {
+            const buffer = new Uint8Array(data);
+            loadPDFBytes(buffer);
+          })
+          .catch(error => {
+            console.error("Error loading default PDF:", error);
+          });
+      }
+
+      // Load a PDF from a file input
+      function loadPDF(event) {
+        const file = event.target.files[0];
+        if (!file || file.type !== "application/pdf") {
+          console.error("Not a valid PDF file");
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const buffer = new Uint8Array(e.target.result);
+          loadPDFBytes(buffer);
+        };
+        reader.readAsArrayBuffer(file);
+      }
+
+      // Load a PDF from a Uint8Array buffer
+      function loadPDFBytes(buffer) {
+        // Clean up existing document
+        if (pdfDocument) {
+          pdfDocument.destroy();
+          pdfDocument = null;
+          viewer.innerHTML = "";
+        }
+
+        // Reset UI
+        disableAnnotationCreation();
+        clearEvents();
+
+        // Load the document
+        pdfjsLib
+          .getDocument(buffer)
+          .promise.then(doc => {
+            pdfDocument = doc;
+            logEvent("PDF document loaded", { numPages: doc.numPages });
+
+            // Load all pages
+            let pendingPages = doc.numPages;
+            for (let i = 1; i <= doc.numPages; i++) {
+              doc.getPage(i).then(page => {
+                renderPage(page, i - 1);
+                pendingPages--;
+                if (pendingPages === 0) {
+                  setupAnnotationEvents();
+                }
+              });
             }
+          })
+          .catch(error => {
+            console.error("Error loading PDF:", error);
+          });
+      }
+
+      // Render a PDF page
+      function renderPage(page, pageIndex) {
+        const scale = 1.0;
+        const viewport = page.getViewport({ scale });
+
+        // Create page div
+        const pageDiv = document.createElement("div");
+        pageDiv.className = "page";
+        pageDiv.dataset.pageIndex = pageIndex;
+        pageDiv.dataset.pageNumber = pageIndex + 1;
+        pageDiv.style.width = `${viewport.width}px`;
+        pageDiv.style.height = `${viewport.height}px`;
+
+        // Create canvas
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        pageDiv.appendChild(canvas);
+
+        // Create annotation layer div
+        const annotationLayerDiv = document.createElement("div");
+        annotationLayerDiv.className = "annotationLayer";
+        pageDiv.appendChild(annotationLayerDiv);
+
+        // Create annotation editor layer div
+        const annotationEditorLayerDiv = document.createElement("div");
+        annotationEditorLayerDiv.className = "annotationEditorLayer";
+        pageDiv.appendChild(annotationEditorLayerDiv);
+
+        // Add to viewer
+        viewer.appendChild(pageDiv);
+
+        // Render the page
+        const renderContext = {
+          canvasContext: context,
+          viewport,
+          annotationMode: pdfjsLib.AnnotationMode.ENABLE_FORMS,
+        };
+
+        page.render(renderContext).promise.then(() => {
+          logEvent(`Page ${pageIndex + 1} rendered`, { scale });
+
+          // Initialize annotation layers
+          initAnnotationLayers(page, pageDiv, viewport, pageIndex);
+        });
+      }
+
+      // Initialize annotation layers for a page
+      function initAnnotationLayers(page, pageDiv, viewport, pageIndex) {
+        const annotationLayerDiv = pageDiv.querySelector(".annotationLayer");
+        const annotationEditorLayerDiv = pageDiv.querySelector(
+          ".annotationEditorLayer"
+        );
+
+        // Set up the annotation layer
+        page.getAnnotations().then(annotations => {
+          if (annotations.length > 0) {
+            logEvent(
+              `Page ${pageIndex + 1} has ${annotations.length} annotations`
+            );
+          }
+
+          // Create the link service
+          const linkService = {
+            navigateTo: dest => console.log("Navigate to:", dest),
+            getDestinationHash: dest =>
+              "#" + (typeof dest === "string" ? dest : JSON.stringify(dest)),
+            getAnchorUrl: hash => "#" + hash,
+            page: pageIndex + 1,
+            rotation: 0,
+            isAttachedToDOM: true,
+            eventBus: new pdfjsLib.EventBus(),
+          };
+
+          // Create and render the annotation layer
+          const annotationLayer = new pdfjsLib.AnnotationLayer({
+            viewport: viewport.clone({ dontFlip: true }),
+            div: annotationLayerDiv,
+            annotationStorage: pdfDocument.annotationStorage,
+            page,
+            linkService,
+          });
+
+          annotationLayer.render({
+            annotations,
+            viewport: viewport.clone({ dontFlip: true }),
+            linkService,
+          });
+
+          // Set up the annotation editor layer
+          try {
+            // Ensure AnnotationEditorLayer is available
+            if (typeof pdfjsLib.AnnotationEditorLayer !== "function") {
+              throw new Error(
+                "AnnotationEditorLayer not available in this PDF.js build"
+              );
+            }
+
+            // Determine editor type constants
+            let AnnotationEditorType;
+            if (pdfjsLib.PDFAnnotationEditorType) {
+              AnnotationEditorType = pdfjsLib.PDFAnnotationEditorType;
+            } else if (pdfjsLib.AnnotationEditorType) {
+              AnnotationEditorType = pdfjsLib.AnnotationEditorType;
+            } else {
+              AnnotationEditorType = {
+                NONE: 0,
+                FREETEXT: 1,
+                INK: 3,
+                HIGHLIGHT: 4,
+              };
+            }
+
+            // Set up UI manager for editor
+            const uiManager = {
+              updateUI: function (mode) {
+                console.log("UI Manager: updateUI called with mode", mode);
+              },
+              addEditListeners: function () {
+                console.log("UI Manager: addEditListeners called");
+              },
+              enterEditMode: function () {
+                console.log("UI Manager: enterEditMode called");
+                return true;
+              },
+              getMode: function () {
+                return AnnotationEditorType.NONE;
+              },
+            };
+
+            // Create editor options
+            const options = {
+              viewport: viewport.clone({ dontFlip: true }),
+              div: annotationEditorLayerDiv,
+              annotationStorage: pdfDocument.annotationStorage,
+              page,
+              pageIndex,
+              l10n: {
+                getLanguage: () => "en-US",
+                get: (property, args, fallback) => fallback || property,
+              },
+              accessibilityManager: null,
+              linkService,
+              mode: AnnotationEditorType.NONE,
+              annotationEditorUIManager: uiManager,
+              eventBus: linkService.eventBus,
+            };
+
+            // Add editing params if that pattern is detected
+            if (
+              pdfjsLib.AnnotationEditorLayer.toString().includes(
+                "editingParams"
+              )
+            ) {
+              options.editingParams = {
+                mode: AnnotationEditorType.NONE,
+                uiManager,
+                annotationEditorUIManager: uiManager,
+              };
+            }
+
+            // Create the editor layer
+            const annotationEditorLayer = new pdfjsLib.AnnotationEditorLayer(
+              options
+            );
+
+            // Initialize the editor
+            if (typeof annotationEditorLayer.setupEditor === "function") {
+              annotationEditorLayer.setupEditor();
+            } else if (typeof annotationEditorLayer.render === "function") {
+              annotationEditorLayer.render();
+            }
+
+            // Add wrapper methods for compatibility
+            annotationEditorLayer.updateMode = function (mode) {
+              try {
+                if (this.setEditingMode) {
+                  this.setEditingMode(mode);
+                } else if (this.setMode) {
+                  this.setMode(mode);
+                } else {
+                  console.warn("No method to update editor mode found");
+                }
+              } catch (e) {
+                console.error("Error updating editor mode:", e);
+              }
+            };
+
+            annotationEditorLayer.updateParams = function (params) {
+              try {
+                if (this.updateToolbar) {
+                  this.updateToolbar(params);
+                } else if (this.updateParams) {
+                  this.updateParams(params);
+                } else {
+                  console.warn("No method to update parameters found");
+                  // Try direct property setting
+                  if (params.color && this.currentColor !== undefined) {
+                    this.currentColor = params.color;
+                  }
+                  if (params.thickness && this.thickness !== undefined) {
+                    this.thickness = params.thickness;
+                  }
+                  if (params.opacity && this.opacity !== undefined) {
+                    this.opacity = params.opacity;
+                  }
+                }
+              } catch (e) {
+                console.error("Error updating parameters:", e);
+              }
+            };
+
+            // Store the editor layer on the page div for easy access
+            pageDiv.annotationEditorLayer = annotationEditorLayer;
+            logEvent(
+              `Annotation editor layer initialized for page ${pageIndex + 1}`
+            );
+          } catch (error) {
+            console.error("Error initializing annotation editor layer:", error);
+            logEvent(
+              `Error initializing annotation editor for page ${pageIndex + 1}`,
+              { error: error.message },
+              true
+            );
+
+            // Create dummy layer for graceful failure
+            pageDiv.annotationEditorLayer = {
+              updateMode: () =>
+                console.warn("Using dummy editor layer - updateMode ignored"),
+              updateParams: () =>
+                console.warn("Using dummy editor layer - updateParams ignored"),
+            };
+          }
+        });
+      }
+
+      // Set up event listeners for annotation events
+      function setupAnnotationEvents() {
+        // Check if the annotation event manager exists
+        if (!pdfDocument.annotationEventManager) {
+          logEvent("Annotation Event Manager not available", {}, true);
+          console.error(
+            "Annotation Event Manager not available in this PDF.js build"
           );
+          return;
+        }
+
+        logEvent("Setting up annotation event listeners");
+
+        const { annotationEventManager } = pdfDocument;
+        const eventTypes = pdfjsLib.AnnotationEventType;
+
+        // Listen for annotation selection events
+        annotationEventManager.on(eventTypes.SELECTED, data => {
+          logEvent("Annotation selected", data);
+        });
+
+        // Listen for annotation unselection events
+        annotationEventManager.on(eventTypes.UNSELECTED, data => {
+          logEvent("Annotation unselected", data);
+        });
+
+        // Listen for annotation creation events
+        annotationEventManager.on(eventTypes.CREATED, data => {
+          logEvent("Annotation created", data);
+        });
+
+        // Listen for annotation modification events
+        annotationEventManager.on(eventTypes.MODIFIED, data => {
+          logEvent("Annotation modified", data);
+        });
+
+        // Listen for annotation removal events
+        annotationEventManager.on(eventTypes.REMOVED, data => {
+          logEvent("Annotation removed", data);
+        });
+
+        // Listen for layer loaded events
+        annotationEventManager.on(eventTypes.LAYER_LOADED, data => {
+          logEvent("Annotation layer loaded", data);
+        });
+
+        // Listen for sidebar toggled events
+        annotationEventManager.on(eventTypes.SIDEBAR_TOGGLED, data => {
+          logEvent("Annotation sidebar toggled", data);
+        });
+
+        // Listen for creation mode changed events
+        annotationEventManager.on(eventTypes.CREATION_MODE_CHANGED, data => {
+          logEvent("Annotation creation mode changed", data);
+          updateToolbarState(data.mode);
+        });
+
+        // Also set up legacy custom event listeners for comparison
+        document.addEventListener("pdfjs-annotations-viewer-select", event => {
+          const { uniqueId, annotation } = event.detail;
+          logEvent(
+            "Legacy: Annotation selected",
+            { id: uniqueId, annotation },
+            false,
+            true
+          );
+        });
+
+        document.addEventListener(
+          "pdfjs-annotations-viewer-unselect",
+          event => {
+            const { uniqueId } = event.detail;
+            logEvent(
+              "Legacy: Annotation unselected",
+              { id: uniqueId },
+              false,
+              true
+            );
+          }
+        );
+
+        document.addEventListener(
+          "pdfjs-annotations-viewer-save-annotation",
+          event => {
+            const { uniqueId, annotation } = event.detail;
+            logEvent(
+              "Legacy: Annotation saved",
+              { id: uniqueId, annotation },
+              false,
+              true
+            );
+          }
+        );
+
+        // Set up postMessage listener for legacy batch events
+        window.addEventListener("message", event => {
+          if (event.data && event.data.type === "pdfjs-annotations-viewer") {
+            logEvent(
+              "Legacy: " + (event.data.event || "PostMessage event"),
+              event.data,
+              false,
+              true
+            );
+          }
+        });
+
+        logEvent("Annotation event listeners set up successfully");
+      }
+
+      // Enable annotation creation mode
+      function enableAnnotationCreation(mode) {
+        if (!pdfDocument || !pdfDocument.annotationEventManager) {
+          console.error(
+            "PDF document or annotation event manager not available"
+          );
+          return;
+        }
+
+        logEvent(`Enabling ${mode} annotation creation`);
+
+        // Get parameters for ink annotations
+        let parameters = null;
+        if (mode === "ink") {
+          parameters = getInkParams();
+          inkParams.classList.remove("hidden");
+        } else {
+          inkParams.classList.add("hidden");
+        }
+
+        // Update button states
+        updateToolbarState(mode);
+
+        // Enable annotation creation in the event manager
+        pdfDocument.annotationEventManager
+          .enableAnnotationCreation(mode, parameters)
+          .then(() => {
+            logEvent(`${mode} annotation creation enabled`);
+
+            // Also update all annotation editor layers
+            const pages = document.querySelectorAll(".page");
+
+            // Detect the available AnnotationEditorType constants
+            let AnnotationEditorType;
+            if (pdfjsLib.PDFAnnotationEditorType) {
+              AnnotationEditorType = pdfjsLib.PDFAnnotationEditorType;
+            } else if (pdfjsLib.AnnotationEditorType) {
+              AnnotationEditorType = pdfjsLib.AnnotationEditorType;
+            } else {
+              AnnotationEditorType = {
+                NONE: 0,
+                FREETEXT: 1,
+                INK: 3,
+                HIGHLIGHT: 4,
+              };
+            }
+
+            // Convert mode string to editor type integer
+            let editorType = AnnotationEditorType.NONE;
+            if (mode === "freeText") editorType = AnnotationEditorType.FREETEXT;
+            if (mode === "ink") editorType = AnnotationEditorType.INK;
+            if (mode === "highlight")
+              editorType = AnnotationEditorType.HIGHLIGHT;
+
+            // Update mode on all pages
+            pages.forEach((pageDiv, index) => {
+              if (pageDiv.annotationEditorLayer) {
+                try {
+                  pageDiv.annotationEditorLayer.updateMode(editorType);
+
+                  // Apply ink parameters if needed
+                  if (mode === "ink" && parameters) {
+                    pageDiv.annotationEditorLayer.updateParams(parameters);
+                  }
+                } catch (error) {
+                  console.error(
+                    `Error setting editor mode on page ${index + 1}:`,
+                    error
+                  );
+                }
+              }
+            });
+          })
+          .catch(error => {
+            console.error(`Error enabling ${mode} annotation creation:`, error);
+            logEvent(
+              `Error enabling ${mode} annotation creation`,
+              { error: error.message },
+              true
+            );
+          });
+      }
+
+      // Disable annotation creation
+      function disableAnnotationCreation() {
+        if (!pdfDocument || !pdfDocument.annotationEventManager) return;
+
+        logEvent("Disabling annotation creation");
+
+        // Hide ink parameters
+        inkParams.classList.add("hidden");
+
+        // Update button states
+        updateToolbarState(null);
+
+        // Disable annotation creation in the event manager
+        pdfDocument.annotationEventManager
+          .disableAnnotationCreation()
+          .then(() => {
+            logEvent("Annotation creation disabled");
+          })
+          .catch(error => {
+            console.error("Error disabling annotation creation:", error);
+            logEvent(
+              "Error disabling annotation creation",
+              { error: error.message },
+              true
+            );
+          });
+      }
+
+      // Update ink parameters
+      function updateInkParams() {
+        if (!pdfDocument || !pdfDocument.annotationEventManager) return;
+
+        // Check if we're in ink mode
+        if (!enableInkBtn.classList.contains("active")) return;
+
+        const params = getInkParams();
+        logEvent("Updating ink parameters", params);
+
+        // If we're in ink mode, apply the new parameters
+        pdfDocument.annotationEventManager
+          .enableAnnotationCreation("ink", params)
+          .then(() => {
+            // Update all editor layers
+            const pages = document.querySelectorAll(".page");
+            pages.forEach((pageDiv, index) => {
+              if (pageDiv.annotationEditorLayer) {
+                try {
+                  pageDiv.annotationEditorLayer.updateParams(params);
+                } catch (error) {
+                  console.error(
+                    `Error updating ink parameters on page ${index + 1}:`,
+                    error
+                  );
+                }
+              }
+            });
+          })
+          .catch(error => {
+            console.error("Error updating ink parameters:", error);
+          });
+      }
+
+      // Get current ink parameters
+      function getInkParams() {
+        // Convert hex color to RGB
+        const hex = inkColor.value.substring(1); // Remove #
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+
+        // Get opacity as decimal
+        const opacity = parseInt(inkOpacity.value) / 100;
+
+        return {
+          color: [r, g, b],
+          thickness: parseInt(inkThickness.value),
+          opacity: opacity,
         };
       }
 
-      // Set up event listeners using the new API
-      function setupEventListeners(pdfDocument) {
-        const { annotationEventManager } = pdfDocument;
+      // Update toolbar state based on active mode
+      function updateToolbarState(mode) {
+        // Remove active class from all buttons
+        enableInkBtn.classList.remove("active");
+        enableTextBtn.classList.remove("active");
+        enableHighlightBtn.classList.remove("active");
+        disableBtn.classList.remove("active");
 
-        // Listen for annotation selection events
-        annotationEventManager.on(
-          pdfjsLib.AnnotationEventType.SELECTED,
-          data => {
-            logEvent(
-              `Annotation selected: ${data.id} on page ${data.pageIndex + 1}`
-            );
-            selectedAnnotationId = data.id;
-            updateAnnotationList();
-          }
-        );
-
-        // Listen for annotation unselection events
-        annotationEventManager.on(
-          pdfjsLib.AnnotationEventType.UNSELECTED,
-          data => {
-            logEvent(`Annotation unselected: ${data.id}`);
-            selectedAnnotationId = null;
-            updateAnnotationList();
-          }
-        );
-
-        // Listen for annotation creation events
-        annotationEventManager.on(
-          pdfjsLib.AnnotationEventType.CREATED,
-          data => {
-            logEvent(`Annotation created: ${data.id} of type ${data.type}`);
-            annotations.push({
-              id: data.id,
-              type: data.type,
-              pageIndex: data.pageIndex,
-              properties: data.properties,
-            });
-            updateAnnotationList();
-          }
-        );
-
-        // Listen for annotation modification events
-        annotationEventManager.on(
-          pdfjsLib.AnnotationEventType.MODIFIED,
-          data => {
-            logEvent(`Annotation modified: ${data.id}`);
-            const index = annotations.findIndex(a => a.id === data.id);
-            if (index !== -1) {
-              annotations[index].properties = data.properties;
-            }
-          }
-        );
-
-        // Listen for annotation removal events
-        annotationEventManager.on(
-          pdfjsLib.AnnotationEventType.REMOVED,
-          data => {
-            logEvent(`Annotation removed: ${data.id}`);
-            annotations = annotations.filter(a => a.id !== data.id);
-            updateAnnotationList();
-          }
-        );
-
-        // Set up button event handlers
-        createInkBtn.addEventListener("click", () => {
-          annotationEventManager.enableAnnotationCreation("ink");
-          logEvent("Enabled ink annotation creation mode");
-        });
-
-        createTextBtn.addEventListener("click", () => {
-          annotationEventManager.enableAnnotationCreation("freeText");
-          logEvent("Enabled text annotation creation mode");
-        });
-
-        toggleSidebarBtn.addEventListener("click", () => {
-          annotationEventManager.showAnnotationSidebar();
-          logEvent("Toggled annotation sidebar");
-        });
-
-        // Get initial annotations
-        annotationEventManager.getAnnotations().then(result => {
-          annotations = result;
-          updateAnnotationList();
-          logEvent(`Loaded ${annotations.length} annotations`);
-        });
+        // Add active class to the current mode button
+        if (mode === "ink") {
+          enableInkBtn.classList.add("active");
+          inkParams.classList.remove("hidden");
+        } else if (mode === "freeText") {
+          enableTextBtn.classList.add("active");
+          inkParams.classList.add("hidden");
+        } else if (mode === "highlight") {
+          enableHighlightBtn.classList.add("active");
+          inkParams.classList.add("hidden");
+        } else {
+          disableBtn.classList.add("active");
+          inkParams.classList.add("hidden");
+        }
       }
 
-      // Update the annotation list in the sidebar
-      function updateAnnotationList() {
-        annotationList.innerHTML = "";
+      // Log an event to the UI
+      function logEvent(title, data = {}, isError = false, isLegacy = false) {
+        // Create list item
+        const item = document.createElement("li");
+        item.className = "event-item";
+        if (!isLegacy) item.classList.add("api");
+        if (isError) item.style.borderLeftColor = "#f44336";
 
-        annotations.forEach(annotation => {
-          const item = document.createElement("li");
-          item.className = "annotation-item";
-          if (annotation.id === selectedAnnotationId) {
-            item.className += " selected";
-          }
+        // Create timestamp
+        const timestamp = document.createElement("div");
+        timestamp.className = "event-timestamp";
+        timestamp.textContent = new Date().toLocaleTimeString();
 
-          item.textContent = `${annotation.type} on page ${annotation.pageIndex + 1}`;
-          item.dataset.id = annotation.id;
-          item.dataset.pageIndex = annotation.pageIndex;
+        // Create title
+        const titleElem = document.createElement("div");
+        titleElem.className = "event-title";
+        titleElem.textContent = title;
 
-          item.addEventListener("click", () => {
-            if (pdfDocument) {
-              pdfDocument.annotationEventManager.selectAnnotation(
-                annotation.id,
-                annotation.pageIndex
-              );
-            }
-          });
+        // Create details (initially hidden)
+        const details = document.createElement("div");
+        details.className = "event-details";
+        details.textContent = JSON.stringify(data, null, 2);
 
-          annotationList.appendChild(item);
+        // Add all elements to the item
+        item.appendChild(timestamp);
+        item.appendChild(titleElem);
+        item.appendChild(details);
+
+        // Add click handler to toggle details
+        item.addEventListener("click", () => {
+          item.classList.toggle("expanded");
         });
+
+        // Add to the list at the top
+        eventList.insertBefore(item, eventList.firstChild);
       }
 
-      // Log events to the event log
-      function logEvent(message) {
-        const entry = document.createElement("div");
-        entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
-        eventLog.appendChild(entry);
-        eventLog.scrollTop = eventLog.scrollHeight;
+      // Clear all events from the log
+      function clearEvents() {
+        eventList.innerHTML = "";
       }
 
-      // Initialize the viewer when the page loads
-      window.addEventListener("load", initViewer);
+      // Start the application
+      init();
     </script>
   </body>
 </html>
