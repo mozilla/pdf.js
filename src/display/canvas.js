@@ -363,8 +363,6 @@ class CanvasExtraState {
 
   transferMaps = "none";
 
-  type3glyphBBox = null;
-
   constructor(width, height, preInit) {
     preInit?.(this);
 
@@ -977,10 +975,6 @@ class CanvasGraphics {
     const fillColor = this.current.fillColor;
     const isPatternFill = this.current.patternFill;
     const currentTransform = getCurrentTransform(ctx);
-    this.dependencyTracker?.recordDependencies(
-      opIdx,
-      Dependencies.transformAndFill
-    );
 
     let cache, cacheKey, scaled, maskCanvas;
     if ((img.bitmap || img.data) && img.count > 1) {
@@ -1011,6 +1005,11 @@ class CanvasGraphics {
         const offsetY = Math.round(
           Math.min(currentTransform[1], currentTransform[3]) +
             currentTransform[5]
+        );
+
+        this.dependencyTracker?.recordDependencies(
+          opIdx,
+          Dependencies.transformAndFill
         );
         return {
           canvas: cachedImage,
@@ -1113,6 +1112,11 @@ class CanvasGraphics {
       cache.set(cacheKey, fillCanvas.canvas);
     }
 
+    this.dependencyTracker?.recordDependencies(
+      opIdx,
+      Dependencies.transformAndFill
+    );
+
     // Round the offsets to avoid drawing fractional pixels.
     return {
       canvas: fillCanvas.canvas,
@@ -1212,7 +1216,7 @@ class CanvasGraphics {
           this.checkSMaskState();
           break;
         case "TR":
-          // TODO: Track
+          this.dependencyTracker?.recordSimpleData("filter", opIdx);
           this.ctx.filter = this.current.transferMaps =
             this.filterFactory.addFilter(value);
           break;
@@ -1476,7 +1480,6 @@ class CanvasGraphics {
         .recordBBox(
           opIdx,
           this.ctx,
-          this.groupStack,
           minMax[0] - outerExtraSize,
           minMax[2] + outerExtraSize,
           minMax[1] - outerExtraSize,
@@ -1594,6 +1597,7 @@ class CanvasGraphics {
       const baseTransform = fillColor.isModifyingCurrentTransform()
         ? ctx.getTransform()
         : null;
+      this.dependencyTracker?.save(opIdx);
       ctx.save();
       ctx.fillStyle = fillColor.getPattern(
         ctx,
@@ -1626,6 +1630,7 @@ class CanvasGraphics {
 
     if (needRestore) {
       ctx.restore();
+      this.dependencyTracker?.restore(opIdx);
     }
     if (consumePath) {
       this.consumePath(opIdx, path, intersect);
@@ -1694,10 +1699,22 @@ class CanvasGraphics {
   }
 
   endText(opIdx) {
-    this.dependencyTracker?.recordCloseMarker(opIdx);
-
     const paths = this.pendingTextPaths;
     const ctx = this.ctx;
+
+    if (this.dependencyTracker) {
+      const { dependencyTracker } = this;
+      if (paths !== undefined) {
+        dependencyTracker
+          .recordFutureForcedDependency(
+            "textClip",
+            dependencyTracker.getOpenMarker()
+          )
+          .recordFutureForcedDependency("textClip", opIdx);
+      }
+      dependencyTracker.recordCloseMarker(opIdx);
+    }
+
     if (paths !== undefined) {
       const newPath = new Path2D();
       const invTransf = ctx.getTransform().invertSelf();
@@ -1890,18 +1907,23 @@ class CanvasGraphics {
       ctx.save();
       ctx.translate(x, y);
       ctx.scale(fontSize, -fontSize);
+
+      this.dependencyTracker?.recordCharacterBBox(opIdx, ctx, font);
+
       let currentTransform;
       if (
         fillStrokeMode === TextRenderingMode.FILL ||
         fillStrokeMode === TextRenderingMode.FILL_STROKE
       ) {
-        // TODO: expandBBox
         if (patternFillTransform) {
           currentTransform = ctx.getTransform();
           ctx.setTransform(...patternFillTransform);
-          ctx.fill(
-            this.#getScaledPath(path, currentTransform, patternFillTransform)
+          const scaledPath = this.#getScaledPath(
+            path,
+            currentTransform,
+            patternFillTransform
           );
+          ctx.fill(scaledPath);
         } else {
           ctx.fill(path);
         }
@@ -1927,7 +1949,6 @@ class CanvasGraphics {
           // If sx and sy are different, unfortunately we can't do anything and
           // we'll have a rendering bug.
           ctx.lineWidth *= Math.max(XY[0], XY[1]) / fontSize;
-          // TODO: expandBBox
           ctx.stroke(
             this.#getScaledPath(path, currentTransform, patternStrokeTransform)
           );
@@ -1942,37 +1963,25 @@ class CanvasGraphics {
         fillStrokeMode === TextRenderingMode.FILL ||
         fillStrokeMode === TextRenderingMode.FILL_STROKE
       ) {
-        if (this.dependencyTracker) {
-          const measure = ctx.measureText(character);
-          this.dependencyTracker
-            .recordBBox(
-              opIdx,
-              this.ctx,
-              this.groupStack,
-              x - measure.actualBoundingBoxLeft,
-              x + measure.actualBoundingBoxRight,
-              y - measure.actualBoundingBoxAscent,
-              y + measure.actualBoundingBoxDescent
-            )
-            .recordDependencies(opIdx, Dependencies.fill);
-        }
         ctx.fillText(character, x, y);
+        this.dependencyTracker?.recordCharacterBBox(
+          opIdx,
+          ctx,
+          font,
+          fontSize,
+          x,
+          y,
+          () => ctx.measureText(character)
+        );
       }
       if (
         fillStrokeMode === TextRenderingMode.STROKE ||
         fillStrokeMode === TextRenderingMode.FILL_STROKE
       ) {
         if (this.dependencyTracker) {
-          const measure = ctx.measureText(character);
           this.dependencyTracker
-            .recordBBox(
-              opIdx,
-              this.ctx,
-              this.groupStack,
-              x - measure.actualBoundingBoxLeft,
-              x + measure.actualBoundingBoxRight,
-              y - measure.actualBoundingBoxAscent,
-              y + measure.actualBoundingBoxDescent
+            ?.recordCharacterBBox(opIdx, ctx, font, fontSize, x, y, () =>
+              ctx.measureText(character)
             )
             .recordDependencies(opIdx, Dependencies.stroke);
         }
@@ -1989,6 +1998,14 @@ class CanvasGraphics {
         fontSize,
         path,
       });
+      this.dependencyTracker?.recordCharacterBBox(
+        opIdx,
+        ctx,
+        font,
+        fontSize,
+        x,
+        y
+      );
     }
   }
 
@@ -2014,10 +2031,17 @@ class CanvasGraphics {
   }
 
   showText(opIdx, glyphs) {
-    this.dependencyTracker
-      ?.recordDependencies(opIdx, Dependencies.showText)
-      .copyDependenciesFromIncrementalOperation(opIdx, "sameLineText")
-      .resetBBox(opIdx);
+    if (this.dependencyTracker) {
+      this.dependencyTracker
+        .recordDependencies(opIdx, Dependencies.showText)
+        .copyDependenciesFromIncrementalOperation(opIdx, "sameLineText")
+        .resetBBox(opIdx);
+      if (this.current.textRenderingMode & TextRenderingMode.ADD_TO_PATH_FLAG) {
+        this.dependencyTracker
+          .recordFutureForcedDependency("textClip", opIdx)
+          .inheritPendingDependenciesAsFutureForcedDependencies();
+      }
+    }
 
     const current = this.current;
     const font = current.font;
@@ -2122,17 +2146,12 @@ class CanvasGraphics {
       }
       const joinedChars = chars.join("");
       ctx.fillText(joinedChars, 0, 0);
-      current.x += width * widthAdvanceScale * textHScale;
-      ctx.restore();
-      this.compose();
-
       if (this.dependencyTracker !== null) {
         const measure = ctx.measureText(joinedChars);
         this.dependencyTracker
           .recordBBox(
             opIdx,
             this.ctx,
-            this.groupStack,
             -measure.actualBoundingBoxLeft,
             measure.actualBoundingBoxRight,
             -measure.actualBoundingBoxAscent,
@@ -2141,6 +2160,9 @@ class CanvasGraphics {
           .recordOperation(opIdx)
           .recordIncrementalData("sameLineText", opIdx);
       }
+      current.x += width * widthAdvanceScale * textHScale;
+      ctx.restore();
+      this.compose();
       return undefined;
     }
 
@@ -2200,19 +2222,18 @@ class CanvasGraphics {
       if (this.contentVisible && (glyph.isInFont || font.missingFile)) {
         if (simpleFillText && !accent) {
           // common case
-          if (this.dependencyTracker !== null) {
-            measure ??= ctx.measureText(character);
-            this.dependencyTracker.recordBBox(
-              opIdx,
-              this.ctx,
-              this.groupStack,
-              scaledX - measure.actualBoundingBoxLeft,
-              scaledX + measure.actualBoundingBoxRight,
-              scaledY - measure.actualBoundingBoxAscent,
-              scaledY + measure.actualBoundingBoxDescent
-            );
-          }
           ctx.fillText(character, scaledX, scaledY);
+
+          this.dependencyTracker?.recordCharacterBBox(
+            opIdx,
+            ctx,
+            // If we already measured the character, force usage of that
+            measure ? { bbox: null } : font,
+            fontSize / fontSizeScale,
+            scaledX,
+            scaledY,
+            () => measure ?? ctx.measureText(character)
+          );
         } else {
           this.paintChar(
             opIdx,
@@ -2296,7 +2317,9 @@ class CanvasGraphics {
     // Type3 fonts have their own operator list. Avoid mixing it up with the
     // dependency tracker of the main operator list.
     const dependencyTracker = this.dependencyTracker;
-    this.dependencyTracker = null;
+    this.dependencyTracker = dependencyTracker
+      ? new CanvasNestedDependencyTracker(dependencyTracker, opIdx)
+      : null;
 
     for (i = 0; i < glyphsLength; ++i) {
       glyph = glyphs[i];
@@ -2315,25 +2338,7 @@ class CanvasGraphics {
         this.save();
         ctx.scale(fontSize, fontSize);
         ctx.transform(...fontMatrix);
-
-        this.current.type3glyphBBox = null;
         this.executeOperatorList(operatorList);
-
-        if (this.current.type3glyphBBox) {
-          dependencyTracker?.recordBBox(
-            opIdx,
-            this.ctx,
-            this.groupStack,
-            this.current.type3glyphBBox[0],
-            this.current.type3glyphBBox[2],
-            this.current.type3glyphBBox[1],
-            this.current.type3glyphBBox[3]
-          );
-        } else {
-          // TODO: Actually get the char bbox
-          dependencyTracker?.recordFullPageBBox(opIdx);
-        }
-
         this.restore();
       }
 
@@ -2345,8 +2350,10 @@ class CanvasGraphics {
       current.x += width * textHScale;
     }
     ctx.restore();
-
-    this.dependencyTracker = dependencyTracker;
+    if (dependencyTracker) {
+      this.dependencyTracker.recordNestedDependencies();
+      this.dependencyTracker = dependencyTracker;
+    }
   }
 
   // Type3 fonts
@@ -2356,10 +2363,12 @@ class CanvasGraphics {
   }
 
   setCharWidthAndBounds(opIdx, xWidth, yWidth, llx, lly, urx, ury) {
-    this.current.type3glyphBBox = [llx, lly, urx, ury];
     const clip = new Path2D();
     clip.rect(llx, lly, urx - llx, ury - lly);
     this.ctx.clip(clip);
+    this.dependencyTracker
+      ?.recordBBox(opIdx, this.ctx, llx, urx, lly, ury)
+      .recordClipBox(opIdx, this.ctx, llx, urx, lly, ury);
     this.endPath(opIdx);
   }
 
@@ -2487,6 +2496,7 @@ class CanvasGraphics {
       // TODO: Track proper bbox
       .recordFullPageBBox(opIdx)
       .recordDependencies(opIdx, Dependencies.transform)
+      .recordDependencies(opIdx, Dependencies.fill)
       .recordOperation(opIdx);
 
     this.compose(this.current.getClippedPathBoundingBox());
@@ -2524,6 +2534,7 @@ class CanvasGraphics {
       const clip = new Path2D();
       clip.rect(x0, y0, x1 - x0, y1 - y0);
       this.ctx.clip(clip);
+      this.dependencyTracker?.recordClipBox(opIdx, this.ctx, x0, x1, y0, y1);
       this.endPath(opIdx);
     }
   }
@@ -2647,7 +2658,14 @@ class CanvasGraphics {
         transferMap: group.smask.transferMap || null,
         startTransformInverse: null, // used during suspend operation
       });
-    } else {
+    }
+    if (
+      !group.smask ||
+      // When this is not an SMask group, we only need to update the current
+      // transform if recording operations bboxes, so they the bboxes have the
+      // correct transform applied.
+      this.dependencyTracker
+    ) {
       // Setup the current ctx so when the group is popped we draw it at the
       // right location.
       currentCtx.setTransform(1, 0, 0, 1, 0, 0);
@@ -2658,11 +2676,13 @@ class CanvasGraphics {
     // except the blend mode, soft mask, and alpha constants.
     copyCtxState(currentCtx, groupCtx);
     this.ctx = groupCtx;
-    this.dependencyTracker?.inheritSimpleDataAsFutureForcedDependencies([
-      "fillAlpha",
-      "strokeAlpha",
-      "globalCompositeOperation",
-    ]);
+    this.dependencyTracker
+      ?.inheritSimpleDataAsFutureForcedDependencies([
+        "fillAlpha",
+        "strokeAlpha",
+        "globalCompositeOperation",
+      ])
+      .pushBaseTransform(currentCtx);
     this.setGState(opIdx, [
       ["BM", "source-over"],
       ["ca", 1],
@@ -2684,9 +2704,14 @@ class CanvasGraphics {
     // look kind of blurry for some pdfs.
     this.ctx.imageSmoothingEnabled = false;
 
+    this.dependencyTracker?.popBaseTransform();
+
     if (group.smask) {
       this.tempSMask = this.smaskStack.pop();
       this.restore(opIdx);
+      if (this.dependencyTracker) {
+        this.ctx.restore();
+      }
     } else {
       this.ctx.restore();
       const currentMtx = getCurrentTransform(this.ctx);
@@ -2810,7 +2835,6 @@ class CanvasGraphics {
       .recordBBox(
         opIdx,
         this.ctx,
-        this.groupStack,
         mask.offsetX,
         mask.offsetX + maskCanvas.width,
         mask.offsetY,
@@ -2833,9 +2857,6 @@ class CanvasGraphics {
     if (!this.contentVisible) {
       return;
     }
-
-    // TODO: Track proper bbox
-    this.dependencyTracker?.resetBBox(opIdx).recordFullPageBBox(opIdx);
 
     img = this.getObject(opIdx, img.data, img);
 
@@ -2870,7 +2891,6 @@ class CanvasGraphics {
       this.dependencyTracker?.recordBBox(
         opIdx,
         this.ctx,
-        this.groupStack,
         trans[4],
         trans[4] + mask.canvas.width,
         trans[5],
@@ -2891,6 +2911,10 @@ class CanvasGraphics {
 
     const fillColor = this.current.fillColor;
     const isPatternFill = this.current.patternFill;
+
+    this.dependencyTracker
+      ?.resetBBox(opIdx)
+      .recordDependencies(opIdx, Dependencies.transformAndFill);
 
     for (const image of images) {
       const { data, width, height, transform } = image;
@@ -2935,9 +2959,12 @@ class CanvasGraphics {
         1,
         1
       );
+
+      this.dependencyTracker?.recordBBox(opIdx, ctx, 0, width, 0, height);
       ctx.restore();
     }
     this.compose();
+    this.dependencyTracker?.recordOperation(opIdx);
   }
 
   paintImageXObject(opIdx, objId) {
@@ -3058,7 +3085,7 @@ class CanvasGraphics {
 
     this.dependencyTracker
       ?.resetBBox(opIdx)
-      .recordBBox(opIdx, ctx, this.groupStack, 0, width, -height, 0)
+      .recordBBox(opIdx, ctx, 0, width, -height, 0)
       .recordDependencies(opIdx, Dependencies.imageXObject)
       .recordOperation(opIdx);
 
@@ -3114,16 +3141,8 @@ class CanvasGraphics {
         1,
         1
       );
+      this.dependencyTracker?.recordBBox(opIdx, ctx, 0, 1, -1, 0);
       ctx.restore();
-      this.dependencyTracker?.recordBBox(
-        opIdx,
-        this.ctx,
-        this.groupStack,
-        entry.x,
-        entry.x + entry.w,
-        -entry.h,
-        0
-      );
     }
     this.dependencyTracker?.recordOperation(opIdx);
     this.compose();
@@ -3135,7 +3154,7 @@ class CanvasGraphics {
     }
     this.dependencyTracker
       ?.resetBBox(opIdx)
-      .recordBBox(opIdx, this.ctx, this.groupStack, 0, 1, 0, 1)
+      .recordBBox(opIdx, this.ctx, 0, 1, 0, 1)
       .recordDependencies(opIdx, Dependencies.fill)
       .recordOperation(opIdx);
     this.ctx.fillRect(0, 0, 1, 1);
@@ -3209,9 +3228,12 @@ class CanvasGraphics {
         }
       }
       this.pendingClip = null;
-      this.dependencyTracker?.recordFutureForcedDependency("clipPath", opIdx);
+      this.dependencyTracker
+        ?.bboxToClipBoxDropOperation(opIdx)
+        .recordFutureForcedDependency("clipPath", opIdx);
+    } else {
+      this.dependencyTracker?.recordOperation(opIdx);
     }
-    this.dependencyTracker?.recordOperation(opIdx);
 
     this.current.startNewPathAndClipBox(this.current.clipBox);
   }

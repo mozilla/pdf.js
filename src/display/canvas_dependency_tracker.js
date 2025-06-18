@@ -1,9 +1,11 @@
+import { Util } from "../shared/util.js";
+
 const FORCED_DEPENDENCY_LABEL = "__forcedDependency";
 
 /**
  * @typedef {"lineWidth" | "lineCap" | "lineJoin" | "miterLimit" | "dash" |
  * "strokeAlpha" | "fillColor" | "fillAlpha" | "globalCompositeOperation" |
- * "path"} SimpleDependency
+ * "path" | "filter"} SimpleDependency
  */
 
 /**
@@ -33,13 +35,20 @@ class CanvasDependencyTracker {
 
   #markedContentStack = [];
 
-  #pendingBBox = null;
+  #baseTransformStack = [[1, 0, 0, 1, 0, 0]];
 
-  #pendingBBoxIdx = null;
+  #clipBox = [-Infinity, -Infinity, Infinity, Infinity];
+
+  // Float32Array<minX, minY, maxX, maxY>
+  #pendingBBox = new Float64Array([Infinity, Infinity, -Infinity, -Infinity]);
+
+  #pendingBBoxIdx = -1;
 
   #pendingDependencies = new Set();
 
   #operations = new Map();
+
+  #fontBBoxTrustworthy = new Map();
 
   #canvasWidth;
 
@@ -61,6 +70,7 @@ class CanvasDependencyTracker {
         __proto__: this.#incremental[FORCED_DEPENDENCY_LABEL],
       },
     };
+    this.#clipBox = { __proto__: this.#clipBox };
     this.#savesStack.push([opIdx, null]);
 
     return this;
@@ -73,8 +83,9 @@ class CanvasDependencyTracker {
       // example when using CanvasGraphics' #restoreInitialState()
       return this;
     }
-    this.#simple = Object.getPrototypeOf(this.#simple);
+    this.#simple = previous;
     this.#incremental = Object.getPrototypeOf(this.#incremental);
+    this.#clipBox = Object.getPrototypeOf(this.#clipBox);
 
     const lastPair = this.#savesStack.pop();
     if (lastPair !== undefined) {
@@ -90,6 +101,13 @@ class CanvasDependencyTracker {
   recordOpenMarker(idx) {
     this.#savesStack.push([idx, null]);
     return this;
+  }
+
+  getOpenMarker() {
+    if (this.#savesStack.length === 0) {
+      return null;
+    }
+    return this.#savesStack.at(-1)[0];
   }
 
   recordCloseMarker(idx) {
@@ -111,6 +129,23 @@ class CanvasDependencyTracker {
     const lastPair = this.#markedContentStack.pop();
     if (lastPair !== undefined) {
       lastPair[1] = opIdx;
+    }
+    return this;
+  }
+
+  pushBaseTransform(ctx) {
+    this.#baseTransformStack.push(
+      Util.multiplyByDOMMatrix(
+        this.#baseTransformStack.at(-1),
+        ctx.getTransform()
+      )
+    );
+    return this;
+  }
+
+  popBaseTransform() {
+    if (this.#baseTransformStack.length > 1) {
+      this.#baseTransformStack.pop();
     }
     return this;
   }
@@ -164,45 +199,168 @@ class CanvasDependencyTracker {
     return this;
   }
 
-  resetBBox(idx) {
-    this.#pendingBBoxIdx = idx;
-    this.#pendingBBox = {
-      minX: Infinity,
-      minY: Infinity,
-      maxX: -Infinity,
-      maxY: -Infinity,
-    };
+  inheritPendingDependenciesAsFutureForcedDependencies() {
+    for (const dep of this.#pendingDependencies) {
+      this.recordFutureForcedDependency(FORCED_DEPENDENCY_LABEL, dep);
+    }
     return this;
   }
 
-  recordBBox(idx, ctx, otherCtxs, minX, maxX, minY, maxY) {
-    let matrix = ctx.getTransform();
-    for (let i = otherCtxs.length - 1; i >= 0; i--) {
-      matrix = otherCtxs[i].getTransform().multiply(matrix);
-    }
-
-    ({ x: minX, y: minY } = matrix.transformPoint(new DOMPoint(minX, minY)));
-    ({ x: maxX, y: maxY } = matrix.transformPoint(new DOMPoint(maxX, maxY)));
-    if (maxX < minX) {
-      [maxX, minX] = [minX, maxX];
-    }
-    if (maxY < minY) {
-      [maxY, minY] = [minY, maxY];
-    }
-
-    this.#pendingBBox.minX = Math.min(this.#pendingBBox.minX, minX);
-    this.#pendingBBox.minY = Math.min(this.#pendingBBox.minY, minY);
-    this.#pendingBBox.maxX = Math.max(this.#pendingBBox.maxX, maxX);
-    this.#pendingBBox.maxY = Math.max(this.#pendingBBox.maxY, maxY);
-
+  resetBBox(idx) {
+    this.#pendingBBoxIdx = idx;
+    this.#pendingBBox[0] = Infinity;
+    this.#pendingBBox[1] = Infinity;
+    this.#pendingBBox[2] = -Infinity;
+    this.#pendingBBox[3] = -Infinity;
     return this;
+  }
+
+  get hasPendingBBox() {
+    return this.#pendingBBoxIdx !== -1;
+  }
+
+  recordClipBox(idx, ctx, minX, maxX, minY, maxY) {
+    const transform = Util.multiplyByDOMMatrix(
+      this.#baseTransformStack.at(-1),
+      ctx.getTransform()
+    );
+    const clipBox = [Infinity, Infinity, -Infinity, -Infinity];
+    Util.axialAlignedBoundingBox([minX, minY, maxX, maxY], transform, clipBox);
+    const intersection = Util.intersect(this.#clipBox, clipBox);
+    if (intersection) {
+      this.#clipBox[0] = intersection[0];
+      this.#clipBox[1] = intersection[1];
+      this.#clipBox[2] = intersection[2];
+      this.#clipBox[3] = intersection[3];
+    } else {
+      this.#clipBox[0] = this.#clipBox[1] = Infinity;
+      this.#clipBox[2] = this.#clipBox[3] = -Infinity;
+    }
+    return this;
+  }
+
+  recordBBox(idx, ctx, minX, maxX, minY, maxY) {
+    const clipBox = this.#clipBox;
+    if (clipBox[0] === Infinity) {
+      return this;
+    }
+
+    const transform = Util.multiplyByDOMMatrix(
+      this.#baseTransformStack.at(-1),
+      ctx.getTransform()
+    );
+    if (clipBox[0] === -Infinity) {
+      Util.axialAlignedBoundingBox(
+        [minX, minY, maxX, maxY],
+        transform,
+        this.#pendingBBox
+      );
+      return this;
+    }
+
+    const bbox = [Infinity, Infinity, -Infinity, -Infinity];
+    Util.axialAlignedBoundingBox([minX, minY, maxX, maxY], transform, bbox);
+    this.#pendingBBox[0] = Math.min(
+      this.#pendingBBox[0],
+      Math.max(bbox[0], clipBox[0])
+    );
+    this.#pendingBBox[1] = Math.min(
+      this.#pendingBBox[1],
+      Math.max(bbox[1], clipBox[1])
+    );
+    this.#pendingBBox[2] = Math.max(
+      this.#pendingBBox[2],
+      Math.min(bbox[2], clipBox[2])
+    );
+    this.#pendingBBox[3] = Math.max(
+      this.#pendingBBox[3],
+      Math.min(bbox[3], clipBox[3])
+    );
+    return this;
+  }
+
+  recordCharacterBBox(idx, ctx, font, scale = 1, x = 0, y = 0, getMeasure) {
+    const fontBBox = font.bbox;
+    let isBBoxTrustworthy;
+    let computedBBox;
+
+    if (fontBBox) {
+      isBBoxTrustworthy =
+        // Only use the bounding box defined by the font if it
+        // has a non-empty area.
+        fontBBox[2] !== fontBBox[0] &&
+        fontBBox[3] !== fontBBox[1] &&
+        this.#fontBBoxTrustworthy.get(font);
+
+      if (isBBoxTrustworthy !== false) {
+        computedBBox = [0, 0, 0, 0];
+        Util.axialAlignedBoundingBox(fontBBox, font.fontMatrix, computedBBox);
+        if (scale !== 1 || x !== 0 || y !== 0) {
+          Util.scaleMinMax([scale, 0, 0, -scale, x, y], computedBBox);
+        }
+
+        if (isBBoxTrustworthy) {
+          return this.recordBBox(
+            idx,
+            ctx,
+            computedBBox[0],
+            computedBBox[2],
+            computedBBox[1],
+            computedBBox[3]
+          );
+        }
+      }
+    }
+
+    if (!getMeasure) {
+      // We have no way of telling how big this character actually is, record
+      // a full page bounding box.
+      return this.recordFullPageBBox(idx);
+    }
+
+    const measure = getMeasure();
+
+    if (fontBBox && computedBBox && isBBoxTrustworthy === undefined) {
+      // If it's the first time we can compare the font bbox with the actual
+      // bbox measured when drawing it, check if the one recorded in the font
+      // is large enough to cover the actual bbox. If it is, we assume that the
+      // font is well-formed and we can use the declared bbox without having to
+      // measure it again for every character.
+      isBBoxTrustworthy =
+        computedBBox[0] <= x - measure.actualBoundingBoxLeft &&
+        computedBBox[2] >= x + measure.actualBoundingBoxRight &&
+        computedBBox[1] <= y - measure.actualBoundingBoxAscent &&
+        computedBBox[3] >= y + measure.actualBoundingBoxDescent;
+      this.#fontBBoxTrustworthy.set(font, isBBoxTrustworthy);
+      if (isBBoxTrustworthy) {
+        return this.recordBBox(
+          idx,
+          ctx,
+          computedBBox[0],
+          computedBBox[2],
+          computedBBox[1],
+          computedBBox[3]
+        );
+      }
+    }
+
+    // The font has no bbox or it is not trustworthy, so we need to
+    // return the bounding box based on .measureText().
+    return this.recordBBox(
+      idx,
+      ctx,
+      x - measure.actualBoundingBoxLeft,
+      x + measure.actualBoundingBoxRight,
+      y - measure.actualBoundingBoxAscent,
+      y + measure.actualBoundingBoxDescent
+    );
   }
 
   recordFullPageBBox(idx) {
-    this.#pendingBBox.minX = 0;
-    this.#pendingBBox.minY = 0;
-    this.#pendingBBox.maxX = this.#canvasWidth;
-    this.#pendingBBox.maxY = this.#canvasHeight;
+    this.#pendingBBox[0] = Math.max(0, this.#clipBox[0]);
+    this.#pendingBBox[1] = Math.max(0, this.#clipBox[1]);
+    this.#pendingBBox[2] = Math.min(this.#canvasWidth, this.#clipBox[2]);
+    this.#pendingBBox[3] = Math.min(this.#canvasHeight, this.#clipBox[3]);
 
     return this;
   }
@@ -212,14 +370,14 @@ class CanvasDependencyTracker {
   }
 
   recordDependencies(idx, dependencyNames) {
+    const pendingDependencies = this.#pendingDependencies;
+    const simple = this.#simple;
+    const incremental = this.#incremental;
     for (const name of dependencyNames) {
       if (name in this.#simple) {
-        this.#pendingDependencies.add(this.#simple[name]);
-      } else if (name in this.#incremental) {
-        this.#incremental[name].forEach(
-          this.#pendingDependencies.add,
-          this.#pendingDependencies
-        );
+        pendingDependencies.add(simple[name]);
+      } else if (name in incremental) {
+        incremental[name].forEach(pendingDependencies.add, pendingDependencies);
       }
     }
 
@@ -227,13 +385,14 @@ class CanvasDependencyTracker {
   }
 
   copyDependenciesFromIncrementalOperation(idx, name) {
-    for (let i = 0; i < this.#incremental[name].length; i++) {
-      const depIdx = this.#incremental[name][i];
-      this.#operations
+    const operations = this.#operations;
+    const pendingDependencies = this.#pendingDependencies;
+    for (const depIdx of this.#incremental[name]) {
+      operations
         .get(depIdx)
         .dependencies.forEach(
-          this.#pendingDependencies.add,
-          this.#pendingDependencies.add(depIdx)
+          pendingDependencies.add,
+          pendingDependencies.add(depIdx)
         );
     }
     return this;
@@ -249,19 +408,46 @@ class CanvasDependencyTracker {
 
   /**
    * @param {number} idx
-   * @param {SimpleDependency[]} dependencyNames
    */
-  recordOperation(idx) {
+  recordOperation(idx, preserveBbox = false) {
     this.recordDependencies(idx, [FORCED_DEPENDENCY_LABEL]);
     const dependencies = new Set(this.#pendingDependencies);
     const pairs = this.#savesStack.concat(this.#markedContentStack);
-    const bbox = this.#pendingBBoxIdx === idx ? this.#pendingBBox : null;
+    const bbox =
+      this.#pendingBBoxIdx === idx
+        ? {
+            minX: this.#pendingBBox[0],
+            minY: this.#pendingBBox[1],
+            maxX: this.#pendingBBox[2],
+            maxY: this.#pendingBBox[3],
+          }
+        : null;
     this.#operations.set(idx, { bbox, pairs, dependencies });
-    this.#pendingBBox = null;
-    this.#pendingBBoxIdx = null;
+    if (!preserveBbox) {
+      this.#pendingBBoxIdx = -1;
+    }
     this.#pendingDependencies.clear();
 
     return this;
+  }
+
+  bboxToClipBoxDropOperation(idx) {
+    if (this.#pendingBBoxIdx !== -1) {
+      this.#pendingBBoxIdx = -1;
+
+      this.#clipBox[0] = Math.max(this.#clipBox[0], this.#pendingBBox[0]);
+      this.#clipBox[1] = Math.max(this.#clipBox[1], this.#pendingBBox[1]);
+      this.#clipBox[2] = Math.min(this.#clipBox[2], this.#pendingBBox[2]);
+      this.#clipBox[3] = Math.min(this.#clipBox[3], this.#pendingBBox[3]);
+    }
+    this.#pendingDependencies.clear();
+    return this;
+  }
+
+  _takePendingDependencies() {
+    const pendingDependencies = this.#pendingDependencies;
+    this.#pendingDependencies = new Set();
+    return pendingDependencies;
   }
 
   _extractOperation(idx) {
@@ -277,6 +463,7 @@ class CanvasDependencyTracker {
   }
 
   take() {
+    this.#fontBBoxTrustworthy.clear();
     return Array.from(
       this.#operations,
       ([idx, { bbox, pairs, dependencies }]) => {
@@ -288,7 +475,7 @@ class CanvasDependencyTracker {
           minY: (bbox?.minY ?? 0) / this.#canvasHeight,
           maxY: (bbox?.maxY ?? this.#canvasHeight) / this.#canvasHeight,
           dependencies: Array.from(dependencies).sort((a, b) => a - b),
-          data: { idx },
+          idx,
         };
       }
     );
@@ -309,28 +496,52 @@ class CanvasNestedDependencyTracker {
   /** @type {number} */
   #opIdx;
 
-  #outerDependencies = new Set();
+  #nestingLevel = 0;
+
+  #outerDependencies;
+
+  #savesLevel = 0;
 
   constructor(dependencyTracker, opIdx) {
+    if (dependencyTracker instanceof CanvasNestedDependencyTracker) {
+      // The goal of CanvasNestedDependencyTracker is to collapse all operations
+      // into a single one. If we are already in a
+      // CanvasNestedDependencyTracker, that is already happening.
+      return dependencyTracker;
+    }
+
     this.#dependencyTracker = dependencyTracker;
+    this.#outerDependencies = dependencyTracker._takePendingDependencies();
     this.#opIdx = opIdx;
   }
 
   save(opIdx) {
+    this.#savesLevel++;
     this.#dependencyTracker.save(this.#opIdx);
     return this;
   }
 
   restore(opIdx) {
-    this.#dependencyTracker.restore(this.#opIdx);
+    if (this.#savesLevel > 0) {
+      this.#dependencyTracker.restore(this.#opIdx);
+      this.#savesLevel--;
+    }
     return this;
   }
 
   recordOpenMarker(idx) {
+    this.#nestingLevel++;
     return this;
   }
 
+  getOpenMarker() {
+    return this.#nestingLevel > 0
+      ? this.#opIdx
+      : this.#dependencyTracker.getOpenMarker();
+  }
+
   recordCloseMarker(idx) {
+    this.#nestingLevel--;
     return this;
   }
 
@@ -339,6 +550,16 @@ class CanvasNestedDependencyTracker {
   }
 
   endMarkedContent(opIdx) {
+    return this;
+  }
+
+  pushBaseTransform(ctx) {
+    this.#dependencyTracker.pushBaseTransform(ctx);
+    return this;
+  }
+
+  popBaseTransform() {
+    this.#dependencyTracker.popBaseTransform();
     return this;
   }
 
@@ -387,20 +608,55 @@ class CanvasNestedDependencyTracker {
     return this;
   }
 
-  resetBBox(idx) {
-    this.#dependencyTracker.resetBBox(this.#opIdx);
+  inheritPendingDependenciesAsFutureForcedDependencies() {
+    this.#dependencyTracker.inheritPendingDependenciesAsFutureForcedDependencies();
     return this;
   }
 
-  recordBBox(idx, ctx, otherCtxs, minX, maxX, minY, maxY) {
-    this.#dependencyTracker.recordBBox(
+  resetBBox(idx) {
+    if (!this.#dependencyTracker.hasPendingBBox) {
+      this.#dependencyTracker.resetBBox(this.#opIdx);
+    }
+    return this;
+  }
+
+  get hasPendingBBox() {
+    return this.#dependencyTracker.hasPendingBBox;
+  }
+
+  recordClipBox(idx, ctx, minX, maxX, minY, maxY) {
+    this.#dependencyTracker.recordClipBox(
       this.#opIdx,
       ctx,
-      otherCtxs,
       minX,
       maxX,
       minY,
       maxY
+    );
+    return this;
+  }
+
+  recordBBox(idx, ctx, minX, maxX, minY, maxY) {
+    this.#dependencyTracker.recordBBox(
+      this.#opIdx,
+      ctx,
+      minX,
+      maxX,
+      minY,
+      maxY
+    );
+    return this;
+  }
+
+  recordCharacterBBox(idx, ctx, font, scale, x, y, getMeasure) {
+    this.#dependencyTracker.recordCharacterBBox(
+      this.#opIdx,
+      ctx,
+      font,
+      scale,
+      x,
+      y,
+      getMeasure
     );
     return this;
   }
@@ -437,13 +693,18 @@ class CanvasNestedDependencyTracker {
    * @param {SimpleDependency[]} dependencyNames
    */
   recordOperation(idx) {
-    this.#dependencyTracker.recordOperation(this.#opIdx);
+    this.#dependencyTracker.recordOperation(this.#opIdx, true);
     const operation = this.#dependencyTracker._extractOperation(this.#opIdx);
     for (const depIdx of operation.dependencies) {
       this.#outerDependencies.add(depIdx);
     }
     this.#outerDependencies.delete(this.#opIdx);
     this.#outerDependencies.delete(null);
+    return this;
+  }
+
+  bboxToClipBoxDropOperation(idx) {
+    this.#dependencyTracker.bboxToClipBoxDropOperation(this.#opIdx);
     return this;
   }
 
@@ -461,6 +722,7 @@ const Dependencies = {
   stroke: [
     "path",
     "transform",
+    "filter",
     "strokeColor",
     "strokeAlpha",
     "lineWidth",
@@ -472,6 +734,7 @@ const Dependencies = {
   fill: [
     "path",
     "transform",
+    "filter",
     "fillColor",
     "fillAlpha",
     "globalCompositeOperation",
@@ -480,11 +743,12 @@ const Dependencies = {
   imageXObject: [
     "transform",
     "SMask",
+    "filter",
     "fillAlpha",
     "strokeAlpha",
     "globalCompositeOperation",
   ],
-  rawFillPath: ["fillColor", "fillAlpha"],
+  rawFillPath: ["filter", "fillColor", "fillAlpha"],
   showText: [
     "transform",
     "leading",
@@ -495,6 +759,7 @@ const Dependencies = {
     "moveText",
     "textMatrix",
     "font",
+    "filter",
     "fillColor",
     "textRenderingMode",
     "SMask",

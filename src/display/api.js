@@ -1230,6 +1230,10 @@ class PDFDocumentProxy {
  *   annotation ids with canvases used to render them.
  * @property {PrintAnnotationStorage} [printAnnotationStorage]
  * @property {boolean} [isEditing] - Render the page in editing mode.
+ * @property {boolean} [recordOperations] - Record the dependencies and bounding
+ *   boxes of all PDF operations that render onto the canvas.
+ * @property {Set<number>} [filteredOperationIndexes] - If provided, only run
+ *   the PDF operations that are included in this set.
  */
 
 /**

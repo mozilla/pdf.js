@@ -645,7 +645,9 @@ function checkRefTestResults(browser, id, results) {
               pageResult.failure
           );
         } else {
-          session.numErrors++;
+          if (failed) {
+            session.numErrors++;
+          }
           console.log(
             "TEST-UNEXPECTED-FAIL | test failed " +
               id +

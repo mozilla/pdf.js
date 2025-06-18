@@ -498,15 +498,7 @@ class Stepper {
     const index = +tr.dataset.idx;
 
     const closestGroupIndex =
-      this.operatorGroups?.findIndex(({ data }) => {
-        if ("idx" in data) {
-          return data.idx === index;
-        }
-        if ("startIdx" in data) {
-          return data.startIdx <= index && index <= data.endIdx;
-        }
-        return false;
-      }) ?? -1;
+      this.operatorGroups?.findIndex(({ idx }) => idx === index) ?? -1;
     if (closestGroupIndex === -1) {
       this.hoverStyle.innerText = "";
       return;
@@ -532,22 +524,13 @@ class Stepper {
     const groupIdx = Number(e.target.dataset.groupIdx);
     const group = this.operatorGroups[groupIdx];
 
-    const firstOp = "idx" in group.data ? group.data.idx : group.data.startIdx;
-
-    this.table.childNodes[firstOp].scrollIntoView();
+    this.table.childNodes[group.idx].scrollIntoView();
   }
 
   #highlightStepsGroup(groupIndex) {
     const group = this.operatorGroups[groupIndex];
 
-    let cssSelector;
-    if ("idx" in group.data) {
-      cssSelector = `tr[data-idx="${group.data.idx}"]`;
-    } else if ("startIdx" in group.data) {
-      cssSelector = `:nth-child(n+${group.data.startIdx + 1} of tr[data-idx]):nth-child(-n+${group.data.endIdx + 1} of tr[data-idx])`;
-    }
-
-    this.hoverStyle.innerText = `#${this.panel.id} ${cssSelector} { background-color: rgba(0, 0, 0, 0.1); }`;
+    this.hoverStyle.innerText = `#${this.panel.id} tr[data-idx="${group.idx}"] { background-color: rgba(0, 0, 0, 0.1); }`;
 
     if (group.dependencies.length > 0) {
       const selector = group.dependencies
