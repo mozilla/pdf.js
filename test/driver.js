@@ -1084,21 +1084,31 @@ class Driver {
                   const clearOutsidePartial = () => {
                     const { width, height } = ctx.canvas;
                     // Everything above the partial area
-                    ctx.clearRect(0, 0, width, partialCrop.minY * height);
+                    ctx.clearRect(
+                      0,
+                      0,
+                      width,
+                      Math.ceil(partialCrop.minY * height)
+                    );
                     // Everything below the partial area
                     ctx.clearRect(
                       0,
-                      partialCrop.maxY * height,
+                      Math.floor(partialCrop.maxY * height),
                       width,
-                      (1 - partialCrop.maxY) * height
+                      height
                     );
                     // Everything to the left of the partial area
-                    ctx.clearRect(0, 0, partialCrop.minX * width, height);
+                    ctx.clearRect(
+                      0,
+                      0,
+                      Math.ceil(partialCrop.minX * width),
+                      height
+                    );
                     // Everything to the right of the partial area
                     ctx.clearRect(
-                      partialCrop.maxX * width,
+                      Math.floor(partialCrop.maxX * width),
                       0,
-                      (1 - partialCrop.maxX) * width,
+                      width,
                       height
                     );
                   };

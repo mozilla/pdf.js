@@ -123,8 +123,7 @@
       "maxX": 0.5,
       "minY": 0.25,
       "maxY": 0.5
-    },
-    "knownPartialMismatch": true
+    }
   },
   {
     "id": "issue16395",
@@ -151,7 +150,7 @@
       "minY": 0.25,
       "maxY": 0.5
     },
-    "knownPartialMismatch": true
+    "_knownPartialMismatch": true
   },
   {
     "id": "issue16432",
@@ -765,8 +764,7 @@
       "maxX": 0.5,
       "minY": 0.25,
       "maxY": 0.5
-    },
-    "knownPartialMismatch": true
+    }
   },
   {
     "id": "intelisa-84-partial",
@@ -1415,9 +1413,7 @@
       "maxX": 0.5,
       "minY": 0.25,
       "maxY": 0.5
-    },
-    "_": "Antialiasing where we crop the partial section",
-    "knownPartialMismatch": true
+    }
   },
   {
     "id": "fips197",
@@ -1530,9 +1526,7 @@
       "maxX": 0.5,
       "minY": 0.25,
       "maxY": 0.5
-    },
-    "_": "TODO: this is a real failure. Sipping it for now as it's a very slow test and thus difficult to debug. Revisit later.",
-    "knownPartialMismatch": true
+    }
   },
   {
     "id": "bug1811668",
@@ -2614,8 +2608,7 @@
       "maxX": 0.5,
       "minY": 0.25,
       "maxY": 0.5
-    },
-    "knownPartialMismatch": true
+    }
   },
   {
     "id": "issue5599",
