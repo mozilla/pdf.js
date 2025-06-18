@@ -1246,6 +1246,10 @@ class Annotation {
     return null;
   }
 
+  get hasHighlightedContent() {
+    return false;
+  }
+
   get hasTextContent() {
     return false;
   }
@@ -4691,6 +4695,10 @@ class HighlightAnnotation extends MarkupAnnotation {
     }
   }
 
+  get hasHighlightedContent() {
+    return true;
+  }
+
   static createNewDict(annotation, xref, { apRef, ap }) {
     const { color, oldAnnotation, opacity, rect, rotation, user, quadPoints } =
       annotation;
@@ -4815,6 +4823,10 @@ class UnderlineAnnotation extends MarkupAnnotation {
       this.data.popupRef = null;
     }
   }
+
+  get hasHighlightedContent() {
+    return true;
+  }
 }
 
 class SquigglyAnnotation extends MarkupAnnotation {
@@ -4859,6 +4871,10 @@ class SquigglyAnnotation extends MarkupAnnotation {
       this.data.popupRef = null;
     }
   }
+
+  get hasHighlightedContent() {
+    return true;
+  }
 }
 
 class StrikeOutAnnotation extends MarkupAnnotation {
@@ -4897,6 +4913,10 @@ class StrikeOutAnnotation extends MarkupAnnotation {
     } else {
       this.data.popupRef = null;
     }
+  }
+
+  get hasHighlightedContent() {
+    return true;
   }
 }
 
