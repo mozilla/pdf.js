@@ -555,6 +555,7 @@ class AnnotationElement {
     svg.classList.add("quadrilateralsContainer");
     svg.setAttribute("width", 0);
     svg.setAttribute("height", 0);
+    svg.role = "none";
     const defs = svgFactory.createElement("defs");
     svg.append(defs);
     const clipPath = svgFactory.createElement("clipPath");
@@ -2912,12 +2913,22 @@ class HighlightAnnotationElement extends AnnotationElement {
   }
 
   render() {
-    if (!this.data.popupRef && this.hasPopupData) {
+    const {
+      data: { overlaidText, popupRef },
+    } = this;
+    if (!popupRef && this.hasPopupData) {
       this._createPopup();
     }
 
     this.container.classList.add("highlightAnnotation");
     this._editOnDoubleClick();
+
+    if (overlaidText) {
+      const mark = document.createElement("mark");
+      mark.classList.add("overlaidText");
+      mark.textContent = overlaidText;
+      this.container.append(mark);
+    }
 
     return this.container;
   }
@@ -2933,11 +2944,22 @@ class UnderlineAnnotationElement extends AnnotationElement {
   }
 
   render() {
-    if (!this.data.popupRef && this.hasPopupData) {
+    const {
+      data: { overlaidText, popupRef },
+    } = this;
+    if (!popupRef && this.hasPopupData) {
       this._createPopup();
     }
 
     this.container.classList.add("underlineAnnotation");
+
+    if (overlaidText) {
+      const underline = document.createElement("u");
+      underline.classList.add("overlaidText");
+      underline.textContent = overlaidText;
+      this.container.append(underline);
+    }
+
     return this.container;
   }
 }
@@ -2952,11 +2974,22 @@ class SquigglyAnnotationElement extends AnnotationElement {
   }
 
   render() {
-    if (!this.data.popupRef && this.hasPopupData) {
+    const {
+      data: { overlaidText, popupRef },
+    } = this;
+    if (!popupRef && this.hasPopupData) {
       this._createPopup();
     }
 
     this.container.classList.add("squigglyAnnotation");
+
+    if (overlaidText) {
+      const underline = document.createElement("u");
+      underline.classList.add("overlaidText");
+      underline.textContent = overlaidText;
+      this.container.append(underline);
+    }
+
     return this.container;
   }
 }
@@ -2971,11 +3004,22 @@ class StrikeOutAnnotationElement extends AnnotationElement {
   }
 
   render() {
-    if (!this.data.popupRef && this.hasPopupData) {
+    const {
+      data: { overlaidText, popupRef },
+    } = this;
+    if (!popupRef && this.hasPopupData) {
       this._createPopup();
     }
 
     this.container.classList.add("strikeoutAnnotation");
+
+    if (overlaidText) {
+      const strikeout = document.createElement("s");
+      strikeout.classList.add("overlaidText");
+      strikeout.textContent = overlaidText;
+      this.container.append(strikeout);
+    }
+
     return this.container;
   }
 }
