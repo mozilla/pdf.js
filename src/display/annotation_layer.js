@@ -1293,6 +1293,10 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       element.disabled = this.data.readOnly;
       element.name = this.data.fieldName;
       element.tabIndex = 0;
+      const format = this.data.dateFormat || this.data.timeFormat;
+      if (format) {
+        element.title = format;
+      }
 
       this._setRequired(element, this.data.required);
 

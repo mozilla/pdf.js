@@ -61,6 +61,7 @@ import {
   parseAppearanceStream,
   parseDefaultAppearance,
 } from "./default_appearance.js";
+import { DateFormats, TimeFormats } from "../shared/scripting_utils.js";
 import { Dict, isName, isRefsEqual, Name, Ref, RefSet } from "./primitives.js";
 import { Stream, StringStream } from "./stream.js";
 import { BaseStream } from "./base_stream.js";
@@ -2780,6 +2781,25 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       !this.hasFieldFlag(AnnotationFieldFlag.FILESELECT) &&
       this.data.maxLen !== 0;
     this.data.doNotScroll = this.hasFieldFlag(AnnotationFieldFlag.DONOTSCROLL);
+
+    // Check if we have a date or time.
+    const {
+      data: { actions },
+    } = this;
+    for (const keystrokeAction of actions?.Keystroke || []) {
+      const m = keystrokeAction
+        .trim()
+        .match(/^AF(Date|Time)_Keystroke(?:Ex)?\(['"]?([^'"]+)['"]?\);$/);
+      if (m) {
+        let format = m[2];
+        const num = parseInt(format, 10);
+        if (!isNaN(num) && Math.floor(Math.log10(num)) + 1 === m[2].length) {
+          format = (m[1] === "Date" ? DateFormats : TimeFormats)[num] ?? format;
+        }
+        this.data[m[1] === "Date" ? "dateFormat" : "timeFormat"] = format;
+        break;
+      }
+    }
   }
 
   get hasTextContent() {
