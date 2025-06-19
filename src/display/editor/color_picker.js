@@ -78,7 +78,7 @@ class ColorPicker {
     this.#uiManager = editor?._uiManager || uiManager;
     this.#eventBus = this.#uiManager._eventBus;
     this.#defaultColor =
-      editor?.color ||
+      editor?.color?.toUpperCase() ||
       this.#uiManager?.highlightColors.values().next().value ||
       "#FFFF98";
 
@@ -96,13 +96,16 @@ class ColorPicker {
     button.className = "colorPicker";
     button.tabIndex = "0";
     button.setAttribute("data-l10n-id", "pdfjs-editor-colorpicker-button");
-    button.setAttribute("aria-haspopup", true);
+    button.ariaHasPopup = "true";
+    if (this.#editor) {
+      button.ariaControls = `${this.#editor.id}_colorpicker_dropdown`;
+    }
     const signal = this.#uiManager._signal;
     button.addEventListener("click", this.#openDropdown.bind(this), { signal });
     button.addEventListener("keydown", this.#keyDown.bind(this), { signal });
     const swatch = (this.#buttonSwatch = document.createElement("span"));
     swatch.className = "swatch";
-    swatch.setAttribute("aria-hidden", true);
+    swatch.ariaHidden = "true";
     swatch.style.backgroundColor = this.#defaultColor;
     button.append(swatch);
     return button;
@@ -110,8 +113,8 @@ class ColorPicker {
 
   renderMainDropdown() {
     const dropdown = (this.#dropdown = this.#getDropdownRoot());
-    dropdown.setAttribute("aria-orientation", "horizontal");
-    dropdown.setAttribute("aria-labelledby", "highlightColorPickerLabel");
+    dropdown.ariaOrientation = "horizontal";
+    dropdown.ariaLabelledBy = "highlightColorPickerLabel";
 
     return dropdown;
   }
@@ -122,9 +125,12 @@ class ColorPicker {
     div.addEventListener("contextmenu", noContextMenu, { signal });
     div.className = "dropdown";
     div.role = "listbox";
-    div.setAttribute("aria-multiselectable", false);
-    div.setAttribute("aria-orientation", "vertical");
+    div.ariaMultiSelectable = "false";
+    div.ariaOrientation = "vertical";
     div.setAttribute("data-l10n-id", "pdfjs-editor-colorpicker-dropdown");
+    if (this.#editor) {
+      div.id = `${this.#editor.id}_colorpicker_dropdown`;
+    }
     for (const [name, color] of this.#uiManager.highlightColors) {
       const button = document.createElement("button");
       button.tabIndex = "0";
@@ -136,7 +142,7 @@ class ColorPicker {
       button.append(swatch);
       swatch.className = "swatch";
       swatch.style.backgroundColor = color;
-      button.setAttribute("aria-selected", color === this.#defaultColor);
+      button.ariaSelected = color === this.#defaultColor;
       button.addEventListener("click", this.#colorSelect.bind(this, color), {
         signal,
       });
@@ -231,6 +237,7 @@ class ColorPicker {
         signal: this.#uiManager.combinedSignal(this.#openDropdownAC),
       });
     }
+    this.#button.ariaExpanded = "true";
     if (this.#dropdown) {
       this.#dropdown.classList.remove("hidden");
       return;
@@ -248,6 +255,7 @@ class ColorPicker {
 
   hideDropdown() {
     this.#dropdown?.classList.add("hidden");
+    this.#button.ariaExpanded = "false";
     this.#openDropdownAC?.abort();
     this.#openDropdownAC = null;
   }
@@ -283,7 +291,7 @@ class ColorPicker {
 
     const i = this.#uiManager.highlightColors.values();
     for (const child of this.#dropdown.children) {
-      child.setAttribute("aria-selected", i.next().value === color);
+      child.ariaSelected = i.next().value === color.toUpperCase();
     }
   }
 
