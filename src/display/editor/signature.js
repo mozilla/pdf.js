@@ -244,27 +244,18 @@ class SignatureEditor extends DrawingEditor {
   }
 
   /** @inheritdoc */
-  async addEditToolbar() {
-    const toolbar = await super.addEditToolbar();
-    if (!toolbar) {
-      return null;
+  get toolbarButtons() {
+    if (this._uiManager.signatureManager) {
+      return [["editSignature", this._uiManager.signatureManager]];
     }
-    if (this._uiManager.signatureManager && this.#description !== null) {
-      await toolbar.addEditSignatureButton(
-        this._uiManager.signatureManager,
-        this.#signatureUUID,
-        this.#description
-      );
-      toolbar.show();
-    }
-    return toolbar;
+    return super.toolbarButtons;
   }
 
   addSignature(data, heightInPage, description, uuid) {
     const { x: savedX, y: savedY } = this;
     const { outline } = (this.#signatureData = data);
     this.#isExtracted = outline instanceof ContourDrawOutline;
-    this.#description = description;
+    this.description = description;
     this.div.setAttribute("data-l10n-args", JSON.stringify({ description }));
     let drawingOptions;
     if (this.#isExtracted) {

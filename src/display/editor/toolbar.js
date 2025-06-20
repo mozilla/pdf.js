@@ -69,8 +69,6 @@ class EditorToolbar {
       }% + var(--editor-toolbar-vert-offset))`;
     }
 
-    this.#addDeleteButton();
-
     return editToolbar;
   }
 
@@ -118,7 +116,7 @@ class EditorToolbar {
     this.#altText?.shown();
   }
 
-  #addDeleteButton() {
+  addDeleteButton() {
     const { editorType, _uiManager } = this.#editor;
 
     const button = document.createElement("button");
@@ -145,7 +143,7 @@ class EditorToolbar {
   async addAltText(altText) {
     const button = await altText.render();
     this.#addListenersToElement(button);
-    this.#buttons.prepend(button, this.#divider);
+    this.#buttons.append(button, this.#divider);
     this.#altText = altText;
   }
 
@@ -153,14 +151,31 @@ class EditorToolbar {
     this.#colorPicker = colorPicker;
     const button = colorPicker.renderButton();
     this.#addListenersToElement(button);
-    this.#buttons.prepend(button, this.#divider);
+    this.#buttons.append(button, this.#divider);
   }
 
   async addEditSignatureButton(signatureManager) {
     const button = (this.#signatureDescriptionButton =
       await signatureManager.renderEditButton(this.#editor));
     this.#addListenersToElement(button);
-    this.#buttons.prepend(button, this.#divider);
+    this.#buttons.append(button, this.#divider);
+  }
+
+  async addButton(name, tool) {
+    switch (name) {
+      case "colorPicker":
+        this.addColorPicker(tool);
+        break;
+      case "altText":
+        await this.addAltText(tool);
+        break;
+      case "editSignature":
+        await this.addEditSignatureButton(tool);
+        break;
+      case "delete":
+        this.addDeleteButton();
+        break;
+    }
   }
 
   updateEditSignatureButton(description) {
