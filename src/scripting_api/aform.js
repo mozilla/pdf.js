@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { DateFormats, TimeFormats } from "../shared/scripting_utils.js";
 import { GlobalConstants } from "./constants.js";
 
 class AForm {
@@ -21,23 +22,6 @@ class AForm {
     this._app = app;
     this._util = util;
     this._color = color;
-    this._dateFormats = [
-      "m/d",
-      "m/d/yy",
-      "mm/dd/yy",
-      "mm/yy",
-      "d-mmm",
-      "d-mmm-yy",
-      "dd-mmm-yy",
-      "yy-mm-dd",
-      "mmm-yy",
-      "mmmm-yy",
-      "mmm d, yyyy",
-      "mmmm d, yyyy",
-      "m/d/yy h:MM tt",
-      "m/d/yy HH:MM",
-    ];
-    this._timeFormats = ["HH:MM", "h:MM tt", "HH:MM:ss", "h:MM:ss tt"];
 
     // The e-mail address regex below originates from:
     // https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address
@@ -52,16 +36,13 @@ class AForm {
     return event.target ? `[ ${event.target.name} ]` : "";
   }
 
-  _parseDate(cFormat, cDate, strict = false) {
+  _parseDate(cFormat, cDate) {
     let date = null;
     try {
-      date = this._util._scand(cFormat, cDate, strict);
+      date = this._util._scand(cFormat, cDate, /* strict = */ false);
     } catch {}
     if (date) {
       return date;
-    }
-    if (strict) {
-      return null;
     }
 
     date = Date.parse(cDate);
@@ -277,9 +258,7 @@ class AForm {
   }
 
   AFDate_Format(pdf) {
-    if (pdf >= 0 && pdf < this._dateFormats.length) {
-      this.AFDate_FormatEx(this._dateFormats[pdf]);
-    }
+    this.AFDate_FormatEx(DateFormats[pdf] ?? pdf);
   }
 
   AFDate_KeystrokeEx(cFormat) {
@@ -293,7 +272,7 @@ class AForm {
       return;
     }
 
-    if (this._parseDate(cFormat, value, /* strict = */ true) === null) {
+    if (this._parseDate(cFormat, value) === null) {
       const invalid = GlobalConstants.IDS_INVALID_DATE;
       const invalid2 = GlobalConstants.IDS_INVALID_DATE2;
       const err = `${invalid} ${this._mkTargetName(
@@ -305,8 +284,8 @@ class AForm {
   }
 
   AFDate_Keystroke(pdf) {
-    if (pdf >= 0 && pdf < this._dateFormats.length) {
-      this.AFDate_KeystrokeEx(this._dateFormats[pdf]);
+    if (pdf >= 0 && pdf < DateFormats.length) {
+      this.AFDate_KeystrokeEx(DateFormats[pdf]);
     }
   }
 
@@ -617,9 +596,7 @@ class AForm {
   }
 
   AFTime_Format(pdf) {
-    if (pdf >= 0 && pdf < this._timeFormats.length) {
-      this.AFDate_FormatEx(this._timeFormats[pdf]);
-    }
+    this.AFDate_FormatEx(TimeFormats[pdf] ?? pdf);
   }
 
   AFTime_KeystrokeEx(cFormat) {
@@ -627,8 +604,8 @@ class AForm {
   }
 
   AFTime_Keystroke(pdf) {
-    if (pdf >= 0 && pdf < this._timeFormats.length) {
-      this.AFDate_KeystrokeEx(this._timeFormats[pdf]);
+    if (pdf >= 0 && pdf < TimeFormats.length) {
+      this.AFDate_KeystrokeEx(TimeFormats[pdf]);
     }
   }
 
