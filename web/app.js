@@ -727,6 +727,7 @@ const PDFViewerApplication = {
       const queryString = document.location.search.substring(1);
       const params = parseQueryString(queryString);
       file = params.get("file") ?? AppOptions.get("defaultUrl");
+      file = encodeURIComponent(file).replaceAll("%2F", "/");
       validateFileURL(file);
     } else if (PDFJSDev.test("MOZCENTRAL")) {
       file = window.location.href;
@@ -2336,7 +2337,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 
     this.open({
       url: URL.createObjectURL(file),
-      originalUrl: file.name,
+      originalUrl: encodeURIComponent(file.name),
     });
   };
 
