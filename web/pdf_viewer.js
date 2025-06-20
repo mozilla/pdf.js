@@ -1545,15 +1545,14 @@ class PDFViewer {
       height = 0,
       widthScale,
       heightScale;
-    const changeOrientation = pageView.rotation % 180 !== 0;
-    const pageWidth =
-      (changeOrientation ? pageView.height : pageView.width) /
-      pageView.scale /
-      PixelsPerInch.PDF_TO_CSS_UNITS;
-    const pageHeight =
-      (changeOrientation ? pageView.width : pageView.height) /
-      pageView.scale /
-      PixelsPerInch.PDF_TO_CSS_UNITS;
+    // Utilize the viewport "end-points" rather than the effective width/height
+    // to avoid problems in PDF documents where the viewport starts at non-zero
+    // coordinates (fixes bug 1913617).
+    // NOTE: In the majority of PDF documents those values agree anyway.
+    const { viewBox } = pageView.viewport;
+    const changeOrientation = pageView.rotation % 180 !== 0,
+      pageWidth = changeOrientation ? viewBox[3] : viewBox[2],
+      pageHeight = changeOrientation ? viewBox[2] : viewBox[3];
     let scale = 0;
     switch (destArray[1].name) {
       case "XYZ":
