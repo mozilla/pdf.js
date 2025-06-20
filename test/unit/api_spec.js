@@ -5127,4 +5127,47 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       }
     );
   });
+
+  describe("Annotations", function () {
+    it("should extract the text under some annotations", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("bug1885505.pdf"));
+      const pdfDoc = await loadingTask.promise;
+
+      const page1 = await pdfDoc.getPage(1);
+      const annots = await page1.getAnnotations();
+      let annot = annots.find(x => x.id === "56R");
+      expect(annot.highlightedText).toEqual("Languages");
+
+      annot = annots.find(x => x.id === "52R");
+      expect(annot.highlightedText)
+        .toEqual(`Dynamic languages such as JavaScript are more difﬁcult to com-
+pile than statically typed ones. Since no concrete type information
+is available, traditional compilers`);
+
+      annot = annots.find(x => x.id === "54R");
+      expect(annot.highlightedText)
+        .toEqual(`typed ones. Since no concrete type information
+is available, traditional compilers need to emit generic code that can
+handle all possible type combinations at runtime. We present an al-
+ternative compilation technique for dynamically-`);
+
+      annot = annots.find(x => x.id === "58R");
+      expect(annot.highlightedText).toEqual("machine");
+
+      annot = annots.find(x => x.id === "60R");
+      expect(annot.highlightedText)
+        .toEqual(`paths through nested loops. We have implemented
+a dynamic compiler for JavaScript based on our`);
+
+      annot = annots.find(x => x.id === "65R");
+      expect(annot.highlightedText).toEqual("Experimentation,");
+
+      annot = annots.find(x => x.id === "63R");
+      expect(annot.highlightedText)
+        .toEqual(`languages such as JavaScript, Python, and Ruby, are pop-
+ular since they are expressive, accessible to non-experts, and make
+deployment as easy as distributing a source ﬁle. They are used for
+small scripts as well as for`);
+    });
+  });
 });
