@@ -2406,6 +2406,7 @@ class PartialEvaluator {
       transform: null,
       fontName: null,
       hasEOL: false,
+      span: "",
     };
 
     // Use a circular buffer (length === 2) to save the last chars in the
@@ -3070,6 +3071,19 @@ class PartialEvaluator {
       textContentItem.str.length = 0;
     }
 
+    function replaceTextContentBySpan() {
+      const { span, str } = textContentItem;
+      if (!span) {
+        return;
+      }
+      textContentItem.span = "";
+      if (/^\s+$/.test(span)) {
+        return;
+      }
+      str.length = 0;
+      str.push(span);
+    }
+
     function enqueueChunk(batch = false) {
       const length = textContent.items.length;
       if (length === 0) {
@@ -3446,6 +3460,11 @@ class PartialEvaluator {
             return;
           case OPS.beginMarkedContent:
             flushTextContentItem();
+            if (args[0]?.name === "Span") {
+              textContentItem.span = stringToPDFString(
+                args[1]?.get("ActualText") || ""
+              );
+            }
             if (includeMarkedContent) {
               markedContentData.level++;
 
@@ -3457,6 +3476,11 @@ class PartialEvaluator {
             break;
           case OPS.beginMarkedContentProps:
             flushTextContentItem();
+            if (args[0]?.name === "Span") {
+              textContentItem.span = stringToPDFString(
+                args[1]?.get("ActualText") || ""
+              );
+            }
             if (includeMarkedContent) {
               markedContentData.level++;
 
@@ -3474,6 +3498,7 @@ class PartialEvaluator {
             }
             break;
           case OPS.endMarkedContent:
+            replaceTextContentBySpan();
             flushTextContentItem();
             if (includeMarkedContent) {
               if (markedContentData.level === 0) {
