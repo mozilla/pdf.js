@@ -185,8 +185,8 @@ class AnnotationElement {
     }
   }
 
-  static _hasPopupData({ titleObj, contentsObj, richText }) {
-    return !!(titleObj?.str || contentsObj?.str || richText?.str);
+  static _hasPopupData({ contentsObj, richText }) {
+    return !!(contentsObj?.str || richText?.str);
   }
 
   get _isEditable() {

@@ -623,11 +623,6 @@ async function firstPageOnTop(page) {
   return awaitPromise(handle);
 }
 
-async function hover(page, selector) {
-  const rect = await getRect(page, selector);
-  await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2);
-}
-
 async function setCaretAt(page, pageNumber, text, position) {
   await page.evaluate(
     (pageN, string, pos) => {
@@ -912,7 +907,6 @@ export {
   getSerialized,
   getSpanRectFromText,
   getXY,
-  hover,
   isCanvasMonochrome,
   kbBigMoveDown,
   kbBigMoveLeft,
