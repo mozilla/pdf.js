@@ -664,7 +664,7 @@ describe("ResetForm action", () => {
   });
 
   describe("Rotated annotation and its clickable area", () => {
-    describe("issue14438.pdf", () => {
+    describe("rotated_ink.pdf", () => {
       let pages;
 
       beforeEach(async () => {
