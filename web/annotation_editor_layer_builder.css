@@ -134,6 +134,13 @@
   &.drawing * {
     pointer-events: none !important;
   }
+
+  &.getElements {
+    pointer-events: auto !important;
+    > div {
+      pointer-events: auto !important;
+    }
+  }
 }
 
 .annotationEditorLayer.waiting {
