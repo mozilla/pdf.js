@@ -361,10 +361,10 @@ class AnnotationFactory {
         case AnnotationEditorType.FREETEXT:
           if (!baseFontRef) {
             const baseFont = new Dict(xref);
-            baseFont.set("BaseFont", Name.get("Helvetica"));
-            baseFont.set("Type", Name.get("Font"));
-            baseFont.set("Subtype", Name.get("Type1"));
-            baseFont.set("Encoding", Name.get("WinAnsiEncoding"));
+            baseFont.setIfName("BaseFont", "Helvetica");
+            baseFont.setIfName("Type", "Font");
+            baseFont.setIfName("Subtype", "Type1");
+            baseFont.setIfName("Encoding", "WinAnsiEncoding");
             baseFontRef = xref.getNewTemporaryRef();
             changes.put(baseFontRef, {
               data: baseFont,
@@ -428,7 +428,7 @@ class AnnotationFactory {
     }
 
     return {
-      annotations: await Promise.all(promises),
+      annotations: (await Promise.all(promises)).flat(),
     };
   }
 
@@ -1737,7 +1737,7 @@ class MarkupAnnotation extends Annotation {
 
     const formDict = new Dict(xref);
     const appearanceStreamDict = new Dict(xref);
-    appearanceStreamDict.set("Subtype", Name.get("Form"));
+    appearanceStreamDict.setIfName("Subtype", "Form");
 
     const appearanceStream = new StringStream(buffer.join(" "));
     appearanceStream.dict = appearanceStreamDict;
@@ -1745,14 +1745,10 @@ class MarkupAnnotation extends Annotation {
 
     const gsDict = new Dict(xref);
     if (blendMode) {
-      gsDict.set("BM", Name.get(blendMode));
+      gsDict.setIfName("BM", blendMode);
     }
-    if (typeof strokeAlpha === "number") {
-      gsDict.set("CA", strokeAlpha);
-    }
-    if (typeof fillAlpha === "number") {
-      gsDict.set("ca", fillAlpha);
-    }
+    gsDict.setIfNumber("CA", strokeAlpha);
+    gsDict.setIfNumber("ca", fillAlpha);
 
     const stateDict = new Dict(xref);
     stateDict.set("GS0", gsDict);
@@ -1798,7 +1794,29 @@ class MarkupAnnotation extends Annotation {
       data: annotationDict,
     });
 
-    return { ref: annotationRef };
+    const retRef = { ref: annotationRef };
+    if (annotation.popup) {
+      const popup = annotation.popup;
+      if (popup.deleted) {
+        annotationDict.delete("Popup");
+        annotationDict.delete("Contents");
+        annotationDict.delete("RC");
+        return retRef;
+      }
+      const popupRef = (popup.ref ||= xref.getNewTemporaryRef());
+      popup.parent = annotationRef;
+      const popupDict = PopupAnnotation.createNewDict(popup, xref);
+      changes.put(popupRef, { data: popupDict });
+      annotationDict.setIfDefined(
+        "Contents",
+        stringToAsciiOrUTF16BE(popup.contents)
+      );
+      annotationDict.set("Popup", popupRef);
+
+      return [retRef, { ref: popupRef }];
+    }
+
+    return retRef;
   }
 
   static async createNewPrintAnnotation(
@@ -2244,7 +2262,7 @@ class WidgetAnnotation extends Annotation {
       const resources = this._getSaveFieldResources(xref);
       const appearanceStream = new StringStream(appearance);
       const appearanceDict = (appearanceStream.dict = new Dict(xref));
-      appearanceDict.set("Subtype", Name.get("Form"));
+      appearanceDict.setIfName("Subtype", "Form");
       appearanceDict.set("Resources", resources);
       const bbox =
         rotation % 180 === 0
@@ -3268,8 +3286,8 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
     const appearanceStreamDict = new Dict(params.xref);
     appearanceStreamDict.set("FormType", 1);
-    appearanceStreamDict.set("Subtype", Name.get("Form"));
-    appearanceStreamDict.set("Type", Name.get("XObject"));
+    appearanceStreamDict.setIfName("Subtype", "Form");
+    appearanceStreamDict.setIfName("Type", "XObject");
     appearanceStreamDict.set("BBox", bbox);
     appearanceStreamDict.set("Matrix", [1, 0, 0, 1, 0, 0]);
     appearanceStreamDict.set("Length", appearance.length);
@@ -3456,10 +3474,10 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
   get fallbackFontDict() {
     const dict = new Dict();
-    dict.set("BaseFont", Name.get("ZapfDingbats"));
-    dict.set("Type", Name.get("FallbackType"));
-    dict.set("Subtype", Name.get("FallbackType"));
-    dict.set("Encoding", Name.get("ZapfDingbatsEncoding"));
+    dict.setIfName("BaseFont", "ZapfDingbats");
+    dict.setIfName("Type", "FallbackType");
+    dict.setIfName("Subtype", "FallbackType");
+    dict.setIfName("Encoding", "ZapfDingbatsEncoding");
 
     return shadow(this, "fallbackFontDict", dict);
   }
@@ -3883,6 +3901,22 @@ class PopupAnnotation extends Annotation {
 
     this.data.open = !!dict.get("Open");
   }
+
+  static createNewDict(annotation, xref, _params) {
+    const { oldAnnotation, rect, parent } = annotation;
+    const popup = oldAnnotation || new Dict(xref);
+    popup.setIfNotExists("Type", Name.get("Annot"));
+    popup.setIfNotExists("Subtype", Name.get("Popup"));
+    popup.setIfNotExists("Open", false);
+    popup.setIfArray("Rect", rect);
+    popup.setIfDefined("Parent", parent);
+
+    return popup;
+  }
+
+  static async createNewAppearanceStream(annotation, xref, params) {
+    return null;
+  }
 }
 
 class FreeTextAnnotation extends MarkupAnnotation {
@@ -3952,38 +3986,31 @@ class FreeTextAnnotation extends MarkupAnnotation {
   static createNewDict(annotation, xref, { apRef, ap }) {
     const { color, fontSize, oldAnnotation, rect, rotation, user, value } =
       annotation;
+    const date = `D:${getModificationDate(annotation.date)}`;
     const freetext = oldAnnotation || new Dict(xref);
-    freetext.set("Type", Name.get("Annot"));
-    freetext.set("Subtype", Name.get("FreeText"));
+    freetext.setIfNotExists("Type", Name.get("Annot"));
+    freetext.setIfNotExists("Subtype", Name.get("FreeText"));
     if (oldAnnotation) {
-      freetext.set("M", `D:${getModificationDate()}`);
+      freetext.set("M", date);
       // TODO: We should try to generate a new RC from the content we've.
       // For now we can just remove it to avoid any issues.
       freetext.delete("RC");
     } else {
-      freetext.set("CreationDate", `D:${getModificationDate()}`);
+      freetext.set("CreationDate", date);
     }
-    freetext.set("Rect", rect);
+    freetext.setIfArray("Rect", rect);
     const da = `/Helv ${fontSize} Tf ${getPdfColor(color, /* isFill */ true)}`;
     freetext.set("DA", da);
-    freetext.set("Contents", stringToAsciiOrUTF16BE(value));
-    freetext.set("F", 4);
-    freetext.set("Border", [0, 0, 0]);
-    freetext.set("Rotate", rotation);
-
-    if (user) {
-      freetext.set("T", stringToAsciiOrUTF16BE(user));
-    }
+    freetext.setIfDefined("Contents", stringToAsciiOrUTF16BE(value));
+    freetext.setIfNotExists("F", 4);
+    freetext.setIfNotExists("Border", [0, 0, 0]);
+    freetext.setIfNumber("Rotate", rotation);
+    freetext.setIfDefined("T", stringToAsciiOrUTF16BE(user));
 
     if (apRef || ap) {
       const n = new Dict(xref);
       freetext.set("AP", n);
-
-      if (apRef) {
-        n.set("N", apRef);
-      } else {
-        n.set("N", ap);
-      }
+      n.set("N", apRef || ap);
     }
 
     return freetext;
@@ -3992,6 +4019,9 @@ class FreeTextAnnotation extends MarkupAnnotation {
   static async createNewAppearanceStream(annotation, xref, params) {
     const { baseFontRef, evaluator, task } = params;
     const { color, fontSize, rect, rotation, value } = annotation;
+    if (!color) {
+      return null;
+    }
 
     const resources = new Dict(xref);
     const font = new Dict(xref);
@@ -4000,10 +4030,10 @@ class FreeTextAnnotation extends MarkupAnnotation {
       font.set("Helv", baseFontRef);
     } else {
       const baseFont = new Dict(xref);
-      baseFont.set("BaseFont", Name.get("Helvetica"));
-      baseFont.set("Type", Name.get("Font"));
-      baseFont.set("Subtype", Name.get("Type1"));
-      baseFont.set("Encoding", Name.get("WinAnsiEncoding"));
+      baseFont.setIfName("BaseFont", "Helvetica");
+      baseFont.setIfName("Type", "Font");
+      baseFont.setIfName("Subtype", "Type1");
+      baseFont.setIfName("Encoding", "WinAnsiEncoding");
       font.set("Helv", baseFont);
     }
     resources.set("Font", font);
@@ -4105,8 +4135,8 @@ class FreeTextAnnotation extends MarkupAnnotation {
 
     const appearanceStreamDict = new Dict(xref);
     appearanceStreamDict.set("FormType", 1);
-    appearanceStreamDict.set("Subtype", Name.get("Form"));
-    appearanceStreamDict.set("Type", Name.get("XObject"));
+    appearanceStreamDict.setIfName("Subtype", "Form");
+    appearanceStreamDict.setIfName("Type", "XObject");
     appearanceStreamDict.set("BBox", rect);
     appearanceStreamDict.set("Resources", resources);
     appearanceStreamDict.set("Matrix", [1, 0, 0, 1, -rect[0], -rect[1]]);
@@ -4488,45 +4518,44 @@ class InkAnnotation extends MarkupAnnotation {
       thickness,
       user,
     } = annotation;
+    const date = `D:${getModificationDate(annotation.date)}`;
     const ink = oldAnnotation || new Dict(xref);
-    ink.set("Type", Name.get("Annot"));
-    ink.set("Subtype", Name.get("Ink"));
-    ink.set(oldAnnotation ? "M" : "CreationDate", `D:${getModificationDate()}`);
-    ink.set("Rect", rect);
-    ink.set("InkList", outlines?.points || paths.points);
-    ink.set("F", 4);
-    ink.set("Rotate", rotation);
-
-    if (user) {
-      ink.set("T", stringToAsciiOrUTF16BE(user));
-    }
+    ink.setIfNotExists("Type", Name.get("Annot"));
+    ink.setIfNotExists("Subtype", Name.get("Ink"));
+    ink.set(oldAnnotation ? "M" : "CreationDate", date);
+    ink.setIfArray("Rect", rect);
+    ink.setIfArray("InkList", outlines?.points || paths?.points);
+    ink.setIfNotExists("F", 4);
+    ink.setIfNumber("Rotate", rotation);
+    ink.setIfDefined("T", stringToAsciiOrUTF16BE(user));
 
     if (outlines) {
       // Free highlight.
       // There's nothing about this in the spec, but it's used when highlighting
       // in Edge's viewer. Acrobat takes into account this parameter to indicate
       // that the Ink is used for highlighting.
-      ink.set("IT", Name.get("InkHighlight"));
+      ink.setIfName("IT", "InkHighlight");
     }
 
     // Line thickness.
-    const bs = new Dict(xref);
-    ink.set("BS", bs);
-    bs.set("W", thickness);
+    if (thickness > 0) {
+      const bs = new Dict(xref);
+      ink.set("BS", bs);
+      bs.set("W", thickness);
+    }
 
     // Color.
-    ink.set("C", getPdfColorArray(color));
+    if (color) {
+      ink.set("C", getPdfColorArray(color));
+    }
 
     // Opacity.
-    ink.set("CA", opacity);
+    ink.setIfNumber("CA", opacity);
 
-    const n = new Dict(xref);
-    ink.set("AP", n);
-
-    if (apRef) {
-      n.set("N", apRef);
-    } else {
-      n.set("N", ap);
+    if (ap || apRef) {
+      const n = new Dict(xref);
+      ink.set("AP", n);
+      n.set("N", apRef || ap);
     }
 
     return ink;
@@ -4541,6 +4570,9 @@ class InkAnnotation extends MarkupAnnotation {
       );
     }
     const { color, rect, paths, thickness, opacity } = annotation;
+    if (!color) {
+      return null;
+    }
 
     const appearanceBuffer = [
       `${thickness} w 1 J 1 j`,
@@ -4581,8 +4613,8 @@ class InkAnnotation extends MarkupAnnotation {
 
     const appearanceStreamDict = new Dict(xref);
     appearanceStreamDict.set("FormType", 1);
-    appearanceStreamDict.set("Subtype", Name.get("Form"));
-    appearanceStreamDict.set("Type", Name.get("XObject"));
+    appearanceStreamDict.setIfName("Subtype", "Form");
+    appearanceStreamDict.setIfName("Type", "XObject");
     appearanceStreamDict.set("BBox", rect);
     appearanceStreamDict.set("Length", appearance.length);
 
@@ -4591,7 +4623,7 @@ class InkAnnotation extends MarkupAnnotation {
       const extGState = new Dict(xref);
       const r0 = new Dict(xref);
       r0.set("CA", opacity);
-      r0.set("Type", Name.get("ExtGState"));
+      r0.setIfName("Type", "ExtGState");
       extGState.set("R0", r0);
       resources.set("ExtGState", extGState);
       appearanceStreamDict.set("Resources", resources);
@@ -4610,6 +4642,9 @@ class InkAnnotation extends MarkupAnnotation {
       outlines: { outline },
       opacity,
     } = annotation;
+    if (!color) {
+      return null;
+    }
     const appearanceBuffer = [
       `${getPdfColor(color, /* isFill */ true)}`,
       "/R0 gs",
@@ -4637,8 +4672,8 @@ class InkAnnotation extends MarkupAnnotation {
 
     const appearanceStreamDict = new Dict(xref);
     appearanceStreamDict.set("FormType", 1);
-    appearanceStreamDict.set("Subtype", Name.get("Form"));
-    appearanceStreamDict.set("Type", Name.get("XObject"));
+    appearanceStreamDict.setIfName("Subtype", "Form");
+    appearanceStreamDict.setIfName("Type", "XObject");
     appearanceStreamDict.set("BBox", rect);
     appearanceStreamDict.set("Length", appearance.length);
 
@@ -4648,11 +4683,11 @@ class InkAnnotation extends MarkupAnnotation {
     appearanceStreamDict.set("Resources", resources);
     const r0 = new Dict(xref);
     extGState.set("R0", r0);
-    r0.set("BM", Name.get("Multiply"));
+    r0.setIfName("BM", "Multiply");
 
     if (opacity !== 1) {
       r0.set("ca", opacity);
-      r0.set("Type", Name.get("ExtGState"));
+      r0.setIfName("Type", "ExtGState");
     }
 
     const ap = new StringStream(appearance);
@@ -4714,29 +4749,21 @@ class HighlightAnnotation extends MarkupAnnotation {
   static createNewDict(annotation, xref, { apRef, ap }) {
     const { color, oldAnnotation, opacity, rect, rotation, user, quadPoints } =
       annotation;
+    const date = `D:${getModificationDate(annotation.date)}`;
     const highlight = oldAnnotation || new Dict(xref);
-    highlight.set("Type", Name.get("Annot"));
-    highlight.set("Subtype", Name.get("Highlight"));
-    highlight.set(
-      oldAnnotation ? "M" : "CreationDate",
-      `D:${getModificationDate()}`
-    );
-    highlight.set("CreationDate", `D:${getModificationDate()}`);
-    highlight.set("Rect", rect);
-    highlight.set("F", 4);
-    highlight.set("Border", [0, 0, 0]);
-    highlight.set("Rotate", rotation);
-    highlight.set("QuadPoints", quadPoints);
-
-    // Color.
-    highlight.set("C", getPdfColorArray(color));
-
-    // Opacity.
-    highlight.set("CA", opacity);
-
-    if (user) {
-      highlight.set("T", stringToAsciiOrUTF16BE(user));
+    highlight.setIfNotExists("Type", Name.get("Annot"));
+    highlight.setIfNotExists("Subtype", Name.get("Highlight"));
+    highlight.set(oldAnnotation ? "M" : "CreationDate", date);
+    highlight.setIfArray("Rect", rect);
+    highlight.setIfNotExists("F", 4);
+    highlight.setIfNotExists("Border", [0, 0, 0]);
+    highlight.setIfNumber("Rotate", rotation);
+    highlight.setIfArray("QuadPoints", quadPoints);
+    if (color) {
+      highlight.set("C", getPdfColorArray(color));
     }
+    highlight.setIfNumber("CA", opacity);
+    highlight.setIfDefined("T", stringToAsciiOrUTF16BE(user));
 
     if (apRef || ap) {
       const n = new Dict(xref);
@@ -4749,6 +4776,9 @@ class HighlightAnnotation extends MarkupAnnotation {
 
   static async createNewAppearanceStream(annotation, xref, params) {
     const { color, rect, outlines, opacity } = annotation;
+    if (!color) {
+      return null;
+    }
 
     const appearanceBuffer = [
       `${getPdfColor(color, /* isFill */ true)}`,
@@ -4774,8 +4804,8 @@ class HighlightAnnotation extends MarkupAnnotation {
 
     const appearanceStreamDict = new Dict(xref);
     appearanceStreamDict.set("FormType", 1);
-    appearanceStreamDict.set("Subtype", Name.get("Form"));
-    appearanceStreamDict.set("Type", Name.get("XObject"));
+    appearanceStreamDict.setIfName("Subtype", "Form");
+    appearanceStreamDict.setIfName("Type", "XObject");
     appearanceStreamDict.set("BBox", rect);
     appearanceStreamDict.set("Length", appearance.length);
 
@@ -4785,11 +4815,11 @@ class HighlightAnnotation extends MarkupAnnotation {
     appearanceStreamDict.set("Resources", resources);
     const r0 = new Dict(xref);
     extGState.set("R0", r0);
-    r0.set("BM", Name.get("Multiply"));
+    r0.setIfName("BM", "Multiply");
 
     if (opacity !== 1) {
       r0.set("ca", opacity);
-      r0.set("Type", Name.get("ExtGState"));
+      r0.setIfName("Type", "ExtGState");
     }
 
     const ap = new StringStream(appearance);
@@ -4989,8 +5019,8 @@ class StampAnnotation extends MarkupAnnotation {
     image.set("Type", xobjectName);
     image.set("Subtype", imageName);
     image.set("BitsPerComponent", 8);
-    image.set("ColorSpace", Name.get("DeviceRGB"));
-    image.set("Filter", Name.get("DCTDecode"));
+    image.setIfName("ColorSpace", "DeviceRGB");
+    image.setIfName("Filter", "DCTDecode");
     image.set("BBox", [0, 0, width, height]);
     image.set("Width", width);
     image.set("Height", height);
@@ -5012,7 +5042,7 @@ class StampAnnotation extends MarkupAnnotation {
       smask.set("Type", xobjectName);
       smask.set("Subtype", imageName);
       smask.set("BitsPerComponent", 8);
-      smask.set("ColorSpace", Name.get("DeviceGray"));
+      smask.setIfName("ColorSpace", "DeviceGray");
       smask.set("Width", width);
       smask.set("Height", height);
 
@@ -5030,31 +5060,21 @@ class StampAnnotation extends MarkupAnnotation {
 
   static createNewDict(annotation, xref, { apRef, ap }) {
     const { oldAnnotation, rect, rotation, user } = annotation;
+    const date = `D:${getModificationDate(annotation.date)}`;
     const stamp = oldAnnotation || new Dict(xref);
-    stamp.set("Type", Name.get("Annot"));
-    stamp.set("Subtype", Name.get("Stamp"));
-    stamp.set(
-      oldAnnotation ? "M" : "CreationDate",
-      `D:${getModificationDate()}`
-    );
-    stamp.set("Rect", rect);
-    stamp.set("F", 4);
-    stamp.set("Border", [0, 0, 0]);
-    stamp.set("Rotate", rotation);
-
-    if (user) {
-      stamp.set("T", stringToAsciiOrUTF16BE(user));
-    }
+    stamp.setIfNotExists("Type", Name.get("Annot"));
+    stamp.setIfNotExists("Subtype", Name.get("Stamp"));
+    stamp.set(oldAnnotation ? "M" : "CreationDate", date);
+    stamp.setIfArray("Rect", rect);
+    stamp.setIfNotExists("F", 4);
+    stamp.setIfNotExists("Border", [0, 0, 0]);
+    stamp.setIfNumber("Rotate", rotation);
+    stamp.setIfDefined("T", stringToAsciiOrUTF16BE(user));
 
     if (apRef || ap) {
       const n = new Dict(xref);
       stamp.set("AP", n);
-
-      if (apRef) {
-        n.set("N", apRef);
-      } else {
-        n.set("N", ap);
-      }
+      n.set("N", apRef || ap);
     }
 
     return stamp;
@@ -5062,6 +5082,9 @@ class StampAnnotation extends MarkupAnnotation {
 
   static async #createNewAppearanceStreamForDrawing(annotation, xref) {
     const { areContours, color, rect, lines, thickness } = annotation;
+    if (!color) {
+      return null;
+    }
 
     const appearanceBuffer = [
       `${thickness} w 1 J 1 j`,
@@ -5096,8 +5119,8 @@ class StampAnnotation extends MarkupAnnotation {
 
     const appearanceStreamDict = new Dict(xref);
     appearanceStreamDict.set("FormType", 1);
-    appearanceStreamDict.set("Subtype", Name.get("Form"));
-    appearanceStreamDict.set("Type", Name.get("XObject"));
+    appearanceStreamDict.setIfName("Subtype", "Form");
+    appearanceStreamDict.setIfName("Type", "XObject");
     appearanceStreamDict.set("BBox", rect);
     appearanceStreamDict.set("Length", appearance.length);
 
@@ -5126,8 +5149,8 @@ class StampAnnotation extends MarkupAnnotation {
 
     const appearanceStreamDict = new Dict(xref);
     appearanceStreamDict.set("FormType", 1);
-    appearanceStreamDict.set("Subtype", Name.get("Form"));
-    appearanceStreamDict.set("Type", Name.get("XObject"));
+    appearanceStreamDict.setIfName("Subtype", "Form");
+    appearanceStreamDict.setIfName("Type", "XObject");
     appearanceStreamDict.set("BBox", [0, 0, width, height]);
     appearanceStreamDict.set("Resources", resources);
 
