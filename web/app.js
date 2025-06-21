@@ -727,7 +727,11 @@ const PDFViewerApplication = {
       const queryString = document.location.search.substring(1);
       const params = parseQueryString(queryString);
       file = params.get("file") ?? AppOptions.get("defaultUrl");
-      file = encodeURIComponent(file).replaceAll("%2F", "/");
+      try {
+        file = new URL(decodeURIComponent(file)).href;
+      } catch {
+        file = encodeURIComponent(file).replaceAll("%2F", "/");
+      }
       validateFileURL(file);
     } else if (PDFJSDev.test("MOZCENTRAL")) {
       file = window.location.href;
