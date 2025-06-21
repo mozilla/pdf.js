@@ -53,9 +53,11 @@ function loadAndWait(filename, selector, zoom, setups, options, viewport) {
           app_options += `&${key}=${encodeURIComponent(value)}`;
         }
       }
-      const url = `${
-        global.integrationBaseUrl
-      }?file=/test/pdfs/${filename}#zoom=${zoom ?? "page-fit"}${app_options}`;
+
+      const fileParam = filename.startsWith("http")
+        ? filename
+        : `/test/pdfs/${filename}`;
+      const url = `${global.integrationBaseUrl}?file=${fileParam}#zoom=${zoom ?? "page-fit"}${app_options}`;
 
       if (setups) {
         // page.evaluateOnNewDocument allows us to run code before the
