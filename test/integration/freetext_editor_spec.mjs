@@ -3338,4 +3338,56 @@ describe("FreeText Editor", () => {
       );
     });
   });
+
+  describe("Edit added Freetext annotation", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that an added Freetext can be edited in double clicking on it", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          const rect = await getRect(page, ".annotationEditorLayer");
+          const editorSelector = getEditorSelector(0);
+
+          const data = "Hello PDF.js World !!";
+          await page.mouse.click(
+            rect.x + rect.width / 2,
+            rect.y + rect.height / 2
+          );
+          await page.waitForSelector(editorSelector, { visible: true });
+          await page.type(`${editorSelector} .internal`, data);
+          await commit(page);
+          await waitForSerialized(page, 1);
+
+          await switchToFreeText(page, /* disable */ true);
+
+          const modeChangedHandle = await createPromise(page, resolve => {
+            window.PDFViewerApplication.eventBus.on(
+              "annotationeditormodechanged",
+              resolve,
+              { once: true }
+            );
+          });
+          const editorRect = await getRect(page, editorSelector);
+          await page.mouse.click(
+            editorRect.x + editorRect.width / 2,
+            editorRect.y + editorRect.height / 2,
+            { count: 2 }
+          );
+
+          await page.waitForSelector(".annotationEditorLayer.freetextEditing");
+          await awaitPromise(modeChangedHandle);
+        })
+      );
+    });
+  });
 });
