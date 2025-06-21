@@ -50,7 +50,7 @@ describe("custom canvas rendering", function () {
     const canvasAndCtx = canvasFactory.create(viewport.width, viewport.height);
 
     const renderTask = page.render({
-      canvasContext: canvasAndCtx.context,
+      canvas: canvasAndCtx.canvas,
       viewport,
     });
     await renderTask.promise;
@@ -70,7 +70,7 @@ describe("custom canvas rendering", function () {
     const canvasAndCtx = canvasFactory.create(viewport.width, viewport.height);
 
     const renderTask = page.render({
-      canvasContext: canvasAndCtx.context,
+      canvas: canvasAndCtx.canvas,
       viewport,
       background: "rgba(255,0,0,1.0)",
     });
@@ -160,7 +160,7 @@ describe("custom ownerDocument", function () {
     const canvasAndCtx = canvasFactory.create(viewport.width, viewport.height);
 
     await page.render({
-      canvasContext: canvasAndCtx.context,
+      canvas: canvasAndCtx.canvas,
       viewport,
     }).promise;
 
@@ -194,7 +194,7 @@ describe("custom ownerDocument", function () {
     const canvasAndCtx = canvasFactory.create(viewport.width, viewport.height);
 
     await page.render({
-      canvasContext: canvasAndCtx.context,
+      canvas: canvasAndCtx.canvas,
       viewport,
     }).promise;
 
