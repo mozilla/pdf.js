@@ -813,6 +813,7 @@ describe("Interaction", () => {
     let pages;
 
     beforeEach(async () => {
+      pending("Linked PDFs are not supported.");
       pages = await loadAndWait("issue13132.pdf", getSelector("171R"));
     });
 
@@ -1276,6 +1277,7 @@ describe("Interaction", () => {
     let pages;
 
     beforeEach(async () => {
+      pending("Linked PDFs are not supported.");
       pages = await loadAndWait("bug1766987.pdf", getSelector("75R"));
     });
 
@@ -1983,6 +1985,7 @@ describe("Interaction", () => {
     let pages;
 
     beforeEach(async () => {
+      pending("Linked PDFs are not supported.");
       pages = await loadAndWait("issue16863.pdf", getSelector("334R"));
     });
 
@@ -2122,6 +2125,7 @@ describe("Interaction", () => {
     let pages;
 
     beforeEach(async () => {
+      pending("Linked PDFs are not supported.");
       pages = await loadAndWait("bug1860602.pdf", getSelector("22R"));
     });
 
