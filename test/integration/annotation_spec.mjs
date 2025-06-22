@@ -696,4 +696,77 @@ describe("ResetForm action", () => {
       });
     });
   });
+
+  describe("Text under some annotations", () => {
+    describe("bug1885505.pdf", () => {
+      let pages;
+
+      beforeEach(async () => {
+        pages = await loadAndWait(
+          "bug1885505.pdf",
+          ":is(" +
+            [56, 58, 60, 65]
+              .map(id => `[data-annotation-id='${id}R']`)
+              .join(", ") +
+            ")"
+        );
+      });
+
+      afterEach(async () => {
+        await closePages(pages);
+      });
+
+      it("must check that the text under a highlight annotation exist in the DOM", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const text = await page.$eval(
+              "[data-annotation-id='56R'] mark",
+              el => el.textContent
+            );
+            expect(text).withContext(`In ${browserName}`).toEqual("Languages");
+          })
+        );
+      });
+
+      it("must check that the text under an underline annotation exist in the DOM", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const text = await page.$eval(
+              "[data-annotation-id='58R'] u",
+              el => el.textContent
+            );
+            expect(text).withContext(`In ${browserName}`).toEqual("machine");
+          })
+        );
+      });
+
+      it("must check that the text under a squiggly annotation exist in the DOM", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const text = await page.$eval(
+              "[data-annotation-id='60R'] u",
+              el => el.textContent
+            );
+            expect(text).withContext(`In ${browserName}`)
+              .toEqual(`paths through nested loops. We have implemented
+a dynamic compiler for JavaScript based on our`);
+          })
+        );
+      });
+
+      it("must check that the text under a strikeout annotation exist in the DOM", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const text = await page.$eval(
+              "[data-annotation-id='65R'] s",
+              el => el.textContent
+            );
+            expect(text)
+              .withContext(`In ${browserName}`)
+              .toEqual("Experimentation,");
+          })
+        );
+      });
+    });
+  });
 });
