@@ -1,0 +1,53 @@
+name: Integration tests
+on:
+  push:
+    paths:
+      - '.github/workflows/integration_tests.yml'
+    branches:
+      - master
+  pull_request:
+    paths:
+      - '.github/workflows/integration_tests.yml'
+    branches:
+      - master
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [lts/*]
+        os: [windows-latest, ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Update resolution (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
+
+      - name: Run integration tests (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: npx gulp integrationtest
+
+      - name: Run integration tests (Linux)
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: xvfb-run -a --server-args="-screen 0, 1920x1080x24" npx gulp integrationtest
