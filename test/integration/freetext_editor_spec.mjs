@@ -89,6 +89,7 @@ describe("FreeText Editor", () => {
     let pages;
 
     beforeEach(async () => {
+      pending("Linked PDFs are not supported.");
       pages = await loadAndWait("aboutstacks.pdf", ".annotationEditorLayer");
     });
 
@@ -137,6 +138,7 @@ describe("FreeText Editor", () => {
     });
 
     it("must copy/paste", async () => {
+      pending("Doesn't work in headless mode in Firefox.");
       // Run sequentially to avoid clipboard issues.
       for (const [browserName, page] of pages) {
         await switchToFreeText(page);
@@ -217,6 +219,7 @@ describe("FreeText Editor", () => {
     });
 
     it("must check that a paste has been undone", async () => {
+      pending("Doesn't work in headless mode in Firefox.");
       // Run sequentially to avoid clipboard issues.
       for (const [, page] of pages) {
         await switchToFreeText(page);
@@ -437,6 +440,7 @@ describe("FreeText Editor", () => {
     let pages;
 
     beforeEach(async () => {
+      pending("Linked PDFs are not supported.");
       pages = await loadAndWait("aboutstacks.pdf", ".annotationEditorLayer");
     });
 
@@ -445,6 +449,7 @@ describe("FreeText Editor", () => {
     });
 
     it("must select/unselect several editors and check copy, paste and delete operations", async () => {
+      pending("Doesn't work in headless mode in Chrome and Firefox.");
       // Run sequentially to avoid clipboard issues.
       for (const [browserName, page] of pages) {
         await switchToFreeText(page);
@@ -1157,6 +1162,7 @@ describe("FreeText Editor", () => {
     });
 
     it("must copy and paste an existing annotation", async () => {
+      pending("Doesn't work in headless mode in Firefox.");
       // Run sequentially to avoid clipboard issues.
       for (const [browserName, page] of pages) {
         await switchToFreeText(page);
@@ -1448,6 +1454,7 @@ describe("FreeText Editor", () => {
     });
 
     it("must open an existing annotation and check that the position are good", async () => {
+      pending("Doesn't work in headless mode in Firefox.");
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           const toBinary = buf => {
@@ -2323,6 +2330,7 @@ describe("FreeText Editor", () => {
     let pages;
 
     beforeEach(async () => {
+      pending("Linked PDFs are not supported.");
       pages = await loadAndWait("bug1823296.pdf", ".annotationEditorLayer");
     });
 
@@ -3094,6 +3102,7 @@ describe("FreeText Editor", () => {
     });
 
     it("must check that a freetext is still there after having updated it and scroll the doc", async () => {
+      pending("Doesn't work in headless mode in Chrome.");
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToFreeText(page);
