@@ -1092,6 +1092,9 @@ function isArrayEqual(arr1, arr2) {
 }
 
 function getModificationDate(date = new Date()) {
+  if (!(date instanceof Date)) {
+    date = new Date(date);
+  }
   const buffer = [
     date.getUTCFullYear().toString(),
     (date.getUTCMonth() + 1).toString().padStart(2, "0"),
