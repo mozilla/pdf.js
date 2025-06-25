@@ -1382,6 +1382,7 @@ class PDFViewer {
     this.eventBus.dispatch("scalechanging", {
       source: this,
       scale: newScale,
+      pdfScale: newScale * PixelsPerInch.PDF_TO_CSS_UNITS,
       presetValue: preset ? newValue : undefined,
     });
 

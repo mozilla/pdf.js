@@ -115,6 +115,8 @@ class TextLayer {
     }
     this.#container = this.#rootContainer = container;
 
+    this.#container.addEventListener("click", this.onContainerClick);
+
     this.#scale = viewport.scale * OutputScale.pixelRatio;
     this.#rotation = viewport.rotation;
     this.#layoutTextParams = {
@@ -173,6 +175,20 @@ class TextLayer {
         ],
       ])
     );
+  }
+
+  /**
+   * Render the textLayer.
+   * @param {MouseEvent} event
+   * @returns {undefined}
+   */
+  onContainerClick(event) {
+    if (window) {
+      window.dispatchEvent(
+        new CustomEvent("PDFTextLayerClick", { detail: { clickEvent: event } })
+      );
+      // event.stopPropagation();
+    }
   }
 
   /**
