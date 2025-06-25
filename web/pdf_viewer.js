@@ -825,7 +825,7 @@ class PDFViewer {
   /**
    * @param {PDFDocumentProxy} pdfDocument
    */
-  setDocument(pdfDocument) {
+  async setDocument(pdfDocument) {
     if (this.pdfDocument) {
       this.eventBus.dispatch("pagesdestroy", { source: this });
 
@@ -833,7 +833,8 @@ class PDFViewer {
       this._resetView();
 
       this.findController?.setDocument(null);
-      this._scriptingManager?.setDocument(null);
+
+      await this._scriptingManager?.setDocument(null);
 
       this.#annotationEditorUIManager?.destroy();
       this.#annotationEditorUIManager = null;
@@ -900,225 +901,227 @@ class PDFViewer {
 
     // Fetch a single page so we can get a viewport that will be the default
     // viewport for all pages
-    Promise.all([firstPagePromise, permissionsPromise])
-      .then(([firstPdfPage, permissions]) => {
-        if (pdfDocument !== this.pdfDocument) {
-          return; // The document was closed while the first page resolved.
-        }
-        this._firstPageCapability.resolve(firstPdfPage);
-        this._optionalContentConfigPromise = optionalContentConfigPromise;
+    try {
+      const [firstPdfPage, permissions] = await Promise.all([
+        firstPagePromise,
+        permissionsPromise,
+      ]);
+      if (pdfDocument !== this.pdfDocument) {
+        return; // The document was closed while the first page resolved.
+      }
+      this._firstPageCapability.resolve(firstPdfPage);
+      this._optionalContentConfigPromise = optionalContentConfigPromise;
 
-        const { annotationEditorMode, annotationMode, textLayerMode } =
-          this.#initializePermissions(permissions);
+      const { annotationEditorMode, annotationMode, textLayerMode } =
+        this.#initializePermissions(permissions);
 
-        if (textLayerMode !== TextLayerMode.DISABLE) {
-          const element = (this.#hiddenCopyElement =
-            document.createElement("div"));
-          element.id = "hiddenCopyElement";
-          viewer.before(element);
-        }
+      if (textLayerMode !== TextLayerMode.DISABLE) {
+        const element = (this.#hiddenCopyElement =
+          document.createElement("div"));
+        element.id = "hiddenCopyElement";
+        viewer.before(element);
+      }
 
-        if (annotationEditorMode !== AnnotationEditorType.DISABLE) {
-          const mode = annotationEditorMode;
+      if (annotationEditorMode !== AnnotationEditorType.DISABLE) {
+        const mode = annotationEditorMode;
 
-          if (pdfDocument.isPureXfa) {
-            console.warn("Warning: XFA-editing is not implemented.");
-          } else if (isValidAnnotationEditorMode(mode)) {
-            this.#annotationEditorUIManager = new AnnotationEditorUIManager(
-              this.container,
-              viewer,
-              this.#altTextManager,
-              this.#signatureManager,
-              eventBus,
-              pdfDocument,
-              pageColors,
-              this.#annotationEditorHighlightColors,
-              this.#enableHighlightFloatingButton,
-              this.#enableUpdatedAddImage,
-              this.#enableNewAltTextWhenAddingImage,
-              this.#mlManager,
-              this.#editorUndoBar,
-              this.#supportsPinchToZoom
-            );
-            eventBus.dispatch("annotationeditoruimanager", {
-              source: this,
-              uiManager: this.#annotationEditorUIManager,
-            });
-            if (mode !== AnnotationEditorType.NONE) {
-              this.#preloadEditingData(mode);
-              this.#annotationEditorUIManager.updateMode(mode);
-            }
-          } else {
-            console.error(`Invalid AnnotationEditor mode: ${mode}`);
-          }
-        }
-
-        const viewerElement =
-          this._scrollMode === ScrollMode.PAGE ? null : viewer;
-        const scale = this.currentScale;
-        const viewport = firstPdfPage.getViewport({
-          scale: scale * PixelsPerInch.PDF_TO_CSS_UNITS,
-        });
-        // Ensure that the various layers always get the correct initial size,
-        // see issue 15795.
-        viewer.style.setProperty("--scale-factor", viewport.scale);
-
-        if (pageColors?.background) {
-          viewer.style.setProperty("--page-bg-color", pageColors.background);
-        }
-        if (
-          pageColors?.foreground === "CanvasText" ||
-          pageColors?.background === "Canvas"
-        ) {
-          viewer.style.setProperty(
-            "--hcm-highlight-filter",
-            pdfDocument.filterFactory.addHighlightHCMFilter(
-              "highlight",
-              "CanvasText",
-              "Canvas",
-              "HighlightText",
-              "Highlight"
-            )
-          );
-          viewer.style.setProperty(
-            "--hcm-highlight-selected-filter",
-            pdfDocument.filterFactory.addHighlightHCMFilter(
-              "highlight_selected",
-              "CanvasText",
-              "Canvas",
-              "HighlightText",
-              "ButtonText"
-            )
-          );
-        }
-
-        for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
-          const pageView = new PDFPageView({
-            container: viewerElement,
+        if (pdfDocument.isPureXfa) {
+          console.warn("Warning: XFA-editing is not implemented.");
+        } else if (isValidAnnotationEditorMode(mode)) {
+          this.#annotationEditorUIManager = new AnnotationEditorUIManager(
+            this.container,
+            viewer,
+            this.#altTextManager,
+            this.#signatureManager,
             eventBus,
-            id: pageNum,
-            scale,
-            defaultViewport: viewport.clone(),
-            optionalContentConfigPromise,
-            renderingQueue: this.renderingQueue,
-            textLayerMode,
-            annotationMode,
-            imageResourcesPath: this.imageResourcesPath,
-            maxCanvasPixels: this.maxCanvasPixels,
-            maxCanvasDim: this.maxCanvasDim,
-            capCanvasAreaFactor: this.capCanvasAreaFactor,
-            enableDetailCanvas: this.enableDetailCanvas,
+            pdfDocument,
             pageColors,
-            l10n: this.l10n,
-            layerProperties: this._layerProperties,
-            enableHWA: this.#enableHWA,
-            enableAutoLinking: this.#enableAutoLinking,
-            minDurationToUpdateCanvas: this.#minDurationToUpdateCanvas,
+            this.#annotationEditorHighlightColors,
+            this.#enableHighlightFloatingButton,
+            this.#enableUpdatedAddImage,
+            this.#enableNewAltTextWhenAddingImage,
+            this.#mlManager,
+            this.#editorUndoBar,
+            this.#supportsPinchToZoom
+          );
+          eventBus.dispatch("annotationeditoruimanager", {
+            source: this,
+            uiManager: this.#annotationEditorUIManager,
           });
-          this._pages.push(pageView);
+          if (mode !== AnnotationEditorType.NONE) {
+            this.#preloadEditingData(mode);
+            this.#annotationEditorUIManager.updateMode(mode);
+          }
+        } else {
+          console.error(`Invalid AnnotationEditor mode: ${mode}`);
         }
-        // Set the first `pdfPage` immediately, since it's already loaded,
-        // rather than having to repeat the `PDFDocumentProxy.getPage` call in
-        // the `this.#ensurePdfPageLoaded` method before rendering can start.
-        this._pages[0]?.setPdfPage(firstPdfPage);
+      }
 
-        if (this._scrollMode === ScrollMode.PAGE) {
-          // Ensure that the current page becomes visible on document load.
-          this.#ensurePageViewVisible();
-        } else if (this._spreadMode !== SpreadMode.NONE) {
-          this._updateSpreadMode();
-        }
-
-        // Fetch all the pages since the viewport is needed before printing
-        // starts to create the correct size canvas. Wait until one page is
-        // rendered so we don't tie up too many resources early on.
-        this.#onePageRenderedOrForceFetch(signal).then(async () => {
-          if (pdfDocument !== this.pdfDocument) {
-            return; // The document was closed while the first page rendered.
-          }
-          this.findController?.setDocument(pdfDocument); // Enable searching.
-          this._scriptingManager?.setDocument(pdfDocument); // Enable scripting.
-
-          if (this.#hiddenCopyElement) {
-            document.addEventListener(
-              "copy",
-              this.#copyCallback.bind(this, textLayerMode),
-              { signal }
-            );
-          }
-
-          if (this.#annotationEditorUIManager) {
-            // Ensure that the Editor buttons, in the toolbar, are updated.
-            eventBus.dispatch("annotationeditormodechanged", {
-              source: this,
-              mode: this.#annotationEditorMode,
-            });
-          }
-
-          // In addition to 'disableAutoFetch' being set, also attempt to reduce
-          // resource usage when loading *very* long/large documents.
-          if (
-            pdfDocument.loadingParams.disableAutoFetch ||
-            pagesCount > PagesCountLimit.FORCE_LAZY_PAGE_INIT
-          ) {
-            // XXX: Printing is semi-broken with auto fetch disabled.
-            this._pagesCapability.resolve();
-            return;
-          }
-          let getPagesLeft = pagesCount - 1; // The first page was already loaded.
-
-          if (getPagesLeft <= 0) {
-            this._pagesCapability.resolve();
-            return;
-          }
-          for (let pageNum = 2; pageNum <= pagesCount; ++pageNum) {
-            const promise = pdfDocument.getPage(pageNum).then(
-              pdfPage => {
-                const pageView = this._pages[pageNum - 1];
-                if (!pageView.pdfPage) {
-                  pageView.setPdfPage(pdfPage);
-                }
-                if (--getPagesLeft === 0) {
-                  this._pagesCapability.resolve();
-                }
-              },
-              reason => {
-                console.error(
-                  `Unable to get page ${pageNum} to initialize viewer`,
-                  reason
-                );
-                if (--getPagesLeft === 0) {
-                  this._pagesCapability.resolve();
-                }
-              }
-            );
-
-            if (pageNum % PagesCountLimit.PAUSE_EAGER_PAGE_INIT === 0) {
-              await promise;
-            }
-          }
-        });
-
-        eventBus.dispatch("pagesinit", { source: this });
-
-        pdfDocument.getMetadata().then(({ info }) => {
-          if (pdfDocument !== this.pdfDocument) {
-            return; // The document was closed while the metadata resolved.
-          }
-          if (info.Language) {
-            viewer.lang = info.Language;
-          }
-        });
-
-        if (this.defaultRenderingQueue) {
-          this.update();
-        }
-      })
-      .catch(reason => {
-        console.error("Unable to initialize viewer", reason);
-
-        this._pagesCapability.reject(reason);
+      const viewerElement =
+        this._scrollMode === ScrollMode.PAGE ? null : viewer;
+      const scale = this.currentScale;
+      const viewport = firstPdfPage.getViewport({
+        scale: scale * PixelsPerInch.PDF_TO_CSS_UNITS,
       });
+      // Ensure that the various layers always get the correct initial size,
+      // see issue 15795.
+      viewer.style.setProperty("--scale-factor", viewport.scale);
+
+      if (pageColors?.background) {
+        viewer.style.setProperty("--page-bg-color", pageColors.background);
+      }
+      if (
+        pageColors?.foreground === "CanvasText" ||
+        pageColors?.background === "Canvas"
+      ) {
+        viewer.style.setProperty(
+          "--hcm-highlight-filter",
+          pdfDocument.filterFactory.addHighlightHCMFilter(
+            "highlight",
+            "CanvasText",
+            "Canvas",
+            "HighlightText",
+            "Highlight"
+          )
+        );
+        viewer.style.setProperty(
+          "--hcm-highlight-selected-filter",
+          pdfDocument.filterFactory.addHighlightHCMFilter(
+            "highlight_selected",
+            "CanvasText",
+            "Canvas",
+            "HighlightText",
+            "ButtonText"
+          )
+        );
+      }
+
+      for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
+        const pageView = new PDFPageView({
+          container: viewerElement,
+          eventBus,
+          id: pageNum,
+          scale,
+          defaultViewport: viewport.clone(),
+          optionalContentConfigPromise,
+          renderingQueue: this.renderingQueue,
+          textLayerMode,
+          annotationMode,
+          imageResourcesPath: this.imageResourcesPath,
+          maxCanvasPixels: this.maxCanvasPixels,
+          maxCanvasDim: this.maxCanvasDim,
+          capCanvasAreaFactor: this.capCanvasAreaFactor,
+          enableDetailCanvas: this.enableDetailCanvas,
+          pageColors,
+          l10n: this.l10n,
+          layerProperties: this._layerProperties,
+          enableHWA: this.#enableHWA,
+          enableAutoLinking: this.#enableAutoLinking,
+          minDurationToUpdateCanvas: this.#minDurationToUpdateCanvas,
+        });
+        this._pages.push(pageView);
+      }
+      // Set the first `pdfPage` immediately, since it's already loaded,
+      // rather than having to repeat the `PDFDocumentProxy.getPage` call in
+      // the `this.#ensurePdfPageLoaded` method before rendering can start.
+      this._pages[0]?.setPdfPage(firstPdfPage);
+
+      if (this._scrollMode === ScrollMode.PAGE) {
+        // Ensure that the current page becomes visible on document load.
+        this.#ensurePageViewVisible();
+      } else if (this._spreadMode !== SpreadMode.NONE) {
+        this._updateSpreadMode();
+      }
+
+      // Fetch all the pages since the viewport is needed before printing
+      // starts to create the correct size canvas. Wait until one page is
+      // rendered so we don't tie up too many resources early on.
+      this.#onePageRenderedOrForceFetch(signal).then(async () => {
+        if (pdfDocument !== this.pdfDocument) {
+          return; // The document was closed while the first page rendered.
+        }
+        this.findController?.setDocument(pdfDocument); // Enable searching.
+        this._scriptingManager?.setDocument(pdfDocument); // Enable scripting.
+
+        if (this.#hiddenCopyElement) {
+          document.addEventListener(
+            "copy",
+            this.#copyCallback.bind(this, textLayerMode),
+            { signal }
+          );
+        }
+
+        if (this.#annotationEditorUIManager) {
+          // Ensure that the Editor buttons, in the toolbar, are updated.
+          eventBus.dispatch("annotationeditormodechanged", {
+            source: this,
+            mode: this.#annotationEditorMode,
+          });
+        }
+
+        // In addition to 'disableAutoFetch' being set, also attempt to reduce
+        // resource usage when loading *very* long/large documents.
+        if (
+          pdfDocument.loadingParams.disableAutoFetch ||
+          pagesCount > PagesCountLimit.FORCE_LAZY_PAGE_INIT
+        ) {
+          // XXX: Printing is semi-broken with auto fetch disabled.
+          this._pagesCapability.resolve();
+          return;
+        }
+        let getPagesLeft = pagesCount - 1; // The first page was already loaded.
+
+        if (getPagesLeft <= 0) {
+          this._pagesCapability.resolve();
+          return;
+        }
+        for (let pageNum = 2; pageNum <= pagesCount; ++pageNum) {
+          const promise = pdfDocument.getPage(pageNum).then(
+            pdfPage => {
+              const pageView = this._pages[pageNum - 1];
+              if (!pageView.pdfPage) {
+                pageView.setPdfPage(pdfPage);
+              }
+              if (--getPagesLeft === 0) {
+                this._pagesCapability.resolve();
+              }
+            },
+            reason => {
+              console.error(
+                `Unable to get page ${pageNum} to initialize viewer`,
+                reason
+              );
+              if (--getPagesLeft === 0) {
+                this._pagesCapability.resolve();
+              }
+            }
+          );
+
+          if (pageNum % PagesCountLimit.PAUSE_EAGER_PAGE_INIT === 0) {
+            await promise;
+          }
+        }
+      });
+
+      eventBus.dispatch("pagesinit", { source: this });
+
+      pdfDocument.getMetadata().then(({ info }) => {
+        if (pdfDocument !== this.pdfDocument) {
+          return; // The document was closed while the metadata resolved.
+        }
+        if (info.Language) {
+          viewer.lang = info.Language;
+        }
+      });
+
+      if (this.defaultRenderingQueue) {
+        this.update();
+      }
+    } catch (reason) {
+      console.error("Unable to initialize viewer", reason);
+
+      this._pagesCapability.reject(reason);
+    }
   }
 
   /**
