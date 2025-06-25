@@ -120,7 +120,14 @@ function scrollIntoView(element, spot, scrollMatches = false) {
       offsetY += spot.top;
     }
     if (spot.left !== undefined) {
-      offsetX += spot.left;
+      const elementWidth = element.getBoundingClientRect().width;
+      const padding = MathClamp(
+        (parent.clientWidth - elementWidth) / 2,
+        20,
+        400
+      );
+      const left = spot.left - padding;
+      offsetX += left;
       parent.scrollLeft = offsetX;
     }
   }
