@@ -72,7 +72,7 @@ function composePage(
           currentRenderTask = null;
         }
         const renderContext = {
-          canvasContext: ctx,
+          canvas: ctx.canvas,
           transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
           viewport: pdfPage.getViewport({ scale: 1, rotation: size.rotation }),
           intent: "print",

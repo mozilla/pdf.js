@@ -17,8 +17,6 @@ import { RenderingCancelledException } from "pdfjs-lib";
 import { RenderingStates } from "./ui_utils.js";
 
 class BasePDFPageView {
-  #enableHWA = false;
-
   #loadingId = null;
 
   #minDurationToUpdateCanvas = 0;
@@ -51,8 +49,6 @@ class BasePDFPageView {
   resume = null;
 
   constructor(options) {
-    this.#enableHWA =
-      #enableHWA in options ? options.#enableHWA : options.enableHWA || false;
     this.eventBus = options.eventBus;
     this.id = options.id;
     this.pageColors = options.pageColors || null;
@@ -166,12 +162,7 @@ class BasePDFPageView {
       }
     };
 
-    const ctx = canvas.getContext("2d", {
-      alpha: false,
-      willReadFrequently: !this.#enableHWA,
-    });
-
-    return { canvas, prevCanvas, ctx };
+    return { canvas, prevCanvas };
   }
 
   #renderContinueCallback = cont => {
