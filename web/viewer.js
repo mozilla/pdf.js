@@ -289,6 +289,7 @@ function webViewerLoad() {
     }
   }
   PDFViewerApplication.run(config);
+
 }
 
 // Block the "load" event until all pages are loaded, to ensure that printing
