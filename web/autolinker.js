@@ -138,7 +138,7 @@ class Autolinker {
     this.#regex ??=
       /\b(?:https?:\/\/|mailto:|www\.)(?:[\S--[\p{P}<>]]|\/|[\S--[\[\]]]+[\S--[\p{P}<>]])+|\b[\S--[@\p{Ps}\p{Pe}<>]]+@([\S--[\p{P}<>]]+(?:\.[\S--[\p{P}<>]]+)+)/gmv;
 
-    const [normalizedText, diffs] = normalize(text);
+    const [normalizedText, diffs] = normalize(text, { ignoreDashEOL: true });
     const matches = normalizedText.matchAll(this.#regex);
     const links = [];
     for (const match of matches) {
