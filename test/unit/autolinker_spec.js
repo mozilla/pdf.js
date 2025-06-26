@@ -195,4 +195,13 @@ describe("autolinker", function () {
       ["httptest@email.com", "mailto:httptest@email.com"],
     ]);
   });
+
+  it("shouldn't remove the dash when it's an the end of a line (bug 1974112)", function () {
+    testLinks([
+      [
+        "https://github.com/pypi/linehaul-cloud-\nfunction",
+        "https://github.com/pypi/linehaul-cloud-function",
+      ],
+    ]);
+  });
 });
