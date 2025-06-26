@@ -88,6 +88,8 @@ class SignatureManager {
 
   #eventBus;
 
+  #isStorageFull = false;
+
   #l10n;
 
   #overlayManager;
@@ -322,8 +324,10 @@ class SignatureManager {
   }
 
   #disableButtons(value) {
-    this.#saveCheckbox.disabled =
-      this.#clearButton.disabled =
+    if (!value || !this.#isStorageFull) {
+      this.#saveCheckbox.disabled = !value;
+    }
+    this.#clearButton.disabled =
       this.#addButton.disabled =
       this.#description.disabled =
         !value;
@@ -847,7 +851,8 @@ class SignatureManager {
     this.#currentEditor = editor;
     this.#uiManager.removeEditListeners();
 
-    const isStorageFull = await this.#signatureStorage.isFull();
+    const isStorageFull = (this.#isStorageFull =
+      await this.#signatureStorage.isFull());
     this.#saveContainer.classList.toggle("fullStorage", isStorageFull);
     this.#saveCheckbox.checked = !isStorageFull;
 

@@ -105,7 +105,7 @@ describe("Signature Editor", () => {
           await page.waitForSelector(
             "#addSignatureSaveContainer > input:not(:disabled)"
           );
-          await page.waitForSelector("#addSignatureSaveCheckbox[checked=true]");
+          await page.waitForSelector("#addSignatureSaveCheckbox:checked");
 
           // The description has been filled in automatically.
           await page.waitForFunction(
@@ -260,7 +260,7 @@ describe("Signature Editor", () => {
           await page.waitForSelector(
             "#addSignatureSaveContainer > input:not(:disabled)"
           );
-          await page.waitForSelector("#addSignatureSaveCheckbox[checked=true]");
+          await page.waitForSelector("#addSignatureSaveCheckbox:checked");
 
           // The description has been filled in automatically.
           await page.waitForFunction(
@@ -316,7 +316,7 @@ describe("Signature Editor", () => {
           await page.waitForSelector(
             "#addSignatureSaveContainer > input:not(:disabled)"
           );
-          await page.waitForSelector("#addSignatureSaveCheckbox[checked=true]");
+          await page.waitForSelector("#addSignatureSaveCheckbox:checked");
 
           // The description has been filled in automatically.
           await page.waitForFunction(
@@ -667,6 +667,50 @@ describe("Signature Editor", () => {
               `In ${browserName} (${contentWidth}x${contentHeight} vs ${width}x${height})`
             )
             .toBeLessThan(0.25);
+        })
+      );
+    });
+  });
+
+  describe("Bug 1974257", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the signature save checkbox is disabled if storage is full", async () => {
+      await Promise.all(
+        pages.map(async ([_, page]) => {
+          await switchToSignature(page);
+
+          for (let i = 0; i < 6; i++) {
+            await page.click("#editorSignatureAddSignature");
+            await page.waitForSelector("#addSignatureDialog", {
+              visible: true,
+            });
+            await page.click("#addSignatureTypeInput");
+            await page.type("#addSignatureTypeInput", `PDF.js ${i}`);
+            if (i === 5) {
+              await page.waitForSelector(
+                "#addSignatureSaveCheckbox:not(checked)"
+              );
+              await page.waitForSelector("#addSignatureSaveCheckbox:disabled");
+            } else {
+              await page.waitForSelector("#addSignatureSaveCheckbox:checked");
+              await page.waitForSelector(
+                "#addSignatureSaveCheckbox:not(:disabled)"
+              );
+            }
+            await page.click("#addSignatureAddButton");
+            await page.waitForSelector("#addSignatureDialog", {
+              visible: false,
+            });
+          }
         })
       );
     });
