@@ -12140,5 +12140,13 @@
     "type": "eq",
     "forms": true,
     "link": true
+  },
+  {
+    "id": "bug1974436",
+    "file": "pdfs/bug1974436.pdf",
+    "md5": "538b64d6781ac370e29887c9805063af",
+    "rounds": 1,
+    "type": "eq",
+    "annotations": true
   }
 ]
