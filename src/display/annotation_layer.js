@@ -615,6 +615,7 @@ class AnnotationElement {
         borderStyle: 0,
         id: `popup_${data.id}`,
         rotation: data.rotation,
+        noRotate: data.noRotate,
       },
       parent: this.parent,
       elements: [this],
