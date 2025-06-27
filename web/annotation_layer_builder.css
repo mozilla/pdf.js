@@ -155,7 +155,6 @@
     > a:hover {
     opacity: 0.2;
     background-color: rgb(255 255 0);
-    box-shadow: 0 2px 10px rgb(255 255 0);
   }
 
   .linkAnnotation.hasBorder:hover {
