@@ -310,6 +310,12 @@ class Page {
           }
           continue;
         }
+        if (annotation.popup?.deleted) {
+          const popupRef = Ref.fromString(annotation.popupRef);
+          if (popupRef) {
+            deletedAnnotations.put(popupRef, popupRef);
+          }
+        }
         existingAnnotations?.put(ref);
         annotation.ref = ref;
         promises.push(
