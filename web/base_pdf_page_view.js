@@ -106,7 +106,8 @@ class BasePDFPageView {
     // In HCM, a final filter is applied on the canvas which means that
     // before it's applied we've normal colors. Consequently, to avoid to
     // have a final flash we just display it once all the drawing is done.
-    const updateOnFirstShow = !prevCanvas && !hasHCM && !hideUntilComplete;
+    // const updateOnFirstShow = !prevCanvas && !hasHCM && !hideUntilComplete;
+    const updateOnFirstShow = false;
 
     let canvas = (this.canvas = document.createElement("canvas"));
 
