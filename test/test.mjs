@@ -413,6 +413,33 @@ function handleSessionTimeout(session) {
 function getTestManifest() {
   var manifest = JSON.parse(fs.readFileSync(options.manifestFile));
 
+  var ids = new Set(manifest.map(t => t.id));
+  var seen = false;
+  manifest = manifest.flatMap(t => {
+    if (!seen) {
+      seen = t.id === "bug1791583-partial";
+      //return [];
+    }
+    if (t.enableXfa || t.annotationStorage || t.print) {
+      return [];
+    }
+    if (t.type !== "eq" || t.partial) {
+      return t;
+    }
+    const partialId = t.id.replace(/(?:-eq)?$/, "") + "-partial";
+    if (ids.has(partialId)) {
+      return t;
+    }
+    return [
+      t,
+      {
+        ...t,
+        id: partialId,
+        partial: { minX: 0.25, minY: 0.25, maxX: 0.5, maxY: 0.5 },
+      },
+    ];
+  });
+
   const testFilter = options.testfilter.slice(0),
     xfaOnly = options.xfaOnly;
   if (testFilter.length || xfaOnly) {

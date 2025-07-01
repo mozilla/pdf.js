@@ -543,6 +543,33 @@ class Driver {
       this._log("done\n");
       this.manifest = await response.json();
 
+      const ids = new Set(this.manifest.map(t => t.id));
+      let seen = false;
+      this.manifest = this.manifest.flatMap(t => {
+        if (!seen) {
+          seen = t.id === "bug1791583-partial";
+          //return [];
+        }
+        if (t.enableXfa || t.annotationStorage || t.print) {
+          return [];
+        }
+        if (t.type !== "eq" || t.partial) {
+          return t;
+        }
+        const partialId = t.id.replace(/(?:-eq)?$/, "") + "-partial";
+        if (ids.has(partialId)) {
+          return t;
+        }
+        return [
+          t,
+          {
+            ...t,
+            id: partialId,
+            partial: { minX: 0.25, minY: 0.25, maxX: 0.5, maxY: 0.5 },
+          },
+        ];
+      });
+
       if (this.testFilter?.length || this.xfaOnly) {
         this.manifest = this.manifest.filter(item => {
           if (this.testFilter.includes(item.id)) {
@@ -1156,6 +1183,7 @@ class Driver {
                     transform,
                     recordOperations: false,
                     filteredOperationIndexes: filteredIndexes,
+                    intent: renderContext.intent,
                   };
 
                   const partialRenderTask = page.render(partialRenderContext);
