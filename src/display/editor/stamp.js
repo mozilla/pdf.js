@@ -484,6 +484,9 @@ class StampEditor extends AnnotationEditor {
     if (this.#bitmapFileName) {
       this.div.setAttribute("aria-description", this.#bitmapFileName);
     }
+    if (!this.annotationElementId) {
+      this._uiManager.a11yAlert("pdfjs-editor-stamp-added-alert");
+    }
   }
 
   copyCanvas(maxDataDimension, maxPreviewDimension, createImageData = false) {
@@ -781,6 +784,7 @@ class StampEditor extends AnnotationEditor {
         pageIndex: pageNumber - 1,
         rect: rect.slice(0),
         rotation,
+        annotationElementId: id,
         id,
         deleted: false,
         accessibilityData: {
@@ -812,7 +816,6 @@ class StampEditor extends AnnotationEditor {
     editor.width = (rect[2] - rect[0]) / parentWidth;
     editor.height = (rect[3] - rect[1]) / parentHeight;
 
-    editor.annotationElementId = data.id || null;
     if (accessibilityData) {
       editor.altTextData = accessibilityData;
     }

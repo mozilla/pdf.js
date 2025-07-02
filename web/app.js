@@ -492,6 +492,7 @@ const PDFViewerApplication = {
     const pdfViewer = (this.pdfViewer = new PDFViewer({
       container,
       viewer,
+      viewerAlert: appConfig.viewerAlert,
       eventBus,
       renderingQueue,
       linkService,
