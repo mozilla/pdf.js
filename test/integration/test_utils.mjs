@@ -543,6 +543,14 @@ async function dragAndDrop(page, selector, translations, steps = 1) {
   await page.waitForSelector("#viewer:not(.noUserSelect)");
 }
 
+function waitForPageChanging(page) {
+  return createPromise(page, resolve => {
+    window.PDFViewerApplication.eventBus.on("pagechanging", resolve, {
+      once: true,
+    });
+  });
+}
+
 function waitForAnnotationEditorLayer(page) {
   return createPromise(page, resolve => {
     window.PDFViewerApplication.eventBus.on(
@@ -944,6 +952,7 @@ export {
   waitForEntryInStorage,
   waitForEvent,
   waitForNoElement,
+  waitForPageChanging,
   waitForPageRendered,
   waitForPointerUp,
   waitForSandboxTrip,
