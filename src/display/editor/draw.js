@@ -106,6 +106,9 @@ class DrawingEditor extends AnnotationEditor {
   #createDrawOutlines({ drawOutlines, drawId, drawingOptions }) {
     this.#drawOutlines = drawOutlines;
     this._drawingOptions ||= drawingOptions;
+    if (!this.annotationElementId) {
+      this._uiManager.a11yAlert(`pdfjs-editor-${this.editorType}-added-alert`);
+    }
 
     if (drawId >= 0) {
       this._drawId = drawId;
