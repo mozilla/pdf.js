@@ -573,7 +573,7 @@ class TilingPattern {
     this.setFillAndStrokeStyleToContext(graphics, paintType, color);
 
     tmpCtx.translate(-dimx.scale * x0, -dimy.scale * y0);
-    graphics.transform(dimx.scale, 0, 0, dimy.scale, 0, 0);
+    graphics.transform(0, dimx.scale, 0, 0, dimy.scale, 0, 0);
 
     // To match CanvasGraphics beginDrawing we must save the context here or
     // else we end up with unbalanced save/restores.
@@ -586,6 +586,8 @@ class TilingPattern {
     graphics.executeOperatorList(operatorList);
 
     graphics.endDrawing();
+
+    graphics.dependencyTracker?.recordNestedDependencies?.();
 
     tmpCtx.restore();
 

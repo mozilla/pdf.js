@@ -413,6 +413,33 @@ function handleSessionTimeout(session) {
 function getTestManifest() {
   var manifest = JSON.parse(fs.readFileSync(options.manifestFile));
 
+  var ids = new Set(manifest.map(t => t.id));
+  var seen = false;
+  manifest = manifest.flatMap(t => {
+    if (!seen) {
+      seen = t.id === "bug1791583-partial";
+      //return [];
+    }
+    if (t.enableXfa || t.annotationStorage || t.print) {
+      return [];
+    }
+    if (t.type !== "eq" || t.partial) {
+      return t;
+    }
+    const partialId = t.id.replace(/(?:-eq)?$/, "") + "-partial";
+    if (ids.has(partialId)) {
+      return t;
+    }
+    return [
+      t,
+      {
+        ...t,
+        id: partialId,
+        partial: { minX: 0.25, minY: 0.25, maxX: 0.5, maxY: 0.5 },
+      },
+    ];
+  });
+
   const testFilter = options.testfilter.slice(0),
     xfaOnly = options.xfaOnly;
   if (testFilter.length || xfaOnly) {
@@ -459,6 +486,13 @@ function checkEq(task, results, browser, masterMode) {
       testSnapshot = Buffer.from(testSnapshot.substring(22), "base64");
     } else {
       console.error("Valid snapshot was not found.");
+    }
+    let unoptimizedSnapshot = pageResult.baselineSnapshot;
+    if (unoptimizedSnapshot?.startsWith("data:image/png;base64,")) {
+      unoptimizedSnapshot = Buffer.from(
+        unoptimizedSnapshot.substring(22),
+        "base64"
+      );
     }
 
     var refSnapshot = null;
@@ -526,7 +560,7 @@ function checkEq(task, results, browser, masterMode) {
       ensureDirSync(tmpSnapshotDir);
       fs.writeFileSync(
         path.join(tmpSnapshotDir, page + 1 + ".png"),
-        testSnapshot
+        unoptimizedSnapshot ?? testSnapshot
       );
     }
   }
@@ -616,7 +650,14 @@ function checkRefTestResults(browser, id, results) {
         return; // no results
       }
       if (pageResult.failure) {
-        failed = true;
+        // If the test failes due to a difference between the optimized and
+        // unoptimized rendering, we don't set `failed` to true so that we will
+        // still compute the differences between them. In master mode, this
+        // means that we will save the reference image from the unoptimized
+        // rendering even if the optimized rendering is wrong.
+        if (!pageResult.failure.includes("Optimized rendering differs")) {
+          failed = true;
+        }
         if (fs.existsSync(task.file + ".error")) {
           console.log(
             "TEST-SKIPPED | PDF was not downloaded " +
@@ -631,7 +672,9 @@ function checkRefTestResults(browser, id, results) {
               pageResult.failure
           );
         } else {
-          session.numErrors++;
+          if (failed) {
+            session.numErrors++;
+          }
           console.log(
             "TEST-UNEXPECTED-FAIL | test failed " +
               id +
@@ -653,6 +696,7 @@ function checkRefTestResults(browser, id, results) {
   }
   switch (task.type) {
     case "eq":
+    case "partial":
     case "text":
     case "highlight":
       checkEq(task, results, browser, session.masterMode);
@@ -712,6 +756,7 @@ function refTestPostHandler(parsedUrl, req, res) {
     var page = data.page - 1;
     var failure = data.failure;
     var snapshot = data.snapshot;
+    var baselineSnapshot = data.baselineSnapshot;
     var lastPageNum = data.lastPageNum;
 
     session = getSession(browser);
@@ -740,6 +785,7 @@ function refTestPostHandler(parsedUrl, req, res) {
     taskResults[round][page] = {
       failure,
       snapshot,
+      baselineSnapshot,
       viewportWidth: data.viewportWidth,
       viewportHeight: data.viewportHeight,
       outputScale: data.outputScale,
