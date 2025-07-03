@@ -49,6 +49,7 @@ import {
   unselectEditor,
   waitForAnnotationEditorLayer,
   waitForAnnotationModeChanged,
+  waitForPointerUp,
   waitForSelectedEditor,
   waitForSerialized,
   waitForStorageEntries,
@@ -3387,6 +3388,59 @@ describe("FreeText Editor", () => {
             { count: 2 }
           );
 
+          await page.waitForSelector(".annotationEditorLayer.freetextEditing");
+          await awaitPromise(modeChangedHandle);
+        })
+      );
+    });
+
+    it("must check that we switch to FreeText in clicking on a FreeText annotation", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          const rect = await getRect(page, ".annotationEditorLayer");
+          const editorSelector = getEditorSelector(0);
+
+          const data = "Hello PDF.js World !!";
+          await page.mouse.click(
+            rect.x + rect.width / 2,
+            rect.y + rect.height / 2
+          );
+          await page.waitForSelector(editorSelector, { visible: true });
+          await page.type(`${editorSelector} .internal`, data);
+          await commit(page);
+          await waitForSerialized(page, 1);
+
+          await switchToFreeText(page, /* disable */ true);
+          await switchToEditor("Ink", page);
+
+          const x = rect.x + 100;
+          const y = rect.y + 100;
+          const clickHandle = await waitForPointerUp(page);
+          await page.mouse.move(x, y);
+          await page.mouse.down();
+          await page.mouse.move(x + 50, y + 50);
+          await page.mouse.up();
+          await awaitPromise(clickHandle);
+          await page.keyboard.press("Escape");
+          await page.waitForSelector(
+            ".inkEditor.selectedEditor.draggable.disabled"
+          );
+          await waitForSerialized(page, 2);
+
+          const modeChangedHandle = await createPromise(page, resolve => {
+            window.PDFViewerApplication.eventBus.on(
+              "annotationeditormodechanged",
+              resolve,
+              { once: true }
+            );
+          });
+          const editorRect = await getRect(page, editorSelector);
+          await page.mouse.click(
+            editorRect.x + editorRect.width / 2,
+            editorRect.y + editorRect.height / 2
+          );
           await page.waitForSelector(".annotationEditorLayer.freetextEditing");
           await awaitPromise(modeChangedHandle);
         })

@@ -205,6 +205,10 @@ class AnnotationEditor {
     return Object.getPrototypeOf(this).constructor._type;
   }
 
+  get mode() {
+    return Object.getPrototypeOf(this).constructor._editorType;
+  }
+
   static get isDrawer() {
     return false;
   }
