@@ -278,6 +278,8 @@ class PDFViewer {
 
   #textLayerMode = TextLayerMode.ENABLE;
 
+  #viewerAlert = null;
+
   /**
    * @param {PDFViewerOptions} options
    */
@@ -291,6 +293,7 @@ class PDFViewer {
     }
     this.container = options.container;
     this.viewer = options.viewer || options.container.firstElementChild;
+    this.#viewerAlert = options.viewerAlert || null;
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       if (this.container?.tagName !== "DIV" || this.viewer?.tagName !== "DIV") {
@@ -927,6 +930,7 @@ class PDFViewer {
             this.#annotationEditorUIManager = new AnnotationEditorUIManager(
               this.container,
               viewer,
+              this.#viewerAlert,
               this.#altTextManager,
               this.#signatureManager,
               eventBus,

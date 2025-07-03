@@ -125,6 +125,9 @@ describe("Stamp Editor", () => {
           const editorSelector = getEditorSelector(0);
           await waitForImage(page, editorSelector);
 
+          const alert = await page.$eval("#viewer-alert", el => el.textContent);
+          expect(alert).toEqual("Image added");
+
           const { width } = await getEditorDimensions(page, editorSelector);
 
           // The image is bigger than the page, so it has been scaled down to

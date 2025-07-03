@@ -229,6 +229,22 @@ body {
   }
 }
 
+/* The following class is used to hide an element but keep it available to
+ * for screen readers. */
+.visuallyHidden {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 0;
+}
+
 .hidden,
 [hidden] {
   display: none !important;

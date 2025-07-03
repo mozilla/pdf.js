@@ -180,6 +180,7 @@ class AnnotationEditor {
     this._willKeepAspectRatio = false;
     this._initialOptions.isCentered = parameters.isCentered;
     this._structTreeParentId = null;
+    this.annotationElementId = parameters.annotationElementId || null;
 
     const {
       rotation,
@@ -427,6 +428,9 @@ class AnnotationEditor {
    * Commit the data contained in this editor.
    */
   commit() {
+    if (!this.isInEditMode()) {
+      return;
+    }
     this.addToAnnotationStorage();
   }
 
@@ -1641,6 +1645,7 @@ class AnnotationEditor {
       parent,
       id: parent.getNextId(),
       uiManager,
+      annotationElementId: data.annotationElementId,
     });
     editor.rotation = data.rotation;
     editor.#accessibilityData = data.accessibilityData;
