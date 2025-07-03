@@ -164,6 +164,7 @@ class InkEditor extends DrawingEditor {
         pageIndex: pageNumber - 1,
         rect: rect.slice(0),
         rotation,
+        annotationElementId: id,
         id,
         deleted: false,
         popupRef,
@@ -171,7 +172,6 @@ class InkEditor extends DrawingEditor {
     }
 
     const editor = await super.deserialize(data, parent, uiManager);
-    editor.annotationElementId = data.id || null;
     editor._initialData = initialData;
 
     return editor;
