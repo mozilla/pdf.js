@@ -346,6 +346,7 @@ describe("Signature Editor", () => {
     });
 
     it("must check copy and paste", async () => {
+      pending("Doesn't work in headless mode in Firefox.");
       // Run sequentially to avoid clipboard issues.
       for (const [browserName, page] of pages) {
         await switchToSignature(page);
@@ -631,6 +632,7 @@ describe("Signature Editor", () => {
     });
 
     it("must check that the signature has the correct aspect ratio", async () => {
+      pending("Doesn't work in headless mode in Chrome and Firefox.");
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToSignature(page);

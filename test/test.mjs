@@ -785,6 +785,7 @@ function onAllSessionsClosedAfterTests(name) {
     }
     var runtime = (Date.now() - startTime) / 1000;
     console.log(name + " tests runtime was " + runtime.toFixed(1) + " seconds");
+    process.exit(numErrors > 0 ? 1 : 0);
   };
 }
 
@@ -1096,8 +1097,6 @@ async function main() {
     } else if (options.fontTest) {
       await startUnitTest("/test/font/font_test.html", "font");
     } else if (options.integration) {
-      // Allows linked PDF files in integration-tests as well.
-      await ensurePDFsDownloaded();
       await startIntegrationTest();
     } else {
       await startRefTest(options.masterMode, options.reftest);

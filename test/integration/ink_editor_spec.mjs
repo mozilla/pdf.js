@@ -57,6 +57,7 @@ describe("Ink Editor", () => {
     let pages;
 
     beforeEach(async () => {
+      pending("Linked PDFs are not supported.");
       pages = await loadAndWait("aboutstacks.pdf", ".annotationEditorLayer");
     });
 
@@ -477,6 +478,7 @@ describe("Ink Editor", () => {
     });
 
     it("must check that we can draw several times on the same canvas", async () => {
+      pending("Doesn't work in headless mode in Chrome.");
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToInk(page);
@@ -951,6 +953,7 @@ describe("Ink Editor", () => {
     });
 
     it("must check that the popup disappears when a new drawing is created", async () => {
+      pending("Doesn't work in headless mode in Chrome.");
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToInk(page);

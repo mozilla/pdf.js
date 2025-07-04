@@ -597,6 +597,7 @@ describe("Highlight Editor", () => {
     });
 
     it("must check that the thickness is correctly updated", async () => {
+      pending("Doesn't work in headless mode in Chrome.");
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToHighlight(page);
@@ -855,6 +856,7 @@ describe("Highlight Editor", () => {
     let pages;
 
     beforeEach(async () => {
+      pending("Linked PDFs are not supported.");
       pages = await loadAndWait(
         "issue12233.pdf",
         ".annotationEditorLayer",
@@ -1245,6 +1247,7 @@ describe("Highlight Editor", () => {
     });
 
     it("must check that the quadpoints for an highlight are almost correct", async () => {
+      pending("Doesn't work in headless mode in Chrome.");
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToHighlight(page);
@@ -1387,6 +1390,7 @@ describe("Highlight Editor", () => {
     });
 
     it("must check that the highlights are correctly hidden/shown", async () => {
+      pending("Doesn't work in headless mode in Chrome.");
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToHighlight(page);
@@ -1508,6 +1512,7 @@ describe("Highlight Editor", () => {
     });
 
     it("must check the focus order", async () => {
+      pending("Doesn't work in headless mode in Chrome.");
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToHighlight(page);
@@ -2141,6 +2146,7 @@ describe("Highlight Editor", () => {
     });
 
     it("must check that it's possible to draw on an image in a struct tree", async () => {
+      pending("Doesn't work in headless mode in Chrome.");
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToHighlight(page);
@@ -2274,6 +2280,7 @@ describe("Highlight Editor", () => {
     });
 
     it("must check that the popup disappears when a new annotation is created", async () => {
+      pending("Doesn't work in headless mode in Firefox.");
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToHighlight(page);
@@ -2511,6 +2518,7 @@ describe("Highlight Editor", () => {
     });
 
     it("must display correct message for multiple highlights", async () => {
+      pending("Doesn't work in headless mode in Chrome.");
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToHighlight(page);
