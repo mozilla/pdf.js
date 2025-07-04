@@ -12156,5 +12156,13 @@
     "rounds": 1,
     "type": "eq",
     "annotations": true
+  },
+  {
+    "id": "firefox_logo",
+    "file": "pdfs/firefox_logo.pdf",
+    "md5": "e212e0cec3e39907950c597782a42c3a",
+    "rounds": 1,
+    "type": "eq",
+    "annotations": true
   }
 ]

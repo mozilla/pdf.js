@@ -2071,7 +2071,7 @@ class PopupAnnotationElement extends AnnotationElement {
       container: this.container,
       color: this.data.color,
       titleObj: this.data.titleObj,
-      modificationDate: this.data.modificationDate,
+      modificationDate: this.data.modificationDate || this.data.creationDate,
       contentsObj: this.data.contentsObj,
       richText: this.data.richText,
       rect: this.data.rect,
@@ -2212,14 +2212,17 @@ class PopupElement {
 
     const header = document.createElement("span");
     header.className = "header";
-    const title = document.createElement("h1");
-    header.append(title);
-    ({ dir: title.dir, str: title.textContent } = this.#titleObj);
+    if (this.#titleObj?.str) {
+      const title = document.createElement("span");
+      title.className = "title";
+      header.append(title);
+      ({ dir: title.dir, str: title.textContent } = this.#titleObj);
+    }
     popup.append(header);
 
     if (this.#dateObj) {
       const modificationDate = document.createElement("time");
-      modificationDate.classList.add("popupDate");
+      modificationDate.className = "popupDate";
       modificationDate.setAttribute(
         "data-l10n-id",
         "pdfjs-annotation-date-time-string"
