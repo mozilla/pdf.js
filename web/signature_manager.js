@@ -56,6 +56,10 @@ class SignatureManager {
 
   #errorBar;
 
+  #errorDescription;
+
+  #errorTitle;
+
   #extractedSignatureData = null;
 
   #imagePath = null;
@@ -123,6 +127,8 @@ class SignatureManager {
       addButton,
       errorCloseButton,
       errorBar,
+      errorTitle,
+      errorDescription,
       saveCheckbox,
       saveContainer,
     },
@@ -142,6 +148,8 @@ class SignatureManager {
     this.#drawPlaceholder = drawPlaceholder;
     this.#drawThickness = drawThickness;
     this.#errorBar = errorBar;
+    this.#errorTitle = errorTitle;
+    this.#errorDescription = errorDescription;
     this.#imageSVG = imageSVG;
     this.#imagePlaceholder = imagePlaceholder;
     this.#imagePicker = imagePicker;
@@ -161,6 +169,12 @@ class SignatureManager {
 
     SignatureManager.#l10nDescription ||= Object.freeze({
       signature: "pdfjs-editor-add-signature-description-default-when-drawing",
+      errorUploadTitle: "pdfjs-editor-add-signature-image-upload-error-title",
+      errorUploadDescription:
+        "pdfjs-editor-add-signature-image-upload-error-description",
+      errorNoDataTitle: "pdfjs-editor-add-signature-image-no-data-error-title",
+      errorNoDataDescription:
+        "pdfjs-editor-add-signature-image-no-data-error-description",
     });
 
     dialog.addEventListener("close", this.#close.bind(this));
@@ -506,6 +520,18 @@ class SignatureManager {
     );
   }
 
+  #showError(type) {
+    this.#errorTitle.setAttribute(
+      "data-l10n-id",
+      SignatureManager.#l10nDescription[`error${type}Title`]
+    );
+    this.#errorDescription.setAttribute(
+      "data-l10n-id",
+      SignatureManager.#l10nDescription[`error${type}Description`]
+    );
+    this.#errorBar.hidden = false;
+  }
+
   #initImageTab(reset) {
     if (reset) {
       this.#resetTab("image");
@@ -539,7 +565,7 @@ class SignatureManager {
       async () => {
         const file = this.#imagePicker.files?.[0];
         if (!file || !SupportedImageMimeTypes.includes(file.type)) {
-          this.#errorBar.hidden = false;
+          this.#showError("Upload");
           this.#dialog.classList.toggle("waiting", false);
           return;
         }
@@ -601,18 +627,19 @@ class SignatureManager {
       console.error("SignatureManager.#extractSignature.", e);
     }
     if (!data) {
-      this.#errorBar.hidden = false;
+      this.#showError("Upload");
       this.#dialog.classList.toggle("waiting", false);
       return;
     }
 
-    const { outline } = (this.#extractedSignatureData =
+    const lineData = (this.#extractedSignatureData =
       this.#currentEditor.getFromImage(data.bitmap));
-
-    if (!outline) {
+    if (!lineData) {
+      this.#showError("NoData");
       this.#dialog.classList.toggle("waiting", false);
       return;
     }
+    const { outline } = lineData;
 
     this.#imagePlaceholder.hidden = true;
     this.#disableButtons(true);

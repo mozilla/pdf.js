@@ -227,6 +227,8 @@ function getViewerConfiguration() {
       saveContainer: document.getElementById("addSignatureSaveContainer"),
       saveCheckbox: document.getElementById("addSignatureSaveCheckbox"),
       errorBar: document.getElementById("addSignatureError"),
+      errorTitle: document.getElementById("addSignatureErrorTitle"),
+      errorDescription: document.getElementById("addSignatureErrorDescription"),
       errorCloseButton: document.getElementById("addSignatureErrorCloseButton"),
       cancelButton: document.getElementById("addSignatureCancelButton"),
       addButton: document.getElementById("addSignatureAddButton"),
