@@ -1676,3 +1676,11 @@ dialog :link {
     display: none;
   }
 }
+footer {
+  background-color: #f0f0f0;
+  color: #333;
+  padding: 12px;
+  font-size: 14px;
+  margin-top: 20px;
+}
+
