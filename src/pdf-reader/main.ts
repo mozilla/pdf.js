@@ -2,7 +2,7 @@ import { referenceCurrentDocument } from "./reference-current-pdf";
 import { getCurrentPageAsImage } from "./get-current-page-as-image";
 import { analyzePageStructure } from "./analyze-page-structure";
 import { prepareAudioForFirstSection } from "./prepare-audio-for-first-section";
-import { onReadButtonClick, enableReadButton } from "./dom-handlers";
+import { enableReadButton, resetReadButton } from "./dom-handlers";
 
 async function runReadingPreparation() {
   try {
@@ -16,8 +16,7 @@ async function runReadingPreparation() {
 
     if (audioForFirstSection) {
       console.log("Audio for first section prepared:", audioForFirstSection);
-
-      enableReadButton();
+      enableReadButton(audioForFirstSection);
     }
   } catch (error) {
     console.error("Analysis failed:", error);
@@ -30,6 +29,7 @@ function waitForPDFToLoad() {
   if (eventBus) {
     eventBus._on("documentloaded", () => {
       console.log("📄 New PDF loaded - running reading preparation...");
+      resetReadButton();
       // Small delay to ensure PDF.js is fully ready
       setTimeout(runReadingPreparation, 100);
     });
@@ -40,10 +40,6 @@ function waitForPDFToLoad() {
   }
 }
 
-// Set up listener once when module loads
 waitForPDFToLoad();
-
-// Assign to window object so it's accessible from HTML
-window.onReadButtonClick = onReadButtonClick;
 
 export {};
