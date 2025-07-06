@@ -409,9 +409,9 @@ const defaultOptions = {
     value:
       typeof PDFJSDev === "undefined"
         ? // NOTE: We cannot use the `updateUrlHash` function here, because of
-          // the default preferences generation (see `gulpfile.mjs`).
-          // However, the following line is *only* used in development mode.
-          document.URL.split("#", 1)[0]
+        // the default preferences generation (see `gulpfile.mjs`).
+        // However, the following line is *only* used in development mode.
+        document.URL.split("#", 1)[0]
         : "",
     kind: OptionKind.API,
   },
@@ -526,7 +526,7 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
     value:
       typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")
         ? ""
-        : "compressed.tracemonkey-pldi-09.pdf",
+        : "somatosensory.pdf",
     kind: OptionKind.VIEWER,
   };
   defaultOptions.sandboxBundleSrc = {
@@ -632,7 +632,7 @@ class AppOptions {
         if (this._hasInvokedSet) {
           console.warn(
             "The Preferences may override manually set AppOptions; " +
-              'please use the "disablePreferences"-option to prevent that.'
+            'please use the "disablePreferences"-option to prevent that.'
           );
         }
         return false;
