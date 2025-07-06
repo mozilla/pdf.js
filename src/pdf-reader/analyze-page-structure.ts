@@ -25,18 +25,35 @@ export async function analyzePageStructure(
 
   const systemPrompt = `
   ## You are an expert PDF reader. 
-  Analyze the PDF page image and extract structured information about its content and layout.
+  Analyze the PDF page image and extract structured information about its content and layout - as described in the schema.
   Think of this task as a preparation for a reading assistant.
-
-  ## Instructions
-  1. Visually inspect the page to find text blocks and if applicable, a title for the given section.
-  2. Do not omit short sections, like article titles, authors, table of contents, etc.
-  3. Assign a reading relevance score (0-5) to every section, 0 being not relevant and 5 being very relevant. You must not omit any section in your response.
-  4. If a section continues on the next page, set the continuesOnNextPage flag to true, otherwise false.
-  5. If a sentence continues on the next page, set the continuesOnNextPage flag to true.
 
   ## Schema 
   ${pageStructureSchema.describe("JSON schema for the page structure")}
+
+  ## Instructions
+
+  ### Sections
+  1. Visually inspect the page to find text blocks and a title for the given section.
+    - title should be always in a separate section.
+    - if group of text is in a similar font, put it in a single section, otherwise create a new section for each group.
+    - if a wider-than-average (line height) white space is between two blocks of text, treat it as a delimiter between two separate sections.
+  2. Do not omit short sections, like article titles, authors, table of contents, etc.
+  3. If a section continues on the next page, set the continuesOnNextPage flag to true, otherwise false.
+
+  ### Reading Relevance
+  1. Assign a reading relevance score (0-5) to every section, 0 being not relevant and 5 being very relevant. You must not omit any section in your response.
+  2. Title should have a reading relevance score of 5.
+  3. Examine fonts: 
+  - sections with fonts with bold text should have a higher reading relevance score.
+  - sections with small or light fonts should have a lower reading relevance score.
+  - regular fonts should be have a reading relevance score of 5.
+
+  ### Sentences
+  1. Don't omit ANY sentence from a given section. You must include all sentences!
+  2. If a sentence continues on the next page, set the continuesOnNextPage flag to true.
+  
+  ---
   `;
 
   const response = await openai.chat.completions.create({
