@@ -125,6 +125,8 @@ See https://github.com/adobe-type-tools/cmap-resources
             </div>
           </div>
 
+
+
           <div id="toolbarSidebarRight">
             <div id="outlineOptionsContainer" class="toolbarHorizontalGroup">
               <div class="verticalToolbarSeparator"></div>
@@ -220,6 +222,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                   <span id="numPages" class="toolbarLabel"></span>
                 </div>
               </div>
+
               <div id="toolbarViewerMiddle" class="toolbarHorizontalGroup">
                 <div class="toolbarHorizontalGroup">
                   <button id="zoomOutButton" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-zoom-out-button">
@@ -248,6 +251,15 @@ See https://github.com/adobe-type-tools/cmap-resources
                   </select>
                 </span>
               </div>
+
+                     <div id="readButtonContainer" class="toolbarHorizontalGroup">
+             <button id="readButton"  type="button" tabindex="0" title="Read" onclick="onReadButtonClick()">
+                <span>Read</span>
+              </button>
+
+            <div class="verticalToolbarSeparator"></div>
+          </div>
+
               <div id="toolbarViewerRight" class="toolbarHorizontalGroup">
                 <div id="editorModeButtons" class="toolbarHorizontalGroup" role="radiogroup">
                   <div id="editorSignature" class="toolbarButtonWithContainer" hidden="true">

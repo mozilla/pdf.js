@@ -3,6 +3,7 @@ import { getCurrentPageAsImage } from "./get-current-page-as-image";
 import { analyzePageStructure } from "./analyze-page-structure";
 import { generateAudioWithWordTimings } from "./generate-audio-with-word-timings";
 import { prepareAudioForFirstSection } from "./prepare-audio-for-first-section";
+import "./dom-handlers";
 
 async function runReadingPreparation() {
   try {
