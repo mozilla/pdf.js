@@ -2,9 +2,13 @@ import { referenceCurrentDocument } from "./reference-current-pdf";
 import { getCurrentPageAsImage } from "./get-current-page-as-image";
 import { analyzePageStructure } from "./analyze-page-structure";
 import { prepareAudioForFirstSection } from "./prepare-audio-for-first-section";
-import { enableReadButton, resetReadButton } from "./dom-handlers";
+import {
+  enableReadButton,
+  resetReadButton,
+  resetLatestAudioData,
+} from "./dom-handlers";
 
-async function runReadingPreparation() {
+async function runReadingPreparation(sessionId: number) {
   try {
     const pdf = await referenceCurrentDocument();
     const imageFile = await getCurrentPageAsImage(pdf);
@@ -16,7 +20,7 @@ async function runReadingPreparation() {
 
     if (audioForFirstSection) {
       console.log("Audio for first section prepared:", audioForFirstSection);
-      enableReadButton(audioForFirstSection);
+      enableReadButton(audioForFirstSection, sessionId);
     }
   } catch (error) {
     console.error("Analysis failed:", error);
@@ -30,8 +34,9 @@ function waitForPDFToLoad() {
     eventBus._on("documentloaded", () => {
       console.log("📄 New PDF loaded - running reading preparation...");
       resetReadButton();
+      const sessionId = resetLatestAudioData();
       // Small delay to ensure PDF.js is fully ready
-      setTimeout(runReadingPreparation, 100);
+      setTimeout(() => runReadingPreparation(sessionId), 100);
     });
   } else {
     console.warn("EventBus not available, trying fallback...");

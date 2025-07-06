@@ -1,5 +1,8 @@
 import { AudioWithWordTimings } from "./generate-audio-with-word-timings";
 
+let latestAudioData: AudioWithWordTimings[] | null = null;
+let currentSessionId = 0;
+
 async function playAudio(audioItem: AudioWithWordTimings): Promise<void> {
   try {
     // Fallback to webkit for older browsers
@@ -28,21 +31,48 @@ async function playAudio(audioItem: AudioWithWordTimings): Promise<void> {
   }
 }
 
-async function readSentences(audioData: AudioWithWordTimings[]): Promise<void> {
-  for (const audioItem of audioData) {
+async function readSentences(): Promise<void> {
+  if (!latestAudioData || latestAudioData.length === 0) {
+    console.error("No audio data available");
+    return;
+  }
+
+  for (const audioItem of latestAudioData) {
     await playAudio(audioItem);
   }
 }
 
-export function enableReadButton(audioData: AudioWithWordTimings[]): void {
+export function enableReadButton(
+  audioData: AudioWithWordTimings[],
+  sessionId: number
+): void {
   const readButton = document.getElementById("readButton") as HTMLButtonElement;
-  if (readButton && audioData && audioData.length > 0) {
-    readButton.disabled = false;
 
+  if (sessionId !== currentSessionId) {
+    console.log(
+      "Ignoring audio from old session:",
+      sessionId,
+      "current:",
+      currentSessionId
+    );
+    return;
+  }
+
+  if (readButton && audioData && audioData.length > 0) {
+    // Store the latest audio data
+    latestAudioData = audioData;
+
+    readButton.disabled = false;
     readButton.onclick = () => {
-      readSentences(audioData);
+      readSentences();
     };
   }
+}
+
+export function resetLatestAudioData(): number {
+  latestAudioData = null;
+  currentSessionId++;
+  return currentSessionId;
 }
 
 export function resetReadButton(): void {
