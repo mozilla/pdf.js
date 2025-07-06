@@ -89,11 +89,16 @@ See https://github.com/adobe-type-tools/cmap-resources
           "web-print_service": "./pdf_print_service.js",
           "web-secondary_toolbar": "./secondary_toolbar.js",
           "web-signature_manager": "./signature_manager.js",
-          "web-toolbar": "./toolbar.js"
+          "web-toolbar": "./toolbar.js",
+
+          "pdf-reader": "../build/pdf-reader/index.js"
         }
       }
     </script>
     <script src="viewer.js" type="module"></script>
+    <script type="module">
+      import "../build/pdf-reader/index.js";
+    </script>
 <!--#endif-->
   </head>
 

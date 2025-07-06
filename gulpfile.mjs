@@ -145,11 +145,11 @@ function safeSpawnSync(command, parameters, options = {}) {
   if (result.status !== 0) {
     console.log(
       'Error: command "' +
-        command +
-        '" with parameters "' +
-        parameters +
-        '" exited with code ' +
-        result.status
+      command +
+      '" with parameters "' +
+      parameters +
+      '" exited with code ' +
+      result.status
     );
     process.exit(result.status);
   }
@@ -389,23 +389,23 @@ function createWebpackConfig(
       minimizer: !isMinified
         ? undefined
         : [
-            new TerserPlugin({
-              extractComments: false,
-              parallel: false,
-              terserOptions: {
-                compress: {
-                  // V8 chokes on very long sequences, work around that.
-                  sequences: false,
-                },
-                format: {
-                  comments: /@lic|webpackIgnore|@vite-ignore|pdfjsVersion/i,
-                },
-                keep_classnames: true,
-                keep_fnames: true,
-                module: isModule,
+          new TerserPlugin({
+            extractComments: false,
+            parallel: false,
+            terserOptions: {
+              compress: {
+                // V8 chokes on very long sequences, work around that.
+                sequences: false,
               },
-            }),
-          ],
+              format: {
+                comments: /@lic|webpackIgnore|@vite-ignore|pdfjsVersion/i,
+              },
+              keep_classnames: true,
+              keep_fnames: true,
+              module: isModule,
+            },
+          }),
+        ],
     },
     experiments,
     output,
@@ -477,7 +477,7 @@ function checkChromePreferencesFile(chromePrefsPath, webPrefs) {
       ret = false;
       console.log(
         `Warning: not the same values (for "${key}"): ` +
-          `${chromePrefs.properties[key].default} !== ${value}`
+        `${chromePrefs.properties[key].default} !== ${value}`
       );
     }
   }
@@ -489,8 +489,8 @@ function checkChromePreferencesFile(chromePrefsPath, webPrefs) {
       ret = false;
       console.log(
         `Warning: ${chromePrefsPath} contains an unrecognized pref: ${key}. ` +
-          `Remove it, or prepend "DEPRECATED. " and add migration logic to ` +
-          `extensions/chromium/options/migration.js and web/chromecom.js.`
+        `Remove it, or prepend "DEPRECATED. " and add migration logic to ` +
+        `extensions/chromium/options/migration.js and web/chromecom.js.`
       );
     }
   }
@@ -1628,11 +1628,11 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
       presets: skipBabel
         ? undefined
         : [
-            [
-              "@babel/preset-env",
-              { ...BABEL_PRESET_ENV_OPTS, loose: false, modules: false },
-            ],
+          [
+            "@babel/preset-env",
+            { ...BABEL_PRESET_ENV_OPTS, loose: false, modules: false },
           ],
+        ],
       plugins: [[babelPluginPDFJSPreprocessor, ctx]],
       targets: BABEL_TARGETS,
     }).code;
@@ -2140,6 +2140,37 @@ gulp.task("dev-wasm", function () {
   return createWasmBundle().pipe(gulp.dest(VIEWER_WASM_OUTPUT));
 });
 
+gulp.task("dev-pdf-reader", function (done) {
+  console.log();
+  console.log("### Compiling PDF Reader TypeScript files");
+
+  const tsConfigPath = path.resolve("src/pdf-reader/tsconfig.json");
+
+  exec(
+    `"node_modules/.bin/tsc" --project "${tsConfigPath}"`,
+    (error, stdout, stderr) => {
+      if (error) {
+        console.error("TypeScript compilation failed:", error);
+        console.error("stdout:", stdout);
+        console.error("stderr:", stderr);
+        done(error);
+        return;
+      }
+
+      if (stdout) {
+        console.log("TypeScript compilation output:", stdout);
+      }
+
+      if (stderr) {
+        console.warn("TypeScript compilation warnings:", stderr);
+      }
+
+      console.log("PDF Reader TypeScript compilation completed successfully");
+      done();
+    }
+  );
+});
+
 gulp.task(
   "dev-sandbox",
   gulp.series(
@@ -2192,6 +2223,13 @@ gulp.task(
         ],
         { ignoreInitial: false },
         gulp.series("dev-sandbox")
+      );
+    },
+    function watchPdfReader() {
+      gulp.watch(
+        "src/pdf-reader/**/*.ts",
+        { ignoreInitial: false },
+        gulp.series("dev-pdf-reader")
       );
     },
     async function createServer() {
@@ -2576,8 +2614,8 @@ gulp.task(
             .on("end", function () {
               console.log(
                 "Result diff can be found at " +
-                  BUILD_DIR +
-                  MOZCENTRAL_DIFF_FILE
+                BUILD_DIR +
+                MOZCENTRAL_DIFF_FILE
               );
               done();
             });
