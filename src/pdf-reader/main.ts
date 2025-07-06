@@ -1,37 +1,41 @@
 import { referenceCurrentDocument } from "./reference-current-pdf";
 import { getCurrentPageAsImage } from "./get-current-page-as-image";
 import { analyzePageStructure } from "./analyze-page-structure";
+import { generateAudioWithWordTimings } from "./generate-audio-with-word-timings";
+import { prepareAudioForFirstSection } from "./prepare-audio-for-first-section";
 
-async function runAnalysisPipeline() {
+async function runReadingPreparation() {
   try {
-    console.log("🔄 Starting analysis pipeline...");
     const pdf = await referenceCurrentDocument();
     const imageFile = await getCurrentPageAsImage(pdf);
     const pageStructure = await analyzePageStructure(imageFile);
-    console.log("📊 Analysis complete:", pageStructure);
+    console.log("Reading preparation complete:", pageStructure);
+
+    const audioForFirstSection =
+      await prepareAudioForFirstSection(pageStructure);
+    console.log("Audio for first section prepared:", audioForFirstSection);
   } catch (error) {
-    console.error("❌ Analysis failed:", error);
+    console.error("Analysis failed:", error);
   }
 }
 
-function setupDocumentListener() {
+function waitForPDFToLoad() {
   const eventBus = window.PDFViewerApplication?.eventBus;
 
   if (eventBus) {
     eventBus._on("documentloaded", () => {
-      console.log("📄 New PDF loaded - running analysis...");
+      console.log("📄 New PDF loaded - running reading preparation...");
       // Small delay to ensure PDF.js is fully ready
-      setTimeout(runAnalysisPipeline, 100);
+      setTimeout(runReadingPreparation, 100);
     });
-    console.log("👂 Document listener set up");
   } else {
-    console.warn("⚠️ EventBus not available, trying fallback...");
+    console.warn("EventBus not available, trying fallback...");
     // Fallback: try again after a delay
-    setTimeout(setupDocumentListener, 1000);
+    setTimeout(waitForPDFToLoad, 1000);
   }
 }
 
 // Set up listener once when module loads
-setupDocumentListener();
+waitForPDFToLoad();
 
 export {};
