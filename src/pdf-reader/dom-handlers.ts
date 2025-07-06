@@ -102,27 +102,19 @@ export function resetReadButton(): void {
 function clearSentenceHighlight(): void {
   if (!currentHighlightedSentence) return;
 
-  const pdfViewer = window.PDFViewerApplication?.pdfViewer;
-  const currentPageNumber = pdfViewer?.currentPageNumber;
-  if (!pdfViewer || currentPageNumber === undefined) return;
+  // Get the event bus to clear highlights
+  const eventBus = (window as any).PDFViewerApplication?.eventBus;
+  if (!eventBus) {
+    console.warn("Event bus not available for clearing highlights");
+    return;
+  }
 
-  const pageIndex = currentPageNumber - 1;
-  if (pageIndex < 0) return;
+  // Dispatch findbarclose event to clear all highlights
+  eventBus.dispatch("findbarclose", { source: null });
 
-  const pageView = (pdfViewer as any)._pages?.[pageIndex];
-  if (!pageView?.textLayer?.div) return;
-
-  const textDivs = pageView.textLayer.div.querySelectorAll(".textLayer > span");
-  textDivs.forEach((div: Element) => {
-    (div as HTMLElement).classList.remove("highlight", "sentence-highlight");
-  });
-
+  console.log("Cleared sentence highlights using PDF.js find infrastructure");
   currentHighlightedSentence = null;
 }
-
-const normalizeText = (text: string): string => {
-  return text.trim().replace(/\s+/g, " "); // Only normalize spaces
-};
 
 export function highlightCurrentlyReadSentence({
   pdfViewer,
@@ -135,92 +127,85 @@ export function highlightCurrentlyReadSentence({
   console.log("Highlighting original text:", sentenceText);
 
   const currentPageIndex = pdfViewer.currentPageNumber - 1;
-
   const pageView = (pdfViewer as any)._pages?.[currentPageIndex];
+
   if (!pageView?.textLayer?.div) {
     console.warn("Text layer not available for highlighting");
     return;
   }
-  const textDivs = pageView.textLayer.div.querySelectorAll(".textLayer > span");
-  if (!textDivs.length) {
-    console.warn("No text divs found for highlighting");
+
+  const findController = (window as any).PDFViewerApplication?.findController;
+  const eventBus = (window as any).PDFViewerApplication?.eventBus;
+
+  if (!findController || !eventBus) {
+    console.warn("Find controller or event bus not available");
     return;
   }
-  // Get all text content from the page
-  const fullText = Array.from(textDivs as NodeListOf<HTMLElement>)
-    .map(div => div.textContent || "")
-    .join(" ");
 
-  const normalizedSentence = normalizeText(sentenceText);
-  const normalizedFullText = normalizeText(fullText);
-
-  console.log("Normalized sentence:", normalizedSentence);
-  console.log(
-    "Normalized full text (first 200 chars):",
-    normalizedFullText.substring(0, 200) + "..."
-  );
-
-  // Try exact match first
-  let sentenceStart = normalizedFullText.indexOf(normalizedSentence);
-  let sentenceEnd: number;
-
-  if (sentenceStart === -1) {
-    console.warn("Exact sentence not found, trying case-insensitive match...");
-
-    // Try case-insensitive match
-    const lowerSentence = normalizedSentence.toLowerCase();
-    const lowerFullText = normalizedFullText.toLowerCase();
-    sentenceStart = lowerFullText.indexOf(lowerSentence);
-
-    if (sentenceStart === -1) {
-      console.warn(
-        "Case-insensitive match failed. Original text might not match PDF text exactly."
-      );
-      return;
-    } else {
-      console.log("Case-insensitive match found at position:", sentenceStart);
-      sentenceEnd = sentenceStart + lowerSentence.length;
-    }
-  } else {
-    console.log("Exact match found at position:", sentenceStart);
-    sentenceEnd = sentenceStart + normalizedSentence.length;
+  const textHighlighter = pageView._textHighlighter;
+  if (!textHighlighter) {
+    console.warn("Text highlighter not available for this page");
+    return;
   }
 
-  // Find which divs contain the sentence
-  let currentPos = 0;
-  const divsToHighlight: HTMLElement[] = [];
+  console.log("Triggering text extraction via find event...");
 
-  for (const div of textDivs) {
-    const divText = (div as HTMLElement).textContent || "";
-    const normalizedDivText = normalizeText(divText);
-    const divStart = currentPos;
-    const divEnd = currentPos + normalizedDivText.length;
-
-    // Check if this div overlaps with the sentence
-    if (divStart < sentenceEnd && divEnd > sentenceStart) {
-      divsToHighlight.push(div as HTMLElement);
-    }
-
-    currentPos = divEnd + (divText ? 1 : 0); // Add space between divs
-
-    if (currentPos > sentenceEnd) break;
-  }
-
-  // Apply highlighting
-  divsToHighlight.forEach(div => {
-    div.classList.add("highlight", "sentence-highlight");
+  // Dispatch a find event to trigger text extraction (same as search does)
+  eventBus.dispatch("find", {
+    source: null,
+    type: "highlightallchange", // Use this type to avoid search UI changes
+    query: sentenceText,
+    caseSensitive: false,
+    entireWord: false,
+    highlightAll: true,
+    findPrevious: false,
+    matchDiacritics: false,
   });
 
-  currentHighlightedSentence = sentenceText;
+  // Wait for the text extraction and matching to complete
+  const checkForResults = () => {
+    // Check if we have page content and matches for our page
+    const pageContent = findController._pageContents[currentPageIndex];
+    const pageMatches = findController._pageMatches[currentPageIndex];
+    const pageMatchesLength =
+      findController._pageMatchesLength[currentPageIndex];
 
-  // Scroll the first highlighted div into view
-  if (divsToHighlight.length > 0) {
-    divsToHighlight[0].scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-      inline: "center",
-    });
-  }
+    if (pageContent && pageMatches && pageMatchesLength) {
+      console.log("Text extraction completed, page content available");
+      console.log(
+        "Page content (first 200 chars):",
+        pageContent.substring(0, 200) + "..."
+      );
+      console.log("Found", pageMatches.length, "match(es) for sentence");
+
+      if (pageMatches.length > 0) {
+        console.log(
+          "Match at position:",
+          pageMatches[0],
+          "length:",
+          pageMatchesLength[0]
+        );
+
+        // The TextHighlighter should already be set up with matches by the find controller
+        // The highlighting should already be applied by the updatetextlayermatches event
+        currentHighlightedSentence = sentenceText;
+        console.log(
+          "Successfully highlighted sentence using PDF.js find infrastructure"
+        );
+
+        // Don't clear the find state here - let it persist until audio ends
+      } else {
+        console.warn("No matches found for sentence:", sentenceText);
+      }
+    } else {
+      // Text extraction still in progress, check again
+      console.log("Text extraction in progress, checking again...");
+      setTimeout(checkForResults, 100);
+    }
+  };
+
+  // Start checking for results
+  setTimeout(checkForResults, 50);
 }
 
 // Make the function globally available for HTML onclick handler
