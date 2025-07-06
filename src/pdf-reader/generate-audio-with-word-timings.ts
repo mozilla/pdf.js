@@ -6,6 +6,7 @@ export type AudioWithWordTimings = {
   transcription: TranscriptionVerbose & {
     _request_id?: string | null;
   };
+  originalSentenceText: string;
 };
 
 export async function generateAudioWithWordTimings(input: string) {
@@ -31,5 +32,6 @@ export async function generateAudioWithWordTimings(input: string) {
   return {
     audioBuffer: audioBuf,
     transcription,
+    originalSentenceText: input,
   };
 }

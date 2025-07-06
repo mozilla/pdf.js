@@ -6,12 +6,20 @@ import {
   enableReadButton,
   resetReadButton,
   resetLatestAudioData,
+  readSentences,
 } from "./dom-handlers";
 
 async function runReadingPreparation(sessionId: number) {
   try {
-    const pdf = await referenceCurrentDocument();
-    const imageFile = await getCurrentPageAsImage(pdf);
+    const { getCurrentPage, pdfDocument, getTitle, pdfViewer } =
+      await referenceCurrentDocument();
+
+    const imageFile = await getCurrentPageAsImage({
+      getCurrentPage,
+      pdfDocument,
+      getTitle,
+    });
+
     const pageStructure = await analyzePageStructure(imageFile);
     console.log("Reading preparation complete:", pageStructure);
 
@@ -20,7 +28,10 @@ async function runReadingPreparation(sessionId: number) {
 
     if (audioForFirstSection) {
       console.log("Audio for first section prepared:", audioForFirstSection);
-      enableReadButton(audioForFirstSection, sessionId);
+
+      enableReadButton(audioForFirstSection, sessionId, () => {
+        readSentences(pdfViewer);
+      });
     }
   } catch (error) {
     console.error("Analysis failed:", error);

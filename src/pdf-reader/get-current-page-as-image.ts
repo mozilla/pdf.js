@@ -1,9 +1,13 @@
 import type { PDFReference } from "./types";
 
-export async function getCurrentPageAsImage(pdf: PDFReference): Promise<File> {
-  const currentPageNum = pdf.getCurrentPage();
+export async function getCurrentPageAsImage({
+  getCurrentPage,
+  pdfDocument,
+  getTitle,
+}: Omit<PDFReference, "pdfViewer">): Promise<File> {
+  const currentPageNum = getCurrentPage();
 
-  const page = await pdf.pdfDocument.getPage(currentPageNum);
+  const page = await pdfDocument.getPage(currentPageNum);
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
 
@@ -21,7 +25,7 @@ export async function getCurrentPageAsImage(pdf: PDFReference): Promise<File> {
     canvas.toBlob(
       blob => {
         if (blob) {
-          const fileName = `${pdf.getTitle()}_page_${currentPageNum}.png`;
+          const fileName = `${getTitle()}_page_${currentPageNum}.png`;
           const file = new File([blob], fileName, { type: "image/png" });
           resolve(file);
         } else {
