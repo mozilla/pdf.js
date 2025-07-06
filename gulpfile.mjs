@@ -2142,15 +2142,13 @@ gulp.task("dev-wasm", function () {
 
 gulp.task("dev-pdf-reader", function (done) {
   console.log();
-  console.log("### Compiling PDF Reader TypeScript files");
-
-  const tsConfigPath = path.resolve("src/pdf-reader/tsconfig.json");
+  console.log("### Building PDF Reader with Vite");
 
   exec(
-    `"node_modules/.bin/tsc" --project "${tsConfigPath}"`,
+    `"node_modules/.bin/vite" build src/pdf-reader`,
     (error, stdout, stderr) => {
       if (error) {
-        console.error("TypeScript compilation failed:", error);
+        console.error("Vite build failed:", error);
         console.error("stdout:", stdout);
         console.error("stderr:", stderr);
         done(error);
@@ -2158,14 +2156,14 @@ gulp.task("dev-pdf-reader", function (done) {
       }
 
       if (stdout) {
-        console.log("TypeScript compilation output:", stdout);
+        console.log("Vite build output:", stdout);
       }
 
       if (stderr) {
-        console.warn("TypeScript compilation warnings:", stderr);
+        console.warn("Vite build warnings:", stderr);
       }
 
-      console.log("PDF Reader TypeScript compilation completed successfully");
+      console.log("PDF Reader Vite build completed successfully");
       done();
     }
   );
