@@ -133,7 +133,9 @@ export async function analyzePageStructure(
   }
 
   const rawData = JSON.parse(content);
-  return pageStructureSchema.parse(rawData);
+  const parsedData = pageStructureSchema.parse(rawData);
+
+  return applyRelevanceFilter(parsedData);
 }
 
 async function fileToBase64(file: File): Promise<string> {
@@ -147,4 +149,14 @@ async function fileToBase64(file: File): Promise<string> {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+function applyRelevanceFilter(
+  pageStructure: PageStructureSchema
+): PageStructureSchema {
+  return {
+    sections: pageStructure.sections.filter(
+      section => section.readingRelevance === 5
+    ),
+  };
 }
