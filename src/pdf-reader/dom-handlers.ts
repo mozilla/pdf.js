@@ -1,7 +1,7 @@
-async function playAudio(audioItem: any): Promise<void> {
-  try {
-    console.log("Read button clicked!");
+import { AudioWithWordTimings } from "./generate-audio-with-word-timings";
 
+async function playAudio(audioItem: AudioWithWordTimings): Promise<void> {
+  try {
     // Fallback to webkit for older browsers
     const audioContext = new (window.AudioContext ||
       (window as any).webkitAudioContext)();
@@ -14,21 +14,34 @@ async function playAudio(audioItem: any): Promise<void> {
     source.buffer = decodedBuffer;
 
     source.connect(audioContext.destination);
-    source.start();
 
     console.log("Playing audio:", audioItem.transcription.text);
-    console.log("Duration:", audioItem.transcription.duration, "seconds");
+
+    // Wait for audio to finish playing
+    return new Promise<void>(resolve => {
+      source.onended = () => resolve();
+      source.start();
+    });
   } catch (error) {
     console.error("Error playing audio:", error);
+    throw error;
   }
 }
 
-export function enableReadButton(audioData: any[]): void {
+async function readSentences(audioData: AudioWithWordTimings[]): Promise<void> {
+  for (const audioItem of audioData) {
+    await playAudio(audioItem);
+  }
+}
+
+export function enableReadButton(audioData: AudioWithWordTimings[]): void {
   const readButton = document.getElementById("readButton") as HTMLButtonElement;
   if (readButton && audioData && audioData.length > 0) {
     readButton.disabled = false;
 
-    readButton.onclick = () => playAudio(audioData[0]);
+    readButton.onclick = () => {
+      readSentences(audioData);
+    };
   }
 }
 

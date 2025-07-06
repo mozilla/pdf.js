@@ -1,4 +1,12 @@
 import { openai } from "./open-ai";
+import { TranscriptionVerbose } from "openai/resources/audio/transcriptions";
+
+export type AudioWithWordTimings = {
+  audioBuffer: ArrayBuffer;
+  transcription: TranscriptionVerbose & {
+    _request_id?: string | null;
+  };
+};
 
 export async function generateAudioWithWordTimings(input: string) {
   const speechResponse = await openai.audio.speech.create({
