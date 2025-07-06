@@ -731,6 +731,7 @@ class AnnotationElement {
         source: this,
         mode,
         editId,
+        mustEnterInEditMode: true,
       });
     });
   }
