@@ -1,10 +1,11 @@
 import { referenceCurrentDocument } from "./reference-current-pdf";
 import { getCurrentPageAsImage } from "./get-current-page-as-image";
 import { analyzePageStructure } from "./analyze-page-structure";
-import { prepareAudioForFirstSection } from "./prepare-audio-for-first-section";
+import { prepareAudioForSentences } from "./prepare-audio-for-sentences";
 import {
   enableReadButton,
   resetReadButton,
+  setLatestAudioData,
   resetLatestAudioData,
   readSentences,
 } from "./dom-handlers";
@@ -23,14 +24,39 @@ async function runReadingPreparation(sessionId: number) {
     const pageStructure = await analyzePageStructure(imageFile);
     console.log("Reading preparation complete:", pageStructure);
 
-    const audioForFirstSection =
-      await prepareAudioForFirstSection(pageStructure);
+    const {
+      sections: [firstSection, ...restOfTheSections],
+    } = pageStructure;
+
+    const audioForFirstSection = await prepareAudioForSentences(
+      firstSection.sentences
+    );
 
     if (audioForFirstSection) {
       console.log("Audio for first section prepared:", audioForFirstSection);
 
-      enableReadButton(audioForFirstSection, sessionId, () => {
-        readSentences(pdfViewer);
+      enableReadButton(audioForFirstSection, sessionId, async () => {
+        // Start preparing audio for the rest of the sections in parallel
+        const audioForTheRestOfTheSectionsPromise = prepareAudioForSentences(
+          restOfTheSections.flatMap(section => section.sentences)
+        );
+
+        // Start reading the first section immediately
+        await readSentences(pdfViewer);
+
+        // Wait for the rest of the sections to be prepared
+        const audioForTheRestOfTheSections =
+          await audioForTheRestOfTheSectionsPromise;
+
+        if (audioForTheRestOfTheSections) {
+          console.log(
+            "Audio for the rest of the sections prepared:",
+            audioForTheRestOfTheSections
+          );
+          setLatestAudioData(audioForTheRestOfTheSections);
+
+          await readSentences(pdfViewer);
+        }
       });
     }
   } catch (error) {

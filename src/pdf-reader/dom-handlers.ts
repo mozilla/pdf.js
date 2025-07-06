@@ -70,14 +70,17 @@ export function enableReadButton(
   }
 
   if (readButton && audioData && audioData.length > 0) {
-    // Store the latest audio data
-    latestAudioData = audioData;
+    setLatestAudioData(audioData);
 
     readButton.disabled = false;
     readButton.onclick = () => {
       onClick();
     };
   }
+}
+
+export function setLatestAudioData(audioData: AudioWithWordTimings[]): void {
+  latestAudioData = audioData;
 }
 
 export function resetLatestAudioData(): number {

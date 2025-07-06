@@ -17,6 +17,8 @@ const pageStructureSchema = z.object({
 });
 
 export type PageStructureSchema = z.infer<typeof pageStructureSchema>;
+export type Sentence =
+  PageStructureSchema["sections"][number]["sentences"][number];
 
 export async function analyzePageStructure(
   pageFile: File
