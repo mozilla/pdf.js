@@ -134,6 +134,12 @@ export function highlightCurrentlyReadSentence({
     return;
   }
 
+  // Ensure the page is fully loaded before proceeding
+  if (!pageView.pdfPage || pageView.renderingState === 0) {
+    console.warn("PDF page not fully loaded yet, skipping highlighting");
+    return;
+  }
+
   const findController = (window as any).PDFViewerApplication?.findController;
   const eventBus = (window as any).PDFViewerApplication?.eventBus;
 
@@ -161,6 +167,9 @@ export function highlightCurrentlyReadSentence({
     findPrevious: false,
     matchDiacritics: false,
   });
+
+  // Disable automatic scrolling to prevent horizontal jumping
+  findController._scrollMatches = false;
 
   // Wait for the text extraction and matching to complete
   const checkForResults = () => {
