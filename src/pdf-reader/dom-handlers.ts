@@ -9,12 +9,16 @@ export function onReadButtonClick(): void {
   // - etc.
 }
 
+export function enableReadButton(): void {
+  const readButton = document.getElementById("readButton") as HTMLButtonElement;
+  if (readButton) {
+    readButton.disabled = false;
+  }
+}
+
 // Make the function globally available for HTML onclick handler
 declare global {
   interface Window {
     onReadButtonClick: () => void;
   }
 }
-
-// Assign to window object so it's accessible from HTML
-window.onReadButtonClick = onReadButtonClick;
