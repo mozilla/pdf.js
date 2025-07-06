@@ -65,5 +65,10 @@
   "engines": {
     "node": ">=20.16.0 || >=22.3.0"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "dependencies": {
+    "llm-api": "^1.6.0",
+    "zod": "^3.25.74",
+    "zod-gpt": "^0.16.0"
+  }
 }
