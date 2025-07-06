@@ -1,16 +1,3 @@
-// TypeScript needs to know about PDFViewerApplication since it's added by PDF.js at runtime
-declare global {
-  interface Window {
-    PDFViewerApplication: {
-      documentInfo?: { Title?: string };
-      eventBus?: { _on: (event: string, callback: () => void) => void };
-      page?: number;
-      pdfDocument?: any;
-      pdfViewer?: any;
-    };
-  }
-}
-
 import type { PDFReference } from "./types";
 
 export async function referenceCurrentDocument(): Promise<PDFReference> {
