@@ -6,10 +6,10 @@ export default defineConfig({
     outDir: "../../build/pdf-reader",
     emptyOutDir: true,
     lib: {
-      entry: "index.ts",
+      entry: "main.ts",
       name: "PdfReader",
       formats: ["es"],
-      fileName: "index",
+      fileName: "main",
     },
     rollupOptions: {
       external: [],
