@@ -16,13 +16,6 @@ const pageStructureSchema = z.object({
         z.object({
           sentenceText: z.string(),
           continuesOnNextPage: z.boolean(),
-          words: z.array(
-            z.object({
-              word: z.string(),
-              indexInSentence: z.number(),
-              continuesOnNextPage: z.boolean(),
-            })
-          ),
         })
       ),
     })
@@ -37,13 +30,23 @@ export async function analyzePageStructure(
   const base64Data = await fileToBase64(pageFile);
 
   const systemPrompt = `
-  You are an expert PDF reader. Analyze the PDF page image and extract structured information about its content and layout.
-  You need to first visually inspect the page to find text blocks and if applicable, a title for the given section.
-  Then, you need to determine the reading relevance of the section (0-5), 0 being not relevant and 5 being very relevant.
+  ## You are an expert PDF reader. 
+  Analyze the PDF page image and extract structured information about its content and layout.
+  Think of this task as a preparation for a reading assistant.
+
+  ## Instructions
+  1. Visually inspect the page to find text blocks and if applicable, a title for the given section.
+  2. Do not omit short sections, like article titles, authors, table of contents, etc.
+  3. Assign a reading relevance score (0-5) to every section, 0 being not relevant and 5 being very relevant. You must not omit any section in your response.
+  4. If a section continues on the next page, set the continuesOnNextPage flag to true, otherwise false.
+  5. If a sentence continues on the next page, set the continuesOnNextPage flag to true.
+
+  ## Schema 
+  ${pageStructureSchema.describe("JSON schema for the page structure")}
   `;
 
   const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: "gpt-4o-2024-11-20",
     messages: [
       {
         role: "system",
@@ -95,35 +98,8 @@ export async function analyzePageStructure(
                         continuesOnNextPage: {
                           type: "boolean",
                         },
-                        words: {
-                          type: "array",
-                          items: {
-                            type: "object",
-                            properties: {
-                              word: {
-                                type: "string",
-                              },
-                              indexInSentence: {
-                                type: "number",
-                              },
-                              continuesOnNextPage: {
-                                type: "boolean",
-                              },
-                            },
-                            required: [
-                              "word",
-                              "indexInSentence",
-                              "continuesOnNextPage",
-                            ],
-                            additionalProperties: false,
-                          },
-                        },
                       },
-                      required: [
-                        "sentenceText",
-                        "continuesOnNextPage",
-                        "words",
-                      ],
+                      required: ["sentenceText", "continuesOnNextPage"],
                       additionalProperties: false,
                     },
                   },
