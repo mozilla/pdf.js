@@ -1,0 +1,14 @@
+.textLayer .sentence-highlight {
+  background-color: rgba(255, 215, 0, 0.3); /* Gold background with transparency */
+  transition: background-color 0.3s ease;
+}
+
+.textLayer .sentence-highlight.highlight {
+  background-color: rgba(255, 215, 0, 0.5); /* Slightly more opaque when combined */
+}
+
+/* Add a subtle glow effect for better visibility */
+.textLayer .sentence-highlight {
+  box-shadow: 0 0 3px rgba(255, 215, 0, 0.4);
+  border-radius: 2px;
+}
