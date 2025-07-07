@@ -32,7 +32,7 @@ async function runReadingPreparation(sessionId: number) {
     // Make wordMap available globally for testing
     (window as any).wordMap = wordMap;
     console.log(
-      "🧪 WordMap traverser available! Use: wordMap.traverse() in console"
+      "🧪 WordMap integrated with audio! Manual API: wordMap.traverse() in console"
     );
 
     const {
@@ -52,7 +52,7 @@ async function runReadingPreparation(sessionId: number) {
         shouldEnable: () => areSameSessions(sessionId),
         onClick: async () => {
           await prepareAudioForTheRestOfTheSections();
-          await readSentences(pdfViewer);
+          await readSentences(pdfViewer, wordMap);
         },
       });
 
@@ -64,7 +64,7 @@ async function runReadingPreparation(sessionId: number) {
         });
 
         // Start reading the first section immediately
-        await readSentences(pdfViewer);
+        await readSentences(pdfViewer, wordMap);
 
         // Wait for the rest of the sections to be prepared
         const audioForTheRestOfTheSections =
