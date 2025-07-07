@@ -1,6 +1,7 @@
 import { referenceCurrentDocument } from "./reference-current-pdf";
 import { getCurrentPageAsImage } from "./get-current-page-as-image";
 import { analyzePageStructure } from "./analyze-page-structure";
+import { buildWordMap } from "./build-word-map";
 import { prepareAudioForSentences } from "./prepare-audio-for-sentences";
 import { enableReadButton, resetReadButton } from "./dom-handlers";
 import {
@@ -24,6 +25,19 @@ async function runReadingPreparation(sessionId: number) {
 
     const pageStructure = await analyzePageStructure(imageFile);
     console.log("Reading preparation complete:", pageStructure);
+
+    const wordMap = await buildWordMap(pageStructure, pdfViewer);
+    console.log("Word map built:", wordMap);
+
+    // Debug: Show structure of enriched data
+    console.log(
+      "🗺️ WordMap sections:",
+      wordMap.sections.map(section => ({
+        title: section.title,
+        sentenceCount: section.sentences.length,
+        sentencesWithLocation: section.sentences.filter(s => s.location).length,
+      }))
+    );
 
     const {
       sections: [firstSection, ...restOfTheSections],
