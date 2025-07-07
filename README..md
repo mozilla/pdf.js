@@ -40,5 +40,6 @@ Walk through the pdf and highlight sentences and words one by one.
 
 1. clone repo
 2. run `npm install` (Node v22)
-3. run `npx gulp server`
-4. Open `http://localhost:8888/web/viewer.html`
+3. add your OpenAI API Key in `src/pdf-reader/open-ai.ts`
+4. run `npx gulp server`
+5. Open `http://localhost:8888/web/viewer.html`
