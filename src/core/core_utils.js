@@ -679,12 +679,19 @@ function getNewAnnotationsMap(annotationStorage) {
   return newAnnotationsByPage.size > 0 ? newAnnotationsByPage : null;
 }
 
+// If the string is null or undefined then it is returned as is.
 function stringToAsciiOrUTF16BE(str) {
+  if (str === null || str === undefined) {
+    return str;
+  }
   return isAscii(str) ? str : stringToUTF16String(str, /* bigEndian = */ true);
 }
 
 function isAscii(str) {
-  return /^[\x00-\x7F]*$/.test(str);
+  if (typeof str !== "string") {
+    return false;
+  }
+  return !str || /^[\x00-\x7F]*$/.test(str);
 }
 
 function stringToUTF16HexString(str) {

@@ -431,6 +431,10 @@ describe("core_utils", function () {
       expect(isAscii("hello world in Japanese is こんにちは世界の")).toEqual(
         false
       );
+      expect(isAscii("")).toEqual(true);
+      expect(isAscii(123)).toEqual(false);
+      expect(isAscii(null)).toEqual(false);
+      expect(isAscii(undefined)).toEqual(false);
     });
   });
 
