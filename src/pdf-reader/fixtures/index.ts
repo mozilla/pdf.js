@@ -1,4 +1,5 @@
 import { AudioWithWordTimings } from "../generate-audio-with-word-timings";
+import { PageStructureSchema } from "../analyze-page-structure";
 
 export async function saveAudioFixtures(
   audioData: AudioWithWordTimings[],
@@ -97,5 +98,55 @@ export async function loadAudioFixtures(
       error
     );
     return null;
+  }
+}
+
+export async function loadCompletionFixtures(
+  fixtureKey: string
+): Promise<PageStructureSchema | null> {
+  try {
+    let fixture;
+
+    // Dynamically import the appropriate fixture based on the key
+    if (fixtureKey === "analyzePageStructureFixture") {
+      const module = await import("./analyzePageStructure");
+      fixture = module.analyzePageStructureFixture;
+    } else {
+      console.warn(`Unknown completion fixture key: ${fixtureKey}`);
+      return null;
+    }
+
+    console.log(
+      `🔧 Development mode: Using completion fixtures for ${fixtureKey} instead of OpenAI APIs`
+    );
+
+    return fixture;
+  } catch (error) {
+    console.warn(
+      `Failed to load completion fixtures for ${fixtureKey}, falling back to OpenAI APIs:`,
+      error
+    );
+    return null;
+  }
+}
+
+export async function saveCompletionFixtures(
+  completionData: PageStructureSchema,
+  filename: string
+) {
+  try {
+    // Create the fixture file content
+    const fixtureContent = `export const ${filename} = ${JSON.stringify(completionData, null, 2)};`;
+
+    console.log(`🔧 Capture mode: Saving ${filename} fixture...`);
+    console.log("Fixture content:", fixtureContent);
+    console.log(
+      "📝 Copy this content to src/pdf-reader/fixtures/" + filename + ".ts"
+    );
+
+    // Also save to localStorage for easy retrieval
+    localStorage.setItem(`fixture_${filename}`, fixtureContent);
+  } catch (error) {
+    console.error("Failed to save completion fixtures:", error);
   }
 }

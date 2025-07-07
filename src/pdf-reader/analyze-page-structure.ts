@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { openai } from "./open-ai";
+import { loadCompletionFixtures, saveCompletionFixtures } from "./fixtures";
+import { IS_DEV, CAPTURE_FIXTURES } from "./config";
 
 const pageStructureSchema = z.object({
   sections: z.array(
@@ -23,6 +25,24 @@ export type Sentence =
 export async function analyzePageStructure(
   pageFile: File
 ): Promise<PageStructureSchema> {
+  // In development mode, try to load fixtures first
+  if (IS_DEV) {
+    try {
+      const fixtures = await loadCompletionFixtures(
+        "analyzePageStructureFixture"
+      );
+      if (fixtures) {
+        return fixtures;
+      }
+    } catch (error) {
+      console.warn(
+        "Failed to load completion fixtures, falling back to OpenAI:",
+        error
+      );
+    }
+  }
+
+  // Generate completion using OpenAI API
   const base64Data = await fileToBase64(pageFile);
 
   const systemPrompt = `
@@ -58,88 +78,103 @@ export async function analyzePageStructure(
   3. If a sentence continues on the next page, set the continuesOnNextPage flag to true.
   
   ---
+  Here is the PDF page image:
   `;
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-2024-11-20",
-    messages: [
-      {
-        role: "system",
-        content: systemPrompt,
-      },
-      {
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: "Analyze this PDF page screenshot and extract the structure information according to the schema.",
-          },
-          {
-            type: "image_url",
-            image_url: {
-              url: `data:image/jpeg;base64,${base64Data}`,
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-2024-11-20",
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "Analyze this PDF page screenshot and extract the structure information according to the schema.",
             },
-          },
-        ],
-      },
-    ],
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: "page_structure_analysis",
-        strict: true,
-        schema: {
-          type: "object",
-          properties: {
-            sections: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  title: {
-                    type: "string",
-                  },
-                  readingRelevance: {
-                    type: "number",
-                  },
-                  sentences: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        sentenceText: {
-                          type: "string",
-                        },
-                        continuesOnNextPage: {
-                          type: "boolean",
-                        },
-                      },
-                      required: ["sentenceText", "continuesOnNextPage"],
-                      additionalProperties: false,
-                    },
-                  },
-                },
-                required: ["title", "readingRelevance", "sentences"],
-                additionalProperties: false,
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:image/jpeg;base64,${base64Data}`,
               },
             },
+          ],
+        },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "page_structure_analysis",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              sections: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    title: {
+                      type: "string",
+                    },
+                    readingRelevance: {
+                      type: "number",
+                    },
+                    sentences: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          sentenceText: {
+                            type: "string",
+                          },
+                          continuesOnNextPage: {
+                            type: "boolean",
+                          },
+                        },
+                        required: ["sentenceText", "continuesOnNextPage"],
+                        additionalProperties: false,
+                      },
+                    },
+                  },
+                  required: ["title", "readingRelevance", "sentences"],
+                  additionalProperties: false,
+                },
+              },
+            },
+            required: ["sections"],
+            additionalProperties: false,
           },
-          required: ["sections"],
-          additionalProperties: false,
         },
       },
-    },
-  });
+    });
 
-  const content = response.choices[0].message.content;
-  if (!content) {
-    throw new Error("No content in LLM response");
+    const content = completion.choices[0].message.content;
+    if (!content) {
+      throw new Error("No content in LLM response");
+    }
+
+    const rawData = JSON.parse(content);
+    const parsedData = pageStructureSchema.parse(rawData);
+    const filteredPageStructure = applyRelevanceFilter(parsedData);
+
+    // Optionally save the generated completion as fixtures
+    if (IS_DEV && CAPTURE_FIXTURES) {
+      await saveCompletionFixtures(
+        filteredPageStructure,
+        "analyzePageStructureFixture"
+      );
+    }
+
+    return filteredPageStructure;
+  } catch (error) {
+    console.error("Error analyzing page structure:", error);
+    throw error;
   }
-
-  const rawData = JSON.parse(content);
-  const parsedData = pageStructureSchema.parse(rawData);
-
-  return applyRelevanceFilter(parsedData);
 }
 
 async function fileToBase64(file: File): Promise<string> {
