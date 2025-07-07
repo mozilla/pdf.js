@@ -36,7 +36,16 @@ async function runReadingPreparation(sessionId: number) {
     if (audioForFirstSection) {
       console.log("Audio for first section prepared:", audioForFirstSection);
 
-      enableReadButton(audioForFirstSection, sessionId, async () => {
+      enableReadButton({
+        audioData: audioForFirstSection,
+        sessionId,
+        onClick: async () => {
+          await prepareAudioForTheRestOfTheSections();
+          await readSentences(pdfViewer);
+        },
+      });
+
+      async function prepareAudioForTheRestOfTheSections() {
         // Start preparing audio for the rest of the sections in parallel
         const audioForTheRestOfTheSectionsPromise = prepareAudioForSentences({
           sentences: restOfTheSections.flatMap(section => section.sentences),
@@ -50,17 +59,17 @@ async function runReadingPreparation(sessionId: number) {
         const audioForTheRestOfTheSections =
           await audioForTheRestOfTheSectionsPromise;
 
-        if (audioForTheRestOfTheSections) {
-          console.log(
-            "Audio for the rest of the sections prepared:",
-            audioForTheRestOfTheSections
-          );
-
-          setLatestAudioData(audioForTheRestOfTheSections);
-
-          await readSentences(pdfViewer);
+        if (!audioForTheRestOfTheSections) {
+          console.error("No audio for the rest of the sections");
+          return;
         }
-      });
+
+        console.log(
+          "Audio for the rest of the sections prepared:",
+          audioForTheRestOfTheSections
+        );
+        setLatestAudioData(audioForTheRestOfTheSections);
+      }
     }
   } catch (error) {
     console.error("Analysis failed:", error);

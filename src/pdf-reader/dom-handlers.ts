@@ -55,11 +55,15 @@ export async function readSentences(pdfViewer: PDFViewer): Promise<void> {
   }
 }
 
-export function enableReadButton(
-  audioData: AudioWithWordTimings[],
-  sessionId: number,
-  onClick: () => void
-): void {
+export function enableReadButton({
+  audioData,
+  sessionId,
+  onClick,
+}: {
+  audioData: AudioWithWordTimings[];
+  sessionId: number;
+  onClick: () => void;
+}): void {
   const readButton = document.getElementById("readButton") as HTMLButtonElement;
 
   if (sessionId !== currentSessionId) {
@@ -76,9 +80,7 @@ export function enableReadButton(
     setLatestAudioData(audioData);
 
     readButton.disabled = false;
-    readButton.onclick = () => {
-      onClick();
-    };
+    readButton.onclick = onClick;
   }
 }
 
