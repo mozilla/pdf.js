@@ -33,6 +33,7 @@ export interface WordMapTraverser {
     sectionIndex: number; // Index within all sections
     done: boolean;
   };
+  clearHighlights(): void; // Clear all highlights and disable scrolling
 }
 
 export interface WordMap {
@@ -122,7 +123,99 @@ class WordMapTraverserImpl implements WordMapTraverser {
       `📖 Step ${this.sentenceIndex + 1}.${this.wordIndex}: "${currentWord.word}" (${currentWord.textContent}) at position ${currentWord.matchStartPosition}`
     );
 
+    // Highlight the current word
+    this.highlightWord(currentWord);
+
     return result;
+  }
+
+  private highlightWord(word: WordLocationData): void {
+    try {
+      const eventBus = (window as any).PDFViewerApplication?.eventBus;
+      const findController = (window as any).PDFViewerApplication
+        ?.findController;
+
+      if (!eventBus || !findController) {
+        console.warn("PDF.js components not available for highlighting");
+        return;
+      }
+
+      // Enable scrolling for traversal (we want to follow the reading)
+      findController._scrollMatches = true;
+
+      // Clear any existing highlights
+      eventBus.dispatch("findbarclose", { source: null });
+
+      // Highlight this specific word
+      eventBus.dispatch("find", {
+        source: null,
+        type: "highlightallchange",
+        query: word.word,
+        caseSensitive: false,
+        entireWord: true,
+        highlightAll: false, // Only highlight one occurrence
+        findPrevious: false,
+        matchDiacritics: false,
+      });
+
+      // Set the find controller to highlight the specific occurrence
+      setTimeout(() => {
+        try {
+          // Find the match index for this specific word position
+          const pageMatches = findController._pageMatches[word.pageIndex];
+          if (pageMatches) {
+            const matchIndex = pageMatches.findIndex(
+              (pos: number) => pos === word.matchStartPosition
+            );
+            if (matchIndex >= 0) {
+              // Set the selected match to this specific word
+              findController._selected.pageIdx = word.pageIndex;
+              findController._selected.matchIdx = matchIndex;
+              findController._offset.pageIdx = word.pageIndex;
+              findController._offset.matchIdx = matchIndex;
+
+              // Update the display to highlight this match
+              findController._eventBus.dispatch("updatetextlayermatches", {
+                source: findController,
+                pageIndex: word.pageIndex,
+              });
+
+              console.log(
+                `✨ Highlighted "${word.word}" at position ${word.matchStartPosition} (match ${matchIndex})`
+              );
+            } else {
+              console.warn(
+                `Could not find match index for word "${word.word}" at position ${word.matchStartPosition}`
+              );
+            }
+          }
+        } catch (error) {
+          console.warn("Error setting specific word highlight:", error);
+        }
+      }, 100);
+    } catch (error) {
+      console.warn("Error highlighting word:", error);
+    }
+  }
+
+  clearHighlights(): void {
+    try {
+      const eventBus = (window as any).PDFViewerApplication?.eventBus;
+      const findController = (window as any).PDFViewerApplication
+        ?.findController;
+
+      if (eventBus && findController) {
+        // Clear all highlights
+        eventBus.dispatch("findbarclose", { source: null });
+
+        // Disable scrolling for better UX
+        findController._scrollMatches = false;
+
+        console.log("🧹 Cleared all highlights and disabled scrolling");
+      }
+    } catch (error) {
+      console.warn("Error clearing highlights:", error);
+    }
   }
 }
 
@@ -178,7 +271,7 @@ export async function testFindWordLocation(
   );
 
   console.log(
-    `🧪 Found ${locations.length} locations for "${word}"${wordMap ? ` (${locations.filter(loc => loc.parentSentence).length} with parent sentences)` : ""}`
+    `🧪 Found ${locations.length} locations for "${word}"${wordMap ? ` (${locations.filter((loc: WordLocationData) => loc.parentSentence).length} with parent sentences)` : ""}`
   );
 
   return locations;
@@ -199,134 +292,190 @@ export async function buildWordMap(
     throw new Error("PDF.js event bus or find controller not available");
   }
 
-  // Wait a bit to ensure text layer is loaded
-  await new Promise(resolve => setTimeout(resolve, 500));
+  // AGGRESSIVE scroll prevention: Override scroll methods temporarily
+  const container = pdfViewer.container;
+  const originalScrollTo = container.scrollTo;
+  const originalScrollTop = container.scrollTop;
+  const originalScrollLeft = container.scrollLeft;
 
-  const enrichedSections: EnrichedSection[] = [];
+  // Override scroll methods to do nothing during map building
+  container.scrollTo = () => {};
+  Object.defineProperty(container, "scrollTop", {
+    get: () => originalScrollTop,
+    set: () => {}, // Ignore all scroll attempts
+    configurable: true,
+  });
+  Object.defineProperty(container, "scrollLeft", {
+    get: () => originalScrollLeft,
+    set: () => {}, // Ignore all scroll attempts
+    configurable: true,
+  });
 
-  // Process each section
-  for (const section of pageStructure.sections) {
-    const enrichedSentences: EnrichedSentence[] = [];
+  // Disable scrolling globally during entire map building process
+  const originalScrollMatches = findController._scrollMatches;
+  findController._scrollMatches = false;
 
-    for (const sentence of section.sentences) {
-      try {
-        const locationData = await findSentenceLocation(
-          sentence,
-          currentPageIndex,
-          eventBus,
-          findController
-        );
+  try {
+    // Wait a bit to ensure text layer is loaded
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-        if (locationData) {
-          // Only add sentences that have location data (others are filtered out)
-          const enrichedSentence: EnrichedSentence = {
-            ...sentence,
-            location: locationData,
-            words: [], // Will be populated after all sentences are processed
-          };
+    const enrichedSections: EnrichedSection[] = [];
 
-          enrichedSentences.push(enrichedSentence);
-        }
-      } catch (error) {
-        console.warn(
-          `⚠️ Skipping sentence due to error: "${sentence.sentenceText}"`
-        );
-      }
-    }
+    // Process each section
+    for (const section of pageStructure.sections) {
+      const enrichedSentences: EnrichedSentence[] = [];
 
-    enrichedSections.push({
-      title: section.title,
-      readingRelevance: section.readingRelevance,
-      sentences: enrichedSentences,
-    });
-  }
-
-  const totalSentences = enrichedSections.reduce(
-    (count, section) => count + section.sentences.length,
-    0
-  );
-
-  console.log(
-    `🗺️ Found ${totalSentences} sentences across ${enrichedSections.length} sections`
-  );
-
-  // Step 2: Now populate words for each sentence
-  console.log("🔤 Finding words for each sentence...");
-
-  for (const section of enrichedSections) {
-    for (const sentence of section.sentences) {
-      // Extract individual words from the sentence text
-      const wordsInSentence = sentence.sentenceText
-        .toLowerCase()
-        .replace(/[^\w\s]/g, " ") // Replace punctuation with spaces
-        .split(/\s+/) // Split on whitespace
-        .filter(word => word.length > 0); // Remove empty strings
-
-      // For each word, find its locations and check if it belongs to this sentence
-      for (const word of wordsInSentence) {
+      for (const sentence of section.sentences) {
         try {
-          const wordLocations = await findWordLocation(
-            word,
+          const locationData = await findSentenceLocation(
+            sentence,
             currentPageIndex,
             eventBus,
-            findController,
-            {
-              sections: enrichedSections,
-              getLocationForSentence: () => null,
-              traverse: () => {
-                throw new Error(
-                  "Traverse not available during word population"
-                );
-              },
-            } // Provide minimal WordMap
+            findController
           );
 
-          // Filter to only words that belong to this specific sentence
-          const wordsInThisSentence = wordLocations.filter(
-            wordLoc =>
-              wordLoc.parentSentence?.sentenceText === sentence.sentenceText
-          );
+          if (locationData) {
+            // Only add sentences that have location data (others are filtered out)
+            const enrichedSentence: EnrichedSentence = {
+              ...sentence,
+              location: locationData,
+              words: [], // Will be populated after all sentences are processed
+            };
 
-          sentence.words.push(...wordsInThisSentence);
+            enrichedSentences.push(enrichedSentence);
+          }
         } catch (error) {
-          // Silently skip words that can't be found
+          console.warn(
+            `⚠️ Skipping sentence due to error: "${sentence.sentenceText}"`
+          );
         }
       }
+
+      enrichedSections.push({
+        title: section.title,
+        readingRelevance: section.readingRelevance,
+        sentences: enrichedSentences,
+      });
     }
-  }
 
-  const totalWords = enrichedSections.reduce(
-    (count, section) =>
-      count +
-      section.sentences.reduce(
-        (sCount, sentence) => sCount + sentence.words.length,
-        0
-      ),
-    0
-  );
+    const totalSentences = enrichedSections.reduce(
+      (count, section) => count + section.sentences.length,
+      0
+    );
 
-  console.log(
-    `✅ WordMap complete: ${totalSentences} sentences with ${totalWords} located words`
-  );
+    console.log(
+      `🗺️ Found ${totalSentences} sentences across ${enrichedSections.length} sections`
+    );
 
-  const wordMap: WordMap = {
-    sections: enrichedSections,
-    getLocationForSentence: (sentenceText: string) => {
-      for (const section of enrichedSections) {
-        for (const sentence of section.sentences) {
-          if (sentence.sentenceText === sentenceText) {
-            return sentence.location;
+    // Step 2: Now populate words for each sentence
+    console.log("🔤 Finding words for each sentence...");
+
+    for (const section of enrichedSections) {
+      for (const sentence of section.sentences) {
+        // Extract individual words from the sentence text
+        const wordsInSentence = sentence.sentenceText
+          .toLowerCase()
+          .replace(/[^\w\s]/g, " ") // Replace punctuation with spaces
+          .split(/\s+/) // Split on whitespace
+          .filter(word => word.length > 0); // Remove empty strings
+
+        // For each word, find its locations and check if it belongs to this sentence
+        for (const word of wordsInSentence) {
+          try {
+            const wordLocations = await findWordLocation(
+              word,
+              currentPageIndex,
+              eventBus,
+              findController,
+              {
+                sections: enrichedSections,
+                getLocationForSentence: () => null,
+                traverse: () => {
+                  throw new Error(
+                    "Traverse not available during word population"
+                  );
+                },
+              } // Provide minimal WordMap
+            );
+
+            // Filter to only words that belong to this specific sentence
+            const wordsInThisSentence = wordLocations.filter(
+              wordLoc =>
+                wordLoc.parentSentence?.sentenceText === sentence.sentenceText
+            );
+
+            sentence.words.push(...wordsInThisSentence);
+          } catch (error) {
+            // Silently skip words that can't be found
           }
         }
       }
-      return null;
-    },
-    traverse: () => {
-      return new WordMapTraverserImpl(wordMap);
-    },
-  };
+    }
 
-  return wordMap;
+    const totalWords = enrichedSections.reduce(
+      (count, section) =>
+        count +
+        section.sentences.reduce(
+          (sCount, sentence) => sCount + sentence.words.length,
+          0
+        ),
+      0
+    );
+
+    console.log(
+      `✅ WordMap complete: ${totalSentences} sentences with ${totalWords} located words`
+    );
+
+    const wordMap: WordMap = {
+      sections: enrichedSections,
+      getLocationForSentence: (sentenceText: string) => {
+        for (const section of enrichedSections) {
+          for (const sentence of section.sentences) {
+            if (sentence.sentenceText === sentenceText) {
+              return sentence.location;
+            }
+          }
+        }
+        return null;
+      },
+      traverse: () => {
+        return new WordMapTraverserImpl(wordMap);
+      },
+    };
+
+    return wordMap;
+  } finally {
+    // Restore all original scroll behavior
+    container.scrollTo = originalScrollTo;
+    Object.defineProperty(container, "scrollTop", {
+      get: function () {
+        return this._scrollTop || 0;
+      },
+      set: function (value) {
+        this._scrollTop = value;
+        this.scrollTo(this.scrollLeft, value);
+      },
+      configurable: true,
+    });
+    Object.defineProperty(container, "scrollLeft", {
+      get: function () {
+        return this._scrollLeft || 0;
+      },
+      set: function (value) {
+        this._scrollLeft = value;
+        this.scrollTo(value, this.scrollTop);
+      },
+      configurable: true,
+    });
+
+    // Reset to original position
+    container.scrollTo(originalScrollLeft, originalScrollTop);
+
+    // Restore original scroll setting
+    findController._scrollMatches = originalScrollMatches;
+
+    console.log("🔄 Restored original scroll behavior");
+  }
 }
 
 export async function findWordLocation(
@@ -338,6 +487,12 @@ export async function findWordLocation(
 ): Promise<WordLocationData[]> {
   // Get access to the PDF viewer to access text layers
   const pdfViewer = (window as any).PDFViewerApplication?.pdfViewer;
+
+  // Store current scroll position to restore later (prevents jumping)
+  const container = pdfViewer?.container;
+  const originalScrollTop = container?.scrollTop || 0;
+  const originalScrollLeft = container?.scrollLeft || 0;
+
   return new Promise(resolve => {
     // Clear any existing search first
     eventBus.dispatch("findbarclose", { source: null });
@@ -354,7 +509,7 @@ export async function findWordLocation(
       matchDiacritics: false,
     });
 
-    // Disable automatic scrolling
+    // Disable automatic scrolling AFTER triggering find (prevents jumping)
     findController._scrollMatches = false;
 
     // Wait for the find operation to complete
@@ -430,6 +585,12 @@ export async function findWordLocation(
           }
         }
 
+        // Restore original scroll position to prevent jumping
+        if (container) {
+          container.scrollTop = originalScrollTop;
+          container.scrollLeft = originalScrollLeft;
+        }
+
         resolve(wordLocations);
         return;
       } else {
@@ -449,6 +610,12 @@ async function findSentenceLocation(
   eventBus: any,
   findController: any
 ): Promise<SentenceLocationData | null> {
+  // Store current scroll position to restore later (prevents jumping)
+  const pdfViewer = (window as any).PDFViewerApplication?.pdfViewer;
+  const container = pdfViewer?.container;
+  const originalScrollTop = container?.scrollTop || 0;
+  const originalScrollLeft = container?.scrollLeft || 0;
+
   return new Promise(resolve => {
     // Clear any existing search first
     eventBus.dispatch("findbarclose", { source: null });
@@ -465,7 +632,7 @@ async function findSentenceLocation(
       matchDiacritics: false,
     });
 
-    // Disable automatic scrolling
+    // Disable automatic scrolling AFTER triggering find (prevents jumping)
     findController._scrollMatches = false;
 
     // Wait for the find operation to complete
@@ -505,12 +672,24 @@ async function findSentenceLocation(
               console.warn("Could not extract text content:", error);
             }
 
+            // Restore original scroll position to prevent jumping
+            if (container) {
+              container.scrollTop = originalScrollTop;
+              container.scrollLeft = originalScrollLeft;
+            }
+
             resolve(location);
             return;
           }
         }
 
         // If we get here, no matches were found on any page
+
+        // Restore original scroll position even when no matches found
+        if (container) {
+          container.scrollTop = originalScrollTop;
+          container.scrollLeft = originalScrollLeft;
+        }
 
         // No fallback needed for now, just return null
         resolve(null);
