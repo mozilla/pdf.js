@@ -29,16 +29,6 @@ async function runReadingPreparation(sessionId: number) {
     const wordMap = await buildWordMap(pageStructure, pdfViewer);
     console.log("Word map built:", wordMap);
 
-    // Debug: Show structure of enriched data
-    console.log(
-      "🗺️ WordMap sections:",
-      wordMap.sections.map(section => ({
-        title: section.title,
-        sentenceCount: section.sentences.length,
-        sentencesWithLocation: section.sentences.filter(s => s.location).length,
-      }))
-    );
-
     // Make wordMap available globally for testing
     (window as any).wordMap = wordMap;
 
