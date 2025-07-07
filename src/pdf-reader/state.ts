@@ -1,6 +1,7 @@
 import { playAudio } from "./playAudio";
 import { type AudioWithWordTimings } from "./generate-audio-with-word-timings";
 import { type PDFViewer } from "./types";
+import { Timer } from "./timer";
 
 export async function readSentences(pdfViewer: PDFViewer): Promise<void> {
   if (!latestAudioData || latestAudioData.length === 0) {
@@ -9,15 +10,19 @@ export async function readSentences(pdfViewer: PDFViewer): Promise<void> {
   }
 
   for (const audioItem of latestAudioData) {
-    await highlightCurrentlyReadSentence({
-      pdfViewer,
-      sentenceText: audioItem.originalSentenceText,
-    });
+    // await highlightCurrentlyReadSentence({
+    //   pdfViewer,
+    //   sentenceText: audioItem.originalSentenceText,
+    // });
+
+    // Start word tracking with main thread timer
+    const wordTimer = highlightCurrentlyReadWord(audioItem);
 
     await playAudio({
       audioItem,
       onEnd: () => {
         clearSentenceHighlight();
+        wordTimer.stop();
       },
     });
   }
@@ -139,4 +144,61 @@ async function highlightCurrentlyReadSentence({
 
   await waitForMatches();
   // Highlighting is now complete (or no matches found)
+}
+
+function highlightCurrentlyReadWord(audioItem: AudioWithWordTimings): Timer {
+  const words = audioItem.transcription.words;
+  if (!words || words.length === 0) {
+    console.warn("No word-level timestamps available");
+    // Return a dummy timer that does nothing
+    const dummyTimer = new Timer();
+    return dummyTimer;
+  }
+
+  console.log(
+    "🔧 [DEBUG] Starting word tracking for:",
+    audioItem.originalSentenceText
+  );
+  console.log(
+    "🔧 [DEBUG] Available words:",
+    words.map(w => ({ word: w.word, start: w.start, end: w.end }))
+  );
+
+  // Create the main thread timer
+  console.log("🔧 [DEBUG] Creating main thread timer...");
+  const wordTimer = new Timer();
+  wordTimer.start();
+
+  let currentWordIndex = 0;
+
+  const checkCurrentWord = () => {
+    if (!wordTimer.isRunning()) {
+      return; // Timer was stopped
+    }
+
+    if (currentWordIndex >= words.length) {
+      return; // All words processed
+    }
+
+    const currentWord = words[currentWordIndex];
+
+    // Check if it's time for this word
+    if (wordTimer.hasTimeStampPassed(currentWord.start)) {
+      console.log(
+        `📖 Currently reading word: "${currentWord.word}" at ${currentWord.start}s (elapsed: ${wordTimer.getElapsedSeconds().toFixed(3)}s)`
+      );
+      currentWordIndex++;
+    }
+
+    // Continue checking for the next word
+    if (currentWordIndex < words.length) {
+      setTimeout(checkCurrentWord, 10); // Check every 10ms for responsive timing
+    }
+  };
+
+  // Start the word tracking loop
+  console.log("🔧 [DEBUG] Starting word tracking loop...");
+  checkCurrentWord();
+
+  return wordTimer;
 }
