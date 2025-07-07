@@ -1,7 +1,7 @@
 import { referenceCurrentDocument } from "./reference-current-pdf";
 import { getCurrentPageAsImage } from "./get-current-page-as-image";
 import { analyzePageStructure } from "./analyze-page-structure";
-import { buildWordMap } from "./build-word-map";
+import { buildWordMap, testFindWordLocation } from "./build-word-map";
 import { prepareAudioForSentences } from "./prepare-audio-for-sentences";
 import { enableReadButton, resetReadButton } from "./dom-handlers";
 import {
@@ -112,5 +112,11 @@ function waitForPDFToLoad() {
 }
 
 waitForPDFToLoad();
+
+// Make test function available globally for console testing
+(window as any).testWordLocation = testFindWordLocation;
+console.log(
+  "🧪 Word location testing available! Use: testWordLocation('your-word') in console"
+);
 
 export {};

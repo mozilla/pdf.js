@@ -23,6 +23,36 @@ export interface WordMap {
   getLocationForSentence: (sentenceText: string) => SentenceLocationData | null;
 }
 
+// Test function to run findWordLocation in isolation
+export async function testFindWordLocation(
+  word: string
+): Promise<SentenceLocationData[]> {
+  console.log(`🧪 Testing word location for: "${word}"`);
+
+  const eventBus = (window as any).PDFViewerApplication?.eventBus;
+  const findController = (window as any).PDFViewerApplication?.findController;
+  const pdfViewer = (window as any).PDFViewerApplication?.pdfViewer;
+
+  if (!eventBus || !findController || !pdfViewer) {
+    throw new Error("PDF.js components not available for testing");
+  }
+
+  const currentPageIndex = pdfViewer.currentPageNumber - 1;
+
+  const locations = await findWordLocation(
+    word,
+    currentPageIndex,
+    eventBus,
+    findController
+  );
+
+  console.log(
+    `🧪 Test complete: Found ${locations.length} locations for word "${word}"`
+  );
+
+  return locations;
+}
+
 export async function buildWordMap(
   pageStructure: PageStructureSchema,
   pdfViewer: PDFViewer
@@ -135,6 +165,140 @@ export async function buildWordMap(
       return null;
     },
   };
+}
+
+export async function findWordLocation(
+  word: string,
+  currentPageIndex: number,
+  eventBus: any,
+  findController: any
+): Promise<SentenceLocationData[]> {
+  // Get access to the PDF viewer to access text layers
+  const pdfViewer = (window as any).PDFViewerApplication?.pdfViewer;
+  return new Promise(resolve => {
+    // Clear any existing search first
+    eventBus.dispatch("findbarclose", { source: null });
+
+    // Use the find system to locate all word occurrences across all pages
+    eventBus.dispatch("find", {
+      source: null,
+      type: "highlightallchange",
+      query: word,
+      caseSensitive: false,
+      entireWord: true, // Use entire word matching for words
+      highlightAll: true,
+      findPrevious: false,
+      matchDiacritics: false,
+    });
+
+    // Disable automatic scrolling
+    findController._scrollMatches = false;
+
+    // Wait for the find operation to complete
+    const checkForResults = () => {
+      const allPageMatches = findController._pageMatches;
+      const allPageLengths = findController._pageMatchesLength;
+
+      console.log("🔧 [DEBUG] Word find controller state:", {
+        word: word,
+        pageMatches: allPageMatches,
+        pageMatchesLength: allPageLengths,
+        textLayerMethod: "using pageView.textLayer.div",
+        pdfViewerAvailable: pdfViewer ? "yes" : "no",
+      });
+
+      // Collect all word occurrences from all pages
+      if (allPageMatches && allPageLengths) {
+        const wordLocations: SentenceLocationData[] = [];
+        let totalMatches = 0;
+
+        for (
+          let pageIndex = 0;
+          pageIndex < allPageMatches.length;
+          pageIndex++
+        ) {
+          const pageMatches = allPageMatches[pageIndex];
+          const pageLengths = allPageLengths[pageIndex];
+
+          if (pageMatches && pageLengths && pageMatches.length > 0) {
+            // Debug: Check text layer availability for this page
+            let pageTextLength = 0;
+            if (pdfViewer) {
+              const pageView = (pdfViewer as any)._pages?.[pageIndex];
+              if (pageView?.textLayer?.div) {
+                const textContent = pageView.textLayer.div.textContent || "";
+                pageTextLength = textContent.length;
+              }
+            }
+
+            console.log(
+              `🔍 Found ${pageMatches.length} occurrences of "${word}" on page ${pageIndex} (text layer: ${pageTextLength} chars)`
+            );
+
+            // Process each match on this page
+            for (
+              let matchIndex = 0;
+              matchIndex < pageMatches.length;
+              matchIndex++
+            ) {
+              const location: SentenceLocationData = {
+                pageIndex: pageIndex,
+                matchStartPosition: pageMatches[matchIndex],
+                matchLength: pageLengths[matchIndex],
+              };
+
+              // Try to get the actual text content from the page's text layer
+              try {
+                if (pdfViewer) {
+                  const pageView = (pdfViewer as any)._pages?.[pageIndex];
+                  if (pageView?.textLayer?.div) {
+                    const textContent =
+                      pageView.textLayer.div.textContent || "";
+                    if (textContent) {
+                      const startPos = pageMatches[matchIndex];
+                      const endPos = startPos + pageLengths[matchIndex];
+                      location.textContent = textContent.substring(
+                        startPos,
+                        endPos
+                      );
+                      console.log(
+                        `🔧 [DEBUG] Extracted text for page ${pageIndex}, pos ${startPos}-${endPos}: "${location.textContent}"`
+                      );
+                    }
+                  } else {
+                    console.warn(
+                      `Text layer not available for page ${pageIndex}`
+                    );
+                  }
+                }
+              } catch (error) {
+                console.warn("Could not extract text content:", error);
+              }
+
+              wordLocations.push(location);
+              totalMatches++;
+
+              console.log(
+                `📍 Match ${matchIndex + 1} on page ${pageIndex}: position ${location.matchStartPosition}, length ${location.matchLength}, text: "${location.textContent || "N/A"}"`
+              );
+            }
+          }
+        }
+
+        console.log(
+          `✅ Total found ${totalMatches} occurrences of word "${word}" across all pages`
+        );
+        resolve(wordLocations);
+        return;
+      } else {
+        // Still searching, check again
+        setTimeout(checkForResults, 100);
+      }
+    };
+
+    // Start checking for results
+    setTimeout(checkForResults, 100);
+  });
 }
 
 async function findSentenceLocation(
