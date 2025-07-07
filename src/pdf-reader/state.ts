@@ -374,43 +374,31 @@ function highlightWordInPdf(word: WordLocationData): void {
     // Enable scrolling for traversal (we want to follow the reading)
     findController._scrollMatches = true;
 
-    // Instead of doing a global search, use the specific word position from our map
-    // First, clear any existing highlights
+    // Clear any existing highlights
     eventBus.dispatch("findbarclose", { source: null });
 
-    // Do a find operation to get all instances of this word
+    // Highlight this specific word (EXACTLY like the working traverser)
     eventBus.dispatch("find", {
       source: null,
       type: "highlightallchange",
       query: word.word,
       caseSensitive: false,
       entireWord: true,
-      highlightAll: true, // Find all instances first
+      highlightAll: false, // Only highlight one occurrence
       findPrevious: false,
       matchDiacritics: false,
     });
 
-    // Set the find controller to highlight the specific occurrence from our map
+    // Set the find controller to highlight the specific occurrence
     setTimeout(() => {
       try {
+        // Find the match index for this specific word position
         const pageMatches = findController._pageMatches[word.pageIndex];
-        const pageLengths = findController._pageMatchesLength[word.pageIndex];
-
-        console.log(
-          `🔍 [DEBUG] PDF.js found ${pageMatches?.length || 0} matches for "${word.word}" on page ${word.pageIndex}`
-        );
-
-        if (pageMatches && pageLengths) {
-          // Find the exact match that corresponds to our WordMap position
+        if (pageMatches) {
           const matchIndex = pageMatches.findIndex(
             (pos: number) => pos === word.matchStartPosition
           );
-
           if (matchIndex >= 0) {
-            console.log(
-              `✅ [DEBUG] Found exact match at index ${matchIndex} for position ${word.matchStartPosition}`
-            );
-
             // Set the selected match to this specific word
             findController._selected.pageIdx = word.pageIndex;
             findController._selected.matchIdx = matchIndex;
@@ -424,29 +412,13 @@ function highlightWordInPdf(word: WordLocationData): void {
             });
 
             console.log(
-              `✨ [DEBUG] Successfully highlighted "${word.word}" at exact position ${word.matchStartPosition} (match ${matchIndex})`
+              `✨ [DEBUG] Successfully highlighted ONLY "${word.word}" at exact position ${word.matchStartPosition} (match ${matchIndex})`
             );
           } else {
             console.warn(
               `❌ [DEBUG] Could not find match for position ${word.matchStartPosition}. Available positions:`,
               pageMatches
             );
-
-            // Fallback: highlight the first occurrence
-            if (pageMatches.length > 0) {
-              console.log(
-                `🔄 [DEBUG] Falling back to first occurrence at position ${pageMatches[0]}`
-              );
-              findController._selected.pageIdx = word.pageIndex;
-              findController._selected.matchIdx = 0;
-              findController._offset.pageIdx = word.pageIndex;
-              findController._offset.matchIdx = 0;
-
-              findController._eventBus.dispatch("updatetextlayermatches", {
-                source: findController,
-                pageIndex: word.pageIndex,
-              });
-            }
           }
         } else {
           console.warn(

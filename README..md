@@ -30,7 +30,8 @@ Click "Read" button and listen to the pdf being read outloud.
 Walk through the pdf and highlight sentences and words one by one.
 
 1. Leverages the pdf.js' internal event-based "search" functionality
-2. Simultaneously highlights the current sentence and word - TODO
+2. Highlights the played word by comparing timestamps with Timer's state  
+3. Simultaneously highlights the current sentence and word - TODO
 
     - the challenge lies in that the internal search is not able to find more than one thing at the same time
     - potential solution: double the code that searches and emit a different events fow words and sentences
