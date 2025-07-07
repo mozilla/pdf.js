@@ -1,8 +1,11 @@
 import { AudioWithWordTimings } from "./generate-audio-with-word-timings";
 import { type PDFViewer } from "./types";
 
+// Audio state
 let latestAudioData: AudioWithWordTimings[] | null = null;
 let currentSessionId = 0;
+
+// Highlighting state
 let currentHighlightedSentence: string | null = null;
 
 async function playAudio(audioItem: AudioWithWordTimings): Promise<void> {
@@ -43,7 +46,7 @@ export async function readSentences(pdfViewer: PDFViewer): Promise<void> {
   }
 
   for (const audioItem of latestAudioData) {
-    highlightCurrentlyReadSentence({
+    await highlightCurrentlyReadSentence({
       pdfViewer,
       sentenceText: audioItem.originalSentenceText,
     });
@@ -112,13 +115,13 @@ function clearSentenceHighlight(): void {
   currentHighlightedSentence = null;
 }
 
-export function highlightCurrentlyReadSentence({
+export async function highlightCurrentlyReadSentence({
   pdfViewer,
   sentenceText,
 }: {
   pdfViewer: PDFViewer;
   sentenceText: string;
-}): void {
+}): Promise<void> {
   clearSentenceHighlight();
   console.log("Highlighting original text:", sentenceText);
 
@@ -154,41 +157,46 @@ export function highlightCurrentlyReadSentence({
   }
   findController._scrollMatches = false; // Disable automatic scrolling to prevent horizontal jumping
 
-  // Wait for the text extraction and matching to complete
-  const checkForResults = () => {
-    // Check if we have page content and matches for our page
-    const matchStartPositions = findController._pageMatches[currentPageIndex]; // Start positions of each match
-    const matchLengths = findController._pageMatchesLength[currentPageIndex]; // Length of each match
-    const matchCount = matchStartPositions.length; // Total number of matches found
+  async function waitForMatches(): Promise<void> {
+    return new Promise(resolve => {
+      const checkForResults = () => {
+        const matchStartPositions =
+          findController._pageMatches[currentPageIndex]; // Start positions of each match
+        const matchLengths =
+          findController._pageMatchesLength[currentPageIndex]; // Length of each match
 
-    if (matchStartPositions && matchLengths && matchCount) {
-      console.log(
-        "Text extraction completed, found",
-        matchCount,
-        "match(es) for sentence"
-      );
+        if (matchStartPositions && matchLengths) {
+          const matchCount = matchStartPositions.length;
+          console.log(
+            "Text extraction completed, found",
+            matchCount,
+            "match(es) for sentence"
+          );
 
-      if (matchCount > 0) {
-        console.log(
-          "Match at position:",
-          matchStartPositions[0],
-          "length:",
-          matchLengths[0]
-        );
+          if (matchCount > 0) {
+            console.log(
+              "Match at position:",
+              matchStartPositions[0],
+              "length:",
+              matchLengths[0]
+            );
 
-        currentHighlightedSentence = sentenceText;
-      } else {
-        console.warn("No matches found for sentence:", sentenceText);
-      }
-    } else {
-      // Text extraction still in progress, check again
-      console.log("Text extraction in progress, checking again...");
-      setTimeout(checkForResults, 100);
-    }
-  };
+            currentHighlightedSentence = sentenceText;
+          } else {
+            console.warn("No matches found for sentence:", sentenceText);
+          }
+          resolve();
+        } else {
+          console.log("Text extraction in progress, checking again...");
+          setTimeout(checkForResults, 100);
+        }
+      };
+      checkForResults();
+    });
+  }
 
-  // Start checking for results
-  setTimeout(checkForResults, 50);
+  await waitForMatches();
+  // Highlighting is now complete (or no matches found)
 }
 
 // Make the function globally available for HTML onclick handler
