@@ -12164,5 +12164,12 @@
     "rounds": 1,
     "type": "eq",
     "annotations": true
+  },
+  {
+    "id": "issue20062",
+    "file": "pdfs/issue20062.pdf",
+    "md5": "9fa985242476c642464d94893528e40f",
+    "rounds": 1,
+    "type": "eq"
   }
 ]
