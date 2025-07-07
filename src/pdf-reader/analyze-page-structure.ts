@@ -53,7 +53,9 @@ export async function analyzePageStructure(
 
   ### Sentences
   1. Don't omit ANY sentence from a given section. You must include all sentences!
-  2. If a sentence continues on the next page, set the continuesOnNextPage flag to true.
+  2. If a sentence is broken into multiple lines, PRESERVE the exact characters of the sentence.
+  - Example: "The quick brown ele - phant jumps over the lazy dog" should be preserved as is, with hyphen and spaces.
+  3. If a sentence continues on the next page, set the continuesOnNextPage flag to true.
   
   ---
   `;
