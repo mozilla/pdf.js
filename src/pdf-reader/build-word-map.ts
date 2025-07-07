@@ -8,6 +8,11 @@ export interface SentenceLocationData {
   textContent?: string; // The actual text content from PDF.js
 }
 
+export interface WordLocationData extends SentenceLocationData {
+  word: string; // The word that was found
+  parentSentence?: EnrichedSentence; // The sentence this word belongs to (if any)
+}
+
 export interface EnrichedSentence extends Sentence {
   location?: SentenceLocationData; // undefined if not found
 }
@@ -24,9 +29,42 @@ export interface WordMap {
 }
 
 // Test function to run findWordLocation in isolation
+function findParentSentence(
+  wordStartPos: number,
+  wordLength: number,
+  pageIndex: number,
+  wordMap: WordMap
+): EnrichedSentence | undefined {
+  // Look through all sections and sentences to find which one contains this word
+  for (const section of wordMap.sections) {
+    for (const sentence of section.sentences) {
+      // Only check sentences that have location data and are on the same page
+      if (sentence.location && sentence.location.pageIndex === pageIndex) {
+        const sentenceStart = sentence.location.matchStartPosition;
+        const sentenceEnd = sentenceStart + sentence.location.matchLength;
+        const wordEnd = wordStartPos + wordLength;
+
+        // Check if word falls within sentence boundaries
+        // Word is inside sentence if:
+        // - Word starts at or after sentence start
+        // - Word ends at or before sentence end
+        if (wordStartPos >= sentenceStart && wordEnd <= sentenceEnd) {
+          console.log(
+            `🎯 Word at ${wordStartPos}-${wordEnd} fits in sentence at ${sentenceStart}-${sentenceEnd}: "${sentence.sentenceText.substring(0, 30)}..."`
+          );
+          return sentence;
+        }
+      }
+    }
+  }
+
+  return undefined;
+}
+
 export async function testFindWordLocation(
-  word: string
-): Promise<SentenceLocationData[]> {
+  word: string,
+  wordMap?: WordMap
+): Promise<WordLocationData[]> {
   console.log(`🧪 Testing word location for: "${word}"`);
 
   const eventBus = (window as any).PDFViewerApplication?.eventBus;
@@ -43,12 +81,18 @@ export async function testFindWordLocation(
     word,
     currentPageIndex,
     eventBus,
-    findController
+    findController,
+    wordMap
   );
 
   console.log(
     `🧪 Test complete: Found ${locations.length} locations for word "${word}"`
   );
+
+  if (wordMap) {
+    const locationsWithParent = locations.filter(loc => loc.parentSentence);
+    console.log(`🔗 ${locationsWithParent.length} words have parent sentences`);
+  }
 
   return locations;
 }
@@ -171,8 +215,9 @@ export async function findWordLocation(
   word: string,
   currentPageIndex: number,
   eventBus: any,
-  findController: any
-): Promise<SentenceLocationData[]> {
+  findController: any,
+  wordMap?: WordMap // Optional: provide to connect words with parent sentences
+): Promise<WordLocationData[]> {
   // Get access to the PDF viewer to access text layers
   const pdfViewer = (window as any).PDFViewerApplication?.pdfViewer;
   return new Promise(resolve => {
@@ -209,7 +254,7 @@ export async function findWordLocation(
 
       // Collect all word occurrences from all pages
       if (allPageMatches && allPageLengths) {
-        const wordLocations: SentenceLocationData[] = [];
+        const wordLocations: WordLocationData[] = [];
         let totalMatches = 0;
 
         for (
@@ -241,10 +286,14 @@ export async function findWordLocation(
               matchIndex < pageMatches.length;
               matchIndex++
             ) {
-              const location: SentenceLocationData = {
+              const wordStartPos = pageMatches[matchIndex];
+              const wordLength = pageLengths[matchIndex];
+
+              const wordLocation: WordLocationData = {
+                word: word,
                 pageIndex: pageIndex,
-                matchStartPosition: pageMatches[matchIndex],
-                matchLength: pageLengths[matchIndex],
+                matchStartPosition: wordStartPos,
+                matchLength: wordLength,
               };
 
               // Try to get the actual text content from the page's text layer
@@ -255,14 +304,13 @@ export async function findWordLocation(
                     const textContent =
                       pageView.textLayer.div.textContent || "";
                     if (textContent) {
-                      const startPos = pageMatches[matchIndex];
-                      const endPos = startPos + pageLengths[matchIndex];
-                      location.textContent = textContent.substring(
-                        startPos,
+                      const endPos = wordStartPos + wordLength;
+                      wordLocation.textContent = textContent.substring(
+                        wordStartPos,
                         endPos
                       );
                       console.log(
-                        `🔧 [DEBUG] Extracted text for page ${pageIndex}, pos ${startPos}-${endPos}: "${location.textContent}"`
+                        `🔧 [DEBUG] Extracted text for page ${pageIndex}, pos ${wordStartPos}-${endPos}: "${wordLocation.textContent}"`
                       );
                     }
                   } else {
@@ -275,11 +323,31 @@ export async function findWordLocation(
                 console.warn("Could not extract text content:", error);
               }
 
-              wordLocations.push(location);
+              // Find parent sentence by comparing positions
+              if (wordMap) {
+                wordLocation.parentSentence = findParentSentence(
+                  wordStartPos,
+                  wordLength,
+                  pageIndex,
+                  wordMap
+                );
+
+                if (wordLocation.parentSentence) {
+                  console.log(
+                    `🔗 Word "${word}" at pos ${wordStartPos} belongs to sentence: "${wordLocation.parentSentence.sentenceText.substring(0, 50)}..."`
+                  );
+                } else {
+                  console.log(
+                    `🔍 Word "${word}" at pos ${wordStartPos} has no parent sentence (filtered out or not found)`
+                  );
+                }
+              }
+
+              wordLocations.push(wordLocation);
               totalMatches++;
 
               console.log(
-                `📍 Match ${matchIndex + 1} on page ${pageIndex}: position ${location.matchStartPosition}, length ${location.matchLength}, text: "${location.textContent || "N/A"}"`
+                `📍 Match ${matchIndex + 1} on page ${pageIndex}: position ${wordLocation.matchStartPosition}, length ${wordLocation.matchLength}, text: "${wordLocation.textContent || "N/A"}", parent: ${wordLocation.parentSentence ? "found" : "none"}`
               );
             }
           }

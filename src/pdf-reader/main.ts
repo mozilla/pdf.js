@@ -39,6 +39,9 @@ async function runReadingPreparation(sessionId: number) {
       }))
     );
 
+    // Make wordMap available globally for testing
+    (window as any).wordMap = wordMap;
+
     const {
       sections: [firstSection, ...restOfTheSections],
     } = pageStructure;
@@ -116,7 +119,7 @@ waitForPDFToLoad();
 // Make test function available globally for console testing
 (window as any).testWordLocation = testFindWordLocation;
 console.log(
-  "🧪 Word location testing available! Use: testWordLocation('your-word') in console"
+  "🧪 Word location testing available! Use: testWordLocation('your-word') or testWordLocation('your-word', wordMap) in console"
 );
 
 export {};
