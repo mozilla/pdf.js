@@ -342,8 +342,9 @@
     display: inline-block;
   }
 
-  .popup > .header h1 {
+  .popup > .header > .title {
     display: inline;
+    font-weight: bold;
   }
 
   .popup > .header .popupDate {
