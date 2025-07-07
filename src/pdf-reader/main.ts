@@ -2,13 +2,14 @@ import { referenceCurrentDocument } from "./reference-current-pdf";
 import { getCurrentPageAsImage } from "./get-current-page-as-image";
 import { analyzePageStructure } from "./analyze-page-structure";
 import { prepareAudioForSentences } from "./prepare-audio-for-sentences";
+import { enableReadButton, resetReadButton } from "./dom-handlers";
 import {
-  enableReadButton,
-  resetReadButton,
   setLatestAudioData,
   resetLatestAudioData,
   readSentences,
-} from "./dom-handlers";
+  clearSentenceHighlight,
+  areSameSessions,
+} from "./state";
 
 async function runReadingPreparation(sessionId: number) {
   try {
@@ -36,9 +37,9 @@ async function runReadingPreparation(sessionId: number) {
     if (audioForFirstSection) {
       console.log("Audio for first section prepared:", audioForFirstSection);
 
+      setLatestAudioData(audioForFirstSection);
       enableReadButton({
-        audioData: audioForFirstSection,
-        sessionId,
+        shouldEnable: () => areSameSessions(sessionId),
         onClick: async () => {
           await prepareAudioForTheRestOfTheSections();
           await readSentences(pdfViewer);
@@ -83,6 +84,8 @@ function waitForPDFToLoad() {
     eventBus._on("documentloaded", () => {
       console.log("📄 New PDF loaded - running reading preparation...");
       resetReadButton();
+      clearSentenceHighlight();
+
       const sessionId = resetLatestAudioData();
       // Small delay to ensure PDF.js is fully ready
       setTimeout(() => runReadingPreparation(sessionId), 100);
