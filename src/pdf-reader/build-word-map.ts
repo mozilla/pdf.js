@@ -24,12 +24,108 @@ export interface EnrichedSection {
   sentences: EnrichedSentence[];
 }
 
+export interface WordMapTraverser {
+  next(): {
+    sentence: EnrichedSentence;
+    word: WordLocationData;
+    wordIndex: number; // Index within current sentence
+    sentenceIndex: number; // Index within all sentences
+    sectionIndex: number; // Index within all sections
+    done: boolean;
+  };
+}
+
 export interface WordMap {
   sections: EnrichedSection[];
   getLocationForSentence: (sentenceText: string) => SentenceLocationData | null;
+  traverse(): WordMapTraverser;
 }
 
 // Test function to run findWordLocation in isolation
+class WordMapTraverserImpl implements WordMapTraverser {
+  private sectionIndex = 0;
+  private sentenceIndex = 0;
+  private wordIndex = 0;
+  private allSentences: EnrichedSentence[];
+  private currentSentence: EnrichedSentence | null = null;
+
+  constructor(private wordMap: WordMap) {
+    // Flatten all sentences from all sections for easier traversal
+    this.allSentences = wordMap.sections.flatMap(section => section.sentences);
+    this.currentSentence =
+      this.allSentences.length > 0 ? this.allSentences[0] : null;
+  }
+
+  next() {
+    // Check if we're done
+    if (
+      !this.currentSentence ||
+      this.sentenceIndex >= this.allSentences.length
+    ) {
+      return {
+        sentence: null as any,
+        word: null as any,
+        wordIndex: -1,
+        sentenceIndex: -1,
+        sectionIndex: -1,
+        done: true,
+      };
+    }
+
+    // Check if we're at the end of current sentence's words
+    if (this.wordIndex >= this.currentSentence.words.length) {
+      // Move to next sentence
+      this.sentenceIndex++;
+      this.wordIndex = 0;
+
+      if (this.sentenceIndex >= this.allSentences.length) {
+        return {
+          sentence: null as any,
+          word: null as any,
+          wordIndex: -1,
+          sentenceIndex: -1,
+          sectionIndex: -1,
+          done: true,
+        };
+      }
+
+      this.currentSentence = this.allSentences[this.sentenceIndex];
+
+      // Update section index
+      let sentenceCount = 0;
+      for (let i = 0; i < this.wordMap.sections.length; i++) {
+        sentenceCount += this.wordMap.sections[i].sentences.length;
+        if (this.sentenceIndex < sentenceCount) {
+          this.sectionIndex = i;
+          break;
+        }
+      }
+    }
+
+    // Get current word
+    const currentWord = this.currentSentence.words[this.wordIndex];
+
+    const result = {
+      sentence: this.currentSentence,
+      word: currentWord,
+      wordIndex: this.wordIndex,
+      sentenceIndex: this.sentenceIndex,
+      sectionIndex: this.sectionIndex,
+      done: false,
+    };
+
+    // Move to next word
+    this.wordIndex++;
+
+    // Log the step
+    console.log(
+      `📖 Step ${this.sentenceIndex + 1}.${this.wordIndex}: "${currentWord.word}" (${currentWord.textContent}) at position ${currentWord.matchStartPosition}`
+    );
+
+    return result;
+  }
+}
+
 function findParentSentence(
   wordStartPos: number,
   wordLength: number,
@@ -174,7 +270,15 @@ export async function buildWordMap(
             currentPageIndex,
             eventBus,
             findController,
-            { sections: enrichedSections, getLocationForSentence: () => null } // Provide minimal WordMap
+            {
+              sections: enrichedSections,
+              getLocationForSentence: () => null,
+              traverse: () => {
+                throw new Error(
+                  "Traverse not available during word population"
+                );
+              },
+            } // Provide minimal WordMap
           );
 
           // Filter to only words that belong to this specific sentence
@@ -205,7 +309,7 @@ export async function buildWordMap(
     `✅ WordMap complete: ${totalSentences} sentences with ${totalWords} located words`
   );
 
-  return {
+  const wordMap: WordMap = {
     sections: enrichedSections,
     getLocationForSentence: (sentenceText: string) => {
       for (const section of enrichedSections) {
@@ -217,7 +321,12 @@ export async function buildWordMap(
       }
       return null;
     },
+    traverse: () => {
+      return new WordMapTraverserImpl(wordMap);
+    },
   };
+
+  return wordMap;
 }
 
 export async function findWordLocation(

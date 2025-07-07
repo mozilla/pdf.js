@@ -31,6 +31,9 @@ async function runReadingPreparation(sessionId: number) {
 
     // Make wordMap available globally for testing
     (window as any).wordMap = wordMap;
+    console.log(
+      "🧪 WordMap traverser available! Use: wordMap.traverse() in console"
+    );
 
     const {
       sections: [firstSection, ...restOfTheSections],
