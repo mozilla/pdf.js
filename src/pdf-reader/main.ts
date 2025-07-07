@@ -28,18 +28,20 @@ async function runReadingPreparation(sessionId: number) {
       sections: [firstSection, ...restOfTheSections],
     } = pageStructure;
 
-    const audioForFirstSection = await prepareAudioForSentences(
-      firstSection.sentences
-    );
+    const audioForFirstSection = await prepareAudioForSentences({
+      sentences: firstSection.sentences,
+      fixtureKey: "audioForFirstSection",
+    });
 
     if (audioForFirstSection) {
       console.log("Audio for first section prepared:", audioForFirstSection);
 
       enableReadButton(audioForFirstSection, sessionId, async () => {
         // Start preparing audio for the rest of the sections in parallel
-        const audioForTheRestOfTheSectionsPromise = prepareAudioForSentences(
-          restOfTheSections.flatMap(section => section.sentences)
-        );
+        const audioForTheRestOfTheSectionsPromise = prepareAudioForSentences({
+          sentences: restOfTheSections.flatMap(section => section.sentences),
+          fixtureKey: "audioForRestOfSections",
+        });
 
         // Start reading the first section immediately
         await readSentences(pdfViewer);
@@ -53,6 +55,7 @@ async function runReadingPreparation(sessionId: number) {
             "Audio for the rest of the sections prepared:",
             audioForTheRestOfTheSections
           );
+
           setLatestAudioData(audioForTheRestOfTheSections);
 
           await readSentences(pdfViewer);
