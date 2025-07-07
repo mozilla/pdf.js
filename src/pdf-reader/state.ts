@@ -1,4 +1,5 @@
-import { AudioWithWordTimings } from "./generate-audio-with-word-timings";
+import { playAudio } from "./playAudio";
+import { type AudioWithWordTimings } from "./generate-audio-with-word-timings";
 import { type PDFViewer } from "./types";
 
 export async function readSentences(pdfViewer: PDFViewer): Promise<void> {
@@ -13,7 +14,12 @@ export async function readSentences(pdfViewer: PDFViewer): Promise<void> {
       sentenceText: audioItem.originalSentenceText,
     });
 
-    await playAudio(audioItem);
+    await playAudio({
+      audioItem,
+      onEnd: () => {
+        clearSentenceHighlight();
+      },
+    });
   }
 }
 
@@ -33,37 +39,6 @@ export function resetLatestAudioData(): number {
   latestAudioData = null;
   currentSessionId++;
   return currentSessionId;
-}
-
-async function playAudio(audioItem: AudioWithWordTimings): Promise<void> {
-  try {
-    console.log("Playing audio:", audioItem.transcription.text);
-
-    // Fallback to webkit for older browsers
-    const audioContext = new (window.AudioContext ||
-      (window as any).webkitAudioContext)();
-
-    const decodedBuffer = await audioContext.decodeAudioData(
-      audioItem.audioBuffer
-    );
-
-    const source = audioContext.createBufferSource();
-    source.buffer = decodedBuffer;
-
-    source.connect(audioContext.destination);
-
-    // Wait for audio to finish playing
-    return new Promise<void>(resolve => {
-      source.onended = () => {
-        clearSentenceHighlight();
-        resolve();
-      };
-      source.start();
-    });
-  } catch (error) {
-    console.error("Error playing audio:", error);
-    throw error;
-  }
 }
 
 // Highlighting state
