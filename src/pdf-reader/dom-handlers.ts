@@ -102,17 +102,13 @@ export function resetReadButton(): void {
 function clearSentenceHighlight(): void {
   if (!currentHighlightedSentence) return;
 
-  // Get the event bus to clear highlights
   const eventBus = (window as any).PDFViewerApplication?.eventBus;
   if (!eventBus) {
     console.warn("Event bus not available for clearing highlights");
     return;
   }
 
-  // Dispatch findbarclose event to clear all highlights
   eventBus.dispatch("findbarclose", { source: null });
-
-  console.log("Cleared sentence highlights using PDF.js find infrastructure");
   currentHighlightedSentence = null;
 }
 
@@ -134,29 +130,12 @@ export function highlightCurrentlyReadSentence({
     return;
   }
 
-  // Ensure the page is fully loaded before proceeding
-  if (!pageView.pdfPage || pageView.renderingState === 0) {
-    console.warn("PDF page not fully loaded yet, skipping highlighting");
-    return;
-  }
-
-  const findController = (window as any).PDFViewerApplication?.findController;
   const eventBus = (window as any).PDFViewerApplication?.eventBus;
-
-  if (!findController || !eventBus) {
-    console.warn("Find controller or event bus not available");
+  if (!eventBus) {
+    console.warn("Event bus not available");
     return;
   }
-
-  const textHighlighter = pageView._textHighlighter;
-  if (!textHighlighter) {
-    console.warn("Text highlighter not available for this page");
-    return;
-  }
-
-  console.log("Triggering text extraction via find event...");
-
-  // Dispatch a find event to trigger text extraction (same as search does)
+  console.log("Dispatching a find event to trigger text extraction...");
   eventBus.dispatch("find", {
     source: null,
     type: "highlightallchange", // Use this type to avoid search UI changes
@@ -168,41 +147,36 @@ export function highlightCurrentlyReadSentence({
     matchDiacritics: false,
   });
 
-  // Disable automatic scrolling to prevent horizontal jumping
-  findController._scrollMatches = false;
+  const findController = (window as any).PDFViewerApplication?.findController;
+  if (!findController) {
+    console.warn("Find controller not available");
+    return;
+  }
+  findController._scrollMatches = false; // Disable automatic scrolling to prevent horizontal jumping
 
   // Wait for the text extraction and matching to complete
   const checkForResults = () => {
     // Check if we have page content and matches for our page
-    const pageContent = findController._pageContents[currentPageIndex];
-    const pageMatches = findController._pageMatches[currentPageIndex];
-    const pageMatchesLength =
-      findController._pageMatchesLength[currentPageIndex];
+    const matchStartPositions = findController._pageMatches[currentPageIndex]; // Start positions of each match
+    const matchLengths = findController._pageMatchesLength[currentPageIndex]; // Length of each match
+    const matchCount = matchStartPositions.length; // Total number of matches found
 
-    if (pageContent && pageMatches && pageMatchesLength) {
-      console.log("Text extraction completed, page content available");
+    if (matchStartPositions && matchLengths && matchCount) {
       console.log(
-        "Page content (first 200 chars):",
-        pageContent.substring(0, 200) + "..."
+        "Text extraction completed, found",
+        matchCount,
+        "match(es) for sentence"
       );
-      console.log("Found", pageMatches.length, "match(es) for sentence");
 
-      if (pageMatches.length > 0) {
+      if (matchCount > 0) {
         console.log(
           "Match at position:",
-          pageMatches[0],
+          matchStartPositions[0],
           "length:",
-          pageMatchesLength[0]
+          matchLengths[0]
         );
 
-        // The TextHighlighter should already be set up with matches by the find controller
-        // The highlighting should already be applied by the updatetextlayermatches event
         currentHighlightedSentence = sentenceText;
-        console.log(
-          "Successfully highlighted sentence using PDF.js find infrastructure"
-        );
-
-        // Don't clear the find state here - let it persist until audio ends
       } else {
         console.warn("No matches found for sentence:", sentenceText);
       }
