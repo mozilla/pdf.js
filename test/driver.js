@@ -377,7 +377,7 @@ class Rasterize {
           height: height / pageHeight,
         });
       }
-      // We set the borderWidth to 0.001 to slighly increase the size of the
+      // We set the borderWidth to 0.001 to slightly increase the size of the
       // boxes so that they can be merged together.
       const outliner = new HighlightOutliner(boxes, /* borderWidth = */ 0.001);
       // We set the borderWidth to 0.0025 in order to have an outline which is

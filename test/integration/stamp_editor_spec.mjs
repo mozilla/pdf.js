@@ -1367,7 +1367,7 @@ describe("Stamp Editor", () => {
     });
   });
 
-  describe("A stamp musn't be on top of the secondary toolbar", () => {
+  describe("A stamp mustn't be on top of the secondary toolbar", () => {
     let pages;
 
     beforeEach(async () => {

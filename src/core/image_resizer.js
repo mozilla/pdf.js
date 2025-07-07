@@ -83,7 +83,7 @@ class ImageResizer {
 
     // TODO: the computation can be a bit long because we potentially allocate
     // some large canvas, so in the Firefox case this value (and MAX_DIM) can be
-    // infered from prefs (MAX_AREA = gfx.max-alloc-size / 4, 4 is because of
+    // inferred from prefs (MAX_AREA = gfx.max-alloc-size / 4, 4 is because of
     // RGBA).
     this.#goodSquareLength = this._guessMax(
       this.#goodSquareLength,

@@ -530,7 +530,7 @@ class AnnotationEditorLayer {
 
   /**
    * An editor can have a different parent, for example after having
-   * being dragged and droped from a page to another.
+   * being dragged and dropped from a page to another.
    * @param {AnnotationEditor} editor
    */
   changeParent(editor) {
