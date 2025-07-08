@@ -33,6 +33,7 @@ import { InkEditor } from "./ink.js";
 import { setLayerDimensions } from "../display_utils.js";
 import { SignatureEditor } from "./signature.js";
 import { StampEditor } from "./stamp.js";
+import { CustomEditor } from "./custom_editor.js";
 
 /**
  * @typedef {Object} AnnotationEditorLayerOptions
@@ -96,6 +97,7 @@ class AnnotationEditorLayer {
       StampEditor,
       HighlightEditor,
       SignatureEditor,
+      CustomEditor
     ].map(type => [type._editorType, type])
   );
 

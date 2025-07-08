@@ -1499,7 +1499,7 @@ class AnnotationEditorUIManager {
       activateEditorIfNecessary &&
       previousMode === AnnotationEditorType.NONE
     ) {
-      this.updateMode(AnnotationEditorType.FREETEXT);
+      await this.updateMode(AnnotationEditorType.FREETEXT);
     }
     // #1783 end of modification by ngx-extended-pdf-viewer
     this.unselectAll();
@@ -1542,7 +1542,7 @@ class AnnotationEditorUIManager {
     }
     // #1783 modified by ngx-extended-pdf-viewer
     if (activateEditorIfNecessary && previousMode !== this.#mode) {
-      this.updateMode(previousMode);
+      await this.updateMode(previousMode);
     }
   }
   // #1783 end of modification by ngx-extended-pdf-viewer

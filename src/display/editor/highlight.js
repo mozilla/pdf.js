@@ -127,21 +127,14 @@ class HighlightEditor extends AnnotationEditor {
       this.rotate(this.rotation);
     }
 
-    if (this.isUserCreated) {
-      this.eventBus.dispatch("annotation-editor-event", {
-        source: this,
-        type: "annotationCreatedByUser",
-        page: this.pageIndex + 1,
-        editorType: this.constructor.name,
-      });
-    } else {
-      this.eventBus.dispatch("annotation-editor-event", {
-        source: this,
-        type: "annotationCreated",
-        page: this.pageIndex + 1,
-        editorType: this.constructor.name,
-      });
-    }
+    this.eventBus.dispatch("annotation-editor-event", {
+      source: this,
+      type: this.isUserCreated
+        ? "annotationCreatedByUser"
+        : "annotationCreated",
+      page: this.pageIndex + 1,
+      editorType: this.constructor.name,
+    });
   }
 
   /** @inheritdoc */

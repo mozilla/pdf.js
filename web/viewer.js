@@ -72,6 +72,10 @@ function getViewerConfiguration() {
       editorSignatureParamsToolbar: document.getElementById(
         "editorSignatureParamsToolbar"
       ),
+      editorCustomButton: document.getElementById("editorCustomButton"),
+      editorCustomParamsToolbar: document.getElementById(
+        "editorCustomParamsToolbar"
+      ),
       download: document.getElementById("downloadButton"),
     },
     secondaryToolbar: {
@@ -253,6 +257,9 @@ function getViewerConfiguration() {
       editorStampAddImage: document.getElementById("editorStampAddImage"),
       editorSignatureAddSignature: document.getElementById(
         "editorSignatureAddSignature"
+      ),
+      editorCustomAddCustom: document.getElementById(
+        "editorCustomAddCustom"
       ),
       editorFreeHighlightThickness: document.getElementById(
         "editorFreeHighlightThickness"
