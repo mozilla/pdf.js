@@ -261,13 +261,30 @@ class Finder {
     const {
       caseSensitive = false,
       entireWord = true,
-      matchDiacritics = false
+      matchDiacritics = false,
+      pageNumber = null  // 1-based page number (like PDF.js UI), null = search all pages
     } = options;
 
     const matches = [];
     let globalIndex = 0;
 
-    for (let pageIndex = 0; pageIndex < this._pageContents.length; pageIndex++) {
+    // Determine which pages to search
+    let startPage = 0;
+    let endPage = this._pageContents.length;
+
+    if (pageNumber !== null) {
+      // Validate page number (1-based)
+      if (!Number.isInteger(pageNumber) || pageNumber < 1 || pageNumber > this.pdfViewer.pagesCount) {
+        throw new Error(`Invalid page number: ${pageNumber}. Pages are numbered 1-${this.pdfViewer.pagesCount}`);
+      }
+
+      // Convert to 0-based index and search only that page
+      const pageIndex = pageNumber - 1;
+      startPage = pageIndex;
+      endPage = pageIndex + 1;
+    }
+
+    for (let pageIndex = startPage; pageIndex < endPage; pageIndex++) {
       const pageContent = this._pageContents[pageIndex];
       if (!pageContent) continue;
 
@@ -291,6 +308,8 @@ class Finder {
       }
     }
 
+    const searchScope = pageNumber ? `page ${pageNumber}` : 'all pages';
+    console.log(`🔍 Found ${matches.length} matches for "${query}" in ${searchScope}`);
     return new MatchCollection(this, query, matches);
   }
 

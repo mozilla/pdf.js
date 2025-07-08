@@ -129,6 +129,9 @@ async function setupCustomFinder() {
     console.log(
       "  finder.find('word').then(matches => matches.highlightByIndex(0))"
     );
+    console.log(
+      "  finder.find('word', { pageNumber: 2 }).then(matches => matches.highlightAll())"
+    );
   }
 }
 
