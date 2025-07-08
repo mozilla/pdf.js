@@ -260,7 +260,7 @@ class Finder {
 
     const {
       caseSensitive = false,
-      entireWord = false,
+      entireWord = true,
       matchDiacritics = false
     } = options;
 
