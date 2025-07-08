@@ -1057,6 +1057,10 @@
   }
 }
 
+.basicColorPicker {
+  width: 28px;
+}
+
 .annotationEditorLayer {
   &[data-main-rotation="0"] {
     .highlightEditor:not(.free) > .editToolbar {

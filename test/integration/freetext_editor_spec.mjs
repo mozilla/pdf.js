@@ -3502,4 +3502,48 @@ describe("FreeText Editor", () => {
       );
     });
   });
+
+  describe("FreeText must update its color", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the text color is the one chosen from the color picker", async () => {
+      await Promise.all(
+        pages.map(async ([_, page]) => {
+          await switchToFreeText(page);
+
+          const rect = await getRect(page, ".annotationEditorLayer");
+          const editorSelector = getEditorSelector(0);
+          const data = "Hello PDF.js World !!";
+          await page.mouse.click(
+            rect.x + rect.width / 2,
+            rect.y + rect.height / 2
+          );
+          await page.waitForSelector(editorSelector, { visible: true });
+          await page.type(`${editorSelector} .internal`, data);
+          await commit(page);
+
+          const colorPickerSelector = `${editorSelector} input.basicColorPicker`;
+          await page.waitForSelector(colorPickerSelector, { visible: true });
+          await page.locator(colorPickerSelector).fill("#ff0000");
+
+          await page.waitForFunction(
+            sel => {
+              const el = document.querySelector(sel);
+              return getComputedStyle(el).color === "rgb(255, 0, 0)";
+            },
+            {},
+            `${editorSelector} .internal`
+          );
+        })
+      );
+    });
+  });
 });

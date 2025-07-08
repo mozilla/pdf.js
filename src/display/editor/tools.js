@@ -1805,12 +1805,14 @@ class AnnotationEditorUIManager {
         break;
     }
 
-    for (const editor of this.#selectedEditors) {
-      editor.updateParams(type, value);
-    }
-
-    for (const editorType of this.#editorTypes) {
-      editorType.updateDefaultParams(type, value);
+    if (this.hasSelection) {
+      for (const editor of this.#selectedEditors) {
+        editor.updateParams(type, value);
+      }
+    } else {
+      for (const editorType of this.#editorTypes) {
+        editorType.updateDefaultParams(type, value);
+      }
     }
   }
 
