@@ -160,3 +160,106 @@ class AnnotationEditorLayerBuilder {
 }
 
 export { AnnotationEditorLayerBuilder };
+
+// === STRAIGHT LINE DRAWING FEATURE FOR ANNOTATION EDITOR ===
+
+// 1. Find or create the annotation editor layer (where we overlay our canvas)
+const editorLayer = document.querySelector(".annotationEditorLayer");
+if (editorLayer) {
+  // 2. Create a canvas overlay if it doesn't exist
+  let canvas = document.getElementById("annotation-canvas");
+  if (!canvas) {
+    canvas = document.createElement("canvas");
+    canvas.id = "annotation-canvas";
+    canvas.style.position = "absolute";
+    canvas.style.top = "0";
+    canvas.style.left = "0";
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+    canvas.width = editorLayer.offsetWidth;
+    canvas.height = editorLayer.offsetHeight;
+    canvas.style.pointerEvents = "auto";
+    editorLayer.appendChild(canvas);
+  }
+
+  const ctx = canvas.getContext("2d");
+  let drawing = false;
+  let startX = 0, startY = 0, currentX = 0, currentY = 0;
+
+  // 3. Start drawing when mouse is pressed
+  canvas.addEventListener("mousedown", function (event) {
+    drawing = true;
+    startX = event.offsetX;
+    startY = event.offsetY;
+    currentX = startX;
+    currentY = startY;
+  });
+
+  // 4. Draw a preview line as the mouse moves
+  canvas.addEventListener("mousemove", function (event) {
+    if (!drawing) return;
+
+    // Clear previous preview
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    let x = event.offsetX;
+    let y = event.offsetY;
+
+    // If Shift is held, snap to straight lines (horizontal, vertical, or 45-degree)
+    if (event.shiftKey) {
+      const dx = x - startX;
+      const dy = y - startY;
+      const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+      if (Math.abs(angle) < 22.5 || Math.abs(angle) > 157.5) {
+        // Horizontal
+        y = startY;
+      } else if (Math.abs(angle) > 67.5 && Math.abs(angle) < 112.5) {
+        // Vertical
+        x = startX;
+      } else {
+        // 45-degree
+        const signX = dx >= 0 ? 1 : -1;
+        const signY = dy >= 0 ? 1 : -1;
+        const len = Math.min(Math.abs(dx), Math.abs(dy));
+        x = startX + signX * len;
+        y = startY + signY * len;
+      }
+    }
+
+    currentX = x;
+    currentY = y;
+
+    // Draw the preview line
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(currentX, currentY);
+    ctx.stroke();
+  });
+
+  // 5. Finish drawing when mouse is released
+  canvas.addEventListener("mouseup", function () {
+    if (!drawing) return;
+    drawing = false;
+
+    // Draw the final line
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(currentX, currentY);
+    ctx.stroke();
+
+    // TODO: Save the annotation to your data model here if needed
+  });
+
+  // 6. Cancel drawing if mouse leaves the canvas
+  canvas.addEventListener("mouseleave", function () {
+    if (drawing) {
+      drawing = false;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  });
+}
