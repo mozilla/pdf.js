@@ -1016,7 +1016,7 @@ class Driver {
               }
             }
             const renderContext = {
-              canvasContext: ctx,
+              canvas: this.canvas,
               viewport,
               optionalContentConfigPromise: task.optionalContentConfigPromise,
               annotationCanvasMap,
