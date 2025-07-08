@@ -2391,7 +2391,7 @@ class WidgetAnnotation extends Annotation {
 
     if (encodingError && intent & RenderingIntentFlag.SAVE) {
       // We don't have a way to render the field, so we just rely on the
-      // /NeedAppearances trick to let the different sofware correctly render
+      // /NeedAppearances trick to let the different software correctly render
       // this pdf.
       return { needAppearances: true };
     }

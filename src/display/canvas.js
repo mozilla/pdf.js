@@ -1027,7 +1027,7 @@ class CanvasGraphics {
     );
     const fillCtx = fillCanvas.context;
 
-    // The offset will be the top-left cordinate mask.
+    // The offset will be the top-left coordinate mask.
     // If objToCanvas is [a,b,c,d,e,f] then:
     //   - offsetX = min(a, c) + e
     //   - offsetY = min(b, d) + f

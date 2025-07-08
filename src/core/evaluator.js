@@ -2745,7 +2745,7 @@ class PartialEvaluator {
           // This is not a 0, 90, 180, 270 rotation so:
           //  - remove the scale factor from the matrix to get a rotation matrix
           //  - apply the inverse (which is the transposed) to the positions
-          // and we can then compare positions of the glyphes to detect
+          // and we can then compare positions of the glyphs to detect
           // a whitespace.
           [posX, posY] = applyInverseRotation(posX, posY, currentTransform);
           [lastPosX, lastPosY] = applyInverseRotation(
@@ -3823,7 +3823,7 @@ class PartialEvaluator {
     // According to the spec if the font is a simple font we should only map
     // to unicode if the base encoding is MacRoman, MacExpert, or WinAnsi or
     // the differences array only contains adobe standard or symbol set names,
-    // in pratice it seems better to always try to create a toUnicode map
+    // in practice it seems better to always try to create a toUnicode map
     // based of the default encoding.
     if (!properties.composite /* is simple font */) {
       return new ToUnicodeMap(this._simpleFontToUnicode(properties));

@@ -2506,7 +2506,7 @@ class Font {
             }
           }
         }
-        // Adjusting stack not extactly, but just enough to get function id
+        // Adjusting stack not exactly, but just enough to get function id
         if (!inFDEF && !inELSE) {
           let stackDelta = 0;
           if (op <= 0x8e) {
