@@ -26,11 +26,11 @@ async function runReadingPreparation(sessionId: number) {
     const pageStructure = await analyzePageStructure(imageFile);
     console.log("Reading preparation complete:", pageStructure);
 
-    const wordMap = await buildWordMap(pageStructure, pdfViewer);
-    console.log("Word map built:", wordMap);
+    // const wordMap = await buildWordMap(pageStructure, pdfViewer);
+    // console.log("Word map built:", wordMap);
 
     // Make wordMap available globally for testing
-    (window as any).wordMap = wordMap;
+    // (window as any).wordMap = wordMap;
     console.log(
       "🧪 WordMap integrated with audio! Manual API: wordMap.traverse() in console"
     );
@@ -52,7 +52,7 @@ async function runReadingPreparation(sessionId: number) {
         shouldEnable: () => areSameSessions(sessionId),
         onClick: async () => {
           await prepareAudioForTheRestOfTheSections();
-          await readSentences(pdfViewer, wordMap);
+          // await readSentences(pdfViewer, wordMap);
         },
       });
 
@@ -64,7 +64,7 @@ async function runReadingPreparation(sessionId: number) {
         });
 
         // Start reading the first section immediately
-        await readSentences(pdfViewer, wordMap);
+        // await readSentences(pdfViewer, wordMap);
 
         // Wait for the rest of the sections to be prepared
         const audioForTheRestOfTheSections =
@@ -114,5 +114,26 @@ waitForPDFToLoad();
 console.log(
   "🧪 Word location testing available! Use: testWordLocation('your-word') or testWordLocation('your-word', wordMap) in console"
 );
+
+// Make custom finder available globally for testing
+async function setupCustomFinder() {
+  if (window.PDFViewerApplication?.pdfViewer && (window as any).CustomFinder) {
+    const finder = new (window as any).CustomFinder.Finder();
+    await finder.ready();
+    (window as any).finder = finder;
+
+    console.log("🔍 Custom finder ready! Try:");
+    console.log(
+      "  finder.find('word').then(matches => matches.highlightAll())"
+    );
+    console.log(
+      "  finder.find('word').then(matches => matches.highlightByIndex(0))"
+    );
+  }
+}
+
+// Initialize when PDF loads
+waitForPDFToLoad();
+setTimeout(setupCustomFinder, 2000); // Give PDF time to load
 
 export {};

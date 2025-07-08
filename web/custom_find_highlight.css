@@ -1,0 +1,240 @@
+/* Copyright 2024 Custom Find Highlight Styles
+ *
+ * CSS styles for custom find highlighting that work independently
+ * from the main PDF.js highlight system.
+ */
+
+/* Base custom highlight styles */
+.custom-find-highlight {
+  --custom-highlight-bg-color: rgb(255 215 0 / 0.4);  /* Gold */
+  --custom-highlight-border-color: rgb(255 215 0 / 0.6);
+  --custom-highlight-text-color: inherit;
+
+  background-color: var(--custom-highlight-bg-color);
+  border-radius: 3px;
+  padding: 1px 2px;
+  margin: -1px -2px;
+  border: 1px solid var(--custom-highlight-border-color);
+  color: var(--custom-highlight-text-color);
+  position: relative;
+  z-index: 1;
+}
+
+/* Selected highlight (different color) */
+.custom-find-highlight-selected {
+  --custom-highlight-bg-color: rgb(0 255 127 / 0.4);  /* Spring green */
+  --custom-highlight-border-color: rgb(0 255 127 / 0.6);
+  --custom-highlight-text-color: inherit;
+
+  background-color: var(--custom-highlight-bg-color);
+  border-radius: 3px;
+  padding: 1px 2px;
+  margin: -1px -2px;
+  border: 2px solid var(--custom-highlight-border-color);  /* Thicker border for selected */
+  color: var(--custom-highlight-text-color);
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 0 4px var(--custom-highlight-border-color);
+}
+
+/* Multi-div spanning styles */
+.custom-find-highlight.begin {
+  border-radius: 3px 0 0 3px;
+  margin-right: 0;
+  padding-right: 1px;
+  border-right: none;
+}
+
+.custom-find-highlight.middle {
+  border-radius: 0;
+  margin: -1px 0;
+  padding: 1px;
+  border-left: none;
+  border-right: none;
+}
+
+.custom-find-highlight.end {
+  border-radius: 0 3px 3px 0;
+  margin-left: 0;
+  padding-left: 1px;
+  border-left: none;
+}
+
+.custom-find-highlight-selected.begin {
+  border-radius: 3px 0 0 3px;
+  margin-right: 0;
+  padding-right: 1px;
+  border-right: none;
+}
+
+.custom-find-highlight-selected.middle {
+  border-radius: 0;
+  margin: -1px 0;
+  padding: 1px;
+  border-left: none;
+  border-right: none;
+}
+
+.custom-find-highlight-selected.end {
+  border-radius: 0 3px 3px 0;
+  margin-left: 0;
+  padding-left: 1px;
+  border-left: none;
+}
+
+/* Additional custom highlight variants */
+.custom-find-highlight-red {
+  --custom-highlight-bg-color: rgb(255 99 71 / 0.4);   /* Tomato */
+  --custom-highlight-border-color: rgb(255 99 71 / 0.6);
+
+  background-color: var(--custom-highlight-bg-color);
+  border: 1px solid var(--custom-highlight-border-color);
+  border-radius: 3px;
+  padding: 1px 2px;
+  margin: -1px -2px;
+  position: relative;
+  z-index: 1;
+}
+
+.custom-find-highlight-blue {
+  --custom-highlight-bg-color: rgb(135 206 250 / 0.4); /* Light sky blue */
+  --custom-highlight-border-color: rgb(135 206 250 / 0.6);
+
+  background-color: var(--custom-highlight-bg-color);
+  border: 1px solid var(--custom-highlight-border-color);
+  border-radius: 3px;
+  padding: 1px 2px;
+  margin: -1px -2px;
+  position: relative;
+  z-index: 1;
+}
+
+.custom-find-highlight-purple {
+  --custom-highlight-bg-color: rgb(221 160 221 / 0.4); /* Plum */
+  --custom-highlight-border-color: rgb(221 160 221 / 0.6);
+
+  background-color: var(--custom-highlight-bg-color);
+  border: 1px solid var(--custom-highlight-border-color);
+  border-radius: 3px;
+  padding: 1px 2px;
+  margin: -1px -2px;
+  position: relative;
+  z-index: 1;
+}
+
+.custom-find-highlight-orange {
+  --custom-highlight-bg-color: rgb(255 165 0 / 0.4);   /* Orange */
+  --custom-highlight-border-color: rgb(255 165 0 / 0.6);
+
+  background-color: var(--custom-highlight-bg-color);
+  border: 1px solid var(--custom-highlight-border-color);
+  border-radius: 3px;
+  padding: 1px 2px;
+  margin: -1px -2px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Hover effects */
+.custom-find-highlight:hover,
+.custom-find-highlight-red:hover,
+.custom-find-highlight-blue:hover,
+.custom-find-highlight-purple:hover,
+.custom-find-highlight-orange:hover {
+  filter: brightness(1.1);
+  cursor: pointer;
+}
+
+.custom-find-highlight-selected:hover {
+  filter: brightness(1.05);
+  cursor: pointer;
+}
+
+/* Animation for newly added highlights */
+@keyframes highlightFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(1.05);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.custom-highlight-wrapper {
+  animation: highlightFadeIn 0.2s ease-out;
+}
+
+/* High contrast mode support */
+@media screen and (forced-colors: active) {
+  .custom-find-highlight,
+  .custom-find-highlight-red,
+  .custom-find-highlight-blue,
+  .custom-find-highlight-purple,
+  .custom-find-highlight-orange {
+    background-color: Highlight;
+    color: HighlightText;
+    border-color: HighlightText;
+  }
+
+  .custom-find-highlight-selected {
+    background-color: SelectedItem;
+    color: SelectedItemText;
+    border-color: SelectedItemText;
+  }
+}
+
+/* Print styles - hide custom highlights in print */
+@media print {
+  .custom-find-highlight,
+  .custom-find-highlight-selected,
+  .custom-find-highlight-red,
+  .custom-find-highlight-blue,
+  .custom-find-highlight-purple,
+  .custom-find-highlight-orange {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* Focus styles for accessibility */
+.custom-find-highlight:focus,
+.custom-find-highlight-selected:focus {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+}
+
+/* Dark mode variants */
+@media (prefers-color-scheme: dark) {
+  .custom-find-highlight {
+    --custom-highlight-bg-color: rgb(255 215 0 / 0.3);
+    --custom-highlight-border-color: rgb(255 215 0 / 0.5);
+  }
+
+  .custom-find-highlight-selected {
+    --custom-highlight-bg-color: rgb(0 255 127 / 0.3);
+    --custom-highlight-border-color: rgb(0 255 127 / 0.5);
+  }
+
+  .custom-find-highlight-red {
+    --custom-highlight-bg-color: rgb(255 99 71 / 0.3);
+    --custom-highlight-border-color: rgb(255 99 71 / 0.5);
+  }
+
+  .custom-find-highlight-blue {
+    --custom-highlight-bg-color: rgb(135 206 250 / 0.3);
+    --custom-highlight-border-color: rgb(135 206 250 / 0.5);
+  }
+
+  .custom-find-highlight-purple {
+    --custom-highlight-bg-color: rgb(221 160 221 / 0.3);
+    --custom-highlight-border-color: rgb(221 160 221 / 0.5);
+  }
+
+  .custom-find-highlight-orange {
+    --custom-highlight-bg-color: rgb(255 165 0 / 0.3);
+    --custom-highlight-border-color: rgb(255 165 0 / 0.5);
+  }
+}
