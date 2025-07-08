@@ -99,6 +99,8 @@ function waitForPDFToLoad() {
       const sessionId = resetLatestAudioData();
       // Small delay to ensure PDF.js is fully ready
       setTimeout(() => runReadingPreparation(sessionId), 100);
+      // Set up custom finder after PDF loads
+      setTimeout(setupCustomFinder, 500);
     });
   } else {
     console.warn("EventBus not available, trying fallback...");
@@ -117,7 +119,19 @@ console.log(
 
 // Make custom finder available globally for testing
 async function setupCustomFinder() {
-  if (window.PDFViewerApplication?.pdfViewer && (window as any).CustomFinder) {
+  try {
+    if (!window.PDFViewerApplication?.pdfViewer) {
+      console.warn("PDFViewerApplication not ready yet, retrying...");
+      setTimeout(setupCustomFinder, 1000);
+      return;
+    }
+
+    if (!(window as any).CustomFinder) {
+      console.warn("CustomFinder not loaded yet, retrying...");
+      setTimeout(setupCustomFinder, 1000);
+      return;
+    }
+
     const finder = new (window as any).CustomFinder.Finder();
     await finder.ready();
     (window as any).finder = finder;
@@ -132,11 +146,20 @@ async function setupCustomFinder() {
     console.log(
       "  finder.find('word', { pageNumber: 2 }).then(matches => matches.highlightAll())"
     );
+    console.log("  // Multi-line text search (with proper spacing):");
+    console.log(
+      "  finder.find('Our somatosensory system consists of sensors').then(matches => matches.highlightAll())"
+    );
+    console.log("  // Debug: See extracted text for a page:");
+    console.log("  finder.getPageText(1)  // Shows text from page 1");
+  } catch (error) {
+    console.error("Failed to setup custom finder:", error);
+    // Retry after a delay
+    setTimeout(setupCustomFinder, 2000);
   }
 }
 
 // Initialize when PDF loads
 waitForPDFToLoad();
-setTimeout(setupCustomFinder, 2000); // Give PDF time to load
 
 export {};

@@ -51,31 +51,29 @@ class MatchCollection {
   }
 
   /**
- * Highlight all matches with custom styling
- */
+   * Highlight all matches using PDF.js official API
+   */
   highlightAll(className = 'highlight-red') {
     console.log(`🔍 Highlighting ${this.matches.length} matches for "${this.query}" in red`);
-    this.clearHighlights();
-    this.finder._highlightAllMatches(this.matches, className);
-    this.allHighlighted = true;
-    return this;
+    return this.finder._highlightMatches(this.query, { highlightAll: true });
   }
 
   /**
- * Highlight specific match by global index
- */
+   * Highlight specific match by global index
+   */
   highlightByIndex(globalIndex, className = 'highlight-red selected') {
-    this.clearHighlights();
-
     const match = this.matches[globalIndex];
     if (!match) {
       console.warn(`No match found at index ${globalIndex}`);
       return this;
     }
 
-    this.finder._highlightSingleMatch(match, className);
-    this.currentHighlight = globalIndex;
-    return this;
+    // For single match highlighting, we need to navigate to it
+    return this.finder._highlightMatches(this.query, {
+      highlightAll: false,
+      targetPageIndex: match.pageIndex,
+      targetMatchIndex: match.matchIndex
+    });
   }
 
   /**
@@ -83,16 +81,22 @@ class MatchCollection {
    */
   highlightByPage(pageIndex, className = 'highlight-red') {
     const pageMatches = this.matches.filter(m => m.pageIndex === pageIndex);
-    this.clearHighlights();
-    this.finder._highlightSpecificMatches(pageMatches, className);
-    return this;
+    if (pageMatches.length === 0) {
+      console.warn(`No matches found on page ${pageIndex + 1}`);
+      return this;
+    }
+
+    return this.finder._highlightMatches(this.query, {
+      highlightAll: true,
+      pageNumber: pageIndex + 1
+    });
   }
 
   /**
-   * Clear all custom highlights
+   * Clear all highlights
    */
   clearHighlights() {
-    this.finder._clearCustomHighlights();
+    this.finder._clearHighlights();
     this.currentHighlight = null;
     this.allHighlighted = false;
     return this;
@@ -106,23 +110,18 @@ class MatchCollection {
   }
 
   /**
-   * Get match bounds for positioning custom elements
-   */
-  getMatchBounds(globalIndex) {
-    const match = this.matches[globalIndex];
-    if (!match) return null;
-
-    return this.finder._getMatchBounds(match);
-  }
-
-  /**
    * Scroll to specific match
    */
   scrollToMatch(globalIndex) {
     const match = this.matches[globalIndex];
     if (!match) return this;
 
-    this.finder._scrollToMatch(match);
+    this.finder._highlightMatches(this.query, {
+      highlightAll: false,
+      targetPageIndex: match.pageIndex,
+      targetMatchIndex: match.matchIndex,
+      scroll: true
+    });
     return this;
   }
 
@@ -150,110 +149,32 @@ class MatchCollection {
 }
 
 /**
- * Custom Find Controller - programmatic wrapper around PDF.js find
+ * Custom Find Controller - programmatic wrapper around PDF.js find using official APIs
  */
 class Finder {
   constructor(pdfViewer = null) {
     this.pdfViewer = pdfViewer || window.PDFViewerApplication?.pdfViewer;
     this.eventBus = window.PDFViewerApplication?.eventBus;
-    this.linkService = window.PDFViewerApplication?.pdfLinkService;
+    this.findController = window.PDFViewerApplication?.findController;
 
-    if (!this.pdfViewer) {
-      throw new Error('PDF viewer not available. Ensure PDF.js is loaded.');
-    }
-
-    // Custom state separate from main find controller
-    this._pageContents = [];
-    this._pageContentPromises = [];
-    this._isReady = false;
-
-    this._initializePageContent();
-  }
-
-  /**
-   * Initialize page content extraction
-   */
-  async _initializePageContent() {
-    const numPages = this.pdfViewer.pagesCount;
-    this._pageContentPromises = new Array(numPages);
-    this._pageContents = new Array(numPages);
-
-    for (let i = 0; i < numPages; i++) {
-      this._pageContentPromises[i] = this._extractPageText(i);
+    if (!this.pdfViewer || !this.eventBus || !this.findController) {
+      throw new Error('PDF.js components not available. Ensure PDF.js is loaded.');
     }
 
     this._isReady = true;
   }
 
   /**
- * Extract text content from a page using the TextHighlighter's text
- */
-  async _extractPageText(pageIndex) {
-    try {
-      const pageView = this.pdfViewer._pages[pageIndex];
-      if (!pageView) {
-        return '';
-      }
-
-      // Wait for text layer to be ready and get the same text the TextHighlighter uses
-      if (pageView._textHighlighter && pageView._textHighlighter.textContentItemsStr) {
-        const pageText = pageView._textHighlighter.textContentItemsStr.join('');
-        this._pageContents[pageIndex] = pageText;
-        console.log(`📄 Page ${pageIndex}: Using TextHighlighter text (${pageText.length} chars)`);
-        return pageText;
-      }
-
-      // Fallback: extract text the traditional way
-      if (!pageView.pdfPage) {
-        return '';
-      }
-
-      const textContent = await pageView.pdfPage.getTextContent({
-        disableNormalization: true
-      });
-
-      const strBuf = [];
-      for (const textItem of textContent.items) {
-        strBuf.push(textItem.str);
-        if (textItem.hasEOL) {
-          strBuf.push("\n");
-        }
-      }
-
-      const pageText = strBuf.join("");
-      this._pageContents[pageIndex] = pageText;
-      return pageText;
-    } catch (error) {
-      console.warn(`Failed to extract text from page ${pageIndex}:`, error);
-      this._pageContents[pageIndex] = '';
-      return '';
-    }
-  }
-
-  /**
- * Wait for finder to be ready
- */
+   * Wait for finder to be ready
+   */
   async ready() {
-    if (this._isReady) {
-      await Promise.all(this._pageContentPromises);
-
-      // Additional wait for text layers to be rendered
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Re-extract text using TextHighlighter content if available
-      for (let i = 0; i < this.pdfViewer.pagesCount; i++) {
-        const pageView = this.pdfViewer._pages[i];
-        if (pageView && pageView._textHighlighter && pageView._textHighlighter.textContentItemsStr) {
-          const pageText = pageView._textHighlighter.textContentItemsStr.join('');
-          this._pageContents[i] = pageText;
-        }
-      }
-    }
+    // Wait a bit for text layers to be ready
+    await new Promise(resolve => setTimeout(resolve, 100));
     return this;
   }
 
   /**
-   * Find text and return MatchCollection
+   * Find text and return MatchCollection using PDF.js official API
    */
   async find(query, options = {}) {
     await this.ready();
@@ -262,283 +183,184 @@ class Finder {
       caseSensitive = false,
       entireWord = true,
       matchDiacritics = false,
-      pageNumber = null  // 1-based page number (like PDF.js UI), null = search all pages
+      pageNumber = null  // 1-based page number, null = search all pages
     } = options;
 
-    const matches = [];
-    let globalIndex = 0;
+    return new Promise((resolve) => {
+      // Store search results
+      let searchComplete = false;
+      let matches = [];
 
-    // Determine which pages to search
-    let startPage = 0;
-    let endPage = this._pageContents.length;
+      // Clear any existing search first
+      this._clearHighlights();
 
-    if (pageNumber !== null) {
-      // Validate page number (1-based)
-      if (!Number.isInteger(pageNumber) || pageNumber < 1 || pageNumber > this.pdfViewer.pagesCount) {
-        throw new Error(`Invalid page number: ${pageNumber}. Pages are numbered 1-${this.pdfViewer.pagesCount}`);
-      }
+      // Listen for search completion
+      const cleanup = () => {
+        if (this._searchListener) {
+          this.eventBus._off('updatetextlayermatches', this._searchListener);
+          this._searchListener = null;
+        }
+      };
 
-      // Convert to 0-based index and search only that page
-      const pageIndex = pageNumber - 1;
-      startPage = pageIndex;
-      endPage = pageIndex + 1;
-    }
+      // Set up listener for when search completes
+      this._searchListener = () => {
+        if (searchComplete) return;
 
-    for (let pageIndex = startPage; pageIndex < endPage; pageIndex++) {
-      const pageContent = this._pageContents[pageIndex];
-      if (!pageContent) continue;
+        // Extract matches from findController after search completes
+        const extractedMatches = this._extractMatches();
 
-      const pageMatches = this._findInText(query, pageContent, {
+        if (pageNumber !== null) {
+          // Filter to specific page if requested
+          const pageIndex = pageNumber - 1;
+          matches = extractedMatches.filter(m => m.pageIndex === pageIndex);
+        } else {
+          matches = extractedMatches;
+        }
+
+        const searchScope = pageNumber ? `page ${pageNumber}` : 'all pages';
+        console.log(`🔍 Found ${matches.length} matches for "${query}" in ${searchScope}`);
+
+        searchComplete = true;
+        cleanup();
+        resolve(new MatchCollection(this, query, matches));
+      };
+
+      this.eventBus._on('updatetextlayermatches', this._searchListener);
+
+      // Dispatch the find event to trigger search
+      this.eventBus.dispatch('find', {
+        source: null,
+        type: 'highlightallchange',
+        query: query,
         caseSensitive,
         entireWord,
-        matchDiacritics
+        highlightAll: true,
+        findPrevious: false,
+        matchDiacritics,
       });
 
-      for (let matchIndex = 0; matchIndex < pageMatches.length; matchIndex++) {
-        const match = pageMatches[matchIndex];
-        matches.push({
-          pageIndex,
-          matchIndex,
-          globalIndex: globalIndex++,
-          startPos: match.index,
-          length: match.length,
-          text: pageContent.substring(match.index, match.index + match.length),
-          bounds: null // Will be populated when needed
-        });
-      }
-    }
+      // Disable automatic scrolling to prevent jumping
+      this.findController._scrollMatches = false;
 
-    const searchScope = pageNumber ? `page ${pageNumber}` : 'all pages';
-    console.log(`🔍 Found ${matches.length} matches for "${query}" in ${searchScope}`);
-    return new MatchCollection(this, query, matches);
+      // Timeout fallback
+      setTimeout(() => {
+        if (!searchComplete) {
+          console.warn('Search timeout - returning partial results');
+          cleanup();
+          resolve(new MatchCollection(this, query, matches));
+        }
+      }, 2000);
+    });
   }
 
   /**
-   * Find text within a single page content
+   * Debug: Get page text from findController
    */
-  _findInText(query, text, options) {
-    const { caseSensitive, entireWord, matchDiacritics } = options;
-
-    let searchQuery = query;
-    if (!matchDiacritics) {
-      // Simple diacritic normalization
-      searchQuery = searchQuery.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      text = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  getPageText(pageNumber) {
+    const pageIndex = pageNumber - 1;
+    if (pageIndex < 0 || pageIndex >= this.pdfViewer.pagesCount) {
+      console.warn(`Invalid page number: ${pageNumber}. Pages are numbered 1-${this.pdfViewer.pagesCount}`);
+      return '';
     }
 
-    const flags = `g${caseSensitive ? '' : 'i'}`;
-    const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const pattern = entireWord ? `\\b${escapedQuery}\\b` : escapedQuery;
-    const regex = new RegExp(pattern, flags);
+    const text = this.findController._pageContents[pageIndex] || '';
+    console.log(`📄 Page ${pageNumber} text (${text.length} chars):`);
+    console.log(text);
+    return text;
+  }
 
+  /**
+   * Extract matches from findController after search
+   */
+  _extractMatches() {
     const matches = [];
-    let match;
-    while ((match = regex.exec(text)) !== null) {
-      matches.push({
-        index: match.index,
-        length: match[0].length
-      });
+    let globalIndex = 0;
+
+    for (let pageIndex = 0; pageIndex < this.pdfViewer.pagesCount; pageIndex++) {
+      const pageMatches = this.findController._pageMatches[pageIndex];
+      const pageMatchesLength = this.findController._pageMatchesLength[pageIndex];
+      const pageContent = this.findController._pageContents[pageIndex];
+
+      if (pageMatches && pageMatchesLength && pageContent) {
+        for (let matchIndex = 0; matchIndex < pageMatches.length; matchIndex++) {
+          const startPos = pageMatches[matchIndex];
+          const length = pageMatchesLength[matchIndex];
+
+          matches.push({
+            pageIndex,
+            matchIndex,
+            globalIndex: globalIndex++,
+            startPos,
+            length,
+            text: pageContent.substring(startPos, startPos + length),
+            bounds: null
+          });
+        }
+      }
     }
 
     return matches;
   }
 
   /**
- * Highlight all matches using PDF.js text layer
- */
-  _highlightAllMatches(matches, className = 'highlight-red') {
-    this._clearCustomHighlights();
-    const pageGroups = this._groupMatchesByPage(matches);
-
-    // Trigger the same events as the original find system
-    for (const [pageIndex, pageMatches] of pageGroups) {
-      this._updatePageMatches(pageIndex, pageMatches, -1); // -1 = highlight all
-    }
-  }
-
-  /**
-   * Highlight single match
+   * Highlight matches using PDF.js official API
    */
-  _highlightSingleMatch(match, className = 'highlight-red selected') {
-    this._clearCustomHighlights();
-    this._updatePageMatches(match.pageIndex, [match], 0); // 0 = first (selected) match
+  _highlightMatches(query, options = {}) {
+    const {
+      highlightAll = true,
+      targetPageIndex = null,
+      targetMatchIndex = null,
+      pageNumber = null,
+      scroll = false
+    } = options;
+
+    // Enable scrolling if requested
+    this.findController._scrollMatches = scroll;
+
+    // Dispatch find event
+    this.eventBus.dispatch('find', {
+      source: null,
+      type: highlightAll ? 'highlightallchange' : 'again',
+      query: query,
+      caseSensitive: false,
+      entireWord: true,
+      highlightAll,
+      findPrevious: false,
+      matchDiacritics: false,
+    });
+
+    // If targeting specific match, set the selection
+    if (targetPageIndex !== null && targetMatchIndex !== null) {
+      this.findController._selected = {
+        pageIdx: targetPageIndex,
+        matchIdx: targetMatchIndex
+      };
+    }
+
+    return this;
   }
 
   /**
-   * Highlight specific matches
+   * Clear all highlights
    */
-  _highlightSpecificMatches(matches, className = 'highlight-red') {
-    this._clearCustomHighlights();
-    const pageGroups = this._groupMatchesByPage(matches);
-
-    for (const [pageIndex, pageMatches] of pageGroups) {
-      this._updatePageMatches(pageIndex, pageMatches, -1); // -1 = highlight all
-    }
+  _clearHighlights() {
+    this.eventBus.dispatch('findbarclose', { source: null });
+    return this;
   }
 
   /**
- * Update page matches using PDF.js event system
- */
-  _updatePageMatches(pageIndex, matches, selectedMatchIdx) {
-    const pageView = this.pdfViewer._pages[pageIndex];
-    if (!pageView) {
-      return;
-    }
-
-    // Get the original find controller to store matches in its format
-    const findController = window.PDFViewerApplication?.findController;
-    if (!findController) {
-      return;
-    }
-
-    // Convert our matches to PDF.js internal format
-    const { pageMatches, pageMatchesLength } = this._convertMatchesToPDFFormat(pageIndex, matches);
-
-    // Store matches in the find controller's internal arrays (private properties)
-    findController._pageMatches = findController._pageMatches || [];
-    findController._pageMatchesLength = findController._pageMatchesLength || [];
-    findController._pageMatches[pageIndex] = pageMatches;
-    findController._pageMatchesLength[pageIndex] = pageMatchesLength;
-
-    // Set the highlightMatches flag so TextHighlighter will actually highlight
-    findController._highlightMatches = true;
-
-    // Set up the getters that TextHighlighter expects
-    if (!findController.state) {
-      Object.defineProperty(findController, 'state', {
-        get() {
-          return {
-            highlightAll: true,
-            query: 'custom-search',
-            caseSensitive: false,
-            entireWord: false
-          };
-        }
-      });
-    }
-
-    if (!findController.selected) {
-      Object.defineProperty(findController, 'selected', {
-        get() {
-          return findController._selected || { pageIdx: -1, matchIdx: -1 };
-        }
-      });
-    }
-
-    // Initialize selected if it doesn't exist
-    findController._selected = findController._selected || { pageIdx: -1, matchIdx: -1 };
-
-    // Simple debug confirmation
-    console.log(`✅ Page ${pageIndex}: ${pageMatches.length} red highlights applied`);
-
-    // Dispatch the event (without matches data - TextHighlighter reads from findController)
-    if (this.eventBus) {
-      this.eventBus.dispatch('updatetextlayermatches', {
-        source: findController, // Important: use findController as source
-        pageIndex: pageIndex
-      });
-    }
-  }
-
-  /**
- * Convert our match format to PDF.js internal format
- */
-  _convertMatchesToPDFFormat(pageIndex, matches) {
-    const pageMatches = [];
-    const pageMatchesLength = [];
-
-    for (const match of matches) {
-      pageMatches.push(match.startPos);
-      pageMatchesLength.push(match.length);
-    }
-
-    return { pageMatches, pageMatchesLength };
-  }
-
-  /**
- * Clear all custom highlights
- */
-  _clearCustomHighlights() {
-    const findController = window.PDFViewerApplication?.findController;
-    if (!findController) {
-      return;
-    }
-
-    // Clear matches from the find controller's internal arrays (private properties)
-    if (findController._pageMatches) {
-      findController._pageMatches.length = 0;
-    }
-    if (findController._pageMatchesLength) {
-      findController._pageMatchesLength.length = 0;
-    }
-
-    // Disable highlighting
-    findController._highlightMatches = false;
-
-    // Clear highlights from all pages using event system
-    if (this.eventBus) {
-      this.eventBus.dispatch('updatetextlayermatches', {
-        source: findController,
-        pageIndex: -1 // -1 means all pages
-      });
-    }
-  }
-
-  /**
-   * Group matches by page
+   * Destroy the finder
    */
-  _groupMatchesByPage(matches) {
-    const pageGroups = new Map();
-
-    for (const match of matches) {
-      if (!pageGroups.has(match.pageIndex)) {
-        pageGroups.set(match.pageIndex, []);
-      }
-      pageGroups.get(match.pageIndex).push(match);
-    }
-
-    return pageGroups;
-  }
-
-  /**
- * Get match bounds for positioning
- */
-  _getMatchBounds(match) {
-    const pageView = this.pdfViewer._pages[match.pageIndex];
-    if (!pageView || !pageView.textLayer) {
-      return null;
-    }
-
-    // Simple bounds calculation - could be enhanced
-    const textLayerDiv = pageView.textLayer.textLayerDiv;
-    if (textLayerDiv) {
-      return textLayerDiv.getBoundingClientRect();
-    }
-    return null;
-  }
-
-  /**
-   * Scroll to match
-   */
-  _scrollToMatch(match) {
-    if (this.linkService) {
-      this.linkService.page = match.pageIndex + 1;
-    }
-
-    // Additional scrolling to specific position could be added here
-  }
-
-  /**
- * Clean up resources
- */
   destroy() {
-    this._clearCustomHighlights();
+    if (this._searchListener) {
+      this.eventBus._off('updatetextlayermatches', this._searchListener);
+      this._searchListener = null;
+    }
+    this._clearHighlights();
   }
 }
 
 // Export for use
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { Finder, MatchCollection };
-} else if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined') {
   window.CustomFinder = { Finder, MatchCollection };
 }
