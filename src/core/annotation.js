@@ -4337,6 +4337,24 @@ class PolylineAnnotation extends MarkupAnnotation {
       const strokeColor = this.color ? getPdfColorArray(this.color) : [0, 0, 0];
       const strokeAlpha = dict.get("CA");
 
+      let fillColor = getRgbColor(dict.getArray("IC"), null);
+      if (fillColor) {
+        fillColor = getPdfColorArray(fillColor);
+      }
+
+      let operator;
+      if (fillColor) {
+        if (this.color) {
+          operator = fillColor.every((c, i) => c === strokeColor[i])
+            ? "f"
+            : "B";
+        } else {
+          operator = "f";
+        }
+      } else {
+        operator = "S";
+      }
+
       const borderWidth = this.borderStyle.width || 1,
         borderAdjust = 2 * borderWidth;
 
@@ -4361,13 +4379,15 @@ class PolylineAnnotation extends MarkupAnnotation {
         extra: `${borderWidth} w`,
         strokeColor,
         strokeAlpha,
+        fillColor,
+        fillAlpha: fillColor ? strokeAlpha : null,
         pointsCallback: (buffer, points) => {
           for (let i = 0, ii = vertices.length; i < ii; i += 2) {
             buffer.push(
               `${vertices[i]} ${vertices[i + 1]} ${i === 0 ? "m" : "l"}`
             );
           }
-          buffer.push("S");
+          buffer.push(operator);
           return [points[0], points[7], points[2], points[3]];
         },
       });
