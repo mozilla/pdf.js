@@ -42,6 +42,39 @@ export interface WordMap {
   traverse(): WordMapTraverser;
 }
 
+// Debug function to verify word order in a sentence
+export function debugWordOrder(wordMap: WordMap, sentenceText: string): void {
+  console.log(`🔍 Debugging word order for sentence: "${sentenceText}"`);
+
+  for (const section of wordMap.sections) {
+    for (const sentence of section.sentences) {
+      if (sentence.sentenceText === sentenceText) {
+        console.log(`📍 Found sentence with ${sentence.words.length} words:`);
+        sentence.words.forEach((word, index) => {
+          console.log(
+            `  ${index + 1}. "${word.word}" (${word.textContent}) at position ${word.matchStartPosition}`
+          );
+        });
+
+        // Verify they are in position order
+        const sortedWords = [...sentence.words].sort(
+          (a, b) => a.matchStartPosition - b.matchStartPosition
+        );
+        const isCorrectOrder = sentence.words.every(
+          (word, index) =>
+            word.matchStartPosition === sortedWords[index].matchStartPosition
+        );
+        console.log(
+          `✅ Words are in correct position order: ${isCorrectOrder}`
+        );
+        return;
+      }
+    }
+  }
+
+  console.log("❌ Sentence not found in word map");
+}
+
 // Test function to run findWordLocation in isolation
 class WordMapTraverserImpl implements WordMapTraverser {
   private sectionIndex = 0;
@@ -134,65 +167,116 @@ class WordMapTraverserImpl implements WordMapTraverser {
       const eventBus = (window as any).PDFViewerApplication?.eventBus;
       const findController = (window as any).PDFViewerApplication
         ?.findController;
+      const pdfViewer = (window as any).PDFViewerApplication?.pdfViewer;
 
-      if (!eventBus || !findController) {
+      if (!eventBus || !findController || !pdfViewer) {
         console.warn("PDF.js components not available for highlighting");
         return;
+      }
+
+      // Validate that this word belongs to a sentence (safety check)
+      if (!word.parentSentence) {
+        console.warn(
+          `Word "${word.word}" has no parent sentence - skipping highlight`
+        );
+        return;
+      }
+
+      const sentence = word.parentSentence;
+      const sentenceStart = sentence.location.matchStartPosition;
+      const sentenceEnd = sentenceStart + sentence.location.matchLength;
+      const wordStart = word.matchStartPosition;
+      const wordEnd = wordStart + word.matchLength;
+
+      // CRITICAL: Only highlight if word is within sentence boundaries
+      if (wordStart < sentenceStart || wordEnd > sentenceEnd) {
+        console.warn(
+          `Word "${word.word}" at position ${wordStart} is outside sentence boundaries (${sentenceStart}-${sentenceEnd}) - skipping highlight`
+        );
+        return;
+      }
+
+      // Set sentence boundaries on the TextHighlighter for this page
+      try {
+        const pageView = pdfViewer._pages?.[word.pageIndex];
+        const textHighlighter = pageView?._textHighlighter;
+
+        if (textHighlighter && textHighlighter.setSentenceBoundaries) {
+          // Set boundaries for the current sentence only
+          console.log(
+            `🎯 Setting boundaries for word "${word.word}" in sentence: "${sentence.sentenceText.substring(0, 50)}..." at ${sentenceStart}-${sentenceEnd}`
+          );
+          textHighlighter.setSentenceBoundaries([
+            {
+              start: sentenceStart,
+              end: sentenceEnd,
+            },
+          ]);
+        }
+      } catch (error) {
+        console.warn(
+          "Could not set sentence boundaries on TextHighlighter:",
+          error
+        );
       }
 
       // Enable scrolling for traversal (we want to follow the reading)
       findController._scrollMatches = true;
 
-      // Clear any existing highlights
+      // Clear any existing highlights first
       eventBus.dispatch("findbarclose", { source: null });
 
-      // Highlight this specific word
-      eventBus.dispatch("find", {
-        source: null,
-        type: "highlightallchange",
-        query: word.word,
-        caseSensitive: false,
-        entireWord: true,
-        highlightAll: false, // Only highlight one occurrence
-        findPrevious: false,
-        matchDiacritics: false,
-      });
-
-      // Set the find controller to highlight the specific occurrence
+      // Wait a bit for clearing to complete, then perform the find
       setTimeout(() => {
-        try {
-          // Find the match index for this specific word position
-          const pageMatches = findController._pageMatches[word.pageIndex];
-          if (pageMatches) {
-            const matchIndex = pageMatches.findIndex(
-              (pos: number) => pos === word.matchStartPosition
-            );
-            if (matchIndex >= 0) {
-              // Set the selected match to this specific word
-              findController._selected.pageIdx = word.pageIndex;
-              findController._selected.matchIdx = matchIndex;
-              findController._offset.pageIdx = word.pageIndex;
-              findController._offset.matchIdx = matchIndex;
+        // Find all occurrences of this word
+        eventBus.dispatch("find", {
+          source: null,
+          type: "highlightallchange",
+          query: word.word,
+          caseSensitive: false,
+          entireWord: true,
+          highlightAll: false,
+          findPrevious: false,
+          matchDiacritics: false,
+        });
 
-              // Update the display to highlight this match
-              findController._eventBus.dispatch("updatetextlayermatches", {
-                source: findController,
-                pageIndex: word.pageIndex,
-              });
+        // Set the find controller to highlight the specific occurrence
+        setTimeout(() => {
+          try {
+            // Find the match index for this specific word position
+            const pageMatches = findController._pageMatches[word.pageIndex];
+            if (pageMatches) {
+              const matchIndex = pageMatches.findIndex(
+                (pos: number) => pos === word.matchStartPosition
+              );
 
-              console.log(
-                `✨ Highlighted "${word.word}" at position ${word.matchStartPosition} (match ${matchIndex})`
-              );
-            } else {
-              console.warn(
-                `Could not find match index for word "${word.word}" at position ${word.matchStartPosition}`
-              );
+              if (matchIndex >= 0) {
+                // Set the selected match to this specific word
+                findController._selected.pageIdx = word.pageIndex;
+                findController._selected.matchIdx = matchIndex;
+                findController._offset.pageIdx = word.pageIndex;
+                findController._offset.matchIdx = matchIndex;
+
+                // Trigger highlighting update
+                findController._eventBus.dispatch("updatetextlayermatches", {
+                  source: findController,
+                  pageIndex: word.pageIndex,
+                });
+
+                console.log(
+                  `✨ Highlighted "${word.word}" at position ${word.matchStartPosition} WITHIN sentence boundaries (${sentenceStart}-${sentenceEnd})`
+                );
+              } else {
+                console.warn(
+                  `Could not find word "${word.word}" at position ${word.matchStartPosition}`
+                );
+              }
             }
+          } catch (error) {
+            console.warn("Error setting specific word highlight:", error);
           }
-        } catch (error) {
-          console.warn("Error setting specific word highlight:", error);
-        }
-      }, 100);
+        }, 100);
+      }, 50);
     } catch (error) {
       console.warn("Error highlighting word:", error);
     }
@@ -203,8 +287,19 @@ class WordMapTraverserImpl implements WordMapTraverser {
       const eventBus = (window as any).PDFViewerApplication?.eventBus;
       const findController = (window as any).PDFViewerApplication
         ?.findController;
+      const pdfViewer = (window as any).PDFViewerApplication?.pdfViewer;
 
       if (eventBus && findController) {
+        // Clear sentence boundaries on all TextHighlighters
+        if (pdfViewer?._pages) {
+          for (const pageView of pdfViewer._pages) {
+            const textHighlighter = pageView?._textHighlighter;
+            if (textHighlighter && textHighlighter.setSentenceBoundaries) {
+              textHighlighter.setSentenceBoundaries(null);
+            }
+          }
+        }
+
         // Clear all highlights
         eventBus.dispatch("findbarclose", { source: null });
 
@@ -368,7 +463,7 @@ export async function buildWordMap(
     );
 
     // Step 2: Now populate words for each sentence
-    console.log("🔤 Finding words for each sentence...");
+    console.log("🔤 Finding words for each sentence (page-limited search)...");
 
     for (const section of enrichedSections) {
       for (const sentence of section.sentences) {
@@ -379,12 +474,15 @@ export async function buildWordMap(
           .split(/\s+/) // Split on whitespace
           .filter(word => word.length > 0); // Remove empty strings
 
+        // Collect all word locations for this sentence
+        const allWordLocationsForSentence: WordLocationData[] = [];
+
         // For each word, find its locations and check if it belongs to this sentence
         for (const word of wordsInSentence) {
           try {
             const wordLocations = await findWordLocation(
               word,
-              currentPageIndex,
+              sentence.location.pageIndex, // Use the sentence's page, not currentPageIndex
               eventBus,
               findController,
               {
@@ -404,11 +502,18 @@ export async function buildWordMap(
                 wordLoc.parentSentence?.sentenceText === sentence.sentenceText
             );
 
-            sentence.words.push(...wordsInThisSentence);
+            allWordLocationsForSentence.push(...wordsInThisSentence);
           } catch (error) {
             // Silently skip words that can't be found
           }
         }
+
+        // Sort words by their position within the sentence to ensure correct reading order
+        allWordLocationsForSentence.sort(
+          (a, b) => a.matchStartPosition - b.matchStartPosition
+        );
+
+        sentence.words = allWordLocationsForSentence;
       }
     }
 
@@ -423,7 +528,38 @@ export async function buildWordMap(
     );
 
     console.log(
-      `✅ WordMap complete: ${totalSentences} sentences with ${totalWords} located words`
+      `✅ WordMap complete: ${totalSentences} sentences with ${totalWords} located words (page-limited)`
+    );
+
+    // Verify word order in all sentences
+    let totalCorrectSentences = 0;
+    let totalSentencesWithWords = 0;
+
+    for (const section of enrichedSections) {
+      for (const sentence of section.sentences) {
+        if (sentence.words.length > 0) {
+          totalSentencesWithWords++;
+          const sortedWords = [...sentence.words].sort(
+            (a, b) => a.matchStartPosition - b.matchStartPosition
+          );
+          const isCorrectOrder = sentence.words.every(
+            (word, index) =>
+              word.matchStartPosition === sortedWords[index].matchStartPosition
+          );
+
+          if (isCorrectOrder) {
+            totalCorrectSentences++;
+          } else {
+            console.warn(
+              `⚠️ Word order issue in sentence: "${sentence.sentenceText.substring(0, 50)}..."`
+            );
+          }
+        }
+      }
+    }
+
+    console.log(
+      `📊 Word order verification: ${totalCorrectSentences}/${totalSentencesWithWords} sentences have correct word order`
     );
 
     const wordMap: WordMap = {
@@ -480,7 +616,7 @@ export async function buildWordMap(
 
 export async function findWordLocation(
   word: string,
-  currentPageIndex: number,
+  targetPageIndex: number,
   eventBus: any,
   findController: any,
   wordMap?: WordMap // Optional: provide to connect words with parent sentences
@@ -519,21 +655,17 @@ export async function findWordLocation(
 
       // Check for word matches (debug logging removed for cleaner output)
 
-      // Collect all word occurrences from all pages
+      // Collect word occurrences ONLY from the target page
       if (allPageMatches && allPageLengths) {
         const wordLocations: WordLocationData[] = [];
-        let totalMatches = 0;
 
-        for (
-          let pageIndex = 0;
-          pageIndex < allPageMatches.length;
-          pageIndex++
-        ) {
-          const pageMatches = allPageMatches[pageIndex];
-          const pageLengths = allPageLengths[pageIndex];
+        // CRITICAL FIX: Only process the target page, not all pages
+        if (targetPageIndex < allPageMatches.length) {
+          const pageMatches = allPageMatches[targetPageIndex];
+          const pageLengths = allPageLengths[targetPageIndex];
 
           if (pageMatches && pageLengths && pageMatches.length > 0) {
-            // Process each match on this page
+            // Process each match on this specific page
             for (
               let matchIndex = 0;
               matchIndex < pageMatches.length;
@@ -544,7 +676,7 @@ export async function findWordLocation(
 
               const wordLocation: WordLocationData = {
                 word: word,
-                pageIndex: pageIndex,
+                pageIndex: targetPageIndex,
                 matchStartPosition: wordStartPos,
                 matchLength: wordLength,
               };
@@ -552,7 +684,7 @@ export async function findWordLocation(
               // Try to get the actual text content from the page's text layer
               try {
                 if (pdfViewer) {
-                  const pageView = (pdfViewer as any)._pages?.[pageIndex];
+                  const pageView = (pdfViewer as any)._pages?.[targetPageIndex];
                   if (pageView?.textLayer?.div) {
                     const textContent =
                       pageView.textLayer.div.textContent || "";
@@ -574,13 +706,12 @@ export async function findWordLocation(
                 wordLocation.parentSentence = findParentSentence(
                   wordStartPos,
                   wordLength,
-                  pageIndex,
+                  targetPageIndex,
                   wordMap
                 );
               }
 
               wordLocations.push(wordLocation);
-              totalMatches++;
             }
           }
         }

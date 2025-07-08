@@ -42,6 +42,8 @@ class TextHighlighter {
     this.textDivs = null;
     this.textContentItemsStr = null;
     this.enabled = false;
+    // PDF Reader: Custom sentence boundaries for focused highlighting
+    this.sentenceBoundaries = null;
   }
 
   /**
@@ -56,6 +58,17 @@ class TextHighlighter {
   setTextMapping(divs, texts) {
     this.textDivs = divs;
     this.textContentItemsStr = texts;
+  }
+
+  /**
+   * PDF Reader: Set sentence boundaries for focused highlighting.
+   * Only matches within these boundaries will be highlighted.
+   *
+   * @param {Array<{start: number, end: number}>} boundaries - Array of sentence boundaries
+   */
+  setSentenceBoundaries(boundaries) {
+    this.sentenceBoundaries = boundaries;
+    console.log("🎯 Set sentence boundaries for focused highlighting:", boundaries);
   }
 
   /**
@@ -159,6 +172,63 @@ class TextHighlighter {
     const { findController, pageIdx } = this;
     const { textContentItemsStr, textDivs } = this;
 
+    // PDF Reader: Filter matches to only those within sentence boundaries
+    if (this.sentenceBoundaries && this.sentenceBoundaries.length > 0) {
+      const originalMatchCount = matches.length;
+
+      console.log(`🔍 Debug: Found ${matches.length} total matches before filtering:`);
+      matches.forEach((match, idx) => {
+        let absoluteStart = 0;
+        for (let i = 0; i < match.begin.divIdx; i++) {
+          absoluteStart += textContentItemsStr[i].length;
+        }
+        absoluteStart += match.begin.offset;
+
+        let absoluteEnd = 0;
+        for (let i = 0; i < match.end.divIdx; i++) {
+          absoluteEnd += textContentItemsStr[i].length;
+        }
+        absoluteEnd += match.end.offset;
+
+        console.log(`  Match ${idx}: position ${absoluteStart}-${absoluteEnd} (div ${match.begin.divIdx}, offset ${match.begin.offset})`);
+      });
+
+      matches = matches.filter(match => {
+        // Calculate absolute position of the match in the text
+        let absoluteStart = 0;
+        for (let i = 0; i < match.begin.divIdx; i++) {
+          absoluteStart += textContentItemsStr[i].length;
+        }
+        absoluteStart += match.begin.offset;
+
+        let absoluteEnd = 0;
+        for (let i = 0; i < match.end.divIdx; i++) {
+          absoluteEnd += textContentItemsStr[i].length;
+        }
+        absoluteEnd += match.end.offset;
+
+        // Check if match falls within any sentence boundary
+        const isWithinBoundaries = this.sentenceBoundaries.some(boundary =>
+          absoluteStart >= boundary.start && absoluteEnd <= boundary.end
+        );
+
+        if (!isWithinBoundaries) {
+          console.log(`🚫 Filtered out match at position ${absoluteStart}-${absoluteEnd} (outside sentence boundaries [${this.sentenceBoundaries.map(b => `${b.start}-${b.end}`).join(', ')}])`);
+        } else {
+          console.log(`✅ Keeping match at position ${absoluteStart}-${absoluteEnd} (within sentence boundaries)`);
+        }
+
+        return isWithinBoundaries;
+      });
+
+      console.log(`🎯 Boundary filtering: ${originalMatchCount} → ${matches.length} matches`);
+
+      if (matches.length === 0) {
+        console.log("🚫 No matches within sentence boundaries - skipping highlighting");
+        return;
+      }
+    }
+
     const isSelectedPage = pageIdx === findController.selected.pageIdx;
     const selectedMatchIdx = findController.selected.matchIdx;
     const highlightAll = findController.state.highlightAll;
@@ -216,10 +286,23 @@ class TextHighlighter {
       return;
     }
 
+    // PDF Reader: Adjust indices after filtering to prevent crashes
+    if (i0 >= matches.length) {
+      i0 = 0;
+      i1 = Math.min(1, matches.length);
+    }
+    if (i1 > matches.length) {
+      i1 = matches.length;
+    }
+
     let lastDivIdx = -1;
     let lastOffset = -1;
     for (let i = i0; i < i1; i++) {
       const match = matches[i];
+      if (!match) {
+        console.warn(`PDF Reader: Skipping undefined match at index ${i}`);
+        continue;
+      }
       const begin = match.begin;
       if (begin.divIdx === lastDivIdx && begin.offset === lastOffset) {
         // It's possible to be in this situation if we searched for a 'f' and we
