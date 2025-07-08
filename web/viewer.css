@@ -1676,3 +1676,34 @@ dialog :link {
     display: none;
   }
 }
+
+/* Custom red highlighting */
+.highlight-red,
+.highlight-red.appended {
+  background-color: rgba(255, 0, 0, 0.3) !important;
+  border-radius: 2px;
+}
+
+.highlight-red.begin {
+  border-radius: 2px 0 0 2px;
+}
+
+.highlight-red.end {
+  border-radius: 0 2px 2px 0;
+}
+
+.highlight-red.middle {
+  border-radius: 0;
+}
+
+/* Force all PDF.js highlight classes to use red */
+span.highlight,
+span.highlightMiddle,
+span.highlightEnd,
+span.highlightSelected,
+span.highlight.appended,
+span.highlightMiddle.appended,
+span.highlightEnd.appended,
+span.highlightSelected.appended {
+  background-color: rgba(255, 0, 0, 0.3) !important;
+}
