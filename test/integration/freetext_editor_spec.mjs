@@ -1086,6 +1086,61 @@ describe("FreeText Editor", () => {
         })
       );
     });
+
+    it("must delete an existing annotation with a popup", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("[data-annotation-id='26R']");
+          // Wait for the popup to be displayed.
+          const popupSelector = "[data-annotation-id='popup_26R'] .popup";
+          await page.waitForSelector(popupSelector, { visible: true });
+
+          await switchToFreeText(page);
+
+          const editorSelector = getEditorSelector(0);
+          await selectEditor(page, editorSelector);
+          await page.keyboard.press("Backspace");
+          await page.waitForFunction(
+            sel => !document.querySelector(sel),
+            {},
+            editorSelector
+          );
+
+          await waitForSerialized(page, 1);
+          const serialized = await getSerialized(page);
+          expect(serialized).toEqual([
+            {
+              pageIndex: 0,
+              id: "26R",
+              deleted: true,
+              popupRef: "",
+            },
+          ]);
+
+          // Disable editing mode.
+          await switchToFreeText(page, /* disable = */ true);
+
+          await page.waitForSelector(":not([data-annotation-id='26R'] .popup)");
+
+          // Re-enable editing mode.
+          await switchToFreeText(page);
+          await page.focus(".annotationEditorLayer");
+
+          await kbUndo(page);
+          await waitForSerialized(page, 0);
+
+          // Disable editing mode.
+          await switchToFreeText(page, /* disable = */ true);
+
+          const popupAreaSelector =
+            "[data-annotation-id='26R'].popupTriggerArea";
+          await page.waitForSelector(popupAreaSelector, { visible: true });
+          await page.click("[data-annotation-id='26R']");
+          // Wait for the popup to be displayed.
+          await page.waitForSelector(popupSelector, { visible: true });
+        })
+      );
+    });
   });
 
   describe("FreeText (copy/paste existing)", () => {

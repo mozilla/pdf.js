@@ -2125,6 +2125,8 @@ class PopupElement {
 
   #popup = null;
 
+  #popupAbortController = null;
+
   #position = null;
 
   #rect = null;
@@ -2166,18 +2168,7 @@ class PopupElement {
     this.#dateObj = PDFDateString.toDateObject(modificationDate);
 
     this.trigger = elements.flatMap(e => e.getElementsToTriggerPopup());
-    // Attach the event listeners to the trigger element.
-    for (const element of this.trigger) {
-      element.addEventListener("click", this.#boundToggle);
-      element.addEventListener("mouseenter", this.#boundShow);
-      element.addEventListener("mouseleave", this.#boundHide);
-      element.classList.add("popupTriggerArea");
-    }
-
-    // Attach the event listener to toggle the popup with the keyboard.
-    for (const element of elements) {
-      element.container?.addEventListener("keydown", this.#boundKeyDown);
-    }
+    this.#addEventListeners();
 
     this.#container.hidden = true;
     if (open) {
@@ -2191,6 +2182,29 @@ class PopupElement {
         if (this.#container.hidden) {
           this.#show();
         }
+      });
+    }
+  }
+
+  #addEventListeners() {
+    if (this.#popupAbortController) {
+      return;
+    }
+    this.#popupAbortController = new AbortController();
+    const { signal } = this.#popupAbortController;
+
+    // Attach the event listeners to the trigger element.
+    for (const element of this.trigger) {
+      element.addEventListener("click", this.#boundToggle, { signal });
+      element.addEventListener("mouseenter", this.#boundShow, { signal });
+      element.addEventListener("mouseleave", this.#boundHide, { signal });
+      element.classList.add("popupTriggerArea");
+    }
+
+    // Attach the event listener to toggle the popup with the keyboard.
+    for (const element of this.#elements) {
+      element.container?.addEventListener("keydown", this.#boundKeyDown, {
+        signal,
       });
     }
   }
@@ -2338,7 +2352,12 @@ class PopupElement {
     }
   }
 
-  updateEdited({ rect, popupContent }) {
+  updateEdited({ rect, popupContent, deleted }) {
+    if (deleted) {
+      this.remove();
+      return;
+    }
+    this.#addEventListeners();
     this.#updates ||= {
       contentsObj: this.#contentsObj,
       richText: this.#richText,
@@ -2364,6 +2383,18 @@ class PopupElement {
     this.#popup?.remove();
     this.#popup = null;
     this.#position = null;
+  }
+
+  remove() {
+    this.#popupAbortController?.abort();
+    this.#popupAbortController = null;
+    this.#popup?.remove();
+    this.#popup = null;
+    this.#wasVisible = false;
+    this.#pinned = false;
+    for (const element of this.trigger) {
+      element.classList.remove("popupTriggerArea");
+    }
   }
 
   #setPosition() {
@@ -2465,6 +2496,7 @@ class PopupElement {
   }
 
   maybeShow() {
+    this.#addEventListeners();
     if (!this.#wasVisible) {
       return;
     }
