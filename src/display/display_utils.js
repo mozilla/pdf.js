@@ -502,6 +502,9 @@ class PDFDateString {
    * @returns {Date|null}
    */
   static toDateObject(input) {
+    if (input instanceof Date) {
+      return input;
+    }
     if (!input || typeof input !== "string") {
       return null;
     }

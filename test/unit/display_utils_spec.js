@@ -295,6 +295,8 @@ describe("display_utils", function () {
             expect(result).toEqual(expectation);
           }
         }
+        const now = new Date();
+        expect(PDFDateString.toDateObject(now)).toEqual(now);
       });
     });
   });

@@ -233,6 +233,11 @@
       "description": "Enable creation of hyperlinks from text that look like URLs.",
       "type": "boolean",
       "default": true
+    },
+    "enableComment": {
+      "description": "Enable creation of comment annotations.",
+      "type": "boolean",
+      "default": false
     }
   }
 }

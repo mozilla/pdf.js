@@ -763,6 +763,7 @@ class FreeTextEditor extends AnnotationEditor {
           rotation,
           id,
           popupRef,
+          contentsObj,
         },
         textContent,
         textPosition,
@@ -789,6 +790,7 @@ class FreeTextEditor extends AnnotationEditor {
         id,
         deleted: false,
         popupRef,
+        comment: contentsObj?.str || null,
       };
     }
     const editor = await super.deserialize(data, parent, uiManager);
@@ -796,6 +798,9 @@ class FreeTextEditor extends AnnotationEditor {
     editor.#color = Util.makeHexColor(...data.color);
     editor.#content = FreeTextEditor.#deserializeContent(data.value);
     editor._initialData = initialData;
+    if (data.comment) {
+      editor.setCommentData(data.comment);
+    }
 
     return editor;
   }
@@ -828,6 +833,7 @@ class FreeTextEditor extends AnnotationEditor {
       rotation: this.rotation,
       structTreeParentId: this._structTreeParentId,
     };
+    this.addComment(serialized);
 
     if (isForCopying) {
       // Don't add the id when copying because the pasted editor mustn't be
@@ -849,6 +855,7 @@ class FreeTextEditor extends AnnotationEditor {
     const { value, fontSize, color, pageIndex } = this._initialData;
 
     return (
+      this.hasEditedComment ||
       this._hasBeenMoved ||
       serialized.value !== value ||
       serialized.fontSize !== fontSize ||
@@ -874,10 +881,13 @@ class FreeTextEditor extends AnnotationEditor {
     }
 
     const padding = FreeTextEditor._internalPadding * this.parentScale;
-    annotation.updateEdited({
+    const params = {
       rect: this.getRect(padding, padding),
-      popupContent: this.#content,
-    });
+    };
+    params.popup = this.hasEditedComment
+      ? this.comment
+      : { text: this.#content };
+    annotation.updateEdited(params);
 
     return content;
   }

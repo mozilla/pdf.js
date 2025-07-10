@@ -389,6 +389,7 @@ class SignatureEditor extends DrawingEditor {
       rotation: this.rotation,
       structTreeParentId: this._structTreeParentId,
     };
+    this.addComment(serialized);
     if (isForCopying) {
       serialized.paths = { lines, points };
       serialized.uuid = this.#signatureUUID;
