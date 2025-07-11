@@ -365,6 +365,9 @@ describe("Signature Editor", () => {
           `${editorSelector} .altText.editDescription`,
           el => el.title
         );
+        const originalL10nParameter = await page.$eval(editorSelector, el =>
+          el.getAttribute("data-l10n-args")
+        );
 
         await copy(page);
         await paste(page);
@@ -376,6 +379,9 @@ describe("Signature Editor", () => {
           `${pastedEditorSelector} .altText.editDescription`,
           el => el.title
         );
+        const pastedL10nParameter = await page.$eval(pastedEditorSelector, el =>
+          el.getAttribute("data-l10n-args")
+        );
 
         expect(pastedRect)
           .withContext(`In ${browserName}`)
@@ -383,6 +389,9 @@ describe("Signature Editor", () => {
         expect(pastedDescription)
           .withContext(`In ${browserName}`)
           .toEqual(originalDescription);
+        expect(pastedL10nParameter)
+          .withContext(`In ${browserName}`)
+          .toEqual(originalL10nParameter);
       }
     });
   });
