@@ -1182,12 +1182,14 @@ class PDFDocumentProxy {
  * Page render parameters.
  *
  * @typedef {Object} RenderParameters
- * @property {CanvasRenderingContext2D} canvasContext - Deprecated 2D context of
- *   a DOM Canvas object for backwards compatibility; it is recommended to use
- *   the `canvas` parameter instead.
- * @property {HTMLCanvasElement} canvas - A DOM Canvas object. The default value
- *   is the canvas associated with the `canvasContext` parameter if no value is
- *   provided explicitly.
+ * @property {CanvasRenderingContext2D} canvasContext - 2D context of a DOM
+ *   Canvas object for backwards compatibility; it is recommended to use the
+ *   `canvas` parameter instead.
+ *   If the context must absolutely be used to render the page, the canvas must
+ *   be null.
+ * @property {HTMLCanvasElement|null} canvas - A DOM Canvas object. The default
+ *   value is the canvas associated with the `canvasContext` parameter if no
+ *   value is provided explicitly.
  * @property {PageViewport} viewport - Rendering viewport obtained by calling
  *   the `PDFPageProxy.getViewport` method.
  * @property {string} [intent] - Rendering intent, can be 'display', 'print',
@@ -1503,6 +1505,7 @@ class PDFPageProxy {
       // Only include the required properties, and *not* the entire object.
       params: {
         canvas,
+        canvasContext,
         viewport,
         transform,
         background,
@@ -3148,6 +3151,7 @@ class InternalRenderTask {
     this._scheduleNextBound = this._scheduleNext.bind(this);
     this._nextBound = this._next.bind(this);
     this._canvas = params.canvas;
+    this._canvasContext = params.canvas ? null : params.canvasContext;
     this._enableHWA = enableHWA;
   }
 
@@ -3180,10 +3184,14 @@ class InternalRenderTask {
     }
     const { viewport, transform, background } = this.params;
 
-    const canvasContext = this._canvas.getContext("2d", {
-      alpha: false,
-      willReadFrequently: !this._enableHWA,
-    });
+    // When printing in Firefox, we get a specific context in mozPrintCallback
+    // which cannot be created from the canvas itself.
+    const canvasContext =
+      this._canvasContext ||
+      this._canvas.getContext("2d", {
+        alpha: false,
+        willReadFrequently: !this._enableHWA,
+      });
 
     this.gfx = new CanvasGraphics(
       canvasContext,
