@@ -332,7 +332,7 @@ pdfjs-editor-ink-editor =
 # Variables:
 #   $description (String) - a string describing/labeling the signature.
 pdfjs-editor-signature-editor1 =
-    .aria-description = Editor de signatura: { $description }
+    .aria-description = Editor de signaturas: { $description }
 pdfjs-editor-stamp-editor =
     .aria-label = Editor de imagines
 
