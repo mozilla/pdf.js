@@ -12171,5 +12171,47 @@
     "md5": "9fa985242476c642464d94893528e40f",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "highlights-popup",
+    "file": "pdfs/highlights.pdf",
+    "md5": "55c12c918f3e2253b39b42075cb38205",
+    "rounds": 1,
+    "type": "eq",
+    "lastPage": 1,
+    "save": true,
+    "annotations": true,
+    "annotationStorage": {
+      "pdfjs_internal_editor_0": {
+        "annotationType": 9,
+        "popup": {
+          "contents": "Hello PDF.js World"
+        },
+        "pageIndex": 0,
+        "date": "2013-11-12T14:15:16Z",
+        "id": "612R"
+      }
+    }
+  },
+  {
+    "id": "annotation-caret-ink-popup-deleted",
+    "file": "pdfs/annotation-caret-ink.pdf",
+    "md5": "6218ca235580d1975474c979e0128c2d",
+    "rounds": 1,
+    "type": "eq",
+    "lastPage": 1,
+    "save": true,
+    "annotations": true,
+    "annotationStorage": {
+      "pdfjs_internal_editor_0": {
+        "annotationType": 15,
+        "popup": {
+          "deleted": true
+        },
+        "pageIndex": 0,
+        "id": "25R",
+        "popupRef": "27R"
+      }
+    }
   }
 ]

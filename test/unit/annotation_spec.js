@@ -4971,6 +4971,57 @@ describe("annotation", function () {
         OPS.endAnnotation,
       ]);
     });
+
+    it("should update an existing Highlight annotation", async function () {
+      const highlightDict = new Dict();
+      highlightDict.set("Type", Name.get("Annot"));
+      highlightDict.set("Subtype", Name.get("Highlight"));
+      highlightDict.set("Rotate", 0);
+      highlightDict.set("CreationDate", "D:20190423");
+
+      const highlightRef = Ref.get(143, 0);
+      const xref = (partialEvaluator.xref = new XRefMock([
+        { ref: highlightRef, data: highlightDict },
+      ]));
+      const changes = new RefSetCache();
+
+      const task = new WorkerTask("test Highlight update");
+      await AnnotationFactory.saveNewAnnotations(
+        partialEvaluator,
+        task,
+        [
+          {
+            annotationType: AnnotationEditorType.HIGHLIGHT,
+            rotation: 90,
+            popup: {
+              contents: "Hello PDF.js World !",
+            },
+            id: "143R",
+            ref: highlightRef,
+            oldAnnotation: highlightDict,
+          },
+        ],
+        null,
+        changes
+      );
+
+      const data = await writeChanges(changes, xref);
+
+      const popup = data[0];
+      expect(popup.data).toEqual(
+        "1 0 obj\n" +
+          "<< /Type /Annot /Subtype /Popup /Open false /Parent 143 0 R>>\n" +
+          "endobj\n"
+      );
+
+      const base = data[1].data.replaceAll(/\(D:\d+\)/g, "(date)");
+      expect(base).toEqual(
+        "143 0 obj\n" +
+          "<< /Type /Annot /Subtype /Highlight /Rotate 90 /CreationDate (date) /M (date) " +
+          "/F 4 /Contents (Hello PDF.js World !) /Popup 1 0 R>>\n" +
+          "endobj\n"
+      );
+    });
   });
 
   describe("UnderlineAnnotation", function () {
