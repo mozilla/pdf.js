@@ -604,6 +604,7 @@ pdfjs-editor-edit-signature-update-button = Oppdater
 
 pdfjs-editor-delete-signature-button1 =
     .title = Fjern lagret signatur
+pdfjs-editor-delete-signature-button-label1 = Fjern lagret signatur
 
 ## Editor toolbar
 

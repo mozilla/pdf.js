@@ -551,6 +551,10 @@ pdfjs-editor-add-signature-image-button = Сурет
 
 ## Tab panels
 
+pdfjs-editor-add-signature-type-input =
+    .aria-label = Қолтаңбаңызды теріңіз
+    .placeholder = Қолтаңбаңызды теріңіз
+pdfjs-editor-add-signature-draw-placeholder = Қолтаңбаңызды сызыңыз
 pdfjs-editor-add-signature-draw-thickness-range-label = Қалыңдығы
 # Variables:
 #   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
@@ -575,6 +579,7 @@ pdfjs-editor-add-signature-clear-button =
 pdfjs-editor-add-signature-save-checkbox = Қолтаңбаны сақтау
 pdfjs-editor-add-signature-save-warning-message = Сақталған 5 қолтаңбаның шегіне жеттіңіз. Көбірек сақтау үшін біреуін алып тастаңыз.
 pdfjs-editor-add-signature-image-upload-error-title = Суретті жүктеп жіберу мүмкін емес.
+pdfjs-editor-add-signature-image-upload-error-description = Желі байланысын тексеріңіз немесе басқа бейнені қолданып көріңіз.
 pdfjs-editor-add-signature-error-close-button = Жабу
 
 ## Dialog buttons
@@ -585,6 +590,9 @@ pdfjs-editor-edit-signature-update-button = Жаңарту
 
 ## Main menu for adding/removing signatures
 
+pdfjs-editor-delete-signature-button1 =
+    .title = Сақталған қолтаңбаны өшіру
+pdfjs-editor-delete-signature-button-label1 = Сақталған қолтаңбаны өшіру
 
 ## Editor toolbar
 
