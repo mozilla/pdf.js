@@ -395,29 +395,13 @@ describe("PDF viewer", () => {
     it("must check that canvas perfectly fits the page whatever the zoom level is", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          if (browserName === "chrome") {
-            // Skip the test for Chrome as `scrollIntoView` below hangs since
-            // Puppeteer 24.5.0 and higher.
-            // See https://github.com/mozilla/pdf.js/issues/19811.
-            // TODO: Remove this check once the issue is fixed.
-            return;
-          }
-
           // The pdf has a single page with a red background.
           // We set the viewer background to red, because when screenshoting
           // some part of the viewer background can be visible.
           // But here we don't care about the viewer background: we only
           // care about the page background and the canvas default color.
-
           await page.evaluate(() => {
             document.body.style.background = "#ff0000";
-            const toolbar = document.querySelector(".toolbar");
-            toolbar.style.display = "none";
-          });
-          await page.waitForSelector(".toolbar", { visible: false });
-          await page.evaluate(() => {
-            const p = document.querySelector(`.page[data-page-number="1"]`);
-            p.style.border = "none";
           });
 
           for (let i = 0; ; i++) {
