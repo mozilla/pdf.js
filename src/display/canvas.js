@@ -1900,10 +1900,6 @@ class CanvasGraphics {
       if (this.dependencyTracker) {
         const fontBBox = font.bbox;
         if (fontBBox) {
-          if (font.fontMatrix) {
-            ctx.save();
-            ctx.transform(...font.fontMatrix);
-          }
           this.dependencyTracker.recordBBox(
             opIdx,
             ctx,
@@ -1913,9 +1909,6 @@ class CanvasGraphics {
             fontBBox[1],
             fontBBox[3]
           );
-          if (font.fontMatrix) {
-            ctx.restore();
-          }
         } else {
           this.dependencyTracker.recordFullPageBBox();
         }
@@ -2029,9 +2022,6 @@ class CanvasGraphics {
           ctx.save();
           ctx.translate(x, y);
           ctx.scale(fontSize, -fontSize);
-          if (font.fontMatrix) {
-            ctx.transform(...font.fontMatrix);
-          }
           this.dependencyTracker.recordBBox(
             opIdx,
             ctx,
