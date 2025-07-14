@@ -33,9 +33,10 @@ class CanvasDependencyTracker {
 
   #markedContentStack = [];
 
-  #pendingBBox = null;
+  // Float32Array<minX, minY, maxX, maxY>
+  #pendingBBox = new Float64Array([Infinity, Infinity, -Infinity, -Infinity]);
 
-  #pendingBBoxIdx = null;
+  #pendingBBoxIdx = -1;
 
   #pendingDependencies = new Set();
 
@@ -180,17 +181,15 @@ class CanvasDependencyTracker {
 
   resetBBox(idx) {
     this.#pendingBBoxIdx = idx;
-    this.#pendingBBox = {
-      minX: Infinity,
-      minY: Infinity,
-      maxX: -Infinity,
-      maxY: -Infinity,
-    };
+    this.#pendingBBox[0] = Infinity;
+    this.#pendingBBox[1] = Infinity;
+    this.#pendingBBox[2] = -Infinity;
+    this.#pendingBBox[3] = -Infinity;
     return this;
   }
 
   get hasPendingBBox() {
-    return this.#pendingBBox !== null;
+    return this.#pendingBBoxIdx !== -1;
   }
 
   recordBBox(idx, ctx, otherCtxs, minX, maxX, minY, maxY) {
@@ -209,19 +208,19 @@ class CanvasDependencyTracker {
     maxX = Math.max(p1.x, p2.x, p3.x, p4.x);
     maxY = Math.max(p1.y, p2.y, p3.y, p4.y);
 
-    this.#pendingBBox.minX = Math.min(this.#pendingBBox.minX, minX);
-    this.#pendingBBox.minY = Math.min(this.#pendingBBox.minY, minY);
-    this.#pendingBBox.maxX = Math.max(this.#pendingBBox.maxX, maxX);
-    this.#pendingBBox.maxY = Math.max(this.#pendingBBox.maxY, maxY);
+    this.#pendingBBox[0] = Math.min(this.#pendingBBox[0], minX);
+    this.#pendingBBox[1] = Math.min(this.#pendingBBox[1], minY);
+    this.#pendingBBox[2] = Math.max(this.#pendingBBox[2], maxX);
+    this.#pendingBBox[3] = Math.max(this.#pendingBBox[3], maxY);
 
     return this;
   }
 
   recordFullPageBBox(idx) {
-    this.#pendingBBox.minX = 0;
-    this.#pendingBBox.minY = 0;
-    this.#pendingBBox.maxX = this.#canvasWidth;
-    this.#pendingBBox.maxY = this.#canvasHeight;
+    this.#pendingBBox[0] = 0;
+    this.#pendingBBox[1] = 0;
+    this.#pendingBBox[2] = this.#canvasWidth;
+    this.#pendingBBox[3] = this.#canvasHeight;
 
     return this;
   }
@@ -274,11 +273,18 @@ class CanvasDependencyTracker {
     this.recordDependencies(idx, [FORCED_DEPENDENCY_LABEL]);
     const dependencies = new Set(this.#pendingDependencies);
     const pairs = this.#savesStack.concat(this.#markedContentStack);
-    const bbox = this.#pendingBBoxIdx === idx ? this.#pendingBBox : null;
+    const bbox =
+      this.#pendingBBoxIdx === idx
+        ? {
+            minX: this.#pendingBBox[0],
+            minY: this.#pendingBBox[1],
+            maxX: this.#pendingBBox[2],
+            maxY: this.#pendingBBox[3],
+          }
+        : null;
     this.#operations.set(idx, { bbox, pairs, dependencies });
     if (!preserveBbox) {
-      this.#pendingBBox = null;
-      this.#pendingBBoxIdx = null;
+      this.#pendingBBoxIdx = -1;
     }
     this.#pendingDependencies.clear();
 
