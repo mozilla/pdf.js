@@ -1,3 +1,5 @@
+import { Util } from "../shared/util.js";
+
 const FORCED_DEPENDENCY_LABEL = "__forcedDependency";
 
 /**
@@ -193,26 +195,15 @@ class CanvasDependencyTracker {
   }
 
   recordBBox(idx, ctx, otherCtxs, minX, maxX, minY, maxY) {
-    let matrix = ctx.getTransform();
+    const transform = Util.domMatrixToTransform(ctx.getTransform());
     for (let i = otherCtxs.length - 1; i >= 0; i--) {
-      matrix = otherCtxs[i].getTransform().multiply(matrix);
+      Util.multiplyDOMMatrixInto(otherCtxs[i].getTransform(), transform);
     }
-
-    const p1 = matrix.transformPoint(new DOMPoint(minX, minY));
-    const p2 = matrix.transformPoint(new DOMPoint(minX, maxY));
-    const p3 = matrix.transformPoint(new DOMPoint(maxX, minY));
-    const p4 = matrix.transformPoint(new DOMPoint(maxX, maxY));
-
-    minX = Math.min(p1.x, p2.x, p3.x, p4.x);
-    minY = Math.min(p1.y, p2.y, p3.y, p4.y);
-    maxX = Math.max(p1.x, p2.x, p3.x, p4.x);
-    maxY = Math.max(p1.y, p2.y, p3.y, p4.y);
-
-    this.#pendingBBox[0] = Math.min(this.#pendingBBox[0], minX);
-    this.#pendingBBox[1] = Math.min(this.#pendingBBox[1], minY);
-    this.#pendingBBox[2] = Math.max(this.#pendingBBox[2], maxX);
-    this.#pendingBBox[3] = Math.max(this.#pendingBBox[3], maxY);
-
+    Util.axialAlignedBoundingBox(
+      [minX, minY, maxX, maxY],
+      transform,
+      this.#pendingBBox
+    );
     return this;
   }
 
