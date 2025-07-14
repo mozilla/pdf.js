@@ -28,6 +28,7 @@ import { AnnotationEditorParamsType } from "pdfjs-lib";
  * @property {HTMLInputElement} editorFreeHighlightThickness
  * @property {HTMLButtonElement} editorHighlightShowAll
  * @property {HTMLButtonElement} editorSignatureAddSignature
+ * @property {HTMLButtonElement} editorCustomAddCustom
  */
 
 class AnnotationEditorParams {
@@ -53,6 +54,7 @@ class AnnotationEditorParams {
     editorFreeHighlightThickness,
     editorHighlightShowAll,
     editorSignatureAddSignature,
+    editorCustomAddCustom
   }) {
     const { eventBus } = this;
 
@@ -97,6 +99,9 @@ class AnnotationEditorParams {
       dispatchEvent("HIGHLIGHT_SHOW_ALL", !checked);
     });
     editorSignatureAddSignature.addEventListener("click", () => {
+      dispatchEvent("CREATE");
+    });
+    editorCustomAddCustom.addEventListener("click", () => {
       dispatchEvent("CREATE");
     });
 

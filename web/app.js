@@ -562,6 +562,11 @@ const PDFViewerApplication = {
         eventBus
       );
     }
+    const customEditorButton = appConfig.toolbar?.editorCustomButton;
+    
+    if (customEditorButton) {
+      customEditorButton.parentElement.hidden = false;
+    }
 
     if (appConfig.annotationEditorParams) {
       if (annotationEditorMode !== AnnotationEditorType.DISABLE) {

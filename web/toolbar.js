@@ -131,6 +131,18 @@ class Toolbar {
           },
         },
       },
+      {
+        element: options.editorCustomButton,
+        eventName: "switchannotationeditormode",
+        eventDetails: {
+          get mode() {
+            const { classList } = options.editorCustomButton;
+            return classList.contains("toggled")
+              ? AnnotationEditorType.NONE
+              : AnnotationEditorType.CUSTOM; // This might not work due to import from pdfjslib
+          },
+        },
+      },
     ];
 
     // Bind the event listeners for click and various other actions.
@@ -288,6 +300,8 @@ class Toolbar {
       editorStampParamsToolbar,
       editorSignatureButton,
       editorSignatureParamsToolbar,
+      editorCustomButton,
+      editorCustomParamsToolbar,
     } = this.#opts;
 
     toggleExpandedBtn(
@@ -314,6 +328,11 @@ class Toolbar {
       editorSignatureButton,
       mode === AnnotationEditorType.SIGNATURE,
       editorSignatureParamsToolbar
+    );
+    toggleExpandedBtn(
+      editorCustomButton,
+      mode === AnnotationEditorType.CUSTOM,
+      editorCustomParamsToolbar
     );
 
     const isDisable = mode === AnnotationEditorType.DISABLE;

@@ -1091,9 +1091,6 @@ class AnnotationEditor {
   async removeToolbarButton(id) {
     if (this._editToolbar) {
       this._editToolbar.removeButtons(id);
-    } else {
-      // eslint-disable-next-line no-console
-      console.log("not found");
     }
   }
 
@@ -1107,8 +1104,6 @@ class AnnotationEditor {
       return;
     }
     if (!this.div) {
-      // eslint-disable-next-line no-console
-      console.log("waiting div");
       await wait();
       this.awaitDivAndAddComponent();
     }

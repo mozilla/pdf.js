@@ -116,6 +116,7 @@ class TextLayer {
     this.#container = this.#rootContainer = container;
 
     this.#container.addEventListener("click", this.onContainerClick);
+    this.#container.addEventListener("mouseover", this.onContainerMouseOver);
 
     this.#scale = viewport.scale * OutputScale.pixelRatio;
     this.#rotation = viewport.rotation;
@@ -178,7 +179,7 @@ class TextLayer {
   }
 
   /**
-   * Render the textLayer.
+   * TextLayer Click.
    * @param {MouseEvent} event
    * @returns {undefined}
    */
@@ -186,6 +187,19 @@ class TextLayer {
     if (window) {
       window.dispatchEvent(
         new CustomEvent("PDFTextLayerClick", { detail: { clickEvent: event } })
+      );
+      // event.stopPropagation();
+    }
+  }
+  /**
+   * TextLayer MouseOver.
+   * @param {MouseEvent} event
+   * @returns {undefined}
+   */
+  onContainerMouseOver(event) {
+    if (window) {
+      window.dispatchEvent(
+        new CustomEvent("PDFTextLayerMouseOver", { detail: { clickEvent: event } })
       );
       // event.stopPropagation();
     }
