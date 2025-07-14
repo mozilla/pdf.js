@@ -764,7 +764,9 @@
       "maxX": 0.5,
       "minY": 0.25,
       "maxY": 0.5
-    }
+    },
+    "_": "Two one-bit differences at the bottom edge of page 22",
+    "knownPartialMismatch": true
   },
   {
     "id": "intelisa-84-partial",
@@ -1338,6 +1340,22 @@
     "type": "eq"
   },
   {
+    "id": "wdsg_fitc-partial",
+    "file": "pdfs/wdsg_fitc.pdf",
+    "md5": "5bb1c2b83705d4cdfc43197ee74f07f9",
+    "link": true,
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "_": "Two one-bit differences at the bottom edge of page 11",
+    "knownPartialMismatch": true
+  },
+  {
     "id": "issue6769_no_matrix",
     "file": "pdfs/issue6769_no_matrix.pdf",
     "md5": "f88806137fb4592975052ff3508d7b1e",
@@ -1351,6 +1369,22 @@
     "link": true,
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "unix01-partial",
+    "file": "pdfs/unix01.pdf",
+    "md5": "2742999f0bf9b9c035dbb0736096e220",
+    "link": true,
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "_": "A one-bit difference at the bottom edge of page 29",
+    "knownPartialMismatch": true
   },
   {
     "id": "issue4909",
