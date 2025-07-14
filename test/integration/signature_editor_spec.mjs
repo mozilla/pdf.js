@@ -727,4 +727,47 @@ describe("Signature Editor", () => {
       );
     });
   });
+
+  describe("Bug 1975719", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that an error is displayed with a monochrome image", async () => {
+      await Promise.all(
+        pages.map(async ([_, page]) => {
+          await switchToSignature(page);
+
+          await page.click("#editorSignatureAddSignature");
+
+          await page.waitForSelector("#addSignatureDialog", {
+            visible: true,
+          });
+          await page.click("#addSignatureImageButton");
+          await page.waitForSelector("#addSignatureImagePlaceholder", {
+            visible: true,
+          });
+          const input = await page.$("#addSignatureFilePicker");
+          await input.uploadFile(
+            `${path.join(__dirname, "../images/red.png")}`
+          );
+          await page.waitForSelector("#addSignatureError", { visible: true });
+          await page.waitForSelector(
+            "#addSignatureErrorTitle[data-l10n-id='pdfjs-editor-add-signature-image-no-data-error-title']"
+          );
+          await page.waitForSelector(
+            "#addSignatureErrorDescription[data-l10n-id='pdfjs-editor-add-signature-image-no-data-error-description']"
+          );
+          await page.click("#addSignatureErrorCloseButton");
+          await page.waitForSelector("#addSignatureError", { visible: false });
+        })
+      );
+    });
+  });
 });
