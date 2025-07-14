@@ -2186,10 +2186,6 @@ class CanvasGraphics {
       }
       const joinedChars = chars.join("");
       ctx.fillText(joinedChars, 0, 0);
-      current.x += width * widthAdvanceScale * textHScale;
-      ctx.restore();
-      this.compose();
-
       if (this.dependencyTracker !== null) {
         const measure = ctx.measureText(joinedChars);
         this.dependencyTracker
@@ -2205,6 +2201,9 @@ class CanvasGraphics {
           .recordOperation(opIdx)
           .recordIncrementalData("sameLineText", opIdx);
       }
+      current.x += width * widthAdvanceScale * textHScale;
+      ctx.restore();
+      this.compose();
       return undefined;
     }
 
