@@ -2427,9 +2427,14 @@ class RendererWorker {
   #handler;
 
   constructor(channelPort, enableHWA) {
-    this.#worker = new Worker("../src/display/renderer_worker.js", {
-      type: "module",
-    });
+    const src =
+      // eslint-disable-next-line no-nested-ternary
+      typeof PDFJSDev === "undefined"
+        ? "../src/pdf.worker.js"
+        : PDFJSDev.test("MOZCENTRAL")
+          ? "resource://pdf.js/build/pdf.worker.mjs"
+          : "../build/pdf.worker.mjs";
+    this.#worker = new Worker(src, { type: "module" });
     this.#handler = new MessageHandler("main", "renderer", this.#worker);
     this.#handler.send("configure", { channelPort, enableHWA }, [channelPort]);
     this.#handler.on("ready", () => {
