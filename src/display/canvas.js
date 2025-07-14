@@ -1973,7 +1973,7 @@ class CanvasGraphics {
           this.dependencyTracker
             .recordBBox(
               opIdx,
-              this.ctx,
+              ctx,
               this.groupStack,
               x - measure.actualBoundingBoxLeft,
               x + measure.actualBoundingBoxRight,
@@ -1993,7 +1993,7 @@ class CanvasGraphics {
           this.dependencyTracker
             .recordBBox(
               opIdx,
-              this.ctx,
+              ctx,
               this.groupStack,
               x - measure.actualBoundingBoxLeft,
               x + measure.actualBoundingBoxRight,
