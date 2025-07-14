@@ -1294,3 +1294,45 @@ describe("Should switch from an editor and mode to others by double clicking", (
     );
   });
 });
+
+describe("Ink must update its color", () => {
+  let pages;
+
+  beforeEach(async () => {
+    pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+  });
+
+  afterEach(async () => {
+    await closePages(pages);
+  });
+
+  it("must check that the stroke color is the one chosen from the color picker", async () => {
+    await Promise.all(
+      pages.map(async ([_, page]) => {
+        await switchToInk(page);
+
+        const rect = await getRect(page, ".annotationEditorLayer");
+
+        const x = rect.x + 20;
+        const y = rect.y + 20;
+        const clickHandle = await waitForPointerUp(page);
+        await page.mouse.move(x, y);
+        await page.mouse.down();
+        await page.mouse.move(x + 50, y + 50);
+        await page.mouse.up();
+        await awaitPromise(clickHandle);
+        await commit(page);
+
+        const editorSelector = getEditorSelector(0);
+        const colorPickerSelector = `${editorSelector} input.basicColorPicker`;
+        await page.waitForSelector(colorPickerSelector, { visible: true });
+        await page.locator(colorPickerSelector).fill("#ff0000");
+
+        await page.waitForSelector(
+          ".canvasWrapper svg.draw[stroke='#ff0000']",
+          { visible: true }
+        );
+      })
+    );
+  });
+});

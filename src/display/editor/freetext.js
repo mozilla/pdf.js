@@ -26,6 +26,7 @@ import {
 } from "../../shared/util.js";
 import { AnnotationEditorUIManager, KeyboardManager } from "./tools.js";
 import { AnnotationEditor } from "./editor.js";
+import { BasicColorPicker } from "./color_picker.js";
 import { FreeTextAnnotationElement } from "../annotation_layer.js";
 
 const EOL_PATTERN = /\r\n?|\n/g;
@@ -43,6 +44,8 @@ class FreeTextEditor extends AnnotationEditor {
   #editModeAC = null;
 
   #fontSize;
+
+  _colorPicker = null;
 
   static _freeTextDefaultContent = "";
 
@@ -202,6 +205,20 @@ class FreeTextEditor extends AnnotationEditor {
     ];
   }
 
+  /** @inheritdoc */
+  get toolbarButtons() {
+    this._colorPicker ||= new BasicColorPicker(this);
+    return [["colorPicker", this._colorPicker]];
+  }
+
+  get colorType() {
+    return AnnotationEditorParamsType.FREETEXT_COLOR;
+  }
+
+  get colorValue() {
+    return this.#color;
+  }
+
   /**
    * Update the font size and make this action as undoable.
    * @param {number} fontSize
@@ -232,6 +249,7 @@ class FreeTextEditor extends AnnotationEditor {
   #updateColor(color) {
     const setColor = col => {
       this.#color = this.editorDiv.style.color = col;
+      this._colorPicker?.update(col);
     };
     const savedColor = this.#color;
     this.addCommands({

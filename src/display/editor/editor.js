@@ -1059,7 +1059,7 @@ class AnnotationEditor {
 
   /**
    * Get the toolbar buttons for this editor.
-   * @returns {Array<Array<string|object>>|null}
+   * @returns {Array<Array<string|object|null>>|null}
    */
   get toolbarButtons() {
     return null;

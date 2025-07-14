@@ -17,6 +17,11 @@ import { AnnotationEditorParamsType, shadow } from "../../shared/util.js";
 import { KeyboardManager } from "./tools.js";
 import { noContextMenu } from "../display_utils.js";
 
+/**
+ * ColorPicker class provides a color picker for the annotation editor.
+ * It displays a dropdown with some predefined colors and allows the user
+ * to select a color for the annotation.
+ */
 class ColorPicker {
   #button = null;
 
@@ -304,4 +309,64 @@ class ColorPicker {
   }
 }
 
-export { ColorPicker };
+/**
+ * BasicColorPicker class provides a simple color picker.
+ * It displays an input element (with type="color") that allows the user
+ * to select a color for the annotation.
+ */
+class BasicColorPicker {
+  #input = null;
+
+  #editor = null;
+
+  #uiManager = null;
+
+  static #l10nColor = null;
+
+  constructor(editor) {
+    this.#editor = editor;
+    this.#uiManager = editor._uiManager;
+
+    BasicColorPicker.#l10nColor ||= Object.freeze({
+      freetext: "pdfjs-editor-color-picker-free-text-input",
+      ink: "pdfjs-editor-color-picker-ink-input",
+    });
+  }
+
+  renderButton() {
+    if (this.#input) {
+      return this.#input;
+    }
+    const { editorType, colorType, colorValue } = this.#editor;
+    const input = (this.#input = document.createElement("input"));
+    input.type = "color";
+    input.value = colorValue || "#000000";
+    input.className = "basicColorPicker";
+    input.tabIndex = 0;
+    input.setAttribute("data-l10n-id", BasicColorPicker.#l10nColor[editorType]);
+    input.addEventListener(
+      "input",
+      () => {
+        this.#uiManager.updateParams(colorType, input.value);
+      },
+      { signal: this.#uiManager._signal }
+    );
+    return input;
+  }
+
+  update(value) {
+    if (!this.#input) {
+      return;
+    }
+    this.#input.value = value;
+  }
+
+  destroy() {
+    this.#input?.remove();
+    this.#input = null;
+  }
+
+  hideDropdown() {}
+}
+
+export { BasicColorPicker, ColorPicker };

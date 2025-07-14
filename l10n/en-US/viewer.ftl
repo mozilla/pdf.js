@@ -306,9 +306,13 @@ pdfjs-web-fonts-disabled = Web fonts are disabled: unable to use embedded PDF fo
 
 pdfjs-editor-free-text-button =
     .title = Text
+pdfjs-editor-color-picker-free-text-input =
+    .title = Change text color
 pdfjs-editor-free-text-button-label = Text
 pdfjs-editor-ink-button =
     .title = Draw
+pdfjs-editor-color-picker-ink-input =
+    .title = Change drawing color
 pdfjs-editor-ink-button-label = Draw
 pdfjs-editor-stamp-button =
     .title = Add or edit images

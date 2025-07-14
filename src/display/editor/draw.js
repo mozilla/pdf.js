@@ -67,6 +67,8 @@ class DrawingEditor extends AnnotationEditor {
 
   #mustBeCommitted;
 
+  _colorPicker = null;
+
   _drawId = null;
 
   static _currentDrawId = -1;
@@ -240,6 +242,9 @@ class DrawingEditor extends AnnotationEditor {
         this._drawId,
         options.toSVGProperties()
       );
+      if (type === this.colorType) {
+        this._colorPicker?.update(val);
+      }
     };
     this.addCommands({
       cmd: setter.bind(this, value),

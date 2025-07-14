@@ -22,6 +22,7 @@ import {
 import { DrawingEditor, DrawingOptions } from "./draw.js";
 import { InkDrawOutline, InkDrawOutliner } from "./drawers/inkdraw.js";
 import { AnnotationEditor } from "./editor.js";
+import { BasicColorPicker } from "./color_picker.js";
 import { InkAnnotationElement } from "../annotation_layer.js";
 
 class InkDrawingOptions extends DrawingOptions {
@@ -175,6 +176,20 @@ class InkEditor extends DrawingEditor {
     editor._initialData = initialData;
 
     return editor;
+  }
+
+  /** @inheritdoc */
+  get toolbarButtons() {
+    this._colorPicker ||= new BasicColorPicker(this);
+    return [["colorPicker", this._colorPicker]];
+  }
+
+  get colorType() {
+    return AnnotationEditorParamsType.INK_COLOR;
+  }
+
+  get colorValue() {
+    return this._drawingOptions.stroke;
   }
 
   /** @inheritdoc */
