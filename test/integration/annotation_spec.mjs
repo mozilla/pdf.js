@@ -247,6 +247,51 @@ describe("Text widget", () => {
   });
 });
 
+describe("Link annotations with internal destinations", () => {
+  describe("bug1708041.pdf", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "bug1708041.pdf",
+        ".page[data-page-number='1'] .annotationLayer"
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must click on a link and check if it navigates to the correct page", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const pageOneSelector = ".page[data-page-number='1']";
+          const linkSelector = `${pageOneSelector} #pdfjs_internal_id_42R`;
+          await page.waitForSelector(linkSelector);
+          const linkTitle = await page.$eval(linkSelector, el => el.title);
+          expect(linkTitle)
+            .withContext(`In ${browserName}`)
+            .toEqual("Go to the last page");
+          await page.click(linkSelector);
+          const pageSixTextLayerSelector =
+            ".page[data-page-number='6'] .textLayer";
+          await page.waitForSelector(pageSixTextLayerSelector, {
+            visible: true,
+          });
+          await page.waitForFunction(
+            sel => {
+              const textLayer = document.querySelector(sel);
+              return document.activeElement === textLayer;
+            },
+            {},
+            pageSixTextLayerSelector
+          );
+        })
+      );
+    });
+  });
+});
+
 describe("Annotation and storage", () => {
   describe("issue14023.pdf", () => {
     let pages;

@@ -24,7 +24,7 @@ class SingleIntersector {
 
   #maxY = -Infinity;
 
-  #quadPoints;
+  #quadPoints = null;
 
   #text = [];
 
@@ -36,13 +36,22 @@ class SingleIntersector {
 
   constructor(annotation) {
     this.#annotation = annotation;
-    const quadPoints = (this.#quadPoints = annotation.data.quadPoints);
+    const quadPoints = annotation.data.quadPoints;
+    if (!quadPoints) {
+      // If there are no quad points, we use the rectangle to determine the
+      // bounds of the annotation.
+      [this.#minX, this.#minY, this.#maxX, this.#maxY] = annotation.data.rect;
+      return;
+    }
 
     for (let i = 0, ii = quadPoints.length; i < ii; i += 8) {
       this.#minX = Math.min(this.#minX, quadPoints[i]);
       this.#maxX = Math.max(this.#maxX, quadPoints[i + 2]);
       this.#minY = Math.min(this.#minY, quadPoints[i + 5]);
       this.#maxY = Math.max(this.#maxY, quadPoints[i + 1]);
+    }
+    if (quadPoints.length > 8) {
+      this.#quadPoints = quadPoints;
     }
   }
 
@@ -73,7 +82,7 @@ class SingleIntersector {
     }
 
     const quadPoints = this.#quadPoints;
-    if (quadPoints.length === 8) {
+    if (!quadPoints) {
       // We've only one quad, so if we intersect min/max bounds then we
       // intersect the quad.
       return true;
@@ -150,7 +159,7 @@ class Intersector {
 
   constructor(annotations) {
     for (const annotation of annotations) {
-      if (!annotation.data.quadPoints) {
+      if (!annotation.data.quadPoints && !annotation.data.rect) {
         continue;
       }
       const intersector = new SingleIntersector(annotation);
