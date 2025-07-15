@@ -1090,8 +1090,11 @@ dialog :link {
   }
 
   .editorParamsToolbar {
+    --editor-toolbar-min-width: 220px;
+
     height: auto;
-    width: 220px;
+    min-width: var(--editor-toolbar-min-width);
+    width: max-content;
     position: absolute;
     z-index: 30000;
     cursor: default;
