@@ -182,16 +182,47 @@ class PDFFindBar {
     this.findField.focus();
   }
 
-  close() {
+  async close() {
     if (!this.opened) {
       return;
     }
+
+    const ele = document.querySelector(".highlight");
+    if (ele) {
+      ele.parentElement.setAttribute("id", "find-element");
+    }
+    const idxFindElement = ele
+      ? ele.parentNode.innerHTML.indexOf(ele.outerHTML)
+      : null;
+
     this.#resizeObserver.disconnect();
 
     this.opened = false;
     toggleExpandedBtn(this.toggleButton, false, this.bar);
 
-    this.eventBus.dispatch("findbarclose", { source: this });
+    await this.eventBus.dispatch("findbarclose", { source: this });
+
+    // apply the cursor position for the caret mode
+    if (ele) {
+      const range = document.createRange();
+      const selection = document.getSelection();
+
+      const findElement = document.getElementById("find-element");
+      const walker = document.createTreeWalker(
+        findElement,
+        NodeFilter.SHOW_TEXT
+      );
+      const findElementChild = walker.firstChild();
+
+      if (findElementChild) {
+        range.setStart(findElementChild, idxFindElement);
+        range.setEnd(findElementChild, idxFindElement);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        findElement.removeAttribute("id");
+      }
+    }
   }
 
   toggle() {
