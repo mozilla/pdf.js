@@ -1059,6 +1059,16 @@
 
 .basicColorPicker {
   width: 28px;
+
+  &::-moz-color-swatch {
+    border-radius: 100%;
+  }
+
+  /*#if !MOZCENTRAL*/
+  &::-webkit-color-swatch {
+    border-radius: 100%;
+  }
+  /*#endif*/
 }
 
 .annotationEditorLayer {
