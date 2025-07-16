@@ -2710,4 +2710,43 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Highlight must change their color when selected", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        { highlightEditorColors: "red=#AB0000,blue=#0000AB" }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the color is correctly updated", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          const highlightSelector = `.page[data-page-number = "1"] .canvasWrapper > svg.highlight`;
+          await page.waitForSelector(`${highlightSelector}[fill = "#AB0000"]`);
+
+          await page.click(
+            "#editorHighlightColorPicker button[title = 'Blue']"
+          );
+
+          await page.waitForSelector(`${highlightSelector}[fill = "#0000AB"]`);
+        })
+      );
+    });
+  });
 });

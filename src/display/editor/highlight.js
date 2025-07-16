@@ -278,7 +278,7 @@ class HighlightEditor extends AnnotationEditor {
   /** @inheritdoc */
   static updateDefaultParams(type, value) {
     switch (type) {
-      case AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR:
+      case AnnotationEditorParamsType.HIGHLIGHT_COLOR:
         HighlightEditor._defaultColor = value;
         break;
       case AnnotationEditorParamsType.HIGHLIGHT_THICKNESS:
@@ -310,7 +310,7 @@ class HighlightEditor extends AnnotationEditor {
   static get defaultPropertiesToUpdate() {
     return [
       [
-        AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR,
+        AnnotationEditorParamsType.HIGHLIGHT_COLOR,
         HighlightEditor._defaultColor,
       ],
       [
