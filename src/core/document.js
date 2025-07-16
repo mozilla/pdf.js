@@ -128,11 +128,10 @@ class Page {
     };
   }
 
-  #createPartialEvaluator(handler, rendererHandler) {
+  #createPartialEvaluator(handler) {
     return new PartialEvaluator({
       xref: this.xref,
       handler,
-      rendererHandler,
       pageIndex: this.pageIndex,
       idFactory: this._localIdFactory,
       fontCache: this.fontCache,
@@ -473,10 +472,7 @@ class Page {
     const contentStreamPromise = this.getContentStream();
     const resourcesPromise = this.loadResources(RESOURCES_KEYS_OPERATOR_LIST);
 
-    const partialEvaluator = this.#createPartialEvaluator(
-      handler,
-      rendererHandler
-    );
+    const partialEvaluator = this.#createPartialEvaluator(handler);
 
     const newAnnotsByPage = !this.xfaFactory
       ? getNewAnnotationsMap(annotationStorage)
@@ -1315,7 +1311,7 @@ class PDFDocument {
     this.xfaFactory.setImages(xfaImages);
   }
 
-  async #loadXfaFonts(handler, task, rendererHandler) {
+  async #loadXfaFonts(handler, task) {
     const acroForm = await this.pdfManager.ensureCatalog("acroForm");
     if (!acroForm) {
       return;
@@ -1341,7 +1337,6 @@ class PDFDocument {
     const partialEvaluator = new PartialEvaluator({
       xref: this.xref,
       handler,
-      rendererHandler,
       pageIndex: -1,
       idFactory: this._globalIdFactory,
       fontCache,
@@ -1454,9 +1449,9 @@ class PDFDocument {
     this.xfaFactory.appendFonts(pdfFonts, reallyMissingFonts);
   }
 
-  loadXfaResources(handler, task, rendererHandler) {
+  loadXfaResources(handler, task) {
     return Promise.all([
-      this.#loadXfaFonts(handler, task, rendererHandler).catch(() => {
+      this.#loadXfaFonts(handler, task).catch(() => {
         // Ignore errors, to allow the document to load.
       }),
       this.#loadXfaImages(),
