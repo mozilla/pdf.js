@@ -1,10 +1,11 @@
-import { assert, warn } from "../shared/util.js";
-import { FontFaceObject, FontLoader } from "./font_loader.js";
+import { assert } from "../shared/util.js";
 import { CanvasGraphics } from "./canvas.js";
 import { DOMFilterFactory } from "./filter_factory.js";
+import { FontLoader } from "./font_loader.js";
 import { MessageHandler } from "../shared/message_handler.js";
 import { OffscreenCanvasFactory } from "./canvas_factory.js";
 import { PDFObjects } from "./display_utils.js";
+import { setupHandler } from "../shared/handle_objs.js";
 
 class RendererMessageHandler {
   static #commonObjs = new PDFObjects();
@@ -56,19 +57,13 @@ class RendererMessageHandler {
       });
       this.#filterFactory = new DOMFilterFactory({});
 
-      workerHandler.on("commonobj", ([id, type, data]) => {
-        if (terminated) {
-          throw new Error("Renderer worker has been terminated.");
-        }
-        this.handleCommonObj(id, type, data, workerHandler);
-      });
-
-      workerHandler.on("obj", ([id, pageIndex, type, data]) => {
-        if (terminated) {
-          throw new Error("Renderer worker has been terminated.");
-        }
-        this.handleObj(pageIndex, id, type, data);
-      });
+      setupHandler(
+        workerHandler,
+        terminated,
+        this.#commonObjs,
+        this.#objsMap,
+        this.#fontLoader
+      );
     });
 
     mainHandler.on(
@@ -153,90 +148,6 @@ class RendererMessageHandler {
       mainHandler.destroy();
       mainHandler = null;
     });
-  }
-
-  static handleCommonObj(id, type, exportedData, handler) {
-    if (this.#commonObjs.has(id)) {
-      return null;
-    }
-
-    switch (type) {
-      case "Font":
-        if ("error" in exportedData) {
-          const exportedError = exportedData.error;
-          warn(`Error during font loading: ${exportedError}`);
-          this.#commonObjs.resolve(id, exportedError);
-          break;
-        }
-
-        // TODO: Make FontInspector work again.
-        const inspectFont = null;
-        // this._params.pdfBug && globalThis.FontInspector?.enabled
-        //   ? (font, url) => globalThis.FontInspector.fontAdded(font, url)
-        // : null;
-        const font = new FontFaceObject(exportedData, inspectFont);
-
-        this.#fontLoader
-          .bind(font)
-          .catch(() => handler.sendWithPromise("FontFallback", { id }))
-          .finally(() => {
-            if (!font.fontExtraProperties && font.data) {
-              // Immediately release the `font.data` property once the font
-              // has been attached to the DOM, since it's no longer needed,
-              // rather than waiting for a `PDFDocumentProxy.cleanup` call.
-              // Since `font.data` could be very large, e.g. in some cases
-              // multiple megabytes, this will help reduce memory usage.
-              font.data = null;
-            }
-            this.#commonObjs.resolve(id, font);
-          });
-        break;
-      case "CopyLocalImage":
-        const { imageRef } = exportedData;
-        assert(imageRef, "The imageRef must be defined.");
-
-        for (const objs of this.#objsMap.values()) {
-          for (const [, data] of objs) {
-            if (data?.ref !== imageRef) {
-              continue;
-            }
-            if (!data.dataLen) {
-              return null;
-            }
-            this.#commonObjs.resolve(id, structuredClone(data));
-            return data.dataLen;
-          }
-        }
-        break;
-      case "FontPath":
-      case "Image":
-      case "Pattern":
-        this.#commonObjs.resolve(id, exportedData);
-        break;
-      default:
-        throw new Error(`Got unknown common object type ${type}`);
-    }
-
-    return null;
-  }
-
-  static handleObj(pageIndex, id, type, exportedData) {
-    const objs = this.pageObjs(pageIndex);
-
-    if (objs.has(id)) {
-      return;
-    }
-
-    switch (type) {
-      case "Image":
-      case "Pattern":
-        objs.resolve(id, exportedData);
-        break;
-      default:
-        throw new Error(
-          `Got unknown object type ${type} id ${id} for page ${pageIndex} data ${JSON.stringify(exportedData)}`
-        );
-    }
   }
 }
 
