@@ -964,6 +964,10 @@ class WorkerMessageHandler {
         .then(page => pdfManager.ensure(page, "getStructTree"));
     });
 
+    handler.on("FontFallback", function (data) {
+      return pdfManager.fontFallback(data.id, handler);
+    });
+
     rendererHandler.on("FontFallback", function (data) {
       return pdfManager.fontFallback(data.id, rendererHandler);
     });
