@@ -16,8 +16,10 @@
 @import url(draw_layer_builder.css);
 @import url(toggle_button.css);
 @import url(signature_manager.css);
+@import url(comment_manager.css);
 
 :root {
+  --editor-toolbar-vert-offset: 6px;
   --outline-width: 2px;
   --outline-color: #0060df;
   --outline-around-width: 1px;
@@ -228,6 +230,7 @@
     --editor-toolbar-delete-image: url(images/editor-toolbar-delete.svg);
     --editor-toolbar-bg-color: light-dark(#f0f0f4, #2b2a33);
     --editor-toolbar-highlight-image: url(images/toolbarButton-editorHighlight.svg);
+    --editor-toolbar-comment-edit-image: url(images/comment-editButton.svg);
     --editor-toolbar-fg-color: light-dark(#2e2e56, #fbfbfe);
     --editor-toolbar-border-color: #8f8f9d;
     --editor-toolbar-hover-border-color: var(--editor-toolbar-border-color);
@@ -236,7 +239,6 @@
     --editor-toolbar-hover-outline: none;
     --editor-toolbar-focus-outline-color: light-dark(#0060df, #0df);
     --editor-toolbar-shadow: 0 2px 6px 0 rgb(58 57 68 / 0.2);
-    --editor-toolbar-vert-offset: 6px;
     --editor-toolbar-height: 28px;
     --editor-toolbar-padding: 2px;
     --alt-text-done-color: light-dark(#2ac3a2, #54ffbd);
@@ -487,6 +489,21 @@
 
             pointer-events: none;
           }
+        }
+      }
+
+      .comment {
+        width: var(--editor-toolbar-height);
+
+        &::before {
+          content: "";
+          mask-image: var(--editor-toolbar-comment-edit-image);
+          mask-repeat: no-repeat;
+          mask-position: center;
+          display: inline-block;
+          background-color: var(--editor-toolbar-fg-color);
+          width: 100%;
+          height: 100%;
         }
       }
     }

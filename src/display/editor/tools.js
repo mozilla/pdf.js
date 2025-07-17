@@ -597,6 +597,8 @@ class AnnotationEditorUIManager {
 
   #commandManager = new CommandManager();
 
+  #commentManager = null;
+
   #copyPasteAC = null;
 
   #currentDrawingSession = null;
@@ -822,6 +824,7 @@ class AnnotationEditorUIManager {
     viewer,
     viewerAlert,
     altTextManager,
+    commentManager,
     signatureManager,
     eventBus,
     pdfDocument,
@@ -839,6 +842,7 @@ class AnnotationEditorUIManager {
     this.#viewer = viewer;
     this.#viewerAlert = viewerAlert;
     this.#altTextManager = altTextManager;
+    this.#commentManager = commentManager;
     this.#signatureManager = signatureManager;
     this._eventBus = eventBus;
     eventBus._on("editingaction", this.onEditingAction.bind(this), { signal });
@@ -902,6 +906,7 @@ class AnnotationEditorUIManager {
     this.#selectedEditors.clear();
     this.#commandManager.destroy();
     this.#altTextManager?.destroy();
+    this.#commentManager?.destroy();
     this.#signatureManager?.destroy();
     this.#highlightToolbar?.hide();
     this.#highlightToolbar = null;
@@ -1001,6 +1006,14 @@ class AnnotationEditorUIManager {
 
   editAltText(editor, firstTime = false) {
     this.#altTextManager?.editAltText(this, editor, firstTime);
+  }
+
+  hasCommentManager() {
+    return !!this.#commentManager;
+  }
+
+  editComment(editor, position) {
+    this.#commentManager?.open(this, editor, position);
   }
 
   getSignature(editor) {
@@ -1686,12 +1699,15 @@ class AnnotationEditorUIManager {
    *   keyboard action.
    * @param {boolean} [mustEnterInEditMode] - true if the editor must enter in
    *   edit mode.
+   * @param {boolean} [editComment] - true if the mode change is due to a
+   *   comment edit.
    */
   async updateMode(
     mode,
     editId = null,
     isFromKeyboard = false,
-    mustEnterInEditMode = false
+    mustEnterInEditMode = false,
+    editComment = false
   ) {
     if (this.#mode === mode) {
       return;
@@ -1739,7 +1755,9 @@ class AnnotationEditorUIManager {
     for (const editor of this.#allEditors.values()) {
       if (editor.annotationElementId === editId || editor.id === editId) {
         this.setSelected(editor);
-        if (mustEnterInEditMode) {
+        if (editComment) {
+          editor.editComment();
+        } else if (mustEnterInEditMode) {
           editor.enterInEditMode();
         }
       } else {

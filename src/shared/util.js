@@ -76,6 +76,7 @@ const AnnotationEditorType = {
   STAMP: 13,
   INK: 15,
   SIGNATURE: 101,
+  COMMENT: 102,
 };
 
 const AnnotationEditorParamsType = {

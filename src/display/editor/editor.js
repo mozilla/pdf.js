@@ -30,6 +30,7 @@ import {
 } from "../../shared/util.js";
 import { noContextMenu, stopEvent } from "../display_utils.js";
 import { AltText } from "./alt_text.js";
+import { Comment } from "./comment.js";
 import { EditorToolbar } from "./toolbar.js";
 import { TouchManager } from "../touch_manager.js";
 
@@ -51,6 +52,8 @@ class AnnotationEditor {
   #allResizerDivs = null;
 
   #altText = null;
+
+  #comment = null;
 
   #disabled = false;
 
@@ -1075,6 +1078,7 @@ class AnnotationEditor {
     }
     this._editToolbar = new EditorToolbar(this);
     this.div.append(this._editToolbar.render());
+    this._editToolbar.addButton("comment", this.addCommentButton());
     const { toolbarButtons } = this;
     if (toolbarButtons) {
       for (const [name, tool] of toolbarButtons) {
@@ -1159,6 +1163,61 @@ class AnnotationEditor {
 
   hasAltTextData() {
     return this.#altText?.hasData() ?? false;
+  }
+
+  addCommentButton() {
+    if (this.#comment) {
+      return this.#comment;
+    }
+    return (this.#comment = new Comment(this));
+  }
+
+  get commentColor() {
+    return null;
+  }
+
+  get comment() {
+    const comment = this.#comment;
+    return {
+      text: comment.data.text,
+      date: comment.data.date,
+      deleted: comment.isDeleted(),
+      color: this.commentColor,
+    };
+  }
+
+  set comment(text) {
+    if (!this.#comment) {
+      this.#comment = new Comment(this);
+    }
+    this.#comment.data = text;
+  }
+
+  setCommentData(text) {
+    if (!this.#comment) {
+      this.#comment = new Comment(this);
+    }
+    this.#comment.setInitialText(text);
+  }
+
+  get hasEditedComment() {
+    return this.#comment?.hasBeenEdited();
+  }
+
+  async editComment() {
+    if (!this.#comment) {
+      this.#comment = new Comment(this);
+    }
+    this.#comment.edit();
+  }
+
+  addComment(serialized) {
+    if (this.hasEditedComment) {
+      serialized.popup = {
+        contents: this.comment.text,
+        deleted: this.comment.deleted,
+      };
+    }
   }
 
   /**
