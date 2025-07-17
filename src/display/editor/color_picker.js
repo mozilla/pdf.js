@@ -43,8 +43,6 @@ class ColorPicker {
 
   #uiManager = null;
 
-  #type;
-
   static #l10nColor = null;
 
   static get _keyboardManager() {
@@ -74,11 +72,9 @@ class ColorPicker {
   constructor({ editor = null, uiManager = null }) {
     if (editor) {
       this.#isMainColorPicker = false;
-      this.#type = AnnotationEditorParamsType.HIGHLIGHT_COLOR;
       this.#editor = editor;
     } else {
       this.#isMainColorPicker = true;
-      this.#type = AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR;
     }
     this.#uiManager = editor?._uiManager || uiManager;
     this.#eventBus = this.#uiManager._eventBus;
@@ -163,9 +159,10 @@ class ColorPicker {
     event.stopPropagation();
     this.#eventBus.dispatch("switchannotationeditorparams", {
       source: this,
-      type: this.#type,
+      type: AnnotationEditorParamsType.HIGHLIGHT_COLOR,
       value: color,
     });
+    this.updateColor(color);
   }
 
   _colorSelectFromKeyboard(event) {

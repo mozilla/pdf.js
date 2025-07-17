@@ -118,7 +118,7 @@ class AnnotationEditorParams {
           case AnnotationEditorParamsType.INK_OPACITY:
             editorInkOpacity.value = value;
             break;
-          case AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR:
+          case AnnotationEditorParamsType.HIGHLIGHT_COLOR:
             eventBus.dispatch("mainhighlightcolorpickerupdatecolor", {
               source: this,
               value,
