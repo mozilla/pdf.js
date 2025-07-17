@@ -1625,6 +1625,9 @@ class CanvasGraphics {
     const newPath = new Path2D();
     const invTransf = ctx.getTransform().invertSelf();
     for (const { transform, x, y, fontSize, path } of paths) {
+      if (!path) {
+        continue; // Skip empty paths.
+      }
       newPath.addPath(
         path,
         new DOMMatrix(transform)
@@ -1768,15 +1771,16 @@ class CanvasGraphics {
 
     let path;
     if (
-      font.disableFontFace ||
-      isAddToPathSet ||
-      patternFill ||
-      patternStroke
+      (font.disableFontFace ||
+        isAddToPathSet ||
+        patternFill ||
+        patternStroke) &&
+      !font.missingFile
     ) {
       path = font.getPathGenerator(this.commonObjs, character);
     }
 
-    if (font.disableFontFace || patternFill || patternStroke) {
+    if (path && (font.disableFontFace || patternFill || patternStroke)) {
       ctx.save();
       ctx.translate(x, y);
       ctx.scale(fontSize, -fontSize);
