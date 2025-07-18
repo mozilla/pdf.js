@@ -215,7 +215,7 @@ class AnnotationElement {
     }
 
     let popup = this.#popupElement?.popup || this.popup;
-    if (!popup && newPopup.text) {
+    if (!popup && newPopup?.text) {
       this._createPopup(newPopup);
       popup = this.#popupElement.popup;
     }
@@ -223,7 +223,7 @@ class AnnotationElement {
       return;
     }
     popup.updateEdited(params);
-    if (newPopup.deleted) {
+    if (newPopup?.deleted) {
       popup.remove();
       this.#popupElement = null;
       this.popup = null;
