@@ -111,8 +111,9 @@ describe("FreeText Editor", () => {
           await waitForSelectedEditor(page, editorSelector);
           await waitForStorageEntries(page, 1);
 
-          const alert = await page.$eval("#viewer-alert", el => el.textContent);
-          expect(alert).toEqual("Text added");
+          await page.waitForFunction(
+            `document.getElementById("viewer-alert").textContent === "Text added"`
+          );
 
           let content = await page.$eval(editorSelector, el =>
             el.innerText.trimEnd()

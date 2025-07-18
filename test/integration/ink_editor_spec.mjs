@@ -84,8 +84,9 @@ describe("Ink Editor", () => {
             await commit(page);
           }
 
-          const alert = await page.$eval("#viewer-alert", el => el.textContent);
-          expect(alert).toEqual("Drawing added");
+          await page.waitForFunction(
+            `document.getElementById("viewer-alert").textContent === "Drawing added"`
+          );
 
           await clearAll(page);
 
