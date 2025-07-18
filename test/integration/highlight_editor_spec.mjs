@@ -2750,4 +2750,55 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Highlight color in HCM", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        {
+          highlightEditorColors: "red=#AB0000,red_HCM=#00AB00",
+          forcePageColors: true,
+          pageColorsForeground: "#74ffd0",
+          pageColorsBackground: "#392a4f",
+        }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must highlight with red color", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+
+          const editorSelector = getEditorSelector(0);
+          await page.waitForSelector(editorSelector);
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] svg.highlightOutline.selected`
+          );
+
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] .canvasWrapper > svg.highlight[fill = "#00AB00"]`
+          );
+          await waitForSerialized(page, 1);
+          const serialized = await getSerialized(page);
+          expect(serialized[0].color)
+            .withContext(`In ${browserName}`)
+            .toEqual([0xab, 0x00, 0x00]);
+        })
+      );
+    });
+  });
 });

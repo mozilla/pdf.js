@@ -375,6 +375,9 @@ const PDFViewerApplication = {
         spreadModeOnLoad: x => parseInt(x),
         supportsCaretBrowsingMode: x => x === "true",
         viewerCssTheme: x => parseInt(x),
+        forcePageColors: x => x === "true",
+        pageColorsBackground: x => x,
+        pageColorsForeground: x => x,
       });
     }
 

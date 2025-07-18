@@ -137,7 +137,7 @@ class HighlightEditor extends AnnotationEditor {
     return {
       action: "added",
       type: this.#isFreeHighlight ? "free_highlight" : "highlight",
-      color: this._uiManager.highlightColorNames.get(this.color),
+      color: this._uiManager.getNonHCMColorName(this.color),
       thickness: this.#thickness,
       methodOfCreation: this.#methodOfCreation,
     };
@@ -147,7 +147,7 @@ class HighlightEditor extends AnnotationEditor {
   get telemetryFinalData() {
     return {
       type: "highlight",
-      color: this._uiManager.highlightColorNames.get(this.color),
+      color: this._uiManager.getNonHCMColorName(this.color),
     };
   }
 
@@ -374,7 +374,7 @@ class HighlightEditor extends AnnotationEditor {
     this._reportTelemetry(
       {
         action: "color_changed",
-        color: this._uiManager.highlightColorNames.get(color),
+        color: this._uiManager.getNonHCMColorName(color),
       },
       /* mustWait = */ true
     );
@@ -1024,7 +1024,9 @@ class HighlightEditor extends AnnotationEditor {
     }
 
     const rect = this.getRect(0, 0);
-    const color = AnnotationEditor._colorManager.convert(this.color);
+    const color = AnnotationEditor._colorManager.convert(
+      this._uiManager.getNonHCMColor(this.color)
+    );
 
     const serialized = {
       annotationType: AnnotationEditorType.HIGHLIGHT,

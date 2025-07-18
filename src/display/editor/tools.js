@@ -960,10 +960,10 @@ class AnnotationEditorUIManager {
     );
   }
 
-  get highlightColors() {
+  get _highlightColors() {
     return shadow(
       this,
-      "highlightColors",
+      "_highlightColors",
       this.#highlightColors
         ? new Map(
             this.#highlightColors.split(",").map(pair => {
@@ -976,6 +976,26 @@ class AnnotationEditorUIManager {
     );
   }
 
+  get highlightColors() {
+    const { _highlightColors } = this;
+    if (!_highlightColors) {
+      return shadow(this, "highlightColors", null);
+    }
+    const map = new Map();
+    const hasHCM = !!this.#pageColors;
+    for (const [name, color] of _highlightColors) {
+      const isNameForHCM = name.endsWith("_HCM");
+      if (hasHCM && isNameForHCM) {
+        map.set(name.replace("_HCM", ""), color);
+        continue;
+      }
+      if (!hasHCM && !isNameForHCM) {
+        map.set(name, color);
+      }
+    }
+    return shadow(this, "highlightColors", map);
+  }
+
   get highlightColorNames() {
     return shadow(
       this,
@@ -984,6 +1004,18 @@ class AnnotationEditorUIManager {
         ? new Map(Array.from(this.highlightColors, e => e.reverse()))
         : null
     );
+  }
+
+  getNonHCMColor(color) {
+    if (!this._highlightColors) {
+      return color;
+    }
+    const colorName = this.highlightColorNames.get(color);
+    return this._highlightColors.get(colorName) || color;
+  }
+
+  getNonHCMColorName(color) {
+    return this.highlightColorNames.get(color) || color;
   }
 
   /**
