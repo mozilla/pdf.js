@@ -12213,5 +12213,13 @@
         "popupRef": "27R"
       }
     }
+  },
+  {
+    "id": "issue20065",
+    "file": "pdfs/issue20065.pdf",
+    "md5": "39ad13514d0b0108e4ae42f4b1422839",
+    "rounds": 1,
+    "disableFontFace": true,
+    "type": "eq"
   }
 ]
