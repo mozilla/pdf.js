@@ -44,6 +44,16 @@ class JpegStream extends DecodeStream {
     );
   }
 
+  static get canUseImageDecoderCMYK() {
+    return shadow(
+      this,
+      "canUseImageDecoderCMYK",
+      this.#isImageDecoderSupported
+        ? ImageDecoder.isTypeSupported("image/x-jpeg-pdf")
+        : Promise.resolve(false)
+    );
+  }
+
   static setOptions({ isImageDecoderSupported = false }) {
     this.#isImageDecoderSupported = isImageDecoderSupported;
   }
@@ -171,6 +181,14 @@ class JpegStream extends DecodeStream {
       if (!useImageDecoder) {
         return null;
       }
+      let type = "image/jpeg";
+      if (useImageDecoder.cmyk) {
+        if (await JpegStream.canUseImageDecoderCMYK) {
+          type = "image/x-jpeg-pdf";
+        } else {
+          return null;
+        }
+      }
       if (useImageDecoder.exifStart) {
         // Replace the entire EXIF-block with dummy data, to ensure that a
         // non-default EXIF orientation won't cause the image to be rotated
@@ -182,7 +200,7 @@ class JpegStream extends DecodeStream {
       }
       decoder = new ImageDecoder({
         data,
-        type: "image/jpeg",
+        type,
         preferAnimation: false,
       });
 
