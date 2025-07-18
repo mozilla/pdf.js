@@ -303,7 +303,7 @@ class PDFThumbnailView {
       await renderTask.promise;
     } catch (e) {
       if (e instanceof RenderingCancelledException) {
-        zeroCanvas(canvas);
+        pdfPage.resetCanvas(renderTask.taskID);
         return;
       }
       error = e;
@@ -318,7 +318,7 @@ class PDFThumbnailView {
     this.renderingState = RenderingStates.FINISHED;
 
     this.#convertCanvasToImage(canvas);
-    zeroCanvas(canvas);
+    pdfPage.resetCanvas(renderTask.taskID);
 
     this.eventBus.dispatch("thumbnailrendered", {
       source: this,
