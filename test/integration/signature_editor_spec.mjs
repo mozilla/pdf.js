@@ -181,8 +181,9 @@ describe("Signature Editor", () => {
             { visible: true }
           );
 
-          const alert = await page.$eval("#viewer-alert", el => el.textContent);
-          expect(alert).toEqual("Signature added");
+          await page.waitForFunction(
+            `document.getElementById("viewer-alert").textContent === "Signature added"`
+          );
 
           // Check the tooltip.
           await page.waitForSelector(

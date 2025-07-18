@@ -78,8 +78,9 @@ describe("Highlight Editor", () => {
 
           await page.waitForSelector(`${getEditorSelector(0)}`);
 
-          const alert = await page.$eval("#viewer-alert", el => el.textContent);
-          expect(alert).toEqual("Highlight added");
+          await page.waitForFunction(
+            `document.getElementById("viewer-alert").textContent === "Highlight added"`
+          );
 
           const oneToOne = Array.from(new Array(13).keys(), n => n + 2).concat(
             Array.from(new Array(13).keys(), n => 13 - n)
