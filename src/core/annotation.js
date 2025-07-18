@@ -3833,6 +3833,10 @@ class LinkAnnotation extends Annotation {
       docAttachments: annotationGlobals.attachments,
     });
   }
+
+  get overlaysTextContent() {
+    return true;
+  }
 }
 
 class PopupAnnotation extends Annotation {
