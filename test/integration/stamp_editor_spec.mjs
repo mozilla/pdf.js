@@ -327,6 +327,7 @@ describe("Stamp Editor", () => {
     });
 
     it("must check that the alt-text flow is correctly implemented", async () => {
+      pending("Doesn't work in headless mode in Firefox due to bug 1878643.");
       // Run sequentially to avoid clipboard issues.
       for (const [browserName, page] of pages) {
         await switchToStamp(page);
@@ -502,6 +503,7 @@ describe("Stamp Editor", () => {
     });
 
     it("must check that the dimensions change", async () => {
+      pending("Doesn't work in headless mode in Firefox due to bug 1878643.");
       // Run sequentially to avoid clipboard issues.
       for (const [browserName, page] of pages) {
         await switchToStamp(page);
@@ -635,6 +637,7 @@ describe("Stamp Editor", () => {
     });
 
     it("must check that the alt-text button is here when pasting in the second tab", async () => {
+      pending("Doesn't work in headless mode in Firefox due to bug 1878643.");
       // Run sequentially to avoid clipboard issues.
       for (let i = 0; i < pages1.length; i++) {
         const [, page1] = pages1[i];
@@ -668,6 +671,7 @@ describe("Stamp Editor", () => {
     });
 
     it("must check that a stamp can be undone", async () => {
+      pending("Doesn't work in headless mode in Firefox due to bug 1878643.");
       // Run sequentially to avoid clipboard issues.
       for (const [, page] of pages) {
         await switchToStamp(page);
@@ -700,6 +704,7 @@ describe("Stamp Editor", () => {
     });
 
     it("must check that a stamp can be undone", async () => {
+      pending("Doesn't work in headless mode in Firefox due to bug 1878643.");
       // Run sequentially to avoid clipboard issues.
       for (const [, page] of pages) {
         await switchToStamp(page);
@@ -745,6 +750,7 @@ describe("Stamp Editor", () => {
     });
 
     it("must check that a stamp can be undone", async () => {
+      pending("Doesn't work in headless mode in Firefox due to bug 1878643.");
       // Run sequentially to avoid clipboard issues.
       for (const [, page] of pages) {
         await switchToStamp(page);
@@ -785,6 +791,7 @@ describe("Stamp Editor", () => {
     });
 
     it("must check that a resized stamp has its canvas at the right position", async () => {
+      pending("Doesn't work in headless mode in Firefox due to bug 1878643.");
       // Run sequentially to avoid clipboard issues.
       for (const [, page] of pages) {
         await switchToStamp(page);
@@ -843,6 +850,7 @@ describe("Stamp Editor", () => {
     });
 
     it("must check that the stamp has its canvas at the right position", async () => {
+      pending("Doesn't work in headless mode in Firefox due to bug 1878643.");
       // Run sequentially to avoid clipboard issues.
       for (const [, page] of pages) {
         await switchToStamp(page);
@@ -876,6 +884,7 @@ describe("Stamp Editor", () => {
     });
 
     it("must check that the pasted image has an alt text", async () => {
+      pending("Doesn't work in headless mode in Firefox due to bug 1878643.");
       // Run sequentially to avoid clipboard issues.
       for (const [browserName, page] of pages) {
         await switchToStamp(page);
@@ -940,6 +949,7 @@ describe("Stamp Editor", () => {
     });
 
     it("must check the new alt text flow (part 1)", async () => {
+      pending("Doesn't work in headless mode in Firefox due to bug 1878643.");
       // Run sequentially to avoid clipboard issues.
       for (const [browserName, page] of pages) {
         await switchToStamp(page);
@@ -1134,6 +1144,7 @@ describe("Stamp Editor", () => {
     });
 
     it("must check the new alt text flow (part 2)", async () => {
+      pending("Doesn't work in headless mode in Firefox due to bug 1878643.");
       // Run sequentially to avoid clipboard issues.
       for (const [, page] of pages) {
         await switchToStamp(page);
@@ -1171,6 +1182,7 @@ describe("Stamp Editor", () => {
     });
 
     it("must check the new alt text flow (part 3)", async () => {
+      pending("Doesn't work in headless mode in Firefox due to bug 1878643.");
       // Run sequentially to avoid clipboard issues.
       for (const [, page] of pages) {
         await page.evaluate(() => {
@@ -1194,6 +1206,7 @@ describe("Stamp Editor", () => {
     });
 
     it("must check that the data in telemetry are correct", async () => {
+      pending("Doesn't work in headless mode in Firefox due to bug 1878643.");
       // Run sequentially to avoid clipboard issues.
       for (const [browserName, page] of pages) {
         await page.evaluate(() => {
@@ -1299,6 +1312,7 @@ describe("Stamp Editor", () => {
     });
 
     it("must check that the toggle button isn't displayed when there is no AI", async () => {
+      pending("Doesn't work in headless mode in Firefox due to bug 1878643.");
       // Run sequentially to avoid clipboard issues.
       for (const [, page] of pages) {
         await switchToStamp(page);
@@ -1334,6 +1348,7 @@ describe("Stamp Editor", () => {
     });
 
     it("must check that a stamp editor isn't resizing itself", async () => {
+      pending("Doesn't work in headless mode in Firefox due to bug 1878643.");
       // Run sequentially to avoid clipboard issues.
       const editorSelector = getEditorSelector(0);
 
@@ -1380,6 +1395,7 @@ describe("Stamp Editor", () => {
     });
 
     it("must check that a stamp editor isn't on top of the secondary toolbar", async () => {
+      pending("Doesn't work in headless mode in Firefox due to bug 1878643.");
       // Run sequentially to avoid clipboard issues.
       for (const [, page] of pages) {
         await switchToStamp(page);
@@ -1564,6 +1580,7 @@ describe("Stamp Editor", () => {
     });
 
     it("must check that the annotation isn't unselected when an other finger taps on the screen", async () => {
+      pending("Doesn't work in headless mode in Firefox due to bug 1878643.");
       // Run sequentially to avoid clipboard issues.
       for (const [, page] of pages) {
         await switchToStamp(page);
@@ -1597,6 +1614,7 @@ describe("Stamp Editor", () => {
     });
 
     it("must check that deleting an image can be undone using the undo button", async () => {
+      pending("Doesn't work in headless mode in Firefox due to bug 1878643.");
       // Run sequentially to avoid clipboard issues.
       for (const [, page] of pages) {
         await switchToStamp(page);
@@ -1622,6 +1640,7 @@ describe("Stamp Editor", () => {
     });
 
     it("must check that the undo deletion popup displays the correct message", async () => {
+      pending("Doesn't work in headless mode in Firefox due to bug 1878643.");
       // Run sequentially to avoid clipboard issues.
       for (const [, page] of pages) {
         await switchToStamp(page);
@@ -1648,6 +1667,7 @@ describe("Stamp Editor", () => {
     });
 
     it("must check that the popup disappears when a new image is inserted", async () => {
+      pending("Doesn't work in headless mode in Firefox due to bug 1878643.");
       // Run sequentially to avoid clipboard issues.
       for (const [, page] of pages) {
         await switchToStamp(page);
