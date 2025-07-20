@@ -22,6 +22,7 @@ import {
   string32,
   stringToBytes,
   stringToPDFString,
+  Util,
 } from "../../src/shared/util.js";
 
 describe("util", function () {
@@ -256,6 +257,31 @@ describe("util", function () {
       const uuid = getUuid();
       expect(typeof uuid).toEqual("string");
       expect(uuid.length).toBeGreaterThanOrEqual(32);
+    });
+  });
+
+  describe("applyTransform", function () {
+    it("should apply transformations correctly without subarray creation", async function () {
+      const cases = [
+        { transform: [1, 0, 0, 1, 10, 20], points: [5, 5, 10, 10] }, // translation
+        { transform: [0.5, 0.3, -0.3, 0.5, -5, 5], points: [0, 0, 1, 1] }, // scale+shear+translate
+        { transform: [2, 0, 0, 2, 0, 0], points: [-2, 3, 4, -5] }, // simple doubling
+      ];
+
+      for (const { transform, points: original } of cases) {
+        const pts = original.slice();
+
+        const [a, b, c, d, e, f] = transform;
+        const ex0x = a * original[0] + c * original[1] + e;
+        const ex0y = b * original[0] + d * original[1] + f;
+        const ex1x = a * original[2] + c * original[3] + e;
+        const ex1y = b * original[2] + d * original[3] + f;
+        const expected = [ex0x, ex0y, ex1x, ex1y];
+
+        Util.applyTransform(pts, transform, 0);
+        Util.applyTransform(pts, transform, 2);
+        expect(pts).toEqual(expected);
+      }
     });
   });
 });
