@@ -15,6 +15,14 @@
 
 import os from "os";
 
+// The time, in milliseconds, between `mousedown`/`mouseup` events in human
+// interaction. By default Puppeteer doesn't delay mouse clicks, making them
+// unrealistically fast and causing intermittent failures because the events
+// fire too fast in succession for the event listeners to process in time.
+// Note that this particular value is also used in Firefox; please see
+// https://github.com/mozilla-firefox/firefox/blob/main/modules/libpref/init/StaticPrefList.yaml#L19136-L19140.
+const CLICK_DELAY = 40;
+
 const isMac = os.platform() === "darwin";
 
 function loadAndWait(filename, selector, zoom, setups, options, viewport) {
@@ -176,7 +184,7 @@ function waitForTimeout(milliseconds) {
 
 async function clearInput(page, selector, waitForInputEvent = false) {
   const action = async () => {
-    await page.click(selector);
+    await page.click(selector, { delay: CLICK_DELAY });
     await kbSelectAll(page);
     await page.keyboard.press("Backspace");
     await page.waitForFunction(
@@ -195,6 +203,7 @@ async function clearInput(page, selector, waitForInputEvent = false) {
 
 async function waitAndClick(page, selector, clickOptions = {}) {
   await page.waitForSelector(selector, { visible: true });
+  clickOptions.delay = CLICK_DELAY;
   await page.click(selector, clickOptions);
 }
 
@@ -357,7 +366,7 @@ async function selectEditor(page, selector, count = 1) {
   await page.mouse.click(
     editorRect.x + editorRect.width / 2,
     editorRect.y + editorRect.height / 2,
-    { count }
+    { count, delay: CLICK_DELAY }
   );
   await waitForSelectedEditor(page, selector);
 }
@@ -806,7 +815,7 @@ async function switchToEditor(name, page, disable = false) {
       { once: true }
     );
   });
-  await page.click(`#editor${name}Button`);
+  await page.click(`#editor${name}Button`, { delay: CLICK_DELAY });
   name = name.toLowerCase();
   await page.waitForSelector(
     ".annotationEditorLayer" +
@@ -896,6 +905,7 @@ export {
   awaitPromise,
   clearEditors,
   clearInput,
+  CLICK_DELAY,
   closePages,
   closeSinglePage,
   copy,

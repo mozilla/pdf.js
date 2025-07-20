@@ -15,6 +15,7 @@
 
 import {
   awaitPromise,
+  CLICK_DELAY,
   closePages,
   createPromise,
   loadAndWait,
@@ -240,7 +241,7 @@ describe("autolinker", function () {
           const linkAnnotationsPromise = await waitForLinkAnnotations(page, 36);
 
           // Search for "rich.edu"
-          await page.click("#viewFindButton");
+          await page.click("#viewFindButton", { delay: CLICK_DELAY });
           await page.waitForSelector("#viewFindButton", { hidden: false });
           await page.type("#findInput", "rich.edu");
           await page.waitForSelector(".textLayer .highlight");

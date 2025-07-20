@@ -15,6 +15,7 @@
 
 import {
   awaitPromise,
+  CLICK_DELAY,
   closePages,
   getEditorSelector,
   getFirstSerialized,
@@ -70,11 +71,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          // Here and elsewhere, we add a small delay between press and release
-          // to make sure that a pointerup event is triggered after
-          // selectionchange.
-          // It works with a value of 1ms, but we use 100ms to be sure.
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
 
           await page.waitForSelector(`${getEditorSelector(0)}`);
 
@@ -120,7 +117,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
 
           await page.waitForSelector(`${getEditorSelector(0)}`);
           await page.waitForSelector(
@@ -170,7 +167,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
 
           await page.waitForSelector(`${getEditorSelector(0)}`);
           await page.waitForSelector(
@@ -215,7 +212,7 @@ describe("Highlight Editor", () => {
           let rect = await getSpanRectFromText(page, 1, "Abstract");
           let x = rect.x + rect.width / 2;
           let y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
 
           await page.waitForSelector(`${getEditorSelector(0)}`);
           await page.waitForSelector(
@@ -238,7 +235,7 @@ describe("Highlight Editor", () => {
           rect = await getSpanRectFromText(page, 14, "References");
           x = rect.x + rect.width / 2;
           y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
 
           const editorSelector = getEditorSelector(1);
           await page.waitForSelector(editorSelector);
@@ -249,12 +246,16 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(
             `${editorSelector} .editToolbar button.colorPicker`
           );
-          await page.click(`${editorSelector} .editToolbar button.colorPicker`);
+          await page.click(
+            `${editorSelector} .editToolbar button.colorPicker`,
+            { delay: CLICK_DELAY }
+          );
           await page.waitForSelector(
             `${editorSelector} .editToolbar button[title = "Green"]`
           );
           await page.click(
-            `${editorSelector} .editToolbar button[title = "Green"]`
+            `${editorSelector} .editToolbar button[title = "Green"]`,
+            { delay: CLICK_DELAY }
           );
           await page.waitForSelector(
             `.page[data-page-number = "14"] svg.highlight[fill = "#53FFBC"]`
@@ -303,7 +304,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
 
           await page.waitForSelector(`${getEditorSelector(0)}`);
           await page.waitForSelector(
@@ -364,7 +365,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
 
           await page.waitForSelector(sel);
           await page.waitForSelector(
@@ -372,11 +373,15 @@ describe("Highlight Editor", () => {
           );
 
           await page.waitForSelector(`${sel} .editToolbar button.colorPicker`);
-          await page.click(`${sel} .editToolbar button.colorPicker`);
+          await page.click(`${sel} .editToolbar button.colorPicker`, {
+            delay: CLICK_DELAY,
+          });
           await page.waitForSelector(
             `${sel} .editToolbar button[title = "Red"]`
           );
-          await page.click(`${sel} .editToolbar button[title = "Red"]`);
+          await page.click(`${sel} .editToolbar button[title = "Red"]`, {
+            delay: CLICK_DELAY,
+          });
           await page.waitForSelector(
             `.page[data-page-number = "1"] svg.highlight[fill = "#FF0000"]`
           );
@@ -474,7 +479,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
 
           const editorSelector = getEditorSelector(0);
           await page.waitForSelector(editorSelector);
@@ -522,7 +527,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
 
           await page.waitForSelector(sel);
           await page.waitForSelector(
@@ -530,11 +535,13 @@ describe("Highlight Editor", () => {
           );
 
           await page.waitForSelector(`${sel} .editToolbar button.colorPicker`);
-          await page.click(`${sel} .editToolbar button.colorPicker`);
+          await page.click(`${sel} .editToolbar button.colorPicker`, {
+            delay: CLICK_DELAY,
+          });
           await page.waitForSelector(
             `${sel} .editToolbar button[title = "Red"]`
           );
-          await page.mouse.click(x, y - rect.height);
+          await page.mouse.click(x, y - rect.height, { delay: CLICK_DELAY });
           await page.waitForSelector(
             `${sel} .editToolbar button.colorPicker .dropdown.hidden`
           );
@@ -563,7 +570,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
 
           await page.waitForSelector(sel);
           await page.waitForSelector(
@@ -571,7 +578,7 @@ describe("Highlight Editor", () => {
           );
 
           await page.waitForSelector(`${sel} .editToolbar button.colorPicker`);
-          await page.mouse.click(x, y - rect.height);
+          await page.mouse.click(x, y - rect.height, { delay: CLICK_DELAY });
           await page.waitForSelector(
             `.page[data-page-number = "1"] svg.highlightOutline:not(.selected)`
           );
@@ -685,7 +692,7 @@ describe("Highlight Editor", () => {
           await page.mouse.click(
             spanRect.x + 1,
             spanRect.y + spanRect.height / 2,
-            { count: 2 }
+            { count: 2, delay: CLICK_DELAY }
           );
           for (let i = 0; i < 6; i++) {
             await page.keyboard.press("ArrowRight");
@@ -836,7 +843,7 @@ describe("Highlight Editor", () => {
           );
           const x = rect.x + 0.75 * rect.width;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
 
           await page.waitForSelector(`${getEditorSelector(0)}`);
           const usedColor = await page.evaluate(() => {
@@ -932,7 +939,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
           await page.waitForFunction(() => window.editingEvents.length > 0);
 
           let editingEvent = await page.evaluate(() => {
@@ -948,7 +955,9 @@ describe("Highlight Editor", () => {
             .toBe(true);
 
           // Click somewhere to unselect the current selection.
-          await page.mouse.click(rect.x + rect.width + 10, y, { count: 1 });
+          await page.mouse.click(rect.x + rect.width + 10, y, {
+            delay: CLICK_DELAY,
+          });
           await page.waitForFunction(() => window.editingEvents.length > 0);
           editingEvent = await page.evaluate(() => {
             const e = window.editingEvents[0];
@@ -959,7 +968,7 @@ describe("Highlight Editor", () => {
             .withContext(`In ${browserName}`)
             .toBe(false);
 
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
           await page.waitForFunction(() => window.editingEvents.length > 0);
 
           await page.evaluate(() => {
@@ -1016,7 +1025,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
 
           const editorSelector = getEditorSelector(0);
           await page.waitForSelector(editorSelector);
@@ -1084,7 +1093,9 @@ describe("Highlight Editor", () => {
             1,
             "Dynamic languages such as JavaScript are more difﬁcult to com-"
           );
-          await page.mouse.click(rect.x + 5, rect.y + rect.height / 2);
+          await page.mouse.click(rect.x + 5, rect.y + rect.height / 2, {
+            delay: CLICK_DELAY,
+          });
           await page.keyboard.down("Shift");
           for (let i = 0; i < 10; i++) {
             await page.keyboard.press("ArrowRight");
@@ -1115,7 +1126,8 @@ describe("Highlight Editor", () => {
           );
           await page.mouse.click(
             rect.x + rect.width / 2,
-            rect.y + rect.height / 2
+            rect.y + rect.height / 2,
+            { delay: CLICK_DELAY }
           );
           await page.keyboard.down("Shift");
           for (let i = 0; i < 10; i++) {
@@ -1163,7 +1175,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
 
           const editorSelector = getEditorSelector(0);
           await page.waitForSelector(editorSelector);
@@ -1199,7 +1211,7 @@ describe("Highlight Editor", () => {
           await page.mouse.click(
             rect.x + rect.width / 2,
             rect.y + rect.height / 2,
-            { count: 2, delay: 100 }
+            { count: 2, delay: CLICK_DELAY }
           );
 
           const editorSelector = getEditorSelector(0);
@@ -1219,7 +1231,7 @@ describe("Highlight Editor", () => {
             "#editorFreeHighlightThickness:not([disabled])"
           );
 
-          await page.click(editorSelector);
+          await page.click(editorSelector, { delay: CLICK_DELAY });
           await page.waitForSelector(editorSelector);
           await page.waitForSelector("#editorFreeHighlightThickness[disabled]");
 
@@ -1254,7 +1266,7 @@ describe("Highlight Editor", () => {
           await page.mouse.click(
             rect.x + rect.width / 2,
             rect.y + rect.height / 2,
-            { count: 2, delay: 100 }
+            { count: 2, delay: CLICK_DELAY }
           );
 
           await page.waitForSelector(getEditorSelector(0));
@@ -1290,7 +1302,7 @@ describe("Highlight Editor", () => {
           await page.mouse.click(
             rect.x + rect.width / 4,
             rect.y + rect.height / 2,
-            { count: 2, delay: 100 }
+            { count: 2, delay: CLICK_DELAY }
           );
 
           await page.waitForSelector(getEditorSelector(0));
@@ -1325,7 +1337,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
 
           const editorSelector = getEditorSelector(0);
           await page.waitForSelector(editorSelector);
@@ -1407,21 +1419,21 @@ describe("Highlight Editor", () => {
           await page.mouse.click(
             rect.x + rect.width / 2,
             rect.y + rect.height / 2,
-            { count: 2, delay: 100 }
+            { count: 2, delay: CLICK_DELAY }
           );
 
           const secondEditorSelector = getEditorSelector(1);
           await page.waitForSelector(secondEditorSelector);
 
-          await page.click("#editorHighlightShowAll");
+          await page.click("#editorHighlightShowAll", { delay: CLICK_DELAY });
           await page.waitForSelector(`${firstEditorSelector}.hidden`);
           await page.waitForSelector(`${secondEditorSelector}.hidden`);
 
-          await page.click("#editorHighlightShowAll");
+          await page.click("#editorHighlightShowAll", { delay: CLICK_DELAY });
           await page.waitForSelector(`${firstEditorSelector}:not(.hidden)`);
           await page.waitForSelector(`${secondEditorSelector}:not(.hidden)`);
 
-          await page.click("#editorHighlightShowAll");
+          await page.click("#editorHighlightShowAll", { delay: CLICK_DELAY });
           await page.waitForSelector(`${firstEditorSelector}.hidden`);
           await page.waitForSelector(`${secondEditorSelector}.hidden`);
 
@@ -1434,7 +1446,9 @@ describe("Highlight Editor", () => {
               `.page[data-page-number = "${pageNumber}"]`
             );
             if (pageNumber === 14) {
-              await page.click("#editorHighlightShowAll");
+              await page.click("#editorHighlightShowAll", {
+                delay: CLICK_DELAY,
+              });
             }
           }
 
@@ -1469,10 +1483,12 @@ describe("Highlight Editor", () => {
             const rect = await getSpanRectFromText(page, 1, text);
             const x = rect.x + rect.width / 2;
             const y = rect.y + rect.height / 2;
-            await page.mouse.click(x, y, { count: 2, delay: 100 });
+            await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
 
             await page.waitForSelector(".textLayer .highlightButton");
-            await page.click(".textLayer .highlightButton");
+            await page.click(".textLayer .highlightButton", {
+              delay: CLICK_DELAY,
+            });
 
             await page.waitForSelector(getEditorSelector(editorId));
             const usedColor = await page.evaluate(() => {
@@ -1516,13 +1532,13 @@ describe("Highlight Editor", () => {
           let rect = await getSpanRectFromText(page, 1, "Abstract");
           let x = rect.x + rect.width / 2;
           let y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
           await page.waitForSelector(getEditorSelector(0));
 
           rect = await getSpanRectFromText(page, 1, "Languages");
           x = rect.x + rect.width / 2;
           y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
 
           const editorSelector = getEditorSelector(1);
           await page.waitForSelector(editorSelector);
@@ -1559,14 +1575,16 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
 
           const editorSelector = getEditorSelector(0);
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
 
           await kbUndo(page);
@@ -1605,14 +1623,16 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
 
           const editorSelector = getEditorSelector(0);
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
 
           const twoToFourteen = Array.from(new Array(13).keys(), n => n + 2);
@@ -1667,14 +1687,16 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
 
           const editorSelector = getEditorSelector(0);
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
 
           const twoToOne = Array.from(new Array(13).keys(), n => n + 2).concat(
@@ -1752,18 +1774,22 @@ describe("Highlight Editor", () => {
           const rect = await getRect(page, editorSelector);
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y);
+          await page.mouse.click(x, y, { delay: CLICK_DELAY });
 
           await page.waitForSelector(
             `${editorSelector} .editToolbar button.colorPicker`
           );
 
-          await page.click(`${editorSelector} .editToolbar button.colorPicker`);
+          await page.click(
+            `${editorSelector} .editToolbar button.colorPicker`,
+            { delay: CLICK_DELAY }
+          );
           await page.waitForSelector(
             `${editorSelector} .editToolbar button[title = "Green"]`
           );
           await page.click(
-            `${editorSelector} .editToolbar button[title = "Green"]`
+            `${editorSelector} .editToolbar button[title = "Green"]`,
+            { delay: CLICK_DELAY }
           );
           await page.waitForSelector(
             `.page[data-page-number = "1"] svg.highlight[fill = "#00FF00"]`
@@ -1793,7 +1819,7 @@ describe("Highlight Editor", () => {
           const editorSelector = getEditorSelector(0);
           const x = rect.x + rect.width / 2;
           let y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
           await unselectEditor(page, editorSelector);
@@ -1863,7 +1889,7 @@ describe("Highlight Editor", () => {
           const editorSelector = getEditorSelector(0);
           const x = Math.round(rect.x + rect.width / 2);
           let y = Math.round(rect.y + rect.height / 2);
-          await page.mouse.click(x, y, { count: 3, delay: 100 });
+          await page.mouse.click(x, y, { count: 3, delay: CLICK_DELAY });
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
           await unselectEditor(page, editorSelector);
@@ -1932,10 +1958,12 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "In production");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 3, delay: 100 });
+          await page.mouse.click(x, y, { count: 3, delay: CLICK_DELAY });
 
           await page.waitForSelector(".textLayer .highlightButton");
-          await page.click(".textLayer .highlightButton");
+          await page.click(".textLayer .highlightButton", {
+            delay: CLICK_DELAY,
+          });
 
           await page.waitForSelector(getEditorSelector(0));
           const usedColor = await page.evaluate(() => {
@@ -2023,7 +2051,9 @@ describe("Highlight Editor", () => {
           const editorSelector = getEditorSelector(0);
           await page.waitForSelector(editorSelector);
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 1);
 
           const serialized = await getSerialized(page);
@@ -2066,7 +2096,10 @@ describe("Highlight Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           const modeChangedHandle = await waitForAnnotationModeChanged(page);
-          await page.click("[data-annotation-id='693R']", { count: 2 });
+          await page.click("[data-annotation-id='693R']", {
+            count: 2,
+            delay: CLICK_DELAY,
+          });
           await awaitPromise(modeChangedHandle);
           await page.waitForSelector("#highlightParamsToolbarContainer");
 
@@ -2200,19 +2233,21 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
           await page.waitForSelector("#editorUndoBar", { visible: true });
 
           await page.waitForSelector("#editorUndoBarUndoButton", {
             visible: true,
           });
-          await page.click("#editorUndoBarUndoButton");
+          await page.click("#editorUndoBarUndoButton", { delay: CLICK_DELAY });
           await waitForSerialized(page, 1);
           await page.waitForSelector(editorSelector);
           await page.waitForSelector(
@@ -2230,19 +2265,21 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
           await page.waitForSelector("#editorUndoBar", { visible: true });
 
           await page.waitForSelector("#editorUndoBarUndoButton", {
             visible: true,
           });
-          await page.click("#editorUndoBarUndoButton");
+          await page.click("#editorUndoBarUndoButton", { delay: CLICK_DELAY });
           await page.waitForSelector("#editorUndoBar", { hidden: true });
         })
       );
@@ -2256,19 +2293,21 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
           await page.waitForSelector("#editorUndoBar", { visible: true });
 
           await page.waitForSelector("#editorUndoBarCloseButton", {
             visible: true,
           });
-          await page.click("#editorUndoBarCloseButton");
+          await page.click("#editorUndoBarCloseButton", { delay: CLICK_DELAY });
           await page.waitForSelector("#editorUndoBar", { hidden: true });
         })
       );
@@ -2282,19 +2321,21 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
           await page.waitForSelector("#editorUndoBar", { visible: true });
 
           const newRect = await getSpanRectFromText(page, 1, "Introduction");
           const newX = newRect.x + newRect.width / 2;
           const newY = newRect.y + newRect.height / 2;
-          await page.mouse.click(newX, newY, { count: 2, delay: 100 });
+          await page.mouse.click(newX, newY, { count: 2, delay: CLICK_DELAY });
 
           await page.waitForSelector(getEditorSelector(1));
           await page.waitForSelector("#editorUndoBar", { hidden: true });
@@ -2310,12 +2351,14 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
           await page.waitForSelector("#editorUndoBar", { visible: true });
 
@@ -2333,16 +2376,18 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
           await page.waitForSelector("#editorUndoBar", { visible: true });
 
-          await page.click("#printButton");
+          await page.click("#printButton", { delay: CLICK_DELAY });
           await page.waitForSelector("#editorUndoBar", { hidden: true });
         })
       );
@@ -2356,12 +2401,14 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
           await page.waitForSelector("#editorUndoBar", { visible: true });
 
@@ -2379,17 +2426,21 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
           await page.waitForSelector("#editorUndoBar", { visible: true });
 
-          await page.click("#secondaryToolbarToggleButton");
-          await page.click("#lastPage");
+          await page.click("#secondaryToolbarToggleButton", {
+            delay: CLICK_DELAY,
+          });
+          await page.click("#lastPage", { delay: CLICK_DELAY });
           await page.waitForSelector("#editorUndoBar", { hidden: true });
         })
       );
@@ -2403,12 +2454,14 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
           await page.waitForSelector("#editorUndoBar", { visible: true });
 
@@ -2426,12 +2479,14 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
           await page.waitForSelector("#editorUndoBar", { visible: true });
           const pdfPath = path.join(__dirname, "../pdfs/basicapi.pdf");
@@ -2486,12 +2541,14 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
 
           await page.waitForFunction(() => {
@@ -2519,18 +2576,20 @@ describe("Highlight Editor", () => {
           let rect = await getSpanRectFromText(page, 1, "Abstract");
           let x = rect.x + rect.width / 2;
           let y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
           await page.waitForSelector(editorSelector);
 
           rect = await getSpanRectFromText(page, 1, "Languages");
           x = rect.x + rect.width / 2;
           y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
           await page.waitForSelector(getEditorSelector(1));
 
           await selectAll(page);
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
 
           await page.waitForFunction(() => {
@@ -2563,12 +2622,14 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
           await page.waitForSelector("#editorUndoBar", { visible: true });
 
@@ -2584,7 +2645,9 @@ describe("Highlight Editor", () => {
           );
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
           await page.waitForSelector("#editorUndoBar", { visible: true });
 
@@ -2610,12 +2673,14 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
           await page.waitForSelector(editorSelector);
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
           await page.waitForSelector("#editorUndoBar", { visible: true });
 
@@ -2737,12 +2802,13 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
           const highlightSelector = `.page[data-page-number = "1"] .canvasWrapper > svg.highlight`;
           await page.waitForSelector(`${highlightSelector}[fill = "#AB0000"]`);
 
           await page.click(
-            "#editorHighlightColorPicker button[title = 'Blue']"
+            "#editorHighlightColorPicker button[title = 'Blue']",
+            { delay: CLICK_DELAY }
           );
 
           await page.waitForSelector(`${highlightSelector}[fill = "#0000AB"]`);
@@ -2781,7 +2847,7 @@ describe("Highlight Editor", () => {
           const rect = await getSpanRectFromText(page, 1, "Abstract");
           const x = rect.x + rect.width / 2;
           const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.mouse.click(x, y, { count: 2, delay: CLICK_DELAY });
 
           const editorSelector = getEditorSelector(0);
           await page.waitForSelector(editorSelector);

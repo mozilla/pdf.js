@@ -15,6 +15,7 @@
 
 import {
   awaitPromise,
+  CLICK_DELAY,
   closePages,
   createPromise,
   getSpanRectFromText,
@@ -1177,7 +1178,9 @@ describe("PDF viewer", () => {
     it("must check that the SecondaryToolbar doesn't close between rotations", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#secondaryToolbarToggleButton");
+          await page.click("#secondaryToolbarToggleButton", {
+            delay: CLICK_DELAY,
+          });
           await page.waitForSelector("#secondaryToolbar", { hidden: false });
 
           for (let i = 1; i <= 4; i++) {
@@ -1191,7 +1194,7 @@ describe("PDF viewer", () => {
             const rotation = i * 90;
             const handle = await waitForRotationChanging(page, rotation);
 
-            await page.click("#pageRotateCw");
+            await page.click("#pageRotateCw", { delay: CLICK_DELAY });
             await awaitPromise(handle);
 
             const pagesRotation = await page.evaluate(

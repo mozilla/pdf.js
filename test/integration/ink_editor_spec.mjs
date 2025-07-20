@@ -16,6 +16,7 @@
 import {
   awaitPromise,
   clearEditors,
+  CLICK_DELAY,
   closePages,
   dragAndDrop,
   getAnnotationSelector,
@@ -306,7 +307,9 @@ describe("Ink Editor", () => {
           await page.mouse.up();
           await awaitPromise(clickHandle);
 
-          await page.mouse.click(rect.x - 10, rect.y + 10);
+          await page.mouse.click(rect.x - 10, rect.y + 10, {
+            delay: CLICK_DELAY,
+          });
           await page.waitForSelector(`${getEditorSelector(0)}.disabled`);
         })
       );
@@ -346,7 +349,9 @@ describe("Ink Editor", () => {
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
 
           await kbUndo(page);
@@ -390,7 +395,9 @@ describe("Ink Editor", () => {
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
 
           const twoToFourteen = Array.from(new Array(13).keys(), n => n + 2);
@@ -447,7 +454,9 @@ describe("Ink Editor", () => {
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
 
           const twoToOne = Array.from(new Array(13).keys(), n => n + 2).concat(
@@ -842,7 +851,7 @@ describe("Ink Editor", () => {
           await page.mouse.click(
             inkRect.x + inkRect.width / 2,
             inkRect.y + inkRect.height / 2,
-            { count: 2 }
+            { count: 2, delay: CLICK_DELAY }
           );
           await awaitPromise(modeChangedHandle);
           const edgeB = getEditorSelector(10);
@@ -898,14 +907,16 @@ describe("Ink Editor", () => {
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
           await page.waitForSelector("#editorUndoBar", { visible: true });
 
           await page.waitForSelector("#editorUndoBarUndoButton", {
             visible: true,
           });
-          await page.click("#editorUndoBarUndoButton");
+          await page.click("#editorUndoBarUndoButton", { delay: CLICK_DELAY });
           await waitForSerialized(page, 1);
           await page.waitForSelector(editorSelector);
         })
@@ -932,7 +943,9 @@ describe("Ink Editor", () => {
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
 
           await page.waitForFunction(() => {
@@ -971,7 +984,9 @@ describe("Ink Editor", () => {
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
           await page.waitForSelector("#editorUndoBar", { visible: true });
 
@@ -1102,14 +1117,16 @@ describe("Ink Editor", () => {
           await waitForSerialized(page, 2);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 1);
           await page.waitForSelector("#editorUndoBar", { visible: true });
 
           await page.waitForSelector("#editorUndoBarUndoButton", {
             visible: true,
           });
-          await page.click("#editorUndoBarUndoButton");
+          await page.click("#editorUndoBarUndoButton", { delay: CLICK_DELAY });
           await page.waitForSelector("#editorUndoBar", { hidden: true });
 
           editorSelector = getEditorSelector(0);
@@ -1269,7 +1286,8 @@ describe("Should switch from an editor and mode to others by double clicking", (
         const data = "Hello PDF.js World !!";
         await page.mouse.click(
           editorLayerRect.x + 200,
-          editorLayerRect.y + 200
+          editorLayerRect.y + 200,
+          { delay: CLICK_DELAY }
         );
         await page.waitForSelector(freeTextSelector, { visible: true });
         await page.type(`${freeTextSelector} .internal`, data);

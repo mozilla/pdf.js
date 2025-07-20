@@ -15,6 +15,7 @@
 
 import {
   awaitPromise,
+  CLICK_DELAY,
   closePages,
   copy,
   FSI,
@@ -54,7 +55,9 @@ describe("Signature Editor", () => {
       await Promise.all(
         pages.map(async ([_, page]) => {
           await switchToSignature(page);
-          await page.click("#editorSignatureAddSignature");
+          await page.click("#editorSignatureAddSignature", {
+            delay: CLICK_DELAY,
+          });
 
           await page.waitForSelector("#addSignatureDialog", {
             visible: true,
@@ -64,7 +67,7 @@ describe("Signature Editor", () => {
           const editorSelector = getEditorSelector(0);
           await page.waitForSelector(editorSelector, { visible: false });
 
-          await page.click("#addSignatureCancelButton");
+          await page.click("#addSignatureCancelButton", { delay: CLICK_DELAY });
 
           // The editor should have been removed.
           await page.waitForSelector(`:not(${editorSelector})`);
@@ -76,7 +79,9 @@ describe("Signature Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToSignature(page);
-          await page.click("#editorSignatureAddSignature");
+          await page.click("#editorSignatureAddSignature", {
+            delay: CLICK_DELAY,
+          });
 
           await page.waitForSelector("#addSignatureDialog", {
             visible: true,
@@ -85,7 +90,7 @@ describe("Signature Editor", () => {
           await page.waitForSelector(
             "#addSignatureTypeButton[aria-selected=true]"
           );
-          await page.click("#addSignatureTypeInput");
+          await page.click("#addSignatureTypeInput", { delay: CLICK_DELAY });
           await page.waitForSelector(
             "#addSignatureSaveContainer > input:disabled"
           );
@@ -118,13 +123,15 @@ describe("Signature Editor", () => {
           expect(description).withContext(browserName).toEqual("PDF.js");
 
           // Clear the description.
-          await page.click("#addSignatureDescription > button");
+          await page.click("#addSignatureDescription > button", {
+            delay: CLICK_DELAY,
+          });
           await page.waitForFunction(
             `document.querySelector("${descriptionInputSelector}").value === ""`
           );
 
           // Clear the text for the signature.
-          await page.click("#clearSignatureButton");
+          await page.click("#clearSignatureButton", { delay: CLICK_DELAY });
           await page.waitForFunction(
             `document.querySelector("#addSignatureTypeInput").value === ""`
           );
@@ -140,7 +147,7 @@ describe("Signature Editor", () => {
           );
 
           // Clearing the signature type should clear the description.
-          await page.click("#clearSignatureButton");
+          await page.click("#clearSignatureButton", { delay: CLICK_DELAY });
           await page.waitForFunction(
             `document.querySelector("#addSignatureTypeInput").value === ""`
           );
@@ -153,7 +160,9 @@ describe("Signature Editor", () => {
           await page.waitForFunction(
             `document.querySelector("${descriptionInputSelector}").value !== ""`
           );
-          await page.click("#addSignatureDescription > button");
+          await page.click("#addSignatureDescription > button", {
+            delay: CLICK_DELAY,
+          });
           await page.waitForFunction(
             `document.querySelector("${descriptionInputSelector}").value === ""`
           );
@@ -169,7 +178,7 @@ describe("Signature Editor", () => {
           );
           expect(description).withContext(browserName).toEqual("Hello World");
 
-          await page.click("#addSignatureAddButton");
+          await page.click("#addSignatureAddButton", { delay: CLICK_DELAY });
           await page.waitForSelector("#addSignatureDialog", {
             visible: false,
           });
@@ -196,7 +205,7 @@ describe("Signature Editor", () => {
           );
 
           // Edit the description.
-          await page.click(`.altText.editDescription`);
+          await page.click(".altText.editDescription", { delay: CLICK_DELAY });
 
           await page.waitForSelector("#editSignatureDescriptionDialog", {
             visible: true,
@@ -208,7 +217,9 @@ describe("Signature Editor", () => {
           const editDescriptionInput = "#editSignatureDescription > input";
           description = await page.$eval(editDescriptionInput, el => el.value);
           expect(description).withContext(browserName).toEqual("Hello World");
-          await page.click("#editSignatureDescription > button");
+          await page.click("#editSignatureDescription > button", {
+            delay: CLICK_DELAY,
+          });
           await page.waitForFunction(
             `document.querySelector("${editDescriptionInput}").value === ""`
           );
@@ -220,7 +231,9 @@ describe("Signature Editor", () => {
             "#editSignatureUpdateButton:not(:disabled)"
           );
 
-          await page.click("#editSignatureUpdateButton");
+          await page.click("#editSignatureUpdateButton", {
+            delay: CLICK_DELAY,
+          });
 
           // Check the tooltip.
           await page.waitForSelector(
@@ -234,13 +247,15 @@ describe("Signature Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToSignature(page);
-          await page.click("#editorSignatureAddSignature");
+          await page.click("#editorSignatureAddSignature", {
+            delay: CLICK_DELAY,
+          });
 
           await page.waitForSelector("#addSignatureDialog", {
             visible: true,
           });
 
-          await page.click("#addSignatureDrawButton");
+          await page.click("#addSignatureDrawButton", { delay: CLICK_DELAY });
           const drawSelector = "#addSignatureDraw";
           await page.waitForSelector(drawSelector, { visible: true });
 
@@ -276,7 +291,7 @@ describe("Signature Editor", () => {
           );
           expect(description).withContext(browserName).toEqual("Signature");
 
-          await page.click("#addSignatureAddButton");
+          await page.click("#addSignatureAddButton", { delay: CLICK_DELAY });
           await page.waitForSelector("#addSignatureDialog", {
             visible: false,
           });
@@ -292,13 +307,15 @@ describe("Signature Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToSignature(page);
-          await page.click("#editorSignatureAddSignature");
+          await page.click("#editorSignatureAddSignature", {
+            delay: CLICK_DELAY,
+          });
 
           await page.waitForSelector("#addSignatureDialog", {
             visible: true,
           });
 
-          await page.click("#addSignatureImageButton");
+          await page.click("#addSignatureImageButton", { delay: CLICK_DELAY });
           await page.waitForSelector("#addSignatureImagePlaceholder", {
             visible: true,
           });
@@ -334,7 +351,7 @@ describe("Signature Editor", () => {
             .withContext(browserName)
             .toEqual("firefox_logo.png");
 
-          await page.click("#addSignatureAddButton");
+          await page.click("#addSignatureAddButton", { delay: CLICK_DELAY });
           await page.waitForSelector("#addSignatureDialog", {
             visible: false,
           });
@@ -350,14 +367,16 @@ describe("Signature Editor", () => {
       // Run sequentially to avoid clipboard issues.
       for (const [browserName, page] of pages) {
         await switchToSignature(page);
-        await page.click("#editorSignatureAddSignature");
+        await page.click("#editorSignatureAddSignature", {
+          delay: CLICK_DELAY,
+        });
 
         await page.waitForSelector("#addSignatureDialog", {
           visible: true,
         });
         await page.type("#addSignatureTypeInput", "Hello");
         await page.waitForSelector(`${addButtonSelector}:not(:disabled)`);
-        await page.click("#addSignatureAddButton");
+        await page.click("#addSignatureAddButton", { delay: CLICK_DELAY });
 
         const editorSelector = getEditorSelector(0);
         await page.waitForSelector(editorSelector, { visible: true });
@@ -412,7 +431,9 @@ describe("Signature Editor", () => {
       await Promise.all(
         pages.map(async ([_, page]) => {
           await switchToSignature(page);
-          await page.click("#editorSignatureAddSignature");
+          await page.click("#editorSignatureAddSignature", {
+            delay: CLICK_DELAY,
+          });
 
           await page.waitForSelector("#addSignatureDialog", {
             visible: true,
@@ -422,7 +443,7 @@ describe("Signature Editor", () => {
             "[18:50:03] asset pdf.scripting.mjs 105 KiB [emitted] [javascript module] (name: main)"
           );
           await page.waitForSelector(`${addButtonSelector}:not(:disabled)`);
-          await page.click("#addSignatureAddButton");
+          await page.click("#addSignatureAddButton", { delay: CLICK_DELAY });
 
           const editorSelector = getEditorSelector(0);
           await page.waitForSelector(editorSelector, { visible: true });
@@ -454,12 +475,14 @@ describe("Signature Editor", () => {
       await Promise.all(
         pages.map(async ([_, page]) => {
           await switchToSignature(page);
-          await page.click("#editorSignatureAddSignature");
+          await page.click("#editorSignatureAddSignature", {
+            delay: CLICK_DELAY,
+          });
 
           await page.waitForSelector("#addSignatureDialog", {
             visible: true,
           });
-          await page.click("#addSignatureImageButton");
+          await page.click("#addSignatureImageButton", { delay: CLICK_DELAY });
           await page.waitForSelector("#addSignatureImagePlaceholder", {
             visible: true,
           });
@@ -468,7 +491,9 @@ describe("Signature Editor", () => {
             `${path.join(__dirname, "./signature_editor_spec.mjs")}`
           );
           await page.waitForSelector("#addSignatureError", { visible: true });
-          await page.click("#addSignatureErrorCloseButton");
+          await page.click("#addSignatureErrorCloseButton", {
+            delay: CLICK_DELAY,
+          });
           await page.waitForSelector("#addSignatureError", { visible: false });
 
           await input.uploadFile(
@@ -476,12 +501,12 @@ describe("Signature Editor", () => {
           );
           await page.waitForSelector("#addSignatureError", { visible: true });
 
-          await page.click("#addSignatureTypeButton");
+          await page.click("#addSignatureTypeButton", { delay: CLICK_DELAY });
           await page.waitForSelector(
             "#addSignatureTypeButton[aria-selected=true]"
           );
           await page.waitForSelector("#addSignatureError", { visible: false });
-          await page.click("#addSignatureCancelButton");
+          await page.click("#addSignatureCancelButton", { delay: CLICK_DELAY });
         })
       );
     });
@@ -515,14 +540,16 @@ describe("Signature Editor", () => {
           expect(colorTheme).toEqual("light");
 
           await switchToSignature(page);
-          await page.click("#editorSignatureAddSignature");
+          await page.click("#editorSignatureAddSignature", {
+            delay: CLICK_DELAY,
+          });
 
           await page.waitForSelector("#addSignatureDialog", {
             visible: true,
           });
           await page.type("#addSignatureTypeInput", "Should be black.");
           await page.waitForSelector(`${addButtonSelector}:not(:disabled)`);
-          await page.click("#addSignatureAddButton");
+          await page.click("#addSignatureAddButton", { delay: CLICK_DELAY });
 
           const editorSelector = getEditorSelector(0);
           await page.waitForSelector(editorSelector, { visible: true });
@@ -571,14 +598,16 @@ describe("Signature Editor", () => {
           expect(colorTheme).toEqual("dark");
 
           await switchToSignature(page);
-          await page.click("#editorSignatureAddSignature");
+          await page.click("#editorSignatureAddSignature", {
+            delay: CLICK_DELAY,
+          });
 
           await page.waitForSelector("#addSignatureDialog", {
             visible: true,
           });
           await page.type("#addSignatureTypeInput", "Should be black.");
           await page.waitForSelector(`${addButtonSelector}:not(:disabled)`);
-          await page.click("#addSignatureAddButton");
+          await page.click("#addSignatureAddButton", { delay: CLICK_DELAY });
 
           const editorSelector = getEditorSelector(0);
           await page.waitForSelector(editorSelector, { visible: true });
@@ -644,13 +673,15 @@ describe("Signature Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToSignature(page);
-          await page.click("#editorSignatureAddSignature");
+          await page.click("#editorSignatureAddSignature", {
+            delay: CLICK_DELAY,
+          });
 
           await page.waitForSelector("#addSignatureDialog", {
             visible: true,
           });
 
-          await page.click("#addSignatureImageButton");
+          await page.click("#addSignatureImageButton", { delay: CLICK_DELAY });
           await page.waitForSelector("#addSignatureImagePlaceholder", {
             visible: true,
           });
@@ -666,7 +697,7 @@ describe("Signature Editor", () => {
           await page.waitForSelector(
             "#addSignatureSaveContainer > input:not(:disabled)"
           );
-          await page.click("#addSignatureAddButton");
+          await page.click("#addSignatureAddButton", { delay: CLICK_DELAY });
           await page.waitForSelector("#addSignatureDialog", {
             visible: false,
           });
@@ -702,11 +733,13 @@ describe("Signature Editor", () => {
           await switchToSignature(page);
 
           for (let i = 0; i < 6; i++) {
-            await page.click("#editorSignatureAddSignature");
+            await page.click("#editorSignatureAddSignature", {
+              delay: CLICK_DELAY,
+            });
             await page.waitForSelector("#addSignatureDialog", {
               visible: true,
             });
-            await page.click("#addSignatureTypeInput");
+            await page.click("#addSignatureTypeInput", { delay: CLICK_DELAY });
             await page.type("#addSignatureTypeInput", `PDF.js ${i}`);
             if (i === 5) {
               await page.waitForSelector(
@@ -719,7 +752,7 @@ describe("Signature Editor", () => {
                 "#addSignatureSaveCheckbox:not(:disabled)"
               );
             }
-            await page.click("#addSignatureAddButton");
+            await page.click("#addSignatureAddButton", { delay: CLICK_DELAY });
             await page.waitForSelector("#addSignatureDialog", {
               visible: false,
             });
@@ -745,12 +778,14 @@ describe("Signature Editor", () => {
         pages.map(async ([_, page]) => {
           await switchToSignature(page);
 
-          await page.click("#editorSignatureAddSignature");
+          await page.click("#editorSignatureAddSignature", {
+            delay: CLICK_DELAY,
+          });
 
           await page.waitForSelector("#addSignatureDialog", {
             visible: true,
           });
-          await page.click("#addSignatureImageButton");
+          await page.click("#addSignatureImageButton", { delay: CLICK_DELAY });
           await page.waitForSelector("#addSignatureImagePlaceholder", {
             visible: true,
           });
@@ -765,7 +800,9 @@ describe("Signature Editor", () => {
           await page.waitForSelector(
             "#addSignatureErrorDescription[data-l10n-id='pdfjs-editor-add-signature-image-no-data-error-description']"
           );
-          await page.click("#addSignatureErrorCloseButton");
+          await page.click("#addSignatureErrorCloseButton", {
+            delay: CLICK_DELAY,
+          });
           await page.waitForSelector("#addSignatureError", { visible: false });
         })
       );

@@ -403,6 +403,18 @@ export default [
           message:
             "`waitForTimeout` can cause intermittent failures and should not be used (see issue #17656 for replacements).",
         },
+        {
+          selector:
+            "CallExpression:has(> MemberExpression.callee[object.name='page'][property.name='click'])[arguments.length < 2]",
+          message:
+            "`page.click` without delay can cause intermittent failures; provide `{ delay: CLICK_DELAY }` as options argument instead",
+        },
+        {
+          selector:
+            "CallExpression:has(> MemberExpression.callee[object.object.name='page'][object.property.name='mouse'][property.name='click'])[arguments.length < 3]",
+          message:
+            "`page.mouse.click` without delay can cause intermittent failures; provide `{ delay: CLICK_DELAY }` as options argument instead",
+        },
       ],
     },
   },

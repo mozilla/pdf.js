@@ -16,6 +16,7 @@
 import {
   awaitPromise,
   clearInput,
+  CLICK_DELAY,
   closePages,
   closeSinglePage,
   getAnnotationStorage,
@@ -111,7 +112,7 @@ describe("Interaction", () => {
           expect(visibility).withContext(`In ${browserName}`).toEqual("hidden");
 
           await page.type(getSelector("416R"), "3.14159");
-          await page.click(getSelector("419R"));
+          await page.click(getSelector("419R"), { delay: CLICK_DELAY });
 
           await page.waitForFunction(
             `${getComputedStyleSelector("427R")}.visibility !== "hidden"`
@@ -128,7 +129,7 @@ describe("Interaction", () => {
           // Clear the textfield
           await clearInput(page, getSelector("416R"));
           // and leave it
-          await page.click(getSelector("419R"));
+          await page.click(getSelector("419R"), { delay: CLICK_DELAY });
 
           await page.waitForFunction(
             `${getComputedStyleSelector("427R")}.visibility !== "visible"`
@@ -149,7 +150,7 @@ describe("Interaction", () => {
           await waitForScripting(page);
 
           await page.type(getSelector("416R"), "3.14159");
-          await page.click(getSelector("419R"));
+          await page.click(getSelector("419R"), { delay: CLICK_DELAY });
           await page.waitForFunction(
             `${getQuerySelector("416R")}.value === "3,14"`
           );
@@ -166,12 +167,12 @@ describe("Interaction", () => {
           await waitForScripting(page);
 
           await page.type(getSelector("448R"), "61803");
-          await page.click(getSelector("419R"));
+          await page.click(getSelector("419R"), { delay: CLICK_DELAY });
           await page.waitForFunction(
             `${getQuerySelector("448R")}.value === "61.803,00"`
           );
 
-          await page.click(getSelector("448R"));
+          await page.click(getSelector("448R"), { delay: CLICK_DELAY });
           await page.waitForFunction(
             `${getQuerySelector("448R")}.value === "61803"`
           );
@@ -180,7 +181,7 @@ describe("Interaction", () => {
           await clearInput(page, getSelector("448R"));
 
           await page.type(getSelector("448R"), "1.61803");
-          await page.click(getSelector("419R"));
+          await page.click(getSelector("419R"), { delay: CLICK_DELAY });
           await page.waitForFunction(
             `${getQuerySelector("448R")}.value === "1,62"`
           );
@@ -245,7 +246,9 @@ describe("Interaction", () => {
           await waitForScripting(page);
 
           // click on a radio button
-          await page.click("[data-annotation-id='449R']");
+          await page.click("[data-annotation-id='449R']", {
+            delay: CLICK_DELAY,
+          });
 
           // this field has no actions but it must be cleared on reset
           await page.type(getSelector("405R"), "employee");
@@ -254,7 +257,9 @@ describe("Interaction", () => {
           expect(checked).toEqual(true);
 
           // click on reset button
-          await page.click("[data-annotation-id='402R']");
+          await page.click("[data-annotation-id='402R']", {
+            delay: CLICK_DELAY,
+          });
 
           await Promise.all(
             ["416R", "422R", "419R", "405R"].map(id => {
@@ -314,7 +319,7 @@ describe("Interaction", () => {
             // Clear the textfield
             await clearInput(page, getSelector("80R"));
 
-            await page.click(getSelector(id));
+            await page.click(getSelector(id), { delay: CLICK_DELAY });
             await page.waitForFunction(
               `${getQuerySelector("80R")}.value !== ""`
             );
@@ -344,7 +349,7 @@ describe("Interaction", () => {
             // Clear the textfield
             await clearInput(page, getSelector("80R"));
 
-            await page.click(getSelector(id));
+            await page.click(getSelector(id), { delay: CLICK_DELAY });
             await page.waitForFunction(
               `${getQuerySelector("80R")}.value !== ""`
             );
@@ -371,7 +376,7 @@ describe("Interaction", () => {
             // Clear the textfield
             await clearInput(page, getSelector("80R"));
 
-            await page.click(getSelector(id));
+            await page.click(getSelector(id), { delay: CLICK_DELAY });
             await page.waitForFunction(
               `${getQuerySelector("80R")}.value !== ""`
             );
@@ -400,10 +405,12 @@ describe("Interaction", () => {
             await clearInput(page, getSelector("80R"));
 
             if (id) {
-              await page.click(getSelector(id));
+              await page.click(getSelector(id), { delay: CLICK_DELAY });
             }
 
-            await page.click("[data-annotation-id='97R']");
+            await page.click("[data-annotation-id='97R']", {
+              delay: CLICK_DELAY,
+            });
             await page.waitForFunction(
               `${getQuerySelector("80R")}.value !== ""`
             );
@@ -442,7 +449,7 @@ describe("Interaction", () => {
             page,
             getSelector("47R"),
             async () => {
-              await page.click("#printButton");
+              await page.click("#printButton", { delay: CLICK_DELAY });
             }
           );
           expect(text).withContext(`In ${browserName}`).toEqual("WillPrint");
@@ -489,7 +496,7 @@ describe("Interaction", () => {
             page,
             getSelector("47R"),
             async () => {
-              await page.click("#downloadButton");
+              await page.click("#downloadButton", { delay: CLICK_DELAY });
             }
           );
           expect(text).withContext(`In ${browserName}`).toEqual("WillSave");
@@ -580,7 +587,9 @@ describe("Interaction", () => {
             page,
             getSelector("25R"),
             async () => {
-              await page.click("[data-annotation-id='26R']");
+              await page.click("[data-annotation-id='26R']", {
+                delay: CLICK_DELAY,
+              });
             }
           );
           expect(text)
@@ -609,7 +618,9 @@ describe("Interaction", () => {
 
           for (const num of [7, 6, 4, 3, 2, 1]) {
             await clearInput(page, getSelector("33R"));
-            await page.click(`option[value=Export${num}]`);
+            await page.click(`option[value=Export${num}]`, {
+              delay: CLICK_DELAY,
+            });
             await page.waitForFunction(
               `${getQuerySelector("33R")}.value !== ""`
             );
@@ -628,20 +639,26 @@ describe("Interaction", () => {
           await waitForScripting(page);
 
           // Click on ClearItems button.
-          await page.click("[data-annotation-id='34R']");
+          await page.click("[data-annotation-id='34R']", {
+            delay: CLICK_DELAY,
+          });
           await page.waitForFunction(
             `${getQuerySelector("30R")}.children.length === 0`
           );
 
           // Click on Restore button.
-          await page.click("[data-annotation-id='37R']");
+          await page.click("[data-annotation-id='37R']", {
+            delay: CLICK_DELAY,
+          });
           await page.waitForFunction(
             `${getQuerySelector("30R")}.children.length !== 0`
           );
 
           for (const num of [7, 6, 4, 3, 2, 1]) {
             await clearInput(page, getSelector("33R"));
-            await page.click(`option[value=Export${num}]`);
+            await page.click(`option[value=Export${num}]`, {
+              delay: CLICK_DELAY,
+            });
             await page.waitForFunction(
               `${getQuerySelector("33R")}.value !== ""`
             );
@@ -670,7 +687,9 @@ describe("Interaction", () => {
             );
 
             // Click on AddItem button.
-            await page.click("[data-annotation-id='38R']");
+            await page.click("[data-annotation-id='38R']", {
+              delay: CLICK_DELAY,
+            });
 
             await page.waitForFunction(
               `${getQuerySelector("30R")}.children.length === ${len}`
@@ -699,7 +718,9 @@ describe("Interaction", () => {
           let len = 6;
           // Click on Restore button.
           await clearInput(page, getSelector("33R"));
-          await page.click("[data-annotation-id='37R']");
+          await page.click("[data-annotation-id='37R']", {
+            delay: CLICK_DELAY,
+          });
           await page.waitForFunction(
             `${getQuerySelector("30R")}.children.length === ${len}`
           );
@@ -710,7 +731,9 @@ describe("Interaction", () => {
             await page.type(getSelector("39R"), `${num}`);
 
             // Click on DeleteItem button.
-            await page.click("[data-annotation-id='36R']");
+            await page.click("[data-annotation-id='36R']", {
+              delay: CLICK_DELAY,
+            });
 
             await page.waitForFunction(
               `${getQuerySelector("30R")}.children.length === ${len}`
@@ -719,7 +742,9 @@ describe("Interaction", () => {
 
           for (const num of [6, 4, 2, 1]) {
             await clearInput(page, getSelector("33R"));
-            await page.click(`option[value=Export${num}]`);
+            await page.click(`option[value=Export${num}]`, {
+              delay: CLICK_DELAY,
+            });
             await page.waitForFunction(
               `${getQuerySelector("33R")}.value !== ""`
             );
@@ -781,7 +806,9 @@ describe("Interaction", () => {
                 propName
               );
 
-              await page.click(`[data-annotation-id='${id}R']`);
+              await page.click(`[data-annotation-id='${id}R']`, {
+                delay: CLICK_DELAY,
+              });
               await page.waitForFunction(
                 `${getComputedStyleSelector(
                   ref
@@ -891,7 +918,9 @@ describe("Interaction", () => {
           );
 
           // Click on execute button to eval the above code.
-          await page.click("[data-annotation-id='57R']");
+          await page.click("[data-annotation-id='57R']", {
+            delay: CLICK_DELAY,
+          });
           await page.waitForFunction(`${getQuerySelector("56R")}.value !== ""`);
 
           const text = await page.$eval(getSelector("56R"), el => el.value);
@@ -922,7 +951,9 @@ describe("Interaction", () => {
               `this.getField("Text2").display = display.${type};`
             );
 
-            await page.click("[data-annotation-id='57R']");
+            await page.click("[data-annotation-id='57R']", {
+              delay: CLICK_DELAY,
+            });
             await page.waitForFunction(
               `${getComputedStyleSelector(
                 "56R"
@@ -995,7 +1026,9 @@ describe("Interaction", () => {
             page,
             getSelector("25R"),
             async () => {
-              await page.click("[data-annotation-id='26R']");
+              await page.click("[data-annotation-id='26R']", {
+                delay: CLICK_DELAY,
+              });
             }
           );
           expect(text).withContext(`In ${browserName}`).toEqual("Standard");
@@ -1032,13 +1065,13 @@ describe("Interaction", () => {
 
         await page.focus(getSelector("29R"));
         await typeAndWaitForSandbox(page, getSelector("29R"), "34");
-        await page.click("[data-annotation-id='30R']");
+        await page.click("[data-annotation-id='30R']", { delay: CLICK_DELAY });
         await waitForSandboxTrip(page);
         await page.waitForFunction(`${getQuerySelector("29R")}.value === ""`);
 
         await page.focus(getSelector("29R"));
         await typeAndWaitForSandbox(page, getSelector("29R"), "12345");
-        await page.click("[data-annotation-id='30R']");
+        await page.click("[data-annotation-id='30R']", { delay: CLICK_DELAY });
         await waitForSandboxTrip(page);
         await page.waitForFunction(
           `${getQuerySelector("29R")}.value === "12345"`
@@ -1077,13 +1110,13 @@ describe("Interaction", () => {
 
         await page.focus(getSelector("30R"));
         await typeAndWaitForSandbox(page, getSelector("30R"), "-789");
-        await page.click("[data-annotation-id='29R']");
+        await page.click("[data-annotation-id='29R']", { delay: CLICK_DELAY });
         await waitForSandboxTrip(page);
         await page.waitForFunction(`${getQuerySelector("30R")}.value === ""`);
 
         await page.focus(getSelector("30R"));
         await typeAndWaitForSandbox(page, getSelector("30R"), "(123) 456-7890");
-        await page.click("[data-annotation-id='29R']");
+        await page.click("[data-annotation-id='29R']", { delay: CLICK_DELAY });
         await waitForSandboxTrip(page);
         await page.waitForFunction(
           `${getQuerySelector("30R")}.value === "(123) 456-7890"`
@@ -1122,13 +1155,13 @@ describe("Interaction", () => {
 
         await page.focus(getSelector("30R"));
         await typeAndWaitForSandbox(page, getSelector("30R"), "-456");
-        await page.click("[data-annotation-id='29R']");
+        await page.click("[data-annotation-id='29R']", { delay: CLICK_DELAY });
         await waitForSandboxTrip(page);
         await page.waitForFunction(`${getQuerySelector("30R")}.value === ""`);
 
         await page.focus(getSelector("30R"));
         await typeAndWaitForSandbox(page, getSelector("30R"), "123-4567");
-        await page.click("[data-annotation-id='29R']");
+        await page.click("[data-annotation-id='29R']", { delay: CLICK_DELAY });
         await waitForSandboxTrip(page);
         await page.waitForFunction(
           `${getQuerySelector("30R")}.value === "123-4567"`
@@ -1206,7 +1239,7 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page]) => {
           await waitForScripting(page);
 
-          await page.click(getSelector("28R"));
+          await page.click(getSelector("28R"), { delay: CLICK_DELAY });
           await page.keyboard.press("Home");
           await page.type(getSelector("28R"), "Hello");
           await page.waitForFunction(
@@ -1216,7 +1249,9 @@ describe("Interaction", () => {
           // The action triggers a `calculateNow` which in turn triggers a
           // `resetForm (inducing a `calculateNow`) and a `calculateNow`.
           // Without infinite loop prevention the field would be empty.
-          await page.click("[data-annotation-id='31R']");
+          await page.click("[data-annotation-id='31R']", {
+            delay: CLICK_DELAY,
+          });
           await page.waitForFunction(
             `${getQuerySelector("28R")}.value === "123"`
           );
@@ -1247,7 +1282,7 @@ describe("Interaction", () => {
           await waitForScripting(page);
 
           await page.type(getSelector("29R"), "Hello World");
-          await page.click(getSelector("27R"));
+          await page.click(getSelector("27R"), { delay: CLICK_DELAY });
 
           await page.waitForFunction(
             `${getQuerySelector("29R")}.value !== "Hello World"`
@@ -1256,7 +1291,7 @@ describe("Interaction", () => {
           let text = await page.$eval(getSelector("29R"), el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("checked");
 
-          await page.click(getSelector("27R"));
+          await page.click(getSelector("27R"), { delay: CLICK_DELAY });
 
           await page.waitForFunction(
             `${getQuerySelector("29R")}.value !== "checked"`
@@ -1333,7 +1368,7 @@ describe("Interaction", () => {
             .withContext(`In ${browserName}`)
             .toEqual("visible");
 
-          await page.click(getSelector("44R"));
+          await page.click(getSelector("44R"), { delay: CLICK_DELAY });
           await page.waitForFunction(
             `document.querySelector("[data-annotation-id='35R']").style.visibility === "hidden"`
           );
@@ -1393,7 +1428,7 @@ describe("Interaction", () => {
               );
             }
             base += 90;
-            await page.click(getSelector("48R"));
+            await page.click(getSelector("48R"), { delay: CLICK_DELAY });
           }
         })
       );
@@ -1422,7 +1457,7 @@ describe("Interaction", () => {
           await clearInput(page, getSelector("42R"));
           await typeAndWaitForSandbox(page, getSelector("42R"), "456");
 
-          await page.click(getSelector("45R"));
+          await page.click(getSelector("45R"), { delay: CLICK_DELAY });
 
           await page.waitForFunction(
             `${getQuerySelector("43R")}.value === "579.00"`
@@ -1458,7 +1493,7 @@ describe("Interaction", () => {
           );
 
           // Increase the charLimit to 1 (this truncates the existing text).
-          await page.click(getSelector("9R"));
+          await page.click(getSelector("9R"), { delay: CLICK_DELAY });
           await waitForSandboxTrip(page);
           await page.waitForFunction(`${getQuerySelector("7R")}.value === "a"`);
 
@@ -1467,7 +1502,7 @@ describe("Interaction", () => {
           await page.waitForFunction(`${getQuerySelector("7R")}.value === "x"`);
 
           // Increase the charLimit to 2.
-          await page.click(getSelector("9R"));
+          await page.click(getSelector("9R"), { delay: CLICK_DELAY });
           await waitForSandboxTrip(page);
 
           await clearInput(page, getSelector("7R"));
@@ -1497,10 +1532,10 @@ describe("Interaction", () => {
           await waitForScripting(page);
 
           await typeAndWaitForSandbox(page, getSelector("30R"), "123");
-          await page.click(getSelector("31R"));
+          await page.click(getSelector("31R"), { delay: CLICK_DELAY });
           await page.type(getSelector("31R"), "456");
-          await page.click(getSelector("26R"));
-          await page.click(getSelector("27R"));
+          await page.click(getSelector("26R"), { delay: CLICK_DELAY });
+          await page.click(getSelector("27R"), { delay: CLICK_DELAY });
           await page.waitForFunction(`${getQuerySelector("26R")}.value !== ""`);
 
           const value = await page.$eval(getSelector("26R"), el => el.value);
@@ -1592,7 +1627,9 @@ describe("Interaction", () => {
           for (const exportValue of ["x3", "x2", "x1"]) {
             await clearInput(page, getSelector("27R"));
             await page.type(getSelector("27R"), exportValue);
-            await page.click("[data-annotation-id='28R']");
+            await page.click("[data-annotation-id='28R']", {
+              delay: CLICK_DELAY,
+            });
             await page.waitForFunction(
               `${getQuerySelector("24R")}.value === "${exportValue}"`
             );
@@ -1716,13 +1753,13 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page]) => {
           await waitForScripting(page);
 
-          await page.click(getSelector("25R"));
+          await page.click(getSelector("25R"), { delay: CLICK_DELAY });
           await page.type(getSelector("25R"), "00000000123");
 
           let text = await page.$eval(getSelector("25R"), el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("00000000123");
 
-          await page.click(getSelector("26R"));
+          await page.click(getSelector("26R"), { delay: CLICK_DELAY });
           await waitForSandboxTrip(page);
 
           text = await page.$eval(getSelector("25R"), el => el.value);
@@ -1754,13 +1791,13 @@ describe("Interaction", () => {
           await page.$eval(getSelector("31R"), el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("5,25");
 
-          await page.click(getSelector("22R"));
+          await page.click(getSelector("22R"), { delay: CLICK_DELAY });
           await waitForSandboxTrip(page);
 
           text = await page.$eval(getSelector("22R"), el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("5,25");
 
-          await page.click(getSelector("31R"));
+          await page.click(getSelector("31R"), { delay: CLICK_DELAY });
           await page.waitForFunction(
             `${getQuerySelector("31R")}.value !== "5,25"`
           );
@@ -1828,7 +1865,7 @@ describe("Interaction", () => {
             .withContext(`In ${browserName}`)
             .toEqual("ABCDEFGHIJKLMN");
 
-          await page.click(getSelector("23R"));
+          await page.click(getSelector("23R"), { delay: CLICK_DELAY });
           await page.waitForFunction(
             `${getQuerySelector("23R")}.value !== "ABCDEFGHIJKLMN"`
           );
@@ -1847,11 +1884,11 @@ describe("Interaction", () => {
           let text = await page.$eval(getSelector("26R"), el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("");
 
-          await page.click(getSelector("26R"));
+          await page.click(getSelector("26R"), { delay: CLICK_DELAY });
           await page.type(getSelector("26R"), "abcde");
-          await page.click(getSelector("23R"));
+          await page.click(getSelector("23R"), { delay: CLICK_DELAY });
           await clearInput(page, getSelector("26R"));
-          await page.click(getSelector("23R"));
+          await page.click(getSelector("23R"), { delay: CLICK_DELAY });
           await waitForSandboxTrip(page);
 
           text = await page.$eval(getSelector("26R"), el => el.value);
@@ -1891,7 +1928,7 @@ describe("Interaction", () => {
           );
           expect(hasHiddenInput).withContext(`In ${browserName}`).toEqual(true);
 
-          await page.click(getSelector("12R"));
+          await page.click(getSelector("12R"), { delay: CLICK_DELAY });
           await page.waitForSelector(
             `[data-annotation-id="9R"] > canvas[hidden]`
           );
@@ -1947,7 +1984,7 @@ describe("Interaction", () => {
           );
           expect(visibility).withContext(`In ${browserName}`).toEqual("hidden");
 
-          await page.click(getSelector("11R"));
+          await page.click(getSelector("11R"), { delay: CLICK_DELAY });
 
           await page.waitForFunction(
             `${getComputedStyleSelector("7R")}.visibility !== "hidden"`
@@ -1996,17 +2033,17 @@ describe("Interaction", () => {
             el => el.disabled
           );
           expect(readonly).withContext(`In ${browserName}`).toEqual(true);
-          await page.click(getSelector("334R"));
+          await page.click(getSelector("334R"), { delay: CLICK_DELAY });
           await waitForSandboxTrip(page);
 
           readonly = await page.$eval(getSelector("353R"), el => el.disabled);
           expect(readonly).withContext(`In ${browserName}`).toEqual(true);
-          await page.click(getSelector("351R"));
+          await page.click(getSelector("351R"), { delay: CLICK_DELAY });
           await waitForSandboxTrip(page);
 
           readonly = await page.$eval(getSelector("353R"), el => el.disabled);
           expect(readonly).withContext(`In ${browserName}`).toEqual(true);
-          await page.click(getSelector("352R"));
+          await page.click(getSelector("352R"), { delay: CLICK_DELAY });
           await page.waitForFunction(
             `${getQuerySelector("353R")}.disabled !== true`
           );
@@ -2014,14 +2051,14 @@ describe("Interaction", () => {
           readonly = await page.$eval(getSelector("353R"), el => el.disabled);
           expect(readonly).withContext(`In ${browserName}`).toEqual(false);
 
-          await page.click(getSelector("353R"));
+          await page.click(getSelector("353R"), { delay: CLICK_DELAY });
           await page.waitForFunction(
             `${getQuerySelector("353R")}.checked !== false`
           );
 
           let checked = await page.$eval(getSelector("353R"), el => el.checked);
           expect(checked).withContext(`In ${browserName}`).toEqual(true);
-          await page.click(getSelector("334R"));
+          await page.click(getSelector("334R"), { delay: CLICK_DELAY });
           await page.waitForFunction(
             `${getQuerySelector("353R")}.disabled !== false`
           );
@@ -2061,11 +2098,11 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page], i) => {
           await waitForScripting(page);
 
-          await page.click(getSelector("55R"));
+          await page.click(getSelector("55R"), { delay: CLICK_DELAY });
           await page.type(getSelector("55R"), "Hello");
-          await page.click(getSelector("56R"));
+          await page.click(getSelector("56R"), { delay: CLICK_DELAY });
 
-          await page.click(getSelector("55R"));
+          await page.click(getSelector("55R"), { delay: CLICK_DELAY });
           await page.type(getSelector("55R"), " World");
 
           await otherPages[i].bringToFront();
@@ -2098,8 +2135,8 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page], i) => {
           await waitForScripting(page);
 
-          await page.click(getSelector("25R"));
-          await page.click(getSelector("26R"));
+          await page.click(getSelector("25R"), { delay: CLICK_DELAY });
+          await page.click(getSelector("26R"), { delay: CLICK_DELAY });
 
           await page.waitForFunction(
             sel => document.querySelector(sel).value !== "",
@@ -2131,7 +2168,7 @@ describe("Interaction", () => {
           await waitForScripting(page);
 
           await scrollIntoView(page, getSelector("22R"));
-          await page.click(getSelector("25R"));
+          await page.click(getSelector("25R"), { delay: CLICK_DELAY });
           await waitForEntryInStorage(page, "25R", { value: true });
 
           let storage = await getAnnotationStorage(page);
@@ -2149,7 +2186,7 @@ describe("Interaction", () => {
               "22R": { value: false },
             });
 
-          await page.click(getSelector("22R"));
+          await page.click(getSelector("22R"), { delay: CLICK_DELAY });
           await waitForEntryInStorage(page, "22R", { value: true });
 
           storage = await getAnnotationStorage(page);
@@ -2187,7 +2224,7 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page], i) => {
           await waitForScripting(page);
 
-          await page.click(getSelector("15R"));
+          await page.click(getSelector("15R"), { delay: CLICK_DELAY });
           await page.type(getSelector("15R"), "3");
           await page.keyboard.press("Enter");
 
@@ -2220,7 +2257,7 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page], i) => {
           await waitForScripting(page);
 
-          await page.click(getSelector("24R"));
+          await page.click(getSelector("24R"), { delay: CLICK_DELAY });
           await typeAndWaitForSandbox(page, getSelector("24R"), "01234");
           await page.keyboard.press("Tab");
           await waitForSandboxTrip(page);
@@ -2328,9 +2365,9 @@ describe("Interaction", () => {
           await waitForScripting(page);
 
           const inputSelector = getSelector("34R");
-          await page.click(inputSelector);
+          await page.click(inputSelector, { delay: CLICK_DELAY });
           await page.type(inputSelector, "123");
-          await page.click(getSelector("28R"));
+          await page.click(getSelector("28R"), { delay: CLICK_DELAY });
           await page.waitForFunction(
             `${getQuerySelector("36R")}.value !== "0"`
           );
@@ -2365,9 +2402,9 @@ describe("Interaction", () => {
           await waitForScripting(page);
 
           const inputSelector = getSelector("24R");
-          await page.click(inputSelector);
+          await page.click(inputSelector, { delay: CLICK_DELAY });
           await page.type(inputSelector, "123");
-          await page.click(getSelector("25R"));
+          await page.click(getSelector("25R"), { delay: CLICK_DELAY });
           await page.waitForFunction(
             `${getQuerySelector("28R")}.value === "12300"`
           );
@@ -2393,9 +2430,9 @@ describe("Interaction", () => {
           await waitForScripting(page);
 
           const inputSelector = getSelector("33R");
-          await page.click(inputSelector);
+          await page.click(inputSelector, { delay: CLICK_DELAY });
           await page.type(inputSelector, "7");
-          await page.click(getSelector("34R"));
+          await page.click(getSelector("34R"), { delay: CLICK_DELAY });
           await page.waitForFunction(
             `${getQuerySelector("35R")}.value === "324,00"`
           );
@@ -2433,14 +2470,22 @@ describe("Interaction", () => {
             }
           };
           await checkColor([255, 0, 0]);
-          await page.click("[data-annotation-id='44R']");
+          await page.click("[data-annotation-id='44R']", {
+            delay: CLICK_DELAY,
+          });
           await checkColor([0, 0, 255]);
-          await page.click("[data-annotation-id='44R']");
+          await page.click("[data-annotation-id='44R']", {
+            delay: CLICK_DELAY,
+          });
           await checkColor([255, 0, 0]);
 
-          await page.click("[data-annotation-id='43R']");
+          await page.click("[data-annotation-id='43R']", {
+            delay: CLICK_DELAY,
+          });
           await waitForSandboxTrip(page);
-          await page.click("[data-annotation-id='44R']");
+          await page.click("[data-annotation-id='44R']", {
+            delay: CLICK_DELAY,
+          });
           await checkColor([0, 0, 255]);
         })
       );
@@ -2475,7 +2520,7 @@ describe("Interaction", () => {
 
           const expectedDate = "02/01/2000";
           await page.type(getSelector("24R"), expectedDate);
-          await page.click(getSelector("25R"));
+          await page.click(getSelector("25R"), { delay: CLICK_DELAY });
           await waitForSandboxTrip(page);
 
           const date = await page.$eval(getSelector("24R"), el => el.value);

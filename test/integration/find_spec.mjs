@@ -13,7 +13,13 @@
  * limitations under the License.
  */
 
-import { closePages, FSI, loadAndWait, PDI } from "./test_utils.mjs";
+import {
+  CLICK_DELAY,
+  closePages,
+  FSI,
+  loadAndWait,
+  PDI,
+} from "./test_utils.mjs";
 
 function fuzzyMatch(a, b, browserName, pixelFuzz = 3) {
   expect(a)
@@ -40,10 +46,10 @@ describe("find bar", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           // Highlight all occurrences of the letter A (case insensitive).
-          await page.click("#viewFindButton");
+          await page.click("#viewFindButton", { delay: CLICK_DELAY });
           await page.waitForSelector("#findInput", { visible: true });
           await page.type("#findInput", "a");
-          await page.click("#findHighlightAll + label");
+          await page.click("#findHighlightAll + label", { delay: CLICK_DELAY });
           await page.waitForSelector(".textLayer .highlight");
 
           // The PDF file contains the text 'AB BA' in a monospace font on a
@@ -100,7 +106,7 @@ describe("find bar", () => {
     it("must search xfa correctly", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#viewFindButton");
+          await page.click("#viewFindButton", { delay: CLICK_DELAY });
           await page.waitForSelector("#findInput", { visible: true });
           await page.type("#findInput", "preferences");
           await page.waitForSelector("#findInput[data-status='']");
@@ -138,7 +144,7 @@ describe("find bar", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           // Search for "40"
-          await page.click("#viewFindButton");
+          await page.click("#viewFindButton", { delay: CLICK_DELAY });
           await page.waitForSelector("#findInput", { visible: true });
           await page.type("#findInput", "40");
 
