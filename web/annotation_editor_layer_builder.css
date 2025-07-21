@@ -1096,7 +1096,8 @@
     max-height: 100%;
     border: none;
     outline: none;
-    pointer-events: none;
+    /* pointer-events: none; */
+    pointer-events: auto;
     transform-origin: 0 0;
 
     &:not(.free) {
