@@ -44,6 +44,8 @@ class CanvasDependencyTracker {
 
   #operations = new Map();
 
+  #fontBBoxTrustworthy = new Map();
+
   #canvasWidth;
 
   #canvasHeight;
@@ -207,6 +209,95 @@ class CanvasDependencyTracker {
     return this;
   }
 
+  recordCharacterBBox(
+    idx,
+    ctx,
+    otherCtxs,
+    font,
+    scale = 1,
+    x = 0,
+    y = 0,
+    getMeasure
+  ) {
+    const fontBBox = font.bbox;
+    let isBBoxTrustworthy;
+    let computedBBox;
+
+    if (fontBBox) {
+      isBBoxTrustworthy =
+        // Only use the bounding box defined by the font if it
+        // has a non-empty area.
+        fontBBox[2] !== fontBBox[0] &&
+        fontBBox[3] !== fontBBox[1] &&
+        this.#fontBBoxTrustworthy.get(font);
+
+      if (isBBoxTrustworthy !== false) {
+        computedBBox = [0, 0, 0, 0];
+        Util.axialAlignedBoundingBox(fontBBox, font.fontMatrix, computedBBox);
+        if (scale !== 1 || x !== 0 || y !== 0) {
+          Util.scaleMinMax([scale, 0, 0, -scale, x, y], computedBBox);
+        }
+
+        if (isBBoxTrustworthy) {
+          return this.recordBBox(
+            idx,
+            ctx,
+            otherCtxs,
+            computedBBox[0],
+            computedBBox[2],
+            computedBBox[1],
+            computedBBox[3]
+          );
+        }
+      }
+    }
+
+    if (!getMeasure) {
+      // We have no way of telling how big this character actually is, record
+      // a full page bounding box.
+      return this.recordFullPageBBox(idx);
+    }
+
+    const measure = getMeasure();
+
+    if (fontBBox && computedBBox && isBBoxTrustworthy === undefined) {
+      // If it's the first time we can compare the font bbox with the actual
+      // bbox measured when drawing it, check if the one recorded in the font
+      // is large enough to cover the actual bbox. If it is, we assume that the
+      // font is well-formed and we can use the declared bbox without having to
+      // measure it again for every character.
+      isBBoxTrustworthy =
+        computedBBox[0] <= x - measure.actualBoundingBoxLeft &&
+        computedBBox[2] >= x + measure.actualBoundingBoxRight &&
+        computedBBox[1] <= y - measure.actualBoundingBoxAscent &&
+        computedBBox[3] >= y + measure.actualBoundingBoxDescent;
+      this.#fontBBoxTrustworthy.set(font, isBBoxTrustworthy);
+      if (isBBoxTrustworthy) {
+        return this.recordBBox(
+          idx,
+          ctx,
+          otherCtxs,
+          computedBBox[0],
+          computedBBox[2],
+          computedBBox[1],
+          computedBBox[3]
+        );
+      }
+    }
+
+    // The font has no bbox or it is not trustworthy, so we need to
+    // return the bounding box based on .measureText().
+    return this.recordBBox(
+      idx,
+      ctx,
+      otherCtxs,
+      x - measure.actualBoundingBoxLeft,
+      x + measure.actualBoundingBoxRight,
+      y - measure.actualBoundingBoxAscent,
+      y + measure.actualBoundingBoxDescent
+    );
+  }
+
   recordFullPageBBox(idx) {
     this.#pendingBBox[0] = 0;
     this.#pendingBBox[1] = 0;
@@ -295,6 +386,7 @@ class CanvasDependencyTracker {
   }
 
   take() {
+    this.#fontBBoxTrustworthy.clear();
     return Array.from(
       this.#operations,
       ([idx, { bbox, pairs, dependencies }]) => {
@@ -453,6 +545,29 @@ class CanvasNestedDependencyTracker {
       maxX,
       minY,
       maxY
+    );
+    return this;
+  }
+
+  recordCharacterBBox(
+    idx,
+    ctx,
+    otherCtxs,
+    font,
+    scale = 1,
+    x = 0,
+    y = 0,
+    getMeasure
+  ) {
+    this.#dependencyTracker.recordCharacterBBox(
+      this.#opIdx,
+      ctx,
+      otherCtxs,
+      font,
+      scale,
+      x,
+      y,
+      getMeasure
     );
     return this;
   }

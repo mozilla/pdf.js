@@ -1897,22 +1897,12 @@ class CanvasGraphics {
       ctx.translate(x, y);
       ctx.scale(fontSize, -fontSize);
 
-      if (this.dependencyTracker) {
-        const fontBBox = font.bbox;
-        if (fontBBox) {
-          this.dependencyTracker.recordBBox(
-            opIdx,
-            ctx,
-            this.groupStack,
-            fontBBox[0],
-            fontBBox[2],
-            fontBBox[1],
-            fontBBox[3]
-          );
-        } else {
-          this.dependencyTracker.recordFullPageBBox();
-        }
-      }
+      this.dependencyTracker?.recordCharacterBBox(
+        opIdx,
+        ctx,
+        this.groupStack,
+        font
+      );
 
       let currentTransform;
       if (
@@ -1967,38 +1957,33 @@ class CanvasGraphics {
         fillStrokeMode === TextRenderingMode.FILL ||
         fillStrokeMode === TextRenderingMode.FILL_STROKE
       ) {
-        if (this.dependencyTracker) {
-          // TODO: Can we do like above, rather than measureText?
-          const measure = ctx.measureText(character);
-          this.dependencyTracker
-            .recordBBox(
-              opIdx,
-              ctx,
-              this.groupStack,
-              x - measure.actualBoundingBoxLeft,
-              x + measure.actualBoundingBoxRight,
-              y - measure.actualBoundingBoxAscent,
-              y + measure.actualBoundingBoxDescent
-            )
-            .recordDependencies(opIdx, Dependencies.fill);
-        }
         ctx.fillText(character, x, y);
+        this.dependencyTracker?.recordCharacterBBox(
+          opIdx,
+          ctx,
+          this.groupStack,
+          font,
+          fontSize,
+          x,
+          y,
+          () => ctx.measureText(character)
+        );
       }
       if (
         fillStrokeMode === TextRenderingMode.STROKE ||
         fillStrokeMode === TextRenderingMode.FILL_STROKE
       ) {
         if (this.dependencyTracker) {
-          const measure = ctx.measureText(character);
           this.dependencyTracker
-            .recordBBox(
+            ?.recordCharacterBBox(
               opIdx,
               ctx,
               this.groupStack,
-              x - measure.actualBoundingBoxLeft,
-              x + measure.actualBoundingBoxRight,
-              y - measure.actualBoundingBoxAscent,
-              y + measure.actualBoundingBoxDescent
+              font,
+              fontSize,
+              x,
+              y,
+              () => ctx.measureText(character)
             )
             .recordDependencies(opIdx, Dependencies.stroke);
         }
@@ -2015,27 +2000,15 @@ class CanvasGraphics {
         fontSize,
         path,
       });
-      if (this.dependencyTracker) {
-        // TODO: Do not use ctx for this math.
-        const fontBBox = font.bbox;
-        if (fontBBox) {
-          ctx.save();
-          ctx.translate(x, y);
-          ctx.scale(fontSize, -fontSize);
-          this.dependencyTracker.recordBBox(
-            opIdx,
-            ctx,
-            this.groupStack,
-            fontBBox[0],
-            fontBBox[2],
-            fontBBox[1],
-            fontBBox[3]
-          );
-          ctx.restore();
-        } else {
-          this.dependencyTracker.recordFullPageBBox();
-        }
-      }
+      this.dependencyTracker?.recordCharacterBBox(
+        opIdx,
+        ctx,
+        this.groupStack,
+        font,
+        fontSize,
+        x,
+        y
+      );
     }
   }
 
@@ -2253,19 +2226,19 @@ class CanvasGraphics {
       if (this.contentVisible && (glyph.isInFont || font.missingFile)) {
         if (simpleFillText && !accent) {
           // common case
-          if (this.dependencyTracker !== null) {
-            measure ??= ctx.measureText(character);
-            this.dependencyTracker.recordBBox(
-              opIdx,
-              this.ctx,
-              this.groupStack,
-              scaledX - measure.actualBoundingBoxLeft,
-              scaledX + measure.actualBoundingBoxRight,
-              scaledY - measure.actualBoundingBoxAscent,
-              scaledY + measure.actualBoundingBoxDescent
-            );
-          }
           ctx.fillText(character, scaledX, scaledY);
+
+          this.dependencyTracker?.recordCharacterBBox(
+            opIdx,
+            ctx,
+            this.groupStack,
+            // If we already measured the character, force usage of that
+            measure ? { bbox: null } : font,
+            fontSize / fontSizeScale,
+            scaledX,
+            scaledY,
+            () => measure ?? ctx.measureText(character)
+          );
         } else {
           this.paintChar(
             opIdx,
