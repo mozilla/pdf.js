@@ -741,21 +741,16 @@ class Util {
     ];
   }
 
-  // Multiplies md (a DOMMatrix transform) by m (an arrray-based transform),
-  // and stores the result in m.
-  static multiplyDOMMatrixInto(md, m) {
-    const t0 = md.a * m[0] + md.c * m[1];
-    const t1 = md.b * m[0] + md.d * m[1];
-    const t2 = md.a * m[2] + md.c * m[3];
-    const t3 = md.b * m[2] + md.d * m[3];
-    const t4 = md.a * m[4] + md.c * m[5] + md.e;
-    const t5 = md.b * m[4] + md.d * m[5] + md.f;
-    m[0] = t0;
-    m[1] = t1;
-    m[2] = t2;
-    m[3] = t3;
-    m[4] = t4;
-    m[5] = t5;
+  // Multiplies m (an array-based transform) by md (a DOMMatrix transform).
+  static multiplyByDOMMatrix(m, md) {
+    return [
+      m[0] * md.a + m[2] * md.b,
+      m[1] * md.a + m[3] * md.b,
+      m[0] * md.c + m[2] * md.d,
+      m[1] * md.c + m[3] * md.d,
+      m[0] * md.e + m[2] * md.f + m[4],
+      m[1] * md.e + m[3] * md.f + m[5],
+    ];
   }
 
   // For 2d affine transforms

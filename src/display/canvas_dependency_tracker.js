@@ -35,6 +35,8 @@ class CanvasDependencyTracker {
 
   #markedContentStack = [];
 
+  #baseTransformStack = [[1, 0, 0, 1, 0, 0]];
+
   // Float32Array<minX, minY, maxX, maxY>
   #pendingBBox = new Float64Array([Infinity, Infinity, -Infinity, -Infinity]);
 
@@ -127,6 +129,23 @@ class CanvasDependencyTracker {
     return this;
   }
 
+  pushBaseTransform(ctx) {
+    this.#baseTransformStack.push(
+      Util.multiplyByDOMMatrix(
+        this.#baseTransformStack.at(-1),
+        ctx.getTransform()
+      )
+    );
+    return this;
+  }
+
+  popBaseTransform() {
+    if (this.#baseTransformStack.length > 1) {
+      this.#baseTransformStack.pop();
+    }
+    return this;
+  }
+
   /**
    * @param {SimpleDependency} name
    * @param {number} idx
@@ -196,11 +215,11 @@ class CanvasDependencyTracker {
     return this.#pendingBBoxIdx !== -1;
   }
 
-  recordBBox(idx, ctx, otherCtxs, minX, maxX, minY, maxY) {
-    const transform = Util.domMatrixToTransform(ctx.getTransform());
-    for (let i = otherCtxs.length - 1; i >= 0; i--) {
-      Util.multiplyDOMMatrixInto(otherCtxs[i].getTransform(), transform);
-    }
+  recordBBox(idx, ctx, minX, maxX, minY, maxY) {
+    const transform = Util.multiplyByDOMMatrix(
+      this.#baseTransformStack.at(-1),
+      ctx.getTransform()
+    );
     Util.axialAlignedBoundingBox(
       [minX, minY, maxX, maxY],
       transform,
@@ -209,16 +228,7 @@ class CanvasDependencyTracker {
     return this;
   }
 
-  recordCharacterBBox(
-    idx,
-    ctx,
-    otherCtxs,
-    font,
-    scale = 1,
-    x = 0,
-    y = 0,
-    getMeasure
-  ) {
+  recordCharacterBBox(idx, ctx, font, scale = 1, x = 0, y = 0, getMeasure) {
     const fontBBox = font.bbox;
     let isBBoxTrustworthy;
     let computedBBox;
@@ -242,7 +252,6 @@ class CanvasDependencyTracker {
           return this.recordBBox(
             idx,
             ctx,
-            otherCtxs,
             computedBBox[0],
             computedBBox[2],
             computedBBox[1],
@@ -276,7 +285,6 @@ class CanvasDependencyTracker {
         return this.recordBBox(
           idx,
           ctx,
-          otherCtxs,
           computedBBox[0],
           computedBBox[2],
           computedBBox[1],
@@ -290,7 +298,6 @@ class CanvasDependencyTracker {
     return this.recordBBox(
       idx,
       ctx,
-      otherCtxs,
       x - measure.actualBoundingBoxLeft,
       x + measure.actualBoundingBoxRight,
       y - measure.actualBoundingBoxAscent,
@@ -475,6 +482,16 @@ class CanvasNestedDependencyTracker {
     return this;
   }
 
+  pushBaseTransform(ctx) {
+    this.#dependencyTracker.pushBaseTransform(ctx);
+    return this;
+  }
+
+  popBaseTransform() {
+    this.#dependencyTracker.popBaseTransform();
+    return this;
+  }
+
   /**
    * @param {SimpleDependency} name
    * @param {number} idx
@@ -540,7 +557,6 @@ class CanvasNestedDependencyTracker {
     this.#dependencyTracker.recordBBox(
       this.#opIdx,
       ctx,
-      otherCtxs,
       minX,
       maxX,
       minY,
@@ -549,20 +565,10 @@ class CanvasNestedDependencyTracker {
     return this;
   }
 
-  recordCharacterBBox(
-    idx,
-    ctx,
-    otherCtxs,
-    font,
-    scale = 1,
-    x = 0,
-    y = 0,
-    getMeasure
-  ) {
+  recordCharacterBBox(idx, ctx, font, scale, x, y, getMeasure) {
     this.#dependencyTracker.recordCharacterBBox(
       this.#opIdx,
       ctx,
-      otherCtxs,
       font,
       scale,
       x,

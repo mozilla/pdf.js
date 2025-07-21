@@ -1474,7 +1474,6 @@ class CanvasGraphics {
         .recordBBox(
           opIdx,
           this.ctx,
-          this.groupStack,
           minMax[0] - outerExtraSize,
           minMax[2] + outerExtraSize,
           minMax[1] - outerExtraSize,
@@ -1903,12 +1902,7 @@ class CanvasGraphics {
       ctx.translate(x, y);
       ctx.scale(fontSize, -fontSize);
 
-      this.dependencyTracker?.recordCharacterBBox(
-        opIdx,
-        ctx,
-        this.groupStack,
-        font
-      );
+      this.dependencyTracker?.recordCharacterBBox(opIdx, ctx, font);
 
       let currentTransform;
       if (
@@ -1967,7 +1961,6 @@ class CanvasGraphics {
         this.dependencyTracker?.recordCharacterBBox(
           opIdx,
           ctx,
-          this.groupStack,
           font,
           fontSize,
           x,
@@ -1981,15 +1974,8 @@ class CanvasGraphics {
       ) {
         if (this.dependencyTracker) {
           this.dependencyTracker
-            ?.recordCharacterBBox(
-              opIdx,
-              ctx,
-              this.groupStack,
-              font,
-              fontSize,
-              x,
-              y,
-              () => ctx.measureText(character)
+            ?.recordCharacterBBox(opIdx, ctx, font, fontSize, x, y, () =>
+              ctx.measureText(character)
             )
             .recordDependencies(opIdx, Dependencies.stroke);
         }
@@ -2009,7 +1995,6 @@ class CanvasGraphics {
       this.dependencyTracker?.recordCharacterBBox(
         opIdx,
         ctx,
-        this.groupStack,
         font,
         fontSize,
         x,
@@ -2161,7 +2146,6 @@ class CanvasGraphics {
           .recordBBox(
             opIdx,
             this.ctx,
-            this.groupStack,
             -measure.actualBoundingBoxLeft,
             measure.actualBoundingBoxRight,
             -measure.actualBoundingBoxAscent,
@@ -2237,7 +2221,6 @@ class CanvasGraphics {
           this.dependencyTracker?.recordCharacterBBox(
             opIdx,
             ctx,
-            this.groupStack,
             // If we already measured the character, force usage of that
             measure ? { bbox: null } : font,
             fontSize / fontSizeScale,
@@ -2378,15 +2361,7 @@ class CanvasGraphics {
     clip.rect(llx, lly, urx - llx, ury - lly);
     this.ctx.clip(clip);
     this.endPath(opIdx);
-    this.dependencyTracker?.recordBBox(
-      opIdx,
-      this.ctx,
-      this.groupStack,
-      llx,
-      urx,
-      lly,
-      ury
-    );
+    this.dependencyTracker?.recordBBox(opIdx, this.ctx, llx, urx, lly, ury);
   }
 
   // Color
@@ -2692,11 +2667,13 @@ class CanvasGraphics {
     // except the blend mode, soft mask, and alpha constants.
     copyCtxState(currentCtx, groupCtx);
     this.ctx = groupCtx;
-    this.dependencyTracker?.inheritSimpleDataAsFutureForcedDependencies([
-      "fillAlpha",
-      "strokeAlpha",
-      "globalCompositeOperation",
-    ]);
+    this.dependencyTracker
+      ?.inheritSimpleDataAsFutureForcedDependencies([
+        "fillAlpha",
+        "strokeAlpha",
+        "globalCompositeOperation",
+      ])
+      .pushBaseTransform(currentCtx);
     this.setGState(opIdx, [
       ["BM", "source-over"],
       ["ca", 1],
@@ -2717,6 +2694,8 @@ class CanvasGraphics {
     // Turn off image smoothing to avoid sub pixel interpolation which can
     // look kind of blurry for some pdfs.
     this.ctx.imageSmoothingEnabled = false;
+
+    this.dependencyTracker?.popBaseTransform();
 
     if (group.smask) {
       this.tempSMask = this.smaskStack.pop();
@@ -2847,7 +2826,6 @@ class CanvasGraphics {
       .recordBBox(
         opIdx,
         this.ctx,
-        this.groupStack,
         mask.offsetX,
         mask.offsetX + maskCanvas.width,
         mask.offsetY,
@@ -2904,7 +2882,6 @@ class CanvasGraphics {
       this.dependencyTracker?.recordBBox(
         opIdx,
         this.ctx,
-        this.groupStack,
         trans[4],
         trans[4] + mask.canvas.width,
         trans[5],
@@ -2974,15 +2951,7 @@ class CanvasGraphics {
         1
       );
 
-      this.dependencyTracker?.recordBBox(
-        opIdx,
-        ctx,
-        this.groupStack,
-        0,
-        width,
-        0,
-        height
-      );
+      this.dependencyTracker?.recordBBox(opIdx, ctx, 0, width, 0, height);
       ctx.restore();
     }
     this.compose();
@@ -3107,7 +3076,7 @@ class CanvasGraphics {
 
     this.dependencyTracker
       ?.resetBBox(opIdx)
-      .recordBBox(opIdx, ctx, this.groupStack, 0, width, -height, 0)
+      .recordBBox(opIdx, ctx, 0, width, -height, 0)
       .recordDependencies(opIdx, Dependencies.imageXObject)
       .recordOperation(opIdx);
 
@@ -3163,15 +3132,7 @@ class CanvasGraphics {
         1,
         1
       );
-      this.dependencyTracker?.recordBBox(
-        opIdx,
-        ctx,
-        this.groupStack,
-        0,
-        1,
-        -1,
-        0
-      );
+      this.dependencyTracker?.recordBBox(opIdx, ctx, 0, 1, -1, 0);
       ctx.restore();
     }
     this.dependencyTracker?.recordOperation(opIdx);
@@ -3184,7 +3145,7 @@ class CanvasGraphics {
     }
     this.dependencyTracker
       ?.resetBBox(opIdx)
-      .recordBBox(opIdx, this.ctx, this.groupStack, 0, 1, 0, 1)
+      .recordBBox(opIdx, this.ctx, 0, 1, 0, 1)
       .recordDependencies(opIdx, Dependencies.fill)
       .recordOperation(opIdx);
     this.ctx.fillRect(0, 0, 1, 1);
