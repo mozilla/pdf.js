@@ -281,4 +281,25 @@ describe("accessibility", () => {
       );
     });
   });
+
+  describe("No undefined id", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("issue20102.pdf", ".textLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that span hasn't an 'undefined' id", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const id = await page.$eval("span.markedContent", span => span.id);
+          expect(id).withContext(`In ${browserName}`).toBe("");
+        })
+      );
+    });
+  });
 });

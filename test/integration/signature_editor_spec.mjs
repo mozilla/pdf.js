@@ -105,7 +105,7 @@ describe("Signature Editor", () => {
           await page.waitForSelector(
             "#addSignatureSaveContainer > input:not(:disabled)"
           );
-          await page.waitForSelector("#addSignatureSaveCheckbox[checked=true]");
+          await page.waitForSelector("#addSignatureSaveCheckbox:checked");
 
           // The description has been filled in automatically.
           await page.waitForFunction(
@@ -179,6 +179,10 @@ describe("Signature Editor", () => {
           await page.waitForSelector(
             `.canvasWrapper > svg use[href="#path_p1_0"]`,
             { visible: true }
+          );
+
+          await page.waitForFunction(
+            `document.getElementById("viewer-alert").textContent === "Signature added"`
           );
 
           // Check the tooltip.
@@ -260,7 +264,7 @@ describe("Signature Editor", () => {
           await page.waitForSelector(
             "#addSignatureSaveContainer > input:not(:disabled)"
           );
-          await page.waitForSelector("#addSignatureSaveCheckbox[checked=true]");
+          await page.waitForSelector("#addSignatureSaveCheckbox:checked");
 
           // The description has been filled in automatically.
           await page.waitForFunction(
@@ -316,7 +320,7 @@ describe("Signature Editor", () => {
           await page.waitForSelector(
             "#addSignatureSaveContainer > input:not(:disabled)"
           );
-          await page.waitForSelector("#addSignatureSaveCheckbox[checked=true]");
+          await page.waitForSelector("#addSignatureSaveCheckbox:checked");
 
           // The description has been filled in automatically.
           await page.waitForFunction(
@@ -362,6 +366,9 @@ describe("Signature Editor", () => {
           `${editorSelector} .altText.editDescription`,
           el => el.title
         );
+        const originalL10nParameter = await page.$eval(editorSelector, el =>
+          el.getAttribute("data-l10n-args")
+        );
 
         await copy(page);
         await paste(page);
@@ -373,6 +380,9 @@ describe("Signature Editor", () => {
           `${pastedEditorSelector} .altText.editDescription`,
           el => el.title
         );
+        const pastedL10nParameter = await page.$eval(pastedEditorSelector, el =>
+          el.getAttribute("data-l10n-args")
+        );
 
         expect(pastedRect)
           .withContext(`In ${browserName}`)
@@ -380,6 +390,9 @@ describe("Signature Editor", () => {
         expect(pastedDescription)
           .withContext(`In ${browserName}`)
           .toEqual(originalDescription);
+        expect(pastedL10nParameter)
+          .withContext(`In ${browserName}`)
+          .toEqual(originalL10nParameter);
       }
     });
   });
@@ -667,6 +680,93 @@ describe("Signature Editor", () => {
               `In ${browserName} (${contentWidth}x${contentHeight} vs ${width}x${height})`
             )
             .toBeLessThan(0.25);
+        })
+      );
+    });
+  });
+
+  describe("Bug 1974257", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the signature save checkbox is disabled if storage is full", async () => {
+      await Promise.all(
+        pages.map(async ([_, page]) => {
+          await switchToSignature(page);
+
+          for (let i = 0; i < 6; i++) {
+            await page.click("#editorSignatureAddSignature");
+            await page.waitForSelector("#addSignatureDialog", {
+              visible: true,
+            });
+            await page.click("#addSignatureTypeInput");
+            await page.type("#addSignatureTypeInput", `PDF.js ${i}`);
+            if (i === 5) {
+              await page.waitForSelector(
+                "#addSignatureSaveCheckbox:not(checked)"
+              );
+              await page.waitForSelector("#addSignatureSaveCheckbox:disabled");
+            } else {
+              await page.waitForSelector("#addSignatureSaveCheckbox:checked");
+              await page.waitForSelector(
+                "#addSignatureSaveCheckbox:not(:disabled)"
+              );
+            }
+            await page.click("#addSignatureAddButton");
+            await page.waitForSelector("#addSignatureDialog", {
+              visible: false,
+            });
+          }
+        })
+      );
+    });
+  });
+
+  describe("Bug 1975719", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that an error is displayed with a monochrome image", async () => {
+      await Promise.all(
+        pages.map(async ([_, page]) => {
+          await switchToSignature(page);
+
+          await page.click("#editorSignatureAddSignature");
+
+          await page.waitForSelector("#addSignatureDialog", {
+            visible: true,
+          });
+          await page.click("#addSignatureImageButton");
+          await page.waitForSelector("#addSignatureImagePlaceholder", {
+            visible: true,
+          });
+          const input = await page.$("#addSignatureFilePicker");
+          await input.uploadFile(
+            `${path.join(__dirname, "../images/red.png")}`
+          );
+          await page.waitForSelector("#addSignatureError", { visible: true });
+          await page.waitForSelector(
+            "#addSignatureErrorTitle[data-l10n-id='pdfjs-editor-add-signature-image-no-data-error-title']"
+          );
+          await page.waitForSelector(
+            "#addSignatureErrorDescription[data-l10n-id='pdfjs-editor-add-signature-image-no-data-error-description']"
+          );
+          await page.click("#addSignatureErrorCloseButton");
+          await page.waitForSelector("#addSignatureError", { visible: false });
         })
       );
     });

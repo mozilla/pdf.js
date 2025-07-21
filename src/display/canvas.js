@@ -1050,7 +1050,7 @@ class CanvasGraphics {
     );
     const fillCtx = fillCanvas.context;
 
-    // The offset will be the top-left cordinate mask.
+    // The offset will be the top-left coordinate mask.
     // If objToCanvas is [a,b,c,d,e,f] then:
     //   - offsetX = min(a, c) + e
     //   - offsetY = min(b, d) + f
@@ -1697,7 +1697,7 @@ class CanvasGraphics {
 
     if (this.dependencyTracker) {
       const { dependencyTracker } = this;
-      if (paths !== undefined) {
+      if (paths) {
         dependencyTracker
           .recordFutureForcedDependency(
             "textClip",
@@ -1708,21 +1708,26 @@ class CanvasGraphics {
       dependencyTracker.recordCloseMarker(opIdx);
     }
 
-    if (paths !== undefined) {
-      const newPath = new Path2D();
-      const invTransf = ctx.getTransform().invertSelf();
-      for (const { transform, x, y, fontSize, path } of paths) {
-        newPath.addPath(
-          path,
-          new DOMMatrix(transform)
-            .preMultiplySelf(invTransf)
-            .translate(x, y)
-            .scale(fontSize, -fontSize)
-        );
-      }
-
-      ctx.clip(newPath);
+    if (!paths) {
+      return;
     }
+
+    const newPath = new Path2D();
+    const invTransf = ctx.getTransform().invertSelf();
+    for (const { transform, x, y, fontSize, path } of paths) {
+      if (!path) {
+        continue; // Skip empty paths.
+      }
+      newPath.addPath(
+        path,
+        new DOMMatrix(transform)
+          .preMultiplySelf(invTransf)
+          .translate(x, y)
+          .scale(fontSize, -fontSize)
+      );
+    }
+
+    ctx.clip(newPath);
     delete this.pendingTextPaths;
   }
 
@@ -1884,15 +1889,16 @@ class CanvasGraphics {
 
     let path;
     if (
-      font.disableFontFace ||
-      isAddToPathSet ||
-      patternFill ||
-      patternStroke
+      (font.disableFontFace ||
+        isAddToPathSet ||
+        patternFill ||
+        patternStroke) &&
+      !font.missingFile
     ) {
       path = font.getPathGenerator(this.commonObjs, character);
     }
 
-    if (font.disableFontFace || patternFill || patternStroke) {
+    if (path && (font.disableFontFace || patternFill || patternStroke)) {
       ctx.save();
       ctx.translate(x, y);
       ctx.scale(fontSize, -fontSize);

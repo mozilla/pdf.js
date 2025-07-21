@@ -192,6 +192,18 @@ class PDFLinkService {
       destArray: explicitDest,
       ignoreDestinationZoom: this._ignoreDestinationZoom,
     });
+
+    const ac = new AbortController();
+    this.eventBus._on(
+      "textlayerrendered",
+      evt => {
+        if (evt.pageNumber === pageNumber) {
+          evt.source.textLayer.div.focus();
+          ac.abort();
+        }
+      },
+      { signal: ac.signal }
+    );
   }
 
   /**

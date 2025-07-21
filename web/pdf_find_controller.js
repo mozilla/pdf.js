@@ -97,7 +97,7 @@ const NFKC_CHARS_TO_NORMALIZE = new Map();
 let noSyllablesRegExp = null;
 let withSyllablesRegExp = null;
 
-function normalize(text) {
+function normalize(text, options = {}) {
   // The diacritics in the text or in the query can be composed or not.
   // So we use a decomposed text using NFD (and the same for the query)
   // in order to be sure that diacritics are in the same order.
@@ -118,6 +118,7 @@ function normalize(text) {
   }
 
   const hasSyllables = syllablePositions.length > 0;
+  const ignoreDashEOL = options.ignoreDashEOL ?? false;
 
   let normalizationRegex;
   if (!hasSyllables && noSyllablesRegExp) {
@@ -294,6 +295,12 @@ function normalize(text) {
       }
 
       if (p5) {
+        if (ignoreDashEOL) {
+          // Keep the - but remove the EOL.
+          shiftOrigin += 1;
+          eol += 1;
+          return p5.slice(0, -1);
+        }
         // In "X-\ny", "-\n" is removed because an hyphen at the end of a line
         // between two letters is likely here to mark a break in a word.
         // If X is encoded with UTF-32 then it can have a length greater than 1.
@@ -717,7 +724,7 @@ class PDFFindController {
         // kind of whitespaces are replaced by a single " ".
 
         if (p1) {
-          // Escape characters like *+?... to not interfer with regexp syntax.
+          // Escape characters like *+?... to not interfere with regexp syntax.
           return `[ ]*\\${p1}[ ]*`;
         }
         if (p2) {

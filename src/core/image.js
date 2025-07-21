@@ -237,8 +237,8 @@ class PDFImage {
         this.jpxDecoderOptions.numComponents = hasColorSpace
           ? this.numComps
           : 0;
-        // If the jpx image has a color space then it musn't be used in order to
-        // be able to use the color space that comes from the pdf.
+        // If the jpx image has a color space then it mustn't be used in order
+        // to be able to use the color space that comes from the pdf.
         this.jpxDecoderOptions.isIndexedColormap =
           this.colorSpace.name === "Indexed";
       }

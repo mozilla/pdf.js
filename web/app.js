@@ -71,6 +71,7 @@ import { LinkTarget, PDFLinkService } from "./pdf_link_service.js";
 import { AltTextManager } from "web-alt_text_manager";
 import { AnnotationEditorParams } from "web-annotation_editor_params";
 import { CaretBrowsingMode } from "./caret_browsing.js";
+import { CommentManager } from "./comment_manager.js";
 import { DownloadManager } from "web-download_manager";
 import { EditorUndoBar } from "./editor_undo_bar.js";
 import { OverlayManager } from "./overlay_manager.js";
@@ -374,6 +375,9 @@ const PDFViewerApplication = {
         spreadModeOnLoad: x => parseInt(x),
         supportsCaretBrowsingMode: x => x === "true",
         viewerCssTheme: x => parseInt(x),
+        forcePageColors: x => x === "true",
+        pageColorsBackground: x => x,
+        pageColorsForeground: x => x,
       });
     }
 
@@ -484,6 +488,10 @@ const PDFViewerApplication = {
             eventBus
           )
         : null;
+    const commentManager =
+      AppOptions.get("enableComment") && appConfig.editCommentDialog
+        ? new CommentManager(appConfig.editCommentDialog, overlayManager)
+        : null;
 
     const enableHWA = AppOptions.get("enableHWA"),
       maxCanvasPixels = AppOptions.get("maxCanvasPixels"),
@@ -492,11 +500,13 @@ const PDFViewerApplication = {
     const pdfViewer = (this.pdfViewer = new PDFViewer({
       container,
       viewer,
+      viewerAlert: appConfig.viewerAlert,
       eventBus,
       renderingQueue,
       linkService,
       downloadManager,
       altTextManager,
+      commentManager,
       signatureManager,
       editorUndoBar: this.editorUndoBar,
       findController,
@@ -727,6 +737,11 @@ const PDFViewerApplication = {
       const queryString = document.location.search.substring(1);
       const params = parseQueryString(queryString);
       file = params.get("file") ?? AppOptions.get("defaultUrl");
+      try {
+        file = new URL(decodeURIComponent(file)).href;
+      } catch {
+        file = encodeURIComponent(file).replaceAll("%2F", "/");
+      }
       validateFileURL(file);
     } else if (PDFJSDev.test("MOZCENTRAL")) {
       file = window.location.href;
@@ -1450,11 +1465,6 @@ const PDFViewerApplication = {
             spreadMode,
           });
           this.eventBus.dispatch("documentinit", { source: this });
-          // Make all navigation keys work on document load,
-          // unless the viewer is embedded in a web page.
-          if (!this.isViewerEmbedded) {
-            pdfViewer.focus();
-          }
 
           // For documents with different page sizes, once all pages are
           // resolved, ensure that the correct location becomes visible on load.
@@ -1632,6 +1642,13 @@ const PDFViewerApplication = {
     if (pdfDocument !== this.pdfDocument) {
       return; // The document was closed while the metadata resolved.
     }
+    if (info.collectedSignatureCertificates) {
+      this.externalServices.reportTelemetry({
+        type: "signatureCertificates",
+        data: info.collectedSignatureCertificates,
+      });
+    }
+
     this.documentInfo = info;
     this.metadata = metadata;
     this._contentDispositionFilename ??= contentDispositionFilename;
@@ -2336,7 +2353,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 
     this.open({
       url: URL.createObjectURL(file),
-      originalUrl: file.name,
+      originalUrl: encodeURIComponent(file.name),
     });
   };
 
@@ -2897,8 +2914,7 @@ function onKeyDown(evt) {
     curElementTagName === "INPUT" ||
     curElementTagName === "TEXTAREA" ||
     curElementTagName === "SELECT" ||
-    (curElementTagName === "BUTTON" &&
-      (evt.keyCode === /* Enter = */ 13 || evt.keyCode === /* Space = */ 32)) ||
+    (curElementTagName === "BUTTON" && evt.keyCode === /* Space = */ 32) ||
     curElement?.isContentEditable
   ) {
     // Make sure that the secondary toolbar is closed when Escape is pressed.
@@ -2969,7 +2985,6 @@ function onKeyDown(evt) {
         }
         turnPage = 1;
         break;
-      case 13: // enter key
       case 32: // spacebar
         if (!isViewerInPresentationMode) {
           turnOnlyIfPageFit = true;
@@ -3037,7 +3052,6 @@ function onKeyDown(evt) {
   // shift-key
   if (cmd === 4) {
     switch (evt.keyCode) {
-      case 13: // enter key
       case 32: // spacebar
         if (
           !isViewerInPresentationMode &&

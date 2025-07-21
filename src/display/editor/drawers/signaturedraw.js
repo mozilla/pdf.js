@@ -366,21 +366,12 @@ class SignatureExtractor {
     let max = -Infinity;
     let min = Infinity;
     for (let i = 0, ii = out.length; i < ii; i++) {
-      const A = buf[(i << 2) + 3];
-      if (A === 0) {
-        max = out[i] = 0xff;
-        continue;
-      }
       const pix = (out[i] = buf[i << 2]);
-      if (pix > max) {
-        max = pix;
-      }
-      if (pix < min) {
-        min = pix;
-      }
+      max = Math.max(max, pix);
+      min = Math.min(min, pix);
     }
     const ratio = 255 / (max - min);
-    for (let i = 0; i < N; i++) {
+    for (let i = 0, ii = out.length; i < ii; i++) {
       out[i] = (out[i] - min) * ratio;
     }
 
@@ -468,6 +459,8 @@ class SignatureExtractor {
     }
     const offscreen = new OffscreenCanvas(newWidth, newHeight);
     const ctx = offscreen.getContext("2d", { willReadFrequently: true });
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, newWidth, newHeight);
     ctx.filter = "grayscale(1)";
     ctx.drawImage(
       bitmap,

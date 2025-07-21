@@ -193,6 +193,20 @@ describe("display_utils", function () {
         "document.pdf"
       );
     });
+
+    it("gets PDF filename with a hash sign", function () {
+      expect(getPdfFilenameFromUrl("/foo.html?file=foo%23.pdf")).toEqual(
+        "foo#.pdf"
+      );
+
+      expect(getPdfFilenameFromUrl("/foo.html?file=%23.pdf")).toEqual("#.pdf");
+
+      expect(getPdfFilenameFromUrl("/foo.html?foo%23.pdf")).toEqual("foo#.pdf");
+
+      expect(getPdfFilenameFromUrl("/foo%23.pdf?a=b#c")).toEqual("foo#.pdf");
+
+      expect(getPdfFilenameFromUrl("foo.html#%23.pdf")).toEqual("#.pdf");
+    });
   });
 
   describe("isValidFetchUrl", function () {
@@ -281,6 +295,8 @@ describe("display_utils", function () {
             expect(result).toEqual(expectation);
           }
         }
+        const now = new Date();
+        expect(PDFDateString.toDateObject(now)).toEqual(now);
       });
     });
   });

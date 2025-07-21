@@ -126,6 +126,10 @@ class HighlightEditor extends AnnotationEditor {
       this.#addToDrawLayer();
       this.rotate(this.rotation);
     }
+
+    if (!this.annotationElementId) {
+      this._uiManager.a11yAlert("pdfjs-editor-highlight-added-alert");
+    }
   }
 
   /** @inheritdoc */
@@ -133,7 +137,7 @@ class HighlightEditor extends AnnotationEditor {
     return {
       action: "added",
       type: this.#isFreeHighlight ? "free_highlight" : "highlight",
-      color: this._uiManager.highlightColorNames.get(this.color),
+      color: this._uiManager.getNonHCMColorName(this.color),
       thickness: this.#thickness,
       methodOfCreation: this.#methodOfCreation,
     };
@@ -143,8 +147,12 @@ class HighlightEditor extends AnnotationEditor {
   get telemetryFinalData() {
     return {
       type: "highlight",
-      color: this._uiManager.highlightColorNames.get(this.color),
+      color: this._uiManager.getNonHCMColorName(this.color),
     };
+  }
+
+  get commentColor() {
+    return this.color;
   }
 
   static computeTelemetryFinalData(data) {
@@ -274,7 +282,7 @@ class HighlightEditor extends AnnotationEditor {
   /** @inheritdoc */
   static updateDefaultParams(type, value) {
     switch (type) {
-      case AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR:
+      case AnnotationEditorParamsType.HIGHLIGHT_COLOR:
         HighlightEditor._defaultColor = value;
         break;
       case AnnotationEditorParamsType.HIGHLIGHT_THICKNESS:
@@ -306,7 +314,7 @@ class HighlightEditor extends AnnotationEditor {
   static get defaultPropertiesToUpdate() {
     return [
       [
-        AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR,
+        AnnotationEditorParamsType.HIGHLIGHT_COLOR,
         HighlightEditor._defaultColor,
       ],
       [
@@ -366,7 +374,7 @@ class HighlightEditor extends AnnotationEditor {
     this._reportTelemetry(
       {
         action: "color_changed",
-        color: this._uiManager.highlightColorNames.get(color),
+        color: this._uiManager.getNonHCMColorName(color),
       },
       /* mustWait = */ true
     );
@@ -398,16 +406,14 @@ class HighlightEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
-  async addEditToolbar() {
-    const toolbar = await super.addEditToolbar();
-    if (!toolbar) {
-      return null;
-    }
+  get toolbarButtons() {
     if (this._uiManager.highlightColors) {
-      this.#colorPicker = new ColorPicker({ editor: this });
-      toolbar.addColorPicker(this.#colorPicker);
+      const colorPicker = (this.#colorPicker = new ColorPicker({
+        editor: this,
+      }));
+      return [["colorPicker", colorPicker]];
     }
-    return toolbar;
+    return super.toolbarButtons;
   }
 
   /** @inheritdoc */
@@ -864,7 +870,16 @@ class HighlightEditor extends AnnotationEditor {
     let initialData = null;
     if (data instanceof HighlightAnnotationElement) {
       const {
-        data: { quadPoints, rect, rotation, id, color, opacity, popupRef },
+        data: {
+          quadPoints,
+          rect,
+          rotation,
+          id,
+          color,
+          opacity,
+          popupRef,
+          contentsObj,
+        },
         parent: {
           page: { pageNumber },
         },
@@ -878,9 +893,11 @@ class HighlightEditor extends AnnotationEditor {
         pageIndex: pageNumber - 1,
         rect: rect.slice(0),
         rotation,
+        annotationElementId: id,
         id,
         deleted: false,
         popupRef,
+        comment: contentsObj?.str || null,
       };
     } else if (data instanceof InkAnnotationElement) {
       const {
@@ -892,6 +909,7 @@ class HighlightEditor extends AnnotationEditor {
           color,
           borderStyle: { rawWidth: thickness },
           popupRef,
+          contentsObj,
         },
         parent: {
           page: { pageNumber },
@@ -906,9 +924,11 @@ class HighlightEditor extends AnnotationEditor {
         pageIndex: pageNumber - 1,
         rect: rect.slice(0),
         rotation,
+        annotationElementId: id,
         id,
         deleted: false,
         popupRef,
+        comment: contentsObj?.str || null,
       };
     }
 
@@ -920,8 +940,10 @@ class HighlightEditor extends AnnotationEditor {
     if (inkLists) {
       editor.#thickness = data.thickness;
     }
-    editor.annotationElementId = data.id || null;
     editor._initialData = initialData;
+    if (data.comment) {
+      editor.setCommentData(data.comment);
+    }
 
     const [pageWidth, pageHeight] = editor.pageDimensions;
     const [pageX, pageY] = editor.pageTranslation;
@@ -1002,7 +1024,9 @@ class HighlightEditor extends AnnotationEditor {
     }
 
     const rect = this.getRect(0, 0);
-    const color = AnnotationEditor._colorManager.convert(this.color);
+    const color = AnnotationEditor._colorManager.convert(
+      this._uiManager.getNonHCMColor(this.color)
+    );
 
     const serialized = {
       annotationType: AnnotationEditorType.HIGHLIGHT,
@@ -1016,6 +1040,7 @@ class HighlightEditor extends AnnotationEditor {
       rotation: this.#getRotation(),
       structTreeParentId: this._structTreeParentId,
     };
+    this.addComment(serialized);
 
     if (this.annotationElementId && !this.#hasElementChanged(serialized)) {
       return null;
@@ -1027,14 +1052,20 @@ class HighlightEditor extends AnnotationEditor {
 
   #hasElementChanged(serialized) {
     const { color } = this._initialData;
-    return serialized.color.some((c, i) => c !== color[i]);
+    return (
+      this.hasEditedComment || serialized.color.some((c, i) => c !== color[i])
+    );
   }
 
   /** @inheritdoc */
   renderAnnotationElement(annotation) {
-    annotation.updateEdited({
+    const params = {
       rect: this.getRect(0, 0),
-    });
+    };
+    if (this.hasEditedComment) {
+      params.popup = this.comment;
+    }
+    annotation.updateEdited(params);
 
     return null;
   }

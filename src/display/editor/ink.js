@@ -22,6 +22,7 @@ import {
 import { DrawingEditor, DrawingOptions } from "./draw.js";
 import { InkDrawOutline, InkDrawOutliner } from "./drawers/inkdraw.js";
 import { AnnotationEditor } from "./editor.js";
+import { BasicColorPicker } from "./color_picker.js";
 import { InkAnnotationElement } from "../annotation_layer.js";
 
 class InkDrawingOptions extends DrawingOptions {
@@ -149,6 +150,7 @@ class InkEditor extends DrawingEditor {
           opacity,
           borderStyle: { rawWidth: thickness },
           popupRef,
+          contentsObj,
         },
         parent: {
           page: { pageNumber },
@@ -164,17 +166,35 @@ class InkEditor extends DrawingEditor {
         pageIndex: pageNumber - 1,
         rect: rect.slice(0),
         rotation,
+        annotationElementId: id,
         id,
         deleted: false,
         popupRef,
+        comment: contentsObj?.str || null,
       };
     }
 
     const editor = await super.deserialize(data, parent, uiManager);
-    editor.annotationElementId = data.id || null;
     editor._initialData = initialData;
+    if (data.comment) {
+      editor.setCommentData(data.comment);
+    }
 
     return editor;
+  }
+
+  /** @inheritdoc */
+  get toolbarButtons() {
+    this._colorPicker ||= new BasicColorPicker(this);
+    return [["colorPicker", this._colorPicker]];
+  }
+
+  get colorType() {
+    return AnnotationEditorParamsType.INK_COLOR;
+  }
+
+  get colorValue() {
+    return this._drawingOptions.stroke;
   }
 
   /** @inheritdoc */
@@ -245,6 +265,7 @@ class InkEditor extends DrawingEditor {
       rotation: this.rotation,
       structTreeParentId: this._structTreeParentId,
     };
+    this.addComment(serialized);
 
     if (isForCopying) {
       serialized.isCopy = true;
@@ -262,6 +283,7 @@ class InkEditor extends DrawingEditor {
   #hasElementChanged(serialized) {
     const { color, thickness, opacity, pageIndex } = this._initialData;
     return (
+      this.hasEditedComment ||
       this._hasBeenMoved ||
       this._hasBeenResized ||
       serialized.color.some((c, i) => c !== color[i]) ||
@@ -274,11 +296,15 @@ class InkEditor extends DrawingEditor {
   /** @inheritdoc */
   renderAnnotationElement(annotation) {
     const { points, rect } = this.serializeDraw(/* isForCopying = */ false);
-    annotation.updateEdited({
+    const params = {
       rect,
       thickness: this._drawingOptions["stroke-width"],
       points,
-    });
+    };
+    if (this.hasEditedComment) {
+      params.popup = this.comment;
+    }
+    annotation.updateEdited(params);
 
     return null;
   }

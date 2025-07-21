@@ -247,6 +247,51 @@ describe("Text widget", () => {
   });
 });
 
+describe("Link annotations with internal destinations", () => {
+  describe("bug1708041.pdf", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "bug1708041.pdf",
+        ".page[data-page-number='1'] .annotationLayer"
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must click on a link and check if it navigates to the correct page", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const pageOneSelector = ".page[data-page-number='1']";
+          const linkSelector = `${pageOneSelector} #pdfjs_internal_id_42R`;
+          await page.waitForSelector(linkSelector);
+          const linkTitle = await page.$eval(linkSelector, el => el.title);
+          expect(linkTitle)
+            .withContext(`In ${browserName}`)
+            .toEqual("Go to the last page");
+          await page.click(linkSelector);
+          const pageSixTextLayerSelector =
+            ".page[data-page-number='6'] .textLayer";
+          await page.waitForSelector(pageSixTextLayerSelector, {
+            visible: true,
+          });
+          await page.waitForFunction(
+            sel => {
+              const textLayer = document.querySelector(sel);
+              return document.activeElement === textLayer;
+            },
+            {},
+            pageSixTextLayerSelector
+          );
+        })
+      );
+    });
+  });
+});
+
 describe("Annotation and storage", () => {
   describe("issue14023.pdf", () => {
     let pages;
@@ -664,7 +709,7 @@ describe("ResetForm action", () => {
   });
 
   describe("Rotated annotation and its clickable area", () => {
-    describe("issue14438.pdf", () => {
+    describe("rotated_ink.pdf", () => {
       let pages;
 
       beforeEach(async () => {
@@ -691,6 +736,79 @@ describe("ResetForm action", () => {
               rect.y + rect.height * 0.9
             );
             await promisePopup;
+          })
+        );
+      });
+    });
+  });
+
+  describe("Text under some annotations", () => {
+    describe("bug1885505.pdf", () => {
+      let pages;
+
+      beforeEach(async () => {
+        pages = await loadAndWait(
+          "bug1885505.pdf",
+          ":is(" +
+            [56, 58, 60, 65]
+              .map(id => `[data-annotation-id='${id}R']`)
+              .join(", ") +
+            ")"
+        );
+      });
+
+      afterEach(async () => {
+        await closePages(pages);
+      });
+
+      it("must check that the text under a highlight annotation exist in the DOM", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const text = await page.$eval(
+              "[data-annotation-id='56R'] mark",
+              el => el.textContent
+            );
+            expect(text).withContext(`In ${browserName}`).toEqual("Languages");
+          })
+        );
+      });
+
+      it("must check that the text under an underline annotation exist in the DOM", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const text = await page.$eval(
+              "[data-annotation-id='58R'] u",
+              el => el.textContent
+            );
+            expect(text).withContext(`In ${browserName}`).toEqual("machine");
+          })
+        );
+      });
+
+      it("must check that the text under a squiggly annotation exist in the DOM", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const text = await page.$eval(
+              "[data-annotation-id='60R'] u",
+              el => el.textContent
+            );
+            expect(text).withContext(`In ${browserName}`)
+              .toEqual(`paths through nested loops. We have implemented
+a dynamic compiler for JavaScript based on our`);
+          })
+        );
+      });
+
+      it("must check that the text under a strikeout annotation exist in the DOM", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const text = await page.$eval(
+              "[data-annotation-id='65R'] s",
+              el => el.textContent
+            );
+            expect(text)
+              .withContext(`In ${browserName}`)
+              .toEqual("Experimentation,");
           })
         );
       });

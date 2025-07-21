@@ -30,6 +30,7 @@ import {
 } from "../../shared/util.js";
 import { noContextMenu, stopEvent } from "../display_utils.js";
 import { AltText } from "./alt_text.js";
+import { Comment } from "./comment.js";
 import { EditorToolbar } from "./toolbar.js";
 import { TouchManager } from "../touch_manager.js";
 
@@ -51,6 +52,8 @@ class AnnotationEditor {
   #allResizerDivs = null;
 
   #altText = null;
+
+  #comment = null;
 
   #disabled = false;
 
@@ -180,6 +183,7 @@ class AnnotationEditor {
     this._willKeepAspectRatio = false;
     this._initialOptions.isCentered = parameters.isCentered;
     this._structTreeParentId = null;
+    this.annotationElementId = parameters.annotationElementId || null;
 
     const {
       rotation,
@@ -202,6 +206,10 @@ class AnnotationEditor {
 
   get editorType() {
     return Object.getPrototypeOf(this).constructor._type;
+  }
+
+  get mode() {
+    return Object.getPrototypeOf(this).constructor._editorType;
   }
 
   static get isDrawer() {
@@ -427,6 +435,9 @@ class AnnotationEditor {
    * Commit the data contained in this editor.
    */
   commit() {
+    if (!this.isInEditMode()) {
+      return;
+    }
     this.addToAnnotationStorage();
   }
 
@@ -1050,6 +1061,14 @@ class AnnotationEditor {
   }
 
   /**
+   * Get the toolbar buttons for this editor.
+   * @returns {Array<Array<string|object|null>>|null}
+   */
+  get toolbarButtons() {
+    return null;
+  }
+
+  /**
    * Add a toolbar for this editor.
    * @returns {Promise<EditorToolbar|null>}
    */
@@ -1059,9 +1078,14 @@ class AnnotationEditor {
     }
     this._editToolbar = new EditorToolbar(this);
     this.div.append(this._editToolbar.render());
-    if (this.#altText) {
-      await this._editToolbar.addAltText(this.#altText);
+    this._editToolbar.addButton("comment", this.addCommentButton());
+    const { toolbarButtons } = this;
+    if (toolbarButtons) {
+      for (const [name, tool] of toolbarButtons) {
+        await this._editToolbar.addButton(name, tool);
+      }
     }
+    this._editToolbar.addButton("delete");
 
     return this._editToolbar;
   }
@@ -1091,17 +1115,20 @@ class AnnotationEditor {
     return this.div.getBoundingClientRect();
   }
 
-  async addAltTextButton() {
-    if (this.#altText) {
-      return;
+  /**
+   * Create the alt text for this editor.
+   * @returns {object}
+   */
+  createAltText() {
+    if (!this.#altText) {
+      AltText.initialize(AnnotationEditor._l10n);
+      this.#altText = new AltText(this);
+      if (this.#accessibilityData) {
+        this.#altText.data = this.#accessibilityData;
+        this.#accessibilityData = null;
+      }
     }
-    AltText.initialize(AnnotationEditor._l10n);
-    this.#altText = new AltText(this);
-    if (this.#accessibilityData) {
-      this.#altText.data = this.#accessibilityData;
-      this.#accessibilityData = null;
-    }
-    await this.addEditToolbar();
+    return this.#altText;
   }
 
   get altTextData() {
@@ -1136,6 +1163,61 @@ class AnnotationEditor {
 
   hasAltTextData() {
     return this.#altText?.hasData() ?? false;
+  }
+
+  addCommentButton() {
+    if (this.#comment) {
+      return this.#comment;
+    }
+    return (this.#comment = new Comment(this));
+  }
+
+  get commentColor() {
+    return null;
+  }
+
+  get comment() {
+    const comment = this.#comment;
+    return {
+      text: comment.data.text,
+      date: comment.data.date,
+      deleted: comment.isDeleted(),
+      color: this.commentColor,
+    };
+  }
+
+  set comment(text) {
+    if (!this.#comment) {
+      this.#comment = new Comment(this);
+    }
+    this.#comment.data = text;
+  }
+
+  setCommentData(text) {
+    if (!this.#comment) {
+      this.#comment = new Comment(this);
+    }
+    this.#comment.setInitialText(text);
+  }
+
+  get hasEditedComment() {
+    return this.#comment?.hasBeenEdited();
+  }
+
+  async editComment() {
+    if (!this.#comment) {
+      this.#comment = new Comment(this);
+    }
+    this.#comment.edit();
+  }
+
+  addComment(serialized) {
+    if (this.hasEditedComment) {
+      serialized.popup = {
+        contents: this.comment.text,
+        deleted: this.comment.deleted,
+      };
+    }
   }
 
   /**
@@ -1626,6 +1708,7 @@ class AnnotationEditor {
       parent,
       id: parent.getNextId(),
       uiManager,
+      annotationElementId: data.annotationElementId,
     });
     editor.rotation = data.rotation;
     editor.#accessibilityData = data.accessibilityData;

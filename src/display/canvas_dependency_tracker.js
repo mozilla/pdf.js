@@ -50,9 +50,9 @@ class CanvasDependencyTracker {
 
   #canvasHeight;
 
-  constructor(initialContext) {
-    this.#canvasWidth = initialContext.canvas.width;
-    this.#canvasHeight = initialContext.canvas.height;
+  constructor(canvas) {
+    this.#canvasWidth = canvas.width;
+    this.#canvasHeight = canvas.height;
   }
 
   save(opIdx) {

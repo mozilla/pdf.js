@@ -337,7 +337,7 @@ pdfjs-editor-remove-freetext-button =
 pdfjs-editor-remove-stamp-button =
     .title = 移除圖片
 pdfjs-editor-remove-highlight-button =
-    .title = 移除強調範圍
+    .title = 移除選擇範圍的強調效果
 pdfjs-editor-remove-signature-button =
     .title = 移除簽章
 

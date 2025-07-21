@@ -227,7 +227,7 @@ class Util extends PDFObject {
       ddd: data => this._days[data.dayOfWeek].substring(0, 3),
       dd: data => data.day.toString().padStart(2, "0"),
       d: data => data.day.toString(),
-      yyyy: data => data.year.toString(),
+      yyyy: data => data.year.toString().padStart(4, "0"),
       yy: data => (data.year % 100).toString().padStart(2, "0"),
       HH: data => data.hours.toString().padStart(2, "0"),
       H: data => data.hours.toString(),

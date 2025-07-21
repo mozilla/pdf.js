@@ -105,4 +105,22 @@ class ColorConverters {
   }
 }
 
-export { ColorConverters };
+const DateFormats = [
+  "m/d",
+  "m/d/yy",
+  "mm/dd/yy",
+  "mm/yy",
+  "d-mmm",
+  "d-mmm-yy",
+  "dd-mmm-yy",
+  "yy-mm-dd",
+  "mmm-yy",
+  "mmmm-yy",
+  "mmm d, yyyy",
+  "mmmm d, yyyy",
+  "m/d/yy h:MM tt",
+  "m/d/yy HH:MM",
+];
+const TimeFormats = ["HH:MM", "h:MM tt", "HH:MM:ss", "h:MM:ss tt"];
+
+export { ColorConverters, DateFormats, TimeFormats };

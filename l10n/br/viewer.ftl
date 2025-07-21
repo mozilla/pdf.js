@@ -206,7 +206,7 @@ pdfjs-find-previous-button-label = Kent
 pdfjs-find-next-button =
     .title = Kavout an tamm frazenn war-lerc'h o klotañ ganti
 pdfjs-find-next-button-label = War-lerc'h
-pdfjs-find-highlight-checkbox = Usskediñ pep tra
+pdfjs-find-highlight-checkbox = Sklêrijennañ pep tra
 pdfjs-find-match-case-checkbox-label = Teurel evezh ouzh ar pennlizherennoù
 pdfjs-find-match-diacritics-checkbox-label = Doujañ d’an tiredoù
 pdfjs-find-entire-word-checkbox-label = Gerioù a-bezh
@@ -272,6 +272,13 @@ pdfjs-editor-ink-button-label = Tresañ
 pdfjs-editor-stamp-button =
     .title = Ouzhpennañ pe aozañ skeudennoù
 pdfjs-editor-stamp-button-label = Ouzhpennañ pe aozañ skeudennoù
+pdfjs-editor-highlight-button =
+    .title = Sklerijennañ
+pdfjs-editor-highlight-button-label = Sklerijennañ
+pdfjs-highlight-floating-button1 =
+    .title = Sklerijennañ
+    .aria-label = Sklerijennañ
+pdfjs-highlight-floating-button-label = Sklerijennañ
 
 ## Default editor aria labels
 
@@ -304,6 +311,9 @@ pdfjs-ink-canvas =
 pdfjs-editor-alt-text-add-description-label = Ouzhpennañ un deskrivadur
 pdfjs-editor-alt-text-cancel-button = Nullañ
 pdfjs-editor-alt-text-save-button = Enrollañ
+# .placeholder: This is a placeholder for the alt text input area
+pdfjs-editor-alt-text-textarea =
+    .placeholder = Da skouer, “Ur paotr yaouank ouzh taol o tebriñ boued”
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
@@ -311,6 +321,8 @@ pdfjs-editor-alt-text-save-button = Enrollañ
 
 ## Color picker
 
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = Liv sklêrijennañ
 pdfjs-editor-colorpicker-button =
     .title = Cheñch liv
 pdfjs-editor-colorpicker-yellow =

@@ -597,6 +597,8 @@ class AnnotationEditorUIManager {
 
   #commandManager = new CommandManager();
 
+  #commentManager = null;
+
   #copyPasteAC = null;
 
   #currentDrawingSession = null;
@@ -675,6 +677,8 @@ class AnnotationEditorUIManager {
   #container = null;
 
   #viewer = null;
+
+  #viewerAlert = null;
 
   #updateModeCapability = null;
 
@@ -818,7 +822,9 @@ class AnnotationEditorUIManager {
   constructor(
     container,
     viewer,
+    viewerAlert,
     altTextManager,
+    commentManager,
     signatureManager,
     eventBus,
     pdfDocument,
@@ -834,7 +840,9 @@ class AnnotationEditorUIManager {
     const signal = (this._signal = this.#abortController.signal);
     this.#container = container;
     this.#viewer = viewer;
+    this.#viewerAlert = viewerAlert;
     this.#altTextManager = altTextManager;
+    this.#commentManager = commentManager;
     this.#signatureManager = signatureManager;
     this._eventBus = eventBus;
     eventBus._on("editingaction", this.onEditingAction.bind(this), { signal });
@@ -898,6 +906,7 @@ class AnnotationEditorUIManager {
     this.#selectedEditors.clear();
     this.#commandManager.destroy();
     this.#altTextManager?.destroy();
+    this.#commentManager?.destroy();
     this.#signatureManager?.destroy();
     this.#highlightToolbar?.hide();
     this.#highlightToolbar = null;
@@ -951,18 +960,40 @@ class AnnotationEditorUIManager {
     );
   }
 
-  get highlightColors() {
+  get _highlightColors() {
     return shadow(
       this,
-      "highlightColors",
+      "_highlightColors",
       this.#highlightColors
         ? new Map(
-            this.#highlightColors
-              .split(",")
-              .map(pair => pair.split("=").map(x => x.trim()))
+            this.#highlightColors.split(",").map(pair => {
+              pair = pair.split("=").map(x => x.trim());
+              pair[1] = pair[1].toUpperCase();
+              return pair;
+            })
           )
         : null
     );
+  }
+
+  get highlightColors() {
+    const { _highlightColors } = this;
+    if (!_highlightColors) {
+      return shadow(this, "highlightColors", null);
+    }
+    const map = new Map();
+    const hasHCM = !!this.#pageColors;
+    for (const [name, color] of _highlightColors) {
+      const isNameForHCM = name.endsWith("_HCM");
+      if (hasHCM && isNameForHCM) {
+        map.set(name.replace("_HCM", ""), color);
+        continue;
+      }
+      if (!hasHCM && !isNameForHCM) {
+        map.set(name, color);
+      }
+    }
+    return shadow(this, "highlightColors", map);
   }
 
   get highlightColorNames() {
@@ -973,6 +1004,18 @@ class AnnotationEditorUIManager {
         ? new Map(Array.from(this.highlightColors, e => e.reverse()))
         : null
     );
+  }
+
+  getNonHCMColor(color) {
+    if (!this._highlightColors) {
+      return color;
+    }
+    const colorName = this.highlightColorNames.get(color);
+    return this._highlightColors.get(colorName) || color;
+  }
+
+  getNonHCMColorName(color) {
+    return this.highlightColorNames.get(color) || color;
   }
 
   /**
@@ -995,6 +1038,14 @@ class AnnotationEditorUIManager {
 
   editAltText(editor, firstTime = false) {
     this.#altTextManager?.editAltText(this, editor, firstTime);
+  }
+
+  hasCommentManager() {
+    return !!this.#commentManager;
+  }
+
+  editComment(editor, position) {
+    this.#commentManager?.open(this, editor, position);
   }
 
   getSignature(editor) {
@@ -1170,6 +1221,19 @@ class AnnotationEditorUIManager {
       !this.#annotationStorage.has(editor.id)
     ) {
       this.#annotationStorage.setValue(editor.id, editor);
+    }
+  }
+
+  a11yAlert(messageId, args = null) {
+    const viewerAlert = this.#viewerAlert;
+    if (!viewerAlert) {
+      return;
+    }
+    viewerAlert.setAttribute("data-l10n-id", messageId);
+    if (args) {
+      viewerAlert.setAttribute("data-l10n-args", JSON.stringify(args));
+    } else {
+      viewerAlert.removeAttribute("data-l10n-args");
     }
   }
 
@@ -1665,8 +1729,18 @@ class AnnotationEditorUIManager {
    * @param {string|null} editId
    * @param {boolean} [isFromKeyboard] - true if the mode change is due to a
    *   keyboard action.
+   * @param {boolean} [mustEnterInEditMode] - true if the editor must enter in
+   *   edit mode.
+   * @param {boolean} [editComment] - true if the mode change is due to a
+   *   comment edit.
    */
-  async updateMode(mode, editId = null, isFromKeyboard = false) {
+  async updateMode(
+    mode,
+    editId = null,
+    isFromKeyboard = false,
+    mustEnterInEditMode = false,
+    editComment = false
+  ) {
     if (this.#mode === mode) {
       return;
     }
@@ -1713,7 +1787,11 @@ class AnnotationEditorUIManager {
     for (const editor of this.#allEditors.values()) {
       if (editor.annotationElementId === editId || editor.id === editId) {
         this.setSelected(editor);
-        editor.enterInEditMode();
+        if (editComment) {
+          editor.editComment();
+        } else if (mustEnterInEditMode) {
+          editor.enterInEditMode();
+        }
       } else {
         editor.unselect();
       }
@@ -1758,9 +1836,6 @@ class AnnotationEditorUIManager {
       case AnnotationEditorParamsType.CREATE:
         this.currentLayer.addNewEditor(value);
         return;
-      case AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR:
-        this.#mainHighlightColorPicker?.updateColor(value);
-        break;
       case AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL:
         this._eventBus.dispatch("reporttelemetry", {
           source: this,
@@ -1777,12 +1852,14 @@ class AnnotationEditorUIManager {
         break;
     }
 
-    for (const editor of this.#selectedEditors) {
-      editor.updateParams(type, value);
-    }
-
-    for (const editorType of this.#editorTypes) {
-      editorType.updateDefaultParams(type, value);
+    if (this.hasSelection) {
+      for (const editor of this.#selectedEditors) {
+        editor.updateParams(type, value);
+      }
+    } else {
+      for (const editorType of this.#editorTypes) {
+        editorType.updateDefaultParams(type, value);
+      }
     }
   }
 
@@ -2017,6 +2094,11 @@ class AnnotationEditorUIManager {
    * @param {AnnotationEditor} editor
    */
   setSelected(editor) {
+    this.updateToolbar({
+      mode: editor.mode,
+      editId: editor.id,
+    });
+
     this.#currentDrawingSession?.commitOrRemove();
     for (const ed of this.#selectedEditors) {
       if (ed !== editor) {

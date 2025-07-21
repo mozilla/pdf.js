@@ -1065,8 +1065,8 @@ describe("Scripting", function () {
                 id: refId,
                 value: "",
                 actions: {
-                  Format: [`AFDate_FormatEx("mmddyyyy");`],
-                  Keystroke: [`AFDate_KeystrokeEx("mmddyyyy");`],
+                  Format: [`AFDate_FormatEx("mm.dd.yyyy");`],
+                  Keystroke: [`AFDate_KeystrokeEx("mm.dd.yyyy");`],
                 },
                 type: "text",
               },
@@ -1080,7 +1080,7 @@ describe("Scripting", function () {
         sandbox.createSandbox(data);
         await sandbox.dispatchEventInSandbox({
           id: refId,
-          value: "12062023",
+          value: "12.06.2023",
           name: "Keystroke",
           willCommit: true,
         });
@@ -1088,14 +1088,14 @@ describe("Scripting", function () {
         expect(send_queue.get(refId)).toEqual({
           id: refId,
           siblings: null,
-          value: "12062023",
-          formattedValue: "12062023",
+          value: "12.06.2023",
+          formattedValue: "12.06.2023",
         });
         send_queue.delete(refId);
 
         await sandbox.dispatchEventInSandbox({
           id: refId,
-          value: "1206202",
+          value: "12.06.202",
           name: "Keystroke",
           willCommit: true,
         });
@@ -1103,16 +1103,15 @@ describe("Scripting", function () {
         expect(send_queue.get(refId)).toEqual({
           id: refId,
           siblings: null,
-          value: "",
-          formattedValue: null,
-          selRange: [0, 0],
+          value: "12.06.202",
+          formattedValue: "12.06.0202",
         });
         send_queue.delete(refId);
 
         sandbox.createSandbox(data);
         await sandbox.dispatchEventInSandbox({
           id: refId,
-          value: "02062023",
+          value: "02.06.2023",
           name: "Keystroke",
           willCommit: true,
         });
@@ -1120,8 +1119,24 @@ describe("Scripting", function () {
         expect(send_queue.get(refId)).toEqual({
           id: refId,
           siblings: null,
-          value: "02062023",
-          formattedValue: "02062023",
+          value: "02.06.2023",
+          formattedValue: "02.06.2023",
+        });
+        send_queue.delete(refId);
+
+        sandbox.createSandbox(data);
+        await sandbox.dispatchEventInSandbox({
+          id: refId,
+          value: "2.6.2023",
+          name: "Keystroke",
+          willCommit: true,
+        });
+        expect(send_queue.has(refId)).toEqual(true);
+        expect(send_queue.get(refId)).toEqual({
+          id: refId,
+          siblings: null,
+          value: "2.6.2023",
+          formattedValue: "02.06.2023",
         });
         send_queue.delete(refId);
       });

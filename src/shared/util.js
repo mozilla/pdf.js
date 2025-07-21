@@ -76,6 +76,7 @@ const AnnotationEditorType = {
   STAMP: 13,
   INK: 15,
   SIGNATURE: 101,
+  COMMENT: 102,
 };
 
 const AnnotationEditorParamsType = {
@@ -88,10 +89,9 @@ const AnnotationEditorParamsType = {
   INK_THICKNESS: 22,
   INK_OPACITY: 23,
   HIGHLIGHT_COLOR: 31,
-  HIGHLIGHT_DEFAULT_COLOR: 32,
-  HIGHLIGHT_THICKNESS: 33,
-  HIGHLIGHT_FREE: 34,
-  HIGHLIGHT_SHOW_ALL: 35,
+  HIGHLIGHT_THICKNESS: 32,
+  HIGHLIGHT_FREE: 33,
+  HIGHLIGHT_SHOW_ALL: 34,
   DRAW_STEP: 41,
 };
 
@@ -1113,6 +1113,9 @@ function isArrayEqual(arr1, arr2) {
 }
 
 function getModificationDate(date = new Date()) {
+  if (!(date instanceof Date)) {
+    date = new Date(date);
+  }
   const buffer = [
     date.getUTCFullYear().toString(),
     (date.getUTCMonth() + 1).toString().padStart(2, "0"),
@@ -1206,7 +1209,7 @@ function _isValidExplicitDest(validRef, validName, dest) {
   return true;
 }
 
-// TOOD: Replace all occurrences of this function with `Math.clamp` once
+// TODO: Replace all occurrences of this function with `Math.clamp` once
 //       https://github.com/tc39/proposal-math-clamp/ is generally available.
 function MathClamp(v, min, max) {
   return Math.min(Math.max(v, min), max);

@@ -4410,7 +4410,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         viewport.height
       );
       const renderTask = pdfPage.render({
-        canvasContext: canvasAndCtx.context,
+        canvas: canvasAndCtx.canvas,
         viewport,
       });
       expect(renderTask instanceof RenderTask).toEqual(true);
@@ -4446,7 +4446,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         viewport.height
       );
       const renderTask = page.render({
-        canvasContext: canvasAndCtx.context,
+        canvas: canvasAndCtx.canvas,
         viewport,
       });
       expect(renderTask instanceof RenderTask).toEqual(true);
@@ -4477,7 +4477,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         viewport.height
       );
       const renderTask = page.render({
-        canvasContext: canvasAndCtx.context,
+        canvas: canvasAndCtx.canvas,
         viewport,
       });
       expect(renderTask instanceof RenderTask).toEqual(true);
@@ -4494,7 +4494,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       }
 
       const reRenderTask = page.render({
-        canvasContext: canvasAndCtx.context,
+        canvas: canvasAndCtx.canvas,
         viewport,
       });
       expect(reRenderTask instanceof RenderTask).toEqual(true);
@@ -4518,14 +4518,14 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         viewport.height
       );
       const renderTask1 = page.render({
-        canvasContext: canvasAndCtx.context,
+        canvas: canvasAndCtx.canvas,
         viewport,
         optionalContentConfigPromise,
       });
       expect(renderTask1 instanceof RenderTask).toEqual(true);
 
       const renderTask2 = page.render({
-        canvasContext: canvasAndCtx.context,
+        canvas: canvasAndCtx.canvas,
         viewport,
         optionalContentConfigPromise,
       });
@@ -4562,7 +4562,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         viewport.height
       );
       const renderTask = pdfPage.render({
-        canvasContext: canvasAndCtx.context,
+        canvas: canvasAndCtx.canvas,
         viewport,
       });
       expect(renderTask instanceof RenderTask).toEqual(true);
@@ -4591,7 +4591,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         viewport.height
       );
       const renderTask = pdfPage.render({
-        canvasContext: canvasAndCtx.context,
+        canvas: canvasAndCtx.canvas,
         viewport,
         background: "#FF0000", // See comment below.
       });
@@ -4651,7 +4651,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
           viewport.height
         );
         const renderTask = pdfPage.render({
-          canvasContext: canvasAndCtx.context,
+          canvas: canvasAndCtx.canvas,
           viewport,
         });
 
@@ -4755,7 +4755,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
           viewport.height
         );
         const renderTask = pdfPage.render({
-          canvasContext: canvasAndCtx.context,
+          canvas: canvasAndCtx.canvas,
           viewport,
         });
 
@@ -4802,7 +4802,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
           viewport.height
         );
         const renderTask = pdfPage.render({
-          canvasContext: canvasAndCtx.context,
+          canvas: canvasAndCtx.canvas,
           viewport,
         });
 
@@ -4852,7 +4852,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
           viewport.height
         );
         const renderTask = pdfPage.render({
-          canvasContext: canvasAndCtx.context,
+          canvas: canvasAndCtx.canvas,
           viewport,
           intent: "print",
           annotationMode: AnnotationMode.ENABLE_STORAGE,
@@ -4911,6 +4911,34 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
 
       await loadingTask.destroy();
     });
+
+    it("should work with the legacy canvasContext parameter", async function () {
+      const loadingTask = getDocument(tracemonkeyGetDocumentParams);
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const viewport = pdfPage.getViewport({ scale: 1 });
+
+      const { canvasFactory } = pdfDoc;
+      const canvasAndCtx = canvasFactory.create(
+        viewport.width,
+        viewport.height
+      );
+      const renderTask = pdfPage.render({
+        canvasContext: canvasAndCtx.context,
+        viewport,
+      });
+      expect(renderTask instanceof RenderTask).toEqual(true);
+
+      await renderTask.promise;
+      expect(
+        canvasAndCtx.context
+          .getImageData(0, 0, viewport.width, viewport.height)
+          .data.some(channel => channel !== 0)
+      ).toEqual(true);
+
+      canvasFactory.destroy(canvasAndCtx);
+      await loadingTask.destroy();
+    });
   });
 
   describe("Multiple `getDocument` instances", function () {
@@ -4939,7 +4967,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         viewport.height
       );
       const renderTask = page.render({
-        canvasContext: canvasAndCtx.context,
+        canvas: canvasAndCtx.canvas,
         viewport,
       });
       await renderTask.promise;
@@ -5126,5 +5154,48 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         await loadingTask.destroy();
       }
     );
+  });
+
+  describe("Annotations", function () {
+    it("should extract the text under some annotations", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("bug1885505.pdf"));
+      const pdfDoc = await loadingTask.promise;
+
+      const page1 = await pdfDoc.getPage(1);
+      const annots = await page1.getAnnotations();
+      let annot = annots.find(x => x.id === "56R");
+      expect(annot.overlaidText).toEqual("Languages");
+
+      annot = annots.find(x => x.id === "52R");
+      expect(annot.overlaidText)
+        .toEqual(`Dynamic languages such as JavaScript are more difﬁcult to com-
+pile than statically typed ones. Since no concrete type information
+is available, traditional compilers`);
+
+      annot = annots.find(x => x.id === "54R");
+      expect(annot.overlaidText)
+        .toEqual(`typed ones. Since no concrete type information
+is available, traditional compilers need to emit generic code that can
+handle all possible type combinations at runtime. We present an al-
+ternative compilation technique for dynamically-`);
+
+      annot = annots.find(x => x.id === "58R");
+      expect(annot.overlaidText).toEqual("machine");
+
+      annot = annots.find(x => x.id === "60R");
+      expect(annot.overlaidText)
+        .toEqual(`paths through nested loops. We have implemented
+a dynamic compiler for JavaScript based on our`);
+
+      annot = annots.find(x => x.id === "65R");
+      expect(annot.overlaidText).toEqual("Experimentation,");
+
+      annot = annots.find(x => x.id === "63R");
+      expect(annot.overlaidText)
+        .toEqual(`languages such as JavaScript, Python, and Ruby, are pop-
+ular since they are expressive, accessible to non-experts, and make
+deployment as easy as distributing a source ﬁle. They are used for
+small scripts as well as for`);
+    });
   });
 });

@@ -241,7 +241,7 @@ const OPERAND = false;
 // operation ('... * - ...' can't be a subtraction).
 // Each time an operator is met its precedence is compared with the one of the
 // operator on top of operators stack:
-//  - if top has precendence on operator then top is applied to the operands
+//  - if top has precedence on operator then top is applied to the operands
 //    on their stack;
 //  - else just push the operator.
 // For example: 1 + 2 * 3

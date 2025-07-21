@@ -49,8 +49,8 @@ pdfjs-download-button =
 # Length of the translation matters since we are in a mobile context, with limited screen estate.
 pdfjs-download-button-label = Preuzimanja
 pdfjs-bookmark-button =
-    .title = Trenutna stranica (pogledajte URL s trenutne stranice)
-pdfjs-bookmark-button-label = Trenutna stranica
+    .title = Trenutačna stranica (pogledaj URL s trenutačne stranice)
+pdfjs-bookmark-button-label = Trenutačna stranica
 
 ##  Secondary toolbar and context menu
 
@@ -61,14 +61,14 @@ pdfjs-first-page-button =
     .title = Idi na prvu stranicu
 pdfjs-first-page-button-label = Idi na prvu stranicu
 pdfjs-last-page-button =
-    .title = Idi na posljednju stranicu
-pdfjs-last-page-button-label = Idi na posljednju stranicu
+    .title = Idi na zadnju stranicu
+pdfjs-last-page-button-label = Idi na zadnju stranicu
 pdfjs-page-rotate-cw-button =
-    .title = Rotiraj u smjeru kazaljke na satu
-pdfjs-page-rotate-cw-button-label = Rotiraj u smjeru kazaljke na satu
+    .title = Okreni nadesno
+pdfjs-page-rotate-cw-button-label = Okreni nadesno
 pdfjs-page-rotate-ccw-button =
-    .title = Rotiraj obrnutno od smjera kazaljke na satu
-pdfjs-page-rotate-ccw-button-label = Rotiraj obrnutno od smjera kazaljke na satu
+    .title = Okreni nalijevo
+pdfjs-page-rotate-ccw-button-label = Okreni nalijevo
 pdfjs-cursor-text-select-tool-button =
     .title = Aktiviraj alat za biranje teksta
 pdfjs-cursor-text-select-tool-button-label = Alat za označavanje teksta
@@ -184,7 +184,7 @@ pdfjs-toggle-sidebar-notification-button =
     .title = Prikazivanje i sklanjanje bočne trake (dokument sadrži strukturu/privitke/slojeve)
 pdfjs-toggle-sidebar-button-label = Prikaži/sakrij bočnu traku
 pdfjs-document-outline-button =
-    .title = Prikaži strukturu dokumenta (dvostruki klik za rasklapanje/sklapanje svih stavki)
+    .title = Prikaži strukturu dokumenta (dvoklik za rasklapanje/sklapanje svih stavki)
 pdfjs-document-outline-button-label = Struktura dokumenta
 pdfjs-attachments-button =
     .title = Prikaži privitke
@@ -309,8 +309,8 @@ pdfjs-editor-ink-button =
     .title = Crtanje
 pdfjs-editor-ink-button-label = Crtanje
 pdfjs-editor-stamp-button =
-    .title = Dodajte ili uredite slike
-pdfjs-editor-stamp-button-label = Dodajte ili uredite slike
+    .title = Dodaj ili uredi slike
+pdfjs-editor-stamp-button-label = Dodaj ili uredi slike
 pdfjs-editor-highlight-button =
     .title = Istakni
 pdfjs-editor-highlight-button-label = Istakni
@@ -318,9 +318,25 @@ pdfjs-highlight-floating-button1 =
     .title = Istakni
     .aria-label = Istakni
 pdfjs-highlight-floating-button-label = Istakni
+pdfjs-editor-signature-button =
+    .title = Dodaj potpis
+pdfjs-editor-signature-button-label = Dodaj potpis
 
 ## Default editor aria labels
 
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = Uređivač za isticanje teksta
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = Uređivač crteža
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor1 =
+    .aria-description = Uređivač potpisa: { $description }
+pdfjs-editor-stamp-editor =
+    .aria-label = Uređivač slika
 
 ## Remove button for the various kind of editor.
 
@@ -332,6 +348,8 @@ pdfjs-editor-remove-stamp-button =
     .title = Ukloni sliku
 pdfjs-editor-remove-highlight-button =
     .title = Ukloni isticanje
+pdfjs-editor-remove-signature-button =
+    .title = Ukloni potpis
 
 ##
 
@@ -348,6 +366,16 @@ pdfjs-editor-stamp-add-image-button-label = Dodaj sliku
 pdfjs-editor-free-highlight-thickness-input = Debljina
 pdfjs-editor-free-highlight-thickness-title =
     .title = Promjeni debljinu pri isticanju drugih stavki osim teksta
+pdfjs-editor-add-signature-container =
+    .aria-label = Kontrole potpisa i spremljeni potpisi
+pdfjs-editor-signature-add-signature-button =
+    .title = Dodaj novi potpis
+pdfjs-editor-signature-add-signature-button-label = Dodaj novi potpis
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = Spremljeni potpis: { $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Uređivač teksta
@@ -504,6 +532,7 @@ pdfjs-editor-undo-bar-message-highlight = Isticanje uklonjeno
 pdfjs-editor-undo-bar-message-freetext = Tekst uklonjen
 pdfjs-editor-undo-bar-message-ink = Crtež uklonjen
 pdfjs-editor-undo-bar-message-stamp = Slika uklonjena
+pdfjs-editor-undo-bar-message-signature = Potpis uklonjen
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -521,24 +550,69 @@ pdfjs-editor-undo-bar-close-button-label = Zatvori
 
 ## Add a signature dialog
 
+pdfjs-editor-add-signature-dialog-label = Ovaj prozor omogućuje korisniku stvoriti potpis i dodati ga u PDF dokument. Korisnik može urediti ime (koje služi i kao alternativni tekst) i opcionalno spremiti potpis za ponovnu upotrebu.
+pdfjs-editor-add-signature-dialog-title = Dodaj potpis
 
 ## Tab names
 
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = Utipkaj
+    .title = Utipkaj
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = Crtaj
+    .title = Crtaj
+pdfjs-editor-add-signature-image-button = Slika
+    .title = Slika
 
 ## Tab panels
 
+pdfjs-editor-add-signature-type-input =
+    .aria-label = Utipkaj svoj potpis
+    .placeholder = Utipkaj svoj potpis
+pdfjs-editor-add-signature-draw-placeholder = Nacrtaj svoj potpis
+pdfjs-editor-add-signature-draw-thickness-range-label = Debljina
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Debljina crtanja: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = Povuci datoteku za prijenos ovamo
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] Ili odaberi slikovne datoteke
+       *[other] Ili odaberi slikovne datoteke
+    }
 
 ## Controls
 
+pdfjs-editor-add-signature-description-label = Opis (alternativni tekst)
+pdfjs-editor-add-signature-description-input =
+    .title = Opis (alternativni tekst)
+pdfjs-editor-add-signature-description-default-when-drawing = Potpis
+pdfjs-editor-add-signature-clear-button-label = Izbriši potpis
+pdfjs-editor-add-signature-clear-button =
+    .title = Izbriši potpis
+pdfjs-editor-add-signature-save-checkbox = Spremi potpis
+pdfjs-editor-add-signature-save-warning-message = Dosegnuto je ograničenje od 5 spremljenih potpisa. Za spremanje novih ukloni jedan potpis.
+pdfjs-editor-add-signature-image-upload-error-title = Nije moguće prenijeti sliku
+pdfjs-editor-add-signature-image-upload-error-description = Provjeri mrežnu vezu ili pokušaj s jednom drugom slikom.
+pdfjs-editor-add-signature-error-close-button = Zatvori
 
 ## Dialog buttons
 
+pdfjs-editor-add-signature-cancel-button = Odustani
+pdfjs-editor-add-signature-add-button = Dodaj
+pdfjs-editor-edit-signature-update-button = Aktualiziraj
 
 ## Main menu for adding/removing signatures
 
+pdfjs-editor-delete-signature-button1 =
+    .title = Ukloni spremljeni potpis
+pdfjs-editor-delete-signature-button-label1 = Ukloni spremljeni potpis
 
 ## Editor toolbar
 
+pdfjs-editor-add-signature-edit-button-label = Uredi opis
 
 ## Edit signature description dialog
 
+pdfjs-editor-edit-signature-dialog-title = Uredi opis

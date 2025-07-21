@@ -380,6 +380,50 @@ describe("primitives", function () {
         "Global font three",
       ]);
     });
+
+    it("should set the values if they're as expected", function () {
+      const dict = new Dict();
+      dict.set("key", "value");
+
+      dict.setIfNotExists("key", "new value");
+      expect(dict.get("key")).toEqual("value");
+
+      dict.setIfNotExists("key1", "value");
+      expect(dict.get("key1")).toEqual("value");
+
+      dict.setIfNumber("a", 123);
+      expect(dict.get("a")).toEqual(123);
+
+      dict.setIfNumber("b", "not a number");
+      expect(dict.has("b")).toBeFalse();
+
+      dict.setIfArray("c", [1, 2, 3]);
+      expect(dict.get("c")).toEqual([1, 2, 3]);
+
+      dict.setIfArray("d", new Uint8Array([4, 5, 6]));
+      expect(dict.get("d")).toEqual(new Uint8Array([4, 5, 6]));
+
+      dict.setIfArray("e", "not an array");
+      expect(dict.has("e")).toBeFalse();
+
+      dict.setIfDefined("f", "defined");
+      expect(dict.get("f")).toEqual("defined");
+
+      dict.setIfDefined("g", undefined);
+      expect(dict.has("g")).toBeFalse();
+
+      dict.setIfDefined("h", null);
+      expect(dict.has("h")).toBeFalse();
+
+      dict.setIfName("i", Name.get("name"));
+      expect(dict.get("i")).toEqual(Name.get("name"));
+
+      dict.setIfName("j", "name");
+      expect(dict.get("j")).toEqual(Name.get("name"));
+
+      dict.setIfName("k", 1234);
+      expect(dict.has("k")).toBeFalse();
+    });
   });
 
   describe("Ref", function () {

@@ -1,0 +1,288 @@
+/* Copyright 2025 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#commentManagerDialog {
+  --comment-actions-button-icon: url(images/comment-actionsButton.svg);
+  --comment-close-button-icon: url(images/comment-closeButton.svg);
+
+  --default-dialog-bg-color: #ffff98;
+  --dialog-base-color: var(--default-dialog-bg-color);
+  --dialog-bg-color: color-mix(in srgb, var(--dialog-base-color), white 30%);
+  --dialog-border-color: var(--dialog-base-color);
+
+  --menuitem-bg-color: transparent;
+  --menuitem-fg-color: black;
+  --menuitem-hover-bg-color: #3383e7;
+  --menuitem-hover-fg-color: white;
+
+  --comment-text-input-bg: white;
+  --comment-text-input-fg: black;
+  --comment-text-input-border: #0060df;
+  --comment-focus-outline-color: #0060df;
+
+  --hover-filter: brightness(0.9);
+  --text-primary-color: #15141a;
+
+  --button-secondary-bg-color: #f0f0f4;
+  --button-secondary-active-bg-color: color-mix(
+    in srgb,
+    var(--button-secondary-bg-color),
+    black 14%
+  );
+  --button-secondary-hover-bg-color: color-mix(
+    in srgb,
+    var(--button-secondary-bg-color),
+    black 7%
+  );
+
+  --button-primary-bg-color: #0060df;
+  --button-primary-fg-color: #fbfbfe;
+  --button-primary-active-bg-color: #0050c0;
+  --button-primary-hover-bg-color: #0250bb;
+
+  --menu-bg-color: rgb(253 250 244);
+  --menu-button-border-color: transparent;
+  --menu-button-focus-outline-color: var(--comment-text-input-border);
+
+  @media screen and (forced-colors: active) {
+    --hover-filter: none;
+    --text-primary-color: CanvasText;
+    --button-secondary-bg-color: HighlightText;
+    --button-secondary-active-bg-color: HighlightText;
+    --button-secondary-hover-bg-color: HighlightText;
+    --button-primary-bg-color: ButtonText;
+    --button-primary-fg-color: HighlightText;
+    --button-primary-active-bg-color: SelectedItem;
+    --button-primary-hover-bg-color: SelectedItem;
+
+    --menu-button-border-color: Canvas;
+    --menu-button-focus-outline-color: CanvasText;
+  }
+
+  width: 308px;
+  padding: 8px 16px 16px;
+  overflow: visible;
+  position: absolute;
+  margin: 0;
+
+  border-radius: 4px;
+  border: 1px solid var(--dialog-border-color);
+  background: var(--dialog-bg-color);
+  box-shadow: 0 2px 14px 0 rgb(58 57 68 / 0.2);
+
+  .mainContainer {
+    width: 100%;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+
+    *:focus-visible {
+      outline: 2px solid var(--comment-focus-outline-color);
+      outline-offset: 0;
+    }
+
+    #commentManagerToolbar {
+      width: 100%;
+      display: flex;
+      justify-content: flex-end;
+      align-items: flex-start;
+      gap: 8px;
+      align-self: stretch;
+
+      cursor: move;
+
+      > button {
+        color-scheme: light;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        border: none;
+
+        cursor: pointer;
+
+        &::before {
+          content: "";
+          display: inline-block;
+          width: 100%;
+          height: 100%;
+          mask-repeat: no-repeat;
+          mask-position: center;
+        }
+
+        &#commentActionsButton::before {
+          mask-image: var(--comment-actions-button-icon);
+        }
+
+        &#commentCloseButton::before {
+          mask-image: var(--comment-close-button-icon);
+        }
+
+        > span {
+          display: inline-block;
+          width: 0;
+          height: 0;
+          overflow: hidden;
+        }
+      }
+
+      menu {
+        width: max-content;
+        min-width: 90px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1px;
+        padding: 5px 6px;
+        cursor: auto;
+        z-index: 1;
+        margin: 0;
+
+        position: absolute;
+        top: 8px;
+        right: -6.5px;
+
+        border-radius: 6px;
+        border: 0.5px solid #b4b4b6;
+        background-color: var(--menu-bg-color);
+        box-shadow:
+          1px -1px 0 0 #fff inset,
+          -1px 1px 0 0 #fff inset,
+          -1px -1px 0 0 #fff inset,
+          1px 1px 0 0 #fff inset,
+          0 0 15px 0 rgb(0 0 0 / 0.25);
+
+        button {
+          background-color: var(--menu-bg-color);
+          width: 100%;
+          height: 24px;
+          padding: 0;
+          box-sizing: border-box;
+          display: flex;
+          border: 2px solid var(--menu-button-border-color);
+          color: var(--menuitem-fg-color);
+
+          &:hover {
+            background-color: var(--menuitem-hover-bg-color);
+            color: var(--menuitem-hover-fg-color);
+          }
+
+          &:is(:focus-visible, :focus) {
+            outline: none;
+            border: 2px solid var(--menu-button-focus-outline-color);
+          }
+
+          &:disabled {
+            opacity: 0.5;
+            pointer-events: none;
+          }
+
+          span {
+            align-content: center;
+            width: 100%;
+            max-width: min-content;
+            padding-inline: 8px;
+            color: inherit;
+            text-align: start;
+            font: menu;
+            font-size: 15px;
+            font-weight: 400;
+            line-height: normal;
+          }
+        }
+      }
+    }
+
+    #commentManagerTextInput {
+      width: 100%;
+      min-height: 132px;
+      resize: none;
+      box-sizing: border-box;
+      margin-bottom: 12px;
+
+      border-radius: 4px;
+      border: 2px solid var(--comment-text-input-border);
+      background-color: var(--comment-text-input-bg);
+      color: var(--comment-text-input-fg);
+    }
+
+    #commentManagerTextView {
+      width: 100%;
+      height: max-content;
+      resize: none;
+      box-sizing: border-box;
+      margin-bottom: 12px;
+
+      border: none;
+      background-color: transparent;
+      color: var(--comment-text-input-fg);
+    }
+
+    .dialogButtonsGroup {
+      gap: 8px;
+
+      #commentManagerSaveButton:disabled {
+        background-color: color-mix(
+          in srgb,
+          var(--button-primary-disabled-bg-color),
+          transparent 50%
+        );
+        border-color: color-mix(
+          in srgb,
+          var(--button-primary-disabled-border-color),
+          transparent 50%
+        );
+        opacity: 1;
+      }
+    }
+  }
+}
+
+.annotationLayer {
+  --comment-inline-button-bg: #e0e0e6;
+  --comment-inline-button-fg: black;
+  --comment-inline-button-border-color: #8f8f9d;
+  --comment-button-dim: 24px;
+  --comment-button-offset: calc(var(--comment-button-dim) / 2);
+
+  .annotationCommentButton {
+    position: absolute;
+    width: var(--comment-button-dim);
+    height: var(--comment-button-dim);
+    background-color: var(--comment-inline-button-bg);
+    cursor: auto;
+    z-index: 1;
+    border: 1px solid var(--comment-inline-button-border-color);
+    border-radius: 4px;
+    padding: 2px;
+    margin: 0;
+    box-sizing: border-box;
+    pointer-events: auto;
+
+    &::before {
+      content: "";
+      display: inline-block;
+      width: 100%;
+      height: 100%;
+      mask-repeat: no-repeat;
+      mask-size: cover;
+      mask-image: var(--comment-edit-image);
+      background-color: var(--comment-inline-button-fg);
+      margin: 0;
+      padding: 0;
+    }
+  }
+}

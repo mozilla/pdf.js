@@ -263,8 +263,8 @@ pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", tim
 
 ## Password
 
-pdfjs-password-label = ഈ പിഡിഎഫ് ഫയല്‍ തുറക്കുന്നതിനു് രഹസ്യവാക്ക് നല്‍കുക.
-pdfjs-password-invalid = തെറ്റായ രഹസ്യവാക്ക്, ദയവായി വീണ്ടും ശ്രമിയ്ക്കുക.
+pdfjs-password-label = ഈ പിഡിഎഫ് ഫയല്‍ തുറക്കുന്നതിനു് ഒളിവാക്ക് നല്‍കുക.
+pdfjs-password-invalid = തെറ്റായ ഒളിവാക്ക്, ദയവായി വീണ്ടും ശ്രമിയ്ക്കുക.
 pdfjs-password-ok-button = ശരി
 pdfjs-password-cancel-button = റദ്ദാക്കുക
 pdfjs-web-fonts-disabled = വെബിനുള്ള അക്ഷരസഞ്ചയങ്ങള്‍ പ്രവര്‍ത്തന രഹിതം: എംബഡ്ഡ് ചെയ്ത പിഡിഎഫ് അക്ഷരസഞ്ചയങ്ങള്‍ ഉപയോഗിയ്ക്കുവാന്‍ സാധ്യമല്ല.

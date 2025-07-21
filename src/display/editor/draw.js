@@ -67,6 +67,8 @@ class DrawingEditor extends AnnotationEditor {
 
   #mustBeCommitted;
 
+  _colorPicker = null;
+
   _drawId = null;
 
   static _currentDrawId = -1;
@@ -106,6 +108,9 @@ class DrawingEditor extends AnnotationEditor {
   #createDrawOutlines({ drawOutlines, drawId, drawingOptions }) {
     this.#drawOutlines = drawOutlines;
     this._drawingOptions ||= drawingOptions;
+    if (!this.annotationElementId) {
+      this._uiManager.a11yAlert(`pdfjs-editor-${this.editorType}-added-alert`);
+    }
 
     if (drawId >= 0) {
       this._drawId = drawId;
@@ -237,6 +242,9 @@ class DrawingEditor extends AnnotationEditor {
         this._drawId,
         options.toSVGProperties()
       );
+      if (type === this.colorType) {
+        this._colorPicker?.update(val);
+      }
     };
     this.addCommands({
       cmd: setter.bind(this, value),

@@ -186,11 +186,8 @@ class PDFPageDetailView extends BasePDFPageView {
     this.reset({ keepCanvas: true });
   }
 
-  _getRenderingContext(canvasContext, transform) {
-    const baseContext = this.pageView._getRenderingContext(
-      canvasContext,
-      transform
-    );
+  _getRenderingContext(canvas, transform) {
+    const baseContext = this.pageView._getRenderingContext(canvas, transform);
     const recordedGroups = this.pdfPage.recordedGroups;
 
     if (!recordedGroups) {
@@ -265,7 +262,7 @@ class PDFPageDetailView extends BasePDFPageView {
 
     const canvasWrapper = this.pageView._ensureCanvasWrapper();
 
-    const { canvas, prevCanvas, ctx } = this._createCanvas(newCanvas => {
+    const { canvas, prevCanvas } = this._createCanvas(newCanvas => {
       // If there is already the background canvas, inject this new canvas
       // after it. We cannot simply use .append because all canvases must
       // be before the SVG elements used for drawings.
@@ -300,7 +297,7 @@ class PDFPageDetailView extends BasePDFPageView {
     style.left = `${(area.minX * 100) / width}%`;
 
     const renderingPromise = this._drawCanvas(
-      this._getRenderingContext(ctx, transform),
+      this._getRenderingContext(canvas, transform),
       () => {
         // If the rendering is cancelled, keep the old canvas visible.
         this.canvas?.remove();

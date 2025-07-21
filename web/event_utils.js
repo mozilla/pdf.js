@@ -170,7 +170,7 @@ class EventBus {
 }
 
 /**
- * NOTE: Only used in the Firefox build-in pdf viewer.
+ * NOTE: Only used in the Firefox built-in pdf viewer.
  */
 class FirefoxEventBus extends EventBus {
   #externalServices;

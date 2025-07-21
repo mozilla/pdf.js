@@ -747,7 +747,7 @@
       }
 
       .toolbarAddSignatureButton {
-        width: auto;
+        width: calc(0.8 * var(--editor-toolbar-min-width));
         height: 100%;
         min-height: var(--menuitem-height);
         aspect-ratio: unset;
