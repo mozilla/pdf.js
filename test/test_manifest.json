@@ -2585,6 +2585,21 @@
     "type": "eq"
   },
   {
+    "id": "issue10491-partial",
+    "file": "pdfs/issue10491.pdf",
+    "md5": "0759ec46739b13bb0b66170a18d33d4f",
+    "rounds": 1,
+    "link": true,
+    "firstPage": 13,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "issue10542",
     "file": "pdfs/issue10542_reduced.pdf",
     "md5": "92406cb903be6c7a63221ba61fcb8eaf",
