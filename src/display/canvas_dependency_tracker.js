@@ -553,7 +553,7 @@ class CanvasNestedDependencyTracker {
     return this.#dependencyTracker.hasPendingBBox;
   }
 
-  recordBBox(idx, ctx, otherCtxs, minX, maxX, minY, maxY) {
+  recordBBox(idx, ctx, minX, maxX, minY, maxY) {
     this.#dependencyTracker.recordBBox(
       this.#opIdx,
       ctx,
