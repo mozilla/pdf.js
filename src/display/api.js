@@ -67,6 +67,7 @@ import { DOMCMapReaderFactory } from "display-cmap_reader_factory";
 import { DOMFilterFactory } from "./filter_factory.js";
 import { DOMStandardFontDataFactory } from "display-standard_fontdata_factory";
 import { DOMWasmFactory } from "display-wasm_factory";
+import { FontInfo } from "../shared/obj-bin-transform.js";
 import { GlobalWorkerOptions } from "./worker_options.js";
 import { Metadata } from "./metadata.js";
 import { OptionalContentConfig } from "./optional_content_config.js";
@@ -2760,11 +2761,17 @@ class WorkerTransport {
             break;
           }
 
+          const fontData = new FontInfo(exportedData);
           const inspectFont =
             this._params.pdfBug && globalThis.FontInspector?.enabled
               ? (font, url) => globalThis.FontInspector.fontAdded(font, url)
               : null;
-          const font = new FontFaceObject(exportedData, inspectFont);
+          const font = new FontFaceObject(
+            fontData,
+            inspectFont,
+            exportedData.extra,
+            exportedData.charProcOperatorList
+          );
 
           this.fontLoader
             .bind(font)
@@ -2776,7 +2783,7 @@ class WorkerTransport {
                 // rather than waiting for a `PDFDocumentProxy.cleanup` call.
                 // Since `font.data` could be very large, e.g. in some cases
                 // multiple megabytes, this will help reduce memory usage.
-                font.data = null;
+                font.clearData();
               }
               this.commonObjs.resolve(id, font);
             });

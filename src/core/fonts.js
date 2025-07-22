@@ -1144,19 +1144,27 @@ class Font {
   }
 
   exportData() {
-    const exportDataProps = this.fontExtraProperties
-      ? [...EXPORT_DATA_PROPERTIES, ...EXPORT_DATA_EXTRA_PROPERTIES]
-      : EXPORT_DATA_PROPERTIES;
-
     const data = Object.create(null);
-    for (const prop of exportDataProps) {
+    for (const prop of EXPORT_DATA_PROPERTIES) {
       const value = this[prop];
       // Ignore properties that haven't been explicitly set.
       if (value !== undefined) {
         data[prop] = value;
       }
     }
-    return data;
+
+    if (!this.fontExtraProperties) {
+      return { data };
+    }
+
+    const extra = Object.create(null);
+    for (const prop of EXPORT_DATA_EXTRA_PROPERTIES) {
+      const value = this[prop];
+      if (value !== undefined) {
+        extra[prop] = value;
+      }
+    }
+    return { data, extra };
   }
 
   fallbackToSystemFont(properties) {

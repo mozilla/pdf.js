@@ -53,6 +53,7 @@ async function initializePDFJS(callback) {
       "pdfjs-test/unit/app_options_spec.js",
       "pdfjs-test/unit/autolinker_spec.js",
       "pdfjs-test/unit/bidi_spec.js",
+      "pdfjs-test/unit/bin_font_info_spec.js",
       "pdfjs-test/unit/canvas_factory_spec.js",
       "pdfjs-test/unit/cff_parser_spec.js",
       "pdfjs-test/unit/cmap_spec.js",
