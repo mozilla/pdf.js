@@ -198,7 +198,7 @@ class PDFPageDetailView extends BasePDFPageView {
     // The indexes are always checked in increasing order, so we can just try
     // to build a pre-sorted array which should have faster lookups.
     // Needs benchmarking.
-    let filteredIndexes = new Set();
+    const filteredIndexes = new Set();
 
     const { viewport } = this.pageView;
     const area = this.#detailArea;
@@ -220,12 +220,6 @@ class PDFPageDetailView extends BasePDFPageView {
         group.dependencies.forEach(filteredIndexes.add, filteredIndexes);
       }
     }
-
-    // Sort the set for debugging
-    // TODO: Remove this
-    filteredIndexes = new Set(
-      Array.from(filteredIndexes).sort((a, b) => a - b)
-    );
 
     return {
       ...baseContext,

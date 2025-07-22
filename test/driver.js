@@ -1117,7 +1117,7 @@ class Driver {
                   const baseline = ctx.canvas.toDataURL("image/png");
                   this._clearCanvas();
 
-                  let filteredIndexes = new Set();
+                  const filteredIndexes = new Set();
 
                   // TODO: This logic is copy-psated from PDFPageDetailView.
                   // We should export it instead, because even though it's
@@ -1139,12 +1139,6 @@ class Driver {
                       );
                     }
                   }
-
-                  // Sort the set for debugging
-                  // TODO: Remove this
-                  filteredIndexes = new Set(
-                    Array.from(filteredIndexes).sort((a, b) => a - b)
-                  );
 
                   const partialRenderContext = {
                     canvasContext: ctx,
