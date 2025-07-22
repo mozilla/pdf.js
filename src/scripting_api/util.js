@@ -619,10 +619,10 @@ class Util extends PDFObject {
     }
 
     const data = {
-      year: new Date().getFullYear(),
+      year: 2000, // 2000 because it's 00 in yy format.
       month: 0,
       day: 1,
-      hours: 12,
+      hours: 0,
       minutes: 0,
       seconds: 0,
       am: null,

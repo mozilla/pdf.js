@@ -104,6 +104,20 @@ class Doc extends PDFObject {
   }
 
   _initActions() {
+    for (const { obj } of this._fields.values()) {
+      // Some fields may have compute their values so we need to send them
+      // to the view.
+      const initialValue = obj._initialValue;
+      if (initialValue) {
+        this._send({
+          id: obj._id,
+          siblings: obj._siblings,
+          value: initialValue,
+          formattedValue: obj.value.toString(),
+        });
+      }
+    }
+
     const dontRun = new Set([
       "WillClose",
       "WillSave",
