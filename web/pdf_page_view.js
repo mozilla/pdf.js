@@ -455,6 +455,7 @@ class PDFPageView {
       error = ex;
     }
 
+    console.log("text layer rendered!");
     this.eventBus.dispatch("textlayerrendered", {
       source: this,
       pageNumber: this.id,

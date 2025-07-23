@@ -912,6 +912,12 @@ class PDFFindController {
       this.pageHighlights[pageIndex]?.length > 0;
 
     if (!hasMatches && fuzzySearchEnabled && query.length > 1) {
+      console.log("Sending fuzzysearching = true event!");
+      this._eventBus.dispatch("fuzzysearching", {
+        source: this,
+        isSearching: true,
+      });
+
       this._pdfDocument
         .getPage(pageIndex + 1)
         .then(pdfPage => pdfPage.getTextContent({ disableNormalization: true }))
@@ -1005,6 +1011,12 @@ class PDFFindController {
           this._linkService.goToPage(pageIndex + 1);
         });
     }
+
+    console.log("Sending fuzzysearching = false event!");
+    this._eventBus.dispatch("fuzzysearching", {
+      source: this,
+      isSearching: false,
+    });
 
     // When `highlightAll` is set, ensure that the matches on previously
     // rendered (and still active) pages are correctly highlighted.
@@ -1423,6 +1435,7 @@ class PDFFindController {
   }
 
   #updateUIResultsCount() {
+    console.log("update find matches count!");
     this._eventBus.dispatch("updatefindmatchescount", {
       source: this,
       matchesCount: this.#requestMatchesCount(),
