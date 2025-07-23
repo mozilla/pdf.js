@@ -2360,8 +2360,10 @@ class CanvasGraphics {
     const clip = new Path2D();
     clip.rect(llx, lly, urx - llx, ury - lly);
     this.ctx.clip(clip);
+    this.dependencyTracker
+      ?.recordBBox(opIdx, this.ctx, llx, urx, lly, ury)
+      .recordClipBox(opIdx, this.ctx, llx, urx, lly, ury);
     this.endPath(opIdx);
-    this.dependencyTracker?.recordBBox(opIdx, this.ctx, llx, urx, lly, ury);
   }
 
   // Color
@@ -2526,6 +2528,7 @@ class CanvasGraphics {
       const clip = new Path2D();
       clip.rect(x0, y0, x1 - x0, y1 - y0);
       this.ctx.clip(clip);
+      this.dependencyTracker?.recordClipBox(opIdx, this.ctx, x0, x1, y0, y1);
       this.endPath(opIdx);
     }
   }

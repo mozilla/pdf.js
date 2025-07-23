@@ -37,6 +37,8 @@ class CanvasDependencyTracker {
 
   #baseTransformStack = [[1, 0, 0, 1, 0, 0]];
 
+  #clipBox = [-Infinity, -Infinity, Infinity, Infinity];
+
   // Float32Array<minX, minY, maxX, maxY>
   #pendingBBox = new Float64Array([Infinity, Infinity, -Infinity, -Infinity]);
 
@@ -68,6 +70,7 @@ class CanvasDependencyTracker {
         __proto__: this.#incremental[FORCED_DEPENDENCY_LABEL],
       },
     };
+    this.#clipBox = { __proto__: this.#clipBox };
     this.#savesStack.push([opIdx, null]);
 
     return this;
@@ -80,8 +83,9 @@ class CanvasDependencyTracker {
       // example when using CanvasGraphics' #restoreInitialState()
       return this;
     }
-    this.#simple = Object.getPrototypeOf(this.#simple);
+    this.#simple = previous;
     this.#incremental = Object.getPrototypeOf(this.#incremental);
+    this.#clipBox = Object.getPrototypeOf(this.#clipBox);
 
     const lastPair = this.#savesStack.pop();
     if (lastPair !== undefined) {
@@ -215,15 +219,62 @@ class CanvasDependencyTracker {
     return this.#pendingBBoxIdx !== -1;
   }
 
-  recordBBox(idx, ctx, minX, maxX, minY, maxY) {
+  recordClipBox(idx, ctx, minX, maxX, minY, maxY) {
     const transform = Util.multiplyByDOMMatrix(
       this.#baseTransformStack.at(-1),
       ctx.getTransform()
     );
-    Util.axialAlignedBoundingBox(
-      [minX, minY, maxX, maxY],
-      transform,
-      this.#pendingBBox
+    const clipBox = [Infinity, Infinity, -Infinity, -Infinity];
+    Util.axialAlignedBoundingBox([minX, minY, maxX, maxY], transform, clipBox);
+    const intersection = Util.intersect(this.#clipBox, clipBox);
+    if (intersection) {
+      this.#clipBox[0] = intersection[0];
+      this.#clipBox[1] = intersection[1];
+      this.#clipBox[2] = intersection[2];
+      this.#clipBox[3] = intersection[3];
+    } else {
+      this.#clipBox[0] = this.#clipBox[1] = Infinity;
+      this.#clipBox[2] = this.#clipBox[3] = -Infinity;
+    }
+    return this;
+  }
+
+  recordBBox(idx, ctx, minX, maxX, minY, maxY) {
+    const clipBox = this.#clipBox;
+    if (clipBox[0] === Infinity) {
+      return this;
+    }
+
+    const transform = Util.multiplyByDOMMatrix(
+      this.#baseTransformStack.at(-1),
+      ctx.getTransform()
+    );
+    if (clipBox[0] === -Infinity) {
+      Util.axialAlignedBoundingBox(
+        [minX, minY, maxX, maxY],
+        transform,
+        this.#pendingBBox
+      );
+      return this;
+    }
+
+    const bbox = [Infinity, Infinity, -Infinity, -Infinity];
+    Util.axialAlignedBoundingBox([minX, minY, maxX, maxY], transform, bbox);
+    this.#pendingBBox[0] = Math.min(
+      this.#pendingBBox[0],
+      Math.max(bbox[0], clipBox[0])
+    );
+    this.#pendingBBox[1] = Math.min(
+      this.#pendingBBox[1],
+      Math.max(bbox[1], clipBox[1])
+    );
+    this.#pendingBBox[2] = Math.max(
+      this.#pendingBBox[2],
+      Math.min(bbox[2], clipBox[2])
+    );
+    this.#pendingBBox[3] = Math.max(
+      this.#pendingBBox[3],
+      Math.min(bbox[3], clipBox[3])
     );
     return this;
   }
@@ -306,10 +357,10 @@ class CanvasDependencyTracker {
   }
 
   recordFullPageBBox(idx) {
-    this.#pendingBBox[0] = 0;
-    this.#pendingBBox[1] = 0;
-    this.#pendingBBox[2] = this.#canvasWidth;
-    this.#pendingBBox[3] = this.#canvasHeight;
+    this.#pendingBBox[0] = Math.max(0, this.#clipBox[0]);
+    this.#pendingBBox[1] = Math.max(0, this.#clipBox[1]);
+    this.#pendingBBox[2] = Math.min(this.#canvasWidth, this.#clipBox[2]);
+    this.#pendingBBox[3] = Math.min(this.#canvasHeight, this.#clipBox[3]);
 
     return this;
   }
@@ -551,6 +602,18 @@ class CanvasNestedDependencyTracker {
 
   get hasPendingBBox() {
     return this.#dependencyTracker.hasPendingBBox;
+  }
+
+  recordClipBox(idx, ctx, minX, maxX, minY, maxY) {
+    this.#dependencyTracker.recordClipBox(
+      this.#opIdx,
+      ctx,
+      minX,
+      maxX,
+      minY,
+      maxY
+    );
+    return this;
   }
 
   recordBBox(idx, ctx, minX, maxX, minY, maxY) {
