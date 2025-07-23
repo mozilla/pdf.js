@@ -912,11 +912,11 @@ class PDFFindController {
       this.pageHighlights[pageIndex]?.length > 0;
 
     if (!hasMatches && fuzzySearchEnabled && query.length > 1) {
-      console.log("Sending fuzzysearching = true event!");
-      this._eventBus.dispatch("fuzzysearching", {
-        source: this,
-        isSearching: true,
-      });
+      // console.log("Sending fuzzysearching = true event!");
+      // this._eventBus.dispatch("fuzzysearching", {
+      //   source: this,
+      //   isSearching: true,
+      // });
 
       this._pdfDocument
         .getPage(pageIndex + 1)
@@ -1012,11 +1012,11 @@ class PDFFindController {
         });
     }
 
-    console.log("Sending fuzzysearching = false event!");
-    this._eventBus.dispatch("fuzzysearching", {
-      source: this,
-      isSearching: false,
-    });
+    // console.log("Sending fuzzysearching = false event!");
+    // this._eventBus.dispatch("fuzzysearching", {
+    //   source: this,
+    //   isSearching: false,
+    // });
 
     // When `highlightAll` is set, ensure that the matches on previously
     // rendered (and still active) pages are correctly highlighted.
@@ -1216,6 +1216,16 @@ class PDFFindController {
 
       this.#updateAllPages(); // Wipe out any previously highlighted matches.
 
+      const { fuzzySearchEnabled } = this.#state;
+      console.log("fuzzySearchEnabled = " + fuzzySearchEnabled);
+      if (fuzzySearchEnabled) {
+        console.log("Sending fuzzysearching = true event!");
+        this._eventBus.dispatch("fuzzysearching", {
+          source: this,
+          isSearching: true,
+        });
+      }
+
       for (let i = 0; i < numPages; i++) {
         // Start finding the matches as soon as the text is extracted.
         if (this._pendingFindMatches.has(i)) {
@@ -1225,6 +1235,14 @@ class PDFFindController {
         this._extractTextPromises[i].then(() => {
           this._pendingFindMatches.delete(i);
           this.#calculateMatch(i);
+        });
+      }
+
+      if (fuzzySearchEnabled) {
+        console.log("Sending fuzzysearching = false event!");
+        this._eventBus.dispatch("fuzzysearching", {
+          source: this,
+          isSearching: false,
         });
       }
     }
