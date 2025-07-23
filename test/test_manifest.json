@@ -12221,5 +12221,12 @@
     "rounds": 1,
     "disableFontFace": true,
     "type": "eq"
+  },
+  {
+    "id": "bug1978317",
+    "file": "pdfs/bug1978317.pdf",
+    "md5": "ae4f643ee9bb0fd725277a9d1e0fb1df",
+    "rounds": 1,
+    "type": "load"
   }
 ]

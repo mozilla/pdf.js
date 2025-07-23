@@ -961,6 +961,15 @@ class XRef {
         );
       }
       nums[i] = num;
+
+      // The entry in the xref table is the object number followed by the index.
+      // So if index (gen number) is not the same as the index (i), we fix it
+      // (fixes bug 1978317).
+      const entry = this.getEntry(num);
+      if (entry?.offset === tableOffset && entry.gen !== i) {
+        entry.gen = i;
+      }
+
       offsets[i] = offset;
     }
 
