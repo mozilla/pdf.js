@@ -24,6 +24,7 @@ import {
   stringToPDFString,
   Util,
 } from "../../src/shared/util.js";
+import { DOMMatrix, DOMPoint } from "@napi-rs/canvas";
 
 describe("util", function () {
   describe("BaseException", function () {
@@ -269,17 +270,16 @@ describe("util", function () {
       ];
 
       for (const { transform, points: original } of cases) {
+        const M = new DOMMatrix(transform);
         const pts = original.slice();
 
-        const [a, b, c, d, e, f] = transform;
-        const ex0x = a * original[0] + c * original[1] + e;
-        const ex0y = b * original[0] + d * original[1] + f;
-        const ex1x = a * original[2] + c * original[3] + e;
-        const ex1y = b * original[2] + d * original[3] + f;
-        const expected = [ex0x, ex0y, ex1x, ex1y];
+        const p0 = M.transformPoint(new DOMPoint(original[0], original[1]));
+        const p1 = M.transformPoint(new DOMPoint(original[2], original[3]));
+        const expected = [p0.x, p0.y, p1.x, p1.y];
 
         Util.applyTransform(pts, transform, 0);
         Util.applyTransform(pts, transform, 2);
+
         expect(pts).toEqual(expected);
       }
     });
