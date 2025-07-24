@@ -1151,7 +1151,7 @@ gulp.task(
     createBuildNumber,
     "locale",
     function scriptingGeneric() {
-      const defines = { ...DEFINES, GENERIC: true };
+      const defines = { ...DEFINES, GENERIC: true, MINIFIED: true };
       return ordered([
         buildDefaultPreferences(defines, "generic/"),
         createTemporaryScriptingBundle(defines),
@@ -1163,7 +1163,7 @@ gulp.task(
     function createGeneric() {
       console.log();
       console.log("### Creating generic viewer");
-      const defines = { ...DEFINES, GENERIC: true };
+      const defines = { ...DEFINES, GENERIC: true, MINIFIED: true };
 
       return buildGeneric(defines, GENERIC_DIR);
     }

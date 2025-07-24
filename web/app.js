@@ -1015,9 +1015,16 @@ const PDFViewerApplication = {
   },
 
   get _docFilename() {
+    const e =
+      typeof window !== "undefined" &&
+      typeof window.download_filename === "string"
+        ? window.download_filename + ".pdf"
+        : null;
     // Use `this.url` instead of `this.baseUrl` to perform filename detection
     // based on the reference fragment as ultimate fallback if needed.
-    return this._contentDispositionFilename || getPdfFilenameFromUrl(this.url);
+    return (
+      this._contentDispositionFilename || e || getPdfFilenameFromUrl(this.url)
+    );
   },
 
   get _docTitle() {
@@ -2314,26 +2321,22 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
 }
 
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-  const HOSTED_VIEWER_ORIGINS = new Set([
-    "null",
-    "http://mozilla.github.io",
-    "https://mozilla.github.io",
+  const ALLOWED_FILE_ORIGIN = new Set([
+    "https://cdna.uns.ac.id",
+    "https://cdnb.uns.ac.id",
+    "https://cdnc.uns.ac.id",
+    "https://cdnd.uns.ac.id",
   ]);
   // eslint-disable-next-line no-var
   var validateFileURL = function (file) {
     if (!file) {
       return;
     }
-    const viewerOrigin = URL.parse(window.location)?.origin || "null";
-    if (HOSTED_VIEWER_ORIGINS.has(viewerOrigin)) {
-      // Hosted or local viewer, allow for any file locations
+    const fileOrigin = URL.parse(file, window.location)?.origin || "null";
+    if (ALLOWED_FILE_ORIGIN.has(fileOrigin)) {
       return;
     }
-    const fileOrigin = URL.parse(file, window.location)?.origin;
-    if (fileOrigin === viewerOrigin) {
-      return;
-    }
-    const ex = new Error("file origin does not match viewer's");
+    const ex = new Error("file origin is not allowed");
 
     PDFViewerApplication._documentError("pdfjs-loading-error", {
       message: ex.message,

@@ -530,10 +530,7 @@ const defaultOptions = {
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
   defaultOptions.defaultUrl = {
     /** @type {string} */
-    value:
-      typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")
-        ? ""
-        : "compressed.tracemonkey-pldi-09.pdf",
+    value: "",
     kind: OptionKind.VIEWER,
   };
   defaultOptions.sandboxBundleSrc = {

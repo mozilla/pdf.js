@@ -376,7 +376,11 @@ class PDFPrintServiceFactory {
   }
 
   static get supportsPrinting() {
-    return shadow(this, "supportsPrinting", true);
+    return shadow(
+      this,
+      "supportsPrinting",
+      typeof window !== "undefined" ? !!window.ap : true
+    );
   }
 
   static createPrintService(params) {
