@@ -568,13 +568,13 @@ class PDFFindController {
       }
     });
 
-    if (fuzzySearchEnabled) {
-      console.log("Sending fuzzysearching = false event!");
-      this._eventBus.dispatch("fuzzysearching", {
-        source: this,
-        isSearching: false,
-      });
-    }
+    // if (fuzzySearchEnabled) {
+    //   console.log("Sending fuzzysearching = false event!");
+    //   this._eventBus.dispatch("fuzzysearching", {
+    //     source: this,
+    //     isSearching: false,
+    //   });
+    // }
   }
 
   /**
@@ -1197,6 +1197,16 @@ class PDFFindController {
       this._linkService.page = index + 1;
     }
 
+    console.log("Dispatch false in #updatePage()");
+    const { fuzzySearchEnabled } = this.#state;
+    if (fuzzySearchEnabled) {
+      console.log("Sending fuzzysearching = false event!");
+      this._eventBus.dispatch("fuzzysearching", {
+        source: this,
+        isSearching: false,
+      });
+    }
+
     this._eventBus.dispatch("updatetextlayermatches", {
       source: this,
       pageIndex: index,
@@ -1534,6 +1544,8 @@ class PDFFindController {
 
     const allMatches = pageHighlights.concat(pageMatches);
     const allMatchesLength = pageHighlightsLength.concat(pageMatchesLength);
+
+    console.log("Dispatch false in getAllMatches()");
 
     return allMatches
       .map((position, index) => ({
