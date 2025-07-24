@@ -455,7 +455,6 @@ class PDFPageView {
       error = ex;
     }
 
-    console.log("text layer rendered!");
     this.eventBus.dispatch("textlayerrendered", {
       source: this,
       pageNumber: this.id,
@@ -980,6 +979,8 @@ class PDFPageView {
       cont();
     };
 
+    console.log("potential fuzzysearch true location (draw function)");
+
     const { width, height } = viewport;
     const canvas = document.createElement("canvas");
     canvas.setAttribute("role", "presentation");
@@ -1117,6 +1118,8 @@ class PDFPageView {
     }
 
     div.setAttribute("data-loaded", true);
+
+    console.log("potential fuzzysearch false location (draw function)");
 
     this.eventBus.dispatch("pagerender", {
       source: this,
