@@ -1500,7 +1500,7 @@ class PDFFindController {
       console.log("Sending fuzzysearching event!");
       this._eventBus.dispatch("fuzzysearching", {
         source: this,
-        isSearching: !this.#isSearching,
+        isSearching: this.#isSearching,
       });
     }
 
