@@ -415,7 +415,7 @@ class PDFFindController {
 
   #visitedPagesCount = 0;
 
-  // #isSearching = false;
+  #matchFound = false;
 
   /**
    * @param {PDFFindControllerOptions} options
@@ -559,14 +559,6 @@ class PDFFindController {
         this.#nextMatch();
       }
     });
-
-    // if (fuzzySearchEnabled) {
-    //   console.log("Sending fuzzysearching = false event!");
-    //   this._eventBus.dispatch("fuzzysearching", {
-    //     source: this,
-    //     isSearching: false,
-    //   });
-    // }
   }
 
   /**
@@ -921,13 +913,12 @@ class PDFFindController {
       this._pageMatches[pageIndex]?.length > 0 ||
       this.pageHighlights[pageIndex]?.length > 0;
 
-    if (!hasMatches && fuzzySearchEnabled && query.length > 1) {
-      // console.log("Sending fuzzysearching = true event!");
-      // this._eventBus.dispatch("fuzzysearching", {
-      //   source: this,
-      //   isSearching: true,
-      // });
-
+    if (
+      !this.#matchFound &&
+      !hasMatches &&
+      fuzzySearchEnabled &&
+      query.length > 1
+    ) {
       this._pdfDocument
         .getPage(pageIndex + 1)
         .then(pdfPage => pdfPage.getTextContent({ disableNormalization: true }))
@@ -991,6 +982,8 @@ class PDFFindController {
             return;
           }
 
+          this.#matchFound = true;
+
           const [normalizedSubstring] = normalize(bestSubstring);
           const [normalizedPageContent] = normalize(pageContent);
 
@@ -1021,12 +1014,6 @@ class PDFFindController {
           this._linkService.goToPage(pageIndex + 1);
         });
     }
-
-    // console.log("Sending fuzzysearching = false event!");
-    // this._eventBus.dispatch("fuzzysearching", {
-    //   source: this,
-    //   isSearching: false,
-    // });
 
     // When `highlightAll` is set, ensure that the matches on previously
     // rendered (and still active) pages are correctly highlighted.
@@ -1197,7 +1184,6 @@ class PDFFindController {
     const { fuzzySearchEnabled } = this.#state;
     if (fuzzySearchEnabled && index === this._linkService.pagesCount - 1) {
       console.timeEnd("dispatchingSearchingEvent");
-      console.log("New sending fuzzysearching = false event!");
       this._eventBus.dispatch("fuzzysearching", {
         source: this,
         isSearching: false,
@@ -1236,16 +1222,6 @@ class PDFFindController {
 
       this.#updateAllPages(); // Wipe out any previously highlighted matches.
 
-      console.time("dispatchingSearchingEvent");
-      const { fuzzySearchEnabled } = this.#state;
-      if (fuzzySearchEnabled) {
-        console.log("New sending fuzzysearching = true event!");
-        this._eventBus.dispatch("fuzzysearching", {
-          source: this,
-          isSearching: true,
-        });
-      }
-
       for (let i = 0; i < numPages; i++) {
         // Start finding the matches as soon as the text is extracted.
         if (this._pendingFindMatches.has(i)) {
@@ -1257,15 +1233,6 @@ class PDFFindController {
           this.#calculateMatch(i);
         });
       }
-
-      // if (fuzzySearchEnabled) {
-      //   console.log("Sending fuzzysearching = false event!");
-      //   this._eventBus.dispatch("fuzzysearching", {
-      //     source: this,
-      //     isSearching: false,
-      //   });
-      // }
-      // console.log("old fuzzysearching false dispatch");
     }
 
     // If there's no query there's no point in searching.
@@ -1490,18 +1457,6 @@ class PDFFindController {
       // when everything is ready.
       return;
     }
-
-    // const { fuzzySearchEnabled } = this.#state;
-    // console.log("fuzzySearchEnabled = " + fuzzySearchEnabled);
-    // this.#isSearching = !this.#isSearching;
-    // console.log("isSearching = " + this.#isSearching);
-    // if (fuzzySearchEnabled) {
-    //   console.log("Sending fuzzysearching event!");
-    //   this._eventBus.dispatch("fuzzysearching", {
-    //     source: this,
-    //     isSearching: this.#isSearching,
-    //   });
-    // }
 
     this._eventBus.dispatch("updatefindcontrolstate", {
       source: this,
