@@ -674,6 +674,10 @@ class Util {
     return `#${hexNumbers[r]}${hexNumbers[g]}${hexNumbers[b]}`;
   }
 
+  static domMatrixToTransform(dm) {
+    return [dm.a, dm.b, dm.c, dm.d, dm.e, dm.f];
+  }
+
   // Apply a scaling matrix to some min/max values.
   // If a scaling factor is negative then min and max must be
   // swapped.
@@ -734,6 +738,18 @@ class Util {
       m1[1] * m2[2] + m1[3] * m2[3],
       m1[0] * m2[4] + m1[2] * m2[5] + m1[4],
       m1[1] * m2[4] + m1[3] * m2[5] + m1[5],
+    ];
+  }
+
+  // Multiplies m (an array-based transform) by md (a DOMMatrix transform).
+  static multiplyByDOMMatrix(m, md) {
+    return [
+      m[0] * md.a + m[2] * md.b,
+      m[1] * md.a + m[3] * md.b,
+      m[0] * md.c + m[2] * md.d,
+      m[1] * md.c + m[3] * md.d,
+      m[0] * md.e + m[2] * md.f + m[4],
+      m[1] * md.e + m[3] * md.f + m[5],
     ];
   }
 

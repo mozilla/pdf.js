@@ -60,6 +60,7 @@ import {
   NodeStandardFontDataFactory,
   NodeWasmFactory,
 } from "display-node_utils";
+import { CanvasDependencyTracker } from "./canvas_dependency_tracker.js";
 import { CanvasGraphics } from "./canvas.js";
 import { DOMCanvasFactory } from "./canvas_factory.js";
 import { DOMCMapReaderFactory } from "display-cmap_reader_factory";
@@ -1299,6 +1300,7 @@ class PDFPageProxy {
 
     this._intentStates = new Map();
     this.destroyed = false;
+    this.recordedGroups = null;
   }
 
   /**
@@ -1423,6 +1425,8 @@ class PDFPageProxy {
     pageColors = null,
     printAnnotationStorage = null,
     isEditing = false,
+    recordOperations = false,
+    filteredOperationIndexes = null,
   }) {
     this._stats?.time("Overall");
 
@@ -1469,8 +1473,22 @@ class PDFPageProxy {
       this._pumpOperatorList(intentArgs);
     }
 
+    const shouldRecordOperations =
+      !this.recordedGroups &&
+      (recordOperations ||
+        (this._pdfBug && globalThis.StepperManager?.enabled));
+
     const complete = error => {
       intentState.renderTasks.delete(internalRenderTask);
+
+      if (shouldRecordOperations) {
+        if (internalRenderTask.gfx) {
+          this.recordedGroups = internalRenderTask.gfx.dependencyTracker.take();
+          internalRenderTask.stepper?.setOperatorGroups(this.recordedGroups);
+        } else {
+          this.recordedGroups = [];
+        }
+      }
 
       // Attempt to reduce memory usage during *printing*, by always running
       // cleanup immediately once rendering has finished.
@@ -1506,6 +1524,9 @@ class PDFPageProxy {
       params: {
         canvas,
         canvasContext,
+        dependencyTracker: shouldRecordOperations
+          ? new CanvasDependencyTracker(canvas)
+          : null,
         viewport,
         transform,
         background,
@@ -1520,6 +1541,7 @@ class PDFPageProxy {
       useRequestAnimationFrame: !intentPrint,
       pdfBug: this._pdfBug,
       pageColors,
+      filteredOperationIndexes,
       enableHWA: this._transport.enableHWA,
     });
 
@@ -3122,6 +3144,7 @@ class InternalRenderTask {
     useRequestAnimationFrame = false,
     pdfBug = false,
     pageColors = null,
+    filteredOperationIndexes = null,
     enableHWA = false,
   }) {
     this.callback = callback;
@@ -3153,6 +3176,7 @@ class InternalRenderTask {
     this._canvas = params.canvas;
     this._canvasContext = params.canvas ? null : params.canvasContext;
     this._enableHWA = enableHWA;
+    this._filteredOperationIndexes = filteredOperationIndexes;
   }
 
   get completed() {
@@ -3182,7 +3206,7 @@ class InternalRenderTask {
       this.stepper.init(this.operatorList);
       this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
     }
-    const { viewport, transform, background } = this.params;
+    const { viewport, transform, background, dependencyTracker } = this.params;
 
     // When printing in Firefox, we get a specific context in mozPrintCallback
     // which cannot be created from the canvas itself.
@@ -3201,7 +3225,8 @@ class InternalRenderTask {
       this.filterFactory,
       { optionalContentConfig },
       this.annotationCanvasMap,
-      this.pageColors
+      this.pageColors,
+      dependencyTracker
     );
     this.gfx.beginDrawing({
       transform,
@@ -3277,7 +3302,8 @@ class InternalRenderTask {
       this.operatorList,
       this.operatorListIdx,
       this._continueBound,
-      this.stepper
+      this.stepper,
+      this._filteredOperationIndexes
     );
     if (this.operatorListIdx === this.operatorList.argsArray.length) {
       this.running = false;
