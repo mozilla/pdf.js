@@ -1183,7 +1183,6 @@ class PDFFindController {
 
     const { fuzzySearchEnabled } = this.#state;
     if (fuzzySearchEnabled && index === this._linkService.pagesCount - 1) {
-      console.timeEnd("dispatchingSearchingEvent");
       this._eventBus.dispatch("fuzzysearching", {
         source: this,
         isSearching: false,
@@ -1221,8 +1220,6 @@ class PDFFindController {
       this._matchesCountTotal = 0;
 
       this.#updateAllPages(); // Wipe out any previously highlighted matches.
-
-      console.time("dispatchingSearchingEvent");
 
       for (let i = 0; i < numPages; i++) {
         // Start finding the matches as soon as the text is extracted.
