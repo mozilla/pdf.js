@@ -1222,6 +1222,8 @@ class PDFFindController {
 
       this.#updateAllPages(); // Wipe out any previously highlighted matches.
 
+      console.time("dispatchingSearchingEvent");
+
       for (let i = 0; i < numPages; i++) {
         // Start finding the matches as soon as the text is extracted.
         if (this._pendingFindMatches.has(i)) {
