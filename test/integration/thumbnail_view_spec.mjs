@@ -1,4 +1,4 @@
-import { closePages, loadAndWait } from "./test_utils.mjs";
+import { CLICK_DELAY, closePages, loadAndWait } from "./test_utils.mjs";
 
 describe("PDF Thumbnail View", () => {
   describe("Works without errors", () => {
@@ -15,7 +15,7 @@ describe("PDF Thumbnail View", () => {
     it("should render thumbnails without errors", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#sidebarToggleButton");
+          await page.click("#sidebarToggleButton", { delay: CLICK_DELAY });
 
           const thumbSelector = "#thumbnailView .thumbnailImage";
           await page.waitForSelector(thumbSelector, { visible: true });

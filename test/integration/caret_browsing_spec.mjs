@@ -13,7 +13,12 @@
  * limitations under the License.
  */
 
-import { closePages, getRect, loadAndWait } from "./test_utils.mjs";
+import {
+  CLICK_DELAY,
+  closePages,
+  getRect,
+  loadAndWait,
+} from "./test_utils.mjs";
 
 const waitForSelectionChange = (page, selection) =>
   page.waitForFunction(
@@ -45,7 +50,7 @@ describe("Caret browsing", () => {
           await page.mouse.click(
             spanRect.x + 1,
             spanRect.y + spanRect.height / 2,
-            { count: 2 }
+            { count: 2, delay: CLICK_DELAY }
           );
           await page.keyboard.down("Shift");
           for (let i = 0; i < 6; i++) {

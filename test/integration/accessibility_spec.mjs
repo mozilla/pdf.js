@@ -15,6 +15,7 @@
 
 import {
   awaitPromise,
+  CLICK_DELAY,
   closePages,
   loadAndWait,
   waitForPageRendered,
@@ -96,7 +97,9 @@ describe("accessibility", () => {
               .toBeTrue();
 
             const handle = await waitForPageRendered(page);
-            await page.click(`#zoom${i < 4 ? "In" : "Out"}Button`);
+            await page.click(`#zoom${i < 4 ? "In" : "Out"}Button`, {
+              delay: CLICK_DELAY,
+            });
             await awaitPromise(handle);
           }
         })
@@ -193,7 +196,7 @@ describe("accessibility", () => {
         pages.map(async ([browserName, page]) => {
           await page.waitForSelector(".annotationLayer");
           const stampId = "pdfjs_internal_id_20R";
-          await page.click(`#${stampId}`);
+          await page.click(`#${stampId}`, { delay: CLICK_DELAY });
 
           const controlledId = await page.$eval(
             "#pdfjs_internal_id_21R",

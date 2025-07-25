@@ -14,6 +14,7 @@
  */
 
 import {
+  CLICK_DELAY,
   closePages,
   getQuerySelector,
   getRect,
@@ -89,7 +90,9 @@ describe("Annotation highlight", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           for (const i of [23, 22, 14]) {
-            await page.click(`[data-annotation-id='${i}R']`);
+            await page.click(`[data-annotation-id='${i}R']`, {
+              delay: CLICK_DELAY,
+            });
             await page.waitForSelector(`#pdfjs_internal_id_${i}R:focus`);
           }
         })
@@ -115,7 +118,7 @@ describe("Checkbox annotation", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           for (const selector of selectors) {
-            await page.click(selector);
+            await page.click(selector, { delay: CLICK_DELAY });
             await page.waitForFunction(
               `document.querySelector("${selector} > :first-child").checked`
             );
@@ -150,7 +153,7 @@ describe("Checkbox annotation", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           const selector = "[data-annotation-id='7R']";
-          await page.click(selector);
+          await page.click(selector, { delay: CLICK_DELAY });
           await page.waitForFunction(
             `document.querySelector("${selector} > :first-child").checked`
           );
@@ -178,7 +181,7 @@ describe("Checkbox annotation", () => {
             id => `[data-annotation-id='${id}R']`
           );
           for (const selector of selectors) {
-            await page.click(selector);
+            await page.click(selector, { delay: CLICK_DELAY });
             await page.waitForFunction(
               `document.querySelector("${selector} > :first-child").checked`
             );
@@ -272,7 +275,7 @@ describe("Link annotations with internal destinations", () => {
           expect(linkTitle)
             .withContext(`In ${browserName}`)
             .toEqual("Go to the last page");
-          await page.click(linkSelector);
+          await page.click(linkSelector, { delay: CLICK_DELAY });
           const pageSixTextLayerSelector =
             ".page[data-page-number='6'] .textLayer";
           await page.waitForSelector(pageSixTextLayerSelector, {
@@ -312,9 +315,13 @@ describe("Annotation and storage", () => {
           // Text field.
           await page.type(getSelector("64R"), text1);
           // Checkbox.
-          await page.click("[data-annotation-id='65R']");
+          await page.click("[data-annotation-id='65R']", {
+            delay: CLICK_DELAY,
+          });
           // Radio.
-          await page.click("[data-annotation-id='67R']");
+          await page.click("[data-annotation-id='67R']", {
+            delay: CLICK_DELAY,
+          });
 
           for (const [pageNumber, textId, checkId, radio1Id, radio2Id] of [
             [2, "18R", "19R", "21R", "20R"],
@@ -351,9 +358,13 @@ describe("Annotation and storage", () => {
           // Text field.
           await page.type(getSelector("23R"), text2);
           // Checkbox.
-          await page.click("[data-annotation-id='24R']");
+          await page.click("[data-annotation-id='24R']", {
+            delay: CLICK_DELAY,
+          });
           // Radio.
-          await page.click("[data-annotation-id='25R']");
+          await page.click("[data-annotation-id='25R']", {
+            delay: CLICK_DELAY,
+          });
 
           for (const [pageNumber, textId, checkId, radio1Id, radio2Id] of [
             [1, "64R", "65R", "67R", "68R"],
@@ -417,13 +428,15 @@ describe("ResetForm action", () => {
             n => `[data-annotation-id='${n}R']`
           );
           for (const selector of selectors) {
-            await page.click(selector);
+            await page.click(selector, { delay: CLICK_DELAY });
           }
 
           await page.select(getSelector("78R"), "b");
           await page.select(getSelector("81R"), "f");
 
-          await page.click("[data-annotation-id='82R']");
+          await page.click("[data-annotation-id='82R']", {
+            delay: CLICK_DELAY,
+          });
           await page.waitForFunction(`${getQuerySelector("63R")}.value === ""`);
 
           for (let i = 63; i <= 68; i++) {
@@ -467,13 +480,15 @@ describe("ResetForm action", () => {
             n => `[data-annotation-id='${n}R']`
           );
           for (const selector of selectors) {
-            await page.click(selector);
+            await page.click(selector, { delay: CLICK_DELAY });
           }
 
           await page.select(getSelector("78R"), "b");
           await page.select(getSelector("81R"), "f");
 
-          await page.click("[data-annotation-id='84R']");
+          await page.click("[data-annotation-id='84R']", {
+            delay: CLICK_DELAY,
+          });
           await page.waitForFunction(`${getQuerySelector("63R")}.value === ""`);
 
           for (let i = 63; i <= 68; i++) {
@@ -536,7 +551,9 @@ describe("ResetForm action", () => {
       it("must check that the FreeText annotation has a popup", async () => {
         await Promise.all(
           pages.map(async ([browserName, page]) => {
-            await page.click("[data-annotation-id='10R']");
+            await page.click("[data-annotation-id='10R']", {
+              delay: CLICK_DELAY,
+            });
             await page.waitForFunction(
               `document.querySelector("[data-annotation-id='10R']").hidden === false`
             );
@@ -567,11 +584,11 @@ describe("ResetForm action", () => {
             await page.waitForFunction(
               `document.querySelector("[data-annotation-id='25R']").hidden === false`
             );
-            await page.click("#editorFreeText");
+            await page.click("#editorFreeText", { delay: CLICK_DELAY });
             await page.waitForFunction(
               `document.querySelector("[data-annotation-id='25R']").hidden === true`
             );
-            await page.click("#editorFreeText");
+            await page.click("#editorFreeText", { delay: CLICK_DELAY });
             await page.waitForFunction(
               `document.querySelector("[data-annotation-id='25R']").hidden === false`
             );

@@ -13,7 +13,13 @@
  * limitations under the License.
  */
 
-import { closePages, FSI, loadAndWait, PDI } from "./test_utils.mjs";
+import {
+  CLICK_DELAY,
+  closePages,
+  FSI,
+  loadAndWait,
+  PDI,
+} from "./test_utils.mjs";
 
 const FIELDS = [
   "fileName",
@@ -61,10 +67,12 @@ describe("PDFDocumentProperties", () => {
     it("must check that the document properties dialog has the correct information", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#secondaryToolbarToggleButton");
+          await page.click("#secondaryToolbarToggleButton", {
+            delay: CLICK_DELAY,
+          });
           await page.waitForSelector("#secondaryToolbar", { hidden: false });
 
-          await page.click("#documentProperties");
+          await page.click("#documentProperties", { delay: CLICK_DELAY });
           await page.waitForSelector("#documentPropertiesDialog", {
             hidden: false,
           });

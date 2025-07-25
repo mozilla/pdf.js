@@ -14,6 +14,7 @@
  */
 
 import {
+  CLICK_DELAY,
   closePages,
   closeSinglePage,
   getSpanRectFromText,
@@ -390,7 +391,10 @@ describe("Text layer", () => {
               await waitForEvent({
                 page,
                 eventName: "click",
-                action: () => page.mouse.click(positionEnd.x, positionEnd.y),
+                action: () =>
+                  page.mouse.click(positionEnd.x, positionEnd.y, {
+                    delay: CLICK_DELAY,
+                  }),
                 selector: "#pdfjs_internal_id_8R",
                 validator: e => {
                   // Don't navigate to the link destination: the `click` event
@@ -425,7 +429,10 @@ describe("Text layer", () => {
               await waitForEvent({
                 page,
                 eventName: "click",
-                action: () => page.mouse.click(positionEnd.x, positionEnd.y),
+                action: () =>
+                  page.mouse.click(positionEnd.x, positionEnd.y, {
+                    delay: CLICK_DELAY,
+                  }),
                 selector: "#pdfjs_internal_id_8R",
                 validator: e => {
                   // Don't navigate to the link destination: the `click` event

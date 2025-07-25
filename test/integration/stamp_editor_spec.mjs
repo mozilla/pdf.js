@@ -18,6 +18,7 @@ import {
   awaitPromise,
   clearEditors,
   clearInput,
+  CLICK_DELAY,
   closePages,
   copy,
   copyToClipboard,
@@ -116,7 +117,7 @@ describe("Stamp Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToStamp(page);
-          await page.click("#editorStampAddImage");
+          await page.click("#editorStampAddImage", { delay: CLICK_DELAY });
 
           const input = await page.$("#stampEditorFileInput");
           await input.uploadFile(
@@ -146,7 +147,7 @@ describe("Stamp Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToStamp(page);
-          await page.click("#editorStampAddImage");
+          await page.click("#editorStampAddImage", { delay: CLICK_DELAY });
           const input = await page.$("#stampEditorFileInput");
           await input.uploadFile(
             `${path.join(__dirname, "../images/firefox_logo.svg")}`
@@ -174,7 +175,7 @@ describe("Stamp Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToStamp(page);
-          await page.click("#editorStampAddImage");
+          await page.click("#editorStampAddImage", { delay: CLICK_DELAY });
           const input = await page.$("#stampEditorFileInput");
           await input.uploadFile(
             `${path.join(__dirname, "../images/firefox_logo.svg")}`
@@ -184,7 +185,9 @@ describe("Stamp Editor", () => {
           await waitForSerialized(page, 1);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
           await waitForSerialized(page, 0);
 
           await kbUndo(page);
@@ -225,7 +228,7 @@ describe("Stamp Editor", () => {
               await clearAll(page);
             }
 
-            await page.click("#editorStampAddImage");
+            await page.click("#editorStampAddImage", { delay: CLICK_DELAY });
             const input = await page.$("#stampEditorFileInput");
             await input.uploadFile(
               `${path.join(__dirname, "../images/firefox_logo.png")}`
@@ -281,7 +284,7 @@ describe("Stamp Editor", () => {
         pages.map(async ([browserName, page]) => {
           await switchToStamp(page);
 
-          await page.click("#editorStampAddImage");
+          await page.click("#editorStampAddImage", { delay: CLICK_DELAY });
           const input = await page.$("#stampEditorFileInput");
           await input.uploadFile(
             `${path.join(__dirname, "../images/firefox_logo.png")}`
@@ -339,19 +342,19 @@ describe("Stamp Editor", () => {
         await page.waitForSelector(buttonSelector);
 
         // Click on the alt-text button.
-        await page.click(buttonSelector);
+        await page.click(buttonSelector, { delay: CLICK_DELAY });
 
         // Wait for the alt-text dialog to be visible.
         await page.waitForSelector("#altTextDialog", { visible: true });
 
         // Click on the alt-text editor.
         const textareaSelector = "#altTextDialog textarea";
-        await page.click(textareaSelector);
+        await page.click(textareaSelector, { delay: CLICK_DELAY });
         await page.type(textareaSelector, "Hello World");
 
         // Click on save button.
         const saveButtonSelector = "#altTextDialog #altTextSave";
-        await page.click(saveButtonSelector);
+        await page.click(saveButtonSelector, { delay: CLICK_DELAY });
 
         // Check that the canvas has an aria-describedby attribute.
         await page.waitForSelector(`${editorSelector}[aria-describedby]`);
@@ -374,14 +377,14 @@ describe("Stamp Editor", () => {
 
         // Now we change the alt-text and check that the tooltip is updated.
         const longString = "a".repeat(512);
-        await page.click(buttonSelector);
+        await page.click(buttonSelector, { delay: CLICK_DELAY });
         await page.waitForSelector("#altTextDialog", { visible: true });
         await page.evaluate(sel => {
           document.querySelector(`${sel}`).value = "";
         }, textareaSelector);
-        await page.click(textareaSelector);
+        await page.click(textareaSelector, { delay: CLICK_DELAY });
         await page.type(textareaSelector, longString);
-        await page.click(saveButtonSelector);
+        await page.click(saveButtonSelector, { delay: CLICK_DELAY });
         await page.waitForSelector(`${buttonSelector}.done`);
         await page.hover(buttonSelector);
         await page.waitForSelector(tooltipSelector, { visible: true });
@@ -399,15 +402,15 @@ describe("Stamp Editor", () => {
         expect(dims.width / dims.height).toBeLessThan(2);
 
         // Now we just check that cancel didn't change anything.
-        await page.click(buttonSelector);
+        await page.click(buttonSelector, { delay: CLICK_DELAY });
         await page.waitForSelector("#altTextDialog", { visible: true });
         await page.evaluate(sel => {
           document.querySelector(`${sel}`).value = "";
         }, textareaSelector);
-        await page.click(textareaSelector);
+        await page.click(textareaSelector, { delay: CLICK_DELAY });
         await page.type(textareaSelector, "Hello PDF.js");
         const cancelButtonSelector = "#altTextDialog #altTextCancel";
-        await page.click(cancelButtonSelector);
+        await page.click(cancelButtonSelector, { delay: CLICK_DELAY });
         await page.waitForSelector(`${buttonSelector}.done`);
         await page.hover(buttonSelector);
         await page.waitForSelector(tooltipSelector, { visible: true });
@@ -419,13 +422,13 @@ describe("Stamp Editor", () => {
         expect(tooltipText).toEqual(longString);
 
         // Now we switch to decorative.
-        await page.click(buttonSelector);
+        await page.click(buttonSelector, { delay: CLICK_DELAY });
         await page.waitForSelector("#altTextDialog", { visible: true });
         const decorativeSelector = "#altTextDialog #decorativeButton";
-        await page.click(decorativeSelector);
-        await page.click(saveButtonSelector);
+        await page.click(decorativeSelector, { delay: CLICK_DELAY });
+        await page.click(saveButtonSelector, { delay: CLICK_DELAY });
         await page.waitForSelector(`${buttonSelector}.done`);
-        await page.hover(buttonSelector);
+        await page.hover(buttonSelector, { delay: CLICK_DELAY });
         await page.waitForSelector(tooltipSelector, { visible: true });
         tooltipText = await page.evaluate(
           sel => document.querySelector(`${sel}`).innerText,
@@ -434,13 +437,13 @@ describe("Stamp Editor", () => {
         expect(tooltipText).toEqual("Marked as decorative");
 
         // Now we switch back to non-decorative.
-        await page.click(buttonSelector);
+        await page.click(buttonSelector, { delay: CLICK_DELAY });
         await page.waitForSelector("#altTextDialog", { visible: true });
         const descriptionSelector = "#altTextDialog #descriptionButton";
-        await page.click(descriptionSelector);
-        await page.click(saveButtonSelector);
+        await page.click(descriptionSelector, { delay: CLICK_DELAY });
+        await page.click(saveButtonSelector, { delay: CLICK_DELAY });
         await page.waitForSelector(`${buttonSelector}.done`);
-        await page.hover(buttonSelector);
+        await page.hover(buttonSelector, { delay: CLICK_DELAY });
         await page.waitForSelector(tooltipSelector, { visible: true });
         tooltipText = await page.evaluate(
           sel => document.querySelector(`${sel}`).innerText,
@@ -449,12 +452,12 @@ describe("Stamp Editor", () => {
         expect(tooltipText).toEqual(longString);
 
         // Now we remove the alt-text and check that the tooltip is removed.
-        await page.click(buttonSelector);
+        await page.click(buttonSelector, { delay: CLICK_DELAY });
         await page.waitForSelector("#altTextDialog", { visible: true });
         await page.evaluate(sel => {
           document.querySelector(`${sel}`).value = "";
         }, textareaSelector);
-        await page.click(saveButtonSelector);
+        await page.click(saveButtonSelector, { delay: CLICK_DELAY });
         await page.waitForSelector(`${buttonSelector}:not(.done)`);
         await page.hover(buttonSelector);
         await page.evaluate(
@@ -678,7 +681,9 @@ describe("Stamp Editor", () => {
         await waitForSerialized(page, 1);
 
         await page.waitForSelector(`${editorSelector} button.delete`);
-        await page.click(`${editorSelector} button.delete`);
+        await page.click(`${editorSelector} button.delete`, {
+          delay: CLICK_DELAY,
+        });
         await waitForSerialized(page, 0);
 
         await kbUndo(page);
@@ -710,7 +715,9 @@ describe("Stamp Editor", () => {
         await waitForSerialized(page, 1);
 
         await page.waitForSelector(`${editorSelector} button.delete`);
-        await page.click(`${editorSelector} button.delete`);
+        await page.click(`${editorSelector} button.delete`, {
+          delay: CLICK_DELAY,
+        });
         await waitForSerialized(page, 0);
 
         const twoToFourteen = Array.from(new Array(13).keys(), n => n + 2);
@@ -755,7 +762,9 @@ describe("Stamp Editor", () => {
         await waitForSerialized(page, 1);
 
         await page.waitForSelector(`${editorSelector} button.delete`);
-        await page.click(`${editorSelector} button.delete`);
+        await page.click(`${editorSelector} button.delete`, {
+          delay: CLICK_DELAY,
+        });
         await waitForSerialized(page, 0);
 
         const twoToOne = Array.from(new Array(13).keys(), n => n + 2).concat(
@@ -999,7 +1008,7 @@ describe("Stamp Editor", () => {
         await page.waitForSelector("#newAltTextDisclaimer", { visible: false });
 
         // Click on the Not Now button.
-        await page.click("#newAltTextNotNow");
+        await page.click("#newAltTextNotNow", { delay: CLICK_DELAY });
         await page.waitForSelector("#newAltTextDialog", { visible: false });
         await waitForSelectedEditor(page, editorSelector);
 
@@ -1034,7 +1043,7 @@ describe("Stamp Editor", () => {
         await page.waitForSelector(".noAltTextBadge", { visible: false });
 
         // Click on the Review button.
-        await page.click(buttonSelector);
+        await page.click(buttonSelector, { delay: CLICK_DELAY });
         await page.waitForSelector("#newAltTextDialog", { visible: true });
 
         // Check that the dialog has the correct title: "Edit..."
@@ -1043,7 +1052,9 @@ describe("Stamp Editor", () => {
         );
 
         // Click on create automatically toggle button.
-        await page.click("#newAltTextCreateAutomaticallyButton");
+        await page.click("#newAltTextCreateAutomaticallyButton", {
+          delay: CLICK_DELAY,
+        });
         await clearInput(
           page,
           "#newAltTextDescriptionTextarea",
@@ -1051,7 +1062,7 @@ describe("Stamp Editor", () => {
         );
 
         // Save the empty text.
-        await page.click("#newAltTextSave");
+        await page.click("#newAltTextSave", { delay: CLICK_DELAY });
         await page.waitForSelector("#newAltTextDialog", { visible: false });
         await waitForSelectedEditor(page, editorSelector);
         await page.waitForSelector(buttonSelector, { visible: true });
@@ -1082,7 +1093,7 @@ describe("Stamp Editor", () => {
         await page.waitForSelector(".noAltTextBadge", { visible: false });
 
         // Click on the Review button.
-        await page.click(buttonSelector);
+        await page.click(buttonSelector, { delay: CLICK_DELAY });
         await page.waitForSelector("#newAltTextDialog", { visible: true });
 
         await page.waitForFunction(
@@ -1095,7 +1106,7 @@ describe("Stamp Editor", () => {
         );
 
         // Click on the Save button.
-        await page.click("#newAltTextSave");
+        await page.click("#newAltTextSave", { delay: CLICK_DELAY });
         await page.waitForSelector("#newAltTextDialog", { visible: false });
 
         await waitForTranslation(page);
@@ -1125,10 +1136,12 @@ describe("Stamp Editor", () => {
         expect(tooltipText).toEqual("Hello World");
 
         // Click on the Review button.
-        await page.click(buttonSelector);
+        await page.click(buttonSelector, { delay: CLICK_DELAY });
         await page.waitForSelector("#newAltTextDialog", { visible: true });
-        await page.click("#newAltTextCreateAutomaticallyButton");
-        await page.click("#newAltTextCancel");
+        await page.click("#newAltTextCreateAutomaticallyButton", {
+          delay: CLICK_DELAY,
+        });
+        await page.click("#newAltTextCancel", { delay: CLICK_DELAY });
         await page.waitForSelector("#newAltTextDialog", { visible: false });
       }
     });
@@ -1154,7 +1167,9 @@ describe("Stamp Editor", () => {
         await page.waitForSelector("#newAltTextDisclaimer", { visible: true });
 
         // Click in the textarea in order to stop the guessing.
-        await page.click("#newAltTextDescriptionTextarea");
+        await page.click("#newAltTextDescriptionTextarea", {
+          delay: CLICK_DELAY,
+        });
         await page.waitForFunction(() =>
           document
             .getElementById("newAltTextTitle")
@@ -1165,7 +1180,7 @@ describe("Stamp Editor", () => {
         await page.waitForSelector("#newAltTextDisclaimer", { visible: false });
 
         // Click on the Not Now button.
-        await page.click("#newAltTextNotNow");
+        await page.click("#newAltTextNotNow", { delay: CLICK_DELAY });
         await page.waitForSelector("#newAltTextDialog", { visible: false });
       }
     });
@@ -1222,7 +1237,7 @@ describe("Stamp Editor", () => {
           /* waitForInputEvent = */ true
         );
         // Save the empty text.
-        await page.click("#newAltTextSave");
+        await page.click("#newAltTextSave", { delay: CLICK_DELAY });
         await page.waitForSelector("#newAltTextDialog", { visible: false });
 
         // Get the telemetry data and clean.
@@ -1245,14 +1260,14 @@ describe("Stamp Editor", () => {
         // Click on the Review button.
         const buttonSelector = `${editorSelector} button.altText.new`;
         await page.waitForSelector(buttonSelector, { visible: true });
-        await page.click(buttonSelector);
+        await page.click(buttonSelector, { delay: CLICK_DELAY });
         await page.waitForSelector("#newAltTextDialog", { visible: true });
 
         // Add a new alt text and check that the title changes to "Edit..."
         await page.type("#newAltTextDescriptionTextarea", "Fake text alt foo.");
 
         // Save the empty text.
-        await page.click("#newAltTextSave");
+        await page.click("#newAltTextSave", { delay: CLICK_DELAY });
         await page.waitForSelector("#newAltTextDialog", { visible: false });
 
         telemetry = await page.evaluate(() => window.telemetry);
@@ -1392,7 +1407,9 @@ describe("Stamp Editor", () => {
 
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#secondaryToolbarToggleButton");
+          await page.click("#secondaryToolbarToggleButton", {
+            delay: CLICK_DELAY,
+          });
           await page.waitForSelector("#secondaryToolbar", { visible: true });
           const secondary = await page.$("#secondaryToolbar");
           const png = await secondary.screenshot({ type: "png" });
@@ -1421,7 +1438,10 @@ describe("Stamp Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           const modeChangedHandle = await waitForAnnotationModeChanged(page);
-          await page.click(getAnnotationSelector("25R"), { count: 2 });
+          await page.click(getAnnotationSelector("25R"), {
+            count: 2,
+            delay: CLICK_DELAY,
+          });
           await awaitPromise(modeChangedHandle);
           const editorSelector = getEditorSelector(0);
           await waitForSelectedEditor(page, editorSelector);
@@ -1459,7 +1479,10 @@ describe("Stamp Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           const modeChangedHandle = await waitForAnnotationModeChanged(page);
-          await page.click(getAnnotationSelector("58R"), { count: 2 });
+          await page.click(getAnnotationSelector("58R"), {
+            count: 2,
+            delay: CLICK_DELAY,
+          });
           await awaitPromise(modeChangedHandle);
           const editorSelector = getEditorSelector(4);
           await waitForSelectedEditor(page, editorSelector);
@@ -1467,7 +1490,9 @@ describe("Stamp Editor", () => {
           const editorIds = await getEditors(page, "stamp");
           expect(editorIds.length).withContext(`In ${browserName}`).toEqual(5);
 
-          await page.click(`${editorSelector} button.altText`);
+          await page.click(`${editorSelector} button.altText`, {
+            delay: CLICK_DELAY,
+          });
           await page.waitForSelector("#altTextDialog", { visible: true });
 
           const textareaSelector = "#altTextDialog textarea";
@@ -1487,7 +1512,7 @@ describe("Stamp Editor", () => {
             document.querySelector(sel).value = "";
           }, textareaSelector);
 
-          await page.click(textareaSelector);
+          await page.click(textareaSelector, { delay: CLICK_DELAY });
           await page.type(textareaSelector, "Hello World");
 
           // All the current annotations should be serialized as null objects
@@ -1496,7 +1521,7 @@ describe("Stamp Editor", () => {
           expect(serialized).withContext(`In ${browserName}`).toEqual([]);
 
           const saveButtonSelector = "#altTextDialog #altTextSave";
-          await page.click(saveButtonSelector);
+          await page.click(saveButtonSelector, { delay: CLICK_DELAY });
 
           await waitForSerialized(page, 1);
         })
@@ -1519,7 +1544,10 @@ describe("Stamp Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           const modeChangedHandle = await waitForAnnotationModeChanged(page);
-          await page.click(getAnnotationSelector("37R"), { count: 2 });
+          await page.click(getAnnotationSelector("37R"), {
+            count: 2,
+            delay: CLICK_DELAY,
+          });
           await awaitPromise(modeChangedHandle);
           const editorSelector = getEditorSelector(2);
           await waitForSelectedEditor(page, editorSelector);
@@ -1533,7 +1561,9 @@ describe("Stamp Editor", () => {
           expect(serialized).withContext(`In ${browserName}`).toEqual([]);
 
           await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.delete`, {
+            delay: CLICK_DELAY,
+          });
 
           await waitForSerialized(page, 1);
           serialized = await getSerialized(page);
@@ -1607,14 +1637,16 @@ describe("Stamp Editor", () => {
         await waitForSerialized(page, 1);
 
         await page.waitForSelector(`${editorSelector} button.delete`);
-        await page.click(`${editorSelector} button.delete`);
+        await page.click(`${editorSelector} button.delete`, {
+          delay: CLICK_DELAY,
+        });
         await waitForSerialized(page, 0);
         await page.waitForSelector("#editorUndoBar", { visible: true });
 
         await page.waitForSelector("#editorUndoBarUndoButton", {
           visible: true,
         });
-        await page.click("#editorUndoBarUndoButton");
+        await page.click("#editorUndoBarUndoButton", { delay: CLICK_DELAY });
         await waitForSerialized(page, 1);
         await page.waitForSelector(editorSelector);
         await page.waitForSelector(`${editorSelector} canvas`);
@@ -1632,7 +1664,9 @@ describe("Stamp Editor", () => {
         await waitForSerialized(page, 1);
 
         await page.waitForSelector(`${editorSelector} button.delete`);
-        await page.click(`${editorSelector} button.delete`);
+        await page.click(`${editorSelector} button.delete`, {
+          delay: CLICK_DELAY,
+        });
         await waitForSerialized(page, 0);
 
         await page.waitForFunction(() => {
@@ -1658,11 +1692,13 @@ describe("Stamp Editor", () => {
         await waitForSerialized(page, 1);
 
         await page.waitForSelector(`${editorSelector} button.delete`);
-        await page.click(`${editorSelector} button.delete`);
+        await page.click(`${editorSelector} button.delete`, {
+          delay: CLICK_DELAY,
+        });
         await waitForSerialized(page, 0);
 
         await page.waitForSelector("#editorUndoBar", { visible: true });
-        await page.click("#editorStampAddImage");
+        await page.click("#editorStampAddImage", { delay: CLICK_DELAY });
         const newInput = await page.$("#stampEditorFileInput");
         await newInput.uploadFile(
           `${path.join(__dirname, "../images/firefox_logo.png")}`
@@ -1760,7 +1796,10 @@ describe("Stamp Editor", () => {
           await page.waitForSelector(annotationSelector);
           await scrollIntoView(page, annotationSelector);
 
-          await page.click(annotationSelector, { count: 2 });
+          await page.click(annotationSelector, {
+            count: 2,
+            delay: CLICK_DELAY,
+          });
 
           await page.waitForFunction(() =>
             document
