@@ -1194,9 +1194,9 @@ class PDFFindController {
       pageIndex: index,
     });
 
-    console.timeEnd("dispatchingSearchingEvent");
     const { fuzzySearchEnabled } = this.#state;
-    if (fuzzySearchEnabled && index === this._linkService.pagesCount) {
+    if (fuzzySearchEnabled && index === this._linkService.pagesCount - 1) {
+      console.timeEnd("dispatchingSearchingEvent");
       console.log("New sending fuzzysearching = false event!");
       this._eventBus.dispatch("fuzzysearching", {
         source: this,
