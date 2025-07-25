@@ -429,7 +429,7 @@ function _collectJS(entry, xref, list, parents) {
         /* keepEscapeSequence = */ true
       ).replaceAll("\x00", "");
       if (code) {
-        list.push(code);
+        list.push(code.trim());
       }
     }
     _collectJS(entry.getRaw("Next"), xref, list, parents);
