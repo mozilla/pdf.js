@@ -177,6 +177,10 @@ class CommentManager {
     }
   }
 
+  #renderActionsButton(visible) {
+    this.#actions.classList.toggle("hidden", !visible);
+  }
+
   #makeMenu() {
     this.#actions.addEventListener("click", e => {
       const closeMenu = this.#closeMenu.bind(this);
@@ -275,8 +279,10 @@ class CommentManager {
     );
     this.#commentText = text || "";
     if (!text) {
+      this.#renderActionsButton(false);
       this.#edit();
     } else {
+      this.#renderActionsButton(true);
       this.#setText(text);
       this.#textInput.classList.toggle("hidden", true);
       this.#textView.classList.toggle("hidden", false);
@@ -352,7 +358,7 @@ class CommentManager {
 
     textInput.classList.toggle("hidden", false);
     textView.classList.toggle("hidden", true);
-    this.#editMenuItem.disabled = this.#deleteMenuItem.disabled = true;
+    this.#editMenuItem.disabled = true;
     setTimeout(() => textInput.focus(), 0);
   }
 
