@@ -46,6 +46,8 @@ class BasePDFPageView {
 
   renderTask = null;
 
+  renderTaskID = null;
+
   resume = null;
 
   constructor(options) {
@@ -106,7 +108,8 @@ class BasePDFPageView {
     // In HCM, a final filter is applied on the canvas which means that
     // before it's applied we've normal colors. Consequently, to avoid to
     // have a final flash we just display it once all the drawing is done.
-    const updateOnFirstShow = !prevCanvas && !hasHCM && !hideUntilComplete;
+    // const updateOnFirstShow = !prevCanvas && !hasHCM && !hideUntilComplete;
+    const updateOnFirstShow = false;
 
     let canvas = (this.canvas = document.createElement("canvas"));
 
@@ -156,7 +159,7 @@ class BasePDFPageView {
 
       if (prevCanvas) {
         prevCanvas.replaceWith(canvas);
-        prevCanvas.width = prevCanvas.height = 0;
+        this.pdfPage.resetCanvas(this.renderTaskID);
       } else {
         onShow(canvas);
       }
@@ -184,7 +187,7 @@ class BasePDFPageView {
       return;
     }
     canvas.remove();
-    canvas.width = canvas.height = 0;
+    this.pdfPage.resetCanvas(this.renderTaskID);
     this.canvas = null;
     this.#resetTempCanvas();
   }
@@ -205,6 +208,8 @@ class BasePDFPageView {
         this.#renderError = null;
       }
     };
+
+    this.renderTaskID = renderTask.taskID;
 
     let error = null;
     try {

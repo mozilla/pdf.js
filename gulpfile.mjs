@@ -589,6 +589,18 @@ function createWorkerBundle(defines) {
     .pipe(webpack2Stream(workerFileConfig));
 }
 
+function createRendererWorkerBundle(defines) {
+  const rendererWorkerFileConfig = createWebpackConfig(defines, {
+    filename: defines.MINIFIED ? "pdf.renderer.min.mjs" : "pdf.renderer.mjs",
+    library: {
+      type: "module",
+    },
+  });
+  return gulp
+    .src("./src/pdf.renderer.js", { encoding: false })
+    .pipe(webpack2Stream(rendererWorkerFileConfig));
+}
+
 function createWebBundle(defines, options) {
   const viewerFileConfig = createWebpackConfig(
     defines,
@@ -1103,6 +1115,7 @@ function buildGeneric(defines, dir) {
   return ordered([
     createMainBundle(defines).pipe(gulp.dest(dir + "build")),
     createWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
+    createRendererWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
     createSandboxBundle(defines).pipe(gulp.dest(dir + "build")),
     createWebBundle(defines, {
       defaultPreferencesDir: defines.SKIP_BABEL
@@ -1293,6 +1306,7 @@ function buildMinified(defines, dir) {
   return ordered([
     createMainBundle(defines).pipe(gulp.dest(dir + "build")),
     createWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
+    createRendererWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
     createSandboxBundle(defines).pipe(gulp.dest(dir + "build")),
     createImageDecodersBundle({ ...defines, IMAGE_DECODERS: true }).pipe(
       gulp.dest(dir + "image_decoders")
@@ -1438,6 +1452,9 @@ gulp.task(
         createWorkerBundle(defines).pipe(
           gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
         ),
+        createRendererWorkerBundle(defines).pipe(
+          gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
+        ),
         createWebBundle(defines, { defaultPreferencesDir: "mozcentral/" }).pipe(
           gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")
         ),
@@ -1533,6 +1550,9 @@ gulp.task(
           gulp.dest(CHROME_BUILD_CONTENT_DIR + "build")
         ),
         createWorkerBundle(defines).pipe(
+          gulp.dest(CHROME_BUILD_CONTENT_DIR + "build")
+        ),
+        createRendererWorkerBundle(defines).pipe(
           gulp.dest(CHROME_BUILD_CONTENT_DIR + "build")
         ),
         createSandboxBundle(defines).pipe(
