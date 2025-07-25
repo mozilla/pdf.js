@@ -2591,7 +2591,7 @@ describe("FreeText Editor", () => {
           await commit(page);
 
           // Delete it in using the button.
-          await page.click(`${editorSelector} button.delete`);
+          await page.click(`${editorSelector} button.deleteButton`);
           await page.waitForFunction(
             sel => !document.querySelector(sel),
             {},
@@ -2644,7 +2644,7 @@ describe("FreeText Editor", () => {
           await selectAll(page);
 
           // Delete it in using the button.
-          await page.focus(`${editorSelector} button.delete`);
+          await page.focus(`${editorSelector} button.deleteButton`);
           await page.keyboard.press("Enter");
           await page.waitForFunction(
             sel => !document.querySelector(sel),
@@ -2885,8 +2885,8 @@ describe("FreeText Editor", () => {
           await commit(page);
           await waitForSerialized(page, 1);
 
-          await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.waitForSelector(`${editorSelector} button.deleteButton`);
+          await page.click(`${editorSelector} button.deleteButton`);
           await waitForSerialized(page, 0);
 
           const twoToFourteen = Array.from(new Array(13).keys(), n => n + 2);
@@ -2935,8 +2935,8 @@ describe("FreeText Editor", () => {
           await commit(page);
           await waitForSerialized(page, 1);
 
-          await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.waitForSelector(`${editorSelector} button.deleteButton`);
+          await page.click(`${editorSelector} button.deleteButton`);
           await waitForSerialized(page, 0);
 
           const twoToOne = Array.from(new Array(13).keys(), n => n + 2).concat(
@@ -3271,8 +3271,8 @@ describe("FreeText Editor", () => {
           await commit(page);
           await waitForSerialized(page, 1);
 
-          await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.waitForSelector(`${editorSelector} button.deleteButton`);
+          await page.click(`${editorSelector} button.deleteButton`);
           await waitForSerialized(page, 0);
           await page.waitForSelector("#editorUndoBar", { visible: true });
 
@@ -3299,8 +3299,8 @@ describe("FreeText Editor", () => {
           await commit(page);
           await waitForSerialized(page, 1);
 
-          await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.waitForSelector(`${editorSelector} button.deleteButton`);
+          await page.click(`${editorSelector} button.deleteButton`);
           await waitForSerialized(page, 0);
 
           await page.waitForFunction(() => {
@@ -3332,8 +3332,8 @@ describe("FreeText Editor", () => {
           await commit(page);
           await waitForSerialized(page, 1);
 
-          await page.waitForSelector(`${editorSelector} button.delete`);
-          await page.click(`${editorSelector} button.delete`);
+          await page.waitForSelector(`${editorSelector} button.deleteButton`);
+          await page.click(`${editorSelector} button.deleteButton`);
           await waitForSerialized(page, 0);
 
           await page.waitForSelector("#editorUndoBar", { visible: true });
