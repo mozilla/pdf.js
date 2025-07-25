@@ -123,7 +123,7 @@ class EditorToolbar {
     const { editorType, _uiManager } = this.#editor;
 
     const button = document.createElement("button");
-    button.className = "delete";
+    button.classList.add("basic", "deleteButton");
     button.tabIndex = 0;
     button.setAttribute("data-l10n-id", EditorToolbar.#l10nRemove[editorType]);
     this.#addListenersToElement(button);
@@ -214,7 +214,7 @@ class EditorToolbar {
   }
 }
 
-class HighlightToolbar {
+class FloatingToolbar {
   #buttons = null;
 
   #toolbar = null;
@@ -237,7 +237,25 @@ class HighlightToolbar {
     buttons.className = "buttons";
     editToolbar.append(buttons);
 
-    this.#addHighlightButton();
+    if (this.#uiManager.hasCommentManager()) {
+      this.#makeButton(
+        "commentButton",
+        `pdfjs-comment-floating-button`,
+        "pdfjs-comment-floating-button-label",
+        () => {
+          this.#uiManager.commentSelection("floating_button");
+        }
+      );
+    }
+
+    this.#makeButton(
+      "highlightButton",
+      `pdfjs-highlight-floating-button1`,
+      "pdfjs-highlight-floating-button-label",
+      () => {
+        this.#uiManager.highlightSelection("floating_button");
+      }
+    );
 
     return editToolbar;
   }
@@ -279,26 +297,20 @@ class HighlightToolbar {
     this.#toolbar.remove();
   }
 
-  #addHighlightButton() {
+  #makeButton(buttonClass, l10nId, labelL10nId, clickHandler) {
     const button = document.createElement("button");
-    button.className = "highlightButton";
+    button.classList.add("basic", buttonClass);
     button.tabIndex = 0;
-    button.setAttribute("data-l10n-id", `pdfjs-highlight-floating-button1`);
+    button.setAttribute("data-l10n-id", l10nId);
     const span = document.createElement("span");
     button.append(span);
     span.className = "visuallyHidden";
-    span.setAttribute("data-l10n-id", "pdfjs-highlight-floating-button-label");
+    span.setAttribute("data-l10n-id", labelL10nId);
     const signal = this.#uiManager._signal;
     button.addEventListener("contextmenu", noContextMenu, { signal });
-    button.addEventListener(
-      "click",
-      () => {
-        this.#uiManager.highlightSelection("floating_button");
-      },
-      { signal }
-    );
+    button.addEventListener("click", clickHandler, { signal });
     this.#buttons.append(button);
   }
 }
 
-export { EditorToolbar, HighlightToolbar };
+export { EditorToolbar, FloatingToolbar };
