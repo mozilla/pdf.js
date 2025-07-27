@@ -524,6 +524,13 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Ehechauka moñe’ẽr
 pdfjs-editor-alt-text-settings-show-dialog-description = Nepytyvõta ta’ãngakuéra orekotaha moñe’ẽrã mokõiha.
 pdfjs-editor-alt-text-settings-close-button = Mboty
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-freetext-added-alert = Moñe’ẽrã juajupyre
+pdfjs-editor-ink-added-alert = Ta’ãnga juajupyre
+pdfjs-editor-stamp-added-alert = Ta’ãnga juajupyre
+pdfjs-editor-signature-added-alert = Teraguapy juajupyre
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Mbosa’ýva mboguete

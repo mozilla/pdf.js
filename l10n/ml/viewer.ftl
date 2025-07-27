@@ -291,9 +291,6 @@ pdfjs-editor-signature-button =
     .title = പുതിയ ഒപ്പു് ചേൎക്കുക
 pdfjs-editor-signature-button-label = പുതിയ ഒപ്പു് ചേൎക്കുക
 
-## Default editor aria labels
-
-
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =

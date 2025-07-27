@@ -214,9 +214,6 @@ pdfjs-page-scale-actual = Իրական չափը
 #   $scale (Number) - percent value for page scale
 pdfjs-page-scale-percent = { $scale }%
 
-## PDF page
-
-
 ## Loading indicator messages
 
 pdfjs-loading-error = Սխալ՝ PDF ֆայլը բացելիս։
@@ -247,15 +244,6 @@ pdfjs-password-ok-button = Լավ
 pdfjs-password-cancel-button = Չեղարկել
 pdfjs-web-fonts-disabled = Վեբ-տառատեսակները անջատված են. հնարավոր չէ օգտագործել ներկառուցված PDF տառատեսակները:
 
-## Editing
-
-
-## Default editor aria labels
-
-
-## Remove button for the various kind of editor.
-
-
 ##
 
 pdfjs-free-text-default-content = Սկսել մուտքագրումը…
@@ -263,13 +251,6 @@ pdfjs-free-text-default-content = Սկսել մուտքագրումը…
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-save-button = Պահպանել
-
-## Editor resizers
-## This is used in an aria label to help to understand the role of the resizer.
-
-
-## Color picker
-
 
 ## Show all highlights
 ## This is a toggle button to show/hide all the highlights.
@@ -282,33 +263,3 @@ pdfjs-editor-highlight-show-all-button =
 ## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
 
 pdfjs-editor-new-alt-text-not-now-button = Ոչ հիմա
-
-## Image alt-text settings
-
-
-## "Annotations removed" bar
-
-
-## Add a signature dialog
-
-
-## Tab names
-
-
-## Tab panels
-
-
-## Controls
-
-
-## Dialog buttons
-
-
-## Main menu for adding/removing signatures
-
-
-## Editor toolbar
-
-
-## Edit signature description dialog
-

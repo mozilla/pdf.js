@@ -516,6 +516,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = 이미지 추가 시 �
 pdfjs-editor-alt-text-settings-show-dialog-description = 모든 이미지에 대체 텍스트가 있는지 확인하는 데 도움이 됩니다.
 pdfjs-editor-alt-text-settings-close-button = 닫기
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = 강조 표시 추가됨
+pdfjs-editor-freetext-added-alert = 텍스트 추가됨
+pdfjs-editor-ink-added-alert = 그리기 추가됨
+pdfjs-editor-stamp-added-alert = 이미지 추가됨
+pdfjs-editor-signature-added-alert = 서명 추가됨
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = 강조 표시 제거됨

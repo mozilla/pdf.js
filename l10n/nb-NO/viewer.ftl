@@ -388,10 +388,10 @@ pdfjs-ink-canvas =
 
 ## Alt-text dialog
 
-pdfjs-editor-alt-text-button-label = Alt-tekst
+pdfjs-editor-alt-text-button-label = Alternativ tekst
 pdfjs-editor-alt-text-edit-button =
-    .aria-label = Rediger alt-tekst
-pdfjs-editor-alt-text-edit-button-label = Rediger alt-tekst tekst
+    .aria-label = Rediger alternativ tekst
+pdfjs-editor-alt-text-edit-button-label = Rediger alternativ tekst
 pdfjs-editor-alt-text-dialog-label = Velg et alternativ
 pdfjs-editor-alt-text-dialog-description = Alt-tekst (alternativ tekst) hjelper når folk ikke kan se bildet eller når det ikke lastes inn.
 pdfjs-editor-alt-text-add-description-label = Legg til en beskrivelse
@@ -406,7 +406,7 @@ pdfjs-editor-alt-text-textarea =
     .placeholder = For eksempel, «En ung mann setter seg ved et bord for å spise et måltid»
 # Alternative text (alt text) helps when people can't see the image.
 pdfjs-editor-alt-text-button =
-    .aria-label = Alt-tekst
+    .aria-label = Alternativ tekst
 
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
@@ -479,7 +479,7 @@ pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Les mer
 pdfjs-editor-new-alt-text-create-automatically-button-label = Lag alternativ tekst automatisk
 pdfjs-editor-new-alt-text-not-now-button = Ikke nå
 pdfjs-editor-new-alt-text-error-title = Kunne ikke opprette alternativ tekst automatisk
-pdfjs-editor-new-alt-text-error-description = Skriv din egen alternativ-tekst eller prøv igjen senere.
+pdfjs-editor-new-alt-text-error-description = Skriv din egen alternativ tekst eller prøv igjen senere.
 pdfjs-editor-new-alt-text-error-close-button = Lukk
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
@@ -488,7 +488,7 @@ pdfjs-editor-new-alt-text-ai-model-downloading-progress = Laster ned alternativ 
     .aria-valuetext = Laster ned alternativ tekst AI-modell ({ $downloadedSize } av { $totalSize } MB)
 # This is a button that users can click to edit the alt text they have already added.
 pdfjs-editor-new-alt-text-added-button =
-    .aria-label = Alt-tekst lagt til
+    .aria-label = Alternativ tekst lagt til
 pdfjs-editor-new-alt-text-added-button-label = Alternativ tekst lagt til
 # This is a button that users can click to open the alt text editor and add alt text when it is not present.
 pdfjs-editor-new-alt-text-missing-button =
@@ -523,6 +523,14 @@ pdfjs-editor-alt-text-settings-editor-title = Alternativ tekst-redigerer
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Vis alternativ tekst-redigerer direkte når du legger til et bilde
 pdfjs-editor-alt-text-settings-show-dialog-description = Hjelper deg å sørge for at alle bildene dine har alternativ tekst.
 pdfjs-editor-alt-text-settings-close-button = Lukk
+
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = Utheving lagt til
+pdfjs-editor-freetext-added-alert = Tekst lagt til
+pdfjs-editor-ink-added-alert = Tegning lagt til
+pdfjs-editor-stamp-added-alert = Bilde lagt til
+pdfjs-editor-signature-added-alert = Signatur lagt til
 
 ## "Annotations removed" bar
 

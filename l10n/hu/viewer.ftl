@@ -524,6 +524,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Az alternatív szöveg
 pdfjs-editor-alt-text-settings-show-dialog-description = Segít elérni, hogy az összes képén legyen alternatív szöveg.
 pdfjs-editor-alt-text-settings-close-button = Bezárás
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = Kiemelés hozzáadva
+pdfjs-editor-freetext-added-alert = Szöveg hozzáadva
+pdfjs-editor-ink-added-alert = Rajz hozzáadva
+pdfjs-editor-stamp-added-alert = Kép hozzáadva
+pdfjs-editor-signature-added-alert = Aláírás hozzáadva
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Kiemelés eltávolítva

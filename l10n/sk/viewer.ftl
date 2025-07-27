@@ -528,6 +528,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Pri pridávaní obráz
 pdfjs-editor-alt-text-settings-show-dialog-description = Pomáha vám zabezpečiť, aby všetky vaše obrázky mali alternatívny text.
 pdfjs-editor-alt-text-settings-close-button = Zavrieť
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = Zvýraznenie bolo pridané
+pdfjs-editor-freetext-added-alert = Text bol pridaný
+pdfjs-editor-ink-added-alert = Kresba bola pridaná
+pdfjs-editor-stamp-added-alert = Obrázok bol pridaný
+pdfjs-editor-signature-added-alert = Podpis bol pridaný
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Zvýraznenie bolo odstránené

@@ -325,6 +325,9 @@ pdfjs-editor-signature-button-label = Legg til signatur
 # “Highlight” is a noun, the string is used on the editor for highlights.
 pdfjs-editor-highlight-editor =
     .aria-label = Markeringsredigerar
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = Redigering av teikningar
 # Used when a signature editor is selected/hovered.
 # Variables:
 #   $description (String) - a string describing/labeling the signature.
@@ -388,7 +391,7 @@ pdfjs-ink-canvas =
 pdfjs-editor-alt-text-button-label = Alt-tekst
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Rediger alt-tekst tekst
-pdfjs-editor-alt-text-edit-button-label = Rediger alt-tekst tekst
+pdfjs-editor-alt-text-edit-button-label = Rediger alternativ tekst
 pdfjs-editor-alt-text-dialog-label = Vel eit alternativ
 pdfjs-editor-alt-text-dialog-description = Alt-tekst (alternativ tekst) hjelper når folk ikkje kan sjå bildet eller når det ikkje vert lasta inn.
 pdfjs-editor-alt-text-add-description-label = Legg til ei skildring
@@ -552,6 +555,9 @@ pdfjs-editor-add-signature-dialog-title = Legg til ein signatur
 # Type is a verb (you can type your name as signature)
 pdfjs-editor-add-signature-type-button = Type
     .title = Type
+# Draw is a verb (you can draw your signature)
+pdfjs-editor-add-signature-draw-button = Teikne
+    .title = Teikne
 pdfjs-editor-add-signature-image-button = Bilde
     .title = Bilde
 

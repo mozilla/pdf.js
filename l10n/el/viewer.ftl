@@ -524,6 +524,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Άμεση εμφάν�
 pdfjs-editor-alt-text-settings-show-dialog-description = Σας βοηθά να βεβαιωθείτε ότι όλες οι εικόνες σας έχουν εναλλακτικό κείμενο.
 pdfjs-editor-alt-text-settings-close-button = Κλείσιμο
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = Προστέθηκε επισήμανση
+pdfjs-editor-freetext-added-alert = Προστέθηκε κείμενο
+pdfjs-editor-ink-added-alert = Προστέθηκε σχέδιο
+pdfjs-editor-stamp-added-alert = Προστέθηκε εικόνα
+pdfjs-editor-signature-added-alert = Προστέθηκε υπογραφή
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Η επισήμανση αφαιρέθηκε
