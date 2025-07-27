@@ -25,9 +25,14 @@ class Console extends PDFObject {
   }
 
   println(msg) {
-    if (typeof msg === "string") {
-      this._send({ command: "println", value: "PDF.js Console:: " + msg });
+    if (typeof msg !== "string") {
+      try {
+        msg = JSON.stringify(msg);
+      } catch {
+        msg = msg.toString?.() || "[Unserializable object]";
+      }
     }
+    this._send({ command: "println", value: "PDF.js Console:: " + msg });
   }
 
   show() {

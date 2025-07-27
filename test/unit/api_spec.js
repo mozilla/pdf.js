@@ -1760,6 +1760,8 @@ describe("api", function () {
             strokeColor: null,
             fillColor: null,
             rotation: 0,
+            datetimeFormat: undefined,
+            hasDatetimeHTML: false,
             type: "text",
           },
         ],
