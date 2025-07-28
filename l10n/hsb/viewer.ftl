@@ -528,6 +528,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Editor alternatiwneho 
 pdfjs-editor-alt-text-settings-show-dialog-description = Pomha, wam wšěm swojim wobrazam alternatiwny tekst přidać.
 pdfjs-editor-alt-text-settings-close-button = Začinić
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = Wuzběhnjenje přidate
+pdfjs-editor-freetext-added-alert = Tekst přidaty
+pdfjs-editor-ink-added-alert = Rysowanka přidata
+pdfjs-editor-stamp-added-alert = Wobraz přidaty
+pdfjs-editor-signature-added-alert = Signatura přidata
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Wotstronjene wuzběhnyć

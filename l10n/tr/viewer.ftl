@@ -524,6 +524,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Resim eklerken alt met
 pdfjs-editor-alt-text-settings-show-dialog-description = Tüm resimlerinizin alt metne sahip olduğundan emin olmanızı sağlar.
 pdfjs-editor-alt-text-settings-close-button = Kapat
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = Vurgu eklendi
+pdfjs-editor-freetext-added-alert = Metin eklendi
+pdfjs-editor-ink-added-alert = Çizim eklendi
+pdfjs-editor-stamp-added-alert = Resim eklendi
+pdfjs-editor-signature-added-alert = İmza eklendi
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Vurgulama silindi

@@ -280,12 +280,6 @@ pdfjs-highlight-floating-button1 =
     .aria-label = Sklerijennañ
 pdfjs-highlight-floating-button-label = Sklerijennañ
 
-## Default editor aria labels
-
-
-## Remove button for the various kind of editor.
-
-
 ##
 
 # Editor Parameters
@@ -314,10 +308,6 @@ pdfjs-editor-alt-text-save-button = Enrollañ
 # .placeholder: This is a placeholder for the alt text input area
 pdfjs-editor-alt-text-textarea =
     .placeholder = Da skouer, “Ur paotr yaouank ouzh taol o tebriñ boued”
-
-## Editor resizers
-## This is used in an aria label to help to understand the role of the resizer.
-
 
 ## Color picker
 
@@ -353,30 +343,3 @@ pdfjs-editor-alt-text-settings-delete-model-button = Dilemel
 pdfjs-editor-alt-text-settings-download-model-button = Pellgargañ
 pdfjs-editor-alt-text-settings-downloading-model-button = O pellgargañ…
 pdfjs-editor-alt-text-settings-close-button = Serriñ
-
-## "Annotations removed" bar
-
-
-## Add a signature dialog
-
-
-## Tab names
-
-
-## Tab panels
-
-
-## Controls
-
-
-## Dialog buttons
-
-
-## Main menu for adding/removing signatures
-
-
-## Editor toolbar
-
-
-## Edit signature description dialog
-

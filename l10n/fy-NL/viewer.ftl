@@ -524,6 +524,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Alternative-tekstbewur
 pdfjs-editor-alt-text-settings-show-dialog-description = Helpt jo derfoar te soargjen dat al jo ôfbyldingen alternative tekst hawwe.
 pdfjs-editor-alt-text-settings-close-button = Slute
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = Markearring tafoege
+pdfjs-editor-freetext-added-alert = Tekst tafoege
+pdfjs-editor-ink-added-alert = Tekening tafoege
+pdfjs-editor-stamp-added-alert = Ofbylding tafoege
+pdfjs-editor-signature-added-alert = Hantekening tafoege
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Markearring fuortsmiten

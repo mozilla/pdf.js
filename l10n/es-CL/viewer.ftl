@@ -524,6 +524,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Mostrar el editor de t
 pdfjs-editor-alt-text-settings-show-dialog-description = Te ayuda a asegurarte de que todas tus imágenes tengan texto alternativo.
 pdfjs-editor-alt-text-settings-close-button = Cerrar
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = Destacado añadido
+pdfjs-editor-freetext-added-alert = Texto añadido
+pdfjs-editor-ink-added-alert = Dibujo añadido
+pdfjs-editor-stamp-added-alert = Imagen añadida
+pdfjs-editor-signature-added-alert = Firma añadida
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Resaltado eliminado

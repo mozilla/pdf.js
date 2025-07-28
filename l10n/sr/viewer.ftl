@@ -288,9 +288,6 @@ pdfjs-highlight-floating-button1 =
     .aria-label = Означи
 pdfjs-highlight-floating-button-label = Означи
 
-## Default editor aria labels
-
-
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =
@@ -419,33 +416,3 @@ pdfjs-editor-new-alt-text-disclaimer1 = Овај алтернативни тек
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Сазнајте више
 pdfjs-editor-new-alt-text-create-automatically-button-label = Прави алтернативни текст аутоматски
 pdfjs-editor-new-alt-text-not-now-button = Не сада
-
-## Image alt-text settings
-
-
-## "Annotations removed" bar
-
-
-## Add a signature dialog
-
-
-## Tab names
-
-
-## Tab panels
-
-
-## Controls
-
-
-## Dialog buttons
-
-
-## Main menu for adding/removing signatures
-
-
-## Editor toolbar
-
-
-## Edit signature description dialog
-

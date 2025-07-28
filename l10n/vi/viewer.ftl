@@ -516,6 +516,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Hiển thị ngay trì
 pdfjs-editor-alt-text-settings-show-dialog-description = Giúp bạn đảm bảo tất cả hình ảnh của bạn đều có văn bản thay thế.
 pdfjs-editor-alt-text-settings-close-button = Đóng
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = Đã thêm tô sáng
+pdfjs-editor-freetext-added-alert = Đã thêm chữ
+pdfjs-editor-ink-added-alert = Đã thêm bản vẽ
+pdfjs-editor-stamp-added-alert = Đã thêm ảnh
+pdfjs-editor-signature-added-alert = Đã thêm chữ ký
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Đã xóa đánh dấu

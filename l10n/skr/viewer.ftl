@@ -317,9 +317,6 @@ pdfjs-highlight-floating-button1 =
     .aria-label = نمایاں کرو
 pdfjs-highlight-floating-button-label = نمایاں کرو
 
-## Default editor aria labels
-
-
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =
@@ -498,27 +495,3 @@ pdfjs-editor-undo-bar-undo-button-label = کیتا اݨ کیتا
 pdfjs-editor-undo-bar-close-button =
     .title = بند کرو
 pdfjs-editor-undo-bar-close-button-label = بند کرو
-
-## Add a signature dialog
-
-
-## Tab names
-
-
-## Tab panels
-
-
-## Controls
-
-
-## Dialog buttons
-
-
-## Main menu for adding/removing signatures
-
-
-## Editor toolbar
-
-
-## Edit signature description dialog
-

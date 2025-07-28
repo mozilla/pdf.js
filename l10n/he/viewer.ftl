@@ -524,6 +524,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = הצגת עורך טק
 pdfjs-editor-alt-text-settings-show-dialog-description = מסייע לך לוודא שלכל התמונות שלך יש טקסט חלופי.
 pdfjs-editor-alt-text-settings-close-button = סגירה
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = הסימון נוסף
+pdfjs-editor-freetext-added-alert = הטקסט נוסף
+pdfjs-editor-ink-added-alert = הציור נוסף
+pdfjs-editor-stamp-added-alert = התמונה נוספה
+pdfjs-editor-signature-added-alert = החתימה נוספה
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = הסימון הוסר

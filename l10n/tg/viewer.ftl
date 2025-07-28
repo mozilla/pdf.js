@@ -524,6 +524,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Дарҳол нишо�
 pdfjs-editor-alt-text-settings-show-dialog-description = Ба шумо кумак мекунад, ки боварӣ ҳосил кунед, ки ҳамаи тасвирҳои шумо дорои матни ивазкунанда мебошанд.
 pdfjs-editor-alt-text-settings-close-button = Пӯшидан
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = Ҷудокунӣ илова карда шуд
+pdfjs-editor-freetext-added-alert = Матн илова карда шуд
+pdfjs-editor-ink-added-alert = Расм илова карда шуд
+pdfjs-editor-stamp-added-alert = Тасвир илова карда шуд
+pdfjs-editor-signature-added-alert = Имзо илова карда шуд
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Ҷудосозӣ тоза карда шуд

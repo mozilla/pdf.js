@@ -320,9 +320,6 @@ pdfjs-editor-signature-button =
     .title = Bæta við undirritun
 pdfjs-editor-signature-button-label = Bæta við undirritun
 
-## Default editor aria labels
-
-
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =

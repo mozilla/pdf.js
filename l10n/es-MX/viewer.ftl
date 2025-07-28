@@ -320,9 +320,6 @@ pdfjs-editor-signature-button =
     .title = Agregar firma
 pdfjs-editor-signature-button-label = Añadir firma
 
-## Default editor aria labels
-
-
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =
@@ -567,9 +564,6 @@ pdfjs-editor-add-signature-error-close-button = Cerrar
 
 pdfjs-editor-add-signature-cancel-button = Cancelar
 pdfjs-editor-add-signature-add-button = Agregar
-
-## Main menu for adding/removing signatures
-
 
 ## Editor toolbar
 

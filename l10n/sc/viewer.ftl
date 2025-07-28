@@ -268,9 +268,6 @@ pdfjs-highlight-floating-button1 =
     .aria-label = Evidèntzia
 pdfjs-highlight-floating-button-label = Evidèntzia
 
-## Default editor aria labels
-
-
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =
@@ -312,10 +309,6 @@ pdfjs-editor-alt-text-add-description-label = Agiunghe una descritzione
 pdfjs-editor-alt-text-cancel-button = Annulla
 pdfjs-editor-alt-text-save-button = Sarva
 
-## Editor resizers
-## This is used in an aria label to help to understand the role of the resizer.
-
-
 ## Color picker
 
 pdfjs-editor-colorpicker-button =
@@ -330,10 +323,6 @@ pdfjs-editor-colorpicker-blue =
     .title = Biaitu
 pdfjs-editor-colorpicker-pink =
     .title = Rosa
-
-## Show all highlights
-## This is a toggle button to show/hide all the highlights.
-
 
 ## New alt-text dialog
 ## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
@@ -365,30 +354,3 @@ pdfjs-editor-alt-text-settings-editor-title = Editore de testu alternativu
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Mustra deretu s’editore de testu alternativu cando siat agiunta un’immàgine
 pdfjs-editor-alt-text-settings-show-dialog-description = T’agiudat a assegurare chi totu is immàgines tuas tèngiant unu testu alternativu.
 pdfjs-editor-alt-text-settings-close-button = Serra
-
-## "Annotations removed" bar
-
-
-## Add a signature dialog
-
-
-## Tab names
-
-
-## Tab panels
-
-
-## Controls
-
-
-## Dialog buttons
-
-
-## Main menu for adding/removing signatures
-
-
-## Editor toolbar
-
-
-## Edit signature description dialog
-
