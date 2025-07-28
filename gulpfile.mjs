@@ -1208,6 +1208,7 @@ function buildComponents(defines, dir) {
     "web/images/messageBar_*.svg",
     "web/images/toolbarButton-{editorHighlight,menuArrow}.svg",
     "web/images/cursor-*.svg",
+    "web/images/comment-*.svg",
   ];
 
   return ordered([
