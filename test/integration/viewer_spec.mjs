@@ -1302,4 +1302,57 @@ describe("PDF viewer", () => {
       );
     });
   });
+
+  describe("Printing can be disallowed for some pdfs (bug 1978985)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "print_protection.pdf",
+        "#passwordDialog",
+        null,
+        null,
+        { enablePermissions: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that printing is disallowed", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForSelector("#printButton", {
+            visible: true,
+          });
+
+          const selector = "#passwordDialog input#password";
+          await page.waitForSelector(selector, { visible: true });
+          await page.type(selector, "1234");
+          await page.click("#passwordDialog button#passwordSubmit");
+
+          await page.waitForSelector(".textLayer .endOfContent");
+
+          // The print button should be hidden.
+          await page.waitForSelector("#printButton", {
+            hidden: true,
+          });
+          await page.waitForSelector("#secondaryPrint", {
+            hidden: true,
+          });
+
+          const hasThrown = await page.evaluate(() => {
+            try {
+              window.print();
+            } catch {
+              return true;
+            }
+            return false;
+          });
+          expect(hasThrown).withContext(`In ${browserName}`).toBeTrue();
+        })
+      );
+    });
+  });
 });
