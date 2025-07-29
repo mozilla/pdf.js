@@ -2392,9 +2392,7 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page], i) => {
           await waitForScripting(page);
 
-          const inputSelector = getSelector("33R");
-          await page.click(inputSelector);
-          await page.type(inputSelector, "7");
+          await typeAndWaitForSandbox(page, getSelector("33R"), "7");
           await page.click(getSelector("34R"));
           await page.waitForFunction(
             `${getQuerySelector("35R")}.value === "324,00"`
