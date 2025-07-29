@@ -94,6 +94,17 @@ Promise.all([
           prefSchema.title,
           prefSchema.description
         );
+      } else if (prefName === "defaultZoomDelay") {
+        renderPreference = renderNumberPref(
+          true,
+          prefSchema.title,
+          prefSchema.description,
+          prefName,
+          "10",
+          "60000",
+          "1",
+          String(prefSchema.default)
+        );
       } else {
         // Should NEVER be reached. Only happens if a new type of preference is
         // added to the storage manifest.
@@ -150,6 +161,56 @@ function importTemplate(id) {
 
 // Helpers to create UI elements that display the preference, and return a
 // function which updates the UI with the preference.
+
+function renderNumberPref(
+  integer,
+  shortDescription,
+  description,
+  prefName,
+  min,
+  max,
+  step,
+  placeholder
+) {
+  var wrapper = importTemplate("number-template");
+  var intOnly = integer;
+  var numberInput = wrapper.querySelector("input");
+  numberInput.min = min;
+  numberInput.max = max;
+  numberInput.step = step;
+  numberInput.placeholder = placeholder;
+  numberInput.oninput = function () {
+    numberInput.setCustomValidity(
+      intOnly && !Number.isInteger(numberInput.valueAsNumber)
+        ? "Integers only!"
+        : ""
+    );
+    numberInput.reportValidity();
+  };
+  numberInput.onchange = function () {
+    var numberValue = this.valueAsNumber;
+    var valid =
+      numberInput.checkValidity() &&
+      (!intOnly || Number.isInteger(numberValue));
+    numberInput.setCustomValidity(
+      valid ? "" : "Invalid value will not be saved!"
+    );
+    if (!valid) {
+      return;
+    }
+    var pref = {};
+    pref[prefName] = numberValue;
+    storageArea.set(pref);
+  };
+  wrapper.querySelector("span").textContent = shortDescription;
+  wrapper.querySelector("label").title = description;
+  document.getElementById("settings-boxes").append(wrapper);
+
+  function renderPreference(value) {
+    numberInput.valueAsNumber = value;
+  }
+  return renderPreference;
+}
 
 function renderBooleanPref(shortDescription, description, prefName) {
   var wrapper = importTemplate("checkbox-template");
