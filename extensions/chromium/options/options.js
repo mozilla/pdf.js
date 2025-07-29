@@ -146,8 +146,6 @@ function importTemplate(id) {
 
 function renderBooleanPref(shortDescription, description, prefName) {
   var wrapper = importTemplate("checkbox-template");
-  wrapper.title = description;
-
   var checkbox = wrapper.querySelector('input[type="checkbox"]');
   checkbox.onchange = function () {
     var pref = {};
@@ -155,6 +153,7 @@ function renderBooleanPref(shortDescription, description, prefName) {
     storageArea.set(pref);
   };
   wrapper.querySelector("span").textContent = shortDescription;
+  wrapper.querySelector("label").title = description;
   document.getElementById("settings-boxes").append(wrapper);
 
   function renderPreference(value) {
