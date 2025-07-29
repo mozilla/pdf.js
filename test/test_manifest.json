@@ -3314,6 +3314,21 @@
     "type": "eq"
   },
   {
+    "id": "bug810214-partial",
+    "file": "pdfs/bug810214.pdf",
+    "md5": "2b7243178f5dd5fd3edc7b6649e4bdf3",
+    "link": true,
+    "rounds": 1,
+    "lastPage": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "Type3WordSpacing",
     "file": "pdfs/Type3WordSpacing.pdf",
     "md5": "8c75440e5b95cf521d186f862b404516",
@@ -5059,6 +5074,23 @@
     }
   },
   {
+    "id": "issue15719-partial",
+    "file": "pdfs/issue15719.pdf",
+    "md5": "4a58dbe725897e787a93e26abc621191",
+    "link": true,
+    "rounds": 1,
+    "type": "eq",
+    "optionalContent": {
+      "37R": false
+    },
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
+  },
+  {
     "id": "issue15833",
     "file": "pdfs/issue15833.pdf",
     "md5": "9562d027b980ea2779dcfb1669f9cf7e",
@@ -6579,6 +6611,19 @@
     "md5": "763b1b9efaecb2b5aefea71c39233f56",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "pattern_text_embedded_font-partial",
+    "file": "pdfs/pattern_text_embedded_font.pdf",
+    "md5": "763b1b9efaecb2b5aefea71c39233f56",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
   },
   {
     "id": "issue6113",
@@ -8990,6 +9035,21 @@
     "link": true,
     "lastPage": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue12306-partial",
+    "file": "pdfs/issue12306.pdf",
+    "md5": "7fd05ba56791238b5a60adc6cc0e7a22",
+    "rounds": 1,
+    "link": true,
+    "lastPage": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    }
   },
   {
     "id": "issue3351.1",

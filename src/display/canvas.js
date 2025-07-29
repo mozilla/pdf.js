@@ -975,10 +975,6 @@ class CanvasGraphics {
     const fillColor = this.current.fillColor;
     const isPatternFill = this.current.patternFill;
     const currentTransform = getCurrentTransform(ctx);
-    this.dependencyTracker?.recordDependencies(
-      opIdx,
-      Dependencies.transformAndFill
-    );
 
     let cache, cacheKey, scaled, maskCanvas;
     if ((img.bitmap || img.data) && img.count > 1) {
@@ -1009,6 +1005,11 @@ class CanvasGraphics {
         const offsetY = Math.round(
           Math.min(currentTransform[1], currentTransform[3]) +
             currentTransform[5]
+        );
+
+        this.dependencyTracker?.recordDependencies(
+          opIdx,
+          Dependencies.transformAndFill
         );
         return {
           canvas: cachedImage,
@@ -1110,6 +1111,11 @@ class CanvasGraphics {
       this.cachedCanvases.delete("fillCanvas");
       cache.set(cacheKey, fillCanvas.canvas);
     }
+
+    this.dependencyTracker?.recordDependencies(
+      opIdx,
+      Dependencies.transformAndFill
+    );
 
     // Round the offsets to avoid drawing fractional pixels.
     return {
@@ -1591,6 +1597,7 @@ class CanvasGraphics {
       const baseTransform = fillColor.isModifyingCurrentTransform()
         ? ctx.getTransform()
         : null;
+      this.dependencyTracker?.save(opIdx);
       ctx.save();
       ctx.fillStyle = fillColor.getPattern(
         ctx,
@@ -1623,6 +1630,7 @@ class CanvasGraphics {
 
     if (needRestore) {
       ctx.restore();
+      this.dependencyTracker?.restore(opIdx);
     }
     if (consumePath) {
       this.consumePath(opIdx, path, intersect);
@@ -3222,9 +3230,12 @@ class CanvasGraphics {
         }
       }
       this.pendingClip = null;
-      this.dependencyTracker?.recordFutureForcedDependency("clipPath", opIdx);
+      this.dependencyTracker
+        ?.bboxToClipBoxDropOperation(opIdx)
+        .recordFutureForcedDependency("clipPath", opIdx);
+    } else {
+      this.dependencyTracker?.recordOperation(opIdx);
     }
-    this.dependencyTracker?.recordOperation(opIdx);
 
     this.current.startNewPathAndClipBox(this.current.clipBox);
   }

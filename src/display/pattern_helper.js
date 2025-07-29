@@ -578,6 +578,7 @@ class TilingPattern {
     // To match CanvasGraphics beginDrawing we must save the context here or
     // else we end up with unbalanced save/restores.
     tmpCtx.save();
+    graphics.dependencyTracker?.save();
 
     this.clipBbox(graphics, x0, y0, x1, y1);
 
@@ -587,8 +588,7 @@ class TilingPattern {
 
     graphics.endDrawing();
 
-    graphics.dependencyTracker?.recordNestedDependencies?.();
-
+    graphics.dependencyTracker?.restore().recordNestedDependencies?.();
     tmpCtx.restore();
 
     if (redrawHorizontally || redrawVertically) {

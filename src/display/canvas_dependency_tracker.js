@@ -431,6 +431,25 @@ class CanvasDependencyTracker {
     return this;
   }
 
+  bboxToClipBoxDropOperation(idx) {
+    if (this.#pendingBBoxIdx !== -1) {
+      this.#pendingBBoxIdx = -1;
+
+      this.#clipBox[0] = Math.max(this.#clipBox[0], this.#pendingBBox[0]);
+      this.#clipBox[1] = Math.max(this.#clipBox[1], this.#pendingBBox[1]);
+      this.#clipBox[2] = Math.min(this.#clipBox[2], this.#pendingBBox[2]);
+      this.#clipBox[3] = Math.min(this.#clipBox[3], this.#pendingBBox[3]);
+    }
+    this.#pendingDependencies.clear();
+    return this;
+  }
+
+  _takePendingDependencies() {
+    const pendingDependencies = this.#pendingDependencies;
+    this.#pendingDependencies = new Set();
+    return pendingDependencies;
+  }
+
   _extractOperation(idx) {
     const operation = this.#operations.get(idx);
     this.#operations.delete(idx);
@@ -479,7 +498,7 @@ class CanvasNestedDependencyTracker {
 
   #nestingLevel = 0;
 
-  #outerDependencies = new Set();
+  #outerDependencies;
 
   #savesLevel = 0;
 
@@ -492,6 +511,7 @@ class CanvasNestedDependencyTracker {
     }
 
     this.#dependencyTracker = dependencyTracker;
+    this.#outerDependencies = dependencyTracker._takePendingDependencies();
     this.#opIdx = opIdx;
   }
 
@@ -680,6 +700,11 @@ class CanvasNestedDependencyTracker {
     }
     this.#outerDependencies.delete(this.#opIdx);
     this.#outerDependencies.delete(null);
+    return this;
+  }
+
+  bboxToClipBoxDropOperation(idx) {
+    this.#dependencyTracker.bboxToClipBoxDropOperation(this.#opIdx);
     return this;
   }
 
