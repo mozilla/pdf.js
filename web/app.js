@@ -3048,6 +3048,12 @@ function onKeyDown(evt) {
       case 115: // F4
         this.pdfSidebar?.toggle();
         break;
+
+      case 70: // 'f'
+      case 73: // 'i'
+        onInvert.call(this, {
+          state: !this.appConfig.toolbar.invert.classList.contains("toggled"),
+        });
     }
 
     if (
