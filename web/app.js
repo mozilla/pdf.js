@@ -219,6 +219,8 @@ const PDFViewerApplication = {
       docStyle.setProperty("color-scheme", mode);
     }
 
+    onInvert.call(this);
+
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       if (AppOptions.get("enableFakeMLManager")) {
         this.mlManager =
@@ -2019,6 +2021,7 @@ const PDFViewerApplication = {
     eventBus._on("zoomin", this.zoomIn.bind(this), opts);
     eventBus._on("zoomout", this.zoomOut.bind(this), opts);
     eventBus._on("zoomreset", this.zoomReset.bind(this), opts);
+    eventBus._on("invert", onInvert.bind(this), opts);
     eventBus._on("pagenumberchanged", onPageNumberChanged.bind(this), opts);
     eventBus._on(
       "scalechanged",
@@ -2443,6 +2446,17 @@ function onNamedAction(evt) {
       this.downloadOrSave();
       break;
   }
+}
+
+function onInvert(evt) {
+  // Handle brightness inversion (CSS filter) toggle
+  const active = evt?.state ?? AppOptions.get("cssInvertPage");
+  const filter = AppOptions.get("cssInvertFilter");
+  this.appConfig.toolbar.invert.classList.toggle("toggled", active);
+  this.appConfig.toolbar.invert.ariaChecked = String(active);
+  this.appConfig.viewerContainer.style.filter = active ? filter : "";
+  this.appConfig.sidebar.thumbnailView.style.filter =
+    active && AppOptions.get("cssInvertThumb") ? filter : "";
 }
 
 function onSidebarViewChanged({ view }) {

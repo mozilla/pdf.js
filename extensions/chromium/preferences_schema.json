@@ -8,6 +8,25 @@
       "enum": [0, 1, 2],
       "default": 2
     },
+    "cssInvertPage": {
+      "title": "Default brightness inversion",
+      "description": "Toggle on brightness inversion by default.",
+      "type": "boolean",
+      "default": false
+    },
+    "cssInvertThumb": {
+      "title": "Brightness invert thubnails",
+      "description": "Also apply brightness inversion for the page thubnails in the sidebar.",
+      "type": "boolean",
+      "default": true
+    },
+    "cssInvertFilter": {
+      "title": "Brightness inversion CSS filter",
+      "description": "The CSS filter used for the toggle. Available filters: 'brightness()', 'contrast()', 'grayscale()', 'invert()', 'sepia()', 'saturate()', and 'hue-rotate()'.",
+      "type": "string",
+      "pattern": "(?: *(?:brightness|contrast|grayscale|invert|sepia|saturate)\\( *(?:[+\\-]?(?:[0-9]+(?:\\.[0-9]+)?|[0-9]*\\.[0-9]+)(?:[eE][+\\-]?[0-9]+)?%? *)?\\)| *hue-rotate\\( *(?:0 *|[+\\-]?(?:[0-9]+(?:\\.[0-9]+)?|[0-9]*\\.[0-9]+)(?:[eE][+\\-]?[0-9]+)?(?:deg|g?rad|turn) *)?\\))+ *",
+      "default": "invert(90%) hue-rotate(180deg)"
+    },
     "showPreviousViewOnLoad": {
       "description": "DEPRECATED. Set viewOnLoad to 1 to disable showing the last page/position on load.",
       "type": "boolean",

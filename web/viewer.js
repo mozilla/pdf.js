@@ -44,6 +44,7 @@ function getViewerConfiguration() {
       next: document.getElementById("next"),
       zoomIn: document.getElementById("zoomInButton"),
       zoomOut: document.getElementById("zoomOutButton"),
+      invert: document.getElementById("invertButton"),
       print: document.getElementById("printButton"),
       editorFreeTextButton: document.getElementById("editorFreeTextButton"),
       editorFreeTextParamsToolbar: document.getElementById(

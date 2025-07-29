@@ -38,6 +38,8 @@ import {
  * @property {HTMLButtonElement} next - Button to go to the next page.
  * @property {HTMLButtonElement} zoomIn - Button to zoom in the pages.
  * @property {HTMLButtonElement} zoomOut - Button to zoom out the pages.
+ * @property {HTMLButtonElement} invert - Button to toggle brightness inversion
+ *   (CSS filter).
  * @property {HTMLButtonElement} editorFreeTextButton - Button to switch to
  *   FreeText editing.
  * @property {HTMLButtonElement} download - Button to download the document.
@@ -67,6 +69,16 @@ class Toolbar {
       { element: options.zoomOut, eventName: "zoomout" },
       { element: options.print, eventName: "print" },
       { element: options.download, eventName: "download" },
+      {
+        element: options.invert,
+        eventName: "invert",
+        eventDetails: {
+          get state() {
+            const { classList } = options.invert;
+            return !classList.contains("toggled");
+          },
+        },
+      },
       {
         element: options.editorFreeTextButton,
         eventName: "switchannotationeditormode",

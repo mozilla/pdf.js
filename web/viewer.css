@@ -111,6 +111,7 @@
   --toolbarButton-pageDown-icon: url(images/toolbarButton-pageDown.svg);
   --toolbarButton-zoomOut-icon: url(images/toolbarButton-zoomOut.svg);
   --toolbarButton-zoomIn-icon: url(images/toolbarButton-zoomIn.svg);
+  --toolbarButton-invert-icon: url(images/toolbarButton-invert.svg);
   --toolbarButton-presentationMode-icon: url(images/toolbarButton-presentationMode.svg);
   --toolbarButton-print-icon: url(images/toolbarButton-print.svg);
   /*#if GENERIC*/
@@ -538,6 +539,10 @@ body {
 
 #zoomInButton::before {
   mask-image: var(--toolbarButton-zoomIn-icon);
+}
+
+#invertButton::before {
+  mask-image: var(--toolbarButton-invert-icon);
 }
 
 #editorFreeTextButton::before {

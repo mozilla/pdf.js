@@ -178,6 +178,21 @@ const defaultOptions = {
     value: 0,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  cssInvertPage: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
+  cssInvertThumb: {
+    /** @type {boolean} */
+    value: true,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
+  cssInvertFilter: {
+    /** @type {string} */
+    value: "invert(90%) hue-rotate(180deg)",
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   debuggerSrc: {
     /** @type {string} */
     value: "./debugger.mjs",

@@ -105,6 +105,14 @@ Promise.all([
           "1",
           String(prefSchema.default)
         );
+      } else if (prefSchema.type === "string") {
+        renderPreference = renderStringPref(
+          prefSchema.title,
+          prefSchema.description,
+          prefName,
+          prefSchema.pattern,
+          prefSchema.default
+        );
       } else {
         // Should NEVER be reached. Only happens if a new type of preference is
         // added to the storage manifest.
@@ -208,6 +216,42 @@ function renderNumberPref(
 
   function renderPreference(value) {
     numberInput.valueAsNumber = value;
+  }
+  return renderPreference;
+}
+
+function renderStringPref(
+  shortDescription,
+  description,
+  prefName,
+  pattern,
+  placeholder
+) {
+  var wrapper = importTemplate("string-template");
+  var textInput = wrapper.querySelector("input");
+  textInput.pattern = pattern;
+  textInput.placeholder = placeholder;
+  textInput.oninput = function () {
+    textInput.setCustomValidity(
+      textInput.validity.patternMismatch
+        ? "Invalid value will not be saved!"
+        : ""
+    );
+  };
+  textInput.onchange = function () {
+    if (!textInput.reportValidity()) {
+      return;
+    }
+    var pref = {};
+    pref[prefName] = this.value;
+    storageArea.set(pref);
+  };
+  wrapper.querySelector("span").textContent = shortDescription;
+  wrapper.querySelector("label").title = description;
+  document.getElementById("settings-boxes").append(wrapper);
+
+  function renderPreference(value) {
+    textInput.value = value;
   }
   return renderPreference;
 }
