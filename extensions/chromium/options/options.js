@@ -84,9 +84,16 @@ Promise.all([
         // Unlike the renderBooleanPref branch, each preference handled by this
         // branch still needs its own template in options.html with
         // id="$prefName-template".
-        renderPreference = renderEnumPref(prefSchema.title, prefName);
+        renderPreference = renderEnumPref(
+          prefSchema.title,
+          prefSchema.description,
+          prefName
+        );
       } else if (prefName === "defaultZoomValue") {
-        renderPreference = renderDefaultZoomValue(prefSchema.title);
+        renderPreference = renderDefaultZoomValue(
+          prefSchema.title,
+          prefSchema.description
+        );
       } else {
         // Should NEVER be reached. Only happens if a new type of preference is
         // added to the storage manifest.
@@ -162,7 +169,7 @@ function renderBooleanPref(shortDescription, description, prefName) {
   return renderPreference;
 }
 
-function renderEnumPref(shortDescription, prefName) {
+function renderEnumPref(shortDescription, description, prefName) {
   var wrapper = importTemplate(prefName + "-template");
   var select = wrapper.querySelector("select");
   select.onchange = function () {
@@ -171,6 +178,7 @@ function renderEnumPref(shortDescription, prefName) {
     storageArea.set(pref);
   };
   wrapper.querySelector("span").textContent = shortDescription;
+  wrapper.querySelector("label").title = description;
   document.getElementById("settings-boxes").append(wrapper);
 
   function renderPreference(value) {
@@ -179,7 +187,7 @@ function renderEnumPref(shortDescription, prefName) {
   return renderPreference;
 }
 
-function renderDefaultZoomValue(shortDescription) {
+function renderDefaultZoomValue(shortDescription, description) {
   var wrapper = importTemplate("defaultZoomValue-template");
   var select = wrapper.querySelector("select");
   select.onchange = function () {
@@ -188,6 +196,7 @@ function renderDefaultZoomValue(shortDescription) {
     });
   };
   wrapper.querySelector("span").textContent = shortDescription;
+  wrapper.querySelector("label").title = description;
   document.getElementById("settings-boxes").append(wrapper);
 
   function renderPreference(value) {
