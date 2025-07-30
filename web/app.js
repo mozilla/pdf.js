@@ -190,6 +190,7 @@ const PDFViewerApplication = {
   _caretBrowsing: null,
   _isScrolling: false,
   editorUndoBar: null,
+  _printPermissionPromise: null,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -369,6 +370,7 @@ const PDFViewerApplication = {
         enableAutoLinking: x => x === "true",
         enableFakeMLManager: x => x === "true",
         enableGuessAltText: x => x === "true",
+        enablePermissions: x => x === "true",
         enableUpdatedAddImage: x => x === "true",
         highlightEditorColors: x => x,
         maxCanvasPixels: x => parseInt(x),
@@ -407,6 +409,7 @@ const PDFViewerApplication = {
           )
         : new EventBus();
     this.eventBus = AppOptions.eventBus = eventBus;
+
     mlManager?.setEventBus(eventBus, abortSignal);
 
     const overlayManager = (this.overlayManager = new OverlayManager());
@@ -798,9 +801,19 @@ const PDFViewerApplication = {
       });
     }
 
+    const togglePrintingButtons = visible => {
+      appConfig.toolbar?.print?.classList.toggle("hidden", !visible);
+      appConfig.secondaryToolbar?.printButton.classList.toggle(
+        "hidden",
+        !visible
+      );
+    };
     if (!this.supportsPrinting) {
-      appConfig.toolbar?.print?.classList.add("hidden");
-      appConfig.secondaryToolbar?.printButton.classList.add("hidden");
+      togglePrintingButtons(false);
+    } else {
+      eventBus.on("printingallowed", ({ isAllowed }) =>
+        togglePrintingButtons(isAllowed)
+      );
     }
 
     if (!this.supportsFullscreen) {
@@ -1334,6 +1347,25 @@ const PDFViewerApplication = {
 
   load(pdfDocument) {
     this.pdfDocument = pdfDocument;
+
+    this._printPermissionPromise = new Promise(resolve => {
+      this.eventBus.on(
+        "printingallowed",
+        ({ isAllowed }) => {
+          if (
+            typeof PDFJSDev !== "undefined" &&
+            PDFJSDev.test("MOZCENTRAL") &&
+            !isAllowed
+          ) {
+            window.print = () => {
+              console.warn("Printing is not allowed.");
+            };
+          }
+          resolve(isAllowed);
+        },
+        { once: true }
+      );
+    });
 
     pdfDocument.getDownloadInfo().then(({ length }) => {
       this._contentLength = length; // Ensure that the correct length is used.
@@ -1893,7 +1925,7 @@ const PDFViewerApplication = {
       return;
     }
 
-    if (!this.supportsPrinting) {
+    if (!this.supportsPrinting || !this.pdfViewer.printingAllowed) {
       this._otherError("pdfjs-printing-not-supported");
       return;
     }
@@ -1961,8 +1993,8 @@ const PDFViewerApplication = {
     this.pdfPresentationMode?.request();
   },
 
-  triggerPrinting() {
-    if (this.supportsPrinting) {
+  async triggerPrinting() {
+    if (this.supportsPrinting && (await this._printPermissionPromise)) {
       window.print();
     }
   },

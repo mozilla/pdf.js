@@ -254,6 +254,8 @@ class PDFViewer {
 
   #mlManager = null;
 
+  #printingAllowed = true;
+
   #scrollTimeoutId = null;
 
   #switchAnnotationEditorModeAC = null;
@@ -413,6 +415,10 @@ class PDFViewer {
       // Ensure that Fluent is connected in e.g. the COMPONENTS build.
       this.l10n.translate(this.container);
     }
+  }
+
+  get printingAllowed() {
+    return this.#printingAllowed;
   }
 
   get pagesCount() {
@@ -672,8 +678,22 @@ class PDFViewer {
       textLayerMode: this.#textLayerMode,
     };
     if (!permissions) {
+      this.#printingAllowed = true;
+      this.eventBus.dispatch("printingallowed", {
+        source: this,
+        isAllowed: this.#printingAllowed,
+      });
+
       return params;
     }
+
+    this.#printingAllowed =
+      permissions.includes(PermissionFlag.PRINT_HIGH_QUALITY) ||
+      permissions.includes(PermissionFlag.PRINT);
+    this.eventBus.dispatch("printingallowed", {
+      source: this,
+      isAllowed: this.#printingAllowed,
+    });
 
     if (
       !permissions.includes(PermissionFlag.COPY) &&
@@ -843,6 +863,8 @@ class PDFViewer {
 
       this.#annotationEditorUIManager?.destroy();
       this.#annotationEditorUIManager = null;
+
+      this.#printingAllowed = true;
     }
 
     this.pdfDocument = pdfDocument;
