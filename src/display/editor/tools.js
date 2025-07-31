@@ -637,6 +637,8 @@ class AnnotationEditorUIManager {
 
   #isEnabled = false;
 
+  #isPointerDown = false;
+
   #isWaiting = false;
 
   #keyboardManagerAC = null;
@@ -856,6 +858,20 @@ class AnnotationEditorUIManager {
       "switchannotationeditorparams",
       evt => this.updateParams(evt.type, evt.value),
       { signal }
+    );
+    window.addEventListener(
+      "pointerdown",
+      () => {
+        this.#isPointerDown = true;
+      },
+      { capture: true, signal }
+    );
+    window.addEventListener(
+      "pointerup",
+      () => {
+        this.#isPointerDown = false;
+      },
+      { capture: true, signal }
     );
     this.#addSelectionListener();
     this.#addDragAndDropListeners();
@@ -1299,22 +1315,30 @@ class AnnotationEditorUIManager {
           : null;
       activeLayer?.toggleDrawing();
 
-      const ac = new AbortController();
-      const signal = this.combinedSignal(ac);
+      if (this.#isPointerDown) {
+        const ac = new AbortController();
+        const signal = this.combinedSignal(ac);
 
-      const pointerup = e => {
-        if (e.type === "pointerup" && e.button !== 0) {
-          // Do nothing on right click.
-          return;
-        }
-        ac.abort();
+        const pointerup = e => {
+          if (e.type === "pointerup" && e.button !== 0) {
+            // Do nothing on right click.
+            return;
+          }
+          ac.abort();
+          activeLayer?.toggleDrawing(true);
+          if (e.type === "pointerup") {
+            this.#onSelectEnd("main_toolbar");
+          }
+        };
+        window.addEventListener("pointerup", pointerup, { signal });
+        window.addEventListener("blur", pointerup, { signal });
+      } else {
+        // Here neither the shift key nor the pointer is down and we've
+        // something in the selection: we can be in the case where the user is
+        // using a screen reader (see bug 1976597).
         activeLayer?.toggleDrawing(true);
-        if (e.type === "pointerup") {
-          this.#onSelectEnd("main_toolbar");
-        }
-      };
-      window.addEventListener("pointerup", pointerup, { signal });
-      window.addEventListener("blur", pointerup, { signal });
+        this.#onSelectEnd("main_toolbar");
+      }
     }
   }
 
