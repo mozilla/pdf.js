@@ -386,24 +386,46 @@ class AlternateCS extends ColorSpace {
       : new Uint8ClampedArray(baseNumComps * count);
     const numComps = this.numComps;
 
+    const tintCache = new Map();
+    // Use an integer cache-key when possible, since that's a lot faster than
+    // string concatenation.
+    const int32Key =
+      numComps <= 4 &&
+      (src instanceof Uint8Array || src instanceof Uint8ClampedArray);
+
     const scaled = new Float32Array(numComps);
     const tinted = new Float32Array(baseNumComps);
-    let i, j;
+    let i, j, key, val;
 
     for (i = 0; i < count; i++) {
+      key = int32Key ? 0 : "";
+
       for (j = 0; j < numComps; j++) {
-        scaled[j] = src[srcOffset++] * scale;
+        val = src[srcOffset++];
+        scaled[j] = val * scale;
+
+        key += int32Key ? val << (8 * j) : val + "_";
       }
-      tintFn(scaled, 0, tinted, 0);
-      if (usesZeroToOneRange) {
-        for (j = 0; j < baseNumComps; j++) {
-          baseBuf[pos++] = tinted[j] * 255;
-        }
-      } else {
-        base.getRgbItem(tinted, 0, baseBuf, pos);
+
+      const cached = tintCache.get(key);
+      if (cached) {
+        baseBuf.set(cached, pos);
         pos += baseNumComps;
+      } else {
+        tintFn(scaled, 0, tinted, 0);
+
+        if (usesZeroToOneRange) {
+          for (j = 0; j < baseNumComps; j++) {
+            baseBuf[pos++] = tinted[j] * 255;
+          }
+        } else {
+          base.getRgbItem(tinted, 0, baseBuf, pos);
+          pos += baseNumComps;
+        }
+        tintCache.set(key, baseBuf.slice(pos - baseNumComps, pos));
       }
     }
+    tintCache.clear();
 
     if (!isPassthrough) {
       base.getRgbBuffer(baseBuf, 0, count, dest, destOffset, 8, alpha01);
