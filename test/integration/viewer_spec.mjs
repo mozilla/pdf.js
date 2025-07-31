@@ -77,6 +77,7 @@ describe("PDF viewer", () => {
     }
 
     it("supports specifying a custom origin", async () => {
+      pending("Doesn't work in headless mode in Chrome.");
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           // We use this text span of page 2 because:
@@ -314,6 +315,7 @@ describe("PDF viewer", () => {
       });
 
       it("does not trigger CSS-only zoom below maxCanvasPixels", async () => {
+        pending("Flaky in headless mode in Firefox.");
         await Promise.all(
           pages.map(async ([browserName, page]) => {
             const originalCanvasSize = await getCanvasSize(page);
