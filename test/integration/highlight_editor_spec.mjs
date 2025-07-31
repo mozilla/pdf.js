@@ -2801,4 +2801,61 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Highlight the selection but without a mouse or a keyboard", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        { highlightEditorColors: "red=#AB0000" }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must highlight with red color", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          await page.evaluate(() => {
+            // Take the first span which contains "Trace-based Just-in-Time..."
+            const root = document.querySelector(
+              ".page[data-page-number='1'] > .textLayer"
+            );
+            const iter = document.createNodeIterator(
+              root,
+              NodeFilter.SHOW_TEXT
+            );
+            const textnode = iter.nextNode();
+            const selection = document.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(textnode);
+            selection.removeAllRanges();
+            selection.addRange(range);
+          });
+
+          await page.waitForSelector(`${getEditorSelector(0)}`);
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] svg.highlightOutline.selected`
+          );
+
+          const usedColor = await page.evaluate(() => {
+            const highlight = document.querySelector(
+              `.page[data-page-number = "1"] .canvasWrapper > svg.highlight`
+            );
+            return highlight.getAttribute("fill");
+          });
+
+          expect(usedColor).withContext(`In ${browserName}`).toEqual("#AB0000");
+        })
+      );
+    });
+  });
 });
