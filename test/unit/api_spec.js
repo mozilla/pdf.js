@@ -878,6 +878,21 @@ describe("api", function () {
 
       await loadingTask.destroy();
     });
+
+    it("should not prompt for password if only attachments are encrypted and there are none", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue20049.pdf"));
+      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+
+      loadingTask.onPassword = function (callback, reason) {
+        if (reason === PasswordResponses.NEED_PASSWORD) {
+          expect(false).toEqual(true);
+          throw new Error("Should not prompt for password.");
+        }
+      };
+
+      const pdfDocument = await loadingTask.promise;
+      expect(pdfDocument.numPages).toBeGreaterThan(0);
+    });
   });
 
   describe("PDFWorker", function () {
