@@ -8752,6 +8752,14 @@
     }
   },
   {
+    "id": "issue20049",
+    "file": "pdfs/issue20049.pdf",
+    "md5": "1cdfde56be6b070e0c18aafc487d92ff",
+    "rounds": 1,
+    "link": true,
+    "type": "eq"
+  },
+  {
     "id": "bug1778692",
     "file": "pdfs/bug1778692.pdf",
     "md5": "8855414caaa04fbbdfad1545d1c8a8ae",
