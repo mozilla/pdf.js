@@ -920,7 +920,8 @@ class Driver {
               renderPrint = false,
               renderXfa = false,
               annotationCanvasMap = null,
-              pageColors = null;
+              pageColors = null,
+              partialCrop = null;
 
             if (task.annotationStorage) {
               task.pdfDoc.annotationStorage._setValues(task.annotationStorage);
@@ -968,10 +969,14 @@ class Driver {
               textLayerCanvas = null;
               // We fetch the `eq` specific test subtypes here, to avoid
               // accidentally changing the behaviour for other types of tests.
-              renderAnnotations = !!task.annotations;
-              renderForms = !!task.forms;
-              renderPrint = !!task.print;
-              renderXfa = !!task.enableXfa;
+
+              partialCrop = task.partial;
+              if (!partialCrop) {
+                renderAnnotations = !!task.annotations;
+                renderForms = !!task.forms;
+                renderPrint = !!task.print;
+                renderXfa = !!task.enableXfa;
+              }
               pageColors = task.pageColors || null;
 
               // Render the annotation layer if necessary.
@@ -1031,6 +1036,9 @@ class Driver {
               }
               renderContext.intent = "print";
             }
+            if (partialCrop) {
+              renderContext.recordOperations = true;
+            }
 
             const completeRender = error => {
               // if text layer is present, compose it on top of the page
@@ -1061,7 +1069,7 @@ class Driver {
               this._snapshot(task, error);
             };
             initPromise
-              .then(data => {
+              .then(async data => {
                 const renderTask = page.render(renderContext);
 
                 if (task.renderTaskOnContinue) {
@@ -1070,26 +1078,122 @@ class Driver {
                     setTimeout(cont, RENDER_TASK_ON_CONTINUE_DELAY);
                   };
                 }
-                return renderTask.promise.then(() => {
-                  if (annotationCanvasMap) {
-                    Rasterize.annotationLayer(
-                      annotationLayerContext,
-                      viewport,
-                      outputScale,
-                      data,
-                      annotationCanvasMap,
-                      task.pdfDoc.annotationStorage,
-                      task.fieldObjects,
-                      page,
-                      IMAGE_RESOURCES_PATH,
-                      renderForms
-                    ).then(() => {
-                      completeRender(false);
-                    });
-                  } else {
-                    completeRender(false);
+                await renderTask.promise;
+
+                if (partialCrop) {
+                  const clearOutsidePartial = () => {
+                    const { width, height } = ctx.canvas;
+                    // Everything above the partial area
+                    ctx.clearRect(
+                      0,
+                      0,
+                      width,
+                      Math.ceil(partialCrop.minY * height)
+                    );
+                    // Everything below the partial area
+                    ctx.clearRect(
+                      0,
+                      Math.floor(partialCrop.maxY * height),
+                      width,
+                      height
+                    );
+                    // Everything to the left of the partial area
+                    ctx.clearRect(
+                      0,
+                      0,
+                      Math.ceil(partialCrop.minX * width),
+                      height
+                    );
+                    // Everything to the right of the partial area
+                    ctx.clearRect(
+                      Math.floor(partialCrop.maxX * width),
+                      0,
+                      width,
+                      height
+                    );
+                  };
+
+                  clearOutsidePartial();
+                  const baseline = ctx.canvas.toDataURL("image/png");
+                  this._clearCanvas();
+
+                  const filteredIndexes = new Set();
+
+                  // TODO: This logic is copy-psated from PDFPageDetailView.
+                  // We should export it instead, because even though it's
+                  // not the core logic of partial rendering it is still
+                  // relevant
+                  const recordedGroups = page.recordedGroups;
+                  for (let i = 0, ii = recordedGroups.length; i < ii; i++) {
+                    const group = recordedGroups[i];
+                    if (
+                      group.minX <= partialCrop.maxX &&
+                      group.maxX >= partialCrop.minX &&
+                      group.minY <= partialCrop.maxY &&
+                      group.maxY >= partialCrop.minY
+                    ) {
+                      filteredIndexes.add(group.idx);
+                      group.dependencies.forEach(
+                        filteredIndexes.add,
+                        filteredIndexes
+                      );
+                    }
                   }
-                });
+
+                  const partialRenderContext = {
+                    canvasContext: ctx,
+                    viewport,
+                    optionalContentConfigPromise:
+                      task.optionalContentConfigPromise,
+                    annotationCanvasMap,
+                    pageColors,
+                    transform,
+                    recordOperations: false,
+                    filteredOperationIndexes: filteredIndexes,
+                  };
+
+                  const partialRenderTask = page.render(partialRenderContext);
+                  await partialRenderTask.promise;
+
+                  clearOutsidePartial();
+
+                  if (page.stats) {
+                    // Get the page stats *before* running cleanup.
+                    task.stats = page.stats;
+                  }
+                  page.cleanup(/* resetStats = */ true);
+                  this._snapshot(
+                    task,
+                    false,
+                    // Sometimes the optimized version does not match the
+                    // baseline. Tests marked as "knownPartialMismatch" have
+                    // been manually verified to be good enough (e.g. there is
+                    // one pixel of a very slightly different shade), so we
+                    // avoid compating them to the non-optimized version and
+                    // instead use the optimized version also for makeref.
+                    task.knownPartialMismatch ? null : baseline
+                  );
+                  return;
+                }
+
+                if (annotationCanvasMap) {
+                  Rasterize.annotationLayer(
+                    annotationLayerContext,
+                    viewport,
+                    outputScale,
+                    data,
+                    annotationCanvasMap,
+                    task.pdfDoc.annotationStorage,
+                    task.fieldObjects,
+                    page,
+                    IMAGE_RESOURCES_PATH,
+                    renderForms
+                  ).then(() => {
+                    completeRender(false);
+                  });
+                } else {
+                  completeRender(false);
+                }
               })
               .catch(function (error) {
                 completeRender("render : " + error);
@@ -1112,11 +1216,16 @@ class Driver {
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
-  _snapshot(task, failure) {
+  _snapshot(task, failure, baselineDataUrl = null) {
     this._log("Snapshotting... ");
 
     const dataUrl = this.canvas.toDataURL("image/png");
-    this._sendResult(dataUrl, task, failure).then(() => {
+
+    if (baselineDataUrl && baselineDataUrl !== dataUrl) {
+      failure ||= "Optimized rendering differs from full rendering.";
+    }
+
+    this._sendResult(dataUrl, task, failure, baselineDataUrl).then(() => {
       this._log(
         "done" + (failure ? " (failed !: " + failure + ")" : "") + "\n"
       );
@@ -1170,7 +1279,7 @@ class Driver {
     }
   }
 
-  _sendResult(snapshot, task, failure) {
+  _sendResult(snapshot, task, failure, baselineSnapshot = null) {
     const result = JSON.stringify({
       browser: this.browser,
       id: task.id,
@@ -1181,6 +1290,7 @@ class Driver {
       round: task.round,
       page: task.pageNum,
       snapshot,
+      baselineSnapshot,
       stats: task.stats.times,
       viewportWidth: task.viewportWidth,
       viewportHeight: task.viewportHeight,

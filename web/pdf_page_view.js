@@ -538,6 +538,8 @@ class PDFPageView extends BasePDFPageView {
     keepCanvasWrapper = false,
     preserveDetailViewState = false,
   } = {}) {
+    const keepPdfBugGroups = this.pdfPage?._pdfBug ?? false;
+
     this.cancelRendering({
       keepAnnotationLayer,
       keepAnnotationEditorLayer,
@@ -565,6 +567,9 @@ class PDFPageView extends BasePDFPageView {
         case textLayerNode:
         case canvasWrapperNode:
           continue;
+      }
+      if (keepPdfBugGroups && node.classList.contains("pdfBugGroupsLayer")) {
+        continue;
       }
       node.remove();
       const layerIndex = this.#layers.indexOf(node);
@@ -920,6 +925,7 @@ class PDFPageView extends BasePDFPageView {
       annotationCanvasMap: this._annotationCanvasMap,
       pageColors: this.pageColors,
       isEditing: this.#isEditing,
+      recordOperations: !this.recordOperations,
     };
   }
 
