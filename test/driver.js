@@ -1132,7 +1132,7 @@ class Driver {
                       group.minY <= partialCrop.maxY &&
                       group.maxY >= partialCrop.minY
                     ) {
-                      filteredIndexes.add(group.data.idx);
+                      filteredIndexes.add(group.idx);
                       group.dependencies.forEach(
                         filteredIndexes.add,
                         filteredIndexes

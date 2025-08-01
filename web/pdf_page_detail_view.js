@@ -216,7 +216,7 @@ class PDFPageDetailView extends BasePDFPageView {
         group.minY <= detailMaxY &&
         group.maxY >= detailMinY
       ) {
-        filteredIndexes.add(group.data.idx);
+        filteredIndexes.add(group.idx);
         group.dependencies.forEach(filteredIndexes.add, filteredIndexes);
       }
     }

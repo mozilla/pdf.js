@@ -475,7 +475,7 @@ class CanvasDependencyTracker {
           minY: (bbox?.minY ?? 0) / this.#canvasHeight,
           maxY: (bbox?.maxY ?? this.#canvasHeight) / this.#canvasHeight,
           dependencies: Array.from(dependencies).sort((a, b) => a - b),
-          data: { idx },
+          idx,
         };
       }
     );
