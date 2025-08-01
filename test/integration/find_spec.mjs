@@ -149,4 +149,32 @@ describe("find bar", () => {
       );
     });
   });
+
+  describe("scrolls to the search result text for smaller viewports", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".textLayer", 100);
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must scroll to the search result text", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          // Set a smaller viewport to simulate a mobile device
+          await page.setViewport({ width: 350, height: 600 });
+          await page.click("#viewFindButton");
+          await page.waitForSelector("#findInput", { visible: true });
+          await page.type("#findInput", "productivity");
+
+          const highlight = await page.waitForSelector(".textLayer .highlight");
+
+          expect(await highlight.isIntersectingViewport()).toBeTrue();
+        })
+      );
+    });
+  });
 });

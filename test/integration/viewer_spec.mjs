@@ -1355,4 +1355,57 @@ describe("PDF viewer", () => {
       );
     });
   });
+
+  describe("Pinch-zoom", () => {
+    let pages;
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        `.page[data-page-number = "1"] .endOfContent`
+      );
+    });
+    it("keeps the content under the pinch centre fixed on the screen", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          if (browserName === "firefox") {
+            // Firefox does not support touch events on devices
+            // with no touch screen.
+            return;
+          }
+
+          const rect = await getSpanRectFromText(page, 1, "type-stable");
+          const originX = rect.x + rect.width / 2;
+          const originY = rect.y + rect.height / 2;
+          const rendered = await createPromise(page, resolve => {
+            const cb = e => {
+              if (e.pageNumber === 1) {
+                window.PDFViewerApplication.eventBus.off(
+                  "textlayerrendered",
+                  cb
+                );
+                resolve();
+              }
+            };
+            window.PDFViewerApplication.eventBus.on("textlayerrendered", cb);
+          });
+          const client = await page.target().createCDPSession();
+          await client.send("Input.synthesizePinchGesture", {
+            x: originX,
+            y: originY,
+            scaleFactor: 3,
+            gestureSourceType: "touch",
+          });
+          await awaitPromise(rendered);
+          const spanHandle = await page.evaluateHandle(() =>
+            Array.from(
+              document.querySelectorAll(
+                '.page[data-page-number="1"] .textLayer span'
+              )
+            ).find(span => span.textContent.includes("type-stable"))
+          );
+          expect(await spanHandle.isIntersectingViewport()).toBeTrue();
+        })
+      );
+    });
+  });
 });
