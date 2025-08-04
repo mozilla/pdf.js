@@ -36,6 +36,8 @@ class BasePDFPageView {
   /** @type {null | HTMLDivElement} */
   div = null;
 
+  enableOptimizedPartialRendering = false;
+
   eventBus = null;
 
   id = null;
@@ -55,6 +57,8 @@ class BasePDFPageView {
     this.id = options.id;
     this.pageColors = options.pageColors || null;
     this.renderingQueue = options.renderingQueue;
+    this.enableOptimizedPartialRendering =
+      options.enableOptimizedPartialRendering ?? false;
     this.#minDurationToUpdateCanvas = options.minDurationToUpdateCanvas ?? 500;
   }
 
@@ -230,7 +234,9 @@ class BasePDFPageView {
       // triggering this callback.
       if (renderTask === this.renderTask) {
         this.renderTask = null;
-        this.recordedGroups ??= renderTask.recordedGroups;
+        if (this.enableOptimizedPartialRendering) {
+          this.recordedGroups ??= renderTask.recordedGroups;
+        }
       }
     }
     this.renderingState = RenderingStates.FINISHED;

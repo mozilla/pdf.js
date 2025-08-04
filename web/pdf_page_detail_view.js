@@ -190,7 +190,7 @@ class PDFPageDetailView extends BasePDFPageView {
     const baseContext = this.pageView._getRenderingContext(canvas, transform);
     const recordedGroups = this.pdfPage.recordedGroups;
 
-    if (!recordedGroups) {
+    if (!recordedGroups || !this.enableOptimizedPartialRendering) {
       return { ...baseContext, recordOperations: false };
     }
 

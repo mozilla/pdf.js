@@ -531,6 +531,9 @@ const PDFViewerApplication = {
       capCanvasAreaFactor,
       enableDetailCanvas: AppOptions.get("enableDetailCanvas"),
       enablePermissions: AppOptions.get("enablePermissions"),
+      enableOptimizedPartialRendering: AppOptions.get(
+        "enableOptimizedPartialRendering"
+      ),
       pageColors,
       mlManager,
       abortSignal,

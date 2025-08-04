@@ -1486,10 +1486,13 @@ class PDFPageProxy {
       intentState.renderTasks.delete(internalRenderTask);
 
       if (shouldRecordOperations) {
-        if (internalRenderTask.gfx) {
-          this.recordedGroups = internalRenderTask.gfx.dependencyTracker.take();
+        const recordedGroups = internalRenderTask.gfx?.dependencyTracker.take();
+        if (recordedGroups) {
           internalRenderTask.stepper?.setOperatorGroups(this.recordedGroups);
-        } else {
+          if (recordOperations) {
+            this.recordedGroups = recordedGroups;
+          }
+        } else if (recordOperations) {
           this.recordedGroups = [];
         }
       }
