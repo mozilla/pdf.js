@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
+import { FeatureTest, isNodeJS } from "../../src/shared/util.js";
 import { buildGetDocumentParams } from "./test_utils.js";
 import { getDocument } from "../../src/display/api.js";
-import { isNodeJS } from "../../src/shared/util.js";
 import { TextLayer } from "../../src/display/text_layer.js";
 
 describe("textLayer", function () {
@@ -249,5 +249,22 @@ describe("textLayer", function () {
     expect(transform2).toEqual(serialTransform2);
 
     await loadingTask.destroy();
+  });
+
+  it("should use Calibri and Lucida Console on Windows with Firefox", async function () {
+    spyOnProperty(FeatureTest, "platform", "get").and.returnValue({
+      isWindows: true,
+      isFirefox: true,
+    });
+
+    const fontFamilyMap = TextLayer.fontFamilyMap;
+    const expectedSansSerif = "Calibri, sans-serif";
+    const expectedMonospace = "Lucida Console, monospace";
+
+    const actualSansSerif = fontFamilyMap.get("sans-serif");
+    const actualMonospace = fontFamilyMap.get("monospace");
+
+    expect(actualSansSerif).toBe(expectedSansSerif);
+    expect(actualMonospace).toBe(expectedMonospace);
   });
 });
