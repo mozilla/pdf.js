@@ -1182,16 +1182,16 @@ class PDFDocumentProxy {
  * Page render parameters.
  *
  * @typedef {Object} RenderParameters
- * @property {CanvasRenderingContext2D} canvasContext - 2D context of a DOM
- *   Canvas object for backwards compatibility; it is recommended to use the
- *   `canvas` parameter instead.
- *   If the context must absolutely be used to render the page, the canvas must
- *   be null.
  * @property {HTMLCanvasElement|null} canvas - A DOM Canvas object. The default
  *   value is the canvas associated with the `canvasContext` parameter if no
  *   value is provided explicitly.
  * @property {PageViewport} viewport - Rendering viewport obtained by calling
  *   the `PDFPageProxy.getViewport` method.
+ * @property {CanvasRenderingContext2D} [canvasContext] - 2D context of a DOM
+ *   Canvas object for backwards compatibility; it is recommended to use the
+ *   `canvas` parameter instead.
+ *   If the context must absolutely be used to render the page, the canvas must
+ *   be null.
  * @property {string} [intent] - Rendering intent, can be 'display', 'print',
  *   or 'any'. The default value is 'display'.
  * @property {number} [annotationMode] Controls which annotations are rendered
