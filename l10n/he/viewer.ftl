@@ -302,9 +302,13 @@ pdfjs-web-fonts-disabled = גופני רשת מנוטרלים: לא ניתן ל�
 
 pdfjs-editor-free-text-button =
     .title = טקסט
+pdfjs-editor-color-picker-free-text-input =
+    .title = שינוי צבע הטקסט
 pdfjs-editor-free-text-button-label = טקסט
 pdfjs-editor-ink-button =
     .title = ציור
+pdfjs-editor-color-picker-ink-input =
+    .title = שינוי צבע הציור
 pdfjs-editor-ink-button-label = ציור
 pdfjs-editor-stamp-button =
     .title = הוספה או עריכת תמונות
@@ -316,6 +320,10 @@ pdfjs-highlight-floating-button1 =
     .title = סימון
     .aria-label = סימון
 pdfjs-highlight-floating-button-label = סימון
+pdfjs-comment-floating-button =
+    .title = הערה
+    .aria-label = הערה
+pdfjs-comment-floating-button-label = הערה
 pdfjs-editor-signature-button =
     .title = הוספת חתימה
 pdfjs-editor-signature-button-label = הוספת חתימה
@@ -600,6 +608,8 @@ pdfjs-editor-add-signature-save-checkbox = שמירת החתימה
 pdfjs-editor-add-signature-save-warning-message = הגעת למגבלה של 5 חתימות שמורות. יש להסיר אחד כדי לשמור עוד.
 pdfjs-editor-add-signature-image-upload-error-title = לא ניתן להעלות את התמונה
 pdfjs-editor-add-signature-image-upload-error-description = נא לבדוק את החיבור שלך לרשת או לנסות תמונה אחרת.
+pdfjs-editor-add-signature-image-no-data-error-title = לא ניתן להמיר את התמונה הזו לחתימה
+pdfjs-editor-add-signature-image-no-data-error-description = נא לנסות להעלות תמונה אחרת.
 pdfjs-editor-add-signature-error-close-button = סגירה
 
 ## Dialog buttons
@@ -607,6 +617,26 @@ pdfjs-editor-add-signature-error-close-button = סגירה
 pdfjs-editor-add-signature-cancel-button = ביטול
 pdfjs-editor-add-signature-add-button = הוספה
 pdfjs-editor-edit-signature-update-button = עדכון
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = פעולות
+pdfjs-editor-edit-comment-actions-button =
+    .title = פעולות
+pdfjs-editor-edit-comment-close-button-label = סגירה
+pdfjs-editor-edit-comment-close-button =
+    .title = סגירה
+pdfjs-editor-edit-comment-actions-edit-button-label = עריכה
+pdfjs-editor-edit-comment-actions-delete-button-label = מחיקה
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = נא להכניס את ההערה שלך
+pdfjs-editor-edit-comment-manager-cancel-button = ביטול
+pdfjs-editor-edit-comment-manager-save-button = שמירה
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = עריכת הערה
 
 ## Main menu for adding/removing signatures
 

@@ -185,7 +185,7 @@ pdfjs-toggle-sidebar-notification-button =
 pdfjs-toggle-sidebar-button-label = Comută bara laterală
 pdfjs-document-outline-button =
     .title = Afișează schița documentului (dublu-clic pentru a extinde/restrânge toate elementele)
-pdfjs-document-outline-button-label = Schița documentului
+pdfjs-document-outline-button-label = Schiță a documentului
 pdfjs-attachments-button =
     .title = Afișează atașamentele
 pdfjs-attachments-button-label = Atașamente
@@ -195,6 +195,9 @@ pdfjs-layers-button-label = Straturi
 pdfjs-thumbs-button =
     .title = Afișează miniaturi
 pdfjs-thumbs-button-label = Miniaturi
+pdfjs-current-outline-item-button =
+    .title = Găsește elementul pe schița actuală
+pdfjs-current-outline-item-button-label = Element al schiței actuale
 pdfjs-findbar-button =
     .title = Caută în document
 pdfjs-findbar-button-label = Caută
@@ -301,9 +304,13 @@ pdfjs-web-fonts-disabled = Fonturile web sunt dezactivate: nu se pot folosi font
 
 pdfjs-editor-free-text-button =
     .title = Text
+pdfjs-editor-color-picker-free-text-input =
+    .title = Schimbă culoarea textului
 pdfjs-editor-free-text-button-label = Text
 pdfjs-editor-ink-button =
     .title = Desenează
+pdfjs-editor-color-picker-ink-input =
+    .title = Schimbă culoarea de desen
 pdfjs-editor-ink-button-label = Desenează
 pdfjs-editor-stamp-button =
     .title = Adaugă sau editează imagini
@@ -315,6 +322,10 @@ pdfjs-highlight-floating-button1 =
     .title = Evidențiază
     .aria-label = Evidențiere
 pdfjs-highlight-floating-button-label = Evidențiază
+pdfjs-comment-floating-button =
+    .title = Comentează
+    .aria-label = Comentariu
+pdfjs-comment-floating-button-label = Comentează
 pdfjs-editor-signature-button =
     .title = Adaugă semnătură
 pdfjs-editor-signature-button-label = Adaugă semnătură
@@ -454,6 +465,75 @@ pdfjs-editor-colorpicker-pink =
 pdfjs-editor-colorpicker-red =
     .title = Roșu
 
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Afișează tot
+pdfjs-editor-highlight-show-all-button =
+    .title = Afișează tot
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+# Modal header positioned above a text box where users can edit the alt text.
+pdfjs-editor-new-alt-text-dialog-edit-label = Editează textul alternativ (descrierea imaginii)
+# Modal header positioned above a text box where users can add the alt text.
+pdfjs-editor-new-alt-text-dialog-add-label = Adaugă text alternativ (descrierea imaginii)
+pdfjs-editor-new-alt-text-textarea =
+    .placeholder = Scrie descrierea aici...
+# This text refers to the alt text box above this description. It offers a definition of alt text.
+pdfjs-editor-new-alt-text-description = Scurtă descriere pentru cei care nu pot vedea imaginea sau pentru când nu se încarcă imaginea.
+# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
+pdfjs-editor-new-alt-text-disclaimer1 = Acest text alternativ a fost creat automat și este posibil să nu fie exact.
+pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Află mai multe
+pdfjs-editor-new-alt-text-create-automatically-button-label = Creează automat texte alternative
+pdfjs-editor-new-alt-text-not-now-button = Nu acum
+pdfjs-editor-new-alt-text-error-title = Nu s-a putut crea automat textul alternativ
+pdfjs-editor-new-alt-text-error-description = Te rugăm să scrii propriul text alternativ sau să încerci din nou mai târziu.
+pdfjs-editor-new-alt-text-error-close-button = Închide
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+#   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = Se descarcă modelul IA de text alternativ ({ $downloadedSize } de { $totalSize } MB)
+    .aria-valuetext = Se descarcă modelul IA de text alternativ ({ $downloadedSize } de { $totalSize } MB)
+# This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button =
+    .aria-label = Text alternativ adăugat
+pdfjs-editor-new-alt-text-added-button-label = Text alternativ adăugat
+# This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button =
+    .aria-label = Text alternativ lipsă
+pdfjs-editor-new-alt-text-missing-button-label = Text alternativ lipsă
+# This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button =
+    .aria-label = Revizuiește textul alternativ
+pdfjs-editor-new-alt-text-to-review-button-label = Revizuiește textul alternativ
+# "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
+# Variables:
+#   $generatedAltText (String) - the generated alt-text.
+pdfjs-editor-new-alt-text-generated-alt-text-with-disclaimer = Creat automat: { $generatedAltText }
+
+## Image alt-text settings
+
+pdfjs-image-alt-text-settings-button =
+    .title = Setări text alternativ imagini
+pdfjs-image-alt-text-settings-button-label = Setări text alternativ imagini
+pdfjs-editor-alt-text-settings-dialog-label = Setări text alternativ imagini
+pdfjs-editor-alt-text-settings-automatic-title = Text alternativ automat
+pdfjs-editor-alt-text-settings-create-model-button-label = Creează automat texte alternative
+pdfjs-editor-alt-text-settings-create-model-description = Sugerează descrieri ca să îi ajuți pe cei care nu pot vedea imaginea sau pentru când nu se încarcă imaginea.
+# Variables:
+#   $totalSize (Number) - the total size (in MB) of the AI model.
+pdfjs-editor-alt-text-settings-download-model-label = Model IA de text alternativ ({ $totalSize } MB)
+pdfjs-editor-alt-text-settings-ai-model-description = Rulează local pe dispozitiv, deci datele tale rămân private. Necesar pentru text alternativ automat.
+pdfjs-editor-alt-text-settings-delete-model-button = Șterge
+pdfjs-editor-alt-text-settings-download-model-button = Descarcă
+pdfjs-editor-alt-text-settings-downloading-model-button = Se descarcă…
+pdfjs-editor-alt-text-settings-editor-title = Editor de text alternativ
+pdfjs-editor-alt-text-settings-show-dialog-button-label = Afișează editorul de text alternativ imediat când adaugi o imagine
+pdfjs-editor-alt-text-settings-show-dialog-description = Te ajută să te asiguri că toate imaginile au text alternativ.
+pdfjs-editor-alt-text-settings-close-button = Închide
+
 ## Accessibility labels (announced by screen readers) for objects added to the editor.
 
 pdfjs-editor-highlight-added-alert = Evidențiere adăugată
@@ -464,6 +544,9 @@ pdfjs-editor-signature-added-alert = Semnătură adăugată
 
 ## "Annotations removed" bar
 
+pdfjs-editor-undo-bar-message-highlight = Evidențiere eliminată
+pdfjs-editor-undo-bar-message-freetext = Text eliminat
+pdfjs-editor-undo-bar-message-ink = Desen eliminat
 pdfjs-editor-undo-bar-message-stamp = Imagine eliminată
 pdfjs-editor-undo-bar-message-signature = Semnătură eliminată
 # Variables:
@@ -528,6 +611,8 @@ pdfjs-editor-add-signature-save-checkbox = Salvează semnătura
 pdfjs-editor-add-signature-save-warning-message = Ai atins limita de 5 semnături salvate. Elimină una dacă vrei să salvezi alta.
 pdfjs-editor-add-signature-image-upload-error-title = Imaginea nu a putut fi încărcată
 pdfjs-editor-add-signature-image-upload-error-description = Verifică-ți conexiunea la rețea sau încearcă cu o altă imagine.
+pdfjs-editor-add-signature-image-no-data-error-title = Imaginea nu poate fi convertită în semnătură
+pdfjs-editor-add-signature-image-no-data-error-description = Încearcă să încarci altă imagine.
 pdfjs-editor-add-signature-error-close-button = Închide
 
 ## Dialog buttons
@@ -535,6 +620,26 @@ pdfjs-editor-add-signature-error-close-button = Închide
 pdfjs-editor-add-signature-cancel-button = Anulează
 pdfjs-editor-add-signature-add-button = Adaugă
 pdfjs-editor-edit-signature-update-button = Actualizează
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Acțiuni
+pdfjs-editor-edit-comment-actions-button =
+    .title = Acțiuni
+pdfjs-editor-edit-comment-close-button-label = Închide
+pdfjs-editor-edit-comment-close-button =
+    .title = Închide
+pdfjs-editor-edit-comment-actions-edit-button-label = Editează
+pdfjs-editor-edit-comment-actions-delete-button-label = Șterge
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Introdu comentariul
+pdfjs-editor-edit-comment-manager-cancel-button = Anulează
+pdfjs-editor-edit-comment-manager-save-button = Salvează
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Editează comentariul
 
 ## Main menu for adding/removing signatures
 

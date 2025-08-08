@@ -302,9 +302,13 @@ pdfjs-web-fonts-disabled = Webbtypsnitt är inaktiverade: kan inte använda inb�
 
 pdfjs-editor-free-text-button =
     .title = Text
+pdfjs-editor-color-picker-free-text-input =
+    .title = Ändra textfärg
 pdfjs-editor-free-text-button-label = Text
 pdfjs-editor-ink-button =
     .title = Rita
+pdfjs-editor-color-picker-ink-input =
+    .title = Ändra ritningsfärg
 pdfjs-editor-ink-button-label = Rita
 pdfjs-editor-stamp-button =
     .title = Lägg till eller redigera bilder
@@ -316,6 +320,10 @@ pdfjs-highlight-floating-button1 =
     .title = Markera
     .aria-label = Markera
 pdfjs-highlight-floating-button-label = Markera
+pdfjs-comment-floating-button =
+    .title = Kommentar
+    .aria-label = Kommentar
+pdfjs-comment-floating-button-label = Kommentar
 pdfjs-editor-signature-button =
     .title = Lägg till signatur
 pdfjs-editor-signature-button-label = Lägg till signatur
@@ -600,6 +608,8 @@ pdfjs-editor-add-signature-save-checkbox = Spara signatur
 pdfjs-editor-add-signature-save-warning-message = Du har nått gränsen på 5 sparade signaturer. Ta bort en för att spara fler.
 pdfjs-editor-add-signature-image-upload-error-title = Det gick inte att ladda upp bilden
 pdfjs-editor-add-signature-image-upload-error-description = Kontrollera din nätverksanslutning eller försök med en annan bild.
+pdfjs-editor-add-signature-image-no-data-error-title = Det går inte att konvertera den här bilden till en signatur
+pdfjs-editor-add-signature-image-no-data-error-description = Prova att ladda upp en annan bild.
 pdfjs-editor-add-signature-error-close-button = Stäng
 
 ## Dialog buttons
@@ -607,6 +617,26 @@ pdfjs-editor-add-signature-error-close-button = Stäng
 pdfjs-editor-add-signature-cancel-button = Avbryt
 pdfjs-editor-add-signature-add-button = Lägg till
 pdfjs-editor-edit-signature-update-button = Uppdatera
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Åtgärder
+pdfjs-editor-edit-comment-actions-button =
+    .title = Åtgärder
+pdfjs-editor-edit-comment-close-button-label = Stäng
+pdfjs-editor-edit-comment-close-button =
+    .title = Stäng
+pdfjs-editor-edit-comment-actions-edit-button-label = Redigera
+pdfjs-editor-edit-comment-actions-delete-button-label = Ta bort
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Ange din kommentar
+pdfjs-editor-edit-comment-manager-cancel-button = Avbryt
+pdfjs-editor-edit-comment-manager-save-button = Spara
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Redigera kommentar
 
 ## Main menu for adding/removing signatures
 

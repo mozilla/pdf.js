@@ -302,9 +302,13 @@ pdfjs-web-fonts-disabled = Tipografía web deshabilitada: no se pueden usar tipo
 
 pdfjs-editor-free-text-button =
     .title = Texto
+pdfjs-editor-color-picker-free-text-input =
+    .title = Cambiar color del texto
 pdfjs-editor-free-text-button-label = Texto
 pdfjs-editor-ink-button =
     .title = Dibujar
+pdfjs-editor-color-picker-ink-input =
+    .title = Cambiar color del dibujo
 pdfjs-editor-ink-button-label = Dibujar
 pdfjs-editor-stamp-button =
     .title = Agregar o editar imágenes
@@ -316,6 +320,10 @@ pdfjs-highlight-floating-button1 =
     .title = Resaltar
     .aria-label = Resaltar
 pdfjs-highlight-floating-button-label = Resaltar
+pdfjs-comment-floating-button =
+    .title = Comentario
+    .aria-label = Comentario
+pdfjs-comment-floating-button-label = Comentario
 pdfjs-editor-signature-button =
     .title = Agregar firma
 pdfjs-editor-signature-button-label = Agregar firma
@@ -600,6 +608,8 @@ pdfjs-editor-add-signature-save-checkbox = Guardar firma
 pdfjs-editor-add-signature-save-warning-message = Se alcanzó el límite de 5 firmas guardadas. Elimine una para guardar más.
 pdfjs-editor-add-signature-image-upload-error-title = No se pudo subir la imagen
 pdfjs-editor-add-signature-image-upload-error-description = Verifique la conexión de red o pruebe con otra imagen.
+pdfjs-editor-add-signature-image-no-data-error-title = No se puede convertir esta imagen en una firma
+pdfjs-editor-add-signature-image-no-data-error-description = Intente subir una imagen diferente.
 pdfjs-editor-add-signature-error-close-button = Cerrar
 
 ## Dialog buttons
@@ -607,6 +617,26 @@ pdfjs-editor-add-signature-error-close-button = Cerrar
 pdfjs-editor-add-signature-cancel-button = Cancelar
 pdfjs-editor-add-signature-add-button = Agregar
 pdfjs-editor-edit-signature-update-button = Actualizar
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Acciones
+pdfjs-editor-edit-comment-actions-button =
+    .title = Acciones
+pdfjs-editor-edit-comment-close-button-label = Cerrar
+pdfjs-editor-edit-comment-close-button =
+    .title = Cerrar
+pdfjs-editor-edit-comment-actions-edit-button-label = Editar
+pdfjs-editor-edit-comment-actions-delete-button-label = Borrar
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Ingresar un comentario
+pdfjs-editor-edit-comment-manager-cancel-button = Cancelar
+pdfjs-editor-edit-comment-manager-save-button = Guardar
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Editar comentario
 
 ## Main menu for adding/removing signatures
 

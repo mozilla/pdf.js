@@ -302,9 +302,13 @@ pdfjs-web-fonts-disabled = Web-fonter er avslått: Kan ikke bruke innbundne PDF-
 
 pdfjs-editor-free-text-button =
     .title = Tekst
+pdfjs-editor-color-picker-free-text-input =
+    .title = Endre tekstfarge
 pdfjs-editor-free-text-button-label = Tekst
 pdfjs-editor-ink-button =
     .title = Tegn
+pdfjs-editor-color-picker-ink-input =
+    .title = Endre tegnefarge
 pdfjs-editor-ink-button-label = Tegn
 pdfjs-editor-stamp-button =
     .title = Legg til eller rediger bilder
@@ -316,6 +320,10 @@ pdfjs-highlight-floating-button1 =
     .title = Markere
     .aria-label = Markere
 pdfjs-highlight-floating-button-label = Markere
+pdfjs-comment-floating-button =
+    .title = Kommentar
+    .aria-label = Kommentar
+pdfjs-comment-floating-button-label = Kommentar
 pdfjs-editor-signature-button =
     .title = Legg til signatur
 pdfjs-editor-signature-button-label = Legg til signatur
@@ -600,6 +608,8 @@ pdfjs-editor-add-signature-save-checkbox = Lagre signatur
 pdfjs-editor-add-signature-save-warning-message = Du har nådd grensen på 5 lagrede signaturer. Fjern en for å lagre en ny.
 pdfjs-editor-add-signature-image-upload-error-title = Kunne ikke laste opp bildet
 pdfjs-editor-add-signature-image-upload-error-description = Sjekk nettverkstilkoblingen eller prøv et annet bilde.
+pdfjs-editor-add-signature-image-no-data-error-title = Kan ikke konvertere dette bildet til en signatur
+pdfjs-editor-add-signature-image-no-data-error-description = Prøv å laste opp et annet bilde.
 pdfjs-editor-add-signature-error-close-button = Lukk
 
 ## Dialog buttons
@@ -607,6 +617,26 @@ pdfjs-editor-add-signature-error-close-button = Lukk
 pdfjs-editor-add-signature-cancel-button = Avbryt
 pdfjs-editor-add-signature-add-button = Legg til
 pdfjs-editor-edit-signature-update-button = Oppdater
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Handlinger
+pdfjs-editor-edit-comment-actions-button =
+    .title = Handlinger
+pdfjs-editor-edit-comment-close-button-label = Lukk
+pdfjs-editor-edit-comment-close-button =
+    .title = Lukk
+pdfjs-editor-edit-comment-actions-edit-button-label = Rediger
+pdfjs-editor-edit-comment-actions-delete-button-label = Slett
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Skriv inn kommentaren din
+pdfjs-editor-edit-comment-manager-cancel-button = Avbryt
+pdfjs-editor-edit-comment-manager-save-button = Lagre
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Rediger kommentar
 
 ## Main menu for adding/removing signatures
 

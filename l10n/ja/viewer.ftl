@@ -516,6 +516,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = 画像の追加時に�
 pdfjs-editor-alt-text-settings-show-dialog-description = すべての画像に代替テキストを追加する助けになります。
 pdfjs-editor-alt-text-settings-close-button = 閉じる
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = 強調表示を追加しました
+pdfjs-editor-freetext-added-alert = フリーテキスト注釈を追加しました
+pdfjs-editor-ink-added-alert = インク注釈を追加しました
+pdfjs-editor-stamp-added-alert = 画像を追加しました
+pdfjs-editor-signature-added-alert = 署名を追加しました
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = 強調表示が削除されました

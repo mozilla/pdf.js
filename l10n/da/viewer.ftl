@@ -316,6 +316,10 @@ pdfjs-highlight-floating-button1 =
     .title = Fremhæv
     .aria-label = Fremhæv
 pdfjs-highlight-floating-button-label = Fremhæv
+pdfjs-comment-floating-button =
+    .title = Kommentar
+    .aria-label = Kommentar
+pdfjs-comment-floating-button-label = Kommentar
 pdfjs-editor-signature-button =
     .title = Tilføj signatur
 pdfjs-editor-signature-button-label = Tilføj signatur
@@ -524,6 +528,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Vis redigering af alte
 pdfjs-editor-alt-text-settings-show-dialog-description = Hjælper dig med at sikre, at alle dine billeder har alternativ tekst.
 pdfjs-editor-alt-text-settings-close-button = Luk
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = Fremhævning tilføjet
+pdfjs-editor-freetext-added-alert = Tekst tilføjet
+pdfjs-editor-ink-added-alert = Tegning tilføjet
+pdfjs-editor-stamp-added-alert = Billede tilføjet
+pdfjs-editor-signature-added-alert = Signatur tilføjet
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Fremhævning fjernet
@@ -599,6 +611,23 @@ pdfjs-editor-add-signature-error-close-button = Luk
 pdfjs-editor-add-signature-cancel-button = Annuller
 pdfjs-editor-add-signature-add-button = Tilføj
 pdfjs-editor-edit-signature-update-button = Opdater
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-close-button-label = Luk
+pdfjs-editor-edit-comment-close-button =
+    .title = Luk
+pdfjs-editor-edit-comment-actions-edit-button-label = Rediger
+pdfjs-editor-edit-comment-actions-delete-button-label = Slet
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Indtast din kommentar
+pdfjs-editor-edit-comment-manager-cancel-button = Annuller
+pdfjs-editor-edit-comment-manager-save-button = Gem
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Rediger kommentar
 
 ## Main menu for adding/removing signatures
 

@@ -517,6 +517,11 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Sken amaẓrag n uḍr
 pdfjs-editor-alt-text-settings-show-dialog-description = Yettall ad tḍemneḍ tugniwin sɛant aḍris amlellay.
 pdfjs-editor-alt-text-settings-close-button = Mdel
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-stamp-added-alert = Tugna tettwarna
+pdfjs-editor-signature-added-alert = Azmul yettwarna
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Yettwakkes usebrureq

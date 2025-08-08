@@ -524,6 +524,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = ਜਦੋਂ ਵਿੱ
 pdfjs-editor-alt-text-settings-show-dialog-description = ਤੁਹਾਡੀ ਮਦਦ ਕਰਦਾ ਹੈ ਕਿ ਤੁਹਾਡੇ ਸਾਰੇ ਚਿੱਤਰਾਂ ਲਈ ਬਦਲਵੀਂ ਲਿਖਤ ਮੌਜੂਦ ਹੋਵੇ।
 pdfjs-editor-alt-text-settings-close-button = ਬੰਦ ਕਰੋ
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = ਹਾਈਲਾਈਟ ਨੂੰ ਜੋੜਿਆ
+pdfjs-editor-freetext-added-alert = ਲਿਖਤ ਨੂੰ ਜੋੜਿਆ ਗਿਆ
+pdfjs-editor-ink-added-alert = ਡਰਾਇੰਗ ਨੂੰ ਜੋੜਿਆ
+pdfjs-editor-stamp-added-alert = ਚਿੱਤਰ ਨੂੰ ਜੋੜਿਆ
+pdfjs-editor-signature-added-alert = ਦਸਤਖ਼ਤਾਂ ਨੂੰ ਜੋੜਿਆ
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = ਹਾਈਲਾਈਟ ਨੂੰ ਹਟਾਇਆ ਗਿਆ
