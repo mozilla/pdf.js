@@ -1430,6 +1430,12 @@ class CanvasGraphics {
       // Using a SVG string is slightly slower than using the following loop.
       const path2d = (data[0] = new Path2D());
       for (let i = 0, ii = path.length; i < ii; ) {
+        const result = this.extractRectanglePathWithMinSizeFix(path, i);
+        if (result) {
+          path2d.addPath(result.path);
+          i = result.nextIndex;
+          continue;
+        }
         switch (path[i++]) {
           case DrawOPS.moveTo:
             path2d.moveTo(path[i++], path[i++]);
@@ -3056,6 +3062,65 @@ class CanvasGraphics {
     }
     return true;
   }
+
+  extractRectanglePathWithMinSizeFix(path, startIndex) {
+    const rectPath = new Path2D();
+    let i = startIndex;
+
+    if (path[i++] !== DrawOPS.moveTo) return null;
+    const x1 = path[i++], y1 = path[i++];
+    rectPath.moveTo(x1, y1);
+
+    const points = [[x1, y1]];
+    let lineCount = 0;
+
+    while (i < path.length && path[i] === DrawOPS.lineTo && lineCount < 4) {
+      i++;
+      const x = path[i++], y = path[i++];
+      rectPath.lineTo(x, y);
+      points.push([x, y]);
+      lineCount++;
+    }
+
+    if (path[i] === DrawOPS.closePath) {
+      rectPath.closePath();
+      i++;
+      points.push(points[0]); // Ensure closure
+    }
+
+    // Proceed only if it's axis-aligned rectangle
+    if (lineCount >= 3 && this.isAxisAlignedRectangle(points)) {
+      let xMin = Math.min(...points.map(p => p[0]));
+      let yMin = Math.min(...points.map(p => p[1]));
+      let xMax = Math.max(...points.map(p => p[0]));
+      let yMax = Math.max(...points.map(p => p[1]));
+
+      let width = xMax - xMin;
+      let height = yMax - yMin;
+
+      // Adjust dimensions if less than 0.25px
+      if (width < 0.25) width = 0.48;
+      if (height < 0.25) height = 0.48;
+
+      const fixedPath = new Path2D();
+      fixedPath.rect(xMin, yMin, width, height);
+
+      return { path: fixedPath, nextIndex: i };
+    }
+
+    return null;
+  }
+
+  // Check if the points form an axis-aligned rectangle
+  isAxisAlignedRectangle(points) {
+    if (points.length < 4) return false;
+    
+    const xs = new Set(points.map(p => p[0]));
+    const ys = new Set(points.map(p => p[1]));
+
+    return xs.size === 2 && ys.size === 2;
+  }
+
 }
 
 for (const op in OPS) {
