@@ -573,11 +573,12 @@ class TilingPattern {
     this.setFillAndStrokeStyleToContext(graphics, paintType, color);
 
     tmpCtx.translate(-dimx.scale * x0, -dimy.scale * y0);
-    graphics.transform(dimx.scale, 0, 0, dimy.scale, 0, 0);
+    graphics.transform(0, dimx.scale, 0, 0, dimy.scale, 0, 0);
 
     // To match CanvasGraphics beginDrawing we must save the context here or
     // else we end up with unbalanced save/restores.
     tmpCtx.save();
+    graphics.dependencyTracker?.save();
 
     this.clipBbox(graphics, x0, y0, x1, y1);
 
@@ -587,6 +588,7 @@ class TilingPattern {
 
     graphics.endDrawing();
 
+    graphics.dependencyTracker?.restore().recordNestedDependencies?.();
     tmpCtx.restore();
 
     if (redrawHorizontally || redrawVertically) {
