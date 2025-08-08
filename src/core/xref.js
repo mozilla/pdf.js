@@ -31,6 +31,7 @@ import {
 } from "./core_utils.js";
 import { BaseStream } from "./base_stream.js";
 import { CipherTransformFactory } from "./crypto.js";
+import { NameTree } from "./name_number_tree.js";
 
 class XRef {
   #firstXRefStmPos = null;
@@ -118,22 +119,6 @@ class XRef {
       }
       warn(`XRef.parse - Invalid "Encrypt" reference: "${ex}".`);
     }
-    if (encrypt instanceof Dict) {
-      const ids = trailerDict.get("ID");
-      const fileId = ids?.length ? ids[0] : "";
-      // The 'Encrypt' dictionary itself should not be encrypted, and by
-      // setting `suppressEncryption` we can prevent an infinite loop inside
-      // of `XRef_fetchUncompressed` if the dictionary contains indirect
-      // objects (fixes issue7665.pdf).
-      encrypt.suppressEncryption = true;
-      this.encrypt = new CipherTransformFactory(
-        encrypt,
-        fileId,
-        this.pdfManager.password
-      );
-    }
-
-    // Get the root dictionary (catalog) object, and do some basic validation.
     let root;
     try {
       root = trailerDict.get("Root");
@@ -142,6 +127,43 @@ class XRef {
         throw ex;
       }
       warn(`XRef.parse - Invalid "Root" reference: "${ex}".`);
+    }
+
+    if (encrypt instanceof Dict) {
+      // Check if only the file attachments are encrypted.
+      if (
+        encrypt.get("CF")?.get("StdCF")?.get("AuthEvent")?.name === "EFOpen"
+      ) {
+        let hasEncryptedAttachments = false;
+        if (root instanceof Dict) {
+          const names = root.get("Names");
+          if (names instanceof Dict && names.has("EmbeddedFiles")) {
+            const nameTree = new NameTree(names.getRaw("EmbeddedFiles"), this);
+            const attachments = nameTree.getAll();
+            if (attachments.size > 0) {
+              hasEncryptedAttachments = true;
+            }
+          }
+        }
+        if (!hasEncryptedAttachments) {
+          // If there are no encrypted attachments, encrypt dictionary is
+          // not needed.
+          encrypt = null;
+        }
+      } else {
+        const ids = trailerDict.get("ID");
+        const fileId = ids?.length ? ids[0] : "";
+        // The 'Encrypt' dictionary itself should not be encrypted, and by
+        // setting `suppressEncryption` we can prevent an infinite loop inside
+        // of `XRef_fetchUncompressed` if the dictionary contains indirect
+        // objects (fixes issue7665.pdf).
+        encrypt.suppressEncryption = true;
+        this.encrypt = new CipherTransformFactory(
+          encrypt,
+          fileId,
+          this.pdfManager.password
+        );
+      }
     }
     if (root instanceof Dict) {
       try {
