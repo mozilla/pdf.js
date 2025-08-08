@@ -526,6 +526,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Адразу пака�
 pdfjs-editor-alt-text-settings-show-dialog-description = Дапамагае пераканацца, што ўсе вашы выявы маюць альтэрнатыўны тэкст.
 pdfjs-editor-alt-text-settings-close-button = Закрыць
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = Вылучэнне дададзена
+pdfjs-editor-freetext-added-alert = Тэкст дададзены
+pdfjs-editor-ink-added-alert = Малюнак дададзены
+pdfjs-editor-stamp-added-alert = Выява дададзена
+pdfjs-editor-signature-added-alert = Подпіс дададзены
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Падсвятленне выдалена

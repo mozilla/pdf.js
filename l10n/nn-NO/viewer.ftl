@@ -302,9 +302,13 @@ pdfjs-web-fonts-disabled = Web-skrifter er slått av: Kan ikkje bruke innbundne 
 
 pdfjs-editor-free-text-button =
     .title = Tekst
+pdfjs-editor-color-picker-free-text-input =
+    .title = Endre tekstfarge
 pdfjs-editor-free-text-button-label = Tekst
 pdfjs-editor-ink-button =
     .title = Teikne
+pdfjs-editor-color-picker-ink-input =
+    .title = Endre teiknefarge
 pdfjs-editor-ink-button-label = Teikne
 pdfjs-editor-stamp-button =
     .title = Legg til eller rediger bilde
@@ -316,6 +320,10 @@ pdfjs-highlight-floating-button1 =
     .title = Markere
     .aria-label = Markere
 pdfjs-highlight-floating-button-label = Markere
+pdfjs-comment-floating-button =
+    .title = Kommentar
+    .aria-label = Kommentar
+pdfjs-comment-floating-button-label = Kommentar
 pdfjs-editor-signature-button =
     .title = Legg til signatur
 pdfjs-editor-signature-button-label = Legg til signatur
@@ -524,6 +532,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Vis alternativ tekst-r
 pdfjs-editor-alt-text-settings-show-dialog-description = Hjelper deg med å sørgje for at alle bilda dine har alternativ tekst.
 pdfjs-editor-alt-text-settings-close-button = Lat att
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = Utheving lagt til
+pdfjs-editor-freetext-added-alert = Tekst lagt til
+pdfjs-editor-ink-added-alert = Teikning lagt til
+pdfjs-editor-stamp-added-alert = Bilde lagt til
+pdfjs-editor-signature-added-alert = Signatur lagt til
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Markering fjerna
@@ -592,6 +608,8 @@ pdfjs-editor-add-signature-save-checkbox = Lagre signatur
 pdfjs-editor-add-signature-save-warning-message = Du har nådd grensa på 5 lagra signaturar. Fjern ein for å lagre ein ny.
 pdfjs-editor-add-signature-image-upload-error-title = Klarte ikkje å oppdatere bilde
 pdfjs-editor-add-signature-image-upload-error-description = Sjekk nettverkstilkoplinga eller prøv eit annet bilde.
+pdfjs-editor-add-signature-image-no-data-error-title = Kan ikkje konvertere dette bildet til ein signatur
+pdfjs-editor-add-signature-image-no-data-error-description = Prøv å laste opp eit anna bilde.
 pdfjs-editor-add-signature-error-close-button = Lat att
 
 ## Dialog buttons
@@ -599,6 +617,26 @@ pdfjs-editor-add-signature-error-close-button = Lat att
 pdfjs-editor-add-signature-cancel-button = Avbryt
 pdfjs-editor-add-signature-add-button = Legg til
 pdfjs-editor-edit-signature-update-button = Oppdater
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Handlingar
+pdfjs-editor-edit-comment-actions-button =
+    .title = Handlingar
+pdfjs-editor-edit-comment-close-button-label = Lat att
+pdfjs-editor-edit-comment-close-button =
+    .title = Lat att
+pdfjs-editor-edit-comment-actions-edit-button-label = Rediger
+pdfjs-editor-edit-comment-actions-delete-button-label = Slett
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Skriv inn kommentaren din
+pdfjs-editor-edit-comment-manager-cancel-button = Avbryt
+pdfjs-editor-edit-comment-manager-save-button = Lagre
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Rediger kommentar
 
 ## Main menu for adding/removing signatures
 

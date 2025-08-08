@@ -302,9 +302,13 @@ pdfjs-web-fonts-disabled = Web fontları devre dışı: Gömülü PDF fontları 
 
 pdfjs-editor-free-text-button =
     .title = Metin
+pdfjs-editor-color-picker-free-text-input =
+    .title = Metin rengini değiştir
 pdfjs-editor-free-text-button-label = Metin
 pdfjs-editor-ink-button =
     .title = Çiz
+pdfjs-editor-color-picker-ink-input =
+    .title = Çizim rengini değiştir
 pdfjs-editor-ink-button-label = Çiz
 pdfjs-editor-stamp-button =
     .title = Resim ekle veya düzenle
@@ -316,6 +320,10 @@ pdfjs-highlight-floating-button1 =
     .title = Vurgula
     .aria-label = Vurgula
 pdfjs-highlight-floating-button-label = Vurgula
+pdfjs-comment-floating-button =
+    .title = Yorum
+    .aria-label = Yorum
+pdfjs-comment-floating-button-label = Yorum
 pdfjs-editor-signature-button =
     .title = İmza ekle
 pdfjs-editor-signature-button-label = İmza ekle
@@ -600,6 +608,8 @@ pdfjs-editor-add-signature-save-checkbox = İmzayı kaydet
 pdfjs-editor-add-signature-save-warning-message = Kayıtlı 5 imza sınırına ulaştınız. Daha fazla imza kaydetmek için imzalardan birini kaldırın.
 pdfjs-editor-add-signature-image-upload-error-title = Resim yüklenemedi
 pdfjs-editor-add-signature-image-upload-error-description = Ağ bağlantınızı kontrol edin veya başka bir resim deneyin.
+pdfjs-editor-add-signature-image-no-data-error-title = Bu resim imzaya dönüştürülemez
+pdfjs-editor-add-signature-image-no-data-error-description = Lütfen farklı bir resim yüklemeyi deneyin.
 pdfjs-editor-add-signature-error-close-button = Kapat
 
 ## Dialog buttons
@@ -607,6 +617,26 @@ pdfjs-editor-add-signature-error-close-button = Kapat
 pdfjs-editor-add-signature-cancel-button = Vazgeç
 pdfjs-editor-add-signature-add-button = Ekle
 pdfjs-editor-edit-signature-update-button = Güncelle
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Eylemler
+pdfjs-editor-edit-comment-actions-button =
+    .title = Eylemler
+pdfjs-editor-edit-comment-close-button-label = Kapat
+pdfjs-editor-edit-comment-close-button =
+    .title = Kapat
+pdfjs-editor-edit-comment-actions-edit-button-label = Düzenle
+pdfjs-editor-edit-comment-actions-delete-button-label = Sil
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Yorumunuzu yazın
+pdfjs-editor-edit-comment-manager-cancel-button = Vazgeç
+pdfjs-editor-edit-comment-manager-save-button = Kaydet
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Yorumu düzenle
 
 ## Main menu for adding/removing signatures
 

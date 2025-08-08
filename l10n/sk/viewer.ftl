@@ -306,9 +306,13 @@ pdfjs-web-fonts-disabled = Webové písma sú vypnuté: nie je možné použiť 
 
 pdfjs-editor-free-text-button =
     .title = Text
+pdfjs-editor-color-picker-free-text-input =
+    .title = Zmeniť farbu textu
 pdfjs-editor-free-text-button-label = Text
 pdfjs-editor-ink-button =
     .title = Kresliť
+pdfjs-editor-color-picker-ink-input =
+    .title = Zmeniť farbu kresby
 pdfjs-editor-ink-button-label = Kresliť
 pdfjs-editor-stamp-button =
     .title = Pridať alebo upraviť obrázky
@@ -320,6 +324,10 @@ pdfjs-highlight-floating-button1 =
     .title = Zvýrazniť
     .aria-label = Zvýrazniť
 pdfjs-highlight-floating-button-label = Zvýrazniť
+pdfjs-comment-floating-button =
+    .title = Komentár
+    .aria-label = Komentár
+pdfjs-comment-floating-button-label = Komentár
 pdfjs-editor-signature-button =
     .title = Pridať podpis
 pdfjs-editor-signature-button-label = Pridať podpis
@@ -606,6 +614,8 @@ pdfjs-editor-add-signature-save-checkbox = Uložiť podpis
 pdfjs-editor-add-signature-save-warning-message = Dosiahli ste limit 5 uložených podpisov. Ak chcete uložiť ďalší, jeden odstráňte.
 pdfjs-editor-add-signature-image-upload-error-title = Obrázok sa nepodarilo nahrať
 pdfjs-editor-add-signature-image-upload-error-description = Skontrolujte sieťové pripojenie alebo skúste iný obrázok.
+pdfjs-editor-add-signature-image-no-data-error-title = Tento obrázok sa nedá previesť na podpis
+pdfjs-editor-add-signature-image-no-data-error-description = Skúste nahrať iný obrázok.
 pdfjs-editor-add-signature-error-close-button = Zavrieť
 
 ## Dialog buttons
@@ -613,6 +623,26 @@ pdfjs-editor-add-signature-error-close-button = Zavrieť
 pdfjs-editor-add-signature-cancel-button = Zrušiť
 pdfjs-editor-add-signature-add-button = Pridať
 pdfjs-editor-edit-signature-update-button = Aktualizovať
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Akcie
+pdfjs-editor-edit-comment-actions-button =
+    .title = Akcie
+pdfjs-editor-edit-comment-close-button-label = Zavrieť
+pdfjs-editor-edit-comment-close-button =
+    .title = Zavrieť
+pdfjs-editor-edit-comment-actions-edit-button-label = Upraviť
+pdfjs-editor-edit-comment-actions-delete-button-label = Odstrániť
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Zadajte svoj komentár
+pdfjs-editor-edit-comment-manager-cancel-button = Zrušiť
+pdfjs-editor-edit-comment-manager-save-button = Uložiť
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Upraviť komentár
 
 ## Main menu for adding/removing signatures
 

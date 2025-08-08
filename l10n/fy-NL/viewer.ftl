@@ -302,9 +302,13 @@ pdfjs-web-fonts-disabled = Weblettertypen binne útskeakele: gebrûk fan ynslute
 
 pdfjs-editor-free-text-button =
     .title = Tekst
+pdfjs-editor-color-picker-free-text-input =
+    .title = Tekstleur wizigje
 pdfjs-editor-free-text-button-label = Tekst
 pdfjs-editor-ink-button =
     .title = Tekenje
+pdfjs-editor-color-picker-ink-input =
+    .title = Tekenkleur wizigje
 pdfjs-editor-ink-button-label = Tekenje
 pdfjs-editor-stamp-button =
     .title = Ofbyldingen tafoegje of bewurkje
@@ -316,6 +320,10 @@ pdfjs-highlight-floating-button1 =
     .title = Markearje
     .aria-label = Markearje
 pdfjs-highlight-floating-button-label = Markearje
+pdfjs-comment-floating-button =
+    .title = Opmerking
+    .aria-label = Opmerking
+pdfjs-comment-floating-button-label = Opmerking
 pdfjs-editor-signature-button =
     .title = Hantekening tafoegje
 pdfjs-editor-signature-button-label = Hantekening tafoegje
@@ -600,6 +608,8 @@ pdfjs-editor-add-signature-save-checkbox = Hantekening bewarje
 pdfjs-editor-add-signature-save-warning-message = Jo hawwe de limyt fan 5 bewarre hantekeningen berikt. Ferwiderje ien om in oar te bewarjen.
 pdfjs-editor-add-signature-image-upload-error-title = Kin de ôfbylding net oplade
 pdfjs-editor-add-signature-image-upload-error-description = Kontrolearje jo netwurkferbining of probearje in oare ôfbylding.
+pdfjs-editor-add-signature-image-no-data-error-title = Kin dizze ôfbylding net nei in hantekening konvertearje
+pdfjs-editor-add-signature-image-no-data-error-description = Probearje in oare ôfbylding op te laden.
 pdfjs-editor-add-signature-error-close-button = Slute
 
 ## Dialog buttons
@@ -607,6 +617,26 @@ pdfjs-editor-add-signature-error-close-button = Slute
 pdfjs-editor-add-signature-cancel-button = Annulearje
 pdfjs-editor-add-signature-add-button = Tafoegje
 pdfjs-editor-edit-signature-update-button = Bywurkje
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Aksjes
+pdfjs-editor-edit-comment-actions-button =
+    .title = Aksjes
+pdfjs-editor-edit-comment-close-button-label = Slute
+pdfjs-editor-edit-comment-close-button =
+    .title = Slute
+pdfjs-editor-edit-comment-actions-edit-button-label = Bewurkje
+pdfjs-editor-edit-comment-actions-delete-button-label = Fuortsmite
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Fier jo opmerking yn
+pdfjs-editor-edit-comment-manager-cancel-button = Annulearje
+pdfjs-editor-edit-comment-manager-save-button = Bewarje
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Opmerking bewurkje
 
 ## Main menu for adding/removing signatures
 

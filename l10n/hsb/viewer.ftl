@@ -306,9 +306,13 @@ pdfjs-web-fonts-disabled = Webpisma su znjemóžnjene: njeje móžno, zasadźene
 
 pdfjs-editor-free-text-button =
     .title = Tekst
+pdfjs-editor-color-picker-free-text-input =
+    .title = Tekstowu barbu změnić
 pdfjs-editor-free-text-button-label = Tekst
 pdfjs-editor-ink-button =
     .title = Rysować
+pdfjs-editor-color-picker-ink-input =
+    .title = Rysowansku barbu změnić
 pdfjs-editor-ink-button-label = Rysować
 pdfjs-editor-stamp-button =
     .title = Wobrazy přidać abo wobdźěłać
@@ -320,6 +324,10 @@ pdfjs-highlight-floating-button1 =
     .title = Wuzběhnjenje
     .aria-label = Wuzběhnjenje
 pdfjs-highlight-floating-button-label = Wuzběhnjenje
+pdfjs-comment-floating-button =
+    .title = Komentar
+    .aria-label = Komentar
+pdfjs-comment-floating-button-label = Komentar
 pdfjs-editor-signature-button =
     .title = Signaturu přidać
 pdfjs-editor-signature-button-label = Signaturu přidać
@@ -606,6 +614,8 @@ pdfjs-editor-add-signature-save-checkbox = Signaturu składować
 pdfjs-editor-add-signature-save-warning-message = Sće limit 5 składowanych signaturow docpěł. Wotstrońće jednu, zo byšće wjace składował.
 pdfjs-editor-add-signature-image-upload-error-title = Wobraz njeda so nahrać
 pdfjs-editor-add-signature-image-upload-error-description = Přepruwujće swój syćowy zwisk abo spytajće druhi wobraz.
+pdfjs-editor-add-signature-image-no-data-error-title = Tutón wobraz njeda so do signatury přetworić
+pdfjs-editor-add-signature-image-no-data-error-description = Spytajće prošu druhi wobraz nahrać.
 pdfjs-editor-add-signature-error-close-button = Začinić
 
 ## Dialog buttons
@@ -613,6 +623,26 @@ pdfjs-editor-add-signature-error-close-button = Začinić
 pdfjs-editor-add-signature-cancel-button = Přetorhnyć
 pdfjs-editor-add-signature-add-button = Přidać
 pdfjs-editor-edit-signature-update-button = Aktualizować
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Akcije
+pdfjs-editor-edit-comment-actions-button =
+    .title = Akcije
+pdfjs-editor-edit-comment-close-button-label = Začinić
+pdfjs-editor-edit-comment-close-button =
+    .title = Začinić
+pdfjs-editor-edit-comment-actions-edit-button-label = Wobdźěłać
+pdfjs-editor-edit-comment-actions-delete-button-label = Zhašeć
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Zapodajće swój komentar
+pdfjs-editor-edit-comment-manager-cancel-button = Přetorhnyć
+pdfjs-editor-edit-comment-manager-save-button = Składować
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Komentar wobdźěłać
 
 ## Main menu for adding/removing signatures
 
