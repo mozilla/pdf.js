@@ -357,6 +357,18 @@ describe("evaluator", function () {
       expect(result.argsArray).toEqual([]);
       expect(result.fnArray).toEqual([]);
     });
+
+    it("should handle invalid dash stuff", async function () {
+      const stream = new StringStream("[ none ] 0 d");
+      const result = await runOperatorListCheck(
+        partialEvaluator,
+        stream,
+        new ResourcesMock()
+      );
+      expect(result.argsArray[0][0]).toEqual([]);
+      expect(result.argsArray[0][1]).toEqual(0);
+      expect(result.fnArray[0]).toEqual(OPS.setDash);
+    });
   });
 
   describe("thread control", function () {
