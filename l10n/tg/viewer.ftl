@@ -302,9 +302,13 @@ pdfjs-web-fonts-disabled = Шрифтҳои интернетӣ ғайрифаъ�
 
 pdfjs-editor-free-text-button =
     .title = Матн
+pdfjs-editor-color-picker-free-text-input =
+    .title = Иваз кардани ранги матн
 pdfjs-editor-free-text-button-label = Матн
 pdfjs-editor-ink-button =
     .title = Расмкашӣ
+pdfjs-editor-color-picker-ink-input =
+    .title = Иваз кардани ранги расмкашӣ
 pdfjs-editor-ink-button-label = Расмкашӣ
 pdfjs-editor-stamp-button =
     .title = Илова ё таҳрир кардани тасвирҳо
@@ -316,6 +320,10 @@ pdfjs-highlight-floating-button1 =
     .title = Ҷудокунӣ
     .aria-label = Ҷудокунӣ
 pdfjs-highlight-floating-button-label = Ҷудокунӣ
+pdfjs-comment-floating-button =
+    .title = Шарҳ
+    .aria-label = Шарҳ
+pdfjs-comment-floating-button-label = Шарҳ
 pdfjs-editor-signature-button =
     .title = Илова кардани имзо
 pdfjs-editor-signature-button-label = Илова кардани имзо
@@ -600,6 +608,7 @@ pdfjs-editor-add-signature-save-checkbox = Нигоҳ доштани имзо
 pdfjs-editor-add-signature-save-warning-message = Шумо ба ҳадди 5 имзои нигоҳдошташуда расидед. Барои нигоҳ доштани имзои нав, яке аз имзоҳои нигоҳдошташударо тоза намоед.
 pdfjs-editor-add-signature-image-upload-error-title = Тасвир бор карда нашуд
 pdfjs-editor-add-signature-image-upload-error-description = Пайвастшавии шабакаи худро санҷед ё тасвири дигареро кӯшиш кунед.
+pdfjs-editor-add-signature-image-no-data-error-description = Лутфан, кӯшиш кунед, ки тасвири дигареро бор намоед.
 pdfjs-editor-add-signature-error-close-button = Пӯшидан
 
 ## Dialog buttons
@@ -607,6 +616,26 @@ pdfjs-editor-add-signature-error-close-button = Пӯшидан
 pdfjs-editor-add-signature-cancel-button = Бекор кардан
 pdfjs-editor-add-signature-add-button = Илова кардан
 pdfjs-editor-edit-signature-update-button = Навсозӣ кардан
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Амалҳо
+pdfjs-editor-edit-comment-actions-button =
+    .title = Амалҳо
+pdfjs-editor-edit-comment-close-button-label = Пӯшидан
+pdfjs-editor-edit-comment-close-button =
+    .title = Пӯшидан
+pdfjs-editor-edit-comment-actions-edit-button-label = Таҳрир кардан
+pdfjs-editor-edit-comment-actions-delete-button-label = Нест кардан
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Шарҳи худро ворид кунед
+pdfjs-editor-edit-comment-manager-cancel-button = Бекор кардан
+pdfjs-editor-edit-comment-manager-save-button = Нигоҳ доштан
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Таҳрир кардани шарҳ
 
 ## Main menu for adding/removing signatures
 

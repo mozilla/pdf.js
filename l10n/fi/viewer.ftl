@@ -302,9 +302,13 @@ pdfjs-web-fonts-disabled = Verkkosivujen omat kirjasinlajit on estetty: ei voida
 
 pdfjs-editor-free-text-button =
     .title = Teksti
+pdfjs-editor-color-picker-free-text-input =
+    .title = Muuta tekstin väriä
 pdfjs-editor-free-text-button-label = Teksti
 pdfjs-editor-ink-button =
     .title = Piirros
+pdfjs-editor-color-picker-ink-input =
+    .title = Vaihda piirustuksen väriä
 pdfjs-editor-ink-button-label = Piirros
 pdfjs-editor-stamp-button =
     .title = Lisää tai muokkaa kuvia
@@ -524,6 +528,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Näytä vaihtoehtoisen
 pdfjs-editor-alt-text-settings-show-dialog-description = Auttaa varmistamaan, että kaikissa kuvissasi on vaihtoehtoinen teksti.
 pdfjs-editor-alt-text-settings-close-button = Sulje
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = Korostus lisätty
+pdfjs-editor-freetext-added-alert = Teksti lisätty
+pdfjs-editor-ink-added-alert = Piirustus lisätty
+pdfjs-editor-stamp-added-alert = Kuva lisätty
+pdfjs-editor-signature-added-alert = Allekirjoitus lisätty
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Korostus poistettu
@@ -592,6 +604,8 @@ pdfjs-editor-add-signature-save-checkbox = Tallenna allekirjoitus
 pdfjs-editor-add-signature-save-warning-message = Olet saavuttanut viiden tallennetun allekirjoituksen rajan. Poista yksi säästääksesi lisää.
 pdfjs-editor-add-signature-image-upload-error-title = Kuvaa ei voitu lähettää
 pdfjs-editor-add-signature-image-upload-error-description = Tarkista verkkoyhteyden tila tai kokeile toista kuvaa.
+pdfjs-editor-add-signature-image-no-data-error-title = Tätä kuvaa ei voida muuntaa allekirjoitukseksi
+pdfjs-editor-add-signature-image-no-data-error-description = Yritä lähettää eri kuva.
 pdfjs-editor-add-signature-error-close-button = Sulje
 
 ## Dialog buttons
@@ -599,6 +613,23 @@ pdfjs-editor-add-signature-error-close-button = Sulje
 pdfjs-editor-add-signature-cancel-button = Peruuta
 pdfjs-editor-add-signature-add-button = Lisää
 pdfjs-editor-edit-signature-update-button = Päivitä
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-close-button-label = Sulje
+pdfjs-editor-edit-comment-close-button =
+    .title = Sulje
+pdfjs-editor-edit-comment-actions-edit-button-label = Muokkaa
+pdfjs-editor-edit-comment-actions-delete-button-label = Poista
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Kirjoita kommenttisi
+pdfjs-editor-edit-comment-manager-cancel-button = Peruuta
+pdfjs-editor-edit-comment-manager-save-button = Tallenna
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Muokkaa kommenttia
 
 ## Main menu for adding/removing signatures
 
