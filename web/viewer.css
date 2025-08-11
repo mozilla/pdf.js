@@ -35,6 +35,9 @@
   --doorhanger-icon-opacity: 0.9;
   --doorhanger-height: 8px;
 
+  /* Accessibility variable for focus rings */
+  --focus-ring-outline: 2px solid #0a84ff;
+
   --main-color: light-dark(rgb(12 12 13), rgb(249 249 250));
   --body-bg-color: light-dark(rgb(212 212 215), rgb(42 42 46));
   --progressBar-color: light-dark(rgb(10 132 255), rgb(0 96 223));
@@ -1058,8 +1061,28 @@ dialog :link {
       height: auto;
     }
   }
-}
+  /* ---- A11Y: strong keyboard focus ring for toolbar controls (WCAG 2.4.7) ---- */
+  .toolbarButton:focus-visible,
+  #secondaryToolbar .toolbarButton:focus-visible,
+  .toolbarField:focus-visible,
+  .dropdownToolbarButton:focus-visible,
+  .toolbarButtonWithContainer > .toolbarButton:focus-visible {
+    outline: var(--focus-ring-outline);
+    outline-offset: 2px;
+    box-shadow: none;
+  }
 
+  /* Windows High Contrast / Forced colors fallback */
+  @media (forced-colors: active) {
+    .toolbarButton:focus-visible,
+    #secondaryToolbar .toolbarButton:focus-visible,
+    .toolbarField:focus-visible,
+    .dropdownToolbarButton:focus-visible,
+    .toolbarButtonWithContainer > .toolbarButton:focus-visible {
+      outline: 2px solid CanvasText;
+    }
+  }
+}
 .toolbarButtonWithContainer {
   height: 100%;
   aspect-ratio: 1;
