@@ -1059,6 +1059,10 @@ class HighlightEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   renderAnnotationElement(annotation) {
+    if (this.deleted) {
+      annotation.hide();
+      return null;
+    }
     const params = {
       rect: this.getRect(0, 0),
     };

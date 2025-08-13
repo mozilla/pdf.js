@@ -295,6 +295,10 @@ class InkEditor extends DrawingEditor {
 
   /** @inheritdoc */
   renderAnnotationElement(annotation) {
+    if (this.deleted) {
+      annotation.hide();
+      return null;
+    }
     const { points, rect } = this.serializeDraw(/* isForCopying = */ false);
     const params = {
       rect,
