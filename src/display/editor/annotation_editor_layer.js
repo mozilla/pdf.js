@@ -359,9 +359,7 @@ class AnnotationEditorLayer {
       for (const editable of editables) {
         const { id } = editable.data;
         if (this.#uiManager.isDeletedAnnotationElement(id)) {
-          editable.updateEdited({
-            deleted: true,
-          });
+          editable.updateEdited({ deleted: true });
           continue;
         }
         let editor = resetAnnotations.get(id);

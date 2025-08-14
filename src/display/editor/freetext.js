@@ -885,6 +885,9 @@ class FreeTextEditor extends AnnotationEditor {
   /** @inheritdoc */
   renderAnnotationElement(annotation) {
     const content = super.renderAnnotationElement(annotation);
+    if (!content) {
+      return null;
+    }
     const { style } = content;
     style.fontSize = `calc(${this.#fontSize}px * var(--total-scale-factor))`;
     style.color = this.#color;

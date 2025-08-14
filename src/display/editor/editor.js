@@ -2155,6 +2155,10 @@ class AnnotationEditor {
    * @returns {HTMLElement|null}
    */
   renderAnnotationElement(annotation) {
+    if (this.deleted) {
+      annotation.hide();
+      return null;
+    }
     let content = annotation.container.querySelector(".annotationContent");
     if (!content) {
       content = document.createElement("div");
