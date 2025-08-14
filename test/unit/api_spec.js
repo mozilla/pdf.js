@@ -3205,6 +3205,58 @@ describe("api", function () {
         });
       });
     });
+
+    describe("Get annotations by their types in the document", function () {
+      it("gets editable annotations", async function () {
+        const loadingTask = getDocument(
+          buildGetDocumentParams("tracemonkey_with_editable_annotations.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+
+        // Get all the editable annotations in the document.
+        let editableAnnotations = (
+          await pdfDoc.getAnnotationsByType(
+            new Set([
+              AnnotationType.FREETEXT,
+              AnnotationType.STAMP,
+              AnnotationType.INK,
+              AnnotationType.HIGHLIGHT,
+            ]),
+            null
+          )
+        ).map(annotation => ({
+          id: annotation.id,
+          subtype: annotation.subtype,
+          pageIndex: annotation.pageIndex,
+        }));
+        editableAnnotations.sort((a, b) => a.id.localeCompare(b.id));
+        expect(editableAnnotations).toEqual([
+          { id: "1000R", subtype: "FreeText", pageIndex: 12 },
+          { id: "1001R", subtype: "Stamp", pageIndex: 12 },
+          { id: "1011R", subtype: "Stamp", pageIndex: 13 },
+          { id: "997R", subtype: "Ink", pageIndex: 13 },
+          { id: "998R", subtype: "Highlight", pageIndex: 13 },
+        ]);
+
+        // Get all the editable annotations but the ones on page 12.
+        editableAnnotations = (
+          await pdfDoc.getAnnotationsByType(
+            new Set([AnnotationType.STAMP, AnnotationType.HIGHLIGHT]),
+            new Set([12])
+          )
+        ).map(annotation => ({
+          id: annotation.id,
+          subtype: annotation.subtype,
+          pageIndex: annotation.pageIndex,
+        }));
+        editableAnnotations.sort((a, b) => a.id.localeCompare(b.id));
+        expect(editableAnnotations).toEqual([
+          { id: "1011R", subtype: "Stamp", pageIndex: 13 },
+          { id: "998R", subtype: "Highlight", pageIndex: 13 },
+        ]);
+        await loadingTask.destroy();
+      });
+    });
   });
 
   describe("Page", function () {

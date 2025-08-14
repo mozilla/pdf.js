@@ -122,6 +122,7 @@ class AnnotationFactory {
    * @param {Object} idFactory
    * @param {boolean} [collectFields]
    * @param {Object} [orphanFields]
+   * @param {Array<string>} [collectByType]
    * @param {Object} [pageRef]
    * @returns {Promise} A promise that is resolved with an {Annotation}
    *   instance.
@@ -133,6 +134,7 @@ class AnnotationFactory {
     idFactory,
     collectFields,
     orphanFields,
+    collectByType,
     pageRef
   ) {
     const pageIndex = collectFields
@@ -146,6 +148,7 @@ class AnnotationFactory {
       idFactory,
       collectFields,
       orphanFields,
+      collectByType,
       pageIndex,
       pageRef,
     ]);
@@ -161,6 +164,7 @@ class AnnotationFactory {
     idFactory,
     collectFields = false,
     orphanFields = null,
+    collectByType = null,
     pageIndex = null,
     pageRef = null
   ) {
@@ -169,13 +173,20 @@ class AnnotationFactory {
       return undefined;
     }
 
-    const { acroForm, pdfManager } = annotationGlobals;
-    const id =
-      ref instanceof Ref ? ref.toString() : `annot_${idFactory.createObjId()}`;
-
     // Determine the annotation's subtype.
     let subtype = dict.get("Subtype");
     subtype = subtype instanceof Name ? subtype.name : null;
+
+    if (
+      collectByType &&
+      !collectByType.has(AnnotationType[subtype.toUpperCase()])
+    ) {
+      return null;
+    }
+
+    const { acroForm, pdfManager } = annotationGlobals;
+    const id =
+      ref instanceof Ref ? ref.toString() : `annot_${idFactory.createObjId()}`;
 
     // Return the right annotation object based on the subtype and field type.
     const parameters = {

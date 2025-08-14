@@ -447,6 +447,57 @@ class WorkerMessageHandler {
         .then(page => pdfManager.ensure(page, "jsActions"));
     });
 
+    handler.on(
+      "GetAnnotationsByType",
+      async function ({ types, pageIndexesToSkip }) {
+        const [numPages, annotationGlobals] = await Promise.all([
+          pdfManager.ensureDoc("numPages"),
+          pdfManager.ensureDoc("annotationGlobals"),
+        ]);
+
+        if (!annotationGlobals) {
+          return null;
+        }
+        const pagePromises = [];
+        const annotationPromises = [];
+        let task = null;
+        try {
+          for (let i = 0, ii = numPages; i < ii; i++) {
+            if (pageIndexesToSkip?.has(i)) {
+              continue;
+            }
+            if (!task) {
+              task = new WorkerTask("GetAnnotationsByType");
+              startWorkerTask(task);
+            }
+            pagePromises.push(
+              pdfManager.getPage(i).then(async page => {
+                if (!page) {
+                  return [];
+                }
+                return (
+                  page.collectAnnotationsByType(
+                    handler,
+                    task,
+                    types,
+                    annotationPromises,
+                    annotationGlobals
+                  ) || []
+                );
+              })
+            );
+          }
+          await Promise.all(pagePromises);
+          const annotations = await Promise.all(annotationPromises);
+          return annotations.filter(a => !!a);
+        } finally {
+          if (task) {
+            finishWorkerTask(task);
+          }
+        }
+      }
+    );
+
     handler.on("GetOutline", function (data) {
       return pdfManager.ensureCatalog("documentOutline");
     });
