@@ -48,11 +48,14 @@ class EditorToolbar {
     const editToolbar = (this.#toolbar = document.createElement("div"));
     editToolbar.classList.add("editToolbar", "hidden");
     editToolbar.setAttribute("role", "toolbar");
+
     const signal = this.#editor._uiManager._signal;
-    editToolbar.addEventListener("contextmenu", noContextMenu, { signal });
-    editToolbar.addEventListener("pointerdown", EditorToolbar.#pointerDown, {
-      signal,
-    });
+    if (signal instanceof AbortSignal && !signal.aborted) {
+      editToolbar.addEventListener("contextmenu", noContextMenu, { signal });
+      editToolbar.addEventListener("pointerdown", EditorToolbar.#pointerDown, {
+        signal,
+      });
+    }
 
     const buttons = (this.#buttons = document.createElement("div"));
     buttons.className = "buttons";
@@ -97,6 +100,9 @@ class EditorToolbar {
     // the mouse, we don't want to trigger any focus events on
     // the editor.
     const signal = this.#editor._uiManager._signal;
+    if (!(signal instanceof AbortSignal) || signal.aborted) {
+      return false;
+    }
     element.addEventListener("focusin", this.#focusIn.bind(this), {
       capture: true,
       signal,
@@ -106,6 +112,7 @@ class EditorToolbar {
       signal,
     });
     element.addEventListener("contextmenu", noContextMenu, { signal });
+    return true;
   }
 
   hide() {
@@ -126,14 +133,15 @@ class EditorToolbar {
     button.classList.add("basic", "deleteButton");
     button.tabIndex = 0;
     button.setAttribute("data-l10n-id", EditorToolbar.#l10nRemove[editorType]);
-    this.#addListenersToElement(button);
-    button.addEventListener(
-      "click",
-      e => {
-        _uiManager.delete();
-      },
-      { signal: _uiManager._signal }
-    );
+    if (this.#addListenersToElement(button)) {
+      button.addEventListener(
+        "click",
+        e => {
+          _uiManager.delete();
+        },
+        { signal: _uiManager._signal }
+      );
+    }
     this.#buttons.append(button);
   }
 
@@ -229,9 +237,13 @@ class FloatingToolbar {
     const editToolbar = (this.#toolbar = document.createElement("div"));
     editToolbar.className = "editToolbar";
     editToolbar.setAttribute("role", "toolbar");
-    editToolbar.addEventListener("contextmenu", noContextMenu, {
-      signal: this.#uiManager._signal,
-    });
+
+    const signal = this.#uiManager._signal;
+    if (signal instanceof AbortSignal && !signal.aborted) {
+      editToolbar.addEventListener("contextmenu", noContextMenu, {
+        signal,
+      });
+    }
 
     const buttons = (this.#buttons = document.createElement("div"));
     buttons.className = "buttons";
@@ -307,8 +319,10 @@ class FloatingToolbar {
     span.className = "visuallyHidden";
     span.setAttribute("data-l10n-id", labelL10nId);
     const signal = this.#uiManager._signal;
-    button.addEventListener("contextmenu", noContextMenu, { signal });
-    button.addEventListener("click", clickHandler, { signal });
+    if (signal instanceof AbortSignal && !signal.aborted) {
+      button.addEventListener("contextmenu", noContextMenu, { signal });
+      button.addEventListener("click", clickHandler, { signal });
+    }
     this.#buttons.append(button);
   }
 }
