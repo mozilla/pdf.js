@@ -802,6 +802,7 @@ class Page {
               this._localIdFactory,
               /* collectFields */ false,
               orphanFields,
+              /* collectByType */ null,
               this.ref
             ).catch(function (reason) {
               warn(`_parsedAnnotations: "${reason}".`);
@@ -848,6 +849,51 @@ class Page {
       PageActionEventType
     );
     return shadow(this, "jsActions", actions);
+  }
+
+  async collectAnnotationsByType(
+    handler,
+    task,
+    types,
+    promises,
+    annotationGlobals
+  ) {
+    const annots = await this.pdfManager.ensure(this, "annotations");
+    const { pageIndex } = this;
+    for (const annotationRef of annots) {
+      promises.push(
+        AnnotationFactory.create(
+          this.xref,
+          annotationRef,
+          annotationGlobals,
+          this._localIdFactory,
+          /* collectFields */ false,
+          /* orphanFields */ null,
+          /* collectByType */ types,
+          this.ref
+        )
+          .then(async annotation => {
+            if (!annotation) {
+              return null;
+            }
+            annotation.data.pageIndex = pageIndex;
+            if (annotation.hasTextContent && annotation.viewable) {
+              const partialEvaluator = this.#createPartialEvaluator(handler);
+              await annotation.extractTextContent(partialEvaluator, task, [
+                -Infinity,
+                -Infinity,
+                Infinity,
+                Infinity,
+              ]);
+            }
+            return annotation.data;
+          })
+          .catch(function (reason) {
+            warn(`collectAnnotationsByType: "${reason}".`);
+            return null;
+          })
+      );
+    }
   }
 }
 
@@ -1881,6 +1927,7 @@ class PDFDocument {
         /* idFactory = */ null,
         /* collectFields */ true,
         orphanFields,
+        /* collectByType */ null,
         /* pageRef */ null
       )
         .then(annotation => annotation?.getFieldObject())
