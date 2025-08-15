@@ -907,6 +907,16 @@ class PDFDocumentProxy {
   }
 
   /**
+   * @param {Set<number>} types - The annotation types to retrieve.
+   * @param {Set<number>} pageIndexToSkip
+   * @returns {Promise<Array<Object>>} A promise that is resolved with a list of
+   *   editable annotations data.
+   */
+  getAnnotationsByType(types, pageIndexToSkip) {
+    return this._transport.getAnnotationsByType(types, pageIndexToSkip);
+  }
+
+  /**
    * @returns {Promise<Object | null>} A promise that is resolved with
    *   an {Object} with the JavaScript actions:
    *     - from the name tree.
@@ -2942,6 +2952,13 @@ class WorkerTransport {
 
   getAttachments() {
     return this.messageHandler.sendWithPromise("GetAttachments", null);
+  }
+
+  getAnnotationsByType(types, pageIndexToSkip) {
+    return this.messageHandler.sendWithPromise("GetAnnotationsByType", {
+      types,
+      pageIndexToSkip,
+    });
   }
 
   getDocJSActions() {
