@@ -246,6 +246,11 @@ const defaultOptions = {
     value: true,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  enableOptimizedPartialRendering: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER,
+  },
   enablePermissions: {
     /** @type {boolean} */
     value: false,
