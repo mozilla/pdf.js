@@ -910,6 +910,14 @@ async function startBrowser({
     // crashes with timeouts or OOM if WebDriver BiDi is used (issue #17961).
     options.protocol = "cdp";
 
+    // Slow down protocol calls by the given number of milliseconds. In Chrome
+    // protocol calls are faster than in Firefox and thus trigger in quicker
+    // succession. This can cause intermittent failures because new protocol
+    // calls can run before events triggered by the previous protocol calls had
+    // a chance to be processed (essentially causing events to get lost). This
+    // value gives Chrome a more similar execution speed as Firefox.
+    options.slowMo = 5;
+
     // avoid crash
     options.args = ["--no-sandbox", "--disable-setuid-sandbox"];
     // silent printing in a pdf
