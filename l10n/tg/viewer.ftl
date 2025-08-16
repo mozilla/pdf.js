@@ -608,6 +608,7 @@ pdfjs-editor-add-signature-save-checkbox = Нигоҳ доштани имзо
 pdfjs-editor-add-signature-save-warning-message = Шумо ба ҳадди 5 имзои нигоҳдошташуда расидед. Барои нигоҳ доштани имзои нав, яке аз имзоҳои нигоҳдошташударо тоза намоед.
 pdfjs-editor-add-signature-image-upload-error-title = Тасвир бор карда нашуд
 pdfjs-editor-add-signature-image-upload-error-description = Пайвастшавии шабакаи худро санҷед ё тасвири дигареро кӯшиш кунед.
+pdfjs-editor-add-signature-image-no-data-error-title = Ин тасвир ба имзо табдил дода нашуд
 pdfjs-editor-add-signature-image-no-data-error-description = Лутфан, кӯшиш кунед, ки тасвири дигареро бор намоед.
 pdfjs-editor-add-signature-error-close-button = Пӯшидан
 

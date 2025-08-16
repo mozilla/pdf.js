@@ -294,9 +294,13 @@ pdfjs-web-fonts-disabled = Web 字体已被禁用：无法使用嵌入的 PDF �
 
 pdfjs-editor-free-text-button =
     .title = 文本
+pdfjs-editor-color-picker-free-text-input =
+    .title = 更改文本颜色
 pdfjs-editor-free-text-button-label = 文本
 pdfjs-editor-ink-button =
     .title = 绘图
+pdfjs-editor-color-picker-ink-input =
+    .title = 更改绘图颜色
 pdfjs-editor-ink-button-label = 绘图
 pdfjs-editor-stamp-button =
     .title = 添加或编辑图像
@@ -308,6 +312,10 @@ pdfjs-highlight-floating-button1 =
     .title = 高亮
     .aria-label = 高亮
 pdfjs-highlight-floating-button-label = 高亮
+pdfjs-comment-floating-button =
+    .title = 批注
+    .aria-label = 批注
+pdfjs-comment-floating-button-label = 批注
 pdfjs-editor-signature-button =
     .title = 添加签名
 pdfjs-editor-signature-button-label = 添加签名
@@ -588,6 +596,8 @@ pdfjs-editor-add-signature-save-checkbox = 保存签名
 pdfjs-editor-add-signature-save-warning-message = 最多可保存 5 个签名，请移除一个以继续保存。
 pdfjs-editor-add-signature-image-upload-error-title = 无法上传图像
 pdfjs-editor-add-signature-image-upload-error-description = 请检查网络连接，或尝试上传其他图像。
+pdfjs-editor-add-signature-image-no-data-error-title = 无法将此图像转换为签名
+pdfjs-editor-add-signature-image-no-data-error-description = 请尝试上传其他图像。
 pdfjs-editor-add-signature-error-close-button = 关闭
 
 ## Dialog buttons
@@ -595,6 +605,26 @@ pdfjs-editor-add-signature-error-close-button = 关闭
 pdfjs-editor-add-signature-cancel-button = 取消
 pdfjs-editor-add-signature-add-button = 添加
 pdfjs-editor-edit-signature-update-button = 更新
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = 操作
+pdfjs-editor-edit-comment-actions-button =
+    .title = 操作
+pdfjs-editor-edit-comment-close-button-label = 关闭
+pdfjs-editor-edit-comment-close-button =
+    .title = 关闭
+pdfjs-editor-edit-comment-actions-edit-button-label = 编辑
+pdfjs-editor-edit-comment-actions-delete-button-label = 删除
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = 输入批注
+pdfjs-editor-edit-comment-manager-cancel-button = 取消
+pdfjs-editor-edit-comment-manager-save-button = 保存
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = 编辑批注
 
 ## Main menu for adding/removing signatures
 

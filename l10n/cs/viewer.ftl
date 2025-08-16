@@ -306,9 +306,13 @@ pdfjs-web-fonts-disabled = Webová písma jsou zakázána, proto není možné p
 
 pdfjs-editor-free-text-button =
     .title = Text
+pdfjs-editor-color-picker-free-text-input =
+    .title = Změna barvy textu
 pdfjs-editor-free-text-button-label = Text
 pdfjs-editor-ink-button =
     .title = Kreslení
+pdfjs-editor-color-picker-ink-input =
+    .title = Změna barvy kresby
 pdfjs-editor-ink-button-label = Kreslení
 pdfjs-editor-stamp-button =
     .title = Přidání či úprava obrázků
@@ -320,6 +324,10 @@ pdfjs-highlight-floating-button1 =
     .title = Zvýraznit
     .aria-label = Zvýraznit
 pdfjs-highlight-floating-button-label = Zvýraznit
+pdfjs-comment-floating-button =
+    .title = Komentář
+    .aria-label = Komentář
+pdfjs-comment-floating-button-label = Komentář
 pdfjs-editor-signature-button =
     .title = Přidat podpis
 pdfjs-editor-signature-button-label = Přidat podpis
@@ -606,6 +614,8 @@ pdfjs-editor-add-signature-save-checkbox = Uložit podpis
 pdfjs-editor-add-signature-save-warning-message = Dosáhli jste limitu 5 uložených podpisů. Odstraňte jeden a uložte další.
 pdfjs-editor-add-signature-image-upload-error-title = Obrázek se nepodařilo nahrát
 pdfjs-editor-add-signature-image-upload-error-description = Zkontrolujte připojení k síti nebo zkuste jiný obrázek.
+pdfjs-editor-add-signature-image-no-data-error-title = Nelze převést tento obrázek na podpis
+pdfjs-editor-add-signature-image-no-data-error-description = Zkuste nahrát jiný obrázek.
 pdfjs-editor-add-signature-error-close-button = Zavřít
 
 ## Dialog buttons
@@ -613,6 +623,26 @@ pdfjs-editor-add-signature-error-close-button = Zavřít
 pdfjs-editor-add-signature-cancel-button = Zrušit
 pdfjs-editor-add-signature-add-button = Přidat
 pdfjs-editor-edit-signature-update-button = Aktualizovat
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Akce
+pdfjs-editor-edit-comment-actions-button =
+    .title = Akce
+pdfjs-editor-edit-comment-close-button-label = Zavřít
+pdfjs-editor-edit-comment-close-button =
+    .title = Zavřít
+pdfjs-editor-edit-comment-actions-edit-button-label = Upravit
+pdfjs-editor-edit-comment-actions-delete-button-label = Smazat
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Zadejte komentář
+pdfjs-editor-edit-comment-manager-cancel-button = Zrušit
+pdfjs-editor-edit-comment-manager-save-button = Uložit
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Upravit komentář
 
 ## Main menu for adding/removing signatures
 

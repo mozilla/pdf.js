@@ -294,7 +294,7 @@ pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", tim
 
 ## Password
 
-pdfjs-password-label = Wprowadź hasło, aby otworzyć ten dokument PDF.
+pdfjs-password-label = Wpisz hasło, aby otworzyć ten dokument PDF.
 pdfjs-password-invalid = Nieprawidłowe hasło. Proszę spróbować ponownie.
 pdfjs-password-ok-button = OK
 pdfjs-password-cancel-button = Anuluj
@@ -304,9 +304,13 @@ pdfjs-web-fonts-disabled = Czcionki sieciowe są wyłączone: nie można użyć 
 
 pdfjs-editor-free-text-button =
     .title = Tekst
+pdfjs-editor-color-picker-free-text-input =
+    .title = Zmień kolor tekstu
 pdfjs-editor-free-text-button-label = Tekst
 pdfjs-editor-ink-button =
     .title = Rysunek
+pdfjs-editor-color-picker-ink-input =
+    .title = Zmień kolor rysunku
 pdfjs-editor-ink-button-label = Rysunek
 pdfjs-editor-stamp-button =
     .title = Dodaj lub edytuj obrazy
@@ -318,6 +322,10 @@ pdfjs-highlight-floating-button1 =
     .title = Wyróżnij
     .aria-label = Wyróżnij
 pdfjs-highlight-floating-button-label = Wyróżnij
+pdfjs-comment-floating-button =
+    .title = Dodaj komentarz
+    .aria-label = Dodaj komentarz
+pdfjs-comment-floating-button-label = Dodaj komentarz
 pdfjs-editor-signature-button =
     .title = Dodaj podpis
 pdfjs-editor-signature-button-label = Dodaj podpis
@@ -526,6 +534,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Wyświetlanie edytora 
 pdfjs-editor-alt-text-settings-show-dialog-description = Pomaga upewnić się, że wszystkie obrazy mają tekst alternatywny.
 pdfjs-editor-alt-text-settings-close-button = Zamknij
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = Dodano wyróżnione
+pdfjs-editor-freetext-added-alert = Dodano tekst
+pdfjs-editor-ink-added-alert = Dodano rysunek
+pdfjs-editor-stamp-added-alert = Dodano obraz
+pdfjs-editor-signature-added-alert = Dodano podpis
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Usunięto wyróżnienie
@@ -595,6 +611,8 @@ pdfjs-editor-add-signature-save-checkbox = Zachowaj podpis
 pdfjs-editor-add-signature-save-warning-message = Osiągnięto ograniczenie wynoszące pięć zachowanych podpisów. Usuń jeden, aby zachować więcej.
 pdfjs-editor-add-signature-image-upload-error-title = Nie można przesłać obrazu
 pdfjs-editor-add-signature-image-upload-error-description = Sprawdź połączenie sieciowe lub spróbuj przesłać inny obraz.
+pdfjs-editor-add-signature-image-no-data-error-title = Nie można przekonwertować tego obrazu na podpis
+pdfjs-editor-add-signature-image-no-data-error-description = Spróbuj przesłać inny obraz.
 pdfjs-editor-add-signature-error-close-button = Zamknij
 
 ## Dialog buttons
@@ -602,6 +620,26 @@ pdfjs-editor-add-signature-error-close-button = Zamknij
 pdfjs-editor-add-signature-cancel-button = Anuluj
 pdfjs-editor-add-signature-add-button = Dodaj
 pdfjs-editor-edit-signature-update-button = Aktualizuj
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Działania
+pdfjs-editor-edit-comment-actions-button =
+    .title = Działania
+pdfjs-editor-edit-comment-close-button-label = Zamknij
+pdfjs-editor-edit-comment-close-button =
+    .title = Zamknij
+pdfjs-editor-edit-comment-actions-edit-button-label = Edytuj
+pdfjs-editor-edit-comment-actions-delete-button-label = Usuń
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Napisz komentarz
+pdfjs-editor-edit-comment-manager-cancel-button = Anuluj
+pdfjs-editor-edit-comment-manager-save-button = Zapisz
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Edytuj komentarz
 
 ## Main menu for adding/removing signatures
 
