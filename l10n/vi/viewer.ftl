@@ -294,9 +294,13 @@ pdfjs-web-fonts-disabled = Phông chữ Web bị vô hiệu hóa: không thể s
 
 pdfjs-editor-free-text-button =
     .title = Văn bản
+pdfjs-editor-color-picker-free-text-input =
+    .title = Thay đổi màu chữ
 pdfjs-editor-free-text-button-label = Văn bản
 pdfjs-editor-ink-button =
     .title = Vẽ
+pdfjs-editor-color-picker-ink-input =
+    .title = Thay đổi màu vẽ
 pdfjs-editor-ink-button-label = Vẽ
 pdfjs-editor-stamp-button =
     .title = Thêm hoặc chỉnh sửa hình ảnh
@@ -308,6 +312,10 @@ pdfjs-highlight-floating-button1 =
     .title = Đánh dấu
     .aria-label = Đánh dấu
 pdfjs-highlight-floating-button-label = Đánh dấu
+pdfjs-comment-floating-button =
+    .title = Bình luận
+    .aria-label = Bình luận
+pdfjs-comment-floating-button-label = Bình luận
 pdfjs-editor-signature-button =
     .title = Thêm chữ ký
 pdfjs-editor-signature-button-label = Thêm chữ ký
@@ -588,6 +596,8 @@ pdfjs-editor-add-signature-save-checkbox = Lưu chữ ký
 pdfjs-editor-add-signature-save-warning-message = Bạn đã đạt đến giới hạn 5 chữ ký đã lưu. Hãy xóa một cái để lưu thêm.
 pdfjs-editor-add-signature-image-upload-error-title = Không thể tải lên hình ảnh
 pdfjs-editor-add-signature-image-upload-error-description = Kiểm tra kết nối mạng của bạn hoặc thử hình ảnh khác.
+pdfjs-editor-add-signature-image-no-data-error-title = Không thể chuyển đổi hình ảnh này thành chữ ký
+pdfjs-editor-add-signature-image-no-data-error-description = Vui lòng thử tải lên một hình ảnh khác.
 pdfjs-editor-add-signature-error-close-button = Đóng
 
 ## Dialog buttons
@@ -595,6 +605,26 @@ pdfjs-editor-add-signature-error-close-button = Đóng
 pdfjs-editor-add-signature-cancel-button = Hủy bỏ
 pdfjs-editor-add-signature-add-button = Thêm
 pdfjs-editor-edit-signature-update-button = Cập nhật
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Hành động
+pdfjs-editor-edit-comment-actions-button =
+    .title = Hành động
+pdfjs-editor-edit-comment-close-button-label = Đóng
+pdfjs-editor-edit-comment-close-button =
+    .title = Đóng
+pdfjs-editor-edit-comment-actions-edit-button-label = Chỉnh sửa
+pdfjs-editor-edit-comment-actions-delete-button-label = Xóa
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Nhập bình luận của bạn
+pdfjs-editor-edit-comment-manager-cancel-button = Hủy bỏ
+pdfjs-editor-edit-comment-manager-save-button = Lưu
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Chỉnh sửa bình luận
 
 ## Main menu for adding/removing signatures
 

@@ -302,9 +302,13 @@ pdfjs-web-fonts-disabled = Webes betűkészletek letiltva: nem használhatók a 
 
 pdfjs-editor-free-text-button =
     .title = Szöveg
+pdfjs-editor-color-picker-free-text-input =
+    .title = Szövegszín módosítása
 pdfjs-editor-free-text-button-label = Szöveg
 pdfjs-editor-ink-button =
     .title = Rajzolás
+pdfjs-editor-color-picker-ink-input =
+    .title = Rajzolási szín módosítása
 pdfjs-editor-ink-button-label = Rajzolás
 pdfjs-editor-stamp-button =
     .title = Képek hozzáadása vagy szerkesztése
@@ -316,6 +320,10 @@ pdfjs-highlight-floating-button1 =
     .title = Kiemelés
     .aria-label = Kiemelés
 pdfjs-highlight-floating-button-label = Kiemelés
+pdfjs-comment-floating-button =
+    .title = Megjegyzés
+    .aria-label = Megjegyzés
+pdfjs-comment-floating-button-label = Megjegyzés
 pdfjs-editor-signature-button =
     .title = Aláírás hozzáadása
 pdfjs-editor-signature-button-label = Aláírás hozzáadása
@@ -600,6 +608,8 @@ pdfjs-editor-add-signature-save-checkbox = Aláírás mentése
 pdfjs-editor-add-signature-save-warning-message = Elérte a mentett aláírások 5 darabos korlátját. A mentéshez távolítson el egyet.
 pdfjs-editor-add-signature-image-upload-error-title = A kép nem tölthető fel
 pdfjs-editor-add-signature-image-upload-error-description = Ellenőrizze a hálózati kapcsolatot, vagy próbálkozzon egy másik képpel.
+pdfjs-editor-add-signature-image-no-data-error-title = Ez a kép nem alakítható át aláírássá
+pdfjs-editor-add-signature-image-no-data-error-description = Próbáljon meg másik képet feltölteni.
 pdfjs-editor-add-signature-error-close-button = Bezárás
 
 ## Dialog buttons
@@ -607,6 +617,26 @@ pdfjs-editor-add-signature-error-close-button = Bezárás
 pdfjs-editor-add-signature-cancel-button = Mégse
 pdfjs-editor-add-signature-add-button = Hozzáadás
 pdfjs-editor-edit-signature-update-button = Frissítés
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Műveletek
+pdfjs-editor-edit-comment-actions-button =
+    .title = Műveletek
+pdfjs-editor-edit-comment-close-button-label = Bezárás
+pdfjs-editor-edit-comment-close-button =
+    .title = Bezárás
+pdfjs-editor-edit-comment-actions-edit-button-label = Szerkesztés
+pdfjs-editor-edit-comment-actions-delete-button-label = Törlés
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Írja be a megjegyzését
+pdfjs-editor-edit-comment-manager-cancel-button = Mégse
+pdfjs-editor-edit-comment-manager-save-button = Mentés
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Megjegyzés szerkesztése
 
 ## Main menu for adding/removing signatures
 
