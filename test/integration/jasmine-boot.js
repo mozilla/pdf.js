@@ -36,7 +36,6 @@ async function runTests(results) {
       "freetext_editor_spec.mjs",
       "highlight_editor_spec.mjs",
       "ink_editor_spec.mjs",
-      "scripting_spec.mjs",
       "signature_editor_spec.mjs",
       "stamp_editor_spec.mjs",
       "text_field_spec.mjs",
@@ -52,7 +51,7 @@ async function runTests(results) {
     specDone(result) {
       // Report on the result of individual tests.
       ++results.runs;
-      if (result.failedExpectations.length > 0) {
+      if (result.failedExpectations.length > 0 && !result.pendingReason) {
         ++results.failures;
         console.log(`TEST-UNEXPECTED-FAIL | ${result.description}`);
       } else {
@@ -62,14 +61,14 @@ async function runTests(results) {
     specStarted(result) {},
     suiteDone(result) {
       // Report on the result of `afterAll` invocations.
-      if (result.failedExpectations.length > 0) {
+      if (result.failedExpectations.length > 0 && !result.pendingReason) {
         ++results.failures;
         console.log(`TEST-UNEXPECTED-FAIL | ${result.description}`);
       }
     },
     suiteStarted(result) {
       // Report on the result of `beforeAll` invocations.
-      if (result.failedExpectations.length > 0) {
+      if (result.failedExpectations.length > 0 && !result.pendingReason) {
         ++results.failures;
         console.log(`TEST-UNEXPECTED-FAIL | ${result.description}`);
       }

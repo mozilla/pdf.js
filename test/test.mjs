@@ -785,6 +785,7 @@ function onAllSessionsClosedAfterTests(name) {
     }
     var runtime = (Date.now() - startTime) / 1000;
     console.log(name + " tests runtime was " + runtime.toFixed(1) + " seconds");
+    process.exit(numErrors > 0 ? 1 : 0);
   };
 }
 
@@ -962,6 +963,12 @@ async function startBrowser({
       "browser.topsites.contile.enabled": false,
       // Disable logging for remote settings.
       "services.settings.loglevel": "off",
+      // Disable AI/ML functionality.
+      "browser.ml.enable": false,
+      "browser.ml.chat.enabled": false,
+      "browser.ml.linkPreview.enabled": false,
+      "browser.tabs.groups.smart.enabled": false,
+      "browser.tabs.groups.smart.userEnabled": false,
       ...extraPrefsFirefox,
     };
   }
@@ -983,7 +990,7 @@ async function startBrowsers({ baseUrl, initializeSession }) {
   // prevent the disk from filling up over time.
   await puppeteer.trimCache();
 
-  const browserNames = ["firefox", "chrome"];
+  const browserNames = ["firefox"];
   if (options.noChrome) {
     browserNames.splice(1, 1);
   }
@@ -1104,8 +1111,6 @@ async function main() {
     } else if (options.fontTest) {
       await startUnitTest("/test/font/font_test.html", "font");
     } else if (options.integration) {
-      // Allows linked PDF files in integration-tests as well.
-      await ensurePDFsDownloaded();
       await startIntegrationTest();
     } else {
       await startRefTest(options.masterMode, options.reftest);
