@@ -302,9 +302,13 @@ pdfjs-web-fonts-disabled = Webskrifttyper er deaktiverede. De indlejrede skriftt
 
 pdfjs-editor-free-text-button =
     .title = Tekst
+pdfjs-editor-color-picker-free-text-input =
+    .title = Skift tekstfarve
 pdfjs-editor-free-text-button-label = Tekst
 pdfjs-editor-ink-button =
     .title = Tegn
+pdfjs-editor-color-picker-ink-input =
+    .title = Skift tegne-farve
 pdfjs-editor-ink-button-label = Tegn
 pdfjs-editor-stamp-button =
     .title = Tilføj eller rediger billeder
@@ -604,6 +608,8 @@ pdfjs-editor-add-signature-save-checkbox = Gem signatur
 pdfjs-editor-add-signature-save-warning-message = Du har nået grænsen på 5 gemte signaturer. Fjern en for at tilføje en ny.
 pdfjs-editor-add-signature-image-upload-error-title = Kunne ikke uploade billede
 pdfjs-editor-add-signature-image-upload-error-description = Kontroller din netværksforbindelse eller prøv med et andet billede.
+pdfjs-editor-add-signature-image-no-data-error-title = Kan ikke konvertere dette billede til en signatur
+pdfjs-editor-add-signature-image-no-data-error-description = Prøv at uploade et andet billede.
 pdfjs-editor-add-signature-error-close-button = Luk
 
 ## Dialog buttons
@@ -614,6 +620,9 @@ pdfjs-editor-edit-signature-update-button = Opdater
 
 ##  Edit a comment dialog
 
+pdfjs-editor-edit-comment-actions-button-label = Handlinger
+pdfjs-editor-edit-comment-actions-button =
+    .title = Handlinger
 pdfjs-editor-edit-comment-close-button-label = Luk
 pdfjs-editor-edit-comment-close-button =
     .title = Luk

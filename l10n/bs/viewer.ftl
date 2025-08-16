@@ -595,6 +595,8 @@ pdfjs-editor-add-signature-save-checkbox = Sačuvaj potpis
 pdfjs-editor-add-signature-save-warning-message = Dostigli ste ograničenje od 5 sačuvanih potpisa. Uklonite jedan da biste sačuvali više.
 pdfjs-editor-add-signature-image-upload-error-title = Nije moguće učitati sliku
 pdfjs-editor-add-signature-image-upload-error-description = Provjerite mrežnu vezu ili pokušajte s drugom slikom.
+pdfjs-editor-add-signature-image-no-data-error-title = Nije moguće pretvoriti ovu sliku u potpis
+pdfjs-editor-add-signature-image-no-data-error-description = Molimo pokušajte učitati drugu sliku.
 pdfjs-editor-add-signature-error-close-button = Zatvori
 
 ## Dialog buttons
@@ -602,6 +604,26 @@ pdfjs-editor-add-signature-error-close-button = Zatvori
 pdfjs-editor-add-signature-cancel-button = Otkaži
 pdfjs-editor-add-signature-add-button = Dodaj
 pdfjs-editor-edit-signature-update-button = Ažuriraj
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Radnje
+pdfjs-editor-edit-comment-actions-button =
+    .title = Radnje
+pdfjs-editor-edit-comment-close-button-label = Zatvori
+pdfjs-editor-edit-comment-close-button =
+    .title = Zatvori
+pdfjs-editor-edit-comment-actions-edit-button-label = Uredi
+pdfjs-editor-edit-comment-actions-delete-button-label = Izbriši
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Unesite svoj komentar
+pdfjs-editor-edit-comment-manager-cancel-button = Otkaži
+pdfjs-editor-edit-comment-manager-save-button = Sačuvaj
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Uredi komentar
 
 ## Main menu for adding/removing signatures
 

@@ -302,9 +302,13 @@ pdfjs-web-fonts-disabled = Ñanduti taity oñemongéma: ndaikatumo’ãi eiporu 
 
 pdfjs-editor-free-text-button =
     .title = Moñe’ẽrã
+pdfjs-editor-color-picker-free-text-input =
+    .title = Emoambue moñe’ẽrã sa’y
 pdfjs-editor-free-text-button-label = Moñe’ẽrã
 pdfjs-editor-ink-button =
     .title = Moha’ãnga
+pdfjs-editor-color-picker-ink-input =
+    .title = Emoambue ta’ãnga sa’y
 pdfjs-editor-ink-button-label = Moha’ãnga
 pdfjs-editor-stamp-button =
     .title = Embojuaju térã embosako’i ta’ãnga
@@ -316,6 +320,10 @@ pdfjs-highlight-floating-button1 =
     .title = Mbosa’y
     .aria-label = Mbosa’y
 pdfjs-highlight-floating-button-label = Mbosa’y
+pdfjs-comment-floating-button =
+    .title = Je’erei
+    .aria-label = Je’erei
+pdfjs-comment-floating-button-label = Je’erei
 pdfjs-editor-signature-button =
     .title = Embojuaju teraguapy
 pdfjs-editor-signature-button-label = Embojuaju teraguapy
@@ -526,6 +534,7 @@ pdfjs-editor-alt-text-settings-close-button = Mboty
 
 ## Accessibility labels (announced by screen readers) for objects added to the editor.
 
+pdfjs-editor-highlight-added-alert = Techaukarã juajupyre
 pdfjs-editor-freetext-added-alert = Moñe’ẽrã juajupyre
 pdfjs-editor-ink-added-alert = Ta’ãnga juajupyre
 pdfjs-editor-stamp-added-alert = Ta’ãnga juajupyre
@@ -598,6 +607,8 @@ pdfjs-editor-add-signature-save-checkbox = Eñongatu teraguapy
 pdfjs-editor-add-signature-save-warning-message = Ehupytýma 5 mboheraguapy ñongatupyre. Embogue peteĩ eñongatukuaa jey hag̃ua.
 pdfjs-editor-add-signature-image-upload-error-title = Ndaikatúi ojehupi pe ta’ãnga
 pdfjs-editor-add-signature-image-upload-error-description = Ehechajey ne ñanduti oikópa térã aha’ã ambue ta’ãnga ndive.
+pdfjs-editor-add-signature-image-no-data-error-title = Ndaikatúi ejapo ko ta’ãngágui teraguapy
+pdfjs-editor-add-signature-image-no-data-error-description = Eñeha’ãkena ehupi ambuéva ta’ãnga.
 pdfjs-editor-add-signature-error-close-button = Mboty
 
 ## Dialog buttons
@@ -605,6 +616,26 @@ pdfjs-editor-add-signature-error-close-button = Mboty
 pdfjs-editor-add-signature-cancel-button = Heja
 pdfjs-editor-add-signature-add-button = Mbojuaju
 pdfjs-editor-edit-signature-update-button = Mbohekopyahu
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Ñemongu’e
+pdfjs-editor-edit-comment-actions-button =
+    .title = Ñemongu’e
+pdfjs-editor-edit-comment-close-button-label = Mboty
+pdfjs-editor-edit-comment-close-button =
+    .title = Mboty
+pdfjs-editor-edit-comment-actions-edit-button-label = Mbosako’i
+pdfjs-editor-edit-comment-actions-delete-button-label = Mboguete
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Ehai peteĩ je’erei
+pdfjs-editor-edit-comment-manager-cancel-button = Heja
+pdfjs-editor-edit-comment-manager-save-button = Ñongatu
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Je’erei mbosako’i
 
 ## Main menu for adding/removing signatures
 
