@@ -17,7 +17,6 @@ import {
   awaitPromise,
   clearInput,
   closePages,
-  closeSinglePage,
   getAnnotationStorage,
   getComputedStyleSelector,
   getFirstSerialized,
@@ -427,6 +426,10 @@ describe("Interaction", () => {
       });
     });
 
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
     it("must execute WillPrint and DidPrint actions", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
@@ -450,7 +453,6 @@ describe("Interaction", () => {
           await page.waitForFunction(
             `${getQuerySelector("50R")}.value === "DidPrint"`
           );
-          await closeSinglePage(page);
         })
       );
     });
