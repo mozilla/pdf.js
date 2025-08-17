@@ -942,18 +942,11 @@ async function startBrowser({
       "browser.download.dir": tempDir,
       // Print silently in a pdf
       "print.always_print_silent": true,
-      "print.show_print_progress": false,
       print_printer: "PDF",
       "print.printer_PDF.print_to_file": true,
       "print.printer_PDF.print_to_filename": printFile,
-      // Enable OffscreenCanvas
-      "gfx.offscreencanvas.enabled": true,
       // Disable gpu acceleration
       "gfx.canvas.accelerated": false,
-      // Enable the `round` CSS function.
-      "layout.css.round.enabled": true,
-      // This allow to copy some data in the clipboard.
-      "dom.events.asyncClipboard.clipboardItem": true,
       // It's helpful to see where the caret is.
       "accessibility.browsewithcaret": true,
       // Disable the newtabpage stuff.
@@ -962,6 +955,12 @@ async function startBrowser({
       "browser.topsites.contile.enabled": false,
       // Disable logging for remote settings.
       "services.settings.loglevel": "off",
+      // Disable AI/ML functionality.
+      "browser.ml.enable": false,
+      "browser.ml.chat.enabled": false,
+      "browser.ml.linkPreview.enabled": false,
+      "browser.tabs.groups.smart.enabled": false,
+      "browser.tabs.groups.smart.userEnabled": false,
       ...extraPrefsFirefox,
     };
   }
