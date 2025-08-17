@@ -955,6 +955,12 @@ async function startBrowser({
       "browser.topsites.contile.enabled": false,
       // Disable logging for remote settings.
       "services.settings.loglevel": "off",
+      // Disable AI/ML functionality.
+      "browser.ml.enable": false,
+      "browser.ml.chat.enabled": false,
+      "browser.ml.linkPreview.enabled": false,
+      "browser.tabs.groups.smart.enabled": false,
+      "browser.tabs.groups.smart.userEnabled": false,
       ...extraPrefsFirefox,
     };
   }
