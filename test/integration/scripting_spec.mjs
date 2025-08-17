@@ -17,6 +17,7 @@ import {
   awaitPromise,
   clearInput,
   closePages,
+  getAnnotationSelector,
   getAnnotationStorage,
   getComputedStyleSelector,
   getFirstSerialized,
@@ -244,7 +245,7 @@ describe("Interaction", () => {
           await waitForScripting(page);
 
           // click on a radio button
-          await page.click("[data-annotation-id='449R']");
+          await page.click(getAnnotationSelector("449R"));
 
           // this field has no actions but it must be cleared on reset
           await page.type(getSelector("405R"), "employee");
@@ -253,7 +254,7 @@ describe("Interaction", () => {
           expect(checked).toEqual(true);
 
           // click on reset button
-          await page.click("[data-annotation-id='402R']");
+          await page.click(getAnnotationSelector("402R"));
 
           await Promise.all(
             ["416R", "422R", "419R", "405R"].map(id => {
@@ -402,7 +403,7 @@ describe("Interaction", () => {
               await page.click(getSelector(id));
             }
 
-            await page.click("[data-annotation-id='97R']");
+            await page.click(getAnnotationSelector("97R"));
             await page.waitForFunction(
               `${getQuerySelector("80R")}.value !== ""`
             );
@@ -582,7 +583,7 @@ describe("Interaction", () => {
             page,
             getSelector("25R"),
             async () => {
-              await page.click("[data-annotation-id='26R']");
+              await page.click(getAnnotationSelector("26R"));
             }
           );
           expect(text)
@@ -630,13 +631,13 @@ describe("Interaction", () => {
           await waitForScripting(page);
 
           // Click on ClearItems button.
-          await page.click("[data-annotation-id='34R']");
+          await page.click(getAnnotationSelector("34R"));
           await page.waitForFunction(
             `${getQuerySelector("30R")}.children.length === 0`
           );
 
           // Click on Restore button.
-          await page.click("[data-annotation-id='37R']");
+          await page.click(getAnnotationSelector("37R"));
           await page.waitForFunction(
             `${getQuerySelector("30R")}.children.length !== 0`
           );
@@ -672,7 +673,7 @@ describe("Interaction", () => {
             );
 
             // Click on AddItem button.
-            await page.click("[data-annotation-id='38R']");
+            await page.click(getAnnotationSelector("38R"));
 
             await page.waitForFunction(
               `${getQuerySelector("30R")}.children.length === ${len}`
@@ -701,7 +702,7 @@ describe("Interaction", () => {
           let len = 6;
           // Click on Restore button.
           await clearInput(page, getSelector("33R"));
-          await page.click("[data-annotation-id='37R']");
+          await page.click(getAnnotationSelector("37R"));
           await page.waitForFunction(
             `${getQuerySelector("30R")}.children.length === ${len}`
           );
@@ -712,7 +713,7 @@ describe("Interaction", () => {
             await page.type(getSelector("39R"), `${num}`);
 
             // Click on DeleteItem button.
-            await page.click("[data-annotation-id='36R']");
+            await page.click(getAnnotationSelector("36R"));
 
             await page.waitForFunction(
               `${getQuerySelector("30R")}.children.length === ${len}`
@@ -783,7 +784,7 @@ describe("Interaction", () => {
                 propName
               );
 
-              await page.click(`[data-annotation-id='${id}R']`);
+              await page.click(getAnnotationSelector(`${id}R`));
               await page.waitForFunction(
                 `${getComputedStyleSelector(
                   ref
@@ -893,7 +894,7 @@ describe("Interaction", () => {
           );
 
           // Click on execute button to eval the above code.
-          await page.click("[data-annotation-id='57R']");
+          await page.click(getAnnotationSelector("57R"));
           await page.waitForFunction(`${getQuerySelector("56R")}.value !== ""`);
 
           const text = await page.$eval(getSelector("56R"), el => el.value);
@@ -924,7 +925,7 @@ describe("Interaction", () => {
               `this.getField("Text2").display = display.${type};`
             );
 
-            await page.click("[data-annotation-id='57R']");
+            await page.click(getAnnotationSelector("57R"));
             await page.waitForFunction(
               `${getComputedStyleSelector(
                 "56R"
@@ -997,7 +998,7 @@ describe("Interaction", () => {
             page,
             getSelector("25R"),
             async () => {
-              await page.click("[data-annotation-id='26R']");
+              await page.click(getAnnotationSelector("26R"));
             }
           );
           expect(text).withContext(`In ${browserName}`).toEqual("Standard");
@@ -1034,13 +1035,13 @@ describe("Interaction", () => {
 
         await page.focus(getSelector("29R"));
         await typeAndWaitForSandbox(page, getSelector("29R"), "34");
-        await page.click("[data-annotation-id='30R']");
+        await page.click(getAnnotationSelector("30R"));
         await waitForSandboxTrip(page);
         await page.waitForFunction(`${getQuerySelector("29R")}.value === ""`);
 
         await page.focus(getSelector("29R"));
         await typeAndWaitForSandbox(page, getSelector("29R"), "12345");
-        await page.click("[data-annotation-id='30R']");
+        await page.click(getAnnotationSelector("30R"));
         await waitForSandboxTrip(page);
         await page.waitForFunction(
           `${getQuerySelector("29R")}.value === "12345"`
@@ -1079,13 +1080,13 @@ describe("Interaction", () => {
 
         await page.focus(getSelector("30R"));
         await typeAndWaitForSandbox(page, getSelector("30R"), "-789");
-        await page.click("[data-annotation-id='29R']");
+        await page.click(getAnnotationSelector("29R"));
         await waitForSandboxTrip(page);
         await page.waitForFunction(`${getQuerySelector("30R")}.value === ""`);
 
         await page.focus(getSelector("30R"));
         await typeAndWaitForSandbox(page, getSelector("30R"), "(123) 456-7890");
-        await page.click("[data-annotation-id='29R']");
+        await page.click(getAnnotationSelector("29R"));
         await waitForSandboxTrip(page);
         await page.waitForFunction(
           `${getQuerySelector("30R")}.value === "(123) 456-7890"`
@@ -1124,13 +1125,13 @@ describe("Interaction", () => {
 
         await page.focus(getSelector("30R"));
         await typeAndWaitForSandbox(page, getSelector("30R"), "-456");
-        await page.click("[data-annotation-id='29R']");
+        await page.click(getAnnotationSelector("29R"));
         await waitForSandboxTrip(page);
         await page.waitForFunction(`${getQuerySelector("30R")}.value === ""`);
 
         await page.focus(getSelector("30R"));
         await typeAndWaitForSandbox(page, getSelector("30R"), "123-4567");
-        await page.click("[data-annotation-id='29R']");
+        await page.click(getAnnotationSelector("29R"));
         await waitForSandboxTrip(page);
         await page.waitForFunction(
           `${getQuerySelector("30R")}.value === "123-4567"`
@@ -1218,7 +1219,7 @@ describe("Interaction", () => {
           // The action triggers a `calculateNow` which in turn triggers a
           // `resetForm (inducing a `calculateNow`) and a `calculateNow`.
           // Without infinite loop prevention the field would be empty.
-          await page.click("[data-annotation-id='31R']");
+          await page.click(getAnnotationSelector("31R"));
           await page.waitForFunction(
             `${getQuerySelector("28R")}.value === "123"`
           );
@@ -1319,8 +1320,11 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page]) => {
           await waitForScripting(page);
 
+          const textWidgetSelector = getAnnotationSelector("35R");
+          const pushButtonSelector = getAnnotationSelector("51R");
+
           let visibility = await page.$eval(
-            "[data-annotation-id='35R']",
+            textWidgetSelector,
             el => getComputedStyle(el).visibility
           );
           expect(visibility)
@@ -1328,7 +1332,7 @@ describe("Interaction", () => {
             .toEqual("visible");
 
           visibility = await page.$eval(
-            "[data-annotation-id='51R']",
+            pushButtonSelector,
             el => getComputedStyle(el).visibility
           );
           expect(visibility)
@@ -1337,17 +1341,17 @@ describe("Interaction", () => {
 
           await page.click(getSelector("44R"));
           await page.waitForFunction(
-            `document.querySelector("[data-annotation-id='35R']").style.visibility === "hidden"`
+            `document.querySelector('${textWidgetSelector}').style.visibility === "hidden"`
           );
 
           visibility = await page.$eval(
-            "[data-annotation-id='35R']",
+            textWidgetSelector,
             el => getComputedStyle(el).visibility
           );
           expect(visibility).withContext(`In ${browserName}`).toEqual("hidden");
 
           visibility = await page.$eval(
-            "[data-annotation-id='51R']",
+            pushButtonSelector,
             el => getComputedStyle(el).visibility
           );
           expect(visibility).withContext(`In ${browserName}`).toEqual("hidden");
@@ -1389,7 +1393,7 @@ describe("Interaction", () => {
                   return rotation === (360 + ((360 - (b + a)) % 360)) % 360;
                 },
                 {},
-                `[data-annotation-id='${ref}R']`,
+                getAnnotationSelector(`${ref}R`),
                 base,
                 angle
               );
@@ -1594,7 +1598,7 @@ describe("Interaction", () => {
           for (const exportValue of ["x3", "x2", "x1"]) {
             await clearInput(page, getSelector("27R"));
             await page.type(getSelector("27R"), exportValue);
-            await page.click("[data-annotation-id='28R']");
+            await page.click(getAnnotationSelector("28R"));
             await page.waitForFunction(
               `${getQuerySelector("24R")}.value === "${exportValue}"`
             );
@@ -1879,27 +1883,25 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page]) => {
           await waitForScripting(page);
 
+          const selector = getAnnotationSelector("9R");
           const hasVisibleCanvas = await page.$eval(
-            `[data-annotation-id="9R"] > canvas`,
+            `${selector} > canvas`,
             elem => elem && !elem.hasAttribute("hidden")
           );
           expect(hasVisibleCanvas)
             .withContext(`In ${browserName}`)
             .toEqual(true);
 
-          const hasHiddenInput = await page.$eval(
-            `[data-annotation-id="9R"] > input`,
-            elem => elem?.hasAttribute("hidden")
+          const hasHiddenInput = await page.$eval(`${selector} > input`, elem =>
+            elem?.hasAttribute("hidden")
           );
           expect(hasHiddenInput).withContext(`In ${browserName}`).toEqual(true);
 
           await page.click(getSelector("12R"));
-          await page.waitForSelector(
-            `[data-annotation-id="9R"] > canvas[hidden]`
-          );
+          await page.waitForSelector(`${selector} > canvas[hidden]`);
 
           const hasHiddenCanvas = await page.$eval(
-            `[data-annotation-id="9R"] > canvas`,
+            `${selector} > canvas`,
             elem => elem?.hasAttribute("hidden")
           );
           expect(hasHiddenCanvas)
@@ -1907,7 +1909,7 @@ describe("Interaction", () => {
             .toEqual(true);
 
           const hasVisibleInput = await page.$eval(
-            `[data-annotation-id="9R"] > input`,
+            `${selector} > input`,
             elem => elem && !elem.hasAttribute("hidden")
           );
           expect(hasVisibleInput)
@@ -2284,7 +2286,7 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page], i) => {
           await waitForScripting(page);
 
-          const buttonSelector = `[data-annotation-id="25R"`;
+          const buttonSelector = getAnnotationSelector("25R");
           await page.waitForSelector(buttonSelector, {
             timeout: 0,
           });
@@ -2408,7 +2410,7 @@ describe("Interaction", () => {
     let pages;
 
     beforeEach(async () => {
-      pages = await loadAndWait("bug1922766.pdf", "[data-annotation-id='44R']");
+      pages = await loadAndWait("bug1922766.pdf", getAnnotationSelector("44R"));
     });
 
     afterEach(async () => {
@@ -2433,14 +2435,14 @@ describe("Interaction", () => {
             }
           };
           await checkColor([255, 0, 0]);
-          await page.click("[data-annotation-id='44R']");
+          await page.click(getAnnotationSelector("44R"));
           await checkColor([0, 0, 255]);
-          await page.click("[data-annotation-id='44R']");
+          await page.click(getAnnotationSelector("44R"));
           await checkColor([255, 0, 0]);
 
-          await page.click("[data-annotation-id='43R']");
+          await page.click(getAnnotationSelector("43R"));
           await waitForSandboxTrip(page);
-          await page.click("[data-annotation-id='44R']");
+          await page.click(getAnnotationSelector("44R"));
           await checkColor([0, 0, 255]);
         })
       );
@@ -2451,7 +2453,7 @@ describe("Interaction", () => {
     let pages;
 
     beforeEach(async () => {
-      pages = await loadAndWait("bug1934157.pdf", "[data-annotation-id='24R']");
+      pages = await loadAndWait("bug1934157.pdf", getAnnotationSelector("24R"));
     });
 
     afterEach(async () => {
@@ -2488,7 +2490,7 @@ describe("Interaction", () => {
     let pages;
 
     beforeEach(async () => {
-      pages = await loadAndWait("issue19505.pdf", "[data-annotation-id='24R']");
+      pages = await loadAndWait("issue19505.pdf", getAnnotationSelector("24R"));
     });
 
     afterEach(async () => {
@@ -2517,7 +2519,7 @@ describe("Interaction", () => {
     let pages;
 
     beforeEach(async () => {
-      pages = await loadAndWait("dates.pdf", "[data-annotation-id='26R']");
+      pages = await loadAndWait("dates.pdf", getAnnotationSelector("26R"));
     });
 
     afterEach(async () => {
@@ -2530,7 +2532,7 @@ describe("Interaction", () => {
           await waitForScripting(page);
           await waitForSandboxTrip(page);
 
-          const firstInputSelector = "[data-annotation-id='26R'] > input";
+          const firstInputSelector = `${getAnnotationSelector("26R")} > input`;
           await page.waitForSelector(`${firstInputSelector}[type="text"]`);
           await page.click(firstInputSelector);
           await waitForSandboxTrip(page);
@@ -2539,7 +2541,7 @@ describe("Interaction", () => {
             el.value = "1975-03-16";
           });
 
-          const secondInputSelector = "[data-annotation-id='27R'] > input";
+          const secondInputSelector = `${getAnnotationSelector("27R")} > input`;
           await page.waitForSelector(`${secondInputSelector}[type="text"]`);
           await page.click(secondInputSelector);
           await waitForSandboxTrip(page);
@@ -2548,7 +2550,7 @@ describe("Interaction", () => {
             el.value = "01:23:45";
           });
 
-          const thirdInputSelector = "[data-annotation-id='28R'] > input";
+          const thirdInputSelector = `${getAnnotationSelector("28R")} > input`;
           await page.waitForSelector(`${thirdInputSelector}[type="text"]`);
           await page.click(thirdInputSelector);
           await waitForSandboxTrip(page);
@@ -2594,7 +2596,7 @@ describe("Interaction", () => {
     let pages;
 
     beforeEach(async () => {
-      pages = await loadAndWait("dates_save.pdf", "[data-annotation-id='26R']");
+      pages = await loadAndWait("dates_save.pdf", getAnnotationSelector("26R"));
     });
 
     afterEach(async () => {
@@ -2607,7 +2609,7 @@ describe("Interaction", () => {
           await waitForScripting(page);
           await waitForSandboxTrip(page);
 
-          const firstInputSelector = "[data-annotation-id='26R'] > input";
+          const firstInputSelector = `${getAnnotationSelector("26R")} > input`;
           await page.waitForSelector(`${firstInputSelector}[type="text"]`);
           await page.click(firstInputSelector);
           await waitForSandboxTrip(page);
@@ -2620,7 +2622,7 @@ describe("Interaction", () => {
             .withContext(`In ${browserName}`)
             .toEqual("2025-07-01");
 
-          const secondInputSelector = "[data-annotation-id='27R'] > input";
+          const secondInputSelector = `${getAnnotationSelector("27R")} > input`;
           await page.waitForSelector(`${secondInputSelector}[type="text"]`);
           await page.click(secondInputSelector);
           await waitForSandboxTrip(page);
@@ -2633,7 +2635,7 @@ describe("Interaction", () => {
             .withContext(`In ${browserName}`)
             .toEqual("00:34:56");
 
-          const thirdInputSelector = "[data-annotation-id='28R'] > input";
+          const thirdInputSelector = `${getAnnotationSelector("28R")} > input`;
           await page.waitForSelector(`${thirdInputSelector}[type="text"]`);
           await page.click(thirdInputSelector);
           await waitForSandboxTrip(page);
