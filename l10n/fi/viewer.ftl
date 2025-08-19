@@ -320,6 +320,10 @@ pdfjs-highlight-floating-button1 =
     .title = Korostus
     .aria-label = Korostus
 pdfjs-highlight-floating-button-label = Korostus
+pdfjs-comment-floating-button =
+    .title = Kommentti
+    .aria-label = Kommentti
+pdfjs-comment-floating-button-label = Kommentti
 pdfjs-editor-signature-button =
     .title = Lisää allekirjoitus
 pdfjs-editor-signature-button-label = Lisää allekirjoitus
@@ -616,6 +620,9 @@ pdfjs-editor-edit-signature-update-button = Päivitä
 
 ##  Edit a comment dialog
 
+pdfjs-editor-edit-comment-actions-button-label = Toiminnot
+pdfjs-editor-edit-comment-actions-button =
+    .title = Toiminnot
 pdfjs-editor-edit-comment-close-button-label = Sulje
 pdfjs-editor-edit-comment-close-button =
     .title = Sulje

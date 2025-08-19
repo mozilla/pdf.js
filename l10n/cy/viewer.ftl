@@ -310,9 +310,13 @@ pdfjs-web-fonts-disabled = Ffontiau gwe wedi eu hanalluogi: methu defnyddio ffon
 
 pdfjs-editor-free-text-button =
     .title = Testun
+pdfjs-editor-color-picker-free-text-input =
+    .title = Newid lliw testun
 pdfjs-editor-free-text-button-label = Testun
 pdfjs-editor-ink-button =
     .title = Lluniadu
+pdfjs-editor-color-picker-ink-input =
+    .title = Newid lliw lluniadu
 pdfjs-editor-ink-button-label = Lluniadu
 pdfjs-editor-stamp-button =
     .title = Ychwanegu neu olygu delweddau
@@ -324,6 +328,10 @@ pdfjs-highlight-floating-button1 =
     .title = Amlygu
     .aria-label = Amlygu
 pdfjs-highlight-floating-button-label = Amlygu
+pdfjs-comment-floating-button =
+    .title = Sylw
+    .aria-label = Sylw
+pdfjs-comment-floating-button-label = Sylw
 pdfjs-editor-signature-button =
     .title = Ychwanegu llofnod
 pdfjs-editor-signature-button-label = Ychwanegu llofnod
@@ -532,6 +540,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Dangoswch y golygydd t
 pdfjs-editor-alt-text-settings-show-dialog-description = Yn eich helpu i wneud yn siŵr bod gan eich holl ddelweddau destun amgen.
 pdfjs-editor-alt-text-settings-close-button = Cau
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = Amlygu wedi'i ychwanegu
+pdfjs-editor-freetext-added-alert = Testun wedi'i ychwanegu
+pdfjs-editor-ink-added-alert = Lluniadu wedi'i ychwanegu
+pdfjs-editor-stamp-added-alert = Delwedd wedi'i hychwanegu
+pdfjs-editor-signature-added-alert = Llofnod wedi'i ychwanegu
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Tynnwyd yr amlygu
@@ -604,6 +620,8 @@ pdfjs-editor-add-signature-save-checkbox = Cadw llofnod
 pdfjs-editor-add-signature-save-warning-message = Rydych chi wedi cyrraedd y terfyn o 5 llofnod sydd wedi'u cadw. Tynnwch un i gadw rhagor
 pdfjs-editor-add-signature-image-upload-error-title = Methu llwytho'r ddelwedd.
 pdfjs-editor-add-signature-image-upload-error-description = Gwiriwch eich cysylltiad rhwydwaith neu rhowch gynnig ar ddelwedd arall.
+pdfjs-editor-add-signature-image-no-data-error-title = Methu trosi'r ddelwedd hon yn llofnod
+pdfjs-editor-add-signature-image-no-data-error-description = Ceisiwch lwytho delwedd wahanol.
 pdfjs-editor-add-signature-error-close-button = Cau
 
 ## Dialog buttons
@@ -611,6 +629,26 @@ pdfjs-editor-add-signature-error-close-button = Cau
 pdfjs-editor-add-signature-cancel-button = Diddymu
 pdfjs-editor-add-signature-add-button = Ychwanegu
 pdfjs-editor-edit-signature-update-button = Diweddaru
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Gweithredoedd
+pdfjs-editor-edit-comment-actions-button =
+    .title = Gweithredoedd
+pdfjs-editor-edit-comment-close-button-label = Cau
+pdfjs-editor-edit-comment-close-button =
+    .title = Cau
+pdfjs-editor-edit-comment-actions-edit-button-label = Golygu
+pdfjs-editor-edit-comment-actions-delete-button-label = Dileu
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Rhowch eich sylw
+pdfjs-editor-edit-comment-manager-cancel-button = Diddymu
+pdfjs-editor-edit-comment-manager-save-button = Cadw
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Golygu sylw
 
 ## Main menu for adding/removing signatures
 

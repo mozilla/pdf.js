@@ -302,9 +302,13 @@ pdfjs-web-fonts-disabled = Las tipografías web están desactivadas: imposible u
 
 pdfjs-editor-free-text-button =
     .title = Texto
+pdfjs-editor-color-picker-free-text-input =
+    .title = Cambiar color del texto
 pdfjs-editor-free-text-button-label = Texto
 pdfjs-editor-ink-button =
     .title = Dibujar
+pdfjs-editor-color-picker-ink-input =
+    .title = Cambiar color del dibujo
 pdfjs-editor-ink-button-label = Dibujar
 pdfjs-editor-stamp-button =
     .title = Añadir o editar imágenes
@@ -316,6 +320,10 @@ pdfjs-highlight-floating-button1 =
     .title = Destacar
     .aria-label = Destacar
 pdfjs-highlight-floating-button-label = Destacar
+pdfjs-comment-floating-button =
+    .title = Comentario
+    .aria-label = Comentario
+pdfjs-comment-floating-button-label = Comentario
 pdfjs-editor-signature-button =
     .title = Añadir firma
 pdfjs-editor-signature-button-label = Añadir firma
@@ -600,6 +608,8 @@ pdfjs-editor-add-signature-save-checkbox = Guardar firma
 pdfjs-editor-add-signature-save-warning-message = Has alcanzado el límite de 5 firmas guardadas. Elimina una para guardar más.
 pdfjs-editor-add-signature-image-upload-error-title = No se pudo subir la imagen
 pdfjs-editor-add-signature-image-upload-error-description = Verifica tu conexión de red o prueba con otra imagen.
+pdfjs-editor-add-signature-image-no-data-error-title = No se puede convertir esta imagen en una firma
+pdfjs-editor-add-signature-image-no-data-error-description = Por favor, intenta cargar una imagen diferente.
 pdfjs-editor-add-signature-error-close-button = Cerrar
 
 ## Dialog buttons
