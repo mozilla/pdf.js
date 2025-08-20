@@ -167,7 +167,7 @@ class EditorToolbar {
       return;
     }
     this.#addListenersToElement(button);
-    this.#buttons.prepend(button, this.#divider);
+    this.#buttons.append(button, this.#divider);
     this.#comment = comment;
     comment.toolbar = this;
   }
