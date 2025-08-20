@@ -173,6 +173,7 @@ class AnnotationElement {
     this.renderForms = parameters.renderForms;
     this.svgFactory = parameters.svgFactory;
     this.annotationStorage = parameters.annotationStorage;
+    this.enableComment = parameters.enableComment;
     this.enableScripting = parameters.enableScripting;
     this.hasJSActions = parameters.hasJSActions;
     this._fieldObjects = parameters.fieldObjects;
@@ -196,6 +197,92 @@ class AnnotationElement {
 
   get hasPopupData() {
     return AnnotationElement._hasPopupData(this.data);
+  }
+
+  get hasCommentButton() {
+    return this.enableComment && this._isEditable && this.hasPopupElement;
+  }
+
+  get commentButtonPosition() {
+    const { quadPoints, rect } = this.data;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    if (quadPoints?.length >= 8) {
+      for (let i = 0; i < quadPoints.length; i += 8) {
+        if (quadPoints[i + 1] > maxY) {
+          maxY = quadPoints[i + 1];
+          maxX = quadPoints[i + 2];
+        } else if (quadPoints[i + 1] === maxY) {
+          maxX = Math.max(maxX, quadPoints[i + 2]);
+        }
+      }
+      return [maxX, maxY];
+    }
+    if (rect) {
+      return [rect[2], rect[3]];
+    }
+    return null;
+  }
+
+  get commentButtonColor() {
+    if (!this.data.color) {
+      return null;
+    }
+    const [r, g, b] = this.data.color;
+    const opacity = this.data.opacity ?? 1;
+    const oppositeOpacity = 255 * (1 - opacity);
+
+    return this.#changeLightness(
+      Math.min(r + oppositeOpacity, 255),
+      Math.min(g + oppositeOpacity, 255),
+      Math.min(b + oppositeOpacity, 255)
+    );
+  }
+
+  #changeLightness(r, g, b) {
+    r /= 255;
+    g /= 255;
+    b /= 255;
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const l = (max + min) / 2;
+    const newL = (((1 + Math.sqrt(l)) / 2) * 100).toFixed(2);
+
+    if (max === min) {
+      // gray
+      return `hsl(0, 0%, ${newL}%)`;
+    }
+
+    const d = max - min;
+
+    // hue (branch on max only; avoids mod)
+    let h;
+    if (max === r) {
+      h = (g - b) / d + (g < b ? 6 : 0);
+    } else if (max === g) {
+      h = (b - r) / d + 2;
+    } else {
+      // max === b
+      h = (r - g) / d + 4;
+    }
+    h = (h * 60).toFixed(2);
+    const s = ((d / (1 - Math.abs(2 * l - 1))) * 100).toFixed(2);
+
+    return `hsl(${h}, ${s}%, ${newL}%)`;
+  }
+
+  _normalizePoint(point) {
+    const {
+      page: { view },
+      viewport: {
+        rawDims: { pageWidth, pageHeight, pageX, pageY },
+      },
+    } = this.parent;
+    point[1] = view[3] - point[1] + view[1];
+    point[0] = (100 * (point[0] - pageX)) / pageWidth;
+    point[1] = (100 * (point[1] - pageY)) / pageHeight;
+    return point;
   }
 
   updateEdited(params) {
@@ -290,7 +377,9 @@ class AnnotationElement {
     // But if an annotation is above an other one, then we must draw it
     // after the other one whatever the order is in the DOM, hence the
     // use of the z-index.
-    style.zIndex = this.parent.zIndex++;
+    style.zIndex = this.parent.zIndex;
+    // Keep zIndex + 1 for stuff we want to add on top of this annotation.
+    this.parent.zIndex += 2;
 
     if (data.alternativeText) {
       container.title = data.alternativeText;
@@ -2194,6 +2283,7 @@ class PopupAnnotationElement extends AnnotationElement {
       parent: this.parent,
       elements: this.elements,
       open: this.data.open,
+      eventBus: this.linkService.eventBus,
     }));
 
     const elementIds = [];
@@ -2232,6 +2322,8 @@ class PopupElement {
 
   #elements = null;
 
+  #eventBus = null;
+
   #parent = null;
 
   #parentRect = null;
@@ -2243,6 +2335,12 @@ class PopupElement {
   #popupAbortController = null;
 
   #position = null;
+
+  #commentButton = null;
+
+  #commentButtonPosition = null;
+
+  #commentButtonColor = null;
 
   #rect = null;
 
@@ -2266,6 +2364,7 @@ class PopupElement {
     rect,
     parentRect,
     open,
+    eventBus = null,
   }) {
     this.#container = container;
     this.#titleObj = titleObj;
@@ -2276,6 +2375,7 @@ class PopupElement {
     this.#rect = rect;
     this.#parentRect = parentRect;
     this.#elements = elements;
+    this.#eventBus = eventBus;
 
     // The modification date is shown in the popup instead of the creation
     // date if it is available and can be parsed correctly, which is
@@ -2322,6 +2422,68 @@ class PopupElement {
         signal,
       });
     }
+
+    this.#renderCommentButton();
+  }
+
+  #setCommentButtonPosition() {
+    const element = this.#elements.find(e => e.hasCommentButton);
+    if (!element) {
+      return;
+    }
+    this.#commentButtonPosition = element._normalizePoint(
+      element.commentButtonPosition
+    );
+    this.#commentButtonColor = element.commentButtonColor;
+  }
+
+  #renderCommentButton() {
+    if (this.#commentButton) {
+      return;
+    }
+
+    if (!this.#commentButtonPosition) {
+      this.#setCommentButtonPosition();
+    }
+
+    if (!this.#commentButtonPosition) {
+      return;
+    }
+
+    const button = (this.#commentButton = document.createElement("button"));
+    button.className = "annotationCommentButton";
+    const parentContainer = this.#elements[0].container;
+    button.style.zIndex = parentContainer.style.zIndex + 1;
+    button.tabIndex = 0;
+
+    const { signal } = this.#popupAbortController;
+    button.addEventListener("hover", this.#boundToggle, { signal });
+    button.addEventListener("keydown", this.#boundKeyDown, { signal });
+    button.addEventListener(
+      "click",
+      () => {
+        const [
+          {
+            data: { id: editId },
+            annotationEditorType: mode,
+          },
+        ] = this.#elements;
+        this.#eventBus?.dispatch("switchannotationeditormode", {
+          source: this,
+          editId,
+          mode,
+          editComment: true,
+        });
+      },
+      { signal }
+    );
+    const { style } = button;
+    style.left = `calc(${this.#commentButtonPosition[0]}% + var(--comment-button-offset))`;
+    style.top = `calc(${this.#commentButtonPosition[1]}% - var(--comment-button-dim) - var(--comment-button-offset))`;
+    if (this.#commentButtonColor) {
+      style.backgroundColor = this.#commentButtonColor;
+    }
+    parentContainer.after(button);
   }
 
   render() {
@@ -3053,6 +3215,31 @@ class InkAnnotationElement extends AnnotationElement {
   addHighlightArea() {
     this.container.classList.add("highlightArea");
   }
+
+  get commentButtonPosition() {
+    const { inkLists, rect } = this.data;
+    if (inkLists?.length >= 1) {
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      for (const inkList of inkLists) {
+        for (let i = 0, ii = inkList.length; i < ii; i += 2) {
+          if (inkList[i + 1] > maxY) {
+            maxY = inkList[i + 1];
+            maxX = inkList[i];
+          } else if (inkList[i + 1] === maxY) {
+            maxX = Math.max(maxX, inkList[i]);
+          }
+        }
+      }
+      if (maxX !== Infinity) {
+        return [maxX, maxY];
+      }
+    }
+    if (rect) {
+      return [rect[2], rect[3]];
+    }
+    return null;
+  }
 }
 
 class HighlightAnnotationElement extends AnnotationElement {
@@ -3391,6 +3578,7 @@ class AnnotationLayer {
       renderForms: params.renderForms !== false,
       svgFactory: new DOMSVGFactory(),
       annotationStorage: params.annotationStorage || new AnnotationStorage(),
+      enableComment: params.enableComment === true,
       enableScripting: params.enableScripting === true,
       hasJSActions: params.hasJSActions,
       fieldObjects: params.fieldObjects,

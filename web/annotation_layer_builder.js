@@ -44,6 +44,7 @@ import { PresentationModeState } from "./ui_utils.js";
  * @property {boolean} renderForms
  * @property {IPDFLinkService} linkService
  * @property {IDownloadManager} [downloadManager]
+ * @property {boolean} [enableComment]
  * @property {boolean} [enableScripting]
  * @property {Promise<boolean>} [hasJSActionsPromise]
  * @property {Promise<Object<string, Array<Object>> | null>}
@@ -89,6 +90,7 @@ class AnnotationLayerBuilder {
     annotationStorage = null,
     imageResourcesPath = "",
     renderForms = true,
+    enableComment = false,
     enableScripting = false,
     hasJSActionsPromise = null,
     fieldObjectsPromise = null,
@@ -103,6 +105,7 @@ class AnnotationLayerBuilder {
     this.imageResourcesPath = imageResourcesPath;
     this.renderForms = renderForms;
     this.annotationStorage = annotationStorage;
+    this.enableComment = enableComment;
     this.enableScripting = enableScripting;
     this._hasJSActionsPromise = hasJSActionsPromise || Promise.resolve(false);
     this._fieldObjectsPromise = fieldObjectsPromise || Promise.resolve(null);
@@ -166,6 +169,7 @@ class AnnotationLayerBuilder {
       linkService: this.linkService,
       downloadManager: this.downloadManager,
       annotationStorage: this.annotationStorage,
+      enableComment: this.enableComment,
       enableScripting: this.enableScripting,
       hasJSActions,
       fieldObjects,

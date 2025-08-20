@@ -649,6 +649,9 @@ class PDFViewer {
       get downloadManager() {
         return self.downloadManager;
       },
+      get enableComment() {
+        return !!self.#commentManager;
+      },
       get enableScripting() {
         return !!self._scriptingManager;
       },
