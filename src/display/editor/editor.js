@@ -1213,9 +1213,18 @@ class AnnotationEditor {
 
   addComment(serialized) {
     if (this.hasEditedComment) {
+      const DEFAULT_POPUP_WIDTH = 180;
+      const DEFAULT_POPUP_HEIGHT = 100;
+      const [, , , trY] = serialized.rect;
+      const [pageWidth] = this.pageDimensions;
+      const [pageX] = this.pageTranslation;
+      const blX = pageX + pageWidth + 1;
+      const blY = trY - DEFAULT_POPUP_HEIGHT;
+      const trX = blX + DEFAULT_POPUP_WIDTH;
       serialized.popup = {
         contents: this.comment.text,
         deleted: this.comment.deleted,
+        rect: [blX, blY, trX, trY],
       };
     }
   }
