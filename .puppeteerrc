@@ -4,6 +4,6 @@
   },
   "firefox": {
     "skipDownload": false,
-    "version": "stable"
+    "version": "nightly"
   }
 }
