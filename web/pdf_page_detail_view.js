@@ -186,6 +186,55 @@ class PDFPageDetailView extends BasePDFPageView {
     this.reset({ keepCanvas: true });
   }
 
+  _getRenderingContext(canvas, transform) {
+    const baseContext = this.pageView._getRenderingContext(canvas, transform);
+    const recordedGroups = this.pdfPage.recordedGroups;
+
+    if (!recordedGroups || !this.enableOptimizedPartialRendering) {
+      return { ...baseContext, recordOperations: false };
+    }
+
+    // TODO: There is probably a better data structure for this.
+    // The indexes are always checked in increasing order, so we can just try
+    // to build a pre-sorted array which should have faster lookups.
+    // Needs benchmarking.
+    const filteredIndexes = new Set();
+
+    const {
+      viewport: { width: vWidth, height: vHeight },
+    } = this.pageView;
+    const {
+      width: aWidth,
+      height: aHeight,
+      minX: aMinX,
+      minY: aMinY,
+    } = this.#detailArea;
+
+    const detailMinX = aMinX / vWidth;
+    const detailMinY = aMinY / vHeight;
+    const detailMaxX = (aMinX + aWidth) / vWidth;
+    const detailMaxY = (aMinY + aHeight) / vHeight;
+
+    for (let i = 0, ii = recordedGroups.length; i < ii; i++) {
+      const group = recordedGroups[i];
+      if (
+        group.minX <= detailMaxX &&
+        group.maxX >= detailMinX &&
+        group.minY <= detailMaxY &&
+        group.maxY >= detailMinY
+      ) {
+        filteredIndexes.add(group.idx);
+        group.dependencies.forEach(filteredIndexes.add, filteredIndexes);
+      }
+    }
+
+    return {
+      ...baseContext,
+      recordOperations: false,
+      filteredOperationIndexes: filteredIndexes,
+    };
+  }
+
   async draw() {
     // The PDFPageView might have already dropped this PDFPageDetailView. In
     // that case, simply do nothing.
@@ -249,7 +298,7 @@ class PDFPageDetailView extends BasePDFPageView {
     style.left = `${(area.minX * 100) / width}%`;
 
     const renderingPromise = this._drawCanvas(
-      this.pageView._getRenderingContext(canvas, transform),
+      this._getRenderingContext(canvas, transform),
       () => {
         // If the rendering is cancelled, keep the old canvas visible.
         this.canvas?.remove();

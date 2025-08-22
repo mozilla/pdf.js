@@ -60,6 +60,7 @@ import {
   NodeStandardFontDataFactory,
   NodeWasmFactory,
 } from "display-node_utils";
+import { CanvasDependencyTracker } from "./canvas_dependency_tracker.js";
 import { CanvasGraphics } from "./canvas.js";
 import { DOMCanvasFactory } from "./canvas_factory.js";
 import { DOMCMapReaderFactory } from "display-cmap_reader_factory";
@@ -1239,6 +1240,10 @@ class PDFDocumentProxy {
  *   annotation ids with canvases used to render them.
  * @property {PrintAnnotationStorage} [printAnnotationStorage]
  * @property {boolean} [isEditing] - Render the page in editing mode.
+ * @property {boolean} [recordOperations] - Record the dependencies and bounding
+ *   boxes of all PDF operations that render onto the canvas.
+ * @property {Set<number>} [filteredOperationIndexes] - If provided, only run
+ *   the PDF operations that are included in this set.
  */
 
 /**
@@ -1309,6 +1314,7 @@ class PDFPageProxy {
 
     this._intentStates = new Map();
     this.destroyed = false;
+    this.recordedGroups = null;
   }
 
   /**
@@ -1433,6 +1439,8 @@ class PDFPageProxy {
     pageColors = null,
     printAnnotationStorage = null,
     isEditing = false,
+    recordOperations = false,
+    filteredOperationIndexes = null,
   }) {
     this._stats?.time("Overall");
 
@@ -1479,8 +1487,25 @@ class PDFPageProxy {
       this._pumpOperatorList(intentArgs);
     }
 
+    const shouldRecordOperations =
+      !this.recordedGroups &&
+      (recordOperations ||
+        (this._pdfBug && globalThis.StepperManager?.enabled));
+
     const complete = error => {
       intentState.renderTasks.delete(internalRenderTask);
+
+      if (shouldRecordOperations) {
+        const recordedGroups = internalRenderTask.gfx?.dependencyTracker.take();
+        if (recordedGroups) {
+          internalRenderTask.stepper?.setOperatorGroups(recordedGroups);
+          if (recordOperations) {
+            this.recordedGroups = recordedGroups;
+          }
+        } else if (recordOperations) {
+          this.recordedGroups = [];
+        }
+      }
 
       // Attempt to reduce memory usage during *printing*, by always running
       // cleanup immediately once rendering has finished.
@@ -1516,6 +1541,9 @@ class PDFPageProxy {
       params: {
         canvas,
         canvasContext,
+        dependencyTracker: shouldRecordOperations
+          ? new CanvasDependencyTracker(canvas)
+          : null,
         viewport,
         transform,
         background,
@@ -1531,6 +1559,7 @@ class PDFPageProxy {
       pdfBug: this._pdfBug,
       pageColors,
       enableHWA: this._transport.enableHWA,
+      filteredOperationIndexes,
     });
 
     (intentState.renderTasks ||= new Set()).add(internalRenderTask);
@@ -3140,6 +3169,7 @@ class InternalRenderTask {
     pdfBug = false,
     pageColors = null,
     enableHWA = false,
+    filteredOperationIndexes = null,
   }) {
     this.callback = callback;
     this.params = params;
@@ -3170,6 +3200,8 @@ class InternalRenderTask {
     this._canvas = params.canvas;
     this._canvasContext = params.canvas ? null : params.canvasContext;
     this._enableHWA = enableHWA;
+    this._dependencyTracker = params.dependencyTracker;
+    this._filteredOperationIndexes = filteredOperationIndexes;
   }
 
   get completed() {
@@ -3199,7 +3231,7 @@ class InternalRenderTask {
       this.stepper.init(this.operatorList);
       this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
     }
-    const { viewport, transform, background } = this.params;
+    const { viewport, transform, background, dependencyTracker } = this.params;
 
     // When printing in Firefox, we get a specific context in mozPrintCallback
     // which cannot be created from the canvas itself.
@@ -3218,7 +3250,8 @@ class InternalRenderTask {
       this.filterFactory,
       { optionalContentConfig },
       this.annotationCanvasMap,
-      this.pageColors
+      this.pageColors,
+      dependencyTracker
     );
     this.gfx.beginDrawing({
       transform,
@@ -3294,7 +3327,8 @@ class InternalRenderTask {
       this.operatorList,
       this.operatorListIdx,
       this._continueBound,
-      this.stepper
+      this.stepper,
+      this._filteredOperationIndexes
     );
     if (this.operatorListIdx === this.operatorList.argsArray.length) {
       this.running = false;
