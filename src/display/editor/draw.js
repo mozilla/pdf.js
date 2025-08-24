@@ -133,7 +133,7 @@ class DrawingEditor extends AnnotationEditor {
     return id;
   }
 
-  replaceOutlines(newOutlines) {
+  _replaceOutlines(newOutlines) {
     if (!newOutlines || !this.parent || this._drawId === null) {
       return;
     }

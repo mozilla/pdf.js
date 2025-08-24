@@ -101,6 +101,8 @@ class AnnotationEditor {
 
   _editToolbar = null;
 
+  _erasable = false;
+
   _initialOptions = Object.create(null);
 
   _initialData = null;
@@ -213,6 +215,10 @@ class AnnotationEditor {
 
   get mode() {
     return Object.getPrototypeOf(this).constructor._editorType;
+  }
+
+  get erasable() {
+    return this._erasable;
   }
 
   static get isDrawer() {
@@ -500,6 +506,20 @@ class AnnotationEditor {
     // We don't change the initial position because the move here hasn't been
     // done by the user.
     this.#translate(this.parentDimensions, x, y);
+  }
+
+  /**
+   * Erase everything in a radius of (x,y) position.
+   * @param {number} x
+   * @param {number} y
+   * @param {number} radius
+   */
+  erase(x, y, radius) {
+    unreachable("Not implemented");
+  }
+
+  endErase() {
+    unreachable("Not implemented");
   }
 
   /**

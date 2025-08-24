@@ -60,6 +60,10 @@ class InkDrawingOptions extends DrawingOptions {
  * Basic draw editor in order to generate an Ink annotation.
  */
 class InkEditor extends DrawingEditor {
+  #points = null;
+
+  #erased = false;
+
   static _type = "ink";
 
   static _editorType = AnnotationEditorType.INK;
@@ -68,6 +72,7 @@ class InkEditor extends DrawingEditor {
 
   constructor(params) {
     super({ ...params, name: "inkEditor" });
+    this._erasable = true;
     this._willKeepAspectRatio = true;
     this.defaultL10nId = "pdfjs-editor-ink-editor";
   }
@@ -311,6 +316,144 @@ class InkEditor extends DrawingEditor {
     annotation.updateEdited(params);
 
     return null;
+  }
+
+  /**
+   * Erase everything in a radius of (x,y) position.
+   * @param {number} x
+   * @param {number} y
+   * @param {number} radius
+   */
+  erase(x, y, radius) {
+    if (!this.#points) {
+      this.#points = this.serializeDraw(false).points;
+    }
+
+    const radius2 = radius * radius;
+    const newPaths = [];
+    let modified = false;
+
+    for (const path of this.#points) {
+      if (path.length === 0) {
+        continue;
+      }
+      let newPath = [];
+      for (let i = 0; i < path.length; i += 2) {
+        const [lx, ly] = this.#pagePointToLayer(path[i], path[i + 1]);
+        const dx = lx - x;
+        const dy = ly - y;
+        const dist = dx * dx + dy * dy;
+        if (dist >= radius2) {
+          newPath.push(path[i], path[i + 1]);
+        } else {
+          modified = true;
+          if (newPath.length >= 4) {
+            newPaths.push(new Float32Array(newPath));
+          }
+          newPath = [];
+        }
+      }
+      if (newPath.length >= 4) {
+        newPaths.push(new Float32Array(newPath));
+      }
+    }
+
+    if (modified) {
+      this.#points = newPaths;
+      this.#erased = true;
+      // remove svg path if no points are left
+      if (newPaths.length === 0) {
+        this.parent.drawLayer.updateProperties(this._drawId, {
+          path: { d: "" },
+        });
+      } else {
+        const tempOutline = this.#deserializePoints();
+        this.parent.drawLayer.updateProperties(this._drawId, {
+          path: { d: tempOutline.toSVGPath() },
+        });
+      }
+    }
+  }
+
+  endErase() {
+    // if nothing has been erased
+    if (!this.#erased) {
+      return;
+    }
+
+    // reset erased flag
+    this.#erased = false;
+
+    if (this.#points.length === 0) {
+      this.remove();
+      return;
+    }
+
+    const newOutlines = this.#deserializePoints();
+    this._replaceOutlines(newOutlines);
+    this.onScaleChanging();
+
+    this.#points = null;
+  }
+
+  #deserializePoints() {
+    const {
+      viewport: {
+        rawDims: { pageWidth, pageHeight, pageX, pageY },
+      },
+    } = this.parent;
+
+    const thickness = this._drawingOptions["stroke-width"];
+    const rotation = this.rotation;
+
+    const newOutline = InkEditor.deserializeDraw(
+      pageX,
+      pageY,
+      pageWidth,
+      pageHeight,
+      InkEditor._INNER_MARGIN,
+      {
+        paths: { points: this.#points },
+        rotation,
+        thickness,
+      }
+    );
+
+    return newOutline;
+  }
+
+  #pagePointToLayer(px, py) {
+    const [pageX, pageY] = this.pageTranslation;
+    const [pageW, pageH] = this.pageDimensions;
+    const { width: layerW, height: layerH } =
+      this.parent.div.getBoundingClientRect();
+
+    const nx = (px - pageX) / pageW;
+    const ny = (py - pageY) / pageH;
+
+    let rx, ry;
+    switch ((this.rotation || 0) % 360) {
+      case 90:
+        rx = ny;
+        ry = 1 - nx;
+        break;
+      case 180:
+        rx = 1 - nx;
+        ry = 1 - ny;
+        break;
+      case 270:
+        rx = 1 - ny;
+        ry = nx;
+        break;
+      default:
+        rx = nx;
+        ry = ny;
+        break;
+    }
+
+    const lx = rx * layerW;
+    const ly = (1 - ry) * layerH;
+    return [lx, ly];
   }
 }
 
