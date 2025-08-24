@@ -3256,6 +3256,42 @@ describe("api", function () {
         ]);
         await loadingTask.destroy();
       });
+
+      it("gets editable annotations after getting annotations on page 13", async function () {
+        const loadingTask = getDocument(
+          buildGetDocumentParams("tracemonkey_with_editable_annotations.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const pdfPage = await pdfDoc.getPage(13);
+        await pdfPage.getAnnotations();
+
+        // Get all the editable annotations in the document.
+        const editableAnnotations = (
+          await pdfDoc.getAnnotationsByType(
+            new Set([
+              AnnotationType.FREETEXT,
+              AnnotationType.STAMP,
+              AnnotationType.INK,
+              AnnotationType.HIGHLIGHT,
+            ]),
+            null
+          )
+        ).map(annotation => ({
+          id: annotation.id,
+          subtype: annotation.subtype,
+          pageIndex: annotation.pageIndex,
+        }));
+        editableAnnotations.sort((a, b) => a.id.localeCompare(b.id));
+        expect(editableAnnotations).toEqual([
+          { id: "1000R", subtype: "FreeText", pageIndex: 12 },
+          { id: "1001R", subtype: "Stamp", pageIndex: 12 },
+          { id: "1011R", subtype: "Stamp", pageIndex: 13 },
+          { id: "997R", subtype: "Ink", pageIndex: 13 },
+          { id: "998R", subtype: "Highlight", pageIndex: 13 },
+        ]);
+
+        await loadingTask.destroy();
+      });
     });
   });
 

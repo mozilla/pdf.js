@@ -80,6 +80,8 @@ import { XRef } from "./xref.js";
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
 class Page {
+  #areAnnotationsCached = false;
+
   #resourcesPromise = null;
 
   constructor({
@@ -839,6 +841,8 @@ class Page {
         return sortedAnnotations;
       });
 
+    this.#areAnnotationsCached = true;
+
     return shadow(this, "_parsedAnnotations", promise);
   }
 
@@ -858,8 +862,20 @@ class Page {
     promises,
     annotationGlobals
   ) {
-    const annots = await this.pdfManager.ensure(this, "annotations");
     const { pageIndex } = this;
+
+    if (this.#areAnnotationsCached) {
+      const cachedAnnotations = await this._parsedAnnotations;
+      for (const { data } of cachedAnnotations) {
+        if (!types || types.has(data.annotationType)) {
+          data.pageIndex = pageIndex;
+          promises.push(Promise.resolve(data));
+        }
+      }
+      return;
+    }
+
+    const annots = await this.pdfManager.ensure(this, "annotations");
     for (const annotationRef of annots) {
       promises.push(
         AnnotationFactory.create(
