@@ -277,30 +277,21 @@ describe("Text layer", () => {
                 ).then(belowEndPosition),
               ]);
 
-              if (browserName !== "firefox") {
-                await page.mouse.move(positionStart.x, positionStart.y);
-                await page.mouse.down({ clickCount: 1 });
-                await page.mouse.up({ clickCount: 1 });
-                await page.mouse.down({ clickCount: 2 });
-              } else {
-                // When running tests with Firefox we use WebDriver BiDi, for
-                // which puppeteer doesn't support emulating "double click and
-                // hold". We need to manually dispatch an action through the
-                // protocol.
-                // See https://github.com/puppeteer/puppeteer/issues/13745.
-                await page.mainFrame().browsingContext.performActions([
-                  {
-                    type: "pointer",
-                    id: "__puppeteer_mouse",
-                    actions: [
-                      { type: "pointerMove", ...positionStart },
-                      { type: "pointerDown", button: 0 },
-                      { type: "pointerUp", button: 0 },
-                      { type: "pointerDown", button: 0 },
-                    ],
-                  },
-                ]);
-              }
+              // Puppeteer doesn't support emulating "double click and hold" for
+              // WebDriver BiDi, so we must manually dispatch a protocol action
+              // (see https://github.com/puppeteer/puppeteer/issues/13745).
+              await page.mainFrame().browsingContext.performActions([
+                {
+                  type: "pointer",
+                  id: "__puppeteer_mouse",
+                  actions: [
+                    { type: "pointerMove", ...positionStart },
+                    { type: "pointerDown", button: 0 },
+                    { type: "pointerUp", button: 0 },
+                    { type: "pointerDown", button: 0 },
+                  ],
+                },
+              ]);
               await moveInSteps(page, positionStart, positionEnd, 20);
               await page.mouse.up();
 
