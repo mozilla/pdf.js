@@ -5,7 +5,7 @@ import {
 import { noContextMenu, stopEvent } from "../display_utils.js";
 import { AnnotationEditor } from "./editor.js";
 import { CurrentPointers } from "./tools.js";
-import { InkEditor } from "./ink.js";
+
 
 class EraserEditor extends AnnotationEditor {
   static #currentCursorAC = null;
@@ -28,7 +28,6 @@ class EraserEditor extends AnnotationEditor {
 
   constructor(params) {
     super({ ...params, name: "eraserEditor" });
-    this.thickness = params.thickness || EraserEditor._defaultThickness;
     this.defaultL10nId = "pdfjs-editor-eraser-editor";
     EraserEditor._thickness =
       params.thickness ||
