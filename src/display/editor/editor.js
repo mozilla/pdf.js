@@ -1078,13 +1078,13 @@ class AnnotationEditor {
     }
     this._editToolbar = new EditorToolbar(this);
     this.div.append(this._editToolbar.render());
-    this._editToolbar.addButton("comment", this.addCommentButton());
     const { toolbarButtons } = this;
     if (toolbarButtons) {
       for (const [name, tool] of toolbarButtons) {
         await this._editToolbar.addButton(name, tool);
       }
     }
+    this._editToolbar.addButton("comment", this.addCommentButton());
     this._editToolbar.addButton("delete");
 
     return this._editToolbar;
