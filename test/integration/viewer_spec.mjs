@@ -1372,6 +1372,12 @@ describe("PDF viewer", () => {
             // with no touch screen.
             return;
           }
+          if (browserName === "chrome") {
+            // Skip the test for Chrome as it doesn't support pinch zoom
+            // emulation for WebDriver BiDi yet.
+            // TODO: Remove this check once the issue is fixed.
+            return;
+          }
 
           const rect = await getSpanRectFromText(page, 1, "type-stable");
           const originX = rect.x + rect.width / 2;

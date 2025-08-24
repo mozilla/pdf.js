@@ -2460,10 +2460,9 @@ describe("Interaction", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           if (browserName === "firefox") {
-            // Skip the test for Firefox as it doesn't support the timezone
-            // feature yet with BiDi.
-            // See https://github.com/puppeteer/puppeteer/issues/13344.
-            // TODO: Remove this check once the issue is fixed.
+            // Skip the test for Firefox as it doesn't support timezone
+            // emulation for WebDriver BiDi yet.
+            // TODO: Remove this check once bug 1978027 is fixed.
             return;
           }
 
