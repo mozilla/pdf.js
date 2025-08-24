@@ -39,12 +39,17 @@ class Comment {
     if (!this.#editor._uiManager.hasCommentManager()) {
       return null;
     }
+
     const comment = (this.#commentButton = document.createElement("button"));
     comment.className = "comment";
     comment.tabIndex = "0";
     comment.setAttribute("data-l10n-id", "pdfjs-editor-edit-comment-button");
 
     const signal = this.#editor._uiManager._signal;
+    if (!(signal instanceof AbortSignal) || signal.aborted) {
+      return comment;
+    }
+
     comment.addEventListener("contextmenu", noContextMenu, { signal });
     comment.addEventListener("pointerdown", event => event.stopPropagation(), {
       signal,
