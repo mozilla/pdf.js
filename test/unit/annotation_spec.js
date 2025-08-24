@@ -4995,6 +4995,7 @@ describe("annotation", function () {
             rotation: 90,
             popup: {
               contents: "Hello PDF.js World !",
+              rect: [1, 2, 3, 4],
             },
             id: "143R",
             ref: highlightRef,
@@ -5010,7 +5011,7 @@ describe("annotation", function () {
       const popup = data[0];
       expect(popup.data).toEqual(
         "1 0 obj\n" +
-          "<< /Type /Annot /Subtype /Popup /Open false /Parent 143 0 R>>\n" +
+          "<< /Type /Annot /Subtype /Popup /Open false /Rect [1 2 3 4] /Parent 143 0 R>>\n" +
           "endobj\n"
       );
 
