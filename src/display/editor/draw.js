@@ -91,6 +91,10 @@ class DrawingEditor extends AnnotationEditor {
     this._addOutlines(params);
   }
 
+  get _drawOutlines() {
+    return this.#drawOutlines;
+  }
+
   _addOutlines(params) {
     if (params.drawOutlines) {
       this.#createDrawOutlines(params);
@@ -131,21 +135,6 @@ class DrawingEditor extends AnnotationEditor {
       /* hasClip = */ false
     );
     return id;
-  }
-
-  _replaceOutlines(newOutlines) {
-    if (!newOutlines || !this.parent || this._drawId === null) {
-      return;
-    }
-    this.#drawOutlines = newOutlines;
-
-    this.parent.drawLayer.finalizeDraw(
-      this._drawId,
-      this.#drawOutlines.defaultProperties
-    );
-
-    this.#updateBbox(this.#drawOutlines.box);
-    this.rotate();
   }
 
   static _mergeSVGProperties(p1, p2) {

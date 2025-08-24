@@ -309,9 +309,22 @@ class EraserEditor extends AnnotationEditor {
   }
 
   #commit() {
+    const cmds = [],
+      undos = [];
     for (const editor of this.#erasableEditors) {
-      editor.endErase();
+      const { cmd, undo } = editor.endErase();
+      if (cmd && undo) {
+        cmds.push(cmd);
+        undos.push(undo);
+      }
     }
+
+    this.parent.addCommands({
+      cmd: () => cmds.forEach(f => f()),
+      undo: () => undos.forEach(f => f()),
+      mustExec: false,
+      type: AnnotationEditorParamsType.ERASER_STEP,
+    });
   }
 
   #abortEraseSession() {

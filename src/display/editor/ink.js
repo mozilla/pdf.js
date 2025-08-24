@@ -378,22 +378,38 @@ class InkEditor extends DrawingEditor {
   endErase() {
     // if nothing has been erased
     if (!this.#erased) {
-      return;
+      return {};
     }
 
     // reset erased flag
     this.#erased = false;
+    const oldOutline = this._drawOutlines;
+    const drawingOptions = { ...this._drawingOptions };
+    const undo = () => {
+      this._addOutlines({
+        drawOutlines: oldOutline,
+        drawId: this._drawId,
+        drawingOptions,
+      });
+    };
 
     if (this.#points.length === 0) {
       this.remove();
-      return;
+      return { cmd: () => this.remove(), undo };
     }
 
     const newOutlines = this.#deserializePoints();
-    this._replaceOutlines(newOutlines);
-    this.onScaleChanging();
+    const cmd = () =>
+      this._addOutlines({
+        drawOutlines: newOutlines,
+        drawId: this._drawId,
+        drawingOptions,
+      });
+    cmd();
 
     this.#points = null;
+
+    return { cmd, undo };
   }
 
   #deserializePoints() {
