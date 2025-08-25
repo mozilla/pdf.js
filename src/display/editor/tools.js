@@ -43,6 +43,78 @@ function bindEvents(obj, element, names) {
 }
 
 /**
+ * Class to store current pointer used by the editor.
+ */
+class CurrentPointer {
+  // To manage the pointer events.
+  static #pointerId = NaN;
+
+  static #pointerType = null;
+
+  static #pointerIds = null;
+
+  static #moveTimestamp = NaN;
+
+  static initializeAndAddPointerId(pointerId) {
+    (CurrentPointer.#pointerIds ||= new Set()).add(pointerId);
+  }
+
+  static setPointer(pointerType, pointerId) {
+    CurrentPointer.#pointerId ||= pointerId;
+    CurrentPointer.#pointerType ??= pointerType;
+  }
+
+  static setTimeStamp(timeStamp) {
+    CurrentPointer.#moveTimestamp = timeStamp;
+  }
+
+  static isSamePointerId(pointerId) {
+    if (CurrentPointer.#pointerId === pointerId) {
+      return true;
+    }
+
+    CurrentPointer.#pointerIds?.delete(pointerId);
+    return false;
+  }
+
+  static isPointerType() {
+    return CurrentPointer.#pointerType !== null;
+  }
+
+  static isSamePointerType(pointerType) {
+    return CurrentPointer.#pointerType === pointerType;
+  }
+
+  static isInitializedAndDifferentPointerType(pointerType) {
+    return (
+      CurrentPointer.isPointerType() &&
+      !CurrentPointer.isSamePointerType(pointerType)
+    );
+  }
+
+  static isSameTimeStamp(timeStamp) {
+    return CurrentPointer.#moveTimestamp === timeStamp;
+  }
+
+  static isUsingMultiplePointers() {
+    return CurrentPointer.#pointerIds?.size >= 1;
+  }
+
+  static clearPointerType() {
+    CurrentPointer.#pointerType = null;
+  }
+
+  static clearPointerId() {
+    CurrentPointer.#pointerId = NaN;
+    CurrentPointer.#pointerIds = null;
+  }
+
+  static clearTimeStamp() {
+    CurrentPointer.#moveTimestamp = NaN;
+  }
+}
+
+/**
  * Class to create some unique ids for the different editors.
  */
 class IdManager {
@@ -1767,13 +1839,16 @@ class AnnotationEditorUIManager {
    *   edit mode.
    * @param {boolean} [editComment] - true if the mode change is due to a
    *   comment edit.
+   * @param {boolean} [isFromEvent] - true if the mode change is due to an event
+   *   (e.g. toolbar button clicked).
    */
   async updateMode(
     mode,
     editId = null,
     isFromKeyboard = false,
     mustEnterInEditMode = false,
-    editComment = false
+    editComment = false,
+    isFromEvent = false
   ) {
     if (this.#mode === mode) {
       return;
@@ -1802,6 +1877,10 @@ class AnnotationEditorUIManager {
     }
     if (mode === AnnotationEditorType.SIGNATURE) {
       await this.#signatureManager?.loadSignatures();
+    }
+    if (isFromEvent) {
+      // reinitialize the pointer type when mode changed by an event
+      CurrentPointer.clearPointerType();
     }
     this.setEditingState(true);
     await this.#enableAll();
@@ -1884,6 +1963,8 @@ class AnnotationEditorUIManager {
         (this.#showAllStates ||= new Map()).set(type, value);
         this.showAllEditors("highlight", value);
         break;
+      case AnnotationEditorParamsType.ERASER_THICKNESS:
+        this.updateEraserThickness("eraser", value);
     }
 
     if (this.hasSelection) {
@@ -1910,6 +1991,14 @@ class AnnotationEditorUIManager {
       this.#dispatchUpdateUI([
         [AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL, visible],
       ]);
+    }
+  }
+
+  updateEraserThickness(type, value) {
+    for (const editor of this.#allEditors.values()) {
+      if (editor.editorType === type) {
+        editor.updateThickness(value);
+      }
     }
   }
 
@@ -2668,5 +2757,6 @@ export {
   bindEvents,
   ColorManager,
   CommandManager,
+  CurrentPointer,
   KeyboardManager,
 };
