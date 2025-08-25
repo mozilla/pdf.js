@@ -1216,6 +1216,13 @@ describe("The pen-drawn shape must maintain correct curvature regardless of the 
   it("must retain correct curvature regardless of the page or the curve's endpoint location", async () => {
     await Promise.all(
       pages.map(async ([browserName, page]) => {
+        if (browserName === "chrome" && navigator.platform.includes("Win")) {
+          // Skip the test for Chrome on Windows because it doesn't allow to
+          // have elements outside the viewport and thus permafails with e.g.
+          // `Cannot move beyond viewport (x: -32, y: 241)`.
+          return;
+        }
+
         await switchToInk(page);
 
         // Creating a reference curve on the first page with end
