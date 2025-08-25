@@ -230,7 +230,6 @@
     --editor-toolbar-delete-image: url(images/editor-toolbar-delete.svg);
     --editor-toolbar-bg-color: light-dark(#f0f0f4, #2b2a33);
     --editor-toolbar-highlight-image: url(images/toolbarButton-editorHighlight.svg);
-    --editor-toolbar-comment-edit-image: url(images/comment-editButton.svg);
     --editor-toolbar-fg-color: light-dark(#2e2e56, #fbfbfe);
     --editor-toolbar-border-color: #8f8f9d;
     --editor-toolbar-hover-border-color: var(--editor-toolbar-border-color);
@@ -343,7 +342,7 @@
         }
 
         &.commentButton::before {
-          mask-image: var(--editor-toolbar-comment-edit-image);
+          mask-image: var(--comment-edit-button-icon);
         }
 
         &.deleteButton::before {
@@ -489,7 +488,7 @@
 
         &::before {
           content: "";
-          mask-image: var(--editor-toolbar-comment-edit-image);
+          mask-image: var(--comment-edit-button-icon);
           mask-repeat: no-repeat;
           mask-position: center;
           display: inline-block;

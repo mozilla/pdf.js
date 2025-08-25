@@ -310,7 +310,7 @@
       height: 100%;
       mask-repeat: no-repeat;
       mask-size: cover;
-      mask-image: var(--comment-edit-image);
+      mask-image: var(--comment-edit-button-icon);
       background-color: var(--comment-button-fg);
       margin: 0;
       padding: 0;

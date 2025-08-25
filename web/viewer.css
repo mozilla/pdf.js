@@ -144,6 +144,7 @@
   );
   --secondaryToolbarButton-documentProperties-icon: url(images/secondaryToolbarButton-documentProperties.svg);
   --editorParams-stampAddImage-icon: url(images/toolbarButton-zoomIn.svg);
+  --comment-edit-button-icon: url(images/comment-editButton.svg);
 }
 
 :root:dir(rtl) {
