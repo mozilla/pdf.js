@@ -2532,6 +2532,24 @@ class PDFViewer {
     updater();
   }
 
+  undo() {
+    if (!this.#annotationEditorUIManager) {
+      throw new Error(`The AnnotationEditor is not enabled.`);
+    }
+    if (this.pdfDocument) {
+      this.#annotationEditorUIManager.undo();
+    }
+  }
+
+  redo() {
+    if (!this.#annotationEditorUIManager) {
+      throw new Error(`The AnnotationEditor is not enabled.`);
+    }
+    if (this.pdfDocument) {
+      this.#annotationEditorUIManager.redo();
+    }
+  }
+
   refresh(noUpdate = false, updateArgs = Object.create(null)) {
     if (!this.pdfDocument) {
       return;

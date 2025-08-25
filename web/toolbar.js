@@ -67,6 +67,8 @@ class Toolbar {
       { element: options.zoomOut, eventName: "zoomout" },
       { element: options.print, eventName: "print" },
       { element: options.download, eventName: "download" },
+      { element: options.undo, eventName: "undo" },
+      { element: options.redo, eventName: "redo" },
       {
         element: options.editorFreeTextButton,
         eventName: "switchannotationeditormode",
