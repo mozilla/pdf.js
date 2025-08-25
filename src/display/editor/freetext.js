@@ -771,6 +771,12 @@ class FreeTextEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
+  getPDFRect() {
+    const padding = FreeTextEditor._internalPadding * this.parentScale;
+    return this.getRect(padding, padding);
+  }
+
+  /** @inheritdoc */
   static async deserialize(data, parent, uiManager) {
     let initialData = null;
     if (data instanceof FreeTextAnnotationElement) {
@@ -833,8 +839,7 @@ class FreeTextEditor extends AnnotationEditor {
       return this.serializeDeleted();
     }
 
-    const padding = FreeTextEditor._internalPadding * this.parentScale;
-    const rect = this.getRect(padding, padding);
+    const rect = this.getPDFRect();
     const color = AnnotationEditor._colorManager.convert(
       this.isAttachedToDOM
         ? getComputedStyle(this.editorDiv).color
@@ -901,9 +906,8 @@ class FreeTextEditor extends AnnotationEditor {
       content.append(div);
     }
 
-    const padding = FreeTextEditor._internalPadding * this.parentScale;
     const params = {
-      rect: this.getRect(padding, padding),
+      rect: this.getPDFRect(),
     };
     params.popup = this.hasEditedComment
       ? this.comment

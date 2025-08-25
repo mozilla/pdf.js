@@ -988,7 +988,7 @@ class DrawingEditor extends AnnotationEditor {
   /** @inheritdoc */
   renderAnnotationElement(annotation) {
     annotation.updateEdited({
-      rect: this.getRect(0, 0),
+      rect: this.getPDFRect(),
     });
 
     return null;
