@@ -250,3 +250,101 @@
     }
   }
 }
+
+.annotationLayer.disabled .annotationCommentButton {
+  display: none;
+}
+
+:is(.annotationLayer, .annotationEditorLayer) {
+  .annotationCommentButton {
+    --comment-button-bg: light-dark(white, #1c1b22);
+    --comment-button-fg: light-dark(#5b5b66, #fbfbfe);
+    --comment-button-active-bg: light-dark(#0041a4, #a6ecf4);
+    --comment-button-active-fg: light-dark(white, #15141a);
+    --comment-button-hover-bg: light-dark(#0053cb, #61dce9);
+    --comment-button-hover-fg: light-dark(white, #15141a);
+    --comment-button-border-color: light-dark(#8f8f9d, #bfbfc9);
+    --comment-button-focus-border-color: light-dark(#cfcfd8, #3a3944);
+    --comment-button-hover-border-color: var(--comment-button-hover-bg);
+    --comment-button-selected-bg: light-dark(#0062fa, #00cadb);
+    --comment-button-selected-fg: light-dark(white, #15141a);
+    --comment-button-dim: 24px;
+    --comment-button-offset: 1px;
+    --comment-button-box-shadow:
+      0 0.25px 0.75px 0 light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)),
+      0 2px 6px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
+    --comment-button-focus-outline-color: light-dark(#0062fa, #00cadb);
+
+    @media screen and (forced-colors: active) {
+      --comment-button-bg: Canvas;
+      --comment-button-fg: CanvasText;
+      --comment-button-hover-bg: Highlight;
+      --comment-button-hover-fg: ButtonFace;
+      --comment-button-active-bg: Highlight;
+      --comment-button-active-fg: ButtonFace;
+      --comment-button-border-color: ButtonBorder;
+      --comment-button-box-shadow: none;
+      --comment-button-focus-outline-color: CanvasText;
+      --comment-button-selected-bg: ButtonBorder;
+      --comment-button-selected-fg: ButtonFace;
+    }
+
+    position: absolute;
+    width: var(--comment-button-dim);
+    height: var(--comment-button-dim);
+    background-color: var(--comment-button-bg);
+    border-radius: 6px 6px 6px 0;
+    border: 1px solid var(--comment-button-border-color);
+    box-shadow: var(--comment-button-box-shadow);
+    cursor: auto;
+    z-index: 1;
+    padding: 4px;
+    margin: 0;
+    box-sizing: border-box;
+    pointer-events: auto;
+
+    &::before {
+      content: "";
+      display: inline-block;
+      width: 100%;
+      height: 100%;
+      mask-repeat: no-repeat;
+      mask-size: cover;
+      mask-image: var(--comment-edit-image);
+      background-color: var(--comment-button-fg);
+      margin: 0;
+      padding: 0;
+    }
+
+    &:focus-visible {
+      -moz-outline-radius: 7px 7px 7px 0;
+      outline: 2px solid var(--comment-button-focus-outline-color);
+      outline-offset: 1px;
+      border-color: var(--comment-button-focus-border-color);
+    }
+
+    &:hover {
+      background-color: var(--comment-button-hover-bg) !important;
+
+      &::before {
+        background-color: var(--comment-button-hover-fg);
+      }
+    }
+
+    &:active {
+      background-color: var(--comment-button-active-bg) !important;
+
+      &::before {
+        background-color: var(--comment-button-active-fg);
+      }
+    }
+
+    &.selected {
+      background-color: var(--comment-button-selected-bg) !important;
+
+      &::before {
+        background-color: var(--comment-button-selected-fg);
+      }
+    }
+  }
+}
