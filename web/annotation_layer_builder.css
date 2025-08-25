@@ -17,7 +17,6 @@
   color-scheme: only light;
 
   --annotation-unfocused-field-background: url("data:image/svg+xml;charset=UTF-8,<svg width='1px' height='1px' xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' style='fill:rgba(0, 54, 255, 0.13);'/></svg>");
-  --comment-edit-image: url(images/comment-inline-editButton.svg);
   --input-focus-border-color: Highlight;
   --input-focus-outline: 1px solid Canvas;
   --input-unfocused-border-color: transparent;
