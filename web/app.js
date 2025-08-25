@@ -2051,6 +2051,8 @@ const PDFViewerApplication = {
     eventBus._on("lastpage", () => (this.page = this.pagesCount), opts);
     eventBus._on("nextpage", () => pdfViewer.nextPage(), opts);
     eventBus._on("previouspage", () => pdfViewer.previousPage(), opts);
+    eventBus._on("redo", evt => pdfViewer.redo(), opts);
+    eventBus._on("undo", evt => pdfViewer.undo(), opts);
     eventBus._on("zoomin", this.zoomIn.bind(this), opts);
     eventBus._on("zoomout", this.zoomOut.bind(this), opts);
     eventBus._on("zoomreset", this.zoomReset.bind(this), opts);
