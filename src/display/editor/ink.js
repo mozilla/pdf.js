@@ -325,9 +325,7 @@ class InkEditor extends DrawingEditor {
    * @param {number} radius
    */
   erase(x, y, radius) {
-    if (!this.#points) {
-      this.#points = this.serializeDraw(false).points;
-    }
+    this.#points ||= this.serializeDraw(false).points;
 
     const radius2 = radius * radius;
     const newPaths = [];
