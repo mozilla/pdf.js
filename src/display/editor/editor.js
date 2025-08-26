@@ -1573,6 +1573,15 @@ class AnnotationEditor {
   }
 
   /**
+   * Get the rect in page coordinates without any translation.
+   * It's used when serializing the editor.
+   * @returns {Array<number>}
+   */
+  getPDFRect() {
+    return this.getRect(0, 0);
+  }
+
+  /**
    * Executed once this editor has been rendered.
    * @param {boolean} focus - true if the editor should be focused.
    */
