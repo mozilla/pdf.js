@@ -2478,8 +2478,8 @@ class PopupElement {
       { signal }
     );
     const { style } = button;
-    style.left = `calc(${this.#commentButtonPosition[0]}% + var(--comment-button-offset))`;
-    style.top = `calc(${this.#commentButtonPosition[1]}% - var(--comment-button-dim) - var(--comment-button-offset))`;
+    style.left = `calc(${this.#commentButtonPosition[0]}%)`;
+    style.top = `calc(${this.#commentButtonPosition[1]}% - var(--comment-button-dim))`;
     if (this.#commentButtonColor) {
       style.backgroundColor = this.#commentButtonColor;
     }
