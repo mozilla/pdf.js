@@ -15,6 +15,7 @@
 
 import {
   AnnotationEditorType,
+  changeLightness,
   getRGB,
   noContextMenu,
   PDFDateString,
@@ -355,9 +356,7 @@ class CommentManager {
       return null; // No color provided.
     }
     const [r, g, b] = getRGB(color);
-    const gray = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-    const ratio = gray < 0.9 ? Math.round((0.9 - gray) * 100) : 0;
-    return `color-mix(in srgb, ${ratio}% white, ${color})`;
+    return changeLightness(r, g, b);
   }
 
   #setText(text) {

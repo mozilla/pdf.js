@@ -37,7 +37,11 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
-import { PDFDateString, setLayerDimensions } from "./display_utils.js";
+import {
+  changeLightness,
+  PDFDateString,
+  setLayerDimensions,
+} from "./display_utils.js";
 import { AnnotationStorage } from "./annotation_storage.js";
 import { ColorConverters } from "../shared/scripting_utils.js";
 import { DOMSVGFactory } from "./svg_factory.js";
@@ -232,44 +236,11 @@ class AnnotationElement {
     const opacity = this.data.opacity ?? 1;
     const oppositeOpacity = 255 * (1 - opacity);
 
-    return this.#changeLightness(
+    return changeLightness(
       Math.min(r + oppositeOpacity, 255),
       Math.min(g + oppositeOpacity, 255),
       Math.min(b + oppositeOpacity, 255)
     );
-  }
-
-  #changeLightness(r, g, b) {
-    r /= 255;
-    g /= 255;
-    b /= 255;
-
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    const l = (max + min) / 2;
-    const newL = (((1 + Math.sqrt(l)) / 2) * 100).toFixed(2);
-
-    if (max === min) {
-      // gray
-      return `hsl(0, 0%, ${newL}%)`;
-    }
-
-    const d = max - min;
-
-    // hue (branch on max only; avoids mod)
-    let h;
-    if (max === r) {
-      h = (g - b) / d + (g < b ? 6 : 0);
-    } else if (max === g) {
-      h = (b - r) / d + 2;
-    } else {
-      // max === b
-      h = (r - g) / d + 4;
-    }
-    h = (h * 60).toFixed(2);
-    const s = ((d / (1 - Math.abs(2 * l - 1))) * 100).toFixed(2);
-
-    return `hsl(${h}, ${s}%, ${newL}%)`;
   }
 
   _normalizePoint(point) {
