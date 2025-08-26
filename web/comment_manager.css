@@ -263,13 +263,14 @@
     --comment-button-active-fg: light-dark(white, #15141a);
     --comment-button-hover-bg: light-dark(#0053cb, #61dce9);
     --comment-button-hover-fg: light-dark(white, #15141a);
+    --comment-button-selected-bg: light-dark(#0062fa, #00cadb);
     --comment-button-border-color: light-dark(#8f8f9d, #bfbfc9);
+    --comment-button-active-border-color: var(--comment-button-active-bg);
     --comment-button-focus-border-color: light-dark(#cfcfd8, #3a3944);
     --comment-button-hover-border-color: var(--comment-button-hover-bg);
-    --comment-button-selected-bg: light-dark(#0062fa, #00cadb);
+    --comment-button-selected-border-color: var(--comment-button-selected-bg);
     --comment-button-selected-fg: light-dark(white, #15141a);
     --comment-button-dim: 24px;
-    --comment-button-offset: 1px;
     --comment-button-box-shadow:
       0 0.25px 0.75px 0 light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)),
       0 2px 6px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
@@ -317,7 +318,6 @@
     }
 
     &:focus-visible {
-      -moz-outline-radius: 7px 7px 7px 0;
       outline: 2px solid var(--comment-button-focus-outline-color);
       outline-offset: 1px;
       border-color: var(--comment-button-focus-border-color);
@@ -325,6 +325,7 @@
 
     &:hover {
       background-color: var(--comment-button-hover-bg) !important;
+      border-color: var(--comment-button-hover-border-color);
 
       &::before {
         background-color: var(--comment-button-hover-fg);
@@ -333,6 +334,7 @@
 
     &:active {
       background-color: var(--comment-button-active-bg) !important;
+      border-color: var(--comment-button-active-border-color);
 
       &::before {
         background-color: var(--comment-button-active-fg);
@@ -341,6 +343,7 @@
 
     &.selected {
       background-color: var(--comment-button-selected-bg) !important;
+      border-color: var(--comment-button-selected-border-color);
 
       &::before {
         background-color: var(--comment-button-selected-fg);
