@@ -934,7 +934,7 @@ class PDFPageView extends BasePDFPageView {
       pageColors: this.pageColors,
       isEditing: this.#isEditing,
       recordOperations:
-        this.enableOptimizedPartialRendering && !this.recordedGroups,
+        this.enableOptimizedPartialRendering && !this.recordedBBoxes,
     };
   }
 
