@@ -45,6 +45,10 @@ function getViewerConfiguration() {
       zoomIn: document.getElementById("zoomInButton"),
       zoomOut: document.getElementById("zoomOutButton"),
       print: document.getElementById("printButton"),
+      editorCommentButton: document.getElementById("editorCommentButton"),
+      editorCommentParamsToolbar: document.getElementById(
+        "editorCommentParamsToolbar"
+      ),
       editorFreeTextButton: document.getElementById("editorFreeTextButton"),
       editorFreeTextParamsToolbar: document.getElementById(
         "editorFreeTextParamsToolbar"
@@ -241,6 +245,19 @@ function getViewerConfiguration() {
       updateButton: document.getElementById("editSignatureUpdateButton"),
     },
     annotationEditorParams: {
+      editorCommentsSidebar: document.getElementById("editorCommentsSidebar"),
+      editorCommentsSidebarCount: document.getElementById(
+        "editorCommentsSidebarCount"
+      ),
+      editorCommentsSidebarTitle: document.getElementById(
+        "editorCommentsSidebarTitle"
+      ),
+      editorCommentsSidebarCloseButton: document.getElementById(
+        "editorCommentsSidebarCloseButton"
+      ),
+      editorCommentsSidebarList: document.getElementById(
+        "editorCommentsSidebarList"
+      ),
       editorFreeTextFontSize: document.getElementById("editorFreeTextFontSize"),
       editorFreeTextColor: document.getElementById("editorFreeTextColor"),
       editorInkColor: document.getElementById("editorInkColor"),

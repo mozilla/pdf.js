@@ -19,6 +19,7 @@
 @import url(xfa_layer_builder.css);
 /* Ignored in GECKOVIEW builds: */
 @import url(annotation_editor_layer_builder.css);
+@import url(sidebar.css);
 
 :root {
   color-scheme: light dark;
