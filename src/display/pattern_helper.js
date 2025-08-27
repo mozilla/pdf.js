@@ -478,7 +478,7 @@ class TilingPattern {
     this.baseTransform = baseTransform;
   }
 
-  createPatternCanvas(owner) {
+  createPatternCanvas(owner, opIdx) {
     const {
       bbox,
       operatorList,
@@ -567,7 +567,7 @@ class TilingPattern {
       dimy.size
     );
     const tmpCtx = tmpCanvas.context;
-    const graphics = canvasGraphicsFactory.createCanvasGraphics(tmpCtx);
+    const graphics = canvasGraphicsFactory.createCanvasGraphics(tmpCtx, opIdx);
     graphics.groupLevel = owner.groupLevel;
 
     this.setFillAndStrokeStyleToContext(graphics, paintType, color);
@@ -600,7 +600,7 @@ class TilingPattern {
 
     graphics.endDrawing();
 
-    graphics.dependencyTracker?.restore().recordNestedDependencies?.();
+    graphics.dependencyTracker?.restore();
     tmpCtx.restore();
 
     if (redrawHorizontally || redrawVertically) {
@@ -726,7 +726,7 @@ class TilingPattern {
     return false;
   }
 
-  getPattern(ctx, owner, inverse, pathType) {
+  getPattern(ctx, owner, inverse, pathType, opIdx) {
     // PDF spec 8.7.2 NOTE 1: pattern's matrix is relative to initial matrix.
     let matrix = inverse;
     if (pathType !== PathType.SHADING) {
@@ -736,7 +736,7 @@ class TilingPattern {
       }
     }
 
-    const temporaryPatternCanvas = this.createPatternCanvas(owner);
+    const temporaryPatternCanvas = this.createPatternCanvas(owner, opIdx);
 
     let domMatrix = new DOMMatrix(matrix);
     // Rescale and so that the ctx.createPattern call generates a pattern with
