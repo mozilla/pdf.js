@@ -873,6 +873,8 @@ class PDFViewer {
       this.#annotationEditorUIManager?.destroy();
       this.#annotationEditorUIManager = null;
 
+      this.#annotationEditorMode = AnnotationEditorType.NONE;
+
       this.#printingAllowed = true;
     }
 
