@@ -449,7 +449,7 @@
             --alt-text-tooltip-bg: light-dark(#f0f0f4, #1c1b22);
             --alt-text-tooltip-fg: light-dark(#15141a, #fbfbfe);
             --alt-text-tooltip-border: #8f8f9d;
-            --alt-text-tooltip-shadow: 0px 2px 6px 0px
+            --alt-text-tooltip-shadow: 0 2px 6px 0
               light-dark(rgb(58 57 68 / 0.2), #15141a);
 
             @media screen and (forced-colors: active) {
@@ -768,7 +768,7 @@
     .editToolbar {
       rotate: 180deg;
       inset-inline-end: 100%;
-      inset-block-start: calc(0pc - var(--editor-toolbar-vert-offset));
+      inset-block-start: calc(0px - var(--editor-toolbar-vert-offset));
     }
   }
 
