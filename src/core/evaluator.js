@@ -72,6 +72,7 @@ import { BaseStream } from "./base_stream.js";
 import { bidi } from "./bidi.js";
 import { ColorSpace } from "./colorspace.js";
 import { ColorSpaceUtils } from "./colorspace_utils.js";
+import { FontInfo } from "../shared/obj-bin-transform.js";
 import { getFontSubstitution } from "./font_substitutions.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { getMetrics } from "./metrics.js";
@@ -4693,12 +4694,13 @@ class TranslatedFont {
       return;
     }
     this.#sent = true;
-
-    handler.send("commonobj", [
-      this.loadedName,
-      "Font",
-      this.font.exportData(),
-    ]);
+    const data = FontInfo.write(this.font.exportData());
+    handler.send("commonobj", [this.loadedName, "Font", data], [data]); // Transfer the ArrayBuffer.
+    // future path: switch to a SharedArrayBuffer
+    // const sab = new SharedArrayBuffer(data.byteLength);
+    // const view = new Uint8Array(sab);
+    // view.set(new Uint8Array(data));
+    // handler.send("commonobj", [this.loadedName, "Font", sab]);
   }
 
   fallback(handler, evaluatorOptions) {
