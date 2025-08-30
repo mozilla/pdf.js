@@ -251,7 +251,7 @@
   }
 }
 
-.annotationLayer.disabled .annotationCommentButton {
+.annotationLayer.disabled :is(.annotationCommentButton) {
   display: none;
 }
 

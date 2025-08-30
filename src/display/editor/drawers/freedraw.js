@@ -480,6 +480,7 @@ class FreeDrawOutline extends Outline {
     this.#scaleFactor = scaleFactor;
     this.#innerMargin = innerMargin;
     this.#isLTR = isLTR;
+    this.firstPoint = [NaN, NaN];
     this.lastPoint = [NaN, NaN];
     this.#computeMinMax(isLTR);
 
@@ -560,9 +561,12 @@ class FreeDrawOutline extends Outline {
     let lastX = outline[4];
     let lastY = outline[5];
     const minMax = [lastX, lastY, lastX, lastY];
+    let firstPointX = lastX;
+    let firstPointY = lastY;
     let lastPointX = lastX;
     let lastPointY = lastY;
     const ltrCallback = isLTR ? Math.max : Math.min;
+    const bezierBbox = new Float32Array(4);
 
     for (let i = 6, ii = outline.length; i < ii; i += 6) {
       const x = outline[i + 4],
@@ -571,6 +575,12 @@ class FreeDrawOutline extends Outline {
       if (isNaN(outline[i])) {
         Util.pointBoundingBox(x, y, minMax);
 
+        if (firstPointY > y) {
+          firstPointX = x;
+          firstPointY = y;
+        } else if (firstPointY === y) {
+          firstPointX = ltrCallback(firstPointX, x);
+        }
         if (lastPointY < y) {
           lastPointX = x;
           lastPointY = y;
@@ -578,16 +588,34 @@ class FreeDrawOutline extends Outline {
           lastPointX = ltrCallback(lastPointX, x);
         }
       } else {
-        const bbox = [Infinity, Infinity, -Infinity, -Infinity];
-        Util.bezierBoundingBox(lastX, lastY, ...outline.slice(i, i + 6), bbox);
+        bezierBbox[0] = bezierBbox[1] = Infinity;
+        bezierBbox[2] = bezierBbox[3] = -Infinity;
+        Util.bezierBoundingBox(
+          lastX,
+          lastY,
+          ...outline.slice(i, i + 6),
+          bezierBbox
+        );
 
-        Util.rectBoundingBox(...bbox, minMax);
+        Util.rectBoundingBox(
+          bezierBbox[0],
+          bezierBbox[1],
+          bezierBbox[2],
+          bezierBbox[3],
+          minMax
+        );
 
-        if (lastPointY < bbox[3]) {
-          lastPointX = bbox[2];
-          lastPointY = bbox[3];
-        } else if (lastPointY === bbox[3]) {
-          lastPointX = ltrCallback(lastPointX, bbox[2]);
+        if (firstPointY > bezierBbox[1]) {
+          firstPointX = bezierBbox[0];
+          firstPointY = bezierBbox[1];
+        } else if (firstPointY === bezierBbox[1]) {
+          firstPointX = ltrCallback(firstPointX, bezierBbox[0]);
+        }
+        if (lastPointY < bezierBbox[3]) {
+          lastPointX = bezierBbox[2];
+          lastPointY = bezierBbox[3];
+        } else if (lastPointY === bezierBbox[3]) {
+          lastPointX = ltrCallback(lastPointX, bezierBbox[2]);
         }
       }
       lastX = x;
@@ -599,6 +627,7 @@ class FreeDrawOutline extends Outline {
     bbox[1] = minMax[1] - this.#innerMargin;
     bbox[2] = minMax[2] - minMax[0] + 2 * this.#innerMargin;
     bbox[3] = minMax[3] - minMax[1] + 2 * this.#innerMargin;
+    this.firstPoint = [firstPointX, firstPointY];
     this.lastPoint = [lastPointX, lastPointY];
   }
 

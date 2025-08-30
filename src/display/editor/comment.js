@@ -16,7 +16,9 @@
 import { noContextMenu } from "../display_utils.js";
 
 class Comment {
-  #commentButton = null;
+  #commentStandaloneButton = null;
+
+  #commentToolbarButton = null;
 
   #commentWasFromKeyBoard = false;
 
@@ -32,16 +34,40 @@ class Comment {
 
   constructor(editor) {
     this.#editor = editor;
-    this.toolbar = null;
   }
 
-  render() {
+  renderForToolbar() {
+    const button = (this.#commentToolbarButton =
+      document.createElement("button"));
+    button.className = "comment";
+    return this.#render(button);
+  }
+
+  renderForStandalone() {
+    const button = (this.#commentStandaloneButton =
+      document.createElement("button"));
+    button.className = "annotationCommentButton";
+
+    const position = this.#editor.commentButtonPosition;
+    if (position) {
+      const { style } = button;
+      style.insetInlineEnd = `calc(${
+        100 *
+        (this.#editor._uiManager.direction === "ltr"
+          ? 1 - position[0]
+          : position[0])
+      }% - var(--comment-button-dim))`;
+      style.top = `calc(${100 * position[1]}% - var(--comment-button-dim))`;
+    }
+
+    return this.#render(button);
+  }
+
+  #render(comment) {
     if (!this.#editor._uiManager.hasCommentManager()) {
       return null;
     }
 
-    const comment = (this.#commentButton = document.createElement("button"));
-    comment.className = "comment";
     comment.tabIndex = "0";
     comment.setAttribute("data-l10n-id", "pdfjs-editor-edit-comment-button");
 
@@ -57,7 +83,11 @@ class Comment {
 
     const onClick = event => {
       event.preventDefault();
-      this.edit();
+      if (comment === this.#commentToolbarButton) {
+        this.edit();
+      } else {
+        this.#editor._uiManager.toggleComment(this.#editor);
+      }
     };
     comment.addEventListener("click", onClick, { capture: true, signal });
     comment.addEventListener(
@@ -86,10 +116,12 @@ class Comment {
   }
 
   finish() {
-    if (!this.#commentButton) {
+    if (!this.#commentToolbarButton) {
       return;
     }
-    this.#commentButton.focus({ focusVisible: this.#commentWasFromKeyBoard });
+    this.#commentToolbarButton.focus({
+      focusVisible: this.#commentWasFromKeyBoard,
+    });
     this.#commentWasFromKeyBoard = false;
   }
 
@@ -132,18 +164,13 @@ class Comment {
     this.data = text;
   }
 
-  toggle(enabled = false) {
-    if (!this.#commentButton) {
-      return;
-    }
-    this.#commentButton.disabled = !enabled;
-  }
-
   shown() {}
 
   destroy() {
-    this.#commentButton?.remove();
-    this.#commentButton = null;
+    this.#commentToolbarButton?.remove();
+    this.#commentToolbarButton = null;
+    this.#commentStandaloneButton?.remove();
+    this.#commentStandaloneButton = null;
     this.#text = "";
     this.#date = null;
     this.#editor = null;

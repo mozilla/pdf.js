@@ -643,6 +643,15 @@ class AnnotationEditorLayer {
     this.addCommands({ cmd, undo, mustExec: false });
   }
 
+  getEditorByUID(uid) {
+    for (const editor of this.#editors.values()) {
+      if (editor.uid === uid) {
+        return editor;
+      }
+    }
+    return null;
+  }
+
   /**
    * Get an id for an editor.
    * @returns {string}

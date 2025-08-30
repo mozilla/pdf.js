@@ -20,6 +20,8 @@ import { Util } from "../../../shared/util.js";
 class HighlightOutliner {
   #box;
 
+  #firstPoint;
+
   #lastPoint;
 
   #verticalEdges = [];
@@ -63,12 +65,30 @@ class HighlightOutliner {
     const bboxHeight = minMax[3] - minMax[1] + 2 * innerMargin;
     const shiftedMinX = minMax[0] - innerMargin;
     const shiftedMinY = minMax[1] - innerMargin;
+    let firstPointX = isLTR ? -Infinity : Infinity;
+    let firstPointY = Infinity;
     const lastEdge = this.#verticalEdges.at(isLTR ? -1 : -2);
     const lastPoint = [lastEdge[0], lastEdge[2]];
 
     // Convert the coordinates of the edges into box coordinates.
     for (const edge of this.#verticalEdges) {
-      const [x, y1, y2] = edge;
+      const [x, y1, y2, left] = edge;
+      if (!left && isLTR) {
+        if (y1 < firstPointY) {
+          firstPointY = y1;
+          firstPointX = x;
+        } else if (y1 === firstPointY) {
+          firstPointX = Math.max(firstPointX, x);
+        }
+      } else if (left && !isLTR) {
+        if (y1 < firstPointY) {
+          firstPointY = y1;
+          firstPointX = x;
+        } else if (y1 === firstPointY) {
+          firstPointX = Math.min(firstPointX, x);
+        }
+      }
+
       edge[0] = (x - shiftedMinX) / bboxWidth;
       edge[1] = (y1 - shiftedMinY) / bboxHeight;
       edge[2] = (y2 - shiftedMinY) / bboxHeight;
@@ -80,6 +100,7 @@ class HighlightOutliner {
       bboxWidth,
       bboxHeight,
     ]);
+    this.#firstPoint = [firstPointX, firstPointY];
     this.#lastPoint = lastPoint;
   }
 
@@ -170,7 +191,12 @@ class HighlightOutliner {
       }
       outline.push(lastPointX, lastPointY);
     }
-    return new HighlightOutline(outlines, this.#box, this.#lastPoint);
+    return new HighlightOutline(
+      outlines,
+      this.#box,
+      this.#firstPoint,
+      this.#lastPoint
+    );
   }
 
   #binarySearch(y) {
@@ -264,10 +290,11 @@ class HighlightOutline extends Outline {
 
   #outlines;
 
-  constructor(outlines, box, lastPoint) {
+  constructor(outlines, box, firstPoint, lastPoint) {
     super();
     this.#outlines = outlines;
     this.#box = box;
+    this.firstPoint = firstPoint;
     this.lastPoint = lastPoint;
   }
 

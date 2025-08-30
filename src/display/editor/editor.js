@@ -55,6 +55,8 @@ class AnnotationEditor {
 
   #comment = null;
 
+  #commentStandaloneButton = null;
+
   #disabled = false;
 
   #dragPointerId = null;
@@ -184,6 +186,7 @@ class AnnotationEditor {
     this._initialOptions.isCentered = parameters.isCentered;
     this._structTreeParentId = null;
     this.annotationElementId = parameters.annotationElementId || null;
+    this.creationDate = new Date();
 
     const {
       rotation,
@@ -311,6 +314,10 @@ class AnnotationEditor {
   set _isDraggable(value) {
     this.#isDraggable = value;
     this.div?.classList.toggle("draggable", value);
+  }
+
+  get uid() {
+    return this.annotationElementId || this.id;
   }
 
   /**
@@ -1166,10 +1173,21 @@ class AnnotationEditor {
   }
 
   addCommentButton() {
-    if (this.#comment) {
-      return this.#comment;
+    return (this.#comment ||= new Comment(this));
+  }
+
+  addStandaloneCommentButton() {
+    this.#comment ||= new Comment(this);
+    if (this.#commentStandaloneButton) {
+      return;
     }
-    return (this.#comment = new Comment(this));
+    this.#commentStandaloneButton = this.#comment.renderForStandalone();
+    this.div.append(this.#commentStandaloneButton);
+  }
+
+  removeStandaloneCommentButton() {
+    this.#commentStandaloneButton?.remove();
+    this.#commentStandaloneButton = null;
   }
 
   get commentColor() {
@@ -1204,12 +1222,18 @@ class AnnotationEditor {
     return this.#comment?.hasBeenEdited();
   }
 
+  get hasComment() {
+    return !!this.#comment && !this.#comment.isDeleted();
+  }
+
   async editComment() {
     if (!this.#comment) {
       this.#comment = new Comment(this);
     }
     this.#comment.edit();
   }
+
+  showComment() {}
 
   addComment(serialized) {
     if (this.hasEditedComment) {
@@ -1581,6 +1605,17 @@ class AnnotationEditor {
     return this.getRect(0, 0);
   }
 
+  getData() {
+    return {
+      id: this.uid,
+      pageIndex: this.pageIndex,
+      rect: this.getPDFRect(),
+      contentsObj: { str: this.comment.text },
+      creationDate: this.creationDate,
+      popupRef: !this.#comment.isDeleted(),
+    };
+  }
+
   /**
    * Executed once this editor has been rendered.
    * @param {boolean} focus - true if the editor should be focused.
@@ -1812,6 +1847,14 @@ class AnnotationEditor {
 
   get toolbarPosition() {
     return null;
+  }
+
+  /**
+   * Get the position of the comment button.
+   * @returns {Array<number>|null}
+   */
+  get commentButtonPosition() {
+    return this._uiManager.direction === "ltr" ? [1, 0] : [0, 0];
   }
 
   /**

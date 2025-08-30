@@ -173,6 +173,10 @@ class CommentManager {
     overlayManager.register(dialog);
   }
 
+  setSidebarUiManager(uiManager) {
+    this.#sidebar.setUIManager(uiManager);
+  }
+
   showSidebar(annotations) {
     this.#sidebar.show(annotations);
   }
@@ -435,6 +439,8 @@ class CommentSidebar {
 
   #idsToElements = null;
 
+  #uiManager = null;
+
   constructor(
     {
       sidebar,
@@ -472,12 +478,14 @@ class CommentSidebar {
     this.#sidebar.hidden = true;
   }
 
+  setUIManager(uiManager) {
+    this.#uiManager = uiManager;
+  }
+
   show(annotations) {
     this.#elementsToAnnotations = new WeakMap();
     this.#idsToElements = new Map();
-    this.#annotations = annotations = annotations.filter(
-      a => a.popupRef && a.contentsObj?.str
-    );
+    this.#annotations = annotations;
     annotations.sort(this.#sortComments.bind(this));
     if (annotations.length !== 0) {
       const fragment = document.createDocumentFragment();
@@ -621,6 +629,7 @@ class CommentSidebar {
 
   #createCommentElement(annotation) {
     const {
+      id,
       creationDate,
       modificationDate,
       contentsObj: { str: text },
@@ -646,11 +655,11 @@ class CommentSidebar {
     commentItem.addEventListener("keydown", this.#boundCommentKeydown);
 
     this.#elementsToAnnotations.set(commentItem, annotation);
-    this.#idsToElements.set(annotation.id, commentItem);
+    this.#idsToElements.set(id, commentItem);
     return commentItem;
   }
 
-  #commentClick({ currentTarget }) {
+  async #commentClick({ currentTarget }) {
     if (currentTarget.classList.contains("selected")) {
       return;
     }
@@ -658,14 +667,18 @@ class CommentSidebar {
     if (!annotation) {
       return;
     }
-    const { pageIndex, rect } = annotation;
+    const { id, pageIndex, rect } = annotation;
     const SPACE_ABOVE_ANNOTATION = 10;
+    const pageNumber = pageIndex + 1;
+    const pageVisiblePromise = this.#uiManager?.waitForPageRendered(pageNumber);
     this.#linkService?.goToXY(
-      pageIndex + 1,
+      pageNumber,
       rect[0],
       rect[3] + SPACE_ABOVE_ANNOTATION
     );
     this.selectComment(currentTarget);
+    await pageVisiblePromise;
+    this.#uiManager?.showComment(pageIndex, id);
   }
 
   #commentKeydown(e) {
