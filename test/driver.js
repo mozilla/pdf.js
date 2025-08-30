@@ -1117,28 +1117,7 @@ class Driver {
                   const baseline = ctx.canvas.toDataURL("image/png");
                   this._clearCanvas();
 
-                  const filteredIndexes = new Set();
-
-                  // TODO: This logic is copy-psated from PDFPageDetailView.
-                  // We should export it instead, because even though it's
-                  // not the core logic of partial rendering it is still
-                  // relevant
-                  const recordedGroups = page.recordedGroups;
-                  for (let i = 0, ii = recordedGroups.length; i < ii; i++) {
-                    const group = recordedGroups[i];
-                    if (
-                      group.minX <= partialCrop.maxX &&
-                      group.maxX >= partialCrop.minX &&
-                      group.minY <= partialCrop.maxY &&
-                      group.maxY >= partialCrop.minY
-                    ) {
-                      filteredIndexes.add(group.idx);
-                      group.dependencies.forEach(
-                        filteredIndexes.add,
-                        filteredIndexes
-                      );
-                    }
-                  }
+                  const recordedBBoxes = page.recordedBBoxes;
 
                   const partialRenderContext = {
                     canvasContext: ctx,
@@ -1149,7 +1128,17 @@ class Driver {
                     pageColors,
                     transform,
                     recordOperations: false,
-                    filteredOperationIndexes: filteredIndexes,
+                    operationsFilter(index) {
+                      if (recordedBBoxes.isEmpty(index)) {
+                        return false;
+                      }
+                      return (
+                        recordedBBoxes.minX(index) <= partialCrop.maxX &&
+                        recordedBBoxes.maxX(index) >= partialCrop.minX &&
+                        recordedBBoxes.minY(index) <= partialCrop.maxY &&
+                        recordedBBoxes.maxY(index) >= partialCrop.minY
+                      );
+                    },
                   };
 
                   const partialRenderTask = page.render(partialRenderContext);
