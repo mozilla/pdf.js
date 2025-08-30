@@ -89,24 +89,12 @@ pdfjs-document-properties-button =
 pdfjs-document-properties-button-label = Keeroraaɗi Winndannde…
 pdfjs-document-properties-file-name = Innde fiilde:
 pdfjs-document-properties-file-size = Ɓetol fiilde:
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bite)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } bite)
 pdfjs-document-properties-title = Tiitoonde:
 pdfjs-document-properties-author = Binnduɗo:
 pdfjs-document-properties-subject = Toɓɓere:
 pdfjs-document-properties-keywords = Kelmekele jiytirɗe:
 pdfjs-document-properties-creation-date = Ñalnde Sosaa:
 pdfjs-document-properties-modification-date = Ñalnde Waylaa:
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Cosɗo:
 pdfjs-document-properties-producer = Paggiiɗo PDF:
 pdfjs-document-properties-version = Yamre PDF:

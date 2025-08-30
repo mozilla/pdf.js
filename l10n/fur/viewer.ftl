@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bytes)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bytes)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } bytes)
 pdfjs-document-properties-title = Titul:
 pdfjs-document-properties-author = Autôr:
 pdfjs-document-properties-subject = Ogjet:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = Date di modifiche:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Creatôr
 pdfjs-document-properties-producer = Gjeneradôr PDF:
 pdfjs-document-properties-version = Version PDF:
@@ -275,10 +263,6 @@ pdfjs-rendering-error = Al è vignût fûr un erôr tal realizâ la visualizazio
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -378,20 +362,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Editôr di test
     .default-content = Scomence a scrivi…
-pdfjs-free-text =
-    .aria-label = Editôr di test
-pdfjs-free-text-default-content = Scomence a scrivi…
-pdfjs-ink =
-    .aria-label = Editôr dissens
-pdfjs-ink-canvas =
-    .aria-label = Imagjin creade dal utent
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Test alternatîf
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Modifiche test alternatîf
-pdfjs-editor-alt-text-edit-button-label = Modifiche test alternatîf
 pdfjs-editor-alt-text-dialog-label = Sielç une opzion
 pdfjs-editor-alt-text-dialog-description = Il test alternatîf (“alt text”) al jude cuant che lis personis no puedin viodi la imagjin o cuant che la imagjine no ven cjariade.
 pdfjs-editor-alt-text-add-description-label = Zonte une descrizion
@@ -411,14 +387,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = Cjanton in alt a çampe — ridimensione
-pdfjs-editor-resizer-label-top-middle = Bande superiôr tal mieç — ridimensione
-pdfjs-editor-resizer-label-top-right = Cjanton in alt a diestre — ridimensione
-pdfjs-editor-resizer-label-middle-right = Bande diestre tal mieç — ridimensione
-pdfjs-editor-resizer-label-bottom-right = Cjanton in bas a diestre — ridimensione
-pdfjs-editor-resizer-label-bottom-middle = Bande inferiôr tal mieç — ridimensione
-pdfjs-editor-resizer-label-bottom-left = Cjanton in bas a çampe — ridimensione
-pdfjs-editor-resizer-label-middle-left = Bande di çampe tal mieç — ridimensione
 pdfjs-editor-resizer-top-left =
     .aria-label = Cjanton in alt a çampe — ridimensione
 pdfjs-editor-resizer-top-middle =

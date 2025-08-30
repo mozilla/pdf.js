@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bajtow)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bajtow)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } bajtow)
 pdfjs-document-properties-title = Titul:
 pdfjs-document-properties-author = Awtor:
 pdfjs-document-properties-subject = Předmjet:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = Datum změny:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Awtor:
 pdfjs-document-properties-producer = PDF-zhotowjer:
 pdfjs-document-properties-version = PDF-wersija:
@@ -279,10 +267,6 @@ pdfjs-rendering-error = Při zwobraznjenju strony je zmylk wustupił.
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -390,20 +374,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Tekstowy editor
     .default-content = Započńće pisać …
-pdfjs-free-text =
-    .aria-label = Tekstowy editor
-pdfjs-free-text-default-content = Započńće pisać…
-pdfjs-ink =
-    .aria-label = Rysowanski editor
-pdfjs-ink-canvas =
-    .aria-label = Wobraz wutworjeny wot wužiwarja
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Alternatiwny tekst
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Alternatiwny tekst wobdźěłać
-pdfjs-editor-alt-text-edit-button-label = Alternatiwny tekst wobdźěłać
 pdfjs-editor-alt-text-dialog-label = Nastajenje wubrać
 pdfjs-editor-alt-text-dialog-description = Alternatiwny tekst pomha, hdyž ludźo njemóža wobraz widźeć abo hdyž so wobraz njezačita.
 pdfjs-editor-alt-text-add-description-label = Wopisanje přidać
@@ -423,14 +399,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = Horjeka nalěwo – wulkosć změnić
-pdfjs-editor-resizer-label-top-middle = Horjeka wosrjedź – wulkosć změnić
-pdfjs-editor-resizer-label-top-right = Horjeka naprawo – wulkosć změnić
-pdfjs-editor-resizer-label-middle-right = Wosrjedź naprawo – wulkosć změnić
-pdfjs-editor-resizer-label-bottom-right = Deleka naprawo – wulkosć změnić
-pdfjs-editor-resizer-label-bottom-middle = Deleka wosrjedź – wulkosć změnić
-pdfjs-editor-resizer-label-bottom-left = Deleka nalěwo – wulkosć změnić
-pdfjs-editor-resizer-label-middle-left = Wosrjedź nalěwo – wulkosć změnić
 pdfjs-editor-resizer-top-left =
     .aria-label = Horjeka nalěwo – wulkosć změnić
 pdfjs-editor-resizer-top-middle =

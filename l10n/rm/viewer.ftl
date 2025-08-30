@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bytes)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bytes)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } bytes)
 pdfjs-document-properties-title = Titel:
 pdfjs-document-properties-author = Autur:
 pdfjs-document-properties-subject = Tema:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = Data da modificaziun:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date } { $time }
 pdfjs-document-properties-creator = Creà da:
 pdfjs-document-properties-producer = Creà il PDF cun:
 pdfjs-document-properties-version = Versiun da PDF:
@@ -275,10 +263,6 @@ pdfjs-rendering-error = Ina errur è cumparida cun visualisar questa pagina.
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -378,20 +362,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Editur da text
     .default-content = Cumenza a tippar…
-pdfjs-free-text =
-    .aria-label = Editur da text
-pdfjs-free-text-default-content = Cumenzar a tippar…
-pdfjs-ink =
-    .aria-label = Editur dissegn
-pdfjs-ink-canvas =
-    .aria-label = Maletg creà da l'utilisader
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Text alternativ
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Modifitgar il text alternativ
-pdfjs-editor-alt-text-edit-button-label = Modifitgar il text alternativ
 pdfjs-editor-alt-text-dialog-label = Tscherner ina opziun
 pdfjs-editor-alt-text-dialog-description = Il text alternativ (alt text) gida en cas che persunas na vesan betg il maletg u sch'i na reussescha betg d'al chargiar.
 pdfjs-editor-alt-text-add-description-label = Agiuntar ina descripziun
@@ -411,14 +387,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = Chantun sura a sanestra — redimensiunar
-pdfjs-editor-resizer-label-top-middle = Sura amez — redimensiunar
-pdfjs-editor-resizer-label-top-right = Chantun sura a dretga — redimensiunar
-pdfjs-editor-resizer-label-middle-right = Da vart dretga amez — redimensiunar
-pdfjs-editor-resizer-label-bottom-right = Chantun sut a dretga — redimensiunar
-pdfjs-editor-resizer-label-bottom-middle = Sutvart amez — redimensiunar
-pdfjs-editor-resizer-label-bottom-left = Chantun sut a sanestra — redimensiunar
-pdfjs-editor-resizer-label-middle-left = Vart sanestra amez — redimensiunar
 pdfjs-editor-resizer-top-left =
     .aria-label = Chantun sura a sanestra — redimensiunar
 pdfjs-editor-resizer-top-middle =

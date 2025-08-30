@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } byte)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } byte)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } byte)
 pdfjs-document-properties-title = Izenburua:
 pdfjs-document-properties-author = Egilea:
 pdfjs-document-properties-subject = Gaia:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = Aldatze-data:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Sortzailea:
 pdfjs-document-properties-producer = PDFaren ekoizlea:
 pdfjs-document-properties-version = PDF bertsioa:
@@ -275,10 +263,6 @@ pdfjs-rendering-error = Errorea gertatu da orria errendatzean.
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -378,20 +362,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Testu-editorea
     .default-content = Hasi idazten…
-pdfjs-free-text =
-    .aria-label = Testu-editorea
-pdfjs-free-text-default-content = Hasi idazten…
-pdfjs-ink =
-    .aria-label = Marrazki-editorea
-pdfjs-ink-canvas =
-    .aria-label = Erabiltzaileak sortutako irudia
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Testu alternatiboa
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Editatu testu alternatiboa
-pdfjs-editor-alt-text-edit-button-label = Editatu testu alternatiboa
 pdfjs-editor-alt-text-dialog-label = Aukeratu aukera
 pdfjs-editor-alt-text-dialog-description = Testu alternatiboak laguntzen du jendeak ezin duenean irudia ikusi edo ez denean kargatzen.
 pdfjs-editor-alt-text-add-description-label = Gehitu azalpena
@@ -411,14 +387,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = Goiko ezkerreko izkina — aldatu tamaina
-pdfjs-editor-resizer-label-top-middle = Goian erdian — aldatu tamaina
-pdfjs-editor-resizer-label-top-right = Goiko eskuineko izkina — aldatu tamaina
-pdfjs-editor-resizer-label-middle-right = Erdian eskuinean — aldatu tamaina
-pdfjs-editor-resizer-label-bottom-right = Beheko eskuineko izkina — aldatu tamaina
-pdfjs-editor-resizer-label-bottom-middle = Behean erdian — aldatu tamaina
-pdfjs-editor-resizer-label-bottom-left = Beheko ezkerreko izkina — aldatu tamaina
-pdfjs-editor-resizer-label-middle-left = Erdian ezkerrean —  aldatu tamaina
 pdfjs-editor-resizer-top-left =
     .aria-label = Goiko ezkerreko izkina — aldatu tamaina
 pdfjs-editor-resizer-top-middle =

@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } byte)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bytes)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } bytes)
 pdfjs-document-properties-title = Tittel:
 pdfjs-document-properties-author = Forfattar:
 pdfjs-document-properties-subject = Emne:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = Dato endra:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Oppretta av:
 pdfjs-document-properties-producer = PDF-verktøy:
 pdfjs-document-properties-version = PDF-versjon:
@@ -275,10 +263,6 @@ pdfjs-rendering-error = Ein feil oppstod under vising av sida.
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date } { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -386,20 +370,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Tekstredigering
     .default-content = Begynn å skrive…
-pdfjs-free-text =
-    .aria-label = Tekstredigering
-pdfjs-free-text-default-content = Byrje å skrive…
-pdfjs-ink =
-    .aria-label = Teikneredigering
-pdfjs-ink-canvas =
-    .aria-label = Brukarskapt bilde
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Alt-tekst
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Rediger alt-tekst tekst
-pdfjs-editor-alt-text-edit-button-label = Rediger alternativ tekst
 pdfjs-editor-alt-text-dialog-label = Vel eit alternativ
 pdfjs-editor-alt-text-dialog-description = Alt-tekst (alternativ tekst) hjelper når folk ikkje kan sjå bildet eller når det ikkje vert lasta inn.
 pdfjs-editor-alt-text-add-description-label = Legg til ei skildring
@@ -419,14 +395,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = Øvste venstre hjørne – endre størrelse
-pdfjs-editor-resizer-label-top-middle = Øvst i midten — endre størrelse
-pdfjs-editor-resizer-label-top-right = Øvste høgre hjørne – endre størrelse
-pdfjs-editor-resizer-label-middle-right = Midt til høgre – endre størrelse
-pdfjs-editor-resizer-label-bottom-right = Nedste høgre hjørne – endre størrelse
-pdfjs-editor-resizer-label-bottom-middle = Nedst i midten — endre størrelse
-pdfjs-editor-resizer-label-bottom-left = Nedste venstre hjørne – endre størrelse
-pdfjs-editor-resizer-label-middle-left = Midt til venstre — endre størrelse
 pdfjs-editor-resizer-top-left =
     .aria-label = Øvste venstre hjørne – endre størrelse
 pdfjs-editor-resizer-top-middle =

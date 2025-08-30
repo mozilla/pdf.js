@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } byte)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } byte)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } byte)
 pdfjs-document-properties-title = Judul:
 pdfjs-document-properties-author = Penyusun:
 pdfjs-document-properties-subject = Subjek:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = Tanggal Dimodifikasi:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Pembuat:
 pdfjs-document-properties-producer = Pemroduksi PDF:
 pdfjs-document-properties-version = Versi PDF:
@@ -267,10 +255,6 @@ pdfjs-rendering-error = Galat terjadi saat merender laman.
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -370,20 +354,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Editor Teks
     .default-content = Mulai mengetik…
-pdfjs-free-text =
-    .aria-label = Editor Teks
-pdfjs-free-text-default-content = Mulai mengetik…
-pdfjs-ink =
-    .aria-label = Editor Gambar
-pdfjs-ink-canvas =
-    .aria-label = Gambar yang dibuat pengguna
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Teks alternatif
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Edit teks alternatif
-pdfjs-editor-alt-text-edit-button-label = Edit teks alternatif
 pdfjs-editor-alt-text-dialog-label = Pilih opsi
 pdfjs-editor-alt-text-dialog-description = Teks alternatif membantu ketika orang tidak dapat melihat gambar atau ketika tidak termuat.
 pdfjs-editor-alt-text-add-description-label = Tambahkan deskripsi
@@ -403,14 +379,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = Pojok kiri atas — ubah ukuran
-pdfjs-editor-resizer-label-top-middle = Tengah atas — ubah ukuran
-pdfjs-editor-resizer-label-top-right = Pojok kanan atas — ubah ukuran
-pdfjs-editor-resizer-label-middle-right = Kanan tengah — ubah ukuran
-pdfjs-editor-resizer-label-bottom-right = Pojok kanan bawah — ubah ukuran
-pdfjs-editor-resizer-label-bottom-middle = Tengah bawah — ubah ukuran
-pdfjs-editor-resizer-label-bottom-left = Pojok kiri bawah — ubah ukuran
-pdfjs-editor-resizer-label-middle-left = Kiri tengah — ubah ukuran
 pdfjs-editor-resizer-top-left =
     .aria-label = Pojok kiri atas — ubah ukuran
 pdfjs-editor-resizer-top-middle =

@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bájt)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bájt)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } bájt)
 pdfjs-document-properties-title = Cím:
 pdfjs-document-properties-author = Szerző:
 pdfjs-document-properties-subject = Tárgy:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = Módosítás dátuma:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Létrehozta:
 pdfjs-document-properties-producer = PDF előállító:
 pdfjs-document-properties-version = PDF verzió:
@@ -275,10 +263,6 @@ pdfjs-rendering-error = Hiba történt az oldal feldolgozása közben.
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -386,20 +370,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Szövegszerkesztő
     .default-content = Kezdjen gépelni…
-pdfjs-free-text =
-    .aria-label = Szövegszerkesztő
-pdfjs-free-text-default-content = Kezdjen el gépelni…
-pdfjs-ink =
-    .aria-label = Rajzszerkesztő
-pdfjs-ink-canvas =
-    .aria-label = Felhasználó által készített kép
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Alternatív szöveg
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Alternatív szöveg szerkesztése
-pdfjs-editor-alt-text-edit-button-label = Alternatív szöveg szerkesztése
 pdfjs-editor-alt-text-dialog-label = Válasszon egy lehetőséget
 pdfjs-editor-alt-text-dialog-description = Az alternatív szöveg segít, ha az emberek nem látják a képet, vagy ha az nem töltődik be.
 pdfjs-editor-alt-text-add-description-label = Leírás hozzáadása
@@ -419,14 +395,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = Bal felső sarok – átméretezés
-pdfjs-editor-resizer-label-top-middle = Felül középen – átméretezés
-pdfjs-editor-resizer-label-top-right = Jobb felső sarok – átméretezés
-pdfjs-editor-resizer-label-middle-right = Jobbra középen – átméretezés
-pdfjs-editor-resizer-label-bottom-right = Jobb alsó sarok – átméretezés
-pdfjs-editor-resizer-label-bottom-middle = Alul középen – átméretezés
-pdfjs-editor-resizer-label-bottom-left = Bal alsó sarok – átméretezés
-pdfjs-editor-resizer-label-middle-left = Balra középen – átméretezés
 pdfjs-editor-resizer-top-left =
     .aria-label = Bal felső sarok – átméretezés
 pdfjs-editor-resizer-top-middle =

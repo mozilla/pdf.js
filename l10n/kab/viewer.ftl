@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } yibiten)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KAṬ ({ $size_b } ibiten)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MAṬ ({ $size_b } iṭamḍanen)
 pdfjs-document-properties-title = Azwel:
 pdfjs-document-properties-author = Ameskar:
 pdfjs-document-properties-subject = Amgay:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = Azemz n usnifel:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Yerna-t:
 pdfjs-document-properties-producer = Afecku n uselket PDF:
 pdfjs-document-properties-version = Lqem PDF:
@@ -275,10 +263,6 @@ pdfjs-rendering-error = Teḍra-d tuccḍa deg uskan n usebter.
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -378,20 +362,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Amaẓrag n uḍris
     .default-content = Bdu tira…
-pdfjs-free-text =
-    .aria-label = Amaẓrag n uḍris
-pdfjs-free-text-default-content = Bdu tira...
-pdfjs-ink =
-    .aria-label = Amaẓrag n usuneɣ
-pdfjs-ink-canvas =
-    .aria-label = Tugna yettwarnan sɣur useqdac
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Aḍris amaskal
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Ẓreg aḍris amaskal
-pdfjs-editor-alt-text-edit-button-label = Ẓreg aḍris amaskal
 pdfjs-editor-alt-text-dialog-label = Fren taxtirt
 pdfjs-editor-alt-text-dialog-description = Aḍris amaskal yettallel mi ara yili imdanen ur ttwalin ara tugna neɣ mi ara yili ur d-tuli ara.
 pdfjs-editor-alt-text-add-description-label = Rnu aglam
@@ -411,14 +387,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = Tiɣmert n ufella n zelmeḍ — semsawi teɣzi
-pdfjs-editor-resizer-label-top-middle = Talemmat n ufella — semsawi teɣzi
-pdfjs-editor-resizer-label-top-right = Tiɣmert n ufella n yeffus — semsawi teɣzi
-pdfjs-editor-resizer-label-middle-right = Talemmast tayeffust — semsawi teɣzi
-pdfjs-editor-resizer-label-bottom-right = Tiɣmert n wadda n yeffus — semsawi teɣzi
-pdfjs-editor-resizer-label-bottom-middle = Talemmat n wadda — semsawi teɣzi
-pdfjs-editor-resizer-label-bottom-left = Tiɣmert n wadda n zelmeḍ — semsawi teɣzi
-pdfjs-editor-resizer-label-middle-left = Talemmast tazelmdaḍt — semsawi teɣzi
 pdfjs-editor-resizer-top-left =
     .aria-label = Tiɣmert n ufella n zelmeḍ — semsawi teɣzi
 pdfjs-editor-resizer-top-middle =

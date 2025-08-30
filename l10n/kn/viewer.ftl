@@ -71,24 +71,12 @@ pdfjs-document-properties-button =
 pdfjs-document-properties-button-label = ಡಾಕ್ಯುಮೆಂಟ್‌ ಗುಣಗಳು...
 pdfjs-document-properties-file-name = ಕಡತದ ಹೆಸರು:
 pdfjs-document-properties-file-size = ಕಡತದ ಗಾತ್ರ:
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } ಬೈಟ್‍ಗಳು)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } ಬೈಟ್‍ಗಳು)
 pdfjs-document-properties-title = ಶೀರ್ಷಿಕೆ:
 pdfjs-document-properties-author = ಕರ್ತೃ:
 pdfjs-document-properties-subject = ವಿಷಯ:
 pdfjs-document-properties-keywords = ಮುಖ್ಯಪದಗಳು:
 pdfjs-document-properties-creation-date = ರಚಿಸಿದ ದಿನಾಂಕ:
 pdfjs-document-properties-modification-date = ಮಾರ್ಪಡಿಸಲಾದ ದಿನಾಂಕ:
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = ರಚಿಸಿದವರು:
 pdfjs-document-properties-producer = PDF ಉತ್ಪಾದಕ:
 pdfjs-document-properties-version = PDF ಆವೃತ್ತಿ:

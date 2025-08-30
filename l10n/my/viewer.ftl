@@ -65,24 +65,12 @@ pdfjs-document-properties-button =
 pdfjs-document-properties-button-label = မှတ်တမ်းမှတ်ရာ ဂုဏ်သတ္တိများ
 pdfjs-document-properties-file-name = ဖိုင် :
 pdfjs-document-properties-file-size = ဖိုင်ဆိုဒ် :
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } ကီလိုဘိုတ် ({ $size_b }ဘိုတ်)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } bytes)
 pdfjs-document-properties-title = ခေါင်းစဉ်‌ -
 pdfjs-document-properties-author = ရေးသားသူ:
 pdfjs-document-properties-subject = အကြောင်းအရာ:
 pdfjs-document-properties-keywords = သော့ချက် စာလုံး:
 pdfjs-document-properties-creation-date = ထုတ်လုပ်ရက်စွဲ:
 pdfjs-document-properties-modification-date = ပြင်ဆင်ရက်စွဲ:
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = ဖန်တီးသူ:
 pdfjs-document-properties-producer = PDF ထုတ်လုပ်သူ:
 pdfjs-document-properties-version = PDF ဗားရှင်း:

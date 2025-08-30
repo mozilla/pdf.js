@@ -71,24 +71,12 @@ pdfjs-document-properties-button =
 pdfjs-document-properties-button-label = Dokumenteienskappe…
 pdfjs-document-properties-file-name = Lêernaam:
 pdfjs-document-properties-file-size = Lêergrootte:
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } kG ({ $size_b } grepe)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MG ({ $size_b } grepe)
 pdfjs-document-properties-title = Titel:
 pdfjs-document-properties-author = Outeur:
 pdfjs-document-properties-subject = Onderwerp:
 pdfjs-document-properties-keywords = Sleutelwoorde:
 pdfjs-document-properties-creation-date = Skeppingsdatum:
 pdfjs-document-properties-modification-date = Wysigingsdatum:
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Skepper:
 pdfjs-document-properties-producer = PDF-vervaardiger:
 pdfjs-document-properties-version = PDF-weergawe:

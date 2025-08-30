@@ -71,24 +71,12 @@ pdfjs-document-properties-button =
 pdfjs-document-properties-button-label = Iipropati zoxwebhu…
 pdfjs-document-properties-file-name = Igama lefayile:
 pdfjs-document-properties-file-size = Isayizi yefayile:
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB (iibhayiti{ $size_b })
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB (iibhayithi{ $size_b })
 pdfjs-document-properties-title = Umxholo:
 pdfjs-document-properties-author = Umbhali:
 pdfjs-document-properties-subject = Umbandela:
 pdfjs-document-properties-keywords = Amagama aphambili:
 pdfjs-document-properties-creation-date = Umhla wokwenziwa kwayo:
 pdfjs-document-properties-modification-date = Umhla wokulungiswa kwayo:
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Umntu oyenzileyo:
 pdfjs-document-properties-producer = Umvelisi we-PDF:
 pdfjs-document-properties-version = Uhlelo lwe-PDF:

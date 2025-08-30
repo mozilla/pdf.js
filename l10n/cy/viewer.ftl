@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } beit)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } beit)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } beit)
 pdfjs-document-properties-title = Teitl:
 pdfjs-document-properties-author = Awdur:
 pdfjs-document-properties-subject = Pwnc:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = Dyddiad Addasu:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Crewr:
 pdfjs-document-properties-producer = Cynhyrchydd PDF:
 pdfjs-document-properties-version = Fersiwn PDF:
@@ -283,10 +271,6 @@ pdfjs-rendering-error = Digwyddodd gwall wrth adeiladu'r dudalen.
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -394,20 +378,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Golygydd Testun
     .default-content = Cychwyn teipio…
-pdfjs-free-text =
-    .aria-label = Golygydd Testun
-pdfjs-free-text-default-content = Cychwyn teipio…
-pdfjs-ink =
-    .aria-label = Golygydd Lluniadu
-pdfjs-ink-canvas =
-    .aria-label = Delwedd wedi'i chreu gan ddefnyddwyr
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Testun amgen (alt)
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Golygu testun amgen
-pdfjs-editor-alt-text-edit-button-label = Golygu testun amgen
 pdfjs-editor-alt-text-dialog-label = Dewisiadau
 pdfjs-editor-alt-text-dialog-description = Mae testun amgen (testun alt) yn helpu pan na all pobl weld y ddelwedd neu pan nad yw'n llwytho.
 pdfjs-editor-alt-text-add-description-label = Ychwanegu disgrifiad
@@ -427,14 +403,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = Y gornel chwith uchaf — newid maint
-pdfjs-editor-resizer-label-top-middle = Canol uchaf - newid maint
-pdfjs-editor-resizer-label-top-right = Y gornel dde uchaf - newid maint
-pdfjs-editor-resizer-label-middle-right = De canol - newid maint
-pdfjs-editor-resizer-label-bottom-right = Y gornel dde isaf — newid maint
-pdfjs-editor-resizer-label-bottom-middle = Canol gwaelod — newid maint
-pdfjs-editor-resizer-label-bottom-left = Y gornel chwith isaf — newid maint
-pdfjs-editor-resizer-label-middle-left = Chwith canol — newid maint
 pdfjs-editor-resizer-top-left =
     .aria-label = Y gornel chwith uchaf — newid maint
 pdfjs-editor-resizer-top-middle =

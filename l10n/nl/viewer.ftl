@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bytes)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bytes)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } bytes)
 pdfjs-document-properties-title = Titel:
 pdfjs-document-properties-author = Auteur:
 pdfjs-document-properties-subject = Onderwerp:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = Wijzigingsdatum:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Maker:
 pdfjs-document-properties-producer = PDF-producent:
 pdfjs-document-properties-version = PDF-versie:
@@ -275,10 +263,6 @@ pdfjs-rendering-error = Er is een fout opgetreden bij het weergeven van de pagin
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -386,20 +370,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Tekstbewerker
     .default-content = Start met typen…
-pdfjs-free-text =
-    .aria-label = Tekstbewerker
-pdfjs-free-text-default-content = Begin met typen…
-pdfjs-ink =
-    .aria-label = Tekeningbewerker
-pdfjs-ink-canvas =
-    .aria-label = Door gebruiker gemaakte afbeelding
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Alternatieve tekst
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Alternatieve tekst bewerken
-pdfjs-editor-alt-text-edit-button-label = Alternatieve tekst bewerken
 pdfjs-editor-alt-text-dialog-label = Kies een optie
 pdfjs-editor-alt-text-dialog-description = Alternatieve tekst helpt wanneer mensen de afbeelding niet kunnen zien of wanneer deze niet wordt geladen.
 pdfjs-editor-alt-text-add-description-label = Voeg een beschrijving toe
@@ -419,14 +395,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = Linkerbovenhoek – formaat wijzigen
-pdfjs-editor-resizer-label-top-middle = Midden boven – formaat wijzigen
-pdfjs-editor-resizer-label-top-right = Rechterbovenhoek – formaat wijzigen
-pdfjs-editor-resizer-label-middle-right = Midden rechts – formaat wijzigen
-pdfjs-editor-resizer-label-bottom-right = Rechterbenedenhoek – formaat wijzigen
-pdfjs-editor-resizer-label-bottom-middle = Midden onder – formaat wijzigen
-pdfjs-editor-resizer-label-bottom-left = Linkerbenedenhoek – formaat wijzigen
-pdfjs-editor-resizer-label-middle-left = Links midden – formaat wijzigen
 pdfjs-editor-resizer-top-left =
     .aria-label = Linkerbovenhoek – formaat wijzigen
 pdfjs-editor-resizer-top-middle =

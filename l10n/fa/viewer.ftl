@@ -103,14 +103,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } مگابایت ({ $b } بایت)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } کیلوبایت ({ $size_b } بایت)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } مگابایت ({ $size_b } بایت)
 pdfjs-document-properties-title = عنوان:
 pdfjs-document-properties-author = نویسنده:
 pdfjs-document-properties-subject = موضوع:
@@ -120,10 +112,6 @@ pdfjs-document-properties-modification-date = تاریخ ویرایش:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }، { $time }
 pdfjs-document-properties-creator = ایجاد کننده:
 pdfjs-document-properties-producer = ایجاد کننده PDF:
 pdfjs-document-properties-version = نسخه PDF:
@@ -237,10 +225,6 @@ pdfjs-rendering-error = هنگام بارگیری صفحه خطایی رخ دا�
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }، { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -292,9 +276,6 @@ pdfjs-editor-stamp-add-image-button-label = افزودن تصویر
 pdfjs-free-text2 =
     .aria-label = ویرایشگر متن
     .default-content = شروع به نوشتن کنید…
-pdfjs-free-text =
-    .aria-label = ویرایشگر متن
-pdfjs-free-text-default-content = شروع به نوشتن کنید…
 
 ## Alt-text dialog
 

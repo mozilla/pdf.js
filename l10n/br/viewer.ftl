@@ -99,24 +99,12 @@ pdfjs-document-properties-button =
 pdfjs-document-properties-button-label = Perzhioù an teul…
 pdfjs-document-properties-file-name = Anv restr:
 pdfjs-document-properties-file-size = Ment ar restr:
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } Ke ({ $size_b } eizhbit)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } Me ({ $size_b } eizhbit)
 pdfjs-document-properties-title = Titl:
 pdfjs-document-properties-author = Aozer:
 pdfjs-document-properties-subject = Danvez:
 pdfjs-document-properties-keywords = Gerioù-alc'hwez:
 pdfjs-document-properties-creation-date = Deiziad krouiñ:
 pdfjs-document-properties-modification-date = Deiziad kemmañ:
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Krouer:
 pdfjs-document-properties-producer = Kenderc'her PDF:
 pdfjs-document-properties-version = Handelv PDF:
@@ -241,10 +229,6 @@ pdfjs-rendering-error = Degouezhet ez eus bet ur fazi e-pad skrammañ ar bajenna
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -293,12 +277,6 @@ pdfjs-editor-stamp-add-image-button =
 pdfjs-editor-stamp-add-image-button-label = Ouzhpennañ ur skeudenn
 # This refers to the thickness of the line used for free highlighting (not bound to text)
 pdfjs-editor-free-highlight-thickness-input = Tevded
-pdfjs-free-text =
-    .aria-label = Aozer testennoù
-pdfjs-ink =
-    .aria-label = Aozer tresoù
-pdfjs-ink-canvas =
-    .aria-label = Skeudenn bet krouet gant an implijer·ez
 
 ## Alt-text dialog
 

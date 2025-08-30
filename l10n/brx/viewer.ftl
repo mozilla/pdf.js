@@ -65,24 +65,12 @@ pdfjs-document-properties-button =
 pdfjs-document-properties-button-label = फोरमान बिलाइनि आखुथाय...
 pdfjs-document-properties-file-name = फाइलनि मुं:
 pdfjs-document-properties-file-size = फाइलनि महर:
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } बाइट)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } बाइट)
 pdfjs-document-properties-title = बिमुं:
 pdfjs-document-properties-author = लिरगिरि:
 pdfjs-document-properties-subject = आयदा:
 pdfjs-document-properties-keywords = गाहाय सोदोब:
 pdfjs-document-properties-creation-date = सोरजिनाय अक्ट':
 pdfjs-document-properties-modification-date = सुद्रायनाय अक्ट':
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = सोरजिग्रा:
 pdfjs-document-properties-producer = PDF दिहुनग्रा:
 pdfjs-document-properties-version = PDF बिसान:
@@ -184,10 +172,6 @@ pdfjs-rendering-error = बिलाइखौ राव सोलायनाय
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec

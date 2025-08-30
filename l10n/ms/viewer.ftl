@@ -89,24 +89,12 @@ pdfjs-document-properties-button =
 pdfjs-document-properties-button-label = Sifat Dokumen…
 pdfjs-document-properties-file-name = Nama fail:
 pdfjs-document-properties-file-size = Saiz fail:
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bait)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } bait)
 pdfjs-document-properties-title = Tajuk:
 pdfjs-document-properties-author = Pengarang:
 pdfjs-document-properties-subject = Subjek:
 pdfjs-document-properties-keywords = Kata kunci:
 pdfjs-document-properties-creation-date = Masa Dicipta:
 pdfjs-document-properties-modification-date = Tarikh Ubahsuai:
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Pencipta:
 pdfjs-document-properties-producer = Pengeluar PDF:
 pdfjs-document-properties-version = Versi PDF:

@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bæti)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bytes)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } bytes)
 pdfjs-document-properties-title = Titill:
 pdfjs-document-properties-author = Hönnuður:
 pdfjs-document-properties-subject = Efni:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = Dags breytingar:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Höfundur:
 pdfjs-document-properties-producer = PDF framleiðandi:
 pdfjs-document-properties-version = PDF útgáfa:
@@ -275,10 +263,6 @@ pdfjs-rendering-error = Upp kom villa við að birta síðuna.
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -360,20 +344,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Textaritill
     .default-content = Byrjaðu að skrifa…
-pdfjs-free-text =
-    .aria-label = Textaritill
-pdfjs-free-text-default-content = Byrjaðu að skrifa…
-pdfjs-ink =
-    .aria-label = Teikniritill
-pdfjs-ink-canvas =
-    .aria-label = Mynd gerð af notanda
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Alt-varatexti
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Breyta alt-myndatexta
-pdfjs-editor-alt-text-edit-button-label = Breyta alt-varatexta
 pdfjs-editor-alt-text-dialog-label = Veldu valkost
 pdfjs-editor-alt-text-dialog-description = Alt-varatexti (auka-myndatexti) hjálpar þegar fólk getur ekki séð myndina eða þegar hún hleðst ekki inn.
 pdfjs-editor-alt-text-add-description-label = Bættu við lýsingu
@@ -393,14 +369,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = Efst í vinstra horni - breyta stærð
-pdfjs-editor-resizer-label-top-middle = Efst á miðju - breyta stærð
-pdfjs-editor-resizer-label-top-right = Efst í hægra horni - breyta stærð
-pdfjs-editor-resizer-label-middle-right = Miðja til hægri - breyta stærð
-pdfjs-editor-resizer-label-bottom-right = Neðst í hægra horni - breyta stærð
-pdfjs-editor-resizer-label-bottom-middle = Neðst á miðju - breyta stærð
-pdfjs-editor-resizer-label-bottom-left = Neðst í vinstra horni - breyta stærð
-pdfjs-editor-resizer-label-middle-left = Miðja til vinstri - breyta stærð
 pdfjs-editor-resizer-top-left =
     .aria-label = Efst í vinstra horni - breyta stærð
 pdfjs-editor-resizer-top-middle =

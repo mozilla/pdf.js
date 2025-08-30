@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } Mo ({ $b } oktetoj)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KO ({ $size_b } oktetoj)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MO ({ $size_b } oktetoj)
 pdfjs-document-properties-title = Titolo:
 pdfjs-document-properties-author = Aŭtoro:
 pdfjs-document-properties-subject = Temo:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = Dato de modifo:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Kreinto:
 pdfjs-document-properties-producer = Produktinto de PDF:
 pdfjs-document-properties-version = Versio de PDF:
@@ -275,10 +263,6 @@ pdfjs-rendering-error = Okazis eraro dum la montro de la paĝo.
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -386,20 +370,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Teksta redaktilo
     .default-content = Komencu tajpi…
-pdfjs-free-text =
-    .aria-label = Teksta redaktilo
-pdfjs-free-text-default-content = Ektajpi…
-pdfjs-ink =
-    .aria-label = Desegnan redaktilon
-pdfjs-ink-canvas =
-    .aria-label = Bildo kreita de uzanto
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Alternativa teksto
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Redakti alternativan tekston
-pdfjs-editor-alt-text-edit-button-label = Redakti alternativan tekston
 pdfjs-editor-alt-text-dialog-label = Elektu eblon
 pdfjs-editor-alt-text-dialog-description = Alternativa teksto helpas personojn, en la okazoj kiam ili ne povas vidi aŭ ŝargi la bildon.
 pdfjs-editor-alt-text-add-description-label = Aldoni priskribon
@@ -419,14 +395,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = Supra maldekstra angulo — ŝangi grandon
-pdfjs-editor-resizer-label-top-middle = Supra mezo — ŝanĝi grandon
-pdfjs-editor-resizer-label-top-right = Supran dekstran angulon — ŝanĝi grandon
-pdfjs-editor-resizer-label-middle-right = Dekstra mezo — ŝanĝi grandon
-pdfjs-editor-resizer-label-bottom-right = Malsupra deksta angulo — ŝanĝi grandon
-pdfjs-editor-resizer-label-bottom-middle = Malsupra mezo — ŝanĝi grandon
-pdfjs-editor-resizer-label-bottom-left = Malsupra maldekstra angulo — ŝanĝi grandon
-pdfjs-editor-resizer-label-middle-left = Maldekstra mezo — ŝanĝi grandon
 pdfjs-editor-resizer-top-left =
     .aria-label = Supra maldekstra angulo — ŝangi grandon
 pdfjs-editor-resizer-top-middle =

@@ -71,24 +71,12 @@ pdfjs-document-properties-button =
 pdfjs-document-properties-button-label = Airíonna na Cáipéise…
 pdfjs-document-properties-file-name = Ainm an chomhaid:
 pdfjs-document-properties-file-size = Méid an chomhaid:
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } kB ({ $size_b } beart)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } beart)
 pdfjs-document-properties-title = Teideal:
 pdfjs-document-properties-author = Údar:
 pdfjs-document-properties-subject = Ábhar:
 pdfjs-document-properties-keywords = Eochairfhocail:
 pdfjs-document-properties-creation-date = Dáta Cruthaithe:
 pdfjs-document-properties-modification-date = Dáta Athraithe:
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Cruthaitheoir:
 pdfjs-document-properties-producer = Cruthaitheoir an PDF:
 pdfjs-document-properties-version = Leagan PDF:

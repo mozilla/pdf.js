@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } მბაიტი ({ $b } ბაიტი)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } კბ ({ $size_b } ბაიტი)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } მბ ({ $size_b } ბაიტი)
 pdfjs-document-properties-title = სათაური:
 pdfjs-document-properties-author = შემქმნელი:
 pdfjs-document-properties-subject = თემა:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = ჩასწორების დ
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = შემდგენელი:
 pdfjs-document-properties-producer = PDF-შემდგენელი:
 pdfjs-document-properties-version = PDF-ვერსია:
@@ -275,10 +263,6 @@ pdfjs-rendering-error = შეცდომა, გვერდის ჩვე�
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -386,20 +370,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = წარწერის ჩასწორება
     .default-content = დაიწყეთ აკრეფა…
-pdfjs-free-text =
-    .aria-label = წარწერის ჩასწორება
-pdfjs-free-text-default-content = აკრიფეთ…
-pdfjs-ink =
-    .aria-label = მოხაზულის შესწორება
-pdfjs-ink-canvas =
-    .aria-label = მომხმარებლის შექმნილი სურათი
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = თანდართული წარწერა
 pdfjs-editor-alt-text-edit-button =
     .aria-label = დართული წარწერის ჩასწორება
-pdfjs-editor-alt-text-edit-button-label = თანდართული წარწერის ჩასწორება
 pdfjs-editor-alt-text-dialog-label = არჩევა
 pdfjs-editor-alt-text-dialog-description = თანდართული (შემნაცვლებელი) წარწერა გამოსადეგია მათთვის, ვინც ვერ ხედავს სურათებს ან გამოისახება მაშინ, როცა სურათი ვერ ჩაიტვირთება.
 pdfjs-editor-alt-text-add-description-label = აღწერილობის მითითება
@@ -419,14 +395,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = ზევით მარცხნივ — ზომაცვლა
-pdfjs-editor-resizer-label-top-middle = ზევით შუაში — ზომაცვლა
-pdfjs-editor-resizer-label-top-right = ზევით მარჯვნივ — ზომაცვლა
-pdfjs-editor-resizer-label-middle-right = შუაში მარჯვნივ — ზომაცვლა
-pdfjs-editor-resizer-label-bottom-right = ქვევით მარჯვნივ — ზომაცვლა
-pdfjs-editor-resizer-label-bottom-middle = ქვევით შუაში — ზომაცვლა
-pdfjs-editor-resizer-label-bottom-left = ზვევით მარცხნივ — ზომაცვლა
-pdfjs-editor-resizer-label-middle-left = შუაში მარცხნივ — ზომაცვლა
 pdfjs-editor-resizer-top-left =
     .aria-label = ზევით მარცხნივ — ზომაცვლა
 pdfjs-editor-resizer-top-middle =
