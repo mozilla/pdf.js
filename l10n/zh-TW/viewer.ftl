@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB（{ $b } 位元組）
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB（{ $size_b } 位元組）
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB（{ $size_b } 位元組）
 pdfjs-document-properties-title = 標題：
 pdfjs-document-properties-author = 作者：
 pdfjs-document-properties-subject = 主旨：
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = 修改日期：
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date } { $time }
 pdfjs-document-properties-creator = 建立者：
 pdfjs-document-properties-producer = PDF 產生器：
 pdfjs-document-properties-version = PDF 版本：
@@ -267,10 +255,6 @@ pdfjs-rendering-error = 描繪頁面時發生錯誤。
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date } { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -378,20 +362,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = 文字編輯器
     .default-content = 請打字…
-pdfjs-free-text =
-    .aria-label = 文本編輯器
-pdfjs-free-text-default-content = 在此打字…
-pdfjs-ink =
-    .aria-label = 圖形編輯器
-pdfjs-ink-canvas =
-    .aria-label = 使用者建立的圖片
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = 替代文字
 pdfjs-editor-alt-text-edit-button =
     .aria-label = 編輯替代文字
-pdfjs-editor-alt-text-edit-button-label = 編輯替代文字
 pdfjs-editor-alt-text-dialog-label = 挑選一種
 pdfjs-editor-alt-text-dialog-description = 替代文字可協助盲人，或於圖片無法載入時提供說明。
 pdfjs-editor-alt-text-add-description-label = 新增描述
@@ -411,14 +387,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = 左上角 — 調整大小
-pdfjs-editor-resizer-label-top-middle = 頂部中間 — 調整大小
-pdfjs-editor-resizer-label-top-right = 右上角 — 調整大小
-pdfjs-editor-resizer-label-middle-right = 中間右方 — 調整大小
-pdfjs-editor-resizer-label-bottom-right = 右下角 — 調整大小
-pdfjs-editor-resizer-label-bottom-middle = 底部中間 — 調整大小
-pdfjs-editor-resizer-label-bottom-left = 左下角 — 調整大小
-pdfjs-editor-resizer-label-middle-left = 中間左方 — 調整大小
 pdfjs-editor-resizer-top-left =
     .aria-label = 左上角 — 調整大小
 pdfjs-editor-resizer-top-middle =

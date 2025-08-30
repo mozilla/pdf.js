@@ -104,24 +104,12 @@ pdfjs-document-properties-button =
 pdfjs-document-properties-button-label = ᱫᱚᱞᱤᱞ ᱜᱩᱱᱠᱚ …
 pdfjs-document-properties-file-name = ᱨᱮᱫᱽ ᱧᱩᱛᱩᱢ :
 pdfjs-document-properties-file-size = ᱨᱮᱫᱽ ᱢᱟᱯ :
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } ᱵᱟᱭᱤᱴ ᱠᱚ)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } ᱵᱟᱭᱤᱴ ᱠᱚ)
 pdfjs-document-properties-title = ᱧᱩᱛᱩᱢ :
 pdfjs-document-properties-author = ᱚᱱᱚᱞᱤᱭᱟᱹ :
 pdfjs-document-properties-subject = ᱵᱤᱥᱚᱭ :
 pdfjs-document-properties-keywords = ᱠᱟᱹᱴᱷᱤ ᱥᱟᱵᱟᱫᱽ :
 pdfjs-document-properties-creation-date = ᱛᱮᱭᱟᱨ ᱢᱟᱸᱦᱤᱛ :
 pdfjs-document-properties-modification-date = ᱵᱚᱫᱚᱞ ᱦᱚᱪᱚ ᱢᱟᱹᱦᱤᱛ :
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = ᱵᱮᱱᱟᱣᱤᱡ :
 pdfjs-document-properties-producer = PDF ᱛᱮᱭᱟᱨ ᱚᱰᱚᱠᱤᱡ :
 pdfjs-document-properties-version = PDF ᱵᱷᱟᱹᱨᱥᱚᱱ :
@@ -249,10 +237,6 @@ pdfjs-rendering-error = ᱥᱟᱦᱴᱟ ᱮᱢ ᱡᱚᱦᱚᱠ ᱢᱤᱫ ᱵᱷ�
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -292,10 +276,3 @@ pdfjs-editor-ink-opacity-input = ᱟᱨᱯᱟᱨ
 pdfjs-editor-stamp-add-image-button =
     .title = ᱪᱤᱛᱟᱹᱨ ᱥᱮᱞᱮᱫ ᱢᱮ
 pdfjs-editor-stamp-add-image-button-label = ᱪᱤᱛᱟᱹᱨ ᱥᱮᱞᱮᱫ ᱢᱮ
-pdfjs-free-text =
-    .aria-label = ᱚᱞ ᱥᱟᱯᱲᱟᱣᱤᱭᱟᱹ
-pdfjs-free-text-default-content = ᱚᱞ ᱮᱛᱦᱚᱵ ᱢᱮ …
-pdfjs-ink =
-    .aria-label = ᱛᱮᱭᱟᱨ ᱥᱟᱯᱲᱟᱣᱤᱭᱟᱹ
-pdfjs-ink-canvas =
-    .aria-label = ᱵᱮᱵᱷᱟᱨᱤᱭᱟᱹ ᱛᱮᱭᱟᱨ ᱠᱟᱫ ᱪᱤᱛᱟᱹᱨ

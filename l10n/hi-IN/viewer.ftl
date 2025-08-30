@@ -83,24 +83,12 @@ pdfjs-document-properties-button =
 pdfjs-document-properties-button-label = दस्तावेज़ विशेषता...
 pdfjs-document-properties-file-name = फ़ाइल नाम:
 pdfjs-document-properties-file-size = फाइल आकारः
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bytes)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } bytes)
 pdfjs-document-properties-title = शीर्षक:
 pdfjs-document-properties-author = लेखकः
 pdfjs-document-properties-subject = विषय:
 pdfjs-document-properties-keywords = कुंजी-शब्द:
 pdfjs-document-properties-creation-date = निर्माण दिनांक:
 pdfjs-document-properties-modification-date = संशोधन दिनांक:
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = निर्माता:
 pdfjs-document-properties-producer = PDF उत्पादक:
 pdfjs-document-properties-version = PDF संस्करण:
@@ -211,10 +199,6 @@ pdfjs-rendering-error = पृष्ठ रेंडरिंग के दौ�
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec

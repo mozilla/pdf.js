@@ -98,24 +98,12 @@ pdfjs-document-properties-button =
 pdfjs-document-properties-button-label = ຄຸນສົມບັດເອກະສານ...
 pdfjs-document-properties-file-name = ຊື່ໄຟລ໌:
 pdfjs-document-properties-file-size = ຂະຫນາດໄຟລ໌:
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b }  ໄບຕ໌)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } ໄບຕ໌)
 pdfjs-document-properties-title = ຫົວຂໍ້:
 pdfjs-document-properties-author = ຜູ້ຂຽນ:
 pdfjs-document-properties-subject = ຫົວຂໍ້:
 pdfjs-document-properties-keywords = ຄໍາທີ່ຕ້ອງການຄົ້ນຫາ:
 pdfjs-document-properties-creation-date = ວັນທີສ້າງ:
 pdfjs-document-properties-modification-date = ວັນທີແກ້ໄຂ:
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = ຜູ້ສ້າງ:
 pdfjs-document-properties-producer = ຜູ້ຜະລິດ PDF:
 pdfjs-document-properties-version = ເວີຊັ່ນ PDF:
@@ -243,10 +231,6 @@ pdfjs-rendering-error = ມີຂໍ້ຜິດພາດເກີດຂື້�
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -280,10 +264,3 @@ pdfjs-editor-free-text-size-input = ຂະຫນາດ
 pdfjs-editor-ink-color-input = ສີ
 pdfjs-editor-ink-thickness-input = ຄວາມຫນາ
 pdfjs-editor-ink-opacity-input = ຄວາມໂປ່ງໃສ
-pdfjs-free-text =
-    .aria-label = ຕົວແກ້ໄຂຂໍ້ຄວາມ
-pdfjs-free-text-default-content = ເລີ່ມພິມ...
-pdfjs-ink =
-    .aria-label = ຕົວແກ້ໄຂຮູບແຕ້ມ
-pdfjs-ink-canvas =
-    .aria-label = ຮູບພາບທີ່ຜູ້ໃຊ້ສ້າງ

@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } بائٹاں)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } کے بی ({ $size_b } بائٹس)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } ایم بی ({ $size_b } بائٹس)
 pdfjs-document-properties-title = عنوان:
 pdfjs-document-properties-author = تخلیق کار:
 pdfjs-document-properties-subject = موضوع:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = ترمیم دی تاریخ:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = تخلیق کار:
 pdfjs-document-properties-producer = PDF پیدا کار:
 pdfjs-document-properties-version = PDF ورژن:
@@ -275,10 +263,6 @@ pdfjs-rendering-error = ورقہ رینڈر کریندے ویلھے ہک خرا�
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -343,18 +327,10 @@ pdfjs-editor-stamp-add-image-button-label = تصویر شامل کرو
 pdfjs-editor-free-highlight-thickness-input = مُٹاݨ
 pdfjs-editor-free-highlight-thickness-title =
     .title = متن توں ان٘ج ٻئے شئیں کوں نمایاں کرݨ ویلے مُٹاݨ کوں بدلو
-pdfjs-free-text =
-    .aria-label = ٹیکسٹ ایڈیٹر
-pdfjs-free-text-default-content = ٹائپنگ شروع کرو …
-pdfjs-ink =
-    .aria-label = ڈرا ایڈیٹر
-pdfjs-ink-canvas =
-    .aria-label = صارف دی بݨائی ہوئی تصویر
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Alt متن
-pdfjs-editor-alt-text-edit-button-label = alt متن وِچ ترمیم کرو
 pdfjs-editor-alt-text-dialog-label = ہِک اختیار چُݨو
 pdfjs-editor-alt-text-dialog-description = Alt متن (متبادل متن) اِیں ویلے مَدَت کرین٘دا ہِے جہڑیلے لوک تصویر کوں نِھیں ݙیکھ سڳدے یا جہڑیلے اِیہ لوڈ کائنی تِھین٘دا۔
 pdfjs-editor-alt-text-add-description-label = تفصیل شامل کرو
@@ -374,14 +350,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = اُتلی کَھٻّی نُکّڑ — سائز بدلو
-pdfjs-editor-resizer-label-top-middle = اُتلا وِچلا — سائز بدلو
-pdfjs-editor-resizer-label-top-right = اُتلی سَڄّی نُکَّڑ — سائز بدلو
-pdfjs-editor-resizer-label-middle-right = وِچلا سڄّا — سائز بدلو
-pdfjs-editor-resizer-label-bottom-right = تلوِیں سَڄّی نُکَّڑ — سائز بدلو
-pdfjs-editor-resizer-label-bottom-middle = تلواں وِچلا — سائز بدلو
-pdfjs-editor-resizer-label-bottom-left = تلوِیں کَھٻّی نُکّڑ — سائز بدلو
-pdfjs-editor-resizer-label-middle-left = وِچلا کَھٻّا — سائز بدلو
 pdfjs-editor-resizer-top-left =
     .aria-label = اُتلی کَھٻّی نُکّڑ — سائز بدلو
 pdfjs-editor-resizer-top-middle =

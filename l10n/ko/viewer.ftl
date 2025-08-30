@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } 바이트)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b }바이트)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b }바이트)
 pdfjs-document-properties-title = 제목:
 pdfjs-document-properties-author = 작성자:
 pdfjs-document-properties-subject = 주제:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = 수정 날짜:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = 작성 프로그램:
 pdfjs-document-properties-producer = PDF 변환 소프트웨어:
 pdfjs-document-properties-version = PDF 버전:
@@ -267,10 +255,6 @@ pdfjs-rendering-error = 페이지를 렌더링하는 동안 오류가 발생했�
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date } { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -378,20 +362,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = 텍스트 편집기
     .default-content = 입력을 시작하세요…
-pdfjs-free-text =
-    .aria-label = 텍스트 편집기
-pdfjs-free-text-default-content = 입력하세요…
-pdfjs-ink =
-    .aria-label = 그리기 편집기
-pdfjs-ink-canvas =
-    .aria-label = 사용자 생성 이미지
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = 대체 텍스트
 pdfjs-editor-alt-text-edit-button =
     .aria-label = 대체 텍스트 편집
-pdfjs-editor-alt-text-edit-button-label = 대체 텍스트 편집
 pdfjs-editor-alt-text-dialog-label = 옵션을 선택하세요
 pdfjs-editor-alt-text-dialog-description = 대체 텍스트는 사람들이 이미지를 볼 수 없거나 이미지가 로드되지 않을 때 도움이 됩니다.
 pdfjs-editor-alt-text-add-description-label = 설명 추가
@@ -411,14 +387,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = 왼쪽 위 — 크기 조정
-pdfjs-editor-resizer-label-top-middle = 가운데 위 - 크기 조정
-pdfjs-editor-resizer-label-top-right = 오른쪽 위 — 크기 조정
-pdfjs-editor-resizer-label-middle-right = 오른쪽 가운데 — 크기 조정
-pdfjs-editor-resizer-label-bottom-right = 오른쪽 아래 - 크기 조정
-pdfjs-editor-resizer-label-bottom-middle = 가운데 아래 — 크기 조정
-pdfjs-editor-resizer-label-bottom-left = 왼쪽 아래 - 크기 조정
-pdfjs-editor-resizer-label-middle-left = 왼쪽 가운데 — 크기 조정
 pdfjs-editor-resizer-top-left =
     .aria-label = 왼쪽 위 — 크기 조정
 pdfjs-editor-resizer-top-middle =

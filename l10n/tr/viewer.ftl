@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bayt)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bayt)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } bayt)
 pdfjs-document-properties-title = Başlık:
 pdfjs-document-properties-author = Yazar:
 pdfjs-document-properties-subject = Konu:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = Değiştirme tarihi:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date } { $time }
 pdfjs-document-properties-creator = Oluşturan:
 pdfjs-document-properties-producer = PDF üreticisi:
 pdfjs-document-properties-version = PDF sürümü:
@@ -275,10 +263,6 @@ pdfjs-rendering-error = Sayfa yorumlanırken bir hata oluştu.
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date } { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -386,20 +370,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Metin düzenleyicisi
     .default-content = Yazmaya başlayın…
-pdfjs-free-text =
-    .aria-label = Metin düzenleyicisi
-pdfjs-free-text-default-content = Yazmaya başlayın…
-pdfjs-ink =
-    .aria-label = Çizim düzenleyicisi
-pdfjs-ink-canvas =
-    .aria-label = Kullanıcı tarafından oluşturulan resim
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Alternatif metin
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Alternatif metni düzenle
-pdfjs-editor-alt-text-edit-button-label = Alternatif metni düzenle
 pdfjs-editor-alt-text-dialog-label = Bir seçenek seçin
 pdfjs-editor-alt-text-dialog-description = Alternatif metin, insanlar resmi göremediğinde veya resim yüklenmediğinde işe yarar.
 pdfjs-editor-alt-text-add-description-label = Açıklama ekle
@@ -419,14 +395,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = Sol üst köşe — yeniden boyutlandır
-pdfjs-editor-resizer-label-top-middle = Üst orta — yeniden boyutlandır
-pdfjs-editor-resizer-label-top-right = Sağ üst köşe — yeniden boyutlandır
-pdfjs-editor-resizer-label-middle-right = Orta sağ — yeniden boyutlandır
-pdfjs-editor-resizer-label-bottom-right = Sağ alt köşe — yeniden boyutlandır
-pdfjs-editor-resizer-label-bottom-middle = Alt orta — yeniden boyutlandır
-pdfjs-editor-resizer-label-bottom-left = Sol alt köşe — yeniden boyutlandır
-pdfjs-editor-resizer-label-middle-left = Orta sol — yeniden boyutlandır
 pdfjs-editor-resizer-top-left =
     .aria-label = Sol üst köşe — yeniden boyutlandır
 pdfjs-editor-resizer-top-middle =

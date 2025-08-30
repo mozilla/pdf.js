@@ -103,14 +103,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bajte)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bajte)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } bajte)
 pdfjs-document-properties-title = Titull:
 pdfjs-document-properties-author = Autor:
 pdfjs-document-properties-subject = Subjekt:
@@ -120,10 +112,6 @@ pdfjs-document-properties-modification-date = Datë Ndryshimi:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Krijues:
 pdfjs-document-properties-producer = Prodhues PDF-je:
 pdfjs-document-properties-version = Version PDF-je:
@@ -266,10 +254,6 @@ pdfjs-rendering-error = Ndodhi një gabim gjatë riprodhimit të faqes.
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -369,20 +353,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Përpunues Tekstesh
     .default-content = Filloni të shtypni…
-pdfjs-free-text =
-    .aria-label = Përpunues Tekstesh
-pdfjs-free-text-default-content = Filloni të shtypni…
-pdfjs-ink =
-    .aria-label = Përpunues Vizatimesh
-pdfjs-ink-canvas =
-    .aria-label = Figurë e krijuar nga përdoruesi
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Tekst alternativ
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Përpunoni tekst alternativ
-pdfjs-editor-alt-text-edit-button-label = Përpunoni tekst alternativ
 pdfjs-editor-alt-text-dialog-label = Zgjidhni një mundësi
 pdfjs-editor-alt-text-dialog-description = Teksti alt (tekst alternativ) vjen në ndihmë kur njerëzit s’mund të shohin figurën, ose kur ajo nuk ngarkohet.
 pdfjs-editor-alt-text-add-description-label = Shtoni një përshkrim
@@ -402,14 +378,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = Cepi i sipërm majtas — ripërmasojeni
-pdfjs-editor-resizer-label-top-middle = Mesi i pjesës sipër — ripërmasojeni
-pdfjs-editor-resizer-label-top-right = Cepi i sipërm djathtas — ripërmasojeni
-pdfjs-editor-resizer-label-middle-right = Djathtas në mes — ripërmasojeni
-pdfjs-editor-resizer-label-bottom-right = Cepi i poshtëm djathtas — ripërmasojeni
-pdfjs-editor-resizer-label-bottom-middle = Mesi i pjesës poshtë — ripërmasojeni
-pdfjs-editor-resizer-label-bottom-left = Cepi i poshtëm — ripërmasojeni
-pdfjs-editor-resizer-label-middle-left = Majtas në mes — ripërmasojeni
 pdfjs-editor-resizer-top-left =
     .aria-label = Cepi i sipërm majtas — ripërmasojeni
 pdfjs-editor-resizer-top-middle =

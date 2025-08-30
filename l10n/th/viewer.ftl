@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } ไบต์)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } ไบต์)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } ไบต์)
 pdfjs-document-properties-title = ชื่อเรื่อง:
 pdfjs-document-properties-author = ผู้สร้าง:
 pdfjs-document-properties-subject = ชื่อเรื่อง:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = วันที่แก้ไข:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = ผู้สร้าง:
 pdfjs-document-properties-producer = ผู้ผลิต PDF:
 pdfjs-document-properties-version = รุ่น PDF:
@@ -267,10 +255,6 @@ pdfjs-rendering-error = เกิดข้อผิดพลาดขณะเ�
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -370,20 +354,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = ตัวแก้ไขข้อความ
     .default-content = เริ่มพิมพ์ได้เลย…
-pdfjs-free-text =
-    .aria-label = ตัวแก้ไขข้อความ
-pdfjs-free-text-default-content = เริ่มพิมพ์…
-pdfjs-ink =
-    .aria-label = ตัวแก้ไขรูปวาด
-pdfjs-ink-canvas =
-    .aria-label = ภาพที่ผู้ใช้สร้างขึ้น
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = ข้อความทดแทน
 pdfjs-editor-alt-text-edit-button =
     .aria-label = แก้ไขข้อความทดแทน
-pdfjs-editor-alt-text-edit-button-label = แก้ไขข้อความทดแทน
 pdfjs-editor-alt-text-dialog-label = เลือกตัวเลือก
 pdfjs-editor-alt-text-dialog-description = ข้อความทดแทนสามารถช่วยเหลือได้เมื่อผู้ใช้มองไม่เห็นภาพ หรือภาพไม่โหลด
 pdfjs-editor-alt-text-add-description-label = เพิ่มคำอธิบาย
@@ -403,14 +379,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = มุมซ้ายบน — ปรับขนาด
-pdfjs-editor-resizer-label-top-middle = ตรงกลางด้านบน — ปรับขนาด
-pdfjs-editor-resizer-label-top-right = มุมขวาบน — ปรับขนาด
-pdfjs-editor-resizer-label-middle-right = ตรงกลางด้านขวา — ปรับขนาด
-pdfjs-editor-resizer-label-bottom-right = มุมขวาล่าง — ปรับขนาด
-pdfjs-editor-resizer-label-bottom-middle = ตรงกลางด้านล่าง — ปรับขนาด
-pdfjs-editor-resizer-label-bottom-left = มุมซ้ายล่าง — ปรับขนาด
-pdfjs-editor-resizer-label-middle-left = ตรงกลางด้านซ้าย — ปรับขนาด
 pdfjs-editor-resizer-top-left =
     .aria-label = มุมซ้ายบน — ปรับขนาด
 pdfjs-editor-resizer-top-middle =

@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } バイト)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } バイト)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } バイト)
 pdfjs-document-properties-title = タイトル:
 pdfjs-document-properties-author = 作成者:
 pdfjs-document-properties-subject = 件名:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = 更新日:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = アプリケーション:
 pdfjs-document-properties-producer = PDF 作成:
 pdfjs-document-properties-version = PDF のバージョン:
@@ -267,10 +255,6 @@ pdfjs-rendering-error = ページのレンダリング中にエラーが発生�
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -294,9 +278,13 @@ pdfjs-web-fonts-disabled = ウェブフォントが無効になっています: 
 
 pdfjs-editor-free-text-button =
     .title = フリーテキスト注釈を追加します
+pdfjs-editor-color-picker-free-text-input =
+    .title = テキスト色を変更します
 pdfjs-editor-free-text-button-label = フリーテキスト注釈
 pdfjs-editor-ink-button =
     .title = インク注釈を追加します
+pdfjs-editor-color-picker-ink-input =
+    .title = インク色を変更します
 pdfjs-editor-ink-button-label = インク注釈
 pdfjs-editor-stamp-button =
     .title = 画像を追加または編集します
@@ -305,9 +293,13 @@ pdfjs-editor-highlight-button =
     .title = 強調します
 pdfjs-editor-highlight-button-label = 強調
 pdfjs-highlight-floating-button1 =
-    .title = 強調
+    .title = 強調します
     .aria-label = 強調します
 pdfjs-highlight-floating-button-label = 強調
+pdfjs-comment-floating-button =
+    .title = コメントを追加します
+    .aria-label = コメントを追加します
+pdfjs-comment-floating-button-label = コメント
 pdfjs-editor-signature-button =
     .title = 署名を追加します
 pdfjs-editor-signature-button-label = 署名を追加
@@ -370,20 +362,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = フリーテキスト注釈エディター
     .default-content = テキストを入力してください...
-pdfjs-free-text =
-    .aria-label = フリーテキスト注釈エディター
-pdfjs-free-text-default-content = テキストを入力してください...
-pdfjs-ink =
-    .aria-label = インク注釈エディター
-pdfjs-ink-canvas =
-    .aria-label = ユーザー作成画像
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = 代替テキスト
 pdfjs-editor-alt-text-edit-button =
     .aria-label = 代替テキストを編集
-pdfjs-editor-alt-text-edit-button-label = 代替テキストを編集
 pdfjs-editor-alt-text-dialog-label = オプションの選択
 pdfjs-editor-alt-text-dialog-description = 代替テキストは画像が表示されない場合や読み込まれない場合にユーザーの助けになります。
 pdfjs-editor-alt-text-add-description-label = 説明を追加
@@ -403,14 +387,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = 左上隅 — サイズ変更
-pdfjs-editor-resizer-label-top-middle = 上中央 — サイズ変更
-pdfjs-editor-resizer-label-top-right = 右上隅 — サイズ変更
-pdfjs-editor-resizer-label-middle-right = 右中央 — サイズ変更
-pdfjs-editor-resizer-label-bottom-right = 右下隅 — サイズ変更
-pdfjs-editor-resizer-label-bottom-middle = 下中央 — サイズ変更
-pdfjs-editor-resizer-label-bottom-left = 左下隅 — サイズ変更
-pdfjs-editor-resizer-label-middle-left = 左中央 — サイズ変更
 pdfjs-editor-resizer-top-left =
     .aria-label = 左上隅 — サイズ変更
 pdfjs-editor-resizer-top-middle =
@@ -588,6 +564,8 @@ pdfjs-editor-add-signature-save-checkbox = 署名を保存
 pdfjs-editor-add-signature-save-warning-message = 保存された署名が上限の 5 個に達しました。さらに保存するにはいずれかを削除してください。
 pdfjs-editor-add-signature-image-upload-error-title = 画像をアップロードできません
 pdfjs-editor-add-signature-image-upload-error-description = ネットワーク接続を確認するか別の画像を試してください。
+pdfjs-editor-add-signature-image-no-data-error-title = この画像は署名に変換できません
+pdfjs-editor-add-signature-image-no-data-error-description = 別の画像をアップロードしてください。
 pdfjs-editor-add-signature-error-close-button = 閉じる
 
 ## Dialog buttons
@@ -595,6 +573,26 @@ pdfjs-editor-add-signature-error-close-button = 閉じる
 pdfjs-editor-add-signature-cancel-button = キャンセル
 pdfjs-editor-add-signature-add-button = 追加
 pdfjs-editor-edit-signature-update-button = 更新
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = 操作
+pdfjs-editor-edit-comment-actions-button =
+    .title = 操作
+pdfjs-editor-edit-comment-close-button-label = 閉じる
+pdfjs-editor-edit-comment-close-button =
+    .title = 閉じる
+pdfjs-editor-edit-comment-actions-edit-button-label = 編集
+pdfjs-editor-edit-comment-actions-delete-button-label = 削除
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = コメントを入力してください
+pdfjs-editor-edit-comment-manager-cancel-button = キャンセル
+pdfjs-editor-edit-comment-manager-save-button = 保存
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Edit comment
 
 ## Main menu for adding/removing signatures
 

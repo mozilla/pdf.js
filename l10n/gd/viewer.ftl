@@ -98,24 +98,12 @@ pdfjs-document-properties-button =
 pdfjs-document-properties-button-label = Roghainnean na sgrìobhainne…
 pdfjs-document-properties-file-name = Ainm an fhaidhle:
 pdfjs-document-properties-file-size = Meud an fhaidhle:
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } bytes)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } bytes)
 pdfjs-document-properties-title = Tiotal:
 pdfjs-document-properties-author = Ùghdar:
 pdfjs-document-properties-subject = Cuspair:
 pdfjs-document-properties-keywords = Faclan-luirg:
 pdfjs-document-properties-creation-date = Latha a chruthachaidh:
 pdfjs-document-properties-modification-date = Latha atharrachaidh:
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Cruthadair:
 pdfjs-document-properties-producer = Saothraiche a' PDF:
 pdfjs-document-properties-version = Tionndadh a' PDF:
@@ -243,10 +231,6 @@ pdfjs-rendering-error = Thachair mearachd rè reandaradh na duilleige.
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -280,10 +264,3 @@ pdfjs-editor-free-text-size-input = Meud
 pdfjs-editor-ink-color-input = Dath
 pdfjs-editor-ink-thickness-input = Tighead
 pdfjs-editor-ink-opacity-input = Trìd-dhoilleireachd
-pdfjs-free-text =
-    .aria-label = An deasaiche teacsa
-pdfjs-free-text-default-content = Tòisich air sgrìobhadh…
-pdfjs-ink =
-    .aria-label = An deasaiche tharraingean
-pdfjs-ink-canvas =
-    .aria-label = Dealbh a chruthaich cleachdaiche

@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } Mt ({ $b } tavua)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } kt ({ $size_b } tavua)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } Mt ({ $size_b } tavua)
 pdfjs-document-properties-title = Otsikko:
 pdfjs-document-properties-author = Tekijä:
 pdfjs-document-properties-subject = Aihe:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = Muokkauspäivämäärä:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Luoja:
 pdfjs-document-properties-producer = PDF-tuottaja:
 pdfjs-document-properties-version = PDF-versio:
@@ -275,10 +263,6 @@ pdfjs-rendering-error = Tapahtui virhe piirrettäessä sivua.
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -386,20 +370,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Tekstimuokkain
     .default-content = Aloita kirjoittaminen…
-pdfjs-free-text =
-    .aria-label = Tekstimuokkain
-pdfjs-free-text-default-content = Aloita kirjoittaminen…
-pdfjs-ink =
-    .aria-label = Piirrustusmuokkain
-pdfjs-ink-canvas =
-    .aria-label = Käyttäjän luoma kuva
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Vaihtoehtoinen teksti
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Muokkaa vaihtoehtoista tekstiä
-pdfjs-editor-alt-text-edit-button-label = Muokkaa vaihtoehtoista tekstiä
 pdfjs-editor-alt-text-dialog-label = Valitse vaihtoehto
 pdfjs-editor-alt-text-dialog-description = Vaihtoehtoinen teksti ("alt-teksti") auttaa ihmisiä, jotka eivät näe kuvaa tai kun kuva ei lataudu.
 pdfjs-editor-alt-text-add-description-label = Lisää kuvaus
@@ -419,14 +395,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = Vasen yläkulma - muuta kokoa
-pdfjs-editor-resizer-label-top-middle = Ylhäällä keskellä - muuta kokoa
-pdfjs-editor-resizer-label-top-right = Oikea yläkulma - muuta kokoa
-pdfjs-editor-resizer-label-middle-right = Keskellä oikealla - muuta kokoa
-pdfjs-editor-resizer-label-bottom-right = Oikea alakulma - muuta kokoa
-pdfjs-editor-resizer-label-bottom-middle = Alhaalla keskellä - muuta kokoa
-pdfjs-editor-resizer-label-bottom-left = Vasen alakulma - muuta kokoa
-pdfjs-editor-resizer-label-middle-left = Keskellä vasemmalla - muuta kokoa
 pdfjs-editor-resizer-top-left =
     .aria-label = Vasen yläkulma - muuta kokoa
 pdfjs-editor-resizer-top-middle =

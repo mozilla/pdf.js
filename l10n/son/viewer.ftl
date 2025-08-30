@@ -65,24 +65,12 @@ pdfjs-document-properties-button =
 pdfjs-document-properties-button-label = Takadda mayrawey…
 pdfjs-document-properties-file-name = Tuku maa:
 pdfjs-document-properties-file-size = Tuku adadu:
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = KB { $size_kb } (cebsu-ize { $size_b })
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = MB { $size_mb } (cebsu-ize { $size_b })
 pdfjs-document-properties-title = Tiiramaa:
 pdfjs-document-properties-author = Hantumkaw:
 pdfjs-document-properties-subject = Dalil:
 pdfjs-document-properties-keywords = Kufalkalimawey:
 pdfjs-document-properties-creation-date = Teeyan han:
 pdfjs-document-properties-modification-date = Barmayan han:
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Teekaw:
 pdfjs-document-properties-producer = PDF berandikaw:
 pdfjs-document-properties-version = PDF dumi:

@@ -11,13 +11,6 @@ pdfjs-zoom-select =
     .title = Nasa´a ka´nu/Nasa´a luli
 pdfjs-open-file-button-label = Síne
 
-## Document properties dialog
-
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
-
 ## Variables:
 ##   $width (Number) - the width of the (current) page
 ##   $height (Number) - the height of the (current) page
@@ -49,13 +42,6 @@ pdfjs-findbar-button-label = Nánuku
 # Variables:
 #   $scale (Number) - percent value for page scale
 pdfjs-page-scale-percent = { $scale }%
-
-## Annotations
-
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 
 ## Password
 

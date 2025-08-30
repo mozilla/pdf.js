@@ -98,14 +98,6 @@ pdfjs-document-properties-button =
 pdfjs-document-properties-button-label = Параметри документа…
 pdfjs-document-properties-file-name = Име датотеке:
 pdfjs-document-properties-file-size = Величина датотеке:
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } B)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } B)
 pdfjs-document-properties-title = Наслов:
 pdfjs-document-properties-author = Аутор:
 pdfjs-document-properties-subject = Тема:
@@ -115,10 +107,6 @@ pdfjs-document-properties-modification-date = Датум модификациј�
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Стваралац:
 pdfjs-document-properties-producer = PDF произвођач:
 pdfjs-document-properties-version = PDF верзија:
@@ -246,10 +234,6 @@ pdfjs-rendering-error = Дошло је до грешке приликом ре�
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -316,20 +300,12 @@ pdfjs-editor-free-highlight-thickness-title =
 pdfjs-free-text2 =
     .aria-label = Уређивач текста
     .default-content = Почни куцати…
-pdfjs-free-text =
-    .aria-label = Уређивач текста
-pdfjs-free-text-default-content = Почни куцање…
-pdfjs-ink =
-    .aria-label = Уређивач цртежа
-pdfjs-ink-canvas =
-    .aria-label = Кориснички направљена слика
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Алтернативни текст
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Уреди алтернативни текст
-pdfjs-editor-alt-text-edit-button-label = Уреди алтернативни текст
 pdfjs-editor-alt-text-dialog-label = Одабери опцију
 pdfjs-editor-alt-text-dialog-description = Алтернативни текст помаже слепим и слабовидим особама или када се слика не учита.
 pdfjs-editor-alt-text-add-description-label = Додај опис
@@ -349,14 +325,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = Горњи леви угао — промени величину
-pdfjs-editor-resizer-label-top-middle = Средина горе — промени величину
-pdfjs-editor-resizer-label-top-right = Горњи десни угао — промени величину
-pdfjs-editor-resizer-label-middle-right = Средина десно — промени величину
-pdfjs-editor-resizer-label-bottom-right = Доњи десни угао — промени величину
-pdfjs-editor-resizer-label-bottom-middle = Средина доле — промени величину
-pdfjs-editor-resizer-label-bottom-left = Доњи леви угао — промени величину
-pdfjs-editor-resizer-label-middle-left = Средина лево — промени величину
 pdfjs-editor-resizer-top-left =
     .aria-label = Горњи леви угао — промени величину
 pdfjs-editor-resizer-top-middle =

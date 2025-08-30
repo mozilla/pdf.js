@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } م.بايت ({ $b } بايتات)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } ك.بايت ({ $size_b } بايت)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } م.بايت ({ $size_b } بايت)
 pdfjs-document-properties-title = العنوان:
 pdfjs-document-properties-author = المؤلف:
 pdfjs-document-properties-subject = الموضوع:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = تاريخ التعديل:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }، { $time }
 pdfjs-document-properties-creator = المنشئ:
 pdfjs-document-properties-producer = منتج PDF:
 pdfjs-document-properties-version = إصدارة PDF:
@@ -283,10 +271,6 @@ pdfjs-rendering-error = حدث خطأ أثناء عرض الصفحة.
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }، { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -386,20 +370,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = محرِّر النص
     .default-content = ابدأ في كتابة…
-pdfjs-free-text =
-    .aria-label = محرِّر النص
-pdfjs-free-text-default-content = ابدأ الكتابة…
-pdfjs-ink =
-    .aria-label = محرِّر الرسم
-pdfjs-ink-canvas =
-    .aria-label = صورة أنشأها المستخدم
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = نص بديل
 pdfjs-editor-alt-text-edit-button =
     .aria-label = حرّر النص البديل
-pdfjs-editor-alt-text-edit-button-label = تحرير النص البديل
 pdfjs-editor-alt-text-dialog-label = اختر خيار
 pdfjs-editor-alt-text-dialog-description = يساعد النص البديل عندما لا يتمكن الأشخاص من رؤية الصورة أو عندما لا يتم تحميلها.
 pdfjs-editor-alt-text-add-description-label = أضِف وصف
@@ -419,14 +395,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = الزاوية اليُسرى العُليا — غيّر الحجم
-pdfjs-editor-resizer-label-top-middle = أعلى الوسط - غيّر الحجم
-pdfjs-editor-resizer-label-top-right = الزاوية اليُمنى العُليا - غيّر الحجم
-pdfjs-editor-resizer-label-middle-right = اليمين الأوسط - غيّر الحجم
-pdfjs-editor-resizer-label-bottom-right = الزاوية اليُمنى السُفلى - غيّر الحجم
-pdfjs-editor-resizer-label-bottom-middle = أسفل الوسط - غيّر الحجم
-pdfjs-editor-resizer-label-bottom-left = الزاوية اليُسرى السُفلية - غيّر الحجم
-pdfjs-editor-resizer-label-middle-left = مُنتصف اليسار - غيّر الحجم
 pdfjs-editor-resizer-top-left =
     .aria-label = الزاوية اليُسرى العُليا — غيّر الحجم
 pdfjs-editor-resizer-top-middle =

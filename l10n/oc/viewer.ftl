@@ -104,24 +104,12 @@ pdfjs-document-properties-button =
 pdfjs-document-properties-button-label = Proprietats del document…
 pdfjs-document-properties-file-name = Nom del fichièr :
 pdfjs-document-properties-file-size = Talha del fichièr :
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } Ko ({ $size_b } octets)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } Mo ({ $size_b } octets)
 pdfjs-document-properties-title = Títol :
 pdfjs-document-properties-author = Autor :
 pdfjs-document-properties-subject = Subjècte :
 pdfjs-document-properties-keywords = Mots claus :
 pdfjs-document-properties-creation-date = Data de creacion :
 pdfjs-document-properties-modification-date = Data de modificacion :
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, a { $time }
 pdfjs-document-properties-creator = Creator :
 pdfjs-document-properties-producer = Aisina de conversion PDF :
 pdfjs-document-properties-version = Version PDF :
@@ -264,10 +252,6 @@ pdfjs-rendering-error = Una error s'es producha pendent l'afichatge de la pagina
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date } a { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -334,18 +318,10 @@ pdfjs-editor-free-highlight-thickness-input = Espessor
 pdfjs-free-text2 =
     .aria-label = Editor de tèxte
     .default-content = Començatz de picar…
-pdfjs-free-text =
-    .aria-label = Editor de tèxte
-pdfjs-free-text-default-content = Començatz d’escriure…
-pdfjs-ink =
-    .aria-label = Editor de dessenh
-pdfjs-ink-canvas =
-    .aria-label = Imatge creat per l’utilizaire
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Tèxt alternatiu
-pdfjs-editor-alt-text-edit-button-label = Modificar lo tèxt alternatiu
 pdfjs-editor-alt-text-dialog-label = Causir una opcion
 pdfjs-editor-alt-text-add-description-label = Apondre una descripcion
 pdfjs-editor-alt-text-cancel-button = Anullar

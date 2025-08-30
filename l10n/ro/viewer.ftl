@@ -37,8 +37,8 @@ pdfjs-open-file-button =
     .title = Deschide un fișier
 pdfjs-open-file-button-label = Deschide
 pdfjs-print-button =
-    .title = Tipărește
-pdfjs-print-button-label = Tipărește
+    .title = Listează
+pdfjs-print-button-label = Listează
 pdfjs-save-button =
     .title = Salvează
 pdfjs-save-button-label = Salvează
@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } octeți)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } KB ({ $size_b } byți)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } byți)
 pdfjs-document-properties-title = Titlu:
 pdfjs-document-properties-author = Autor:
 pdfjs-document-properties-subject = Subiect:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = Data modificării:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Autor:
 pdfjs-document-properties-producer = Producător PDF:
 pdfjs-document-properties-version = Versiune PDF:
@@ -168,13 +156,13 @@ pdfjs-document-properties-close-button = Închide
 
 ## Print
 
-pdfjs-print-progress-message = Se pregătește documentul pentru tipărire…
+pdfjs-print-progress-message = Se pregătește documentul pentru listare…
 # Variables:
 #   $progress (Number) - percent value
 pdfjs-print-progress-percent = { $progress }%
 pdfjs-print-progress-close-button = Anulează
-pdfjs-printing-not-supported = Avertisment: Tipărirea nu este suportată în totalitate de acest browser.
-pdfjs-printing-not-ready = Avertisment: PDF-ul nu este încărcat complet pentru tipărire.
+pdfjs-printing-not-supported = Avertisment: Listarea nu este suportată complet de acest browser.
+pdfjs-printing-not-ready = Avertisment: PDF-ul nu este încărcat complet pentru listare.
 
 ## Tooltips and alt text for side panel toolbar buttons
 
@@ -277,10 +265,6 @@ pdfjs-rendering-error = A intervenit o eroare la randarea paginii.
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -388,20 +372,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Editor de text
     .default-content = Începe să tastezi...
-pdfjs-free-text =
-    .aria-label = Editor de text
-pdfjs-free-text-default-content = Începe să tastezi…
-pdfjs-ink =
-    .aria-label = Editor de desene
-pdfjs-ink-canvas =
-    .aria-label = Imagine creată de utilizator
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Text alternativ
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Editează textul alternativ
-pdfjs-editor-alt-text-edit-button-label = Editează textul alternativ
 pdfjs-editor-alt-text-dialog-label = Alege o opțiune
 pdfjs-editor-alt-text-dialog-description = Textul alternativ (alt text) ajută când oamenii nu pot vedea imaginea sau când nu se încarcă.
 pdfjs-editor-alt-text-add-description-label = Adaugă o descriere
@@ -421,14 +397,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = Colțul din stânga sus — redimensionează
-pdfjs-editor-resizer-label-top-middle = Mijloc de sus — redimensionează
-pdfjs-editor-resizer-label-top-right = Colțul din dreapta sus — redimensionează
-pdfjs-editor-resizer-label-middle-right = Mijloc dreapta — redimensionează
-pdfjs-editor-resizer-label-bottom-right = Colțul din dreapta jos — redimensionează
-pdfjs-editor-resizer-label-bottom-middle = Mijloc de jos - redimensionează
-pdfjs-editor-resizer-label-bottom-left = Colțul din stânga jos — redimensionează
-pdfjs-editor-resizer-label-middle-left = Mijloc stânga — redimensionează
 pdfjs-editor-resizer-top-left =
     .aria-label = Colțul din stânga sus — redimensionează
 pdfjs-editor-resizer-top-middle =

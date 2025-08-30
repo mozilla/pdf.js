@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bajtov)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } kB ({ $size_b } bajtov)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } MB ({ $size_b } bajtov)
 pdfjs-document-properties-title = Názov:
 pdfjs-document-properties-author = Autor:
 pdfjs-document-properties-subject = Predmet:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = Dátum úpravy:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Aplikácia:
 pdfjs-document-properties-producer = Tvorca PDF:
 pdfjs-document-properties-version = Verzia PDF:
@@ -279,10 +267,6 @@ pdfjs-rendering-error = Pri vykresľovaní stránky sa vyskytla chyba.
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -390,20 +374,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Textový editor
     .default-content = Začnite písať…
-pdfjs-free-text =
-    .aria-label = Textový editor
-pdfjs-free-text-default-content = Začnite písať…
-pdfjs-ink =
-    .aria-label = Editor kreslenia
-pdfjs-ink-canvas =
-    .aria-label = Obrázok vytvorený používateľom
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Alternatívny text
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Upraviť alternatívny text
-pdfjs-editor-alt-text-edit-button-label = Upraviť alternatívny text
 pdfjs-editor-alt-text-dialog-label = Vyberte možnosť
 pdfjs-editor-alt-text-dialog-description = Alternatívny text (alt text) pomáha, keď ľudia obrázok nevidia alebo sa nenačítava.
 pdfjs-editor-alt-text-add-description-label = Pridať popis
@@ -423,14 +399,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = Ľavý horný roh – zmena veľkosti
-pdfjs-editor-resizer-label-top-middle = Horný stred – zmena veľkosti
-pdfjs-editor-resizer-label-top-right = Pravý horný roh – zmena veľkosti
-pdfjs-editor-resizer-label-middle-right = Vpravo uprostred – zmena veľkosti
-pdfjs-editor-resizer-label-bottom-right = Pravý dolný roh – zmena veľkosti
-pdfjs-editor-resizer-label-bottom-middle = Stred dole – zmena veľkosti
-pdfjs-editor-resizer-label-bottom-left = Ľavý dolný roh – zmena veľkosti
-pdfjs-editor-resizer-label-middle-left = Vľavo uprostred – zmena veľkosti
 pdfjs-editor-resizer-top-left =
     .aria-label = Ľavý horný roh – zmena veľkosti
 pdfjs-editor-resizer-top-middle =

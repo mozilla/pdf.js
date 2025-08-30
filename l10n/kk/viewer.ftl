@@ -112,14 +112,6 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } МБ ({ $b } байт)
-# Variables:
-#   $size_kb (Number) - the PDF file size in kilobytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-kb = { $size_kb } КБ ({ $size_b } байт)
-# Variables:
-#   $size_mb (Number) - the PDF file size in megabytes
-#   $size_b (Number) - the PDF file size in bytes
-pdfjs-document-properties-mb = { $size_mb } МБ ({ $size_b } байт)
 pdfjs-document-properties-title = Тақырыбы:
 pdfjs-document-properties-author = Авторы:
 pdfjs-document-properties-subject = Тақырыбы:
@@ -129,10 +121,6 @@ pdfjs-document-properties-modification-date = Түзету күні:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-# Variables:
-#   $date (Date) - the creation/modification date of the PDF file
-#   $time (Time) - the creation/modification time of the PDF file
-pdfjs-document-properties-date-string = { $date }, { $time }
 pdfjs-document-properties-creator = Жасаған:
 pdfjs-document-properties-producer = PDF өндірген:
 pdfjs-document-properties-version = PDF нұсқасы:
@@ -275,10 +263,6 @@ pdfjs-rendering-error = Парақты өңдеу кезінде қате кет
 
 ## Annotations
 
-# Variables:
-#   $date (Date) - the modification date of the annotation
-#   $time (Time) - the modification time of the annotation
-pdfjs-annotation-date-string = { $date }, { $time }
 # .alt: This is used as a tooltip.
 # Variables:
 #   $type (String) - an annotation type from a list defined in the PDF spec
@@ -367,20 +351,12 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Мәтін түзеткіші
     .default-content = Теріп бастаңыз…
-pdfjs-free-text =
-    .aria-label = Мәтін түзеткіші
-pdfjs-free-text-default-content = Теруді бастау…
-pdfjs-ink =
-    .aria-label = Сурет түзеткіші
-pdfjs-ink-canvas =
-    .aria-label = Пайдаланушы жасаған сурет
 
 ## Alt-text dialog
 
 pdfjs-editor-alt-text-button-label = Балама мәтін
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Балама мәтінді өңдеу
-pdfjs-editor-alt-text-edit-button-label = Балама мәтінді өңдеу
 pdfjs-editor-alt-text-dialog-label = Опцияны таңдау
 pdfjs-editor-alt-text-dialog-description = Балама мәтін адамдар суретті көре алмағанда немесе ол жүктелмегенде көмектеседі.
 pdfjs-editor-alt-text-add-description-label = Сипаттаманы қосу
@@ -400,14 +376,6 @@ pdfjs-editor-alt-text-button =
 ## Editor resizers
 ## This is used in an aria label to help to understand the role of the resizer.
 
-pdfjs-editor-resizer-label-top-left = Жоғарғы сол жақ бұрыш — өлшемін өзгерту
-pdfjs-editor-resizer-label-top-middle = Жоғарғы ортасы — өлшемін өзгерту
-pdfjs-editor-resizer-label-top-right = Жоғарғы оң жақ бұрыш — өлшемін өзгерту
-pdfjs-editor-resizer-label-middle-right = Ортаңғы оң жақ — өлшемін өзгерту
-pdfjs-editor-resizer-label-bottom-right = Төменгі оң жақ бұрыш — өлшемін өзгерту
-pdfjs-editor-resizer-label-bottom-middle = Төменгі ортасы — өлшемін өзгерту
-pdfjs-editor-resizer-label-bottom-left = Төменгі сол жақ бұрыш — өлшемін өзгерту
-pdfjs-editor-resizer-label-middle-left = Ортаңғы сол жақ — өлшемін өзгерту
 pdfjs-editor-resizer-top-left =
     .aria-label = Жоғарғы сол жақ бұрыш — өлшемін өзгерту
 pdfjs-editor-resizer-top-middle =
