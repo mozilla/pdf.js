@@ -493,7 +493,30 @@ const PDFViewerApplication = {
         : null;
     const commentManager =
       AppOptions.get("enableComment") && appConfig.editCommentDialog
-        ? new CommentManager(appConfig.editCommentDialog, overlayManager)
+        ? new CommentManager(
+            appConfig.editCommentDialog,
+            {
+              sidebar:
+                appConfig.annotationEditorParams?.editorCommentsSidebar || null,
+              commentsList:
+                appConfig.annotationEditorParams?.editorCommentsSidebarList ||
+                null,
+              commentCount:
+                appConfig.annotationEditorParams?.editorCommentsSidebarCount ||
+                null,
+              sidebarTitle:
+                appConfig.annotationEditorParams?.editorCommentsSidebarTitle ||
+                null,
+              closeButton:
+                appConfig.annotationEditorParams
+                  ?.editorCommentsSidebarCloseButton || null,
+              commentToolbarButton:
+                appConfig.toolbar?.editorCommentButton || null,
+            },
+            eventBus,
+            linkService,
+            overlayManager
+          )
         : null;
 
     const enableHWA = AppOptions.get("enableHWA"),
@@ -588,6 +611,10 @@ const PDFViewerApplication = {
         const editorSignatureButton = appConfig.toolbar?.editorSignatureButton;
         if (editorSignatureButton && AppOptions.get("enableSignatureEditor")) {
           editorSignatureButton.parentElement.hidden = false;
+        }
+        const editorCommentButton = appConfig.toolbar?.editorCommentButton;
+        if (editorCommentButton && AppOptions.get("enableComment")) {
+          editorCommentButton.parentElement.hidden = false;
         }
         this.annotationEditorParams = new AnnotationEditorParams(
           appConfig.annotationEditorParams,

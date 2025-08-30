@@ -304,6 +304,10 @@
     box-sizing: border-box;
     pointer-events: auto;
 
+    &:dir(rtl) {
+      border-radius: 6px 6px 0;
+    }
+
     &::before {
       content: "";
       display: inline-block;
@@ -315,6 +319,7 @@
       background-color: var(--comment-button-fg);
       margin: 0;
       padding: 0;
+      transform: scaleX(var(--dir-factor));
     }
 
     &:focus-visible {
@@ -347,6 +352,244 @@
 
       &::before {
         background-color: var(--comment-button-selected-fg);
+      }
+    }
+  }
+}
+
+#editorCommentsSidebar {
+  --comment-close-button-icon: url(images/comment-closeButton.svg);
+
+  --comment-date-fg-color: light-dark(
+    rgb(21 20 26 / 0.69),
+    rgb(251 251 254 / 0.69)
+  );
+  --comment-bg-color: light-dark(#f9f9fb, #1c1b22);
+  --comment-hover-bg-color: light-dark(
+    rgb(21 20 26 / 0.14),
+    rgb(251 251 254 / 0.14)
+  );
+  --comment-active-bg-color: light-dark(
+    rgb(21 20 26 / 0.21),
+    rgb(251 251 254 / 0.21)
+  );
+  --comment-border-color: light-dark(#f0f0f4, #52525e);
+  --comment-focus-outline-color: light-dark(#0062fa, #00cadb);
+  --comment-fg-color: light-dark(#15141a, #fbfbfe);
+  --comment-count-bg-color: light-dark(#e2f7ff, #00317e);
+  --comment-indicator-active-fg-color: light-dark(#0041a4, #a6ecf4);
+  --comment-indicator-focus-fg-color: light-dark(#5b5b66, #fbfbfe);
+  --comment-indicator-hover-fg-color: light-dark(#0053cb, #61dce9);
+  --comment-indicator-selected-fg-color: light-dark(#0062fa, #00cadb);
+
+  @media screen and (forced-colors: active) {
+    --comment-date-fg-color: CanvasText;
+    --comment-bg-color: Canvas;
+    --comment-hover-bg-color: SelectedItemText;
+    --comment-active-bg-color: SelectedItemText;
+    --comment-border-color: CanvasText;
+    --comment-fg-color: CanvasText;
+    --comment-count-bg-color: Canvas;
+    --comment-indicator-active-fg-color: SelectedItem;
+    --comment-indicator-focus-fg-color: CanvasText;
+    --comment-indicator-hover-fg-color: CanvasText;
+    --comment-indicator-selected-fg-color: SelectedItem;
+  }
+
+  display: flex;
+  width: 239px;
+  height: auto;
+  min-width: 180px;
+  max-width: 632px;
+  padding-bottom: 16px;
+  flex-direction: column;
+  align-items: flex-start;
+
+  #editorCommentsSidebarHeader {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .commentCount {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      user-select: none;
+
+      #editorCommentsSidebarTitle {
+        font: menu;
+        font-style: normal;
+        font-weight: 590;
+        line-height: normal;
+        font-size: 17px;
+        color: var(--comment-fg-color);
+      }
+
+      #editorCommentsSidebarCount {
+        padding: 0 4px;
+        border-radius: 4px;
+        background-color: var(--comment-count-bg-color);
+
+        color: var(--comment-fg-color);
+        text-align: center;
+
+        font: menu;
+        font-size: 13px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: normal;
+      }
+    }
+
+    #editorCommentsSidebarCloseButton {
+      width: 32px;
+      height: 32px;
+      padding: 8px;
+      border: none;
+      background: none;
+      cursor: pointer;
+
+      &::before {
+        content: "";
+        display: inline-block;
+        width: 100%;
+        height: 100%;
+        mask-repeat: no-repeat;
+        mask-position: center;
+        mask-image: var(--comment-close-button-icon);
+        background-color: var(--comment-fg-color);
+      }
+
+      &:hover {
+        background-color: var(--comment-hover-bg-color);
+      }
+
+      &:active {
+        background-color: var(--comment-active-bg-color);
+      }
+
+      > span {
+        display: inline-block;
+        width: 0;
+        height: 0;
+        overflow: hidden;
+      }
+    }
+  }
+
+  #editorCommentsSidebarList {
+    display: flex;
+    width: auto;
+    padding: 1px 16px 0;
+    gap: 10px;
+    flex: 1 0 0;
+    align-self: stretch;
+    align-items: flex-start;
+    flex-direction: column;
+    list-style-type: none;
+
+    .sidebarComment {
+      display: flex;
+      width: auto;
+      padding: 8px 16px 16px;
+      flex-direction: column;
+      align-items: flex-start;
+      align-self: stretch;
+      gap: 4px;
+
+      border-radius: 8px;
+      border: 0.5px solid var(--comment-border-color);
+      background-color: var(--comment-bg-color);
+
+      &:not(.noComments) {
+        &:hover {
+          background-color: var(--comment-hover-bg-color);
+
+          time::after {
+            display: inline-block;
+            background-color: var(--comment-indicator-hover-fg-color);
+          }
+        }
+
+        &:active {
+          background-color: var(--comment-active-bg-color);
+
+          time::after {
+            display: inline-block;
+            background-color: var(--comment-indicator-active-fg-color);
+          }
+        }
+
+        &:is(:focus, :focus-visible) time::after {
+          display: inline-block;
+          background-color: var(--comment-indicator-focus-fg-color);
+        }
+
+        &:focus-visible {
+          outline: 2px solid var(--comment-focus-outline-color);
+          outline-offset: 2px;
+        }
+
+        &.selected {
+          .sidebarCommentText {
+            max-height: fit-content;
+            -webkit-line-clamp: unset;
+          }
+
+          time::after {
+            display: inline-block;
+            background-color: var(--comment-indicator-selected-fg-color);
+          }
+        }
+      }
+
+      .sidebarCommentText {
+        font: menu;
+        font-style: normal;
+        font-weight: 400;
+        line-height: normal;
+        font-size: 15px;
+        width: 100%;
+        height: fit-content;
+        max-height: 80px;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+        overflow-wrap: break-word;
+      }
+
+      &.noComments .sidebarCommentText {
+        max-height: fit-content;
+        -webkit-line-clamp: unset;
+        user-select: none;
+      }
+
+      time {
+        width: 100%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: space-between;
+
+        font: menu;
+        font-style: normal;
+        font-weight: 400;
+        line-height: normal;
+        font-size: 13px;
+
+        &::after {
+          content: "";
+          display: none;
+          width: 16px;
+          height: 16px;
+          mask-repeat: no-repeat;
+          mask-position: center;
+          mask-image: var(--comment-edit-button-icon);
+          transform: scaleX(var(--dir-factor));
+        }
       }
     }
   }

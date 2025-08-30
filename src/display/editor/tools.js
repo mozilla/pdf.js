@@ -585,6 +585,8 @@ class AnnotationEditorUIManager {
 
   #activeEditor = null;
 
+  #allEditableAnnotations = null;
+
   #allEditors = new Map();
 
   #allLayers = new Map();
@@ -662,6 +664,8 @@ class AnnotationEditorUIManager {
   #pageColors = null;
 
   #showAllStates = null;
+
+  #pdfDocument = null;
 
   #previousStates = {
     isEditing: false,
@@ -846,6 +850,7 @@ class AnnotationEditorUIManager {
     this.#altTextManager = altTextManager;
     this.#commentManager = commentManager;
     this.#signatureManager = signatureManager;
+    this.#pdfDocument = pdfDocument;
     this._eventBus = eventBus;
     eventBus._on("editingaction", this.onEditingAction.bind(this), { signal });
     eventBus._on("pagechanging", this.onPageChanging.bind(this), { signal });
@@ -928,6 +933,7 @@ class AnnotationEditorUIManager {
     this.#floatingToolbar = null;
     this.#mainHighlightColorPicker?.destroy();
     this.#mainHighlightColorPicker = null;
+    this.#allEditableAnnotations = null;
     if (this.#focusMainContainerTimeoutId) {
       clearTimeout(this.#focusMainContainerTimeoutId);
       this.#focusMainContainerTimeoutId = null;
@@ -937,6 +943,7 @@ class AnnotationEditorUIManager {
       this.#translationTimeoutId = null;
     }
     this._editorUndoBar?.destroy();
+    this.#pdfDocument = null;
   }
 
   combinedSignal(ac) {
@@ -1790,6 +1797,10 @@ class AnnotationEditorUIManager {
     this.#updateModeCapability = Promise.withResolvers();
     this.#currentDrawingSession?.commitOrRemove();
 
+    if (this.#mode === AnnotationEditorType.POPUP) {
+      this.#commentManager?.hideSidebar();
+    }
+
     this.#mode = mode;
     if (mode === AnnotationEditorType.NONE) {
       this.setEditingState(false);
@@ -1800,9 +1811,18 @@ class AnnotationEditorUIManager {
       this.#updateModeCapability.resolve();
       return;
     }
+
     if (mode === AnnotationEditorType.SIGNATURE) {
       await this.#signatureManager?.loadSignatures();
     }
+    if (mode === AnnotationEditorType.POPUP) {
+      this.#allEditableAnnotations ||=
+        await this.#pdfDocument.getAnnotationsByType(
+          new Set(this.#editorTypes.map(editorClass => editorClass._editorType))
+        );
+      this.#commentManager?.showSidebar(this.#allEditableAnnotations);
+    }
+
     this.setEditingState(true);
     await this.#enableAll();
     this.unselectAll();

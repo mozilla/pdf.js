@@ -13,7 +13,15 @@
  * limitations under the License.
  */
 
-import { getRGB, noContextMenu, shadow, stopEvent } from "pdfjs-lib";
+import {
+  AnnotationEditorType,
+  getRGB,
+  noContextMenu,
+  PDFDateString,
+  shadow,
+  stopEvent,
+} from "pdfjs-lib";
+import { binarySearchFirstItem } from "./ui_utils.js";
 
 class CommentManager {
   #actions;
@@ -39,6 +47,8 @@ class CommentManager {
   #textView;
 
   #saveButton;
+
+  #sidebar;
 
   #uiManager;
 
@@ -66,6 +76,9 @@ class CommentManager {
       cancelButton,
       saveButton,
     },
+    sidebar,
+    eventBus,
+    linkService,
     overlayManager
   ) {
     this.#actions = actions;
@@ -73,6 +86,7 @@ class CommentManager {
     this.#editMenuItem = editMenuItem;
     this.#deleteMenuItem = deleteMenuItem;
     this.#menu = menu;
+    this.#sidebar = new CommentSidebar(sidebar, eventBus, linkService);
     this.#textInput = textInput;
     this.#textView = textView;
     this.#overlayManager = overlayManager;
@@ -156,6 +170,26 @@ class CommentManager {
     });
 
     overlayManager.register(dialog);
+  }
+
+  showSidebar(annotations) {
+    this.#sidebar.show(annotations);
+  }
+
+  hideSidebar() {
+    this.#sidebar.hide();
+  }
+
+  removeComments(ids) {
+    this.#sidebar.removeComments(ids);
+  }
+
+  selectComment(id) {
+    this.#sidebar.selectComment(null, id);
+  }
+
+  addComment(annotation) {
+    this.#sidebar.addComment(annotation);
   }
 
   #closeMenu() {
@@ -375,6 +409,319 @@ class CommentManager {
   destroy() {
     this.#uiManager = null;
     this.#finish();
+  }
+}
+
+class CommentSidebar {
+  #annotations = null;
+
+  #boundCommentClick = this.#commentClick.bind(this);
+
+  #boundCommentKeydown = this.#commentKeydown.bind(this);
+
+  #sidebar;
+
+  #closeButton;
+
+  #commentsList;
+
+  #commentCount;
+
+  #sidebarTitle;
+
+  #linkService;
+
+  #elementsToAnnotations = null;
+
+  #idsToElements = null;
+
+  constructor(
+    {
+      sidebar,
+      commentsList,
+      commentCount,
+      sidebarTitle,
+      closeButton,
+      commentToolbarButton,
+    },
+    eventBus,
+    linkService
+  ) {
+    this.#sidebar = sidebar;
+    this.#sidebarTitle = sidebarTitle;
+    this.#commentsList = commentsList;
+    this.#commentCount = commentCount;
+    this.#linkService = linkService;
+    this.#closeButton = closeButton;
+
+    closeButton.addEventListener("click", () => {
+      eventBus.dispatch("switchannotationeditormode", {
+        source: this,
+        mode: AnnotationEditorType.NONE,
+      });
+    });
+    commentToolbarButton.addEventListener("keydown", e => {
+      if (e.key === "ArrowDown" || e.key === "Home" || e.key === "F6") {
+        this.#commentsList.firstElementChild.focus();
+        stopEvent(e);
+      } else if (e.key === "ArrowUp" || e.key === "End") {
+        this.#commentsList.lastElementChild.focus();
+        stopEvent(e);
+      }
+    });
+    this.#sidebar.hidden = true;
+  }
+
+  show(annotations) {
+    this.#elementsToAnnotations = new WeakMap();
+    this.#idsToElements = new Map();
+    this.#annotations = annotations = annotations.filter(
+      a => a.popupRef && a.contentsObj?.str
+    );
+    annotations.sort(this.#sortComments.bind(this));
+    if (annotations.length !== 0) {
+      const fragment = document.createDocumentFragment();
+      for (const annotation of annotations) {
+        fragment.append(this.#createCommentElement(annotation));
+      }
+
+      this.#setCommentsCount(fragment);
+      this.#commentsList.append(fragment);
+    } else {
+      this.#setCommentsCount();
+    }
+    this.#sidebar.hidden = false;
+  }
+
+  hide() {
+    this.#sidebar.hidden = true;
+    this.#commentsList.replaceChildren();
+    this.#elementsToAnnotations = null;
+    this.#idsToElements = null;
+    this.#annotations = null;
+  }
+
+  removeComments(ids) {
+    if (ids.length === 0) {
+      return;
+    }
+    if (
+      new Set(this.#idsToElements.keys()).difference(new Set(ids)).size === 0
+    ) {
+      this.#removeAll();
+      return;
+    }
+    for (const id of ids) {
+      this.#removeComment(id);
+    }
+  }
+
+  focusComment(id) {
+    const element = this.#idsToElements.get(id);
+    if (!element) {
+      return;
+    }
+    this.#sidebar.scrollTop = element.offsetTop - this.#sidebar.offsetTop;
+    for (const el of this.#commentsList.children) {
+      el.classList.toggle("selected", el === element);
+    }
+  }
+
+  #removeComment(id) {
+    const element = this.#idsToElements.get(id);
+    if (!element) {
+      return;
+    }
+    const annotation = this.#elementsToAnnotations.get(element);
+    const index = binarySearchFirstItem(
+      this.#annotations,
+      a => this.#sortComments(a, annotation) >= 0
+    );
+    if (index >= this.#annotations.length) {
+      return;
+    }
+    this.#annotations.splice(index, 1);
+    element.remove();
+    this.#idsToElements.delete(id);
+    this.#setCommentsCount();
+  }
+
+  #removeAll() {
+    this.#commentsList.replaceChildren();
+    this.#elementsToAnnotations = new WeakMap();
+    this.#idsToElements.clear();
+    this.#annotations.length = 0;
+    this.#setCommentsCount();
+  }
+
+  selectComment(element, id = null) {
+    element ||= this.#idsToElements.get(id);
+    for (const el of this.#commentsList.children) {
+      el.classList.toggle("selected", el === element);
+    }
+  }
+
+  addComment(annotation) {
+    if (this.#idsToElements.has(annotation.id)) {
+      return;
+    }
+    const { popupRef, contentsObj } = annotation;
+    if (!popupRef || !contentsObj?.str) {
+      return;
+    }
+    const commentItem = this.#createCommentElement(annotation);
+    if (this.#annotations.length === 0) {
+      this.#commentsList.replaceChildren(commentItem);
+      this.#annotations.push(annotation);
+      this.#setCommentsCount();
+      return;
+    }
+    const index = binarySearchFirstItem(
+      this.#annotations,
+      a => this.#sortComments(a, annotation) >= 0
+    );
+    this.#annotations.splice(index, 0, annotation);
+    if (index >= this.#commentsList.children.length) {
+      this.#commentsList.append(commentItem);
+    } else {
+      this.#commentsList.insertBefore(
+        commentItem,
+        this.#commentsList.children[index]
+      );
+    }
+    this.#setCommentsCount();
+  }
+
+  #setCommentsCount(container = this.#commentsList) {
+    const count = this.#idsToElements.size;
+    this.#sidebarTitle.setAttribute(
+      "data-l10n-args",
+      JSON.stringify({ count })
+    );
+    this.#commentCount.textContent = count;
+    if (count === 0) {
+      container.append(this.#createZeroCommentElement());
+    }
+  }
+
+  #createZeroCommentElement() {
+    const commentItem = document.createElement("li");
+    commentItem.classList.add("sidebarComment", "noComments");
+    commentItem.role = "button";
+    const textDiv = document.createElement("div");
+    textDiv.className = "sidebarCommentText";
+    textDiv.setAttribute(
+      "data-l10n-id",
+      "pdfjs-editor-comments-sidebar-no-comments"
+    );
+    commentItem.addEventListener("keydown", this.#boundCommentKeydown);
+    commentItem.append(textDiv);
+    return commentItem;
+  }
+
+  #createCommentElement(annotation) {
+    const {
+      creationDate,
+      modificationDate,
+      contentsObj: { str: text },
+    } = annotation;
+    const commentItem = document.createElement("li");
+    commentItem.role = "button";
+    commentItem.className = "sidebarComment";
+    commentItem.tabIndex = -1;
+
+    const dateDiv = document.createElement("time");
+    const date = PDFDateString.toDateObject(modificationDate || creationDate);
+    dateDiv.dateTime = date.toISOString();
+    const dateFormat = new Intl.DateTimeFormat(undefined, {
+      dateStyle: "long",
+    });
+    dateDiv.textContent = dateFormat.format(date);
+
+    const textDiv = document.createElement("div");
+    textDiv.className = "sidebarCommentText";
+    textDiv.textContent = text;
+    commentItem.append(dateDiv, textDiv);
+    commentItem.addEventListener("click", this.#boundCommentClick);
+    commentItem.addEventListener("keydown", this.#boundCommentKeydown);
+
+    this.#elementsToAnnotations.set(commentItem, annotation);
+    this.#idsToElements.set(annotation.id, commentItem);
+    return commentItem;
+  }
+
+  #commentClick({ currentTarget }) {
+    if (currentTarget.classList.contains("selected")) {
+      return;
+    }
+    const annotation = this.#elementsToAnnotations.get(currentTarget);
+    if (!annotation) {
+      return;
+    }
+    const { pageIndex, rect } = annotation;
+    const SPACE_ABOVE_ANNOTATION = 10;
+    this.#linkService?.goToXY(
+      pageIndex + 1,
+      rect[0],
+      rect[3] + SPACE_ABOVE_ANNOTATION
+    );
+    this.selectComment(currentTarget);
+  }
+
+  #commentKeydown(e) {
+    const { key, currentTarget } = e;
+    switch (key) {
+      case "ArrowDown":
+        (
+          currentTarget.nextElementSibling ||
+          this.#commentsList.firstElementChild
+        ).focus();
+        stopEvent(e);
+        break;
+      case "ArrowUp":
+        (
+          currentTarget.previousElementSibling ||
+          this.#commentsList.lastElementChild
+        ).focus();
+        stopEvent(e);
+        break;
+      case "Home":
+        this.#commentsList.firstElementChild.focus();
+        stopEvent(e);
+        break;
+      case "End":
+        this.#commentsList.lastElementChild.focus();
+        stopEvent(e);
+        break;
+      case "Enter":
+      case " ":
+        this.#commentClick(e);
+        stopEvent(e);
+        break;
+      case "ShiftTab":
+        this.#closeButton.focus();
+        stopEvent(e);
+        break;
+    }
+  }
+
+  #sortComments(a, b) {
+    if (a.pageIndex !== b.pageIndex) {
+      return a.pageIndex - b.pageIndex;
+    }
+    if (a.rect[3] !== b.rect[3]) {
+      return b.rect[3] - a.rect[3];
+    }
+    if (a.rect[0] !== b.rect[0]) {
+      return a.rect[0] - b.rect[0];
+    }
+    if (a.rect[1] !== b.rect[1]) {
+      return b.rect[1] - a.rect[1];
+    }
+    if (a.rect[2] !== b.rect[2]) {
+      return a.rect[2] - b.rect[2];
+    }
+    return a.id.localeCompare(b.id);
   }
 }
 
