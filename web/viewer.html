@@ -320,6 +320,19 @@ See https://github.com/adobe-type-tools/cmap-resources
                       </div>
                     </div>
                   </div>
+                  <div id="editorEraser" class="toolbarButtonWithContainer">
+                    <button id="editorEraserButton" class="toolbarButton" type="button" disabled="disabled" role="radio" aria-expanded="false" aria-haspopup="true" aria-controls="editorEraserParamsToolbar" tabindex="0" data-l10n-id="pdfjs-editor-eraser-button">
+                      <span data-l10n-id="pdfjs-editor-eraser-button-label"></span>
+                    </button>
+                    <div class="editorParamsToolbar hidden doorHangerRight" id="editorEraserParamsToolbar">
+                      <div class="editorParamsToolbarContainer">
+                        <div class="editorParamsSetter">
+                          <label for="editorEraserThickness" class="editorParamsLabel" data-l10n-id="pdfjs-editor-ink-thickness-input"></label>
+                          <input type="range" id="editorEraserThickness" class="editorParamsSlider" value="20" min="20" max="100" step="1" tabindex="0">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                   <div id="editorStamp" class="toolbarButtonWithContainer">
                     <button id="editorStampButton" class="toolbarButton" type="button" disabled="disabled" role="radio" aria-expanded="false" aria-haspopup="true" aria-controls="editorStampParamsToolbar" tabindex="0" data-l10n-id="pdfjs-editor-stamp-button">
                       <span data-l10n-id="pdfjs-editor-stamp-button-label"></span>
