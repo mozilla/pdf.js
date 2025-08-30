@@ -770,7 +770,41 @@ const SupportedImageMimeTypes = [
   "image/x-icon",
 ];
 
+function changeLightness(r, g, b, lumCallback = l => (1 + Math.sqrt(l)) / 2) {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const newL = (lumCallback(l) * 100).toFixed(2);
+
+  if (max === min) {
+    // gray
+    return `hsl(0, 0%, ${newL}%)`;
+  }
+
+  const d = max - min;
+
+  // hue (branch on max only; avoids mod)
+  let h;
+  if (max === r) {
+    h = (g - b) / d + (g < b ? 6 : 0);
+  } else if (max === g) {
+    h = (b - r) / d + 2;
+  } else {
+    // max === b
+    h = (r - g) / d + 4;
+  }
+  h = (h * 60).toFixed(2);
+  const s = ((d / (1 - Math.abs(2 * l - 1))) * 100).toFixed(2);
+
+  return `hsl(${h}, ${s}%, ${newL}%)`;
+}
+
 export {
+  changeLightness,
   deprecated,
   fetchData,
   getColorValues,

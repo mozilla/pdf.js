@@ -43,6 +43,7 @@ import {
   version,
 } from "../../src/display/api.js";
 import {
+  changeLightness,
   fetchData,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
@@ -82,6 +83,7 @@ const expectedAPI = Object.freeze({
   AnnotationMode,
   AnnotationType,
   build,
+  changeLightness,
   ColorPicker,
   createValidAbsoluteUrl,
   DOMSVGFactory,

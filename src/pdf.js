@@ -52,6 +52,7 @@ import {
   version,
 } from "./display/api.js";
 import {
+  changeLightness,
   fetchData,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
@@ -98,6 +99,7 @@ globalThis.pdfjsLib = {
   AnnotationMode,
   AnnotationType,
   build,
+  changeLightness,
   ColorPicker,
   createValidAbsoluteUrl,
   DOMSVGFactory,
@@ -153,6 +155,7 @@ export {
   AnnotationMode,
   AnnotationType,
   build,
+  changeLightness,
   ColorPicker,
   createValidAbsoluteUrl,
   DOMSVGFactory,
