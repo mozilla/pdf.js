@@ -251,7 +251,6 @@
     --editor-toolbar-delete-image: url(images/editor-toolbar-delete.svg);
     --editor-toolbar-bg-color: light-dark(#f0f0f4, #2b2a33);
     --editor-toolbar-highlight-image: url(images/toolbarButton-editorHighlight.svg);
-    --editor-toolbar-comment-edit-image: url(images/comment-editButton.svg);
     --editor-toolbar-fg-color: light-dark(#2e2e56, #fbfbfe);
     --editor-toolbar-border-color: #8f8f9d;
     --editor-toolbar-hover-border-color: var(--editor-toolbar-border-color);
@@ -364,7 +363,7 @@
         }
 
         &.commentButton::before {
-          mask-image: var(--editor-toolbar-comment-edit-image);
+          mask-image: var(--comment-edit-button-icon);
         }
 
         &.deleteButton::before {
@@ -471,7 +470,7 @@
             --alt-text-tooltip-bg: light-dark(#f0f0f4, #1c1b22);
             --alt-text-tooltip-fg: light-dark(#15141a, #fbfbfe);
             --alt-text-tooltip-border: #8f8f9d;
-            --alt-text-tooltip-shadow: 0px 2px 6px 0px
+            --alt-text-tooltip-shadow: 0 2px 6px 0
               light-dark(rgb(58 57 68 / 0.2), #15141a);
 
             @media screen and (forced-colors: active) {
@@ -510,7 +509,7 @@
 
         &::before {
           content: "";
-          mask-image: var(--editor-toolbar-comment-edit-image);
+          mask-image: var(--comment-edit-button-icon);
           mask-repeat: no-repeat;
           mask-position: center;
           display: inline-block;
@@ -790,7 +789,7 @@
     .editToolbar {
       rotate: 180deg;
       inset-inline-end: 100%;
-      inset-block-start: calc(0pc - var(--editor-toolbar-vert-offset));
+      inset-block-start: calc(0px - var(--editor-toolbar-vert-offset));
     }
   }
 

@@ -655,6 +655,9 @@ class PDFViewer {
       get downloadManager() {
         return self.downloadManager;
       },
+      get enableComment() {
+        return !!self.#commentManager;
+      },
       get enableScripting() {
         return !!self._scriptingManager;
       },
@@ -869,6 +872,8 @@ class PDFViewer {
 
       this.#annotationEditorUIManager?.destroy();
       this.#annotationEditorUIManager = null;
+
+      this.#annotationEditorMode = AnnotationEditorType.NONE;
 
       this.#printingAllowed = true;
     }

@@ -878,6 +878,20 @@ describe("api", function () {
 
       await loadingTask.destroy();
     });
+
+    it("Doesn't iterate over all empty slots in the xref entries (bug 1980958)", async function () {
+      if (isNodeJS) {
+        pending("Worker is not supported in Node.js.");
+      }
+      const loadingTask = getDocument(buildGetDocumentParams("bug1980958.pdf"));
+      const { promise, resolve } = Promise.withResolvers();
+      setTimeout(() => resolve(null), 1000);
+
+      const pdfDocument = await Promise.race([loadingTask.promise, promise]);
+      expect(pdfDocument?.numPages).toEqual(1);
+
+      loadingTask._worker.destroy();
+    });
   });
 
   describe("PDFWorker", function () {

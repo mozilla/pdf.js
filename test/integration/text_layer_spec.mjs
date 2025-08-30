@@ -509,7 +509,7 @@ describe("Text layer", () => {
 
         await expectAsync(page)
           .withContext(`second selection`)
-          .toHaveRoughlySelected(/frequently .* We call such a se/s);
+          .toHaveRoughlySelected(/frequently .* We call such a s/s);
 
         await page.mouse.down();
         await moveInSteps(page, intermediateCaretPos, finalCaretPos, 20);
@@ -517,7 +517,7 @@ describe("Text layer", () => {
 
         await expectAsync(page)
           .withContext(`third selection`)
-          .toHaveRoughlySelected(/frequently .* We call such a se/s);
+          .toHaveRoughlySelected(/frequently .* We call such a s/s);
       });
     });
   });
