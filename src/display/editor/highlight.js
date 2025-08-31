@@ -60,6 +60,8 @@ class HighlightEditor extends AnnotationEditor {
 
   #isFreeHighlight = false;
 
+  #firstPoint = null;
+
   #lastPoint = null;
 
   #opacity;
@@ -177,7 +179,11 @@ class HighlightEditor extends AnnotationEditor {
     this.#focusOutlines = outlinerForOutline.getOutlines();
 
     // The last point is in the pages coordinate system.
-    const { lastPoint } = this.#focusOutlines;
+    const { firstPoint, lastPoint } = this.#focusOutlines;
+    this.#firstPoint = [
+      (firstPoint[0] - this.x) / this.width,
+      (firstPoint[1] - this.y) / this.height,
+    ];
     this.#lastPoint = [
       (lastPoint[0] - this.x) / this.width,
       (lastPoint[1] - this.y) / this.height,
@@ -268,7 +274,11 @@ class HighlightEditor extends AnnotationEditor {
       }
     }
 
-    const { lastPoint } = this.#focusOutlines;
+    const { firstPoint, lastPoint } = this.#focusOutlines;
+    this.#firstPoint = [
+      (firstPoint[0] - x) / width,
+      (firstPoint[1] - y) / height,
+    ];
     this.#lastPoint = [(lastPoint[0] - x) / width, (lastPoint[1] - y) / height];
   }
 
@@ -297,6 +307,11 @@ class HighlightEditor extends AnnotationEditor {
   /** @inheritdoc */
   get toolbarPosition() {
     return this.#lastPoint;
+  }
+
+  /** @inheritdoc */
+  get commentButtonPosition() {
+    return this.#firstPoint;
   }
 
   /** @inheritdoc */

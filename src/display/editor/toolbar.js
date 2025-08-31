@@ -162,7 +162,7 @@ class EditorToolbar {
     if (this.#comment) {
       return;
     }
-    const button = comment.render();
+    const button = comment.renderForToolbar();
     if (!button) {
       return;
     }
