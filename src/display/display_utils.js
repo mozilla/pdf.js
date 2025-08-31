@@ -770,7 +770,24 @@ const SupportedImageMimeTypes = [
   "image/x-icon",
 ];
 
-function changeLightness(r, g, b, lumCallback = l => (1 + Math.sqrt(l)) / 2) {
+class ColorScheme {
+  static get isDarkMode() {
+    return shadow(
+      this,
+      "isDarkMode",
+      !!window?.matchMedia?.("(prefers-color-scheme: dark)").matches
+    );
+  }
+}
+
+function changeLightness(
+  r,
+  g,
+  b,
+  lumCallback = ColorScheme.isDarkMode
+    ? l => (1 - Math.sqrt(1 - l)) / 2
+    : l => (1 + Math.sqrt(l)) / 2
+) {
   r /= 255;
   g /= 255;
   b /= 255;
@@ -803,8 +820,19 @@ function changeLightness(r, g, b, lumCallback = l => (1 + Math.sqrt(l)) / 2) {
   return `hsl(${h}, ${s}%, ${newL}%)`;
 }
 
+function applyOpacity(r, g, b, opacity) {
+  opacity = Math.min(Math.max(opacity ?? 1, 0), 1);
+  const white = 255 * (1 - opacity);
+  r = Math.round(r * opacity + white);
+  g = Math.round(g * opacity + white);
+  b = Math.round(b * opacity + white);
+  return [r, g, b];
+}
+
 export {
+  applyOpacity,
   changeLightness,
+  ColorScheme,
   deprecated,
   fetchData,
   getColorValues,

@@ -257,6 +257,7 @@
 
 :is(.annotationLayer, .annotationEditorLayer) {
   .annotationCommentButton {
+    color-scheme: light dark;
     --comment-button-bg: light-dark(white, #1c1b22);
     --comment-button-fg: light-dark(#5b5b66, #fbfbfe);
     --comment-button-active-bg: light-dark(#0041a4, #a6ecf4);

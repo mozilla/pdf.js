@@ -14,6 +14,7 @@
  */
 
 import {
+  applyOpacity,
   changeLightness,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
@@ -322,6 +323,23 @@ describe("display_utils", function () {
       expect(changeLightness(r, g, b, l => l / 2)).toEqual(
         "hsl(123.16, 45.24%, 33.53%)"
       );
+    });
+  });
+
+  describe("applyOpacity", function () {
+    it("Check that the opacity is applied correctly", function () {
+      if (isNodeJS) {
+        pending("OffscreenCanvas is not supported in Node.js.");
+      }
+      const canvas = new OffscreenCanvas(1, 1);
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, 1, 1);
+      ctx.fillStyle = "rgb(123, 45, 67)";
+      ctx.globalAlpha = 0.8;
+      ctx.fillRect(0, 0, 1, 1);
+      const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+      expect(applyOpacity(123, 45, 67, ctx.globalAlpha)).toEqual([r, g, b]);
     });
   });
 });

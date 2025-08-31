@@ -15,6 +15,7 @@
 
 import { AnnotationEditorType, AnnotationPrefix } from "../../shared/util.js";
 import {
+  ColorScheme,
   OutputScale,
   PixelsPerInch,
   SupportedImageMimeTypes,
@@ -535,7 +536,7 @@ class StampEditor extends AnnotationEditor {
         black = "#cfcfd8";
       if (this._uiManager.hcmFilter !== "none") {
         black = "black";
-      } else if (window.matchMedia?.("(prefers-color-scheme: dark)").matches) {
+      } else if (ColorScheme.isDarkMode) {
         white = "#8f8f9d";
         black = "#42414d";
       }

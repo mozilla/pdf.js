@@ -45,13 +45,7 @@ import {
   VerbosityLevel,
 } from "./shared/util.js";
 import {
-  build,
-  getDocument,
-  PDFDataRangeTransport,
-  PDFWorker,
-  version,
-} from "./display/api.js";
-import {
+  applyOpacity,
   changeLightness,
   fetchData,
   getFilenameFromUrl,
@@ -69,6 +63,13 @@ import {
   stopEvent,
   SupportedImageMimeTypes,
 } from "./display/display_utils.js";
+import {
+  build,
+  getDocument,
+  PDFDataRangeTransport,
+  PDFWorker,
+  version,
+} from "./display/api.js";
 import { AnnotationEditorLayer } from "./display/editor/annotation_editor_layer.js";
 import { AnnotationEditorUIManager } from "./display/editor/tools.js";
 import { AnnotationLayer } from "./display/annotation_layer.js";
@@ -98,6 +99,7 @@ globalThis.pdfjsLib = {
   AnnotationLayer,
   AnnotationMode,
   AnnotationType,
+  applyOpacity,
   build,
   changeLightness,
   ColorPicker,
@@ -154,6 +156,7 @@ export {
   AnnotationLayer,
   AnnotationMode,
   AnnotationType,
+  applyOpacity,
   build,
   changeLightness,
   ColorPicker,

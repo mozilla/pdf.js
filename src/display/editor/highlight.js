@@ -64,8 +64,6 @@ class HighlightEditor extends AnnotationEditor {
 
   #lastPoint = null;
 
-  #opacity;
-
   #outlineId = null;
 
   #text = "";
@@ -108,7 +106,7 @@ class HighlightEditor extends AnnotationEditor {
     super({ ...params, name: "highlightEditor" });
     this.color = params.color || HighlightEditor._defaultColor;
     this.#thickness = params.thickness || HighlightEditor._defaultThickness;
-    this.#opacity = params.opacity || HighlightEditor._defaultOpacity;
+    this.opacity = params.opacity || HighlightEditor._defaultOpacity;
     this.#boxes = params.boxes || null;
     this.#methodOfCreation = params.methodOfCreation || "";
     this.#text = params.text || "";
@@ -361,7 +359,7 @@ class HighlightEditor extends AnnotationEditor {
   #updateColor(color) {
     const setColorAndOpacity = (col, opa) => {
       this.color = col;
-      this.#opacity = opa;
+      this.opacity = opa;
       this.parent?.drawLayer.updateProperties(this.#id, {
         root: {
           fill: col,
@@ -371,7 +369,7 @@ class HighlightEditor extends AnnotationEditor {
       this.#colorPicker?.updateColor(col);
     };
     const savedColor = this.color;
-    const savedOpacity = this.#opacity;
+    const savedOpacity = this.opacity;
     this.addCommands({
       cmd: setColorAndOpacity.bind(
         this,
@@ -549,7 +547,7 @@ class HighlightEditor extends AnnotationEditor {
         root: {
           viewBox: "0 0 1 1",
           fill: this.color,
-          "fill-opacity": this.#opacity,
+          "fill-opacity": this.opacity,
         },
         rootClass: {
           highlight: true,
@@ -951,7 +949,7 @@ class HighlightEditor extends AnnotationEditor {
     const editor = await super.deserialize(data, parent, uiManager);
 
     editor.color = Util.makeHexColor(...color);
-    editor.#opacity = opacity || 1;
+    editor.opacity = opacity || 1;
     if (inkLists) {
       editor.#thickness = data.thickness;
     }
@@ -1046,7 +1044,7 @@ class HighlightEditor extends AnnotationEditor {
     const serialized = {
       annotationType: AnnotationEditorType.HIGHLIGHT,
       color,
-      opacity: this.#opacity,
+      opacity: this.opacity,
       thickness: this.#thickness,
       quadPoints: this.#serializeBoxes(),
       outlines: this.#serializeOutlines(rect),

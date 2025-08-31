@@ -35,8 +35,6 @@ const EOL_PATTERN = /\r\n?|\n/g;
  * Basic text editor in order to create a FreeTex annotation.
  */
 class FreeTextEditor extends AnnotationEditor {
-  #color;
-
   #content = "";
 
   #editorDivId = `${this.id}-editor`;
@@ -129,7 +127,7 @@ class FreeTextEditor extends AnnotationEditor {
 
   constructor(params) {
     super({ ...params, name: "freeTextEditor" });
-    this.#color =
+    this.color =
       params.color ||
       FreeTextEditor._defaultColor ||
       AnnotationEditor._defaultLineColor;
@@ -201,7 +199,7 @@ class FreeTextEditor extends AnnotationEditor {
   get propertiesToUpdate() {
     return [
       [AnnotationEditorParamsType.FREETEXT_SIZE, this.#fontSize],
-      [AnnotationEditorParamsType.FREETEXT_COLOR, this.#color],
+      [AnnotationEditorParamsType.FREETEXT_COLOR, this.color],
     ];
   }
 
@@ -213,10 +211,6 @@ class FreeTextEditor extends AnnotationEditor {
 
   get colorType() {
     return AnnotationEditorParamsType.FREETEXT_COLOR;
-  }
-
-  get colorValue() {
-    return this.#color;
   }
 
   /**
@@ -248,10 +242,10 @@ class FreeTextEditor extends AnnotationEditor {
    */
   #updateColor(color) {
     const setColor = col => {
-      this.#color = this.editorDiv.style.color = col;
+      this.color = this.editorDiv.style.color = col;
       this._colorPicker?.update(col);
     };
-    const savedColor = this.#color;
+    const savedColor = this.color;
     this.addCommands({
       cmd: setColor.bind(this, color),
       undo: setColor.bind(this, savedColor),
@@ -581,7 +575,7 @@ class FreeTextEditor extends AnnotationEditor {
 
     const { style } = this.editorDiv;
     style.fontSize = `calc(${this.#fontSize}px * var(--total-scale-factor))`;
-    style.color = this.#color;
+    style.color = this.color;
 
     this.div.append(this.editorDiv);
 
@@ -819,7 +813,7 @@ class FreeTextEditor extends AnnotationEditor {
     }
     const editor = await super.deserialize(data, parent, uiManager);
     editor.#fontSize = data.fontSize;
-    editor.#color = Util.makeHexColor(...data.color);
+    editor.color = Util.makeHexColor(...data.color);
     editor.#content = FreeTextEditor.#deserializeContent(data.value);
     editor._initialData = initialData;
     if (data.comment) {
@@ -841,9 +835,7 @@ class FreeTextEditor extends AnnotationEditor {
 
     const rect = this.getPDFRect();
     const color = AnnotationEditor._colorManager.convert(
-      this.isAttachedToDOM
-        ? getComputedStyle(this.editorDiv).color
-        : this.#color
+      this.isAttachedToDOM ? getComputedStyle(this.editorDiv).color : this.color
     );
 
     const serialized = {
@@ -895,7 +887,7 @@ class FreeTextEditor extends AnnotationEditor {
     }
     const { style } = content;
     style.fontSize = `calc(${this.#fontSize}px * var(--total-scale-factor))`;
-    style.color = this.#color;
+    style.color = this.color;
 
     content.replaceChildren();
     for (const line of this.#content.split("\n")) {

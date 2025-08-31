@@ -193,8 +193,12 @@ class InkEditor extends DrawingEditor {
     return AnnotationEditorParamsType.INK_COLOR;
   }
 
-  get colorValue() {
+  get color() {
     return this._drawingOptions.stroke;
+  }
+
+  get opacity() {
+    return this._drawingOptions["stroke-opacity"];
   }
 
   /** @inheritdoc */
