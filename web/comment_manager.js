@@ -408,6 +408,7 @@ class CommentManager {
   destroy() {
     this.#uiManager = null;
     this.#finish();
+    this.#sidebar.hide();
   }
 }
 
