@@ -81,8 +81,6 @@ describe("annotation", function () {
       return this.ensure(this.pdfDocument, prop, args);
     }
   }
-  // FILE: test/unit/annotation_spec.js
-  // LOCATION: Add this test section at the end of the file, before the closing });
 
   describe("WidgetAnnotation repeating calculation value fix", function () {
     let dict, xref, annotationGlobals;
@@ -96,7 +94,6 @@ describe("annotation", function () {
     });
 
     it("should fix pure repeating digit patterns", function () {
-      // Test case for "37037037" -> 37
       dict.set("Subtype", Name.get("Widget"));
       dict.set("V", "37037037");
 
@@ -110,7 +107,6 @@ describe("annotation", function () {
     });
 
     it("should fix repeating decimal patterns", function () {
-      // Test case for "37.037.03" -> 37
       dict.set("Subtype", Name.get("Widget"));
       dict.set("V", "37.037.03");
 
