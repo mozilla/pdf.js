@@ -480,115 +480,120 @@
     }
   }
 
-  #editorCommentsSidebarList {
-    display: flex;
-    width: auto;
-    padding: 1px 16px 0;
-    gap: 10px;
-    flex: 1 0 0;
-    align-self: stretch;
-    align-items: flex-start;
-    flex-direction: column;
-    list-style-type: none;
+  #editorCommentsSidebarListContainer {
+    overflow: scroll;
 
-    .sidebarComment {
+    #editorCommentsSidebarList {
       display: flex;
       width: auto;
-      padding: 8px 16px 16px;
-      flex-direction: column;
-      align-items: flex-start;
+      padding: 1px 16px 0;
+      gap: 10px;
+      flex: 1 0 0;
       align-self: stretch;
-      gap: 4px;
+      align-items: flex-start;
+      flex-direction: column;
+      list-style-type: none;
+      overflow: scroll;
 
-      border-radius: 8px;
-      border: 0.5px solid var(--comment-border-color);
-      background-color: var(--comment-bg-color);
+      .sidebarComment {
+        display: flex;
+        width: auto;
+        padding: 8px 16px 16px;
+        flex-direction: column;
+        align-items: flex-start;
+        align-self: stretch;
+        gap: 4px;
 
-      &:not(.noComments) {
-        &:hover {
-          background-color: var(--comment-hover-bg-color);
+        border-radius: 8px;
+        border: 0.5px solid var(--comment-border-color);
+        background-color: var(--comment-bg-color);
 
-          time::after {
+        &:not(.noComments) {
+          &:hover {
+            background-color: var(--comment-hover-bg-color);
+
+            time::after {
+              display: inline-block;
+              background-color: var(--comment-indicator-hover-fg-color);
+            }
+          }
+
+          &:active {
+            background-color: var(--comment-active-bg-color);
+
+            time::after {
+              display: inline-block;
+              background-color: var(--comment-indicator-active-fg-color);
+            }
+          }
+
+          &:is(:focus, :focus-visible) time::after {
             display: inline-block;
-            background-color: var(--comment-indicator-hover-fg-color);
+            background-color: var(--comment-indicator-focus-fg-color);
+          }
+
+          &:focus-visible {
+            outline: 2px solid var(--comment-focus-outline-color);
+            outline-offset: 2px;
+          }
+
+          &.selected {
+            .sidebarCommentText {
+              max-height: fit-content;
+              -webkit-line-clamp: unset;
+            }
+
+            time::after {
+              display: inline-block;
+              background-color: var(--comment-indicator-selected-fg-color);
+            }
           }
         }
 
-        &:active {
-          background-color: var(--comment-active-bg-color);
+        .sidebarCommentText {
+          font: menu;
+          font-style: normal;
+          font-weight: 400;
+          line-height: normal;
+          font-size: 15px;
+          width: 100%;
+          height: fit-content;
+          max-height: 80px;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+          overflow: hidden;
+          overflow-wrap: break-word;
+        }
 
-          time::after {
-            display: inline-block;
-            background-color: var(--comment-indicator-active-fg-color);
+        &.noComments .sidebarCommentText {
+          max-height: fit-content;
+          -webkit-line-clamp: unset;
+          user-select: none;
+        }
+
+        time {
+          width: 100%;
+          display: inline-flex;
+          align-items: center;
+          justify-content: space-between;
+
+          font: menu;
+          font-style: normal;
+          font-weight: 400;
+          line-height: normal;
+          font-size: 13px;
+
+          &::after {
+            content: "";
+            display: none;
+            width: 16px;
+            height: 16px;
+            mask-repeat: no-repeat;
+            mask-position: center;
+            mask-image: var(--comment-edit-button-icon);
+            transform: scaleX(var(--dir-factor));
           }
-        }
-
-        &:is(:focus, :focus-visible) time::after {
-          display: inline-block;
-          background-color: var(--comment-indicator-focus-fg-color);
-        }
-
-        &:focus-visible {
-          outline: 2px solid var(--comment-focus-outline-color);
-          outline-offset: 2px;
-        }
-
-        &.selected {
-          .sidebarCommentText {
-            max-height: fit-content;
-            -webkit-line-clamp: unset;
-          }
-
-          time::after {
-            display: inline-block;
-            background-color: var(--comment-indicator-selected-fg-color);
-          }
-        }
-      }
-
-      .sidebarCommentText {
-        font: menu;
-        font-style: normal;
-        font-weight: 400;
-        line-height: normal;
-        font-size: 15px;
-        width: 100%;
-        height: fit-content;
-        max-height: 80px;
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
-        overflow: hidden;
-        overflow-wrap: break-word;
-      }
-
-      &.noComments .sidebarCommentText {
-        max-height: fit-content;
-        -webkit-line-clamp: unset;
-        user-select: none;
-      }
-
-      time {
-        width: 100%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: space-between;
-
-        font: menu;
-        font-style: normal;
-        font-weight: 400;
-        line-height: normal;
-        font-size: 13px;
-
-        &::after {
-          content: "";
-          display: none;
-          width: 16px;
-          height: 16px;
-          mask-repeat: no-repeat;
-          mask-position: center;
-          mask-image: var(--comment-edit-button-icon);
-          transform: scaleX(var(--dir-factor));
         }
       }
     }
