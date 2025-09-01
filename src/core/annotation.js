@@ -1884,7 +1884,182 @@ class WidgetAnnotation extends Annotation {
       key: "V",
       getArray: true,
     });
-    data.fieldValue = this._decodeFormValue(fieldValue);
+
+    let decodedValue = this._decodeFormValue(fieldValue);
+
+    // Handle Name objects, Arrays, and force numeric conversion
+    if (decodedValue instanceof Name) {
+      decodedValue = decodedValue.name;
+    }
+    if (Array.isArray(decodedValue)) {
+      decodedValue = decodedValue[0]; // just pick first if multiple
+    }
+
+    // FILE: src/core/annotation.js
+    // LOCATION: In the WidgetAnnotation class constructor, around line 2800-2900
+
+    class WidgetAnnotation extends Annotation {
+      constructor(params) {
+        super(params);
+
+        const { dict, xref, annotationGlobals } = params;
+        const data = this.data;
+        this._needAppearances = params.needAppearances;
+
+        data.annotationType = AnnotationType.WIDGET;
+        if (data.fieldName === undefined) {
+          data.fieldName = this._constructFieldName(dict);
+        }
+
+        if (data.actions === undefined) {
+          data.actions = collectActions(xref, dict, AnnotationActionEventType);
+        }
+
+        let fieldValue = getInheritableProperty({
+          dict,
+          key: "V",
+          getArray: true,
+        });
+
+        let decodedValue = this._decodeFormValue(fieldValue);
+
+        // Handle Name objects, Arrays, and force numeric conversion
+        if (decodedValue instanceof Name) {
+          decodedValue = decodedValue.name;
+        }
+        if (Array.isArray(decodedValue)) {
+          decodedValue = decodedValue[0]; // just pick first if multiple
+        }
+
+        // REPLACE THIS SECTION:
+        // OLD CODE:
+        /*
+    if (typeof decodedValue === "string") {
+      // Remove commas from numbers like "37,037.03"
+      let numericStr = decodedValue.replace(/,/g, "");
+      if (!isNaN(numericStr)) {
+        decodedValue = Number(numericStr);
+      }
+    }
+    */
+
+        // NEW CODE - REPLACE THE ABOVE SECTION WITH THIS:
+        if (typeof decodedValue === "string" && decodedValue.length > 0) {
+          // Handle potential calculation errors that result in repeating patterns
+          const fixedValue = this._fixRepeatingCalculationValue(decodedValue);
+          if (fixedValue !== null) {
+            decodedValue = fixedValue;
+          } else {
+            // Fall back to original numeric conversion logic
+            let numericStr = decodedValue.replace(/,/g, "");
+            if (!isNaN(numericStr) && numericStr !== "") {
+              decodedValue = Number(numericStr);
+            }
+          }
+        }
+
+        data.fieldValue = decodedValue;
+
+        // ... rest of constructor remains unchanged
+      }
+
+      // ADD THIS NEW METHOD to the WidgetAnnotation class
+      // LOCATION: Add this method anywhere within the WidgetAnnotation class,
+      // preferably near other private methods like _decodeFormValue
+
+      /**
+       * Fix calculation values that show repeating patterns due to JavaScript execution errors
+       * @private
+       * @param {string} value - The potentially malformed calculation result
+       * @returns {number|null} - Fixed numeric value or null if no fix needed
+       */
+      _fixRepeatingCalculationValue(value) {
+        // Only process strings that look like malformed numbers
+        if (!/^[\d.,]+$/.test(value)) {
+          return null;
+        }
+
+        // Pattern 1: Pure repeating digits (e.g., "37037037" -> "37")
+        let match = value.match(/^(\d{1,4})\1{2,}$/);
+        if (match) {
+          const basePattern = match[1];
+          const numericValue = Number(basePattern);
+          if (!isNaN(numericValue)) {
+            warn(
+              `PDF.js: Fixed repeating calculation value "${value}" -> "${basePattern}"`
+            );
+            return numericValue;
+          }
+        }
+
+        // Pattern 2: Repeating decimal patterns (e.g., "37.037.03" -> "37.0")
+        if (value.includes(".")) {
+          const parts = value.split(".");
+          if (parts.length > 2) {
+            // Multiple decimal points indicate a calculation error
+            const firstPart = parts[0];
+            const secondPart = parts[1];
+
+            // Check if the pattern before first decimal repeats
+            if (
+              firstPart.length > 0 &&
+              value.startsWith(firstPart + "." + firstPart)
+            ) {
+              const candidate = firstPart;
+              const numericValue = Number(candidate);
+              if (!isNaN(numericValue)) {
+                warn(
+                  `PDF.js: Fixed repeating decimal calculation "${value}" -> "${candidate}"`
+                );
+                return numericValue;
+              }
+            }
+
+            // Fallback: use first valid decimal number found
+            const firstDecimal = parts[0] + "." + parts[1];
+            const numericValue = Number(firstDecimal);
+            if (!isNaN(numericValue)) {
+              warn(
+                `PDF.js: Fixed multiple decimal calculation "${value}" -> "${firstDecimal}"`
+              );
+              return numericValue;
+            }
+          }
+        }
+
+        // Pattern 3: Simple repeating short patterns for longer strings
+        if (value.length >= 6) {
+          for (
+            let patternLen = 1;
+            patternLen <= Math.floor(value.length / 3);
+            patternLen++
+          ) {
+            const pattern = value.substring(0, patternLen);
+            const expectedRepeated = pattern.repeat(
+              Math.floor(value.length / patternLen)
+            );
+
+            if (
+              value.startsWith(expectedRepeated) &&
+              expectedRepeated.length >= value.length * 0.8
+            ) {
+              const numericValue = Number(pattern);
+              if (!isNaN(numericValue) && pattern !== "0") {
+                warn(
+                  `PDF.js: Fixed repeating pattern calculation "${value}" -> "${pattern}"`
+                );
+                return numericValue;
+              }
+            }
+          }
+        }
+
+        return null; // No fix needed
+      }
+
+      // ... rest of the class methods remain unchanged
+    }
+    data.fieldValue = decodedValue;
 
     const defaultFieldValue = getInheritableProperty({
       dict,
