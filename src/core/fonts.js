@@ -989,10 +989,14 @@ class Font {
     // Fallback to checking the font name, in order to improve text-selection,
     // since the /Flags-entry is often wrong (fixes issue13845.pdf).
     if (!isSerifFont && !properties.isSimulatedFlags) {
-      const baseName = name.replaceAll(/[,_]/g, "-").split("-", 1)[0],
+      const stdFontMap = getStdFontMap(),
+        nonStdFontMap = getNonStdFontMap(),
         serifFonts = getSerifFonts();
-      for (const namePart of baseName.split("+")) {
-        if (serifFonts[namePart]) {
+      for (const namePart of name.split("+")) {
+        let fontName = namePart.replaceAll(/[,_]/g, "-");
+        fontName = stdFontMap[fontName] || nonStdFontMap[fontName] || fontName;
+        fontName = fontName.split("-", 1)[0];
+        if (serifFonts[fontName]) {
           isSerifFont = true;
           break;
         }
