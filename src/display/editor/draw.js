@@ -820,7 +820,6 @@ class DrawingEditor extends AnnotationEditor {
       this._currentParent = null;
       DrawingEditor.#currentDraw = null;
       DrawingEditor.#currentDrawingOptions = null;
-      CurrentPointers.clearPointerType();
       CurrentPointers.clearTimeStamp();
     }
 
