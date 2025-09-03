@@ -133,6 +133,21 @@ class DrawingEditor extends AnnotationEditor {
     return id;
   }
 
+  replaceOutlines(newOutlines) {
+    if (!newOutlines || !this.parent || this._drawId === null) {
+      return;
+    }
+    this.#drawOutlines = newOutlines;
+
+    this.parent.drawLayer.finalizeDraw(
+      this._drawId,
+      this.#drawOutlines.defaultProperties
+    );
+
+    this.#updateBbox(this.#drawOutlines.box);
+    this.rotate();
+  }
+
   static _mergeSVGProperties(p1, p2) {
     const p1Keys = new Set(Object.keys(p1));
 

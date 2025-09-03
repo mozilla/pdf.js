@@ -24,6 +24,7 @@ import { AnnotationEditorParamsType } from "pdfjs-lib";
  * @property {HTMLInputElement} editorInkColor
  * @property {HTMLInputElement} editorInkThickness
  * @property {HTMLInputElement} editorInkOpacity
+ * @property {HTMLInputElement} editorEraserThickness
  * @property {HTMLButtonElement} editorStampAddImage
  * @property {HTMLInputElement} editorFreeHighlightThickness
  * @property {HTMLButtonElement} editorHighlightShowAll
@@ -49,6 +50,7 @@ class AnnotationEditorParams {
     editorInkColor,
     editorInkThickness,
     editorInkOpacity,
+    editorEraserThickness,
     editorStampAddImage,
     editorFreeHighlightThickness,
     editorHighlightShowAll,
@@ -77,6 +79,9 @@ class AnnotationEditorParams {
     });
     editorInkOpacity.addEventListener("input", function () {
       dispatchEvent("INK_OPACITY", this.valueAsNumber);
+    });
+    editorEraserThickness.addEventListener("input", function () {
+      dispatchEvent("ERASER_THICKNESS", this.valueAsNumber);
     });
     editorStampAddImage.addEventListener("click", () => {
       eventBus.dispatch("reporttelemetry", {
@@ -117,6 +122,9 @@ class AnnotationEditorParams {
             break;
           case AnnotationEditorParamsType.INK_OPACITY:
             editorInkOpacity.value = value;
+            break;
+          case AnnotationEditorParamsType.ERASER_THICKNESS:
+            editorEraserThickness.value = value;
             break;
           case AnnotationEditorParamsType.HIGHLIGHT_COLOR:
             eventBus.dispatch("mainhighlightcolorpickerupdatecolor", {

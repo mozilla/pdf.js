@@ -103,6 +103,7 @@
   --toolbarButton-editorFreeText-icon: url(images/toolbarButton-editorFreeText.svg);
   --toolbarButton-editorHighlight-icon: url(images/toolbarButton-editorHighlight.svg);
   --toolbarButton-editorInk-icon: url(images/toolbarButton-editorInk.svg);
+  --toolbarButton-editorEraser-icon: url(images/toolbarButton-editorEraser.svg);
   --toolbarButton-editorStamp-icon: url(images/toolbarButton-editorStamp.svg);
   --toolbarButton-editorSignature-icon: url(images/toolbarButton-editorSignature.svg);
   --toolbarButton-menuArrow-icon: url(images/toolbarButton-menuArrow.svg);
@@ -540,6 +541,10 @@ body {
 
 #zoomInButton::before {
   mask-image: var(--toolbarButton-zoomIn-icon);
+}
+
+#editorEraserButton::before {
+  mask-image: var(--toolbarButton-editorEraser-icon);
 }
 
 #editorCommentButton::before {

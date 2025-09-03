@@ -31,6 +31,7 @@ import {
   FeatureTest,
 } from "../../shared/util.js";
 import { AnnotationEditor } from "./editor.js";
+import { EraserEditor } from "./eraser.js";
 import { FreeTextEditor } from "./freetext.js";
 import { HighlightEditor } from "./highlight.js";
 import { InkEditor } from "./ink.js";
@@ -99,6 +100,7 @@ class AnnotationEditorLayer {
 
   static #editorTypes = new Map(
     [
+      EraserEditor,
       FreeTextEditor,
       InkEditor,
       StampEditor,
@@ -168,6 +170,7 @@ class AnnotationEditorLayer {
    */
   updateMode(mode = this.#uiManager.getMode()) {
     this.#cleanup();
+    this.#toogleEditorPointerEvents(true);
     switch (mode) {
       case AnnotationEditorType.NONE:
         this.disableTextSelection();
@@ -175,6 +178,13 @@ class AnnotationEditorLayer {
         this.toggleAnnotationLayerPointerEvents(true);
         this.disableClick();
         return;
+      case AnnotationEditorType.ERASER:
+        this.#toogleEditorPointerEvents(false);
+        this.disableTextSelection();
+        this.togglePointerEvents(true);
+        this.enableClick();
+        this.addNewEditor({ /* eraser */});
+        break;
       case AnnotationEditorType.INK:
         this.disableTextSelection();
         this.togglePointerEvents(true);
@@ -236,6 +246,20 @@ class AnnotationEditorLayer {
 
   toggleAnnotationLayerPointerEvents(enabled = false) {
     this.#annotationLayer?.div.classList.toggle("disabled", !enabled);
+  }
+
+  #toogleEditorPointerEvents(enabled = false) {
+    const value = enabled ? "" : "none";
+    for (const editor of this.#editors.values()) {
+      editor.div.style.pointerEvents = value;
+      // for highlight editors, we must also set pointer-events
+      // of the clipped child.
+      for (const child of editor.div.children) {
+        if (child.className === "internal") {
+          child.style.pointerEvents = value;
+        }
+      }
+    }
   }
 
   /**
