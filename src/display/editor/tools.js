@@ -75,6 +75,10 @@ class CurrentPointers {
     CurrentPointers.#moveTimestamp = timeStamp;
   }
 
+  static isSamePointerId(pointerId) {
+    return CurrentPointers.#pointerId === pointerId;
+  }
+
   // Check if it's the same pointer id, otherwise remove it from the set.
   static isSamePointerIdOrRemove(pointerId) {
     if (CurrentPointers.#pointerId === pointerId) {
@@ -109,7 +113,7 @@ class CurrentPointers {
     CurrentPointers.#pointerType = null;
   }
 
-  static clearPointerId() {
+  static clearPointerIds() {
     CurrentPointers.#pointerId = NaN;
     CurrentPointers.#pointerIds = null;
   }

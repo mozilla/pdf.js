@@ -797,7 +797,7 @@ class DrawingEditor extends AnnotationEditor {
     }
     const { offsetX, offsetY, pointerId } = event;
 
-    if (!CurrentPointers.isSamePointerIdOrRemove(pointerId)) {
+    if (!CurrentPointers.isSamePointerId(pointerId)) {
       return;
     }
     if (CurrentPointers.isUsingMultiplePointers()) {
@@ -827,7 +827,7 @@ class DrawingEditor extends AnnotationEditor {
     if (DrawingEditor.#currentDrawingAC) {
       DrawingEditor.#currentDrawingAC.abort();
       DrawingEditor.#currentDrawingAC = null;
-      CurrentPointers.clearPointerId();
+      CurrentPointers.clearPointerIds();
     }
   }
 
