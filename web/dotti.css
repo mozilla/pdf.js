@@ -1,0 +1,11 @@
+.dotti_brand {
+  margin: 0 8px;
+  flex: none;
+  font-weight: 700;
+  font-size: 20px;
+  color: #272834;
+}
+
+.dotti_button {
+  margin: 0 4px;
+}
