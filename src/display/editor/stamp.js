@@ -879,8 +879,10 @@ class StampEditor extends AnnotationEditor {
         serialized.accessibilityData.structParent =
           this._initialData.structParent ?? -1;
       }
+      serialized.id = this.annotationElementId;
+      delete serialized.bitmapId;
+      return serialized;
     }
-    serialized.id = this.annotationElementId;
 
     if (context === null) {
       return serialized;
