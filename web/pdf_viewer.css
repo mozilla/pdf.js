@@ -20,6 +20,7 @@
 /* Ignored in GECKOVIEW builds: */
 @import url(annotation_editor_layer_builder.css);
 @import url(sidebar.css);
+@import url(dotti.css);
 
 :root {
   color-scheme: light dark;
