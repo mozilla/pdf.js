@@ -36,13 +36,7 @@ import {
   VerbosityLevel,
 } from "../../src/shared/util.js";
 import {
-  build,
-  getDocument,
-  PDFDataRangeTransport,
-  PDFWorker,
-  version,
-} from "../../src/display/api.js";
-import {
+  applyOpacity,
   changeLightness,
   fetchData,
   getFilenameFromUrl,
@@ -60,6 +54,13 @@ import {
   stopEvent,
   SupportedImageMimeTypes,
 } from "../../src/display/display_utils.js";
+import {
+  build,
+  getDocument,
+  PDFDataRangeTransport,
+  PDFWorker,
+  version,
+} from "../../src/display/api.js";
 import { AnnotationEditorLayer } from "../../src/display/editor/annotation_editor_layer.js";
 import { AnnotationEditorUIManager } from "../../src/display/editor/tools.js";
 import { AnnotationLayer } from "../../src/display/annotation_layer.js";
@@ -82,6 +83,7 @@ const expectedAPI = Object.freeze({
   AnnotationLayer,
   AnnotationMode,
   AnnotationType,
+  applyOpacity,
   build,
   changeLightness,
   ColorPicker,

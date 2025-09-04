@@ -58,6 +58,10 @@ class Comment {
           : position[0])
       }% - var(--comment-button-dim))`;
       style.top = `calc(${100 * position[1]}% - var(--comment-button-dim))`;
+      const color = this.#editor.commentButtonColor;
+      if (color) {
+        style.backgroundColor = color;
+      }
     }
 
     return this.#render(button);

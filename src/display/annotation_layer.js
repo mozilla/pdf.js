@@ -38,6 +38,7 @@ import {
   warn,
 } from "../shared/util.js";
 import {
+  applyOpacity,
   changeLightness,
   PDFDateString,
   setLayerDimensions,
@@ -232,15 +233,8 @@ class AnnotationElement {
     if (!this.data.color) {
       return null;
     }
-    const [r, g, b] = this.data.color;
-    const opacity = this.data.opacity ?? 1;
-    const oppositeOpacity = 255 * (1 - opacity);
-
-    return changeLightness(
-      Math.min(r + oppositeOpacity, 255),
-      Math.min(g + oppositeOpacity, 255),
-      Math.min(b + oppositeOpacity, 255)
-    );
+    const [r, g, b] = applyOpacity(...this.data.color, this.data.opacity);
+    return changeLightness(r, g, b);
   }
 
   _normalizePoint(point) {

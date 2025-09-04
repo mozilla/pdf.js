@@ -23,12 +23,17 @@ import {
   KeyboardManager,
 } from "./tools.js";
 import {
+  applyOpacity,
+  changeLightness,
+  noContextMenu,
+  stopEvent,
+} from "../display_utils.js";
+import {
   FeatureTest,
   MathClamp,
   shadow,
   unreachable,
 } from "../../shared/util.js";
-import { noContextMenu, stopEvent } from "../display_utils.js";
 import { AltText } from "./alt_text.js";
 import { Comment } from "./comment.js";
 import { EditorToolbar } from "./toolbar.js";
@@ -1855,6 +1860,17 @@ class AnnotationEditor {
    */
   get commentButtonPosition() {
     return this._uiManager.direction === "ltr" ? [1, 0] : [0, 0];
+  }
+
+  get commentButtonColor() {
+    if (!this.color) {
+      return null;
+    }
+    let [r, g, b] = AnnotationEditor._colorManager.convert(
+      this._uiManager.getNonHCMColor(this.color)
+    );
+    [r, g, b] = applyOpacity(r, g, b, this.opacity);
+    return changeLightness(r, g, b);
   }
 
   /**
