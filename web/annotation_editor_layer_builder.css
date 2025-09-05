@@ -43,6 +43,7 @@
   );
   --editorFreeText-editing-cursor: text;
   --editorInk-editing-cursor: url(images/cursor-editorInk.svg) 0 16, pointer;
+  --editorEraser-thickness: 20px;
   --editorHighlight-editing-cursor:
     url(images/cursor-editorTextHighlight.svg) 24 24, text;
   --editorFreeHighlight-editing-cursor:
@@ -157,6 +158,26 @@
 
 .annotationEditorLayer .draw {
   box-sizing: border-box;
+}
+
+.annotationEditorLayer.eraserEditing {
+  cursor: none;
+}
+
+.annotationEditorLayer.eraserEditing .editToolbar{
+  display: none;
+}
+
+.eraserCursor {
+  position: absolute;
+  display: none;
+  width: var(--editorEraser-thickness);
+  height: var(--editorEraser-thickness);
+  background-color: transparent;
+  border: 1px solid black;
+  border-radius: 50%;
+  pointer-events: none;
+  transition: transform 0.05s ease-out;
 }
 
 .annotationEditorLayer

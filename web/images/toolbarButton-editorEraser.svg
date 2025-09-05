@@ -1,0 +1,17 @@
+<svg version="1.1" id="Icons" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     viewBox="0 0 32 32" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;}
+	.st1{fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+	.st2{fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:6,6;}
+	.st3{fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:4,4;}
+	.st4{fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round;}
+	.st5{fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:3.1081,3.1081;}
+
+		.st6{fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:4,3;}
+</style>
+    <line class="st0" x1="5" y1="29" x2="27" y2="29"/>
+    <line class="st0" x1="12" y1="10" x2="22" y2="20"/>
+    <path class="st0" d="M9.9,25H17l10.1-10.1c1.6-1.6,1.6-4.1,0-5.7l-4.3-4.3c-1.6-1.6-4.1-1.6-5.7,0L6.3,15.7c-1.6,1.6-1.6,4.1,0,5.7
+	L9.9,25z"/>
+</svg>
