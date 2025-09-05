@@ -89,6 +89,7 @@ describe("FreeText Editor", () => {
     let pages;
 
     beforeEach(async () => {
+      pending("Linked PDFs are not supported.");
       pages = await loadAndWait("aboutstacks.pdf", ".annotationEditorLayer");
     });
 
@@ -437,6 +438,7 @@ describe("FreeText Editor", () => {
     let pages;
 
     beforeEach(async () => {
+      pending("Linked PDFs are not supported.");
       pages = await loadAndWait("aboutstacks.pdf", ".annotationEditorLayer");
     });
 
@@ -2323,6 +2325,7 @@ describe("FreeText Editor", () => {
     let pages;
 
     beforeEach(async () => {
+      pending("Linked PDFs are not supported.");
       pages = await loadAndWait("bug1823296.pdf", ".annotationEditorLayer");
     });
 
