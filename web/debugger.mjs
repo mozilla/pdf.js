@@ -295,7 +295,7 @@ class Stepper {
     this.currentIdx = -1;
     this.operatorListIdx = 0;
     this.indentLevel = 0;
-    this.operatorGroups = null;
+    this.operatorsGroups = null;
     this.pageContainer = pageContainer;
   }
 
@@ -439,7 +439,7 @@ class Stepper {
     this.table.append(chunk);
   }
 
-  setOperatorGroups(groups) {
+  setOperatorBBoxes(bboxes, metadata) {
     let boxesContainer = this.pageContainer.querySelector(".pdfBugGroupsLayer");
     if (!boxesContainer) {
       boxesContainer = this.#c("div");
@@ -457,12 +457,55 @@ class Stepper {
     }
     boxesContainer.innerHTML = "";
 
-    groups = groups.toSorted((a, b) => {
+    const dependents = new Map();
+    for (const [dependentIdx, { dependencies: ownDependencies }] of metadata) {
+      for (const dependencyIdx of ownDependencies) {
+        let ownDependents = dependents.get(dependencyIdx);
+        if (!ownDependents) {
+          dependents.set(dependencyIdx, (ownDependents = new Set()));
+        }
+        ownDependents.add(dependentIdx);
+      }
+    }
+
+    const groups = Array.from({ length: bboxes.length }, (_, i) => {
+      let minX = null;
+      let minY = null;
+      let maxX = null;
+      let maxY = null;
+      if (!bboxes.isEmpty(i)) {
+        minX = bboxes.minX(i);
+        minY = bboxes.minY(i);
+        maxX = bboxes.maxX(i);
+        maxY = bboxes.maxY(i);
+      }
+
+      return {
+        minX,
+        minY,
+        maxX,
+        maxY,
+        dependencies: Array.from(metadata.get(i)?.dependencies ?? []).sort(),
+        dependents: Array.from(dependents.get(i) ?? []).sort(),
+        isRenderingOperation: metadata.get(i)?.isRenderingOperation ?? false,
+        idx: i,
+      };
+    });
+    this.operatorsGroups = groups;
+
+    const operatorsGroupsByZindex = groups.toSorted((a, b) => {
+      if (a.minX === null) {
+        return b.minX === null ? 0 : 1;
+      }
+      if (b.minX === null) {
+        return -1;
+      }
+
       const diffs = [
-        a.minX - b.minX,
         a.minY - b.minY,
-        b.maxX - a.maxX,
+        a.minX - b.minX,
         b.maxY - a.maxY,
+        b.maxX - a.maxX,
       ];
       for (const diff of diffs) {
         if (Math.abs(diff) > 0.01) {
@@ -476,16 +519,18 @@ class Stepper {
       }
       return 0;
     });
-    this.operatorGroups = groups;
 
-    for (let i = 0; i < groups.length; i++) {
-      const el = this.#c("div");
-      el.style.left = `${groups[i].minX * 100}%`;
-      el.style.top = `${groups[i].minY * 100}%`;
-      el.style.width = `${(groups[i].maxX - groups[i].minX) * 100}%`;
-      el.style.height = `${(groups[i].maxY - groups[i].minY) * 100}%`;
-      el.dataset.groupIdx = i;
-      boxesContainer.append(el);
+    for (let i = 0; i < operatorsGroupsByZindex.length; i++) {
+      const group = operatorsGroupsByZindex[i];
+      if (group.minX !== null) {
+        const el = this.#c("div");
+        el.style.left = `${group.minX * 100}%`;
+        el.style.top = `${group.minY * 100}%`;
+        el.style.width = `${(group.maxX - group.minX) * 100}%`;
+        el.style.height = `${(group.maxY - group.minY) * 100}%`;
+        el.dataset.idx = group.idx;
+        boxesContainer.append(el);
+      }
     }
   }
 
@@ -496,51 +541,85 @@ class Stepper {
     }
 
     const index = +tr.dataset.idx;
-
-    const closestGroupIndex =
-      this.operatorGroups?.findIndex(({ idx }) => idx === index) ?? -1;
-    if (closestGroupIndex === -1) {
-      this.hoverStyle.innerText = "";
-      return;
-    }
-
-    this.#highlightStepsGroup(closestGroupIndex);
+    this.#highlightStepsGroup(index);
   }
 
   #handleDebugBoxHover(e) {
-    if (e.target.dataset.groupIdx === undefined) {
+    if (e.target.dataset.idx === undefined) {
       return;
     }
 
-    const groupIdx = Number(e.target.dataset.groupIdx);
-    this.#highlightStepsGroup(groupIdx);
+    const idx = Number(e.target.dataset.idx);
+    this.#highlightStepsGroup(idx);
   }
 
   #handleDebugBoxClick(e) {
-    if (e.target.dataset.groupIdx === undefined) {
+    if (e.target.dataset.idx === undefined) {
       return;
     }
 
-    const groupIdx = Number(e.target.dataset.groupIdx);
-    const group = this.operatorGroups[groupIdx];
+    const idx = Number(e.target.dataset.idx);
 
-    this.table.childNodes[group.idx].scrollIntoView();
+    this.table.childNodes[idx].scrollIntoView();
   }
 
-  #highlightStepsGroup(groupIndex) {
-    const group = this.operatorGroups[groupIndex];
+  #highlightStepsGroup(index) {
+    const group = this.operatorsGroups?.[index];
+    if (!group) {
+      return;
+    }
 
-    this.hoverStyle.innerText = `#${this.panel.id} tr[data-idx="${group.idx}"] { background-color: rgba(0, 0, 0, 0.1); }`;
+    const renderingColor = `rgba(0, 0, 0, 0.1)`;
+    const dependencyColor = `rgba(0, 255, 255, 0.1)`;
+    const dependentColor = `rgba(255, 0, 0, 0.1)`;
 
+    const solid = color => `background-color: ${color}`;
+    // Used for operations that have an empty bounding box
+    const striped = color => `
+      background-image: repeating-linear-gradient(
+        -45deg,
+        white,
+        white 10px,
+        ${color} 10px,
+        ${color} 20px
+      )
+    `;
+
+    const select = idx => `#${this.panel.id} tr[data-idx="${idx}"]`;
+    const selectN = idxs =>
+      idxs.length === 0 ? "q:not(q)" : idxs.map(select).join(", ");
+
+    const isEmpty = idx =>
+      !this.operatorsGroups[idx] || this.operatorsGroups[idx].minX === null;
+
+    const selfColor = group.isRenderingOperation
+      ? renderingColor
+      : dependentColor;
+
+    this.hoverStyle.innerText = `${select(index)} {
+      ${group.minX === null ? striped(selfColor) : solid(selfColor)}
+    }`;
     if (group.dependencies.length > 0) {
-      const selector = group.dependencies
-        .map(idx => `#${this.panel.id} tr[data-idx="${idx}"]`)
-        .join(", ");
-      this.hoverStyle.innerText += `${selector} { background-color: rgba(0, 255, 255, 0.1); }`;
+      this.hoverStyle.innerText += `
+        ${selectN(group.dependencies.filter(idx => !isEmpty(idx)))} {
+          ${solid(dependencyColor)}
+        }
+        ${selectN(group.dependencies.filter(isEmpty))} {
+          ${striped(dependencyColor)}
+        }`;
+    }
+    if (group.dependents.length > 0) {
+      this.hoverStyle.innerText += `
+        ${selectN(group.dependents.filter(idx => !isEmpty(idx)))} {
+          ${solid(dependentColor)}
+        }
+        ${selectN(group.dependents.filter(isEmpty))} {
+          ${striped(dependentColor)}
+        }`;
     }
 
     this.hoverStyle.innerText += `
-      #viewer [data-page-number="${this.pageIndex + 1}"] .pdfBugGroupsLayer :nth-child(${groupIndex + 1}) {
+      #viewer [data-page-number="${this.pageIndex + 1}"] .pdfBugGroupsLayer [data-idx="${index}"] {
         background-color: var(--hover-background-color);
         outline-style: var(--hover-outline-style);
       }
