@@ -41,12 +41,12 @@ import {
   applyOpacity,
   changeLightness,
   PDFDateString,
+  renderRichText,
   setLayerDimensions,
 } from "./display_utils.js";
 import { AnnotationStorage } from "./annotation_storage.js";
 import { ColorConverters } from "../shared/scripting_utils.js";
 import { DOMSVGFactory } from "./svg_factory.js";
-import { XfaLayer } from "./xfa_layer.js";
 
 const DEFAULT_FONT_SIZE = 9;
 const GetElementsByNameSet = new WeakSet();
@@ -2491,18 +2491,15 @@ class PopupElement {
       header.append(modificationDate);
     }
 
-    const html = this.#html;
-    if (html) {
-      XfaLayer.render({
-        xfaHtml: html,
-        intent: "richText",
-        div: popup,
-      });
-      popup.lastChild.classList.add("richText", "popupContent");
-    } else {
-      const contents = this._formatContents(this.#contentsObj);
-      popup.append(contents);
-    }
+    renderRichText(
+      {
+        html: this.#html || this.#contentsObj.str,
+        dir: this.#contentsObj.dir,
+        className: "popupContent",
+      },
+      popup
+    );
+
     this.#container.append(popup);
   }
 
@@ -2559,29 +2556,6 @@ class PopupElement {
       });
     }
     return popupContent;
-  }
-
-  /**
-   * Format the contents of the popup by adding newlines where necessary.
-   *
-   * @private
-   * @param {Object<string, string>} contentsObj
-   * @memberof PopupElement
-   * @returns {HTMLParagraphElement}
-   */
-  _formatContents({ str, dir }) {
-    const p = document.createElement("p");
-    p.classList.add("popupContent");
-    p.dir = dir;
-    const lines = str.split(/(?:\r\n?|\n)/);
-    for (let i = 0, ii = lines.length; i < ii; ++i) {
-      const line = lines[i];
-      p.append(document.createTextNode(line));
-      if (i < ii - 1) {
-        p.append(document.createElement("br"));
-      }
-    }
-    return p;
   }
 
   #keyDown(event) {

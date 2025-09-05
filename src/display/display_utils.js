@@ -20,6 +20,7 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
+import { XfaLayer } from "./xfa_layer.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -829,6 +830,31 @@ function applyOpacity(r, g, b, opacity) {
   return [r, g, b];
 }
 
+function renderRichText({ html, dir, className }, container) {
+  const fragment = document.createDocumentFragment();
+  if (typeof html === "string") {
+    const p = document.createElement("p");
+    p.dir = dir || "auto";
+    const lines = html.split(/(?:\r\n?|\n)/);
+    for (let i = 0, ii = lines.length; i < ii; ++i) {
+      const line = lines[i];
+      p.append(document.createTextNode(line));
+      if (i < ii - 1) {
+        p.append(document.createElement("br"));
+      }
+    }
+    fragment.append(p);
+  } else {
+    XfaLayer.render({
+      xfaHtml: html,
+      div: fragment,
+      intent: "richText",
+    });
+  }
+  fragment.firstChild.classList.add("richText", className);
+  container.append(fragment);
+}
+
 export {
   applyOpacity,
   changeLightness,
@@ -851,6 +877,7 @@ export {
   PDFDateString,
   PixelsPerInch,
   RenderingCancelledException,
+  renderRichText,
   setLayerDimensions,
   StatTimer,
   stopEvent,
