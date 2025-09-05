@@ -82,6 +82,101 @@ describe("annotation", function () {
     }
   }
 
+  describe("WidgetAnnotation repeating calculation value fix", function () {
+    let dict, xref, annotationGlobals;
+
+    beforeEach(function () {
+      dict = new Dict();
+      xref = new XRefMock();
+      annotationGlobals = {
+        acroForm: new Dict(),
+      };
+    });
+
+    it("should fix pure repeating digit patterns", function () {
+      dict.set("Subtype", Name.get("Widget"));
+      dict.set("V", "37037037");
+
+      const widgetAnnotation = new WidgetAnnotation({
+        dict,
+        xref,
+        annotationGlobals,
+      });
+
+      expect(widgetAnnotation.data.fieldValue).toEqual(37);
+    });
+
+    it("should fix repeating decimal patterns", function () {
+      dict.set("Subtype", Name.get("Widget"));
+      dict.set("V", "37.037.03");
+
+      const widgetAnnotation = new WidgetAnnotation({
+        dict,
+        xref,
+        annotationGlobals,
+      });
+
+      expect(widgetAnnotation.data.fieldValue).toEqual(37);
+    });
+
+    it("should fix multiple repeating patterns", function () {
+      dict.set("Subtype", Name.get("Widget"));
+      dict.set("V", "333333");
+
+      const widgetAnnotation = new WidgetAnnotation({
+        dict,
+        xref,
+        annotationGlobals,
+      });
+
+      expect(widgetAnnotation.data.fieldValue).toEqual(3);
+    });
+
+    it("should not modify valid numeric strings", function () {
+      dict.set("Subtype", Name.get("Widget"));
+      dict.set("V", "123.45");
+
+      const widgetAnnotation = new WidgetAnnotation({
+        dict,
+        xref,
+        annotationGlobals,
+      });
+
+      expect(widgetAnnotation.data.fieldValue).toEqual(123.45);
+    });
+
+    it("should not modify non-numeric strings", function () {
+      dict.set("Subtype", Name.get("Widget"));
+      dict.set("V", "ABC123");
+
+      const widgetAnnotation = new WidgetAnnotation({
+        dict,
+        xref,
+        annotationGlobals,
+      });
+
+      expect(widgetAnnotation.data.fieldValue).toEqual("ABC123");
+    });
+
+    it("should handle edge cases safely", function () {
+      const testCases = [
+        { input: "", expected: "" },
+        { input: "0", expected: 0 },
+        { input: "000", expected: 0 },
+        { input: "12", expected: 12 },
+      ];
+
+      testCases.forEach(({ input, expected }) => {
+        dict.set("V", input);
+        const widgetAnnotation = new WidgetAnnotation({
+          dict,
+          xref,
+          annotationGlobals,
+        });
+        expect(widgetAnnotation.data.fieldValue).toEqual(expected);
+      });
+    });
+  });
   const fontDataReader = new DefaultStandardFontDataFactory({
     baseUrl: STANDARD_FONT_DATA_URL,
   });
