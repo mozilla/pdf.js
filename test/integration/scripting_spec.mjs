@@ -2463,13 +2463,6 @@ describe("Interaction", () => {
     it("must check that date entered by the user is consistent", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          if (browserName === "firefox") {
-            // Skip the test for Firefox as it doesn't support timezone
-            // emulation for WebDriver BiDi yet.
-            // TODO: Remove this check once bug 1978027 is fixed.
-            return;
-          }
-
           await waitForScripting(page);
 
           await page.emulateTimezone("Pacific/Honolulu");
