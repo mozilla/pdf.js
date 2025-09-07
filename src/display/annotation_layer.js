@@ -2494,7 +2494,7 @@ class PopupElement {
     renderRichText(
       {
         html: this.#html || this.#contentsObj.str,
-        dir: this.#contentsObj.dir,
+        dir: this.#contentsObj?.dir,
         className: "popupContent",
       },
       popup
