@@ -15,10 +15,9 @@
 
 import {
   applyOpacity,
-  changeLightness,
+  findContrastColor,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
-  getRGB,
   isValidFetchUrl,
   PDFDateString,
   renderRichText,
@@ -305,24 +304,10 @@ describe("display_utils", function () {
     });
   });
 
-  describe("changeLightness", function () {
+  describe("findContrastColor", function () {
     it("Check that the lightness is changed correctly", function () {
-      if (isNodeJS) {
-        pending("DOM is not supported in Node.js.");
-      }
-      const div = document.createElement("div");
-      const { style } = div;
-      style.width = style.height = "0";
-      style.backgroundColor = "hsl(123, 45%, 67%)";
-      document.body.append(div);
-      const [r, g, b] = getRGB(getComputedStyle(div).backgroundColor);
-      div.remove();
-      expect([r, g, b]).toEqual([133, 209, 137]);
-      expect(changeLightness(r, g, b, l => l)).toEqual(
-        "hsl(123.16, 45.24%, 67.06%)"
-      );
-      expect(changeLightness(r, g, b, l => l / 2)).toEqual(
-        "hsl(123.16, 45.24%, 33.53%)"
+      expect(findContrastColor([210, 98, 76], [197, 113, 89])).toEqual(
+        "#240d09"
       );
     });
   });
