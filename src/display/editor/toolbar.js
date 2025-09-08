@@ -158,7 +158,7 @@ class EditorToolbar {
     this.#altText = altText;
   }
 
-  addComment(comment) {
+  addComment(comment, beforeElement = null) {
     if (this.#comment) {
       return;
     }
@@ -167,7 +167,12 @@ class EditorToolbar {
       return;
     }
     this.#addListenersToElement(button);
-    this.#buttons.append(button, this.#divider);
+    if (!beforeElement) {
+      this.#buttons.append(button, this.#divider);
+    } else {
+      this.#buttons.insertBefore(button, beforeElement);
+      this.#buttons.insertBefore(this.#divider, beforeElement);
+    }
     this.#comment = comment;
     comment.toolbar = this;
   }
@@ -206,6 +211,16 @@ class EditorToolbar {
       case "comment":
         this.addComment(tool);
         break;
+    }
+  }
+
+  async addButtonBefore(name, tool, beforeSelector) {
+    const beforeElement = this.#buttons.querySelector(beforeSelector);
+    if (!beforeElement) {
+      return;
+    }
+    if (name === "comment") {
+      this.addComment(tool, beforeElement);
     }
   }
 

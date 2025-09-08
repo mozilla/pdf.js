@@ -1103,6 +1103,17 @@ class AnnotationEditor {
     return this._editToolbar;
   }
 
+  addCommentButtonInToolbar() {
+    if (!this._editToolbar) {
+      return;
+    }
+    this._editToolbar.addButtonBefore(
+      "comment",
+      this.addCommentButton(),
+      ".deleteButton"
+    );
+  }
+
   removeEditToolbar() {
     if (!this._editToolbar) {
       return;
@@ -1214,10 +1225,14 @@ class AnnotationEditor {
   }
 
   set comment(text) {
-    if (!this.#comment) {
-      this.#comment = new Comment(this);
-    }
+    this.#comment ||= new Comment(this);
     this.#comment.data = text;
+    if (this.hasComment) {
+      this.addStandaloneCommentButton();
+    } else {
+      this.addCommentButtonInToolbar();
+      this.removeStandaloneCommentButton();
+    }
   }
 
   setCommentData({ comment, richText }) {
@@ -1232,7 +1247,9 @@ class AnnotationEditor {
   }
 
   get hasComment() {
-    return !!this.#comment && !this.#comment.isDeleted();
+    return (
+      !!this.#comment && !this.#comment.isEmpty() && !this.#comment.isDeleted()
+    );
   }
 
   async editComment() {
