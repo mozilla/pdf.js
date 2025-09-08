@@ -133,6 +133,10 @@ class Comment {
     return this.#deleted || this.#text === "";
   }
 
+  isEmpty() {
+    return this.#text === null;
+  }
+
   hasBeenEdited() {
     return this.isDeleted() || this.#text !== this.#initialText;
   }
@@ -145,7 +149,7 @@ class Comment {
     return {
       text: this.#text,
       date: this.#date,
-      deleted: this.#deleted,
+      deleted: this.isDeleted(),
     };
   }
 
