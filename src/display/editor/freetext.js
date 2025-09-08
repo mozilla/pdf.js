@@ -833,21 +833,14 @@ class FreeTextEditor extends AnnotationEditor {
       return this.serializeDeleted();
     }
 
-    const rect = this.getPDFRect();
     const color = AnnotationEditor._colorManager.convert(
       this.isAttachedToDOM ? getComputedStyle(this.editorDiv).color : this.color
     );
-
-    const serialized = {
-      annotationType: AnnotationEditorType.FREETEXT,
+    const serialized = Object.assign(super.serialize(isForCopying), {
       color,
       fontSize: this.#fontSize,
       value: this.#serializeContent(),
-      pageIndex: this.pageIndex,
-      rect,
-      rotation: this.rotation,
-      structTreeParentId: this._structTreeParentId,
-    };
+    });
     this.addComment(serialized);
 
     if (isForCopying) {

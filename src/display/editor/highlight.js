@@ -1036,23 +1036,17 @@ class HighlightEditor extends AnnotationEditor {
       return this.serializeDeleted();
     }
 
-    const rect = this.getPDFRect();
     const color = AnnotationEditor._colorManager.convert(
       this._uiManager.getNonHCMColor(this.color)
     );
-
-    const serialized = {
-      annotationType: AnnotationEditorType.HIGHLIGHT,
+    const serialized = super.serialize(isForCopying);
+    Object.assign(serialized, {
       color,
       opacity: this.opacity,
       thickness: this.#thickness,
       quadPoints: this.#serializeBoxes(),
-      outlines: this.#serializeOutlines(rect),
-      pageIndex: this.pageIndex,
-      rect,
-      rotation: this.#getRotation(),
-      structTreeParentId: this._structTreeParentId,
-    };
+      outlines: this.#serializeOutlines(serialized.rect),
+    });
     this.addComment(serialized);
 
     if (this.annotationElementId && !this.#hasElementChanged(serialized)) {

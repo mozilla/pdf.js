@@ -247,7 +247,7 @@ class InkEditor extends DrawingEditor {
       return this.serializeDeleted();
     }
 
-    const { lines, points, rect } = this.serializeDraw(isForCopying);
+    const { lines, points } = this.serializeDraw(isForCopying);
     const {
       _drawingOptions: {
         stroke,
@@ -255,8 +255,7 @@ class InkEditor extends DrawingEditor {
         "stroke-width": thickness,
       },
     } = this;
-    const serialized = {
-      annotationType: AnnotationEditorType.INK,
+    const serialized = Object.assign(super.serialize(isForCopying), {
       color: AnnotationEditor._colorManager.convert(stroke),
       opacity,
       thickness,
@@ -264,11 +263,7 @@ class InkEditor extends DrawingEditor {
         lines,
         points,
       },
-      pageIndex: this.pageIndex,
-      rect,
-      rotation: this.rotation,
-      structTreeParentId: this._structTreeParentId,
-    };
+    });
     this.addComment(serialized);
 
     if (isForCopying) {

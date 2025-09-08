@@ -5023,6 +5023,63 @@ describe("annotation", function () {
           "endobj\n"
       );
     });
+
+    it("should update an existing Highlight annotation in removing its popup", async function () {
+      const popupRef = Ref.get(111, 0);
+      const highlightDict = new Dict();
+      highlightDict.set("Type", Name.get("Annot"));
+      highlightDict.set("Subtype", Name.get("Highlight"));
+      highlightDict.set("Rotate", 0);
+      highlightDict.set("CreationDate", "D:20190423");
+      highlightDict.set("Contents", "Hello PDF.js World !");
+      highlightDict.set("Popup", popupRef);
+      const highlightRef = Ref.get(143, 0);
+
+      const highlightPopupDict = new Dict();
+      highlightPopupDict.set("Type", Name.get("Annot"));
+      highlightPopupDict.set("Subtype", Name.get("Popup"));
+      highlightPopupDict.set("Open", false);
+      highlightPopupDict.set("Rect", [1, 2, 3, 4]);
+      highlightPopupDict.set("Parent", highlightRef);
+
+      const xref = (partialEvaluator.xref = new XRefMock([
+        { ref: highlightRef, data: highlightDict },
+        { ref: popupRef, data: highlightPopupDict },
+      ]));
+      const changes = new RefSetCache();
+
+      const task = new WorkerTask("test Highlight update");
+      await AnnotationFactory.saveNewAnnotations(
+        partialEvaluator,
+        task,
+        [
+          {
+            annotationType: AnnotationEditorType.HIGHLIGHT,
+            rotation: 90,
+            popup: {
+              contents: "",
+              deleted: true,
+              rect: [1, 2, 3, 4],
+            },
+            id: "143R",
+            ref: highlightRef,
+            oldAnnotation: highlightDict,
+            popupRef,
+          },
+        ],
+        null,
+        changes
+      );
+
+      const data = await writeChanges(changes, xref);
+      const base = data[0].data.replaceAll(/\(D:\d+\)/g, "(date)");
+      expect(base).toEqual(
+        "143 0 obj\n" +
+          "<< /Type /Annot /Subtype /Highlight /Rotate 90 /CreationDate (date) /M (date) " +
+          "/F 4>>\n" +
+          "endobj\n"
+      );
+    });
   });
 
   describe("UnderlineAnnotation", function () {
