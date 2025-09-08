@@ -670,7 +670,8 @@ class CommentSidebar {
     const { id, pageIndex, rect } = annotation;
     const SPACE_ABOVE_ANNOTATION = 10;
     const pageNumber = pageIndex + 1;
-    const pageVisiblePromise = this.#uiManager?.waitForPageRendered(pageNumber);
+    const pageVisiblePromise =
+      this.#uiManager?.waitForEditorsRendered(pageNumber);
     this.#linkService?.goToXY(
       pageNumber,
       rect[0],
