@@ -73,6 +73,7 @@ import { JpegStream } from "./jpeg_stream.js";
 import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
 import { XFAFactory } from "./xfa/factory.js";
+import { warn } from "../shared/util.js";
 
 class AnnotationFactory {
   static createGlobals(pdfManager) {
@@ -1895,136 +1896,19 @@ class WidgetAnnotation extends Annotation {
       decodedValue = decodedValue[0];
     }
 
-    class WidgetAnnotation extends Annotation {
-      constructor(params) {
-        super(params);
-
-        const { dict, xref, annotationGlobals } = params;
-        const data = this.data;
-        this._needAppearances = params.needAppearances;
-
-        data.annotationType = AnnotationType.WIDGET;
-        if (data.fieldName === undefined) {
-          data.fieldName = this._constructFieldName(dict);
+    // Handle potential calculation errors that result in repeating patterns
+    if (typeof decodedValue === "string" && decodedValue.length > 0) {
+      const fixedValue = this._fixRepeatingCalculationValue(decodedValue);
+      if (fixedValue !== null) {
+        decodedValue = fixedValue;
+      } else {
+        let numericStr = decodedValue.replace(/,/g, "");
+        if (!isNaN(numericStr) && numericStr !== "") {
+          decodedValue = Number(numericStr);
         }
-
-        if (data.actions === undefined) {
-          data.actions = collectActions(xref, dict, AnnotationActionEventType);
-        }
-
-        let fieldValue = getInheritableProperty({
-          dict,
-          key: "V",
-          getArray: true,
-        });
-
-        let decodedValue = this._decodeFormValue(fieldValue);
-
-        if (decodedValue instanceof Name) {
-          decodedValue = decodedValue.name;
-        }
-        if (Array.isArray(decodedValue)) {
-          decodedValue = decodedValue[0];
-        }
-
-        if (typeof decodedValue === "string" && decodedValue.length > 0) {
-          // Handle potential calculation errors that result in repeating patterns
-          const fixedValue = this._fixRepeatingCalculationValue(decodedValue);
-          if (fixedValue !== null) {
-            decodedValue = fixedValue;
-          } else {
-            let numericStr = decodedValue.replace(/,/g, "");
-            if (!isNaN(numericStr) && numericStr !== "") {
-              decodedValue = Number(numericStr);
-            }
-          }
-        }
-
-        data.fieldValue = decodedValue;
-      }
-      /**
-       * Fix calculation values that show repeating patterns due to JavaScript execution errors
-       * @private
-       * @param {string} value - The potentially malformed calculation result
-       * @returns {number|null} - Fixed numeric value or null if no fix needed
-       */
-      _fixRepeatingCalculationValue(value) {
-        if (!/^[\d.,]+$/.test(value)) {
-          return null;
-        }
-
-        let match = value.match(/^(\d{1,4})\1{2,}$/);
-        if (match) {
-          const basePattern = match[1];
-          const numericValue = Number(basePattern);
-          if (!isNaN(numericValue)) {
-            warn(
-              `PDF.js: Fixed repeating calculation value "${value}" -> "${basePattern}"`
-            );
-            return numericValue;
-          }
-        }
-
-        if (value.includes(".")) {
-          const parts = value.split(".");
-          if (parts.length > 2) {
-            const firstPart = parts[0];
-            const secondPart = parts[1];
-
-            if (
-              firstPart.length > 0 &&
-              value.startsWith(firstPart + "." + firstPart)
-            ) {
-              const candidate = firstPart;
-              const numericValue = Number(candidate);
-              if (!isNaN(numericValue)) {
-                warn(
-                  `PDF.js: Fixed repeating decimal calculation "${value}" -> "${candidate}"`
-                );
-                return numericValue;
-              }
-            }
-
-            const firstDecimal = parts[0] + "." + parts[1];
-            const numericValue = Number(firstDecimal);
-            if (!isNaN(numericValue)) {
-              warn(
-                `PDF.js: Fixed multiple decimal calculation "${value}" -> "${firstDecimal}"`
-              );
-              return numericValue;
-            }
-          }
-        }
-
-        if (value.length >= 6) {
-          for (
-            let patternLen = 1;
-            patternLen <= Math.floor(value.length / 3);
-            patternLen++
-          ) {
-            const pattern = value.substring(0, patternLen);
-            const expectedRepeated = pattern.repeat(
-              Math.floor(value.length / patternLen)
-            );
-
-            if (
-              value.startsWith(expectedRepeated) &&
-              expectedRepeated.length >= value.length * 0.8
-            ) {
-              const numericValue = Number(pattern);
-              if (!isNaN(numericValue) && pattern !== "0") {
-                warn(
-                  `PDF.js: Fixed repeating pattern calculation "${value}" -> "${pattern}"`
-                );
-                return numericValue;
-              }
-            }
-          }
-        }
-
-        return null;
       }
     }
+
     data.fieldValue = decodedValue;
 
     const defaultFieldValue = getInheritableProperty({
@@ -2088,6 +1972,89 @@ class WidgetAnnotation extends Annotation {
     data.hidden =
       this._hasFlag(data.annotationFlags, AnnotationFlag.HIDDEN) ||
       this._hasFlag(data.annotationFlags, AnnotationFlag.NOVIEW);
+  }
+
+  /**
+   * Fix calculation values that show repeating patterns due to JavaScript execution errors
+   * @private
+   * @param {string} value - The potentially malformed calculation result
+   * @returns {number|null} - Fixed numeric value or null if no fix needed
+   */
+  _fixRepeatingCalculationValue(value) {
+    if (!/^[\d.,]+$/.test(value)) {
+      return null;
+    }
+
+    let match = value.match(/^(\d{1,4})\1{2,}$/);
+    if (match) {
+      const basePattern = match[1];
+      const numericValue = Number(basePattern);
+      if (!isNaN(numericValue)) {
+        warn(
+          `PDF.js: Fixed repeating calculation value "${value}" -> "${basePattern}"`
+        );
+        return numericValue;
+      }
+    }
+
+    if (value.includes(".")) {
+      const parts = value.split(".");
+      if (parts.length > 2) {
+        const firstPart = parts[0];
+        const secondPart = parts[1];
+
+        if (
+          firstPart.length > 0 &&
+          value.startsWith(firstPart + "." + firstPart)
+        ) {
+          const candidate = firstPart;
+          const numericValue = Number(candidate);
+          if (!isNaN(numericValue)) {
+            warn(
+              `PDF.js: Fixed repeating decimal calculation "${value}" -> "${candidate}"`
+            );
+            return numericValue;
+          }
+        }
+
+        const firstDecimal = parts[0] + "." + parts[1];
+        const numericValue = Number(firstDecimal);
+        if (!isNaN(numericValue)) {
+          warn(
+            `PDF.js: Fixed multiple decimal calculation "${value}" -> "${firstDecimal}"`
+          );
+          return numericValue;
+        }
+      }
+    }
+
+    if (value.length >= 6) {
+      for (
+        let patternLen = 1;
+        patternLen <= Math.floor(value.length / 3);
+        patternLen++
+      ) {
+        const pattern = value.substring(0, patternLen);
+        const expectedRepeated = pattern.repeat(
+          Math.floor(value.length / patternLen)
+        );
+
+        if (
+          value.startsWith(expectedRepeated) &&
+          expectedRepeated.length >= value.length * 0.8
+        ) {
+          const numericValue = Number(pattern);
+          if (!isNaN(numericValue) && pattern !== "0") {
+            warn(
+              `PDF.js: Fixed repeating pattern calculation "${value}" -> "${pattern}"`
+            );
+            return numericValue;
+          }
+        }
+      }
+    }
+
+    return null;
   }
 
   /**
