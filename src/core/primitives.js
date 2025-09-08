@@ -309,7 +309,7 @@ class Dict {
   }
 
   delete(key) {
-    delete this._map[key];
+    this._map.delete(key);
   }
 }
 

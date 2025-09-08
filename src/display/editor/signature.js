@@ -374,21 +374,16 @@ class SignatureEditor extends DrawingEditor {
       return null;
     }
 
-    const { lines, points, rect } = this.serializeDraw(isForCopying);
+    const { lines, points } = this.serializeDraw(isForCopying);
     const {
       _drawingOptions: { "stroke-width": thickness },
     } = this;
-    const serialized = {
-      annotationType: AnnotationEditorType.SIGNATURE,
+    const serialized = Object.assign(super.serialize(isForCopying), {
       isSignature: true,
       areContours: this.#isExtracted,
       color: [0, 0, 0],
       thickness: this.#isExtracted ? 0 : thickness,
-      pageIndex: this.pageIndex,
-      rect,
-      rotation: this.rotation,
-      structTreeParentId: this._structTreeParentId,
-    };
+    });
     this.addComment(serialized);
     if (isForCopying) {
       serialized.paths = { lines, points };

@@ -842,15 +842,10 @@ class StampEditor extends AnnotationEditor {
       return this.serializeDeleted();
     }
 
-    const serialized = {
-      annotationType: AnnotationEditorType.STAMP,
+    const serialized = Object.assign(super.serialize(isForCopying), {
       bitmapId: this.#bitmapId,
-      pageIndex: this.pageIndex,
-      rect: this.getPDFRect(),
-      rotation: this.rotation,
       isSvg: this.#isSvg,
-      structTreeParentId: this._structTreeParentId,
-    };
+    });
     this.addComment(serialized);
 
     if (isForCopying) {
