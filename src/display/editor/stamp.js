@@ -373,9 +373,10 @@ class StampEditor extends AnnotationEditor {
       }
     }
 
-    if (this._isCopy) {
-      this._moveAfterPaste(baseX, baseY);
-    }
+    // TouchSign suppres copy logic for deserialization
+    // if (this._isCopy) {
+    //   this._moveAfterPaste(baseX, baseY);
+    // }
 
     this._uiManager.addShouldRescale(this);
 
@@ -827,6 +828,8 @@ class StampEditor extends AnnotationEditor {
     // No need to be add in the undo stack if the editor is created from an
     // existing one.
     editor.#hasBeenAddedInUndoStack = !!initialData;
+    editor.isSignaturePlaceholder = data.isSignaturePlaceholder;
+    editor.isStampPlaceholder = data.isStampPlaceholder;
 
     return editor;
   }
@@ -849,6 +852,11 @@ class StampEditor extends AnnotationEditor {
       rotation: this.rotation,
       isSvg: this.#isSvg,
       structTreeParentId: this._structTreeParentId,
+      x: this.x,
+      y: this.y,
+      signer: this.signer.serializable,
+      isSignaturePlaceholder: this.isSignaturePlaceholder,
+      isStampPlaceholder: this.isStampPlaceholder,
     };
     this.addComment(serialized);
 

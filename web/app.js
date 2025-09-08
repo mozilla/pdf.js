@@ -767,13 +767,17 @@ const PDFViewerApplication = {
     const { appConfig, eventBus } = this;
     let file;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      const queryString = document.location.search.substring(1);
-      const params = parseQueryString(queryString);
-      file = params.get("file") ?? AppOptions.get("defaultUrl");
-      try {
-        file = new URL(decodeURIComponent(file)).href;
-      } catch {
-        file = encodeURIComponent(file).replaceAll("%2F", "/");
+      if (window.DottiStore.getPDFURL()) {
+        file = window.DottiStore.getPDFURL();
+      } else {
+        const queryString = document.location.search.substring(1);
+        const params = parseQueryString(queryString);
+        file = params.get("file") ?? AppOptions.get("defaultUrl");
+        try {
+          file = new URL(decodeURIComponent(file)).href;
+        } catch {
+          file = encodeURIComponent(file).replaceAll("%2F", "/");
+        }
       }
       validateFileURL(file);
     } else if (PDFJSDev.test("MOZCENTRAL")) {
@@ -2396,6 +2400,11 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     "null",
     "http://mozilla.github.io",
     "https://mozilla.github.io",
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:8888",
+    "https://i-sign.cn",
+    "https://mobile.i-sign.cn",
   ]);
   // eslint-disable-next-line no-var
   var validateFileURL = function (file) {

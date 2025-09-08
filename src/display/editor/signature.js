@@ -199,10 +199,11 @@ class SignatureEditor extends DrawingEditor {
       );
     }
 
-    if (_isCopy) {
-      this._isCopy = true;
-      this._moveAfterPaste(baseX, baseY);
-    }
+    // TouchSign suppress copy logic for deserialization
+    // if (_isCopy) {
+    //   this._isCopy = true;
+    //   this._moveAfterPaste(baseX, baseY);
+    // }
 
     return this.div;
   }
@@ -388,6 +389,7 @@ class SignatureEditor extends DrawingEditor {
       rect,
       rotation: this.rotation,
       structTreeParentId: this._structTreeParentId,
+      signer: this.signer.serializable,
     };
     this.addComment(serialized);
     if (isForCopying) {
