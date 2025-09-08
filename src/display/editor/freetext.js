@@ -781,7 +781,10 @@ class FreeTextEditor extends AnnotationEditor {
           rotation,
           id,
           popupRef,
+          richText,
           contentsObj,
+          creationDate,
+          modificationDate,
         },
         textContent,
         textPosition,
@@ -809,6 +812,9 @@ class FreeTextEditor extends AnnotationEditor {
         deleted: false,
         popupRef,
         comment: contentsObj?.str || null,
+        richText,
+        creationDate,
+        modificationDate,
       };
     }
     const editor = await super.deserialize(data, parent, uiManager);
@@ -817,7 +823,7 @@ class FreeTextEditor extends AnnotationEditor {
     editor.#content = FreeTextEditor.#deserializeContent(data.value);
     editor._initialData = initialData;
     if (data.comment) {
-      editor.setCommentData(data.comment);
+      editor.setCommentData(data);
     }
 
     return editor;
