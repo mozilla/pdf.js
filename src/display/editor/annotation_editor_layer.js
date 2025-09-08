@@ -334,7 +334,7 @@ class AnnotationEditorLayer {
           if (editor?.annotationElementId === null) {
             e.stopPropagation();
             e.preventDefault();
-            editor.dblclick();
+            editor.dblclick(e);
           }
         },
         { signal, capture: true }

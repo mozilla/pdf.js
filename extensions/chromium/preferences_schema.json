@@ -71,6 +71,10 @@
       "type": "string",
       "default": ""
     },
+    "commentLearnMoreUrl": {
+      "type": "string",
+      "default": ""
+    },
     "enableSignatureEditor": {
       "type": "boolean",
       "default": false

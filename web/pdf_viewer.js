@@ -1057,6 +1057,7 @@ class PDFViewer {
             enableHWA: this.#enableHWA,
             enableAutoLinking: this.#enableAutoLinking,
             minDurationToUpdateCanvas: this.#minDurationToUpdateCanvas,
+            commentManager: this.#commentManager,
           });
           this._pages.push(pageView);
         }
