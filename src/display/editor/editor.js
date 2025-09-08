@@ -1237,7 +1237,10 @@ class AnnotationEditor {
     }
   }
 
-  setCommentData({ comment, richText }) {
+  setCommentData({ comment, popupRef, richText }) {
+    if (!popupRef) {
+      return;
+    }
     this.#comment ||= new Comment(this);
     this.#comment.setInitialText(comment, richText);
   }

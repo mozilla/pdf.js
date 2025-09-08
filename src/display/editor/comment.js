@@ -104,11 +104,7 @@ class Comment {
       width: parentWidth,
       height: parentHeight,
     } = this.#editor.parent.boundingClientRect;
-    const OFFSET_UNDER_BUTTON = 2;
-    return [
-      (x - parentX) / parentWidth,
-      (y + height + OFFSET_UNDER_BUTTON - parentY) / parentHeight,
-    ];
+    return [(x - parentX) / parentWidth, (y + height - parentY) / parentHeight];
   }
 
   set commentPopupPositionInLayer(pos) {
