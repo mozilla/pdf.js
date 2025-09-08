@@ -16,6 +16,7 @@
 import {
   awaitPromise,
   closePages,
+  getAnnotationSelector,
   getEditorSelector,
   getFirstSerialized,
   getRect,
@@ -1981,7 +1982,7 @@ describe("Highlight Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           const modeChangedHandle = await waitForAnnotationModeChanged(page);
-          await waitAndClick(page, "[data-annotation-id='687R']", { count: 2 });
+          await waitAndClick(page, getAnnotationSelector("687R"), { count: 2 });
           await awaitPromise(modeChangedHandle);
           await page.waitForSelector("#highlightParamsToolbarContainer");
 
@@ -2022,7 +2023,7 @@ describe("Highlight Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           const modeChangedHandle = await waitForAnnotationModeChanged(page);
-          await waitAndClick(page, "[data-annotation-id='24R']", { count: 2 });
+          await waitAndClick(page, getAnnotationSelector("24R"), { count: 2 });
           await awaitPromise(modeChangedHandle);
           await page.waitForSelector("#highlightParamsToolbarContainer");
 
@@ -2072,7 +2073,7 @@ describe("Highlight Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           const modeChangedHandle = await waitForAnnotationModeChanged(page);
-          await page.click("[data-annotation-id='693R']", { count: 2 });
+          await page.click(getAnnotationSelector("693R"), { count: 2 });
           await awaitPromise(modeChangedHandle);
           await page.waitForSelector("#highlightParamsToolbarContainer");
 

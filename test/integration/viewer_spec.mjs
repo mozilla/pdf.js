@@ -1358,12 +1358,14 @@ describe("PDF viewer", () => {
 
   describe("Pinch-zoom", () => {
     let pages;
+
     beforeEach(async () => {
       pages = await loadAndWait(
         "tracemonkey.pdf",
         `.page[data-page-number = "1"] .endOfContent`
       );
     });
+
     it("keeps the content under the pinch centre fixed on the screen", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
