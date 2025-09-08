@@ -414,7 +414,8 @@ pdfjs-editor-comments-sidebar-close-button =
 pdfjs-editor-comments-sidebar-close-button-label = Close the sidebar
 
 # Instructional copy to add a comment by selecting text or an annotations.
-pdfjs-editor-comments-sidebar-no-comments = Add a comment by selecting text or an annotation.
+pdfjs-editor-comments-sidebar-no-comments1 = See something noteworthy? Highlight it and leave a comment.
+pdfjs-editor-comments-sidebar-no-comments-link = Learn more
 
 ## Alt-text dialog
 
@@ -670,21 +671,28 @@ pdfjs-editor-edit-signature-dialog-title = Edit description
 
 pdfjs-editor-edit-signature-update-button = Update
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Edit comment
+pdfjs-editor-edit-comment-popup-button =
+    .title = Edit comment
+pdfjs-editor-delete-comment-popup-button-label = Remove comment
+pdfjs-editor-delete-comment-popup-button =
+    .title = Remove comment
+
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = Actions
-pdfjs-editor-edit-comment-actions-button =
-    .title = Actions
-pdfjs-editor-edit-comment-close-button-label = Close
-pdfjs-editor-edit-comment-close-button =
-    .title = Close
-pdfjs-editor-edit-comment-actions-edit-button-label = Edit
-pdfjs-editor-edit-comment-actions-delete-button-label = Delete
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Enter your comment
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Edit comment
 
-pdfjs-editor-edit-comment-manager-cancel-button = Cancel
-pdfjs-editor-edit-comment-manager-save-button = Save
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Add comment
+
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Start typing…
+
+pdfjs-editor-edit-comment-dialog-cancel-button = Cancel
+pdfjs-editor-edit-comment-dialog-save-button = Save
 
 ## Edit a comment button in the editor toolbar
 
