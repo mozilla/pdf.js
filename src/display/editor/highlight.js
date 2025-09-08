@@ -151,10 +151,6 @@ class HighlightEditor extends AnnotationEditor {
     };
   }
 
-  get commentColor() {
-    return this.color;
-  }
-
   static computeTelemetryFinalData(data) {
     // We want to know how many colors have been used.
     return { numberOfColors: data.get("color").size };
@@ -891,7 +887,10 @@ class HighlightEditor extends AnnotationEditor {
           color,
           opacity,
           popupRef,
+          richText,
           contentsObj,
+          creationDate,
+          modificationDate,
         },
         parent: {
           page: { pageNumber },
@@ -910,7 +909,10 @@ class HighlightEditor extends AnnotationEditor {
         id,
         deleted: false,
         popupRef,
+        richText,
         comment: contentsObj?.str || null,
+        creationDate,
+        modificationDate,
       };
     } else if (data instanceof InkAnnotationElement) {
       const {
@@ -922,7 +924,10 @@ class HighlightEditor extends AnnotationEditor {
           color,
           borderStyle: { rawWidth: thickness },
           popupRef,
+          richText,
           contentsObj,
+          creationDate,
+          modificationDate,
         },
         parent: {
           page: { pageNumber },
@@ -941,7 +946,10 @@ class HighlightEditor extends AnnotationEditor {
         id,
         deleted: false,
         popupRef,
+        richText,
         comment: contentsObj?.str || null,
+        creationDate,
+        modificationDate,
       };
     }
 
@@ -955,7 +963,7 @@ class HighlightEditor extends AnnotationEditor {
     }
     editor._initialData = initialData;
     if (data.comment) {
-      editor.setCommentData(data.comment);
+      editor.setCommentData(data);
     }
 
     const [pageWidth, pageHeight] = editor.pageDimensions;

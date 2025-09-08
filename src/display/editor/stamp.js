@@ -751,7 +751,17 @@ class StampEditor extends AnnotationEditor {
     let missingCanvas = false;
     if (data instanceof StampAnnotationElement) {
       const {
-        data: { rect, rotation, id, structParent, popupRef, contentsObj },
+        data: {
+          rect,
+          rotation,
+          id,
+          structParent,
+          popupRef,
+          richText,
+          contentsObj,
+          creationDate,
+          modificationDate,
+        },
         container,
         parent: {
           page: { pageNumber },
@@ -795,7 +805,10 @@ class StampEditor extends AnnotationEditor {
         isSvg: false,
         structParent,
         popupRef,
+        richText,
         comment: contentsObj?.str || null,
+        creationDate,
+        modificationDate,
       };
     }
     const editor = await super.deserialize(data, parent, uiManager);
@@ -823,7 +836,7 @@ class StampEditor extends AnnotationEditor {
     }
     editor._initialData = initialData;
     if (data.comment) {
-      editor.setCommentData(data.comment);
+      editor.setCommentData(data);
     }
     // No need to be add in the undo stack if the editor is created from an
     // existing one.

@@ -191,7 +191,8 @@ class AnnotationEditor {
     this._initialOptions.isCentered = parameters.isCentered;
     this._structTreeParentId = null;
     this.annotationElementId = parameters.annotationElementId || null;
-    this.creationDate = new Date();
+    this.creationDate = parameters.creationDate || new Date();
+    this.modificationDate = parameters.modificationDate || null;
 
     const {
       rotation,
@@ -1200,11 +1201,14 @@ class AnnotationEditor {
   }
 
   get comment() {
-    const comment = this.#comment;
+    const {
+      data: { richText, text, date, deleted },
+    } = this.#comment;
     return {
-      text: comment.data.text,
-      date: comment.data.date,
-      deleted: comment.isDeleted(),
+      text,
+      richText,
+      date,
+      deleted,
       color: this.commentColor,
     };
   }
@@ -1216,11 +1220,11 @@ class AnnotationEditor {
     this.#comment.data = text;
   }
 
-  setCommentData(text) {
+  setCommentData({ comment, richText }) {
     if (!this.#comment) {
       this.#comment = new Comment(this);
     }
-    this.#comment.setInitialText(text);
+    this.#comment.setInitialText(comment, richText);
   }
 
   get hasEditedComment() {
@@ -1611,13 +1615,22 @@ class AnnotationEditor {
   }
 
   getData() {
+    const {
+      comment: { text: str, date, deleted, richText },
+      uid: id,
+      pageIndex,
+      creationDate,
+      modificationDate,
+    } = this;
     return {
-      id: this.uid,
-      pageIndex: this.pageIndex,
+      id,
+      pageIndex,
       rect: this.getPDFRect(),
-      contentsObj: { str: this.comment.text },
-      creationDate: this.creationDate,
-      popupRef: !this.#comment.isDeleted(),
+      richText,
+      contentsObj: { str },
+      creationDate,
+      modificationDate: date || modificationDate,
+      popupRef: !deleted,
     };
   }
 
@@ -1767,6 +1780,8 @@ class AnnotationEditor {
       id: parent.getNextId(),
       uiManager,
       annotationElementId: data.annotationElementId,
+      creationDate: data.creationDate,
+      modificationDate: data.modificationDate,
     });
     editor.rotation = data.rotation;
     editor.#accessibilityData = data.accessibilityData;

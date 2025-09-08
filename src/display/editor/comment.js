@@ -26,6 +26,8 @@ class Comment {
 
   #initialText = null;
 
+  #richText = null;
+
   #text = null;
 
   #date = null;
@@ -144,8 +146,9 @@ class Comment {
   get data() {
     return {
       text: this.#text,
+      richText: this.#richText,
       date: this.#date,
-      deleted: this.#deleted,
+      deleted: this.isDeleted(),
     };
   }
 
@@ -153,6 +156,9 @@ class Comment {
    * Set the comment data.
    */
   set data(text) {
+    if (text !== this.#text) {
+      this.#richText = null;
+    }
     if (text === null) {
       this.#text = "";
       this.#deleted = true;
@@ -163,9 +169,11 @@ class Comment {
     this.#deleted = false;
   }
 
-  setInitialText(text) {
+  setInitialText(text, richText = null) {
     this.#initialText = text;
     this.data = text;
+    this.#date = null;
+    this.#richText = richText;
   }
 
   shown() {}
@@ -176,6 +184,7 @@ class Comment {
     this.#commentStandaloneButton?.remove();
     this.#commentStandaloneButton = null;
     this.#text = "";
+    this.#richText = null;
     this.#date = null;
     this.#editor = null;
     this.#commentWasFromKeyBoard = false;

@@ -150,7 +150,10 @@ class InkEditor extends DrawingEditor {
           opacity,
           borderStyle: { rawWidth: thickness },
           popupRef,
+          richText,
           contentsObj,
+          creationDate,
+          modificationDate,
         },
         parent: {
           page: { pageNumber },
@@ -170,14 +173,17 @@ class InkEditor extends DrawingEditor {
         id,
         deleted: false,
         popupRef,
+        richText,
         comment: contentsObj?.str || null,
+        creationDate,
+        modificationDate,
       };
     }
 
     const editor = await super.deserialize(data, parent, uiManager);
     editor._initialData = initialData;
     if (data.comment) {
-      editor.setCommentData(data.comment);
+      editor.setCommentData(data);
     }
 
     return editor;
