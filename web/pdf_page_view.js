@@ -798,6 +798,12 @@ class PDFPageView extends BasePDFPageView {
         this.maxCanvasDim,
         this.capCanvasAreaFactor
       );
+      if (this.#needsRestrictedScaling && this.enableDetailCanvas) {
+        // If we are going to have a high-res detail view, further reduce
+        // the canvas resolution to improve rendering performance.
+        outputScale.sx /= 10;
+        outputScale.sy /= 10;
+      }
     }
   }
 
