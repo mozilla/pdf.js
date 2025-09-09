@@ -74,6 +74,8 @@ class SignatureEditor extends DrawingEditor {
 
   static _defaultDrawingOptions = null;
 
+  attachingPlaceholder = null;
+
   constructor(params) {
     super({ ...params, mustBeCommitted: true, name: "signatureEditor" });
     this._willKeepAspectRatio = true;
@@ -279,18 +281,56 @@ class SignatureEditor extends DrawingEditor {
     });
     const [parentWidth, parentHeight] = this.parentDimensions;
     const [, pageHeight] = this.pageDimensions;
-    let newHeight = heightInPage / pageHeight;
-    // Ensure the signature doesn't exceed the page height.
-    // If the signature is too big, we scale it down to 50% of the page height.
-    newHeight = newHeight >= 1 ? 0.5 : newHeight;
 
-    this.width *= newHeight / this.height;
-    if (this.width >= 1) {
-      newHeight *= 0.9 / this.width;
-      this.width = 0.9;
+    // TouchSign: resize the signature to keep
+    // aspect ratio of the signaturePlaceholder
+    const attachingEditor = window.DottiStore.signingStampEditor;
+    if (attachingEditor) {
+      const originalRatio = this.width / this.height;
+      const newRatio = attachingEditor.width / attachingEditor.height;
+      if (originalRatio > newRatio) {
+        let newWidth = attachingEditor.width;
+        // Ensure the signature doesn't exceed the page height.
+        // If the signature is too big,
+        // we scale it down to 50% of the page height.
+        newWidth = newWidth >= 1 ? 0.5 : newWidth;
+
+        this.height *= newWidth / this.width;
+        if (this.height >= 1) {
+          newWidth *= 0.9 / this.height;
+          this.height = 0.9;
+        }
+        this.width = newWidth;
+      } else {
+        let newHeight = attachingEditor.height;
+        // Ensure the signature doesn't exceed the page height.
+        // If the signature is too big,
+        // we scale it down to 50% of the page height.
+        newHeight = newHeight >= 1 ? 0.5 : newHeight;
+
+        this.width *= newHeight / this.height;
+        if (this.width >= 1) {
+          newHeight *= 0.9 / this.width;
+          this.width = 0.9;
+        }
+        this.height = newHeight;
+      }
+    } else {
+      let newHeight = heightInPage / pageHeight;
+      // Ensure the signature doesn't exceed the page height.
+      // If the signature is too big,
+      // we scale it down to 50% of the page height.
+      newHeight = newHeight >= 1 ? 0.5 : newHeight;
+
+      this.width *= newHeight / this.height;
+      if (this.width >= 1) {
+        newHeight *= 0.9 / this.width;
+        this.width = 0.9;
+      }
+
+      this.height = newHeight;
     }
 
-    this.height = newHeight;
     this.setDims(parentWidth * this.width, parentHeight * this.height);
     this.x = savedX;
     this.y = savedY;
@@ -311,6 +351,12 @@ class SignatureEditor extends DrawingEditor {
     });
 
     this.div.hidden = false;
+
+    // TouchSign: keep a ref of stamp editor
+    this.attachingPlaceholder = window.DottiStore.signingStampEditor;
+    if (this.attachingPlaceholder) {
+      this.attachingPlaceholder.div.hidden = true;
+    }
   }
 
   getFromImage(bitmap) {

@@ -48,6 +48,8 @@ class StampEditor extends AnnotationEditor {
 
   #hasBeenAddedInUndoStack = false;
 
+  isSignaturePlaceholder = false;
+
   static _type = "stamp";
 
   static _editorType = AnnotationEditorType.STAMP;
@@ -57,6 +59,7 @@ class StampEditor extends AnnotationEditor {
     this.#bitmapUrl = params.bitmapUrl;
     this.#bitmapFile = params.bitmapFile;
     this.defaultL10nId = "pdfjs-editor-stamp-editor";
+    this.isSignaturePlaceholder = params.isSignaturePlaceholder ?? false;
   }
 
   /** @inheritdoc */
@@ -151,7 +154,8 @@ class StampEditor extends AnnotationEditor {
       } catch {}
     }
 
-    this.div.focus();
+    // TouchSign: prevent focus on bitmap when in preview mode
+    // this.div.focus();
   }
 
   async mlGuessAltText(imageData = null, updateAltTextData = true) {
@@ -951,6 +955,36 @@ class StampEditor extends AnnotationEditor {
     annotation.updateEdited(params);
 
     return null;
+  }
+
+  /**
+   * ondblclick callback.
+   * @param {MouseEvent} event
+   */
+  dblclick(event) {
+    if (this.isSignaturePlaceholder) {
+      if (!window.DottiStore.canSign(this.signer)) {
+        // eslint-disable-next-line no-alert
+        alert(`请【${this.signer.name}】使用正确的入口进行签字`);
+        return;
+      }
+      window.DottiStore.setSigningStampEditor(this);
+      this._uiManager._eventBus.dispatch("switchannotationeditormode", {
+        source: "dblclick_signature_placeholder",
+        mode: AnnotationEditorType.SIGNATURE,
+        isFromKeyboard: false,
+      });
+      setTimeout(() => {
+        this._uiManager._eventBus.dispatch("switchannotationeditorparams", {
+          source: "dblclick_signature_placeholder",
+          type: 2,
+          value: {
+            editor: this,
+            signOnPlaceholder: true,
+          },
+        });
+      }, 100);
+    }
   }
 }
 

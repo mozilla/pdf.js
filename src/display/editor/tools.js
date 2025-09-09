@@ -2337,6 +2337,9 @@ class AnnotationEditorUIManager {
       );
       for (const editor of editors) {
         editor.remove();
+        if (editor.attachingPlaceholder) {
+          editor.attachingPlaceholder.div.hidden = false;
+        }
       }
     };
     const undo = () => {

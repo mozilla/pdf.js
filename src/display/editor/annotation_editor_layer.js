@@ -728,12 +728,30 @@ class AnnotationEditorLayer {
    * @returns {AnnotationEditor}
    */
   createAndAddNewEditor(event, isCentered, data = {}) {
+    let newX = event.offsetX;
+    let newY = event.offsetY;
+    let newWidth = null;
+    let newHeight = null;
+    let newSigner = null;
+    if (data.signOnPlaceholder) {
+      const stampEditor = data.editor;
+      const [pageW, pageH] = stampEditor.parentDimensions;
+      newX = pageW * stampEditor.x + (pageW * stampEditor.width) / 2;
+      newY = pageH * stampEditor.y + (pageH * stampEditor.height) / 2;
+      newWidth = stampEditor.width;
+      newHeight = stampEditor.height;
+      newSigner = stampEditor.signer;
+    }
+
     const id = this.getNextId();
     const editor = this.#createNewEditor({
       parent: this,
       id,
-      x: event.offsetX,
-      y: event.offsetY,
+      x: newX, // event.offsetX,
+      y: newY, // event.offsetY,
+      width: newWidth, // not passed in before
+      height: newHeight, // not passed in before
+      signer: newSigner,
       uiManager: this.#uiManager,
       isCentered,
       ...data,
