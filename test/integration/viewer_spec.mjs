@@ -17,6 +17,7 @@ import {
   awaitPromise,
   closePages,
   createPromise,
+  getRect,
   getSpanRectFromText,
   loadAndWait,
   scrollIntoView,
@@ -1412,6 +1413,51 @@ describe("PDF viewer", () => {
             ).find(span => span.textContent.includes("type-stable"))
           );
           expect(await spanHandle.isIntersectingViewport()).toBeTrue();
+        })
+      );
+    });
+  });
+
+  describe("Scroll into view", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey_annotation_on_page_8.pdf",
+        `.page[data-page-number = "1"] .endOfContent`
+      );
+    });
+
+    it("Check that the top right corner of the annotation is centered vertically", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const handle = await page.evaluateHandle(() => [
+            new Promise(resolve => {
+              const container = document.getElementById("viewerContainer");
+              container.addEventListener("scrollend", resolve, {
+                once: true,
+              });
+              window.PDFViewerApplication.pdfLinkService.goToXY(
+                8,
+                43.55,
+                198.36,
+                {
+                  center: "vertical",
+                }
+              );
+            }),
+          ]);
+          await awaitPromise(handle);
+          const annotationSelector =
+            ".page[data-page-number='8'] .stampAnnotation";
+          await page.waitForSelector(annotationSelector, { visible: true });
+          const rect = await getRect(page, annotationSelector);
+          const containerRect = await getRect(page, "#viewerContainer");
+          expect(
+            Math.abs(2 * (rect.y - containerRect.y) - containerRect.height)
+          )
+            .withContext(`In ${browserName}`)
+            .toBeLessThan(1);
         })
       );
     });

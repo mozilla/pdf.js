@@ -1554,6 +1554,9 @@ class PDFViewer {
    *   The default value is `false`.
    * @property {boolean} [ignoreDestinationZoom] - Ignore the zoom argument in
    *   the destination array. The default value is `false`.
+   * @property {string} [center] - Center the view on the specified coordinates.
+   *   The default value is `null`. Possible values are: `null` (don't center),
+   *  `horizontal`, `vertical` and `both`.
    */
 
   /**
@@ -1565,6 +1568,7 @@ class PDFViewer {
     destArray = null,
     allowNegativeOffset = false,
     ignoreDestinationZoom = false,
+    center = null,
   }) {
     if (!this.pdfDocument) {
       return;
@@ -1687,7 +1691,20 @@ class PDFViewer {
     let left = Math.min(boundingRect[0][0], boundingRect[1][0]);
     let top = Math.min(boundingRect[0][1], boundingRect[1][1]);
 
-    if (!allowNegativeOffset) {
+    if (center) {
+      if (center === "both" || center === "vertical") {
+        top -=
+          (this.container.clientHeight -
+            Math.abs(boundingRect[1][1] - boundingRect[0][1])) /
+          2;
+      }
+      if (center === "both" || center === "horizontal") {
+        left -=
+          (this.container.clientWidth -
+            Math.abs(boundingRect[1][0] - boundingRect[0][0])) /
+          2;
+      }
+    } else if (!allowNegativeOffset) {
       // Some bad PDF generators will create destinations with e.g. top values
       // that exceeds the page height. Ensure that offsets are not negative,
       // to prevent a previous page from becoming visible (fixes bug 874482).
