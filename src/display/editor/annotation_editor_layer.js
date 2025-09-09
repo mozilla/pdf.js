@@ -281,6 +281,10 @@ class AnnotationEditorLayer {
       editor.enableEditing();
     }
     this.#isEnabling = false;
+    this.#uiManager._eventBus.dispatch("editorsrendered", {
+      source: this,
+      pageNumber: this.pageIndex + 1,
+    });
   }
 
   /**
@@ -745,8 +749,12 @@ class AnnotationEditorLayer {
     return editor;
   }
 
+  get boundingClientRect() {
+    return this.div.getBoundingClientRect();
+  }
+
   #getCenterPoint() {
-    const { x, y, width, height } = this.div.getBoundingClientRect();
+    const { x, y, width, height } = this.boundingClientRect;
     const tlX = Math.max(0, x);
     const tlY = Math.max(0, y);
     const brX = Math.min(window.innerWidth, x + width);

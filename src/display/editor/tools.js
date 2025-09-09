@@ -1078,18 +1078,18 @@ class AnnotationEditorUIManager {
     editor?.showComment();
   }
 
-  async waitForPageRendered(pageNumber) {
+  async waitForEditorsRendered(pageNumber) {
     if (this.#allLayers.has(pageNumber - 1)) {
       return;
     }
     const { resolve, promise } = Promise.withResolvers();
-    const onPageRendered = evt => {
+    const onEditorsRendered = evt => {
       if (evt.pageNumber === pageNumber) {
-        this._eventBus._off("annotationeditorlayerrendered", onPageRendered);
+        this._eventBus._off("editorsrendered", onEditorsRendered);
         resolve();
       }
     };
-    this._eventBus.on("annotationeditorlayerrendered", onPageRendered);
+    this._eventBus.on("editorsrendered", onEditorsRendered);
     await promise;
   }
 
