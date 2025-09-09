@@ -78,23 +78,17 @@ class EraserEditor extends AnnotationEditor {
     ];
   }
 
-  updateThickness(thickness) {
-    const setThickness = th => {
-      EraserEditor._thickness = th;
-      this.#updateCursor();
-    };
+  /** @inheritdoc */
+  render() {
+    if (this.div) {
+      return this.div;
+    }
 
-    const savedThickness = EraserEditor._thickness;
-
-    this.addCommands({
-      cmd: setThickness.bind(this, thickness),
-      undo: setThickness.bind(this, savedThickness),
-      post: this._uiManager.updateUI.bind(this._uiManager, this),
-      mustExec: true,
-      type: AnnotationEditorParamsType.ERASER_THICKNESS,
-      overwriteIfSameType: true,
-      keepUndo: true,
-    });
+    const div = super.render();
+    this.fixAndSetPosition();
+    this.#erasableEditors = this.#getErasableEditors();
+    this.enableEditing();
+    return div;
   }
 
   /** Ensures EraserEditor spans the entire AnnotationEditorLayer */
@@ -108,19 +102,6 @@ class EraserEditor extends AnnotationEditor {
     this.setDims(parentWidth, parentHeight);
 
     return super.fixAndSetPosition(0);
-  }
-
-  /** @inheritdoc */
-  render() {
-    if (this.div) {
-      return this.div;
-    }
-
-    const div = super.render();
-    this.fixAndSetPosition();
-    this.#erasableEditors = this.#getErasableEditors();
-    this.enableEditing();
-    return div;
   }
 
   /** @inheritdoc */
@@ -183,21 +164,27 @@ class EraserEditor extends AnnotationEditor {
     this.#abortCursor();
   }
 
-  #abortCursor() {
-    if (EraserEditor.#currentCursorAC) {
-      EraserEditor.#currentCursorAC.abort();
-      EraserEditor.#currentCursorAC = null;
-    }
+  updateThickness(thickness) {
+    const setThickness = th => {
+      EraserEditor._thickness = th;
+      this.#updateCursor();
+    };
 
-    if (this.#cursor) {
-      this.#cursor.remove();
-      this.#cursor = null;
-    }
+    const savedThickness = EraserEditor._thickness;
 
-    if (this.div) {
-      this.div.style.pointerEvents = "";
-      this.div.style.zIndex = "";
-    }
+    this.addCommands({
+      cmd: setThickness.bind(this, thickness),
+      undo: setThickness.bind(this, savedThickness),
+      post: this._uiManager.updateUI.bind(this._uiManager, this),
+      mustExec: true,
+      type: AnnotationEditorParamsType.ERASER_THICKNESS,
+      overwriteIfSameType: true,
+      keepUndo: true,
+    });
+  }
+
+  isEmpty() {
+    return true;
   }
 
   #startEraseSession(event) {
@@ -337,8 +324,21 @@ class EraserEditor extends AnnotationEditor {
     this.#isErasing = false;
   }
 
-  isEmpty() {
-    return true;
+  #abortCursor() {
+    if (EraserEditor.#currentCursorAC) {
+      EraserEditor.#currentCursorAC.abort();
+      EraserEditor.#currentCursorAC = null;
+    }
+
+    if (this.#cursor) {
+      this.#cursor.remove();
+      this.#cursor = null;
+    }
+
+    if (this.div) {
+      this.div.style.pointerEvents = "";
+      this.div.style.zIndex = "";
+    }
   }
 
   #updateCursor() {
