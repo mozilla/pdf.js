@@ -2357,12 +2357,14 @@ class AnnotationEditorUIManager {
       ? [drawingEditor]
       : [...this.#selectedEditors];
     const cmd = () => {
-      this._editorUndoBar?.show(
+      // TouchSign: remove undo functionality
+      /*      this._editorUndoBar?.show(
         undo,
         editors.length === 1 ? editors[0].editorType : editors.length
-      );
+      ); */
       for (const editor of editors) {
         editor.remove();
+        // Dotti: unhide placeholder
         if (editor.attachingPlaceholder) {
           editor.attachingPlaceholder.div.hidden = false;
         }

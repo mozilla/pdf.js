@@ -858,10 +858,12 @@ class AnnotationEditorLayer {
       currentMode === AnnotationEditorType.SIGNATURE
     ) {
       this.#uiManager.unselectAll();
+      // eslint-disable-next-line no-useless-return
       return;
     }
 
-    this.createAndAddNewEditor(event, /* isCentered = */ false);
+    // Dotti: prevent create new editor
+    // this.createAndAddNewEditor(event, /* isCentered = */ false);
   }
 
   /**

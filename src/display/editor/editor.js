@@ -1999,6 +1999,13 @@ class AnnotationEditor {
    * Select this editor.
    */
   select() {
+    // TouchSign: disable all select
+    if (
+      window.DottiStore.displayMode === "view" ||
+      window.DottiStore.displayMode === "task"
+    ) {
+      return;
+    }
     if (this.isSelected && this._editToolbar) {
       return;
     }
@@ -2086,11 +2093,12 @@ class AnnotationEditor {
    * @param {MouseEvent} event
    */
   dblclick(event) {
-    this.enterInEditMode();
+    // Dotti: just prevent dblclick
+    /*    this.enterInEditMode();
     this.parent.updateToolbar({
       mode: this.constructor._editorType,
       editId: this.id,
-    });
+    }); */
   }
 
   /**

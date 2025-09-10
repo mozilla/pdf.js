@@ -451,6 +451,15 @@ class SignatureEditor extends DrawingEditor {
     return serialized;
   }
 
+  // Dotti: provide a way to re-sign
+  dblclick(event) {
+    if (this.attachingPlaceholder) {
+      this.attachingPlaceholder.div.hidden = false;
+      this.attachingPlaceholder.dblclick(event);
+      this.remove();
+    }
+  }
+
   /** @inheritdoc */
   static deserializeDraw(
     pageX,
