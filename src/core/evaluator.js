@@ -2478,7 +2478,7 @@ class PartialEvaluator {
                   textState.translateTextMatrix(offset, 0);
                   breakTextRun =
                     textContentItem.textRunBreakAllowed &&
-                    advance > textContentItem.fakeMultiSpaceMax;
+                    Math.abs(advance) > textContentItem.fakeMultiSpaceMax;
                   if (!breakTextRun) {
                     // Value needs to be subtracted from width to paint left.
                     textContentItem.width += offset;
