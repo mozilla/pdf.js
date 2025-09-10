@@ -1074,6 +1074,10 @@ class PDFPageView extends BasePDFPageView {
         );
       }
     ).then(async () => {
+      if (this.renderingState !== RenderingStates.FINISHED) {
+        // The rendering has been cancelled.
+        return;
+      }
       this.structTreeLayer ||= new StructTreeLayerBuilder(
         pdfPage,
         viewport.rawDims
