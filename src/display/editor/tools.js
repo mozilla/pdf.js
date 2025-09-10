@@ -1943,7 +1943,15 @@ class AnnotationEditorUIManager {
 
     switch (type) {
       case AnnotationEditorParamsType.CREATE:
-        this.currentLayer.addNewEditor(value);
+        // Dotti: we cannot use current layer in this case
+        // user can scroll down a little bit which changes the current layer
+        // we must use the layer from placeholder
+        const signingPlaceholderEditor = window.DottiStore.signingStampEditor;
+        if (signingPlaceholderEditor) {
+          this.getLayer(signingPlaceholderEditor.pageIndex).addNewEditor(value);
+        } else {
+          this.currentLayer.addNewEditor(value);
+        }
         return;
       case AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL:
         this._eventBus.dispatch("reporttelemetry", {
