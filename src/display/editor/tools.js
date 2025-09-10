@@ -2036,6 +2036,32 @@ class AnnotationEditorUIManager {
     }
   }
 
+  getAllSignatureEditors() {
+    const editors = [];
+    for (const editor of this.#allEditors.values()) {
+      if (
+        editor.name === "signatureEditor" &&
+        window.DottiStore.sameSigner(editor.signer)
+      ) {
+        editors.push(editor);
+      }
+    }
+    return editors;
+  }
+
+  getAllSignaturePlaceholderEditors() {
+    const editors = [];
+    for (const editor of this.#allEditors.values()) {
+      if (
+        window.DottiStore.isPlaceholderEditor(editor) &&
+        window.DottiStore.sameSigner(editor.signer)
+      ) {
+        editors.push(editor);
+      }
+    }
+    return editors;
+  }
+
   /**
    * Get all the editors belonging to a given page.
    * @param {number} pageIndex

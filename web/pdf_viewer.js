@@ -676,6 +676,10 @@ class PDFViewer {
     });
   }
 
+  get annotationEditorUIManager() {
+    return this.#annotationEditorUIManager;
+  }
+
   /**
    * Currently only *some* permissions are supported.
    * @returns {Object}

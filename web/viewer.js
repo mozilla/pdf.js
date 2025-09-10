@@ -328,6 +328,15 @@ function fetchTask(token, taskId) {
         if (res.success) {
           DottiStore.setTask(res.data);
           DottiStore.setDisplayMode("task");
+
+          const submitSignatureButton = document.getElementById(
+            "submitSignatureButton"
+          );
+          submitSignatureButton.onclick = () => {
+            window.DottiStore.onSubmitSignature();
+          };
+          submitSignatureButton.style.display = DottiStore.isProcessingTask() ? '' : 'none';
+
           webViewerLoad();
         } else {
           // TODO: show error page

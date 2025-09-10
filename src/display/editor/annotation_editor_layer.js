@@ -174,6 +174,8 @@ class AnnotationEditorLayer {
         this.togglePointerEvents(false);
         this.toggleAnnotationLayerPointerEvents(true);
         this.disableClick();
+        // Dotti: we want to make div unhidden
+        this.div.hidden = false;
         return;
       case AnnotationEditorType.INK:
         this.disableTextSelection();

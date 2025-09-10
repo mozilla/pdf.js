@@ -164,6 +164,8 @@ class AnnotationEditor {
     );
   }
 
+  signer = null;
+
   /**
    * @param {AnnotationEditorParameters} parameters
    */
@@ -188,6 +190,7 @@ class AnnotationEditor {
     this._structTreeParentId = null;
     this.annotationElementId = parameters.annotationElementId || null;
     this.creationDate = new Date();
+    this.signer = parameters.signer;
 
     const {
       rotation,
