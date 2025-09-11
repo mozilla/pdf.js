@@ -2525,6 +2525,8 @@ class PDFViewer {
       if (!isEditing) {
         this.pdfDocument.annotationStorage.resetModifiedIds();
       }
+      // We need to cleanup whatever pages being rendered.
+      this.cleanup();
       for (const pageView of this._pages) {
         pageView.toggleEditingMode(isEditing);
       }
