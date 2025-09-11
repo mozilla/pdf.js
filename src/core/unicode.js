@@ -243,8 +243,8 @@ function getUnicodeRangeFor(value, lastPosition = -1) {
 }
 
 const SpecialCharRegExp = new RegExp("^(\\s)|(\\p{Mn})|(\\p{Cf})$", "u");
+const AsciiControlCharRegExp = /[\x00-\x08\x0a-\x1f\x7f]/u;
 const CategoryCache = new Map();
-
 function getCharUnicodeCategory(char) {
   const cachedCategory = CategoryCache.get(char);
   if (cachedCategory) {
@@ -254,7 +254,7 @@ function getCharUnicodeCategory(char) {
   const category = {
     isWhitespace: !!groups?.[1],
     isZeroWidthDiacritic: !!groups?.[2],
-    isInvisibleFormatMark: !!groups?.[3],
+    isInvisibleFormatMark: !!groups?.[3] || AsciiControlCharRegExp.test(char),
   };
   CategoryCache.set(char, category);
   return category;

@@ -2219,44 +2219,50 @@ class CanvasGraphics {
 
       // Only attempt to draw the glyph if it is actually in the embedded font
       // file or if there isn't a font file so the fallback font is shown.
-      if (this.contentVisible && (glyph.isInFont || font.missingFile)) {
-        if (simpleFillText && !accent) {
-          // common case
-          ctx.fillText(character, scaledX, scaledY);
+      if (this.contentVisible) {
+        if (glyph.isInFont || font.missingFile) {
+          if (simpleFillText && !accent) {
+            // common case
+            ctx.fillText(character, scaledX, scaledY);
 
-          this.dependencyTracker?.recordCharacterBBox(
-            opIdx,
-            ctx,
-            // If we already measured the character, force usage of that
-            measure ? { bbox: null } : font,
-            fontSize / fontSizeScale,
-            scaledX,
-            scaledY,
-            () => measure ?? ctx.measureText(character)
-          );
-        } else {
-          this.paintChar(
-            opIdx,
-            character,
-            scaledX,
-            scaledY,
-            patternFillTransform,
-            patternStrokeTransform
-          );
-          if (accent) {
-            const scaledAccentX =
-              scaledX + (fontSize * accent.offset.x) / fontSizeScale;
-            const scaledAccentY =
-              scaledY - (fontSize * accent.offset.y) / fontSizeScale;
+            this.dependencyTracker?.recordCharacterBBox(
+              opIdx,
+              ctx,
+              // If we already measured the character, force usage of that
+              measure ? { bbox: null } : font,
+              fontSize / fontSizeScale,
+              scaledX,
+              scaledY,
+              () => measure ?? ctx.measureText(character)
+            );
+          } else {
             this.paintChar(
               opIdx,
-              accent.fontChar,
-              scaledAccentX,
-              scaledAccentY,
+              character,
+              scaledX,
+              scaledY,
               patternFillTransform,
               patternStrokeTransform
             );
+            if (accent) {
+              const scaledAccentX =
+                scaledX + (fontSize * accent.offset.x) / fontSizeScale;
+              const scaledAccentY =
+                scaledY - (fontSize * accent.offset.y) / fontSizeScale;
+              this.paintChar(
+                opIdx,
+                accent.fontChar,
+                scaledAccentX,
+                scaledAccentY,
+                patternFillTransform,
+                patternStrokeTransform
+              );
+            }
           }
+        } else if (glyph.unicode) {
+          // Fallback: when glyph is not in the embedded font,
+          // use Unicode character for rendering
+          ctx.fillText(glyph.unicode, scaledX, scaledY);
         }
       }
 
