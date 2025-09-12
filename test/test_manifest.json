@@ -1958,6 +1958,13 @@
     "type": "text"
   },
   {
+    "id": "issue13845_TimesNewRomanPSMT",
+    "file": "pdfs/issue13845_TimesNewRomanPSMT.pdf",
+    "md5": "be3648879c0dfce8ce070f714e2cb075",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "xfa_bug1718521_1",
     "file": "pdfs/xfa_bug1718521_1.pdf",
     "md5": "9b89dd9e6a4c6c3258ca24debd806863",
