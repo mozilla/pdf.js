@@ -44,7 +44,7 @@ class BasePDFPageView {
 
   pageColors = null;
 
-  recordedGroups = null;
+  recordedBBoxes = null;
 
   renderingQueue = null;
 
@@ -235,7 +235,7 @@ class BasePDFPageView {
       if (renderTask === this.renderTask) {
         this.renderTask = null;
         if (this.enableOptimizedPartialRendering) {
-          this.recordedGroups ??= renderTask.recordedGroups;
+          this.recordedBBoxes ??= renderTask.recordedBBoxes;
         }
       }
     }

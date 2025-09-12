@@ -541,8 +541,7 @@
       "maxX": 0.5,
       "minY": 0.25,
       "maxY": 0.5
-    },
-    "knownPartialMismatch": true
+    }
   },
   {
     "id": "bug1753983",
@@ -673,8 +672,7 @@
       "maxX": 0.5,
       "minY": 0.25,
       "maxY": 0.5
-    },
-    "knownPartialMismatch": true
+    }
   },
   {
     "id": "bug1473809",
@@ -780,8 +778,7 @@
       "maxX": 0.5,
       "minY": 0.25,
       "maxY": 0.5
-    },
-    "knownPartialMismatch": "Gives slightly different results in Firefox when running in headless mode"
+    }
   },
   {
     "id": "issue2128",
@@ -1556,8 +1553,7 @@
       "maxX": 0.5,
       "minY": 0.25,
       "maxY": 0.5
-    },
-    "knownPartialMismatch": "Gives slightly different results in Firefox when running in headless mode"
+    }
   },
   {
     "id": "bug1811668",
@@ -2904,8 +2900,7 @@
       "maxX": 0.5,
       "minY": 0.25,
       "maxY": 0.5
-    },
-    "knownPartialMismatch": true
+    }
   },
   {
     "id": "bug1245391-text",
@@ -3250,8 +3245,7 @@
       "maxX": 0.5,
       "minY": 0.25,
       "maxY": 0.5
-    },
-    "knownPartialMismatch": true
+    }
   },
   {
     "id": "bug1337429",
@@ -8080,8 +8074,7 @@
       "maxX": 0.5,
       "minY": 0.25,
       "maxY": 0.5
-    },
-    "knownPartialMismatch": "Half pixel rendering at the edge of the image"
+    }
   },
   {
     "id": "issue16454",
@@ -11270,8 +11263,7 @@
       "maxX": 0.5,
       "minY": 0.25,
       "maxY": 0.5
-    },
-    "knownPartialMismatch": "One-bit difference in two pixels at the edge"
+    }
   },
   {
     "id": "issue14724",

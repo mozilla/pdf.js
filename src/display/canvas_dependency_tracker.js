@@ -2,10 +2,70 @@ import { Util } from "../shared/util.js";
 
 const FORCED_DEPENDENCY_LABEL = "__forcedDependency";
 
+const { floor, ceil } = Math;
+
+function expandBBox(array, index, minX, minY, maxX, maxY) {
+  array[index * 4 + 0] = Math.min(array[index * 4 + 0], minX);
+  array[index * 4 + 1] = Math.min(array[index * 4 + 1], minY);
+  array[index * 4 + 2] = Math.max(array[index * 4 + 2], maxX);
+  array[index * 4 + 3] = Math.max(array[index * 4 + 3], maxY);
+}
+
+// This is computed rathter than hard-coded to keep into
+// account the platform's endianess.
+const EMPTY_BBOX = new Uint32Array(new Uint8Array([255, 255, 0, 0]).buffer)[0];
+
+class BBoxReader {
+  #bboxes;
+
+  #coords;
+
+  constructor(bboxes, coords) {
+    this.#bboxes = bboxes;
+    this.#coords = coords;
+  }
+
+  get length() {
+    return this.#bboxes.length;
+  }
+
+  isEmpty(i) {
+    return this.#bboxes[i] === EMPTY_BBOX;
+  }
+
+  minX(i) {
+    return this.#coords[i * 4 + 0] / 256;
+  }
+
+  minY(i) {
+    return this.#coords[i * 4 + 1] / 256;
+  }
+
+  maxX(i) {
+    return (this.#coords[i * 4 + 2] + 1) / 256;
+  }
+
+  maxY(i) {
+    return (this.#coords[i * 4 + 3] + 1) / 256;
+  }
+}
+
+const ensureDebugMetadata = (map, key) => {
+  if (!map) {
+    return undefined;
+  }
+  let value = map.get(key);
+  if (!value) {
+    value = { dependencies: new Set(), isRenderingOperation: false };
+    map.set(key, value);
+  }
+  return value;
+};
+
 /**
  * @typedef {"lineWidth" | "lineCap" | "lineJoin" | "miterLimit" | "dash" |
  * "strokeAlpha" | "fillColor" | "fillAlpha" | "globalCompositeOperation" |
- * "path" | "filter"} SimpleDependency
+ * "path" | "filter" | "font" | "fontObj"} SimpleDependency
  */
 
 /**
@@ -54,9 +114,38 @@ class CanvasDependencyTracker {
 
   #canvasHeight;
 
-  constructor(canvas) {
+  // Uint8ClampedArray<minX, minY, maxX, maxY>
+  #bboxesCoords;
+
+  #bboxes;
+
+  #debugMetadata;
+
+  constructor(canvas, operationsCount, recordDebugMetadata = false) {
     this.#canvasWidth = canvas.width;
     this.#canvasHeight = canvas.height;
+    this.#initializeBBoxes(operationsCount);
+    if (recordDebugMetadata) {
+      this.#debugMetadata = new Map();
+    }
+  }
+
+  growOperationsCount(operationsCount) {
+    if (operationsCount >= this.#bboxes.length) {
+      this.#initializeBBoxes(operationsCount, this.#bboxes);
+    }
+  }
+
+  #initializeBBoxes(operationsCount, oldBBoxes) {
+    const buffer = new ArrayBuffer(operationsCount * 4);
+    this.#bboxesCoords = new Uint8ClampedArray(buffer);
+    this.#bboxes = new Uint32Array(buffer);
+    if (oldBBoxes && oldBBoxes.length > 0) {
+      this.#bboxes.set(oldBBoxes);
+      this.#bboxes.fill(EMPTY_BBOX, oldBBoxes.length);
+    } else {
+      this.#bboxes.fill(EMPTY_BBOX);
+    }
   }
 
   save(opIdx) {
@@ -71,7 +160,7 @@ class CanvasDependencyTracker {
       },
     };
     this.#clipBox = { __proto__: this.#clipBox };
-    this.#savesStack.push([opIdx, null]);
+    this.#savesStack.push(opIdx);
 
     return this;
   }
@@ -87,9 +176,12 @@ class CanvasDependencyTracker {
     this.#incremental = Object.getPrototypeOf(this.#incremental);
     this.#clipBox = Object.getPrototypeOf(this.#clipBox);
 
-    const lastPair = this.#savesStack.pop();
-    if (lastPair !== undefined) {
-      lastPair[1] = opIdx;
+    const lastSave = this.#savesStack.pop();
+    if (lastSave !== undefined) {
+      ensureDebugMetadata(this.#debugMetadata, opIdx)?.dependencies.add(
+        lastSave
+      );
+      this.#bboxes[opIdx] = this.#bboxes[lastSave];
     }
 
     return this;
@@ -99,7 +191,7 @@ class CanvasDependencyTracker {
    * @param {number} idx
    */
   recordOpenMarker(idx) {
-    this.#savesStack.push([idx, null]);
+    this.#savesStack.push(idx);
     return this;
   }
 
@@ -107,13 +199,16 @@ class CanvasDependencyTracker {
     if (this.#savesStack.length === 0) {
       return null;
     }
-    return this.#savesStack.at(-1)[0];
+    return this.#savesStack.at(-1);
   }
 
-  recordCloseMarker(idx) {
-    const lastPair = this.#savesStack.pop();
-    if (lastPair !== undefined) {
-      lastPair[1] = idx;
+  recordCloseMarker(opIdx) {
+    const lastSave = this.#savesStack.pop();
+    if (lastSave !== undefined) {
+      ensureDebugMetadata(this.#debugMetadata, opIdx)?.dependencies.add(
+        lastSave
+      );
+      this.#bboxes[opIdx] = this.#bboxes[lastSave];
     }
     return this;
   }
@@ -121,14 +216,17 @@ class CanvasDependencyTracker {
   // Marked content needs a separate stack from save/restore, because they
   // form two independent trees.
   beginMarkedContent(opIdx) {
-    this.#markedContentStack.push([opIdx, null]);
+    this.#markedContentStack.push(opIdx);
     return this;
   }
 
   endMarkedContent(opIdx) {
-    const lastPair = this.#markedContentStack.pop();
-    if (lastPair !== undefined) {
-      lastPair[1] = opIdx;
+    const lastSave = this.#markedContentStack.pop();
+    if (lastSave !== undefined) {
+      ensureDebugMetadata(this.#debugMetadata, opIdx)?.dependencies.add(
+        lastSave
+      );
+      this.#bboxes[opIdx] = this.#bboxes[lastSave];
     }
     return this;
   }
@@ -182,6 +280,15 @@ class CanvasDependencyTracker {
     return this;
   }
 
+  /**
+   * @param {SimpleDependency} name
+   * @param {string} depName
+   * @param {number} fallbackIdx
+   */
+  recordSimpleDataFromNamed(name, depName, fallbackIdx) {
+    this.#simple[name] = this.#namedDependencies.get(depName) ?? fallbackIdx;
+  }
+
   // All next operations, until the next .restore(), will depend on this
   recordFutureForcedDependency(name, idx) {
     this.recordIncrementalData(FORCED_DEPENDENCY_LABEL, idx);
@@ -207,16 +314,14 @@ class CanvasDependencyTracker {
   }
 
   resetBBox(idx) {
-    this.#pendingBBoxIdx = idx;
-    this.#pendingBBox[0] = Infinity;
-    this.#pendingBBox[1] = Infinity;
-    this.#pendingBBox[2] = -Infinity;
-    this.#pendingBBox[3] = -Infinity;
+    if (this.#pendingBBoxIdx !== idx) {
+      this.#pendingBBoxIdx = idx;
+      this.#pendingBBox[0] = Infinity;
+      this.#pendingBBox[1] = Infinity;
+      this.#pendingBBox[2] = -Infinity;
+      this.#pendingBBox[3] = -Infinity;
+    }
     return this;
-  }
-
-  get hasPendingBBox() {
-    return this.#pendingBBoxIdx !== -1;
   }
 
   recordClipBox(idx, ctx, minX, maxX, minY, maxY) {
@@ -384,20 +489,6 @@ class CanvasDependencyTracker {
     return this;
   }
 
-  copyDependenciesFromIncrementalOperation(idx, name) {
-    const operations = this.#operations;
-    const pendingDependencies = this.#pendingDependencies;
-    for (const depIdx of this.#incremental[name]) {
-      operations
-        .get(depIdx)
-        .dependencies.forEach(
-          pendingDependencies.add,
-          pendingDependencies.add(depIdx)
-        );
-    }
-    return this;
-  }
-
   recordNamedDependency(idx, name) {
     if (this.#namedDependencies.has(name)) {
       this.#pendingDependencies.add(this.#namedDependencies.get(name));
@@ -409,38 +500,74 @@ class CanvasDependencyTracker {
   /**
    * @param {number} idx
    */
-  recordOperation(idx, preserveBbox = false) {
+  recordOperation(idx, preserve = false) {
     this.recordDependencies(idx, [FORCED_DEPENDENCY_LABEL]);
-    const dependencies = new Set(this.#pendingDependencies);
-    const pairs = this.#savesStack.concat(this.#markedContentStack);
-    const bbox =
-      this.#pendingBBoxIdx === idx
-        ? {
-            minX: this.#pendingBBox[0],
-            minY: this.#pendingBBox[1],
-            maxX: this.#pendingBBox[2],
-            maxY: this.#pendingBBox[3],
-          }
-        : null;
-    this.#operations.set(idx, { bbox, pairs, dependencies });
-    if (!preserveBbox) {
-      this.#pendingBBoxIdx = -1;
+
+    if (this.#debugMetadata) {
+      const metadata = ensureDebugMetadata(this.#debugMetadata, idx);
+      const { dependencies } = metadata;
+      this.#pendingDependencies.forEach(dependencies.add, dependencies);
+      this.#savesStack.forEach(dependencies.add, dependencies);
+      this.#markedContentStack.forEach(dependencies.add, dependencies);
+      dependencies.delete(idx);
+      metadata.isRenderingOperation = true;
     }
-    this.#pendingDependencies.clear();
+
+    if (this.#pendingBBoxIdx === idx) {
+      const minX = floor((this.#pendingBBox[0] * 256) / this.#canvasWidth);
+      const minY = floor((this.#pendingBBox[1] * 256) / this.#canvasHeight);
+      const maxX = ceil((this.#pendingBBox[2] * 256) / this.#canvasWidth);
+      const maxY = ceil((this.#pendingBBox[3] * 256) / this.#canvasHeight);
+
+      expandBBox(this.#bboxesCoords, idx, minX, minY, maxX, maxY);
+      for (const depIdx of this.#pendingDependencies) {
+        if (depIdx !== idx) {
+          expandBBox(this.#bboxesCoords, depIdx, minX, minY, maxX, maxY);
+        }
+      }
+      for (const saveIdx of this.#savesStack) {
+        if (saveIdx !== idx) {
+          expandBBox(this.#bboxesCoords, saveIdx, minX, minY, maxX, maxY);
+        }
+      }
+      for (const saveIdx of this.#markedContentStack) {
+        if (saveIdx !== idx) {
+          expandBBox(this.#bboxesCoords, saveIdx, minX, minY, maxX, maxY);
+        }
+      }
+
+      if (!preserve) {
+        this.#pendingDependencies.clear();
+        this.#pendingBBoxIdx = -1;
+      }
+    }
 
     return this;
   }
 
-  bboxToClipBoxDropOperation(idx) {
-    if (this.#pendingBBoxIdx !== -1) {
+  recordShowTextOperation(idx, preserve = false) {
+    const deps = Array.from(this.#pendingDependencies);
+    this.recordOperation(idx, preserve);
+    this.recordIncrementalData("sameLineText", idx);
+    for (const dep of deps) {
+      this.recordIncrementalData("sameLineText", dep);
+    }
+    return this;
+  }
+
+  bboxToClipBoxDropOperation(idx, preserve = false) {
+    if (this.#pendingBBoxIdx === idx) {
       this.#pendingBBoxIdx = -1;
 
       this.#clipBox[0] = Math.max(this.#clipBox[0], this.#pendingBBox[0]);
       this.#clipBox[1] = Math.max(this.#clipBox[1], this.#pendingBBox[1]);
       this.#clipBox[2] = Math.min(this.#clipBox[2], this.#pendingBBox[2]);
       this.#clipBox[3] = Math.min(this.#clipBox[3], this.#pendingBBox[3]);
+
+      if (!preserve) {
+        this.#pendingDependencies.clear();
+      }
     }
-    this.#pendingDependencies.clear();
     return this;
   }
 
@@ -464,21 +591,11 @@ class CanvasDependencyTracker {
 
   take() {
     this.#fontBBoxTrustworthy.clear();
-    return Array.from(
-      this.#operations,
-      ([idx, { bbox, pairs, dependencies }]) => {
-        pairs.forEach(pair => pair.forEach(dependencies.add, dependencies));
-        dependencies.delete(idx);
-        return {
-          minX: (bbox?.minX ?? 0) / this.#canvasWidth,
-          maxX: (bbox?.maxX ?? this.#canvasWidth) / this.#canvasWidth,
-          minY: (bbox?.minY ?? 0) / this.#canvasHeight,
-          maxY: (bbox?.maxY ?? this.#canvasHeight) / this.#canvasHeight,
-          dependencies: Array.from(dependencies).sort((a, b) => a - b),
-          idx,
-        };
-      }
-    );
+    return new BBoxReader(this.#bboxes, this.#bboxesCoords);
+  }
+
+  takeDebugMetadata() {
+    return this.#debugMetadata;
   }
 }
 
@@ -496,14 +613,17 @@ class CanvasNestedDependencyTracker {
   /** @type {number} */
   #opIdx;
 
-  #nestingLevel = 0;
+  #ignoreBBoxes;
 
-  #outerDependencies;
+  #nestingLevel = 0;
 
   #savesLevel = 0;
 
-  constructor(dependencyTracker, opIdx) {
-    if (dependencyTracker instanceof CanvasNestedDependencyTracker) {
+  constructor(dependencyTracker, opIdx, ignoreBBoxes) {
+    if (
+      dependencyTracker instanceof CanvasNestedDependencyTracker &&
+      dependencyTracker.#ignoreBBoxes === !!ignoreBBoxes
+    ) {
       // The goal of CanvasNestedDependencyTracker is to collapse all operations
       // into a single one. If we are already in a
       // CanvasNestedDependencyTracker, that is already happening.
@@ -511,8 +631,12 @@ class CanvasNestedDependencyTracker {
     }
 
     this.#dependencyTracker = dependencyTracker;
-    this.#outerDependencies = dependencyTracker._takePendingDependencies();
     this.#opIdx = opIdx;
+    this.#ignoreBBoxes = !!ignoreBBoxes;
+  }
+
+  growOperationsCount() {
+    throw new Error("Unreachable");
   }
 
   save(opIdx) {
@@ -595,6 +719,20 @@ class CanvasNestedDependencyTracker {
     return this;
   }
 
+  /**
+   * @param {SimpleDependency} name
+   * @param {string} depName
+   * @param {number} fallbackIdx
+   */
+  recordSimpleDataFromNamed(name, depName, fallbackIdx) {
+    this.#dependencyTracker.recordSimpleDataFromNamed(
+      name,
+      depName,
+      this.#opIdx
+    );
+    return this;
+  }
+
   // All next operations, until the next .restore(), will depend on this
   recordFutureForcedDependency(name, idx) {
     this.#dependencyTracker.recordFutureForcedDependency(name, this.#opIdx);
@@ -614,55 +752,59 @@ class CanvasNestedDependencyTracker {
   }
 
   resetBBox(idx) {
-    if (!this.#dependencyTracker.hasPendingBBox) {
+    if (!this.#ignoreBBoxes) {
       this.#dependencyTracker.resetBBox(this.#opIdx);
     }
     return this;
   }
 
-  get hasPendingBBox() {
-    return this.#dependencyTracker.hasPendingBBox;
-  }
-
   recordClipBox(idx, ctx, minX, maxX, minY, maxY) {
-    this.#dependencyTracker.recordClipBox(
-      this.#opIdx,
-      ctx,
-      minX,
-      maxX,
-      minY,
-      maxY
-    );
+    if (!this.#ignoreBBoxes) {
+      this.#dependencyTracker.recordClipBox(
+        this.#opIdx,
+        ctx,
+        minX,
+        maxX,
+        minY,
+        maxY
+      );
+    }
     return this;
   }
 
   recordBBox(idx, ctx, minX, maxX, minY, maxY) {
-    this.#dependencyTracker.recordBBox(
-      this.#opIdx,
-      ctx,
-      minX,
-      maxX,
-      minY,
-      maxY
-    );
+    if (!this.#ignoreBBoxes) {
+      this.#dependencyTracker.recordBBox(
+        this.#opIdx,
+        ctx,
+        minX,
+        maxX,
+        minY,
+        maxY
+      );
+    }
     return this;
   }
 
   recordCharacterBBox(idx, ctx, font, scale, x, y, getMeasure) {
-    this.#dependencyTracker.recordCharacterBBox(
-      this.#opIdx,
-      ctx,
-      font,
-      scale,
-      x,
-      y,
-      getMeasure
-    );
+    if (!this.#ignoreBBoxes) {
+      this.#dependencyTracker.recordCharacterBBox(
+        this.#opIdx,
+        ctx,
+        font,
+        scale,
+        x,
+        y,
+        getMeasure
+      );
+    }
     return this;
   }
 
   recordFullPageBBox(idx) {
-    this.#dependencyTracker.recordFullPageBBox(this.#opIdx);
+    if (!this.#ignoreBBoxes) {
+      this.#dependencyTracker.recordFullPageBBox(this.#opIdx);
+    }
     return this;
   }
 
@@ -672,14 +814,6 @@ class CanvasNestedDependencyTracker {
 
   recordDependencies(idx, dependencyNames) {
     this.#dependencyTracker.recordDependencies(this.#opIdx, dependencyNames);
-    return this;
-  }
-
-  copyDependenciesFromIncrementalOperation(idx, name) {
-    this.#dependencyTracker.copyDependenciesFromIncrementalOperation(
-      this.#opIdx,
-      name
-    );
     return this;
   }
 
@@ -694,25 +828,26 @@ class CanvasNestedDependencyTracker {
    */
   recordOperation(idx) {
     this.#dependencyTracker.recordOperation(this.#opIdx, true);
-    const operation = this.#dependencyTracker._extractOperation(this.#opIdx);
-    for (const depIdx of operation.dependencies) {
-      this.#outerDependencies.add(depIdx);
-    }
-    this.#outerDependencies.delete(this.#opIdx);
-    this.#outerDependencies.delete(null);
+    return this;
+  }
+
+  recordShowTextOperation(idx) {
+    this.#dependencyTracker.recordShowTextOperation(this.#opIdx, true);
     return this;
   }
 
   bboxToClipBoxDropOperation(idx) {
-    this.#dependencyTracker.bboxToClipBoxDropOperation(this.#opIdx);
+    if (!this.#ignoreBBoxes) {
+      this.#dependencyTracker.bboxToClipBoxDropOperation(this.#opIdx, true);
+    }
     return this;
   }
 
-  recordNestedDependencies() {
-    this.#dependencyTracker._pushPendingDependencies(this.#outerDependencies);
+  take() {
+    throw new Error("Unreachable");
   }
 
-  take() {
+  takeDebugMetadata() {
     throw new Error("Unreachable");
   }
 }
@@ -759,6 +894,7 @@ const Dependencies = {
     "moveText",
     "textMatrix",
     "font",
+    "fontObj",
     "filter",
     "fillColor",
     "textRenderingMode",
@@ -766,7 +902,8 @@ const Dependencies = {
     "fillAlpha",
     "strokeAlpha",
     "globalCompositeOperation",
-    // TODO: More
+
+    "sameLineText",
   ],
   transform: ["transform"],
   transformAndFill: ["transform", "fillColor"],
