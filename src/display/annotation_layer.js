@@ -39,7 +39,8 @@ import {
 } from "../shared/util.js";
 import {
   applyOpacity,
-  changeLightness,
+  CSSConstants,
+  findContrastColor,
   PDFDateString,
   renderRichText,
   setLayerDimensions,
@@ -233,8 +234,10 @@ class AnnotationElement {
     if (!this.data.color) {
       return null;
     }
-    const [r, g, b] = applyOpacity(...this.data.color, this.data.opacity);
-    return changeLightness(r, g, b);
+    return findContrastColor(
+      applyOpacity(...this.data.color, this.data.opacity),
+      CSSConstants.commentForegroundColor
+    );
   }
 
   _normalizePoint(point) {

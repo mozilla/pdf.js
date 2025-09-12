@@ -15,7 +15,8 @@
 
 import {
   AnnotationEditorType,
-  changeLightness,
+  CSSConstants,
+  findContrastColor,
   getRGB,
   noContextMenu,
   PDFDateString,
@@ -359,8 +360,10 @@ class CommentManager {
     if (!color) {
       return null; // No color provided.
     }
-    const [r, g, b] = getRGB(color);
-    return changeLightness(r, g, b);
+    return findContrastColor(
+      getRGB(color),
+      CSSConstants.commentForegroundColor
+    );
   }
 
   #setText(text) {

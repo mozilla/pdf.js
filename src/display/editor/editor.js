@@ -24,7 +24,8 @@ import {
 } from "./tools.js";
 import {
   applyOpacity,
-  changeLightness,
+  CSSConstants,
+  findContrastColor,
   noContextMenu,
   stopEvent,
 } from "../display_utils.js";
@@ -1905,11 +1906,13 @@ class AnnotationEditor {
     if (!this.color) {
       return null;
     }
-    let [r, g, b] = AnnotationEditor._colorManager.convert(
+    const [r, g, b] = AnnotationEditor._colorManager.convert(
       this._uiManager.getNonHCMColor(this.color)
     );
-    [r, g, b] = applyOpacity(r, g, b, this.opacity);
-    return changeLightness(r, g, b);
+    return findContrastColor(
+      applyOpacity(r, g, b, this.opacity),
+      CSSConstants.commentForegroundColor
+    );
   }
 
   /**

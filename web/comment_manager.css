@@ -358,7 +358,7 @@
   }
 }
 
-#editorCommentsSidebar {
+.comment.sidebar {
   --comment-close-button-icon: url(images/comment-closeButton.svg);
 
   --comment-date-fg-color: light-dark(
