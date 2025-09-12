@@ -173,6 +173,14 @@ const defaultOptions = {
     value: 200,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  commentLearnMoreUrl: {
+    /** @type {string} */
+    value:
+      typeof PDFJSDev === "undefined" || PDFJSDev.test("MOZCENTRAL")
+        ? "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/pdf-comment"
+        : "",
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   cursorToolOnLoad: {
     /** @type {number} */
     value: 0,

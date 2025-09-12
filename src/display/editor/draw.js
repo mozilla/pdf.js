@@ -98,6 +98,12 @@ class DrawingEditor extends AnnotationEditor {
     this._addOutlines(params);
   }
 
+  /** @inheritdoc */
+  onUpdatedColor() {
+    this._colorPicker?.update(this.color);
+    super.onUpdatedColor();
+  }
+
   _addOutlines(params) {
     if (params.drawOutlines) {
       this.#createDrawOutlines(params);
@@ -243,7 +249,7 @@ class DrawingEditor extends AnnotationEditor {
         options.toSVGProperties()
       );
       if (type === this.colorType) {
-        this._colorPicker?.update(val);
+        this.onUpdatedColor();
       }
     };
     this.addCommands({
