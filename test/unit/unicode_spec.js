@@ -106,6 +106,35 @@ describe("unicode", function () {
           isInvisibleFormatMark: false,
           isWhitespace: false,
         },
+
+        // ASCII control characters
+        // [\x00-\x08\x0a-\x1f\x7f]
+
+        "\x08": {
+          isZeroWidthDiacritic: false,
+          isInvisibleFormatMark: true,
+          isWhitespace: false,
+        },
+        "\x0b": {
+          isZeroWidthDiacritic: false,
+          isInvisibleFormatMark: true,
+          isWhitespace: true,
+        },
+        "\x0c": {
+          isZeroWidthDiacritic: false,
+          isInvisibleFormatMark: true,
+          isWhitespace: true,
+        },
+        "\x1f": {
+          isZeroWidthDiacritic: false,
+          isInvisibleFormatMark: true,
+          isWhitespace: false,
+        },
+        "\x7f": {
+          isZeroWidthDiacritic: false,
+          isInvisibleFormatMark: true,
+          isWhitespace: false,
+        },
       };
       for (const [character, expectation] of Object.entries(tests)) {
         expect(getCharUnicodeCategory(character)).toEqual(expectation);

@@ -1027,6 +1027,20 @@ class PartialEvaluator {
     const font = state.font;
     const glyphs = font.charsToGlyphs(chars);
 
+    // Filter out invisible format marks
+    const filteredGlyphs = [];
+    for (let i = 0, ii = glyphs.length; i < ii; i++) {
+      const glyph = glyphs[i];
+      const {
+        category: { isInvisibleFormatMark },
+        isInFont,
+      } = glyph;
+      if (!isInFont && isInvisibleFormatMark) {
+        continue;
+      }
+      filteredGlyphs.push(glyph);
+    }
+
     if (font.data) {
       const isAddToPathSet = !!(
         state.textRenderingMode & TextRenderingMode.ADD_TO_PATH_FLAG
@@ -1038,13 +1052,13 @@ class PartialEvaluator {
       ) {
         PartialEvaluator.buildFontPaths(
           font,
-          glyphs,
+          filteredGlyphs,
           this.handler,
           this.options
         );
       }
     }
-    return glyphs;
+    return filteredGlyphs;
   }
 
   ensureStateFont(state) {
