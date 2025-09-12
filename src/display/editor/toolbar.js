@@ -236,6 +236,10 @@ class FloatingToolbar {
   #render() {
     const editToolbar = (this.#toolbar = document.createElement("div"));
     editToolbar.className = "editToolbar";
+    // TouchSign: hide highlight functionality for now T.T
+    // We will definitely take it back later
+    // once we can have a clear picture of hot to instruct user to do it
+    editToolbar.style.display = "none";
     editToolbar.setAttribute("role", "toolbar");
 
     const signal = this.#uiManager._signal;

@@ -33,6 +33,7 @@ import { AltText } from "./alt_text.js";
 import { Comment } from "./comment.js";
 import { EditorToolbar } from "./toolbar.js";
 import { TouchManager } from "../touch_manager.js";
+import Signer from "../../../web/Signer.js";
 
 /**
  * @typedef {Object} AnnotationEditorParameters
@@ -163,6 +164,8 @@ class AnnotationEditor {
     );
   }
 
+  signer = null;
+
   /**
    * @param {AnnotationEditorParameters} parameters
    */
@@ -187,6 +190,7 @@ class AnnotationEditor {
     this._structTreeParentId = null;
     this.annotationElementId = parameters.annotationElementId || null;
     this.creationDate = new Date();
+    this.signer = parameters.signer;
 
     const {
       rotation,
@@ -1284,8 +1288,13 @@ class AnnotationEditor {
       )}%`;
     }
 
-    const [tx, ty] = this.getInitialTranslation();
-    this.translate(tx, ty);
+    // Dotti: pdf.js will translate the x & y to the cursor position
+    // which will move in y-axis a little bit
+    // stop that when it is copying (deserialization)
+    if (!this._isCopy) {
+      const [tx, ty] = this.getInitialTranslation();
+      this.translate(tx, ty);
+    }
 
     bindEvents(this, div, ["keydown", "pointerdown", "dblclick"]);
 
@@ -1773,10 +1782,12 @@ class AnnotationEditor {
       pageHeight
     );
 
-    editor.x = x / pageWidth;
-    editor.y = y / pageHeight;
+    // TouchSign: if x & y is present, use x & y from serialization
+    editor.x = data.x ?? x / pageWidth;
+    editor.y = data.y ?? y / pageHeight;
     editor.width = width / pageWidth;
     editor.height = height / pageHeight;
+    editor.signer = data.signer ? new Signer(data.signer) : null;
 
     return editor;
   }
@@ -1988,6 +1999,13 @@ class AnnotationEditor {
    * Select this editor.
    */
   select() {
+    // TouchSign: disable all select
+    if (
+      window.DottiStore.displayMode === "view" ||
+      window.DottiStore.displayMode === "task"
+    ) {
+      return;
+    }
     if (this.isSelected && this._editToolbar) {
       return;
     }
@@ -2075,11 +2093,12 @@ class AnnotationEditor {
    * @param {MouseEvent} event
    */
   dblclick(event) {
-    this.enterInEditMode();
+    // Dotti: just prevent dblclick
+    /*    this.enterInEditMode();
     this.parent.updateToolbar({
       mode: this.constructor._editorType,
       editId: this.id,
-    });
+    }); */
   }
 
   /**

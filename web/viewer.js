@@ -15,6 +15,7 @@
 
 import { RenderingStates, ScrollMode, SpreadMode } from "./ui_utils.js";
 import { AppOptions } from "./app_options.js";
+import DottiStore from "./dotti_data_store.js";
 import { LinkTarget } from "./pdf_link_service.js";
 import { PDFViewerApplication } from "./app.js";
 
@@ -26,6 +27,7 @@ const AppConstants =
 window.PDFViewerApplication = PDFViewerApplication;
 window.PDFViewerApplicationConstants = AppConstants;
 window.PDFViewerApplicationOptions = AppOptions;
+window.DottiStore = DottiStore;
 
 function getViewerConfiguration() {
   return {
@@ -295,6 +297,54 @@ function getViewerConfiguration() {
   };
 }
 
+function parseURL() {
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  const token = urlParams.get("token");
+  const taskId = urlParams.get("taskId");
+  DottiStore.setToken(token);
+
+  fetch("https://i-sign.cn:9101/isign/v1/profiles", {
+    headers: {
+      "X-IS-Token": token,
+    },
+  })
+    .then(response => response.json())
+    .then(res => {
+      DottiStore.setProfile(res.data);
+      fetchTask(token, taskId);
+    });
+}
+
+function fetchTask(token, taskId) {
+  if (token && taskId) {
+    fetch(`https://i-sign.cn:9102/isign/v1/tasks?id=${taskId}`, {
+      headers: {
+        "X-IS-Token": token,
+      },
+    })
+      .then(response => response.json())
+      .then(res => {
+        if (res.success) {
+          DottiStore.setTask(res.data);
+          DottiStore.setDisplayMode("task");
+
+          const submitSignatureButton = document.getElementById(
+            "submitSignatureButton"
+          );
+          submitSignatureButton.onclick = () => {
+            window.DottiStore.onSubmitSignature();
+          };
+          submitSignatureButton.style.display = DottiStore.isProcessingTask() ? '' : 'none';
+
+          webViewerLoad();
+        } else {
+          // TODO: show error page
+        }
+      });
+  }
+}
+
 function webViewerLoad() {
   const config = getViewerConfiguration();
 
@@ -332,9 +382,9 @@ if (
   document.readyState === "interactive" ||
   document.readyState === "complete"
 ) {
-  webViewerLoad();
+  parseURL();
 } else {
-  document.addEventListener("DOMContentLoaded", webViewerLoad, true);
+  document.addEventListener("DOMContentLoaded", parseURL, true);
 }
 
 export {

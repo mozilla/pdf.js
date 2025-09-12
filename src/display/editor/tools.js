@@ -1776,6 +1776,9 @@ class AnnotationEditorUIManager {
     } else {
       layer.disable();
     }
+
+    // Dotti
+    window.DottiStore.renderTaskAnnotationsOnLayer(layer);
   }
 
   /**
@@ -1940,7 +1943,15 @@ class AnnotationEditorUIManager {
 
     switch (type) {
       case AnnotationEditorParamsType.CREATE:
-        this.currentLayer.addNewEditor(value);
+        // Dotti: we cannot use current layer in this case
+        // user can scroll down a little bit which changes the current layer
+        // we must use the layer from placeholder
+        const signingPlaceholderEditor = window.DottiStore.signingStampEditor;
+        if (signingPlaceholderEditor) {
+          this.getLayer(signingPlaceholderEditor.pageIndex).addNewEditor(value);
+        } else {
+          this.currentLayer.addNewEditor(value);
+        }
         return;
       case AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL:
         this._eventBus.dispatch("reporttelemetry", {
@@ -2031,6 +2042,32 @@ class AnnotationEditorUIManager {
         editor.disable();
       }
     }
+  }
+
+  getAllSignatureEditors() {
+    const editors = [];
+    for (const editor of this.#allEditors.values()) {
+      if (
+        editor.name === "signatureEditor" &&
+        window.DottiStore.sameSigner(editor.signer)
+      ) {
+        editors.push(editor);
+      }
+    }
+    return editors;
+  }
+
+  getAllSignaturePlaceholderEditors() {
+    const editors = [];
+    for (const editor of this.#allEditors.values()) {
+      if (
+        window.DottiStore.isPlaceholderEditor(editor) &&
+        window.DottiStore.sameSigner(editor.signer)
+      ) {
+        editors.push(editor);
+      }
+    }
+    return editors;
   }
 
   /**
@@ -2328,12 +2365,17 @@ class AnnotationEditorUIManager {
       ? [drawingEditor]
       : [...this.#selectedEditors];
     const cmd = () => {
-      this._editorUndoBar?.show(
+      // TouchSign: remove undo functionality
+      /*      this._editorUndoBar?.show(
         undo,
         editors.length === 1 ? editors[0].editorType : editors.length
-      );
+      ); */
       for (const editor of editors) {
         editor.remove();
+        // Dotti: unhide placeholder
+        if (editor.attachingPlaceholder) {
+          editor.attachingPlaceholder.div.hidden = false;
+        }
       }
     };
     const undo = () => {

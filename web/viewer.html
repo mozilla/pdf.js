@@ -356,7 +356,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                   </div>
                 </div>
 
-                <button class="dotti_button">提交签名</button>
+                <button style="display: none;" class="dotti_button" id="submitSignatureButton">提交签名</button>
 
                 <div id="editorModeSeparator" class="verticalToolbarSeparator"></div>
 
@@ -713,7 +713,7 @@ See https://github.com/adobe-type-tools/cmap-resources
             <div role="tablist" id="addSignatureOptions">
               <button id="addSignatureTypeButton" type="button" role="tab" aria-selected="true" aria-controls="addSignatureTypeContainer" data-l10n-id="pdfjs-editor-add-signature-type-button" tabindex="0"></button>
               <button id="addSignatureDrawButton" type="button" role="tab" aria-selected="false" aria-controls="addSignatureDrawContainer" data-l10n-id="pdfjs-editor-add-signature-draw-button" tabindex="0"></button>
-              <button id="addSignatureImageButton" type="button" role="tab" aria-selected="false" aria-controls="addSignatureImageContainer" data-l10n-id="pdfjs-editor-add-signature-image-button" tabindex="-1"></button>
+              <button style="display: none;" id="addSignatureImageButton" type="button" role="tab" aria-selected="false" aria-controls="addSignatureImageContainer" data-l10n-id="pdfjs-editor-add-signature-image-button" tabindex="-1"></button>
             </div>
             <div id="addSignatureActionContainer" data-selected="type">
               <div id="addSignatureTypeContainer" role="tabpanel" aria-labelledby="addSignatureTypeContainer">
@@ -741,7 +741,7 @@ See https://github.com/adobe-type-tools/cmap-resources
               </div>
               <div id="addSignatureControls">
                 <div id="horizontalContainer">
-                  <div id="addSignatureDescriptionContainer">
+                  <div id="addSignatureDescriptionContainer" style="display: none;">
                     <label for="addSignatureDescInput" data-l10n-id="pdfjs-editor-add-signature-description-label"></label>
                     <span id="addSignatureDescription" class="inputWithClearButton">
                       <input id="addSignatureDescInput" type="text" data-l10n-id="pdfjs-editor-add-signature-description-input" tabindex="0"></input>
@@ -750,7 +750,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                   </div>
                   <button id="clearSignatureButton" type="button" data-l10n-id="pdfjs-editor-add-signature-clear-button" tabindex="0"><span data-l10n-id="pdfjs-editor-add-signature-clear-button-label"></span></button>
                 </div>
-                <div id="addSignatureSaveContainer">
+                <div id="addSignatureSaveContainer" style="display: none;">
                   <input type="checkbox" id="addSignatureSaveCheckbox"></input>
                   <label for="addSignatureSaveCheckbox" data-l10n-id="pdfjs-editor-add-signature-save-checkbox"></label>
                   <span></span>

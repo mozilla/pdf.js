@@ -9,3 +9,7 @@
 .dotti_button {
   margin: 0 4px;
 }
+
+html, body {
+  overscroll-behavior: none;
+}
