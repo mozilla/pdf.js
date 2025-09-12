@@ -1242,8 +1242,14 @@ class PDFDocumentProxy {
  * @property {boolean} [isEditing] - Render the page in editing mode.
  * @property {boolean} [recordOperations] - Record the dependencies and bounding
  *   boxes of all PDF operations that render onto the canvas.
- * @property {(index: number) => boolean} [operationsFilter] - If provided, only
+ * @property {OperationsFilter} [operationsFilter] - If provided, only
  *   run for which this function returns `true`.
+ */
+
+/**
+ * @callback OperationsFilter
+ * @param {number} index - The index of the operation.
+ * @returns {boolean} If false, the operation is ignored.
  */
 
 /**
