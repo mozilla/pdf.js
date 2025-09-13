@@ -16,7 +16,6 @@
 import {
   BaseException,
   FeatureTest,
-  MathClamp,
   shadow,
   Util,
   warn,
@@ -931,18 +930,36 @@ function findContrastColor(baseColor, fixedColor) {
   // Use the contrast ratio requirements from WCAG 2.1.
   // https://www.w3.org/TR/WCAG21/#contrast-minimum
   // https://www.w3.org/TR/WCAG21/#contrast-enhanced
-  const minContrast = isFixedColorDark ? 7 : 4.5;
+  const minContrast = isFixedColorDark ? 12 : 4.5;
 
   baseHSL[2] = isFixedColorDark
     ? Math.sqrt(baseHSL[2])
     : 1 - Math.sqrt(1 - baseHSL[2]);
-  const increment = isFixedColorDark ? 0.01 : -0.01;
-  let contrast = contrastRatio(baseHSL, fixedHSL, output);
-  while (baseHSL[2] >= 0 && baseHSL[2] <= 1 && contrast < minContrast) {
-    baseHSL[2] += increment;
-    contrast = contrastRatio(baseHSL, fixedHSL, output);
+
+  if (contrastRatio(baseHSL, fixedHSL, output) < minContrast) {
+    let start, end;
+    if (isFixedColorDark) {
+      start = baseHSL[2];
+      end = 1;
+    } else {
+      start = 0;
+      end = baseHSL[2];
+    }
+    const PRECISION = 0.005;
+    while (end - start > PRECISION) {
+      const mid = (baseHSL[2] = (start + end) / 2);
+      if (
+        isFixedColorDark ===
+        contrastRatio(baseHSL, fixedHSL, output) < minContrast
+      ) {
+        start = mid;
+      } else {
+        end = mid;
+      }
+    }
+    baseHSL[2] = isFixedColorDark ? end : start;
   }
-  baseHSL[2] = MathClamp(baseHSL[2], 0, 1);
+
   HSLToRGB(baseHSL, output);
   cachedValue = Util.makeHexColor(
     Math.round(output[0] * 255),
