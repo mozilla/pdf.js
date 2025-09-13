@@ -3385,6 +3385,18 @@ class Font {
       unicode = String.fromCharCode(unicode);
     }
 
+    // If the charcode is in the differences map, use the corresponding
+    // unicode value from the glyphsUnicodeMap to get the proper character
+    // mapping
+    const differencesChar = this.differences[charcode];
+    if (differencesChar) {
+      // Get the global glyph unicode mapping to resolve character
+      // differences
+      const glyphsUnicodeMap = getGlyphsUnicode();
+      const differencesCharCode = glyphsUnicodeMap[differencesChar];
+      this.toFontChar[charcode] = this.toFontChar[differencesCharCode];
+    }
+
     let isInFont = this.toFontChar[charcode] !== undefined;
     // First try the toFontChar map, if it's not there then try falling
     // back to the char code.
