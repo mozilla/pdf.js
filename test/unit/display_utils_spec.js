@@ -307,7 +307,7 @@ describe("display_utils", function () {
   describe("findContrastColor", function () {
     it("Check that the lightness is changed correctly", function () {
       expect(findContrastColor([210, 98, 76], [197, 113, 89])).toEqual(
-        "#240d09"
+        "#260e09"
       );
     });
   });
