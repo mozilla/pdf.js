@@ -1072,13 +1072,11 @@ describe("Highlight Editor", () => {
     it("must check that an highlight can be left with the keyboard", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await switchToHighlight(page);
-
           if (browserName === "chrome") {
-            // Unfortunately, we can't test this on Chrome because we can't set
-            // the caret browsing mode to true.
-            return;
+            pending("Caret browsing mode cannot be used in Chrome.");
           }
+
+          await switchToHighlight(page);
 
           let rect = await getSpanRectFromText(
             page,
@@ -1855,9 +1853,7 @@ describe("Highlight Editor", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           if (navigator.platform.includes("Win")) {
-            // Skip the test on Windows because it permafails.
-            // TODO: Remove this check once #20136 is fixed.
-            return;
+            pending("Fails consistently on Windows (issue #20136).");
           }
 
           await switchToHighlight(page);

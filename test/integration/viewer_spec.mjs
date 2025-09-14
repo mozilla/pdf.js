@@ -1375,15 +1375,14 @@ describe("PDF viewer", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           if (browserName === "firefox") {
-            // Firefox does not support touch events on devices
-            // with no touch screen.
-            return;
+            pending(
+              "Touch events are not supported on devices without touch screen in Firefox."
+            );
           }
           if (browserName === "chrome") {
-            // Skip the test for Chrome as it doesn't support pinch zoom
-            // emulation for WebDriver BiDi yet.
-            // TODO: Remove this check once the issue is fixed.
-            return;
+            pending(
+              "Pinch zoom emulation is not supported for WebDriver BiDi in Chrome."
+            );
           }
 
           const rect = await getSpanRectFromText(page, 1, "type-stable");
