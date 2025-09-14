@@ -929,7 +929,7 @@ class PDFPageView extends BasePDFPageView {
     return canvasWrapper;
   }
 
-  _getRenderingContext(canvas, transform) {
+  _getRenderingContext(canvas, transform, recordOperations) {
     return {
       canvas,
       transform,
@@ -939,8 +939,7 @@ class PDFPageView extends BasePDFPageView {
       annotationCanvasMap: this._annotationCanvasMap,
       pageColors: this.pageColors,
       isEditing: this.#isEditing,
-      recordOperations:
-        this.enableOptimizedPartialRendering && !this.recordedBBoxes,
+      recordOperations,
     };
   }
 
@@ -1058,12 +1057,17 @@ class PDFPageView extends BasePDFPageView {
       this.#scaleRoundY = sfy[1];
     }
 
+    const recordBBoxes =
+      this.enableOptimizedPartialRendering &&
+      this.#hasRestrictedScaling &&
+      !this.recordedBBoxes;
+
     // Rendering area
     const transform = outputScale.scaled
       ? [outputScale.sx, 0, 0, outputScale.sy, 0, 0]
       : null;
     const resultPromise = this._drawCanvas(
-      this._getRenderingContext(canvas, transform),
+      this._getRenderingContext(canvas, transform, recordBBoxes),
       () => {
         prevCanvas?.remove();
         this._resetCanvas();

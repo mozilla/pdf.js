@@ -187,11 +187,15 @@ class PDFPageDetailView extends BasePDFPageView {
   }
 
   _getRenderingContext(canvas, transform) {
-    const baseContext = this.pageView._getRenderingContext(canvas, transform);
+    const baseContext = this.pageView._getRenderingContext(
+      canvas,
+      transform,
+      false
+    );
     const recordedBBoxes = this.pdfPage.recordedBBoxes;
 
     if (!recordedBBoxes || !this.enableOptimizedPartialRendering) {
-      return { ...baseContext, recordOperations: false };
+      return baseContext;
     }
 
     const {
@@ -211,7 +215,6 @@ class PDFPageDetailView extends BasePDFPageView {
 
     return {
       ...baseContext,
-      recordOperations: false,
       operationsFilter(index) {
         if (recordedBBoxes.isEmpty(index)) {
           return false;
