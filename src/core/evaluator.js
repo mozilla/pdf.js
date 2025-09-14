@@ -3661,8 +3661,24 @@ class PartialEvaluator {
     if (baseEncodingName) {
       properties.defaultEncoding = getEncoding(baseEncodingName);
     } else {
-      const isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
+      let isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
       const isNonsymbolicFont = !!(properties.flags & FontFlags.Nonsymbolic);
+
+      // The PDF specs state that the flags Symbolic and Nonsymbolic must be
+      // mutually exclusive. However, some fonts are marked as both.
+      // In that case we ignore the Symbolic flag when there is a Differences
+      // entry (which indicates that the font is used as a non-symbolic
+      // font).
+      if (
+        properties.type === "TrueType" &&
+        isSymbolicFont &&
+        isNonsymbolicFont &&
+        differences.length !== 0
+      ) {
+        properties.flags &= ~FontFlags.Symbolic;
+        isSymbolicFont = false;
+      }
+
       // According to "Table 114" in section "9.6.6.1 General" (under
       // "9.6.6 Character Encoding") of the PDF specification, a Nonsymbolic
       // font should use the `StandardEncoding` if no encoding is specified.
