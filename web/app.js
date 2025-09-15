@@ -777,7 +777,7 @@ const PDFViewerApplication = {
       const params = parseQueryString(queryString);
       file = params.get("file") ?? AppOptions.get("defaultUrl");
       try {
-        file = new URL(decodeURIComponent(file)).href;
+        file = new URL(file).href;
       } catch {
         file = encodeURIComponent(file).replaceAll("%2F", "/");
       }
