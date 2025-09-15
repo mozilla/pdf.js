@@ -496,6 +496,7 @@
   gap: 12px;
   z-index: 100001; /* above selected annotation editor */
   pointer-events: auto;
+  margin-top: 2px;
 
   border: 0.5px solid var(--comment-border-color);
   background: var(--comment-bg-color);

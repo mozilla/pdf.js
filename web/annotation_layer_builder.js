@@ -26,6 +26,7 @@
 /** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/editor/tools.js").AnnotationEditorUIManager} AnnotationEditorUIManager */
+/** @typedef {import("./comment_manager.js").CommentManager} CommentManager */
 
 import {
   AnnotationLayer,
@@ -53,6 +54,7 @@ import { PresentationModeState } from "./ui_utils.js";
  * @property {TextAccessibilityManager} [accessibilityManager]
  * @property {AnnotationEditorUIManager} [annotationEditorUIManager]
  * @property {function} [onAppend]
+ * @property {CommentManager} [commentManager]
  */
 
 /**
@@ -71,6 +73,8 @@ import { PresentationModeState } from "./ui_utils.js";
 
 class AnnotationLayerBuilder {
   #annotations = null;
+
+  #commentManager = null;
 
   #externalHide = false;
 
@@ -91,6 +95,7 @@ class AnnotationLayerBuilder {
     imageResourcesPath = "",
     renderForms = true,
     enableComment = false,
+    commentManager = null,
     enableScripting = false,
     hasJSActionsPromise = null,
     fieldObjectsPromise = null,
@@ -106,6 +111,7 @@ class AnnotationLayerBuilder {
     this.renderForms = renderForms;
     this.annotationStorage = annotationStorage;
     this.enableComment = enableComment;
+    this.#commentManager = commentManager;
     this.enableScripting = enableScripting;
     this._hasJSActionsPromise = hasJSActionsPromise || Promise.resolve(false);
     this._fieldObjectsPromise = fieldObjectsPromise || Promise.resolve(null);
@@ -204,6 +210,7 @@ class AnnotationLayerBuilder {
       page: this.pdfPage,
       viewport: viewport.clone({ dontFlip: true }),
       structTreeLayer,
+      commentManager: this.#commentManager,
     });
   }
 
