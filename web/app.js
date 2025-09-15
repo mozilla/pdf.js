@@ -98,6 +98,7 @@ import { Toolbar } from "web-toolbar";
 import { ViewHistory } from "./view_history.js";
 
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
+globalThis.SILENCE_TYPE3_WARNINGS = true;
 
 const ViewOnLoad = {
   UNKNOWN: -1,

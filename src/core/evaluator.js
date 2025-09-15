@@ -2354,7 +2354,7 @@ class PartialEvaluator {
       if (this.options.ignoreErrors) {
         warn(
           `getOperatorList - ignoring errors during "${task.name}" ` +
-            `task: "${reason}".`
+          `task: "${reason}".`
         );
 
         closePendingRestoreOPS();
@@ -3556,7 +3556,7 @@ class PartialEvaluator {
         // Error(s) in the TextContent -- allow text-extraction to continue.
         warn(
           `getTextContent - ignoring errors during "${task.name}" ` +
-            `task: "${reason}".`
+          `task: "${reason}".`
         );
 
         flushTextContentItem();
@@ -4283,10 +4283,10 @@ class PartialEvaluator {
         const uint8array = stream.buffer
           ? new Uint8Array(stream.buffer.buffer, 0, stream.bufferLength)
           : new Uint8Array(
-              stream.bytes.buffer,
-              stream.start,
-              stream.end - stream.start
-            );
+            stream.bytes.buffer,
+            stream.start,
+            stream.end - stream.start
+          );
         hash.update(uint8array);
       } else if (toUnicode instanceof Name) {
         hash.update(toUnicode.name);
@@ -4478,7 +4478,7 @@ class PartialEvaluator {
     } else if (fontNameStr !== baseFontStr) {
       info(
         `The FontDescriptor's FontName is "${fontNameStr}" but ` +
-          `should be the same as the Font's BaseFont "${baseFontStr}".`
+        `should be the same as the Font's BaseFont "${baseFontStr}".`
       );
       // - Workaround for cases where e.g. fontNameStr = 'Arial' and
       //   baseFontStr = 'Arial,Bold' (needed when no font file is embedded).
@@ -4800,7 +4800,9 @@ class TranslatedFont {
             }
           })
           .catch(function (reason) {
-            warn(`Type3 font resource "${key}" is not available.`);
+            if (!globalThis.SILENCE_TYPE3_WARNINGS) {
+              warn(`Type3 font resource "${key}" is not available.`);
+            }
             const dummyOperatorList = new OperatorList();
             charProcOperatorList[key] = dummyOperatorList.getIR();
           });
@@ -5279,7 +5281,7 @@ class EvaluatorPreprocessor {
             if (
               this._isPathOp &&
               ++this._numInvalidPathOPS >
-                EvaluatorPreprocessor.MAX_INVALID_PATH_OPS
+              EvaluatorPreprocessor.MAX_INVALID_PATH_OPS
             ) {
               throw new FormatError(`Invalid ${partialMsg}`);
             }
@@ -5294,7 +5296,7 @@ class EvaluatorPreprocessor {
         } else if (argsLength > numArgs) {
           info(
             `Command ${cmd}: expected [0, ${numArgs}] args, ` +
-              `but received ${argsLength} args.`
+            `but received ${argsLength} args.`
           );
         }
 
