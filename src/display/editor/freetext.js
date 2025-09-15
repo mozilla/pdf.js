@@ -236,14 +236,21 @@ class FreeTextEditor extends AnnotationEditor {
     });
   }
 
+  /** @inheritdoc */
+  onUpdatedColor() {
+    this.editorDiv.style.color = this.color;
+    this._colorPicker?.update(this.color);
+    super.onUpdatedColor();
+  }
+
   /**
    * Update the color and make this action undoable.
    * @param {string} color
    */
   #updateColor(color) {
     const setColor = col => {
-      this.color = this.editorDiv.style.color = col;
-      this._colorPicker?.update(col);
+      this.color = col;
+      this.onUpdatedColor();
     };
     const savedColor = this.color;
     this.addCommands({

@@ -278,9 +278,13 @@ pdfjs-web-fonts-disabled = แบบอักษรเว็บถูกปิ�
 
 pdfjs-editor-free-text-button =
     .title = ข้อความ
+pdfjs-editor-color-picker-free-text-input =
+    .title = เปลี่ยนสีข้อความ
 pdfjs-editor-free-text-button-label = ข้อความ
 pdfjs-editor-ink-button =
     .title = รูปวาด
+pdfjs-editor-color-picker-ink-input =
+    .title = เปลี่ยนสีรูปวาด
 pdfjs-editor-ink-button-label = รูปวาด
 pdfjs-editor-stamp-button =
     .title = เพิ่มหรือแก้ไขภาพ
@@ -292,6 +296,10 @@ pdfjs-highlight-floating-button1 =
     .title = เน้นสี
     .aria-label = เน้นสี
 pdfjs-highlight-floating-button-label = เน้นสี
+pdfjs-comment-floating-button =
+    .title = แสดงความคิดเห็น
+    .aria-label = แสดงความคิดเห็น
+pdfjs-comment-floating-button-label = แสดงความคิดเห็น
 pdfjs-editor-signature-button =
     .title = เพิ่มลายเซ็น
 pdfjs-editor-signature-button-label = เพิ่มลายเซ็น
@@ -484,6 +492,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = แสดงตัว�
 pdfjs-editor-alt-text-settings-show-dialog-description = ช่วยให้คุณแน่ใจว่าภาพทั้งหมดของคุณมีข้อความทดแทน
 pdfjs-editor-alt-text-settings-close-button = ปิด
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = เพิ่มการเน้นสีแล้ว
+pdfjs-editor-freetext-added-alert = เพิ่มข้อความแล้ว
+pdfjs-editor-ink-added-alert = เพิ่มรูปวาดแล้ว
+pdfjs-editor-stamp-added-alert = เพิ่มภาพแล้ว
+pdfjs-editor-signature-added-alert = เพิ่มลายเซ็นแล้ว
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = เอาการเน้นสีออกแล้ว
@@ -548,6 +564,8 @@ pdfjs-editor-add-signature-save-checkbox = บันทึกลายเซ็�
 pdfjs-editor-add-signature-save-warning-message = คุณมีลายเซ็นที่บันทึกถึงจำนวนสูงสุด 5 รายการแล้ว โปรดลบรายการหนึ่งออกเมื่อจะบันทึกเพิ่ม
 pdfjs-editor-add-signature-image-upload-error-title = ไม่สามารถอัปโหลดภาพได้
 pdfjs-editor-add-signature-image-upload-error-description = ตรวจสอบการเชื่อมต่อเครือข่ายของคุณหรือลองใช้ภาพอื่น
+pdfjs-editor-add-signature-image-no-data-error-title = ไม่สามารถแปลงภาพนี้ให้เป็นลายเซ็นได้
+pdfjs-editor-add-signature-image-no-data-error-description = โปรดลองอัปโหลดภาพอื่น
 pdfjs-editor-add-signature-error-close-button = ปิด
 
 ## Dialog buttons
@@ -555,6 +573,26 @@ pdfjs-editor-add-signature-error-close-button = ปิด
 pdfjs-editor-add-signature-cancel-button = ยกเลิก
 pdfjs-editor-add-signature-add-button = เพิ่ม
 pdfjs-editor-edit-signature-update-button = อัปเดต
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = การกระทำ
+pdfjs-editor-edit-comment-actions-button =
+    .title = การกระทำ
+pdfjs-editor-edit-comment-close-button-label = ปิด
+pdfjs-editor-edit-comment-close-button =
+    .title = ปิด
+pdfjs-editor-edit-comment-actions-edit-button-label = แก้ไข
+pdfjs-editor-edit-comment-actions-delete-button-label = ลบ
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = ป้อนความคิดเห็นของคุณ
+pdfjs-editor-edit-comment-manager-cancel-button = ยกเลิก
+pdfjs-editor-edit-comment-manager-save-button = บันทึก
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = แก้ไขความคิดเห็น
 
 ## Main menu for adding/removing signatures
 

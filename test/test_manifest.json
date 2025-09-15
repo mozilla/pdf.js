@@ -13020,5 +13020,12 @@
     "md5": "ae4f643ee9bb0fd725277a9d1e0fb1df",
     "rounds": 1,
     "type": "load"
+  },
+  {
+    "id": "issue20232",
+    "file": "pdfs/issue20232.pdf",
+    "md5": "cc53e96a8fd9eafbfbb74de564f37047",
+    "rounds": 1,
+    "type": "eq"
   }
 ]

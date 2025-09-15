@@ -249,7 +249,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                     <button id="editorCommentButton" class="toolbarButton" type="button" tabindex="0" disabled="disabled" role="radio" aria-expanded="false" aria-haspopup="true" aria-controls="editorCommentParamsToolbar" data-l10n-id="pdfjs-editor-comment-button">
                       <span data-l10n-id="pdfjs-editor-comment-button-label"></span>
                     </button>
-                    <div class="editorParamsToolbar sidebar hidden menu" id="editorCommentParamsToolbar">
+                    <div class="editorParamsToolbar hidden menu" id="editorCommentParamsToolbar">
                       <div id="editorCommentsSidebar" class="menuContainer comment sidebar" role="landmark" aria-labelledby="editorCommentsSidebarHeader">
                         <div id="editorCommentsSidebarHeader" role="heading" aria-level="2">
                           <span class="commentCount">
@@ -260,7 +260,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                             <span data-l10n-id="pdfjs-editor-comments-sidebar-close-button-label"></span>
                           </button>
                         </div>
-                        <div id="editorCommentsSidebarListContainer">
+                        <div id="editorCommentsSidebarListContainer" tabindex="-1">
                           <ul id="editorCommentsSidebarList"></ul>
                         </div>
                       </div>
@@ -794,30 +794,16 @@ See https://github.com/adobe-type-tools/cmap-resources
 
       <dialog class="dialog commentManager" id="commentManagerDialog">
         <div class="mainContainer">
-          <div id="commentManagerToolbar">
-            <button id="commentActionsButton" class="toolbarButton" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="commentActionsMenu" tabindex="0" data-l10n-id="pdfjs-editor-edit-comment-actions-button">
-              <span data-l10n-id="pdfjs-editor-edit-comment-actions-button-label"></span>
-            </button>
-            <menu class="hidden" role="menu" id="commentActionsMenu">
-              <button id="commentActionsEditButton" role="menuitem" type="button" tabindex="0">
-                <span data-l10n-id="pdfjs-editor-edit-comment-actions-edit-button-label"></span>
-              </button>
-              <button id="commentActionsDeleteButton" role="menuitem" type="button" tabindex="0">
-                <span data-l10n-id="pdfjs-editor-edit-comment-actions-delete-button-label"></span>
-              </button>
-            </menu>
-            <button id="commentCloseButton" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-editor-edit-comment-close-button">
-              <span data-l10n-id="pdfjs-editor-edit-comment-close-button-label"></span>
-            </button>
+          <div class="title" id="commentManagerToolbar">
+            <span id="commentManagerTitle" role="sectionhead" data-l10n-id="pdfjs-editor-edit-comment-dialog-title-when-adding" tabindex="0"></span>
           </div>
-          <textarea class="hidden" id="commentManagerTextInput" data-l10n-id="pdfjs-editor-edit-comment-manager-text-input"></textarea>
-          <div class="hidden" id="commentManagerTextView"></div>
+          <textarea id="commentManagerTextInput" data-l10n-id="pdfjs-editor-edit-comment-dialog-text-input"></textarea>
           <div class="dialogButtonsGroup">
             <button id="commentManagerCancelButton" type="button" class="secondaryButton" tabindex="0">
-              <span data-l10n-id="pdfjs-editor-edit-comment-manager-cancel-button"></span>
+              <span data-l10n-id="pdfjs-editor-edit-comment-dialog-cancel-button"></span>
             </button>
             <button id="commentManagerSaveButton" type="button" class="primaryButton" disabled tabindex="0">
-              <span data-l10n-id="pdfjs-editor-edit-comment-manager-save-button"></span>
+              <span data-l10n-id="pdfjs-editor-edit-comment-dialog-save-button"></span>
             </button>
           </div>
         </div>
