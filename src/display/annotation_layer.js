@@ -29,6 +29,7 @@
 
 import {
   AnnotationBorderStyleType,
+  AnnotationEditorPrefix,
   AnnotationEditorType,
   AnnotationPrefix,
   AnnotationType,
@@ -240,6 +241,16 @@ class AnnotationElement {
     point[0] = (100 * (point[0] - pageX)) / pageWidth;
     point[1] = (100 * (point[1] - pageY)) / pageHeight;
     return point;
+  }
+
+  get commentText() {
+    const { data } = this;
+    return (
+      this.annotationStorage.getRawValue(`${AnnotationEditorPrefix}${data.id}`)
+        ?.popup?.contents ||
+      data.contentsObj?.str ||
+      ""
+    );
   }
 
   removePopup() {
@@ -2335,6 +2346,8 @@ class PopupElement {
 
   #firstElement = null;
 
+  #commentText = null;
+
   constructor({
     container,
     color,
@@ -2495,7 +2508,16 @@ class PopupElement {
   }
 
   getData() {
-    return this.#firstElement.data;
+    const { richText, color, opacity, creationDate, modificationDate } =
+      this.#firstElement.data;
+    return {
+      contentsObj: { str: this.comment },
+      richText,
+      color,
+      opacity,
+      creationDate,
+      modificationDate,
+    };
   }
 
   get elementBeforePopup() {
@@ -2503,22 +2525,35 @@ class PopupElement {
   }
 
   get comment() {
-    return this.#firstElement.data.contentsObj?.str || "";
+    this.#commentText ||= this.#firstElement.commentText;
+    return this.#commentText;
   }
 
   set comment(text) {
     const element = this.#firstElement;
-    if (text) {
-      element.data.contentsObj = { str: text };
-      // TODO: Support saving the text.
-      //  element.annotationStorage.setValue(element.data.id, {
-      //    popup: { contents: text },
-      //  });
-    } else {
-      element.data.contentsObj = null;
+    const { data } = element;
+    if (text === this.comment) {
+      return;
+    }
+    const popup = { deleted: !text, contents: text || "" };
+    if (!element.annotationStorage.updateEditor(data.id, { popup })) {
+      element.annotationStorage.setValue(
+        `${AnnotationEditorPrefix}${data.id}`,
+        {
+          id: data.id,
+          annotationType: data.annotationType,
+          pageIndex: element.parent.page._pageIndex,
+          popup,
+          popupRef: data.popupRef,
+          modificationDate: new Date(),
+        }
+      );
+    }
+
+    this.#commentText = text;
+    if (!text) {
       element.removePopup();
     }
-    element.data.modificationDate = new Date();
   }
 
   get parentBoundingClientRect() {
@@ -2703,6 +2738,10 @@ class PopupElement {
   }
 
   updateEdited({ rect, popup, deleted }) {
+    if (this.#commentManager) {
+      this.#commentText = deleted ? null : popup.text;
+      return;
+    }
     if (deleted || popup?.deleted) {
       this.remove();
       return;

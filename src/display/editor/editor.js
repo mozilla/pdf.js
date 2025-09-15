@@ -1243,6 +1243,16 @@ class AnnotationEditor {
     }
     this.#comment ||= new Comment(this);
     this.#comment.setInitialText(comment, richText);
+
+    if (!this.annotationElementId) {
+      return;
+    }
+    const storedData = this._uiManager.getAndRemoveDataFromAnnotationStorage(
+      this.annotationElementId
+    );
+    if (storedData) {
+      this.updateFromAnnotationLayer(storedData);
+    }
   }
 
   get hasEditedComment() {
@@ -1286,6 +1296,10 @@ class AnnotationEditor {
         rect: [blX, blY, trX, trY],
       };
     }
+  }
+
+  updateFromAnnotationLayer({ popup: { contents, deleted } }) {
+    this.#comment.data = deleted ? null : contents;
   }
 
   get parentBoundingClientRect() {

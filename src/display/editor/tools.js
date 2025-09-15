@@ -1289,6 +1289,26 @@ class AnnotationEditorUIManager {
   }
 
   /**
+   * Some annotations may have been modified in the annotation layer
+   * (e.g. comments added or modified).
+   * So this function retrieves the data from the storage and removes
+   * them from the storage in order to be able to save them later.
+   * @param {string} annotationId
+   * @returns {Object|null} The data associated to the annotation or null.
+   */
+  getAndRemoveDataFromAnnotationStorage(annotationId) {
+    if (!this.#annotationStorage) {
+      return null;
+    }
+    const key = `${AnnotationEditorPrefix}${annotationId}`;
+    const storedValue = this.#annotationStorage.getRawValue(key);
+    if (storedValue) {
+      this.#annotationStorage.remove(key);
+    }
+    return storedValue;
+  }
+
+  /**
    * Add an editor in the annotation storage.
    * @param {AnnotationEditor} editor
    */
