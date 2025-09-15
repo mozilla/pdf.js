@@ -46,7 +46,7 @@ class CommentManager {
       dateStyle: "long",
     });
     this.dialogElement = commentDialog.dialog;
-    this.#dialog = new CommentDialog(commentDialog, overlayManager, ltr);
+    this.#dialog = new CommentDialog(commentDialog, overlayManager);
     this.#popup = new CommentPopup(dateFormat, ltr, this.dialogElement);
     this.#sidebar = new CommentSidebar(
       sidebar,
@@ -572,19 +572,15 @@ class CommentDialog {
 
   #dialogY = 0;
 
-  #isLTR;
-
   constructor(
     { dialog, toolbar, title, textInput, cancelButton, saveButton },
-    overlayManager,
-    ltr
+    overlayManager
   ) {
     this.#dialog = dialog;
     this.#textInput = textInput;
     this.#overlayManager = overlayManager;
     this.#saveButton = saveButton;
     this.#title = title;
-    this.#isLTR = ltr;
 
     const finishBound = this.#finish.bind(this);
     dialog.addEventListener("close", finishBound);
@@ -686,17 +682,6 @@ class CommentDialog {
     }
     this.#uiManager?.removeEditListeners();
     this.#saveButton.disabled = true;
-    const parentDimensions = options?.parentDimensions;
-    if (
-      parentDimensions &&
-      ((this.#isLTR &&
-        posX + this._dialogWidth >
-          parentDimensions.x + parentDimensions.width) ||
-        (!this.#isLTR && posX - this._dialogWidth < parentDimensions.x))
-    ) {
-      const buttonWidth = this.#editor.commentButtonWidth;
-      posX -= this._dialogWidth - buttonWidth * parentDimensions.width;
-    }
 
     this.#setPosition(posX, posY);
 
@@ -903,7 +888,7 @@ class CommentPopup {
           this.#setPosition(
             this.#posX + (x - this.#prevDragX) / parentWidth,
             this.#posY + (y - this.#prevDragY) / parentHeight,
-            /* isDragging = */ true
+            /* correctPosition = */ false
           );
           this.#prevDragX = x;
           this.#prevDragY = y;
@@ -1019,7 +1004,10 @@ class CommentPopup {
     this.#time.textContent = this.#dateFormat.format(
       PDFDateString.toDateObject(modificationDate || creationDate)
     );
-    this.#setPosition(...editor.commentPopupPosition);
+    this.#setPosition(
+      ...editor.commentPopupPosition,
+      /* correctPosition = */ editor.hasDefaultPopupPosition()
+    );
     editor.elementBeforePopup.after(container);
     container.addEventListener(
       "focus",
@@ -1033,8 +1021,8 @@ class CommentPopup {
     }
   }
 
-  #setPosition(x, y, isDragging = false) {
-    if (isDragging) {
+  #setPosition(x, y, correctPosition = true) {
+    if (!correctPosition) {
       this.#editor.commentPopupPosition = [x, y];
     } else {
       const widthRatio =

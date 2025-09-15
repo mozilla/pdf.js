@@ -1953,6 +1953,10 @@ class AnnotationEditor {
     this.#comment.commentPopupPositionInLayer = pos;
   }
 
+  hasDefaultPopupPosition() {
+    return this.#comment.hasDefaultPopupPosition();
+  }
+
   get commentButtonWidth() {
     return this.#comment.commentButtonWidth;
   }

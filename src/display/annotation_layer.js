@@ -2555,6 +2555,10 @@ class PopupElement {
     this.#popupPosition = pos;
   }
 
+  hasDefaultPopupPosition() {
+    return this.#popupPosition === null;
+  }
+
   get commentButtonPosition() {
     return this.#commentButtonPosition;
   }
