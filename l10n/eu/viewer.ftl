@@ -286,9 +286,13 @@ pdfjs-web-fonts-disabled = Webeko letra-tipoak desgaituta daude: ezin dira kapsu
 
 pdfjs-editor-free-text-button =
     .title = Testua
+pdfjs-editor-color-picker-free-text-input =
+    .title = Aldatu testuaren kolorea
 pdfjs-editor-free-text-button-label = Testua
 pdfjs-editor-ink-button =
     .title = Marrazkia
+pdfjs-editor-color-picker-ink-input =
+    .title = Aldatu marrazteko kolorea
 pdfjs-editor-ink-button-label = Marrazkia
 pdfjs-editor-stamp-button =
     .title = Gehitu edo editatu irudiak
@@ -300,6 +304,10 @@ pdfjs-highlight-floating-button1 =
     .title = Nabarmendu
     .aria-label = Nabarmendu
 pdfjs-highlight-floating-button-label = Nabarmendu
+pdfjs-comment-floating-button =
+    .title = Iruzkina
+    .aria-label = Iruzkina
+pdfjs-comment-floating-button-label = Iruzkina
 pdfjs-editor-signature-button =
     .title = Gehitu sinadura
 pdfjs-editor-signature-button-label = Gehitu sinadura
@@ -492,6 +500,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Erakutsi testu alterna
 pdfjs-editor-alt-text-settings-show-dialog-description = Zure irudiek testu alternatiboa duela ziurtatzen laguntzen dizu.
 pdfjs-editor-alt-text-settings-close-button = Itxi
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = Nabarmentzea gehituta
+pdfjs-editor-freetext-added-alert = Testua gehituta
+pdfjs-editor-ink-added-alert = Marrazkia gehituta
+pdfjs-editor-stamp-added-alert = Irudia gehituta
+pdfjs-editor-signature-added-alert = Sinadura gehituta
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Nabarmentzea kenduta
@@ -564,6 +580,8 @@ pdfjs-editor-add-signature-save-checkbox = Gorde sinadura
 pdfjs-editor-add-signature-save-warning-message = Gordetako sinadura kopuruaren mugara heldu zara (5). Gehiago gorde ahal izateko, ken ezazu bat.
 pdfjs-editor-add-signature-image-upload-error-title = Ezin da irudia igo
 pdfjs-editor-add-signature-image-upload-error-description = Egiaztatu zure sareko konexioa edo saiatu beste irudi batekin.
+pdfjs-editor-add-signature-image-no-data-error-title = Ezin da irudia sinaduran bihurtu
+pdfjs-editor-add-signature-image-no-data-error-description = Saiatu beste irudi bat igotzen.
 pdfjs-editor-add-signature-error-close-button = Itxi
 
 ## Dialog buttons
@@ -571,6 +589,26 @@ pdfjs-editor-add-signature-error-close-button = Itxi
 pdfjs-editor-add-signature-cancel-button = Utzi
 pdfjs-editor-add-signature-add-button = Gehitu
 pdfjs-editor-edit-signature-update-button = Eguneratu
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Ekintzak
+pdfjs-editor-edit-comment-actions-button =
+    .title = Ekintzak
+pdfjs-editor-edit-comment-close-button-label = Itxi
+pdfjs-editor-edit-comment-close-button =
+    .title = Itxi
+pdfjs-editor-edit-comment-actions-edit-button-label = Editatu
+pdfjs-editor-edit-comment-actions-delete-button-label = Ezabatu
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Idatzi zure iruzkina
+pdfjs-editor-edit-comment-manager-cancel-button = Utzi
+pdfjs-editor-edit-comment-manager-save-button = Gorde
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Editatu iruzkina
 
 ## Main menu for adding/removing signatures
 

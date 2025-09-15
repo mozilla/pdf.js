@@ -286,6 +286,8 @@ pdfjs-web-fonts-disabled = Веб қаріптері сөндірілген: қ�
 
 pdfjs-editor-free-text-button =
     .title = Мәтін
+pdfjs-editor-color-picker-free-text-input =
+    .title = Мәтін түсін өзгерту
 pdfjs-editor-free-text-button-label = Мәтін
 pdfjs-editor-ink-button =
     .title = Сурет салу
@@ -300,12 +302,21 @@ pdfjs-highlight-floating-button1 =
     .title = Ерекшелеу
     .aria-label = Ерекшелеу
 pdfjs-highlight-floating-button-label = Ерекшелеу
+pdfjs-comment-floating-button =
+    .title = Түсіндірме
+    .aria-label = Түсіндірме
+pdfjs-comment-floating-button-label = Түсіндірме
 pdfjs-editor-signature-button =
     .title = Қолтаңбаны қосу
 pdfjs-editor-signature-button-label = Қолтаңбаны қосу
 
 ## Default editor aria labels
 
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor1 =
+    .aria-description = Қолтаңба түзеткіші: { $description }
 pdfjs-editor-stamp-editor =
     .aria-label = Сурет редакторы
 
@@ -563,6 +574,26 @@ pdfjs-editor-add-signature-error-close-button = Жабу
 pdfjs-editor-add-signature-cancel-button = Бас тарту
 pdfjs-editor-add-signature-add-button = Қосу
 pdfjs-editor-edit-signature-update-button = Жаңарту
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Әрекеттер
+pdfjs-editor-edit-comment-actions-button =
+    .title = Әрекеттер
+pdfjs-editor-edit-comment-close-button-label = Жабу
+pdfjs-editor-edit-comment-close-button =
+    .title = Жабу
+pdfjs-editor-edit-comment-actions-edit-button-label = Түзету
+pdfjs-editor-edit-comment-actions-delete-button-label = Өшіру
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Пікіріңізді енгізіңіз
+pdfjs-editor-edit-comment-manager-cancel-button = Бас тарту
+pdfjs-editor-edit-comment-manager-save-button = Сақтау
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Пікірді түзету
 
 ## Main menu for adding/removing signatures
 
