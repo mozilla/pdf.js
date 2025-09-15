@@ -111,6 +111,10 @@ class Comment {
     this.#popupPosition = pos;
   }
 
+  hasDefaultPopupPosition() {
+    return this.#popupPosition === null;
+  }
+
   removeStandaloneCommentButton() {
     this.#commentStandaloneButton?.remove();
     this.#commentStandaloneButton = null;
