@@ -348,6 +348,18 @@ class HighlightEditor extends AnnotationEditor {
     ];
   }
 
+  /** @inheritdoc */
+  onUpdatedColor() {
+    this.parent?.drawLayer.updateProperties(this.#id, {
+      root: {
+        fill: this.color,
+        "fill-opacity": this.opacity,
+      },
+    });
+    this.#colorPicker?.updateColor(this.color);
+    super.onUpdatedColor();
+  }
+
   /**
    * Update the color and make this action undoable.
    * @param {string} color
@@ -356,13 +368,7 @@ class HighlightEditor extends AnnotationEditor {
     const setColorAndOpacity = (col, opa) => {
       this.color = col;
       this.opacity = opa;
-      this.parent?.drawLayer.updateProperties(this.#id, {
-        root: {
-          fill: col,
-          "fill-opacity": opa,
-        },
-      });
-      this.#colorPicker?.updateColor(col);
+      this.onUpdatedColor();
     };
     const savedColor = this.color;
     const savedOpacity = this.opacity;

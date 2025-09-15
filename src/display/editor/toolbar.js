@@ -28,6 +28,8 @@ class EditorToolbar {
 
   #comment = null;
 
+  #commentButtonDivider = null;
+
   #signatureDescriptionButton = null;
 
   static #l10nRemove = null;
@@ -167,11 +169,12 @@ class EditorToolbar {
       return;
     }
     this.#addListenersToElement(button);
+    const divider = (this.#commentButtonDivider = this.#divider);
     if (!beforeElement) {
-      this.#buttons.append(button, this.#divider);
+      this.#buttons.append(button, divider);
     } else {
       this.#buttons.insertBefore(button, beforeElement);
-      this.#buttons.insertBefore(this.#divider, beforeElement);
+      this.#buttons.insertBefore(divider, beforeElement);
     }
     this.#comment = comment;
     comment.toolbar = this;
@@ -192,6 +195,17 @@ class EditorToolbar {
       await signatureManager.renderEditButton(this.#editor));
     this.#addListenersToElement(button);
     this.#buttons.append(button, this.#divider);
+  }
+
+  removeButton(name) {
+    switch (name) {
+      case "comment":
+        this.#comment?.removeToolbarCommentButton();
+        this.#comment = null;
+        this.#commentButtonDivider?.remove();
+        this.#commentButtonDivider = null;
+        break;
+    }
   }
 
   async addButton(name, tool) {

@@ -142,7 +142,13 @@
   pointer-events: none;
 
   &.highlightEditing
-    :is(.freeTextEditor, .inkEditor, .stampEditor, .signatureEditor) {
+    :is(
+      .freeTextEditor,
+      .inkEditor,
+      .stampEditor,
+      .signatureEditor,
+      .commentPopup
+    ) {
     pointer-events: auto;
   }
 }

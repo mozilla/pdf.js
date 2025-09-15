@@ -491,11 +491,16 @@ const PDFViewerApplication = {
             eventBus
           )
         : null;
+
+    const ltr = appConfig.viewerContainer
+      ? getComputedStyle(appConfig.viewerContainer).direction === "ltr"
+      : true;
     const commentManager =
       AppOptions.get("enableComment") && appConfig.editCommentDialog
         ? new CommentManager(
             appConfig.editCommentDialog,
             {
+              learnMoreUrl: AppOptions.get("commentLearnMoreUrl"),
               sidebar:
                 appConfig.annotationEditorParams?.editorCommentsSidebar || null,
               commentsList:
@@ -515,7 +520,8 @@ const PDFViewerApplication = {
             },
             eventBus,
             linkService,
-            overlayManager
+            overlayManager,
+            ltr
           )
         : null;
 

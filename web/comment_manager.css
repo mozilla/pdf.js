@@ -13,74 +13,22 @@
  * limitations under the License.
  */
 
+.commentPopup,
+#commentManagerDialog {
+  width: 360px;
+  max-width: 100%;
+  min-width: 200px;
+  position: absolute;
+  padding: 8px 16px 16px;
+  margin: 0;
+  box-sizing: border-box;
+
+  border-radius: 8px;
+}
+
 #commentManagerDialog {
   --comment-actions-button-icon: url(images/comment-actionsButton.svg);
   --comment-close-button-icon: url(images/comment-closeButton.svg);
-
-  --default-dialog-bg-color: #ffff98;
-  --dialog-base-color: var(--default-dialog-bg-color);
-  --dialog-bg-color: color-mix(in srgb, var(--dialog-base-color), white 30%);
-  --dialog-border-color: var(--dialog-base-color);
-
-  --menuitem-bg-color: transparent;
-  --menuitem-fg-color: black;
-  --menuitem-hover-bg-color: #3383e7;
-  --menuitem-hover-fg-color: white;
-
-  --comment-text-input-bg: white;
-  --comment-text-input-fg: black;
-  --comment-text-input-border: #0060df;
-  --comment-focus-outline-color: #0060df;
-
-  --hover-filter: brightness(0.9);
-  --text-primary-color: #15141a;
-
-  --button-secondary-bg-color: #f0f0f4;
-  --button-secondary-active-bg-color: color-mix(
-    in srgb,
-    var(--button-secondary-bg-color),
-    black 14%
-  );
-  --button-secondary-hover-bg-color: color-mix(
-    in srgb,
-    var(--button-secondary-bg-color),
-    black 7%
-  );
-
-  --button-primary-bg-color: #0060df;
-  --button-primary-fg-color: #fbfbfe;
-  --button-primary-active-bg-color: #0050c0;
-  --button-primary-hover-bg-color: #0250bb;
-
-  --menu-bg-color: rgb(253 250 244);
-  --menu-button-border-color: transparent;
-  --menu-button-focus-outline-color: var(--comment-text-input-border);
-
-  @media screen and (forced-colors: active) {
-    --hover-filter: none;
-    --text-primary-color: CanvasText;
-    --button-secondary-bg-color: HighlightText;
-    --button-secondary-active-bg-color: HighlightText;
-    --button-secondary-hover-bg-color: HighlightText;
-    --button-primary-bg-color: ButtonText;
-    --button-primary-fg-color: HighlightText;
-    --button-primary-active-bg-color: SelectedItem;
-    --button-primary-hover-bg-color: SelectedItem;
-
-    --menu-button-border-color: Canvas;
-    --menu-button-focus-outline-color: CanvasText;
-  }
-
-  width: 308px;
-  padding: 8px 16px 16px;
-  overflow: visible;
-  position: absolute;
-  margin: 0;
-
-  border-radius: 4px;
-  border: 1px solid var(--dialog-border-color);
-  background: var(--dialog-bg-color);
-  box-shadow: 0 2px 14px 0 rgb(58 57 68 / 0.2);
 
   .mainContainer {
     width: 100%;
@@ -97,156 +45,20 @@
 
     #commentManagerToolbar {
       width: 100%;
+      height: 32px;
       display: flex;
-      justify-content: flex-end;
+      justify-content: flex-start;
       align-items: flex-start;
       gap: 8px;
       align-self: stretch;
 
       cursor: move;
-
-      > button {
-        color-scheme: light;
-        width: 24px;
-        height: 24px;
-        padding: 0;
-        border: none;
-
-        cursor: pointer;
-
-        &::before {
-          content: "";
-          display: inline-block;
-          width: 100%;
-          height: 100%;
-          mask-repeat: no-repeat;
-          mask-position: center;
-        }
-
-        &#commentActionsButton::before {
-          mask-image: var(--comment-actions-button-icon);
-        }
-
-        &#commentCloseButton::before {
-          mask-image: var(--comment-close-button-icon);
-        }
-
-        > span {
-          display: inline-block;
-          width: 0;
-          height: 0;
-          overflow: hidden;
-        }
-      }
-
-      menu {
-        width: max-content;
-        min-width: 90px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 1px;
-        padding: 5px 6px;
-        cursor: auto;
-        z-index: 1;
-        margin: 0;
-
-        position: absolute;
-        top: 8px;
-        right: -6.5px;
-
-        border-radius: 6px;
-        border: 0.5px solid #b4b4b6;
-        background-color: var(--menu-bg-color);
-        box-shadow:
-          1px -1px 0 0 #fff inset,
-          -1px 1px 0 0 #fff inset,
-          -1px -1px 0 0 #fff inset,
-          1px 1px 0 0 #fff inset,
-          0 0 15px 0 rgb(0 0 0 / 0.25);
-
-        button {
-          background-color: var(--menuitem-bg-color);
-          width: 100%;
-          height: 24px;
-          padding: 0;
-          box-sizing: border-box;
-          display: flex;
-          border: 2px solid var(--menu-button-border-color);
-          color: var(--menuitem-fg-color);
-
-          &:hover {
-            background-color: var(--menuitem-hover-bg-color);
-            color: var(--menuitem-hover-fg-color);
-          }
-
-          &:is(:focus-visible, :focus) {
-            outline: none;
-            border: 2px solid var(--menu-button-focus-outline-color);
-          }
-
-          &:disabled {
-            opacity: 0.5;
-            pointer-events: none;
-          }
-
-          span {
-            align-content: center;
-            width: 100%;
-            max-width: min-content;
-            padding-inline: 8px;
-            color: inherit;
-            text-align: start;
-            font: menu;
-            font-size: 15px;
-            font-weight: 400;
-            line-height: normal;
-          }
-        }
-      }
     }
 
     #commentManagerTextInput {
       width: 100%;
       min-height: 132px;
-      resize: none;
-      box-sizing: border-box;
       margin-bottom: 12px;
-
-      border-radius: 4px;
-      border: 2px solid var(--comment-text-input-border);
-      background-color: var(--comment-text-input-bg);
-      color: var(--comment-text-input-fg);
-    }
-
-    #commentManagerTextView {
-      width: 100%;
-      height: max-content;
-      resize: none;
-      box-sizing: border-box;
-      margin-bottom: 12px;
-
-      border: none;
-      background-color: transparent;
-      color: var(--comment-text-input-fg);
-    }
-
-    .dialogButtonsGroup {
-      gap: 8px;
-
-      #commentManagerSaveButton:disabled {
-        background-color: color-mix(
-          in srgb,
-          var(--button-primary-disabled-bg-color),
-          transparent 50%
-        );
-        border-color: color-mix(
-          in srgb,
-          var(--button-primary-disabled-border-color),
-          transparent 50%
-        );
-        opacity: 1;
-      }
     }
   }
 }
@@ -279,12 +91,14 @@
 
     @media screen and (forced-colors: active) {
       --comment-button-bg: Canvas;
-      --comment-button-fg: CanvasText;
-      --comment-button-hover-bg: Highlight;
-      --comment-button-hover-fg: ButtonFace;
-      --comment-button-active-bg: Highlight;
-      --comment-button-active-fg: ButtonFace;
+      --comment-button-fg: ButtonText;
+      --comment-button-hover-bg: Canvas;
+      --comment-button-hover-fg: Highlight;
+      --comment-button-active-bg: Canvas;
+      --comment-button-active-fg: Highlight;
       --comment-button-border-color: ButtonBorder;
+      --comment-button-active-border-color: ButtonBorder;
+      --comment-button-hover-border-color: Highlight;
       --comment-button-box-shadow: none;
       --comment-button-focus-outline-color: CanvasText;
       --comment-button-selected-bg: ButtonBorder;
@@ -358,36 +172,54 @@
   }
 }
 
-.comment.sidebar {
+#editorCommentsSidebar,
+.commentPopup {
   --comment-close-button-icon: url(images/comment-closeButton.svg);
+  --comment-popup-edit-button-icon: url(images/comment-popup-editButton.svg);
+  --comment-popup-delete-button-icon: url(images/editor-toolbar-delete.svg);
 
   --comment-date-fg-color: light-dark(
     rgb(21 20 26 / 0.69),
     rgb(251 251 254 / 0.69)
   );
   --comment-bg-color: light-dark(#f9f9fb, #1c1b22);
-  --comment-hover-bg-color: light-dark(
-    rgb(21 20 26 / 0.14),
-    rgb(251 251 254 / 0.14)
-  );
-  --comment-active-bg-color: light-dark(
-    rgb(21 20 26 / 0.21),
-    rgb(251 251 254 / 0.21)
-  );
+  --comment-hover-bg-color: light-dark(#e0e0e6, #2c2b33);
+  --comment-active-bg-color: light-dark(#d1d1d9, #3a3944);
+  --comment-hover-brightness: 0.89;
+  --comment-hover-filter: brightness(var(--comment-hover-brightness));
+  --comment-active-brightness: 0.825;
+  --comment-active-filter: brightness(var(--comment-active-brightness));
   --comment-border-color: light-dark(#f0f0f4, #52525e);
   --comment-focus-outline-color: light-dark(#0062fa, #00cadb);
   --comment-fg-color: light-dark(#15141a, #fbfbfe);
   --comment-count-bg-color: light-dark(#e2f7ff, #00317e);
   --comment-indicator-active-fg-color: light-dark(#0041a4, #a6ecf4);
+  --comment-indicator-active-filter: brightness(
+    calc(1 / var(--comment-active-brightness))
+  );
   --comment-indicator-focus-fg-color: light-dark(#5b5b66, #fbfbfe);
   --comment-indicator-hover-fg-color: light-dark(#0053cb, #61dce9);
+  --comment-indicator-hover-filter: brightness(
+    calc(1 / var(--comment-hover-brightness))
+  );
   --comment-indicator-selected-fg-color: light-dark(#0062fa, #00cadb);
+
+  --button-comment-bg: transparent;
+  --button-comment-color: var(--main-color);
+  --button-comment-active-bg: light-dark(#cfcfd8, #5b5b66);
+  --button-comment-active-border: none;
+  --button-comment-active-color: var(--button-comment-color);
+  --button-comment-border: none;
+  --button-comment-hover-bg: light-dark(#e0e0e6, #52525e);
+  --button-comment-hover-color: var(--button-comment-color);
 
   @media screen and (forced-colors: active) {
     --comment-date-fg-color: CanvasText;
     --comment-bg-color: Canvas;
     --comment-hover-bg-color: SelectedItemText;
+    --comment-hover-filter: none;
     --comment-active-bg-color: SelectedItemText;
+    --comment-active-filter: none;
     --comment-border-color: CanvasText;
     --comment-fg-color: CanvasText;
     --comment-count-bg-color: Canvas;
@@ -395,8 +227,17 @@
     --comment-indicator-focus-fg-color: CanvasText;
     --comment-indicator-hover-fg-color: CanvasText;
     --comment-indicator-selected-fg-color: SelectedItem;
+    --button-comment-bg: HighlightText;
+    --button-comment-color: ButtonText;
+    --button-comment-active-bg: ButtonText;
+    --button-comment-active-color: HighlightText;
+    --button-comment-border: 1px solid ButtonText;
+    --button-comment-hover-bg: Highlight;
+    --button-comment-hover-color: HighlightText;
   }
+}
 
+#editorCommentsSidebar {
   display: flex;
   width: 239px;
   height: auto;
@@ -449,6 +290,7 @@
       width: 32px;
       height: 32px;
       padding: 8px;
+      border-radius: 4px;
       border: none;
       background: none;
       cursor: pointer;
@@ -472,6 +314,10 @@
         background-color: var(--comment-active-bg-color);
       }
 
+      &:focus-visible {
+        outline: var(--focus-ring-outline);
+      }
+
       > span {
         display: inline-block;
         width: 0;
@@ -483,18 +329,18 @@
 
   #editorCommentsSidebarListContainer {
     overflow: scroll;
+    width: 100%;
 
     #editorCommentsSidebarList {
       display: flex;
       width: auto;
-      padding: 1px 16px 0;
+      padding: 4px 16px;
       gap: 10px;
       flex: 1 0 0;
       align-self: stretch;
       align-items: flex-start;
       flex-direction: column;
       list-style-type: none;
-      overflow: scroll;
 
       .sidebarComment {
         display: flex;
@@ -511,20 +357,28 @@
 
         &:not(.noComments) {
           &:hover {
-            background-color: var(--comment-hover-bg-color);
+            @media screen and (forced-colors: active) {
+              background-color: var(--comment-hover-bg-color);
+            }
+            filter: var(--comment-hover-filter);
 
             time::after {
               display: inline-block;
               background-color: var(--comment-indicator-hover-fg-color);
+              filter: var(--comment-indicator-hover-filter);
             }
           }
 
           &:active {
-            background-color: var(--comment-active-bg-color);
+            @media screen and (forced-colors: active) {
+              background-color: var(--comment-active-bg-color);
+            }
+            filter: var(--comment-active-filter);
 
             time::after {
               display: inline-block;
               background-color: var(--comment-indicator-active-fg-color);
+              filter: var(--comment-indicator-active-filter);
             }
           }
 
@@ -565,12 +419,34 @@
           -webkit-line-clamp: 2;
           overflow: hidden;
           overflow-wrap: break-word;
+
+          .richText {
+            --total-scale-factor: 1.5;
+          }
         }
 
-        &.noComments .sidebarCommentText {
-          max-height: fit-content;
-          -webkit-line-clamp: unset;
-          user-select: none;
+        &.noComments {
+          .sidebarCommentText {
+            max-height: fit-content;
+            -webkit-line-clamp: unset;
+            user-select: none;
+          }
+
+          a {
+            font: menu;
+            font-style: normal;
+            font-weight: 400;
+            line-height: normal;
+            font-size: 15px;
+            width: 100%;
+            height: auto;
+            overflow-wrap: break-word;
+            margin-block-start: 15px;
+
+            &:focus-visible {
+              outline: var(--focus-ring-outline);
+            }
+          }
         }
 
         time {
@@ -598,5 +474,165 @@
         }
       }
     }
+  }
+}
+
+.commentPopup {
+  color-scheme: light dark;
+
+  --divider-color: light-dark(#cfcfd8, #3a3944);
+  --comment-shadow:
+    0 0.5px 2px 0 light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)),
+    0 4px 16px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
+
+  @media screen and (forced-colors: active) {
+    --divider-color: CanvasText;
+    --comment-shadow: none;
+  }
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  z-index: 100001; /* above selected annotation editor */
+  pointer-events: auto;
+
+  border: 0.5px solid var(--comment-border-color);
+  background: var(--comment-bg-color);
+  box-shadow: var(--comment-shadow);
+
+  &:focus-visible {
+    outline: none;
+  }
+
+  &.dragging {
+    cursor: move !important;
+
+    * {
+      cursor: move !important;
+    }
+
+    button {
+      pointer-events: none !important;
+    }
+  }
+
+  &:not(.selected) .commentPopupButtons {
+    visibility: hidden !important;
+  }
+
+  hr {
+    width: 100%;
+    height: 1px;
+    border: none;
+    border-top: 1px solid var(--divider-color);
+    margin: 0;
+    padding: 0;
+  }
+
+  .commentPopupTop {
+    display: flex;
+    width: 100%;
+    height: auto;
+    padding-bottom: 4px;
+    justify-content: space-between;
+    align-items: center;
+    align-self: stretch;
+    cursor: move;
+    user-select: none;
+
+    .commentPopupTime {
+      font: menu;
+      font-style: normal;
+      font-weight: 400;
+      line-height: normal;
+      font-size: 13px;
+      color: var(--comment-date-fg-color);
+    }
+
+    .commentPopupButtons {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      cursor: default;
+
+      > button {
+        width: 32px;
+        height: 32px;
+        padding: 8px;
+        border: none;
+        border-radius: 4px;
+        background-color: var(--button-comment-bg);
+        color: var(--button-comment-color);
+
+        &:hover {
+          background-color: var(--button-comment-hover-bg);
+        }
+
+        &:active {
+          border: var(--button-comment-active-border);
+          background-color: var(--button-comment-active-bg);
+          color: var(--button-comment-active-color);
+
+          &::before {
+            background-color: var(--button-comment-active-color);
+          }
+        }
+
+        &:focus-visible {
+          background-color: var(--button-comment-hover-bg);
+          outline: 2px solid var(--comment-focus-outline-color);
+          outline-offset: 0;
+        }
+
+        &::before {
+          content: "";
+          display: inline-block;
+          width: 100%;
+          height: 100%;
+          mask-repeat: no-repeat;
+          mask-position: center;
+        }
+
+        &.commentPopupEdit::before {
+          mask-image: var(--comment-popup-edit-button-icon);
+        }
+
+        &.commentPopupDelete::before {
+          mask-image: var(--comment-popup-delete-button-icon);
+        }
+      }
+    }
+  }
+
+  .commentPopupText {
+    width: 100%;
+    height: auto;
+
+    font: menu;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+    font-size: 15px;
+    color: var(--comment-fg-color);
+  }
+}
+
+.commentPopupText,
+.sidebarCommentText .richText {
+  margin-block: 0;
+
+  p:first-of-type {
+    margin-block: 0;
+  }
+
+  > * {
+    white-space: pre-wrap;
+    font-size: max(15px, calc(10px * var(--total-scale-factor)));
+    overflow-wrap: break-word;
+  }
+
+  span {
+    color: var(--comment-fg-color) !important;
   }
 }
