@@ -27,7 +27,6 @@
 }
 
 #commentManagerDialog {
-  --comment-actions-button-icon: url(images/comment-actionsButton.svg);
   --comment-close-button-icon: url(images/comment-closeButton.svg);
 
   .mainContainer {
@@ -561,13 +560,17 @@
         width: 32px;
         height: 32px;
         padding: 8px;
-        border: none;
+        border: var(--button-comment-border);
         border-radius: 4px;
         background-color: var(--button-comment-bg);
         color: var(--button-comment-color);
 
         &:hover {
           background-color: var(--button-comment-hover-bg);
+
+          &::before {
+            background-color: var(--button-comment-hover-color);
+          }
         }
 
         &:active {
