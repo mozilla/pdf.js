@@ -368,6 +368,7 @@ const PDFViewerApplication = {
         docBaseUrl: x => x,
         enableAltText: x => x === "true",
         enableAutoLinking: x => x === "true",
+        enableComment: x => x === "true",
         enableFakeMLManager: x => x === "true",
         enableGuessAltText: x => x === "true",
         enablePermissions: x => x === "true",
@@ -380,6 +381,7 @@ const PDFViewerApplication = {
         forcePageColors: x => x === "true",
         pageColorsBackground: x => x,
         pageColorsForeground: x => x,
+        localeProperties: x => ({ lang: x }),
       });
     }
 
