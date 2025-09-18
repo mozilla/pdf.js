@@ -238,6 +238,12 @@ class AnnotationEditorLayer {
     this.#annotationLayer?.div.classList.toggle("disabled", !enabled);
   }
 
+  get #allEditorsIterator() {
+    return this.#editors.size !== 0
+      ? this.#editors.values()
+      : this.#uiManager.getEditors(this.pageIndex);
+  }
+
   /**
    * Enable pointer events on the main div in order to enable
    * editor creation.
@@ -249,7 +255,7 @@ class AnnotationEditorLayer {
     this.#textLayerDblClickAC?.abort();
     this.#textLayerDblClickAC = null;
     const annotationElementIds = new Set();
-    for (const editor of this.#editors.values()) {
+    for (const editor of this.#allEditorsIterator) {
       editor.enableEditing();
       editor.show(true);
       if (editor.annotationElementId) {
@@ -342,7 +348,7 @@ class AnnotationEditorLayer {
     }
     const changedAnnotations = new Map();
     const resetAnnotations = new Map();
-    for (const editor of this.#editors.values()) {
+    for (const editor of this.#allEditorsIterator) {
       editor.disableEditing();
       if (!editor.annotationElementId) {
         continue;

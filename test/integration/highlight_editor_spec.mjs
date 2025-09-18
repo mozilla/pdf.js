@@ -2861,4 +2861,96 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("Highlight (edit existing and scroll)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "highlights.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        {
+          highlightEditorColors:
+            "yellow=#FFFF00,green=#00FF00,blue=#0000FF,pink=#FF00FF,red=#FF0102",
+        }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that no extra annotations are added while in editing mode", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const editorSelector = getEditorSelector(7);
+          await page.waitForSelector(editorSelector);
+
+          const oneToOne = Array.from(new Array(13).keys(), n => n + 2).concat(
+            Array.from(new Array(13).keys(), n => 13 - n)
+          );
+          for (const pageNumber of oneToOne) {
+            await scrollIntoView(
+              page,
+              `.page[data-page-number = "${pageNumber}"]`
+            );
+          }
+
+          await page.waitForSelector(editorSelector);
+
+          const count = await page.evaluate(
+            () =>
+              document.querySelectorAll(
+                `.page[data-page-number = "1"] .annotationEditorLayer .highlightEditor`
+              ).length
+          );
+          expect(count).withContext(`In ${browserName}`).toEqual(8);
+        })
+      );
+    });
+
+    it("must check that no extra annotations are added while in reading mode", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const editorSelector = getEditorSelector(7);
+          await page.waitForSelector(editorSelector);
+
+          const oneToThirteen = Array.from(new Array(13).keys(), n => n + 2);
+          const thirteenToOne = Array.from(new Array(13).keys(), n => 13 - n);
+          for (const pageNumber of oneToThirteen) {
+            await scrollIntoView(
+              page,
+              `.page[data-page-number = "${pageNumber}"]`
+            );
+          }
+
+          await switchToHighlight(page, /* disable */ true);
+
+          for (const pageNumber of thirteenToOne) {
+            await scrollIntoView(
+              page,
+              `.page[data-page-number = "${pageNumber}"]`
+            );
+          }
+
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] .annotationEditorLayer.disabled`
+          );
+
+          await page.waitForFunction(
+            () =>
+              document.querySelectorAll(
+                `.page[data-page-number = "1"] .annotationEditorLayer .highlightEditor`
+              ).length === 0
+          );
+        })
+      );
+    });
+  });
 });
