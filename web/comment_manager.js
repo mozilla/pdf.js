@@ -46,7 +46,7 @@ class CommentManager {
       dateStyle: "long",
     });
     this.dialogElement = commentDialog.dialog;
-    this.#dialog = new CommentDialog(commentDialog, overlayManager);
+    this.#dialog = new CommentDialog(commentDialog, overlayManager, ltr);
     this.#popup = new CommentPopup(dateFormat, ltr, this.dialogElement);
     this.#sidebar = new CommentSidebar(
       sidebar,
@@ -572,15 +572,19 @@ class CommentDialog {
 
   #dialogY = 0;
 
+  #isLTR;
+
   constructor(
     { dialog, toolbar, title, textInput, cancelButton, saveButton },
-    overlayManager
+    overlayManager,
+    ltr
   ) {
     this.#dialog = dialog;
     this.#textInput = textInput;
     this.#overlayManager = overlayManager;
     this.#saveButton = saveButton;
     this.#title = title;
+    this.#isLTR = ltr;
 
     const finishBound = this.#finish.bind(this);
     dialog.addEventListener("close", finishBound);
@@ -682,7 +686,38 @@ class CommentDialog {
     }
     this.#uiManager?.removeEditListeners();
     this.#saveButton.disabled = true;
-
+    const parentDimensions = options?.parentDimensions;
+    if (editor.hasDefaultPopupPosition()) {
+      const { dialogWidth, dialogHeight } = this._dialogDimensions;
+      if (parentDimensions) {
+        if (
+          this.#isLTR &&
+          posX + dialogWidth >
+            Math.min(
+              parentDimensions.x + parentDimensions.width,
+              window.innerWidth
+            )
+        ) {
+          const buttonWidth = this.#editor.commentButtonWidth;
+          posX -= dialogWidth - buttonWidth * parentDimensions.width;
+        } else if (!this.#isLTR) {
+          const buttonWidth =
+            this.#editor.commentButtonWidth * parentDimensions.width;
+          if (posX - dialogWidth < Math.max(0, parentDimensions.x)) {
+            posX = Math.max(0, posX);
+          } else {
+            posX -= dialogWidth - buttonWidth;
+          }
+        }
+      }
+      const height = Math.max(dialogHeight, options?.height || 0);
+      if (posY + height > window.innerHeight) {
+        posY = window.innerHeight - height;
+      }
+      if (posY < 0) {
+        posY = 0;
+      }
+    }
     this.#setPosition(posX, posY);
 
     await this.#overlayManager.open(this.#dialog);
@@ -694,14 +729,17 @@ class CommentDialog {
     this.#finish();
   }
 
-  get _dialogWidth() {
+  get _dialogDimensions() {
     const dialog = this.#dialog;
     const { style } = dialog;
     style.opacity = "0";
     style.display = "block";
-    const width = dialog.getBoundingClientRect().width;
+    const { width, height } = dialog.getBoundingClientRect();
     style.opacity = style.display = "";
-    return shadow(this, "_dialogWidth", width);
+    return shadow(this, "_dialogDimensions", {
+      dialogWidth: width,
+      dialogHeight: height,
+    });
   }
 
   #setPosition(x, y) {
@@ -1021,7 +1059,7 @@ class CommentPopup {
     }
   }
 
-  #setPosition(x, y, correctPosition = true) {
+  #setPosition(x, y, correctPosition) {
     if (!correctPosition) {
       this.#editor.commentPopupPosition = [x, y];
     } else {

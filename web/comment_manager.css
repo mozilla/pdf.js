@@ -20,7 +20,8 @@
   min-width: 200px;
   position: absolute;
   padding: 8px 16px 16px;
-  margin: 0;
+  margin-left: 0;
+  margin-top: 0;
   box-sizing: border-box;
 
   border-radius: 8px;

@@ -193,11 +193,16 @@ class AnnotationEditorLayer {
 
     this.toggleAnnotationLayerPointerEvents(false);
     const { classList } = this.div;
-    for (const editorType of AnnotationEditorLayer.#editorTypes.values()) {
-      classList.toggle(
-        `${editorType._type}Editing`,
-        mode === editorType._editorType
-      );
+    if (mode === AnnotationEditorType.POPUP) {
+      classList.toggle("commentEditing", true);
+    } else {
+      classList.toggle("commentEditing", false);
+      for (const editorType of AnnotationEditorLayer.#editorTypes.values()) {
+        classList.toggle(
+          `${editorType._type}Editing`,
+          mode === editorType._editorType
+        );
+      }
     }
     this.div.hidden = false;
   }
