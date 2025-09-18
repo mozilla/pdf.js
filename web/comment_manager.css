@@ -37,11 +37,6 @@
     align-items: flex-start;
     gap: 4px;
 
-    *:focus-visible {
-      outline: 2px solid var(--comment-focus-outline-color);
-      outline-offset: 0;
-    }
-
     #commentManagerToolbar {
       width: 100%;
       height: 32px;
