@@ -276,7 +276,6 @@ class SignatureEditor extends DrawingEditor {
       drawOutlines: outline,
       drawingOptions,
     });
-    const [parentWidth, parentHeight] = this.parentDimensions;
     const [, pageHeight] = this.pageDimensions;
     let newHeight = heightInPage / pageHeight;
     // Ensure the signature doesn't exceed the page height.
@@ -290,7 +289,7 @@ class SignatureEditor extends DrawingEditor {
     }
 
     this.height = newHeight;
-    this.setDims(parentWidth * this.width, parentHeight * this.height);
+    this.setDims();
     this.x = savedX;
     this.y = savedY;
     this.center();
