@@ -63,8 +63,6 @@ class AnnotationEditor {
 
   #dragPointerType = "";
 
-  #keepAspectRatio = false;
-
   #resizersDiv = null;
 
   #lastPointerCoords = null;
@@ -736,34 +734,15 @@ class AnnotationEditor {
 
   /**
    * Set the dimensions of this editor.
-   * @param {number} width
-   * @param {number} height
    */
-  setDims(width, height) {
-    const [parentWidth, parentHeight] = this.parentDimensions;
-    const { style } = this.div;
-    style.width = `${((100 * width) / parentWidth).toFixed(2)}%`;
-    if (!this.#keepAspectRatio) {
-      style.height = `${((100 * height) / parentHeight).toFixed(2)}%`;
-    }
-  }
-
-  fixDims() {
-    const { style } = this.div;
-    const { height, width } = style;
-    const widthPercent = width.endsWith("%");
-    const heightPercent = !this.#keepAspectRatio && height.endsWith("%");
-    if (widthPercent && heightPercent) {
-      return;
-    }
-
-    const [parentWidth, parentHeight] = this.parentDimensions;
-    if (!widthPercent) {
-      style.width = `${((100 * parseFloat(width)) / parentWidth).toFixed(2)}%`;
-    }
-    if (!this.#keepAspectRatio && !heightPercent) {
-      style.height = `${((100 * parseFloat(height)) / parentHeight).toFixed(2)}%`;
-    }
+  setDims() {
+    const {
+      div: { style },
+      width,
+      height,
+    } = this;
+    style.width = `${(100 * width).toFixed(2)}%`;
+    style.height = `${(100 * height).toFixed(2)}%`;
   }
 
   /**
@@ -872,8 +851,7 @@ class AnnotationEditor {
     this.height = height;
     this.x = x;
     this.y = y;
-    const [parentWidth, parentHeight] = this.parentDimensions;
-    this.setDims(parentWidth * width, parentHeight * height);
+    this.setDims();
     this.fixAndSetPosition();
     this._onResized();
   }
@@ -1050,7 +1028,7 @@ class AnnotationEditor {
     this.x = newX;
     this.y = newY;
 
-    this.setDims(parentWidth * newWidth, parentHeight * newHeight);
+    this.setDims();
     this.fixAndSetPosition();
 
     this._onResizing();
@@ -1417,7 +1395,7 @@ class AnnotationEditor {
     this.width = newWidth;
     this.height = newHeight;
 
-    this.setDims(parentWidth * newWidth, parentHeight * newHeight);
+    this.setDims();
     this.fixAndSetPosition();
 
     this._onResizing();
@@ -2258,19 +2236,6 @@ class AnnotationEditor {
     } else {
       this.parent.setActiveEditor(null);
     }
-  }
-
-  /**
-   * Set the aspect ratio to use when resizing.
-   * @param {number} width
-   * @param {number} height
-   */
-  setAspectRatio(width, height) {
-    this.#keepAspectRatio = true;
-    const aspectRatio = width / height;
-    const { style } = this.div;
-    style.aspectRatio = aspectRatio;
-    style.height = "auto";
   }
 
   static get MIN_SIZE() {
