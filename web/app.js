@@ -445,14 +445,15 @@ const PDFViewerApplication = {
     const container = appConfig.mainContainer,
       viewer = appConfig.viewerContainer;
     const annotationEditorMode = AppOptions.get("annotationEditorMode");
-    const pageColors =
+    const hasForcedColors =
       AppOptions.get("forcePageColors") ||
-      window.matchMedia("(forced-colors: active)").matches
-        ? {
-            background: AppOptions.get("pageColorsBackground"),
-            foreground: AppOptions.get("pageColorsForeground"),
-          }
-        : null;
+      window.matchMedia("(forced-colors: active)").matches;
+    const pageColors = hasForcedColors
+      ? {
+          background: AppOptions.get("pageColorsBackground"),
+          foreground: AppOptions.get("pageColorsForeground"),
+        }
+      : null;
 
     let altTextManager;
     if (AppOptions.get("enableUpdatedAddImage")) {
@@ -521,7 +522,8 @@ const PDFViewerApplication = {
             eventBus,
             linkService,
             overlayManager,
-            ltr
+            ltr,
+            hasForcedColors
           )
         : null;
 

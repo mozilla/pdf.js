@@ -84,15 +84,15 @@
     --comment-button-focus-outline-color: light-dark(#0062fa, #00cadb);
 
     @media screen and (forced-colors: active) {
-      --comment-button-bg: Canvas;
+      --comment-button-bg: ButtonFace;
       --comment-button-fg: ButtonText;
-      --comment-button-hover-bg: Canvas;
-      --comment-button-hover-fg: Highlight;
-      --comment-button-active-bg: Canvas;
-      --comment-button-active-fg: Highlight;
+      --comment-button-hover-bg: SelectedItemText;
+      --comment-button-hover-fg: SelectedItem;
+      --comment-button-active-bg: SelectedItemText;
+      --comment-button-active-fg: SelectedItem;
       --comment-button-border-color: ButtonBorder;
       --comment-button-active-border-color: ButtonBorder;
-      --comment-button-hover-border-color: Highlight;
+      --comment-button-hover-border-color: SelectedItem;
       --comment-button-box-shadow: none;
       --comment-button-focus-outline-color: CanvasText;
       --comment-button-selected-bg: ButtonBorder;

@@ -34,13 +34,16 @@ class CommentManager {
 
   #sidebar;
 
+  static #hasForcedColors = null;
+
   constructor(
     commentDialog,
     sidebar,
     eventBus,
     linkService,
     overlayManager,
-    ltr
+    ltr,
+    hasForcedColors
   ) {
     const dateFormat = new Intl.DateTimeFormat(undefined, {
       dateStyle: "long",
@@ -56,6 +59,7 @@ class CommentManager {
       dateFormat
     );
     this.#popup.sidebar = this.#sidebar;
+    CommentManager.#hasForcedColors = hasForcedColors;
   }
 
   setSidebarUiManager(uiManager) {
@@ -110,10 +114,12 @@ class CommentManager {
   }
 
   static _makeCommentColor(color, opacity) {
-    return findContrastColor(
-      applyOpacity(...color, opacity ?? 1),
-      CSSConstants.commentForegroundColor
-    );
+    return this.#hasForcedColors
+      ? null
+      : findContrastColor(
+          applyOpacity(...color, opacity ?? 1),
+          CSSConstants.commentForegroundColor
+        );
   }
 
   destroy() {
