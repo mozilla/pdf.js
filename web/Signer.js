@@ -9,74 +9,88 @@ const COLORS = [
 ];
 
 class Signer {
+  companyId = "";
+
   email = "";
+
+  idCard = "";
+
   name = "";
+
+  notifyType = "";
+
   organizationId = "";
+
   phone = "";
+
   signChannelType = "ONLINE";
+
   sortNum = 1;
-  userId = ""
+
+  userId = "";
+
   color = COLORS[0];
 
   constructor(workflowSigner) {
-    this.email = workflowSigner.email ?? ''
-    this.name = workflowSigner.name ?? ''
-    this.organizationId = workflowSigner.organizationId ?? ''
-    this.phone = workflowSigner.phone ?? ''
-    this.signChannelType = workflowSigner.signChannelType ?? 'ONLINE'
-    this.sortNum = workflowSigner.sortNum ?? 1
-    this.userId = workflowSigner.userId ?? ''
+    this.companyId = workflowSigner.companyId ?? "";
+    this.email = workflowSigner.email ?? "";
+    this.idCard = workflowSigner.idCard ?? "";
+    this.name = workflowSigner.name ?? "";
+    this.notifyType = workflowSigner.notifyType ?? "";
+    this.organizationId = workflowSigner.organizationId ?? "";
+    this.phone = workflowSigner.phone ?? "";
+    this.signChannelType = workflowSigner.signChannelType ?? "ONLINE";
+    this.sortNum = workflowSigner.sortNum ?? 1;
+    this.userId = workflowSigner.userId ?? "";
     this.color = workflowSigner.color ?? COLORS[0];
   }
 
   clone() {
-    return new Signer(this)
+    return new Signer(this);
   }
 
   get displayName() {
     if (this.name) {
-      return this.name
-    } else {
-      return this.phone
+      return this.name;
     }
+    return this.phone;
   }
 
   get label() {
-    return this.displayName
+    return this.displayName;
   }
 
   static me() {
     return new Signer({
-      userId: '-1',
-      name: '我',
-      color: COLORS[0]
-    })
+      userId: "-1",
+      name: "我",
+      color: COLORS[0],
+    });
   }
 
   static testUser() {
     return new Signer({
-      userId: '100',
-      name: '对方',
-      color: COLORS[1]
-    })
-  }
-
-  isMe() {
-    return this.userId === Signer.me().userId
+      userId: "100",
+      name: "对方",
+      color: COLORS[1],
+    });
   }
 
   get serializable() {
     return {
+      companyId: this.companyId,
       email: this.email,
+      idCard: this.idCard,
       name: this.name,
+      notifyType: this.notifyType,
       organizationId: this.organizationId,
       phone: this.phone,
       signChannelType: this.signChannelType,
       sortNum: this.sortNum,
       userId: this.userId,
-      color: this.color
-    }
+      color: this.color,
+    };
   }
 }
 
-export default Signer
+export default Signer;

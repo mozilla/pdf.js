@@ -50,6 +50,10 @@ class StampEditor extends AnnotationEditor {
 
   isSignaturePlaceholder = false;
 
+  isStampPlaceholder = false;
+
+  stampURL = null;
+
   static _type = "stamp";
 
   static _editorType = AnnotationEditorType.STAMP;
@@ -60,6 +64,7 @@ class StampEditor extends AnnotationEditor {
     this.#bitmapFile = params.bitmapFile;
     this.defaultL10nId = "pdfjs-editor-stamp-editor";
     this.isSignaturePlaceholder = params.isSignaturePlaceholder ?? false;
+    this.isStampPlaceholder = params.isStampPlaceholder ?? false;
   }
 
   /** @inheritdoc */
@@ -282,7 +287,7 @@ class StampEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
-  remove() {
+  remove(removeSuper = true) {
     if (this.#bitmapId) {
       this.#bitmap = null;
       this._uiManager.imageManager.deleteId(this.#bitmapId);
@@ -293,7 +298,11 @@ class StampEditor extends AnnotationEditor {
         this.#resizeTimeoutId = null;
       }
     }
-    super.remove();
+    // Dotti: prevent from removing the super
+    // since we just want to replace it with the real stamp png
+    if (removeSuper) {
+      super.remove();
+    }
   }
 
   /** @inheritdoc */
@@ -984,6 +993,15 @@ class StampEditor extends AnnotationEditor {
           },
         });
       }, 100);
+    } else if (this.isStampPlaceholder) {
+      // eslint-disable-next-line no-alert
+      if (confirm("确定盖章吗")) {
+        this.remove(false);
+        this.#bitmapId = null;
+        this.#bitmapUrl = this.signer.email; // stamp url
+        this.stampURL = this.signer.email;
+        this.#getBitmap();
+      }
     }
   }
 }
