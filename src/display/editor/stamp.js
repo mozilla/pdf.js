@@ -443,11 +443,6 @@ class StampEditor extends AnnotationEditor {
       width *= factor;
       height *= factor;
     }
-    const [parentWidth, parentHeight] = this.parentDimensions;
-    this.setDims(
-      (width * parentWidth) / pageWidth,
-      (height * parentHeight) / pageHeight
-    );
 
     this._uiManager.enableWaiting(false);
     const canvas = (this.#canvas = document.createElement("canvas"));
@@ -456,6 +451,8 @@ class StampEditor extends AnnotationEditor {
 
     this.width = width / pageWidth;
     this.height = height / pageHeight;
+    this.setDims();
+
     if (this._initialOptions?.isCentered) {
       this.center();
     } else {
