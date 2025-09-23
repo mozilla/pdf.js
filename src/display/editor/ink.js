@@ -305,15 +305,12 @@ class InkEditor extends DrawingEditor {
       return null;
     }
     const { points, rect } = this.serializeDraw(/* isForCopying = */ false);
-    const params = {
+    annotation.updateEdited({
       rect,
       thickness: this._drawingOptions["stroke-width"],
       points,
-    };
-    if (this.hasEditedComment) {
-      params.popup = this.comment;
-    }
-    annotation.updateEdited(params);
+      popup: this.comment,
+    });
 
     return null;
   }

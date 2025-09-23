@@ -268,6 +268,10 @@ class AnnotationStorage {
     return false;
   }
 
+  getEditor(annotationId) {
+    return this.#editorsMap?.get(annotationId) || null;
+  }
+
   /**
    * @returns {{ids: Set<string>, hash: string}}
    */

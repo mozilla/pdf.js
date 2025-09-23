@@ -172,12 +172,13 @@ class HighlightEditor extends AnnotationEditor {
     );
     this.#focusOutlines = outlinerForOutline.getOutlines();
 
-    // The last point is in the pages coordinate system.
-    const { firstPoint, lastPoint } = this.#focusOutlines;
+    const { firstPoint } = this.#highlightOutlines;
     this.#firstPoint = [
       (firstPoint[0] - this.x) / this.width,
       (firstPoint[1] - this.y) / this.height,
     ];
+    // The last point is in the pages coordinate system.
+    const { lastPoint } = this.#focusOutlines;
     this.#lastPoint = [
       (lastPoint[0] - this.x) / this.width,
       (lastPoint[1] - this.y) / this.height,
@@ -268,11 +269,12 @@ class HighlightEditor extends AnnotationEditor {
       }
     }
 
-    const { firstPoint, lastPoint } = this.#focusOutlines;
+    const { firstPoint } = highlightOutlines;
     this.#firstPoint = [
       (firstPoint[0] - x) / width,
       (firstPoint[1] - y) / height,
     ];
+    const { lastPoint } = this.#focusOutlines;
     this.#lastPoint = [(lastPoint[0] - x) / width, (lastPoint[1] - y) / height];
   }
 
@@ -1082,13 +1084,10 @@ class HighlightEditor extends AnnotationEditor {
       annotation.hide();
       return null;
     }
-    const params = {
+    annotation.updateEdited({
       rect: this.getPDFRect(),
-    };
-    if (this.hasEditedComment) {
-      params.popup = this.comment;
-    }
-    annotation.updateEdited(params);
+      popup: this.comment,
+    });
 
     return null;
   }
