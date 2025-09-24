@@ -323,7 +323,7 @@
   }
 
   #editorCommentsSidebarListContainer {
-    overflow: scroll;
+    overflow: auto;
     width: 100%;
 
     #editorCommentsSidebarList {
