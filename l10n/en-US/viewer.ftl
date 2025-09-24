@@ -684,15 +684,16 @@ pdfjs-editor-delete-comment-popup-button =
 
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Edit comment
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Update
 
 # No existing comment
 pdfjs-editor-edit-comment-dialog-title-when-adding = Add comment
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Add
 
 pdfjs-editor-edit-comment-dialog-text-input =
     .placeholder = Start typing…
 
 pdfjs-editor-edit-comment-dialog-cancel-button = Cancel
-pdfjs-editor-edit-comment-dialog-save-button = Save
 
 ## Edit a comment button in the editor toolbar
 
