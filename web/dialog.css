@@ -99,7 +99,7 @@
     --radio-border-color: ButtonText;
     --radio-checked-border-color: ButtonText;
 
-    --button-secondary-bg-color: HighlightText;
+    --button-secondary-bg-color: ButtonFace;
     --button-secondary-fg-color: ButtonText;
     --button-secondary-border-color: ButtonText;
     --button-secondary-active-bg-color: HighlightText;
@@ -112,7 +112,7 @@
     --button-secondary-disabled-border-color: GrayText;
 
     --button-primary-bg-color: ButtonText;
-    --button-primary-fg-color: HighlightText;
+    --button-primary-fg-color: ButtonFace;
     --button-primary-border-color: ButtonText;
     --button-primary-active-bg-color: SelectedItem;
     --button-primary-active-fg-color: HighlightText;
@@ -125,7 +125,7 @@
     --button-primary-disabled-border-color: GrayText;
     --button-disabled-opacity: 1;
 
-    --input-text-bg-color: HighlightText;
+    --input-text-bg-color: Field;
     --input-text-fg-color: FieldText;
   }
 
