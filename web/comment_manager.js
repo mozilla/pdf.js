@@ -624,6 +624,7 @@ class CommentDialog {
       this.#prevDragY = clientY;
       pointerMoveAC = new AbortController();
       const { signal } = pointerMoveAC;
+      const { innerHeight, innerWidth } = window;
       dialog.classList.add("dragging");
       window.addEventListener(
         "pointermove",
@@ -633,8 +634,8 @@ class CommentDialog {
           }
           const { clientX: x, clientY: y } = ev;
           this.#setPosition(
-            this.#dialogX + x - this.#prevDragX,
-            this.#dialogY + y - this.#prevDragY
+            this.#dialogX + (x - this.#prevDragX) / innerWidth,
+            this.#dialogY + (y - this.#prevDragY) / innerHeight
           );
           this.#prevDragX = x;
           this.#prevDragY = y;
@@ -693,16 +694,14 @@ class CommentDialog {
     this.#uiManager?.removeEditListeners();
     this.#saveButton.disabled = true;
     const parentDimensions = options?.parentDimensions;
+    const { innerHeight, innerWidth } = window;
     if (editor.hasDefaultPopupPosition()) {
       const { dialogWidth, dialogHeight } = this._dialogDimensions;
       if (parentDimensions) {
         if (
           this.#isLTR &&
           posX + dialogWidth >
-            Math.min(
-              parentDimensions.x + parentDimensions.width,
-              window.innerWidth
-            )
+            Math.min(parentDimensions.x + parentDimensions.width, innerWidth)
         ) {
           const buttonWidth = this.#editor.commentButtonWidth;
           posX -= dialogWidth - buttonWidth * parentDimensions.width;
@@ -717,13 +716,15 @@ class CommentDialog {
         }
       }
       const height = Math.max(dialogHeight, options?.height || 0);
-      if (posY + height > window.innerHeight) {
-        posY = window.innerHeight - height;
+      if (posY + height > innerHeight) {
+        posY = innerHeight - height;
       }
       if (posY < 0) {
         posY = 0;
       }
     }
+    posX /= innerWidth;
+    posY /= innerHeight;
     this.#setPosition(posX, posY);
 
     await this.#overlayManager.open(this.#dialog);
@@ -752,8 +753,8 @@ class CommentDialog {
     this.#dialogX = x;
     this.#dialogY = y;
     const { style } = this.#dialog;
-    style.left = `${x}px`;
-    style.top = `${y}px`;
+    style.left = `${100 * x}%`;
+    style.top = `${100 * y}%`;
   }
 
   #finish() {
