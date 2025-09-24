@@ -904,13 +904,13 @@ class FreeTextEditor extends AnnotationEditor {
       content.append(div);
     }
 
-    const params = {
+    annotation.updateEdited({
       rect: this.getPDFRect(),
-    };
-    params.popup = this.hasEditedComment
-      ? this.comment
-      : { text: this.#content };
-    annotation.updateEdited(params);
+      popup:
+        this._uiManager.hasCommentManager() || this.hasEditedComment
+          ? this.comment
+          : { text: this.#content },
+    });
 
     return content;
   }

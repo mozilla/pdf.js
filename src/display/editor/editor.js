@@ -1930,6 +1930,17 @@ class AnnotationEditor {
     return this._uiManager.direction === "ltr" ? [1, 0] : [0, 0];
   }
 
+  get commentButtonPositionInPage() {
+    const {
+      commentButtonPosition: [posX, posY],
+    } = this;
+    const [blX, blY, trX, trY] = this.getPDFRect();
+    return [
+      AnnotationEditor._round(blX + (trX - blX) * posX),
+      AnnotationEditor._round(blY + (trY - blY) * (1 - posY)),
+    ];
+  }
+
   get commentButtonColor() {
     return this._uiManager.makeCommentColor(
       this.getNonHCMColor(),

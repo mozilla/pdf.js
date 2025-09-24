@@ -202,7 +202,19 @@ class AnnotationElement {
   }
 
   get hasPopupData() {
-    return AnnotationElement._hasPopupData(this.data);
+    return (
+      AnnotationElement._hasPopupData(this.data) ||
+      (this.enableComment && !!this.commentText)
+    );
+  }
+
+  get commentData() {
+    const { data } = this;
+    const editor = this.annotationStorage?.getEditor(data.id);
+    if (editor) {
+      return editor.getData();
+    }
+    return data;
   }
 
   get hasCommentButton() {
@@ -210,7 +222,11 @@ class AnnotationElement {
   }
 
   get commentButtonPosition() {
-    const { quadPoints, rect } = this.data;
+    const editor = this.annotationStorage?.getEditor(this.data.id);
+    if (editor) {
+      return editor.commentButtonPositionInPage;
+    }
+    const { quadPoints, inkLists, rect } = this.data;
     let maxX = -Infinity;
     let maxY = -Infinity;
     if (quadPoints?.length >= 8) {
@@ -223,6 +239,21 @@ class AnnotationElement {
         }
       }
       return [maxX, maxY];
+    }
+    if (inkLists?.length >= 1) {
+      for (const inkList of inkLists) {
+        for (let i = 0, ii = inkList.length; i < ii; i += 2) {
+          if (inkList[i + 1] > maxY) {
+            maxY = inkList[i + 1];
+            maxX = inkList[i];
+          } else if (inkList[i + 1] === maxY) {
+            maxX = Math.max(maxX, inkList[i]);
+          }
+        }
+      }
+      if (maxX !== Infinity) {
+        return [maxX, maxY];
+      }
     }
     if (rect) {
       return [rect[2], rect[3]];
@@ -2380,7 +2411,6 @@ class PopupElement {
     this.#dateObj = PDFDateString.toDateObject(modificationDate);
 
     if (commentManager) {
-      this.#popupAbortController = new AbortController();
       this.#renderCommentButton();
     } else {
       this.trigger = elements.flatMap(e => e.getElementsToTriggerPopup());
@@ -2457,7 +2487,7 @@ class PopupElement {
     button.ariaHasPopup = "dialog";
     button.ariaControls = "commentPopup";
 
-    const { signal } = this.#popupAbortController;
+    const { signal } = (this.#popupAbortController = new AbortController());
     button.addEventListener("keydown", this.#boundKeyDown, { signal });
     button.addEventListener(
       "click",
@@ -2488,19 +2518,26 @@ class PopupElement {
       },
       { signal }
     );
-    const { style } = button;
-    style.left = `calc(${this.#commentButtonPosition[0]}%)`;
-    style.top = `calc(${this.#commentButtonPosition[1]}% - var(--comment-button-dim))`;
-    if (this.commentButtonColor) {
-      style.backgroundColor = this.commentButtonColor;
-    }
+    this.#updateColor();
+    this.#updateCommentButtonPosition();
     parentContainer.after(button);
   }
 
+  #updateCommentButtonPosition() {
+    this.#renderCommentButton();
+    const [x, y] = this.#commentButtonPosition;
+    const { style } = this.#commentButton;
+    style.left = `calc(${x}%)`;
+    style.top = `calc(${y}% - var(--comment-button-dim))`;
+  }
+
+  #updateColor() {
+    this.#renderCommentButton();
+    this.#commentButton.style.backgroundColor = this.commentButtonColor || "";
+  }
+
   get commentButtonColor() {
-    const {
-      data: { color, opacity },
-    } = this.#firstElement;
+    const { color, opacity } = this.#firstElement.commentData;
     if (!color) {
       return null;
     }
@@ -2509,7 +2546,7 @@ class PopupElement {
 
   getData() {
     const { richText, color, opacity, creationDate, modificationDate } =
-      this.#firstElement.data;
+      this.#firstElement.commentData;
     return {
       contentsObj: { str: this.comment },
       richText,
@@ -2743,7 +2780,22 @@ class PopupElement {
 
   updateEdited({ rect, popup, deleted }) {
     if (this.#commentManager) {
-      this.#commentText = deleted ? null : popup.text;
+      if (deleted) {
+        this.remove();
+        this.#commentText = null;
+      } else if (popup) {
+        if (popup.deleted) {
+          this.remove();
+        } else {
+          this.#updateColor();
+          this.#commentText = popup.text;
+        }
+      }
+      if (rect) {
+        this.#commentButtonPosition = null;
+        this.#setCommentButtonPosition();
+        this.#updateCommentButtonPosition();
+      }
       return;
     }
     if (deleted || popup?.deleted) {
@@ -2758,7 +2810,7 @@ class PopupElement {
     if (rect) {
       this.#position = null;
     }
-    if (popup) {
+    if (popup && popup.text) {
       this.#richText = this.#makePopupContent(popup.text);
       this.#dateObj = PDFDateString.toDateObject(popup.date);
       this.#contentsObj = null;
@@ -3345,31 +3397,6 @@ class InkAnnotationElement extends AnnotationElement {
 
   addHighlightArea() {
     this.container.classList.add("highlightArea");
-  }
-
-  get commentButtonPosition() {
-    const { inkLists, rect } = this.data;
-    if (inkLists?.length >= 1) {
-      let maxX = -Infinity;
-      let maxY = -Infinity;
-      for (const inkList of inkLists) {
-        for (let i = 0, ii = inkList.length; i < ii; i += 2) {
-          if (inkList[i + 1] > maxY) {
-            maxY = inkList[i + 1];
-            maxX = inkList[i];
-          } else if (inkList[i + 1] === maxY) {
-            maxX = Math.max(maxX, inkList[i]);
-          }
-        }
-      }
-      if (maxX !== Infinity) {
-        return [maxX, maxY];
-      }
-    }
-    if (rect) {
-      return [rect[2], rect[3]];
-    }
-    return null;
   }
 }
 

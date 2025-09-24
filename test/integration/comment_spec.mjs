@@ -15,16 +15,20 @@
 
 import {
   closePages,
+  dragAndDrop,
   getEditorSelector,
   getRect,
   getSpanRectFromText,
   loadAndWait,
   scrollIntoView,
+  selectEditor,
   switchToEditor,
   waitAndClick,
+  waitForSerialized,
 } from "./test_utils.mjs";
 
 const switchToHighlight = switchToEditor.bind(null, "Highlight");
+const switchToStamp = switchToEditor.bind(null, "Stamp");
 
 describe("Comment", () => {
   describe("Comment edit dialog must be visible in ltr", () => {
@@ -127,6 +131,107 @@ describe("Comment", () => {
           expect(dialogRect.y + dialogRect.height)
             .withContext(`In ${browserName}`)
             .toBeLessThanOrEqual(viewport.height);
+        })
+      );
+    });
+  });
+
+  describe("Update comment position and color in reading mode", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "comments.pdf",
+        ".annotationEditorLayer",
+        "page-fit",
+        null,
+        {
+          enableComment: true,
+          highlightEditorColors:
+            "yellow=#FFFF00,green=#00FF00,blue=#0000FF,pink=#FF00FF,red=#FF0000",
+        }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must set the comment button at the right place", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToStamp(page);
+
+          const stampSelector = getEditorSelector(8);
+          await selectEditor(page, stampSelector);
+          await dragAndDrop(page, stampSelector, [[100, 100]]);
+          await waitForSerialized(page, 1);
+          const rectCommentButton = await getRect(
+            page,
+            `${stampSelector} .annotationCommentButton`
+          );
+
+          await switchToStamp(page, /* disable = */ true);
+          const rectCommentButtonAfter = await getRect(
+            page,
+            `#pdfjs_internal_id_713R + .annotationCommentButton`
+          );
+
+          expect(Math.abs(rectCommentButtonAfter.x - rectCommentButton.x))
+            .withContext(`In ${browserName}`)
+            .toBeLessThanOrEqual(1);
+          expect(Math.abs(rectCommentButtonAfter.y - rectCommentButton.y))
+            .withContext(`In ${browserName}`)
+            .toBeLessThanOrEqual(1);
+          expect(
+            Math.abs(rectCommentButtonAfter.width - rectCommentButton.width)
+          )
+            .withContext(`In ${browserName}`)
+            .toBeLessThanOrEqual(1);
+          expect(
+            Math.abs(rectCommentButtonAfter.height - rectCommentButton.height)
+          )
+            .withContext(`In ${browserName}`)
+            .toBeLessThanOrEqual(1);
+        })
+      );
+    });
+
+    it("must set the right color to the comment button", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const highlightSelector = getEditorSelector(0);
+          await selectEditor(page, highlightSelector);
+          const colorButtonSelector = `${highlightSelector} .editToolbar button`;
+          await page.waitForSelector(`${colorButtonSelector}.colorPicker`);
+          await page.click(`${colorButtonSelector}.colorPicker`);
+          await page.waitForSelector(`${colorButtonSelector}[title = "Red"]`);
+          await page.click(`${colorButtonSelector}[title = "Red"]`);
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] svg.highlight[fill = "#FF0000"]`
+          );
+
+          const commentButtonColor = await page.evaluate(selector => {
+            const button = document.querySelector(
+              `${selector} .annotationCommentButton`
+            );
+            return window.getComputedStyle(button).backgroundColor;
+          }, highlightSelector);
+
+          await switchToHighlight(page, /* disable = */ true);
+
+          const commentButtonColorAfter = await page.evaluate(() => {
+            const button = document.querySelector(
+              "section[data-annotation-id='612R'] + .annotationCommentButton"
+            );
+            return window.getComputedStyle(button).backgroundColor;
+          });
+
+          expect(commentButtonColorAfter)
+            .withContext(`In ${browserName}`)
+            .toEqual(commentButtonColor);
         })
       );
     });

@@ -942,13 +942,10 @@ class StampEditor extends AnnotationEditor {
       annotation.hide();
       return null;
     }
-    const params = {
+    annotation.updateEdited({
       rect: this.getPDFRect(),
-    };
-    if (this.hasEditedComment) {
-      params.popup = this.comment;
-    }
-    annotation.updateEdited(params);
+      popup: this.comment,
+    });
 
     return null;
   }
