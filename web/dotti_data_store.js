@@ -132,8 +132,7 @@ const DottiStore = {
           signatureEditorsSerialized.push(serialized);
         }
       }
-      this.requestFacialRecognition('foooooo');
-      // this.submitSignatureTask(signatureEditorsSerialized);
+      this.submitSignatureTask(signatureEditorsSerialized);
     }
   },
   submitSignatureTask(signatureAnnotations) {
@@ -208,10 +207,14 @@ const DottiStore = {
               location.reload();
             } else {
               alert("请进行人脸核身");
-              this.requestFacialRecognition();
+              this.requestFacialRecognition(res.data);
             }
           } else {
-            alert("提交失败，请检查网络后重试");
+            if (res.message === 'not processing') {
+              alert("该任务已办结");
+            } else {
+              alert("提交失败，请检查网络后重试");
+            }
           }
         });
     }
@@ -220,7 +223,7 @@ const DottiStore = {
     const data = {
       idCard: this.profile.idCard,
       name: this.profile.idName,
-      redirectUrl: `https://i-sign.cn?pre_submit_task_id=${preSubmitTaskId}`,
+      redirectUrl: `https://i-sign.cn?pre_submit_task_id=${preSubmitTaskId}_${this.token}`,
     };
 
     fetch("https://i-sign.cn:9103/v1/tencent/h5-face-auth", {
@@ -234,8 +237,7 @@ const DottiStore = {
       .then(response => response.json())
       .then(res => {
         if (res.success) {
-          console.log(res);
-          open(res.data.authUrl, "_blank");
+          open(res.data.authUrl, "_self");
         } else {
           alert("提交失败，请检查网络后重试");
         }
