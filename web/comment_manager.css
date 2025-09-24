@@ -211,9 +211,9 @@
   @media screen and (forced-colors: active) {
     --comment-date-fg-color: CanvasText;
     --comment-bg-color: Canvas;
-    --comment-hover-bg-color: SelectedItemText;
+    --comment-hover-bg-color: Canvas;
     --comment-hover-filter: none;
-    --comment-active-bg-color: SelectedItemText;
+    --comment-active-bg-color: Canvas;
     --comment-active-filter: none;
     --comment-border-color: CanvasText;
     --comment-fg-color: CanvasText;
@@ -222,7 +222,7 @@
     --comment-indicator-focus-fg-color: CanvasText;
     --comment-indicator-hover-fg-color: CanvasText;
     --comment-indicator-selected-fg-color: SelectedItem;
-    --button-comment-bg: HighlightText;
+    --button-comment-bg: ButtonFace;
     --button-comment-color: ButtonText;
     --button-comment-active-bg: ButtonText;
     --button-comment-active-color: HighlightText;
