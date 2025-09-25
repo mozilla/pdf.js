@@ -682,12 +682,25 @@ class CommentDialog {
     this.#commentText = str || "";
     const textInput = this.#textInput;
     textInput.value = this.#previousText = this.#commentText;
-    this.#title.setAttribute(
-      "data-l10n-id",
-      str
-        ? "pdfjs-editor-edit-comment-dialog-title-when-editing"
-        : "pdfjs-editor-edit-comment-dialog-title-when-adding"
-    );
+    if (str) {
+      this.#title.setAttribute(
+        "data-l10n-id",
+        "pdfjs-editor-edit-comment-dialog-title-when-editing"
+      );
+      this.#saveButton.setAttribute(
+        "data-l10n-id",
+        "pdfjs-editor-edit-comment-dialog-save-button-when-editing"
+      );
+    } else {
+      this.#title.setAttribute(
+        "data-l10n-id",
+        "pdfjs-editor-edit-comment-dialog-title-when-adding"
+      );
+      this.#saveButton.setAttribute(
+        "data-l10n-id",
+        "pdfjs-editor-edit-comment-dialog-save-button-when-adding"
+      );
+    }
     if (options?.height) {
       textInput.style.height = `${options.height}px`;
     }
