@@ -29,6 +29,7 @@ import {
 
 const switchToHighlight = switchToEditor.bind(null, "Highlight");
 const switchToStamp = switchToEditor.bind(null, "Stamp");
+const switchToComment = switchToEditor.bind(null, "Comment");
 
 describe("Comment", () => {
   describe("Comment edit dialog must be visible in ltr", () => {
@@ -232,6 +233,57 @@ describe("Comment", () => {
           expect(commentButtonColorAfter)
             .withContext(`In ${browserName}`)
             .toEqual(commentButtonColor);
+        })
+      );
+    });
+  });
+
+  describe("Comment sidebar", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "comments.pdf",
+        ".annotationEditorLayer",
+        "page-width",
+        null,
+        { enableComment: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the comment sidebar is resizable", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToComment(page);
+
+          const sidebarSelector = "#editorCommentParamsToolbar";
+          for (const extraWidth of [100, -100]) {
+            const rect = await getRect(page, sidebarSelector);
+            const resizerRect = await getRect(
+              page,
+              "#editorCommentsSidebarResizer"
+            );
+            const startX = resizerRect.x + resizerRect.width / 2;
+            const startY = resizerRect.y + 2;
+            await page.mouse.move(startX, startY);
+            await page.mouse.down();
+
+            const steps = 20;
+            await page.mouse.move(startX - extraWidth, startY, { steps });
+            await page.mouse.up();
+
+            const rectAfter = await getRect(page, sidebarSelector);
+            expect(Math.abs(rectAfter.width - (rect.width + extraWidth)))
+              .withContext(`In ${browserName}`)
+              .toBeLessThanOrEqual(1);
+            expect(Math.abs(rectAfter.x - (rect.x - extraWidth)))
+              .withContext(`In ${browserName}`)
+              .toBeLessThanOrEqual(1);
+          }
         })
       );
     });

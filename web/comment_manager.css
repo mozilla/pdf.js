@@ -234,10 +234,7 @@
 
 #editorCommentsSidebar {
   display: flex;
-  width: 239px;
   height: auto;
-  min-width: 180px;
-  max-width: 632px;
   padding-bottom: 16px;
   flex-direction: column;
   align-items: flex-start;
@@ -331,8 +328,6 @@
       width: auto;
       padding: 4px 16px;
       gap: 10px;
-      flex: 1 0 0;
-      align-self: stretch;
       align-items: flex-start;
       flex-direction: column;
       list-style-type: none;

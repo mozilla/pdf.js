@@ -22,6 +22,12 @@
   --sidebar-box-shadow:
     0 0.25px 0.75px light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)),
     0 2px 6px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
+  --sidebar-border-radius: 8px;
+  --sidebar-padding: 5px;
+  --sidebar-extra-width: 0px;
+  --sidebar-min-width: 180px;
+  --sidebar-max-width: 632px;
+  --sidebar-width: 239px;
 
   @media screen and (forced-colors: active) {
     --sidebar-bg-color: Canvas;
@@ -29,9 +35,31 @@
     --sidebar-box-shadow: none;
   }
 
-  border-radius: 8px;
+  border-radius: var(--sidebar-border-radius);
   box-shadow: var(--sidebar-box-shadow);
   border: 1px solid var(--sidebar-border-color);
   background-color: var(--sidebar-bg-color);
   inset-block-start: calc(100% + var(--doorhanger-height) - 2px);
+  padding-block: var(--sidebar-padding);
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-min-width);
+  max-width: var(--sidebar-max-width);
+
+  .sidebarResizer {
+    width: 4px;
+    background-color: transparent;
+    forced-color-adjust: none;
+    cursor: ew-resize;
+    position: absolute;
+    inset-block: calc(var(--sidebar-padding) + var(--sidebar-border-radius));
+  }
+
+  &.resizing {
+    cursor: ew-resize;
+    user-select: none;
+
+    :not(.sidebarResizer) {
+      pointer-events: none;
+    }
+  }
 }
