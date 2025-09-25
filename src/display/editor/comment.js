@@ -143,6 +143,7 @@ class Comment {
 
     if (isStandalone) {
       comment.ariaControls = "commentPopup";
+      comment.setAttribute("data-l10n-id", "pdfjs-show-comment-button");
     } else {
       comment.ariaControlsElements = [
         this.#editor._uiManager.getCommentDialogElement(),
