@@ -2486,6 +2486,7 @@ class PopupElement {
     button.tabIndex = 0;
     button.ariaHasPopup = "dialog";
     button.ariaControls = "commentPopup";
+    button.setAttribute("data-l10n-id", "pdfjs-show-comment-button");
 
     const { signal } = (this.#popupAbortController = new AbortController());
     button.addEventListener("keydown", this.#boundKeyDown, { signal });

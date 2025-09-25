@@ -238,6 +238,69 @@ describe("Comment", () => {
     });
   });
 
+  describe("Comment buttons", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        "page-width",
+        null,
+        { enableComment: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the comment button has a title", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getSpanRectFromText(page, 1, "Languages");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(getEditorSelector(0));
+
+          let commentButtonSelector = `${getEditorSelector(0)} button.comment`;
+          await page.waitForSelector(commentButtonSelector, { visible: true });
+          let title = await page.evaluate(
+            selector => document.querySelector(selector).title,
+            commentButtonSelector
+          );
+          expect(title)
+            .withContext(`In ${browserName}`)
+            .toEqual("Edit comment");
+          await page.click(commentButtonSelector);
+
+          const textInputSelector = "#commentManagerTextInput";
+          await page.waitForSelector(textInputSelector, {
+            visible: true,
+          });
+          await page.type(textInputSelector, "Hello world!");
+
+          await page.click("#commentManagerSaveButton");
+
+          commentButtonSelector = `${getEditorSelector(0)} button.annotationCommentButton`;
+          await page.waitForSelector(commentButtonSelector, {
+            visible: true,
+          });
+          title = await page.evaluate(selector => {
+            const button = document.querySelector(selector);
+            return button.title;
+          }, commentButtonSelector);
+          expect(title)
+            .withContext(`In ${browserName}`)
+            .toEqual("Show comment");
+        })
+      );
+    });
+  });
+
   describe("Comment sidebar", () => {
     let pages;
 

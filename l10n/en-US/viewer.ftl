@@ -673,6 +673,9 @@ pdfjs-editor-edit-signature-update-button = Update
 
 ## Comment popup
 
+pdfjs-show-comment-button =
+    .title = Show comment
+
 pdfjs-editor-edit-comment-popup-button-label = Edit comment
 pdfjs-editor-edit-comment-popup-button =
     .title = Edit comment
