@@ -71,6 +71,12 @@ class Comment {
     return this.#render(button, true);
   }
 
+  focusButton() {
+    setTimeout(() => {
+      (this.#commentStandaloneButton ?? this.#commentToolbarButton)?.focus();
+    }, 0);
+  }
+
   onUpdatedColor() {
     if (!this.#commentStandaloneButton) {
       return;

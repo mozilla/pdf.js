@@ -1162,6 +1162,10 @@ class AnnotationEditor {
     return this.#altText?.hasData() ?? false;
   }
 
+  focusCommentButton() {
+    this.#comment?.focusButton();
+  }
+
   addCommentButton() {
     return (this.#comment ||= new Comment(this));
   }

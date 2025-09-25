@@ -14,7 +14,9 @@
  */
 
 import {
+  awaitPromise,
   closePages,
+  createPromise,
   dragAndDrop,
   getEditorSelector,
   getRect,
@@ -296,6 +298,71 @@ describe("Comment", () => {
           expect(title)
             .withContext(`In ${browserName}`)
             .toEqual("Show comment");
+        })
+      );
+    });
+  });
+
+  describe("Focused element after editing", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        "page-width",
+        null,
+        { enableComment: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the focus is moved on the comment button", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getSpanRectFromText(page, 1, "Languages");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(getEditorSelector(0));
+
+          const commentButtonSelector = `${getEditorSelector(0)} button.comment`;
+          await waitAndClick(page, commentButtonSelector);
+
+          await page.waitForSelector("#commentManagerCancelButton", {
+            visible: true,
+          });
+          const handle = await createPromise(page, resolve => {
+            document
+              .querySelector("button.comment")
+              .addEventListener("focus", resolve, { once: true });
+          });
+          await page.click("#commentManagerCancelButton");
+          await awaitPromise(handle);
+
+          await waitAndClick(page, commentButtonSelector);
+
+          const textInputSelector = "#commentManagerTextInput";
+          await page.waitForSelector(textInputSelector, {
+            visible: true,
+          });
+          await page.type(textInputSelector, "Hello world!");
+
+          await page.click("#commentManagerSaveButton");
+          await page.waitForSelector("button.annotationCommentButton", {
+            visible: true,
+          });
+
+          await page.waitForFunction(
+            sel => document.activeElement === document.querySelector(sel),
+            {},
+            "button.annotationCommentButton"
+          );
         })
       );
     });
