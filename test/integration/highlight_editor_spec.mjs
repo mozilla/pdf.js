@@ -31,6 +31,7 @@ import {
   kbUndo,
   loadAndWait,
   scrollIntoView,
+  selectEditor,
   selectEditors,
   setCaretAt,
   switchToEditor,
@@ -2949,6 +2950,76 @@ describe("Highlight Editor", () => {
                 `.page[data-page-number = "1"] .annotationEditorLayer .highlightEditor`
               ).length === 0
           );
+        })
+      );
+    });
+  });
+
+  describe("An ink between two highlights and focus", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        { highlightEditorColors: "red=#AB0000" }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that focus move from an editor to an other", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          let rect = await getSpanRectFromText(page, 1, "Languages");
+          await page.mouse.click(
+            rect.x + rect.width / 2,
+            rect.y + rect.height / 2,
+            { count: 2, delay: 100 }
+          );
+          const editorSelector0 = getEditorSelector(0);
+          await page.waitForSelector(editorSelector0);
+
+          rect = await getSpanRectFromText(page, 1, "Abstract");
+          await page.mouse.click(
+            rect.x + rect.width / 2,
+            rect.y + rect.height / 2,
+            { count: 2, delay: 100 }
+          );
+          const editorSelector1 = getEditorSelector(1);
+          await page.waitForSelector(editorSelector1);
+
+          await switchToEditor("Ink", page);
+
+          rect = await getSpanRectFromText(
+            page,
+            1,
+            "University of California, Irvine"
+          );
+
+          const clickHandle = await waitForPointerUp(page);
+          await page.mouse.move(rect.x, rect.y);
+          await page.mouse.down();
+          await page.mouse.move(rect.x + 50, rect.y + 50);
+          await page.mouse.up();
+          await awaitPromise(clickHandle);
+
+          await page.keyboard.press("Escape");
+          await page.waitForSelector(
+            ".inkEditor.selectedEditor.draggable.disabled"
+          );
+
+          await selectEditor(page, editorSelector0);
+          for (let i = 0; i < 6; i++) {
+            await page.keyboard.press("Tab", { delay: 100 });
+          }
+          await waitForSelectedEditor(page, editorSelector1);
         })
       );
     });
