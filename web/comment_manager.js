@@ -851,16 +851,18 @@ class CommentDialog {
   }
 
   #finish() {
+    this.#editor?.focusCommentButton();
+    this.#editor = null;
     this.#textInput.value = this.#previousText = this.#commentText = "";
     this.#overlayManager.closeIfActive(this.#dialog);
     this.#textInput.style.height = "";
     this.#uiManager?.addEditListeners();
     this.#uiManager = null;
-    this.#editor = null;
   }
 
   destroy() {
     this.#uiManager = null;
+    this.#editor = null;
     this.#finish();
   }
 }
