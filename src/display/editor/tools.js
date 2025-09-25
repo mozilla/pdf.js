@@ -43,6 +43,87 @@ function bindEvents(obj, element, names) {
 }
 
 /**
+ * Class to store current pointers used by the editor to be able to handle
+ * multiple pointers (e.g. two fingers, a pen, a mouse, ...).
+ */
+class CurrentPointers {
+  // To manage the pointer events.
+
+  // The pointerId  and pointerIds are used to keep track of
+  // the pointers with a same type (e.g. two fingers).
+  static #pointerId = NaN;
+
+  static #pointerIds = null;
+
+  // Track the timestamp to know if the touchmove event is used.
+  static #moveTimestamp = NaN;
+
+  // The pointerType is used to know if we are using a mouse, a pen or a touch.
+  static #pointerType = null;
+
+  static initializeAndAddPointerId(pointerId) {
+    // Store pointer ids. For example, the user is using a second finger.
+    (CurrentPointers.#pointerIds ||= new Set()).add(pointerId);
+  }
+
+  static setPointer(pointerType, pointerId) {
+    CurrentPointers.#pointerId ||= pointerId;
+    CurrentPointers.#pointerType ??= pointerType;
+  }
+
+  static setTimeStamp(timeStamp) {
+    CurrentPointers.#moveTimestamp = timeStamp;
+  }
+
+  static isSamePointerId(pointerId) {
+    return CurrentPointers.#pointerId === pointerId;
+  }
+
+  // Check if it's the same pointer id, otherwise remove it from the set.
+  static isSamePointerIdOrRemove(pointerId) {
+    if (CurrentPointers.#pointerId === pointerId) {
+      return true;
+    }
+
+    CurrentPointers.#pointerIds?.delete(pointerId);
+    return false;
+  }
+
+  static isSamePointerType(pointerType) {
+    return CurrentPointers.#pointerType === pointerType;
+  }
+
+  static isInitializedAndDifferentPointerType(pointerType) {
+    return (
+      CurrentPointers.#pointerType !== null &&
+      !CurrentPointers.isSamePointerType(pointerType)
+    );
+  }
+
+  static isSameTimeStamp(timeStamp) {
+    return CurrentPointers.#moveTimestamp === timeStamp;
+  }
+
+  static isUsingMultiplePointers() {
+    // Check if the user is using multiple fingers
+    return CurrentPointers.#pointerIds?.size >= 1;
+  }
+
+  static clearPointerType() {
+    CurrentPointers.#pointerType = null;
+  }
+
+  static clearPointerIds() {
+    CurrentPointers.#pointerId = NaN;
+    CurrentPointers.#pointerIds = null;
+  }
+
+  static clearTimeStamp() {
+    CurrentPointers.#moveTimestamp = NaN;
+  }
+}
+
+/**
  * Class to create some unique ids for the different editors.
  */
 class IdManager {
@@ -1842,13 +1923,16 @@ class AnnotationEditorUIManager {
    *   edit mode.
    * @param {boolean} [editComment] - true if the mode change is due to a
    *   comment edit.
+   * @param {boolean} [isFromEvent] - true if the mode change is due to an event
+   * (e.g. toolbar button clicked).
    */
   async updateMode(
     mode,
     editId = null,
     isFromKeyboard = false,
     mustEnterInEditMode = false,
-    editComment = false
+    editComment = false,
+    isFromEvent = false
   ) {
     if (this.#mode === mode) {
       return;
@@ -1891,6 +1975,10 @@ class AnnotationEditorUIManager {
 
     if (mode === AnnotationEditorType.SIGNATURE) {
       await this.#signatureManager?.loadSignatures();
+    }
+    if (isFromEvent) {
+      // reinitialize the pointer type when mode changed by an event
+      CurrentPointers.clearPointerType();
     }
 
     this.setEditingState(true);
@@ -2789,5 +2877,6 @@ export {
   bindEvents,
   ColorManager,
   CommandManager,
+  CurrentPointers,
   KeyboardManager,
 };
