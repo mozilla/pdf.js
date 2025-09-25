@@ -18,6 +18,7 @@ import {
   applyOpacity,
   CSSConstants,
   findContrastColor,
+  MathClamp,
   noContextMenu,
   PDFDateString,
   renderRichText,
@@ -56,7 +57,8 @@ class CommentManager {
       eventBus,
       linkService,
       this.#popup,
-      dateFormat
+      dateFormat,
+      ltr
     );
     this.#popup.sidebar = this.#sidebar;
     CommentManager.#hasForcedColors = hasForcedColors;
@@ -160,10 +162,21 @@ class CommentSidebar {
 
   #uiManager = null;
 
+  #minWidth = 0;
+
+  #maxWidth = 0;
+
+  #initialWidth = 0;
+
+  #width = 0;
+
+  #ltr;
+
   constructor(
     {
       learnMoreUrl,
       sidebar,
+      sidebarResizer,
       commentsList,
       commentCount,
       sidebarTitle,
@@ -173,7 +186,8 @@ class CommentSidebar {
     eventBus,
     linkService,
     popup,
-    dateFormat
+    dateFormat,
+    ltr
   ) {
     this.#sidebar = sidebar;
     this.#sidebarTitle = sidebarTitle;
@@ -184,7 +198,16 @@ class CommentSidebar {
     this.#closeButton = closeButton;
     this.#popup = popup;
     this.#dateFormat = dateFormat;
+    this.#ltr = ltr;
 
+    const style = window.getComputedStyle(sidebar);
+    this.#minWidth = parseFloat(style.getPropertyValue("--sidebar-min-width"));
+    this.#maxWidth = parseFloat(style.getPropertyValue("--sidebar-max-width"));
+    this.#initialWidth = this.#width = parseFloat(
+      style.getPropertyValue("--sidebar-width")
+    );
+
+    this.#makeSidebarResizable(sidebarResizer);
     closeButton.addEventListener("click", () => {
       eventBus.dispatch("switchannotationeditormode", {
         source: this,
@@ -203,6 +226,63 @@ class CommentSidebar {
     commentToolbarButton.addEventListener("keydown", keyDownCallback);
     sidebar.addEventListener("keydown", keyDownCallback);
     this.#sidebar.hidden = true;
+  }
+
+  #makeSidebarResizable(resizer) {
+    let pointerMoveAC;
+    const cancelResize = () => {
+      this.#width = MathClamp(this.#width, this.#minWidth, this.#maxWidth);
+      this.#sidebar.classList.remove("resizing");
+      pointerMoveAC?.abort();
+      pointerMoveAC = null;
+    };
+    resizer.addEventListener("pointerdown", e => {
+      if (pointerMoveAC) {
+        cancelResize();
+        return;
+      }
+      const { clientX } = e;
+      stopEvent(e);
+      let prevX = clientX;
+      pointerMoveAC = new AbortController();
+      const { signal } = pointerMoveAC;
+      const sign = this.#ltr ? -1 : 1;
+      const sidebar = this.#sidebar;
+      const sidebarStyle = sidebar.style;
+      sidebar.classList.add("resizing");
+      const parentStyle = sidebar.parentElement.style;
+      parentStyle.minWidth = 0;
+      window.addEventListener("contextmenu", noContextMenu, { signal });
+      window.addEventListener(
+        "pointermove",
+        ev => {
+          if (!pointerMoveAC) {
+            return;
+          }
+          stopEvent(ev);
+          const { clientX: x } = ev;
+          const newWidth = (this.#width += sign * (x - prevX));
+          prevX = x;
+          if (newWidth > this.#maxWidth || newWidth < this.#minWidth) {
+            return;
+          }
+          sidebarStyle.width = `${newWidth.toFixed(3)}px`;
+          parentStyle.insetInlineStart = `${(this.#initialWidth - newWidth).toFixed(3)}px`;
+        },
+        { signal, capture: true }
+      );
+      window.addEventListener("blur", cancelResize, { signal });
+      window.addEventListener(
+        "pointerup",
+        ev => {
+          if (pointerMoveAC) {
+            cancelResize();
+            stopEvent(ev);
+          }
+        },
+        { signal }
+      );
+    });
   }
 
   setUIManager(uiManager) {

@@ -506,6 +506,9 @@ const PDFViewerApplication = {
               learnMoreUrl: AppOptions.get("commentLearnMoreUrl"),
               sidebar:
                 appConfig.annotationEditorParams?.editorCommentsSidebar || null,
+              sidebarResizer:
+                appConfig.annotationEditorParams
+                  ?.editorCommentsSidebarResizer || null,
               commentsList:
                 appConfig.annotationEditorParams?.editorCommentsSidebarList ||
                 null,
