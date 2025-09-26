@@ -50,8 +50,18 @@ class CommentManager {
       dateStyle: "long",
     });
     this.dialogElement = commentDialog.dialog;
-    this.#dialog = new CommentDialog(commentDialog, overlayManager, ltr);
-    this.#popup = new CommentPopup(dateFormat, ltr, this.dialogElement);
+    this.#dialog = new CommentDialog(
+      commentDialog,
+      overlayManager,
+      eventBus,
+      ltr
+    );
+    this.#popup = new CommentPopup(
+      eventBus,
+      dateFormat,
+      ltr,
+      this.dialogElement
+    );
     this.#sidebar = new CommentSidebar(
       sidebar,
       eventBus,
@@ -134,6 +144,8 @@ class CommentManager {
 class CommentSidebar {
   #annotations = null;
 
+  #eventBus;
+
   #boundCommentClick = this.#commentClick.bind(this);
 
   #boundCommentKeydown = this.#commentKeydown.bind(this);
@@ -199,6 +211,7 @@ class CommentSidebar {
     this.#popup = popup;
     this.#dateFormat = dateFormat;
     this.#ltr = ltr;
+    this.#eventBus = eventBus;
 
     const style = window.getComputedStyle(sidebar);
     this.#minWidth = parseFloat(style.getPropertyValue("--sidebar-min-width"));
@@ -306,6 +319,13 @@ class CommentSidebar {
       this.#setCommentsCount();
     }
     this.#sidebar.hidden = false;
+    this.#eventBus.dispatch("reporttelemetry", {
+      source: this,
+      details: {
+        type: "commentSidebar",
+        data: { numberOfAnnotations: annotations.length },
+      },
+    });
   }
 
   hide() {
@@ -672,14 +692,18 @@ class CommentDialog {
 
   #isLTR;
 
+  #eventBus;
+
   constructor(
     { dialog, toolbar, title, textInput, cancelButton, saveButton },
     overlayManager,
+    eventBus,
     ltr
   ) {
     this.#dialog = dialog;
     this.#textInput = textInput;
     this.#overlayManager = overlayManager;
+    this.#eventBus = eventBus;
     this.#saveButton = saveButton;
     this.#title = title;
     this.#isLTR = ltr;
@@ -863,6 +887,20 @@ class CommentDialog {
   }
 
   #finish() {
+    if (!this.#editor) {
+      return;
+    }
+    const edited = this.#textInput.value !== this.#commentText;
+    this.#eventBus.dispatch("reporttelemetry", {
+      source: this,
+      details: {
+        type: "comment",
+        data: {
+          edited,
+        },
+      },
+    });
+
     this.#editor?.focusCommentButton();
     this.#editor = null;
     this.#textInput.value = this.#previousText = this.#commentText = "";
@@ -881,6 +919,8 @@ class CommentDialog {
 
 class CommentPopup {
   #buttonsContainer = null;
+
+  #eventBus;
 
   #commentDialog;
 
@@ -910,7 +950,8 @@ class CommentPopup {
 
   #visible = false;
 
-  constructor(dateFormat, ltr, commentDialog) {
+  constructor(eventBus, dateFormat, ltr, commentDialog) {
+    this.#eventBus = eventBus;
     this.#dateFormat = dateFormat;
     this.#isLTR = ltr;
     this.#commentDialog = commentDialog;
@@ -994,6 +1035,15 @@ class CommentPopup {
     );
     del.append(delLabel);
     del.addEventListener("click", () => {
+      this.#eventBus.dispatch("reporttelemetry", {
+        source: this,
+        details: {
+          type: "comment",
+          data: {
+            deleted: true,
+          },
+        },
+      });
       this.#editor.comment = null;
       this.destroy();
     });

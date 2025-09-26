@@ -1241,6 +1241,10 @@ class AnnotationEditor {
     return this.#comment?.hasBeenEdited();
   }
 
+  get hasDeletedComment() {
+    return this.#comment?.isDeleted();
+  }
+
   get hasComment() {
     return (
       !!this.#comment && !this.#comment.isEmpty() && !this.#comment.isDeleted()

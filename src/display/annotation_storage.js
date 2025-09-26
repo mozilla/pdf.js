@@ -222,9 +222,21 @@ class AnnotationStorage {
   get editorStats() {
     let stats = null;
     const typeToEditor = new Map();
+    let numberOfEditedComments = 0;
+    let numberOfDeletedComments = 0;
     for (const value of this.#storage.values()) {
       if (!(value instanceof AnnotationEditor)) {
+        if (value.popup.deleted) {
+          numberOfDeletedComments += 1;
+        } else if (value.popup) {
+          numberOfEditedComments += 1;
+        }
         continue;
+      }
+      if (value.isCommentDeleted) {
+        numberOfDeletedComments += 1;
+      } else if (value.hasEditedComment) {
+        numberOfEditedComments += 1;
       }
       const editorStats = value.telemetryFinalData;
       if (!editorStats) {
@@ -248,6 +260,16 @@ class AnnotationStorage {
         const count = counters.get(val) ?? 0;
         counters.set(val, count + 1);
       }
+    }
+    if (numberOfDeletedComments > 0 || numberOfEditedComments > 0) {
+      stats ||= Object.create(null);
+      stats.comments = {
+        deleted: numberOfDeletedComments,
+        edited: numberOfEditedComments,
+      };
+    }
+    if (!stats) {
+      return null;
     }
     for (const [type, editor] of typeToEditor) {
       stats[type] = editor.computeTelemetryFinalData(stats[type]);
