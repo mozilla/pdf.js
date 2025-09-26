@@ -92,11 +92,11 @@ class CommentManager {
     this.#sidebar.updateComment(annotation);
   }
 
-  toggleCommentPopup(editor, isSelected, visibility) {
+  toggleCommentPopup(editor, isSelected, visibility, isEditable) {
     if (isSelected) {
       this.selectComment(editor.uid);
     }
-    this.#popup.toggle(editor, isSelected, visibility);
+    this.#popup.toggle(editor, isSelected, visibility, isEditable);
   }
 
   destroyPopup() {
@@ -880,6 +880,8 @@ class CommentDialog {
 }
 
 class CommentPopup {
+  #buttonsContainer = null;
+
   #commentDialog;
 
   #dateFormat;
@@ -954,7 +956,7 @@ class CommentPopup {
     const time = (this.#time = document.createElement("time"));
     time.className = "commentPopupTime";
 
-    const buttons = document.createElement("div");
+    const buttons = (this.#buttonsContainer = document.createElement("div"));
     buttons.className = "commentPopupButtons";
     const edit = document.createElement("button");
     edit.classList.add("commentPopupEdit", "toolbarButton");
@@ -1089,7 +1091,7 @@ class CommentPopup {
     this.sidebar.selectComment(null);
   }
 
-  toggle(editor, isSelected, visibility = undefined) {
+  toggle(editor, isSelected, visibility = undefined, isEditable = true) {
     if (!editor) {
       this.destroy();
       return;
@@ -1119,6 +1121,7 @@ class CommentPopup {
     }
 
     const container = this.#createPopup();
+    this.#buttonsContainer.classList.toggle("hidden", !isEditable);
     container.classList.toggle("hidden", false);
     container.classList.toggle("selected", isSelected);
     this.#selected = isSelected;
