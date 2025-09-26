@@ -718,9 +718,6 @@ class AnnotationElement {
    * @memberof AnnotationElement
    */
   _createPopup(popupData = null) {
-    if (this.parent._commentManager) {
-      return;
-    }
     const { data } = this;
 
     let contentsObj, modificationDate;
@@ -750,11 +747,17 @@ class AnnotationElement {
       parent: this.parent,
       elements: [this],
     }));
-    this.parent.div.append(popup.render());
+    if (!this.parent._commentManager) {
+      this.parent.div.append(popup.render());
+    }
   }
 
   get hasPopupElement() {
     return !!(this.#popupElement || this.popup || this.data.popupRef);
+  }
+
+  get extraPopupElement() {
+    return this.#popupElement;
   }
 
   /**
@@ -2410,10 +2413,12 @@ class PopupElement {
     // consistent with other viewers such as Adobe Acrobat.
     this.#dateObj = PDFDateString.toDateObject(modificationDate);
 
+    // The elements that will trigger the popup.
+    this.trigger = elements.flatMap(e => e.getElementsToTriggerPopup());
+
     if (commentManager) {
-      this.#renderCommentButton();
+      this.renderCommentButton();
     } else {
-      this.trigger = elements.flatMap(e => e.getElementsToTriggerPopup());
       this.#addEventListeners();
 
       this.#container.hidden = true;
@@ -2443,8 +2448,8 @@ class PopupElement {
     // Attach the event listeners to the trigger element.
     for (const element of this.trigger) {
       element.addEventListener("click", this.#boundToggle, { signal });
-      element.addEventListener("mouseenter", this.#boundShow, { signal });
-      element.addEventListener("mouseleave", this.#boundHide, { signal });
+      element.addEventListener("pointerenter", this.#boundShow, { signal });
+      element.addEventListener("pointerleave", this.#boundHide, { signal });
       element.classList.add("popupTriggerArea");
     }
 
@@ -2466,7 +2471,7 @@ class PopupElement {
     );
   }
 
-  #renderCommentButton() {
+  renderCommentButton() {
     if (this.#commentButton) {
       return;
     }
@@ -2479,53 +2484,67 @@ class PopupElement {
       return;
     }
 
-    const button = (this.#commentButton = document.createElement("button"));
-    button.className = "annotationCommentButton";
-    const parentContainer = this.#firstElement.container;
-    button.style.zIndex = parentContainer.style.zIndex + 1;
-    button.tabIndex = 0;
-    button.ariaHasPopup = "dialog";
-    button.ariaControls = "commentPopup";
-    button.setAttribute("data-l10n-id", "pdfjs-show-comment-button");
-
     const { signal } = (this.#popupAbortController = new AbortController());
-    button.addEventListener("keydown", this.#boundKeyDown, { signal });
-    button.addEventListener(
-      "click",
-      () => {
-        this.#commentManager.toggleCommentPopup(this, /* isSelected = */ true);
-      },
-      { signal }
-    );
-    button.addEventListener(
-      "pointerenter",
-      () => {
-        this.#commentManager.toggleCommentPopup(
-          this,
-          /* isSelected = */ false,
-          /* visibility = */ true
-        );
-      },
-      { signal }
-    );
-    button.addEventListener(
-      "pointerleave",
-      () => {
-        this.#commentManager.toggleCommentPopup(
-          this,
-          /* isSelected = */ false,
-          /* visibility = */ false
-        );
-      },
-      { signal }
-    );
-    this.#updateColor();
-    this.#updateCommentButtonPosition();
-    parentContainer.after(button);
+    const hasOwnButton = !!this.#firstElement.extraPopupElement;
+    const togglePopup = () => {
+      this.#commentManager.toggleCommentPopup(
+        this,
+        /* isSelected = */ true,
+        /* visibility = */ undefined,
+        /* isEditable = */ !hasOwnButton
+      );
+    };
+    const showPopup = () => {
+      this.#commentManager.toggleCommentPopup(
+        this,
+        /* isSelected = */ false,
+        /* visibility = */ true,
+        /* isEditable = */ !hasOwnButton
+      );
+    };
+    const hidePopup = () => {
+      this.#commentManager.toggleCommentPopup(
+        this,
+        /* isSelected = */ false,
+        /* visibility = */ false
+      );
+    };
+
+    if (!hasOwnButton) {
+      const button = (this.#commentButton = document.createElement("button"));
+      button.className = "annotationCommentButton";
+      const parentContainer = this.#firstElement.container;
+      button.style.zIndex = parentContainer.style.zIndex + 1;
+      button.tabIndex = 0;
+      button.ariaHasPopup = "dialog";
+      button.ariaControls = "commentPopup";
+      button.setAttribute("data-l10n-id", "pdfjs-show-comment-button");
+      this.#updateColor();
+      this.#updateCommentButtonPosition();
+      button.addEventListener("keydown", this.#boundKeyDown, { signal });
+      button.addEventListener("click", togglePopup, { signal });
+      button.addEventListener("pointerenter", showPopup, { signal });
+      button.addEventListener("pointerleave", hidePopup, { signal });
+      parentContainer.after(button);
+    } else {
+      this.#commentButton = this.#firstElement.container;
+      for (const element of this.trigger) {
+        element.ariaHasPopup = "dialog";
+        element.ariaControls = "commentPopup";
+        element.addEventListener("keydown", this.#boundKeyDown, { signal });
+        element.addEventListener("click", togglePopup, { signal });
+        element.addEventListener("pointerenter", showPopup, { signal });
+        element.addEventListener("pointerleave", hidePopup, { signal });
+        element.classList.add("popupTriggerArea");
+      }
+    }
   }
 
   #updateCommentButtonPosition() {
-    this.#renderCommentButton();
+    if (this.#firstElement.extraPopupElement) {
+      return;
+    }
+    this.renderCommentButton();
     const [x, y] = this.#commentButtonPosition;
     const { style } = this.#commentButton;
     style.left = `calc(${x}%)`;
@@ -2533,7 +2552,10 @@ class PopupElement {
   }
 
   #updateColor() {
-    this.#renderCommentButton();
+    if (this.#firstElement.extraPopupElement) {
+      return;
+    }
+    this.renderCommentButton();
     this.#commentButton.style.backgroundColor = this.commentButtonColor || "";
   }
 
@@ -3792,6 +3814,7 @@ class AnnotationLayer {
         rendered.style.visibility = "hidden";
       }
       await this.#appendElement(rendered, data.id, elementParams.elements);
+      element.extraPopupElement?.popup?.renderCommentButton();
 
       if (element._isEditable) {
         this.#editableAnnotations.set(element.data.id, element);

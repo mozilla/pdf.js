@@ -810,4 +810,72 @@ a dynamic compiler for JavaScript based on our`);
       });
     });
   });
+
+  describe("Annotation without popup and enableComment set to true", () => {
+    describe("annotation-text-without-popup.pdf", () => {
+      let pages;
+
+      beforeEach(async () => {
+        pages = await loadAndWait(
+          "annotation-text-without-popup.pdf",
+          getAnnotationSelector("4R"),
+          "page-fit",
+          null,
+          { enableComment: true }
+        );
+      });
+
+      afterEach(async () => {
+        await closePages(pages);
+      });
+
+      it("must check that the popup is shown", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const rect = await getRect(page, getAnnotationSelector("4R"));
+
+            // Hover the annotation, the popup should be visible.
+            let promisePopup = page.waitForSelector("#commentPopup", {
+              visible: true,
+            });
+            await page.mouse.move(
+              rect.x + rect.width / 2,
+              rect.y + rect.height / 2
+            );
+            await promisePopup;
+
+            // Move the mouse away, the popup should be hidden.
+            promisePopup = page.waitForSelector("#commentPopup", {
+              visible: false,
+            });
+            await page.mouse.move(
+              rect.x - rect.width / 2,
+              rect.y - rect.height / 2
+            );
+            await promisePopup;
+
+            // Click the annotation, the popup should be visible.
+            promisePopup = page.waitForSelector("#commentPopup", {
+              visible: true,
+            });
+            await page.mouse.click(
+              rect.x + rect.width / 2,
+              rect.y + rect.height / 2
+            );
+            await promisePopup;
+
+            // Click again, the popup should be hidden.
+            promisePopup = page.waitForSelector("#commentPopup", {
+              visible: false,
+            });
+            await page.mouse.click(
+              rect.x + rect.width / 2,
+              rect.y + rect.height / 2
+            );
+            await promisePopup;
+          })
+        );
+      });
+    });
+  });
 });
