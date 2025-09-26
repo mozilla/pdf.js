@@ -376,6 +376,68 @@ describe("Comment", () => {
     });
   });
 
+  describe("Focused element after editing in reading mode", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "comments.pdf",
+        ".annotationLayer",
+        "page-width",
+        null,
+        { enableComment: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the focus is moved on the comment button", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const commentButtonSelector = `[data-annotation-id="612R"] + button.annotationCommentButton`;
+          await waitAndClick(page, commentButtonSelector);
+          const commentPopupSelector = "#commentPopup";
+          const editButtonSelector = `${commentPopupSelector} button.commentPopupEdit`;
+          await waitAndClick(page, editButtonSelector);
+
+          await page.waitForSelector("#commentManagerCancelButton", {
+            visible: true,
+          });
+          let handle = await createPromise(page, resolve => {
+            document
+              .querySelector(
+                `[data-annotation-id="612R"] + button.annotationCommentButton`
+              )
+              .addEventListener("focus", resolve, { once: true });
+          });
+          await page.click("#commentManagerCancelButton");
+          await awaitPromise(handle);
+
+          await waitAndClick(page, commentButtonSelector);
+          await waitAndClick(page, editButtonSelector);
+
+          const textInputSelector = "#commentManagerTextInput";
+          await page.waitForSelector(textInputSelector, {
+            visible: true,
+          });
+          await page.type(textInputSelector, "Hello world!");
+
+          handle = await createPromise(page, resolve => {
+            document
+              .querySelector(
+                `[data-annotation-id="612R"] + button.annotationCommentButton`
+              )
+              .addEventListener("focus", resolve, { once: true });
+          });
+          await page.click("#commentManagerSaveButton");
+          await awaitPromise(handle);
+        })
+      );
+    });
+  });
+
   describe("Comment sidebar", () => {
     let pages;
 

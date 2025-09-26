@@ -2545,6 +2545,12 @@ class PopupElement {
     return this.#parent._commentManager.makeCommentColor(color, opacity);
   }
 
+  focusCommentButton() {
+    setTimeout(() => {
+      this.#commentButton?.focus();
+    }, 0);
+  }
+
   getData() {
     const { richText, color, opacity, creationDate, modificationDate } =
       this.#firstElement.commentData;
