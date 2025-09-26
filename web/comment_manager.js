@@ -612,6 +612,18 @@ class CommentSidebar {
   }
 
   #sortComments(a, b) {
+    const dateA = PDFDateString.toDateObject(
+      a.modificationDate || a.creationDate
+    );
+    const dateB = PDFDateString.toDateObject(
+      b.modificationDate || b.creationDate
+    );
+    if (dateA !== dateB) {
+      if (dateA !== null && dateB !== null) {
+        return dateB - dateA;
+      }
+      return dateA !== null ? -1 : 1;
+    }
     if (a.pageIndex !== b.pageIndex) {
       return a.pageIndex - b.pageIndex;
     }

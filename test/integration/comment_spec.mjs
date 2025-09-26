@@ -33,6 +33,14 @@ const switchToHighlight = switchToEditor.bind(null, "Highlight");
 const switchToStamp = switchToEditor.bind(null, "Stamp");
 const switchToComment = switchToEditor.bind(null, "Comment");
 
+const highlightSpan = async (page, pageIndex, text) => {
+  const rect = await getSpanRectFromText(page, pageIndex, text);
+  const x = rect.x + rect.width / 2;
+  const y = rect.y + rect.height / 2;
+  await page.mouse.click(x, y, { count: 2, delay: 100 });
+  await page.waitForSelector(getEditorSelector(0));
+};
+
 describe("Comment", () => {
   describe("Comment edit dialog must be visible in ltr", () => {
     let pages;
@@ -414,6 +422,49 @@ describe("Comment", () => {
               .withContext(`In ${browserName}`)
               .toBeLessThanOrEqual(1);
           }
+        })
+      );
+    });
+
+    it("must check that comments are in chronological order", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToComment(page);
+
+          const checkDates = async () => {
+            const dates = await page.evaluate(() =>
+              Array.from(
+                document.querySelectorAll(
+                  `#editorCommentParamsToolbar ul > li > time`
+                )
+              ).map(time => new Date(time.getAttribute("datetime")))
+            );
+            for (let i = 0; i < dates.length - 1; i++) {
+              expect(dates[i])
+                .withContext(`In ${browserName}`)
+                .toBeGreaterThanOrEqual(dates[i + 1]);
+            }
+          };
+          await checkDates();
+
+          // Add an highlight with a comment and check the order again.
+          await switchToHighlight(page);
+          await highlightSpan(page, 1, "Languages");
+          const editorSelector = getEditorSelector(9);
+          await page.waitForSelector(editorSelector);
+          const commentButtonSelector = `${editorSelector} button.comment`;
+          await waitAndClick(page, commentButtonSelector);
+
+          const textInputSelector = "#commentManagerTextInput";
+          await page.waitForSelector(textInputSelector, {
+            visible: true,
+          });
+          await page.type(textInputSelector, "Hello world!");
+          await page.click("#commentManagerSaveButton");
+          await waitForSerialized(page, 1);
+
+          await switchToComment(page);
+          await checkDates();
         })
       );
     });
