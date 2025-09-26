@@ -177,7 +177,7 @@ const defaultOptions = {
     /** @type {string} */
     value:
       typeof PDFJSDev === "undefined" || PDFJSDev.test("MOZCENTRAL")
-        ? "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/pdf-comment"
+        ? "https://support.mozilla.org/%LOCALE%/kb/view-pdf-files-firefox-or-choose-another-viewer#w_add-a-comment-to-a-pdf"
         : "",
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
