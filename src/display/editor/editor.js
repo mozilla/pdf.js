@@ -2129,6 +2129,12 @@ class AnnotationEditor {
     this.#altText?.toggleAltTextBadge(false);
   }
 
+  focus() {
+    if (this.div && !this.div.contains(document.activeElement)) {
+      setTimeout(() => this.div?.focus({ preventScroll: true }), 0);
+    }
+  }
+
   /**
    * Unselect this editor.
    */

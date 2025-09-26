@@ -1948,6 +1948,8 @@ class AnnotationEditorUIManager {
           editor.editComment();
         } else if (mustEnterInEditMode) {
           editor.enterInEditMode();
+        } else {
+          editor.focus();
         }
       } else {
         editor.unselect();
