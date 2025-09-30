@@ -1671,6 +1671,14 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
               ).valueOf();
               target.step = "";
             } else {
+              // Unfortunately, when the date is "2025-09-23", the parser
+              // converts it to UTC time which may lead to the date being off by
+              // one day depending on the timezone. To workaround this, we
+              // append "T00:00" to the date so that it's parsed as local
+              // time (bug 1989874).
+              if (!value.includes("T")) {
+                value = `${value}T00:00`;
+              }
               value = new Date(value).valueOf();
             }
             target.type = "text";
