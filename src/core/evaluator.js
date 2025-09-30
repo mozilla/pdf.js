@@ -40,7 +40,11 @@ import {
   lookupMatrix,
   lookupNormalRect,
 } from "./core_utils.js";
-import { FontInfo, PatternInfo } from "../shared/obj-bin-transform.js";
+import {
+  FontInfo,
+  FontPathInfo,
+  PatternInfo,
+} from "../shared/obj-bin-transform.js";
 import {
   getEncoding,
   MacRomanEncoding,
@@ -4663,11 +4667,8 @@ class PartialEvaluator {
         if (font.renderer.hasBuiltPath(fontChar)) {
           return;
         }
-        handler.send("commonobj", [
-          glyphName,
-          "FontPath",
-          font.renderer.getPathJs(fontChar),
-        ]);
+        const buffer = FontPathInfo.write(font.renderer.getPathJs(fontChar));
+        handler.send("commonobj", [glyphName, "FontPath", buffer], [buffer]);
       } catch (reason) {
         if (evaluatorOptions.ignoreErrors) {
           warn(`buildFontPaths - ignoring ${glyphName} glyph: "${reason}".`);

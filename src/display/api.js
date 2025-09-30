@@ -45,7 +45,11 @@ import {
   StatTimer,
 } from "./display_utils.js";
 import { FontFaceObject, FontLoader } from "./font_loader.js";
-import { FontInfo, PatternInfo } from "../shared/obj-bin-transform.js";
+import {
+  FontInfo,
+  FontPathInfo,
+  PatternInfo,
+} from "../shared/obj-bin-transform.js";
 import {
   getDataProp,
   getFactoryUrlProp,
@@ -2821,6 +2825,8 @@ class WorkerTransport {
           }
           break;
         case "FontPath":
+          this.commonObjs.resolve(id, new FontPathInfo(exportedData));
+          break;
         case "Image":
           this.commonObjs.resolve(id, exportedData);
           break;
