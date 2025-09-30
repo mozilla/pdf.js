@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { assert, MeshFigureType } from "./util.js";
+import { assert, FeatureTest, MeshFigureType } from "./util.js";
 
 class CssFontInfo {
   #buffer;
@@ -881,4 +881,39 @@ class PatternInfo {
     throw new Error(`Unsupported pattern kind: ${kind}`);
   }
 }
-export { CssFontInfo, FontInfo, PatternInfo, SystemFontInfo };
+
+class FontPathInfo {
+  static write(path) {
+    let data;
+    let buffer;
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      buffer = new ArrayBuffer(path.length * 2);
+      data = new Float32Array(buffer);
+    } else if (FeatureTest.isFloat16ArraySupported) {
+      buffer = new ArrayBuffer(path.length * 2);
+      data = new Float16Array(buffer);
+    } else {
+      buffer = new ArrayBuffer(path.length * 4);
+      data = new Float32Array(buffer);
+    }
+    data.set(path);
+    return buffer;
+  }
+
+  #buffer;
+
+  constructor(buffer) {
+    this.#buffer = buffer;
+  }
+
+  get path() {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      return new Float16Array(this.#buffer);
+    }
+    return FeatureTest.isFloat16ArraySupported
+      ? new Float16Array(this.#buffer)
+      : new Float32Array(this.#buffer);
+  }
+}
+
+export { CssFontInfo, FontInfo, FontPathInfo, PatternInfo, SystemFontInfo };
