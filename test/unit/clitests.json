@@ -11,6 +11,7 @@
     "autolinker_spec.js",
     "bidi_spec.js",
     "bin_font_info_spec.js",
+    "bin_font_path_info_spec.js",
     "canvas_factory_spec.js",
     "cff_parser_spec.js",
     "cmap_spec.js",

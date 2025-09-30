@@ -770,10 +770,6 @@ class Commands {
   restore() {
     this.currentTransform = this.transformStack.pop() || [1, 0, 0, 1, 0, 0];
   }
-
-  getSVG() {
-    return this.cmds.join("");
-  }
 }
 
 class CompiledFont {
@@ -836,7 +832,7 @@ class CompiledFont {
     this.compileGlyphImpl(code, cmds, glyphId);
     cmds.add("Z");
 
-    return cmds.getSVG();
+    return cmds.cmds;
   }
 
   compileGlyphImpl() {
