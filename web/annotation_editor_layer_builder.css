@@ -69,6 +69,13 @@
   }
 }
 
+.page:has(.annotationEditorLayer.nonEditing)
+  .annotationLayer
+  .editorAnnotation {
+  position: absolute;
+  pointer-events: none;
+}
+
 #viewerContainer.pdfPresentationMode:fullscreen,
 .annotationEditorLayer.disabled {
   .noAltTextBadge {

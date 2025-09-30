@@ -69,6 +69,8 @@ class AnnotationEditor {
 
   #savedDimensions = null;
 
+  #fakeAnnotation = null;
+
   #focusAC = null;
 
   #focusedResizerName = "";
@@ -382,6 +384,10 @@ class AnnotationEditor {
     } else {
       // The editor is being removed from the DOM, so we need to stop resizing.
       this.#stopResizing();
+
+      // Remove the fake annotation in the annotation layer.
+      this.#fakeAnnotation?.remove();
+      this.#fakeAnnotation = null;
     }
     this.parent = parent;
   }
@@ -1172,7 +1178,9 @@ class AnnotationEditor {
 
   addStandaloneCommentButton() {
     if (this.#commentStandaloneButton) {
-      this.#commentStandaloneButton.classList.remove("hidden");
+      if (this._uiManager.isEditingMode()) {
+        this.#commentStandaloneButton.classList.remove("hidden");
+      }
       return;
     }
     if (!this.hasComment) {
@@ -2336,6 +2344,24 @@ class AnnotationEditor {
       this.div.tabIndex = -1;
     }
     this.#disabled = true;
+  }
+
+  updateFakeAnnotationElement(annotationLayer) {
+    if (!this.#fakeAnnotation && !this.deleted) {
+      this.#fakeAnnotation = annotationLayer.addFakeAnnotation(this);
+      return;
+    }
+    if (this.deleted) {
+      this.#fakeAnnotation.remove();
+      this.#fakeAnnotation = null;
+      return;
+    }
+    if (this.hasEditedComment || this._hasBeenMoved || this._hasBeenResized) {
+      this.#fakeAnnotation.updateEdited({
+        rect: this.getPDFRect(),
+        popup: this.comment,
+      });
+    }
   }
 
   /**

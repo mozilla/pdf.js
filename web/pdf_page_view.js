@@ -521,11 +521,9 @@ class PDFPageView extends BasePDFPageView {
       if (!this.annotationLayer) {
         return; // Rendering was cancelled while the textLayerPromise resolved.
       }
-      await this.annotationLayer.injectLinkAnnotations({
-        inferredLinks: Autolinker.processLinks(this),
-        viewport: this.viewport,
-        structTreeLayer: this.structTreeLayer,
-      });
+      await this.annotationLayer.injectLinkAnnotations(
+        Autolinker.processLinks(this)
+      );
     } catch (ex) {
       console.error("#injectLinkAnnotations:", ex);
       error = ex;
@@ -1120,20 +1118,25 @@ class PDFPageView extends BasePDFPageView {
       await this.#renderDrawLayer();
       this.drawLayer.setParent(canvasWrapper);
 
-      this.annotationEditorLayer ||= new AnnotationEditorLayerBuilder({
-        uiManager: annotationEditorUIManager,
-        pdfPage,
-        l10n,
-        structTreeLayer: this.structTreeLayer,
-        accessibilityManager: this._accessibilityManager,
-        annotationLayer: this.annotationLayer?.annotationLayer,
-        textLayer: this.textLayer,
-        drawLayer: this.drawLayer.getDrawLayer(),
-        onAppend: annotationEditorLayerDiv => {
-          this.#addLayer(annotationEditorLayerDiv, "annotationEditorLayer");
-        },
-      });
-      this.#renderAnnotationEditorLayer();
+      if (
+        this.annotationLayer ||
+        this.#annotationMode === AnnotationMode.DISABLE
+      ) {
+        this.annotationEditorLayer ||= new AnnotationEditorLayerBuilder({
+          uiManager: annotationEditorUIManager,
+          pdfPage,
+          l10n,
+          structTreeLayer: this.structTreeLayer,
+          accessibilityManager: this._accessibilityManager,
+          annotationLayer: this.annotationLayer?.annotationLayer,
+          textLayer: this.textLayer,
+          drawLayer: this.drawLayer.getDrawLayer(),
+          onAppend: annotationEditorLayerDiv => {
+            this.#addLayer(annotationEditorLayerDiv, "annotationEditorLayer");
+          },
+        });
+        this.#renderAnnotationEditorLayer();
+      }
     });
 
     if (pdfPage.isPureXfa) {

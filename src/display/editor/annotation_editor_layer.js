@@ -170,6 +170,7 @@ class AnnotationEditorLayer {
     this.#cleanup();
     switch (mode) {
       case AnnotationEditorType.NONE:
+        this.div.classList.toggle("nonEditing", true);
         this.disableTextSelection();
         this.togglePointerEvents(false);
         this.toggleAnnotationLayerPointerEvents(true);
@@ -193,6 +194,7 @@ class AnnotationEditorLayer {
 
     this.toggleAnnotationLayerPointerEvents(false);
     const { classList } = this.div;
+    classList.toggle("nonEditing", false);
     if (mode === AnnotationEditorType.POPUP) {
       classList.toggle("commentEditing", true);
     } else {
@@ -257,6 +259,7 @@ class AnnotationEditorLayer {
     this.#isEnabling = true;
     this.div.tabIndex = 0;
     this.togglePointerEvents(true);
+    this.div.classList.toggle("nonEditing", false);
     this.#textLayerDblClickAC?.abort();
     this.#textLayerDblClickAC = null;
     const annotationElementIds = new Set();
@@ -269,27 +272,24 @@ class AnnotationEditorLayer {
       }
     }
 
-    if (!this.#annotationLayer) {
-      this.#isEnabling = false;
-      return;
-    }
-
-    const editables = this.#annotationLayer.getEditableAnnotations();
-    for (const editable of editables) {
-      // The element must be hidden whatever its state is.
-      editable.hide();
-      if (this.#uiManager.isDeletedAnnotationElement(editable.data.id)) {
-        continue;
+    const annotationLayer = this.#annotationLayer;
+    if (annotationLayer) {
+      for (const editable of annotationLayer.getEditableAnnotations()) {
+        // The element must be hidden whatever its state is.
+        editable.hide();
+        if (this.#uiManager.isDeletedAnnotationElement(editable.data.id)) {
+          continue;
+        }
+        if (annotationElementIds.has(editable.data.id)) {
+          continue;
+        }
+        const editor = await this.deserialize(editable);
+        if (!editor) {
+          continue;
+        }
+        this.addOrRebuild(editor);
+        editor.enableEditing();
       }
-      if (annotationElementIds.has(editable.data.id)) {
-        continue;
-      }
-      const editor = await this.deserialize(editable);
-      if (!editor) {
-        continue;
-      }
-      this.addOrRebuild(editor);
-      editor.enableEditing();
     }
     this.#isEnabling = false;
     this.#uiManager._eventBus.dispatch("editorsrendered", {
@@ -305,6 +305,7 @@ class AnnotationEditorLayer {
     this.#isDisabling = true;
     this.div.tabIndex = -1;
     this.togglePointerEvents(false);
+    this.div.classList.toggle("nonEditing", true);
     if (this.#textLayer && !this.#textLayerDblClickAC) {
       this.#textLayerDblClickAC = new AbortController();
       const signal = this.#uiManager.combinedSignal(this.#textLayerDblClickAC);
@@ -351,26 +352,29 @@ class AnnotationEditorLayer {
         { signal, capture: true }
       );
     }
-    const changedAnnotations = new Map();
-    const resetAnnotations = new Map();
-    for (const editor of this.#allEditorsIterator) {
-      editor.disableEditing();
-      if (!editor.annotationElementId) {
-        continue;
-      }
-      if (editor.serialize() !== null) {
-        changedAnnotations.set(editor.annotationElementId, editor);
-        continue;
-      } else {
-        resetAnnotations.set(editor.annotationElementId, editor);
-      }
-      this.getEditableAnnotation(editor.annotationElementId)?.show();
-      editor.remove();
-    }
 
-    if (this.#annotationLayer) {
+    const annotationLayer = this.#annotationLayer;
+    if (annotationLayer) {
+      const changedAnnotations = new Map();
+      const resetAnnotations = new Map();
+      for (const editor of this.#allEditorsIterator) {
+        editor.disableEditing();
+        if (!editor.annotationElementId) {
+          editor.updateFakeAnnotationElement(annotationLayer);
+          continue;
+        }
+        if (editor.serialize() !== null) {
+          changedAnnotations.set(editor.annotationElementId, editor);
+          continue;
+        } else {
+          resetAnnotations.set(editor.annotationElementId, editor);
+        }
+        this.getEditableAnnotation(editor.annotationElementId)?.show();
+        editor.remove();
+      }
+
       // Show the annotations that were hidden in enable().
-      const editables = this.#annotationLayer.getEditableAnnotations();
+      const editables = annotationLayer.getEditableAnnotations();
       for (const editable of editables) {
         const { id } = editable.data;
         if (this.#uiManager.isDeletedAnnotationElement(id)) {
@@ -725,7 +729,7 @@ class AnnotationEditorLayer {
   /**
    * Create a new editor
    * @param {Object} data
-   * @returns {AnnotationEditor | null}
+   * @returns {Promise<AnnotationEditor | null>}
    */
   async deserialize(data) {
     return (
