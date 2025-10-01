@@ -804,8 +804,12 @@ class PDFPageView extends BasePDFPageView {
       if (this.#needsRestrictedScaling && this.enableDetailCanvas) {
         // If we are going to have a high-res detail view, further reduce
         // the canvas resolution to improve rendering performance.
-        outputScale.sx /= 10;
-        outputScale.sy /= 10;
+        // When enableOptimizedPartialRendering is enabled the factor can be
+        // higher since less data will be rendered and it's more acceptable to
+        // have a lower quality (the canvas is exposed less time to the user).
+        const factor = this.enableOptimizedPartialRendering ? 4 : 2;
+        outputScale.sx /= factor;
+        outputScale.sy /= factor;
       }
     }
   }
