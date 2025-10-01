@@ -364,16 +364,12 @@ describe("PDF viewer", () => {
               .toBeLessThan(originalCanvasSize * factor ** 2);
 
             expect(canvasSize)
-              .withContext(`In ${browserName}, <= MAX_CANVAS_PIXELS / 100`)
-              .toBeLessThanOrEqual(MAX_CANVAS_PIXELS.get(browserName) / 100);
+              .withContext(`In ${browserName}, <= MAX_CANVAS_PIXELS / 4`)
+              .toBeLessThanOrEqual(MAX_CANVAS_PIXELS.get(browserName) / 4);
 
             expect(canvasSize)
-              .withContext(
-                `In ${browserName}, > MAX_CANVAS_PIXELS / 100 * 0.95`
-              )
-              .toBeGreaterThan(
-                (MAX_CANVAS_PIXELS.get(browserName) / 100) * 0.95
-              );
+              .withContext(`In ${browserName}, > MAX_CANVAS_PIXELS / 4 * 0.95`)
+              .toBeGreaterThan((MAX_CANVAS_PIXELS.get(browserName) / 4) * 0.95);
           })
         );
       });
@@ -570,10 +566,10 @@ describe("PDF viewer", () => {
                 .toBe(2);
               expect(after[0].width)
                 .withContext(`In ${browserName}`)
-                .toBe(Math.floor(58.2 * pixelRatio));
+                .toBe(Math.floor(291 * pixelRatio));
               expect(after[0].height)
                 .withContext(`In ${browserName}`)
-                .toBe(Math.floor(82.3 * pixelRatio));
+                .toBe(Math.floor(411.5 * pixelRatio));
 
               // The dimensions of the detail canvas are capped to 800x600 but
               // it depends on the visible area which depends itself of the

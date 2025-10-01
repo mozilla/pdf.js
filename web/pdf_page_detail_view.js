@@ -267,7 +267,10 @@ class PDFPageDetailView extends BasePDFPageView {
         canvasWrapper.prepend(newCanvas);
       }
     }, hideUntilComplete);
-    canvas.setAttribute("aria-hidden", "true");
+    canvas.ariaHidden = true;
+    if (this.enableOptimizedPartialRendering) {
+      canvas.className = "detailView";
+    }
 
     const { width, height } = viewport;
 
