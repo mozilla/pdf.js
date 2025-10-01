@@ -226,10 +226,12 @@ class AnnotationStorage {
     let numberOfDeletedComments = 0;
     for (const value of this.#storage.values()) {
       if (!(value instanceof AnnotationEditor)) {
-        if (value.popup.deleted) {
-          numberOfDeletedComments += 1;
-        } else if (value.popup) {
-          numberOfEditedComments += 1;
+        if (value.popup) {
+          if (value.popup.deleted) {
+            numberOfDeletedComments += 1;
+          } else {
+            numberOfEditedComments += 1;
+          }
         }
         continue;
       }
