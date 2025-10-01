@@ -91,6 +91,7 @@ const EXPORT_DATA_PROPERTIES = [
   "fallbackName",
   "fontExtraProperties",
   "fontMatrix",
+  "fontWeight",
   "isInvalidPDFjsFont",
   "isType3Font",
   "italic",
@@ -1036,6 +1037,7 @@ class Font {
     this.descent = properties.descent / PDF_GLYPH_SPACE_UNITS;
     this.lineHeight = this.ascent - this.descent;
     this.fontMatrix = properties.fontMatrix;
+    this.fontWeight = properties.fontWeight;
     this.bbox = properties.bbox;
     this.defaultEncoding = properties.defaultEncoding;
 
