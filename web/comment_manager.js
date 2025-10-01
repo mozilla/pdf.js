@@ -575,6 +575,8 @@ class CommentSidebar {
 
   async #commentClick({ currentTarget }) {
     if (currentTarget.classList.contains("selected")) {
+      currentTarget.classList.remove("selected");
+      this.#popup._hide();
       return;
     }
     const annotation = this.#elementsToAnnotations.get(currentTarget);

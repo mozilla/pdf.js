@@ -594,5 +594,34 @@ describe("Comment", () => {
         })
       );
     });
+
+    it("must check that comments can be selected/unselected", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToComment(page);
+
+          const firstElementSelector =
+            "#editorCommentsSidebarList li:first-child";
+          await waitAndClick(page, firstElementSelector);
+          const popupSelector = "#commentPopup";
+          await page.waitForSelector(popupSelector, { visible: true });
+          const popupTextSelector = `${popupSelector} .commentPopupText`;
+          await page.waitForSelector(popupTextSelector, {
+            visible: true,
+          });
+          const popupText = await page.evaluate(
+            selector => document.querySelector(selector).textContent,
+            popupTextSelector
+          );
+          expect(popupText)
+            .withContext(`In ${browserName}`)
+            .toEqual("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+
+          // Click again to unselect the comment.
+          await waitAndClick(page, firstElementSelector);
+          await page.waitForSelector(popupSelector, { visible: false });
+        })
+      );
+    });
   });
 });
