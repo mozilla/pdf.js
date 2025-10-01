@@ -2668,6 +2668,10 @@ class AnnotationEditorUIManager {
     return this.#mode;
   }
 
+  isEditingMode() {
+    return this.#mode !== AnnotationEditorType.NONE;
+  }
+
   get imageManager() {
     return shadow(this, "imageManager", new ImageManager());
   }

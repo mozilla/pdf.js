@@ -284,6 +284,24 @@ class AnnotationElement {
     );
   }
 
+  set commentText(text) {
+    const { data } = this;
+    const popup = { deleted: !text, contents: text || "" };
+    if (!this.annotationStorage.updateEditor(data.id, { popup })) {
+      this.annotationStorage.setValue(`${AnnotationEditorPrefix}${data.id}`, {
+        id: data.id,
+        annotationType: data.annotationType,
+        pageIndex: this.parent.page._pageIndex,
+        popup,
+        popupRef: data.popupRef,
+        modificationDate: new Date(),
+      });
+    }
+    if (!text) {
+      this.removePopup();
+    }
+  }
+
   removePopup() {
     (this.#popupElement?.popup || this.popup)?.remove();
     this.#popupElement = this.popup = null;
@@ -308,10 +326,8 @@ class AnnotationElement {
 
     let popup = this.#popupElement?.popup || this.popup;
     if (!popup && newPopup?.text) {
-      if (!this.parent._commentManager) {
-        this._createPopup(newPopup);
-        popup = this.#popupElement.popup;
-      }
+      this._createPopup(newPopup);
+      popup = this.#popupElement.popup;
     }
     if (!popup) {
       return;
@@ -879,6 +895,56 @@ class AnnotationElement {
 
   get height() {
     return this.data.rect[3] - this.data.rect[1];
+  }
+}
+
+class EditorAnnotationElement extends AnnotationElement {
+  constructor(parameters) {
+    super(parameters, { isRenderable: true, ignoreBorder: true });
+    this.editor = parameters.editor;
+  }
+
+  render() {
+    this.container.className = "editorAnnotation";
+    return this.container;
+  }
+
+  createOrUpdatePopup() {
+    const { editor } = this;
+    if (!editor.hasComment) {
+      return;
+    }
+    this._createPopup(editor.comment);
+    this.extraPopupElement.popup.renderCommentButton();
+  }
+
+  get hasCommentButton() {
+    return this.enableComment && this.editor.hasComment;
+  }
+
+  get commentButtonPosition() {
+    return this.editor.commentButtonPositionInPage;
+  }
+
+  get commentText() {
+    return this.editor.comment.text;
+  }
+
+  set commentText(text) {
+    this.editor.comment = text;
+    if (!text) {
+      this.removePopup();
+    }
+  }
+
+  get commentData() {
+    return this.editor.getData();
+  }
+
+  remove() {
+    this.container.remove();
+    this.container = null;
+    this.removePopup();
   }
 }
 
@@ -2541,7 +2607,9 @@ class PopupElement {
   }
 
   #updateCommentButtonPosition() {
-    if (this.#firstElement.extraPopupElement) {
+    if (this.#firstElement.extraPopupElement && !this.#firstElement.editor) {
+      // If there's no editor associated with the annotation then the comment
+      // button position can't be changed.
       return;
     }
     this.renderCommentButton();
@@ -2596,30 +2664,10 @@ class PopupElement {
   }
 
   set comment(text) {
-    const element = this.#firstElement;
-    const { data } = element;
     if (text === this.comment) {
       return;
     }
-    const popup = { deleted: !text, contents: text || "" };
-    if (!element.annotationStorage.updateEditor(data.id, { popup })) {
-      element.annotationStorage.setValue(
-        `${AnnotationEditorPrefix}${data.id}`,
-        {
-          id: data.id,
-          annotationType: data.annotationType,
-          pageIndex: element.parent.page._pageIndex,
-          popup,
-          popupRef: data.popupRef,
-          modificationDate: new Date(),
-        }
-      );
-    }
-
-    this.#commentText = text;
-    if (!text) {
-      element.removePopup();
-    }
+    this.#firstElement.commentText = this.#commentText = text;
   }
 
   get parentBoundingClientRect() {
@@ -3681,9 +3729,13 @@ class AnnotationLayer {
 
   #annotationCanvasMap = null;
 
+  #annotationStorage = null;
+
   #editableAnnotations = new Map();
 
   #structTreeLayer = null;
+
+  #linkService = null;
 
   constructor({
     div,
@@ -3694,11 +3746,15 @@ class AnnotationLayer {
     viewport,
     structTreeLayer,
     commentManager,
+    linkService,
+    annotationStorage,
   }) {
     this.div = div;
     this.#accessibilityManager = accessibilityManager;
     this.#annotationCanvasMap = annotationCanvasMap;
     this.#structTreeLayer = structTreeLayer || null;
+    this.#linkService = linkService || null;
+    this.#annotationStorage = annotationStorage || new AnnotationStorage();
     this.page = page;
     this.viewport = viewport;
     this.zIndex = 0;
@@ -3762,12 +3818,12 @@ class AnnotationLayer {
     const elementParams = {
       data: null,
       layer,
-      linkService: params.linkService,
+      linkService: this.#linkService,
       downloadManager: params.downloadManager,
       imageResourcesPath: params.imageResourcesPath || "",
       renderForms: params.renderForms !== false,
       svgFactory: new DOMSVGFactory(),
-      annotationStorage: params.annotationStorage || new AnnotationStorage(),
+      annotationStorage: this.#annotationStorage,
       enableComment: params.enableComment === true,
       enableScripting: params.enableScripting === true,
       hasJSActions: params.hasJSActions,
@@ -3832,11 +3888,11 @@ class AnnotationLayer {
    * @param {IPDFLinkService} linkService
    * @memberof AnnotationLayer
    */
-  async addLinkAnnotations(annotations, linkService) {
+  async addLinkAnnotations(annotations) {
     const elementParams = {
       data: null,
       layer: this.div,
-      linkService,
+      linkService: this.#linkService,
       svgFactory: new DOMSVGFactory(),
       parent: this,
     };
@@ -3917,6 +3973,34 @@ class AnnotationLayer {
 
   getEditableAnnotation(id) {
     return this.#editableAnnotations.get(id);
+  }
+
+  addFakeAnnotation(editor) {
+    const { div } = this;
+    const { id, rotation } = editor;
+    const element = new EditorAnnotationElement({
+      data: {
+        id,
+        rect: editor.getPDFRect(),
+        rotation,
+      },
+      editor,
+      layer: div,
+      parent: this,
+      enableComment: !!this._commentManager,
+      linkService: this.#linkService,
+      annotationStorage: this.#annotationStorage,
+    });
+    const htmlElement = element.render();
+    div.append(htmlElement);
+    this.#accessibilityManager?.moveElementInDOM(
+      div,
+      htmlElement,
+      htmlElement,
+      /* isRemovable = */ false
+    );
+    element.createOrUpdatePopup();
+    return element;
   }
 
   /**

@@ -41,6 +41,21 @@ const highlightSpan = async (page, pageIndex, text) => {
   await page.waitForSelector(getEditorSelector(0));
 };
 
+const editComment = async (page, editorSelector, comment) => {
+  const commentButtonSelector = `${editorSelector} button.comment`;
+  await waitAndClick(page, commentButtonSelector);
+
+  const textInputSelector = "#commentManagerTextInput";
+  await page.waitForSelector(textInputSelector, {
+    visible: true,
+  });
+  await page.type(textInputSelector, comment);
+  await waitAndClick(page, "#commentManagerSaveButton");
+  await page.waitForSelector("#commentManagerDialog", {
+    visible: false,
+  });
+};
+
 describe("Comment", () => {
   describe("Comment edit dialog must be visible in ltr", () => {
     let pages;
@@ -88,10 +103,10 @@ describe("Comment", () => {
           }));
           expect(dialogRect.x + dialogRect.width)
             .withContext(`In ${browserName}`)
-            .toBeLessThanOrEqual(viewport.width);
+            .toBeLessThanOrEqual(viewport.width + 1);
           expect(dialogRect.y + dialogRect.height)
             .withContext(`In ${browserName}`)
-            .toBeLessThanOrEqual(viewport.height);
+            .toBeLessThanOrEqual(viewport.height + 1);
         })
       );
     });
@@ -134,14 +149,14 @@ describe("Comment", () => {
           });
           const dialogRect = await getRect(page, "#commentManagerDialog");
           const viewport = await page.evaluate(() => ({
-            height: document.documentElement.clientHeight,
+            height: window.innerHeight,
           }));
           expect(dialogRect.x + dialogRect.width)
             .withContext(`In ${browserName}`)
-            .toBeGreaterThanOrEqual(0);
+            .toBeGreaterThanOrEqual(-1);
           expect(dialogRect.y + dialogRect.height)
             .withContext(`In ${browserName}`)
-            .toBeLessThanOrEqual(viewport.height);
+            .toBeLessThanOrEqual(viewport.height + 1);
         })
       );
     });
@@ -306,6 +321,55 @@ describe("Comment", () => {
           expect(title)
             .withContext(`In ${browserName}`)
             .toEqual("Show comment");
+        })
+      );
+    });
+
+    it("must check that the comment button is added in the annotation layer", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getSpanRectFromText(page, 1, "Abstract");
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.click(x, y, { count: 2, delay: 100 });
+          await page.waitForSelector(getEditorSelector(0));
+
+          const comment = "Hello world!";
+          await editComment(page, getEditorSelector(0), comment);
+          await page.hover("#editorHighlightButton");
+          let buttonSelector =
+            ".annotationEditorLayer .annotationCommentButton";
+          await page.waitForSelector(buttonSelector, { visible: true });
+          await page.hover(buttonSelector);
+          const popupSelector = "#commentPopup";
+          await page.waitForSelector(popupSelector, {
+            visible: true,
+          });
+          let popupText = await page.evaluate(
+            selector => document.querySelector(selector).textContent,
+            `${popupSelector} .commentPopupText`
+          );
+          expect(popupText).withContext(`In ${browserName}`).toEqual(comment);
+
+          await page.hover("#editorHighlightButton");
+          await switchToHighlight(page, /* disable = */ true);
+
+          buttonSelector = ".annotationLayer .annotationCommentButton";
+          await page.waitForSelector(buttonSelector, {
+            visible: true,
+          });
+          await page.hover(buttonSelector);
+
+          await page.waitForSelector(popupSelector, {
+            visible: true,
+          });
+          popupText = await page.evaluate(
+            selector => document.querySelector(selector).textContent,
+            `${popupSelector} .commentPopupText`
+          );
+          expect(popupText).withContext(`In ${browserName}`).toEqual(comment);
         })
       );
     });

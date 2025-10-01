@@ -64,13 +64,6 @@ import { PresentationModeState } from "./ui_utils.js";
  * @property {StructTreeLayerBuilder} [structTreeLayer]
  */
 
-/**
- * @typedef {Object} InjectLinkAnnotationsOptions
- * @property {Array<Object>} inferredLinks
- * @property {PageViewport} viewport
- * @property {StructTreeLayerBuilder} [structTreeLayer]
- */
-
 class AnnotationLayerBuilder {
   #annotations = null;
 
@@ -158,23 +151,19 @@ class AnnotationLayerBuilder {
     const div = (this.div = document.createElement("div"));
     div.className = "annotationLayer";
     this.#onAppend?.(div);
+    this.#initAnnotationLayer(viewport, structTreeLayer);
 
     if (annotations.length === 0) {
       this.#annotations = annotations;
-
-      this.hide(/* internal = */ true);
+      setLayerDimensions(this.div, viewport);
       return;
     }
-
-    this.#initAnnotationLayer(viewport, structTreeLayer);
 
     await this.annotationLayer.render({
       annotations,
       imageResourcesPath: this.imageResourcesPath,
       renderForms: this.renderForms,
-      linkService: this.linkService,
       downloadManager: this.downloadManager,
-      annotationStorage: this.annotationStorage,
       enableComment: this.enableComment,
       enableScripting: this.enableScripting,
       hasJSActions,
@@ -207,10 +196,12 @@ class AnnotationLayerBuilder {
       accessibilityManager: this._accessibilityManager,
       annotationCanvasMap: this._annotationCanvasMap,
       annotationEditorUIManager: this._annotationEditorUIManager,
+      annotationStorage: this.annotationStorage,
       page: this.pdfPage,
       viewport: viewport.clone({ dontFlip: true }),
       structTreeLayer,
       commentManager: this.#commentManager,
+      linkService: this.linkService,
     });
   }
 
@@ -234,15 +225,11 @@ class AnnotationLayerBuilder {
   }
 
   /**
-   * @param {InjectLinkAnnotationsOptions} options
+   * @param {Array<Object>} inferredLinks
    * @returns {Promise<void>} A promise that is resolved when the inferred links
    *   are added to the annotation layer.
    */
-  async injectLinkAnnotations({
-    inferredLinks,
-    viewport,
-    structTreeLayer = null,
-  }) {
+  async injectLinkAnnotations(inferredLinks) {
     if (this.#annotations === null) {
       throw new Error(
         "`render` method must be called before `injectLinkAnnotations`."
@@ -261,12 +248,7 @@ class AnnotationLayerBuilder {
       return;
     }
 
-    if (!this.annotationLayer) {
-      this.#initAnnotationLayer(viewport, structTreeLayer);
-      setLayerDimensions(this.div, viewport);
-    }
-
-    await this.annotationLayer.addLinkAnnotations(newLinks, this.linkService);
+    await this.annotationLayer.addLinkAnnotations(newLinks);
     // Don't show the annotation layer if it was explicitly hidden previously.
     if (!this.#externalHide) {
       this.div.hidden = false;
