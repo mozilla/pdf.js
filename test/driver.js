@@ -257,10 +257,8 @@ class Rasterize {
       // Rendering annotation layer as HTML.
       const parameters = {
         annotations,
-        linkService: new SimpleLinkService(),
         imageResourcesPath,
         renderForms,
-        annotationStorage,
         fieldObjects,
       };
 
@@ -272,6 +270,8 @@ class Rasterize {
         annotationCanvasMap: annotationImageMap,
         page,
         viewport: annotationViewport,
+        linkService: new SimpleLinkService(),
+        annotationStorage,
       });
       await annotationLayer.render(parameters);
       await annotationLayer.showPopups();
