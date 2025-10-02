@@ -854,8 +854,9 @@ class CommentDialog {
         posY = 0;
       }
     }
-    posX /= innerWidth;
-    posY /= innerHeight;
+
+    posX = MathClamp(posX / innerWidth, 0, 1);
+    posY = MathClamp(posY / innerHeight, 0, 1);
     this.#setPosition(posX, posY);
 
     await this.#overlayManager.open(this.#dialog);
