@@ -13027,5 +13027,27 @@
     "md5": "cc53e96a8fd9eafbfbb74de564f37047",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue20302-save-print",
+    "file": "pdfs/issue20302.pdf",
+    "md5": "d8db2fa1889fd14effcfa5b597b6fe7b",
+    "rounds": 1,
+    "lastPage": 1,
+    "type": "eq",
+    "link": true,
+    "save": true,
+    "print": true,
+    "annotationStorage": {
+      "pdfjs_internal_editor_0": {
+        "annotationType": 3,
+        "color": [0, 0, 0],
+        "fontSize": 10,
+        "value": "Hello World",
+        "pageIndex": 0,
+        "rect": [115, 325, 171, 342],
+        "rotation": 0
+      }
+    }
   }
 ]
