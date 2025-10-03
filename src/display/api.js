@@ -2403,10 +2403,10 @@ class RendererWorker {
     const src =
       // eslint-disable-next-line no-nested-ternary
       typeof PDFJSDev === "undefined"
-        ? "../src/pdf.worker.js"
+        ? "../src/pdf.renderer.js"
         : PDFJSDev.test("MOZCENTRAL")
-          ? "resource://pdf.js/build/pdf.worker.mjs"
-          : "../build/pdf.worker.mjs";
+          ? "resource://pdf.js/build/pdf.renderer.mjs"
+          : "../build/pdf.renderer.mjs";
     this.#worker = new Worker(src, { type: "module" });
     this.#handler = new MessageHandler("main", "renderer", this.#worker);
     this.#handler.send("configure", { channelPort, enableHWA }, [channelPort]);
@@ -3427,9 +3427,16 @@ class InternalRenderTask {
       this.graphicsReadyCallback ||= this._continueBound;
       return;
     }
-    this.gfx.dependencyTracker?.growOperationsCount(
-      this.operatorList.fnArray.length
-    );
+    if (!this._renderInWorker) {
+      this.gfx.dependencyTracker?.growOperationsCount(
+        this.operatorList.fnArray.length
+      );
+    } else {
+      this.rendererHandler.send("growOperationsCount", {
+        taskID: this.taskID,
+        newOperatorListLength: this.operatorList.fnArray.length,
+      });
+    }
     this.stepper?.updateOperatorList(this.operatorList);
 
     if (this.running) {
