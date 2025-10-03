@@ -27,11 +27,14 @@
   --sidebar-min-width: 180px;
   --sidebar-max-width: 632px;
   --sidebar-width: 239px;
+  --resizer-width: 4px;
+  --resizer-hover-bg-color: light-dark(#0062fa, #00cadb);
 
   @media screen and (forced-colors: active) {
     --sidebar-bg-color: Canvas;
     --sidebar-border-color: CanvasText;
     --sidebar-box-shadow: none;
+    --resizer-hover-bg-color: CanvasText;
   }
 
   border-radius: var(--sidebar-border-radius);
@@ -45,12 +48,22 @@
   max-width: var(--sidebar-max-width);
 
   .sidebarResizer {
-    width: 4px;
+    width: var(--resizer-width);
     background-color: transparent;
     forced-color-adjust: none;
     cursor: ew-resize;
     position: absolute;
     inset-block: calc(var(--sidebar-padding) + var(--sidebar-border-radius));
+    inset-inline-start: calc(0px - var(--resizer-width) / 2);
+    transition: background-color 0.5s ease-in-out;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    border-block-width: 0;
+    background-clip: content-box;
+
+    &:hover {
+      background-color: var(--resizer-hover-bg-color);
+    }
   }
 
   &.resizing {
