@@ -22,7 +22,9 @@ import {
   string32,
   stringToBytes,
   stringToPDFString,
+  Util,
 } from "../../src/shared/util.js";
+import { DOMMatrix, DOMPoint } from "@napi-rs/canvas";
 
 describe("util", function () {
   describe("BaseException", function () {
@@ -256,6 +258,30 @@ describe("util", function () {
       const uuid = getUuid();
       expect(typeof uuid).toEqual("string");
       expect(uuid.length).toBeGreaterThanOrEqual(32);
+    });
+  });
+
+  describe("applyTransform", function () {
+    it("should apply transformations correctly without subarray creation", async function () {
+      const cases = [
+        { transform: [1, 0, 0, 1, 10, 20], points: [5, 5, 10, 10] }, // translation
+        { transform: [0.5, 0.3, -0.3, 0.5, -5, 5], points: [0, 0, 1, 1] }, // scale+shear+translate
+        { transform: [2, 0, 0, 2, 0, 0], points: [-2, 3, 4, -5] }, // simple doubling
+      ];
+
+      for (const { transform, points: original } of cases) {
+        const M = new DOMMatrix(transform);
+        const pts = original.slice();
+
+        const p0 = M.transformPoint(new DOMPoint(original[0], original[1]));
+        const p1 = M.transformPoint(new DOMPoint(original[2], original[3]));
+        const expected = [p0.x, p0.y, p1.x, p1.y];
+
+        Util.applyTransform(pts, transform, 0);
+        Util.applyTransform(pts, transform, 2);
+
+        expect(pts).toEqual(expected);
+      }
     });
   });
 });
