@@ -3335,9 +3335,16 @@ class InternalRenderTask {
       this.graphicsReadyCallback ||= this._continueBound;
       return;
     }
-    this.gfx.dependencyTracker?.growOperationsCount(
-      this.operatorList.fnArray.length
-    );
+    if (!this._renderInWorker) {
+      this.gfx.dependencyTracker?.growOperationsCount(
+        this.operatorList.fnArray.length
+      );
+    } else {
+      this.rendererHandler.send("growOperationsCount", {
+        taskID: this.taskID,
+        newOperatorListLength: this.operatorList.fnArray.length,
+      });
+    }
     this.stepper?.updateOperatorList(this.operatorList);
 
     if (this.running) {

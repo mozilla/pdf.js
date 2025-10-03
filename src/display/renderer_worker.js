@@ -79,6 +79,7 @@ class RendererMessageHandler {
         transparency,
         background,
         optionalContentConfig,
+        dependencyTracker,
       }) => {
         assert(!this.#tasks.has(taskID), "Task already initialized");
         const ctx = canvas.getContext("2d", {
@@ -94,7 +95,8 @@ class RendererMessageHandler {
           this.#filterFactory,
           { optionalContentConfig },
           map,
-          colors
+          colors,
+          dependencyTracker
         );
         gfx.beginDrawing({ transform, viewport, transparency, background });
         this.#tasks.set(taskID, { canvas, gfx });
@@ -148,6 +150,18 @@ class RendererMessageHandler {
       mainHandler.destroy();
       mainHandler = null;
     });
+
+    mainHandler.on(
+      "growOperationsCount",
+      ({ taskID, newOperatorListLength }) => {
+        if (terminated) {
+          throw new Error("Renderer worker has been terminated.");
+        }
+        const task = this.#tasks.get(taskID);
+        assert(task !== undefined, "Task not initialized");
+        task.gfx.dependencyTracker?.growOperationsCount(newOperatorListLength);
+      }
+    );
   }
 }
 
