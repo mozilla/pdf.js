@@ -2927,7 +2927,7 @@ class PartialEvaluator {
 
       for (let i = 0, ii = glyphs.length; i < ii; i++) {
         const glyph = glyphs[i];
-        const { category } = glyph;
+        const { category, originalCharCode } = glyph;
 
         if (category.isInvisibleFormatMark) {
           continue;
@@ -2941,6 +2941,10 @@ class PartialEvaluator {
         }
         let scaledDim = glyphWidth * scale;
 
+        if (originalCharCode === 0x20) {
+          charSpacing += textState.wordSpacing;
+        }
+
         if (!keepWhiteSpace && category.isWhitespace) {
           // Don't push a " " in the textContentItem
           // (except when it's between two non-spaces chars),
@@ -2948,13 +2952,13 @@ class PartialEvaluator {
           // compareWithLastPosition.
           // This way we can merge real spaces and spaces due to cursor moves.
           if (!font.vertical) {
-            charSpacing += scaledDim + textState.wordSpacing;
+            charSpacing += scaledDim;
             textState.translateTextMatrix(
               charSpacing * textState.textHScale,
               0
             );
           } else {
-            charSpacing += -scaledDim + textState.wordSpacing;
+            charSpacing += -scaledDim;
             textState.translateTextMatrix(0, -charSpacing);
           }
           saveLastChar(" ");
