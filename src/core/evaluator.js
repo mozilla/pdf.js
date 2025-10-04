@@ -4603,6 +4603,10 @@ class PartialEvaluator {
     if (typeof italicAngle !== "number") {
       italicAngle = 0;
     }
+    let fontWeight = descriptor.get("FontWeight");
+    if (typeof fontWeight !== "number") {
+      fontWeight = 400;
+    }
 
     const properties = {
       type,
@@ -4627,6 +4631,7 @@ class PartialEvaluator {
       capHeight,
       flags,
       italicAngle,
+      fontWeight,
       isType3Font,
       cssFontInfo,
       scaleFactors: glyphScaleFactors,
