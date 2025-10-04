@@ -438,6 +438,7 @@ class Page {
 
   async getOperatorList({
     handler,
+    rendererHandler,
     sink,
     task,
     intent,
