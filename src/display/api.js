@@ -752,9 +752,6 @@ class PDFDocumentProxy {
       Object.defineProperty(this, "getXFADatasets", {
         value: () => this._transport.getXFADatasets(),
       });
-      Object.defineProperty(this, "getXRefPrevValue", {
-        value: () => this._transport.getXRefPrevValue(),
-      });
       Object.defineProperty(this, "getStartXRefPos", {
         value: () => this._transport.getStartXRefPos(),
       });

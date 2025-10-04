@@ -2499,6 +2499,8 @@ describe("api", function () {
 
       let loadingTask = getDocument(buildGetDocumentParams("bug1823296.pdf"));
       let pdfDoc = await loadingTask.promise;
+      let page = await pdfDoc.getPage(1);
+      const originalStructTree = await page.getStructTree();
       pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
         annotationType: AnnotationEditorType.FREETEXT,
         rect: [12, 34, 56, 78],
@@ -2514,9 +2516,9 @@ describe("api", function () {
 
       loadingTask = getDocument(data);
       pdfDoc = await loadingTask.promise;
-      const xrefPrev = await pdfDoc.getXRefPrevValue();
-
-      expect(xrefPrev).toEqual(143954);
+      page = await pdfDoc.getPage(1);
+      const newStructTree = await page.getStructTree();
+      expect(newStructTree).toEqual(originalStructTree);
 
       await loadingTask.destroy();
     });

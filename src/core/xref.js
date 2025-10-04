@@ -33,8 +33,6 @@ import { BaseStream } from "./base_stream.js";
 import { CipherTransformFactory } from "./crypto.js";
 
 class XRef {
-  #firstXRefStmPos = null;
-
   constructor(stream, pdfManager) {
     this.stream = stream;
     this.pdfManager = pdfManager;
@@ -754,7 +752,6 @@ class XRef {
             // (possible infinite recursion)
             this._xrefStms.add(obj);
             this.startXRefQueue.push(obj);
-            this.#firstXRefStmPos ??= obj;
           }
         } else if (Number.isInteger(obj)) {
           // Parse in-stream XRef
@@ -801,13 +798,6 @@ class XRef {
       return undefined;
     }
     throw new XRefParseException();
-  }
-
-  get lastXRefStreamPos() {
-    return (
-      this.#firstXRefStmPos ??
-      (this._xrefStms.size > 0 ? Math.max(...this._xrefStms) : null)
-    );
   }
 
   getEntry(i) {
