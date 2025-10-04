@@ -16,6 +16,7 @@
 import { AnnotationEditorParamsType, unreachable } from "../../shared/util.js";
 import { noContextMenu, stopEvent } from "../display_utils.js";
 import { AnnotationEditor } from "./editor.js";
+import { CurrentPointers } from "./tools.js";
 
 class DrawingOptions {
   #svgProperties = Object.create(null);
@@ -80,14 +81,6 @@ class DrawingEditor extends AnnotationEditor {
   static #currentDrawingAC = null;
 
   static #currentDrawingOptions = null;
-
-  static #currentPointerId = NaN;
-
-  static #currentPointerType = null;
-
-  static #currentPointerIds = null;
-
-  static #currentMoveTimestamp = NaN;
 
   static _INNER_MARGIN = 3;
 
@@ -678,20 +671,15 @@ class DrawingEditor extends AnnotationEditor {
   }
 
   static startDrawing(parent, uiManager, _isLTR, event) {
-    // The _currentPointerType is set when the user starts an empty drawing
-    // session. If, in the same drawing session, the user starts using a
+    // The pointerType of CurrentPointer is set when the user starts an empty
+    // drawing session. If, in the same drawing session, the user starts using a
     // different type of pointer (e.g. a pen and then a finger), we just return.
     //
-    // The _currentPointerId  and _currentPointerIds are used to keep track of
-    // the pointers with a same type (e.g. two fingers). If the user starts to
-    // draw with a finger and then uses a second finger, we just stop the
-    // current drawing and let the user zoom the document.
+    // If the user starts to draw with a finger and then uses a second finger,
+    // we just stop the current drawing and let the user zoom the document.
 
     const { target, offsetX: x, offsetY: y, pointerId, pointerType } = event;
-    if (
-      DrawingEditor.#currentPointerType &&
-      DrawingEditor.#currentPointerType !== pointerType
-    ) {
+    if (CurrentPointers.isInitializedAndDifferentPointerType(pointerType)) {
       return;
     }
 
@@ -704,16 +692,13 @@ class DrawingEditor extends AnnotationEditor {
     const ac = (DrawingEditor.#currentDrawingAC = new AbortController());
     const signal = parent.combinedSignal(ac);
 
-    DrawingEditor.#currentPointerId ||= pointerId;
-    DrawingEditor.#currentPointerType ??= pointerType;
+    CurrentPointers.setPointer(pointerType, pointerId);
 
     window.addEventListener(
       "pointerup",
       e => {
-        if (DrawingEditor.#currentPointerId === e.pointerId) {
+        if (CurrentPointers.isSamePointerIdOrRemove(e.pointerId)) {
           this._endDraw(e);
-        } else {
-          DrawingEditor.#currentPointerIds?.delete(e.pointerId);
         }
       },
       { signal }
@@ -721,10 +706,8 @@ class DrawingEditor extends AnnotationEditor {
     window.addEventListener(
       "pointercancel",
       e => {
-        if (DrawingEditor.#currentPointerId === e.pointerId) {
+        if (CurrentPointers.isSamePointerIdOrRemove(e.pointerId)) {
           this._currentParent.endDrawingSession();
-        } else {
-          DrawingEditor.#currentPointerIds?.delete(e.pointerId);
         }
       },
       { signal }
@@ -732,14 +715,14 @@ class DrawingEditor extends AnnotationEditor {
     window.addEventListener(
       "pointerdown",
       e => {
-        if (DrawingEditor.#currentPointerType !== e.pointerType) {
+        if (!CurrentPointers.isSamePointerType(e.pointerType)) {
           // For example, we started with a pen and the user
           // is now using a finger.
           return;
         }
 
         // For example, the user is using a second finger.
-        (DrawingEditor.#currentPointerIds ||= new Set()).add(e.pointerId);
+        CurrentPointers.initializeAndAddPointerId(e.pointerId);
 
         // The first finger created a first point and a second finger just
         // started, so we stop the drawing and remove this only point.
@@ -765,7 +748,7 @@ class DrawingEditor extends AnnotationEditor {
     target.addEventListener(
       "touchmove",
       e => {
-        if (e.timeStamp === DrawingEditor.#currentMoveTimestamp) {
+        if (CurrentPointers.isSameTimeStamp(e.timeStamp)) {
           // This move event is used to draw so we don't want to scroll.
           stopEvent(e);
         }
@@ -812,16 +795,16 @@ class DrawingEditor extends AnnotationEditor {
   }
 
   static _drawMove(event) {
-    DrawingEditor.#currentMoveTimestamp = -1;
+    CurrentPointers.isSameTimeStamp(event.timeStamp);
     if (!DrawingEditor.#currentDraw) {
       return;
     }
     const { offsetX, offsetY, pointerId } = event;
 
-    if (DrawingEditor.#currentPointerId !== pointerId) {
+    if (!CurrentPointers.isSamePointerId(pointerId)) {
       return;
     }
-    if (DrawingEditor.#currentPointerIds?.size >= 1) {
+    if (CurrentPointers.isUsingMultiplePointers()) {
       // The user is using multiple fingers and the first one is moving.
       this._endDraw(event);
       return;
@@ -831,7 +814,7 @@ class DrawingEditor extends AnnotationEditor {
       DrawingEditor.#currentDraw.add(offsetX, offsetY)
     );
     // We track the timestamp to know if the touchmove event is used to draw.
-    DrawingEditor.#currentMoveTimestamp = event.timeStamp;
+    CurrentPointers.setTimeStamp(event.timeStamp);
     stopEvent(event);
   }
 
@@ -841,15 +824,14 @@ class DrawingEditor extends AnnotationEditor {
       this._currentParent = null;
       DrawingEditor.#currentDraw = null;
       DrawingEditor.#currentDrawingOptions = null;
-      DrawingEditor.#currentPointerType = null;
-      DrawingEditor.#currentMoveTimestamp = NaN;
+      CurrentPointers.clearPointerType();
+      CurrentPointers.clearTimeStamp();
     }
 
     if (DrawingEditor.#currentDrawingAC) {
       DrawingEditor.#currentDrawingAC.abort();
       DrawingEditor.#currentDrawingAC = null;
-      DrawingEditor.#currentPointerId = NaN;
-      DrawingEditor.#currentPointerIds = null;
+      CurrentPointers.clearPointerIds();
     }
   }
 
