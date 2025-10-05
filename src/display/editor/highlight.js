@@ -527,7 +527,7 @@ class HighlightEditor extends AnnotationEditor {
       highlightOutlines: this.#highlightOutlines.getNewOutline(thickness / 2),
     });
     this.fixAndSetPosition();
-    this.setDims(this.width, this.height);
+    this.setDims();
   }
 
   #cleanDrawLayer() {
@@ -646,7 +646,7 @@ class HighlightEditor extends AnnotationEditor {
     highlightDiv.setAttribute("aria-hidden", "true");
     highlightDiv.className = "internal";
     highlightDiv.style.clipPath = this.#clipPathId;
-    this.setDims(this.width, this.height);
+    this.setDims();
 
     bindEvents(this, this.#highlightDiv, ["pointerover", "pointerleave"]);
     this.enableEditing();
