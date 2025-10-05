@@ -304,6 +304,15 @@ pdfjs-editor-signature-button =
     .title = Agregar firma
 pdfjs-editor-signature-button-label = Añadir firma
 
+## Default editor aria labels
+
+# “Highlight” is a noun, the string is used on the editor for highlights.
+pdfjs-editor-highlight-editor =
+    .aria-label = Editor de destacados
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = Editor de dibujos
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =
@@ -492,6 +501,7 @@ pdfjs-editor-undo-bar-close-button-label = Cerrar
 
 ## Add a signature dialog
 
+pdfjs-editor-add-signature-dialog-label = Este modal permite al usuario crear una firma para añadirla a un documento PDF. El usuario puede editar el nombre (que también sirve como texto alternativo) y, opcionalmente, guardar la firma para utilizarla en otras ocasiones.
 pdfjs-editor-add-signature-dialog-title = Agregar una firma
 
 ## Tab names
@@ -512,6 +522,16 @@ pdfjs-editor-add-signature-type-input =
     .placeholder = Escribe tu firma
 pdfjs-editor-add-signature-draw-placeholder = Dibuja tu firma
 pdfjs-editor-add-signature-draw-thickness-range-label = Grossor
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Grosor del dibujo: { $thickness }
+pdfjs-editor-add-signature-image-placeholder = Arrastra un archivo aquí para cargarlo
+pdfjs-editor-add-signature-image-browse-link =
+    { PLATFORM() ->
+        [macos] O elegir archivos de imagen
+       *[other] O buscar archivos de imagen
+    }
 
 ## Controls
 
@@ -532,6 +552,13 @@ pdfjs-editor-add-signature-error-close-button = Cerrar
 
 pdfjs-editor-add-signature-cancel-button = Cancelar
 pdfjs-editor-add-signature-add-button = Agregar
+pdfjs-editor-edit-signature-update-button = Actualizar
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button1 =
+    .title = Eliminar la firma guardada
+pdfjs-editor-delete-signature-button-label1 = Eliminar la firma guardada
 
 ## Editor toolbar
 

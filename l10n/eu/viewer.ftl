@@ -308,6 +308,10 @@ pdfjs-comment-floating-button =
     .title = Iruzkina
     .aria-label = Iruzkina
 pdfjs-comment-floating-button-label = Iruzkina
+pdfjs-editor-comment-button =
+    .title = Iruzkina
+    .aria-label = Iruzkina
+pdfjs-editor-comment-button-label = Iruzkina
 pdfjs-editor-signature-button =
     .title = Gehitu sinadura
 pdfjs-editor-signature-button-label = Gehitu sinadura
@@ -370,6 +374,21 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Testu-editorea
     .default-content = Hasi idazten…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Iruzkina
+       *[other] Iruzkinak
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Itxi alboko barra
+    .aria-label = Itxi alboko barra
+pdfjs-editor-comments-sidebar-close-button-label = Itxi alboko barra
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = Azpimarratzeko zerbait ikusi duzu? Nabarmen ezazu eta utzi iruzkina.
+pdfjs-editor-comments-sidebar-no-comments-link = Argibide gehiago
 
 ## Alt-text dialog
 
@@ -590,6 +609,17 @@ pdfjs-editor-add-signature-cancel-button = Utzi
 pdfjs-editor-add-signature-add-button = Gehitu
 pdfjs-editor-edit-signature-update-button = Eguneratu
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Editatu iruzkina
+pdfjs-editor-edit-comment-popup-button =
+    .title = Editatu iruzkina
+pdfjs-editor-delete-comment-popup-button-label = Kendu iruzkina
+pdfjs-editor-delete-comment-popup-button =
+    .title = Kendu iruzkina
+pdfjs-show-comment-button =
+    .title = Erakutsi iruzkina
+
 ##  Edit a comment dialog
 
 pdfjs-editor-edit-comment-actions-button-label = Ekintzak
@@ -604,6 +634,15 @@ pdfjs-editor-edit-comment-manager-text-input =
     .placeholder = Idatzi zure iruzkina
 pdfjs-editor-edit-comment-manager-cancel-button = Utzi
 pdfjs-editor-edit-comment-manager-save-button = Gorde
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Editatu iruzkina
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Eguneratu
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Gehitu iruzkina
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Gehitu
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Hasi idazten…
+pdfjs-editor-edit-comment-dialog-cancel-button = Utzi
 
 ## Edit a comment button in the editor toolbar
 

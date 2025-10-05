@@ -300,6 +300,10 @@ pdfjs-comment-floating-button =
     .title = Bình luận
     .aria-label = Bình luận
 pdfjs-comment-floating-button-label = Bình luận
+pdfjs-editor-comment-button =
+    .title = Bình luận
+    .aria-label = Bình luận
+pdfjs-editor-comment-button-label = Bình luận
 pdfjs-editor-signature-button =
     .title = Thêm chữ ký
 pdfjs-editor-signature-button-label = Thêm chữ ký
@@ -362,6 +366,17 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Trình chỉnh sửa văn bản
     .default-content = Bắt đầu nhập…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title = Bình luận
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Đóng thanh lề
+    .aria-label = Đóng thanh lề
+pdfjs-editor-comments-sidebar-close-button-label = Đóng thanh lề
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = Bạn thấy điều gì đáng chú ý? Hãy đánh dấu và để lại bình luận.
+pdfjs-editor-comments-sidebar-no-comments-link = Tìm hiểu thêm
 
 ## Alt-text dialog
 
@@ -574,6 +589,15 @@ pdfjs-editor-add-signature-cancel-button = Hủy bỏ
 pdfjs-editor-add-signature-add-button = Thêm
 pdfjs-editor-edit-signature-update-button = Cập nhật
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Chỉnh sửa bình luận
+pdfjs-editor-edit-comment-popup-button =
+    .title = Chỉnh sửa bình luận
+pdfjs-editor-delete-comment-popup-button-label = Xoá bình luận
+pdfjs-editor-delete-comment-popup-button =
+    .title = Xoá bình luận
+
 ##  Edit a comment dialog
 
 pdfjs-editor-edit-comment-actions-button-label = Hành động
@@ -588,6 +612,13 @@ pdfjs-editor-edit-comment-manager-text-input =
     .placeholder = Nhập bình luận của bạn
 pdfjs-editor-edit-comment-manager-cancel-button = Hủy bỏ
 pdfjs-editor-edit-comment-manager-save-button = Lưu
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Chỉnh sửa bình luận
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Thêm bình luận
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Bắt đầu nhập…
+pdfjs-editor-edit-comment-dialog-cancel-button = Hủy bỏ
 
 ## Edit a comment button in the editor toolbar
 

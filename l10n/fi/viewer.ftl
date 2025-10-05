@@ -370,6 +370,9 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Tekstimuokkain
     .default-content = Aloita kirjoittaminen…
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = Näetkö jotain huomionarvoista? Korosta se ja jätä kommentti.
+pdfjs-editor-comments-sidebar-no-comments-link = Lue lisää
 
 ## Alt-text dialog
 
@@ -586,6 +589,15 @@ pdfjs-editor-add-signature-cancel-button = Peruuta
 pdfjs-editor-add-signature-add-button = Lisää
 pdfjs-editor-edit-signature-update-button = Päivitä
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Muokkaa kommenttia
+pdfjs-editor-edit-comment-popup-button =
+    .title = Muokkaa kommenttia
+pdfjs-editor-delete-comment-popup-button-label = Poista kommentti
+pdfjs-editor-delete-comment-popup-button =
+    .title = Poista kommentti
+
 ##  Edit a comment dialog
 
 pdfjs-editor-edit-comment-actions-button-label = Toiminnot
@@ -600,6 +612,13 @@ pdfjs-editor-edit-comment-manager-text-input =
     .placeholder = Kirjoita kommenttisi
 pdfjs-editor-edit-comment-manager-cancel-button = Peruuta
 pdfjs-editor-edit-comment-manager-save-button = Tallenna
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Muokkaa kommenttia
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Lisää kommentti
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Aloita kirjoittaminen…
+pdfjs-editor-edit-comment-dialog-cancel-button = Peruuta
 
 ## Edit a comment button in the editor toolbar
 
