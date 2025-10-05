@@ -2585,6 +2585,56 @@ describe("Interaction", () => {
     });
   });
 
+  describe("Date HTML element in different timezone", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "dates.pdf",
+        getAnnotationSelector("26R"),
+        null,
+        null,
+        async page => {
+          // Make sure that 00:00 UTC is the day before in the local timezone.
+          await page.emulateTimezone("Pacific/Niue");
+        }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the inputs are correct", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForScripting(page);
+          await waitForSandboxTrip(page);
+
+          const firstInputSelector = `${getAnnotationSelector("26R")} > input`;
+          await page.waitForSelector(`${firstInputSelector}[type="text"]`);
+          await page.click(firstInputSelector);
+          await waitForSandboxTrip(page);
+          await page.waitForSelector(`${firstInputSelector}[type="date"]`);
+          await page.$eval(firstInputSelector, el => {
+            el.value = "2025-10-05";
+          });
+          const secondInputSelector = `${getAnnotationSelector("27R")} > input`;
+          await page.waitForSelector(`${secondInputSelector}[type="text"]`);
+          await page.click(secondInputSelector);
+          await waitForSandboxTrip(page);
+          const firstInputValue = await page.$eval(
+            firstInputSelector,
+            el => el.value
+          );
+          expect(firstInputValue)
+            .withContext(`In ${browserName}`)
+            .toEqual("05-Oct-25");
+        })
+      );
+    });
+  });
+
   describe("Date HTML element with initial values", () => {
     let pages;
 
