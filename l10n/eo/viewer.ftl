@@ -308,6 +308,10 @@ pdfjs-comment-floating-button =
     .title = Komenti
     .aria-label = Komenti
 pdfjs-comment-floating-button-label = Komenti
+pdfjs-editor-comment-button =
+    .title = Komenti
+    .aria-label = Komenti
+pdfjs-editor-comment-button-label = Komenti
 pdfjs-editor-signature-button =
     .title = Aldoni subskribon
 pdfjs-editor-signature-button-label = Aldoni subskribon
@@ -370,6 +374,21 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Teksta redaktilo
     .default-content = Komencu tajpi…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Komenti
+       *[other] Komentoj
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Fermi la flankan strion
+    .aria-label = Fermi la flankan strion
+pdfjs-editor-comments-sidebar-close-button-label = Fermi la flankan strion
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = Ĉu vi rimarkas ion interesan? Elstarigu tion kaj aldonu komenton.
+pdfjs-editor-comments-sidebar-no-comments-link = Pli da informo
 
 ## Alt-text dialog
 
@@ -586,6 +605,17 @@ pdfjs-editor-add-signature-cancel-button = Nuligi
 pdfjs-editor-add-signature-add-button = Aldoni
 pdfjs-editor-edit-signature-update-button = Ĝisdatigi
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Modifi komenton
+pdfjs-editor-edit-comment-popup-button =
+    .title = Modifi komenton
+pdfjs-editor-delete-comment-popup-button-label = Forigi komenton
+pdfjs-editor-delete-comment-popup-button =
+    .title = Forigi komenton
+pdfjs-show-comment-button =
+    .title = Montri komenton
+
 ##  Edit a comment dialog
 
 pdfjs-editor-edit-comment-actions-button-label = Agoj
@@ -600,6 +630,15 @@ pdfjs-editor-edit-comment-manager-text-input =
     .placeholder = Tajpu vian komenton
 pdfjs-editor-edit-comment-manager-cancel-button = Nuligi
 pdfjs-editor-edit-comment-manager-save-button = Konservi
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Modifi komenton
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Ĝisdatigi
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Aldoni komenton
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Aldoni
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Ektajpi…
+pdfjs-editor-edit-comment-dialog-cancel-button = Nuligi
 
 ## Edit a comment button in the editor toolbar
 

@@ -300,6 +300,10 @@ pdfjs-comment-floating-button =
     .title = 批注
     .aria-label = 批注
 pdfjs-comment-floating-button-label = 批注
+pdfjs-editor-comment-button =
+    .title = 批注
+    .aria-label = 批注
+pdfjs-editor-comment-button-label = 批注
 pdfjs-editor-signature-button =
     .title = 添加签名
 pdfjs-editor-signature-button-label = 添加签名
@@ -362,6 +366,17 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = 文本编辑器
     .default-content = 在此键入…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title = 批注
+pdfjs-editor-comments-sidebar-close-button =
+    .title = 关闭侧栏
+    .aria-label = 关闭侧栏
+pdfjs-editor-comments-sidebar-close-button-label = 关闭侧栏
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = 发现值得注意的地方？可为其添加高亮并批注。
+pdfjs-editor-comments-sidebar-no-comments-link = 详细了解
 
 ## Alt-text dialog
 
@@ -574,6 +589,17 @@ pdfjs-editor-add-signature-cancel-button = 取消
 pdfjs-editor-add-signature-add-button = 添加
 pdfjs-editor-edit-signature-update-button = 更新
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = 编辑批注
+pdfjs-editor-edit-comment-popup-button =
+    .title = 编辑批注
+pdfjs-editor-delete-comment-popup-button-label = 移除批注
+pdfjs-editor-delete-comment-popup-button =
+    .title = 移除批注
+pdfjs-show-comment-button =
+    .title = 显示批注
+
 ##  Edit a comment dialog
 
 pdfjs-editor-edit-comment-actions-button-label = 操作
@@ -588,6 +614,15 @@ pdfjs-editor-edit-comment-manager-text-input =
     .placeholder = 输入批注
 pdfjs-editor-edit-comment-manager-cancel-button = 取消
 pdfjs-editor-edit-comment-manager-save-button = 保存
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = 编辑批注
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = 更新
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = 添加批注
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = 添加
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = 开始键入…
+pdfjs-editor-edit-comment-dialog-cancel-button = 取消
 
 ## Edit a comment button in the editor toolbar
 

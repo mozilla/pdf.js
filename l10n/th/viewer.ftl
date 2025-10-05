@@ -300,6 +300,10 @@ pdfjs-comment-floating-button =
     .title = แสดงความคิดเห็น
     .aria-label = แสดงความคิดเห็น
 pdfjs-comment-floating-button-label = แสดงความคิดเห็น
+pdfjs-editor-comment-button =
+    .title = แสดงความคิดเห็น
+    .aria-label = แสดงความคิดเห็น
+pdfjs-editor-comment-button-label = ความคิดเห็น
 pdfjs-editor-signature-button =
     .title = เพิ่มลายเซ็น
 pdfjs-editor-signature-button-label = เพิ่มลายเซ็น
@@ -362,6 +366,17 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = ตัวแก้ไขข้อความ
     .default-content = เริ่มพิมพ์ได้เลย…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title = ความคิดเห็น
+pdfjs-editor-comments-sidebar-close-button =
+    .title = ปิดแถบข้าง
+    .aria-label = ปิดแถบข้าง
+pdfjs-editor-comments-sidebar-close-button-label = ปิดแถบข้าง
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = เห็นอะไรที่น่าสนใจใช่ไหม? เน้นสีไว้และแสดงความคิดเห็นได้เลย
+pdfjs-editor-comments-sidebar-no-comments-link = เรียนรู้เพิ่มเติม
 
 ## Alt-text dialog
 
@@ -574,6 +589,15 @@ pdfjs-editor-add-signature-cancel-button = ยกเลิก
 pdfjs-editor-add-signature-add-button = เพิ่ม
 pdfjs-editor-edit-signature-update-button = อัปเดต
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = แก้ไขความคิดเห็น
+pdfjs-editor-edit-comment-popup-button =
+    .title = แก้ไขความคิดเห็น
+pdfjs-editor-delete-comment-popup-button-label = เอาความคิดเห็นออก
+pdfjs-editor-delete-comment-popup-button =
+    .title = เอาความคิดเห็นออก
+
 ##  Edit a comment dialog
 
 pdfjs-editor-edit-comment-actions-button-label = การกระทำ
@@ -588,6 +612,13 @@ pdfjs-editor-edit-comment-manager-text-input =
     .placeholder = ป้อนความคิดเห็นของคุณ
 pdfjs-editor-edit-comment-manager-cancel-button = ยกเลิก
 pdfjs-editor-edit-comment-manager-save-button = บันทึก
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = แก้ไขความคิดเห็น
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = เพิ่มความคิดเห็น
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = เริ่มพิมพ์…
+pdfjs-editor-edit-comment-dialog-cancel-button = ยกเลิก
 
 ## Edit a comment button in the editor toolbar
 

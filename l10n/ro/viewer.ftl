@@ -310,6 +310,10 @@ pdfjs-comment-floating-button =
     .title = Comentează
     .aria-label = Comentariu
 pdfjs-comment-floating-button-label = Comentează
+pdfjs-editor-comment-button =
+    .title = Comentariu
+    .aria-label = Comentează
+pdfjs-editor-comment-button-label = Comentariu
 pdfjs-editor-signature-button =
     .title = Adaugă semnătură
 pdfjs-editor-signature-button-label = Adaugă semnătură
@@ -372,6 +376,20 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Editor de text
     .default-content = Începe să tastezi...
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Comentariu
+       *[other] Comentarii
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Închide bara laterală
+    .aria-label = Închide bara laterală
+pdfjs-editor-comments-sidebar-close-button-label = Închide bara laterală
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = Vezi ceva care merită comentat? Evidențiază-l și lasă un comentariu.
 
 ## Alt-text dialog
 

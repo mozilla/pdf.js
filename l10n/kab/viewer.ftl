@@ -286,9 +286,13 @@ pdfjs-web-fonts-disabled = Tisefsiyin web ttwassensent; D awezɣi useqdec n tsef
 
 pdfjs-editor-free-text-button =
     .title = Aḍris
+pdfjs-editor-color-picker-free-text-input =
+    .title = Senfel ini n uḍris
 pdfjs-editor-free-text-button-label = Aḍris
 pdfjs-editor-ink-button =
     .title = Suneɣ
+pdfjs-editor-color-picker-ink-input =
+    .title = Senfel ini n usuneɣ
 pdfjs-editor-ink-button-label = Suneɣ
 pdfjs-editor-stamp-button =
     .title = Rnu neɣ ẓreg tugniwin
@@ -300,6 +304,14 @@ pdfjs-highlight-floating-button1 =
     .title = Derrer
     .aria-label = Derrer
 pdfjs-highlight-floating-button-label = Derrer
+pdfjs-comment-floating-button =
+    .title = Wennet
+    .aria-label = Wennet
+pdfjs-comment-floating-button-label = Awennit
+pdfjs-editor-comment-button =
+    .title = Wennet
+    .aria-label = Wennet
+pdfjs-editor-comment-button-label = Awennit
 pdfjs-editor-signature-button =
     .title = Rnu azmul
 pdfjs-editor-signature-button-label = Rnu azmul
@@ -362,6 +374,21 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Amaẓrag n uḍris
     .default-content = Bdu tira…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Awennit
+       *[other] Iwenniten
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Mdel agalis adisan
+    .aria-label = Mdel agalis adisan
+pdfjs-editor-comments-sidebar-close-button-label = Mdel agalis adisan
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = Twalaḍ ayen i ak⋅akem-iɛeǧben? Sebrureq-it, ternuḍ eǧǧ awennit.
+pdfjs-editor-comments-sidebar-no-comments-link = Issin ugar
 
 ## Alt-text dialog
 
@@ -443,6 +470,7 @@ pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Issin ugar
 pdfjs-editor-new-alt-text-create-automatically-button-label = Rnu aḍris niḍen s wudem awurman
 pdfjs-editor-new-alt-text-not-now-button = Mačči tura
 pdfjs-editor-new-alt-text-error-title = D awezɣi timerna n uḍris niḍen s wudem awurman
+pdfjs-editor-new-alt-text-error-description = Ttxil-k⋅m aru aḍris-ik⋅im niḍen neɣ ɛreḍ tikkelt niḍen.
 pdfjs-editor-new-alt-text-error-close-button = Mdel
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
@@ -487,6 +515,9 @@ pdfjs-editor-alt-text-settings-close-button = Mdel
 
 ## Accessibility labels (announced by screen readers) for objects added to the editor.
 
+pdfjs-editor-highlight-added-alert = Yettwarna usebrureq
+pdfjs-editor-freetext-added-alert = Yettwarna uḍris
+pdfjs-editor-ink-added-alert = Yettwarna usuneɣ
 pdfjs-editor-stamp-added-alert = Tugna tettwarna
 pdfjs-editor-signature-added-alert = Azmul yettwarna
 
@@ -526,6 +557,10 @@ pdfjs-editor-add-signature-type-input =
     .placeholder = Zru azmul-ik
 pdfjs-editor-add-signature-draw-placeholder = Suneɣ azmul-ik
 pdfjs-editor-add-signature-draw-thickness-range-label = Tuzert
+# Variables:
+#   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
+pdfjs-editor-add-signature-draw-thickness-range =
+    .title = Tuzert n usuneɣ: { $thickness }
 pdfjs-editor-add-signature-image-placeholder = Seḥnucceḍ afaylu da akken ad t-saliṭ
 pdfjs-editor-add-signature-image-browse-link =
     { PLATFORM() ->
@@ -545,6 +580,8 @@ pdfjs-editor-add-signature-clear-button =
 pdfjs-editor-add-signature-save-checkbox = Sekles azmul
 pdfjs-editor-add-signature-image-upload-error-title = Ur izmir ara ad yessali tugna
 pdfjs-editor-add-signature-image-upload-error-description = Ssefqed tuqqna-inek⋅inem n uẓeṭṭa neɣ ɛreḍ tugna-nniḍen.
+pdfjs-editor-add-signature-image-no-data-error-title = D awezɣi aselket n tugna-a ɣer uzmul
+pdfjs-editor-add-signature-image-no-data-error-description = Ttxil-k⋅m ɛreḍ ad tzedmeḍ tugna niḍen
 pdfjs-editor-add-signature-error-close-button = Mdel
 
 ## Dialog buttons
@@ -552,6 +589,42 @@ pdfjs-editor-add-signature-error-close-button = Mdel
 pdfjs-editor-add-signature-cancel-button = Semmet
 pdfjs-editor-add-signature-add-button = Rnu
 pdfjs-editor-edit-signature-update-button = Leqqem
+
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Ẓreg awennit
+pdfjs-editor-edit-comment-popup-button =
+    .title = Ẓreg awennit
+pdfjs-editor-delete-comment-popup-button-label = Kkes awennit
+pdfjs-editor-delete-comment-popup-button =
+    .title = Kkes awennit
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Tigawin
+pdfjs-editor-edit-comment-actions-button =
+    .title = Tigawin
+pdfjs-editor-edit-comment-close-button-label = Mdel
+pdfjs-editor-edit-comment-close-button =
+    .title = Mdel
+pdfjs-editor-edit-comment-actions-edit-button-label = Ẓreg
+pdfjs-editor-edit-comment-actions-delete-button-label = Kkes
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Aru awennit-ik⋅im
+pdfjs-editor-edit-comment-manager-cancel-button = Sefsex
+pdfjs-editor-edit-comment-manager-save-button = Sekles
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Ẓreg awennit
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Rnu awennit
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Bdu tira...
+pdfjs-editor-edit-comment-dialog-cancel-button = Sefsex
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Ẓreg awennit
 
 ## Main menu for adding/removing signatures
 
