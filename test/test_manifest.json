@@ -1676,6 +1676,12 @@
     "lastPage": 1,
     "type": "eq"
   },
+    {  "id": "issue20324",
+       "file": "pdfs/issue20324.pdf",
+       "md5": "13250232aa91444f983279581d9c02d6",
+       "rounds": 1,
+       "type": "eq"
+    },
   {
     "id": "issue13561_reduced",
     "file": "pdfs/issue13561_reduced.pdf",

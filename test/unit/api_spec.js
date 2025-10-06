@@ -5076,6 +5076,41 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       canvasFactory.destroy(canvasAndCtx);
       await loadingTask.destroy();
     });
+
+    it("should collect all list and table items in StructTree", async function() {
+      const findNodes = (node, check) => {
+        const results = [];
+        if (check(node)) {
+          results.push(node);
+        }
+        if (node.children) {
+          for (const child of node.children) {
+            results.push(...findNodes(child, check));
+          }
+        }
+        return results;
+      };
+      const loadingTask = getDocument(buildGetDocumentParams("issue20324.pdf"));
+
+      const pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      const tree = await page.getStructTree({
+        includeMarkedContent: true,
+      });
+      const cells = findNodes(
+        tree,
+        node => node.role === "TD"
+      );
+      expect(cells.length).toEqual(4);
+
+      const listItems = findNodes(
+        tree,
+        node => node.role === "LI"
+      );
+      expect(listItems.length).toEqual(4);
+
+      await loadingTask.destroy();
+    });
   });
 
   describe("Multiple `getDocument` instances", function () {
