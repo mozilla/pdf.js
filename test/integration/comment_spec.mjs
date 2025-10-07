@@ -373,6 +373,36 @@ describe("Comment", () => {
         })
       );
     });
+
+    it("must check that the button is removed in the annotation layer", async () => {
+      await Promise.all(
+        pages.map(async ([, page]) => {
+          await switchToHighlight(page);
+
+          await highlightSpan(page, 1, "Abstract");
+          const editorSelector = getEditorSelector(0);
+          await editComment(page, editorSelector, "Hello world!");
+
+          await switchToHighlight(page, /* disable = */ true);
+          const buttonSelector = ".annotationLayer .annotationCommentButton";
+          await page.waitForSelector(buttonSelector, {
+            visible: true,
+          });
+
+          await switchToHighlight(page);
+          await selectEditor(page, editorSelector);
+          await waitAndClick(page, `${editorSelector} button.deleteButton`);
+          await waitForSerialized(page, 0);
+
+          await switchToHighlight(page, /* disable = */ true);
+          await page.waitForFunction(
+            sel => !document.querySelector(sel),
+            {},
+            buttonSelector
+          );
+        })
+      );
+    });
   });
 
   describe("Focused element after editing", () => {
@@ -620,6 +650,52 @@ describe("Comment", () => {
           // Click again to unselect the comment.
           await waitAndClick(page, firstElementSelector);
           await page.waitForSelector(popupSelector, { visible: false });
+        })
+      );
+    });
+  });
+
+  describe("Comment popup", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        "page-width",
+        null,
+        { enableComment: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the popup is deleted when the editor is", async () => {
+      await Promise.all(
+        pages.map(async ([, page]) => {
+          await switchToHighlight(page);
+
+          await highlightSpan(page, 1, "Abstract");
+          const editorSelector = getEditorSelector(0);
+          await editComment(page, editorSelector, "Hello world!");
+
+          await waitAndClick(
+            page,
+            `${editorSelector} button.annotationCommentButton`
+          );
+
+          const popupSelector = "#commentPopup";
+          await page.waitForSelector(popupSelector, { visible: true });
+          await waitAndClick(page, `${editorSelector} button.deleteButton`);
+
+          // Check that the popup is removed from the DOM.
+          await page.waitForFunction(
+            sel => !document.querySelector(sel),
+            {},
+            popupSelector
+          );
         })
       );
     });

@@ -1899,6 +1899,7 @@ class AnnotationEditor {
     } else {
       this._uiManager.removeEditor(this);
     }
+    this.hideCommentPopup();
 
     if (this.#moveInDOMTimeout) {
       clearTimeout(this.#moveInDOMTimeout);
@@ -1915,6 +1916,8 @@ class AnnotationEditor {
     this.parent = null;
     this.#touchManager?.destroy();
     this.#touchManager = null;
+    this.#fakeAnnotation?.remove();
+    this.#fakeAnnotation = null;
   }
 
   /**
@@ -2166,12 +2169,12 @@ class AnnotationEditor {
     }
     this._editToolbar?.hide();
     this.#altText?.toggleAltTextBadge(true);
+    this.hideCommentPopup();
+  }
+
+  hideCommentPopup() {
     if (this.hasComment) {
-      this._uiManager.toggleComment(
-        this,
-        /* isSelected = */ false,
-        /* visibility = */ false
-      );
+      this._uiManager.toggleComment(null);
     }
   }
 
