@@ -2253,7 +2253,7 @@ class AnnotationEditorUIManager {
   setSelected(editor) {
     this.updateToolbar({
       mode: editor.mode,
-      editId: editor.id,
+      editId: editor.uid,
     });
 
     this.#currentDrawingSession?.commitOrRemove();

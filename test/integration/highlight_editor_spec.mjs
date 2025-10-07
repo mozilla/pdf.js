@@ -3024,4 +3024,43 @@ describe("Highlight Editor", () => {
       );
     });
   });
+
+  describe("All editors must be focusable", () => {
+    describe("bug1992868.pdf", () => {
+      let pages;
+
+      beforeEach(async () => {
+        pages = await loadAndWait(
+          "bug1992868.pdf",
+          getAnnotationSelector("999R"),
+          "page-fit"
+        );
+      });
+
+      afterEach(async () => {
+        await closePages(pages);
+      });
+
+      it("must check that the freetext annotation can be reached", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const modeChangedHandle = await waitForAnnotationModeChanged(page);
+            await page.click(getAnnotationSelector("997R"), { count: 2 });
+            await awaitPromise(modeChangedHandle);
+            await page.waitForSelector("#highlightParamsToolbarContainer");
+
+            const editorSelector = getEditorSelector(0);
+            await page.waitForSelector(editorSelector);
+            await page.focus(editorSelector);
+            await waitForSelectedEditor(page, editorSelector);
+
+            for (let i = 0; i < 4; i++) {
+              await page.keyboard.press("Tab", { delay: 100 });
+            }
+            await waitForSelectedEditor(page, getEditorSelector(1));
+          })
+        );
+      });
+    });
+  });
 });
