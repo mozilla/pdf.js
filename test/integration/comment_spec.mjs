@@ -737,4 +737,65 @@ describe("Comment", () => {
       );
     });
   });
+
+  describe("Annotations order in reading mode", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "comments.pdf",
+        ".annotationEditorLayer",
+        "page-fit",
+        null,
+        { enableComment: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the annotations are in the right order", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+          await highlightSpan(
+            page,
+            1,
+            "method provides cheap inter-procedural type specialization, and an"
+          );
+          await editComment(page, getEditorSelector(9), "Hello world!");
+
+          await highlightSpan(page, 1, "Andreas Gal");
+          await editComment(page, getEditorSelector(10), "Hello world!");
+
+          await switchToHighlight(page, /* disable = */ true);
+          await page.waitForSelector(
+            ".annotationLayer section:nth-child(4).editorAnnotation"
+          );
+
+          const sectionIds = await page.evaluate(() =>
+            [
+              ...document.querySelectorAll(
+                ".page[data-page-number='1'] .annotationLayer > section:not(.popupAnnotation)"
+              ),
+            ].map(el => el.id.split("_").pop())
+          );
+          expect(sectionIds).withContext(`In ${browserName}`).toEqual([
+            "612R",
+            "693R",
+            "10", // shortcut for pdfjs_internal_id_pdfjs_internal_editor_10
+            "687R",
+            "690R",
+            "713R",
+            "9", // shortcut for pdfjs_internal_id_pdfjs_internal_editor_9
+            "673R",
+            "613R",
+            "680R",
+            "661R",
+          ]);
+        })
+      );
+    });
+  });
 });
