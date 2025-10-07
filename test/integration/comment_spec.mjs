@@ -699,5 +699,42 @@ describe("Comment", () => {
         })
       );
     });
+
+    it("must check that the focus is moved on the editor once the popup is deleted", async () => {
+      await Promise.all(
+        pages.map(async ([, page]) => {
+          await switchToHighlight(page);
+
+          await highlightSpan(page, 1, "Abstract");
+          const editorSelector = getEditorSelector(0);
+          await editComment(page, editorSelector, "Hello world!");
+
+          await waitAndClick(
+            page,
+            `${editorSelector} button.annotationCommentButton`
+          );
+
+          const popupSelector = "#commentPopup";
+          await page.waitForSelector(popupSelector, { visible: true });
+          const handle = await page.evaluateHandle(
+            sel => [
+              new Promise(resolve => {
+                document
+                  .querySelector(sel)
+                  .addEventListener("focusin", resolve, {
+                    once: true,
+                  });
+              }),
+            ],
+            editorSelector
+          );
+          await waitAndClick(
+            page,
+            `${popupSelector} button.commentPopupDelete`
+          );
+          await awaitPromise(handle);
+        })
+      );
+    });
   });
 });
