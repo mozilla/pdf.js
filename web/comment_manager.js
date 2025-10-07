@@ -1048,6 +1048,7 @@ class CommentPopup {
         },
       });
       this.#editor.comment = null;
+      this.#editor.focus();
       this.destroy();
     });
     del.addEventListener("contextmenu", noContextMenu);
