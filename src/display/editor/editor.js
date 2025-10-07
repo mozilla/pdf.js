@@ -2230,7 +2230,7 @@ class AnnotationEditor {
     this.enterInEditMode();
     this.parent.updateToolbar({
       mode: this.constructor._editorType,
-      editId: this.id,
+      editId: this.uid,
     });
   }
 
