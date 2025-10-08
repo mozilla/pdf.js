@@ -95,7 +95,7 @@ describe("Annotation highlight", () => {
         pages.map(async ([browserName, page]) => {
           for (const i of [23, 22, 14]) {
             await page.click(getAnnotationSelector(`${i}R`));
-            await page.waitForSelector(`#pdfjs_internal_id_${i}R:focus`);
+            await page.waitForSelector(`#pdfjs_internal_id_${i}R:focus-within`);
           }
         })
       );
@@ -876,6 +876,48 @@ a dynamic compiler for JavaScript based on our`);
           })
         );
       });
+    });
+  });
+
+  describe("Annotation order in the DOM", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "comments.pdf",
+        ".page[data-page-number='1'] .annotationLayer #pdfjs_internal_id_661R"
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that annotations are in the visual order", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const sectionIds = await page.evaluate(() =>
+            [
+              ...document.querySelectorAll(
+                ".page[data-page-number='1'] .annotationLayer > section:not(.popupAnnotation)"
+              ),
+            ].map(el => el.id.split("_").pop())
+          );
+          expect(sectionIds)
+            .withContext(`In ${browserName}`)
+            .toEqual([
+              "612R",
+              "693R",
+              "687R",
+              "690R",
+              "713R",
+              "673R",
+              "613R",
+              "680R",
+              "661R",
+            ]);
+        })
+      );
     });
   });
 });

@@ -242,7 +242,7 @@ class AnnotationEditorLayer {
   }
 
   toggleAnnotationLayerPointerEvents(enabled = false) {
-    this.#annotationLayer?.div.classList.toggle("disabled", !enabled);
+    this.#annotationLayer?.togglePointerEvents(enabled);
   }
 
   get #allEditorsIterator() {
@@ -354,13 +354,14 @@ class AnnotationEditorLayer {
     }
 
     const annotationLayer = this.#annotationLayer;
+    const needFakeAnnotation = [];
     if (annotationLayer) {
       const changedAnnotations = new Map();
       const resetAnnotations = new Map();
       for (const editor of this.#allEditorsIterator) {
         editor.disableEditing();
         if (!editor.annotationElementId) {
-          editor.updateFakeAnnotationElement(annotationLayer);
+          needFakeAnnotation.push(editor);
           continue;
         }
         if (editor.serialize() !== null) {
@@ -411,6 +412,7 @@ class AnnotationEditorLayer {
     }
     this.disableTextSelection();
     this.toggleAnnotationLayerPointerEvents(true);
+    annotationLayer?.updateFakeAnnotations(needFakeAnnotation);
 
     this.#isDisabling = false;
   }

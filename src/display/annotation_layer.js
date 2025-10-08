@@ -186,7 +186,8 @@ class AnnotationElement {
     this.parent = parameters.parent;
 
     if (isRenderable) {
-      this.container = this._createContainer(ignoreBorder);
+      this.contentElement = this.container =
+        this._createContainer(ignoreBorder);
     }
     if (createQuadrilaterals) {
       this._createQuadrilaterals();
@@ -1008,6 +1009,7 @@ class LinkAnnotationElement extends AnnotationElement {
 
     this.container.classList.add("linkAnnotation");
     if (isBound) {
+      this.contentElement = link;
       this.container.append(link);
     }
 
@@ -1517,6 +1519,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         element.hidden = true;
       }
       GetElementsByNameSet.add(element);
+      this.contentElement = element;
       element.setAttribute("data-element-id", id);
 
       element.disabled = this.data.readOnly;
@@ -3070,7 +3073,7 @@ class FreeTextAnnotationElement extends AnnotationElement {
     this.container.classList.add("freeTextAnnotation");
 
     if (this.textContent) {
-      const content = document.createElement("div");
+      const content = (this.contentElement = document.createElement("div"));
       content.classList.add("annotationTextContent");
       content.setAttribute("role", "comment");
       for (const line of this.textContent) {
@@ -3787,7 +3790,7 @@ class AnnotationLayer {
   }
 
   async #appendElement(element, id, popupElements) {
-    const contentElement = element.firstChild || element;
+    const { contentElement, container } = element;
     const annotationId = (contentElement.id = `${AnnotationPrefix}${id}`);
     const ariaAttributes =
       await this.#structTreeLayer?.getAriaAttributes(annotationId);
@@ -3799,16 +3802,29 @@ class AnnotationLayer {
 
     if (popupElements) {
       // Set the popup just after the first element associated with the popup.
-      popupElements.at(-1).container.after(element);
+      popupElements.at(-1).container.after(container);
     } else {
-      this.div.append(element);
-      this.#accessibilityManager?.moveElementInDOM(
-        this.div,
-        element,
-        contentElement,
-        /* isRemovable = */ false
-      );
+      this.#moveElementInDOM(container, contentElement);
     }
+  }
+
+  #moveElementInDOM(container, contentElement) {
+    this.div.append(container);
+    this.#accessibilityManager?.moveElementInDOM(
+      this.div,
+      container,
+      contentElement,
+      /* isRemovable = */ false,
+      /* filter = */ node => node.nodeName === "SECTION",
+      /* inserter = */ (prevNode, node) => {
+        if (prevNode.nextElementSibling.nodeName === "BUTTON") {
+          // In case we have a comment button, insert after the button.
+          prevNode.nextElementSibling.after(node);
+        } else {
+          prevNode.after(node);
+        }
+      }
+    );
   }
 
   /**
@@ -3877,7 +3893,7 @@ class AnnotationLayer {
       if (data.hidden) {
         rendered.style.visibility = "hidden";
       }
-      await this.#appendElement(rendered, data.id, elementParams.elements);
+      await this.#appendElement(element, data.id, elementParams.elements);
       element.extraPopupElement?.popup?.renderCommentButton();
 
       if (element._isEditable) {
@@ -3913,8 +3929,8 @@ class AnnotationLayer {
       if (!element.isRenderable) {
         continue;
       }
-      const rendered = element.render();
-      await this.#appendElement(rendered, data.id, null);
+      element.render();
+      await this.#appendElement(element, data.id, null);
     }
   }
 
@@ -3999,16 +4015,30 @@ class AnnotationLayer {
       linkService: this.#linkService,
       annotationStorage: this.#annotationStorage,
     });
-    const htmlElement = element.render();
-    div.append(htmlElement);
-    this.#accessibilityManager?.moveElementInDOM(
-      div,
-      htmlElement,
-      htmlElement,
-      /* isRemovable = */ false
-    );
+    const rendered = element.render();
+    rendered.id = `${AnnotationPrefix}${id}`;
+    this.#moveElementInDOM(rendered, rendered);
     element.createOrUpdatePopup();
     return element;
+  }
+
+  togglePointerEvents(enabled = false) {
+    this.div.classList.toggle("disabled", !enabled);
+  }
+
+  updateFakeAnnotations(editors) {
+    if (editors.length === 0) {
+      return;
+    }
+    // In order to ensure that the annotations are correctly moved in the DOM
+    // we need to make sure that this has been laid out.
+    window.requestAnimationFrame(() =>
+      setTimeout(() => {
+        for (const editor of editors) {
+          editor.updateFakeAnnotationElement(this);
+        }
+      }, 10)
+    );
   }
 
   /**
