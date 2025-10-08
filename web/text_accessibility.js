@@ -222,14 +222,7 @@ class TextAccessibilityManager {
    * @param {HTMLDivElement} element
    * @returns {string|null} The id in the struct tree if any.
    */
-  moveElementInDOM(
-    container,
-    element,
-    contentElement,
-    isRemovable,
-    filter,
-    inserter
-  ) {
+  moveElementInDOM(container, element, contentElement, isRemovable) {
     const id = this.addPointerInTextLayer(contentElement, isRemovable);
 
     if (!container.hasChildNodes()) {
@@ -238,7 +231,7 @@ class TextAccessibilityManager {
     }
 
     const children = Array.from(container.childNodes).filter(
-      node => node !== element && (!filter || filter(node))
+      node => node !== element
     );
 
     if (children.length === 0) {
@@ -253,8 +246,6 @@ class TextAccessibilityManager {
 
     if (index === 0) {
       children[0].before(element);
-    } else if (inserter) {
-      inserter(children[index - 1], element);
     } else {
       children[index - 1].after(element);
     }
