@@ -787,7 +787,7 @@ class PartialEvaluator {
       // globally, check if the image is still cached locally on the main-thread
       // to avoid having to re-parse the image (since that can be slow).
       if (w * h > 250000 || hasMask) {
-        const localLength = await this.handler.sendWithPromise("commonobj", [
+        const localLength = await this.sendWithPromise("commonobj", [
           objId,
           "CopyLocalImage",
           { imageRef },
