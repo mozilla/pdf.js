@@ -35,6 +35,31 @@ class StructTreeRoot {
     this.ref = rootRef instanceof Ref ? rootRef : null;
     this.roleMap = new Map();
     this.structParentIds = null;
+    this.kidRefToPosition = undefined;
+  }
+
+  getKidPosition(kidRef) {
+    if (this.kidRefToPosition === undefined) {
+      const obj = this.dict.get("K");
+      if (Array.isArray(obj)) {
+        const map = (this.kidRefToPosition = new Map());
+        for (let i = 0, ii = obj.length; i < ii; i++) {
+          const ref = obj[i];
+          if (ref) {
+            map.set(ref.toString(), i);
+          }
+        }
+      } else if (obj instanceof Dict) {
+        this.kidRefToPosition = new Map([[obj.objId, 0]]);
+      } else if (!obj) {
+        this.kidRefToPosition = new Map();
+      } else {
+        this.kidRefToPosition = null;
+      }
+    }
+    return this.kidRefToPosition
+      ? (this.kidRefToPosition.get(kidRef) ?? NaN)
+      : -1;
   }
 
   init() {
@@ -785,31 +810,14 @@ class StructTreePage {
   }
 
   addTopLevelNode(dict, element) {
-    const obj = this.rootDict.get("K");
-    if (!obj) {
+    const index = this.root.getKidPosition(dict.objId);
+    if (isNaN(index)) {
       return false;
     }
-
-    if (obj instanceof Dict) {
-      if (obj.objId !== dict.objId) {
-        return false;
-      }
-      this.nodes[0] = element;
-      return true;
+    if (index !== -1) {
+      this.nodes[index] = element;
     }
-
-    if (!Array.isArray(obj)) {
-      return true;
-    }
-    let save = false;
-    for (let i = 0; i < obj.length; i++) {
-      const kidRef = obj[i];
-      if (kidRef?.toString() === dict.objId) {
-        this.nodes[i] = element;
-        save = true;
-      }
-    }
-    return save;
+    return true;
   }
 
   /**
