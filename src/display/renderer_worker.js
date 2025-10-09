@@ -4,7 +4,7 @@ import { DOMFilterFactory } from "./filter_factory.js";
 import { FontLoader } from "./font_loader.js";
 import { MessageHandler } from "../shared/message_handler.js";
 import { OffscreenCanvasFactory } from "./canvas_factory.js";
-import { PDFObjects } from "./display_utils.js";
+import { PDFObjects } from "./pdf_objects.js";
 import { setupHandler } from "../shared/handle_objs.js";
 
 class RendererMessageHandler {
@@ -40,10 +40,6 @@ class RendererMessageHandler {
   static initializeFromPort(port) {
     let terminated = false;
     let mainHandler = new MessageHandler("renderer", "main", port);
-    mainHandler.send("ready", null);
-    mainHandler.on("Ready", function () {
-      // DO NOTHING
-    });
 
     mainHandler.on("configure", ({ channelPort, enableHWA }) => {
       this.#enableHWA = enableHWA;
@@ -59,10 +55,11 @@ class RendererMessageHandler {
 
       setupHandler(
         workerHandler,
-        terminated,
+        () => terminated,
         this.#commonObjs,
         this.#objsMap,
-        this.#fontLoader
+        this.#fontLoader,
+        { renderInWorker: true }
       );
     });
 
@@ -97,22 +94,35 @@ class RendererMessageHandler {
           colors
         );
         gfx.beginDrawing({ transform, viewport, transparency, background });
-        this.#tasks.set(taskID, { canvas, gfx });
+        this.#tasks.set(taskID, {
+          canvas,
+          gfx,
+          pageIndex,
+          ended: false,
+          cleanupRequested: false,
+        });
       }
     );
 
     mainHandler.on(
       "execute",
-      async ({ operatorList, operatorListIdx, taskID }) => {
+      ({ operatorList, operatorListIdx, taskID, operationsFilter }) => {
         if (terminated) {
           throw new Error("Renderer worker has been terminated.");
         }
         const task = this.#tasks.get(taskID);
         assert(task !== undefined, "Task not initialized");
+
+        const continueFn = () => {
+          mainHandler.send("continue", { taskID });
+        };
+
         return task.gfx.executeOperatorList(
           operatorList,
           operatorListIdx,
-          arg => mainHandler.send("continue", { taskID, arg })
+          continueFn,
+          undefined,
+          operationsFilter
         );
       }
     );
@@ -124,6 +134,24 @@ class RendererMessageHandler {
       const task = this.#tasks.get(taskID);
       assert(task !== undefined, "Task not initialized");
       task.gfx.endDrawing();
+      task.ended = true;
+      task.gfx = null;
+
+      if (task.cleanupRequested) {
+        task.canvas.width = task.canvas.height = 0;
+        this.#tasks.delete(taskID);
+      }
+    });
+
+    mainHandler.on("growOperationsCount", ({ operatorList, taskID }) => {
+      if (terminated) {
+        throw new Error("Renderer worker has been terminated.");
+      }
+      const task = this.#tasks.get(taskID);
+      assert(task !== undefined, "Task not initialized");
+      task.gfx?.dependencyTracker?.growOperationsCount(
+        operatorList.fnArray.length
+      );
     });
 
     mainHandler.on("resetCanvas", ({ taskID }) => {
@@ -131,9 +159,15 @@ class RendererMessageHandler {
         throw new Error("Renderer worker has been terminated.");
       }
       const task = this.#tasks.get(taskID);
-      assert(task !== undefined, "Task not initialized");
-      const canvas = task.canvas;
-      canvas.width = canvas.height = 0;
+      if (!task) {
+        return;
+      }
+      task.cleanupRequested = true;
+
+      if (task.ended) {
+        task.canvas.width = task.canvas.height = 0;
+        this.#tasks.delete(taskID);
+      }
     });
 
     mainHandler.on("Terminate", async () => {
@@ -148,6 +182,8 @@ class RendererMessageHandler {
       mainHandler.destroy();
       mainHandler = null;
     });
+
+    mainHandler.send("ready", null);
   }
 }
 
