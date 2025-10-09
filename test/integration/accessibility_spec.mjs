@@ -181,7 +181,10 @@ describe("accessibility", () => {
     let pages;
 
     beforeEach(async () => {
-      pages = await loadAndWait("tagged_stamp.pdf", ".annotationLayer");
+      pages = await loadAndWait(
+        "tagged_stamp.pdf",
+        ".annotationLayer #pdfjs_internal_id_21R"
+      );
     });
 
     afterEach(async () => {
