@@ -5,10 +5,23 @@ import {
   PatternInfo,
 } from "../shared/obj-bin-transform.js";
 import { FontFaceObject } from "../display/font_loader.js";
+import { PDFObjects } from "../display/pdf_objects.js";
 
-function setupHandler(handler, destroyed, commonObjs, pages, fontLoader) {
+function setupHandler(
+  handler,
+  isDestroyed,
+  commonObjs,
+  pages,
+  fontLoader,
+  options = null
+) {
+  const { pdfBug = false, renderInWorker = false } =
+    typeof options === "boolean" ? { renderInWorker: options } : options || {};
+  const destroyed =
+    typeof isDestroyed === "function" ? isDestroyed : () => isDestroyed;
+
   handler.on("commonobj", ([id, type, exportedData]) => {
-    if (destroyed) {
+    if (destroyed()) {
       return null; // Ignore any pending requests if the worker was terminated.
     }
 
@@ -27,7 +40,7 @@ function setupHandler(handler, destroyed, commonObjs, pages, fontLoader) {
 
         const fontData = new FontInfo(exportedData);
         const inspectFont =
-          this._params.pdfBug && globalThis.FontInspector?.enabled
+          pdfBug && globalThis.FontInspector?.enabled
             ? (font, url) => globalThis.FontInspector.fontAdded(font, url)
             : null;
         const font = new FontFaceObject(
@@ -39,7 +52,9 @@ function setupHandler(handler, destroyed, commonObjs, pages, fontLoader) {
 
         fontLoader
           .bind(font)
-          .catch(() => handler.sendWithPromise("FontFallback", { id }))
+          .catch(() =>
+            handler.sendWithPromise("FontFallback", { id, renderInWorker })
+          )
           .finally(() => {
             if (!font.fontExtraProperties && font.data) {
               // Immediately release the `font.data` property once the font
@@ -56,8 +71,9 @@ function setupHandler(handler, destroyed, commonObjs, pages, fontLoader) {
         const { imageRef } = exportedData;
         assert(imageRef, "The imageRef must be defined.");
 
-        for (const page of pages.values()) {
-          for (const [, data] of page.objs) {
+        for (const pageOrObjs of pages.values()) {
+          const objs = pageOrObjs.objs || pageOrObjs;
+          for (const [, data] of objs) {
             if (data?.ref !== imageRef) {
               continue;
             }
@@ -87,25 +103,41 @@ function setupHandler(handler, destroyed, commonObjs, pages, fontLoader) {
   });
 
   handler.on("obj", ([id, pageIndex, type, imageData]) => {
-    if (destroyed) {
+    if (destroyed()) {
       // Ignore any pending requests if the worker was terminated.
       return;
     }
 
-    const page = pages.get(pageIndex);
-    if (page.objs.has(id)) {
+    let pageOrObjs = pages.get(pageIndex);
+    if (!pageOrObjs) {
+      // Do not discard the objects if we're rendering in the worker.
+      if (renderInWorker) {
+        pageOrObjs = new PDFObjects();
+        pages.set(pageIndex, pageOrObjs);
+      } else {
+        return;
+      }
+    }
+
+    const objs = pageOrObjs.objs || pageOrObjs;
+
+    if (objs.has(id)) {
       return;
     }
     // Don't store data *after* cleanup has successfully run, see bug 1854145.
-    if (page._intentStates.size === 0) {
+    // Only check _intentStates if this is a page object
+    if (pageOrObjs._intentStates?.size === 0) {
       imageData?.bitmap?.close(); // Release any `ImageBitmap` data.
       return;
     }
 
     switch (type) {
       case "Image":
+        objs.resolve(id, imageData);
+        break;
       case "Pattern":
-        page.objs.resolve(id, imageData);
+        const pattern = new PatternInfo(imageData);
+        objs.resolve(id, pattern.getIR());
         break;
       default:
         throw new Error(`Got unknown object type ${type}`);

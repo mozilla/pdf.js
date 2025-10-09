@@ -122,12 +122,18 @@ class BasePDFPageView extends RenderableView {
     this.#showCanvas = isLastShow => {
       if (updateOnFirstShow) {
         let tempCanvas = this.#tempCanvas;
-        if (!isLastShow && this.#minDurationToUpdateCanvas > 0) {
+        if (
+          !isLastShow &&
+          this.#minDurationToUpdateCanvas > 0 &&
+          !this.renderTask?.renderInWorker
+        ) {
           // We draw on the canvas at 60fps (in using `requestAnimationFrame`),
           // so if the canvas is large, updating it at 60fps can be a way too
           // much and can cause some serious performance issues.
           // To avoid that we only update the canvas every
           // `this.#minDurationToUpdateCanvas` ms.
+          // When rendering in worker, we don't need this optimization because
+          // the rendering is already happening off the main thread.
 
           if (Date.now() - this.#startTime < this.#minDurationToUpdateCanvas) {
             return;
@@ -151,7 +157,6 @@ class BasePDFPageView extends RenderableView {
           }
           return;
         }
-
         // Don't add the canvas until the first draw callback, or until
         // drawing is complete when `!this.renderingQueue`, to prevent black
         // flickering.
@@ -165,7 +170,12 @@ class BasePDFPageView extends RenderableView {
 
       if (prevCanvas) {
         prevCanvas.replaceWith(canvas);
-        this.pdfPage.resetCanvas(this.renderTaskID);
+        const resetWorkerCanvas = prevCanvas.resetWorkerCanvas;
+        if (typeof resetWorkerCanvas === "function") {
+          resetWorkerCanvas();
+        } else {
+          prevCanvas.width = prevCanvas.height = 0;
+        }
       } else {
         onShow(canvas);
       }
@@ -193,7 +203,12 @@ class BasePDFPageView extends RenderableView {
       return;
     }
     canvas.remove();
-    this.pdfPage.resetCanvas(this.renderTaskID);
+    const resetWorkerCanvas = canvas.resetWorkerCanvas;
+    if (typeof resetWorkerCanvas === "function") {
+      resetWorkerCanvas();
+    } else {
+      canvas.width = canvas.height = 0;
+    }
     this.canvas = null;
     this.#resetTempCanvas();
   }

@@ -1,11 +1,12 @@
 import { assert } from "../shared/util.js";
 import { CanvasGraphics } from "./canvas.js";
-import { DOMFilterFactory } from "./filter_factory.js";
 import { FontLoader } from "./font_loader.js";
 import { MessageHandler } from "../shared/message_handler.js";
 import { OffscreenCanvasFactory } from "./canvas_factory.js";
-import { PDFObjects } from "./display_utils.js";
+import { OptionalContentConfig } from "./optional_content_config.js";
+import { PDFObjects } from "./pdf_objects.js";
 import { setupHandler } from "../shared/handle_objs.js";
+import { WorkerFilterFactory } from "./filter_factory.js";
 
 class RendererMessageHandler {
   static #commonObjs = new PDFObjects();
@@ -40,10 +41,6 @@ class RendererMessageHandler {
   static initializeFromPort(port) {
     let terminated = false;
     let mainHandler = new MessageHandler("renderer", "main", port);
-    mainHandler.send("ready", null);
-    mainHandler.on("Ready", function () {
-      // DO NOTHING
-    });
 
     mainHandler.on("configure", ({ channelPort, enableHWA }) => {
       this.#enableHWA = enableHWA;
@@ -55,14 +52,15 @@ class RendererMessageHandler {
       this.#canvasFactory = new OffscreenCanvasFactory({
         enableHWA,
       });
-      this.#filterFactory = new DOMFilterFactory({});
+      this.#filterFactory = new WorkerFilterFactory();
 
       setupHandler(
         workerHandler,
-        terminated,
+        () => terminated,
         this.#commonObjs,
         this.#objsMap,
-        this.#fontLoader
+        this.#fontLoader,
+        { renderInWorker: true }
       );
     });
 
@@ -78,14 +76,25 @@ class RendererMessageHandler {
         viewport,
         transparency,
         background,
-        optionalContentConfig,
+        renderingIntent,
+        optionalContentConfig: optionalContentConfigData,
+        optionalContentConfigState = null,
       }) => {
         assert(!this.#tasks.has(taskID), "Task already initialized");
         const ctx = canvas.getContext("2d", {
           alpha: false,
-          willReadFrequently: this.#enableHWA,
+          willReadFrequently: !this.#enableHWA,
         });
         const objs = this.pageObjs(pageIndex);
+        const optionalContentConfig = new OptionalContentConfig(
+          optionalContentConfigData,
+          renderingIntent
+        );
+        if (optionalContentConfigState) {
+          for (const [id, visible] of optionalContentConfigState) {
+            optionalContentConfig.setVisibility(id, visible, false);
+          }
+        }
         const gfx = new CanvasGraphics(
           ctx,
           this.#commonObjs,
@@ -97,23 +106,86 @@ class RendererMessageHandler {
           colors
         );
         gfx.beginDrawing({ transform, viewport, transparency, background });
-        this.#tasks.set(taskID, { canvas, gfx });
+        const operatorList = {
+          fnArray: [],
+          argsArray: [],
+        };
+        this.#tasks.set(taskID, {
+          canvas,
+          ctx,
+          gfx,
+          pageIndex,
+          operatorList,
+          ended: false,
+          cleanupRequested: false,
+        });
       }
     );
 
+    mainHandler.on("getImageData", ({ taskID, x, y, width, height }) => {
+      if (terminated) {
+        throw new Error("Renderer worker has been terminated.");
+      }
+      const task = this.#tasks.get(taskID);
+      assert(task !== undefined, "Task not initialized");
+      return task.ctx.getImageData(x, y, width, height).data;
+    });
+
     mainHandler.on(
-      "execute",
-      async ({ operatorList, operatorListIdx, taskID }) => {
+      "isCanvasMonochrome",
+      ({ taskID, x, y, width, height, color }) => {
         if (terminated) {
           throw new Error("Renderer worker has been terminated.");
         }
         const task = this.#tasks.get(taskID);
         assert(task !== undefined, "Task not initialized");
-        return task.gfx.executeOperatorList(
-          operatorList,
+
+        const { data } = task.ctx.getImageData(x, y, width, height);
+        const view = new Uint32Array(data.buffer);
+        for (let i = 0, ii = view.length; i < ii; i++) {
+          if (view[i] !== color) {
+            return false;
+          }
+        }
+        return true;
+      }
+    );
+
+    mainHandler.on(
+      "execute",
+      ({ fnArray, argsArray, operatorListIdx, taskID, operationsFilter }) => {
+        if (terminated) {
+          throw new Error("Renderer worker has been terminated.");
+        }
+        const task = this.#tasks.get(taskID);
+        assert(task !== undefined, "Task not initialized");
+
+        if (fnArray) {
+          const { operatorList } = task;
+          const ii = fnArray.length;
+          for (let i = 0; i < ii; i++) {
+            operatorList.fnArray.push(fnArray[i]);
+            operatorList.argsArray.push(argsArray[i]);
+          }
+        }
+
+        const continueFn = () => {
+          mainHandler.send("continue", { taskID });
+        };
+
+        const newOperatorListIdx = task.gfx.executeOperatorList(
+          task.operatorList,
           operatorListIdx,
-          arg => mainHandler.send("continue", { taskID, arg })
+          continueFn,
+          undefined,
+          operationsFilter
         );
+        try {
+          task.ctx.commit?.();
+        } catch {
+          // `commit` isn't supported in all environments.
+        }
+        return newOperatorListIdx;
       }
     );
 
@@ -124,6 +196,19 @@ class RendererMessageHandler {
       const task = this.#tasks.get(taskID);
       assert(task !== undefined, "Task not initialized");
       task.gfx.endDrawing();
+      try {
+        task.ctx.commit?.();
+      } catch {
+        // `commit` isn't supported in all environments.
+      }
+      task.ended = true;
+      task.gfx = null;
+      task.operatorList = null;
+
+      if (task.cleanupRequested) {
+        task.canvas.width = task.canvas.height = 0;
+        this.#tasks.delete(taskID);
+      }
     });
 
     mainHandler.on("resetCanvas", ({ taskID }) => {
@@ -131,9 +216,15 @@ class RendererMessageHandler {
         throw new Error("Renderer worker has been terminated.");
       }
       const task = this.#tasks.get(taskID);
-      assert(task !== undefined, "Task not initialized");
-      const canvas = task.canvas;
-      canvas.width = canvas.height = 0;
+      if (!task) {
+        return;
+      }
+      task.cleanupRequested = true;
+
+      if (task.ended) {
+        task.canvas.width = task.canvas.height = 0;
+        this.#tasks.delete(taskID);
+      }
     });
 
     mainHandler.on("Terminate", async () => {
@@ -148,6 +239,8 @@ class RendererMessageHandler {
       mainHandler.destroy();
       mainHandler = null;
     });
+
+    mainHandler.send("ready", null);
   }
 }
 
