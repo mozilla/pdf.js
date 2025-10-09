@@ -1177,6 +1177,9 @@ class AnnotationEditor {
   }
 
   addStandaloneCommentButton() {
+    if (!this._uiManager.hasCommentManager()) {
+      return;
+    }
     if (this.#commentStandaloneButton) {
       if (this._uiManager.isEditingMode()) {
         this.#commentStandaloneButton.classList.remove("hidden");
