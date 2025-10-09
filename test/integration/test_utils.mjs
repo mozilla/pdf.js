@@ -874,20 +874,27 @@ function waitForNoElement(page, selector) {
 
 function isCanvasMonochrome(page, pageNumber, rectangle, color) {
   return page.evaluate(
-    (rect, pageN, col) => {
+    async (rect, pageN, col) => {
       const canvas = document.querySelector(
         `.page[data-page-number = "${pageN}"] .canvasWrapper canvas`
       );
       const canvasRect = canvas.getBoundingClientRect();
-      const ctx = canvas.getContext("2d");
       rect ||= canvasRect;
-      const { data } = ctx.getImageData(
-        rect.x - canvasRect.x,
-        rect.y - canvasRect.y,
-        rect.width,
-        rect.height
-      );
-      return new Uint32Array(data.buffer).every(x => x === col);
+      const x = rect.x - canvasRect.x;
+      const y = rect.y - canvasRect.y;
+      const { width, height } = rect;
+
+      try {
+        const ctx = canvas.getContext("2d");
+        const { data } = ctx.getImageData(x, y, width, height);
+        return new Uint32Array(data.buffer).every(v => v === col);
+      } catch (ex) {
+        const isMonochrome = canvas.isCanvasMonochrome;
+        if (typeof isMonochrome !== "function") {
+          throw ex;
+        }
+        return isMonochrome(x, y, width, height, col);
+      }
     },
     rectangle,
     pageNumber,
