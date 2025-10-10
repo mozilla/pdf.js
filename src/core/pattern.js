@@ -18,6 +18,7 @@ import {
   FormatError,
   info,
   MathClamp,
+  MeshFigureType,
   unreachable,
   Util,
   warn,
@@ -582,7 +583,7 @@ class MeshShading extends BaseShading {
       reader.align();
     }
     this.figures.push({
-      type: "triangles",
+      type: MeshFigureType.TRIANGLES,
       coords: new Int32Array(ps),
       colors: new Int32Array(ps),
     });
@@ -600,7 +601,7 @@ class MeshShading extends BaseShading {
       colors.push(color);
     }
     this.figures.push({
-      type: "lattice",
+      type: MeshFigureType.LATTICE,
       coords: new Int32Array(ps),
       colors: new Int32Array(ps),
       verticesPerRow,
@@ -732,7 +733,7 @@ class MeshShading extends BaseShading {
           9,
       ]);
       this.figures.push({
-        type: "patch",
+        type: MeshFigureType.PATCH,
         coords: new Int32Array(ps), // making copies of ps and cs
         colors: new Int32Array(cs),
       });
@@ -802,7 +803,7 @@ class MeshShading extends BaseShading {
           break;
       }
       this.figures.push({
-        type: "patch",
+        type: MeshFigureType.PATCH,
         coords: new Int32Array(ps), // making copies of ps and cs
         colors: new Int32Array(cs),
       });
@@ -811,7 +812,10 @@ class MeshShading extends BaseShading {
 
   _buildFigureFromPatch(index) {
     const figure = this.figures[index];
-    assert(figure.type === "patch", "Unexpected patch mesh figure");
+    assert(
+      figure.type === MeshFigureType.PATCH,
+      "Unexpected patch mesh figure"
+    );
 
     const coords = this.coords,
       colors = this.colors;
@@ -919,7 +923,7 @@ class MeshShading extends BaseShading {
     figureColors[verticesPerRow * splitYBy + splitXBy] = ci[3];
 
     this.figures[index] = {
-      type: "lattice",
+      type: MeshFigureType.LATTICE,
       coords: figureCoords,
       colors: figureColors,
       verticesPerRow,

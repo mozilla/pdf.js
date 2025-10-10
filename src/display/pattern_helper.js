@@ -13,7 +13,13 @@
  * limitations under the License.
  */
 
-import { FormatError, info, unreachable, Util } from "../shared/util.js";
+import {
+  FormatError,
+  info,
+  MeshFigureType,
+  unreachable,
+  Util,
+} from "../shared/util.js";
 import { getCurrentTransform } from "./display_utils.js";
 
 const PathType = {
@@ -261,7 +267,7 @@ function drawFigure(data, figure, context) {
   const cs = figure.colors;
   let i, ii;
   switch (figure.type) {
-    case "lattice":
+    case MeshFigureType.LATTICE:
       const verticesPerRow = figure.verticesPerRow;
       const rows = Math.floor(ps.length / verticesPerRow) - 1;
       const cols = verticesPerRow - 1;
@@ -291,7 +297,7 @@ function drawFigure(data, figure, context) {
         }
       }
       break;
-    case "triangles":
+    case MeshFigureType.TRIANGLES:
       for (i = 0, ii = ps.length; i < ii; i += 3) {
         drawTriangle(
           data,

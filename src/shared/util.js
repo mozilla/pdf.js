@@ -108,6 +108,12 @@ const PermissionFlag = {
   PRINT_HIGH_QUALITY: 0x800,
 };
 
+const MeshFigureType = {
+  TRIANGLES: 1,
+  LATTICE: 2,
+  PATCH: 3,
+};
+
 const TextRenderingMode = {
   FILL: 0,
   STROKE: 1,
@@ -1327,6 +1333,7 @@ export {
   LINE_DESCENT_FACTOR,
   LINE_FACTOR,
   MathClamp,
+  MeshFigureType,
   normalizeUnicode,
   objectSize,
   OPS,
