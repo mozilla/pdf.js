@@ -435,7 +435,7 @@ class FontFaceObject {
     } catch (ex) {
       warn(`getPathGenerator - ignoring character: "${ex}".`);
     }
-    const path = new Path2D(cmds || "");
+    const path = new Path2D(cmds.getSVG() || "");
 
     if (!this.fontExtraProperties) {
       // Remove the raw path-string, since we don't need it anymore.
