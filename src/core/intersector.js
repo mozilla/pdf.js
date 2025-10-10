@@ -16,13 +16,13 @@
 class SingleIntersector {
   #annotation;
 
-  #minX = Infinity;
+  minX = Infinity;
 
-  #minY = Infinity;
+  minY = Infinity;
 
-  #maxX = -Infinity;
+  maxX = -Infinity;
 
-  #maxY = -Infinity;
+  maxY = -Infinity;
 
   #quadPoints = null;
 
@@ -40,28 +40,19 @@ class SingleIntersector {
     if (!quadPoints) {
       // If there are no quad points, we use the rectangle to determine the
       // bounds of the annotation.
-      [this.#minX, this.#minY, this.#maxX, this.#maxY] = annotation.data.rect;
+      [this.minX, this.minY, this.maxX, this.maxY] = annotation.data.rect;
       return;
     }
 
     for (let i = 0, ii = quadPoints.length; i < ii; i += 8) {
-      this.#minX = Math.min(this.#minX, quadPoints[i]);
-      this.#maxX = Math.max(this.#maxX, quadPoints[i + 2]);
-      this.#minY = Math.min(this.#minY, quadPoints[i + 5]);
-      this.#maxY = Math.max(this.#maxY, quadPoints[i + 1]);
+      this.minX = Math.min(this.minX, quadPoints[i]);
+      this.maxX = Math.max(this.maxX, quadPoints[i + 2]);
+      this.minY = Math.min(this.minY, quadPoints[i + 5]);
+      this.maxY = Math.max(this.maxY, quadPoints[i + 1]);
     }
     if (quadPoints.length > 8) {
       this.#quadPoints = quadPoints;
     }
-  }
-
-  overlaps(other) {
-    return !(
-      this.#minX >= other.#maxX ||
-      this.#maxX <= other.#minX ||
-      this.#minY >= other.#maxY ||
-      this.#maxY <= other.#minY
-    );
   }
 
   /**
@@ -72,12 +63,7 @@ class SingleIntersector {
    * @returns {boolean}
    */
   #intersects(x, y) {
-    if (
-      this.#minX >= x ||
-      this.#maxX <= x ||
-      this.#minY >= y ||
-      this.#maxY <= y
-    ) {
+    if (this.minX >= x || this.maxX <= x || this.minY >= y || this.maxY <= y) {
       return false;
     }
 
@@ -154,56 +140,91 @@ class SingleIntersector {
   }
 }
 
+// The grid is STEPS x STEPS.
+const STEPS = 64;
+
 class Intersector {
-  #intersectors = new Map();
+  #intersectors = [];
+
+  #grid = [];
+
+  #minX;
+
+  #minY;
+
+  #invXRatio;
+
+  #invYRatio;
 
   constructor(annotations) {
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    const intersectors = this.#intersectors;
     for (const annotation of annotations) {
       if (!annotation.data.quadPoints && !annotation.data.rect) {
         continue;
       }
       const intersector = new SingleIntersector(annotation);
-      for (const [otherIntersector, overlapping] of this.#intersectors) {
-        if (otherIntersector.overlaps(intersector)) {
-          if (!overlapping) {
-            this.#intersectors.set(otherIntersector, new Set([intersector]));
-          } else {
-            overlapping.add(intersector);
+      intersectors.push(intersector);
+      minX = Math.min(minX, intersector.minX);
+      minY = Math.min(minY, intersector.minY);
+      maxX = Math.max(maxX, intersector.maxX);
+      maxY = Math.max(maxY, intersector.maxY);
+    }
+    this.#minX = minX;
+    this.#minY = minY;
+    this.#invXRatio = (STEPS - 1) / (maxX - minX);
+    this.#invYRatio = (STEPS - 1) / (maxY - minY);
+    for (const intersector of intersectors) {
+      const iMin = this.#getGridIndex(intersector.minX, intersector.minY);
+      const iMax = this.#getGridIndex(intersector.maxX, intersector.maxY);
+      const w = (iMax - iMin) % STEPS;
+      const h = Math.floor((iMax - iMin) / STEPS);
+      for (let i = iMin; i <= iMin + h * STEPS; i += STEPS) {
+        for (let j = 0; j <= w; j++) {
+          let existing = this.#grid[i + j];
+          if (!existing) {
+            this.#grid[i + j] = existing = [];
           }
+          existing.push(intersector);
         }
       }
-      this.#intersectors.set(intersector, null);
     }
+  }
+
+  #getGridIndex(x, y) {
+    const i = Math.floor((x - this.#minX) * this.#invXRatio);
+    const j = Math.floor((y - this.#minY) * this.#invYRatio);
+    return i >= 0 && i < STEPS && j >= 0 && j < STEPS ? i + j * STEPS : -1;
   }
 
   addGlyph(transform, width, height, glyph) {
     const x = transform[4] + width / 2;
     const y = transform[5] + height / 2;
-    let overlappingIntersectors;
-    for (const [intersector, overlapping] of this.#intersectors) {
-      if (overlappingIntersectors) {
-        if (overlappingIntersectors.has(intersector)) {
-          intersector.addGlyph(x, y, glyph);
-        } else {
-          intersector.disableExtraChars();
-        }
-        continue;
-      }
-      if (!intersector.addGlyph(x, y, glyph)) {
-        continue;
-      }
-      overlappingIntersectors = overlapping;
+    const index = this.#getGridIndex(x, y);
+    if (index < 0) {
+      return;
+    }
+    const intersectors = this.#grid[index];
+    if (!intersectors) {
+      return;
+    }
+
+    for (const intersector of intersectors) {
+      intersector.addGlyph(x, y, glyph);
     }
   }
 
   addExtraChar(char) {
-    for (const intersector of this.#intersectors.keys()) {
+    for (const intersector of this.#intersectors) {
       intersector.addExtraChar(char);
     }
   }
 
   setText() {
-    for (const intersector of this.#intersectors.keys()) {
+    for (const intersector of this.#intersectors) {
       intersector.setText();
     }
   }
