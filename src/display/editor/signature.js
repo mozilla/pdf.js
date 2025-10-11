@@ -436,6 +436,7 @@ class SignatureEditor extends DrawingEditor {
       rotation: this.rotation,
       structTreeParentId: this._structTreeParentId,
       signer: this.signer.serializable,
+      signTimestamp: Date.now(),
     };
     this.addComment(serialized);
     if (isForCopying) {

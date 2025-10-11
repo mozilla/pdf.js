@@ -870,6 +870,7 @@ class StampEditor extends AnnotationEditor {
       signer: this.signer.serializable,
       isSignaturePlaceholder: this.isSignaturePlaceholder,
       isStampPlaceholder: this.isStampPlaceholder,
+      signTimestamp: Date.now(),
     };
     this.addComment(serialized);
 
