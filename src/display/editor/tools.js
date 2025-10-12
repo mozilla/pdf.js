@@ -53,6 +53,9 @@ class IdManager {
       Object.defineProperty(this, "reset", {
         value: () => (this.#id = 0),
       });
+      Object.defineProperty(this, "getNextId", {
+        value: () => this.#id,
+      });
     }
   }
 
@@ -905,6 +908,9 @@ class AnnotationEditorUIManager {
           this.delete();
           this.#idManager.reset();
         },
+      });
+      Object.defineProperty(this, "getNextEditorId", {
+        value: () => this.#idManager.getNextId(),
       });
     }
   }

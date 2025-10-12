@@ -20,7 +20,7 @@ import {
   dragAndDrop,
   getEditorSelector,
   getRect,
-  getSpanRectFromText,
+  highlightSpan,
   loadAndWait,
   scrollIntoView,
   selectEditor,
@@ -34,14 +34,6 @@ const switchToHighlight = switchToEditor.bind(null, "Highlight");
 const switchToStamp = switchToEditor.bind(null, "Stamp");
 const switchToComment = switchToEditor.bind(null, "Comment");
 const switchToFreeText = switchToEditor.bind(null, "FreeText");
-
-const highlightSpan = async (page, pageIndex, text) => {
-  const rect = await getSpanRectFromText(page, pageIndex, text);
-  const x = rect.x + rect.width / 2;
-  const y = rect.y + rect.height / 2;
-  await page.mouse.click(x, y, { count: 2, delay: 100 });
-  await page.waitForSelector(getEditorSelector(0));
-};
 
 const editComment = async (page, editorSelector, comment) => {
   const commentButtonSelector = `${editorSelector} button.comment`;
@@ -82,16 +74,7 @@ describe("Comment", () => {
           await switchToHighlight(page);
 
           await scrollIntoView(page, ".textLayer span:last-of-type");
-          const rect = await getSpanRectFromText(page, 1, "...");
-          const x = rect.x + rect.width / 2;
-          const y = rect.y + rect.height / 2;
-          // Here and elsewhere, we add a small delay between press and release
-          // to make sure that a pointerup event is triggered after
-          // selectionchange.
-          // It works with a value of 1ms, but we use 100ms to be sure.
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
-          await page.waitForSelector(getEditorSelector(0));
-
+          await highlightSpan(page, 1, "...");
           const commentButtonSelector = `${getEditorSelector(0)} button.comment`;
           await waitAndClick(page, commentButtonSelector);
 
@@ -137,12 +120,7 @@ describe("Comment", () => {
           await switchToHighlight(page);
 
           await scrollIntoView(page, ".textLayer span:nth-of-type(4)");
-          const rect = await getSpanRectFromText(page, 1, "World");
-          const x = rect.x + rect.width / 2;
-          const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
-          await page.waitForSelector(getEditorSelector(0));
-
+          await highlightSpan(page, 1, "World");
           const commentButtonSelector = `${getEditorSelector(0)} button.comment`;
           await waitAndClick(page, commentButtonSelector);
 
@@ -272,7 +250,7 @@ describe("Comment", () => {
       pages = await loadAndWait(
         "tracemonkey.pdf",
         ".annotationEditorLayer",
-        "page-width",
+        "page-fit",
         null,
         { enableComment: true }
       );
@@ -286,12 +264,7 @@ describe("Comment", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToHighlight(page);
-
-          const rect = await getSpanRectFromText(page, 1, "Languages");
-          const x = rect.x + rect.width / 2;
-          const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
-          await page.waitForSelector(getEditorSelector(0));
+          await highlightSpan(page, 1, "Languages");
 
           let commentButtonSelector = `${getEditorSelector(0)} button.comment`;
           await page.waitForSelector(commentButtonSelector, { visible: true });
@@ -329,12 +302,7 @@ describe("Comment", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToHighlight(page);
-
-          const rect = await getSpanRectFromText(page, 1, "Abstract");
-          const x = rect.x + rect.width / 2;
-          const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
-          await page.waitForSelector(getEditorSelector(0));
+          await highlightSpan(page, 1, "Abstract");
 
           const comment = "Hello world!";
           await editComment(page, getEditorSelector(0), comment);
@@ -426,12 +394,7 @@ describe("Comment", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToHighlight(page);
-
-          const rect = await getSpanRectFromText(page, 1, "Languages");
-          const x = rect.x + rect.width / 2;
-          const y = rect.y + rect.height / 2;
-          await page.mouse.click(x, y, { count: 2, delay: 100 });
-          await page.waitForSelector(getEditorSelector(0));
+          await highlightSpan(page, 1, "Languages");
 
           const commentButtonSelector = `${getEditorSelector(0)} button.comment`;
           await waitAndClick(page, commentButtonSelector);
@@ -539,7 +502,7 @@ describe("Comment", () => {
       pages = await loadAndWait(
         "comments.pdf",
         ".annotationEditorLayer",
-        "page-width",
+        "page-fit",
         null,
         { enableComment: true }
       );
@@ -607,7 +570,6 @@ describe("Comment", () => {
           await switchToHighlight(page);
           await highlightSpan(page, 1, "Languages");
           const editorSelector = getEditorSelector(9);
-          await page.waitForSelector(editorSelector);
           const commentButtonSelector = `${editorSelector} button.comment`;
           await waitAndClick(page, commentButtonSelector);
 
@@ -662,7 +624,7 @@ describe("Comment", () => {
       pages = await loadAndWait(
         "tracemonkey.pdf",
         ".annotationEditorLayer",
-        "page-width",
+        "page-fit",
         null,
         { enableComment: true }
       );
