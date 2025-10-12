@@ -597,6 +597,8 @@ pdfjs-editor-edit-comment-popup-button =
 pdfjs-editor-delete-comment-popup-button-label = เอาความคิดเห็นออก
 pdfjs-editor-delete-comment-popup-button =
     .title = เอาความคิดเห็นออก
+pdfjs-show-comment-button =
+    .title = แสดงความคิดเห็น
 
 ##  Edit a comment dialog
 
@@ -614,8 +616,10 @@ pdfjs-editor-edit-comment-manager-cancel-button = ยกเลิก
 pdfjs-editor-edit-comment-manager-save-button = บันทึก
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = แก้ไขความคิดเห็น
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = อัปเดต
 # No existing comment
 pdfjs-editor-edit-comment-dialog-title-when-adding = เพิ่มความคิดเห็น
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = เพิ่ม
 pdfjs-editor-edit-comment-dialog-text-input =
     .placeholder = เริ่มพิมพ์…
 pdfjs-editor-edit-comment-dialog-cancel-button = ยกเลิก

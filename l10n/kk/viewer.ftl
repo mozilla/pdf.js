@@ -291,6 +291,8 @@ pdfjs-editor-color-picker-free-text-input =
 pdfjs-editor-free-text-button-label = Мәтін
 pdfjs-editor-ink-button =
     .title = Сурет салу
+pdfjs-editor-color-picker-ink-input =
+    .title = Сызба түсін өзгерту
 pdfjs-editor-ink-button-label = Сурет салу
 pdfjs-editor-stamp-button =
     .title = Суреттерді қосу немесе түзету
@@ -306,6 +308,10 @@ pdfjs-comment-floating-button =
     .title = Түсіндірме
     .aria-label = Түсіндірме
 pdfjs-comment-floating-button-label = Түсіндірме
+pdfjs-editor-comment-button =
+    .title = Түсіндірме
+    .aria-label = Түсіндірме
+pdfjs-editor-comment-button-label = Түсіндірме
 pdfjs-editor-signature-button =
     .title = Қолтаңбаны қосу
 pdfjs-editor-signature-button-label = Қолтаңбаны қосу
@@ -362,6 +368,19 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Мәтін түзеткіші
     .default-content = Теріп бастаңыз…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Түсіндірмелер
+       *[other] Түсіндірмелер
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Бүйір панелін жабу
+    .aria-label = Бүйір панелін жабу
+pdfjs-editor-comments-sidebar-close-button-label = Бүйір панелін жабу
+pdfjs-editor-comments-sidebar-no-comments-link = Көбірек білу
 
 ## Alt-text dialog
 
@@ -589,6 +608,8 @@ pdfjs-editor-edit-comment-manager-text-input =
     .placeholder = Пікіріңізді енгізіңіз
 pdfjs-editor-edit-comment-manager-cancel-button = Бас тарту
 pdfjs-editor-edit-comment-manager-save-button = Сақтау
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Жаңарту
+pdfjs-editor-edit-comment-dialog-cancel-button = Бас тарту
 
 ## Edit a comment button in the editor toolbar
 

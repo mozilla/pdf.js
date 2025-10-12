@@ -642,7 +642,7 @@ pdfjs-editor-edit-comment-manager-save-button = Uložit
 pdfjs-editor-edit-comment-dialog-title-when-editing = Upravit komentář
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = Aktualizovat
 # No existing comment
-pdfjs-editor-edit-comment-dialog-title-when-adding = Přidat komentář
+pdfjs-editor-edit-comment-dialog-title-when-adding = Přidání komentáře
 pdfjs-editor-edit-comment-dialog-save-button-when-adding = Přidat
 pdfjs-editor-edit-comment-dialog-text-input =
     .placeholder = Začněte psát…
