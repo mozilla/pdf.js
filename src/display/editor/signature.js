@@ -437,6 +437,7 @@ class SignatureEditor extends DrawingEditor {
       structTreeParentId: this._structTreeParentId,
       signer: this.signer.serializable,
       signTimestamp: Date.now(),
+      fieldName: crypto.randomUUID(),
     };
     this.addComment(serialized);
     if (isForCopying) {
