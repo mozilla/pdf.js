@@ -871,6 +871,7 @@ class StampEditor extends AnnotationEditor {
       isSignaturePlaceholder: this.isSignaturePlaceholder,
       isStampPlaceholder: this.isStampPlaceholder,
       signTimestamp: Date.now(),
+      fieldName: crypto.randomUUID(),
     };
     this.addComment(serialized);
 
@@ -999,7 +1000,9 @@ class StampEditor extends AnnotationEditor {
       if (confirm("确定盖章吗")) {
         this.remove(false);
         this.#bitmapId = null;
-        this.#bitmapUrl = this.signer.email; // stamp url
+        this.#bitmapUrl = window.DottiStore.getSignImageURLByKey(
+          this.signer.email
+        ); // stamp url
         this.stampURL = this.signer.email;
         this.#getBitmap();
       }

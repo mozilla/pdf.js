@@ -35,11 +35,17 @@ const DottiStore = {
   getPDFURL() {
     return this.task.fileContents[0].url;
   },
+  getSignImageURLByKey(key) {
+    return (
+      this.task.fileContents[0].signContents.find(st => st.key === key)?.url ??
+      ""
+    );
+  },
   getRawAnnotations() {
     return this.task.fileContents[0].attr?.annotations;
   },
   getRawSignAnnotations() {
-    return this.task.fileContents[0].signContents?.[0].attr?.annotations;
+    return this.task.fileContents[0].signContents;
   },
   isProcessingTask() {
     return !!this.task && this.task.taskStatus === "PROCESSING";
@@ -91,14 +97,20 @@ const DottiStore = {
     }
     const rawSignAnnotations = this.getRawSignAnnotations();
     if (rawSignAnnotations) {
-      for (const editor of rawSignAnnotations) {
-        if (editor.pageIndex === layer.pageIndex) {
-          layer.deserialize(editor).then(deserializedEditor => {
-            if (!deserializedEditor) {
-              return;
-            }
-            layer.add(deserializedEditor);
-          });
+      for (const rsa of rawSignAnnotations) {
+        // signContents can contain 2 things:
+        // 1. just pure key and url for saving stamp image
+        // 2. real annotation data
+        const editor = rsa.attr;
+        if (editor) {
+          if (editor.pageIndex === layer.pageIndex) {
+            layer.deserialize(editor).then(deserializedEditor => {
+              if (!deserializedEditor) {
+                return;
+              }
+              layer.add(deserializedEditor);
+            });
+          }
         }
       }
     }
@@ -153,32 +165,27 @@ const DottiStore = {
       // Exclude all placeholders for this task
       const filteredAnnotations = annotations.filter(annotation => {
         if (
-          annotation.isSignaturePlaceholder &&
-          this.sameSigner(annotation.signer) &&
-          this.sameSortNum(annotation.signer)
+          annotation.isSignaturePlaceholder ||
+          annotation.isStampPlaceholder
         ) {
           return false;
         }
         return true;
       });
-      filteredAnnotations.forEach(annotation => {
-        if (this.sameSortNum(annotation.signer)) {
-          annotation.bitmapId = null;
-          annotation.bitmapUrl = annotation.signer.email; // stamp url
-          annotation.isStampPlaceholder = false;
-        }
-      });
       this.task.fileContents[0].attr.annotations = filteredAnnotations;
 
-      const mergedSignatureAnnotations = this.task.fileContents[0].signContents?.[0].attr.annotations ?? [];
-      mergedSignatureAnnotations.push(...signatureAnnotations);
-      this.task.fileContents[0].signContents = [
-        {
-          attr: {
-            annotations: mergedSignatureAnnotations,
-          },
-        },
-      ];
+      const mergedSignatureAnnotations = this.task.fileContents[0].signContents ?? [];
+      signatureAnnotations.forEach(sa => {
+        mergedSignatureAnnotations.push({
+          attr: sa,
+          checksum: null,
+          imgProcessArg: null,
+          key: null,
+          signType: null,
+          url: null,
+        });
+      });
+      this.task.fileContents[0].signContents = mergedSignatureAnnotations;
 
       const data = {
         fileContents: this.task.fileContents,
@@ -191,7 +198,9 @@ const DottiStore = {
         ? "https://i-sign.cn:9102/isign/v1/submit-task"
         : "https://i-sign.cn:9102/isign/v1/pre-submit-task";
 
-      fetch(submitTaskActionUrl, {
+      const submitTaskActionUrl1 = "https://i-sign.cn:9102/isign/v1/submit-task";
+
+      fetch(submitTaskActionUrl1, {
         method: "POST",
         body: JSON.stringify(data),
         headers: {
@@ -207,7 +216,7 @@ const DottiStore = {
               location.reload();
             } else {
               alert("请进行人脸核身");
-              this.requestFacialRecognition(res.data);
+              // this.requestFacialRecognition(res.data);
             }
           } else {
             if (res.message === 'not processing') {
