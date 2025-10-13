@@ -150,7 +150,11 @@ class Intersector {
 
   #minX;
 
+  #maxX;
+
   #minY;
+
+  #maxY;
 
   #invXRatio;
 
@@ -175,9 +179,13 @@ class Intersector {
     }
     this.#minX = minX;
     this.#minY = minY;
+    this.#maxX = maxX;
+    this.#maxY = maxY;
     this.#invXRatio = (STEPS - 1) / (maxX - minX);
     this.#invYRatio = (STEPS - 1) / (maxY - minY);
     for (const intersector of intersectors) {
+      // TODO: instead of using the intersector bounds, we could iterate over
+      // the grid cells that the quad points intersect.
       const iMin = this.#getGridIndex(intersector.minX, intersector.minY);
       const iMax = this.#getGridIndex(intersector.maxX, intersector.maxY);
       const w = (iMax - iMin) % STEPS;
@@ -197,17 +205,16 @@ class Intersector {
   #getGridIndex(x, y) {
     const i = Math.floor((x - this.#minX) * this.#invXRatio);
     const j = Math.floor((y - this.#minY) * this.#invYRatio);
-    return i >= 0 && i < STEPS && j >= 0 && j < STEPS ? i + j * STEPS : -1;
+    return i + j * STEPS;
   }
 
   addGlyph(transform, width, height, glyph) {
     const x = transform[4] + width / 2;
     const y = transform[5] + height / 2;
-    const index = this.#getGridIndex(x, y);
-    if (index < 0) {
+    if (x < this.#minX || y < this.#minY || x > this.#maxX || y > this.#maxY) {
       return;
     }
-    const intersectors = this.#grid[index];
+    const intersectors = this.#grid[this.#getGridIndex(x, y)];
     if (!intersectors) {
       return;
     }
