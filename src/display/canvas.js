@@ -1843,7 +1843,9 @@ class CanvasGraphics {
   }
 
   setTextMatrix(opIdx, matrix) {
-    this.dependencyTracker?.recordSimpleData("textMatrix", opIdx);
+    this.dependencyTracker
+      ?.resetIncrementalData("sameLineText")
+      .recordSimpleData("textMatrix", opIdx);
     const { current } = this;
     current.textMatrix = matrix;
     current.textMatrixScale = Math.hypot(matrix[0], matrix[1]);
