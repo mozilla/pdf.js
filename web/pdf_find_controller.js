@@ -708,6 +708,11 @@ class PDFFindController {
   #convertToRegExpString(query, hasDiacritics) {
     const { matchDiacritics } = this.#state;
     let isUnicode = false;
+    const rawQuery = this._rawQuery ?? this.#state?.query;
+    const queryHasWhitespace =
+      typeof rawQuery === "string"
+        ? /\s/.test(rawQuery)
+        : Array.isArray(rawQuery) && rawQuery.some(q => /\s/.test(q));
     query = query.replaceAll(
       SPECIAL_CHARS_REG_EXP,
       (
@@ -718,16 +723,16 @@ class PDFFindController {
         p4 /* diacritics */,
         p5 /* letters */
       ) => {
-        // We don't need to use a \s for whitespaces since all the different
-        // kind of whitespaces are replaced by a single " ".
+        // We don't need \s because all whitespace is normalized to a single " ".
 
         if (p1) {
-          // Escape characters like *+?... to not interfere with regexp syntax.
-          return `[ ]*\\${p1}[ ]*`;
+          // Escaped metacharacters like . * + ? ...
+          // Allow spaces around them ONLY if the user typed spaces.
+          return queryHasWhitespace ? `[ ]*\\${p1}[ ]*` : `\\${p1}`;
         }
         if (p2) {
-          // Allow whitespaces around punctuation signs.
-          return `[ ]*${p2}[ ]*`;
+          // Punctuation: allow optional spaces ONLY if the user typed spaces.
+          return queryHasWhitespace ? `[ ]*${p2}[ ]*` : `${p2}`;
         }
         if (p3) {
           // Replace spaces by \s+ to be sure to match any spaces.
@@ -906,7 +911,6 @@ class PDFFindController {
           .then(
             textContent => {
               const strBuf = [];
-
               for (const textItem of textContent.items) {
                 strBuf.push(textItem.str);
                 if (textItem.hasEOL) {
