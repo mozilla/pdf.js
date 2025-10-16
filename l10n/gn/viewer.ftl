@@ -612,6 +612,8 @@ pdfjs-editor-edit-comment-popup-button =
 pdfjs-editor-delete-comment-popup-button-label = Je’erei mboguete
 pdfjs-editor-delete-comment-popup-button =
     .title = Je’erei mboguete
+pdfjs-show-comment-button =
+    .title = Ehechauka je’epy
 
 ##  Edit a comment dialog
 
@@ -629,8 +631,10 @@ pdfjs-editor-edit-comment-manager-cancel-button = Heja
 pdfjs-editor-edit-comment-manager-save-button = Ñongatu
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Je’erei mbosako’i
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Mbohekopyahu
 # No existing comment
 pdfjs-editor-edit-comment-dialog-title-when-adding = Je’erei mbojuaju
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Mbojuaju
 pdfjs-editor-edit-comment-dialog-text-input =
     .placeholder = Ehai ñepyrũ…
 pdfjs-editor-edit-comment-dialog-cancel-button = Eheja

@@ -613,6 +613,8 @@ pdfjs-editor-edit-comment-popup-button =
 pdfjs-editor-delete-comment-popup-button-label = Тоза кардани шарҳ
 pdfjs-editor-delete-comment-popup-button =
     .title = Тоза кардани шарҳ
+pdfjs-show-comment-button =
+    .title = Нишон додани шарҳ
 
 ##  Edit a comment dialog
 
@@ -630,8 +632,10 @@ pdfjs-editor-edit-comment-manager-cancel-button = Бекор кардан
 pdfjs-editor-edit-comment-manager-save-button = Нигоҳ доштан
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Таҳрир кардани шарҳ
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Навсозӣ кардан
 # No existing comment
 pdfjs-editor-edit-comment-dialog-title-when-adding = Илова кардани шарҳ
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Илова кардан
 pdfjs-editor-edit-comment-dialog-text-input =
     .placeholder = Нависед…
 pdfjs-editor-edit-comment-dialog-cancel-button = Бекор кардан

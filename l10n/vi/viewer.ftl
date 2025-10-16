@@ -597,6 +597,8 @@ pdfjs-editor-edit-comment-popup-button =
 pdfjs-editor-delete-comment-popup-button-label = Xoá bình luận
 pdfjs-editor-delete-comment-popup-button =
     .title = Xoá bình luận
+pdfjs-show-comment-button =
+    .title = Hiển thị bình luận
 
 ##  Edit a comment dialog
 
@@ -614,8 +616,10 @@ pdfjs-editor-edit-comment-manager-cancel-button = Hủy bỏ
 pdfjs-editor-edit-comment-manager-save-button = Lưu
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Chỉnh sửa bình luận
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Cập nhật
 # No existing comment
 pdfjs-editor-edit-comment-dialog-title-when-adding = Thêm bình luận
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Thêm
 pdfjs-editor-edit-comment-dialog-text-input =
     .placeholder = Bắt đầu nhập…
 pdfjs-editor-edit-comment-dialog-cancel-button = Hủy bỏ

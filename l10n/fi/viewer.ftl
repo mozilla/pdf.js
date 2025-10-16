@@ -308,6 +308,10 @@ pdfjs-comment-floating-button =
     .title = Kommentti
     .aria-label = Kommentti
 pdfjs-comment-floating-button-label = Kommentti
+pdfjs-editor-comment-button =
+    .title = Kommentti
+    .aria-label = Kommentti
+pdfjs-editor-comment-button-label = Kommentti
 pdfjs-editor-signature-button =
     .title = Lisää allekirjoitus
 pdfjs-editor-signature-button-label = Lisää allekirjoitus
@@ -370,6 +374,18 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Tekstimuokkain
     .default-content = Aloita kirjoittaminen…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Kommentti
+       *[other] Kommenttia
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Sulje sivupaneeli
+    .aria-label = Sulje sivupaneeli
+pdfjs-editor-comments-sidebar-close-button-label = Sulje sivupaneeli
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Näetkö jotain huomionarvoista? Korosta se ja jätä kommentti.
 pdfjs-editor-comments-sidebar-no-comments-link = Lue lisää
@@ -597,6 +613,8 @@ pdfjs-editor-edit-comment-popup-button =
 pdfjs-editor-delete-comment-popup-button-label = Poista kommentti
 pdfjs-editor-delete-comment-popup-button =
     .title = Poista kommentti
+pdfjs-show-comment-button =
+    .title = Näytä kommentti
 
 ##  Edit a comment dialog
 
@@ -614,8 +632,10 @@ pdfjs-editor-edit-comment-manager-cancel-button = Peruuta
 pdfjs-editor-edit-comment-manager-save-button = Tallenna
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Muokkaa kommenttia
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Päivitä
 # No existing comment
 pdfjs-editor-edit-comment-dialog-title-when-adding = Lisää kommentti
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Lisää
 pdfjs-editor-edit-comment-dialog-text-input =
     .placeholder = Aloita kirjoittaminen…
 pdfjs-editor-edit-comment-dialog-cancel-button = Peruuta

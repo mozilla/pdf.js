@@ -617,6 +617,8 @@ pdfjs-editor-edit-comment-popup-button =
 pdfjs-editor-delete-comment-popup-button-label = Выдаліць каментарый
 pdfjs-editor-delete-comment-popup-button =
     .title = Выдаліць каментарый
+pdfjs-show-comment-button =
+    .title = Паказаць каментарый
 
 ##  Edit a comment dialog
 
@@ -634,8 +636,10 @@ pdfjs-editor-edit-comment-manager-cancel-button = Скасаваць
 pdfjs-editor-edit-comment-manager-save-button = Захаваць
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Змяніць каментарый
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Абнавіць
 # No existing comment
 pdfjs-editor-edit-comment-dialog-title-when-adding = Дадаць каментарый
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Дадаць
 pdfjs-editor-edit-comment-dialog-text-input =
     .placeholder = Пачніце набор тэксту…
 pdfjs-editor-edit-comment-dialog-cancel-button = Скасаваць
