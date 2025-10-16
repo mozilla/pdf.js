@@ -2685,6 +2685,10 @@ class PopupElement {
     this.#firstElement.commentText = this.#commentText = text;
   }
 
+  focus() {
+    this.#firstElement.container?.focus();
+  }
+
   get parentBoundingClientRect() {
     return this.#firstElement.layer.getBoundingClientRect();
   }
