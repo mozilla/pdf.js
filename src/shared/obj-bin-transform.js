@@ -606,4 +606,79 @@ class FontInfo {
   }
 }
 
-export { CssFontInfo, FontInfo, SystemFontInfo };
+class FontPathInfo {
+  static write(path) {
+    let lengthEstimate = 0;
+    const commands = [];
+    for (const cmd of path) {
+      const code = cmd.charCodeAt(0);
+      let args = null;
+      if (code === 67 || code === 76 || code === 77) {
+        args = cmd.slice(1).split(" ");
+        lengthEstimate += 1 + args.length * 8;
+      } else if (code === 90) {
+        lengthEstimate += 1;
+      } else {
+        throw new Error(`Invalid path command: ${cmd}`);
+      }
+      commands.push({ code, args });
+    }
+
+    const buffer = new ArrayBuffer(4 + lengthEstimate);
+    const view = new DataView(buffer);
+    let offset = 0;
+
+    view.setUint32(offset, commands.length);
+    offset += 4;
+    for (const { code, args } of commands) {
+      view.setUint8(offset, code);
+      offset += 1;
+      if (args) {
+        for (const arg of args) {
+          view.setFloat64(offset, parseFloat(arg), true);
+          offset += 8;
+        }
+      }
+    }
+
+    assert(offset === buffer.byteLength, "FontPathInfo.write: Buffer overflow");
+    return buffer;
+  }
+
+  #buffer;
+
+  #view;
+
+  constructor(buffer) {
+    this.#buffer = buffer;
+    this.#view = new DataView(this.#buffer);
+  }
+
+  getSVG() {
+    const length = this.#view.getUint32(0);
+    const cmds = [];
+    let offset = 4;
+    for (let i = 0; i < length; i++) {
+      const code = String.fromCharCode(this.#view.getUint8(offset));
+      offset += 1;
+      // eslint-disable-next-line no-nested-ternary
+      const numArgs = code === "M" || code === "L" ? 2 : code === "C" ? 6 : 0;
+      let args = null;
+      if (numArgs > 0) {
+        args = [];
+        for (let j = 0; j < numArgs; j++) {
+          args.push(this.#view.getFloat64(offset, true));
+          offset += 8;
+        }
+      }
+      cmds.push(code + (args ? args.join(" ") : ""));
+    }
+    assert(
+      offset === this.#buffer.byteLength,
+      "FontPathInfo.toString: Buffer overflow"
+    );
+    return cmds.join("");
+  }
+}
+
+export { CssFontInfo, FontInfo, FontPathInfo, SystemFontInfo };
