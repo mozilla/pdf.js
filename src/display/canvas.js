@@ -18,7 +18,6 @@ import {
   Dependencies,
 } from "./canvas_dependency_tracker.js";
 import {
-  DrawOPS,
   FeatureTest,
   FONT_IDENTITY_MATRIX,
   ImageKind,
@@ -33,6 +32,7 @@ import {
 import {
   getCurrentTransform,
   getCurrentTransformInverse,
+  makePathFromDrawOPS,
   OutputScale,
   PixelsPerInch,
 } from "./display_utils.js";
@@ -1489,35 +1489,7 @@ class CanvasGraphics {
     }
 
     if (!(path instanceof Path2D)) {
-      // Using a SVG string is slightly slower than using the following loop.
-      const path2d = (data[0] = new Path2D());
-      for (let i = 0, ii = path.length; i < ii; ) {
-        switch (path[i++]) {
-          case DrawOPS.moveTo:
-            path2d.moveTo(path[i++], path[i++]);
-            break;
-          case DrawOPS.lineTo:
-            path2d.lineTo(path[i++], path[i++]);
-            break;
-          case DrawOPS.curveTo:
-            path2d.bezierCurveTo(
-              path[i++],
-              path[i++],
-              path[i++],
-              path[i++],
-              path[i++],
-              path[i++]
-            );
-            break;
-          case DrawOPS.closePath:
-            path2d.closePath();
-            break;
-          default:
-            warn(`Unrecognized drawing path operator: ${path[i - 1]}`);
-            break;
-        }
-      }
-      path = path2d;
+      path = data[0] = makePathFromDrawOPS(path);
     }
     Util.axialAlignedBoundingBox(
       minMax,

@@ -354,7 +354,8 @@ const DrawOPS = {
   moveTo: 0,
   lineTo: 1,
   curveTo: 2,
-  closePath: 3,
+  quadraticCurveTo: 3,
+  closePath: 4,
 };
 
 const PasswordResponses = {
@@ -646,6 +647,14 @@ class FeatureTest {
       this,
       "isImageDecoderSupported",
       typeof ImageDecoder !== "undefined"
+    );
+  }
+
+  static get isFloat16ArraySupported() {
+    return shadow(
+      this,
+      "isFloat16ArraySupported",
+      typeof Float16Array !== "undefined"
     );
   }
 
