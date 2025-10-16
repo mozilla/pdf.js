@@ -15,6 +15,7 @@
 
 import {
   BaseException,
+  DrawOPS,
   FeatureTest,
   shadow,
   Util,
@@ -995,6 +996,44 @@ function renderRichText({ html, dir, className }, container) {
   container.append(fragment);
 }
 
+function makePathFromDrawOPS(data) {
+  // Using a SVG string is slightly slower than using the following loop.
+  const path = new Path2D();
+  if (!data) {
+    return path;
+  }
+  for (let i = 0, ii = data.length; i < ii; ) {
+    switch (data[i++]) {
+      case DrawOPS.moveTo:
+        path.moveTo(data[i++], data[i++]);
+        break;
+      case DrawOPS.lineTo:
+        path.lineTo(data[i++], data[i++]);
+        break;
+      case DrawOPS.curveTo:
+        path.bezierCurveTo(
+          data[i++],
+          data[i++],
+          data[i++],
+          data[i++],
+          data[i++],
+          data[i++]
+        );
+        break;
+      case DrawOPS.quadraticCurveTo:
+        path.quadraticCurveTo(data[i++], data[i++], data[i++], data[i++]);
+        break;
+      case DrawOPS.closePath:
+        path.closePath();
+        break;
+      default:
+        warn(`Unrecognized drawing path operator: ${data[i - 1]}`);
+        break;
+    }
+  }
+  return path;
+}
+
 export {
   applyOpacity,
   ColorScheme,
@@ -1012,6 +1051,7 @@ export {
   isDataScheme,
   isPdfFile,
   isValidFetchUrl,
+  makePathFromDrawOPS,
   noContextMenu,
   OutputScale,
   PageViewport,
