@@ -798,4 +798,44 @@ describe("Comment", () => {
       );
     });
   });
+
+  describe("Focus annotation after comment has been deleted (bug 1994738)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        "page-fit",
+        null,
+        { enableComment: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the annotation is focused", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+          await highlightSpan(page, 1, "Abstract");
+          const editorSelector = getEditorSelector(0);
+          await editComment(page, editorSelector, "Hello world!");
+
+          await switchToHighlight(page, /* disable = */ true);
+          await waitAndClick(page, ".annotationLayer .annotationCommentButton");
+
+          const handle = await createPromise(page, resolve => {
+            document
+              .querySelector(".annotationLayer section.editorAnnotation")
+              .addEventListener("focus", resolve, { once: true });
+          });
+          await waitAndClick(page, "button.commentPopupDelete");
+          await awaitPromise(handle);
+        })
+      );
+    });
+  });
 });
