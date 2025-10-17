@@ -188,6 +188,7 @@ class AnnotationEditor {
     this.annotationElementId = parameters.annotationElementId || null;
     this.creationDate = parameters.creationDate || new Date();
     this.modificationDate = parameters.modificationDate || null;
+    this.canAddComment = true;
 
     const {
       rotation,
@@ -1173,7 +1174,7 @@ class AnnotationEditor {
   }
 
   addCommentButton() {
-    return (this.#comment ||= new Comment(this));
+    return this.canAddComment ? (this.#comment ||= new Comment(this)) : null;
   }
 
   addStandaloneCommentButton() {
@@ -1991,7 +1992,7 @@ class AnnotationEditor {
   }
 
   setCommentButtonStates(options) {
-    this.#comment.setCommentButtonStates(options);
+    this.#comment?.setCommentButtonStates(options);
   }
 
   /**

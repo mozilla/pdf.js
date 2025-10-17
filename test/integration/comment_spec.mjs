@@ -27,11 +27,13 @@ import {
   switchToEditor,
   waitAndClick,
   waitForSerialized,
+  waitForTimeout,
 } from "./test_utils.mjs";
 
 const switchToHighlight = switchToEditor.bind(null, "Highlight");
 const switchToStamp = switchToEditor.bind(null, "Stamp");
 const switchToComment = switchToEditor.bind(null, "Comment");
+const switchToFreeText = switchToEditor.bind(null, "FreeText");
 
 const highlightSpan = async (page, pageIndex, text) => {
   const rect = await getSpanRectFromText(page, pageIndex, text);
@@ -834,6 +836,57 @@ describe("Comment", () => {
           });
           await waitAndClick(page, "button.commentPopupDelete");
           await awaitPromise(handle);
+        })
+      );
+    });
+  });
+
+  describe("FreeText annotation doesn't have a popup (bug 1995028)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "empty.pdf",
+        ".annotationEditorLayer",
+        "page-fit",
+        null,
+        { enableComment: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that comment button isn't in the annotation toolbar", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          const rect = await getRect(page, ".annotationEditorLayer");
+          const editorSelector = getEditorSelector(0);
+          const data = "Hello PDF.js World !!";
+          await page.mouse.click(rect.x + 100, rect.y + 100);
+          await page.waitForSelector(editorSelector, { visible: true });
+          await page.type(`${editorSelector} .internal`, data);
+          await page.keyboard.press("Escape");
+
+          await page.waitForSelector(`${editorSelector} .editToolbar`, {
+            visible: true,
+          });
+
+          // We want to be sure that the comment button isn't rendered.
+          // eslint-disable-next-line no-restricted-syntax
+          await waitForTimeout(100);
+
+          const hasCommentButton = await page.evaluate(
+            selector =>
+              !!document.querySelector(
+                `${selector} .editToolbar button.comment`
+              ),
+            editorSelector
+          );
+          expect(hasCommentButton).withContext(`In ${browserName}`).toBe(false);
         })
       );
     });
