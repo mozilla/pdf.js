@@ -181,6 +181,58 @@ describe("FreeText Editor", () => {
       }
     });
 
+    it("must copy/paste and check color", async () => {
+      // Run sequentially to avoid clipboard issues.
+      for (const [browserName, page] of pages) {
+        await switchToFreeText(page);
+
+        const rect = await getRect(page, ".annotationEditorLayer");
+        const firstEditorSelector = getEditorSelector(0);
+        const data = "Hello PDF.js World !!";
+        await page.mouse.click(rect.x + 100, rect.y + 100);
+        await page.waitForSelector(firstEditorSelector, { visible: true });
+        await page.type(`${firstEditorSelector} .internal`, data);
+        await commit(page);
+        await waitForStorageEntries(page, 1);
+
+        await page.evaluate(() => {
+          window.PDFViewerApplication.eventBus.dispatch(
+            "switchannotationeditorparams",
+            {
+              source: null,
+              type: window.pdfjsLib.AnnotationEditorParamsType.FREETEXT_COLOR,
+              value: "#FF0000",
+            }
+          );
+        });
+
+        await selectEditor(page, firstEditorSelector);
+        await copy(page);
+        await paste(page);
+        const secondEditorSelector = getEditorSelector(1);
+        await page.waitForSelector(secondEditorSelector, { visible: true });
+        await waitForStorageEntries(page, 2);
+
+        const color = await page.$eval(
+          `${secondEditorSelector} .internal`,
+          el => getComputedStyle(el).color
+        );
+        expect(color)
+          .withContext(`In ${browserName}`)
+          .toEqual("rgb(255, 0, 0)");
+
+        const inputSelector = `${secondEditorSelector} .basicColorPicker`;
+        await page.waitForSelector(inputSelector, { visible: true });
+
+        const buttonColor = await page.evaluate(sel => {
+          const input = document.querySelector(sel);
+          return input.value;
+        }, inputSelector);
+
+        expect(buttonColor).withContext(`In ${browserName}`).toEqual("#ff0000");
+      }
+    });
+
     it("must clear all", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
