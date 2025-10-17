@@ -154,7 +154,7 @@ class Comment {
       comment.ariaControlsElements = [
         this.#editor._uiManager.getCommentDialogElement(),
       ];
-      comment.setAttribute("data-l10n-id", "pdfjs-editor-edit-comment-button");
+      comment.setAttribute("data-l10n-id", "pdfjs-editor-add-comment-button");
     }
 
     const signal = this.#editor._uiManager._signal;
