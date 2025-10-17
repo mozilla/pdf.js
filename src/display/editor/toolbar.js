@@ -211,24 +211,35 @@ class EditorToolbar {
   async addButton(name, tool) {
     switch (name) {
       case "colorPicker":
-        this.addColorPicker(tool);
+        if (tool) {
+          this.addColorPicker(tool);
+        }
         break;
       case "altText":
-        await this.addAltText(tool);
+        if (tool) {
+          await this.addAltText(tool);
+        }
         break;
       case "editSignature":
-        await this.addEditSignatureButton(tool);
+        if (tool) {
+          await this.addEditSignatureButton(tool);
+        }
         break;
       case "delete":
         this.addDeleteButton();
         break;
       case "comment":
-        this.addComment(tool);
+        if (tool) {
+          this.addComment(tool);
+        }
         break;
     }
   }
 
   async addButtonBefore(name, tool, beforeSelector) {
+    if (!tool && name === "comment") {
+      return;
+    }
     const beforeElement = this.#buttons.querySelector(beforeSelector);
     if (!beforeElement) {
       return;

@@ -135,6 +135,7 @@ class FreeTextEditor extends AnnotationEditor {
     if (!this.annotationElementId) {
       this._uiManager.a11yAlert("pdfjs-editor-freetext-added-alert");
     }
+    this.canAddComment = false;
   }
 
   /** @inheritdoc */
