@@ -19,7 +19,7 @@ class RunLengthStream extends DecodeStream {
   constructor(str, maybeLength) {
     super(maybeLength);
 
-    this.str = str;
+    this.stream = str;
     this.dict = str.dict;
   }
 
@@ -28,7 +28,7 @@ class RunLengthStream extends DecodeStream {
     // and amount of bytes to repeat/copy: n = 0 through 127 - copy next n bytes
     // (in addition to the second byte from the header), n = 129 through 255 -
     // duplicate the second byte from the header (257 - n) times, n = 128 - end.
-    const repeatHeader = this.str.getBytes(2);
+    const repeatHeader = this.stream.getBytes(2);
     if (!repeatHeader || repeatHeader.length < 2 || repeatHeader[0] === 128) {
       this.eof = true;
       return;
@@ -42,7 +42,7 @@ class RunLengthStream extends DecodeStream {
       buffer = this.ensureBuffer(bufferLength + n + 1);
       buffer[bufferLength++] = repeatHeader[1];
       if (n > 0) {
-        const source = this.str.getBytes(n);
+        const source = this.stream.getBytes(n);
         buffer.set(source, bufferLength);
         bufferLength += n;
       }

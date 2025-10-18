@@ -24,7 +24,7 @@ class AsciiHexStream extends DecodeStream {
     }
     super(maybeLength);
 
-    this.str = str;
+    this.stream = str;
     this.dict = str.dict;
 
     this.firstDigit = -1;
@@ -32,7 +32,7 @@ class AsciiHexStream extends DecodeStream {
 
   readBlock() {
     const UPSTREAM_BLOCK_SIZE = 8000;
-    const bytes = this.str.getBytes(UPSTREAM_BLOCK_SIZE);
+    const bytes = this.stream.getBytes(UPSTREAM_BLOCK_SIZE);
     if (!bytes.length) {
       this.eof = true;
       return;
