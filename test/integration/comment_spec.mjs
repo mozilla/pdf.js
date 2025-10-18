@@ -299,9 +299,7 @@ describe("Comment", () => {
             selector => document.querySelector(selector).title,
             commentButtonSelector
           );
-          expect(title)
-            .withContext(`In ${browserName}`)
-            .toEqual("Edit comment");
+          expect(title).withContext(`In ${browserName}`).toEqual("Add comment");
           await page.click(commentButtonSelector);
 
           const textInputSelector = "#commentManagerTextInput";
