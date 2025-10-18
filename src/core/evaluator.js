@@ -4284,7 +4284,7 @@ class PartialEvaluator {
       hash.update(`${firstChar}-${lastChar}`); // Fixes issue10665_reduced.pdf
 
       if (toUnicode instanceof BaseStream) {
-        const stream = toUnicode.str || toUnicode;
+        const stream = toUnicode.stream || toUnicode;
         const uint8array = stream.buffer
           ? new Uint8Array(stream.buffer.buffer, 0, stream.bufferLength)
           : new Uint8Array(
