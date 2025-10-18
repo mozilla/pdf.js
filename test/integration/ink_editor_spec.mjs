@@ -57,7 +57,7 @@ describe("Ink Editor", () => {
     let pages;
 
     beforeEach(async () => {
-      pages = await loadAndWait("aboutstacks.pdf", ".annotationEditorLayer");
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
     });
 
     afterEach(async () => {
