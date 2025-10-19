@@ -90,7 +90,7 @@ describe("FreeText Editor", () => {
     let pages;
 
     beforeEach(async () => {
-      pages = await loadAndWait("aboutstacks.pdf", ".annotationEditorLayer");
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
     });
 
     afterEach(async () => {
@@ -311,53 +311,6 @@ describe("FreeText Editor", () => {
       }
     });
 
-    it("must check that aria-owns is correct", async () => {
-      await Promise.all(
-        pages.map(async ([browserName, page]) => {
-          await switchToFreeText(page);
-
-          await page.$eval(".textLayer", el => {
-            for (const span of el.querySelectorAll(
-              `span[role="presentation"]`
-            )) {
-              if (span.innerText.includes("Stacks are simple to create")) {
-                span.setAttribute("pdfjs", true);
-              }
-            }
-          });
-
-          await scrollIntoView(page, `span[pdfjs="true"]`);
-
-          const stacksRect = await getRect(page, `span[pdfjs="true"]`);
-          const oldAriaOwns = await page.$eval(`span[pdfjs="true"]`, el =>
-            el.getAttribute("aria-owns")
-          );
-
-          expect(oldAriaOwns).withContext(`In ${browserName}`).toEqual(null);
-
-          const editorSelector = getEditorSelector(0);
-          const data = "Hello PDF.js World !!";
-          await page.mouse.click(
-            stacksRect.x + stacksRect.width + 1,
-            stacksRect.y + stacksRect.height / 2
-          );
-          await page.waitForSelector(editorSelector, { visible: true });
-          await page.type(`${editorSelector} .internal`, data);
-          await commit(page);
-
-          const ariaOwns = await page.$eval(".textLayer", el => {
-            const span = el.querySelector(`span[pdfjs="true"]`);
-            return span?.getAttribute("aria-owns") || null;
-          });
-
-          expect(ariaOwns.endsWith("_0-editor"))
-            .withContext(`In ${browserName}`)
-            .toEqual(true);
-          await scrollIntoView(page, ".annotationEditorLayer");
-        })
-      );
-    });
-
     it("must check that right click doesn't select", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
@@ -490,7 +443,7 @@ describe("FreeText Editor", () => {
     let pages;
 
     beforeEach(async () => {
-      pages = await loadAndWait("aboutstacks.pdf", ".annotationEditorLayer");
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
     });
 
     afterEach(async () => {
@@ -640,6 +593,59 @@ describe("FreeText Editor", () => {
           .withContext(`In ${browserName}`)
           .toEqual([0, 2, 4, 5, 6]);
       }
+    });
+  });
+
+  describe("FreeText (accessibility)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("attachment.pdf", ".annotationEditorLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that aria-owns is correct", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          await page.$eval(".textLayer", el => {
+            for (const span of el.querySelectorAll(
+              `span[role="presentation"]`
+            )) {
+              if (span.innerText.includes("This document contains")) {
+                span.setAttribute("pdfjs", true);
+              }
+            }
+          });
+
+          const oldAriaOwns = await page.$eval(`span[pdfjs="true"]`, el =>
+            el.getAttribute("aria-owns")
+          );
+          expect(oldAriaOwns).withContext(`In ${browserName}`).toEqual(null);
+
+          const editorSelector = getEditorSelector(0);
+          const rect = await getRect(page, `span[pdfjs="true"]`);
+          const data = "Hello PDF.js World !!";
+          await page.mouse.click(
+            rect.x + rect.width / 2,
+            rect.y + rect.height / 2
+          );
+          await page.waitForSelector(editorSelector, { visible: true });
+          await page.type(`${editorSelector} .internal`, data);
+          await commit(page);
+
+          const newAriaOwns = await page.$eval(`span[pdfjs="true"]`, el =>
+            el.getAttribute("aria-owns")
+          );
+          expect(newAriaOwns.endsWith("_0-editor"))
+            .withContext(`In ${browserName}`)
+            .toEqual(true);
+        })
+      );
     });
   });
 
