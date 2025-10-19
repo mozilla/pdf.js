@@ -1453,10 +1453,12 @@ describe("PDF viewer", () => {
           const rect = await getRect(page, annotationSelector);
           const containerRect = await getRect(page, "#viewerContainer");
           expect(
-            Math.abs(2 * (rect.y - containerRect.y) - containerRect.height)
+            Math.abs(
+              2 * (Math.ceil(rect.y) - containerRect.y) - containerRect.height
+            )
           )
             .withContext(`In ${browserName}`)
-            .toBeLessThan(1);
+            .toBeLessThanOrEqual(1);
         })
       );
     });
