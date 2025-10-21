@@ -15,6 +15,7 @@
 
 /** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
 
+import { FeatureTest, shadow } from "pdfjs-lib";
 import { removeNullCharacters } from "./ui_utils.js";
 
 const PDF_ROLE_TO_HTML_ROLE = {
@@ -72,6 +73,98 @@ const PDF_ROLE_TO_HTML_ROLE = {
   // standard structure type Artifact
   Artifact: null,
 };
+
+const MathMLElements = new Set([
+  "math",
+  "merror",
+  "mfrac",
+  "mi",
+  "mmultiscripts",
+  "mn",
+  "mo",
+  "mover",
+  "mpadded",
+  "mprescripts",
+  "mroot",
+  "mrow",
+  "ms",
+  "mspace",
+  "msqrt",
+  "mstyle",
+  "msub",
+  "msubsup",
+  "msup",
+  "mtable",
+  "mtd",
+  "mtext",
+  "mtr",
+  "munder",
+  "munderover",
+  "semantics",
+]);
+const MathMLNamespace = "http://www.w3.org/1998/Math/MathML";
+
+class MathMLSanitizer {
+  static get sanitizer() {
+    // From https://w3c.github.io/mathml-docs/mathml-safe-list.
+
+    return shadow(
+      this,
+      "sanitizer",
+      FeatureTest.isSanitizerSupported
+        ? // eslint-disable-next-line no-undef
+          new Sanitizer({
+            elements: [...MathMLElements].map(name => ({
+              name,
+              namespace: MathMLNamespace,
+            })),
+            replaceWithChildrenElements: [
+              {
+                name: "maction",
+                namespace: MathMLNamespace,
+              },
+            ],
+            attributes: [
+              "dir",
+              "displaystyle",
+              "mathbackground",
+              "mathcolor",
+              "mathsize",
+              "scriptlevel",
+              "encoding",
+              "display",
+              "linethickness",
+              "intent",
+              "arg",
+              "form",
+              "fence",
+              "separator",
+              "lspace",
+              "rspace",
+              "stretchy",
+              "symmetric",
+              "maxsize",
+              "minsize",
+              "largeop",
+              "movablelimits",
+              "width",
+              "height",
+              "depth",
+              "voffset",
+              "accent",
+              "accentunder",
+              "columnspan",
+              "rowspan",
+            ].map(name => ({
+              name,
+              namespace: MathMLNamespace,
+            })),
+            comments: false,
+          })
+        : null
+    );
+  }
+}
 
 const HEADING_PATTERN = /^H(\d+)$/;
 
@@ -230,9 +323,12 @@ class StructTreeLayerBuilder {
       return null;
     }
 
-    const element = document.createElement("span");
+    let element;
     if ("role" in node) {
       const { role } = node;
+      element = MathMLElements.has(role)
+        ? document.createElementNS(MathMLNamespace, role)
+        : document.createElement("span");
       const match = role.match(HEADING_PATTERN);
       if (match) {
         element.setAttribute("role", "heading");
@@ -243,7 +339,23 @@ class StructTreeLayerBuilder {
       if (role === "Figure" && this.#addImageInTextLayer(node, element)) {
         return element;
       }
+      if (role === "Formula") {
+        if (node.mathML && MathMLSanitizer.sanitizer) {
+          element.setHTML(node.mathML, {
+            sanitizer: MathMLSanitizer.sanitizer,
+          });
+        }
+        if (
+          !node.mathML &&
+          node.children.length === 1 &&
+          node.children[0].role !== "math"
+        ) {
+          element = document.createElementNS(MathMLNamespace, "math");
+        }
+      }
     }
+
+    element ||= document.createElement("span");
 
     this.#setAttributes(node, element);
 
