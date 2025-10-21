@@ -885,7 +885,8 @@ class SignatureManager {
 
     await this.#overlayManager.open(this.#dialog);
 
-    const tabType = this.#tabButtons.get("type");
+    // Dotti: It ensures that when the dialog opens, it activates the “Draw” tab instead of “Type”.
+    const tabType = this.#tabButtons.get("draw");
     tabType.focus();
     tabType.click();
   }

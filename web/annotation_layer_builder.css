@@ -109,6 +109,7 @@
       overflow: visible;
       white-space: nowrap;
       font: 10px sans-serif;
+      font-family: 'PingFang SC', sans-serif;
       line-height: 1.35;
     }
   }

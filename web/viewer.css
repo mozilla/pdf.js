@@ -15,6 +15,11 @@
 
 @import url(pdf_viewer.css);
 
+@font-face {
+  font-family: "PingFang SC";
+  src: url("https://dev-memorybread-oss.oss-cn-shanghai.aliyuncs.com/resource/fonts/PingFang-Bold.ttf");
+}
+
 :root {
   --dir-factor: 1;
   /*#if !MOZCENTRAL*/

@@ -33,7 +33,9 @@ const DottiStore = {
     return annotationSigner.sortNum === this.task.sortNum;
   },
   getPDFURL() {
-    return this.task.fileContents[0].url;
+    return this.isFinishedWorkflow()
+      ? this.task.fileContents[1].url
+      : this.task.fileContents[0].url;
   },
   getSignImageURLByKey(key) {
     return (
@@ -49,6 +51,9 @@ const DottiStore = {
   },
   isProcessingTask() {
     return !!this.task && this.task.taskStatus === "PROCESSING";
+  },
+  isFinishedWorkflow() {
+    return this.task.fileContents.length === 2;
   },
   isPlaceholderEditor(editor) {
     return editor.isSignaturePlaceholder || editor.isStampPlaceholder;
@@ -66,50 +71,53 @@ const DottiStore = {
     return false;
   },
   renderTaskAnnotationsOnLayer(layer) {
-    const rawAnnotations = this.getRawAnnotations();
-    if (rawAnnotations) {
-      for (const editor of rawAnnotations) {
-        if (editor.pageIndex === layer.pageIndex) {
-          if (this.isPlaceholderEditor(editor)) {
-            if (this.isProcessingTask()) {
-              if (
-                this.sameSigner(editor.signer) &&
-                this.sameSortNum(editor.signer)
-              ) {
-                layer.deserialize(editor).then(deserializedEditor => {
-                  if (!deserializedEditor) {
-                    return;
-                  }
-                  layer.add(deserializedEditor);
-                });
+    if (!this.isFinishedWorkflow()) {
+      const rawAnnotations = this.getRawAnnotations();
+      if (rawAnnotations) {
+        for (const editor of rawAnnotations) {
+          if (editor.pageIndex === layer.pageIndex) {
+            if (this.isPlaceholderEditor(editor)) {
+              if (this.isProcessingTask()) {
+                if (
+                  this.sameSigner(editor.signer) &&
+                  this.sameSortNum(editor.signer)
+                ) {
+                  layer.deserialize(editor).then(deserializedEditor => {
+                    if (!deserializedEditor) {
+                      return;
+                    }
+                    layer.add(deserializedEditor);
+                  });
+                }
               }
+            } else {
+              layer.deserialize(editor).then(deserializedEditor => {
+                if (!deserializedEditor) {
+                  return;
+                }
+                layer.add(deserializedEditor);
+              });
             }
-          } else {
-            layer.deserialize(editor).then(deserializedEditor => {
-              if (!deserializedEditor) {
-                return;
-              }
-              layer.add(deserializedEditor);
-            });
           }
         }
       }
-    }
-    const rawSignAnnotations = this.getRawSignAnnotations();
-    if (rawSignAnnotations) {
-      for (const rsa of rawSignAnnotations) {
-        // signContents can contain 2 things:
-        // 1. just pure key and url for saving stamp image
-        // 2. real annotation data
-        const editor = rsa.attr;
-        if (editor) {
-          if (editor.pageIndex === layer.pageIndex) {
-            layer.deserialize(editor).then(deserializedEditor => {
-              if (!deserializedEditor) {
-                return;
-              }
-              layer.add(deserializedEditor);
-            });
+      const rawSignAnnotations = this.getRawSignAnnotations();
+      if (rawSignAnnotations) {
+        for (const rsa of rawSignAnnotations) {
+          // signContents can contain 2 things:
+          // 1. just pure key and url for saving stamp image
+          // 2. real annotation data
+          const editor = rsa.attr;
+          if (editor) {
+            const annotation = editor.annotation;
+            if (annotation.pageIndex === layer.pageIndex) {
+              layer.deserialize(annotation).then(deserializedEditor => {
+                if (!deserializedEditor) {
+                  return;
+                }
+                layer.add(deserializedEditor);
+              });
+            }
           }
         }
       }
@@ -177,12 +185,16 @@ const DottiStore = {
       const mergedSignatureAnnotations = this.task.fileContents[0].signContents ?? [];
       signatureAnnotations.forEach(sa => {
         mergedSignatureAnnotations.push({
-          attr: sa,
+          attr: {
+            annotation: sa,
+          },
           checksum: null,
           imgProcessArg: null,
-          key: null,
+          key: sa.signer.organizationId ? sa.signer.email : null, // in org, email is the stamp image's key
           signType: null,
-          url: null,
+          url: sa.signer.organizationId
+            ? this.getSignImageURLByKey(sa.signer.email)
+            : null,
         });
       });
       this.task.fileContents[0].signContents = mergedSignatureAnnotations;
@@ -194,13 +206,10 @@ const DottiStore = {
         taskAction: isStampingTask ? "STAMPED" : "SIGNED",
       };
 
-      const submitTaskActionUrl = isStampingTask
-        ? "https://i-sign.cn:9102/isign/v1/submit-task"
-        : "https://i-sign.cn:9102/isign/v1/pre-submit-task";
+      const submitTaskActionUrl =
+        "https://i-sign.cn:9102/isign/v1/pre-submit-task";
 
-      const submitTaskActionUrl1 = "https://i-sign.cn:9102/isign/v1/submit-task";
-
-      fetch(submitTaskActionUrl1, {
+      fetch(submitTaskActionUrl, {
         method: "POST",
         body: JSON.stringify(data),
         headers: {
@@ -211,15 +220,10 @@ const DottiStore = {
         .then(response => response.json())
         .then(res => {
           if (res.success) {
-            if (isStampingTask) {
-              alert("提交成功");
-              location.reload();
-            } else {
-              alert("请进行人脸核身");
-              // this.requestFacialRecognition(res.data);
-            }
+            alert("请进行人脸核身以授权平台代签");
+            this.requestFacialRecognition(res.data);
           } else {
-            if (res.message === 'not processing') {
+            if (res.message === "not processing") {
               alert("该任务已办结");
             } else {
               alert("提交失败，请检查网络后重试");
@@ -251,6 +255,86 @@ const DottiStore = {
           alert("提交失败，请检查网络后重试");
         }
       });
+  },
+  /**
+   * For testing purpose only
+   * @param signatureAnnotations
+   */
+  submitSignatureTaskWithoutFacialRecognition(signatureAnnotations) {
+    if (this.task) {
+      const annotations = this.task.fileContents[0].attr.annotations;
+      // find out this task is individual or entity
+      const entityAnnotations = annotations.filter(annotation => {
+        if (
+          annotation.signer.organizationId &&
+          this.sameSortNum(annotation.signer)
+        ) {
+          return true;
+        }
+        return false;
+      });
+      const isStampingTask = entityAnnotations.length > 0;
+
+      // Exclude all placeholders for this task
+      const filteredAnnotations = annotations.filter(annotation => {
+        if (
+          annotation.isSignaturePlaceholder ||
+          annotation.isStampPlaceholder
+        ) {
+          return false;
+        }
+        return true;
+      });
+      this.task.fileContents[0].attr.annotations = filteredAnnotations;
+
+      const mergedSignatureAnnotations = this.task.fileContents[0].signContents ?? [];
+      signatureAnnotations.forEach(sa => {
+        mergedSignatureAnnotations.push({
+          attr: {
+            annotation: sa,
+          },
+          checksum: null,
+          imgProcessArg: null,
+          key: sa.signer.organizationId ? sa.signer.email : null, // in org, email is the stamp image's key
+          signType: null,
+          url: sa.signer.organizationId
+            ? this.getSignImageURLByKey(sa.signer.email)
+            : null,
+        });
+      });
+      this.task.fileContents[0].signContents = mergedSignatureAnnotations;
+
+      const data = {
+        fileContents: this.task.fileContents,
+        taskId: this.task.taskId,
+        workflowId: this.task.workflow.workflowId,
+        taskAction: isStampingTask ? "STAMPED" : "SIGNED",
+      };
+
+      const submitTaskActionUrl = "https://i-sign.cn:9102/isign/v1/submit-task";
+
+      fetch(submitTaskActionUrl, {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: {
+          "X-IS-Token": this.token,
+          "Content-Type": "application/json",
+        },
+      })
+        .then(response => response.json())
+        .then(res => {
+          if (res.success) {
+            alert("提交成功");
+            location.reload();
+          } else {
+            if (res.message === "not processing") {
+              alert("该任务已办结");
+            } else {
+              alert("提交失败，请检查网络后重试");
+            }
+          }
+        });
+    }
   },
 };
 

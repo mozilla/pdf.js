@@ -515,6 +515,7 @@
   overflow: visible;
   white-space: nowrap;
   font: 10px sans-serif;
+  font-family: 'PingFang SC', sans-serif;
   line-height: var(--freetext-line-height);
   text-align: start;
   user-select: none;

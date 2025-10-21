@@ -327,15 +327,26 @@ function fetchTask(token, taskId) {
       .then(res => {
         if (res.success) {
           DottiStore.setTask(res.data);
-          DottiStore.setDisplayMode("task");
+          if (DottiStore.isFinishedWorkflow()) {
+            DottiStore.setDisplayMode("view");
+            // allow download and print
+            const printDownloadGroupBar = document.getElementById(
+              "printDownloadGroupBar"
+            );
+            printDownloadGroupBar.style.display = "";
+          } else {
+            DottiStore.setDisplayMode("task");
 
-          const submitSignatureButton = document.getElementById(
-            "submitSignatureButton"
-          );
-          submitSignatureButton.onclick = () => {
-            window.DottiStore.onSubmitSignature();
-          };
-          submitSignatureButton.style.display = DottiStore.isProcessingTask() ? '' : 'none';
+            const submitSignatureButton = document.getElementById(
+              "submitSignatureButton"
+            );
+            submitSignatureButton.onclick = () => {
+              window.DottiStore.onSubmitSignature();
+            };
+            submitSignatureButton.style.display = DottiStore.isProcessingTask()
+              ? ""
+              : "none";
+          }
 
           webViewerLoad();
         } else {
