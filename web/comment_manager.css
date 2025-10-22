@@ -208,6 +208,9 @@
   --button-comment-hover-bg: light-dark(#e0e0e6, #52525e);
   --button-comment-hover-color: var(--button-comment-color);
 
+  --link-fg-color: light-dark(#0060df, #0df);
+  --link-hover-fg-color: light-dark(#0250bb, #80ebff);
+
   @media screen and (forced-colors: active) {
     --comment-date-fg-color: CanvasText;
     --comment-bg-color: Canvas;
@@ -229,6 +232,8 @@
     --button-comment-border: 1px solid ButtonText;
     --button-comment-hover-bg: Highlight;
     --button-comment-hover-color: HighlightText;
+    --link-fg-color: LinkText;
+    --link-hover-fg-color: LinkText;
   }
 }
 
@@ -432,9 +437,14 @@
             height: auto;
             overflow-wrap: break-word;
             margin-block-start: 15px;
+            color: var(--link-fg-color);
 
             &:focus-visible {
               outline: var(--focus-ring-outline);
+            }
+
+            &:hover {
+              color: var(--link-hover-fg-color);
             }
           }
         }
