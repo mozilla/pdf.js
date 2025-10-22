@@ -723,11 +723,11 @@ class PDFFindController {
 
         if (p1) {
           // Escape characters like *+?... to not interfere with regexp syntax.
-          return `[ ]*\\${p1}[ ]*`;
+          return `\\${p1}`;
         }
         if (p2) {
-          // Allow whitespaces around punctuation signs.
-          return `[ ]*${p2}[ ]*`;
+          // Match punctuation signs exactly without allowing arbitrary whitespaces.
+          return p2;
         }
         if (p3) {
           // Replace spaces by \s+ to be sure to match any spaces.

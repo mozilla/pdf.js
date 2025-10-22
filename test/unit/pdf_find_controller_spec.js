@@ -1213,4 +1213,54 @@ describe("pdf_find_controller", function () {
       });
     });
   });
+
+  it("should not match punctuation with spaces when searching for exact punctuation", async function () {
+    // Test case for issue #20225: searching for "...." should not match ". ..." or ".. .."
+    const mockMatcher = function (query, pageContent) {
+      // Simulate page content with various dot patterns
+      const testContent = "This has four dots.... and this has dot space three dots. ... and this has two dots space two dots.. ..";
+      
+      // Call the original match method to test the current behavior
+      return PDFFindController.prototype.match.call(this, query, testContent, 0);
+    };
+
+    const { eventBus, pdfFindController } = await initPdfFindController(
+      null,
+      false,
+      mockMatcher
+    );
+
+    // Test searching for exactly four dots - should only match exact sequence
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: { query: "...." },
+      selectedMatch: { pageIndex: 0, matchIndex: 0 },
+      matchesPerPage: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // Should match only 1 exact occurrence
+    });
+  });
+
+  it("should not match text with spaces when searching for text without spaces", async function () {
+    // Test case for issue: searching for "hello.world" should not match "hello. world"
+    const mockMatcher = function (query, pageContent) {
+      const testContent = "hello. world and hello.world are different";
+      
+      // Call the original match method to test the current behavior
+      return PDFFindController.prototype.match.call(this, query, testContent, 0);
+    };
+
+    const { eventBus, pdfFindController } = await initPdfFindController(
+      null,
+      false,
+      mockMatcher
+    );
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: { query: "hello.world" },
+      selectedMatch: { pageIndex: 0, matchIndex: 0 },
+      matchesPerPage: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // Should match only 1 exact occurrence
+    });
+  });
 });
