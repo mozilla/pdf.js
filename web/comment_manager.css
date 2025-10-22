@@ -224,7 +224,7 @@
     --comment-indicator-selected-fg-color: SelectedItem;
     --button-comment-bg: ButtonFace;
     --button-comment-color: ButtonText;
-    --button-comment-active-bg: ButtonText;
+    --button-comment-active-bg: Highlight;
     --button-comment-active-color: HighlightText;
     --button-comment-border: 1px solid ButtonText;
     --button-comment-hover-bg: Highlight;
@@ -283,8 +283,8 @@
       height: 32px;
       padding: 8px;
       border-radius: 4px;
-      border: none;
-      background: none;
+      border: var(--button-comment-border);
+      background-color: var(--button-comment-bg);
       cursor: pointer;
 
       &::before {
@@ -295,15 +295,24 @@
         mask-repeat: no-repeat;
         mask-position: center;
         mask-image: var(--comment-close-button-icon);
-        background-color: var(--comment-fg-color);
+        background-color: var(--button-comment-color);
       }
 
       &:hover {
-        background-color: var(--comment-hover-bg-color);
+        background-color: var(--button-comment-hover-bg);
+
+        &::before {
+          background-color: var(--button-comment-hover-color);
+        }
       }
 
       &:active {
-        background-color: var(--comment-active-bg-color);
+        border: var(--button-comment-active-border);
+        background-color: var(--button-comment-active-bg);
+
+        &::before {
+          background-color: var(--button-comment-active-color);
+        }
       }
 
       &:focus-visible {
