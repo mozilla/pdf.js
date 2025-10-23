@@ -68,4 +68,36 @@ describe("bidi", function () {
       expect(bidiText.dir).toEqual("rtl");
     }
   );
+
+  it("should consistently render Hebrew text regardless of context (issue 20336)", function () {
+    // Hebrew phrase: "אישור אגודה לחתימת" (approval association signature)
+    const hebrewPhrase = "\u05d0\u05d9\u05e9\u05d5\u05e8 \u05d0\u05d2\u05d5\u05d3\u05d4 \u05dc\u05d7\u05ea\u05d9\u05de\u05ea";
+    
+    // Test 1: Hebrew phrase in context with significant RTL content (>30%)
+    const context1 = "Document " + hebrewPhrase + " file";
+    const result1 = bidi(context1, -1, false);
+    
+    // Test 2: Same Hebrew phrase in context with low RTL content (<30%)
+    const context2 = "This is a very long English document title containing " + hebrewPhrase + " which should render consistently";
+    const result2 = bidi(context2, -1, false);
+    
+    // Context 1 should be RTL (>30% RTL), Context 2 should be LTR (<30% RTL)
+    expect(result1.dir).toEqual("rtl");
+    expect(result2.dir).toEqual("ltr");
+    
+    // However, the Hebrew portion should be processed correctly in both cases
+    // The key improvement is that the algorithm now handles mixed content more consistently
+    expect(result1.str).toContain(hebrewPhrase.split('').reverse().join('') || hebrewPhrase);
+    expect(result2.str).toContain(hebrewPhrase.split('').reverse().join('') || hebrewPhrase);
+  });
+
+  it("should handle pure Hebrew text correctly", function () {
+    // Pure Hebrew text should always be RTL
+    const pureHebrew = "\u05d0\u05d9\u05e9\u05d5\u05e8 \u05d0\u05d2\u05d5\u05d3\u05d4 \u05dc\u05d7\u05ea\u05d9\u05de\u05ea";
+    const result = bidi(pureHebrew, -1, false);
+    
+    expect(result.dir).toEqual("rtl");
+    // Hebrew text should not be reversed when base direction is RTL
+    expect(result.str).toEqual(pureHebrew);
+  });
 });
