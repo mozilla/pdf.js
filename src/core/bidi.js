@@ -165,12 +165,46 @@ function bidi(str, startLevel = -1, vertical = false) {
   }
 
   if (startLevel === -1) {
-    if (numBidi / strLength < 0.3 && strLength > 4) {
-      isLTR = true;
-      startLevel = 0;
-    } else {
-      isLTR = false;
+    // Improved base direction detection for consistent Hebrew text rendering
+    // This fixes issue #20336 where Hebrew text renders inconsistently across contexts
+    
+    let hasStrongRTL = false;
+    let hasStrongLTR = false;
+    
+    // Scan for strong directional characters
+    for (let j = 0; j < strLength; j++) {
+      const type = types[j];
+      if (type === "R" || type === "AL") {
+        hasStrongRTL = true;
+      } else if (type === "L") {
+        hasStrongLTR = true;
+      }
+      
+      // Early termination if we found both types
+      if (hasStrongRTL && hasStrongLTR) break;
+    }
+    
+    if (hasStrongRTL && !hasStrongLTR) {
+      // Pure RTL content (like pure Hebrew)
       startLevel = 1;
+      isLTR = false;
+    } else if (!hasStrongRTL && hasStrongLTR) {
+      // Pure LTR content
+      startLevel = 0;
+      isLTR = true;
+    } else {
+      // Mixed content - use improved heuristic
+      // For mixed content, if RTL characters form a significant portion
+      // or if the string is short, treat as RTL to preserve RTL text integrity
+      if (numBidi / strLength >= 0.3 || strLength <= 4) {
+        startLevel = 1; // RTL
+        isLTR = false;
+      } else {
+        // For mixed content with low RTL percentage, still use LTR base
+        // but the RTL segments will be properly handled by the algorithm
+        startLevel = 0; // LTR
+        isLTR = true;
+      }
     }
   }
 
