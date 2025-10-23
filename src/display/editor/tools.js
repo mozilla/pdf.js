@@ -1537,12 +1537,12 @@ class AnnotationEditorUIManager {
 
   addEditListeners() {
     this.#addKeyboardManager();
-    this.#addCopyPasteListeners();
+    this.setEditingState(true);
   }
 
   removeEditListeners() {
     this.#removeKeyboardManager();
-    this.#removeCopyPasteListeners();
+    this.setEditingState(false);
   }
 
   dragOver(event) {
