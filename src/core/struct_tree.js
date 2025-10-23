@@ -16,6 +16,7 @@
 import { AnnotationPrefix, stringToPDFString, warn } from "../shared/util.js";
 import { Dict, isName, Name, Ref, RefSetCache } from "./primitives.js";
 import { lookupNormalRect, stringToAsciiOrUTF16BE } from "./core_utils.js";
+import { BaseStream } from "./base_stream.js";
 import { NumberTree } from "./name_number_tree.js";
 
 const MAX_DEPTH = 40;
@@ -579,6 +580,50 @@ class StructElementNode {
     return root.roleMap.get(name) ?? name;
   }
 
+  get mathML() {
+    let AFs = this.dict.get("AF") || [];
+    if (!Array.isArray(AFs)) {
+      AFs = [AFs];
+    }
+    for (let af of AFs) {
+      af = this.xref.fetchIfRef(af);
+      if (!(af instanceof Dict)) {
+        continue;
+      }
+      if (!isName(af.get("Type"), "Filespec")) {
+        continue;
+      }
+      if (!isName(af.get("AFRelationship"), "Supplement")) {
+        continue;
+      }
+      const ef = af.get("EF");
+      if (!(ef instanceof Dict)) {
+        continue;
+      }
+      const fileStream = ef.get("UF") || ef.get("F");
+      if (!(fileStream instanceof BaseStream)) {
+        continue;
+      }
+      if (!isName(fileStream.dict.get("Type"), "EmbeddedFile")) {
+        continue;
+      }
+      if (!isName(fileStream.dict.get("Subtype"), "application/mathml+xml")) {
+        continue;
+      }
+      return fileStream.getString();
+    }
+    const A = this.dict.get("A");
+    if (A instanceof Dict) {
+      // This stuff isn't in the spec, but MS Office seems to use it.
+      const O = A.get("O");
+      if (isName(O, "MSFT_Office")) {
+        const mathml = A.get("MSFT_MathML");
+        return mathml ? stringToPDFString(mathml) : null;
+      }
+    }
+    return null;
+  }
+
   parseKids() {
     let pageObjId = null;
     const objRef = this.dict.getRaw("Pg");
@@ -841,6 +886,12 @@ class StructTreePage {
       }
       if (typeof alt === "string") {
         obj.alt = stringToPDFString(alt);
+      }
+      if (obj.role === "Formula") {
+        const { mathML } = node;
+        if (mathML) {
+          obj.mathML = mathML;
+        }
       }
 
       const a = node.dict.get("A");

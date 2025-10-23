@@ -658,6 +658,15 @@ class FeatureTest {
     );
   }
 
+  static get isSanitizerSupported() {
+    return shadow(
+      this,
+      "isSanitizerSupported",
+      // eslint-disable-next-line no-undef
+      typeof Sanitizer !== "undefined"
+    );
+  }
+
   static get platform() {
     const { platform, userAgent } = navigator;
 
