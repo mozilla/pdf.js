@@ -1125,6 +1125,7 @@ const PDFViewerApplication = {
       }
 
       this.pdfSaveCfazDialog?.setMessageContent('Arquivo enviado com sucesso.');
+      window.pdfWasSaved = true;
     } catch (reason) {
       // When the PDF document isn't ready, or the PDF file is still
       // downloading, simply fallback to a "regular" download.
@@ -1208,7 +1209,14 @@ const PDFViewerApplication = {
   },
 
   backButton() {
-    window.history.back();
+    backButton.disabled = true;
+    const requestId = document.getElementById('request_id')?.value;
+    if (window.pdfWasSaved) {
+      return window.location.href = `/requests/${requestId}`
+    } else {
+      window.history.back();
+      backButton.disabled = false;
+    }
   },
   /**
    * Report the error; used for errors affecting loading and/or parsing of
