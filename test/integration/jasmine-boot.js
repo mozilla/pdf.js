@@ -53,7 +53,7 @@ async function runTests(results) {
     specDone(result) {
       // Report on the result of individual tests.
       ++results.runs;
-      if (result.failedExpectations.length > 0) {
+      if (result.failedExpectations.length > 0 && !result.pendingReason) {
         ++results.failures;
         console.log(`TEST-UNEXPECTED-FAIL | ${result.description}`);
       } else {
@@ -63,14 +63,14 @@ async function runTests(results) {
     specStarted(result) {},
     suiteDone(result) {
       // Report on the result of `afterAll` invocations.
-      if (result.failedExpectations.length > 0) {
+      if (result.failedExpectations.length > 0 && !result.pendingReason) {
         ++results.failures;
         console.log(`TEST-UNEXPECTED-FAIL | ${result.description}`);
       }
     },
     suiteStarted(result) {
       // Report on the result of `beforeAll` invocations.
-      if (result.failedExpectations.length > 0) {
+      if (result.failedExpectations.length > 0 && !result.pendingReason) {
         ++results.failures;
         console.log(`TEST-UNEXPECTED-FAIL | ${result.description}`);
       }
