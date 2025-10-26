@@ -648,6 +648,8 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Utzi
 
 pdfjs-editor-edit-comment-button =
     .title = Editatu iruzkina
+pdfjs-editor-add-comment-button =
+    .title = Gehitu iruzkina
 
 ## Main menu for adding/removing signatures
 

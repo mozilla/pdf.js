@@ -365,7 +365,7 @@ pdfjs-editor-add-saved-signature-button =
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = 텍스트 편집기
-    .default-content = 입력을 시작하세요…
+    .default-content = 입력하세요…
 # Used to show how many comments are present in the pdf file.
 # Variables:
 #   $count (Number) - the number of comments.
@@ -375,7 +375,7 @@ pdfjs-editor-comments-sidebar-close-button =
     .aria-label = 사이드바 닫기
 pdfjs-editor-comments-sidebar-close-button-label = 사이드바 닫기
 # Instructional copy to add a comment by selecting text or an annotations.
-pdfjs-editor-comments-sidebar-no-comments1 = 주목할만한 것이 있나요? 강조 표시하고 주석을 남겨주세요.
+pdfjs-editor-comments-sidebar-no-comments1 = 눈에 띄는 내용이 있나요? 해당 부분을 강조 표시하고 주석을 남겨주세요.
 pdfjs-editor-comments-sidebar-no-comments-link = 더 알아보기
 
 ## Alt-text dialog
@@ -628,6 +628,8 @@ pdfjs-editor-edit-comment-dialog-cancel-button = 취소
 
 pdfjs-editor-edit-comment-button =
     .title = 주석 편집
+pdfjs-editor-add-comment-button =
+    .title = 주석 추가
 
 ## Main menu for adding/removing signatures
 

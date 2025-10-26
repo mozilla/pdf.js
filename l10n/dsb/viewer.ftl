@@ -652,6 +652,8 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Pśetergnuś
 
 pdfjs-editor-edit-comment-button =
     .title = Komentar wobźěłaś
+pdfjs-editor-add-comment-button =
+    .title = Komentar pśidaś
 
 ## Main menu for adding/removing signatures
 
