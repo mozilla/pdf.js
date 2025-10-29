@@ -258,7 +258,7 @@ describe("struct tree", function () {
     await loadingTask.destroy();
   });
 
-  it("parses structure with some MathML in MS Office specific entry", async function() {
+  it("parses structure with some MathML in MS Office specific entry", async function () {
     const filename = "bug1937438_from_word.pdf";
     const params = buildGetDocumentParams(filename);
     const loadingTask = getDocument(params);
