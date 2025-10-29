@@ -621,6 +621,8 @@ pdfjs-editor-edit-comment-popup-button =
 pdfjs-editor-delete-comment-popup-button-label = Odstrani komentar
 pdfjs-editor-delete-comment-popup-button =
     .title = Odstrani komentar
+pdfjs-show-comment-button =
+    .title = Pokaži komentar
 
 ##  Edit a comment dialog
 
@@ -638,8 +640,10 @@ pdfjs-editor-edit-comment-manager-cancel-button = Prekliči
 pdfjs-editor-edit-comment-manager-save-button = Shrani
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Uredi komentar
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Spremeni
 # No existing comment
 pdfjs-editor-edit-comment-dialog-title-when-adding = Dodaj komentar
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Dodaj
 pdfjs-editor-edit-comment-dialog-text-input =
     .placeholder = Začnite tipkati …
 pdfjs-editor-edit-comment-dialog-cancel-button = Prekliči

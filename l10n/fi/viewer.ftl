@@ -644,6 +644,8 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Peruuta
 
 pdfjs-editor-edit-comment-button =
     .title = Muokkaa kommenttia
+pdfjs-editor-add-comment-button =
+    .title = Lisää kommentti
 
 ## Main menu for adding/removing signatures
 

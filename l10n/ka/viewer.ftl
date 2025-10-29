@@ -644,6 +644,8 @@ pdfjs-editor-edit-comment-dialog-cancel-button = გაუქმება
 
 pdfjs-editor-edit-comment-button =
     .title = შენიშვნის ჩასწორება
+pdfjs-editor-add-comment-button =
+    .title = შენიშვნის დამატება
 
 ## Main menu for adding/removing signatures
 

@@ -320,6 +320,7 @@ pdfjs-editor-stamp-add-image-button-label = Добавяне на изображ
 pdfjs-free-text2 =
     .aria-label = Текстов редактор
     .default-content = Започнете да пишете…
+pdfjs-editor-comments-sidebar-close-button-label = Затваряне на страничната лента
 
 ## Alt-text dialog
 

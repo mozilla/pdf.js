@@ -644,6 +644,8 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Mégse
 
 pdfjs-editor-edit-comment-button =
     .title = Megjegyzés szerkesztése
+pdfjs-editor-add-comment-button =
+    .title = Megjegyzés hozzáadása
 
 ## Main menu for adding/removing signatures
 

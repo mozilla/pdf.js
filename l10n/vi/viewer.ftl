@@ -297,13 +297,13 @@ pdfjs-highlight-floating-button1 =
     .aria-label = Đánh dấu
 pdfjs-highlight-floating-button-label = Đánh dấu
 pdfjs-comment-floating-button =
-    .title = Bình luận
-    .aria-label = Bình luận
-pdfjs-comment-floating-button-label = Bình luận
+    .title = Chú thích
+    .aria-label = Chú thích
+pdfjs-comment-floating-button-label = Chú thích
 pdfjs-editor-comment-button =
-    .title = Bình luận
-    .aria-label = Bình luận
-pdfjs-editor-comment-button-label = Bình luận
+    .title = Chú thích
+    .aria-label = Chú thích
+pdfjs-editor-comment-button-label = Chú thích
 pdfjs-editor-signature-button =
     .title = Thêm chữ ký
 pdfjs-editor-signature-button-label = Thêm chữ ký
@@ -369,13 +369,13 @@ pdfjs-free-text2 =
 # Used to show how many comments are present in the pdf file.
 # Variables:
 #   $count (Number) - the number of comments.
-pdfjs-editor-comments-sidebar-title = Bình luận
+pdfjs-editor-comments-sidebar-title = Chú thích
 pdfjs-editor-comments-sidebar-close-button =
     .title = Đóng thanh lề
     .aria-label = Đóng thanh lề
 pdfjs-editor-comments-sidebar-close-button-label = Đóng thanh lề
 # Instructional copy to add a comment by selecting text or an annotations.
-pdfjs-editor-comments-sidebar-no-comments1 = Bạn thấy điều gì đáng chú ý? Hãy đánh dấu và để lại bình luận.
+pdfjs-editor-comments-sidebar-no-comments1 = Bạn thấy điều gì đáng chú ý? Hãy đánh dấu và để lại chú thích.
 pdfjs-editor-comments-sidebar-no-comments-link = Tìm hiểu thêm
 
 ## Alt-text dialog
@@ -591,14 +591,14 @@ pdfjs-editor-edit-signature-update-button = Cập nhật
 
 ## Comment popup
 
-pdfjs-editor-edit-comment-popup-button-label = Chỉnh sửa bình luận
+pdfjs-editor-edit-comment-popup-button-label = Chỉnh sửa chú thích
 pdfjs-editor-edit-comment-popup-button =
-    .title = Chỉnh sửa bình luận
-pdfjs-editor-delete-comment-popup-button-label = Xoá bình luận
+    .title = Chỉnh sửa chú thích
+pdfjs-editor-delete-comment-popup-button-label = Xoá chú thích
 pdfjs-editor-delete-comment-popup-button =
-    .title = Xoá bình luận
+    .title = Xoá chú thích
 pdfjs-show-comment-button =
-    .title = Hiển thị bình luận
+    .title = Hiển thị chú thích
 
 ##  Edit a comment dialog
 
@@ -611,14 +611,14 @@ pdfjs-editor-edit-comment-close-button =
 pdfjs-editor-edit-comment-actions-edit-button-label = Chỉnh sửa
 pdfjs-editor-edit-comment-actions-delete-button-label = Xóa
 pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Nhập bình luận của bạn
+    .placeholder = Nhập chú thích của bạn
 pdfjs-editor-edit-comment-manager-cancel-button = Hủy bỏ
 pdfjs-editor-edit-comment-manager-save-button = Lưu
 # An existing comment is edited
-pdfjs-editor-edit-comment-dialog-title-when-editing = Chỉnh sửa bình luận
+pdfjs-editor-edit-comment-dialog-title-when-editing = Chỉnh sửa chú thích
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = Cập nhật
 # No existing comment
-pdfjs-editor-edit-comment-dialog-title-when-adding = Thêm bình luận
+pdfjs-editor-edit-comment-dialog-title-when-adding = Thêm chú thích
 pdfjs-editor-edit-comment-dialog-save-button-when-adding = Thêm
 pdfjs-editor-edit-comment-dialog-text-input =
     .placeholder = Bắt đầu nhập…
@@ -627,7 +627,9 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Hủy bỏ
 ## Edit a comment button in the editor toolbar
 
 pdfjs-editor-edit-comment-button =
-    .title = Chỉnh sửa bình luận
+    .title = Chỉnh sửa chú thích
+pdfjs-editor-add-comment-button =
+    .title = Thêm chú thích
 
 ## Main menu for adding/removing signatures
 
