@@ -327,6 +327,7 @@ function fetchTask(token, taskId) {
       .then(res => {
         if (res.success) {
           DottiStore.setTask(res.data);
+          const task = res.data;
           if (DottiStore.isFinishedWorkflow()) {
             DottiStore.setDisplayMode("view");
             // allow download and print
@@ -346,6 +347,45 @@ function fetchTask(token, taskId) {
             submitSignatureButton.style.display = DottiStore.isProcessingTask()
               ? ""
               : "none";
+
+            document.getElementById(
+              "signingConfirmDialogWorkflowNameDiv"
+            ).innerText = task.workflow.workflowName;
+            document.getElementById(
+              "signingConfirmDialogWorkflowIdDiv"
+            ).innerText = task.workflow.workflowId;
+            document.getElementById(
+              "signingConfirmDialogSignerName"
+            ).innerText = DottiStore.getCurrentSigner().idName;
+            document.getElementById("signingConfirmDialogSignerId").innerText =
+              DottiStore.getCurrentSigner().idCard.slice(-4);
+            const userConsentDialog =
+              document.getElementById("userConsentDialog");
+            const signingConfirmDialogCancelButton = document.getElementById(
+              "signingConfirmDialogCancelButton"
+            );
+            signingConfirmDialogCancelButton.onclick = () => {
+              userConsentDialog.close();
+            };
+            const signingConfirmDialogSubmitButton = document.getElementById(
+              "signingConfirmDialogSubmitButton"
+            );
+            signingConfirmDialogSubmitButton.onclick = () => {
+              // 1. validate 3 checkboxes
+              const userConsent1 = document.getElementById("userConsent1");
+              const userConsent2 = document.getElementById("userConsent2");
+              const userConsent3 = document.getElementById("userConsent3");
+              if (
+                userConsent1.checked &&
+                userConsent2.checked &&
+                userConsent3.checked
+              ) {
+                DottiStore.saveUserConsents();
+              } else {
+                // eslint-disable-next-line no-alert
+                alert("请先确认电子签署授权");
+              }
+            };
           }
 
           webViewerLoad();
