@@ -267,6 +267,10 @@ class Catalog {
     return markInfo;
   }
 
+  get hasStructTree() {
+    return this.#catDict.has("StructTreeRoot");
+  }
+
   get structTreeRoot() {
     let structTree = null;
     try {
