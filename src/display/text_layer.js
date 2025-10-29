@@ -308,6 +308,9 @@ class TextLayer {
           if (item.tag === "Artifact") {
             this.#container.ariaHidden = true;
           }
+          if (item.lang) {
+            this.#container.setAttribute("lang", item.lang);
+          }
           parent.append(this.#container);
         } else if (item.type === "endMarkedContent") {
           this.#container = this.#container.parentNode;
