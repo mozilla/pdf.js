@@ -824,6 +824,23 @@ class StructTreePage {
 
     const element = new StructElementNode(this, dict);
     map.set(dict, element);
+    switch (element.role) {
+      case "L":
+      case "LBody":
+      case "LI":
+      case "Table":
+      case "THead":
+      case "TBody":
+      case "TFoot":
+      case "TR": {
+        // Always collect all child nodes of lists and tables, even empty ones
+        for (const kid of element.kids) {
+          if (kid.type === StructElementType.ELEMENT) {
+            this.addNode(kid.dict, map, level - 1);
+          }
+        }
+      }
+    }
 
     const parent = dict.get("P");
 
