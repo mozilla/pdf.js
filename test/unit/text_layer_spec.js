@@ -250,4 +250,26 @@ describe("textLayer", function () {
 
     await loadingTask.destroy();
   });
+
+  it("handles lang attribute for marked content", async function () {
+    const loadingTask = getDocument(
+      buildGetDocumentParams("marked_content_lang.pdf")
+    );
+    const pdfDocument = await loadingTask.promise;
+    const page = await pdfDocument.getPage(1);
+
+    const container = document.createElement("div");
+    const textLayer = new TextLayer({
+      textContentSource: page.streamTextContent({
+        includeMarkedContent: true,
+      }),
+      container,
+      viewport: page.getViewport({ scale: 1 }),
+    });
+    await textLayer.render();
+
+    const span = container.querySelector("#p17R_mc1");
+    expect(span.getAttribute("lang")).toEqual("es-ES");
+    expect(span.textContent).toEqual("Esto es español");
+  });
 });

@@ -293,6 +293,9 @@ class TextLayer {
           if (item.id) {
             this.#container.setAttribute("id", `${item.id}`);
           }
+          if (item.lang) {
+            this.#container.setAttribute("lang", item.lang);
+          }
           parent.append(this.#container);
         } else if (item.type === "endMarkedContent") {
           this.#container = this.#container.parentNode;
