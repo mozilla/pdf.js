@@ -1223,7 +1223,9 @@ const PDFViewerApplication = {
     };
 
     return loadingTask.promise.then(
-      pdfDocument => {
+      async pdfDocument => {
+        // Compute SHA-256 before rendering
+        await window.DottiStore.calculateSha256(pdfDocument);
         this.load(pdfDocument);
       },
       reason => {

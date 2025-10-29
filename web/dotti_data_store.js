@@ -5,6 +5,7 @@ const DottiStore = {
   task: null,
   displayMode: "view",
   signingStampEditor: null,
+  sha256: null,
   setToken(t) {
     this.token = t;
   },
@@ -42,6 +43,24 @@ const DottiStore = {
       this.task.fileContents[0].signContents.find(st => st.key === key)?.url ??
       ""
     );
+  },
+  getCurrentSigner() {
+    // 如果是个签名任务，则直接拿Signer里的信息，如果是盖章任务，则需要拿profile里的信息，这里默认加入组织的用户必须已经实名认证过
+    const signer = this.task.workflow.signers.find(
+      s => s.sortNum === this.task.sortNum
+    );
+    if (signer.organizationId) {
+      return {
+        idName: this.profile.idName,
+        idCard: this.profile.idCard,
+        phone: this.profile.phone,
+      };
+    }
+    return {
+      idName: signer.name,
+      idCard: signer.idCard,
+      phone: signer.phone,
+    };
   },
   getRawAnnotations() {
     return this.task.fileContents[0].attr?.annotations;
@@ -124,11 +143,18 @@ const DottiStore = {
     }
   },
   onSubmitSignature() {
-    const uiManager = window.PDFViewerApplication.pdfViewer.annotationEditorUIManager;
+    const userConsentDialog = document.getElementById("userConsentDialog");
+    userConsentDialog.showModal();
+  },
+  processSubmitSignature() {
+    const uiManager =
+      window.PDFViewerApplication.pdfViewer.annotationEditorUIManager;
     const signatureEditors = uiManager.getAllSignatureEditors();
-    const signaturePlaceholderEditors = uiManager.getAllSignaturePlaceholderEditors();
+    const signaturePlaceholderEditors =
+      uiManager.getAllSignaturePlaceholderEditors();
     const stampPlaceholderEditors = uiManager.getAllStampPlaceholderEditors();
-    const unsignedStampPlaceholderEditors = uiManager.getAllUnsignedStampPlaceholderEditors();
+    const unsignedStampPlaceholderEditors =
+      uiManager.getAllUnsignedStampPlaceholderEditors();
     if (signatureEditors.length !== signaturePlaceholderEditors.length) {
       alert("请先签名，签名完成后再提交");
       return;
@@ -182,7 +208,8 @@ const DottiStore = {
       });
       this.task.fileContents[0].attr.annotations = filteredAnnotations;
 
-      const mergedSignatureAnnotations = this.task.fileContents[0].signContents ?? [];
+      const mergedSignatureAnnotations =
+        this.task.fileContents[0].signContents ?? [];
       signatureAnnotations.forEach(sa => {
         mergedSignatureAnnotations.push({
           attr: {
@@ -233,9 +260,10 @@ const DottiStore = {
     }
   },
   requestFacialRecognition(preSubmitTaskId) {
+    const requestor = this.getCurrentSigner();
     const data = {
-      idCard: this.profile.idCard,
-      name: this.profile.idName,
+      idCard: requestor.idCard,
+      name: requestor.idName,
       redirectUrl: `https://i-sign.cn?pre_submit_task_id=${preSubmitTaskId}_${this.token}`,
     };
 
@@ -287,7 +315,8 @@ const DottiStore = {
       });
       this.task.fileContents[0].attr.annotations = filteredAnnotations;
 
-      const mergedSignatureAnnotations = this.task.fileContents[0].signContents ?? [];
+      const mergedSignatureAnnotations =
+        this.task.fileContents[0].signContents ?? [];
       signatureAnnotations.forEach(sa => {
         mergedSignatureAnnotations.push({
           attr: {
@@ -335,6 +364,51 @@ const DottiStore = {
           }
         });
     }
+  },
+  async calculateSha256(pdfDocument) {
+    // Compute SHA-256 before rendering
+    const data = await pdfDocument.getData(); // Uint8Array of full PDF bytes
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray
+      .map(b => b.toString(16).padStart(2, "0"))
+      .join("");
+    // console.log("文件指纹(SHA-256):", hashHex);
+    this.sha256 = hashHex;
+    document.getElementById(
+      "signingConfirmDialogDocumentFingerprintDiv"
+    ).innerText = hashHex;
+  },
+  saveUserConsents() {
+    const data = {
+      userId: "",
+      company_id: "",
+      stamp_id: "", // 印章ID
+      ipAddress: "",
+      timestamp: "",
+      face_auth_result: "",
+      consentTextId: "v2025.10.18-1",
+      docHash: this.sha256,
+      taskId: this.task.taskId,
+      userAgent: navigator.userAgent,
+      workflowId: this.task.workflow.workflowId,
+    };
+    fetch("https://i-sign.cn:9102/isign/v1/consents", {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: {
+        "X-IS-Token": this.token,
+        "Content-Type": "application/json",
+      },
+    })
+      .then(response => response.json())
+      .then(res => {
+        if (res.success) {
+          // this.processSubmitSignature();
+        } else {
+          alert(res.message);
+        }
+      });
   },
 };
 

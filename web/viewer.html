@@ -844,6 +844,59 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#if CHROME-->
 <!--#include viewer-snippet-chrome-overlays.html-->
 <!--#endif-->
+
+        <dialog id="userConsentDialog" style="padding: 0; width: 464px; height: max-content;">
+          <div style="border-bottom: 1px solid rgb(0 0 0 / 0.5); height: 40px; display: flex; align-items: center; padding: 0 12px; font-size: 14px; font-weight: 500;">
+            电子签署授权确认
+          </div>
+
+          <div style="display: flex; padding: 0 12px; margin: 16px 0;">
+            <div style="flex: none; width: 96px;">流程名称：</div>
+            <div id="signingConfirmDialogWorkflowNameDiv" style="flex: 1;"></div>
+          </div>
+          <div style="display: flex; padding: 0 12px; margin: 16px 0;">
+            <div style="flex: none; width: 96px;">流程号：</div>
+            <div id="signingConfirmDialogWorkflowIdDiv" style="flex: 1;"></div>
+          </div>
+          <div style="display: flex; padding: 0 12px; margin: 16px 0;">
+            <div style="flex: none; width: 96px;">签署方身份：</div>
+            <div style="flex: 1; display: flex;">
+              <div id="signingConfirmDialogSignerName"></div>（身份证尾号：<div id="signingConfirmDialogSignerId"></div>）
+            </div>
+          </div>
+          <div style="display: flex; padding: 0 12px; margin: 16px 0;">
+            <div style="flex: none; width: 96px; display: flex; flex-direction: column;">
+              <div>文件指纹：</div>
+              <div>（SHA-256)</div>
+            </div>
+            <div id="signingConfirmDialogDocumentFingerprintDiv" style="flex: 1; word-break: break-all; font-family: monospace;"></div>
+          </div>
+          <div style="display: flex; padding: 0 12px; margin: 16px 0;">
+            <div style="flex: none; width: 96px;">法律效力说明：</div>
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 12px;">
+              <div>该签署与您本人手写签名/盖章具有同等法律效力。</div>
+<!--              <div>签署由【Dotti电子签平台】使用其合法数字证书代您完成，签署行为全程留痕可追溯。</div>-->
+<!--              <div>签署由【Dotti电子签平台】代您加盖其合法数字证书，签署行为全程留痕可追溯。</div>-->
+              <div>您已确认的签名/印章将由【Dotti电子签平台】在技术上加盖平台合法数字证书，签署行为全程留痕、可追溯，平台仅提供技术加盖服务，不代替您进行签署。</div>
+            </div>
+          </div>
+          <div style="display: flex; height: 36px; align-items: center; padding: 0 12px; gap: 4px; margin-top: 12px;">
+            <input type="checkbox" id="userConsent1" name="userConsent1" />
+            <label for="userConsent1">我已审阅并确认上述文件内容无误</label>
+          </div>
+          <div style="display: flex; height: 36px; align-items: center; padding: 0 12px; gap: 4px;">
+            <input type="checkbox" id="userConsent2" name="userConsent2" />
+            <label for="userConsent2">我已阅读并同意<a href="http://i-sign.cn?doc=e_sign_agreement" target="_blank" style="color: inherit; font-weight: 600; text-decoration: none;">《电子签署授权协议》</a></label>
+          </div>
+          <div style="display: flex; height: 36px; align-items: center; padding: 0 12px; gap: 4px;">
+            <input type="checkbox" id="userConsent3" name="userConsent3" />
+            <label for="userConsent3">我同意由平台代为加盖签名/签章证书</label>
+          </div>
+          <div style="display: flex; height: 48px; align-items: center; padding: 0 12px; gap: 8px; justify-content: flex-end;">
+            <button id="signingConfirmDialogCancelButton">取消</button>
+            <button id="signingConfirmDialogSubmitButton">确认并进行身份验证</button>
+          </div>
+        </dialog>
       </div>  <!-- dialogContainer -->
 
       <div id="editorUndoBar" class="messageBar" role="status" aria-labelledby="editorUndoBarMessage" tabindex="-1" hidden>
