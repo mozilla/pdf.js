@@ -3055,6 +3055,7 @@ class WorkerTransport {
         metadata: results[1] ? new Metadata(results[1]) : null,
         contentDispositionFilename: this._fullReader?.filename ?? null,
         contentLength: this._fullReader?.contentLength ?? null,
+        hasStructTree: results[2],
       }));
     this.#methodPromises.set(name, promise);
     return promise;
