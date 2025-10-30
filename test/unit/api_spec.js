@@ -5335,4 +5335,90 @@ deployment as easy as distributing a source ﬁle. They are used for
 small scripts as well as for`);
     });
   });
+
+  describe("PDF page editing", function () {
+    describe("Merge pdfs", function () {
+      it("should merge three PDFs", async function () {
+        const loadingTask = getDocument(
+          buildGetDocumentParams("doc_1_3_pages.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const pdfData2 = await DefaultFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH + "doc_2_3_pages.pdf",
+        });
+        const pdfData3 = await DefaultFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH + "doc_3_3_pages.pdf",
+        });
+
+        let data = await pdfDoc.extractPages([
+          {},
+          { document: pdfData2 },
+          { document: pdfData3 },
+        ]);
+        let newLoadingTask = getDocument(data);
+        let newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(9);
+
+        for (let i = 1; i <= 9; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          expect(mergeText(textItems)).toEqual(
+            `Document ${Math.ceil(i / 3)}:Page ${((i - 1) % 3) + 1}`
+          );
+        }
+        await newLoadingTask.destroy();
+
+        data = await pdfDoc.extractPages([
+          { document: pdfData3 },
+          { document: pdfData2 },
+          {},
+        ]);
+        newLoadingTask = getDocument(data);
+        newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(9);
+        for (let i = 1; i <= 9; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          expect(mergeText(textItems)).toEqual(
+            `Document ${Math.ceil((10 - i) / 3)}:Page ${((i - 1) % 3) + 1}`
+          );
+        }
+        await newLoadingTask.destroy();
+
+        data = await pdfDoc.extractPages([
+          { keptIndices: [0] },
+          { document: pdfData2, keptIndices: [0] },
+          { document: pdfData3, keptIndices: [0] },
+        ]);
+        newLoadingTask = getDocument(data);
+        newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(3);
+        for (let i = 1; i <= 3; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          expect(mergeText(textItems)).toEqual(`Document ${i}:Page 1`);
+        }
+        await newLoadingTask.destroy();
+
+        data = await pdfDoc.extractPages([
+          { deletedIndices: [0] },
+          { document: pdfData2, deletedIndices: [0] },
+          { document: pdfData3, deletedIndices: [0] },
+        ]);
+        newLoadingTask = getDocument(data);
+        newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(6);
+        for (let i = 1; i <= 6; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          expect(mergeText(textItems)).toEqual(
+            `Document ${Math.ceil(i / 2)}:Page ${((i - 1) % 2) + 2}`
+          );
+        }
+        await newLoadingTask.destroy();
+
+        await loadingTask.destroy();
+      });
+    });
+  });
 });

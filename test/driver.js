@@ -506,6 +506,7 @@ class Driver {
     this.inFlightRequests = 0;
     this.testFilter = JSON.parse(params.get("testfilter") || "[]");
     this.xfaOnly = params.get("xfaonly") === "true";
+    this.masterMode = params.get("mastermode") === "true";
 
     // Create a working canvas
     this.canvas = document.createElement("canvas");
@@ -591,6 +592,15 @@ class Driver {
       task.stats = { times: [] };
       task.enableXfa = task.enableXfa === true;
 
+      if (task.keptIndices && task.type === "extract") {
+        task.keptIndices = new Set(task.keptIndices);
+        if (this.masterMode) {
+          task.numberOfTasks = task.keptIndices.size;
+        } else {
+          delete task.pageMapping;
+        }
+      }
+
       const prevFile = md5FileMap.get(task.md5);
       if (prevFile) {
         if (task.file !== prevFile) {
@@ -657,6 +667,19 @@ class Driver {
           disableFontFace,
         });
         let promise = loadingTask.promise;
+
+        if (!this.masterMode && task.type === "extract") {
+          promise = promise.then(async doc => {
+            const data = await doc.extractPages([
+              {
+                keptIndices: task.keptIndices,
+              },
+            ]);
+            await loadingTask.destroy();
+            delete task.keptIndices;
+            return getDocument(data).promise;
+          });
+        }
 
         if (task.annotationStorage) {
           for (const annotation of Object.values(task.annotationStorage)) {
@@ -862,7 +885,12 @@ class Driver {
       }
     }
 
-    if (task.skipPages?.includes(task.pageNum)) {
+    if (
+      task.skipPages?.includes(task.pageNum) ||
+      (this.masterMode &&
+        task.keptIndices &&
+        !task.keptIndices.has(task.pageNum - 1))
+    ) {
       this._log(
         `    Skipping page ${task.pageNum}/${task.pdfDoc.numPages}...\n`
       );
@@ -1274,10 +1302,11 @@ class Driver {
       id: task.id,
       numPages: task.pdfDoc ? task.lastPage || task.pdfDoc.numPages : 0,
       lastPageNum: this._getLastPageNumber(task),
+      numberOfTasks: task.numberOfTasks ?? -1,
       failure,
       file: task.file,
       round: task.round,
-      page: task.pageNum,
+      page: task.pageMapping?.[task.pageNum] ?? task.pageNum,
       snapshot,
       baselineSnapshot,
       stats: task.stats.times,
