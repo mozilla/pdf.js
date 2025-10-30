@@ -252,6 +252,9 @@ describe("textLayer", function () {
   });
 
   it("handles lang attribute for marked content", async function () {
+    if (isNodeJS) {
+      pending("document.createElement is not supported in Node.js.");
+    }
     const loadingTask = getDocument(
       buildGetDocumentParams("marked_content_lang.pdf")
     );
