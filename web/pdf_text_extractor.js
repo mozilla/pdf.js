@@ -50,7 +50,7 @@ class PdfTextExtractor {
       for (const pendingRequest of this.#pendingRequests) {
         this.extractTextContent(pendingRequest);
       }
-      this.#pendingRequests = new Set();
+      this.#pendingRequests.clear();
     }
   }
 
@@ -66,8 +66,7 @@ class PdfTextExtractor {
     }
 
     if (!this.#textPromise) {
-      const textPromise = this.#pdfViewer.getAllText();
-      this.#textPromise = textPromise;
+      const textPromise = (this.#textPromise = this.#pdfViewer.getAllText());
 
       // After the text resolves, cache the text for a little bit in case
       // multiple consumers call it.
