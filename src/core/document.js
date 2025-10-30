@@ -178,7 +178,7 @@ class Page {
     );
   }
 
-  #getBoundingBox(name) {
+  getBoundingBox(name) {
     if (this.xfaData) {
       return this.xfaData.bbox;
     }
@@ -201,7 +201,7 @@ class Page {
     return shadow(
       this,
       "mediaBox",
-      this.#getBoundingBox("MediaBox") || LETTER_SIZE_MEDIABOX
+      this.getBoundingBox("MediaBox") || LETTER_SIZE_MEDIABOX
     );
   }
 
@@ -210,7 +210,7 @@ class Page {
     return shadow(
       this,
       "cropBox",
-      this.#getBoundingBox("CropBox") || this.mediaBox
+      this.getBoundingBox("CropBox") || this.mediaBox
     );
   }
 

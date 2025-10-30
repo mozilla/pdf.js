@@ -672,6 +672,7 @@ function checkRefTestResults(browser, id, results) {
     case "partial":
     case "text":
     case "highlight":
+    case "extract":
       checkEq(task, results, browser, session.masterMode);
       break;
     case "fbf":
@@ -731,6 +732,7 @@ function refTestPostHandler(parsedUrl, req, res) {
     var snapshot = data.snapshot;
     var baselineSnapshot = data.baselineSnapshot;
     var lastPageNum = data.lastPageNum;
+    var numberOfTasks = data.numberOfTasks;
 
     session = getSession(browser);
     monitorBrowserTimeout(session, handleSessionTimeout);
@@ -773,7 +775,10 @@ function refTestPostHandler(parsedUrl, req, res) {
       });
     }
 
-    var isDone = taskResults.at(-1)?.[lastPageNum - 1];
+    const lastTaskResults = taskResults.at(-1);
+    const isDone =
+      lastTaskResults?.[lastPageNum - 1] ||
+      lastTaskResults?.filter(result => !!result).length === numberOfTasks;
     if (isDone) {
       checkRefTestResults(browser, id, taskResults);
       session.remaining--;

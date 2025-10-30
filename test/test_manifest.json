@@ -13049,5 +13049,23 @@
         "rotation": 0
       }
     }
+  },
+  {
+    "id": "tracemonkey-extract_0_2_12",
+    "file": "pdfs/tracemonkey.pdf",
+    "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+    "rounds": 1,
+    "type": "extract",
+    "includePages": [0, 2, 12],
+    "pageMapping": { "1": 1, "3": 2, "13": 3 }
+  },
+  {
+    "id": "bug900822-encrypted-extract_0",
+    "file": "pdfs/bug900822.pdf",
+    "md5": "70e2a3c5922574eeda169c955cf9d084",
+    "rounds": 1,
+    "type": "extract",
+    "includePages": [0],
+    "pageMapping": { "1": 1 }
   }
 ]
