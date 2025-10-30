@@ -1042,6 +1042,16 @@ class Font {
     this.fontMatrix = properties.fontMatrix;
     this.bbox = properties.bbox;
     this.defaultEncoding = properties.defaultEncoding;
+    if (typeof properties.fontWeight === "number") {
+      if (properties.fontWeight === 900) {
+        this.black = true;
+      } else if (properties.fontWeight >= 700) {
+        this.bold = true;
+      }
+    }
+    if (typeof properties.italicAngle === "number" && properties.italicAngle) {
+      this.italic = true;
+    }
 
     this.toUnicode = properties.toUnicode;
     this.toFontChar = [];
