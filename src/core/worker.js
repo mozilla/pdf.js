@@ -514,6 +514,7 @@ class WorkerMessageHandler {
       return Promise.all([
         pdfManager.ensureDoc("documentInfo"),
         pdfManager.ensureCatalog("metadata"),
+        Promise.resolve(pdfManager.pdfDocument.catalog.hasStructTree()),
       ]);
     });
 
