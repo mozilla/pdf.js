@@ -3309,6 +3309,46 @@ describe("api", function () {
         await loadingTask.destroy();
       });
     });
+
+    describe("Fonts", function () {
+      it("set black/bold/italic properties to translated fonts", async function () {
+        const loadingTask = getDocument(
+          buildGetDocumentParams("translated_fonts_weight.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const page = await pdfDoc.getPage(1);
+        await page.getOperatorList();
+
+        const fontsMap = Array.from(page.commonObjs);
+        const fonts = fontsMap.map(entry => entry[1]);
+
+        expect(fonts[0].black).toEqual(undefined);
+        expect(fonts[0].bold).toEqual(undefined);
+        expect(fonts[0].italic).toEqual(undefined);
+
+        expect(fonts[1].black).toEqual(undefined);
+        expect(fonts[1].bold).toEqual(true);
+        expect(fonts[1].italic).toEqual(undefined);
+
+        expect(fonts[2].black).toEqual(undefined);
+        expect(fonts[2].bold).toEqual(undefined);
+        expect(fonts[2].italic).toEqual(true);
+
+        expect(fonts[3].black).toEqual(undefined);
+        expect(fonts[3].bold).toEqual(true);
+        expect(fonts[3].italic).toEqual(true);
+
+        expect(fonts[4].black).toEqual(true);
+        expect(fonts[4].bold).toEqual(undefined);
+        expect(fonts[4].italic).toEqual(undefined);
+
+        expect(fonts[5].black).toEqual(true);
+        expect(fonts[5].bold).toEqual(undefined);
+        expect(fonts[5].italic).toEqual(true);
+
+        await loadingTask.destroy();
+      });
+    });
   });
 
   describe("Page", function () {
