@@ -13,7 +13,12 @@
  * limitations under the License.
  */
 
-import { AnnotationPrefix, stringToPDFString, warn } from "../shared/util.js";
+import {
+  AnnotationPrefix,
+  stringToPDFString,
+  stringToUTF8String,
+  warn,
+} from "../shared/util.js";
 import { Dict, isName, Name, Ref, RefSetCache } from "./primitives.js";
 import { lookupNormalRect, stringToAsciiOrUTF16BE } from "./core_utils.js";
 import { BaseStream } from "./base_stream.js";
@@ -610,7 +615,8 @@ class StructElementNode {
       if (!isName(fileStream.dict.get("Subtype"), "application/mathml+xml")) {
         continue;
       }
-      return fileStream.getString();
+      // The default encoding for xml files is UTF-8.
+      return stringToUTF8String(fileStream.getString());
     }
     const A = this.dict.get("A");
     if (A instanceof Dict) {
