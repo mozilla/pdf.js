@@ -131,6 +131,19 @@ class DecodeStream extends BaseStream {
   getBaseStreams() {
     return this.stream ? this.stream.getBaseStreams() : null;
   }
+
+  clone() {
+    // Make sure it has been fully read.
+    while (!this.eof) {
+      this.readBlock();
+    }
+    return new Stream(
+      this.buffer,
+      this.start,
+      this.end - this.start,
+      this.dict.clone()
+    );
+  }
 }
 
 class StreamsSequenceStream extends DecodeStream {

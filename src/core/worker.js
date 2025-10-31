@@ -36,6 +36,7 @@ import { MessageHandler, wrapReason } from "../shared/message_handler.js";
 import { AnnotationFactory } from "./annotation.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
 import { incrementalUpdate } from "./writer.js";
+import { PDFEditor } from "./editor/pdf_editor.js"; // split_merge.js";
 import { PDFWorkerStream } from "./worker_stream.js";
 import { StructTreeRoot } from "./struct_tree.js";
 
@@ -555,6 +556,54 @@ class WorkerMessageHandler {
 
     handler.on("GetCalculationOrderIds", function (data) {
       return pdfManager.ensureDoc("calculationOrderIds");
+    });
+
+    handler.on("ExtractPages", async function ({ pageInfos, password }) {
+      let newDocumentId = 0;
+      if (!pageInfos) {
+        pageInfos = [{ document: pdfManager.pdfDocument }];
+      } else if (!Array.isArray(pageInfos)) {
+        pageInfos = [pageInfos];
+      }
+      try {
+        for (const pageInfo of pageInfos) {
+          if (!pageInfo.document) {
+            pageInfo.document = pdfManager.pdfDocument;
+          } else if (ArrayBuffer.isView(pageInfo.document)) {
+            const manager = new LocalPdfManager({
+              source: pageInfo.document,
+              docId: `${docId}_extractPages_${newDocumentId++}`,
+              handler,
+              password,
+              evaluatorOptions: Object.assign({}, pdfManager.evaluatorOptions),
+            });
+            await manager.requestLoadedStream();
+            await manager.ensureDoc("checkHeader");
+            await manager.ensureDoc("parseStartXRef");
+            await manager.ensureDoc("parse", [true]);
+            const isPureXfa = await manager.ensureDoc("isPureXfa");
+            if (isPureXfa) {
+              pageInfo.document = null;
+              warn("extractPages does not support pure XFA documents.");
+            } else {
+              pageInfo.document = manager.pdfDocument;
+            }
+          }
+          if (Array.isArray(pageInfo.keptIndices)) {
+            pageInfo.keptIndices = new Set(pageInfo.keptIndices);
+          }
+          if (Array.isArray(pageInfo.deletedIndices)) {
+            pageInfo.deletedIndices = new Set(pageInfo.deletedIndices);
+          }
+        }
+        const pdfEditor = new PDFEditor();
+        const buffer = await pdfEditor.extractPages(pageInfos);
+        return buffer;
+      } catch (reason) {
+        // eslint-disable-next-line no-console
+        console.error(reason);
+        return null;
+      }
     });
 
     handler.on(

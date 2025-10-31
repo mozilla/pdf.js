@@ -52,6 +52,10 @@ class DecryptStream extends DecodeStream {
     buffer.set(chunk, bufferLength);
     this.bufferLength = newLength;
   }
+
+  getOriginalStream() {
+    return this;
+  }
 }
 
 export { DecryptStream };
