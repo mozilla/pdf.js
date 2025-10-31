@@ -25,6 +25,7 @@ import { StringStream } from "../stream.js";
 import { stringToAsciiOrUTF16BE } from "../core_utils.js";
 
 const MAX_LEAVES_PER_PAGES_NODE = 16;
+const MAX_IN_NAME_TREE_NODE = 64;
 
 class PageData {
   constructor() {
@@ -33,6 +34,7 @@ class PageData {
 }
 class DocumentData {
   constructor() {
+    this.pageLabels = null;
     this.pagesMap = new RefSetCache();
   }
 }
@@ -62,6 +64,7 @@ class PDFEditor {
     this.version = "1.7";
     this.title = title;
     this.author = author;
+    this.pageLabels = null;
   }
 
   /**
@@ -302,6 +305,8 @@ class PDFEditor {
     await Promise.all(promises);
     promises.length = 0;
 
+    this.#collectPageLabels();
+
     for (const page of this.oldPages) {
       promises.push(this.#postCollectPageData(page));
     }
@@ -320,10 +325,13 @@ class PDFEditor {
    * @return {Promise<void>}
    */
   async #collectDocumentData(document) {
-    const data = this.documentData.get(document);
+    let data = this.documentData.get(document);
     if (!data) {
-      this.documentData.set(document, new DocumentData());
+      this.documentData.set(document, (data = new DocumentData()));
     }
+    await document.pdfManager
+      .ensureCatalog("rawPageLabels")
+      .then(pageLabels => (data.pageLabels = pageLabels));
   }
 
   /**
@@ -373,6 +381,48 @@ class PDFEditor {
     await Promise.all(promises);
     newAnnotations = newAnnotations.filter(annot => !!annot);
     pageData.annotations = newAnnotations.length > 0 ? newAnnotations : null;
+  }
+
+  async #collectPageLabels() {
+    // We can only preserve page labels when editing a single PDF file.
+    // Acrobat does the same and I'm not sure that it makes sense otherwise.
+    if (!this.hasSingleFile) {
+      return;
+    }
+    const {
+      page: {
+        pdfManager: { pdfDocument },
+      },
+    } = this.oldPages[0];
+    const { pageLabels } = this.documentData.values().next().value;
+    if (!pageLabels) {
+      return;
+    }
+    const numPages = pdfDocument.numPages;
+    const oldPageLabels = [];
+    const oldPageIndices = new Set(
+      this.oldPages.map(({ page: { pageIndex } }) => pageIndex)
+    );
+    let currentLabel = null;
+    for (let i = 0; i < numPages; i++) {
+      currentLabel = pageLabels.get(i) || currentLabel;
+      if (!oldPageIndices.has(i)) {
+        continue;
+      }
+      oldPageLabels.push(currentLabel);
+    }
+    currentLabel = oldPageLabels[0];
+    let currentIndex = 0;
+    const newPageLabels = (this.pageLabels = [[0, currentLabel]]);
+    for (let i = 0, ii = oldPageLabels.length; i < ii; i++) {
+      const label = oldPageLabels[i];
+      if (label === currentLabel) {
+        continue;
+      }
+      currentIndex = i;
+      currentLabel = label;
+      newPageLabels.push([currentIndex, currentLabel]);
+    }
   }
 
   /**
@@ -485,6 +535,63 @@ class PDFEditor {
   }
 
   /**
+   * Create a name or number tree from the given map.
+   * @param {Array<[string, any]>} map
+   * @returns {Ref}
+   */
+  #makeNameNumTree(map, areNames) {
+    const allEntries = map.sort(
+      areNames
+        ? ([keyA], [keyB]) => keyA.localeCompare(keyB)
+        : ([keyA], [keyB]) => keyA - keyB
+    );
+    const maxLeaves =
+      MAX_IN_NAME_TREE_NODE <= 1 ? allEntries.length : MAX_IN_NAME_TREE_NODE;
+    const [treeRef, treeDict] = this.newDict;
+    const stack = [{ dict: treeDict, entries: allEntries }];
+    const valueType = areNames ? "Names" : "Nums";
+
+    while (stack.length > 0) {
+      const { dict, entries } = stack.pop();
+      if (entries.length <= maxLeaves) {
+        dict.set("Limits", [entries[0][0], entries.at(-1)[0]]);
+        dict.set(valueType, entries.flat());
+        continue;
+      }
+      const entriesChunks = [];
+      const chunkSize = Math.ceil(entries.length / maxLeaves);
+      for (let i = 0; i < entries.length; i += chunkSize) {
+        entriesChunks.push(entries.slice(i, i + chunkSize));
+      }
+      const entriesRefs = [];
+      dict.set("Kids", entriesRefs);
+      for (const chunk of entriesChunks) {
+        const [entriesRef, entriesDict] = this.newDict;
+        entriesRefs.push(entriesRef);
+        entriesDict.set("Limits", [chunk[0][0], chunk.at(-1)[0]]);
+        stack.push({ dict: entriesDict, entries: chunk });
+      }
+    }
+    return treeRef;
+  }
+
+  /**
+   * Create the page labels tree if it exists.
+   */
+  #makePageLabelsTree() {
+    const { pageLabels } = this;
+    if (!pageLabels || pageLabels.length === 0) {
+      return;
+    }
+    const { rootDict } = this;
+    const pageLabelsRef = this.#makeNameNumTree(
+      this.pageLabels,
+      /* areNames = */ false
+    );
+    rootDict.set("PageLabels", pageLabelsRef);
+  }
+
+  /**
    * Create the root dictionary.
    * @returns {Promise<void>}
    */
@@ -493,6 +600,7 @@ class PDFEditor {
     rootDict.setIfName("Type", "Catalog");
     rootDict.set("Version", this.version);
     this.#makePageTree();
+    this.#makePageLabelsTree();
   }
 
   /**
