@@ -1824,4 +1824,71 @@ describe("Stamp Editor", () => {
       );
     });
   });
+
+  describe("Stamp (move between pages)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "firefox_stamp.pdf",
+        getAnnotationSelector("24R"),
+        "50"
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must move a stamp annotation from page 1 to page 2", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForPageRendered(page, 1);
+          await waitForPageRendered(page, 2);
+          await waitForAnnotationEditorLayer(page, 1);
+          await waitForAnnotationEditorLayer(page, 2);
+
+          const modeChangedHandle = await waitForAnnotationModeChanged(page);
+
+          await page.click(getAnnotationSelector("24R"), { count: 2 });
+          await awaitPromise(modeChangedHandle);
+
+          const editorSelector = getEditorSelector(0);
+          await waitForSelectedEditor(page, editorSelector);
+
+          await scrollIntoView(
+            page,
+            `.page[data-page-number="2"] .annotationEditorLayer`
+          );
+
+          const editorRect = await getRect(page, editorSelector);
+          const page2Rect = await getRect(
+            page,
+            `.page[data-page-number="2"] .annotationEditorLayer`
+          );
+
+          const deltaX =
+            page2Rect.x +
+            page2Rect.width / 2 -
+            (editorRect.x + editorRect.width / 2);
+          const deltaY =
+            page2Rect.y +
+            page2Rect.height / 3 -
+            (editorRect.y + editorRect.height / 2);
+
+          await dragAndDrop(page, editorSelector, [[deltaX, deltaY]], 10);
+
+          await page.waitForFunction(
+            sel => {
+              const editorDiv = document.querySelector(sel);
+              const pageDiv = editorDiv?.closest(".page");
+              return pageDiv?.getAttribute("data-page-number") === "2";
+            },
+            {},
+            editorSelector
+          );
+        })
+      );
+    });
+  });
 });
