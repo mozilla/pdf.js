@@ -1167,49 +1167,6 @@ class PDFDocument {
     });
   }
 
-  #collectSignatureCertificates(
-    fields,
-    collectedSignatureCertificates,
-    visited = new RefSet()
-  ) {
-    if (!Array.isArray(fields)) {
-      return;
-    }
-    for (let field of fields) {
-      if (field instanceof Ref) {
-        if (visited.has(field)) {
-          continue;
-        }
-        visited.put(field);
-      }
-      field = this.xref.fetchIfRef(field);
-      if (!(field instanceof Dict)) {
-        continue;
-      }
-      if (field.has("Kids")) {
-        this.#collectSignatureCertificates(
-          field.get("Kids"),
-          collectedSignatureCertificates,
-          visited
-        );
-        continue;
-      }
-      const isSignature = isName(field.get("FT"), "Sig");
-      if (!isSignature) {
-        continue;
-      }
-      const value = field.get("V");
-      if (!(value instanceof Dict)) {
-        continue;
-      }
-      const subFilter = value.get("SubFilter");
-      if (!(subFilter instanceof Name)) {
-        continue;
-      }
-      collectedSignatureCertificates.add(subFilter.name);
-    }
-  }
-
   get _xfaStreams() {
     const { acroForm } = this.catalog;
     if (!acroForm) {
@@ -1525,20 +1482,6 @@ class PDFDocument {
       // specification).
       const sigFlags = acroForm.get("SigFlags");
       const hasSignatures = !!(sigFlags & 0x1);
-      if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-        if (hasSignatures) {
-          const collectedSignatureCertificates = new Set();
-          this.#collectSignatureCertificates(
-            fields,
-            collectedSignatureCertificates
-          );
-          if (collectedSignatureCertificates.size > 0) {
-            formInfo.collectedSignatureCertificates = Array.from(
-              collectedSignatureCertificates
-            );
-          }
-        }
-      }
       const hasOnlyDocumentSignatures =
         hasSignatures && this.#hasOnlyDocumentSignatures(fields);
       formInfo.hasAcroForm = hasFields && !hasOnlyDocumentSignatures;
@@ -1565,11 +1508,6 @@ class PDFDocument {
       IsCollectionPresent: !!catalog.collection,
       IsSignaturesPresent: formInfo.hasSignatures,
     };
-
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      docInfo.collectedSignatureCertificates =
-        formInfo.collectedSignatureCertificates ?? null;
-    }
 
     let infoDict;
     try {
