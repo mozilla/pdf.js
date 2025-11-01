@@ -346,6 +346,46 @@ describe("accessibility", () => {
     });
   });
 
+  describe("MathML with some attributes in AF entry from LaTeX", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("bug1997343.pdf", ".textLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the MathML is correctly inserted", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const isSanitizerSupported = await page.evaluate(() => {
+            try {
+              // eslint-disable-next-line no-undef
+              return typeof Sanitizer !== "undefined";
+            } catch {
+              return false;
+            }
+          });
+          if (isSanitizerSupported) {
+            const mathML = await page.$eval(
+              "span.structTree span[aria-owns='p21R_mc64']",
+              el => el?.innerHTML ?? ""
+            );
+            expect(mathML)
+              .withContext(`In ${browserName}`)
+              .toEqual(
+                '<math display="block"> <msup> <mi>𝑛</mi> <mi>𝑝</mi> </msup> <mo lspace="0.278em" rspace="0.278em">=</mo> <mi>𝑛</mi> <mspace width="1.000em"></mspace> <mi> mod </mi> <mspace width="0.167em"></mspace> <mspace width="0.167em"></mspace> <mi>𝑝</mi> </math>'
+              );
+          } else {
+            pending(`Sanitizer API (in ${browserName}) is not supported`);
+          }
+        })
+      );
+    });
+  });
+
   describe("MathML tags in the struct tree", () => {
     let pages;
 

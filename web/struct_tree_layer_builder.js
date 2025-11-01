@@ -155,10 +155,7 @@ class MathMLSanitizer {
               "accentunder",
               "columnspan",
               "rowspan",
-            ].map(name => ({
-              name,
-              namespace: MathMLNamespace,
-            })),
+            ],
             comments: false,
           })
         : null
