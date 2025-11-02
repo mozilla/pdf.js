@@ -2501,6 +2501,7 @@ class PDFViewer {
       await this.#annotationEditorUIManager.updateMode(
         mode,
         editId,
+        /* isFromUser = */ true,
         isFromKeyboard,
         mustEnterInEditMode,
         editComment
