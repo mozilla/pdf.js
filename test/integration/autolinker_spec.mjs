@@ -219,7 +219,6 @@ describe("autolinker", function () {
     let pages;
 
     beforeEach(async () => {
-      pending("Linked PDFs are not supported.");
       pages = await loadAndWait(
         "issue3115r.pdf",
         ".annotationLayer",
