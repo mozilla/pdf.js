@@ -2499,6 +2499,8 @@ describe("api", function () {
 
       let loadingTask = getDocument(buildGetDocumentParams("bug1823296.pdf"));
       let pdfDoc = await loadingTask.promise;
+      let page = await pdfDoc.getPage(1);
+      const originalStructTree = await page.getStructTree();
       pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
         annotationType: AnnotationEditorType.FREETEXT,
         rect: [12, 34, 56, 78],
@@ -2514,9 +2516,9 @@ describe("api", function () {
 
       loadingTask = getDocument(data);
       pdfDoc = await loadingTask.promise;
-      const xrefPrev = await pdfDoc.getXRefPrevValue();
-
-      expect(xrefPrev).toEqual(143954);
+      page = await pdfDoc.getPage(1);
+      const newStructTree = await page.getStructTree();
+      expect(newStructTree).toEqual(originalStructTree);
 
       await loadingTask.destroy();
     });
@@ -4025,6 +4027,37 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       ]);
       expect(items[0].fontName).toEqual(items[2].fontName);
       expect(items[1].fontName).not.toEqual(items[0].fontName);
+    });
+
+    it("gets text content with word spacing (issue 20319)", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue20319_1.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+      const text = mergeText(items);
+
+      expect(text).toEqual("A A");
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content with word spacing and a fake space (issue 20319)", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue20319_2.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+      const text = mergeText(items);
+      expect(text).toEqual("AA A");
+
+      await loadingTask.destroy();
     });
 
     it("gets empty structure tree", async function () {

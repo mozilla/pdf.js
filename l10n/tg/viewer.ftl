@@ -308,6 +308,10 @@ pdfjs-comment-floating-button =
     .title = Шарҳ
     .aria-label = Шарҳ
 pdfjs-comment-floating-button-label = Шарҳ
+pdfjs-editor-comment-button =
+    .title = Шарҳ
+    .aria-label = Шарҳ
+pdfjs-editor-comment-button-label = Шарҳ
 pdfjs-editor-signature-button =
     .title = Илова кардани имзо
 pdfjs-editor-signature-button-label = Илова кардани имзо
@@ -370,6 +374,21 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Муҳаррири матн
     .default-content = Матнро ворид кунед…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Шарҳ
+       *[other] Шарҳҳо
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Пӯшидани навори ҷонибӣ
+    .aria-label = Пӯшидани навори ҷонибӣ
+pdfjs-editor-comments-sidebar-close-button-label = Пӯшидани навори ҷонибӣ
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = Чизи диққатангезро мушоҳида кардед? Онро қайд кунед ва ба он шарҳ гузоред.
+pdfjs-editor-comments-sidebar-no-comments-link = Маълумоти бештар
 
 ## Alt-text dialog
 
@@ -586,6 +605,17 @@ pdfjs-editor-add-signature-cancel-button = Бекор кардан
 pdfjs-editor-add-signature-add-button = Илова кардан
 pdfjs-editor-edit-signature-update-button = Навсозӣ кардан
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Таҳрир кардани шарҳ
+pdfjs-editor-edit-comment-popup-button =
+    .title = Таҳрир кардани шарҳ
+pdfjs-editor-delete-comment-popup-button-label = Тоза кардани шарҳ
+pdfjs-editor-delete-comment-popup-button =
+    .title = Тоза кардани шарҳ
+pdfjs-show-comment-button =
+    .title = Нишон додани шарҳ
+
 ##  Edit a comment dialog
 
 pdfjs-editor-edit-comment-actions-button-label = Амалҳо
@@ -600,6 +630,15 @@ pdfjs-editor-edit-comment-manager-text-input =
     .placeholder = Шарҳи худро ворид кунед
 pdfjs-editor-edit-comment-manager-cancel-button = Бекор кардан
 pdfjs-editor-edit-comment-manager-save-button = Нигоҳ доштан
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Таҳрир кардани шарҳ
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Навсозӣ кардан
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Илова кардани шарҳ
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Илова кардан
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Нависед…
+pdfjs-editor-edit-comment-dialog-cancel-button = Бекор кардан
 
 ## Edit a comment button in the editor toolbar
 

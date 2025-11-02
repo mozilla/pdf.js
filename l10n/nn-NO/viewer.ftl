@@ -308,6 +308,10 @@ pdfjs-comment-floating-button =
     .title = Kommenter
     .aria-label = Kommenter
 pdfjs-comment-floating-button-label = Kommenter
+pdfjs-editor-comment-button =
+    .title = Kommentar
+    .aria-label = Kommentar
+pdfjs-editor-comment-button-label = Kommentar
 pdfjs-editor-signature-button =
     .title = Legg til signatur
 pdfjs-editor-signature-button-label = Legg til signatur
@@ -370,6 +374,19 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Tekstredigering
     .default-content = Begynn å skrive…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Kommentarar
+       *[other] Kommentararar
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Lat att sidestolpen
+    .aria-label = Lat att sidestolpen
+pdfjs-editor-comments-sidebar-close-button-label = Lat att sidestolpen
+pdfjs-editor-comments-sidebar-no-comments-link = Les meir
 
 ## Alt-text dialog
 
@@ -586,6 +603,17 @@ pdfjs-editor-add-signature-cancel-button = Avbryt
 pdfjs-editor-add-signature-add-button = Legg til
 pdfjs-editor-edit-signature-update-button = Oppdater
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Rediger kommentar
+pdfjs-editor-edit-comment-popup-button =
+    .title = Rediger kommentar
+pdfjs-editor-delete-comment-popup-button-label = Fjern kommentar
+pdfjs-editor-delete-comment-popup-button =
+    .title = Fjern kommentar
+pdfjs-show-comment-button =
+    .title = Vis kommentar
+
 ##  Edit a comment dialog
 
 pdfjs-editor-edit-comment-actions-button-label = Handlingar
@@ -600,6 +628,15 @@ pdfjs-editor-edit-comment-manager-text-input =
     .placeholder = Skriv inn kommentaren din
 pdfjs-editor-edit-comment-manager-cancel-button = Avbryt
 pdfjs-editor-edit-comment-manager-save-button = Lagre
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Rediger kommentar
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Oppdater
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Legg til kommentar
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Legg til
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Byrje å skrive…
+pdfjs-editor-edit-comment-dialog-cancel-button = Avbryt
 
 ## Edit a comment button in the editor toolbar
 

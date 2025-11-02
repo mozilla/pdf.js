@@ -30,6 +30,7 @@ async function runTests(results) {
       "annotation_spec.mjs",
       "autolinker_spec.mjs",
       "caret_browsing_spec.mjs",
+      "comment_spec.mjs",
       "copy_paste_spec.mjs",
       "document_properties_spec.mjs",
       "find_spec.mjs",

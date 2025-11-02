@@ -18,7 +18,6 @@ import {
   Dependencies,
 } from "./canvas_dependency_tracker.js";
 import {
-  DrawOPS,
   FeatureTest,
   FONT_IDENTITY_MATRIX,
   ImageKind,
@@ -33,6 +32,7 @@ import {
 import {
   getCurrentTransform,
   getCurrentTransformInverse,
+  makePathFromDrawOPS,
   OutputScale,
   PixelsPerInch,
 } from "./display_utils.js";
@@ -763,7 +763,7 @@ class CanvasGraphics {
     executionStartIdx,
     continueCallback,
     stepper,
-    filteredOperationIndexes
+    operationsFilter
   ) {
     const argsArray = operatorList.argsArray;
     const fnArray = operatorList.fnArray;
@@ -791,7 +791,7 @@ class CanvasGraphics {
         return i;
       }
 
-      if (!filteredOperationIndexes || filteredOperationIndexes.has(i)) {
+      if (!operationsFilter || operationsFilter(i)) {
         fnId = fnArray[i];
         // TODO: There is a `undefined` coming from somewhere.
         fnArgs = argsArray[i] ?? null;
@@ -1100,7 +1100,7 @@ class CanvasGraphics {
       -offsetY,
     ]);
     fillCtx.fillStyle = isPatternFill
-      ? fillColor.getPattern(ctx, this, inverse, PathType.FILL)
+      ? fillColor.getPattern(ctx, this, inverse, PathType.FILL, opIdx)
       : fillColor;
 
     fillCtx.fillRect(0, 0, width, height);
@@ -1489,35 +1489,7 @@ class CanvasGraphics {
     }
 
     if (!(path instanceof Path2D)) {
-      // Using a SVG string is slightly slower than using the following loop.
-      const path2d = (data[0] = new Path2D());
-      for (let i = 0, ii = path.length; i < ii; ) {
-        switch (path[i++]) {
-          case DrawOPS.moveTo:
-            path2d.moveTo(path[i++], path[i++]);
-            break;
-          case DrawOPS.lineTo:
-            path2d.lineTo(path[i++], path[i++]);
-            break;
-          case DrawOPS.curveTo:
-            path2d.bezierCurveTo(
-              path[i++],
-              path[i++],
-              path[i++],
-              path[i++],
-              path[i++],
-              path[i++]
-            );
-            break;
-          case DrawOPS.closePath:
-            path2d.closePath();
-            break;
-          default:
-            warn(`Unrecognized drawing path operator: ${path[i - 1]}`);
-            break;
-        }
-      }
-      path = path2d;
+      path = data[0] = makePathFromDrawOPS(path);
     }
     Util.axialAlignedBoundingBox(
       minMax,
@@ -1549,7 +1521,8 @@ class CanvasGraphics {
           ctx,
           this,
           getCurrentTransformInverse(ctx),
-          PathType.STROKE
+          PathType.STROKE,
+          opIdx
         );
         if (baseTransform) {
           const newPath = new Path2D();
@@ -1603,7 +1576,8 @@ class CanvasGraphics {
         ctx,
         this,
         getCurrentTransformInverse(ctx),
-        PathType.FILL
+        PathType.FILL,
+        opIdx
       );
       if (baseTransform) {
         const newPath = new Path2D();
@@ -1759,7 +1733,7 @@ class CanvasGraphics {
   setFont(opIdx, fontRefName, size) {
     this.dependencyTracker
       ?.recordSimpleData("font", opIdx)
-      .recordNamedDependency(opIdx, fontRefName);
+      .recordSimpleDataFromNamed("fontObj", fontRefName, opIdx);
     const fontObj = this.commonObjs.get(fontRefName);
     const current = this.current;
 
@@ -1841,7 +1815,9 @@ class CanvasGraphics {
   }
 
   setTextMatrix(opIdx, matrix) {
-    this.dependencyTracker?.recordSimpleData("textMatrix", opIdx);
+    this.dependencyTracker
+      ?.resetIncrementalData("sameLineText")
+      .recordSimpleData("textMatrix", opIdx);
     const { current } = this;
     current.textMatrix = matrix;
     current.textMatrixScale = Math.hypot(matrix[0], matrix[1]);
@@ -2034,7 +2010,6 @@ class CanvasGraphics {
     if (this.dependencyTracker) {
       this.dependencyTracker
         .recordDependencies(opIdx, Dependencies.showText)
-        .copyDependenciesFromIncrementalOperation(opIdx, "sameLineText")
         .resetBBox(opIdx);
       if (this.current.textRenderingMode & TextRenderingMode.ADD_TO_PATH_FLAG) {
         this.dependencyTracker
@@ -2047,9 +2022,7 @@ class CanvasGraphics {
     const font = current.font;
     if (font.isType3Font) {
       this.showType3Text(opIdx, glyphs);
-      this.dependencyTracker
-        ?.recordOperation(opIdx)
-        .recordIncrementalData("sameLineText", opIdx);
+      this.dependencyTracker?.recordShowTextOperation(opIdx);
       return undefined;
     }
 
@@ -2095,7 +2068,8 @@ class CanvasGraphics {
         ctx,
         this,
         getCurrentTransformInverse(ctx),
-        PathType.FILL
+        PathType.FILL,
+        opIdx
       );
       patternFillTransform = getCurrentTransform(ctx);
       ctx.restore();
@@ -2108,7 +2082,8 @@ class CanvasGraphics {
         ctx,
         this,
         getCurrentTransformInverse(ctx),
-        PathType.STROKE
+        PathType.STROKE,
+        opIdx
       );
       patternStrokeTransform = getCurrentTransform(ctx);
       ctx.restore();
@@ -2157,8 +2132,7 @@ class CanvasGraphics {
             -measure.actualBoundingBoxAscent,
             measure.actualBoundingBoxDescent
           )
-          .recordOperation(opIdx)
-          .recordIncrementalData("sameLineText", opIdx);
+          .recordShowTextOperation(opIdx);
       }
       current.x += width * widthAdvanceScale * textHScale;
       ctx.restore();
@@ -2277,9 +2251,7 @@ class CanvasGraphics {
     ctx.restore();
     this.compose();
 
-    this.dependencyTracker
-      ?.recordOperation(opIdx)
-      .recordIncrementalData("sameLineText", opIdx);
+    this.dependencyTracker?.recordShowTextOperation(opIdx);
     return undefined;
   }
 
@@ -2351,7 +2323,6 @@ class CanvasGraphics {
     }
     ctx.restore();
     if (dependencyTracker) {
-      this.dependencyTracker.recordNestedDependencies();
       this.dependencyTracker = dependencyTracker;
     }
   }
@@ -2378,7 +2349,7 @@ class CanvasGraphics {
     if (IR[0] === "TilingPattern") {
       const baseTransform = this.baseTransform || getCurrentTransform(this.ctx);
       const canvasGraphicsFactory = {
-        createCanvasGraphics: ctx =>
+        createCanvasGraphics: (ctx, renderingOpIdx) =>
           new CanvasGraphics(
             ctx,
             this.commonObjs,
@@ -2392,7 +2363,11 @@ class CanvasGraphics {
             undefined,
             undefined,
             this.dependencyTracker
-              ? new CanvasNestedDependencyTracker(this.dependencyTracker, opIdx)
+              ? new CanvasNestedDependencyTracker(
+                  this.dependencyTracker,
+                  renderingOpIdx,
+                  /* ignoreBBoxes */ true
+                )
               : null
           ),
       };
@@ -2470,7 +2445,8 @@ class CanvasGraphics {
       ctx,
       this,
       getCurrentTransformInverse(ctx),
-      PathType.SHADING
+      PathType.SHADING,
+      opIdx
     );
 
     const inv = getCurrentTransformInverse(ctx);
@@ -2937,7 +2913,8 @@ class CanvasGraphics {
             maskCtx,
             this,
             getCurrentTransformInverse(ctx),
-            PathType.FILL
+            PathType.FILL,
+            opIdx
           )
         : fillColor;
       maskCtx.fillRect(0, 0, width, height);

@@ -310,6 +310,10 @@ pdfjs-comment-floating-button =
     .title = Comentează
     .aria-label = Comentariu
 pdfjs-comment-floating-button-label = Comentează
+pdfjs-editor-comment-button =
+    .title = Comentariu
+    .aria-label = Comentează
+pdfjs-editor-comment-button-label = Comentariu
 pdfjs-editor-signature-button =
     .title = Adaugă semnătură
 pdfjs-editor-signature-button-label = Adaugă semnătură
@@ -372,6 +376,21 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Editor de text
     .default-content = Începe să tastezi...
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Comentariu
+       *[other] Comentarii
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Închide bara laterală
+    .aria-label = Închide bara laterală
+pdfjs-editor-comments-sidebar-close-button-label = Închide bara laterală
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = Vezi ceva care merită comentat? Evidențiază-l și lasă un comentariu.
+pdfjs-editor-comments-sidebar-no-comments-link = Află mai multe
 
 ## Alt-text dialog
 
@@ -589,6 +608,17 @@ pdfjs-editor-add-signature-cancel-button = Anulează
 pdfjs-editor-add-signature-add-button = Adaugă
 pdfjs-editor-edit-signature-update-button = Actualizează
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Editează comentariul
+pdfjs-editor-edit-comment-popup-button =
+    .title = Editează comentariul
+pdfjs-editor-delete-comment-popup-button-label = Șterge comentariul
+pdfjs-editor-delete-comment-popup-button =
+    .title = Șterge comentariul
+pdfjs-show-comment-button =
+    .title = Afișează comentariul
+
 ##  Edit a comment dialog
 
 pdfjs-editor-edit-comment-actions-button-label = Acțiuni
@@ -603,11 +633,22 @@ pdfjs-editor-edit-comment-manager-text-input =
     .placeholder = Introdu comentariul
 pdfjs-editor-edit-comment-manager-cancel-button = Anulează
 pdfjs-editor-edit-comment-manager-save-button = Salvează
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Editează comentariul
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Actualizează
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Adaugă un comentariu
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Adaugă
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Începe să tastezi…
+pdfjs-editor-edit-comment-dialog-cancel-button = Anulează
 
 ## Edit a comment button in the editor toolbar
 
 pdfjs-editor-edit-comment-button =
     .title = Editează comentariul
+pdfjs-editor-add-comment-button =
+    .title = Adaugă un comentariu
 
 ## Main menu for adding/removing signatures
 

@@ -308,6 +308,10 @@ pdfjs-comment-floating-button =
     .title = Σχόλιο
     .aria-label = Σχόλιο
 pdfjs-comment-floating-button-label = Σχόλιο
+pdfjs-editor-comment-button =
+    .title = Σχόλιο
+    .aria-label = Σχόλιο
+pdfjs-editor-comment-button-label = Σχόλιο
 pdfjs-editor-signature-button =
     .title = Προσθήκη υπογραφής
 pdfjs-editor-signature-button-label = Προσθήκη υπογραφής
@@ -370,6 +374,21 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Επεξεργασία κειμένου
     .default-content = Ξεκινήστε να πληκτρολογείτε…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Σχόλια
+       *[other] Σχόλια
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Κλείσιμο πλευρικής στήλης
+    .aria-label = Κλείσιμο πλευρικής στήλης
+pdfjs-editor-comments-sidebar-close-button-label = Κλείσιμο πλευρικής στήλης
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = Βλέπετε κάτι αξιοσημείωτο; Επισημάνετε το και αφήστε ένα σχόλιο.
+pdfjs-editor-comments-sidebar-no-comments-link = Μάθετε περισσότερα
 
 ## Alt-text dialog
 
@@ -586,6 +605,17 @@ pdfjs-editor-add-signature-cancel-button = Ακύρωση
 pdfjs-editor-add-signature-add-button = Προσθήκη
 pdfjs-editor-edit-signature-update-button = Ενημέρωση
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Επεξεργασία σχολίου
+pdfjs-editor-edit-comment-popup-button =
+    .title = Επεξεργασία σχολίου
+pdfjs-editor-delete-comment-popup-button-label = Αφαίρεση σχολίου
+pdfjs-editor-delete-comment-popup-button =
+    .title = Αφαίρεση σχολίου
+pdfjs-show-comment-button =
+    .title = Εμφάνιση σχολίου
+
 ##  Edit a comment dialog
 
 pdfjs-editor-edit-comment-actions-button-label = Ενέργειες
@@ -600,6 +630,15 @@ pdfjs-editor-edit-comment-manager-text-input =
     .placeholder = Εισαγάγετε το σχόλιό σας
 pdfjs-editor-edit-comment-manager-cancel-button = Ακύρωση
 pdfjs-editor-edit-comment-manager-save-button = Αποθήκευση
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Επεξεργασία σχολίου
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Ενημέρωση
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Προσθήκη σχολίου
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Προσθήκη
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Ξεκινήστε να πληκτρολογείτε…
+pdfjs-editor-edit-comment-dialog-cancel-button = Ακύρωση
 
 ## Edit a comment button in the editor toolbar
 

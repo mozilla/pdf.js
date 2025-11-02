@@ -308,6 +308,10 @@ pdfjs-comment-floating-button =
     .title = Opmerking
     .aria-label = Opmerking
 pdfjs-comment-floating-button-label = Opmerking
+pdfjs-editor-comment-button =
+    .title = Opmerking
+    .aria-label = Opmerking
+pdfjs-editor-comment-button-label = Opmerking
 pdfjs-editor-signature-button =
     .title = Hantekening tafoegje
 pdfjs-editor-signature-button-label = Hantekening tafoegje
@@ -370,6 +374,21 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Tekstbewurker
     .default-content = Start mei typen…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Opmerking
+       *[other] Opmerkingen
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = De sydbalke slute
+    .aria-label = De sydbalke slute
+pdfjs-editor-comments-sidebar-close-button-label = De sydbalke slute
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = Sjogge jo wat it neamen wurdich? Markearje it en lit in opmerking efter.
+pdfjs-editor-comments-sidebar-no-comments-link = Mear ynfo
 
 ## Alt-text dialog
 
@@ -586,6 +605,17 @@ pdfjs-editor-add-signature-cancel-button = Annulearje
 pdfjs-editor-add-signature-add-button = Tafoegje
 pdfjs-editor-edit-signature-update-button = Bywurkje
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Opmerking bewurkje
+pdfjs-editor-edit-comment-popup-button =
+    .title = Opmerking bewurkje
+pdfjs-editor-delete-comment-popup-button-label = Opmerking fuortsmite
+pdfjs-editor-delete-comment-popup-button =
+    .title = Opmerking fuortsmite
+pdfjs-show-comment-button =
+    .title = Opmerking toane
+
 ##  Edit a comment dialog
 
 pdfjs-editor-edit-comment-actions-button-label = Aksjes
@@ -600,11 +630,22 @@ pdfjs-editor-edit-comment-manager-text-input =
     .placeholder = Fier jo opmerking yn
 pdfjs-editor-edit-comment-manager-cancel-button = Annulearje
 pdfjs-editor-edit-comment-manager-save-button = Bewarje
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Opmerking bewurkje
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Bywurkje
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Opmerking tafoegje
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Tafoegje
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Begjin mei typen…
+pdfjs-editor-edit-comment-dialog-cancel-button = Annulearje
 
 ## Edit a comment button in the editor toolbar
 
 pdfjs-editor-edit-comment-button =
     .title = Opmerking bewurkje
+pdfjs-editor-add-comment-button =
+    .title = Opmerking tafoegje
 
 ## Main menu for adding/removing signatures
 

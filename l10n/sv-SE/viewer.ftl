@@ -308,6 +308,10 @@ pdfjs-comment-floating-button =
     .title = Kommentar
     .aria-label = Kommentar
 pdfjs-comment-floating-button-label = Kommentar
+pdfjs-editor-comment-button =
+    .title = Kommentar
+    .aria-label = Kommentar
+pdfjs-editor-comment-button-label = Kommentar
 pdfjs-editor-signature-button =
     .title = Lägg till signatur
 pdfjs-editor-signature-button-label = Lägg till signatur
@@ -370,6 +374,21 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Textredigerare
     .default-content = Börja skriva…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Kommentar
+       *[other] Kommentarer
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Stäng sidofältet
+    .aria-label = Stäng sidofältet
+pdfjs-editor-comments-sidebar-close-button-label = Stäng sidofältet
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = Ser du något anmärkningsvärt? Markera det och lämna en kommentar.
+pdfjs-editor-comments-sidebar-no-comments-link = Läs mer
 
 ## Alt-text dialog
 
@@ -586,6 +605,17 @@ pdfjs-editor-add-signature-cancel-button = Avbryt
 pdfjs-editor-add-signature-add-button = Lägg till
 pdfjs-editor-edit-signature-update-button = Uppdatera
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Redigera kommentar
+pdfjs-editor-edit-comment-popup-button =
+    .title = Redigera kommentar
+pdfjs-editor-delete-comment-popup-button-label = Ta bort kommentar
+pdfjs-editor-delete-comment-popup-button =
+    .title = Ta bort kommentar
+pdfjs-show-comment-button =
+    .title = Visa kommentar
+
 ##  Edit a comment dialog
 
 pdfjs-editor-edit-comment-actions-button-label = Åtgärder
@@ -600,11 +630,22 @@ pdfjs-editor-edit-comment-manager-text-input =
     .placeholder = Ange din kommentar
 pdfjs-editor-edit-comment-manager-cancel-button = Avbryt
 pdfjs-editor-edit-comment-manager-save-button = Spara
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Redigera kommentar
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Uppdatera
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Lägg till kommentar
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Lägg till
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Börja skriva…
+pdfjs-editor-edit-comment-dialog-cancel-button = Avbryt
 
 ## Edit a comment button in the editor toolbar
 
 pdfjs-editor-edit-comment-button =
     .title = Redigera kommentar
+pdfjs-editor-add-comment-button =
+    .title = Lägg till kommentar
 
 ## Main menu for adding/removing signatures
 

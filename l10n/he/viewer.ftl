@@ -308,6 +308,10 @@ pdfjs-comment-floating-button =
     .title = הערה
     .aria-label = הערה
 pdfjs-comment-floating-button-label = הערה
+pdfjs-editor-comment-button =
+    .title = הערה
+    .aria-label = הערה
+pdfjs-editor-comment-button-label = הערה
 pdfjs-editor-signature-button =
     .title = הוספת חתימה
 pdfjs-editor-signature-button-label = הוספת חתימה
@@ -370,6 +374,21 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = עורך טקסט
     .default-content = נא להתחיל להקליד…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] הערה
+       *[other] הערות
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = סגירת סרגל הצד
+    .aria-label = סגירת סרגל הצד
+pdfjs-editor-comments-sidebar-close-button-label = סגירת סרגל הצד
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = ראית משהו ראוי לציון? ניתן לסמן אותו ולהשאיר הערה.
+pdfjs-editor-comments-sidebar-no-comments-link = מידע נוסף
 
 ## Alt-text dialog
 
@@ -586,6 +605,17 @@ pdfjs-editor-add-signature-cancel-button = ביטול
 pdfjs-editor-add-signature-add-button = הוספה
 pdfjs-editor-edit-signature-update-button = עדכון
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = עריכת הערה
+pdfjs-editor-edit-comment-popup-button =
+    .title = עריכת הערה
+pdfjs-editor-delete-comment-popup-button-label = הסרת הערה
+pdfjs-editor-delete-comment-popup-button =
+    .title = הסרת הערה
+pdfjs-show-comment-button =
+    .title = הצגת הערה
+
 ##  Edit a comment dialog
 
 pdfjs-editor-edit-comment-actions-button-label = פעולות
@@ -600,11 +630,22 @@ pdfjs-editor-edit-comment-manager-text-input =
     .placeholder = נא להכניס את ההערה שלך
 pdfjs-editor-edit-comment-manager-cancel-button = ביטול
 pdfjs-editor-edit-comment-manager-save-button = שמירה
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = עריכת הערה
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = עדכון
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = הוספת הערה
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = הוספה
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = להתחיל להקליד…
+pdfjs-editor-edit-comment-dialog-cancel-button = ביטול
 
 ## Edit a comment button in the editor toolbar
 
 pdfjs-editor-edit-comment-button =
     .title = עריכת הערה
+pdfjs-editor-add-comment-button =
+    .title = הוספת הערה
 
 ## Main menu for adding/removing signatures
 

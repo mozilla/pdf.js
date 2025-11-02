@@ -308,6 +308,10 @@ pdfjs-comment-floating-button =
     .title = Comentário
     .aria-label = Comentário
 pdfjs-comment-floating-button-label = Comentário
+pdfjs-editor-comment-button =
+    .title = Comentar
+    .aria-label = Comentar
+pdfjs-editor-comment-button-label = Comentar
 pdfjs-editor-signature-button =
     .title = Adicionar assinatura
 pdfjs-editor-signature-button-label = Adicionar assinatura
@@ -370,6 +374,21 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Editor de texto
     .default-content = Comece a digitar…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Comentário
+       *[other] Comentários
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Fechar painel lateral
+    .aria-label = Fechar painel lateral
+pdfjs-editor-comments-sidebar-close-button-label = Fechar painel lateral
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = Viu algo digno de atenção? Destaque e deixe um comentário.
+pdfjs-editor-comments-sidebar-no-comments-link = Saiba mais
 
 ## Alt-text dialog
 
@@ -586,6 +605,17 @@ pdfjs-editor-add-signature-cancel-button = Cancelar
 pdfjs-editor-add-signature-add-button = Adicionar
 pdfjs-editor-edit-signature-update-button = Atualizar
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Editar comentário
+pdfjs-editor-edit-comment-popup-button =
+    .title = Editar comentário
+pdfjs-editor-delete-comment-popup-button-label = Remover comentário
+pdfjs-editor-delete-comment-popup-button =
+    .title = Remover comentário
+pdfjs-show-comment-button =
+    .title = Mostrar comentário
+
 ##  Edit a comment dialog
 
 pdfjs-editor-edit-comment-actions-button-label = Ações
@@ -600,6 +630,15 @@ pdfjs-editor-edit-comment-manager-text-input =
     .placeholder = Digite seu comentário
 pdfjs-editor-edit-comment-manager-cancel-button = Cancelar
 pdfjs-editor-edit-comment-manager-save-button = Salvar
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Editar comentário
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Atualizar
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Adicionar comentário
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Adicionar
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Começar a digitar…
+pdfjs-editor-edit-comment-dialog-cancel-button = Cancelar
 
 ## Edit a comment button in the editor toolbar
 

@@ -187,18 +187,16 @@ class PDFPageDetailView extends BasePDFPageView {
   }
 
   _getRenderingContext(canvas, transform) {
-    const baseContext = this.pageView._getRenderingContext(canvas, transform);
-    const recordedGroups = this.pdfPage.recordedGroups;
+    const baseContext = this.pageView._getRenderingContext(
+      canvas,
+      transform,
+      false
+    );
+    const recordedBBoxes = this.pdfPage.recordedBBoxes;
 
-    if (!recordedGroups || !this.enableOptimizedPartialRendering) {
-      return { ...baseContext, recordOperations: false };
+    if (!recordedBBoxes || !this.enableOptimizedPartialRendering) {
+      return baseContext;
     }
-
-    // TODO: There is probably a better data structure for this.
-    // The indexes are always checked in increasing order, so we can just try
-    // to build a pre-sorted array which should have faster lookups.
-    // Needs benchmarking.
-    const filteredIndexes = new Set();
 
     const {
       viewport: { width: vWidth, height: vHeight },
@@ -215,23 +213,19 @@ class PDFPageDetailView extends BasePDFPageView {
     const detailMaxX = (aMinX + aWidth) / vWidth;
     const detailMaxY = (aMinY + aHeight) / vHeight;
 
-    for (let i = 0, ii = recordedGroups.length; i < ii; i++) {
-      const group = recordedGroups[i];
-      if (
-        group.minX <= detailMaxX &&
-        group.maxX >= detailMinX &&
-        group.minY <= detailMaxY &&
-        group.maxY >= detailMinY
-      ) {
-        filteredIndexes.add(group.idx);
-        group.dependencies.forEach(filteredIndexes.add, filteredIndexes);
-      }
-    }
-
     return {
       ...baseContext,
-      recordOperations: false,
-      filteredOperationIndexes: filteredIndexes,
+      operationsFilter(index) {
+        if (recordedBBoxes.isEmpty(index)) {
+          return false;
+        }
+        return (
+          recordedBBoxes.minX(index) <= detailMaxX &&
+          recordedBBoxes.maxX(index) >= detailMinX &&
+          recordedBBoxes.minY(index) <= detailMaxY &&
+          recordedBBoxes.maxY(index) >= detailMinY
+        );
+      },
     };
   }
 
@@ -273,7 +267,10 @@ class PDFPageDetailView extends BasePDFPageView {
         canvasWrapper.prepend(newCanvas);
       }
     }, hideUntilComplete);
-    canvas.setAttribute("aria-hidden", "true");
+    canvas.ariaHidden = true;
+    if (this.enableOptimizedPartialRendering) {
+      canvas.className = "detailView";
+    }
 
     const { width, height } = viewport;
 

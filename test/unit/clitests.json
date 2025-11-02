@@ -32,6 +32,7 @@
     "murmurhash3_spec.js",
     "network_utils_spec.js",
     "node_stream_spec.js",
+    "obj_bin_transform_spec.js",
     "parser_spec.js",
     "pdf.image_decoders_spec.js",
     "pdf.worker_spec.js",

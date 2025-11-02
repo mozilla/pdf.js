@@ -272,6 +272,10 @@ pdfjs-editor-stamp-add-image-button =
 pdfjs-editor-stamp-add-image-button-label = Agiunghe un’immàgine
 # This refers to the thickness of the line used for free highlighting (not bound to text)
 pdfjs-editor-free-highlight-thickness-input = Grussària
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Editore de testu
+    .default-content = Cumintza a iscrìere…
 
 ## Alt-text dialog
 
@@ -335,3 +339,5 @@ pdfjs-editor-add-signature-cancel-button = Annulla
 ##  Edit a comment dialog
 
 pdfjs-editor-edit-comment-manager-cancel-button = Annulla
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Cumintza a iscrìere…

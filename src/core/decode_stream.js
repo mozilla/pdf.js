@@ -129,7 +129,7 @@ class DecodeStream extends BaseStream {
   }
 
   getBaseStreams() {
-    return this.str ? this.str.getBaseStreams() : null;
+    return this.stream ? this.stream.getBaseStreams() : null;
   }
 }
 

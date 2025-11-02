@@ -13,7 +13,13 @@
  * limitations under the License.
  */
 
-import { FormatError, info, unreachable, Util } from "../shared/util.js";
+import {
+  FormatError,
+  info,
+  MeshFigureType,
+  unreachable,
+  Util,
+} from "../shared/util.js";
 import { getCurrentTransform } from "./display_utils.js";
 
 const PathType = {
@@ -261,7 +267,7 @@ function drawFigure(data, figure, context) {
   const cs = figure.colors;
   let i, ii;
   switch (figure.type) {
-    case "lattice":
+    case MeshFigureType.LATTICE:
       const verticesPerRow = figure.verticesPerRow;
       const rows = Math.floor(ps.length / verticesPerRow) - 1;
       const cols = verticesPerRow - 1;
@@ -291,7 +297,7 @@ function drawFigure(data, figure, context) {
         }
       }
       break;
-    case "triangles":
+    case MeshFigureType.TRIANGLES:
       for (i = 0, ii = ps.length; i < ii; i += 3) {
         drawTriangle(
           data,
@@ -478,7 +484,7 @@ class TilingPattern {
     this.baseTransform = baseTransform;
   }
 
-  createPatternCanvas(owner) {
+  createPatternCanvas(owner, opIdx) {
     const {
       bbox,
       operatorList,
@@ -567,7 +573,7 @@ class TilingPattern {
       dimy.size
     );
     const tmpCtx = tmpCanvas.context;
-    const graphics = canvasGraphicsFactory.createCanvasGraphics(tmpCtx);
+    const graphics = canvasGraphicsFactory.createCanvasGraphics(tmpCtx, opIdx);
     graphics.groupLevel = owner.groupLevel;
 
     this.setFillAndStrokeStyleToContext(graphics, paintType, color);
@@ -600,7 +606,7 @@ class TilingPattern {
 
     graphics.endDrawing();
 
-    graphics.dependencyTracker?.restore().recordNestedDependencies?.();
+    graphics.dependencyTracker?.restore();
     tmpCtx.restore();
 
     if (redrawHorizontally || redrawVertically) {
@@ -726,7 +732,7 @@ class TilingPattern {
     return false;
   }
 
-  getPattern(ctx, owner, inverse, pathType) {
+  getPattern(ctx, owner, inverse, pathType, opIdx) {
     // PDF spec 8.7.2 NOTE 1: pattern's matrix is relative to initial matrix.
     let matrix = inverse;
     if (pathType !== PathType.SHADING) {
@@ -736,7 +742,7 @@ class TilingPattern {
       }
     }
 
-    const temporaryPatternCanvas = this.createPatternCanvas(owner);
+    const temporaryPatternCanvas = this.createPatternCanvas(owner, opIdx);
 
     let domMatrix = new DOMMatrix(matrix);
     // Rescale and so that the ctx.createPattern call generates a pattern with

@@ -25,7 +25,7 @@ class Ascii85Stream extends DecodeStream {
     }
     super(maybeLength);
 
-    this.str = str;
+    this.stream = str;
     this.dict = str.dict;
     this.input = new Uint8Array(5);
   }
@@ -35,7 +35,7 @@ class Ascii85Stream extends DecodeStream {
     const Z_LOWER_CHAR = 0x7a; // 'z'
     const EOF = -1;
 
-    const str = this.str;
+    const str = this.stream;
 
     let c = str.getByte();
     while (isWhiteSpace(c)) {

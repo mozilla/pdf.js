@@ -278,9 +278,13 @@ pdfjs-web-fonts-disabled = Font web dinonaktifkan: tidak dapat menggunakan font 
 
 pdfjs-editor-free-text-button =
     .title = Teks
+pdfjs-editor-color-picker-free-text-input =
+    .title = Ubah warna teks
 pdfjs-editor-free-text-button-label = Teks
 pdfjs-editor-ink-button =
     .title = Gambar
+pdfjs-editor-color-picker-ink-input =
+    .title = Ubah warna gambar
 pdfjs-editor-ink-button-label = Gambar
 pdfjs-editor-stamp-button =
     .title = Tambah atau edit gambar
@@ -292,6 +296,10 @@ pdfjs-highlight-floating-button1 =
     .title = Sorot
     .aria-label = Sorot
 pdfjs-highlight-floating-button-label = Sorot
+pdfjs-comment-floating-button =
+    .title = Komentar
+    .aria-label = Komentar
+pdfjs-comment-floating-button-label = Komentar
 pdfjs-editor-signature-button =
     .title = Tambahkan tanda tangan
 pdfjs-editor-signature-button-label = Tambahkan tanda tangan
@@ -484,6 +492,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Tampilkan editor teks 
 pdfjs-editor-alt-text-settings-show-dialog-description = Membantu Anda memastikan semua gambar Anda memiliki teks alternatif.
 pdfjs-editor-alt-text-settings-close-button = Tutup
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = Sorotan ditambahkan
+pdfjs-editor-freetext-added-alert = Teks ditambahkan
+pdfjs-editor-ink-added-alert = Gambar ditambahkan
+pdfjs-editor-stamp-added-alert = Citra ditambahkan
+pdfjs-editor-signature-added-alert = Tanda tangan ditambahkan
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Sorotan dihapus
@@ -548,6 +564,8 @@ pdfjs-editor-add-signature-save-checkbox = Simpan tanda tangan
 pdfjs-editor-add-signature-save-warning-message = Anda telah mencapai batas 5 tanda tangan tersimpan. Hapus untuk menyimpan lebih banyak.
 pdfjs-editor-add-signature-image-upload-error-title = Tidak dapat mengunggah gambar
 pdfjs-editor-add-signature-image-upload-error-description = Periksa sambungan jaringan Anda atau coba gambar lain.
+pdfjs-editor-add-signature-image-no-data-error-title = Tak bisa mengonversi citra ini menjadi tanda tangan
+pdfjs-editor-add-signature-image-no-data-error-description = Coba unggah gambar lain.
 pdfjs-editor-add-signature-error-close-button = Tutup
 
 ## Dialog buttons
@@ -555,6 +573,26 @@ pdfjs-editor-add-signature-error-close-button = Tutup
 pdfjs-editor-add-signature-cancel-button = Batal
 pdfjs-editor-add-signature-add-button = Tambah
 pdfjs-editor-edit-signature-update-button = Perbarui
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Aksi
+pdfjs-editor-edit-comment-actions-button =
+    .title = Aksi
+pdfjs-editor-edit-comment-close-button-label = Tutup
+pdfjs-editor-edit-comment-close-button =
+    .title = Tutup
+pdfjs-editor-edit-comment-actions-edit-button-label = Sunting
+pdfjs-editor-edit-comment-actions-delete-button-label = Hapus
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Masukkan komentar Anda
+pdfjs-editor-edit-comment-manager-cancel-button = Batal
+pdfjs-editor-edit-comment-manager-save-button = Simpan
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Sunting komentar
 
 ## Main menu for adding/removing signatures
 

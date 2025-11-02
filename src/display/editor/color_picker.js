@@ -334,10 +334,10 @@ class BasicColorPicker {
     if (this.#input) {
       return this.#input;
     }
-    const { editorType, colorType, colorValue } = this.#editor;
+    const { editorType, colorType, color } = this.#editor;
     const input = (this.#input = document.createElement("input"));
     input.type = "color";
-    input.value = colorValue || "#000000";
+    input.value = color || "#000000";
     input.className = "basicColorPicker";
     input.tabIndex = 0;
     input.setAttribute("data-l10n-id", BasicColorPicker.#l10nColor[editorType]);

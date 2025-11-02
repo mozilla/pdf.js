@@ -277,9 +277,13 @@ pdfjs-web-fonts-disabled = Shkronjat Web janë të çaktivizuara: s’arrihet t�
 
 pdfjs-editor-free-text-button =
     .title = Tekst
+pdfjs-editor-color-picker-free-text-input =
+    .title = Ndryshoni ngjyrë teksti
 pdfjs-editor-free-text-button-label = Tekst
 pdfjs-editor-ink-button =
     .title = Vizatoni
+pdfjs-editor-color-picker-ink-input =
+    .title = Ndryshoni ngjyrë vizatimi
 pdfjs-editor-ink-button-label = Vizatoni
 pdfjs-editor-stamp-button =
     .title = Shtoni ose përpunoni figura
@@ -291,6 +295,14 @@ pdfjs-highlight-floating-button1 =
     .title = Theksim
     .aria-label = Theksim
 pdfjs-highlight-floating-button-label = Theksim
+pdfjs-comment-floating-button =
+    .title = Komentoni
+    .aria-label = Komentoni
+pdfjs-comment-floating-button-label = Komentoni
+pdfjs-editor-comment-button =
+    .title = Koment
+    .aria-label = Koment
+pdfjs-editor-comment-button-label = Komentoni
 pdfjs-editor-signature-button =
     .title = Shtoni nënshkrim
 pdfjs-editor-signature-button-label = Shtoni nënshkrim
@@ -353,6 +365,21 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Përpunues Tekstesh
     .default-content = Filloni të shtypni…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Koment
+       *[other] Komente
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Mbylleni anështyllën
+    .aria-label = Mbylleni anështyllën
+pdfjs-editor-comments-sidebar-close-button-label = Mbylleni anështyllën
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = Shihni diçka që ia vlen. Theksojeni dhe lini një koment.
+pdfjs-editor-comments-sidebar-no-comments-link = Mësoni më tepër
 
 ## Alt-text dialog
 
@@ -483,6 +510,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Shfaq menjëherë për
 pdfjs-editor-alt-text-settings-show-dialog-description = Ju ndihmon të siguroheni se krejt figurat tuaja kanë tekst alternativ.
 pdfjs-editor-alt-text-settings-close-button = Mbylle
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = U shtua theksim
+pdfjs-editor-freetext-added-alert = U shtua tekst
+pdfjs-editor-ink-added-alert = U shtua vizatim
+pdfjs-editor-stamp-added-alert = U shtua figurë
+pdfjs-editor-signature-added-alert = U shtua nënshkrim
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = U hoq theksimi
@@ -551,6 +586,8 @@ pdfjs-editor-add-signature-save-checkbox = Ruaje nënshkrimin
 pdfjs-editor-add-signature-save-warning-message = Keni mbërritur në kufirin e 5 nënshkrimeve të ruajtura. Që të ruani tjetër, hiqni një.
 pdfjs-editor-add-signature-image-upload-error-title = S’u ngarkua dot figurë
 pdfjs-editor-add-signature-image-upload-error-description = Kontrolloni lidhjen tuaj në rrjet, ose provoni figurë tjetër.
+pdfjs-editor-add-signature-image-no-data-error-title = S’shndërrohet dot kjo figurë në një nënshkrim
+pdfjs-editor-add-signature-image-no-data-error-description = Ju lutemi, provoni të ngarkoni një figurë tjetër.
 pdfjs-editor-add-signature-error-close-button = Mbylle
 
 ## Dialog buttons
@@ -558,6 +595,46 @@ pdfjs-editor-add-signature-error-close-button = Mbylle
 pdfjs-editor-add-signature-cancel-button = Anuloje
 pdfjs-editor-add-signature-add-button = Shtoje
 pdfjs-editor-edit-signature-update-button = Përditësoje
+
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Përpunoni koment
+pdfjs-editor-edit-comment-popup-button =
+    .title = Përpunoni koment
+pdfjs-editor-delete-comment-popup-button-label = Hiqe komentin
+pdfjs-editor-delete-comment-popup-button =
+    .title = Hiqe komentin
+pdfjs-show-comment-button =
+    .title = Shfaqe komentin
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Veprime
+pdfjs-editor-edit-comment-actions-button =
+    .title = Veprime
+pdfjs-editor-edit-comment-close-button-label = Mbylle
+pdfjs-editor-edit-comment-close-button =
+    .title = Mbylle
+pdfjs-editor-edit-comment-actions-edit-button-label = Përpunoni
+pdfjs-editor-edit-comment-actions-delete-button-label = Fshije
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Jepni komentin tuaj
+pdfjs-editor-edit-comment-manager-cancel-button = Anuloje
+pdfjs-editor-edit-comment-manager-save-button = Ruaje
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Përpunoni koment
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Përditësojeni
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Shtoni koment
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Shtoje
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Filloni të shtypni…
+pdfjs-editor-edit-comment-dialog-cancel-button = Anuloje
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Përpunoni koment
 
 ## Main menu for adding/removing signatures
 

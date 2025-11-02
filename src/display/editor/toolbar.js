@@ -28,6 +28,8 @@ class EditorToolbar {
 
   #comment = null;
 
+  #commentButtonDivider = null;
+
   #signatureDescriptionButton = null;
 
   static #l10nRemove = null;
@@ -158,7 +160,7 @@ class EditorToolbar {
     this.#altText = altText;
   }
 
-  addComment(comment) {
+  addComment(comment, beforeElement = null) {
     if (this.#comment) {
       return;
     }
@@ -167,7 +169,13 @@ class EditorToolbar {
       return;
     }
     this.#addListenersToElement(button);
-    this.#buttons.append(button, this.#divider);
+    const divider = (this.#commentButtonDivider = this.#divider);
+    if (!beforeElement) {
+      this.#buttons.append(button, divider);
+    } else {
+      this.#buttons.insertBefore(button, beforeElement);
+      this.#buttons.insertBefore(divider, beforeElement);
+    }
     this.#comment = comment;
     comment.toolbar = this;
   }
@@ -189,23 +197,55 @@ class EditorToolbar {
     this.#buttons.append(button, this.#divider);
   }
 
+  removeButton(name) {
+    switch (name) {
+      case "comment":
+        this.#comment?.removeToolbarCommentButton();
+        this.#comment = null;
+        this.#commentButtonDivider?.remove();
+        this.#commentButtonDivider = null;
+        break;
+    }
+  }
+
   async addButton(name, tool) {
     switch (name) {
       case "colorPicker":
-        this.addColorPicker(tool);
+        if (tool) {
+          this.addColorPicker(tool);
+        }
         break;
       case "altText":
-        await this.addAltText(tool);
+        if (tool) {
+          await this.addAltText(tool);
+        }
         break;
       case "editSignature":
-        await this.addEditSignatureButton(tool);
+        if (tool) {
+          await this.addEditSignatureButton(tool);
+        }
         break;
       case "delete":
         this.addDeleteButton();
         break;
       case "comment":
-        this.addComment(tool);
+        if (tool) {
+          this.addComment(tool);
+        }
         break;
+    }
+  }
+
+  async addButtonBefore(name, tool, beforeSelector) {
+    if (!tool && name === "comment") {
+      return;
+    }
+    const beforeElement = this.#buttons.querySelector(beforeSelector);
+    if (!beforeElement) {
+      return;
+    }
+    if (name === "comment") {
+      this.addComment(tool, beforeElement);
     }
   }
 

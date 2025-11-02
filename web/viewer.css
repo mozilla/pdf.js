@@ -1084,7 +1084,6 @@ dialog :link {
   }
 
   .menuContainer {
-    width: 100%;
     height: auto;
     max-height: calc(
       var(--viewer-container-height) - var(--toolbar-height) -

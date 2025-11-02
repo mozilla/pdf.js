@@ -57,7 +57,7 @@ describe("Ink Editor", () => {
     let pages;
 
     beforeEach(async () => {
-      pages = await loadAndWait("aboutstacks.pdf", ".annotationEditorLayer");
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
     });
 
     afterEach(async () => {
@@ -1217,10 +1217,9 @@ describe("The pen-drawn shape must maintain correct curvature regardless of the 
     await Promise.all(
       pages.map(async ([browserName, page]) => {
         if (browserName === "chrome" && navigator.platform.includes("Win")) {
-          // Skip the test for Chrome on Windows because it doesn't allow to
-          // have elements outside the viewport and thus permafails with e.g.
-          // `Cannot move beyond viewport (x: -32, y: 241)`.
-          return;
+          pending(
+            "Chrome on Windows doesn't allow having elements outside the viewport."
+          );
         }
 
         await switchToInk(page);

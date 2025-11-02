@@ -63,13 +63,13 @@ class AnnotationEditor {
 
   #dragPointerType = "";
 
-  #keepAspectRatio = false;
-
   #resizersDiv = null;
 
   #lastPointerCoords = null;
 
   #savedDimensions = null;
+
+  #fakeAnnotation = null;
 
   #focusAC = null;
 
@@ -186,7 +186,9 @@ class AnnotationEditor {
     this._initialOptions.isCentered = parameters.isCentered;
     this._structTreeParentId = null;
     this.annotationElementId = parameters.annotationElementId || null;
-    this.creationDate = new Date();
+    this.creationDate = parameters.creationDate || new Date();
+    this.modificationDate = parameters.modificationDate || null;
+    this.canAddComment = true;
 
     const {
       rotation,
@@ -383,6 +385,10 @@ class AnnotationEditor {
     } else {
       // The editor is being removed from the DOM, so we need to stop resizing.
       this.#stopResizing();
+
+      // Remove the fake annotation in the annotation layer.
+      this.#fakeAnnotation?.remove();
+      this.#fakeAnnotation = null;
     }
     this.parent = parent;
   }
@@ -735,34 +741,15 @@ class AnnotationEditor {
 
   /**
    * Set the dimensions of this editor.
-   * @param {number} width
-   * @param {number} height
    */
-  setDims(width, height) {
-    const [parentWidth, parentHeight] = this.parentDimensions;
-    const { style } = this.div;
-    style.width = `${((100 * width) / parentWidth).toFixed(2)}%`;
-    if (!this.#keepAspectRatio) {
-      style.height = `${((100 * height) / parentHeight).toFixed(2)}%`;
-    }
-  }
-
-  fixDims() {
-    const { style } = this.div;
-    const { height, width } = style;
-    const widthPercent = width.endsWith("%");
-    const heightPercent = !this.#keepAspectRatio && height.endsWith("%");
-    if (widthPercent && heightPercent) {
-      return;
-    }
-
-    const [parentWidth, parentHeight] = this.parentDimensions;
-    if (!widthPercent) {
-      style.width = `${((100 * parseFloat(width)) / parentWidth).toFixed(2)}%`;
-    }
-    if (!this.#keepAspectRatio && !heightPercent) {
-      style.height = `${((100 * parseFloat(height)) / parentHeight).toFixed(2)}%`;
-    }
+  setDims() {
+    const {
+      div: { style },
+      width,
+      height,
+    } = this;
+    style.width = `${(100 * width).toFixed(2)}%`;
+    style.height = `${(100 * height).toFixed(2)}%`;
   }
 
   /**
@@ -871,8 +858,7 @@ class AnnotationEditor {
     this.height = height;
     this.x = x;
     this.y = y;
-    const [parentWidth, parentHeight] = this.parentDimensions;
-    this.setDims(parentWidth * width, parentHeight * height);
+    this.setDims();
     this.fixAndSetPosition();
     this._onResized();
   }
@@ -1049,7 +1035,7 @@ class AnnotationEditor {
     this.x = newX;
     this.y = newY;
 
-    this.setDims(parentWidth * newWidth, parentHeight * newHeight);
+    this.setDims();
     this.fixAndSetPosition();
 
     this._onResizing();
@@ -1091,17 +1077,28 @@ class AnnotationEditor {
         await this._editToolbar.addButton(name, tool);
       }
     }
-    this._editToolbar.addButton("comment", this.addCommentButton());
+    if (!this.hasComment) {
+      this._editToolbar.addButton("comment", this.addCommentButton());
+    }
     this._editToolbar.addButton("delete");
 
     return this._editToolbar;
   }
 
+  addCommentButtonInToolbar() {
+    this._editToolbar?.addButtonBefore(
+      "comment",
+      this.addCommentButton(),
+      ".deleteButton"
+    );
+  }
+
+  removeCommentButtonFromToolbar() {
+    this._editToolbar?.removeButton("comment");
+  }
+
   removeEditToolbar() {
-    if (!this._editToolbar) {
-      return;
-    }
-    this._editToolbar.remove();
+    this._editToolbar?.remove();
     this._editToolbar = null;
 
     // We destroy the alt text but we don't null it because we want to be able
@@ -1172,13 +1169,25 @@ class AnnotationEditor {
     return this.#altText?.hasData() ?? false;
   }
 
+  focusCommentButton() {
+    this.#comment?.focusButton();
+  }
+
   addCommentButton() {
-    return (this.#comment ||= new Comment(this));
+    return this.canAddComment ? (this.#comment ||= new Comment(this)) : null;
   }
 
   addStandaloneCommentButton() {
-    this.#comment ||= new Comment(this);
+    if (!this._uiManager.hasCommentManager()) {
+      return;
+    }
     if (this.#commentStandaloneButton) {
+      if (this._uiManager.isEditingMode()) {
+        this.#commentStandaloneButton.classList.remove("hidden");
+      }
+      return;
+    }
+    if (!this.hasComment) {
       return;
     }
     this.#commentStandaloneButton = this.#comment.renderForStandalone();
@@ -1186,54 +1195,88 @@ class AnnotationEditor {
   }
 
   removeStandaloneCommentButton() {
-    this.#commentStandaloneButton?.remove();
+    this.#comment.removeStandaloneCommentButton();
     this.#commentStandaloneButton = null;
   }
 
-  get commentColor() {
-    return null;
+  hideStandaloneCommentButton() {
+    this.#commentStandaloneButton?.classList.add("hidden");
   }
 
   get comment() {
-    const comment = this.#comment;
+    const {
+      data: { richText, text, date, deleted },
+    } = this.#comment;
     return {
-      text: comment.data.text,
-      date: comment.data.date,
-      deleted: comment.isDeleted(),
-      color: this.commentColor,
+      text,
+      richText,
+      date,
+      deleted,
+      color: this.getNonHCMColor(),
+      opacity: this.opacity ?? 1,
     };
   }
 
   set comment(text) {
-    if (!this.#comment) {
-      this.#comment = new Comment(this);
-    }
+    this.#comment ||= new Comment(this);
     this.#comment.data = text;
+    if (this.hasComment) {
+      this.removeCommentButtonFromToolbar();
+      this.addStandaloneCommentButton();
+      this._uiManager.updateComment(this);
+    } else {
+      this.addCommentButtonInToolbar();
+      this.removeStandaloneCommentButton();
+      this._uiManager.removeComment(this);
+    }
   }
 
-  setCommentData(text) {
-    if (!this.#comment) {
-      this.#comment = new Comment(this);
+  setCommentData({ comment, popupRef, richText }) {
+    if (!popupRef) {
+      return;
     }
-    this.#comment.setInitialText(text);
+    this.#comment ||= new Comment(this);
+    this.#comment.setInitialText(comment, richText);
+
+    if (!this.annotationElementId) {
+      return;
+    }
+    const storedData = this._uiManager.getAndRemoveDataFromAnnotationStorage(
+      this.annotationElementId
+    );
+    if (storedData) {
+      this.updateFromAnnotationLayer(storedData);
+    }
   }
 
   get hasEditedComment() {
     return this.#comment?.hasBeenEdited();
   }
 
+  get hasDeletedComment() {
+    return this.#comment?.isDeleted();
+  }
+
   get hasComment() {
-    return !!this.#comment && !this.#comment.isDeleted();
+    return (
+      !!this.#comment && !this.#comment.isEmpty() && !this.#comment.isDeleted()
+    );
   }
 
-  async editComment() {
-    if (!this.#comment) {
-      this.#comment = new Comment(this);
+  async editComment(options) {
+    this.#comment ||= new Comment(this);
+    this.#comment.edit(options);
+  }
+
+  toggleComment(isSelected, visibility = undefined) {
+    if (this.hasComment) {
+      this._uiManager.toggleComment(this, isSelected, visibility);
     }
-    this.#comment.edit();
   }
 
-  showComment() {}
+  setSelectedCommentButton(selected) {
+    this.#comment.setSelectedButton(selected);
+  }
 
   addComment(serialized) {
     if (this.hasEditedComment) {
@@ -1251,6 +1294,14 @@ class AnnotationEditor {
         rect: [blX, blY, trX, trY],
       };
     }
+  }
+
+  updateFromAnnotationLayer({ popup: { contents, deleted } }) {
+    this.#comment.data = deleted ? null : contents;
+  }
+
+  get parentBoundingClientRect() {
+    return this.parent.boundingClientRect;
   }
 
   /**
@@ -1300,6 +1351,7 @@ class AnnotationEditor {
       });
     }
 
+    this.addStandaloneCommentButton();
     this._uiManager._editorUndoBar?.hide();
 
     return div;
@@ -1363,7 +1415,7 @@ class AnnotationEditor {
     this.width = newWidth;
     this.height = newHeight;
 
-    this.setDims(parentWidth * newWidth, parentHeight * newHeight);
+    this.setDims();
     this.fixAndSetPosition();
 
     this._onResizing();
@@ -1440,6 +1492,11 @@ class AnnotationEditor {
         e => {
           if (!hasDraggingStarted) {
             hasDraggingStarted = true;
+            this._uiManager.toggleComment(
+              this,
+              /* isSelected = */ true,
+              /* visibility = */ false
+            );
             this._onStartDragging();
           }
           const { clientX: x, clientY: y, pointerId } = e;
@@ -1605,14 +1662,41 @@ class AnnotationEditor {
     return this.getRect(0, 0);
   }
 
+  getNonHCMColor() {
+    return (
+      this.color &&
+      AnnotationEditor._colorManager.convert(
+        this._uiManager.getNonHCMColor(this.color)
+      )
+    );
+  }
+
+  /**
+   * The color has been changed.
+   */
+  onUpdatedColor() {
+    this.#comment?.onUpdatedColor();
+  }
+
   getData() {
+    const {
+      comment: { text: str, color, date, opacity, deleted, richText },
+      uid: id,
+      pageIndex,
+      creationDate,
+      modificationDate,
+    } = this;
     return {
-      id: this.uid,
-      pageIndex: this.pageIndex,
+      id,
+      pageIndex,
       rect: this.getPDFRect(),
-      contentsObj: { str: this.comment.text },
-      creationDate: this.creationDate,
-      popupRef: !this.#comment.isDeleted(),
+      richText,
+      contentsObj: { str },
+      creationDate,
+      modificationDate: date || modificationDate,
+      popupRef: !deleted,
+      color,
+      opacity,
     };
   }
 
@@ -1744,7 +1828,14 @@ class AnnotationEditor {
    * @returns {Object | null}
    */
   serialize(isForCopying = false, context = null) {
-    unreachable("An editor must be serializable");
+    return {
+      annotationType: this.mode,
+      pageIndex: this.pageIndex,
+      rect: this.getPDFRect(),
+      rotation: this.rotation,
+      structTreeParentId: this._structTreeParentId,
+      popupRef: this._initialData?.popupRef || "",
+    };
   }
 
   /**
@@ -1762,6 +1853,8 @@ class AnnotationEditor {
       id: parent.getNextId(),
       uiManager,
       annotationElementId: data.annotationElementId,
+      creationDate: data.creationDate,
+      modificationDate: data.modificationDate,
     });
     editor.rotation = data.rotation;
     editor.#accessibilityData = data.accessibilityData;
@@ -1810,6 +1903,7 @@ class AnnotationEditor {
     } else {
       this._uiManager.removeEditor(this);
     }
+    this.hideCommentPopup();
 
     if (this.#moveInDOMTimeout) {
       clearTimeout(this.#moveInDOMTimeout);
@@ -1826,6 +1920,8 @@ class AnnotationEditor {
     this.parent = null;
     this.#touchManager?.destroy();
     this.#touchManager = null;
+    this.#fakeAnnotation?.remove();
+    this.#fakeAnnotation = null;
   }
 
   /**
@@ -1855,6 +1951,48 @@ class AnnotationEditor {
    */
   get commentButtonPosition() {
     return this._uiManager.direction === "ltr" ? [1, 0] : [0, 0];
+  }
+
+  get commentButtonPositionInPage() {
+    const {
+      commentButtonPosition: [posX, posY],
+    } = this;
+    const [blX, blY, trX, trY] = this.getPDFRect();
+    return [
+      AnnotationEditor._round(blX + (trX - blX) * posX),
+      AnnotationEditor._round(blY + (trY - blY) * (1 - posY)),
+    ];
+  }
+
+  get commentButtonColor() {
+    return this._uiManager.makeCommentColor(
+      this.getNonHCMColor(),
+      this.opacity
+    );
+  }
+
+  get commentPopupPosition() {
+    return this.#comment.commentPopupPositionInLayer;
+  }
+
+  set commentPopupPosition(pos) {
+    this.#comment.commentPopupPositionInLayer = pos;
+  }
+
+  hasDefaultPopupPosition() {
+    return this.#comment.hasDefaultPopupPosition();
+  }
+
+  get commentButtonWidth() {
+    return this.#comment.commentButtonWidth;
+  }
+
+  get elementBeforePopup() {
+    return this.div;
+  }
+
+  setCommentButtonStates(options) {
+    this.#comment?.setCommentButtonStates(options);
   }
 
   /**
@@ -1989,6 +2127,7 @@ class AnnotationEditor {
    */
   select() {
     if (this.isSelected && this._editToolbar) {
+      this._editToolbar.show();
       return;
     }
     this.isSelected = true;
@@ -2007,6 +2146,12 @@ class AnnotationEditor {
     }
     this._editToolbar?.show();
     this.#altText?.toggleAltTextBadge(false);
+  }
+
+  focus() {
+    if (this.div && !this.div.contains(document.activeElement)) {
+      setTimeout(() => this.div?.focus({ preventScroll: true }), 0);
+    }
   }
 
   /**
@@ -2028,6 +2173,13 @@ class AnnotationEditor {
     }
     this._editToolbar?.hide();
     this.#altText?.toggleAltTextBadge(true);
+    this.hideCommentPopup();
+  }
+
+  hideCommentPopup() {
+    if (this.hasComment) {
+      this._uiManager.toggleComment(null);
+    }
   }
 
   /**
@@ -2075,10 +2227,14 @@ class AnnotationEditor {
    * @param {MouseEvent} event
    */
   dblclick(event) {
+    if (event.target.nodeName === "BUTTON") {
+      // Avoid entering in edit mode when clicking on the comment button.
+      return;
+    }
     this.enterInEditMode();
     this.parent.updateToolbar({
       mode: this.constructor._editorType,
-      editId: this.id,
+      editId: this.uid,
     });
   }
 
@@ -2120,19 +2276,6 @@ class AnnotationEditor {
     } else {
       this.parent.setActiveEditor(null);
     }
-  }
-
-  /**
-   * Set the aspect ratio to use when resizing.
-   * @param {number} width
-   * @param {number} height
-   */
-  setAspectRatio(width, height) {
-    this.#keepAspectRatio = true;
-    const aspectRatio = width / height;
-    const { style } = this.div;
-    style.aspectRatio = aspectRatio;
-    style.height = "auto";
   }
 
   static get MIN_SIZE() {
@@ -2208,6 +2351,24 @@ class AnnotationEditor {
       this.div.tabIndex = -1;
     }
     this.#disabled = true;
+  }
+
+  updateFakeAnnotationElement(annotationLayer) {
+    if (!this.#fakeAnnotation && !this.deleted) {
+      this.#fakeAnnotation = annotationLayer.addFakeAnnotation(this);
+      return;
+    }
+    if (this.deleted) {
+      this.#fakeAnnotation.remove();
+      this.#fakeAnnotation = null;
+      return;
+    }
+    if (this.hasEditedComment || this._hasBeenMoved || this._hasBeenResized) {
+      this.#fakeAnnotation.updateEdited({
+        rect: this.getPDFRect(),
+        popup: this.comment,
+      });
+    }
   }
 
   /**

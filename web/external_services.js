@@ -33,6 +33,8 @@ class BaseExternalServices {
 
   reportTelemetry(data) {}
 
+  reportText(data) {}
+
   /**
    * @returns {Promise<IL10n>}
    */

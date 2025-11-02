@@ -35,8 +35,6 @@ const EOL_PATTERN = /\r\n?|\n/g;
  * Basic text editor in order to create a FreeTex annotation.
  */
 class FreeTextEditor extends AnnotationEditor {
-  #color;
-
   #content = "";
 
   #editorDivId = `${this.id}-editor`;
@@ -129,7 +127,7 @@ class FreeTextEditor extends AnnotationEditor {
 
   constructor(params) {
     super({ ...params, name: "freeTextEditor" });
-    this.#color =
+    this.color =
       params.color ||
       FreeTextEditor._defaultColor ||
       AnnotationEditor._defaultLineColor;
@@ -137,6 +135,7 @@ class FreeTextEditor extends AnnotationEditor {
     if (!this.annotationElementId) {
       this._uiManager.a11yAlert("pdfjs-editor-freetext-added-alert");
     }
+    this.canAddComment = false;
   }
 
   /** @inheritdoc */
@@ -201,7 +200,7 @@ class FreeTextEditor extends AnnotationEditor {
   get propertiesToUpdate() {
     return [
       [AnnotationEditorParamsType.FREETEXT_SIZE, this.#fontSize],
-      [AnnotationEditorParamsType.FREETEXT_COLOR, this.#color],
+      [AnnotationEditorParamsType.FREETEXT_COLOR, this.color],
     ];
   }
 
@@ -213,10 +212,6 @@ class FreeTextEditor extends AnnotationEditor {
 
   get colorType() {
     return AnnotationEditorParamsType.FREETEXT_COLOR;
-  }
-
-  get colorValue() {
-    return this.#color;
   }
 
   /**
@@ -242,16 +237,23 @@ class FreeTextEditor extends AnnotationEditor {
     });
   }
 
+  /** @inheritdoc */
+  onUpdatedColor() {
+    this.editorDiv.style.color = this.color;
+    this._colorPicker?.update(this.color);
+    super.onUpdatedColor();
+  }
+
   /**
    * Update the color and make this action undoable.
    * @param {string} color
    */
   #updateColor(color) {
     const setColor = col => {
-      this.#color = this.editorDiv.style.color = col;
-      this._colorPicker?.update(col);
+      this.color = col;
+      this.onUpdatedColor();
     };
-    const savedColor = this.#color;
+    const savedColor = this.color;
     this.addCommands({
       cmd: setColor.bind(this, color),
       undo: setColor.bind(this, savedColor),
@@ -581,7 +583,7 @@ class FreeTextEditor extends AnnotationEditor {
 
     const { style } = this.editorDiv;
     style.fontSize = `calc(${this.#fontSize}px * var(--total-scale-factor))`;
-    style.color = this.#color;
+    style.color = this.color;
 
     this.div.append(this.editorDiv);
 
@@ -787,7 +789,10 @@ class FreeTextEditor extends AnnotationEditor {
           rotation,
           id,
           popupRef,
+          richText,
           contentsObj,
+          creationDate,
+          modificationDate,
         },
         textContent,
         textPosition,
@@ -815,15 +820,18 @@ class FreeTextEditor extends AnnotationEditor {
         deleted: false,
         popupRef,
         comment: contentsObj?.str || null,
+        richText,
+        creationDate,
+        modificationDate,
       };
     }
     const editor = await super.deserialize(data, parent, uiManager);
     editor.#fontSize = data.fontSize;
-    editor.#color = Util.makeHexColor(...data.color);
+    editor.color = Util.makeHexColor(...data.color);
     editor.#content = FreeTextEditor.#deserializeContent(data.value);
     editor._initialData = initialData;
     if (data.comment) {
-      editor.setCommentData(data.comment);
+      editor.setCommentData(data);
     }
 
     return editor;
@@ -839,23 +847,14 @@ class FreeTextEditor extends AnnotationEditor {
       return this.serializeDeleted();
     }
 
-    const rect = this.getPDFRect();
     const color = AnnotationEditor._colorManager.convert(
-      this.isAttachedToDOM
-        ? getComputedStyle(this.editorDiv).color
-        : this.#color
+      this.isAttachedToDOM ? getComputedStyle(this.editorDiv).color : this.color
     );
-
-    const serialized = {
-      annotationType: AnnotationEditorType.FREETEXT,
+    const serialized = Object.assign(super.serialize(isForCopying), {
       color,
       fontSize: this.#fontSize,
       value: this.#serializeContent(),
-      pageIndex: this.pageIndex,
-      rect,
-      rotation: this.rotation,
-      structTreeParentId: this._structTreeParentId,
-    };
+    });
     this.addComment(serialized);
 
     if (isForCopying) {
@@ -895,7 +894,7 @@ class FreeTextEditor extends AnnotationEditor {
     }
     const { style } = content;
     style.fontSize = `calc(${this.#fontSize}px * var(--total-scale-factor))`;
-    style.color = this.#color;
+    style.color = this.color;
 
     content.replaceChildren();
     for (const line of this.#content.split("\n")) {
@@ -906,13 +905,13 @@ class FreeTextEditor extends AnnotationEditor {
       content.append(div);
     }
 
-    const params = {
+    annotation.updateEdited({
       rect: this.getPDFRect(),
-    };
-    params.popup = this.hasEditedComment
-      ? this.comment
-      : { text: this.#content };
-    annotation.updateEdited(params);
+      popup:
+        this._uiManager.hasCommentManager() || this.hasEditedComment
+          ? this.comment
+          : { text: this.#content },
+    });
 
     return content;
   }

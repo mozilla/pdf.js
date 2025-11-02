@@ -286,9 +286,13 @@ pdfjs-web-fonts-disabled = I caratars dal Web a son disativâts: Impussibil dopr
 
 pdfjs-editor-free-text-button =
     .title = Test
+pdfjs-editor-color-picker-free-text-input =
+    .title = Cambie colôr dal test
 pdfjs-editor-free-text-button-label = Test
 pdfjs-editor-ink-button =
     .title = Dissen
+pdfjs-editor-color-picker-ink-input =
+    .title = Cambie colôr dal dissen
 pdfjs-editor-ink-button-label = Dissen
 pdfjs-editor-stamp-button =
     .title = Zonte o modifiche imagjins
@@ -300,6 +304,14 @@ pdfjs-highlight-floating-button1 =
     .title = Evidenzie
     .aria-label = Evidenzie
 pdfjs-highlight-floating-button-label = Evidenzie
+pdfjs-comment-floating-button =
+    .title = Comente
+    .aria-label = Comente
+pdfjs-comment-floating-button-label = Comente
+pdfjs-editor-comment-button =
+    .title = Comente
+    .aria-label = Comente
+pdfjs-editor-comment-button-label = Comente
 pdfjs-editor-signature-button =
     .title = Zonte firme
 pdfjs-editor-signature-button-label = Zonte firme
@@ -362,6 +374,21 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Editôr di test
     .default-content = Scomence a scrivi…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Coment
+       *[other] Coments
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Siere la sbare laterâl
+    .aria-label = Siere la sbare laterâl
+pdfjs-editor-comments-sidebar-close-button-label = Siere la sbare laterâl
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = Âstu cjatât alc di interessant? Evidenzilu e lasse un coment.
+pdfjs-editor-comments-sidebar-no-comments-link = Plui informazions
 
 ## Alt-text dialog
 
@@ -492,6 +519,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Mostre l'editôr dal t
 pdfjs-editor-alt-text-settings-show-dialog-description = Ti jude a sigurâti che dutis lis tôs imagjins a vedin il test alternatîf.
 pdfjs-editor-alt-text-settings-close-button = Siere
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = Evidenziazion zontade
+pdfjs-editor-freetext-added-alert = Test zontât
+pdfjs-editor-ink-added-alert = Dissen zontât
+pdfjs-editor-stamp-added-alert = Imagjin zontade
+pdfjs-editor-signature-added-alert = Firme zontade
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Evidenziazion gjavade
@@ -560,6 +595,8 @@ pdfjs-editor-add-signature-save-checkbox = Salve firme
 pdfjs-editor-add-signature-save-warning-message = Tu sês rivât/rivade al limit di 5 firmis salvadis. Gjave une  par salvânt une altre.
 pdfjs-editor-add-signature-image-upload-error-title = Impussibil cjariâ la imagjin
 pdfjs-editor-add-signature-image-upload-error-description = Controle la conession di rêt o prove cuntune altre imagjin.
+pdfjs-editor-add-signature-image-no-data-error-title = Impussibil convertî cheste imagjin intune firme
+pdfjs-editor-add-signature-image-no-data-error-description = Prove a cjariâ une altre imagjin.
 pdfjs-editor-add-signature-error-close-button = Siere
 
 ## Dialog buttons
@@ -567,6 +604,46 @@ pdfjs-editor-add-signature-error-close-button = Siere
 pdfjs-editor-add-signature-cancel-button = Anule
 pdfjs-editor-add-signature-add-button = Zonte
 pdfjs-editor-edit-signature-update-button = Inzorne
+
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Modifiche coment
+pdfjs-editor-edit-comment-popup-button =
+    .title = Modifiche coment
+pdfjs-editor-delete-comment-popup-button-label = Gjave coment
+pdfjs-editor-delete-comment-popup-button =
+    .title = Gjave coment
+pdfjs-show-comment-button =
+    .title = Mostre coment
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-actions-button-label = Azions
+pdfjs-editor-edit-comment-actions-button =
+    .title = Azions
+pdfjs-editor-edit-comment-close-button-label = Siere
+pdfjs-editor-edit-comment-close-button =
+    .title = Siere
+pdfjs-editor-edit-comment-actions-edit-button-label = Modifiche
+pdfjs-editor-edit-comment-actions-delete-button-label = Elimine
+pdfjs-editor-edit-comment-manager-text-input =
+    .placeholder = Inserìs il to coment
+pdfjs-editor-edit-comment-manager-cancel-button = Anule
+pdfjs-editor-edit-comment-manager-save-button = Salve
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Modifiche coment
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Inzorne
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Zonte coment
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Zonte
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Scomence a scrivi…
+pdfjs-editor-edit-comment-dialog-cancel-button = Anule
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Modifiche coment
 
 ## Main menu for adding/removing signatures
 

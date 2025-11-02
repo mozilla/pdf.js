@@ -300,6 +300,10 @@ pdfjs-comment-floating-button =
     .title = 註解
     .aria-label = 註解
 pdfjs-comment-floating-button-label = 註解
+pdfjs-editor-comment-button =
+    .title = 註解
+    .aria-label = 註解
+pdfjs-editor-comment-button-label = 註解
 pdfjs-editor-signature-button =
     .title = 加入簽章
 pdfjs-editor-signature-button-label = 加入簽章
@@ -362,6 +366,17 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = 文字編輯器
     .default-content = 請打字…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title = 註解
+pdfjs-editor-comments-sidebar-close-button =
+    .title = 關閉側邊欄
+    .aria-label = 關閉側邊欄
+pdfjs-editor-comments-sidebar-close-button-label = 關閉側邊欄
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = 想把哪個部分記下來？可以畫螢光強調，並且留下註解。
+pdfjs-editor-comments-sidebar-no-comments-link = 更多資訊
 
 ## Alt-text dialog
 
@@ -574,6 +589,17 @@ pdfjs-editor-add-signature-cancel-button = 取消
 pdfjs-editor-add-signature-add-button = 新增
 pdfjs-editor-edit-signature-update-button = 更新
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = 編輯註解
+pdfjs-editor-edit-comment-popup-button =
+    .title = 編輯註解
+pdfjs-editor-delete-comment-popup-button-label = 移除註解
+pdfjs-editor-delete-comment-popup-button =
+    .title = 移除註解
+pdfjs-show-comment-button =
+    .title = 顯示註解
+
 ##  Edit a comment dialog
 
 pdfjs-editor-edit-comment-actions-button-label = 動作
@@ -588,11 +614,22 @@ pdfjs-editor-edit-comment-manager-text-input =
     .placeholder = 輸入您的註解
 pdfjs-editor-edit-comment-manager-cancel-button = 取消
 pdfjs-editor-edit-comment-manager-save-button = 儲存
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = 編輯註解
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = 更新
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = 新增註解
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = 新增
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = 在此打字…
+pdfjs-editor-edit-comment-dialog-cancel-button = 取消
 
 ## Edit a comment button in the editor toolbar
 
 pdfjs-editor-edit-comment-button =
     .title = 編輯註解
+pdfjs-editor-add-comment-button =
+    .title = 新增註解
 
 ## Main menu for adding/removing signatures
 

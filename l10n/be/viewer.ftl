@@ -310,6 +310,10 @@ pdfjs-comment-floating-button =
     .title = Каментаваць
     .aria-label = Каментаваць
 pdfjs-comment-floating-button-label = Каментаваць
+pdfjs-editor-comment-button =
+    .title = Каментарый
+    .aria-label = Каментарый
+pdfjs-editor-comment-button-label = Каментарый
 pdfjs-editor-signature-button =
     .title = Дадаць подпіс
 pdfjs-editor-signature-button-label = Дадаць подпіс
@@ -372,6 +376,22 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Тэкставы рэдактар
     .default-content = Пачніце ўводзіць…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Каментарый
+        [few] Каментарыі
+       *[many] Каментарыі
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Закрыць бакавую панэль
+    .aria-label = Закрыць бакавую панэль
+pdfjs-editor-comments-sidebar-close-button-label = Закрыць бакавую панэль
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = Бачыце штосьці вартае ўвагі? Вылучыце і пакіньце каментарый.
+pdfjs-editor-comments-sidebar-no-comments-link = Падрабязней
 
 ## Alt-text dialog
 
@@ -589,6 +609,17 @@ pdfjs-editor-add-signature-cancel-button = Скасаваць
 pdfjs-editor-add-signature-add-button = Дадаць
 pdfjs-editor-edit-signature-update-button = Абнавіць
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Змяніць каментарый
+pdfjs-editor-edit-comment-popup-button =
+    .title = Змяніць каментарый
+pdfjs-editor-delete-comment-popup-button-label = Выдаліць каментарый
+pdfjs-editor-delete-comment-popup-button =
+    .title = Выдаліць каментарый
+pdfjs-show-comment-button =
+    .title = Паказаць каментарый
+
 ##  Edit a comment dialog
 
 pdfjs-editor-edit-comment-actions-button-label = Дзеянні
@@ -603,6 +634,15 @@ pdfjs-editor-edit-comment-manager-text-input =
     .placeholder = Увядзіце свой каментарый
 pdfjs-editor-edit-comment-manager-cancel-button = Скасаваць
 pdfjs-editor-edit-comment-manager-save-button = Захаваць
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Змяніць каментарый
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Абнавіць
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Дадаць каментарый
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Дадаць
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Пачніце набор тэксту…
+pdfjs-editor-edit-comment-dialog-cancel-button = Скасаваць
 
 ## Edit a comment button in the editor toolbar
 

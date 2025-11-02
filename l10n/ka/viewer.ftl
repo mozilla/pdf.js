@@ -308,6 +308,10 @@ pdfjs-comment-floating-button =
     .title = შენიშვნა
     .aria-label = შენიშვნა
 pdfjs-comment-floating-button-label = შენიშვნა
+pdfjs-editor-comment-button =
+    .title = შენიშვნა
+    .aria-label = შენიშვნა
+pdfjs-editor-comment-button-label = შენიშვნა
 pdfjs-editor-signature-button =
     .title = ხელმოწერის დამატება
 pdfjs-editor-signature-button-label = ხელმოწერის დამატება
@@ -370,6 +374,21 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = წარწერის ჩასწორება
     .default-content = დაიწყეთ აკრეფა…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] შენიშვნა
+       *[other] შენიშვნა
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = გვერდითი ზოლის დახურვა
+    .aria-label = გვერდითი ზოლის დახურვა
+pdfjs-editor-comments-sidebar-close-button-label = გვერდითი ზოლის დახურვა
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = რამე საყურადღებოს წააწყდით? გააფერადეთ და დაურთეთ შენიშვნა.
+pdfjs-editor-comments-sidebar-no-comments-link = ვრცლად
 
 ## Alt-text dialog
 
@@ -586,6 +605,17 @@ pdfjs-editor-add-signature-cancel-button = გაუქმება
 pdfjs-editor-add-signature-add-button = დამატება
 pdfjs-editor-edit-signature-update-button = განახლება
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = შენიშვნის ჩასწორება
+pdfjs-editor-edit-comment-popup-button =
+    .title = შენიშვნის ჩასწორება
+pdfjs-editor-delete-comment-popup-button-label = შენიშვნის მოცილება
+pdfjs-editor-delete-comment-popup-button =
+    .title = შენიშვნის მოცილება
+pdfjs-show-comment-button =
+    .title = შენიშვნის გამოჩენა
+
 ##  Edit a comment dialog
 
 pdfjs-editor-edit-comment-actions-button-label = მოქმედებები
@@ -600,11 +630,22 @@ pdfjs-editor-edit-comment-manager-text-input =
     .placeholder = შეიყვანეთ დასართავი შენიშვნა
 pdfjs-editor-edit-comment-manager-cancel-button = გაუქმება
 pdfjs-editor-edit-comment-manager-save-button = შენახვა
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = შენიშვნის ჩასწორება
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = განახლება
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = შენიშვნის დამატება
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = დამატება
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = აკრიფეთ…
+pdfjs-editor-edit-comment-dialog-cancel-button = გაუქმება
 
 ## Edit a comment button in the editor toolbar
 
 pdfjs-editor-edit-comment-button =
     .title = შენიშვნის ჩასწორება
+pdfjs-editor-add-comment-button =
+    .title = შენიშვნის დამატება
 
 ## Main menu for adding/removing signatures
 

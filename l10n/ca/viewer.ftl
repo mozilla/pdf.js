@@ -264,3 +264,15 @@ pdfjs-editor-free-text-size-input = Mida
 pdfjs-editor-ink-color-input = Color
 pdfjs-editor-ink-thickness-input = Gruix
 pdfjs-editor-ink-opacity-input = Opacitat
+
+## Alt-text dialog
+
+pdfjs-editor-alt-text-cancel-button = Cancel·la
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = Cancel·la
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-manager-cancel-button = Cancel·la

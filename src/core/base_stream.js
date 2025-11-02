@@ -137,6 +137,10 @@ class BaseStream {
   getBaseStreams() {
     return null;
   }
+
+  getOriginalStream() {
+    return this.stream?.getOriginalStream() || this;
+  }
 }
 
 export { BaseStream };

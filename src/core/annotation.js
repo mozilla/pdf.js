@@ -1810,8 +1810,8 @@ class MarkupAnnotation extends Annotation {
     });
 
     const retRef = { ref: annotationRef };
-    if (annotation.popup) {
-      const popup = annotation.popup;
+    const { popup } = annotation;
+    if (popup) {
       if (popup.deleted) {
         annotationDict.delete("Popup");
         annotationDict.delete("Contents");

@@ -308,6 +308,10 @@ pdfjs-comment-floating-button =
     .title = Je’erei
     .aria-label = Je’erei
 pdfjs-comment-floating-button-label = Je’erei
+pdfjs-editor-comment-button =
+    .title = Je’erei
+    .aria-label = Je’erei
+pdfjs-editor-comment-button-label = Je’erei
 pdfjs-editor-signature-button =
     .title = Embojuaju teraguapy
 pdfjs-editor-signature-button-label = Embojuaju teraguapy
@@ -370,6 +374,21 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Moñe’ẽrã moheñoiha
     .default-content = Eñepyrũ ehai…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Je’erei
+       *[other] Je’ereieta
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Emboty ta'ãngarupa yke
+    .aria-label = Emboty ta'ãngarupa yke
+pdfjs-editor-comments-sidebar-close-button-label = Emboty ta'ãngarupa yke
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = ¿Ehechápa peteĩ mbaʼe iporãva? Emomba’e ha eheja jehaipy.
+pdfjs-editor-comments-sidebar-no-comments-link = Kuaave
 
 ## Alt-text dialog
 
@@ -585,6 +604,17 @@ pdfjs-editor-add-signature-cancel-button = Heja
 pdfjs-editor-add-signature-add-button = Mbojuaju
 pdfjs-editor-edit-signature-update-button = Mbohekopyahu
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Je’erei mbosako’i
+pdfjs-editor-edit-comment-popup-button =
+    .title = Je’erei mbosako’i
+pdfjs-editor-delete-comment-popup-button-label = Je’erei mboguete
+pdfjs-editor-delete-comment-popup-button =
+    .title = Je’erei mboguete
+pdfjs-show-comment-button =
+    .title = Ehechauka je’epy
+
 ##  Edit a comment dialog
 
 pdfjs-editor-edit-comment-actions-button-label = Ñemongu’e
@@ -599,6 +629,15 @@ pdfjs-editor-edit-comment-manager-text-input =
     .placeholder = Ehai peteĩ je’erei
 pdfjs-editor-edit-comment-manager-cancel-button = Heja
 pdfjs-editor-edit-comment-manager-save-button = Ñongatu
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Je’erei mbosako’i
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Mbohekopyahu
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Je’erei mbojuaju
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Mbojuaju
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Ehai ñepyrũ…
+pdfjs-editor-edit-comment-dialog-cancel-button = Eheja
 
 ## Edit a comment button in the editor toolbar
 

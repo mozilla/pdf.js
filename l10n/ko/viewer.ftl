@@ -300,6 +300,10 @@ pdfjs-comment-floating-button =
     .title = 주석
     .aria-label = 주석
 pdfjs-comment-floating-button-label = 주석
+pdfjs-editor-comment-button =
+    .title = 주석
+    .aria-label = 주석
+pdfjs-editor-comment-button-label = 주석
 pdfjs-editor-signature-button =
     .title = 서명 추가
 pdfjs-editor-signature-button-label = 서명 추가
@@ -361,7 +365,18 @@ pdfjs-editor-add-saved-signature-button =
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = 텍스트 편집기
-    .default-content = 입력을 시작하세요…
+    .default-content = 입력하세요…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title = 주석
+pdfjs-editor-comments-sidebar-close-button =
+    .title = 사이드바 닫기
+    .aria-label = 사이드바 닫기
+pdfjs-editor-comments-sidebar-close-button-label = 사이드바 닫기
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = 눈에 띄는 내용이 있나요? 해당 부분을 강조 표시하고 주석을 남겨주세요.
+pdfjs-editor-comments-sidebar-no-comments-link = 더 알아보기
 
 ## Alt-text dialog
 
@@ -574,6 +589,17 @@ pdfjs-editor-add-signature-cancel-button = 취소
 pdfjs-editor-add-signature-add-button = 추가
 pdfjs-editor-edit-signature-update-button = 업데이트
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = 주석 편집
+pdfjs-editor-edit-comment-popup-button =
+    .title = 주석 편집
+pdfjs-editor-delete-comment-popup-button-label = 주석 제거
+pdfjs-editor-delete-comment-popup-button =
+    .title = 주석 제거
+pdfjs-show-comment-button =
+    .title = 주석 보기
+
 ##  Edit a comment dialog
 
 pdfjs-editor-edit-comment-actions-button-label = 동작
@@ -588,11 +614,22 @@ pdfjs-editor-edit-comment-manager-text-input =
     .placeholder = 주석을 입력하세요
 pdfjs-editor-edit-comment-manager-cancel-button = 취소
 pdfjs-editor-edit-comment-manager-save-button = 저장
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = 주석 편집
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = 업데이트
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = 주석 추가
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = 추가
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = 입력하세요…
+pdfjs-editor-edit-comment-dialog-cancel-button = 취소
 
 ## Edit a comment button in the editor toolbar
 
 pdfjs-editor-edit-comment-button =
     .title = 주석 편집
+pdfjs-editor-add-comment-button =
+    .title = 주석 추가
 
 ## Main menu for adding/removing signatures
 
