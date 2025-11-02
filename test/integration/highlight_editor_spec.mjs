@@ -800,7 +800,6 @@ describe("Highlight Editor", () => {
     let pages;
 
     beforeEach(async () => {
-      pending("Linked PDFs are not supported.");
       pages = await loadAndWait(
         "issue12233.pdf",
         ".annotationEditorLayer",
