@@ -169,7 +169,6 @@ describe("Checkbox annotation", () => {
     let pages;
 
     beforeEach(async () => {
-      pending("Linked PDFs are not supported.");
       pages = await loadAndWait("bug1847733.pdf", getAnnotationSelector("18R"));
     });
 

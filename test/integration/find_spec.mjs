@@ -90,7 +90,6 @@ describe("find bar", () => {
     let pages;
 
     beforeEach(async () => {
-      pending("Linked PDFs are not supported.");
       pages = await loadAndWait("xfa_imm5257e.pdf", ".xfaLayer");
     });
 
