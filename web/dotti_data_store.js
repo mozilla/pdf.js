@@ -3,9 +3,11 @@ const DottiStore = {
   token: null,
   profile: null,
   task: null,
+  workflow: null,
   displayMode: "view",
   signingStampEditor: null,
   sha256: null,
+  userConsentId: null,
   setToken(t) {
     this.token = t;
   },
@@ -15,15 +17,22 @@ const DottiStore = {
   setTask(t) {
     this.task = t;
   },
+  setWorkflow(w) {
+    this.workflow = w;
+  },
   setDisplayMode(mode) {
     this.displayMode = mode;
   },
   setSigningStampEditor(editor) {
     this.signingStampEditor = editor;
   },
+  getFileContents() {
+    return this.task ? this.task.fileContents : this.workflow.fileContents;
+  },
   sameSigner(annotationSigner) {
     if (annotationSigner.organizationId) {
-      const validPermissions = this.profile.permissions.filter(
+      const pms = this.profile.permissions ?? [];
+      const validPermissions = pms.filter(
         p => p.organizationId === annotationSigner.organizationId
       );
       return !!validPermissions.length;
@@ -34,15 +43,14 @@ const DottiStore = {
     return annotationSigner.sortNum === this.task.sortNum;
   },
   getPDFURL() {
+    const fileContents = this.getFileContents();
     return this.isFinishedWorkflow()
-      ? this.task.fileContents[1].url
-      : this.task.fileContents[0].url;
+      ? fileContents[1].url
+      : fileContents[0].url;
   },
   getSignImageURLByKey(key) {
-    return (
-      this.task.fileContents[0].signContents.find(st => st.key === key)?.url ??
-      ""
-    );
+    const fileContents = this.getFileContents();
+    return fileContents[0].signContents.find(st => st.key === key)?.url ?? "";
   },
   getCurrentSigner() {
     // 如果是个签名任务，则直接拿Signer里的信息，如果是盖章任务，则需要拿profile里的信息，这里默认加入组织的用户必须已经实名认证过
@@ -63,16 +71,19 @@ const DottiStore = {
     };
   },
   getRawAnnotations() {
-    return this.task.fileContents[0].attr?.annotations;
+    const fileContents = this.getFileContents();
+    return fileContents[0].attr?.annotations;
   },
   getRawSignAnnotations() {
-    return this.task.fileContents[0].signContents;
+    const fileContents = this.getFileContents();
+    return fileContents[0].signContents;
   },
   isProcessingTask() {
     return !!this.task && this.task.taskStatus === "PROCESSING";
   },
   isFinishedWorkflow() {
-    return this.task.fileContents.length === 2;
+    const fileContents = this.getFileContents();
+    return fileContents.length === 2;
   },
   isPlaceholderEditor(editor) {
     return editor.isSignaturePlaceholder || editor.isStampPlaceholder;
@@ -88,6 +99,13 @@ const DottiStore = {
       return editorSigner.phone === this.profile.phone;
     }
     return false;
+  },
+  renderAnnotationsOnLayer(layer) {
+    if (this.task) {
+      this.renderTaskAnnotationsOnLayer(layer);
+    } else if (this.workflow) {
+      this.renderWorkflowAnnotationsOnLayer(layer);
+    }
   },
   renderTaskAnnotationsOnLayer(layer) {
     if (!this.isFinishedWorkflow()) {
@@ -142,27 +160,74 @@ const DottiStore = {
       }
     }
   },
-  onSubmitSignature() {
-    const userConsentDialog = document.getElementById("userConsentDialog");
-    userConsentDialog.showModal();
+  renderWorkflowAnnotationsOnLayer(layer) {
+    if (!this.isFinishedWorkflow()) {
+      const rawAnnotations = this.getRawAnnotations();
+      if (rawAnnotations) {
+        for (const editor of rawAnnotations) {
+          if (editor.pageIndex === layer.pageIndex) {
+            if (!this.isPlaceholderEditor(editor)) {
+              layer.deserialize(editor).then(deserializedEditor => {
+                if (!deserializedEditor) {
+                  return;
+                }
+                layer.add(deserializedEditor);
+              });
+            }
+          }
+        }
+      }
+      const rawSignAnnotations = this.getRawSignAnnotations();
+      if (rawSignAnnotations) {
+        for (const rsa of rawSignAnnotations) {
+          // signContents can contain 2 things:
+          // 1. just pure key and url for saving stamp image
+          // 2. real annotation data
+          const editor = rsa.attr;
+          if (editor) {
+            const annotation = editor.annotation;
+            if (annotation.pageIndex === layer.pageIndex) {
+              layer.deserialize(annotation).then(deserializedEditor => {
+                if (!deserializedEditor) {
+                  return;
+                }
+                layer.add(deserializedEditor);
+              });
+            }
+          }
+        }
+      }
+    }
   },
-  processSubmitSignature() {
+  onSubmitSignature() {
+    if (this.validateSubmitSignature()) {
+      const userConsentDialog = document.getElementById("userConsentDialog");
+      userConsentDialog.showModal();
+    }
+  },
+  validateSubmitSignature() {
     const uiManager =
       window.PDFViewerApplication.pdfViewer.annotationEditorUIManager;
     const signatureEditors = uiManager.getAllSignatureEditors();
     const signaturePlaceholderEditors =
       uiManager.getAllSignaturePlaceholderEditors();
-    const stampPlaceholderEditors = uiManager.getAllStampPlaceholderEditors();
     const unsignedStampPlaceholderEditors =
       uiManager.getAllUnsignedStampPlaceholderEditors();
     if (signatureEditors.length !== signaturePlaceholderEditors.length) {
       alert("请先签名，签名完成后再提交");
-      return;
+      return false;
     }
     if (unsignedStampPlaceholderEditors.length > 0) {
       alert("请盖章完成后再提交");
-      return;
+      return false;
     }
+    return true;
+  },
+  processSubmitSignature() {
+    const uiManager =
+      window.PDFViewerApplication.pdfViewer.annotationEditorUIManager;
+    const signatureEditors = uiManager.getAllSignatureEditors();
+    const stampPlaceholderEditors = uiManager.getAllStampPlaceholderEditors();
     if (confirm("确认提交吗？")) {
       const signatureEditorsSerialized = [];
       for (const editor of signatureEditors) {
@@ -247,7 +312,7 @@ const DottiStore = {
         .then(response => response.json())
         .then(res => {
           if (res.success) {
-            alert("请进行人脸核身以授权平台代签");
+            // alert("请进行人脸核身以授权平台代签");
             this.requestFacialRecognition(res.data);
           } else {
             if (res.message === "not processing") {
@@ -260,27 +325,62 @@ const DottiStore = {
     }
   },
   requestFacialRecognition(preSubmitTaskId) {
-    const requestor = this.getCurrentSigner();
-    const data = {
-      idCard: requestor.idCard,
-      name: requestor.idName,
-      redirectUrl: `https://i-sign.cn?pre_submit_task_id=${preSubmitTaskId}_${this.token}`,
+    // create face auth log
+    const faceAuthLogData = {
+      bizId: this.userConsentId,
+      bizType: "SUBMIT_SIGNATURE_TASK",
+      ipAddress: "127.0.0.1",
+      userAgent: navigator.userAgent,
     };
-
-    fetch("https://i-sign.cn:9103/v1/tencent/h5-face-auth", {
+    fetch("https://i-sign.cn:9102/isign/v1/face-auth/logs", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify(faceAuthLogData),
       headers: {
         "X-IS-Token": this.token,
         "Content-Type": "application/json",
       },
     })
       .then(response => response.json())
-      .then(res => {
-        if (res.success) {
-          open(res.data.authUrl, "_self");
-        } else {
-          alert("提交失败，请检查网络后重试");
+      .then(faceAuthRes => {
+        if (faceAuthRes.success) {
+          const faceAuthLogId = faceAuthRes.data.id;
+          // request face recognition
+          const requestor = this.getCurrentSigner();
+          const data = {
+            idCard: requestor.idCard,
+            name: requestor.idName,
+            redirectUrl: `https://i-sign.cn?pre_submit_task_id=${preSubmitTaskId}_${this.token}_${faceAuthLogId}_4`, // preSubmitTaskId_token_faceAuthLogId_bizType, bizType = 4 = SUBMIT_SIGNATURE_TASK
+          };
+
+          fetch("https://i-sign.cn:9103/v1/tencent/h5-face-auth", {
+            method: "POST",
+            body: JSON.stringify(data),
+            headers: {
+              "X-IS-Token": this.token,
+              "Content-Type": "application/json",
+            },
+          })
+            .then(response => response.json())
+            .then(res => {
+              if (res.success) {
+                const authURL = res.data.authUrl;
+                // eslint-disable-next-line max-len
+                // eslint-disable-next-line unicorn/no-single-promise-in-promise-methods
+                Promise.all([
+                  this.updateFaceAuthLog(authURL, faceAuthLogId),
+                  // just save userConsentId to bizId of faceAuthLog.
+                  // this.bindFaceAuthLogIdWithUserConsent(faceAuthLogId),
+                ]).then(() => {
+                  open(authURL, "_self");
+                });
+              } else {
+                alert("提交失败，请检查网络后重试");
+              }
+            })
+            .catch(err => {
+              console.error("Face recognition flow error:", err);
+              alert("网络异常，请稍后重试");
+            });
         }
       });
   },
@@ -381,12 +481,7 @@ const DottiStore = {
   },
   saveUserConsents() {
     const data = {
-      userId: "",
-      company_id: "",
-      stamp_id: "", // 印章ID
-      ipAddress: "",
-      timestamp: "",
-      face_auth_result: "",
+      ipAddress: "127.0.0.1",
       consentTextId: "v2025.10.18-1",
       docHash: this.sha256,
       taskId: this.task.taskId,
@@ -404,11 +499,48 @@ const DottiStore = {
       .then(response => response.json())
       .then(res => {
         if (res.success) {
-          // this.processSubmitSignature();
+          this.userConsentId = res.data.id;
+          this.processSubmitSignature(res.data.id);
         } else {
           alert(res.message);
         }
       });
+  },
+  updateFaceAuthLog(authURL, faceAuthLogId) {
+    const url = new URL(authURL);
+    const params = Object.fromEntries(url.searchParams.entries());
+    const data = {
+      id: faceAuthLogId,
+      resultMetadata: {
+        appId: params.appId,
+        nonce: params.nonce,
+        orderNo: params.orderNo,
+        faceId: params.faceId,
+        sign: params.sign,
+      },
+    };
+    return fetch("https://i-sign.cn:9102/isign/v1/face-auth/logs", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+      headers: {
+        "X-IS-Token": this.token,
+        "Content-Type": "application/json",
+      },
+    });
+  },
+  bindFaceAuthLogIdWithUserConsent(logId) {
+    const data = {
+      id: this.userConsentId,
+      faceVerificationLogId: logId,
+    };
+    return fetch("https://i-sign.cn:9102/isign/v1/consents", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+      headers: {
+        "X-IS-Token": this.token,
+        "Content-Type": "application/json",
+      },
+    });
   },
 };
 

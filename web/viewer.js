@@ -302,6 +302,7 @@ function parseURL() {
   const urlParams = new URLSearchParams(queryString);
   const token = urlParams.get("token");
   const taskId = urlParams.get("taskId");
+  const workflowId = urlParams.get("workflowId");
   DottiStore.setToken(token);
 
   fetch("https://i-sign.cn:9101/isign/v1/profiles", {
@@ -312,7 +313,11 @@ function parseURL() {
     .then(response => response.json())
     .then(res => {
       DottiStore.setProfile(res.data);
-      fetchTask(token, taskId);
+      if (taskId) {
+        fetchTask(token, taskId);
+      } else if (workflowId) {
+        fetchWorkflow(token, workflowId);
+      }
     });
 }
 
@@ -388,6 +393,33 @@ function fetchTask(token, taskId) {
             };
           }
 
+          webViewerLoad();
+        } else {
+          // TODO: show error page
+        }
+      });
+  }
+}
+
+function fetchWorkflow(token, workflowId) {
+  if (token && workflowId) {
+    fetch(`https://i-sign.cn:9102/isign/v1/workflows?id=${workflowId}`, {
+      headers: {
+        "X-IS-Token": token,
+      },
+    })
+      .then(response => response.json())
+      .then(res => {
+        if (res.success) {
+          DottiStore.setWorkflow(res.data);
+          DottiStore.setDisplayMode("view");
+          if (DottiStore.isFinishedWorkflow()) {
+            // allow download and print
+            const printDownloadGroupBar = document.getElementById(
+              "printDownloadGroupBar"
+            );
+            printDownloadGroupBar.style.display = "";
+          }
           webViewerLoad();
         } else {
           // TODO: show error page
