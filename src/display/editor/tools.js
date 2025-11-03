@@ -1778,7 +1778,7 @@ class AnnotationEditorUIManager {
     }
 
     // Dotti
-    window.DottiStore.renderTaskAnnotationsOnLayer(layer);
+    window.DottiStore.renderAnnotationsOnLayer(layer);
   }
 
   /**
