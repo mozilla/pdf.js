@@ -4494,10 +4494,6 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       );
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-
-      pdfDoc.annotationStorage.setValue("30R", { value: "test" });
-      pdfDoc.annotationStorage.setValue("31R", { value: true });
-
       const opList = await pdfPage.getOperatorList({
         annotationMode: AnnotationMode.DISABLE,
       });
