@@ -4980,13 +4980,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       );
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-
-      pdfDoc.annotationStorage.setValue("30R", { value: "test" });
-      pdfDoc.annotationStorage.setValue("31R", { value: true });
-
-      const opList = await pdfPage.getOperatorList({
-        annotationMode: AnnotationMode.DISABLE,
-      });
+      const opList = await pdfPage.getOperatorList();
       expect(opList.fnArray[0]).toEqual(OPS.beginMarkedContentProps);
       expect(opList.argsArray[0][0]).toEqual("P");
       expect(opList.argsArray[0][2]?.lang).toEqual("en-US");

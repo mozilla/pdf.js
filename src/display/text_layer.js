@@ -63,6 +63,8 @@ class TextLayer {
 
   #lang = null;
 
+  #langStack = [];
+
   #layoutTextParams = null;
 
   #pageHeight = 0;
@@ -127,7 +129,6 @@ class TextLayer {
     this.#layoutTextParams = {
       div: null,
       properties: null,
-      ctx: null,
     };
     const { pageWidth, pageHeight, pageX, pageY } = viewport.rawDims;
     this.#transform = [1, 0, 0, -1, -pageX, pageY + pageHeight];
@@ -232,7 +233,6 @@ class TextLayer {
       const params = {
         div: null,
         properties: null,
-        ctx: TextLayer.#getCtx(this.#lang),
       };
       for (const div of this.#textDivs) {
         params.properties = this.#textDivProperties.get(div);
@@ -279,8 +279,6 @@ class TextLayer {
     if (this.#disableProcessItems) {
       return;
     }
-    this.#layoutTextParams.ctx ??= TextLayer.#getCtx(this.#lang);
-
     const textDivs = this.#textDivs,
       textContentItemsStr = this.#textContentItemsStr;
 
@@ -308,11 +306,18 @@ class TextLayer {
           if (item.tag === "Artifact") {
             this.#container.ariaHidden = true;
           }
+          // The lang is inherited from the closest enclosing marked content
+          // (or the top-level language), so that text measurements rely on the
+          // same font fallback as the one used by the browser to render it.
+          this.#langStack.push(
+            item.lang || this.#langStack.at(-1) || this.#lang
+          );
           if (item.lang) {
             this.#container.setAttribute("lang", item.lang);
           }
           parent.append(this.#container);
         } else if (item.type === "endMarkedContent") {
+          this.#langStack.pop();
           this.#container = this.#container.parentNode;
         }
         continue;
@@ -325,12 +330,14 @@ class TextLayer {
   #appendText(geom) {
     // Initialize all used properties to keep the caches monomorphic.
     const textDiv = document.createElement("span");
+    const lang = this.#langStack.at(-1) || this.#lang;
     const textDivProperties = {
       angle: 0,
       canvasWidth: 0,
       hasText: geom.str !== "",
       hasEOL: geom.hasEOL,
       fontSize: 0,
+      lang,
     };
     this.#textDivs.push(textDiv);
 
@@ -349,7 +356,7 @@ class TextLayer {
     fontFamily = TextLayer.fontFamilyMap.get(fontFamily) || fontFamily;
     const fontHeight = Math.hypot(tx[2], tx[3]);
     const fontAscent =
-      fontHeight * TextLayer.#getAscent(fontFamily, style, this.#lang);
+      fontHeight * TextLayer.#getAscent(fontFamily, style, lang);
 
     let left, top;
     if (angle === 0) {
@@ -425,12 +432,13 @@ class TextLayer {
   }
 
   #layout(params) {
-    const { div, properties, ctx } = params;
+    const { div, properties } = params;
     const { style } = div;
 
     if (properties.canvasWidth !== 0 && properties.hasText) {
       const { fontFamily } = style;
       const { canvasWidth, fontSize } = properties;
+      const ctx = TextLayer.#getCtx(properties.lang);
 
       TextLayer.#ensureCtxFont(ctx, fontSize * this.#scale, fontFamily);
       // Only measure the width for multi-char text divs, see `appendText`.
@@ -524,9 +532,17 @@ class TextLayer {
   }
 
   static #getAscent(fontFamily, style, lang) {
-    const cachedAscent = this.#ascentCache.get(fontFamily);
-    if (cachedAscent) {
-      return cachedAscent;
+    // The font fallback (and thus its metrics) depends on the language, hence
+    // the ascent is cached per-language.
+    let langAscentCache = this.#ascentCache.get((lang ||= ""));
+    if (langAscentCache) {
+      const cachedAscent = langAscentCache.get(fontFamily);
+      if (cachedAscent) {
+        return cachedAscent;
+      }
+    } else {
+      langAscentCache = new Map();
+      this.#ascentCache.set(lang, langAscentCache);
     }
     const ctx = this.#getCtx(lang);
 
@@ -559,7 +575,7 @@ class TextLayer {
       }
     }
 
-    this.#ascentCache.set(fontFamily, ratio);
+    langAscentCache.set(fontFamily, ratio);
     return ratio;
   }
 }

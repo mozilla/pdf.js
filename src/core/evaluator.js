@@ -3537,9 +3537,9 @@ class PartialEvaluator {
               let itemLang = null;
               if (args[1] instanceof Dict) {
                 mcid = args[1].get("MCID");
-                const langString = args[1].get("Lang");
-                if (typeof langString === "string") {
-                  itemLang = stringToPDFString(langString);
+                const langEntry = args[1].get("Lang");
+                if (typeof langEntry === "string") {
+                  itemLang = stringToPDFString(langEntry);
                 }
               }
               textContent.items.push({
