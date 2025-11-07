@@ -45,6 +45,8 @@ const CHARACTERS_TO_NORMALIZE = {
   "\u00BE": "3/4", // Vulgar fraction three quarters
 };
 
+const escapeForRegex = str => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 // These diacritics aren't considered as combining diacritics
 // when searching in a document:
 //   https://searchfox.org/mozilla-central/source/intl/unicharutil/util/is_combining_diacritic.py.
@@ -78,7 +80,7 @@ let DIACRITICS_EXCEPTION_STR; // Lazily initialized, see below.
 
 const DIACRITICS_REG_EXP = /\p{M}+/gu;
 const SPECIAL_CHARS_REG_EXP =
-  /([.*+?^${}()|[\]\\])|(\p{P})|(\s+)|(\p{M})|(\p{L})/gu;
+  /([*+^${}()|[\]\\])|((?:[.?]|\p{P})+)|(\s+)|(\p{M})|(\p{L})/gu;
 const NOT_DIACRITIC_FROM_END_REG_EXP = /([^\p{M}])\p{M}*$/u;
 const NOT_DIACRITIC_FROM_START_REG_EXP = /^\p{M}*([^\p{M}])/u;
 
@@ -708,6 +710,11 @@ class PDFFindController {
   #convertToRegExpString(query, hasDiacritics) {
     const { matchDiacritics } = this.#state;
     let isUnicode = false;
+    const rawQuery = this._rawQuery ?? this.#state?.query;
+    const queryHasWhitespace =
+      typeof rawQuery === "string"
+        ? /\s/.test(rawQuery)
+        : Array.isArray(rawQuery) && rawQuery.some(q => /\s/.test(q));
     query = query.replaceAll(
       SPECIAL_CHARS_REG_EXP,
       (
@@ -718,16 +725,18 @@ class PDFFindController {
         p4 /* diacritics */,
         p5 /* letters */
       ) => {
-        // We don't need to use a \s for whitespaces since all the different
-        // kind of whitespaces are replaced by a single " ".
+        // We don't need \s because all whitespace is normalized to a single " ".
 
         if (p1) {
-          // Escape characters like *+?... to not interfere with regexp syntax.
-          return `[ ]*\\${p1}[ ]*`;
+          // Escaped metacharacters like . * + ? ...
+          // Allow spaces around them ONLY if the user typed spaces.
+          return queryHasWhitespace ? `[ ]*\\${p1}[ ]*` : `\\${p1}`;
         }
         if (p2) {
-          // Allow whitespaces around punctuation signs.
-          return `[ ]*${p2}[ ]*`;
+          // Punctuation: allow optional spaces ONLY if the user typed spaces.
+          // p2 is a *run* of punctuation; escape it as a whole.
+          const escapedRun = escapeForRegex(p2);
+          return queryHasWhitespace ? `[ ]*${escapedRun}[ ]*` : `${escapedRun}`;
         }
         if (p3) {
           // Replace spaces by \s+ to be sure to match any spaces.
@@ -906,7 +915,6 @@ class PDFFindController {
           .then(
             textContent => {
               const strBuf = [];
-
               for (const textItem of textContent.items) {
                 strBuf.push(textItem.str);
                 if (textItem.hasEOL) {
