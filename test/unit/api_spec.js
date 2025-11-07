@@ -5335,4 +5335,212 @@ deployment as easy as distributing a source ﬁle. They are used for
 small scripts as well as for`);
     });
   });
+
+  describe("PDF page editing", function () {
+    describe("Merge pdfs", function () {
+      it("should merge three PDFs", async function () {
+        const loadingTask = getDocument(
+          buildGetDocumentParams("doc_1_3_pages.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const pdfData2 = await DefaultFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH + "doc_2_3_pages.pdf",
+        });
+        const pdfData3 = await DefaultFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH + "doc_3_3_pages.pdf",
+        });
+
+        let data = await pdfDoc.extractPages([
+          { document: null },
+          { document: pdfData2 },
+          { document: pdfData3 },
+        ]);
+        let newLoadingTask = getDocument(data);
+        let newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(9);
+
+        for (let i = 1; i <= 9; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          expect(mergeText(textItems)).toEqual(
+            `Document ${Math.ceil(i / 3)}:Page ${((i - 1) % 3) + 1}`
+          );
+        }
+        await newLoadingTask.destroy();
+
+        data = await pdfDoc.extractPages([
+          { document: pdfData3 },
+          { document: pdfData2 },
+          { document: null },
+        ]);
+        newLoadingTask = getDocument(data);
+        newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(9);
+        for (let i = 1; i <= 9; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          expect(mergeText(textItems)).toEqual(
+            `Document ${Math.ceil((10 - i) / 3)}:Page ${((i - 1) % 3) + 1}`
+          );
+        }
+        await newLoadingTask.destroy();
+
+        data = await pdfDoc.extractPages([
+          { document: null, includePages: [0] },
+          { document: pdfData2, includePages: [0] },
+          { document: pdfData3, includePages: [0] },
+        ]);
+        newLoadingTask = getDocument(data);
+        newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(3);
+        for (let i = 1; i <= 3; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          expect(mergeText(textItems)).toEqual(`Document ${i}:Page 1`);
+        }
+        await newLoadingTask.destroy();
+
+        data = await pdfDoc.extractPages([
+          { document: null, excludePages: [0] },
+          { document: pdfData2, excludePages: [0] },
+          { document: pdfData3, excludePages: [0] },
+        ]);
+        newLoadingTask = getDocument(data);
+        newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(6);
+        for (let i = 1; i <= 6; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          expect(mergeText(textItems)).toEqual(
+            `Document ${Math.ceil(i / 2)}:Page ${((i - 1) % 2) + 2}`
+          );
+        }
+        await newLoadingTask.destroy();
+
+        await loadingTask.destroy();
+      });
+
+      it("should merge two PDFs with page included ranges", async function () {
+        const loadingTask = getDocument(
+          buildGetDocumentParams("tracemonkey.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const pdfData1 = await DefaultFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH + "doc_1_3_pages.pdf",
+        });
+
+        const data = await pdfDoc.extractPages([
+          { document: pdfData1, includePages: [[0, 0], 2] },
+          { document: null, includePages: [[2, 4], 7] },
+        ]);
+        const newLoadingTask = getDocument(data);
+        const newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(6);
+
+        for (let i = 1; i <= 2; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          expect(mergeText(textItems)).toEqual(`Document 1:Page ${2 * i - 1}`);
+        }
+
+        const expectedPagesText = [
+          "v0 := ld s",
+          "i=4. On th",
+          "resentatio",
+          "5.1 Optimi",
+        ];
+        for (let i = 3; i <= 6; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          const text = mergeText(textItems);
+          expect(text.substring(0, 10)).toEqual(expectedPagesText[i - 3]);
+        }
+
+        await newLoadingTask.destroy();
+        await loadingTask.destroy();
+      });
+
+      it("should merge two PDFs with page excluded ranges", async function () {
+        const loadingTask = getDocument(
+          buildGetDocumentParams("tracemonkey.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const pdfData1 = await DefaultFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH + "doc_1_3_pages.pdf",
+        });
+
+        const data = await pdfDoc.extractPages([
+          { document: pdfData1, excludePages: [[1, 1]] },
+          {
+            document: null,
+            excludePages: [
+              [0, 1],
+              [5, 6],
+              [8, 13],
+            ],
+          },
+        ]);
+        const newLoadingTask = getDocument(data);
+        const newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(6);
+
+        for (let i = 1; i <= 2; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          expect(mergeText(textItems)).toEqual(`Document 1:Page ${2 * i - 1}`);
+        }
+
+        const expectedPagesText = [
+          "v0 := ld s",
+          "i=4. On th",
+          "resentatio",
+          "5.1 Optimi",
+        ];
+        for (let i = 3; i <= 6; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          const text = mergeText(textItems);
+          expect(text.substring(0, 10)).toEqual(expectedPagesText[i - 3]);
+        }
+
+        await newLoadingTask.destroy();
+        await loadingTask.destroy();
+      });
+
+      it("should merge two PDFs with one with a password", async function () {
+        const loadingTask = getDocument(
+          buildGetDocumentParams("doc_1_3_pages.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const pdfData1 = await DefaultFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH + "pr6531_2.pdf",
+        });
+
+        const data = await pdfDoc.extractPages([
+          { document: null, includePages: [0] },
+          { document: pdfData1, password: "asdfasdf" },
+        ]);
+        const newLoadingTask = getDocument(data);
+        const newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(2);
+
+        const expectedPagesText = ["Document 1:Page 1", ""];
+        for (let i = 1; i <= 2; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          expect(mergeText(textItems)).toEqual(expectedPagesText[i - 1]);
+        }
+
+        const page2 = await newPdfDoc.getPage(2);
+        const annots = await page2.getAnnotations();
+        expect(annots.length).toEqual(1);
+        expect(annots[0].contentsObj.str).toEqual(
+          "Bluebeam should be encrypting this."
+        );
+
+        await newLoadingTask.destroy();
+        await loadingTask.destroy();
+      });
+    });
+  });
 });
