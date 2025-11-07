@@ -562,6 +562,12 @@ describe("primitives", function () {
         [ref2, obj2],
       ]);
     });
+
+    it("should support iteration over keys", function () {
+      cache.put(ref1, obj1);
+      cache.put(ref2, obj2);
+      expect([...cache.keys()]).toEqual([ref1, ref2]);
+    });
   });
 
   describe("isName", function () {

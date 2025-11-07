@@ -5337,6 +5337,15 @@ small scripts as well as for`);
   });
 
   describe("PDF page editing", function () {
+    const getPageRefs = async pdfDoc => {
+      const refs = [];
+      for (let i = 1; i <= pdfDoc.numPages; i++) {
+        const page = await pdfDoc.getPage(i);
+        refs.push(page.ref);
+      }
+      return refs;
+    };
+
     describe("Merge pdfs", function () {
       it("should merge three PDFs", async function () {
         const loadingTask = getDocument(
@@ -5573,6 +5582,143 @@ small scripts as well as for`);
         const newPdfDoc = await loadingTask.promise;
         labels = await newPdfDoc.getPageLabels();
         expect(labels).toEqual(["i", "ii", "1", "a", "5"]);
+        await loadingTask.destroy();
+      });
+    });
+
+    describe("Named destinations", function () {
+      it("extract page and check destinations", async function () {
+        let loadingTask = getDocument(buildGetDocumentParams("issue6204.pdf"));
+        let pdfDoc = await loadingTask.promise;
+        let pagesRef = await getPageRefs(pdfDoc);
+        let destinations = await pdfDoc.getDestinations();
+        expect(destinations).toEqual({
+          "Page.1": [pagesRef[0], { name: "XYZ" }, 0, 375, null],
+          "Page.2": [pagesRef[1], { name: "XYZ" }, 0, 375, null],
+        });
+
+        let data = await pdfDoc.extractPages([
+          { document: null },
+          { document: null },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument(data);
+        pdfDoc = await loadingTask.promise;
+
+        expect(pdfDoc.numPages).toEqual(4);
+
+        pagesRef = await getPageRefs(pdfDoc);
+        destinations = await pdfDoc.getDestinations();
+        expect(destinations).toEqual({
+          "Page.1": [pagesRef[0], { name: "XYZ" }, 0, 375, null],
+          "Page.2": [pagesRef[1], { name: "XYZ" }, 0, 375, null],
+          "Page.1_p3": [pagesRef[2], { name: "XYZ" }, 0, 375, null],
+          "Page.2_p4": [pagesRef[3], { name: "XYZ" }, 0, 375, null],
+        });
+        const expectedDests = ["Page.2", "Page.1", "Page.2_p4", "Page.1_p3"];
+        for (let i = 1; i <= 4; i++) {
+          const pdfPage = await pdfDoc.getPage(i);
+          const annots = await pdfPage.getAnnotations();
+          expect(annots.length).toEqual(1);
+          expect(annots[0].dest).toEqual(expectedDests[i - 1]);
+        }
+
+        data = await pdfDoc.extractPages([
+          { document: null },
+          { document: null },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument(data);
+        pdfDoc = await loadingTask.promise;
+
+        expect(pdfDoc.numPages).toEqual(8);
+
+        pagesRef = await getPageRefs(pdfDoc);
+        destinations = await pdfDoc.getDestinations();
+        expect(destinations).toEqual({
+          "Page.1": [pagesRef[0], { name: "XYZ" }, 0, 375, null],
+          "Page.2": [pagesRef[1], { name: "XYZ" }, 0, 375, null],
+          "Page.1_p3": [pagesRef[2], { name: "XYZ" }, 0, 375, null],
+          "Page.2_p4": [pagesRef[3], { name: "XYZ" }, 0, 375, null],
+          "Page.1_p5": [pagesRef[4], { name: "XYZ" }, 0, 375, null],
+          "Page.2_p6": [pagesRef[5], { name: "XYZ" }, 0, 375, null],
+          "Page.1_p3_p7": [pagesRef[6], { name: "XYZ" }, 0, 375, null],
+          "Page.2_p4_p8": [pagesRef[7], { name: "XYZ" }, 0, 375, null],
+        });
+        expectedDests.push(
+          "Page.2_p6",
+          "Page.1_p5",
+          "Page.2_p4_p8",
+          "Page.1_p3_p7"
+        );
+        for (let i = 1; i <= 8; i++) {
+          const pdfPage = await pdfDoc.getPage(i);
+          const annots = await pdfPage.getAnnotations();
+          expect(annots.length).toEqual(1);
+          expect(annots[0].dest).toEqual(expectedDests[i - 1]);
+        }
+        await loadingTask.destroy();
+      });
+
+      it("extract pages and check deleted destinations", async function () {
+        let loadingTask = getDocument(buildGetDocumentParams("issue6204.pdf"));
+        let pdfDoc = await loadingTask.promise;
+        const data = await pdfDoc.extractPages([
+          { document: null },
+          { document: null, excludePages: [0] },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument(data);
+        pdfDoc = await loadingTask.promise;
+
+        expect(pdfDoc.numPages).toEqual(3);
+
+        const pagesRef = await getPageRefs(pdfDoc);
+        const destinations = await pdfDoc.getDestinations();
+        expect(destinations).toEqual({
+          "Page.1": [pagesRef[0], { name: "XYZ" }, 0, 375, null],
+          "Page.2": [pagesRef[1], { name: "XYZ" }, 0, 375, null],
+        });
+        const pdfPage = await pdfDoc.getPage(3);
+        const annots = await pdfPage.getAnnotations();
+        expect(annots.length).toEqual(0);
+      });
+    });
+
+    describe("Destinations with a page reference", function () {
+      it("extract page and check destinations", async function () {
+        let loadingTask = getDocument(
+          buildGetDocumentParams("extract_link.pdf")
+        );
+        let pdfDoc = await loadingTask.promise;
+        let pagesRef = await getPageRefs(pdfDoc);
+        let pdfPage = await pdfDoc.getPage(1);
+        let annotations = await pdfPage.getAnnotations();
+        expect(annotations.length).toEqual(1);
+        expect(annotations[0].dest[0]).toEqual(pagesRef[1]);
+
+        const data = await pdfDoc.extractPages([
+          { document: null },
+          { document: null },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument(data);
+        pdfDoc = await loadingTask.promise;
+
+        expect(pdfDoc.numPages).toEqual(4);
+
+        pagesRef = await getPageRefs(pdfDoc);
+        for (let i = 1; i <= 4; i += 2) {
+          pdfPage = await pdfDoc.getPage(i);
+          annotations = await pdfPage.getAnnotations();
+          expect(annotations.length).toEqual(1);
+          expect(annotations[0].dest[0]).toEqual(pagesRef[i]);
+        }
+
         await loadingTask.destroy();
       });
     });
