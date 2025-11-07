@@ -5542,5 +5542,39 @@ small scripts as well as for`);
         await loadingTask.destroy();
       });
     });
+
+    describe("Page labels", function () {
+      it("extract page and check labels", async function () {
+        let loadingTask = getDocument(
+          buildGetDocumentParams("labelled_pages.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        let labels = await pdfDoc.getPageLabels();
+        expect(labels).toEqual([
+          "i" /* Page 0 */,
+          "ii" /* Page 1 */,
+          "iii" /* Page 2 */,
+          "iv" /* Page 3 */,
+          "1" /* Page 4 */,
+          "2" /* Page 5 */,
+          "3" /* Page 6 */,
+          "a" /* Page 7 */,
+          "b" /* Page 8 */,
+          "4" /* Page 9 */,
+          "5" /* Page 10 */,
+        ]);
+
+        const data = await pdfDoc.extractPages({
+          document: null,
+          includePages: [0, 1, 5, 7, 10],
+        });
+        await loadingTask.destroy();
+        loadingTask = getDocument(data);
+        const newPdfDoc = await loadingTask.promise;
+        labels = await newPdfDoc.getPageLabels();
+        expect(labels).toEqual(["i", "ii", "1", "a", "5"]);
+        await loadingTask.destroy();
+      });
+    });
   });
 });
