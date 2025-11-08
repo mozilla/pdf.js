@@ -617,18 +617,6 @@ pdfjs-show-comment-button =
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = Ñemongu’e
-pdfjs-editor-edit-comment-actions-button =
-    .title = Ñemongu’e
-pdfjs-editor-edit-comment-close-button-label = Mboty
-pdfjs-editor-edit-comment-close-button =
-    .title = Mboty
-pdfjs-editor-edit-comment-actions-edit-button-label = Mbosako’i
-pdfjs-editor-edit-comment-actions-delete-button-label = Mboguete
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Ehai peteĩ je’erei
-pdfjs-editor-edit-comment-manager-cancel-button = Heja
-pdfjs-editor-edit-comment-manager-save-button = Ñongatu
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Je’erei mbosako’i
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = Mbohekopyahu
@@ -643,6 +631,8 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Eheja
 
 pdfjs-editor-edit-comment-button =
     .title = Je’erei mbosako’i
+pdfjs-editor-add-comment-button =
+    .title = Je’erei mbojuaju
 
 ## Main menu for adding/removing signatures
 

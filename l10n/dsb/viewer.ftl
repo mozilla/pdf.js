@@ -626,18 +626,6 @@ pdfjs-show-comment-button =
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = Akcije
-pdfjs-editor-edit-comment-actions-button =
-    .title = Akcije
-pdfjs-editor-edit-comment-close-button-label = Zacyniś
-pdfjs-editor-edit-comment-close-button =
-    .title = Zacyniś
-pdfjs-editor-edit-comment-actions-edit-button-label = Wobźěłaś
-pdfjs-editor-edit-comment-actions-delete-button-label = Lašowaś
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Zapódajśo swój komentar
-pdfjs-editor-edit-comment-manager-cancel-button = Pśetergnuś
-pdfjs-editor-edit-comment-manager-save-button = Składowaś
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Komentar wobźěłaś
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = Aktualizěrowaś

@@ -573,21 +573,6 @@ pdfjs-editor-add-signature-cancel-button = Otkaži
 pdfjs-editor-add-signature-add-button = Dodaj
 pdfjs-editor-edit-signature-update-button = Ažuriraj
 
-##  Edit a comment dialog
-
-pdfjs-editor-edit-comment-actions-button-label = Radnje
-pdfjs-editor-edit-comment-actions-button =
-    .title = Radnje
-pdfjs-editor-edit-comment-close-button-label = Zatvori
-pdfjs-editor-edit-comment-close-button =
-    .title = Zatvori
-pdfjs-editor-edit-comment-actions-edit-button-label = Uredi
-pdfjs-editor-edit-comment-actions-delete-button-label = Izbriši
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Unesite svoj komentar
-pdfjs-editor-edit-comment-manager-cancel-button = Otkaži
-pdfjs-editor-edit-comment-manager-save-button = Sačuvaj
-
 ## Edit a comment button in the editor toolbar
 
 pdfjs-editor-edit-comment-button =
