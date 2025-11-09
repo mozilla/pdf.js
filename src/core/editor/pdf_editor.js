@@ -550,7 +550,7 @@ class PDFEditor {
   async #makeRoot() {
     const { rootDict } = this;
     rootDict.setIfName("Type", "Catalog");
-    rootDict.set("Version", this.version);
+    rootDict.setIfName("Version", this.version);
     this.#makePageTree();
     this.#makePageLabelsTree();
   }
