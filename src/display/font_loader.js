@@ -457,6 +457,15 @@ class FontFaceObject {
     return this.#fontData.disableFontFace ?? false;
   }
 
+  set disableFontFace(value) {
+    Object.defineProperty(this, "disableFontFace", {
+      value: !!value,
+      writable: false,
+      enumerable: true,
+      configurable: true,
+    });
+  }
+
   get fontExtraProperties() {
     return this.#fontData.fontExtraProperties ?? false;
   }
@@ -499,6 +508,15 @@ class FontFaceObject {
 
   get bbox() {
     return this.#fontData.bbox;
+  }
+
+  set bbox(bbox) {
+    Object.defineProperty(this, "bbox", {
+      value: bbox,
+      writable: false,
+      enumerable: true,
+      configurable: true,
+    });
   }
 
   get fontMatrix() {
