@@ -52,6 +52,16 @@ class DocumentData {
   }
 }
 
+class XRefWrapper {
+  constructor(entries) {
+    this.entries = entries;
+  }
+
+  fetch(ref) {
+    return ref instanceof Ref ? this.entries[ref.num] : ref;
+  }
+}
+
 class PDFEditor {
   constructor({ useObjectStreams = true, title = "", author = "" } = {}) {
     this.hasSingleFile = false;
@@ -59,6 +69,7 @@ class PDFEditor {
     this.oldPages = [];
     this.newPages = [];
     this.xref = [null];
+    this.xrefWrapper = new XRefWrapper(this.xref);
     this.newRefCount = 1;
     [this.rootRef, this.rootDict] = this.newDict;
     [this.infoRef, this.infoDict] = this.newDict;
@@ -173,9 +184,11 @@ class PDFEditor {
     let dict;
     if (obj instanceof BaseStream) {
       ({ dict } = obj = obj.getOriginalStream().clone());
+      dict.xref = this.xrefWrapper;
     } else if (obj instanceof Dict) {
       if (mustClone) {
         obj = obj.clone();
+        obj.xref = this.xrefWrapper;
       }
       dict = obj;
     }
