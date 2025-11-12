@@ -8,6 +8,7 @@ const DottiStore = {
   signingStampEditor: null,
   sha256: null,
   userConsentId: null,
+  jumpToNextPlaceholderIndex: 0,
   setToken(t) {
     this.token = t;
   },
@@ -69,6 +70,12 @@ const DottiStore = {
       idCard: signer.idCard,
       phone: signer.phone,
     };
+  },
+  getCurrentSignerType() {
+    const signer = this.task.workflow.signers.find(
+      s => s.sortNum === this.task.sortNum
+    );
+    return signer.organizationId ? "stamp" : "signature";
   },
   getRawAnnotations() {
     const fileContents = this.getFileContents();
@@ -205,20 +212,84 @@ const DottiStore = {
       userConsentDialog.showModal();
     }
   },
+  getAllSignaturePlaceholdersBelongsToCurrentUser() {
+    const rawAnnotations = this.getRawAnnotations();
+    if (rawAnnotations) {
+      return rawAnnotations.filter(annotation => {
+        if (this.isSignaturePlaceholderEditor(annotation)) {
+          if (
+            this.sameSigner(annotation.signer) &&
+            this.sameSortNum(annotation.signer)
+          ) {
+            return true;
+          }
+        }
+        return false;
+      });
+    }
+    return [];
+  },
+  getAllStampPlaceholdersBelongsToCurrentUser() {
+    const rawAnnotations = this.getRawAnnotations();
+    if (rawAnnotations) {
+      return rawAnnotations.filter(annotation => {
+        if (this.isStampPlaceholderEditor(annotation)) {
+          if (
+            this.sameSigner(annotation.signer) &&
+            this.sameSortNum(annotation.signer)
+          ) {
+            return true;
+          }
+        }
+        return false;
+      });
+    }
+    return [];
+  },
+  findNextPlaceholderEditorPage() {
+    const placeholderEditors =
+      this.getCurrentSignerType() === "signature"
+        ? this.getAllSignaturePlaceholdersBelongsToCurrentUser()
+        : this.getAllStampPlaceholdersBelongsToCurrentUser();
+    if (placeholderEditors.length) {
+      const targetPage = placeholderEditors[this.jumpToNextPlaceholderIndex].pageIndex + 1;
+      this.jumpToNextPlaceholderIndex += 1;
+      if (this.jumpToNextPlaceholderIndex >= placeholderEditors.length) {
+        this.jumpToNextPlaceholderIndex = 0;
+      }
+      return targetPage;
+    }
+    return null;
+  },
   validateSubmitSignature() {
     const uiManager =
       window.PDFViewerApplication.pdfViewer.annotationEditorUIManager;
     const signatureEditors = uiManager.getAllSignatureEditors();
     const signaturePlaceholderEditors =
-      uiManager.getAllSignaturePlaceholderEditors();
-    const unsignedStampPlaceholderEditors =
-      uiManager.getAllUnsignedStampPlaceholderEditors();
+      this.getAllSignaturePlaceholdersBelongsToCurrentUser();
     if (signatureEditors.length !== signaturePlaceholderEditors.length) {
-      alert("请先签名，签名完成后再提交");
+      alert(
+        `您还剩余${signaturePlaceholderEditors.length - signatureEditors.length}处未签名，请在签名完成后再提交`
+      );
       return false;
     }
+
+    const stampEditors = uiManager.getAllStampPlaceholderEditors();
+    const stampPlaceholderEditors =
+      this.getAllStampPlaceholdersBelongsToCurrentUser();
+    if (stampEditors.length !== stampPlaceholderEditors.length) {
+      alert(
+        `您还剩余${stampPlaceholderEditors.length - stampEditors.length}处未盖章，请在盖章完成后再提交`
+      );
+      return false;
+    }
+
+    const unsignedStampPlaceholderEditors =
+      uiManager.getAllUnsignedStampPlaceholderEditors();
     if (unsignedStampPlaceholderEditors.length > 0) {
-      alert("请盖章完成后再提交");
+      alert(
+        `您还剩余${unsignedStampPlaceholderEditors.length}处未盖章，请在盖章完成后再提交`
+      );
       return false;
     }
     return true;
@@ -228,23 +299,22 @@ const DottiStore = {
       window.PDFViewerApplication.pdfViewer.annotationEditorUIManager;
     const signatureEditors = uiManager.getAllSignatureEditors();
     const stampPlaceholderEditors = uiManager.getAllStampPlaceholderEditors();
-    if (confirm("确认提交吗？")) {
-      const signatureEditorsSerialized = [];
-      for (const editor of signatureEditors) {
-        const serialized = editor.serialize(true);
-        if (serialized) {
-          signatureEditorsSerialized.push(serialized);
-        }
+
+    const signatureEditorsSerialized = [];
+    for (const editor of signatureEditors) {
+      const serialized = editor.serialize(true);
+      if (serialized) {
+        signatureEditorsSerialized.push(serialized);
       }
-      for (const editor of stampPlaceholderEditors) {
-        const serialized = editor.serialize(true);
-        serialized.isStampPlaceholder = false;
-        if (serialized) {
-          signatureEditorsSerialized.push(serialized);
-        }
-      }
-      this.submitSignatureTask(signatureEditorsSerialized);
     }
+    for (const editor of stampPlaceholderEditors) {
+      const serialized = editor.serialize(true);
+      serialized.isStampPlaceholder = false;
+      if (serialized) {
+        signatureEditorsSerialized.push(serialized);
+      }
+    }
+    this.submitSignatureTask(signatureEditorsSerialized);
   },
   submitSignatureTask(signatureAnnotations) {
     if (this.task) {
@@ -347,6 +417,7 @@ const DottiStore = {
           // request face recognition
           const requestor = this.getCurrentSigner();
           const data = {
+            businessType: "SUBMIT_SIGNATURE_TASK",
             idCard: requestor.idCard,
             name: requestor.idName,
             redirectUrl: `https://i-sign.cn?pre_submit_task_id=${preSubmitTaskId}_${this.token}_${faceAuthLogId}_4`, // preSubmitTaskId_token_faceAuthLogId_bizType, bizType = 4 = SUBMIT_SIGNATURE_TASK
@@ -367,7 +438,7 @@ const DottiStore = {
                 // eslint-disable-next-line max-len
                 // eslint-disable-next-line unicorn/no-single-promise-in-promise-methods
                 Promise.all([
-                  this.updateFaceAuthLog(authURL, faceAuthLogId),
+                  this.updateFaceAuthLog(res.data, faceAuthLogId),
                   // just save userConsentId to bizId of faceAuthLog.
                   // this.bindFaceAuthLogIdWithUserConsent(faceAuthLogId),
                 ]).then(() => {
@@ -506,16 +577,18 @@ const DottiStore = {
         }
       });
   },
-  updateFaceAuthLog(authURL, faceAuthLogId) {
-    const url = new URL(authURL);
+  updateFaceAuthLog(faceData, faceAuthLogId) {
+    const url = new URL(faceData.authURL);
     const params = Object.fromEntries(url.searchParams.entries());
     const data = {
       id: faceAuthLogId,
       resultMetadata: {
         appId: params.appId,
         nonce: params.nonce,
-        orderNo: params.orderNo,
-        faceId: params.faceId,
+        bizSeqNo: faceData.bizSeqNo,
+        orderNo: faceData.orderNo,
+        faceId: faceData.faceId,
+        transactionTime: faceData.transactionTime,
         sign: params.sign,
       },
     };

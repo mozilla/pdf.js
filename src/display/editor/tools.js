@@ -2058,16 +2058,6 @@ class AnnotationEditorUIManager {
     return editors;
   }
 
-  getAllSignaturePlaceholderEditors() {
-    const editors = [];
-    for (const editor of this.#allEditors.values()) {
-      if (window.DottiStore.isSignaturePlaceholderEditor(editor)) {
-        editors.push(editor);
-      }
-    }
-    return editors;
-  }
-
   getAllStampPlaceholderEditors() {
     const editors = [];
     for (const editor of this.#allEditors.values()) {

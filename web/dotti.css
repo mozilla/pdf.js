@@ -1,9 +1,13 @@
 .dotti_brand {
-  margin: 0 8px;
-  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #000;
+  font-size: 24px;
   font-weight: 700;
-  font-size: 20px;
-  color: #272834;
+  padding: 0 20px 0 12px;
+  cursor: default;
+  flex: none;
 }
 
 .dotti_button {
@@ -12,4 +16,59 @@
 
 html, body {
   overscroll-behavior: none;
+}
+
+.rainbow-btn {
+  user-select: none;
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  bottom: 12px;
+  left: 12%;
+  right: 12%;
+
+  padding: 10px 24px;
+  border: none;
+  background: #fff;
+  color: #1a1a1a;
+  font-weight: 500;
+  border-radius: 999px;
+  cursor: pointer;
+  z-index: 1;
+  overflow: hidden;
+
+  font-size: 14px;
+}
+
+/* The animated border */
+.rainbow-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  padding: 2px; /* border thickness */
+  background: linear-gradient(
+    90deg,
+    #00ff87,
+    #60efff,
+    #ff6ec7,
+    #ffa95e,
+    #00ff87
+  );
+  background-size: 200% auto;
+
+  /* create a ring border only */
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  z-index: -1;
+}
+
+/* Rainbow animation movement */
+@keyframes rainbow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 400% 50%; }
 }
