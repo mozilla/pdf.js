@@ -343,6 +343,23 @@ function fetchTask(token, taskId) {
           } else {
             DottiStore.setDisplayMode("task");
 
+            const jumpSignButton = document.getElementById("jump-sign-button");
+            jumpSignButton.style.display = "";
+            jumpSignButton.onclick = () => {
+              const jumpTo =
+                window.DottiStore.findNextPlaceholderEditorPage();
+              if (jumpTo) {
+                const eBus = window.PDFViewerApplicationOptions.eventBus;
+                eBus.dispatch("pagenumberchanged", {
+                  source: self,
+                  value: jumpTo,
+                });
+              } else {
+                // eslint-disable-next-line no-alert
+                window.alert("当前文件不需要您进行签名，直接提交接受即可！");
+              }
+            };
+
             const submitSignatureButton = document.getElementById(
               "submitSignatureButton"
             );
@@ -376,20 +393,7 @@ function fetchTask(token, taskId) {
               "signingConfirmDialogSubmitButton"
             );
             signingConfirmDialogSubmitButton.onclick = () => {
-              // 1. validate 3 checkboxes
-              const userConsent1 = document.getElementById("userConsent1");
-              const userConsent2 = document.getElementById("userConsent2");
-              const userConsent3 = document.getElementById("userConsent3");
-              if (
-                userConsent1.checked &&
-                userConsent2.checked &&
-                userConsent3.checked
-              ) {
-                DottiStore.saveUserConsents();
-              } else {
-                // eslint-disable-next-line no-alert
-                alert("请先确认电子签署授权");
-              }
+              DottiStore.saveUserConsents();
             };
           }
 
