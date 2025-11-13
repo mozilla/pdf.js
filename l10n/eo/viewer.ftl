@@ -618,18 +618,6 @@ pdfjs-show-comment-button =
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = Agoj
-pdfjs-editor-edit-comment-actions-button =
-    .title = Agoj
-pdfjs-editor-edit-comment-close-button-label = Fermi
-pdfjs-editor-edit-comment-close-button =
-    .title = Fermi
-pdfjs-editor-edit-comment-actions-edit-button-label = Modifi
-pdfjs-editor-edit-comment-actions-delete-button-label = Forigi
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Tajpu vian komenton
-pdfjs-editor-edit-comment-manager-cancel-button = Nuligi
-pdfjs-editor-edit-comment-manager-save-button = Konservi
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Modifi komenton
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = Ĝisdatigi
@@ -644,6 +632,8 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Nuligi
 
 pdfjs-editor-edit-comment-button =
     .title = Modifi komenton
+pdfjs-editor-add-comment-button =
+    .title = Aldoni komenton
 
 ## Main menu for adding/removing signatures
 

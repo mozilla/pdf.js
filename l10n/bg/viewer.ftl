@@ -382,3 +382,7 @@ pdfjs-editor-colorpicker-red =
 
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Научете повече
 pdfjs-editor-new-alt-text-not-now-button = Не сега
+
+## Image alt-text settings
+
+pdfjs-editor-alt-text-settings-delete-model-button = Изтриване

@@ -609,18 +609,6 @@ pdfjs-show-comment-button =
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = Veprime
-pdfjs-editor-edit-comment-actions-button =
-    .title = Veprime
-pdfjs-editor-edit-comment-close-button-label = Mbylle
-pdfjs-editor-edit-comment-close-button =
-    .title = Mbylle
-pdfjs-editor-edit-comment-actions-edit-button-label = Përpunoni
-pdfjs-editor-edit-comment-actions-delete-button-label = Fshije
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Jepni komentin tuaj
-pdfjs-editor-edit-comment-manager-cancel-button = Anuloje
-pdfjs-editor-edit-comment-manager-save-button = Ruaje
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Përpunoni koment
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = Përditësojeni
@@ -635,6 +623,8 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Anuloje
 
 pdfjs-editor-edit-comment-button =
     .title = Përpunoni koment
+pdfjs-editor-add-comment-button =
+    .title = Shtoni koment
 
 ## Main menu for adding/removing signatures
 

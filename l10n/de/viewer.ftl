@@ -618,18 +618,6 @@ pdfjs-show-comment-button =
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = Aktionen
-pdfjs-editor-edit-comment-actions-button =
-    .title = Aktionen
-pdfjs-editor-edit-comment-close-button-label = Schließen
-pdfjs-editor-edit-comment-close-button =
-    .title = Schließen
-pdfjs-editor-edit-comment-actions-edit-button-label = Bearbeiten
-pdfjs-editor-edit-comment-actions-delete-button-label = Löschen
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Kommentar eingeben
-pdfjs-editor-edit-comment-manager-cancel-button = Abbrechen
-pdfjs-editor-edit-comment-manager-save-button = Speichern
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Kommentar bearbeiten
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = Aktualisieren

@@ -596,25 +596,16 @@ pdfjs-editor-edit-signature-update-button = Жаңарту
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = Әрекеттер
-pdfjs-editor-edit-comment-actions-button =
-    .title = Әрекеттер
-pdfjs-editor-edit-comment-close-button-label = Жабу
-pdfjs-editor-edit-comment-close-button =
-    .title = Жабу
-pdfjs-editor-edit-comment-actions-edit-button-label = Түзету
-pdfjs-editor-edit-comment-actions-delete-button-label = Өшіру
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Пікіріңізді енгізіңіз
-pdfjs-editor-edit-comment-manager-cancel-button = Бас тарту
-pdfjs-editor-edit-comment-manager-save-button = Сақтау
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = Жаңарту
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Қосу
 pdfjs-editor-edit-comment-dialog-cancel-button = Бас тарту
 
 ## Edit a comment button in the editor toolbar
 
 pdfjs-editor-edit-comment-button =
     .title = Пікірді түзету
+pdfjs-editor-add-comment-button =
+    .title = Пікір қосу
 
 ## Main menu for adding/removing signatures
 

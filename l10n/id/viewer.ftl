@@ -574,21 +574,6 @@ pdfjs-editor-add-signature-cancel-button = Batal
 pdfjs-editor-add-signature-add-button = Tambah
 pdfjs-editor-edit-signature-update-button = Perbarui
 
-##  Edit a comment dialog
-
-pdfjs-editor-edit-comment-actions-button-label = Aksi
-pdfjs-editor-edit-comment-actions-button =
-    .title = Aksi
-pdfjs-editor-edit-comment-close-button-label = Tutup
-pdfjs-editor-edit-comment-close-button =
-    .title = Tutup
-pdfjs-editor-edit-comment-actions-edit-button-label = Sunting
-pdfjs-editor-edit-comment-actions-delete-button-label = Hapus
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Masukkan komentar Anda
-pdfjs-editor-edit-comment-manager-cancel-button = Batal
-pdfjs-editor-edit-comment-manager-save-button = Simpan
-
 ## Edit a comment button in the editor toolbar
 
 pdfjs-editor-edit-comment-button =

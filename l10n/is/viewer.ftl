@@ -557,21 +557,6 @@ pdfjs-editor-add-signature-cancel-button = Hætta við
 pdfjs-editor-add-signature-add-button = Bæta við
 pdfjs-editor-edit-signature-update-button = Uppfæra
 
-##  Edit a comment dialog
-
-pdfjs-editor-edit-comment-actions-button-label = Aðgerðir
-pdfjs-editor-edit-comment-actions-button =
-    .title = Aðgerðir
-pdfjs-editor-edit-comment-close-button-label = Loka
-pdfjs-editor-edit-comment-close-button =
-    .title = Loka
-pdfjs-editor-edit-comment-actions-edit-button-label = Breyta
-pdfjs-editor-edit-comment-actions-delete-button-label = Eyða
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Settu inn athugasemdina þína
-pdfjs-editor-edit-comment-manager-cancel-button = Hætta við
-pdfjs-editor-edit-comment-manager-save-button = Vista
-
 ## Edit a comment button in the editor toolbar
 
 pdfjs-editor-edit-comment-button =

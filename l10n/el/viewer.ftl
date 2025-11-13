@@ -618,18 +618,6 @@ pdfjs-show-comment-button =
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = Ενέργειες
-pdfjs-editor-edit-comment-actions-button =
-    .title = Ενέργειες
-pdfjs-editor-edit-comment-close-button-label = Κλείσιμο
-pdfjs-editor-edit-comment-close-button =
-    .title = Κλείσιμο
-pdfjs-editor-edit-comment-actions-edit-button-label = Επεξεργασία
-pdfjs-editor-edit-comment-actions-delete-button-label = Διαγραφή
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Εισαγάγετε το σχόλιό σας
-pdfjs-editor-edit-comment-manager-cancel-button = Ακύρωση
-pdfjs-editor-edit-comment-manager-save-button = Αποθήκευση
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Επεξεργασία σχολίου
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = Ενημέρωση
@@ -644,6 +632,8 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Ακύρωση
 
 pdfjs-editor-edit-comment-button =
     .title = Επεξεργασία σχολίου
+pdfjs-editor-add-comment-button =
+    .title = Προσθήκη σχολίου
 
 ## Main menu for adding/removing signatures
 

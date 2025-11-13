@@ -602,18 +602,6 @@ pdfjs-show-comment-button =
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = 동작
-pdfjs-editor-edit-comment-actions-button =
-    .title = 동작
-pdfjs-editor-edit-comment-close-button-label = 닫기
-pdfjs-editor-edit-comment-close-button =
-    .title = 닫기
-pdfjs-editor-edit-comment-actions-edit-button-label = 편집
-pdfjs-editor-edit-comment-actions-delete-button-label = 삭제
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = 주석을 입력하세요
-pdfjs-editor-edit-comment-manager-cancel-button = 취소
-pdfjs-editor-edit-comment-manager-save-button = 저장
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = 주석 편집
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = 업데이트

@@ -618,18 +618,6 @@ pdfjs-show-comment-button =
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = Åtgärder
-pdfjs-editor-edit-comment-actions-button =
-    .title = Åtgärder
-pdfjs-editor-edit-comment-close-button-label = Stäng
-pdfjs-editor-edit-comment-close-button =
-    .title = Stäng
-pdfjs-editor-edit-comment-actions-edit-button-label = Redigera
-pdfjs-editor-edit-comment-actions-delete-button-label = Ta bort
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Ange din kommentar
-pdfjs-editor-edit-comment-manager-cancel-button = Avbryt
-pdfjs-editor-edit-comment-manager-save-button = Spara
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Redigera kommentar
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = Uppdatera

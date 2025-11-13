@@ -618,18 +618,6 @@ pdfjs-show-comment-button =
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = Eylemler
-pdfjs-editor-edit-comment-actions-button =
-    .title = Eylemler
-pdfjs-editor-edit-comment-close-button-label = Kapat
-pdfjs-editor-edit-comment-close-button =
-    .title = Kapat
-pdfjs-editor-edit-comment-actions-edit-button-label = Düzenle
-pdfjs-editor-edit-comment-actions-delete-button-label = Sil
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Yorumunuzu yazın
-pdfjs-editor-edit-comment-manager-cancel-button = Vazgeç
-pdfjs-editor-edit-comment-manager-save-button = Kaydet
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Yorumu düzenle
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = Güncelle
@@ -644,6 +632,8 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Vazgeç
 
 pdfjs-editor-edit-comment-button =
     .title = Yorumu düzenle
+pdfjs-editor-add-comment-button =
+    .title = Yorum ekle
 
 ## Main menu for adding/removing signatures
 

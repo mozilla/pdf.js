@@ -618,18 +618,6 @@ pdfjs-show-comment-button =
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = Амалҳо
-pdfjs-editor-edit-comment-actions-button =
-    .title = Амалҳо
-pdfjs-editor-edit-comment-close-button-label = Пӯшидан
-pdfjs-editor-edit-comment-close-button =
-    .title = Пӯшидан
-pdfjs-editor-edit-comment-actions-edit-button-label = Таҳрир кардан
-pdfjs-editor-edit-comment-actions-delete-button-label = Нест кардан
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Шарҳи худро ворид кунед
-pdfjs-editor-edit-comment-manager-cancel-button = Бекор кардан
-pdfjs-editor-edit-comment-manager-save-button = Нигоҳ доштан
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Таҳрир кардани шарҳ
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = Навсозӣ кардан
@@ -644,6 +632,8 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Бекор кардан
 
 pdfjs-editor-edit-comment-button =
     .title = Таҳрир кардани шарҳ
+pdfjs-editor-add-comment-button =
+    .title = Илова кардани шарҳ
 
 ## Main menu for adding/removing signatures
 

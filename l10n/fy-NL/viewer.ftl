@@ -618,18 +618,6 @@ pdfjs-show-comment-button =
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = Aksjes
-pdfjs-editor-edit-comment-actions-button =
-    .title = Aksjes
-pdfjs-editor-edit-comment-close-button-label = Slute
-pdfjs-editor-edit-comment-close-button =
-    .title = Slute
-pdfjs-editor-edit-comment-actions-edit-button-label = Bewurkje
-pdfjs-editor-edit-comment-actions-delete-button-label = Fuortsmite
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Fier jo opmerking yn
-pdfjs-editor-edit-comment-manager-cancel-button = Annulearje
-pdfjs-editor-edit-comment-manager-save-button = Bewarje
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Opmerking bewurkje
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = Bywurkje

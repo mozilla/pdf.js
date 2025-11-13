@@ -602,18 +602,6 @@ pdfjs-show-comment-button =
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = 操作
-pdfjs-editor-edit-comment-actions-button =
-    .title = 操作
-pdfjs-editor-edit-comment-close-button-label = 关闭
-pdfjs-editor-edit-comment-close-button =
-    .title = 关闭
-pdfjs-editor-edit-comment-actions-edit-button-label = 编辑
-pdfjs-editor-edit-comment-actions-delete-button-label = 删除
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = 输入批注
-pdfjs-editor-edit-comment-manager-cancel-button = 取消
-pdfjs-editor-edit-comment-manager-save-button = 保存
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = 编辑批注
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = 更新
@@ -628,6 +616,8 @@ pdfjs-editor-edit-comment-dialog-cancel-button = 取消
 
 pdfjs-editor-edit-comment-button =
     .title = 编辑批注
+pdfjs-editor-add-comment-button =
+    .title = 添加批注
 
 ## Main menu for adding/removing signatures
 
