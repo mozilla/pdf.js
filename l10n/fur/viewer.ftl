@@ -618,18 +618,6 @@ pdfjs-show-comment-button =
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = Azions
-pdfjs-editor-edit-comment-actions-button =
-    .title = Azions
-pdfjs-editor-edit-comment-close-button-label = Siere
-pdfjs-editor-edit-comment-close-button =
-    .title = Siere
-pdfjs-editor-edit-comment-actions-edit-button-label = Modifiche
-pdfjs-editor-edit-comment-actions-delete-button-label = Elimine
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Inserìs il to coment
-pdfjs-editor-edit-comment-manager-cancel-button = Anule
-pdfjs-editor-edit-comment-manager-save-button = Salve
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Modifiche coment
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = Inzorne

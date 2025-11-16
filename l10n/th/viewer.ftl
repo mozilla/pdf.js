@@ -602,18 +602,6 @@ pdfjs-show-comment-button =
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = การกระทำ
-pdfjs-editor-edit-comment-actions-button =
-    .title = การกระทำ
-pdfjs-editor-edit-comment-close-button-label = ปิด
-pdfjs-editor-edit-comment-close-button =
-    .title = ปิด
-pdfjs-editor-edit-comment-actions-edit-button-label = แก้ไข
-pdfjs-editor-edit-comment-actions-delete-button-label = ลบ
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = ป้อนความคิดเห็นของคุณ
-pdfjs-editor-edit-comment-manager-cancel-button = ยกเลิก
-pdfjs-editor-edit-comment-manager-save-button = บันทึก
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = แก้ไขความคิดเห็น
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = อัปเดต

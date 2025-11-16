@@ -602,18 +602,6 @@ pdfjs-show-comment-button =
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = 動作
-pdfjs-editor-edit-comment-actions-button =
-    .title = 動作
-pdfjs-editor-edit-comment-close-button-label = 關閉
-pdfjs-editor-edit-comment-close-button =
-    .title = 關閉
-pdfjs-editor-edit-comment-actions-edit-button-label = 編輯
-pdfjs-editor-edit-comment-actions-delete-button-label = 刪除
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = 輸入您的註解
-pdfjs-editor-edit-comment-manager-cancel-button = 取消
-pdfjs-editor-edit-comment-manager-save-button = 儲存
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = 編輯註解
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = 更新

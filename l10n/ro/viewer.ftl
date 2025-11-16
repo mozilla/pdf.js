@@ -37,8 +37,8 @@ pdfjs-open-file-button =
     .title = Deschide un fișier
 pdfjs-open-file-button-label = Deschide
 pdfjs-print-button =
-    .title = Listează
-pdfjs-print-button-label = Listează
+    .title = Printează
+pdfjs-print-button-label = Printează
 pdfjs-save-button =
     .title = Salvează
 pdfjs-save-button-label = Salvează
@@ -621,18 +621,6 @@ pdfjs-show-comment-button =
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = Acțiuni
-pdfjs-editor-edit-comment-actions-button =
-    .title = Acțiuni
-pdfjs-editor-edit-comment-close-button-label = Închide
-pdfjs-editor-edit-comment-close-button =
-    .title = Închide
-pdfjs-editor-edit-comment-actions-edit-button-label = Editează
-pdfjs-editor-edit-comment-actions-delete-button-label = Șterge
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Introdu comentariul
-pdfjs-editor-edit-comment-manager-cancel-button = Anulează
-pdfjs-editor-edit-comment-manager-save-button = Salvează
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Editează comentariul
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = Actualizează
