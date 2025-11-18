@@ -47,6 +47,7 @@
     "struct_tree_spec.js",
     "svg_factory_spec.js",
     "text_layer_spec.js",
+    "to_unicode_map_spec.js",
     "type1_parser_spec.js",
     "ui_utils_spec.js",
     "unicode_spec.js",
