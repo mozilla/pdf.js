@@ -151,7 +151,7 @@ function preprocess(inFilename, outFilename, defines) {
   let state = STATE_NONE;
   const stack = [];
   const control =
-    /^(?:\/\/|\s*\/\*|<!--)\s*#(if|elif|else|endif|expand|include|error)\b(?:\s+(.*?)(?:\*\/|-->)?$)?/;
+    /^(?:\/\/|\s*\/\*|\s*<!--)\s*#(if|elif|else|endif|expand|include|error)\b(?:\s+(.*?)(?:\*\/|-->)?$)?/;
 
   while ((line = readLine()) !== null) {
     ++lineNumber;
@@ -213,7 +213,7 @@ function preprocess(inFilename, outFilename, defines) {
     ) {
       writeLine(
         line
-          .replaceAll(/^\/\/|^<!--/g, "  ")
+          .replaceAll(/^\/\/|^\s*<!--/g, "  ")
           .replaceAll(/(^\s*)\/\*/g, "$1  ")
           .replaceAll(/\*\/$|-->$/g, "")
       );

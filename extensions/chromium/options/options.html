@@ -15,171 +15,171 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <html>
-<head>
-<meta charset="utf-8">
-<title>PDF.js viewer options</title>
-<style>
-body {
-  min-width: 400px; /* a page at the settings page is at least 400px wide */
-  margin: 14px 17px; /* already added by default in Chrome 40.0.2212.0 */
-}
-.settings-row {
-  margin: 1em 0;
-}
-.checkbox label {
-  display: inline-flex;
-  align-items: center;
-}
-.checkbox label input {
-  flex-shrink: 0;
-}
-</style>
-</head>
-<body>
-<div id="settings-boxes"></div>
-<button id="reset-button" type="button">Restore default settings</button>
+  <head>
+    <meta charset="utf-8" />
+    <title>PDF.js viewer options</title>
+    <style>
+      body {
+        min-width: 400px; /* a page at the settings page is at least 400px wide */
+        margin: 14px 17px; /* already added by default in Chrome 40.0.2212.0 */
+      }
+      .settings-row {
+        margin: 1em 0;
+      }
+      .checkbox label {
+        display: inline-flex;
+        align-items: center;
+      }
+      .checkbox label input {
+        flex-shrink: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="settings-boxes"></div>
+    <button id="reset-button" type="button">Restore default settings</button>
 
-<template id="checkbox-template">
-<div class="settings-row checkbox">
-  <label>
-    <input type="checkbox">
-    <span></span>
-  </label>
-</div>
-</template>
+    <template id="checkbox-template">
+      <div class="settings-row checkbox">
+        <label>
+          <input type="checkbox" />
+          <span></span>
+        </label>
+      </div>
+    </template>
 
-<template id="viewerCssTheme-template">
-<div class="settings-row">
-  <label>
-    <span></span>
-    <select>
-      <option value="0">Use system theme</option>
-      <option value="1">Light theme</option>
-      <option value="2">Dark theme</option>
-    </select>
-  </label>
-</div>
-</template>
+    <template id="viewerCssTheme-template">
+      <div class="settings-row">
+        <label>
+          <span></span>
+          <select>
+            <option value="0">Use system theme</option>
+            <option value="1">Light theme</option>
+            <option value="2">Dark theme</option>
+          </select>
+        </label>
+      </div>
+    </template>
 
-<template id="viewOnLoad-template">
-<div class="settings-row">
-  <label>
-    <span></span>
-    <select>
-      <option value="-1">Default</option>
-      <option value="0">Show previous position</option>
-      <option value="1">Show initial position</option>
-    </select>
-  </label>
-</div>
-</template>
+    <template id="viewOnLoad-template">
+      <div class="settings-row">
+        <label>
+          <span></span>
+          <select>
+            <option value="-1">Default</option>
+            <option value="0">Show previous position</option>
+            <option value="1">Show initial position</option>
+          </select>
+        </label>
+      </div>
+    </template>
 
-<template id="defaultZoomValue-template">
-<div class="settings-row">
-  <label>
-    <span></span>
-    <select>
-      <option value="auto" selected="selected">Automatic Zoom</option>
-      <option value="page-actual">Actual Size</option>
-      <option value="page-fit">Page Fit</option>
-      <option value="page-width">Page Width</option>
-      <option value="custom" class="custom-zoom" hidden></option>
-      <option value="50">50%</option>
-      <option value="75">75%</option>
-      <option value="100">100%</option>
-      <option value="125">125%</option>
-      <option value="150">150%</option>
-      <option value="200">200%</option>
-      <option value="300">300%</option>
-      <option value="400">400%</option>
-    </select>
-  </label>
-</div>
-</template>
+    <template id="defaultZoomValue-template">
+      <div class="settings-row">
+        <label>
+          <span></span>
+          <select>
+            <option value="auto" selected="selected">Automatic Zoom</option>
+            <option value="page-actual">Actual Size</option>
+            <option value="page-fit">Page Fit</option>
+            <option value="page-width">Page Width</option>
+            <option value="custom" class="custom-zoom" hidden></option>
+            <option value="50">50%</option>
+            <option value="75">75%</option>
+            <option value="100">100%</option>
+            <option value="125">125%</option>
+            <option value="150">150%</option>
+            <option value="200">200%</option>
+            <option value="300">300%</option>
+            <option value="400">400%</option>
+          </select>
+        </label>
+      </div>
+    </template>
 
-<template id="sidebarViewOnLoad-template">
-<div class="settings-row">
-  <label>
-    <span></span>
-    <select>
-      <option value="-1">Default</option>
-      <option value="0">Do not show sidebar</option>
-      <option value="1">Show thumbnails in sidebar</option>
-      <option value="2">Show document outline in sidebar</option>
-      <option value="3">Show attachments in sidebar</option>
-    </select>
-  </label>
-</div>
-</template>
+    <template id="sidebarViewOnLoad-template">
+      <div class="settings-row">
+        <label>
+          <span></span>
+          <select>
+            <option value="-1">Default</option>
+            <option value="0">Do not show sidebar</option>
+            <option value="1">Show thumbnails in sidebar</option>
+            <option value="2">Show document outline in sidebar</option>
+            <option value="3">Show attachments in sidebar</option>
+          </select>
+        </label>
+      </div>
+    </template>
 
-<template id="cursorToolOnLoad-template">
-<div class="settings-row">
-  <label>
-    <span></span>
-    <select>
-      <option value="0">Text selection tool</option>
-      <option value="1">Hand tool</option>
-    </select>
-  </label>
-</div>
-</template>
+    <template id="cursorToolOnLoad-template">
+      <div class="settings-row">
+        <label>
+          <span></span>
+          <select>
+            <option value="0">Text selection tool</option>
+            <option value="1">Hand tool</option>
+          </select>
+        </label>
+      </div>
+    </template>
 
-<template id="textLayerMode-template">
-<div class="settings-row">
-  <label>
-    <span></span>
-    <select>
-      <option value="0">Disable text selection</option>
-      <option value="1">Enable text selection</option>
-    </select>
-  </label>
-</div>
-</template>
+    <template id="textLayerMode-template">
+      <div class="settings-row">
+        <label>
+          <span></span>
+          <select>
+            <option value="0">Disable text selection</option>
+            <option value="1">Enable text selection</option>
+          </select>
+        </label>
+      </div>
+    </template>
 
-<template id="externalLinkTarget-template">
-<div class="settings-row">
-  <label>
-    <span></span>
-    <select>
-      <option value="0">Default</option>
-      <option value="1">Current window/tab</option>
-      <option value="2">New window/tab</option>
-      <option value="3">Parent window/tab</option>
-      <option value="4">Top window/tab</option>
-    </select>
-  </label>
-</div>
-</template>
+    <template id="externalLinkTarget-template">
+      <div class="settings-row">
+        <label>
+          <span></span>
+          <select>
+            <option value="0">Default</option>
+            <option value="1">Current window/tab</option>
+            <option value="2">New window/tab</option>
+            <option value="3">Parent window/tab</option>
+            <option value="4">Top window/tab</option>
+          </select>
+        </label>
+      </div>
+    </template>
 
-<template id="scrollModeOnLoad-template">
-<div class="settings-row">
-  <label>
-    <span></span>
-    <select>
-      <option value="-1">Default</option>
-      <option value="3">Page scrolling</option>
-      <option value="0">Vertical scrolling</option>
-      <option value="1">Horizontal scrolling</option>
-      <option value="2">Wrapped scrolling</option>
-    </select>
-  </label>
-</div>
-</template>
+    <template id="scrollModeOnLoad-template">
+      <div class="settings-row">
+        <label>
+          <span></span>
+          <select>
+            <option value="-1">Default</option>
+            <option value="3">Page scrolling</option>
+            <option value="0">Vertical scrolling</option>
+            <option value="1">Horizontal scrolling</option>
+            <option value="2">Wrapped scrolling</option>
+          </select>
+        </label>
+      </div>
+    </template>
 
-<template id="spreadModeOnLoad-template">
-<div class="settings-row">
-  <label>
-    <span></span>
-    <select>
-      <option value="-1">Default</option>
-      <option value="0">No spreads</option>
-      <option value="1">Odd spreads</option>
-      <option value="2">Even spreads</option>
-    </select>
-  </label>
-</div>
-</template>
+    <template id="spreadModeOnLoad-template">
+      <div class="settings-row">
+        <label>
+          <span></span>
+          <select>
+            <option value="-1">Default</option>
+            <option value="0">No spreads</option>
+            <option value="1">Odd spreads</option>
+            <option value="2">Even spreads</option>
+          </select>
+        </label>
+      </div>
+    </template>
 
-<script src="options.js"></script>
-</body>
+    <script src="options.js"></script>
+  </body>
 </html>
