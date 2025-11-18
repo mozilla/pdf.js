@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <!--
 Copyright 2016 Mozilla Foundation
 
@@ -16,13 +16,13 @@ limitations under the License.
 -->
 <html dir="ltr">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 
     <title>PDF.js viewer</title>
 
-    <link rel="stylesheet" href="../../node_modules/pdfjs-dist/web/pdf_viewer.css">
-    <link rel="stylesheet" type="text/css" href="viewer.css">
+    <link rel="stylesheet" href="../../node_modules/pdfjs-dist/web/pdf_viewer.css" />
+    <link rel="stylesheet" type="text/css" href="viewer.css" />
 
     <script src="../../node_modules/pdfjs-dist/build/pdf.mjs" type="module"></script>
     <script src="../../node_modules/pdfjs-dist/web/pdf_viewer.mjs" type="module"></script>
@@ -46,12 +46,12 @@ limitations under the License.
       <button class="toolbarButton pageUp" title="Previous Page" id="previous" type="button"></button>
       <button class="toolbarButton pageDown" title="Next Page" id="next" type="button"></button>
 
-      <input type="number" id="pageNumber" class="toolbarField pageNumber" value="1" size="4" min="1">
+      <input type="number" id="pageNumber" class="toolbarField pageNumber" value="1" size="4" min="1" />
 
       <button class="toolbarButton zoomOut" title="Zoom Out" id="zoomOut" type="button"></button>
       <button class="toolbarButton zoomIn" title="Zoom In" id="zoomIn" type="button"></button>
     </footer>
 
-     <script src="viewer.mjs" type="module"></script>
+    <script src="viewer.mjs" type="module"></script>
   </body>
 </html>

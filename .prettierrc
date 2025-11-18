@@ -9,10 +9,17 @@
 
   "overrides": [
     {
-      files: ["tsconfig.json"],
-      options: {
-        parser: "json",
-      },
+      "files": ["tsconfig.json", ".prettierrc"],
+      "options": {
+        "parser": "json"
+      }
     },
+    {
+      "files": ["**/*.html"],
+      "options": {
+        "parser": "html",
+        "printWidth": 160
+      }
+    }
   ]
 }
