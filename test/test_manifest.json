@@ -1949,6 +1949,14 @@
     "forms": true
   },
   {
+    "id": "issue20426",
+    "file": "pdfs/issue20426.pdf",
+    "md5": "b9a753df595f1dd30505a67c96373dd8",
+    "link": true,
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "issue13845",
     "file": "pdfs/issue13845.pdf",
     "md5": "7c6b675f61ae68a2e416f4aa26da567c",
