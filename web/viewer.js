@@ -344,10 +344,11 @@ function fetchTask(token, taskId) {
             DottiStore.setDisplayMode("task");
 
             const jumpSignButton = document.getElementById("jump-sign-button");
-            jumpSignButton.style.display = "";
+            jumpSignButton.style.display = DottiStore.isProcessingTask()
+              ? ""
+              : "none";
             jumpSignButton.onclick = () => {
-              const jumpTo =
-                window.DottiStore.findNextPlaceholderEditorPage();
+              const jumpTo = window.DottiStore.findNextPlaceholderEditorPage();
               if (jumpTo) {
                 const eBus = window.PDFViewerApplicationOptions.eventBus;
                 eBus.dispatch("pagenumberchanged", {
@@ -356,7 +357,9 @@ function fetchTask(token, taskId) {
                 });
               } else {
                 // eslint-disable-next-line no-alert
-                window.alert("当前文件不需要您进行签名，直接提交接受即可！");
+                window.alert(
+                  "当前文件不需要您进行签名，请在确认文件内容无误后直接提交即可！"
+                );
               }
             };
 

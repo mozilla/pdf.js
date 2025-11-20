@@ -107,6 +107,48 @@ const DottiStore = {
     }
     return false;
   },
+  canStamp(editorSigner) {
+    if (this.displayMode === "task") {
+      const pms = this.profile.permissions ?? [];
+      const orgPermissions = pms.filter(
+        p => p.organizationId === editorSigner.organizationId
+      );
+      const validPermissions = orgPermissions.filter(op => {
+        if (op.role === RoleType.CREATOR) {
+          return true;
+        } else {
+          if (editorSigner.signChannelType === SignChannelType.HR) {
+            return op.role === RoleType.HR;
+          } else if (
+            editorSigner.signChannelType === SignChannelType.FINANCIAL
+          ) {
+            return op.role === RoleType.FINANCE;
+          } else {
+            return op.role === RoleType.LEGAL;
+          }
+        }
+      });
+      return validPermissions.length > 0;
+    }
+    return false;
+  },
+  assignCorrectDate(annotation) {
+    // make sure we assign to the correct signer
+    if (
+      this.sameSigner(annotation.signer) &&
+      this.sameSortNum(annotation.signer)
+    ) {
+      if (annotation.placeholderType === "DateSigned") {
+        annotation.value = getMandarinDate();
+      } else if (annotation.placeholderType === "DateSignedYear") {
+        annotation.value = getYear();
+      } else if (annotation.placeholderType === "DateSignedMonth") {
+        annotation.value = getMonth();
+      } else if (annotation.placeholderType === "DateSignedDay") {
+        annotation.value = getDay();
+      }
+    }
+  },
   renderAnnotationsOnLayer(layer) {
     if (this.task) {
       this.renderTaskAnnotationsOnLayer(layer);
@@ -154,6 +196,10 @@ const DottiStore = {
           const editor = rsa.attr;
           if (editor) {
             const annotation = editor.annotation;
+            // Assign correct date to signer
+            if (this.isProcessingTask()) {
+              this.assignCorrectDate(annotation);
+            }
             if (annotation.pageIndex === layer.pageIndex) {
               layer.deserialize(annotation).then(deserializedEditor => {
                 if (!deserializedEditor) {
@@ -252,7 +298,8 @@ const DottiStore = {
         ? this.getAllSignaturePlaceholdersBelongsToCurrentUser()
         : this.getAllStampPlaceholdersBelongsToCurrentUser();
     if (placeholderEditors.length) {
-      const targetPage = placeholderEditors[this.jumpToNextPlaceholderIndex].pageIndex + 1;
+      const targetPage =
+        placeholderEditors[this.jumpToNextPlaceholderIndex].pageIndex + 1;
       this.jumpToNextPlaceholderIndex += 1;
       if (this.jumpToNextPlaceholderIndex >= placeholderEditors.length) {
         this.jumpToNextPlaceholderIndex = 0;
@@ -345,6 +392,16 @@ const DottiStore = {
 
       const mergedSignatureAnnotations =
         this.task.fileContents[0].signContents ?? [];
+      // assign correct date
+      for (const rsa of mergedSignatureAnnotations) {
+        const editor = rsa.attr;
+        if (editor) {
+          const annotation = editor.annotation;
+          // Assign correct date to signer
+          // no need to check task status because he is submitting the task
+          this.assignCorrectDate(annotation);
+        }
+      }
       signatureAnnotations.forEach(sa => {
         mergedSignatureAnnotations.push({
           attr: {
@@ -488,6 +545,16 @@ const DottiStore = {
 
       const mergedSignatureAnnotations =
         this.task.fileContents[0].signContents ?? [];
+      // assign correct date
+      for (const rsa of mergedSignatureAnnotations) {
+        const editor = rsa.attr;
+        if (editor) {
+          const annotation = editor.annotation;
+          // Assign correct date to signer
+          // no need to check task status because he is submitting the task
+          this.assignCorrectDate(annotation);
+        }
+      }
       signatureAnnotations.forEach(sa => {
         mergedSignatureAnnotations.push({
           attr: {
@@ -578,7 +645,7 @@ const DottiStore = {
       });
   },
   updateFaceAuthLog(faceData, faceAuthLogId) {
-    const url = new URL(faceData.authURL);
+    const url = new URL(faceData.authUrl);
     const params = Object.fromEntries(url.searchParams.entries());
     const data = {
       id: faceAuthLogId,
@@ -615,6 +682,58 @@ const DottiStore = {
       },
     });
   },
+};
+
+function getMandarinDate() {
+  const dateObj = new Date();
+  const month = dateObj.getUTCMonth() + 1; // months from 1-12
+  const day = dateObj.getUTCDate();
+  const year = dateObj.getUTCFullYear();
+
+  // Using padded values, so that 2023/1/7 becomes 2023/01/07
+  const pMonth = month.toString().padStart(2, "0");
+  const pDay = day.toString().padStart(2, "0");
+  //   const newPaddedDate = `${year}/${pMonth}/${pDay}`;
+
+  return `${year} 年 ${pMonth} 月 ${pDay} 日`;
+}
+
+function getYear() {
+  const dateObj = new Date();
+  return dateObj.getUTCFullYear() + "";
+}
+
+function getMonth() {
+  const dateObj = new Date();
+  const month = dateObj.getUTCMonth() + 1; // months from 1-12
+  return month.toString().padStart(2, "0");
+}
+
+function getDay() {
+  const dateObj = new Date();
+  const day = dateObj.getUTCDate();
+  return day.toString().padStart(2, "0");
+}
+
+const SignChannelType = {
+  CONTRACT: "CONTRACT",
+  FINANCIAL: "FINANCIAL",
+  HR: "HR",
+  INVOICE: "INVOICE", // 发票章
+  OFFICIAL: "OFFICIAL",
+  OTHER: "OTHER",
+  PRIVATE: "PRIVATE",
+  TAX: "TAX", // 法人章
+};
+
+const RoleType = {
+  ADMIN: "ADMIN",
+  CREATOR: "CREATOR",
+  FINANCE: "FINANCE",
+  HR: "HR",
+  LEGAL: "LEGAL",
+  OBSERVER: "OBSERVER",
+  SUPER_ADMIN: "SUPER_ADMIN",
 };
 
 export default DottiStore;
