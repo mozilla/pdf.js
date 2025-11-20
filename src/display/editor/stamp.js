@@ -996,6 +996,11 @@ class StampEditor extends AnnotationEditor {
         });
       }, 100);
     } else if (this.isStampPlaceholder) {
+      if (!window.DottiStore.canStamp(this.signer)) {
+        // eslint-disable-next-line no-alert
+        alert(`您没有权限加盖此章`);
+        return;
+      }
       // eslint-disable-next-line no-alert
       if (confirm("确定盖章吗")) {
         this.remove(false);
