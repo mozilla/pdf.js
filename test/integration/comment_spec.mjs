@@ -15,6 +15,7 @@
 
 import {
   awaitPromise,
+  clearInput,
   closePages,
   createPromise,
   dragAndDrop,
@@ -847,6 +848,64 @@ describe("Comment", () => {
             editorSelector
           );
           expect(hasCommentButton).withContext(`In ${browserName}`).toBe(false);
+        })
+      );
+    });
+  });
+
+  describe("Save a comment in using CTRL+Enter", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "comments.pdf",
+        ".annotationEditorLayer",
+        "page-fit",
+        null,
+        { enableComment: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the comment is saved", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const commentButtonSelector = `[data-annotation-id="612R"] + button.annotationCommentButton`;
+          await waitAndClick(page, commentButtonSelector);
+          const commentPopupSelector = "#commentPopup";
+          const editButtonSelector = `${commentPopupSelector} button.commentPopupEdit`;
+          await waitAndClick(page, editButtonSelector);
+
+          const textInputSelector = "#commentManagerTextInput";
+          await page.waitForSelector(textInputSelector, {
+            visible: true,
+          });
+          await clearInput(page, textInputSelector, true);
+          const comment = "Comment saved using CTRL+Enter";
+          await page.type(textInputSelector, comment);
+          await page.focus(textInputSelector);
+
+          await page.keyboard.down("Control");
+          await page.keyboard.press("Enter");
+          await page.keyboard.up("Control");
+
+          await page.waitForSelector("#commentManagerDialog", {
+            visible: false,
+          });
+
+          await page.hover(commentButtonSelector);
+          await page.waitForSelector(commentPopupSelector, {
+            visible: true,
+          });
+          const popupTextSelector = `${commentPopupSelector} .commentPopupText`;
+          const popupText = await page.evaluate(
+            selector => document.querySelector(selector).textContent,
+            popupTextSelector
+          );
+          expect(popupText).withContext(`In ${browserName}`).toEqual(comment);
         })
       );
     });

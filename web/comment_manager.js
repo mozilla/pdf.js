@@ -723,6 +723,15 @@ class CommentDialog {
     textInput.addEventListener("input", () => {
       saveButton.disabled = textInput.value === this.#previousText;
     });
+    textInput.addEventListener("keydown", e => {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.key === "Enter" &&
+        !saveButton.disabled
+      ) {
+        this.#save();
+      }
+    });
 
     // Make the dialog draggable.
     let pointerMoveAC;
