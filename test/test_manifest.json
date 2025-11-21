@@ -13067,5 +13067,15 @@
     "type": "extract",
     "includePages": [0],
     "pageMapping": { "1": 1 }
+  },
+  {
+    "id": "xfa_bug1998843",
+    "file": "pdfs/xfa_bug1998843.pdf",
+    "md5": "b7b25e5b05b2b903d0a6727c9f962a91",
+    "link": true,
+    "rounds": 1,
+    "enableXfa": true,
+    "lastPage": 1,
+    "type": "eq"
   }
 ]

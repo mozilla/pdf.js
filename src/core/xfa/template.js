@@ -3899,7 +3899,7 @@ class Occur extends XFAObject {
       attributes.max !== ""
         ? getInteger({
             data: attributes.max,
-            defaultValue: 1,
+            defaultValue: -1,
             validate: x => true,
           })
         : "";
