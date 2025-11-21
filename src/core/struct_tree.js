@@ -13,7 +13,12 @@
  * limitations under the License.
  */
 
-import { AnnotationPrefix, stringToPDFString, warn } from "../shared/util.js";
+import {
+  AnnotationPrefix,
+  stringToPDFString,
+  stringToUTF8String,
+  warn,
+} from "../shared/util.js";
 import { Dict, isName, Name, Ref, RefSetCache } from "./primitives.js";
 import { lookupNormalRect, stringToAsciiOrUTF16BE } from "./core_utils.js";
 import { BaseStream } from "./base_stream.js";
@@ -37,6 +42,7 @@ class StructTreeRoot {
     this.roleMap = new Map();
     this.structParentIds = null;
     this.kidRefToPosition = undefined;
+    this.parentTree = null;
   }
 
   getKidPosition(kidRef) {
@@ -65,6 +71,11 @@ class StructTreeRoot {
 
   init() {
     this.readRoleMap();
+    const parentTree = this.dict.get("ParentTree");
+    if (!parentTree) {
+      return;
+    }
+    this.parentTree = new NumberTree(parentTree, this.xref);
   }
 
   #addIdToPage(pageRef, id, type) {
@@ -610,7 +621,8 @@ class StructElementNode {
       if (!isName(fileStream.dict.get("Subtype"), "application/mathml+xml")) {
         continue;
       }
-      return fileStream.getString();
+      // The default encoding for xml files is UTF-8.
+      return stringToUTF8String(fileStream.getString());
     }
     const A = this.dict.get("A");
     if (A instanceof Dict) {
@@ -765,7 +777,7 @@ class StructTreePage {
       return;
     }
 
-    const parentTree = this.rootDict.get("ParentTree");
+    const { parentTree } = this.root;
     if (!parentTree) {
       return;
     }
@@ -776,10 +788,9 @@ class StructTreePage {
     }
 
     const map = new Map();
-    const numberTree = new NumberTree(parentTree, this.xref);
 
     if (Number.isInteger(id)) {
-      const parentArray = numberTree.get(id);
+      const parentArray = parentTree.get(id);
       if (Array.isArray(parentArray)) {
         for (const ref of parentArray) {
           if (ref instanceof Ref) {
@@ -793,7 +804,7 @@ class StructTreePage {
       return;
     }
     for (const [elemId, type] of ids) {
-      const obj = numberTree.get(elemId);
+      const obj = parentTree.get(elemId);
       if (obj) {
         const elem = this.addNode(this.xref.fetchIfRef(obj), map);
         if (
@@ -824,6 +835,23 @@ class StructTreePage {
 
     const element = new StructElementNode(this, dict);
     map.set(dict, element);
+    switch (element.role) {
+      case "L":
+      case "LBody":
+      case "LI":
+      case "Table":
+      case "THead":
+      case "TBody":
+      case "TFoot":
+      case "TR": {
+        // Always collect all child nodes of lists and tables, even empty ones
+        for (const kid of element.kids) {
+          if (kid.type === StructElementType.ELEMENT) {
+            this.addNode(kid.dict, map, level - 1);
+          }
+        }
+      }
+    }
 
     const parent = dict.get("P");
 

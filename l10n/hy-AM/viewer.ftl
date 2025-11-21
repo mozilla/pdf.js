@@ -586,21 +586,6 @@ pdfjs-editor-add-signature-cancel-button = Չեղարկել
 pdfjs-editor-add-signature-add-button = Ավելացնել
 pdfjs-editor-edit-signature-update-button = Թարմացնել
 
-##  Edit a comment dialog
-
-pdfjs-editor-edit-comment-actions-button-label = Գործողություններ
-pdfjs-editor-edit-comment-actions-button =
-    .title = Գործողություններ
-pdfjs-editor-edit-comment-close-button-label = Փակել
-pdfjs-editor-edit-comment-close-button =
-    .title = Փակել
-pdfjs-editor-edit-comment-actions-edit-button-label = Խմբագրել
-pdfjs-editor-edit-comment-actions-delete-button-label = Ջնջել
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Մուտքագրեք ձեր մեկնաբանությունը
-pdfjs-editor-edit-comment-manager-cancel-button = Չեղարկել
-pdfjs-editor-edit-comment-manager-save-button = Պահպանել
-
 ## Edit a comment button in the editor toolbar
 
 pdfjs-editor-edit-comment-button =

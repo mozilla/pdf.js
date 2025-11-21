@@ -170,8 +170,8 @@ describe("Writer", function () {
 
       const expected =
         "<< /A /B /B 123 456 R /C 789 /D (hello world) " +
-        "/E (\\(hello\\\\world\\)) /F [1.23 4.5 6] " +
-        "/G << /H 123 /I << /Length 8>> stream\n" +
+        "/E (\\(hello\\\\world\\)) /F [1.23001 4.50001 6] " +
+        "/G << /H 123.00001 /I << /Length 8>> stream\n" +
         "a stream\n" +
         "endstream>> /J true /K false " +
         "/NullArr [null 10] /NullVal null>>";

@@ -626,18 +626,6 @@ pdfjs-show-comment-button =
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = Dejanja
-pdfjs-editor-edit-comment-actions-button =
-    .title = Dejanja
-pdfjs-editor-edit-comment-close-button-label = Zapri
-pdfjs-editor-edit-comment-close-button =
-    .title = Zapri
-pdfjs-editor-edit-comment-actions-edit-button-label = Uredi
-pdfjs-editor-edit-comment-actions-delete-button-label = Izbriši
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Vnesite komentar
-pdfjs-editor-edit-comment-manager-cancel-button = Prekliči
-pdfjs-editor-edit-comment-manager-save-button = Shrani
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Uredi komentar
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = Spremeni
@@ -652,6 +640,8 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Prekliči
 
 pdfjs-editor-edit-comment-button =
     .title = Uredi komentar
+pdfjs-editor-add-comment-button =
+    .title = Dodaj komentar
 
 ## Main menu for adding/removing signatures
 

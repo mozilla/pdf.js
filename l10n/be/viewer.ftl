@@ -622,18 +622,6 @@ pdfjs-show-comment-button =
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = Дзеянні
-pdfjs-editor-edit-comment-actions-button =
-    .title = Дзеянні
-pdfjs-editor-edit-comment-close-button-label = Закрыць
-pdfjs-editor-edit-comment-close-button =
-    .title = Закрыць
-pdfjs-editor-edit-comment-actions-edit-button-label = Праўка
-pdfjs-editor-edit-comment-actions-delete-button-label = Выдаліць
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Увядзіце свой каментарый
-pdfjs-editor-edit-comment-manager-cancel-button = Скасаваць
-pdfjs-editor-edit-comment-manager-save-button = Захаваць
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Змяніць каментарый
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = Абнавіць
@@ -648,6 +636,8 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Скасаваць
 
 pdfjs-editor-edit-comment-button =
     .title = Змяніць каментарый
+pdfjs-editor-add-comment-button =
+    .title = Дадаць каментарый
 
 ## Main menu for adding/removing signatures
 

@@ -1026,6 +1026,24 @@ class PDFDocumentProxy {
   }
 
   /**
+   * @typedef {Object} PageInfo
+   * @property {null|Uint8Array} document
+   * @property {Array<Array<number>|number>} [includePages]
+   *  included ranges or indices.
+   * @property {Array<Array<number>|number>} [excludePages]
+   *  excluded ranges or indices.
+   */
+
+  /**
+   * @param {Array<PageInfo>} pageInfos - The pages to extract.
+   * @returns {Promise<Uint8Array>} A promise that is resolved with a
+   *   {Uint8Array} containing the full data of the saved document.
+   */
+  extractPages(pageInfos) {
+    return this._transport.extractPages(pageInfos);
+  }
+
+  /**
    * @returns {Promise<{ length: number }>} A promise that is resolved when the
    *   document's data is loaded. It is resolved with an {Object} that contains
    *   the `length` property that indicates size of the PDF data in bytes.
@@ -2902,6 +2920,10 @@ class WorkerTransport {
       });
   }
 
+  extractPages(pageInfos) {
+    return this.messageHandler.sendWithPromise("ExtractPages", { pageInfos });
+  }
+
   getPage(pageNumber) {
     if (
       !Number.isInteger(pageNumber) ||
@@ -3057,6 +3079,7 @@ class WorkerTransport {
         metadata: results[1] ? new Metadata(results[1]) : null,
         contentDispositionFilename: this._fullReader?.filename ?? null,
         contentLength: this._fullReader?.contentLength ?? null,
+        hasStructTree: results[2],
       }));
     this.#methodPromises.set(name, promise);
     return promise;

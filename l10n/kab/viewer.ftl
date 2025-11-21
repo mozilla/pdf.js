@@ -601,18 +601,6 @@ pdfjs-editor-delete-comment-popup-button =
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = Tigawin
-pdfjs-editor-edit-comment-actions-button =
-    .title = Tigawin
-pdfjs-editor-edit-comment-close-button-label = Mdel
-pdfjs-editor-edit-comment-close-button =
-    .title = Mdel
-pdfjs-editor-edit-comment-actions-edit-button-label = Ẓreg
-pdfjs-editor-edit-comment-actions-delete-button-label = Kkes
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Aru awennit-ik⋅im
-pdfjs-editor-edit-comment-manager-cancel-button = Sefsex
-pdfjs-editor-edit-comment-manager-save-button = Sekles
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Ẓreg awennit
 # No existing comment

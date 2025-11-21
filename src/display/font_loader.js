@@ -457,6 +457,10 @@ class FontFaceObject {
     return this.#fontData.disableFontFace ?? false;
   }
 
+  set disableFontFace(value) {
+    shadow(this, "disableFontFace", !!value);
+  }
+
   get fontExtraProperties() {
     return this.#fontData.fontExtraProperties ?? false;
   }
@@ -499,6 +503,10 @@ class FontFaceObject {
 
   get bbox() {
     return this.#fontData.bbox;
+  }
+
+  set bbox(bbox) {
+    shadow(this, "bbox", bbox);
   }
 
   get fontMatrix() {

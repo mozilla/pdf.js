@@ -622,18 +622,6 @@ pdfjs-show-comment-button =
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = Ekintzak
-pdfjs-editor-edit-comment-actions-button =
-    .title = Ekintzak
-pdfjs-editor-edit-comment-close-button-label = Itxi
-pdfjs-editor-edit-comment-close-button =
-    .title = Itxi
-pdfjs-editor-edit-comment-actions-edit-button-label = Editatu
-pdfjs-editor-edit-comment-actions-delete-button-label = Ezabatu
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Idatzi zure iruzkina
-pdfjs-editor-edit-comment-manager-cancel-button = Utzi
-pdfjs-editor-edit-comment-manager-save-button = Gorde
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = Editatu iruzkina
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = Eguneratu

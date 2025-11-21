@@ -2023,7 +2023,7 @@ gulp.task(
 
 gulp.task("lint", function (done) {
   console.log();
-  console.log("### Linting JS/CSS/JSON/SVG files");
+  console.log("### Linting JS/CSS/JSON/SVG/HTML files");
 
   // Ensure that we lint the Firefox specific *.jsm files too.
   const esLintOptions = [
@@ -2047,9 +2047,10 @@ gulp.task("lint", function (done) {
   const prettierOptions = [
     "node_modules/prettier/bin/prettier.cjs",
     "**/*.json",
+    "**/*.html",
   ];
   if (process.argv.includes("--fix")) {
-    prettierOptions.push("--log-level", "silent", "--write");
+    prettierOptions.push("--log-level", "error", "--write");
   } else {
     prettierOptions.push("--log-level", "warn", "--check");
   }

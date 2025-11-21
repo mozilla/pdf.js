@@ -272,7 +272,3 @@ pdfjs-editor-alt-text-cancel-button = Cancel·la
 ## Dialog buttons
 
 pdfjs-editor-add-signature-cancel-button = Cancel·la
-
-##  Edit a comment dialog
-
-pdfjs-editor-edit-comment-manager-cancel-button = Cancel·la

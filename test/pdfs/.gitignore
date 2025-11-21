@@ -620,6 +620,7 @@
 !autoprint.pdf
 !bug1811694.pdf
 !bug1811510.pdf
+!issue20324.pdf
 !bug1815476.pdf
 !issue16021.pdf
 !bug1770750.pdf
@@ -753,3 +754,11 @@
 !bug1937438_from_word.pdf
 !bug1937438_mml_from_latex.pdf
 !marked_content_lang.pdf
+!bug1997343.pdf
+!doc_1_3_pages.pdf
+!doc_2_3_pages.pdf
+!doc_3_3_pages.pdf
+!labelled_pages.pdf
+!extract_link.pdf
+!two_paragraphs.pdf
+!paragraph_and_link.pdf
