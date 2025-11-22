@@ -14,6 +14,7 @@
     "@types/node": "^24.10.0",
     "autoprefixer": "^10.4.21",
     "babel-loader": "^10.0.0",
+    "cached-iterable": "^0.3.0",
     "caniuse-lite": "^1.0.30001754",
     "core-js": "^3.46.0",
     "eslint": "^9.39.1",
