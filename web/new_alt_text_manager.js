@@ -444,7 +444,7 @@ class NewAltTextManager {
   }
 
   #close() {
-    const canvas = this.#imagePreview.firstChild;
+    const canvas = this.#imagePreview.firstElementChild;
     canvas.remove();
     canvas.width = canvas.height = 0;
     this.#imageData = null;
@@ -619,7 +619,7 @@ class ImageAltTextSettings {
   async #download(isFromUI = false) {
     if (isFromUI) {
       this.#downloadModelButton.disabled = true;
-      const span = this.#downloadModelButton.firstChild;
+      const span = this.#downloadModelButton.firstElementChild;
       span.setAttribute(
         "data-l10n-id",
         "pdfjs-editor-alt-text-settings-downloading-model-button"

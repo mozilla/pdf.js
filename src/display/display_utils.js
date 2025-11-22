@@ -992,7 +992,7 @@ function renderRichText({ html, dir, className }, container) {
       intent: "richText",
     });
   }
-  fragment.firstChild.classList.add("richText", className);
+  fragment.firstElementChild.classList.add("richText", className);
   container.append(fragment);
 }
 

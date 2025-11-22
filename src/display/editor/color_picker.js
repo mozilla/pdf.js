@@ -183,7 +183,7 @@ class ColorPicker {
       return;
     }
     if (event.target === this.#button) {
-      this.#dropdown.firstChild?.focus();
+      this.#dropdown.firstElementChild?.focus();
       return;
     }
     event.target.nextSibling?.focus();
@@ -191,7 +191,7 @@ class ColorPicker {
 
   _moveToPrevious(event) {
     if (
-      event.target === this.#dropdown?.firstChild ||
+      event.target === this.#dropdown?.firstElementChild ||
       event.target === this.#button
     ) {
       if (this.#isDropdownVisible) {
@@ -210,7 +210,7 @@ class ColorPicker {
       this.#openDropdown(event);
       return;
     }
-    this.#dropdown.firstChild?.focus();
+    this.#dropdown.firstElementChild?.focus();
   }
 
   _moveToEnd(event) {
@@ -218,7 +218,7 @@ class ColorPicker {
       this.#openDropdown(event);
       return;
     }
-    this.#dropdown.lastChild?.focus();
+    this.#dropdown.lastElementChild?.focus();
   }
 
   #keyDown(event) {

@@ -392,8 +392,8 @@ class CommentSidebar {
       return;
     }
 
-    this.#setDate(element.firstChild, modificationDate || creationDate);
-    this.#setText(element.lastChild, richText, contentsObj);
+    this.#setDate(element.firstElementChild, modificationDate || creationDate);
+    this.#setText(element.lastElementChild, richText, contentsObj);
 
     this.#annotations.splice(index, 1);
     index = binarySearchFirstItem(
