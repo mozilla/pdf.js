@@ -634,8 +634,8 @@ describe("pdf_find_controller", function () {
         pageIndex: 0,
         matchIndex: 0,
       },
-      pageMatches: [[1497]],
-      pageMatchesLength: [[25]],
+      pageMatches: [[1498]],
+      pageMatchesLength: [[24]],
     });
   });
 
@@ -1135,6 +1135,26 @@ describe("pdf_find_controller", function () {
         [],
         [7],
       ],
+    });
+  });
+
+  it("performs a search with a group of punctuation signs", async () => {
+    const { eventBus, pdfFindController } =
+      await initPdfFindController("issue20225.pdf");
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: "....",
+      },
+      matchesPerPage: [1],
+      selectedMatch: {
+        pageIndex: 0,
+        matchIndex: 0,
+      },
+      pageMatches: [[8]],
+      pageMatchesLength: [[4]],
     });
   });
 
