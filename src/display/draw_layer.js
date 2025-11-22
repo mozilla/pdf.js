@@ -208,8 +208,8 @@ class DrawLayer {
       }
     }
     if (path) {
-      const defs = element.firstChild;
-      const pathElement = defs.firstChild;
+      const defs = element.firstElementChild;
+      const pathElement = defs.firstElementChild;
       this.#updateProperties(pathElement, path);
     }
   }
