@@ -717,61 +717,63 @@ body {
 }
 
 #thumbnailView {
+  --thumbnail-width: 98px;
+
+  display: flex;
+  flex-wrap: wrap;
   width: calc(100% - 60px);
   padding: 10px 30px 0;
-}
 
-#thumbnailView > a:is(:active, :focus) {
-  outline: 0;
-}
+  > a {
+    width: auto;
+    height: auto;
 
-.thumbnail {
-  /* Define these variables here, and not in :root, since the individual
-     thumbnails may have different sizes. */
-  --thumbnail-width: 0;
-  --thumbnail-height: 0;
+    > .thumbnail {
+      width: var(--thumbnail-width);
+      margin: 0 10px 5px;
+      padding: 1px;
+      border: 7px solid transparent;
+      border-radius: 2px;
 
-  float: var(--inline-start);
-  width: var(--thumbnail-width);
-  height: var(--thumbnail-height);
-  margin: 0 10px 5px;
-  padding: 1px;
-  border: 7px solid transparent;
-  border-radius: 2px;
-}
+      &.selected {
+        border-color: var(--thumbnail-selected-color) !important;
 
-#thumbnailView > a:last-of-type > .thumbnail {
-  margin-bottom: 10px;
-}
+        > .thumbnailImage {
+          opacity: 1 !important;
+        }
+      }
 
-a:focus > .thumbnail,
-.thumbnail:hover {
-  border-color: var(--thumbnail-hover-color);
-}
+      &.missingThumbnailImage {
+        border: 1px dashed rgb(132 132 132);
+        padding: 7px;
+        > .thumbnailImage {
+          display: none;
+        }
+      }
 
-.thumbnail.selected {
-  border-color: var(--thumbnail-selected-color) !important;
-}
+      > .thumbnailImage {
+        width: 100%;
+        opacity: 0.9;
+      }
+    }
 
-.thumbnailImage {
-  width: var(--thumbnail-width);
-  height: var(--thumbnail-height);
-  opacity: 0.9;
-}
+    &:is(:active, :focus) {
+      outline: 0;
+    }
 
-a:focus > .thumbnail > .thumbnailImage,
-.thumbnail:hover > .thumbnailImage {
-  opacity: 0.95;
-}
+    &:last-of-type > .thumbnail {
+      margin-bottom: 10px;
+    }
 
-.thumbnail.selected > .thumbnailImage {
-  opacity: 1 !important;
-}
+    &:focus > .thumbnail,
+    .thumbnail:hover {
+      border-color: var(--thumbnail-hover-color);
 
-.thumbnail:not([data-loaded]) > .thumbnailImage {
-  width: calc(var(--thumbnail-width) - 2px);
-  height: calc(var(--thumbnail-height) - 2px);
-  border: 1px dashed rgb(132 132 132);
+      > .thumbnailImage {
+        opacity: 0.95;
+      }
+    }
+  }
 }
 
 .treeWithDeepNesting > .treeItem,

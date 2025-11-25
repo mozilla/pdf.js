@@ -21,13 +21,13 @@ describe("PDF Thumbnail View", () => {
           await page.waitForSelector(thumbSelector, { visible: true });
 
           await page.waitForSelector(
-            '#thumbnailView .thumbnail[data-loaded="true"]'
+            "#thumbnailView .thumbnail:not(.missingThumbnailImage)"
           );
 
           const src = await page.$eval(thumbSelector, el => el.src);
           expect(src)
             .withContext(`In ${browserName}`)
-            .toMatch(/^data:image\//);
+            .toMatch(/^blob:http:/);
         })
       );
     });
