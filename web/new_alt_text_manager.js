@@ -141,6 +141,15 @@ class NewAltTextManager {
     textarea.addEventListener("input", () => {
       this.#toggleTitleAndDisclaimer();
     });
+    textarea.addEventListener("keydown", e => {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.key === "Enter" &&
+        !saveButton.disabled
+      ) {
+        this.#save();
+      }
+    });
 
     eventBus._on("enableguessalttext", ({ value }) => {
       this.#toggleGuessAltText(value, /* isInitial = */ false);
