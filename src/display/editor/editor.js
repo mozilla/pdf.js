@@ -2051,11 +2051,13 @@ class AnnotationEditor {
       // on the top-left one.
       if (nextFirstPosition < firstPosition) {
         for (let i = 0; i < firstPosition - nextFirstPosition; i++) {
-          this.#resizersDiv.append(this.#resizersDiv.firstChild);
+          this.#resizersDiv.append(this.#resizersDiv.firstElementChild);
         }
       } else if (nextFirstPosition > firstPosition) {
         for (let i = 0; i < nextFirstPosition - firstPosition; i++) {
-          this.#resizersDiv.firstChild.before(this.#resizersDiv.lastChild);
+          this.#resizersDiv.firstElementChild.before(
+            this.#resizersDiv.lastElementChild
+          );
         }
       }
 
@@ -2069,7 +2071,7 @@ class AnnotationEditor {
 
     this.#setResizerTabIndex(0);
     this.#isResizerEnabledForKeyboard = true;
-    this.#resizersDiv.firstChild.focus({ focusVisible: true });
+    this.#resizersDiv.firstElementChild.focus({ focusVisible: true });
     event.preventDefault();
     event.stopImmediatePropagation();
   }
@@ -2397,12 +2399,12 @@ class AnnotationEditor {
   }
 
   resetAnnotationElement(annotation) {
-    const { firstChild } = annotation.container;
+    const { firstElementChild } = annotation.container;
     if (
-      firstChild?.nodeName === "DIV" &&
-      firstChild.classList.contains("annotationContent")
+      firstElementChild?.nodeName === "DIV" &&
+      firstElementChild.classList.contains("annotationContent")
     ) {
-      firstChild.remove();
+      firstElementChild.remove();
     }
   }
 }
