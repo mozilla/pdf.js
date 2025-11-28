@@ -22,6 +22,8 @@ import {
   getEditorSelector,
   getRect,
   highlightSpan,
+  kbModifierDown,
+  kbModifierUp,
   loadAndWait,
   scrollIntoView,
   selectEditor,
@@ -533,6 +535,59 @@ describe("Comment", () => {
             const steps = 20;
             await page.mouse.move(startX - extraWidth, startY, { steps });
             await page.mouse.up();
+
+            const rectAfter = await getRect(page, sidebarSelector);
+            expect(Math.abs(rectAfter.width - (rect.width + extraWidth)))
+              .withContext(`In ${browserName}`)
+              .toBeLessThanOrEqual(1);
+            expect(Math.abs(rectAfter.x - (rect.x - extraWidth)))
+              .withContext(`In ${browserName}`)
+              .toBeLessThanOrEqual(1);
+          }
+        })
+      );
+    });
+
+    it("must check that the comment sidebar is resizable with the keyboard", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToComment(page);
+
+          const sidebarSelector = "#editorCommentParamsToolbar";
+          const handle = await createPromise(page, resolve => {
+            document
+              .getElementById("editorCommentsSidebarResizer")
+              .addEventListener("focus", () => resolve(), { once: true });
+          });
+          await page.focus(`${sidebarSelector} #editorCommentsSidebarResizer`);
+          await awaitPromise(handle);
+
+          // Use Ctrl+ArrowLeft/Right to resize the sidebar.
+          for (const extraWidth of [10, -10]) {
+            const rect = await getRect(page, sidebarSelector);
+            const arrowKey = extraWidth > 0 ? "ArrowLeft" : "ArrowRight";
+            for (let i = 0; i < Math.abs(extraWidth); i++) {
+              await kbModifierDown(page);
+              await page.keyboard.press(arrowKey);
+              await kbModifierUp(page);
+            }
+
+            const rectAfter = await getRect(page, sidebarSelector);
+            expect(Math.abs(rectAfter.width - (rect.width + 10 * extraWidth)))
+              .withContext(`In ${browserName}`)
+              .toBeLessThanOrEqual(1);
+            expect(Math.abs(rectAfter.x - (rect.x - 10 * extraWidth)))
+              .withContext(`In ${browserName}`)
+              .toBeLessThanOrEqual(1);
+          }
+
+          // Use ArrowLeft/Right to resize the sidebar.
+          for (const extraWidth of [10, -10]) {
+            const rect = await getRect(page, sidebarSelector);
+            const arrowKey = extraWidth > 0 ? "ArrowLeft" : "ArrowRight";
+            for (let i = 0; i < Math.abs(extraWidth); i++) {
+              await page.keyboard.press(arrowKey);
+            }
 
             const rectAfter = await getRect(page, sidebarSelector);
             expect(Math.abs(rectAfter.width - (rect.width + extraWidth)))
