@@ -34,6 +34,4 @@ jobs:
         run: npx gulp dist
 
       - name: Publish the `pdfjs-dist` library to NPM
-        run: npm publish ./build/dist --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish ./build/dist
