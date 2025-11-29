@@ -318,7 +318,8 @@ class TextLayerBuilder {
 
         const parentTextLayer = anchor.parentElement?.closest(".textLayer");
         const endDiv = this.#textLayers.get(parentTextLayer);
-        if (endDiv) {
+        const anchorHighlighted = anchor.classList?.contains("highlight");
+        if (endDiv && !anchorHighlighted) {
           endDiv.style.width = parentTextLayer.style.width;
           endDiv.style.height = parentTextLayer.style.height;
           anchor.parentElement.insertBefore(
