@@ -96,7 +96,7 @@ const AUTOPREFIXER_CONFIG = {
 const BABEL_TARGETS = ENV_TARGETS.join(", ");
 
 const BABEL_PRESET_ENV_OPTS = Object.freeze({
-  corejs: "3.46.0",
+  corejs: "3.47.0",
   exclude: ["web.structured-clone"],
   shippedProposals: true,
   useBuiltIns: "usage",
@@ -1058,9 +1058,8 @@ gulp.task("cmaps", async function () {
     }
   });
 
-  const { compressCmaps } = await import(
-    "./external/cmapscompress/compress.mjs"
-  );
+  const { compressCmaps } =
+    await import("./external/cmapscompress/compress.mjs");
   compressCmaps(CMAP_INPUT, VIEWER_CMAP_OUTPUT, true);
 });
 
@@ -2341,7 +2340,7 @@ function packageJson() {
     bugs: DIST_BUGS_URL,
     license: DIST_LICENSE,
     optionalDependencies: {
-      "@napi-rs/canvas": "^0.1.81",
+      "@napi-rs/canvas": "^0.1.83",
     },
     browser: {
       canvas: false,
