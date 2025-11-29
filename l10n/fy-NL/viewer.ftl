@@ -181,8 +181,8 @@ pdfjs-layers-button =
     .title = Lagen toane (dûbelklik om alle lagen nei de standertsteat werom te setten)
 pdfjs-layers-button-label = Lagen
 pdfjs-thumbs-button =
-    .title = Foarbylden toane
-pdfjs-thumbs-button-label = Foarbylden
+    .title = Miniatueren toane
+pdfjs-thumbs-button-label = Miniatueren
 pdfjs-current-outline-item-button =
     .title = Aktueel item yn ynhâldsopjefte sykje
 pdfjs-current-outline-item-button-label = Aktueel item yn ynhâldsopjefte
@@ -200,7 +200,7 @@ pdfjs-thumb-page-title =
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
-    .aria-label = Foarbyld fan side { $page }
+    .aria-label = Miniatuer fan side { $page }
 
 ## Find panel button title and messages
 

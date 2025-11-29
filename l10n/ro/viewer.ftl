@@ -156,13 +156,13 @@ pdfjs-document-properties-close-button = Închide
 
 ## Print
 
-pdfjs-print-progress-message = Se pregătește documentul pentru listare…
+pdfjs-print-progress-message = Se pregătește documentul pentru printare…
 # Variables:
 #   $progress (Number) - percent value
 pdfjs-print-progress-percent = { $progress }%
 pdfjs-print-progress-close-button = Anulează
-pdfjs-printing-not-supported = Avertisment: Listarea nu este suportată complet de acest browser.
-pdfjs-printing-not-ready = Avertisment: PDF-ul nu este încărcat complet pentru listare.
+pdfjs-printing-not-supported = Avertisment: Printarea nu este suportată complet de acest browser.
+pdfjs-printing-not-ready = Avertisment: PDF-ul nu este încărcat complet pentru printare.
 
 ## Tooltips and alt text for side panel toolbar buttons
 
@@ -172,7 +172,7 @@ pdfjs-toggle-sidebar-notification-button =
     .title = Comută bara laterală (documentul conține schițe/atașamente/straturi)
 pdfjs-toggle-sidebar-button-label = Comută bara laterală
 pdfjs-document-outline-button =
-    .title = Afișează schița documentului (dublu-clic pentru a extinde/restrânge toate elementele)
+    .title = Afișează schița documentului (dă dublu clic pentru a extinde/restrânge toate elementele)
 pdfjs-document-outline-button-label = Schiță a documentului
 pdfjs-attachments-button =
     .title = Afișează atașamentele
