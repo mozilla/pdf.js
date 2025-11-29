@@ -27,7 +27,7 @@ import {
   scrollIntoView,
   watchScroll,
 } from "./ui_utils.js";
-import { PDFThumbnailView, TempImageFactory } from "./pdf_thumbnail_view.js";
+import { PDFThumbnailView } from "./pdf_thumbnail_view.js";
 
 const THUMBNAIL_SCROLL_MARGIN = -19;
 const THUMBNAIL_SELECTED_CLASS = "selected";
@@ -174,7 +174,6 @@ class PDFThumbnailViewer {
         thumbnail.reset();
       }
     }
-    TempImageFactory.destroyCanvas();
   }
 
   #resetView() {
@@ -209,10 +208,11 @@ class PDFThumbnailViewer {
       .then(firstPdfPage => {
         const pagesCount = pdfDocument.numPages;
         const viewport = firstPdfPage.getViewport({ scale: 1 });
+        const fragment = document.createDocumentFragment();
 
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           const thumbnail = new PDFThumbnailView({
-            container: this.container,
+            container: fragment,
             eventBus: this.eventBus,
             id: pageNum,
             defaultViewport: viewport.clone(),
@@ -234,6 +234,7 @@ class PDFThumbnailViewer {
         // Ensure that the current thumbnail is always highlighted on load.
         const thumbnailView = this._thumbnails[this._currentPageNumber - 1];
         thumbnailView.div.classList.add(THUMBNAIL_SELECTED_CLASS);
+        this.container.append(fragment);
       })
       .catch(reason => {
         console.error("Unable to initialize thumbnail viewer", reason);
