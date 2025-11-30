@@ -336,10 +336,20 @@ describe("accessibility", () => {
             expect(mathML)
               .withContext(`In ${browserName}`)
               .toEqual(
-                " <msqrt><msup><mi>x</mi><mn>2</mn></msup></msqrt> <mo>=</mo> <mrow><mo>|</mo><mi>x</mi><mo>|</mo></mrow> "
+                ` <msqrt><msup><mi>x</mi><mn>2</mn></msup></msqrt> <mo>=</mo> <mrow intent="absolute-value($x)"><mo>|</mo><mi arg="x">x</mi><mo>|</mo></mrow> `
               );
+
+            // Check that the math corresponding element is hidden in the text
+            // layer.
+            const ariaHidden = await page.$eval("span#p58R_mc13", el =>
+              el.getAttribute("aria-hidden")
+            );
+            expect(ariaHidden).withContext(`In ${browserName}`).toEqual("true");
           } else {
-            pending(`Sanitizer API (in ${browserName}) is not supported`);
+            // eslint-disable-next-line no-console
+            console.log(
+              `Pending in Chrome: Sanitizer API (in ${browserName}) is not supported`
+            );
           }
         })
       );
@@ -379,7 +389,10 @@ describe("accessibility", () => {
                 '<math display="block"> <msup> <mi>𝑛</mi> <mi>𝑝</mi> </msup> <mo lspace="0.278em" rspace="0.278em">=</mo> <mi>𝑛</mi> <mspace width="1.000em"></mspace> <mi> mod </mi> <mspace width="0.167em"></mspace> <mspace width="0.167em"></mspace> <mi>𝑝</mi> </math>'
               );
           } else {
-            pending(`Sanitizer API (in ${browserName}) is not supported`);
+            // eslint-disable-next-line no-console
+            console.log(
+              `Pending in Chrome: Sanitizer API (in ${browserName}) is not supported`
+            );
           }
         })
       );

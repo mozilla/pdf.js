@@ -341,6 +341,18 @@ class StructTreeLayerBuilder {
           element.setHTML(node.mathML, {
             sanitizer: MathMLSanitizer.sanitizer,
           });
+          // Hide all the corresponding content elements in the text layer in
+          // order to avoid screen readers reading both the MathML and the
+          // text content.
+          for (const { id } of node.children || []) {
+            if (!id) {
+              continue;
+            }
+            const elem = document.getElementById(id);
+            if (elem) {
+              elem.ariaHidden = true;
+            }
+          }
         }
         if (
           !node.mathML &&
