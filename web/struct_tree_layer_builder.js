@@ -323,9 +323,26 @@ class StructTreeLayerBuilder {
     let element;
     if ("role" in node) {
       const { role } = node;
-      element = MathMLElements.has(role)
-        ? document.createElementNS(MathMLNamespace, role)
-        : document.createElement("span");
+      if (MathMLElements.has(role)) {
+        element = document.createElementNS(MathMLNamespace, role);
+        let text = "";
+        for (const { type, id } of node.children || []) {
+          if (type !== "content" || !id) {
+            continue;
+          }
+          const elem = document.getElementById(id);
+          if (!elem) {
+            continue;
+          }
+          text += elem.textContent.trim() || "";
+          // Aria-hide the element in order to avoid duplicate reading of the
+          // math content by screen readers.
+          elem.ariaHidden = "true";
+        }
+        element.textContent = text;
+      } else {
+        element = document.createElement("span");
+      }
       const match = role.match(HEADING_PATTERN);
       if (match) {
         element.setAttribute("role", "heading");
