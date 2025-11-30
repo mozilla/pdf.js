@@ -1923,6 +1923,8 @@ class AnnotationEditorUIManager {
    * Change the editor mode (None, FreeText, Ink, ...)
    * @param {number} mode
    * @param {string|null} editId
+   * @param {boolean} [isFromUser] - true if the mode change is due to a
+   *   user action.
    * @param {boolean} [isFromKeyboard] - true if the mode change is due to a
    *   keyboard action.
    * @param {boolean} [mustEnterInEditMode] - true if the editor must enter in
@@ -1933,6 +1935,7 @@ class AnnotationEditorUIManager {
   async updateMode(
     mode,
     editId = null,
+    isFromUser = false,
     isFromKeyboard = false,
     mustEnterInEditMode = false,
     editComment = false
@@ -1978,6 +1981,11 @@ class AnnotationEditorUIManager {
 
     if (mode === AnnotationEditorType.SIGNATURE) {
       await this.#signatureManager?.loadSignatures();
+    }
+
+    if (isFromUser) {
+      // reinitialize the pointer type when the mode is changed by the user
+      CurrentPointers.clearPointerType();
     }
 
     this.setEditingState(true);
