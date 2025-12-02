@@ -13,23 +13,30 @@
  * limitations under the License.
  */
 
-import { MathClamp, noContextMenu, stopEvent } from "pdfjs-lib";
+import { noContextMenu, stopEvent } from "pdfjs-lib";
+
+// Timeout before ending resize operation.
+const RESIZE_TIMEOUT = 400; // ms
 
 /**
  * Viewer control to display a sidebar with resizer functionality.
  */
 class Sidebar {
-  #minWidth = 0;
-
-  #maxWidth = 0;
-
   #initialWidth = 0;
 
   #width = 0;
 
   #coefficient;
 
-  #visible = false;
+  #resizeTimeout = null;
+
+  #resizer;
+
+  #isResizerOnTheLeft;
+
+  #isKeyboardResizing = false;
+
+  #resizeObserver = null;
 
   /**
    * @typedef {Object} SidebarElements
@@ -48,46 +55,67 @@ class Sidebar {
   constructor({ sidebar, resizer, toggleButton }, ltr, isResizerOnTheLeft) {
     this._sidebar = sidebar;
     this.#coefficient = ltr === isResizerOnTheLeft ? -1 : 1;
+    this.#resizer = resizer;
+    this.#isResizerOnTheLeft = isResizerOnTheLeft;
 
     const style = window.getComputedStyle(sidebar);
-    this.#minWidth = parseFloat(style.getPropertyValue("--sidebar-min-width"));
-    this.#maxWidth = parseFloat(style.getPropertyValue("--sidebar-max-width"));
     this.#initialWidth = this.#width = parseFloat(
       style.getPropertyValue("--sidebar-width")
     );
+    resizer.ariaValueMin = parseFloat(
+      style.getPropertyValue("--sidebar-min-width")
+    );
+    resizer.ariaValueMax = parseFloat(
+      style.getPropertyValue("--sidebar-max-width")
+    );
+    resizer.ariaValueNow = this.#width;
 
-    this.#makeSidebarResizable(resizer, isResizerOnTheLeft);
+    this.#makeSidebarResizable();
     toggleButton.addEventListener("click", this.toggle.bind(this));
+    this._isOpen = false;
     sidebar.hidden = true;
   }
 
-  #makeSidebarResizable(resizer, isResizerOnTheLeft) {
-    resizer.ariaValueMin = this.#minWidth;
-    resizer.ariaValueMax = this.#maxWidth;
-    resizer.ariaValueNow = this.#width;
-
+  #makeSidebarResizable() {
+    const sidebarStyle = this._sidebar.style;
     let pointerMoveAC;
     const cancelResize = () => {
-      this.#width = MathClamp(this.#width, this.#minWidth, this.#maxWidth);
+      this.#resizeTimeout = null;
       this._sidebar.classList.remove("resizing");
       pointerMoveAC?.abort();
       pointerMoveAC = null;
+      this.#resizeObserver?.disconnect();
+      this.#resizeObserver = null;
+      this.#isKeyboardResizing = false;
+      this.onStopResizing();
     };
-    resizer.addEventListener("pointerdown", e => {
+    this.#resizer.addEventListener("pointerdown", e => {
       if (pointerMoveAC) {
         cancelResize();
         return;
       }
+      this.onStartResizing();
       const { clientX } = e;
       stopEvent(e);
       let prevX = clientX;
       pointerMoveAC = new AbortController();
       const { signal } = pointerMoveAC;
       const sidebar = this._sidebar;
-      const sidebarStyle = sidebar.style;
       sidebar.classList.add("resizing");
       const parentStyle = sidebar.parentElement.style;
       parentStyle.minWidth = 0;
+      this.#resizeObserver?.disconnect();
+      this.#resizeObserver = new ResizeObserver(
+        ([
+          {
+            borderBoxSize: [{ inlineSize }],
+          },
+        ]) => {
+          prevX += this.#width - inlineSize;
+          this.#setWidth(inlineSize);
+        }
+      );
+      this.#resizeObserver.observe(sidebar);
       window.addEventListener("contextmenu", noContextMenu, { signal });
       window.addEventListener(
         "pointermove",
@@ -96,16 +124,7 @@ class Sidebar {
             return;
           }
           stopEvent(ev);
-          const { clientX: x } = ev;
-          this.#setNewWidth(
-            x - prevX,
-            parentStyle,
-            resizer,
-            sidebarStyle,
-            isResizerOnTheLeft,
-            /* isFromKeyboard */ false
-          );
-          prevX = x;
+          sidebarStyle.width = `${Math.round(this.#width + this.#coefficient * (ev.clientX - prevX))}px`;
         },
         { signal, capture: true }
       );
@@ -121,59 +140,101 @@ class Sidebar {
         { signal }
       );
     });
-    resizer.addEventListener("keydown", e => {
+    this.#resizer.addEventListener("keydown", e => {
       const { key } = e;
       const isArrowLeft = key === "ArrowLeft";
       if (isArrowLeft || key === "ArrowRight") {
+        if (!this.#isKeyboardResizing) {
+          this._sidebar.classList.add("resizing");
+          this.#isKeyboardResizing = true;
+          this.#resizeObserver?.disconnect();
+          this.#resizeObserver = new ResizeObserver(
+            ([
+              {
+                borderBoxSize: [{ inlineSize }],
+              },
+            ]) => {
+              this.#setWidth(inlineSize);
+            }
+          );
+          this.#resizeObserver.observe(this._sidebar);
+          this.onStartResizing();
+        }
+
         const base = e.ctrlKey || e.metaKey ? 10 : 1;
         const dx = base * (isArrowLeft ? -1 : 1);
-        this.#setNewWidth(
-          dx,
-          this._sidebar.parentElement.style,
-          resizer,
-          this._sidebar.style,
-          isResizerOnTheLeft,
-          /* isFromKeyboard */ true
-        );
+        clearTimeout(this.#resizeTimeout);
+        this.#resizeTimeout = setTimeout(cancelResize, RESIZE_TIMEOUT);
+        sidebarStyle.width = `${Math.round(this.#width + this.#coefficient * dx)}px`;
         stopEvent(e);
       }
     });
   }
 
-  #setNewWidth(
-    dx,
-    parentStyle,
-    resizer,
-    sidebarStyle,
-    isResizerOnTheLeft,
-    isFromKeyboard
-  ) {
-    let newWidth = this.#width + this.#coefficient * dx;
-    if (!isFromKeyboard) {
-      this.#width = newWidth;
+  #setWidth(newWidth) {
+    this.#width = newWidth;
+    this.#resizer.ariaValueNow = Math.round(newWidth);
+    if (this.#isResizerOnTheLeft) {
+      this._sidebar.parentElement.style.insetInlineStart = `${(this.#initialWidth - newWidth).toFixed(3)}px`;
     }
-    if (
-      (newWidth > this.#maxWidth || newWidth < this.#minWidth) &&
-      (this.#width === this.#maxWidth || this.#width === this.#minWidth)
-    ) {
-      return;
-    }
-    newWidth = MathClamp(newWidth, this.#minWidth, this.#maxWidth);
-    if (isFromKeyboard) {
-      this.#width = newWidth;
-    }
-    resizer.ariaValueNow = Math.round(newWidth);
-    sidebarStyle.width = `${newWidth.toFixed(3)}px`;
-    if (isResizerOnTheLeft) {
-      parentStyle.insetInlineStart = `${(this.#initialWidth - newWidth).toFixed(3)}px`;
-    }
+    this.onResizing(newWidth);
   }
 
   /**
-   * Toggle the sidebar's visibility.
+   * Get the current width of the sidebar in pixels.
+   * @returns {number}
    */
-  toggle() {
-    this._sidebar.hidden = !(this.#visible = !this.#visible);
+  get width() {
+    return this.#width;
+  }
+
+  /**
+   * Set the width of the sidebar in pixels.
+   * @param {number} newWidth
+   */
+  set width(newWidth) {
+    if (!this.#resizeObserver) {
+      this.#resizeObserver = new ResizeObserver(
+        ([
+          {
+            borderBoxSize: [{ inlineSize }],
+          },
+        ]) => {
+          this.#setWidth(inlineSize);
+        }
+      );
+      this.#resizeObserver.observe(this._sidebar);
+    }
+    this._sidebar.style.width = `${newWidth}px`;
+    clearTimeout(this.#resizeTimeout);
+    this.#resizeTimeout = setTimeout(() => {
+      this.#resizeObserver.disconnect();
+      this.#resizeObserver = null;
+    }, RESIZE_TIMEOUT);
+  }
+
+  /**
+   * Callback to be executed when the user starts resizing the sidebar.
+   */
+  onStartResizing() {}
+
+  /**
+   * Callback to be executed when the user stops resizing the sidebar.
+   */
+  onStopResizing() {}
+
+  /**
+   * Callback to be executed when the sidebar is being resized.
+   * @param {number} newWidth - The new width of the sidebar in pixels.
+   */
+  onResizing(_newWidth) {}
+
+  /**
+   * Toggle the sidebar's visibility.
+   * @param {boolean} [visibility] - The visibility state to set.
+   */
+  toggle(visibility = !this._isOpen) {
+    this._sidebar.hidden = !(this._isOpen = visibility);
   }
 }
 
