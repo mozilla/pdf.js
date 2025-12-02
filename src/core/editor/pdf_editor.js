@@ -470,6 +470,8 @@ class PDFEditor {
    *  included ranges (inclusive) or indices.
    * @property {Array<Array<number>|number>} [excludePages]
    *  excluded ranges (inclusive) or indices.
+   * @property {Array<number>} [pageIndices]
+   *  position of the pages in the final document.
    */
 
   /**
@@ -482,9 +484,17 @@ class PDFEditor {
     let newIndex = 0;
     this.hasSingleFile = pageInfos.length === 1;
     const allDocumentData = [];
-    for (const { document, includePages, excludePages } of pageInfos) {
+    for (const {
+      document,
+      includePages,
+      excludePages,
+      pageIndices,
+    } of pageInfos) {
       if (!document) {
         continue;
+      }
+      if (pageIndices) {
+        newIndex = -1;
       }
       const documentData = new DocumentData(document);
       allDocumentData.push(documentData);
@@ -504,6 +514,7 @@ class PDFEditor {
           (deletedIndices ||= new Set()).add(page);
         }
       }
+      let pageIndex = 0;
       for (let i = 0, ii = document.numPages; i < ii; i++) {
         if (deletedIndices?.has(i)) {
           continue;
@@ -539,7 +550,23 @@ class PDFEditor {
         if (!takePage) {
           continue;
         }
-        const newPageIndex = newIndex++;
+        let newPageIndex;
+        if (pageIndices) {
+          newPageIndex = pageIndices[pageIndex++];
+        }
+        if (newPageIndex === undefined) {
+          if (newIndex !== -1) {
+            newPageIndex = newIndex++;
+          } else {
+            for (
+              newPageIndex = 0;
+              this.oldPages[newPageIndex] === undefined;
+              newPageIndex++
+            ) {
+              /* empty */
+            }
+          }
+        }
         promises.push(
           document.getPage(i).then(page => {
             this.oldPages[newPageIndex] = new PageData(page, documentData);
