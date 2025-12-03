@@ -602,18 +602,6 @@ pdfjs-show-comment-button =
 
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = 操作
-pdfjs-editor-edit-comment-actions-button =
-    .title = 操作
-pdfjs-editor-edit-comment-close-button-label = 閉じる
-pdfjs-editor-edit-comment-close-button =
-    .title = 閉じる
-pdfjs-editor-edit-comment-actions-edit-button-label = 編集
-pdfjs-editor-edit-comment-actions-delete-button-label = 削除
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = コメントを入力してください
-pdfjs-editor-edit-comment-manager-cancel-button = キャンセル
-pdfjs-editor-edit-comment-manager-save-button = 保存
 # An existing comment is edited
 pdfjs-editor-edit-comment-dialog-title-when-editing = コメントを編集
 pdfjs-editor-edit-comment-dialog-save-button-when-editing = 更新
