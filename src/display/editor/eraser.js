@@ -6,7 +6,6 @@ import { noContextMenu, stopEvent } from "../display_utils.js";
 import { AnnotationEditor } from "./editor.js";
 import { CurrentPointers } from "./tools.js";
 
-
 class EraserEditor extends AnnotationEditor {
   static #currentCursorAC = null;
 
