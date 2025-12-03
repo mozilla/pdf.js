@@ -17,6 +17,7 @@ import {
   awaitPromise,
   closePages,
   createPromise,
+  getRect,
   getSpanRectFromText,
   loadAndWait,
   scrollIntoView,
@@ -363,12 +364,12 @@ describe("PDF viewer", () => {
               .toBeLessThan(originalCanvasSize * factor ** 2);
 
             expect(canvasSize)
-              .withContext(`In ${browserName}, <= MAX_CANVAS_PIXELS`)
-              .toBeLessThanOrEqual(MAX_CANVAS_PIXELS.get(browserName));
+              .withContext(`In ${browserName}, <= MAX_CANVAS_PIXELS / 4`)
+              .toBeLessThanOrEqual(MAX_CANVAS_PIXELS.get(browserName) / 4);
 
             expect(canvasSize)
-              .withContext(`In ${browserName}, > MAX_CANVAS_PIXELS * 0.99`)
-              .toBeGreaterThan(MAX_CANVAS_PIXELS.get(browserName) * 0.99);
+              .withContext(`In ${browserName}, > MAX_CANVAS_PIXELS / 4 * 0.95`)
+              .toBeGreaterThan((MAX_CANVAS_PIXELS.get(browserName) / 4) * 0.95);
           })
         );
       });
@@ -565,10 +566,10 @@ describe("PDF viewer", () => {
                 .toBe(2);
               expect(after[0].width)
                 .withContext(`In ${browserName}`)
-                .toBe(582 * pixelRatio);
+                .toBe(Math.floor(291 * pixelRatio));
               expect(after[0].height)
                 .withContext(`In ${browserName}`)
-                .toBe(823 * pixelRatio);
+                .toBe(Math.floor(411.5 * pixelRatio));
 
               // The dimensions of the detail canvas are capped to 800x600 but
               // it depends on the visible area which depends itself of the
@@ -1358,25 +1359,26 @@ describe("PDF viewer", () => {
 
   describe("Pinch-zoom", () => {
     let pages;
+
     beforeEach(async () => {
       pages = await loadAndWait(
         "tracemonkey.pdf",
         `.page[data-page-number = "1"] .endOfContent`
       );
     });
+
     it("keeps the content under the pinch centre fixed on the screen", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           if (browserName === "firefox") {
-            // Firefox does not support touch events on devices
-            // with no touch screen.
-            return;
+            pending(
+              "Touch events are not supported on devices without touch screen in Firefox."
+            );
           }
           if (browserName === "chrome") {
-            // Skip the test for Chrome as it doesn't support pinch zoom
-            // emulation for WebDriver BiDi yet.
-            // TODO: Remove this check once the issue is fixed.
-            return;
+            pending(
+              "Pinch zoom emulation is not supported for WebDriver BiDi in Chrome."
+            );
           }
 
           const rect = await getSpanRectFromText(page, 1, "type-stable");
@@ -1410,6 +1412,53 @@ describe("PDF viewer", () => {
             ).find(span => span.textContent.includes("type-stable"))
           );
           expect(await spanHandle.isIntersectingViewport()).toBeTrue();
+        })
+      );
+    });
+  });
+
+  describe("Scroll into view", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey_annotation_on_page_8.pdf",
+        `.page[data-page-number = "1"] .endOfContent`
+      );
+    });
+
+    it("Check that the top right corner of the annotation is centered vertically", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const handle = await page.evaluateHandle(() => [
+            new Promise(resolve => {
+              const container = document.getElementById("viewerContainer");
+              container.addEventListener("scrollend", resolve, {
+                once: true,
+              });
+              window.PDFViewerApplication.pdfLinkService.goToXY(
+                8,
+                43.55,
+                198.36,
+                {
+                  center: "vertical",
+                }
+              );
+            }),
+          ]);
+          await awaitPromise(handle);
+          const annotationSelector =
+            ".page[data-page-number='8'] .stampAnnotation";
+          await page.waitForSelector(annotationSelector, { visible: true });
+          const rect = await getRect(page, annotationSelector);
+          const containerRect = await getRect(page, "#viewerContainer");
+          expect(
+            Math.abs(
+              2 * (Math.ceil(rect.y) - containerRect.y) - containerRect.height
+            )
+          )
+            .withContext(`In ${browserName}`)
+            .toBeLessThanOrEqual(1);
         })
       );
     });

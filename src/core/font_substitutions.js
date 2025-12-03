@@ -51,6 +51,7 @@ const substitutionMap = new Map([
         "FreeSerif",
         "Linux Libertine O",
         "Libertinus Serif",
+        "PT Astra Serif",
         "DejaVu Serif",
         "Bitstream Vera Serif",
         "Ubuntu",

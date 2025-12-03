@@ -181,7 +181,10 @@ describe("accessibility", () => {
     let pages;
 
     beforeEach(async () => {
-      pages = await loadAndWait("tagged_stamp.pdf", ".annotationLayer");
+      pages = await loadAndWait(
+        "tagged_stamp.pdf",
+        ".annotationLayer #pdfjs_internal_id_21R"
+      );
     });
 
     afterEach(async () => {
@@ -298,6 +301,114 @@ describe("accessibility", () => {
         pages.map(async ([browserName, page]) => {
           const id = await page.$eval("span.markedContent", span => span.id);
           expect(id).withContext(`In ${browserName}`).toBe("");
+        })
+      );
+    });
+  });
+
+  describe("MathML in AF entry from LaTeX", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("bug1937438_af_from_latex.pdf", ".textLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the MathML is correctly inserted", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const isSanitizerSupported = await page.evaluate(() => {
+            try {
+              // eslint-disable-next-line no-undef
+              return typeof Sanitizer !== "undefined";
+            } catch {
+              return false;
+            }
+          });
+          if (isSanitizerSupported) {
+            const mathML = await page.$eval(
+              "span.structTree span[aria-owns='p58R_mc13'] > math",
+              el => el?.innerHTML ?? ""
+            );
+            expect(mathML)
+              .withContext(`In ${browserName}`)
+              .toEqual(
+                " <msqrt><msup><mi>x</mi><mn>2</mn></msup></msqrt> <mo>=</mo> <mrow><mo>|</mo><mi>x</mi><mo>|</mo></mrow> "
+              );
+          } else {
+            pending(`Sanitizer API (in ${browserName}) is not supported`);
+          }
+        })
+      );
+    });
+  });
+
+  describe("MathML with some attributes in AF entry from LaTeX", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("bug1997343.pdf", ".textLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the MathML is correctly inserted", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const isSanitizerSupported = await page.evaluate(() => {
+            try {
+              // eslint-disable-next-line no-undef
+              return typeof Sanitizer !== "undefined";
+            } catch {
+              return false;
+            }
+          });
+          if (isSanitizerSupported) {
+            const mathML = await page.$eval(
+              "span.structTree span[aria-owns='p21R_mc64']",
+              el => el?.innerHTML ?? ""
+            );
+            expect(mathML)
+              .withContext(`In ${browserName}`)
+              .toEqual(
+                '<math display="block"> <msup> <mi>𝑛</mi> <mi>𝑝</mi> </msup> <mo lspace="0.278em" rspace="0.278em">=</mo> <mi>𝑛</mi> <mspace width="1.000em"></mspace> <mi> mod </mi> <mspace width="0.167em"></mspace> <mspace width="0.167em"></mspace> <mi>𝑝</mi> </math>'
+              );
+          } else {
+            pending(`Sanitizer API (in ${browserName}) is not supported`);
+          }
+        })
+      );
+    });
+  });
+
+  describe("MathML tags in the struct tree", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("bug1937438_mml_from_latex.pdf", ".textLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the MathML is correctly inserted", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const mathML = await page.$eval(
+            "span.structTree span[role='group'] span[role='group']:last-child > span math",
+            el => el?.innerHTML ?? ""
+          );
+          expect(mathML)
+            .withContext(`In ${browserName}`)
+            .toEqual(
+              `<mi aria-owns="p76R_mc16"></mi><mo aria-owns="p76R_mc17"></mo><msqrt><mrow><msup><mi aria-owns="p76R_mc18"></mi><mn aria-owns="p76R_mc19"></mn></msup><mo aria-owns="p76R_mc20"></mo><msup><mi aria-owns="p76R_mc21"></mi><mn aria-owns="p76R_mc22"></mn></msup></mrow></msqrt>`
+            );
         })
       );
     });

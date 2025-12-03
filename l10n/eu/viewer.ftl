@@ -286,9 +286,13 @@ pdfjs-web-fonts-disabled = Webeko letra-tipoak desgaituta daude: ezin dira kapsu
 
 pdfjs-editor-free-text-button =
     .title = Testua
+pdfjs-editor-color-picker-free-text-input =
+    .title = Aldatu testuaren kolorea
 pdfjs-editor-free-text-button-label = Testua
 pdfjs-editor-ink-button =
     .title = Marrazkia
+pdfjs-editor-color-picker-ink-input =
+    .title = Aldatu marrazteko kolorea
 pdfjs-editor-ink-button-label = Marrazkia
 pdfjs-editor-stamp-button =
     .title = Gehitu edo editatu irudiak
@@ -300,6 +304,14 @@ pdfjs-highlight-floating-button1 =
     .title = Nabarmendu
     .aria-label = Nabarmendu
 pdfjs-highlight-floating-button-label = Nabarmendu
+pdfjs-comment-floating-button =
+    .title = Iruzkina
+    .aria-label = Iruzkina
+pdfjs-comment-floating-button-label = Iruzkina
+pdfjs-editor-comment-button =
+    .title = Iruzkina
+    .aria-label = Iruzkina
+pdfjs-editor-comment-button-label = Iruzkina
 pdfjs-editor-signature-button =
     .title = Gehitu sinadura
 pdfjs-editor-signature-button-label = Gehitu sinadura
@@ -362,6 +374,21 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Testu-editorea
     .default-content = Hasi idazten…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Iruzkina
+       *[other] Iruzkinak
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Itxi alboko barra
+    .aria-label = Itxi alboko barra
+pdfjs-editor-comments-sidebar-close-button-label = Itxi alboko barra
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = Azpimarratzeko zerbait ikusi duzu? Nabarmen ezazu eta utzi iruzkina.
+pdfjs-editor-comments-sidebar-no-comments-link = Argibide gehiago
 
 ## Alt-text dialog
 
@@ -492,6 +519,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Erakutsi testu alterna
 pdfjs-editor-alt-text-settings-show-dialog-description = Zure irudiek testu alternatiboa duela ziurtatzen laguntzen dizu.
 pdfjs-editor-alt-text-settings-close-button = Itxi
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = Nabarmentzea gehituta
+pdfjs-editor-freetext-added-alert = Testua gehituta
+pdfjs-editor-ink-added-alert = Marrazkia gehituta
+pdfjs-editor-stamp-added-alert = Irudia gehituta
+pdfjs-editor-signature-added-alert = Sinadura gehituta
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Nabarmentzea kenduta
@@ -564,6 +599,8 @@ pdfjs-editor-add-signature-save-checkbox = Gorde sinadura
 pdfjs-editor-add-signature-save-warning-message = Gordetako sinadura kopuruaren mugara heldu zara (5). Gehiago gorde ahal izateko, ken ezazu bat.
 pdfjs-editor-add-signature-image-upload-error-title = Ezin da irudia igo
 pdfjs-editor-add-signature-image-upload-error-description = Egiaztatu zure sareko konexioa edo saiatu beste irudi batekin.
+pdfjs-editor-add-signature-image-no-data-error-title = Ezin da irudia sinaduran bihurtu
+pdfjs-editor-add-signature-image-no-data-error-description = Saiatu beste irudi bat igotzen.
 pdfjs-editor-add-signature-error-close-button = Itxi
 
 ## Dialog buttons
@@ -571,6 +608,36 @@ pdfjs-editor-add-signature-error-close-button = Itxi
 pdfjs-editor-add-signature-cancel-button = Utzi
 pdfjs-editor-add-signature-add-button = Gehitu
 pdfjs-editor-edit-signature-update-button = Eguneratu
+
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Editatu iruzkina
+pdfjs-editor-edit-comment-popup-button =
+    .title = Editatu iruzkina
+pdfjs-editor-delete-comment-popup-button-label = Kendu iruzkina
+pdfjs-editor-delete-comment-popup-button =
+    .title = Kendu iruzkina
+pdfjs-show-comment-button =
+    .title = Erakutsi iruzkina
+
+##  Edit a comment dialog
+
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Editatu iruzkina
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Eguneratu
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Gehitu iruzkina
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Gehitu
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Hasi idazten…
+pdfjs-editor-edit-comment-dialog-cancel-button = Utzi
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Editatu iruzkina
+pdfjs-editor-add-comment-button =
+    .title = Gehitu iruzkina
 
 ## Main menu for adding/removing signatures
 

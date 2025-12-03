@@ -384,10 +384,9 @@ class EraserEditor extends AnnotationEditor {
   }
 
   #getErasableEditors() {
-    const editors = this._uiManager.getEditors(this.pageIndex) || [];
-    return editors.filter(
-      ed => ed.erasable && ed?.parent?.div && ed?.div
-    );
+    const editors =
+      Array.from(this._uiManager.getEditors(this.pageIndex)) || [];
+    return editors.filter(ed => ed.erasable && ed?.parent?.div && ed?.div);
   }
 
   #erase(clientX, clientY) {

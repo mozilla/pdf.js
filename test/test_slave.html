@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <!--
 Copyright 2015 Mozilla Foundation
 
@@ -17,29 +17,29 @@ limitations under the License.
 <html>
   <head>
     <title>PDF.js test slave</title>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <script src="../build/generic/build/pdf.mjs" type="module"></script>
     <script src="../build/components/pdf_viewer.mjs" type="module"></script>
 
-    <link rel="resource" type="application/l10n" href="../build/generic/web/locale/locale.json">
+    <link rel="resource" type="application/l10n" href="../build/generic/web/locale/locale.json" />
   </head>
   <body>
     <p>Inflight requests: <span id="inflight"></span></p>
     <p>
-      <input type="checkbox" id="disableScrolling">
+      <input type="checkbox" id="disableScrolling" />
       <label for="disableScrolling">Disable automatic scrolling</label>
     </p>
-    <pre id="output" style="max-height: 800px; overflow-y: scroll;"></pre>
+    <pre id="output" style="max-height: 800px; overflow-y: scroll"></pre>
     <div id="end"></div>
   </body>
   <script type="module">
     import { Driver } from "./driver.js";
 
     const driver = new Driver({
-      disableScrolling: document.getElementById('disableScrolling'),
-      inflight: document.getElementById('inflight'),
-      output: document.getElementById('output'),
-      end: document.getElementById('end')
+      disableScrolling: document.getElementById("disableScrolling"),
+      inflight: document.getElementById("inflight"),
+      output: document.getElementById("output"),
+      end: document.getElementById("end"),
     });
     driver.run();
   </script>

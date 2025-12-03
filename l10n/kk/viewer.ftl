@@ -286,9 +286,13 @@ pdfjs-web-fonts-disabled = Веб қаріптері сөндірілген: қ�
 
 pdfjs-editor-free-text-button =
     .title = Мәтін
+pdfjs-editor-color-picker-free-text-input =
+    .title = Мәтін түсін өзгерту
 pdfjs-editor-free-text-button-label = Мәтін
 pdfjs-editor-ink-button =
     .title = Сурет салу
+pdfjs-editor-color-picker-ink-input =
+    .title = Сызба түсін өзгерту
 pdfjs-editor-ink-button-label = Сурет салу
 pdfjs-editor-stamp-button =
     .title = Суреттерді қосу немесе түзету
@@ -300,12 +304,25 @@ pdfjs-highlight-floating-button1 =
     .title = Ерекшелеу
     .aria-label = Ерекшелеу
 pdfjs-highlight-floating-button-label = Ерекшелеу
+pdfjs-comment-floating-button =
+    .title = Түсіндірме
+    .aria-label = Түсіндірме
+pdfjs-comment-floating-button-label = Түсіндірме
+pdfjs-editor-comment-button =
+    .title = Түсіндірме
+    .aria-label = Түсіндірме
+pdfjs-editor-comment-button-label = Түсіндірме
 pdfjs-editor-signature-button =
     .title = Қолтаңбаны қосу
 pdfjs-editor-signature-button-label = Қолтаңбаны қосу
 
 ## Default editor aria labels
 
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor1 =
+    .aria-description = Қолтаңба түзеткіші: { $description }
 pdfjs-editor-stamp-editor =
     .aria-label = Сурет редакторы
 
@@ -351,6 +368,19 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Мәтін түзеткіші
     .default-content = Теріп бастаңыз…
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Түсіндірмелер
+       *[other] Түсіндірмелер
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Бүйір панелін жабу
+    .aria-label = Бүйір панелін жабу
+pdfjs-editor-comments-sidebar-close-button-label = Бүйір панелін жабу
+pdfjs-editor-comments-sidebar-no-comments-link = Көбірек білу
 
 ## Alt-text dialog
 
@@ -563,6 +593,19 @@ pdfjs-editor-add-signature-error-close-button = Жабу
 pdfjs-editor-add-signature-cancel-button = Бас тарту
 pdfjs-editor-add-signature-add-button = Қосу
 pdfjs-editor-edit-signature-update-button = Жаңарту
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Жаңарту
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Қосу
+pdfjs-editor-edit-comment-dialog-cancel-button = Бас тарту
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-edit-comment-button =
+    .title = Пікірді түзету
+pdfjs-editor-add-comment-button =
+    .title = Пікір қосу
 
 ## Main menu for adding/removing signatures
 

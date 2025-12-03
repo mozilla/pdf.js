@@ -257,10 +257,8 @@ class Rasterize {
       // Rendering annotation layer as HTML.
       const parameters = {
         annotations,
-        linkService: new SimpleLinkService(),
         imageResourcesPath,
         renderForms,
-        annotationStorage,
         fieldObjects,
       };
 
@@ -272,6 +270,8 @@ class Rasterize {
         annotationCanvasMap: annotationImageMap,
         page,
         viewport: annotationViewport,
+        linkService: new SimpleLinkService(),
+        annotationStorage,
       });
       await annotationLayer.render(parameters);
       await annotationLayer.showPopups();
@@ -506,6 +506,7 @@ class Driver {
     this.inFlightRequests = 0;
     this.testFilter = JSON.parse(params.get("testfilter") || "[]");
     this.xfaOnly = params.get("xfaonly") === "true";
+    this.masterMode = params.get("mastermode") === "true";
 
     // Create a working canvas
     this.canvas = document.createElement("canvas");
@@ -591,6 +592,25 @@ class Driver {
       task.stats = { times: [] };
       task.enableXfa = task.enableXfa === true;
 
+      if (task.includePages && task.type === "extract") {
+        if (this.masterMode) {
+          const includePages = [];
+          for (const page of task.includePages) {
+            if (Array.isArray(page)) {
+              for (let i = page[0]; i <= page[1]; i++) {
+                includePages.push(i);
+              }
+            } else {
+              includePages.push(page);
+            }
+          }
+          task.numberOfTasks = includePages.length;
+          task.includePages = includePages;
+        } else {
+          delete task.pageMapping;
+        }
+      }
+
       const prevFile = md5FileMap.get(task.md5);
       if (prevFile) {
         if (task.file !== prevFile) {
@@ -657,6 +677,20 @@ class Driver {
           disableFontFace,
         });
         let promise = loadingTask.promise;
+
+        if (!this.masterMode && task.type === "extract") {
+          promise = promise.then(async doc => {
+            const data = await doc.extractPages([
+              {
+                document: null,
+                includePages: task.includePages,
+              },
+            ]);
+            await loadingTask.destroy();
+            delete task.includePages;
+            return getDocument(data).promise;
+          });
+        }
 
         if (task.annotationStorage) {
           for (const annotation of Object.values(task.annotationStorage)) {
@@ -862,7 +896,12 @@ class Driver {
       }
     }
 
-    if (task.skipPages?.includes(task.pageNum)) {
+    if (
+      task.skipPages?.includes(task.pageNum) ||
+      (this.masterMode &&
+        task.includePages &&
+        !task.includePages.includes(task.pageNum - 1))
+    ) {
       this._log(
         `    Skipping page ${task.pageNum}/${task.pdfDoc.numPages}...\n`
       );
@@ -1117,28 +1156,7 @@ class Driver {
                   const baseline = ctx.canvas.toDataURL("image/png");
                   this._clearCanvas();
 
-                  const filteredIndexes = new Set();
-
-                  // TODO: This logic is copy-psated from PDFPageDetailView.
-                  // We should export it instead, because even though it's
-                  // not the core logic of partial rendering it is still
-                  // relevant
-                  const recordedGroups = page.recordedGroups;
-                  for (let i = 0, ii = recordedGroups.length; i < ii; i++) {
-                    const group = recordedGroups[i];
-                    if (
-                      group.minX <= partialCrop.maxX &&
-                      group.maxX >= partialCrop.minX &&
-                      group.minY <= partialCrop.maxY &&
-                      group.maxY >= partialCrop.minY
-                    ) {
-                      filteredIndexes.add(group.idx);
-                      group.dependencies.forEach(
-                        filteredIndexes.add,
-                        filteredIndexes
-                      );
-                    }
-                  }
+                  const recordedBBoxes = page.recordedBBoxes;
 
                   const partialRenderContext = {
                     canvasContext: ctx,
@@ -1149,7 +1167,17 @@ class Driver {
                     pageColors,
                     transform,
                     recordOperations: false,
-                    filteredOperationIndexes: filteredIndexes,
+                    operationsFilter(index) {
+                      if (recordedBBoxes.isEmpty(index)) {
+                        return false;
+                      }
+                      return (
+                        recordedBBoxes.minX(index) <= partialCrop.maxX &&
+                        recordedBBoxes.maxX(index) >= partialCrop.minX &&
+                        recordedBBoxes.minY(index) <= partialCrop.maxY &&
+                        recordedBBoxes.maxY(index) >= partialCrop.minY
+                      );
+                    },
                   };
 
                   const partialRenderTask = page.render(partialRenderContext);
@@ -1285,10 +1313,11 @@ class Driver {
       id: task.id,
       numPages: task.pdfDoc ? task.lastPage || task.pdfDoc.numPages : 0,
       lastPageNum: this._getLastPageNumber(task),
+      numberOfTasks: task.numberOfTasks ?? -1,
       failure,
       file: task.file,
       round: task.round,
-      page: task.pageNum,
+      page: task.pageMapping?.[task.pageNum] ?? task.pageNum,
       snapshot,
       baselineSnapshot,
       stats: task.stats.times,

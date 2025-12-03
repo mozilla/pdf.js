@@ -22,16 +22,62 @@
   --sidebar-box-shadow:
     0 0.25px 0.75px light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)),
     0 2px 6px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
+  --sidebar-backdrop-filter: none;
+  --sidebar-border-radius: 8px;
+  --sidebar-padding: 5px;
+  --sidebar-min-width: 180px;
+  --sidebar-max-width: 632px;
+  --sidebar-width: 239px;
+  --resizer-width: 4px;
+  --resizer-hover-bg-color: light-dark(#0062fa, #00cadb);
 
   @media screen and (forced-colors: active) {
     --sidebar-bg-color: Canvas;
     --sidebar-border-color: CanvasText;
     --sidebar-box-shadow: none;
+    --resizer-hover-bg-color: CanvasText;
   }
 
-  border-radius: 8px;
+  border-radius: var(--sidebar-border-radius);
   box-shadow: var(--sidebar-box-shadow);
   border: 1px solid var(--sidebar-border-color);
   background-color: var(--sidebar-bg-color);
   inset-block-start: calc(100% + var(--doorhanger-height) - 2px);
+  padding-block: var(--sidebar-padding);
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-min-width);
+  max-width: var(--sidebar-max-width);
+  backdrop-filter: var(--sidebar-backdrop-filter);
+
+  .sidebarResizer {
+    width: var(--resizer-width);
+    background-color: transparent;
+    forced-color-adjust: none;
+    cursor: ew-resize;
+    position: absolute;
+    inset-block: calc(var(--sidebar-padding) + var(--sidebar-border-radius));
+    inset-inline-start: calc(0px - var(--resizer-width) / 2);
+    transition: background-color 0.5s ease-in-out;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    border-block-width: 0;
+    background-clip: content-box;
+
+    &:hover {
+      background-color: var(--resizer-hover-bg-color);
+    }
+    &:focus-visible {
+      background-color: var(--resizer-hover-bg-color);
+      outline: none;
+    }
+  }
+
+  &.resizing {
+    cursor: ew-resize;
+    user-select: none;
+
+    :not(.sidebarResizer) {
+      pointer-events: none;
+    }
+  }
 }

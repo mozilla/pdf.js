@@ -75,6 +75,7 @@ async function initializePDFJS(callback) {
       "pdfjs-test/unit/murmurhash3_spec.js",
       "pdfjs-test/unit/network_spec.js",
       "pdfjs-test/unit/network_utils_spec.js",
+      "pdfjs-test/unit/obj_bin_transform_spec.js",
       "pdfjs-test/unit/parser_spec.js",
       "pdfjs-test/unit/pdf.image_decoders_spec.js",
       "pdfjs-test/unit/pdf.worker_spec.js",

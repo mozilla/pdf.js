@@ -141,6 +141,15 @@ class NewAltTextManager {
     textarea.addEventListener("input", () => {
       this.#toggleTitleAndDisclaimer();
     });
+    textarea.addEventListener("keydown", e => {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.key === "Enter" &&
+        !saveButton.disabled
+      ) {
+        this.#save();
+      }
+    });
 
     eventBus._on("enableguessalttext", ({ value }) => {
       this.#toggleGuessAltText(value, /* isInitial = */ false);
@@ -444,7 +453,7 @@ class NewAltTextManager {
   }
 
   #close() {
-    const canvas = this.#imagePreview.firstChild;
+    const canvas = this.#imagePreview.firstElementChild;
     canvas.remove();
     canvas.width = canvas.height = 0;
     this.#imageData = null;
@@ -619,7 +628,7 @@ class ImageAltTextSettings {
   async #download(isFromUI = false) {
     if (isFromUI) {
       this.#downloadModelButton.disabled = true;
-      const span = this.#downloadModelButton.firstChild;
+      const span = this.#downloadModelButton.firstElementChild;
       span.setAttribute(
         "data-l10n-id",
         "pdfjs-editor-alt-text-settings-downloading-model-button"

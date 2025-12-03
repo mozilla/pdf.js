@@ -312,6 +312,10 @@ pdfjs-comment-floating-button =
     .title = Komentář
     .aria-label = Komentář
 pdfjs-comment-floating-button-label = Komentář
+pdfjs-editor-comment-button =
+    .title = Komentář
+    .aria-label = Komentář
+pdfjs-editor-comment-button-label = Komentář
 pdfjs-editor-signature-button =
     .title = Přidat podpis
 pdfjs-editor-signature-button-label = Přidat podpis
@@ -374,6 +378,23 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Textový editor
     .default-content = Začněte psát...
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Komentář
+        [few] Komentáře
+        [many] Komentáře
+       *[other] Komentáře
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Zavřít postranní lištu
+    .aria-label = Zavřít postranní lištu
+pdfjs-editor-comments-sidebar-close-button-label = Zavřít postranní lištu
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = Vidíte něco pozoruhodného? Zvýrazněte to a zanechte komentář.
+pdfjs-editor-comments-sidebar-no-comments-link = Zjistit více
 
 ## Alt-text dialog
 
@@ -543,8 +564,8 @@ pdfjs-editor-add-signature-dialog-title = Přidat podpis
 ## Tab names
 
 # Type is a verb (you can type your name as signature)
-pdfjs-editor-add-signature-type-button = Typ
-    .title = Typ
+pdfjs-editor-add-signature-type-button = Psát
+    .title = Psát
 # Draw is a verb (you can draw your signature)
 pdfjs-editor-add-signature-draw-button = Kreslit
     .title = Kreslit
@@ -592,25 +613,35 @@ pdfjs-editor-add-signature-cancel-button = Zrušit
 pdfjs-editor-add-signature-add-button = Přidat
 pdfjs-editor-edit-signature-update-button = Aktualizovat
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Upravit komentář
+pdfjs-editor-edit-comment-popup-button =
+    .title = Upravit komentář
+pdfjs-editor-delete-comment-popup-button-label = Odebrat komentář
+pdfjs-editor-delete-comment-popup-button =
+    .title = Odebrat komentář
+pdfjs-show-comment-button =
+    .title = Zobrazit komentář
+
 ##  Edit a comment dialog
 
-pdfjs-editor-edit-comment-actions-button-label = Akce
-pdfjs-editor-edit-comment-actions-button =
-    .title = Akce
-pdfjs-editor-edit-comment-close-button-label = Zavřít
-pdfjs-editor-edit-comment-close-button =
-    .title = Zavřít
-pdfjs-editor-edit-comment-actions-edit-button-label = Upravit
-pdfjs-editor-edit-comment-actions-delete-button-label = Smazat
-pdfjs-editor-edit-comment-manager-text-input =
-    .placeholder = Zadejte komentář
-pdfjs-editor-edit-comment-manager-cancel-button = Zrušit
-pdfjs-editor-edit-comment-manager-save-button = Uložit
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Upravit komentář
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Aktualizovat
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Přidání komentáře
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Přidat
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Začněte psát…
+pdfjs-editor-edit-comment-dialog-cancel-button = Zrušit
 
 ## Edit a comment button in the editor toolbar
 
 pdfjs-editor-edit-comment-button =
     .title = Upravit komentář
+pdfjs-editor-add-comment-button =
+    .title = Přidání komentáře
 
 ## Main menu for adding/removing signatures
 

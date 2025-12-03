@@ -49,7 +49,7 @@ function loadAndWait(filename, selector, zoom, setups, options, viewport) {
             : options;
 
         // Options must be handled in app.js::_parseHashParams.
-        for (const [key, value] of Object.entries(optionsObject)) {
+        for (const [key, value] of Object.entries(optionsObject || {})) {
           app_options += `&${key}=${encodeURIComponent(value)}`;
         }
       }
@@ -310,11 +310,25 @@ async function waitForEvent({
   }
 }
 
+async function countStorageEntries(page) {
+  return page.evaluate(
+    () => window.PDFViewerApplication.pdfDocument.annotationStorage.size
+  );
+}
+
 async function waitForStorageEntries(page, nEntries) {
   return page.waitForFunction(
     n => window.PDFViewerApplication.pdfDocument.annotationStorage.size === n,
     {},
     nEntries
+  );
+}
+
+async function countSerialized(page) {
+  return page.evaluate(
+    () =>
+      window.PDFViewerApplication.pdfDocument.annotationStorage.serializable.map
+        ?.size ?? 0
   );
 }
 
@@ -887,6 +901,30 @@ async function moveEditor(page, selector, n, pressKey) {
   }
 }
 
+async function getNextEditorId(page) {
+  return page.evaluate(() =>
+    window.PDFViewerApplication.pdfViewer._layerProperties.annotationEditorUIManager.getNextEditorId()
+  );
+}
+
+async function highlightSpan(
+  page,
+  pageIndex,
+  text,
+  xRatio = 0.5,
+  yRatio = 0.5
+) {
+  const nextId = await getNextEditorId(page);
+  const rect = await getSpanRectFromText(page, pageIndex, text);
+  const x = rect.x + rect.width * xRatio;
+  const y = rect.y + rect.height * yRatio;
+  // We add a small delay between press and release to make sure that a
+  // pointerup event is triggered after selectionchange.
+  // It works with a value of 1ms, but we use 100ms to be sure.
+  await page.mouse.click(x, y, { count: 2, delay: 100 });
+  await page.waitForSelector(getEditorSelector(nextId));
+}
+
 // Unicode bidi isolation characters, Fluent adds these markers to the text.
 const FSI = "\u2068";
 const PDI = "\u2069";
@@ -900,6 +938,8 @@ export {
   closeSinglePage,
   copy,
   copyToClipboard,
+  countSerialized,
+  countStorageEntries,
   createPromise,
   dragAndDrop,
   firstPageOnTop,
@@ -911,12 +951,14 @@ export {
   getEditors,
   getEditorSelector,
   getFirstSerialized,
+  getNextEditorId,
   getQuerySelector,
   getRect,
   getSelector,
   getSerialized,
   getSpanRectFromText,
   getXY,
+  highlightSpan,
   isCanvasMonochrome,
   kbBigMoveDown,
   kbBigMoveLeft,

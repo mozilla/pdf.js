@@ -155,7 +155,10 @@ class InkEditor extends DrawingEditor {
           opacity,
           borderStyle: { rawWidth: thickness },
           popupRef,
+          richText,
           contentsObj,
+          creationDate,
+          modificationDate,
         },
         parent: {
           page: { pageNumber },
@@ -175,14 +178,17 @@ class InkEditor extends DrawingEditor {
         id,
         deleted: false,
         popupRef,
+        richText,
         comment: contentsObj?.str || null,
+        creationDate,
+        modificationDate,
       };
     }
 
     const editor = await super.deserialize(data, parent, uiManager);
     editor._initialData = initialData;
     if (data.comment) {
-      editor.setCommentData(data.comment);
+      editor.setCommentData(data);
     }
 
     return editor;
@@ -198,8 +204,12 @@ class InkEditor extends DrawingEditor {
     return AnnotationEditorParamsType.INK_COLOR;
   }
 
-  get colorValue() {
+  get color() {
     return this._drawingOptions.stroke;
+  }
+
+  get opacity() {
+    return this._drawingOptions["stroke-opacity"];
   }
 
   /** @inheritdoc */
@@ -248,7 +258,7 @@ class InkEditor extends DrawingEditor {
       return this.serializeDeleted();
     }
 
-    const { lines, points, rect } = this.serializeDraw(isForCopying);
+    const { lines, points } = this.serializeDraw(isForCopying);
     const {
       _drawingOptions: {
         stroke,
@@ -256,8 +266,7 @@ class InkEditor extends DrawingEditor {
         "stroke-width": thickness,
       },
     } = this;
-    const serialized = {
-      annotationType: AnnotationEditorType.INK,
+    const serialized = Object.assign(super.serialize(isForCopying), {
       color: AnnotationEditor._colorManager.convert(stroke),
       opacity,
       thickness,
@@ -265,11 +274,7 @@ class InkEditor extends DrawingEditor {
         lines,
         points,
       },
-      pageIndex: this.pageIndex,
-      rect,
-      rotation: this.rotation,
-      structTreeParentId: this._structTreeParentId,
-    };
+    });
     this.addComment(serialized);
 
     if (isForCopying) {
@@ -305,15 +310,12 @@ class InkEditor extends DrawingEditor {
       return null;
     }
     const { points, rect } = this.serializeDraw(/* isForCopying = */ false);
-    const params = {
+    annotation.updateEdited({
       rect,
       thickness: this._drawingOptions["stroke-width"],
       points,
-    };
-    if (this.hasEditedComment) {
-      params.popup = this.comment;
-    }
-    annotation.updateEdited(params);
+      popup: this.comment,
+    });
 
     return null;
   }

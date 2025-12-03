@@ -2499,6 +2499,8 @@ describe("api", function () {
 
       let loadingTask = getDocument(buildGetDocumentParams("bug1823296.pdf"));
       let pdfDoc = await loadingTask.promise;
+      let page = await pdfDoc.getPage(1);
+      const originalStructTree = await page.getStructTree();
       pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
         annotationType: AnnotationEditorType.FREETEXT,
         rect: [12, 34, 56, 78],
@@ -2514,9 +2516,9 @@ describe("api", function () {
 
       loadingTask = getDocument(data);
       pdfDoc = await loadingTask.promise;
-      const xrefPrev = await pdfDoc.getXRefPrevValue();
-
-      expect(xrefPrev).toEqual(143954);
+      page = await pdfDoc.getPage(1);
+      const newStructTree = await page.getStructTree();
+      expect(newStructTree).toEqual(originalStructTree);
 
       await loadingTask.destroy();
     });
@@ -4027,6 +4029,37 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       expect(items[1].fontName).not.toEqual(items[0].fontName);
     });
 
+    it("gets text content with word spacing (issue 20319)", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue20319_1.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+      const text = mergeText(items);
+
+      expect(text).toEqual("A A");
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content with word spacing and a fake space (issue 20319)", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue20319_2.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+      const text = mergeText(items);
+      expect(text).toEqual("AA A");
+
+      await loadingTask.destroy();
+    });
+
     it("gets empty structure tree", async function () {
       const tree = await page.getStructTree();
 
@@ -5300,6 +5333,640 @@ a dynamic compiler for JavaScript based on our`);
 ular since they are expressive, accessible to non-experts, and make
 deployment as easy as distributing a source ﬁle. They are used for
 small scripts as well as for`);
+    });
+  });
+
+  describe("PDF page editing", function () {
+    const getPageRefs = async pdfDoc => {
+      const refs = [];
+      for (let i = 1; i <= pdfDoc.numPages; i++) {
+        const page = await pdfDoc.getPage(i);
+        refs.push(page.ref);
+      }
+      return refs;
+    };
+
+    describe("Merge pdfs", function () {
+      it("should merge three PDFs", async function () {
+        const loadingTask = getDocument(
+          buildGetDocumentParams("doc_1_3_pages.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const pdfData2 = await DefaultFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH + "doc_2_3_pages.pdf",
+        });
+        const pdfData3 = await DefaultFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH + "doc_3_3_pages.pdf",
+        });
+
+        let data = await pdfDoc.extractPages([
+          { document: null },
+          { document: pdfData2 },
+          { document: pdfData3 },
+        ]);
+        let newLoadingTask = getDocument(data);
+        let newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(9);
+
+        for (let i = 1; i <= 9; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          expect(mergeText(textItems)).toEqual(
+            `Document ${Math.ceil(i / 3)}:Page ${((i - 1) % 3) + 1}`
+          );
+        }
+        await newLoadingTask.destroy();
+
+        data = await pdfDoc.extractPages([
+          { document: pdfData3 },
+          { document: pdfData2 },
+          { document: null },
+        ]);
+        newLoadingTask = getDocument(data);
+        newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(9);
+        for (let i = 1; i <= 9; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          expect(mergeText(textItems)).toEqual(
+            `Document ${Math.ceil((10 - i) / 3)}:Page ${((i - 1) % 3) + 1}`
+          );
+        }
+        await newLoadingTask.destroy();
+
+        data = await pdfDoc.extractPages([
+          { document: null, includePages: [0] },
+          { document: pdfData2, includePages: [0] },
+          { document: pdfData3, includePages: [0] },
+        ]);
+        newLoadingTask = getDocument(data);
+        newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(3);
+        for (let i = 1; i <= 3; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          expect(mergeText(textItems)).toEqual(`Document ${i}:Page 1`);
+        }
+        await newLoadingTask.destroy();
+
+        data = await pdfDoc.extractPages([
+          { document: null, excludePages: [0] },
+          { document: pdfData2, excludePages: [0] },
+          { document: pdfData3, excludePages: [0] },
+        ]);
+        newLoadingTask = getDocument(data);
+        newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(6);
+        for (let i = 1; i <= 6; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          expect(mergeText(textItems)).toEqual(
+            `Document ${Math.ceil(i / 2)}:Page ${((i - 1) % 2) + 2}`
+          );
+        }
+        await newLoadingTask.destroy();
+
+        await loadingTask.destroy();
+      });
+
+      it("should merge two PDFs with page included ranges", async function () {
+        const loadingTask = getDocument(
+          buildGetDocumentParams("tracemonkey.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const pdfData1 = await DefaultFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH + "doc_1_3_pages.pdf",
+        });
+
+        const data = await pdfDoc.extractPages([
+          { document: pdfData1, includePages: [[0, 0], 2] },
+          { document: null, includePages: [[2, 4], 7] },
+        ]);
+        const newLoadingTask = getDocument(data);
+        const newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(6);
+
+        for (let i = 1; i <= 2; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          expect(mergeText(textItems)).toEqual(`Document 1:Page ${2 * i - 1}`);
+        }
+
+        const expectedPagesText = [
+          "v0 := ld s",
+          "i=4. On th",
+          "resentatio",
+          "5.1 Optimi",
+        ];
+        for (let i = 3; i <= 6; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          const text = mergeText(textItems);
+          expect(text.substring(0, 10)).toEqual(expectedPagesText[i - 3]);
+        }
+
+        await newLoadingTask.destroy();
+        await loadingTask.destroy();
+      });
+
+      it("should merge two PDFs with page excluded ranges", async function () {
+        const loadingTask = getDocument(
+          buildGetDocumentParams("tracemonkey.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const pdfData1 = await DefaultFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH + "doc_1_3_pages.pdf",
+        });
+
+        const data = await pdfDoc.extractPages([
+          { document: pdfData1, excludePages: [[1, 1]] },
+          {
+            document: null,
+            excludePages: [
+              [0, 1],
+              [5, 6],
+              [8, 13],
+            ],
+          },
+        ]);
+        const newLoadingTask = getDocument(data);
+        const newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(6);
+
+        for (let i = 1; i <= 2; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          expect(mergeText(textItems)).toEqual(`Document 1:Page ${2 * i - 1}`);
+        }
+
+        const expectedPagesText = [
+          "v0 := ld s",
+          "i=4. On th",
+          "resentatio",
+          "5.1 Optimi",
+        ];
+        for (let i = 3; i <= 6; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          const text = mergeText(textItems);
+          expect(text.substring(0, 10)).toEqual(expectedPagesText[i - 3]);
+        }
+
+        await newLoadingTask.destroy();
+        await loadingTask.destroy();
+      });
+
+      it("should merge two PDFs with one with a password", async function () {
+        const loadingTask = getDocument(
+          buildGetDocumentParams("doc_1_3_pages.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const pdfData1 = await DefaultFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH + "pr6531_2.pdf",
+        });
+
+        const data = await pdfDoc.extractPages([
+          { document: null, includePages: [0] },
+          { document: pdfData1, password: "asdfasdf" },
+        ]);
+        const newLoadingTask = getDocument(data);
+        const newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(2);
+
+        const expectedPagesText = ["Document 1:Page 1", ""];
+        for (let i = 1; i <= 2; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          expect(mergeText(textItems)).toEqual(expectedPagesText[i - 1]);
+        }
+
+        const page2 = await newPdfDoc.getPage(2);
+        const annots = await page2.getAnnotations();
+        expect(annots.length).toEqual(1);
+        expect(annots[0].contentsObj.str).toEqual(
+          "Bluebeam should be encrypting this."
+        );
+
+        await newLoadingTask.destroy();
+        await loadingTask.destroy();
+      });
+    });
+
+    describe("Page labels", function () {
+      it("extract page and check labels", async function () {
+        let loadingTask = getDocument(
+          buildGetDocumentParams("labelled_pages.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        let labels = await pdfDoc.getPageLabels();
+        expect(labels).toEqual([
+          "i" /* Page 0 */,
+          "ii" /* Page 1 */,
+          "iii" /* Page 2 */,
+          "iv" /* Page 3 */,
+          "1" /* Page 4 */,
+          "2" /* Page 5 */,
+          "3" /* Page 6 */,
+          "a" /* Page 7 */,
+          "b" /* Page 8 */,
+          "4" /* Page 9 */,
+          "5" /* Page 10 */,
+        ]);
+
+        const data = await pdfDoc.extractPages({
+          document: null,
+          includePages: [0, 1, 5, 7, 10],
+        });
+        await loadingTask.destroy();
+        loadingTask = getDocument(data);
+        const newPdfDoc = await loadingTask.promise;
+        labels = await newPdfDoc.getPageLabels();
+        expect(labels).toEqual(["i", "ii", "1", "a", "5"]);
+        await loadingTask.destroy();
+      });
+    });
+
+    describe("Named destinations", function () {
+      it("extract page and check destinations", async function () {
+        let loadingTask = getDocument(buildGetDocumentParams("issue6204.pdf"));
+        let pdfDoc = await loadingTask.promise;
+        let pagesRef = await getPageRefs(pdfDoc);
+        let destinations = await pdfDoc.getDestinations();
+        expect(destinations).toEqual({
+          "Page.1": [pagesRef[0], { name: "XYZ" }, 0, 375, null],
+          "Page.2": [pagesRef[1], { name: "XYZ" }, 0, 375, null],
+        });
+
+        let data = await pdfDoc.extractPages([
+          { document: null },
+          { document: null },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument(data);
+        pdfDoc = await loadingTask.promise;
+
+        expect(pdfDoc.numPages).toEqual(4);
+
+        pagesRef = await getPageRefs(pdfDoc);
+        destinations = await pdfDoc.getDestinations();
+        expect(destinations).toEqual({
+          "Page.1": [pagesRef[0], { name: "XYZ" }, 0, 375, null],
+          "Page.2": [pagesRef[1], { name: "XYZ" }, 0, 375, null],
+          "Page.1_p3": [pagesRef[2], { name: "XYZ" }, 0, 375, null],
+          "Page.2_p4": [pagesRef[3], { name: "XYZ" }, 0, 375, null],
+        });
+        const expectedDests = ["Page.2", "Page.1", "Page.2_p4", "Page.1_p3"];
+        for (let i = 1; i <= 4; i++) {
+          const pdfPage = await pdfDoc.getPage(i);
+          const annots = await pdfPage.getAnnotations();
+          expect(annots.length).toEqual(1);
+          expect(annots[0].dest).toEqual(expectedDests[i - 1]);
+        }
+
+        data = await pdfDoc.extractPages([
+          { document: null },
+          { document: null },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument(data);
+        pdfDoc = await loadingTask.promise;
+
+        expect(pdfDoc.numPages).toEqual(8);
+
+        pagesRef = await getPageRefs(pdfDoc);
+        destinations = await pdfDoc.getDestinations();
+        expect(destinations).toEqual({
+          "Page.1": [pagesRef[0], { name: "XYZ" }, 0, 375, null],
+          "Page.2": [pagesRef[1], { name: "XYZ" }, 0, 375, null],
+          "Page.1_p3": [pagesRef[2], { name: "XYZ" }, 0, 375, null],
+          "Page.2_p4": [pagesRef[3], { name: "XYZ" }, 0, 375, null],
+          "Page.1_p5": [pagesRef[4], { name: "XYZ" }, 0, 375, null],
+          "Page.2_p6": [pagesRef[5], { name: "XYZ" }, 0, 375, null],
+          "Page.1_p3_p7": [pagesRef[6], { name: "XYZ" }, 0, 375, null],
+          "Page.2_p4_p8": [pagesRef[7], { name: "XYZ" }, 0, 375, null],
+        });
+        expectedDests.push(
+          "Page.2_p6",
+          "Page.1_p5",
+          "Page.2_p4_p8",
+          "Page.1_p3_p7"
+        );
+        for (let i = 1; i <= 8; i++) {
+          const pdfPage = await pdfDoc.getPage(i);
+          const annots = await pdfPage.getAnnotations();
+          expect(annots.length).toEqual(1);
+          expect(annots[0].dest).toEqual(expectedDests[i - 1]);
+        }
+        await loadingTask.destroy();
+      });
+
+      it("extract pages and check deleted destinations", async function () {
+        let loadingTask = getDocument(buildGetDocumentParams("issue6204.pdf"));
+        let pdfDoc = await loadingTask.promise;
+        const data = await pdfDoc.extractPages([
+          { document: null },
+          { document: null, excludePages: [0] },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument(data);
+        pdfDoc = await loadingTask.promise;
+
+        expect(pdfDoc.numPages).toEqual(3);
+
+        const pagesRef = await getPageRefs(pdfDoc);
+        const destinations = await pdfDoc.getDestinations();
+        expect(destinations).toEqual({
+          "Page.1": [pagesRef[0], { name: "XYZ" }, 0, 375, null],
+          "Page.2": [pagesRef[1], { name: "XYZ" }, 0, 375, null],
+        });
+        const pdfPage = await pdfDoc.getPage(3);
+        const annots = await pdfPage.getAnnotations();
+        expect(annots.length).toEqual(0);
+      });
+    });
+
+    describe("Destinations with a page reference", function () {
+      it("extract page and check destinations", async function () {
+        let loadingTask = getDocument(
+          buildGetDocumentParams("extract_link.pdf")
+        );
+        let pdfDoc = await loadingTask.promise;
+        let pagesRef = await getPageRefs(pdfDoc);
+        let pdfPage = await pdfDoc.getPage(1);
+        let annotations = await pdfPage.getAnnotations();
+        expect(annotations.length).toEqual(1);
+        expect(annotations[0].dest[0]).toEqual(pagesRef[1]);
+
+        const data = await pdfDoc.extractPages([
+          { document: null },
+          { document: null },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument(data);
+        pdfDoc = await loadingTask.promise;
+
+        expect(pdfDoc.numPages).toEqual(4);
+
+        pagesRef = await getPageRefs(pdfDoc);
+        for (let i = 1; i <= 4; i += 2) {
+          pdfPage = await pdfDoc.getPage(i);
+          annotations = await pdfPage.getAnnotations();
+          expect(annotations.length).toEqual(1);
+          expect(annotations[0].dest[0]).toEqual(pagesRef[i]);
+        }
+
+        await loadingTask.destroy();
+      });
+    });
+
+    describe("Struct trees", function () {
+      it("extract pages and merge struct trees", async function () {
+        let loadingTask = getDocument(
+          buildGetDocumentParams("two_paragraphs.pdf")
+        );
+        let pdfDoc = await loadingTask.promise;
+        let pdfPage = await pdfDoc.getPage(1);
+        const structTree = await pdfPage.getStructTree();
+        expect(structTree).toEqual({
+          children: [
+            {
+              role: "Document",
+              children: [
+                {
+                  role: "Sect",
+                  children: [
+                    {
+                      role: "P",
+                      children: [{ type: "content", id: "p19R_mc0" }],
+                      lang: "EN-US",
+                    },
+                    {
+                      role: "P",
+                      children: [{ type: "content", id: "p19R_mc1" }],
+                      lang: "EN-US",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          role: "Root",
+        });
+        const filterItems = item => {
+          if (item.type === "beginMarkedContentProps") {
+            return item.id;
+          }
+          if (item.str !== undefined) {
+            return item.str;
+          }
+          return null;
+        };
+        let { items } = await pdfPage.getTextContent({
+          includeMarkedContent: true,
+          disableNormalization: true,
+        });
+        expect(items.map(filterItems)).toEqual([
+          "p19R_mc0",
+          "The ﬁrst paragraph.",
+          null,
+          "p19R_mc1",
+          "",
+          "The second paragraph.",
+          null,
+        ]);
+
+        const data = await pdfDoc.extractPages([
+          { document: null },
+          { document: null },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument(data);
+        pdfDoc = await loadingTask.promise;
+
+        expect(pdfDoc.numPages).toEqual(2);
+        pdfPage = await pdfDoc.getPage(1);
+        const structTree1 = await pdfPage.getStructTree();
+        expect(structTree1).toEqual({
+          children: [
+            {
+              role: "Document",
+              children: [
+                {
+                  role: "Sect",
+                  children: [
+                    {
+                      role: "P",
+                      children: [{ type: "content", id: "p4R_mc0" }],
+                      lang: "EN-US",
+                    },
+                    {
+                      role: "P",
+                      children: [{ type: "content", id: "p4R_mc1" }],
+                      lang: "EN-US",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          role: "Root",
+        });
+
+        ({ items } = await pdfPage.getTextContent({
+          includeMarkedContent: true,
+          disableNormalization: true,
+        }));
+        expect(items.map(filterItems)).toEqual([
+          "p4R_mc0",
+          "The ﬁrst paragraph.",
+          null,
+          "p4R_mc1",
+          "",
+          "The second paragraph.",
+          null,
+        ]);
+
+        pdfPage = await pdfDoc.getPage(2);
+        const structTree2 = await pdfPage.getStructTree();
+        expect(structTree2).toEqual({
+          children: [
+            {
+              role: "Document",
+              children: [
+                {
+                  role: "Sect",
+                  children: [
+                    {
+                      role: "P",
+                      children: [{ type: "content", id: "p19R_mc0" }],
+                      lang: "EN-US",
+                    },
+                    {
+                      role: "P",
+                      children: [{ type: "content", id: "p19R_mc1" }],
+                      lang: "EN-US",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          role: "Root",
+        });
+
+        ({ items } = await pdfPage.getTextContent({
+          includeMarkedContent: true,
+          disableNormalization: true,
+        }));
+        expect(items.map(filterItems)).toEqual([
+          "p19R_mc0",
+          "The ﬁrst paragraph.",
+          null,
+          "p19R_mc1",
+          "",
+          "The second paragraph.",
+          null,
+        ]);
+
+        await loadingTask.destroy();
+      });
+
+      it("extract pages with a removed link", async function () {
+        let loadingTask = getDocument(
+          buildGetDocumentParams("paragraph_and_link.pdf")
+        );
+        let pdfDoc = await loadingTask.promise;
+
+        const data = await pdfDoc.extractPages([
+          { document: null, excludePages: [1] },
+          { document: null },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument(data);
+        pdfDoc = await loadingTask.promise;
+
+        expect(pdfDoc.numPages).toEqual(3);
+        let pdfPage = await pdfDoc.getPage(1);
+        let structTree = await pdfPage.getStructTree();
+        expect(structTree).toEqual({
+          children: [
+            {
+              role: "Document",
+              children: [
+                {
+                  role: "Sect",
+                  children: [
+                    {
+                      role: "P",
+                      children: [{ type: "content", id: "p4R_mc0" }],
+                      lang: "EN-US",
+                    },
+                    {
+                      role: "P",
+                      children: [{ type: "content", id: "p4R_mc3" }],
+                      lang: "EN-US",
+                    },
+                    {
+                      role: "P",
+                      children: [{ type: "content", id: "p4R_mc6" }],
+                      lang: "EN-US",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          role: "Root",
+        });
+
+        pdfPage = await pdfDoc.getPage(2);
+        structTree = await pdfPage.getStructTree();
+
+        expect(structTree).toEqual({
+          children: [
+            {
+              role: "Document",
+              children: [
+                {
+                  role: "Sect",
+                  children: [
+                    {
+                      role: "P",
+                      children: [{ type: "content", id: "p23R_mc0" }],
+                      lang: "EN-US",
+                    },
+                    {
+                      role: "P",
+                      children: [
+                        {
+                          role: "Reference",
+                          children: [{ type: "content", id: "p23R_mc2" }],
+                          lang: "EN-US",
+                        },
+                        { type: "content", id: "p23R_mc3" },
+                      ],
+                      lang: "EN-US",
+                    },
+                    {
+                      role: "P",
+                      children: [{ type: "content", id: "p23R_mc6" }],
+                      lang: "EN-US",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          role: "Root",
+        });
+        await loadingTask.destroy();
+      });
     });
   });
 });

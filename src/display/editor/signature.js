@@ -276,7 +276,6 @@ class SignatureEditor extends DrawingEditor {
       drawOutlines: outline,
       drawingOptions,
     });
-    const [parentWidth, parentHeight] = this.parentDimensions;
     const [, pageHeight] = this.pageDimensions;
     let newHeight = heightInPage / pageHeight;
     // Ensure the signature doesn't exceed the page height.
@@ -290,7 +289,7 @@ class SignatureEditor extends DrawingEditor {
     }
 
     this.height = newHeight;
-    this.setDims(parentWidth * this.width, parentHeight * this.height);
+    this.setDims();
     this.x = savedX;
     this.y = savedY;
     this.center();
@@ -374,21 +373,16 @@ class SignatureEditor extends DrawingEditor {
       return null;
     }
 
-    const { lines, points, rect } = this.serializeDraw(isForCopying);
+    const { lines, points } = this.serializeDraw(isForCopying);
     const {
       _drawingOptions: { "stroke-width": thickness },
     } = this;
-    const serialized = {
-      annotationType: AnnotationEditorType.SIGNATURE,
+    const serialized = Object.assign(super.serialize(isForCopying), {
       isSignature: true,
       areContours: this.#isExtracted,
       color: [0, 0, 0],
       thickness: this.#isExtracted ? 0 : thickness,
-      pageIndex: this.pageIndex,
-      rect,
-      rotation: this.rotation,
-      structTreeParentId: this._structTreeParentId,
-    };
+    });
     this.addComment(serialized);
     if (isForCopying) {
       serialized.paths = { lines, points };

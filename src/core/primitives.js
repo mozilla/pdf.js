@@ -188,6 +188,10 @@ class Dict {
     return [...this._map.values()];
   }
 
+  getRawEntries() {
+    return this._map.entries();
+  }
+
   set(key, value) {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       if (typeof key !== "string") {
@@ -227,6 +231,12 @@ class Dict {
     if (typeof value === "string") {
       this.set(key, Name.get(value));
     } else if (value instanceof Name) {
+      this.set(key, value);
+    }
+  }
+
+  setIfDict(key, value) {
+    if (value instanceof Dict) {
       this.set(key, value);
     }
   }
@@ -309,7 +319,7 @@ class Dict {
   }
 
   delete(key) {
-    delete this._map[key];
+    this._map.delete(key);
   }
 }
 
@@ -427,6 +437,12 @@ class RefSetCache {
   *items() {
     for (const [ref, value] of this._map) {
       yield [Ref.fromString(ref), value];
+    }
+  }
+
+  *keys() {
+    for (const ref of this._map.keys()) {
+      yield Ref.fromString(ref);
     }
   }
 }

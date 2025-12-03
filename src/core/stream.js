@@ -82,6 +82,15 @@ class Stream extends BaseStream {
   makeSubStream(start, length, dict = null) {
     return new Stream(this.bytes.buffer, start, length, dict);
   }
+
+  clone() {
+    return new Stream(
+      this.bytes.buffer,
+      this.start,
+      this.end - this.start,
+      this.dict.clone()
+    );
+  }
 }
 
 class StringStream extends Stream {

@@ -14,12 +14,13 @@
  */
 
 import {
-  changeLightness,
+  applyOpacity,
+  findContrastColor,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
-  getRGB,
   isValidFetchUrl,
   PDFDateString,
+  renderRichText,
 } from "../../src/display/display_utils.js";
 import { isNodeJS, toBase64Util } from "../../src/shared/util.js";
 
@@ -303,24 +304,90 @@ describe("display_utils", function () {
     });
   });
 
-  describe("changeLightness", function () {
+  describe("findContrastColor", function () {
     it("Check that the lightness is changed correctly", function () {
+      expect(findContrastColor([210, 98, 76], [197, 113, 89])).toEqual(
+        "#260e09"
+      );
+    });
+  });
+
+  describe("applyOpacity", function () {
+    it("Check that the opacity is applied correctly", function () {
+      if (isNodeJS) {
+        pending("OffscreenCanvas is not supported in Node.js.");
+      }
+      const canvas = new OffscreenCanvas(1, 1);
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, 1, 1);
+      ctx.fillStyle = "rgb(123, 45, 67)";
+      ctx.globalAlpha = 0.8;
+      ctx.fillRect(0, 0, 1, 1);
+      const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+      expect(applyOpacity(123, 45, 67, ctx.globalAlpha)).toEqual([r, g, b]);
+    });
+  });
+
+  describe("renderRichText", function () {
+    // Unlike other tests we cannot simply compare the HTML-strings since
+    // Chrome and Firefox produce different results. Instead we compare sets
+    // containing the individual parts of the HTML-strings.
+    const splitParts = s => new Set(s.split(/[<>/ ]+/).filter(x => x));
+
+    it("should render plain text", function () {
       if (isNodeJS) {
         pending("DOM is not supported in Node.js.");
       }
-      const div = document.createElement("div");
-      const { style } = div;
-      style.width = style.height = "0";
-      style.backgroundColor = "hsl(123, 45%, 67%)";
-      document.body.append(div);
-      const [r, g, b] = getRGB(getComputedStyle(div).backgroundColor);
-      div.remove();
-      expect([r, g, b]).toEqual([133, 209, 137]);
-      expect(changeLightness(r, g, b, l => l)).toEqual(
-        "hsl(123.16, 45.24%, 67.06%)"
+      const container = document.createElement("div");
+      renderRichText(
+        {
+          html: "Hello world!\nThis is a test.",
+          dir: "ltr",
+          className: "foo",
+        },
+        container
       );
-      expect(changeLightness(r, g, b, l => l / 2)).toEqual(
-        "hsl(123.16, 45.24%, 33.53%)"
+      expect(splitParts(container.innerHTML)).toEqual(
+        splitParts(
+          '<p dir="ltr" class="richText foo">Hello world!<br>This is a test.</p>'
+        )
+      );
+    });
+
+    it("should render XFA rich text", function () {
+      if (isNodeJS) {
+        pending("DOM is not supported in Node.js.");
+      }
+      const container = document.createElement("div");
+      const xfaHtml = {
+        name: "div",
+        attributes: { style: { color: "red" } },
+        children: [
+          {
+            name: "p",
+            attributes: { style: { fontSize: "20px" } },
+            children: [
+              {
+                name: "span",
+                attributes: { style: { fontWeight: "bold" } },
+                value: "Hello",
+              },
+              { name: "#text", value: " world!" },
+            ],
+          },
+        ],
+      };
+      renderRichText(
+        { html: xfaHtml, dir: "ltr", className: "foo" },
+        container
+      );
+      expect(splitParts(container.innerHTML)).toEqual(
+        splitParts(
+          '<div style="color: red;" class="richText foo">' +
+            '<p style="font-size: 20px;">' +
+            '<span style="font-weight: bold;">Hello</span> world!</p></div>'
+        )
       );
     });
   });

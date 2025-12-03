@@ -111,6 +111,12 @@ const PermissionFlag = {
   PRINT_HIGH_QUALITY: 0x800,
 };
 
+const MeshFigureType = {
+  TRIANGLES: 1,
+  LATTICE: 2,
+  PATCH: 3,
+};
+
 const TextRenderingMode = {
   FILL: 0,
   STROKE: 1,
@@ -351,7 +357,8 @@ const DrawOPS = {
   moveTo: 0,
   lineTo: 1,
   curveTo: 2,
-  closePath: 3,
+  quadraticCurveTo: 3,
+  closePath: 4,
 };
 
 const PasswordResponses = {
@@ -377,7 +384,7 @@ function getVerbosityLevel() {
 function info(msg) {
   if (verbosity >= VerbosityLevel.INFOS) {
     // eslint-disable-next-line no-console
-    console.log(`Info: ${msg}`);
+    console.info(`Info: ${msg}`);
   }
 }
 
@@ -385,7 +392,7 @@ function info(msg) {
 function warn(msg) {
   if (verbosity >= VerbosityLevel.WARNINGS) {
     // eslint-disable-next-line no-console
-    console.log(`Warning: ${msg}`);
+    console.warn(`Warning: ${msg}`);
   }
 }
 
@@ -643,6 +650,23 @@ class FeatureTest {
       this,
       "isImageDecoderSupported",
       typeof ImageDecoder !== "undefined"
+    );
+  }
+
+  static get isFloat16ArraySupported() {
+    return shadow(
+      this,
+      "isFloat16ArraySupported",
+      typeof Float16Array !== "undefined"
+    );
+  }
+
+  static get isSanitizerSupported() {
+    return shadow(
+      this,
+      "isSanitizerSupported",
+      // eslint-disable-next-line no-undef
+      typeof Sanitizer !== "undefined"
     );
   }
 
@@ -1330,6 +1354,7 @@ export {
   LINE_DESCENT_FACTOR,
   LINE_FACTOR,
   MathClamp,
+  MeshFigureType,
   normalizeUnicode,
   objectSize,
   OPS,

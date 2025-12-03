@@ -95,6 +95,12 @@ class DrawingEditor extends AnnotationEditor {
     return this.#drawOutlines;
   }
 
+  /** @inheritdoc */
+  onUpdatedColor() {
+    this._colorPicker?.update(this.color);
+    super.onUpdatedColor();
+  }
+
   _addOutlines(params) {
     if (params.drawOutlines) {
       this.#createDrawOutlines(params);
@@ -240,7 +246,7 @@ class DrawingEditor extends AnnotationEditor {
         options.toSVGProperties()
       );
       if (type === this.colorType) {
-        this._colorPicker?.update(val);
+        this.onUpdatedColor();
       }
     };
     this.addCommands({
@@ -485,8 +491,7 @@ class DrawingEditor extends AnnotationEditor {
       this.#convertToParentSpace(bbox);
     if (this.div) {
       this.fixAndSetPosition();
-      const [parentWidth, parentHeight] = this.parentDimensions;
-      this.setDims(this.width * parentWidth, this.height * parentHeight);
+      this.setDims();
     }
     this._onResized();
   }
@@ -646,8 +651,7 @@ class DrawingEditor extends AnnotationEditor {
     div.append(drawDiv);
     drawDiv.setAttribute("aria-hidden", "true");
     drawDiv.className = "internal";
-    const [parentWidth, parentHeight] = this.parentDimensions;
-    this.setDims(this.width * parentWidth, this.height * parentHeight);
+    this.setDims();
     this._uiManager.addShouldRescale(this);
     this.disableEditing();
 

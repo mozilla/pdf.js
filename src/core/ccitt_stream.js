@@ -21,7 +21,7 @@ class CCITTFaxStream extends DecodeStream {
   constructor(str, maybeLength, params) {
     super(maybeLength);
 
-    this.str = str;
+    this.stream = str;
     this.dict = str.dict;
 
     if (!(params instanceof Dict)) {

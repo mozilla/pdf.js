@@ -36,6 +36,7 @@ import { MessageHandler, wrapReason } from "../shared/message_handler.js";
 import { AnnotationFactory } from "./annotation.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
 import { incrementalUpdate } from "./writer.js";
+import { PDFEditor } from "./editor/pdf_editor.js";
 import { PDFWorkerStream } from "./worker_stream.js";
 import { StructTreeRoot } from "./struct_tree.js";
 
@@ -514,6 +515,7 @@ class WorkerMessageHandler {
       return Promise.all([
         pdfManager.ensureDoc("documentInfo"),
         pdfManager.ensureCatalog("metadata"),
+        pdfManager.ensureCatalog("hasStructTree"),
       ]);
     });
 
@@ -557,6 +559,97 @@ class WorkerMessageHandler {
       return pdfManager.ensureDoc("calculationOrderIds");
     });
 
+    handler.on("ExtractPages", async function ({ pageInfos }) {
+      if (!pageInfos) {
+        warn("extractPages: nothing to extract.");
+        return null;
+      }
+      if (!Array.isArray(pageInfos)) {
+        pageInfos = [pageInfos];
+      }
+      let newDocumentId = 0;
+      for (const pageInfo of pageInfos) {
+        if (pageInfo.document === null) {
+          pageInfo.document = pdfManager.pdfDocument;
+        } else if (ArrayBuffer.isView(pageInfo.document)) {
+          const manager = new LocalPdfManager({
+            source: pageInfo.document,
+            docId: `${docId}_extractPages_${newDocumentId++}`,
+            handler,
+            password: pageInfo.password ?? null,
+            evaluatorOptions: Object.assign({}, pdfManager.evaluatorOptions),
+          });
+          let recoveryMode = false;
+          let isValid = true;
+          while (true) {
+            try {
+              await manager.requestLoadedStream();
+              await manager.ensureDoc("checkHeader");
+              await manager.ensureDoc("parseStartXRef");
+              await manager.ensureDoc("parse", [recoveryMode]);
+              break;
+            } catch (e) {
+              if (e instanceof XRefParseException) {
+                if (recoveryMode === false) {
+                  recoveryMode = true;
+                  continue;
+                } else {
+                  isValid = false;
+                  warn("extractPages: XRefParseException.");
+                }
+              } else if (e instanceof PasswordException) {
+                const task = new WorkerTask(
+                  `PasswordException: response ${e.code}`
+                );
+
+                startWorkerTask(task);
+
+                try {
+                  const { password } = await handler.sendWithPromise(
+                    "PasswordRequest",
+                    e
+                  );
+                  manager.updatePassword(password);
+                } catch {
+                  isValid = false;
+                  warn("extractPages: invalid password.");
+                } finally {
+                  finishWorkerTask(task);
+                }
+              } else {
+                isValid = false;
+                warn("extractPages: invalid document.");
+              }
+              if (!isValid) {
+                break;
+              }
+            }
+          }
+          if (!isValid) {
+            pageInfo.document = null;
+          }
+          const isPureXfa = await manager.ensureDoc("isPureXfa");
+          if (isPureXfa) {
+            pageInfo.document = null;
+            warn("extractPages does not support pure XFA documents.");
+          } else {
+            pageInfo.document = manager.pdfDocument;
+          }
+        } else {
+          warn("extractPages: invalid document.");
+        }
+      }
+      try {
+        const pdfEditor = new PDFEditor();
+        const buffer = await pdfEditor.extractPages(pageInfos);
+        return buffer;
+      } catch (reason) {
+        // eslint-disable-next-line no-console
+        console.error(reason);
+        return null;
+      }
+    });
+
     handler.on(
       "SaveDocument",
       async function ({ isPureXfa, numPages, annotationStorage, filename }) {
@@ -566,7 +659,6 @@ class WorkerMessageHandler {
           pdfManager.ensureCatalog("acroFormRef"),
           pdfManager.ensureDoc("startXRef"),
           pdfManager.ensureDoc("xref"),
-          pdfManager.ensureDoc("linearization"),
           pdfManager.ensureCatalog("structTreeRoot"),
         ];
         const changes = new RefSetCache();
@@ -581,7 +673,6 @@ class WorkerMessageHandler {
           acroFormRef,
           startXRef,
           xref,
-          linearization,
           _structTreeRoot,
         ] = await Promise.all(globalPromises);
         const catalogRef = xref.trailer.getRaw("Root") || null;
@@ -736,9 +827,7 @@ class WorkerMessageHandler {
             infoRef: xref.trailer.getRaw("Info") || null,
             infoMap,
             fileIds: xref.trailer.get("ID") || null,
-            startXRef: linearization
-              ? startXRef
-              : (xref.lastXRefStreamPos ?? startXRef),
+            startXRef,
             filename,
           };
         }
@@ -904,11 +993,6 @@ class WorkerMessageHandler {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       handler.on("GetXFADatasets", function (data) {
         return pdfManager.ensureDoc("xfaDatasets");
-      });
-      handler.on("GetXRefPrevValue", function (data) {
-        return pdfManager
-          .ensureXRef("trailer")
-          .then(trailer => trailer.get("Prev"));
       });
       handler.on("GetStartXRefPos", function (data) {
         return pdfManager.ensureDoc("startXRef");

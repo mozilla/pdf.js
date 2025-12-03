@@ -15,162 +15,64 @@
 
 import {
   AnnotationEditorType,
-  changeLightness,
-  getRGB,
+  applyOpacity,
+  CSSConstants,
+  findContrastColor,
+  MathClamp,
   noContextMenu,
   PDFDateString,
+  renderRichText,
   shadow,
   stopEvent,
+  Util,
 } from "pdfjs-lib";
 import { binarySearchFirstItem } from "./ui_utils.js";
+import { Sidebar } from "./sidebar.js";
 
 class CommentManager {
-  #actions;
-
-  #currentEditor;
-
   #dialog;
 
-  #deleteMenuItem;
-
-  #editMenuItem;
-
-  #overlayManager;
-
-  #previousText = "";
-
-  #commentText = "";
-
-  #menu;
-
-  #textInput;
-
-  #textView;
-
-  #saveButton;
+  #popup;
 
   #sidebar;
 
-  #uiManager;
-
-  #prevDragX = Infinity;
-
-  #prevDragY = Infinity;
-
-  #dialogX = 0;
-
-  #dialogY = 0;
-
-  #menuAC = null;
+  static #hasForcedColors = null;
 
   constructor(
-    {
-      dialog,
-      toolbar,
-      actions,
-      menu,
-      editMenuItem,
-      deleteMenuItem,
-      closeButton,
-      textInput,
-      textView,
-      cancelButton,
-      saveButton,
-    },
+    commentDialog,
     sidebar,
     eventBus,
     linkService,
-    overlayManager
+    overlayManager,
+    ltr,
+    hasForcedColors
   ) {
-    this.#actions = actions;
-    this.#dialog = dialog;
-    this.#editMenuItem = editMenuItem;
-    this.#deleteMenuItem = deleteMenuItem;
-    this.#menu = menu;
-    this.#sidebar = new CommentSidebar(sidebar, eventBus, linkService);
-    this.#textInput = textInput;
-    this.#textView = textView;
-    this.#overlayManager = overlayManager;
-    this.#saveButton = saveButton;
-
-    const finishBound = this.#finish.bind(this);
-    dialog.addEventListener("close", finishBound);
-    dialog.addEventListener("contextmenu", e => {
-      if (e.target !== this.#textInput) {
-        e.preventDefault();
-      }
+    const dateFormat = new Intl.DateTimeFormat(undefined, {
+      dateStyle: "long",
     });
-    cancelButton.addEventListener("click", finishBound);
-    closeButton.addEventListener("click", finishBound);
-    saveButton.addEventListener("click", this.#save.bind(this));
-
-    this.#makeMenu();
-    editMenuItem.addEventListener("click", () => {
-      this.#closeMenu();
-      this.#edit();
-    });
-    deleteMenuItem.addEventListener("click", () => {
-      this.#closeMenu();
-      this.#textInput.value = "";
-      this.#currentEditor.comment = null;
-      this.#save();
-    });
-
-    textInput.addEventListener("input", () => {
-      saveButton.disabled = textInput.value === this.#previousText;
-      this.#deleteMenuItem.disabled = textInput.value === "";
-    });
-    textView.addEventListener("dblclick", () => {
-      this.#edit();
-    });
-
-    // Make the dialog draggable.
-    let pointerMoveAC;
-    const cancelDrag = () => {
-      this.#prevDragX = this.#prevDragY = Infinity;
-      this.#dialog.classList.remove("dragging");
-      pointerMoveAC?.abort();
-      pointerMoveAC = null;
-    };
-    toolbar.addEventListener("pointerdown", e => {
-      const { target, clientX, clientY } = e;
-      if (target !== toolbar) {
-        return;
-      }
-      this.#closeMenu();
-      this.#prevDragX = clientX;
-      this.#prevDragY = clientY;
-      pointerMoveAC = new AbortController();
-      const { signal } = pointerMoveAC;
-      dialog.classList.add("dragging");
-      window.addEventListener(
-        "pointermove",
-        ev => {
-          if (this.#prevDragX !== Infinity) {
-            const { clientX: x, clientY: y } = ev;
-            this.#setPosition(
-              this.#dialogX + x - this.#prevDragX,
-              this.#dialogY + y - this.#prevDragY
-            );
-            this.#prevDragX = x;
-            this.#prevDragY = y;
-            stopEvent(ev);
-          }
-        },
-        { signal }
-      );
-      window.addEventListener("blur", cancelDrag, { signal });
-      stopEvent(e);
-    });
-    dialog.addEventListener("pointerup", e => {
-      if (this.#prevDragX === Infinity) {
-        return; // Not dragging.
-      }
-      cancelDrag();
-      stopEvent(e);
-    });
-
-    overlayManager.register(dialog);
+    this.dialogElement = commentDialog.dialog;
+    this.#dialog = new CommentDialog(
+      commentDialog,
+      overlayManager,
+      eventBus,
+      ltr
+    );
+    this.#popup = new CommentPopup(
+      eventBus,
+      dateFormat,
+      ltr,
+      this.dialogElement
+    );
+    this.#sidebar = new CommentSidebar(
+      sidebar,
+      eventBus,
+      linkService,
+      this.#popup,
+      dateFormat,
+      ltr
+    );
+    this.#popup.sidebar = this.#sidebar;
+    CommentManager.#hasForcedColors = hasForcedColors;
   }
 
   setSidebarUiManager(uiManager) {
@@ -197,233 +99,57 @@ class CommentManager {
     this.#sidebar.addComment(annotation);
   }
 
-  #closeMenu() {
-    if (!this.#menuAC) {
-      return;
+  updateComment(annotation) {
+    this.#sidebar.updateComment(annotation);
+  }
+
+  toggleCommentPopup(editor, isSelected, visibility, isEditable) {
+    if (isSelected) {
+      this.selectComment(editor.uid);
     }
-    const menu = this.#menu;
-    menu.classList.toggle("hidden", true);
-    this.#actions.ariaExpanded = "false";
-    this.#menuAC.abort();
-    this.#menuAC = null;
-    if (menu.contains(document.activeElement)) {
-      // If the menu is closed while focused, focus the actions button.
-      setTimeout(() => {
-        if (!this.#dialog.contains(document.activeElement)) {
-          this.#actions.focus();
-        }
-      }, 0);
-    }
+    this.#popup.toggle(editor, isSelected, visibility, isEditable);
   }
 
-  #renderActionsButton(visible) {
-    this.#actions.classList.toggle("hidden", !visible);
+  destroyPopup() {
+    this.#popup.destroy();
   }
 
-  #makeMenu() {
-    this.#actions.addEventListener("click", e => {
-      const closeMenu = this.#closeMenu.bind(this);
-      if (this.#menuAC) {
-        closeMenu();
-        return;
-      }
-
-      const menu = this.#menu;
-      menu.classList.toggle("hidden", false);
-      this.#actions.ariaExpanded = "true";
-      this.#menuAC = new AbortController();
-      const { signal } = this.#menuAC;
-      window.addEventListener(
-        "pointerdown",
-        ({ target }) => {
-          if (target !== this.#actions && !menu.contains(target)) {
-            closeMenu();
-          }
-        },
-        { signal }
-      );
-      window.addEventListener("blur", closeMenu, { signal });
-      this.#actions.addEventListener(
-        "keydown",
-        ({ key }) => {
-          switch (key) {
-            case "ArrowDown":
-            case "Home":
-              menu.firstElementChild.focus();
-              stopEvent(e);
-              break;
-            case "ArrowUp":
-            case "End":
-              menu.lastElementChild.focus();
-              stopEvent(e);
-              break;
-            case "Escape":
-              closeMenu();
-              stopEvent(e);
-          }
-        },
-        { signal }
-      );
-    });
-
-    const keyboardListener = e => {
-      const { key, target } = e;
-      const menu = this.#menu;
-      switch (key) {
-        case "Escape":
-          this.#closeMenu();
-          stopEvent(e);
-          break;
-        case "ArrowDown":
-        case "Tab":
-          (target.nextElementSibling || menu.firstElementChild).focus();
-          stopEvent(e);
-          break;
-        case "ArrowUp":
-        case "ShiftTab":
-          (target.previousElementSibling || menu.lastElementChild).focus();
-          stopEvent(e);
-          break;
-        case "Home":
-          menu.firstElementChild.focus();
-          stopEvent(e);
-          break;
-        case "End":
-          menu.lastElementChild.focus();
-          stopEvent(e);
-          break;
-      }
-    };
-    for (const menuItem of this.#menu.children) {
-      if (menuItem.classList.contains("hidden")) {
-        continue; // Skip hidden menu items.
-      }
-      menuItem.addEventListener("keydown", keyboardListener);
-      menuItem.addEventListener("contextmenu", noContextMenu);
-    }
-    this.#menu.addEventListener("contextmenu", noContextMenu);
+  updatePopupColor(editor) {
+    this.#popup.updateColor(editor);
   }
 
-  async open(uiManager, editor, position) {
-    if (editor) {
-      this.#uiManager = uiManager;
-      this.#currentEditor = editor;
-    }
-    const {
-      comment: { text, color },
-    } = editor;
-    this.#dialog.style.setProperty(
-      "--dialog-base-color",
-      this.#lightenColor(color) || "var(--default-dialog-bg-color)"
-    );
-    this.#commentText = text || "";
-    if (!text) {
-      this.#renderActionsButton(false);
-      this.#edit();
-    } else {
-      this.#renderActionsButton(true);
-      this.#setText(text);
-      this.#textInput.classList.toggle("hidden", true);
-      this.#textView.classList.toggle("hidden", false);
-      this.#editMenuItem.disabled = this.#deleteMenuItem.disabled = false;
-    }
-    this.#uiManager.removeEditListeners();
-    this.#saveButton.disabled = true;
-
-    const x =
-      position.right !== undefined
-        ? position.right - this._dialogWidth
-        : position.left;
-    const y = position.top;
-    this.#setPosition(x, y, /* isInitial */ true);
-
-    await this.#overlayManager.open(this.#dialog);
+  showDialog(uiManager, editor, posX, posY, options) {
+    return this.#dialog.open(uiManager, editor, posX, posY, options);
   }
 
-  async #save() {
-    this.#currentEditor.comment = this.#textInput.value;
-    this.#finish();
+  makeCommentColor(color, opacity) {
+    return CommentManager._makeCommentColor(color, opacity);
   }
 
-  get _dialogWidth() {
-    const dialog = this.#dialog;
-    const { style } = dialog;
-    style.opacity = "0";
-    style.display = "block";
-    const width = dialog.getBoundingClientRect().width;
-    style.opacity = style.display = "";
-    return shadow(this, "_dialogWidth", width);
-  }
-
-  #lightenColor(color) {
-    if (!color) {
-      return null; // No color provided.
-    }
-    const [r, g, b] = getRGB(color);
-    return changeLightness(r, g, b);
-  }
-
-  #setText(text) {
-    const textView = this.#textView;
-    for (const line of text.split("\n")) {
-      const span = document.createElement("span");
-      span.textContent = line;
-      textView.append(span, document.createElement("br"));
-    }
-  }
-
-  #setPosition(x, y, isInitial = false) {
-    this.#dialogX = x;
-    this.#dialogY = y;
-    const { style } = this.#dialog;
-    style.left = `${x}px`;
-    style.top = isInitial
-      ? `calc(${y}px + var(--editor-toolbar-vert-offset))`
-      : `${y}px`;
-  }
-
-  #edit() {
-    const textInput = this.#textInput;
-    const textView = this.#textView;
-    if (textView.childElementCount > 0) {
-      const height = parseFloat(getComputedStyle(textView).height);
-      textInput.value = this.#previousText = this.#commentText;
-      textInput.style.height = `${height + 20}px`;
-    } else {
-      textInput.value = this.#previousText = this.#commentText;
-    }
-
-    textInput.classList.toggle("hidden", false);
-    textView.classList.toggle("hidden", true);
-    this.#editMenuItem.disabled = true;
-    setTimeout(() => textInput.focus(), 0);
-  }
-
-  #finish() {
-    this.#textView.replaceChildren();
-    this.#textInput.value = this.#previousText = this.#commentText = "";
-    this.#overlayManager.closeIfActive(this.#dialog);
-    this.#textInput.style.height = "";
-    this.#uiManager?.addEditListeners();
-    this.#uiManager = null;
-    this.#currentEditor = null;
+  static _makeCommentColor(color, opacity) {
+    return this.#hasForcedColors
+      ? null
+      : findContrastColor(
+          applyOpacity(...color, opacity ?? 1),
+          CSSConstants.commentForegroundColor
+        );
   }
 
   destroy() {
-    this.#uiManager = null;
-    this.#finish();
+    this.#dialog.destroy();
     this.#sidebar.hide();
+    this.#popup.destroy();
   }
 }
 
-class CommentSidebar {
+class CommentSidebar extends Sidebar {
   #annotations = null;
+
+  #eventBus;
 
   #boundCommentClick = this.#commentClick.bind(this);
 
   #boundCommentKeydown = this.#commentKeydown.bind(this);
-
-  #sidebar;
 
   #closeButton;
 
@@ -431,9 +157,15 @@ class CommentSidebar {
 
   #commentCount;
 
+  #dateFormat;
+
   #sidebarTitle;
 
+  #learnMoreUrl;
+
   #linkService;
+
+  #popup;
 
   #elementsToAnnotations = null;
 
@@ -443,7 +175,9 @@ class CommentSidebar {
 
   constructor(
     {
+      learnMoreUrl,
       sidebar,
+      sidebarResizer,
       commentsList,
       commentCount,
       sidebarTitle,
@@ -451,14 +185,25 @@ class CommentSidebar {
       commentToolbarButton,
     },
     eventBus,
-    linkService
+    linkService,
+    popup,
+    dateFormat,
+    ltr
   ) {
-    this.#sidebar = sidebar;
+    super(
+      { sidebar, resizer: sidebarResizer, toggleButton: commentToolbarButton },
+      ltr,
+      /* isResizerOnTheLeft = */ true
+    );
     this.#sidebarTitle = sidebarTitle;
     this.#commentsList = commentsList;
     this.#commentCount = commentCount;
+    this.#learnMoreUrl = learnMoreUrl;
     this.#linkService = linkService;
     this.#closeButton = closeButton;
+    this.#popup = popup;
+    this.#dateFormat = dateFormat;
+    this.#eventBus = eventBus;
 
     closeButton.addEventListener("click", () => {
       eventBus.dispatch("switchannotationeditormode", {
@@ -466,7 +211,7 @@ class CommentSidebar {
         mode: AnnotationEditorType.NONE,
       });
     });
-    commentToolbarButton.addEventListener("keydown", e => {
+    const keyDownCallback = e => {
       if (e.key === "ArrowDown" || e.key === "Home" || e.key === "F6") {
         this.#commentsList.firstElementChild.focus();
         stopEvent(e);
@@ -474,8 +219,9 @@ class CommentSidebar {
         this.#commentsList.lastElementChild.focus();
         stopEvent(e);
       }
-    });
-    this.#sidebar.hidden = true;
+    };
+    commentToolbarButton.addEventListener("keydown", keyDownCallback);
+    sidebar.addEventListener("keydown", keyDownCallback);
   }
 
   setUIManager(uiManager) {
@@ -498,11 +244,18 @@ class CommentSidebar {
     } else {
       this.#setCommentsCount();
     }
-    this.#sidebar.hidden = false;
+    this._sidebar.hidden = false;
+    this.#eventBus.dispatch("reporttelemetry", {
+      source: this,
+      details: {
+        type: "commentSidebar",
+        data: { numberOfAnnotations: annotations.length },
+      },
+    });
   }
 
   hide() {
-    this.#sidebar.hidden = true;
+    this._sidebar.hidden = true;
     this.#commentsList.replaceChildren();
     this.#elementsToAnnotations = null;
     this.#idsToElements = null;
@@ -510,7 +263,7 @@ class CommentSidebar {
   }
 
   removeComments(ids) {
-    if (ids.length === 0) {
+    if (ids.length === 0 || !this.#idsToElements) {
       return;
     }
     if (
@@ -529,14 +282,63 @@ class CommentSidebar {
     if (!element) {
       return;
     }
-    this.#sidebar.scrollTop = element.offsetTop - this.#sidebar.offsetTop;
+    this._sidebar.scrollTop = element.offsetTop - this._sidebar.offsetTop;
     for (const el of this.#commentsList.children) {
       el.classList.toggle("selected", el === element);
     }
   }
 
-  #removeComment(id) {
+  updateComment(annotation) {
+    if (!this.#idsToElements) {
+      return;
+    }
+    const {
+      id,
+      creationDate,
+      modificationDate,
+      richText,
+      contentsObj,
+      popupRef,
+    } = annotation;
+
+    if (!popupRef || (!richText && !contentsObj?.str)) {
+      this.#removeComment(id);
+    }
+
     const element = this.#idsToElements.get(id);
+    if (!element) {
+      return;
+    }
+    const prevAnnotation = this.#elementsToAnnotations.get(element);
+    let index = binarySearchFirstItem(
+      this.#annotations,
+      a => this.#sortComments(a, prevAnnotation) >= 0
+    );
+    if (index >= this.#annotations.length) {
+      return;
+    }
+
+    this.#setDate(element.firstElementChild, modificationDate || creationDate);
+    this.#setText(element.lastElementChild, richText, contentsObj);
+
+    this.#annotations.splice(index, 1);
+    index = binarySearchFirstItem(
+      this.#annotations,
+      a => this.#sortComments(a, annotation) >= 0
+    );
+    this.#annotations.splice(index, 0, annotation);
+    if (index >= this.#commentsList.children.length) {
+      this.#commentsList.append(element);
+    } else {
+      this.#commentsList.insertBefore(
+        element,
+        this.#commentsList.children[index]
+      );
+    }
+  }
+
+  #removeComment(id) {
+    const element = this.#idsToElements?.get(id);
     if (!element) {
       return;
     }
@@ -563,14 +365,21 @@ class CommentSidebar {
   }
 
   selectComment(element, id = null) {
+    if (!this.#idsToElements) {
+      return;
+    }
+    const hasNoElement = !element;
     element ||= this.#idsToElements.get(id);
     for (const el of this.#commentsList.children) {
       el.classList.toggle("selected", el === element);
     }
+    if (hasNoElement) {
+      element?.scrollIntoView({ behavior: "instant", block: "center" });
+    }
   }
 
   addComment(annotation) {
-    if (this.#idsToElements.has(annotation.id)) {
+    if (this.#idsToElements?.has(annotation.id)) {
       return;
     }
     const { popupRef, contentsObj } = annotation;
@@ -615,16 +424,47 @@ class CommentSidebar {
   #createZeroCommentElement() {
     const commentItem = document.createElement("li");
     commentItem.classList.add("sidebarComment", "noComments");
-    commentItem.role = "button";
     const textDiv = document.createElement("div");
     textDiv.className = "sidebarCommentText";
     textDiv.setAttribute(
       "data-l10n-id",
-      "pdfjs-editor-comments-sidebar-no-comments"
+      "pdfjs-editor-comments-sidebar-no-comments1"
     );
-    commentItem.addEventListener("keydown", this.#boundCommentKeydown);
     commentItem.append(textDiv);
+    if (this.#learnMoreUrl) {
+      const a = document.createElement("a");
+      a.setAttribute(
+        "data-l10n-id",
+        "pdfjs-editor-comments-sidebar-no-comments-link"
+      );
+      a.href = this.#learnMoreUrl;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      commentItem.append(a);
+    }
     return commentItem;
+  }
+
+  #setDate(element, date) {
+    date = PDFDateString.toDateObject(date);
+    element.dateTime = date.toISOString();
+    element.textContent = this.#dateFormat.format(date);
+  }
+
+  #setText(element, richText, contentsObj) {
+    element.replaceChildren();
+    const html =
+      richText?.str && (!contentsObj?.str || richText.str === contentsObj.str)
+        ? richText.html
+        : contentsObj?.str;
+    renderRichText(
+      {
+        html,
+        dir: contentsObj?.dir || "auto",
+        className: "richText",
+      },
+      element
+    );
   }
 
   #createCommentElement(annotation) {
@@ -632,24 +472,24 @@ class CommentSidebar {
       id,
       creationDate,
       modificationDate,
-      contentsObj: { str: text },
+      richText,
+      contentsObj,
+      color,
+      opacity,
     } = annotation;
     const commentItem = document.createElement("li");
     commentItem.role = "button";
     commentItem.className = "sidebarComment";
     commentItem.tabIndex = -1;
-
+    commentItem.style.backgroundColor =
+      (color && CommentManager._makeCommentColor(color, opacity)) || "";
     const dateDiv = document.createElement("time");
-    const date = PDFDateString.toDateObject(modificationDate || creationDate);
-    dateDiv.dateTime = date.toISOString();
-    const dateFormat = new Intl.DateTimeFormat(undefined, {
-      dateStyle: "long",
-    });
-    dateDiv.textContent = dateFormat.format(date);
+    this.#setDate(dateDiv, modificationDate || creationDate);
 
     const textDiv = document.createElement("div");
     textDiv.className = "sidebarCommentText";
-    textDiv.textContent = text;
+    this.#setText(textDiv, richText, contentsObj);
+
     commentItem.append(dateDiv, textDiv);
     commentItem.addEventListener("click", this.#boundCommentClick);
     commentItem.addEventListener("keydown", this.#boundCommentKeydown);
@@ -661,24 +501,25 @@ class CommentSidebar {
 
   async #commentClick({ currentTarget }) {
     if (currentTarget.classList.contains("selected")) {
+      currentTarget.classList.remove("selected");
+      this.#popup._hide();
       return;
     }
     const annotation = this.#elementsToAnnotations.get(currentTarget);
     if (!annotation) {
       return;
     }
+    this.#popup._hide();
     const { id, pageIndex, rect } = annotation;
-    const SPACE_ABOVE_ANNOTATION = 10;
     const pageNumber = pageIndex + 1;
-    const pageVisiblePromise = this.#uiManager?.waitForPageRendered(pageNumber);
-    this.#linkService?.goToXY(
-      pageNumber,
-      rect[0],
-      rect[3] + SPACE_ABOVE_ANNOTATION
-    );
+    const pageVisiblePromise =
+      this.#uiManager?.waitForEditorsRendered(pageNumber);
+    this.#linkService?.goToXY(pageNumber, rect[0], rect[3], {
+      center: "both",
+    });
     this.selectComment(currentTarget);
     await pageVisiblePromise;
-    this.#uiManager?.showComment(pageIndex, id);
+    this.#uiManager?.selectComment(pageIndex, id);
   }
 
   #commentKeydown(e) {
@@ -719,6 +560,18 @@ class CommentSidebar {
   }
 
   #sortComments(a, b) {
+    const dateA = PDFDateString.toDateObject(
+      a.modificationDate || a.creationDate
+    );
+    const dateB = PDFDateString.toDateObject(
+      b.modificationDate || b.creationDate
+    );
+    if (dateA !== dateB) {
+      if (dateA !== null && dateB !== null) {
+        return dateB - dateA;
+      }
+      return dateA !== null ? -1 : 1;
+    }
     if (a.pageIndex !== b.pageIndex) {
       return a.pageIndex - b.pageIndex;
     }
@@ -735,6 +588,622 @@ class CommentSidebar {
       return a.rect[2] - b.rect[2];
     }
     return a.id.localeCompare(b.id);
+  }
+}
+
+class CommentDialog {
+  #dialog;
+
+  #editor;
+
+  #overlayManager;
+
+  #previousText = "";
+
+  #commentText = "";
+
+  #textInput;
+
+  #title;
+
+  #saveButton;
+
+  #uiManager;
+
+  #prevDragX = 0;
+
+  #prevDragY = 0;
+
+  #dialogX = 0;
+
+  #dialogY = 0;
+
+  #isLTR;
+
+  #eventBus;
+
+  constructor(
+    { dialog, toolbar, title, textInput, cancelButton, saveButton },
+    overlayManager,
+    eventBus,
+    ltr
+  ) {
+    this.#dialog = dialog;
+    this.#textInput = textInput;
+    this.#overlayManager = overlayManager;
+    this.#eventBus = eventBus;
+    this.#saveButton = saveButton;
+    this.#title = title;
+    this.#isLTR = ltr;
+
+    const finishBound = this.#finish.bind(this);
+    dialog.addEventListener("close", finishBound);
+    dialog.addEventListener("contextmenu", e => {
+      if (e.target !== this.#textInput) {
+        e.preventDefault();
+      }
+    });
+    cancelButton.addEventListener("click", finishBound);
+    saveButton.addEventListener("click", this.#save.bind(this));
+
+    textInput.addEventListener("input", () => {
+      saveButton.disabled = textInput.value === this.#previousText;
+    });
+    textInput.addEventListener("keydown", e => {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.key === "Enter" &&
+        !saveButton.disabled
+      ) {
+        this.#save();
+      }
+    });
+
+    // Make the dialog draggable.
+    let pointerMoveAC;
+    const cancelDrag = () => {
+      dialog.classList.remove("dragging");
+      pointerMoveAC?.abort();
+      pointerMoveAC = null;
+    };
+    toolbar.addEventListener("pointerdown", e => {
+      if (pointerMoveAC) {
+        cancelDrag();
+        return;
+      }
+      const { clientX, clientY } = e;
+      stopEvent(e);
+      this.#prevDragX = clientX;
+      this.#prevDragY = clientY;
+      pointerMoveAC = new AbortController();
+      const { signal } = pointerMoveAC;
+      const { innerHeight, innerWidth } = window;
+      dialog.classList.add("dragging");
+      window.addEventListener(
+        "pointermove",
+        ev => {
+          if (!pointerMoveAC) {
+            return;
+          }
+          const { clientX: x, clientY: y } = ev;
+          this.#setPosition(
+            this.#dialogX + (x - this.#prevDragX) / innerWidth,
+            this.#dialogY + (y - this.#prevDragY) / innerHeight
+          );
+          this.#prevDragX = x;
+          this.#prevDragY = y;
+          stopEvent(ev);
+        },
+        { signal }
+      );
+      window.addEventListener("blur", cancelDrag, { signal });
+      window.addEventListener(
+        "pointerup",
+        ev => {
+          if (pointerMoveAC) {
+            cancelDrag();
+            stopEvent(ev);
+          }
+        },
+        { signal }
+      );
+    });
+
+    overlayManager.register(dialog);
+  }
+
+  async open(uiManager, editor, posX, posY, options) {
+    if (editor) {
+      this.#uiManager = uiManager;
+      this.#editor = editor;
+    }
+    const {
+      contentsObj: { str },
+      color,
+      opacity,
+    } = editor.getData();
+    const { style: dialogStyle } = this.#dialog;
+    if (color) {
+      dialogStyle.backgroundColor = CommentManager._makeCommentColor(
+        color,
+        opacity
+      );
+      dialogStyle.borderColor = Util.makeHexColor(...color);
+    } else {
+      dialogStyle.backgroundColor = dialogStyle.borderColor = "";
+    }
+    this.#commentText = str || "";
+    const textInput = this.#textInput;
+    textInput.value = this.#previousText = this.#commentText;
+    if (str) {
+      this.#title.setAttribute(
+        "data-l10n-id",
+        "pdfjs-editor-edit-comment-dialog-title-when-editing"
+      );
+      this.#saveButton.setAttribute(
+        "data-l10n-id",
+        "pdfjs-editor-edit-comment-dialog-save-button-when-editing"
+      );
+    } else {
+      this.#title.setAttribute(
+        "data-l10n-id",
+        "pdfjs-editor-edit-comment-dialog-title-when-adding"
+      );
+      this.#saveButton.setAttribute(
+        "data-l10n-id",
+        "pdfjs-editor-edit-comment-dialog-save-button-when-adding"
+      );
+    }
+    if (options?.height) {
+      textInput.style.height = `${options.height}px`;
+    }
+    this.#uiManager?.removeEditListeners();
+    this.#saveButton.disabled = true;
+    const parentDimensions = options?.parentDimensions;
+    const { innerHeight, innerWidth } = window;
+    if (editor.hasDefaultPopupPosition()) {
+      const { dialogWidth, dialogHeight } = this._dialogDimensions;
+      if (parentDimensions) {
+        if (
+          this.#isLTR &&
+          posX + dialogWidth >
+            Math.min(parentDimensions.x + parentDimensions.width, innerWidth)
+        ) {
+          const buttonWidth = this.#editor.commentButtonWidth;
+          posX -= dialogWidth - buttonWidth * parentDimensions.width;
+        } else if (!this.#isLTR) {
+          const buttonWidth =
+            this.#editor.commentButtonWidth * parentDimensions.width;
+          if (posX - dialogWidth < Math.max(0, parentDimensions.x)) {
+            posX = Math.max(0, posX);
+          } else {
+            posX -= dialogWidth - buttonWidth;
+          }
+        }
+      }
+      const height = Math.max(dialogHeight, options?.height || 0);
+      if (posY + height > innerHeight) {
+        posY = innerHeight - height;
+      }
+      if (posY < 0) {
+        posY = 0;
+      }
+    }
+
+    posX = MathClamp(posX / innerWidth, 0, 1);
+    posY = MathClamp(posY / innerHeight, 0, 1);
+    this.#setPosition(posX, posY);
+
+    await this.#overlayManager.open(this.#dialog);
+    textInput.focus();
+  }
+
+  async #save() {
+    this.#editor.comment = this.#textInput.value;
+    this.#finish();
+  }
+
+  get _dialogDimensions() {
+    const dialog = this.#dialog;
+    const { style } = dialog;
+    style.opacity = "0";
+    style.display = "block";
+    const { width, height } = dialog.getBoundingClientRect();
+    style.opacity = style.display = "";
+    return shadow(this, "_dialogDimensions", {
+      dialogWidth: width,
+      dialogHeight: height,
+    });
+  }
+
+  #setPosition(x, y) {
+    this.#dialogX = x;
+    this.#dialogY = y;
+    const { style } = this.#dialog;
+    style.left = `${100 * x}%`;
+    style.top = `${100 * y}%`;
+  }
+
+  #finish() {
+    if (!this.#editor) {
+      return;
+    }
+    const edited = this.#textInput.value !== this.#commentText;
+    this.#eventBus.dispatch("reporttelemetry", {
+      source: this,
+      details: {
+        type: "comment",
+        data: {
+          edited,
+        },
+      },
+    });
+
+    this.#editor?.focusCommentButton();
+    this.#editor = null;
+    this.#textInput.value = this.#previousText = this.#commentText = "";
+    this.#overlayManager.closeIfActive(this.#dialog);
+    this.#textInput.style.height = "";
+    this.#uiManager?.addEditListeners();
+    this.#uiManager = null;
+  }
+
+  destroy() {
+    this.#uiManager = null;
+    this.#editor = null;
+    this.#finish();
+  }
+}
+
+class CommentPopup {
+  #buttonsContainer = null;
+
+  #eventBus;
+
+  #commentDialog;
+
+  #dateFormat;
+
+  #editor = null;
+
+  #isLTR;
+
+  #container = null;
+
+  #text = null;
+
+  #time = null;
+
+  #prevDragX = 0;
+
+  #prevDragY = 0;
+
+  #posX = 0;
+
+  #posY = 0;
+
+  #previousFocusedElement = null;
+
+  #selected = false;
+
+  #visible = false;
+
+  constructor(eventBus, dateFormat, ltr, commentDialog) {
+    this.#eventBus = eventBus;
+    this.#dateFormat = dateFormat;
+    this.#isLTR = ltr;
+    this.#commentDialog = commentDialog;
+    this.sidebar = null;
+  }
+
+  get _popupWidth() {
+    const container = this.#createPopup();
+    const { style } = container;
+    style.opacity = "0";
+    style.display = "block";
+    document.body.append(container);
+    const width = container.getBoundingClientRect().width;
+    container.remove();
+    style.opacity = style.display = "";
+    return shadow(this, "_popupWidth", width);
+  }
+
+  #createPopup() {
+    if (this.#container) {
+      return this.#container;
+    }
+    const container = (this.#container = document.createElement("div"));
+    container.className = "commentPopup";
+    container.id = "commentPopup";
+    container.tabIndex = -1;
+    container.role = "dialog";
+    container.ariaModal = "false";
+    container.addEventListener("contextmenu", noContextMenu);
+    container.addEventListener("keydown", e => {
+      if (e.key === "Escape") {
+        this.toggle(this.#editor, true, false);
+        this.#previousFocusedElement?.focus();
+        stopEvent(e);
+      }
+    });
+    container.addEventListener("click", () => {
+      container.focus();
+    });
+
+    const top = document.createElement("div");
+    top.className = "commentPopupTop";
+    const time = (this.#time = document.createElement("time"));
+    time.className = "commentPopupTime";
+
+    const buttons = (this.#buttonsContainer = document.createElement("div"));
+    buttons.className = "commentPopupButtons";
+    const edit = document.createElement("button");
+    edit.classList.add("commentPopupEdit", "toolbarButton");
+    edit.tabIndex = 0;
+    edit.setAttribute("data-l10n-id", "pdfjs-editor-edit-comment-popup-button");
+    edit.ariaHasPopup = "dialog";
+    edit.ariaControlsElements = [this.#commentDialog];
+    const editLabel = document.createElement("span");
+    editLabel.setAttribute(
+      "data-l10n-id",
+      "pdfjs-editor-edit-comment-popup-button-label"
+    );
+    edit.append(editLabel);
+    edit.addEventListener("click", () => {
+      const editor = this.#editor;
+      const height = parseFloat(getComputedStyle(this.#text).height);
+      this.toggle(editor, /* isSelected */ true, /* visibility */ false);
+      editor.editComment({
+        height,
+      });
+    });
+    edit.addEventListener("contextmenu", noContextMenu);
+
+    const del = document.createElement("button");
+    del.classList.add("commentPopupDelete", "toolbarButton");
+    del.tabIndex = 0;
+    del.setAttribute(
+      "data-l10n-id",
+      "pdfjs-editor-delete-comment-popup-button"
+    );
+    const delLabel = document.createElement("span");
+    delLabel.setAttribute(
+      "data-l10n-id",
+      "pdfjs-editor-delete-comment-popup-button-label"
+    );
+    del.append(delLabel);
+    del.addEventListener("click", () => {
+      this.#eventBus.dispatch("reporttelemetry", {
+        source: this,
+        details: {
+          type: "comment",
+          data: {
+            deleted: true,
+          },
+        },
+      });
+      this.#editor.comment = null;
+      this.#editor.focus();
+      this.destroy();
+    });
+    del.addEventListener("contextmenu", noContextMenu);
+    buttons.append(edit, del);
+
+    top.append(time, buttons);
+
+    const separator = document.createElement("hr");
+
+    const text = (this.#text = document.createElement("div"));
+    text.className = "commentPopupText";
+    container.append(top, separator, text);
+
+    // Make the dialog draggable.
+    let pointerMoveAC;
+    const cancelDrag = () => {
+      container.classList.remove("dragging");
+      pointerMoveAC?.abort();
+      pointerMoveAC = null;
+    };
+    top.addEventListener("pointerdown", e => {
+      if (pointerMoveAC) {
+        cancelDrag();
+        return;
+      }
+      const { target, clientX, clientY } = e;
+      if (buttons.contains(target)) {
+        return;
+      }
+      stopEvent(e);
+      const { width: parentWidth, height: parentHeight } =
+        this.#editor.parentBoundingClientRect;
+      this.#prevDragX = clientX;
+      this.#prevDragY = clientY;
+      pointerMoveAC = new AbortController();
+      const { signal } = pointerMoveAC;
+      container.classList.add("dragging");
+      window.addEventListener(
+        "pointermove",
+        ev => {
+          if (!pointerMoveAC) {
+            return; // Not dragging.
+          }
+          const { clientX: x, clientY: y } = ev;
+          this.#setPosition(
+            this.#posX + (x - this.#prevDragX) / parentWidth,
+            this.#posY + (y - this.#prevDragY) / parentHeight,
+            /* correctPosition = */ false
+          );
+          this.#prevDragX = x;
+          this.#prevDragY = y;
+          stopEvent(ev);
+        },
+        { signal }
+      );
+      window.addEventListener("blur", cancelDrag, { signal });
+      window.addEventListener(
+        "pointerup",
+        ev => {
+          if (pointerMoveAC) {
+            cancelDrag();
+            stopEvent(ev);
+          }
+        },
+        { signal }
+      );
+    });
+
+    return container;
+  }
+
+  updateColor(editor) {
+    if (this.#editor !== editor || !this.#visible) {
+      return;
+    }
+    const { color, opacity } = editor.getData();
+    this.#container.style.backgroundColor =
+      (color && CommentManager._makeCommentColor(color, opacity)) || "";
+  }
+
+  _hide(editor) {
+    const container = this.#createPopup();
+
+    container.classList.toggle("hidden", true);
+    container.classList.toggle("selected", false);
+    (editor || this.#editor)?.setCommentButtonStates({
+      selected: false,
+      hasPopup: false,
+    });
+    this.#editor = null;
+    this.#selected = false;
+    this.#visible = false;
+    this.#text.replaceChildren();
+    this.sidebar.selectComment(null);
+  }
+
+  toggle(editor, isSelected, visibility = undefined, isEditable = true) {
+    if (!editor) {
+      this.destroy();
+      return;
+    }
+
+    if (isSelected) {
+      visibility ??=
+        this.#editor === editor ? !this.#selected || !this.#visible : true;
+    } else {
+      if (this.#selected) {
+        return;
+      }
+      visibility ??= !this.#visible;
+    }
+
+    if (!visibility) {
+      this._hide(editor);
+      return;
+    }
+
+    this.#visible = true;
+    if (this.#editor !== editor) {
+      this.#editor?.setCommentButtonStates({
+        selected: false,
+        hasPopup: false,
+      });
+    }
+
+    const container = this.#createPopup();
+    this.#buttonsContainer.classList.toggle("hidden", !isEditable);
+    container.classList.toggle("hidden", false);
+    container.classList.toggle("selected", isSelected);
+    this.#selected = isSelected;
+    this.#editor = editor;
+    editor.setCommentButtonStates({
+      selected: isSelected,
+      hasPopup: true,
+    });
+
+    const {
+      contentsObj,
+      richText,
+      creationDate,
+      modificationDate,
+      color,
+      opacity,
+    } = editor.getData();
+    container.style.backgroundColor =
+      (color && CommentManager._makeCommentColor(color, opacity)) || "";
+    this.#text.replaceChildren();
+    const html =
+      richText?.str && (!contentsObj?.str || richText.str === contentsObj.str)
+        ? richText.html
+        : contentsObj?.str;
+    if (html) {
+      renderRichText(
+        {
+          html,
+          dir: contentsObj?.dir || "auto",
+          className: "richText",
+        },
+        this.#text
+      );
+    }
+    this.#time.textContent = this.#dateFormat.format(
+      PDFDateString.toDateObject(modificationDate || creationDate)
+    );
+    this.#setPosition(
+      ...editor.commentPopupPosition,
+      /* correctPosition = */ editor.hasDefaultPopupPosition()
+    );
+    editor.elementBeforePopup.after(container);
+    container.addEventListener(
+      "focus",
+      ({ relatedTarget }) => {
+        this.#previousFocusedElement = relatedTarget;
+      },
+      { once: true }
+    );
+    if (isSelected) {
+      setTimeout(() => container.focus(), 0);
+    }
+  }
+
+  #setPosition(x, y, correctPosition) {
+    if (!correctPosition) {
+      this.#editor.commentPopupPosition = [x, y];
+    } else {
+      const parentRect = this.#editor.parentBoundingClientRect;
+      const widthRatio = this._popupWidth / parentRect.width;
+      if (
+        (this.#isLTR && x + widthRatio > 1) ||
+        (!this.#isLTR && x - widthRatio >= 0)
+      ) {
+        const buttonWidth = this.#editor.commentButtonWidth;
+        x -= widthRatio - buttonWidth;
+      }
+      const margin = 0.01;
+      if (this.#isLTR) {
+        x = Math.max(x, -parentRect.x / parentRect.width + margin);
+      } else {
+        x = Math.min(
+          x,
+          (window.innerWidth - parentRect.x) / parentRect.width -
+            widthRatio -
+            margin
+        );
+      }
+    }
+    this.#posX = x;
+    this.#posY = y;
+    const { style } = this.#container;
+    style.left = `${100 * x}%`;
+    style.top = `${100 * y}%`;
+  }
+
+  destroy() {
+    this._hide();
+    this.#container?.remove();
+    this.#container = this.#text = this.#time = null;
+    this.#prevDragX = this.#prevDragY = Infinity;
+    this.#posX = this.#posY = 0;
+    this.#previousFocusedElement = null;
   }
 }
 

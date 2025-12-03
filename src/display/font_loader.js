@@ -23,6 +23,7 @@ import {
   unreachable,
   warn,
 } from "../shared/util.js";
+import { makePathFromDrawOPS } from "./display_utils.js";
 
 class FontLoader {
   #systemFonts = new Set();
@@ -355,12 +356,11 @@ class FontLoader {
 }
 
 class FontFaceObject {
-  constructor(translatedData, inspectFont = null) {
+  #fontData;
+
+  constructor(translatedData, inspectFont = null, extra, charProcOperatorList) {
     this.compiledGlyphs = Object.create(null);
-    // importing translated data
-    for (const i in translatedData) {
-      this[i] = translatedData[i];
-    }
+    this.#fontData = translatedData;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       if (typeof this.disableFontFace !== "boolean") {
         unreachable("disableFontFace must be available.");
@@ -370,6 +370,12 @@ class FontFaceObject {
       }
     }
     this._inspectFont = inspectFont;
+    if (extra) {
+      Object.assign(this, extra);
+    }
+    if (charProcOperatorList) {
+      this.charProcOperatorList = charProcOperatorList;
+    }
   }
 
   createNativeFontFace() {
@@ -430,13 +436,117 @@ class FontFaceObject {
     } catch (ex) {
       warn(`getPathGenerator - ignoring character: "${ex}".`);
     }
-    const path = new Path2D(cmds || "");
+    const path = makePathFromDrawOPS(cmds);
 
     if (!this.fontExtraProperties) {
       // Remove the raw path-string, since we don't need it anymore.
       objs.delete(objId);
     }
     return (this.compiledGlyphs[character] = path);
+  }
+
+  get black() {
+    return this.#fontData.black;
+  }
+
+  get bold() {
+    return this.#fontData.bold;
+  }
+
+  get disableFontFace() {
+    return this.#fontData.disableFontFace ?? false;
+  }
+
+  set disableFontFace(value) {
+    shadow(this, "disableFontFace", !!value);
+  }
+
+  get fontExtraProperties() {
+    return this.#fontData.fontExtraProperties ?? false;
+  }
+
+  get isInvalidPDFjsFont() {
+    return this.#fontData.isInvalidPDFjsFont;
+  }
+
+  get isType3Font() {
+    return this.#fontData.isType3Font;
+  }
+
+  get italic() {
+    return this.#fontData.italic;
+  }
+
+  get missingFile() {
+    return this.#fontData.missingFile;
+  }
+
+  get remeasure() {
+    return this.#fontData.remeasure;
+  }
+
+  get vertical() {
+    return this.#fontData.vertical;
+  }
+
+  get ascent() {
+    return this.#fontData.ascent;
+  }
+
+  get defaultWidth() {
+    return this.#fontData.defaultWidth;
+  }
+
+  get descent() {
+    return this.#fontData.descent;
+  }
+
+  get bbox() {
+    return this.#fontData.bbox;
+  }
+
+  set bbox(bbox) {
+    shadow(this, "bbox", bbox);
+  }
+
+  get fontMatrix() {
+    return this.#fontData.fontMatrix;
+  }
+
+  get fallbackName() {
+    return this.#fontData.fallbackName;
+  }
+
+  get loadedName() {
+    return this.#fontData.loadedName;
+  }
+
+  get mimetype() {
+    return this.#fontData.mimetype;
+  }
+
+  get name() {
+    return this.#fontData.name;
+  }
+
+  get data() {
+    return this.#fontData.data;
+  }
+
+  clearData() {
+    this.#fontData.clearData();
+  }
+
+  get cssFontInfo() {
+    return this.#fontData.cssFontInfo;
+  }
+
+  get systemFontInfo() {
+    return this.#fontData.systemFontInfo;
+  }
+
+  get defaultVMetrics() {
+    return this.#fontData.defaultVMetrics;
   }
 }
 

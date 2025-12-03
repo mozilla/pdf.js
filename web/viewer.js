@@ -262,6 +262,9 @@ function getViewerConfiguration() {
       editorCommentsSidebarList: document.getElementById(
         "editorCommentsSidebarList"
       ),
+      editorCommentsSidebarResizer: document.getElementById(
+        "editorCommentsSidebarResizer"
+      ),
       editorEraserThickness: document.getElementById("editorEraserThickness"),
       editorFreeTextFontSize: document.getElementById("editorFreeTextFontSize"),
       editorFreeTextColor: document.getElementById("editorFreeTextColor"),

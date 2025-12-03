@@ -989,10 +989,14 @@ class Font {
     // Fallback to checking the font name, in order to improve text-selection,
     // since the /Flags-entry is often wrong (fixes issue13845.pdf).
     if (!isSerifFont && !properties.isSimulatedFlags) {
-      const baseName = name.replaceAll(/[,_]/g, "-").split("-", 1)[0],
+      const stdFontMap = getStdFontMap(),
+        nonStdFontMap = getNonStdFontMap(),
         serifFonts = getSerifFonts();
-      for (const namePart of baseName.split("+")) {
-        if (serifFonts[namePart]) {
+      for (const namePart of name.split("+")) {
+        let fontName = namePart.replaceAll(/[,_]/g, "-");
+        fontName = stdFontMap[fontName] || nonStdFontMap[fontName] || fontName;
+        fontName = fontName.split("-", 1)[0];
+        if (serifFonts[fontName]) {
           isSerifFont = true;
           break;
         }
@@ -1144,19 +1148,27 @@ class Font {
   }
 
   exportData() {
-    const exportDataProps = this.fontExtraProperties
-      ? [...EXPORT_DATA_PROPERTIES, ...EXPORT_DATA_EXTRA_PROPERTIES]
-      : EXPORT_DATA_PROPERTIES;
-
     const data = Object.create(null);
-    for (const prop of exportDataProps) {
+    for (const prop of EXPORT_DATA_PROPERTIES) {
       const value = this[prop];
       // Ignore properties that haven't been explicitly set.
       if (value !== undefined) {
         data[prop] = value;
       }
     }
-    return data;
+
+    if (!this.fontExtraProperties) {
+      return { data };
+    }
+
+    const extra = Object.create(null);
+    for (const prop of EXPORT_DATA_EXTRA_PROPERTIES) {
+      const value = this[prop];
+      if (value !== undefined) {
+        extra[prop] = value;
+      }
+    }
+    return { data, extra };
   }
 
   fallbackToSystemFont(properties) {

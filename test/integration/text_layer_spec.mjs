@@ -117,6 +117,7 @@ describe("Text layer", () => {
             `.page[data-page-number = "1"] .endOfContent`
           );
         });
+
         afterEach(async () => {
           await closePages(pages);
         });
@@ -226,6 +227,7 @@ describe("Text layer", () => {
             `.page[data-page-number = "1"] .endOfContent`
           );
         });
+
         afterEach(async () => {
           await closePages(pages);
         });
@@ -315,6 +317,7 @@ describe("Text layer", () => {
             `.page[data-page-number = "1"] .endOfContent`
           );
         });
+
         afterEach(async () => {
           await closePages(pages);
         });
@@ -456,6 +459,7 @@ describe("Text layer", () => {
           { timeout: 0 }
         );
       });
+
       afterEach(async () => {
         await closeSinglePage(page);
         await browser.close();

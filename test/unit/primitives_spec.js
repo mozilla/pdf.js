@@ -310,6 +310,16 @@ describe("primitives", function () {
       expect(rawValues2.sort()).toEqual(expectedRawValues2);
     });
 
+    it("should get all raw entries", function () {
+      const expectedRawEntries = [
+        ["FontFile", testFontFile],
+        ["FontFile2", testFontFile2],
+        ["FontFile3", testFontFile3],
+      ];
+      const rawEntries = Array.from(dictWithManyKeys.getRawEntries());
+      expect(rawEntries.sort()).toEqual(expectedRawEntries);
+    });
+
     it("should create only one object for Dict.empty", function () {
       const firstDictEmpty = Dict.empty;
       const secondDictEmpty = Dict.empty;
@@ -423,6 +433,12 @@ describe("primitives", function () {
 
       dict.setIfName("k", 1234);
       expect(dict.has("k")).toBeFalse();
+
+      dict.setIfDict("l", new Dict());
+      expect(dict.get("l")).toEqual(new Dict());
+
+      dict.setIfDict("m", "not a dict");
+      expect(dict.has("m")).toBeFalse();
     });
   });
 
@@ -545,6 +561,12 @@ describe("primitives", function () {
         [ref1, obj1],
         [ref2, obj2],
       ]);
+    });
+
+    it("should support iteration over keys", function () {
+      cache.put(ref1, obj1);
+      cache.put(ref2, obj2);
+      expect([...cache.keys()]).toEqual([ref1, ref2]);
     });
   });
 

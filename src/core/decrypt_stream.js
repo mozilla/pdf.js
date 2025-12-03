@@ -21,7 +21,7 @@ class DecryptStream extends DecodeStream {
   constructor(str, maybeLength, decrypt) {
     super(maybeLength);
 
-    this.str = str;
+    this.stream = str;
     this.dict = str.dict;
     this.decrypt = decrypt;
     this.nextChunk = null;
@@ -33,14 +33,14 @@ class DecryptStream extends DecodeStream {
     if (this.initialized) {
       chunk = this.nextChunk;
     } else {
-      chunk = this.str.getBytes(chunkSize);
+      chunk = this.stream.getBytes(chunkSize);
       this.initialized = true;
     }
     if (!chunk?.length) {
       this.eof = true;
       return;
     }
-    this.nextChunk = this.str.getBytes(chunkSize);
+    this.nextChunk = this.stream.getBytes(chunkSize);
     const hasMoreData = this.nextChunk?.length > 0;
 
     const decrypt = this.decrypt;
@@ -51,6 +51,10 @@ class DecryptStream extends DecodeStream {
       buffer = this.ensureBuffer(newLength);
     buffer.set(chunk, bufferLength);
     this.bufferLength = newLength;
+  }
+
+  getOriginalStream() {
+    return this;
   }
 }
 

@@ -173,6 +173,14 @@ const defaultOptions = {
     value: 200,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  commentLearnMoreUrl: {
+    /** @type {string} */
+    value:
+      typeof PDFJSDev === "undefined" || PDFJSDev.test("MOZCENTRAL")
+        ? "https://support.mozilla.org/%LOCALE%/kb/view-pdf-files-firefox-or-choose-another-viewer#w_add-a-comment-to-a-pdf"
+        : "",
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   cursorToolOnLoad: {
     /** @type {number} */
     value: 0,
@@ -220,7 +228,7 @@ const defaultOptions = {
   },
   enableComment: {
     /** @type {boolean} */
-    value: typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING"),
+    value: typeof PDFJSDev === "undefined",
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   enableDetailCanvas: {

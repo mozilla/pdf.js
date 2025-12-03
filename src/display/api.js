@@ -45,6 +45,7 @@ import {
   StatTimer,
 } from "./display_utils.js";
 import { FontFaceObject, FontLoader } from "./font_loader.js";
+import { FontInfo, PatternInfo } from "../shared/obj-bin-transform.js";
 import {
   getDataProp,
   getFactoryUrlProp,
@@ -751,9 +752,6 @@ class PDFDocumentProxy {
       Object.defineProperty(this, "getXFADatasets", {
         value: () => this._transport.getXFADatasets(),
       });
-      Object.defineProperty(this, "getXRefPrevValue", {
-        value: () => this._transport.getXRefPrevValue(),
-      });
       Object.defineProperty(this, "getStartXRefPos", {
         value: () => this._transport.getStartXRefPos(),
       });
@@ -1028,6 +1026,24 @@ class PDFDocumentProxy {
   }
 
   /**
+   * @typedef {Object} PageInfo
+   * @property {null|Uint8Array} document
+   * @property {Array<Array<number>|number>} [includePages]
+   *  included ranges or indices.
+   * @property {Array<Array<number>|number>} [excludePages]
+   *  excluded ranges or indices.
+   */
+
+  /**
+   * @param {Array<PageInfo>} pageInfos - The pages to extract.
+   * @returns {Promise<Uint8Array>} A promise that is resolved with a
+   *   {Uint8Array} containing the full data of the saved document.
+   */
+  extractPages(pageInfos) {
+    return this._transport.extractPages(pageInfos);
+  }
+
+  /**
    * @returns {Promise<{ length: number }>} A promise that is resolved when the
    *   document's data is loaded. It is resolved with an {Object} that contains
    *   the `length` property that indicates size of the PDF data in bytes.
@@ -1242,8 +1258,14 @@ class PDFDocumentProxy {
  * @property {boolean} [isEditing] - Render the page in editing mode.
  * @property {boolean} [recordOperations] - Record the dependencies and bounding
  *   boxes of all PDF operations that render onto the canvas.
- * @property {Set<number>} [filteredOperationIndexes] - If provided, only run
- *   the PDF operations that are included in this set.
+ * @property {OperationsFilter} [operationsFilter] - If provided, only
+ *   run for which this function returns `true`.
+ */
+
+/**
+ * @callback OperationsFilter
+ * @param {number} index - The index of the operation.
+ * @returns {boolean} If false, the operation is ignored.
  */
 
 /**
@@ -1314,7 +1336,7 @@ class PDFPageProxy {
 
     this._intentStates = new Map();
     this.destroyed = false;
-    this.recordedGroups = null;
+    this.recordedBBoxes = null;
   }
 
   /**
@@ -1440,7 +1462,7 @@ class PDFPageProxy {
     printAnnotationStorage = null,
     isEditing = false,
     recordOperations = false,
-    filteredOperationIndexes = null,
+    operationsFilter = null,
   }) {
     this._stats?.time("Overall");
 
@@ -1487,23 +1509,28 @@ class PDFPageProxy {
       this._pumpOperatorList(intentArgs);
     }
 
+    const recordForDebugger = Boolean(
+      this._pdfBug && globalThis.StepperManager?.enabled
+    );
+
     const shouldRecordOperations =
-      !this.recordedGroups &&
-      (recordOperations ||
-        (this._pdfBug && globalThis.StepperManager?.enabled));
+      !this.recordedBBoxes && (recordOperations || recordForDebugger);
 
     const complete = error => {
       intentState.renderTasks.delete(internalRenderTask);
 
       if (shouldRecordOperations) {
-        const recordedGroups = internalRenderTask.gfx?.dependencyTracker.take();
-        if (recordedGroups) {
-          internalRenderTask.stepper?.setOperatorGroups(recordedGroups);
-          if (recordOperations) {
-            this.recordedGroups = recordedGroups;
+        const recordedBBoxes = internalRenderTask.gfx?.dependencyTracker.take();
+        if (recordedBBoxes) {
+          if (internalRenderTask.stepper) {
+            internalRenderTask.stepper.setOperatorBBoxes(
+              recordedBBoxes,
+              internalRenderTask.gfx.dependencyTracker.takeDebugMetadata()
+            );
           }
-        } else if (recordOperations) {
-          this.recordedGroups = [];
+          if (recordOperations) {
+            this.recordedBBoxes = recordedBBoxes;
+          }
         }
       }
 
@@ -1542,7 +1569,11 @@ class PDFPageProxy {
         canvas,
         canvasContext,
         dependencyTracker: shouldRecordOperations
-          ? new CanvasDependencyTracker(canvas)
+          ? new CanvasDependencyTracker(
+              canvas,
+              intentState.operatorList.length,
+              recordForDebugger
+            )
           : null,
         viewport,
         transform,
@@ -1559,7 +1590,7 @@ class PDFPageProxy {
       pdfBug: this._pdfBug,
       pageColors,
       enableHWA: this._transport.enableHWA,
-      filteredOperationIndexes,
+      operationsFilter,
     });
 
     (intentState.renderTasks ||= new Set()).add(internalRenderTask);
@@ -2745,11 +2776,17 @@ class WorkerTransport {
             break;
           }
 
+          const fontData = new FontInfo(exportedData);
           const inspectFont =
             this._params.pdfBug && globalThis.FontInspector?.enabled
               ? (font, url) => globalThis.FontInspector.fontAdded(font, url)
               : null;
-          const font = new FontFaceObject(exportedData, inspectFont);
+          const font = new FontFaceObject(
+            fontData,
+            inspectFont,
+            exportedData.extra,
+            exportedData.charProcOperatorList
+          );
 
           this.fontLoader
             .bind(font)
@@ -2761,7 +2798,7 @@ class WorkerTransport {
                 // rather than waiting for a `PDFDocumentProxy.cleanup` call.
                 // Since `font.data` could be very large, e.g. in some cases
                 // multiple megabytes, this will help reduce memory usage.
-                font.data = null;
+                font.clearData();
               }
               this.commonObjs.resolve(id, font);
             });
@@ -2785,8 +2822,11 @@ class WorkerTransport {
           break;
         case "FontPath":
         case "Image":
-        case "Pattern":
           this.commonObjs.resolve(id, exportedData);
+          break;
+        case "Pattern":
+          const pattern = new PatternInfo(exportedData);
+          this.commonObjs.resolve(id, pattern.getIR());
           break;
         default:
           throw new Error(`Got unknown common object type ${type}`);
@@ -2876,6 +2916,10 @@ class WorkerTransport {
       .finally(() => {
         this.annotationStorage.resetModified();
       });
+  }
+
+  extractPages(pageInfos) {
+    return this.messageHandler.sendWithPromise("ExtractPages", { pageInfos });
   }
 
   getPage(pageNumber) {
@@ -3033,6 +3077,7 @@ class WorkerTransport {
         metadata: results[1] ? new Metadata(results[1]) : null,
         contentDispositionFilename: this._fullReader?.filename ?? null,
         contentLength: this._fullReader?.contentLength ?? null,
+        hasStructTree: results[2],
       }));
     this.#methodPromises.set(name, promise);
     return promise;
@@ -3169,7 +3214,7 @@ class InternalRenderTask {
     pdfBug = false,
     pageColors = null,
     enableHWA = false,
-    filteredOperationIndexes = null,
+    operationsFilter = null,
   }) {
     this.callback = callback;
     this.params = params;
@@ -3201,7 +3246,7 @@ class InternalRenderTask {
     this._canvasContext = params.canvas ? null : params.canvasContext;
     this._enableHWA = enableHWA;
     this._dependencyTracker = params.dependencyTracker;
-    this._filteredOperationIndexes = filteredOperationIndexes;
+    this._operationsFilter = operationsFilter;
   }
 
   get completed() {
@@ -3288,6 +3333,9 @@ class InternalRenderTask {
       this.graphicsReadyCallback ||= this._continueBound;
       return;
     }
+    this.gfx.dependencyTracker?.growOperationsCount(
+      this.operatorList.fnArray.length
+    );
     this.stepper?.updateOperatorList(this.operatorList);
 
     if (this.running) {
@@ -3328,7 +3376,7 @@ class InternalRenderTask {
       this.operatorListIdx,
       this._continueBound,
       this.stepper,
-      this._filteredOperationIndexes
+      this._operationsFilter
     );
     if (this.operatorListIdx === this.operatorList.argsArray.length) {
       this.running = false;

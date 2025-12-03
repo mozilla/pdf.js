@@ -89,6 +89,7 @@ import { PDFPrintServiceFactory } from "web-print_service";
 import { PDFRenderingQueue } from "./pdf_rendering_queue.js";
 import { PDFScriptingManager } from "./pdf_scripting_manager.js";
 import { PDFSidebar } from "web-pdf_sidebar";
+import { PdfTextExtractor } from "./pdf_text_extractor.js";
 import { PDFThumbnailViewer } from "web-pdf_thumbnail_viewer";
 import { PDFViewer } from "./pdf_viewer.js";
 import { Preferences } from "web-preferences";
@@ -129,6 +130,8 @@ const PDFViewerApplication = {
   pdfDocumentProperties: null,
   /** @type {PDFLinkService} */
   pdfLinkService: null,
+  /** @type {PdfTextExtractor|null} */
+  pdfTextExtractor: null,
   /** @type {PDFHistory} */
   pdfHistory: null,
   /** @type {PDFSidebar} */
@@ -262,6 +265,8 @@ const PDFViewerApplication = {
     }
     await this._initializeViewerComponents();
 
+    this.pdfTextExtractor = new PdfTextExtractor(this.externalServices);
+
     // Bind the various event handlers *after* the viewer has been
     // initialized, to prevent errors if an event arrives too soon.
     this.bindEvents();
@@ -368,6 +373,7 @@ const PDFViewerApplication = {
         docBaseUrl: x => x,
         enableAltText: x => x === "true",
         enableAutoLinking: x => x === "true",
+        enableComment: x => x === "true",
         enableFakeMLManager: x => x === "true",
         enableGuessAltText: x => x === "true",
         enablePermissions: x => x === "true",
@@ -380,6 +386,7 @@ const PDFViewerApplication = {
         forcePageColors: x => x === "true",
         pageColorsBackground: x => x,
         pageColorsForeground: x => x,
+        localeProperties: x => ({ lang: x }),
       });
     }
 
@@ -445,14 +452,15 @@ const PDFViewerApplication = {
     const container = appConfig.mainContainer,
       viewer = appConfig.viewerContainer;
     const annotationEditorMode = AppOptions.get("annotationEditorMode");
-    const pageColors =
+    const hasForcedColors =
       AppOptions.get("forcePageColors") ||
-      window.matchMedia("(forced-colors: active)").matches
-        ? {
-            background: AppOptions.get("pageColorsBackground"),
-            foreground: AppOptions.get("pageColorsForeground"),
-          }
-        : null;
+      window.matchMedia("(forced-colors: active)").matches;
+    const pageColors = hasForcedColors
+      ? {
+          background: AppOptions.get("pageColorsBackground"),
+          foreground: AppOptions.get("pageColorsForeground"),
+        }
+      : null;
 
     let altTextManager;
     if (AppOptions.get("enableUpdatedAddImage")) {
@@ -491,13 +499,21 @@ const PDFViewerApplication = {
             eventBus
           )
         : null;
+
+    const ltr = appConfig.viewerContainer
+      ? getComputedStyle(appConfig.viewerContainer).direction === "ltr"
+      : true;
     const commentManager =
       AppOptions.get("enableComment") && appConfig.editCommentDialog
         ? new CommentManager(
             appConfig.editCommentDialog,
             {
+              learnMoreUrl: AppOptions.get("commentLearnMoreUrl"),
               sidebar:
                 appConfig.annotationEditorParams?.editorCommentsSidebar || null,
+              sidebarResizer:
+                appConfig.annotationEditorParams
+                  ?.editorCommentsSidebarResizer || null,
               commentsList:
                 appConfig.annotationEditorParams?.editorCommentsSidebarList ||
                 null,
@@ -515,7 +531,9 @@ const PDFViewerApplication = {
             },
             eventBus,
             linkService,
-            overlayManager
+            overlayManager,
+            ltr,
+            hasForcedColors
           )
         : null;
 
@@ -1135,6 +1153,7 @@ const PDFViewerApplication = {
       this.pdfViewer.setDocument(null);
       this.pdfLinkService.setDocument(null);
       this.pdfDocumentProperties?.setDocument(null);
+      this.pdfTextExtractor?.setViewer(null);
     }
     this.pdfLinkService.externalLinkEnabled = true;
     this.store = null;
@@ -1279,12 +1298,13 @@ const PDFViewerApplication = {
       this._saveInProgress = false;
     }
 
-    if (this._hasAnnotationEditors) {
+    const editorStats = this.pdfDocument?.annotationStorage.editorStats;
+    if (editorStats) {
       this.externalServices.reportTelemetry({
         type: "editing",
         data: {
           type: "save",
-          stats: this.pdfDocument?.annotationStorage.editorStats,
+          stats: editorStats,
         },
       });
     }
@@ -1440,6 +1460,7 @@ const PDFViewerApplication = {
 
     const pdfViewer = this.pdfViewer;
     pdfViewer.setDocument(pdfDocument);
+    this.pdfTextExtractor.setViewer(pdfViewer);
     const { firstPagePromise, onePageRendered, pagesPromise } = pdfViewer;
 
     this.pdfThumbnailViewer?.setDocument(pdfDocument);
@@ -1702,19 +1723,21 @@ const PDFViewerApplication = {
    * @private
    */
   async _initializeMetadata(pdfDocument) {
-    const { info, metadata, contentDispositionFilename, contentLength } =
-      await pdfDocument.getMetadata();
+    const {
+      info,
+      metadata,
+      contentDispositionFilename,
+      contentLength,
+      hasStructTree,
+    } = await pdfDocument.getMetadata();
 
     if (pdfDocument !== this.pdfDocument) {
       return; // The document was closed while the metadata resolved.
     }
-    if (info.collectedSignatureCertificates) {
-      this.externalServices.reportTelemetry({
-        type: "signatureCertificates",
-        data: info.collectedSignatureCertificates,
-      });
-    }
-
+    this.externalServices.reportTelemetry({
+      type: "taggedPDF",
+      data: hasStructTree,
+    });
     this.documentInfo = info;
     this.metadata = metadata;
     this._contentDispositionFilename ??= contentDispositionFilename;

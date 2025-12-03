@@ -244,12 +244,14 @@ class PDFLinkService {
    * @param {number} pageNumber - The page number to scroll to.
    * @param {number} x - The x-coordinate to scroll to in page coordinates.
    * @param {number} y - The y-coordinate to scroll to in page coordinates.
+   * @param {Object} [options]
    */
-  goToXY(pageNumber, x, y) {
+  goToXY(pageNumber, x, y, options = {}) {
     this.pdfViewer.scrollPageIntoView({
       pageNumber,
       destArray: [null, { name: "XYZ" }, x, y],
       ignoreDestinationZoom: true,
+      ...options,
     });
   }
 
