@@ -177,7 +177,7 @@
   cursor: none;
 }
 
-.annotationEditorLayer.eraserEditing .editToolbar{
+.annotationEditorLayer.eraserEditing.editToolbar {
   display: none;
 }
 
