@@ -45,6 +45,7 @@ function getViewerConfiguration() {
       zoomIn: document.getElementById("zoomInButton"),
       zoomOut: document.getElementById("zoomOutButton"),
       print: document.getElementById("printButton"),
+      pageRotateCw: document.getElementById("pageRotateCw"),
       editorCommentButton: document.getElementById("editorCommentButton"),
       editorCommentParamsToolbar: document.getElementById(
         "editorCommentParamsToolbar"
@@ -85,7 +86,6 @@ function getViewerConfiguration() {
       viewBookmarkButton: document.getElementById("viewBookmark"),
       firstPageButton: document.getElementById("firstPage"),
       lastPageButton: document.getElementById("lastPage"),
-      pageRotateCwButton: document.getElementById("pageRotateCw"),
       pageRotateCcwButton: document.getElementById("pageRotateCcw"),
       cursorSelectToolButton: document.getElementById("cursorSelectTool"),
       cursorHandToolButton: document.getElementById("cursorHandTool"),

@@ -41,8 +41,6 @@ import { PagesCountLimit } from "./pdf_viewer.js";
  *   page in the document.
  * @property {HTMLButtonElement} lastPageButton - Button to go to the last page
  *   in the document.
- * @property {HTMLButtonElement} pageRotateCwButton - Button to rotate the pages
- *   clockwise.
  * @property {HTMLButtonElement} pageRotateCcwButton - Button to rotate the
  *   pages counterclockwise.
  * @property {HTMLButtonElement} cursorSelectToolButton - Button to enable the
@@ -75,11 +73,6 @@ class SecondaryToolbar {
       { element: options.viewBookmarkButton, eventName: null, close: true },
       { element: options.firstPageButton, eventName: "firstpage", close: true },
       { element: options.lastPageButton, eventName: "lastpage", close: true },
-      {
-        element: options.pageRotateCwButton,
-        eventName: "rotatecw",
-        close: false,
-      },
       {
         element: options.pageRotateCcwButton,
         eventName: "rotateccw",
@@ -197,16 +190,12 @@ class SecondaryToolbar {
   }
 
   #updateUIState() {
-    const {
-      firstPageButton,
-      lastPageButton,
-      pageRotateCwButton,
-      pageRotateCcwButton,
-    } = this.#opts;
+    const { firstPageButton, lastPageButton, pageRotateCcwButton } = this.#opts;
 
     firstPageButton.disabled = this.pageNumber <= 1;
     lastPageButton.disabled = this.pageNumber >= this.pagesCount;
-    pageRotateCwButton.disabled = this.pagesCount === 0;
+    firstPageButton.disabled = this.pageNumber <= 1;
+    lastPageButton.disabled = this.pageNumber >= this.pagesCount;
     pageRotateCcwButton.disabled = this.pagesCount === 0;
   }
 

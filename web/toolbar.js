@@ -41,6 +41,8 @@ import {
  * @property {HTMLButtonElement} editorFreeTextButton - Button to switch to
  *   FreeText editing.
  * @property {HTMLButtonElement} download - Button to download the document.
+ * @property {HTMLButtonElement} pageRotateCw - Button to rotate the pages
+ *   clockwise.
  */
 
 class Toolbar {
@@ -67,6 +69,7 @@ class Toolbar {
       { element: options.zoomOut, eventName: "zoomout" },
       { element: options.print, eventName: "print" },
       { element: options.download, eventName: "download" },
+      { element: options.pageRotateCw, eventName: "rotatecw" },
       {
         element: options.editorCommentButton,
         eventName: "switchannotationeditormode",
@@ -381,6 +384,8 @@ class Toolbar {
 
     opts.zoomOut.disabled = pageScale <= MIN_SCALE;
     opts.zoomIn.disabled = pageScale >= MAX_SCALE;
+
+    opts.pageRotateCw.disabled = pagesCount === 0;
 
     let predefinedValueFound = false;
     for (const option of opts.scaleSelect.options) {

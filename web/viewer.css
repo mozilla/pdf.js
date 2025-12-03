@@ -542,6 +542,10 @@ body {
   mask-image: var(--toolbarButton-zoomIn-icon);
 }
 
+#pageRotateCw::before {
+  mask-image: var(--secondaryToolbarButton-rotateCw-icon);
+}
+
 #editorCommentButton::before {
   mask-image: var(--toolbarButton-editorComment-icon);
   transform: scaleX(var(--dir-factor));
