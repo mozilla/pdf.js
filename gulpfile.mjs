@@ -378,8 +378,6 @@ function createWebpackConfig(
   const alias = createWebpackAlias(bundleDefines);
   const experiments = isModule ? { outputModule: true } : undefined;
 
-
-
   return {
     mode: "production",
     optimization: {
