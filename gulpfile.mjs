@@ -378,8 +378,7 @@ function createWebpackConfig(
   const alias = createWebpackAlias(bundleDefines);
   const experiments = isModule ? { outputModule: true } : undefined;
 
-  // Required to expose e.g., the `window` object.
-  output.globalObject = "globalThis";
+
 
   return {
     mode: "production",
