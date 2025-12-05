@@ -729,6 +729,7 @@ body {
     height: auto;
 
     > .thumbnail {
+      scroll-margin-block: 19px;
       width: var(--thumbnail-width);
       margin: 0 10px 5px;
       padding: 1px;

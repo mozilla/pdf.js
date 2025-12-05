@@ -24,13 +24,16 @@ import {
   getVisibleElements,
   isValidRotation,
   RenderingStates,
-  scrollIntoView,
   watchScroll,
 } from "./ui_utils.js";
 import { PDFThumbnailView } from "./pdf_thumbnail_view.js";
 
-const THUMBNAIL_SCROLL_MARGIN = -19;
 const THUMBNAIL_SELECTED_CLASS = "selected";
+const SCROLL_OPTIONS = {
+  behavior: "instant",
+  container: "nearest",
+  block: "nearest",
+};
 
 /**
  * @typedef {Object} PDFThumbnailViewerOptions
@@ -139,7 +142,7 @@ class PDFThumbnailViewer {
         }
       }
       if (shouldScroll) {
-        scrollIntoView(thumbnailView.div, { top: THUMBNAIL_SCROLL_MARGIN });
+        thumbnailView.div.scrollIntoView(SCROLL_OPTIONS);
       }
     }
 
