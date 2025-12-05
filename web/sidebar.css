@@ -79,5 +79,9 @@
     :not(.sidebarResizer) {
       pointer-events: none;
     }
+
+    .sidebarResizer {
+      background-color: var(--resizer-hover-bg-color);
+    }
   }
 }
