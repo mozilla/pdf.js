@@ -32,3 +32,6 @@ jobs:
 
       - name: Run lint-chromium
         run: npx gulp lint-chromium
+
+      - name: Run lint-mozcentral
+        run: npx gulp lint-mozcentral

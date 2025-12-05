@@ -26,6 +26,7 @@
   --border-color-interactive: light-dark(#8f8f9d, #f9f9fa);
   --border-color-interactive-hover: var(--border-color-interactive);
   --border-color-interactive-active: var(--border-color-interactive);
+  --focus-outline-offset: 2px;
 
   @media (forced-colors: active) {
     --color-accent-primary: ButtonText;
