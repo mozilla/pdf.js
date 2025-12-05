@@ -1115,16 +1115,6 @@
     "type": "eq"
   },
   {
-    "id": "hmm-pdf",
-    "file": "pdfs/hmm.pdf",
-    "md5": "e08467e60101ee5f4a59716e86db6dc9",
-    "link": true,
-    "rounds": 1,
-    "firstPage": 1,
-    "lastPage": 2,
-    "type": "load"
-  },
-  {
     "id": "issue7847_radial",
     "file": "pdfs/issue7847_radial.pdf",
     "md5": "59dc206ec5dd6e6f701943e4694e4147",
@@ -2814,6 +2804,13 @@
     "id": "jbig2_symbol_offset",
     "file": "pdfs/jbig2_symbol_offset.pdf",
     "md5": "6b22a0f838008fa4d8cb5b40ba095c48",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
+    "id": "issue20439",
+    "file": "pdfs/issue20439.pdf",
+    "md5": "3c7e888b26ff00943ec1610d93235efc",
     "rounds": 1,
     "type": "eq"
   },
