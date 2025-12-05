@@ -88,6 +88,12 @@ class PDFHistory {
    * @param {InitializeParameters} params
    */
   initialize({ fingerprint, resetHistory = false, updateUrl = false }) {
+    const isLocalFile = window.location.protocol === "file:";
+    this._isLocalFile = isLocalFile;
+    if (isLocalFile) {
+      this._loadLocalPosition();
+    }
+
     if (!fingerprint || typeof fingerprint !== "string") {
       console.error(
         'PDFHistory.initialize: The "fingerprint" must be a non-empty string.'
@@ -667,6 +673,43 @@ class PDFHistory {
     // into the browser history when the 'unload' event has already fired).
     if (!this._destination || this._destination.temporary) {
       this.#tryPushCurrentPosition();
+    }
+    if (this._isLocalFile) {
+      this._saveLocalPosition();
+    }
+  }
+
+  _saveLocalPosition() {
+    if (!this._isLocalFile || !this._position) {
+      return;
+    }
+    const data = {
+      page: this._position.page || this.linkService.page,
+      rotation: this.linkService.rotation,
+    };
+    localStorage.setItem(
+      `pdfjs_last_position_${this._fingerprint}`,
+      JSON.stringify(data)
+    );
+  }
+
+  _loadLocalPosition() {
+    if (!this._isLocalFile) {
+      return;
+    }
+    const saved = localStorage.getItem(
+      `pdfjs_last_position_${this._fingerprint}`
+    );
+    if (saved) {
+      try {
+        const { page, rotation } = JSON.parse(saved);
+        this.linkService.page = page;
+        if (isValidRotation(rotation)) {
+          this.linkService.rotation = rotation;
+        }
+      } catch (err) {
+        console.warn("[pdfjs] Failed to parse saved local PDF position:", err);
+      }
     }
   }
 
