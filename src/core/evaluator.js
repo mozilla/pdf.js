@@ -2317,9 +2317,19 @@ class PartialEvaluator {
               return;
             }
             // Other marked content types aren't supported yet.
+            let props = null;
+            if (args[1] instanceof Dict) {
+              const lang = args[1].get("Lang");
+              if (typeof lang === "string") {
+                props = Object.create(null);
+                props.lang = stringToPDFString(lang);
+              }
+            }
+
             args = [
               args[0].name,
               args[1] instanceof Dict ? args[1].get("MCID") : null,
+              props,
             ];
 
             break;
@@ -3505,8 +3515,13 @@ class PartialEvaluator {
               markedContentData.level++;
 
               let mcid = null;
+              let itemLang = null;
               if (args[1] instanceof Dict) {
                 mcid = args[1].get("MCID");
+                const langString = args[1].get("Lang");
+                if (typeof langString === "string") {
+                  itemLang = stringToPDFString(langString);
+                }
               }
               textContent.items.push({
                 type: "beginMarkedContentProps",
@@ -3514,6 +3529,7 @@ class PartialEvaluator {
                   ? `${self.idFactory.getPageObjId()}_mc${mcid}`
                   : null,
                 tag: args[0] instanceof Name ? args[0].name : null,
+                lang: itemLang,
               });
             }
             break;
