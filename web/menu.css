@@ -1,0 +1,177 @@
+/* Copyright 2025 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+.popupMenu {
+  --menuitem-checkmark-icon: url(images/checkmark.svg);
+  --menu-mark-icon-size: 0;
+  --menu-icon-size: 16px;
+  --menuitem-gap: 5px;
+  --menuitem-border-color: transparent;
+  --menuitem-active-bg: color-mix(
+    in srgb,
+    var(--menu-text-color),
+    transparent 79%
+  );
+  --menuitem-text-active-fg: var(--menu-text-color);
+  --menuitem-focus-bg: color-mix(
+    in srgb,
+    var(--menu-text-color),
+    transparent 93%
+  );
+  --menuitem-focus-outline-color: light-dark(#0062fa, #00cadb);
+  --menuitem-focus-border-color: light-dark(white, black);
+
+  @media screen and (forced-colors: active) {
+    --menu-bg: Canvas;
+    --menu-background-blend-mode: normal;
+    --menu-box-shadow: none;
+    --menu-backdrop-filter: none;
+    --menu-text-color: ButtonText;
+    --menu-border-color: CanvasText;
+    --menuitem-border-color: none;
+    --menuitem-hover-bg: SelectedItemText;
+    --menuitem-text-hover-fg: SelectedItem;
+    --menuitem-active-bg: SelectedItemText;
+    --menuitem-text-active-fg: SelectedItem;
+    --menuitem-focus-outline-color: CanvasText;
+    --menuitem-focus-border-color: none;
+  }
+
+  display: flex;
+  flex-direction: column;
+  width: max-content;
+  height: auto;
+  position: relative;
+  left: 0;
+  top: 1px;
+  margin: 0;
+  padding: 5px;
+
+  background: var(--menu-bg);
+  background-blend-mode: var(--menu-background-blend-mode);
+  box-shadow: var(--menu-box-shadow);
+  border-radius: 6px;
+  border: 1px solid var(--menu-border-color);
+  backdrop-filter: var(--menu-backdrop-filter);
+
+  &.withMark {
+    --menu-mark-icon-size: 16px;
+  }
+
+  > li {
+    display: flex;
+    align-items: center;
+    list-style: none;
+    width: 100%;
+    height: 24px;
+    padding-inline: calc(var(--menu-mark-icon-size) + var(--menuitem-gap))
+      var(--menuitem-gap);
+    gap: var(--menuitem-gap);
+    box-sizing: border-box;
+    border-radius: var(--menuitem-border-radius);
+    border: 1px solid var(--menuitem-border-color);
+    background: transparent;
+
+    &:has(button.selected)::before {
+      content: "";
+      display: inline-block;
+      width: 11px;
+      height: 11px;
+      mask-repeat: no-repeat;
+      mask-position: center;
+      mask-image: var(--menuitem-checkmark-icon);
+      background-color: var(--menu-text-color);
+      position: absolute;
+      margin-left: -16px;
+    }
+
+    &:has(button:disabled) {
+      opacity: 0.62;
+      pointer-events: none;
+    }
+
+    &:hover {
+      background: var(--menuitem-hover-bg);
+      background-blend-mode: var(--menuitem-hover-background-blend-mode);
+      > button {
+        &:not(.noIcon)::before {
+          background-color: var(--menuitem-text-hover-fg);
+        }
+        > span {
+          color: var(--menuitem-text-hover-fg);
+        }
+      }
+      &:has(button.selected)::before {
+        background-color: var(--menuitem-text-hover-fg);
+      }
+    }
+
+    &:active {
+      background-color: var(--menuitem-active-bg);
+      > button > span {
+        color: var(--menuitem-text-active-fg);
+      }
+    }
+
+    &:has(> button:focus-visible) {
+      border-color: var(--menuitem-focus-border-color);
+      background-color: var(--menuitem-focus-bg);
+      outline: 2px solid var(--menuitem-focus-outline-color);
+      outline-offset: 2px;
+    }
+
+    > button {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      width: 100%;
+      height: auto;
+      padding: var(--menuitem-gap);
+      gap: var(--menuitem-gap);
+      background: transparent;
+      border: none;
+
+      &:not(.noIcon)::before {
+        display: inline-block;
+        width: var(--menu-icon-size);
+        height: var(--menu-icon-size);
+        content: "";
+        mask-size: cover;
+        mask-position: center;
+        background-color: var(--menu-text-color);
+      }
+
+      &:focus-visible {
+        outline: none;
+      }
+
+      > span {
+        display: inline-block;
+        width: max-content;
+        height: auto;
+        text-align: left;
+        color: var(--menu-text-color);
+        user-select: none;
+        padding-inline-start: 6px;
+
+        font: menu;
+        font-size: 13px;
+        font-style: normal;
+        font-weight: 510;
+        line-height: normal;
+      }
+    }
+  }
+}
