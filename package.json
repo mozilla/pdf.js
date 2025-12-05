@@ -45,6 +45,7 @@
     "postcss-dir-pseudo-class": "^9.0.1",
     "postcss-discard-comments": "^7.0.5",
     "postcss-nesting": "^13.0.2",
+    "postcss-values-parser": "^7.0.0",
     "prettier": "^3.7.2",
     "puppeteer": "^24.31.0",
     "stylelint": "^16.26.1",

@@ -16,12 +16,6 @@
 @import url(pdf_viewer.css);
 
 :root {
-  --dir-factor: 1;
-  --scale-select-width: 140px;
-
-  --toolbar-icon-opacity: 1;
-  --doorhanger-icon-opacity: 0.9;
-
   --main-color: light-dark(rgb(12 12 13), rgb(249 249 250));
   --body-bg-color: light-dark(rgb(212 212 215), rgb(42 42 46));
   --scrollbar-color: light-dark(auto, rgb(121 121 123));
@@ -44,10 +38,6 @@
   --toolbar-border-width: 1px;
 
   --toolbarButton-download-icon: url(images/gv-toolbarButton-download.svg);
-}
-
-:root:dir(rtl) {
-  --dir-factor: -1;
 }
 
 @media screen and (forced-colors: active) {

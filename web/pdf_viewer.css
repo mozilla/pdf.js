@@ -17,10 +17,11 @@
 @import url(text_layer_builder.css);
 @import url(annotation_layer_builder.css);
 @import url(xfa_layer_builder.css);
-/* Ignored in GECKOVIEW builds: */
+/* Ignored in GECKOVIEW: begin */
 @import url(annotation_editor_layer_builder.css);
 @import url(sidebar.css);
 @import url(menu.css);
+/* Ignored in GECKOVIEW: end */
 
 :root {
   color-scheme: light dark;
