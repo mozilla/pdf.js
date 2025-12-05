@@ -1260,6 +1260,40 @@ describe("PDF viewer", () => {
     });
   });
 
+  describe("File param with encoded characters (issue 20420)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      const baseURL = new URL(global.integrationBaseUrl);
+      const url = `${baseURL.origin}/build/generic/web/compressed.tracemonkey-pldi-09.pdf?token=%2Ffoo`;
+      pages = await loadAndWait(
+        encodeURIComponent(url),
+        ".textLayer .endOfContent"
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must not double-decode the file param", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const pdfUrl = await page.evaluate(
+            () => window.PDFViewerApplication.url
+          );
+
+          expect(pdfUrl)
+            .withContext(`In ${browserName}`)
+            .toContain("token=%2Ffoo");
+          expect(pdfUrl)
+            .withContext(`In ${browserName}`)
+            .not.toContain("token=/foo");
+        })
+      );
+    });
+  });
+
   describe("Keyboard scrolling on startup (bug 843653)", () => {
     let pages;
 
