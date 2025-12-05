@@ -420,8 +420,12 @@ describe("accessibility", () => {
           expect(mathML)
             .withContext(`In ${browserName}`)
             .toEqual(
-              `<mi aria-owns="p76R_mc16"></mi><mo aria-owns="p76R_mc17"></mo><msqrt><mrow><msup><mi aria-owns="p76R_mc18"></mi><mn aria-owns="p76R_mc19"></mn></msup><mo aria-owns="p76R_mc20"></mo><msup><mi aria-owns="p76R_mc21"></mi><mn aria-owns="p76R_mc22"></mn></msup></mrow></msqrt>`
+              `<mi aria-owns="p76R_mc16">𝑐</mi><mo aria-owns="p76R_mc17">=</mo><msqrt><mrow><msup><mi aria-owns="p76R_mc18">𝑎</mi><mn aria-owns="p76R_mc19">2</mn></msup><mo aria-owns="p76R_mc20">+</mo><msup><mi aria-owns="p76R_mc21">𝑏</mi><mn aria-owns="p76R_mc22">2</mn></msup></mrow></msqrt>`
             );
+          const ariaHidden = await page.$eval("span#p76R_mc16", el =>
+            el.getAttribute("aria-hidden")
+          );
+          expect(ariaHidden).withContext(`In ${browserName}`).toEqual("true");
         })
       );
     });
