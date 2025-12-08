@@ -2100,6 +2100,35 @@ gulp.task("lint", function (done) {
 });
 
 gulp.task(
+  "lint-mozcentral",
+  gulp.series("mozcentral", function runLintMozcentral(done) {
+    console.log();
+    console.log("### Checking mozilla-central files");
+
+    const styleLintOptions = [
+      "../../node_modules/stylelint/bin/stylelint.mjs",
+      "**/*.css",
+      "--report-needless-disables",
+      "--config",
+      "../../stylelint-mozcentral.json",
+    ];
+
+    const styleLintProcess = startNode(styleLintOptions, {
+      stdio: "inherit",
+      cwd: BUILD_DIR + "mozcentral/",
+    });
+    styleLintProcess.on("close", function (styleLintCode) {
+      if (styleLintCode !== 0) {
+        done(new Error("Stylelint failed."));
+        return;
+      }
+      console.log("files checked, no errors found");
+      done();
+    });
+  })
+);
+
+gulp.task(
   "lint-chromium",
   gulp.series(
     function scriptingLintChromium() {

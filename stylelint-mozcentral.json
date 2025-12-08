@@ -1,0 +1,12 @@
+{
+  "plugins": ["./external/stylelint/no-unused-custom-properties.mjs"],
+  "rules": {
+    "no-unknown-custom-properties": true,
+    "pdfjs/no-unused-custom-properties": [
+      true,
+      {
+        "ignoreList": ["scale-round-x", "scale-round-y", "input-width"]
+      }
+    ]
+  }
+}
