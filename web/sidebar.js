@@ -36,7 +36,9 @@ class Sidebar {
 
   #isKeyboardResizing = false;
 
-  #resizeObserver = null;
+  #resizeObserver;
+
+  #prevX = 0;
 
   /**
    * @typedef {Object} SidebarElements
@@ -74,6 +76,20 @@ class Sidebar {
     toggleButton.addEventListener("click", this.toggle.bind(this));
     this._isOpen = false;
     sidebar.hidden = true;
+
+    this.#resizeObserver = new ResizeObserver(
+      ([
+        {
+          borderBoxSize: [{ inlineSize }],
+        },
+      ]) => {
+        if (!isNaN(this.#prevX)) {
+          this.#prevX += this.#coefficient * (inlineSize - this.#width);
+        }
+        this.#setWidth(inlineSize);
+      }
+    );
+    this.#resizeObserver.observe(sidebar);
   }
 
   #makeSidebarResizable() {
@@ -84,10 +100,9 @@ class Sidebar {
       this._sidebar.classList.remove("resizing");
       pointerMoveAC?.abort();
       pointerMoveAC = null;
-      this.#resizeObserver?.disconnect();
-      this.#resizeObserver = null;
       this.#isKeyboardResizing = false;
       this.onStopResizing();
+      this.#prevX = NaN;
     };
     this.#resizer.addEventListener("pointerdown", e => {
       if (pointerMoveAC) {
@@ -97,25 +112,13 @@ class Sidebar {
       this.onStartResizing();
       const { clientX } = e;
       stopEvent(e);
-      let prevX = clientX;
+      this.#prevX = clientX;
       pointerMoveAC = new AbortController();
       const { signal } = pointerMoveAC;
       const sidebar = this._sidebar;
       sidebar.classList.add("resizing");
       const parentStyle = sidebar.parentElement.style;
       parentStyle.minWidth = 0;
-      this.#resizeObserver?.disconnect();
-      this.#resizeObserver = new ResizeObserver(
-        ([
-          {
-            borderBoxSize: [{ inlineSize }],
-          },
-        ]) => {
-          prevX += this.#width - inlineSize;
-          this.#setWidth(inlineSize);
-        }
-      );
-      this.#resizeObserver.observe(sidebar);
       window.addEventListener("contextmenu", noContextMenu, { signal });
       window.addEventListener(
         "pointermove",
@@ -124,7 +127,7 @@ class Sidebar {
             return;
           }
           stopEvent(ev);
-          sidebarStyle.width = `${Math.round(this.#width + this.#coefficient * (ev.clientX - prevX))}px`;
+          sidebarStyle.width = `${Math.round(this.#width + this.#coefficient * (ev.clientX - this.#prevX))}px`;
         },
         { signal, capture: true }
       );
@@ -147,17 +150,6 @@ class Sidebar {
         if (!this.#isKeyboardResizing) {
           this._sidebar.classList.add("resizing");
           this.#isKeyboardResizing = true;
-          this.#resizeObserver?.disconnect();
-          this.#resizeObserver = new ResizeObserver(
-            ([
-              {
-                borderBoxSize: [{ inlineSize }],
-              },
-            ]) => {
-              this.#setWidth(inlineSize);
-            }
-          );
-          this.#resizeObserver.observe(this._sidebar);
           this.onStartResizing();
         }
 
@@ -193,24 +185,7 @@ class Sidebar {
    * @param {number} newWidth
    */
   set width(newWidth) {
-    if (!this.#resizeObserver) {
-      this.#resizeObserver = new ResizeObserver(
-        ([
-          {
-            borderBoxSize: [{ inlineSize }],
-          },
-        ]) => {
-          this.#setWidth(inlineSize);
-        }
-      );
-      this.#resizeObserver.observe(this._sidebar);
-    }
     this._sidebar.style.width = `${newWidth}px`;
-    clearTimeout(this.#resizeTimeout);
-    this.#resizeTimeout = setTimeout(() => {
-      this.#resizeObserver.disconnect();
-      this.#resizeObserver = null;
-    }, RESIZE_TIMEOUT);
   }
 
   /**
@@ -235,6 +210,11 @@ class Sidebar {
    */
   toggle(visibility = !this._isOpen) {
     this._sidebar.hidden = !(this._isOpen = visibility);
+  }
+
+  destroy() {
+    this.#resizeObserver?.disconnect();
+    this.#resizeObserver = null;
   }
 }
 
