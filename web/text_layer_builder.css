@@ -38,9 +38,25 @@
     transform-origin: 0% 0%;
   }
 
+  /* We multiply the font size by --min-font-size, and then scale the text
+   * elements by 1/--min-font-size. This allows us to effectively ignore the
+   * minimum font size enforced by the browser, so that the text layer <span>s
+   * can always match the size of the text in the canvas. */
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+
   > :not(.markedContent),
   .markedContent span:not(.markedContent) {
     z-index: 1;
+
+    --font-height: 0; /* set by text_layer.js */
+    font-size: calc(var(--text-scale-factor) * var(--font-height));
+
+    --scale-x: 1;
+    --rotate: 0deg;
+    transform: rotate(var(--rotate)) scaleX(var(--scale-x))
+      scale(var(--min-font-size-inv));
   }
 
   /* Only necessary in Google Chrome, see issue 14205, and most unfortunately

@@ -128,6 +128,7 @@ class TextLayer {
     this.#pageHeight = pageHeight;
 
     TextLayer.#ensureMinFontSizeComputed();
+    container.style.setProperty("--min-font-size", TextLayer.#minFontSize);
 
     setLayerDimensions(container, viewport);
 
@@ -342,7 +343,6 @@ class TextLayer {
       top = tx[5] - fontAscent * Math.cos(angle);
     }
 
-    const scaleFactorStr = "calc(var(--total-scale-factor) *";
     const divStyle = textDiv.style;
     // Setting the style properties individually, rather than all at once,
     // should be OK since the `textDiv` isn't appended to the document yet.
@@ -351,14 +351,10 @@ class TextLayer {
       divStyle.top = `${((100 * top) / this.#pageHeight).toFixed(2)}%`;
     } else {
       // We're in a marked content span, hence we can't use percents.
-      divStyle.left = `${scaleFactorStr}${left.toFixed(2)}px)`;
-      divStyle.top = `${scaleFactorStr}${top.toFixed(2)}px)`;
+      divStyle.left = `calc(var(--total-scale-factor) * ${left.toFixed(2)}px)`;
+      divStyle.top = `calc(var(--total-scale-factor) * ${top.toFixed(2)}px)`;
     }
-    // We multiply the font size by #minFontSize, and then #layout will
-    // scale the element by 1/#minFontSize. This allows us to effectively
-    // ignore the minimum font size enforced by the browser, so that the text
-    // layer <span>s can always match the size of the text in the canvas.
-    divStyle.fontSize = `${scaleFactorStr}${(TextLayer.#minFontSize * fontHeight).toFixed(2)}px)`;
+    divStyle.setProperty("--font-height", `${fontHeight.toFixed(2)}px`);
     divStyle.fontFamily = fontFamily;
 
     textDivProperties.fontSize = fontHeight;
@@ -421,11 +417,6 @@ class TextLayer {
     const { div, properties, ctx } = params;
     const { style } = div;
 
-    let transform = "";
-    if (TextLayer.#minFontSize > 1) {
-      transform = `scale(${1 / TextLayer.#minFontSize})`;
-    }
-
     if (properties.canvasWidth !== 0 && properties.hasText) {
       const { fontFamily } = style;
       const { canvasWidth, fontSize } = properties;
@@ -435,14 +426,11 @@ class TextLayer {
       const { width } = ctx.measureText(div.textContent);
 
       if (width > 0) {
-        transform = `scaleX(${(canvasWidth * this.#scale) / width}) ${transform}`;
+        style.setProperty("--scale-x", (canvasWidth * this.#scale) / width);
       }
     }
     if (properties.angle !== 0) {
-      transform = `rotate(${properties.angle}deg) ${transform}`;
-    }
-    if (transform.length > 0) {
-      style.transform = transform;
+      style.setProperty("--rotate", `${properties.angle}deg`);
     }
   }
 
