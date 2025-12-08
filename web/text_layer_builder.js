@@ -321,6 +321,7 @@ class TextLayerBuilder {
         if (endDiv) {
           endDiv.style.width = parentTextLayer.style.width;
           endDiv.style.height = parentTextLayer.style.height;
+          endDiv.style.userSelect = "text";
           anchor.parentElement.insertBefore(
             endDiv,
             modifyStart ? anchor : anchor.nextSibling
