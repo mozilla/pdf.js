@@ -21,6 +21,7 @@
 @import url(annotation_editor_layer_builder.css);
 @import url(sidebar.css);
 @import url(menu.css);
+@import url(tree.css);
 /* Ignored in GECKOVIEW: end */
 
 :root {

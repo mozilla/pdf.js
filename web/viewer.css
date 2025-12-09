@@ -69,17 +69,6 @@
   --field-color: light-dark(rgb(6 6 6), rgb(250 250 250));
   --field-bg-color: light-dark(rgb(255 255 255), rgb(64 64 68));
   --field-border-color: light-dark(rgb(187 187 188), rgb(115 115 115));
-  --treeitem-color: light-dark(rgb(0 0 0 / 0.8), rgb(255 255 255 / 0.8));
-  --treeitem-bg-color: light-dark(rgb(0 0 0 / 0.15), rgb(255 255 255 / 0.15));
-  --treeitem-hover-color: light-dark(rgb(0 0 0 / 0.9), rgb(255 255 255 / 0.9));
-  --treeitem-selected-color: light-dark(
-    rgb(0 0 0 / 0.9),
-    rgb(255 255 255 / 0.9)
-  );
-  --treeitem-selected-bg-color: light-dark(
-    rgb(0 0 0 / 0.25),
-    rgb(255 255 255 / 0.25)
-  );
   --thumbnail-hover-color: light-dark(rgb(0 0 0 / 0.1), rgb(255 255 255 / 0.1));
   --thumbnail-selected-color: light-dark(
     rgb(0 0 0 / 0.2),
@@ -97,8 +86,6 @@
   );
 
   --loading-icon: url(images/loading.svg);
-  --treeitem-expanded-icon: url(images/treeitem-expanded.svg);
-  --treeitem-collapsed-icon: url(images/treeitem-collapsed.svg);
   --toolbarButton-editorComment-icon: url(images/comment-editButton.svg);
   --toolbarButton-editorFreeText-icon: url(images/toolbarButton-editorFreeText.svg);
   --toolbarButton-editorHighlight-icon: url(images/toolbarButton-editorHighlight.svg);
@@ -503,19 +490,6 @@ body {
   box-sizing: border-box;
 }
 
-.treeItemToggler::before {
-  /* All matching images have a size of 16x16
-   * All relevant containers have a size of 28x28 */
-  position: absolute;
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-
-  content: "";
-  background-color: var(--toolbar-icon-bg-color);
-  mask-size: cover;
-}
-
 #sidebarToggleButton::before {
   mask-image: var(--toolbarButton-sidebarToggle-icon);
   transform: scaleX(var(--dir-factor));
@@ -775,79 +749,6 @@ body {
       }
     }
   }
-}
-
-.treeWithDeepNesting > .treeItem,
-.treeItem > .treeItems {
-  margin-inline-start: 20px;
-}
-
-.treeItem > a {
-  text-decoration: none;
-  display: inline-block;
-  /* Subtract the right padding (left, in RTL mode) of the container: */
-  min-width: calc(100% - 4px);
-  height: auto;
-  margin-bottom: 1px;
-  padding: 2px 0 5px;
-  padding-inline-start: 4px;
-  border-radius: 2px;
-  color: var(--treeitem-color);
-  font-size: 13px;
-  line-height: 15px;
-  user-select: none;
-  white-space: normal;
-  cursor: pointer;
-}
-
-#layersView .treeItem > a * {
-  cursor: pointer;
-}
-
-#layersView .treeItem > a > label {
-  padding-inline-start: 4px;
-}
-
-#layersView .treeItem > a > label > input {
-  float: var(--inline-start);
-  margin-top: 1px;
-}
-
-.treeItemToggler {
-  position: relative;
-  float: var(--inline-start);
-  height: 0;
-  width: 0;
-  color: rgb(255 255 255 / 0.5);
-}
-
-.treeItemToggler::before {
-  inset-inline-end: 4px;
-  mask-image: var(--treeitem-expanded-icon);
-}
-
-.treeItemToggler.treeItemsHidden::before {
-  mask-image: var(--treeitem-collapsed-icon);
-  transform: scaleX(var(--dir-factor));
-}
-
-.treeItemToggler.treeItemsHidden ~ .treeItems {
-  display: none;
-}
-
-.treeItem.selected > a {
-  background-color: var(--treeitem-selected-bg-color);
-  color: var(--treeitem-selected-color);
-}
-
-.treeItemToggler:hover,
-.treeItemToggler:hover + a,
-.treeItemToggler:hover ~ .treeItems,
-.treeItem > a:hover {
-  background-color: var(--treeitem-bg-color);
-  background-clip: padding-box;
-  border-radius: 2px;
-  color: var(--treeitem-hover-color);
 }
 
 #outlineOptionsContainer {
