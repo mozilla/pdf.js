@@ -33,7 +33,7 @@ import { RenderingStates } from "./ui_utils.js";
 
 const DRAW_UPSCALE_FACTOR = 2; // See comment in `PDFThumbnailView.draw` below.
 const MAX_NUM_SCALING_STEPS = 3;
-const THUMBNAIL_WIDTH = 98; // px
+const THUMBNAIL_WIDTH = 126; // px
 
 /**
  * @typedef {Object} PDFThumbnailViewOptions
@@ -119,26 +119,22 @@ class PDFThumbnailView {
     this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
 
-    const anchor = (this.anchor = document.createElement("a"));
-    anchor.href = linkService.getAnchorUrl(`#page=${id}`);
-    anchor.setAttribute("data-l10n-id", "pdfjs-thumb-page-title");
-    anchor.setAttribute("data-l10n-args", this.#pageL10nArgs);
-    anchor.onclick = () => {
-      linkService.goToPage(id);
-      return false;
-    };
+    const imageContainer = (this.div = document.createElement("div"));
+    imageContainer.className = "thumbnail";
+    imageContainer.setAttribute("page-number", this.#pageNumber);
 
-    const div = (this.div = document.createElement("div"));
-    div.classList.add("thumbnail", "missingThumbnailImage");
-    div.setAttribute("data-page-number", this.id);
-    this.#updateDims();
+    const checkbox = (this.checkbox = document.createElement("input"));
+    checkbox.type = "checkbox";
+    checkbox.tabIndex = -1;
 
     const image = (this.image = document.createElement("img"));
-    image.className = "thumbnailImage";
+    image.classList.add("thumbnailImage", "missingThumbnailImage");
+    image.role = "button";
+    image.tabIndex = -1;
+    this.#updateDims();
 
-    div.append(image);
-    anchor.append(div);
-    container.append(anchor);
+    imageContainer.append(checkbox, image);
+    container.append(imageContainer);
   }
 
   #updateDims() {
@@ -149,7 +145,7 @@ class PDFThumbnailView {
     const canvasHeight = (this.canvasHeight = (canvasWidth / ratio) | 0);
     this.scale = canvasWidth / width;
 
-    this.div.style.height = `${canvasHeight}px`;
+    this.image.style.height = `${canvasHeight}px`;
   }
 
   setPdfPage(pdfPage) {
@@ -172,7 +168,7 @@ class PDFThumbnailView {
       image.removeAttribute("data-l10n-id");
       image.removeAttribute("data-l10n-args");
       image.src = "";
-      this.div.classList.add("missingThumbnailImage");
+      this.image.classList.add("missingThumbnailImage");
     }
   }
 
@@ -186,6 +182,16 @@ class PDFThumbnailView {
       rotation: totalRotation,
     });
     this.reset();
+  }
+
+  toggleCurrent(isCurrent) {
+    if (isCurrent) {
+      this.image.ariaCurrent = "page";
+      this.image.tabIndex = 0;
+    } else {
+      this.image.ariaCurrent = false;
+      this.image.tabIndex = -1;
+    }
   }
 
   /**
@@ -238,7 +244,7 @@ class PDFThumbnailView {
     image.src = URL.createObjectURL(blob);
     image.setAttribute("data-l10n-id", "pdfjs-thumb-page-canvas");
     image.setAttribute("data-l10n-args", this.#pageL10nArgs);
-    this.div.classList.remove("missingThumbnailImage");
+    image.classList.remove("missingThumbnailImage");
     if (!FeatureTest.isOffscreenCanvasSupported) {
       // Clean up the canvas element since it is no longer needed.
       reducedCanvas.width = reducedCanvas.height = 0;
@@ -432,6 +438,10 @@ class PDFThumbnailView {
 
   get #pageL10nArgs() {
     return JSON.stringify({ page: this.pageLabel ?? this.id });
+  }
+
+  get #pageNumber() {
+    return this.pageLabel ?? this.id;
   }
 
   /**

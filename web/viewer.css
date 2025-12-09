@@ -69,11 +69,6 @@
   --field-color: light-dark(rgb(6 6 6), rgb(250 250 250));
   --field-bg-color: light-dark(rgb(255 255 255), rgb(64 64 68));
   --field-border-color: light-dark(rgb(187 187 188), rgb(115 115 115));
-  --thumbnail-hover-color: light-dark(rgb(0 0 0 / 0.1), rgb(255 255 255 / 0.1));
-  --thumbnail-selected-color: light-dark(
-    rgb(0 0 0 / 0.2),
-    rgb(255 255 255 / 0.2)
-  );
   --doorhanger-bg-color: light-dark(rgb(255 255 255), #42414d);
   --doorhanger-border-color: light-dark(rgb(12 12 13 / 0.2), rgb(39 39 43));
   --doorhanger-hover-color: light-dark(rgb(12 12 13), rgb(249 249 250));
@@ -93,7 +88,7 @@
   --toolbarButton-editorStamp-icon: url(images/toolbarButton-editorStamp.svg);
   --toolbarButton-editorSignature-icon: url(images/toolbarButton-editorSignature.svg);
   --toolbarButton-menuArrow-icon: url(images/toolbarButton-menuArrow.svg);
-  --toolbarButton-sidebarToggle-icon: url(images/toolbarButton-sidebarToggle.svg);
+  --toolbarButton-viewsManagerToggle-icon: url(images/toolbarButton-viewsManagerToggle.svg);
   --toolbarButton-secondaryToolbarToggle-icon: url(images/toolbarButton-secondaryToolbarToggle.svg);
   --toolbarButton-pageUp-icon: url(images/toolbarButton-pageUp.svg);
   --toolbarButton-pageDown-icon: url(images/toolbarButton-pageDown.svg);
@@ -269,29 +264,6 @@ body {
   margin: 0;
 }
 
-#sidebarContainer {
-  position: absolute;
-  inset-block: var(--toolbar-height) 0;
-  inset-inline-start: calc(-1 * var(--sidebar-width));
-  width: var(--sidebar-width);
-  visibility: hidden;
-  z-index: 1;
-  font: message-box;
-  border-top: 1px solid transparent;
-  border-inline-end: var(--doorhanger-border-color-whcm);
-  transition-property: inset-inline-start;
-  transition-duration: var(--sidebar-transition-duration);
-  transition-timing-function: var(--sidebar-transition-timing-function);
-}
-
-#outerContainer:is(.sidebarMoving, .sidebarOpen) #sidebarContainer {
-  visibility: visible;
-}
-
-#outerContainer.sidebarOpen #sidebarContainer {
-  inset-inline-start: 0;
-}
-
 #mainContainer {
   position: absolute;
   inset: 0;
@@ -321,11 +293,6 @@ body {
 #viewerContainer:not(.pdfPresentationMode) {
   transition-duration: var(--sidebar-transition-duration);
   transition-timing-function: var(--sidebar-transition-timing-function);
-}
-
-#outerContainer.sidebarOpen #viewerContainer:not(.pdfPresentationMode) {
-  inset-inline-start: var(--sidebar-width);
-  transition-property: inset-inline-start;
 }
 
 #sidebarContainer :is(input, button, select) {
@@ -372,25 +339,6 @@ body {
     height: 100%;
     padding-inline-end: 2px;
   }
-}
-
-#sidebarResizer {
-  position: absolute;
-  inset-block: 0;
-  inset-inline-end: -6px;
-  width: 6px;
-  z-index: 200;
-  cursor: ew-resize;
-}
-
-#outerContainer.sidebarOpen #loadingBar {
-  inset-inline-start: var(--sidebar-width);
-}
-
-#outerContainer.sidebarResizing
-  :is(#sidebarContainer, #viewerContainer, #loadingBar) {
-  /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
-  transition-duration: 0s;
 }
 
 .doorHanger,
@@ -490,8 +438,8 @@ body {
   box-sizing: border-box;
 }
 
-#sidebarToggleButton::before {
-  mask-image: var(--toolbarButton-sidebarToggle-icon);
+#viewsManagerToggleButton::before {
+  mask-image: var(--toolbarButton-viewsManagerToggle-icon);
   transform: scaleX(var(--dir-factor));
 }
 
@@ -677,80 +625,6 @@ body {
     inset-inline-end: 4px;
   }
 }
-
-#thumbnailView,
-#outlineView,
-#attachmentsView,
-#layersView {
-  position: absolute;
-  width: calc(100% - 8px);
-  inset-block: 0;
-  padding: 4px 4px 0;
-  overflow: auto;
-  user-select: none;
-}
-
-#thumbnailView {
-  --thumbnail-width: 98px;
-
-  display: flex;
-  flex-wrap: wrap;
-  width: calc(100% - 60px);
-  padding: 10px 30px 0;
-
-  > a {
-    width: auto;
-    height: auto;
-
-    > .thumbnail {
-      scroll-margin-block: 19px;
-      width: var(--thumbnail-width);
-      margin: 0 10px 5px;
-      padding: 1px;
-      border: 7px solid transparent;
-      border-radius: 2px;
-
-      &.selected {
-        border-color: var(--thumbnail-selected-color) !important;
-
-        > .thumbnailImage {
-          opacity: 1 !important;
-        }
-      }
-
-      &.missingThumbnailImage {
-        border: 1px dashed rgb(132 132 132);
-        padding: 7px;
-        > .thumbnailImage {
-          display: none;
-        }
-      }
-
-      > .thumbnailImage {
-        width: 100%;
-        opacity: 0.9;
-      }
-    }
-
-    &:is(:active, :focus) {
-      outline: 0;
-    }
-
-    &:last-of-type > .thumbnail {
-      margin-bottom: 10px;
-    }
-
-    &:focus > .thumbnail,
-    .thumbnail:hover {
-      border-color: var(--thumbnail-hover-color);
-
-      > .thumbnailImage {
-        opacity: 0.95;
-      }
-    }
-  }
-}
-
 #outlineOptionsContainer {
   display: none;
 
@@ -1559,7 +1433,7 @@ dialog :link {
   #sidebarContainer {
     background-color: var(--sidebar-narrow-bg-color);
   }
-  #outerContainer.sidebarOpen #viewerContainer {
+  #outerContainer.viewsManagerOpen #viewerContainer {
     inset-inline-start: 0 !important;
   }
 }

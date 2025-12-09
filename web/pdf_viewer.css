@@ -19,9 +19,10 @@
 @import url(xfa_layer_builder.css);
 /* Ignored in GECKOVIEW: begin */
 @import url(annotation_editor_layer_builder.css);
-@import url(sidebar.css);
 @import url(menu.css);
 @import url(tree.css);
+@import url(views_manager.css);
+@import url(sidebar.css);
 /* Ignored in GECKOVIEW: end */
 
 :root {
