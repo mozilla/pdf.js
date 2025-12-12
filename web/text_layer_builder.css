@@ -59,14 +59,9 @@
       scale(var(--min-font-size-inv));
   }
 
-  /* Only necessary in Google Chrome, see issue 14205, and most unfortunately
-   * the problem doesn't show up in "text" reference tests. */
-  /*#if !MOZCENTRAL*/
-  span.markedContent {
-    top: 0;
-    height: 0;
+  .markedContent {
+    display: contents;
   }
-  /*#endif*/
 
   span[role="img"] {
     user-select: none;

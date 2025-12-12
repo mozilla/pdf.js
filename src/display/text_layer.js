@@ -346,14 +346,8 @@ class TextLayer {
     const divStyle = textDiv.style;
     // Setting the style properties individually, rather than all at once,
     // should be OK since the `textDiv` isn't appended to the document yet.
-    if (this.#container === this.#rootContainer) {
-      divStyle.left = `${((100 * left) / this.#pageWidth).toFixed(2)}%`;
-      divStyle.top = `${((100 * top) / this.#pageHeight).toFixed(2)}%`;
-    } else {
-      // We're in a marked content span, hence we can't use percents.
-      divStyle.left = `calc(var(--total-scale-factor) * ${left.toFixed(2)}px)`;
-      divStyle.top = `calc(var(--total-scale-factor) * ${top.toFixed(2)}px)`;
-    }
+    divStyle.left = `${((100 * left) / this.#pageWidth).toFixed(2)}%`;
+    divStyle.top = `${((100 * top) / this.#pageHeight).toFixed(2)}%`;
     divStyle.setProperty("--font-height", `${fontHeight.toFixed(2)}px`);
     divStyle.fontFamily = fontFamily;
 
