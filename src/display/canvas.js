@@ -2708,7 +2708,12 @@ class CanvasGraphics {
         currentMtx,
         dirtyBox
       );
+
+      // Apply the group blend mode and alpha when compositing the group
+      const prevBlendMode = this.pushGroupBlendMode(this.ctx, group.blendMode);
       this.ctx.drawImage(groupCtx.canvas, 0, 0);
+      this.popGroupBlendMode(this.ctx, prevBlendMode);
+
       this.ctx.restore();
       this.compose(dirtyBox);
     }
@@ -3341,6 +3346,22 @@ class CanvasGraphics {
 
     if (saveRestore) {
       ctx.restore();
+    }
+  }
+
+  pushGroupBlendMode(ctx, blendMode) {
+    if (!ctx || !blendMode) {
+      return null;
+    }
+
+    const prev = ctx.globalCompositeOperation;
+    ctx.globalCompositeOperation = blendMode;
+    return prev;
+  }
+
+  popGroupBlendMode(ctx, prev) {
+    if (ctx && prev !== null) {
+      ctx.globalCompositeOperation = prev;
     }
   }
 
