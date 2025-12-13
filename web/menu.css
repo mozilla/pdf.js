@@ -111,7 +111,7 @@
       mask-image: var(--menuitem-checkmark-icon);
       background-color: var(--menu-text-color);
       position: absolute;
-      margin-left: -16px;
+      margin-inline-start: -16px;
     }
 
     &:has(button:disabled) {
@@ -178,7 +178,7 @@
         display: inline-block;
         width: max-content;
         height: auto;
-        text-align: left;
+        text-align: start;
         color: var(--menu-text-color);
         user-select: none;
         padding-inline-start: 6px;
