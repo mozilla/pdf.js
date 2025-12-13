@@ -850,6 +850,13 @@ function toggleCheckedBtn(button, toggle, view = null) {
   view?.classList.toggle("hidden", !toggle);
 }
 
+function toggleSelectedBtn(button, toggle, view = null) {
+  button.classList.toggle("selected", toggle);
+  button.setAttribute("aria-selected", toggle);
+
+  view?.classList.toggle("hidden", !toggle);
+}
+
 function toggleExpandedBtn(button, toggle, view = null) {
   button.classList.toggle("toggled", toggle);
   button.setAttribute("aria-expanded", toggle);
@@ -916,6 +923,7 @@ export {
   TextLayerMode,
   toggleCheckedBtn,
   toggleExpandedBtn,
+  toggleSelectedBtn,
   UNKNOWN_SCALE,
   VERTICAL_PADDING,
   watchScroll,
