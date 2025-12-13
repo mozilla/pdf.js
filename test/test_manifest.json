@@ -1028,7 +1028,8 @@
     "type": "eq",
     "link": true,
     "lastPage": 1,
-    "about": "The same file as issue2337."
+    "about": "The same file as issue2337.",
+    "labels": ["integration"]
   },
   {
     "id": "freeculture",
@@ -2081,7 +2082,8 @@
     "rounds": 1,
     "link": true,
     "enableXfa": true,
-    "type": "eq"
+    "type": "eq",
+    "labels": ["integration"]
   },
   {
     "id": "xfa_bug1716380",
@@ -5165,7 +5167,8 @@
     "file": "pdfs/issue13132.pdf",
     "md5": "1b28964b9188047bc6c786302c95029f",
     "link": true,
-    "type": "other"
+    "type": "other",
+    "labels": ["integration"]
   },
   {
     "id": "issue11518",
@@ -8494,7 +8497,8 @@
     "link": true,
     "rounds": 1,
     "type": "eq",
-    "forms": true
+    "forms": true,
+    "labels": ["integration"]
   },
   {
     "id": "issue12233-print",
@@ -9109,7 +9113,8 @@
     "md5": "3ce134ead03d6158c3e8207453dcd21d",
     "rounds": 1,
     "link": true,
-    "type": "other"
+    "type": "other",
+    "labels": ["integration"]
   },
   {
     "id": "issue14301",
@@ -9997,7 +10002,8 @@
     "file": "pdfs/bug1823296.pdf",
     "md5": "f71e89ebe3d6e75e0c83ce41cd72df1f",
     "link": true,
-    "type": "other"
+    "type": "other",
+    "labels": ["integration"]
   },
   {
     "id": "bug1942064",
@@ -10441,7 +10447,8 @@
     "md5": "d2e167216493a50f732b4b3685a91792",
     "rounds": 1,
     "link": true,
-    "type": "other"
+    "type": "other",
+    "labels": ["integration"]
   },
   {
     "id": "protected-stamp-editor-save-print",
@@ -10477,7 +10484,8 @@
     "file": "pdfs/issue16863.pdf",
     "md5": "af8abe281721f92a0d46646969f061de",
     "link": true,
-    "type": "other"
+    "type": "other",
+    "labels": ["integration"]
   },
   {
     "id": "bug1851498",
@@ -10511,7 +10519,8 @@
     "firstPage": 2,
     "lastPage": 2,
     "type": "eq",
-    "forms": true
+    "forms": true,
+    "labels": ["integration"]
   },
   {
     "id": "issue17169",
