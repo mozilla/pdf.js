@@ -629,8 +629,6 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Eheja
 
 ## Edit a comment button in the editor toolbar
 
-pdfjs-editor-edit-comment-button =
-    .title = Je’erei mbosako’i
 pdfjs-editor-add-comment-button =
     .title = Je’erei mbojuaju
 

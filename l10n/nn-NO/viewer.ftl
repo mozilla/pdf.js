@@ -386,6 +386,8 @@ pdfjs-editor-comments-sidebar-close-button =
     .title = Lat att sidestolpen
     .aria-label = Lat att sidestolpen
 pdfjs-editor-comments-sidebar-close-button-label = Lat att sidestolpen
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = Ser du noko som er verdt å merke seg? Marker det og legg igjen ein kommentar.
 pdfjs-editor-comments-sidebar-no-comments-link = Les meir
 
 ## Alt-text dialog
@@ -628,8 +630,8 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Avbryt
 
 ## Edit a comment button in the editor toolbar
 
-pdfjs-editor-edit-comment-button =
-    .title = Rediger kommentar
+pdfjs-editor-add-comment-button =
+    .title = Legg til kommentar
 
 ## Main menu for adding/removing signatures
 

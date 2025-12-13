@@ -628,11 +628,6 @@ pdfjs-editor-edit-comment-dialog-text-input =
     .placeholder = Scomence a scrivi…
 pdfjs-editor-edit-comment-dialog-cancel-button = Anule
 
-## Edit a comment button in the editor toolbar
-
-pdfjs-editor-edit-comment-button =
-    .title = Modifiche coment
-
 ## Main menu for adding/removing signatures
 
 pdfjs-editor-delete-signature-button1 =

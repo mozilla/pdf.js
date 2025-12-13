@@ -492,6 +492,11 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Mostrar editor de text
 pdfjs-editor-alt-text-settings-show-dialog-description = Ajuda a garantir que todas as suas imagens tenham um texto alternativo.
 pdfjs-editor-alt-text-settings-close-button = Fechar
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-stamp-added-alert = Imagem adicionada
+pdfjs-editor-signature-added-alert = Assinatura adicionada
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Destaque removido
@@ -560,6 +565,8 @@ pdfjs-editor-add-signature-save-checkbox = Guardar assinatura
 pdfjs-editor-add-signature-save-warning-message = Atingiu o limite de 5 assinaturas guardadas. Remova uma para guardar mais.
 pdfjs-editor-add-signature-image-upload-error-title = Não foi possível carregar a imagem
 pdfjs-editor-add-signature-image-upload-error-description = Verifique a sua ligação à rede ou tente outra imagem.
+pdfjs-editor-add-signature-image-no-data-error-title = Não é possível converter esta imagem para uma assinatura
+pdfjs-editor-add-signature-image-no-data-error-description = Tente enviar uma imagem diferente.
 pdfjs-editor-add-signature-error-close-button = Fechar
 
 ## Dialog buttons
@@ -567,6 +574,34 @@ pdfjs-editor-add-signature-error-close-button = Fechar
 pdfjs-editor-add-signature-cancel-button = Cancelar
 pdfjs-editor-add-signature-add-button = Adicionar
 pdfjs-editor-edit-signature-update-button = Atualizar
+
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Editar comentário
+pdfjs-editor-edit-comment-popup-button =
+    .title = Editar comentário
+pdfjs-editor-delete-comment-popup-button-label = Remover comentário
+pdfjs-editor-delete-comment-popup-button =
+    .title = Remover comentário
+pdfjs-show-comment-button =
+    .title = Mostrar comentário
+
+##  Edit a comment dialog
+
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Editar comentário
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Atualizar
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Adicionar comentário
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Adicionar
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Comece a digitar…
+pdfjs-editor-edit-comment-dialog-cancel-button = Cancelar
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-add-comment-button =
+    .title = Adicionar comentário
 
 ## Main menu for adding/removing signatures
 

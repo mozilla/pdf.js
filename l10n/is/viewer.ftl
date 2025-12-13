@@ -557,11 +557,6 @@ pdfjs-editor-add-signature-cancel-button = Hætta við
 pdfjs-editor-add-signature-add-button = Bæta við
 pdfjs-editor-edit-signature-update-button = Uppfæra
 
-## Edit a comment button in the editor toolbar
-
-pdfjs-editor-edit-comment-button =
-    .title = Breyta athugasemd
-
 ## Main menu for adding/removing signatures
 
 pdfjs-editor-delete-signature-button1 =

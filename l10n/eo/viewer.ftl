@@ -630,8 +630,6 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Nuligi
 
 ## Edit a comment button in the editor toolbar
 
-pdfjs-editor-edit-comment-button =
-    .title = Modifi komenton
 pdfjs-editor-add-comment-button =
     .title = Aldoni komenton
 
