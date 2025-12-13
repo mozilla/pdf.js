@@ -630,8 +630,6 @@ pdfjs-editor-edit-comment-dialog-cancel-button = გაუქმება
 
 ## Edit a comment button in the editor toolbar
 
-pdfjs-editor-edit-comment-button =
-    .title = შენიშვნის ჩასწორება
 pdfjs-editor-add-comment-button =
     .title = შენიშვნის დამატება
 

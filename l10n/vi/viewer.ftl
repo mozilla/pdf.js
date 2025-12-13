@@ -614,8 +614,6 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Hủy bỏ
 
 ## Edit a comment button in the editor toolbar
 
-pdfjs-editor-edit-comment-button =
-    .title = Chỉnh sửa chú thích
 pdfjs-editor-add-comment-button =
     .title = Thêm chú thích
 
