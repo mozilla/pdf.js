@@ -646,8 +646,6 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Diddymu
 
 ## Edit a comment button in the editor toolbar
 
-pdfjs-editor-edit-comment-button =
-    .title = Golygu sylw
 pdfjs-editor-add-comment-button =
     .title = Ychwanegu sylw
 

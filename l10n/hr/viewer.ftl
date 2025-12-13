@@ -288,9 +288,13 @@ pdfjs-web-fonts-disabled = Web fontovi su deaktivirani: nije moguće koristiti u
 
 pdfjs-editor-free-text-button =
     .title = Tekst
+pdfjs-editor-color-picker-free-text-input =
+    .title = Promijeni boju teksta
 pdfjs-editor-free-text-button-label = Tekst
 pdfjs-editor-ink-button =
     .title = Crtanje
+pdfjs-editor-color-picker-ink-input =
+    .title = Promijeni boju crteža
 pdfjs-editor-ink-button-label = Crtanje
 pdfjs-editor-stamp-button =
     .title = Dodaj ili uredi slike
@@ -302,6 +306,14 @@ pdfjs-highlight-floating-button1 =
     .title = Istakni
     .aria-label = Istakni
 pdfjs-highlight-floating-button-label = Istakni
+pdfjs-comment-floating-button =
+    .title = Komentiraj
+    .aria-label = Komentiraj
+pdfjs-comment-floating-button-label = Komentiraj
+pdfjs-editor-comment-button =
+    .title = Komentar
+    .aria-label = Komentar
+pdfjs-editor-comment-button-label = Komentar
 pdfjs-editor-signature-button =
     .title = Dodaj potpis
 pdfjs-editor-signature-button-label = Dodaj potpis
@@ -364,6 +376,22 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Uređivač teksta
     .default-content = Počni tipkati …
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Komentar
+        [few] Komentara
+       *[other] Komentara
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Zatvori bočnu traku
+    .aria-label = Zatvori bočnu traku
+pdfjs-editor-comments-sidebar-close-button-label = Zatvori bočnu traku
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = Vidiš nešto vrijedno pažnje? Istakni to i ostavi komentar.
+pdfjs-editor-comments-sidebar-no-comments-link = Saznaj više
 
 ## Alt-text dialog
 
@@ -494,6 +522,14 @@ pdfjs-editor-alt-text-settings-show-dialog-button-label = Prikaži uređivač al
 pdfjs-editor-alt-text-settings-show-dialog-description = Pomaže osigurati da sve tvoje slike imaju alternativni tekst.
 pdfjs-editor-alt-text-settings-close-button = Zatvori
 
+## Accessibility labels (announced by screen readers) for objects added to the editor.
+
+pdfjs-editor-highlight-added-alert = Isticanje je dodano
+pdfjs-editor-freetext-added-alert = Tekst je dodan
+pdfjs-editor-ink-added-alert = Crtež je dodan
+pdfjs-editor-stamp-added-alert = Slika je dodana
+pdfjs-editor-signature-added-alert = Potpis je dodan
+
 ## "Annotations removed" bar
 
 pdfjs-editor-undo-bar-message-highlight = Isticanje uklonjeno
@@ -563,6 +599,8 @@ pdfjs-editor-add-signature-save-checkbox = Spremi potpis
 pdfjs-editor-add-signature-save-warning-message = Dosegnuto je ograničenje od 5 spremljenih potpisa. Za spremanje novih ukloni jedan potpis.
 pdfjs-editor-add-signature-image-upload-error-title = Nije moguće prenijeti sliku
 pdfjs-editor-add-signature-image-upload-error-description = Provjeri mrežnu vezu ili pokušaj s jednom drugom slikom.
+pdfjs-editor-add-signature-image-no-data-error-title = Ova se slika ne može pretvoriti u potpis
+pdfjs-editor-add-signature-image-no-data-error-description = Probaj prenijeti jednu drugu sliku.
 pdfjs-editor-add-signature-error-close-button = Zatvori
 
 ## Dialog buttons
@@ -570,6 +608,34 @@ pdfjs-editor-add-signature-error-close-button = Zatvori
 pdfjs-editor-add-signature-cancel-button = Odustani
 pdfjs-editor-add-signature-add-button = Dodaj
 pdfjs-editor-edit-signature-update-button = Aktualiziraj
+
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Uredi komentar
+pdfjs-editor-edit-comment-popup-button =
+    .title = Uredi komentar
+pdfjs-editor-delete-comment-popup-button-label = Ukloni komentar
+pdfjs-editor-delete-comment-popup-button =
+    .title = Ukloni komentar
+pdfjs-show-comment-button =
+    .title = Prikaži komentar
+
+##  Edit a comment dialog
+
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Uredi komentar
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Aktualiziraj
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Dodaj komentar
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Dodaj
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Počni tipkati …
+pdfjs-editor-edit-comment-dialog-cancel-button = Odustani
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-add-comment-button =
+    .title = Dodaj komentar
 
 ## Main menu for adding/removing signatures
 

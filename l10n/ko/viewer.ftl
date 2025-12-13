@@ -614,8 +614,6 @@ pdfjs-editor-edit-comment-dialog-cancel-button = 취소
 
 ## Edit a comment button in the editor toolbar
 
-pdfjs-editor-edit-comment-button =
-    .title = 주석 편집
 pdfjs-editor-add-comment-button =
     .title = 주석 추가
 

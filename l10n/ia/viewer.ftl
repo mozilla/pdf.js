@@ -630,8 +630,6 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Cancellar
 
 ## Edit a comment button in the editor toolbar
 
-pdfjs-editor-edit-comment-button =
-    .title = Rediger commento
 pdfjs-editor-add-comment-button =
     .title = Adder commento
 
