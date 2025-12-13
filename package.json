@@ -11,7 +11,7 @@
     "@metalsmith/layouts": "^3.0.0",
     "@metalsmith/markdown": "^1.10.0",
     "@napi-rs/canvas": "^0.1.84",
-    "@types/node": "^24.10.1",
+    "@types/node": "^25.0.1",
     "autoprefixer": "^10.4.22",
     "babel-loader": "^10.0.0",
     "cached-iterable": "^0.3.0",
