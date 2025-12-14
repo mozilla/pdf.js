@@ -26,6 +26,7 @@ import {
   LINE_FACTOR,
   OPS,
   shadow,
+  Util,
   warn,
 } from "../shared/util.js";
 import { ColorSpaceUtils } from "./colorspace_utils.js";
@@ -145,7 +146,8 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
             result = stack.pop() || result;
             break;
           case OPS.setTextMatrix:
-            result.scaleFactor *= Math.hypot(args[0], args[1]);
+            const tm = Util.transform(this.stateManager.state.ctm, args);
+            result.scaleFactor *= Math.hypot(tm[0], tm[1]);
             break;
           case OPS.setFont:
             const [fontName, fontSize] = args;
