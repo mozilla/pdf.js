@@ -1799,6 +1799,83 @@ describe("FreeText Editor", () => {
     });
   });
 
+  describe("FreeText (open existing generated with Cairo)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "issue20504.pdf",
+        ".annotationEditorLayer",
+        100
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must open some existing annotations", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const boxes = [];
+          for (const num of [48, 49, 50, 51, 52]) {
+            const id = `${num}R`;
+            await page.waitForSelector(getAnnotationSelector(id), {
+              visible: true,
+            });
+            const rect = await getRect(page, getAnnotationSelector(id));
+            boxes.push(rect);
+          }
+
+          await switchToFreeText(page);
+
+          // The font sizes extracted from the Cairo appearance streams.
+          const expectedFontSizes = [61, 38, 38, 38, 56];
+          const PRECISION = 0.3;
+          // The width tracks the rendered text length, which depends heavily on
+          // the substitute font used to display the annotation (the original
+          // font isn't embedded). It can vary a lot from a platform to another,
+          // so we only check that it has the same order of magnitude as the
+          // annotation rect.
+          const WIDTH_PRECISION = 0.6;
+
+          for (let i = 0; i < boxes.length; i++) {
+            const rect = await getRect(page, `#pdfjs_internal_editor_${i}`);
+
+            // The default used font can be different from a platform to another
+            // hence we just check that the dimensions have the some order of
+            // magnitude as the annotation rect.
+            expect(Math.abs(rect.width / boxes[i].width - 1))
+              .withContext(`In ${browserName}, editor ${i} width`)
+              .toBeLessThan(WIDTH_PRECISION);
+            expect(Math.abs(rect.height / boxes[i].height - 1))
+              .withContext(`In ${browserName}, editor ${i} height`)
+              .toBeLessThan(PRECISION);
+            expect(Math.abs(rect.x / boxes[i].x - 1))
+              .withContext(`In ${browserName}, editor ${i} x`)
+              .toBeLessThan(PRECISION);
+            expect(Math.abs(rect.y / boxes[i].y - 1))
+              .withContext(`In ${browserName}, editor ${i} y`)
+              .toBeLessThan(PRECISION);
+
+            // Verify that the font size is correctly extracted from the Cairo
+            // appearance stream (font size is encoded in the cm operator).
+            const fontSize = await page.evaluate(N => {
+              const editorDiv = document.getElementById(
+                `pdfjs_internal_editor_${N}-editor`
+              );
+              const match = editorDiv?.style.fontSize.match(/calc\((\d+)px/);
+              return match ? parseInt(match[1], 10) : 0;
+            }, i);
+            expect(fontSize)
+              .withContext(`In ${browserName}, editor ${i} fontSize`)
+              .toEqual(expectedFontSizes[i]);
+          }
+        })
+      );
+    });
+  });
+
   describe("Keyboard shortcuts when the editor layer isn't focused", () => {
     let pages;
 
