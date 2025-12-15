@@ -171,8 +171,12 @@ class PDFLayerViewer extends BaseTreeViewer {
           queue.push({ parent: itemsDiv, groups: groupId.order });
         } else {
           const group = optionalContentConfig.getGroup(groupId);
-
+          const label = document.createElement("label");
           const input = document.createElement("input");
+          label.append(
+            input,
+            document.createTextNode(this._normalizeTextContent(group.name))
+          );
           this._bindLink(element, { groupId, input });
           input.type = "checkbox";
           input.checked = group.visible;
@@ -182,10 +186,6 @@ class PDFLayerViewer extends BaseTreeViewer {
             visible: input.checked,
           });
 
-          const label = document.createElement("label");
-          label.textContent = this._normalizeTextContent(group.name);
-
-          label.append(input);
           element.append(label);
           layersCount++;
         }

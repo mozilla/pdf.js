@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-.treeWithDeepNesting {
+.treeView {
   --treeitem-color: light-dark(rgb(0 0 0 / 0.8), rgb(255 255 255 / 0.8));
   --treeitem-bg-color: light-dark(rgb(0 0 0 / 0.15), rgb(255 255 255 / 0.15));
   --treeitem-hover-color: light-dark(rgb(0 0 0 / 0.9), rgb(255 255 255 / 0.9));
@@ -28,17 +28,53 @@
   --treeitem-expanded-icon: url(images/treeitem-expanded.svg);
   --treeitem-collapsed-icon: url(images/treeitem-collapsed.svg);
 
-  .treeItemToggler::before {
-    /* All matching images have a size of 16x16
-   * All relevant containers have a size of 28x28 */
-    position: absolute;
-    display: inline-block;
-    width: 16px;
-    height: 16px;
+  &.withNesting {
+    .treeItemToggler {
+      &::before {
+        /* All matching images have a size of 16x16
+         * All relevant containers have a size of 28x28 */
+        position: absolute;
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        inset-inline-end: 4px;
 
-    content: "";
-    background-color: var(--toolbar-icon-bg-color);
-    mask-size: cover;
+        content: "";
+        background-color: var(--toolbar-icon-bg-color);
+        mask-image: var(--treeitem-expanded-icon);
+        mask-size: cover;
+      }
+
+      position: relative;
+      float: var(--inline-start);
+      height: 0;
+      width: 0;
+      color: rgb(255 255 255 / 0.5);
+
+      &.treeItemsHidden {
+        &::before {
+          mask-image: var(--treeitem-collapsed-icon);
+          transform: scaleX(var(--dir-factor));
+        }
+
+        ~ .treeItems {
+          display: none;
+        }
+      }
+
+      &:hover + a,
+      &:hover ~ .treeItems {
+        background-color: var(--treeitem-bg-color);
+        background-clip: padding-box;
+        border-radius: 2px;
+        color: var(--treeitem-hover-color);
+      }
+    }
+
+    > .treeItem,
+    .treeItem > .treeItems {
+      margin-inline-start: 20px;
+    }
   }
 
   &#layersView .treeItem > a {
@@ -47,17 +83,13 @@
     }
 
     > label {
+      display: flex;
+      align-items: center;
       padding-inline-start: 4px;
       > input {
-        float: var(--inline-start);
         margin-top: 1px;
       }
     }
-  }
-
-  > .treeItem,
-  .treeItem > .treeItems {
-    margin-inline-start: 20px;
   }
 
   .treeItem {
@@ -76,7 +108,7 @@
       line-height: 15px;
       user-select: none;
       white-space: normal;
-      cursor: pointer;
+      cursor: default;
 
       &:hover {
         background-color: var(--treeitem-bg-color);
@@ -89,37 +121,6 @@
     &.selected > a {
       background-color: var(--treeitem-selected-bg-color);
       color: var(--treeitem-selected-color);
-    }
-  }
-
-  .treeItemToggler {
-    position: relative;
-    float: var(--inline-start);
-    height: 0;
-    width: 0;
-    color: rgb(255 255 255 / 0.5);
-
-    &::before {
-      inset-inline-end: 4px;
-      mask-image: var(--treeitem-expanded-icon);
-    }
-
-    &.treeItemsHidden {
-      &::before {
-        mask-image: var(--treeitem-collapsed-icon);
-        transform: scaleX(var(--dir-factor));
-      }
-
-      ~ .treeItems {
-        display: none;
-      }
-    }
-
-    &:hover:is(+ a, ~ .treeItems) {
-      background-color: var(--treeitem-bg-color);
-      background-clip: padding-box;
-      border-radius: 2px;
-      color: var(--treeitem-hover-color);
     }
   }
 }
